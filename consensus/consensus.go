@@ -66,6 +66,7 @@ func (engine *DPOSEngine) SendEvents(content string) {
 	engine.dposFeed.Send(core.ConsensusEvent{content})
 }
 func (engine *DPOSEngine) Engine() int {
+	log.Info("DPOSEngine SendEvents test wangjiyou")
 	engine.SendEvents("test wangjiyou")
 	return 0
 }

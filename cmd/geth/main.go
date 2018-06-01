@@ -25,16 +25,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/ethclient"
 	"github.com/palletone/go-palletone/internal/debug"
-	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/statistics/metrics"
-	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/p2p/eth"
+	"github.com/palletone/go-palletone/statistics/metrics"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -240,6 +240,12 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 			unlockAccount(ctx, ks, trimmed, i, passwords)
 		}
 	}
+
+	//	go func() {
+	//		time.Sleep(time.Duration(15) * time.Second)
+	//		ethereum.Engine().Engine()
+	//	}()
+
 	// Register wallet event handlers to open and auto-derive wallets
 	events := make(chan accounts.WalletEvent, 16)
 	stack.AccountManager().Subscribe(events)
@@ -291,6 +297,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		if err := stack.Service(&ethereum); err != nil {
 			utils.Fatalf("Ethereum service not running: %v", err)
 		}
+		log.Info("===========Ethereum service running")
 		// Use a reduced number of threads if requested
 		if threads := ctx.GlobalInt(utils.MinerThreadsFlag.Name); threads > 0 {
 			type threaded interface {
@@ -302,10 +309,16 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		}
 		// Set the gas price to the limits from the CLI
 		ethereum.TxPool().SetGasPrice(utils.GlobalBig(ctx, utils.GasPriceFlag.Name))
-
+		log.Info("===========Ethereum TxPool SetGasPrice")
 		//Start mining
 		//		if err := ethereum.StartMining(true); err != nil {
 		//			utils.Fatalf("Failed to start mining: %v", err)
 		//		}
+		//		go func() {
+		//			time.Sleep(time.Duration(15) * time.Second)
+		//			ethereum.Engine().Engine()
+		//		}()
+
 	}
+
 }

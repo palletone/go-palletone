@@ -143,6 +143,7 @@ func NewProtocolManager(config *configure.ChainConfig, mode downloader.SyncMode,
 			Length:  ProtocolLengths[i],
 			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
 				peer := manager.newPeer(int(version), p, rw)
+				log.Info("======manager.newPeer")
 				select {
 				case manager.newPeerCh <- peer:
 					manager.wg.Add(1)
@@ -268,6 +269,7 @@ func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *p
 func (pm *ProtocolManager) handle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
+		log.Info("ProtocolManager handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
 		return p2p.DiscTooManyPeers
 	}
 	p.Log().Debug("Ethereum peer connected", "name", p.Name())
@@ -293,6 +295,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		return err
 	}
 	defer pm.removePeer(p.id)
+	log.Info("======pm.peers.Register pid:", p.id)
 
 	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
 	if err := pm.downloader.RegisterPeer(p.id, p.version, p); err != nil {
@@ -300,7 +303,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
-	pm.syncTransactions(p)
+	//pm.syncTransactions(p)//wangjiyou would recover
 
 	// If we're DAO hard-fork aware, validate any remote peer with regard to the hard-fork
 	if daoBlock := pm.chainconfig.DAOForkBlock; daoBlock != nil {
@@ -334,6 +337,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 // peer. The remote connection is torn down upon returning any error.
 func (pm *ProtocolManager) handleMsg(p *peer) error {
 	// Read the next message from the remote peer, and ensure it's fully consumed
+	log.Info("======ProtocolManager.handleMsg")
 	msg, err := p.rw.ReadMsg()
 	if err != nil {
 		return err
@@ -795,9 +799,10 @@ type NodeInfo struct {
 // NodeInfo retrieves some protocol metadata about the running host node.
 func (self *ProtocolManager) NodeInfo() *NodeInfo {
 	//currentBlock := self.blockchain.CurrentBlock()
+	//var natnum nat = []uint{17179869184}
 	return &NodeInfo{
-		Network: self.networkId,
-		//Difficulty: self.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64()),
+		Network:    self.networkId,
+		Difficulty: &big.Int{}, //self.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64()),
 		//Genesis:    self.blockchain.Genesis().Hash(),
 		//Config:     self.blockchain.Config(),
 		//Head:       currentBlock.Hash(),

@@ -29,11 +29,18 @@ func (self *ProtocolManager) ceBroadcastLoop() {
 
 func (pm *ProtocolManager) BroadcastCe(ce string) {
 	log.Info("=========BroadcastCe:", ce)
+	//PeerCount
+	//pm.peers.
+
+	counts := pm.peers.Len()
+	log.Info("=========BroadcastCe have peers:", counts)
 	var index int = 0
 	peers := pm.peers.GetPeers()
+
 	for _, peer := range peers {
 		log.Info("======index:", index)
 		peer.SendConsensus(ce)
 		index++
 	}
+
 }

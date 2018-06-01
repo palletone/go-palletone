@@ -585,7 +585,7 @@ func (srv *Server) run(dialstate dialer) {
 running:
 	for {
 		scheduleTasks()
-
+		//log.Info("===p2p server run===")
 		select {
 		case <-srv.quit:
 			// The server was stopped. Run the cleanup logic.
@@ -617,6 +617,7 @@ running:
 			dialstate.taskDone(t, time.Now())
 			delTask(t)
 		case c := <-srv.posthandshake:
+			log.Info("===p2p posthandshake===")
 			// A connection has passed the encryption handshake so
 			// the remote identity is known (but hasn't been verified yet).
 			if trusted[c.id] {
@@ -630,6 +631,7 @@ running:
 				break running
 			}
 		case c := <-srv.addpeer:
+			log.Info("===p2p addpeer===")
 			// At this point the connection is past the protocol handshake.
 			// Its capabilities are known and the remote identity is verified.
 			err := srv.protoHandshakeChecks(peers, inboundCount, c)
@@ -642,12 +644,16 @@ running:
 					p.events = &srv.peerFeed
 				}
 				name := truncateName(c.name)
-				srv.log.Debug("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers)+1)
+				//srv.log.Debug("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers)+1)
+				//srv.log.Info("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers)+1)
 				go srv.runPeer(p)
 				peers[c.id] = p
+				srv.log.Info("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers))
 				if p.Inbound() {
 					inboundCount++
 				}
+			} else {
+				log.Info("===p2p addpeer protoHandshakeChecks err:", err)
 			}
 			// The dialer logic relies on the assumption that
 			// dial tasks complete after the peer has been added or
@@ -793,6 +799,7 @@ func (srv *Server) listenLoop() {
 // as a peer. It returns when the connection has been added as a peer
 // or the handshakes have failed.
 func (srv *Server) SetupConn(fd net.Conn, flags connFlag, dialDest *discover.Node) error {
+	log.Info("p2p server SetupConn")
 	self := srv.Self()
 	if self == nil {
 		return errors.New("shutdown")
@@ -812,6 +819,7 @@ func (srv *Server) setupConn(c *conn, flags connFlag, dialDest *discover.Node) e
 	running := srv.running
 	srv.lock.Unlock()
 	if !running {
+		srv.log.Info("===srv.running is not running===")
 		return errServerStopped
 	}
 	// Run the encryption handshake.
@@ -880,6 +888,7 @@ func (srv *Server) checkpoint(c *conn, stage chan<- *conn) error {
 // it waits until the Peer logic returns and removes
 // the peer.
 func (srv *Server) runPeer(p *Peer) {
+	log.Info("===p2p server runPeer===")
 	if srv.newPeerHook != nil {
 		srv.newPeerHook(p)
 	}

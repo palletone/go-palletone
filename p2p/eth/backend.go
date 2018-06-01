@@ -23,8 +23,7 @@ import (
 	"math/big"
 	"runtime"
 	"sync"
-	//"sync/atomic"
-	//"time"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -383,7 +382,7 @@ func (s *Ethereum) AccountManager() *accounts.Manager  { return s.accountManager
 func (s *Ethereum) BlockChain() *coredata.BlockChain   { return s.blockchain }
 func (s *Ethereum) TxPool() *coredata.TxPool           { return s.txPool }
 func (s *Ethereum) EventMux() *event.TypeMux           { return s.eventMux }
-func (s *Ethereum) Engine() consensus.Engine           { return s.engine }
+func (s *Ethereum) Engine() core.ConsensusEngine       { return s.engine }
 func (s *Ethereum) ChainDb() ethdb.Database            { return s.chainDb }
 func (s *Ethereum) IsListening() bool                  { return true } // Always listening
 func (s *Ethereum) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
@@ -418,8 +417,10 @@ func (s *Ethereum) Start(srvr *p2p.Server) error {
 	}
 	// Start the networking layer and the light server if requested
 	s.protocolManager.Start(maxPeers)
-	//time.Sleep(time.Duration(5) * time.Second)
-	s.engine.Engine()
+	go func() {
+		time.Sleep(time.Duration(15) * time.Second)
+		s.Engine().Engine()
+	}()
 	return nil
 }
 
