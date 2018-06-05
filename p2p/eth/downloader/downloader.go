@@ -404,6 +404,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode 
 // syncWithPeer starts a block synchronization based on the hash chain from the
 // specified peer and head hash.
 func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.Int) (err error) {
+	return nil //wangjiyou would delete the test
 	d.mux.Post(StartEvent{})
 	defer func() {
 		// reset on error
@@ -565,15 +566,18 @@ func (d *Downloader) fetchHeight(p *peerConnection) (*types.Header, error) {
 				log.Debug("Received headers from incorrect peer", "peer", packet.PeerId())
 				break
 			}
-			// Make sure the peer actually gave something valid
-			headers := packet.(*headerPack).headers
-			if len(headers) != 1 {
-				p.log.Debug("Multiple headers for single request", "headers", len(headers))
-				return nil, errBadPeer
-			}
-			head := headers[0]
-			p.log.Debug("Remote head header identified", "number", head.Number, "hash", head.Hash())
-			return head, nil
+			/*
+				// Make sure the peer actually gave something valid
+				headers := packet.(*headerPack).headers
+				if len(headers) != 1 {
+					p.log.Debug("Multiple headers for single request", "headers", len(headers))
+					return nil, errBadPeer
+				}
+				head := headers[0]
+				p.log.Debug("Remote head header identified", "number", head.Number, "hash", head.Hash())
+				return head, nil*/
+			log.Debug("Received headers from remote peer", "peer", packet.PeerId())
+			return &types.Header{}, nil
 
 		case <-timeout:
 			p.log.Debug("Waiting for head header timed out", "elapsed", ttl)
