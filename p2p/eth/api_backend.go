@@ -169,7 +169,15 @@ func (b *EthApiBackend) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscri
 	return nil
 }
 
+func (b *EthApiBackend) SendConsensus(ctx context.Context) error {
+	//log.Info("===EthApiBackend SendConsensus===")
+	return nil //b.eth.txPool.AddLocal(signedTx)
+}
+
 func (b *EthApiBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {
+	//return b.eth.txPool.AddLocal(signedTx)
+	b.eth.Engine().Engine()
+	return nil
 	return b.eth.txPool.AddLocal(signedTx)
 }
 

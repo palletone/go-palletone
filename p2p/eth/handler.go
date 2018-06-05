@@ -108,7 +108,7 @@ func NewProtocolManager(config *configure.ChainConfig, mode downloader.SyncMode,
 	manager := &ProtocolManager{
 		networkId: networkId,
 		eventMux:  mux,
-		txpool:    txpool,
+		//txpool:    txpool,
 		//blockchain:  blockchain,
 		consEngine:  engine,
 		chainconfig: config,

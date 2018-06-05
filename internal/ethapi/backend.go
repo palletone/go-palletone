@@ -69,6 +69,9 @@ type Backend interface {
 
 	ChainConfig() *configure.ChainConfig
 	CurrentBlock() *types.Block
+
+	//test
+	SendConsensus(ctx context.Context) error
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {
