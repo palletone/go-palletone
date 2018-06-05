@@ -71,8 +71,8 @@ type ProtocolManager struct {
 
 	txpool txPool
 	//blockchain  *core.BlockChain//wangjiyou
-	chainconfig *configure.ChainConfig
-	maxPeers    int
+	//chainconfig *configure.ChainConfig
+	maxPeers int
 
 	downloader *downloader.Downloader
 	fetcher    *fetcher.Fetcher
@@ -110,8 +110,8 @@ func NewProtocolManager(config *configure.ChainConfig, mode downloader.SyncMode,
 		eventMux:  mux,
 		//txpool:    txpool,
 		//blockchain:  blockchain,
-		consEngine:  engine,
-		chainconfig: config,
+		consEngine: engine,
+		//chainconfig: config,
 		peers:       newPeerSet(),
 		newPeerCh:   make(chan *peer),
 		noMorePeers: make(chan struct{}),
@@ -146,8 +146,10 @@ func NewProtocolManager(config *configure.ChainConfig, mode downloader.SyncMode,
 				log.Info("======manager.newPeer")
 				select {
 				case manager.newPeerCh <- peer:
+					log.Info("===manager.newPeerCh===")
 					manager.wg.Add(1)
 					defer manager.wg.Done()
+					log.Info("===pre manager.handle===")
 					return manager.handle(peer)
 				case <-manager.quitSync:
 					return p2p.DiscQuitting
@@ -168,7 +170,7 @@ func NewProtocolManager(config *configure.ChainConfig, mode downloader.SyncMode,
 		return nil, errIncompatibleConfig
 	}
 	// Construct the different synchronisation mechanisms
-	//manager.downloader = downloader.New(mode, chaindb, manager.eventMux, blockchain, nil, manager.removePeer)//wangjiyou
+	manager.downloader = downloader.New(mode, chaindb, manager.eventMux /*blockchain, nil,*/, manager.removePeer) //wangjiyou
 	/*wangjiyou
 	validator := func(header *types.Header) error {
 		return engine.VerifyHeader(blockchain, header, true)
@@ -184,9 +186,9 @@ func NewProtocolManager(config *configure.ChainConfig, mode downloader.SyncMode,
 		}
 		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
 		return manager.blockchain.InsertChain(blocks)
-	}
-	//manager.fetcher = fetcher.New(blockchain.GetBlockByHash, validator, manager.BroadcastBlock, heighter, inserter, manager.removePeer)//wangjiyou
-	*/
+	}*/
+	//manager.fetcher = fetcher.New(blockchain.GetBlockByHash, validator, manager.BroadcastBlock, heighter, inserter, manager.removePeer) //wangjiyou
+
 	return manager, nil
 }
 
@@ -219,6 +221,8 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
 	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
 	go pm.ceBroadcastLoop()
+
+	go pm.syncer()
 	/*
 		// broadcast transactions
 		pm.txCh = make(chan core.TxPreEvent, txChanSize)
@@ -295,7 +299,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		return err
 	}
 	defer pm.removePeer(p.id)
-	log.Info("======pm.peers.Register pid:", p.id)
 
 	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
 	if err := pm.downloader.RegisterPeer(p.id, p.version, p); err != nil {
@@ -304,26 +307,26 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
 	//pm.syncTransactions(p)//wangjiyou would recover
-
-	// If we're DAO hard-fork aware, validate any remote peer with regard to the hard-fork
-	if daoBlock := pm.chainconfig.DAOForkBlock; daoBlock != nil {
-		// Request the peer's DAO fork header for extra-data validation
-		if err := p.RequestHeadersByNumber(daoBlock.Uint64(), 1, 0, false); err != nil {
-			return err
-		}
-		// Start a timer to disconnect if the peer doesn't reply in time
-		p.forkDrop = time.AfterFunc(daoChallengeTimeout, func() {
-			p.Log().Debug("Timed out DAO fork-check, dropping")
-			pm.removePeer(p.id)
-		})
-		// Make sure it's cleaned up if the peer dies off
-		defer func() {
-			if p.forkDrop != nil {
-				p.forkDrop.Stop()
-				p.forkDrop = nil
+	/*
+		// If we're DAO hard-fork aware, validate any remote peer with regard to the hard-fork
+		if daoBlock := pm.chainconfig.DAOForkBlock; daoBlock != nil {
+			// Request the peer's DAO fork header for extra-data validation
+			if err := p.RequestHeadersByNumber(daoBlock.Uint64(), 1, 0, false); err != nil {
+				return err
 			}
-		}()
-	}
+			// Start a timer to disconnect if the peer doesn't reply in time
+			p.forkDrop = time.AfterFunc(daoChallengeTimeout, func() {
+				p.Log().Debug("Timed out DAO fork-check, dropping")
+				pm.removePeer(p.id)
+			})
+			// Make sure it's cleaned up if the peer dies off
+			defer func() {
+				if p.forkDrop != nil {
+					p.forkDrop.Stop()
+					p.forkDrop = nil
+				}
+			}()
+		}*/
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
@@ -340,6 +343,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	log.Info("======ProtocolManager.handleMsg")
 	msg, err := p.rw.ReadMsg()
 	if err != nil {
+		log.Info("===p.rw.ReadMsg err:", err)
 		return err
 	}
 	if msg.Size > ProtocolMaxMsgSize {
@@ -462,21 +466,22 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Filter out any explicitly requested headers, deliver the rest to the downloader
 		filter := len(headers) == 1
 		if filter {
-			// If it's a potential DAO fork check, validate against the rules
-			if p.forkDrop != nil && pm.chainconfig.DAOForkBlock.Cmp(headers[0].Number) == 0 {
-				// Disable the fork drop timer
-				p.forkDrop.Stop()
-				p.forkDrop = nil
+			/*
+				// If it's a potential DAO fork check, validate against the rules
+				if p.forkDrop != nil && pm.chainconfig.DAOForkBlock.Cmp(headers[0].Number) == 0 {
+					// Disable the fork drop timer
+					p.forkDrop.Stop()
+					p.forkDrop = nil
 
-				// Validate the header and either drop the peer or continue
-				/*wangjiyou
-				if err := misc.VerifyDAOHeaderExtraData(pm.chainconfig, headers[0]); err != nil {
-					p.Log().Debug("Verified to be on the other side of the DAO fork, dropping")
-					return err
+					// Validate the header and either drop the peer or continue
+
+					//				if err := misc.VerifyDAOHeaderExtraData(pm.chainconfig, headers[0]); err != nil {
+					//					p.Log().Debug("Verified to be on the other side of the DAO fork, dropping")
+					//					return err
+					//				}
+					p.Log().Debug("Verified to be on the same side of the DAO fork")
+					return nil
 				}*/
-				p.Log().Debug("Verified to be on the same side of the DAO fork")
-				return nil
-			}
 			// Irrelevant of the fork checks, send the header to the fetcher just in case
 			headers = pm.fetcher.FilterHeaders(p.id, headers, time.Now())
 		}

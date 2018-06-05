@@ -70,7 +70,7 @@ type peer struct {
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 	id := p.ID()
-
+	log.Info("======newPeer p id:", id)
 	return &peer{
 		Peer:        p,
 		rw:          rw,

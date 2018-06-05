@@ -17,8 +17,9 @@
 package eth
 
 import (
-	"github.com/palletone/go-palletone/statistics/metrics"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/p2p"
+	"github.com/palletone/go-palletone/statistics/metrics"
 )
 
 var (
@@ -67,6 +68,7 @@ type meteredMsgReadWriter struct {
 // metrics system is disabled, this function returns the original object.
 func newMeteredMsgWriter(rw p2p.MsgReadWriter) p2p.MsgReadWriter {
 	if !metrics.Enabled {
+		log.Debug("===newMeteredMsgWriter metrics do not Enabled===")
 		return rw
 	}
 	return &meteredMsgReadWriter{MsgReadWriter: rw}
