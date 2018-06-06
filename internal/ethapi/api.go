@@ -742,6 +742,16 @@ func (s *PublicBlockChainAPI) EstimateGas(ctx context.Context, args CallArgs) (h
 	return hexutil.Uint64(hi), nil
 }
 
+// Start forking command.
+// Rate is the fork coin's exchange rate.
+func (s *PublicBlockChainAPI) Forking(ctx context.Context, rate uint64) uint64 {
+	// attempt: store the rate info in context.
+	// context.WithValue(ctx, "rate", rate)
+	return rate * rate
+}
+
+//-------------test end
+
 // ExecutionResult groups all structured logs emitted by the EVM
 // while replaying a transaction in debug mode as well as transaction
 // execution status, the amount of gas used and the return value

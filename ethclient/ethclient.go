@@ -27,8 +27,8 @@ import (
 	"github.com/palletone/go-palletone"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/rpc"
 )
 
@@ -505,3 +505,13 @@ func toCallArg(msg ethereum.CallMsg) interface{} {
 	}
 	return arg
 }
+
+//--------------test begin
+// Forking tool's client for the Ethereum RPC API
+func (ec *Client) ForkingAt(ctx context.Context, account common.Address, rate uint64) (uint64, error) {
+	var result hexutil.Uint64
+	err := ec.c.CallContext(ctx, &result, "eth_forking", account, rate)
+	return uint64(result), err
+}
+
+//--------------test end
