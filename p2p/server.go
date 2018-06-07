@@ -644,13 +644,14 @@ running:
 					p.events = &srv.peerFeed
 				}
 				name := truncateName(c.name)
-				//srv.log.Debug("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers)+1)
-				//srv.log.Info("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers)+1)
 				go srv.runPeer(p)
 				peers[c.id] = p
-				srv.log.Info("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers))
+				srv.log.Info("Adding p2p peer", "name", name, "addr",
+					c.fd.RemoteAddr(), "peers", len(peers),
+					"peers address:", &peers)
 				if p.Inbound() {
 					inboundCount++
+					srv.log.Info("====Adding p2p peer inboundCount:", inboundCount)
 				}
 			} else {
 				log.Info("===p2p addpeer protoHandshakeChecks err:", err)

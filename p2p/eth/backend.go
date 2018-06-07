@@ -23,7 +23,7 @@ import (
 	"math/big"
 	"runtime"
 	"sync"
-	"time"
+	//"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -392,10 +392,13 @@ func (s *Ethereum) Downloader() *downloader.Downloader { return s.protocolManage
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.
 func (s *Ethereum) Protocols() []p2p.Protocol {
-	if s.lesServer == nil {
-		return s.protocolManager.SubProtocols
-	}
-	return append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
+	return s.protocolManager.SubProtocols
+	/*
+		if s.lesServer == nil {
+			return s.protocolManager.SubProtocols
+		}
+		return append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
+	*/
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the
@@ -409,18 +412,19 @@ func (s *Ethereum) Start(srvr *p2p.Server) error {
 
 	// Figure out a max peers count based on the server limits
 	maxPeers := srvr.MaxPeers
-	if s.config.LightServ > 0 {
-		if s.config.LightPeers >= srvr.MaxPeers {
-			return fmt.Errorf("invalid peer config: light peer count (%d) >= total peer count (%d)", s.config.LightPeers, srvr.MaxPeers)
-		}
-		maxPeers -= s.config.LightPeers
-	}
+	/*
+		if s.config.LightServ > 0 {
+			if s.config.LightPeers >= srvr.MaxPeers {
+				return fmt.Errorf("invalid peer config: light peer count (%d) >= total peer count (%d)", s.config.LightPeers, srvr.MaxPeers)
+			}
+			maxPeers -= s.config.LightPeers
+		}*/
 	// Start the networking layer and the light server if requested
 	s.protocolManager.Start(maxPeers)
-	go func() {
+	/*go func() {
 		time.Sleep(time.Duration(15) * time.Second)
 		s.Engine().Engine()
-	}()
+	}()*/
 	return nil
 }
 

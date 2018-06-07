@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/p2p"
@@ -69,7 +70,7 @@ type peer struct {
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 	id := p.ID()
-
+	log.Info("======newPeer p id:", id)
 	return &peer{
 		Peer:        p,
 		rw:          rw,
@@ -425,6 +426,7 @@ func (ps *peerSet) GetPeers() []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 	list := make([]*peer, 0, len(ps.peers))
+	log.Info("peerSet GetPeers peers address:", &ps.peers)
 	for _, p := range ps.peers {
 		list = append(list, p)
 	}

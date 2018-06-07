@@ -30,9 +30,9 @@ func (self *ProtocolManager) ceBroadcastLoop() {
 func (pm *ProtocolManager) BroadcastCe(ce string) {
 	log.Info("=========BroadcastCe:", ce)
 	//PeerCount
-	//pm.peers.
-
-	counts := pm.peers.Len()
+	//pm.server.PeerCount()
+	counts := pm.peers.GetPeers()
+	//counts := pm.peers.Len()
 	log.Info("=========BroadcastCe have peers:", counts)
 	var index int = 0
 	peers := pm.peers.GetPeers()
