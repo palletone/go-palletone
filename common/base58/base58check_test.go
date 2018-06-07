@@ -28,6 +28,13 @@ var checkEncodingStringTests = []struct {
 	{20, "00000000000000000000000000000000000000000000000000000000000000", "bi1EWXwJay2udZVxLJozuTb8Meg4W9c6xnmJaRDjg6pri5MBAxb9XwrpQXbtnqEoRV5U2pixnFfwyXC8tRAVC8XxnjK"},
 }
 
+// func TestBase58CheckPrefix(t *testing.T) {
+// 	for i := 0; i < 255; i++ {
+// 		hash := Hash160([]byte("47588203-df15-4260-b50e-eb0e6a33873d"))
+// 		t.Logf("%d-%s", i, base58.CheckEncode([]byte(hash), byte(i)))
+// 	}
+// }
+
 func TestBase58Check(t *testing.T) {
 	for x, test := range checkEncodingStringTests {
 		// test encoding

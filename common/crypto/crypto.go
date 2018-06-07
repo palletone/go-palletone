@@ -201,6 +201,18 @@ func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
 	return common.BytesToAddress([]byte(addrStr))
 }
 
+//This is for P2SH address, start with P3
+func ScriptToAddress(redeemScript []byte) common.Address {
+	scriptHash := Hash160(redeemScript)
+	addrStr := "P" + base58.CheckEncode(scriptHash, byte(5))
+	return common.BytesToAddress([]byte(addrStr))
+}
+
+func ContractIdToAddress(contractId []byte) common.Address {
+	scriptHash := Hash160(contractId)
+	addrStr := "P" + base58.CheckEncode(scriptHash, byte(28))
+	return common.BytesToAddress([]byte(addrStr))
+}
 func zeroBytes(bytes []byte) {
 	for i := range bytes {
 		bytes[i] = 0
