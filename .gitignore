@@ -21,7 +21,7 @@ build/_vendor/pkg
 *~
 .project
 .settings
-
+debug
 # used by the Makefile
 /build/_workspace/
 /build/bin/

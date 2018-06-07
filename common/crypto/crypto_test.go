@@ -219,3 +219,12 @@ func TestPythonIntegration(t *testing.T) {
 	t.Logf("msg: %x, privkey: %s sig: %x\n", msg0, kh, sig0)
 	t.Logf("msg: %x, privkey: %s sig: %x\n", msg1, kh, sig1)
 }
+
+func TestPubkeyToAddress(t *testing.T) {
+	prvKey, _ := GenerateKey()
+	pubKey := prvKey.PublicKey
+	t.Log(pubKey)
+	address := PubkeyToAddress(pubKey)
+	addStr := address.Str()
+	t.Log(addStr)
+}
