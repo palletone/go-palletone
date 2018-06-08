@@ -25,13 +25,13 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/crypto/sha3"
+	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 const (
 	HashLength    = 32
-	AddressLength = 20
+	AddressLength = 35
 )
 
 var (
