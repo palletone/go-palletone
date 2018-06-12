@@ -57,27 +57,25 @@ type DPOSEngine struct {
 }
 
 func (engine *DPOSEngine) SubscribeCeEvent(ch chan<- core.ConsensusEvent) event.Subscription {
-	//return engine.dposFeed.Subscribe(ch)
 	return engine.scope.Track(engine.dposFeed.Subscribe(ch))
-	//s.scope.Track(s.divServer.results.Subscribe(ch))
 }
 
 func (engine *DPOSEngine) SendEvents(content string) {
 	engine.dposFeed.Send(core.ConsensusEvent{content})
 }
+
+func (engine *DPOSEngine) Stop() {
+	// Unsubscribe all subscriptions registered from dops
+	engine.scope.Close()
+	log.Info("DPOSEngine stopped")
+}
+
 func (engine *DPOSEngine) Engine() int {
-	log.Info("DPOSEngine SendEvents test wangjiyou")
-	engine.SendEvents("test wangjiyou")
+	engine.SendEvents("test dpos")
 	return 0
 }
 func New() *DPOSEngine {
 	return &DPOSEngine{}
-}
-
-func (engine *DPOSEngine) Stop() {
-	// Unsubscribe all subscriptions registered from txpool
-	engine.scope.Close()
-	log.Info("DPOSEngine stopped")
 }
 
 //var engine ConsensusEngine = DPOSEngine{}
