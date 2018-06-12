@@ -209,10 +209,10 @@ var (
 		Value: dashboard.DefaultConfig.Refresh,
 	}
 	// Ethash settings
-	EthashCacheDirFlag = DirectoryFlag{
+	/*EthashCacheDirFlag = DirectoryFlag{
 		Name:  "ethash.cachedir",
 		Usage: "Directory to store the ethash verification caches (default = inside the datadir)",
-	}
+	}*/
 	//EthashCachesInMemoryFlag   = cli.IntFlag{}
 	//EthashCachesOnDiskFlag     = cli.IntFlag{}
 	//EthashDatasetDirFlag       = DirectoryFlag{}
@@ -921,8 +921,9 @@ func setTxPool(ctx *cli.Context, cfg *coredata.TxPoolConfig) {
 	}
 }
 
+/*wangjiyou
 func setEthash(ctx *cli.Context, cfg *eth.Config) {
-	/*wangjiyou
+
 	if ctx.GlobalIsSet(EthashCacheDirFlag.Name) {
 		cfg.Ethash.CacheDir = ctx.GlobalString(EthashCacheDirFlag.Name)
 	}
@@ -940,9 +941,9 @@ func setEthash(ctx *cli.Context, cfg *eth.Config) {
 	}
 	if ctx.GlobalIsSet(EthashDatasetsOnDiskFlag.Name) {
 		cfg.Ethash.DatasetsOnDisk = ctx.GlobalInt(EthashDatasetsOnDiskFlag.Name)
-	}*/
+	}
 }
-
+*/
 // checkExclusive verifies that only a single isntance of the provided flags was
 // set by the user. Each flag might optionally be followed by a string type to
 // specialize it further.
@@ -1004,7 +1005,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	setEtherbase(ctx, ks, cfg)
 	setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
-	setEthash(ctx, cfg)
+	//setEthash(ctx, cfg)
 
 	switch {
 	case ctx.GlobalIsSet(SyncModeFlag.Name):

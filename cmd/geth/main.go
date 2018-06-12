@@ -62,7 +62,7 @@ var (
 		utils.DashboardAddrFlag,
 		utils.DashboardPortFlag,
 		utils.DashboardRefreshFlag,
-		utils.EthashCacheDirFlag,
+		//utils.EthashCacheDirFlag,
 		//utils.EthashCachesInMemoryFlag,
 		//utils.EthashCachesOnDiskFlag,
 		//utils.EthashDatasetDirFlag,
