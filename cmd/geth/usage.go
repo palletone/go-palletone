@@ -89,7 +89,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.DeveloperPeriodFlag,
 		},
 	},
-	{
+	/*{
 		Name: "ETHASH",
 		Flags: []cli.Flag{
 			utils.EthashCacheDirFlag,
@@ -99,17 +99,17 @@ var AppHelpFlagGroups = []flagGroup{
 			//utils.EthashDatasetsInMemoryFlag,
 			//utils.EthashDatasetsOnDiskFlag,
 		},
+	},*/
+	{
+		Name: "DASHBOARD",
+		Flags: []cli.Flag{
+			utils.DashboardEnabledFlag,
+			utils.DashboardAddrFlag,
+			utils.DashboardPortFlag,
+			utils.DashboardRefreshFlag,
+			//utils.DashboardAssetsFlag,
+		},
 	},
-	//{
-	//	Name: "DASHBOARD",
-	//	Flags: []cli.Flag{
-	//		utils.DashboardEnabledFlag,
-	//		utils.DashboardAddrFlag,
-	//		utils.DashboardPortFlag,
-	//		utils.DashboardRefreshFlag,
-	//		utils.DashboardAssetsFlag,
-	//	},
-	//},
 	{
 		Name: "TRANSACTION POOL",
 		Flags: []cli.Flag{
@@ -179,7 +179,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.NodeKeyHexFlag,
 		},
 	},
-	{
+	/*{
 		Name: "MINER",
 		Flags: []cli.Flag{
 			utils.MiningEnabledFlag,
@@ -189,7 +189,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.GasPriceFlag,
 			utils.ExtraDataFlag,
 		},
-	},
+	},*/
 	{
 		Name: "GAS PRICE ORACLE",
 		Flags: []cli.Flag{

@@ -28,10 +28,10 @@ import (
 	cli "gopkg.in/urfave/cli.v1"
 
 	"github.com/palletone/go-palletone/cmd/utils"
-	"github.com/palletone/go-palletone/statistics/dashboard"
-	"github.com/palletone/go-palletone/p2p/eth"
-	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/core/node"
+	"github.com/palletone/go-palletone/p2p/eth"
+	"github.com/palletone/go-palletone/statistics/dashboard"
 	//whisper "github.com/palletone/go-palletone/whisper/whisperv6"
 	"github.com/naoina/toml"
 )
@@ -76,8 +76,7 @@ type ethstatsConfig struct {
 }
 
 type gethConfig struct {
-	Eth eth.Config
-	//Shh       whisper.Config//wangjiyou
+	Eth       eth.Config
 	Node      node.Config
 	Ethstats  ethstatsConfig
 	Dashboard dashboard.Config
