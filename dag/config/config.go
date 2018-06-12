@@ -5,6 +5,7 @@ var (
 	SConfig Sconfig
 )
 
+// key := strings.ToLower(typ.Name()) 大写统一转小写
 type DagConfig struct {
 	DbPath     string
 	DbName     string
