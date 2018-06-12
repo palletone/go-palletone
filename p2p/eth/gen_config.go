@@ -7,7 +7,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	//"github.com/palletone/go-palletone/consensus/ethash"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/p2p/eth/downloader"
 	"github.com/palletone/go-palletone/p2p/eth/gasprice"
@@ -33,7 +33,9 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		TxPool                  coredata.TxPoolConfig
 		GPO                     gasprice.Config
 		EnablePreimageRecording bool
-		DocRoot                 string `toml:"-"`
+		// DAG options
+		Dag     dag.Config
+		DocRoot string `toml:"-"`
 	}
 	var enc Config
 	//enc.Genesis = c.Genesis
@@ -52,6 +54,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.TxPool = c.TxPool
 	enc.GPO = c.GPO
 	enc.EnablePreimageRecording = c.EnablePreimageRecording
+	enc.Dag = c.Dag
 	enc.DocRoot = c.DocRoot
 	return &enc, nil
 }
@@ -74,6 +77,7 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		TxPool                  *coredata.TxPoolConfig
 		GPO                     *gasprice.Config
 		EnablePreimageRecording *bool
+		Dag                     *dag.Config
 		DocRoot                 *string `toml:"-"`
 	}
 	var dec Config
@@ -128,6 +132,9 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.EnablePreimageRecording != nil {
 		c.EnablePreimageRecording = *dec.EnablePreimageRecording
+	}
+	if dec.Dag != nil {
+		c.Dag = *dec.Dag
 	}
 	if dec.DocRoot != nil {
 		c.DocRoot = *dec.DocRoot

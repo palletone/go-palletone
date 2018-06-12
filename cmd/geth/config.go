@@ -27,13 +27,12 @@ import (
 
 	cli "gopkg.in/urfave/cli.v1"
 
+	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/p2p/eth"
 	"github.com/palletone/go-palletone/statistics/dashboard"
-	//whisper "github.com/palletone/go-palletone/whisper/whisperv6"
-	"github.com/naoina/toml"
 )
 
 var (
@@ -110,8 +109,7 @@ func defaultNodeConfig() node.Config {
 func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	// Load defaults.
 	cfg := gethConfig{
-		Eth: eth.DefaultConfig,
-		//Shh:       whisper.DefaultConfig,//wangjiyou
+		Eth:       eth.DefaultConfig,
 		Node:      defaultNodeConfig(),
 		Dashboard: dashboard.DefaultConfig,
 	}
@@ -122,21 +120,18 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 			utils.Fatalf("%v", err)
 		}
 	}
-
 	// Apply flags.
 	utils.SetNodeConfig(ctx, &cfg.Node)
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
+
 	utils.SetEthConfig(ctx, stack, &cfg.Eth)
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ethstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
-
-	//utils.SetShhConfig(ctx, stack, &cfg.Shh)//wangjiyou
 	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
-
 	return stack, cfg
 }
 
@@ -144,7 +139,6 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	stack, cfg := makeConfigNode(ctx)
 
 	utils.RegisterEthService(stack, &cfg.Eth)
-
 	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
 	}

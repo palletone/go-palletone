@@ -198,6 +198,13 @@ var AppHelpFlagGroups = []flagGroup{
 		},
 	},
 	{
+		Name: "DAG TEST VALUE",
+		Flags: []cli.Flag{
+			utils.DagValue1Flag,
+			utils.DagValue2Flag,
+		},
+	},
+	{
 		Name: "VIRTUAL MACHINE",
 		Flags: []cli.Flag{
 			utils.VMEnableDebugFlag,
