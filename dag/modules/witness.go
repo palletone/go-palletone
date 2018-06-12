@@ -21,3 +21,9 @@ type UnitWitness struct {
 	Unit    string `json:"unit"`
 	Address string `json:"address"`
 }
+
+func GetWitnessList() *WitnessList{
+	w :=new(WitnessList)
+	return  w
+	
+}
