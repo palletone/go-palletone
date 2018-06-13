@@ -501,13 +501,13 @@ var (
 	DagValue1Flag = cli.IntFlag{
 		Name:  "dag.dag1",
 		Usage: "Dag value1",
-		Value: eth.DefaultConfig.Dag.Dag1,
+		Value: eth.DefaultConfig.Dag.DbPath,
 	}
 
 	DagValue2Flag = cli.IntFlag{
 		Name:  "dag.dag2",
 		Usage: "Dag value2",
-		Value: eth.DefaultConfig.Dag.Dag2,
+		Value: eth.DefaultConfig.Dag.DbName,
 	}
 	/*
 		WhisperEnabledFlag = cli.BoolFlag{
