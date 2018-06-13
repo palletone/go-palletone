@@ -1,10 +1,10 @@
 package storage
 
 import (
-	"config"
 	"log"
 
 	"gitee.com/sailinst/pallet_dag/palletdb"
+	"github.com/palletone/go-palletone/dag/config"
 )
 
 var (
@@ -36,10 +36,10 @@ var (
 func init() {
 	var err error
 	if Dbconn == nil {
-		if config.TConfig.DbPath == "" {
-			config.TConfig.DbPath = DBPath
+		if config.DConfig.DbPath == "" {
+			config.DConfig.DbPath = DBPath
 		}
-		Dbconn, err = palletdb.NewLDBDatabase(config.TConfig.DbPath, 0, 0)
+		Dbconn, err = palletdb.NewLDBDatabase(config.DConfig.DbPath, 0, 0)
 		if err != nil {
 			log.Println("new dbconn error:", err)
 		}
@@ -48,10 +48,10 @@ func init() {
 }
 func ReNewDbConn() *palletdb.LDBDatabase {
 	log.Println("renew dbconn start...")
-	if config.TConfig.DbPath == "" {
-		config.TConfig.DbPath = DBPath
+	if config.DConfig.DbPath == "" {
+		config.DConfig.DbPath = DBPath
 	}
-	if dbconn, err := palletdb.NewLDBDatabase(config.TConfig.DbPath, 0, 0); err != nil {
+	if dbconn, err := palletdb.NewLDBDatabase(config.DConfig.DbPath, 0, 0); err != nil {
 		log.Println("renew dbconn error:", err)
 		return nil
 	} else {

@@ -2,9 +2,10 @@
 package modules
 
 import (
-	"common"
 	"encoding/json"
 	"time"
+
+	"github.com/palletone/go-palletone/dag/common"
 )
 
 // key: unit.hash(unit)

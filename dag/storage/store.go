@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"palletdag/modules"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // store unit

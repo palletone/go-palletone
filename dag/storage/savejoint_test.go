@@ -1,15 +1,15 @@
 package storage
 
 import (
-	"config"
 	"errors"
 	"log"
-	"palletdag/modules"
 	"strconv"
 	"testing"
 	"time"
 
 	"gitee.com/sailinst/pallet_dag/palletdb"
+	"github.com/palletone/go-palletone/dag/config"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func TestSaveJoint(t *testing.T) {
@@ -34,8 +34,8 @@ func TestAddUnitKey(t *testing.T) {
 	keys = append(keys, "unit1231526522017", "unit1231526521834")
 	var err error
 	if Dbconn == nil {
-		config.TConfig.DbPath = "/Users/jay/code/gocode/src/palletone/bin/leveldb"
-		Dbconn, err = palletdb.NewLDBDatabase(config.TConfig.DbPath, 0, 0)
+		config.DConfig.DbPath = "/Users/jay/code/gocode/src/palletone/bin/leveldb"
+		Dbconn, err = palletdb.NewLDBDatabase(config.DConfig.DbPath, 0, 0)
 		if err != nil {
 			log.Println("new db error", err)
 			t.Fatal("error1")
@@ -78,9 +78,14 @@ func TestGetUnitKeys(t *testing.T) {
 	log.Println("times:", (time.Now().UnixNano()-t0.UnixNano())/1e6)
 }
 
-func TestDBPATH(t *testing.T) {
+func TestDBBatch(t *testing.T) {
 	log.Println("db_path:", DBPath)
-	var s1 = []int{0, 1, 2, 3, 4}
-	log.Println(append(s1, 5, 6))
-	log.Println("s1:", s1)
+	table := palletdb.NewTable(Dbconn, "hehe")
+	err0 := table.Put([]byte("jay"), []byte("baby"))
+	log.Println("err0:", err0)
+
+	b, err := table.Get([]byte("jay"))
+	log.Println("b:", string(b), err)
+
+	log.Println("table:", table.prefix)
 }
