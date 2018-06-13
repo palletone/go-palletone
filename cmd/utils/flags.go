@@ -42,7 +42,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/p2p"
 	"github.com/palletone/go-palletone/p2p/discover"
 	"github.com/palletone/go-palletone/p2p/discv5"
@@ -498,15 +498,15 @@ var (
 		Value: eth.DefaultConfig.GPO.Percentile,
 	}
 
-	DagValue1Flag = cli.IntFlag{
-		Name:  "dag.dag1",
-		Usage: "Dag value1",
+	DagValue1Flag = cli.StringFlag{
+		Name:  "dag.dbpath",
+		Usage: "Dag dbapth",
 		Value: eth.DefaultConfig.Dag.DbPath,
 	}
 
-	DagValue2Flag = cli.IntFlag{
-		Name:  "dag.dag2",
-		Usage: "Dag value2",
+	DagValue2Flag = cli.StringFlag{
+		Name:  "dag.dbname",
+		Usage: "Dag dbname",
 		Value: eth.DefaultConfig.Dag.DbName,
 	}
 	/*
@@ -1017,12 +1017,12 @@ func setGPO(ctx *cli.Context, cfg *gasprice.Config) {
 }
 
 // SetDagConfig applies dag related command line flags to the config.
-func setDag(ctx *cli.Context, cfg *dag.Config) {
+func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
 	if ctx.GlobalIsSet(DagValue1Flag.Name) {
-		cfg.Dag1 = ctx.GlobalInt(DagValue1Flag.Name)
+		cfg.DbPath = ctx.GlobalString(DagValue1Flag.Name)
 	}
 	if ctx.GlobalIsSet(DagValue2Flag.Name) {
-		cfg.Dag2 = ctx.GlobalInt(DagValue2Flag.Name)
+		cfg.DbName = ctx.GlobalString(DagValue2Flag.Name)
 	}
 }
 
