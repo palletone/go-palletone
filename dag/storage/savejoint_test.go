@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"gitee.com/sailinst/pallet_dag/palletdb"
-	"github.com/palletone/go-palletone/dag/config"
+	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -34,8 +34,8 @@ func TestAddUnitKey(t *testing.T) {
 	keys = append(keys, "unit1231526522017", "unit1231526521834")
 	var err error
 	if Dbconn == nil {
-		config.DConfig.DbPath = "/Users/jay/code/gocode/src/palletone/bin/leveldb"
-		Dbconn, err = palletdb.NewLDBDatabase(config.DConfig.DbPath, 0, 0)
+		config.DefaultConfig.DbPath = "/Users/jay/code/gocode/src/palletone/bin/leveldb"
+		Dbconn, err = palletdb.NewLDBDatabase(config.DefaultConfig.DbPath, 0, 0)
 		if err != nil {
 			log.Println("new db error", err)
 			t.Fatal("error1")
@@ -71,7 +71,7 @@ func TestGetUnitKeys(t *testing.T) {
 
 	err := AddUnitKeys("unit1231526521834")
 	if errors.New("key is already exist.").Error() == err.Error() {
-		log.Println("success test add unit") // this
+		log.Println("success test add unit", keys) // this
 	} else {
 		log.Println("failed test add  unit ")
 	}
@@ -87,5 +87,5 @@ func TestDBBatch(t *testing.T) {
 	b, err := table.Get([]byte("jay"))
 	log.Println("b:", string(b), err)
 
-	log.Println("table:", table.prefix)
+	log.Println("table:", table)
 }

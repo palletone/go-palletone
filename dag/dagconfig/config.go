@@ -1,12 +1,12 @@
-package config
+package dagconfig
 
 var (
-	DConfig DagConfig
-	SConfig Sconfig
+	DefaultConfig Config
+	SConfig       Sconfig
 )
 
 // key := strings.ToLower(typ.Name()) 大写统一转小写
-type DagConfig struct {
+type Config struct {
 	DbPath     string
 	DbName     string
 	DbUser     string

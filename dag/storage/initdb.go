@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"gitee.com/sailinst/pallet_dag/palletdb"
-	"github.com/palletone/go-palletone/dag/config"
+	config "github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 var (
@@ -36,10 +36,10 @@ var (
 func init() {
 	var err error
 	if Dbconn == nil {
-		if config.DConfig.DbPath == "" {
-			config.DConfig.DbPath = DBPath
+		if config.DefaultConfig.DbPath == "" {
+			config.DefaultConfig.DbPath = DBPath
 		}
-		Dbconn, err = palletdb.NewLDBDatabase(config.DConfig.DbPath, 0, 0)
+		Dbconn, err = palletdb.NewLDBDatabase(config.DefaultConfig.DbPath, 0, 0)
 		if err != nil {
 			log.Println("new dbconn error:", err)
 		}
@@ -48,10 +48,10 @@ func init() {
 }
 func ReNewDbConn() *palletdb.LDBDatabase {
 	log.Println("renew dbconn start...")
-	if config.DConfig.DbPath == "" {
-		config.DConfig.DbPath = DBPath
+	if config.DefaultConfig.DbPath == "" {
+		config.DefaultConfig.DbPath = DBPath
 	}
-	if dbconn, err := palletdb.NewLDBDatabase(config.DConfig.DbPath, 0, 0); err != nil {
+	if dbconn, err := palletdb.NewLDBDatabase(config.DefaultConfig.DbPath, 0, 0); err != nil {
 		log.Println("renew dbconn error:", err)
 		return nil
 	} else {
