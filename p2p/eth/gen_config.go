@@ -7,8 +7,8 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/p2p/eth/downloader"
 	"github.com/palletone/go-palletone/p2p/eth/gasprice"
 )
@@ -34,7 +34,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		GPO                     gasprice.Config
 		EnablePreimageRecording bool
 		// DAG options
-		Dag     dag.Config
+		Dag     dagconfig.Config
 		DocRoot string `toml:"-"`
 	}
 	var enc Config
@@ -77,7 +77,7 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		TxPool                  *coredata.TxPoolConfig
 		GPO                     *gasprice.Config
 		EnablePreimageRecording *bool
-		Dag                     *dag.Config
+		Dag                     *dagconfig.Config
 		DocRoot                 *string `toml:"-"`
 	}
 	var dec Config

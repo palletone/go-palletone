@@ -24,17 +24,17 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus/ethash"
+	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/vm"
-	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/p2p"
 	"github.com/palletone/go-palletone/p2p/eth/downloader"
 	"github.com/palletone/go-palletone/p2p/ethdb"
-	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/p2p"
-	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/vm"
 )
 
 // Tests that protocol versions and modes of operations are matched up properly.

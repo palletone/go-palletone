@@ -28,8 +28,8 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	//"github.com/palletone/go-palletone/consensus/ethash"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/p2p/eth/downloader"
 	"github.com/palletone/go-palletone/p2p/eth/gasprice"
 )
@@ -56,7 +56,7 @@ var DefaultConfig = Config{
 		Blocks:     20,
 		Percentile: 60,
 	},
-	Dag: dag.DefaultConfig,
+	Dag: dagconfig.DefaultConfig,
 }
 
 func init() {
@@ -115,7 +115,7 @@ type Config struct {
 	// Enables tracking of SHA3 preimages in the VM
 	EnablePreimageRecording bool
 	// DAG options
-	Dag dag.Config
+	Dag dagconfig.Config
 	// Miscellaneous options
 	DocRoot string `toml:"-"`
 }
