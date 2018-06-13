@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	//"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 // Type determines the kind of filter and is used to put the filter in to

@@ -39,7 +39,7 @@ import (
 	"github.com/palletone/go-palletone/p2p/simulations"
 	"github.com/palletone/go-palletone/p2p/simulations/adapters"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 // ProtocolTester is the tester environment used for unit testing protocol

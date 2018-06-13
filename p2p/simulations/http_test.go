@@ -32,7 +32,7 @@ import (
 	"github.com/palletone/go-palletone/p2p"
 	"github.com/palletone/go-palletone/p2p/discover"
 	"github.com/palletone/go-palletone/p2p/simulations/adapters"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 // testService implements the node.Service interface and provides protocols

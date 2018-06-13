@@ -36,7 +36,7 @@ import (
 	//"github.com/palletone/go-palletone/internal/ethapi"
 	//"github.com/palletone/go-palletone/common/log"
 	//"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 	//"github.com/palletone/go-palletone/common/trie"
 )
 

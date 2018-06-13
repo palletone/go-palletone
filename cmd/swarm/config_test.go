@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/swarm"
 	"github.com/palletone/go-palletone/swarm/api"
 

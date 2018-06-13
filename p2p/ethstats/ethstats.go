@@ -40,7 +40,7 @@ import (
 	//"github.com/palletone/go-palletone/les"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/p2p"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 	"golang.org/x/net/websocket"
 )
 

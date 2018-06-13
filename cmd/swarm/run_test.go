@@ -32,7 +32,7 @@ import (
 	"github.com/palletone/go-palletone/internal/cmdtest"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/p2p"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/swarm"
 )
 

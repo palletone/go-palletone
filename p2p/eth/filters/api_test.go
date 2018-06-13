@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 func TestUnmarshalJSONNewFilterArgs(t *testing.T) {

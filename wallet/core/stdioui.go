@@ -23,7 +23,7 @@ import (
 
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 type StdIOUI struct {

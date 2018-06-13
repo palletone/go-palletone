@@ -35,7 +35,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/trie"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 // PublicEthereumAPI provides an API to access Ethereum full node-related

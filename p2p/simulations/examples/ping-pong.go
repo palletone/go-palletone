@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/p2p/discover"
 	"github.com/palletone/go-palletone/p2p/simulations"
 	"github.com/palletone/go-palletone/p2p/simulations/adapters"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 var adapterType = flag.String("adapter", "sim", `node adapter to use (one of "sim", "exec" or "docker")`)

@@ -23,7 +23,7 @@ import (
 	"reflect"
 
 	"github.com/palletone/go-palletone/p2p"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 // NoopService is a trivial implementation of the Service interface.

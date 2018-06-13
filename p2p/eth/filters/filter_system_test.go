@@ -34,7 +34,7 @@ import (
 	"github.com/palletone/go-palletone/p2p/ethdb"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 type testBackend struct {
