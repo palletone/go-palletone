@@ -28,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/p2p"
 	"github.com/palletone/go-palletone/p2p/discover"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 // SimAdapter is a NodeAdapter which creates in-memory simulation nodes and

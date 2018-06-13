@@ -22,7 +22,7 @@ import (
 
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/p2p"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 // SampleService is a trivial network service that can be attached to a node for

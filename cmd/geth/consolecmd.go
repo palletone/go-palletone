@@ -27,7 +27,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 	"gopkg.in/urfave/cli.v1"
 )
 

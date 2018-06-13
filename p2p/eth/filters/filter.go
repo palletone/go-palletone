@@ -26,7 +26,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/p2p/ethdb"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 type Backend interface {

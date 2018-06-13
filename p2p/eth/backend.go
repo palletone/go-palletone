@@ -47,7 +47,7 @@ import (
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/p2p"
 	"github.com/palletone/go-palletone/p2p/ethdb"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 type LesServer interface {

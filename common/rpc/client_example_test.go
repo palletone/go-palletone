@@ -22,7 +22,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 // In this example, our client whishes to track the latest 'block number'

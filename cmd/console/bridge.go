@@ -25,7 +25,7 @@ import (
 
 	//"github.com/palletone/go-palletone/core/accounts/usbwallet"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/robertkrimen/otto"
 )
 

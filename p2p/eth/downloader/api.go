@@ -22,7 +22,7 @@ import (
 
 	ethereum "github.com/palletone/go-palletone"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 // PublicDownloaderAPI provides an API which gives information about the current synchronisation status.

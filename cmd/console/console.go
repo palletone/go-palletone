@@ -30,7 +30,7 @@ import (
 
 	"github.com/palletone/go-palletone/internal/jsre"
 	"github.com/palletone/go-palletone/internal/web3ext"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/mattn/go-colorable"
 	"github.com/peterh/liner"
 	"github.com/robertkrimen/otto"

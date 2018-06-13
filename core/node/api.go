@@ -27,7 +27,7 @@ import (
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"github.com/palletone/go-palletone/p2p"
 	"github.com/palletone/go-palletone/p2p/discover"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 // PrivateAdminAPI is the collection of administrative API methods exposed only

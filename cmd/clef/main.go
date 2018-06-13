@@ -40,7 +40,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/signer/core"
 	"github.com/palletone/go-palletone/signer/rules"
 	"github.com/palletone/go-palletone/signer/storage"

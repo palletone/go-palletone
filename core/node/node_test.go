@@ -26,7 +26,7 @@ import (
 
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/p2p"
-	"github.com/palletone/go-palletone/rpc"
+	"github.com/palletone/go-palletone/common/rpc"
 )
 
 var (
