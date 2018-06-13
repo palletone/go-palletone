@@ -49,3 +49,7 @@ type DynamicGlobalProperty struct {
 	*/
 	RecentSlotsFilled float32
 }
+
+func UpdateGlobalDynamicData() {
+
+}
