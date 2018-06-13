@@ -39,20 +39,20 @@ import (
 	"github.com/palletone/go-palletone/dag/state"
 	//"github.com/palletone/go-palletone/vm"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/core/node"
+	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/p2p"
+	"github.com/palletone/go-palletone/p2p/discover"
+	"github.com/palletone/go-palletone/p2p/discv5"
 	"github.com/palletone/go-palletone/p2p/eth"
 	"github.com/palletone/go-palletone/p2p/eth/downloader"
 	"github.com/palletone/go-palletone/p2p/eth/gasprice"
 	"github.com/palletone/go-palletone/p2p/ethdb"
-	"github.com/palletone/go-palletone/statistics/dashboard"
-	//"github.com/palletone/go-palletone/p2p/ethstats"
-	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/p2p"
-	"github.com/palletone/go-palletone/p2p/discover"
-	"github.com/palletone/go-palletone/p2p/discv5"
 	"github.com/palletone/go-palletone/p2p/nat"
 	"github.com/palletone/go-palletone/p2p/netutil"
+	"github.com/palletone/go-palletone/statistics/dashboard"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	//whisper "github.com/palletone/go-palletone/whisper/whisperv6"
 	"gopkg.in/urfave/cli.v1"
@@ -497,6 +497,18 @@ var (
 		Usage: "Suggested gas price is the given percentile of a set of recent transaction gas prices",
 		Value: eth.DefaultConfig.GPO.Percentile,
 	}
+
+	DagValue1Flag = cli.IntFlag{
+		Name:  "dag.dag1",
+		Usage: "Dag value1",
+		Value: eth.DefaultConfig.Dag.Dag1,
+	}
+
+	DagValue2Flag = cli.IntFlag{
+		Name:  "dag.dag2",
+		Usage: "Dag value2",
+		Value: eth.DefaultConfig.Dag.Dag2,
+	}
 	/*
 		WhisperEnabledFlag = cli.BoolFlag{
 			Name:  "shh",
@@ -879,6 +891,7 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	}
 }
 
+/*
 func setGPO(ctx *cli.Context, cfg *gasprice.Config) {
 	if ctx.GlobalIsSet(GpoBlocksFlag.Name) {
 		cfg.Blocks = ctx.GlobalInt(GpoBlocksFlag.Name)
@@ -887,7 +900,7 @@ func setGPO(ctx *cli.Context, cfg *gasprice.Config) {
 		cfg.Percentile = ctx.GlobalInt(GpoPercentileFlag.Name)
 	}
 }
-
+*/
 func setTxPool(ctx *cli.Context, cfg *coredata.TxPoolConfig) {
 	if ctx.GlobalIsSet(TxPoolNoLocalsFlag.Name) {
 		cfg.NoLocals = ctx.GlobalBool(TxPoolNoLocalsFlag.Name)
@@ -993,6 +1006,26 @@ func SetShhConfig(ctx *cli.Context, stack *node.Node, cfg *whisper.Config) {
 	}
 }
 */
+
+func setGPO(ctx *cli.Context, cfg *gasprice.Config) {
+	if ctx.GlobalIsSet(GpoBlocksFlag.Name) {
+		cfg.Blocks = ctx.GlobalInt(GpoBlocksFlag.Name)
+	}
+	if ctx.GlobalIsSet(GpoPercentileFlag.Name) {
+		cfg.Percentile = ctx.GlobalInt(GpoPercentileFlag.Name)
+	}
+}
+
+// SetDagConfig applies dag related command line flags to the config.
+func setDag(ctx *cli.Context, cfg *dag.Config) {
+	if ctx.GlobalIsSet(DagValue1Flag.Name) {
+		cfg.Dag1 = ctx.GlobalInt(DagValue1Flag.Name)
+	}
+	if ctx.GlobalIsSet(DagValue2Flag.Name) {
+		cfg.Dag2 = ctx.GlobalInt(DagValue2Flag.Name)
+	}
+}
+
 // SetEthConfig applies eth-related command line flags to the config.
 func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	// Avoid conflicting network flags
@@ -1005,7 +1038,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	setEtherbase(ctx, ks, cfg)
 	setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
-	//setEthash(ctx, cfg)
+	setDag(ctx, &cfg.Dag)
 
 	switch {
 	case ctx.GlobalIsSet(SyncModeFlag.Name):

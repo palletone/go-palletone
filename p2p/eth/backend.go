@@ -183,7 +183,6 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		gpoParams.Default = config.GasPrice
 	}
 	//eth.ApiBackend.gpo = gasprice.NewOracle(eth.ApiBackend, gpoParams)//wangjiyou
-
 	return eth, nil
 }
 
