@@ -15,7 +15,8 @@
 // along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package palletone defines interfaces for interacting with palletone.
-package ethereum
+
+package palletone
 
 import (
 	"context"
