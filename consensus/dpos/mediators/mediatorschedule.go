@@ -13,10 +13,9 @@ import (
 	d "github.com/palletone/go-palletone/consensus/dpos"
 )
 
-
 // Mediator调度顺序结构体
 type MediatorSchedule struct {
-	CurrentShuffledMediators []*Mediator
+	CurrentShuffledMediators []*d.Mediator
 }
 
 // 洗牌算法，更新mediator的调度顺序
@@ -30,7 +29,7 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *d.GlobalProperty, dgp *d.
 
 	// 2. 判断CurrentShuffledMediators的空间是否够大
 	if uint32(len(ms.CurrentShuffledMediators)) < aSize {
-		ms.CurrentShuffledMediators = make([]*Mediator, aSize, aSize)
+		ms.CurrentShuffledMediators = make([]*d.Mediator, aSize, aSize)
 	}
 
 	// 3. 截取slice为所需大小
@@ -74,7 +73,7 @@ If slotNum == 1, return the next scheduled mediator.
 如果slotNum == 2，则返回下下一个调度Mediator。
 If slotNum == 2, return the next scheduled mediator after 1 verified uint gap.
 */
-func (ms *MediatorSchedule) GetScheduledMediator(dgp *d.DynamicGlobalProperty, slotNum uint32) *Mediator {
+func (ms *MediatorSchedule) GetScheduledMediator(dgp *d.DynamicGlobalProperty, slotNum uint32) *d.Mediator {
 	currentASlot := dgp.CurrentASlot + uint64(slotNum)
 	return ms.CurrentShuffledMediators[currentASlot%uint64(len(ms.CurrentShuffledMediators))]
 }
@@ -83,9 +82,9 @@ func (ms *MediatorSchedule) GetScheduledMediator(dgp *d.DynamicGlobalProperty, s
 计算在过去的128个见证单元生产slots中miss的百分比，不包括当前验证单元。
 Calculate the percent of verifiedUnit production slots that were missed in the past 128 verifiedUnits,
 not including the current verifiedUnit.
- */
+*/
 func MediatorParticipationRate(dgp *d.DynamicGlobalProperty) float32 {
-	return dgp.RecentSlotsFilled /128.0
+	return dgp.RecentSlotsFilled / 128.0
 }
 
 /**
@@ -115,7 +114,7 @@ func GetSlotTime(gp *d.GlobalProperty, dgp *d.DynamicGlobalProperty, slotNum uin
 	}
 
 	// 最近的验证单元的绝对slot
-	var verifiedUnitAbsSlot int64 = dgp.VerifiedUnitTime.Unix() / int64(interval)
+	var verifiedUnitAbsSlot = dgp.VerifiedUnitTime.Unix() / int64(interval)
 	// 最近的时间槽起始时间
 	verifiedUnitSlotTime := time.Unix(verifiedUnitAbsSlot*int64(interval), 0)
 

@@ -1,16 +1,14 @@
 /**
-	@version 0.1
-	@author albert·gou
-	@time June 6, 2018
-	@brief 主要实现全局属性的保存、更新和获取
- */
+@version 0.1
+@author albert·gou
+@time June 6, 2018
+@brief 主要实现全局属性的保存、更新和获取
+*/
 
 package dpos
 
 import (
 	"time"
-
-	m "github.com/palletone/go-palletone/consensus/dpos/mediators"
 )
 
 // 区块链属性结构体的定义
@@ -22,23 +20,22 @@ type ChainParameters struct {
 	MaintenanceSkipSlots uint8
 }
 
-
 // 全局属性的结构体定义
 type GlobalProperty struct {
 	ChainParameters ChainParameters // 区块链参数
 
-	ActiveMediators []*m.Mediator // 当前活跃mediator集合；每个维护间隔更新一次
-} 
+	ActiveMediators []*Mediator // 当前活跃mediator集合；每个维护间隔更新一次
+}
 
 // 动态全局属性的结构体定义
 type DynamicGlobalProperty struct {
-	VerifiedUnitNum uint32	// 最近的验证单元编号(数量)
+	VerifiedUnitNum uint32 // 最近的验证单元编号(数量)
 
 	VerifiedUnitHash string // 最近的验证单元hash
 
 	VerifiedUnitTime time.Time // 最近的验证单元时间
 
-	CurrentMediator *m.Mediator // 当前生产验证单元的mediator
+	CurrentMediator *Mediator // 当前生产验证单元的mediator
 
 	NextMaintenanceTime time.Time // 下一次系统维护时间
 
@@ -49,6 +46,6 @@ type DynamicGlobalProperty struct {
 	在过去的128个见证单元生产slots中miss的数量。
 	The count of verifiedUnit production slots that were missed in the past 128 verifiedUnits
 	用于计算mediator的参与率。used to compute mediator participation.
-	 */
+	*/
 	RecentSlotsFilled float32
 }
