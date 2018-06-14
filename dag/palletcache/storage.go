@@ -1,11 +1,11 @@
 package palletcache
 
 import (
-	"config"
 	"encoding/json"
+	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/dag/palletcache/cache"
+	th_redis "github.com/palletone/go-palletone/dag/palletcache/redis"
 	"log"
-	"palletdag/palletcache/cache"
-	th_redis "palletdag/palletcache/redis"
 )
 
 var (

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 
-	"gitee.com/sailinst/pallet_dag/palletdb"
 	"github.com/palletone/go-palletone/dag/constants"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
