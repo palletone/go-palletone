@@ -35,7 +35,7 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/internal/debug"
-	"github.com/palletone/go-palletone/p2p/ethdb"
+	"github.com/palletone/go-palletone/p2p/pandb"
 )
 
 const (
@@ -237,7 +237,7 @@ func ExportAppendChain(blockchain *coredata.BlockChain, fn string, first uint64,
 }
 
 // ImportPreimages imports a batch of exported hash preimages into the database.
-func ImportPreimages(db *ethdb.LDBDatabase, fn string) error {
+func ImportPreimages(db *pandb.LDBDatabase, fn string) error {
 	log.Info("Importing preimages", "file", fn)
 
 	// Open the file handle and potentially unwrap the gzip stream
@@ -286,7 +286,7 @@ func ImportPreimages(db *ethdb.LDBDatabase, fn string) error {
 
 // ExportPreimages exports all known hash preimages into the specified file,
 // truncating any data already present in the file.
-func ExportPreimages(db *ethdb.LDBDatabase, fn string) error {
+func ExportPreimages(db *pandb.LDBDatabase, fn string) error {
 	log.Info("Exporting preimages", "file", fn)
 
 	// Open the file handle and potentially wrap with a gzip stream

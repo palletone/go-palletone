@@ -23,14 +23,14 @@ import (
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/math"
+	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
+	"github.com/palletone/go-palletone/p2p/pandb"
 	"github.com/palletone/go-palletone/vm"
-	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/p2p/ethdb"
-	"github.com/palletone/go-palletone/configure"
 )
 
 // VMTest checks EVM execution without block or transaction context.
@@ -79,7 +79,7 @@ type vmExecMarshaling struct {
 }
 
 func (t *VMTest) Run(vmconfig vm.Config) error {
-	db, _ := ethdb.NewMemDatabase()
+	db, _ := pandb.NewMemDatabase()
 	statedb := MakePreState(db, t.json.Pre)
 	ret, gasRemaining, err := t.exec(statedb, vmconfig)
 

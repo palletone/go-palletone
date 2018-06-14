@@ -47,7 +47,7 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/p2p"
-	"github.com/palletone/go-palletone/p2p/ethdb"
+	"github.com/palletone/go-palletone/p2p/pandb"
 )
 
 type LesServer interface {
@@ -73,7 +73,7 @@ type Ethereum struct {
 	lesServer       LesServer
 
 	// DB interfaces
-	chainDb ethdb.Database // Block chain database
+	chainDb pandb.Database // Block chain database
 
 	eventMux       *event.TypeMux
 	engine         core.ConsensusEngine //consensus.Engine
@@ -204,19 +204,19 @@ func makeExtraData(extra []byte) []byte {
 }
 
 // CreateDB creates the chain database.
-func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ethdb.Database, error) {
+func CreateDB(ctx *node.ServiceContext, config *Config, name string) (pandb.Database, error) {
 	db, err := ctx.OpenDatabase(name, config.DatabaseCache, config.DatabaseHandles)
 	if err != nil {
 		return nil, err
 	}
-	if db, ok := db.(*ethdb.LDBDatabase); ok {
+	if db, ok := db.(*pandb.LDBDatabase); ok {
 		db.Meter("eth/db/chaindata/")
 	}
 	return db, nil
 }
 
 // CreateConsensusEngine creates the required type of consensus engine instance for an Ethereum service
-func CreateConsensusEngine(ctx *node.ServiceContext /*config *ethash.Config, chainConfig *configure.ChainConfig,*/, db ethdb.Database) core.ConsensusEngine {
+func CreateConsensusEngine(ctx *node.ServiceContext /*config *ethash.Config, chainConfig *configure.ChainConfig,*/, db pandb.Database) core.ConsensusEngine {
 	engine := consensus.New()
 	return engine
 	/*
@@ -382,7 +382,7 @@ func (s *Ethereum) BlockChain() *coredata.BlockChain   { return s.blockchain }
 func (s *Ethereum) TxPool() *coredata.TxPool           { return s.txPool }
 func (s *Ethereum) EventMux() *event.TypeMux           { return s.eventMux }
 func (s *Ethereum) Engine() core.ConsensusEngine       { return s.engine }
-func (s *Ethereum) ChainDb() ethdb.Database            { return s.chainDb }
+func (s *Ethereum) ChainDb() pandb.Database            { return s.chainDb }
 func (s *Ethereum) IsListening() bool                  { return true } // Always listening
 func (s *Ethereum) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *Ethereum) NetVersion() uint64                 { return s.networkId }

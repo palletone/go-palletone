@@ -32,7 +32,7 @@ import (
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/p2p/ethdb"
+	"github.com/palletone/go-palletone/p2p/pandb"
 	"github.com/palletone/go-palletone/statistics/metrics"
 )
 
@@ -98,7 +98,7 @@ type Downloader struct {
 
 	queue   *queue   // Scheduler for selecting the hashes to download
 	peers   *peerSet // Set of active peers from which download can proceed
-	stateDB ethdb.Database
+	stateDB pandb.Database
 
 	rttEstimate   uint64 // Round trip time to target for download requests
 	rttConfidence uint64 // Confidence in the estimated RTT (unit: millionths to allow atomic ops)
@@ -198,7 +198,7 @@ type BlockChain interface {
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
-func New(mode SyncMode, stateDb ethdb.Database, mux *event.TypeMux /*chain BlockChain, lightchain LightChain,*/, dropPeer peerDropFn) *Downloader {
+func New(mode SyncMode, stateDb pandb.Database, mux *event.TypeMux /*chain BlockChain, lightchain LightChain,*/, dropPeer peerDropFn) *Downloader {
 	/*
 		if lightchain == nil {
 			lightchain = chain

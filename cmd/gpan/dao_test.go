@@ -24,9 +24,9 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/p2p/ethdb"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/p2p/pandb"
 )
 
 // Genesis block for nodes which don't care about the DAO fork (i.e. not configured)
@@ -121,7 +121,7 @@ func testDAOForkBlockNewChain(t *testing.T, test int, genesis string, expectBloc
 	}
 	// Retrieve the DAO config flag from the database
 	path := filepath.Join(datadir, "gpan", "chaindata")
-	db, err := ethdb.NewLDBDatabase(path, 0, 0)
+	db, err := pandb.NewLDBDatabase(path, 0, 0)
 	if err != nil {
 		t.Fatalf("test %d: failed to open test database: %v", test, err)
 	}

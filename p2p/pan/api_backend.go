@@ -32,7 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/p2p/pan/downloader"
 	"github.com/palletone/go-palletone/p2p/pan/gasprice"
-	"github.com/palletone/go-palletone/p2p/ethdb"
+	"github.com/palletone/go-palletone/p2p/pandb"
 	"github.com/palletone/go-palletone/vm"
 )
 
@@ -225,7 +225,7 @@ func (b *EthApiBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
 	return b.gpo.SuggestPrice(ctx)
 }
 
-func (b *EthApiBackend) ChainDb() ethdb.Database {
+func (b *EthApiBackend) ChainDb() pandb.Database {
 	return b.eth.ChainDb()
 }
 

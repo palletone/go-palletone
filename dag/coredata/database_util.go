@@ -26,7 +26,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/p2p/ethdb"
+	"github.com/palletone/go-palletone/p2p/pandb"
 	//"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
@@ -203,67 +203,67 @@ func GetBloomBits(db DatabaseReader, bit uint, section uint64, head common.Hash)
 }
 
 // WriteCanonicalHash stores the canonical hash for the given block number.
-func WriteCanonicalHash(db ethdb.Putter, hash common.Hash, number uint64) error {
+func WriteCanonicalHash(db pandb.Putter, hash common.Hash, number uint64) error {
 	return nil
 }
 
 // WriteHeadHeaderHash stores the head header's hash.
-func WriteHeadHeaderHash(db ethdb.Putter, hash common.Hash) error {
+func WriteHeadHeaderHash(db pandb.Putter, hash common.Hash) error {
 	return nil
 }
 
 // WriteHeadBlockHash stores the head block's hash.
-func WriteHeadBlockHash(db ethdb.Putter, hash common.Hash) error {
+func WriteHeadBlockHash(db pandb.Putter, hash common.Hash) error {
 	return nil
 }
 
 // WriteHeadFastBlockHash stores the fast head block's hash.
-func WriteHeadFastBlockHash(db ethdb.Putter, hash common.Hash) error {
+func WriteHeadFastBlockHash(db pandb.Putter, hash common.Hash) error {
 	return nil
 }
 
 // WriteTrieSyncProgress stores the fast sync trie process counter to support
 // retrieving it across restarts.
-func WriteTrieSyncProgress(db ethdb.Putter, count uint64) error {
+func WriteTrieSyncProgress(db pandb.Putter, count uint64) error {
 	return nil
 }
 
 // WriteHeader serializes a block header into the database.
-func WriteHeader(db ethdb.Putter, header *types.Header) error {
+func WriteHeader(db pandb.Putter, header *types.Header) error {
 	return nil
 }
 
 // WriteBody serializes the body of a block into the database.
-func WriteBody(db ethdb.Putter, hash common.Hash, number uint64, body *types.Body) error {
+func WriteBody(db pandb.Putter, hash common.Hash, number uint64, body *types.Body) error {
 	return nil
 }
 
 // WriteTd serializes the total difficulty of a block into the database.
-func WriteTd(db ethdb.Putter, hash common.Hash, number uint64, td *big.Int) error {
+func WriteTd(db pandb.Putter, hash common.Hash, number uint64, td *big.Int) error {
 	return nil
 }
 
 // WriteBlock serializes a block into the database, header and body separately.
-func WriteBlock(db ethdb.Putter, block *types.Block) error {
+func WriteBlock(db pandb.Putter, block *types.Block) error {
 	return nil
 }
 
 // WriteBlockReceipts stores all the transaction receipts belonging to a block
 // as a single receipt slice. This is used during chain reorganisations for
 // rescheduling dropped transactions.
-func WriteBlockReceipts(db ethdb.Putter, hash common.Hash, number uint64, receipts types.Receipts) error {
+func WriteBlockReceipts(db pandb.Putter, hash common.Hash, number uint64, receipts types.Receipts) error {
 	return nil
 }
 
 // WriteTxLookupEntries stores a positional metadata for every transaction from
 // a block, enabling hash based transaction and receipt lookups.
-func WriteTxLookupEntries(db ethdb.Putter, block *types.Block) error {
+func WriteTxLookupEntries(db pandb.Putter, block *types.Block) error {
 	return nil
 }
 
 // WriteBloomBits writes the compressed bloom bits vector belonging to the given
 // section and bit index.
-func WriteBloomBits(db ethdb.Putter, bit uint, section uint64, head common.Hash, bits []byte) {
+func WriteBloomBits(db pandb.Putter, bit uint, section uint64, head common.Hash, bits []byte) {
 
 }
 
@@ -296,13 +296,13 @@ func DeleteTxLookupEntry(db DatabaseDeleter, hash common.Hash) {
 }
 
 // PreimageTable returns a Database instance with the key prefix for preimage entries.
-func PreimageTable(db ethdb.Database) ethdb.Database {
+func PreimageTable(db pandb.Database) pandb.Database {
 	return nil
 }
 
 // WritePreimages writes the provided set of preimages to the database. `number` is the
 // current block number, and is used for debug messages only.
-func WritePreimages(db ethdb.Database, number uint64, preimages map[common.Hash][]byte) error {
+func WritePreimages(db pandb.Database, number uint64, preimages map[common.Hash][]byte) error {
 	return nil
 }
 
@@ -312,11 +312,11 @@ func GetBlockChainVersion(db DatabaseReader) int {
 }
 
 // WriteBlockChainVersion writes vsn as the version number to db.
-func WriteBlockChainVersion(db ethdb.Putter, vsn int) {
+func WriteBlockChainVersion(db pandb.Putter, vsn int) {
 }
 
 // WriteChainConfig writes the chain config settings to the database.
-func WriteChainConfig(db ethdb.Putter, hash common.Hash, cfg *configure.ChainConfig) error {
+func WriteChainConfig(db pandb.Putter, hash common.Hash, cfg *configure.ChainConfig) error {
 	return nil
 }
 
@@ -329,6 +329,6 @@ func GetChainConfig(db DatabaseReader, hash common.Hash) (*configure.ChainConfig
 func FindCommonAncestor(db DatabaseReader, a, b *types.Header) *types.Header {
 	return nil
 }
-func WriteBodyRLP(db ethdb.Putter, hash common.Hash, number uint64, rlp rlp.RawValue) error {
+func WriteBodyRLP(db pandb.Putter, hash common.Hash, number uint64, rlp rlp.RawValue) error {
 	return nil
 }

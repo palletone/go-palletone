@@ -24,13 +24,13 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
-	
-	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/contracts/types"
+
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/p2p/ethdb"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/p2p/pandb"
 )
 
 func makeReceipt(addr common.Address) *types.Receipt {
@@ -50,7 +50,7 @@ func BenchmarkFilters(b *testing.B) {
 	defer os.RemoveAll(dir)
 
 	var (
-		db, _      = ethdb.NewLDBDatabase(dir, 0, 0)
+		db, _      = pandb.NewLDBDatabase(dir, 0, 0)
 		mux        = new(event.TypeMux)
 		txFeed     = new(event.Feed)
 		rmLogsFeed = new(event.Feed)
@@ -115,7 +115,7 @@ func TestFilters(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	var (
-		db, _      = ethdb.NewLDBDatabase(dir, 0, 0)
+		db, _      = pandb.NewLDBDatabase(dir, 0, 0)
 		mux        = new(event.TypeMux)
 		txFeed     = new(event.Feed)
 		rmLogsFeed = new(event.Feed)

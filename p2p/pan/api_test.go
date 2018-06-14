@@ -23,7 +23,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/p2p/ethdb"
+	"github.com/palletone/go-palletone/p2p/pandb"
 )
 
 var dumper = spew.ConfigState{Indent: "    "}
@@ -31,7 +31,7 @@ var dumper = spew.ConfigState{Indent: "    "}
 func TestStorageRangeAt(t *testing.T) {
 	// Create a state where account 0x010000... has a few storage entries.
 	var (
-		db, _    = ethdb.NewMemDatabase()
+		db, _    = pandb.NewMemDatabase()
 		state, _ = state.New(common.Hash{}, state.NewDatabase(db))
 		addr     = common.Address{0x01}
 		keys     = []common.Hash{ // hashes of Keys of storage

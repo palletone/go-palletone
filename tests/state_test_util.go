@@ -24,17 +24,17 @@ import (
 	"strings"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/common/math"
-	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/vm"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/crypto/sha3"
-	"github.com/palletone/go-palletone/p2p/ethdb"
-	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/dag/state"
+	"github.com/palletone/go-palletone/p2p/pandb"
+	"github.com/palletone/go-palletone/vm"
 )
 
 // StateTest checks transaction processing without block context.
@@ -126,7 +126,7 @@ func (t *StateTest) Run(subtest StateSubtest, vmconfig vm.Config) (*state.StateD
 		return nil, UnsupportedForkError{subtest.Fork}
 	}
 	block := t.genesis(config).ToBlock(nil)
-	db, _ := ethdb.NewMemDatabase()
+	db, _ := pandb.NewMemDatabase()
 	statedb := MakePreState(db, t.json.Pre)
 
 	post := t.json.Post[subtest.Fork][subtest.Index]
@@ -158,7 +158,7 @@ func (t *StateTest) gasLimit(subtest StateSubtest) uint64 {
 	return t.json.Tx.GasLimit[t.json.Post[subtest.Fork][subtest.Index].Indexes.Gas]
 }
 
-func MakePreState(db ethdb.Database, accounts core.GenesisAlloc) *state.StateDB {
+func MakePreState(db pandb.Database, accounts core.GenesisAlloc) *state.StateDB {
 	sdb := state.NewDatabase(db)
 	statedb, _ := state.New(common.Hash{}, sdb)
 	for addr, a := range accounts {

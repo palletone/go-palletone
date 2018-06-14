@@ -28,12 +28,12 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/math"
-	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/vm"
-	"github.com/palletone/go-palletone/p2p/ethdb"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/p2p/pandb"
 	"github.com/palletone/go-palletone/tests"
+	"github.com/palletone/go-palletone/vm"
 )
 
 // To generate a new callTracer test, copy paste the makeTest method below into
@@ -159,7 +159,7 @@ func TestCallTracer(t *testing.T) {
 				GasLimit:    uint64(test.Context.GasLimit),
 				GasPrice:    tx.GasPrice(),
 			}
-			db, _ := ethdb.NewMemDatabase()
+			db, _ := pandb.NewMemDatabase()
 			statedb := tests.MakePreState(db, test.Genesis.Alloc)
 
 			// Create the tracer, the EVM environment and run it

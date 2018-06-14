@@ -28,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/trie"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/p2p/ethdb"
+	"github.com/palletone/go-palletone/p2p/pandb"
 )
 
 // stateReq represents a batch of state fetch requests grouped together into
@@ -324,7 +324,7 @@ func (s *stateSync) loop() (err error) {
 }
 
 func (s *stateSync) commit(force bool) error {
-	if !force && s.bytesUncommitted < ethdb.IdealBatchSize {
+	if !force && s.bytesUncommitted < pandb.IdealBatchSize {
 		return nil
 	}
 	start := time.Now()

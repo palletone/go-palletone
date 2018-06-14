@@ -19,11 +19,11 @@ package node
 import (
 	"reflect"
 
-	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/p2p/ethdb"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/p2p"
+	"github.com/palletone/go-palletone/p2p/pandb"
 )
 
 // ServiceContext is a collection of service independent options inherited from
@@ -39,11 +39,11 @@ type ServiceContext struct {
 // OpenDatabase opens an existing database with the given name (or creates one
 // if no previous can be found) from within the node's data directory. If the
 // node is an ephemeral one, a memory database is returned.
-func (ctx *ServiceContext) OpenDatabase(name string, cache int, handles int) (ethdb.Database, error) {
+func (ctx *ServiceContext) OpenDatabase(name string, cache int, handles int) (pandb.Database, error) {
 	if ctx.config.DataDir == "" {
-		return ethdb.NewMemDatabase()
+		return pandb.NewMemDatabase()
 	}
-	db, err := ethdb.NewLDBDatabase(ctx.config.resolvePath(name), cache, handles)
+	db, err := pandb.NewLDBDatabase(ctx.config.resolvePath(name), cache, handles)
 	if err != nil {
 		return nil, err
 	}

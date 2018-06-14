@@ -50,7 +50,7 @@ import (
 	"github.com/palletone/go-palletone/p2p/pan"
 	"github.com/palletone/go-palletone/p2p/pan/downloader"
 	"github.com/palletone/go-palletone/p2p/pan/gasprice"
-	"github.com/palletone/go-palletone/p2p/ethdb"
+	"github.com/palletone/go-palletone/p2p/pandb"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"gopkg.in/urfave/cli.v1"
@@ -1129,7 +1129,7 @@ func SetupNetwork(ctx *cli.Context) {
 }
 
 // MakeChainDatabase open an LevelDB using the flags passed to the client and will hard crash if it fails.
-func MakeChainDatabase(ctx *cli.Context, stack *node.Node) ethdb.Database {
+func MakeChainDatabase(ctx *cli.Context, stack *node.Node) pandb.Database {
 	var (
 		cache   = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheDatabaseFlag.Name) / 100
 		handles = makeDatabaseHandles()
@@ -1159,7 +1159,7 @@ func MakeGenesis(ctx *cli.Context) *coredata.Genesis {
 }
 
 // MakeChain creates a chain manager from set command line flags.
-func MakeChain(ctx *cli.Context, stack *node.Node) (chain *coredata.BlockChain, chainDb ethdb.Database) {
+func MakeChain(ctx *cli.Context, stack *node.Node) (chain *coredata.BlockChain, chainDb pandb.Database) {
 	var err error
 	chainDb = MakeChainDatabase(ctx, stack)
 

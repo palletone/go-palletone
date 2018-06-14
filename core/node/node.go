@@ -26,13 +26,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/p2p/ethdb"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/internal/debug"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/internal/debug"
+	"github.com/palletone/go-palletone/p2p"
+	"github.com/palletone/go-palletone/p2p/pandb"
 	"github.com/prometheus/prometheus/util/flock"
 )
 
@@ -566,11 +566,11 @@ func (n *Node) EventMux() *event.TypeMux {
 // OpenDatabase opens an existing database with the given name (or creates one if no
 // previous can be found) from within the node's instance directory. If the node is
 // ephemeral, a memory database is returned.
-func (n *Node) OpenDatabase(name string, cache, handles int) (ethdb.Database, error) {
+func (n *Node) OpenDatabase(name string, cache, handles int) (pandb.Database, error) {
 	if n.config.DataDir == "" {
-		return ethdb.NewMemDatabase()
+		return pandb.NewMemDatabase()
 	}
-	return ethdb.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
+	return pandb.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
 }
 
 // ResolvePath returns the absolute path of a resource in the instance directory.
