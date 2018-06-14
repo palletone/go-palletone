@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	//
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/p2p/pan/downloader"
@@ -56,7 +57,8 @@ var DefaultConfig = Config{
 		Blocks:     20,
 		Percentile: 60,
 	},
-	Dag: dagconfig.DefaultConfig,
+	Consensus: consensusconfig.DefaultConfig,
+	Dag:       dagconfig.DefaultConfig,
 }
 
 func init() {
@@ -116,6 +118,8 @@ type Config struct {
 	EnablePreimageRecording bool
 	// DAG options
 	Dag dagconfig.Config
+	// Consensus options
+	Consensus consensusconfig.Config
 	// Miscellaneous options
 	DocRoot string `toml:"-"`
 }

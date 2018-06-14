@@ -137,7 +137,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 
 func makeFullNode(ctx *cli.Context) *node.Node {
 	stack, cfg := makeConfigNode(ctx)
-
+	fmt.Println("==========Consensus Engine :", cfg.Eth.Consensus.Engine)
 	utils.RegisterEthService(stack, &cfg.Eth)
 	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)

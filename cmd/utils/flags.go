@@ -41,6 +41,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/p2p"
@@ -486,7 +487,11 @@ var (
 		Usage: "Suggested gas price is the given percentile of a set of recent transaction gas prices",
 		Value: pan.DefaultConfig.GPO.Percentile,
 	}
-
+	ConsensusEngineFlag = cli.StringFlag{
+		Name:  "consensus.engine",
+		Usage: "Consensus Engine: solo or dpos",
+		Value: pan.DefaultConfig.Consensus.Engine,
+	}
 	DagValue1Flag = cli.StringFlag{
 		Name:  "dag.dbpath",
 		Usage: "Dag dbapth",
@@ -926,6 +931,13 @@ func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
 	}
 }
 
+// SetDagConfig applies dag related command line flags to the config.
+func setConsensus(ctx *cli.Context, cfg *consensusconfig.Config) {
+	if ctx.GlobalIsSet(ConsensusEngineFlag.Name) {
+		cfg.Engine = ctx.GlobalString(ConsensusEngineFlag.Name)
+	}
+}
+
 // SetEthConfig applies pan-related command line flags to the config.
 func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *pan.Config) {
 	// Avoid conflicting network flags
@@ -939,6 +951,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *pan.Config) {
 	setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
 	setDag(ctx, &cfg.Dag)
+	setConsensus(ctx, &cfg.Consensus)
 
 	switch {
 	case ctx.GlobalIsSet(SyncModeFlag.Name):

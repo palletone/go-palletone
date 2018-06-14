@@ -205,6 +205,12 @@ var AppHelpFlagGroups = []flagGroup{
 		},
 	},
 	{
+		Name: "CONSENSUS",
+		Flags: []cli.Flag{
+			utils.ConsensusEngineFlag,
+		},
+	},
+	{
 		Name: "VIRTUAL MACHINE",
 		Flags: []cli.Flag{
 			utils.VMEnableDebugFlag,

@@ -7,3 +7,6 @@ GasPrice = 18000000000
 MaxPeers = 25
 NoDiscovery = false
 BootstrapNodes = ["enode://c98f6ca0bb3428fb72bcbb8ae78e2ac46577ed84450e1af4965e16d4ee34cf728ef6192254dcb9ca0ae441c446bbb7a0973f87c1b633842d2dd2b43cf9131169@192.168.159.130:30301"]
+
+[Eth.Consensus]
+Engine="solo"
