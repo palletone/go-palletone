@@ -24,9 +24,9 @@ import (
 	"strings"
 
 	"github.com/palletone/go-palletone/cmd/utils"
-	//"github.com/palletone/go-palletone/consensus/ethash"
-	"github.com/palletone/go-palletone/p2p/eth"
+	//
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/p2p/eth"
 	"gopkg.in/urfave/cli.v1"
 )
 

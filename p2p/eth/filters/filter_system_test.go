@@ -27,7 +27,7 @@ import (
 
 	ethereum "github.com/palletone/go-palletone"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/consensus/ethash"
+	
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/contracts/types"

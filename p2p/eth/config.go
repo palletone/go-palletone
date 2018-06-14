@@ -26,7 +26,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	//"github.com/palletone/go-palletone/consensus/ethash"
+	//
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"

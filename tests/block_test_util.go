@@ -27,14 +27,14 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/math"
-	"github.com/palletone/go-palletone/consensus/ethash"
+
+	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/vm"
 	"github.com/palletone/go-palletone/p2p/ethdb"
-	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/vm"
 )
 
 // A BlockTest checks handling of entire blocks.

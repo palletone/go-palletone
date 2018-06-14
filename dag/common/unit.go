@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/crypto/sha3"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common/crypto/sha3"
+	"github.com/palletone/go-palletone/common/rlp"
 )
 
 func RlpHash(x interface{}) (h Hash) {

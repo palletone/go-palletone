@@ -22,13 +22,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/internal/ethapi"
-	"github.com/palletone/go-palletone/signer/core"
-	"github.com/palletone/go-palletone/signer/storage"
 )
 
 const JS = `

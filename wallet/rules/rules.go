@@ -25,9 +25,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/signer/core"
-	"github.com/palletone/go-palletone/signer/rules/deps"
-	"github.com/palletone/go-palletone/signer/storage"
 	"github.com/robertkrimen/otto"
 )
 

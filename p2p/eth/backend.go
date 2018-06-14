@@ -30,7 +30,7 @@ import (
 	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/core/accounts"
 	//"github.com/palletone/go-palletone/consensus/clique"
-	//"github.com/palletone/go-palletone/consensus/ethash"
+	//
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
@@ -41,13 +41,13 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/p2p"
 	"github.com/palletone/go-palletone/p2p/ethdb"
-	"github.com/palletone/go-palletone/common/rpc"
 )
 
 type LesServer interface {

@@ -27,7 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/consensus/ethash"
+	
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"

@@ -36,7 +36,6 @@ import (
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/p2p/ethdb"
 	"github.com/palletone/go-palletone/vm"
-	"github.com/palletone/go-palletone/vm/runtime"
 	cli "gopkg.in/urfave/cli.v1"
 )
 

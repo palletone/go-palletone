@@ -39,11 +39,9 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/signer/core"
-	"github.com/palletone/go-palletone/signer/rules"
-	"github.com/palletone/go-palletone/signer/storage"
+	"github.com/palletone/go-palletone/core/node"
+
 	"gopkg.in/urfave/cli.v1"
 )
 

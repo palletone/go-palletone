@@ -34,7 +34,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	//"github.com/palletone/go-palletone/consensus"
 	//"github.com/palletone/go-palletone/consensus/clique"
-	//"github.com/palletone/go-palletone/consensus/ethash"
+	//
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
 	//"github.com/palletone/go-palletone/vm"

@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"gitee.com/sailinst/pallet_dag/palletdb"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )

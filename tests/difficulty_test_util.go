@@ -22,9 +22,9 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/math"
-	"github.com/palletone/go-palletone/consensus/ethash"
-	"github.com/palletone/go-palletone/contracts/types"
+
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/contracts/types"
 )
 
 //go:generate gencodec -type DifficultyTest -field-override difficultyTestMarshaling -out gen_difficultytest.go

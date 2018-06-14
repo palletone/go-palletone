@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/consensus/ethash"
+	
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/common/crypto"
