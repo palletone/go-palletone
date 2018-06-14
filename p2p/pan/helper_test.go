@@ -17,7 +17,7 @@
 // This file contains some shares testing functionality, common to  multiple
 // different files and modules being tested.
 
-package eth
+package pan
 
 import (
 	"crypto/ecdsa"
@@ -36,7 +36,7 @@ import (
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/p2p"
 	"github.com/palletone/go-palletone/p2p/discover"
-	"github.com/palletone/go-palletone/p2p/eth/downloader"
+	"github.com/palletone/go-palletone/p2p/pan/downloader"
 	"github.com/palletone/go-palletone/p2p/ethdb"
 	"github.com/palletone/go-palletone/vm"
 )

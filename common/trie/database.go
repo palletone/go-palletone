@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/p2p/ethdb"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/p2p/ethdb"
 )
 
 // secureKeyPrefix is the database key prefix used to store trie node preimages.

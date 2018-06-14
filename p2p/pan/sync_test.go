@@ -14,16 +14,16 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
-package eth
+package pan
 
 import (
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/palletone/go-palletone/p2p/eth/downloader"
 	"github.com/palletone/go-palletone/p2p"
 	"github.com/palletone/go-palletone/p2p/discover"
+	"github.com/palletone/go-palletone/p2p/pan/downloader"
 )
 
 // Tests that fast sync gets disabled as soon as a real block is successfully

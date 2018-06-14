@@ -1,4 +1,4 @@
-package eth
+package pan
 
 func (self *ProtocolManager) ceBroadcastLoop() {
 	for {

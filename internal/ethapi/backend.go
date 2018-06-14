@@ -28,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/p2p/eth/downloader"
+	"github.com/palletone/go-palletone/p2p/pan/downloader"
 	"github.com/palletone/go-palletone/p2p/ethdb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/vm"

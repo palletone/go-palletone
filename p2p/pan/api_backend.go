@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
-package eth
+package pan
 
 import (
 	"context"
@@ -25,14 +25,14 @@ import (
 	//"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/p2p/eth/downloader"
-	"github.com/palletone/go-palletone/p2p/eth/gasprice"
+	"github.com/palletone/go-palletone/p2p/pan/downloader"
+	"github.com/palletone/go-palletone/p2p/pan/gasprice"
 	"github.com/palletone/go-palletone/p2p/ethdb"
-	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/vm"
 )
 

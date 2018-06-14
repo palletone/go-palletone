@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/p2p/eth"
+	"github.com/palletone/go-palletone/p2p/pan"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 )
 
@@ -75,7 +75,7 @@ type ethstatsConfig struct {
 }
 
 type gethConfig struct {
-	Eth       eth.Config
+	Eth       pan.Config
 	Node      node.Config
 	Ethstats  ethstatsConfig
 	Dashboard dashboard.Config
@@ -100,8 +100,8 @@ func defaultNodeConfig() node.Config {
 	cfg := node.DefaultConfig
 	cfg.Name = clientIdentifier
 	cfg.Version = configure.VersionWithCommit(gitCommit)
-	cfg.HTTPModules = append(cfg.HTTPModules, "eth", "shh")
-	cfg.WSModules = append(cfg.WSModules, "eth", "shh")
+	//cfg.HTTPModules = append(cfg.HTTPModules, "eth", "shh")
+	//cfg.WSModules = append(cfg.WSModules, "eth", "shh")
 	cfg.IPCPath = "gpan.ipc"
 	return cfg
 }
@@ -109,7 +109,7 @@ func defaultNodeConfig() node.Config {
 func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	// Load defaults.
 	cfg := gethConfig{
-		Eth:       eth.DefaultConfig,
+		Eth:       pan.DefaultConfig,
 		Node:      defaultNodeConfig(),
 		Dashboard: dashboard.DefaultConfig,
 	}
