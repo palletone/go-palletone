@@ -15,7 +15,7 @@
 // along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package ethclient provides a client for the palletone RPC API.
-package ethclient
+package panclient
 
 import (
 	"context"
@@ -28,8 +28,8 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/contracts/types"
 )
 
 // Client defines typed wrappers for the Palletone RPC API.

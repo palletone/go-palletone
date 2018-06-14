@@ -31,9 +31,9 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/ethclient"
 	"github.com/palletone/go-palletone/internal/debug"
 	"github.com/palletone/go-palletone/p2p/eth"
+	"github.com/palletone/go-palletone/panclient"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -258,7 +258,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		if err != nil {
 			utils.Fatalf("Failed to attach to self: %v", err)
 		}
-		stateReader := ethclient.NewClient(rpcClient)
+		stateReader := panclient.NewClient(rpcClient)
 
 		// Open any wallets already attached
 		for _, wallet := range stack.AccountManager().Wallets() {
