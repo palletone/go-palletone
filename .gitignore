@@ -25,7 +25,7 @@ debug
 # used by the Makefile
 /build/_workspace/
 /build/bin/
-/geth*.zip
+/gpan*.zip
 
 # travis
 profile.tmp

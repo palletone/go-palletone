@@ -11,8 +11,8 @@ Vcs-Browser: https://github.com/palletone/go-palletone
 Package: {{.Name}}
 Architecture: any
 Depends: ${misc:Depends}, {{.ExeList}}
-Description: Meta-package to install geth and other tools
- Meta-package to install geth and other tools
+Description: Meta-package to install gpan and other tools
+ Meta-package to install gpan and other tools
 
 {{range .Executables}}
 Package: {{$.ExeName .}}
