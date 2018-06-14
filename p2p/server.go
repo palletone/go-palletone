@@ -30,7 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/mclock"
 	"github.com/palletone/go-palletone/p2p/discover"
-	"github.com/palletone/go-palletone/p2p/discv5"
+	//"github.com/palletone/go-palletone/p2p/discv5"
 	"github.com/palletone/go-palletone/p2p/nat"
 	"github.com/palletone/go-palletone/p2p/netutil"
 )
@@ -91,7 +91,7 @@ type Config struct {
 	// BootstrapNodesV5 are used to establish connectivity
 	// with the rest of the network using the V5 discovery
 	// protocol.
-	BootstrapNodesV5 []*discv5.Node `toml:",omitempty"`
+	//BootstrapNodesV5 []*discv5.Node `toml:",omitempty"`
 
 	// Static nodes are used as pre-configured connections which are always
 	// maintained and re-connected on disconnects.
@@ -160,7 +160,7 @@ type Server struct {
 	listener     net.Listener
 	ourHandshake *protoHandshake
 	lastLookup   time.Time
-	DiscV5       *discv5.Network
+	//DiscV5       *discv5.Network
 
 	// These are for Peers, PeerCount (and nothing else).
 	peerOp     chan peerOpFunc
@@ -681,9 +681,10 @@ running:
 	if srv.ntab != nil {
 		srv.ntab.Close()
 	}
-	if srv.DiscV5 != nil {
-		srv.DiscV5.Close()
-	}
+	/*
+		if srv.DiscV5 != nil {
+			srv.DiscV5.Close()
+		}*/
 	// Disconnect all peers.
 	for _, p := range peers {
 		p.Disconnect(DiscQuitting)

@@ -18,17 +18,17 @@ package panclient
 
 import "github.com/palletone/go-palletone"
 
-// Verify that Client implements the ethereum interfaces.
+// Verify that Client implements the palletone interfaces.
 var (
-	_ = ethereum.ChainReader(&Client{})
-	_ = ethereum.TransactionReader(&Client{})
-	_ = ethereum.ChainStateReader(&Client{})
-	_ = ethereum.ChainSyncReader(&Client{})
-	_ = ethereum.ContractCaller(&Client{})
-	_ = ethereum.GasEstimator(&Client{})
-	_ = ethereum.GasPricer(&Client{})
-	_ = ethereum.LogFilterer(&Client{})
-	_ = ethereum.PendingStateReader(&Client{})
-	// _ = ethereum.PendingStateEventer(&Client{})
-	_ = ethereum.PendingContractCaller(&Client{})
+	_ = palletone.ChainReader(&Client{})
+	_ = palletone.TransactionReader(&Client{})
+	_ = palletone.ChainStateReader(&Client{})
+	_ = palletone.ChainSyncReader(&Client{})
+	_ = palletone.ContractCaller(&Client{})
+	_ = palletone.GasEstimator(&Client{})
+	_ = palletone.GasPricer(&Client{})
+	_ = palletone.LogFilterer(&Client{})
+	_ = palletone.PendingStateReader(&Client{})
+	// _ = palletone.PendingStateEventer(&Client{})
+	_ = palletone.PendingContractCaller(&Client{})
 )
