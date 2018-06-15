@@ -27,10 +27,10 @@ import (
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/p2p/discover"
-	"github.com/palletone/go-palletone/p2p/discv5"
-	"github.com/palletone/go-palletone/p2p/nat"
-	"github.com/palletone/go-palletone/p2p/netutil"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/common/p2p/discv5"
+	"github.com/palletone/go-palletone/common/p2p/nat"
+	"github.com/palletone/go-palletone/common/p2p/netutil"
 )
 
 func main() {

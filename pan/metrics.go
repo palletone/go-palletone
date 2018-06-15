@@ -18,7 +18,7 @@ package pan
 
 import (
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/p2p"
+	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/statistics/metrics"
 )
 

@@ -46,10 +46,10 @@ import (
 	"text/tabwriter"
 
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/p2p"
-	"github.com/palletone/go-palletone/p2p/discover"
-	"github.com/palletone/go-palletone/p2p/simulations"
-	"github.com/palletone/go-palletone/p2p/simulations/adapters"
+	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/common/p2p/simulations"
+	"github.com/palletone/go-palletone/common/p2p/simulations/adapters"
 	"github.com/palletone/go-palletone/common/rpc"
 	"gopkg.in/urfave/cli.v1"
 )

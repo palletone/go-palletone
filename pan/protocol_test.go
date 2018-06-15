@@ -26,7 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/p2p"
+	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/pan/downloader"
 )
 

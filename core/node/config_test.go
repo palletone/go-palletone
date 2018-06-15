@@ -25,7 +25,7 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/p2p"
+	"github.com/palletone/go-palletone/common/p2p"
 )
 
 // Tests that datadirs can be successfully created, be them manually configured

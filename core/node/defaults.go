@@ -22,8 +22,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/palletone/go-palletone/p2p"
-	"github.com/palletone/go-palletone/p2p/nat"
+	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/p2p/nat"
 )
 
 const (
