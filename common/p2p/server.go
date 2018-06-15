@@ -651,7 +651,6 @@ running:
 					"peers address:", &peers)
 				if p.Inbound() {
 					inboundCount++
-					srv.log.Info("====Adding p2p peer inboundCount:", inboundCount)
 				}
 			} else {
 				log.Info("===p2p addpeer protoHandshakeChecks err:", err)

@@ -25,9 +25,9 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/common/p2p"
 	"gopkg.in/fatih/set.v0"
 )
 
@@ -70,7 +70,6 @@ type peer struct {
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 	id := p.ID()
-	log.Info("======newPeer p id:", id)
 	return &peer{
 		Peer:        p,
 		rw:          rw,

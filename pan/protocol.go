@@ -30,24 +30,24 @@ import (
 
 // Constants to match up protocol versions and messages
 const (
-	eth62 = 62
-	eth63 = 63
+	pan2 = 2
+	pan3 = 3
 )
 
 // Official short name of the protocol used during capability negotiation.
-var ProtocolName = "eth"
+var ProtocolName = "pan"
 
 // Supported versions of the eth protocol (first is primary).
-var ProtocolVersions = []uint{eth63, eth62}
+var ProtocolVersions = []uint{pan3, pan2}
 
 // Number of implemented message corresponding to different protocol versions.
 var ProtocolLengths = []uint64{17, 8}
 
 const ProtocolMaxMsgSize = 10 * 1024 * 1024 // Maximum cap on the size of a protocol message
 
-// eth protocol message codes
+// pan protocol message codes
 const (
-	// Protocol messages belonging to eth/62
+	// Protocol messages belonging to pan/62
 	StatusMsg          = 0x00
 	NewBlockHashesMsg  = 0x01
 	TxMsg              = 0x02
@@ -58,7 +58,7 @@ const (
 	NewBlockMsg        = 0x07
 	ConsensusMsg       = 0x08
 
-	// Protocol messages belonging to eth/63
+	// Protocol messages belonging to pan/63
 	GetNodeDataMsg = 0x0d
 	NodeDataMsg    = 0x0e
 	GetReceiptsMsg = 0x0f
