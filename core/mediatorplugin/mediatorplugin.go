@@ -1,17 +1,21 @@
 package mediatorplugin
 
 import (
+	"fmt"
+
 	d "github.com/palletone/go-palletone/consensus/dpos"
 )
 
 var (
 	Signature1 = "mediator1`sig"
 	Signature2 = "mediator2`sig"
+	Signature3 = "mediator3`sig"
 )
 
 var (
 	Mediator1 = d.Mediator{"mediator1", Signature1}
 	Mediator2 = d.Mediator{"mediator2", Signature2}
+	Mediator3 = d.Mediator{"mediator3", Signature3}
 )
 
 type MediatorPlugin struct {
@@ -22,7 +26,7 @@ type MediatorPlugin struct {
 }
 
 func (mp *MediatorPlugin) PluginInitialize() {
-	println("mediator plugin initialize begin")
+	println("\nmediator plugin initialize begin")
 
 	// 1.初始化生产验证单元相关的属性值
 	mp.ProductionEnabled = false
@@ -31,12 +35,18 @@ func (mp *MediatorPlugin) PluginInitialize() {
 	// 1. 获取当前节点控制的所有mediator
 	mp.Mediaotrs = append(mp.Mediaotrs, &Mediator1)
 	mp.Mediaotrs = append(mp.Mediaotrs, &Mediator2)
+	mp.Mediaotrs = append(mp.Mediaotrs, &Mediator3)
+
+	fmt.Printf("this node controll %d mediators!\n", len(mp.Mediaotrs))
 
 	// 2. 获取当前节点使用的mediator使用的所有签名公私钥
 	mp.PrivateKeys = append(mp.PrivateKeys, &Signature1)
 	mp.PrivateKeys = append(mp.PrivateKeys, &Signature2)
+	mp.PrivateKeys = append(mp.PrivateKeys, &Signature3)
 
-	println("mediator plugin initialize end")
+	fmt.Printf("this node controll %d sigkey!\n", len(mp.PrivateKeys))
+
+	println("mediator plugin initialize end\n")
 }
 
 func (mp *MediatorPlugin) PluginStartup() {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	m "github.com/palletone/go-palletone/core/mediatorplugin"
-	d "github.com/palletone/go-palletone/consensus/dpos"
+	a "github.com/palletone/go-palletone/core/application"
 )
 
 func main() {
@@ -22,7 +22,8 @@ func main() {
 
 	// 4. 根据命令行参数初始主程序
 	println("根据命令行参数初始主程序...")
-	db := Initialize()
+	var db a.DataBase
+	db.Initialize()
 
 	// 5. 根据命令行参数初始程序组件
 	println("根据命令行参数初始程序组件...")
@@ -30,12 +31,7 @@ func main() {
 
 	// 6. 启动主程序
 	println("启动主程序...")
-	var (
-		gp d.GlobalProperty
-		dgp d.DynamicGlobalProperty
-	)
-
-	Startup(db, &gp, &dgp)
+	db.Startup()
 
 	// 7. 启动程序组件
 	println("启动程序组件...")

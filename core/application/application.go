@@ -1,4 +1,4 @@
-package main
+package application
 
 import (
 	"time"
@@ -13,8 +13,12 @@ type VerifiedUnit struct {
 }
 
 type DataBase struct {
-	VerifiedUnits []*VerifiedUnit
-	Mediators     []*d.Mediator
+	VerifiedUnits	[]*VerifiedUnit
+	Mediators     	[]*d.Mediator
+
+	GlobalProp		d.GlobalProperty
+	DynGlobalProp	d.DynamicGlobalProperty
+	MediatorSchl	s.MediatorSchedule
 }
 
 var (
@@ -23,10 +27,9 @@ var (
 	Mediator3 = d.Mediator{"mediator3", "mediator3`sig"}
 )
 
-func Initialize() (*DataBase) {
+func (db *DataBase) Initialize() {
 	// 1. 打开区块链数据库...
 	println("\n open db!")
-	var db DataBase
 
 	// 2. 初始化区块链数据...
 	println("initilize blockchain data start!")
@@ -45,32 +48,30 @@ func Initialize() (*DataBase) {
 	db.VerifiedUnits = vus
 	db.Mediators = ms
 
-	println("initilize blockchain data end!")
-
-	return  &db
+	println("initilize blockchain data end!\n")
 }
 
-func Startup(gp *d.GlobalProperty, dgp *d.DynamicGlobalProperty, ms *s.MediatorSchedule) {
+func (db *DataBase) Startup() {
 	// 2. 初始化全局属性...
-	println("initilize global property...")
-	gp.ChainParameters.MaintenanceSkipSlots = 3
-	gp.ChainParameters.VerifiedUnitInterval = 3
+	println("\ninitilize global property...")
+	db.GlobalProp.ChainParameters.MaintenanceSkipSlots = 3
+	db.GlobalProp.ChainParameters.VerifiedUnitInterval = 3
 
-	gp.ActiveMediators = append(gp.ActiveMediators, &Mediator1)
-	gp.ActiveMediators = append(gp.ActiveMediators, &Mediator2)
-	gp.ActiveMediators = append(gp.ActiveMediators, &Mediator3)
+	db.GlobalProp.ActiveMediators = append(db.GlobalProp.ActiveMediators, &Mediator1)
+	db.GlobalProp.ActiveMediators = append(db.GlobalProp.ActiveMediators, &Mediator2)
+	db.GlobalProp.ActiveMediators = append(db.GlobalProp.ActiveMediators, &Mediator3)
 
 	println("initilize dynamic global property...")
 
-	dgp.VerifiedUnitNum = 0
-	dgp.VerifiedUnitHash = "0x000000"
-	dgp.VerifiedUnitTime = time.Unix(0, 0)
-	dgp.CurrentMediator = nil
-	dgp.CurrentASlot = 0
-	dgp.RecentSlotsFilled = 100
+	db.DynGlobalProp.VerifiedUnitNum = 0
+	db.DynGlobalProp.VerifiedUnitHash = "0x000000"
+	db.DynGlobalProp.VerifiedUnitTime = time.Unix(0, 0)
+	db.DynGlobalProp.CurrentMediator = nil
+	db.DynGlobalProp.CurrentASlot = 0
+	db.DynGlobalProp.RecentSlotsFilled = 100
 
-	println("Set active mediators...")
-	for _, m := range gp.ActiveMediators {
-		ms.CurrentShuffledMediators =append(ms.CurrentShuffledMediators, m)
+	println("Set active mediators...\n")
+	for _, m := range db.GlobalProp.ActiveMediators {
+		db.MediatorSchl.CurrentShuffledMediators =append(db.MediatorSchl.CurrentShuffledMediators, m)
 	}
 }
