@@ -4,7 +4,6 @@ package modules
 import (
 	"encoding/json"
 	"time"
-
 	"github.com/palletone/go-palletone/dag/common"
 )
 
