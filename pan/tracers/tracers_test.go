@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/p2p/pandb"
+	"github.com/palletone/go-palletone/common/pandb"
 	"github.com/palletone/go-palletone/tests"
 	"github.com/palletone/go-palletone/vm"
 )

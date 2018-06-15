@@ -23,7 +23,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/p2p/pandb"
+	"github.com/palletone/go-palletone/common/pandb"
 )
 
 var dumper = spew.ConfigState{Indent: "    "}

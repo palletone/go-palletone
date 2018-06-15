@@ -39,7 +39,7 @@ import (
 	"github.com/palletone/go-palletone/p2p/discover"
 	"github.com/palletone/go-palletone/pan/downloader"
 	"github.com/palletone/go-palletone/pan/fetcher"
-	"github.com/palletone/go-palletone/p2p/pandb"
+	"github.com/palletone/go-palletone/common/pandb"
 )
 
 const (

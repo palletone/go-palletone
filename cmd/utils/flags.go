@@ -51,7 +51,7 @@ import (
 	"github.com/palletone/go-palletone/pan"
 	"github.com/palletone/go-palletone/pan/downloader"
 	"github.com/palletone/go-palletone/pan/gasprice"
-	"github.com/palletone/go-palletone/p2p/pandb"
+	"github.com/palletone/go-palletone/common/pandb"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"gopkg.in/urfave/cli.v1"

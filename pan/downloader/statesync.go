@@ -28,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/trie"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/p2p/pandb"
+	"github.com/palletone/go-palletone/common/pandb"
 )
 
 // stateReq represents a batch of state fetch requests grouped together into

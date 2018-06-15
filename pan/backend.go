@@ -47,7 +47,7 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/p2p"
-	"github.com/palletone/go-palletone/p2p/pandb"
+	"github.com/palletone/go-palletone/common/pandb"
 )
 
 type LesServer interface {

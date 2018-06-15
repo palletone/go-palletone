@@ -32,7 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/pan/downloader"
 	"github.com/palletone/go-palletone/pan/gasprice"
-	"github.com/palletone/go-palletone/p2p/pandb"
+	"github.com/palletone/go-palletone/common/pandb"
 	"github.com/palletone/go-palletone/vm"
 )
 
