@@ -31,8 +31,8 @@ import (
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/p2p/pan/downloader"
-	"github.com/palletone/go-palletone/p2p/pan/gasprice"
+	"github.com/palletone/go-palletone/pan/downloader"
+	"github.com/palletone/go-palletone/pan/gasprice"
 )
 
 // DefaultConfig contains default settings for use on the Ethereum main net.

@@ -36,7 +36,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/p2p/pan"
+	"github.com/palletone/go-palletone/pan"
 	//"github.com/palletone/go-palletone/les"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rpc"

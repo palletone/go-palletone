@@ -30,8 +30,8 @@ import (
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/p2p/pan/downloader"
-	"github.com/palletone/go-palletone/p2p/pan/gasprice"
+	"github.com/palletone/go-palletone/pan/downloader"
+	"github.com/palletone/go-palletone/pan/gasprice"
 	"github.com/palletone/go-palletone/p2p/pandb"
 	"github.com/palletone/go-palletone/vm"
 )

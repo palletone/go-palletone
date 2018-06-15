@@ -32,7 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/vm"
-	//"github.com/palletone/go-palletone/p2p/pan/tracers"
+	//"github.com/palletone/go-palletone/pan/tracers"
 	//"github.com/palletone/go-palletone/internal/ethapi"
 	//"github.com/palletone/go-palletone/common/log"
 	//"github.com/palletone/go-palletone/common/rlp"

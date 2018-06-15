@@ -36,7 +36,7 @@ import (
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/p2p"
 	"github.com/palletone/go-palletone/p2p/discover"
-	"github.com/palletone/go-palletone/p2p/pan/downloader"
+	"github.com/palletone/go-palletone/pan/downloader"
 	"github.com/palletone/go-palletone/p2p/pandb"
 	"github.com/palletone/go-palletone/vm"
 )

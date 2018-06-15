@@ -26,7 +26,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/utils"
 	//
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/p2p/pan"
+	"github.com/palletone/go-palletone/pan"
 	"gopkg.in/urfave/cli.v1"
 )
 

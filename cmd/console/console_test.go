@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/internal/jsre"
-	"github.com/palletone/go-palletone/p2p/pan"
+	"github.com/palletone/go-palletone/pan"
 )
 
 const (

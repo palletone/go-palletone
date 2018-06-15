@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/p2p/pan"
+	"github.com/palletone/go-palletone/pan"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 )
 

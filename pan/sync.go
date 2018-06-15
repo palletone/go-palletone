@@ -25,7 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/p2p/discover"
-	"github.com/palletone/go-palletone/p2p/pan/downloader"
+	"github.com/palletone/go-palletone/pan/downloader"
 )
 
 const (
