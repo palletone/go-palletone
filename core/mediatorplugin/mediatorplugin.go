@@ -2,8 +2,10 @@ package mediatorplugin
 
 import (
 	"fmt"
+	"time"
 
 	d "github.com/palletone/go-palletone/consensus/dpos"
+	a "github.com/palletone/go-palletone/core/application"
 )
 
 var (
@@ -21,8 +23,15 @@ var (
 type MediatorPlugin struct {
 	ProductionEnabled            bool
 	RequiredWitnessParticipation float32
-	Mediaotrs []*d.Mediator
-	PrivateKeys []*string
+	CMediaotors                  []*d.Mediator
+	PrivateKeys                  []*string
+	DB                           *a.DataBase
+	ch                           chan int
+}
+
+func (mp *MediatorPlugin) CloseChannel(signal int) {
+	mp.ch <- signal
+	close(mp.ch)
 }
 
 func (mp *MediatorPlugin) PluginInitialize() {
@@ -33,44 +42,67 @@ func (mp *MediatorPlugin) PluginInitialize() {
 	mp.RequiredWitnessParticipation = 0.33
 
 	// 1. 获取当前节点控制的所有mediator
-	mp.Mediaotrs = append(mp.Mediaotrs, &Mediator1)
-	mp.Mediaotrs = append(mp.Mediaotrs, &Mediator2)
-	mp.Mediaotrs = append(mp.Mediaotrs, &Mediator3)
+	mp.CMediaotors = append(mp.CMediaotors, &Mediator1)
+	mp.CMediaotors = append(mp.CMediaotors, &Mediator2)
+	mp.CMediaotors = append(mp.CMediaotors, &Mediator3)
 
-	fmt.Printf("this node controll %d mediators!\n", len(mp.Mediaotrs))
+	fmt.Printf("this node controll %d mediators!\n", len(mp.CMediaotors))
 
 	// 2. 获取当前节点使用的mediator使用的所有签名公私钥
 	mp.PrivateKeys = append(mp.PrivateKeys, &Signature1)
 	mp.PrivateKeys = append(mp.PrivateKeys, &Signature2)
 	mp.PrivateKeys = append(mp.PrivateKeys, &Signature3)
 
-	fmt.Printf("this node controll %d sigkey!\n", len(mp.PrivateKeys))
+	fmt.Printf("this node controll %d private keys!\n", len(mp.PrivateKeys))
 
 	println("mediator plugin initialize end\n")
 }
 
-func (mp *MediatorPlugin) PluginStartup() {
+func (mp *MediatorPlugin) PluginStartup(db *a.DataBase, ch chan int) {
 	println("mediator plugin startup begin")
+	mp.DB = db
+	mp.ch = ch
 
 	// 1. 判断是否满足生产验证单元的条件，主要判断本节点是否控制至少一个mediator账户
+	if len(mp.CMediaotors) == 0 {
+		println("No mediaotors configured! Please add mediator and private keys to configuration.")
+		mp.CloseChannel(-1)
+	} else {
+		// 2. 开启循环生产计划
+		fmt.Printf("Launching unit verify for %d mediators.\n", len(mp.CMediaotors))
+		mp.ProductionEnabled = true
 
-	// 2. 开启循环生产计划
+		if mp.ProductionEnabled {
+			mp.ScheduleProductionLoop()
+		}
+	}
 
 	println("mediator plugin startup end")
 }
 
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
-	// 1. 计算下一秒的滴答时刻，如果少于50毫秒，则从下下一秒开始
+	// 1. 计算下一秒的滴答时刻，如果少于50毫秒，则多等一秒开始
+	now := time.Now()
+	timeToNextSecond := int64(now.Nanosecond())
+	if timeToNextSecond < int64(time.Duration(50)*time.Millisecond) {
+		timeToNextSecond += int64(time.Duration(1) * time.Second)
+	}
+
+	nextWakeup := now.Add(time.Duration(timeToNextSecond) * time.Nanosecond)
 
 	// 2. 安排验证单元生产循环
+	time.Sleep(nextWakeup.Sub(time.Now()))
+	mp.VerifiedUnitProductionLoop()
 }
 
 func (mp *MediatorPlugin) VerifiedUnitProductionLoop() {
 	// 1. 尝试生产验证单元
+	println("尝试生产验证单元")
 
 	// 2. 打印尝试结果
 
 	// 3. 继续循环生产计划
+	mp.ScheduleProductionLoop()
 }
 
 func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() {

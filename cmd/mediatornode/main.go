@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	m "github.com/palletone/go-palletone/core/mediatorplugin"
 	a "github.com/palletone/go-palletone/core/application"
+	m "github.com/palletone/go-palletone/core/mediatorplugin"
 )
 
 func main() {
@@ -35,4 +35,13 @@ func main() {
 
 	// 7. 启动程序组件
 	println("启动程序组件...")
+	ch := make(chan int)
+	go mp.PluginStartup(&db, ch)
+
+	fmt.Printf("Started mediator node on a chain with %d verified uints.",
+		db.DynGlobalProp.VerifiedUnitNum)
+
+	// 8. 本协程睡眠直到其他协程唤醒
+	signal := <-ch
+	println("Exiting from signal %d", signal)
 }
