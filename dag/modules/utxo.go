@@ -3,45 +3,50 @@ package modules
 
 // key: utxo.hash(utxo+timestamp)
 type Utxo struct {
-	AccountId string `json:"account_id"` // 所属人id
-	Amount    int    `json:"amount"`     // 数量
-	AssertId  string `json:"assert_id"`  // 资产类别
-	Alias     string `json:"alias"`      // 资产别名
-	Program   string `json:"program"`    // 要执行的代码段
-	Key       string `json:"key"`        // 索引值
+	AccountId 	string `json:"account_id"` 	// 所属人id
+	UnitId	  	string `json:"unit_id"`	 	// unit id
+	Amount    	uint64 `json:"amount"`     	// 数量
+	AssertId  	uint32 `json:"assert_id"`  	// 资产类别
+	UniqueId  	uint64 `json:"unique_id"`	// every token has its unique id
+	ChainId	  	uint32 `json:"chain_id"`	// main chain id or sub-chain id
+	Alias     	string `json:"alias"`      	// 资产别名
+	Program   	string `json:"program"`    	// 要执行的代码段
+	Key       	string `json:"key"`        	// 索引值
+	IsCoinBase	int16	  `json:"is_coinbase"`	//
 }
 
 type Input struct {
-	Unit               string `json:"unit"`
-	MessageIndex       int    `json:"message_index"`
-	InputIndex         int    `json:"input_index"`
-	Asset              string `json:"asset"`
-	Denomination       int    `json:"denomination"` // default 1
-	IsUnique           int    `json:"is_unique"`    //default 1
-	TypeEnum           string `json:"type_unum"`    //'transfer','headers_commission','witnessing','issue'
-	SrcUnit            string `json:"src_unit"`
-	SrcMessageIndex    int    `json:"src_message_index"`
-	SrcOutputIndex     int    `json:"src_output_index"`
-	FromMainChainIndex int64  `json:"from_main_chain_index"`
-	ToMainChainIndex   int64  `json:"to_main_chain_index"`
-	SerialNumber       int64  `json:"serial_number"`
-	Amount             int64  `json:"amount"`
-	Address            string `json:"address"`
+	Unit               string 	`json:"unit"`
+	MessageIndex       uint16 	`json:"message_index"`
+	InputIndex         uint16 	`json:"input_index"`
+	Asset              string 	`json:"asset"`
+	Denomination       uint64 	`json:"denomination"` 		// default 1
+	IsUnique           int16  	`json:"is_unique"`    		//default 1
+	TypeEnum           string 	`json:"type_unum"`    		//'transfer','headers_commission','witnessing','issue'
+	SrcUnit            string 	`json:"src_unit"`
+	SrcMessageIndex    uint16 	`json:"src_message_index"`
+	SrcOutputIndex     uint16 	`json:"src_output_index"`
+	FromMainChainIndex uint64  	`json:"from_main_chain_index"`
+	ToMainChainIndex   uint64  	`json:"to_main_chain_index"`
+	SerialNumber       uint64  	`json:"serial_number"`
+	Amount             uint64  	`json:"amount"`
+	Address            string 	`json:"address"`
 }
 
 type Output struct {
-	OutputId     int    `json:"output_id"`
-	Unit         string `json:"unit"`
-	MessageIndex int    `json:"message_index"`
-	OutputIndex  int    `json:"output_index"`
-	Asset        string `json:"asset"`
-	Denomination int    `json:"denomination"` // default 1
-	Amount       int64  `json:"amount"`
-	Address      string `json:"address"`
-	Blinding     string `json:"blinding"`
-	OutputHash   string `json:"output_hash"`
-	IsSerial     int    `json:"is_serial"` // default 0 if not stable yet
-	IsSpent      int    `json:"is_spend"`  //  default 0
+	OutputId     uint64 	`json:"output_id"`
+	Unit         string 	`json:"unit"`
+	MessageIndex uint16    	`json:"message_index"`
+	OutputIndex  uint16    	`json:"output_index"`
+	Asset        string 	`json:"asset"`
+	Denomination uint64    	`json:"denomination"` 	// default 1
+	Amount       uint64  	`json:"amount"`
+	Address      string 	`json:"address"`
+	Blinding     string 	`json:"blinding"`
+	OutputHash   string 	`json:"output_hash"`
+	IsSerial     int16    	`json:"is_serial"` 		// default 0 if not stable yet
+	IsSpent      int16    	`json:"is_spend"`  		// default 0
+	IsCoinBase	 int16		`json:"is_coinbase"`	// wether token generates from minner or not
 }
 
 type SpendProof struct {
