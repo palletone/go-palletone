@@ -22,7 +22,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/p2p/pandb"
+	"github.com/palletone/go-palletone/common/pandb"
 )
 
 // secureKeyPrefix is the database key prefix used to store trie node preimages.

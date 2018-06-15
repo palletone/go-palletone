@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/p2p/pandb"
+	"github.com/palletone/go-palletone/common/pandb"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 

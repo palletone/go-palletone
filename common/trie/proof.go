@@ -24,7 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/p2p/pandb"
+	"github.com/palletone/go-palletone/common/pandb"
 )
 
 // Prove constructs a merkle proof for key. The result contains all encoded nodes

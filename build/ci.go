@@ -675,7 +675,7 @@ func doWindowsInstaller(cmdline []string) {
 	// first section contains the gpan binary, second section holds the dev tools.
 	templateData := map[string]interface{}{
 		"License":  "COPYING",
-		"Geth":     gethTool,
+		"Gpan":     gethTool,
 		"DevTools": devTools,
 	}
 	build.Render("build/nsis.gpan.nsi", filepath.Join(*workdir, "gpan.nsi"), 0644, nil)

@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/p2p/pan"
+	"github.com/palletone/go-palletone/pan"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 )
 
@@ -137,7 +137,6 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 
 func makeFullNode(ctx *cli.Context) *node.Node {
 	stack, cfg := makeConfigNode(ctx)
-	fmt.Println("==========Consensus Engine :", cfg.Eth.Consensus.Engine)
 	utils.RegisterEthService(stack, &cfg.Eth)
 	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)

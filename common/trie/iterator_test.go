@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/p2p/pandb"
+	"github.com/palletone/go-palletone/common/pandb"
 )
 
 func TestIterator(t *testing.T) {

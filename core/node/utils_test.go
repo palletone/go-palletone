@@ -22,7 +22,7 @@ package node
 import (
 	"reflect"
 
-	"github.com/palletone/go-palletone/p2p"
+	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
 )
 

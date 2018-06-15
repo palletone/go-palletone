@@ -22,8 +22,8 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/p2p"
-	"github.com/palletone/go-palletone/p2p/pandb"
+	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/pandb"
 )
 
 // ServiceContext is a collection of service independent options inherited from

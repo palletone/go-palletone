@@ -31,8 +31,8 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/p2p"
-	"github.com/palletone/go-palletone/p2p/discover"
+	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
 const (
@@ -229,7 +229,7 @@ func (c *Config) NodeName() string {
 	name := c.name()
 	// Backwards compatibility: previous versions used title-cased "Geth", keep that.
 	if name == "gpan" || name == "gpan-testnet" {
-		name = "Geth"
+		name = "Gpan"
 	}
 	if c.UserIdent != "" {
 		name += "/" + c.UserIdent
