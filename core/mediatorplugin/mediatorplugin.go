@@ -1,16 +1,45 @@
 package mediatorplugin
 
-func PluginInitialize() {
+import (
+	d "github.com/palletone/go-palletone/consensus/dpos"
+)
+
+var (
+	Signature1 = "mediator1`sig"
+	Signature2 = "mediator2`sig"
+)
+
+var (
+	Mediator1 = d.Mediator{"mediator1", Signature1}
+	Mediator2 = d.Mediator{"mediator2", Signature2}
+)
+
+type MediatorPlugin struct {
+	ProductionEnabled            bool
+	RequiredWitnessParticipation float32
+	Mediaotrs []*d.Mediator
+	PrivateKeys []*string
+}
+
+func (mp *MediatorPlugin) PluginInitialize() {
 	println("mediator plugin initialize begin")
 
-	// 1. 获取当前节点控制的所有mediator ID
+	// 1.初始化生产验证单元相关的属性值
+	mp.ProductionEnabled = false
+	mp.RequiredWitnessParticipation = 0.33
+
+	// 1. 获取当前节点控制的所有mediator
+	mp.Mediaotrs = append(mp.Mediaotrs, &Mediator1)
+	mp.Mediaotrs = append(mp.Mediaotrs, &Mediator2)
 
 	// 2. 获取当前节点使用的mediator使用的所有签名公私钥
+	mp.PrivateKeys = append(mp.PrivateKeys, &Signature1)
+	mp.PrivateKeys = append(mp.PrivateKeys, &Signature2)
 
 	println("mediator plugin initialize end")
 }
 
-func PluginStartup() {
+func (mp *MediatorPlugin) PluginStartup() {
 	println("mediator plugin startup begin")
 
 	// 1. 判断是否满足生产验证单元的条件，主要判断本节点是否控制至少一个mediator账户
@@ -20,13 +49,13 @@ func PluginStartup() {
 	println("mediator plugin startup end")
 }
 
-func ScheduleProductionLoop() {
+func (mp *MediatorPlugin) ScheduleProductionLoop() {
 	// 1. 计算下一秒的滴答时刻，如果少于50毫秒，则从下下一秒开始
 
 	// 2. 安排验证单元生产循环
 }
 
-func VerifiedUnitProductionLoop() {
+func (mp *MediatorPlugin) VerifiedUnitProductionLoop() {
 	// 1. 尝试生产验证单元
 
 	// 2. 打印尝试结果
@@ -34,7 +63,7 @@ func VerifiedUnitProductionLoop() {
 	// 3. 继续循环生产计划
 }
 
-func MaybeProduceVerifiedUnit() {
+func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() {
 	// 1. 判断是否满足生产的各个条件
 
 	// 2. 生产验证单元
