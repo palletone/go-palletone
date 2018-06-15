@@ -229,7 +229,7 @@ func (c *Config) NodeName() string {
 	name := c.name()
 	// Backwards compatibility: previous versions used title-cased "Geth", keep that.
 	if name == "gpan" || name == "gpan-testnet" {
-		name = "Geth"
+		name = "Gpan"
 	}
 	if c.UserIdent != "" {
 		name += "/" + c.UserIdent

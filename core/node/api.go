@@ -22,12 +22,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/statistics/metrics"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/statistics/metrics"
 )
 
 // PrivateAdminAPI is the collection of administrative API methods exposed only
@@ -53,7 +53,7 @@ func (api *PrivateAdminAPI) AddPeer(url string) (bool, error) {
 	// Try to add the url as a static peer and return
 	node, err := discover.ParseNode(url)
 	if err != nil {
-		return false, fmt.Errorf("invalid enode: %v", err)
+		return false, fmt.Errorf("invalid pnode: %v", err)
 	}
 	server.AddPeer(node)
 	return true, nil
@@ -69,7 +69,7 @@ func (api *PrivateAdminAPI) RemovePeer(url string) (bool, error) {
 	// Try to remove the url as a static peer and return
 	node, err := discover.ParseNode(url)
 	if err != nil {
-		return false, fmt.Errorf("invalid enode: %v", err)
+		return false, fmt.Errorf("invalid pnode: %v", err)
 	}
 	server.RemovePeer(node)
 	return true, nil

@@ -28,10 +28,10 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/mattn/go-colorable"
+	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/internal/jsre"
 	"github.com/palletone/go-palletone/internal/web3ext"
-	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/mattn/go-colorable"
 	"github.com/peterh/liner"
 	"github.com/robertkrimen/otto"
 )
@@ -273,7 +273,7 @@ func (c *Console) AutoCompleteInput(line string, pos int) (string, []string, str
 // console's available modules.
 func (c *Console) Welcome() {
 	// Print some generic Geth metadata
-	fmt.Fprintf(c.printer, "Welcome to the Geth JavaScript console!\n\n")
+	fmt.Fprintf(c.printer, "Welcome to the Gpan JavaScript console!\n\n")
 	c.jsre.Run(`
 		console.log("instance: " + web3.version.node);
 		console.log("coinbase: " + eth.coinbase);

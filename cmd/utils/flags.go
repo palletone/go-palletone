@@ -40,18 +40,18 @@ import (
 	//"github.com/palletone/go-palletone/vm"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/consensus/consensusconfig"
-	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
+	"github.com/palletone/go-palletone/common/pandb"
+	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/consensus/consensusconfig"
+	"github.com/palletone/go-palletone/core/node"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/pan"
 	"github.com/palletone/go-palletone/pan/downloader"
 	"github.com/palletone/go-palletone/pan/gasprice"
-	"github.com/palletone/go-palletone/common/pandb"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"gopkg.in/urfave/cli.v1"
@@ -430,17 +430,17 @@ var (
 	}
 	BootnodesFlag = cli.StringFlag{
 		Name:  "bootnodes",
-		Usage: "Comma separated enode URLs for P2P discovery bootstrap (set v4+v5 instead for light servers)",
+		Usage: "Comma separated pnode URLs for P2P discovery bootstrap (set v4+v5 instead for light servers)",
 		Value: "",
 	}
 	BootnodesV4Flag = cli.StringFlag{
 		Name:  "bootnodesv4",
-		Usage: "Comma separated enode URLs for P2P v4 discovery bootstrap (light server, full nodes)",
+		Usage: "Comma separated pnode URLs for P2P v4 discovery bootstrap (light server, full nodes)",
 		Value: "",
 	}
 	BootnodesV5Flag = cli.StringFlag{
 		Name:  "bootnodesv5",
-		Usage: "Comma separated enode URLs for P2P v5 discovery bootstrap (light server, light nodes)",
+		Usage: "Comma separated pnode URLs for P2P v5 discovery bootstrap (light server, light nodes)",
 		Value: "",
 	}
 	NodeKeyFileFlag = cli.StringFlag{
@@ -578,7 +578,7 @@ func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 	for _, url := range urls {
 		node, err := discover.ParseNode(url)
 		if err != nil {
-			log.Error("Bootstrap URL invalid", "enode", url, "err", err)
+			log.Error("Bootstrap URL invalid", "pnode", url, "err", err)
 			continue
 		}
 		cfg.BootstrapNodes = append(cfg.BootstrapNodes, node)

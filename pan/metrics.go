@@ -17,7 +17,6 @@
 package pan
 
 import (
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/statistics/metrics"
 )
@@ -68,7 +67,6 @@ type meteredMsgReadWriter struct {
 // metrics system is disabled, this function returns the original object.
 func newMeteredMsgWriter(rw p2p.MsgReadWriter) p2p.MsgReadWriter {
 	if !metrics.Enabled {
-		log.Debug("===newMeteredMsgWriter metrics do not Enabled===")
 		return rw
 	}
 	return &meteredMsgReadWriter{MsgReadWriter: rw}
@@ -94,9 +92,9 @@ func (rw *meteredMsgReadWriter) ReadMsg() (p2p.Msg, error) {
 	case msg.Code == BlockBodiesMsg:
 		packets, traffic = reqBodyInPacketsMeter, reqBodyInTrafficMeter
 
-	case rw.version >= pan3 && msg.Code == NodeDataMsg:
+	case /*rw.version >= pan1 &&*/ msg.Code == NodeDataMsg:
 		packets, traffic = reqStateInPacketsMeter, reqStateInTrafficMeter
-	case rw.version >= pan3 && msg.Code == ReceiptsMsg:
+	case /*rw.version >= pan1 &&*/ msg.Code == ReceiptsMsg:
 		packets, traffic = reqReceiptInPacketsMeter, reqReceiptInTrafficMeter
 
 	case msg.Code == NewBlockHashesMsg:
@@ -121,9 +119,9 @@ func (rw *meteredMsgReadWriter) WriteMsg(msg p2p.Msg) error {
 	case msg.Code == BlockBodiesMsg:
 		packets, traffic = reqBodyOutPacketsMeter, reqBodyOutTrafficMeter
 
-	case rw.version >= pan3 && msg.Code == NodeDataMsg:
+	case /*rw.version >= pan1 &&*/ msg.Code == NodeDataMsg:
 		packets, traffic = reqStateOutPacketsMeter, reqStateOutTrafficMeter
-	case rw.version >= pan3 && msg.Code == ReceiptsMsg:
+	case /*rw.version >= pan1 && */ msg.Code == ReceiptsMsg:
 		packets, traffic = reqReceiptOutPacketsMeter, reqReceiptOutTrafficMeter
 
 	case msg.Code == NewBlockHashesMsg:
