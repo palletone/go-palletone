@@ -1,18 +1,18 @@
-// Copyright 2015 The go-ethereum Authors
-// This file is part of the go-ethereum library.
+// Copyright 2015 The go-palletone Authors
+// This file is part of the go-palletone library.
 //
-// The go-ethereum library is free software: you can redistribute it and/or modify
+// The go-palletone library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-ethereum library is distributed in the hope that it will be useful,
+// The go-palletone library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+// along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
 package node
 
@@ -22,12 +22,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/statistics/metrics"
-	"github.com/palletone/go-palletone/p2p"
-	"github.com/palletone/go-palletone/p2p/discover"
-	"github.com/palletone/go-palletone/rpc"
 )
 
 // PrivateAdminAPI is the collection of administrative API methods exposed only
@@ -53,7 +53,7 @@ func (api *PrivateAdminAPI) AddPeer(url string) (bool, error) {
 	// Try to add the url as a static peer and return
 	node, err := discover.ParseNode(url)
 	if err != nil {
-		return false, fmt.Errorf("invalid enode: %v", err)
+		return false, fmt.Errorf("invalid pnode: %v", err)
 	}
 	server.AddPeer(node)
 	return true, nil
@@ -69,7 +69,7 @@ func (api *PrivateAdminAPI) RemovePeer(url string) (bool, error) {
 	// Try to remove the url as a static peer and return
 	node, err := discover.ParseNode(url)
 	if err != nil {
-		return false, fmt.Errorf("invalid enode: %v", err)
+		return false, fmt.Errorf("invalid pnode: %v", err)
 	}
 	server.RemovePeer(node)
 	return true, nil

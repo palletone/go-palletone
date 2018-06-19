@@ -1,18 +1,18 @@
-// Copyright 2015 The go-ethereum Authors
-// This file is part of the go-ethereum library.
+// Copyright 2015 The go-palletone Authors
+// This file is part of the go-palletone library.
 //
-// The go-ethereum library is free software: you can redistribute it and/or modify
+// The go-palletone library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-ethereum library is distributed in the hope that it will be useful,
+// The go-palletone library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+// along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
 package trie
 
@@ -24,11 +24,11 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/p2p/ethdb"
+	"github.com/palletone/go-palletone/common/pandb"
 )
 
 func newEmptySecure() *SecureTrie {
-	diskdb, _ := ethdb.NewMemDatabase()
+	diskdb, _ := pandb.NewMemDatabase()
 	triedb := NewDatabase(diskdb)
 
 	trie, _ := NewSecure(common.Hash{}, triedb, 0)
@@ -38,7 +38,7 @@ func newEmptySecure() *SecureTrie {
 // makeTestSecureTrie creates a large enough secure trie for testing.
 func makeTestSecureTrie() (*Database, *SecureTrie, map[string][]byte) {
 	// Create an empty trie
-	diskdb, _ := ethdb.NewMemDatabase()
+	diskdb, _ := pandb.NewMemDatabase()
 	triedb := NewDatabase(diskdb)
 
 	trie, _ := NewSecure(common.Hash{}, triedb, 0)

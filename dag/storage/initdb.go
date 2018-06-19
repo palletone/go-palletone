@@ -3,7 +3,7 @@ package storage
 import (
 	"log"
 
-	"gitee.com/sailinst/pallet_dag/palletdb"
+
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 )
 

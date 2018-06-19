@@ -3356,7 +3356,7 @@ var _bundleJs = []byte((((((((((`!function(modules) {
                         width: Object(__WEBPACK_IMPORTED_MODULE_7__util_DOMUtils__.c)(word, props.style).width
                     };
                 }),
-                spaceWidth: Object(__WEBPACK_IMPORTED_MODULE_7__util_DOMUtils__.c)(" ", props.style).width
+                spaceWidth: Object(__WEBPACK_IMPORTED_MODULE_7__util_DOMUtils__.c)(" ", props.style).width
             };
         } catch (e) {
             return null;
@@ -31417,7 +31417,7 @@ var _bundleJs = []byte((((((((((`!function(modules) {
                     color: "inherit"
                 }, _react2.default.createElement("span", {
                     style: _common.styles.light
-                }, "Geth"), " ", general.version), general.commit && _react2.default.createElement(_Typography2.default, {
+                }, "Gpan"), " ", general.version), general.commit && _react2.default.createElement(_Typography2.default, {
                     type: "caption",
                     color: "inherit"
                 }, _react2.default.createElement("span", {

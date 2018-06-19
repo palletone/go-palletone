@@ -7,8 +7,8 @@ import (
 	"math/rand"
 	"reflect"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/crypto/sha3"
+	"github.com/palletone/go-palletone/common/crypto/sha3"
+	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 const (

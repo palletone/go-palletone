@@ -37,7 +37,7 @@ type DynamicGlobalProperty struct {
 
 	CurrentMediator *Mediator // 当前生产验证单元的mediator
 
-	NextMaintenanceTime time.Time // 下一次系统维护时间
+//	NextMaintenanceTime time.Time // 下一次系统维护时间
 
 	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == verifiedUnitNum + 错过的槽数量
 	CurrentASlot uint64
@@ -48,4 +48,8 @@ type DynamicGlobalProperty struct {
 	用于计算mediator的参与率。used to compute mediator participation.
 	*/
 	RecentSlotsFilled float32
+}
+
+func UpdateGlobalDynamicData() {
+
 }

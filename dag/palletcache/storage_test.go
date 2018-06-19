@@ -1,9 +1,9 @@
 package palletcache
 
 import (
+	"github.com/palletone/go-palletone/dag/palletcache/cache"
+	"github.com/palletone/go-palletone/dag/palletcache/redis"
 	"log"
-	"palletdag/palletcache/cache"
-	"palletdag/palletcache/redis"
 	"testing"
 )
 

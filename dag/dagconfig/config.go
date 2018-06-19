@@ -1,9 +1,13 @@
 package dagconfig
 
 var (
-	DefaultConfig Config
-	SConfig       Sconfig
+	SConfig Sconfig
 )
+
+var DefaultConfig = Config{
+	DbPath: "dbpath",
+	DbName: "dbname",
+}
 
 // key := strings.ToLower(typ.Name()) 大写统一转小写
 type Config struct {

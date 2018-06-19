@@ -69,6 +69,18 @@
 			"revisionTime": "2015-01-22T07:26:53Z"
 		},
 		{
+			"checksumSHA1": "XmSM/gzGetfmtLlvg+D1kn40lSM=",
+			"path": "github.com/cespare/xxhash",
+			"revision": "48099fad606eafc26e3a569fad19ff510fff4df6",
+			"revisionTime": "2018-01-29T23:03:33Z"
+		},
+		{
+			"checksumSHA1": "XlCbPByzS13MyKOZXWd8fNIMTYI=",
+			"path": "github.com/coocood/freecache",
+			"revision": "036298587d3a11a2946fecb24ef983708e2e8944",
+			"revisionTime": "2018-03-04T01:59:25Z"
+		},
+		{
 			"checksumSHA1": "dvabztWVQX8f6oMLRyv4dLH+TGY=",
 			"path": "github.com/davecgh/go-spew/spew",
 			"revision": "346938d642f2ec3594ed81d874461961cd0faa76",
@@ -778,5 +790,5 @@
 			"revisionTime": "2017-08-11T01:42:03Z"
 		}
 	],
-	"rootPath": "github.com/ethereum/go-palletone"
+	"rootPath": "github.com/palletone/go-palletone"
 }

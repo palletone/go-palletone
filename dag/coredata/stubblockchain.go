@@ -1,18 +1,18 @@
-// Copyright 2014 The go-ethereum Authors
-// This file is part of the go-ethereum library.
+// Copyright 2014 The go-palletone Authors
+// This file is part of the go-palletone library.
 //
-// The go-ethereum library is free software: you can redistribute it and/or modify
+// The go-palletone library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-ethereum library is distributed in the hope that it will be useful,
+// The go-palletone library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+// along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package core implements the Ethereum consensus protocol.
 package coredata
@@ -30,7 +30,7 @@ import (
 	"github.com/palletone/go-palletone/consensus"
 	//"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/p2p/ethdb"
+	"github.com/palletone/go-palletone/common/pandb"
 	"github.com/palletone/go-palletone/vm"
 )
 
@@ -60,7 +60,7 @@ func (bc *BlockChain) Export(w io.Writer) error {
 func (bc *BlockChain) ExportN(w io.Writer, first uint64, last uint64) error {
 	return nil
 }
-func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *configure.ChainConfig, engine consensus.Engine /*, vmConfig vm.Config*/) (*BlockChain, error) {
+func NewBlockChain(db pandb.Database, cacheConfig *CacheConfig, chainConfig *configure.ChainConfig, engine consensus.Engine /*, vmConfig vm.Config*/) (*BlockChain, error) {
 	return &BlockChain{}, nil
 }
 
@@ -69,7 +69,7 @@ type ChainIndexerBackend interface{}
 
 type ChainIndexer struct{}
 
-func NewChainIndexer(chainDb, indexDb ethdb.Database, backend ChainIndexerBackend, section, confirm uint64, throttling time.Duration, kind string) *ChainIndexer {
+func NewChainIndexer(chainDb, indexDb pandb.Database, backend ChainIndexerBackend, section, confirm uint64, throttling time.Duration, kind string) *ChainIndexer {
 	return &ChainIndexer{}
 }
 
@@ -170,18 +170,18 @@ type Genesis struct {
 */
 // Commit writes the block and state of a genesis specification to the database.
 // The block is committed as the canonical head block.
-func (g *Genesis) Commit(db ethdb.Database) (*types.Block, error) {
+func (g *Genesis) Commit(db pandb.Database) (*types.Block, error) {
 	return &types.Block{}, nil
 }
 
 // MustCommit writes the genesis block and state to db, panicking on error.
 // The block is committed as the canonical head block.
-func (g *Genesis) MustCommit(db ethdb.Database) *types.Block {
+func (g *Genesis) MustCommit(db pandb.Database) *types.Block {
 	return &types.Block{}
 }
 
 // GenesisBlockForTesting creates and writes a block in which addr has the given wei balance.
-func GenesisBlockForTesting(db ethdb.Database, addr common.Address, balance *big.Int) *types.Block {
+func GenesisBlockForTesting(db pandb.Database, addr common.Address, balance *big.Int) *types.Block {
 	return &types.Block{}
 }
 
@@ -200,19 +200,19 @@ func DefaultRinkebyGenesisBlock() *Genesis {
 	return &Genesis{}
 }
 
-// DeveloperGenesisBlock returns the 'geth --dev' genesis block. Note, this must
+// DeveloperGenesisBlock returns the 'gpan --dev' genesis block. Note, this must
 // be seeded with the
 func DeveloperGenesisBlock(period uint64, faucet common.Address) *Genesis {
 	return &Genesis{}
 }
-func SetupGenesisBlock(db ethdb.Database, genesis *Genesis) (*configure.ChainConfig, common.Hash, error) {
+func SetupGenesisBlock(db pandb.Database, genesis *Genesis) (*configure.ChainConfig, common.Hash, error) {
 	return &configure.ChainConfig{}, common.Hash{}, nil
 }
 
 ////////headerchain///////////
 type HeaderChain struct{}
 
-func NewHeaderChain(chainDb ethdb.Database, config *configure.ChainConfig, engine consensus.Engine, procInterrupt func() bool) (*HeaderChain, error) {
+func NewHeaderChain(chainDb pandb.Database, config *configure.ChainConfig, engine consensus.Engine, procInterrupt func() bool) (*HeaderChain, error) {
 	return &HeaderChain{}, nil
 }
 func (hc *HeaderChain) CurrentHeader() *types.Header {
