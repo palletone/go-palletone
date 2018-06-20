@@ -108,12 +108,11 @@ func initLogger(path, err_path, lvl string, isDebug bool) {
 // Trace
 func Trace(msg string, ctx ...interface{}) {
 	if Logger == nil {
-		log.Println("logger is nil.")
+		//log.Println("logger is nil.")
 		InitLogger()
 	} else {
 		//log.Println("logger trace is  ok.")
 		fileds := ctxTOfileds(ctx...)
-
 		Logger.Info(msg, fileds...)
 	}
 }
@@ -123,9 +122,7 @@ func Debug(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
 	} else {
-		// log.Println("logger debug is ok.")
 		fileds := ctxTOfileds(ctx...)
-
 		Logger.Debug(msg, fileds...)
 	}
 }
@@ -135,9 +132,7 @@ func Info(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
 	} else {
-		// log.Println("logger info is ok.")
 		fileds := ctxTOfileds(ctx...)
-
 		Logger.Info(msg, fileds...)
 	}
 }
@@ -147,9 +142,7 @@ func Warn(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
 	} else {
-		// log.Println("logger warn is ok.")
 		fileds := ctxTOfileds(ctx...)
-
 		Logger.Warn(msg, fileds...)
 	}
 }
@@ -159,9 +152,7 @@ func Error(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
 	} else {
-		// log.Println("logger error is ok.")
 		fileds := ctxTOfileds(ctx...)
-
 		Logger.Error(msg, fileds...)
 	}
 }
@@ -171,9 +162,7 @@ func Crit(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
 	} else {
-		// log.Println("logger Crit is ok.")
 		fileds := ctxTOfileds(ctx...)
-
 		Logger.Info(msg, fileds...)
 	}
 }
