@@ -9,6 +9,7 @@
 **/log
 */**/*un~
 */**/*.test
+log.txt
 *un~
 .DS_Store
 */**/.DS_Store

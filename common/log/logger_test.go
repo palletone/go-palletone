@@ -10,7 +10,7 @@ import (
 )
 
 func TestInitLogger(t *testing.T) {
-	initLogger("out.log", "DEBUG", false)
+	initLogger("out.log", "error.log", "DEBUG", false)
 	s := []string{
 		"Hello info",
 		"Hello error",
@@ -23,7 +23,7 @@ func TestInitLogger(t *testing.T) {
 	Logger.Error("info", zap.String("str", s[3]))
 }
 func TestTrace(t *testing.T) {
-	initLogger("out.log", "DEBUG", false)
+	initLogger("out.log", "error.log", "DEBUG", false)
 	Trace("test trace ...")
 }
 

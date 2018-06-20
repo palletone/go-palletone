@@ -9,7 +9,7 @@ var DefaultConfig = Config{
 	DbName:     "dbname",
 	LoggerPath: "./log/full.log",
 	LoggerLvl:  "DEBUG",
-	IsDebug:    false,
+	IsDebug:    true,
 	ErrPath:    "./log/err.log",
 }
 
