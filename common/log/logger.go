@@ -1,9 +1,31 @@
+// Copyright 2018 The go-palletone Authors
+// This file is part of go-palletone.
+//
+// go-palletone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// go-palletone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with go-palletone. If not, see <http://www.gnu.org/licenses/>.
+
+// log is the palletone log system.
+
 package log
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"os"
+	"runtime"
+	"strings"
 
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"go.uber.org/zap"
@@ -75,12 +97,26 @@ func InitLogger() {
 	lvl := dagconfig.DefaultConfig.LoggerLvl
 	// is debug?
 	isDebug := dagconfig.DefaultConfig.IsDebug
-	log.Println("=============================================")
-	log.Println("------------", path, err_path, lvl, isDebug, "------------")
-	log.Println("=============================================")
+	// if the config file is damaged or lost, then initialize the config if log system.
+	if path == "" {
+		path = "log/full.log"
+	}
+	if err_path == "" {
+		err_path = "log/err.log"
+	}
+	if lvl == "" {
+		lvl = "DEBUG"
+	}
+
+	if err := mkdirPath(path, err_path); err != nil {
+		panic(err)
+	}
+
 	initLogger(path, err_path, lvl, isDebug)
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
+
+// init logger.
 func initLogger(path, err_path, lvl string, isDebug bool) {
 	var js string
 	if isDebug {
@@ -243,4 +279,79 @@ func (c Ctx) toArray() []interface{} {
 	}
 
 	return arr
+}
+
+//CheckFileIsExist 判断文件是否存在，存在返回true，不存在返回false
+func checkFileIsExist(path string) bool {
+	var exist = true
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		exist = false
+	}
+	return exist
+}
+
+// Mkdir the path of out.log、err.log ,if the path is not exist.
+func mkdirPath(path1, path2 string) error {
+	var paths, errpaths []string
+	oos := runtime.GOOS
+	switch oos {
+	case "windows":
+		paths = strings.Split(path1, `\\`)
+		errpaths = strings.Split(path2, `\\`)
+	case "linux", "darwin":
+		paths = strings.Split(path1, `/`)
+		errpaths = strings.Split(path2, `/`)
+	default:
+		return errors.New("not supported on this system.")
+
+	}
+	if len(paths) > 1 {
+		var path string
+		for i, p := range paths {
+			if i == 0 {
+				path = p
+			} else if i > 0 && i < len(paths)-1 {
+				switch oos {
+				case "windows":
+					path += (`\\` + p)
+
+				case "linux", "darwin":
+					path += (`/` + p)
+				}
+			} else {
+				break
+			}
+			if !checkFileIsExist(path) {
+				if err := os.Mkdir(path, os.ModePerm); err != nil {
+					return err
+				}
+			}
+
+		}
+	}
+	if len(errpaths) > 1 {
+		var path string
+		for i, e := range errpaths {
+			if i == 0 {
+				path = e
+			} else if i > 0 && i < len(errpaths)-1 {
+				switch oos {
+				case "windows":
+					path += (`\\` + e)
+
+				case "linux", "darwin":
+					path += (`/` + e)
+				}
+			} else {
+				break
+			}
+			if !checkFileIsExist(path) {
+				if err := os.Mkdir(path, os.ModePerm); err != nil {
+					return err
+				}
+			}
+
+		}
+	}
+	return nil
 }

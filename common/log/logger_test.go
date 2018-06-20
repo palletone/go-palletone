@@ -3,6 +3,7 @@ package log
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"testing"
 	"time"
 
@@ -77,4 +78,43 @@ func InitLog(url string, optins ...interface{}) {
 		Logger.Error("error ", zap.Error(errors.New("hahah")))
 	}
 
+}
+
+func TestCheckFilePath(t *testing.T) {
+	str := []string{
+		"log",
+		"log1/log.log",
+		"log1",
+		"log2.log",
+	}
+	re := []bool{
+		false,
+		false,
+		true,
+		true,
+	}
+	for i, v := range str {
+		if re[i] == checkFileIsExist(v) {
+			fmt.Println("success.")
+		} else {
+			fmt.Println("failed.")
+		}
+	}
+	fmt.Println(runtime.GOOS)
+}
+func TestMkdirPath(t *testing.T) {
+	paths := []string{
+		"log/log.log ",
+		"log1",
+		"log2/log2_1/log2_2/log.log",
+		"log1/log1_1/log.log",
+	}
+
+	for _, p := range paths {
+		if mkdirPath("", p) == nil {
+			fmt.Println("ture", p)
+		} else {
+			t.Error("false", p, mkdirPath(p, ""))
+		}
+	}
 }
