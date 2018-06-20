@@ -113,11 +113,11 @@ func initLogger(path, err_path, lvl string, isDebug bool) {
 	}
 	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
 	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	var err error
-	Logger, err = cfg.Build()
+	l, err := cfg.Build()
 	if err != nil {
 		log.Fatal("init logger error: ", err)
 	}
+	Logger = l.WithOptions(zap.AddCallerSkip(1))
 }
 
 // Trace
