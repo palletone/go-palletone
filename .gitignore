@@ -6,7 +6,7 @@
 
 /tmp
 **/data1
-**/log
+*.log
 */**/*un~
 */**/*.test
 log.txt
