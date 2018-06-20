@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"runtime"
 	"strings"
 
@@ -122,16 +123,16 @@ func initLogger(path, err_path, lvl string, isDebug bool) {
 		js = fmt.Sprintf(`{
       "level": "%s",
       "encoding": "json",
-      "outputPaths": ["stdout"],
-      "errorOutputPaths": ["stdout"]
-      }`, lvl)
+      "outputPaths": ["stdout","%s"],
+      "errorOutputPaths": ["stdout","%s"]
+      }`, lvl, path, err_path)
 	} else {
 		js = fmt.Sprintf(`{
       "level": "%s",
       "encoding": "json",
       "outputPaths": ["%s"],
       "errorOutputPaths": ["%s"]
-      }`, lvl, path, path)
+      }`, lvl, path, err_path)
 	}
 	var cfg zap.Config
 	if err := json.Unmarshal([]byte(js), &cfg); err != nil {
@@ -304,7 +305,7 @@ func mkdirPath(path1, path2 string) error {
 		return errors.New("not supported on this system.")
 
 	}
-	if len(paths) > 1 {
+	if len(paths) > 0 {
 		var path string
 		for i, p := range paths {
 			if i == 0 {
@@ -320,15 +321,14 @@ func mkdirPath(path1, path2 string) error {
 			} else {
 				break
 			}
-			if !checkFileIsExist(path) {
-				if err := os.Mkdir(path, os.ModePerm); err != nil {
-					return err
-				}
+
+			if err := makeDirAndFile(path); err != nil {
+				return err
 			}
 
 		}
 	}
-	if len(errpaths) > 1 {
+	if len(errpaths) > 0 {
 		var path string
 		for i, e := range errpaths {
 			if i == 0 {
@@ -344,13 +344,26 @@ func mkdirPath(path1, path2 string) error {
 			} else {
 				break
 			}
-			if !checkFileIsExist(path) {
-				if err := os.Mkdir(path, os.ModePerm); err != nil {
-					return err
-				}
+
+			if err := makeDirAndFile(path); err != nil {
+				return err
 			}
 
 		}
+	}
+	return nil
+}
+func makeDirAndFile(filePath string) error {
+	if !checkFileIsExist(filePath) {
+		err := os.MkdirAll(path.Dir(filePath), os.ModePerm)
+		if err != nil {
+			return err
+		}
+		_, err = os.Create(filePath)
+		if err != nil {
+			return err
+		}
+
 	}
 	return nil
 }
