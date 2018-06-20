@@ -1,3 +1,21 @@
+// Copyright 2018 The go-palletone Authors
+// This file is part of go-palletone.
+//
+// go-palletone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// go-palletone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with go-palletone. If not, see <http://www.gnu.org/licenses/>.
+
+// log is the palletone log system.
+
 package log
 
 import (
@@ -73,7 +91,7 @@ func InitLogger() {
 	lvl := dagconfig.DefaultConfig.LoggerLvl
 	// is debug?
 	isDebug := dagconfig.DefaultConfig.IsDebug
-	// 若配置文件损坏或信息为空，则设置初始化
+	// if the config file is damaged or lost, then initialize the config if log system.
 	if path == "" {
 		path = "log/full.log"
 	}
@@ -83,6 +101,7 @@ func InitLogger() {
 	if lvl == "" {
 		lvl = "DEBUG"
 	}
+
 	if err := mkdirPath(path, err_path); err != nil {
 		panic(err)
 	}
@@ -90,6 +109,8 @@ func InitLogger() {
 	initLogger(path, err_path, lvl, isDebug)
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
+
+// init logger.
 func initLogger(path, err_path, lvl string, isDebug bool) {
 	var js string
 	if isDebug {
@@ -263,7 +284,7 @@ func checkFileIsExist(path string) bool {
 	return exist
 }
 
-// Mkdir  path ,err_path
+// Mkdir the path of out.log、err.log ,if the path is not exist.
 func mkdirPath(path1, path2 string) error {
 	var paths, errpaths []string
 	oos := runtime.GOOS
