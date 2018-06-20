@@ -27,7 +27,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -90,13 +89,13 @@ func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
 // init zap.logger
 func InitLogger() {
 	// log path
-	path := dagconfig.DefaultConfig.LoggerPath
+	path := DefaultConfig.LoggerPath
 	// error path
-	err_path := dagconfig.DefaultConfig.ErrPath
+	err_path := DefaultConfig.ErrPath
 	// log level
-	lvl := dagconfig.DefaultConfig.LoggerLvl
+	lvl := DefaultConfig.LoggerLvl
 	// is debug?
-	isDebug := dagconfig.DefaultConfig.IsDebug
+	isDebug := DefaultConfig.IsDebug
 	// if the config file is damaged or lost, then initialize the config if log system.
 	if path == "" {
 		path = "log/full.log"

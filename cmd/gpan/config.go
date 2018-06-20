@@ -141,6 +141,8 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
 	}
+	//Test
+	fmt.Println("---- Log Path:" + cfg.Eth.Log.LoggerPath)
 	/*wangjiyou
 	// Whisper must be explicitly enabled by specifying at least 1 whisper flag or in dev mode
 	shhEnabled := enableWhisper(ctx)
