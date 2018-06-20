@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -117,4 +118,81 @@ func TestMkdirPath(t *testing.T) {
 			t.Error("false", p, mkdirPath(p, ""))
 		}
 	}
+}
+func TestMakeDirAndFile(t *testing.T) {
+	paths := []string{
+		"log2/log2_1/log2_2/log.log",
+		"log1/log1_1/log.log",
+	}
+	for _, p := range paths {
+		if MakeDirAndFile(p) == nil {
+			fmt.Println("ture", p)
+		} else {
+			t.Error("false", p)
+		}
+	}
+}
+
+// Mkdir the path of out.log、err.log ,if the path is not exist.
+func mkdirPath(path1, path2 string) error {
+	var paths, errpaths []string
+	oos := runtime.GOOS
+	switch oos {
+	case "windows":
+		paths = strings.Split(path1, `\\`)
+		errpaths = strings.Split(path2, `\\`)
+	case "linux", "darwin":
+		paths = strings.Split(path1, `/`)
+		errpaths = strings.Split(path2, `/`)
+	default:
+		return errors.New("not supported on this system.")
+
+	}
+	if len(paths) > 0 {
+		var path string
+		for i, p := range paths {
+			if i == 0 {
+				path = p
+			} else if i > 0 && i < len(paths)-1 {
+				switch oos {
+				case "windows":
+					path += (`\\` + p)
+
+				case "linux", "darwin":
+					path += (`/` + p)
+				}
+			} else {
+				break
+			}
+
+			if err := MakeDirAndFile(path); err != nil {
+				return err
+			}
+
+		}
+	}
+	if len(errpaths) > 0 {
+		var path string
+		for i, e := range errpaths {
+			if i == 0 {
+				path = e
+			} else if i > 0 && i < len(errpaths)-1 {
+				switch oos {
+				case "windows":
+					path += (`\\` + e)
+
+				case "linux", "darwin":
+					path += (`/` + e)
+				}
+			} else {
+				break
+			}
+
+			if err := MakeDirAndFile(path); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
