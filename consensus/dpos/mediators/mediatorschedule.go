@@ -23,7 +23,7 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *d.GlobalProperty, dgp *d.
 	aSize := uint32(len(gp.ActiveMediators))
 
 	// 1. 判断是否到达洗牌时刻
-	if dgp.VerifiedUnitNum%aSize != 0 {
+	if dgp.LastVerifiedUnitNum%aSize != 0 {
 		return
 	}
 
@@ -104,7 +104,7 @@ func GetSlotTime(gp *d.GlobalProperty, dgp *d.DynamicGlobalProperty, slotNum uin
 
 	interval := gp.ChainParameters.VerifiedUnitInterval
 
-	if dgp.VerifiedUnitNum == 0 {
+	if dgp.LastVerifiedUnitNum == 0 {
 		/**
 		注：第一个验证单元在genesisTime加上一个验证单元间隔
 		n.b. first verifiedUnit is at genesisTime plus one verifiedUnitInterval

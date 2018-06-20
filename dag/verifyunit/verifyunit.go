@@ -1,3 +1,10 @@
+/**
+@version 0.1
+@author albert·gou
+@time June 11, 2018
+@brief 生产验证单元的功能
+*/
+
 package verifyunit
 
 func GenerateVerifiedUnit() {
@@ -7,7 +14,7 @@ func GenerateVerifiedUnit() {
 
 	// 3. 从未验证交易池中移除添加的交易
 
-	// 3. 如果最长链条的头部块不是由当前头部构成的，我们需要切换到分叉。
+	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
 
 	// 5. 更新全局动态属性值
 

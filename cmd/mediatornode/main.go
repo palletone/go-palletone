@@ -1,3 +1,10 @@
+/**
+@version 0.1
+@author albert·gou
+@time June 11, 2018
+@brief mediator节点的初始化和启动功能
+*/
+
 package main
 
 import (
@@ -38,8 +45,8 @@ func main() {
 	ch := make(chan int)
 	go mp.PluginStartup(&db, ch)
 
-	fmt.Printf("Started mediator node on a chain with %d verified uints.",
-		db.DynGlobalProp.VerifiedUnitNum)
+	fmt.Printf("Started mediator node on a chain with %d verified uints.\n",
+		db.DynGlobalProp.LastVerifiedUnitNum)
 
 	// 8. 本协程睡眠直到其他协程唤醒
 	signal := <-ch
