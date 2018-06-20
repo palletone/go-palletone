@@ -2,8 +2,12 @@ package log
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"os"
+	"runtime"
+	"strings"
 
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"go.uber.org/zap"
@@ -72,6 +76,20 @@ func InitLogger() {
 	log.Println("=============================================")
 	log.Println("------------", path, err_path, lvl, isDebug, "------------")
 	log.Println("=============================================")
+	// 若配置文件损坏或信息为空，则设置初始化
+	if path == "" {
+		path = "log/full.log"
+	}
+	if err_path == "" {
+		err_path = "log/err.log"
+	}
+	if lvl == "" {
+		lvl = "DEBUG"
+	}
+	if err := mkdirPath(path, err_path); err != nil {
+		panic(err)
+	}
+
 	initLogger(path, err_path, lvl, isDebug)
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
@@ -248,4 +266,79 @@ func (c Ctx) toArray() []interface{} {
 	}
 
 	return arr
+}
+
+//CheckFileIsExist 判断文件是否存在，存在返回true，不存在返回false
+func checkFileIsExist(path string) bool {
+	var exist = true
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		exist = false
+	}
+	return exist
+}
+
+// Mkdir  path ,err_path
+func mkdirPath(path1, path2 string) error {
+	var paths, errpaths []string
+	oos := runtime.GOOS
+	switch oos {
+	case "windows":
+		paths = strings.Split(path1, `\\`)
+		errpaths = strings.Split(path2, `\\`)
+	case "linux", "darwin":
+		paths = strings.Split(path1, `/`)
+		errpaths = strings.Split(path2, `/`)
+	default:
+		return errors.New("not supported on this system.")
+
+	}
+	if len(paths) > 1 {
+		var path string
+		for i, p := range paths {
+			if i == 0 {
+				path = p
+			} else if i > 0 && i < len(paths)-1 {
+				switch oos {
+				case "windows":
+					path += (`\\` + p)
+
+				case "linux", "darwin":
+					path += (`/` + p)
+				}
+			} else {
+				break
+			}
+			if !checkFileIsExist(path) {
+				if err := os.Mkdir(path, os.ModePerm); err != nil {
+					return err
+				}
+			}
+
+		}
+	}
+	if len(errpaths) > 1 {
+		var path string
+		for i, e := range errpaths {
+			if i == 0 {
+				path = e
+			} else if i > 0 && i < len(errpaths)-1 {
+				switch oos {
+				case "windows":
+					path += (`\\` + e)
+
+				case "linux", "darwin":
+					path += (`/` + e)
+				}
+			} else {
+				break
+			}
+			if !checkFileIsExist(path) {
+				if err := os.Mkdir(path, os.ModePerm); err != nil {
+					return err
+				}
+			}
+
+		}
+	}
+	return nil
 }
