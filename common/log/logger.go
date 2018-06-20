@@ -1,193 +1,204 @@
 package log
 
 import (
+	"encoding/json"
 	"fmt"
-	"os"
-	"time"
+	"log"
 
-	"github.com/go-stack/stack"
+	"github.com/palletone/go-palletone/dag/dagconfig"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-const timeKey = "t"
-const lvlKey = "lvl"
-const msgKey = "msg"
-const errorKey = "LOG15_ERROR"
+const errorKey = "ZAPLOG_ERROR"
 
-type Lvl int
+var Logger *zap.Logger
 
-const (
-	LvlCrit Lvl = iota
-	LvlError
-	LvlWarn
-	LvlInfo
-	LvlDebug
-	LvlTrace
-)
+type Plogger struct {
+	logger zap.Logger
+}
 
-// Aligned returns a 5-character string containing the name of a Lvl.
-func (l Lvl) AlignedString() string {
-	switch l {
-	case LvlTrace:
-		return "TRACE"
-	case LvlDebug:
-		return "DEBUG"
-	case LvlInfo:
-		return "INFO "
-	case LvlWarn:
-		return "WARN "
-	case LvlError:
-		return "ERROR"
-	case LvlCrit:
-		return "CRIT "
-	default:
-		panic("bad level")
+// New returns a new logger with the given context.
+// New is a convenient alias for Root().New
+func New(ctx ...interface{}) *Plogger {
+	if Logger == nil {
+		InitLogger()
+	}
+	pl := new(Plogger)
+	pl.logger = *Logger
+	return pl
+}
+func (pl *Plogger) New(ctx ...interface{}) *Plogger {
+	if pl != nil {
+		return pl
+	}
+	if Logger == nil {
+		InitLogger()
+	}
+
+	pl.logger = *Logger
+	return pl
+}
+func (pl *Plogger) Trace(msg string, ctx ...interface{}) {
+	Trace(msg, ctx...)
+}
+
+func (pl *Plogger) Debug(msg string, ctx ...interface{}) {
+	Debug(msg, ctx...)
+}
+func (pl *Plogger) Info(msg string, ctx ...interface{}) {
+	Info(msg, ctx...)
+}
+func (pl *Plogger) Warn(msg string, ctx ...interface{}) {
+	Warn(msg, ctx...)
+}
+func (pl *Plogger) Error(msg string, ctx ...interface{}) {
+	Error(msg, ctx...)
+}
+func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
+	Crit(msg, ctx...)
+}
+
+// init zap.logger
+func InitLogger() {
+	// log path
+	path := dagconfig.DefaultConfig.LoggerPath
+	// error path
+	err_path := dagconfig.DefaultConfig.ErrPath
+	// log level
+	lvl := dagconfig.DefaultConfig.LoggerLvl
+	// is debug?
+	isDebug := dagconfig.DefaultConfig.IsDebug
+	log.Println("=============================================")
+	log.Println("------------", path, err_path, lvl, isDebug, "------------")
+	log.Println("=============================================")
+	initLogger(path, err_path, lvl, isDebug)
+	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
+}
+func initLogger(path, err_path, lvl string, isDebug bool) {
+	var js string
+	if isDebug {
+		js = fmt.Sprintf(`{
+      "level": "%s",
+      "encoding": "json",
+      "outputPaths": ["stdout"],
+      "errorOutputPaths": ["stdout"]
+      }`, lvl)
+	} else {
+		js = fmt.Sprintf(`{
+      "level": "%s",
+      "encoding": "json",
+      "outputPaths": ["%s"],
+      "errorOutputPaths": ["%s"]
+      }`, lvl, path, path)
+	}
+	var cfg zap.Config
+	if err := json.Unmarshal([]byte(js), &cfg); err != nil {
+		panic(err)
+	}
+	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	var err error
+	Logger, err = cfg.Build()
+	if err != nil {
+		log.Fatal("init logger error: ", err)
 	}
 }
 
-// Strings returns the name of a Lvl.
-func (l Lvl) String() string {
-	switch l {
-	case LvlTrace:
-		return "trce"
-	case LvlDebug:
-		return "dbug"
-	case LvlInfo:
-		return "info"
-	case LvlWarn:
-		return "warn"
-	case LvlError:
-		return "eror"
-	case LvlCrit:
-		return "crit"
-	default:
-		panic("bad level")
+// Trace
+func Trace(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		log.Println("logger is nil.")
+		InitLogger()
+	} else {
+		log.Println("logger trace is  ok.")
+		fileds := ctxTOfileds(ctx...)
+
+		Logger.Info(msg, fileds...)
 	}
 }
 
-// Returns the appropriate Lvl from a string name.
-// Useful for parsing command line args and configuration files.
-func LvlFromString(lvlString string) (Lvl, error) {
-	switch lvlString {
-	case "trace", "trce":
-		return LvlTrace, nil
-	case "debug", "dbug":
-		return LvlDebug, nil
-	case "info":
-		return LvlInfo, nil
-	case "warn":
-		return LvlWarn, nil
-	case "error", "eror":
-		return LvlError, nil
-	case "crit":
-		return LvlCrit, nil
-	default:
-		return LvlDebug, fmt.Errorf("Unknown level: %v", lvlString)
+// Debug
+func Debug(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	} else {
+		log.Println("logger debug is ok.")
+		fileds := ctxTOfileds(ctx...)
+
+		Logger.Debug(msg, fileds...)
 	}
 }
 
-// A Record is what a Logger asks its handler to write
-type Record struct {
-	Time     time.Time
-	Lvl      Lvl
-	Msg      string
-	Ctx      []interface{}
-	Call     stack.Call
-	KeyNames RecordKeyNames
+// Info
+func Info(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	} else {
+		log.Println("logger info is ok.")
+		fileds := ctxTOfileds(ctx...)
+
+		Logger.Info(msg, fileds...)
+	}
 }
 
-type RecordKeyNames struct {
-	Time string
-	Msg  string
-	Lvl  string
+// Warn
+func Warn(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	} else {
+		log.Println("logger warn is ok.")
+		fileds := ctxTOfileds(ctx...)
+
+		Logger.Warn(msg, fileds...)
+	}
 }
 
-// A Logger writes key/value pairs to a Handler
-type Logger interface {
-	// New returns a new Logger that has this logger's context plus the given context
-	New(ctx ...interface{}) Logger
+// Error
+func Error(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	} else {
+		log.Println("logger error is ok.")
+		fileds := ctxTOfileds(ctx...)
 
-	// GetHandler gets the handler associated with the logger.
-	GetHandler() Handler
-
-	// SetHandler updates the logger to write records to the specified handler.
-	SetHandler(h Handler)
-
-	// Log a message at the given level with context key/value pairs
-	Trace(msg string, ctx ...interface{})
-	Debug(msg string, ctx ...interface{})
-	Info(msg string, ctx ...interface{})
-	Warn(msg string, ctx ...interface{})
-	Error(msg string, ctx ...interface{})
-	Crit(msg string, ctx ...interface{})
+		Logger.Error(msg, fileds...)
+	}
 }
 
-type logger struct {
-	ctx []interface{}
-	h   *swapHandler
+// Crit
+func Crit(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	} else {
+		log.Println("logger Crit is ok.")
+		fileds := ctxTOfileds(ctx...)
+
+		Logger.Info(msg, fileds...)
+	}
 }
 
-func (l *logger) write(msg string, lvl Lvl, ctx []interface{}) {
-	l.h.Log(&Record{
-		Time: time.Now(),
-		Lvl:  lvl,
-		Msg:  msg,
-		Ctx:  newContext(l.ctx, ctx),
-		Call: stack.Caller(2),
-		KeyNames: RecordKeyNames{
-			Time: timeKey,
-			Msg:  msgKey,
-			Lvl:  lvlKey,
-		},
-	})
+// ctx transfer to  fileds
+func ctxTOfileds(ctx ...interface{}) []zap.Field {
+	// ctx translate into zap.Filed
+	normalctx := normalize(ctx)
+	fileds := make([]zap.Field, 0)
+	var prefix, suffix []interface{}
+	for i, v := range normalctx {
+		if i%2 == 0 {
+			prefix = append(prefix, v)
+		} else {
+			suffix = append(suffix, v)
+		}
+	}
+
+	for i := 0; i < len(prefix); i++ {
+		fileds = append(fileds, zap.Any(prefix[i].(string), suffix[i]))
+	}
+	return fileds
 }
 
-func (l *logger) New(ctx ...interface{}) Logger {
-	child := &logger{newContext(l.ctx, ctx), new(swapHandler)}
-	child.SetHandler(l.h)
-	return child
-}
-
-func newContext(prefix []interface{}, suffix []interface{}) []interface{} {
-	normalizedSuffix := normalize(suffix)
-	newCtx := make([]interface{}, len(prefix)+len(normalizedSuffix))
-	n := copy(newCtx, prefix)
-	copy(newCtx[n:], normalizedSuffix)
-	return newCtx
-}
-
-func (l *logger) Trace(msg string, ctx ...interface{}) {
-	l.write(msg, LvlTrace, ctx)
-}
-
-func (l *logger) Debug(msg string, ctx ...interface{}) {
-	l.write(msg, LvlDebug, ctx)
-}
-
-func (l *logger) Info(msg string, ctx ...interface{}) {
-	l.write(msg, LvlInfo, ctx)
-}
-
-func (l *logger) Warn(msg string, ctx ...interface{}) {
-	l.write(msg, LvlWarn, ctx)
-}
-
-func (l *logger) Error(msg string, ctx ...interface{}) {
-	l.write(msg, LvlError, ctx)
-}
-
-func (l *logger) Crit(msg string, ctx ...interface{}) {
-	l.write(msg, LvlCrit, ctx)
-	os.Exit(1)
-}
-
-func (l *logger) GetHandler() Handler {
-	return l.h.Get()
-}
-
-func (l *logger) SetHandler(h Handler) {
-	l.h.Swap(h)
-}
-
+// normalize
 func normalize(ctx []interface{}) []interface{} {
 	// if the caller passed a Ctx object, then expand it
 	if len(ctx) == 1 {

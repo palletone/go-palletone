@@ -503,6 +503,27 @@ var (
 		Usage: "Dag dbname",
 		Value: pan.DefaultConfig.Dag.DbName,
 	}
+	LogValue1Flag = cli.StringFlag{
+		Name:  "log.path",
+		Usage: "Log path",
+		Value: pan.DefaultConfig.Dag.LoggerPath,
+	}
+
+	LogValue2Flag = cli.StringFlag{
+		Name:  "log.lvl",
+		Usage: "Log lvl",
+		Value: pan.DefaultConfig.Dag.LoggerLvl,
+	}
+	LogValue3Flag = cli.BoolFlag{
+		Name:  "log.debug",
+		Usage: "Log debug",
+		// Value: pan.DefaultConfig.Dag.IsDebug,
+	}
+	LogValue4Flag = cli.StringFlag{
+		Name:  "log.errpath",
+		Usage: "Log errpath",
+		Value: pan.DefaultConfig.Dag.ErrPath,
+	}
 )
 
 // MakeDataDir retrieves the currently requested data directory, terminating
@@ -928,6 +949,18 @@ func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
 	}
 	if ctx.GlobalIsSet(DagValue2Flag.Name) {
 		cfg.DbName = ctx.GlobalString(DagValue2Flag.Name)
+	}
+	if ctx.GlobalIsSet(LogValue1Flag.Name) {
+		cfg.LoggerPath = ctx.GlobalString(LogValue1Flag.Name)
+	}
+	if ctx.GlobalIsSet(LogValue2Flag.Name) {
+		cfg.LoggerLvl = ctx.GlobalString(LogValue2Flag.Name)
+	}
+	if ctx.GlobalIsSet(LogValue3Flag.Name) {
+		cfg.IsDebug = ctx.GlobalBool(LogValue3Flag.Name)
+	}
+	if ctx.GlobalIsSet(LogValue4Flag.Name) {
+		cfg.ErrPath = ctx.GlobalString(LogValue4Flag.Name)
 	}
 }
 

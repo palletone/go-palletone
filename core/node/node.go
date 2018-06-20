@@ -28,11 +28,11 @@ import (
 
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/pandb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/internal/debug"
-	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/pandb"
 	"github.com/prometheus/prometheus/util/flock"
 )
 
@@ -70,7 +70,7 @@ type Node struct {
 	stop chan struct{} // Channel to wait for termination notifications
 	lock sync.RWMutex
 
-	log log.Logger
+	log log.Plogger
 }
 
 // New creates a new P2P node, ready for protocol registration.
@@ -103,9 +103,10 @@ func New(conf *Config) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	if conf.Logger == nil {
-		conf.Logger = log.New()
-	}
+	// if conf.Logger == nil {
+	// 	conf.Logger = log.New()
+	// }
+	conf.Logger = *log.New()
 	// Note: any interaction with Config that would create/touch files
 	// in the data directory or instance directory is delayed until Start.
 	return &Node{

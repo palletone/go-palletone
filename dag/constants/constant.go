@@ -39,7 +39,7 @@ var (
 func init() {
 	VERSION = "1.0"
 	ALT = "1"
-	log.Println("start init...")
+	log.Println("start constant init...")
 	if VERSION == "1.0" && ALT == "1" {
 		GENESIS_UNIT = "TvqutGPz3T4Cs6oiChxFlclY92M2MvCvfXR5/FETato="
 

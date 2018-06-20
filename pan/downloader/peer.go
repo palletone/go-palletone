@@ -70,8 +70,8 @@ type peerConnection struct {
 
 	peer Peer
 
-	version int        // Eth protocol version number to switch strategies
-	log     log.Logger // Contextual logger to add extra infos to peer logs
+	version int         // Eth protocol version number to switch strategies
+	log     log.Plogger // Contextual logger to add extra infos to peer logs
 	lock    sync.RWMutex
 }
 
@@ -113,7 +113,7 @@ func (w *lightPeerWrapper) RequestNodeData([]common.Hash) error {
 }
 
 // newPeerConnection creates a new downloader peer.
-func newPeerConnection(id string, version int, peer Peer, logger log.Logger) *peerConnection {
+func newPeerConnection(id string, version int, peer Peer, logger log.Plogger) *peerConnection {
 	return &peerConnection{
 		id:      id,
 		lacking: make(map[common.Hash]struct{}),

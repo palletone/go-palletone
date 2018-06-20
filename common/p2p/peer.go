@@ -24,9 +24,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/palletone/go-palletone/common/mclock"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/mclock"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rlp"
 )
@@ -97,7 +97,7 @@ type PeerEvent struct {
 type Peer struct {
 	rw      *conn
 	running map[string]*protoRW
-	log     log.Logger
+	log     *log.Plogger
 	created mclock.AbsTime
 
 	wg       sync.WaitGroup
@@ -177,7 +177,7 @@ func newPeer(conn *conn, protocols []Protocol) *Peer {
 	return p
 }
 
-func (p *Peer) Log() log.Logger {
+func (p *Peer) Log() *log.Plogger {
 	return p.log
 }
 

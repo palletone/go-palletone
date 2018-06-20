@@ -5,8 +5,12 @@ var (
 )
 
 var DefaultConfig = Config{
-	DbPath: "dbpath",
-	DbName: "dbname",
+	DbPath:     "dbpath",
+	DbName:     "dbname",
+	LoggerPath: "./log/full.log",
+	LoggerLvl:  "DEBUG",
+	IsDebug:    false,
+	ErrPath:    "./log/err.log",
 }
 
 // key := strings.ToLower(typ.Name()) 大写统一转小写
@@ -26,6 +30,12 @@ type Config struct {
 	RedisPwd    string
 	RedisPrefix string
 	RedisDb     int
+
+	// logger
+	LoggerPath string
+	ErrPath    string
+	LoggerLvl  string
+	IsDebug    bool
 }
 
 type Sconfig struct {
