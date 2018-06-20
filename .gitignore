@@ -5,8 +5,11 @@
 #   git config --global core.excludesfile ~/.gitignore_global
 
 /tmp
+**/data1
+**/log
 */**/*un~
 */**/*.test
+log.txt
 *un~
 .DS_Store
 */**/.DS_Store
