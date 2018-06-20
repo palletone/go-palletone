@@ -73,9 +73,6 @@ func InitLogger() {
 	lvl := dagconfig.DefaultConfig.LoggerLvl
 	// is debug?
 	isDebug := dagconfig.DefaultConfig.IsDebug
-	log.Println("=============================================")
-	log.Println("------------", path, err_path, lvl, isDebug, "------------")
-	log.Println("=============================================")
 	// 若配置文件损坏或信息为空，则设置初始化
 	if path == "" {
 		path = "log/full.log"
