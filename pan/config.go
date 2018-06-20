@@ -26,6 +26,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/common/log"
 	//
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
@@ -59,6 +60,7 @@ var DefaultConfig = Config{
 	},
 	Consensus: consensusconfig.DefaultConfig,
 	Dag:       dagconfig.DefaultConfig,
+	Log:       log.DefaultConfig,
 }
 
 func init() {
@@ -118,6 +120,8 @@ type Config struct {
 	EnablePreimageRecording bool
 	// DAG options
 	Dag dagconfig.Config
+	//Log config
+	Log log.Config
 	// Consensus options
 	Consensus consensusconfig.Config
 	// Miscellaneous options

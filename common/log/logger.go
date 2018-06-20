@@ -24,10 +24,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"runtime"
 	"strings"
 
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -62,35 +62,41 @@ func (pl *Plogger) New(ctx ...interface{}) *Plogger {
 	return pl
 }
 func (pl *Plogger) Trace(msg string, ctx ...interface{}) {
-	Trace(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Info(msg, fileds...)
 }
 
 func (pl *Plogger) Debug(msg string, ctx ...interface{}) {
-	Debug(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Debug(msg, fileds...)
 }
 func (pl *Plogger) Info(msg string, ctx ...interface{}) {
-	Info(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Info(msg, fileds...)
 }
 func (pl *Plogger) Warn(msg string, ctx ...interface{}) {
-	Warn(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Warn(msg, fileds...)
 }
 func (pl *Plogger) Error(msg string, ctx ...interface{}) {
-	Error(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Error(msg, fileds...)
 }
 func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
-	Crit(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Error(msg, fileds...)
 }
 
 // init zap.logger
 func InitLogger() {
 	// log path
-	path := dagconfig.DefaultConfig.LoggerPath
+	path := DefaultConfig.LoggerPath
 	// error path
-	err_path := dagconfig.DefaultConfig.ErrPath
+	err_path := DefaultConfig.ErrPath
 	// log level
-	lvl := dagconfig.DefaultConfig.LoggerLvl
+	lvl := DefaultConfig.LoggerLvl
 	// is debug?
-	isDebug := dagconfig.DefaultConfig.IsDebug
+	isDebug := DefaultConfig.IsDebug
 	// if the config file is damaged or lost, then initialize the config if log system.
 	if path == "" {
 		path = "log/full.log"
@@ -117,16 +123,16 @@ func initLogger(path, err_path, lvl string, isDebug bool) {
 		js = fmt.Sprintf(`{
       "level": "%s",
       "encoding": "json",
-      "outputPaths": ["stdout"],
-      "errorOutputPaths": ["stdout"]
-      }`, lvl)
+      "outputPaths": ["stdout","%s"],
+      "errorOutputPaths": ["stdout","%s"]
+      }`, lvl, path, err_path)
 	} else {
 		js = fmt.Sprintf(`{
       "level": "%s",
       "encoding": "json",
       "outputPaths": ["%s"],
       "errorOutputPaths": ["%s"]
-      }`, lvl, path, path)
+      }`, lvl, path, err_path)
 	}
 	var cfg zap.Config
 	if err := json.Unmarshal([]byte(js), &cfg); err != nil {
@@ -199,7 +205,7 @@ func Crit(msg string, ctx ...interface{}) {
 		InitLogger()
 	} else {
 		fileds := ctxTOfileds(ctx...)
-		Logger.Info(msg, fileds...)
+		Logger.Error(msg, fileds...)
 	}
 }
 
@@ -299,7 +305,7 @@ func mkdirPath(path1, path2 string) error {
 		return errors.New("not supported on this system.")
 
 	}
-	if len(paths) > 1 {
+	if len(paths) > 0 {
 		var path string
 		for i, p := range paths {
 			if i == 0 {
@@ -315,15 +321,14 @@ func mkdirPath(path1, path2 string) error {
 			} else {
 				break
 			}
-			if !checkFileIsExist(path) {
-				if err := os.Mkdir(path, os.ModePerm); err != nil {
-					return err
-				}
+
+			if err := makeDirAndFile(path); err != nil {
+				return err
 			}
 
 		}
 	}
-	if len(errpaths) > 1 {
+	if len(errpaths) > 0 {
 		var path string
 		for i, e := range errpaths {
 			if i == 0 {
@@ -339,13 +344,26 @@ func mkdirPath(path1, path2 string) error {
 			} else {
 				break
 			}
-			if !checkFileIsExist(path) {
-				if err := os.Mkdir(path, os.ModePerm); err != nil {
-					return err
-				}
+
+			if err := makeDirAndFile(path); err != nil {
+				return err
 			}
 
 		}
+	}
+	return nil
+}
+func makeDirAndFile(filePath string) error {
+	if !checkFileIsExist(filePath) {
+		err := os.MkdirAll(path.Dir(filePath), os.ModePerm)
+		if err != nil {
+			return err
+		}
+		_, err = os.Create(filePath)
+		if err != nil {
+			return err
+		}
+
 	}
 	return nil
 }
