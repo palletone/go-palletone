@@ -40,23 +40,29 @@ func (pl *Plogger) New(ctx ...interface{}) *Plogger {
 	return pl
 }
 func (pl *Plogger) Trace(msg string, ctx ...interface{}) {
-	Trace(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Info(msg, fileds...)
 }
 
 func (pl *Plogger) Debug(msg string, ctx ...interface{}) {
-	Debug(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Debug(msg, fileds...)
 }
 func (pl *Plogger) Info(msg string, ctx ...interface{}) {
-	Info(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Info(msg, fileds...)
 }
 func (pl *Plogger) Warn(msg string, ctx ...interface{}) {
-	Warn(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Warn(msg, fileds...)
 }
 func (pl *Plogger) Error(msg string, ctx ...interface{}) {
-	Error(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Error(msg, fileds...)
 }
 func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
-	Crit(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Error(msg, fileds...)
 }
 
 // init zap.logger
@@ -163,7 +169,7 @@ func Crit(msg string, ctx ...interface{}) {
 		InitLogger()
 	} else {
 		fileds := ctxTOfileds(ctx...)
-		Logger.Info(msg, fileds...)
+		Logger.Error(msg, fileds...)
 	}
 }
 
