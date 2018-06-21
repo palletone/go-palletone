@@ -64,9 +64,10 @@ func (db *DataBase) Initialize() {
 func (db *DataBase) Startup() {
 	// 2. 初始化全局属性...
 	println("\ninitilize global property...")
-	db.GlobalProp.ChainParameters.MaintenanceSkipSlots = 3
+//	db.GlobalProp.ChainParameters.MaintenanceSkipSlots = 3
 	db.GlobalProp.ChainParameters.VerifiedUnitInterval = 3
 
+	println("Set active mediators...\n")
 	db.GlobalProp.ActiveMediators = append(db.GlobalProp.ActiveMediators, &Mediator1)
 	db.GlobalProp.ActiveMediators = append(db.GlobalProp.ActiveMediators, &Mediator2)
 	db.GlobalProp.ActiveMediators = append(db.GlobalProp.ActiveMediators, &Mediator3)
@@ -75,12 +76,12 @@ func (db *DataBase) Startup() {
 
 	db.DynGlobalProp.LastVerifiedUnitNum = 0
 //	db.DynGlobalProp.VerifiedUnitHash = "0x000000"
-	db.DynGlobalProp.VerifiedUnitTime = time.Unix(0, 0)
+	db.DynGlobalProp.LastVerifiedUnitTime = time.Unix(0, 0)
 	db.DynGlobalProp.CurrentMediator = nil
 	db.DynGlobalProp.CurrentASlot = 0
-	db.DynGlobalProp.RecentSlotsFilled = 100
+//	db.DynGlobalProp.RecentSlotsFilled = 100
 
-	println("Set active mediators...\n")
+	println("Create witness scheduler...\n")
 	for _, m := range db.GlobalProp.ActiveMediators {
 		db.MediatorSchl.CurrentShuffledMediators =append(db.MediatorSchl.CurrentShuffledMediators, m)
 	}

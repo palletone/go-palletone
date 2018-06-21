@@ -41,7 +41,7 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *d.GlobalProperty, dgp *d.
 	}
 
 	// 5. 打乱证人的调度顺序
-	nowHi := uint64(dgp.VerifiedUnitTime.Unix() << 32)
+	nowHi := uint64(dgp.LastVerifiedUnitTime.Unix() << 32)
 	for i := uint32(0); i < aSize; i++ {
 		// 高性能随机生成器(High performance random generator)
 		// 原理请参考 http://xorshift.di.unimi.it/
@@ -83,9 +83,9 @@ func (ms *MediatorSchedule) GetScheduledMediator(dgp *d.DynamicGlobalProperty, s
 Calculate the percent of verifiedUnit production slots that were missed in the past 128 verifiedUnits,
 not including the current verifiedUnit.
 */
-func MediatorParticipationRate(dgp *d.DynamicGlobalProperty) float32 {
-	return dgp.RecentSlotsFilled / 128.0
-}
+//func MediatorParticipationRate(dgp *d.DynamicGlobalProperty) float32 {
+//	return dgp.RecentSlotsFilled / 128.0
+//}
 
 /**
 @brief 获取给定的未来第slotNum个slot开始的时间。
@@ -109,12 +109,12 @@ func GetSlotTime(gp *d.GlobalProperty, dgp *d.DynamicGlobalProperty, slotNum uin
 		注：第一个验证单元在genesisTime加上一个验证单元间隔
 		n.b. first verifiedUnit is at genesisTime plus one verifiedUnitInterval
 		*/
-		genesisTime := dgp.VerifiedUnitTime
+		genesisTime := dgp.LastVerifiedUnitTime
 		return genesisTime.Add(time.Second * time.Duration(slotNum) * time.Duration(interval))
 	}
 
 	// 最近的验证单元的绝对slot
-	var verifiedUnitAbsSlot = dgp.VerifiedUnitTime.Unix() / int64(interval)
+	var verifiedUnitAbsSlot = dgp.LastVerifiedUnitTime.Unix() / int64(interval)
 	// 最近的时间槽起始时间
 	verifiedUnitSlotTime := time.Unix(verifiedUnitAbsSlot*int64(interval), 0)
 
