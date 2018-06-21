@@ -5,6 +5,7 @@ import (
 	"os/user"
 
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/pan/downloader"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/dag/coredata"
