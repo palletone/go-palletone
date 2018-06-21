@@ -92,6 +92,8 @@ func InitLogger() {
 	err_path := DefaultConfig.ErrPath
 	// log level
 	lvl := DefaultConfig.LoggerLvl
+	//  encoding
+	encoding := DefaultConfig.Encoding
 	// is debug?
 	isDebug := DefaultConfig.IsDebug
 	// if the config file is damaged or lost, then initialize the config if log system.
@@ -104,7 +106,9 @@ func InitLogger() {
 	if lvl == "" {
 		lvl = "INFO"
 	}
-
+	if encoding == "" {
+		encoding = "console"
+	}
 	// if err := mkdirPath(path, err_path); err != nil {
 	// 	panic(err)
 	// }
@@ -115,27 +119,27 @@ func InitLogger() {
 		panic(err)
 	}
 
-	initLogger(path, err_path, lvl, isDebug)
+	initLogger(path, err_path, encoding, lvl, isDebug)
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
 
 // init logger.
-func initLogger(path, err_path, lvl string, isDebug bool) {
+func initLogger(path, err_path, encoding, lvl string, isDebug bool) {
 	var js string
 	if isDebug {
 		js = fmt.Sprintf(`{
       "level": "%s",
-      "encoding": "json",
+      "encoding": "%s",
       "outputPaths": ["stdout","%s"],
       "errorOutputPaths": ["stdout","%s"]
-      }`, lvl, path, err_path)
+      }`, lvl, encoding, path, err_path)
 	} else {
 		js = fmt.Sprintf(`{
       "level": "%s",
-      "encoding": "json",
+      "encoding": "%s",
       "outputPaths": ["%s"],
       "errorOutputPaths": ["%s"]
-      }`, lvl, path, err_path)
+      }`, lvl, encoding, path, err_path)
 	}
 	var cfg zap.Config
 	if err := json.Unmarshal([]byte(js), &cfg); err != nil {

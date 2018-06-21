@@ -206,6 +206,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.LogValue2Flag,
 			utils.LogValue3Flag,
 			utils.LogValue4Flag,
+			utils.LogValue5Flag,
 		},
 	},
 	{

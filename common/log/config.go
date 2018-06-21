@@ -5,13 +5,14 @@ var DefaultConfig = Config{
 	LoggerLvl:  "INFO",
 	IsDebug:    true,
 	ErrPath:    "./log/err.log",
+	Encoding:   "console", // json
 }
 
-// key := strings.ToLower(typ.Name()) 大写统一转小写
 type Config struct {
 	// logger
-	LoggerPath string
-	ErrPath    string
-	LoggerLvl  string
-	IsDebug    bool
+	LoggerPath string // out path
+	ErrPath    string // err path
+	LoggerLvl  string // log levle
+	Encoding   string // encoding
+	IsDebug    bool   // is dubug
 }

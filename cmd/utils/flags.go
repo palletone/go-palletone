@@ -524,6 +524,11 @@ var (
 		Usage: "Log errpath",
 		Value: pan.DefaultConfig.Log.ErrPath,
 	}
+	LogValue5Flag = cli.StringFlag{
+		Name:  "log.encoding",
+		Usage: "Log encoding",
+		Value: pan.DefaultConfig.Log.Encoding,
+	}
 )
 
 // MakeDataDir retrieves the currently requested data directory, terminating

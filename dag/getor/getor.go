@@ -1,16 +1,17 @@
 package getor
 
 import (
+	"log"
+
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
-	"log"
 )
 
 var cache, handles int
-var db *leveldb.DB
+var DB *leveldb.DB
 
 func Init() {
 	var err error
@@ -20,7 +21,7 @@ func Init() {
 	if handles < 16 {
 		handles = 16
 	}
-	db, err = leveldb.OpenFile(storage.DBPath, &opt.Options{
+	DB, err = leveldb.OpenFile(storage.DBPath, &opt.Options{
 		OpenFilesCacheCapacity: handles,
 		BlockCacheCapacity:     cache / 2 * opt.MiB,
 		WriteBuffer:            cache / 4 * opt.MiB, // Two of these are used internally
@@ -34,7 +35,7 @@ func Init() {
 }
 
 func GetPrefix(prefix []byte) map[string][]byte {
-	if db == nil {
+	if DB == nil {
 		Init()
 	}
 	return getprefix(prefix)
@@ -42,7 +43,7 @@ func GetPrefix(prefix []byte) map[string][]byte {
 
 // get prefix
 func getprefix(prefix []byte) map[string][]byte {
-	iter := db.NewIterator(util.BytesPrefix(prefix), nil)
+	iter := DB.NewIterator(util.BytesPrefix(prefix), nil)
 	result := make(map[string][]byte)
 	for iter.Next() {
 		key := iter.Key()

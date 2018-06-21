@@ -16,3 +16,4 @@ LoggerPath=".\\log\\full.log"
 ErrPath=".\\log\\error.log"
 LoggerLvl="DEBUG"
 IsDebug=true
+Encoding="console"

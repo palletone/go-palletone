@@ -29,6 +29,7 @@ import (
 
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/pan"
@@ -120,6 +121,15 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 			utils.Fatalf("%v", err)
 		}
 	}
+	// resetting log config
+	log.DefaultConfig.LoggerPath = cfg.Eth.Log.LoggerPath
+	log.DefaultConfig.ErrPath = cfg.Eth.Log.ErrPath
+	log.DefaultConfig.LoggerLvl = cfg.Eth.Log.LoggerLvl
+	log.DefaultConfig.IsDebug = cfg.Eth.Log.IsDebug
+	log.DefaultConfig.Encoding = cfg.Eth.Log.Encoding
+	fmt.Println("resetting log config ")
+	log.InitLogger()
+
 	// Apply flags.
 	utils.SetNodeConfig(ctx, &cfg.Node)
 	stack, err := node.New(&cfg.Node)
@@ -142,7 +152,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
 	}
 	//Test
-	fmt.Println("---- Log Path:" + cfg.Eth.Log.LoggerPath)
+	fmt.Println("----Log Path:" + cfg.Eth.Log.LoggerPath)
 
 	/*wangjiyou
 	// Whisper must be explicitly enabled by specifying at least 1 whisper flag or in dev mode
