@@ -2,7 +2,7 @@ package log
 
 var DefaultConfig = Config{
 	LoggerPath: "./log/out.log",
-	LoggerLvl:  "DEBUG",
+	LoggerLvl:  "INFO",
 	IsDebug:    true,
 	ErrPath:    "./log/err.log",
 }

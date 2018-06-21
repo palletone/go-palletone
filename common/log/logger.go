@@ -102,7 +102,7 @@ func InitLogger() {
 		err_path = "log/err.log"
 	}
 	if lvl == "" {
-		lvl = "DEBUG"
+		lvl = "INFO"
 	}
 
 	// if err := mkdirPath(path, err_path); err != nil {
@@ -158,7 +158,7 @@ func Trace(msg string, ctx ...interface{}) {
 	} else {
 		//log.Println("logger trace is  ok.")
 		fileds := ctxTOfileds(ctx...)
-		Logger.Info(msg, fileds...)
+		Logger.Debug(msg, fileds...)
 	}
 }
 

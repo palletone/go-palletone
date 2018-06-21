@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
+	//"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/contracts/types"
@@ -425,7 +425,6 @@ func (ps *peerSet) GetPeers() []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 	list := make([]*peer, 0, len(ps.peers))
-	log.Info("peerSet GetPeers peers address:", &ps.peers)
 	for _, p := range ps.peers {
 		list = append(list, p)
 	}
