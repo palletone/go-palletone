@@ -16,8 +16,8 @@ var DefaultConfig = &Config{
 	SyncMode: downloader.FullSync,
 
 	ChainId:   1,
-	Consensus: consensusconfig.DefaultConfig,
-	Dag:       dagconfig.DefaultConfig,
+	Consensus: &consensusconfig.DefaultConfig,
+	Dag:       &dagconfig.DefaultConfig,
 	Log:       &log.DefaultConfig,
 }
 
@@ -43,9 +43,9 @@ type Config struct {
 	SyncMode downloader.SyncMode
 
 	// DAG options
-	Dag dagconfig.Config
+	Dag *dagconfig.Config
 	//Log config
 	Log *log.Config
 	// Consensus options
-	Consensus consensusconfig.Config
+	Consensus *consensusconfig.Config
 }

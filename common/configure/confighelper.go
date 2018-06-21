@@ -42,5 +42,7 @@ func LoadConfig2DefaultValue() error {
 		return err
 	}
 	DefaultConfig.Log = cfg.Log
+	DefaultConfig.Dag = cfg.Dag
+	DefaultConfig.Consensus = cfg.Consensus
 	return nil
 }

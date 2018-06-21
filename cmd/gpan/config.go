@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/node"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/pan"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 )
@@ -155,7 +156,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	}
 	//Test
 	fmt.Println("----Log Path:" + log.DefaultConfig.LoggerPath)
-
+	fmt.Println("----DB config:" + dagconfig.DefaultConfig.DbPath)
 	/*wangjiyou
 	// Whisper must be explicitly enabled by specifying at least 1 whisper flag or in dev mode
 	shhEnabled := enableWhisper(ctx)

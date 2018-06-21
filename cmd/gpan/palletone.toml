@@ -3,8 +3,12 @@
 Engine="solo"
 
 [Log]
-LoggerPath="./log/fulltest.log"
+LoggerPath="./log/abc.log"
 ErrPath="./log/error.log"
 LoggerLvl="DEBUG"
 IsDebug=true
 Encoding="console"
+
+[Dag]
+DbPath="./leveldb"
+DbName="palletone.db"
