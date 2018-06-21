@@ -506,23 +506,23 @@ var (
 	LogValue1Flag = cli.StringFlag{
 		Name:  "log.path",
 		Usage: "Log path",
-		Value: pan.DefaultConfig.Dag.LoggerPath,
+		Value: pan.DefaultConfig.Log.LoggerPath,
 	}
 
 	LogValue2Flag = cli.StringFlag{
 		Name:  "log.lvl",
 		Usage: "Log lvl",
-		Value: pan.DefaultConfig.Dag.LoggerLvl,
+		Value: pan.DefaultConfig.Log.LoggerLvl,
 	}
 	LogValue3Flag = cli.BoolFlag{
 		Name:  "log.debug",
 		Usage: "Log debug",
-		// Value: pan.DefaultConfig.Dag.IsDebug,
+		//Value: pan.DefaultConfig.Log.IsDebug,
 	}
 	LogValue4Flag = cli.StringFlag{
 		Name:  "log.errpath",
 		Usage: "Log errpath",
-		Value: pan.DefaultConfig.Dag.ErrPath,
+		Value: pan.DefaultConfig.Log.ErrPath,
 	}
 )
 
@@ -950,6 +950,8 @@ func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
 	if ctx.GlobalIsSet(DagValue2Flag.Name) {
 		cfg.DbName = ctx.GlobalString(DagValue2Flag.Name)
 	}
+}
+func setLog(ctx *cli.Context, cfg *log.Config) {
 	if ctx.GlobalIsSet(LogValue1Flag.Name) {
 		cfg.LoggerPath = ctx.GlobalString(LogValue1Flag.Name)
 	}
@@ -984,6 +986,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *pan.Config) {
 	setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
 	setDag(ctx, &cfg.Dag)
+	setLog(ctx, &cfg.Log)
 	setConsensus(ctx, &cfg.Consensus)
 
 	switch {

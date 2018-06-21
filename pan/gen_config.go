@@ -7,6 +7,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -36,6 +37,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		EnablePreimageRecording bool
 		// DAG options
 		Dag       dagconfig.Config
+		Log       log.Config
 		Consensus consensusconfig.Config
 		DocRoot   string `toml:"-"`
 	}
@@ -57,6 +59,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.GPO = c.GPO
 	enc.EnablePreimageRecording = c.EnablePreimageRecording
 	enc.Dag = c.Dag
+	enc.Log = c.Log
 	enc.DocRoot = c.DocRoot
 	return &enc, nil
 }
@@ -80,6 +83,7 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		GPO                     *gasprice.Config
 		EnablePreimageRecording *bool
 		Dag                     *dagconfig.Config
+		Log                     *log.Config
 		Consensus               *consensusconfig.Config
 		DocRoot                 *string `toml:"-"`
 	}
@@ -138,6 +142,9 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.Dag != nil {
 		c.Dag = *dec.Dag
+	}
+	if dec.Log != nil {
+		c.Log = *dec.Log
 	}
 	if dec.DocRoot != nil {
 		c.DocRoot = *dec.DocRoot

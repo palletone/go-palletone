@@ -1,11 +1,30 @@
+// Copyright 2018 The go-palletone Authors
+// This file is part of go-palletone.
+//
+// go-palletone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// go-palletone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with go-palletone. If not, see <http://www.gnu.org/licenses/>.
+
+// log is the palletone log system.
+
 package log
 
 import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
+	"path"
 
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -40,57 +59,83 @@ func (pl *Plogger) New(ctx ...interface{}) *Plogger {
 	return pl
 }
 func (pl *Plogger) Trace(msg string, ctx ...interface{}) {
-	Trace(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Info(msg, fileds...)
 }
 
 func (pl *Plogger) Debug(msg string, ctx ...interface{}) {
-	Debug(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Debug(msg, fileds...)
 }
 func (pl *Plogger) Info(msg string, ctx ...interface{}) {
-	Info(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Info(msg, fileds...)
 }
 func (pl *Plogger) Warn(msg string, ctx ...interface{}) {
-	Warn(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Warn(msg, fileds...)
 }
 func (pl *Plogger) Error(msg string, ctx ...interface{}) {
-	Error(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Error(msg, fileds...)
 }
 func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
-	Crit(msg, ctx...)
+	fileds := ctxTOfileds(ctx...)
+	Logger.Error(msg, fileds...)
 }
 
 // init zap.logger
 func InitLogger() {
 	// log path
-	path := dagconfig.DefaultConfig.LoggerPath
+	path := DefaultConfig.LoggerPath
 	// error path
-	err_path := dagconfig.DefaultConfig.ErrPath
+	err_path := DefaultConfig.ErrPath
 	// log level
-	lvl := dagconfig.DefaultConfig.LoggerLvl
+	lvl := DefaultConfig.LoggerLvl
 	// is debug?
-	isDebug := dagconfig.DefaultConfig.IsDebug
-	log.Println("=============================================")
-	log.Println("------------", path, err_path, lvl, isDebug, "------------")
-	log.Println("=============================================")
+	isDebug := DefaultConfig.IsDebug
+	// if the config file is damaged or lost, then initialize the config if log system.
+	if path == "" {
+		path = "log/out.log"
+	}
+	if err_path == "" {
+		err_path = "log/err.log"
+	}
+	if lvl == "" {
+		lvl = "DEBUG"
+	}
+
+	// if err := mkdirPath(path, err_path); err != nil {
+	// 	panic(err)
+	// }
+	if err := MakeDirAndFile(path); err != nil {
+		panic(err)
+	}
+	if err := MakeDirAndFile(err_path); err != nil {
+		panic(err)
+	}
+
 	initLogger(path, err_path, lvl, isDebug)
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
+
+// init logger.
 func initLogger(path, err_path, lvl string, isDebug bool) {
 	var js string
 	if isDebug {
 		js = fmt.Sprintf(`{
       "level": "%s",
       "encoding": "json",
-      "outputPaths": ["stdout"],
-      "errorOutputPaths": ["stdout"]
-      }`, lvl)
+      "outputPaths": ["stdout","%s"],
+      "errorOutputPaths": ["stdout","%s"]
+      }`, lvl, path, err_path)
 	} else {
 		js = fmt.Sprintf(`{
       "level": "%s",
       "encoding": "json",
       "outputPaths": ["%s"],
       "errorOutputPaths": ["%s"]
-      }`, lvl, path, path)
+      }`, lvl, path, err_path)
 	}
 	var cfg zap.Config
 	if err := json.Unmarshal([]byte(js), &cfg); err != nil {
@@ -98,22 +143,21 @@ func initLogger(path, err_path, lvl string, isDebug bool) {
 	}
 	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
 	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	var err error
-	Logger, err = cfg.Build()
+	l, err := cfg.Build()
 	if err != nil {
 		log.Fatal("init logger error: ", err)
 	}
+	Logger = l.WithOptions(zap.AddCallerSkip(1))
 }
 
 // Trace
 func Trace(msg string, ctx ...interface{}) {
 	if Logger == nil {
-		log.Println("logger is nil.")
+		//log.Println("logger is nil.")
 		InitLogger()
 	} else {
-		log.Println("logger trace is  ok.")
+		//log.Println("logger trace is  ok.")
 		fileds := ctxTOfileds(ctx...)
-
 		Logger.Info(msg, fileds...)
 	}
 }
@@ -123,9 +167,7 @@ func Debug(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
 	} else {
-		log.Println("logger debug is ok.")
 		fileds := ctxTOfileds(ctx...)
-
 		Logger.Debug(msg, fileds...)
 	}
 }
@@ -135,9 +177,7 @@ func Info(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
 	} else {
-		log.Println("logger info is ok.")
 		fileds := ctxTOfileds(ctx...)
-
 		Logger.Info(msg, fileds...)
 	}
 }
@@ -147,9 +187,7 @@ func Warn(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
 	} else {
-		log.Println("logger warn is ok.")
 		fileds := ctxTOfileds(ctx...)
-
 		Logger.Warn(msg, fileds...)
 	}
 }
@@ -159,9 +197,7 @@ func Error(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
 	} else {
-		log.Println("logger error is ok.")
 		fileds := ctxTOfileds(ctx...)
-
 		Logger.Error(msg, fileds...)
 	}
 }
@@ -171,10 +207,8 @@ func Crit(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
 	} else {
-		log.Println("logger Crit is ok.")
 		fileds := ctxTOfileds(ctx...)
-
-		Logger.Info(msg, fileds...)
+		Logger.Error(msg, fileds...)
 	}
 }
 
@@ -248,4 +282,29 @@ func (c Ctx) toArray() []interface{} {
 	}
 
 	return arr
+}
+
+//CheckFileIsExist 判断文件是否存在，存在返回true，不存在返回false
+func checkFileIsExist(path string) bool {
+	var exist = true
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		exist = false
+	}
+	return exist
+}
+
+// Mkdir the path of out.log、err.log ,if the path is not exist.
+func MakeDirAndFile(filePath string) error {
+	if !checkFileIsExist(filePath) {
+		err := os.MkdirAll(path.Dir(filePath), os.ModePerm)
+		if err != nil {
+			return err
+		}
+		_, err = os.Create(filePath)
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
 }
