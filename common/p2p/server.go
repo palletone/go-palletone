@@ -140,7 +140,7 @@ type Config struct {
 	EnableMsgEvents bool
 
 	// Logger is a custom logger to use with the p2p.Server.
-	Logger log.Logger `toml:",omitempty"`
+	Logger log.Plogger `toml:",omitempty"`
 }
 
 // Server manages all peer connections.
@@ -174,7 +174,7 @@ type Server struct {
 	delpeer       chan peerDrop
 	loopWG        sync.WaitGroup // loop, listenLoop
 	peerFeed      event.Feed
-	log           log.Logger
+	log           log.Plogger
 }
 
 type peerOpFunc func(map[discover.NodeID]*Peer)
@@ -388,10 +388,11 @@ func (srv *Server) Start() (err error) {
 		return errors.New("server already running")
 	}
 	srv.running = true
-	srv.log = srv.Config.Logger
-	if srv.log == nil {
-		srv.log = log.New()
-	}
+	// srv.Logger = srv.Config.Logger.
+	// if *srv.Logger == nil {
+	// 	srv.Logger = *srv.log.New()
+	// }
+	srv.log = *srv.log.New()
 	srv.log.Info("Starting P2P networking")
 
 	// static fields

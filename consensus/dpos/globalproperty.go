@@ -22,16 +22,16 @@ type ChainParameters struct {
 
 // 全局属性的结构体定义
 type GlobalProperty struct {
-	ChainParameters ChainParameters // 区块链参数
+	ChainParameters ChainParameters // 区块链网络参数
 
 	ActiveMediators []*Mediator // 当前活跃mediator集合；每个维护间隔更新一次
 }
 
 // 动态全局属性的结构体定义
 type DynamicGlobalProperty struct {
-	VerifiedUnitNum uint32 // 最近的验证单元编号(数量)
+	LastVerifiedUnitNum uint32 // 最近的验证单元编号(数量)
 
-	VerifiedUnitHash string // 最近的验证单元hash
+//	VerifiedUnitHash string // 最近的验证单元hash
 
 	VerifiedUnitTime time.Time // 最近的验证单元时间
 

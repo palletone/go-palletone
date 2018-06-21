@@ -1,193 +1,238 @@
+// Copyright 2018 The go-palletone Authors
+// This file is part of go-palletone.
+//
+// go-palletone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// go-palletone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with go-palletone. If not, see <http://www.gnu.org/licenses/>.
+
+// log is the palletone log system.
+
 package log
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"os"
-	"time"
+	"path"
 
-	"github.com/go-stack/stack"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-const timeKey = "t"
-const lvlKey = "lvl"
-const msgKey = "msg"
-const errorKey = "LOG15_ERROR"
+const errorKey = "ZAPLOG_ERROR"
 
-type Lvl int
+var Logger *zap.Logger
 
-const (
-	LvlCrit Lvl = iota
-	LvlError
-	LvlWarn
-	LvlInfo
-	LvlDebug
-	LvlTrace
-)
+type Plogger struct {
+	logger zap.Logger
+}
 
-// Aligned returns a 5-character string containing the name of a Lvl.
-func (l Lvl) AlignedString() string {
-	switch l {
-	case LvlTrace:
-		return "TRACE"
-	case LvlDebug:
-		return "DEBUG"
-	case LvlInfo:
-		return "INFO "
-	case LvlWarn:
-		return "WARN "
-	case LvlError:
-		return "ERROR"
-	case LvlCrit:
-		return "CRIT "
-	default:
-		panic("bad level")
+// New returns a new logger with the given context.
+// New is a convenient alias for Root().New
+func New(ctx ...interface{}) *Plogger {
+	if Logger == nil {
+		InitLogger()
+	}
+	pl := new(Plogger)
+	pl.logger = *Logger
+	return pl
+}
+func (pl *Plogger) New(ctx ...interface{}) *Plogger {
+	if pl != nil {
+		return pl
+	}
+	if Logger == nil {
+		InitLogger()
+	}
+
+	pl.logger = *Logger
+	return pl
+}
+func (pl *Plogger) Trace(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	Logger.Info(msg, fileds...)
+}
+
+func (pl *Plogger) Debug(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	Logger.Debug(msg, fileds...)
+}
+func (pl *Plogger) Info(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	Logger.Info(msg, fileds...)
+}
+func (pl *Plogger) Warn(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	Logger.Warn(msg, fileds...)
+}
+func (pl *Plogger) Error(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	Logger.Error(msg, fileds...)
+}
+func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	Logger.Error(msg, fileds...)
+}
+
+// init zap.logger
+func InitLogger() {
+	// log path
+	path := DefaultConfig.LoggerPath
+	// error path
+	err_path := DefaultConfig.ErrPath
+	// log level
+	lvl := DefaultConfig.LoggerLvl
+	// is debug?
+	isDebug := DefaultConfig.IsDebug
+	// if the config file is damaged or lost, then initialize the config if log system.
+	if path == "" {
+		path = "log/out.log"
+	}
+	if err_path == "" {
+		err_path = "log/err.log"
+	}
+	if lvl == "" {
+		lvl = "DEBUG"
+	}
+
+	// if err := mkdirPath(path, err_path); err != nil {
+	// 	panic(err)
+	// }
+	if err := MakeDirAndFile(path); err != nil {
+		panic(err)
+	}
+	if err := MakeDirAndFile(err_path); err != nil {
+		panic(err)
+	}
+
+	initLogger(path, err_path, lvl, isDebug)
+	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
+}
+
+// init logger.
+func initLogger(path, err_path, lvl string, isDebug bool) {
+	var js string
+	if isDebug {
+		js = fmt.Sprintf(`{
+      "level": "%s",
+      "encoding": "json",
+      "outputPaths": ["stdout","%s"],
+      "errorOutputPaths": ["stdout","%s"]
+      }`, lvl, path, err_path)
+	} else {
+		js = fmt.Sprintf(`{
+      "level": "%s",
+      "encoding": "json",
+      "outputPaths": ["%s"],
+      "errorOutputPaths": ["%s"]
+      }`, lvl, path, err_path)
+	}
+	var cfg zap.Config
+	if err := json.Unmarshal([]byte(js), &cfg); err != nil {
+		panic(err)
+	}
+	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	l, err := cfg.Build()
+	if err != nil {
+		log.Fatal("init logger error: ", err)
+	}
+	Logger = l.WithOptions(zap.AddCallerSkip(1))
+}
+
+// Trace
+func Trace(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		//log.Println("logger is nil.")
+		InitLogger()
+	} else {
+		//log.Println("logger trace is  ok.")
+		fileds := ctxTOfileds(ctx...)
+		Logger.Info(msg, fileds...)
 	}
 }
 
-// Strings returns the name of a Lvl.
-func (l Lvl) String() string {
-	switch l {
-	case LvlTrace:
-		return "trce"
-	case LvlDebug:
-		return "dbug"
-	case LvlInfo:
-		return "info"
-	case LvlWarn:
-		return "warn"
-	case LvlError:
-		return "eror"
-	case LvlCrit:
-		return "crit"
-	default:
-		panic("bad level")
+// Debug
+func Debug(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	} else {
+		fileds := ctxTOfileds(ctx...)
+		Logger.Debug(msg, fileds...)
 	}
 }
 
-// Returns the appropriate Lvl from a string name.
-// Useful for parsing command line args and configuration files.
-func LvlFromString(lvlString string) (Lvl, error) {
-	switch lvlString {
-	case "trace", "trce":
-		return LvlTrace, nil
-	case "debug", "dbug":
-		return LvlDebug, nil
-	case "info":
-		return LvlInfo, nil
-	case "warn":
-		return LvlWarn, nil
-	case "error", "eror":
-		return LvlError, nil
-	case "crit":
-		return LvlCrit, nil
-	default:
-		return LvlDebug, fmt.Errorf("Unknown level: %v", lvlString)
+// Info
+func Info(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	} else {
+		fileds := ctxTOfileds(ctx...)
+		Logger.Info(msg, fileds...)
 	}
 }
 
-// A Record is what a Logger asks its handler to write
-type Record struct {
-	Time     time.Time
-	Lvl      Lvl
-	Msg      string
-	Ctx      []interface{}
-	Call     stack.Call
-	KeyNames RecordKeyNames
+// Warn
+func Warn(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	} else {
+		fileds := ctxTOfileds(ctx...)
+		Logger.Warn(msg, fileds...)
+	}
 }
 
-type RecordKeyNames struct {
-	Time string
-	Msg  string
-	Lvl  string
+// Error
+func Error(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	} else {
+		fileds := ctxTOfileds(ctx...)
+		Logger.Error(msg, fileds...)
+	}
 }
 
-// A Logger writes key/value pairs to a Handler
-type Logger interface {
-	// New returns a new Logger that has this logger's context plus the given context
-	New(ctx ...interface{}) Logger
-
-	// GetHandler gets the handler associated with the logger.
-	GetHandler() Handler
-
-	// SetHandler updates the logger to write records to the specified handler.
-	SetHandler(h Handler)
-
-	// Log a message at the given level with context key/value pairs
-	Trace(msg string, ctx ...interface{})
-	Debug(msg string, ctx ...interface{})
-	Info(msg string, ctx ...interface{})
-	Warn(msg string, ctx ...interface{})
-	Error(msg string, ctx ...interface{})
-	Crit(msg string, ctx ...interface{})
+// Crit
+func Crit(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	} else {
+		fileds := ctxTOfileds(ctx...)
+		Logger.Error(msg, fileds...)
+	}
 }
 
-type logger struct {
-	ctx []interface{}
-	h   *swapHandler
+// ctx transfer to  fileds
+func ctxTOfileds(ctx ...interface{}) []zap.Field {
+	// ctx translate into zap.Filed
+	normalctx := normalize(ctx)
+	fileds := make([]zap.Field, 0)
+	var prefix, suffix []interface{}
+	for i, v := range normalctx {
+		if i%2 == 0 {
+			prefix = append(prefix, v)
+		} else {
+			suffix = append(suffix, v)
+		}
+	}
+
+	for i := 0; i < len(prefix); i++ {
+		fileds = append(fileds, zap.Any(prefix[i].(string), suffix[i]))
+	}
+	return fileds
 }
 
-func (l *logger) write(msg string, lvl Lvl, ctx []interface{}) {
-	l.h.Log(&Record{
-		Time: time.Now(),
-		Lvl:  lvl,
-		Msg:  msg,
-		Ctx:  newContext(l.ctx, ctx),
-		Call: stack.Caller(2),
-		KeyNames: RecordKeyNames{
-			Time: timeKey,
-			Msg:  msgKey,
-			Lvl:  lvlKey,
-		},
-	})
-}
-
-func (l *logger) New(ctx ...interface{}) Logger {
-	child := &logger{newContext(l.ctx, ctx), new(swapHandler)}
-	child.SetHandler(l.h)
-	return child
-}
-
-func newContext(prefix []interface{}, suffix []interface{}) []interface{} {
-	normalizedSuffix := normalize(suffix)
-	newCtx := make([]interface{}, len(prefix)+len(normalizedSuffix))
-	n := copy(newCtx, prefix)
-	copy(newCtx[n:], normalizedSuffix)
-	return newCtx
-}
-
-func (l *logger) Trace(msg string, ctx ...interface{}) {
-	l.write(msg, LvlTrace, ctx)
-}
-
-func (l *logger) Debug(msg string, ctx ...interface{}) {
-	l.write(msg, LvlDebug, ctx)
-}
-
-func (l *logger) Info(msg string, ctx ...interface{}) {
-	l.write(msg, LvlInfo, ctx)
-}
-
-func (l *logger) Warn(msg string, ctx ...interface{}) {
-	l.write(msg, LvlWarn, ctx)
-}
-
-func (l *logger) Error(msg string, ctx ...interface{}) {
-	l.write(msg, LvlError, ctx)
-}
-
-func (l *logger) Crit(msg string, ctx ...interface{}) {
-	l.write(msg, LvlCrit, ctx)
-	os.Exit(1)
-}
-
-func (l *logger) GetHandler() Handler {
-	return l.h.Get()
-}
-
-func (l *logger) SetHandler(h Handler) {
-	l.h.Swap(h)
-}
-
+// normalize
 func normalize(ctx []interface{}) []interface{} {
 	// if the caller passed a Ctx object, then expand it
 	if len(ctx) == 1 {
@@ -237,4 +282,29 @@ func (c Ctx) toArray() []interface{} {
 	}
 
 	return arr
+}
+
+//CheckFileIsExist 判断文件是否存在，存在返回true，不存在返回false
+func checkFileIsExist(path string) bool {
+	var exist = true
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		exist = false
+	}
+	return exist
+}
+
+// Mkdir the path of out.log、err.log ,if the path is not exist.
+func MakeDirAndFile(filePath string) error {
+	if !checkFileIsExist(filePath) {
+		err := os.MkdirAll(path.Dir(filePath), os.ModePerm)
+		if err != nil {
+			return err
+		}
+		_, err = os.Create(filePath)
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
 }

@@ -1,3 +1,10 @@
+/**
+@version 0.1
+@author albert·gou
+@time June 11, 2018
+@brief mediator插件的初始化和启动功能
+*/
+
 package mediatorplugin
 
 import (
@@ -59,7 +66,7 @@ func (mp *MediatorPlugin) PluginInitialize() {
 }
 
 func (mp *MediatorPlugin) PluginStartup(db *a.DataBase, ch chan int) {
-	println("mediator plugin startup begin")
+	println("\nmediator plugin startup begin")
 	mp.DB = db
 	mp.ch = ch
 
@@ -77,7 +84,7 @@ func (mp *MediatorPlugin) PluginStartup(db *a.DataBase, ch chan int) {
 		}
 	}
 
-	println("mediator plugin startup end")
+	println("mediator plugin startup end\n")
 }
 
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
@@ -91,25 +98,52 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 	nextWakeup := now.Add(time.Duration(timeToNextSecond) * time.Nanosecond)
 
 	// 2. 安排验证单元生产循环
-	time.Sleep(nextWakeup.Sub(time.Now()))
-	mp.VerifiedUnitProductionLoop()
+	go mp.VerifiedUnitProductionLoop(nextWakeup)
 }
 
-func (mp *MediatorPlugin) VerifiedUnitProductionLoop() {
+//验证单元生产状态类型
+type ProductionCondition uint8
+
+//验证单元生产状态枚举
+const(
+	Produced ProductionCondition = iota
+	NotSynced
+	NotMyTurn
+	NotTimeYet
+	NoPrivateKey
+	LowParticipation
+	Lag
+	Consecutive
+	ExceptionProducing
+)
+
+func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) ProductionCondition {
+	time.Sleep(wakeup.Sub(time.Now()))
+
 	// 1. 尝试生产验证单元
 	println("尝试生产验证单元")
+	result, _ := mp.MaybeProduceVerifiedUnit()
 
 	// 2. 打印尝试结果
+	switch result {
+	case Produced:
+	default:
+		println("Unknow condition!")
+	}
 
 	// 3. 继续循环生产计划
 	mp.ScheduleProductionLoop()
+
+	return result
 }
 
-func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() {
+func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (pc ProductionCondition, dpc map[string]string) {
 	// 1. 判断是否满足生产的各个条件
+
 
 	// 2. 生产验证单元
 
 	// 3. 向区块链网络广播验证单元
-
+	pc = Produced
+	return
 }

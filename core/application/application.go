@@ -1,3 +1,10 @@
+/**
+@version 0.1
+@author albert·gou
+@time June 11, 2018
+@brief DB和全局变量的初始化功能
+*/
+
 package application
 
 import (
@@ -8,8 +15,10 @@ import (
 )
 
 type VerifiedUnit struct {
-	ParentVerifiedUnit *VerifiedUnit
-	MediatorSig string
+	PreVerifiedUnit *VerifiedUnit // 前一个验证单元的hash
+	MediatorSig     string		// 验证单元签名信息
+	Timestamp		time.Time	// 时间戳
+	VerifiedUnitNum uint32		// 验证单元编号
 }
 
 type DataBase struct {
@@ -35,7 +44,8 @@ func (db *DataBase) Initialize() {
 	println("initilize blockchain data start!")
 
 	println("initilize genesis verified uint!")
-	gvu := VerifiedUnit{nil, ""}	//创世单元
+	gvu := VerifiedUnit{nil, "",
+	time.Unix(0, 0), 0}	//创世单元
 	var vus []*VerifiedUnit
 	vus = append(vus, &gvu)
 
@@ -63,8 +73,8 @@ func (db *DataBase) Startup() {
 
 	println("initilize dynamic global property...")
 
-	db.DynGlobalProp.VerifiedUnitNum = 0
-	db.DynGlobalProp.VerifiedUnitHash = "0x000000"
+	db.DynGlobalProp.LastVerifiedUnitNum = 0
+//	db.DynGlobalProp.VerifiedUnitHash = "0x000000"
 	db.DynGlobalProp.VerifiedUnitTime = time.Unix(0, 0)
 	db.DynGlobalProp.CurrentMediator = nil
 	db.DynGlobalProp.CurrentASlot = 0
