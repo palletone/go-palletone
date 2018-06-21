@@ -5,21 +5,20 @@ import (
 	"os/user"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/pan/downloader"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/pan/downloader"
 )
 
 // DefaultConfig contains default settings for use on the Ethereum main net.
-var DefaultConfig = Config{
+var DefaultConfig = &Config{
 	SyncMode: downloader.FullSync,
 
 	ChainId:   1,
 	Consensus: consensusconfig.DefaultConfig,
 	Dag:       dagconfig.DefaultConfig,
-	Log:       log.DefaultConfig,
+	Log:       &log.DefaultConfig,
 }
 
 func init() {
@@ -46,7 +45,7 @@ type Config struct {
 	// DAG options
 	Dag dagconfig.Config
 	//Log config
-	Log log.Config
+	Log *log.Config
 	// Consensus options
 	Consensus consensusconfig.Config
 }

@@ -142,6 +142,7 @@ func initLogger(path, err_path, encoding, lvl string, isDebug bool) {
       }`, lvl, encoding, path, err_path)
 	}
 	var cfg zap.Config
+	//log.Println("Zap config json:" + js)
 	if err := json.Unmarshal([]byte(js), &cfg); err != nil {
 		panic(err)
 	}
@@ -299,7 +300,9 @@ func checkFileIsExist(path string) bool {
 
 // Mkdir the path of out.log、err.log ,if the path is not exist.
 func MakeDirAndFile(filePath string) error {
+	// log.Println("log file path:" + filePath)
 	if !checkFileIsExist(filePath) {
+		// log.Println("create folder and file:" + filePath)
 		err := os.MkdirAll(path.Dir(filePath), os.ModePerm)
 		if err != nil {
 			return err
