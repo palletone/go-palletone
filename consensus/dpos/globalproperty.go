@@ -17,7 +17,7 @@ type ChainParameters struct {
 	VerifiedUnitInterval uint8
 
 	// 在维护时跳过的verifiedUnitInterval数量。 number of verifiedUnitInterval to skip at maintenance time
-	MaintenanceSkipSlots uint8
+//	MaintenanceSkipSlots uint8
 }
 
 // 全局属性的结构体定义
@@ -33,7 +33,7 @@ type DynamicGlobalProperty struct {
 
 //	VerifiedUnitHash string // 最近的验证单元hash
 
-	VerifiedUnitTime time.Time // 最近的验证单元时间
+	LastVerifiedUnitTime time.Time // 最近的验证单元时间
 
 	CurrentMediator *Mediator // 当前生产验证单元的mediator
 
@@ -47,7 +47,7 @@ type DynamicGlobalProperty struct {
 	The count of verifiedUnit production slots that were missed in the past 128 verifiedUnits
 	用于计算mediator的参与率。used to compute mediator participation.
 	*/
-	RecentSlotsFilled float32
+//	RecentSlotsFilled float32
 }
 
 func UpdateGlobalDynamicData() {

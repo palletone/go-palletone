@@ -13,6 +13,7 @@ import (
 
 	d "github.com/palletone/go-palletone/consensus/dpos"
 	a "github.com/palletone/go-palletone/core/application"
+	s "github.com/palletone/go-palletone/consensus/dpos/mediators"
 )
 
 var (
@@ -28,12 +29,15 @@ var (
 )
 
 type MediatorPlugin struct {
+	// Enable VerifiedUnit production, even if the chain is stale. 新开启一个区块链时，必须设为true
 	ProductionEnabled            bool
-	RequiredWitnessParticipation float32
-	CMediaotors                  []*d.Mediator
-	PrivateKeys                  []*string
-	DB                           *a.DataBase
-	ch                           chan int
+	// Percent of witnesses (0-99) that must be participating in order to produce VerifiedUnit.
+	// 新开启一个区块链时，必须设为0, 或者100
+//	RequiredWitnessParticipation float32
+	MediatorSet map[d.Mediator]bool
+	SignKeySet  map[string]bool
+	DB          *a.DataBase
+	ch          chan int
 }
 
 func (mp *MediatorPlugin) CloseChannel(signal int) {
@@ -46,21 +50,23 @@ func (mp *MediatorPlugin) PluginInitialize() {
 
 	// 1.初始化生产验证单元相关的属性值
 	mp.ProductionEnabled = false
-	mp.RequiredWitnessParticipation = 0.33
+//	mp.RequiredWitnessParticipation = 0.33
 
 	// 1. 获取当前节点控制的所有mediator
-	mp.CMediaotors = append(mp.CMediaotors, &Mediator1)
-	mp.CMediaotors = append(mp.CMediaotors, &Mediator2)
-	mp.CMediaotors = append(mp.CMediaotors, &Mediator3)
+	mp.MediatorSet = map[d.Mediator]bool{}
+	mp.MediatorSet[Mediator1] = true
+	mp.MediatorSet[Mediator2] = true
+	mp.MediatorSet[Mediator3] = true
 
-	fmt.Printf("this node controll %d mediators!\n", len(mp.CMediaotors))
+	fmt.Printf("this node controll %d mediators!\n", len(mp.MediatorSet))
 
 	// 2. 获取当前节点使用的mediator使用的所有签名公私钥
-	mp.PrivateKeys = append(mp.PrivateKeys, &Signature1)
-	mp.PrivateKeys = append(mp.PrivateKeys, &Signature2)
-	mp.PrivateKeys = append(mp.PrivateKeys, &Signature3)
+	mp.SignKeySet = map[string]bool{}
+	mp.SignKeySet[Signature1] = true
+	mp.SignKeySet[Signature2] = true
+	mp.SignKeySet[Signature3] = true
 
-	fmt.Printf("this node controll %d private keys!\n", len(mp.PrivateKeys))
+	fmt.Printf("this node controll %d private keys!\n", len(mp.SignKeySet))
 
 	println("mediator plugin initialize end\n")
 }
@@ -71,17 +77,23 @@ func (mp *MediatorPlugin) PluginStartup(db *a.DataBase, ch chan int) {
 	mp.ch = ch
 
 	// 1. 判断是否满足生产验证单元的条件，主要判断本节点是否控制至少一个mediator账户
-	if len(mp.CMediaotors) == 0 {
+	if len(mp.MediatorSet) == 0 {
 		println("No mediaotors configured! Please add mediator and private keys to configuration.")
 		mp.CloseChannel(-1)
 	} else {
 		// 2. 开启循环生产计划
-		fmt.Printf("Launching unit verify for %d mediators.\n", len(mp.CMediaotors))
-		mp.ProductionEnabled = true
+		fmt.Printf("Launching unit verify for %d mediators.\n", len(mp.MediatorSet))
+		mp.ProductionEnabled = true		// 此处应由配置文件设置为true
 
 		if mp.ProductionEnabled {
-			mp.ScheduleProductionLoop()
+			if mp.DB.DynGlobalProp.LastVerifiedUnitNum == 0 {
+				println("*   ------- NEW CHAIN -------   *")
+				println("*   - Welcome to PalletOne! -   *")
+				println("*   -------------------------   *")
+			}
 		}
+
+		mp.ScheduleProductionLoop()
 	}
 
 	println("mediator plugin startup end\n")
@@ -111,10 +123,10 @@ const(
 	NotMyTurn
 	NotTimeYet
 	NoPrivateKey
-	LowParticipation
+//	LowParticipation
 	Lag
-	Consecutive
-	ExceptionProducing
+//	Consecutive
+//	ExceptionProducing
 )
 
 func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) ProductionCondition {
@@ -122,11 +134,14 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 
 	// 1. 尝试生产验证单元
 	println("尝试生产验证单元")
-	result, _ := mp.MaybeProduceVerifiedUnit()
+	result, detail := mp.MaybeProduceVerifiedUnit()
 
 	// 2. 打印尝试结果
 	switch result {
+	case NoPrivateKey:
+		fmt.Printf("Not producing block because I don't have the private key for %v\n", detail["ScheduledKey"])
 	case Produced:
+//		println()
 	default:
 		println("Unknow condition!")
 	}
@@ -137,13 +152,72 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 	return result
 }
 
-func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (pc ProductionCondition, dpc map[string]string) {
-	// 1. 判断是否满足生产的各个条件
+func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[string]string) {
+	detail := map[string]string{}
 
+	gp := &mp.DB.GlobalProp
+	dgp := &mp.DB.DynGlobalProp
+	ms := &mp.DB.MediatorSchl
+
+	nowFine := time.Now()
+	now := nowFine.Add( 500 * time.Millisecond)
+
+	// 1. 判断是否满足生产的各个条件
+	nextSlotTime := s.GetSlotTime(gp, dgp, 1)
+	// If the next VerifiedUnit production opportunity is in the present or future, we're synced.
+	if !mp.ProductionEnabled {
+		if nextSlotTime.After(now) || nextSlotTime.Equal(now) {
+			mp.ProductionEnabled = true
+		}else {
+			return NotSynced, detail
+		}
+	}
+
+	slot := s.GetSlotAtTime(gp, dgp, now)
+	// is anyone scheduled to produce now or one second in the future?
+	if slot == 0 {
+		detail["NextTime"] = s.GetSlotTime(gp, dgp, 1).Format("2006-01-02 15:04:05")
+		return NotTimeYet,detail
+	}
+
+	//
+	// this Conditional judgment should fail, because now <= LastVerifiedUnitTime
+	// should have resulted in slot == 0.
+	//
+	// if this panic triggers, there is a serious bug in get_slot_at_time()
+	// which would result in allowing a later block to have a timestamp
+	// less than or equal to the previous block
+	//
+	if !now.After(dgp.LastVerifiedUnitTime) {
+		panic("\n The later VerifiedUnit have a timestamp less than or equal to the previous!")
+	}
+
+	scheduledMediator := ms.GetScheduledMediator(dgp, slot)
+	// we must control the Mediator scheduled to produce the next VerifiedUnit.
+	if !mp.MediatorSet[*scheduledMediator] {
+		detail["ScheduledMediator"] = scheduledMediator.Name
+		return NotMyTurn, detail
+	}
+
+	scheduledTime := s.GetSlotTime(gp, dgp, slot)
+	if scheduledTime.After(now.Add(500 * time.Millisecond)) || scheduledTime.Before(now.Add(-500 * time.Millisecond)) {
+		detail["ScheduledTime"] = scheduledTime.Format("2018-06-20 20:50:34")
+		detail["Now"] = now.Format("2018-06-20 20:50:34")
+		return Lag, detail
+	}
+
+	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
+	signKey := scheduledMediator.SignKey
+	if !mp.SignKeySet[signKey] {
+		detail["ScheduledKey"] = signKey
+		return NoPrivateKey, detail
+	}
 
 	// 2. 生产验证单元
+//	verifiedUnit :=
 
 	// 3. 向区块链网络广播验证单元
-	pc = Produced
-	return
+
+
+	return Produced, detail
 }
