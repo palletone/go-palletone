@@ -20,13 +20,10 @@ package log
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
 	"path"
-	"runtime"
-	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -99,7 +96,7 @@ func InitLogger() {
 	isDebug := DefaultConfig.IsDebug
 	// if the config file is damaged or lost, then initialize the config if log system.
 	if path == "" {
-		path = "log/full.log"
+		path = "log/out.log"
 	}
 	if err_path == "" {
 		err_path = "log/err.log"
@@ -108,7 +105,13 @@ func InitLogger() {
 		lvl = "DEBUG"
 	}
 
-	if err := mkdirPath(path, err_path); err != nil {
+	// if err := mkdirPath(path, err_path); err != nil {
+	// 	panic(err)
+	// }
+	if err := MakeDirAndFile(path); err != nil {
+		panic(err)
+	}
+	if err := MakeDirAndFile(err_path); err != nil {
 		panic(err)
 	}
 
@@ -291,69 +294,7 @@ func checkFileIsExist(path string) bool {
 }
 
 // Mkdir the path of out.log、err.log ,if the path is not exist.
-func mkdirPath(path1, path2 string) error {
-	var paths, errpaths []string
-	oos := runtime.GOOS
-	switch oos {
-	case "windows":
-		paths = strings.Split(path1, `\\`)
-		errpaths = strings.Split(path2, `\\`)
-	case "linux", "darwin":
-		paths = strings.Split(path1, `/`)
-		errpaths = strings.Split(path2, `/`)
-	default:
-		return errors.New("not supported on this system.")
-
-	}
-	if len(paths) > 0 {
-		var path string
-		for i, p := range paths {
-			if i == 0 {
-				path = p
-			} else if i > 0 && i < len(paths)-1 {
-				switch oos {
-				case "windows":
-					path += (`\\` + p)
-
-				case "linux", "darwin":
-					path += (`/` + p)
-				}
-			} else {
-				break
-			}
-
-			if err := makeDirAndFile(path); err != nil {
-				return err
-			}
-
-		}
-	}
-	if len(errpaths) > 0 {
-		var path string
-		for i, e := range errpaths {
-			if i == 0 {
-				path = e
-			} else if i > 0 && i < len(errpaths)-1 {
-				switch oos {
-				case "windows":
-					path += (`\\` + e)
-
-				case "linux", "darwin":
-					path += (`/` + e)
-				}
-			} else {
-				break
-			}
-
-			if err := makeDirAndFile(path); err != nil {
-				return err
-			}
-
-		}
-	}
-	return nil
-}
-func makeDirAndFile(filePath string) error {
+func MakeDirAndFile(filePath string) error {
 	if !checkFileIsExist(filePath) {
 		err := os.MkdirAll(path.Dir(filePath), os.ModePerm)
 		if err != nil {
