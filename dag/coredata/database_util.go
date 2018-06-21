@@ -25,8 +25,8 @@ import (
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/common/pandb"
+	"github.com/palletone/go-palletone/contracts/types"
 	//"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
@@ -97,7 +97,7 @@ func GetCanonicalHash(db DatabaseReader, number uint64) common.Hash {
 
 // missingNumber is returned by GetBlockNumber if no header with the
 // given block hash has been stored in the database
-const missingNumber = uint64(0xffffffffffffffff)
+const MissingNumber = uint64(0xffffffffffffffff)
 
 // GetBlockNumber returns the block number assigned to a block hash
 // if the corresponding header is present in the database

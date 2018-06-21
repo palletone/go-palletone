@@ -31,7 +31,7 @@ import (
 
 const (
 	HashLength    = 32
-	AddressLength = 35
+	AddressLength = 20
 )
 
 var (
