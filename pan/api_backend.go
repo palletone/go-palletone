@@ -25,6 +25,7 @@ import (
 	//"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/pandb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/types"
@@ -32,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/pan/downloader"
 	"github.com/palletone/go-palletone/pan/gasprice"
-	"github.com/palletone/go-palletone/common/pandb"
 	"github.com/palletone/go-palletone/vm"
 )
 
@@ -170,14 +170,11 @@ func (b *EthApiBackend) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscri
 }
 
 func (b *EthApiBackend) SendConsensus(ctx context.Context) error {
-	//log.Info("===EthApiBackend SendConsensus===")
-	return nil //b.eth.txPool.AddLocal(signedTx)
+	b.eth.Engine().Engine()
+	return nil
 }
 
 func (b *EthApiBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {
-	//return b.eth.txPool.AddLocal(signedTx)
-	b.eth.Engine().Engine()
-	return nil
 	return b.eth.txPool.AddLocal(signedTx)
 }
 
