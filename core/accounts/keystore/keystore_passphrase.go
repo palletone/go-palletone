@@ -35,11 +35,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	//"strconv"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/crypto/randentropy"
+	// "github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/math"
 	"github.com/pborman/uuid"
 	"golang.org/x/crypto/pbkdf2"
 	"golang.org/x/crypto/scrypt"
@@ -94,6 +96,8 @@ func (ks keyStorePassphrase) GetKey(addr common.Address, filename, auth string) 
 // StoreKey generates a key, encrypts with 'auth' and stores in the given directory
 func StoreKey(dir, auth string, scryptN, scryptP int) (common.Address, error) {
 	_, a, err := storeNewKey(&keyStorePassphrase{dir, scryptN, scryptP}, crand.Reader, auth)
+	// log.Debug("Dir: " + dir + " Auth: " + auth + " scryptN: " + strconv.Itoa(scryptN) + " scryptP: " + strconv.Itoa(scryptP))
+	// log.Debug("Address:" + a.Address.Str())
 	return a.Address, err
 }
 

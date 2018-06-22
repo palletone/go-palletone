@@ -110,8 +110,8 @@ func init() {
 // Setup initializes profiling and logging based on the CLI flags.
 // It should be called as early as possible in the program.
 func Setup(ctx *cli.Context) error {
-	//load config data
-	cfgHelper.LoadConfig2DefaultValue()
+	//load default config data
+	cfgHelper.LoadConfigFromFile("")
 	// logging
 	log.PrintOrigins(ctx.GlobalBool(debugFlag.Name))
 	glogger.Verbosity(log.Lvl(ctx.GlobalInt(verbosityFlag.Name)))

@@ -138,7 +138,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	// log.InitLogger()
 
 	// Apply flags.
-	utils.SetNodeConfig(ctx, &cfg.Node)
+	// utils.SetNodeConfig(ctx, &cfg.Node)
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
