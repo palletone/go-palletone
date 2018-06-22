@@ -7,7 +7,7 @@
 
 package verifyunit
 
-func GenerateVerifiedUnit() {
+func GenerateVerifiedUnit()  {
 	// 1. 判断是否满足生产的若干条件
 
 	// 2. 生产验证单元，添加交易集、时间戳、签名

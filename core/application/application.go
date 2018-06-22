@@ -38,14 +38,14 @@ var (
 
 func (db *DataBase) Initialize() {
 	// 1. 打开区块链数据库...
-	println("\n open db!")
+	println("open db!")
 
 	// 2. 初始化区块链数据...
 	println("initilize blockchain data start!")
 
 	println("initilize genesis verified uint!")
 	gvu := VerifiedUnit{nil, "",
-	time.Unix(0, 0), 0}	//创世单元
+	time.Unix(time.Now().Unix(), 0), 0}	//创世单元
 	var vus []*VerifiedUnit
 	vus = append(vus, &gvu)
 
@@ -63,7 +63,7 @@ func (db *DataBase) Initialize() {
 
 func (db *DataBase) Startup() {
 	// 2. 初始化全局属性...
-	println("\ninitilize global property...")
+	println("initilize global property...")
 //	db.GlobalProp.ChainParameters.MaintenanceSkipSlots = 3
 	db.GlobalProp.ChainParameters.VerifiedUnitInterval = 3
 
@@ -76,7 +76,7 @@ func (db *DataBase) Startup() {
 
 	db.DynGlobalProp.LastVerifiedUnitNum = 0
 //	db.DynGlobalProp.VerifiedUnitHash = "0x000000"
-	db.DynGlobalProp.LastVerifiedUnitTime = time.Unix(0, 0)
+	db.DynGlobalProp.LastVerifiedUnitTime = time.Unix(time.Now().Unix(), 0)
 	db.DynGlobalProp.CurrentMediator = nil
 	db.DynGlobalProp.CurrentASlot = 0
 //	db.DynGlobalProp.RecentSlotsFilled = 100
