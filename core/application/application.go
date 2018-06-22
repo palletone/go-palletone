@@ -1,3 +1,10 @@
+/**
+@version 0.1
+@author albert·gou
+@time June 11, 2018
+@brief DB和全局变量的初始化功能
+*/
+
 package application
 
 import (
@@ -8,8 +15,10 @@ import (
 )
 
 type VerifiedUnit struct {
-	ParentVerifiedUnit *VerifiedUnit
-	MediatorSig string
+	PreVerifiedUnit *VerifiedUnit // 前一个验证单元的hash
+	MediatorSig     string		// 验证单元签名信息
+	Timestamp		time.Time	// 时间戳
+	VerifiedUnitNum uint32		// 验证单元编号
 }
 
 type DataBase struct {
@@ -29,13 +38,14 @@ var (
 
 func (db *DataBase) Initialize() {
 	// 1. 打开区块链数据库...
-	println("\n open db!")
+	println("open db!")
 
 	// 2. 初始化区块链数据...
 	println("initilize blockchain data start!")
 
 	println("initilize genesis verified uint!")
-	gvu := VerifiedUnit{nil, ""}	//创世单元
+	gvu := VerifiedUnit{nil, "",
+	time.Unix(time.Now().Unix(), 0), 0}	//创世单元
 	var vus []*VerifiedUnit
 	vus = append(vus, &gvu)
 
@@ -53,24 +63,25 @@ func (db *DataBase) Initialize() {
 
 func (db *DataBase) Startup() {
 	// 2. 初始化全局属性...
-	println("\ninitilize global property...")
-	db.GlobalProp.ChainParameters.MaintenanceSkipSlots = 3
+	println("initilize global property...")
+//	db.GlobalProp.ChainParameters.MaintenanceSkipSlots = 3
 	db.GlobalProp.ChainParameters.VerifiedUnitInterval = 3
 
+	println("Set active mediators...\n")
 	db.GlobalProp.ActiveMediators = append(db.GlobalProp.ActiveMediators, &Mediator1)
 	db.GlobalProp.ActiveMediators = append(db.GlobalProp.ActiveMediators, &Mediator2)
 	db.GlobalProp.ActiveMediators = append(db.GlobalProp.ActiveMediators, &Mediator3)
 
 	println("initilize dynamic global property...")
 
-	db.DynGlobalProp.VerifiedUnitNum = 0
-	db.DynGlobalProp.VerifiedUnitHash = "0x000000"
-	db.DynGlobalProp.VerifiedUnitTime = time.Unix(0, 0)
+	db.DynGlobalProp.LastVerifiedUnitNum = 0
+//	db.DynGlobalProp.VerifiedUnitHash = "0x000000"
+	db.DynGlobalProp.LastVerifiedUnitTime = time.Unix(time.Now().Unix(), 0)
 	db.DynGlobalProp.CurrentMediator = nil
 	db.DynGlobalProp.CurrentASlot = 0
-	db.DynGlobalProp.RecentSlotsFilled = 100
+//	db.DynGlobalProp.RecentSlotsFilled = 100
 
-	println("Set active mediators...\n")
+	println("Create witness scheduler...\n")
 	for _, m := range db.GlobalProp.ActiveMediators {
 		db.MediatorSchl.CurrentShuffledMediators =append(db.MediatorSchl.CurrentShuffledMediators, m)
 	}

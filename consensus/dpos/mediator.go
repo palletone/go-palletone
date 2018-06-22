@@ -10,5 +10,5 @@ package dpos
 // mediator结构体 和具体的账户模型有关
 type Mediator struct {
 	Name string
-	Signature string
+	SignKey string
 }

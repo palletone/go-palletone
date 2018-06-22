@@ -23,14 +23,18 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"strings"
 	"unicode"
-
-	cli "gopkg.in/urfave/cli.v1"
 
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/cmd/utils"
+	cli "gopkg.in/urfave/cli.v1"
+
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/core/node"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/pan"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 )
@@ -79,6 +83,9 @@ type gethConfig struct {
 	Node      node.Config
 	Ethstats  ethstatsConfig
 	Dashboard dashboard.Config
+	Consensus consensusconfig.Config
+	Log       log.Config
+	Dag       dagconfig.Config
 }
 
 func loadConfig(file string, cfg *gethConfig) error {
@@ -100,8 +107,8 @@ func defaultNodeConfig() node.Config {
 	cfg := node.DefaultConfig
 	cfg.Name = clientIdentifier
 	cfg.Version = configure.VersionWithCommit(gitCommit)
-	//cfg.HTTPModules = append(cfg.HTTPModules, "eth", "shh")
-	//cfg.WSModules = append(cfg.WSModules, "eth", "shh")
+	cfg.HTTPModules = append(cfg.HTTPModules, "eth" /*, "shh"*/)
+	cfg.WSModules = append(cfg.WSModules, "eth" /*, "shh"*/)
 	cfg.IPCPath = "gpan.ipc"
 	return cfg
 }
@@ -115,11 +122,21 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	}
 
 	// Load config file.
+
 	if file := ctx.GlobalString(configFileFlag.Name); file != "" {
 		if err := loadConfig(file, &cfg); err != nil {
 			utils.Fatalf("%v", err)
 		}
 	}
+	// // resetting log config
+	// log.DefaultConfig.LoggerPath = cfg.Eth.Log.LoggerPath
+	// log.DefaultConfig.ErrPath = cfg.Eth.Log.ErrPath
+	// log.DefaultConfig.LoggerLvl = cfg.Eth.Log.LoggerLvl
+	// log.DefaultConfig.IsDebug = cfg.Eth.Log.IsDebug
+	// log.DefaultConfig.Encoding = cfg.Eth.Log.Encoding
+	// fmt.Println("resetting log config ")
+	// log.InitLogger()
+
 	// Apply flags.
 	utils.SetNodeConfig(ctx, &cfg.Node)
 	stack, err := node.New(&cfg.Node)
@@ -141,6 +158,9 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
 	}
+	//Test
+	fmt.Println("----Log Path:" + strings.Join(log.DefaultConfig.OutputPaths, ","))
+	fmt.Println("----DB config:" + dagconfig.DefaultConfig.DbPath)
 	/*wangjiyou
 	// Whisper must be explicitly enabled by specifying at least 1 whisper flag or in dev mode
 	shhEnabled := enableWhisper(ctx)

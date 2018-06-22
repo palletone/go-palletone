@@ -202,6 +202,11 @@ var AppHelpFlagGroups = []flagGroup{
 		Flags: []cli.Flag{
 			utils.DagValue1Flag,
 			utils.DagValue2Flag,
+			utils.LogValue1Flag,
+			utils.LogValue2Flag,
+			utils.LogValue3Flag,
+			utils.LogValue4Flag,
+			utils.LogValue5Flag,
 		},
 	},
 	{

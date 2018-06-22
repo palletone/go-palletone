@@ -33,11 +33,11 @@ import (
 	"time"
 
 	"github.com/elastic/gosigar"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/statistics/metrics"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/statistics/metrics"
 	"golang.org/x/net/websocket"
 )
 
@@ -72,7 +72,7 @@ type Dashboard struct {
 type client struct {
 	conn   *websocket.Conn // Particular live websocket connection
 	msg    chan Message    // Message queue for the update messages
-	logger log.Logger      // Logger for the particular live websocket connection
+	logger log.Plogger     // Logger for the particular live websocket connection
 }
 
 // New creates a new dashboard instance with the given configuration.
@@ -195,7 +195,7 @@ func (db *Dashboard) apiHandler(conn *websocket.Conn) {
 	client := &client{
 		conn:   conn,
 		msg:    make(chan Message, 128),
-		logger: log.New("id", id),
+		logger: *log.New("id", id),
 	}
 	done := make(chan struct{})
 

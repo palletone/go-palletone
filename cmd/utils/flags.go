@@ -503,6 +503,32 @@ var (
 		Usage: "Dag dbname",
 		Value: pan.DefaultConfig.Dag.DbName,
 	}
+	LogValue1Flag = cli.StringFlag{
+		Name:  "log.path",
+		Usage: "Log path",
+		Value: strings.Join(pan.DefaultConfig.Log.OutputPaths, ","),
+	}
+
+	LogValue2Flag = cli.StringFlag{
+		Name:  "log.lvl",
+		Usage: "Log lvl",
+		Value: pan.DefaultConfig.Log.LoggerLvl,
+	}
+	LogValue3Flag = cli.BoolFlag{
+		Name:  "log.debug",
+		Usage: "Log debug",
+		//Value: pan.DefaultConfig.Log.IsDebug,
+	}
+	LogValue4Flag = cli.StringFlag{
+		Name:  "log.errpath",
+		Usage: "Log errpath",
+		Value: strings.Join(pan.DefaultConfig.Log.ErrorOutputPaths, ","),
+	}
+	LogValue5Flag = cli.StringFlag{
+		Name:  "log.encoding",
+		Usage: "Log encoding",
+		Value: pan.DefaultConfig.Log.Encoding,
+	}
 )
 
 // MakeDataDir retrieves the currently requested data directory, terminating
@@ -930,6 +956,20 @@ func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
 		cfg.DbName = ctx.GlobalString(DagValue2Flag.Name)
 	}
 }
+func setLog(ctx *cli.Context, cfg *log.Config) {
+	if ctx.GlobalIsSet(LogValue1Flag.Name) {
+		cfg.OutputPaths = []string{ctx.GlobalString(LogValue1Flag.Name)}
+	}
+	if ctx.GlobalIsSet(LogValue2Flag.Name) {
+		cfg.LoggerLvl = ctx.GlobalString(LogValue2Flag.Name)
+	}
+	if ctx.GlobalIsSet(LogValue3Flag.Name) {
+		cfg.Development = ctx.GlobalBool(LogValue3Flag.Name)
+	}
+	if ctx.GlobalIsSet(LogValue4Flag.Name) {
+		cfg.ErrorOutputPaths = []string{ctx.GlobalString(LogValue4Flag.Name)}
+	}
+}
 
 // SetDagConfig applies dag related command line flags to the config.
 func setConsensus(ctx *cli.Context, cfg *consensusconfig.Config) {
@@ -951,6 +991,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *pan.Config) {
 	setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
 	setDag(ctx, &cfg.Dag)
+	setLog(ctx, &cfg.Log)
 	setConsensus(ctx, &cfg.Consensus)
 
 	switch {
