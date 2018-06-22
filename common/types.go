@@ -31,7 +31,7 @@ import (
 
 const (
 	HashLength    = 32
-	AddressLength = 20
+	AddressLength = 35 // ETH length is 20
 )
 
 var (
