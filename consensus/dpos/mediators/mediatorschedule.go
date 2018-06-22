@@ -104,13 +104,14 @@ func GetSlotTime(gp *d.GlobalProperty, dgp *d.DynamicGlobalProperty, slotNum uin
 
 	interval := gp.ChainParameters.VerifiedUnitInterval
 
+	// 本条件是用来生产创世区块
 	if dgp.LastVerifiedUnitNum == 0 {
 		/**
 		注：第一个验证单元在genesisTime加上一个验证单元间隔
 		n.b. first verifiedUnit is at genesisTime plus one verifiedUnitInterval
 		*/
-		genesisTime := dgp.LastVerifiedUnitTime
-		return genesisTime.Add(time.Second * time.Duration(slotNum) * time.Duration(interval))
+		genesisTime := dgp.LastVerifiedUnitTime.Unix()
+		return time.Unix(genesisTime + int64(slotNum) * int64(interval), 0)
 	}
 
 	// 最近的验证单元的绝对slot
@@ -146,8 +147,8 @@ func GetSlotAtTime(gp *d.GlobalProperty, dgp *d.DynamicGlobalProperty, when time
 		return 0
 	}
 
-	difSecs := when.Sub(firstSlotTime).Seconds()
-	interval := gp.ChainParameters.VerifiedUnitInterval
+	diffSecs := when.Unix() - firstSlotTime.Unix()
+	interval := int64(gp.ChainParameters.VerifiedUnitInterval)
 
-	return uint32(difSecs/float64(interval)) + 1
+	return uint32(diffSecs/interval) + 1
 }
