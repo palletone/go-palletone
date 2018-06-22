@@ -23,15 +23,16 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"strings"
 	"unicode"
-
-	cli "gopkg.in/urfave/cli.v1"
 
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/cmd/utils"
+	cli "gopkg.in/urfave/cli.v1"
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/pan"
@@ -82,6 +83,9 @@ type gethConfig struct {
 	Node      node.Config
 	Ethstats  ethstatsConfig
 	Dashboard dashboard.Config
+	Consensus consensusconfig.Config
+	Log       log.Config
+	Dag       dagconfig.Config
 }
 
 func loadConfig(file string, cfg *gethConfig) error {
@@ -155,7 +159,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
 	}
 	//Test
-	fmt.Println("----Log Path:" + log.DefaultConfig.LoggerPath)
+	fmt.Println("----Log Path:" + strings.Join(log.DefaultConfig.OutputPaths, ","))
 	fmt.Println("----DB config:" + dagconfig.DefaultConfig.DbPath)
 	/*wangjiyou
 	// Whisper must be explicitly enabled by specifying at least 1 whisper flag or in dev mode

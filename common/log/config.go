@@ -1,18 +1,18 @@
 package log
 
 var DefaultConfig = Config{
-	LoggerPath: "./log/out.log",
-	LoggerLvl:  "INFO",
-	IsDebug:    true,
-	ErrPath:    "./log/err.log",
-	Encoding:   "console", // json
+	OutputPaths:      []string{"stdout", "./log/out.log"},
+	ErrorOutputPaths: []string{"stderr", "./log/err.log"},
+	LoggerLvl:        "INFO",
+	Encoding:         "console", // json
+	Development:      true,
 }
 
 type Config struct {
 	// logger
-	LoggerPath string // out path
-	ErrPath    string // err path
-	LoggerLvl  string // log levle
-	Encoding   string // encoding
-	IsDebug    bool   // is dubug
+	OutputPaths      []string
+	ErrorOutputPaths []string
+	LoggerLvl        string // log levle
+	Encoding         string // encoding
+	Development      bool
 }

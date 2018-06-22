@@ -46,7 +46,7 @@ func (mp *MediatorPlugin) CloseChannel(signal int) {
 }
 
 func (mp *MediatorPlugin) PluginInitialize() {
-	println("\nmediator plugin initialize begin")
+	println("mediator plugin initialize begin")
 
 	// 1.初始化生产验证单元相关的属性值
 	mp.ProductionEnabled = false
@@ -83,31 +83,33 @@ func (mp *MediatorPlugin) PluginStartup(db *a.DataBase, ch chan int) {
 	} else {
 		// 2. 开启循环生产计划
 		fmt.Printf("Launching unit verify for %d mediators.\n", len(mp.MediatorSet))
-		mp.ProductionEnabled = true		// 此处应由配置文件设置为true
+		mp.ProductionEnabled = true		// 此处应由配置文件中的 enable-stale-production 字段设置为true
 
 		if mp.ProductionEnabled {
 			if mp.DB.DynGlobalProp.LastVerifiedUnitNum == 0 {
+				println()
 				println("*   ------- NEW CHAIN -------   *")
 				println("*   - Welcome to PalletOne! -   *")
 				println("*   -------------------------   *")
+				println()
 			}
 		}
 
 		mp.ScheduleProductionLoop()
 	}
 
-	println("mediator plugin startup end\n")
+	println("mediator plugin startup end")
 }
 
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
 	// 1. 计算下一秒的滴答时刻，如果少于50毫秒，则多等一秒开始
 	now := time.Now()
-	timeToNextSecond := int64(now.Nanosecond())
-	if timeToNextSecond < int64(time.Duration(50)*time.Millisecond) {
-		timeToNextSecond += int64(time.Duration(1) * time.Second)
+	timeToNextSecond := time.Second - time.Duration(now.Nanosecond())
+	if timeToNextSecond < 50 * time.Millisecond {
+		timeToNextSecond += time.Second
 	}
 
-	nextWakeup := now.Add(time.Duration(timeToNextSecond) * time.Nanosecond)
+	nextWakeup := now.Add(timeToNextSecond)
 
 	// 2. 安排验证单元生产循环
 	go mp.VerifiedUnitProductionLoop(nextWakeup)
@@ -133,13 +135,26 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 	time.Sleep(wakeup.Sub(time.Now()))
 
 	// 1. 尝试生产验证单元
-	println("尝试生产验证单元")
+	println("\n尝试生产验证单元...")
 	result, detail := mp.MaybeProduceVerifiedUnit()
 
 	// 2. 打印尝试结果
 	switch result {
+	case NotSynced:
+		println("Not producing VerifiedUnit because production is disabled " +
+			"until we receive a recent VerifiedUnit (see: --enable-stale-production)")
+	case NotTimeYet:
+		//fmt.Printf("Not producing VerifiedUnit because next slot time is %v, but now is %v\n",
+		//	detail["NextTime"], detail["Now"])
+	case NotMyTurn:
+		//fmt.Printf("Not producing VerifiedUnit because current scheduled mediator is %v\n",
+		//	detail["ScheduledMediator"])
+	case Lag:
+		fmt.Printf("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time." +
+			" Scheduled Time is: %v, but now is %v\n", detail["ScheduledTime"], detail["Now"])
 	case NoPrivateKey:
-		fmt.Printf("Not producing block because I don't have the private key for %v\n", detail["ScheduledKey"])
+		fmt.Printf("Not producing VerifiedUnit because I don't have the private key for %v\n",
+			detail["ScheduledKey"])
 	case Produced:
 //		println()
 	default:
@@ -159,11 +174,13 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	dgp := &mp.DB.DynGlobalProp
 	ms := &mp.DB.MediatorSchl
 
+	// 整秒调整，四舍五入
 	nowFine := time.Now()
-	now := nowFine.Add( 500 * time.Millisecond)
+	now := time.Unix(nowFine.Add( 500 * time.Millisecond).Unix(), 0)
 
 	// 1. 判断是否满足生产的各个条件
 	nextSlotTime := s.GetSlotTime(gp, dgp, 1)
+//	println(nextSlotTime.String())
 	// If the next VerifiedUnit production opportunity is in the present or future, we're synced.
 	if !mp.ProductionEnabled {
 		if nextSlotTime.After(now) || nextSlotTime.Equal(now) {
@@ -174,10 +191,12 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	slot := s.GetSlotAtTime(gp, dgp, now)
+//	println(slot)
 	// is anyone scheduled to produce now or one second in the future?
 	if slot == 0 {
-		detail["NextTime"] = s.GetSlotTime(gp, dgp, 1).Format("2006-01-02 15:04:05")
-		return NotTimeYet,detail
+		detail["NextTime"] = nextSlotTime.Format("2006-01-02 15:04:05")
+		detail["Now"] = now.Format("2006-01-02 15:04:05")
+		return NotTimeYet, detail
 	}
 
 	//
@@ -200,9 +219,10 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	scheduledTime := s.GetSlotTime(gp, dgp, slot)
-	if scheduledTime.After(now.Add(500 * time.Millisecond)) || scheduledTime.Before(now.Add(-500 * time.Millisecond)) {
-		detail["ScheduledTime"] = scheduledTime.Format("2018-06-20 20:50:34")
-		detail["Now"] = now.Format("2018-06-20 20:50:34")
+	diff := scheduledTime.Sub(now)
+	if diff > 500 * time.Millisecond || diff < -500 * time.Millisecond {
+		detail["ScheduledTime"] = scheduledTime.Format("2006-01-02 15:04:05")
+		detail["Now"] = now.Format("2006-01-02 15:04:05")
 		return Lag, detail
 	}
 
@@ -214,10 +234,11 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 2. 生产验证单元
+	println("正在生产验证单元...")
 //	verifiedUnit :=
 
 	// 3. 向区块链网络广播验证单元
-
+	go println("向网络异步广播新生产的验证单元...")
 
 	return Produced, detail
 }

@@ -506,7 +506,7 @@ var (
 	LogValue1Flag = cli.StringFlag{
 		Name:  "log.path",
 		Usage: "Log path",
-		Value: pan.DefaultConfig.Log.LoggerPath,
+		Value: strings.Join(pan.DefaultConfig.Log.OutputPaths, ","),
 	}
 
 	LogValue2Flag = cli.StringFlag{
@@ -522,7 +522,7 @@ var (
 	LogValue4Flag = cli.StringFlag{
 		Name:  "log.errpath",
 		Usage: "Log errpath",
-		Value: pan.DefaultConfig.Log.ErrPath,
+		Value: strings.Join(pan.DefaultConfig.Log.ErrorOutputPaths, ","),
 	}
 	LogValue5Flag = cli.StringFlag{
 		Name:  "log.encoding",
@@ -958,16 +958,16 @@ func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
 }
 func setLog(ctx *cli.Context, cfg *log.Config) {
 	if ctx.GlobalIsSet(LogValue1Flag.Name) {
-		cfg.LoggerPath = ctx.GlobalString(LogValue1Flag.Name)
+		cfg.OutputPaths = []string{ctx.GlobalString(LogValue1Flag.Name)}
 	}
 	if ctx.GlobalIsSet(LogValue2Flag.Name) {
 		cfg.LoggerLvl = ctx.GlobalString(LogValue2Flag.Name)
 	}
 	if ctx.GlobalIsSet(LogValue3Flag.Name) {
-		cfg.IsDebug = ctx.GlobalBool(LogValue3Flag.Name)
+		cfg.Development = ctx.GlobalBool(LogValue3Flag.Name)
 	}
 	if ctx.GlobalIsSet(LogValue4Flag.Name) {
-		cfg.ErrPath = ctx.GlobalString(LogValue4Flag.Name)
+		cfg.ErrorOutputPaths = []string{ctx.GlobalString(LogValue4Flag.Name)}
 	}
 }
 
