@@ -35,19 +35,19 @@ import (
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	//"github.com/palletone/go-palletone/vm"
-	"github.com/palletone/go-palletone/pan/downloader"
-	"github.com/palletone/go-palletone/pan/filters"
-	//"github.com/palletone/go-palletone/pan/gasprice"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/pandb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/internal/ethapi"
-	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/pandb"
+	"github.com/palletone/go-palletone/pan/downloader"
+	"github.com/palletone/go-palletone/pan/filters"
+	"github.com/palletone/go-palletone/pan/gasprice"
 )
 
 type LesServer interface {
@@ -182,7 +182,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	if gpoParams.Default == nil {
 		gpoParams.Default = config.GasPrice
 	}
-	//eth.ApiBackend.gpo = gasprice.NewOracle(eth.ApiBackend, gpoParams)//wangjiyou
+	eth.ApiBackend.gpo = gasprice.NewOracle(eth.ApiBackend, gpoParams)
 	return eth, nil
 }
 
