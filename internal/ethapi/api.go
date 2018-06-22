@@ -34,12 +34,12 @@ import (
 	//
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/vm"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
@@ -743,14 +743,9 @@ func (s *PublicBlockChainAPI) EstimateGas(ctx context.Context, args CallArgs) (h
 }
 
 // Start forking command.
-// Rate is the fork coin's exchange rate.
 func (s *PublicBlockChainAPI) Forking(ctx context.Context, rate uint64) uint64 {
-	// attempt: store the rate info in context.
-	// context.WithValue(ctx, "rate", rate)
-	return rate * rate
+	return forking(ctx, s.b)
 }
-
-//-------------test end
 
 // ExecutionResult groups all structured logs emitted by the EVM
 // while replaying a transaction in debug mode as well as transaction
@@ -1194,63 +1189,64 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input)
 }
 
+//func forking
+func forking(ctx context.Context, b Backend) uint64 {
+	b.SendConsensus(ctx)
+	return 0
+}
+
 // submitTransaction is a helper function that submits tx to txPool and logs a message.
 func submitTransaction(ctx context.Context, b Backend, tx *types.Transaction) (common.Hash, error) {
-	b.SendTx(ctx, tx)
-	return common.Hash{}, nil
-	/*
-		if err := b.SendTx(ctx, tx); err != nil {
+	if err := b.SendTx(ctx, tx); err != nil {
+		return common.Hash{}, err
+	}
+	if tx.To() == nil {
+		signer := types.MakeSigner(b.ChainConfig(), b.CurrentBlock().Number())
+		from, err := types.Sender(signer, tx)
+		if err != nil {
 			return common.Hash{}, err
 		}
-		if tx.To() == nil {
-			signer := types.MakeSigner(b.ChainConfig(), b.CurrentBlock().Number())
-			from, err := types.Sender(signer, tx)
-			if err != nil {
-				return common.Hash{}, err
-			}
-			addr := crypto.CreateAddress(from, tx.Nonce())
-			log.Info("Submitted contract creation", "fullhash", tx.Hash().Hex(), "contract", addr.Hex())
-		} else {
-			log.Info("Submitted transaction", "fullhash", tx.Hash().Hex(), "recipient", tx.To())
-		}
-		return tx.Hash(), nil*/
+		addr := crypto.CreateAddress(from, tx.Nonce())
+		log.Info("Submitted contract creation", "fullhash", tx.Hash().Hex(), "contract", addr.Hex())
+	} else {
+		log.Info("Submitted transaction", "fullhash", tx.Hash().Hex(), "recipient", tx.To())
+	}
+	return tx.Hash(), nil
 }
 
 // SendTransaction creates a transaction for the given argument, sign it and submit it to the
 // transaction pool.
 func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args SendTxArgs) (common.Hash, error) {
-	/*
-		// Look up the wallet containing the requested signer
-		account := accounts.Account{Address: args.From}
+	// Look up the wallet containing the requested signer
+	account := accounts.Account{Address: args.From}
 
-		wallet, err := s.b.AccountManager().Find(account)
-		if err != nil {
-			return common.Hash{}, err
-		}
+	wallet, err := s.b.AccountManager().Find(account)
+	if err != nil {
+		return common.Hash{}, err
+	}
 
-		if args.Nonce == nil {
-			// Hold the addresse's mutex around signing to prevent concurrent assignment of
-			// the same nonce to multiple accounts.
-			s.nonceLock.LockAddr(args.From)
-			defer s.nonceLock.UnlockAddr(args.From)
-		}
+	if args.Nonce == nil {
+		// Hold the addresse's mutex around signing to prevent concurrent assignment of
+		// the same nonce to multiple accounts.
+		s.nonceLock.LockAddr(args.From)
+		defer s.nonceLock.UnlockAddr(args.From)
+	}
 
-		// Set some sanity defaults and terminate on failure
-		if err := args.setDefaults(ctx, s.b); err != nil {
-			return common.Hash{}, err
-		}
-		// Assemble the transaction and sign with the wallet
-		tx := args.toTransaction()
+	// Set some sanity defaults and terminate on failure
+	if err := args.setDefaults(ctx, s.b); err != nil {
+		return common.Hash{}, err
+	}
+	// Assemble the transaction and sign with the wallet
+	tx := args.toTransaction()
 
-		var chainID *big.Int
-		if config := s.b.ChainConfig(); config.IsEIP155(s.b.CurrentBlock().Number()) {
-			chainID = config.ChainId
-		}
-		signed, err := wallet.SignTx(account, tx, chainID)
-		if err != nil {
-			return common.Hash{}, err
-		}*/ //would recover wangjiyou
-	signed := &types.Transaction{}
+	var chainID *big.Int
+	if config := s.b.ChainConfig(); config.IsEIP155(s.b.CurrentBlock().Number()) {
+		chainID = config.ChainId
+	}
+	signed, err := wallet.SignTx(account, tx, chainID)
+	if err != nil {
+		return common.Hash{}, err
+	}
 	return submitTransaction(ctx, s.b, signed)
 }
 
