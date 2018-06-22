@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"strings"
 	"unicode"
 
 	"github.com/naoina/toml"
@@ -158,7 +159,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
 	}
 	//Test
-	fmt.Println("----Log Path:" + log.DefaultConfig.LoggerPath)
+	fmt.Println("----Log Path:" + strings.Join(log.DefaultConfig.OutputPaths, ","))
 	fmt.Println("----DB config:" + dagconfig.DefaultConfig.DbPath)
 	/*wangjiyou
 	// Whisper must be explicitly enabled by specifying at least 1 whisper flag or in dev mode

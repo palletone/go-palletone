@@ -3,11 +3,11 @@
 Engine="solo"
 
 [Log]
-LoggerPath="./log/abc.log"
-ErrPath="./log/error.log"
-LoggerLvl="DEBUG"
-IsDebug=true
-Encoding="console"
+OutputPaths =["stdout","./log/all.log"]
+ErrorOutputPaths= ["stderr","./log/error.log"]
+LoggerLvl="debug"   # ("debug", "info", "warn","error", "dpanic", "panic", and "fatal")
+Encoding="console" # console,json
+Development =true
 
 [Dag]
 DbPath="./leveldb"
