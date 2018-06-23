@@ -18,17 +18,13 @@ package debug
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	_ "net/http/pprof"
-	"os"
 	"runtime"
 
 	"github.com/fjl/memsize/memsizeui"
-	colorable "github.com/mattn/go-colorable"
 	cfgHelper "github.com/palletone/go-palletone/common/configure"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/log/term"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"github.com/palletone/go-palletone/statistics/metrics/exp"
 	"gopkg.in/urfave/cli.v1"
@@ -96,15 +92,15 @@ var Flags = []cli.Flag{
 	memprofilerateFlag, blockprofilerateFlag, cpuprofileFlag, traceFlag,
 }
 
-var glogger *log.GlogHandler
+// var glogger *log.GlogHandler
 
 func init() {
-	usecolor := term.IsTty(os.Stderr.Fd()) && os.Getenv("TERM") != "dumb"
-	output := io.Writer(os.Stderr)
-	if usecolor {
-		output = colorable.NewColorableStderr()
-	}
-	glogger = log.NewGlogHandler(log.StreamHandler(output, log.TerminalFormat(usecolor)))
+	// usecolor := term.IsTty(os.Stderr.Fd()) && os.Getenv("TERM") != "dumb"
+	// output := io.Writer(os.Stderr)
+	// if usecolor {
+	// 	output = colorable.NewColorableStderr()
+	// }
+	// glogger = log.NewGlogHandler(log.StreamHandler(output, log.TerminalFormat(usecolor)))
 }
 
 // Setup initializes profiling and logging based on the CLI flags.
@@ -113,12 +109,14 @@ func Setup(ctx *cli.Context) error {
 	//load default config data
 	cfgHelper.LoadConfigFromFile("")
 	// logging
-	log.PrintOrigins(ctx.GlobalBool(debugFlag.Name))
-	glogger.Verbosity(log.Lvl(ctx.GlobalInt(verbosityFlag.Name)))
-	glogger.Vmodule(ctx.GlobalString(vmoduleFlag.Name))
-	glogger.BacktraceAt(ctx.GlobalString(backtraceAtFlag.Name))
+	//log.PrintOrigins(ctx.GlobalBool(debugFlag.Name))
+
+	// glogger.Verbosity(log.Lvl(ctx.GlobalInt(verbosityFlag.Name)))
+	// glogger.Vmodule(ctx.GlobalString(vmoduleFlag.Name))
+	// glogger.BacktraceAt(ctx.GlobalString(backtraceAtFlag.Name))
 	//log.Root().SetHandler(glogger)
 	log.InitLogger()
+
 	// profiling, tracing
 	runtime.MemProfileRate = ctx.GlobalInt(memprofilerateFlag.Name)
 	Handler.SetBlockProfileRate(ctx.GlobalInt(blockprofilerateFlag.Name))
