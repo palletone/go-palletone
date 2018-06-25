@@ -10,10 +10,12 @@ package mediatorplugin
 import (
 	"fmt"
 	"time"
+	"strconv"
 
 	d "github.com/palletone/go-palletone/consensus/dpos"
 	a "github.com/palletone/go-palletone/core/application"
 	s "github.com/palletone/go-palletone/consensus/dpos/mediators"
+	v "github.com/palletone/go-palletone/dag/verifyunit"
 )
 
 var (
@@ -78,7 +80,7 @@ func (mp *MediatorPlugin) PluginStartup(db *a.DataBase, ch chan int) {
 
 	// 1. 判断是否满足生产验证单元的条件，主要判断本节点是否控制至少一个mediator账户
 	if len(mp.MediatorSet) == 0 {
-		println("No mediaotors configured! Please add mediator and private keys to configuration.")
+		println("No mediators configured! Please add mediator and private keys to configuration.")
 		mp.CloseChannel(-1)
 	} else {
 		// 2. 开启循环生产计划
@@ -98,7 +100,7 @@ func (mp *MediatorPlugin) PluginStartup(db *a.DataBase, ch chan int) {
 		mp.ScheduleProductionLoop()
 	}
 
-	println("mediator plugin startup end")
+	println("mediator plugin startup end!")
 }
 
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
@@ -120,7 +122,7 @@ type ProductionCondition uint8
 
 //验证单元生产状态枚举
 const(
-	Produced ProductionCondition = iota
+	Produced ProductionCondition = iota	// 正常生产验证单元
 	NotSynced
 	NotMyTurn
 	NotTimeYet
@@ -135,11 +137,13 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 	time.Sleep(wakeup.Sub(time.Now()))
 
 	// 1. 尝试生产验证单元
-	println("\n尝试生产验证单元...")
 	result, detail := mp.MaybeProduceVerifiedUnit()
 
 	// 2. 打印尝试结果
 	switch result {
+	case Produced:
+		println("Generated VerifiedUnit #" + detail["Num"] +" with timestamp " +
+			detail["Timestamp"] + /*" at time " + detail["Now"]*/ " with signature " + detail["MediatorSig"])
 	case NotSynced:
 		println("Not producing VerifiedUnit because production is disabled " +
 			"until we receive a recent VerifiedUnit (see: --enable-stale-production)")
@@ -155,10 +159,8 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 	case NoPrivateKey:
 		fmt.Printf("Not producing VerifiedUnit because I don't have the private key for %v\n",
 			detail["ScheduledKey"])
-	case Produced:
-//		println()
 	default:
-		println("Unknow condition!")
+		println("Unknown condition!")
 	}
 
 	// 3. 继续循环生产计划
@@ -168,6 +170,7 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 }
 
 func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[string]string) {
+//	println("\n尝试生产验证单元...")
 	detail := map[string]string{}
 
 	gp := &mp.DB.GlobalProp
@@ -234,11 +237,18 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 2. 生产验证单元
-	println("正在生产验证单元...")
-//	verifiedUnit :=
+	verifiedUnit := v.GenerateVerifiedUnit(
+		scheduledTime,
+//		scheduledMediator,
+		signKey,
+		mp.DB)
 
-	// 3. 向区块链网络广播验证单元
-	go println("向网络异步广播新生产的验证单元...")
+	// 3. 异步向区块链网络广播验证单元
+	go println("异步向网络广播新生产的验证单元...")
 
+	detail["Num"] = strconv.FormatUint(uint64(verifiedUnit.VerifiedUnitNum), 10)
+	detail["Timestamp"] = verifiedUnit.Timestamp.Format("2006-01-02 15:04:05")
+//	detail["Now"] = now.Format("2006-01-02 15:04:05")
+	detail["MediatorSig"] = verifiedUnit.MediatorSig
 	return Produced, detail
 }

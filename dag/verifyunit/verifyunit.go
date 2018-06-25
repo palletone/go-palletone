@@ -7,21 +7,61 @@
 
 package verifyunit
 
-func GenerateVerifiedUnit()  {
+import (
+	"time"
+
+	d "github.com/palletone/go-palletone/consensus/dpos"
+	s "github.com/palletone/go-palletone/consensus/dpos/mediators"
+	a "github.com/palletone/go-palletone/core/application"
+	v "github.com/palletone/go-palletone/dag/verifiedunit"
+)
+
+func GenerateVerifiedUnit(
+	when time.Time,
+	//	m *d.Mediator,
+	signKey string,
+	db *a.DataBase) v.VerifiedUnit {
+
+	gp := &db.GlobalProp
+	dgp := &db.DynGlobalProp
+
 	// 1. 判断是否满足生产的若干条件
 
 	// 2. 生产验证单元，添加交易集、时间戳、签名
+	println("\n正在生产验证单元...")
+
+	var vu v.VerifiedUnit
+	vu.Timestamp = when
+	vu.MediatorSig = signKey
+	vu.PreVerifiedUnit = dgp.LastVerifiedUnit
+	vu.VerifiedUnitNum = dgp.LastVerifiedUnitNum + 1
 
 	// 3. 从未验证交易池中移除添加的交易
 
 	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
 
+	// 4. 将验证单元添加到本地DB
+	go println("将新验证单元添加到DB...")
+
 	// 5. 更新全局动态属性值
+	println("更新全局动态属性值...")
+	UpdateGlobalDynProp(gp, dgp, &vu)
 
 	// 5. 判断是否到了维护周期，并维护
 
 	// 6. 洗牌
+	println("尝试打乱mediators的调度顺序...")
+	db.MediatorSchl.UpdateMediatorSchedule(gp, dgp)
 
-	// 4. 将验证单元添加到本地DB
+	return vu
+}
 
+func UpdateGlobalDynProp(gp *d.GlobalProperty, dgp *d.DynamicGlobalProperty, vu *v.VerifiedUnit) {
+	dgp.LastVerifiedUnitNum = vu.VerifiedUnitNum
+	dgp.LastVerifiedUnit = vu
+	dgp.LastVerifiedUnitTime = vu.Timestamp
+
+	missedUnits := uint64(s.GetSlotAtTime(gp, dgp, vu.Timestamp))
+	//	println(missedUnits)
+	dgp.CurrentASlot += missedUnits + 1
 }

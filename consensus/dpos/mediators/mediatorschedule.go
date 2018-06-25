@@ -126,8 +126,8 @@ func GetSlotTime(gp *d.GlobalProperty, dgp *d.DynamicGlobalProperty, slotNum uin
 	如果不是，就直接加上验证单元的slot时间
 	*/
 	// "slot 1" is verifiedUnitSlotTime,
-	// plus maint interval if last uint is a maint verifiedUnit
-	// plus verifiedUnit interval if last uint is not a maint verifiedUnit
+	// plus maintenance interval if last uint is a maintenance verifiedUnit
+	// plus verifiedUnit interval if last uint is not a maintenance verifiedUnit
 	return verifiedUnitSlotTime.Add(time.Second * time.Duration(slotNum) * time.Duration(interval))
 }
 
