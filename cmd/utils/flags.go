@@ -33,7 +33,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	//"github.com/palletone/go-palletone/consensus"
-	//"github.com/palletone/go-palletone/consensus/clique"
+	"github.com/palletone/go-palletone/core/node/nodeconfig"
 	//
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
@@ -506,7 +506,7 @@ var (
 	LogValue1Flag = cli.StringFlag{
 		Name:  "log.path",
 		Usage: "Log path",
-		Value: pan.DefaultConfig.Log.LoggerPath,
+		Value: strings.Join(pan.DefaultConfig.Log.OutputPaths, ","),
 	}
 
 	LogValue2Flag = cli.StringFlag{
@@ -522,7 +522,7 @@ var (
 	LogValue4Flag = cli.StringFlag{
 		Name:  "log.errpath",
 		Usage: "Log errpath",
-		Value: pan.DefaultConfig.Log.ErrPath,
+		Value: strings.Join(pan.DefaultConfig.Log.ErrorOutputPaths, ","),
 	}
 	LogValue5Flag = cli.StringFlag{
 		Name:  "log.encoding",
@@ -828,12 +828,12 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 }
 
 // SetNodeConfig applies node-related command line flags to the config.
-func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
-	SetP2PConfig(ctx, &cfg.P2P)
-	setIPC(ctx, cfg)
-	setHTTP(ctx, cfg)
-	setWS(ctx, cfg)
-	setNodeUserIdent(ctx, cfg)
+func SetNodeConfig(ctx *cli.Context, cfg *nodeconfig.Config) {
+	// SetP2PConfig(ctx, &cfg.P2P)
+	// setIPC(ctx, cfg)
+	// setHTTP(ctx, cfg)
+	// setWS(ctx, cfg)
+	// setNodeUserIdent(ctx, cfg)
 
 	switch {
 	case ctx.GlobalIsSet(DataDirFlag.Name):
@@ -849,12 +849,12 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	if ctx.GlobalIsSet(KeyStoreDirFlag.Name) {
 		cfg.KeyStoreDir = ctx.GlobalString(KeyStoreDirFlag.Name)
 	}
-	if ctx.GlobalIsSet(LightKDFFlag.Name) {
-		cfg.UseLightweightKDF = ctx.GlobalBool(LightKDFFlag.Name)
-	}
-	if ctx.GlobalIsSet(NoUSBFlag.Name) {
-		cfg.NoUSB = ctx.GlobalBool(NoUSBFlag.Name)
-	}
+	// if ctx.GlobalIsSet(LightKDFFlag.Name) {
+	// 	cfg.UseLightweightKDF = ctx.GlobalBool(LightKDFFlag.Name)
+	// }
+	// if ctx.GlobalIsSet(NoUSBFlag.Name) {
+	// 	cfg.NoUSB = ctx.GlobalBool(NoUSBFlag.Name)
+	// }
 }
 
 /*
@@ -958,16 +958,16 @@ func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
 }
 func setLog(ctx *cli.Context, cfg *log.Config) {
 	if ctx.GlobalIsSet(LogValue1Flag.Name) {
-		cfg.LoggerPath = ctx.GlobalString(LogValue1Flag.Name)
+		cfg.OutputPaths = []string{ctx.GlobalString(LogValue1Flag.Name)}
 	}
 	if ctx.GlobalIsSet(LogValue2Flag.Name) {
 		cfg.LoggerLvl = ctx.GlobalString(LogValue2Flag.Name)
 	}
 	if ctx.GlobalIsSet(LogValue3Flag.Name) {
-		cfg.IsDebug = ctx.GlobalBool(LogValue3Flag.Name)
+		cfg.Development = ctx.GlobalBool(LogValue3Flag.Name)
 	}
 	if ctx.GlobalIsSet(LogValue4Flag.Name) {
-		cfg.ErrPath = ctx.GlobalString(LogValue4Flag.Name)
+		cfg.ErrorOutputPaths = []string{ctx.GlobalString(LogValue4Flag.Name)}
 	}
 }
 

@@ -58,3 +58,10 @@ func TestKeyEncryptDecrypt(t *testing.T) {
 		}
 	}
 }
+func TestStoreKey(t *testing.T) {
+	dir := "./"
+	auth := "123456"
+	add, err := StoreKey(dir, auth, 2, 2)
+	t.Log("Address: " + add.Str())
+	t.Log(err)
+}

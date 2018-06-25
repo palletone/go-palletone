@@ -19,8 +19,6 @@
 package log
 
 import (
-	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"path"
@@ -87,67 +85,79 @@ func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
 // init zap.logger
 func InitLogger() {
 	// log path
-	path := DefaultConfig.LoggerPath
+	path := DefaultConfig.OutputPaths
 	// error path
-	err_path := DefaultConfig.ErrPath
+	err_path := DefaultConfig.ErrorOutputPaths
 	// log level
-	lvl := DefaultConfig.LoggerLvl
+	// lvl := DefaultConfig.LoggerLvl
 	//  encoding
-	encoding := DefaultConfig.Encoding
-	// is debug?
-	isDebug := DefaultConfig.IsDebug
+	// encoding := DefaultConfig.Encoding
+	// // is debug?
+	// isDebug := DefaultConfig.IsDebug
 	// if the config file is damaged or lost, then initialize the config if log system.
-	if path == "" {
-		path = "log/out.log"
+	if len(path) == 0 {
+		path = []string{"log/out.log"}
 	}
-	if err_path == "" {
-		err_path = "log/err.log"
+	if len(err_path) == 0 {
+		err_path = []string{"log/err.log"}
 	}
-	if lvl == "" {
-		lvl = "INFO"
-	}
-	if encoding == "" {
-		encoding = "console"
-	}
+	// if lvl == "" {
+	// 	lvl = "INFO"
+	// }
+	// if encoding == "" {
+	// 	encoding = "console"
+	// }
 	// if err := mkdirPath(path, err_path); err != nil {
 	// 	panic(err)
 	// }
-	if err := MakeDirAndFile(path); err != nil {
-		panic(err)
-	}
-	if err := MakeDirAndFile(err_path); err != nil {
-		panic(err)
-	}
+	for _, p := range path {
 
-	initLogger(path, err_path, encoding, lvl, isDebug)
+		if err := MakeDirAndFile(p); err != nil {
+			panic(err)
+		}
+	}
+	for _, ep := range err_path {
+		if err := MakeDirAndFile(ep); err != nil {
+			panic(err)
+		}
+	}
+	initLogger()
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
 
 // init logger.
-func initLogger(path, err_path, encoding, lvl string, isDebug bool) {
-	var js string
-	if isDebug {
-		js = fmt.Sprintf(`{
-      "level": "%s",
-      "encoding": "%s",
-      "outputPaths": ["stdout","%s"],
-      "errorOutputPaths": ["stdout","%s"]
-      }`, lvl, encoding, path, err_path)
-	} else {
-		js = fmt.Sprintf(`{
-      "level": "%s",
-      "encoding": "%s",
-      "outputPaths": ["%s"],
-      "errorOutputPaths": ["%s"]
-      }`, lvl, encoding, path, err_path)
-	}
+func initLogger() {
+	// var js string
+	// if isDebug {
+	// 	js = fmt.Sprintf(`{
+	//   "level": "%s",
+	//   "encoding": "%s",
+	//   "outputPaths": ["stdout","%s"],
+	//   "errorOutputPaths": ["stderr","%s"]
+	//   }`, lvl, encoding, path, err_path)
+	// } else {
+	// 	js = fmt.Sprintf(`{
+	//   "level": "%s",
+	//   "encoding": "%s",
+	//   "outputPaths": ["%s"],
+	//   "errorOutputPaths": ["%s"]
+	//   }`, lvl, encoding, path, err_path)
+	// }
 	var cfg zap.Config
 	//log.Println("Zap config json:" + js)
-	if err := json.Unmarshal([]byte(js), &cfg); err != nil {
-		panic(err)
-	}
+	// if err := json.Unmarshal([]byte(js), &cfg); err != nil {
+	// 	panic(err)
+	// }
+	cfg.OutputPaths = DefaultConfig.OutputPaths
+	cfg.ErrorOutputPaths = DefaultConfig.ErrorOutputPaths
+	var lvl zap.AtomicLevel
+	lvl.UnmarshalText([]byte(DefaultConfig.LoggerLvl))
+	cfg.Level = lvl
+	cfg.Encoding = DefaultConfig.Encoding
+	cfg.Development = DefaultConfig.Development
 	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
 	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	//cfg.EncoderConfig.EncodeLevel=zapcore.LowercaseColorLevelEncoder
 	l, err := cfg.Build()
 	if err != nil {
 		log.Fatal("init logger error: ", err)
@@ -300,6 +310,9 @@ func checkFileIsExist(path string) bool {
 
 // Mkdir the path of out.log、err.log ,if the path is not exist.
 func MakeDirAndFile(filePath string) error {
+	if filePath == "stdout" || filePath == "stderr" {
+		return nil
+	}
 	// log.Println("log file path:" + filePath)
 	if !checkFileIsExist(filePath) {
 		// log.Println("create folder and file:" + filePath)

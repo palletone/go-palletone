@@ -50,23 +50,23 @@ type HandlerT struct {
 	traceFile string
 }
 
-// Verbosity sets the log verbosity ceiling. The verbosity of individual packages
-// and source files can be raised using Vmodule.
-func (*HandlerT) Verbosity(level int) {
-	glogger.Verbosity(log.Lvl(level))
-}
+// // Verbosity sets the log verbosity ceiling. The verbosity of individual packages
+// // and source files can be raised using Vmodule.
+// func (*HandlerT) Verbosity(level int) {
+// 	glogger.Verbosity(log.Lvl(level))
+// }
 
-// Vmodule sets the log verbosity pattern. See package log for details on the
-// pattern syntax.
-func (*HandlerT) Vmodule(pattern string) error {
-	return glogger.Vmodule(pattern)
-}
+// // Vmodule sets the log verbosity pattern. See package log for details on the
+// // pattern syntax.
+// func (*HandlerT) Vmodule(pattern string) error {
+// 	return glogger.Vmodule(pattern)
+// }
 
-// BacktraceAt sets the log backtrace location. See package log for details on
-// the pattern syntax.
-func (*HandlerT) BacktraceAt(location string) error {
-	return glogger.BacktraceAt(location)
-}
+// // BacktraceAt sets the log backtrace location. See package log for details on
+// // the pattern syntax.
+// func (*HandlerT) BacktraceAt(location string) error {
+// 	return glogger.BacktraceAt(location)
+// }
 
 // MemStats returns detailed runtime memory statistics.
 func (*HandlerT) MemStats() *runtime.MemStats {

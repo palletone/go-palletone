@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"strings"
 	"unicode"
 
 	"github.com/naoina/toml"
@@ -137,7 +138,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	// log.InitLogger()
 
 	// Apply flags.
-	utils.SetNodeConfig(ctx, &cfg.Node)
+	// utils.SetNodeConfig(ctx, &cfg.Node)
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
@@ -158,7 +159,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
 	}
 	//Test
-	fmt.Println("----Log Path:" + log.DefaultConfig.LoggerPath)
+	fmt.Println("----Log Path:" + strings.Join(log.DefaultConfig.OutputPaths, ","))
 	fmt.Println("----DB config:" + dagconfig.DefaultConfig.DbPath)
 	/*wangjiyou
 	// Whisper must be explicitly enabled by specifying at least 1 whisper flag or in dev mode
