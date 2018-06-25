@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with go-palletone. If not, see <http://www.gnu.org/licenses/>.
 
-// gpan is the official command-line client for Ethereum.
+// gptn is the official command-line client for Ethereum.
 package main
 
 import (
@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	clientIdentifier = "gpan" // Client identifier to advertise over the network
+	clientIdentifier = "gptn" // Client identifier to advertise over the network
 )
 
 var (
@@ -139,7 +139,7 @@ var (
 
 func init() {
 	// Initialize the CLI app and start Geth
-	app.Action = gpan
+	app.Action = gptn
 	app.HideVersion = true // we have a command to print the version
 	app.Copyright = "Copyright 2017-2018 The go-palletone Authors"
 	app.Commands = []cli.Command{
@@ -203,10 +203,10 @@ func main() {
 	}
 }
 
-// gpan is the main entry point into the system if no special subcommand is ran.
+// gptn is the main entry point into the system if no special subcommand is ran.
 // It creates a default node based on the command line arguments and runs it in
 // blocking mode, waiting for it to be shut down.
-func gpan(ctx *cli.Context) error {
+func gptn(ctx *cli.Context) error {
 	node := makeFullNode(ctx)
 	startNode(ctx, node)
 	node.Wait()

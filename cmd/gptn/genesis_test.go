@@ -100,11 +100,11 @@ func TestCustomGenesis(t *testing.T) {
 		runGeth(t, "--datadir", datadir, "init", json).WaitExit()
 
 		// Query the custom genesis block
-		gpan := runGeth(t,
+		gptn := runGeth(t,
 			"--datadir", datadir, "--maxpeers", "0", "--port", "0",
 			"--nodiscover", "--nat", "none", "--ipcdisable",
 			"--exec", tt.query, "console")
-		gpan.ExpectRegexp(tt.result)
-		gpan.ExpectExit()
+		gptn.ExpectRegexp(tt.result)
+		gptn.ExpectExit()
 	}
 }

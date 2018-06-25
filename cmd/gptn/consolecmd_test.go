@@ -40,22 +40,22 @@ const (
 func TestConsoleWelcome(t *testing.T) {
 	coinbase := "0x8605cdbbdb6d264aa742e77020dcbc58fcdce182"
 
-	// Start a gpan console, make sure it's cleaned up and terminate the console
-	gpan := runGeth(t,
+	// Start a gptn console, make sure it's cleaned up and terminate the console
+	gptn := runGeth(t,
 		"--port", "0", "--maxpeers", "0", "--nodiscover", "--nat", "none",
 		"--etherbase", coinbase, "--shh",
 		"console")
 
 	// Gather all the infos the welcome message needs to contain
-	gpan.SetTemplateFunc("goos", func() string { return runtime.GOOS })
-	gpan.SetTemplateFunc("goarch", func() string { return runtime.GOARCH })
-	gpan.SetTemplateFunc("gover", runtime.Version)
-	gpan.SetTemplateFunc("gethver", func() string { return configure.Version })
-	gpan.SetTemplateFunc("niltime", func() string { return time.Unix(0, 0).Format(time.RFC1123) })
-	gpan.SetTemplateFunc("apis", func() string { return ipcAPIs })
+	gptn.SetTemplateFunc("goos", func() string { return runtime.GOOS })
+	gptn.SetTemplateFunc("goarch", func() string { return runtime.GOARCH })
+	gptn.SetTemplateFunc("gover", runtime.Version)
+	gptn.SetTemplateFunc("gethver", func() string { return configure.Version })
+	gptn.SetTemplateFunc("niltime", func() string { return time.Unix(0, 0).Format(time.RFC1123) })
+	gptn.SetTemplateFunc("apis", func() string { return ipcAPIs })
 
 	// Verify the actual welcome message to the required template
-	gpan.Expect(`
+	gptn.Expect(`
 Welcome to the Geth JavaScript console!
 
 instance: Geth/v{{gethver}}/{{goos}}-{{goarch}}/{{gover}}
@@ -66,7 +66,7 @@ at block: 0 ({{niltime}})
 
 > {{.InputLine "exit"}}
 `)
-	gpan.ExpectExit()
+	gptn.ExpectExit()
 }
 
 // Tests that a console can be attached to a running node via various means.
@@ -75,56 +75,56 @@ func TestIPCAttachWelcome(t *testing.T) {
 	coinbase := "0x8605cdbbdb6d264aa742e77020dcbc58fcdce182"
 	var ipc string
 	if runtime.GOOS == "windows" {
-		ipc = `\\.\pipe\gpan` + strconv.Itoa(trulyRandInt(100000, 999999))
+		ipc = `\\.\pipe\gptn` + strconv.Itoa(trulyRandInt(100000, 999999))
 	} else {
 		ws := tmpdir(t)
 		defer os.RemoveAll(ws)
-		ipc = filepath.Join(ws, "gpan.ipc")
+		ipc = filepath.Join(ws, "gptn.ipc")
 	}
 	// Note: we need --shh because testAttachWelcome checks for default
 	// list of ipc modules and shh is included there.
-	gpan := runGeth(t,
+	gptn := runGeth(t,
 		"--port", "0", "--maxpeers", "0", "--nodiscover", "--nat", "none",
 		"--etherbase", coinbase, "--shh", "--ipcpath", ipc)
 
 	time.Sleep(2 * time.Second) // Simple way to wait for the RPC endpoint to open
-	testAttachWelcome(t, gpan, "ipc:"+ipc, ipcAPIs)
+	testAttachWelcome(t, gptn, "ipc:"+ipc, ipcAPIs)
 
-	gpan.Interrupt()
-	gpan.ExpectExit()
+	gptn.Interrupt()
+	gptn.ExpectExit()
 }
 
 func TestHTTPAttachWelcome(t *testing.T) {
 	coinbase := "0x8605cdbbdb6d264aa742e77020dcbc58fcdce182"
 	port := strconv.Itoa(trulyRandInt(1024, 65536)) // Yeah, sometimes this will fail, sorry :P
-	gpan := runGeth(t,
+	gptn := runGeth(t,
 		"--port", "0", "--maxpeers", "0", "--nodiscover", "--nat", "none",
 		"--etherbase", coinbase, "--rpc", "--rpcport", port)
 
 	time.Sleep(2 * time.Second) // Simple way to wait for the RPC endpoint to open
-	testAttachWelcome(t, gpan, "http://localhost:"+port, httpAPIs)
+	testAttachWelcome(t, gptn, "http://localhost:"+port, httpAPIs)
 
-	gpan.Interrupt()
-	gpan.ExpectExit()
+	gptn.Interrupt()
+	gptn.ExpectExit()
 }
 
 func TestWSAttachWelcome(t *testing.T) {
 	coinbase := "0x8605cdbbdb6d264aa742e77020dcbc58fcdce182"
 	port := strconv.Itoa(trulyRandInt(1024, 65536)) // Yeah, sometimes this will fail, sorry :P
 
-	gpan := runGeth(t,
+	gptn := runGeth(t,
 		"--port", "0", "--maxpeers", "0", "--nodiscover", "--nat", "none",
 		"--etherbase", coinbase, "--ws", "--wsport", port)
 
 	time.Sleep(2 * time.Second) // Simple way to wait for the RPC endpoint to open
-	testAttachWelcome(t, gpan, "ws://localhost:"+port, httpAPIs)
+	testAttachWelcome(t, gptn, "ws://localhost:"+port, httpAPIs)
 
-	gpan.Interrupt()
-	gpan.ExpectExit()
+	gptn.Interrupt()
+	gptn.ExpectExit()
 }
 
-func testAttachWelcome(t *testing.T, gpan *testgeth, endpoint, apis string) {
-	// Attach to a running gpan note and terminate immediately
+func testAttachWelcome(t *testing.T, gptn *testgeth, endpoint, apis string) {
+	// Attach to a running gptn note and terminate immediately
 	attach := runGeth(t, "attach", endpoint)
 	defer attach.ExpectExit()
 	attach.CloseStdin()
@@ -134,10 +134,10 @@ func testAttachWelcome(t *testing.T, gpan *testgeth, endpoint, apis string) {
 	attach.SetTemplateFunc("goarch", func() string { return runtime.GOARCH })
 	attach.SetTemplateFunc("gover", runtime.Version)
 	attach.SetTemplateFunc("gethver", func() string { return configure.Version })
-	attach.SetTemplateFunc("etherbase", func() string { return gpan.Etherbase })
+	attach.SetTemplateFunc("etherbase", func() string { return gptn.Etherbase })
 	attach.SetTemplateFunc("niltime", func() string { return time.Unix(0, 0).Format(time.RFC1123) })
 	attach.SetTemplateFunc("ipc", func() bool { return strings.HasPrefix(endpoint, "ipc") })
-	attach.SetTemplateFunc("datadir", func() string { return gpan.Datadir })
+	attach.SetTemplateFunc("datadir", func() string { return gptn.Datadir })
 	attach.SetTemplateFunc("apis", func() string { return apis })
 
 	// Verify the actual welcome message to the required template

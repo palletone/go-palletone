@@ -32,7 +32,7 @@ import (
 )
 
 func tmpKeyStoreIface(t *testing.T, encrypted bool) (dir string, ks keyStore) {
-	d, err := ioutil.TempDir("", "gpan-keystore-test")
+	d, err := ioutil.TempDir("", "gptn-keystore-test")
 	if err != nil {
 		t.Fatal(err)
 	}

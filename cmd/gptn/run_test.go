@@ -27,7 +27,7 @@ import (
 )
 
 func tmpdir(t *testing.T) string {
-	dir, err := ioutil.TempDir("", "gpan-test")
+	dir, err := ioutil.TempDir("", "gptn-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,8 +43,8 @@ type testgeth struct {
 }
 
 func init() {
-	// Run the app if we've been exec'd as "gpan-test" in runGeth.
-	reexec.Register("gpan-test", func() {
+	// Run the app if we've been exec'd as "gptn-test" in runGeth.
+	reexec.Register("gptn-test", func() {
 		if err := app.Run(os.Args); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
@@ -61,7 +61,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// spawns gpan with the given command line args. If the args don't set --datadir, the
+// spawns gptn with the given command line args. If the args don't set --datadir, the
 // child g gets a temporary data directory.
 func runGeth(t *testing.T, args ...string) *testgeth {
 	tt := &testgeth{}
@@ -90,9 +90,9 @@ func runGeth(t *testing.T, args ...string) *testgeth {
 		}()
 	}
 
-	// Boot "gpan". This actually runs the test binary but the TestMain
+	// Boot "gptn". This actually runs the test binary but the TestMain
 	// function will prevent any tests from running.
-	tt.Run("gpan-test", args...)
+	tt.Run("gptn-test", args...)
 
 	return tt
 }

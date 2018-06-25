@@ -162,7 +162,7 @@ func makeExtraData(extra []byte) []byte {
 		// create default extradata
 		extra, _ = rlp.EncodeToBytes([]interface{}{
 			uint(configure.VersionMajor<<16 | configure.VersionMinor<<8 | configure.VersionPatch),
-			"gpan",
+			"gptn",
 			runtime.Version(),
 			runtime.GOOS,
 		})

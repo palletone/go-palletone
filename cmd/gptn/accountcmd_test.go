@@ -43,22 +43,22 @@ func tmpDatadirWithKeystore(t *testing.T) string {
 }
 
 func TestAccountListEmpty(t *testing.T) {
-	gpan := runGeth(t, "account", "list")
-	gpan.ExpectExit()
+	gptn := runGeth(t, "account", "list")
+	gptn.ExpectExit()
 }
 
 func TestAccountList(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	gpan := runGeth(t, "account", "list", "--datadir", datadir)
-	defer gpan.ExpectExit()
+	gptn := runGeth(t, "account", "list", "--datadir", datadir)
+	defer gptn.ExpectExit()
 	if runtime.GOOS == "windows" {
-		gpan.Expect(`
+		gptn.Expect(`
 Account #0: {7ef5a6135f1fd6a02593eedc869c6d41d934aef8} keystore://{{.Datadir}}\keystore\UTC--2016-03-22T12-57-55.920751759Z--7ef5a6135f1fd6a02593eedc869c6d41d934aef8
 Account #1: {f466859ead1932d743d622cb74fc058882e8648a} keystore://{{.Datadir}}\keystore\aaa
 Account #2: {289d485d9771714cce91d3393d764e1311907acc} keystore://{{.Datadir}}\keystore\zzz
 `)
 	} else {
-		gpan.Expect(`
+		gptn.Expect(`
 Account #0: {7ef5a6135f1fd6a02593eedc869c6d41d934aef8} keystore://{{.Datadir}}/keystore/UTC--2016-03-22T12-57-55.920751759Z--7ef5a6135f1fd6a02593eedc869c6d41d934aef8
 Account #1: {f466859ead1932d743d622cb74fc058882e8648a} keystore://{{.Datadir}}/keystore/aaa
 Account #2: {289d485d9771714cce91d3393d764e1311907acc} keystore://{{.Datadir}}/keystore/zzz
@@ -67,21 +67,21 @@ Account #2: {289d485d9771714cce91d3393d764e1311907acc} keystore://{{.Datadir}}/k
 }
 
 func TestAccountNew(t *testing.T) {
-	gpan := runGeth(t, "account", "new", "--lightkdf")
-	defer gpan.ExpectExit()
-	gpan.Expect(`
+	gptn := runGeth(t, "account", "new", "--lightkdf")
+	defer gptn.ExpectExit()
+	gptn.Expect(`
 Your new account is locked with a password. Please give a password. Do not forget this password.
 !! Unsupported terminal, password will be echoed.
 Passphrase: {{.InputLine "foobar"}}
 Repeat passphrase: {{.InputLine "foobar"}}
 `)
-	gpan.ExpectRegexp(`Address: \{[0-9a-f]{40}\}\n`)
+	gptn.ExpectRegexp(`Address: \{[0-9a-f]{40}\}\n`)
 }
 
 func TestAccountNewBadRepeat(t *testing.T) {
-	gpan := runGeth(t, "account", "new", "--lightkdf")
-	defer gpan.ExpectExit()
-	gpan.Expect(`
+	gptn := runGeth(t, "account", "new", "--lightkdf")
+	defer gptn.ExpectExit()
+	gptn.Expect(`
 Your new account is locked with a password. Please give a password. Do not forget this password.
 !! Unsupported terminal, password will be echoed.
 Passphrase: {{.InputLine "something"}}
@@ -92,11 +92,11 @@ Fatal: Passphrases do not match
 
 func TestAccountUpdate(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	gpan := runGeth(t, "account", "update",
+	gptn := runGeth(t, "account", "update",
 		"--datadir", datadir, "--lightkdf",
 		"f466859ead1932d743d622cb74fc058882e8648a")
-	defer gpan.ExpectExit()
-	gpan.Expect(`
+	defer gptn.ExpectExit()
+	gptn.Expect(`
 Unlocking account f466859ead1932d743d622cb74fc058882e8648a | Attempt 1/3
 !! Unsupported terminal, password will be echoed.
 Passphrase: {{.InputLine "foobar"}}
@@ -107,24 +107,24 @@ Repeat passphrase: {{.InputLine "foobar2"}}
 }
 
 func TestWalletImport(t *testing.T) {
-	gpan := runGeth(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
-	defer gpan.ExpectExit()
-	gpan.Expect(`
+	gptn := runGeth(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
+	defer gptn.ExpectExit()
+	gptn.Expect(`
 !! Unsupported terminal, password will be echoed.
 Passphrase: {{.InputLine "foo"}}
 Address: {d4584b5f6229b7be90727b0fc8c6b91bb427821f}
 `)
 
-	files, err := ioutil.ReadDir(filepath.Join(gpan.Datadir, "keystore"))
+	files, err := ioutil.ReadDir(filepath.Join(gptn.Datadir, "keystore"))
 	if len(files) != 1 {
 		t.Errorf("expected one key file in keystore directory, found %d files (error: %v)", len(files), err)
 	}
 }
 
 func TestWalletImportBadPassword(t *testing.T) {
-	gpan := runGeth(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
-	defer gpan.ExpectExit()
-	gpan.Expect(`
+	gptn := runGeth(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
+	defer gptn.ExpectExit()
+	gptn.Expect(`
 !! Unsupported terminal, password will be echoed.
 Passphrase: {{.InputLine "wrong"}}
 Fatal: could not decrypt key with given passphrase
@@ -133,23 +133,23 @@ Fatal: could not decrypt key with given passphrase
 
 func TestUnlockFlag(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	gpan := runGeth(t,
+	gptn := runGeth(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a",
 		"js", "testdata/empty.js")
-	gpan.Expect(`
+	gptn.Expect(`
 Unlocking account f466859ead1932d743d622cb74fc058882e8648a | Attempt 1/3
 !! Unsupported terminal, password will be echoed.
 Passphrase: {{.InputLine "foobar"}}
 `)
-	gpan.ExpectExit()
+	gptn.ExpectExit()
 
 	wantMessages := []string{
 		"Unlocked account",
 		"=0xf466859eAD1932D743d622CB74FC058882E8648A",
 	}
 	for _, m := range wantMessages {
-		if !strings.Contains(gpan.StderrText(), m) {
+		if !strings.Contains(gptn.StderrText(), m) {
 			t.Errorf("stderr text does not contain %q", m)
 		}
 	}
@@ -157,11 +157,11 @@ Passphrase: {{.InputLine "foobar"}}
 
 func TestUnlockFlagWrongPassword(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	gpan := runGeth(t,
+	gptn := runGeth(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a")
-	defer gpan.ExpectExit()
-	gpan.Expect(`
+	defer gptn.ExpectExit()
+	gptn.Expect(`
 Unlocking account f466859ead1932d743d622cb74fc058882e8648a | Attempt 1/3
 !! Unsupported terminal, password will be echoed.
 Passphrase: {{.InputLine "wrong1"}}
@@ -176,18 +176,18 @@ Fatal: Failed to unlock account f466859ead1932d743d622cb74fc058882e8648a (could 
 // https://github.com/palletone/go-palletone/issues/1785
 func TestUnlockFlagMultiIndex(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	gpan := runGeth(t,
+	gptn := runGeth(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "0,2",
 		"js", "testdata/empty.js")
-	gpan.Expect(`
+	gptn.Expect(`
 Unlocking account 0 | Attempt 1/3
 !! Unsupported terminal, password will be echoed.
 Passphrase: {{.InputLine "foobar"}}
 Unlocking account 2 | Attempt 1/3
 Passphrase: {{.InputLine "foobar"}}
 `)
-	gpan.ExpectExit()
+	gptn.ExpectExit()
 
 	wantMessages := []string{
 		"Unlocked account",
@@ -195,7 +195,7 @@ Passphrase: {{.InputLine "foobar"}}
 		"=0x289d485D9771714CCe91D3393D764E1311907ACc",
 	}
 	for _, m := range wantMessages {
-		if !strings.Contains(gpan.StderrText(), m) {
+		if !strings.Contains(gptn.StderrText(), m) {
 			t.Errorf("stderr text does not contain %q", m)
 		}
 	}
@@ -203,11 +203,11 @@ Passphrase: {{.InputLine "foobar"}}
 
 func TestUnlockFlagPasswordFile(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	gpan := runGeth(t,
+	gptn := runGeth(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--password", "testdata/passwords.txt", "--unlock", "0,2",
 		"js", "testdata/empty.js")
-	gpan.ExpectExit()
+	gptn.ExpectExit()
 
 	wantMessages := []string{
 		"Unlocked account",
@@ -215,7 +215,7 @@ func TestUnlockFlagPasswordFile(t *testing.T) {
 		"=0x289d485D9771714CCe91D3393D764E1311907ACc",
 	}
 	for _, m := range wantMessages {
-		if !strings.Contains(gpan.StderrText(), m) {
+		if !strings.Contains(gptn.StderrText(), m) {
 			t.Errorf("stderr text does not contain %q", m)
 		}
 	}
@@ -223,29 +223,29 @@ func TestUnlockFlagPasswordFile(t *testing.T) {
 
 func TestUnlockFlagPasswordFileWrongPassword(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	gpan := runGeth(t,
+	gptn := runGeth(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--password", "testdata/wrong-passwords.txt", "--unlock", "0,2")
-	defer gpan.ExpectExit()
-	gpan.Expect(`
+	defer gptn.ExpectExit()
+	gptn.Expect(`
 Fatal: Failed to unlock account 0 (could not decrypt key with given passphrase)
 `)
 }
 
 func TestUnlockFlagAmbiguous(t *testing.T) {
 	store := filepath.Join("..", "..", "accounts", "keystore", "testdata", "dupes")
-	gpan := runGeth(t,
+	gptn := runGeth(t,
 		"--keystore", store, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a",
 		"js", "testdata/empty.js")
-	defer gpan.ExpectExit()
+	defer gptn.ExpectExit()
 
 	// Helper for the expect template, returns absolute keystore path.
-	gpan.SetTemplateFunc("keypath", func(file string) string {
+	gptn.SetTemplateFunc("keypath", func(file string) string {
 		abs, _ := filepath.Abs(filepath.Join(store, file))
 		return abs
 	})
-	gpan.Expect(`
+	gptn.Expect(`
 Unlocking account f466859ead1932d743d622cb74fc058882e8648a | Attempt 1/3
 !! Unsupported terminal, password will be echoed.
 Passphrase: {{.InputLine "foobar"}}
@@ -257,14 +257,14 @@ Your passphrase unlocked keystore://{{keypath "1"}}
 In order to avoid this warning, you need to remove the following duplicate key files:
    keystore://{{keypath "2"}}
 `)
-	gpan.ExpectExit()
+	gptn.ExpectExit()
 
 	wantMessages := []string{
 		"Unlocked account",
 		"=0xf466859eAD1932D743d622CB74FC058882E8648A",
 	}
 	for _, m := range wantMessages {
-		if !strings.Contains(gpan.StderrText(), m) {
+		if !strings.Contains(gptn.StderrText(), m) {
 			t.Errorf("stderr text does not contain %q", m)
 		}
 	}
@@ -272,17 +272,17 @@ In order to avoid this warning, you need to remove the following duplicate key f
 
 func TestUnlockFlagAmbiguousWrongPassword(t *testing.T) {
 	store := filepath.Join("..", "..", "accounts", "keystore", "testdata", "dupes")
-	gpan := runGeth(t,
+	gptn := runGeth(t,
 		"--keystore", store, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a")
-	defer gpan.ExpectExit()
+	defer gptn.ExpectExit()
 
 	// Helper for the expect template, returns absolute keystore path.
-	gpan.SetTemplateFunc("keypath", func(file string) string {
+	gptn.SetTemplateFunc("keypath", func(file string) string {
 		abs, _ := filepath.Abs(filepath.Join(store, file))
 		return abs
 	})
-	gpan.Expect(`
+	gptn.Expect(`
 Unlocking account f466859ead1932d743d622cb74fc058882e8648a | Attempt 1/3
 !! Unsupported terminal, password will be echoed.
 Passphrase: {{.InputLine "wrong"}}
@@ -292,5 +292,5 @@ Multiple key files exist for address f466859ead1932d743d622cb74fc058882e8648a:
 Testing your passphrase against all of them...
 Fatal: None of the listed files could be unlocked.
 `)
-	gpan.ExpectExit()
+	gptn.ExpectExit()
 }

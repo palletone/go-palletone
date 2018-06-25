@@ -24,7 +24,7 @@ type Config struct {
 var DefaultConfig = Config{
 	DataDir:     "/data1",
 	KeyStoreDir: "/data1/keystore",
-	IPCPath:     "gpan.ipc",
+	IPCPath:     "gptn.ipc",
 }
 
 // AccountConfig determines the settings for scrypt and keydirectory

@@ -116,11 +116,11 @@ func testDAOForkBlockNewChain(t *testing.T, test int, genesis string, expectBloc
 	} else {
 		// Force chain initialization
 		args := []string{"--port", "0", "--maxpeers", "0", "--nodiscover", "--nat", "none", "--ipcdisable", "--datadir", datadir}
-		gpan := runGeth(t, append(args, []string{"--exec", "2+2", "console"}...)...)
-		gpan.WaitExit()
+		gptn := runGeth(t, append(args, []string{"--exec", "2+2", "console"}...)...)
+		gptn.WaitExit()
 	}
 	// Retrieve the DAO config flag from the database
-	path := filepath.Join(datadir, "gpan", "chaindata")
+	path := filepath.Join(datadir, "gptn", "chaindata")
 	db, err := pandb.NewLDBDatabase(path, 0, 0)
 	if err != nil {
 		t.Fatalf("test %d: failed to open test database: %v", test, err)

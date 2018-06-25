@@ -80,7 +80,7 @@ The output of this command is supposed to be machine-readable.
 func makecache(ctx *cli.Context) error {
 	args := ctx.Args()
 	if len(args) != 2 {
-		utils.Fatalf(`Usage: gpan makecache <block number> <outputdir>`)
+		utils.Fatalf(`Usage: gptn makecache <block number> <outputdir>`)
 	}
 	_, err := strconv.ParseUint(args[0], 0, 64)
 	if err != nil {
@@ -95,7 +95,7 @@ func makecache(ctx *cli.Context) error {
 func makedag(ctx *cli.Context) error {
 	args := ctx.Args()
 	if len(args) != 2 {
-		utils.Fatalf(`Usage: gpan makedag <block number> <outputdir>`)
+		utils.Fatalf(`Usage: gptn makedag <block number> <outputdir>`)
 	}
 	_, err := strconv.ParseUint(args[0], 0, 64)
 	if err != nil {
@@ -134,6 +134,6 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with gpan. If not, see <http://www.gnu.org/licenses/>.`)
+along with gptn. If not, see <http://www.gnu.org/licenses/>.`)
 	return nil
 }

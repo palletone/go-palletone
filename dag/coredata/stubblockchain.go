@@ -200,7 +200,7 @@ func DefaultRinkebyGenesisBlock() *Genesis {
 	return &Genesis{}
 }
 
-// DeveloperGenesisBlock returns the 'gpan --dev' genesis block. Note, this must
+// DeveloperGenesisBlock returns the 'gptn --dev' genesis block. Note, this must
 // be seeded with the
 func DeveloperGenesisBlock(period uint64, faucet common.Address) *Genesis {
 	return &Genesis{}

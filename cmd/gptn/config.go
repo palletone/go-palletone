@@ -109,7 +109,7 @@ func defaultNodeConfig() node.Config {
 	cfg.Version = configure.VersionWithCommit(gitCommit)
 	cfg.HTTPModules = append(cfg.HTTPModules, "eth" /*, "shh"*/)
 	cfg.WSModules = append(cfg.WSModules, "eth" /*, "shh"*/)
-	cfg.IPCPath = "gpan.ipc"
+	cfg.IPCPath = "gptn.ipc"
 	return cfg
 }
 

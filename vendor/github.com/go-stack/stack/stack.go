@@ -39,7 +39,7 @@ func Caller(skip int) Call {
 	}
 
 	c.pc = pcs[1]
-	if runtime.FuncForPC(pcs[0]).Name() != "runtime.sigpanic" {
+	if runtime.FuncForPC(pcs[0]).Name() != "runtime.sigptnic" {
 		c.pc--
 	}
 	c.fn = runtime.FuncForPC(c.pc)
@@ -214,7 +214,7 @@ func Trace() CallStack {
 
 	for i, pc := range pcs[:n] {
 		pcFix := pc
-		if i > 0 && cs[i-1].fn.Name() != "runtime.sigpanic" {
+		if i > 0 && cs[i-1].fn.Name() != "runtime.sigptnic" {
 			pcFix--
 		}
 		cs[i] = Call{
