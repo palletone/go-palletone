@@ -351,7 +351,7 @@ func DefaultRinkebyGenesisBlock() *Genesis {
 func DeveloperGenesisBlock(period uint64, faucet common.Address) *Genesis {
 	// Override the default period to the user requested one
 	config := *configure.AllCliqueProtocolChanges
-	config.Clique.Period = period
+	//config.Clique.Period = period
 
 	// Assemble and return the genesis with the precompiles and faucet pre-funded
 	return &Genesis{

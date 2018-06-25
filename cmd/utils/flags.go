@@ -1217,26 +1217,27 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *coredata.BlockChain, 
 	var err error
 	chainDb = MakeChainDatabase(ctx, stack)
 
-	config, _, err := coredata.SetupGenesisBlock(chainDb, MakeGenesis(ctx))
+	_, _, err = coredata.SetupGenesisBlock(chainDb, MakeGenesis(ctx))
 	if err != nil {
 		Fatalf("%v", err)
 	}
-	//	var engine consensus.Engine
-	if config.Clique != nil {
-		//engine = clique.New(config.Clique, chainDb)//wangjiyou
-	} else { /*wangjiyou
-		engine = ethash.NewFaker()
-		if !ctx.GlobalBool(FakePoWFlag.Name) {
-			engine = ethash.New(ethash.Config{
-				CacheDir:       stack.ResolvePath(pan.DefaultConfig.Ethash.CacheDir),
-				CachesInMem:    pan.DefaultConfig.Ethash.CachesInMem,
-				CachesOnDisk:   pan.DefaultConfig.Ethash.CachesOnDisk,
-				DatasetDir:     stack.ResolvePath(pan.DefaultConfig.Ethash.DatasetDir),
-				DatasetsInMem:  pan.DefaultConfig.Ethash.DatasetsInMem,
-				DatasetsOnDisk: pan.DefaultConfig.Ethash.DatasetsOnDisk,
-			})
+	/*
+		//	var engine consensus.Engine
+		if config.Clique != nil {
+			engine = clique.New(config.Clique, chainDb)//wangjiyou
+		} else { wangjiyou
+			engine = ethash.NewFaker()
+			if !ctx.GlobalBool(FakePoWFlag.Name) {
+				engine = ethash.New(ethash.Config{
+					CacheDir:       stack.ResolvePath(pan.DefaultConfig.Ethash.CacheDir),
+					CachesInMem:    pan.DefaultConfig.Ethash.CachesInMem,
+					CachesOnDisk:   pan.DefaultConfig.Ethash.CachesOnDisk,
+					DatasetDir:     stack.ResolvePath(pan.DefaultConfig.Ethash.DatasetDir),
+					DatasetsInMem:  pan.DefaultConfig.Ethash.DatasetsInMem,
+					DatasetsOnDisk: pan.DefaultConfig.Ethash.DatasetsOnDisk,
+				})
+			}
 		}*/
-	}
 	if gcmode := ctx.GlobalString(GCModeFlag.Name); gcmode != "full" && gcmode != "archive" {
 		Fatalf("--%s must be either 'full' or 'archive'", GCModeFlag.Name)
 	}
