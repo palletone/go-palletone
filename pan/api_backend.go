@@ -43,7 +43,7 @@ type EthApiBackend struct {
 }
 
 func (b *EthApiBackend) ChainConfig() *configure.ChainConfig {
-	return b.eth.chainConfig
+	return nil
 }
 
 func (b *EthApiBackend) CurrentBlock() *types.Block {

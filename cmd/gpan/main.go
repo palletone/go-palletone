@@ -62,12 +62,6 @@ var (
 		utils.DashboardAddrFlag,
 		utils.DashboardPortFlag,
 		utils.DashboardRefreshFlag,
-		//utils.EthashCacheDirFlag,
-		//utils.EthashCachesInMemoryFlag,
-		//utils.EthashCachesOnDiskFlag,
-		//utils.EthashDatasetDirFlag,
-		//utils.EthashDatasetsInMemoryFlag,
-		//utils.EthashDatasetsOnDiskFlag,
 		utils.TxPoolNoLocalsFlag,
 		utils.TxPoolJournalFlag,
 		utils.TxPoolRejournalFlag,
@@ -141,14 +135,6 @@ var (
 		utils.IPCDisabledFlag,
 		utils.IPCPathFlag,
 	}
-
-/*
-	whisperFlags = []cli.Flag{
-		utils.WhisperEnabledFlag,
-		utils.WhisperMaxMessageSizeFlag,
-		utils.WhisperMinPOWFlag,
-	}
-*/
 )
 
 func init() {
@@ -190,7 +176,6 @@ func init() {
 	app.Flags = append(app.Flags, rpcFlags...)
 	app.Flags = append(app.Flags, consoleFlags...)
 	app.Flags = append(app.Flags, debug.Flags...)
-	//app.Flags = append(app.Flags, whisperFlags...)
 
 	app.Before = func(ctx *cli.Context) error {
 		runtime.GOMAXPROCS(runtime.NumCPU())
@@ -247,11 +232,6 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 			unlockAccount(ctx, ks, trimmed, i, passwords)
 		}
 	}
-
-	//	go func() {
-	//		time.Sleep(time.Duration(15) * time.Second)
-	//		ethereum.Engine().Engine()
-	//	}()
 
 	// Register wallet event handlers to open and auto-derive wallets
 	events := make(chan accounts.WalletEvent, 16)
@@ -316,16 +296,6 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		}
 		// Set the gas price to the limits from the CLI
 		ethereum.TxPool().SetGasPrice(utils.GlobalBig(ctx, utils.GasPriceFlag.Name))
-		log.Info("===========Ethereum TxPool SetGasPrice")
-		//Start mining
-		//		if err := ethereum.StartMining(true); err != nil {
-		//			utils.Fatalf("Failed to start mining: %v", err)
-		//		}
-		//		go func() {
-		//			time.Sleep(time.Duration(15) * time.Second)
-		//			ethereum.Engine().Engine()
-		//		}()
-
 	}
 
 }

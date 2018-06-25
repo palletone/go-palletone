@@ -59,8 +59,8 @@ type LesServer interface {
 
 // Ethereum implements the Ethereum full node service.
 type Ethereum struct {
-	config      *Config
-	chainConfig *configure.ChainConfig
+	config *Config
+	//chainConfig *configure.ChainConfig
 
 	// Channel for shutting down the service
 	shutdownChan  chan bool    // Channel for shutting down the Ethereum
@@ -137,45 +137,16 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	}
 
 	log.Info("Initialising Ethereum protocol", "versions", ProtocolVersions, "network", config.NetworkId)
-	/*wangjiyou
-	if !config.SkipBcVersionCheck {
-		bcVersion := core.GetBlockChainVersion(chainDb)
-		if bcVersion != core.BlockChainVersion && bcVersion != 0 {
-			return nil, fmt.Errorf("Blockchain DB version mismatch (%d / %d). Run gpan upgradedb.\n", bcVersion, core.BlockChainVersion)
-		}
-		core.WriteBlockChainVersion(chainDb, core.BlockChainVersion)
-	}*/
-	var (
-		//vmConfig    = vm.Config{EnablePreimageRecording: config.EnablePreimageRecording}
-		cacheConfig = &coredata.CacheConfig{Disabled: config.NoPruning, TrieNodeLimit: config.TrieCache, TrieTimeLimit: config.TrieTimeout}
-	)
-
-	/*eth.blockchain*/
-	eth.blockchain, err = coredata.NewBlockChain(chainDb, cacheConfig, eth.chainConfig, eth.engine /*, vmConfig*/)
-	if err != nil {
-		return nil, err
-	}
-	/*
-		// Rewind the chain in case of an incompatible config upgrade.
-		if compat, ok := genesisErr.(*configure.ConfigCompatError); ok {
-			log.Warn("Rewinding chain to upgrade configuration", "err", compat)
-			eth.blockchain.SetHead(compat.RewindTo)
-			core.WriteChainConfig(chainDb, genesisHash, chainConfig)
-		}*/
-	eth.bloomIndexer.Start(eth.blockchain) //wangjiyou
-	log.Info("bloomIndexer Start")
 
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	eth.txPool = coredata.NewTxPool(config.TxPool, eth.chainConfig /*, eth.blockchain*/) //wangjiyou
+	eth.txPool = coredata.NewTxPool(config.TxPool) //wangjiyou
 
-	if eth.protocolManager, err = NewProtocolManager(eth.chainConfig, config.SyncMode, config.NetworkId, eth.eventMux, eth.txPool, eth.engine, eth.blockchain, chainDb); err != nil {
+	if eth.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, eth.eventMux, eth.txPool, eth.engine, chainDb); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}
-	//eth.miner = miner.New(eth, eth.chainConfig, eth.EventMux(), eth.engine)
-	//eth.miner.SetExtra(makeExtraData(config.ExtraData))
 
 	eth.ApiBackend = &EthApiBackend{eth, nil}
 	gpoParams := config.GPO
@@ -219,44 +190,12 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (pandb.Data
 func CreateConsensusEngine(ctx *node.ServiceContext /*config *ethash.Config, chainConfig *configure.ChainConfig,*/, db pandb.Database) core.ConsensusEngine {
 	engine := consensus.New()
 	return engine
-	/*
-		// If proof-of-authority is requested, set it up
-		if chainConfig.Clique != nil {
-			return clique.New(chainConfig.Clique, db)
-		}
-
-			// Otherwise assume proof-of-work
-			switch {
-			case config.PowMode == ethash.ModeFake:
-				log.Warn("Ethash used in fake mode")
-				return ethash.NewFaker()
-			case config.PowMode == ethash.ModeTest:
-				log.Warn("Ethash used in test mode")
-				return ethash.NewTester()
-			case config.PowMode == ethash.ModeShared:
-				log.Warn("Ethash used in shared mode")
-				return ethash.NewShared()
-			default:
-				engine := ethash.New(ethash.Config{
-					CacheDir:       ctx.ResolvePath(config.CacheDir),
-					CachesInMem:    config.CachesInMem,
-					CachesOnDisk:   config.CachesOnDisk,
-					DatasetDir:     config.DatasetDir,
-					DatasetsInMem:  config.DatasetsInMem,
-					DatasetsOnDisk: config.DatasetsOnDisk,
-				})
-				engine.SetThreads(-1) // Disable CPU mining
-				return engine
-			}*/
 }
 
 // APIs returns the collection of RPC services the ethereum package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.
 func (s *Ethereum) APIs() []rpc.API {
 	apis := ethapi.GetAPIs(s.ApiBackend)
-
-	// Append any APIs exposed explicitly by the consensus engine
-	//apis = append(apis, s.engine.APIs(s.BlockChain())...) //wangjiyou
 
 	// Append all the local APIs and return
 	return append(apis, []rpc.API{
@@ -289,15 +228,6 @@ func (s *Ethereum) APIs() []rpc.API {
 			Namespace: "admin",
 			Version:   "1.0",
 			//Service:   NewPrivateAdminAPI(s),
-		}, {
-			Namespace: "debug",
-			Version:   "1.0",
-			Service:   NewPublicDebugAPI(s),
-			Public:    true,
-		}, {
-			Namespace: "debug",
-			Version:   "1.0",
-			Service:   NewPrivateDebugAPI(s.chainConfig, s),
 		}, {
 			Namespace: "net",
 			Version:   "1.0",
@@ -339,37 +269,6 @@ func (self *Ethereum) SetEtherbase(etherbase common.Address) {
 	self.lock.Lock()
 	self.etherbase = etherbase
 	self.lock.Unlock()
-
-	//self.miner.SetEtherbase(etherbase)//wangjiyou
-}
-
-func (s *Ethereum) StartMining(local bool) error {
-	/*
-		eb, err := s.Etherbase()
-		if err != nil {
-			log.Error("Cannot start mining without etherbase", "err", err)
-			return fmt.Errorf("etherbase missing: %v", err)
-		}
-
-		if _, ok := s.engine.(*clique.Clique); ok {
-			wallet, err := s.accountManager.Find(accounts.Account{Address: eb})
-			if wallet == nil || err != nil {
-				log.Error("Etherbase account unavailable locally", "err", err)
-				return fmt.Errorf("signer missing: %v", err)
-			}
-			//clique.Authorize(eb, wallet.SignHash)//wangjiyou
-		}
-
-		if local {
-			// If local (CPU) mining is started, we can disable the transaction rejection
-			// mechanism introduced to speed sync times. CPU mining on mainnet is ludicrous
-			// so none will ever hit this path, whereas marking sync done on CPU mining
-			// will ensure that private networks work in single miner mode too.
-			atomic.StoreUint32(&s.protocolManager.acceptTxs, 1)
-		}
-		go s.miner.Start(eb)
-	*/
-	return nil
 }
 
 func (s *Ethereum) StopMining()    { /*s.miner.Stop()*/ }
@@ -377,8 +276,9 @@ func (s *Ethereum) IsMining() bool { /*return s.miner.Mining()*/ return true }
 
 //func (s *Ethereum) Miner() *miner.Miner { return s.miner }//wangjiyou
 
-func (s *Ethereum) AccountManager() *accounts.Manager  { return s.accountManager }
-func (s *Ethereum) BlockChain() *coredata.BlockChain   { return s.blockchain }
+func (s *Ethereum) AccountManager() *accounts.Manager { return s.accountManager }
+
+//func (s *Ethereum) BlockChain() *coredata.BlockChain   { return s.blockchain }
 func (s *Ethereum) TxPool() *coredata.TxPool           { return s.txPool }
 func (s *Ethereum) EventMux() *event.TypeMux           { return s.eventMux }
 func (s *Ethereum) Engine() core.ConsensusEngine       { return s.engine }
