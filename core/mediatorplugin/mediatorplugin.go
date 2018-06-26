@@ -206,13 +206,13 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	// this Conditional judgment should fail, because now <= LastVerifiedUnitTime
 	// should have resulted in slot == 0.
 	//
-	// if this panic triggers, there is a serious bug in get_slot_at_time()
+	// if this assert triggers, there is a serious bug in GetSlotAtTime()
 	// which would result in allowing a later block to have a timestamp
-	// less than or equal to the previous block
+	// less than or equal to the previous VerifiedUnit
 	//
-	if !now.After(dgp.LastVerifiedUnitTime) {
-		panic("\n The later VerifiedUnit have a timestamp less than or equal to the previous!")
-	}
+	//if !now.After(dgp.LastVerifiedUnitTime) {
+	//	panic("\n The later VerifiedUnit have a timestamp less than or equal to the previous!")
+	//}
 
 	scheduledMediator := ms.GetScheduledMediator(dgp, slot)
 	// we must control the Mediator scheduled to produce the next VerifiedUnit.
