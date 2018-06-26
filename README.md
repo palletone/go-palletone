@@ -10,7 +10,7 @@ https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/6874
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/palletone/go-palletone?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Automated builds are available for stable releases and the unstable master branch.
-Binary archives are published at https://gpan.palletone.org/downloads/.
+Binary archives are published at https://gptn.palletone.org/downloads/.
 
 ## Building the source
 
@@ -18,11 +18,11 @@ For prerequisites and detailed build instructions please read the
 [Installation Instructions](https://github.com/palletone/go-palletone/wiki/Building-palletone)
 on the wiki.
 
-Building gpan requires both a Go (version 1.7 or later) and a C compiler.
+Building gptn requires both a Go (version 1.7 or later) and a C compiler.
 You can install them using your favourite package manager.
 Once the dependencies are installed, run
 
-    make gpan
+    make gptn
 
 or, to build the full suite of utilities:
 
@@ -34,16 +34,9 @@ The go-palletone project comes with several wrappers/executables found in the `c
 
 | Command    | Description |
 |:----------:|-------------|
-| **`gpan`** | Our main palletone CLI client. It is the entry point into the palletone network (main-, test- or private net), capable of running as a full node (default) archive node (retaining all historical state) or a light node (retrieving data live). It can be used by other processes as a gateway into the palletone network via JSON RPC endpoints exposed on top of HTTP, WebSocket and/or IPC transports. `gpan --help` and the [CLI Wiki page](https://github.com/palletone/go-palletone/wiki/Command-Line-Options) for command line options. |
-| `abigen` | Source code generator to convert palletone contract definitions into easy to use, compile-time type-safe Go packages. It operates on plain [palletone contract ABIs](https://github.com/palletone/wiki/wiki/palletone-Contract-ABI) with expanded functionality if the contract bytecode is also available. However it also accepts Solidity source files, making development much more streamlined. Please see our [Native DApps](https://github.com/palletone/go-palletone/wiki/Native-DApps:-Go-bindings-to-palletone-contracts) wiki page for details. |
-| `bootnode` | Stripped down version of our palletone client implementation that only takes part in the network node discovery protocol, but does not run any of the higher level application protocols. It can be used as a lightweight bootstrap node to aid in finding peers in private networks. |
-| `evm` | Developer utility version of the EVM (palletone Virtual Machine) that is capable of running bytecode snippets within a configurable environment and execution mode. Its purpose is to allow isolated, fine-grained debugging of EVM opcodes (e.g. `evm --code 60ff60ff --debug`). |
-| `gethrpctest` | Developer utility tool to support our [palletone/rpc-test](https://github.com/palletone/rpc-tests) test suite which validates baseline conformity to the [palletone JSON RPC](https://github.com/palletone/wiki/wiki/JSON-RPC) specs. Please see the [test suite's readme](https://github.com/palletone/rpc-tests/blob/master/README.md) for details. |
-| `rlpdump` | Developer utility tool to convert binary RLP ([Recursive Length Prefix](https://github.com/palletone/wiki/wiki/RLP)) dumps (data encoding used by the palletone protocol both network as well as consensus wise) to user friendlier hierarchical representation (e.g. `rlpdump --hex CE0183FFFFFFC4C304050583616263`). |
-| `swarm`    | swarm daemon and tools. This is the entrypoint for the swarm network. `swarm --help` for command line options and subcommands. See https://swarm-guide.readthedocs.io for swarm documentation. |
-| `puppeth`    | a CLI wizard that aids in creating a new palletone network. |
+| **`gptn`** | Our main palletone CLI client. It is the entry point into the palletone network (main-, test- or private net), capable of running as a full node (default) archive node (retaining all historical state) or a light node (retrieving data live). It can be used by other processes as a gateway into the palletone network via JSON RPC endpoints exposed on top of HTTP, WebSocket and/or IPC transports. `gptn --help` and the [CLI Wiki page](https://github.com/palletone/go-palletone/wiki/Command-Line-Options) for command line options. |
 
-## Running gpan
+## Running gptn
 
 Going through all the possible command line flags is out of scope here (please consult our
 [CLI Wiki page](https://github.com/palletone/go-palletone/wiki/Command-Line-Options)), but we've
@@ -58,19 +51,19 @@ the user doesn't care about years-old historical data, so we can fast-sync quick
 state of the network. To do so:
 
 ```
-$ gpan console
+$ gptn console
 ```
 
 This command will:
 
- * Start gpan in fast sync mode (default, can be changed with the `--syncmode` flag), causing it to
+ * Start gptn in fast sync mode (default, can be changed with the `--syncmode` flag), causing it to
    download more data in exchange for avoiding processing the entire history of the palletone network,
    which is very CPU intensive.
  * Start up Geth's built-in interactive [JavaScript console](https://github.com/palletone/go-palletone/wiki/JavaScript-Console),
    (via the trailing `console` subcommand) through which you can invoke all official [`web3` methods](https://github.com/palletone/wiki/wiki/JavaScript-API)
    as well as Geth's own [management APIs](https://github.com/palletone/go-palletone/wiki/Management-APIs).
    This too is optional and if you leave it out you can always attach to an already running Geth instance
-   with `gpan attach`.
+   with `gptn attach`.
 
 ### Full node on the palletone test network
 
@@ -80,7 +73,7 @@ entire system. In other words, instead of attaching to the main network, you wan
 network with your node, which is fully equivalent to the main network, but with play-Ether only.
 
 ```
-$ gpan --testnet console
+$ gptn --testnet console
 ```
 
 The `console` subcommand have the exact same meaning as above and they are equally useful on the
@@ -91,8 +84,8 @@ Specifying the `--testnet` flag however will reconfigure your Geth instance a bi
  * Instead of using the default data directory (`~/.palletone` on Linux for example), Geth will nest
    itself one level deeper into a `testnet` subfolder (`~/.palletone/testnet` on Linux). Note, on OSX
    and Linux this also means that attaching to a running testnet node requires the use of a custom
-   endpoint since `gpan attach` will try to attach to a production node endpoint by default. E.g.
-   `gpan attach <datadir>/testnet/gpan.ipc`. Windows users are not affected by this.
+   endpoint since `gptn attach` will try to attach to a production node endpoint by default. E.g.
+   `gptn attach <datadir>/testnet/gptn.ipc`. Windows users are not affected by this.
  * Instead of connecting the main palletone network, the client will connect to the test network,
    which uses different P2P bootnodes, different network IDs and genesis states.
    
@@ -101,80 +94,20 @@ over between the main network and test network, you should make sure to always u
 for play-money and real-money. Unless you manually move accounts, Geth will by default correctly
 separate the two networks and will not make any accounts available between them.*
 
-### Full node on the Rinkeby test network
-
-The above test network is a cross client one based on the ethash proof-of-work consensus algorithm. As such, it has certain extra overhead and is more susceptible to reorganization attacks due to the network's low difficulty / security. Go palletone also supports connecting to a proof-of-authority based test network called [*Rinkeby*](https://www.rinkeby.io) (operated by members of the community). This network is lighter, more secure, but is only supported by go-palletone.
-
-```
-$ gpan --rinkeby console
-```
 
 ### Configuration
 
-As an alternative to passing the numerous flags to the `gpan` binary, you can also pass a configuration file via:
+As an alternative to passing the numerous flags to the `gptn` binary, you can also pass a configuration file via:
 
 ```
-$ gpan --config /path/to/your_config.toml
+$ gptn --config /path/to/your_config.toml
 ```
 
 To get an idea how the file should look like you can use the `dumpconfig` subcommand to export your existing configuration:
 
 ```
-$ gpan --your-favourite-flags dumpconfig
+$ gptn --your-favourite-flags dumpconfig
 ```
-
-*Note: This works only with gpan v1.6.0 and above.*
-
-#### Docker quick start
-
-One of the quickest ways to get palletone up and running on your machine is by using Docker:
-
-```
-docker run -d --name palletone-node -v /Users/alice/palletone:/root \
-           -p 8545:8545 -p 30303:30303 \
-           palletone/client-go
-```
-
-This will start gpan in fast-sync mode with a DB memory allowance of 1GB just as the above command does.  It will also create a persistent volume in your home directory for saving your blockchain as well as map the default ports. There is also an `alpine` tag available for a slim version of the image.
-
-Do not forget `--rpcaddr 0.0.0.0`, if you want to access RPC from other containers and/or hosts. By default, `gpan` binds to the local interface and RPC endpoints is not accessible from the outside.
-
-### Programatically interfacing Geth nodes
-
-As a developer, sooner rather than later you'll want to start interacting with Geth and the palletone
-network via your own programs and not manually through the console. To aid this, Geth has built-in
-support for a JSON-RPC based APIs ([standard APIs](https://github.com/palletone/wiki/wiki/JSON-RPC) and
-[Geth specific APIs](https://github.com/palletone/go-palletone/wiki/Management-APIs)). These can be
-exposed via HTTP, WebSockets and IPC (unix sockets on unix based platforms, and named pipes on Windows).
-
-The IPC interface is enabled by default and exposes all the APIs supported by Geth, whereas the HTTP
-and WS interfaces need to manually be enabled and only expose a subset of APIs due to security reasons.
-These can be turned on/off and configured as you'd expect.
-
-HTTP based JSON-RPC API options:
-
-  * `--rpc` Enable the HTTP-RPC server
-  * `--rpcaddr` HTTP-RPC server listening interface (default: "localhost")
-  * `--rpcport` HTTP-RPC server listening port (default: 8545)
-  * `--rpcapi` API's offered over the HTTP-RPC interface (default: "eth,net,web3")
-  * `--rpccorsdomain` Comma separated list of domains from which to accept cross origin requests (browser enforced)
-  * `--ws` Enable the WS-RPC server
-  * `--wsaddr` WS-RPC server listening interface (default: "localhost")
-  * `--wsport` WS-RPC server listening port (default: 8546)
-  * `--wsapi` API's offered over the WS-RPC interface (default: "eth,net,web3")
-  * `--wsorigins` Origins from which to accept websockets requests
-  * `--ipcdisable` Disable the IPC-RPC server
-  * `--ipcapi` API's offered over the IPC-RPC interface (default: "admin,debug,eth,miner,net,personal,shh,txpool,web3")
-  * `--ipcpath` Filename for IPC socket/pipe within the datadir (explicit paths escape it)
-
-You'll need to use your own programming environments' capabilities (libraries, tools, etc) to connect
-via HTTP, WS or IPC to a Geth node configured with the above flags and you'll need to speak [JSON-RPC](http://www.jsonrpc.org/specification)
-on all transports. You can reuse the same connection for multiple requests!
-
-**Note: Please understand the security implications of opening up an HTTP/WS based transport before
-doing so! Hackers on the internet are actively trying to subvert palletone nodes with exposed APIs!
-Further, all browser tabs can access locally running webservers, so malicious webpages could try to
-subvert locally available APIs!**
 
 ### Operating a private network
 
@@ -222,26 +155,8 @@ With the genesis state defined in the above JSON file, you'll need to initialize
 with it prior to starting it up to ensure all blockchain parameters are correctly set:
 
 ```
-$ gpan init path/to/genesis.json
+$ gptn init path/to/genesis.json
 ```
-
-#### Creating the rendezvous point
-
-With all nodes that you want to run initialized to the desired genesis state, you'll need to start a
-bootstrap node that others can use to find each other in your network and/or over the internet. The
-clean way is to configure and run a dedicated bootnode:
-
-```
-$ bootnode --genkey=boot.key
-$ bootnode --nodekey=boot.key
-```
-
-With the bootnode online, it will display an [`enode` URL](https://github.com/palletone/wiki/wiki/enode-url-format)
-that other nodes can use to connect to it and exchange peer information. Make sure to replace the
-displayed IP address information (most probably `[::]`) with your externally accessible IP to get the
-actual `enode` URL.
-
-*Note: You could also use a full fledged Geth node as a bootnode, but it's the less recommended way.*
 
 #### Starting up your member nodes
 
@@ -251,7 +166,7 @@ via the `--bootnodes` flag. It will probably also be desirable to keep the data 
 private network separated, so do also specify a custom `--datadir` flag.
 
 ```
-$ gpan --datadir=path/to/custom/data/folder --bootnodes=<bootnode-enode-url-from-above>
+$ gptn --datadir=path/to/custom/data/folder
 ```
 
 *Note: Since your network will be completely cut off from the main and test networks, you'll also
@@ -270,7 +185,7 @@ resources (consider running on a single thread, no need for multiple ones either
 instance for mining, run it with all your usual flags, extended by:
 
 ```
-$ gpan <usual-flags> --mine --minerthreads=1 --etherbase=0x0000000000000000000000000000000000000000
+$ gptn <usual-flags> --mine --minerthreads=1 --etherbase=0x0000000000000000000000000000000000000000
 ```
 
 Which will start mining blocks and transactions on a single CPU thread, crediting all proceedings to
