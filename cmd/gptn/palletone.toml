@@ -13,11 +13,7 @@ Development =true
 DbPath="./leveldb"
 DbName="palletone.db"
 
-[Genesis]
-TotalSupply= 10000000000
-HolderAddress="P1B9YK6yYe9YDgiFN89PxkkHE9WCKBbJcNK"   #Private key: bb6ec6e84251e5f7bf35aeb6d0c7e56051d6319d4fd25cd19a9d209f4973765f
-
 [Node]
-DataDir = "./data123"
-KeyStoreDir="./data123/keystore"
+DataDir = "./data1"
+KeyStoreDir="./data1/keystore"
 IPCPath = "gpan.ipc"
