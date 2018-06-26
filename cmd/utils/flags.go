@@ -45,9 +45,9 @@ import (
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/pan"
-	"github.com/palletone/go-palletone/pan/downloader"
-	"github.com/palletone/go-palletone/pan/gasprice"
+	"github.com/palletone/go-palletone/ptn"
+	"github.com/palletone/go-palletone/ptn/downloader"
+	"github.com/palletone/go-palletone/ptn/gasprice"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"gopkg.in/urfave/cli.v1"
@@ -123,7 +123,7 @@ var (
 	NetworkIdFlag = cli.Uint64Flag{
 		Name:  "networkid",
 		Usage: "Network identifier (integer, 1=Frontier, 2=Morden (disused), 3=Ropsten, 4=Rinkeby)",
-		Value: pan.DefaultConfig.NetworkId,
+		Value: ptn.DefaultConfig.NetworkId,
 	}
 	TestnetFlag = cli.BoolFlag{
 		Name:  "testnet",
@@ -158,7 +158,7 @@ var (
 		Name:  "light",
 		Usage: "Enable light client mode (replaced by --syncmode)",
 	}
-	defaultSyncMode = pan.DefaultConfig.SyncMode
+	defaultSyncMode = ptn.DefaultConfig.SyncMode
 	SyncModeFlag    = TextMarshalerFlag{
 		Name:  "syncmode",
 		Usage: `Blockchain sync mode ("fast", "full", or "light")`,
@@ -177,7 +177,7 @@ var (
 	LightPeersFlag = cli.IntFlag{
 		Name:  "lightpeers",
 		Usage: "Maximum number of LES client peers",
-		Value: pan.DefaultConfig.LightPeers,
+		Value: ptn.DefaultConfig.LightPeers,
 	}
 	LightKDFFlag = cli.BoolFlag{
 		Name:  "lightkdf",
@@ -222,37 +222,37 @@ var (
 	TxPoolPriceLimitFlag = cli.Uint64Flag{
 		Name:  "txpool.pricelimit",
 		Usage: "Minimum gas price limit to enforce for acceptance into the pool",
-		Value: pan.DefaultConfig.TxPool.PriceLimit,
+		Value: ptn.DefaultConfig.TxPool.PriceLimit,
 	}
 	TxPoolPriceBumpFlag = cli.Uint64Flag{
 		Name:  "txpool.pricebump",
 		Usage: "Price bump percentage to replace an already existing transaction",
-		Value: pan.DefaultConfig.TxPool.PriceBump,
+		Value: ptn.DefaultConfig.TxPool.PriceBump,
 	}
 	TxPoolAccountSlotsFlag = cli.Uint64Flag{
 		Name:  "txpool.accountslots",
 		Usage: "Minimum number of executable transaction slots guaranteed per account",
-		Value: pan.DefaultConfig.TxPool.AccountSlots,
+		Value: ptn.DefaultConfig.TxPool.AccountSlots,
 	}
 	TxPoolGlobalSlotsFlag = cli.Uint64Flag{
 		Name:  "txpool.globalslots",
 		Usage: "Maximum number of executable transaction slots for all accounts",
-		Value: pan.DefaultConfig.TxPool.GlobalSlots,
+		Value: ptn.DefaultConfig.TxPool.GlobalSlots,
 	}
 	TxPoolAccountQueueFlag = cli.Uint64Flag{
 		Name:  "txpool.accountqueue",
 		Usage: "Maximum number of non-executable transaction slots permitted per account",
-		Value: pan.DefaultConfig.TxPool.AccountQueue,
+		Value: ptn.DefaultConfig.TxPool.AccountQueue,
 	}
 	TxPoolGlobalQueueFlag = cli.Uint64Flag{
 		Name:  "txpool.globalqueue",
 		Usage: "Maximum number of non-executable transaction slots for all accounts",
-		Value: pan.DefaultConfig.TxPool.GlobalQueue,
+		Value: ptn.DefaultConfig.TxPool.GlobalQueue,
 	}
 	TxPoolLifetimeFlag = cli.DurationFlag{
 		Name:  "txpool.lifetime",
 		Usage: "Maximum amount of time non-executable transaction are queued",
-		Value: pan.DefaultConfig.TxPool.Lifetime,
+		Value: ptn.DefaultConfig.TxPool.Lifetime,
 	}
 	// Performance tuning settings
 	CacheFlag = cli.IntFlag{
@@ -298,7 +298,7 @@ var (
 	GasPriceFlag = BigFlag{
 		Name:  "gasprice",
 		Usage: "Minimal gas price to accept for mining a transactions",
-		Value: pan.DefaultConfig.GasPrice,
+		Value: ptn.DefaultConfig.GasPrice,
 	}
 	ExtraDataFlag = cli.StringFlag{
 		Name:  "extradata",
@@ -476,54 +476,54 @@ var (
 	GpoBlocksFlag = cli.IntFlag{
 		Name:  "gpoblocks",
 		Usage: "Number of recent blocks to check for gas prices",
-		Value: pan.DefaultConfig.GPO.Blocks,
+		Value: ptn.DefaultConfig.GPO.Blocks,
 	}
 	GpoPercentileFlag = cli.IntFlag{
 		Name:  "gpopercentile",
 		Usage: "Suggested gas price is the given percentile of a set of recent transaction gas prices",
-		Value: pan.DefaultConfig.GPO.Percentile,
+		Value: ptn.DefaultConfig.GPO.Percentile,
 	}
 	ConsensusEngineFlag = cli.StringFlag{
 		Name:  "consensus.engine",
 		Usage: "Consensus Engine: solo or dpos",
-		Value: pan.DefaultConfig.Consensus.Engine,
+		Value: ptn.DefaultConfig.Consensus.Engine,
 	}
 	DagValue1Flag = cli.StringFlag{
 		Name:  "dag.dbpath",
 		Usage: "Dag dbapth",
-		Value: pan.DefaultConfig.Dag.DbPath,
+		Value: ptn.DefaultConfig.Dag.DbPath,
 	}
 
 	DagValue2Flag = cli.StringFlag{
 		Name:  "dag.dbname",
 		Usage: "Dag dbname",
-		Value: pan.DefaultConfig.Dag.DbName,
+		Value: ptn.DefaultConfig.Dag.DbName,
 	}
 	LogValue1Flag = cli.StringFlag{
 		Name:  "log.path",
 		Usage: "Log path",
-		Value: strings.Join(pan.DefaultConfig.Log.OutputPaths, ","),
+		Value: strings.Join(ptn.DefaultConfig.Log.OutputPaths, ","),
 	}
 
 	LogValue2Flag = cli.StringFlag{
 		Name:  "log.lvl",
 		Usage: "Log lvl",
-		Value: pan.DefaultConfig.Log.LoggerLvl,
+		Value: ptn.DefaultConfig.Log.LoggerLvl,
 	}
 	LogValue3Flag = cli.BoolFlag{
 		Name:  "log.debug",
 		Usage: "Log debug",
-		//Value: pan.DefaultConfig.Log.IsDebug,
+		//Value: ptn.DefaultConfig.Log.IsDebug,
 	}
 	LogValue4Flag = cli.StringFlag{
 		Name:  "log.errpath",
 		Usage: "Log errpath",
-		Value: strings.Join(pan.DefaultConfig.Log.ErrorOutputPaths, ","),
+		Value: strings.Join(ptn.DefaultConfig.Log.ErrorOutputPaths, ","),
 	}
 	LogValue5Flag = cli.StringFlag{
 		Name:  "log.encoding",
 		Usage: "Log encoding",
-		Value: pan.DefaultConfig.Log.Encoding,
+		Value: ptn.DefaultConfig.Log.Encoding,
 	}
 )
 
@@ -738,7 +738,7 @@ func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error
 
 // setEtherbase retrieves the etherbase either from the directly specified
 // command line flags or from the keystore if CLI indexed.
-func setEtherbase(ctx *cli.Context, ks *keystore.KeyStore, cfg *pan.Config) {
+func setEtherbase(ctx *cli.Context, ks *keystore.KeyStore, cfg *ptn.Config) {
 	if ctx.GlobalIsSet(EtherbaseFlag.Name) {
 		account, err := MakeAddress(ks, ctx.GlobalString(EtherbaseFlag.Name))
 		if err != nil {
@@ -974,8 +974,8 @@ func setConsensus(ctx *cli.Context, cfg *consensusconfig.Config) {
 	}
 }
 
-// SetEthConfig applies pan-related command line flags to the config.
-func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *pan.Config) {
+// SetEthConfig applies ptn-related command line flags to the config.
+func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	// Avoid conflicting network flags
 	checkExclusive(ctx, DeveloperFlag, TestnetFlag, RinkebyFlag)
 	checkExclusive(ctx, FastSyncFlag, LightModeFlag, SyncModeFlag)
@@ -1088,9 +1088,9 @@ func SetDashboardConfig(ctx *cli.Context, cfg *dashboard.Config) {
 }
 
 // RegisterEthService adds an Ethereum client to the stack.
-func RegisterEthService(stack *node.Node, cfg *pan.Config) {
+func RegisterEthService(stack *node.Node, cfg *ptn.Config) {
 	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-		return pan.New(ctx, cfg)
+		return ptn.New(ctx, cfg)
 	})
 
 	if err != nil {
@@ -1099,7 +1099,7 @@ func RegisterEthService(stack *node.Node, cfg *pan.Config) {
 }
 
 /*
-func RegisterEthService(stack *node.Node, cfg *pan.Config) {
+func RegisterEthService(stack *node.Node, cfg *ptn.Config) {
 	var err error
 	if cfg.SyncMode == downloader.LightSync {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
@@ -1107,7 +1107,7 @@ func RegisterEthService(stack *node.Node, cfg *pan.Config) {
 		})
 	} else {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			fullNode, err := pan.New(ctx, cfg)
+			fullNode, err := ptn.New(ctx, cfg)
 			if fullNode != nil && cfg.LightServ > 0 {
 				ls, _ := les.NewLesServer(fullNode, cfg)
 				fullNode.AddLesServer(ls)
@@ -1142,8 +1142,8 @@ func RegisterShhService(stack *node.Node, cfg *whisper.Config) {
 func RegisterEthStatsService(stack *node.Node, url string) {
 	/*
 		if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			// Retrieve both pan and les services
-			var ethServ *pan.Ethereum
+			// Retrieve both ptn and les services
+			var ethServ *ptn.Ethereum
 			ctx.Service(&ethServ)
 
 			var lesServ *les.LightEthereum
@@ -1159,8 +1159,8 @@ func RegisterEthStatsService(stack *node.Node, url string) {
 /*
 func RegisterEthStatsService(stack *node.Node, url string) {
 	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-		// Retrieve both pan and les services
-		var ethServ *pan.Ethereum
+		// Retrieve both ptn and les services
+		var ethServ *ptn.Ethereum
 		ctx.Service(&ethServ)
 
 		var lesServ *les.LightEthereum
@@ -1225,12 +1225,12 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *coredata.BlockChain, 
 			engine = ethash.NewFaker()
 			if !ctx.GlobalBool(FakePoWFlag.Name) {
 				engine = ethash.New(ethash.Config{
-					CacheDir:       stack.ResolvePath(pan.DefaultConfig.Ethash.CacheDir),
-					CachesInMem:    pan.DefaultConfig.Ethash.CachesInMem,
-					CachesOnDisk:   pan.DefaultConfig.Ethash.CachesOnDisk,
-					DatasetDir:     stack.ResolvePath(pan.DefaultConfig.Ethash.DatasetDir),
-					DatasetsInMem:  pan.DefaultConfig.Ethash.DatasetsInMem,
-					DatasetsOnDisk: pan.DefaultConfig.Ethash.DatasetsOnDisk,
+					CacheDir:       stack.ResolvePath(ptn.DefaultConfig.Ethash.CacheDir),
+					CachesInMem:    ptn.DefaultConfig.Ethash.CachesInMem,
+					CachesOnDisk:   ptn.DefaultConfig.Ethash.CachesOnDisk,
+					DatasetDir:     stack.ResolvePath(ptn.DefaultConfig.Ethash.DatasetDir),
+					DatasetsInMem:  ptn.DefaultConfig.Ethash.DatasetsInMem,
+					DatasetsOnDisk: ptn.DefaultConfig.Ethash.DatasetsOnDisk,
 				})
 			}
 		}*/
@@ -1239,8 +1239,8 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *coredata.BlockChain, 
 	}
 	cache := &coredata.CacheConfig{
 		Disabled:      ctx.GlobalString(GCModeFlag.Name) == "archive",
-		TrieNodeLimit: pan.DefaultConfig.TrieCache,
-		TrieTimeLimit: pan.DefaultConfig.TrieTimeout,
+		TrieNodeLimit: ptn.DefaultConfig.TrieCache,
+		TrieTimeLimit: ptn.DefaultConfig.TrieTimeout,
 	}
 	if ctx.GlobalIsSet(CacheFlag.Name) || ctx.GlobalIsSet(CacheGCFlag.Name) {
 		cache.TrieNodeLimit = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheGCFlag.Name) / 100

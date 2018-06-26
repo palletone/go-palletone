@@ -26,7 +26,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/utils"
 	//
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/pan"
+	"github.com/palletone/go-palletone/ptn"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -113,8 +113,8 @@ func version(ctx *cli.Context) error {
 		fmt.Println("Git Commit:", gitCommit)
 	}
 	fmt.Println("Architecture:", runtime.GOARCH)
-	fmt.Println("Protocol Versions:", pan.ProtocolVersions)
-	fmt.Println("Network Id:", pan.DefaultConfig.NetworkId)
+	fmt.Println("Protocol Versions:", ptn.ProtocolVersions)
+	fmt.Println("Network Id:", ptn.DefaultConfig.NetworkId)
 	fmt.Println("Go Version:", runtime.Version())
 	fmt.Println("Operating System:", runtime.GOOS)
 	fmt.Printf("GOPATH=%s\n", os.Getenv("GOPATH"))

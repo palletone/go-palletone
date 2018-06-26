@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
-package pan
+package ptn
 
 import (
 	"math/rand"
@@ -23,9 +23,9 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/pan/downloader"
+	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
 const (

@@ -21,7 +21,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/palletone/go-palletone/pan/tracers/internal/tracers"
+	"github.com/palletone/go-palletone/ptn/tracers/internal/tracers"
 )
 
 // all contains all the built in JavaScript tracers by name.

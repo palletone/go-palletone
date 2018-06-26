@@ -15,7 +15,7 @@
 // along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package ethclient provides a client for the palletone RPC API.
-package panclient
+package ptnclient
 
 import (
 	"context"
