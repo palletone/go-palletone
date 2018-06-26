@@ -2,19 +2,19 @@
 # with Go source code. If you know what GOPATH is then you probably
 # don't need to bother with make.
 
-.PHONY: gpan android ios gpan-cross swarm evm all test clean
-.PHONY: gpan-linux gpan-linux-386 gpan-linux-amd64 gpan-linux-mips64 gpan-linux-mips64le
-.PHONY: gpan-linux-arm gpan-linux-arm-5 gpan-linux-arm-6 gpan-linux-arm-7 gpan-linux-arm64
-.PHONY: gpan-darwin gpan-darwin-386 gpan-darwin-amd64
-.PHONY: gpan-windows gpan-windows-386 gpan-windows-amd64
+.PHONY: gptn android ios gptn-cross swarm evm all test clean
+.PHONY: gptn-linux gptn-linux-386 gptn-linux-amd64 gptn-linux-mips64 gptn-linux-mips64le
+.PHONY: gptn-linux-arm gptn-linux-arm-5 gptn-linux-arm-6 gptn-linux-arm-7 gptn-linux-arm64
+.PHONY: gptn-darwin gptn-darwin-386 gptn-darwin-amd64
+.PHONY: gptn-windows gptn-windows-386 gptn-windows-amd64
 
 GOBIN = $(shell pwd)/build/bin
 GO ?= latest
 
-gpan:
-	build/env.sh go run build/ci.go install ./cmd/gpan
+gptn:
+	build/env.sh go run build/ci.go install ./cmd/gptn
 	@echo "Done building."
-	@echo "Run \"$(GOBIN)/gpan\" to launch gpan."
+	@echo "Run \"$(GOBIN)/gptn\" to launch gptn."
 
 swarm:
 	build/env.sh go run build/ci.go install ./cmd/swarm
@@ -27,7 +27,7 @@ all:
 android:
 	build/env.sh go run build/ci.go aar --local
 	@echo "Done building."
-	@echo "Import \"$(GOBIN)/gpan.aar\" to use the library."
+	@echo "Import \"$(GOBIN)/gptn.aar\" to use the library."
 
 ios:
 	build/env.sh go run build/ci.go xcode --local
@@ -58,92 +58,92 @@ devtools:
 
 # Cross Compilation Targets (xgo)
 
-gpan-cross: gpan-linux gpan-darwin gpan-windows gpan-android gpan-ios
+gptn-cross: gptn-linux gptn-darwin gptn-windows gptn-android gptn-ios
 	@echo "Full cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-*
+	@ls -ld $(GOBIN)/gptn-*
 
-gpan-linux: gpan-linux-386 gpan-linux-amd64 gpan-linux-arm gpan-linux-mips64 gpan-linux-mips64le
+gptn-linux: gptn-linux-386 gptn-linux-amd64 gptn-linux-arm gptn-linux-mips64 gptn-linux-mips64le
 	@echo "Linux cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-linux-*
+	@ls -ld $(GOBIN)/gptn-linux-*
 
-gpan-linux-386:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/386 -v ./cmd/gpan
+gptn-linux-386:
+	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/386 -v ./cmd/gptn
 	@echo "Linux 386 cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-linux-* | grep 386
+	@ls -ld $(GOBIN)/gptn-linux-* | grep 386
 
-gpan-linux-amd64:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/amd64 -v ./cmd/gpan
+gptn-linux-amd64:
+	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/amd64 -v ./cmd/gptn
 	@echo "Linux amd64 cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-linux-* | grep amd64
+	@ls -ld $(GOBIN)/gptn-linux-* | grep amd64
 
-gpan-linux-arm: gpan-linux-arm-5 gpan-linux-arm-6 gpan-linux-arm-7 gpan-linux-arm64
+gptn-linux-arm: gptn-linux-arm-5 gptn-linux-arm-6 gptn-linux-arm-7 gptn-linux-arm64
 	@echo "Linux ARM cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-linux-* | grep arm
+	@ls -ld $(GOBIN)/gptn-linux-* | grep arm
 
-gpan-linux-arm-5:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/arm-5 -v ./cmd/gpan
+gptn-linux-arm-5:
+	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/arm-5 -v ./cmd/gptn
 	@echo "Linux ARMv5 cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-linux-* | grep arm-5
+	@ls -ld $(GOBIN)/gptn-linux-* | grep arm-5
 
-gpan-linux-arm-6:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/arm-6 -v ./cmd/gpan
+gptn-linux-arm-6:
+	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/arm-6 -v ./cmd/gptn
 	@echo "Linux ARMv6 cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-linux-* | grep arm-6
+	@ls -ld $(GOBIN)/gptn-linux-* | grep arm-6
 
-gpan-linux-arm-7:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/arm-7 -v ./cmd/gpan
+gptn-linux-arm-7:
+	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/arm-7 -v ./cmd/gptn
 	@echo "Linux ARMv7 cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-linux-* | grep arm-7
+	@ls -ld $(GOBIN)/gptn-linux-* | grep arm-7
 
-gpan-linux-arm64:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/arm64 -v ./cmd/gpan
+gptn-linux-arm64:
+	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/arm64 -v ./cmd/gptn
 	@echo "Linux ARM64 cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-linux-* | grep arm64
+	@ls -ld $(GOBIN)/gptn-linux-* | grep arm64
 
-gpan-linux-mips:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/mips --ldflags '-extldflags "-static"' -v ./cmd/gpan
+gptn-linux-mips:
+	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/mips --ldflags '-extldflags "-static"' -v ./cmd/gptn
 	@echo "Linux MIPS cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-linux-* | grep mips
+	@ls -ld $(GOBIN)/gptn-linux-* | grep mips
 
-gpan-linux-mipsle:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/mipsle --ldflags '-extldflags "-static"' -v ./cmd/gpan
+gptn-linux-mipsle:
+	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/mipsle --ldflags '-extldflags "-static"' -v ./cmd/gptn
 	@echo "Linux MIPSle cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-linux-* | grep mipsle
+	@ls -ld $(GOBIN)/gptn-linux-* | grep mipsle
 
-gpan-linux-mips64:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/mips64 --ldflags '-extldflags "-static"' -v ./cmd/gpan
+gptn-linux-mips64:
+	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/mips64 --ldflags '-extldflags "-static"' -v ./cmd/gptn
 	@echo "Linux MIPS64 cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-linux-* | grep mips64
+	@ls -ld $(GOBIN)/gptn-linux-* | grep mips64
 
-gpan-linux-mips64le:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/mips64le --ldflags '-extldflags "-static"' -v ./cmd/gpan
+gptn-linux-mips64le:
+	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=linux/mips64le --ldflags '-extldflags "-static"' -v ./cmd/gptn
 	@echo "Linux MIPS64le cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-linux-* | grep mips64le
+	@ls -ld $(GOBIN)/gptn-linux-* | grep mips64le
 
-gpan-darwin: gpan-darwin-386 gpan-darwin-amd64
+gptn-darwin: gptn-darwin-386 gptn-darwin-amd64
 	@echo "Darwin cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-darwin-*
+	@ls -ld $(GOBIN)/gptn-darwin-*
 
-gpan-darwin-386:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=darwin/386 -v ./cmd/gpan
+gptn-darwin-386:
+	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=darwin/386 -v ./cmd/gptn
 	@echo "Darwin 386 cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-darwin-* | grep 386
+	@ls -ld $(GOBIN)/gptn-darwin-* | grep 386
 
-gpan-darwin-amd64:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=darwin/amd64 -v ./cmd/gpan
+gptn-darwin-amd64:
+	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=darwin/amd64 -v ./cmd/gptn
 	@echo "Darwin amd64 cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-darwin-* | grep amd64
+	@ls -ld $(GOBIN)/gptn-darwin-* | grep amd64
 
-gpan-windows: gpan-windows-386 gpan-windows-amd64
+gptn-windows: gptn-windows-386 gptn-windows-amd64
 	@echo "Windows cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-windows-*
+	@ls -ld $(GOBIN)/gptn-windows-*
 
-gpan-windows-386:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=windows/386 -v ./cmd/gpan
+gptn-windows-386:
+	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=windows/386 -v ./cmd/gptn
 	@echo "Windows 386 cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-windows-* | grep 386
+	@ls -ld $(GOBIN)/gptn-windows-* | grep 386
 
-gpan-windows-amd64:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=windows/amd64 -v ./cmd/gpan
+gptn-windows-amd64:
+	build/env.sh go run build/ci.go xgo -- --go=$(GO) --targets=windows/amd64 -v ./cmd/gptn
 	@echo "Windows amd64 cross compilation done:"
-	@ls -ld $(GOBIN)/gpan-windows-* | grep amd64
+	@ls -ld $(GOBIN)/gptn-windows-* | grep amd64

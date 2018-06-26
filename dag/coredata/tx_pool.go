@@ -213,14 +213,14 @@ type TxPool struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config TxPoolConfig, chainconfig *configure.ChainConfig /*, chain blockChain*/) *TxPool {
+func NewTxPool(config TxPoolConfig /*, chainconfig *configure.ChainConfig , chain blockChain*/) *TxPool {
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 
 	// Create the transaction pool with its initial settings
 	pool := &TxPool{
-		config:      config,
-		chainconfig: chainconfig,
+		config: config,
+		//chainconfig: chainconfig,
 		//chain:       chain,
 		//signer:      types.NewEIP155Signer(chainconfig.ChainId),
 		pending:     make(map[common.Address]*txList),

@@ -30,12 +30,12 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/internal/debug"
-	"github.com/palletone/go-palletone/common/pandb"
 )
 
 const (
@@ -237,7 +237,7 @@ func ExportAppendChain(blockchain *coredata.BlockChain, fn string, first uint64,
 }
 
 // ImportPreimages imports a batch of exported hash preimages into the database.
-func ImportPreimages(db *pandb.LDBDatabase, fn string) error {
+func ImportPreimages(db *ptndb.LDBDatabase, fn string) error {
 	log.Info("Importing preimages", "file", fn)
 
 	// Open the file handle and potentially unwrap the gzip stream
@@ -286,7 +286,7 @@ func ImportPreimages(db *pandb.LDBDatabase, fn string) error {
 
 // ExportPreimages exports all known hash preimages into the specified file,
 // truncating any data already present in the file.
-func ExportPreimages(db *pandb.LDBDatabase, fn string) error {
+func ExportPreimages(db *ptndb.LDBDatabase, fn string) error {
 	log.Info("Exporting preimages", "file", fn)
 
 	// Open the file handle and potentially wrap with a gzip stream

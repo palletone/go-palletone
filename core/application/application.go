@@ -12,17 +12,11 @@ import (
 
 	d "github.com/palletone/go-palletone/consensus/dpos"
 	s "github.com/palletone/go-palletone/consensus/dpos/mediators"
+	v "github.com/palletone/go-palletone/dag/verifiedunit"
 )
 
-type VerifiedUnit struct {
-	PreVerifiedUnit *VerifiedUnit // 前一个验证单元的hash
-	MediatorSig     string		// 验证单元签名信息
-	Timestamp		time.Time	// 时间戳
-	VerifiedUnitNum uint32		// 验证单元编号
-}
-
 type DataBase struct {
-	VerifiedUnits	[]*VerifiedUnit
+	VerifiedUnits	[]*v.VerifiedUnit
 	Mediators     	[]*d.Mediator
 
 	GlobalProp		d.GlobalProperty
@@ -44,9 +38,9 @@ func (db *DataBase) Initialize() {
 	println("initilize blockchain data start!")
 
 	println("initilize genesis verified uint!")
-	gvu := VerifiedUnit{nil, "",
+	gvu := v.VerifiedUnit{nil, "",
 	time.Unix(time.Now().Unix(), 0), 0}	//创世单元
-	var vus []*VerifiedUnit
+	var vus []*v.VerifiedUnit
 	vus = append(vus, &gvu)
 
 	println("initilize mediators!")
@@ -64,25 +58,34 @@ func (db *DataBase) Initialize() {
 func (db *DataBase) Startup() {
 	// 2. 初始化全局属性...
 	println("initilize global property...")
-//	db.GlobalProp.ChainParameters.MaintenanceSkipSlots = 3
-	db.GlobalProp.ChainParameters.VerifiedUnitInterval = 3
+
+	gp := &db.GlobalProp
+//	gp.ChainParameters.MaintenanceSkipSlots = 3
+	gp.ChainParameters.VerifiedUnitInterval = 3
 
 	println("Set active mediators...\n")
-	db.GlobalProp.ActiveMediators = append(db.GlobalProp.ActiveMediators, &Mediator1)
-	db.GlobalProp.ActiveMediators = append(db.GlobalProp.ActiveMediators, &Mediator2)
-	db.GlobalProp.ActiveMediators = append(db.GlobalProp.ActiveMediators, &Mediator3)
+	gp.ActiveMediators = append(gp.ActiveMediators, &Mediator1)
+	gp.ActiveMediators = append(gp.ActiveMediators, &Mediator2)
+	gp.ActiveMediators = append(gp.ActiveMediators, &Mediator3)
 
 	println("initilize dynamic global property...")
 
-	db.DynGlobalProp.LastVerifiedUnitNum = 0
-//	db.DynGlobalProp.VerifiedUnitHash = "0x000000"
-	db.DynGlobalProp.LastVerifiedUnitTime = time.Unix(time.Now().Unix(), 0)
-	db.DynGlobalProp.CurrentMediator = nil
-	db.DynGlobalProp.CurrentASlot = 0
-//	db.DynGlobalProp.RecentSlotsFilled = 100
+	dgp := &db.DynGlobalProp
+	vus := &db.VerifiedUnits
+	lastVU := (*vus)[len(*vus)-1]
+	dgp.LastVerifiedUnitNum = lastVU.VerifiedUnitNum
+//	dgp.VerifiedUnitHash = "0x000000"
+	dgp.LastVerifiedUnit = lastVU
+	dgp.LastVerifiedUnitTime = lastVU.Timestamp
+//	dgp.CurrentMediator = nil
+	dgp.CurrentASlot = 0
+//	dgp.RecentSlotsFilled = 100
 
+	ms := &db.MediatorSchl
 	println("Create witness scheduler...\n")
 	for _, m := range db.GlobalProp.ActiveMediators {
-		db.MediatorSchl.CurrentShuffledMediators =append(db.MediatorSchl.CurrentShuffledMediators, m)
+		ms.CurrentShuffledMediators =append(ms.CurrentShuffledMediators, m)
 	}
+
+	ms.UpdateMediatorSchedule(gp, dgp)
 }

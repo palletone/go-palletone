@@ -157,6 +157,7 @@ func initLogger() {
 	cfg.Development = DefaultConfig.Development
 	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
 	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	//cfg.EncoderConfig.EncodeLevel=zapcore.LowercaseColorLevelEncoder
 	l, err := cfg.Build()
 	if err != nil {
 		log.Fatal("init logger error: ", err)

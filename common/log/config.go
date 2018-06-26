@@ -12,7 +12,7 @@ type Config struct {
 	// logger
 	OutputPaths      []string
 	ErrorOutputPaths []string
-	LoggerLvl        string // log levle
+	LoggerLvl        string // log level
 	Encoding         string // encoding
 	Development      bool
 }

@@ -29,7 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/pandb"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/internal/debug"
@@ -98,15 +98,12 @@ func New(conf *Config) (*Node, error) {
 		return nil, errors.New(`Config.Name cannot end in ".ipc"`)
 	}
 	// Ensure that the AccountManager method works before the node has started.
-	// We rely on this in cmd/gpan.
+	// We rely on this in cmd/gptn.
 	am, ephemeralKeystore, err := makeAccountManager(conf)
 	if err != nil {
 		return nil, err
 	}
-	// if conf.Logger == nil {
-	// 	conf.Logger = log.New()
-	// }
-	conf.Logger = *log.New()
+
 	// Note: any interaction with Config that would create/touch files
 	// in the data directory or instance directory is delayed until Start.
 	return &Node{
@@ -118,7 +115,7 @@ func New(conf *Config) (*Node, error) {
 		httpEndpoint:      conf.HTTPEndpoint(),
 		wsEndpoint:        conf.WSEndpoint(),
 		eventmux:          new(event.TypeMux),
-		log:               conf.Logger,
+		//log:               conf.Logger,
 	}, nil
 }
 
@@ -567,11 +564,11 @@ func (n *Node) EventMux() *event.TypeMux {
 // OpenDatabase opens an existing database with the given name (or creates one if no
 // previous can be found) from within the node's instance directory. If the node is
 // ephemeral, a memory database is returned.
-func (n *Node) OpenDatabase(name string, cache, handles int) (pandb.Database, error) {
+func (n *Node) OpenDatabase(name string, cache, handles int) (ptndb.Database, error) {
 	if n.config.DataDir == "" {
-		return pandb.NewMemDatabase()
+		return ptndb.NewMemDatabase()
 	}
-	return pandb.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
+	return ptndb.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
 }
 
 // ResolvePath returns the absolute path of a resource in the instance directory.

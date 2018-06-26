@@ -9,6 +9,8 @@ package dpos
 
 import (
 	"time"
+
+	v "github.com/palletone/go-palletone/dag/verifiedunit"
 )
 
 // 区块链属性结构体的定义
@@ -33,13 +35,15 @@ type DynamicGlobalProperty struct {
 
 //	VerifiedUnitHash string // 最近的验证单元hash
 
+	LastVerifiedUnit *v.VerifiedUnit	// 最近生产的验证单元
+
 	LastVerifiedUnitTime time.Time // 最近的验证单元时间
 
-	CurrentMediator *Mediator // 当前生产验证单元的mediator
+//	CurrentMediator *Mediator // 当前生产验证单元的mediator, 用于判断是否连续同一个mediator生产验证单元
 
 //	NextMaintenanceTime time.Time // 下一次系统维护时间
 
-	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == verifiedUnitNum + 错过的槽数量
+	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == verifiedUnitNum + 丢失的槽数量
 	CurrentASlot uint64
 
 	/**
@@ -48,8 +52,4 @@ type DynamicGlobalProperty struct {
 	用于计算mediator的参与率。used to compute mediator participation.
 	*/
 //	RecentSlotsFilled float32
-}
-
-func UpdateGlobalDynamicData() {
-
 }

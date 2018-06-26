@@ -23,14 +23,14 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/pan/downloader"
-	"github.com/palletone/go-palletone/common/pandb"
+	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/vm"
 )
 
@@ -41,7 +41,7 @@ type Backend interface {
 	Downloader() *downloader.Downloader
 	ProtocolVersion() int
 	SuggestPrice(ctx context.Context) (*big.Int, error)
-	ChainDb() pandb.Database
+	ChainDb() ptndb.Database
 	EventMux() *event.TypeMux
 	AccountManager() *accounts.Manager
 

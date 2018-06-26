@@ -75,7 +75,8 @@ If slotNum == 2, return the next scheduled mediator after 1 verified uint gap.
 */
 func (ms *MediatorSchedule) GetScheduledMediator(dgp *d.DynamicGlobalProperty, slotNum uint32) *d.Mediator {
 	currentASlot := dgp.CurrentASlot + uint64(slotNum)
-	return ms.CurrentShuffledMediators[currentASlot%uint64(len(ms.CurrentShuffledMediators))]
+	// 由于创世单元不是有mediator生产，所以这里需要减1
+	return ms.CurrentShuffledMediators[(currentASlot-1)%uint64(len(ms.CurrentShuffledMediators))]
 }
 
 /**
@@ -104,15 +105,15 @@ func GetSlotTime(gp *d.GlobalProperty, dgp *d.DynamicGlobalProperty, slotNum uin
 
 	interval := gp.ChainParameters.VerifiedUnitInterval
 
-	// 本条件是用来生产创世区块
-	if dgp.LastVerifiedUnitNum == 0 {
-		/**
-		注：第一个验证单元在genesisTime加上一个验证单元间隔
-		n.b. first verifiedUnit is at genesisTime plus one verifiedUnitInterval
-		*/
-		genesisTime := dgp.LastVerifiedUnitTime.Unix()
-		return time.Unix(genesisTime + int64(slotNum) * int64(interval), 0)
-	}
+	// 本条件是用来生产创世区块, 由于palletone创世单元不是有mediator生产, 先注释掉
+	//if dgp.LastVerifiedUnitNum == 0 {
+	//	/**
+	//	注：第一个验证单元在genesisTime加上一个验证单元间隔
+	//	n.b. first verifiedUnit is at genesisTime plus one verifiedUnitInterval
+	//	*/
+	//	genesisTime := dgp.LastVerifiedUnitTime.Unix()
+	//	return time.Unix(genesisTime + int64(slotNum) * int64(interval), 0)
+	//}
 
 	// 最近的验证单元的绝对slot
 	var verifiedUnitAbsSlot = dgp.LastVerifiedUnitTime.Unix() / int64(interval)
@@ -126,8 +127,8 @@ func GetSlotTime(gp *d.GlobalProperty, dgp *d.DynamicGlobalProperty, slotNum uin
 	如果不是，就直接加上验证单元的slot时间
 	*/
 	// "slot 1" is verifiedUnitSlotTime,
-	// plus maint interval if last uint is a maint verifiedUnit
-	// plus verifiedUnit interval if last uint is not a maint verifiedUnit
+	// plus maintenance interval if last uint is a maintenance verifiedUnit
+	// plus verifiedUnit interval if last uint is not a maintenance verifiedUnit
 	return verifiedUnitSlotTime.Add(time.Second * time.Duration(slotNum) * time.Duration(interval))
 }
 

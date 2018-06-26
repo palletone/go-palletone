@@ -5267,6 +5267,15 @@ Object.defineProperty(Eth.prototype, 'defaultAccount', {
 });
 
 var methods = function () {
+	
+	var forking = new Method({
+	    name: 'forking',
+	    call: 'eth_forking',
+	    params: 1,
+	    inputFormatter: [null],
+	    outputFormatter: formatters.outputBigNumberFormatter
+	});
+	
     var getBalance = new Method({
         name: 'getBalance',
         call: 'eth_getBalance',
@@ -5432,6 +5441,7 @@ var methods = function () {
     });
 
     return [
+		forking,
         getBalance,
         getStorageAt,
         getCode,

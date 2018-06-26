@@ -29,8 +29,8 @@ import (
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus"
 	//"github.com/palletone/go-palletone/dag/state"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/common/pandb"
 	"github.com/palletone/go-palletone/vm"
 )
 
@@ -60,7 +60,7 @@ func (bc *BlockChain) Export(w io.Writer) error {
 func (bc *BlockChain) ExportN(w io.Writer, first uint64, last uint64) error {
 	return nil
 }
-func NewBlockChain(db pandb.Database, cacheConfig *CacheConfig, chainConfig *configure.ChainConfig, engine consensus.Engine /*, vmConfig vm.Config*/) (*BlockChain, error) {
+func NewBlockChain(db ptndb.Database, cacheConfig *CacheConfig, chainConfig *configure.ChainConfig, engine consensus.Engine /*, vmConfig vm.Config*/) (*BlockChain, error) {
 	return &BlockChain{}, nil
 }
 
@@ -69,7 +69,7 @@ type ChainIndexerBackend interface{}
 
 type ChainIndexer struct{}
 
-func NewChainIndexer(chainDb, indexDb pandb.Database, backend ChainIndexerBackend, section, confirm uint64, throttling time.Duration, kind string) *ChainIndexer {
+func NewChainIndexer(chainDb, indexDb ptndb.Database, backend ChainIndexerBackend, section, confirm uint64, throttling time.Duration, kind string) *ChainIndexer {
 	return &ChainIndexer{}
 }
 
@@ -85,7 +85,7 @@ func (c *ChainIndexer) AddKnownSectionHead(section uint64, shead common.Hash) {
 
 }
 
-func (c *ChainIndexer) Start(chain ChainIndexerChain) {
+func (c *ChainIndexer) Start( /*chain ChainIndexerChain*/ ) {
 
 }
 
@@ -170,18 +170,18 @@ type Genesis struct {
 */
 // Commit writes the block and state of a genesis specification to the database.
 // The block is committed as the canonical head block.
-func (g *Genesis) Commit(db pandb.Database) (*types.Block, error) {
+func (g *Genesis) Commit(db ptndb.Database) (*types.Block, error) {
 	return &types.Block{}, nil
 }
 
 // MustCommit writes the genesis block and state to db, panicking on error.
 // The block is committed as the canonical head block.
-func (g *Genesis) MustCommit(db pandb.Database) *types.Block {
+func (g *Genesis) MustCommit(db ptndb.Database) *types.Block {
 	return &types.Block{}
 }
 
 // GenesisBlockForTesting creates and writes a block in which addr has the given wei balance.
-func GenesisBlockForTesting(db pandb.Database, addr common.Address, balance *big.Int) *types.Block {
+func GenesisBlockForTesting(db ptndb.Database, addr common.Address, balance *big.Int) *types.Block {
 	return &types.Block{}
 }
 
@@ -200,19 +200,19 @@ func DefaultRinkebyGenesisBlock() *Genesis {
 	return &Genesis{}
 }
 
-// DeveloperGenesisBlock returns the 'gpan --dev' genesis block. Note, this must
+// DeveloperGenesisBlock returns the 'gptn --dev' genesis block. Note, this must
 // be seeded with the
 func DeveloperGenesisBlock(period uint64, faucet common.Address) *Genesis {
 	return &Genesis{}
 }
-func SetupGenesisBlock(db pandb.Database, genesis *Genesis) (*configure.ChainConfig, common.Hash, error) {
+func SetupGenesisBlock(db ptndb.Database, genesis *Genesis) (*configure.ChainConfig, common.Hash, error) {
 	return &configure.ChainConfig{}, common.Hash{}, nil
 }
 
 ////////headerchain///////////
 type HeaderChain struct{}
 
-func NewHeaderChain(chainDb pandb.Database, config *configure.ChainConfig, engine consensus.Engine, procInterrupt func() bool) (*HeaderChain, error) {
+func NewHeaderChain(chainDb ptndb.Database, config *configure.ChainConfig, engine consensus.Engine, procInterrupt func() bool) (*HeaderChain, error) {
 	return &HeaderChain{}, nil
 }
 func (hc *HeaderChain) CurrentHeader() *types.Header {
