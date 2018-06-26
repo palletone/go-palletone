@@ -20,10 +20,6 @@ type Unit struct {
 	LastPacketUnit        string          `json:"last_packet_unit"`         // 最后一个packet对应的unit
 	WitnessListUnit       string          `json:"witness_list_unit"`        // 上一个稳定见证单元的hash
 	ContentHash           string          `json:"content_hash"`             // 内容hash
-	// 头佣金和净载荷酬劳在我们的项目可能暂时没有用到
-	// fields of  'headers_commission' and 'headers_commission' may not be used in our project for the now
-	// HeadersCommission     int             `json:"headers_commission"`       // 头佣金
-	// PayloadCommission     int             `json:"headers_commission"`       // 净载荷酬劳
 	IsFree                bool            `json:"is_free"`                  // 顶端单元
 	IsOnMainChain         bool            `json:"is_on_main_chain"`         // 是在主链上
 	MainChainIndex        uint64          `json:"main_chain_index"`         // 主链序号
@@ -34,63 +30,83 @@ type Unit struct {
 	Sequence              string          `json:"sequence"`                 // {枚举：'good' 'temp-bad' 'final-bad', default:'good'}
 	BestParentUnit        string          `json:"best_parent_unit"`         // 最优父单元
 
+	// 头佣金和净载荷酬劳在我们的项目可能暂时没有用到
+	// fields of  'headers_commission' and 'headers_commission' may not be used in our project for the now
+	// HeadersCommission     int             `json:"headers_commission"`       // 头佣金
+	// PayloadCommission     int             `json:"headers_commission"`       // 净载荷酬劳
+
 	// 与杨杰沟通，这两个字段表示前驱和后继，但是从DAG网络和数据库update两方面考虑，暂时不需要这两个字段
 	// In communication with Yang Jie, these two fields represent the precursor and successor, but considering the DAG network and the database update, the two fields are not needed temporarily.
 	// ToUnit                map[string]bool `json:"to_unit"`                  // parents
 	// FromUnit              map[string]bool `json:"from_unit"`                // childs
 
-	// 与杨杰沟通，当时在未确定数据库的时候考虑外键、模糊查询的情况
+	// 与杨杰沟通，当时在未确定 数据库的时候考虑外键、模糊查询的情况
 	// Communicating with Yang Jie, then ha has considered foreign keys and fuzzy queries at the time when the database was not determined
 	// Key                   string          `json:"key"`                      // index: key
 }
 
 // key: message.hash(message+timestamp)
 type Message struct {
-	App             string        `json:"app"`              // 消息类型
-	PayloadLocation string        `json:"payload_location"` // 负载位置
+	App             string        `json:"app"`              // message type
+	PayloadLocation string        `json:"payload_location"` // payload loacation
 	PayloadHash     string    	  `json:"payload_hash"`     // payload hash
-	Payload         interface{}   `json:"payload"`			// should be the choice of Payload, ContractTplPayload, ContractDeployPayload, ContractInvokePayload
+	Payload         interface{}   `json:"payload"`			// the true transaction data
 	CreationDate    time.Time     `json:"creation_date"`
 }
 
+/************************** Payload Details ******************************************/
 // Token exchange message and verify message
-type Payload struct {
+// App: payment
+// App: verify
+type PaymentPayload struct {
 	Inputs  []Input  `json:"inputs"`
 	Outputs []Output `json:"outputs"`
 }
 
 // Contract template deploy message
+// App: contract_template
 type ContractTplPayload struct {
-	TemplateId	string 	`json:"template_id"`	// configure xml file of contract
-	Bytecode	[]byte 	`json:"bytecode"`		// contract bytecode
+	TemplateId	string 					`json:"template_id"`	// configure xml file of contract
+	Bytecode	[]byte 					`json:"bytecode"`		// contract bytecode
+	ReadSet		map[string]interface{}  `json:"read_set"`		// the set data of read, and value could be any type
+	WriteSet	map[string]interface{}	`json:"write_set"`		// the set data of write, and value could be any type
 }
 
 // Contract instance message
+// App: contract_deploy
 type ContractDeployPayload struct {
-	TemplateId	string 	`json:"template_id"`	// contract template id
-	Config		[]byte 	`json:"config"`			// configure xml file of contract instance parameters
+	TemplateId	string 				 	`json:"template_id"`	// contract template id
+	Config		[]byte 	             	`json:"config"`		// configure xml file of contract instance parameters
+	ReadSet		map[string]interface{}  `json:"read_set"`		// the set data of read, and value could be any type
+	WriteSet	map[string]interface{}	`json:"write_set"`		// the set data of write, and value could be any type
 }
 
 // Contract invoke message
+// App: contract_invoke
 type ContractInvokePayload struct {
-	ContractId	string 	`json:"contract_id"`	// contract id
-	Function	[]byte 	`json:"function"`		// serialized value of invoked function with call parameters
+	ContractId	string               	`json:"contract_id"`	// contract id
+	Function	[]byte               	`json:"function"`		// serialized value of invoked function with call parameters
+	ReadSet		map[string]interface{}  `json:"read_set"`		// the set data of read, and value could be any type
+	WriteSet	map[string]interface{}	`json:"write_set"`		// the set data of write, and value could be any type
 }
 
-// type Input struct {
-// 	Unit         string `json:"unit"`          // 未花费unit
-// 	MessageIndex int    `json:"message_index"` // 消息序号
-// 	OutputIndex  int    `json:"output_index"`  // 输出序号
-// }
-// type Output struct {
-// 	Address string `json:"address"` // 输出地址
-// 	Amount  int    `json:"amount"`  // 输出金额
+// Token exchange message and verify message
+// App: config	// update global config
+type ConfigPayload struct {
+	ConfigSet 	map[string]interface{}	`json:"config_set"`		// the array of global config
+}
 
-// }
+// Token exchange message and verify message
+// App: text
+type TextPayload struct {
+	Text	[]byte		`json:"text"`	// Textdata
+}
+/************************** End of Payload Details ******************************************/
+
 type Author struct {
-	Address       string       `json:"address"`
+	Address       string        `json:"address"`
 	Pubkey		  string 		`json:"pubkey"`
-	Authentifiers Authentifier `json:"authentifiers"`
+	Authentifiers Authentifier  `json:"authentifiers"`
 }
 
 type Authentifier struct {
@@ -100,9 +116,11 @@ type Authentifier struct {
 func (a *Authentifier) ToDB() ([]byte, error) {
 	return json.Marshal(a)
 }
+
 func (a *Authentifier) FromDB(info []byte) error {
 	return json.Unmarshal(info, a)
 }
+
 func NewUnit() *Unit {
 	return &Unit{Version: "1.0", Alt: "1", CreationDate: time.Now(), IsFree: true, Sequence: "good"}
 }
@@ -111,14 +129,16 @@ func (u *Unit) Is_stable() bool {
 	// 判断候选主链的交点是否是这个unit
 	return true
 }
+
 func (u *Unit) GetBestParentUnit() string {
 	return ""
 }
+
 func (u *Unit) GetLastBall() string {
 	ball := getlastball(u.Unit)
-
 	return ball.Ball
 }
+
 func getlastball(unit string) *Ball {
 	return &Ball{Ball: ""}
 }
@@ -126,17 +146,20 @@ func getlastball(unit string) *Ball {
 type UnStableUnitsList []*Unit
 
 func (ulist UnStableUnitsList) Len() int { return len(ulist) }
+
 func (ulist UnStableUnitsList) Less(i, j int) bool {
 	if ulist[i].Unit < ulist[j].Unit {
 		return true
 	}
 	return false
 }
+
 func (ulist UnStableUnitsList) Swap(i, j int) {
 	var temp *Unit = ulist[i]
 	ulist[i] = ulist[j]
 	ulist[j] = temp
 }
+
 func (ulist UnStableUnitsList) GetMaxMainChainIndex() (max int64) {
 	//max = ulist[0].MainChainIndex
 	for _, v := range ulist {
@@ -150,17 +173,20 @@ func (ulist UnStableUnitsList) GetMaxMainChainIndex() (max int64) {
 type StableUnitslist []*Unit
 
 func (list StableUnitslist) Len() int { return len(list) }
+
 func (list StableUnitslist) Less(i, j int) bool {
 	if list[i].Unit < list[j].Unit {
 		return true
 	}
 	return false
 }
+
 func (list StableUnitslist) Swap(i, j int) {
 	var temp *Unit = list[i]
 	list[i] = list[j]
 	list[j] = temp
 }
+
 func (list StableUnitslist) GetMaxMainChainIndex() (max int64) {
 	//max = list[0].MainChainIndex
 	for _, v := range list {
