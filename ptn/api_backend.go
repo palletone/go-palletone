@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
-package pan
+package ptn
 
 import (
 	"context"
@@ -31,8 +31,8 @@ import (
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/pan/downloader"
-	"github.com/palletone/go-palletone/pan/gasprice"
+	"github.com/palletone/go-palletone/ptn/downloader"
+	"github.com/palletone/go-palletone/ptn/gasprice"
 	"github.com/palletone/go-palletone/vm"
 )
 

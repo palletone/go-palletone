@@ -32,8 +32,8 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/internal/debug"
-	"github.com/palletone/go-palletone/pan"
-	"github.com/palletone/go-palletone/panclient"
+	"github.com/palletone/go-palletone/ptn"
+	"github.com/palletone/go-palletone/ptnclient"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -243,7 +243,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		if err != nil {
 			utils.Fatalf("Failed to attach to self: %v", err)
 		}
-		stateReader := panclient.NewClient(rpcClient)
+		stateReader := ptnclient.NewClient(rpcClient)
 
 		// Open any wallets already attached
 		for _, wallet := range stack.AccountManager().Wallets() {
@@ -280,7 +280,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		if ctx.GlobalBool(utils.LightModeFlag.Name) || ctx.GlobalString(utils.SyncModeFlag.Name) == "light" {
 			utils.Fatalf("Light clients do not support mining")
 		}
-		var ethereum *pan.Ethereum
+		var ethereum *ptn.Ethereum
 		if err := stack.Service(&ethereum); err != nil {
 			utils.Fatalf("Ethereum service not running: %v", err)
 		}

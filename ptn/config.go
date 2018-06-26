@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
-package pan
+package ptn
 
 import (
 	"math/big"
@@ -32,8 +32,8 @@ import (
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/pan/downloader"
-	"github.com/palletone/go-palletone/pan/gasprice"
+	"github.com/palletone/go-palletone/ptn/downloader"
+	"github.com/palletone/go-palletone/ptn/gasprice"
 )
 
 // DefaultConfig contains default settings for use on the Ethereum main net.

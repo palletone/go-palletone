@@ -15,7 +15,7 @@
 // along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package eth implements the Ethereum protocol.
-package pan
+package ptn
 
 import (
 	"errors"
@@ -45,9 +45,9 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/internal/ethapi"
-	"github.com/palletone/go-palletone/pan/downloader"
-	"github.com/palletone/go-palletone/pan/filters"
-	"github.com/palletone/go-palletone/pan/gasprice"
+	"github.com/palletone/go-palletone/ptn/downloader"
+	"github.com/palletone/go-palletone/ptn/filters"
+	"github.com/palletone/go-palletone/ptn/gasprice"
 )
 
 type LesServer interface {

@@ -15,7 +15,7 @@
 // along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package eth implements the Ethereum protocol.
-package pan
+package ptn
 
 import (
 	"bytes"
@@ -23,9 +23,9 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/pandb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/common/pandb"
 )
 
 var deduplicateData = []byte("dbUpgrade_20170714deduplicateData")

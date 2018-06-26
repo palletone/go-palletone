@@ -37,7 +37,7 @@ import (
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/pan"
+	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 )
 
@@ -81,7 +81,7 @@ type ethstatsConfig struct {
 }
 
 type gethConfig struct {
-	Eth       pan.Config
+	Eth       ptn.Config
 	Node      node.Config
 	Ethstats  ethstatsConfig
 	Dashboard dashboard.Config
@@ -128,7 +128,7 @@ func adaptorConfig(config gethConfig) gethConfig {
 func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	// Load defaults.
 	cfg := gethConfig{
-		Eth:       pan.DefaultConfig,
+		Eth:       ptn.DefaultConfig,
 		Node:      defaultNodeConfig(),
 		Dashboard: dashboard.DefaultConfig,
 		P2P:       p2p.Config{ListenAddr: ":30303", MaxPeers: 25, NAT: nat.Any()},

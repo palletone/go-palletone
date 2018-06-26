@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
-package pan
+package ptn
 
 import (
 	"reflect"
@@ -22,8 +22,8 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/common/pandb"
+	"github.com/palletone/go-palletone/dag/state"
 )
 
 var dumper = spew.ConfigState{Indent: "    "}

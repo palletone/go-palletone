@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
-package pan
+package ptn
 
 import (
 	"sync/atomic"
@@ -23,7 +23,7 @@ import (
 
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/pan/downloader"
+	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
 // Tests that fast sync gets disabled as soon as a real block is successfully

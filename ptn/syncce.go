@@ -1,4 +1,4 @@
-package pan
+package ptn
 
 func (self *ProtocolManager) ceBroadcastLoop() {
 	for {
