@@ -49,7 +49,7 @@ the user doesn't care about years-old historical data, so we can fast-sync quick
 state of the network. To do so:
 
 ```
-$ gptn console
+$ gptn --config /path/to/your_config.toml console 
 ```
 
 This command will:
@@ -71,7 +71,7 @@ entire system. In other words, instead of attaching to the main network, you wan
 network with your node, which is fully equivalent to the main network, but with play-Ether only.
 
 ```
-$ gptn --testnet console
+$ gptn --config /path/to/your_config.toml --testnet console
 ```
 
 The `console` subcommand have the exact same meaning as above and they are equally useful on the
