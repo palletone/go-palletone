@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 
+	palletdb "github.com/palletone/go-palletone/common/pandb"
 	"github.com/palletone/go-palletone/dag/constants"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -20,7 +21,7 @@ var (
 func SaveJoint(objJoint *modules.Joint, objValidationState *modules.ValidationState, onDone func()) (err error) {
 	log.Println("Start save unit... ")
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn()
+		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
 	}
 	objUnit := objJoint.Unit
 	obj_unit_byte, _ := json.Marshal(objUnit)
@@ -45,7 +46,7 @@ func SaveJoint(objJoint *modules.Joint, objValidationState *modules.ValidationSt
 func GetUnitKeys() []string {
 	var keys []string
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn()
+		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
 	}
 	if keys_byte, err := Dbconn.Get([]byte("array_units")); err != nil {
 		log.Println("get units error:", err)
@@ -69,7 +70,7 @@ func AddUnitKeys(key string) error {
 	}
 	keys = append(keys, key)
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn()
+		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
 	}
 
 	if err := Dbconn.Put([]byte("array_units"), ConvertBytes(keys)); err != nil {
@@ -83,7 +84,7 @@ func ConvertBytes(val interface{}) (re []byte) {
 	if re, err = json.Marshal(val); err != nil {
 		log.Println("json.marshal error:", err)
 	}
-	return re
+	return re[:]
 }
 func IsGenesisUnit(unit string) bool {
 	return unit == constants.GENESIS_UNIT
@@ -96,7 +97,7 @@ func IsGenesisBall(ball string) bool {
 func GetKeysWithTag(tag string) []string {
 	var keys []string
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn()
+		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
 	}
 	if keys_byte, err := Dbconn.Get([]byte(tag)); err != nil {
 		log.Println("get keys error:", err)
@@ -120,7 +121,7 @@ func AddKeysWithTag(key, tag string) error {
 	}
 	keys = append(keys, key)
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn()
+		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
 	}
 
 	if err := Dbconn.Put([]byte(tag), ConvertBytes(keys)); err != nil {

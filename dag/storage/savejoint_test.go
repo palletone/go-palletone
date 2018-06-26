@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	palletdb "github.com/palletone/go-palletone/common/pandb"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -26,24 +27,29 @@ func TestSaveJoint(t *testing.T) {
 }
 
 func TestAddUnitKey(t *testing.T) {
-	keys := GetUnitKeys()
+	//keys := GetUnitKeys()
 	// if len(keys) <= 0 {
 	// 	return errors.New("null keys.")
 	// }
-	keys = append(keys, "unit1231526522017", "unit1231526521834")
+	keys := []string{"unit1231526522017", "unit1231526521834"}
 	var err error
 	if Dbconn == nil {
-		config.DefaultConfig.DbPath = "/Users/jay/code/gocode/src/palletone/bin/leveldb"
 		Dbconn, err = palletdb.NewLDBDatabase(config.DefaultConfig.DbPath, 0, 0)
 		if err != nil {
 			log.Println("new db error", err)
 			t.Fatal("error1")
 		}
 	}
-	if err := Dbconn.Put([]byte("array_units"), ConvertBytes(keys)); err != nil {
-		log.Println("put error", err)
-		t.Fatal("error2")
+	value := []int{123456, 987654}
+	for i, v := range keys {
+		log.Println("key: ", v, "value: ", value[i])
+		if err := Dbconn.Put([]byte(v), ConvertBytes(value[i])); err != nil {
+			log.Println("put error", err)
+			t.Fatal("error2")
+		}
+		log.Println("this value:", string(ConvertBytes(value[i])))
 	}
+
 	log.Println("success")
 }
 

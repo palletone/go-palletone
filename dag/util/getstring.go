@@ -2,11 +2,13 @@ package util
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
+	"unsafe"
 )
 
 const (
@@ -109,4 +111,20 @@ func InsertArray(a string, arr []string) []string {
 		arr[i], arr[lengh-1] = arr[lengh-1], arr[i]
 	}
 	return arr
+}
+
+func ToString(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
+}
+
+func ToByte(s string) []byte {
+	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
+	return *(*[]byte)(unsafe.Pointer(sh))
+}
+func Bytes(value interface{}) ([]byte, error) {
+	re := make([]byte, 0)
+	if value == nil {
+		return re, errors.New("value is nil.")
+	}
+	return json.Marshal(value)
 }
