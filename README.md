@@ -9,8 +9,6 @@ https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/6874
 [![Travis](https://travis-ci.org/palletone/go-palletone.svg?branch=master)](https://travis-ci.org/palletone/go-palletone)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/palletone/go-palletone?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-Automated builds are available for stable releases and the unstable master branch.
-Binary archives are published at https://gptn.palletone.org/downloads/.
 
 ## Building the source
 
@@ -108,6 +106,44 @@ To get an idea how the file should look like you can use the `dumpconfig` subcom
 ```
 $ gptn --your-favourite-flags dumpconfig
 ```
+
+e.g. call it palletone.toml:
+
+```
+[Consensus]
+Engine="solo"
+
+[Log]
+OutputPaths =["stdout","./log/all.log"]
+ErrorOutputPaths= ["stderr","./log/error.log"]
+LoggerLvl="info"   # ("debug", "info", "warn","error", "dpanic", "panic", and "fatal")
+Encoding="console" # console,json
+Development =true
+
+[Dag]
+DbPath="./leveldb"
+DbName="palletone.db"
+
+[Ada]
+Ada1="ada1_config"
+Ada2="ada2_config"
+
+[Node]
+DataDir = "./data1"
+KeyStoreDir="./data1/keystore"
+IPCPath = "./data1/gptn.ipc"
+HTTPPort = 8541
+HTTPVirtualHosts = ["0.0.0.0"]
+HTTPCors = ["*"]
+
+[Eth]
+NetworkId = 3369
+
+[P2P]
+ListenAddr = "0.0.0.0:30301"
+#BootstrapNodes = ["pnode://228f7e50031457d804ce6021f4a211721bacb9abba9585870efea55780bb744005a7f22e22938040684cdec32c748968f5dbe19822d4fbb44c6aaa69e7abdfee@127.0.0.1:30301"]
+```
+
 
 ### Operating a private network
 
