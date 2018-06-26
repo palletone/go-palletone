@@ -7,7 +7,7 @@ import (
 
 // contract template
 type ContractTplObj struct {
-	TplID    	string			`json:"address"`			// contract template address
+	TplID    	string						`json:"address"`			// contract template address
 	CodeHash 	  	string            		`json:"codeHash"`			// contract code hash
 	Code          	[]byte            		`json:"code"`				// contract bytecode
 	CreationDate  	time.Time 				`json:"creation_date"`		// contract template create time
