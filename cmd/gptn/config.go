@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/utils"
 	cli "gopkg.in/urfave/cli.v1"
 
+	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/nat"
@@ -88,6 +89,7 @@ type gethConfig struct {
 	Log       log.Config
 	Dag       dagconfig.Config
 	P2P       p2p.Config
+	Ada       adaptor.Config
 }
 
 func loadConfig(file string, cfg *gethConfig) error {
@@ -133,6 +135,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 		Consensus: consensusconfig.DefaultConfig,
 		Dag:       dagconfig.DefaultConfig,
 		Log:       log.DefaultConfig,
+		Ada:       adaptor.DefaultConfig,
 	}
 
 	// Load config file.
