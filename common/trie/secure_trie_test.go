@@ -24,11 +24,11 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/common/pandb"
+	"github.com/palletone/go-palletone/common/ptndb"
 )
 
 func newEmptySecure() *SecureTrie {
-	diskdb, _ := pandb.NewMemDatabase()
+	diskdb, _ := ptndb.NewMemDatabase()
 	triedb := NewDatabase(diskdb)
 
 	trie, _ := NewSecure(common.Hash{}, triedb, 0)
@@ -38,7 +38,7 @@ func newEmptySecure() *SecureTrie {
 // makeTestSecureTrie creates a large enough secure trie for testing.
 func makeTestSecureTrie() (*Database, *SecureTrie, map[string][]byte) {
 	// Create an empty trie
-	diskdb, _ := pandb.NewMemDatabase()
+	diskdb, _ := ptndb.NewMemDatabase()
 	triedb := NewDatabase(diskdb)
 
 	trie, _ := NewSecure(common.Hash{}, triedb, 0)

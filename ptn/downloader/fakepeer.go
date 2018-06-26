@@ -22,7 +22,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/coredata"
 	//"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/common/pandb"
+	"github.com/palletone/go-palletone/common/ptndb"
 )
 
 /*
@@ -31,13 +31,13 @@ import (
 // sync commands from an existing local database.
 type FakePeer struct {
 	id string
-	db pandb.Database
+	db ptndb.Database
 	//hc *core.HeaderChain//wangjiyou
 	dl *Downloader
 }
 
 // NewFakePeer creates a new mock downloader peer with the given data sources.
-func NewFakePeer(id string, db pandb.Database, hc *core.HeaderChain, dl *Downloader) *FakePeer {
+func NewFakePeer(id string, db ptndb.Database, hc *core.HeaderChain, dl *Downloader) *FakePeer {
 	return &FakePeer{id: id, db: db, hc: hc, dl: dl}
 }
 
@@ -162,7 +162,7 @@ func (p *FakePeer) RequestNodeData(hashes []common.Hash) error {
 */
 type FakePeer struct{}
 
-func NewFakePeer(id string, db pandb.Database, hc *coredata.HeaderChain, dl *Downloader) *FakePeer {
+func NewFakePeer(id string, db ptndb.Database, hc *coredata.HeaderChain, dl *Downloader) *FakePeer {
 	return &FakePeer{}
 }
 func (p *FakePeer) Head() (common.Hash, *big.Int) {

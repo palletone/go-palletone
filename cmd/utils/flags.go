@@ -36,7 +36,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
-	"github.com/palletone/go-palletone/common/pandb"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -1179,7 +1179,7 @@ func SetupNetwork(ctx *cli.Context) {
 }
 
 // MakeChainDatabase open an LevelDB using the flags passed to the client and will hard crash if it fails.
-func MakeChainDatabase(ctx *cli.Context, stack *node.Node) pandb.Database {
+func MakeChainDatabase(ctx *cli.Context, stack *node.Node) ptndb.Database {
 	var (
 		cache   = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheDatabaseFlag.Name) / 100
 		handles = makeDatabaseHandles()
@@ -1209,7 +1209,7 @@ func MakeGenesis(ctx *cli.Context) *coredata.Genesis {
 }
 
 // MakeChain creates a chain manager from set command line flags.
-func MakeChain(ctx *cli.Context, stack *node.Node) (chain *coredata.BlockChain, chainDb pandb.Database) {
+func MakeChain(ctx *cli.Context, stack *node.Node) (chain *coredata.BlockChain, chainDb ptndb.Database) {
 	var err error
 	chainDb = MakeChainDatabase(ctx, stack)
 

@@ -28,10 +28,10 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/math"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/common/pandb"
 	"github.com/palletone/go-palletone/tests"
 	"github.com/palletone/go-palletone/vm"
 )
@@ -159,7 +159,7 @@ func TestCallTracer(t *testing.T) {
 				GasLimit:    uint64(test.Context.GasLimit),
 				GasPrice:    tx.GasPrice(),
 			}
-			db, _ := pandb.NewMemDatabase()
+			db, _ := ptndb.NewMemDatabase()
 			statedb := tests.MakePreState(db, test.Genesis.Alloc)
 
 			// Create the tracer, the EVM environment and run it

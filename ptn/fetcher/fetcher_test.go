@@ -27,14 +27,14 @@ import (
 	"github.com/palletone/go-palletone/common"
 
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/common/pandb"
 )
 
 var (
-	testdb, _    = pandb.NewMemDatabase()
+	testdb, _    = ptndb.NewMemDatabase()
 	testKey, _   = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	testAddress  = crypto.PubkeyToAddress(testKey.PublicKey)
 	genesis      = core.GenesisBlockForTesting(testdb, testAddress, big.NewInt(1000000000))

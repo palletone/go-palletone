@@ -25,7 +25,7 @@ import (
 	//"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/common/pandb"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/types"
@@ -222,7 +222,7 @@ func (b *EthApiBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
 	return b.gpo.SuggestPrice(ctx)
 }
 
-func (b *EthApiBackend) ChainDb() pandb.Database {
+func (b *EthApiBackend) ChainDb() ptndb.Database {
 	return b.eth.ChainDb()
 }
 

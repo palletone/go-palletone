@@ -29,7 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/pandb"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/internal/debug"
@@ -564,11 +564,11 @@ func (n *Node) EventMux() *event.TypeMux {
 // OpenDatabase opens an existing database with the given name (or creates one if no
 // previous can be found) from within the node's instance directory. If the node is
 // ephemeral, a memory database is returned.
-func (n *Node) OpenDatabase(name string, cache, handles int) (pandb.Database, error) {
+func (n *Node) OpenDatabase(name string, cache, handles int) (ptndb.Database, error) {
 	if n.config.DataDir == "" {
-		return pandb.NewMemDatabase()
+		return ptndb.NewMemDatabase()
 	}
-	return pandb.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
+	return ptndb.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
 }
 
 // ResolvePath returns the absolute path of a resource in the instance directory.

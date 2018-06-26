@@ -30,7 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/math"
 	//"github.com/palletone/go-palletone/core/state"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/pandb"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/coredata"
@@ -149,7 +149,7 @@ func (e *GenesisMismatchError) Error() string {
 // error is a *configure.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-func SetupGenesisBlock(db pandb.Database, genesis *Genesis) (*configure.ChainConfig, common.Hash, error) {
+func SetupGenesisBlock(db ptndb.Database, genesis *Genesis) (*configure.ChainConfig, common.Hash, error) {
 	if genesis != nil && genesis.Config == nil {
 		return configure.AllEthashProtocolChanges, common.Hash{}, errGenesisNoConfig
 	}
@@ -223,9 +223,9 @@ func (g *Genesis) configOrDefault(ghash common.Hash) *configure.ChainConfig {
 /*
 // ToBlock creates the genesis block and writes state of a genesis specification
 // to the given database (or discards it if nil).
-func (g *Genesis) ToBlock(db pandb.Database) *types.Block {
+func (g *Genesis) ToBlock(db ptndb.Database) *types.Block {
 	if db == nil {
-		db, _ = pandb.NewMemDatabase()
+		db, _ = ptndb.NewMemDatabase()
 	}
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(db))
 	for addr, account := range g.Alloc {
@@ -264,7 +264,7 @@ func (g *Genesis) ToBlock(db pandb.Database) *types.Block {
 
 // Commit writes the block and state of a genesis specification to the database.
 // The block is committed as the canonical head block.
-func (g *Genesis) Commit(db pandb.Database) (*types.Block, error) {
+func (g *Genesis) Commit(db ptndb.Database) (*types.Block, error) {
 	block := g.ToBlock(db)
 	if block.Number().Sign() != 0 {
 		return nil, fmt.Errorf("can't commit genesis block with number > 0")
@@ -296,7 +296,7 @@ func (g *Genesis) Commit(db pandb.Database) (*types.Block, error) {
 
 // MustCommit writes the genesis block and state to db, panicking on error.
 // The block is committed as the canonical head block.
-func (g *Genesis) MustCommit(db pandb.Database) *types.Block {
+func (g *Genesis) MustCommit(db ptndb.Database) *types.Block {
 	block, err := g.Commit(db)
 	if err != nil {
 		panic(err)
@@ -305,7 +305,7 @@ func (g *Genesis) MustCommit(db pandb.Database) *types.Block {
 }
 
 // GenesisBlockForTesting creates and writes a block in which addr has the given wei balance.
-func GenesisBlockForTesting(db pandb.Database, addr common.Address, balance *big.Int) *types.Block {
+func GenesisBlockForTesting(db ptndb.Database, addr common.Address, balance *big.Int) *types.Block {
 	g := Genesis{Alloc: GenesisAlloc{addr: {Balance: balance}}}
 	return g.MustCommit(db)
 }

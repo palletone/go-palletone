@@ -23,14 +23,14 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/common/pandb"
 )
 
 type Backend interface {
-	ChainDb() pandb.Database
+	ChainDb() ptndb.Database
 	EventMux() *event.TypeMux
 	HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Header, error)
 	GetReceipts(ctx context.Context, blockHash common.Hash) (types.Receipts, error)
@@ -49,7 +49,7 @@ type Backend interface {
 type Filter struct {
 	backend Backend
 
-	db         pandb.Database
+	db         ptndb.Database
 	begin, end int64
 	addresses  []common.Address
 	topics     [][]common.Hash

@@ -34,7 +34,7 @@ import (
 	//"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/common/pandb"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/coredata"
@@ -103,7 +103,7 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new Ethereum sub protocol manager. The Ethereum sub protocol manages peers capable
 // with the Ethereum network.
-func NewProtocolManager( /*config *configure.ChainConfig,*/ mode downloader.SyncMode, networkId uint64, mux *event.TypeMux, txpool txPool, engine core.ConsensusEngine /*blockchain *coredata.BlockChain,*/, chaindb pandb.Database) (*ProtocolManager, error) {
+func NewProtocolManager( /*config *configure.ChainConfig,*/ mode downloader.SyncMode, networkId uint64, mux *event.TypeMux, txpool txPool, engine core.ConsensusEngine /*blockchain *coredata.BlockChain,*/, chaindb ptndb.Database) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId: networkId,
