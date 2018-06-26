@@ -1,5 +1,6 @@
 package nodeconfig
 
+/*
 import (
 	"path/filepath"
 
@@ -54,3 +55,4 @@ func (c *Config) AccountConfig() (int, int, string, error) {
 	}
 	return scryptN, scryptP, keydir, err
 }
+*/

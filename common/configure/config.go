@@ -44,5 +44,5 @@ type Config struct {
 	// Consensus options
 	Consensus *consensusconfig.Config
 	//Node config
-	Node *nodeconfig.Config
+	//Node *nodeconfig.Config
 }

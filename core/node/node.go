@@ -103,10 +103,7 @@ func New(conf *Config) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	// if conf.Logger == nil {
-	// 	conf.Logger = log.New()
-	// }
-	conf.Logger = *log.New()
+
 	// Note: any interaction with Config that would create/touch files
 	// in the data directory or instance directory is delayed until Start.
 	return &Node{
@@ -118,7 +115,7 @@ func New(conf *Config) (*Node, error) {
 		httpEndpoint:      conf.HTTPEndpoint(),
 		wsEndpoint:        conf.WSEndpoint(),
 		eventmux:          new(event.TypeMux),
-		log:               conf.Logger,
+		//log:               conf.Logger,
 	}, nil
 }
 

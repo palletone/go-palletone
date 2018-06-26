@@ -1,5 +1,6 @@
 package configure
 
+/*
 import (
 	"log"
 	"os"
@@ -64,3 +65,4 @@ func LoadConfigFromFile(tomlFilePath string) (*Config, error) {
 	}
 	return cfg, err
 }
+*/

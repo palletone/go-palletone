@@ -21,9 +21,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
-
-	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/p2p/nat"
 )
 
 const (
@@ -41,11 +38,11 @@ var DefaultConfig = Config{
 	HTTPVirtualHosts: []string{"localhost"},
 	WSPort:           DefaultWSPort,
 	WSModules:        []string{"net", "web3"},
-	P2P: p2p.Config{
-		ListenAddr: ":30303",
-		MaxPeers:   25,
-		NAT:        nat.Any(),
-	},
+	//	P2P: p2p.Config{
+	//		ListenAddr: ":30303",
+	//		MaxPeers:   25,
+	//		NAT:        nat.Any(),
+	//	},
 }
 
 // DefaultDataDir is the default data directory to use for the databases and other

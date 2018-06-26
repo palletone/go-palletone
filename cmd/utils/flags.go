@@ -29,16 +29,8 @@ import (
 	"strings"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/fdlimit"
-	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
-	//"github.com/palletone/go-palletone/consensus"
-	"github.com/palletone/go-palletone/core/node/nodeconfig"
-	//
-	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/dag/state"
-	//"github.com/palletone/go-palletone/vm"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/fdlimit"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -47,8 +39,12 @@ import (
 	"github.com/palletone/go-palletone/common/pandb"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
+	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/pan"
 	"github.com/palletone/go-palletone/pan/downloader"
 	"github.com/palletone/go-palletone/pan/gasprice"
@@ -828,9 +824,9 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 }
 
 // SetNodeConfig applies node-related command line flags to the config.
-func SetNodeConfig(ctx *cli.Context, cfg *nodeconfig.Config) {
+func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	// SetP2PConfig(ctx, &cfg.P2P)
-	// setIPC(ctx, cfg)
+	//setIPC(ctx, cfg)
 	// setHTTP(ctx, cfg)
 	// setWS(ctx, cfg)
 	// setNodeUserIdent(ctx, cfg)

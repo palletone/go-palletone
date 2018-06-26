@@ -23,7 +23,6 @@ import (
 	"io"
 	"os"
 	"reflect"
-	"strings"
 	"unicode"
 
 	"github.com/naoina/toml"
@@ -31,6 +30,8 @@ import (
 	cli "gopkg.in/urfave/cli.v1"
 
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/core/node"
@@ -86,6 +87,7 @@ type gethConfig struct {
 	Consensus consensusconfig.Config
 	Log       log.Config
 	Dag       dagconfig.Config
+	P2P       p2p.Config
 }
 
 func loadConfig(file string, cfg *gethConfig) error {
@@ -113,32 +115,38 @@ func defaultNodeConfig() node.Config {
 	return cfg
 }
 
+func adaptorConfig(config gethConfig) gethConfig {
+	config.Node.P2P = config.P2P
+	config.Eth.Dag = config.Dag
+	config.Eth.Log = config.Log
+	config.Eth.Consensus = config.Consensus
+	return config
+}
+
 func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	// Load defaults.
 	cfg := gethConfig{
 		Eth:       pan.DefaultConfig,
 		Node:      defaultNodeConfig(),
 		Dashboard: dashboard.DefaultConfig,
+		P2P:       p2p.Config{ListenAddr: ":30303", MaxPeers: 25, NAT: nat.Any()},
+		Consensus: consensusconfig.DefaultConfig,
+		Dag:       dagconfig.DefaultConfig,
+		Log:       log.DefaultConfig,
 	}
 
 	// Load config file.
-
-	if file := ctx.GlobalString(configFileFlag.Name); file != "" {
-		if err := loadConfig(file, &cfg); err != nil {
-			utils.Fatalf("%v", err)
-		}
+	file := "./palletone.toml"
+	if temp := ctx.GlobalString(configFileFlag.Name); temp != "" {
+		file = temp
 	}
-	// // resetting log config
-	// log.DefaultConfig.LoggerPath = cfg.Eth.Log.LoggerPath
-	// log.DefaultConfig.ErrPath = cfg.Eth.Log.ErrPath
-	// log.DefaultConfig.LoggerLvl = cfg.Eth.Log.LoggerLvl
-	// log.DefaultConfig.IsDebug = cfg.Eth.Log.IsDebug
-	// log.DefaultConfig.Encoding = cfg.Eth.Log.Encoding
-	// fmt.Println("resetting log config ")
-	// log.InitLogger()
+	if err := loadConfig(file, &cfg); err != nil {
+		utils.Fatalf("%v", err)
+	}
 
+	cfg = adaptorConfig(cfg)
 	// Apply flags.
-	// utils.SetNodeConfig(ctx, &cfg.Node)
+	//utils.SetNodeConfig(ctx, &cfg.Node)
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
@@ -159,8 +167,8 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
 	}
 	//Test
-	fmt.Println("----Log Path:" + strings.Join(log.DefaultConfig.OutputPaths, ","))
-	fmt.Println("----DB config:" + dagconfig.DefaultConfig.DbPath)
+	//fmt.Println("----Log Path:" + strings.Join(log.DefaultConfig.OutputPaths, ","))
+	//fmt.Println("----DB config:" + dagconfig.DefaultConfig.DbPath)
 
 	// Add the Ethereum Stats daemon if requested.
 	if cfg.Ethstats.URL != "" {
@@ -181,6 +189,7 @@ func dumpConfig(ctx *cli.Context) error {
 
 	out, err := tomlSettings.Marshal(&cfg)
 	if err != nil {
+		log.Error(err.Error())
 		return err
 	}
 	io.WriteString(os.Stdout, comment)

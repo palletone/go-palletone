@@ -22,7 +22,6 @@ import (
 
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
-	"github.com/palletone/go-palletone/common/configure"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -292,13 +291,17 @@ func ambiguousAddrRecovery(ks *keystore.KeyStore, err *keystore.AmbiguousAddrErr
 
 // accountCreate creates a new account into the keystore defined by the CLI flags.
 func accountCreate(ctx *cli.Context) error {
-	file := ctx.GlobalString(configFileFlag.Name)
-	cfg, err := configure.LoadConfigFromFile(file)
-	if err != nil {
-		utils.Fatalf("Failed to read configuration: %v", err)
+	cfg := gethConfig{Node: defaultNodeConfig()}
+	// Load config file.
+	file := "./palletone.toml"
+	if temp := ctx.GlobalString(configFileFlag.Name); temp != "" {
+		file = temp
 	}
-	fmt.Println("node--------------" + cfg.Node.DataDir)
-	utils.SetNodeConfig(ctx, cfg.Node)
+	if err := loadConfig(file, &cfg); err != nil {
+		utils.Fatalf("%v", err)
+	}
+
+	//utils.SetNodeConfig(ctx, cfg.Node)
 	scryptN, scryptP, keydir, err := cfg.Node.AccountConfig()
 
 	password := getPassPhrase("Your new account is locked with a password. Please give a password. Do not forget this password.", true, 0, utils.MakePasswordList(ctx))

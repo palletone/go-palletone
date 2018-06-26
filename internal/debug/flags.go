@@ -23,7 +23,7 @@ import (
 	"runtime"
 
 	"github.com/fjl/memsize/memsizeui"
-	cfgHelper "github.com/palletone/go-palletone/common/configure"
+	//cfgHelper "github.com/palletone/go-palletone/common/configure"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"github.com/palletone/go-palletone/statistics/metrics/exp"
@@ -107,7 +107,7 @@ func init() {
 // It should be called as early as possible in the program.
 func Setup(ctx *cli.Context) error {
 	//load default config data
-	cfgHelper.LoadConfigFromFile("")
+	//cfgHelper.LoadConfigFromFile("")
 	// logging
 	//log.PrintOrigins(ctx.GlobalBool(debugFlag.Name))
 

@@ -118,7 +118,6 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	if _, ok := genesisErr.(*configure.ConfigCompatError); genesisErr != nil && !ok {
 		return nil, genesisErr
 	}
-	//log.Info("Initialised chain configuration", "config", chainConfig)
 
 	eth := &Ethereum{
 		config:  config,
