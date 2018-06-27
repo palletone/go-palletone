@@ -75,7 +75,7 @@ func (p *hookedPrompter) SetWordCompleter(completer WordCompleter) {}
 type tester struct {
 	workspace string
 	stack     *node.Node
-	ethereum  *ptn.Ethereum
+	ethereum  *ptn.PalletOne
 	console   *Console
 	input     *hookedPrompter
 	output    *bytes.Buffer
@@ -90,7 +90,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		t.Fatalf("failed to create temporary keystore: %v", err)
 	}
 
-	// Create a networkless protocol stack and start an Ethereum service within
+	// Create a networkless protocol stack and start an PalletOne service within
 	stack, err := node.New(&node.Config{DataDir: workspace, UseLightweightKDF: true, Name: testInstance})
 	if err != nil {
 		t.Fatalf("failed to create node: %v", err)
@@ -106,7 +106,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		confOverride(ethConf)
 	}
 	if err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) { return ptn.New(ctx, ethConf) }); err != nil {
-		t.Fatalf("failed to register Ethereum protocol: %v", err)
+		t.Fatalf("failed to register PalletOne protocol: %v", err)
 	}
 	// Start the node and assemble the JavaScript console around it
 	if err = stack.Start(); err != nil {
@@ -131,7 +131,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		t.Fatalf("failed to create JavaScript console: %v", err)
 	}
 	// Create the final tester and return
-	var ethereum *ptn.Ethereum
+	var ethereum *ptn.PalletOne
 	stack.Service(&ethereum)
 
 	return &tester{

@@ -62,7 +62,7 @@ class Header extends Component<Props> {
 						</Icon>
 					</IconButton>
 					<Typography type='title' color='inherit' noWrap className={classes.title}>
-						Go Ethereum Dashboard
+						Go PalletOne Dashboard
 					</Typography>
 				</Toolbar>
 			</AppBar>

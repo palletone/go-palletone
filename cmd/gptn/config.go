@@ -173,7 +173,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	//fmt.Println("----Log Path:" + strings.Join(log.DefaultConfig.OutputPaths, ","))
 	//fmt.Println("----DB config:" + dagconfig.DefaultConfig.DbPath)
 
-	// Add the Ethereum Stats daemon if requested.
+	// Add the PalletOne Stats daemon if requested.
 	if cfg.Ethstats.URL != "" {
 		utils.RegisterEthStatsService(stack, cfg.Ethstats.URL)
 	}

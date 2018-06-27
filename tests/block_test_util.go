@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
 
-// Package tests implements execution of Ethereum JSON tests.
+// Package tests implements execution of PalletOne JSON tests.
 package tests
 
 import (

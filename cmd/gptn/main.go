@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with go-palletone. If not, see <http://www.gnu.org/licenses/>.
 
-// gptn is the official command-line client for Ethereum.
+// gptn is the official command-line client for PalletOne.
 package main
 
 import (
@@ -276,13 +276,13 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 	}()
 	// Start auxiliary services if enabled
 	if ctx.GlobalBool(utils.MiningEnabledFlag.Name) || ctx.GlobalBool(utils.DeveloperFlag.Name) {
-		// Mining only makes sense if a full Ethereum node is running
+		// Mining only makes sense if a full PalletOne node is running
 		if ctx.GlobalBool(utils.LightModeFlag.Name) || ctx.GlobalString(utils.SyncModeFlag.Name) == "light" {
 			utils.Fatalf("Light clients do not support mining")
 		}
-		var ethereum *ptn.Ethereum
+		var ethereum *ptn.PalletOne
 		if err := stack.Service(&ethereum); err != nil {
-			utils.Fatalf("Ethereum service not running: %v", err)
+			utils.Fatalf("PalletOne service not running: %v", err)
 		}
 
 		// Use a reduced number of threads if requested

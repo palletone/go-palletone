@@ -1,6 +1,6 @@
-## Go Ethereum Dashboard
+## Go PalletOne Dashboard
 
-The dashboard is a data visualizer integrated into gpan, intended to collect and visualize useful information of an Ethereum node. It consists of two parts:
+The dashboard is a data visualizer integrated into gpan, intended to collect and visualize useful information of an PalletOne node. It consists of two parts:
 
 * The client visualizes the collected data.
 * The server collects the data, and updates the clients.

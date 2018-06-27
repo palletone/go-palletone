@@ -1088,14 +1088,14 @@ func SetDashboardConfig(ctx *cli.Context, cfg *dashboard.Config) {
 	cfg.Refresh = ctx.GlobalDuration(DashboardRefreshFlag.Name)
 }
 
-// RegisterEthService adds an Ethereum client to the stack.
+// RegisterEthService adds an PalletOne client to the stack.
 func RegisterEthService(stack *node.Node, cfg *ptn.Config) {
 	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		return ptn.New(ctx, cfg)
 	})
 
 	if err != nil {
-		Fatalf("Failed to register the Ethereum service: %v", err)
+		Fatalf("Failed to register the PalletOne service: %v", err)
 	}
 }
 
@@ -1106,17 +1106,17 @@ func RegisterDashboardService(stack *node.Node, cfg *dashboard.Config, commit st
 	})
 }
 
-// RegisterEthStatsService configures the Ethereum Stats daemon and adds it to
+// RegisterEthStatsService configures the PalletOne Stats daemon and adds it to
 // th egiven node.
 func RegisterEthStatsService(stack *node.Node, url string) {
 	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		// Retrieve both ptn and les services
-		var ethServ *ptn.Ethereum
+		var ethServ *ptn.PalletOne
 		ctx.Service(&ethServ)
 
 		return ptnstats.New(url, ethServ)
 	}); err != nil {
-		Fatalf("Failed to register the Ethereum Stats service: %v", err)
+		Fatalf("Failed to register the PalletOne Stats service: %v", err)
 	}
 }
 
