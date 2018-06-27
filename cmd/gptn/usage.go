@@ -65,7 +65,7 @@ type flagGroup struct {
 // AppHelpFlagGroups is the application flags, grouped by functionality.
 var AppHelpFlagGroups = []flagGroup{
 	{
-		Name: "ETHEREUM",
+		Name: "PALLETONE",
 		Flags: []cli.Flag{
 			configFileFlag,
 			utils.DataDirFlag,
@@ -189,24 +189,19 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.GasPriceFlag,
 			utils.ExtraDataFlag,
 		},
-	},*/
+	},
 	{
 		Name: "GAS PRICE ORACLE",
 		Flags: []cli.Flag{
 			utils.GpoBlocksFlag,
 			utils.GpoPercentileFlag,
 		},
-	},
+	},*/
 	{
-		Name: "DAG TEST VALUE",
+		Name: "DATA STORAGE",
 		Flags: []cli.Flag{
 			utils.DagValue1Flag,
 			utils.DagValue2Flag,
-			utils.LogValue1Flag,
-			utils.LogValue2Flag,
-			utils.LogValue3Flag,
-			utils.LogValue4Flag,
-			utils.LogValue5Flag,
 		},
 	},
 	{
@@ -224,6 +219,11 @@ var AppHelpFlagGroups = []flagGroup{
 	{
 		Name: "LOGGING AND DEBUGGING",
 		Flags: append([]cli.Flag{
+			utils.LogValue1Flag,
+			utils.LogValue2Flag,
+			utils.LogValue3Flag,
+			utils.LogValue4Flag,
+			utils.LogValue5Flag,
 			utils.MetricsEnabledFlag,
 			utils.FakePoWFlag,
 			utils.NoCompactionFlag,
