@@ -33,11 +33,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/accounts"
 )
 
 var (

@@ -85,7 +85,7 @@ type Service struct {
 type LightEthereum struct{}
 
 // New returns a monitoring service ready for stats reporting.
-func New(url string, ethServ *ptn.Ethereum, lesServ *LightEthereum) (*Service, error) {
+func New(url string, ethServ *ptn.Ethereum) (*Service, error) {
 	// Parse the netstats connection url
 	re := regexp.MustCompile("([^:@]*)(:([^@]*))?@(.+)")
 	parts := re.FindStringSubmatch(url)
@@ -102,7 +102,6 @@ func New(url string, ethServ *ptn.Ethereum, lesServ *LightEthereum) (*Service, e
 	}*/
 	return &Service{
 		eth: ethServ,
-		//les: lesServ,
 		//engine: engine,
 		node:   parts[1],
 		pass:   parts[3],

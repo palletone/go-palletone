@@ -138,7 +138,7 @@ var (
 )
 
 func init() {
-	// Initialize the CLI app and start Geth
+	// Initialize the CLI app and start Gptn
 	app.Action = gptn
 	app.HideVersion = true // we have a command to print the version
 	app.Copyright = "Copyright 2017-2018 The go-palletone Authors"

@@ -60,7 +60,6 @@ type LesServer interface {
 // Ethereum implements the Ethereum full node service.
 type Ethereum struct {
 	config *Config
-	//chainConfig *configure.ChainConfig
 
 	// Channel for shutting down the service
 	shutdownChan  chan bool    // Channel for shutting down the Ethereum
@@ -68,9 +67,7 @@ type Ethereum struct {
 
 	// Handlers
 	txPool          *coredata.TxPool
-	blockchain      *coredata.BlockChain
 	protocolManager *ProtocolManager
-	lesServer       LesServer
 
 	// DB interfaces
 	chainDb ptndb.Database // Block chain database
@@ -83,20 +80,13 @@ type Ethereum struct {
 	bloomIndexer  *coredata.ChainIndexer         // Bloom indexer operating during block imports
 
 	ApiBackend *EthApiBackend
-
-	//miner     *miner.Miner//wangjiyou
-	gasPrice  *big.Int
-	etherbase common.Address
+	gasPrice   *big.Int
+	etherbase  common.Address
 
 	networkId     uint64
 	netRPCService *ethapi.PublicNetAPI
 
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
-}
-
-func (s *Ethereum) AddLesServer(ls LesServer) {
-	s.lesServer = ls
-	ls.SetBloomBitsIndexer(s.bloomIndexer)
 }
 
 // New creates a new Ethereum object (including the
@@ -120,9 +110,8 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	}
 
 	eth := &Ethereum{
-		config:  config,
-		chainDb: chainDb,
-		//chainConfig:    chainConfig,//wangjiyou
+		config:         config,
+		chainDb:        chainDb,
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
 		engine:         CreateConsensusEngine(ctx /*&config.Ethash, chainConfig,*/, chainDb), //wangjiyou  Ethash pow
@@ -186,7 +175,7 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ptndb.Data
 }
 
 // CreateConsensusEngine creates the required type of consensus engine instance for an Ethereum service
-func CreateConsensusEngine(ctx *node.ServiceContext /*config *ethash.Config, chainConfig *configure.ChainConfig,*/, db ptndb.Database) core.ConsensusEngine {
+func CreateConsensusEngine(ctx *node.ServiceContext, db ptndb.Database) core.ConsensusEngine {
 	engine := consensus.New()
 	return engine
 }
@@ -291,12 +280,6 @@ func (s *Ethereum) Downloader() *downloader.Downloader { return s.protocolManage
 // network protocols to start.
 func (s *Ethereum) Protocols() []p2p.Protocol {
 	return s.protocolManager.SubProtocols
-	/*
-		if s.lesServer == nil {
-			return s.protocolManager.SubProtocols
-		}
-		return append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
-	*/
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the
@@ -310,19 +293,9 @@ func (s *Ethereum) Start(srvr *p2p.Server) error {
 
 	// Figure out a max peers count based on the server limits
 	maxPeers := srvr.MaxPeers
-	/*
-		if s.config.LightServ > 0 {
-			if s.config.LightPeers >= srvr.MaxPeers {
-				return fmt.Errorf("invalid peer config: light peer count (%d) >= total peer count (%d)", s.config.LightPeers, srvr.MaxPeers)
-			}
-			maxPeers -= s.config.LightPeers
-		}*/
+
 	// Start the networking layer and the light server if requested
 	s.protocolManager.Start(maxPeers)
-	/*go func() {
-		time.Sleep(time.Duration(15) * time.Second)
-		s.Engine().Engine()
-	}()*/
 	return nil
 }
 
@@ -333,10 +306,8 @@ func (s *Ethereum) Stop() error {
 		s.stopDbUpgrade()
 	}
 	s.bloomIndexer.Close()
-	//s.blockchain.Stop()
 	s.protocolManager.Stop()
 	s.txPool.Stop()
-	//s.miner.Stop()
 	s.engine.Stop()
 	s.eventMux.Stop()
 
