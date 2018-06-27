@@ -208,26 +208,6 @@ $ gptn --datadir=path/to/custom/data/folder
 *Note: Since your network will be completely cut off from the main and test networks, you'll also
 need to configure a miner to process transactions and create new blocks for you.*
 
-#### Running a private miner
-
-Mining on the public palletone network is a complex task as it's only feasible using GPUs, requiring
-an OpenCL or CUDA enabled `ethminer` instance. For information on such a setup, please consult the
-[EtherMining subreddit](https://www.reddit.com/r/EtherMining/) and the [Genoil miner](https://github.com/Genoil/cpp-palletone)
-repository.
-
-In a private network setting however, a single CPU miner instance is more than enough for practical
-purposes as it can produce a stable stream of blocks at the correct intervals without needing heavy
-resources (consider running on a single thread, no need for multiple ones either). To start a Geth
-instance for mining, run it with all your usual flags, extended by:
-
-```
-$ gptn <usual-flags> --mine --minerthreads=1 --etherbase=0x0000000000000000000000000000000000000000
-```
-
-Which will start mining blocks and transactions on a single CPU thread, crediting all proceedings to
-the account specified by `--etherbase`. You can further tune the mining by changing the default gas
-limit blocks converge to (`--targetgaslimit`) and the price transactions are accepted at (`--gasprice`).
-
 ## Contribution
 
 Thank you for considering to help out with the source code! We welcome contributions from
@@ -252,10 +232,6 @@ Please see the [Developers' Guide](https://github.com/palletone/go-palletone/wik
 for more details on configuring your environment, managing project dependencies and testing procedures.
 
 ## License
-
-The go-palletone library (i.e. all code outside of the `cmd` directory) is licensed under the
-[GNU Lesser General Public License v3.0](https://www.gnu.org/licenses/lgpl-3.0.en.html), also
-included in our repository in the `COPYING.LESSER` file.
 
 The go-palletone binaries (i.e. all code inside of the `cmd` directory) is licensed under the
 [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html), also included
