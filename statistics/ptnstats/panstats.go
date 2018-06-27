@@ -69,10 +69,9 @@ type blockChain interface {
 // Service implements an PalletOne netstats reporting daemon that pushes local
 // chain statistics up to a monitoring server.
 type Service struct {
-	server *p2p.Server   // Peer-to-peer server to retrieve networking infos
+	server *p2p.Server    // Peer-to-peer server to retrieve networking infos
 	eth    *ptn.PalletOne // Full PalletOne service if monitoring a full node
-	//les    *les.LightEthereum // Light PalletOne service if monitoring a light node
-	//engine consensus.Engine   // Consensus engine to retrieve variadic block fields//wangjiyou
+	//engine consensus.Engine // Consensus engine to retrieve variadic block fields//would recover
 
 	node string // Name of the node to display on the monitoring page
 	pass string // Password to authorize access to the monitoring page
@@ -93,7 +92,7 @@ func New(url string, ethServ *ptn.PalletOne) (*Service, error) {
 		return nil, fmt.Errorf("invalid netstats url: \"%s\", should be nodename:secret@host:port", url)
 	}
 	// Assemble and return the stats service
-	/*wangjiyou
+	/*would recover
 	var engine consensus.Engine
 	if ethServ != nil {
 		engine = ethServ.Engine()
@@ -102,7 +101,7 @@ func New(url string, ethServ *ptn.PalletOne) (*Service, error) {
 	}*/
 	return &Service{
 		eth: ethServ,
-		//engine: engine,
+		//engine: engine,//would recover
 		node:   parts[1],
 		pass:   parts[3],
 		host:   parts[4],

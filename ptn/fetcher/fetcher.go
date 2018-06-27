@@ -23,9 +23,9 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/common/log"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -62,7 +62,7 @@ type blockBroadcasterFn func(block *types.Block, propagate bool)
 type chainHeightFn func() uint64
 
 // chainInsertFn is a callback type to insert a batch of blocks into the local chain.
-type chainInsertFn func(types.Blocks) (int, error) //wangjiyou
+type chainInsertFn func(types.Blocks) (int, error)
 
 // peerDropFn is a callback type for dropping a peer detected as malicious.
 type peerDropFn func(id string)
@@ -134,7 +134,7 @@ type Fetcher struct {
 	verifyHeader   headerVerifierFn   // Checks if a block's headers have a valid proof of work
 	broadcastBlock blockBroadcasterFn // Broadcasts a block to connected peers
 	chainHeight    chainHeightFn      // Retrieves the current chain's height
-	insertChain    chainInsertFn      // Injects a batch of blocks into the chain//wangjiyou
+	insertChain    chainInsertFn      // Injects a batch of blocks into the chain
 	dropPeer       peerDropFn         // Drops a peer for misbehaving
 
 	// Testing hooks

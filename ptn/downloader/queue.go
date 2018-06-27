@@ -26,8 +26,8 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
@@ -455,15 +455,6 @@ func (q *queue) ReserveHeaders(p *peerConnection, count int) *fetchRequest {
 // previously failed downloads. Beside the next batch of needed fetches, it also
 // returns a flag whether empty blocks were queued requiring processing.
 func (q *queue) ReserveBodies(p *peerConnection, count int) (*fetchRequest, bool, error) {
-	/*
-		isNoop := func(header *types.Header) //bool {
-			//return header.TxHash == types.EmptyRootHash && header.UncleHash == types.EmptyUncleHash//wangjiyou
-		//}
-		q.lock.Lock()
-		defer q.lock.Unlock()
-
-		return q.reserveHeaders(p, count, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, isNoop)
-	*/
 	return &fetchRequest{}, true, nil
 }
 
@@ -471,15 +462,6 @@ func (q *queue) ReserveBodies(p *peerConnection, count int) (*fetchRequest, bool
 // any previously failed downloads. Beside the next batch of needed fetches, it
 // also returns a flag whether empty receipts were queued requiring importing.
 func (q *queue) ReserveReceipts(p *peerConnection, count int) (*fetchRequest, bool, error) {
-	/*
-		isNoop := func(header *types.Header) bool {
-			return header.ReceiptHash == types.EmptyRootHash
-		}
-		q.lock.Lock()
-		defer q.lock.Unlock()
-
-		return q.reserveHeaders(p, count, q.receiptTaskPool, q.receiptTaskQueue, q.receiptPendPool, q.receiptDonePool, isNoop)
-	*/
 	return &fetchRequest{}, true, nil
 }
 

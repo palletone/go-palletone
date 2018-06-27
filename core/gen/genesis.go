@@ -163,14 +163,14 @@ func SetupGenesisBlock(db ptndb.Database, genesis *Genesis) (*configure.ChainCon
 		} else {
 			log.Info("Writing custom genesis block")
 		}
-		//block, err := genesis.Commit(db) //wangjiyou would recover
+		//block, err := genesis.Commit(db) //would recover
 		//return genesis.Config, block.Hash(), err
 		return genesis.Config, common.Hash{}, nil
 	}
 
 	// Check whether the genesis block is already written.
 	if genesis != nil {
-		hash := common.Hash{} //genesis.ToBlock(nil).Hash() //wangjiyou wouldrecover
+		hash := common.Hash{} //genesis.ToBlock(nil).Hash() //wouldrecover
 		if hash != stored {
 			return genesis.Config, hash, &GenesisMismatchError{stored, hash}
 		}

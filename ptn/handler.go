@@ -69,9 +69,7 @@ type ProtocolManager struct {
 	fastSync  uint32 // Flag whether fast sync is enabled (gets disabled if we already have blocks)
 	acceptTxs uint32 // Flag whether we're considered synchronised (enables transaction processing)
 
-	txpool txPool
-	//blockchain  *core.BlockChain//wangjiyou
-	//chainconfig *configure.ChainConfig
+	txpool   txPool
 	maxPeers int
 
 	downloader *downloader.Downloader
@@ -118,15 +116,7 @@ func NewProtocolManager( /*config *configure.ChainConfig,*/ mode downloader.Sync
 		txsyncCh:    make(chan *txsync),
 		quitSync:    make(chan struct{}),
 	}
-	/*wangjiyou
-	// Figure out whether to allow fast sync or not
-	if mode == downloader.FastSync && blockchain.CurrentBlock().NumberU64() > 0 {
-		log.Warn("Blockchain not empty, fast sync disabled")
-		mode = downloader.FullSync
-	}
-	if mode == downloader.FastSync {
-		manager.fastSync = uint32(1)
-	}*/
+
 	mode = downloader.FullSync
 	// Initiate a sub-protocol for every implemented version we can handle
 	manager.SubProtocols = make([]p2p.Protocol, 0, len(ProtocolVersions))
@@ -167,8 +157,8 @@ func NewProtocolManager( /*config *configure.ChainConfig,*/ mode downloader.Sync
 		return nil, errIncompatibleConfig
 	}
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(mode, chaindb, manager.eventMux /*blockchain, nil,*/, manager.removePeer) //wangjiyou
-	/*wangjiyou
+	manager.downloader = downloader.New(mode, chaindb, manager.eventMux, manager.removePeer)
+	/*woule recover
 	validator := func(header *types.Header) error {
 		return engine.VerifyHeader(blockchain, header, true)
 	}
@@ -183,9 +173,9 @@ func NewProtocolManager( /*config *configure.ChainConfig,*/ mode downloader.Sync
 		}
 		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
 		return manager.blockchain.InsertChain(blocks)
-	}*/
-	//manager.fetcher = fetcher.New(blockchain.GetBlockByHash, validator, manager.BroadcastBlock, heighter, inserter, manager.removePeer) //wangjiyou
-
+	}
+	manager.fetcher = fetcher.New(blockchain.GetBlockByHash, validator, manager.BroadcastBlock, heighter, inserter, manager.removePeer)
+	*/
 	return manager, nil
 }
 
@@ -239,13 +229,14 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping PalletOne protocol")
 
-	//pm.txSub.Unsubscribe() //wangjiyou     // quits txBroadcastLoop
-	//pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
+	/*would recover
+	pm.txSub.Unsubscribe() // quits txBroadcastLoop
+	pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
 
 	// Quit the sync loop.
 	// After this send has completed, no new peers will be accepted.
-	//pm.noMorePeers <- struct{}{}//would recover
-
+	pm.noMorePeers <- struct{}{}
+	*/
 	// Quit fetcher, txsyncLoop.
 	close(pm.quitSync)
 
@@ -303,27 +294,28 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
-	//pm.syncTransactions(p)//wangjiyou would recover
-	/*
-		// If we're DAO hard-fork aware, validate any remote peer with regard to the hard-fork
-		if daoBlock := pm.chainconfig.DAOForkBlock; daoBlock != nil {
-			// Request the peer's DAO fork header for extra-data validation
-			if err := p.RequestHeadersByNumber(daoBlock.Uint64(), 1, 0, false); err != nil {
-				return err
+	/*would recover
+	pm.syncTransactions(p)
+
+	// If we're DAO hard-fork aware, validate any remote peer with regard to the hard-fork
+	if daoBlock := pm.chainconfig.DAOForkBlock; daoBlock != nil {
+		// Request the peer's DAO fork header for extra-data validation
+		if err := p.RequestHeadersByNumber(daoBlock.Uint64(), 1, 0, false); err != nil {
+			return err
+		}
+		// Start a timer to disconnect if the peer doesn't reply in time
+		p.forkDrop = time.AfterFunc(daoChallengeTimeout, func() {
+			p.Log().Debug("Timed out DAO fork-check, dropping")
+			pm.removePeer(p.id)
+		})
+		// Make sure it's cleaned up if the peer dies off
+		defer func() {
+			if p.forkDrop != nil {
+				p.forkDrop.Stop()
+				p.forkDrop = nil
 			}
-			// Start a timer to disconnect if the peer doesn't reply in time
-			p.forkDrop = time.AfterFunc(daoChallengeTimeout, func() {
-				p.Log().Debug("Timed out DAO fork-check, dropping")
-				pm.removePeer(p.id)
-			})
-			// Make sure it's cleaned up if the peer dies off
-			defer func() {
-				if p.forkDrop != nil {
-					p.forkDrop.Stop()
-					p.forkDrop = nil
-				}
-			}()
-		}*/
+		}()
+	}*/
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
@@ -652,7 +644,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		request.Block.ReceivedAt = msg.ReceivedAt
-		//request.Block.ReceivedFrom = p//wangjiyou
+		//request.Block.ReceivedFrom = p //would recover
 
 		// Mark the peer as owning the block and schedule it for import
 		p.MarkBlock(request.Block.Hash())
@@ -671,7 +663,8 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
 			// a singe block (as the true TD is below the propagated block), however this
 			// scenario should easily be covered by the fetcher.
-			/*currentBlock := pm.blockchain.CurrentBlock()
+			/*would recover
+			currentBlock := pm.blockchain.CurrentBlock()
 			if trueTD.Cmp(pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())) > 0 {
 				go pm.synchronise(p)
 			}*/
@@ -700,7 +693,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&consensusmsg); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		log.Info("======ConsensusMsg recv:", consensusmsg)
+		log.Info("ConsensusMsg recv:", consensusmsg)
 		if consensusmsg == "A" {
 			p.SendConsensus("Hello I received A")
 		}

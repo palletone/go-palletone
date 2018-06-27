@@ -47,67 +47,27 @@ func (b *EthApiBackend) ChainConfig() *configure.ChainConfig {
 }
 
 func (b *EthApiBackend) CurrentBlock() *types.Block {
-	//return b.eth.blockchain.CurrentBlock()
 	return &types.Block{}
 }
 
 func (b *EthApiBackend) SetHead(number uint64) {
 	b.eth.protocolManager.downloader.Cancel()
-	//b.eth.blockchain.SetHead(number)//wangjiyou
 }
 
 func (b *EthApiBackend) HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Header, error) {
 	// Pending block is only known by the miner
-	/*
-		if blockNr == rpc.PendingBlockNumber {
-			block := b.eth.miner.PendingBlock()
-			return block.Header(), nil
-		}
-		// Otherwise resolve and return the block
-		if blockNr == rpc.LatestBlockNumber {
-			return b.eth.blockchain.CurrentBlock().Header(), nil
-		}
-		return b.eth.blockchain.GetHeaderByNumber(uint64(blockNr)), nil
-	*/
 	return &types.Header{}, nil
 }
 
 func (b *EthApiBackend) BlockByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Block, error) {
-	/*
-		// Pending block is only known by the miner
-		if blockNr == rpc.PendingBlockNumber {
-			block := b.eth.miner.PendingBlock()
-			return block, nil
-		}
-		// Otherwise resolve and return the block
-		if blockNr == rpc.LatestBlockNumber {
-			return b.eth.blockchain.CurrentBlock(), nil
-		}
-		return b.eth.blockchain.GetBlockByNumber(uint64(blockNr)), nil
-	*/
 	return &types.Block{}, nil
 }
 
 func (b *EthApiBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB, *types.Header, error) {
-	/*
-		// Pending state is only known by the miner
-		if blockNr == rpc.PendingBlockNumber {
-			block, state := b.eth.miner.Pending()
-			return state, block.Header(), nil
-		}
-		// Otherwise resolve the block number and return its state
-		header, err := b.HeaderByNumber(ctx, blockNr)
-		if header == nil || err != nil {
-			return nil, nil, err
-		}
-		stateDb, err := b.eth.BlockChain().StateAt(header.Root)
-		return stateDb, header, err
-	*/
 	return &state.StateDB{}, &types.Header{}, nil
 }
 
 func (b *EthApiBackend) GetBlock(ctx context.Context, blockHash common.Hash) (*types.Block, error) {
-	//return b.eth.blockchain.GetBlockByHash(blockHash), nil
 	return &types.Block{}, nil
 }
 
@@ -128,44 +88,30 @@ func (b *EthApiBackend) GetLogs(ctx context.Context, blockHash common.Hash) ([][
 }
 
 func (b *EthApiBackend) GetTd(blockHash common.Hash) *big.Int {
-	//return b.eth.blockchain.GetTdByHash(blockHash)
 	return &big.Int{}
 }
 
 func (b *EthApiBackend) GetEVM(ctx context.Context, msg coredata.Message, state *state.StateDB, header *types.Header, vmCfg vm.Config) (*vm.EVM, func() error, error) {
-	/*
-		state.SetBalance(msg.From(), math.MaxBig256)
-		vmError := func() error { return nil }
-
-		//context := core.NewEVMContext(msg, header, b.eth.BlockChain(), nil)//wangjiyou
-		context := vm.Context{}
-		return vm.NewEVM(context, state, b.eth.chainConfig, vmCfg), vmError, nil
-	*/
 	return &vm.EVM{}, func() error { return nil }, nil
 }
 
 func (b *EthApiBackend) SubscribeRemovedLogsEvent(ch chan<- coredata.RemovedLogsEvent) event.Subscription {
-	//return b.eth.BlockChain().SubscribeRemovedLogsEvent(ch)
 	return nil
 }
 
 func (b *EthApiBackend) SubscribeChainEvent(ch chan<- coredata.ChainEvent) event.Subscription {
-	//return b.eth.BlockChain().SubscribeChainEvent(ch)
 	return nil
 }
 
 func (b *EthApiBackend) SubscribeChainHeadEvent(ch chan<- coredata.ChainHeadEvent) event.Subscription {
-	//return b.eth.BlockChain().SubscribeChainHeadEvent(ch)
 	return nil
 }
 
 func (b *EthApiBackend) SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription {
-	//return b.eth.BlockChain().SubscribeChainSideEvent(ch)
 	return nil
 }
 
 func (b *EthApiBackend) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscription {
-	//return b.eth.BlockChain().SubscribeLogsEvent(ch)
 	return nil
 }
 

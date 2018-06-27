@@ -92,35 +92,6 @@ type txTraceTask struct {
 // TraceChain returns the structured logs created during the execution of EVM
 // between two blocks (excluding start) and returns them as a JSON object.
 func (api *PrivateDebugAPI) TraceChain(ctx context.Context, start, end rpc.BlockNumber, config *TraceConfig) (*rpc.Subscription, error) {
-	/*
-		// Fetch the block interval that we want to trace
-		var from, to *types.Block
-
-		switch start {
-		case rpc.PendingBlockNumber:
-			//from = api.eth.miner.PendingBlock()//wangjiyou
-		case rpc.LatestBlockNumber:
-			//from = api.eth.blockchain.CurrentBlock()//wangjiyou
-		default:
-			from = api.eth.blockchain.GetBlockByNumber(uint64(start))
-		}
-		switch end {
-		case rpc.PendingBlockNumber:
-			to = api.eth.miner.PendingBlock()
-		case rpc.LatestBlockNumber:
-			to = api.eth.blockchain.CurrentBlock()
-		default:
-			to = api.eth.blockchain.GetBlockByNumber(uint64(end))
-		}
-		// Trace the chain if we've found all our blocks
-		if from == nil {
-			return nil, fmt.Errorf("starting block #%d not found", start)
-		}
-		if to == nil {
-			return nil, fmt.Errorf("end block #%d not found", end)
-		}
-		return api.traceChain(ctx, from, to, config)
-	*/
 	return &rpc.Subscription{}, nil
 }
 
@@ -128,7 +99,7 @@ func (api *PrivateDebugAPI) TraceChain(ctx context.Context, start, end rpc.Block
 // executes all the transactions contained within. The return value will be one item
 // per transaction, dependent on the requestd tracer.
 func (api *PrivateDebugAPI) traceChain(ctx context.Context, start, end *types.Block, config *TraceConfig) (*rpc.Subscription, error) {
-	/*wangjiyou
+	/*would recover
 	// Tracing a chain is a **long** operation, only do with subscriptions
 	notifier, supported := rpc.NotifierFromContext(ctx)
 	if !supported {
@@ -405,7 +376,7 @@ func (api *PrivateDebugAPI) TraceBlockFromFile(ctx context.Context, file string,
 // per transaction, dependent on the requestd tracer.
 func (api *PrivateDebugAPI) traceBlock(ctx context.Context, block *types.Block, config *TraceConfig) ([]*txTraceResult, error) {
 	// Create the parent state database
-	/*wangjiyou
+	/*would recover
 	if err := api.eth.engine.VerifyHeader(api.eth.blockchain, block.Header(), true); err != nil {
 		return nil, err
 	}*/
