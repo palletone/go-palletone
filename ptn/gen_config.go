@@ -9,6 +9,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
+	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -19,19 +20,18 @@ var _ = (*configMarshaling)(nil)
 
 func (c Config) MarshalTOML() (interface{}, error) {
 	type Config struct {
-		//Genesis            *core.Genesis `toml:",omitempty"`//wangjiyou
-		NetworkId          uint64
-		SyncMode           downloader.SyncMode
-		LightServ          int  `toml:",omitempty"`
-		LightPeers         int  `toml:",omitempty"`
-		SkipBcVersionCheck bool `toml:"-"`
-		DatabaseHandles    int  `toml:"-"`
-		DatabaseCache      int
-		Etherbase          common.Address `toml:",omitempty"`
-		MinerThreads       int            `toml:",omitempty"`
-		ExtraData          hexutil.Bytes  `toml:",omitempty"`
-		GasPrice           *big.Int
-		//Ethash                  ethash.Config//wangjiyou
+		Genesis                 *gen.Genesis `toml:",omitempty"`
+		NetworkId               uint64
+		SyncMode                downloader.SyncMode
+		LightServ               int  `toml:",omitempty"`
+		LightPeers              int  `toml:",omitempty"`
+		SkipBcVersionCheck      bool `toml:"-"`
+		DatabaseHandles         int  `toml:"-"`
+		DatabaseCache           int
+		Etherbase               common.Address `toml:",omitempty"`
+		MinerThreads            int            `toml:",omitempty"`
+		ExtraData               hexutil.Bytes  `toml:",omitempty"`
+		GasPrice                *big.Int
 		TxPool                  coredata.TxPoolConfig
 		GPO                     gasprice.Config
 		EnablePreimageRecording bool
@@ -54,7 +54,6 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.MinerThreads = c.MinerThreads
 	enc.ExtraData = c.ExtraData
 	enc.GasPrice = c.GasPrice
-	//enc.Ethash = c.Ethash//wangjiyou
 	enc.TxPool = c.TxPool
 	enc.GPO = c.GPO
 	enc.EnablePreimageRecording = c.EnablePreimageRecording
@@ -127,10 +126,6 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	if dec.GasPrice != nil {
 		c.GasPrice = dec.GasPrice
 	}
-	/*wangjiyou
-	if dec.Ethash != nil {
-		c.Ethash = *dec.Ethash
-	}*/
 	if dec.TxPool != nil {
 		c.TxPool = *dec.TxPool
 	}

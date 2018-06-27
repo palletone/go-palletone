@@ -111,7 +111,7 @@ func NewEventSystem(mux *event.TypeMux, backend Backend, lightMode bool) *EventS
 		uninstall: make(chan *subscription),
 	}
 
-	//go m.eventLoop()//wangjiyou would recover
+	//go m.eventLoop()//would recover
 
 	return m
 }

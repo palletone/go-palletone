@@ -91,7 +91,7 @@ func (s *Server) RegisterName(name string, rcvr interface{}) error {
 	/*Begin Add by wangjiyou for crash when rcvrVal is empty 2018-5-21*/
 	v := reflect.Value{}
 	if reflect.Indirect(rcvrVal) == v {
-		return nil //fmt.Errorf("rcvrVal is empty reflect.Value")
+		return nil //fmt.Errorf("rcvrVal is empty reflect.Value")//would recover
 	}
 	/*End Add by wangjiyou for crash when rcvrVal is empty 2018-5-21*/
 	if !isExported(reflect.Indirect(rcvrVal).Type().Name()) {

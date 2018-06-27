@@ -38,14 +38,7 @@ import (
 
 // DefaultConfig contains default settings for use on the PalletOne main net.
 var DefaultConfig = Config{
-	SyncMode: downloader.FullSync,
-	/*Ethash: ethash.Config{
-		CacheDir:       "ethash",
-		CachesInMem:    2,
-		CachesOnDisk:   3,
-		DatasetsInMem:  1,
-		DatasetsOnDisk: 2,
-	},*/           //wangjiyou POW
+	SyncMode:      downloader.FullSync,
 	NetworkId:     1,
 	LightPeers:    100,
 	DatabaseCache: 768,
@@ -70,12 +63,13 @@ func init() {
 			home = user.HomeDir
 		}
 	}
-	/*wangjiyou
-	if runtime.GOOS == "windows" {
-		DefaultConfig.Ethash.DatasetDir = filepath.Join(home, "AppData", "Ethash")
-	} else {
-		DefaultConfig.Ethash.DatasetDir = filepath.Join(home, ".ethash")
-	}*/
+	//would recover
+	/*
+		if runtime.GOOS == "windows" {
+			DefaultConfig.Ethash.DatasetDir = filepath.Join(home, "AppData", "Ethash")
+		} else {
+			DefaultConfig.Ethash.DatasetDir = filepath.Join(home, ".ethash")
+		}*/
 }
 
 //go:generate gencodec -type Config -field-override configMarshaling -formats toml -out gen_config.go
@@ -106,9 +100,6 @@ type Config struct {
 	MinerThreads int            `toml:",omitempty"`
 	ExtraData    []byte         `toml:",omitempty"`
 	GasPrice     *big.Int
-
-	// Ethash options
-	//Ethash ethash.Config//wangjiyou
 
 	// Transaction pool options
 	TxPool coredata.TxPoolConfig

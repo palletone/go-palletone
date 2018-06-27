@@ -114,7 +114,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		chainDb:        chainDb,
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
-		engine:         CreateConsensusEngine(ctx /*&config.Ethash, chainConfig,*/, chainDb), //wangjiyou  Ethash pow
+		engine:         CreateConsensusEngine(ctx, chainDb),
 		shutdownChan:   make(chan bool),
 		stopDbUpgrade:  stopDbUpgrade,
 		networkId:      config.NetworkId,
@@ -129,7 +129,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	eth.txPool = coredata.NewTxPool(config.TxPool) //wangjiyou
+	eth.txPool = coredata.NewTxPool(config.TxPool)
 
 	if eth.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, eth.eventMux, eth.txPool, eth.engine, chainDb); err != nil {
 		log.Error("NewProtocolManager err:", err)
@@ -226,7 +226,7 @@ func (s *PalletOne) APIs() []rpc.API {
 }
 
 func (s *PalletOne) ResetWithGenesisBlock(gb *types.Block) {
-	//s.blockchain.ResetWithGenesisBlock(gb)//wangjiyou
+	//s.blockchain.ResetWithGenesisBlock(gb)
 }
 
 func (s *PalletOne) Etherbase() (eb common.Address, err error) {
@@ -259,14 +259,7 @@ func (self *PalletOne) SetEtherbase(etherbase common.Address) {
 	self.lock.Unlock()
 }
 
-func (s *PalletOne) StopMining()    { /*s.miner.Stop()*/ }
-func (s *PalletOne) IsMining() bool { /*return s.miner.Mining()*/ return true }
-
-//func (s *PalletOne) Miner() *miner.Miner { return s.miner }//wangjiyou
-
-func (s *PalletOne) AccountManager() *accounts.Manager { return s.accountManager }
-
-//func (s *PalletOne) BlockChain() *coredata.BlockChain   { return s.blockchain }
+func (s *PalletOne) AccountManager() *accounts.Manager  { return s.accountManager }
 func (s *PalletOne) TxPool() *coredata.TxPool           { return s.txPool }
 func (s *PalletOne) EventMux() *event.TypeMux           { return s.eventMux }
 func (s *PalletOne) Engine() core.ConsensusEngine       { return s.engine }
