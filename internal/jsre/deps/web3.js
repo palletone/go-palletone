@@ -2409,7 +2409,7 @@ var isJson = function (str) {
 };
 
 /**
- * Returns true if given string is a valid Ethereum block header bloom.
+ * Returns true if given string is a valid PalletOne block header bloom.
  *
  * @method isBloom
  * @param {String} hex encoded bloom filter

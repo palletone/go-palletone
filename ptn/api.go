@@ -28,14 +28,14 @@ import (
 	"github.com/palletone/go-palletone/dag/coredata"
 )
 
-// PublicEthereumAPI provides an API to access Ethereum full node-related
+// PublicEthereumAPI provides an API to access PalletOne full node-related
 // information.
 type PublicEthereumAPI struct {
-	e *Ethereum
+	e *PalletOne
 }
 
-// NewPublicEthereumAPI creates a new Ethereum protocol API for full nodes.
-func NewPublicEthereumAPI(e *Ethereum) *PublicEthereumAPI {
+// NewPublicEthereumAPI creates a new PalletOne protocol API for full nodes.
+func NewPublicEthereumAPI(e *PalletOne) *PublicEthereumAPI {
 	return &PublicEthereumAPI{e}
 }
 
@@ -56,28 +56,28 @@ func (api *PublicEthereumAPI) Hashrate() hexutil.Uint64 {
 }
 
 /*
-// PublicDebugAPI is the collection of Ethereum full node APIs exposed
+// PublicDebugAPI is the collection of PalletOne full node APIs exposed
 // over the public debugging endpoint.
 type PublicDebugAPI struct {
-	eth *Ethereum
+	eth *PalletOne
 }
 
 // NewPublicDebugAPI creates a new API definition for the full node-
-// related public debug methods of the Ethereum service.
-func NewPublicDebugAPI(eth *Ethereum) *PublicDebugAPI {
+// related public debug methods of the PalletOne service.
+func NewPublicDebugAPI(eth *PalletOne) *PublicDebugAPI {
 	return &PublicDebugAPI{eth: eth}
 }
 */
-// PrivateDebugAPI is the collection of Ethereum full node APIs exposed over
+// PrivateDebugAPI is the collection of PalletOne full node APIs exposed over
 // the private debugging endpoint.
 type PrivateDebugAPI struct {
 	config *configure.ChainConfig
-	eth    *Ethereum
+	eth    *PalletOne
 }
 
 // NewPrivateDebugAPI creates a new API definition for the full node-related
-// private debug methods of the Ethereum service.
-func NewPrivateDebugAPI(config *configure.ChainConfig, eth *Ethereum) *PrivateDebugAPI {
+// private debug methods of the PalletOne service.
+func NewPrivateDebugAPI(config *configure.ChainConfig, eth *PalletOne) *PrivateDebugAPI {
 	return &PrivateDebugAPI{config: config, eth: eth}
 }
 

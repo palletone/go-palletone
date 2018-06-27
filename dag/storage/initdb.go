@@ -3,8 +3,7 @@ package storage
 import (
 	"log"
 
-
-	config "github.com/palletone/go-palletone/dag/dagconfig"
+	palletdb "github.com/palletone/go-palletone/common/pandb"
 )
 
 var (
@@ -33,25 +32,23 @@ var (
 	ALL_UNITS                        = "array_units"
 )
 
-func init() {
+func Init(path string) *palletdb.LDBDatabase {
 	var err error
 	if Dbconn == nil {
-		if config.DefaultConfig.DbPath == "" {
-			config.DefaultConfig.DbPath = DBPath
+		if path == "" {
+			path = DBPath
 		}
-		Dbconn, err = palletdb.NewLDBDatabase(config.DefaultConfig.DbPath, 0, 0)
+		Dbconn, err = palletdb.NewLDBDatabase(path, 0, 0)
 		if err != nil {
 			log.Println("new dbconn error:", err)
 		}
-		log.Println("db_n:", Dbconn.Path())
+		log.Println("db_path:", Dbconn.Path())
 	}
+	return Dbconn
 }
-func ReNewDbConn() *palletdb.LDBDatabase {
+func ReNewDbConn(path string) *palletdb.LDBDatabase {
 	log.Println("renew dbconn start...")
-	if config.DefaultConfig.DbPath == "" {
-		config.DefaultConfig.DbPath = DBPath
-	}
-	if dbconn, err := palletdb.NewLDBDatabase(config.DefaultConfig.DbPath, 0, 0); err != nil {
+	if dbconn, err := palletdb.NewLDBDatabase(path, 0, 0); err != nil {
 		log.Println("renew dbconn error:", err)
 		return nil
 	} else {

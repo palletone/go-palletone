@@ -47,9 +47,9 @@ import (
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/ptn/gasprice"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"github.com/palletone/go-palletone/statistics/metrics"
+	"github.com/palletone/go-palletone/statistics/ptnstats"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -473,16 +473,16 @@ var (
 	}
 
 	// Gas price oracle settings
-	GpoBlocksFlag = cli.IntFlag{
-		Name:  "gpoblocks",
-		Usage: "Number of recent blocks to check for gas prices",
-		Value: ptn.DefaultConfig.GPO.Blocks,
-	}
-	GpoPercentileFlag = cli.IntFlag{
-		Name:  "gpopercentile",
-		Usage: "Suggested gas price is the given percentile of a set of recent transaction gas prices",
-		Value: ptn.DefaultConfig.GPO.Percentile,
-	}
+	// GpoBlocksFlag = cli.IntFlag{
+	// 	Name:  "gpoblocks",
+	// 	Usage: "Number of recent blocks to check for gas prices",
+	// 	Value: ptn.DefaultConfig.GPO.Blocks,
+	// }
+	// GpoPercentileFlag = cli.IntFlag{
+	// 	Name:  "gpopercentile",
+	// 	Usage: "Suggested gas price is the given percentile of a set of recent transaction gas prices",
+	// 	Value: ptn.DefaultConfig.GPO.Percentile,
+	// }
 	ConsensusEngineFlag = cli.StringFlag{
 		Name:  "consensus.engine",
 		Usage: "Consensus Engine: solo or dpos",
@@ -934,14 +934,14 @@ func checkExclusive(ctx *cli.Context, args ...interface{}) {
 	}
 }
 
-func setGPO(ctx *cli.Context, cfg *gasprice.Config) {
-	if ctx.GlobalIsSet(GpoBlocksFlag.Name) {
-		cfg.Blocks = ctx.GlobalInt(GpoBlocksFlag.Name)
-	}
-	if ctx.GlobalIsSet(GpoPercentileFlag.Name) {
-		cfg.Percentile = ctx.GlobalInt(GpoPercentileFlag.Name)
-	}
-}
+// func setGPO(ctx *cli.Context, cfg *gasprice.Config) {
+// 	if ctx.GlobalIsSet(GpoBlocksFlag.Name) {
+// 		cfg.Blocks = ctx.GlobalInt(GpoBlocksFlag.Name)
+// 	}
+// 	if ctx.GlobalIsSet(GpoPercentileFlag.Name) {
+// 		cfg.Percentile = ctx.GlobalInt(GpoPercentileFlag.Name)
+// 	}
+// }
 
 // SetDagConfig applies dag related command line flags to the config.
 func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
@@ -984,7 +984,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 
 	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 	setEtherbase(ctx, ks, cfg)
-	setGPO(ctx, &cfg.GPO)
+	// setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
 	setDag(ctx, &cfg.Dag)
 	setLog(ctx, &cfg.Log)
@@ -1087,39 +1087,17 @@ func SetDashboardConfig(ctx *cli.Context, cfg *dashboard.Config) {
 	cfg.Refresh = ctx.GlobalDuration(DashboardRefreshFlag.Name)
 }
 
-// RegisterEthService adds an Ethereum client to the stack.
+// RegisterEthService adds an PalletOne client to the stack.
 func RegisterEthService(stack *node.Node, cfg *ptn.Config) {
 	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		return ptn.New(ctx, cfg)
 	})
 
 	if err != nil {
-		Fatalf("Failed to register the Ethereum service: %v", err)
+		Fatalf("Failed to register the PalletOne service: %v", err)
 	}
 }
 
-/*
-func RegisterEthService(stack *node.Node, cfg *ptn.Config) {
-	var err error
-	if cfg.SyncMode == downloader.LightSync {
-		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			return les.New(ctx, cfg)
-		})
-	} else {
-		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			fullNode, err := ptn.New(ctx, cfg)
-			if fullNode != nil && cfg.LightServ > 0 {
-				ls, _ := les.NewLesServer(fullNode, cfg)
-				fullNode.AddLesServer(ls)
-			}
-			return fullNode, err
-		})
-	}
-	if err != nil {
-		Fatalf("Failed to register the Ethereum service: %v", err)
-	}
-}
-*/
 // RegisterDashboardService adds a dashboard to the stack.
 func RegisterDashboardService(stack *node.Node, cfg *dashboard.Config, commit string) {
 	stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
@@ -1127,51 +1105,20 @@ func RegisterDashboardService(stack *node.Node, cfg *dashboard.Config, commit st
 	})
 }
 
-/*
-// RegisterShhService configures Whisper and adds it to the given node.
-func RegisterShhService(stack *node.Node, cfg *whisper.Config) {
-	if err := stack.Register(func(n *node.ServiceContext) (node.Service, error) {
-		return whisper.New(cfg), nil
-	}); err != nil {
-		Fatalf("Failed to register the Whisper service: %v", err)
-	}
-}
-*/
-// RegisterEthStatsService configures the Ethereum Stats daemon and adds it to
+// RegisterEthStatsService configures the PalletOne Stats daemon and adds it to
 // th egiven node.
-func RegisterEthStatsService(stack *node.Node, url string) {
-	/*
-		if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			// Retrieve both ptn and les services
-			var ethServ *ptn.Ethereum
-			ctx.Service(&ethServ)
-
-			var lesServ *les.LightEthereum
-			ctx.Service(&lesServ)
-
-			return ethstats.New(url, ethServ, lesServ)
-		}); err != nil {
-			Fatalf("Failed to register the Ethereum Stats service: %v", err)
-		}
-	*/
-}
-
-/*
 func RegisterEthStatsService(stack *node.Node, url string) {
 	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		// Retrieve both ptn and les services
-		var ethServ *ptn.Ethereum
+		var ethServ *ptn.PalletOne
 		ctx.Service(&ethServ)
 
-		var lesServ *les.LightEthereum
-		ctx.Service(&lesServ)
-
-		return ethstats.New(url, ethServ, lesServ)
+		return ptnstats.New(url, ethServ)
 	}); err != nil {
-		Fatalf("Failed to register the Ethereum Stats service: %v", err)
+		Fatalf("Failed to register the PalletOne Stats service: %v", err)
 	}
 }
-*/
+
 // SetupNetwork configures the system for either the main net or some test network.
 func SetupNetwork(ctx *cli.Context) {
 	// TODO(fjl): move target gas limit into config
@@ -1206,51 +1153,6 @@ func MakeGenesis(ctx *cli.Context) *coredata.Genesis {
 		Fatalf("Developer chains are ephemeral")
 	}
 	return genesis
-}
-
-// MakeChain creates a chain manager from set command line flags.
-func MakeChain(ctx *cli.Context, stack *node.Node) (chain *coredata.BlockChain, chainDb ptndb.Database) {
-	var err error
-	chainDb = MakeChainDatabase(ctx, stack)
-
-	_, _, err = coredata.SetupGenesisBlock(chainDb, MakeGenesis(ctx))
-	if err != nil {
-		Fatalf("%v", err)
-	}
-	/*
-		//	var engine consensus.Engine
-		if config.Clique != nil {
-			engine = clique.New(config.Clique, chainDb)//wangjiyou
-		} else { wangjiyou
-			engine = ethash.NewFaker()
-			if !ctx.GlobalBool(FakePoWFlag.Name) {
-				engine = ethash.New(ethash.Config{
-					CacheDir:       stack.ResolvePath(ptn.DefaultConfig.Ethash.CacheDir),
-					CachesInMem:    ptn.DefaultConfig.Ethash.CachesInMem,
-					CachesOnDisk:   ptn.DefaultConfig.Ethash.CachesOnDisk,
-					DatasetDir:     stack.ResolvePath(ptn.DefaultConfig.Ethash.DatasetDir),
-					DatasetsInMem:  ptn.DefaultConfig.Ethash.DatasetsInMem,
-					DatasetsOnDisk: ptn.DefaultConfig.Ethash.DatasetsOnDisk,
-				})
-			}
-		}*/
-	if gcmode := ctx.GlobalString(GCModeFlag.Name); gcmode != "full" && gcmode != "archive" {
-		Fatalf("--%s must be either 'full' or 'archive'", GCModeFlag.Name)
-	}
-	cache := &coredata.CacheConfig{
-		Disabled:      ctx.GlobalString(GCModeFlag.Name) == "archive",
-		TrieNodeLimit: ptn.DefaultConfig.TrieCache,
-		TrieTimeLimit: ptn.DefaultConfig.TrieTimeout,
-	}
-	if ctx.GlobalIsSet(CacheFlag.Name) || ctx.GlobalIsSet(CacheGCFlag.Name) {
-		cache.TrieNodeLimit = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheGCFlag.Name) / 100
-	}
-	//vmcfg :=  vm.Config{EnablePreimageRecording: ctx.GlobalBool(VMEnableDebugFlag.Name)}
-	//chain, err = core.NewBlockChain(chainDb, cache, config, engine, vmcfg)
-	//	if err != nil {
-	//		Fatalf("Can't create BlockChain: %v", err)
-	//	}
-	return chain, chainDb
 }
 
 // MakeConsolePreloads retrieves the absolute paths for the console JavaScript

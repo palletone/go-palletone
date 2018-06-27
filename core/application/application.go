@@ -81,8 +81,11 @@ func (db *DataBase) Startup() {
 	dgp.CurrentASlot = 0
 //	dgp.RecentSlotsFilled = 100
 
+	ms := &db.MediatorSchl
 	println("Create witness scheduler...\n")
 	for _, m := range db.GlobalProp.ActiveMediators {
-		db.MediatorSchl.CurrentShuffledMediators =append(db.MediatorSchl.CurrentShuffledMediators, m)
+		ms.CurrentShuffledMediators =append(ms.CurrentShuffledMediators, m)
 	}
+
+	ms.UpdateMediatorSchedule(gp, dgp)
 }

@@ -81,7 +81,7 @@ type ethstatsConfig struct {
 }
 
 type gethConfig struct {
-	Eth       ptn.Config
+	Ptn       ptn.Config
 	Node      node.Config
 	Ethstats  ethstatsConfig
 	Dashboard dashboard.Config
@@ -119,16 +119,16 @@ func defaultNodeConfig() node.Config {
 
 func adaptorConfig(config gethConfig) gethConfig {
 	config.Node.P2P = config.P2P
-	config.Eth.Dag = config.Dag
-	config.Eth.Log = config.Log
-	config.Eth.Consensus = config.Consensus
+	config.Ptn.Dag = config.Dag
+	config.Ptn.Log = config.Log
+	config.Ptn.Consensus = config.Consensus
 	return config
 }
 
 func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	// Load defaults.
 	cfg := gethConfig{
-		Eth:       ptn.DefaultConfig,
+		Ptn:       ptn.DefaultConfig,
 		Node:      defaultNodeConfig(),
 		Dashboard: dashboard.DefaultConfig,
 		P2P:       p2p.Config{ListenAddr: ":30303", MaxPeers: 25, NAT: nat.Any()},
@@ -155,7 +155,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
 
-	utils.SetEthConfig(ctx, stack, &cfg.Eth)
+	utils.SetEthConfig(ctx, stack, &cfg.Ptn)
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ethstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
@@ -165,7 +165,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 
 func makeFullNode(ctx *cli.Context) *node.Node {
 	stack, cfg := makeConfigNode(ctx)
-	utils.RegisterEthService(stack, &cfg.Eth)
+	utils.RegisterEthService(stack, &cfg.Ptn)
 	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
 	}
@@ -173,7 +173,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	//fmt.Println("----Log Path:" + strings.Join(log.DefaultConfig.OutputPaths, ","))
 	//fmt.Println("----DB config:" + dagconfig.DefaultConfig.DbPath)
 
-	// Add the Ethereum Stats daemon if requested.
+	// Add the PalletOne Stats daemon if requested.
 	if cfg.Ethstats.URL != "" {
 		utils.RegisterEthStatsService(stack, cfg.Ethstats.URL)
 	}
@@ -185,8 +185,8 @@ func dumpConfig(ctx *cli.Context) error {
 	_, cfg := makeConfigNode(ctx)
 	comment := ""
 
-	if cfg.Eth.Genesis != nil {
-		cfg.Eth.Genesis = nil
+	if cfg.Ptn.Genesis != nil {
+		cfg.Ptn.Genesis = nil
 		comment += "# Note: this config doesn't contain the genesis block.\n\n"
 	}
 

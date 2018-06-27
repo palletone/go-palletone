@@ -66,12 +66,12 @@ type blockChain interface {
 	SubscribeChainHeadEvent(ch chan<- coredata.ChainHeadEvent) event.Subscription
 }
 
-// Service implements an Ethereum netstats reporting daemon that pushes local
+// Service implements an PalletOne netstats reporting daemon that pushes local
 // chain statistics up to a monitoring server.
 type Service struct {
 	server *p2p.Server   // Peer-to-peer server to retrieve networking infos
-	eth    *ptn.Ethereum // Full Ethereum service if monitoring a full node
-	//les    *les.LightEthereum // Light Ethereum service if monitoring a light node
+	eth    *ptn.PalletOne // Full PalletOne service if monitoring a full node
+	//les    *les.LightEthereum // Light PalletOne service if monitoring a light node
 	//engine consensus.Engine   // Consensus engine to retrieve variadic block fields//wangjiyou
 
 	node string // Name of the node to display on the monitoring page
@@ -85,7 +85,7 @@ type Service struct {
 type LightEthereum struct{}
 
 // New returns a monitoring service ready for stats reporting.
-func New(url string, ethServ *ptn.Ethereum, lesServ *LightEthereum) (*Service, error) {
+func New(url string, ethServ *ptn.PalletOne) (*Service, error) {
 	// Parse the netstats connection url
 	re := regexp.MustCompile("([^:@]*)(:([^@]*))?@(.+)")
 	parts := re.FindStringSubmatch(url)
@@ -102,7 +102,6 @@ func New(url string, ethServ *ptn.Ethereum, lesServ *LightEthereum) (*Service, e
 	}*/
 	return &Service{
 		eth: ethServ,
-		//les: lesServ,
 		//engine: engine,
 		node:   parts[1],
 		pass:   parts[3],

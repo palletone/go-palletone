@@ -36,7 +36,7 @@ import (
 	"github.com/palletone/go-palletone/ptn/gasprice"
 )
 
-// DefaultConfig contains default settings for use on the Ethereum main net.
+// DefaultConfig contains default settings for use on the PalletOne main net.
 var DefaultConfig = Config{
 	SyncMode: downloader.FullSync,
 	/*Ethash: ethash.Config{
@@ -51,7 +51,7 @@ var DefaultConfig = Config{
 	DatabaseCache: 768,
 	TrieCache:     256,
 	TrieTimeout:   5 * time.Minute,
-	GasPrice:      big.NewInt(18 * configure.Shannon),
+	GasPrice:      big.NewInt(0.01 * configure.PalletOne),
 
 	TxPool: coredata.DefaultTxPoolConfig,
 	GPO: gasprice.Config{
@@ -82,7 +82,7 @@ func init() {
 
 type Config struct {
 	// The genesis block, which is inserted if the database is empty.
-	// If nil, the Ethereum main net block is used.
+	// If nil, the PalletOne main net block is used.
 	Genesis *coredata.Genesis `toml:",omitempty"`
 
 	// Protocol options
