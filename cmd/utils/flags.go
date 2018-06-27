@@ -47,7 +47,6 @@ import (
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/ptn/gasprice"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"github.com/palletone/go-palletone/statistics/ptnstats"
@@ -474,16 +473,16 @@ var (
 	}
 
 	// Gas price oracle settings
-	GpoBlocksFlag = cli.IntFlag{
-		Name:  "gpoblocks",
-		Usage: "Number of recent blocks to check for gas prices",
-		Value: ptn.DefaultConfig.GPO.Blocks,
-	}
-	GpoPercentileFlag = cli.IntFlag{
-		Name:  "gpopercentile",
-		Usage: "Suggested gas price is the given percentile of a set of recent transaction gas prices",
-		Value: ptn.DefaultConfig.GPO.Percentile,
-	}
+	// GpoBlocksFlag = cli.IntFlag{
+	// 	Name:  "gpoblocks",
+	// 	Usage: "Number of recent blocks to check for gas prices",
+	// 	Value: ptn.DefaultConfig.GPO.Blocks,
+	// }
+	// GpoPercentileFlag = cli.IntFlag{
+	// 	Name:  "gpopercentile",
+	// 	Usage: "Suggested gas price is the given percentile of a set of recent transaction gas prices",
+	// 	Value: ptn.DefaultConfig.GPO.Percentile,
+	// }
 	ConsensusEngineFlag = cli.StringFlag{
 		Name:  "consensus.engine",
 		Usage: "Consensus Engine: solo or dpos",
@@ -935,14 +934,14 @@ func checkExclusive(ctx *cli.Context, args ...interface{}) {
 	}
 }
 
-func setGPO(ctx *cli.Context, cfg *gasprice.Config) {
-	if ctx.GlobalIsSet(GpoBlocksFlag.Name) {
-		cfg.Blocks = ctx.GlobalInt(GpoBlocksFlag.Name)
-	}
-	if ctx.GlobalIsSet(GpoPercentileFlag.Name) {
-		cfg.Percentile = ctx.GlobalInt(GpoPercentileFlag.Name)
-	}
-}
+// func setGPO(ctx *cli.Context, cfg *gasprice.Config) {
+// 	if ctx.GlobalIsSet(GpoBlocksFlag.Name) {
+// 		cfg.Blocks = ctx.GlobalInt(GpoBlocksFlag.Name)
+// 	}
+// 	if ctx.GlobalIsSet(GpoPercentileFlag.Name) {
+// 		cfg.Percentile = ctx.GlobalInt(GpoPercentileFlag.Name)
+// 	}
+// }
 
 // SetDagConfig applies dag related command line flags to the config.
 func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
@@ -985,7 +984,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 
 	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 	setEtherbase(ctx, ks, cfg)
-	setGPO(ctx, &cfg.GPO)
+	// setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
 	setDag(ctx, &cfg.Dag)
 	setLog(ctx, &cfg.Log)

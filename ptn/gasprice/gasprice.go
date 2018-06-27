@@ -23,13 +23,13 @@ import (
 	"sync"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/internal/ethapi"
-	"github.com/palletone/go-palletone/common/rpc"
 )
 
-var maxPrice = big.NewInt(500 * configure.Shannon)
+var maxPrice = big.NewInt(1 * configure.PalletOne)
 
 type Config struct {
 	Blocks     int

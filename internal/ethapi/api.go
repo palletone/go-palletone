@@ -46,7 +46,7 @@ import (
 )
 
 const (
-	defaultGasPrice = 50 * configure.Shannon
+	defaultGasPrice = 0.0001 * configure.PalletOne
 )
 
 // PublicEthereumAPI provides an API to access PalletOne related information.
