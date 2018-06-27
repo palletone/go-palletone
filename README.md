@@ -136,7 +136,7 @@ HTTPPort = 8541
 HTTPVirtualHosts = ["0.0.0.0"]
 HTTPCors = ["*"]
 
-[Eth]
+[Ptn]
 NetworkId = 3369
 
 [P2P]
