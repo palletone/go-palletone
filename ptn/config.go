@@ -51,7 +51,7 @@ var DefaultConfig = Config{
 	DatabaseCache: 768,
 	TrieCache:     256,
 	TrieTimeout:   5 * time.Minute,
-	GasPrice:      big.NewInt(18 * configure.Shannon),
+	GasPrice:      big.NewInt(0.01 * configure.PalletOne),
 
 	TxPool: coredata.DefaultTxPoolConfig,
 	GPO: gasprice.Config{
