@@ -15,7 +15,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 )
 
-type Transaction struct {
+type PoolTransaction struct {
 	data txdata
 	// caches
 	hash         atomic.Value
@@ -27,7 +27,7 @@ type Transaction struct {
 	creationdate time.Time `json:"creation_date"`
 }
 type txdata struct {
-	AccountNonce      uint64          `json:"nonce"`
+	From              *common.Address `json:"from"`
 	Price             *big.Int        `json:"price"`              // 交易费
 	Recipient         *common.Address `json:"to"       rlp:"nil"` // nil means contract creation
 	Amount            *big.Int        `json:"value"`
@@ -53,42 +53,42 @@ type txdataMarshaling struct {
 	S            *hexutil.Big
 }
 
-func NewTransaction(nonce uint64, to common.Address, amount *big.Int, data []byte) *Transaction {
-	return newTransaction(nonce, &to, amount, data)
+func NewPoolTransaction(from, to common.Address, amount *big.Int, data []byte) *PoolTransaction {
+	return newTransaction(&from, &to, amount, data)
 }
 
-func NewContractCreation(nonce uint64, amount *big.Int, data []byte) *Transaction {
-	return newTransaction(nonce, nil, amount, data)
+func NewContractCreation(from common.Address, amount *big.Int, data []byte) *PoolTransaction {
+	return newTransaction(&from, nil, amount, data)
 }
 
-func newTransaction(nonce uint64, to *common.Address, amount *big.Int, data []byte) *Transaction {
+func newTransaction(from, to *common.Address, amount *big.Int, data []byte) *PoolTransaction {
 	if len(data) > 0 {
 		data = common.CopyBytes(data)
 	}
 	d := txdata{
-		AccountNonce: nonce,
-		Recipient:    to,
-		Payload:      data,
-		Amount:       new(big.Int),
-		Price:        new(big.Int),
-		V:            new(big.Int),
-		R:            new(big.Int),
-		S:            new(big.Int),
+		From:      from,
+		Recipient: to,
+		Payload:   data,
+		Amount:    new(big.Int),
+		Price:     new(big.Int),
+		V:         new(big.Int),
+		R:         new(big.Int),
+		S:         new(big.Int),
 	}
 	if amount != nil {
 		d.Amount.Set(amount)
 	}
 
-	return &Transaction{data: d}
+	return &PoolTransaction{data: d}
 }
 
 // ChainId returns which chain id this transaction was signed for (if at all)
-func (tx *Transaction) ChainId() *big.Int {
+func (tx *PoolTransaction) ChainId() *big.Int {
 	return deriveChainId(tx.data.V)
 }
 
 // Protected returns whether the transaction is protected from replay protection.
-func (tx *Transaction) Protected() bool {
+func (tx *PoolTransaction) Protected() bool {
 	return isProtectedV(tx.data.V)
 }
 
@@ -102,12 +102,12 @@ func isProtectedV(V *big.Int) bool {
 }
 
 // EncodeRLP implements rlp.Encoder
-func (tx *Transaction) EncodeRLP(w io.Writer) error {
+func (tx *PoolTransaction) EncodeRLP(w io.Writer) error {
 	return rlp.Encode(w, &tx.data)
 }
 
 // DecodeRLP implements rlp.Decoder
-func (tx *Transaction) DecodeRLP(s *rlp.Stream) error {
+func (tx *PoolTransaction) DecodeRLP(s *rlp.Stream) error {
 	_, size, _ := s.Kind()
 	err := s.Decode(&tx.data)
 	if err == nil {
@@ -118,7 +118,7 @@ func (tx *Transaction) DecodeRLP(s *rlp.Stream) error {
 }
 
 // MarshalJSON encodes the web3 RPC transaction format.
-func (tx *Transaction) MarshalJSON() ([]byte, error) {
+func (tx *PoolTransaction) MarshalJSON() ([]byte, error) {
 	hash := tx.Hash()
 	data := tx.data
 	data.Hash = &hash
@@ -126,7 +126,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON decodes the web3 RPC transaction format.
-func (tx *Transaction) UnmarshalJSON(input []byte) error {
+func (tx *PoolTransaction) UnmarshalJSON(input []byte) error {
 	var dec txdata
 	if err := dec.UnmarshalJSON(input); err != nil {
 		return err
@@ -141,21 +141,21 @@ func (tx *Transaction) UnmarshalJSON(input []byte) error {
 	if !crypto.ValidateSignatureValues(V, dec.R, dec.S, false) {
 		return errors.New("invalid transaction v, r, s values")
 	}
-	*tx = Transaction{data: dec}
+	*tx = PoolTransaction{data: dec}
 	return nil
 }
 
-func (tx *Transaction) Data() []byte { return common.CopyBytes(tx.data.Payload) }
+func (tx *PoolTransaction) Data() []byte { return common.CopyBytes(tx.data.Payload) }
 
-// func (tx *Transaction) Gas() uint64      { return tx.data.GasLimit }
-func (tx *Transaction) Price() *big.Int  { return new(big.Int).Set(tx.data.Price) }
-func (tx *Transaction) Value() *big.Int  { return new(big.Int).Set(tx.data.Amount) }
-func (tx *Transaction) Nonce() uint64    { return tx.data.AccountNonce }
-func (tx *Transaction) CheckNonce() bool { return true }
+// func (tx *PoolTransaction ) Gas() uint64      { return tx.data.GasLimit }
+func (tx *PoolTransaction) Price() *big.Int          { return new(big.Int).Set(tx.data.Price) }
+func (tx *PoolTransaction) Value() *big.Int          { return new(big.Int).Set(tx.data.Amount) }
+func (tx *PoolTransaction) Account() *common.Address { return tx.data.From }
+func (tx *PoolTransaction) CheckNonce() bool         { return true }
 
-// To returns the recipient address of the transaction.
+// To returns the recipient address of the PoolTransaction .
 // It returns nil if the transaction is a contract creation.
-func (tx *Transaction) ToAddress() *common.Address {
+func (tx *PoolTransaction) ToAddress() *common.Address {
 	if tx.data.Recipient == nil {
 		return nil
 	}
@@ -165,7 +165,7 @@ func (tx *Transaction) ToAddress() *common.Address {
 
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
-func (tx *Transaction) Hash() common.Hash {
+func (tx *PoolTransaction) Hash() common.Hash {
 	if hash := tx.hash.Load(); hash != nil {
 		return hash.(common.Hash)
 	}
@@ -176,7 +176,7 @@ func (tx *Transaction) Hash() common.Hash {
 
 // Size returns the true RLP encoded storage size of the transaction, either by
 // encoding and returning it, or returning a previsouly cached value.
-func (tx *Transaction) Size() common.StorageSize {
+func (tx *PoolTransaction) Size() common.StorageSize {
 	if size := tx.size.Load(); size != nil {
 		return size.(common.StorageSize)
 	}
@@ -186,7 +186,7 @@ func (tx *Transaction) Size() common.StorageSize {
 	return common.StorageSize(c)
 }
 
-func (tx *Transaction) String() string {
+func (tx *PoolTransaction) String() string {
 	var from, to string
 	if tx.data.V != nil {
 		// make a best guess about the signer and use that to derive
@@ -225,7 +225,7 @@ func (tx *Transaction) String() string {
 		tx.data.Recipient == nil,
 		from,
 		to,
-		tx.data.AccountNonce,
+		tx.data.From,
 		tx.data.Price,
 		tx.data.Amount,
 		tx.data.Payload,
@@ -236,18 +236,18 @@ func (tx *Transaction) String() string {
 	)
 }
 
-func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, error) {
+func (tx *PoolTransaction) WithSignature(signer Signer, sig []byte) (*PoolTransaction, error) {
 	r, s, v, err := signer.SignatureValues(tx, sig)
 	if err != nil {
 		return nil, err
 	}
-	cpy := &Transaction{data: tx.data}
+	cpy := &PoolTransaction{data: tx.data}
 	cpy.data.R, cpy.data.S, cpy.data.V = r, s, v
 	return cpy, nil
 }
 
 // Cost returns amount + price
-func (tx *Transaction) Cost() *big.Int {
+func (tx *PoolTransaction) Cost() *big.Int {
 	total := new(big.Int) // .mul(tx.data.Price, new(big.Int).SetUint64(tx.data.GasLimit))
 	total.Add(tx.data.Price, tx.data.Amount)
 	return total
@@ -258,9 +258,9 @@ func (tx *Transaction) Cost() *big.Int {
 // AsMessage requires a signer to derive the sender.
 //
 // XXX Rename message to something less arbitrary?
-func (tx *Transaction) AsMessage(s Signer) (Message, error) {
-	msg := Message{
-		nonce:      tx.data.AccountNonce,
+func (tx *PoolTransaction) AsMessage(s Signer) (PoolMessage, error) {
+	msg := PoolMessage{
+		from:       *tx.data.From,
 		gasPrice:   new(big.Int).Set(tx.data.Price),
 		to:         tx.data.Recipient,
 		amount:     tx.data.Amount,
@@ -273,24 +273,24 @@ func (tx *Transaction) AsMessage(s Signer) (Message, error) {
 	return msg, err
 }
 
-// Transactions is a Transaction slice type for basic sorting.
-type Transactions []*Transaction
+// PoolTransactions is a Transaction slice type for basic sorting.
+type PoolTransactions []*PoolTransaction
 
 // Len returns the length of s.
-func (s Transactions) Len() int { return len(s) }
+func (s PoolTransactions) Len() int { return len(s) }
 
 // Swap swaps the i'th and the j'th element in s.
-func (s Transactions) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s PoolTransactions) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 // GetRlp implements Rlpable and returns the i'th element of s in rlp.
-func (s Transactions) GetRlp(i int) []byte {
+func (s PoolTransactions) GetRlp(i int) []byte {
 	enc, _ := rlp.EncodeToBytes(s[i])
 	return enc
 }
 
 // TxDifference returns a new set t which is the difference between a to b.
-func TxDifference(a, b Transactions) (keep Transactions) {
-	keep = make(Transactions, 0, len(a))
+func TxDifference(a, b PoolTransactions) (keep PoolTransactions) {
+	keep = make(PoolTransactions, 0, len(a))
 
 	remove := make(map[common.Hash]struct{})
 	for _, tx := range b {
@@ -306,25 +306,16 @@ func TxDifference(a, b Transactions) (keep Transactions) {
 	return keep
 }
 
-// TxByNonce implements the sort interface to allow sorting a list of transactions
-// by their nonces. This is usually only useful for sorting transactions from a
-// single account, otherwise a nonce comparison doesn't make much sense.
-type TxByNonce Transactions
-
-func (s TxByNonce) Len() int           { return len(s) }
-func (s TxByNonce) Less(i, j int) bool { return s[i].data.AccountNonce < s[j].data.AccountNonce }
-func (s TxByNonce) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-
 // TxByPrice implements both the sort and the heap interface, making it useful
 // for all at once sorting as well as individually adding and removing elements.
-type TxByPrice Transactions
+type TxByPrice PoolTransactions
 
 func (s TxByPrice) Len() int           { return len(s) }
 func (s TxByPrice) Less(i, j int) bool { return s[i].data.Price.Cmp(s[j].data.Price) > 0 }
 func (s TxByPrice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
 func (s *TxByPrice) Push(x interface{}) {
-	*s = append(*s, x.(*Transaction))
+	*s = append(*s, x.(*PoolTransaction))
 }
 
 func (s *TxByPrice) Pop() interface{} {
@@ -338,7 +329,7 @@ func (s *TxByPrice) Pop() interface{} {
 // Message is a fully derived transaction and implements core.Message
 //
 // NOTE: In a future PR this will be removed.
-type Message struct {
+type PoolMessage struct {
 	to         *common.Address
 	from       common.Address
 	nonce      uint64
@@ -349,9 +340,9 @@ type Message struct {
 	checkNonce bool
 }
 
-func NewMessage(from common.Address, to *common.Address, nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, checkNonce bool) Message {
-	return Message{
-		from:       from,
+func NewMessage(from, to *common.Address, nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, checkNonce bool) PoolMessage {
+	return PoolMessage{
+		from:       *from,
 		to:         to,
 		nonce:      nonce,
 		amount:     amount,
@@ -362,14 +353,14 @@ func NewMessage(from common.Address, to *common.Address, nonce uint64, amount *b
 	}
 }
 
-func (m Message) From() common.Address { return m.from }
-func (m Message) To() *common.Address  { return m.to }
-func (m Message) GasPrice() *big.Int   { return m.gasPrice }
-func (m Message) Value() *big.Int      { return m.amount }
-func (m Message) Gas() uint64          { return m.gasLimit }
-func (m Message) Nonce() uint64        { return m.nonce }
-func (m Message) Data() []byte         { return m.data }
-func (m Message) CheckNonce() bool     { return m.checkNonce }
+func (m PoolMessage) From() *common.Address { return &m.from }
+func (m PoolMessage) To() *common.Address   { return m.to }
+func (m PoolMessage) GasPrice() *big.Int    { return m.gasPrice }
+func (m PoolMessage) Value() *big.Int       { return m.amount }
+func (m PoolMessage) Gas() uint64           { return m.gasLimit }
+func (m PoolMessage) Nonce() uint64         { return m.nonce }
+func (m PoolMessage) Data() []byte          { return m.data }
+func (m PoolMessage) CheckNonce() bool      { return m.checkNonce }
 
 // deriveChainId derives the chain id from the given v parameter
 func deriveChainId(v *big.Int) *big.Int {
@@ -397,4 +388,11 @@ func deriveSigner(V *big.Int) Signer {
 	} else {
 		return HomesteadSigner{}
 	}
+}
+
+type writeCounter common.StorageSize
+
+func (c *writeCounter) Write(b []byte) (int, error) {
+	*c += writeCounter(len(b))
+	return len(b), nil
 }
