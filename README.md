@@ -167,20 +167,22 @@ like to pre-fund some accounts for easier testing, you can populate the `alloc` 
 configs:
 
 ```json
-{ 
-    "height":"0",
-    "version":"0.6.0",
-    "tokenAmount":1000000000
-    "tokenDecimal":8
-    "chainId":0
-    "tokenHolder":"P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ",
-    "systemConfig":{ 
-        "mediatorSlot":5,
-        "mediatorCount":21,
-        "mediatorList":["dfba98bb5c52bba028e2cc487cbd1084","",""],
-        "mediatorCycle": 86400 <!--24 Hours-->
-        "depositRate":0.02
-      }
+{
+  "height": "0",
+  "version": "0.6.0",
+  "tokenAmount": 1000000000,
+  "tokenDecimal": 8,
+  "chainId": 0,
+  "tokenHolder": "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ",
+  "systemConfig": {
+    "mediatorSlot": 5,
+    "mediatorCount": 21,
+    "mediatorList": [
+      "dfba98bb5c52bba028e2cc487cbd1084"
+    ],
+    "mediatorCycle": 86400,  <!--24 Hours-->
+    "depositRate": 0.02
+  }
 }
 ```
 
