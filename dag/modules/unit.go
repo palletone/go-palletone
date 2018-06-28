@@ -8,6 +8,7 @@ import (
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
+	"math/big"
 )
 
 /*****************************27 June, 2018 update unit struct type*****************************************/
@@ -54,9 +55,9 @@ type Unit struct {
 	UnitHeader *Header      `json:"unit_header"`  // unit header
 	Txs        Transactions `json:"transactions"` // transaction list
 
-	UnitHash   common.Hash `json:"unit_hash"`   // unit hash
-	Size       uint64      `json:"size"`        // unit size
-	CreateTime time.Time   `json:"create_time"` // unit create time
+	UnitHash     common.Hash `json:"unit_hash"`   // unit hash
+	Size         uint64      `json:"size"`        // unit size
+	CreationDate time.Time   `json:"creation_time"` // unit create time
 }
 
 type Header struct {
@@ -68,6 +69,7 @@ type Header struct {
 	GasUsed     uint64        `json:"gasUsed"`
 	Root        common.Hash   `json:"root"`
 	Index       ChainIndex    `json:"index"`
+	Extra  []byte `json:"extra"`
 }
 
 type ChainIndex struct {
@@ -224,7 +226,17 @@ func (h *Header) Hash() common.Hash {
 }
 
 func (h *Header) Size() common.StorageSize {
-	return common.StorageSize(unsafe.Sizeof(*h)) + common.StorageSize(len(h.Extra)+(h.Difficulty.BitLen()+h.Number.BitLen()+h.Time.BitLen())/8)
+	return common.StorageSize(unsafe.Sizeof(*h)) + common.StorageSize(len(h.Extra)/8)
+}
+
+
+func NewUnit(header *Header, msgs []*Message, receipt []*Receipt) *Unit {
+	u := &Unit{
+		UnitHeader: CopyHeader(header),
+	}
+
+	u.CreationDate = time.Now()
+	return u
 }
 
 // return  unit'hash
@@ -238,19 +250,39 @@ func (u *Unit) Header() *Header { return CopyHeader(u.UnitHeader) }
 
 //  last unit
 func CurrentUnit() *Unit {
-	return &Unit{CreateTime: time.Now()}
+	return &Unit{CreationDate: time.Now()}
 }
 
-// get unit  with hash & number or level.
-func GetUnit(hash common.Hash, number uint64) *Unit {
-	return &Unit{CreateTime: time.Now()}
-}
+
 
 //
 //func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }
 func (u *Unit) Number() ChainIndex {
 	return u.UnitHeader.Index
 }
+	return &Unit{CreationDate: time.Now()}
+}
+
+// CopyHeader creates a deep copy of a block header to prevent side effects from
+// modifying a header variable.
+func CopyHeader(h *Header) *Header {
+	cpy := *h
+	//if cpy.Time = new(big.Int); h.Time != nil {
+	//	cpy.Time.Set(h.Time)
+	//}
+	// if cpy.Difficulty = new(big.Int); h.Difficulty != nil {
+	// 	cpy.Difficulty.Set(h.Difficulty)
+	// }
+	// if cpy.Number = new(big.Int); h.Number != nil {
+	// 	cpy.Number.Set(h.Number)
+	// }
+	if len(h.Extra) > 0 {
+		cpy.Extra = make([]byte, len(h.Extra))
+		copy(cpy.Extra, h.Extra)
+	}
+	return &cpy
+}
+
 
 // transactions
 func (u *Unit) Transactions() []*Transaction {
@@ -263,6 +295,4 @@ func (u *Unit) ParentHash() []common.Hash {
 	return u.UnitHeader.ParentUnits
 }
 
-func (u *Unit) GetBestParentUnit() string {
-	return ""
-}
+
