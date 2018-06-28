@@ -27,9 +27,9 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-	//
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
+	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -63,13 +63,12 @@ func init() {
 			home = user.HomeDir
 		}
 	}
-	//would recover
-	/*
-		if runtime.GOOS == "windows" {
-			DefaultConfig.Ethash.DatasetDir = filepath.Join(home, "AppData", "Ethash")
-		} else {
-			DefaultConfig.Ethash.DatasetDir = filepath.Join(home, ".ethash")
-		}*/
+	/*would recover
+	if runtime.GOOS == "windows" {
+		DefaultConfig.Ethash.DatasetDir = filepath.Join(home, "AppData", "Ethash")
+	} else {
+		DefaultConfig.Ethash.DatasetDir = filepath.Join(home, ".ethash")
+	}*/
 }
 
 //go:generate gencodec -type Config -field-override configMarshaling -formats toml -out gen_config.go
@@ -77,7 +76,7 @@ func init() {
 type Config struct {
 	// The genesis block, which is inserted if the database is empty.
 	// If nil, the PalletOne main net block is used.
-	Genesis *coredata.Genesis `toml:",omitempty"`
+	Genesis *gen.Genesis `toml:",omitempty"`
 
 	// Protocol options
 	NetworkId uint64 // Network ID to use for selecting peers to connect to

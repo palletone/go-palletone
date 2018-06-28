@@ -32,9 +32,6 @@ import (
 	//"github.com/palletone/go-palletone/consensus/clique"
 	//
 	"github.com/palletone/go-palletone/common/bloombits"
-	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/dag/coredata"
-	//"github.com/palletone/go-palletone/vm"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
@@ -42,8 +39,11 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/core/node"
+	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
@@ -102,7 +102,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 	/*chainConfig, genesisHash,*/
-	_, _, genesisErr := coredata.SetupGenesisBlock(chainDb, config.Genesis)
+	_, _, genesisErr := gen.SetupGenesisBlock(chainDb, config.Genesis)
 
 	if _, ok := genesisErr.(*configure.ConfigCompatError); genesisErr != nil && !ok {
 		return nil, genesisErr

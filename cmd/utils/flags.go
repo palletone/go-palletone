@@ -41,6 +41,7 @@ import (
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -1044,12 +1045,12 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 3
 		}
-		cfg.Genesis = coredata.DefaultTestnetGenesisBlock()
+		cfg.Genesis = gen.DefaultTestnetGenesisBlock()
 	case ctx.GlobalBool(RinkebyFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 4
 		}
-		cfg.Genesis = coredata.DefaultRinkebyGenesisBlock()
+		cfg.Genesis = gen.DefaultRinkebyGenesisBlock()
 	case ctx.GlobalBool(DeveloperFlag.Name):
 		// Create new developer account or reuse existing one
 		var (
@@ -1069,7 +1070,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 		}
 		log.Info("Using developer account", "address", developer.Address)
 
-		cfg.Genesis = coredata.DeveloperGenesisBlock(uint64(ctx.GlobalInt(DeveloperPeriodFlag.Name)), developer.Address)
+		cfg.Genesis = gen.DeveloperGenesisBlock(uint64(ctx.GlobalInt(DeveloperPeriodFlag.Name)), developer.Address)
 		if !ctx.GlobalIsSet(GasPriceFlag.Name) {
 			cfg.GasPrice = big.NewInt(1)
 		}
@@ -1142,13 +1143,13 @@ func MakeChainDatabase(ctx *cli.Context, stack *node.Node) ptndb.Database {
 	return chainDb
 }
 
-func MakeGenesis(ctx *cli.Context) *coredata.Genesis {
-	var genesis *coredata.Genesis
+func MakeGenesis(ctx *cli.Context) *gen.Genesis {
+	var genesis *gen.Genesis
 	switch {
 	case ctx.GlobalBool(TestnetFlag.Name):
-		genesis = coredata.DefaultTestnetGenesisBlock()
+		genesis = gen.DefaultTestnetGenesisBlock()
 	case ctx.GlobalBool(RinkebyFlag.Name):
-		genesis = coredata.DefaultRinkebyGenesisBlock()
+		genesis = gen.DefaultRinkebyGenesisBlock()
 	case ctx.GlobalBool(DeveloperFlag.Name):
 		Fatalf("Developer chains are ephemeral")
 	}
