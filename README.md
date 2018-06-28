@@ -157,17 +157,6 @@ and agree upon. This consists of a small JSON file (e.g. call it `genesis.json`)
 
 ```json
 {
-
-}
-```
-
-The above fields should be fine for most purposes, although we'd recommend changing the `nonce` to
-some random value so you prevent unknown remote nodes from being able to connect to you. If you'd
-like to pre-fund some accounts for easier testing, you can populate the `alloc` field with account
-configs:
-
-```json
-{
   "height": "0",
   "version": "0.6.0",
   "tokenAmount": 1000000000,

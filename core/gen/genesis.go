@@ -19,18 +19,13 @@ package gen
 import (
 	"bytes"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/common/math"
-	//"github.com/palletone/go-palletone/core/state"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/coredata"
 )
 
@@ -39,66 +34,32 @@ import (
 
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.
-type Genesis struct {
-	Config     *configure.ChainConfig `json:"config"`
+/*type Genesis struct {
 	Nonce      uint64                 `json:"nonce"`
 	Timestamp  uint64                 `json:"timestamp"`
 	ExtraData  []byte                 `json:"extraData"`
-	GasLimit   uint64                 `json:"gasLimit"   gencodec:"required"`
-	Difficulty *big.Int               `json:"difficulty" gencodec:"required"`
+	GasLimit   uint64                 `json:"gasLimit"`
+	Difficulty *big.Int               `json:"difficulty"`
 	Mixhash    common.Hash            `json:"mixHash"`
 	Coinbase   common.Address         `json:"coinbase"`
-	Alloc      GenesisAlloc           `json:"alloc"      gencodec:"required"`
+}*/
 
-	// These fields are used for consensus tests. Please don't use them
-	// in actual genesis blocks.
-	Number     uint64      `json:"number"`
-	GasUsed    uint64      `json:"gasUsed"`
-	ParentHash common.Hash `json:"parentHash"`
+type SystemConfig struct {
+	MediatorSlot  int      `json:"mediatorSlot"`
+	MediatorCount int      `json:"mediatorCount"`
+	MediatorList  []string `json:"mediatorList"`
+	MediatorCycle int      `json:"mediatorCycle"`
+	DepositRate   float64  `json:"depositRate"`
 }
 
-// GenesisAlloc specifies the initial state that is part of the genesis block.
-type GenesisAlloc map[common.Address]GenesisAccount
-
-func (ga *GenesisAlloc) UnmarshalJSON(data []byte) error {
-	m := make(map[common.UnprefixedAddress]GenesisAccount)
-	if err := json.Unmarshal(data, &m); err != nil {
-		return err
-	}
-	*ga = make(GenesisAlloc)
-	for addr, a := range m {
-		(*ga)[common.Address(addr)] = a
-	}
-	return nil
-}
-
-// GenesisAccount is an account in the state of the genesis block.
-type GenesisAccount struct {
-	Code       []byte                      `json:"code,omitempty"`
-	Storage    map[common.Hash]common.Hash `json:"storage,omitempty"`
-	Balance    *big.Int                    `json:"balance" gencodec:"required"`
-	Nonce      uint64                      `json:"nonce,omitempty"`
-	PrivateKey []byte                      `json:"secretKey,omitempty"` // for tests
-}
-
-// field type overrides for gencodec
-type genesisSpecMarshaling struct {
-	Nonce      math.HexOrDecimal64
-	Timestamp  math.HexOrDecimal64
-	ExtraData  hexutil.Bytes
-	GasLimit   math.HexOrDecimal64
-	GasUsed    math.HexOrDecimal64
-	Number     math.HexOrDecimal64
-	Difficulty *math.HexOrDecimal256
-	Alloc      map[common.UnprefixedAddress]GenesisAccount
-}
-
-type genesisAccountMarshaling struct {
-	Code       hexutil.Bytes
-	Balance    *math.HexOrDecimal256
-	Nonce      math.HexOrDecimal64
-	Storage    map[storageJSON]storageJSON
-	PrivateKey hexutil.Bytes
+type Genesis struct {
+	Height       string       `json:"height"`
+	Version      string       `json:"version"`
+	TokenAmount  uint64       `json:"tokenAmount"`
+	TokenDecimal int          `json:"tokenDecimal"`
+	ChainID      int          `json:"chainId"`
+	TokenHolder  string       `json:"tokenHolder"`
+	SystemConfig SystemConfig `json:"systemConfig"`
 }
 
 // storageJSON represents a 256 bit byte array, but allows less than 256 bits when
@@ -185,24 +146,12 @@ func SetupGenesisBlock(db ptndb.Database, genesis *Genesis) (common.Hash, error)
 
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
 func DefaultGenesisBlock() *Genesis {
-	return &Genesis{
-		Config:     configure.MainnetChainConfig,
-		Nonce:      66,
-		ExtraData:  hexutil.MustDecode("0x11bbe8db4e347b4e8c937c1c8370e4b5ed33adb3db69cbdb7a38e1e50b1b82fa"),
-		GasLimit:   5000,
-		Difficulty: big.NewInt(17179869184),
-	}
+	return &Genesis{}
 }
 
 // DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
 func DefaultTestnetGenesisBlock() *Genesis {
-	return &Genesis{
-		Config:     configure.TestnetChainConfig,
-		Nonce:      66,
-		ExtraData:  hexutil.MustDecode("0x3535353535353535353535353535353535353535353535353535353535353535"),
-		GasLimit:   16777216,
-		Difficulty: big.NewInt(1048576),
-	}
+	return &Genesis{}
 }
 
 /*
