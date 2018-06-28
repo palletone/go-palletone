@@ -176,15 +176,15 @@ Sign a text by one account and return Signature.
 				Name:      "verify",
 				Usage:     "verify a signature",
 				Action:    utils.MigrateFlags(accountSignVerify),
-				ArgsUsage: "<address> <signature> <string>",
+				ArgsUsage: "<address> <message> <signature>",
 				Flags: []cli.Flag{
 					utils.DataDirFlag,
 					utils.KeyStoreDirFlag,
 					utils.PasswordFileFlag,
 				},
 				Description: `
-    gptn account sign <address> <string>
-Sign a text by one account and return Signature.
+    gptn account verify <address> <message> <signature>
+verify the message signature.
 `,
 			},
 			{
@@ -410,7 +410,7 @@ func accountDumpKey(ctx *cli.Context) error {
 	account, _ := utils.MakeAddress(ks, addr)
 	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
 	prvKey, _ := ks.DumpKey(account, pwd)
-	fmt.Printf("Your private key is : {%s}", hexutil.Encode( prvKey))
+	fmt.Printf("Your private key is : {%s}", hexutil.Encode(prvKey))
 	return nil
 }
 
@@ -429,17 +429,17 @@ func accountSignVerify(ctx *cli.Context) error {
 	fmt.Printf("\n%s Hash:%s\n", addr, hash.String())
 	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
 	s, _ := hexutil.Decode(sign)
-	ss, _ := ks.SignHashWithPassphrase(account, pwd, hash.Bytes())
-	fmt.Println("Sign again:" + hexutil.Encode(ss))
+	// ss, _ := ks.SignHashWithPassphrase(account, pwd, hash.Bytes())
+	// fmt.Println("Sign again:" + hexutil.Encode(ss))
 
 	pass, err := ks.VerifySignatureWithPassphrase(account, pwd, hash.Bytes(), s)
 	if err != nil {
 		utils.Fatalf("Verfiy error:%s", err)
 	}
 	if pass {
-		fmt.Println("Verified")
+		fmt.Println("Valid signature")
 	} else {
-		fmt.Println("Invalid signature")
+		utils.Fatalf("Invalid signature")
 	}
 	return nil
 }

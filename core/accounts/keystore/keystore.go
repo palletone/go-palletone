@@ -302,7 +302,8 @@ func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase
 	}
 	defer zeroKey(key.PrivateKey)
 	pk := key.PrivateKey.PublicKey
-	return crypto.VerifySignature(crypto.FromECDSAPub(&pk), hash, signature), nil
+	sig := signature[:len(signature)-1] // remove recovery id
+	return crypto.VerifySignature(crypto.FromECDSAPub(&pk), hash, sig), nil
 }
 
 // SignTxWithPassphrase signs the transaction if the private key matching the
