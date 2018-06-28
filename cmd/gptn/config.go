@@ -168,9 +168,6 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
 	}
-	//Test
-	//fmt.Println("----Log Path:" + strings.Join(log.DefaultConfig.OutputPaths, ","))
-	//fmt.Println("----DB config:" + dagconfig.DefaultConfig.DbPath)
 
 	// Add the PalletOne Stats daemon if requested.
 	if cfg.Ethstats.URL != "" {
