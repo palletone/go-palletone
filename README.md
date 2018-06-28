@@ -157,30 +157,21 @@ and agree upon. This consists of a small JSON file (e.g. call it `genesis.json`)
 
 ```json
 {
-
-}
-```
-
-The above fields should be fine for most purposes, although we'd recommend changing the `nonce` to
-some random value so you prevent unknown remote nodes from being able to connect to you. If you'd
-like to pre-fund some accounts for easier testing, you can populate the `alloc` field with account
-configs:
-
-```json
-{ 
-    "height":"0",
-    "version":"0.6.0",
-    "tokenAmount":1000000000
-    "tokenDecimal":8
-    "chainId":0
-    "tokenHolder":"P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ",
-    "systemConfig":{ 
-        "mediatorSlot":5,
-        "mediatorCount":21,
-        "mediatorList":["dfba98bb5c52bba028e2cc487cbd1084","",""],
-        "mediatorCycle": 86400 <!--24 Hours-->
-        "depositRate":0.02
-      }
+  "height": "0",
+  "version": "0.6.0",
+  "tokenAmount": 1000000000,
+  "tokenDecimal": 8,
+  "chainId": 0,
+  "tokenHolder": "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ",
+  "systemConfig": {
+    "mediatorSlot": 5,
+    "mediatorCount": 21,
+    "mediatorList": [
+      "dfba98bb5c52bba028e2cc487cbd1084"
+    ],
+    "mediatorCycle": 86400,  <!--24 Hours-->
+    "depositRate": 0.02
+  }
 }
 ```
 

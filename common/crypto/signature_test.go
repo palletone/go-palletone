@@ -1,18 +1,18 @@
-// Copyright 2017 The go-palletone Authors
-// This file is part of the go-palletone library.
+// Copyright 2017 The go-ethereum Authors
+// This file is part of the go-ethereum library.
 //
-// The go-palletone library is free software: you can redistribute it and/or modify
+// The go-ethereum library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-palletone library is distributed in the hope that it will be useful,
+// The go-ethereum library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
+// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 package crypto
 
@@ -156,5 +156,27 @@ func BenchmarkDecompressPubkey(b *testing.B) {
 		if _, err := DecompressPubkey(testpubkeyc); err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+func TestSignVerify(t *testing.T) {
+	//sign := "0xda850b649658b2863559c338fdd99858acc20884f1b1f097d09735346b059b111e6c0f46661d45987e60a81fc4329b357c609dde1f5da187cdbeb5a57cc61f8d01"
+	text := "a"
+	hash := Keccak256([]byte(text))
+
+	privateKey := "f4b430cd1007bf3309a00fdda81c58131a1e0a41f6a72eab3291e561342ae1b3"
+	// privateKeyBytes := hexutil.MustDecode(privateKey)
+	prvKey, _ := HexToECDSA(privateKey)
+	pubKey := FromECDSAPub(&prvKey.PublicKey)
+
+	//signB, _ := hexutil.Decode(sign)
+	signature, _ := Sign(hash, prvKey)
+	t.Log("Signature is: " + hexutil.Encode(signature))
+
+	pass := VerifySignature(pubKey, hash, signature)
+	if pass {
+		t.Log("Pass")
+	} else {
+		t.Error("No Pass")
 	}
 }

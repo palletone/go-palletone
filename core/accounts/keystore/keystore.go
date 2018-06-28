@@ -1,18 +1,18 @@
-// Copyright 2017 The go-palletone Authors
-// This file is part of the go-palletone library.
+// Copyright 2017 The go-ethereum Authors
+// This file is part of the go-ethereum library.
 //
-// The go-palletone library is free software: you can redistribute it and/or modify
+// The go-ethereum library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-palletone library is distributed in the hope that it will be useful,
+// The go-ethereum library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-palletone library. If not, see <http://www.gnu.org/licenses/>.
+// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package keystore implements encrypted storage of secp256k1 private keys.
 //
@@ -295,6 +295,15 @@ func (ks *KeyStore) SignHashWithPassphrase(a accounts.Account, passphrase string
 	defer zeroKey(key.PrivateKey)
 	return crypto.Sign(hash, key.PrivateKey)
 }
+func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase string, hash []byte,signature []byte) (pass bool, err error) {
+	_, key, err := ks.getDecryptedKey(a, passphrase)
+	if err != nil {
+		return false, err
+	}
+	defer zeroKey(key.PrivateKey)
+	pk:=key.PrivateKey.PublicKey
+	return crypto.VerifySignature(crypto.FromECDSAPub( &pk),hash,signature),nil
+}
 
 // SignTxWithPassphrase signs the transaction if the private key matching the
 // given address can be decrypted with the given passphrase.
@@ -430,6 +439,15 @@ func (ks *KeyStore) Export(a accounts.Account, passphrase, newPassphrase string)
 		N, P = StandardScryptN, StandardScryptP
 	}
 	return EncryptKey(key, newPassphrase, N, P)
+}
+
+func (ks *KeyStore) DumpKey(a accounts.Account, passphrase string) (privateKey []byte, err error) {
+	_, key, err := ks.getDecryptedKey(a, passphrase)
+	if err != nil {
+		return nil, err
+	}
+	return crypto.FromECDSA(key.PrivateKey),nil
+
 }
 
 // Import stores the given encrypted JSON key into the key directory.

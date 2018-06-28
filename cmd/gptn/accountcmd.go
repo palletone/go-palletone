@@ -1,12 +1,12 @@
-// Copyright 2016 The go-palletone Authors
-// This file is part of go-palletone.
+// Copyright 2016 The go-ethereum Authors
+// This file is part of go-ethereum.
 //
-// go-palletone is free software: you can redistribute it and/or modify
+// go-ethereum is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// go-palletone is distributed in the hope that it will be useful,
+// go-ethereum is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
@@ -18,11 +18,12 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	// "io/ioutil"
 
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -153,6 +154,52 @@ For non-interactive use the passphrase can be specified with the --password flag
 
 Since only one password can be given, only format update can be performed,
 changing your password is only possible interactively.
+`,
+			},
+
+			{
+				Name:      "sign",
+				Usage:     "sign a string",
+				Action:    utils.MigrateFlags(accountSignString),
+				ArgsUsage: "<address> <string>",
+				Flags: []cli.Flag{
+					utils.DataDirFlag,
+					utils.KeyStoreDirFlag,
+					utils.PasswordFileFlag,
+				},
+				Description: `
+    gptn account sign <address> <string>
+Sign a text by one account and return Signature.
+`,
+			},
+			{
+				Name:      "verify",
+				Usage:     "verify a signature",
+				Action:    utils.MigrateFlags(accountSignVerify),
+				ArgsUsage: "<address> <signature> <string>",
+				Flags: []cli.Flag{
+					utils.DataDirFlag,
+					utils.KeyStoreDirFlag,
+					utils.PasswordFileFlag,
+				},
+				Description: `
+    gptn account sign <address> <string>
+Sign a text by one account and return Signature.
+`,
+			},
+			{
+				Name:      "dumpkey",
+				Usage:     "Dump the private key",
+				Action:    utils.MigrateFlags(accountDumpKey),
+				ArgsUsage: "<address>",
+				Flags: []cli.Flag{
+					utils.DataDirFlag,
+					utils.KeyStoreDirFlag,
+					utils.PasswordFileFlag,
+				},
+				Description: `
+    gptn account dumpkey <address>
+	Dump the private key.
 `,
 			},
 			{
@@ -334,28 +381,90 @@ func accountUpdate(ctx *cli.Context) error {
 	}
 	return nil
 }
-
-func importWallet(ctx *cli.Context) error {
-	keyfile := ctx.Args().First()
-	if len(keyfile) == 0 {
-		utils.Fatalf("keyfile must be given as argument")
-	}
-	keyJson, err := ioutil.ReadFile(keyfile)
-	if err != nil {
-		utils.Fatalf("Could not read wallet file: %v", err)
+func accountSignString(ctx *cli.Context) error {
+	if len(ctx.Args()) == 0 {
+		utils.Fatalf("No accounts specified to update")
 	}
 
 	stack, _ := makeConfigNode(ctx)
-	passphrase := getPassPhrase("", false, 0, utils.MakePasswordList(ctx))
-
 	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
-	acct, err := ks.ImportPreSaleKey(keyJson, passphrase)
+	addr := ctx.Args().First()
+	account, _ := utils.MakeAddress(ks, addr)
+	hash := crypto.Keccak256Hash([]byte(ctx.Args()[1]))
+	fmt.Printf("%s Hash:%s", addr, hash.String())
+	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
+	sign, err := ks.SignHashWithPassphrase(account, pwd, hash.Bytes())
 	if err != nil {
-		utils.Fatalf("%v", err)
+		utils.Fatalf("Sign error:%s", err)
 	}
-	fmt.Printf("Address: {%x}\n", acct.Address)
+	fmt.Println("Signature: " + hexutil.Encode(sign))
 	return nil
 }
+func accountDumpKey(ctx *cli.Context) error {
+	if len(ctx.Args()) == 0 {
+		utils.Fatalf("No accounts specified to update")
+	}
+	stack, _ := makeConfigNode(ctx)
+	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	addr := ctx.Args().First()
+	account, _ := utils.MakeAddress(ks, addr)
+	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
+	prvKey, _ := ks.DumpKey(account, pwd)
+	fmt.Printf("Your private key is : {%s}", hexutil.Encode(prvKey))
+	return nil
+}
+
+func accountSignVerify(ctx *cli.Context) error {
+	if len(ctx.Args()) == 0 {
+		utils.Fatalf("No accounts specified to update")
+	}
+
+	stack, _ := makeConfigNode(ctx)
+	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	addr := ctx.Args().First()
+	account, _ := utils.MakeAddress(ks, addr)
+
+	hash := crypto.Keccak256Hash([]byte(ctx.Args()[1]))
+	sign := ctx.Args()[2]
+	fmt.Printf("\n%s Hash:%s\n", addr, hash.String())
+	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
+	s, _ := hexutil.Decode(sign)
+	ss, _ := ks.SignHashWithPassphrase(account, pwd, hash.Bytes())
+	fmt.Println("Sign again:" + hexutil.Encode(ss))
+
+	pass, err := ks.VerifySignatureWithPassphrase(account, pwd, hash.Bytes(), s)
+	if err != nil {
+		utils.Fatalf("Verfiy error:%s", err)
+	}
+	if pass {
+		fmt.Println("Verified")
+	} else {
+		fmt.Println("Invalid signature")
+	}
+	return nil
+}
+
+// func importWallet(ctx *cli.Context) error {
+// 	keyfile := ctx.Args().First()
+// 	if len(keyfile) == 0 {
+// 		utils.Fatalf("keyfile must be given as argument")
+// 	}
+// 	keyJson, err := ioutil.ReadFile(keyfile)
+// 	if err != nil {
+// 		utils.Fatalf("Could not read wallet file: %v", err)
+// 	}
+
+// 	stack, _ := makeConfigNode(ctx)
+// 	passphrase := getPassPhrase("", false, 0, utils.MakePasswordList(ctx))
+
+// 	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+// 	acct, err := ks.ImportPreSaleKey(keyJson, passphrase)
+// 	if err != nil {
+// 		utils.Fatalf("%v", err)
+// 	}
+// 	fmt.Printf("Address: {%x}\n", acct.Address)
+// 	return nil
+// }
 
 func accountImport(ctx *cli.Context) error {
 	keyfile := ctx.Args().First()
