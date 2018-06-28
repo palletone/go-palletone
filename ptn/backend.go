@@ -32,9 +32,6 @@ import (
 	//"github.com/palletone/go-palletone/consensus/clique"
 	//
 	"github.com/palletone/go-palletone/common/bloombits"
-	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/dag/coredata"
-	//"github.com/palletone/go-palletone/vm"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
@@ -42,8 +39,11 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/core/node"
+	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
@@ -62,8 +62,7 @@ type PalletOne struct {
 	config *Config
 
 	// Channel for shutting down the service
-	shutdownChan  chan bool    // Channel for shutting down the PalletOne
-	stopDbUpgrade func() error // stop chain db sequential key upgrade
+	shutdownChan chan bool // Channel for shutting down the PalletOne
 
 	// Handlers
 	txPool          *coredata.TxPool
@@ -102,8 +101,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if err != nil {
 		return nil, err
 	}
-	stopDbUpgrade := upgradeDeduplicateData(chainDb)
-	/*chainConfig, genesisHash,*/ _, _, genesisErr := coredata.SetupGenesisBlock(chainDb, config.Genesis)
+	/*chainConfig, genesisHash,*/
+	_, _, genesisErr := gen.SetupGenesisBlock(chainDb, config.Genesis)
 
 	if _, ok := genesisErr.(*configure.ConfigCompatError); genesisErr != nil && !ok {
 		return nil, genesisErr
@@ -116,7 +115,6 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		accountManager: ctx.AccountManager,
 		engine:         CreateConsensusEngine(ctx, chainDb),
 		shutdownChan:   make(chan bool),
-		stopDbUpgrade:  stopDbUpgrade,
 		networkId:      config.NetworkId,
 		gasPrice:       config.GasPrice,
 		etherbase:      config.Etherbase,
@@ -295,9 +293,6 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 // Stop implements node.Service, terminating all internal goroutines used by the
 // PalletOne protocol.
 func (s *PalletOne) Stop() error {
-	if s.stopDbUpgrade != nil {
-		s.stopDbUpgrade()
-	}
 	s.bloomIndexer.Close()
 	s.protocolManager.Stop()
 	s.txPool.Stop()
