@@ -1,12 +1,12 @@
-// Copyright 2016 The go-palletone Authors
-// This file is part of go-palletone.
+// Copyright 2016 The go-ethereum Authors
+// This file is part of go-ethereum.
 //
-// go-palletone is free software: you can redistribute it and/or modify
+// go-ethereum is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// go-palletone is distributed in the hope that it will be useful,
+// go-ethereum is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
@@ -410,7 +410,7 @@ func accountDumpKey(ctx *cli.Context) error {
 	account, _ := utils.MakeAddress(ks, addr)
 	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
 	prvKey, _ := ks.DumpKey(account, pwd)
-	fmt.Printf("Your private key is : {%s}", hexutil.Encode( prvKey))
+	fmt.Printf("Your private key is : {%s}", hexutil.Encode(prvKey))
 	return nil
 }
 
