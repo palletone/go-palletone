@@ -156,7 +156,7 @@ func init() {
 		monitorCommand,
 		// See accountcmd.go:
 		accountCommand,
-		walletCommand,
+		// walletCommand,
 		// See consolecmd.go:
 		consoleCommand,
 		attachCommand,

@@ -51,23 +51,27 @@ import (
 
 // key: unit.hash(unit)
 type Unit struct {
-	UnitHeader   Header       `json:"unit_header"`  // unit header
-	Transactions Transactions `json:"transactions"` // transaction list
+	UnitHeader *Header      `json:"unit_header"`  // unit header
+	Txs        Transactions `json:"transactions"` // transaction list
 
-	UnitHash   common.Hash `json:"unit_hash"`   // unit hash
-	Size       uint64      `json:"size"`        // unit size
-	CreateTime time.Time   `json:"create_time"` // unit create time
+	UnitHash     common.Hash `json:"unit_hash"`   // unit hash
+	Size         uint64      `json:"size"`        // unit size
+	CreationDate time.Time   `json:"create_time"` // unit create time
 }
 
 type Header struct {
-	ParentUnits common.Hash `json:"parent_units"`
+	ParentUnit  common.Hash `json:"parent_unit"`
 	AssetIDs    []IDType    `json:"assets"`
 	Authors     []Author    `json:"authors"` // the unit creation authors
 	Witness     []Author    `json:"witness"`
 	GasLimit    uint64      `json:"gasLimit"`
 	GasUsed     uint64      `json:"gasUsed"`
-	Root        Hash        `json:"root"`
-	Index       ChainIndex  `json:"index"`
+	Root        common.Hash `json:"state_root"`
+	TxHash      common.Hash `json:"transactions_root"`
+	ReceiptHash common.Hash `json:"receipt_root"`
+	Time        *big.Int
+	Index       ChainIndex `json:"index"`
+	Extra       []byte     `json:"extra"`
 }
 
 type ChainIndex struct {
@@ -178,17 +182,15 @@ func (h *Header) Hash() common.Hash {
 }
 
 func (h *Header) Size() common.StorageSize {
-	return common.StorageSize(unsafe.Sizeof(*h)) + common.StorageSize(len(h.Extra)+(h.Difficulty.BitLen()+h.Number.BitLen()+h.Time.BitLen())/8)
+	return common.StorageSize(unsafe.Sizeof(*h)) + common.StorageSize(len(h.Extra)/8)
 }
 
 func NewUnit(header *Header, msgs []*Message, receipt []*Receipt) *Unit {
 	u := &Unit{
-		Head: CopyHeader(header),
+		UnitHeader: CopyHeader(header),
 	}
-	u.Version = "1.0"
-	u.Alt = "1"
+
 	u.CreationDate = time.Now()
-	u.Sequence = "good"
 	return u
 }
 
@@ -199,7 +201,7 @@ func (u *Unit) Hash() common.Hash {
 }
 
 //
-func (u *Unit) Header() *Header { return CopyHeader(u.Head) }
+func (u *Unit) Header() *Header { return CopyHeader(u.UnitHeader) }
 
 //  last unit
 func CurrentUnit() *Unit {
@@ -221,9 +223,9 @@ func CopyHeader(h *Header) *Header {
 	// if cpy.Difficulty = new(big.Int); h.Difficulty != nil {
 	// 	cpy.Difficulty.Set(h.Difficulty)
 	// }
-	if cpy.Number = new(big.Int); h.Number != nil {
-		cpy.Number.Set(h.Number)
-	}
+	// if cpy.Number = new(big.Int); h.Number != nil {
+	// 	cpy.Number.Set(h.Number)
+	// }
 	if len(h.Extra) > 0 {
 		cpy.Extra = make([]byte, len(h.Extra))
 		copy(cpy.Extra, h.Extra)
@@ -232,7 +234,7 @@ func CopyHeader(h *Header) *Header {
 }
 
 //
-func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }
+// func (u *Unit) NumberU64() uint64 { return u.UnitHeader.Number.Uint64() }
 
 // transactions
 func (u *Unit) Transactions() []*Transaction {
@@ -241,10 +243,6 @@ func (u *Unit) Transactions() []*Transaction {
 }
 
 //
-func (u *Unit) ParentHash() common.Hash {
-	return u.Head.ParentHash
-}
-
-func (u *Unit) GetBestParentUnit() string {
-	return ""
+func (u *Unit) ParentUnit() common.Hash {
+	return u.UnitHeader.ParentUnit
 }
