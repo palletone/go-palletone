@@ -3,7 +3,7 @@ package modules
 
 import (
 	"encoding/json"
-	"math/big"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -56,22 +56,19 @@ type Unit struct {
 
 	UnitHash     common.Hash `json:"unit_hash"`   // unit hash
 	Size         uint64      `json:"size"`        // unit size
-	CreationDate time.Time   `json:"create_time"` // unit create time
+	CreationDate time.Time   `json:"creation_time"` // unit create time
 }
 
 type Header struct {
-	ParentUnit  common.Hash `json:"parent_unit"`
-	AssetIDs    []IDType    `json:"assets"`
-	Authors     []Author    `json:"authors"` // the unit creation authors
-	Witness     []Author    `json:"witness"`
-	GasLimit    uint64      `json:"gasLimit"`
-	GasUsed     uint64      `json:"gasUsed"`
-	Root        common.Hash `json:"state_root"`
-	TxHash      common.Hash `json:"transactions_root"`
-	ReceiptHash common.Hash `json:"receipt_root"`
-	Time        *big.Int
-	Index       ChainIndex `json:"index"`
-	Extra       []byte     `json:"extra"`
+	ParentUnits []common.Hash `json:"parent_units"`
+	AssetIDs    []IDType      `json:"assets"`
+	Authors     []Author      `json:"authors"` // the unit creation authors
+	Witness     []Author      `json:"witness"`
+	GasLimit    uint64        `json:"gasLimit"`
+	GasUsed     uint64        `json:"gasUsed"`
+	Root        common.Hash   `json:"root"`
+	Index       ChainIndex    `json:"index"`
+	Extra  []byte `json:"extra"`
 }
 
 type ChainIndex struct {
@@ -83,17 +80,19 @@ type ChainIndex struct {
 type Transactions []*Transaction
 
 type Transaction struct {
-	TxHash       common.Hash `json:"tx_hash"`
-	TxMessages   []Message   `json:"messages"` //
-	Authors      []Author    `json:"authors"`  // the issuers of the transaction
-	CreationDate time.Time   `json:"creation_date"`
+	TxHash       common.Hash   `json:"tx_hash"`
+	TxMessages   []UnitMessage `json:"messages"` //
+	Authors      []Author      `json:"authors"`  // the issuers of the transaction
+	CreationDate time.Time     `json:"creation_date"`
 }
 
 // key: message.hash(message+timestamp)
-type Message struct {
-	App         string      `json:"app"`          // message type
-	PayloadHash common.Hash `json:"payload_hash"` // payload hash
-	Payload     interface{} `json:"payload"`      // the true transaction data
+type UnitMessage struct {
+	App          string       `json:"app"`          // message type
+	PayloadHash  common.Hash  `json:"payload_hash"` // payload hash
+	Memery       atomic.Value `json:"momery"`
+	Excutiontime uint         `json:"excution_time"`
+	Payload      interface{}  `json:"payload"` // the true transaction data
 }
 
 /************************** Payload Details ******************************************/
@@ -132,7 +131,6 @@ type ContractDeployPayload struct {
 	Config     []byte                 `json:"config"`      // configure xml file of contract instance parameters
 	ReadSet    map[string]interface{} `json:"read_set"`    // the set data of read, and value could be any type
 	WriteSet   map[string]interface{} `json:"write_set"`   // the set data of write, and value could be any type
-
 }
 
 // Contract invoke message
@@ -175,6 +173,51 @@ func (a *Authentifier) FromDB(info []byte) error {
 	return json.Unmarshal(info, a)
 }
 
+func NewUnit(header *Header, txs Transactions) *Unit {
+	u := &Unit{
+		UnitHeader: CopyHeader(header),
+		Txs:        CopyTransactions(txs),
+	}
+	u.CreationDate = time.Now()
+	return u
+}
+
+// CopyHeader creates a deep copy of a block header to prevent side effects from
+// modifying a header variable.
+func CopyHeader(h *Header) *Header {
+	cpy := *h
+
+	if len(h.ParentUnits) > 0 {
+		cpy.ParentUnits = make([]common.Hash, len(h.ParentUnits))
+		for i := 0; i < len(h.ParentUnits); i++ {
+			cpy.ParentUnits[i].Set(h.ParentUnits[i])
+		}
+	}
+
+	if len(h.AssetIDs) > 0 {
+		copy(cpy.AssetIDs, h.AssetIDs)
+	}
+
+	if len(h.Authors) > 0 {
+		copy(cpy.Authors, h.Authors)
+	}
+
+	if len(h.Witness) > 0 {
+		copy(cpy.Witness, h.Witness)
+	}
+
+	if len(h.Root) > 0 {
+		cpy.Root.Set(h.Root)
+	}
+
+	return &cpy
+}
+
+func CopyTransactions(txs Transactions) Transactions {
+	cpy := txs
+	return cpy
+}
+
 type UnitNonce [8]byte
 
 func (h *Header) Hash() common.Hash {
@@ -185,14 +228,8 @@ func (h *Header) Size() common.StorageSize {
 	return common.StorageSize(unsafe.Sizeof(*h)) + common.StorageSize(len(h.Extra)/8)
 }
 
-func NewUnit(header *Header, msgs []*Message, receipt []*Receipt) *Unit {
-	u := &Unit{
-		UnitHeader: CopyHeader(header),
-	}
 
-	u.CreationDate = time.Now()
-	return u
-}
+
 
 // return  unit'hash
 func (u *Unit) Hash() common.Hash {
@@ -208,33 +245,17 @@ func CurrentUnit() *Unit {
 	return &Unit{CreationDate: time.Now()}
 }
 
-// get unit  with hash & number or level.
-func GetUnit(hash common.Hash, number uint64) *Unit {
-	return &Unit{CreationDate: time.Now()}
-}
 
-// CopyHeader creates a deep copy of a block header to prevent side effects from
-// modifying a header variable.
-func CopyHeader(h *Header) *Header {
-	cpy := *h
-	if cpy.Time = new(big.Int); h.Time != nil {
-		cpy.Time.Set(h.Time)
-	}
-	// if cpy.Difficulty = new(big.Int); h.Difficulty != nil {
-	// 	cpy.Difficulty.Set(h.Difficulty)
-	// }
-	// if cpy.Number = new(big.Int); h.Number != nil {
-	// 	cpy.Number.Set(h.Number)
-	// }
-	if len(h.Extra) > 0 {
-		cpy.Extra = make([]byte, len(h.Extra))
-		copy(cpy.Extra, h.Extra)
-	}
-	return &cpy
-}
 
 //
-// func (u *Unit) NumberU64() uint64 { return u.UnitHeader.Number.Uint64() }
+//func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }
+func (u *Unit) Number() ChainIndex {
+	return u.UnitHeader.Index
+}
+
+
+
+
 
 // transactions
 func (u *Unit) Transactions() []*Transaction {
@@ -243,6 +264,8 @@ func (u *Unit) Transactions() []*Transaction {
 }
 
 //
-func (u *Unit) ParentUnit() common.Hash {
-	return u.UnitHeader.ParentUnit
+func (u *Unit) ParentHash() []common.Hash {
+	return u.UnitHeader.ParentUnits
 }
+
+

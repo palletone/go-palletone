@@ -100,7 +100,6 @@ var (
 		utils.DeveloperFlag,
 		utils.DeveloperPeriodFlag,
 		utils.TestnetFlag,
-		utils.RinkebyFlag,
 		utils.VMEnableDebugFlag,
 		utils.NetworkIdFlag,
 		utils.RPCCORSDomainFlag,
@@ -156,7 +155,7 @@ func init() {
 		monitorCommand,
 		// See accountcmd.go:
 		accountCommand,
-		// walletCommand,
+		walletCommand,
 		// See consolecmd.go:
 		consoleCommand,
 		attachCommand,

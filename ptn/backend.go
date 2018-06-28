@@ -21,26 +21,20 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"runtime"
 	"sync"
-	//"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/consensus"
-	"github.com/palletone/go-palletone/core/accounts"
-	//"github.com/palletone/go-palletone/consensus/clique"
-	//
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/coredata"
@@ -101,8 +95,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if err != nil {
 		return nil, err
 	}
-	/*chainConfig, genesisHash,*/
-	_, _, genesisErr := gen.SetupGenesisBlock(chainDb, config.Genesis)
+
+	_, genesisErr := gen.SetupGenesisBlock(chainDb, config.Genesis)
 
 	if _, ok := genesisErr.(*configure.ConfigCompatError); genesisErr != nil && !ok {
 		return nil, genesisErr
@@ -141,23 +135,6 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 	eth.ApiBackend.gpo = gasprice.NewOracle(eth.ApiBackend, gpoParams)
 	return eth, nil
-}
-
-func makeExtraData(extra []byte) []byte {
-	if len(extra) == 0 {
-		// create default extradata
-		extra, _ = rlp.EncodeToBytes([]interface{}{
-			uint(configure.VersionMajor<<16 | configure.VersionMinor<<8 | configure.VersionPatch),
-			"gptn",
-			runtime.Version(),
-			runtime.GOOS,
-		})
-	}
-	if uint64(len(extra)) > configure.MaximumExtraDataSize {
-		log.Warn("Miner extra data exceed limit", "extra", hexutil.Bytes(extra), "limit", configure.MaximumExtraDataSize)
-		extra = nil
-	}
-	return extra
 }
 
 // CreateDB creates the chain database.

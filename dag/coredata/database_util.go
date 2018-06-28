@@ -315,11 +315,6 @@ func GetBlockChainVersion(db DatabaseReader) int {
 func WriteBlockChainVersion(db ptndb.Putter, vsn int) {
 }
 
-// WriteChainConfig writes the chain config settings to the database.
-func WriteChainConfig(db ptndb.Putter, hash common.Hash, cfg *configure.ChainConfig) error {
-	return nil
-}
-
 // GetChainConfig will fetch the network settings based on the given hash.
 func GetChainConfig(db DatabaseReader, hash common.Hash) (*configure.ChainConfig, error) {
 	return &configure.ChainConfig{}, nil

@@ -19,90 +19,47 @@ package gen
 import (
 	"bytes"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
-	// "strings"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/common/math"
-	//"github.com/palletone/go-palletone/core/state"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	// "github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/coredata"
 )
 
 //go:generate gencodec -type Genesis -field-override genesisSpecMarshaling -out gen_genesis.go
 //go:generate gencodec -type GenesisAccount -field-override genesisAccountMarshaling -out gen_genesis_account.go
 
-var errGenesisNoConfig = errors.New("genesis has no chain configuration")
-
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.
-type Genesis struct {
-	Config     *configure.ChainConfig `json:"config"`
+/*type Genesis struct {
 	Nonce      uint64                 `json:"nonce"`
 	Timestamp  uint64                 `json:"timestamp"`
 	ExtraData  []byte                 `json:"extraData"`
-	GasLimit   uint64                 `json:"gasLimit"   gencodec:"required"`
-	Difficulty *big.Int               `json:"difficulty" gencodec:"required"`
+	GasLimit   uint64                 `json:"gasLimit"`
+	Difficulty *big.Int               `json:"difficulty"`
 	Mixhash    common.Hash            `json:"mixHash"`
 	Coinbase   common.Address         `json:"coinbase"`
-	Alloc      GenesisAlloc           `json:"alloc"      gencodec:"required"`
+}*/
 
-	// These fields are used for consensus tests. Please don't use them
-	// in actual genesis blocks.
-	Number     uint64      `json:"number"`
-	GasUsed    uint64      `json:"gasUsed"`
-	ParentHash common.Hash `json:"parentHash"`
+type SystemConfig struct {
+	MediatorSlot  int      `json:"mediatorSlot"`
+	MediatorCount int      `json:"mediatorCount"`
+	MediatorList  []string `json:"mediatorList"`
+	MediatorCycle int      `json:"mediatorCycle"`
+	DepositRate   float64  `json:"depositRate"`
 }
 
-// GenesisAlloc specifies the initial state that is part of the genesis block.
-type GenesisAlloc map[common.Address]GenesisAccount
-
-func (ga *GenesisAlloc) UnmarshalJSON(data []byte) error {
-	m := make(map[common.Address]GenesisAccount)
-	if err := json.Unmarshal(data, &m); err != nil {
-		return err
-	}
-	*ga = make(GenesisAlloc)
-	for addr, a := range m {
-		(*ga)[common.Address(addr)] = a
-	}
-	return nil
-}
-
-// GenesisAccount is an account in the state of the genesis block.
-type GenesisAccount struct {
-	Code       []byte                      `json:"code,omitempty"`
-	Storage    map[common.Hash]common.Hash `json:"storage,omitempty"`
-	Balance    *big.Int                    `json:"balance" gencodec:"required"`
-	Nonce      uint64                      `json:"nonce,omitempty"`
-	PrivateKey []byte                      `json:"secretKey,omitempty"` // for tests
-}
-
-// field type overrides for gencodec
-type genesisSpecMarshaling struct {
-	Nonce      math.HexOrDecimal64
-	Timestamp  math.HexOrDecimal64
-	ExtraData  hexutil.Bytes
-	GasLimit   math.HexOrDecimal64
-	GasUsed    math.HexOrDecimal64
-	Number     math.HexOrDecimal64
-	Difficulty *math.HexOrDecimal256
-	Alloc      map[common.Address]GenesisAccount
-}
-
-type genesisAccountMarshaling struct {
-	Code       hexutil.Bytes
-	Balance    *math.HexOrDecimal256
-	Nonce      math.HexOrDecimal64
-	Storage    map[storageJSON]storageJSON
-	PrivateKey hexutil.Bytes
+type Genesis struct {
+	Height       string       `json:"height"`
+	Version      string       `json:"version"`
+	TokenAmount  uint64       `json:"tokenAmount"`
+	TokenDecimal int          `json:"tokenDecimal"`
+	ChainID      int          `json:"chainId"`
+	TokenHolder  string       `json:"tokenHolder"`
+	SystemConfig SystemConfig `json:"systemConfig"`
 }
 
 // storageJSON represents a 256 bit byte array, but allows less than 256 bits when
@@ -149,11 +106,7 @@ func (e *GenesisMismatchError) Error() string {
 // error is a *configure.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-func SetupGenesisBlock(db ptndb.Database, genesis *Genesis) (*configure.ChainConfig, common.Hash, error) {
-	if genesis != nil && genesis.Config == nil {
-		return configure.AllEthashProtocolChanges, common.Hash{}, errGenesisNoConfig
-	}
-
+func SetupGenesisBlock(db ptndb.Database, genesis *Genesis) (common.Hash, error) {
 	// Just commit the new block if there is no stored genesis block.
 	stored := coredata.GetCanonicalHash(db, 0)
 	if (stored == common.Hash{}) {
@@ -163,61 +116,42 @@ func SetupGenesisBlock(db ptndb.Database, genesis *Genesis) (*configure.ChainCon
 		} else {
 			log.Info("Writing custom genesis block")
 		}
-		//block, err := genesis.Commit(db)
-		//return genesis.Config, block.Hash(), err
-		return nil, common.Hash{}, nil
+		/*would recover
+		block, err := genesis.Commit(db)
+		return genesis.Config, block.Hash(), err*/
+		return common.Hash{}, nil
 	}
 
 	// Check whether the genesis block is already written.
 	if genesis != nil {
-		hash := common.Hash{} //genesis.ToBlock(nil).Hash() //wouldrecover
+		hash := common.Hash{} //genesis.ToBlock(nil).Hash() //would recover
 		if hash != stored {
-			return genesis.Config, hash, &GenesisMismatchError{stored, hash}
+			return hash, &GenesisMismatchError{stored, hash}
 		}
-	}
-
-	// Get the existing chain configuration.
-	newcfg := genesis.configOrDefault(stored)
-	storedcfg, err := coredata.GetChainConfig(db, stored)
-	if err != nil {
-		if err == coredata.ErrChainConfigNotFound {
-			// This case happens if a genesis write was interrupted.
-			log.Warn("Found genesis block without chain config")
-			err = coredata.WriteChainConfig(db, stored, newcfg)
-		}
-		return newcfg, stored, err
-	}
-	// Special case: don't change the existing config of a non-mainnet chain if no new
-	// config is supplied. These chains would get AllProtocolChanges (and a compat error)
-	// if we just continued here.
-	if genesis == nil && stored != configure.MainnetGenesisHash {
-		return storedcfg, stored, nil
 	}
 
 	// Check config compatibility and write the config. Compatibility errors
 	// are returned to the caller unless we're already at block zero.
 	height := coredata.GetBlockNumber(db, coredata.GetHeadHeaderHash(db))
 	if height == coredata.MissingNumber {
-		return newcfg, stored, fmt.Errorf("missing block number for head header hash")
+		return common.Hash{}, errors.New("missing block number for head header hash")
 	}
+	/*would recover check the genesis config height
 	compatErr := storedcfg.CheckCompatible(newcfg, height)
 	if compatErr != nil && height != 0 && compatErr.RewindTo != 0 {
-		return newcfg, stored, compatErr
-	}
-	return newcfg, stored, coredata.WriteChainConfig(db, stored, newcfg)
+		return common.Hash{}, compatErr
+	}*/
+	return common.Hash{}, nil
 }
 
-func (g *Genesis) configOrDefault(ghash common.Hash) *configure.ChainConfig {
-	switch {
-	case g != nil:
-		return g.Config
-	case ghash == configure.MainnetGenesisHash:
-		return configure.MainnetChainConfig
-	case ghash == configure.TestnetGenesisHash:
-		return configure.TestnetChainConfig
-	default:
-		return configure.AllEthashProtocolChanges
-	}
+// DefaultGenesisBlock returns the PalletOne main net genesis block.
+func DefaultGenesisBlock() *Genesis {
+	return &Genesis{}
+}
+
+// DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
+func DefaultTestnetGenesisBlock() *Genesis {
+	return &Genesis{}
 }
 
 /*
@@ -303,165 +237,4 @@ func (g *Genesis) MustCommit(db ptndb.Database) *types.Block {
 	}
 	return block
 }
-
-// GenesisBlockForTesting creates and writes a block in which addr has the given wei balance.
-func GenesisBlockForTesting(db ptndb.Database, addr common.Address, balance *big.Int) *types.Block {
-	g := Genesis{Alloc: GenesisAlloc{addr: {Balance: balance}}}
-	return g.MustCommit(db)
-}
 */
-
-// ToBlock creates the genesis block and writes state of a genesis specification
-// to the given database (or discards it if nil).
-func (g *Genesis) ToBlock(db ptndb.Database) {
-	/*would recover
-	if db == nil {
-		db, _ = ptndb.NewMemDatabase()
-	}
-	statedb, _ := state.New(common.Hash{}, state.NewDatabase(db))
-	for addr, account := range g.Alloc {
-		statedb.AddBalance(addr, account.Balance)
-		statedb.SetCode(addr, account.Code)
-		statedb.SetNonce(addr, account.Nonce)
-		for key, value := range account.Storage {
-			statedb.SetState(addr, key, value)
-		}
-	}
-	root := statedb.IntermediateRoot(false)
-	head := &types.Header{
-		Number:     new(big.Int).SetUint64(g.Number),
-		Nonce:      types.EncodeNonce(g.Nonce),
-		Time:       new(big.Int).SetUint64(g.Timestamp),
-		ParentHash: g.ParentHash,
-		Extra:      g.ExtraData,
-		GasLimit:   g.GasLimit,
-		GasUsed:    g.GasUsed,
-		Difficulty: g.Difficulty,
-		MixDigest:  g.Mixhash,
-		Coinbase:   g.Coinbase,
-		Root:       root,
-	}
-	if g.GasLimit == 0 {
-		head.GasLimit = configure.GenesisGasLimit
-	}
-	if g.Difficulty == nil {
-		head.Difficulty = configure.GenesisDifficulty
-	}
-	statedb.Commit(false)
-	statedb.Database().TrieDB().Commit(root, true)
-
-	return types.NewBlock(head, nil, nil, nil)
-	*/
-	return
-}
-
-// Commit writes the block and state of a genesis specification to the database.
-// The block is committed as the canonical head block.
-func (g *Genesis) Commit(db ptndb.Database) error {
-	/*would recover
-	block := g.ToBlock(db)
-	if block.Number().Sign() != 0 {
-		return nil, fmt.Errorf("can't commit genesis block with number > 0")
-	}
-	if err := WriteTd(db, block.Hash(), block.NumberU64(), g.Difficulty); err != nil {
-		return nil, err
-	}
-	if err := WriteBlock(db, block); err != nil {
-		return nil, err
-	}
-	if err := WriteBlockReceipts(db, block.Hash(), block.NumberU64(), nil); err != nil {
-		return nil, err
-	}
-	if err := WriteCanonicalHash(db, block.Hash(), block.NumberU64()); err != nil {
-		return nil, err
-	}
-	if err := WriteHeadBlockHash(db, block.Hash()); err != nil {
-		return nil, err
-	}
-	if err := WriteHeadHeaderHash(db, block.Hash()); err != nil {
-		return nil, err
-	}
-	config := g.Config
-	if config == nil {
-		config = configure.AllEthashProtocolChanges
-	}
-	return block, WriteChainConfig(db, block.Hash(), config)
-	*/
-	return nil
-}
-
-// DefaultGenesisBlock returns the PalletOne main net genesis block.
-func DefaultGenesisBlock() *Genesis {
-	return &Genesis{
-		Config:     configure.MainnetChainConfig,
-		Nonce:      66,
-		ExtraData:  hexutil.MustDecode("0x11bbe8db4e347b4e8c937c1c8370e4b5ed33adb3db69cbdb7a38e1e50b1b82fa"),
-		GasLimit:   5000,
-		Difficulty: big.NewInt(17179869184),
-		Alloc:      decodePrealloc(mainnetAllocData),
-	}
-}
-
-// DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
-func DefaultTestnetGenesisBlock() *Genesis {
-	return &Genesis{
-		Config:     configure.TestnetChainConfig,
-		Nonce:      66,
-		ExtraData:  hexutil.MustDecode("0x3535353535353535353535353535353535353535353535353535353535353535"),
-		GasLimit:   16777216,
-		Difficulty: big.NewInt(1048576),
-		Alloc:      decodePrealloc(testnetAllocData),
-	}
-}
-
-// DefaultRinkebyGenesisBlock returns the Rinkeby network genesis block.
-func DefaultRinkebyGenesisBlock() *Genesis {
-	return &Genesis{
-		Config:     configure.RinkebyChainConfig,
-		Timestamp:  1492009146,
-		ExtraData:  hexutil.MustDecode("0x52657370656374206d7920617574686f7269746168207e452e436172746d616e42eb768f2244c8811c63729a21a3569731535f067ffc57839b00206d1ad20c69a1981b489f772031b279182d99e65703f0076e4812653aab85fca0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-		GasLimit:   4700000,
-		Difficulty: big.NewInt(1),
-		Alloc:      decodePrealloc(rinkebyAllocData),
-	}
-}
-
-// DeveloperGenesisBlock returns the 'geth --dev' genesis block. Note, this must
-// be seeded with the
-func DeveloperGenesisBlock(period uint64, faucet common.Address) *Genesis {
-	// Override the default period to the user requested one
-	config := *configure.AllCliqueProtocolChanges
-	//config.Clique.Period = period
-
-	// Assemble and return the genesis with the precompiles and faucet pre-funded
-	return &Genesis{
-		Config:     &config,
-		ExtraData:  append(append(make([]byte, 32), faucet[:]...), make([]byte, 65)...),
-		GasLimit:   6283185,
-		Difficulty: big.NewInt(1),
-		Alloc: map[common.Address]GenesisAccount{
-			common.BytesToAddress([]byte{1}): {Balance: big.NewInt(1)}, // ECRecover
-			common.BytesToAddress([]byte{2}): {Balance: big.NewInt(1)}, // SHA256
-			common.BytesToAddress([]byte{3}): {Balance: big.NewInt(1)}, // RIPEMD
-			common.BytesToAddress([]byte{4}): {Balance: big.NewInt(1)}, // Identity
-			common.BytesToAddress([]byte{5}): {Balance: big.NewInt(1)}, // ModExp
-			common.BytesToAddress([]byte{6}): {Balance: big.NewInt(1)}, // ECAdd
-			common.BytesToAddress([]byte{7}): {Balance: big.NewInt(1)}, // ECScalarMul
-			common.BytesToAddress([]byte{8}): {Balance: big.NewInt(1)}, // ECPairing
-			faucet: {Balance: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))},
-		},
-	}
-}
-
-func decodePrealloc(data string) GenesisAlloc {
-	// var p []struct{ Addr, Balance *big.Int }
-	// if err := rlp.NewStream(strings.NewReader(data), 0).Decode(&p); err != nil {
-	// 	panic(err)
-	// }
-	// ga := make(GenesisAlloc, len(p))
-	// for _, account := range p {
-	// 	ga[common.BigToAddress(account.Addr)] = GenesisAccount{Balance: account.Balance}
-	// }
-	// return ga
-	return nil
-}
