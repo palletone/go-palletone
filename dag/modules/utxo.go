@@ -6,9 +6,7 @@ type Utxo struct {
 	AccountId 	string `json:"account_id"` 	// 所属人id
 	UnitId	  	string `json:"unit_id"`	 	// unit id
 	Amount    	uint64 `json:"amount"`     	// 数量
-	AssertId  	uint32 `json:"assert_id"`  	// 资产类别
-	UniqueId  	uint64 `json:"unique_id"`	// every token has its unique id
-	ChainId	  	uint32 `json:"chain_id"`	// main chain id or sub-chain id
+	Asset  		Asset  `json:"asset"`  		// 资产类别
 	Alias     	string `json:"alias"`      	// 资产别名
 	Program   	string `json:"program"`    	// 要执行的代码段
 	Key       	string `json:"key"`        	// 索引值
@@ -16,10 +14,10 @@ type Utxo struct {
 }
 
 type Input struct {
-	Unit               string 	`json:"unit"`
+	TxHash             Hash 	`json:"unit"`
 	MessageIndex       uint16 	`json:"message_index"`
 	InputIndex         uint16 	`json:"input_index"`
-	Asset              string 	`json:"asset"`
+	Asset              Asset 	`json:"asset"`
 	Denomination       uint64 	`json:"denomination"` 		// default 1
 	IsUnique           int16  	`json:"is_unique"`    		//default 1
 	TypeEnum           string 	`json:"type_unum"`    		//'transfer','headers_commission','witnessing','issue'
@@ -35,10 +33,10 @@ type Input struct {
 
 type Output struct {
 	OutputId     uint64 	`json:"output_id"`
-	Unit         string 	`json:"unit"`
+	TxHash  	 Hash 		`json:"unit"`
 	MessageIndex uint16    	`json:"message_index"`
 	OutputIndex  uint16    	`json:"output_index"`
-	Asset        string 	`json:"asset"`
+	Asset      	 Asset 		`json:"asset"`
 	Denomination uint64    	`json:"denomination"` 	// default 1
 	Amount       uint64  	`json:"amount"`
 	Address      string 	`json:"address"`
@@ -51,4 +49,10 @@ type Output struct {
 
 type SpendProof struct {
 	Unit string `json:"unit"`
+}
+
+type Asset struct {
+	AssertId  	IDType 	`json:"assert_id"`  	// 资产类别
+	UniqueId  	IDType 	`json:"unique_id"`	// every token has its unique id
+	ChainId	  	IDType 	`json:"chain_id"`	// main chain id or sub-chain id
 }

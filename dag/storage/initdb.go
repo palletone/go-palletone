@@ -3,7 +3,7 @@ package storage
 import (
 	"log"
 
-	palletdb "github.com/palletone/go-palletone/common/pandb"
+	palletdb "github.com/palletone/go-palletone/common/ptndb"
 )
 
 var (
@@ -30,6 +30,10 @@ var (
 	SPEED_PROOFS                     = []byte("sp")
 	EAENED_HEADERS_COMMISSION        = "earned_headers_commossion"
 	ALL_UNITS                        = "array_units"
+
+	// state storage
+	CONTRACT_ATTRI					= []byte("contract_")	// like contract_[contract address]_[key]
+
 )
 
 func Init(path string) *palletdb.LDBDatabase {
