@@ -27,7 +27,7 @@ func (list FreeUnitsList) Less(i, j int) bool {
 	return false
 }
 func (list FreeUnitsList) Swap(i, j int) {
-	var temp *Unit = list[i]
+	var temp *FreeUnits = list[i]
 	list[i] = list[j]
 	list[j] = temp
 }
