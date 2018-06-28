@@ -19,13 +19,14 @@ package common
 import (
 	// "encoding/hex"
 	//"encoding/json"
+	"errors"
 	"fmt"
 	// "math/big"
 	// "math/rand"
 	"reflect"
 	// "strings"
 
-	// "github.com/palletone/go-palletone/common/crypto/sha3"
+	"github.com/palletone/go-palletone/common/base58"
 	"github.com/palletone/go-palletone/common/hexutil"
 )
 
@@ -41,6 +42,35 @@ var (
 
 // Address represents the 20 byte address of an PalletOne account.
 type Address [AddressLength]byte
+type AddressType byte
+
+const (
+	ErrorAddress  AddressType = iota
+	PublicKeyHash AddressType = 1
+	ScriptHash    AddressType = 2
+	ContractHash  AddressType = 3
+)
+
+func (a Address) Validate() (AddressType, error) {
+	if a[0] != byte('P') {
+		return ErrorAddress, errors.New("Address must start with 'P'")
+	}
+	_, version, err := base58.CheckDecode(string(a[1:]))
+	if err != nil {
+		return ErrorAddress, err
+	}
+	switch version {
+	case 0:
+		return PublicKeyHash, nil
+	case 5:
+		return ScriptHash, nil
+	case 28:
+		return ContractHash, nil
+	default:
+		return ErrorAddress, errors.New("Invalid address type")
+	}
+
+}
 
 func BytesToAddress(b []byte) Address {
 	var a Address
