@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log"
 
-	palletdb "github.com/palletone/go-palletone/common/pandb"
+	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/constants"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -15,7 +15,8 @@ import (
 var (
 	Dbconn             *palletdb.LDBDatabase = nil
 	AssocUnstableUnits map[string]modules.Joint
-	DBPath             string = "/Users/jay/code/gocode/src/palletone/bin/leveldb"
+	//DBPath             string = "/Users/jay/code/gocode/src/palletone/bin/leveldb"
+	DBPath             string = config.DefaultConfig.DbPath
 )
 
 func SaveJoint(objJoint *modules.Joint, objValidationState *modules.ValidationState, onDone func()) (err error) {

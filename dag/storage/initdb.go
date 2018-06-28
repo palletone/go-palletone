@@ -3,7 +3,7 @@ package storage
 import (
 	"log"
 
-	palletdb "github.com/palletone/go-palletone/common/pandb"
+	palletdb "github.com/palletone/go-palletone/common/ptndb"
 )
 
 var (
