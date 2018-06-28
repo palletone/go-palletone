@@ -53,7 +53,7 @@ const (
 
 func (a Address) Validate() (AddressType, error) {
 	if a[0] != byte('P') {
-		return ErrorAddress, errors.New("Address must start with 'P'")
+		return ErrorAddress, errors.New("PalletOne address must start with 'P'")
 	}
 	_, version, err := base58.CheckDecode(string(a[1:]))
 	if err != nil {
@@ -71,7 +71,11 @@ func (a Address) Validate() (AddressType, error) {
 	}
 
 }
-
+func IsValidAddress(s string) bool {
+	addr := StringToAddress(s)
+	_, err := addr.Validate()
+	return err == nil
+}
 func BytesToAddress(b []byte) Address {
 	var a Address
 	a.SetBytes(b)
