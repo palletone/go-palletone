@@ -769,17 +769,17 @@ func (self *ProtocolManager) txBroadcastLoop() {
 	for {
 		time.Sleep(time.Duration(5) * time.Second)
 	}
-	/*
-		for {
-			select {
-			case event := <-self.txCh:
-				self.BroadcastTx(event.Tx.Hash(), event.Tx)
+	/*would recover
+	for {
+		select {
+		case event := <-self.txCh:
+			self.BroadcastTx(event.Tx.Hash(), event.Tx)
 
-			// Err() channel will be closed when unsubscribing.
-			case <-self.txSub.Err():
-				return
-			}
-		}*/
+		// Err() channel will be closed when unsubscribing.
+		case <-self.txSub.Err():
+			return
+		}
+	}*/
 }
 
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
