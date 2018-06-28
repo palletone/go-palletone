@@ -51,8 +51,8 @@ import (
 
 // key: unit.hash(unit)
 type Unit struct {
-	UnitHeader   Header       `json:"unit_header"`  // unit header
-	Transactions Transactions `json:"transactions"` // transaction list
+	UnitHeader Header       `json:"unit_header"`  // unit header
+	Txs        Transactions `json:"transactions"` // transaction list
 
 	UnitHash   common.Hash `json:"unit_hash"`   // unit hash
 	Size       uint64      `json:"size"`        // unit size
@@ -66,7 +66,7 @@ type Header struct {
 	Witness     []Author    `json:"witness"`
 	GasLimit    uint64      `json:"gasLimit"`
 	GasUsed     uint64      `json:"gasUsed"`
-	Root        Hash        `json:"root"`
+	Root        common.Hash `json:"root"`
 	Index       ChainIndex  `json:"index"`
 }
 

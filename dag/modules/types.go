@@ -1,4 +1,4 @@
 package modules
 
-type 	Hash 		[]byte
-type 	IDType		[256]byte
+// type 	Hash 		[]byte
+type IDType [256]byte
