@@ -295,14 +295,14 @@ func (ks *KeyStore) SignHashWithPassphrase(a accounts.Account, passphrase string
 	defer zeroKey(key.PrivateKey)
 	return crypto.Sign(hash, key.PrivateKey)
 }
-func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase string, hash []byte,signature []byte) (pass bool, err error) {
+func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase string, hash []byte, signature []byte) (pass bool, err error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
 	if err != nil {
 		return false, err
 	}
 	defer zeroKey(key.PrivateKey)
-	pk:=key.PrivateKey.PublicKey
-	return crypto.VerifySignature(crypto.FromECDSAPub( &pk),hash,signature),nil
+	pk := key.PrivateKey.PublicKey
+	return crypto.VerifySignature(crypto.FromECDSAPub(&pk), hash, signature), nil
 }
 
 // SignTxWithPassphrase signs the transaction if the private key matching the
@@ -446,7 +446,7 @@ func (ks *KeyStore) DumpKey(a accounts.Account, passphrase string) (privateKey [
 	if err != nil {
 		return nil, err
 	}
-	return crypto.FromECDSA(key.PrivateKey),nil
+	return crypto.FromECDSA(key.PrivateKey), nil
 
 }
 

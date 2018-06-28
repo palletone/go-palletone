@@ -1,5 +1,5 @@
 // Copyright 2016 The go-ethereum Authors
-// This file is part of go-ethereum.
+// This file is part of go-palletone.
 //
 // go-ethereum is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,40 +31,40 @@ import (
 )
 
 var (
-	walletCommand = cli.Command{
-		Name:      "wallet",
-		Usage:     "Manage PalletOne presale wallets",
-		ArgsUsage: "",
-		Category:  "ACCOUNT COMMANDS",
-		Description: `
-    gptn wallet import /path/to/my/presale.wallet
+	// 	walletCommand = cli.Command{
+	// 		Name:      "wallet",
+	// 		Usage:     "Manage PalletOne presale wallets",
+	// 		ArgsUsage: "",
+	// 		Category:  "ACCOUNT COMMANDS",
+	// 		Description: `
+	//     gptn wallet import /path/to/my/presale.wallet
 
-will prompt for your password and imports your ether presale account.
-It can be used non-interactively with the --password option taking a
-passwordfile as argument containing the wallet password in plaintext.`,
-		Subcommands: []cli.Command{
-			{
+	// will prompt for your password and imports your ether presale account.
+	// It can be used non-interactively with the --password option taking a
+	// passwordfile as argument containing the wallet password in plaintext.`,
+	// 		Subcommands: []cli.Command{
+	// 			{
 
-				Name:      "import",
-				Usage:     "Import PalletOne presale wallet",
-				ArgsUsage: "<keyFile>",
-				Action:    utils.MigrateFlags(importWallet),
-				Category:  "ACCOUNT COMMANDS",
-				Flags: []cli.Flag{
-					utils.DataDirFlag,
-					utils.KeyStoreDirFlag,
-					utils.PasswordFileFlag,
-					utils.LightKDFFlag,
-				},
-				Description: `
-	gptn wallet [options] /path/to/my/presale.wallet
+	// 				Name:      "import",
+	// 				Usage:     "Import PalletOne presale wallet",
+	// 				ArgsUsage: "<keyFile>",
+	// 				Action:    utils.MigrateFlags(importWallet),
+	// 				Category:  "ACCOUNT COMMANDS",
+	// 				Flags: []cli.Flag{
+	// 					utils.DataDirFlag,
+	// 					utils.KeyStoreDirFlag,
+	// 					utils.PasswordFileFlag,
+	// 					utils.LightKDFFlag,
+	// 				},
+	// 				Description: `
+	// 	gptn wallet [options] /path/to/my/presale.wallet
 
-will prompt for your password and imports your ether presale account.
-It can be used non-interactively with the --password option taking a
-passwordfile as argument containing the wallet password in plaintext.`,
-			},
-		},
-	}
+	// will prompt for your password and imports your ether presale account.
+	// It can be used non-interactively with the --password option taking a
+	// passwordfile as argument containing the wallet password in plaintext.`,
+	// 			},
+	// 		},
+	// 	}
 
 	accountCommand = cli.Command{
 		Name:     "account",
@@ -244,7 +244,7 @@ func accountList(ctx *cli.Context) error {
 	var index int
 	for _, wallet := range stack.AccountManager().Wallets() {
 		for _, account := range wallet.Accounts() {
-			fmt.Printf("Account #%d: {%x} %s\n", index, account.Address, &account.URL)
+			fmt.Printf("Account #%d: {%s} %s\n", index, account.Address.Str(), &account.URL)
 			index++
 		}
 	}
@@ -410,7 +410,7 @@ func accountDumpKey(ctx *cli.Context) error {
 	account, _ := utils.MakeAddress(ks, addr)
 	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
 	prvKey, _ := ks.DumpKey(account, pwd)
-	fmt.Printf("Your private key is : {%s}", hexutil.Encode(prvKey))
+	fmt.Printf("Your private key is : {%s}", hexutil.Encode( prvKey))
 	return nil
 }
 
@@ -483,6 +483,6 @@ func accountImport(ctx *cli.Context) error {
 	if err != nil {
 		utils.Fatalf("Could not create the account: %v", err)
 	}
-	fmt.Printf("Address: {%x}\n", acct.Address)
+	fmt.Printf("Address: {%s}\n", acct.Address)
 	return nil
 }
