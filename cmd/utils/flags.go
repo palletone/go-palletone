@@ -25,7 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	// "strconv"
+	"strconv"
 	"strings"
 
 	"github.com/palletone/go-palletone/common"
@@ -707,12 +707,25 @@ func makeDatabaseHandles() int {
 // a key index in the key store to an internal account representation.
 func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error) {
 	// If the specified account is a valid address, return it
-	if common.IsValidAddress(account) {
-		return accounts.Account{Address: common.StringToAddress(account)}, nil
-	} else {
-		return accounts.Account{}, fmt.Errorf("invalid account address: %s", account)
+	if common.IsHexAddress(account) {
+		return accounts.Account{Address: common.HexToAddress(account)}, nil
 	}
+	// Otherwise try to interpret the account as a keystore index
+	index, err := strconv.Atoi(account)
+	if err != nil || index < 0 {
+		return accounts.Account{}, fmt.Errorf("invalid account address or index %q", account)
+	}
+	log.Warn("-------------------------------------------------------------------")
+	log.Warn("Referring to accounts by order in the keystore folder is dangerous!")
+	log.Warn("This functionality is deprecated and will be removed in the future!")
+	log.Warn("Please use explicit addresses! (can search via `gptn account list`)")
+	log.Warn("-------------------------------------------------------------------")
 
+	accs := ks.Accounts()
+	if len(accs) <= index {
+		return accounts.Account{}, fmt.Errorf("index %d higher than number of accounts %d", index, len(accs))
+	}
+	return accs[index], nil
 }
 
 // setEtherbase retrieves the etherbase either from the directly specified

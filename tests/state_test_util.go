@@ -82,7 +82,7 @@ type stEnv struct {
 }
 
 type stEnvMarshaling struct {
-	Coinbase   common.Address
+	Coinbase   common.UnprefixedAddress
 	Difficulty *math.HexOrDecimal256
 	GasLimit   math.HexOrDecimal64
 	Number     math.HexOrDecimal64
