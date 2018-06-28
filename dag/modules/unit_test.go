@@ -6,13 +6,10 @@ import (
 )
 
 func TestNewUnit(t *testing.T) {
-	unit := NewUnit()
+	msgs := make([]*Message, 0)
+	recp := make([]*Receipt, 0)
+	unit := NewUnit(&Header{}, msgs, recp)
 	log.Println("unit", unit)
-	if unit.IsOnMainChain {
-		log.Println("Is On Main Chain:", true)
-	} else {
-		log.Println("Is On Main Chain", false)
-	}
 }
 
 // test interface
