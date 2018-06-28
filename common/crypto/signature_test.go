@@ -158,3 +158,25 @@ func BenchmarkDecompressPubkey(b *testing.B) {
 		}
 	}
 }
+
+func TestSignVerify(t *testing.T) {
+	//sign := "0xda850b649658b2863559c338fdd99858acc20884f1b1f097d09735346b059b111e6c0f46661d45987e60a81fc4329b357c609dde1f5da187cdbeb5a57cc61f8d01"
+	text := "a"
+	hash := Keccak256([]byte(text))
+
+	privateKey := "f4b430cd1007bf3309a00fdda81c58131a1e0a41f6a72eab3291e561342ae1b3"
+	// privateKeyBytes := hexutil.MustDecode(privateKey)
+	prvKey, _ := HexToECDSA(privateKey)
+	pubKey := FromECDSAPub(&prvKey.PublicKey)
+
+	//signB, _ := hexutil.Decode(sign)
+	signature, _ := Sign(hash, prvKey)
+	t.Log("Signature is: " + hexutil.Encode(signature))
+
+	pass := VerifySignature(pubKey, hash, signature)
+	if pass {
+		t.Log("Pass")
+	} else {
+		t.Error("No Pass")
+	}
+}

@@ -295,6 +295,15 @@ func (ks *KeyStore) SignHashWithPassphrase(a accounts.Account, passphrase string
 	defer zeroKey(key.PrivateKey)
 	return crypto.Sign(hash, key.PrivateKey)
 }
+func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase string, hash []byte,signature []byte) (pass bool, err error) {
+	_, key, err := ks.getDecryptedKey(a, passphrase)
+	if err != nil {
+		return false, err
+	}
+	defer zeroKey(key.PrivateKey)
+	pk:=key.PrivateKey.PublicKey
+	return crypto.VerifySignature(crypto.FromECDSAPub( &pk),hash,signature),nil
+}
 
 // SignTxWithPassphrase signs the transaction if the private key matching the
 // given address can be decrypted with the given passphrase.
@@ -430,6 +439,15 @@ func (ks *KeyStore) Export(a accounts.Account, passphrase, newPassphrase string)
 		N, P = StandardScryptN, StandardScryptP
 	}
 	return EncryptKey(key, newPassphrase, N, P)
+}
+
+func (ks *KeyStore) DumpKey(a accounts.Account, passphrase string) (privateKey []byte, err error) {
+	_, key, err := ks.getDecryptedKey(a, passphrase)
+	if err != nil {
+		return nil, err
+	}
+	return crypto.FromECDSA(key.PrivateKey),nil
+
 }
 
 // Import stores the given encrypted JSON key into the key directory.
