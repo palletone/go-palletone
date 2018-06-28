@@ -183,7 +183,8 @@ func initGenesis(ctx *cli.Context) error {
 	if err != nil {
 		utils.Fatalf("Failed to open database: %v", err)
 	}
-	_, hash, err := gen.SetupGenesisBlock(chaindb, genesis)
+	defer chaindb.Close()
+	hash, err := gen.SetupGenesisBlock(chaindb, genesis)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis block: %v", err)
 	}
