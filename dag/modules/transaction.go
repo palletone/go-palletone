@@ -27,6 +27,7 @@ type PoolTransaction struct {
 	creationdate time.Time `json:"creation_date"`
 }
 type txdata struct {
+	AccountNonce      uint64          `json:"account_nonce"`
 	From              *common.Address `json:"from"`
 	Price             *big.Int        `json:"price"`              // 交易费
 	Recipient         *common.Address `json:"to"       rlp:"nil"` // nil means contract creation
@@ -147,7 +148,7 @@ func (tx *PoolTransaction) UnmarshalJSON(input []byte) error {
 
 func (tx *PoolTransaction) Data() []byte { return common.CopyBytes(tx.data.Payload) }
 
-// func (tx *PoolTransaction ) Gas() uint64      { return tx.data.GasLimit }
+func (tx *PoolTransaction) Nonce() uint64            { return tx.data.AccountNonce }
 func (tx *PoolTransaction) Price() *big.Int          { return new(big.Int).Set(tx.data.Price) }
 func (tx *PoolTransaction) Value() *big.Int          { return new(big.Int).Set(tx.data.Amount) }
 func (tx *PoolTransaction) Account() *common.Address { return tx.data.From }
@@ -305,6 +306,13 @@ func TxDifference(a, b PoolTransactions) (keep PoolTransactions) {
 
 	return keep
 }
+
+// single account, otherwise a nonce comparison doesn't make much sense.
+type TxByNonce PoolTransactions
+
+func (s TxByNonce) Len() int           { return len(s) }
+func (s TxByNonce) Less(i, j int) bool { return s[i].data.AccountNonce < s[j].data.AccountNonce }
+func (s TxByNonce) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
 // TxByPrice implements both the sort and the heap interface, making it useful
 // for all at once sorting as well as individually adding and removing elements.

@@ -49,16 +49,6 @@ import (
 //}
 /***************************** end of update **********************************************/
 
-// key: unit.hash(unit)
-type Unit struct {
-	UnitHeader *Header      `json:"unit_header"`  // unit header
-	Txs        Transactions `json:"transactions"` // transaction list
-
-	UnitHash     common.Hash `json:"unit_hash"`   // unit hash
-	Size         uint64      `json:"size"`        // unit size
-	CreationDate time.Time   `json:"creation_time"` // unit create time
-}
-
 type Header struct {
 	ParentUnits []common.Hash `json:"parent_units"`
 	AssetIDs    []IDType      `json:"assets"`
@@ -67,8 +57,40 @@ type Header struct {
 	GasLimit    uint64        `json:"gasLimit"`
 	GasUsed     uint64        `json:"gasUsed"`
 	Root        common.Hash   `json:"root"`
-	Index       ChainIndex    `json:"index"`
-	Extra  []byte `json:"extra"`
+	Number      ChainIndex    `json:"index"`
+	Extra       []byte        `json:"extra"`
+}
+
+func NewHeader(parents []common.Hash, asset []IDType, gas, used uint64, extra []byte) *Header {
+	hashs := make([]common.Hash, 0)
+	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
+	var b []byte
+	return &Header{ParentUnits: hashs, AssetIDs: asset, GasLimit: gas, GasUsed: gas, Extra: append(b, extra...)}
+}
+func HeaderEqual(oldh, newh *Header) bool {
+	if oldh.ParentUnits[0] == newh.ParentUnits[0] && oldh.ParentUnits[1] == newh.ParentUnits[1] {
+		return true
+	} else if oldh.ParentUnits[0] == newh.ParentUnits[1] && oldh.ParentUnits[1] == newh.ParentUnits[0] {
+		return true
+	}
+	return false
+}
+func (h *Header) Index() uint64 {
+	return h.Number.Index
+}
+
+// func (h *Header) ChainIndex() ChainIndex {
+// 	return h.Number
+// }
+
+// key: unit.hash(unit)
+type Unit struct {
+	header *Header      `json:"unit_header"`  // unit header
+	txs    Transactions `json:"transactions"` // transaction list
+
+	hash         common.Hash        `json:"unit_hash"`     // unit hash
+	size         common.StorageSize `json:"size"`          // unit size
+	creationdate time.Time          `json:"creation_time"` // unit create time
 }
 
 type ChainIndex struct {
@@ -175,10 +197,12 @@ func (a *Authentifier) FromDB(info []byte) error {
 
 func NewUnit(header *Header, txs Transactions) *Unit {
 	u := &Unit{
-		UnitHeader: CopyHeader(header),
-		Txs:        CopyTransactions(txs),
+		header: CopyHeader(header),
+		txs:    CopyTransactions(txs),
 	}
-	u.CreationDate = time.Now()
+	u.hash = u.Hash()
+	u.size = u.Size()
+	u.creationdate = time.Now()
 	return u
 }
 
@@ -228,44 +252,42 @@ func (h *Header) Size() common.StorageSize {
 	return common.StorageSize(unsafe.Sizeof(*h)) + common.StorageSize(len(h.Extra)/8)
 }
 
-
-
-
 // return  unit'hash
 func (u *Unit) Hash() common.Hash {
 	v := rlpHash(u)
 	return v
 }
 
-//
-func (u *Unit) Header() *Header { return CopyHeader(u.UnitHeader) }
-
-//  last unit
-func CurrentUnit() *Unit {
-	return &Unit{CreationDate: time.Now()}
+func (u *Unit) Size() common.StorageSize {
+	return common.StorageSize(unsafe.Sizeof(*u)) + common.StorageSize(len(u.hash)/8)
 }
 
-
+//
+func (u *Unit) Header() *Header { return CopyHeader(u.header) }
 
 //
 //func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }
 func (u *Unit) Number() ChainIndex {
-	return u.UnitHeader.Index
+	return u.header.Number
 }
-
-
-
-
+func (u *Unit) NumberU64() uint64 {
+	return u.header.Number.Index
+}
 
 // transactions
 func (u *Unit) Transactions() []*Transaction {
-	ts := make([]*Transaction, 0)
-	return ts
+	return u.txs
+}
+func txsTOPooltxs(txs Transactions) PoolTransactions {
+	ptxs := make(PoolTransactions, 0)
+	return ptxs
+
+}
+func (u *Unit) PoolTransactions() []*PoolTransaction {
+	return txsTOPooltxs(u.txs)
 }
 
 //
 func (u *Unit) ParentHash() []common.Hash {
-	return u.UnitHeader.ParentUnits
+	return u.header.ParentUnits
 }
-
-

@@ -6,7 +6,7 @@ import (
 
 // update
 func Update(key, value []byte) error {
-	if _, err := Delete(key); err != nil {
+	if err := Delete(key); err != nil {
 		return err
 	}
 	return Dbconn.Put(key, value)
