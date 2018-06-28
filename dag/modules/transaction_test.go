@@ -12,14 +12,14 @@ import (
 // at github.com/ethereum/tests.
 var (
 	emptyTx = NewPoolTransaction(
-		0,
+		common.HexToAddress("095e7baea6a6c7c4c2dfeb977efac326af552d11"),
 		common.HexToAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"),
 		big.NewInt(0),
 		nil,
 	)
 
-	rightvrsTx, _ = NewTransaction(
-		3,
+	rightvrsTx, _ = NewPoolTransaction(
+		common.HexToAddress("b94f5374fce5edbc8e2a8697c15331677e6ebf12"),
 		common.HexToAddress("b94f5374fce5edbc8e2a8697c15331677e6ebf0b"),
 		big.NewInt(10),
 		common.FromHex("5544"),

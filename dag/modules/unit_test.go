@@ -6,9 +6,8 @@ import (
 )
 
 func TestNewUnit(t *testing.T) {
-	msgs := make([]*Message, 0)
-	recp := make([]*Receipt, 0)
-	unit := NewUnit(&Header{}, msgs, recp)
+	txs := make(Transactions, 0)
+	unit := NewUnit(&Header{}, txs)
 	log.Println("unit", unit)
 }
 

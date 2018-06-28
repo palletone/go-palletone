@@ -8,7 +8,6 @@ import (
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
-	"math/big"
 )
 
 /*****************************27 June, 2018 update unit struct type*****************************************/
@@ -179,7 +178,7 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 		UnitHeader: CopyHeader(header),
 		Txs:        CopyTransactions(txs),
 	}
-	u.CreateTime = time.Now()
+	u.CreationDate = time.Now()
 	return u
 }
 
@@ -230,14 +229,7 @@ func (h *Header) Size() common.StorageSize {
 }
 
 
-func NewUnit(header *Header, msgs []*Message, receipt []*Receipt) *Unit {
-	u := &Unit{
-		UnitHeader: CopyHeader(header),
-	}
 
-	u.CreationDate = time.Now()
-	return u
-}
 
 // return  unit'hash
 func (u *Unit) Hash() common.Hash {
@@ -260,28 +252,9 @@ func CurrentUnit() *Unit {
 func (u *Unit) Number() ChainIndex {
 	return u.UnitHeader.Index
 }
-	return &Unit{CreationDate: time.Now()}
-}
 
-// CopyHeader creates a deep copy of a block header to prevent side effects from
-// modifying a header variable.
-func CopyHeader(h *Header) *Header {
-	cpy := *h
-	//if cpy.Time = new(big.Int); h.Time != nil {
-	//	cpy.Time.Set(h.Time)
-	//}
-	// if cpy.Difficulty = new(big.Int); h.Difficulty != nil {
-	// 	cpy.Difficulty.Set(h.Difficulty)
-	// }
-	// if cpy.Number = new(big.Int); h.Number != nil {
-	// 	cpy.Number.Set(h.Number)
-	// }
-	if len(h.Extra) > 0 {
-		cpy.Extra = make([]byte, len(h.Extra))
-		copy(cpy.Extra, h.Extra)
-	}
-	return &cpy
-}
+
+
 
 
 // transactions
