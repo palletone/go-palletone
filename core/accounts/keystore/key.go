@@ -29,9 +29,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/pborman/uuid"
 )
 
@@ -152,7 +152,7 @@ func NewKeyForDirectICAP(rand io.Reader) *Key {
 		panic("key generation: ecdsa.GenerateKey failed: " + err.Error())
 	}
 	key := newKeyFromECDSA(privateKeyECDSA)
-	if !strings.HasPrefix(key.Address.Hex(), "0x00") {
+	if !strings.HasPrefix(key.Address.Str(), "0x00") {
 		return NewKeyForDirectICAP(rand)
 	}
 	return key

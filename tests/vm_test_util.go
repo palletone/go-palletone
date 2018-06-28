@@ -68,9 +68,9 @@ type vmExec struct {
 }
 
 type vmExecMarshaling struct {
-	Address  common.UnprefixedAddress
-	Caller   common.UnprefixedAddress
-	Origin   common.UnprefixedAddress
+	Address  common.Address
+	Caller   common.Address
+	Origin   common.Address
 	Code     hexutil.Bytes
 	Data     hexutil.Bytes
 	Value    *math.HexOrDecimal256
