@@ -24,10 +24,10 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/cmd/console"
-	"github.com/palletone/go-palletone/core/node"
+	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core/node"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -125,8 +125,6 @@ func remoteConsole(ctx *cli.Context) error {
 		if path != "" {
 			if ctx.GlobalBool(utils.TestnetFlag.Name) {
 				path = filepath.Join(path, "testnet")
-			} else if ctx.GlobalBool(utils.RinkebyFlag.Name) {
-				path = filepath.Join(path, "rinkeby")
 			}
 		}
 		endpoint = fmt.Sprintf("%s/gptn.ipc", path)
