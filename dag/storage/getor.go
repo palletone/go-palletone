@@ -20,10 +20,11 @@ package storage
 
 import (
 	"encoding/json"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/modules"
 	"log"
 	"unsafe"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
 
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 )
@@ -67,6 +68,10 @@ func getprefix(prefix []byte) map[string][]byte {
 		result[string(key)] = append(value, iter.Value()...)
 	}
 	return result
+}
+
+func GetGenesisUnit(index uint64) *modules.Unit {
+	return nil
 }
 
 func GetUnit(hash common.Hash, index uint64) *modules.Unit {

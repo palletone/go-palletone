@@ -108,6 +108,7 @@ func (e *GenesisMismatchError) Error() string {
 // The returned chain configuration is never nil.
 func SetupGenesisBlock(db ptndb.Database, genesis *Genesis) (common.Hash, error) {
 	// Just commit the new block if there is no stored genesis block.
+	fmt.Println("======SetupGenesisBlock:", genesis)
 	stored := coredata.GetCanonicalHash(db, 0)
 	if (stored == common.Hash{}) {
 		if genesis == nil {
@@ -146,7 +147,14 @@ func SetupGenesisBlock(db ptndb.Database, genesis *Genesis) (common.Hash, error)
 
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
 func DefaultGenesisBlock() *Genesis {
-	return &Genesis{}
+	return &Genesis{
+		Height:       "0",
+		Version:      "0.6.0",
+		TokenAmount:  1000000000,
+		TokenDecimal: 8,
+		ChainID:      0,
+		TokenHolder:  "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ",
+	}
 }
 
 // DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
