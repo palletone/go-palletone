@@ -10,6 +10,8 @@ package application
 import (
 	"time"
 
+	"github.com/palletone/go-palletone/common/log"
+
 	d "github.com/palletone/go-palletone/consensus/dpos"
 	s "github.com/palletone/go-palletone/consensus/dpos/mediators"
 	v "github.com/palletone/go-palletone/dag/verifiedunit"
@@ -32,18 +34,22 @@ var (
 
 func (db *DataBase) Initialize() {
 	// 1. 打开区块链数据库...
-	println("open db!")
+//	println("open database!")
+	log.Info("open database!")
 
 	// 2. 初始化区块链数据...
-	println("initilize blockchain data start!")
+//	println("initilize blockchain data start!")
+	log.Info("initilize blockchain data start!")
 
-	println("initilize genesis verified uint!")
+//	println("initilize genesis verified uint!")
+	log.Info("initilize genesis verified uint!")
 	gvu := v.VerifiedUnit{nil, "",
 	time.Unix(time.Now().Unix(), 0), 0}	//创世单元
 	var vus []*v.VerifiedUnit
 	vus = append(vus, &gvu)
 
-	println("initilize mediators!")
+//	println("initilize mediators!")
+	log.Info("initilize mediators!")
 	var ms []*d.Mediator
 	ms = append(ms, &Mediator1)
 	ms = append(ms, &Mediator2)
@@ -52,23 +58,27 @@ func (db *DataBase) Initialize() {
 	db.VerifiedUnits = vus
 	db.Mediators = ms
 
-	println("initilize blockchain data end!\n")
+//	println("initilize blockchain data end!\n")
+	log.Info("initilize blockchain data end!")
 }
 
 func (db *DataBase) Startup() {
 	// 2. 初始化全局属性...
-	println("initilize global property...")
+//	println("initilize global property...")
+	log.Info("initilize global property...")
 
 	gp := &db.GlobalProp
 //	gp.ChainParameters.MaintenanceSkipSlots = 3
 	gp.ChainParameters.VerifiedUnitInterval = 3
 
-	println("Set active mediators...\n")
+//	println("Set active mediators...")
+	log.Info("Set active mediators...")
 	gp.ActiveMediators = append(gp.ActiveMediators, &Mediator1)
 	gp.ActiveMediators = append(gp.ActiveMediators, &Mediator2)
 	gp.ActiveMediators = append(gp.ActiveMediators, &Mediator3)
 
-	println("initilize dynamic global property...")
+//	println("initilize dynamic global property...")
+	log.Info("initilize dynamic global property...")
 
 	dgp := &db.DynGlobalProp
 	vus := &db.VerifiedUnits
@@ -82,7 +92,8 @@ func (db *DataBase) Startup() {
 //	dgp.RecentSlotsFilled = 100
 
 	ms := &db.MediatorSchl
-	println("Create witness scheduler...\n")
+//	println("Create witness scheduler...\n")
+	log.Info("Create witness scheduler...")
 	for _, m := range db.GlobalProp.ActiveMediators {
 		ms.CurrentShuffledMediators =append(ms.CurrentShuffledMediators, m)
 	}
