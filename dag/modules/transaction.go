@@ -309,6 +309,10 @@ func (s Transactions) GetRlp(i int) []byte {
 	enc, _ := rlp.EncodeToBytes(s[i])
 	return enc
 }
+func (s Transactions) Hash() common.Hash {
+	v := rlpHash(s)
+	return v
+}
 
 // TxDifference returns a new set t which is the difference between a to b.
 func TxDifference(a, b Transactions) (keep Transactions) {
