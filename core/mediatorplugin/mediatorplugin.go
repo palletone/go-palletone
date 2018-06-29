@@ -35,9 +35,9 @@ var (
 type MediatorPlugin struct {
 	// Enable VerifiedUnit production, even if the chain is stale. 新开启一个区块链时，必须设为true
 	ProductionEnabled            bool
-	// Percent of witnesses (0-99) that must be participating in order to produce VerifiedUnit.
+	// Percent of mediators (0-99) that must be participating in order to produce VerifiedUnit.
 	// 新开启一个区块链时，必须设为0, 或者100
-//	RequiredWitnessParticipation float32
+//	RequiredMediatorsParticipation float32
 	MediatorSet map[d.Mediator]bool
 	SignKeySet  map[string]bool
 	DB          *a.DataBase
@@ -55,7 +55,7 @@ func (mp *MediatorPlugin) PluginInitialize() {
 
 	// 1.初始化生产验证单元相关的属性值
 	mp.ProductionEnabled = false
-//	mp.RequiredWitnessParticipation = 0.33
+//	mp.RequiredMediatorsParticipation = 0.33
 
 	// 1. 获取当前节点控制的所有mediator
 	mp.MediatorSet = map[d.Mediator]bool{}
