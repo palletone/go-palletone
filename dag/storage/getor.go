@@ -1,6 +1,10 @@
 package storage
 
 import (
+	"encoding/json"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
+	"log"
 	"unsafe"
 
 	config "github.com/palletone/go-palletone/dag/dagconfig"
@@ -45,6 +49,15 @@ func getprefix(prefix []byte) map[string][]byte {
 		result[string(key)] = append(value, iter.Value()...)
 	}
 	return result
+}
+
+func GetUnit(hash common.Hash, index uint64) *modules.Unit {
+	unit_bytes, err := Get(append(UNIT_PREFIX, hash.Bytes()...))
+	log.Println(err)
+	var unit modules.Unit
+	json.Unmarshal(unit_bytes, &unit)
+
+	return &unit
 }
 
 // func GetFreeUnits() []string {

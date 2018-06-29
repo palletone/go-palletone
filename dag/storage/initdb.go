@@ -9,11 +9,12 @@ import (
 var (
 	PACKET_PREFIX                    = []byte("p") // packet_prefix  + mci + hash
 	UNIT_PREFIX                      = []byte("u") // unit_prefix + mci + hash
+	HEADERPREFIX                     = []byte("h") // prefix + hash
+	TRANSACTIONPREFIX                = []byte("t")
+	TRANSACTIONSPREFIX               = []byte("ts")
 	ALL_UNITS_PREFIX                 = []byte("au")
 	UNITAUTHORS_PREFIX               = []byte("ua")
-	SKIPLIST_PREFIX                  = []byte("sl")
 	HASH_TREE_BALLS_PREFIX           = []byte("ht")
-	PARENTHOODS_PREFIX               = []byte("pt")
 	UNIT_WITNESS_PREFIX              = []byte("uw")
 	WITNESS_LIST_HASHES_PREFIX       = []byte("wl")
 	DEFINITIONS_PREFIX               = []byte("de")
@@ -26,13 +27,12 @@ var (
 	ATTESTATION_PREFIX               = []byte("at")
 	ASSET_PREFIX                     = []byte("as")
 	ASSET_ATTESTORS                  = []byte("ae")
-	DATA_FEED_PREFIX                 = []byte("df")
-	SPEED_PROOFS                     = []byte("sp")
-	EAENED_HEADERS_COMMISSION        = "earned_headers_commossion"
-	ALL_UNITS                        = "array_units"
+
+	EAENED_HEADERS_COMMISSION = "earned_headers_commossion"
+	ALL_UNITS                 = "array_units"
 
 	// state storage
-	CONTRACT_ATTRI					= []byte("contract_")	// like contract_[contract address]_[key]
+	CONTRACT_ATTRI = []byte("contract_") // like contract_[contract address]_[key]
 
 )
 
