@@ -2,13 +2,6 @@
 
 Official golang implementation of the palletone protocol.
 
-[![API Reference](
-https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/68747470733a2f2f676f646f632e6f72672f6769746875622e636f6d2f676f6c616e672f6764646f3f7374617475732e737667
-)](https://godoc.org/github.com/palletone/go-palletone)
-[![Go Report Card](https://goreportcard.com/badge/github.com/palletone/go-palletone)](https://goreportcard.com/report/github.com/palletone/go-palletone)
-[![Travis](https://travis-ci.org/palletone/go-palletone.svg?branch=master)](https://travis-ci.org/palletone/go-palletone)
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/palletone/go-palletone?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-
 
 ## Building the source
 
@@ -39,7 +32,7 @@ The go-palletone project comes with several wrappers/executables found in the `c
 Going through all the possible command line flags is out of scope here (please consult our
 [CLI Wiki page](https://github.com/palletone/go-palletone/wiki/Command-Line-Options)), but we've
 enumerated a few common parameter combos to get you up to speed quickly on how you can run your
-own Geth instance.
+own Gptn instance.
 
 ### Full node on the main palletone network
 
@@ -57,40 +50,11 @@ This command will:
  * Start gptn in fast sync mode (default, can be changed with the `--syncmode` flag), causing it to
    download more data in exchange for avoiding processing the entire history of the palletone network,
    which is very CPU intensive.
- * Start up Geth's built-in interactive [JavaScript console](https://github.com/palletone/go-palletone/wiki/JavaScript-Console),
+ * Start up Gptn's built-in interactive [JavaScript console](https://github.com/palletone/go-palletone/wiki/JavaScript-Console),
    (via the trailing `console` subcommand) through which you can invoke all official [`web3` methods](https://github.com/palletone/wiki/wiki/JavaScript-API)
-   as well as Geth's own [management APIs](https://github.com/palletone/go-palletone/wiki/Management-APIs).
-   This too is optional and if you leave it out you can always attach to an already running Geth instance
+   as well as Gptn's own [management APIs](https://github.com/palletone/go-palletone/wiki/Management-APIs).
+   This too is optional and if you leave it out you can always attach to an already running Gptn instance
    with `gptn attach`.
-
-### Full node on the palletone test network
-
-Transitioning towards developers, if you'd like to play around with creating palletone contracts, you
-almost certainly would like to do that without any real money involved until you get the hang of the
-entire system. In other words, instead of attaching to the main network, you want to join the **test**
-network with your node, which is fully equivalent to the main network, but with play-Ether only.
-
-```
-$ gptn --config /path/to/your_config.toml --testnet console
-```
-
-The `console` subcommand have the exact same meaning as above and they are equally useful on the
-testnet too. Please see above for their explanations if you've skipped to here.
-
-Specifying the `--testnet` flag however will reconfigure your Geth instance a bit:
-
- * Instead of using the default data directory (`~/.palletone` on Linux for example), Geth will nest
-   itself one level deeper into a `testnet` subfolder (`~/.palletone/testnet` on Linux). Note, on OSX
-   and Linux this also means that attaching to a running testnet node requires the use of a custom
-   endpoint since `gptn attach` will try to attach to a production node endpoint by default. E.g.
-   `gptn attach <datadir>/testnet/gptn.ipc`. Windows users are not affected by this.
- * Instead of connecting the main palletone network, the client will connect to the test network,
-   which uses different P2P bootnodes, different network IDs and genesis states.
-   
-*Note: Although there are some internal protective measures to prevent transactions from crossing
-over between the main network and test network, you should make sure to always use separate accounts
-for play-money and real-money. Unless you manually move accounts, Geth will by default correctly
-separate the two networks and will not make any accounts available between them.*
 
 
 ### Configuration
@@ -175,26 +139,12 @@ and agree upon. This consists of a small JSON file (e.g. call it `genesis.json`)
 }
 ```
 
-With the genesis state defined in the above JSON file, you'll need to initialize **every** Geth node
+With the genesis state defined in the above JSON file, you'll need to initialize **every** Gptn node
 with it prior to starting it up to ensure all blockchain parameters are correctly set:
 
 ```
 $ gptn init path/to/genesis.json
 ```
-
-#### Starting up your member nodes
-
-With the bootnode operational and externally reachable (you can try `telnet <ip> <port>` to ensure
-it's indeed reachable), start every subsequent Geth node pointed to the bootnode for peer discovery
-via the `--bootnodes` flag. It will probably also be desirable to keep the data directory of your
-private network separated, so do also specify a custom `--datadir` flag.
-
-```
-$ gptn --datadir=path/to/custom/data/folder
-```
-
-*Note: Since your network will be completely cut off from the main and test networks, you'll also
-need to configure a miner to process transactions and create new blocks for you.*
 
 ## Contribution
 
@@ -214,7 +164,7 @@ Please make sure your contributions adhere to our coding guidelines:
  * Code must be documented adhering to the official Go [commentary](https://golang.org/doc/effective_go.html#commentary) guidelines.
  * Pull requests need to be based on and opened against the `master` branch.
  * Commit messages should be prefixed with the package(s) they modify.
-   * E.g. "eth, rpc: make trace configs optional"
+   * E.g. "ptn, rpc: make trace configs optional"
 
 Please see the [Developers' Guide](https://github.com/palletone/go-palletone/wiki/Developers'-Guide)
 for more details on configuring your environment, managing project dependencies and testing procedures.
