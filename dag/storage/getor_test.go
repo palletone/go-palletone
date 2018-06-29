@@ -16,44 +16,34 @@
  * @date 2018
  */
 
-package util
+package storage
 
 import (
-	"crypto/md5"
-	"crypto/sha1"
-	"crypto/sha256"
-	"crypto/sha512"
-	"fmt"
-
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto/sha3"
-	"github.com/palletone/go-palletone/common/rlp"
+	"log"
+	"testing"
 )
 
-func Sha1(data []byte) string {
-	s1 := sha1.New()
-	s1.Write(data)
-	return fmt.Sprintf("%x", s1.Sum(nil))
-}
-func Sha256(data []byte) string {
-	s256 := sha256.New()
-	s256.Write(data)
-	return fmt.Sprintf("%x", s256.Sum(nil))
-}
-func Sha512(data []byte) string {
-	s512 := sha512.New()
-	s512.Write(data)
-	return fmt.Sprintf("%x", s512.Sum(nil))
-}
-func Md5(data []byte) string {
-	m5 := md5.New()
-	m5.Write(data)
-	return fmt.Sprintf("%x", m5.Sum(nil))
+func TestGet(t *testing.T) {
+	if m := GetPrefix([]byte("array")); m != nil {
+		for k, v := range m {
+			log.Println("key: ", k, "value: ", string(v))
+		}
+	}
+
+	if m := GetPrefix([]byte("20")); m != nil {
+		for k, v := range m {
+			log.Println("key: ", k, "value: ", string(v))
+		}
+	}
+
+	if m := GetPrefix([]byte("unit")); m != nil {
+		for k, _ := range m {
+			log.Println("key: ", k, "value: ", string(m[k]))
+		}
+	}
 }
 
-func rlpHash(x interface{}) (h common.Hash) {
-	hw := sha3.NewKeccak256()
-	rlp.Encode(hw, x)
-	hw.Sum(h[:0])
-	return h
+func TestGetUnit(t *testing.T) {
+	GetUnit(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"), 0)
 }

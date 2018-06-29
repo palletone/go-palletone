@@ -1,3 +1,5 @@
+// Copyright 2018 PalletOne
+
 package modules
 
 import (

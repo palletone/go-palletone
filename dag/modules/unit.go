@@ -142,13 +142,6 @@ type ChainIndex struct {
 	Index   uint64
 }
 
-type Transaction struct {
-	TxHash       common.Hash `json:"tx_hash"`
-	TxMessages   []Message   `json:"messages"` //
-	Authors      []Author    `json:"authors"`  // the issuers of the transaction
-	CreationDate time.Time   `json:"creation_date"`
-}
-
 // key: message.hash(message+timestamp)
 type Message struct {
 	App          string       `json:"app"`          // message type
@@ -313,25 +306,9 @@ func (u *Unit) NumberU64() uint64 {
 	return u.header.Number.Index
 }
 
-func (u *Unit) PoolTransactions() []*PoolTransaction {
-	return txsTOpooltxs(u.txs)
-}
-
 // return unit's parents hash
 func (u *Unit) ParentHash() []common.Hash {
 	return u.header.ParentUnits
 }
 
-func txsTOpooltxs(txs Transactions) PoolTransactions {
-	ptxs := make(PoolTransactions, 0)
-	return ptxs
-
-}
-
 /************************** Unit Members  *****************************/
-
-type Transactions []*Transaction
-
-func (txs *Transactions) Hash() common.Hash {
-	return rlpHash(txs)
-}

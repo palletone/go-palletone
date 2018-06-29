@@ -1,3 +1,21 @@
+/*
+   This file is part of go-palletone.
+   go-palletone is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   go-palletone is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/*
+ * @author PalletOne core developers <dev@pallet.one>
+ * @date 2018
+ */
+
 package modules
 
 import (
@@ -15,8 +33,12 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 )
 
-type PoolTransaction struct {
-	data txdata
+type Transaction struct {
+	TxHash       common.Hash `json:"tx_hash"`
+	TxMessages   []Message   `json:"messages"` //
+	Authors      []Author    `json:"authors"`  // the issuers of the transaction
+	CreationDate time.Time   `json:"creation_date"`
+	data         txdata
 	// caches
 	hash         atomic.Value
 	size         atomic.Value
@@ -28,8 +50,8 @@ type PoolTransaction struct {
 type txdata struct {
 	AccountNonce      uint64          `json:"account_nonce"`
 	From              *common.Address `json:"from"`
-	Price             *big.Int        `json:"price"`              // 交易费
 	Recipient         *common.Address `json:"to"       rlp:"nil"` // nil means contract creation
+	Price             *big.Int        `json:"price"`              // 交易费
 	Amount            *big.Int        `json:"value"`
 	Payload           []byte          `json:"input"`
 	TranReceiptStatus string          `json:"tran_receipt_status"`
@@ -53,15 +75,15 @@ type txdataMarshaling struct {
 	S            *hexutil.Big
 }
 
-func NewPoolTransaction(from, to common.Address, amount *big.Int, data []byte) *PoolTransaction {
+func NewTransaction(from, to common.Address, amount *big.Int, data []byte) *Transaction {
 	return newTransaction(&from, &to, amount, data)
 }
 
-func NewContractCreation(from common.Address, amount *big.Int, data []byte) *PoolTransaction {
+func NewContractCreation(from common.Address, amount *big.Int, data []byte) *Transaction {
 	return newTransaction(&from, nil, amount, data)
 }
 
-func newTransaction(from, to *common.Address, amount *big.Int, data []byte) *PoolTransaction {
+func newTransaction(from, to *common.Address, amount *big.Int, data []byte) *Transaction {
 	if len(data) > 0 {
 		data = common.CopyBytes(data)
 	}
@@ -79,16 +101,16 @@ func newTransaction(from, to *common.Address, amount *big.Int, data []byte) *Poo
 		d.Amount.Set(amount)
 	}
 
-	return &PoolTransaction{data: d}
+	return &Transaction{data: d}
 }
 
 // ChainId returns which chain id this transaction was signed for (if at all)
-func (tx *PoolTransaction) ChainId() *big.Int {
+func (tx Transaction) ChainId() *big.Int {
 	return deriveChainId(tx.data.V)
 }
 
 // Protected returns whether the transaction is protected from replay protection.
-func (tx *PoolTransaction) Protected() bool {
+func (tx Transaction) Protected() bool {
 	return isProtectedV(tx.data.V)
 }
 
@@ -102,12 +124,12 @@ func isProtectedV(V *big.Int) bool {
 }
 
 // EncodeRLP implements rlp.Encoder
-func (tx *PoolTransaction) EncodeRLP(w io.Writer) error {
+func (tx *Transaction) EncodeRLP(w io.Writer) error {
 	return rlp.Encode(w, &tx.data)
 }
 
 // DecodeRLP implements rlp.Decoder
-func (tx *PoolTransaction) DecodeRLP(s *rlp.Stream) error {
+func (tx *Transaction) DecodeRLP(s *rlp.Stream) error {
 	_, size, _ := s.Kind()
 	err := s.Decode(&tx.data)
 	if err == nil {
@@ -118,7 +140,7 @@ func (tx *PoolTransaction) DecodeRLP(s *rlp.Stream) error {
 }
 
 // MarshalJSON encodes the web3 RPC transaction format.
-func (tx *PoolTransaction) MarshalJSON() ([]byte, error) {
+func (tx *Transaction) MarshalJSON() ([]byte, error) {
 	hash := tx.Hash()
 	data := tx.data
 	data.Hash = &hash
@@ -126,7 +148,7 @@ func (tx *PoolTransaction) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON decodes the web3 RPC transaction format.
-func (tx *PoolTransaction) UnmarshalJSON(input []byte) error {
+func (tx *Transaction) UnmarshalJSON(input []byte) error {
 	var dec txdata
 	if err := dec.UnmarshalJSON(input); err != nil {
 		return err
@@ -141,21 +163,21 @@ func (tx *PoolTransaction) UnmarshalJSON(input []byte) error {
 	if !crypto.ValidateSignatureValues(V, dec.R, dec.S, false) {
 		return errors.New("invalid transaction v, r, s values")
 	}
-	*tx = PoolTransaction{data: dec}
+	*tx = Transaction{data: dec}
 	return nil
 }
 
-func (tx *PoolTransaction) Data() []byte { return common.CopyBytes(tx.data.Payload) }
+func (tx Transaction) Data() []byte { return common.CopyBytes(tx.data.Payload) }
 
-func (tx *PoolTransaction) Nonce() uint64            { return tx.data.AccountNonce }
-func (tx *PoolTransaction) Price() *big.Int          { return new(big.Int).Set(tx.data.Price) }
-func (tx *PoolTransaction) Value() *big.Int          { return new(big.Int).Set(tx.data.Amount) }
-func (tx *PoolTransaction) Account() *common.Address { return tx.data.From }
-func (tx *PoolTransaction) CheckNonce() bool         { return true }
+func (tx Transaction) Nonce() uint64            { return tx.data.AccountNonce }
+func (tx Transaction) Price() *big.Int          { return new(big.Int).Set(tx.data.Price) }
+func (tx Transaction) Value() *big.Int          { return new(big.Int).Set(tx.data.Amount) }
+func (tx Transaction) Account() *common.Address { return tx.data.From }
+func (tx Transaction) CheckNonce() bool         { return true }
 
-// To returns the recipient address of the PoolTransaction .
+// To returns the recipient address of theTransaction .
 // It returns nil if the transaction is a contract creation.
-func (tx *PoolTransaction) ToAddress() *common.Address {
+func (tx Transaction) ToAddress() *common.Address {
 	if tx.data.Recipient == nil {
 		return nil
 	}
@@ -165,7 +187,7 @@ func (tx *PoolTransaction) ToAddress() *common.Address {
 
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
-func (tx *PoolTransaction) Hash() common.Hash {
+func (tx Transaction) Hash() common.Hash {
 	if hash := tx.hash.Load(); hash != nil {
 		return hash.(common.Hash)
 	}
@@ -176,7 +198,7 @@ func (tx *PoolTransaction) Hash() common.Hash {
 
 // Size returns the true RLP encoded storage size of the transaction, either by
 // encoding and returning it, or returning a previsouly cached value.
-func (tx *PoolTransaction) Size() common.StorageSize {
+func (tx *Transaction) Size() common.StorageSize {
 	if size := tx.size.Load(); size != nil {
 		return size.(common.StorageSize)
 	}
@@ -186,7 +208,7 @@ func (tx *PoolTransaction) Size() common.StorageSize {
 	return common.StorageSize(c)
 }
 
-func (tx *PoolTransaction) String() string {
+func (tx *Transaction) String() string {
 	var from, to string
 	if tx.data.V != nil {
 		// make a best guess about the signer and use that to derive
@@ -236,18 +258,18 @@ func (tx *PoolTransaction) String() string {
 	)
 }
 
-func (tx *PoolTransaction) WithSignature(signer Signer, sig []byte) (*PoolTransaction, error) {
+func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, error) {
 	r, s, v, err := signer.SignatureValues(tx, sig)
 	if err != nil {
 		return nil, err
 	}
-	cpy := &PoolTransaction{data: tx.data}
+	cpy := &Transaction{data: tx.data}
 	cpy.data.R, cpy.data.S, cpy.data.V = r, s, v
 	return cpy, nil
 }
 
 // Cost returns amount + price
-func (tx *PoolTransaction) Cost() *big.Int {
+func (tx *Transaction) Cost() *big.Int {
 	total := new(big.Int) // .mul(tx.data.Price, new(big.Int).SetUint64(tx.data.GasLimit))
 	total.Add(tx.data.Price, tx.data.Amount)
 	return total
@@ -258,7 +280,7 @@ func (tx *PoolTransaction) Cost() *big.Int {
 // AsMessage requires a signer to derive the sender.
 //
 // XXX Rename message to something less arbitrary?
-func (tx *PoolTransaction) AsMessage(s Signer) (Message, error) {
+func (tx *Transaction) AsMessage(s Signer) (Message, error) {
 	msg := Message{
 		from:       *tx.data.From,
 		gasPrice:   new(big.Int).Set(tx.data.Price),
@@ -273,24 +295,24 @@ func (tx *PoolTransaction) AsMessage(s Signer) (Message, error) {
 	return msg, err
 }
 
-// PoolTransactions is a Transaction slice type for basic sorting.
-type PoolTransactions []*PoolTransaction
+//Transactions is a Transaction slice type for basic sorting.
+type Transactions []*Transaction
 
 // Len returns the length of s.
-func (s PoolTransactions) Len() int { return len(s) }
+func (s Transactions) Len() int { return len(s) }
 
 // Swap swaps the i'th and the j'th element in s.
-func (s PoolTransactions) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s Transactions) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 // GetRlp implements Rlpable and returns the i'th element of s in rlp.
-func (s PoolTransactions) GetRlp(i int) []byte {
+func (s Transactions) GetRlp(i int) []byte {
 	enc, _ := rlp.EncodeToBytes(s[i])
 	return enc
 }
 
 // TxDifference returns a new set t which is the difference between a to b.
-func TxDifference(a, b PoolTransactions) (keep PoolTransactions) {
-	keep = make(PoolTransactions, 0, len(a))
+func TxDifference(a, b Transactions) (keep Transactions) {
+	keep = make(Transactions, 0, len(a))
 
 	remove := make(map[common.Hash]struct{})
 	for _, tx := range b {
@@ -307,7 +329,7 @@ func TxDifference(a, b PoolTransactions) (keep PoolTransactions) {
 }
 
 // single account, otherwise a nonce comparison doesn't make much sense.
-type TxByNonce PoolTransactions
+type TxByNonce Transactions
 
 func (s TxByNonce) Len() int           { return len(s) }
 func (s TxByNonce) Less(i, j int) bool { return s[i].data.AccountNonce < s[j].data.AccountNonce }
@@ -315,14 +337,14 @@ func (s TxByNonce) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
 // TxByPrice implements both the sort and the heap interface, making it useful
 // for all at once sorting as well as individually adding and removing elements.
-type TxByPrice PoolTransactions
+type TxByPrice Transactions
 
 func (s TxByPrice) Len() int           { return len(s) }
 func (s TxByPrice) Less(i, j int) bool { return s[i].data.Price.Cmp(s[j].data.Price) > 0 }
 func (s TxByPrice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
 func (s *TxByPrice) Push(x interface{}) {
-	*s = append(*s, x.(*PoolTransaction))
+	*s = append(*s, x.(*Transaction))
 }
 
 func (s *TxByPrice) Pop() interface{} {

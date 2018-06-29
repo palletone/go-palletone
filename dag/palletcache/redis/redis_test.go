@@ -7,9 +7,6 @@ import (
 
 func TestInit(t *testing.T) {
 	log.Println("start test redis.")
-	// red := new(Redis)
-	// addr := "127.0.0.1:6379"
-	// red.address = &addr
 	Init()
 	// log.Println(red.ParseConfig("jay"), red.Init())
 	Store("unit", "unit1", "hello1")
