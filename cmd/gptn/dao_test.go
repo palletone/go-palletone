@@ -26,7 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/dag/coredata"
+	core "github.com/palletone/go-palletone/dag/coredata"
 )
 
 // Genesis block for nodes which don't care about the DAO fork (i.e. not configured)
