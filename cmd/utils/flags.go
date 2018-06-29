@@ -37,7 +37,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/netutil"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/consensus/consensusconfig"
+//	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -480,11 +480,13 @@ var (
 	// 	Usage: "Suggested gas price is the given percentile of a set of recent transaction gas prices",
 	// 	Value: ptn.DefaultConfig.GPO.Percentile,
 	// }
-	ConsensusEngineFlag = cli.StringFlag{
-		Name:  "consensus.engine",
-		Usage: "Consensus Engine: solo or dpos",
-		Value: ptn.DefaultConfig.Consensus.Engine,
-	}
+
+	//ConsensusEngineFlag = cli.StringFlag{
+	//	Name:  "consensus.engine",
+	//	Usage: "Consensus Engine: solo or dpos",
+	//	Value: ptn.DefaultConfig.Consensus.Engine,
+	//}
+
 	DagValue1Flag = cli.StringFlag{
 		Name:  "dag.dbpath",
 		Usage: "Dag dbapth",
@@ -945,11 +947,11 @@ func setLog(ctx *cli.Context, cfg *log.Config) {
 }
 
 // SetDagConfig applies dag related command line flags to the config.
-func setConsensus(ctx *cli.Context, cfg *consensusconfig.Config) {
-	if ctx.GlobalIsSet(ConsensusEngineFlag.Name) {
-		cfg.Engine = ctx.GlobalString(ConsensusEngineFlag.Name)
-	}
-}
+//func setConsensus(ctx *cli.Context, cfg *consensusconfig.Config) {
+//	if ctx.GlobalIsSet(ConsensusEngineFlag.Name) {
+//		cfg.Engine = ctx.GlobalString(ConsensusEngineFlag.Name)
+//	}
+//}
 
 // SetEthConfig applies ptn-related command line flags to the config.
 func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
@@ -965,7 +967,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	setTxPool(ctx, &cfg.TxPool)
 	setDag(ctx, &cfg.Dag)
 	setLog(ctx, &cfg.Log)
-	setConsensus(ctx, &cfg.Consensus)
+//	setConsensus(ctx, &cfg.Consensus)
 
 	switch {
 	case ctx.GlobalIsSet(SyncModeFlag.Name):

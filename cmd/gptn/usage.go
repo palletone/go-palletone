@@ -203,12 +203,12 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.DagValue2Flag,
 		},
 	},
-	{
-		Name: "CONSENSUS",
-		Flags: []cli.Flag{
-			utils.ConsensusEngineFlag,
-		},
-	},
+	//{
+	//	Name: "CONSENSUS",
+	//	Flags: []cli.Flag{
+	//		utils.ConsensusEngineFlag,
+	//	},
+	//},
 	{
 		Name: "VIRTUAL MACHINE",
 		Flags: []cli.Flag{

@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/consensus"
+//	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -107,7 +107,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		chainDb:        chainDb,
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
-		engine:         CreateConsensusEngine(ctx, chainDb),
+//		engine:         CreateConsensusEngine(ctx, chainDb),
 		shutdownChan:   make(chan bool),
 		networkId:      config.NetworkId,
 		gasPrice:       config.GasPrice,
@@ -150,10 +150,10 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ptndb.Data
 }
 
 // CreateConsensusEngine creates the required type of consensus engine instance for an PalletOne service
-func CreateConsensusEngine(ctx *node.ServiceContext, db ptndb.Database) core.ConsensusEngine {
-	engine := consensus.New()
-	return engine
-}
+//func CreateConsensusEngine(ctx *node.ServiceContext, db ptndb.Database) core.ConsensusEngine {
+//	engine := consensus.New()
+//	return engine
+//}
 
 // APIs returns the collection of RPC services the ethereum package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.

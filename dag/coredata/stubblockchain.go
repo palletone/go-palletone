@@ -27,7 +27,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/consensus"
+//	"github.com/palletone/go-palletone/consensus"
 	//"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/types"
@@ -60,7 +60,7 @@ func (bc *BlockChain) Export(w io.Writer) error {
 func (bc *BlockChain) ExportN(w io.Writer, first uint64, last uint64) error {
 	return nil
 }
-func NewBlockChain(db ptndb.Database, cacheConfig *CacheConfig, chainConfig *configure.ChainConfig, engine consensus.Engine /*, vmConfig vm.Config*/) (*BlockChain, error) {
+func NewBlockChain(db ptndb.Database, cacheConfig *CacheConfig, chainConfig *configure.ChainConfig, /*engine consensus.Engine*/ /*, vmConfig vm.Config*/) (*BlockChain, error) {
 	return &BlockChain{}, nil
 }
 
@@ -148,7 +148,7 @@ type ChainHeadEvent struct{ Block *types.Block }
 ////////headerchain///////////
 type HeaderChain struct{}
 
-func NewHeaderChain(chainDb ptndb.Database, config *configure.ChainConfig, engine consensus.Engine, procInterrupt func() bool) (*HeaderChain, error) {
+func NewHeaderChain(chainDb ptndb.Database, config *configure.ChainConfig, /*engine consensus.Engine,*/ procInterrupt func() bool) (*HeaderChain, error) {
 	return &HeaderChain{}, nil
 }
 func (hc *HeaderChain) CurrentHeader() *types.Header {
@@ -160,7 +160,7 @@ func (hc *HeaderChain) GetTd(hash common.Hash, number uint64) *big.Int {
 
 //////////EVM///////////////////
 type ChainContext interface {
-	Engine() consensus.Engine
+//	Engine() consensus.Engine
 	GetHeader(common.Hash, uint64) *types.Header
 }
 
@@ -221,11 +221,11 @@ func (gp *GasPool) String() string {
 type StateProcessor struct {
 	config *configure.ChainConfig // Chain configuration options
 	bc     *BlockChain            // Canonical block chain
-	engine consensus.Engine       // Consensus engine used for block rewards
+//	engine consensus.Engine       // Consensus engine used for block rewards
 }
 
 // NewStateProcessor initialises a new StateProcessor.
-func NewStateProcessor(config *configure.ChainConfig, bc *BlockChain, engine consensus.Engine) *StateProcessor {
+func NewStateProcessor(config *configure.ChainConfig, bc *BlockChain, /*engine consensus.Engine*/) *StateProcessor {
 	return &StateProcessor{}
 }
 
