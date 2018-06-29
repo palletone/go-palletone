@@ -2,12 +2,13 @@ package storage
 
 import (
 	"errors"
+	"github.com/palletone/go-palletone/common"
 	"log"
 	"strconv"
 	"testing"
 	"time"
 
-	palletdb "github.com/palletone/go-palletone/common/pandb"
+	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -21,7 +22,15 @@ func TestSaveJoint(t *testing.T) {
 		t.Log("success")
 	}
 	log.Println(strconv.FormatInt(time.Now().Unix(), 10))
-	err := SaveJoint(&modules.Joint{Unit: &modules.Unit{Unit: "123", CreationDate: time.Now()}, Ball: "ball", Skiplist: []string{"s1", "s2", "s3"}, CreationDate: time.Now()},
+	var ty []modules.IDType
+	var p []common.Hash
+	ty = append(ty, modules.PTNCOIN, modules.BTCCOIN)
+	log.Println("assets:", ty[0].String(), ty[1].String())
+	p = append(p, common.HexToHash("123"), common.HexToHash("456"))
+	h := modules.NewHeader(p, ty, uint64(111), uint64(222), []byte("hello"))
+	txs := make(modules.Transactions, 0)
+	u := modules.NewUnit(h, txs)
+	err := SaveJoint(&modules.Joint{Unit: u},
 		&modules.ValidationState{}, func() { log.Println("ok") })
 	log.Println("error:", err)
 }

@@ -22,11 +22,11 @@ type PoolTransaction struct {
 	size         atomic.Value
 	memery       atomic.Value
 	from         atomic.Value
-	excutiontime uint `json:"excution_time"`
-
+	excutiontime uint      `json:"excution_time"`
 	creationdate time.Time `json:"creation_date"`
 }
 type txdata struct {
+	AccountNonce      uint64          `json:"account_nonce"`
 	From              *common.Address `json:"from"`
 	Price             *big.Int        `json:"price"`              // 交易费
 	Recipient         *common.Address `json:"to"       rlp:"nil"` // nil means contract creation
@@ -147,7 +147,7 @@ func (tx *PoolTransaction) UnmarshalJSON(input []byte) error {
 
 func (tx *PoolTransaction) Data() []byte { return common.CopyBytes(tx.data.Payload) }
 
-// func (tx *PoolTransaction ) Gas() uint64      { return tx.data.GasLimit }
+func (tx *PoolTransaction) Nonce() uint64            { return tx.data.AccountNonce }
 func (tx *PoolTransaction) Price() *big.Int          { return new(big.Int).Set(tx.data.Price) }
 func (tx *PoolTransaction) Value() *big.Int          { return new(big.Int).Set(tx.data.Amount) }
 func (tx *PoolTransaction) Account() *common.Address { return tx.data.From }
@@ -258,8 +258,8 @@ func (tx *PoolTransaction) Cost() *big.Int {
 // AsMessage requires a signer to derive the sender.
 //
 // XXX Rename message to something less arbitrary?
-func (tx *PoolTransaction) AsMessage(s Signer) (PoolMessage, error) {
-	msg := PoolMessage{
+func (tx *PoolTransaction) AsMessage(s Signer) (Message, error) {
+	msg := Message{
 		from:       *tx.data.From,
 		gasPrice:   new(big.Int).Set(tx.data.Price),
 		to:         tx.data.Recipient,
@@ -306,6 +306,13 @@ func TxDifference(a, b PoolTransactions) (keep PoolTransactions) {
 	return keep
 }
 
+// single account, otherwise a nonce comparison doesn't make much sense.
+type TxByNonce PoolTransactions
+
+func (s TxByNonce) Len() int           { return len(s) }
+func (s TxByNonce) Less(i, j int) bool { return s[i].data.AccountNonce < s[j].data.AccountNonce }
+func (s TxByNonce) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+
 // TxByPrice implements both the sort and the heap interface, making it useful
 // for all at once sorting as well as individually adding and removing elements.
 type TxByPrice PoolTransactions
@@ -329,19 +336,9 @@ func (s *TxByPrice) Pop() interface{} {
 // Message is a fully derived transaction and implements core.Message
 //
 // NOTE: In a future PR this will be removed.
-type PoolMessage struct {
-	to         *common.Address
-	from       common.Address
-	nonce      uint64
-	amount     *big.Int
-	gasLimit   uint64
-	gasPrice   *big.Int
-	data       []byte
-	checkNonce bool
-}
 
-func NewMessage(from, to *common.Address, nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, checkNonce bool) PoolMessage {
-	return PoolMessage{
+func NewMessage(from, to *common.Address, nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, checkNonce bool) Message {
+	return Message{
 		from:       *from,
 		to:         to,
 		nonce:      nonce,
@@ -353,14 +350,14 @@ func NewMessage(from, to *common.Address, nonce uint64, amount *big.Int, gasLimi
 	}
 }
 
-func (m PoolMessage) From() *common.Address { return &m.from }
-func (m PoolMessage) To() *common.Address   { return m.to }
-func (m PoolMessage) GasPrice() *big.Int    { return m.gasPrice }
-func (m PoolMessage) Value() *big.Int       { return m.amount }
-func (m PoolMessage) Gas() uint64           { return m.gasLimit }
-func (m PoolMessage) Nonce() uint64         { return m.nonce }
-func (m PoolMessage) Data() []byte          { return m.data }
-func (m PoolMessage) CheckNonce() bool      { return m.checkNonce }
+func (m Message) From() *common.Address { return &m.from }
+func (m Message) To() *common.Address   { return m.to }
+func (m Message) GasPrice() *big.Int    { return m.gasPrice }
+func (m Message) Value() *big.Int       { return m.amount }
+func (m Message) Gas() uint64           { return m.gasLimit }
+func (m Message) Nonce() uint64         { return m.nonce }
+func (m Message) Data() []byte          { return m.data }
+func (m Message) CheckNonce() bool      { return m.checkNonce }
 
 // deriveChainId derives the chain id from the given v parameter
 func deriveChainId(v *big.Int) *big.Int {

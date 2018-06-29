@@ -5,10 +5,9 @@ import (
 )
 
 type Joint struct {
-	Unit *Unit  `json:"unit"`
-	Ball string `json:"ball"`
+	Unit *Unit `json:"unit"`
 	// obj skiplist
-	Skiplist     []string  `json:"skiplist"`
+
 	Unsigned     string    `json:"unsigned"`
 	CreationDate time.Time `json:"creation_date"`
 }
