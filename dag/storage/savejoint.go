@@ -1,8 +1,10 @@
 package storage
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"github.com/palletone/go-palletone/common/rlp"
 	"log"
 
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
@@ -18,8 +20,7 @@ var (
 	DBPath string = dagconfig.DefaultConfig.DbPath
 )
 
-func SaveJoint(objJoint *modules.Joint, objValidationState *modules.ValidationState, onDone func()) (err error) {
-	log.Println("Start save unit... ")
+func SaveJoint(objJoint *modules.Joint, onDone func()) (err error) {
 	if objJoint.Unsigned != "" {
 		return errors.New(objJoint.Unsigned)
 	}
@@ -33,7 +34,7 @@ func SaveJoint(objJoint *modules.Joint, objValidationState *modules.ValidationSt
 		return
 	}
 	// add key in  unit_keys
-	log.Println("add unit key:", AddUnitKeys(string(UNIT_PREFIX)+obj_unit.Hash().String()))
+	log.Println("add unit key:", string(UNIT_PREFIX)+obj_unit.Hash().String(), AddUnitKeys(string(UNIT_PREFIX)+obj_unit.Hash().String()))
 
 	if dagconfig.SConfig.Blight {
 		// save  update utxo , message , transaction
@@ -44,6 +45,72 @@ func SaveJoint(objJoint *modules.Joint, objValidationState *modules.ValidationSt
 		onDone()
 	}
 	return
+}
+
+// save unit
+func SaveUnit(unit *modules.Unit) error {
+	log.Println("Start save unit... ")
+	obj_unit := unit
+	obj_unit_byte, err := json.Marshal(obj_unit)
+	if err != nil {
+		return err
+	}
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+	if err = Dbconn.Put(append(UNIT_PREFIX, obj_unit.Hash().Bytes()...), obj_unit_byte); err != nil {
+		return err
+	}
+	AddUnitKeys(string(UNIT_PREFIX) + obj_unit.Hash().String())
+	return nil
+}
+
+// save header
+func SaveHeader(h *modules.Header) error {
+	log.Println("Start save header... ")
+	data, err := rlp.EncodeToBytes(h)
+	if err != nil {
+		return err
+	}
+	hash := h.Hash().Bytes()
+
+	chain_index := h.ChainIndex()
+	encNum := encodeBlockNumber(chain_index.Index)
+
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+
+	// Dbconn.Put(append())
+	key := append(append(HEADERPREFIX, encNum...))
+	if err := Dbconn.Put(append(key, hash...), data); err != nil {
+		return err
+	}
+	return nil
+}
+func SaveTransactions(txs *modules.Transactions) error {
+	log.Println("Start save header... ")
+
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+	data, err := rlp.EncodeToBytes(txs)
+	if err != nil {
+		return err
+	}
+	// Dbconn.Put(append())
+
+	if err := Dbconn.Put(append(TRANSACTIONSPREFIX, txs.Hash().Bytes()...), data); err != nil {
+		return err
+	}
+	return nil
+}
+
+// encodeBlockNumber encodes a block number as big endian uint64
+func encodeBlockNumber(number uint64) []byte {
+	enc := make([]byte, 8)
+	binary.BigEndian.PutUint64(enc, number)
+	return enc
 }
 func GetUnitKeys() []string {
 	var keys []string
