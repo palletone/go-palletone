@@ -60,6 +60,19 @@ func GetUnit(hash common.Hash, index uint64) *modules.Unit {
 	return &unit
 }
 
+func GetHeader(hash common.Hash, index uint64) *modules.Header {
+
+	encNum := encodeBlockNumber(index)
+	key := append(HEADERPREFIX, encNum...)
+	header_bytes, err := Get(append(key, hash.Bytes()...))
+	// rlp  to  Header struct
+	log.Println(err)
+	var header modules.Header
+	json.Unmarshal(header_bytes, &header)
+
+	return &header
+}
+
 // func GetFreeUnits() []string {
 // 	if list_bytes, err := Get([]byte(modules.FREEUNITS)); err != nil {
 // 		log.Error("get free units error:" + err.Error())
