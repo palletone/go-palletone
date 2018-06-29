@@ -22,10 +22,9 @@ package log
 
 import (
 	"log"
-	"os"
-	"path"
 	// "strings"
 
+	"github.com/palletone/go-palletone/common/files"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -116,12 +115,12 @@ func InitLogger() {
 	// }
 	for _, p := range path {
 
-		if err := MakeDirAndFile(p); err != nil {
+		if err := files.MakeDirAndFile(p); err != nil {
 			panic(err)
 		}
 	}
 	for _, ep := range err_path {
-		if err := MakeDirAndFile(ep); err != nil {
+		if err := files.MakeDirAndFile(ep); err != nil {
 			panic(err)
 		}
 	}
@@ -301,34 +300,4 @@ func (c Ctx) toArray() []interface{} {
 	}
 
 	return arr
-}
-
-//CheckFileIsExist 判断文件是否存在，存在返回true，不存在返回false
-func checkFileIsExist(path string) bool {
-	var exist = true
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		exist = false
-	}
-	return exist
-}
-
-// Mkdir the path of out.log、err.log ,if the path is not exist.
-func MakeDirAndFile(filePath string) error {
-	if filePath == "stdout" || filePath == "stderr" {
-		return nil
-	}
-	// log.Println("log file path:" + filePath)
-	if !checkFileIsExist(filePath) {
-		// log.Println("create folder and file:" + filePath)
-		err := os.MkdirAll(path.Dir(filePath), os.ModePerm)
-		if err != nil {
-			return err
-		}
-		_, err = os.Create(filePath)
-		if err != nil {
-			return err
-		}
-
-	}
-	return nil
 }
