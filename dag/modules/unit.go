@@ -79,6 +79,17 @@ func HeaderEqual(oldh, newh *Header) bool {
 func (h *Header) Index() uint64 {
 	return h.Number.Index
 }
+func (h *Header) ChainIndex() ChainIndex {
+	return h.Number
+}
+
+func (h *Header) Hash() common.Hash {
+	return rlpHash(h)
+}
+
+func (h *Header) Size() common.StorageSize {
+	return common.StorageSize(unsafe.Sizeof(*h)) + common.StorageSize(len(h.Extra)/8)
+}
 
 // CopyHeader creates a deep copy of a block header to prevent side effects from
 // modifying a header variable.
@@ -130,8 +141,6 @@ type ChainIndex struct {
 	IsMain  bool
 	Index   uint64
 }
-
-type Transactions []*Transaction
 
 type Transaction struct {
 	TxHash       common.Hash `json:"tx_hash"`
@@ -254,14 +263,6 @@ func CopyTransactions(txs Transactions) Transactions {
 
 type UnitNonce [8]byte
 
-func (h *Header) Hash() common.Hash {
-	return rlpHash(h)
-}
-
-func (h *Header) Size() common.StorageSize {
-	return common.StorageSize(unsafe.Sizeof(*h)) + common.StorageSize(len(h.Extra)/8)
-}
-
 /************************** Unit Members  *****************************/
 func (u *Unit) Header() *Header { return CopyHeader(u.header) }
 
@@ -289,6 +290,14 @@ func (u *Unit) Hash() common.Hash {
 func (u *Unit) Size() common.StorageSize {
 	u.size = common.StorageSize(unsafe.Sizeof(*u)) + common.StorageSize(len(u.hash)/8)
 	return u.size
+
+	// if size := b.size.Load(); size != nil {
+	// 	return size.(common.StorageSize)
+	// }
+	// c := writeCounter(0)
+	// rlp.Encode(&c, b)
+	// b.size.Store(common.StorageSize(c))
+	// return common.StorageSize(c)
 }
 
 // return creationdate
@@ -320,3 +329,9 @@ func txsTOpooltxs(txs Transactions) PoolTransactions {
 }
 
 /************************** Unit Members  *****************************/
+
+type Transactions []*Transaction
+
+func (txs *Transactions) Hash() common.Hash {
+	return rlpHash(txs)
+}

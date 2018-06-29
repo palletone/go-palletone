@@ -31,7 +31,7 @@ func TestSaveJoint(t *testing.T) {
 	txs := make(modules.Transactions, 0)
 	u := modules.NewUnit(h, txs)
 	err := SaveJoint(&modules.Joint{Unit: u},
-		&modules.ValidationState{}, func() { log.Println("ok") })
+		func() { log.Println("ok") })
 	log.Println("error:", err)
 }
 

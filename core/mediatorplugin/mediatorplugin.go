@@ -12,6 +12,8 @@ import (
 	"time"
 	"strconv"
 
+	"github.com/palletone/go-palletone/common/log"
+
 	d "github.com/palletone/go-palletone/consensus/dpos"
 	a "github.com/palletone/go-palletone/core/application"
 	s "github.com/palletone/go-palletone/consensus/dpos/mediators"
@@ -33,9 +35,9 @@ var (
 type MediatorPlugin struct {
 	// Enable VerifiedUnit production, even if the chain is stale. 新开启一个区块链时，必须设为true
 	ProductionEnabled            bool
-	// Percent of witnesses (0-99) that must be participating in order to produce VerifiedUnit.
+	// Percent of mediators (0-99) that must be participating in order to produce VerifiedUnit.
 	// 新开启一个区块链时，必须设为0, 或者100
-//	RequiredWitnessParticipation float32
+//	RequiredMediatorsParticipation float32
 	MediatorSet map[d.Mediator]bool
 	SignKeySet  map[string]bool
 	DB          *a.DataBase
@@ -48,11 +50,12 @@ func (mp *MediatorPlugin) CloseChannel(signal int) {
 }
 
 func (mp *MediatorPlugin) PluginInitialize() {
-	println("mediator plugin initialize begin")
+//	println("mediator plugin initialize begin")
+	log.Info("mediator plugin initialize begin")
 
 	// 1.初始化生产验证单元相关的属性值
 	mp.ProductionEnabled = false
-//	mp.RequiredWitnessParticipation = 0.33
+//	mp.RequiredMediatorsParticipation = 0.33
 
 	// 1. 获取当前节点控制的所有mediator
 	mp.MediatorSet = map[d.Mediator]bool{}
@@ -60,7 +63,8 @@ func (mp *MediatorPlugin) PluginInitialize() {
 	mp.MediatorSet[Mediator2] = true
 	mp.MediatorSet[Mediator3] = true
 
-	fmt.Printf("this node controll %d mediators!\n", len(mp.MediatorSet))
+//	fmt.Printf("this node controll %d mediators!\n", len(mp.MediatorSet))
+	log.Info(fmt.Sprintf("this node controll %d mediators!", len(mp.MediatorSet)))
 
 	// 2. 获取当前节点使用的mediator使用的所有签名公私钥
 	mp.SignKeySet = map[string]bool{}
@@ -68,13 +72,16 @@ func (mp *MediatorPlugin) PluginInitialize() {
 	mp.SignKeySet[Signature2] = true
 	mp.SignKeySet[Signature3] = true
 
-	fmt.Printf("this node controll %d private keys!\n", len(mp.SignKeySet))
+//	fmt.Printf("this node controll %d private keys!\n", len(mp.SignKeySet))
+	log.Info(fmt.Sprintf("this node controll %d private keys!", len(mp.SignKeySet)))
 
-	println("mediator plugin initialize end\n")
+//	println("mediator plugin initialize end\n")
+	log.Info("mediator plugin initialize end")
 }
 
 func (mp *MediatorPlugin) PluginStartup(db *a.DataBase, ch chan int) {
-	println("\nmediator plugin startup begin")
+//	println("\nmediator plugin startup begin")
+	log.Info("mediator plugin startup begin")
 	mp.DB = db
 	mp.ch = ch
 
@@ -84,7 +91,8 @@ func (mp *MediatorPlugin) PluginStartup(db *a.DataBase, ch chan int) {
 		mp.CloseChannel(-1)
 	} else {
 		// 2. 开启循环生产计划
-		fmt.Printf("Launching unit verify for %d mediators.\n", len(mp.MediatorSet))
+//		fmt.Printf("Launching unit verify for %d mediators.\n", len(mp.MediatorSet))
+		log.Info(fmt.Sprintf("Launching unit verify for %d mediators.", len(mp.MediatorSet)))
 		mp.ProductionEnabled = true		// 此处应由配置文件中的 enable-stale-production 字段设置为true
 
 		if mp.ProductionEnabled {
@@ -100,7 +108,8 @@ func (mp *MediatorPlugin) PluginStartup(db *a.DataBase, ch chan int) {
 		mp.ScheduleProductionLoop()
 	}
 
-	println("mediator plugin startup end!")
+//	println("mediator plugin startup end!")
+	log.Info("mediator plugin startup end!")
 }
 
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
@@ -142,10 +151,14 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 	// 2. 打印尝试结果
 	switch result {
 	case Produced:
-		println("Generated VerifiedUnit #" + detail["Num"] +" with timestamp " +
+		//println("Generated VerifiedUnit #" + detail["Num"] +" with timestamp " +
+		//	detail["Timestamp"] + /*" at time " + detail["Now"]*/ " with signature " + detail["MediatorSig"])
+		log.Info("Generated VerifiedUnit #" + detail["Num"] +" with timestamp " +
 			detail["Timestamp"] + /*" at time " + detail["Now"]*/ " with signature " + detail["MediatorSig"])
 	case NotSynced:
-		println("Not producing VerifiedUnit because production is disabled " +
+		//println("Not producing VerifiedUnit because production is disabled " +
+		//	"until we receive a recent VerifiedUnit (see: --enable-stale-production)")
+		log.Info("Not producing VerifiedUnit because production is disabled " +
 			"until we receive a recent VerifiedUnit (see: --enable-stale-production)")
 	case NotTimeYet:
 		//fmt.Printf("Not producing VerifiedUnit because next slot time is %v, but now is %v\n",
@@ -154,13 +167,18 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 		//fmt.Printf("Not producing VerifiedUnit because current scheduled mediator is %v\n",
 		//	detail["ScheduledMediator"])
 	case Lag:
-		fmt.Printf("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time." +
+		//fmt.Printf("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time." +
+		//	" Scheduled Time is: %v, but now is %v\n", detail["ScheduledTime"], detail["Now"])
+		log.Info("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time." +
 			" Scheduled Time is: %v, but now is %v\n", detail["ScheduledTime"], detail["Now"])
 	case NoPrivateKey:
-		fmt.Printf("Not producing VerifiedUnit because I don't have the private key for %v\n",
+		//fmt.Printf("Not producing VerifiedUnit because I don't have the private key for %v\n",
+		//	detail["ScheduledKey"])
+		log.Info("Not producing VerifiedUnit because I don't have the private key for %v\n",
 			detail["ScheduledKey"])
 	default:
-		println("Unknown condition!")
+		//println("Unknown condition!")
+		log.Info("Unknown condition!")
 	}
 
 	// 3. 继续循环生产计划
@@ -244,7 +262,9 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 		mp.DB)
 
 	// 3. 异步向区块链网络广播验证单元
-	go println("异步向网络广播新生产的验证单元...")
+//	go println("异步向网络广播新生产的验证单元...")
+//	go println("Asynchronously broadcast the new signed verified unit to p2p networks...")
+	go log.Info("Asynchronously broadcast the new signed verified unit to p2p networks...")
 
 	detail["Num"] = strconv.FormatUint(uint64(verifiedUnit.VerifiedUnitNum), 10)
 	detail["Timestamp"] = verifiedUnit.Timestamp.Format("2006-01-02 15:04:05")
