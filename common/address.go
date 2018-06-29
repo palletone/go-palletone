@@ -26,7 +26,7 @@ import (
 	"reflect"
 	// "strings"
 
-	"github.com/palletone/go-palletone/common/base58"
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common/hexutil"
 )
 

@@ -63,6 +63,12 @@
 			"revisionTime": "2017-11-28T15:02:46Z"
 		},
 		{
+			"checksumSHA1": "SA6HCTtNhxRocP4mFOqQK6x7PWc=",
+			"path": "github.com/btcsuite/btcutil/base58",
+			"revision": "d4cc87b860166d00d6b5b9e0d3b3d71d6088d4d4",
+			"revisionTime": "2018-05-24T03:27:03Z"
+		},
+		{
 			"checksumSHA1": "cDMtzKmdTx4CcIpP4broa+16X9g=",
 			"path": "github.com/cespare/cp",
 			"revision": "165db2f241fd235aec29ba6d9b1ccd5f1c14637c",
