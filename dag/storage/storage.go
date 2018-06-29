@@ -2,14 +2,9 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/util"
 )
 
-// store unit
-func StoreUnit(unit *modules.Unit) {
-
-}
 func Store(key string, value interface{}) error {
 	if Dbconn == nil {
 		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
