@@ -3,6 +3,7 @@ package modules
 
 import (
 	"encoding/json"
+	"math/big"
 	"sync/atomic"
 	"time"
 	"unsafe"
@@ -79,6 +80,37 @@ func (h *Header) Index() uint64 {
 	return h.Number.Index
 }
 
+// CopyHeader creates a deep copy of a block header to prevent side effects from
+// modifying a header variable.
+func CopyHeader(h *Header) *Header {
+	cpy := *h
+
+	if len(h.ParentUnits) > 0 {
+		cpy.ParentUnits = make([]common.Hash, len(h.ParentUnits))
+		for i := 0; i < len(h.ParentUnits); i++ {
+			cpy.ParentUnits[i].Set(h.ParentUnits[i])
+		}
+	}
+
+	if len(h.AssetIDs) > 0 {
+		copy(cpy.AssetIDs, h.AssetIDs)
+	}
+
+	if len(h.Authors) > 0 {
+		copy(cpy.Authors, h.Authors)
+	}
+
+	if len(h.Witness) > 0 {
+		copy(cpy.Witness, h.Witness)
+	}
+
+	if len(h.Root) > 0 {
+		cpy.Root.Set(h.Root)
+	}
+
+	return &cpy
+}
+
 // func (h *Header) ChainIndex() ChainIndex {
 // 	return h.Number
 // }
@@ -102,19 +134,28 @@ type ChainIndex struct {
 type Transactions []*Transaction
 
 type Transaction struct {
-	TxHash       common.Hash   `json:"tx_hash"`
-	TxMessages   []UnitMessage `json:"messages"` //
-	Authors      []Author      `json:"authors"`  // the issuers of the transaction
-	CreationDate time.Time     `json:"creation_date"`
+	TxHash       common.Hash `json:"tx_hash"`
+	TxMessages   []Message   `json:"messages"` //
+	Authors      []Author    `json:"authors"`  // the issuers of the transaction
+	CreationDate time.Time   `json:"creation_date"`
 }
 
 // key: message.hash(message+timestamp)
-type UnitMessage struct {
+type Message struct {
 	App          string       `json:"app"`          // message type
 	PayloadHash  common.Hash  `json:"payload_hash"` // payload hash
 	Memery       atomic.Value `json:"momery"`
 	Excutiontime uint         `json:"excution_time"`
 	Payload      interface{}  `json:"payload"` // the true transaction data
+	/*** poolmessage ***/
+	to         *common.Address
+	from       common.Address
+	nonce      uint64
+	amount     *big.Int
+	gasLimit   uint64
+	gasPrice   *big.Int
+	data       []byte
+	checkNonce bool
 }
 
 /************************** Payload Details ******************************************/
@@ -200,41 +241,10 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 		header: CopyHeader(header),
 		txs:    CopyTransactions(txs),
 	}
-	u.hash = u.Hash()
-	u.size = u.Size()
 	u.creationdate = time.Now()
+	u.size = header.Size()
+	u.hash = u.Hash()
 	return u
-}
-
-// CopyHeader creates a deep copy of a block header to prevent side effects from
-// modifying a header variable.
-func CopyHeader(h *Header) *Header {
-	cpy := *h
-
-	if len(h.ParentUnits) > 0 {
-		cpy.ParentUnits = make([]common.Hash, len(h.ParentUnits))
-		for i := 0; i < len(h.ParentUnits); i++ {
-			cpy.ParentUnits[i].Set(h.ParentUnits[i])
-		}
-	}
-
-	if len(h.AssetIDs) > 0 {
-		copy(cpy.AssetIDs, h.AssetIDs)
-	}
-
-	if len(h.Authors) > 0 {
-		copy(cpy.Authors, h.Authors)
-	}
-
-	if len(h.Witness) > 0 {
-		copy(cpy.Witness, h.Witness)
-	}
-
-	if len(h.Root) > 0 {
-		cpy.Root.Set(h.Root)
-	}
-
-	return &cpy
 }
 
 func CopyTransactions(txs Transactions) Transactions {
@@ -252,6 +262,24 @@ func (h *Header) Size() common.StorageSize {
 	return common.StorageSize(unsafe.Sizeof(*h)) + common.StorageSize(len(h.Extra)/8)
 }
 
+/************************** Unit Members  *****************************/
+func (u *Unit) Header() *Header { return CopyHeader(u.header) }
+
+// transactions
+func (u *Unit) Transactions() []*Transaction {
+	return u.txs
+}
+
+// return transaction
+func (u *Unit) Transaction(hash common.Hash) *Transaction {
+	for _, transaction := range u.txs {
+		if transaction.TxHash == hash {
+			return transaction
+		}
+	}
+	return nil
+}
+
 // return  unit'hash
 func (u *Unit) Hash() common.Hash {
 	v := rlpHash(u)
@@ -259,13 +287,15 @@ func (u *Unit) Hash() common.Hash {
 }
 
 func (u *Unit) Size() common.StorageSize {
-	return common.StorageSize(unsafe.Sizeof(*u)) + common.StorageSize(len(u.hash)/8)
+	u.size = common.StorageSize(unsafe.Sizeof(*u)) + common.StorageSize(len(u.hash)/8)
+	return u.size
 }
 
-//
-func (u *Unit) Header() *Header { return CopyHeader(u.header) }
+// return creationdate
+func (u *Unit) CreationDate() time.Time {
+	return u.creationdate
+}
 
-//
 //func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }
 func (u *Unit) Number() ChainIndex {
 	return u.header.Number
@@ -274,20 +304,19 @@ func (u *Unit) NumberU64() uint64 {
 	return u.header.Number.Index
 }
 
-// transactions
-func (u *Unit) Transactions() []*Transaction {
-	return u.txs
+func (u *Unit) PoolTransactions() []*PoolTransaction {
+	return txsTOpooltxs(u.txs)
 }
-func txsTOPooltxs(txs Transactions) PoolTransactions {
+
+// return unit's parents hash
+func (u *Unit) ParentHash() []common.Hash {
+	return u.header.ParentUnits
+}
+
+func txsTOpooltxs(txs Transactions) PoolTransactions {
 	ptxs := make(PoolTransactions, 0)
 	return ptxs
 
 }
-func (u *Unit) PoolTransactions() []*PoolTransaction {
-	return txsTOPooltxs(u.txs)
-}
 
-//
-func (u *Unit) ParentHash() []common.Hash {
-	return u.header.ParentUnits
-}
+/************************** Unit Members  *****************************/
