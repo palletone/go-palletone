@@ -359,7 +359,7 @@ func accountCreate(ctx *cli.Context) error {
 		utils.Fatalf("Failed to create account: %v", err)
 	}
 	fmt.Printf("Address Hex: {%x}\n", address)
-	fmt.Printf("Address: %s\n", address.Str())
+	fmt.Printf("Address: %s\n", address)
 	return nil
 }
 
@@ -392,7 +392,7 @@ func accountSignString(ctx *cli.Context) error {
 	account, _ := utils.MakeAddress(ks, addr)
 	hash := crypto.Keccak256Hash([]byte(ctx.Args()[1]))
 	fmt.Printf("%s Hash:%s", addr, hash.String())
-	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
+	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, utils.MakePasswordList(ctx))
 	sign, err := ks.SignHashWithPassphrase(account, pwd, hash.Bytes())
 	if err != nil {
 		utils.Fatalf("Sign error:%s", err)
@@ -427,7 +427,7 @@ func accountSignVerify(ctx *cli.Context) error {
 	hash := crypto.Keccak256Hash([]byte(ctx.Args()[1]))
 	sign := ctx.Args()[2]
 	fmt.Printf("\n%s Hash:%s\n", addr, hash.String())
-	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
+	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, utils.MakePasswordList(ctx))
 	s, _ := hexutil.Decode(sign)
 	// ss, _ := ks.SignHashWithPassphrase(account, pwd, hash.Bytes())
 	// fmt.Println("Sign again:" + hexutil.Encode(ss))
