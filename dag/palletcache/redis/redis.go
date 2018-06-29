@@ -21,7 +21,7 @@ package redis
 import (
 	toml "github.com/extrame/go-toml-config"
 	"github.com/garyburd/redigo/redis"
-	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"log"
 )
 
@@ -49,22 +49,22 @@ var PoolMaxIdle = 10
 func Init() {
 	var addr, pwd, prefix string
 
-	if config.TConfig.RedisAddr == "" {
+	if dagconfig.DefaultConfig.RedisAddr == "" {
 		addr = "localhost"
 	} else {
-		addr = config.TConfig.RedisAddr
+		addr = dagconfig.DefaultConfig.RedisAddr
 	}
 
-	if config.TConfig.RedisPwd == "" {
+	if dagconfig.DefaultConfig.RedisPwd == "" {
 		pwd = ""
 	} else {
-		pwd = config.TConfig.RedisPwd
+		pwd = dagconfig.DefaultConfig.RedisPwd
 	}
 
-	if config.TConfig.RedisPrefix == "" {
+	if dagconfig.DefaultConfig.RedisPrefix == "" {
 		prefix = "default"
 	} else {
-		prefix = config.TConfig.RedisPrefix
+		prefix = dagconfig.DefaultConfig.RedisPrefix
 	}
 	log.Println("addr:", addr)
 	r := Redis{address: &addr, password: &pwd}
