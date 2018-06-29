@@ -19,8 +19,8 @@
 package redis
 
 import (
-	toml "github.com/extrame/go-toml-config"
-	"github.com/garyburd/redigo/redis"
+	//toml "github.com/extrame/go-toml-config"
+	"github.com/gomodule/redigo/redis"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
@@ -72,9 +72,10 @@ func Init() {
 
 // 从文件解析 redis配置信息
 func (r *Redis) ParseConfig(prefix string) error {
-	r.address = toml.String(prefix+".address", "localhost:6379")
-	r.password = toml.String(prefix+".password", "")
-	r.db = toml.Int64(prefix+".db", 0)
+	// r.address = toml.String(prefix+".address", "localhost:6379")
+	// r.password = toml.String(prefix+".password", "")
+	// r.db = toml.Int64(prefix+".db", 0)
+	//TODO please use github.com/naoina/toml
 	return nil
 }
 
