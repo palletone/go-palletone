@@ -167,13 +167,12 @@ func TestSignVerify(t *testing.T) {
 	privateKey := "f4b430cd1007bf3309a00fdda81c58131a1e0a41f6a72eab3291e561342ae1b3"
 	// privateKeyBytes := hexutil.MustDecode(privateKey)
 	prvKey, _ := HexToECDSA(privateKey)
-	pubKey := FromECDSAPub(&prvKey.PublicKey)
 
 	//signB, _ := hexutil.Decode(sign)
 	signature, _ := Sign(hash, prvKey)
 	t.Log("Signature is: " + hexutil.Encode(signature))
-
-	pass := VerifySignature(pubKey, hash, signature)
+	pubKey := FromECDSAPub(&prvKey.PublicKey)
+	pass := VerifySignature(pubKey, hash, signature[0:64])
 	if pass {
 		t.Log("Pass")
 	} else {
