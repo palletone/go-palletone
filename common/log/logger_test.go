@@ -95,3 +95,15 @@ func InitLog(url string, optins ...interface{}) {
 	}
 
 }
+
+// func TestMain(m *testing.M) {
+// 	//setup()
+// 	code := m.Run()
+
+// 	shutdown()
+// 	os.Exit(code)
+// }
+// func shutdown() {
+// 	fmt.Println("remove unit test log files.")
+// 	os.RemoveAll("log")
+// }
