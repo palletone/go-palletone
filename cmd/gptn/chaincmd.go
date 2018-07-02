@@ -22,9 +22,9 @@ import (
 	"strconv"
 
 	"github.com/palletone/go-palletone/cmd/utils"
-	"github.com/palletone/go-palletone/common/log"
+	//"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/gen"
+	//"github.com/palletone/go-palletone/core/gen"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -176,18 +176,21 @@ func initGenesis(ctx *cli.Context) error {
 	if err := json.NewDecoder(file).Decode(genesis); err != nil {
 		utils.Fatalf("invalid genesis file: %v", err)
 	}
-	// Open an initialise both full and light databases
-	makeFullNode(ctx)
-	//	chaindb, err := stack.OpenDatabase("chaindata", 0, 0)
-	//	if err != nil {
-	//		utils.Fatalf("Failed to open database: %v", err)
-	//	}
-	//	defer chaindb.Close()
-	hash, err := gen.SetupGenesisBlock( /*chaindb,*/ genesis)
-	if err != nil {
-		utils.Fatalf("Failed to write genesis block: %v", err)
-	}
-	log.Info("Successfully wrote genesis state", "database", "chaindata", "hash", hash)
+
+	//node := makeFullNode(ctx)
+	//startNode(ctx, node)
+	//node.initGenesis()
+
+	/*
+		makeFullNode(ctx)
+		unit, err = gen.SetupGenesisBlock(genesis)
+		if err != nil {
+			utils.Fatalf("Failed to write genesis block: %v", err)
+		}
+		log.Info("Successfully wrote genesis state", "database", "chaindata")
+	*/
+	//to p2p
+
 	return nil
 }
 

@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/dag/coredata"
@@ -96,9 +95,8 @@ type Downloader struct {
 	mode SyncMode       // Synchronisation mode defining the strategy used (per sync cycle)
 	mux  *event.TypeMux // Event multiplexer to announce sync operation events
 
-	queue   *queue   // Scheduler for selecting the hashes to download
-	peers   *peerSet // Set of active peers from which download can proceed
-	stateDB ptndb.Database
+	queue *queue   // Scheduler for selecting the hashes to download
+	peers *peerSet // Set of active peers from which download can proceed
 
 	rttEstimate   uint64 // Round trip time to target for download requests
 	rttConfidence uint64 // Confidence in the estimated RTT (unit: millionths to allow atomic ops)
@@ -108,9 +106,6 @@ type Downloader struct {
 	syncStatsChainHeight uint64 // Highest block number known when syncing started
 	syncStatsState       stateSyncStats
 	syncStatsLock        sync.RWMutex // Lock protecting the sync stats fields
-
-	//lightchain LightChain
-	//blockchain BlockChain
 
 	// Callbacks
 	dropPeer peerDropFn // Drops a peer for misbehaving
@@ -198,7 +193,7 @@ type BlockChain interface {
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
-func New(mode SyncMode, stateDb ptndb.Database, mux *event.TypeMux /*chain BlockChain, lightchain LightChain,*/, dropPeer peerDropFn) *Downloader {
+func New(mode SyncMode, mux *event.TypeMux /*chain BlockChain, lightchain LightChain,*/, dropPeer peerDropFn) *Downloader {
 	/*
 		if lightchain == nil {
 			lightchain = chain
@@ -206,7 +201,6 @@ func New(mode SyncMode, stateDb ptndb.Database, mux *event.TypeMux /*chain Block
 
 	dl := &Downloader{
 		mode:          mode,
-		stateDB:       stateDb,
 		mux:           mux,
 		queue:         newQueue(),
 		peers:         newPeerSet(),
@@ -225,7 +219,7 @@ func New(mode SyncMode, stateDb ptndb.Database, mux *event.TypeMux /*chain Block
 		stateCh:        make(chan dataPack),
 		stateSyncStart: make(chan *stateSync),
 		syncStatsState: stateSyncStats{
-			processed: coredata.GetTrieSyncProgress(stateDb),
+			processed: coredata.GetTrieSyncProgress(),
 		},
 		trackStateReq: make(chan *stateReq),
 	}

@@ -35,7 +35,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/types"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/internal/ethapi"
@@ -61,9 +60,6 @@ type PalletOne struct {
 	// Handlers
 	txPool          *coredata.TxPool
 	protocolManager *ProtocolManager
-
-	// DB interfaces
-	chainDb ptndb.Database // Block chain database
 
 	eventMux       *event.TypeMux
 	engine         core.ConsensusEngine //consensus.Engine
@@ -91,29 +87,23 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
-	chainDb, err := CreateDB(ctx, config, "chaindata")
-	if err != nil {
-		return nil, err
-	}
 
-	_, genesisErr := gen.SetupGenesisBlock(config.Genesis)
-
+	/*_, genesisErr := gen.SetupGenesisBlock(config.Genesis)
 	if _, ok := genesisErr.(*configure.ConfigCompatError); genesisErr != nil && !ok {
 		return nil, genesisErr
-	}
+	}*/
 
 	eth := &PalletOne{
 		config:         config,
-		chainDb:        chainDb,
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
-		engine:         CreateConsensusEngine(ctx, chainDb),
+		engine:         CreateConsensusEngine(ctx),
 		shutdownChan:   make(chan bool),
 		networkId:      config.NetworkId,
 		gasPrice:       config.GasPrice,
 		etherbase:      config.Etherbase,
 		bloomRequests:  make(chan chan *bloombits.Retrieval),
-		bloomIndexer:   NewBloomIndexer(chainDb, configure.BloomBitsBlocks),
+		bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
 	}
 
 	log.Info("Initialising PalletOne protocol", "versions", ProtocolVersions, "network", config.NetworkId)
@@ -123,7 +113,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 	eth.txPool = coredata.NewTxPool(config.TxPool)
 
-	if eth.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, eth.eventMux, eth.txPool, eth.engine, chainDb); err != nil {
+	var err error
+	if eth.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, eth.eventMux, eth.txPool, eth.engine); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}
@@ -150,7 +141,7 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ptndb.Data
 }
 
 // CreateConsensusEngine creates the required type of consensus engine instance for an PalletOne service
-func CreateConsensusEngine(ctx *node.ServiceContext, db ptndb.Database) core.ConsensusEngine {
+func CreateConsensusEngine(ctx *node.ServiceContext) core.ConsensusEngine {
 	engine := consensus.New()
 	return engine
 }
@@ -238,7 +229,6 @@ func (s *PalletOne) AccountManager() *accounts.Manager  { return s.accountManage
 func (s *PalletOne) TxPool() *coredata.TxPool           { return s.txPool }
 func (s *PalletOne) EventMux() *event.TypeMux           { return s.eventMux }
 func (s *PalletOne) Engine() core.ConsensusEngine       { return s.engine }
-func (s *PalletOne) ChainDb() ptndb.Database            { return s.chainDb }
 func (s *PalletOne) IsListening() bool                  { return true } // Always listening
 func (s *PalletOne) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *PalletOne) NetVersion() uint64                 { return s.networkId }
@@ -275,8 +265,6 @@ func (s *PalletOne) Stop() error {
 	s.txPool.Stop()
 	s.engine.Stop()
 	s.eventMux.Stop()
-
-	s.chainDb.Close()
 	close(s.shutdownChan)
 
 	return nil

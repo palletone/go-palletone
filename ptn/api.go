@@ -18,14 +18,14 @@ package ptn
 
 import (
 	"context"
-	"fmt"
+	//"fmt"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/common/trie"
+	//"github.com/palletone/go-palletone/common/trie"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/dag/coredata"
+	//"github.com/palletone/go-palletone/dag/coredata"
 )
 
 // PublicEthereumAPI provides an API to access PalletOne full node-related
@@ -83,8 +83,7 @@ func NewPrivateDebugAPI(config *configure.ChainConfig, eth *PalletOne) *PrivateD
 
 // Preimage is a debug API function that returns the preimage for a sha3 hash, if known.
 func (api *PrivateDebugAPI) Preimage(ctx context.Context, hash common.Hash) (hexutil.Bytes, error) {
-	db := coredata.PreimageTable(api.eth.ChainDb())
-	return db.Get(hash.Bytes())
+	return hexutil.Bytes{}, nil
 }
 
 // StorageRangeResult is the result of a debug_storageRangeAt API call.
@@ -101,29 +100,5 @@ type storageEntry struct {
 }
 
 func (api *PrivateDebugAPI) getModifiedAccounts(startBlock, endBlock *types.Block) ([]common.Address, error) {
-	if startBlock.Number().Uint64() >= endBlock.Number().Uint64() {
-		return nil, fmt.Errorf("start block height (%d) must be less than end block height (%d)", startBlock.Number().Uint64(), endBlock.Number().Uint64())
-	}
-
-	oldTrie, err := trie.NewSecure(startBlock.Root(), trie.NewDatabase(api.eth.chainDb), 0)
-	if err != nil {
-		return nil, err
-	}
-	newTrie, err := trie.NewSecure(endBlock.Root(), trie.NewDatabase(api.eth.chainDb), 0)
-	if err != nil {
-		return nil, err
-	}
-
-	diff, _ := trie.NewDifferenceIterator(oldTrie.NodeIterator([]byte{}), newTrie.NodeIterator([]byte{}))
-	iter := trie.NewIterator(diff)
-
-	var dirty []common.Address
-	for iter.Next() {
-		key := newTrie.GetKey(iter.Key)
-		if key == nil {
-			return nil, fmt.Errorf("no preimage found for hash %x", iter.Key)
-		}
-		dirty = append(dirty, common.BytesToAddress(key))
-	}
-	return dirty, nil
+	return []common.Address{}, nil
 }
