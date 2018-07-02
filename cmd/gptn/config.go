@@ -79,19 +79,19 @@ type ethstatsConfig struct {
 	URL string `toml:",omitempty"`
 }
 
-type gethConfig struct {
+type FullConfig struct {
 	Ptn       ptn.Config
 	Node      node.Config
 	Ethstats  ethstatsConfig
 	Dashboard dashboard.Config
 	Consensus consensusconfig.Config
-	Log       log.Config
+	Log       *log.Config
 	Dag       dagconfig.Config
 	P2P       p2p.Config
 	Ada       adaptor.Config
 }
 
-func loadConfig(file string, cfg *gethConfig) error {
+func loadConfig(file string, cfg *FullConfig) error {
 	f, err := os.Open(file)
 	if err != nil {
 		return err
@@ -116,24 +116,24 @@ func defaultNodeConfig() node.Config {
 	return cfg
 }
 
-func adaptorConfig(config gethConfig) gethConfig {
+func adaptorConfig(config FullConfig) FullConfig {
 	config.Node.P2P = config.P2P
 	config.Ptn.Dag = config.Dag
-	config.Ptn.Log = config.Log
+	config.Ptn.Log = *config.Log
 	config.Ptn.Consensus = config.Consensus
 	return config
 }
 
-func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
+func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// Load defaults.
-	cfg := gethConfig{
+	cfg := FullConfig{
 		Ptn:       ptn.DefaultConfig,
 		Node:      defaultNodeConfig(),
 		Dashboard: dashboard.DefaultConfig,
 		P2P:       p2p.Config{ListenAddr: ":30303", MaxPeers: 25, NAT: nat.Any()},
 		Consensus: consensusconfig.DefaultConfig,
 		Dag:       dagconfig.DefaultConfig,
-		Log:       log.DefaultConfig,
+		Log:       &log.DefaultConfig,
 		Ada:       adaptor.DefaultConfig,
 	}
 
@@ -164,6 +164,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 
 func makeFullNode(ctx *cli.Context) *node.Node {
 	stack, cfg := makeConfigNode(ctx)
+	log.InitLogger()
 	utils.RegisterEthService(stack, &cfg.Ptn)
 	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)

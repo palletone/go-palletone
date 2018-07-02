@@ -27,7 +27,6 @@ import (
 
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/crypto/sha3"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
@@ -207,7 +206,7 @@ func TestServerTaskScheduling(t *testing.T) {
 		quit:    make(chan struct{}),
 		ntab:    fakeTable{},
 		running: true,
-		log:     log.New(),
+		// log:     log.New(),
 	}
 	srv.loopWG.Add(1)
 	go func() {
@@ -252,7 +251,7 @@ func TestServerManyTasks(t *testing.T) {
 			quit:    make(chan struct{}),
 			ntab:    fakeTable{},
 			running: true,
-			log:     log.New(),
+			// log:     log.New(),
 		}
 		done       = make(chan *testTask)
 		start, end = 0, 0
@@ -435,7 +434,7 @@ func TestServerSetupConn(t *testing.T) {
 				Protocols:  []Protocol{discard},
 			},
 			newTransport: func(fd net.Conn) transport { return test.tt },
-			log:          log.New(),
+			// log:          log.New(),
 		}
 		if !test.dontstart {
 			if err := srv.Start(); err != nil {

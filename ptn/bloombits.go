@@ -60,7 +60,7 @@ func (eth *PalletOne) startBloomHandlers() {
 					task := <-request
 					task.Bitsets = make([][]byte, len(task.Sections))
 					for i, section := range task.Sections {
-						head := coredata.GetCanonicalHash(eth.chainDb, (section+1)*configure.BloomBitsBlocks-1)
+						head := common.Hash{} //coredata.GetCanonicalHash(eth.chainDb, (section+1)*configure.BloomBitsBlocks-1)//would recover
 						if compVector, err := coredata.GetBloomBits(eth.chainDb, task.Bit, section, head); err == nil {
 							if blob, err := bitutil.DecompressBytes(compVector, int(configure.BloomBitsBlocks)/8); err == nil {
 								task.Bitsets[i] = blob

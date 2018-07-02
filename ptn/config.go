@@ -29,7 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
-	"github.com/palletone/go-palletone/core/gen"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -76,7 +76,7 @@ func init() {
 type Config struct {
 	// The genesis block, which is inserted if the database is empty.
 	// If nil, the PalletOne main net block is used.
-	Genesis *gen.Genesis `toml:",omitempty"`
+	Genesis *core.Genesis `toml:",omitempty"`
 
 	// Protocol options
 	NetworkId uint64 // Network ID to use for selecting peers to connect to

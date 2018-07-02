@@ -63,6 +63,12 @@
 			"revisionTime": "2017-11-28T15:02:46Z"
 		},
 		{
+			"checksumSHA1": "SA6HCTtNhxRocP4mFOqQK6x7PWc=",
+			"path": "github.com/btcsuite/btcutil/base58",
+			"revision": "d4cc87b860166d00d6b5b9e0d3b3d71d6088d4d4",
+			"revisionTime": "2018-05-24T03:27:03Z"
+		},
+		{
 			"checksumSHA1": "cDMtzKmdTx4CcIpP4broa+16X9g=",
 			"path": "github.com/cespare/cp",
 			"revision": "165db2f241fd235aec29ba6d9b1ccd5f1c14637c",
@@ -175,6 +181,18 @@
 			"path": "github.com/golang/snappy",
 			"revision": "553a641470496b2327abcac10b36396bd98e45c9",
 			"revisionTime": "2017-02-15T23:32:05Z"
+		},
+		{
+			"checksumSHA1": "5lMzZtb4uUo+N/J+cK7LqwR6bQQ=",
+			"path": "github.com/gomodule/redigo/internal",
+			"revision": "2cd21d9966bf7ff9ae091419744f0b3fb0fecace",
+			"revisionTime": "2018-06-27T14:45:07Z"
+		},
+		{
+			"checksumSHA1": "7LBPojy3Jduic8tFDejR9xei/z0=",
+			"path": "github.com/gomodule/redigo/redis",
+			"revision": "2cd21d9966bf7ff9ae091419744f0b3fb0fecace",
+			"revisionTime": "2018-06-27T14:45:07Z"
 		},
 		{
 			"checksumSHA1": "d9PxF1XQGLMJZRct2R8qVM/eYlE=",

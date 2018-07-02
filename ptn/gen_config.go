@@ -9,7 +9,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
-	"github.com/palletone/go-palletone/core/gen"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -20,7 +20,7 @@ var _ = (*configMarshaling)(nil)
 
 func (c Config) MarshalTOML() (interface{}, error) {
 	type Config struct {
-		Genesis                 *gen.Genesis `toml:",omitempty"`
+		Genesis                 *core.Genesis `toml:",omitempty"`
 		NetworkId               uint64
 		SyncMode                downloader.SyncMode
 		LightServ               int  `toml:",omitempty"`

@@ -28,8 +28,8 @@ import (
 	"math/big"
 	"os"
 
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/base58"
 	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/rlp"

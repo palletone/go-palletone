@@ -25,42 +25,13 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 //go:generate gencodec -type Genesis -field-override genesisSpecMarshaling -out gen_genesis.go
 //go:generate gencodec -type GenesisAccount -field-override genesisAccountMarshaling -out gen_genesis_account.go
-
-// Genesis specifies the header fields, state of a genesis block. It also defines hard
-// fork switch-over blocks through the chain configuration.
-/*type Genesis struct {
-	Nonce      uint64                 `json:"nonce"`
-	Timestamp  uint64                 `json:"timestamp"`
-	ExtraData  []byte                 `json:"extraData"`
-	GasLimit   uint64                 `json:"gasLimit"`
-	Difficulty *big.Int               `json:"difficulty"`
-	Mixhash    common.Hash            `json:"mixHash"`
-	Coinbase   common.Address         `json:"coinbase"`
-}*/
-
-type SystemConfig struct {
-	MediatorSlot  int      `json:"mediatorSlot"`
-	MediatorCount int      `json:"mediatorCount"`
-	MediatorList  []string `json:"mediatorList"`
-	MediatorCycle int      `json:"mediatorCycle"`
-	DepositRate   float64  `json:"depositRate"`
-}
-
-type Genesis struct {
-	Height       string       `json:"height"`
-	Version      string       `json:"version"`
-	TokenAmount  uint64       `json:"tokenAmount"`
-	TokenDecimal int          `json:"tokenDecimal"`
-	ChainID      int          `json:"chainId"`
-	TokenHolder  string       `json:"tokenHolder"`
-	SystemConfig SystemConfig `json:"systemConfig"`
-}
 
 // storageJSON represents a 256 bit byte array, but allows less than 256 bits when
 // unmarshaling from hex.
@@ -106,10 +77,9 @@ func (e *GenesisMismatchError) Error() string {
 // error is a *configure.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-func SetupGenesisBlock(db ptndb.Database, genesis *Genesis) (common.Hash, error) {
+func SetupGenesisBlock(genesis *core.Genesis) (common.Hash, error) {
 	// Just commit the new block if there is no stored genesis block.
-	fmt.Println("======SetupGenesisBlock:", genesis)
-	stored := coredata.GetCanonicalHash(db, 0)
+	stored := storage.GetGenesisUnit(0)
 	if (stored == common.Hash{}) {
 		if genesis == nil {
 			log.Info("Writing default main-net genesis block")
@@ -117,49 +87,54 @@ func SetupGenesisBlock(db ptndb.Database, genesis *Genesis) (common.Hash, error)
 		} else {
 			log.Info("Writing custom genesis block")
 		}
-		/*would recover
-		block, err := genesis.Commit(db)
-		return genesis.Config, block.Hash(), err*/
-		return common.Hash{}, nil
+		return modules.NewGenesisUnit(genesis)
 	}
 
 	// Check whether the genesis block is already written.
 	if genesis != nil {
-		hash := common.Hash{} //genesis.ToBlock(nil).Hash() //would recover
-		if hash != stored {
-			return hash, &GenesisMismatchError{stored, hash}
-		}
+		return stored, errors.New("the genesis block is already written")
 	}
-
-	// Check config compatibility and write the config. Compatibility errors
-	// are returned to the caller unless we're already at block zero.
-	height := coredata.GetBlockNumber(db, coredata.GetHeadHeaderHash(db))
-	if height == coredata.MissingNumber {
-		return common.Hash{}, errors.New("missing block number for head header hash")
-	}
-	/*would recover check the genesis config height
-	compatErr := storedcfg.CheckCompatible(newcfg, height)
-	if compatErr != nil && height != 0 && compatErr.RewindTo != 0 {
-		return common.Hash{}, compatErr
-	}*/
-	return common.Hash{}, nil
+	return stored, nil
 }
 
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
-func DefaultGenesisBlock() *Genesis {
-	return &Genesis{
+func DefaultGenesisBlock() *core.Genesis {
+	SystemConfig := core.SystemConfig{
+		MediatorSlot:  5,
+		MediatorCount: 21,
+		//MediatorList: ["dfba98bb5c52bba028e2cc487cbd1084"],
+		MediatorCycle: 86400,
+		DepositRate:   0.02,
+	}
+	return &core.Genesis{
 		Height:       "0",
 		Version:      "0.6.0",
 		TokenAmount:  1000000000,
 		TokenDecimal: 8,
-		ChainID:      0,
+		ChainID:      1,
 		TokenHolder:  "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ",
+		SystemConfig: SystemConfig,
 	}
 }
 
 // DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
-func DefaultTestnetGenesisBlock() *Genesis {
-	return &Genesis{}
+func DefaultTestnetGenesisBlock() *core.Genesis {
+	SystemConfig := core.SystemConfig{
+		MediatorSlot:  5,
+		MediatorCount: 21,
+		//MediatorList: ["dfba98bb5c52bba028e2cc487cbd1084"],
+		MediatorCycle: 86400,
+		DepositRate:   0.02,
+	}
+	return &core.Genesis{
+		Height:       "0",
+		Version:      "0.6.0",
+		TokenAmount:  11111111111,
+		TokenDecimal: 8,
+		ChainID:      1,
+		TokenHolder:  "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ",
+		SystemConfig: SystemConfig,
+	}
 }
 
 /*

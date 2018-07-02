@@ -338,7 +338,7 @@ func ambiguousAddrRecovery(ks *keystore.KeyStore, err *keystore.AmbiguousAddrErr
 
 // accountCreate creates a new account into the keystore defined by the CLI flags.
 func accountCreate(ctx *cli.Context) error {
-	cfg := gethConfig{Node: defaultNodeConfig()}
+	cfg := FullConfig{Node: defaultNodeConfig()}
 	// Load config file.
 	file := "./palletone.toml"
 	if temp := ctx.GlobalString(configFileFlag.Name); temp != "" {

@@ -38,6 +38,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus/consensusconfig"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
@@ -1112,8 +1113,8 @@ func MakeChainDatabase(ctx *cli.Context, stack *node.Node) ptndb.Database {
 	return chainDb
 }
 
-func MakeGenesis(ctx *cli.Context) *gen.Genesis {
-	var genesis *gen.Genesis
+func MakeGenesis(ctx *cli.Context) *core.Genesis {
+	var genesis *core.Genesis
 	switch {
 	case ctx.GlobalBool(TestnetFlag.Name):
 		genesis = gen.DefaultTestnetGenesisBlock()

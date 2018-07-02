@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/coocood/freecache"
 )
 
 func NewDag() *modules.Dag {

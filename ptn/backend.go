@@ -96,7 +96,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	_, genesisErr := gen.SetupGenesisBlock(chainDb, config.Genesis)
+	_, genesisErr := gen.SetupGenesisBlock(config.Genesis)
 
 	if _, ok := genesisErr.(*configure.ConfigCompatError); genesisErr != nil && !ok {
 		return nil, genesisErr

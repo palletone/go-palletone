@@ -1,3 +1,21 @@
+/*
+   This file is part of go-palletone.
+   go-palletone is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   go-palletone is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/*
+ * @author PalletOne core developers <dev@pallet.one>
+ * @date 2018
+ */
+
 // unit package, unit structure and storage api
 package modules
 
@@ -9,6 +27,7 @@ import (
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/core"
 )
 
 /*****************************27 June, 2018 update unit struct type*****************************************/
@@ -247,6 +266,10 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 	u.size = header.Size()
 	u.hash = u.Hash()
 	return u
+}
+
+func NewGenesisUnit(genesis *core.Genesis) (common.Hash, error) {
+	return common.Hash{}, nil
 }
 
 func CopyTransactions(txs Transactions) Transactions {

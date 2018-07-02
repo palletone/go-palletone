@@ -19,10 +19,9 @@
 package redis
 
 import (
-	toml "github.com/extrame/go-toml-config"
-	"github.com/garyburd/redigo/redis"
-	"github.com/palletone/go-palletone/configure"
-	"log"
+	//toml "github.com/extrame/go-toml-config"
+	"github.com/gomodule/redigo/redis"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 //TODO
@@ -49,24 +48,23 @@ var PoolMaxIdle = 10
 func Init() {
 	var addr, pwd, prefix string
 
-	if config.TConfig.RedisAddr == "" {
+	if dagconfig.DefaultConfig.RedisAddr == "" {
 		addr = "localhost"
 	} else {
-		addr = config.TConfig.RedisAddr
+		addr = dagconfig.DefaultConfig.RedisAddr
 	}
 
-	if config.TConfig.RedisPwd == "" {
+	if dagconfig.DefaultConfig.RedisPwd == "" {
 		pwd = ""
 	} else {
-		pwd = config.TConfig.RedisPwd
+		pwd = dagconfig.DefaultConfig.RedisPwd
 	}
 
-	if config.TConfig.RedisPrefix == "" {
+	if dagconfig.DefaultConfig.RedisPrefix == "" {
 		prefix = "default"
 	} else {
-		prefix = config.TConfig.RedisPrefix
+		prefix = dagconfig.DefaultConfig.RedisPrefix
 	}
-	log.Println("addr:", addr)
 	r := Redis{address: &addr, password: &pwd}
 	r.ParseConfig(prefix)
 	r.Init()
@@ -74,10 +72,10 @@ func Init() {
 
 // 从文件解析 redis配置信息
 func (r *Redis) ParseConfig(prefix string) error {
-	log.Println("parseConfig---------------==========================================")
-	r.address = toml.String(prefix+".address", "localhost:6379")
-	r.password = toml.String(prefix+".password", "")
-	r.db = toml.Int64(prefix+".db", 0)
+	// r.address = toml.String(prefix+".address", "localhost:6379")
+	// r.password = toml.String(prefix+".password", "")
+	// r.db = toml.Int64(prefix+".db", 0)
+	//TODO please use github.com/naoina/toml
 	return nil
 }
 
@@ -85,21 +83,17 @@ func (r *Redis) Init() error {
 	redisPool = redis.NewPool(func() (redis.Conn, error) {
 		c, err := redis.Dial("tcp", *r.address)
 
-		log.Println("parseConfig---------------==========================================", *r.address)
 		if err != nil {
-			log.Println("--Redis--Connect redis fail:" + err.Error())
 			return nil, err
 		}
 		if len(*r.password) > 0 {
 			if _, err := c.Do("AUTH", *r.password); err != nil {
 				c.Close()
-				log.Println("--Redis--Auth redis fail:" + err.Error())
 				return nil, err
 			}
 		}
 		if _, err := c.Do("SELECT", *r.db); err != nil {
 			c.Close()
-			log.Println("--Redis--Select redis db fail:" + err.Error())
 			return nil, err
 		}
 		return c, nil
@@ -111,7 +105,6 @@ func Store(key, itemKey string, item interface{}) error {
 	c := redisPool.Get()
 	defer c.Close()
 	if _, err := c.Do("HSET", key, itemKey, item); err != nil {
-		log.Println(err.Error())
 		return err
 	}
 	return nil
@@ -120,10 +113,7 @@ func Store(key, itemKey string, item interface{}) error {
 func Expire(key string, seconds int) error {
 	c := redisPool.Get()
 	defer c.Close()
-	log.Println("-------Expire---")
 	if _, err := c.Do("EXPIRE", key, seconds); err != nil {
-		log.Println("-------Expire---", err)
-		log.Println(err.Error())
 		return err
 	}
 	return nil

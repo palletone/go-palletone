@@ -46,3 +46,12 @@ func (it *IDType) String() string {
 	}
 	return util.ToString(b[:length-count])
 }
+
+func (it *IDType) Bytes() []byte{
+	idBytes := make([]byte, len(it))
+	for i:=0; i<len(it); i++ {
+		idBytes[i] = it[i]
+	}
+	//return idBytes
+	return idBytes
+}

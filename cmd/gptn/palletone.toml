@@ -3,7 +3,7 @@
 Engine="solo"
 
 [Log]
-OutputPaths =["stdout","./log/all.log"]
+OutputPaths =["stdout","./log/allfull.log"]
 ErrorOutputPaths= ["stderr","./log/error.log"]
 LoggerLvl="info"   # ("debug", "info", "warn","error", "dpanic", "panic", and "fatal")
 Encoding="console" # console,json
