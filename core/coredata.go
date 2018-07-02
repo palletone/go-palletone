@@ -17,19 +17,15 @@
 
 package core
 
-import (
-	"github.com/palletone/go-palletone/common/event"
-)
+//type ConsensusEngine interface {
+//	Engine() int
+//	Stop()
+//	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
+//}
 
-type ConsensusEngine interface {
-	Engine() int
-	Stop()
-	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
-}
-
-type ConsensusEvent struct {
-	Ce string
-}
+//type ConsensusEvent struct {
+//	Ce string
+//}
 
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.

@@ -116,7 +116,7 @@ func (b *EthApiBackend) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscri
 }
 
 func (b *EthApiBackend) SendConsensus(ctx context.Context) error {
-	b.eth.Engine().Engine()
+//	b.eth.Engine().Engine()
 	return nil
 }
 

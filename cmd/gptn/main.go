@@ -290,9 +290,9 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 			type threaded interface {
 				SetThreads(threads int)
 			}
-			if th, ok := ethereum.Engine().(threaded); ok {
-				th.SetThreads(threads)
-			}
+			//if th, ok := ethereum.Engine().(threaded); ok {
+			//	th.SetThreads(threads)
+			//}
 		}
 		// Set the gas price to the limits from the CLI
 		ethereum.TxPool().SetGasPrice(utils.GlobalBig(ctx, utils.GasPriceFlag.Name))
