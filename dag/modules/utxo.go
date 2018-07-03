@@ -78,21 +78,3 @@ type Asset struct {
 	UniqueId IDType `json:"unique_id"` // every token has its unique id
 	ChainId  IDType `json:"chain_id"`  // main chain id or sub-chain id
 }
-
-/**
-	根据用户地址、选择的资产类型、转账金额、手续费返回utxo
-	return utxo struct according to user's address, asset type, transaction amount and given gas.
- */
-func GetUtxo(addr common.Address, asset Asset, amount uint64, gas uint64) Utxo {
-	vout := Utxo{}
-	return vout
-}
-
-
-/**
-	检查UTXO是否正确
-	check UTXO, if passed return true, else return false
- */
-func CheckUtxo(vout *Utxo)  bool{
-	return true
-}

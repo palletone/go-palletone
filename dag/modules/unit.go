@@ -21,11 +21,12 @@ package modules
 
 import (
 	"encoding/json"
+	"math/big"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 )
 
@@ -86,7 +87,6 @@ func NewHeader(parents []common.Hash, asset []IDType, gas, used uint64, extra []
 	var b []byte
 	return &Header{ParentUnits: hashs, AssetIDs: asset, GasLimit: gas, GasUsed: gas, Extra: append(b, extra...)}
 }
-
 func HeaderEqual(oldh, newh *Header) bool {
 	if oldh.ParentUnits[0] == newh.ParentUnits[0] && oldh.ParentUnits[1] == newh.ParentUnits[1] {
 		return true
@@ -95,7 +95,6 @@ func HeaderEqual(oldh, newh *Header) bool {
 	}
 	return false
 }
-
 func (h *Header) Index() uint64 {
 	return h.Number.Index
 }
@@ -104,7 +103,7 @@ func (h *Header) ChainIndex() ChainIndex {
 }
 
 func (h *Header) Hash() common.Hash {
-	return rlp.RlpHash(h)
+	return rlpHash(h)
 }
 
 func (h *Header) Size() common.StorageSize {
@@ -154,20 +153,6 @@ type Unit struct {
 	hash         common.Hash        `json:"unit_hash"`     // unit hash
 	size         common.StorageSize `json:"size"`          // unit size
 	creationdate time.Time          `json:"creation_time"` // unit create time
-	gasprice 	uint64		`json:"gas_price"`	// user set total gas
-	gasused 	uint64		`json:"gas_used"`	// the actually used gas, mediator set
-}
-
-type Transactions []*Transaction
-
-type Transaction struct {
-	TxHash       common.Hash `json:"tx_hash"`
-	TxMessages   []Message   `json:"messages"` //
-	Authors      []Author    `json:"authors"`  // the issuers of the transaction
-	Excutiontime uint        `json:"excution_time"`
-	Memery       uint		`json:"memory"`
-	CreationDate time.Time   `json:"creation_date"`
-	GasPrice 	uint64		`json:"gas_price"`	// user set total gas
 }
 
 type ChainIndex struct {
@@ -178,14 +163,36 @@ type ChainIndex struct {
 
 // key: message.hash(message+timestamp)
 type Message struct {
-	App         string      `json:"app"`          // message type
-	PayloadHash common.Hash `json:"payload_hash"` // payload hash
-	Payload interface{} `json:"payload"` // the true transaction data
+	App          string       `json:"app"`          // message type
+	PayloadHash  common.Hash  `json:"payload_hash"` // payload hash
+	Memery       atomic.Value `json:"momery"`
+	Excutiontime uint         `json:"excution_time"`
+	Payload      interface{}  `json:"payload"` // the true transaction data
+	/*** poolmessage ***/
+	to         *common.Address
+	from       common.Address
+	nonce      uint64
+	amount     *big.Int
+	gasLimit   uint64
+	gasPrice   *big.Int
+	data       []byte
+	checkNonce bool
 }
 
 /************************** Payload Details ******************************************/
+// type Payload struct {
+// 	ppay   PaymentPayload
+// 	ctpay  ContractTplPayload
+// 	cdpay  ContractDeployPayload
+// 	cipay  ContractInvokePayload
+// 	conpay ConfigPayload
+// 	txtpay TextPayload
+// }
+
 // Token exchange message and verify message
 // App: payment
+// App: verify
+
 type PaymentPayload struct {
 	Inputs  []Input  `json:"inputs"`
 	Outputs []Output `json:"outputs"`
@@ -194,7 +201,7 @@ type PaymentPayload struct {
 // Contract template deploy message
 // App: contract_template
 type ContractTplPayload struct {
-	TemplateId common.Hash            `json:"template_id"` // configure xml file of contract
+	TemplateId string                 `json:"template_id"` // configure xml file of contract
 	Bytecode   []byte                 `json:"bytecode"`    // contract bytecode
 	ReadSet    map[string]interface{} `json:"read_set"`    // the set data of read, and value could be any type
 	WriteSet   map[string]interface{} `json:"write_set"`   // the set data of write, and value could be any type
@@ -204,7 +211,7 @@ type ContractTplPayload struct {
 // Contract instance message
 // App: contract_deploy
 type ContractDeployPayload struct {
-	TemplateId common.Hash            `json:"template_id"` // contract template id
+	TemplateId string                 `json:"template_id"` // contract template id
 	Config     []byte                 `json:"config"`      // configure xml file of contract instance parameters
 	ReadSet    map[string]interface{} `json:"read_set"`    // the set data of read, and value could be any type
 	WriteSet   map[string]interface{} `json:"write_set"`   // the set data of write, and value could be any type
@@ -292,7 +299,7 @@ func (u *Unit) Transaction(hash common.Hash) *Transaction {
 
 // return  unit'hash
 func (u *Unit) Hash() common.Hash {
-	v := rlp.RlpHash(u)
+	v := rlpHash(u)
 	return v
 }
 
