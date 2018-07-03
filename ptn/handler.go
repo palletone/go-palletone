@@ -34,8 +34,8 @@ import (
 	//"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/contracts/types"
+	//"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -101,7 +101,7 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager( /*config *configure.ChainConfig,*/ mode downloader.SyncMode, networkId uint64, mux *event.TypeMux, txpool txPool, engine core.ConsensusEngine /*blockchain *coredata.BlockChain,*/, chaindb ptndb.Database) (*ProtocolManager, error) {
+func NewProtocolManager( /*config *configure.ChainConfig,*/ mode downloader.SyncMode, networkId uint64, mux *event.TypeMux, txpool txPool, engine core.ConsensusEngine /*blockchain *coredata.BlockChain,*/) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId: networkId,
@@ -157,7 +157,7 @@ func NewProtocolManager( /*config *configure.ChainConfig,*/ mode downloader.Sync
 		return nil, errIncompatibleConfig
 	}
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(mode, chaindb, manager.eventMux, manager.removePeer)
+	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer)
 	/*woule recover
 	validator := func(header *types.Header) error {
 		return engine.VerifyHeader(blockchain, header, true)

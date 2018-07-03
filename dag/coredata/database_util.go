@@ -26,7 +26,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/types"
 	//"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
@@ -124,7 +124,7 @@ func GetHeadFastBlockHash(db DatabaseReader) common.Hash {
 
 // GetTrieSyncProgress retrieves the number of tries nodes fast synced to allow
 // reportinc correct numbers across restarts.
-func GetTrieSyncProgress(db DatabaseReader) uint64 {
+func GetTrieSyncProgress() uint64 {
 	return uint64(0)
 }
 
@@ -219,7 +219,7 @@ func WriteHeadFastBlockHash(db ptndb.Putter, hash common.Hash) error {
 
 // WriteTrieSyncProgress stores the fast sync trie process counter to support
 // retrieving it across restarts.
-func WriteTrieSyncProgress(db ptndb.Putter, count uint64) error {
+func WriteTrieSyncProgress(count uint64) error {
 	return nil
 }
 

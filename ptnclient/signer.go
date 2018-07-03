@@ -21,7 +21,7 @@ import (
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/types"
 )
 
 // senderFromServer is a types.Signer that remembers the sender address returned by the RPC

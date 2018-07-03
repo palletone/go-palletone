@@ -19,7 +19,7 @@ package downloader
 import (
 	"fmt"
 
-	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/types"
 )
 
 // peerDropFn is a callback type for dropping a peer detected as malicious.

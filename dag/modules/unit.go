@@ -261,8 +261,8 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 	return u
 }
 
-func NewGenesisUnit(genesis *core.Genesis) (common.Hash, error) {
-	return common.Hash{}, nil
+func NewGenesisUnit(genesis *core.Genesis) (*Unit, error) {
+	return nil, nil
 }
 
 func CopyTransactions(txs Transactions) Transactions {

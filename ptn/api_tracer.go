@@ -28,16 +28,9 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/vm"
-	//"github.com/palletone/go-palletone/ptn/tracers"
-	//"github.com/palletone/go-palletone/internal/ethapi"
-	//"github.com/palletone/go-palletone/common/log"
-	//"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
-	//"github.com/palletone/go-palletone/common/trie"
+	"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/dag/state"
 )
 
 const (
@@ -53,7 +46,7 @@ const (
 
 // TraceConfig holds extra parameters to trace functions.
 type TraceConfig struct {
-	*vm.LogConfig
+	//*vm.LogConfig
 	Tracer  *string
 	Timeout *string
 	Reexec  *uint64
@@ -545,69 +538,6 @@ func (api *PrivateDebugAPI) TraceTransaction(ctx context.Context, hash common.Ha
 		// Trace the transaction and return
 		return api.traceTx(ctx, msg, vmctx, statedb, config)
 	*/
-	return nil, nil
-}
-
-// traceTx configures a new tracer according to the provided configuration, and
-// executes the given message in the provided environment. The return value will
-// be tracer dependent.
-func (api *PrivateDebugAPI) traceTx(ctx context.Context, message coredata.Message, vmctx vm.Context, statedb *state.StateDB, config *TraceConfig) (interface{}, error) {
-	/*
-		// Assemble the structured logger or the JavaScript tracer
-		var (
-			tracer vm.Tracer
-			err    error
-		)
-		switch {
-		case config != nil && config.Tracer != nil:
-			// Define a meaningful timeout of a single transaction trace
-			timeout := defaultTraceTimeout
-			if config.Timeout != nil {
-				if timeout, err = time.ParseDuration(*config.Timeout); err != nil {
-					return nil, err
-				}
-			}
-			// Constuct the JavaScript tracer to execute with
-			if tracer, err = tracers.New(*config.Tracer); err != nil {
-				return nil, err
-			}
-			// Handle timeouts and RPC cancellations
-			deadlineCtx, cancel := context.WithTimeout(ctx, timeout)
-			go func() {
-				<-deadlineCtx.Done()
-				tracer.(*tracers.Tracer).Stop(errors.New("execution timeout"))
-			}()
-			defer cancel()
-
-		case config == nil:
-			tracer = vm.NewStructLogger(nil)
-
-		default:
-			tracer = vm.NewStructLogger(config.LogConfig)
-		}
-		// Run the transaction with tracing enabled.
-		vmenv := vm.NewEVM(vmctx, statedb, api.config, vm.Config{Debug: true, Tracer: tracer})
-
-		ret, gas, failed, err := core.ApplyMessage(vmenv, message, new(core.GasPool).AddGas(message.Gas()))
-		if err != nil {
-			return nil, fmt.Errorf("tracing failed: %v", err)
-		}
-		// Depending on the tracer type, format and return the output
-		switch tracer := tracer.(type) {
-		case *vm.StructLogger:
-			return &ethapi.ExecutionResult{
-				Gas:         gas,
-				Failed:      failed,
-				ReturnValue: fmt.Sprintf("%x", ret),
-				StructLogs:  ethapi.FormatLogs(tracer.StructLogs()),
-			}, nil
-
-		case *tracers.Tracer:
-			return tracer.GetResult()
-
-		default:
-			panic(fmt.Sprintf("bad tracer type %T", tracer))
-		}*/
 	return nil, nil
 }
 

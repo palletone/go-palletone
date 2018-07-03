@@ -17,52 +17,13 @@
 package gen
 
 import (
-	"bytes"
-	"encoding/hex"
 	"errors"
-	"fmt"
 
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
-
-//go:generate gencodec -type Genesis -field-override genesisSpecMarshaling -out gen_genesis.go
-//go:generate gencodec -type GenesisAccount -field-override genesisAccountMarshaling -out gen_genesis_account.go
-
-// storageJSON represents a 256 bit byte array, but allows less than 256 bits when
-// unmarshaling from hex.
-type storageJSON common.Hash
-
-func (h *storageJSON) UnmarshalText(text []byte) error {
-	text = bytes.TrimPrefix(text, []byte("0x"))
-	if len(text) > 64 {
-		return fmt.Errorf("too many hex characters in storage key/value %q", text)
-	}
-	offset := len(h) - len(text)/2 // pad on the left
-	if _, err := hex.Decode(h[offset:], text); err != nil {
-		fmt.Println(err)
-		return fmt.Errorf("invalid hex storage key/value %q", text)
-	}
-	return nil
-}
-
-func (h storageJSON) MarshalText() ([]byte, error) {
-	return hexutil.Bytes(h[:]).MarshalText()
-}
-
-// GenesisMismatchError is raised when trying to overwrite an existing
-// genesis block with an incompatible one.
-type GenesisMismatchError struct {
-	Stored, New common.Hash
-}
-
-func (e *GenesisMismatchError) Error() string {
-	return fmt.Sprintf("database already contains an incompatible genesis block (have %x, new %x)", e.Stored[:8], e.New[:8])
-}
 
 // SetupGenesisBlock writes or updates the genesis block in db.
 // The block that will be used is:
@@ -77,24 +38,21 @@ func (e *GenesisMismatchError) Error() string {
 // error is a *configure.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-func SetupGenesisBlock(genesis *core.Genesis) (common.Hash, error) {
+func SetupGenesisBlock(genesis *core.Genesis) (*modules.Unit, error) {
 	// Just commit the new block if there is no stored genesis block.
 	stored := storage.GetGenesisUnit(0)
-	if (stored == common.Hash{}) {
-		if genesis == nil {
-			log.Info("Writing default main-net genesis block")
-			genesis = DefaultGenesisBlock()
-		} else {
-			log.Info("Writing custom genesis block")
-		}
-		return modules.NewGenesisUnit(genesis)
-	}
-
 	// Check whether the genesis block is already written.
-	if genesis != nil {
+	if stored != nil {
 		return stored, errors.New("the genesis block is already written")
 	}
-	return stored, nil
+
+	if genesis == nil {
+		log.Info("Writing default main-net genesis block")
+		genesis = DefaultGenesisBlock()
+	} else {
+		log.Info("Writing custom genesis block")
+	}
+	return modules.NewGenesisUnit(genesis)
 }
 
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
@@ -136,88 +94,3 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		SystemConfig: SystemConfig,
 	}
 }
-
-/*
-// ToBlock creates the genesis block and writes state of a genesis specification
-// to the given database (or discards it if nil).
-func (g *Genesis) ToBlock(db ptndb.Database) *types.Block {
-	if db == nil {
-		db, _ = ptndb.NewMemDatabase()
-	}
-	statedb, _ := state.New(common.Hash{}, state.NewDatabase(db))
-	for addr, account := range g.Alloc {
-		statedb.AddBalance(addr, account.Balance)
-		statedb.SetCode(addr, account.Code)
-		statedb.SetNonce(addr, account.Nonce)
-		for key, value := range account.Storage {
-			statedb.SetState(addr, key, value)
-		}
-	}
-	root := statedb.IntermediateRoot(false)
-	head := &types.Header{
-		Number:     new(big.Int).SetUint64(g.Number),
-		Nonce:      types.EncodeNonce(g.Nonce),
-		Time:       new(big.Int).SetUint64(g.Timestamp),
-		ParentHash: g.ParentHash,
-		Extra:      g.ExtraData,
-		GasLimit:   g.GasLimit,
-		GasUsed:    g.GasUsed,
-		Difficulty: g.Difficulty,
-		MixDigest:  g.Mixhash,
-		Coinbase:   g.Coinbase,
-		Root:       root,
-	}
-	if g.GasLimit == 0 {
-		head.GasLimit = configure.GenesisGasLimit
-	}
-	if g.Difficulty == nil {
-		head.Difficulty = configure.GenesisDifficulty
-	}
-	statedb.Commit(false)
-	statedb.Database().TrieDB().Commit(root, true)
-
-	return types.NewBlock(head, nil, nil, nil)
-}
-
-// Commit writes the block and state of a genesis specification to the database.
-// The block is committed as the canonical head block.
-func (g *Genesis) Commit(db ptndb.Database) (*types.Block, error) {
-	block := g.ToBlock(db)
-	if block.Number().Sign() != 0 {
-		return nil, fmt.Errorf("can't commit genesis block with number > 0")
-	}
-	if err := WriteTd(db, block.Hash(), block.NumberU64(), g.Difficulty); err != nil {
-		return nil, err
-	}
-	if err := WriteBlock(db, block); err != nil {
-		return nil, err
-	}
-	if err := WriteBlockReceipts(db, block.Hash(), block.NumberU64(), nil); err != nil {
-		return nil, err
-	}
-	if err := WriteCanonicalHash(db, block.Hash(), block.NumberU64()); err != nil {
-		return nil, err
-	}
-	if err := WriteHeadBlockHash(db, block.Hash()); err != nil {
-		return nil, err
-	}
-	if err := WriteHeadHeaderHash(db, block.Hash()); err != nil {
-		return nil, err
-	}
-	config := g.Config
-	if config == nil {
-		config = configure.AllEthashProtocolChanges
-	}
-	return block, WriteChainConfig(db, block.Hash(), config)
-}
-
-// MustCommit writes the genesis block and state to db, panicking on error.
-// The block is committed as the canonical head block.
-func (g *Genesis) MustCommit(db ptndb.Database) *types.Block {
-	block, err := g.Commit(db)
-	if err != nil {
-		panic(err)
-	}
-	return block
-}
-*/

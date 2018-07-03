@@ -19,7 +19,7 @@ package bloombits
 import (
 	"errors"
 
-	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/types"
 )
 
 // errSectionOutOfBounds is returned if the user tried to add more bloom filters

@@ -70,8 +70,8 @@ func getprefix(prefix []byte) map[string][]byte {
 	return result
 }
 
-func GetGenesisUnit(index uint64) common.Hash {
-	return common.Hash{}
+func GetGenesisUnit(index uint64) *modules.Unit {
+	return nil
 }
 
 func GetUnit(hash common.Hash, index uint64) *modules.Unit {

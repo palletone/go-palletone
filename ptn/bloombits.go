@@ -23,8 +23,7 @@ import (
 	"github.com/palletone/go-palletone/common/bitutil"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 )
 
@@ -59,8 +58,8 @@ func (eth *PalletOne) startBloomHandlers() {
 				case request := <-eth.bloomRequests:
 					task := <-request
 					task.Bitsets = make([][]byte, len(task.Sections))
-					for i, section := range task.Sections {
-						head := common.Hash{} //coredata.GetCanonicalHash(eth.chainDb, (section+1)*configure.BloomBitsBlocks-1)//would recover
+					/*for i, section := range task.Sections {
+						head := coredata.GetCanonicalHash(eth.chainDb, (section+1)*configure.BloomBitsBlocks-1) //would recover
 						if compVector, err := coredata.GetBloomBits(eth.chainDb, task.Bit, section, head); err == nil {
 							if blob, err := bitutil.DecompressBytes(compVector, int(configure.BloomBitsBlocks)/8); err == nil {
 								task.Bitsets[i] = blob
@@ -70,7 +69,7 @@ func (eth *PalletOne) startBloomHandlers() {
 						} else {
 							task.Error = err
 						}
-					}
+					}*/
 					request <- task
 				}
 			}
@@ -102,7 +101,9 @@ type BloomIndexer struct {
 
 // NewBloomIndexer returns a chain indexer that generates bloom bits data for the
 // canonical chain for fast logs filtering.
-func NewBloomIndexer(db ptndb.Database, size uint64) *coredata.ChainIndexer {
+func NewBloomIndexer(size uint64) *coredata.ChainIndexer {
+	/*would recover
+	db := ptndb.Database{}
 	backend := &BloomIndexer{
 		db:   db,
 		size: size,
@@ -110,6 +111,8 @@ func NewBloomIndexer(db ptndb.Database, size uint64) *coredata.ChainIndexer {
 	table := ptndb.NewTable(db, string(coredata.BloomBitsIndexPrefix))
 
 	return coredata.NewChainIndexer(db, table, backend, size, bloomConfirms, bloomThrottling, "bloombits")
+	*/
+	return nil
 }
 
 // Reset implements core.ChainIndexerBackend, starting a new bloombits index

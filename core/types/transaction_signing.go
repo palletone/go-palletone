@@ -23,8 +23,8 @@ import (
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/configure"
 )
 
 var (
@@ -42,8 +42,6 @@ type sigCache struct {
 func MakeSigner(config *configure.ChainConfig, blockNumber *big.Int) Signer {
 	var signer Signer
 	switch {
-	case config.IsEIP155(blockNumber):
-		signer = NewEIP155Signer(config.ChainId)
 	case config.IsHomestead(blockNumber):
 		signer = HomesteadSigner{}
 	default:
@@ -102,6 +100,7 @@ type Signer interface {
 	Equal(Signer) bool
 }
 
+/*
 // EIP155Transaction implements Signer using the EIP155 rules.
 type EIP155Signer struct {
 	chainId, chainIdMul *big.Int
@@ -150,6 +149,7 @@ func (s EIP155Signer) SignatureValues(tx *Transaction, sig []byte) (R, S, V *big
 	return R, S, V, nil
 }
 
+
 // Hash returns the hash to be signed by the sender.
 // It does not uniquely identify the transaction.
 func (s EIP155Signer) Hash(tx *Transaction) common.Hash {
@@ -163,7 +163,7 @@ func (s EIP155Signer) Hash(tx *Transaction) common.Hash {
 		s.chainId, uint(0), uint(0),
 	})
 }
-
+*/
 // HomesteadTransaction implements TransactionInterface using the
 // homestead rules.
 type HomesteadSigner struct{ FrontierSigner }
@@ -205,14 +205,7 @@ func (fs FrontierSigner) SignatureValues(tx *Transaction, sig []byte) (r, s, v *
 // Hash returns the hash to be signed by the sender.
 // It does not uniquely identify the transaction.
 func (fs FrontierSigner) Hash(tx *Transaction) common.Hash {
-	return rlpHash([]interface{}{
-		tx.data.AccountNonce,
-		tx.data.Price,
-		tx.data.GasLimit,
-		tx.data.Recipient,
-		tx.data.Amount,
-		tx.data.Payload,
-	})
+	return common.Hash{}
 }
 
 func (fs FrontierSigner) Sender(tx *Transaction) (common.Address, error) {

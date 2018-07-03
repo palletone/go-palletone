@@ -21,19 +21,17 @@ import (
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/core/accounts"
-	//"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/gasprice"
-	"github.com/palletone/go-palletone/vm"
 )
 
 // EthApiBackend implements ethapi.Backend for full nodes
@@ -72,31 +70,11 @@ func (b *EthApiBackend) GetBlock(ctx context.Context, blockHash common.Hash) (*t
 }
 
 func (b *EthApiBackend) GetReceipts(ctx context.Context, blockHash common.Hash) (types.Receipts, error) {
-	return coredata.GetBlockReceipts(b.eth.chainDb, blockHash, coredata.GetBlockNumber(b.eth.chainDb, blockHash)), nil
-}
-
-func (b *EthApiBackend) GetLogs(ctx context.Context, blockHash common.Hash) ([][]*types.Log, error) {
-	receipts := coredata.GetBlockReceipts(b.eth.chainDb, blockHash, coredata.GetBlockNumber(b.eth.chainDb, blockHash))
-	if receipts == nil {
-		return nil, nil
-	}
-	logs := make([][]*types.Log, len(receipts))
-	for i, receipt := range receipts {
-		logs[i] = receipt.Logs
-	}
-	return logs, nil
+	return types.Receipts{}, nil
 }
 
 func (b *EthApiBackend) GetTd(blockHash common.Hash) *big.Int {
 	return &big.Int{}
-}
-
-func (b *EthApiBackend) GetEVM(ctx context.Context, msg coredata.Message, state *state.StateDB, header *types.Header, vmCfg vm.Config) (*vm.EVM, func() error, error) {
-	return &vm.EVM{}, func() error { return nil }, nil
-}
-
-func (b *EthApiBackend) SubscribeRemovedLogsEvent(ch chan<- coredata.RemovedLogsEvent) event.Subscription {
-	return nil
 }
 
 func (b *EthApiBackend) SubscribeChainEvent(ch chan<- coredata.ChainEvent) event.Subscription {
@@ -108,10 +86,6 @@ func (b *EthApiBackend) SubscribeChainHeadEvent(ch chan<- coredata.ChainHeadEven
 }
 
 func (b *EthApiBackend) SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription {
-	return nil
-}
-
-func (b *EthApiBackend) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscription {
 	return nil
 }
 
@@ -169,7 +143,7 @@ func (b *EthApiBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
 }
 
 func (b *EthApiBackend) ChainDb() ptndb.Database {
-	return b.eth.ChainDb()
+	return nil
 }
 
 func (b *EthApiBackend) EventMux() *event.TypeMux {

@@ -31,7 +31,7 @@ func (self *StateDB) GetBalance(addr common.Address) *big.Int       { return &bi
 func (self *StateDB) GetNonce(addr common.Address) uint64           { return uint64(0) }
 func (ms *ManagedState) SetNonce(addr common.Address, nonce uint64) {}
 func (ms *ManagedState) GetNonce(addr common.Address) uint64        { return uint64(0) }
-func NewStateSync(root common.Hash, database trie.DatabaseReader) *trie.TrieSync {
+func NewStateSync(root common.Hash) *trie.TrieSync {
 	return &trie.TrieSync{}
 }
 

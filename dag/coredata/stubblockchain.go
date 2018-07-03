@@ -26,12 +26,10 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus"
-	//"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/contracts/types"
-	"github.com/palletone/go-palletone/vm"
+	"github.com/palletone/go-palletone/core/types"
 )
 
 type BlockChain struct{}
@@ -116,11 +114,12 @@ var (
 // TxPreEvent is posted when a transaction enters the transaction pool.
 type TxPreEvent struct{ Tx *types.Transaction }
 
+/*
 // PendingLogsEvent is posted pre mining and notifies of pending logs.
 type PendingLogsEvent struct {
 	Logs []*types.Log
 }
-
+*/
 // PendingStateEvent is posted pre mining and notifies of pending state changes.
 type PendingStateEvent struct{}
 
@@ -131,12 +130,12 @@ type NewMinedBlockEvent struct{ Block *types.Block }
 type RemovedTransactionEvent struct{ Txs types.Transactions }
 
 // RemovedLogsEvent is posted when a reorg happens
-type RemovedLogsEvent struct{ Logs []*types.Log }
+//type RemovedLogsEvent struct{ Logs []*types.Log }
 
 type ChainEvent struct {
 	Block *types.Block
 	Hash  common.Hash
-	Logs  []*types.Log
+	//Logs  []*types.Log
 }
 
 type ChainSideEvent struct {
@@ -164,16 +163,18 @@ type ChainContext interface {
 	GetHeader(common.Hash, uint64) *types.Header
 }
 
+/*
 // NewEVMContext creates a new context for use in the EVM.
 func NewEVMContext(msg Message, header *types.Header, chain ChainContext, author *common.Address) vm.Context {
 	return vm.Context{}
 }
-
+*/
 // GetHashFn returns a GetHashFunc which retrieves header hashes by number
 func GetHashFn(ref *types.Header, chain ChainContext) func(n uint64) common.Hash {
 	return func(n uint64) common.Hash { return common.Hash{} }
 }
 
+/*
 // CanTransfer checks wether there are enough funds in the address' account to make a transfer.
 // This does not take the necessary gas in to account to make the transfer valid.
 func CanTransfer(db vm.StateDB, addr common.Address, amount *big.Int) bool {
@@ -184,7 +185,7 @@ func CanTransfer(db vm.StateDB, addr common.Address, amount *big.Int) bool {
 func Transfer(db vm.StateDB, sender, recipient common.Address, amount *big.Int) {
 
 }
-
+*/
 ////////////GasPool///////////////
 type GasPool uint64
 
@@ -229,7 +230,8 @@ func NewStateProcessor(config *configure.ChainConfig, bc *BlockChain, engine con
 	return &StateProcessor{}
 }
 
-func (p *StateProcessor) Process(block *types.Block /*statedb *state.StateDB,*/, cfg vm.Config) (types.Receipts, []*types.Log, uint64, error) {
+/*
+func (p *StateProcessor) Process(block *types.Block , cfg vm.Config) (types.Receipts, []*types.Log, uint64, error) {
 	var (
 		receipts types.Receipts
 		usedGas  = new(uint64)
@@ -238,10 +240,10 @@ func (p *StateProcessor) Process(block *types.Block /*statedb *state.StateDB,*/,
 	return receipts, allLogs, *usedGas, nil
 }
 
-func ApplyTransaction(config *configure.ChainConfig, bc *BlockChain, author *common.Address, gp *GasPool /*statedb *state.StateDB,*/, header *types.Header, tx *types.Transaction, usedGas *uint64, cfg vm.Config) (*types.Receipt, uint64, error) {
+func ApplyTransaction(config *configure.ChainConfig, bc *BlockChain, author *common.Address, gp *GasPool, header *types.Header, tx *types.Transaction, usedGas *uint64, cfg vm.Config) (*types.Receipt, uint64, error) {
 	return nil, 0, nil
 }
-
+*/
 ////////////////state_transition////////////////////
 var (
 	errInsufficientBalanceForGas = errors.New("insufficient balance to pay for gas")
@@ -255,8 +257,8 @@ type StateTransition struct {
 	initialGas uint64
 	value      *big.Int
 	data       []byte
-	state      vm.StateDB
-	evm        *vm.EVM
+	//state      vm.StateDB
+	//evm        *vm.EVM
 }
 
 // Message represents a message sent to a contract.
@@ -278,11 +280,11 @@ type Message interface {
 func IntrinsicGas(data []byte, contractCreation, homestead bool) (uint64, error) {
 	return uint64(0), nil
 }
-func NewStateTransition(evm *vm.EVM, msg Message, gp *GasPool) *StateTransition {
+func NewStateTransition( /*evm *vm.EVM, */ msg Message, gp *GasPool) *StateTransition {
 	return &StateTransition{}
 }
 
-func ApplyMessage(evm *vm.EVM, msg Message, gp *GasPool) ([]byte, uint64, bool, error) {
+func ApplyMessage( /*evm *vm.EVM,*/ msg Message, gp *GasPool) ([]byte, uint64, bool, error) {
 	return []byte{}, uint64(0), true, nil
 }
 
@@ -296,5 +298,5 @@ type Validator interface {
 }
 
 type Processor interface {
-	Process(block *types.Block /*statedb *state.StateDB,*/, cfg vm.Config) (types.Receipts, []*types.Log, uint64, error)
+	//Process(block *types.Block /*statedb *state.StateDB,*/, cfg vm.Config) (types.Receipts, []*types.Log, uint64, error)
 }
