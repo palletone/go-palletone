@@ -32,7 +32,6 @@ import (
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/gasprice"
-	"github.com/palletone/go-palletone/vm"
 )
 
 // EthApiBackend implements ethapi.Backend for full nodes
@@ -80,10 +79,6 @@ func (b *EthApiBackend) GetLogs(ctx context.Context, blockHash common.Hash) ([][
 
 func (b *EthApiBackend) GetTd(blockHash common.Hash) *big.Int {
 	return &big.Int{}
-}
-
-func (b *EthApiBackend) GetEVM(ctx context.Context, msg coredata.Message, state *state.StateDB, header *types.Header, vmCfg vm.Config) (*vm.EVM, func() error, error) {
-	return &vm.EVM{}, func() error { return nil }, nil
 }
 
 func (b *EthApiBackend) SubscribeRemovedLogsEvent(ch chan<- coredata.RemovedLogsEvent) event.Subscription {

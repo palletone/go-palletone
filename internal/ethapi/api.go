@@ -27,20 +27,18 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/common/math"
-	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
-	//
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/vm"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
@@ -621,76 +619,10 @@ type CallArgs struct {
 	Data     hexutil.Bytes   `json:"data"`
 }
 
-func (s *PublicBlockChainAPI) doCall(ctx context.Context, args CallArgs, blockNr rpc.BlockNumber, vmCfg vm.Config, timeout time.Duration) ([]byte, uint64, bool, error) {
-	/*
-		defer func(start time.Time) { log.Debug("Executing EVM call finished", "runtime", time.Since(start)) }(time.Now())
-
-		state, header, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
-		if state == nil || err != nil {
-			return nil, 0, false, err
-		}
-		// Set sender address or use a default if none specified
-		addr := args.From
-		if addr == (common.Address{}) {
-			if wallets := s.b.AccountManager().Wallets(); len(wallets) > 0 {
-				if accounts := wallets[0].Accounts(); len(accounts) > 0 {
-					addr = accounts[0].Address
-				}
-			}
-		}
-		// Set default gas & gas price if none were set
-		gas, gasPrice := uint64(args.Gas), args.GasPrice.ToInt()
-		if gas == 0 {
-			gas = math.MaxUint64 / 2
-		}
-		if gasPrice.Sign() == 0 {
-			gasPrice = new(big.Int).SetUint64(defaultGasPrice)
-		}
-
-		// Create new call message
-		msg := types.NewMessage(addr, args.To, 0, args.Value.ToInt(), gas, gasPrice, args.Data, false)
-
-		// Setup context so it may be cancelled the call has completed
-		// or, in case of unmetered gas, setup a context with a timeout.
-		var cancel context.CancelFunc
-		if timeout > 0 {
-			ctx, cancel = context.WithTimeout(ctx, timeout)
-		} else {
-			ctx, cancel = context.WithCancel(ctx)
-		}
-		// Make sure the context is cancelled when the call has completed
-		// this makes sure resources are cleaned up.
-		defer cancel()
-
-		// Get a new instance of the EVM.
-		evm, vmError, err := s.b.GetEVM(ctx, msg, state, header, vmCfg)
-		if err != nil {
-			return nil, 0, false, err
-		}
-		// Wait for the context to be done and cancel the evm. Even if the
-		// EVM has finished, cancelling may be done (repeatedly)
-		go func() {
-			<-ctx.Done()
-			evm.Cancel()
-		}()
-
-		// Setup the gas pool (also for unmetered requests)
-		// and apply the message.
-		gp := new(core.GasPool).AddGas(math.MaxUint64)
-		res, gas, failed, err := core.ApplyMessage(evm, msg, gp)
-		if err := vmError(); err != nil {
-			return nil, 0, false, err
-		}
-		return res, gas, failed, err
-	*/
-	return []byte{}, uint64(0), true, nil
-}
-
 // Call executes the given transaction on the state for the given block number.
 // It doesn't make and changes in the state/blockchain and is useful to execute and retrieve values.
 func (s *PublicBlockChainAPI) Call(ctx context.Context, args CallArgs, blockNr rpc.BlockNumber) (hexutil.Bytes, error) {
-	result, _, _, err := s.doCall(ctx, args, blockNr, vm.Config{}, 5*time.Second)
-	return (hexutil.Bytes)(result), err
+	return hexutil.Bytes{}, nil
 }
 
 // EstimateGas returns an estimate of the amount of gas needed to execute the
@@ -718,10 +650,6 @@ func (s *PublicBlockChainAPI) EstimateGas(ctx context.Context, args CallArgs) (h
 	executable := func(gas uint64) bool {
 		args.Gas = hexutil.Uint64(gas)
 
-		_, _, failed, err := s.doCall(ctx, args, rpc.PendingBlockNumber, vm.Config{}, 0)
-		if err != nil || failed {
-			return false
-		}
 		return true
 	}
 	// Execute the binary search and hone in on an executable gas limit
@@ -771,6 +699,7 @@ type StructLogRes struct {
 	Storage *map[string]string `json:"storage,omitempty"`
 }
 
+/*
 // formatLogs formats EVM returned structured logs for json output
 func FormatLogs(logs []vm.StructLog) []StructLogRes {
 	formatted := make([]StructLogRes, len(logs))
@@ -807,7 +736,7 @@ func FormatLogs(logs []vm.StructLog) []StructLogRes {
 	}
 	return formatted
 }
-
+*/
 // rpcOutputBlock converts the given block to the RPC output which depends on fullTx. If inclTx is true transactions are
 // returned. When fullTx is true the returned block contains full transaction details, otherwise it will only contain
 // transaction hashes.

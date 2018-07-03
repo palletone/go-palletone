@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/vm"
 )
 
 // Backend interface provides the common API services (that are provided by
@@ -53,7 +52,6 @@ type Backend interface {
 	GetBlock(ctx context.Context, blockHash common.Hash) (*types.Block, error)
 	GetReceipts(ctx context.Context, blockHash common.Hash) (types.Receipts, error)
 	GetTd(blockHash common.Hash) *big.Int
-	GetEVM(ctx context.Context, msg coredata.Message, state *state.StateDB, header *types.Header, vmCfg vm.Config) (*vm.EVM, func() error, error)
 	SubscribeChainEvent(ch chan<- coredata.ChainEvent) event.Subscription
 	SubscribeChainHeadEvent(ch chan<- coredata.ChainHeadEvent) event.Subscription
 	SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription
