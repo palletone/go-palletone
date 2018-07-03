@@ -19,6 +19,8 @@ package rlp
 import (
 	"io"
 	"reflect"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto/sha3"
 )
 
 // RawValue represents an encoded RLP value and can be used to delay
@@ -153,4 +155,11 @@ func readSize(b []byte, slen byte) (uint64, error) {
 		return 0, ErrCanonSize
 	}
 	return s, nil
+}
+
+func RlpHash(x interface{}) (h common.Hash) {
+	hw := sha3.NewKeccak256()
+	Encode(hw, x)
+	hw.Sum(h[:0])
+	return h
 }
