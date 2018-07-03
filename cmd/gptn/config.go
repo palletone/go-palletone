@@ -128,6 +128,7 @@ func adaptorConfig(config FullConfig) FullConfig {
 
 func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// Load defaults.
+	// 加载cfg默认配置信息，cfg是一个字典结构
 	cfg := FullConfig{
 		Ptn:       ptn.DefaultConfig,
 		Node:      defaultNodeConfig(),
@@ -157,7 +158,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
 
-	utils.SetEthConfig(ctx, stack, &cfg.Ptn)
+	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ethstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
@@ -173,7 +174,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	log.InitLogger()
 	//在stack上增加一个 PalletOne 节点，其实就是new一个 PalletOne 后加到后者的 serviceFuncs 里面去
 	//然后在stack.Run的时候会调用这些service
-	utils.RegisterEthService(stack, &cfg.Ptn)
+	utils.RegisterPtnService(stack, &cfg.Ptn)
 	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
 		//注册dashboard仪表盘服务，Dashboard会开启端口监听
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
@@ -182,7 +183,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	// Add the PalletOne Stats daemon if requested.
 	if cfg.Ethstats.URL != "" {
 		//注册状态服务
-		utils.RegisterEthStatsService(stack, cfg.Ethstats.URL)
+		utils.RegisterPtnStatsService(stack, cfg.Ethstats.URL)
 	}
 	return stack
 }

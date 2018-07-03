@@ -953,8 +953,8 @@ func setLog(ctx *cli.Context, cfg *log.Config) {
 //	}
 //}
 
-// SetEthConfig applies ptn-related command line flags to the config.
-func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
+// SetPtnConfig applies ptn-related command line flags to the config.
+func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	// Avoid conflicting network flags
 	checkExclusive(ctx, TestnetFlag)
 	checkExclusive(ctx, FastSyncFlag, LightModeFlag, SyncModeFlag)
@@ -1060,8 +1060,8 @@ func SetDashboardConfig(ctx *cli.Context, cfg *dashboard.Config) {
 	cfg.Refresh = ctx.GlobalDuration(DashboardRefreshFlag.Name)
 }
 
-// RegisterEthService adds an PalletOne client to the stack.
-func RegisterEthService(stack *node.Node, cfg *ptn.Config) {
+// RegisterPtnService adds an PalletOne client to the stack.
+func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
 	// 2. 到stack上增加一个serviceFuncs 函数
 	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		// 1. new 一个全节点类型的 PalletOne
@@ -1080,9 +1080,9 @@ func RegisterDashboardService(stack *node.Node, cfg *dashboard.Config, commit st
 	})
 }
 
-// RegisterEthStatsService configures the PalletOne Stats daemon and adds it to
+// RegisterPtnStatsService configures the PalletOne Stats daemon and adds it to
 // th egiven node.
-func RegisterEthStatsService(stack *node.Node, url string) {
+func RegisterPtnStatsService(stack *node.Node, url string) {
 	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		// Retrieve both ptn and les services
 		var ethServ *ptn.PalletOne

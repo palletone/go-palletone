@@ -142,14 +142,14 @@ func init() {
 	// 先调用初始化函数，设置app的各个参数
 	// Initialize the CLI app and start Gptn
 	// gptn处理函数会在 app.HandleAction 里面调用
-	app.Action = gptn	//默认的操作，就是启动一个gptn节点， 如果有其他命令行参数，会调用到下面的Commands里面去
+	app.Action = gptn	//默认的操作，就是启动一个gptn节点， 如果有其他子命令行参数，会调用到下面的Commands里面去
 	app.HideVersion = true // we have a command to print the version
 	app.Copyright = "Copyright 2017-2018 The go-ethereum Authors"
-	// 设置各个命令的处理类/函数，比如consoleCommand 最后调用到 localConsole
+	// 设置各个子命令的处理类/函数，比如consoleCommand 最后调用到 localConsole
 	// 如果命令行参数里面有下面的指令，就会直接调用下面的Command.Run方法，而不调用默认的app.Action方法
 	app.Commands = []cli.Command{
 		// See chaincmd.go:
-		initCommand,	//初始化创世块
+		initCommand,	//初始化创世单元
 		importCommand,
 		exportCommand,
 		importPreimagesCommand,
@@ -220,7 +220,7 @@ func gptn(ctx *cli.Context) error {
 	// 根据参数来新建一个全节点服务
 	node := makeFullNode(ctx)
 
-	// 创建协程启动节点，然后进入等待状态。
+	// 创建协程启动节点，然后进入等待状态(阻塞模式)。
 	// 启动 serviceFuncs 列表中的所有匿名服务，在Node.Start()中执行，函数调用路径为：
 	/*
 		1. startNode(ctx, node);
