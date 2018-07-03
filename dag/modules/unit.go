@@ -154,8 +154,8 @@ type Unit struct {
 	hash         common.Hash        `json:"unit_hash"`     // unit hash
 	size         common.StorageSize `json:"size"`          // unit size
 	creationdate time.Time          `json:"creation_time"` // unit create time
-	gasprice 	uint64		`json:"gas_price"`	// user set total gas
-	gasused 	uint64		`json:"gas_used"`	// the actually used gas, mediator set
+	gasprice     uint64             `json:"gas_price"`     // user set total gas
+	gasused      uint64             `json:"gas_used"`      // the actually used gas, mediator set
 }
 
 type Transactions []*Transaction
@@ -165,9 +165,9 @@ type Transaction struct {
 	TxMessages   []Message   `json:"messages"` //
 	Authors      []Author    `json:"authors"`  // the issuers of the transaction
 	Excutiontime uint        `json:"excution_time"`
-	Memery       uint		`json:"memory"`
+	Memery       uint        `json:"memory"`
 	CreationDate time.Time   `json:"creation_date"`
-	GasPrice 	uint64		`json:"gas_price"`	// user set total gas
+	GasPrice     uint64      `json:"gas_price"` // user set total gas
 }
 
 type ChainIndex struct {
@@ -180,7 +180,7 @@ type ChainIndex struct {
 type Message struct {
 	App         string      `json:"app"`          // message type
 	PayloadHash common.Hash `json:"payload_hash"` // payload hash
-	Payload interface{} `json:"payload"` // the true transaction data
+	Payload     interface{} `json:"payload"`      // the true transaction data
 }
 
 /************************** Payload Details ******************************************/
@@ -262,7 +262,7 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 }
 
 func NewGenesisUnit(genesis *core.Genesis) (*Unit, error) {
-	return &Unit{},nil
+	return &Unit{}, nil
 }
 
 func CopyTransactions(txs Transactions) Transactions {
