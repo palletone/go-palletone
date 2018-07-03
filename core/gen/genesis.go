@@ -19,35 +19,11 @@ package gen
 import (
 	"errors"
 
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
-
-type GenesisEngine struct {
-	scope    event.SubscriptionScope
-	dposFeed event.Feed
-}
-
-func (engine *GenesisEngine) SubscribeCeEvent(ch chan<- *modules.Unit) event.Subscription {
-	return engine.scope.Track(engine.dposFeed.Subscribe(ch))
-}
-
-func (engine *GenesisEngine) SendEvents(unit *modules.Unit) int {
-	return engine.dposFeed.Send(unit)
-}
-
-func (engine *GenesisEngine) Stop() {
-	// Unsubscribe all subscriptions registered from dops
-	engine.scope.Close()
-	log.Info("GenesisEngine stopped")
-}
-
-func New() *GenesisEngine {
-	return &GenesisEngine{}
-}
 
 // SetupGenesisBlock writes or updates the genesis block in db.
 // The block that will be used is:
@@ -62,7 +38,7 @@ func New() *GenesisEngine {
 // error is a *configure.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-func (engine *GenesisEngine) SetupGenesisBlock(genesis *core.Genesis) (*modules.Unit, error) {
+func SetupGenesisBlock(genesis *core.Genesis) (*modules.Unit, error) {
 	// Just commit the new block if there is no stored genesis block.
 	stored := storage.GetGenesisUnit(0)
 	// Check whether the genesis block is already written.

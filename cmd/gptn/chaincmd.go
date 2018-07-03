@@ -22,9 +22,9 @@ import (
 	"strconv"
 
 	"github.com/palletone/go-palletone/cmd/utils"
-	//"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
-	//"github.com/palletone/go-palletone/core/gen"
+	"github.com/palletone/go-palletone/core/gen"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -177,20 +177,12 @@ func initGenesis(ctx *cli.Context) error {
 		utils.Fatalf("invalid genesis file: %v", err)
 	}
 
-	//node := makeFullNode(ctx)
-	//startNode(ctx, node)
-	//node.initGenesis()
-
-	/*
-		makeFullNode(ctx)
-		unit, err = gen.SetupGenesisBlock(genesis)
-		if err != nil {
-			utils.Fatalf("Failed to write genesis block: %v", err)
-		}
-		log.Info("Successfully wrote genesis state", "database", "chaindata")
-	*/
-	//to p2p
-
+	makeFullNode(ctx)
+	_, err = gen.SetupGenesisBlock(genesis)
+	if err != nil {
+		utils.Fatalf("Failed to write genesis block: %v", err)
+	}
+	log.Info("Successfully wrote genesis state", "database", "chaindata")
 	return nil
 }
 
