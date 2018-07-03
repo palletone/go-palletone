@@ -165,16 +165,23 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	return stack, cfg
 }
 
+// makeFullNode 函数用创建一个 PalletOne 节点，节点类型根据ctx参数传递的命令行指令来控制。
+//生成node.Node一个结构，里面会有任务函数栈, 然后设置各个服务到serviceFuncs 里面，
+//包括：全节点，dashboard，以及状态stats服务等
 func makeFullNode(ctx *cli.Context) *node.Node {
 	stack, cfg := makeConfigNode(ctx)
 	log.InitLogger()
+	//在stack上增加一个 PalletOne 节点，其实就是new一个 PalletOne 后加到后者的 serviceFuncs 里面去
+	//然后在stack.Run的时候会调用这些service
 	utils.RegisterEthService(stack, &cfg.Ptn)
 	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
+		//注册dashboard仪表盘服务，Dashboard会开启端口监听
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
 	}
 
 	// Add the PalletOne Stats daemon if requested.
 	if cfg.Ethstats.URL != "" {
+		//注册状态服务
 		utils.RegisterEthStatsService(stack, cfg.Ethstats.URL)
 	}
 	return stack

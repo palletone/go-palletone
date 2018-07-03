@@ -1062,7 +1062,9 @@ func SetDashboardConfig(ctx *cli.Context, cfg *dashboard.Config) {
 
 // RegisterEthService adds an PalletOne client to the stack.
 func RegisterEthService(stack *node.Node, cfg *ptn.Config) {
+	// 2. 到stack上增加一个serviceFuncs 函数
 	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+		// 1. new 一个全节点类型的 PalletOne
 		return ptn.New(ctx, cfg)
 	})
 
