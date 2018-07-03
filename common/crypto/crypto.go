@@ -198,6 +198,11 @@ func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
 	// return common.BytesToAddress(Keccak256(pubBytes[1:])[12:])
 	pubKeyHash := Hash160(pubBytes)
 	addrStr := "P" + base58.CheckEncode(pubKeyHash, byte(0))
+	//if len<35 add suffix "_" to make len=35
+	addrLen := len(addrStr)
+	for i := addrLen; i < 35; i++ {
+		addrStr += "_"
+	}
 	return common.BytesToAddress([]byte(addrStr))
 }
 
