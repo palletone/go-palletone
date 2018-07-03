@@ -2,6 +2,7 @@
 
 package types
 
+/*
 import (
 	"encoding/json"
 	//"errors"
@@ -31,24 +32,6 @@ func (h Header) MarshalJSON() ([]byte, error) {
 		Hash        common.Hash    `json:"hash"`
 	}
 	var enc Header
-	/*
-		enc.ParentHash = h.ParentHash
-		enc.UncleHash = h.UncleHash
-		enc.Coinbase = h.Coinbase
-		enc.Root = h.Root
-		enc.TxHash = h.TxHash
-		enc.ReceiptHash = h.ReceiptHash
-		enc.Bloom = h.Bloom
-		enc.Difficulty = (*hexutil.Big)(h.Difficulty)
-		enc.Number = (*hexutil.Big)(h.Number)
-		enc.GasLimit = hexutil.Uint64(h.GasLimit)
-		enc.GasUsed = hexutil.Uint64(h.GasUsed)
-		enc.Time = (*hexutil.Big)(h.Time)
-		enc.Extra = h.Extra
-		enc.MixDigest = h.MixDigest
-		enc.Nonce = h.Nonce
-		enc.Hash = h.Hash()
-	*/
 	return json.Marshal(&enc)
 }
 
@@ -72,3 +55,4 @@ func (h *Header) UnmarshalJSON(input []byte) error {
 	}
 	return nil
 }
+*/

@@ -24,8 +24,8 @@ import (
 	"sync/atomic"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/rlp"
 )
 
@@ -37,11 +37,7 @@ var (
 
 // deriveSigner makes a *best* guess about which signer to use.
 func deriveSigner(V *big.Int) Signer {
-	if V.Sign() != 0 && isProtectedV(V) {
-		return NewEIP155Signer(deriveChainId(V))
-	} else {
-		return HomesteadSigner{}
-	}
+	return HomesteadSigner{}
 }
 
 type Transaction struct {
@@ -196,24 +192,26 @@ func (tx *Transaction) To() *common.Address {
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
 func (tx *Transaction) Hash() common.Hash {
-	if hash := tx.hash.Load(); hash != nil {
-		return hash.(common.Hash)
-	}
-	v := rlpHash(tx)
-	tx.hash.Store(v)
-	return v
+	/*
+		if hash := tx.hash.Load(); hash != nil {
+			return hash.(common.Hash)
+		}
+		v := rlpHash(tx)
+		tx.hash.Store(v)*/
+	return common.Hash{}
 }
 
 // Size returns the true RLP encoded storage size of the transaction, either by
 // encoding and returning it, or returning a previsouly cached value.
 func (tx *Transaction) Size() common.StorageSize {
-	if size := tx.size.Load(); size != nil {
-		return size.(common.StorageSize)
-	}
-	c := writeCounter(0)
-	rlp.Encode(&c, &tx.data)
-	tx.size.Store(common.StorageSize(c))
-	return common.StorageSize(c)
+	/*
+		if size := tx.size.Load(); size != nil {
+			return size.(common.StorageSize)
+		}
+		c := writeCounter(0)
+		rlp.Encode(&c, &tx.data)
+		tx.size.Store(common.StorageSize(c))*/
+	return common.StorageSize(0)
 }
 
 // AsMessage returns the transaction as a core.Message.

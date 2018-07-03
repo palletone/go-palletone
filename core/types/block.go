@@ -27,7 +27,6 @@ import (
 )
 
 type BlockNonce [8]byte
-
 type Header struct {
 	ParentHash  common.Hash    `json:"parentHash"       gencodec:"required"`
 	UncleHash   common.Hash    `json:"sha3Uncles"       gencodec:"required"`
@@ -45,59 +44,20 @@ type Header struct {
 	MixDigest   common.Hash    `json:"mixHash"          gencodec:"required"`
 	Nonce       BlockNonce     `json:"nonce"            gencodec:"required"`
 }
-
-func (h *Header) Hash() common.Hash {
-	return rlpHash(h)
-}
-
-// HashNoNonce returns the hash which is used as input for the proof-of-work search.
-func (h *Header) HashNoNonce() common.Hash {
-	return common.Hash{}
-}
-
-// Size returns the approximate memory used by all internal contents. It is used
-// to approximate and limit the memory consumption of various caches.
-func (h *Header) Size() common.StorageSize {
-	return common.StorageSize(0)
-}
-
-type Block struct {
-	header       *Header
-	ReceivedAt   time.Time
-	transactions Transactions
-}
+type Block struct{ ReceivedAt time.Time }
 type Blocks []*Block
-type Body struct {
-	Transactions []*Transaction
-	Uncles       []*Header
-}
+type Body struct{}
 
-func (b *Block) WithSeal(header *Header) *Block {
-	return &Block{}
-}
-
-// WithBody returns a new block with the given transaction and uncle contents.
-func (b *Block) WithBody(transactions []*Transaction, uncles []*Header) *Block {
-	block := &Block{}
-	return block
-}
-
-// Hash returns the keccak256 hash of b's header.
-// The hash is computed on the first call and cached thereafter.
-func (b *Block) Hash() common.Hash {
-	v := common.Hash{}
-	return v
-}
+func (b *Block) Hash() common.Hash { return common.Hash{} }
 
 func (b *Block) Uncles() []*Header          { return []*Header{} }
 func (b *Block) Transactions() Transactions { return Transactions{} }
 
-func (b *Block) Number() *big.Int     { return &big.Int{} }
-func (b *Block) GasLimit() uint64     { return uint64(0) }
-func (b *Block) GasUsed() uint64      { return uint64(0) }
-func (b *Block) Difficulty() *big.Int { return &big.Int{} }
-func (b *Block) Time() *big.Int       { return &big.Int{} }
-
+func (b *Block) Number() *big.Int         { return &big.Int{} }
+func (b *Block) GasLimit() uint64         { return uint64(0) }
+func (b *Block) GasUsed() uint64          { return uint64(0) }
+func (b *Block) Difficulty() *big.Int     { return &big.Int{} }
+func (b *Block) Time() *big.Int           { return &big.Int{} }
 func (b *Block) NumberU64() uint64        { return uint64(0) }
 func (b *Block) MixDigest() common.Hash   { return common.Hash{} }
 func (b *Block) Nonce() uint64            { return uint64(0) }
@@ -109,23 +69,16 @@ func (b *Block) TxHash() common.Hash      { return common.Hash{} }
 func (b *Block) ReceiptHash() common.Hash { return common.Hash{} }
 func (b *Block) UncleHash() common.Hash   { return common.Hash{} }
 func (b *Block) Extra() []byte            { return []byte{} }
-
-func (b *Block) Header() *Header { return &Header{} }
-
+func (b *Block) Header() *Header          { return &Header{} }
 func (b *Block) Size() common.StorageSize { return common.StorageSize(0) }
 
-type writeCounter common.StorageSize
+func (h *Header) Hash() common.Hash        { return rlpHash(h) }
+func (h *Header) HashNoNonce() common.Hash { return common.Hash{} }
 
-func (c *writeCounter) Write(b []byte) (int, error) {
-	*c += writeCounter(len(b))
-	return len(b), nil
-}
+func (h *Header) Size() common.StorageSize { return common.StorageSize(0) }
 func rlpHash(x interface{}) (h common.Hash) {
 	hw := sha3.NewKeccak256()
 	rlp.Encode(hw, x)
 	hw.Sum(h[:0])
 	return h
-}
-func NewBlockWithHeader(header *Header) *Block {
-	return &Block{}
 }
