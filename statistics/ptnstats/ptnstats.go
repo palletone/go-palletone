@@ -34,7 +34,7 @@ import (
 	//"github.com/palletone/go-palletone/common/mclock"
 	//"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/ptn"
 	//"github.com/palletone/go-palletone/les"

@@ -29,7 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"

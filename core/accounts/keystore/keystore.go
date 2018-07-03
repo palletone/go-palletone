@@ -36,7 +36,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/core/accounts"
 )
 

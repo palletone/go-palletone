@@ -24,7 +24,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/types"
 )
 
 // nonceHeap is a heap.Interface implementation over 64bit unsigned integers for

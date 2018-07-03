@@ -24,7 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common/math"
 
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/types"
 )
 
 //go:generate gencodec -type DifficultyTest -field-override difficultyTestMarshaling -out gen_difficultytest.go

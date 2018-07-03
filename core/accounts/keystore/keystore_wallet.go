@@ -21,7 +21,7 @@ import (
 
 	ethereum "github.com/palletone/go-palletone"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/types"
 )
 
 // keystoreWallet implements the accounts.Wallet interface for the original

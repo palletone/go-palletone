@@ -35,7 +35,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	//"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/ptn/downloader"

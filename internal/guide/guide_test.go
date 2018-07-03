@@ -31,7 +31,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/contracts/types"
+	"github.com/palletone/go-palletone/core/types"
 )
 
 // Tests that the account management snippets work correctly.
