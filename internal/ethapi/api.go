@@ -996,7 +996,7 @@ func (s *PublicTransactionPoolAPI) GetTransactionReceipt(ctx context.Context, ha
 	if len(receipts) <= int(index) {
 		return nil, nil
 	}
-	receipt := receipts[index]
+	//receipt := receipts[index]
 
 	var signer types.Signer = types.FrontierSigner{}
 	if tx.Protected() {
@@ -1005,32 +1005,32 @@ func (s *PublicTransactionPoolAPI) GetTransactionReceipt(ctx context.Context, ha
 	from, _ := types.Sender(signer, tx)
 
 	fields := map[string]interface{}{
-		"blockHash":         blockHash,
-		"blockNumber":       hexutil.Uint64(blockNumber),
-		"transactionHash":   hash,
-		"transactionIndex":  hexutil.Uint64(index),
-		"from":              from,
-		"to":                tx.To(),
-		"gasUsed":           hexutil.Uint64(receipt.GasUsed),
-		"cumulativeGasUsed": hexutil.Uint64(receipt.CumulativeGasUsed),
-		"contractAddress":   nil,
-		"logs":              receipt.Logs,
-		"logsBloom":         receipt.Bloom,
+		"blockHash":        blockHash,
+		"blockNumber":      hexutil.Uint64(blockNumber),
+		"transactionHash":  hash,
+		"transactionIndex": hexutil.Uint64(index),
+		"from":             from,
+		"to":               tx.To(),
+		//"gasUsed":           hexutil.Uint64(receipt.GasUsed),
+		//"cumulativeGasUsed": hexutil.Uint64(receipt.CumulativeGasUsed),
+		"contractAddress": nil,
+		//"logs":              receipt.Logs,
+		//"logsBloom":         receipt.Bloom,
 	}
 
 	// Assign receipt status or post state.
-	if len(receipt.PostState) > 0 {
-		fields["root"] = hexutil.Bytes(receipt.PostState)
-	} else {
-		fields["status"] = hexutil.Uint(receipt.Status)
-	}
-	if receipt.Logs == nil {
-		fields["logs"] = [][]*types.Log{}
-	}
+	//if len(receipt.PostState) > 0 {
+	//fields["root"] = hexutil.Bytes(receipt.PostState)
+	//} else {
+	//	fields["status"] = hexutil.Uint(receipt.Status)
+	//}
+	//if receipt.Logs == nil {
+	//	fields["logs"] = [][]*types.Log{}
+	//}
 	// If the ContractAddress is 20 0x0 bytes, assume it is not a contract creation
-	if receipt.ContractAddress != (common.Address{}) {
-		fields["contractAddress"] = receipt.ContractAddress
-	}
+	//if receipt.ContractAddress != (common.Address{}) {
+	//	fields["contractAddress"] = receipt.ContractAddress
+	//}
 	return fields, nil
 }
 

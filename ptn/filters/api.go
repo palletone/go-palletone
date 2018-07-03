@@ -25,7 +25,6 @@ import (
 	"sync"
 	"time"
 
-	ethereum "github.com/palletone/go-palletone"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -45,8 +44,8 @@ type filter struct {
 	deadline *time.Timer // filter is inactiv when deadline triggers
 	hashes   []common.Hash
 	crit     FilterCriteria
-	logs     []*types.Log
-	s        *Subscription // associated subscription in event system
+	//logs     []*types.Log
+	s *Subscription // associated subscription in event system
 }
 
 // PublicFilterAPI offers support to create and manage filters. This will allow external clients to retrieve various
@@ -229,44 +228,6 @@ func (api *PublicFilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, er
 	return rpcSub, nil
 }
 
-// Logs creates a subscription that fires for all new log that match the given filter criteria.
-func (api *PublicFilterAPI) Logs(ctx context.Context, crit FilterCriteria) (*rpc.Subscription, error) {
-	notifier, supported := rpc.NotifierFromContext(ctx)
-	if !supported {
-		return &rpc.Subscription{}, rpc.ErrNotificationsUnsupported
-	}
-
-	var (
-		rpcSub      = notifier.CreateSubscription()
-		matchedLogs = make(chan []*types.Log)
-	)
-
-	logsSub, err := api.events.SubscribeLogs(ethereum.FilterQuery(crit), matchedLogs)
-	if err != nil {
-		return nil, err
-	}
-
-	go func() {
-
-		for {
-			select {
-			case logs := <-matchedLogs:
-				for _, log := range logs {
-					notifier.Notify(rpcSub.ID, &log)
-				}
-			case <-rpcSub.Err(): // client send an unsubscribe request
-				logsSub.Unsubscribe()
-				return
-			case <-notifier.Closed(): // connection dropped
-				logsSub.Unsubscribe()
-				return
-			}
-		}
-	}()
-
-	return rpcSub, nil
-}
-
 // FilterCriteria represents a request to create a new filter.
 //
 // TODO(karalabe): Kill this in favor of ethereum.FilterQuery.
@@ -291,56 +252,7 @@ type FilterCriteria struct {
 //
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_newfilter
 func (api *PublicFilterAPI) NewFilter(crit FilterCriteria) (rpc.ID, error) {
-	logs := make(chan []*types.Log)
-	logsSub, err := api.events.SubscribeLogs(ethereum.FilterQuery(crit), logs)
-	if err != nil {
-		return rpc.ID(""), err
-	}
-
-	api.filtersMu.Lock()
-	api.filters[logsSub.ID] = &filter{typ: LogsSubscription, crit: crit, deadline: time.NewTimer(deadline), logs: make([]*types.Log, 0), s: logsSub}
-	api.filtersMu.Unlock()
-
-	go func() {
-		for {
-			select {
-			case l := <-logs:
-				api.filtersMu.Lock()
-				if f, found := api.filters[logsSub.ID]; found {
-					f.logs = append(f.logs, l...)
-				}
-				api.filtersMu.Unlock()
-			case <-logsSub.Err():
-				api.filtersMu.Lock()
-				delete(api.filters, logsSub.ID)
-				api.filtersMu.Unlock()
-				return
-			}
-		}
-	}()
-
-	return logsSub.ID, nil
-}
-
-// GetLogs returns logs matching the given argument that are stored within the state.
-//
-// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getlogs
-func (api *PublicFilterAPI) GetLogs(ctx context.Context, crit FilterCriteria) ([]*types.Log, error) {
-	// Convert the RPC block numbers into internal representations
-	if crit.FromBlock == nil {
-		crit.FromBlock = big.NewInt(rpc.LatestBlockNumber.Int64())
-	}
-	if crit.ToBlock == nil {
-		crit.ToBlock = big.NewInt(rpc.LatestBlockNumber.Int64())
-	}
-	// Create and run the filter to get all the logs
-	filter := New(api.backend, crit.FromBlock.Int64(), crit.ToBlock.Int64(), crit.Addresses, crit.Topics)
-
-	logs, err := filter.Logs(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return returnLogs(logs), err
+	return "", nil
 }
 
 // UninstallFilter removes the filter with the given filter id.
@@ -358,37 +270,6 @@ func (api *PublicFilterAPI) UninstallFilter(id rpc.ID) bool {
 	}
 
 	return found
-}
-
-// GetFilterLogs returns the logs for the filter with the given id.
-// If the filter could not be found an empty array of logs is returned.
-//
-// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getfilterlogs
-func (api *PublicFilterAPI) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*types.Log, error) {
-	api.filtersMu.Lock()
-	f, found := api.filters[id]
-	api.filtersMu.Unlock()
-
-	if !found || f.typ != LogsSubscription {
-		return nil, fmt.Errorf("filter not found")
-	}
-
-	begin := rpc.LatestBlockNumber.Int64()
-	if f.crit.FromBlock != nil {
-		begin = f.crit.FromBlock.Int64()
-	}
-	end := rpc.LatestBlockNumber.Int64()
-	if f.crit.ToBlock != nil {
-		end = f.crit.ToBlock.Int64()
-	}
-	// Create and run the filter to get all the logs
-	filter := New(api.backend, begin, end, f.crit.Addresses, f.crit.Topics)
-
-	logs, err := filter.Logs(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return returnLogs(logs), nil
 }
 
 // GetFilterChanges returns the logs for the filter with the given id since
@@ -415,10 +296,6 @@ func (api *PublicFilterAPI) GetFilterChanges(id rpc.ID) (interface{}, error) {
 			hashes := f.hashes
 			f.hashes = nil
 			return returnHashes(hashes), nil
-		case LogsSubscription:
-			logs := f.logs
-			f.logs = nil
-			return returnLogs(logs), nil
 		}
 	}
 
@@ -432,15 +309,6 @@ func returnHashes(hashes []common.Hash) []common.Hash {
 		return []common.Hash{}
 	}
 	return hashes
-}
-
-// returnLogs is a helper that will return an empty log array in case the given logs array is nil,
-// otherwise the given logs array is returned.
-func returnLogs(logs []*types.Log) []*types.Log {
-	if logs == nil {
-		return []*types.Log{}
-	}
-	return logs
 }
 
 // UnmarshalJSON sets *args fields with given data.

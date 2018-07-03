@@ -82,3 +82,6 @@ func rlpHash(x interface{}) (h common.Hash) {
 	hw.Sum(h[:0])
 	return h
 }
+
+type Receipt struct{}
+type Receipts []*Receipt

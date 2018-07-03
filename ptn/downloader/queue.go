@@ -389,9 +389,9 @@ func (q *queue) Results(block bool) []*fetchResult {
 			for _, uncle := range result.Uncles {
 				size += uncle.Size()
 			}
-			for _, receipt := range result.Receipts {
-				size += receipt.Size()
-			}
+			//for _, receipt := range result.Receipts {
+			//	size += receipt.Size()
+			//}
 			for _, tx := range result.Transactions {
 				size += tx.Size()
 			}
@@ -774,17 +774,20 @@ func (q *queue) DeliverBodies(id string, txLists [][]*types.Transaction, uncleLi
 // The method returns the number of transaction receipts accepted from the delivery
 // and also wakes any threads waiting for data delivery.
 func (q *queue) DeliverReceipts(id string, receiptList [][]*types.Receipt) (int, error) {
-	q.lock.Lock()
-	defer q.lock.Unlock()
+	/*
+		q.lock.Lock()
+		defer q.lock.Unlock()
 
-	reconstruct := func(header *types.Header, index int, result *fetchResult) error {
-		if types.DeriveSha(types.Receipts(receiptList[index])) != header.ReceiptHash {
-			return errInvalidReceipt
+		reconstruct := func(header *types.Header, index int, result *fetchResult) error {
+			if types.DeriveSha(types.Receipts(receiptList[index])) != header.ReceiptHash {
+				return errInvalidReceipt
+			}
+			result.Receipts = receiptList[index]
+			return nil
 		}
-		result.Receipts = receiptList[index]
-		return nil
-	}
-	return q.deliver(id, q.receiptTaskPool, q.receiptTaskQueue, q.receiptPendPool, q.receiptDonePool, receiptReqTimer, len(receiptList), reconstruct)
+		return q.deliver(id, q.receiptTaskPool, q.receiptTaskQueue, q.receiptPendPool, q.receiptDonePool, receiptReqTimer, len(receiptList), reconstruct)
+	*/
+	return 0, nil
 }
 
 // deliver injects a data retrieval response into the results queue.

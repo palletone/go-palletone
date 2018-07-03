@@ -114,11 +114,12 @@ var (
 // TxPreEvent is posted when a transaction enters the transaction pool.
 type TxPreEvent struct{ Tx *types.Transaction }
 
+/*
 // PendingLogsEvent is posted pre mining and notifies of pending logs.
 type PendingLogsEvent struct {
 	Logs []*types.Log
 }
-
+*/
 // PendingStateEvent is posted pre mining and notifies of pending state changes.
 type PendingStateEvent struct{}
 
@@ -129,12 +130,12 @@ type NewMinedBlockEvent struct{ Block *types.Block }
 type RemovedTransactionEvent struct{ Txs types.Transactions }
 
 // RemovedLogsEvent is posted when a reorg happens
-type RemovedLogsEvent struct{ Logs []*types.Log }
+//type RemovedLogsEvent struct{ Logs []*types.Log }
 
 type ChainEvent struct {
 	Block *types.Block
 	Hash  common.Hash
-	Logs  []*types.Log
+	//Logs  []*types.Log
 }
 
 type ChainSideEvent struct {

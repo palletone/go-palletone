@@ -24,7 +24,7 @@ import (
 	"sync/atomic"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
+	//"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/rlp"
 )
@@ -149,26 +149,27 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 	hash := tx.Hash()
 	data := tx.data
 	data.Hash = &hash
-	return data.MarshalJSON()
+	return []byte{}, nil
+	//return data.MarshalJSON(), nil
 }
 
 // UnmarshalJSON decodes the web3 RPC transaction format.
 func (tx *Transaction) UnmarshalJSON(input []byte) error {
-	var dec txdata
-	if err := dec.UnmarshalJSON(input); err != nil {
-		return err
-	}
-	var V byte
-	if isProtectedV(dec.V) {
-		chainID := deriveChainId(dec.V).Uint64()
-		V = byte(dec.V.Uint64() - 35 - 2*chainID)
-	} else {
-		V = byte(dec.V.Uint64() - 27)
-	}
-	if !crypto.ValidateSignatureValues(V, dec.R, dec.S, false) {
-		return ErrInvalidSig
-	}
-	*tx = Transaction{data: dec}
+	/*	var dec txdata
+		if err := dec.UnmarshalJSON(input); err != nil {
+			return err
+		}
+		var V byte
+		if isProtectedV(dec.V) {
+			chainID := deriveChainId(dec.V).Uint64()
+			V = byte(dec.V.Uint64() - 35 - 2*chainID)
+		} else {
+			V = byte(dec.V.Uint64() - 27)
+		}
+		if !crypto.ValidateSignatureValues(V, dec.R, dec.S, false) {
+			return ErrInvalidSig
+		}
+		*tx = Transaction{data: dec}*/
 	return nil
 }
 

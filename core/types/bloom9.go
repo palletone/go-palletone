@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 type bytesBacked interface {
@@ -92,14 +92,15 @@ func (b *Bloom) UnmarshalText(input []byte) error {
 }
 
 func CreateBloom(receipts Receipts) Bloom {
-	bin := new(big.Int)
+	/*bin := new(big.Int)
 	for _, receipt := range receipts {
 		bin.Or(bin, LogsBloom(receipt.Logs))
 	}
-
-	return BytesToBloom(bin.Bytes())
+	return BytesToBloom(bin.Bytes())*/
+	return Bloom{}
 }
 
+/*
 func LogsBloom(logs []*Log) *big.Int {
 	bin := new(big.Int)
 	for _, log := range logs {
@@ -111,7 +112,7 @@ func LogsBloom(logs []*Log) *big.Int {
 
 	return bin
 }
-
+*/
 func bloom9(b []byte) *big.Int {
 	b = crypto.Keccak256(b[:])
 

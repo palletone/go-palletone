@@ -295,8 +295,7 @@ func (ec *Client) NonceAt(ctx context.Context, account common.Address, blockNumb
 	return uint64(result), err
 }
 
-// Filters
-
+/*
 // FilterLogs executes a filter query.
 func (ec *Client) FilterLogs(ctx context.Context, q palletone.FilterQuery) ([]types.Log, error) {
 	var result []types.Log
@@ -308,7 +307,7 @@ func (ec *Client) FilterLogs(ctx context.Context, q palletone.FilterQuery) ([]ty
 func (ec *Client) SubscribeFilterLogs(ctx context.Context, q palletone.FilterQuery, ch chan<- types.Log) (palletone.Subscription, error) {
 	return ec.c.EthSubscribe(ctx, ch, "logs", toFilterArg(q))
 }
-
+*/
 func toFilterArg(q palletone.FilterQuery) interface{} {
 	arg := map[string]interface{}{
 		"fromBlock": toBlockNumArg(q.FromBlock),

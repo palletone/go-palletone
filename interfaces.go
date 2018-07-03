@@ -150,6 +150,7 @@ type FilterQuery struct {
 	Topics [][]common.Hash
 }
 
+/*
 // LogFilterer provides access to contract log events using a one-off query or continuous
 // event subscription.
 //
@@ -159,7 +160,7 @@ type LogFilterer interface {
 	FilterLogs(ctx context.Context, q FilterQuery) ([]types.Log, error)
 	SubscribeFilterLogs(ctx context.Context, q FilterQuery, ch chan<- types.Log) (Subscription, error)
 }
-
+*/
 // TransactionSender wraps transaction sending. The SendTransaction method injects a
 // signed transaction into the pending transaction pool for execution. If the transaction
 // was a contract creation, the TransactionReceipt method can be used to retrieve the

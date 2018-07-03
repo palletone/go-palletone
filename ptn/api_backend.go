@@ -26,8 +26,8 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -73,16 +73,8 @@ func (b *EthApiBackend) GetReceipts(ctx context.Context, blockHash common.Hash) 
 	return types.Receipts{}, nil
 }
 
-func (b *EthApiBackend) GetLogs(ctx context.Context, blockHash common.Hash) ([][]*types.Log, error) {
-	return [][]*types.Log{}, nil
-}
-
 func (b *EthApiBackend) GetTd(blockHash common.Hash) *big.Int {
 	return &big.Int{}
-}
-
-func (b *EthApiBackend) SubscribeRemovedLogsEvent(ch chan<- coredata.RemovedLogsEvent) event.Subscription {
-	return nil
 }
 
 func (b *EthApiBackend) SubscribeChainEvent(ch chan<- coredata.ChainEvent) event.Subscription {
@@ -94,10 +86,6 @@ func (b *EthApiBackend) SubscribeChainHeadEvent(ch chan<- coredata.ChainHeadEven
 }
 
 func (b *EthApiBackend) SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription {
-	return nil
-}
-
-func (b *EthApiBackend) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscription {
 	return nil
 }
 
