@@ -34,8 +34,8 @@ func TestKeyEncryptDecrypt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	password := ""
-	address := common.HexToAddress("45dea0fb0bba44f4fcf290bba71fd57d7117cbb8")
+	password := "1"
+	address := common.HexToAddress("503148333466705a524e37554a32747563336a66526365315550384d44514733324670")
 
 	// Do a few rounds of decryption and encryption
 	for i := 0; i < 3; i++ {
