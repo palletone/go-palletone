@@ -28,6 +28,7 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common/hexutil"
+	"math/big"
 )
 
 const (
@@ -98,7 +99,7 @@ func IsHexAddress(s string) bool {
 func (a Address) Str() string   { return string(a[:]) }
 func (a Address) Bytes() []byte { return a[:] }
 
-//func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a[:]) }
+func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a[:]) }
 func (a Address) Hash() Hash  { return BytesToHash(a[:]) }
 func (a Address) Hex() string { return fmt.Sprintf("0x%x", a) }
 
