@@ -73,6 +73,9 @@ var (
 
 	preimageCounter    = metrics.NewRegisteredCounter("db/preimage/total", nil)
 	preimageHitCounter = metrics.NewRegisteredCounter("db/preimage/hits", nil)
+
+	// utxo
+	utxoprefix =  []byte("u")
 )
 
 // TxLookupEntry is a positional metadata to help looking up the data content of

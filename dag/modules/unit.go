@@ -153,7 +153,7 @@ type Unit struct {
 
 	hash         common.Hash        `json:"unit_hash"`     // unit hash
 	size         common.StorageSize `json:"size"`          // unit size
-	creationdate time.Time          `json:"creation_time"` // unit create time
+	Creationdate time.Time          `json:"creation_time"` // unit create time
 	gasprice     uint64             `json:"gas_price"`     // user set total gas
 	gasused      uint64             `json:"gas_used"`      // the actually used gas, mediator set
 }
@@ -255,7 +255,7 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 		header: CopyHeader(header),
 		txs:    CopyTransactions(txs),
 	}
-	u.creationdate = time.Now()
+	u.Creationdate = time.Now()
 	u.size = header.Size()
 	u.hash = u.Hash()
 	return u
@@ -311,7 +311,7 @@ func (u *Unit) Size() common.StorageSize {
 
 // return creationdate
 func (u *Unit) CreationDate() time.Time {
-	return u.creationdate
+	return u.Creationdate
 }
 
 //func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }

@@ -67,12 +67,12 @@ package modules
 //		}
 //	}
 //
-//	addr, err := signer.Sender(tx)
+//	Addr, err := signer.Sender(tx)
 //	if err != nil {
 //		return common.Address{}, err
 //	}
-//	tx.from.Store(sigCache{signer: signer, from: addr})
-//	return addr, nil
+//	tx.from.Store(sigCache{signer: signer, from: Addr})
+//	return Addr, nil
 //}
 //
 //// Signer encapsulates transaction signature handling. Note that this interface is not a
@@ -226,7 +226,7 @@ package modules
 //	if len(pub) == 0 || pub[0] != 4 {
 //		return common.Address{}, errors.New("invalid public key")
 //	}
-//	var addr common.Address
-//	copy(addr[:], crypto.Keccak256(pub[1:])[12:])
-//	return addr, nil
+//	var Addr common.Address
+//	copy(Addr[:], crypto.Keccak256(pub[1:])[12:])
+//	return Addr, nil
 //}

@@ -21,11 +21,11 @@ package asset
 import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/util"
-	"github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func NewAsset() common.IDType {
-	var assetID common.IDType
+func NewAsset() modules.IDType {
+	var assetID modules.IDType
 
 	out := util.TimeUUID()
 	byteOut := out.ToUUid()
@@ -42,7 +42,7 @@ func NewAsset() common.IDType {
 
 	_, err := storage.Get(assetID.Bytes())
 	if err != nil { // assetID already exists
-		return common.IDType{}
+		return modules.IDType{}
 	}
 	return assetID
 }

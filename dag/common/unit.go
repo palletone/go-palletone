@@ -31,7 +31,7 @@ import (
 	"time"
 )
 
-func RlpHash(x interface{}) (h Hash) {
+func RlpHash(x interface{}) (h common.Hash) {
 	hw := sha3.NewKeccak256()
 	rlp.Encode(hw, x)
 	hw.Sum(h[:0])
@@ -51,12 +51,12 @@ func RHashStr(x interface{}) string {
 
 //  last unit
 func CurrentUnit() *modules.Unit {
-	return &modules.Unit{creationdate: time.Now()}
+	return &modules.Unit{Creationdate: time.Now()}
 }
 
 // get unit
 func GetUnit(hash *common.Hash, index modules.ChainIndex) *modules.Unit {
-	unit_bytes, err := storage.Get(append(storage.UNIT_PREFIX + hash...))
+	unit_bytes, err := storage.Get(append(storage.UNIT_PREFIX,hash.Bytes()...))
 	if err != nil {
 		return nil
 	}
