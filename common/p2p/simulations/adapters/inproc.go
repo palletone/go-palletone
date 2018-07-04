@@ -24,7 +24,7 @@ import (
 	"sync"
 
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/common/log"
+	//"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -84,7 +84,7 @@ func (s *SimAdapter) NewNode(config *NodeConfig) (Node, error) {
 			EnableMsgEvents: true,
 		},
 		NoUSB:  true,
-		Logger: log.New("node.id", id.String()),
+		//Logger: log.New("node.id", id.String()),
 	})
 	if err != nil {
 		return nil, err
