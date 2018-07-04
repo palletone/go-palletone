@@ -20,10 +20,12 @@ import (
 	"errors"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/core"
 )
+
+
 
 // SetupGenesisBlock writes or updates the genesis block in db.
 // The block that will be used is:
