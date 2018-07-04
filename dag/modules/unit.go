@@ -255,7 +255,7 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 		header: CopyHeader(header),
 		txs:    CopyTransactions(txs),
 	}
-	u.Creationdate = time.Now()
+	u.creationdate = time.Now()
 	u.size = header.Size()
 	u.hash = u.Hash()
 	return u
@@ -311,7 +311,7 @@ func (u *Unit) Size() common.StorageSize {
 
 // return creationdate
 func (u *Unit) CreationDate() time.Time {
-	return u.Creationdate
+	return u.creationdate
 }
 
 //func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }
