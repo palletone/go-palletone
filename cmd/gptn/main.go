@@ -169,6 +169,7 @@ func init() {
 		licenseCommand,
 		// See config.go
 		dumpConfigCommand,
+		createGenesisJsonCommand,
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 

@@ -51,3 +51,4 @@ profile.cov
 **/yarn-error.log
 
 bin/
+*.json
