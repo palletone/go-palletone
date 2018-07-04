@@ -34,7 +34,7 @@ import (
 func tmpDatadirWithKeystore(t *testing.T) string {
 	datadir := tmpdir(t)
 	keystore := filepath.Join(datadir, "keystore")
-	source := filepath.Join("..", "..", "accounts", "keystore", "testdata", "keystore")
+	source := filepath.Join("..", "..", "core", "accounts", "keystore", "testdata", "keystore")
 	if err := files.CopyAll(keystore, source); err != nil {
 		t.Fatal(err)
 	}
