@@ -27,6 +27,7 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 var testAddrHex = "5031336b6a334b656a50585168673348577a35314d7448443177387248614657503138" //P13kj3KejPXQhg3HWz51MtHD1w8rHaFWP18
@@ -232,6 +233,15 @@ func TestPubkeyToAddress(t *testing.T) {
 	address := PubkeyToAddress(pubKey)
 	addStr := address.Str()
 	t.Logf("Address: %s", addStr)
+}
+
+func TestImportPrivateKeyAndGenerateAddress(t *testing.T) {
+	prvKeyHex := "0x734e7c08b3651305c45422b9dc1e3fc0d67bc2bf8f3b50bff28a6760fb3e1057"
+	prvKeyB, _ := hexutil.Decode(prvKeyHex)
+	prvKey, _ := ToECDSA(prvKeyB)
+	pubKey := prvKey.PublicKey
+	addr := PubkeyToAddress(pubKey)
+	t.Logf("Address:[%s]", addr)
 }
 
 func ExamplePubkeyToAddress() {

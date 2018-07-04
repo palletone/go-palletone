@@ -26,9 +26,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/core/accounts"
 )
 
 var testSigData = make([]byte, 32)
@@ -375,7 +375,7 @@ func checkEvents(t *testing.T, want []walletEvent, have []walletEvent) {
 }
 
 func tmpKeyStore(t *testing.T, encrypted bool) (string, *KeyStore) {
-	d, err := ioutil.TempDir("", "eth-keystore-test")
+	d, err := ioutil.TempDir("", "gptn-keystore-test")
 	if err != nil {
 		t.Fatal(err)
 	}

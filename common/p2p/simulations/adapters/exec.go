@@ -342,9 +342,9 @@ type execNodeConfig struct {
 // argv[0] being "p2p-node", reading the service / ID from argv[1] / argv[2]
 // and the node config from the _P2P_NODE_CONFIG environment variable
 func execP2PNode() {
-	glogger := log.NewGlogHandler(log.StreamHandler(os.Stderr, log.LogfmtFormat()))
-	glogger.Verbosity(log.LvlInfo)
-	log.Root().SetHandler(glogger)
+	//glogger := log.NewGlogHandler(log.StreamHandler(os.Stderr, log.LogfmtFormat()))
+	//glogger.Verbosity(log.LvlInfo)
+	//log.Root().SetHandler(glogger)
 
 	// read the services from argv
 	serviceNames := strings.Split(os.Args[1], ",")
@@ -359,7 +359,7 @@ func execP2PNode() {
 		log.Crit("error decoding _P2P_NODE_CONFIG", "err", err)
 	}
 	conf.Stack.P2P.PrivateKey = conf.Node.PrivateKey
-	conf.Stack.Logger = log.New("node.id", conf.Node.ID.String())
+	//conf.Stack.Logger = log.New("node.id", conf.Node.ID.String())
 
 	// use explicit IP address in ListenAddr so that Enode URL is usable
 	externalIP := func() string {

@@ -17,7 +17,6 @@
 package keystore
 
 import (
-	"bytes"
 	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
@@ -26,7 +25,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
+
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -140,23 +139,23 @@ func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
 // NewKeyForDirectICAP generates a key whose address fits into < 155 bits so it can fit
 // into the Direct ICAP spec. for simplicity and easier compatibility with other libs, we
 // retry until the first byte is 0.
-func NewKeyForDirectICAP(rand io.Reader) *Key {
-	randBytes := make([]byte, 64)
-	_, err := rand.Read(randBytes)
-	if err != nil {
-		panic("key generation: could not read from random source: " + err.Error())
-	}
-	reader := bytes.NewReader(randBytes)
-	privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), reader)
-	if err != nil {
-		panic("key generation: ecdsa.GenerateKey failed: " + err.Error())
-	}
-	key := newKeyFromECDSA(privateKeyECDSA)
-	if !strings.HasPrefix(key.Address.Hex(), "0x00") {
-		return NewKeyForDirectICAP(rand)
-	}
-	return key
-}
+// func NewKeyForDirectICAP(rand io.Reader) *Key {
+// 	randBytes := make([]byte, 64)
+// 	_, err := rand.Read(randBytes)
+// 	if err != nil {
+// 		panic("key generation: could not read from random source: " + err.Error())
+// 	}
+// 	reader := bytes.NewReader(randBytes)
+// 	privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), reader)
+// 	if err != nil {
+// 		panic("key generation: ecdsa.GenerateKey failed: " + err.Error())
+// 	}
+// 	key := newKeyFromECDSA(privateKeyECDSA)
+// 	if !strings.HasPrefix(key.Address.Hex(), "0x00") {
+// 		return NewKeyForDirectICAP(rand)
+// 	}
+// 	return key
+// }
 
 func newKey(rand io.Reader) (*Key, error) {
 	privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), rand)

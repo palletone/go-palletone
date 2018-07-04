@@ -58,7 +58,7 @@ func (bc *BlockChain) Export(w io.Writer) error {
 func (bc *BlockChain) ExportN(w io.Writer, first uint64, last uint64) error {
 	return nil
 }
-func NewBlockChain(db ptndb.Database, cacheConfig *CacheConfig, chainConfig *configure.ChainConfig, engine consensus.Engine /*, vmConfig vm.Config*/) (*BlockChain, error) {
+func NewBlockChain(db ptndb.Database, cacheConfig *CacheConfig, chainConfig *configure.ChainConfig, engine consensus.DPOSEngine /*, vmConfig vm.Config*/) (*BlockChain, error) {
 	return &BlockChain{}, nil
 }
 

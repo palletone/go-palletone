@@ -24,7 +24,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
@@ -100,26 +99,27 @@ func TestKeyStorePassphraseDecryptionFail(t *testing.T) {
 	}
 }
 
-func TestImportPreSaleKey(t *testing.T) {
-	dir, ks := tmpKeyStoreIface(t, true)
-	defer os.RemoveAll(dir)
+//Don't need import resale key for PalletOne
+// func TestImportPreSaleKey(t *testing.T) {
+// 	dir, ks := tmpKeyStoreIface(t, true)
+// 	defer os.RemoveAll(dir)
 
-	// file content of a presale key file generated with:
-	// python pyethsaletool.py genwallet
-	// with password "foo"
-	fileContent := "{\"encseed\": \"26d87f5f2bf9835f9a47eefae571bc09f9107bb13d54ff12a4ec095d01f83897494cf34f7bed2ed34126ecba9db7b62de56c9d7cd136520a0427bfb11b8954ba7ac39b90d4650d3448e31185affcd74226a68f1e94b1108e6e0a4a91cdd83eba\", \"ethaddr\": \"d4584b5f6229b7be90727b0fc8c6b91bb427821f\", \"email\": \"gustav.simonsson@gmail.com\", \"btcaddr\": \"1EVknXyFC68kKNLkh6YnKzW41svSRoaAcx\"}"
-	pass := "foo"
-	account, _, err := importPreSaleKey(ks, []byte(fileContent), pass)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if account.Address != common.HexToAddress("d4584b5f6229b7be90727b0fc8c6b91bb427821f") {
-		t.Errorf("imported account has wrong address %x", account.Address)
-	}
-	if !strings.HasPrefix(account.URL.Path, dir) {
-		t.Errorf("imported account file not in keystore directory: %q", account.URL)
-	}
-}
+// 	// file content of a presale key file generated with:
+// 	// python pyethsaletool.py genwallet
+// 	// with password "foo"
+// 	fileContent := "{\"encseed\": \"26d87f5f2bf9835f9a47eefae571bc09f9107bb13d54ff12a4ec095d01f83897494cf34f7bed2ed34126ecba9db7b62de56c9d7cd136520a0427bfb11b8954ba7ac39b90d4650d3448e31185affcd74226a68f1e94b1108e6e0a4a91cdd83eba\", \"ethaddr\": \"d4584b5f6229b7be90727b0fc8c6b91bb427821f\", \"email\": \"gustav.simonsson@gmail.com\", \"btcaddr\": \"1EVknXyFC68kKNLkh6YnKzW41svSRoaAcx\"}"
+// 	pass := "foo"
+// 	account, _, err := importPreSaleKey(ks, []byte(fileContent), pass)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	if account.Address != common.HexToAddress("d4584b5f6229b7be90727b0fc8c6b91bb427821f") {
+// 		t.Errorf("imported account has wrong address %x", account.Address)
+// 	}
+// 	if !strings.HasPrefix(account.URL.Path, dir) {
+// 		t.Errorf("imported account file not in keystore directory: %q", account.URL)
+// 	}
+// }
 
 // Test and utils for the key store tests in the PalletOne JSON tests;
 // testdataKeyStoreTests/basic_tests.json
@@ -192,14 +192,14 @@ func TestV1_1(t *testing.T) {
 func TestV1_2(t *testing.T) {
 	t.Parallel()
 	ks := &keyStorePassphrase{"testdata/v1", LightScryptN, LightScryptP}
-	addr := common.HexToAddress("cb61d5a9c4896fb9658090b597ef0e7be6f7b67e")
-	file := "testdata/v1/cb61d5a9c4896fb9658090b597ef0e7be6f7b67e/cb61d5a9c4896fb9658090b597ef0e7be6f7b67e"
-	k, err := ks.GetKey(addr, file, "g")
+	addr := common.HexToAddress("503148333466705a524e37554a32747563336a66526365315550384d44514733324670")
+	file := "testdata/v1/503148333466705a524e37554a32747563336a66526365315550384d44514733324670/503148333466705a524e37554a32747563336a66526365315550384d44514733324670"
+	k, err := ks.GetKey(addr, file, "1")
 	if err != nil {
 		t.Fatal(err)
 	}
 	privHex := hex.EncodeToString(crypto.FromECDSA(k.PrivateKey))
-	expectedHex := "d1b1178d3529626a1a93e073f65028370d14c7eb0936eb42abef05db6f37ad7d"
+	expectedHex := "b66dc1d6f78a867abf058414281c9b7ec0b9564fc3cc3d4675aee8c951070841"
 	if privHex != expectedHex {
 		t.Fatal(fmt.Errorf("Unexpected privkey: %v, expected %v", privHex, expectedHex))
 	}
@@ -245,13 +245,13 @@ func loadKeyStoreTestV1(file string, t *testing.T) map[string]KeyStoreTestV1 {
 	return tests
 }
 
-func TestKeyForDirectICAP(t *testing.T) {
-	t.Parallel()
-	key := NewKeyForDirectICAP(rand.Reader)
-	if !strings.HasPrefix(key.Address.Hex(), "0x00") {
-		t.Errorf("Expected first address byte to be zero, have: %s", key.Address.Hex())
-	}
-}
+// func TestKeyForDirectICAP(t *testing.T) {
+// 	t.Parallel()
+// 	key := NewKeyForDirectICAP(rand.Reader)
+// 	if !strings.HasPrefix(key.Address.Hex(), "0x00") {
+// 		t.Errorf("Expected first address byte to be zero, have: %s", key.Address.Hex())
+// 	}
+// }
 
 func TestV3_31_Byte_Key(t *testing.T) {
 	t.Parallel()

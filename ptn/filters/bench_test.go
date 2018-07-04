@@ -15,7 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 package filters
-
+/*
 import (
 	"bytes"
 	"context"
@@ -30,7 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/dag/coredata"
+	//"github.com/palletone/go-palletone/dag/coredata"
 )
 
 func BenchmarkBloomBits512(b *testing.B) {
@@ -199,3 +199,4 @@ func BenchmarkNoBloomBits(b *testing.B) {
 	fmt.Println(" ", d, "total  ", d*time.Duration(1000000)/time.Duration(headNum+1), "per million blocks")
 	db.Close()
 }
+*/
