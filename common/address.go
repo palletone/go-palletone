@@ -40,7 +40,8 @@ var (
 
 /////////// Address
 
-// Address represents the 20 byte address of an PalletOne account.
+// Address represents the 35 byte address of an PalletOne account.
+// for personal address, start with P1, script address start with P3, contract address start with Pc
 type Address [AddressLength]byte
 type AddressType byte
 
