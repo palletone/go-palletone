@@ -27,9 +27,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cespare/cp"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/files"
 	"github.com/palletone/go-palletone/core/accounts"
 )
 
@@ -68,7 +68,7 @@ func TestWatchNewFile(t *testing.T) {
 			Address: cachetestAccounts[i].Address,
 			URL:     accounts.URL{Scheme: KeyStoreScheme, Path: filepath.Join(dir, filepath.Base(cachetestAccounts[i].URL.Path))},
 		}
-		if err := cp.CopyFile(wantAccounts[i].URL.Path, cachetestAccounts[i].URL.Path); err != nil {
+		if err := files.CopyFile(wantAccounts[i].URL.Path, cachetestAccounts[i].URL.Path); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -109,7 +109,7 @@ func TestWatchNoDir(t *testing.T) {
 	os.MkdirAll(dir, 0700)
 	defer os.RemoveAll(dir)
 	file := filepath.Join(dir, "aaa")
-	if err := cp.CopyFile(file, cachetestAccounts[0].URL.Path); err != nil {
+	if err := files.CopyFile(file, cachetestAccounts[0].URL.Path); err != nil {
 		t.Fatal(err)
 	}
 
@@ -337,7 +337,7 @@ func TestUpdatedKeyfileContents(t *testing.T) {
 	file := filepath.Join(dir, "aaa")
 
 	// Place one of our testfiles in there
-	if err := cp.CopyFile(file, cachetestAccounts[0].URL.Path); err != nil {
+	if err := files.CopyFile(file, cachetestAccounts[0].URL.Path); err != nil {
 		t.Fatal(err)
 	}
 

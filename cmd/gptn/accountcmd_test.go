@@ -17,13 +17,12 @@
 package main
 
 import (
+	"github.com/palletone/go-palletone/common/files"
 	"io/ioutil"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
-
-	"github.com/cespare/cp"
 )
 
 // These tests are 'smoke tests' for the account related
@@ -36,7 +35,7 @@ func tmpDatadirWithKeystore(t *testing.T) string {
 	datadir := tmpdir(t)
 	keystore := filepath.Join(datadir, "keystore")
 	source := filepath.Join("..", "..", "accounts", "keystore", "testdata", "keystore")
-	if err := cp.CopyAll(keystore, source); err != nil {
+	if err := files.CopyAll(keystore, source); err != nil {
 		t.Fatal(err)
 	}
 	return datadir
