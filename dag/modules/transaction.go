@@ -18,21 +18,25 @@
 
 package modules
 
-//import (
-//	"errors"
-//	"fmt"
-//	"io"
-//	"math/big"
-//	"sync/atomic"
-//	"time"
-//
-//	"github.com/palletone/go-palletone/common"
-//	"github.com/palletone/go-palletone/common/crypto"
-//	"github.com/palletone/go-palletone/common/crypto/sha3"
-//	"github.com/palletone/go-palletone/common/hexutil"
-//	"github.com/palletone/go-palletone/common/rlp"
-//)
-//
+import (
+	//	"errors"
+	//	"fmt"
+	//	"io"
+	"math/big"
+	//	"sync/atomic"
+	//	"time"
+	//
+	"github.com/palletone/go-palletone/common"
+	//	"github.com/palletone/go-palletone/common/crypto"
+	//	"github.com/palletone/go-palletone/common/crypto/sha3"
+	//	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/common/rlp"
+)
+
+var (
+	TXFEE = big.NewInt(5) // transaction fee =5ptn
+)
+
 //type Transaction struct {
 //	TxHash       common.Hash `json:"tx_hash"`
 //	TxMessages   []Message   `json:"messages"` //
@@ -74,36 +78,27 @@ package modules
 //	R            *hexutil.Big
 //	S            *hexutil.Big
 //}
-//
-//func NewTransaction(from, to common.Address, amount *big.Int, data []byte) *Transaction {
-//	return newTransaction(&from, &to, amount, data)
-//}
-//
-//func NewContractCreation(from common.Address, amount *big.Int, data []byte) *Transaction {
-//	return newTransaction(&from, nil, amount, data)
-//}
-//
-//func newTransaction(from, to *common.Address, amount *big.Int, data []byte) *Transaction {
-//	if len(data) > 0 {
-//		data = common.CopyBytes(data)
-//	}
-//	d := txdata{
-//		From:      from,
-//		Recipient: to,
-//		Payload:   data,
-//		Amount:    new(big.Int),
-//		Price:     new(big.Int),
-//		V:         new(big.Int),
-//		R:         new(big.Int),
-//		S:         new(big.Int),
-//	}
-//	if amount != nil {
-//		d.Amount.Set(amount)
-//	}
-//
-//	return &Transaction{data: d}
-//}
-//
+
+func NewTransaction(nonce uint64, from common.Address, fee *big.Int, data []byte) *Transaction {
+	return newTransaction(nonce, &from, fee, data)
+}
+
+func NewContractCreation(nonce uint64, from common.Address, fee *big.Int, data []byte) *Transaction {
+	return newTransaction(nonce, &from, fee, data)
+}
+
+func newTransaction(nonce uint64, from *common.Address, fee *big.Int, data []byte) *Transaction {
+	if len(data) > 0 {
+		data = common.CopyBytes(data)
+	}
+	// var f *big.Int
+	// if fee != nil {
+	// 	f.Set(fee)
+	// }
+
+	return &Transaction{AccountNonce: nonce, TxFee: fee}
+}
+
 //// ChainId returns which chain id this transaction was signed for (if at all)
 //func (tx Transaction) ChainId() *big.Int {
 //	return deriveChainId(tx.data.V)
@@ -169,10 +164,12 @@ package modules
 //
 //func (tx Transaction) Data() []byte { return common.CopyBytes(tx.data.Payload) }
 //
-//func (tx Transaction) Nonce() uint64            { return tx.data.AccountNonce }
-//func (tx Transaction) Price() *big.Int          { return new(big.Int).Set(tx.data.Price) }
-//func (tx Transaction) Value() *big.Int          { return new(big.Int).Set(tx.data.Amount) }
+func (tx Transaction) Nonce() uint64 { return tx.AccountNonce }
+
+func (tx Transaction) Fee() *big.Int { return tx.TxFee }
+
 //func (tx Transaction) Account() *common.Address { return tx.data.From }
+
 //func (tx Transaction) CheckNonce() bool         { return true }
 //
 //// To returns the recipient address of theTransaction .
@@ -187,27 +184,27 @@ package modules
 //
 //// Hash hashes the RLP encoding of tx.
 //// It uniquely identifies the transaction.
-//func (tx Transaction) Hash() common.Hash {
-//	if hash := tx.hash.Load(); hash != nil {
-//		return hash.(common.Hash)
-//	}
-//	v := rlpHash(tx)
-//	tx.hash.Store(v)
-//	return v
-//}
-//
-//// Size returns the true RLP encoded storage size of the transaction, either by
-//// encoding and returning it, or returning a previsouly cached value.
-//func (tx *Transaction) Size() common.StorageSize {
-//	if size := tx.size.Load(); size != nil {
-//		return size.(common.StorageSize)
-//	}
-//	c := writeCounter(0)
-//	rlp.Encode(&c, &tx.data)
-//	tx.size.Store(common.StorageSize(c))
-//	return common.StorageSize(c)
-//}
-//
+func (tx Transaction) Hash() common.Hash {
+	if hash := tx.TxHash; &hash != nil {
+		return hash
+	}
+	v := rlp.RlpHash(tx)
+	tx.TxHash.Set(v)
+	return v
+}
+
+// Size returns the true RLP encoded storage size of the transaction, either by
+// encoding and returning it, or returning a previsouly cached value.
+func (tx *Transaction) Size() common.StorageSize {
+	if size := tx.size.Load(); size != nil {
+		return size.(common.StorageSize)
+	}
+	c := writeCounter(0)
+	rlp.Encode(&c, &tx)
+	tx.size.Store(common.StorageSize(c))
+	return common.StorageSize(c)
+}
+
 //func (tx *Transaction) String() string {
 //	var from, to string
 //	if tx.data.V != nil {
@@ -257,24 +254,25 @@ package modules
 //		enc,
 //	)
 //}
-//
-//func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, error) {
-//	r, s, v, err := signer.SignatureValues(tx, sig)
-//	if err != nil {
-//		return nil, err
-//	}
-//	cpy := &Transaction{data: tx.data}
-//	cpy.data.R, cpy.data.S, cpy.data.V = r, s, v
-//	return cpy, nil
-//}
-//
-//// Cost returns amount + price
-//func (tx *Transaction) Cost() *big.Int {
-//	total := new(big.Int) // .mul(tx.data.Price, new(big.Int).SetUint64(tx.data.GasLimit))
-//	total.Add(tx.data.Price, tx.data.Amount)
-//	return total
-//}
-//
+
+// func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, error) {
+// 	r, s, v, err := signer.SignatureValues(tx, sig)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	cpy := &Transaction{data: tx.data}
+// 	cpy.data.R, cpy.data.S, cpy.data.V = r, s, v
+// 	return cpy, nil
+// }
+
+// Cost returns amount + price
+func (tx *Transaction) Cost() *big.Int {
+	if tx.TxFee.Cmp(TXFEE) < 0 {
+		tx.TxFee = TXFEE
+	}
+	return tx.TxFee
+}
+
 //// AsMessage returns the transaction as a core.Message.
 ////
 //// AsMessage requires a signer to derive the sender.
@@ -295,70 +293,68 @@ package modules
 //	return msg, err
 //}
 //
-////Transactions is a Transaction slice type for basic sorting.
-//type Transactions []*Transaction
-//
-//// Len returns the length of s.
-//func (s Transactions) Len() int { return len(s) }
-//
-//// Swap swaps the i'th and the j'th element in s.
-//func (s Transactions) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-//
-//// GetRlp implements Rlpable and returns the i'th element of s in rlp.
-//func (s Transactions) GetRlp(i int) []byte {
-//	enc, _ := rlp.EncodeToBytes(s[i])
-//	return enc
-//}
-//func (s Transactions) Hash() common.Hash {
-//	v := rlpHash(s)
-//	return v
-//}
-//
-//// TxDifference returns a new set t which is the difference between a to b.
-//func TxDifference(a, b Transactions) (keep Transactions) {
-//	keep = make(Transactions, 0, len(a))
-//
-//	remove := make(map[common.Hash]struct{})
-//	for _, tx := range b {
-//		remove[tx.Hash()] = struct{}{}
-//	}
-//
-//	for _, tx := range a {
-//		if _, ok := remove[tx.Hash()]; !ok {
-//			keep = append(keep, tx)
-//		}
-//	}
-//
-//	return keep
-//}
-//
-//// single account, otherwise a nonce comparison doesn't make much sense.
-//type TxByNonce Transactions
-//
-//func (s TxByNonce) Len() int           { return len(s) }
-//func (s TxByNonce) Less(i, j int) bool { return s[i].data.AccountNonce < s[j].data.AccountNonce }
-//func (s TxByNonce) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-//
-//// TxByPrice implements both the sort and the heap interface, making it useful
-//// for all at once sorting as well as individually adding and removing elements.
-//type TxByPrice Transactions
-//
-//func (s TxByPrice) Len() int           { return len(s) }
-//func (s TxByPrice) Less(i, j int) bool { return s[i].data.Price.Cmp(s[j].data.Price) > 0 }
-//func (s TxByPrice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-//
-//func (s *TxByPrice) Push(x interface{}) {
-//	*s = append(*s, x.(*Transaction))
-//}
-//
-//func (s *TxByPrice) Pop() interface{} {
-//	old := *s
-//	n := len(old)
-//	x := old[n-1]
-//	*s = old[0 : n-1]
-//	return x
-//}
-//
+
+// Len returns the length of s.
+func (s Transactions) Len() int { return len(s) }
+
+// Swap swaps the i'th and the j'th element in s.
+func (s Transactions) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+// GetRlp implements Rlpable and returns the i'th element of s in rlp.
+func (s Transactions) GetRlp(i int) []byte {
+	enc, _ := rlp.EncodeToBytes(s[i])
+	return enc
+}
+func (s Transactions) Hash() common.Hash {
+	v := rlp.RlpHash(s)
+	return v
+}
+
+// TxDifference returns a new set t which is the difference between a to b.
+func TxDifference(a, b Transactions) (keep Transactions) {
+	keep = make(Transactions, 0, len(a))
+
+	remove := make(map[common.Hash]struct{})
+	for _, tx := range b {
+		remove[tx.Hash()] = struct{}{}
+	}
+
+	for _, tx := range a {
+		if _, ok := remove[tx.Hash()]; !ok {
+			keep = append(keep, tx)
+		}
+	}
+
+	return keep
+}
+
+// single account, otherwise a nonce comparison doesn't make much sense.
+type TxByNonce Transactions
+
+func (s TxByNonce) Len() int           { return len(s) }
+func (s TxByNonce) Less(i, j int) bool { return s[i].AccountNonce < s[j].AccountNonce }
+func (s TxByNonce) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+
+// TxByPrice implements both the sort and the heap interface, making it useful
+// for all at once sorting as well as individually adding and removing elements.
+type TxByPrice Transactions
+
+func (s TxByPrice) Len() int           { return len(s) }
+func (s TxByPrice) Less(i, j int) bool { return s[i].TxFee.Cmp(s[j].TxFee) < 0 }
+func (s TxByPrice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+
+func (s *TxByPrice) Push(x interface{}) {
+	*s = append(*s, x.(*Transaction))
+}
+
+func (s *TxByPrice) Pop() interface{} {
+	old := *s
+	n := len(old)
+	x := old[n-1]
+	*s = old[0 : n-1]
+	return x
+}
+
 //// Message is a fully derived transaction and implements core.Message
 ////
 //// NOTE: In a future PR this will be removed.
@@ -413,9 +409,9 @@ package modules
 //	}
 //}
 //
-//type writeCounter common.StorageSize
-//
-//func (c *writeCounter) Write(b []byte) (int, error) {
-//	*c += writeCounter(len(b))
-//	return len(b), nil
-//}
+type writeCounter common.StorageSize
+
+func (c *writeCounter) Write(b []byte) (int, error) {
+	*c += writeCounter(len(b))
+	return len(b), nil
+}

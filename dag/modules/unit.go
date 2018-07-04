@@ -21,6 +21,8 @@ package modules
 
 import (
 	"encoding/json"
+	"math/big"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -142,10 +144,6 @@ func CopyHeader(h *Header) *Header {
 	return &cpy
 }
 
-// func (h *Header) ChainIndex() ChainIndex {
-// 	return h.Number
-// }
-
 // key: unit.hash(unit)
 type Unit struct {
 	header *Header      `json:"unit_header"`  // unit header
@@ -154,20 +152,22 @@ type Unit struct {
 	hash         common.Hash        `json:"unit_hash"`     // unit hash
 	size         common.StorageSize `json:"size"`          // unit size
 	creationdate time.Time          `json:"creation_time"` // unit create time
-	gasprice 	uint64		`json:"gas_price"`	// user set total gas
-	gasused 	uint64		`json:"gas_used"`	// the actually used gas, mediator set
+	gasprice     uint64             `json:"gas_price"`     // user set total gas
+	gasused      uint64             `json:"gas_used"`      // the actually used gas, mediator set
 }
 
 type Transactions []*Transaction
 
 type Transaction struct {
-	TxHash       common.Hash `json:"tx_hash"`
-	TxMessages   []Message   `json:"messages"` //
-	Authors      []Author    `json:"authors"`  // the issuers of the transaction
-	Excutiontime uint        `json:"excution_time"`
-	Memery       uint		`json:"memory"`
-	CreationDate time.Time   `json:"creation_date"`
-	GasPrice 	uint64		`json:"gas_price"`	// user set total gas
+	AccountNonce uint64
+	TxHash       common.Hash  `json:"tx_hash"`
+	TxMessages   []Message    `json:"messages"` //
+	From         Author       `json:"authors"`  // the issuers of the transaction
+	Excutiontime uint         `json:"excution_time"`
+	Memery       uint         `json:"memory"`
+	CreationDate time.Time    `json:"creation_date"`
+	TxFee        *big.Int     `json:"txfee"` // user set total transaction fee.
+	size         atomic.Value `json:"-" rlp:"-"`
 }
 
 type ChainIndex struct {
@@ -180,7 +180,7 @@ type ChainIndex struct {
 type Message struct {
 	App         string      `json:"app"`          // message type
 	PayloadHash common.Hash `json:"payload_hash"` // payload hash
-	Payload interface{} `json:"payload"` // the true transaction data
+	Payload     interface{} `json:"payload"`      // the true transaction data
 }
 
 /************************** Payload Details ******************************************/
@@ -234,9 +234,9 @@ type TextPayload struct {
 /************************** End of Payload Details ******************************************/
 
 type Author struct {
-	Address        common.Hash  `json:"address"`
-	Pubkey         common.Hash  `json:"pubkey"`
-	TxAuthentifier Authentifier `json:"authentifiers"`
+	Address        common.Address `json:"address"`
+	Pubkey         common.Hash    `json:"pubkey"`
+	TxAuthentifier Authentifier   `json:"authentifiers"`
 }
 
 type Authentifier struct {
@@ -262,7 +262,7 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 }
 
 func NewGenesisUnit(genesis *core.Genesis) (*Unit, error) {
-	return &Unit{},nil
+	return &Unit{}, nil
 }
 
 func CopyTransactions(txs Transactions) Transactions {
@@ -328,8 +328,3 @@ func (u *Unit) ParentHash() []common.Hash {
 }
 
 /************************** Unit Members  *****************************/
-
-func (s Transactions) Hash() common.Hash {
-	v := rlp.RlpHash(s)
-	return v
-}
