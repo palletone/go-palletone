@@ -147,23 +147,24 @@ func init() {
 	app.Copyright = "Copyright 2017-2018 The go-ethereum Authors"
 	// 设置各个子命令的处理类/函数，比如consoleCommand 最后调用到 localConsole
 	// 如果命令行参数里面有下面的指令，就会直接调用下面的Command.Run方法，而不调用默认的app.Action方法
+	// Commands 是所有支持的子命令
 	app.Commands = []cli.Command{
 		// See chaincmd.go:
-		initCommand,	//初始化创世单元
+		initCommand,	//初始化创世单元命令
 		importCommand,
 		exportCommand,
 		importPreimagesCommand,
 		exportPreimagesCommand,
 		copydbCommand,
 		removedbCommand,
-		dumpCommand,
+		dumpCommand,	//转储命令
 		// See monitorcmd.go:
 		monitorCommand,
 		// See accountcmd.go:
 		accountCommand,
 		// walletCommand,
 		// See consolecmd.go:
-		consoleCommand,		//js命令行终端
+		consoleCommand,		//js控制台命令
 		attachCommand,
 		javascriptCommand,
 		// See misccmd.go:
@@ -173,10 +174,11 @@ func init() {
 		bugCommand,
 		licenseCommand,
 		// See config.go
-		dumpConfigCommand,
+		dumpConfigCommand,	//转储配置命令
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 
+	// 所有能够解析的Options
 	app.Flags = append(app.Flags, nodeFlags...)
 	app.Flags = append(app.Flags, rpcFlags...)
 	app.Flags = append(app.Flags, consoleFlags...)
