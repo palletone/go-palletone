@@ -27,12 +27,6 @@
 			"revisionTime": "2017-02-15T19:58:14Z"
 		},
 		{
-			"checksumSHA1": "QC55lHNOv1+UAL2xtIHw17MJ8J8=",
-			"path": "github.com/StackExchange/wmi",
-			"revision": "5d049714c4a64225c3c79a7cf7d02f7fb5b96338",
-			"revisionTime": "2018-01-16T20:38:02Z"
-		},
-		{
 			"checksumSHA1": "USkefO0g1U9mr+8hagv3fpSkrxg=",
 			"path": "github.com/aristanetworks/goarista/monotime",
 			"revision": "ea17b1a17847fb6e4c0a91de0b674704693469b0",
@@ -85,18 +79,6 @@
 			"path": "github.com/edsrzf/mmap-go",
 			"revision": "935e0e8a636ca4ba70b713f3e38a19e1b77739e8",
 			"revisionTime": "2016-05-12T03:30:02Z"
-		},
-		{
-			"checksumSHA1": "jElNoLEe7m/iaoF1vYIHyNaS2SE=",
-			"path": "github.com/elastic/gosigar",
-			"revision": "37f05ff46ffa7a825d1b24cf2b62d4a4c1a9d2e8",
-			"revisionTime": "2018-03-30T10:04:40Z"
-		},
-		{
-			"checksumSHA1": "qDsgp2kAeI9nhj565HUScaUyjU4=",
-			"path": "github.com/elastic/gosigar/sys/windows",
-			"revision": "a3814ce5008e612a0c6d027608b54e1d0d9a5613",
-			"revisionTime": "2018-01-22T22:25:45Z"
 		},
 		{
 			"checksumSHA1": "7oFpbmDfGobwKsFLIf6wMUvVoKw=",
