@@ -55,7 +55,7 @@ func TestProtocolCompatibility(t *testing.T) {
 }
 
 // Tests that block headers can be retrieved from a remote chain based on user queries.
-func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
+//func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
 
 func testGetBlockHeaders(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil)

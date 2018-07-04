@@ -19,9 +19,12 @@
 package files
 
 import (
+	"errors"
 	"io"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 )
 
 //Check file Is Exist
@@ -103,4 +106,47 @@ func MakeDirAndFile(filePath string) error {
 
 	}
 	return nil
+}
+
+//Copy on file
+func CopyFile(dst, src string) error {
+	if IsDir(src) {
+		return errors.New("CopyFile function only can copy file, but your path is a folder:" + src)
+	}
+	rf, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer rf.Close()
+	rstat, err := rf.Stat()
+	if err != nil {
+		return err
+	}
+
+	wf, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_EXCL, rstat.Mode())
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(wf, rf); err != nil {
+		wf.Close()
+		return err
+	}
+	return wf.Close()
+}
+
+//CopyAll Copy all files from source to destination
+func CopyAll(dst, src string) error {
+	return filepath.Walk(src, makeFileCopyWalkFunc(dst, src))
+}
+func makeFileCopyWalkFunc(dst, src string) filepath.WalkFunc {
+	return func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		dstPath := filepath.Join(dst, strings.TrimPrefix(path, src))
+		if info.IsDir() {
+			return os.Mkdir(dstPath, info.Mode())
+		}
+		return CopyFile(dstPath, path)
+	}
 }

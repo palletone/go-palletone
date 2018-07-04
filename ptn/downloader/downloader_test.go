@@ -16,6 +16,7 @@
 
 package downloader
 
+/*
 import (
 	"errors"
 	"fmt"
@@ -33,7 +34,7 @@ import (
 	"github.com/palletone/go-palletone/common/trie"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/types"
-	"github.com/palletone/go-palletone/dag/coredata"
+	//"github.com/palletone/go-palletone/dag/coredata"
 )
 
 var (
@@ -640,20 +641,20 @@ func assertOwnForkedChain(t *testing.T, tester *downloadTester, common int, leng
 		t.Fatalf("synchronised receipts mismatch: have %v, want %v", rs, receipts)
 	}
 	// Verify the state trie too for fast syncs
-	/*if tester.downloader.mode == FastSync {
-		pivot := uint64(0)
-		var index int
-		if pivot := int(tester.downloader.queue.fastSyncPivot); pivot < common {
-			index = pivot
-		} else {
-			index = len(tester.ownHashes) - lengths[len(lengths)-1] + int(tester.downloader.queue.fastSyncPivot)
-		}
-		if index > 0 {
-			if statedb, err := state.New(tester.ownHeaders[tester.ownHashes[index]].Root, state.NewDatabase(trie.NewDatabase(tester.stateDb))); statedb == nil || err != nil {
-				t.Fatalf("state reconstruction failed: %v", err)
-			}
-		}
-	}*/
+	//if tester.downloader.mode == FastSync {
+	//	pivot := uint64(0)
+	//	var index int
+	//	if pivot := int(tester.downloader.queue.fastSyncPivot); pivot < common {
+	//		index = pivot
+	//	} else {
+	//		index = len(tester.ownHashes) - lengths[len(lengths)-1] + int(tester.downloader.queue.fastSyncPivot)
+	//	}
+	//	if index > 0 {
+	//		if statedb, err := state.New(tester.ownHeaders[tester.ownHashes[index]].Root, state.NewDatabase(trie.NewDatabase(tester.stateDb))); statedb == nil || err != nil {
+	//			t.Fatalf("state reconstruction failed: %v", err)
+	//		}
+	//	}
+	//}
 }
 
 // Tests that simple synchronization against a canonical chain works correctly.
@@ -1753,3 +1754,4 @@ func testDeliverHeadersHang(t *testing.T, protocol int, mode SyncMode) {
 		tester.downloader.peers.peers["peer"].peer.(*floodingTestPeer).pend.Wait()
 	}
 }
+*/
