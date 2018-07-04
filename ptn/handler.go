@@ -101,7 +101,7 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager( /*config *configure.ChainConfig,*/ mode downloader.SyncMode, networkId uint64, mux *event.TypeMux, txpool txPool, engine core.ConsensusEngine /*blockchain *coredata.BlockChain,*/) (*ProtocolManager, error) {
+func NewProtocolManager(mode downloader.SyncMode, networkId uint64, mux *event.TypeMux, txpool txPool, engine core.ConsensusEngine /*blockchain *coredata.BlockChain,*/) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId: networkId,
