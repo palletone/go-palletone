@@ -69,12 +69,6 @@
 			"revisionTime": "2018-05-24T03:27:03Z"
 		},
 		{
-			"checksumSHA1": "cDMtzKmdTx4CcIpP4broa+16X9g=",
-			"path": "github.com/cespare/cp",
-			"revision": "165db2f241fd235aec29ba6d9b1ccd5f1c14637c",
-			"revisionTime": "2015-01-22T07:26:53Z"
-		},
-		{
 			"checksumSHA1": "XmSM/gzGetfmtLlvg+D1kn40lSM=",
 			"path": "github.com/cespare/xxhash",
 			"revision": "48099fad606eafc26e3a569fad19ff510fff4df6",
