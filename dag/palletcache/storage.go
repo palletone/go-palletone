@@ -20,10 +20,11 @@ package palletcache
 
 import (
 	"encoding/json"
-	"github.com/palletone/go-palletone/configure"
+	"log"
+
+	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/palletcache/cache"
 	th_redis "github.com/palletone/go-palletone/dag/palletcache/redis"
-	"log"
 )
 
 var (
@@ -31,7 +32,7 @@ var (
 )
 
 func init() {
-	switch config.TConfig.CacheSource {
+	switch config.DefaultConfig.CacheSource {
 	case "redis":
 		th_redis.Init()
 		Isredispool = true
