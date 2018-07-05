@@ -20,8 +20,8 @@ package palletcache
 
 import (
 	"encoding/json"
-	"log"
 
+	"github.com/palletone/go-palletone/common/log"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/palletcache/cache"
 	th_redis "github.com/palletone/go-palletone/dag/palletcache/redis"
@@ -36,7 +36,7 @@ func init() {
 	case "redis":
 		th_redis.Init()
 		Isredispool = true
-		log.Println("init redis ,", Isredispool)
+		log.Info("init cache.", "redis", Isredispool)
 	// case "cache":
 
 	default:
@@ -56,7 +56,6 @@ func Store(tag, key string, value interface{}, expire int) error {
 }
 
 func Get(tag, key string) (interface{}, bool) {
-	log.Println("Isredis?", Isredispool)
 	if Isredispool {
 		return th_redis.Get(tag, key)
 	}
