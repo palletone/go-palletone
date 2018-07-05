@@ -144,7 +144,7 @@ func init() {
 	// gptn处理函数会在 app.HandleAction 里面调用
 	app.Action = gptn	//默认的操作，就是启动一个gptn节点， 如果有其他子命令行参数，会调用到下面的Commands里面去
 	app.HideVersion = true // we have a command to print the version
-	app.Copyright = "Copyright 2017-2018 The go-ethereum Authors"
+	app.Copyright = "Copyright 2017-2018 The go-palletone Authors"
 	// 设置各个子命令的处理类/函数，比如consoleCommand 最后调用到 localConsole
 	// 如果命令行参数里面有下面的指令，就会直接调用下面的Command.Run方法，而不调用默认的app.Action方法
 	// Commands 是所有支持的子命令
@@ -207,7 +207,8 @@ func init() {
 
 func main() {
 	// 如果是gptn命令行启动，不带子命令，那么直接调用app.Action = gptn()函数；
-	// 如果带有子命令比如build/bin/gptn console 启动，那么会调用对应命令的Command.Action， 对于console来说就是调用的 localConsole()函数；
+	// 如果带有子命令比如gptn console，那么会调用Command.Run, 最终会执行该子命令对应的Command.Action
+	// 对于console子命令来说就是调用的 localConsole()函数；
 	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
