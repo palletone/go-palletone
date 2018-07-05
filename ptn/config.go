@@ -28,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/consensus/consensusconfig"
+//	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -51,7 +51,7 @@ var DefaultConfig = Config{
 		Blocks:     20,
 		Percentile: 60,
 	},
-	Consensus: consensusconfig.DefaultConfig,
+//	Consensus: consensusconfig.DefaultConfig,
 	Dag:       dagconfig.DefaultConfig,
 	Log:       log.DefaultConfig,
 }
@@ -113,7 +113,7 @@ type Config struct {
 	//Log config
 	Log log.Config
 	// Consensus options
-	Consensus consensusconfig.Config
+//	Consensus consensusconfig.Config
 	// Miscellaneous options
 	DocRoot string `toml:"-"`
 }

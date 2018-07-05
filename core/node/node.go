@@ -128,11 +128,13 @@ func (n *Node) Register(constructor ServiceConstructor) error {
 	if n.server != nil {
 		return ErrNodeRunning
 	}
+	// 将函数加到本节点的serviceFuncs 里面
 	n.serviceFuncs = append(n.serviceFuncs, constructor)
 	return nil
 }
 
 // Start create a live P2P node and starts running it.
+// 启动P2P服务，并且依次启动Register的各个serviceFuncs相关服务。
 func (n *Node) Start() error {
 	n.lock.Lock()
 	defer n.lock.Unlock()
@@ -160,19 +162,24 @@ func (n *Node) Start() error {
 	if n.serverConfig.NodeDatabase == "" {
 		n.serverConfig.NodeDatabase = n.config.NodeDB()
 	}
+	// 新建一个P2P服务
 	running := &p2p.Server{Config: n.serverConfig}
 	n.log.Info("Starting peer-to-peer node", "instance", n.serverConfig.Name)
 
 	// Otherwise copy and specialize the P2P configuration
 	services := make(map[reflect.Type]Service)
+	// 遍历所有的serviceFuncs 服务
 	for _, constructor := range n.serviceFuncs {
 		// Create a new context for the particular service
+		// 为每个service 分别新建一个ServiceContext 结构
 		ctx := &ServiceContext{
 			config:         n.config,
+			//这个 services 干什么的？似乎是记录一下之前的所有serviceFuncs 的kind，service，方便其他service使用
 			services:       make(map[reflect.Type]Service),
 			EventMux:       n.eventmux,
 			AccountManager: n.accman,
 		}
+		//重新拷贝一下services 变量的所有成员给ctx.services， 所以，这里只能拷贝之前的serviceFuncs，后面的就没办法复制了
 		for kind, s := range services { // copy needed for threaded access
 			ctx.services[kind] = s
 		}
@@ -185,17 +192,21 @@ func (n *Node) Start() error {
 		if _, exists := services[kind]; exists {
 			return &DuplicateServiceError{Kind: kind}
 		}
+		// 记录一下，保存到services map里面。
 		services[kind] = service
 	}
 	// Gather the protocols and start the freshly assembled P2P server
+	// 收集所有的这些服务的协议名, 为后面启动服务做准备
 	for _, service := range services {
 		running.Protocols = append(running.Protocols, service.Protocols()...)
 	}
+	//启动P2P服务
 	if err := running.Start(); err != nil {
 		return convertFileLockError(err)
 	}
 	// Start each of the services
 	started := []reflect.Type{}
+	//启动所有刚才创建的服务，分别调用， 如果出错就stop之前所有的服务并返回错误
 	for kind, service := range services {
 		// Start the next service, stopping all previous upon failure
 		if err := service.Start(running); err != nil {
@@ -210,6 +221,7 @@ func (n *Node) Start() error {
 		started = append(started, kind)
 	}
 	// Lastly start the configured RPC interfaces
+	//启动节点的所有RPC服务，开启监听端口，包括HTTPS， websocket接口
 	if err := n.startRPC(services); err != nil {
 		for _, service := range services {
 			service.Stop()
@@ -218,8 +230,10 @@ func (n *Node) Start() error {
 		return err
 	}
 	// Finish initializing the startup
+	// 记录当前节点拥有的服务列表到services上面， 设置节点停止的管道用于通信。
 	n.services = services
 	n.server = running
+	// 设置节点停止的管道用于通信。
 	n.stop = make(chan struct{})
 
 	return nil

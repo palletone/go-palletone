@@ -37,7 +37,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/netutil"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/consensus/consensusconfig"
+//	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -480,11 +480,13 @@ var (
 	// 	Usage: "Suggested gas price is the given percentile of a set of recent transaction gas prices",
 	// 	Value: ptn.DefaultConfig.GPO.Percentile,
 	// }
-	ConsensusEngineFlag = cli.StringFlag{
-		Name:  "consensus.engine",
-		Usage: "Consensus Engine: solo or dpos",
-		Value: ptn.DefaultConfig.Consensus.Engine,
-	}
+
+	//ConsensusEngineFlag = cli.StringFlag{
+	//	Name:  "consensus.engine",
+	//	Usage: "Consensus Engine: solo or dpos",
+	//	Value: ptn.DefaultConfig.Consensus.Engine,
+	//}
+
 	DagValue1Flag = cli.StringFlag{
 		Name:  "dag.dbpath",
 		Usage: "Dag dbapth",
@@ -945,14 +947,14 @@ func setLog(ctx *cli.Context, cfg *log.Config) {
 }
 
 // SetDagConfig applies dag related command line flags to the config.
-func setConsensus(ctx *cli.Context, cfg *consensusconfig.Config) {
-	if ctx.GlobalIsSet(ConsensusEngineFlag.Name) {
-		cfg.Engine = ctx.GlobalString(ConsensusEngineFlag.Name)
-	}
-}
+//func setConsensus(ctx *cli.Context, cfg *consensusconfig.Config) {
+//	if ctx.GlobalIsSet(ConsensusEngineFlag.Name) {
+//		cfg.Engine = ctx.GlobalString(ConsensusEngineFlag.Name)
+//	}
+//}
 
-// SetEthConfig applies ptn-related command line flags to the config.
-func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
+// SetPtnConfig applies ptn-related command line flags to the config.
+func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	// Avoid conflicting network flags
 	checkExclusive(ctx, TestnetFlag)
 	checkExclusive(ctx, FastSyncFlag, LightModeFlag, SyncModeFlag)
@@ -965,7 +967,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	setTxPool(ctx, &cfg.TxPool)
 	setDag(ctx, &cfg.Dag)
 	setLog(ctx, &cfg.Log)
-	setConsensus(ctx, &cfg.Consensus)
+//	setConsensus(ctx, &cfg.Consensus)
 
 	switch {
 	case ctx.GlobalIsSet(SyncModeFlag.Name):
@@ -1058,9 +1060,11 @@ func SetDashboardConfig(ctx *cli.Context, cfg *dashboard.Config) {
 	cfg.Refresh = ctx.GlobalDuration(DashboardRefreshFlag.Name)
 }
 
-// RegisterEthService adds an PalletOne client to the stack.
-func RegisterEthService(stack *node.Node, cfg *ptn.Config) {
+// RegisterPtnService adds an PalletOne client to the stack.
+func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
+	// 2. 到stack上增加一个serviceFuncs 函数
 	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+		// 1. new 一个全节点类型的 PalletOne
 		return ptn.New(ctx, cfg)
 	})
 
@@ -1076,9 +1080,9 @@ func RegisterDashboardService(stack *node.Node, cfg *dashboard.Config, commit st
 	})
 }
 
-// RegisterEthStatsService configures the PalletOne Stats daemon and adds it to
+// RegisterPtnStatsService configures the PalletOne Stats daemon and adds it to
 // th egiven node.
-func RegisterEthStatsService(stack *node.Node, url string) {
+func RegisterPtnStatsService(stack *node.Node, url string) {
 	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		// Retrieve both ptn and les services
 		var ethServ *ptn.PalletOne
