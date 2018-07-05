@@ -16,13 +16,6 @@
 
 package main
 
-import (
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"testing"
-)
-
 var customGenesisTests = []struct {
 	genesis string
 	query   string
@@ -83,7 +76,7 @@ var customGenesisTests = []struct {
 		result: "0x0000000000000042",
 	},
 }
-
+/*
 // Tests that initializing Geth with a custom genesis block and chain definitions
 // work properly.
 func TestCustomGenesis(t *testing.T) {
@@ -108,3 +101,4 @@ func TestCustomGenesis(t *testing.T) {
 		gptn.ExpectExit()
 	}
 }
+*/
