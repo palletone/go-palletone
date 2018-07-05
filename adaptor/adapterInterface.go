@@ -29,6 +29,7 @@ type adapterCryptoCurrency interface {
 	GetBalance(params string) string
 	GetTransactions(params string) string
 	ImportMultisig(params string) string
+	SendTransaction(params string) string
 }
 
 type adapterSmartContract interface {
