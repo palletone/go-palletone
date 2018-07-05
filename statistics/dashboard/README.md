@@ -1,6 +1,6 @@
 ## Go PalletOne Dashboard
 
-The dashboard is a data visualizer integrated into gpan, intended to collect and visualize useful information of an PalletOne node. It consists of two parts:
+The dashboard is a data visualizer integrated into gptn, intended to collect and visualize useful information of an PalletOne node. It consists of two parts:
 
 * The client visualizes the collected data.
 * The server collects the data, and updates the clients.
@@ -18,7 +18,7 @@ $ (cd dashboard/assets && yarn install && yarn flow)
 Normally the dashboard assets are bundled into Geth via `go-bindata` to avoid external dependencies. Rebuilding Geth after each UI modification however is not feasible from a developer perspective. Instead, we can run `yarn dev` to watch for file system changes and refresh the browser automatically.
 
 ```
-$ gpan --dashboard --vmodule=dashboard=5
+$ gptn --dashboard --vmodule=dashboard=5
 $ (cd dashboard/assets && yarn dev)
 ```
 
