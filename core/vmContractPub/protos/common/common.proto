@@ -22,8 +22,8 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/hyperledger/fabric/protos/common";
-option java_package = "org.hyperledger.fabric.protos.common";
+option go_package = "github.com/palletone/go-palletone/core/vmContractPub/protos/common";
+option java_package = "protos.common";
 
 package common;
 

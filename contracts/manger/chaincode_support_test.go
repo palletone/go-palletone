@@ -237,7 +237,7 @@ func finitMockPeer(chainIDs ...string) {
 	ledgermgmt.CleanupTestEnv()
 	ledgerPath := config.GetPath("peer.fileSystemPath")
 	os.RemoveAll(ledgerPath)
-	os.RemoveAll(filepath.Join(os.TempDir(), "hyperledger"))
+	os.RemoveAll(filepath.Join(os.TempDir(), "palletone"))
 	*/
 }
 
@@ -473,7 +473,7 @@ func initializeCC(t *testing.T, chainID, ccname string, ccSide *mockpeer.MockCCC
 	//badcccid := ccprovider.NewCCContext(chainID, ccname, "unknownver", txid, false, sprop, prop)
 
 	//we are not going to reach the chaincode and so won't get a response from it. processDone will not
-	//be triggered by the chaincode stream.  We just expect an error from fabric. Hence pass nil for done
+	//be triggered by the chaincode stream.  We just expect an error from palletone. Hence pass nil for done
 	//execCC(t, ctxt, ccSide, badcccid, false, true, nil, cis, respSet)
 
 	//---------try a successful init at last-------
@@ -918,8 +918,8 @@ func getLaunchConfigs(t *testing.T, auth accesscontrol.Authenticator) {
 		t.Fatalf("calling getLaunchConfigs() with TLS enabled should have returned an array of 7 elements for Envs, but got %v", envs)
 	}
 	if envs[0] != "CORE_CHAINCODE_ID_NAME=mycc:v0" || envs[1] != "CORE_PEER_TLS_ENABLED=true" ||
-		envs[2] != "CORE_TLS_CLIENT_KEY_PATH=/etc/hyperledger/fabric/client.key" || envs[3] != "CORE_TLS_CLIENT_CERT_PATH=/etc/hyperledger/fabric/client.crt" ||
-		envs[4] != "CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/peer.crt" ||
+		envs[2] != "CORE_TLS_CLIENT_KEY_PATH=/etc/palletone/client.key" || envs[3] != "CORE_TLS_CLIENT_CERT_PATH=/etc/palletone/client.crt" ||
+		envs[4] != "CORE_PEER_TLS_ROOTCERT_FILE=/etc/palletone/peer.crt" ||
 		envs[5] != "CORE_CHAINCODE_LOGGING_LEVEL=debug" || envs[6] != "CORE_CHAINCODE_LOGGING_SHIM=info" {
 		t.Fatalf("calling getLaunchConfigs() with TLS enabled should have returned the proper environment variables, but got %v", envs)
 	}

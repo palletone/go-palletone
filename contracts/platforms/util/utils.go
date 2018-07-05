@@ -29,9 +29,9 @@ import (
 	"path/filepath"
 
 	docker "github.com/fsouza/go-dockerclient"
-	"common/flogging"
-	"common/util"
-	cutil "vm/common"
+	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	"github.com/palletone/go-palletone/core/vmContractPub/util"
+	cutil "github.com/palletone/go-palletone/vm/common"
 )
 
 var logger = flogging.MustGetLogger("util")

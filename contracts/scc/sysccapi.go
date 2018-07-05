@@ -38,7 +38,7 @@ import (
 var sysccLogger = flogging.MustGetLogger("sccapi")
 
 // SystemChaincode defines the metadata needed to initialize system chaincode
-// when the fabric comes up. SystemChaincodes are installed by adding an
+// when the comes up. SystemChaincodes are installed by adding an
 // entry in importsysccs.go
 type SystemChaincode struct {
 	//Unique name of the system chaincode
@@ -185,7 +185,7 @@ func isWhitelisted(syscc *SystemChaincode) bool {
 	enabled := val == "enable" || val == "true" || val == "yes"
 	return ok && enabled
 }
-//RegisterSysCCs is the hook for system chaincodes where system chaincodes are registered with the fabric
+//RegisterSysCCs is the hook for system chaincodes where system chaincodes are registered
 //note the chaincode must still be deployed and launched like a user chaincode will be
 func RegisterSysCCs() {
 	for _, sysCC := range systemChaincodes {

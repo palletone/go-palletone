@@ -154,7 +154,7 @@ func InitViper(v *viper.Viper, configName string) error {
 		//
 		// *) CWD
 		// *) The $GOPATH based development tree
-		// *) fabric
+		// *)
 		//
 
 		// CWD

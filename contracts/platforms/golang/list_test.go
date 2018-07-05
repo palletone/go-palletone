@@ -22,7 +22,7 @@ package golang
 import "testing"
 
 func Test_listDeps(t *testing.T) {
-	_, err := listDeps(nil, "github.com/hyperledger/fabric/peer")
+	_, err := listDeps(nil, "github.com/palletone/go-palletone/peer")
 	if err != nil {
 		t.Errorf("list failed: %s", err)
 	}

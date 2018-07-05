@@ -23,7 +23,7 @@ import (
 	"os"
 	"testing"
 
-	"common/flogging"
+	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"github.com/op/go-logging"
 	"github.com/stretchr/testify/assert"
 )

@@ -34,6 +34,8 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/gasprice"
+	"github.com/palletone/go-palletone/vm/vmconfig"
+	"github.com/palletone/go-palletone/contracts/contractconfig"
 )
 
 // DefaultConfig contains default settings for use on the PalletOne main net.
@@ -114,6 +116,11 @@ type Config struct {
 	Log log.Config
 	// Consensus options
 	Consensus consensusconfig.Config
+	// VM config
+	Vm vmconfig.Config
+	//Contract config
+	Contract contractconfig.Config
+
 	// Miscellaneous options
 	DocRoot string `toml:"-"`
 }

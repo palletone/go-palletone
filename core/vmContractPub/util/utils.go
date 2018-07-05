@@ -29,7 +29,7 @@ import (
 	"strings"
 	"time"
 	"hash"
-	"common/metadata"
+	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"crypto/sha256"
@@ -182,8 +182,8 @@ func GetTestOrgID() string {
 
 //GetSysCCVersion returns the version of all system chaincodes
 //This needs to be revisited on policies around system chaincode
-//"upgrades" from user and relationship with "fabric" upgrade. For
-//now keep it simple and use the fabric's version stamp
+//"upgrades" from user and relationship with  upgrade. For
+//now keep it simple and use the version stamp
 func GetSysCCVersion() string {
 	return metadata.Version
 }

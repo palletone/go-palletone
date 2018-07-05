@@ -20,10 +20,10 @@
 syntax = "proto3";
 
 package protos;
-option java_package = "org.hyperledger.fabric.protos.peer";
+option java_package = "protos.peer";
 option go_package = "protos/peer";
 
-import "github.com/palletone/go-palletone/core/vmContractPub/protos/peer/chaincode_event.proto";
+import "github.com/palletone/go-palletone/core/protos/peer/chaincode_event.proto";
 import "peer/proposal.proto";
 import "google/protobuf/timestamp.proto";
 

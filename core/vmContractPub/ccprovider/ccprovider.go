@@ -176,7 +176,6 @@ func (*CCInfoFSImpl) PutChaincode(depSpec *pb.ChaincodeDeploymentSpec) (CCPackag
 // until a later time in which they are fixed. The peer process on
 // the other hand requires the benefits of this cache and therefore
 // enables it.
-// TODO: (post v1) enable cache by default as soon as https://jira.hyperledger.org/browse/FAB-3785 is completed
 
 // ccInfoFSStorageMgr is the storage manager used either by the cache or if the
 // cache is bypassed
@@ -238,7 +237,6 @@ func CheckInstantiationPolicy(name, version string, cdLedger *ChaincodeData) err
 	// policy. This check is there to ensure that this will not
 	// happen, i.e. that the peer will refuse to invoke the
 	// chaincode under these conditions. More info on
-	// https://jira.hyperledger.org/browse/FAB-3156
 	if ccdata.InstantiationPolicy != nil {
 		if !bytes.Equal(ccdata.InstantiationPolicy, cdLedger.InstantiationPolicy) {
 			return fmt.Errorf("Instantiation policy mismatch for cc %s/%s", name, version)

@@ -28,16 +28,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-	mockpeer "github.com/palletone/go-palletone/core/vmContractPub/mocks/peer"
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
-	//lproto "github.com/hyperledger/fabric/protos/ledger/queryresult"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/core/vmContractPub/protos/utils"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	"github.com/palletone/go-palletone/core/vmContractPub/util"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	mockpeer "github.com/palletone/go-palletone/core/vmContractPub/mocks/peer"
+	"github.com/palletone/go-palletone/core/vmContractPub/protos/utils"
 )
 
 // shimTestCC example simple Chaincode implementation

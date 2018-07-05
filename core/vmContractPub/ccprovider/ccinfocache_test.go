@@ -83,7 +83,7 @@ func (m *mockCCInfoFSStorageMgrImpl) GetChaincode(ccname string, ccversion strin
 func TestCCInfoCache(t *testing.T) {
 	ccname := "foo"
 	ccver := "1.0"
-	ccpath := "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02"
+	ccpath := "github.com/palletone/go-palletone/contracts/example/go/chaincode_example02"
 
 	ccinfoFs := &mockCCInfoFSStorageMgrImpl{CCMap: map[string]CCPackage{}}
 	cccache := NewCCInfoCache(ccinfoFs)
@@ -138,7 +138,7 @@ func TestCCInfoCache(t *testing.T) {
 func TestPutChaincode(t *testing.T) {
 	ccname := ""
 	ccver := "1.0"
-	ccpath := "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02"
+	ccpath := "github.com/palletone/go-palletone/contracts/examples/go/chaincode_example02"
 
 	ccinfoFs := &mockCCInfoFSStorageMgrImpl{CCMap: map[string]CCPackage{}}
 	NewCCInfoCache(ccinfoFs)
@@ -168,7 +168,7 @@ func TestPutChaincode(t *testing.T) {
 func TestCCInfoFSPeerInstance(t *testing.T) {
 	ccname := "bar"
 	ccver := "1.0"
-	ccpath := "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02"
+	ccpath := "github.com/palletone/go-palletone/contracts/examples/go/chaincode_example02"
 
 	// the cc data is not yet in the cache
 	_, err := GetChaincodeFromFS(ccname, ccver)

@@ -300,9 +300,10 @@ func init() {
 		fmt.Println("glh:config.initViper error", err)
 	}
 	fmt.Println("glh:config.initViper ok")
-
 	viper.SetConfigFile("vm_cfg.toml")
+
 	viper.Set("vm.endpoint", "unix:///var/run/docker.sock")
+
 	//file := viper.ConfigFileUsed()
 	//fmt.Println("config file:", file)
 }

@@ -37,7 +37,6 @@ const (
 
 var (
 	logger *logging.Logger
-
 	defaultOutput *os.File
 
 	modules          map[string]string // Holds the map of all modules and their respective log level

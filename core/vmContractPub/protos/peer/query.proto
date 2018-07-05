@@ -19,7 +19,7 @@
 
 syntax = "proto3";
 
-option java_package = "org.hyperledger.fabric.protos.peer";
+option java_package = "protos.peer";
 option go_package = "protos/peer";
 
 package protos;

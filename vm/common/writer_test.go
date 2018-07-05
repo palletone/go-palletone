@@ -193,7 +193,7 @@ func Test_WriteFolderToTarPackage3(t *testing.T) {
 
 	// Note - go chaincode does not use WriteFolderToTarPackage(),
 	// but we can still use the go example for unit test,
-	// since there are no node chaincode examples in fabric repos
+	// since there are no node chaincode examples in repos
 	srcPath := filepath.Join(gopath, "src",
 		"github.com/palletone/go-palletone/contracts/examples/go/marbles02")
 	filePath := "META-INF/statedb/couchdb/indexes/indexOwner.json"
@@ -230,7 +230,7 @@ func Test_WriteFolderToTarPackage4(t *testing.T) {
 
 	// Note - go chaincode does not use WriteFolderToTarPackage(),
 	// but we can still use the go example for unit test,
-	// since there are no node chaincode examples in fabric repos
+	// since there are no node chaincode examples in repos
 	srcPath := filepath.Join(gopath, "src",
 		"github.com/palletone/go-palletone/contracts/examples/go/marbles02")
 	srcPath = srcPath + "/"
@@ -328,7 +328,7 @@ func Test_WriteFolderToTarPackageFailure2(t *testing.T) {
 
 	// Note - go chaincode does not use WriteFolderToTarPackage(),
 	// but we can still use the go example for unit test,
-	// since there are no node chaincode examples in fabric repos
+	// since there are no node chaincode examples in repos
 	srcPath := filepath.Join(gopath, "src",
 		"github.com/palletone/go-palletone/contracts/examples/go/BadMetadataInvalidIndex")
 
@@ -351,7 +351,7 @@ func Test_WriteFolderToTarPackageFailure3(t *testing.T) {
 
 	// Note - go chaincode does not use WriteFolderToTarPackage(),
 	// but we can still use the go example for unit test,
-	// since there are no node chaincode examples in fabric repos
+	// since there are no node chaincode examples in repos
 	srcPath := filepath.Join(gopath, "src",
 		"github.com/palletone/go-palletone/contracts/examples/go/BadMetadataUnexpectedFolderContent")
 

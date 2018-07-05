@@ -19,22 +19,12 @@
 
 package scc
 
-import (
-	//import system chaincodes here
-	//glh
-	//"github.com/hyperledger/fabric/core/scc/cscc"
-	//"github.com/hyperledger/fabric/core/scc/escc"
-	//"github.com/hyperledger/fabric/core/scc/lscc"
-	//"github.com/hyperledger/fabric/core/scc/qscc"
-	//"github.com/hyperledger/fabric/core/scc/vscc"
-)
-
 //see systemchaincode_test.go for an example using "sample_syscc"
 var systemChaincodes = []*SystemChaincode{
 	{
 		Enabled:           true,
 		Name:              "cscc",
-		Path:              "github.com/hyperledger/fabric/core/scc/cscc",
+		Path:              "github.com/palletone/go-palletone/contracts/scc/cscc",
 		InitArgs:          [][]byte{[]byte("")},
 		//glh
 		//Chaincode:         &cscc.PeerConfiger{},
@@ -43,7 +33,7 @@ var systemChaincodes = []*SystemChaincode{
 	{
 		Enabled:           true,
 		Name:              "lscc",
-		Path:              "github.com/hyperledger/fabric/core/scc/lscc",
+		Path:              "github.com/palletone/go-palletone/contracts/scc/lscc",
 		InitArgs:          [][]byte{[]byte("")},
 		//glh
 		//Chaincode:         lscc.NewLifeCycleSysCC(),
@@ -53,7 +43,7 @@ var systemChaincodes = []*SystemChaincode{
 	{
 		Enabled:   true,
 		Name:      "escc",
-		Path:      "github.com/hyperledger/fabric/core/scc/escc",
+		Path:      "github.com/palletone/go-palletone/contracts/scc/escc",
 		InitArgs:  [][]byte{[]byte("")},
 		//glh
 		//Chaincode: &escc.EndorserOneValidSignature{},
@@ -61,7 +51,7 @@ var systemChaincodes = []*SystemChaincode{
 	{
 		Enabled:   true,
 		Name:      "vscc",
-		Path:      "github.com/hyperledger/fabric/core/scc/vscc",
+		Path:      "github.com/palletone/go-palletone/contracts/scc/vscc",
 		InitArgs:  [][]byte{[]byte("")},
 		//glh
 		//Chaincode: &vscc.ValidatorOneValidSignature{},
@@ -69,7 +59,7 @@ var systemChaincodes = []*SystemChaincode{
 	{
 		Enabled:           true,
 		Name:              "qscc",
-		Path:              "github.com/hyperledger/fabric/core/chaincode/qscc",
+		Path:              "github.com/palletone/go-palletone/contracts/scc/qscc",
 		InitArgs:          [][]byte{[]byte("")},
 		//glh
 		//Chaincode:         &qscc.LedgerQuerier{},
@@ -78,7 +68,7 @@ var systemChaincodes = []*SystemChaincode{
 	},
 }
 
-//DeploySysCCs is the hook for system chaincodes where system chaincodes are registered with the fabric
+//DeploySysCCs is the hook for system chaincodes where system chaincodes are registered 
 //note the chaincode must still be deployed and launched like a user chaincode will be
 func DeploySysCCs(chainID string) {
 	for _, sysCC := range systemChaincodes {

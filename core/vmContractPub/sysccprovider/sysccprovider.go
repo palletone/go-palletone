@@ -19,11 +19,6 @@
 
 package sysccprovider
 
-import (
-	//"common/channelconfig"
-	//"github.com/hyperledger/fabric/common/policies"
-	//"github.com/hyperledger/fabric/core/ledger"
-)
 
 // SystemChaincodeProvider provides an abstraction layer that is
 // used for different packages to interact with code in the

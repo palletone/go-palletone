@@ -29,7 +29,6 @@ const GRPCModuleID = "grpc"
 func initgrpclogger() {
 	glogger := MustGetLogger(GRPCModuleID)
 	grpclog.SetLogger(&grpclogger{glogger})
-
 }
 
 // grpclogger implements the standard Go logging interface and wraps the

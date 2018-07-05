@@ -167,8 +167,8 @@ func TestGenerateDockerfile(t *testing.T) {
 		CodePackage: []byte("dummy CodePackage content")}
 
 	str, _ := platform.GenerateDockerfile(cds)
-	if !strings.Contains(str, "/fabric-baseimage:") {
-		t.Fatalf("should have generated a docker file using the fabric-baseimage, but got %s", str)
+	if !strings.Contains(str, "/baseimage:") {
+		t.Fatalf("should have generated a docker file using the baseimage, but got %s", str)
 	}
 
 	if !strings.Contains(str, "ADD binpackage.tar /usr/local/src") {
@@ -184,7 +184,7 @@ func TestGenerateDockerBuild(t *testing.T) {
 
 	content := []byte(`
 		{
-		  "name": "fabric-shim-test",
+		  "name": "shim-test",
 		  "version": "1.0.0-snapshot",
 	      "script": {
 	        "start": "node chaincode.js"
@@ -202,7 +202,7 @@ func TestGenerateDockerBuild(t *testing.T) {
 	}
 
 	content = []byte(`
-		const shim = require('fabric-shim');
+		const shim = require('shim');
 
 		var chaincode = {};
 		chaincode.Init = function(stub) {

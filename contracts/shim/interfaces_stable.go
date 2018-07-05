@@ -26,7 +26,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
 
-// Chaincode interface must be implemented by all chaincodes. The fabric runs
+// Chaincode interface must be implemented by all chaincodes. The runs
 // the transactions by calling these functions as specified.
 type Chaincode interface {
 	// Init is called during Instantiate transaction after the chaincode container

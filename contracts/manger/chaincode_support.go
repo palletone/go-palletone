@@ -62,9 +62,9 @@ const (
 
 	//glh
 	// Mutual TLS auth client key and cert paths in the chaincode container
-	TLSClientKeyPath      string = "/etc/hyperledger/fabric/client.key"
-	TLSClientCertPath     string = "/etc/hyperledger/fabric/client.crt"
-	TLSClientRootCertPath string = "/etc/hyperledger/fabric/peer.crt"
+	TLSClientKeyPath      string = "/etc/palletone/client.key"
+	TLSClientCertPath     string = "/etc/palletone/client.crt"
+	TLSClientRootCertPath string = "/etc/palletone/peer.crt"
 )
 
 //this is basically the singleton that supports the

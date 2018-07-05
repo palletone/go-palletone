@@ -19,8 +19,8 @@
 
 syntax = "proto3";
 
-option go_package = "protos/peer";
-option java_package = "org.hyperledger.fabric.protos.peer";
+option go_package = "github.com/palletone/go-palletone/core/vmContractPub/protos/peer";
+option java_package = "protos.peer";
 option java_outer_classname = "ProposalResponsePackage";
 
 package protos;
