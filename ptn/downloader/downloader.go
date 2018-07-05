@@ -193,7 +193,7 @@ type BlockChain interface {
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
-func New(mode SyncMode, mux *event.TypeMux /*chain BlockChain, lightchain LightChain,*/, dropPeer peerDropFn) *Downloader {
+func New(mode SyncMode/*, mux *event.TypeMux chain BlockChain, lightchain LightChain,*/, dropPeer peerDropFn) *Downloader {
 	/*
 		if lightchain == nil {
 			lightchain = chain
@@ -201,7 +201,7 @@ func New(mode SyncMode, mux *event.TypeMux /*chain BlockChain, lightchain LightC
 
 	dl := &Downloader{
 		mode:          mode,
-		mux:           mux,
+		//mux:           mux,
 		queue:         newQueue(),
 		peers:         newPeerSet(),
 		rttEstimate:   uint64(rttMaxEstimate),

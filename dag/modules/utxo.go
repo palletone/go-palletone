@@ -20,7 +20,10 @@
 package modules
 
 import (
+	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/rlp"
+	"strings"
 )
 
 type Asset struct {
@@ -29,24 +32,92 @@ type Asset struct {
 	ChainId  IDType `json:"chain_id"`  // main chain id or sub-chain id
 }
 
+func (asset *Asset) String() string {
+	data, err := rlp.EncodeToBytes(asset)
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}
+
 // key: utxo.hash(utxo+timestamp)
 type Utxo struct {
-	AccountId    common.Address `json:"account_id"`    // 所属人id
+	AccountAddr  common.Address `json:"account_id"`    // 所属人id
 	TxID         common.Hash    `json:"unit_id"`       // transaction id
 	MessageIndex uint32         `json:"message_index"` // message index in transaction
-	Amount       uint64         `json:"amount"`        // 数量
-	Asset        Asset          `json:"asset"`         // 资产类别
-	PkScript     string         `json:"program"`       // 要执行的代码段
-	Key          common.Hash         `json:"key"`           // 索引值
-	IsCoinBase   int16          `json:"is_coinbase"`   //
+	OutIndex     uint32         `json:"output_index"`
+	Amount       uint64         `json:"amount"`      // 数量
+	Asset        Asset          `json:"Asset"`       // 资产类别
+	PkScript     []byte         `json:"program"`     // 要执行的代码段
+	IsCoinBase   bool           `json:"is_coinbase"` //
 	IsLocked     bool           `json:"is_locked"`
 }
 
-// OutPoint defines a bitcoin data type that is used to track previous
-// transaction outputs.
+// utxo key
 type OutPoint struct {
-	Hash  common.Hash	// reference Utxo struct key field
-	Index uint32
+	Prefix [1]byte // default 'u'
+	Addr   common.Address
+	Asset  Asset
+	Hash   common.Hash // reference Utxo struct key field
+}
+
+func (outpoint *OutPoint) ToPrefixKey() []byte {
+	out := fmt.Sprintf("%s%s_%s",
+		outpoint.Prefix,
+		outpoint.Addr.String(),
+		outpoint.Asset.String())
+	return []byte(out)
+}
+
+func (outpoint *OutPoint) ToKey() []byte {
+	out := fmt.Sprintf("%s%s_%s_%s",
+		outpoint.Prefix,
+		outpoint.Addr.String(),
+		outpoint.Asset.String(),
+		outpoint.Hash.String(),
+	)
+	return []byte(out)
+}
+
+func KeyToOutpoint(key []byte) OutPoint {
+	// key: u[Addr]_[Asset]_[index]
+	data := strings.Split(string(key), "_")
+	if len(data) != 3 {
+		return OutPoint{}
+	}
+
+	var vout OutPoint
+	vout.Prefix = [1]byte{data[0][0]}
+
+	if err := rlp.DecodeBytes([]byte(data[0][1:]), &vout.Addr); err != nil {
+		vout.Addr = common.Address{}
+	}
+
+	if err := rlp.DecodeBytes([]byte(data[1]), &vout.Asset); err != nil {
+		vout.Asset = Asset{}
+	}
+
+	if err := rlp.DecodeBytes([]byte(data[2]), &vout.Hash); err != nil {
+		vout.Hash = common.Hash{}
+	}
+
+	return vout
+}
+
+func (outpoint *OutPoint) String() string {
+	data, err := rlp.EncodeToBytes(outpoint)
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}
+
+func (outpoint *OutPoint) Bytes() []byte {
+	data, err := rlp.EncodeToBytes(outpoint)
+	if err != nil {
+		return nil
+	}
+	return data
 }
 
 type Input struct {
@@ -55,32 +126,11 @@ type Input struct {
 }
 
 type Output struct {
-	Value    int64
+	Value    uint64
 	Asset    Asset
 	PkScript []byte
 }
 
 type SpendProof struct {
 	Unit string `json:"unit"`
-}
-
-/**
-根据用户地址、选择的资产类型、转账金额、手续费返回utxo
-return utxo struct according to user's address, asset type, transaction amount and given gas.
-*/
-func GetUtxos(addr common.Address, asset Asset, amount uint64, gas uint64) []Utxo {
-	vout := make([]Utxo, 0)
-	return vout
-}
-
-/**
-检查UTXO是否正确
-check UTXO, if passed return true, else return false
-*/
-func CheckOutput(vout *Utxo) bool {
-	return true
-}
-
-func WriteUtxo(tx *PaymentPayload) (common.Hash, error){
-	return common.Hash{}, nil
 }

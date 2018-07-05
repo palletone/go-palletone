@@ -31417,7 +31417,7 @@ var _bundleJs = []byte((((((((((`!function(modules) {
                     color: "inherit"
                 }, _react2.default.createElement("span", {
                     style: _common.styles.light
-                }, "Gpan"), " ", general.version), general.commit && _react2.default.createElement(_Typography2.default, {
+                }, "Gptn"), " ", general.version), general.commit && _react2.default.createElement(_Typography2.default, {
                     type: "caption",
                     color: "inherit"
                 }, _react2.default.createElement("span", {

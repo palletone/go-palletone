@@ -34,7 +34,7 @@ func tmpdir(t *testing.T) string {
 	return dir
 }
 
-type testgeth struct {
+type testgptn struct {
 	*cmdtest.TestCmd
 
 	// template variables for expect
@@ -43,7 +43,7 @@ type testgeth struct {
 }
 
 func init() {
-	// Run the app if we've been exec'd as "gptn-test" in runGeth.
+	// Run the app if we've been exec'd as "gptn-test" in runGptn.
 	reexec.Register("gptn-test", func() {
 		if err := app.Run(os.Args); err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -63,8 +63,8 @@ func TestMain(m *testing.M) {
 
 // spawns gptn with the given command line args. If the args don't set --datadir, the
 // child g gets a temporary data directory.
-func runGeth(t *testing.T, args ...string) *testgeth {
-	tt := &testgeth{}
+func runGptn(t *testing.T, args ...string) *testgptn {
+	tt := &testgptn{}
 	tt.TestCmd = cmdtest.NewTestCmd(t, tt)
 	for i, arg := range args {
 		switch {

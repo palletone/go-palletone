@@ -28,6 +28,7 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common/hexutil"
+	"math/big"
 )
 
 const (
@@ -40,7 +41,8 @@ var (
 
 /////////// Address
 
-// Address represents the 20 byte address of an PalletOne account.
+// Address represents the 35 byte address of an PalletOne account.
+// for personal address, start with P1, script address start with P3, contract address start with Pc
 type Address [AddressLength]byte
 type AddressType byte
 
@@ -97,7 +99,7 @@ func IsHexAddress(s string) bool {
 func (a Address) Str() string   { return string(a[:]) }
 func (a Address) Bytes() []byte { return a[:] }
 
-//func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a[:]) }
+func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a[:]) }
 func (a Address) Hash() Hash  { return BytesToHash(a[:]) }
 func (a Address) Hex() string { return fmt.Sprintf("0x%x", a) }
 
@@ -180,13 +182,31 @@ func (a *Address) UnmarshalJSON(input []byte) error {
 // 	return []byte(hex.EncodeToString(a[:])), nil
 // }
 
-// MixedcaseAddress retains the original string, which may or may not be
-// correctly checksummed
-// type MixedcaseAddress struct {
-// 	addr     Address
-// 	original string
-// }
+//MixedcaseAddress retains the original string, which may or may not be
+//correctly checksummed.
+/////////////////(for wallet core tyeps SendTxArgs)
+type MixedcaseAddress struct {
+	addr     Address
+	original string
+}
 
+// Address returns the address
+func (ma *MixedcaseAddress) Address() Address {
+	return ma.addr
+}
+
+// String implements fmt.Stringer
+func (ma *MixedcaseAddress) String() string {
+	if ma.ValidChecksum() {
+		return fmt.Sprintf("%s [chksum ok]", ma.original)
+	}
+	return fmt.Sprintf("%s [chksum INVALID]", ma.original)
+}
+
+// ValidChecksum returns true if the address has valid checksum
+func (ma *MixedcaseAddress) ValidChecksum() bool {
+	return ma.original == ma.addr.Hex()
+}
 // // NewMixedcaseAddress constructor (mainly for testing)
 // func NewMixedcaseAddress(addr Address) MixedcaseAddress {
 // 	return MixedcaseAddress{addr: addr, original: addr.Str()}
@@ -217,25 +237,7 @@ func (a *Address) UnmarshalJSON(input []byte) error {
 // 	return json.Marshal(fmt.Sprintf("0x%s", ma.original))
 // }
 
-// // Address returns the address
-// func (ma *MixedcaseAddress) Address() Address {
-// 	return ma.addr
-// }
-
-// // String implements fmt.Stringer
-// func (ma *MixedcaseAddress) String() string {
-// 	if ma.ValidChecksum() {
-// 		return fmt.Sprintf("%s [chksum ok]", ma.original)
-// 	}
-// 	return fmt.Sprintf("%s [chksum INVALID]", ma.original)
-// }
-
-// // ValidChecksum returns true if the address has valid checksum
-// func (ma *MixedcaseAddress) ValidChecksum() bool {
-// 	return ma.original == ma.addr.Hex()
-// }
-
-// // Original returns the mixed-case input string
-// func (ma *MixedcaseAddress) Original() string {
-// 	return ma.original
-// }
+// Original returns the mixed-case input string
+func (ma *MixedcaseAddress) Original() string {
+	return ma.original
+}

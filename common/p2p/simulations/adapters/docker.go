@@ -28,7 +28,6 @@ import (
 	"strings"
 
 	"github.com/docker/docker/pkg/reexec"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 )
@@ -95,7 +94,7 @@ func (d *DockerAdapter) NewNode(config *NodeConfig) (Node, error) {
 	conf.Stack.P2P.NoDiscovery = true
 	conf.Stack.P2P.NAT = nil
 	conf.Stack.NoUSB = true
-	conf.Stack.Logger = log.New("node.id", config.ID.String())
+	//conf.Stack.Logger = log.New("node.id", config.ID.String())
 
 	node := &DockerNode{
 		ExecNode: ExecNode{

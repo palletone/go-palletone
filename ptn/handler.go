@@ -78,7 +78,7 @@ type ProtocolManager struct {
 
 	SubProtocols []p2p.Protocol
 
-	eventMux      *event.TypeMux
+	//eventMux      *event.TypeMux
 	txCh          chan coredata.TxPreEvent
 	txSub         event.Subscription
 	minedBlockSub *event.TypeMuxSubscription
@@ -101,11 +101,11 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager( /*config *configure.ChainConfig,*/ mode downloader.SyncMode, networkId uint64, mux *event.TypeMux, txpool txPool, engine core.ConsensusEngine /*blockchain *coredata.BlockChain,*/) (*ProtocolManager, error) {
+func NewProtocolManager(mode downloader.SyncMode, networkId uint64, /*mux *event.TypeMux,*/ txpool txPool, engine core.ConsensusEngine /*blockchain *coredata.BlockChain,*/) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId: networkId,
-		eventMux:  mux,
+		//eventMux:  mux,
 		//txpool:    txpool,
 		//blockchain:  blockchain,
 		consEngine: engine,
@@ -157,7 +157,7 @@ func NewProtocolManager( /*config *configure.ChainConfig,*/ mode downloader.Sync
 		return nil, errIncompatibleConfig
 	}
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer)
+	manager.downloader = downloader.New(mode, /*manager.eventMux,*/ manager.removePeer)
 	/*woule recover
 	validator := func(header *types.Header) error {
 		return engine.VerifyHeader(blockchain, header, true)
