@@ -95,8 +95,8 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 }
 
 // This test checks that received transactions are added to the local pool.
-func TestRecvTransactions62(t *testing.T) { testRecvTransactions(t, 62) }
-func TestRecvTransactions63(t *testing.T) { testRecvTransactions(t, 63) }
+//func TestRecvTransactions1(t *testing.T) { testRecvTransactions(t, 1) }
+//func TestRecvTransactions63(t *testing.T) { testRecvTransactions(t, 63) }
 
 func testRecvTransactions(t *testing.T, protocol int) {
 	txAdded := make(chan []*types.Transaction)
@@ -123,8 +123,8 @@ func testRecvTransactions(t *testing.T, protocol int) {
 }
 
 // This test checks that pending transactions are sent.
-func TestSendTransactions62(t *testing.T) { testSendTransactions(t, 1) }
-func TestSendTransactions63(t *testing.T) { testSendTransactions(t, 1) }
+//func TestSendTransactions62(t *testing.T) { testSendTransactions(t, 1) }
+//func TestSendTransactions63(t *testing.T) { testSendTransactions(t, 1) }
 
 func testSendTransactions(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil)
