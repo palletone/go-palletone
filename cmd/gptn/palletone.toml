@@ -1,4 +1,4 @@
-#./gpan --datadir="./data1" --networkid 123456 --port 30301 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" --rpcport 8541 --verbosity=4
+#./gptn --datadir="./data1" --networkid 123456 --port 30301 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" --rpcport 8541 --verbosity=4
 [Consensus]
 Engine="solo"
 
