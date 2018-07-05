@@ -28,14 +28,12 @@ var DefaultConfig = Config{
 	DbName: "palletone",
 }
 
-// key := strings.ToLower(typ.Name()) 大写统一转小写
+// global configuration of dag modules
 type Config struct {
-	DbPath     string
-	DbName     string
-	DbUser     string
-	DbPassword string
-	DbCache    int
-	DbHandles  int
+	DbPath    string
+	DbName    string
+	DbCache   int
+	DbHandles int
 
 	// cache
 	CacheSource string
