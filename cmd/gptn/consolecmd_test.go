@@ -33,7 +33,7 @@ func TestConsoleWelcome(t *testing.T) {
 	//coinbase := "0x8605cdbbdb6d264aa742e77020dcbc58fcdce182"
 
 	// Start a gptn console, make sure it's cleaned up and terminate the console
-	gptn := runGeth(t,
+	gptn := runGptn(t,
 		"console")
 
 	// Verify the actual welcome message to the required template
@@ -66,7 +66,7 @@ func TestIPCAttachWelcome(t *testing.T) {
 	}
 	// Note: we need --shh because testAttachWelcome checks for default
 	// list of ipc modules and shh is included there.
-	gptn := runGeth(t,"--maxpeers", "0", "--nodiscover", "--nat", "none")
+	gptn := runGptn(t,"--maxpeers", "0", "--nodiscover", "--nat", "none")
 
 	time.Sleep(10 * time.Second) // Simple way to wait for the RPC endpoint to open
 	testAttachWelcome(t, gptn, "ipc:"+ipc, ipcAPIs)
@@ -79,10 +79,10 @@ func TestIPCAttachWelcome(t *testing.T) {
 func TestHTTPAttachWelcome(t *testing.T) {
 	//coinbase := "0x8605cdbbdb6d264aa742e77020dcbc58fcdce182"
 	port := strconv.Itoa(trulyRandInt(1024, 65536)) // Yeah, sometimes this will fail, sorry :P
-	//gptn := runGeth(t,
+	//gptn := runGptn(t,
 	//	"--port", "0", "--maxpeers", "0", "--nodiscover", "--nat", "none",
 	//	"--etherbase", coinbase, "--rpc", "--rpcport", port)
-	gptn := runGeth(t)
+	gptn := runGptn(t)
 
 	time.Sleep(2 * time.Second) // Simple way to wait for the RPC endpoint to open
 	testAttachWelcome(t, gptn, "http://localhost:"+port, httpAPIs)
@@ -95,7 +95,7 @@ func TestWSAttachWelcome(t *testing.T) {
 	coinbase := "0x8605cdbbdb6d264aa742e77020dcbc58fcdce182"
 	port := strconv.Itoa(trulyRandInt(1024, 65536)) // Yeah, sometimes this will fail, sorry :P
 
-	gptn := runGeth(t,
+	gptn := runGptn(t,
 		"--port", "0", "--maxpeers", "0", "--nodiscover", "--nat", "none",
 		"--etherbase", coinbase, "--ws", "--wsport", port)
 
@@ -106,9 +106,9 @@ func TestWSAttachWelcome(t *testing.T) {
 	gptn.ExpectExit()
 }
 */
-func testAttachWelcome(t *testing.T, gptn *testgeth, endpoint, apis string) {
+func testAttachWelcome(t *testing.T, gptn *testgptn, endpoint, apis string) {
 	// Attach to a running gptn note and terminate immediately
-	attach := runGeth(t, "attach", endpoint)
+	attach := runGptn(t, "attach", endpoint)
 	defer attach.ExpectExit()
 	attach.CloseStdin()
 
