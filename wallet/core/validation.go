@@ -17,10 +17,10 @@
 package core
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
+	"bytes"
 	"math/big"
+	"errors"
 
 	"github.com/palletone/go-palletone/common"
 )
@@ -39,7 +39,27 @@ func (vs *ValidationMessages) warn(msg string) {
 func (vs *ValidationMessages) info(msg string) {
 	vs.Messages = append(vs.Messages, ValidationInfo{"Info", msg})
 }
+//////stub
+type AbiDb struct {
+	db           map[string]string
+	customdb     map[string]string
+	customdbPath string
+}
+type Validator struct {
+	db *AbiDb
+}
 
+func NewValidator(db *AbiDb) *Validator {
+	return &Validator{db}
+}
+
+// ValidateTransaction does a number of checks on the supplied transaction, and returns either a list of warnings,
+// or an error, indicating that the transaction should be immediately rejected
+func (v *Validator) ValidateTransaction(txArgs *SendTxArgs, methodSelector *string) (*ValidationMessages, error) {
+	msgs := &ValidationMessages{}
+	return msgs, v.validate(msgs, txArgs, methodSelector)
+}
+/*
 type Validator struct {
 	db *AbiDb
 }
@@ -62,44 +82,10 @@ func testSelector(selector string, data []byte) (*decodedCallData, error) {
 	return info, nil
 
 }
-
+*/
 // validateCallData checks if the ABI-data + methodselector (if given) can be parsed and seems to match
 func (v *Validator) validateCallData(msgs *ValidationMessages, data []byte, methodSelector *string) {
-	if len(data) == 0 {
-		return
-	}
-	if len(data) < 4 {
-		msgs.warn("Tx contains data which is not valid ABI")
-		return
-	}
-	var (
-		info *decodedCallData
-		err  error
-	)
-	// Check the provided one
-	if methodSelector != nil {
-		info, err = testSelector(*methodSelector, data)
-		if err != nil {
-			msgs.warn(fmt.Sprintf("Tx contains data, but provided ABI signature could not be matched: %v", err))
-		} else {
-			msgs.info(info.String())
-			//Successfull match. add to db if not there already (ignore errors there)
-			v.db.AddSignature(*methodSelector, data[:4])
-		}
-		return
-	}
-	// Check the db
-	selector, err := v.db.LookupMethodSelector(data[:4])
-	if err != nil {
-		msgs.warn(fmt.Sprintf("Tx contains data, but the ABI signature could not be found: %v", err))
-		return
-	}
-	info, err = testSelector(selector, data)
-	if err != nil {
-		msgs.warn(fmt.Sprintf("Tx contains data, but provided ABI signature could not be matched: %v", err))
-	} else {
-		msgs.info(info.String())
-	}
+
 }
 
 // validateSemantics checks if the transactions 'makes sense', and generate warnings for a couple of typical scenarios
@@ -155,9 +141,3 @@ func (v *Validator) validate(msgs *ValidationMessages, txargs *SendTxArgs, metho
 	return nil
 }
 
-// ValidateTransaction does a number of checks on the supplied transaction, and returns either a list of warnings,
-// or an error, indicating that the transaction should be immediately rejected
-func (v *Validator) ValidateTransaction(txArgs *SendTxArgs, methodSelector *string) (*ValidationMessages, error) {
-	msgs := &ValidationMessages{}
-	return msgs, v.validate(msgs, txArgs, methodSelector)
-}

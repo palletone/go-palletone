@@ -237,7 +237,7 @@ func (ma *MixedcaseAddress) ValidChecksum() bool {
 // 	return json.Marshal(fmt.Sprintf("0x%s", ma.original))
 // }
 
-// // Original returns the mixed-case input string
-// func (ma *MixedcaseAddress) Original() string {
-// 	return ma.original
-// }
+// Original returns the mixed-case input string
+func (ma *MixedcaseAddress) Original() string {
+	return ma.original
+}

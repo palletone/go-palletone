@@ -15,7 +15,7 @@
 // along with go-ethereum. If not, see <http://www.gnu.org/licenses/>.
 
 package rules
-
+/*would recover
 import (
 	"encoding/json"
 	"fmt"
@@ -243,3 +243,4 @@ func (r *rulesetUi) OnApprovedTx(tx ethapi.SignTransactionResult) {
 		log.Info("error occurred during execution", "error", err)
 	}
 }
+*/
