@@ -121,6 +121,7 @@ var (
 		utils.LogValue4Flag,
 		utils.LogValue5Flag,
 		configFileFlag,
+		GenesisJsonPathFlag,
 	}
 
 	rpcFlags = []cli.Flag{
@@ -175,7 +176,7 @@ func init() {
 		licenseCommand,
 		// See config.go
 		dumpConfigCommand, //转储配置命令
-		createGenesisJsonCommand,
+		createGenesisJsonCommand,	// 创建创世json文件命令
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 
