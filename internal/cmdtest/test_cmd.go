@@ -245,7 +245,7 @@ func (tt *TestCmd) ExpectExitConsoleWelcome() {
 	os.RemoveAll("./gptn")
 	os.RemoveAll("./log")
 	if len(output) > 0 {
-		isconsole := strings.Contains(string(output),"Welcome to the Gpan JavaScript console!")
+		isconsole := strings.Contains(string(output),"Welcome to the Gptn JavaScript console!")
 		if !isconsole{
 			tt.Errorf("Unmatched stdout text:\n%s", output)
 		}
