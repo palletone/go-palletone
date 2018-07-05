@@ -114,7 +114,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	eth.txPool = coredata.NewTxPool(config.TxPool)
 
 	var err error
-	if eth.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, eth.eventMux, eth.txPool, eth.engine); err != nil {
+	if eth.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, /*eth.eventMux,*/ eth.txPool, eth.engine); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}
