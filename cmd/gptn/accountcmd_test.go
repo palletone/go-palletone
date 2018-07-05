@@ -39,13 +39,13 @@ func tmpDatadirWithKeystore(t *testing.T) string {
 }
 
 func TestAccountListEmpty(t *testing.T) {
-	gptn := runGeth(t, "account", "list")
+	gptn := runGptn(t, "account", "list")
 	gptn.ExpectExitEmpty()
 }
 /*
 func TestAccountList(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	gptn := runGeth(t, "core","account", "list", "--datadir", datadir)
+	gptn := runGptn(t, "core","account", "list", "--datadir", datadir)
 	defer gptn.ExpectExit()
 	if runtime.GOOS == "windows" {
 		gptn.Expect(`
@@ -59,7 +59,7 @@ Account #0: {50314256554d426b754d505a37536b564c5a775a384c796f7451794c32574b36564
 }
 
 func TestAccountNew(t *testing.T) {
-	gptn := runGeth(t, "account", "new", "--lightkdf")
+	gptn := runGptn(t, "account", "new", "--lightkdf")
 	defer gptn.ExpectExit()
 	gptn.Expect(`
 Your new account is locked with a password. Please give a password. Do not forget this password.
@@ -71,7 +71,7 @@ Repeat passphrase: {{.InputLine "foobar"}}
 }
 
 func TestAccountNewBadRepeat(t *testing.T) {
-	gptn := runGeth(t, "account", "new", "--lightkdf")
+	gptn := runGptn(t, "account", "new", "--lightkdf")
 	defer gptn.ExpectExit()
 	gptn.Expect(`
 Your new account is locked with a password. Please give a password. Do not forget this password.
@@ -84,7 +84,7 @@ Fatal: Passphrases do not match
 
 func TestAccountUpdate(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	gptn := runGeth(t, "account", "update",
+	gptn := runGptn(t, "account", "update",
 		"--datadir", datadir, "--lightkdf",
 		"50314256554d426b754d505a37536b564c5a775a384c796f7451794c32574b3656466e")
 	defer gptn.ExpectExit()
@@ -99,7 +99,7 @@ Repeat passphrase: {{.InputLine "foobar2"}}
 }
 
 func TestWalletImport(t *testing.T) {
-	gptn := runGeth(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
+	gptn := runGptn(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
 	defer gptn.ExpectExit()
 	gptn.Expect(`
 !! Unsupported terminal, password will be echoed.
@@ -114,7 +114,7 @@ Address: {50314256554d426b754d505a37536b564c5a775a384c796f7451794c32574b3656466e
 }
 
 func TestWalletImportBadPassword(t *testing.T) {
-	gptn := runGeth(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
+	gptn := runGptn(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
 	defer gptn.ExpectExit()
 	gptn.Expect(`
 !! Unsupported terminal, password will be echoed.
@@ -125,7 +125,7 @@ Fatal: could not decrypt key with given passphrase
 
 func TestUnlockFlag(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	gptn := runGeth(t,
+	gptn := runGptn(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a",
 		"js", "testdata/empty.js")
@@ -149,7 +149,7 @@ Passphrase: {{.InputLine "foobar"}}
 
 func TestUnlockFlagWrongPassword(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	gptn := runGeth(t,
+	gptn := runGptn(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a")
 	defer gptn.ExpectExit()
@@ -168,7 +168,7 @@ Fatal: Failed to unlock account f466859ead1932d743d622cb74fc058882e8648a (could 
 // https://github.com/palletone/go-palletone/issues/1785
 func TestUnlockFlagMultiIndex(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	gptn := runGeth(t,
+	gptn := runGptn(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "0,2",
 		"js", "testdata/empty.js")
@@ -195,7 +195,7 @@ Passphrase: {{.InputLine "foobar"}}
 
 func TestUnlockFlagPasswordFile(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	gptn := runGeth(t,
+	gptn := runGptn(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--password", "testdata/passwords.txt", "--unlock", "0,2",
 		"js", "testdata/empty.js")
@@ -215,7 +215,7 @@ func TestUnlockFlagPasswordFile(t *testing.T) {
 
 func TestUnlockFlagPasswordFileWrongPassword(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)
-	gptn := runGeth(t,
+	gptn := runGptn(t,
 		"--datadir", datadir, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--password", "testdata/wrong-passwords.txt", "--unlock", "0,2")
 	defer gptn.ExpectExit()
@@ -226,7 +226,7 @@ Fatal: Failed to unlock account 0 (could not decrypt key with given passphrase)
 
 func TestUnlockFlagAmbiguous(t *testing.T) {
 	store := filepath.Join("..", "..", "accounts", "keystore", "testdata", "dupes")
-	gptn := runGeth(t,
+	gptn := runGptn(t,
 		"--keystore", store, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a",
 		"js", "testdata/empty.js")
@@ -264,7 +264,7 @@ In order to avoid this warning, you need to remove the following duplicate key f
 
 func TestUnlockFlagAmbiguousWrongPassword(t *testing.T) {
 	store := filepath.Join("..", "..", "accounts", "keystore", "testdata", "dupes")
-	gptn := runGeth(t,
+	gptn := runGptn(t,
 		"--keystore", store, "--nat", "none", "--nodiscover", "--maxpeers", "0", "--port", "0",
 		"--unlock", "50314256554d426b754d505a37536b564c5a775a384c796f7451794c32574b3656466e")
 	defer gptn.ExpectExit()
