@@ -15,7 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 package tracers
-
+/*
 import (
 	"encoding/json"
 	"errors"
@@ -616,3 +616,4 @@ func (jst *Tracer) GetResult() (json.RawMessage, error) {
 
 	return result, jst.err
 }
+*/

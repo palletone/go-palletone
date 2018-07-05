@@ -27,7 +27,7 @@ var (
 	_ = palletone.ContractCaller(&Client{})
 	_ = palletone.GasEstimator(&Client{})
 	_ = palletone.GasPricer(&Client{})
-	_ = palletone.LogFilterer(&Client{})
+	//_ = palletone.LogFilterer(&Client{})
 	_ = palletone.PendingStateReader(&Client{})
 	// _ = palletone.PendingStateEventer(&Client{})
 	_ = palletone.PendingContractCaller(&Client{})
