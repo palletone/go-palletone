@@ -1,4 +1,4 @@
-Name "gpan ${MAJORVERSION}.${MINORVERSION}.${BUILDVERSION}" # VERSION variables set through command line arguments
+Name "gptn ${MAJORVERSION}.${MINORVERSION}.${BUILDVERSION}" # VERSION variables set through command line arguments
 InstallDir "$InstDir"
 OutFile "${OUTPUTFILE}" # set through command line arguments
 
@@ -12,15 +12,15 @@ PageEx license
   LicenseData {{.License}}
 PageExEnd
 
-# Install gpan binary
+# Install gptn binary
 Section "Geth" GETH_IDX
   SetOutPath $INSTDIR
   file {{.Geth}}
 
   # Create start menu launcher
   createDirectory "$SMPROGRAMS\${APPNAME}"
-  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\gpan.exe" "--fast" "--cache=512"
-  createShortCut "$SMPROGRAMS\${APPNAME}\Attach.lnk" "$INSTDIR\gpan.exe" "attach" "" ""
+  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\gptn.exe" "--fast" "--cache=512"
+  createShortCut "$SMPROGRAMS\${APPNAME}\Attach.lnk" "$INSTDIR\gptn.exe" "attach" "" ""
   createShortCut "$SMPROGRAMS\${APPNAME}\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "" ""
 
   # Firewall - remove rules (if exists)
@@ -29,13 +29,13 @@ Section "Geth" GETH_IDX
   SimpleFC::AdvRemoveRule "Geth UDP discovery (UDP:30303)"
 
   # Firewall - add rules
-  SimpleFC::AdvAddRule "Geth incoming peers (TCP:30303)" ""  6 1 1 2147483647 1 "$INSTDIR\gpan.exe" "" "" "PalletOne" 30303 "" "" ""
-  SimpleFC::AdvAddRule "Geth outgoing peers (TCP:30303)" ""  6 2 1 2147483647 1 "$INSTDIR\gpan.exe" "" "" "PalletOne" "" 30303 "" ""
-  SimpleFC::AdvAddRule "Geth UDP discovery (UDP:30303)" "" 17 2 1 2147483647 1 "$INSTDIR\gpan.exe" "" "" "PalletOne" "" 30303 "" ""
+  SimpleFC::AdvAddRule "Geth incoming peers (TCP:30303)" ""  6 1 1 2147483647 1 "$INSTDIR\gptn.exe" "" "" "PalletOne" 30303 "" "" ""
+  SimpleFC::AdvAddRule "Geth outgoing peers (TCP:30303)" ""  6 2 1 2147483647 1 "$INSTDIR\gptn.exe" "" "" "PalletOne" "" 30303 "" ""
+  SimpleFC::AdvAddRule "Geth UDP discovery (UDP:30303)" "" 17 2 1 2147483647 1 "$INSTDIR\gptn.exe" "" "" "PalletOne" "" 30303 "" ""
 
   # Set default IPC endpoint (https://github.com/ethereum/EIPs/issues/147)
-  ${EnvVarUpdate} $0 "ETHEREUM_SOCKET" "R" "HKLM" "\\.\pipe\gpan.ipc"
-  ${EnvVarUpdate} $0 "ETHEREUM_SOCKET" "A" "HKLM" "\\.\pipe\gpan.ipc"
+  ${EnvVarUpdate} $0 "ETHEREUM_SOCKET" "R" "HKLM" "\\.\pipe\gptn.ipc"
+  ${EnvVarUpdate} $0 "ETHEREUM_SOCKET" "A" "HKLM" "\\.\pipe\gptn.ipc"
 
   # Add instdir to PATH
   Push "$INSTDIR"

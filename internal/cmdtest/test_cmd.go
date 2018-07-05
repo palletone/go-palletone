@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"regexp"
@@ -32,6 +31,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/pkg/reexec"
+	"io/ioutil"
 )
 
 func NewTestCmd(t *testing.T, data interface{}) *TestCmd {
@@ -167,6 +167,28 @@ func (tt *TestCmd) ExpectRegexp(regex string) (*regexp.Regexp, []string) {
 
 // ExpectExit expects the child process to exit within 5s without
 // printing any additional text on stdout.
+func (tt *TestCmd) ExpectExitEmpty() {
+	var output []byte
+	tt.withKillTimeout(func() {
+		output, _ = ioutil.ReadAll(tt.stdout)
+	})
+	tt.WaitExit()
+	if tt.Cleanup != nil {
+		tt.Cleanup()
+	}
+	os.RemoveAll("./data1")
+	os.RemoveAll("./gptn")
+	os.RemoveAll("./log")
+	isdebug := strings.Contains(string(output),"debug")
+	isinfo := strings.Contains(string(output),"info")
+	if len(output) > 0 &&!isdebug && !isinfo{
+		tt.Errorf("Unmatched stdout text:\n%s", output)
+	}
+
+}
+
+// ExpectExit expects the child process to exit within 5s without
+// printing any additional text on stdout.
 func (tt *TestCmd) ExpectExit() {
 	var output []byte
 	tt.withKillTimeout(func() {
@@ -176,11 +198,59 @@ func (tt *TestCmd) ExpectExit() {
 	if tt.Cleanup != nil {
 		tt.Cleanup()
 	}
+	os.RemoveAll("./data1")
+	os.RemoveAll("./gptn")
+	os.RemoveAll("./log")
 	if len(output) > 0 {
 		tt.Errorf("Unmatched stdout text:\n%s", output)
 	}
 }
 
+func (tt *TestCmd) ExpectExitIPCAttachWelcome() {
+	var output []byte
+	tt.withKillTimeout(func() {
+		output, _ = ioutil.ReadAll(tt.stdout)
+	})
+	tt.WaitExit()
+	if tt.Cleanup != nil {
+		tt.Cleanup()
+	}
+	os.RemoveAll("./data1")
+	os.RemoveAll("./gptn")
+	os.RemoveAll("./log")
+
+	//open :=`IPC endpoint opened	{"url": "./data1/gptn.ipc"}`
+	//close := `IPC endpoint closed	{"endpoint": "./data1/gptn.ipc"}`
+	welcome:="Welcome to the Gpan JavaScript console!"
+	if len(output) > 0 {
+		//isopen := strings.Contains(string(output),open)
+		//isclose := strings.Contains(string(output),close)
+		iswelcome :=strings.Contains(string(output),welcome)
+		if !iswelcome{
+			tt.Errorf("Unmatched stdout text:\n%s", output)
+		}
+	}
+}
+
+func (tt *TestCmd) ExpectExitConsoleWelcome() {
+	var output []byte
+	tt.withKillTimeout(func() {
+		output, _ = ioutil.ReadAll(tt.stdout)
+	})
+	tt.WaitExit()
+	if tt.Cleanup != nil {
+		tt.Cleanup()
+	}
+	os.RemoveAll("./data1")
+	os.RemoveAll("./gptn")
+	os.RemoveAll("./log")
+	if len(output) > 0 {
+		isconsole := strings.Contains(string(output),"Welcome to the Gptn JavaScript console!")
+		if !isconsole{
+			tt.Errorf("Unmatched stdout text:\n%s", output)
+		}
+	}
+}
 func (tt *TestCmd) WaitExit() {
 	tt.cmd.Wait()
 }
