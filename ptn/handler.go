@@ -36,7 +36,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	//"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core/types"
-	//	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
@@ -90,9 +90,9 @@ type ProtocolManager struct {
 	noMorePeers chan struct{}
 
 	//consensus to p2p
-	//	consEngine core.ConsensusEngine
-	//	ceCh       chan core.ConsensusEvent
-	//	ceSub      event.Subscription
+	consEngine core.ConsensusEngine
+	ceCh       chan core.ConsensusEvent
+	ceSub      event.Subscription
 
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
@@ -102,15 +102,14 @@ type ProtocolManager struct {
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64 /*mux *event.TypeMux,*/, txpool txPool,
-
-/*engine core.ConsensusEngine*/ /*blockchain *coredata.BlockChain,*/) (*ProtocolManager, error) {
+engine core.ConsensusEngine) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId: networkId,
 		//eventMux:  mux,
 		//txpool:    txpool,
 		//blockchain:  blockchain,
-		//		consEngine: engine,
+		consEngine: engine,
 		//chainconfig: config,
 		peers:       newPeerSet(),
 		newPeerCh:   make(chan *peer),
@@ -202,14 +201,14 @@ func (pm *ProtocolManager) removePeer(id string) {
 
 func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.maxPeers = maxPeers
-	/*
-		consEngine core.ConsensusEngine
-		ceCh       chan core.ConsensusEvent
-		ceSub      event.Subscription
-	*/
-	//	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
-	//	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
-	//	go pm.ceBroadcastLoop()
+
+	//consEngine core.ConsensusEngine
+	//ceCh       chan core.ConsensusEvent
+	//ceSub      event.Subscription
+
+	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
+	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
+	go pm.ceBroadcastLoop()
 
 	go pm.syncer()
 	/*

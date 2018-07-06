@@ -17,13 +17,17 @@
 
 package core
 
-//type ConsensusEngine interface {
-//	Engine() int
-//	Stop()
-//	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
-//}
+import(
+	"github.com/palletone/go-palletone/common/event"
+)
 
-//type ConsensusEvent struct {
-//	Ce string
-//}
+type ConsensusEngine interface {
+	Engine() int
+	Stop()
+	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
+}
+
+type ConsensusEvent struct {
+	Ce string
+}
 
