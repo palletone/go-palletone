@@ -19,6 +19,7 @@
 package modules
 
 import (
+	"time"
 	//	"errors"
 	//	"fmt"
 	//	"io"
@@ -95,8 +96,9 @@ func newTransaction(nonce uint64, from *common.Address, fee *big.Int, data []byt
 	// if fee != nil {
 	// 	f.Set(fee)
 	// }
+	au_from := &Author{Address: *from}
 
-	return &Transaction{AccountNonce: nonce, TxFee: fee}
+	return &Transaction{AccountNonce: nonce, From: au_from, TxFee: fee, CreationDate: time.Now()}
 }
 
 //// ChainId returns which chain id this transaction was signed for (if at all)
@@ -185,9 +187,6 @@ func (tx Transaction) Fee() *big.Int { return tx.TxFee }
 //// Hash hashes the RLP encoding of tx.
 //// It uniquely identifies the transaction.
 func (tx Transaction) Hash() common.Hash {
-	if hash := tx.TxHash; &hash != nil {
-		return hash
-	}
 	v := rlp.RlpHash(tx)
 	tx.TxHash.Set(v)
 	return v

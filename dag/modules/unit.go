@@ -162,7 +162,7 @@ type Transaction struct {
 	AccountNonce uint64
 	TxHash       common.Hash  `json:"tx_hash"`
 	TxMessages   []Message    `json:"messages"` //
-	From         Author       `json:"authors"`  // the issuers of the transaction
+	From         *Author      `json:"authors"`  // the issuers of the transaction
 	Excutiontime uint         `json:"excution_time"`
 	Memery       uint         `json:"memory"`
 	CreationDate time.Time    `json:"creation_date"`
