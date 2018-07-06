@@ -24,7 +24,7 @@ var (
 
 var DefaultConfig = Config{
 	//DbPath: "db/leveldb",
-	DbPath: "/Users/jay/code/gocode/src/palletone/bin/leveldb",
+	DbPath: "./leveldb",
 	DbName: "palletone",
 }
 
