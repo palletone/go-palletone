@@ -24,7 +24,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/consensus"
+	//	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/core/types"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
@@ -658,8 +658,8 @@ func (f *Fetcher) insert(peer string, block *types.Block) {
 			propBroadcastOutTimer.UpdateSince(block.ReceivedAt)
 			go f.broadcastBlock(block, true)
 
-		case consensus.ErrFutureBlock:
-			// Weird future block, don't fail, but neither propagate
+		//case consensus.ErrFutureBlock:
+		//	// Weird future block, don't fail, but neither propagate
 
 		default:
 			// Something went very wrong, drop the peer

@@ -8,7 +8,8 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/consensus/consensusconfig"
+//	"github.com/palletone/go-palletone/consensus/consensusconfig"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -38,7 +39,8 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		// DAG options
 		Dag       dagconfig.Config
 		Log       log.Config
-		Consensus consensusconfig.Config
+//		Consensus consensusconfig.Config
+		MediatorPlugin mp.Config
 		DocRoot   string `toml:"-"`
 	}
 	var enc Config
@@ -83,7 +85,8 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		EnablePreimageRecording *bool
 		Dag                     *dagconfig.Config
 		Log                     *log.Config
-		Consensus               *consensusconfig.Config
+//		Consensus               *consensusconfig.Config
+		MediatorPlugin 			*mp.Config
 		DocRoot                 *string `toml:"-"`
 	}
 	var dec Config

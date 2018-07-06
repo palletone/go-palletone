@@ -27,14 +27,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/utils"
 )
 
-type InitialMediator struct {
-	PublicKey string
-}
-
-type GenesisState struct{
-	Value string	//变量名一定要大些，否则外部无法访问，导致无法成功写入json文件
-	InitialMediatorSet []InitialMediator
-}
+const defaultGenesisJsonPath = "./exampleGenesis.json"
 
 var (
 	//GenesisJsonPathFlag = utils.DirectoryFlag{
@@ -46,7 +39,7 @@ var (
 	GenesisJsonPathFlag = cli.StringFlag{
 		Name:  "genesis-json-path",
 		Usage: "Path to create a Genesis State at.",
-		Value: "./exampleGenesis.json",
+		Value: defaultGenesisJsonPath,
 	}
 
 	createGenesisJsonCommand = cli.Command{
@@ -66,13 +59,22 @@ If no file or an invalid file is found, it will be replaced with an example Gene
 	}
 )
 
+type InitialMediator struct {
+	PublicKey string
+}
+
+type GenesisState struct{
+	Value string	//变量名一定要大些，否则外部无法访问，导致无法成功写入json文件
+	InitialMediatorSet []InitialMediator
+}
+
 // createGenesisJson
 func createGenesisJson(ctx *cli.Context) error {
 	// Make sure we have a valid genesis JSON
 	genesisOut := ctx.Args().First()
 	if len(genesisOut) == 0 {
 //		utils.Fatalf("Must supply path to genesis JSON file")
-		genesisOut = "exampleGenesis.json"
+		genesisOut = defaultGenesisJsonPath
 	}
 
 	var (
@@ -101,6 +103,8 @@ func createGenesisJson(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	print("Creating example genesis state in file " + genesisOut)
 
 	return nil
 }

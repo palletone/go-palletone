@@ -17,7 +17,7 @@
 
 package core
 
-import (
+import(
 	"github.com/palletone/go-palletone/common/event"
 )
 

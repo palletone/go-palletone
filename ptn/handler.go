@@ -101,7 +101,8 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager(mode downloader.SyncMode, networkId uint64, /*mux *event.TypeMux,*/ txpool txPool, engine core.ConsensusEngine /*blockchain *coredata.BlockChain,*/) (*ProtocolManager, error) {
+func NewProtocolManager(mode downloader.SyncMode, networkId uint64 /*mux *event.TypeMux,*/, txpool txPool,
+engine core.ConsensusEngine) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId: networkId,
@@ -157,7 +158,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, /*mux *event
 		return nil, errIncompatibleConfig
 	}
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(mode, /*manager.eventMux,*/ manager.removePeer)
+	manager.downloader = downloader.New(mode /*manager.eventMux,*/, manager.removePeer)
 	/*woule recover
 	validator := func(header *types.Header) error {
 		return engine.VerifyHeader(blockchain, header, true)
@@ -200,11 +201,11 @@ func (pm *ProtocolManager) removePeer(id string) {
 
 func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.maxPeers = maxPeers
-	/*
-		consEngine core.ConsensusEngine
-		ceCh       chan core.ConsensusEvent
-		ceSub      event.Subscription
-	*/
+
+	//consEngine core.ConsensusEngine
+	//ceCh       chan core.ConsensusEvent
+	//ceSub      event.Subscription
+
 	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
 	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
 	go pm.ceBroadcastLoop()

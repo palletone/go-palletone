@@ -34,7 +34,8 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/consensus/consensusconfig"
+//	"github.com/palletone/go-palletone/consensus/consensusconfig"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
@@ -75,16 +76,17 @@ var tomlSettings = toml.Config{
 	},
 }
 
-type ethstatsConfig struct {
+type ptnstatsConfig struct {
 	URL string `toml:",omitempty"`
 }
 
 type FullConfig struct {
 	Ptn       ptn.Config
 	Node      node.Config
-	Ethstats  ethstatsConfig
+	Ethstats  ptnstatsConfig
 	Dashboard dashboard.Config
-	Consensus consensusconfig.Config
+//	Consensus consensusconfig.Config
+	MediatorPlugin mp.Config
 	Log       *log.Config
 	Dag       dagconfig.Config
 	P2P       p2p.Config
@@ -120,18 +122,20 @@ func adaptorConfig(config FullConfig) FullConfig {
 	config.Node.P2P = config.P2P
 	config.Ptn.Dag = config.Dag
 	config.Ptn.Log = *config.Log
-	config.Ptn.Consensus = config.Consensus
+//	config.Ptn.Consensus = config.Consensus
 	return config
 }
 
 func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// Load defaults.
+	// 加载cfg默认配置信息，cfg是一个字典结构
 	cfg := FullConfig{
 		Ptn:       ptn.DefaultConfig,
 		Node:      defaultNodeConfig(),
 		Dashboard: dashboard.DefaultConfig,
 		P2P:       p2p.Config{ListenAddr: ":30303", MaxPeers: 25, NAT: nat.Any()},
-		Consensus: consensusconfig.DefaultConfig,
+//		Consensus: consensusconfig.DefaultConfig,
+		MediatorPlugin: mp.DefaultConfig,
 		Dag:       dagconfig.DefaultConfig,
 		Log:       &log.DefaultConfig,
 		Ada:       adaptor.DefaultConfig,
@@ -154,7 +158,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
 
-	utils.SetEthConfig(ctx, stack, &cfg.Ptn)
+	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ethstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
@@ -162,17 +166,25 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	return stack, cfg
 }
 
+// makeFullNode 函数用创建一个 PalletOne 节点，节点类型根据ctx参数传递的命令行指令来控制。
+//生成node.Node一个结构，里面会有任务函数栈, 然后设置各个服务到serviceFuncs 里面，
+//包括：全节点，dashboard，以及状态stats服务等
 func makeFullNode(ctx *cli.Context) *node.Node {
+	// 根据命令行参数和一些特殊的配置来创建一个node
 	stack, cfg := makeConfigNode(ctx)
 	log.InitLogger()
-	utils.RegisterEthService(stack, &cfg.Ptn)
+	//在stack上增加一个 PalletOne 节点，其实就是new一个 PalletOne 后加到后者的 serviceFuncs 里面去
+	//然后在stack.Run的时候会调用这些service
+	utils.RegisterPtnService(stack, &cfg.Ptn)
 	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
+		//注册dashboard仪表盘服务，Dashboard会开启端口监听
 		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
 	}
 
 	// Add the PalletOne Stats daemon if requested.
 	if cfg.Ethstats.URL != "" {
-		utils.RegisterEthStatsService(stack, cfg.Ethstats.URL)
+		// 注册状态服务。 默认情况下是没有启动的。
+		utils.RegisterPtnStatsService(stack, cfg.Ethstats.URL)
 	}
 	return stack
 }

@@ -18,7 +18,6 @@
 package ptn
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 	"sync"
@@ -31,11 +30,11 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/consensus"
-	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/node"
+	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -62,7 +61,7 @@ type PalletOne struct {
 	protocolManager *ProtocolManager
 
 	eventMux       *event.TypeMux
-	engine         core.ConsensusEngine //consensus.Engine
+	engine         core.ConsensusEngine
 	accountManager *accounts.Manager
 
 	bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
@@ -81,9 +80,9 @@ type PalletOne struct {
 // New creates a new PalletOne object (including the
 // initialisation of the common PalletOne object)
 func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
-	if config.SyncMode == downloader.LightSync {
-		return nil, errors.New("can't run eth.PalletOne in light sync mode, use les.LightEthereum")
-	}
+	//if config.SyncMode == downloader.LightSync {
+	//	return nil, errors.New("can't run eth.PalletOne in light sync mode, use les.LightEthereum")
+	//}
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
@@ -98,12 +97,12 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
 		engine:         CreateConsensusEngine(ctx),
-		shutdownChan:   make(chan bool),
-		networkId:      config.NetworkId,
-		gasPrice:       config.GasPrice,
-		etherbase:      config.Etherbase,
-		bloomRequests:  make(chan chan *bloombits.Retrieval),
-		bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
+		shutdownChan:  make(chan bool),
+		networkId:     config.NetworkId,
+		gasPrice:      config.GasPrice,
+		etherbase:     config.Etherbase,
+		bloomRequests: make(chan chan *bloombits.Retrieval),
+		bloomIndexer:  NewBloomIndexer(configure.BloomBitsBlocks),
 	}
 
 	log.Info("Initialising PalletOne protocol", "versions", ProtocolVersions, "network", config.NetworkId)
@@ -140,7 +139,7 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ptndb.Data
 	return db, nil
 }
 
-// CreateConsensusEngine creates the required type of consensus engine instance for an PalletOne service
+//CreateConsensusEngine creates the required type of consensus engine instance for an PalletOne service
 func CreateConsensusEngine(ctx *node.ServiceContext) core.ConsensusEngine {
 	engine := consensus.New()
 	return engine
@@ -225,9 +224,10 @@ func (self *PalletOne) SetEtherbase(etherbase common.Address) {
 	self.lock.Unlock()
 }
 
-func (s *PalletOne) AccountManager() *accounts.Manager  { return s.accountManager }
-func (s *PalletOne) TxPool() *coredata.TxPool           { return s.txPool }
-func (s *PalletOne) EventMux() *event.TypeMux           { return s.eventMux }
+func (s *PalletOne) AccountManager() *accounts.Manager { return s.accountManager }
+func (s *PalletOne) TxPool() *coredata.TxPool          { return s.txPool }
+func (s *PalletOne) EventMux() *event.TypeMux          { return s.eventMux }
+
 func (s *PalletOne) Engine() core.ConsensusEngine       { return s.engine }
 func (s *PalletOne) IsListening() bool                  { return true } // Always listening
 func (s *PalletOne) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
@@ -263,7 +263,7 @@ func (s *PalletOne) Stop() error {
 	s.bloomIndexer.Close()
 	s.protocolManager.Stop()
 	s.txPool.Stop()
-	s.engine.Stop()
+	//	s.engine.Stop()
 	s.eventMux.Stop()
 	close(s.shutdownChan)
 

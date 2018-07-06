@@ -1,7 +1,8 @@
-## Go palletone
+## Go PalletOne
 
 Official golang implementation of the palletone protocol.
 
+ [![CircleCI](https://circleci.com/gh/palletone/go-palletone/tree/master.svg?style=shield)](https://circleci.com/gh/palletone/go-palletone/tree/master)
 
 ## Building the source
 
