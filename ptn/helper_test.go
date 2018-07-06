@@ -28,7 +28,7 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
-	//"github.com/palletone/go-palletone/consensus"
+	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/common/crypto"
 	//"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/types"
@@ -69,8 +69,8 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	//if _, err := blockchain.InsertChain(chain); err != nil {
 	//	panic(err)
 	//}
-
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx})
+	engine := consensus.New()
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx},engine)
 	if err != nil {
 		return nil, nil, err
 	}
