@@ -90,7 +90,7 @@ func (b *EthApiBackend) SubscribeChainSideEvent(ch chan<- coredata.ChainSideEven
 }
 
 func (b *EthApiBackend) SendConsensus(ctx context.Context) error {
-//	b.eth.Engine().Engine()
+	b.eth.Engine().Engine()
 	return nil
 }
 

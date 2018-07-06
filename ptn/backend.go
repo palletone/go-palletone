@@ -30,7 +30,8 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
-	//	"github.com/palletone/go-palletone/consensus"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/core/types"
@@ -60,7 +61,7 @@ type PalletOne struct {
 	protocolManager *ProtocolManager
 
 	eventMux       *event.TypeMux
-	//	engine         core.ConsensusEngine //consensus.Engine
+	engine         core.ConsensusEngine
 	accountManager *accounts.Manager
 
 	bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
@@ -95,7 +96,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		config:         config,
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
-		//		engine:         CreateConsensusEngine(ctx, chainDb),
+		engine:         CreateConsensusEngine(ctx),
 		shutdownChan:  make(chan bool),
 		networkId:     config.NetworkId,
 		gasPrice:      config.GasPrice,
@@ -112,8 +113,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	eth.txPool = coredata.NewTxPool(config.TxPool)
 
 	var err error
-	if eth.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, /*eth.eventMux,*/ eth.txPool,
-		/*eth.engine*/); err != nil {
+	if eth.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, /*eth.eventMux,*/ eth.txPool, eth.engine); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}
@@ -139,11 +139,11 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ptndb.Data
 	return db, nil
 }
 
-// CreateConsensusEngine creates the required type of consensus engine instance for an PalletOne service
-//func CreateConsensusEngine(ctx *node.ServiceContext, db ptndb.Database) core.ConsensusEngine {
-//	engine := consensus.New()
-//	return engine
-//}
+//CreateConsensusEngine creates the required type of consensus engine instance for an PalletOne service
+func CreateConsensusEngine(ctx *node.ServiceContext) core.ConsensusEngine {
+	engine := consensus.New()
+	return engine
+}
 
 // APIs returns the collection of RPC services the ethereum package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.
@@ -228,7 +228,7 @@ func (s *PalletOne) AccountManager() *accounts.Manager { return s.accountManager
 func (s *PalletOne) TxPool() *coredata.TxPool          { return s.txPool }
 func (s *PalletOne) EventMux() *event.TypeMux          { return s.eventMux }
 
-//func (s *PalletOne) Engine() core.ConsensusEngine       { return s.engine }
+func (s *PalletOne) Engine() core.ConsensusEngine       { return s.engine }
 func (s *PalletOne) IsListening() bool                  { return true } // Always listening
 func (s *PalletOne) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *PalletOne) NetVersion() uint64                 { return s.networkId }
