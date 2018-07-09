@@ -3,11 +3,10 @@ package core
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.
 type SystemConfig struct {
-	MediatorSlot  int      `json:"mediatorSlot"`
-	MediatorCount int      `json:"mediatorCount"`
-	MediatorList  []string `json:"mediatorList"`
-	MediatorCycle int      `json:"mediatorCycle"`
-	DepositRate   float64  `json:"depositRate"`
+	MediatorInterval int      `json:"mediatorInterval"`	//变量名一定要大些，否则外部无法访问，导致无法成功写入json文件
+//	MediatorCount    int      `json:"mediatorCount"`
+//	MediatorCycle    int      `json:"mediatorCycle"`
+	DepositRate      float64  `json:"depositRate"`
 }
 
 type Genesis struct {
@@ -18,6 +17,8 @@ type Genesis struct {
 	ChainID      int          `json:"chainId"`
 	TokenHolder  string       `json:"tokenHolder"`
 	SystemConfig SystemConfig `json:"systemConfig"`
+	InitialActiveMediators int	`json:"initialActiveMediators"`
+	InitialMediatorCandidates []string `json:"initialMediatorCandidates"`
 }
 
 

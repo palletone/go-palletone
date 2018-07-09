@@ -25,7 +25,11 @@ import (
 	"github.com/palletone/go-palletone/core"
 )
 
-
+const (
+	defaultMediatorInterval = 5
+	defaultMediatorCount = 21
+	defaultTokenHolder = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
+)
 
 // SetupGenesisBlock writes or updates the genesis block in db.
 // The block that will be used is:
@@ -60,10 +64,10 @@ func SetupGenesisBlock(genesis *core.Genesis) (*modules.Unit, error) {
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
 func DefaultGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		MediatorSlot:  5,
-		MediatorCount: 21,
+		MediatorInterval: defaultMediatorInterval,
+//		MediatorCount:    21,
 		//MediatorList: ["dfba98bb5c52bba028e2cc487cbd1084"],
-		MediatorCycle: 86400,
+//		MediatorCycle: 86400,
 		DepositRate:   0.02,
 	}
 	return &core.Genesis{
@@ -72,18 +76,19 @@ func DefaultGenesisBlock() *core.Genesis {
 		TokenAmount:  1000000000,
 		TokenDecimal: 8,
 		ChainID:      1,
-		TokenHolder:  "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ",
+		TokenHolder:  defaultTokenHolder,
 		SystemConfig: SystemConfig,
+		InitialActiveMediators: defaultMediatorCount,
+		InitialMediatorCandidates: initialMediatorCandidates(defaultMediatorCount, defaultTokenHolder),
 	}
 }
 
 // DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
 func DefaultTestnetGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		MediatorSlot:  5,
-		MediatorCount: 21,
-		//MediatorList: ["dfba98bb5c52bba028e2cc487cbd1084"],
-		MediatorCycle: 86400,
+		MediatorInterval: defaultMediatorInterval,
+//		MediatorCount:    21,
+//		MediatorCycle: 86400,
 		DepositRate:   0.02,
 	}
 	return &core.Genesis{
@@ -92,7 +97,18 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		TokenAmount:  11111111111,
 		TokenDecimal: 8,
 		ChainID:      1,
-		TokenHolder:  "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ",
+		TokenHolder:  defaultTokenHolder,
 		SystemConfig: SystemConfig,
+		InitialActiveMediators: defaultMediatorCount,
+		InitialMediatorCandidates: initialMediatorCandidates(defaultMediatorCount, defaultTokenHolder),
 	}
+}
+
+func initialMediatorCandidates(len int, address string) []string {
+	initialMediatorSet := make([]string, len)
+	for i := 0; i < len; i++ {
+		initialMediatorSet[i] = address
+	}
+
+	return initialMediatorSet
 }

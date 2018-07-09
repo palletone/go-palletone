@@ -25,6 +25,7 @@ import (
 	"gopkg.in/urfave/cli.v1"
 
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/core/gen"
 )
 
 const defaultGenesisJsonPath = "./exampleGenesis.json"
@@ -59,19 +60,11 @@ If no file or an invalid file is found, it will be replaced with an example Gene
 	}
 )
 
-type InitialMediator struct {
-	PublicKey string
-}
-
-type GenesisState struct{
-	Value string	//变量名一定要大些，否则外部无法访问，导致无法成功写入json文件
-	InitialMediatorSet []InitialMediator
-}
-
 // createGenesisJson
 func createGenesisJson(ctx *cli.Context) error {
 	// Make sure we have a valid genesis JSON
 	genesisOut := ctx.Args().First()
+	// 如果没有指定路径，则使用默认的路径
 	if len(genesisOut) == 0 {
 //		utils.Fatalf("Must supply path to genesis JSON file")
 		genesisOut = defaultGenesisJsonPath
@@ -91,9 +84,9 @@ func createGenesisJson(ctx *cli.Context) error {
 		return err
 	}
 
-	genesisState := createExampleGenesis()
+	genesisState := gen.DefaultGenesisBlock()
 	var genesisJson []byte
-	genesisJson, err = json.MarshalIndent(genesisState, "", "  ")
+	genesisJson, err = json.MarshalIndent(*genesisState, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -107,15 +100,4 @@ func createGenesisJson(ctx *cli.Context) error {
 	print("Creating example genesis state in file " + genesisOut)
 
 	return nil
-}
-
-func createExampleGenesis() *GenesisState  {
-	gs := GenesisState{
-		"genesisState",
-		[]InitialMediator{
-			{"Mediator1"},
-		},
-	}
-
-	return &gs
 }
