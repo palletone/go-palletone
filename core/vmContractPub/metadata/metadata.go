@@ -17,20 +17,12 @@
  * @date 2018
  */
 
+package metadata
 
-package core
-
-import(
-	"github.com/palletone/go-palletone/common/event"
-)
-
-type ConsensusEngine interface {
-	Engine() int
-	Stop()
-	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
-}
-
-type ConsensusEvent struct {
-	Ce string
-}
-
+// Variables defined by the Makefile and passed in with ldflags
+var Version string = "ptn001"
+var BaseVersion string
+var BaseDockerLabel string
+var DockerNamespace string
+var BaseDockerNamespace string
+var Experimental string
