@@ -22,10 +22,6 @@ import (
 	"os"
 	"fmt"
 	"encoding/json"
-	"log"
-	"bufio"
-	"strings"
-
 	"gopkg.in/urfave/cli.v1"
 
 	"github.com/palletone/go-palletone/cmd/utils"
@@ -33,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/cmd/console"
 )
 
 const defaultGenesisJsonPath = "./exampleGenesis.json"
@@ -92,12 +89,16 @@ func createGenesisJson(ctx *cli.Context) error {
 //		return err
 		utils.Fatalf("%v", err)
 	}
-	
+
+	var confirm bool
+	confirm, err = console.Stdin.PromptConfirm("Do you use an existing account?")
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+
 	var account string
-	if askForConfirmation("Do you use an existing account?") {
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Printf("Please enter an existing account address: ")
-		account, err = reader.ReadString('\n')
+	if confirm {
+		account, err = console.Stdin.PromptInput("Please enter an existing account address: ")
 		if err != nil {
 			utils.Fatalf("%v", err)
 		}
@@ -175,30 +176,5 @@ func createExampleGenesis(account string)  *core.Genesis  {
 		InitialActiveMediators:    gen.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(
 			gen.DefaultMediatorCount, account),
-	}
-}
-
-// askForConfirmation asks the user for confirmation. A user must type in "yes" or "no" and
-// then press enter. It has fuzzy matching, so "y", "Y", "yes", "YES", and "Yes" all count as
-// confirmations. If the input is not recognized, it will ask again. The function does not return
-// until it gets a valid response from the user.
-func askForConfirmation(s string) bool {
-	reader := bufio.NewReader(os.Stdin)
-
-	for {
-		fmt.Printf("%s [y/n]: ", s)
-
-		response, err := reader.ReadString('\n')
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		response = strings.ToLower(strings.TrimSpace(response))
-
-		if response == "y" || response == "yes" {
-			return true
-		} else if response == "n" || response == "no" {
-			return false
-		}
 	}
 }
