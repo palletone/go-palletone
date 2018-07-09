@@ -58,14 +58,15 @@ var (
 		},
 		Category: "BLOCKCHAIN COMMANDS",
 		Description: `
-If a well-formed JSON file exists at the path, it will be parsed and any 
-missing fields in a Genesis State will be added, and any unknown fields will be removed. 
+Create a genesis.json for the genesis state of new chain with a newly created account.
 
-If no file or an invalid file is found, it will be replaced with an example Genesis State.`,
+If a well-formed JSON file exists at the path, 
+it will be replaced with an example Genesis State.`,
 	}
 )
 
-// createGenesisJson
+// createGenesisJson, create new chain: create a initial account
+// and corresponding genesis.json
 func createGenesisJson(ctx *cli.Context) error {
 	// Make sure we have a valid genesis JSON
 	genesisOut := ctx.Args().First()
@@ -112,11 +113,12 @@ func createGenesisJson(ctx *cli.Context) error {
 		utils.Fatalf("%v", err)
 	}
 
-	fmt.Print("Creating example genesis state in file " + genesisOut)
+	fmt.Println("Creating example genesis state in file " + genesisOut)
 
 	return nil
 }
 
+// initialAccount, create a initial account for a new account
 func initialAccount(ctx *cli.Context) (common.Address, error) {
 	cfg := FullConfig{Node: defaultNodeConfig()}
 	// Load config file.
@@ -131,18 +133,20 @@ func initialAccount(ctx *cli.Context) (common.Address, error) {
 	//utils.SetNodeConfig(ctx, cfg.Node)
 	scryptN, scryptP, keydir, err := cfg.Node.AccountConfig()
 
-	password := getPassPhrase("Your new account is locked with a password. Please give a password. Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
+	password := getPassPhrase("Your new account is locked with a password. " +
+		"Please give a password. Do not forget this password.",
+		true, 0, utils.MakePasswordList(ctx))
 
 	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
 
 	if err != nil {
 		utils.Fatalf("Failed to create account: %v", err)
 	}
-//	fmt.Printf("Address Hex: {%x}\n", address)
 	fmt.Printf("Address: %s\n", address)
 	return address, nil
 }
 
+// createExampleGenesis, create the genesis state of new chain with the specified account
 func createExampleGenesis(account string)  *core.Genesis  {
 	SystemConfig := core.SystemConfig{
 		MediatorInterval: gen.DefaultMediatorInterval,
@@ -150,7 +154,6 @@ func createExampleGenesis(account string)  *core.Genesis  {
 	}
 
 	return &core.Genesis{
-//		Height:                    "0",
 		Version:                   configure.Version,
 		TokenAmount:               gen.DefaultTokenAmount,
 		TokenDecimal:              gen.DefaultTokenDecimal,
