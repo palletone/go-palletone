@@ -89,7 +89,7 @@ func DevGenesisBlock() *core.Genesis {
 		DepositRate:   0.02,
 	}
 	return &core.Genesis{
-		Height:       "0",
+//		Height:       "0",
 		Version:      "0.6.0",
 		TokenAmount:  1000000000,
 		TokenDecimal: 8,

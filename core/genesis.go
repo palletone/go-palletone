@@ -3,7 +3,7 @@ package core
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.
 type SystemConfig struct {
-	//变量名一定要大些，否则外部无法访问，导致无法进行json编码和解码
+	// 属性名一定要大些，否则外部无法访问，导致无法进行json编码和解码
 	MediatorInterval int      `json:"mediatorInterval"`
 //	MediatorCount    int      `json:"mediatorCount"`
 //	MediatorCycle    int      `json:"mediatorCycle"`
