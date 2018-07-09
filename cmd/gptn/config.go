@@ -39,8 +39,6 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/statistics/dashboard"
-	"github.com/palletone/go-palletone/vm/vmconfig"
-	"github.com/palletone/go-palletone/contracts/contractconfig"
 )
 
 var (
@@ -91,8 +89,6 @@ type FullConfig struct {
 	Dag       dagconfig.Config
 	P2P       p2p.Config
 	Ada       adaptor.Config
-	Vm        vmconfig.Config
-	Contract  contractconfig.Config
 }
 
 func loadConfig(file string, cfg *FullConfig) error {
@@ -125,9 +121,6 @@ func adaptorConfig(config FullConfig) FullConfig {
 	config.Ptn.Dag = config.Dag
 	config.Ptn.Log = *config.Log
 	config.Ptn.Consensus = config.Consensus
-	config.Ptn.Vm = config.Vm
-	config.Ptn.Contract = config.Contract
-
 	return config
 }
 
@@ -142,8 +135,6 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 		Dag:       dagconfig.DefaultConfig,
 		Log:       &log.DefaultConfig,
 		Ada:       adaptor.DefaultConfig,
-		Vm:        vmconfig.DefaultConfig,
-		Contract:  contractconfig.DefaultConfig,
 	}
 
 	// Load config file.
