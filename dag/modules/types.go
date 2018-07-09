@@ -23,14 +23,14 @@ import (
 )
 
 // type 	Hash 		[]byte
-type IDType [256]byte
+type IDType36 [36]byte
 
 var (
-	PTNCOIN = IDType{'p', 't', 'n', ' ', '0', 'f', '5', ' ', ' '}
-	BTCCOIN = IDType{'b', 't', 'c', '0', ' '}
+	PTNCOIN = IDType36{'p', 't', 'n', ' ', '0', 'f', '5', ' ', ' '}
+	BTCCOIN = IDType36{'b', 't', 'c', '0', ' '}
 )
 
-func (it *IDType) String() string {
+func (it *IDType36) String() string {
 	var b []byte
 	length := len(it)
 	for _, v := range it {
@@ -47,7 +47,7 @@ func (it *IDType) String() string {
 	return util.ToString(b[:length-count])
 }
 
-func (it *IDType) Bytes() []byte {
+func (it *IDType36) Bytes() []byte {
 	idBytes := make([]byte, len(it))
 	for i := 0; i < len(it); i++ {
 		idBytes[i] = it[i]
