@@ -36,7 +36,7 @@ profile.tmp
 profile.cov
 
 # IdeaIDE
-.idea
+.idea\
 
 # VS Code
 .vscode
@@ -52,4 +52,3 @@ profile.cov
 
 bin/
 *.json
-.circleci/
