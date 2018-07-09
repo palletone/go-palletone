@@ -5,8 +5,12 @@
 #   git config --global core.excludesfile ~/.gitignore_global
 
 /tmp
+**/data1
+*.log
 */**/*un~
 */**/*.test
+log.txt
+UTC--*
 *un~
 .DS_Store
 */**/.DS_Store
@@ -21,11 +25,11 @@ build/_vendor/pkg
 *~
 .project
 .settings
-debug
+
 # used by the Makefile
 /build/_workspace/
 /build/bin/
-/gpan*.zip
+/gptn*.zip
 
 # travis
 profile.tmp
@@ -45,3 +49,7 @@ profile.cov
 /dashboard/assets/package-lock.json
 
 **/yarn-error.log
+
+bin/
+*.json
+.circleci/
