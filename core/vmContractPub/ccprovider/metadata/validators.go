@@ -26,7 +26,7 @@ import (
 	"reflect"
 	"strings"
 
-	"common/flogging"
+	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 )
 
 var logger = flogging.MustGetLogger("metadata")
