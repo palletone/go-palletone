@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/configure"
 )
 
 const defaultGenesisJsonPath = "./exampleGenesis.json"
@@ -145,14 +146,14 @@ func initialAccount(ctx *cli.Context) (common.Address, error) {
 func createExampleGenesis(account string)  *core.Genesis  {
 	SystemConfig := core.SystemConfig{
 		MediatorInterval: gen.DefaultMediatorInterval,
-		DepositRate:   0.02,
+		DepositRate:   gen.DefaultDepositRate,
 	}
 
 	return &core.Genesis{
-		Height:                    "0",
-		Version:                   "0.6.0",
-		TokenAmount:               11111111111,
-		TokenDecimal:              8,
+//		Height:                    "0",
+		Version:                   configure.Version,
+		TokenAmount:               gen.DefaultTokenAmount,
+		TokenDecimal:              gen.DefaultTokenDecimal,
 		ChainID:                   1,
 		TokenHolder:               account,
 		SystemConfig:              SystemConfig,
