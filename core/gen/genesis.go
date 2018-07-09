@@ -20,18 +20,18 @@ import (
 	"errors"
 
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/configure"
 )
 
 const (
 	DefaultMediatorInterval = 5
 	DefaultMediatorCount    = 21
-	DefaultTokenAmount		= 1000000000
-	DefaultTokenDecimal		= 8
-	DefaultDepositRate		= 0.02
+	DefaultTokenAmount      = 1000000000
+	DefaultTokenDecimal     = 8
+	DefaultDepositRate      = 0.02
 	defaultTokenHolder      = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 )
 
@@ -48,7 +48,7 @@ const (
 // error is a *configure.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-func SetupGenesisBlock(genesis *core.Genesis) (*modules.Unit, error) {
+func SetupGenesisBlock(genesis *core.Genesis, txs modules.Transactions) (*modules.Unit, error) {
 	// Just commit the new block if there is no stored genesis block.
 	stored := storage.GetGenesisUnit(0)
 	// Check whether the genesis block is already written.
@@ -62,20 +62,16 @@ func SetupGenesisBlock(genesis *core.Genesis) (*modules.Unit, error) {
 	} else {
 		log.Info("Writing custom genesis block")
 	}
-	return modules.NewGenesisUnit(genesis)
+	return modules.NewGenesisUnit(genesis, txs)
 }
 
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
 func DefaultGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
 		MediatorInterval: DefaultMediatorInterval,
-//		MediatorCount:    21,
-		//MediatorList: ["dfba98bb5c52bba028e2cc487cbd1084"],
-//		MediatorCycle: 86400,
-		DepositRate:   DefaultDepositRate,
+		DepositRate:      DefaultDepositRate,
 	}
 	return &core.Genesis{
-//		Height:                    "0",
 		Version:                   configure.Version,
 		TokenAmount:               DefaultTokenAmount,
 		TokenDecimal:              DefaultTokenDecimal,
@@ -91,12 +87,9 @@ func DefaultGenesisBlock() *core.Genesis {
 func DefaultTestnetGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
 		MediatorInterval: DefaultMediatorInterval,
-//		MediatorCount:    21,
-//		MediatorCycle: 86400,
-		DepositRate:   DefaultDepositRate,
+		DepositRate:      DefaultDepositRate,
 	}
 	return &core.Genesis{
-//		Height:                    "0",
 		Version:                   configure.Version,
 		TokenAmount:               DefaultTokenAmount,
 		TokenDecimal:              DefaultTokenDecimal,

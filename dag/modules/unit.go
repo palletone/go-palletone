@@ -261,8 +261,10 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 	return u
 }
 
-func NewGenesisUnit(genesis *core.Genesis) (*Unit, error) {
-	return &Unit{}, nil
+func NewGenesisUnit(genesis *core.Genesis, txs Transactions) (*Unit, error) {
+	//test
+	unit := Unit{txs: txs}
+	return &unit, nil
 }
 
 func CopyTransactions(txs Transactions) Transactions {

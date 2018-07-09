@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/core/node"
@@ -112,32 +113,39 @@ func initGenesis(ctx *cli.Context) error {
 	}
 
 	node := makeFullNode(ctx)
-	unit, err := gen.SetupGenesisBlock(genesis)
+	txs, account, _ := getTransctions(ctx, node, genesis)
+	unit, err := gen.SetupGenesisBlock(genesis, txs)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis block: %v", err)
 		return err
 	}
-	log.Info("Successfully wrote genesis state", "database", "chaindata")
-	sig, err := sigGenesis(ctx, node, genesis, unit)
+	log.Info("Successfully Get Genesis Block")
+
+	sig, err := sigGenesis(ctx, node, unit, account)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis block: %v", err)
 		return err
 	}
+	log.Info("Successfully SIG Genesis Block")
 	return commitDB(sig)
 }
 
-func sigGenesis(ctx *cli.Context, node *node.Node, genesis *core.Genesis, unit *modules.Unit) ([]byte, error) {
+func getTransctions(ctx *cli.Context, node *node.Node, genesis *core.Genesis) (modules.Transactions, accounts.Account, string) {
 	ks := node.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 	addr := genesis.TokenHolder
-	account, _ := utils.MakeAddress(ks, addr)
-	hash := crypto.Keccak256Hash([]byte(""))
-	//tx signature
-	transctions := unit.Transactions()
-	for _, transction := range transctions {
-		//ks.SignTx(account, transction, genesis.ChainID)
-		transction = transction
-	}
+	account, password := unlockAccount(ctx, ks, addr, 0, nil)
+	//log.Info("======sigGenesis account:", account.Address.String())
+	//log.Info("======sigGenesis password:", password)
+	tx := &modules.Transaction{AccountNonce: 1}
+	txs := []*modules.Transaction{}
+	txs = append(txs, tx)
+	return txs, account, password
+}
 
+func sigGenesis(ctx *cli.Context, node *node.Node, unit *modules.Unit, account accounts.Account) ([]byte, error) {
+	//-------------
+	ks := node.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	hash := crypto.Keccak256Hash([]byte(""))
 	//unit signature
 	sign, err := ks.SignHash(account, hash.Bytes())
 	if err != nil {
