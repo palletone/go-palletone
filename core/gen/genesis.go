@@ -23,11 +23,15 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/configure"
 )
 
 const (
 	DefaultMediatorInterval = 5
 	DefaultMediatorCount    = 21
+	DefaultTokenAmount		= 1000000000
+	DefaultTokenDecimal		= 8
+	DefaultDepositRate		= 0.02
 	defaultTokenHolder      = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 )
 
@@ -68,13 +72,13 @@ func DefaultGenesisBlock() *core.Genesis {
 //		MediatorCount:    21,
 		//MediatorList: ["dfba98bb5c52bba028e2cc487cbd1084"],
 //		MediatorCycle: 86400,
-		DepositRate:   0.02,
+		DepositRate:   DefaultDepositRate,
 	}
 	return &core.Genesis{
-		Height:                    "0",
-		Version:                   "0.6.0",
-		TokenAmount:               1000000000,
-		TokenDecimal:              8,
+//		Height:                    "0",
+		Version:                   configure.Version,
+		TokenAmount:               DefaultTokenAmount,
+		TokenDecimal:              DefaultTokenDecimal,
 		ChainID:                   1,
 		TokenHolder:               defaultTokenHolder,
 		SystemConfig:              SystemConfig,
@@ -89,13 +93,13 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		MediatorInterval: DefaultMediatorInterval,
 //		MediatorCount:    21,
 //		MediatorCycle: 86400,
-		DepositRate:   0.02,
+		DepositRate:   DefaultDepositRate,
 	}
 	return &core.Genesis{
-		Height:                    "0",
-		Version:                   "0.6.0",
-		TokenAmount:               11111111111,
-		TokenDecimal:              8,
+//		Height:                    "0",
+		Version:                   configure.Version,
+		TokenAmount:               DefaultTokenAmount,
+		TokenDecimal:              DefaultTokenDecimal,
 		ChainID:                   1,
 		TokenHolder:               defaultTokenHolder,
 		SystemConfig:              SystemConfig,
