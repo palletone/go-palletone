@@ -17,20 +17,33 @@
  * @date 2018
  */
 
+package util
 
-package core
+import (
+	"testing"
 
-import(
-	"github.com/palletone/go-palletone/common/event"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/peer"
 )
 
-type ConsensusEngine interface {
-	Engine() int
-	Stop()
-	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
+type addr struct {
 }
 
-type ConsensusEvent struct {
-	Ce string
+func (*addr) Network() string {
+	return ""
 }
 
+func (*addr) String() string {
+	return "1.2.3.4:5000"
+}
+
+func TestExtractAddress(t *testing.T) {
+	ctx := context.Background()
+	assert.Zero(t, ExtractRemoteAddress(ctx))
+
+	ctx = peer.NewContext(ctx, &peer.Peer{
+		Addr: &addr{},
+	})
+	assert.Equal(t, "1.2.3.4:5000", ExtractRemoteAddress(ctx))
+}

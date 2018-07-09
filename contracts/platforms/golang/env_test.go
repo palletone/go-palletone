@@ -17,20 +17,27 @@
  * @date 2018
  */
 
+package golang
 
-package core
+import (
+	"os"
+	"testing"
 
-import(
-	"github.com/palletone/go-palletone/common/event"
+	"github.com/stretchr/testify/assert"
 )
 
-type ConsensusEngine interface {
-	Engine() int
-	Stop()
-	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
+func Test_splitEnvPath(t *testing.T) {
+	paths := splitEnvPaths("foo" + string(os.PathListSeparator) + "bar" + string(os.PathListSeparator) + "baz")
+	assert.Equal(t, len(paths), 3)
 }
 
-type ConsensusEvent struct {
-	Ce string
-}
+func Test_getGoEnv(t *testing.T) {
+	goenv, err := getGoEnv()
+	assert.NoError(t, err)
 
+	_, ok := goenv["GOPATH"]
+	assert.Equal(t, ok, true)
+
+	_, ok = goenv["GOROOT"]
+	assert.Equal(t, ok, true)
+}

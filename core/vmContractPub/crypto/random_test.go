@@ -17,20 +17,22 @@
  * @date 2018
  */
 
+package crypto
 
-package core
+import (
+	"testing"
 
-import(
-	"github.com/palletone/go-palletone/common/event"
+	"github.com/stretchr/testify/assert"
 )
 
-type ConsensusEngine interface {
-	Engine() int
-	Stop()
-	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
+func TestGetRandomBytes(t *testing.T) {
+	_, err := GetRandomBytes(10)
+
+	assert.NoError(t, err, "GetRandomBytes fails")
 }
 
-type ConsensusEvent struct {
-	Ce string
-}
+func TestGetRandomNonce(t *testing.T) {
+	_, err := GetRandomNonce()
 
+	assert.NoError(t, err, "GetRandomNonce fails")
+}

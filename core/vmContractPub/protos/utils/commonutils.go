@@ -17,20 +17,24 @@
  * @date 2018
  */
 
+package utils
 
-package core
+import (
+	"github.com/golang/protobuf/proto"
 
-import(
-	"github.com/palletone/go-palletone/common/event"
+
 )
 
-type ConsensusEngine interface {
-	Engine() int
-	Stop()
-	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
+// MarshalOrPanic serializes a protobuf message and panics if this operation fails.
+func MarshalOrPanic(pb proto.Message) []byte {
+	data, err := proto.Marshal(pb)
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
-type ConsensusEvent struct {
-	Ce string
+// Marshal serializes a protobuf message.
+func Marshal(pb proto.Message) ([]byte, error) {
+	return proto.Marshal(pb)
 }
-

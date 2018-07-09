@@ -17,20 +17,21 @@
  * @date 2018
  */
 
+package util
 
-package core
-
-import(
-	"github.com/palletone/go-palletone/common/event"
+import (
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/peer"
 )
 
-type ConsensusEngine interface {
-	Engine() int
-	Stop()
-	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
+func ExtractRemoteAddress(ctx context.Context) string {
+	var remoteAddress string
+	p, ok := peer.FromContext(ctx)
+	if !ok {
+		return ""
+	}
+	if address := p.Addr; address != nil {
+		remoteAddress = address.String()
+	}
+	return remoteAddress
 }
-
-type ConsensusEvent struct {
-	Ce string
-}
-

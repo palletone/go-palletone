@@ -18,19 +18,29 @@
  */
 
 
-package core
+package crypto
 
-import(
-	"github.com/palletone/go-palletone/common/event"
+import "crypto/rand"
+
+const (
+	// NonceSize is the default NonceSize
+	NonceSize = 24
 )
 
-type ConsensusEngine interface {
-	Engine() int
-	Stop()
-	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
+// GetRandomBytes returns len random looking bytes
+func GetRandomBytes(len int) ([]byte, error) {
+	key := make([]byte, len)
+
+	// TODO: rand could fill less bytes then len
+	_, err := rand.Read(key)
+	if err != nil {
+		return nil, err
+	}
+
+	return key, nil
 }
 
-type ConsensusEvent struct {
-	Ce string
+// GetRandomNonce returns a random byte array of length NonceSize
+func GetRandomNonce() ([]byte, error) {
+	return GetRandomBytes(NonceSize)
 }
-

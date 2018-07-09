@@ -18,19 +18,34 @@
  */
 
 
-package core
+package shim
 
-import(
-	"github.com/palletone/go-palletone/common/event"
+import (
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
 
-type ConsensusEngine interface {
-	Engine() int
-	Stop()
-	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
+const (
+	// OK constant - status code less than 400, endorser will endorse it.
+	// OK means init or invoke successfully.
+	OK = 200
+
+	// ERRORTHRESHOLD constant - status code greater than or equal to 400 will be considered an error and rejected by endorser.
+	ERRORTHRESHOLD = 400
+
+	// ERROR constant - default error value
+	ERROR = 500
+)
+
+func Success(payload []byte) pb.Response {
+	return pb.Response{
+		Status:  OK,
+		Payload: payload,
+	}
 }
 
-type ConsensusEvent struct {
-	Ce string
+func Error(msg string) pb.Response {
+	return pb.Response{
+		Status:  ERROR,
+		Message: msg,
+	}
 }
-

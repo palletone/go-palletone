@@ -17,20 +17,17 @@
  * @date 2018
  */
 
+syntax = "proto3";
+package protos;
+option java_package = "protos.peer";
+option java_outer_classname = "ChaincodeEventPackage";
+option go_package = "github.com/palletone/go-palletone/core/vmContractPub/protos/peer";
 
-package core
-
-import(
-	"github.com/palletone/go-palletone/common/event"
-)
-
-type ConsensusEngine interface {
-	Engine() int
-	Stop()
-	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
+//ChaincodeEvent is used for events and registrations that are specific to chaincode
+//string type - "chaincode"
+message ChaincodeEvent {
+      string chaincode_id = 1;
+      string tx_id = 2;
+      string event_name = 3;
+      bytes payload = 4;
 }
-
-type ConsensusEvent struct {
-	Ce string
-}
-

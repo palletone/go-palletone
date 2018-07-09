@@ -17,20 +17,13 @@
  * @date 2018
  */
 
+package golang
 
-package core
+import "testing"
 
-import(
-	"github.com/palletone/go-palletone/common/event"
-)
-
-type ConsensusEngine interface {
-	Engine() int
-	Stop()
-	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
+func Test_listDeps(t *testing.T) {
+	_, err := listDeps(nil, "github.com/palletone/go-palletone/peer")
+	if err != nil {
+		t.Errorf("list failed: %s", err)
+	}
 }
-
-type ConsensusEvent struct {
-	Ce string
-}
-

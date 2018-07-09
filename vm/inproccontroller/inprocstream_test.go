@@ -17,20 +17,30 @@
  * @date 2018
  */
 
+package inproccontroller
 
-package core
+import (
+	"testing"
 
-import(
-	"github.com/palletone/go-palletone/common/event"
+	"github.com/stretchr/testify/assert"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
 
-type ConsensusEngine interface {
-	Engine() int
-	Stop()
-	SubscribeCeEvent(chan<- ConsensusEvent) event.Subscription
-}
+func TestSend(t *testing.T) {
+	ch := make(chan *pb.ChaincodeMessage)
 
-type ConsensusEvent struct {
-	Ce string
-}
+	stream := newInProcStream(ch, ch)
 
+	//good send (non-blocking send and receive)
+	msg := &pb.ChaincodeMessage{}
+	go stream.Send(msg)
+	msg2, _ := stream.Recv()
+	assert.Equal(t, msg, msg2, "send != recv")
+
+	//close the channel
+	close(ch)
+
+	//bad send, should panic, unblock and return error
+	err := stream.Send(msg)
+	assert.NotNil(t, err, "should have errored on panic")
+}
