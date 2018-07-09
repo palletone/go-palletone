@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="c9bc5ffc-f8e6-46c0-ba1a-165fc47dca4b" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmd/gptn/creategenesisjson.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/gptn/creategenesisjson.go" afterDir="false" />
-    </list>
+    <list default="true" id="c9bc5ffc-f8e6-46c0-ba1a-165fc47dca4b" name="Default" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
