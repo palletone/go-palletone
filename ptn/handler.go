@@ -107,7 +107,7 @@ engine core.ConsensusEngine) (*ProtocolManager, error) {
 	manager := &ProtocolManager{
 		networkId: networkId,
 		//eventMux:  mux,
-		//txpool:    txpool,
+		txpool:    txpool,
 		//blockchain:  blockchain,
 		consEngine: engine,
 		//chainconfig: config,

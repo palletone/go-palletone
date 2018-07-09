@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
@@ -126,7 +125,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	eth.ApiBackend.gpo = gasprice.NewOracle(eth.ApiBackend, gpoParams)
 	return eth, nil
 }
-
+/*
 // CreateDB creates the chain database.
 func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ptndb.Database, error) {
 	db, err := ctx.OpenDatabase(name, config.DatabaseCache, config.DatabaseHandles)
@@ -138,7 +137,7 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ptndb.Data
 	}
 	return db, nil
 }
-
+*/
 //CreateConsensusEngine creates the required type of consensus engine instance for an PalletOne service
 func CreateConsensusEngine(ctx *node.ServiceContext) core.ConsensusEngine {
 	engine := consensus.New()
