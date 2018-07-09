@@ -26,9 +26,9 @@ import (
 )
 
 const (
-	defaultMediatorInterval = 5
-	defaultMediatorCount = 21
-	defaultTokenHolder = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
+	DefaultMediatorInterval = 5
+	DefaultMediatorCount    = 21
+	defaultTokenHolder      = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 )
 
 // SetupGenesisBlock writes or updates the genesis block in db.
@@ -64,47 +64,47 @@ func SetupGenesisBlock(genesis *core.Genesis) (*modules.Unit, error) {
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
 func DefaultGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		MediatorInterval: defaultMediatorInterval,
+		MediatorInterval: DefaultMediatorInterval,
 //		MediatorCount:    21,
 		//MediatorList: ["dfba98bb5c52bba028e2cc487cbd1084"],
 //		MediatorCycle: 86400,
 		DepositRate:   0.02,
 	}
 	return &core.Genesis{
-		Height:       "0",
-		Version:      "0.6.0",
-		TokenAmount:  1000000000,
-		TokenDecimal: 8,
-		ChainID:      1,
-		TokenHolder:  defaultTokenHolder,
-		SystemConfig: SystemConfig,
-		InitialActiveMediators: defaultMediatorCount,
-		InitialMediatorCandidates: initialMediatorCandidates(defaultMediatorCount, defaultTokenHolder),
+		Height:                    "0",
+		Version:                   "0.6.0",
+		TokenAmount:               1000000000,
+		TokenDecimal:              8,
+		ChainID:                   1,
+		TokenHolder:               defaultTokenHolder,
+		SystemConfig:              SystemConfig,
+		InitialActiveMediators:    DefaultMediatorCount,
+		InitialMediatorCandidates: InitialMediatorCandidates(DefaultMediatorCount, defaultTokenHolder),
 	}
 }
 
 // DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
 func DefaultTestnetGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		MediatorInterval: defaultMediatorInterval,
+		MediatorInterval: DefaultMediatorInterval,
 //		MediatorCount:    21,
 //		MediatorCycle: 86400,
 		DepositRate:   0.02,
 	}
 	return &core.Genesis{
-		Height:       "0",
-		Version:      "0.6.0",
-		TokenAmount:  11111111111,
-		TokenDecimal: 8,
-		ChainID:      1,
-		TokenHolder:  defaultTokenHolder,
-		SystemConfig: SystemConfig,
-		InitialActiveMediators: defaultMediatorCount,
-		InitialMediatorCandidates: initialMediatorCandidates(defaultMediatorCount, defaultTokenHolder),
+		Height:                    "0",
+		Version:                   "0.6.0",
+		TokenAmount:               11111111111,
+		TokenDecimal:              8,
+		ChainID:                   1,
+		TokenHolder:               defaultTokenHolder,
+		SystemConfig:              SystemConfig,
+		InitialActiveMediators:    DefaultMediatorCount,
+		InitialMediatorCandidates: InitialMediatorCandidates(DefaultMediatorCount, defaultTokenHolder),
 	}
 }
 
-func initialMediatorCandidates(len int, address string) []string {
+func InitialMediatorCandidates(len int, address string) []string {
 	initialMediatorSet := make([]string, len)
 	for i := 0; i < len; i++ {
 		initialMediatorSet[i] = address
