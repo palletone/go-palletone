@@ -40,7 +40,7 @@ func TestSaveJoint(t *testing.T) {
 		t.Log("success")
 	}
 	log.Println(strconv.FormatInt(time.Now().Unix(), 10))
-	var ty []modules.IDType
+	var ty []modules.IDType36
 	var p []common.Hash
 	ty = append(ty, modules.PTNCOIN, modules.BTCCOIN)
 	log.Println("assets:", ty[0].String(), ty[1].String())
