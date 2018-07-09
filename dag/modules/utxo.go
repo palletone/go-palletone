@@ -27,9 +27,9 @@ import (
 )
 
 type Asset struct {
-	AssertId IDType `json:"assert_id"` // 资产类别
-	UniqueId IDType `json:"unique_id"` // every token has its unique id
-	ChainId  IDType `json:"chain_id"`  // main chain id or sub-chain id
+	AssertId IDType36 `json:"assert_id"` // 资产类别
+	UniqueId IDType36 `json:"unique_id"` // every token has its unique id
+	ChainId  IDType36 `json:"chain_id"`  // main chain id or sub-chain id
 }
 
 func (asset *Asset) String() string {

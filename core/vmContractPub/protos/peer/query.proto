@@ -1,0 +1,69 @@
+/*
+	This file is part of go-palletone.
+	go-palletone is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	go-palletone is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License
+	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/*
+ * Copyright IBM Corp. All Rights Reserved.
+ * @author PalletOne core developers <dev@pallet.one>
+ * @date 2018
+ */
+
+syntax = "proto3";
+
+option java_package = "protos.peer";
+option go_package = "protos/peer";
+
+package protos;
+
+// ChaincodeQueryResponse returns information about each chaincode that pertains
+// to a query in lscc.go, such as GetChaincodes (returns all chaincodes
+// instantiated on a channel), and GetInstalledChaincodes (returns all chaincodes
+// installed on a peer)
+message ChaincodeQueryResponse {
+  repeated ChaincodeInfo chaincodes = 1;
+}
+
+// ChaincodeInfo contains general information about an installed/instantiated
+// chaincode
+message ChaincodeInfo {
+  string name = 1;
+  string version = 2;
+  // the path as specified by the install/instantiate transaction
+  string path = 3;
+  // the chaincode function upon instantiation and its arguments. This will be
+  // blank if the query is returning information about installed chaincodes.
+  string input = 4;
+  // the name of the ESCC for this chaincode. This will be
+  // blank if the query is returning information about installed chaincodes.
+  string escc = 5;
+  // the name of the VSCC for this chaincode. This will be
+  // blank if the query is returning information about installed chaincodes.
+  string vscc = 6;
+  // the chaincode unique id.
+  // computed as: H(
+  //                H(name || version) ||
+  //                H(CodePackage)
+  //              )
+  bytes id = 7;
+}
+
+// ChannelQueryResponse returns information about each channel that pertains
+// to a query in lscc.go, such as GetChannels (returns all channels for a
+// given peer)
+message ChannelQueryResponse {
+  repeated ChannelInfo channels = 1;
+}
+
+// ChannelInfo contains general information about channels
+message ChannelInfo {
+  string channel_id = 1;
+}

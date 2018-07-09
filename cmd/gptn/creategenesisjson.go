@@ -22,15 +22,14 @@ import (
 	"os"
 	"fmt"
 	"encoding/json"
-
 	"gopkg.in/urfave/cli.v1"
 
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/core/gen"
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/cmd/console"
 )
 
 const defaultGenesisJsonPath = "./exampleGenesis.json"
@@ -58,18 +57,19 @@ var (
 		},
 		Category: "BLOCKCHAIN COMMANDS",
 		Description: `
-If a well-formed JSON file exists at the path, it will be parsed and any 
-missing fields in a Genesis State will be added, and any unknown fields will be removed. 
+Create a json file for the genesis state of a new chain 
+with an existing account or a newly created account.
 
-If no file or an invalid file is found, it will be replaced with an example Genesis State.`,
+If a well-formed JSON file exists at the path, 
+it will be replaced with an example Genesis State.`,
 	}
 )
 
-// createGenesisJson
+// createGenesisJson, Create a json file for the genesis state of a new chain.
 func createGenesisJson(ctx *cli.Context) error {
 	// Make sure we have a valid genesis JSON
 	genesisOut := ctx.Args().First()
-	// 如果没有指定路径，则使用默认的路径
+	// If no path is specified, the default path is used
 	if len(genesisOut) == 0 {
 //		utils.Fatalf("Must supply path to genesis JSON file")
 		genesisOut = defaultGenesisJsonPath
@@ -90,13 +90,26 @@ func createGenesisJson(ctx *cli.Context) error {
 		utils.Fatalf("%v", err)
 	}
 
-//	genesisState := gen.DefaultGenesisBlock()
-
-	account, err := initialAccount(ctx)
+	var confirm bool
+	confirm, err = console.Stdin.PromptConfirm("Do you use an existing account?")
 	if err != nil {
 		utils.Fatalf("%v", err)
 	}
-	genesisState := createExampleGenesis(account.Str())
+
+	var account string
+	if confirm {
+		account, err = console.Stdin.PromptInput("Please enter an existing account address: ")
+		if err != nil {
+			utils.Fatalf("%v", err)
+		}
+	} else {
+		account, err = initialAccount(ctx)
+		if err != nil {
+			utils.Fatalf("%v", err)
+		}
+	}
+
+	genesisState := createExampleGenesis(account)
 
 	var genesisJson []byte
 	genesisJson, err = json.MarshalIndent(*genesisState, "", "  ")
@@ -112,12 +125,13 @@ func createGenesisJson(ctx *cli.Context) error {
 		utils.Fatalf("%v", err)
 	}
 
-	fmt.Print("Creating example genesis state in file " + genesisOut)
+	fmt.Println("Creating example genesis state in file " + genesisOut)
 
 	return nil
 }
 
-func initialAccount(ctx *cli.Context) (common.Address, error) {
+// initialAccount, create a initial account for a new account
+func initialAccount(ctx *cli.Context) (string, error) {
 	cfg := FullConfig{Node: defaultNodeConfig()}
 	// Load config file.
 	file := "./palletone.toml"
@@ -131,18 +145,21 @@ func initialAccount(ctx *cli.Context) (common.Address, error) {
 	//utils.SetNodeConfig(ctx, cfg.Node)
 	scryptN, scryptP, keydir, err := cfg.Node.AccountConfig()
 
-	password := getPassPhrase("Your new account is locked with a password. Please give a password. Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
+	password := getPassPhrase("Your new account is locked with a password. " +
+		"Please give a password. Do not forget this password.",
+		true, 0, utils.MakePasswordList(ctx))
 
 	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
 
 	if err != nil {
 		utils.Fatalf("Failed to create account: %v", err)
 	}
-//	fmt.Printf("Address Hex: {%x}\n", address)
 	fmt.Printf("Address: %s\n", address)
-	return address, nil
+
+	return address.Str(), nil
 }
 
+// createExampleGenesis, create the genesis state of new chain with the specified account
 func createExampleGenesis(account string)  *core.Genesis  {
 	SystemConfig := core.SystemConfig{
 		MediatorInterval: gen.DefaultMediatorInterval,
@@ -150,7 +167,6 @@ func createExampleGenesis(account string)  *core.Genesis  {
 	}
 
 	return &core.Genesis{
-//		Height:                    "0",
 		Version:                   configure.Version,
 		TokenAmount:               gen.DefaultTokenAmount,
 		TokenDecimal:              gen.DefaultTokenDecimal,

@@ -1,0 +1,126 @@
+/*
+	This file is part of go-palletone.
+	go-palletone is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	go-palletone is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License
+	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/*
+ * Copyright IBM Corp. All Rights Reserved.
+ * @author PalletOne core developers <dev@pallet.one>
+ * @date 2018
+ */
+
+package container
+
+import (
+	"flag"
+	"os"
+	"testing"
+
+	"golang.org/x/net/context"
+	"github.com/stretchr/testify/assert"
+	"github.com/palletone/go-palletone/core/vmContractPub/util"
+	"github.com/palletone/go-palletone/core/vmContractPub/mocks/config"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+
+)
+
+
+var runTests1 bool = true
+func TestMain(m *testing.M) {
+	flag.BoolVar(&runTests1, "run-controller-tests", true, "run tests")
+	flag.Parse()
+	config.SetupTestConfig()
+	os.Exit(m.Run())
+}
+
+func TestVM_ListImages(t *testing.T) {
+	vm, err := NewVM()
+	if err != nil {
+		t.Fail()
+		t.Logf("Error getting VM: %s", err)
+	}
+	err = vm.ListImages(context.TODO())
+	assert.NoError(t, err, "Error listing images")
+}
+
+func TestVM_BuildImage_ChaincodeLocal(t *testing.T) {
+	vm, err := NewVM()
+	if err != nil {
+		t.Fail()
+		t.Logf("Error getting VM: %s", err)
+		return
+	}
+	// Build the spec
+	chaincodePath := "contract/go/example01"
+	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_GOLANG,
+		ChaincodeId: &pb.ChaincodeID{Name: "ex01", Path: chaincodePath},
+		Input:       &pb.ChaincodeInput{Args: util.ToChaincodeArgs("f")}}
+	err = vm.BuildChaincodeContainer(spec)
+	assert.NoError(t, err)
+}
+
+func TestVM_BuildImage_ChaincodeRemote(t *testing.T) {
+	t.Skip("Works but needs user credentials. Not suitable for automated unit tests as is")
+	vm, err := NewVM()
+	if err != nil {
+		t.Fail()
+		t.Logf("Error getting VM: %s", err)
+		return
+	}
+	// Build the spec
+	chaincodePath := "https://github.com/prjayach/chaincode_examples/chaincode_example02"
+	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_GOLANG,
+		ChaincodeId: &pb.ChaincodeID{Name: "ex02", Path: chaincodePath},
+		Input:       &pb.ChaincodeInput{Args: util.ToChaincodeArgs("f")}}
+	err = vm.BuildChaincodeContainer(spec)
+	assert.NoError(t, err)
+}
+
+func TestVM_GetChaincodePackageBytes(t *testing.T) {
+	_, err := GetChaincodePackageBytes(nil)
+	assert.Error(t, err,
+		"GetChaincodePackageBytes did not return error when chaincode spec is nil")
+
+	spec := &pb.ChaincodeSpec{ChaincodeId: nil}
+	_, err = GetChaincodePackageBytes(spec)
+	assert.Error(t, err, "Error expected when GetChaincodePackageBytes is called with nil chaincode ID")
+	assert.Contains(t, err.Error(), "invalid chaincode spec")
+
+	spec = &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_GOLANG,
+		ChaincodeId: nil,
+		Input:       &pb.ChaincodeInput{Args: util.ToChaincodeArgs("f")}}
+	_, err = GetChaincodePackageBytes(spec)
+	assert.Error(t, err,
+		"GetChaincodePackageBytes did not return error when chaincode ID is nil")
+}
+
+func TestVM_BuildChaincodeContainer(t *testing.T) {
+	vm, err := NewVM()
+	assert.NoError(t, err)
+	err = vm.BuildChaincodeContainer(nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Error getting chaincode package bytes")
+}
+
+func TestVM_Chaincode_Compile(t *testing.T) {
+	// vm, err := NewVM()
+	// if err != nil {
+	// 	t.Fail()
+	// 	t.Logf("Error getting VM: %s", err)
+	// 	return
+	// }
+
+	// if err := vm.BuildPeerContainer(); err != nil {
+	// 	t.Fail()
+	// 	t.Log(err)
+	// }
+	t.Skip("NOT IMPLEMENTED")
+}

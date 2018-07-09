@@ -19,30 +19,29 @@
 package asset
 
 import (
-	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/dag/util"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/pborman/uuid"
+	"fmt"
 )
 
-func NewAsset() modules.IDType {
-	var assetID modules.IDType
+func NewAsset() modules.IDType36 {
+	var assetId modules.IDType36
 
-	out := util.TimeUUID()
-	byteOut := out.ToUUid()
+	// use version 1: timestamp and mac
+	sId := uuid.NewUUID().String()
 
-	length := 0
-	if len(byteOut) < len(assetID) {
-		length = len(byteOut)
-	} else {
-		length = len(assetID)
-	}
-	for i := 0; i < length; i++ {
-		assetID[i] = byteOut[i]
+	if len(sId) > cap(assetId) {
+		return assetId
 	}
 
-	_, err := storage.Get(assetID.Bytes())
-	if err != nil { // assetID already exists
-		return modules.IDType{}
+	bID := []byte(sId)
+	for i:=0; i<len(bID); i++ {
+		assetId[i] = bID[i]
 	}
-	return assetID
+
+	for j:=len(bID); j<cap(assetId); j++ {
+		fmt.Println(j)
+		assetId[j] = '_'
+	}
+	return assetId
 }

@@ -28,12 +28,14 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
-//	"github.com/palletone/go-palletone/consensus/consensusconfig"
+	//"github.com/palletone/go-palletone/consensus/consensusconfig"
+	"github.com/palletone/go-palletone/contracts/contractconfig"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/gasprice"
+	"github.com/palletone/go-palletone/vm/vmconfig"
 )
 
 // DefaultConfig contains default settings for use on the PalletOne main net.
@@ -51,9 +53,9 @@ var DefaultConfig = Config{
 		Blocks:     20,
 		Percentile: 60,
 	},
-//	Consensus: consensusconfig.DefaultConfig,
-	Dag:       dagconfig.DefaultConfig,
-	Log:       log.DefaultConfig,
+	//Consensus: consensusconfig.DefaultConfig,
+	Dag: dagconfig.DefaultConfig,
+	Log: log.DefaultConfig,
 }
 
 func init() {
@@ -113,7 +115,12 @@ type Config struct {
 	//Log config
 	Log log.Config
 	// Consensus options
-//	Consensus consensusconfig.Config
+	//Consensus consensusconfig.Config
+	// VM config
+	Vm vmconfig.Config
+	//Contract config
+	Contract contractconfig.Config
+
 	// Miscellaneous options
 	DocRoot string `toml:"-"`
 }

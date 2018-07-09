@@ -72,7 +72,7 @@ import (
 
 type Header struct {
 	ParentUnits []common.Hash `json:"parent_units"`
-	AssetIDs    []IDType      `json:"assets"`
+	AssetIDs    []IDType36    `json:"assets"`
 	Authors     []Author      `json:"authors"` // the unit creation authors
 	Witness     []Author      `json:"witness"`
 	GasLimit    uint64        `json:"gasLimit"`
@@ -82,7 +82,7 @@ type Header struct {
 	Extra       []byte        `json:"extra"`
 }
 
-func NewHeader(parents []common.Hash, asset []IDType, gas, used uint64, extra []byte) *Header {
+func NewHeader(parents []common.Hash, asset []IDType36, gas, used uint64, extra []byte) *Header {
 	hashs := make([]common.Hash, 0)
 	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
 	var b []byte
@@ -171,7 +171,7 @@ type Transaction struct {
 }
 
 type ChainIndex struct {
-	AssetID IDType
+	AssetID IDType36
 	IsMain  bool
 	Index   uint64
 }
