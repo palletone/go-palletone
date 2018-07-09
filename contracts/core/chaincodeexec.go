@@ -18,7 +18,7 @@
  */
 
 
-package manger
+package core
 
 import (
 	"fmt"

@@ -17,7 +17,7 @@
  * @date 2018
  */
 
-package manger
+package core
 
 import (
 	"fmt"
