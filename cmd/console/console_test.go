@@ -82,10 +82,10 @@ type tester struct {
 
 func DevGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		MediatorSlot:  5,
-		MediatorCount: 21,
+		MediatorInterval: 5,
+//		MediatorCount:    21,
 		//MediatorList: ["dfba98bb5c52bba028e2cc487cbd1084"],
-		MediatorCycle: 86400,
+//		MediatorCycle: 86400,
 		DepositRate:   0.02,
 	}
 	return &core.Genesis{

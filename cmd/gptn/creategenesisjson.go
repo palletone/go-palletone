@@ -20,11 +20,16 @@ package main
 
 import (
 	"os"
+	"fmt"
 	"encoding/json"
 
 	"gopkg.in/urfave/cli.v1"
 
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/core/gen"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/core"
 )
 
 const defaultGenesisJsonPath = "./exampleGenesis.json"
@@ -59,19 +64,11 @@ If no file or an invalid file is found, it will be replaced with an example Gene
 	}
 )
 
-type InitialMediator struct {
-	PublicKey string
-}
-
-type GenesisState struct{
-	Value string	//变量名一定要大些，否则外部无法访问，导致无法成功写入json文件
-	InitialMediatorSet []InitialMediator
-}
-
 // createGenesisJson
 func createGenesisJson(ctx *cli.Context) error {
 	// Make sure we have a valid genesis JSON
 	genesisOut := ctx.Args().First()
+	// 如果没有指定路径，则使用默认的路径
 	if len(genesisOut) == 0 {
 //		utils.Fatalf("Must supply path to genesis JSON file")
 		genesisOut = defaultGenesisJsonPath
@@ -88,34 +85,79 @@ func createGenesisJson(ctx *cli.Context) error {
 	}
 	defer genesisFile.Close()
 	if err != nil {
-		return err
+//		return err
+		utils.Fatalf("%v", err)
 	}
 
-	genesisState := createExampleGenesis()
-	var genesisJson []byte
-	genesisJson, err = json.MarshalIndent(genesisState, "", "  ")
+//	genesisState := gen.DefaultGenesisBlock()
+
+	account, err := initialAccount(ctx)
 	if err != nil {
-		return err
+		utils.Fatalf("%v", err)
+	}
+	genesisState := createExampleGenesis(account.Str())
+
+	var genesisJson []byte
+	genesisJson, err = json.MarshalIndent(*genesisState, "", "  ")
+	if err != nil {
+//		return err
+		utils.Fatalf("%v", err)
 	}
 //	log.Debug(string(genesisJson))
 
 	_ ,err = genesisFile.Write(genesisJson)
 	if err != nil {
-		return err
+//		return err
+		utils.Fatalf("%v", err)
 	}
 
-	print("Creating example genesis state in file " + genesisOut)
+	fmt.Print("Creating example genesis state in file " + genesisOut)
 
 	return nil
 }
 
-func createExampleGenesis() *GenesisState  {
-	gs := GenesisState{
-		"genesisState",
-		[]InitialMediator{
-			{"Mediator1"},
-		},
+func initialAccount(ctx *cli.Context) (common.Address, error) {
+	cfg := FullConfig{Node: defaultNodeConfig()}
+	// Load config file.
+	file := "./palletone.toml"
+	if temp := ctx.GlobalString(configFileFlag.Name); temp != "" {
+		file = temp
+	}
+	if err := loadConfig(file, &cfg); err != nil {
+		utils.Fatalf("%v", err)
 	}
 
-	return &gs
+	//utils.SetNodeConfig(ctx, cfg.Node)
+	scryptN, scryptP, keydir, err := cfg.Node.AccountConfig()
+
+	password := getPassPhrase("Your new account is locked with a password. Please give a password. Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
+
+	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
+
+	if err != nil {
+		utils.Fatalf("Failed to create account: %v", err)
+	}
+//	fmt.Printf("Address Hex: {%x}\n", address)
+	fmt.Printf("Address: %s\n", address)
+	return address, nil
+}
+
+func createExampleGenesis(account string)  *core.Genesis  {
+	SystemConfig := core.SystemConfig{
+		MediatorInterval: gen.DefaultMediatorInterval,
+		DepositRate:   0.02,
+	}
+
+	return &core.Genesis{
+		Height:                    "0",
+		Version:                   "0.6.0",
+		TokenAmount:               11111111111,
+		TokenDecimal:              8,
+		ChainID:                   1,
+		TokenHolder:               account,
+		SystemConfig:              SystemConfig,
+		InitialActiveMediators:    gen.DefaultMediatorCount,
+		InitialMediatorCandidates: gen.InitialMediatorCandidates(
+			gen.DefaultMediatorCount, account),
+	}
 }
