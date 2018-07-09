@@ -22,12 +22,14 @@ import (
 	"os"
 	"fmt"
 	"encoding/json"
+	"log"
+	"bufio"
+	"strings"
 
 	"gopkg.in/urfave/cli.v1"
 
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/core/gen"
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/configure"
@@ -58,19 +60,19 @@ var (
 		},
 		Category: "BLOCKCHAIN COMMANDS",
 		Description: `
-Create a genesis.json for the genesis state of new chain with a newly created account.
+Create a json file for the genesis state of a new chain 
+with an existing account or a newly created account.
 
 If a well-formed JSON file exists at the path, 
 it will be replaced with an example Genesis State.`,
 	}
 )
 
-// createGenesisJson, create new chain: create a initial account
-// and corresponding genesis.json
+// createGenesisJson, Create a json file for the genesis state of a new chain.
 func createGenesisJson(ctx *cli.Context) error {
 	// Make sure we have a valid genesis JSON
 	genesisOut := ctx.Args().First()
-	// 如果没有指定路径，则使用默认的路径
+	// If no path is specified, the default path is used
 	if len(genesisOut) == 0 {
 //		utils.Fatalf("Must supply path to genesis JSON file")
 		genesisOut = defaultGenesisJsonPath
@@ -90,14 +92,23 @@ func createGenesisJson(ctx *cli.Context) error {
 //		return err
 		utils.Fatalf("%v", err)
 	}
-
-//	genesisState := gen.DefaultGenesisBlock()
-
-	account, err := initialAccount(ctx)
-	if err != nil {
-		utils.Fatalf("%v", err)
+	
+	var account string
+	if askForConfirmation("Do you use an existing account?") {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Printf("Please enter an existing account address: ")
+		account, err = reader.ReadString('\n')
+		if err != nil {
+			utils.Fatalf("%v", err)
+		}
+	} else {
+		account, err = initialAccount(ctx)
+		if err != nil {
+			utils.Fatalf("%v", err)
+		}
 	}
-	genesisState := createExampleGenesis(account.Str())
+
+	genesisState := createExampleGenesis(account)
 
 	var genesisJson []byte
 	genesisJson, err = json.MarshalIndent(*genesisState, "", "  ")
@@ -119,7 +130,7 @@ func createGenesisJson(ctx *cli.Context) error {
 }
 
 // initialAccount, create a initial account for a new account
-func initialAccount(ctx *cli.Context) (common.Address, error) {
+func initialAccount(ctx *cli.Context) (string, error) {
 	cfg := FullConfig{Node: defaultNodeConfig()}
 	// Load config file.
 	file := "./palletone.toml"
@@ -143,7 +154,8 @@ func initialAccount(ctx *cli.Context) (common.Address, error) {
 		utils.Fatalf("Failed to create account: %v", err)
 	}
 	fmt.Printf("Address: %s\n", address)
-	return address, nil
+
+	return address.Str(), nil
 }
 
 // createExampleGenesis, create the genesis state of new chain with the specified account
@@ -163,5 +175,30 @@ func createExampleGenesis(account string)  *core.Genesis  {
 		InitialActiveMediators:    gen.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(
 			gen.DefaultMediatorCount, account),
+	}
+}
+
+// askForConfirmation asks the user for confirmation. A user must type in "yes" or "no" and
+// then press enter. It has fuzzy matching, so "y", "Y", "yes", "YES", and "Yes" all count as
+// confirmations. If the input is not recognized, it will ask again. The function does not return
+// until it gets a valid response from the user.
+func askForConfirmation(s string) bool {
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		fmt.Printf("%s [y/n]: ", s)
+
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		response = strings.ToLower(strings.TrimSpace(response))
+
+		if response == "y" || response == "yes" {
+			return true
+		} else if response == "n" || response == "no" {
+			return false
+		}
 	}
 }
