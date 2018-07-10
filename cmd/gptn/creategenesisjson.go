@@ -134,7 +134,7 @@ func createGenesisJson(ctx *cli.Context) error {
 func initialAccount(ctx *cli.Context) (string, error) {
 	cfg := FullConfig{Node: defaultNodeConfig()}
 	// Load config file.
-	file := "./palletone.toml"
+	file := defaultConfigPath
 	if temp := ctx.GlobalString(configFileFlag.Name); temp != "" {
 		file = temp
 	}

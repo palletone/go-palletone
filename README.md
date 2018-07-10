@@ -125,6 +125,13 @@ You can create a JSON file for the genesis state of a new chain with an existing
 $ gptn create-genesis-json path/to/my-genesis.json
 ```
 
+##### Customization of the genesis file
+
+If you want to customize the network’s genesis state, edit the newly created my-genesis.json file. This allows you to control things such as:
+
+* The initial values of chain parameters
+* Assets and their initial distribution
+
 With the genesis state defined in the above JSON file, you'll need to initialize **every** Gptn node with it prior to starting it up to ensure all blockchain parameters are correctly set:
 
 ```

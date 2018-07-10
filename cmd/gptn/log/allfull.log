@@ -266,3 +266,18 @@
 2018-07-05T11:50:09.542+0800	info	coredata/tx_journal.go:97	Loaded local transaction journal	{"transactions": 0, "dropped": 0}
 2018-07-05T11:50:09.547+0800	info	coredata/tx_journal.go:149	Regenerated local transaction journal	{"transactions": 0, "accounts": 0}
 2018-07-05T11:50:09.547+0800	info	p2p/server.go:392	Starting P2P networking
+2018-07-10T11:53:29.933+0800	info	node/node.go:167	Starting peer-to-peer node	{"instance": "Gptn/v0.6.0-alpha/windows-amd64/go1.10.2"}
+2018-07-10T11:53:29.934+0800	info	ptn/backend.go:107	Initialising PalletOne protocol	{"versions": [1], "network": 3369}
+2018-07-10T11:53:29.934+0800	info	coredata/tx_journal.go:97	Loaded local transaction journal	{"transactions": 0, "dropped": 0}
+2018-07-10T11:53:29.937+0800	info	coredata/tx_journal.go:149	Regenerated local transaction journal	{"transactions": 0, "accounts": 0}
+2018-07-10T11:53:29.938+0800	info	p2p/server.go:392	Starting P2P networking
+2018-07-10T11:53:32.187+0800	info	discover/udp.go:237	UDP listener up	{"self": "pnode://415e74de84ae6986e39df16575e51d59839ee5a5505258901bd0de30fc7bb6d258c909834ec2d247000adbc0fdea315a23ff1e046cb6180d63a5e178d4f250ba@[::]:30301"}
+2018-07-10T11:53:32.189+0800	info	p2p/server.go:743	RLPx listener up	{"self": "pnode://415e74de84ae6986e39df16575e51d59839ee5a5505258901bd0de30fc7bb6d258c909834ec2d247000adbc0fdea315a23ff1e046cb6180d63a5e178d4f250ba@[::]:30301"}
+2018-07-10T11:53:32.193+0800	info	node/node.go:327	IPC endpoint opened	{"url": "\\\\.\\pipe\\./data1/gptn.ipc"}
+2018-07-10T11:53:33.852+0800	info	utils/cmd.go:74	Got interrupt, shutting down...
+2018-07-10T11:53:33.853+0800	info	node/node.go:337	IPC endpoint closed	{"endpoint": "\\\\.\\pipe\\./data1/gptn.ipc"}
+2018-07-10T11:53:33.855+0800	info	ptn/handler.go:231	Stopping PalletOne protocol
+2018-07-10T11:53:33.855+0800	info	ptn/handler.go:253	PalletOne protocol stopped
+2018-07-10T11:53:33.856+0800	info	coredata/tx_pool.go:445	Transaction pool stopped
+2018-07-10T11:53:33.856+0800	info	event/event.go:109	TypeMux stoping
+2018-07-10T11:53:33.857+0800	info	event/event.go:117	TypeMux stopped
