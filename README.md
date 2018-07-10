@@ -2,6 +2,7 @@
 
 Official golang implementation of the palletone protocol.
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/47ccb5f4718d4e80963f70159c16c913)](https://app.codacy.com/app/palletonedev/go-palletone?utm_source=github.com&utm_medium=referral&utm_content=palletone/go-palletone&utm_campaign=badger)
 [![Build Status](https://travis-ci.org/palletone/go-palletone.svg?branch=master)](https://travis-ci.org/palletone/go-palletone)
 
 ## Building the source
