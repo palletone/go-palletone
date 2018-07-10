@@ -1,4 +1,4 @@
-﻿/*
+/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -73,7 +73,7 @@ import (
 type Header struct {
 	ParentUnits []common.Hash `json:"parent_units"`
 	AssetIDs    []IDType36    `json:"assets"`
-	Authors     *Author      `json:"authors"` // the unit creation authors
+	Authors     *Author       `json:"authors"` // the unit creation authors
 	Witness     []Author      `json:"witness"`
 	GasLimit    uint64        `json:"gasLimit"`
 	GasUsed     uint64        `json:"gasUsed"`
@@ -82,7 +82,7 @@ type Header struct {
 	Extra       []byte        `json:"extra"`
 }
 
-func (cpy *Header)CopyHeader(h *Header)  {
+func (cpy *Header) CopyHeader(h *Header) {
 	//ParentUnits []common.Hash `json:"parent_units"`
 	//AssetIDs    []IDType36    `json:"assets"`
 	//Authors     *Author       `json:"authors"` // the unit creation authors
@@ -96,18 +96,17 @@ func (cpy *Header)CopyHeader(h *Header)  {
 	cpy = h
 	if len(h.ParentUnits) > 0 {
 		cpy.ParentUnits = make([]common.Hash, len(h.ParentUnits))
-		for i:=0; i<len(h.ParentUnits); i++ {
+		for i := 0; i < len(h.ParentUnits); i++ {
 			cpy.ParentUnits[i] = h.ParentUnits[i]
 		}
 	}
 
 	if len(h.AssetIDs) > 0 {
-		cpy.AssetIDs =  make([]IDType36, len(h.AssetIDs))
-		for i:=0; i<len(h.AssetIDs); i++ {
+		cpy.AssetIDs = make([]IDType36, len(h.AssetIDs))
+		for i := 0; i < len(h.AssetIDs); i++ {
 			cpy.AssetIDs[i] = h.AssetIDs[i]
 		}
 	}
-
 
 }
 
@@ -158,7 +157,7 @@ func CopyHeader(h *Header) *Header {
 		copy(cpy.AssetIDs, h.AssetIDs)
 	}
 
-		if len(h.Witness) > 0 {
+	if len(h.Witness) > 0 {
 		copy(cpy.Witness, h.Witness)
 	}
 
@@ -260,8 +259,8 @@ type TextPayload struct {
 
 type Author struct {
 	Address        common.Address `json:"address"`
-	Pubkey         common.Hash    `json:"pubkey"`
-	TxAuthentifier Authentifier   `json:"authentifiers"`
+	Pubkey         []byte/*common.Hash*/ `json:"pubkey"`
+	TxAuthentifier Authentifier `json:"authentifiers"`
 }
 
 type Authentifier struct {

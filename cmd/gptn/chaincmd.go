@@ -19,7 +19,6 @@ package main
 import (
 	"encoding/json"
 	"os"
-	"unsafe"
 
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -122,42 +121,47 @@ func initGenesis(ctx *cli.Context) error {
 	}
 	log.Info("Successfully Get Genesis Block")
 
-	sig, err := sigGenesis(ctx, node, unit, account)
+	sig, privateKey, err := sigGenesis(ctx, node, unit, account)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis block: %v", err)
 		return err
 	}
 	log.Info("Successfully SIG Genesis Block")
-	return commitDB(sig)
+	return commitDB(unit, privateKey, sig, account)
 }
 
 func getTransctions(ctx *cli.Context, node *node.Node, genesis *core.Genesis) (modules.Transactions, accounts.Account, string) {
 	ks := node.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 	addr := genesis.TokenHolder
 	account, password := unlockAccount(ctx, ks, addr, 0, nil)
-	//log.Info("======sigGenesis account:", account.Address.String())
-	//log.Info("======sigGenesis password:", password)
 	tx := &modules.Transaction{AccountNonce: 1}
 	txs := []*modules.Transaction{}
 	txs = append(txs, tx)
 	return txs, account, password
 }
 
-func sigGenesis(ctx *cli.Context, node *node.Node, unit *modules.Unit, account accounts.Account) ([]byte, error) {
-	//-------------
-
+func sigGenesis(ctx *cli.Context, node *node.Node, unit *modules.Unit, account accounts.Account) (string, []byte, error) {
 	ks := node.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
+	privateKey, err := ks.GetPrivateKey(account)
+	if err != nil {
+		return "", []byte(""), err
+	}
 	//unit signature
 	sign, err := ks.SignHash(account, hash.Bytes())
 	if err != nil {
 		utils.Fatalf("Sign error:%s", err)
-		return []byte{}, err
+		return "", []byte(""), err
 	}
-	strSign := hexutil.Encode(sign)
-	return *(*[]byte)(unsafe.Pointer(&strSign)), nil
+	return hexutil.Encode(sign), crypto.FromECDSAPub(&privateKey.PublicKey), nil
 }
 
-func commitDB(sign []byte) error {
+func commitDB(unit *modules.Unit, privateKey []byte, sign string, account accounts.Account) error {
+	var authentifier modules.Authentifier
+	authentifier.R = sign
+	author := new(modules.Author)
+	author.Address = account.Address
+	author.Pubkey = privateKey
+	author.TxAuthentifier = authentifier
 	return nil
 }
