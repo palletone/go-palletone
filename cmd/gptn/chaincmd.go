@@ -114,7 +114,7 @@ func initGenesis(ctx *cli.Context) error {
 	}
 
 	node := makeFullNode(ctx)
-	txs, account, pwd := getTransctions(ctx, node, genesis)
+	txs, account, _ := getTransctions(ctx, node, genesis)
 	unit, err := gen.SetupGenesisBlock(genesis, txs)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis block: %v", err)
@@ -122,14 +122,16 @@ func initGenesis(ctx *cli.Context) error {
 	}
 	log.Info("Successfully Get Genesis Block")
 	fmt.Println("genesis unit:", unit)
-	sign, privateKey, err := sigGenesis(ctx, node, unit, account)
+	sign, publicKey, err := sigGenesis(node, unit, account)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis block: %v", err)
 		return err
 	}
+
 	log.Info("Successfully SIG Genesis Block")
-	//verifyGenesis(sign, unit, pwd, account, node)
-	return commitDB(unit, privateKey, sign, account)
+	verifyGenesisWithPK(sign, unit, publicKey)
+	commitDB(unit, publicKey, sign, account)
+	return nil
 }
 
 func getTransctions(ctx *cli.Context, node *node.Node, genesis *core.Genesis) (modules.Transactions, accounts.Account, string) {
@@ -142,7 +144,7 @@ func getTransctions(ctx *cli.Context, node *node.Node, genesis *core.Genesis) (m
 	return txs, account, password
 }
 
-func sigGenesis(ctx *cli.Context, node *node.Node, unit *modules.Unit, account accounts.Account) (string, []byte, error) {
+func sigGenesis(node *node.Node, unit *modules.Unit, account accounts.Account) (string, []byte, error) {
 	ks := node.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
 	privateKey, err := ks.GetPrivateKey(account)
@@ -158,29 +160,31 @@ func sigGenesis(ctx *cli.Context, node *node.Node, unit *modules.Unit, account a
 	return hexutil.Encode(sign), crypto.FromECDSAPub(&privateKey.PublicKey), nil
 }
 
-func verifyGenesis(sign string, unit *modules.Unit, pwd string, account accounts.Account, node *node.Node) error {
-	ks := node.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+func verifyGenesisWithPK(sign string, unit *modules.Unit, publicKey []byte) bool {
 	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
-	s, _ := hexutil.Decode(sign)
-
-	pass, err := ks.VerifySignatureWithPassphrase(account, pwd, hash.Bytes(), s)
+	s, err := hexutil.Decode(sign)
 	if err != nil {
-		utils.Fatalf("Verfiy error:%s", err)
+		log.Info("Verfiy error:%s", err.Error())
+		return false
 	}
+	sig := s[:len(s)-1] // remove recovery id
+	pass := crypto.VerifySignature(publicKey, hash.Bytes(), sig)
 	if pass {
-		fmt.Println("Valid signature")
+		log.Info("Valid signature")
+		return true
 	} else {
-		utils.Fatalf("Invalid signature")
+		log.Info("Invalid signature")
+		return false
 	}
-	return nil
+	return false
 }
 
-func commitDB(unit *modules.Unit, privateKey []byte, sign string, account accounts.Account) error {
+func commitDB(unit *modules.Unit, publicKey []byte, sign string, account accounts.Account) error {
 	var authentifier modules.Authentifier
 	authentifier.R = sign
 	author := new(modules.Author)
 	author.Address = account.Address
-	author.Pubkey = privateKey
+	author.Pubkey = publicKey
 	author.TxAuthentifier = authentifier
 	unit.UnitHeader.Authors = author
 	return nil
