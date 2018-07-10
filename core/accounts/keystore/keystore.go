@@ -36,6 +36,8 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/types"
 )
@@ -515,11 +517,33 @@ func (ks *KeyStore) GetPrivateKey(a accounts.Account) (*ecdsa.PrivateKey, error)
 	// Look up the key to sign with and abort if it cannot be found
 	ks.mu.RLock()
 	defer ks.mu.RUnlock()
-
 	unlockedKey, found := ks.unlocked[a.Address]
 	if !found {
 		return nil, ErrLocked
 	}
-
 	return unlockedKey.PrivateKey, nil
+}
+
+func (ks *KeyStore) SigUnit(unit interface{}, account accounts.Account) (string, []byte, error) {
+	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
+	privateKey, err := ks.GetPrivateKey(account)
+	if err != nil {
+		return "", []byte(""), err
+	}
+	//unit signature
+	sign, err := ks.SignHash(account, hash.Bytes())
+	if err != nil {
+		return "", []byte(""), err
+	}
+	return hexutil.Encode(sign), crypto.FromECDSAPub(&privateKey.PublicKey), nil
+}
+
+func VerifyUnitWithPK(sign string, unit interface{}, publicKey []byte) bool {
+	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
+	s, err := hexutil.Decode(sign)
+	if err != nil {
+		return false
+	}
+	sig := s[:len(s)-1] // remove recovery id
+	return crypto.VerifySignature(publicKey, hash.Bytes(), sig)
 }

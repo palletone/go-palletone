@@ -22,15 +22,11 @@ import (
 	"os"
 
 	"github.com/palletone/go-palletone/cmd/utils"
-	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
-	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
 
 	"gopkg.in/urfave/cli.v1"
@@ -114,7 +110,8 @@ func initGenesis(ctx *cli.Context) error {
 	}
 
 	node := makeFullNode(ctx)
-	txs, account, _ := getTransctions(ctx, node, genesis)
+	ks := node.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	txs, account, _ := getTransctions(ctx, ks, genesis)
 	unit, err := gen.SetupGenesisBlock(genesis, txs)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis block: %v", err)
@@ -122,61 +119,31 @@ func initGenesis(ctx *cli.Context) error {
 	}
 	log.Info("Successfully Get Genesis Block")
 	fmt.Println("genesis unit:", unit)
-	sign, publicKey, err := sigGenesis(node, unit, account)
+
+	sign, publicKey, err := ks.SigUnit(unit, account)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis block: %v", err)
 		return err
 	}
 
 	log.Info("Successfully SIG Genesis Block")
-	verifyGenesisWithPK(sign, unit, publicKey)
+	pass := keystore.VerifyUnitWithPK(sign, unit, publicKey)
+	if pass {
+		log.Info("Valid signature")
+	} else {
+		log.Info("Invalid signature")
+	}
 	commitDB(unit, publicKey, sign, account)
 	return nil
 }
 
-func getTransctions(ctx *cli.Context, node *node.Node, genesis *core.Genesis) (modules.Transactions, accounts.Account, string) {
-	ks := node.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+func getTransctions(ctx *cli.Context, ks *keystore.KeyStore, genesis *core.Genesis) (modules.Transactions, accounts.Account, string) {
 	addr := genesis.TokenHolder
 	account, password := unlockAccount(ctx, ks, addr, 0, nil)
 	tx := &modules.Transaction{AccountNonce: 1}
 	txs := []*modules.Transaction{}
 	txs = append(txs, tx)
 	return txs, account, password
-}
-
-func sigGenesis(node *node.Node, unit *modules.Unit, account accounts.Account) (string, []byte, error) {
-	ks := node.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
-	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
-	privateKey, err := ks.GetPrivateKey(account)
-	if err != nil {
-		return "", []byte(""), err
-	}
-	//unit signature
-	sign, err := ks.SignHash(account, hash.Bytes())
-	if err != nil {
-		utils.Fatalf("Sign error:%s", err)
-		return "", []byte(""), err
-	}
-	return hexutil.Encode(sign), crypto.FromECDSAPub(&privateKey.PublicKey), nil
-}
-
-func verifyGenesisWithPK(sign string, unit *modules.Unit, publicKey []byte) bool {
-	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
-	s, err := hexutil.Decode(sign)
-	if err != nil {
-		log.Info("Verfiy error:%s", err.Error())
-		return false
-	}
-	sig := s[:len(s)-1] // remove recovery id
-	pass := crypto.VerifySignature(publicKey, hash.Bytes(), sig)
-	if pass {
-		log.Info("Valid signature")
-		return true
-	} else {
-		log.Info("Invalid signature")
-		return false
-	}
-	return false
 }
 
 func commitDB(unit *modules.Unit, publicKey []byte, sign string, account accounts.Account) error {
