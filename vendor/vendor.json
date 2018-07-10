@@ -256,6 +256,12 @@
 			"tree": true
 		},
 		{
+			"checksumSHA1": "x1lFuKrH9pNNW9Qb1DLNVzb2VXA=",
+			"path": "github.com/looplab/fsm",
+			"revision": "f980bdb68a8962823200eafe6c0aa99e917be0d7",
+			"revisionTime": "2018-05-15T09:12:35Z"
+		},
+		{
 			"checksumSHA1": "7hln62oZPZmyqEmgXaybf9WxQ7A=",
 			"path": "github.com/maruel/panicparse/stack",
 			"revision": "ad661195ed0e88491e0f14be6613304e3b1141d6",
