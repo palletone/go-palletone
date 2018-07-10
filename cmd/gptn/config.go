@@ -42,6 +42,8 @@ import (
 	"github.com/palletone/go-palletone/statistics/dashboard"
 )
 
+const defaultConfigPath = "./palletone.toml"
+
 var (
 	dumpConfigCommand = cli.Command{
 		Action:      utils.MigrateFlags(dumpConfig),
@@ -56,6 +58,7 @@ var (
 	configFileFlag = cli.StringFlag{
 		Name:  "config",
 		Usage: "TOML configuration file",
+		Value: defaultConfigPath,
 	}
 )
 
@@ -142,7 +145,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	}
 
 	// Load config file.
-	file := "./palletone.toml"
+	file := defaultConfigPath
 	if temp := ctx.GlobalString(configFileFlag.Name); temp != "" {
 		file = temp
 	}
