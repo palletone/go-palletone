@@ -341,7 +341,7 @@ func accountCreate(ctx *cli.Context) error {
 	cfg := FullConfig{Node: defaultNodeConfig()}
 	// Load config file.
 	file := defaultConfigPath
-	if temp := ctx.GlobalString(configFileFlag.Name); temp != "" {
+	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
 		file = temp
 	}
 	if err := loadConfig(file, &cfg); err != nil {
