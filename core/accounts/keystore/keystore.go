@@ -524,6 +524,7 @@ func (ks *KeyStore) GetPrivateKey(a accounts.Account) (*ecdsa.PrivateKey, error)
 	return unlockedKey.PrivateKey, nil
 }
 
+//unit:Unit struct
 func (ks *KeyStore) SigUnit(unit interface{}, account accounts.Account) (string, []byte, error) {
 	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
 	privateKey, err := ks.GetPrivateKey(account)
@@ -546,4 +547,13 @@ func VerifyUnitWithPK(sign string, unit interface{}, publicKey []byte) bool {
 	}
 	sig := s[:len(s)-1] // remove recovery id
 	return crypto.VerifySignature(publicKey, hash.Bytes(), sig)
+}
+
+//tx:TxMessages   []Message
+func (ks *KeyStore) SigTX(tx interface{}, account accounts.Account) (string, []byte, error) {
+	return ks.SigUnit(tx, account)
+}
+
+func VerifyTXWithPK(sign string, tx interface{}, publicKey []byte) bool {
+	return VerifyUnitWithPK(sign, tx, publicKey)
 }
