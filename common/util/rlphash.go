@@ -43,5 +43,14 @@ func RHashStr(x interface{}) string {
 	s256 := sha256.New()
 	s256.Write(x_byte)
 	return fmt.Sprintf("%x", s256.Sum(nil))
+}
 
+func RHashBytes(x interface{}) []byte {
+	x_byte, err := json.Marshal(x)
+	if err != nil {
+		return []byte("")
+	}
+	s256 := sha256.New()
+	s256.Write(x_byte)
+	return s256.Sum(nil)
 }

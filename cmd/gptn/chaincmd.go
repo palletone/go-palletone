@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -144,8 +145,9 @@ func getTransctions(ctx *cli.Context, node *node.Node, genesis *core.Genesis) (m
 
 func sigGenesis(ctx *cli.Context, node *node.Node, unit *modules.Unit, account accounts.Account) ([]byte, error) {
 	//-------------
+
 	ks := node.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
-	hash := crypto.Keccak256Hash([]byte(""))
+	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
 	//unit signature
 	sign, err := ks.SignHash(account, hash.Bytes())
 	if err != nil {
