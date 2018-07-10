@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"time"
 )
 
 func RlpHash(x interface{}) (h common.Hash) {
@@ -72,8 +73,8 @@ func GetUnit(hash *common.Hash, index modules.ChainIndex) *modules.Unit {
 生成创世单元，需要传入创世单元的配置信息以及coinbase交易
 generate genesis unit, need genesis unit configure fields and transactions list
 */
-func NewGenesisUnit(genesisConf *core.Genesis, txs modules.Transactions) (*modules.Unit, error) {
-	var gUnit modules.Unit
+func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
+	gUnit := modules.Unit{Gasprice:0, Gasused:0, Creationdate:time.Now()}
 
 	// genesis unit asset id
 	gAssetID := asset.NewAsset()
@@ -117,4 +118,8 @@ func NewGenesisUnit(genesisConf *core.Genesis, txs modules.Transactions) (*modul
 		}
 	}
 	return &gUnit, nil
+}
+
+func SaveGenesisUnit()  {
+	
 }

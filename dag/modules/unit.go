@@ -286,9 +286,9 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 	return u
 }
 
-func NewGenesisUnit(genesisConf *core.Genesis) (*Unit, error) {
+func NewGenesisUnit(genesisConf *core.Genesis, txs Transactions) (*Unit, error) {
 	//test
-	unit := Unit{txs: txs}
+	unit := Unit{Txs: txs}
 	return &unit, nil
 }
 
