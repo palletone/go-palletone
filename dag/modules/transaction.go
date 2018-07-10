@@ -45,12 +45,12 @@ var (
 //	CreationDate time.Time   `json:"creation_date"`
 //	data         txdata
 //	// caches
-//	hash         atomic.Value
-//	size         atomic.Value
+//	UnitHash         atomic.Value
+//	UnitSize         atomic.Value
 //	memery       atomic.Value
 //	from         atomic.Value
 //	excutiontime uint      `json:"excution_time"`
-//	creationdate time.Time `json:"creation_date"`
+//	Creationdate time.Time `json:"creation_date"`
 //}
 //type txdata struct {
 //	AccountNonce      uint64          `json:"account_nonce"`
@@ -67,7 +67,7 @@ var (
 //	S *big.Int `json:"s"`
 //
 //	// This is only used when marshaling to JSON.
-//	Hash *common.Hash `json:"hash" rlp:"-"`
+//	Hash *common.Hash `json:"UnitHash" rlp:"-"`
 //}
 //
 //type txdataMarshaling struct {
@@ -127,10 +127,10 @@ func newTransaction(nonce uint64, from *common.Address, fee *big.Int, data []byt
 //
 //// DecodeRLP implements rlp.Decoder
 //func (tx *Transaction) DecodeRLP(s *rlp.Stream) error {
-//	_, size, _ := s.Kind()
+//	_, UnitSize, _ := s.Kind()
 //	err := s.Decode(&tx.data)
 //	if err == nil {
-//		tx.size.Store(common.StorageSize(rlp.ListSize(size)))
+//		tx.UnitSize.Store(common.StorageSize(rlp.ListSize(UnitSize)))
 //	}
 //
 //	return err
@@ -138,9 +138,9 @@ func newTransaction(nonce uint64, from *common.Address, fee *big.Int, data []byt
 //
 //// MarshalJSON encodes the web3 RPC transaction format.
 //func (tx *Transaction) MarshalJSON() ([]byte, error) {
-//	hash := tx.Hash()
+//	UnitHash := tx.Hash()
 //	data := tx.data
-//	data.Hash = &hash
+//	data.Hash = &UnitHash
 //	return data.MarshalJSON()
 //}
 //
@@ -192,7 +192,7 @@ func (tx Transaction) Hash() common.Hash {
 	return v
 }
 
-// Size returns the true RLP encoded storage size of the transaction, either by
+// Size returns the true RLP encoded storage UnitSize of the transaction, either by
 // encoding and returning it, or returning a previsouly cached value.
 func (tx *Transaction) Size() common.StorageSize {
 	if size := tx.size.Load(); size != nil {

@@ -28,11 +28,11 @@ type Log struct {
 	// but not secured by consensus.
 	// block in which the transaction was included
 	UnitNumber uint64 `json:"unitNumber"`
-	// hash of the transaction
+	// UnitHash of the transaction
 	TxHash common.Hash `json:"transactionHash" gencodec:"required"`
 	// index of the transaction in the block
 	TxIndex uint `json:"transactionIndex" gencodec:"required"`
-	// hash of the block in which the transaction was included
+	// UnitHash of the block in which the transaction was included
 	UnitHash common.Hash `json:"unitHash"`
 	// index of the log in the receipt
 	Index uint `json:"logIndex" gencodec:"required"`
