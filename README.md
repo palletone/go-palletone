@@ -2,7 +2,7 @@
 
 Official golang implementation of the palletone protocol.
 
- [![CircleCI](https://circleci.com/gh/palletone/go-palletone/tree/master.svg?style=shield)](https://circleci.com/gh/palletone/go-palletone/tree/master)
+[![Build Status](https://travis-ci.org/palletone/go-palletone.svg?branch=master)](https://travis-ci.org/palletone/go-palletone)
 
 ## Building the source
 
