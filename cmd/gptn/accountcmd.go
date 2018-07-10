@@ -340,8 +340,8 @@ func ambiguousAddrRecovery(ks *keystore.KeyStore, err *keystore.AmbiguousAddrErr
 func accountCreate(ctx *cli.Context) error {
 	cfg := FullConfig{Node: defaultNodeConfig()}
 	// Load config file.
-	file := "./palletone.toml"
-	if temp := ctx.GlobalString(configFileFlag.Name); temp != "" {
+	file := defaultConfigPath
+	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
 		file = temp
 	}
 	if err := loadConfig(file, &cfg); err != nil {

@@ -83,7 +83,7 @@ package modules
 // 	// SignatureValues returns the raw R, S, V values corresponding to the
 // 	// given signature.
 // 	SignatureValues(tx *Transaction, sig []byte) (r, s, v *big.Int, err error)
-// 	// Hash returns the hash to be signed.
+// 	// Hash returns the UnitHash to be signed.
 // 	Hash(tx *Transaction) common.Hash
 // 	// Equal returns true if the given signer is the same as the receiver.
 // 	Equal(Signer) bool
@@ -137,7 +137,7 @@ package modules
 // 	return R, S, V, nil
 // }
 //
-// // Hash returns the hash to be signed by the sender.
+// // Hash returns the UnitHash to be signed by the sender.
 // // It does not uniquely identify the transaction.
 // func (s EIP155Signer) Hash(tx *Transaction) common.Hash {
 // 	return rlpHash([]interface{}{
@@ -180,7 +180,7 @@ package modules
 // // needs to be in the [R || S || V] format where V is 0 or 1.
 // func (fs FrontierSigner) SignatureValues(tx *Transaction, sig []byte) (r, s, v *big.Int, err error) {
 // 	if len(sig) != 65 {
-// 		panic(fmt.Sprintf("wrong size for signature: got %d, want 65", len(sig)))
+// 		panic(fmt.Sprintf("wrong UnitSize for signature: got %d, want 65", len(sig)))
 // 	}
 // 	r = new(big.Int).SetBytes(sig[:32])
 // 	s = new(big.Int).SetBytes(sig[32:64])
@@ -188,7 +188,7 @@ package modules
 // 	return r, s, v, nil
 // }
 //
-// // Hash returns the hash to be signed by the sender.
+// // Hash returns the UnitHash to be signed by the sender.
 // // It does not uniquely identify the transaction.
 // func (fs FrontierSigner) Hash(tx *Transaction) common.Hash {
 // 	return rlpHash([]interface{}{

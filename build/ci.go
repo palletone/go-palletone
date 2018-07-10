@@ -71,14 +71,14 @@ var (
 	// Files that end up in the gptn-alltools*.zip archive.
 	allToolsArchiveFiles = []string{
 		"COPYING",
-		executablePath("abigen"),
-		executablePath("bootnode"),
-		executablePath("evm"),
+		// executablePath("abigen"),
+		// executablePath("bootnode"),
+		// executablePath("evm"),
 		executablePath("gptn"),
-		executablePath("puppeth"),
-		executablePath("rlpdump"),
-		executablePath("swarm"),
-		executablePath("wnode"),
+		// executablePath("puppeth"),
+		// executablePath("rlpdump"),
+		// executablePath("swarm"),
+		// executablePath("wnode"),
 	}
 
 	// A debian package is created for all executables listed here.
@@ -381,11 +381,13 @@ func doArchive(cmdline []string) {
 	if err := build.WriteArchive(alltools, allToolsArchiveFiles); err != nil {
 		log.Fatal(err)
 	}
-	for _, archive := range []string{gptn, alltools} {
-		if err := archiveUpload(archive, *upload, *signer); err != nil {
-			log.Fatal(err)
-		}
-	}
+	// for _, archive := range []string{gptn, alltools} {
+	// 	if err := archiveUpload(archive, *upload, *signer); err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// }
+	fmt.Println(signer)
+	fmt.Println(upload)
 }
 
 func archiveBasename(arch string, env build.Environment) string {

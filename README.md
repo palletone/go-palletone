@@ -2,7 +2,10 @@
 
 Official golang implementation of the palletone protocol.
 
- [![CircleCI](https://circleci.com/gh/palletone/go-palletone/tree/master.svg?style=shield)](https://circleci.com/gh/palletone/go-palletone/tree/master)
+[![Build Status](https://travis-ci.org/palletone/go-palletone.svg?branch=master)](https://travis-ci.org/palletone/go-palletone)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/47ccb5f4718d4e80963f70159c16c913)](https://app.codacy.com/app/palletonedev/go-palletone?utm_source=github.com&utm_medium=referral&utm_content=palletone/go-palletone&utm_campaign=badger)
+[![Coverage Status](https://coveralls.io/repos/github/palletone/go-palletone/badge.svg?branch=master)](https://coveralls.io/github/palletone/go-palletone?branch=master)
+[![Build status](https://ci.appveyor.com/api/projects/status/odogyg1g23w4gagn?svg=true)](https://ci.appveyor.com/project/palletonedev/go-palletone)
 
 ## Building the source
 
@@ -124,6 +127,13 @@ You can create a JSON file for the genesis state of a new chain with an existing
 ```
 $ gptn create-genesis-json path/to/my-genesis.json
 ```
+
+##### Customization of the genesis file
+
+If you want to customize the network’s genesis state, edit the newly created my-genesis.json file. This allows you to control things such as:
+
+* The initial values of chain parameters
+* Assets and their initial distribution
 
 With the genesis state defined in the above JSON file, you'll need to initialize **every** Gptn node with it prior to starting it up to ensure all blockchain parameters are correctly set:
 

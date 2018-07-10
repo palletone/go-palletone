@@ -40,22 +40,29 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/statistics/dashboard"
+	"path/filepath"
 )
+
+const defaultConfigPath = "./palletone.toml"
 
 var (
 	dumpConfigCommand = cli.Command{
 		Action:      utils.MigrateFlags(dumpConfig),
 		Name:        "dumpconfig",
-		Usage:       "Show configuration values",
+		Usage:       "Dumps configuration to a specified file",
 		ArgsUsage:   "",
-		Flags:       append(append(nodeFlags, rpcFlags...)),
+//		Flags:       append(append(nodeFlags, rpcFlags...)),
+		Flags:		 []cli.Flag{
+			ConfigFileFlag,
+		},
 		Category:    "MISCELLANEOUS COMMANDS",
-		Description: `The dumpconfig command shows configuration values.`,
+		Description: `The dumpconfig command dumps configuration to a specified file.`,
 	}
 
-	configFileFlag = cli.StringFlag{
-		Name:  "config",
+	ConfigFileFlag = cli.StringFlag{
+		Name:  "configfile",
 		Usage: "TOML configuration file",
+		Value: defaultConfigPath,
 	}
 )
 
@@ -142,8 +149,8 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	}
 
 	// Load config file.
-	file := "./palletone.toml"
-	if temp := ctx.GlobalString(configFileFlag.Name); temp != "" {
+	file := defaultConfigPath
+	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
 		file = temp
 	}
 	if err := loadConfig(file, &cfg); err != nil {
@@ -199,12 +206,44 @@ func dumpConfig(ctx *cli.Context) error {
 		comment += "# Note: this config doesn't contain the genesis block.\n\n"
 	}
 
+	configPath := ctx.Args().First()
+	// If no path is specified, the default path is used
+	if len(configPath) == 0 {
+		configPath = defaultConfigPath
+	}
+
+	var (
+		configFile *os.File
+		err        error
+	)
+
+	err = os.MkdirAll(filepath.Dir(configPath), os.ModePerm)
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+
+	configFile, err = os.Create(configPath)
+	defer configFile.Close()
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+
 	out, err := tomlSettings.Marshal(&cfg)
 	if err != nil {
 		log.Error(err.Error())
 		return err
 	}
+
 	io.WriteString(os.Stdout, comment)
-	os.Stdout.Write(out)
+//	os.Stdout.Write(out)
+
+	_ ,err = configFile.Write(out)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	fmt.Println("Dumping new config file at " + configPath)
+
 	return nil
 }

@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-// key: wallet.hash(wallet+create_date)
+// key: wallet.UnitHash(wallet+create_date)
 type Wallet struct {
 	Wallet             string                 `json:"wallet"`
 	Address            string                 `json:"address"`

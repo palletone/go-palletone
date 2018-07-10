@@ -73,13 +73,41 @@ import (
 type Header struct {
 	ParentUnits []common.Hash `json:"parent_units"`
 	AssetIDs    []IDType36    `json:"assets"`
-	Authors     []Author      `json:"authors"` // the unit creation authors
+	Authors     *Author       `json:"authors"` // the unit creation authors
 	Witness     []Author      `json:"witness"`
 	GasLimit    uint64        `json:"gasLimit"`
 	GasUsed     uint64        `json:"gasUsed"`
 	Root        common.Hash   `json:"root"`
 	Number      ChainIndex    `json:"index"`
 	Extra       []byte        `json:"extra"`
+}
+
+func (cpy *Header) CopyHeader(h *Header) {
+	//ParentUnits []common.Hash `json:"parent_units"`
+	//AssetIDs    []IDType36    `json:"assets"`
+	//Authors     *Author       `json:"authors"` // the unit creation authors
+	//Witness     []Author      `json:"witness"`
+	//GasLimit    uint64        `json:"gasLimit"`
+	//GasUsed     uint64        `json:"gasUsed"`
+	//Root        common.Hash   `json:"root"`
+	//Number      ChainIndex    `json:"index"`
+	//Extra       []byte        `json:"extra"`
+
+	cpy = h
+	if len(h.ParentUnits) > 0 {
+		cpy.ParentUnits = make([]common.Hash, len(h.ParentUnits))
+		for i := 0; i < len(h.ParentUnits); i++ {
+			cpy.ParentUnits[i] = h.ParentUnits[i]
+		}
+	}
+
+	if len(h.AssetIDs) > 0 {
+		cpy.AssetIDs = make([]IDType36, len(h.AssetIDs))
+		for i := 0; i < len(h.AssetIDs); i++ {
+			cpy.AssetIDs[i] = h.AssetIDs[i]
+		}
+	}
+
 }
 
 func NewHeader(parents []common.Hash, asset []IDType36, gas, used uint64, extra []byte) *Header {
@@ -129,10 +157,6 @@ func CopyHeader(h *Header) *Header {
 		copy(cpy.AssetIDs, h.AssetIDs)
 	}
 
-	if len(h.Authors) > 0 {
-		copy(cpy.Authors, h.Authors)
-	}
-
 	if len(h.Witness) > 0 {
 		copy(cpy.Witness, h.Witness)
 	}
@@ -144,16 +168,16 @@ func CopyHeader(h *Header) *Header {
 	return &cpy
 }
 
-// key: unit.hash(unit)
+// key: unit.UnitHash(unit)
 type Unit struct {
-	header *Header      `json:"unit_header"`  // unit header
-	txs    Transactions `json:"transactions"` // transaction list
+	UnitHeader *Header      `json:"unit_header"`  // unit header
+	Txs        Transactions `json:"transactions"` // transaction list
 
-	hash         common.Hash        `json:"unit_hash"`     // unit hash
-	size         common.StorageSize `json:"size"`          // unit size
-	creationdate time.Time          `json:"creation_time"` // unit create time
-	gasprice     uint64             `json:"gas_price"`     // user set total gas
-	gasused      uint64             `json:"gas_used"`      // the actually used gas, mediator set
+	UnitHash     common.Hash        `json:"unit_hash"`     // unit hash
+	UnitSize     common.StorageSize `json:"UnitSize"`      // unit size
+	Creationdate time.Time          `json:"creation_time"` // unit create time
+	Gasprice     uint64             `json:"gas_price"`     // user set total gas
+	Gasused      uint64             `json:"gas_used"`      // the actually used gas, mediator set
 }
 
 type Transactions []*Transaction
@@ -176,7 +200,7 @@ type ChainIndex struct {
 	Index   uint64
 }
 
-// key: message.hash(message+timestamp)
+// key: message.UnitHash(message+timestamp)
 type Message struct {
 	App         string      `json:"app"`          // message type
 	PayloadHash common.Hash `json:"payload_hash"` // payload hash
@@ -235,8 +259,8 @@ type TextPayload struct {
 
 type Author struct {
 	Address        common.Address `json:"address"`
-	Pubkey         common.Hash    `json:"pubkey"`
-	TxAuthentifier Authentifier   `json:"authentifiers"`
+	Pubkey         []byte/*common.Hash*/ `json:"pubkey"`
+	TxAuthentifier Authentifier `json:"authentifiers"`
 }
 
 type Authentifier struct {
@@ -252,18 +276,18 @@ func (a *Authentifier) FromDB(info []byte) error {
 
 func NewUnit(header *Header, txs Transactions) *Unit {
 	u := &Unit{
-		header: CopyHeader(header),
-		txs:    CopyTransactions(txs),
+		UnitHeader: CopyHeader(header),
+		Txs:        CopyTransactions(txs),
 	}
-	u.creationdate = time.Now()
-	u.size = header.Size()
-	u.hash = u.Hash()
+	u.Creationdate = time.Now()
+	u.UnitSize = header.Size()
+	u.UnitHash = u.Hash()
 	return u
 }
 
-func NewGenesisUnit(genesis *core.Genesis, txs Transactions) (*Unit, error) {
+func NewGenesisUnit(genesisConf *core.Genesis, txs Transactions) (*Unit, error) {
 	//test
-	unit := Unit{txs: txs}
+	unit := Unit{Txs: txs}
 	return &unit, nil
 }
 
@@ -275,16 +299,16 @@ func CopyTransactions(txs Transactions) Transactions {
 type UnitNonce [8]byte
 
 /************************** Unit Members  *****************************/
-func (u *Unit) Header() *Header { return CopyHeader(u.header) }
+func (u *Unit) Header() *Header { return CopyHeader(u.UnitHeader) }
 
 // transactions
 func (u *Unit) Transactions() []*Transaction {
-	return u.txs
+	return u.Txs
 }
 
 // return transaction
 func (u *Unit) Transaction(hash common.Hash) *Transaction {
-	for _, transaction := range u.txs {
+	for _, transaction := range u.Txs {
 		if transaction.TxHash == hash {
 			return transaction
 		}
@@ -292,41 +316,41 @@ func (u *Unit) Transaction(hash common.Hash) *Transaction {
 	return nil
 }
 
-// return  unit'hash
+// return  unit'UnitHash
 func (u *Unit) Hash() common.Hash {
 	v := rlp.RlpHash(u)
 	return v
 }
 
 func (u *Unit) Size() common.StorageSize {
-	u.size = common.StorageSize(unsafe.Sizeof(*u)) + common.StorageSize(len(u.hash)/8)
-	return u.size
+	u.UnitSize = common.StorageSize(unsafe.Sizeof(*u)) + common.StorageSize(len(u.UnitHash)/8)
+	return u.UnitSize
 
-	// if size := b.size.Load(); size != nil {
-	// 	return size.(common.StorageSize)
+	// if UnitSize := b.UnitSize.Load(); UnitSize != nil {
+	// 	return UnitSize.(common.StorageSize)
 	// }
 	// c := writeCounter(0)
 	// rlp.Encode(&c, b)
-	// b.size.Store(common.StorageSize(c))
+	// b.UnitSize.Store(common.StorageSize(c))
 	// return common.StorageSize(c)
 }
 
-// return creationdate
+// return Creationdate
 func (u *Unit) CreationDate() time.Time {
-	return u.creationdate
+	return u.Creationdate
 }
 
 //func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }
 func (u *Unit) Number() ChainIndex {
-	return u.header.Number
+	return u.UnitHeader.Number
 }
 func (u *Unit) NumberU64() uint64 {
-	return u.header.Number.Index
+	return u.UnitHeader.Number.Index
 }
 
-// return unit's parents hash
+// return unit's parents UnitHash
 func (u *Unit) ParentHash() []common.Hash {
-	return u.header.ParentUnits
+	return u.UnitHeader.ParentUnits
 }
 
 /************************** Unit Members  *****************************/

@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/cmd/console"
+	"path/filepath"
 )
 
 const defaultGenesisJsonPath = "./exampleGenesis.json"
@@ -79,15 +80,18 @@ func createGenesisJson(ctx *cli.Context) error {
 		genesisFile *os.File
 		err error
 	)
-	if _, err = os.Stat(genesisOut); err != nil && os.IsNotExist(err) {
-		genesisFile,err = os.Create(genesisOut)
-	}else {
-		genesisFile,err = os.OpenFile(genesisOut, os.O_RDWR,0600)
+
+	err = os.MkdirAll(filepath.Dir(genesisOut), os.ModePerm)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
 	}
+
+	genesisFile,err = os.Create(genesisOut)
 	defer genesisFile.Close()
 	if err != nil {
-//		return err
 		utils.Fatalf("%v", err)
+		return err
 	}
 
 	var confirm bool
@@ -101,11 +105,13 @@ func createGenesisJson(ctx *cli.Context) error {
 		account, err = console.Stdin.PromptInput("Please enter an existing account address: ")
 		if err != nil {
 			utils.Fatalf("%v", err)
+			return err
 		}
 	} else {
 		account, err = initialAccount(ctx)
 		if err != nil {
 			utils.Fatalf("%v", err)
+			return err
 		}
 	}
 
@@ -114,15 +120,14 @@ func createGenesisJson(ctx *cli.Context) error {
 	var genesisJson []byte
 	genesisJson, err = json.MarshalIndent(*genesisState, "", "  ")
 	if err != nil {
-//		return err
 		utils.Fatalf("%v", err)
+		return err
 	}
-//	log.Debug(string(genesisJson))
 
 	_ ,err = genesisFile.Write(genesisJson)
 	if err != nil {
-//		return err
 		utils.Fatalf("%v", err)
+		return err
 	}
 
 	fmt.Println("Creating example genesis state in file " + genesisOut)
@@ -134,8 +139,8 @@ func createGenesisJson(ctx *cli.Context) error {
 func initialAccount(ctx *cli.Context) (string, error) {
 	cfg := FullConfig{Node: defaultNodeConfig()}
 	// Load config file.
-	file := "./palletone.toml"
-	if temp := ctx.GlobalString(configFileFlag.Name); temp != "" {
+	file := defaultConfigPath
+	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
 		file = temp
 	}
 	if err := loadConfig(file, &cfg); err != nil {

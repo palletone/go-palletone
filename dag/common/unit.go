@@ -26,8 +26,12 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"time"
+	"reflect"
 )
 
 func RlpHash(x interface{}) (h common.Hash) {
@@ -64,4 +68,76 @@ func GetUnit(hash *common.Hash, index modules.ChainIndex) *modules.Unit {
 		return unit
 	}
 	return nil
+}
+
+/**
+生成创世单元，需要传入创世单元的配置信息以及coinbase交易
+generate genesis unit, need genesis unit configure fields and transactions list
+*/
+func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
+	gUnit := modules.Unit{Gasprice:0, Gasused:0, Creationdate:time.Now()}
+
+	// genesis unit asset id
+	gAssetID := asset.NewAsset()
+
+	// genesis unit height
+	chainIndex := modules.ChainIndex{AssetID: gAssetID, IsMain: true, Index: 0}
+
+	// transactions merkle root
+	root := core.DeriveSha(txs)
+
+	// generate genesis unit header
+	header := modules.Header{
+		AssetIDs: []modules.IDType36{gAssetID},
+		GasLimit: 0,
+		GasUsed:  0,
+		Number:   chainIndex,
+		Root:     root,
+	}
+
+	gUnit.UnitHeader = &header
+	// copy txs
+	if len(txs) > 0 {
+		gUnit.Txs = make([]*modules.Transaction, len(txs))
+		for i, pTx := range txs {
+			tx := modules.Transaction{
+				AccountNonce: pTx.AccountNonce,
+				TxHash:       pTx.TxHash,
+				From:         pTx.From,
+				Excutiontime: pTx.Excutiontime,
+				Memery:       pTx.Memery,
+				CreationDate: pTx.CreationDate,
+				TxFee:        pTx.TxFee,
+			}
+			if len(pTx.TxMessages) > 0 {
+				tx.TxMessages = make([]modules.Message, len(pTx.TxMessages))
+				for j := 0; j < len(pTx.TxMessages); j++ {
+					tx.TxMessages[j] = pTx.TxMessages[j]
+				}
+			}
+			gUnit.Txs[i] = &tx
+		}
+	}
+	return &gUnit, nil
+}
+
+/**
+为创世单元生成ConfigPayload
+To generate config payload for genesis unit
+ */
+func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, error) {
+	var confPay modules.ConfigPayload
+
+	confPay.ConfigSet = make(map[string]interface{})
+	confPay.ConfigSet["version"] = genesisConf.Version
+	confPay.ConfigSet["initialActiveMediators"] = genesisConf.InitialActiveMediators
+	confPay.ConfigSet["InitialMediatorCandidates"] = genesisConf.InitialMediatorCandidates
+
+	t := reflect.TypeOf(genesisConf.SystemConfig)
+	v := reflect.ValueOf(genesisConf.SystemConfig)
+	for k := 0; k < t.NumField(); k++ {
+		confPay.ConfigSet[t.Field(k).Name] = v.Field(k).Interface()
+	}
+
+	return confPay, nil
 }
