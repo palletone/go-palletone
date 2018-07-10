@@ -18,6 +18,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/palletone/go-palletone/cmd/utils"
@@ -113,21 +114,22 @@ func initGenesis(ctx *cli.Context) error {
 	}
 
 	node := makeFullNode(ctx)
-	txs, account, _ := getTransctions(ctx, node, genesis)
+	txs, account, pwd := getTransctions(ctx, node, genesis)
 	unit, err := gen.SetupGenesisBlock(genesis, txs)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis block: %v", err)
 		return err
 	}
 	log.Info("Successfully Get Genesis Block")
-
-	sig, privateKey, err := sigGenesis(ctx, node, unit, account)
+	fmt.Println("genesis unit:", unit)
+	sign, privateKey, err := sigGenesis(ctx, node, unit, account)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis block: %v", err)
 		return err
 	}
 	log.Info("Successfully SIG Genesis Block")
-	return commitDB(unit, privateKey, sig, account)
+	//verifyGenesis(sign, unit, pwd, account, node)
+	return commitDB(unit, privateKey, sign, account)
 }
 
 func getTransctions(ctx *cli.Context, node *node.Node, genesis *core.Genesis) (modules.Transactions, accounts.Account, string) {
@@ -156,6 +158,23 @@ func sigGenesis(ctx *cli.Context, node *node.Node, unit *modules.Unit, account a
 	return hexutil.Encode(sign), crypto.FromECDSAPub(&privateKey.PublicKey), nil
 }
 
+func verifyGenesis(sign string, unit *modules.Unit, pwd string, account accounts.Account, node *node.Node) error {
+	ks := node.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
+	s, _ := hexutil.Decode(sign)
+
+	pass, err := ks.VerifySignatureWithPassphrase(account, pwd, hash.Bytes(), s)
+	if err != nil {
+		utils.Fatalf("Verfiy error:%s", err)
+	}
+	if pass {
+		fmt.Println("Valid signature")
+	} else {
+		utils.Fatalf("Invalid signature")
+	}
+	return nil
+}
+
 func commitDB(unit *modules.Unit, privateKey []byte, sign string, account accounts.Account) error {
 	var authentifier modules.Authentifier
 	authentifier.R = sign
@@ -163,5 +182,6 @@ func commitDB(unit *modules.Unit, privateKey []byte, sign string, account accoun
 	author.Address = account.Address
 	author.Pubkey = privateKey
 	author.TxAuthentifier = authentifier
+	unit.UnitHeader.Authors = author
 	return nil
 }
