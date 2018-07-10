@@ -117,34 +117,18 @@ the official networks need to be manually set up.
 
 #### Defining the private genesis state
 
-First, you'll need to create the genesis state of your networks, which all nodes need to be aware of
-and agree upon. This consists of a small JSON file (e.g. call it `genesis.json`):
+First, you'll need to create the genesis state of your networks, which all nodes need to be aware of and agree upon. This consists of a JSON file (e.g. call it `genesis.json`):
 
-```json
-{
-  "height": "0",
-  "version": "0.6.0",
-  "tokenAmount": 1000000000,
-  "tokenDecimal": 8,
-  "chainId": 0,
-  "tokenHolder": "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ",
-  "systemConfig": {
-    "mediatorSlot": 5,
-    "mediatorCount": 21,
-    "mediatorList": [
-      "dfba98bb5c52bba028e2cc487cbd1084"
-    ],
-    "mediatorCycle": 86400,  <!--24 Hours-->
-    "depositRate": 0.02
-  }
-}
-```
-
-With the genesis state defined in the above JSON file, you'll need to initialize **every** Gptn node
-with it prior to starting it up to ensure all blockchain parameters are correctly set:
+You can create a JSON file for the genesis state of a new chain with an existing account or a newly created account named `my-genesis.json` by running this command:
 
 ```
-$ gptn init path/to/genesis.json
+$ gptn create-genesis-json path/to/my-genesis.json
+```
+
+With the genesis state defined in the above JSON file, you'll need to initialize **every** Gptn node with it prior to starting it up to ensure all blockchain parameters are correctly set:
+
+```
+$ gptn init path/to/my-genesis.json
 ```
 
 ## Contribution

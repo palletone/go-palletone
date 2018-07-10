@@ -40,7 +40,7 @@ func (asset *Asset) String() string {
 	return string(data)
 }
 
-// key: utxo.hash(utxo+timestamp)
+// key: utxo.UnitHash(utxo+timestamp)
 type Utxo struct {
 	AccountAddr  common.Address `json:"account_id"`    // 所属人id
 	TxID         common.Hash    `json:"unit_id"`       // transaction id
