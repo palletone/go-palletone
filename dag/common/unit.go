@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"time"
+	"reflect"
 )
 
 func RlpHash(x interface{}) (h common.Hash) {
@@ -120,6 +121,23 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 	return &gUnit, nil
 }
 
-func SaveGenesisUnit()  {
-	
+/**
+为创世单元生成ConfigPayload
+To generate config payload for genesis unit
+ */
+func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, error) {
+	var confPay modules.ConfigPayload
+
+	confPay.ConfigSet = make(map[string]interface{})
+	confPay.ConfigSet["version"] = genesisConf.Version
+	confPay.ConfigSet["initialActiveMediators"] = genesisConf.InitialActiveMediators
+	confPay.ConfigSet["InitialMediatorCandidates"] = genesisConf.InitialMediatorCandidates
+
+	t := reflect.TypeOf(genesisConf.SystemConfig)
+	v := reflect.ValueOf(genesisConf.SystemConfig)
+	for k := 0; k < t.NumField(); k++ {
+		confPay.ConfigSet[t.Field(k).Name] = v.Field(k).Interface()
+	}
+
+	return confPay, nil
 }
