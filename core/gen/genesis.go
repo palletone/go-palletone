@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	dagCommon "github.com/palletone/go-palletone/dag/common"
 )
 
 const (
@@ -62,7 +63,8 @@ func SetupGenesisBlock(genesis *core.Genesis, txs modules.Transactions) (*module
 	} else {
 		log.Info("Writing custom genesis block")
 	}
-	return modules.NewGenesisUnit(genesis, txs)
+	//return modules.NewGenesisUnit(genesis, txs)
+	return dagCommon.NewGenesisUnit(txs)
 }
 
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
