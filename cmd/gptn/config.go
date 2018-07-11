@@ -32,9 +32,8 @@ import (
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/configure"
-//	"github.com/palletone/go-palletone/consensus/consensusconfig"
+	//	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -92,12 +91,12 @@ type FullConfig struct {
 	Node      node.Config
 	Ethstats  ptnstatsConfig
 	Dashboard dashboard.Config
-//	Consensus consensusconfig.Config
+	//	Consensus consensusconfig.Config
 	MediatorPlugin mp.Config
-	Log       *log.Config
-	Dag       dagconfig.Config
-	P2P       p2p.Config
-	Ada       adaptor.Config
+	Log            *log.Config
+	Dag            dagconfig.Config
+	P2P            p2p.Config
+	Ada            adaptor.Config
 }
 
 func loadConfig(file string, cfg *FullConfig) error {
@@ -129,7 +128,7 @@ func adaptorConfig(config FullConfig) FullConfig {
 	config.Node.P2P = config.P2P
 	config.Ptn.Dag = config.Dag
 	config.Ptn.Log = *config.Log
-//	config.Ptn.Consensus = config.Consensus
+	//	config.Ptn.Consensus = config.Consensus
 	return config
 }
 
@@ -140,12 +139,12 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 		Ptn:       ptn.DefaultConfig,
 		Node:      defaultNodeConfig(),
 		Dashboard: dashboard.DefaultConfig,
-		P2P:       p2p.Config{ListenAddr: ":30303", MaxPeers: 25, NAT: nat.Any()},
-//		Consensus: consensusconfig.DefaultConfig,
+		P2P:       p2p.DefaultConfig,
+		//		Consensus: consensusconfig.DefaultConfig,
 		MediatorPlugin: mp.DefaultConfig,
-		Dag:       dagconfig.DefaultConfig,
-		Log:       &log.DefaultConfig,
-		Ada:       adaptor.DefaultConfig,
+		Dag:            dagconfig.DefaultConfig,
+		Log:            &log.DefaultConfig,
+		Ada:            adaptor.DefaultConfig,
 	}
 
 	file := defaultConfigPath
