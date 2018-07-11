@@ -79,9 +79,9 @@ type ProtocolManager struct {
 	SubProtocols []p2p.Protocol
 
 	//eventMux      *event.TypeMux
-	txCh          chan coredata.TxPreEvent
-	txSub         event.Subscription
-	minedBlockSub *event.TypeMuxSubscription
+	txCh  chan coredata.TxPreEvent
+	txSub event.Subscription
+	//minedBlockSub *event.TypeMuxSubscription
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -209,12 +209,12 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	go pm.ceBroadcastLoop()
 
 	go pm.syncer()
-	/*
-		// broadcast transactions
-		pm.txCh = make(chan core.TxPreEvent, txChanSize)
-		pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
-		go pm.txBroadcastLoop()
 
+	// broadcast transactions
+	pm.txCh = make(chan coredata.TxPreEvent, txChanSize)
+	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
+	go pm.txBroadcastLoop()
+	/*
 		// broadcast mined blocks
 		pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
 		go pm.minedBroadcastLoop()
@@ -752,33 +752,18 @@ func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *types.Transaction) 
 	*/
 }
 
-// Mined broadcast loop
-func (self *ProtocolManager) minedBroadcastLoop() {
-	// automatically stops if unsubscribe
-	for obj := range self.minedBlockSub.Chan() {
-		switch ev := obj.Data.(type) {
-		case coredata.NewMinedBlockEvent:
-			self.BroadcastBlock(ev.Block, true)  // First propagate block to peers
-			self.BroadcastBlock(ev.Block, false) // Only then announce to the rest
+func (self *ProtocolManager) txBroadcastLoop() {
+
+	for {
+		select {
+		case event := <-self.txCh:
+			self.BroadcastTx(event.Tx.Hash(), event.Tx)
+
+		// Err() channel will be closed when unsubscribing.
+		case <-self.txSub.Err():
+			return
 		}
 	}
-}
-
-func (self *ProtocolManager) txBroadcastLoop() {
-	for {
-		time.Sleep(time.Duration(5) * time.Second)
-	}
-	/*
-		for {
-			select {
-			case event := <-self.txCh:
-				self.BroadcastTx(event.Tx.Hash(), event.Tx)
-
-			// Err() channel will be closed when unsubscribing.
-			case <-self.txSub.Err():
-				return
-			}
-		}*/
 }
 
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
