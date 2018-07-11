@@ -142,7 +142,8 @@ func maybeLoadConfig(ctx *cli.Context, cfg *FullConfig) error {
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
 	if _, err := os.Stat(configPath); err != nil && os.IsNotExist(err) {
-		err = makeConfigFile(cfg, configPath)
+		defaultConfig := makeDefaultConfig()
+		err = makeConfigFile(&defaultConfig, configPath)
 		if err != nil {
 			utils.Fatalf("%v", err)
 			return err
