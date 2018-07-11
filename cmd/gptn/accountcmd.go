@@ -20,6 +20,8 @@ import (
 	"fmt"
 	// "io/ioutil"
 
+	"gopkg.in/urfave/cli.v1"
+
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -27,7 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"gopkg.in/urfave/cli.v1"
+	"github.com/palletone/go-palletone/common"
 )
 
 var (
@@ -336,29 +338,35 @@ func ambiguousAddrRecovery(ks *keystore.KeyStore, err *keystore.AmbiguousAddrErr
 	return *match
 }
 
-// accountCreate creates a new account into the keystore defined by the CLI flags.
-func accountCreate(ctx *cli.Context) error {
+func newAccount(ctx *cli.Context) (common.Address, error) {
 	cfg := FullConfig{Node: defaultNodeConfig()}
 	// Load config file.
-	file := defaultConfigPath
-	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-		file = temp
-	}
-	if err := loadConfig(file, &cfg); err != nil {
+	if err := maybeLoadConfig(ctx, &cfg); err != nil {
 		utils.Fatalf("%v", err)
 	}
 
-	//utils.SetNodeConfig(ctx, cfg.Node)
+	utils.SetNodeConfig(ctx, &cfg.Node)
 	scryptN, scryptP, keydir, err := cfg.Node.AccountConfig()
 
-	password := getPassPhrase("Your new account is locked with a password. Please give a password. Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
+	password := getPassPhrase("Your new account is locked with a password. Please give a password. " +
+		"Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
 
 	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
-
 	if err != nil {
 		utils.Fatalf("Failed to create account: %v", err)
 	}
-	fmt.Printf("Address Hex: {%x}\n", address)
+
+	return address, nil
+}
+
+// accountCreate creates a new account into the keystore defined by the CLI flags.
+func accountCreate(ctx *cli.Context) error {
+	address, err := newAccount(ctx)
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+
+//	fmt.Printf("Address Hex: {%x}\n", address)
 	fmt.Printf("Address: %s\n", address)
 	return nil
 }

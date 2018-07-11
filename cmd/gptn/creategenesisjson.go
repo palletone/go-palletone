@@ -26,7 +26,6 @@ import (
 
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/core/gen"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/cmd/console"
@@ -137,29 +136,12 @@ func createGenesisJson(ctx *cli.Context) error {
 
 // initialAccount, create a initial account for a new account
 func initialAccount(ctx *cli.Context) (string, error) {
-	cfg := FullConfig{Node: defaultNodeConfig()}
-	// Load config file.
-	file := defaultConfigPath
-	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-		file = temp
-	}
-	if err := loadConfig(file, &cfg); err != nil {
+	address, err := newAccount(ctx)
+	if err != nil {
 		utils.Fatalf("%v", err)
 	}
 
-	//utils.SetNodeConfig(ctx, cfg.Node)
-	scryptN, scryptP, keydir, err := cfg.Node.AccountConfig()
-
-	password := getPassPhrase("Your new account is locked with a password. " +
-		"Please give a password. Do not forget this password.",
-		true, 0, utils.MakePasswordList(ctx))
-
-	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
-
-	if err != nil {
-		utils.Fatalf("Failed to create account: %v", err)
-	}
-	fmt.Printf("Address: %s\n", address)
+	fmt.Printf("Initial account address: %s\n", address)
 
 	return address.Str(), nil
 }
