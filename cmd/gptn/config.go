@@ -34,24 +34,25 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/configure"
 	//	"github.com/palletone/go-palletone/consensus/consensusconfig"
+	"path/filepath"
+
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/statistics/dashboard"
-	"path/filepath"
 )
 
 const defaultConfigPath = "./palletone.toml"
 
 var (
 	dumpConfigCommand = cli.Command{
-		Action:      utils.MigrateFlags(dumpConfig),
-		Name:        "dumpconfig",
-		Usage:       "Dumps configuration to a specified file",
-		ArgsUsage:   "",
-//		Flags:       append(append(nodeFlags, rpcFlags...)),
-		Flags:		 []cli.Flag{
+		Action:    utils.MigrateFlags(dumpConfig),
+		Name:      "dumpconfig",
+		Usage:     "Dumps configuration to a specified file",
+		ArgsUsage: "",
+		//		Flags:       append(append(nodeFlags, rpcFlags...)),
+		Flags: []cli.Flag{
 			ConfigFileFlag,
 		},
 		Category:    "MISCELLANEOUS COMMANDS",
@@ -134,29 +135,31 @@ func adaptorConfig(config FullConfig) FullConfig {
 
 func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// Load defaults.
-	// 加载cfg默认配置信息，cfg是一个字典结构
-	cfg := FullConfig{
-		Ptn:       ptn.DefaultConfig,
-		Node:      defaultNodeConfig(),
-		Dashboard: dashboard.DefaultConfig,
-		P2P:       p2p.DefaultConfig,
-		//		Consensus: consensusconfig.DefaultConfig,
-		MediatorPlugin: mp.DefaultConfig,
-		Dag:            dagconfig.DefaultConfig,
-		Log:            &log.DefaultConfig,
-		Ada:            adaptor.DefaultConfig,
+	// 1. cfg加载系统默认的配置信息，cfg是一个字典结构
+	cfg := makeDefaultConfig()
+
+	// 2. 获取配置文件中的配置信息，并覆盖cfg中对应的配置
+	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
+	configPath := defaultConfigPath
+	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
+		configPath = temp
 	}
 
-	file := defaultConfigPath
-	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-		file = temp
+	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
+	if _, err := os.Stat(configPath); err != nil && os.IsNotExist(err) {
+		err = makeConfigFile(&cfg, configPath)
+		if err != nil {
+			utils.Fatalf("%v", err)
+		}
 	}
+
 	// Load config file.
-	if err := loadConfig(file, &cfg); err != nil {
+	if err := loadConfig(configPath, &cfg); err != nil {
 		utils.Fatalf("%v", err)
 	}
 
 	// Apply flags.
+	// 3. 将命令行中的配置参数覆盖cfg中对应的配置
 	//utils.SetNodeConfig(ctx, &cfg.Node)
 	cfg = adaptorConfig(cfg)
 	stack, err := node.New(&cfg.Node)
@@ -176,7 +179,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 //生成node.Node一个结构，里面会有任务函数栈, 然后设置各个服务到serviceFuncs 里面，
 //包括：全节点，dashboard，以及状态stats服务等
 func makeFullNode(ctx *cli.Context) *node.Node {
-	// 根据命令行参数和一些特殊的配置来创建一个node
+	// 根据命令行参数和配置文件的配置来创建一个node
 	stack, cfg := makeConfigNode(ctx)
 	log.InitLogger()
 	//在stack上增加一个 PalletOne 节点，其实就是new一个 PalletOne 后加到后者的 serviceFuncs 里面去
@@ -197,7 +200,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 
 // dumpConfig is the dumpconfig command.
 func dumpConfig(ctx *cli.Context) error {
-	_, cfg := makeConfigNodeWithOutFile(ctx)
+	cfg := makeDefaultConfig()
 	comment := ""
 
 	if cfg.Ptn.Genesis != nil {
@@ -211,32 +214,9 @@ func dumpConfig(ctx *cli.Context) error {
 		configPath = defaultConfigPath
 	}
 
-	var (
-		configFile *os.File
-		err        error
-	)
-
-	err = os.MkdirAll(filepath.Dir(configPath), os.ModePerm)
-	if err != nil {
-		utils.Fatalf("%v", err)
-	}
-
-	configFile, err = os.Create(configPath)
-	defer configFile.Close()
-	if err != nil {
-		utils.Fatalf("%v", err)
-	}
-
-	out, err := tomlSettings.Marshal(&cfg)
-	if err != nil {
-		log.Error(err.Error())
-		return err
-	}
-
 	io.WriteString(os.Stdout, comment)
-//	os.Stdout.Write(out)
 
-	_ ,err = configFile.Write(out)
+	err := makeConfigFile(&cfg, configPath)
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
@@ -247,34 +227,52 @@ func dumpConfig(ctx *cli.Context) error {
 	return nil
 }
 
-func makeConfigNodeWithOutFile(ctx *cli.Context) (*node.Node, FullConfig) {
-	// Load defaults.
-	// 加载cfg默认配置信息，cfg是一个字典结构
-	cfg := FullConfig{
+// makeDefaultConfig, create a default config
+func makeDefaultConfig() FullConfig {
+	return FullConfig{
 		Ptn:       ptn.DefaultConfig,
 		Node:      defaultNodeConfig(),
 		Dashboard: dashboard.DefaultConfig,
-		P2P:       p2p.Config{ListenAddr: ":30303", MaxPeers: 25, NAT: nat.Any()},
+		P2P:       p2p.DefaultConfig,
 		//		Consensus: consensusconfig.DefaultConfig,
 		MediatorPlugin: mp.DefaultConfig,
-		Dag:       dagconfig.DefaultConfig,
-		Log:       &log.DefaultConfig,
-		Ada:       adaptor.DefaultConfig,
+		Dag:            dagconfig.DefaultConfig,
+		Log:            &log.DefaultConfig,
+		Ada:            adaptor.DefaultConfig,
 	}
+}
 
-	//Apply flags.
-	utils.SetNodeConfig(ctx, &cfg.Node)
+// Create a config file with the specified path and config info
+func makeConfigFile(cfg *FullConfig, configPath string) error {
+	var (
+		configFile *os.File = nil
+		err        error    = nil
+	)
 
-	cfg = adaptorConfig(cfg)
-	stack, err := node.New(&cfg.Node)
+	err = os.MkdirAll(filepath.Dir(configPath), os.ModePerm)
 	if err != nil {
-		utils.Fatalf("Failed to create the protocol stack: %v", err)
+		utils.Fatalf("%v", err)
+		return err
 	}
 
-	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
-	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
-		cfg.Ethstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
+	configFile, err = os.Create(configPath)
+	defer configFile.Close()
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
 	}
-	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
-	return stack, cfg
+
+	configToml, err := tomlSettings.Marshal(cfg)
+	if err != nil {
+		log.Error(err.Error())
+		return err
+	}
+
+	_, err = configFile.Write(configToml)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	return nil
 }

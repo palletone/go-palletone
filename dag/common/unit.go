@@ -24,22 +24,16 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto/sha3"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"time"
 	"reflect"
+	"github.com/palletone/go-palletone/common/log"
+	"unsafe"
+	"github.com/palletone/go-palletone/common/rlp"
 )
-
-func RlpHash(x interface{}) (h common.Hash) {
-	hw := sha3.NewKeccak256()
-	rlp.Encode(hw, x)
-	hw.Sum(h[:0])
-	return h
-}
 
 func RHashStr(x interface{}) string {
 	x_byte, err := json.Marshal(x)
@@ -75,7 +69,7 @@ func GetUnit(hash *common.Hash, index modules.ChainIndex) *modules.Unit {
 generate genesis unit, need genesis unit configure fields and transactions list
 */
 func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
-	gUnit := modules.Unit{Gasprice:0, Gasused:0, Creationdate:time.Now()}
+	gUnit := modules.Unit{Gasprice:0, Gasused:0, Creationdate:time.Now().UTC()}
 
 	// genesis unit asset id
 	gAssetID := asset.NewAsset()
@@ -132,6 +126,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, 
 	confPay.ConfigSet["version"] = genesisConf.Version
 	confPay.ConfigSet["initialActiveMediators"] = genesisConf.InitialActiveMediators
 	confPay.ConfigSet["InitialMediatorCandidates"] = genesisConf.InitialMediatorCandidates
+	confPay.ConfigSet["ChainID"] = genesisConf.ChainID
 
 	t := reflect.TypeOf(genesisConf.SystemConfig)
 	v := reflect.ValueOf(genesisConf.SystemConfig)
@@ -140,4 +135,122 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, 
 	}
 
 	return confPay, nil
+}
+
+/**
+保存创世单元数据
+save genesis unit data
+ */
+func SaveUnit(unit modules.Unit)  error{
+	// check unit signature
+
+	// check unit size
+	if unit.UnitSize != unit.Size() {
+		return modules.ErrUnit(-1)
+	}
+	// save unit header, key is like ""
+	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err!=nil {
+		return modules.ErrUnit(-3)
+	}
+
+	// traverse transactions
+	for _, tx := range unit.Txs {
+		// check tx size
+		if tx.Size() != tx.TxSize {
+			return modules.ErrUnit(-4)
+		}
+		// traverse messages
+		for _, msg := range tx.TxMessages {
+			if !CheckMessageType(msg.App, msg.Payload) {
+				log.Error("Message payload is not consistent with app:", msg.App)
+				continue
+			}
+			// handle different messages
+			switch msg.App {
+			case modules.APP_PAYMENT:
+				payload :=msg.Payload.(modules.PaymentPayload)
+				if ok :=savePaymentPayload(tx, &payload); ok!=true {
+					log.Error("Save payment payload error.")
+					return modules.ErrUnit(-5)
+				}
+
+			case modules.APP_CONTRACT_TPL:
+			case modules.APP_CONTRACT_DEPLOY:
+			case modules.APP_CONTRACT_INVOKE:
+			case modules.APP_CONFIG:
+			case modules.APP_TEXT:
+			default:
+				log.Error("Message type is not supported now:", msg.App)
+			}
+		}
+	}
+	// save unit body, the value only save txs' hash set, and the key is merkle root
+
+	return nil
+}
+
+/**
+检查message的app与payload是否一致
+check messaage 'app' consistent with payload type
+ */
+func CheckMessageType(app string, payload interface{})  bool{
+	switch payload.(type) {
+	case modules.PaymentPayload:
+		if app == modules.APP_PAYMENT { return true}
+	case modules.ContractTplPayload:
+		if app == modules.APP_CONTRACT_TPL { return true}
+	case modules.ContractDeployPayload:
+		if app == modules.APP_CONTRACT_DEPLOY { return true }
+	case modules.ContractInvokePayload:
+		if app == modules.APP_CONTRACT_INVOKE { return true}
+	case modules.ConfigPayload:
+		if app == modules.APP_CONFIG { return true }
+	case modules.TextPayload:
+		if app == modules.APP_TEXT { return true}
+	default:
+		return false
+	}
+	return false
+}
+
+/**
+保存PaymentPayload
+save PaymentPayload data
+ */
+func savePaymentPayload(tx *modules.Transaction, payload *modules.PaymentPayload) bool {
+	// if inputs is none then it is just a normal coinbase transaction
+	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
+	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
+	// if this is a create token transaction, should be return a assetid
+	if len(payload.Inputs) > 0{
+		if len(payload.Inputs)==1 && unsafe.Sizeof(payload.Inputs[0].PreviousOutPoint)==0 {
+			// create new token
+			var assetInfo modules.AssetInfo
+			if err:=rlp.DecodeBytes(payload.Inputs[0].Extra, &assetInfo); err!=nil{ return false }
+			// create asset id
+			assetInfo.AssetID.AssertId = asset.NewAsset()
+			assetInfo.AssetID.UniqueId = assetInfo.AssetID.AssertId
+			data := GetConfig([]byte("ChainID"))
+			chainID := common.BytesToInt(data)
+			if chainID < 0 { return false }
+			assetInfo.AssetID.ChainId = uint64(chainID)
+			// save asset info
+			if err:=SaveAssetInfo(&assetInfo); err!=nil {
+				log.Error("Save asset info error")
+			}
+		} else {
+			// use utxo transaction
+			// check total balance
+			//utxos, total := GetUxtoSetByInputs(payload.Inputs)
+			//walletAmount := WalletBalance()
+			// check acount balance
+			// check double spent
+		}
+	} else {
+		// coinbase
+
+	}
+	// save utxo
+	UpdateUtxo(tx.From.Address, tx)
+	return true
 }

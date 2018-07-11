@@ -148,7 +148,7 @@ func init() {
 	app.Copyright = "Copyright 2017-2018 The go-palletone Authors"
 	// 设置各个子命令的处理类/函数，比如consoleCommand 最后调用到 localConsole
 	// 如果命令行参数里面有下面的指令，就会直接调用下面的Command.Run方法，而不调用默认的app.Action方法
-	// Commands 是所有支持的子命令
+	// Commands 是程序支持的所有子命令
 	app.Commands = []cli.Command{
 		// See chaincmd.go:
 		initCommand, //初始化创世单元命令
@@ -222,7 +222,7 @@ func main() {
 // blocking mode, waiting for it to be shut down.
 // 默认情况下，如果不带子命令参数，那么app.Action = gptn，也就会调用gptn()函数 来启动PalletOne
 func gptn(ctx *cli.Context) error {
-	// 根据参数来新建一个全节点服务
+	// 根据参数来新建一个全节点和相关的服务
 	node := makeFullNode(ctx)
 
 	// 创建协程启动节点，然后进入等待状态(阻塞模式)。

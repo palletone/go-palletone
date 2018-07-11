@@ -18,17 +18,13 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
-	"github.com/palletone/go-palletone/dag/modules"
-
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -111,48 +107,13 @@ func initGenesis(ctx *cli.Context) error {
 
 	node := makeFullNode(ctx)
 	ks := node.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
-	txs, account, _ := getTransctions(ctx, ks, genesis)
-	unit, err := gen.SetupGenesisBlock(genesis, txs)
+	account, _ := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
+
+	err = gen.SetupGenesisUnit(genesis, ks, account)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis block: %v", err)
 		return err
 	}
 	log.Info("Successfully Get Genesis Block")
-	fmt.Println("genesis unit:", unit)
-
-	sign, publicKey, err := ks.SigUnit(unit, account)
-	if err != nil {
-		utils.Fatalf("Failed to write genesis block: %v", err)
-		return err
-	}
-
-	log.Info("Successfully SIG Genesis Block")
-	pass := keystore.VerifyUnitWithPK(sign, unit, publicKey)
-	if pass {
-		log.Info("Valid signature")
-	} else {
-		log.Info("Invalid signature")
-	}
-	commitDB(unit, publicKey, sign, account)
-	return nil
-}
-
-func getTransctions(ctx *cli.Context, ks *keystore.KeyStore, genesis *core.Genesis) (modules.Transactions, accounts.Account, string) {
-	addr := genesis.TokenHolder
-	account, password := unlockAccount(ctx, ks, addr, 0, nil)
-	tx := &modules.Transaction{AccountNonce: 1}
-	txs := []*modules.Transaction{}
-	txs = append(txs, tx)
-	return txs, account, password
-}
-
-func commitDB(unit *modules.Unit, publicKey []byte, sign string, account accounts.Account) error {
-	var authentifier modules.Authentifier
-	authentifier.R = sign
-	author := new(modules.Author)
-	author.Address = account.Address
-	author.Pubkey = publicKey
-	author.TxAuthentifier = authentifier
-	unit.UnitHeader.Authors = author
 	return nil
 }

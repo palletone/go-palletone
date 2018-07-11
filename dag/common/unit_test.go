@@ -37,3 +37,7 @@ func TestGenGenesisConfigPayload(t *testing.T)  {
 		log.Println(k, v)
 	}
 }
+
+func TestSaveUnit(t *testing.T) {
+
+}
