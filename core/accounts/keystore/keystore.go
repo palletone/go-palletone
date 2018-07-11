@@ -525,18 +525,14 @@ func (ks *KeyStore) GetPrivateKey(a accounts.Account) (*ecdsa.PrivateKey, error)
 }
 
 //unit:Unit struct
-func (ks *KeyStore) SigUnit(unit interface{}, account accounts.Account) (string, []byte, error) {
+func (ks *KeyStore) SigUnit(unit interface{}, privateKey *ecdsa.PrivateKey) (string, error) {
 	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
-	privateKey, err := ks.GetPrivateKey(account)
-	if err != nil {
-		return "", []byte(""), err
-	}
 	//unit signature
-	sign, err := ks.SignHash(account, hash.Bytes())
+	sign, err := crypto.Sign(hash.Bytes(), privateKey)
 	if err != nil {
-		return "", []byte(""), err
+		return "", err
 	}
-	return hexutil.Encode(sign), crypto.FromECDSAPub(&privateKey.PublicKey), nil
+	return hexutil.Encode(sign), nil
 }
 
 func VerifyUnitWithPK(sign string, unit interface{}, publicKey []byte) bool {
@@ -550,8 +546,8 @@ func VerifyUnitWithPK(sign string, unit interface{}, publicKey []byte) bool {
 }
 
 //tx:TxMessages   []Message
-func (ks *KeyStore) SigTX(tx interface{}, account accounts.Account) (string, []byte, error) {
-	return ks.SigUnit(tx, account)
+func (ks *KeyStore) SigTX(tx interface{}, privateKey *ecdsa.PrivateKey) (string, error) {
+	return ks.SigUnit(tx, privateKey)
 }
 
 func VerifyTXWithPK(sign string, tx interface{}, publicKey []byte) bool {
