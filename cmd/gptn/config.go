@@ -34,24 +34,25 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/configure"
 	//	"github.com/palletone/go-palletone/consensus/consensusconfig"
+	"path/filepath"
+
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/statistics/dashboard"
-	"path/filepath"
 )
 
 const defaultConfigPath = "./palletone.toml"
 
 var (
 	dumpConfigCommand = cli.Command{
-		Action:      utils.MigrateFlags(dumpConfig),
-		Name:        "dumpconfig",
-		Usage:       "Dumps configuration to a specified file",
-		ArgsUsage:   "",
-//		Flags:       append(append(nodeFlags, rpcFlags...)),
-		Flags:		 []cli.Flag{
+		Action:    utils.MigrateFlags(dumpConfig),
+		Name:      "dumpconfig",
+		Usage:     "Dumps configuration to a specified file",
+		ArgsUsage: "",
+		//		Flags:       append(append(nodeFlags, rpcFlags...)),
+		Flags: []cli.Flag{
 			ConfigFileFlag,
 		},
 		Category:    "MISCELLANEOUS COMMANDS",
@@ -227,7 +228,7 @@ func dumpConfig(ctx *cli.Context) error {
 }
 
 // makeDefaultConfig, create a default config
-func makeDefaultConfig() (FullConfig) {
+func makeDefaultConfig() FullConfig {
 	return FullConfig{
 		Ptn:       ptn.DefaultConfig,
 		Node:      defaultNodeConfig(),
@@ -235,9 +236,9 @@ func makeDefaultConfig() (FullConfig) {
 		P2P:       p2p.DefaultConfig,
 		//		Consensus: consensusconfig.DefaultConfig,
 		MediatorPlugin: mp.DefaultConfig,
-		Dag:       dagconfig.DefaultConfig,
-		Log:       &log.DefaultConfig,
-		Ada:       adaptor.DefaultConfig,
+		Dag:            dagconfig.DefaultConfig,
+		Log:            &log.DefaultConfig,
+		Ada:            adaptor.DefaultConfig,
 	}
 }
 
@@ -245,7 +246,7 @@ func makeDefaultConfig() (FullConfig) {
 func makeConfigFile(cfg *FullConfig, configPath string) error {
 	var (
 		configFile *os.File = nil
-		err        error = nil
+		err        error    = nil
 	)
 
 	err = os.MkdirAll(filepath.Dir(configPath), os.ModePerm)
@@ -267,7 +268,7 @@ func makeConfigFile(cfg *FullConfig, configPath string) error {
 		return err
 	}
 
-	_ ,err = configFile.Write(configToml)
+	_, err = configFile.Write(configToml)
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
