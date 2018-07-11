@@ -120,7 +120,7 @@ var (
 		utils.LogValue3Flag,
 		utils.LogValue4Flag,
 		utils.LogValue5Flag,
-		configFileFlag,
+		ConfigFileFlag,
 		GenesisJsonPathFlag,
 	}
 
@@ -175,7 +175,7 @@ func init() {
 		bugCommand,
 		licenseCommand,
 		// See config.go
-		dumpConfigCommand, //转储配置命令
+		dumpConfigCommand, //转储配置文件命令
 		createGenesisJsonCommand,	// 创建创世json文件命令
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
