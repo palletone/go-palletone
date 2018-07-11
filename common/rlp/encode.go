@@ -17,8 +17,10 @@
 package rlp
 
 import (
+	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"math/big"
 	"reflect"
 	"sync"
@@ -375,6 +377,8 @@ func makeWriter(typ reflect.Type, ts tags) (writer, error) {
 		return makeStructWriter(typ)
 	case kind == reflect.Ptr:
 		return makePtrWriter(typ)
+	case kind == reflect.Float64:
+		return writefloat64, nil
 	default:
 		return nil, fmt.Errorf("rlp: type %v is not RLP-serializable", typ)
 	}
@@ -457,7 +461,15 @@ func writeByteArray(val reflect.Value, w *encbuf) error {
 	w.encodeString(slice)
 	return nil
 }
+func writefloat64(val reflect.Value, w *encbuf) error {
+	f := val.Float()
+	bits := math.Float64bits(f)
+	bytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bytes, bits)
 
+	w.encode(bytes)
+	return nil
+}
 func writeString(val reflect.Value, w *encbuf) error {
 	s := val.String()
 	if len(s) == 1 && s[0] <= 0x7f {
