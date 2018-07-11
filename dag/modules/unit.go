@@ -22,7 +22,6 @@ package modules
 import (
 	"encoding/json"
 	"math/big"
-	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -184,14 +183,16 @@ type Transactions []*Transaction
 
 type Transaction struct {
 	AccountNonce uint64
-	TxHash       common.Hash  `json:"tx_hash"`
-	TxMessages   []Message    `json:"messages"` //
-	From         *Author      `json:"authors"`  // the issuers of the transaction
-	Excutiontime uint         `json:"excution_time"`
-	Memery       uint         `json:"memory"`
-	CreationDate time.Time    `json:"creation_date"`
-	TxFee        *big.Int     `json:"txfee"` // user set total transaction fee.
-	size         atomic.Value `json:"-" rlp:"-"`
+	TxHash       common.Hash `json:"tx_hash"`
+	TxMessages   []Message   `json:"messages"` //
+	From         *Author     `json:"authors"`  // the issuers of the transaction
+	Excutiontime uint        `json:"excution_time"`
+	Memery       uint        `json:"memory"`
+	CreationDate time.Time   `json:"creation_date"`
+	TxFee        *big.Int    `json:"txfee"` // user set total transaction fee.
+	//size         atomic.Value `json:"-" rlp:"-"`
+	Txsize       common.StorageSize `json:"txsize"  rlp:""`
+	priority_lvl float64            `json:"priority_lvl" rlp:"priority_lvl"`
 }
 
 type ChainIndex struct {
