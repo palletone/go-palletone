@@ -22,17 +22,17 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"time"
+	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"time"
-	"reflect"
-	"github.com/palletone/go-palletone/common/log"
-	"unsafe"
-	"github.com/palletone/go-palletone/common/rlp"
 )
 
 func RHashStr(x interface{}) string {
@@ -69,7 +69,7 @@ func GetUnit(hash *common.Hash, index modules.ChainIndex) *modules.Unit {
 generate genesis unit, need genesis unit configure fields and transactions list
 */
 func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
-	gUnit := modules.Unit{Gasprice:0, Gasused:0, Creationdate:time.Now().UTC()}
+	gUnit := modules.Unit{Gasprice: 0, Gasused: 0, Creationdate: time.Now().UTC()}
 
 	// genesis unit asset id
 	gAssetID := asset.NewAsset()
@@ -118,7 +118,7 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 /**
 为创世单元生成ConfigPayload
 To generate config payload for genesis unit
- */
+*/
 func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, error) {
 	var confPay modules.ConfigPayload
 
@@ -140,8 +140,8 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, 
 /**
 保存创世单元数据
 save genesis unit data
- */
-func SaveUnit(unit modules.Unit)  error{
+*/
+func SaveUnit(unit modules.Unit) error {
 	// check unit signature
 
 	// check unit size
@@ -149,14 +149,14 @@ func SaveUnit(unit modules.Unit)  error{
 		return modules.ErrUnit(-1)
 	}
 	// save unit header, key is like ""
-	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err!=nil {
+	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		return modules.ErrUnit(-3)
 	}
 
 	// traverse transactions
 	for _, tx := range unit.Txs {
 		// check tx size
-		if tx.Size() != tx.TxSize {
+		if tx.Size() != tx.Txsize {
 			return modules.ErrUnit(-4)
 		}
 		// traverse messages
@@ -168,8 +168,8 @@ func SaveUnit(unit modules.Unit)  error{
 			// handle different messages
 			switch msg.App {
 			case modules.APP_PAYMENT:
-				payload :=msg.Payload.(modules.PaymentPayload)
-				if ok :=savePaymentPayload(tx, &payload); ok!=true {
+				payload := msg.Payload.(modules.PaymentPayload)
+				if ok := savePaymentPayload(tx, &payload); ok != true {
 					log.Error("Save payment payload error.")
 					return modules.ErrUnit(-5)
 				}
@@ -192,21 +192,33 @@ func SaveUnit(unit modules.Unit)  error{
 /**
 检查message的app与payload是否一致
 check messaage 'app' consistent with payload type
- */
-func CheckMessageType(app string, payload interface{})  bool{
+*/
+func CheckMessageType(app string, payload interface{}) bool {
 	switch payload.(type) {
 	case modules.PaymentPayload:
-		if app == modules.APP_PAYMENT { return true}
+		if app == modules.APP_PAYMENT {
+			return true
+		}
 	case modules.ContractTplPayload:
-		if app == modules.APP_CONTRACT_TPL { return true}
+		if app == modules.APP_CONTRACT_TPL {
+			return true
+		}
 	case modules.ContractDeployPayload:
-		if app == modules.APP_CONTRACT_DEPLOY { return true }
+		if app == modules.APP_CONTRACT_DEPLOY {
+			return true
+		}
 	case modules.ContractInvokePayload:
-		if app == modules.APP_CONTRACT_INVOKE { return true}
+		if app == modules.APP_CONTRACT_INVOKE {
+			return true
+		}
 	case modules.ConfigPayload:
-		if app == modules.APP_CONFIG { return true }
+		if app == modules.APP_CONFIG {
+			return true
+		}
 	case modules.TextPayload:
-		if app == modules.APP_TEXT { return true}
+		if app == modules.APP_TEXT {
+			return true
+		}
 	default:
 		return false
 	}
@@ -216,26 +228,30 @@ func CheckMessageType(app string, payload interface{})  bool{
 /**
 保存PaymentPayload
 save PaymentPayload data
- */
+*/
 func savePaymentPayload(tx *modules.Transaction, payload *modules.PaymentPayload) bool {
 	// if inputs is none then it is just a normal coinbase transaction
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
 	// if this is a create token transaction, should be return a assetid
-	if len(payload.Inputs) > 0{
-		if len(payload.Inputs)==1 && unsafe.Sizeof(payload.Inputs[0].PreviousOutPoint)==0 {
+	if len(payload.Inputs) > 0 {
+		if len(payload.Inputs) == 1 && unsafe.Sizeof(payload.Inputs[0].PreviousOutPoint) == 0 {
 			// create new token
 			var assetInfo modules.AssetInfo
-			if err:=rlp.DecodeBytes(payload.Inputs[0].Extra, &assetInfo); err!=nil{ return false }
+			if err := rlp.DecodeBytes(payload.Inputs[0].Extra, &assetInfo); err != nil {
+				return false
+			}
 			// create asset id
 			assetInfo.AssetID.AssertId = asset.NewAsset()
 			assetInfo.AssetID.UniqueId = assetInfo.AssetID.AssertId
 			data := GetConfig([]byte("ChainID"))
 			chainID := common.BytesToInt(data)
-			if chainID < 0 { return false }
+			if chainID < 0 {
+				return false
+			}
 			assetInfo.AssetID.ChainId = uint64(chainID)
 			// save asset info
-			if err:=SaveAssetInfo(&assetInfo); err!=nil {
+			if err := SaveAssetInfo(&assetInfo); err != nil {
 				log.Error("Save asset info error")
 			}
 		} else {

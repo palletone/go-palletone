@@ -19,13 +19,14 @@ package common
 
 import (
 	"fmt"
+	"strings"
+	"unsafe"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"strings"
-	"unsafe"
 )
 
 func KeyToOutpoint(key []byte) modules.OutPoint {
@@ -76,7 +77,9 @@ func ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*
 			continue
 		}
 
-		if utxo.IsLocked { continue }
+		if utxo.IsLocked {
+			continue
+		}
 		outpoint := KeyToOutpoint([]byte(k))
 		vout[outpoint] = &utxo
 		balance += utxo.Amount
@@ -148,9 +151,9 @@ func writeUtxo(addr common.Address, txHash common.Hash, msgIndex common.Hash, tx
 
 		// write to database
 		outpoint := modules.OutPoint{
-			Addr:   addr,
-			Asset:  txout.Asset,
-			Hash:   rlp.RlpHash(utxo),
+			Addr:  addr,
+			Asset: txout.Asset,
+			Hash:  rlp.RlpHash(utxo),
 		}
 		outpoint.SetPrefix(modules.UTXO_PREFIX)
 
@@ -181,17 +184,21 @@ func destoryUtxo(txins []modules.Input) {
 /**
 存储Asset的信息
 write asset info to leveldb
- */
-func SaveAssetInfo(assetInfo * modules.AssetInfo)  error{
-	assetID, err:= rlp.EncodeToBytes(assetInfo.AssetID)
-	if err != nil { return err }
+*/
+func SaveAssetInfo(assetInfo *modules.AssetInfo) error {
+	assetID, err := rlp.EncodeToBytes(assetInfo.AssetID)
+	if err != nil {
+		return err
+	}
 
 	key := append(modules.ASSET_INFO_PREFIX, assetID...)
 
 	data, err := rlp.EncodeToBytes(assetInfo)
 
 	err = storage.Store(string(key), data)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -199,31 +206,37 @@ func SaveAssetInfo(assetInfo * modules.AssetInfo)  error{
 /**
 根据assetid从数据库中获取asset的信息
 get asset infomation from leveldb by assetid ( Asset struct type )
- */
+*/
 func GetAssetInfo(assetId *modules.Asset) (modules.AssetInfo, error) {
-	assetID, err:= rlp.EncodeToBytes(assetId)
-	if err != nil { return modules.AssetInfo{}, err }
+	assetID, err := rlp.EncodeToBytes(assetId)
+	if err != nil {
+		return modules.AssetInfo{}, err
+	}
 
 	key := append(modules.ASSET_INFO_PREFIX, assetID...)
 
 	data, err := storage.Get(key)
-	if err!=nil { return modules.AssetInfo{}, err  }
+	if err != nil {
+		return modules.AssetInfo{}, err
+	}
 
 	var assetInfo modules.AssetInfo
-	err =  rlp.DecodeBytes(data, &assetInfo)
+	err = rlp.DecodeBytes(data, &assetInfo)
 
-	if err!=nil { return assetInfo, err }
+	if err != nil {
+		return assetInfo, err
+	}
 	return assetInfo, nil
 }
 
 /**
 获得某个账户下面的余额信息
 To get balance by wallet address and his/her chosen asset type
- */
+*/
 func WalletBalance(addr common.Address, asset modules.Asset) uint64 {
 	outpoint := modules.OutPoint{
-		Addr:   addr,
-		Asset:  asset,
+		Addr:  addr,
+		Asset: asset,
 	}
 	outpoint.SetPrefix(modules.UTXO_PREFIX)
 	preKey := outpoint.ToPrefixKey()
@@ -232,12 +245,14 @@ func WalletBalance(addr common.Address, asset modules.Asset) uint64 {
 	if data := storage.GetPrefix(preKey); data != nil {
 		for _, v := range data {
 			var utxo modules.Utxo
-			if err := rlp.DecodeBytes(v, &utxo); err !=nil {
+			if err := rlp.DecodeBytes(v, &utxo); err != nil {
 				log.Error("Decode utxo data error:", err)
 				continue
 			}
 
-			if utxo.IsLocked { continue }
+			if utxo.IsLocked {
+				continue
+			}
 
 			balance += utxo.Amount
 		}
@@ -248,13 +263,15 @@ func WalletBalance(addr common.Address, asset modules.Asset) uint64 {
 
 /**
 根据payload中的inputs获得对应的UTXO map
- */
-func GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64)  {
-	utxos :=map[modules.OutPoint]*modules.Utxo{}
+*/
+func GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64) {
+	utxos := map[modules.OutPoint]*modules.Utxo{}
 	total := uint64(0)
 	for _, in := range txins {
 		utxo := GetUxto(in)
-		if unsafe.Sizeof(utxo)==0 { continue }
+		if unsafe.Sizeof(utxo) == 0 {
+			continue
+		}
 		utxos[in.PreviousOutPoint] = &utxo
 		total += utxo.Amount
 	}

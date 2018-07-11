@@ -1,13 +1,14 @@
 package common
 
 import (
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/dag/modules"
 	"io/ioutil"
 	"log"
 	"testing"
+
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/asset"
+	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func TestUpdateUtxo(t *testing.T) {
@@ -35,17 +36,17 @@ func getTempDir(t *testing.T) string {
 }
 
 func TestSaveAssetInfo(t *testing.T) {
-	assetid :=  asset.NewAsset()
+	assetid := asset.NewAsset()
 	asset := modules.Asset{
-		AssertId:assetid,
-		UniqueId:assetid,
-		ChainId:0,
+		AssertId: assetid,
+		UniqueId: assetid,
+		ChainId:  0,
 	}
 	assetInfo := modules.AssetInfo{
-		Alias: "Test",
-		AssetID:asset,
-		InitialTotal:1000000000,
-		Decimal:100000000,
+		Alias:        "Test",
+		AssetID:      asset,
+		InitialTotal: 1000000000,
+		Decimal:      100000000,
 	}
 	assetInfo.OriginalHolder.SetString("Mytest")
 }
