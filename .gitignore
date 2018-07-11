@@ -56,4 +56,5 @@ bin/
 #run temp file
 /cmd/gptn/data1
 /cmd/gptn/log
-
+/cmd/gptn/C:\\Users\\Albert\\AppData\\Roaming\\PalletOne/
+/dag/storage/leveldb/
