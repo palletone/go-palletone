@@ -35,8 +35,8 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	//"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
@@ -102,15 +102,13 @@ type ProtocolManager struct {
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64 /*mux *event.TypeMux,*/, txpool txPool,
-engine core.ConsensusEngine) (*ProtocolManager, error) {
+	engine core.ConsensusEngine) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId: networkId,
 		//eventMux:  mux,
-		txpool:    txpool,
-		//blockchain:  blockchain,
-		consEngine: engine,
-		//chainconfig: config,
+		txpool:      txpool,
+		consEngine:  engine,
 		peers:       newPeerSet(),
 		newPeerCh:   make(chan *peer),
 		noMorePeers: make(chan struct{}),

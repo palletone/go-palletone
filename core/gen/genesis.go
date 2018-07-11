@@ -17,14 +17,19 @@
 package gen
 
 import (
+	//"crypto/ecdsa"
 	"errors"
 
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	dagCommon "github.com/palletone/go-palletone/dag/common"
 )
 
 const (
@@ -49,7 +54,42 @@ const (
 // error is a *configure.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-func SetupGenesisBlock(genesis *core.Genesis, txs modules.Transactions) (*modules.Unit, error) {
+func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) error {
+	privateKey, err := ks.GetPrivateKey(account)
+	if err != nil {
+		log.Info("SetupGenesisUnit GetPrivateKey err:", err.Error())
+		return err
+	}
+
+	unit, err := setupGenesisUnit(genesis, ks)
+	if err != nil && unit != nil {
+		log.Info("Genesis is Exist")
+		return nil
+	}
+	if err != nil {
+		log.Info("Failed to write genesis block:", err.Error())
+		return err
+	}
+
+	sign, err1 := ks.SigUnit(unit, privateKey)
+	if err != nil {
+		log.Info("Failed to write genesis block:", err1.Error())
+		return err
+	}
+	publicKey := crypto.FromECDSAPub(&privateKey.PublicKey)
+	log.Info("Successfully SIG Genesis Block")
+	pass := keystore.VerifyUnitWithPK(sign, unit, publicKey)
+	if pass {
+		log.Info("Valid signature")
+	} else {
+		log.Info("Invalid signature")
+	}
+	CommitDB(unit, publicKey, sign, common.Address{} /*account.Address*/)
+	return nil
+}
+
+func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Unit, error) {
+	txs := GetTransctions(ks, genesis)
 	// Just commit the new block if there is no stored genesis block.
 	stored := storage.GetGenesisUnit(0)
 	// Check whether the genesis block is already written.
@@ -65,6 +105,24 @@ func SetupGenesisBlock(genesis *core.Genesis, txs modules.Transactions) (*module
 	}
 	//return modules.NewGenesisUnit(genesis, txs)
 	return dagCommon.NewGenesisUnit(txs)
+}
+
+func GetTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.Transactions {
+	tx := &modules.Transaction{AccountNonce: 1}
+	txs := []*modules.Transaction{}
+	txs = append(txs, tx)
+	return txs
+}
+
+func CommitDB(unit *modules.Unit, publicKey []byte, sign string, address common.Address) error {
+	var authentifier modules.Authentifier
+	authentifier.R = sign
+	author := new(modules.Author)
+	author.Address = address
+	author.Pubkey = publicKey
+	author.TxAuthentifier = authentifier
+	unit.UnitHeader.Authors = author
+	return nil
 }
 
 // DefaultGenesisBlock returns the PalletOne main net genesis block.

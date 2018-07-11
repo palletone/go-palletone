@@ -29,12 +29,12 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/consensus"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/dag/coredata"
+	//"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
@@ -85,23 +85,24 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
+	var err error
 
-	/*_, genesisErr := gen.SetupGenesisBlock(config.Genesis)
-	if _, ok := genesisErr.(*configure.ConfigCompatError); genesisErr != nil && !ok {
-		return nil, genesisErr
-	}*/
+	//  stored := storage.GetGenesisUnit(0)
+	//	if stored == nil {
+	//		return nil, errors.New("the genesis block is not exsit")
+	//	}
 
 	eth := &PalletOne{
 		config:         config,
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
 		engine:         CreateConsensusEngine(ctx),
-		shutdownChan:  make(chan bool),
-		networkId:     config.NetworkId,
-		gasPrice:      config.GasPrice,
-		etherbase:     config.Etherbase,
-		bloomRequests: make(chan chan *bloombits.Retrieval),
-		bloomIndexer:  NewBloomIndexer(configure.BloomBitsBlocks),
+		shutdownChan:   make(chan bool),
+		networkId:      config.NetworkId,
+		gasPrice:       config.GasPrice,
+		etherbase:      config.Etherbase,
+		bloomRequests:  make(chan chan *bloombits.Retrieval),
+		bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
 	}
 
 	log.Info("Initialising PalletOne protocol", "versions", ProtocolVersions, "network", config.NetworkId)
@@ -111,8 +112,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 	eth.txPool = coredata.NewTxPool(config.TxPool)
 
-	var err error
-	if eth.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, /*eth.eventMux,*/ eth.txPool, eth.engine); err != nil {
+	if eth.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId /*eth.eventMux,*/, eth.txPool, eth.engine); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}
@@ -125,19 +125,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	eth.ApiBackend.gpo = gasprice.NewOracle(eth.ApiBackend, gpoParams)
 	return eth, nil
 }
-/*
-// CreateDB creates the chain database.
-func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ptndb.Database, error) {
-	db, err := ctx.OpenDatabase(name, config.DatabaseCache, config.DatabaseHandles)
-	if err != nil {
-		return nil, err
-	}
-	if db, ok := db.(*ptndb.LDBDatabase); ok {
-		db.Meter("eth/db/chaindata/")
-	}
-	return db, nil
-}
-*/
+
 //CreateConsensusEngine creates the required type of consensus engine instance for an PalletOne service
 func CreateConsensusEngine(ctx *node.ServiceContext) core.ConsensusEngine {
 	engine := consensus.New()
@@ -187,10 +175,6 @@ func (s *PalletOne) APIs() []rpc.API {
 			Public:    true,
 		},
 	}...)
-}
-
-func (s *PalletOne) ResetWithGenesisBlock(gb *types.Block) {
-	//s.blockchain.ResetWithGenesisBlock(gb)
 }
 
 func (s *PalletOne) Etherbase() (eb common.Address, err error) {
