@@ -33,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/dag/coredata"
 	//"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/internal/ethapi"
@@ -127,19 +126,6 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	return eth, nil
 }
 
-/*
-// CreateDB creates the chain database.
-func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ptndb.Database, error) {
-	db, err := ctx.OpenDatabase(name, config.DatabaseCache, config.DatabaseHandles)
-	if err != nil {
-		return nil, err
-	}
-	if db, ok := db.(*ptndb.LDBDatabase); ok {
-		db.Meter("eth/db/chaindata/")
-	}
-	return db, nil
-}
-*/
 //CreateConsensusEngine creates the required type of consensus engine instance for an PalletOne service
 func CreateConsensusEngine(ctx *node.ServiceContext) core.ConsensusEngine {
 	engine := consensus.New()
@@ -189,10 +175,6 @@ func (s *PalletOne) APIs() []rpc.API {
 			Public:    true,
 		},
 	}...)
-}
-
-func (s *PalletOne) ResetWithGenesisBlock(gb *types.Block) {
-	//s.blockchain.ResetWithGenesisBlock(gb)
 }
 
 func (s *PalletOne) Etherbase() (eb common.Address, err error) {
