@@ -26,9 +26,10 @@ import (
 	"reflect"
 	// "strings"
 
+	"math/big"
+
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common/hexutil"
-	"math/big"
 )
 
 const (
@@ -85,6 +86,11 @@ func BytesToAddress(b []byte) Address {
 }
 func StringToAddress(s string) Address { return BytesToAddress([]byte(s)) }
 func HexToAddress(s string) Address    { return BytesToAddress(FromHex(s)) }
+func PubKeyHashHexToAddress(s string) Address {
+	pubKeyHash := FromHex(s)
+	addrStr := "P" + base58.CheckEncode(pubKeyHash, byte(0))
+	return BytesToAddress([]byte(addrStr))
+}
 
 // IsHexAddress verifies whether a string can represent a valid hex-encoded
 // PalletOne address or not.
@@ -96,12 +102,16 @@ func IsHexAddress(s string) bool {
 }
 
 // Get the string representation of the underlying address
-func (a Address) Str() string   { return string(a[:]) }
-func (a Address) Bytes() []byte { return a[:] }
+func (a Address) Str() string { return string(a[:]) }
+func (a Address) Bytes() []byte {
 
-func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a[:]) }
-func (a Address) Hash() Hash  { return BytesToHash(a[:]) }
-func (a Address) Hex() string { return fmt.Sprintf("0x%x", a) }
+	result, _, _ := base58.CheckDecode(a.String()[1:])
+	return result
+}
+
+func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a.Bytes()) }
+func (a Address) Hash() Hash    { return BytesToHash(a.Bytes()) }
+func (a Address) Hex() string   { return fmt.Sprintf("0x%x", a.Bytes()) }
 
 // Hex returns an EIP55-compliant hex string representation of the address.
 // func (a Address) Hex() string {
@@ -207,6 +217,7 @@ func (ma *MixedcaseAddress) String() string {
 func (ma *MixedcaseAddress) ValidChecksum() bool {
 	return ma.original == ma.addr.Hex()
 }
+
 // // NewMixedcaseAddress constructor (mainly for testing)
 // func NewMixedcaseAddress(addr Address) MixedcaseAddress {
 // 	return MixedcaseAddress{addr: addr, original: addr.Str()}
