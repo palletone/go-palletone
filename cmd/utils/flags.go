@@ -807,7 +807,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 // SetNodeConfig applies node-related command line flags to the config.
 func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	// SetP2PConfig(ctx, &cfg.P2P)
-	//setIPC(ctx, cfg)
+	// setIPC(ctx, cfg)
 	// setHTTP(ctx, cfg)
 	// setWS(ctx, cfg)
 	// setNodeUserIdent(ctx, cfg)

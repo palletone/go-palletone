@@ -148,18 +148,18 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 		Ada:       adaptor.DefaultConfig,
 	}
 
-	// Load config file.
 	file := defaultConfigPath
 	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
 		file = temp
 	}
+	// Load config file.
 	if err := loadConfig(file, &cfg); err != nil {
 		utils.Fatalf("%v", err)
 	}
 
-	cfg = adaptorConfig(cfg)
 	// Apply flags.
 	//utils.SetNodeConfig(ctx, &cfg.Node)
+	cfg = adaptorConfig(cfg)
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
@@ -198,7 +198,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 
 // dumpConfig is the dumpconfig command.
 func dumpConfig(ctx *cli.Context) error {
-	_, cfg := makeConfigNode(ctx)
+	_, cfg := makeConfigNodeWithOutFile(ctx)
 	comment := ""
 
 	if cfg.Ptn.Genesis != nil {
@@ -246,4 +246,36 @@ func dumpConfig(ctx *cli.Context) error {
 	fmt.Println("Dumping new config file at " + configPath)
 
 	return nil
+}
+
+func makeConfigNodeWithOutFile(ctx *cli.Context) (*node.Node, FullConfig) {
+	// Load defaults.
+	// 加载cfg默认配置信息，cfg是一个字典结构
+	cfg := FullConfig{
+		Ptn:       ptn.DefaultConfig,
+		Node:      defaultNodeConfig(),
+		Dashboard: dashboard.DefaultConfig,
+		P2P:       p2p.Config{ListenAddr: ":30303", MaxPeers: 25, NAT: nat.Any()},
+		//		Consensus: consensusconfig.DefaultConfig,
+		MediatorPlugin: mp.DefaultConfig,
+		Dag:       dagconfig.DefaultConfig,
+		Log:       &log.DefaultConfig,
+		Ada:       adaptor.DefaultConfig,
+	}
+
+	//Apply flags.
+	utils.SetNodeConfig(ctx, &cfg.Node)
+
+	cfg = adaptorConfig(cfg)
+	stack, err := node.New(&cfg.Node)
+	if err != nil {
+		utils.Fatalf("Failed to create the protocol stack: %v", err)
+	}
+
+	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
+	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
+		cfg.Ethstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
+	}
+	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
+	return stack, cfg
 }
