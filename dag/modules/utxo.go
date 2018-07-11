@@ -26,10 +26,17 @@ import (
 	"strings"
 )
 
+var (
+	// state storage
+	CONTRACT_ATTRI    = []byte("contract_") // like contract_[contract address]_[key]
+	UTXO_PREFIX       = []byte("uo")
+	ASSET_INFO_PREFIX = []byte("ai_")
+)
+
 type Asset struct {
 	AssertId IDType36 `json:"assert_id"` // 资产类别
 	UniqueId IDType36 `json:"unique_id"` // every token has its unique id
-	ChainId  IDType36 `json:"chain_id"`  // main chain id or sub-chain id
+	ChainId  uint64   `json:"chain_id"`  // main chain id or sub-chain id
 }
 
 func (asset *Asset) String() string {
@@ -44,7 +51,7 @@ func (asset *Asset) String() string {
 type Utxo struct {
 	AccountAddr  common.Address `json:"account_id"`    // 所属人id
 	TxID         common.Hash    `json:"unit_id"`       // transaction id
-	MessageIndex uint32         `json:"message_index"` // message index in transaction
+	MessageIndex common.Hash    `json:"message_index"` // message index in transaction
 	OutIndex     uint32         `json:"output_index"`
 	Amount       uint64         `json:"amount"`      // 数量
 	Asset        Asset          `json:"Asset"`       // 资产类别
@@ -55,10 +62,23 @@ type Utxo struct {
 
 // utxo key
 type OutPoint struct {
-	Prefix [1]byte // default 'u'
+	Prefix [2]byte // default 'ut'
 	Addr   common.Address
 	Asset  Asset
 	Hash   common.Hash // reference Utxo struct key field
+}
+
+func (outpoint *OutPoint) SetPrefix(pre []byte) {
+	lenth := 0
+	if len(pre) > cap(outpoint.Prefix) {
+		lenth = cap(outpoint.Prefix)
+	} else {
+		lenth = len(pre)
+	}
+
+	for i := 0; i < lenth; i++ {
+		outpoint.Prefix[i] = pre[i]
+	}
 }
 
 func (outpoint *OutPoint) ToPrefixKey() []byte {
@@ -80,23 +100,25 @@ func (outpoint *OutPoint) ToKey() []byte {
 }
 
 func KeyToOutpoint(key []byte) OutPoint {
-	// key: u[Addr]_[Asset]_[index]
+	// key: [UTXO_PREFIX]_[Addr]_[Asset]_[utxo hash]
 	data := strings.Split(string(key), "_")
 	if len(data) != 3 {
 		return OutPoint{}
 	}
 
 	var vout OutPoint
-	vout.Prefix = [1]byte{data[0][0]}
+	// set prefix
+	vout.SetPrefix(UTXO_PREFIX)
 
-	if err := rlp.DecodeBytes([]byte(data[0][1:]), &vout.Addr); err != nil {
+	// set address
+	if err := rlp.DecodeBytes([]byte(data[0][len(UTXO_PREFIX):]), &vout.Addr); err != nil {
 		vout.Addr = common.Address{}
 	}
-
+	// set asset
 	if err := rlp.DecodeBytes([]byte(data[1]), &vout.Asset); err != nil {
 		vout.Asset = Asset{}
 	}
-
+	// set hash
 	if err := rlp.DecodeBytes([]byte(data[2]), &vout.Hash); err != nil {
 		vout.Hash = common.Hash{}
 	}
@@ -123,6 +145,7 @@ func (outpoint *OutPoint) Bytes() []byte {
 type Input struct {
 	PreviousOutPoint OutPoint
 	SignatureScript  []byte
+	Extra            []byte // if user creating a new asset, this field should be it's config data. Otherwise it is null.
 }
 
 type Output struct {
@@ -133,4 +156,16 @@ type Output struct {
 
 type SpendProof struct {
 	Unit string `json:"unit"`
+}
+
+/**
+保存Asset属性信息结构体
+structure for saving asset property infomation
+*/
+type AssetInfo struct {
+	Alias          string      `json:"alias"`           // asset name
+	AssetID        Asset       `json:"asset_id"`        // asset id
+	InitialTotal   uint64      `json:"initial_total"`   // total circulation
+	Decimal        uint64      `json:"deciaml"`         // asset accuracy
+	OriginalHolder common.Hash `json:"original_holder"` // holder address when creating the asset
 }

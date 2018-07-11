@@ -1,4 +1,4 @@
-/*
+﻿/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@ package modules
 import (
 	"encoding/json"
 	"math/big"
-	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -83,16 +82,6 @@ type Header struct {
 }
 
 func (cpy *Header) CopyHeader(h *Header) {
-	//ParentUnits []common.Hash `json:"parent_units"`
-	//AssetIDs    []IDType36    `json:"assets"`
-	//Authors     *Author       `json:"authors"` // the unit creation authors
-	//Witness     []Author      `json:"witness"`
-	//GasLimit    uint64        `json:"gasLimit"`
-	//GasUsed     uint64        `json:"gasUsed"`
-	//Root        common.Hash   `json:"root"`
-	//Number      ChainIndex    `json:"index"`
-	//Extra       []byte        `json:"extra"`
-
 	cpy = h
 	if len(h.ParentUnits) > 0 {
 		cpy.ParentUnits = make([]common.Hash, len(h.ParentUnits))
@@ -170,9 +159,8 @@ func CopyHeader(h *Header) *Header {
 
 // key: unit.UnitHash(unit)
 type Unit struct {
-	UnitHeader *Header      `json:"unit_header"`  // unit header
-	Txs        Transactions `json:"transactions"` // transaction list
-
+	UnitHeader   *Header            `json:"unit_header"`   // unit header
+	Txs          Transactions       `json:"transactions"`  // transaction list
 	UnitHash     common.Hash        `json:"unit_hash"`     // unit hash
 	UnitSize     common.StorageSize `json:"UnitSize"`      // unit size
 	Creationdate time.Time          `json:"creation_time"` // unit create time
@@ -184,14 +172,14 @@ type Transactions []*Transaction
 
 type Transaction struct {
 	AccountNonce uint64
-	TxHash       common.Hash  `json:"tx_hash"`
-	TxMessages   []Message    `json:"messages"` //
-	From         *Author      `json:"authors"`  // the issuers of the transaction
-	Excutiontime uint         `json:"excution_time"`
-	Memery       uint         `json:"memory"`
-	CreationDate time.Time    `json:"creation_date"`
-	TxFee        *big.Int     `json:"txfee"` // user set total transaction fee.
-	size         atomic.Value `json:"-" rlp:"-"`
+	TxHash       common.Hash        `json:"tx_hash"`
+	TxMessages   []Message          `json:"messages"` //
+	From         *Author            `json:"authors"`  // the issuers of the transaction
+	Excutiontime uint               `json:"excution_time"`
+	Memery       uint               `json:"memory"`
+	CreationDate time.Time          `json:"creation_date"`
+	TxFee        *big.Int           `json:"txfee"` // user set total transaction fee.
+	TxSize       common.StorageSize `json:"size" rlp:"-"`
 }
 
 type ChainIndex struct {
@@ -199,6 +187,15 @@ type ChainIndex struct {
 	IsMain  bool
 	Index   uint64
 }
+
+var (
+	APP_PAYMENT         = "payment"
+	APP_CONTRACT_TPL    = "contract_template"
+	APP_CONTRACT_DEPLOY = "contract_deploy"
+	APP_CONTRACT_INVOKE = "contract_invoke"
+	APP_CONFIG          = "config"
+	APP_TEXT            = "text"
+)
 
 // key: message.UnitHash(message+timestamp)
 type Message struct {
@@ -351,6 +348,26 @@ func (u *Unit) NumberU64() uint64 {
 // return unit's parents UnitHash
 func (u *Unit) ParentHash() []common.Hash {
 	return u.UnitHeader.ParentUnits
+}
+
+type ErrUnit float64
+
+func (e ErrUnit) Error() string {
+	switch e {
+	case -1:
+		return "Unit size error"
+	case -2:
+		return "Unit signature error"
+	case -3:
+		return "Unit header save error"
+	case -4:
+		return "Unit tx size error"
+	case -5:
+		return "Save create token transaction error"
+	default:
+		return ""
+	}
+	return ""
 }
 
 /************************** Unit Members  *****************************/

@@ -25,10 +25,9 @@ import (
 )
 
 var (
-	PACKET_PREFIX                    = []byte("p") // packet_prefix  + mci + hash
-	UNIT_PREFIX                      = []byte("u") // unit_prefix + mci + hash
-	HEADERPREFIX                     = []byte("h") // prefix + hash
-	TRANSACTIONPREFIX                = []byte("t")
+	UNIT_PREFIX                      = []byte("ut") // unit_prefix + mci + hash
+	HEADERPREFIX                     = []byte("uh") // prefix + hash
+	TRANSACTIONPREFIX                = []byte("tx")
 	TRANSACTIONSPREFIX               = []byte("ts")
 	ALL_UNITS_PREFIX                 = []byte("au")
 	UNITAUTHORS_PREFIX               = []byte("ua")
@@ -45,13 +44,8 @@ var (
 	ATTESTATION_PREFIX               = []byte("at")
 	ASSET_PREFIX                     = []byte("as")
 	ASSET_ATTESTORS                  = []byte("ae")
-
-	EAENED_HEADERS_COMMISSION = "earned_headers_commossion"
-	ALL_UNITS                 = "array_units"
-
-	// state storage
-	CONTRACT_ATTRI = []byte("contract_") // like contract_[contract address]_[key]
-
+	EAENED_HEADERS_COMMISSION        = "earned_headers_commossion"
+	ALL_UNITS                        = "array_units"
 )
 
 func Init(path string) *palletdb.LDBDatabase {

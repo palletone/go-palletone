@@ -32,6 +32,7 @@ import (
 	//	"github.com/palletone/go-palletone/common/crypto/sha3"
 	//	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/Re-volution/sizestruct"
 )
 
 var (
@@ -195,12 +196,16 @@ func (tx Transaction) Hash() common.Hash {
 // Size returns the true RLP encoded storage UnitSize of the transaction, either by
 // encoding and returning it, or returning a previsouly cached value.
 func (tx *Transaction) Size() common.StorageSize {
-	if size := tx.size.Load(); size != nil {
-		return size.(common.StorageSize)
-	}
-	c := writeCounter(0)
-	rlp.Encode(&c, &tx)
-	tx.size.Store(common.StorageSize(c))
+	////atomic.Value{}
+	//if size := tx.TxSize.Load(); size != nil {
+	//	return size.(common.StorageSize)
+	//}
+	//rlp.Encode(&c, &tx)
+	//tx.TxSize.Store(common.StorageSize(c))
+	//return common.StorageSize(c)
+
+	txsize := sizestruct.SizeStruct(tx)
+	c := writeCounter(txsize)
 	return common.StorageSize(c)
 }
 
