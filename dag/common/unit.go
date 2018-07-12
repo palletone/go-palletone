@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"math/big"
 )
 
 func RHashStr(x interface{}) string {
@@ -138,22 +139,33 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, 
 }
 
 /**
-保存创世单元数据
+保存单元数据，如果单元的结构基本相同
 save genesis unit data
 */
 func SaveUnit(unit modules.Unit) error {
+	if unit.UnitSize==0 || unit.Size()==0 {
+		log.Info("Unit is null")
+		return nil
+	}
 	// check unit signature
 
 	// check unit size
 	if unit.UnitSize != unit.Size() {
 		return modules.ErrUnit(-1)
 	}
-	// save unit header, key is like ""
+	// check transactions in unit
+	totalFee, err:=checkTransactions(&unit.Txs)
+	if err!=nil { return err }
+	if totalFee != unit.Gasprice && totalFee!=unit.Gasused {
+		return fmt.Errorf("Unit's gas computed error.")
+	}
+	// save unit header, key is like "[HEADER_PREFIX][chain_index]_[unit hash]"
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		return modules.ErrUnit(-3)
 	}
 
-	// traverse transactions
+	// traverse transactions and save them
+	txHashSet := []common.Hash{}
 	for _, tx := range unit.Txs {
 		// check tx size
 		if tx.Size() != tx.Txsize {
@@ -161,30 +173,31 @@ func SaveUnit(unit modules.Unit) error {
 		}
 		// traverse messages
 		for _, msg := range tx.TxMessages {
-			if !CheckMessageType(msg.App, msg.Payload) {
-				log.Error("Message payload is not consistent with app:", msg.App)
-				continue
-			}
 			// handle different messages
 			switch msg.App {
 			case modules.APP_PAYMENT:
-				payload := msg.Payload.(modules.PaymentPayload)
-				if ok := savePaymentPayload(tx, &payload); ok != true {
+				if ok := savePaymentPayload(tx.TxHash, &msg); ok != true {
 					log.Error("Save payment payload error.")
 					return modules.ErrUnit(-5)
 				}
-
 			case modules.APP_CONTRACT_TPL:
 			case modules.APP_CONTRACT_DEPLOY:
 			case modules.APP_CONTRACT_INVOKE:
 			case modules.APP_CONFIG:
+				if ok:=saveConfigPayload(tx.TxHash, &msg); ok==false {
+					return modules.ErrUnit(-6)
+				}
 			case modules.APP_TEXT:
 			default:
 				log.Error("Message type is not supported now:", msg.App)
 			}
 		}
+		// save transaction
+		if err=storage.SaveTransaction(tx); err!=nil{ return err}
 	}
+
 	// save unit body, the value only save txs' hash set, and the key is merkle root
+	if err = storage.SaveBody(unit.UnitHeader.Root, txHashSet); err!=nil {return err}
 
 	return nil
 }
@@ -193,7 +206,7 @@ func SaveUnit(unit modules.Unit) error {
 检查message的app与payload是否一致
 check messaage 'app' consistent with payload type
 */
-func CheckMessageType(app string, payload interface{}) bool {
+func checkMessageType(app string, payload interface{}) bool {
 	switch payload.(type) {
 	case modules.PaymentPayload:
 		if app == modules.APP_PAYMENT {
@@ -226,14 +239,61 @@ func CheckMessageType(app string, payload interface{}) bool {
 }
 
 /**
+检查unit中所有交易的合法性，返回所有交易的交易费总和
+check all transactions in one unit
+return all transactions' fee
+ */
+func checkTransactions(txs *modules.Transactions) (uint64, error) {
+	fee := uint64(0)
+	for _, tx := range *txs {
+		txFee := uint64(0)
+		for _, msg := range tx.TxMessages {
+			if !checkMessageType(msg.App, msg.Payload) {
+				return 0, fmt.Errorf("Transaction (%s) message (%s) type is not consistent with payload.", tx.TxHash, msg.PayloadHash)
+			}
+			switch msg.App {
+			case modules.APP_PAYMENT:
+
+			case modules.APP_CONTRACT_TPL:
+
+			case modules.APP_CONTRACT_DEPLOY:
+
+			case modules.APP_CONTRACT_INVOKE:
+
+			case modules.APP_CONFIG:
+
+			case modules.APP_TEXT:
+
+			default:
+				return 0, fmt.Errorf("Message type(%s) is not supported now:", msg.App)
+			}
+		}
+		// check transaction fee
+		i := big.Int{}
+		i.SetUint64(txFee)
+		if tx.TxFee.Cmp(&i)!=0 {
+			return 0, fmt.Errorf("Transaction(%s)'s fee is invalid.", tx.TxHash)
+		}
+	}
+
+	return fee, nil
+}
+
+/**
 保存PaymentPayload
 save PaymentPayload data
 */
-func savePaymentPayload(tx *modules.Transaction, payload *modules.PaymentPayload) bool {
+func savePaymentPayload(txHash common.Hash, msg *modules.Message) bool {
 	// if inputs is none then it is just a normal coinbase transaction
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
 	// if this is a create token transaction, should be return a assetid
+	var pl interface{}
+	pl = msg.Payload
+	payload, ok := pl.(modules.PaymentPayload)
+	if ok == false {
+		return false
+	}
 	if len(payload.Inputs) > 0 {
 		if len(payload.Inputs) == 1 && unsafe.Sizeof(payload.Inputs[0].PreviousOutPoint) == 0 {
 			// create new token
@@ -254,19 +314,29 @@ func savePaymentPayload(tx *modules.Transaction, payload *modules.PaymentPayload
 			if err := SaveAssetInfo(&assetInfo); err != nil {
 				log.Error("Save asset info error")
 			}
-		} else {
-			// use utxo transaction
-			// check total balance
-			//utxos, total := GetUxtoSetByInputs(payload.Inputs)
-			//walletAmount := WalletBalance()
-			// check acount balance
-			// check double spent
 		}
-	} else {
-		// coinbase
-
 	}
 	// save utxo
-	UpdateUtxo(tx)
+	UpdateUtxo(txHash, msg)
+	return true
+}
+
+/**
+保存配置交易
+save config payload
+*/
+func saveConfigPayload(txHash common.Hash, msg *modules.Message) bool {
+	var pl interface{}
+	pl = msg.Payload
+	payload, ok := pl.(modules.ConfigPayload)
+	if ok == false {
+		return false
+	}
+
+	if err := SaveConfig(payload.ConfigSet); err!=nil {
+		errMsg := fmt.Sprintf("To save config payload error: %s", err)
+		log.Error(errMsg)
+		return false
+	}
 	return true
 }
