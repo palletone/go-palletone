@@ -267,6 +267,6 @@ func savePaymentPayload(tx *modules.Transaction, payload *modules.PaymentPayload
 
 	}
 	// save utxo
-	UpdateUtxo(tx.From.Address, tx)
+	UpdateUtxo(tx)
 	return true
 }
