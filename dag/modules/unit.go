@@ -321,9 +321,15 @@ func (u *Unit) Hash() common.Hash {
 }
 
 func (u *Unit) Size() common.StorageSize {
-	u.UnitSize = common.StorageSize(unsafe.Sizeof(*u)) + common.StorageSize(len(u.UnitHash)/8)
-	return u.UnitSize
+	//u.UnitSize = common.StorageSize(unsafe.Sizeof(*u)) + common.StorageSize(len(u.UnitHash)/8)
+	//return u.UnitSize
 
+	b, err := rlp.EncodeToBytes(u)
+	if err!=nil {
+		return common.StorageSize(0)
+	} else {
+		return common.StorageSize(len(b))
+	}
 	// if UnitSize := b.UnitSize.Load(); UnitSize != nil {
 	// 	return UnitSize.(common.StorageSize)
 	// }
@@ -365,6 +371,8 @@ func (e ErrUnit) Error() string {
 		return "Unit tx size error"
 	case -5:
 		return "Save create token transaction error"
+	case -6:
+		return "Save config transaction error"
 	default:
 		return ""
 	}

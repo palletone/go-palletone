@@ -86,7 +86,7 @@ func GetUnit(hash common.Hash, index uint64) *modules.Unit {
 func GetHeader(hash common.Hash, index uint64) *modules.Header {
 
 	encNum := encodeBlockNumber(index)
-	key := append(HEADERPREFIX, encNum...)
+	key := append(HEADER_PREFIX, encNum...)
 	header_bytes, err := Get(append(key, hash.Bytes()...))
 	// rlp  to  Header struct
 	log.Println(err)

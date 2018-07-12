@@ -21,15 +21,38 @@ package storage
 import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/common/util"
+	"goleveldb/leveldb"
+	"github.com/palletone/go-palletone/common/rlp"
 )
 
+// value will serialize to rlp encoding bytes
 func Store(key string, value interface{}) error {
 	if Dbconn == nil {
 		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
 	}
-	val, _ := util.Bytes(value)
-	return Dbconn.Put(util.ToByte(key), val)
+	val, err := rlp.EncodeToBytes(value)
+	if err!=nil { return err }
+
+	_, err = Dbconn.Get([]byte(key))
+	if err!=nil {
+		if err==leveldb.ErrNotFound {
+			if err := Dbconn.Put([]byte(key), val); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	} else {
+		if err = Dbconn.Delete([]byte(key)); err!=nil {return err}
+		if err := Dbconn.Put([]byte(key), val); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
+
+
 func StoreString(key, value string) error {
 	if Dbconn == nil {
 		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
