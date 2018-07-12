@@ -1,4 +1,4 @@
-/*
+﻿/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -172,15 +172,15 @@ type Transactions []*Transaction
 
 type Transaction struct {
 	AccountNonce uint64
-	TxHash       common.Hash `json:"tx_hash"`
-	TxMessages   []Message   `json:"messages"` //
-	From         *Author     `json:"authors"`  // the issuers of the transaction
-	Excutiontime uint        `json:"excution_time"`
-	Memery       uint        `json:"memory"`
-	CreationDate time.Time   `json:"creation_date"`
-	TxFee        *big.Int    `json:"txfee"` // user set total transaction fee.
+	TxHash       common.Hash        `json:"txhash" rlp:""`
+	TxMessages   []Message          `json:"messages"` //
+	From         *Author            `json:"authors"`  // the issuers of the transaction
+	Excutiontime uint               `json:"excution_time"`
+	Memery       uint               `json:"memory"`
+	CreationDate string             `json:"creation_date"`
+	TxFee        *big.Int           `json:"txfee"` // user set total transaction fee.
 	Txsize       common.StorageSize `json:"txsize"  rlp:""`
-	priority_lvl float64            `json:"priority_lvl" rlp:"priority_lvl"`
+	Priority_lvl float64            `json:"priority_lvl" rlp:""`
 }
 
 type ChainIndex struct {
