@@ -20,14 +20,13 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"reflect"
 	"unicode"
 
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/cmd/utils"
-	cli "gopkg.in/urfave/cli.v1"
+	"gopkg.in/urfave/cli.v1"
 
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/common/log"
@@ -217,12 +216,12 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 // dumpConfig is the dumpconfig command.
 func dumpConfig(ctx *cli.Context) error {
 	cfg := makeDefaultConfig()
-	comment := ""
+//	comment := ""
 
-	if cfg.Ptn.Genesis != nil {
-		cfg.Ptn.Genesis = nil
-		comment += "# Note: this config doesn't contain the genesis block.\n\n"
-	}
+	//if cfg.Ptn.Genesis != nil {
+	//	cfg.Ptn.Genesis = nil
+	//	comment += "# Note: this config doesn't contain the genesis block.\n\n"
+	//}
 
 	configPath := ctx.Args().First()
 	// If no path is specified, the default path is used
@@ -230,7 +229,7 @@ func dumpConfig(ctx *cli.Context) error {
 		configPath = defaultConfigPath
 	}
 
-	io.WriteString(os.Stdout, comment)
+//	io.WriteString(os.Stdout, comment)
 
 	err := makeConfigFile(&cfg, configPath)
 	if err != nil {
