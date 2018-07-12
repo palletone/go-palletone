@@ -59,3 +59,4 @@ bin/
 /cmd/gptn/C:\\Users\\Albert\\AppData\\Roaming\\PalletOne/
 /dag/storage/leveldb/
 *.rlp
+dag/common/leveldb/

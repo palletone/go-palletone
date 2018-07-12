@@ -21,27 +21,17 @@ package asset
 import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/pborman/uuid"
-	"fmt"
 )
 
-func NewAsset() modules.IDType36 {
-	var assetId modules.IDType36
+func NewAsset() modules.IDType16 {
+	var assetId modules.IDType16
 
 	// use version 1: timestamp and mac
-	sId := uuid.NewUUID().String()
-
-	if len(sId) > cap(assetId) {
-		return assetId
-	}
-
-	bID := []byte(sId)
-	for i:=0; i<len(bID); i++ {
-		assetId[i] = bID[i]
-	}
-
-	for j:=len(bID); j<cap(assetId); j++ {
-		fmt.Println(j)
-		assetId[j] = '_'
+	uuid := uuid.NewUUID()
+	lenth := len(uuid)
+	if lenth > cap(assetId) {lenth = cap(assetId)}
+	for i:=0; i<lenth; i++ {
+		assetId[i] = uuid[i]
 	}
 	return assetId
 }

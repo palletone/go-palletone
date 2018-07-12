@@ -82,7 +82,7 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 
 	// generate genesis unit header
 	header := modules.Header{
-		AssetIDs: []modules.IDType36{gAssetID},
+		AssetIDs: []modules.IDType16{gAssetID},
 		GasLimit: 0,
 		GasUsed:  0,
 		Number:   chainIndex,
