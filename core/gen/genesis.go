@@ -21,7 +21,6 @@ import (
 	"errors"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
@@ -55,11 +54,11 @@ const (
 //
 // The returned chain configuration is never nil.
 func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) error {
-	privateKey, err := ks.GetPrivateKey(account)
-	if err != nil {
-		log.Info("SetupGenesisUnit GetPrivateKey err:", err.Error())
-		return err
-	}
+	//	privateKey, err := ks.GetPrivateKey(account)
+	//	if err != nil {
+	//		log.Info("SetupGenesisUnit GetPrivateKey err:", err.Error())
+	//		return err
+	//	}
 
 	unit, err := setupGenesisUnit(genesis, ks)
 	if err != nil && unit != nil {
@@ -67,16 +66,21 @@ func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account acco
 		return nil
 	}
 	if err != nil {
-		log.Info("Failed to write genesis block:", err.Error())
+		log.Error("Failed to write genesis block:", err.Error())
 		return err
 	}
 
-	sign, err1 := ks.SigUnit(unit, privateKey)
+	sign, err1 := ks.SigUnit(unit, account.Address)
 	if err != nil {
-		log.Info("Failed to write genesis block:", err1.Error())
-		return err
+		log.Error("Failed to write genesis block:", err1.Error())
+		return err1
 	}
-	publicKey := crypto.FromECDSAPub(&privateKey.PublicKey)
+	publicKey, err2 := ks.GetPublicKey(account.Address)
+	if err != nil {
+		log.Error("Failed to Get Public Key:", err2.Error())
+		return err2
+	}
+	//	publicKey := crypto.FromECDSAPub(&privateKey.PublicKey)
 	log.Info("Successfully SIG Genesis Block")
 	pass := keystore.VerifyUnitWithPK(sign, unit, publicKey)
 	if pass {
