@@ -213,6 +213,11 @@ func ScriptToAddress(redeemScript []byte) common.Address {
 	return common.BytesToAddress([]byte(addrStr))
 }
 
+func ScriptHashToAddress(scriptHash []byte) common.Address{
+	addrStr := "P" + base58.CheckEncode(scriptHash, byte(5))
+	return common.BytesToAddress([]byte(addrStr))
+}
+
 func ContractIdToAddress(contractId []byte) common.Address {
 	scriptHash := Hash160(contractId)
 	addrStr := "P" + base58.CheckEncode(scriptHash, byte(28))

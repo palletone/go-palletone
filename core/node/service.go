@@ -83,16 +83,20 @@ type ServiceConstructor func(ctx *ServiceContext) (Service, error)
 // every time a service is started.
 type Service interface {
 	// Protocols retrieves the P2P protocols the service wishes to start.
+	// 返回 service 要启动的 P2P 协议列表
 	Protocols() []p2p.Protocol
 
 	// APIs retrieves the list of RPC descriptors the service provides
+	// 返回 service 提供的 RPC 接口
 	APIs() []rpc.API
 
 	// Start is called after all services have been constructed and the networking
 	// layer was also initialized to spawn any goroutines required by the service.
+	// 启动 service ，本方法在所有服务构建之后，网络层初始化完后以服务所需的任何goroutine生成之后，才调用启动。
 	Start(server *p2p.Server) error
 
 	// Stop terminates all goroutines belonging to the service, blocking until they
 	// are all terminated.
+	// 停止service所有的goroutines，并阻塞线程直到所有goroutines都终止
 	Stop() error
 }

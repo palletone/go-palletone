@@ -51,7 +51,7 @@ var (
 		"consensus/ethash/xor.go",
 		"crypto/bn256/",
 		"crypto/ecies/",
-		"crypto/secp256k1/curve.go",
+		// "crypto/secp256k1/curve.go",
 		"crypto/sha3/",
 		"internal/jsre/deps",
 		"log/",

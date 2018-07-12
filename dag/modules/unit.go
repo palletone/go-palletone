@@ -71,7 +71,7 @@ import (
 
 type Header struct {
 	ParentUnits []common.Hash `json:"parent_units"`
-	AssetIDs    []IDType36    `json:"assets"`
+	AssetIDs    []IDType16    `json:"assets"`
 	Authors     *Author       `json:"authors"` // the unit creation authors
 	Witness     []Author      `json:"witness"`
 	GasLimit    uint64        `json:"gasLimit"`
@@ -91,7 +91,7 @@ func (cpy *Header) CopyHeader(h *Header) {
 	}
 
 	if len(h.AssetIDs) > 0 {
-		cpy.AssetIDs = make([]IDType36, len(h.AssetIDs))
+		cpy.AssetIDs = make([]IDType16, len(h.AssetIDs))
 		for i := 0; i < len(h.AssetIDs); i++ {
 			cpy.AssetIDs[i] = h.AssetIDs[i]
 		}
@@ -99,7 +99,7 @@ func (cpy *Header) CopyHeader(h *Header) {
 
 }
 
-func NewHeader(parents []common.Hash, asset []IDType36, gas, used uint64, extra []byte) *Header {
+func NewHeader(parents []common.Hash, asset []IDType16, gas, used uint64, extra []byte) *Header {
 	hashs := make([]common.Hash, 0)
 	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
 	var b []byte
@@ -184,7 +184,7 @@ type Transaction struct {
 }
 
 type ChainIndex struct {
-	AssetID IDType36
+	AssetID IDType16
 	IsMain  bool
 	Index   uint64
 }
@@ -321,9 +321,15 @@ func (u *Unit) Hash() common.Hash {
 }
 
 func (u *Unit) Size() common.StorageSize {
-	u.UnitSize = common.StorageSize(unsafe.Sizeof(*u)) + common.StorageSize(len(u.UnitHash)/8)
-	return u.UnitSize
+	//u.UnitSize = common.StorageSize(unsafe.Sizeof(*u)) + common.StorageSize(len(u.UnitHash)/8)
+	//return u.UnitSize
 
+	b, err := rlp.EncodeToBytes(u)
+	if err!=nil {
+		return common.StorageSize(0)
+	} else {
+		return common.StorageSize(len(b))
+	}
 	// if UnitSize := b.UnitSize.Load(); UnitSize != nil {
 	// 	return UnitSize.(common.StorageSize)
 	// }
@@ -365,6 +371,8 @@ func (e ErrUnit) Error() string {
 		return "Unit tx size error"
 	case -5:
 		return "Save create token transaction error"
+	case -6:
+		return "Save config transaction error"
 	default:
 		return ""
 	}

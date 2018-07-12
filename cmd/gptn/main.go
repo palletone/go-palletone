@@ -180,7 +180,7 @@ func init() {
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 
-	// 所有能够解析的Options
+	// 所有从命令行能够解析的Options
 	app.Flags = append(app.Flags, nodeFlags...)
 	app.Flags = append(app.Flags, rpcFlags...)
 	app.Flags = append(app.Flags, consoleFlags...)
@@ -244,6 +244,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 	debug.Memsize.Add("node", stack)
 
 	// Start up the node itself
+	// 启动节点本身, 将之前注册的所有 service 交给 p2p.Server, 然后启动
 	utils.StartNode(stack)
 
 	// Unlock any account specifically requested
@@ -259,10 +260,11 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 	}
 
 	// Register wallet event handlers to open and auto-derive wallets
+	// 注册钱包事件, 来处理打开钱包和自动派生钱包
 	events := make(chan accounts.WalletEvent, 16)
 	stack.AccountManager().Subscribe(events)
 
-	// 创建协程，用RPC监听钱包创建事件。
+	// 创建协程，创建链状态读取器、用 RPC 监听钱包供远程调用
 	go func() {
 		// Create a chain state reader for self-derivation
 		rpcClient, err := stack.Attach()
@@ -328,5 +330,4 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		//	utils.Fatalf("Failed to start mining: %v", err)
 		//}
 	}
-
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/common/txscript"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
@@ -106,37 +107,38 @@ func GetUxto(txin modules.Input) modules.Utxo {
 根据交易信息中的outputs创建UTXO， 根据交易信息中的inputs销毁UTXO
 To create utxo according to outpus in transaction, and destory utxo according to inputs in transaction
 */
-func UpdateUtxo(addr common.Address, tx *modules.Transaction) {
-	if len(tx.TxMessages) <= 0 {
-		return
-	}
-
+func UpdateUtxo(txHash common.Hash, msg *modules.Message) {
 	var payload interface{}
 
-	for _, msg := range tx.TxMessages {
-		payload = msg.Payload
-		payment, ok := payload.(modules.PaymentPayload)
-		if ok == true {
-			var isCoinbase bool
-			if len(payment.Inputs) <= 0 {
-				isCoinbase = true
-			} else {
-				isCoinbase = false
-			}
-
-			// create utxo
-			writeUtxo(addr, tx.TxHash, msg.PayloadHash, payment.Outputs, isCoinbase)
-			// destory utxo
-			destoryUtxo(payment.Inputs)
+	payload = msg.Payload
+	payment, ok := payload.(modules.PaymentPayload)
+	if ok == true {
+		var isCoinbase bool
+		if len(payment.Inputs) <= 0 {
+			isCoinbase = true
+		} else {
+			isCoinbase = false
 		}
+
+		// create utxo
+		writeUtxo(txHash, msg.PayloadHash, payment.Outputs, isCoinbase)
+		// destory utxo
+		destoryUtxo(payment.Inputs)
 	}
 }
 
 /**
 创建UTXO
 */
-func writeUtxo(addr common.Address, txHash common.Hash, msgIndex common.Hash, txouts []modules.Output, isCoinbase bool) {
+func writeUtxo(txHash common.Hash, msgIndex common.Hash, txouts []modules.Output, isCoinbase bool) {
 	for outIndex, txout := range txouts {
+		// get address
+		spk, err := txscript.ExtractPkScriptAddrs(txout.PkScript)
+		if err != nil {
+			log.Error("Extract PkScript Address error.")
+			continue
+		}
+		addr := spk.Address
 		utxo := modules.Utxo{
 			AccountAddr:  addr,
 			TxID:         txHash,
@@ -157,11 +159,7 @@ func writeUtxo(addr common.Address, txHash common.Hash, msgIndex common.Hash, tx
 		}
 		outpoint.SetPrefix(modules.UTXO_PREFIX)
 
-		v, err := rlp.EncodeToBytes(utxo)
-		if err != nil {
-			continue
-		}
-		if err = storage.Store(string(outpoint.ToKey()), v); err != nil {
+		if err = storage.Store(string(outpoint.ToKey()), utxo); err != nil {
 			log.Error("Write utxo error: %s", err)
 		}
 
@@ -193,9 +191,7 @@ func SaveAssetInfo(assetInfo *modules.AssetInfo) error {
 
 	key := append(modules.ASSET_INFO_PREFIX, assetID...)
 
-	data, err := rlp.EncodeToBytes(assetInfo)
-
-	err = storage.Store(string(key), data)
+	err = storage.Store(string(key), *assetInfo)
 	if err != nil {
 		return err
 	}
