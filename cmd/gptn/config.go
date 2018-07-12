@@ -175,7 +175,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// 注意：不是将命令行中所有的配置都覆盖cfg中对应的配置，例如 Ptnstats 配置目前没有覆盖 (可能通过命令行设置)
 	utils.SetNodeConfig(ctx, &cfg.Node)
 	cfg = adaptorConfig(cfg)
-	// 通过Node的配置来创建一个Node
+	// 4. 通过Node的配置来创建一个Node
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
@@ -190,14 +190,16 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 }
 
 // makeFullNode 函数用创建一个 PalletOne 节点，节点类型根据ctx参数传递的命令行指令来控制。
-//生成node.Node一个结构，里面会有任务函数栈, 然后设置各个服务到serviceFuncs 里面，
-//包括：全节点，dashboard，以及状态stats服务等
+// 生成node.Node一个结构，里面会有任务函数栈, 然后设置各个服务到serviceFuncs 里面，
+// 包括：全节点，dashboard，以及状态stats服务等
 func makeFullNode(ctx *cli.Context) *node.Node {
-	// 根据默认配置、命令行参数和配置文件的配置来创建一个node
+	// 1. 根据默认配置、命令行参数和配置文件的配置来创建一个node, 并获取相关配置
 	stack, cfg := makeConfigNode(ctx)
 	log.InitLogger()
-	//在stack上增加一个 PalletOne 节点，其实就是new一个 PalletOne 后加到后者的 serviceFuncs 里面去
-	//然后在stack.Run的时候会调用这些service
+
+	// 2. 创建 Ptn service、DashBoard service以及 PtnStats service 等 service ,
+	// 并注册到 Node 的 serviceFuncs 中，然后在 stack.Start() 执行的时候会调用这些 service
+	// 所有的 service 必须实现 node.Service 接口中定义的所有方法
 	utils.RegisterPtnService(stack, &cfg.Ptn)
 	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
 		//注册dashboard仪表盘服务，Dashboard会开启端口监听
