@@ -21,8 +21,8 @@ package storage
 import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/common/util"
-	"goleveldb/leveldb"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
 // value will serialize to rlp encoding bytes
@@ -35,7 +35,7 @@ func Store(key string, value interface{}) error {
 
 	_, err = Dbconn.Get([]byte(key))
 	if err!=nil {
-		if err==leveldb.ErrNotFound {
+		if err==errors.ErrNotFound {
 			if err := Dbconn.Put([]byte(key), val); err != nil {
 				return err
 			}
