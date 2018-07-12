@@ -513,19 +513,34 @@ func ZeroKey(k *ecdsa.PrivateKey) {
 	}
 }
 
-func (ks *KeyStore) GetPrivateKey(a accounts.Account) (*ecdsa.PrivateKey, error) {
+func (ks *KeyStore) getPrivateKey(address common.Address) (*ecdsa.PrivateKey, error) {
 	// Look up the key to sign with and abort if it cannot be found
 	ks.mu.RLock()
 	defer ks.mu.RUnlock()
-	unlockedKey, found := ks.unlocked[a.Address]
+	unlockedKey, found := ks.unlocked[address]
 	if !found {
 		return nil, ErrLocked
 	}
 	return unlockedKey.PrivateKey, nil
 }
 
+func (ks *KeyStore) GetPublicKey(address common.Address) ([]byte, error) {
+	// Look up the key to sign with and abort if it cannot be found
+	ks.mu.RLock()
+	defer ks.mu.RUnlock()
+	unlockedKey, found := ks.unlocked[address]
+	if !found {
+		return nil, ErrLocked
+	}
+	return crypto.FromECDSAPub(&unlockedKey.PrivateKey.PublicKey), nil
+}
+
 //unit:Unit struct
-func (ks *KeyStore) SigUnit(unit interface{}, privateKey *ecdsa.PrivateKey) (string, error) {
+func (ks *KeyStore) SigUnit(unit interface{}, address common.Address) (string, error) {
+	privateKey, err := ks.getPrivateKey(address)
+	if err != nil {
+		return "", err
+	}
 	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
 	//unit signature
 	sign, err := crypto.Sign(hash.Bytes(), privateKey)
@@ -546,8 +561,8 @@ func VerifyUnitWithPK(sign string, unit interface{}, publicKey []byte) bool {
 }
 
 //tx:TxMessages   []Message
-func (ks *KeyStore) SigTX(tx interface{}, privateKey *ecdsa.PrivateKey) (string, error) {
-	return ks.SigUnit(tx, privateKey)
+func (ks *KeyStore) SigTX(tx interface{}, address common.Address) (string, error) {
+	return ks.SigUnit(tx, address)
 }
 
 func VerifyTXWithPK(sign string, tx interface{}, publicKey []byte) bool {

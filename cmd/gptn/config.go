@@ -133,12 +133,7 @@ func adaptorConfig(config FullConfig) FullConfig {
 	return config
 }
 
-func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
-	// Load defaults.
-	// 1. cfg加载系统默认的配置信息，cfg是一个字典结构
-	cfg := makeDefaultConfig()
-
-	// 2. 获取配置文件中的配置信息，并覆盖cfg中对应的配置
+func maybeLoadConfig(ctx *cli.Context, cfg *FullConfig) error {
 	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
 	configPath := defaultConfigPath
 	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
@@ -147,20 +142,37 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
 	if _, err := os.Stat(configPath); err != nil && os.IsNotExist(err) {
-		err = makeConfigFile(&cfg, configPath)
+		defaultConfig := makeDefaultConfig()
+		err = makeConfigFile(&defaultConfig, configPath)
 		if err != nil {
 			utils.Fatalf("%v", err)
+			return err
 		}
 	}
 
+	// 加载配置文件中的配置信息到 cfg中
+	if err := loadConfig(configPath, cfg); err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	return nil
+}
+
+func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
+	// Load defaults.
+	// 1. cfg加载系统默认的配置信息，cfg是一个字典结构
+	cfg := makeDefaultConfig()
+
 	// Load config file.
-	if err := loadConfig(configPath, &cfg); err != nil {
+	// 2. 获取配置文件中的配置信息，并覆盖cfg中对应的配置
+	if err := maybeLoadConfig(ctx, &cfg); err != nil {
 		utils.Fatalf("%v", err)
 	}
 
 	// Apply flags.
 	// 3. 将命令行中的配置参数覆盖cfg中对应的配置
-	//utils.SetNodeConfig(ctx, &cfg.Node)
+	utils.SetNodeConfig(ctx, &cfg.Node)
 	cfg = adaptorConfig(cfg)
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
