@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
 /**
@@ -46,16 +47,19 @@ func ExtractPkScriptAddrs(pkScript []byte) (*ScriptPubKey, error) {
 	results := reg.FindStringSubmatch(string(pkScript))
 	if len(results)==2 {
 		spk.Type = T_P2PKH
+		pubkey := crypto.ToECDSAPub([]byte(results[0]))
+		if pubkey==nil {return nil, fmt.Errorf("Get pubkey from bytes error.")}
+		spk.Address = crypto.PubkeyToAddress(*pubkey)
+
 	} else {
 		results = shReq.FindStringSubmatch(string(pkScript))
 		if len(results)==2 {
 			spk.Type = T_P2SH
+			spk.Address = crypto.ScriptHashToAddress([]byte(results[1]))
 		} else {
 			return &spk, fmt.Errorf("Extract PkScript Addrs error")
 		}
 	}
-
-	spk.Address.SetBytes([]byte(results[1]))
 
 	return &spk, nil
 }
