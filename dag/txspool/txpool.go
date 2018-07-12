@@ -120,19 +120,15 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 }
 
 type TxPool struct {
-	config TxPoolConfig
-	// chainconfig *params.ChainConfig
+	config       TxPoolConfig
 	unit         units
 	txfee        *big.Int
 	txFeed       event.Feed
 	scope        event.SubscriptionScope
 	chainHeadCh  chan ChainHeadEvent
 	chainHeadSub event.Subscription
-	//signer       modules.Signer
-	mu sync.RWMutex
+	mu           sync.RWMutex
 
-	// currentState  *state.StateDB      // Current state in the blockchain head
-	// pendingState  *state.ManagedState // Pending state tracking virtual nonces
 	currentMaxGas uint64 // Current gas limit for transaction caps
 
 	locals  *accountSet // Set of local transaction to exempt from eviction rules
@@ -157,11 +153,8 @@ func NewTxPool(config TxPoolConfig, unit units) *TxPool { // chainconfig *params
 
 	// Create the transaction pool with its initial settings
 	pool := &TxPool{
-
-		// chainconfig: chainconfig,
-		config: config,
-		unit:   unit,
-		//signer:      modules.NewEIP155Signer(chainconfig.ChainId),
+		config:      config,
+		unit:        unit,
 		pending:     make(map[common.Address]*txList),
 		queue:       make(map[common.Address]*txList),
 		beats:       make(map[common.Address]time.Time),
@@ -223,9 +216,7 @@ func (pool *TxPool) loop() {
 		case ev := <-pool.chainHeadCh:
 			if ev.Unit != nil {
 				pool.mu.Lock()
-				// if pool.chainconfig.IsHomestead(ev.Block.Number()) {
-				// 	pool.homestead = true
-				// }
+
 				pool.reset(head.Header(), ev.Unit.Header())
 				head = ev.Unit
 
@@ -251,10 +242,6 @@ func (pool *TxPool) loop() {
 		case <-evict.C:
 			pool.mu.Lock()
 			for addr := range pool.queue {
-				// // Skip local transactions from the eviction mechanism
-				// if pool.locals.contains(addr) {
-				// 	continue
-				// }
 				// Any non-locals old enough should be removed
 				if time.Since(pool.beats[addr]) > pool.config.Lifetime {
 					for _, tx := range pool.queue[addr].Flatten() {
@@ -340,7 +327,6 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 
 	//pool.currentState = statedb
 	//pool.pendingState = state.ManageState(statedb)
-	//pool.currentMaxGas = newHead.GasLimit
 
 	// Inject any transactions discarded due to reorgs
 	log.Debug("Reinjecting stale transactions", "count", len(reinject))
@@ -456,24 +442,6 @@ func (pool *TxPool) validateTx(tx *modules.Transaction, local bool) error {
 	}
 	// Make sure the transaction is signed properly
 
-	// // Ensure the transaction adheres to nonce ordering
-	// if pool.currentState.GetNonce(from) > tx.Nonce() {
-	// 	return ErrNonceTooLow
-	// }
-	// Transactor should have enough funds to cover the costs
-	// cost == V + GP * GL
-	/******  balance   ******/
-	// if pool.currentState.GetBalance(from).Cmp(tx.Cost()) < 0 {
-	// 	return ErrInsufficientFunds
-	// }
-	/*****  end balance  ******/
-	// intrGas, err := IntrinsicGas(tx.Data(), tx.To() == nil, pool.homestead)
-	// if err != nil {
-	// 	return err
-	// }
-	// if tx.Gas() < intrGas {
-	// 	return ErrIntrinsicGas
-	// }
 	return nil
 }
 
@@ -552,7 +520,7 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 	}
 	pool.journalTx(from, tx)
 
-	//log.Trace("Pooled new future transaction", "hash", hash, "from", from, "repalce", replace)
+	log.Trace("Pooled new future transaction", "hash", hash, "from", from, "repalce", replace)
 	return replace, nil
 }
 
@@ -786,10 +754,6 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 			for _, tx := range invalids {
 				pool.enqueueTx(tx.Hash(), tx)
 			}
-			// Update the account nonce if needed
-			// if nonce := tx.Nonce(); pool.pendingState.GetNonce(addr) > nonce {
-			// 	pool.pendingState.SetNonce(addr, nonce)
-			// }
 			return
 		}
 	}
