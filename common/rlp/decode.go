@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"math/big"
 	"reflect"
 	"strings"
@@ -205,6 +206,10 @@ func makeDecoder(typ reflect.Type, tags tags) (dec decoder, err error) {
 		return makePtrDecoder(typ)
 	case kind == reflect.Interface:
 		return decodeInterface, nil
+	case kind == reflect.Float64:
+		return decodefloat64, nil
+	case kind.String() == "common.StorageSize":
+		return decodefloat64, nil
 	default:
 		return nil, fmt.Errorf("rlp: type %v is not RLP-serializable", typ)
 	}
@@ -237,12 +242,22 @@ func decodeBool(s *Stream, val reflect.Value) error {
 	val.SetBool(b)
 	return nil
 }
+func decodefloat64(s *Stream, val reflect.Value) error {
+	b, err := s.Bytes()
+	if err != nil {
+		return wrapStreamError(err, val.Type())
+	}
+	bits := binary.LittleEndian.Uint64(b)
 
+	val.SetFloat(math.Float64frombits(bits))
+	return nil
+}
 func decodeString(s *Stream, val reflect.Value) error {
 	b, err := s.Bytes()
 	if err != nil {
 		return wrapStreamError(err, val.Type())
 	}
+
 	val.SetString(string(b))
 	return nil
 }

@@ -17,7 +17,9 @@
 package common
 
 import (
+	"encoding/binary"
 	"fmt"
+	"math"
 )
 
 // StorageSize is a wrapper around a float value that supports user friendly
@@ -45,4 +47,16 @@ func (s StorageSize) TerminalString() string {
 	} else {
 		return fmt.Sprintf("%.2fB", s)
 	}
+}
+
+func (s StorageSize) Float64() float64 {
+	return float64(s)
+}
+
+func (s StorageSize) Bytes() []byte {
+	bits := math.Float64bits(float64(s))
+	bytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bytes, bits)
+
+	return bytes
 }

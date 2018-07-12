@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common"
 )
 
 var (
@@ -84,28 +85,33 @@ func SaveUnit(unit *modules.Unit) error {
 }
 
 // save header
-func SaveHeader(h *modules.Header) error {
-	log.Println("Start save header... ")
+func SaveHeader(uHahs common.Hash, h *modules.Header) error {
 	data, err := rlp.EncodeToBytes(h)
 	if err != nil {
 		return err
 	}
-	hash := h.Hash().Bytes()
 
-	chain_index := h.ChainIndex()
-	encNum := encodeBlockNumber(chain_index.Index)
+	//chain_index := h.ChainIndex()
+	//encNum := encodeBlockNumber(chain_index.Index)
+	chain_index, err := rlp.EncodeToBytes(h.Number)
+	if err != nil {
+		return err
+	}
 
 	if Dbconn == nil {
 		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
 	}
 
 	// Dbconn.Put(append())
-	key := append(append(HEADERPREFIX, encNum...))
-	if err := Dbconn.Put(append(key, hash...), data); err != nil {
+	key := append(append(HEADERPREFIX, chain_index...), uHahs.Bytes()...)
+	log.Println(key)
+
+	if err := Dbconn.Put(key, data); err != nil {
 		return err
 	}
 	return nil
 }
+
 func SaveTransactions(txs *modules.Transactions) error {
 	log.Println("Start save header... ")
 
@@ -130,6 +136,7 @@ func encodeBlockNumber(number uint64) []byte {
 	binary.BigEndian.PutUint64(enc, number)
 	return enc
 }
+
 func GetUnitKeys() []string {
 	var keys []string
 	if Dbconn == nil {

@@ -19,12 +19,14 @@ package common
 
 import (
 	"fmt"
+	"strings"
+	"unsafe"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"strings"
 )
 
 func KeyToOutpoint(key []byte) modules.OutPoint {
@@ -35,9 +37,9 @@ func KeyToOutpoint(key []byte) modules.OutPoint {
 	}
 
 	var vout modules.OutPoint
-	vout.Prefix = [1]byte{data[0][0]}
+	vout.SetPrefix(modules.UTXO_PREFIX)
 
-	if err := rlp.DecodeBytes([]byte(data[0][1:]), &vout.Addr); err != nil {
+	if err := rlp.DecodeBytes([]byte(data[0][len(modules.UTXO_PREFIX):]), &vout.Addr); err != nil {
 		vout.Addr = common.Address{}
 	}
 
@@ -57,25 +59,33 @@ func KeyToOutpoint(key []byte) modules.OutPoint {
 Return utxo struct and his total amount according to user's address, asset type, transaction amount and given gas.
 */
 func ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
-	// key: u[addr]_[asset]_[index]
-	key := fmt.Sprintf("u%s_%s_", addr.String(), asset.String())
+	// key: [UTXO_PREFIX][addr]_[asset]_[msgindex]_[out index]
+	key := fmt.Sprintf("%s%s_%s_", string(modules.UTXO_PREFIX), addr.String(), asset.String())
 	data := storage.GetPrefix([]byte(key))
 	if data == nil {
 		return nil, 0
 	}
 
 	// value: utxo rlp bytes
-	vout := make(map[modules.OutPoint]*modules.Utxo, len(data))
+	vout := map[modules.OutPoint]*modules.Utxo{}
+	var balance uint64
+	balance = 0
 	for k, v := range data {
 		var utxo modules.Utxo
 		if err := rlp.DecodeBytes([]byte(v), &utxo); err != nil {
+			log.Error("Decode utxo data error:", err)
+			continue
+		}
+
+		if utxo.IsLocked {
 			continue
 		}
 		outpoint := KeyToOutpoint([]byte(k))
 		vout[outpoint] = &utxo
+		balance += utxo.Amount
 	}
 
-	return vout, 0
+	return vout, balance
 }
 
 /**
@@ -93,17 +103,17 @@ func GetUxto(txin modules.Input) modules.Utxo {
 }
 
 /**
-根据交易信息中的outpus创建UTXO， 根据交易信息中的inputs销毁UTXO
+根据交易信息中的outputs创建UTXO， 根据交易信息中的inputs销毁UTXO
 To create utxo according to outpus in transaction, and destory utxo according to inputs in transaction
 */
-func UpdateUtxo(addr common.Address, tx modules.Transaction) {
+func UpdateUtxo(addr common.Address, tx *modules.Transaction) {
 	if len(tx.TxMessages) <= 0 {
 		return
 	}
 
 	var payload interface{}
 
-	for index, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages {
 		payload = msg.Payload
 		payment, ok := payload.(modules.PaymentPayload)
 		if ok == true {
@@ -115,7 +125,7 @@ func UpdateUtxo(addr common.Address, tx modules.Transaction) {
 			}
 
 			// create utxo
-			writeUtxo(addr, tx.TxHash, uint32(index), payment.Outputs, isCoinbase)
+			writeUtxo(addr, tx.TxHash, msg.PayloadHash, payment.Outputs, isCoinbase)
 			// destory utxo
 			destoryUtxo(payment.Inputs)
 		}
@@ -125,12 +135,12 @@ func UpdateUtxo(addr common.Address, tx modules.Transaction) {
 /**
 创建UTXO
 */
-func writeUtxo(addr common.Address, txHash common.Hash, index uint32, txouts []modules.Output, isCoinbase bool) {
+func writeUtxo(addr common.Address, txHash common.Hash, msgIndex common.Hash, txouts []modules.Output, isCoinbase bool) {
 	for outIndex, txout := range txouts {
 		utxo := modules.Utxo{
 			AccountAddr:  addr,
 			TxID:         txHash,
-			MessageIndex: uint32(index),
+			MessageIndex: msgIndex,
 			OutIndex:     uint32(outIndex),
 			Amount:       txout.Value,
 			Asset:        txout.Asset,
@@ -141,11 +151,12 @@ func writeUtxo(addr common.Address, txHash common.Hash, index uint32, txouts []m
 
 		// write to database
 		outpoint := modules.OutPoint{
-			Prefix: [1]byte{'u'},
-			Addr:   addr,
-			Asset:  txout.Asset,
-			Hash:   rlp.RlpHash(utxo),
+			Addr:  addr,
+			Asset: txout.Asset,
+			Hash:  rlp.RlpHash(utxo),
 		}
+		outpoint.SetPrefix(modules.UTXO_PREFIX)
+
 		v, err := rlp.EncodeToBytes(utxo)
 		if err != nil {
 			continue
@@ -168,4 +179,101 @@ func destoryUtxo(txins []modules.Input) {
 			log.Error("Destory uxto error: %s", err)
 		}
 	}
+}
+
+/**
+存储Asset的信息
+write asset info to leveldb
+*/
+func SaveAssetInfo(assetInfo *modules.AssetInfo) error {
+	assetID, err := rlp.EncodeToBytes(assetInfo.AssetID)
+	if err != nil {
+		return err
+	}
+
+	key := append(modules.ASSET_INFO_PREFIX, assetID...)
+
+	data, err := rlp.EncodeToBytes(assetInfo)
+
+	err = storage.Store(string(key), data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/**
+根据assetid从数据库中获取asset的信息
+get asset infomation from leveldb by assetid ( Asset struct type )
+*/
+func GetAssetInfo(assetId *modules.Asset) (modules.AssetInfo, error) {
+	assetID, err := rlp.EncodeToBytes(assetId)
+	if err != nil {
+		return modules.AssetInfo{}, err
+	}
+
+	key := append(modules.ASSET_INFO_PREFIX, assetID...)
+
+	data, err := storage.Get(key)
+	if err != nil {
+		return modules.AssetInfo{}, err
+	}
+
+	var assetInfo modules.AssetInfo
+	err = rlp.DecodeBytes(data, &assetInfo)
+
+	if err != nil {
+		return assetInfo, err
+	}
+	return assetInfo, nil
+}
+
+/**
+获得某个账户下面的余额信息
+To get balance by wallet address and his/her chosen asset type
+*/
+func WalletBalance(addr common.Address, asset modules.Asset) uint64 {
+	outpoint := modules.OutPoint{
+		Addr:  addr,
+		Asset: asset,
+	}
+	outpoint.SetPrefix(modules.UTXO_PREFIX)
+	preKey := outpoint.ToPrefixKey()
+
+	balance := uint64(0)
+	if data := storage.GetPrefix(preKey); data != nil {
+		for _, v := range data {
+			var utxo modules.Utxo
+			if err := rlp.DecodeBytes(v, &utxo); err != nil {
+				log.Error("Decode utxo data error:", err)
+				continue
+			}
+
+			if utxo.IsLocked {
+				continue
+			}
+
+			balance += utxo.Amount
+		}
+	}
+
+	return balance
+}
+
+/**
+根据payload中的inputs获得对应的UTXO map
+*/
+func GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64) {
+	utxos := map[modules.OutPoint]*modules.Utxo{}
+	total := uint64(0)
+	for _, in := range txins {
+		utxo := GetUxto(in)
+		if unsafe.Sizeof(utxo) == 0 {
+			continue
+		}
+		utxos[in.PreviousOutPoint] = &utxo
+		total += utxo.Amount
+	}
+	return utxos, total
 }

@@ -19,6 +19,8 @@
 package modules
 
 import (
+	"fmt"
+	"strconv"
 	"time"
 	//	"errors"
 	//	"fmt"
@@ -31,54 +33,13 @@ import (
 	//	"github.com/palletone/go-palletone/common/crypto"
 	//	"github.com/palletone/go-palletone/common/crypto/sha3"
 	//	"github.com/palletone/go-palletone/common/hexutil"
+	//"github.com/Re-volution/sizestruct"
 	"github.com/palletone/go-palletone/common/rlp"
 )
 
 var (
 	TXFEE = big.NewInt(5) // transaction fee =5ptn
 )
-
-//type Transaction struct {
-//	TxHash       common.Hash `json:"tx_hash"`
-//	TxMessages   []Message   `json:"messages"` //
-//	Authors      []Author    `json:"authors"`  // the issuers of the transaction
-//	CreationDate time.Time   `json:"creation_date"`
-//	data         txdata
-//	// caches
-//	UnitHash         atomic.Value
-//	UnitSize         atomic.Value
-//	memery       atomic.Value
-//	from         atomic.Value
-//	excutiontime uint      `json:"excution_time"`
-//	Creationdate time.Time `json:"creation_date"`
-//}
-//type txdata struct {
-//	AccountNonce      uint64          `json:"account_nonce"`
-//	From              *common.Address `json:"from"`
-//	Recipient         *common.Address `json:"to"       rlp:"nil"` // nil means contract creation
-//	Price             *big.Int        `json:"price"`              // 交易费
-//	Amount            *big.Int        `json:"value"`
-//	Payload           []byte          `json:"input"`
-//	TranReceiptStatus string          `json:"tran_receipt_status"`
-//
-//	// Signature values
-//	V *big.Int `json:"v"`
-//	R *big.Int `json:"r"`
-//	S *big.Int `json:"s"`
-//
-//	// This is only used when marshaling to JSON.
-//	Hash *common.Hash `json:"UnitHash" rlp:"-"`
-//}
-//
-//type txdataMarshaling struct {
-//	AccountNonce hexutil.Uint64
-//	Price        *hexutil.Big
-//	Amount       *hexutil.Big
-//	Payload      hexutil.Bytes
-//	V            *hexutil.Big
-//	R            *hexutil.Big
-//	S            *hexutil.Big
-//}
 
 func NewTransaction(nonce uint64, from common.Address, fee *big.Int, data []byte) *Transaction {
 	return newTransaction(nonce, &from, fee, data)
@@ -166,6 +127,18 @@ func newTransaction(nonce uint64, from *common.Address, fee *big.Int, data []byt
 //
 //func (tx Transaction) Data() []byte { return common.CopyBytes(tx.data.Payload) }
 //
+
+func (tx Transaction) GetPriorityLvl() float64 {
+	// priority_lvl=  fee/size*(1+(time.Now-CreationDate)/24)
+	var priority_lvl float64
+	if txfee := tx.TxFee.Int64(); txfee > 0 {
+		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee)/tx.Txsize.Float64()*(1+float64(time.Now().Hour()-tx.CreationDate.Hour())/24)), 64)
+	}
+	return priority_lvl
+}
+func (tx Transaction) SetPriorityLvl(priority float64) {
+	tx.priority_lvl = priority
+}
 func (tx Transaction) Nonce() uint64 { return tx.AccountNonce }
 
 func (tx Transaction) Fee() *big.Int { return tx.TxFee }
@@ -195,12 +168,11 @@ func (tx Transaction) Hash() common.Hash {
 // Size returns the true RLP encoded storage UnitSize of the transaction, either by
 // encoding and returning it, or returning a previsouly cached value.
 func (tx *Transaction) Size() common.StorageSize {
-	if size := tx.size.Load(); size != nil {
-		return size.(common.StorageSize)
+	if size := tx.Txsize.Float64(); size > 0 {
+		return tx.Txsize
 	}
 	c := writeCounter(0)
 	rlp.Encode(&c, &tx)
-	tx.size.Store(common.StorageSize(c))
 	return common.StorageSize(c)
 }
 
@@ -347,6 +319,24 @@ func (s *TxByPrice) Push(x interface{}) {
 }
 
 func (s *TxByPrice) Pop() interface{} {
+	old := *s
+	n := len(old)
+	x := old[n-1]
+	*s = old[0 : n-1]
+	return x
+}
+
+type TxByPriority Transactions
+
+func (s TxByPriority) Len() int           { return len(s) }
+func (s TxByPriority) Less(i, j int) bool { return s[i].priority_lvl > s[j].priority_lvl }
+func (s TxByPriority) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+
+func (s *TxByPriority) Push(x interface{}) {
+	*s = append(*s, x.(*Transaction))
+}
+
+func (s *TxByPriority) Pop() interface{} {
 	old := *s
 	n := len(old)
 	x := old[n-1]
