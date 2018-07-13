@@ -24,7 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -39,12 +39,12 @@ const (
 
 type txsync struct {
 	p   *peer
-	txs []*types.Transaction
+	txs []*modules.Transaction
 }
 
 // syncTransactions starts sending all currently pending transactions to the given peer.
 func (pm *ProtocolManager) syncTransactions(p *peer) {
-	var txs types.Transactions
+	var txs modules.Transactions
 	pending, _ := pm.txpool.Pending()
 	for _, batch := range pending {
 		txs = append(txs, batch...)
@@ -86,7 +86,7 @@ func (pm *ProtocolManager) txsyncLoop() {
 			delete(pending, s.p.ID())
 		}
 		// Send the pack in the background.
-		s.p.Log().Trace("Sending batch of transactions", "count", len(pack.txs), "bytes", size)
+		log.Trace("Sending batch of transactions", "count", len(pack.txs), "bytes", size)
 		sending = true
 		go func() { done <- pack.p.SendTransactions(pack.txs) }()
 	}
@@ -116,7 +116,7 @@ func (pm *ProtocolManager) txsyncLoop() {
 			sending = false
 			// Stop tracking peers that cause send failures.
 			if err != nil {
-				pack.p.Log().Debug("Transaction send failed", "err", err)
+				log.Debug("Transaction send failed", "err", err.Error())
 				delete(pending, pack.p.ID())
 			}
 			// Schedule the next send.

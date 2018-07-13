@@ -28,15 +28,15 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/consensus"
 	//"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/types"
-	"github.com/palletone/go-palletone/ptn/downloader"
-	//"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/ptn/downloader"
 	//"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/coredata"
@@ -50,7 +50,7 @@ var (
 // newTestProtocolManager creates a new protocol manager for testing purposes,
 // with the given number of blocks already known, and potential notification
 // channels for different events.
-func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*types.Transaction) (*ProtocolManager, *ptndb.MemDatabase, error) {
+func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, *ptndb.MemDatabase, error) {
 	//var engine core.ConsensusEngine = &consensus.DPOSEngine{}
 	var (
 		// evmux = new(event.TypeMux)
@@ -70,7 +70,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	//	panic(err)
 	//}
 	engine := consensus.New()
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx},engine)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -82,7 +82,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 // with the given number of blocks already known, and potential notification
 // channels for different events. In case of an error, the constructor force-
 // fails the test.
-func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, newtx chan<- []*types.Transaction) (*ProtocolManager, *ptndb.MemDatabase) {
+func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, *ptndb.MemDatabase) {
 	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/, newtx)
 	if err != nil {
 		t.Fatalf("Failed to create protocol manager: %v", err)
@@ -93,15 +93,15 @@ func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks i
 // testTxPool is a fake, helper transaction pool for testing purposes
 type testTxPool struct {
 	txFeed event.Feed
-	pool   []*types.Transaction        // Collection of all transactions
-	added  chan<- []*types.Transaction // Notification channel for new transactions
+	pool   []*modules.Transaction        // Collection of all transactions
+	added  chan<- []*modules.Transaction // Notification channel for new transactions
 
 	lock sync.RWMutex // Protects the transaction pool
 }
 
 // AddRemotes appends a batch of transactions to the pool, and notifies any
 // listeners if the addition channel is non nil
-func (p *testTxPool) AddRemotes(txs []*types.Transaction) []error {
+func (p *testTxPool) AddRemotes(txs []*modules.Transaction) []error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -113,11 +113,11 @@ func (p *testTxPool) AddRemotes(txs []*types.Transaction) []error {
 }
 
 // Pending returns all the transactions known to the pool
-func (p *testTxPool) Pending() (map[common.Address]types.Transactions, error) {
+func (p *testTxPool) Pending() (map[common.Address]modules.Transactions, error) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	batches := make(map[common.Address]types.Transactions)
+	batches := make(map[common.Address]modules.Transactions)
 	for _, tx := range p.pool {
 		from, _ := types.Sender(types.HomesteadSigner{}, tx)
 		batches[from] = append(batches[from], tx)
@@ -128,12 +128,12 @@ func (p *testTxPool) Pending() (map[common.Address]types.Transactions, error) {
 	return batches, nil
 }
 
-func (p *testTxPool) SubscribeTxPreEvent(ch chan<- coredata.TxPreEvent) event.Subscription {
+func (p *testTxPool) SubscribeTxPreEvent(ch chan<- txspool.TxPreEvent) event.Subscription {
 	return p.txFeed.Subscribe(ch)
 }
 
 // newTestTransaction create a new dummy transaction.
-func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *types.Transaction {
+func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *modules.Transaction {
 	tx := types.NewTransaction(nonce, common.Address{}, big.NewInt(0), 100000, big.NewInt(0), make([]byte, datasize))
 	tx, _ = types.SignTx(tx, types.HomesteadSigner{}, from)
 	return tx

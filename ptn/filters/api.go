@@ -30,7 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
@@ -169,7 +169,7 @@ func (api *PublicFilterAPI) NewPendingTransactions(ctx context.Context) (*rpc.Su
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_newblockfilter
 func (api *PublicFilterAPI) NewBlockFilter() rpc.ID {
 	var (
-		headers   = make(chan *types.Header)
+		headers   = make(chan *modules.Header)
 		headerSub = api.events.SubscribeNewHeads(headers)
 	)
 
@@ -208,7 +208,7 @@ func (api *PublicFilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, er
 	rpcSub := notifier.CreateSubscription()
 
 	go func() {
-		headers := make(chan *types.Header)
+		headers := make(chan *modules.Header)
 		headersSub := api.events.SubscribeNewHeads(headers)
 
 		for {

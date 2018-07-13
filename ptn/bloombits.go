@@ -20,11 +20,10 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/bitutil"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 const (
@@ -125,22 +124,23 @@ func (b *BloomIndexer) Reset(section uint64, lastSectionHead common.Hash) error 
 
 // Process implements core.ChainIndexerBackend, adding a new header's bloom into
 // the index.
-func (b *BloomIndexer) Process(header *types.Header) {
-	b.gen.AddBloom(uint(header.Number.Uint64()-b.section*b.size), header.Bloom)
+func (b *BloomIndexer) Process(header *modules.Header) {
+	//b.gen.AddBloom(uint(header.Number.Uint64()-b.section*b.size), header.Bloom)
 	b.head = header.Hash()
 }
 
 // Commit implements core.ChainIndexerBackend, finalizing the bloom section and
 // writing it out into the database.
 func (b *BloomIndexer) Commit() error {
-	batch := b.db.NewBatch()
+	return nil
+	//	batch := b.db.NewBatch()
 
-	for i := 0; i < types.BloomBitLength; i++ {
-		bits, err := b.gen.Bitset(uint(i))
-		if err != nil {
-			return err
-		}
-		coredata.WriteBloomBits(batch, uint(i), b.section, b.head, bitutil.CompressBytes(bits))
-	}
-	return batch.Write()
+	//	for i := 0; i < types.BloomBitLength; i++ {
+	//		bits, err := b.gen.Bitset(uint(i))
+	//		if err != nil {
+	//			return err
+	//		}
+	//		coredata.WriteBloomBits(batch, uint(i), b.section, b.head, bitutil.CompressBytes(bits))
+	//	}
+	//	return batch.Write()
 }

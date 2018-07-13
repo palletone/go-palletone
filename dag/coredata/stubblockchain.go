@@ -29,7 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 	//	"github.com/palletone/go-palletone/consensus"
-	"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type BlockChain struct{}
@@ -39,12 +39,10 @@ type CacheConfig struct {
 	TrieTimeLimit time.Duration // Time limit after which to flush the current in-memory trie to disk
 }
 
-func (bc *BlockChain) InsertChain(chain types.Blocks) (int, error) {
+func (bc *BlockChain) InsertChain() (int, error) {
 	return 0, nil
 }
-func (bc *BlockChain) CurrentBlock() *types.Block {
-	return &types.Block{}
-}
+
 func (bc *BlockChain) HasBlock(hash common.Hash, number uint64) bool {
 	return true
 }
@@ -112,7 +110,7 @@ var (
 )
 
 // TxPreEvent is posted when a transaction enters the transaction pool.
-type TxPreEvent struct{ Tx *types.Transaction }
+//type TxPreEvent struct{ Tx *modules.Transaction }
 
 /*
 // PendingLogsEvent is posted pre mining and notifies of pending logs.
@@ -124,25 +122,25 @@ type PendingLogsEvent struct {
 type PendingStateEvent struct{}
 
 // NewMinedBlockEvent is posted when a block has been imported.
-type NewMinedBlockEvent struct{ Block *types.Block }
+type NewMinedBlockEvent struct{}
 
 // RemovedTransactionEvent is posted when a reorg happens
-type RemovedTransactionEvent struct{ Txs types.Transactions }
+type RemovedTransactionEvent struct{ Txs modules.Transactions }
 
 // RemovedLogsEvent is posted when a reorg happens
 //type RemovedLogsEvent struct{ Logs []*types.Log }
 
 type ChainEvent struct {
-	Block *types.Block
-	Hash  common.Hash
+	//Block *types.Block
+	Hash common.Hash
 	//Logs  []*types.Log
 }
 
 type ChainSideEvent struct {
-	Block *types.Block
+	//Block *types.Block
 }
 
-type ChainHeadEvent struct{ Block *types.Block }
+type ChainHeadEvent struct{}
 
 ////////headerchain///////////
 type HeaderChain struct{}
@@ -150,8 +148,8 @@ type HeaderChain struct{}
 func NewHeaderChain(chainDb ptndb.Database, config *configure.ChainConfig /*engine consensus.Engine,*/, procInterrupt func() bool) (*HeaderChain, error) {
 	return &HeaderChain{}, nil
 }
-func (hc *HeaderChain) CurrentHeader() *types.Header {
-	return &types.Header{}
+func (hc *HeaderChain) CurrentHeader() *modules.Header {
+	return &modules.Header{}
 }
 func (hc *HeaderChain) GetTd(hash common.Hash, number uint64) *big.Int {
 	return &big.Int{}
@@ -160,7 +158,7 @@ func (hc *HeaderChain) GetTd(hash common.Hash, number uint64) *big.Int {
 //////////EVM///////////////////
 type ChainContext interface {
 	//	Engine() consensus.Engine
-	GetHeader(common.Hash, uint64) *types.Header
+	GetHeader(common.Hash, uint64) *modules.Header
 }
 
 /*
@@ -170,7 +168,7 @@ func NewEVMContext(msg Message, header *types.Header, chain ChainContext, author
 }
 */
 // GetHashFn returns a GetHashFunc which retrieves header hashes by number
-func GetHashFn(ref *types.Header, chain ChainContext) func(n uint64) common.Hash {
+func GetHashFn(ref *modules.Header, chain ChainContext) func(n uint64) common.Hash {
 	return func(n uint64) common.Hash { return common.Hash{} }
 }
 
@@ -240,7 +238,7 @@ func (p *StateProcessor) Process(block *types.Block , cfg vm.Config) (types.Rece
 	return receipts, allLogs, *usedGas, nil
 }
 
-func ApplyTransaction(config *configure.ChainConfig, bc *BlockChain, author *common.Address, gp *GasPool, header *types.Header, tx *types.Transaction, usedGas *uint64, cfg vm.Config) (*types.Receipt, uint64, error) {
+func ApplyTransaction(config *configure.ChainConfig, bc *BlockChain, author *common.Address, gp *GasPool, header *types.Header, tx *modules.Transaction, usedGas *uint64, cfg vm.Config) (*types.Receipt, uint64, error) {
 	return nil, 0, nil
 }
 */
@@ -293,8 +291,8 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 ///////////types///////////////////
 
 type Validator interface {
-	ValidateBody(block *types.Block) error
-	ValidateState(block, parent *types.Block /*state *state.StateDB,*/, receipts types.Receipts, usedGas uint64) error
+	//ValidateBody(block *types.Block) error
+	//ValidateState(block, parent *types.Block /*state *state.StateDB,*/, receipts types.Receipts, usedGas uint64) error
 }
 
 type Processor interface {

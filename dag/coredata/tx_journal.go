@@ -16,6 +16,7 @@
 
 package coredata
 
+/*
 import (
 	"errors"
 	"io"
@@ -24,7 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // errNoActiveJournal is returned if a transaction is attempted to be inserted
@@ -56,7 +57,7 @@ func newTxJournal(path string) *txJournal {
 
 // load parses a transaction journal dump from disk, loading its contents into
 // the specified pool.
-func (journal *txJournal) load(add func(*types.Transaction) error) error {
+func (journal *txJournal) load(add func(*modules.Transaction) error) error {
 	// Skip the parsing if the journal file doens't exist at all
 	if _, err := os.Stat(journal.path); os.IsNotExist(err) {
 		return nil
@@ -79,7 +80,7 @@ func (journal *txJournal) load(add func(*types.Transaction) error) error {
 	var failure error
 	for {
 		// Parse the next transaction and terminate on error
-		tx := new(types.Transaction)
+		tx := new(modules.Transaction)
 		if err = stream.Decode(tx); err != nil {
 			if err != io.EOF {
 				failure = err
@@ -100,7 +101,7 @@ func (journal *txJournal) load(add func(*types.Transaction) error) error {
 }
 
 // insert adds the specified transaction to the local disk journal.
-func (journal *txJournal) insert(tx *types.Transaction) error {
+func (journal *txJournal) insert(tx *modules.Transaction) error {
 	if journal.writer == nil {
 		return errNoActiveJournal
 	}
@@ -112,7 +113,7 @@ func (journal *txJournal) insert(tx *types.Transaction) error {
 
 // rotate regenerates the transaction journal based on the current contents of
 // the transaction pool.
-func (journal *txJournal) rotate(all map[common.Address]types.Transactions) error {
+func (journal *txJournal) rotate(all map[common.Address]modules.Transactions) error {
 	// Close the current journal (if any is open)
 	if journal.writer != nil {
 		if err := journal.writer.Close(); err != nil {
@@ -161,3 +162,4 @@ func (journal *txJournal) close() error {
 	}
 	return err
 }
+*/

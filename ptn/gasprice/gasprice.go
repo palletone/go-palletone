@@ -16,6 +16,7 @@
 
 package gasprice
 
+/*
 import (
 	"context"
 	"math/big"
@@ -25,7 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/internal/ethapi"
 )
 
@@ -153,7 +154,7 @@ type getBlockPricesResult struct {
 	err   error
 }
 
-type transactionsByGasPrice []*types.Transaction
+type transactionsByGasPrice []*modules.Transaction
 
 func (t transactionsByGasPrice) Len() int           { return len(t) }
 func (t transactionsByGasPrice) Swap(i, j int)      { t[i], t[j] = t[j], t[i] }
@@ -169,7 +170,7 @@ func (gpo *Oracle) getBlockPrices(ctx context.Context, signer types.Signer, bloc
 	}
 
 	blockTxs := block.Transactions()
-	txs := make([]*types.Transaction, len(blockTxs))
+	txs := make([]*modules.Transaction, len(blockTxs))
 	copy(txs, blockTxs)
 	sort.Sort(transactionsByGasPrice(txs))
 
@@ -188,3 +189,4 @@ type bigIntArray []*big.Int
 func (s bigIntArray) Len() int           { return len(s) }
 func (s bigIntArray) Less(i, j int) bool { return s[i].Cmp(s[j]) < 0 }
 func (s bigIntArray) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+*/

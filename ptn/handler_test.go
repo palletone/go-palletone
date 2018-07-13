@@ -20,7 +20,7 @@ import (
 	"testing"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/dag/modules"
 
 	"github.com/palletone/go-palletone/ptn/downloader"
 )

@@ -39,7 +39,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
@@ -270,20 +270,23 @@ func (ks *KeyStore) SignHash(a accounts.Account, hash []byte) ([]byte, error) {
 }
 
 // SignTx signs the given transaction with the requested account.
-func (ks *KeyStore) SignTx(a accounts.Account, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
-	// Look up the key to sign with and abort if it cannot be found
-	ks.mu.RLock()
-	defer ks.mu.RUnlock()
+func (ks *KeyStore) SignTx(a accounts.Account, tx *modules.Transaction, chainID *big.Int) (*modules.Transaction, error) {
+	authen, err := ks.SigTX(tx, a.Address)
+	if err != nil {
+		return nil, err
+	}
+	publicKey, err1 := ks.GetPublicKey(a.Address)
+	if err1 != nil {
+		return nil, err1
+	}
 
-	unlockedKey, found := ks.unlocked[a.Address]
-	if !found {
-		return nil, ErrLocked
+	if tx.From == nil {
+		tx.From = new(modules.Author)
 	}
-	// Depending on the presence of the chain ID, sign with EIP155 or homestead
-	if chainID != nil {
-		//return types.SignTx(tx, types.NewEIP155Signer(chainID), unlockedKey.PrivateKey)
-	}
-	return types.SignTx(tx, types.HomesteadSigner{}, unlockedKey.PrivateKey)
+	tx.From.Address = a.Address
+	tx.From.Pubkey = publicKey
+	tx.From.TxAuthentifier = modules.Authentifier{authen}
+	return tx, nil
 }
 
 // SignHashWithPassphrase signs hash if the private key matching the given address
@@ -310,18 +313,29 @@ func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase
 
 // SignTxWithPassphrase signs the transaction if the private key matching the
 // given address can be decrypted with the given passphrase.
-func (ks *KeyStore) SignTxWithPassphrase(a accounts.Account, passphrase string, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
+func (ks *KeyStore) SignTxWithPassphrase(a accounts.Account, passphrase string, tx *modules.Transaction, chainID *big.Int) (*modules.Transaction, error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
 	if err != nil {
 		return nil, err
 	}
 	defer ZeroKey(key.PrivateKey)
 
-	// Depending on the presence of the chain ID, sign with EIP155 or homestead
-	if chainID != nil {
-		//return types.SignTx(tx, types.NewEIP155Signer(chainID), key.PrivateKey)
+	authen, err := ks.SigTXWithPwd(tx, key.PrivateKey)
+	if err != nil {
+		return nil, err
 	}
-	return types.SignTx(tx, types.HomesteadSigner{}, key.PrivateKey)
+	publicKey, err1 := ks.GetPublicKey(a.Address)
+	if err1 != nil {
+		return nil, err1
+	}
+
+	if tx.From == nil {
+		tx.From = new(modules.Author)
+	}
+	tx.From.Address = a.Address
+	tx.From.Pubkey = publicKey
+	tx.From.TxAuthentifier = modules.Authentifier{authen}
+	return tx, nil
 }
 
 // Unlock unlocks the given account indefinitely.
@@ -493,18 +507,6 @@ func (ks *KeyStore) Update(a accounts.Account, passphrase, newPassphrase string)
 	return ks.storage.StoreKey(a.URL.Path, key, newPassphrase)
 }
 
-// // ImportPreSaleKey decrypts the given PalletOne presale wallet and stores
-// // a key file in the key directory. The key file is encrypted with the same passphrase.
-// func (ks *KeyStore) ImportPreSaleKey(keyJSON []byte, passphrase string) (accounts.Account, error) {
-// 	a, _, err := importPreSaleKey(ks.storage, keyJSON, passphrase)
-// 	if err != nil {
-// 		return a, err
-// 	}
-// 	ks.cache.add(a)
-// 	ks.refreshWallets()
-// 	return a, nil
-// }
-
 // ZeroKey zeroes a private key in memory.
 func ZeroKey(k *ecdsa.PrivateKey) {
 	b := k.D.Bits()
@@ -541,6 +543,18 @@ func (ks *KeyStore) SigUnit(unit interface{}, address common.Address) (string, e
 	if err != nil {
 		return "", err
 	}
+	defer ZeroKey(privateKey)
+
+	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
+	//unit signature
+	sign, err := crypto.Sign(hash.Bytes(), privateKey)
+	if err != nil {
+		return "", err
+	}
+	return hexutil.Encode(sign), nil
+}
+
+func (ks *KeyStore) SigUnitWithPwd(unit interface{}, privateKey *ecdsa.PrivateKey) (string, error) {
 	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
 	//unit signature
 	sign, err := crypto.Sign(hash.Bytes(), privateKey)
@@ -567,4 +581,8 @@ func (ks *KeyStore) SigTX(tx interface{}, address common.Address) (string, error
 
 func VerifyTXWithPK(sign string, tx interface{}, publicKey []byte) bool {
 	return VerifyUnitWithPK(sign, tx, publicKey)
+}
+
+func (ks *KeyStore) SigTXWithPwd(tx interface{}, privateKey *ecdsa.PrivateKey) (string, error) {
+	return ks.SigUnitWithPwd(tx, privateKey)
 }

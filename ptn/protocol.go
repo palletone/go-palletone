@@ -24,8 +24,8 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/core/types"
-	"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 // Constants to match up protocol versions and messages
@@ -96,15 +96,15 @@ var errorToString = map[int]string{
 
 type txPool interface {
 	// AddRemotes should add the given transactions to the pool.
-	AddRemotes([]*types.Transaction) []error
+	AddRemotes([]*modules.Transaction) []error
 
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.
-	Pending() (map[common.Address]types.Transactions, error)
+	Pending() (map[common.Address]modules.Transactions, error)
 
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.
-	SubscribeTxPreEvent(chan<- coredata.TxPreEvent) event.Subscription
+	SubscribeTxPreEvent(chan<- txspool.TxPreEvent) event.Subscription
 }
 
 // statusData is the network packet for the status message.
@@ -166,16 +166,10 @@ func (hn *hashOrNumber) DecodeRLP(s *rlp.Stream) error {
 	return err
 }
 
-// newBlockData is the network packet for the block propagation message.
-type newBlockData struct {
-	Block *types.Block
-	TD    *big.Int
-}
-
 // blockBody represents the data content of a single block.
 type blockBody struct {
-	Transactions []*types.Transaction // Transactions contained within a block
-	Uncles       []*types.Header      // Uncles contained within a block
+	Transactions []*modules.Transaction // Transactions contained within a block
+	Uncles       []*modules.Header      // Uncles contained within a block
 }
 
 // blockBodiesData is the network packet for block content distribution.

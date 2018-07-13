@@ -173,7 +173,7 @@ func (n *Node) Start() error {
 		// Create a new context for the particular service
 		// 为每个service 分别新建一个ServiceContext 结构
 		ctx := &ServiceContext{
-			config:         n.config,
+			config: n.config,
 			//这个 services 干什么的？似乎是记录一下之前的所有serviceFuncs 的kind，service，方便其他service使用
 			services:       make(map[reflect.Type]Service),
 			EventMux:       n.eventmux,
@@ -269,13 +269,16 @@ func (n *Node) startRPC(services map[reflect.Type]Service) error {
 	}
 	// Start the various API endpoints, terminating all in case of errors
 	if err := n.startInProc(apis); err != nil {
+		log.Error("startRPC startInProc err:", err.Error())
 		return err
 	}
 	if err := n.startIPC(apis); err != nil {
+		log.Error("startRPC startIPC err:", err.Error())
 		n.stopInProc()
 		return err
 	}
 	if err := n.startHTTP(n.httpEndpoint, apis, n.config.HTTPModules, n.config.HTTPCors, n.config.HTTPVirtualHosts); err != nil {
+		log.Error("startRPC startHTTP err:", err.Error())
 		n.stopIPC()
 		n.stopInProc()
 		return err
@@ -316,10 +319,12 @@ func (n *Node) stopInProc() {
 // startIPC initializes and starts the IPC RPC endpoint.
 func (n *Node) startIPC(apis []rpc.API) error {
 	if n.ipcEndpoint == "" {
+		log.Info("startIPC ipcEndpoint is null")
 		return nil // IPC disabled.
 	}
 	listener, handler, err := rpc.StartIPCEndpoint(n.ipcEndpoint, apis)
 	if err != nil {
+		log.Info("startIPC StartIPCEndpoint err:", err.Error())
 		return err
 	}
 	n.ipcListener = listener
