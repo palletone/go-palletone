@@ -20,8 +20,6 @@ import (
 	"encoding/json"
 	"strings"
 
-	"math/big"
-
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -88,8 +86,12 @@ func (args *SendTxArgs) toTransaction() *modules.Transaction {
 	} else if args.Input != nil {
 		input = *args.Input
 	}
+	input = input
+	return &modules.Transaction{}
+	/*would recover
 	if args.To == nil {
 		return types.NewContractCreation(uint64(args.Nonce), (*big.Int)(&args.Value), uint64(args.Gas), (*big.Int)(&args.GasPrice), input)
 	}
 	return types.NewTransaction(uint64(args.Nonce), args.To.Address(), (*big.Int)(&args.Value), (uint64)(args.Gas), (*big.Int)(&args.GasPrice), input)
+	*/
 }

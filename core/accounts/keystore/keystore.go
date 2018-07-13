@@ -324,10 +324,7 @@ func (ks *KeyStore) SignTxWithPassphrase(a accounts.Account, passphrase string, 
 	if err != nil {
 		return nil, err
 	}
-	publicKey, err1 := ks.GetPublicKey(a.Address)
-	if err1 != nil {
-		return nil, err1
-	}
+	publicKey := crypto.FromECDSAPub(&key.PrivateKey.PublicKey)
 
 	if tx.From == nil {
 		tx.From = new(modules.Author)
