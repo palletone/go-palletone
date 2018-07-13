@@ -805,6 +805,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 }
 
 // SetNodeConfig applies node-related command line flags to the config.
+// 检查命令行中有没有 node 相关的配置，如果有的话覆盖掉cfg中的配置。
 func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	// SetP2PConfig(ctx, &cfg.P2P)
 	// setIPC(ctx, cfg)
@@ -1097,6 +1098,7 @@ func RegisterPtnStatsService(stack *node.Node, url string) {
 // SetupNetwork configures the system for either the main net or some test network.
 func SetupNetwork(ctx *cli.Context) {
 	// TODO(fjl): move target gas limit into config
+	// 配置gas limit值
 	configure.TargetGasLimit = ctx.GlobalUint64(TargetGasLimitFlag.Name)
 }
 
