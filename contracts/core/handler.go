@@ -38,6 +38,7 @@ import (
 	"github.com/looplab/fsm"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	"github.com/palletone/go-palletone/contracts/rwset"
 )
 
 const (
@@ -60,7 +61,7 @@ type transactionContext struct {
 	queryIteratorMap    map[string]commonledger.ResultsIterator
 	pendingQueryResults map[string]*pendingQueryResult
 
-	//txsimulator          ledger.TxSimulator
+	txsimulator          rwset.TxSimulator
 	//historyQueryExecutor ledger.HistoryQueryExecutor
 }
 
@@ -202,7 +203,7 @@ func (handler *Handler) createTxContext(ctxt context.Context, chainID string, tx
 		pendingQueryResults: make(map[string]*pendingQueryResult)}
 	handler.txCtxs[txCtxID] = txctx
 	//glh
-	//txctx.txsimulator = getTxSimulator(ctxt)
+	txctx.txsimulator = getTxSimulator(ctxt)
 	//txctx.historyQueryExecutor = getHistoryQueryExecutor(ctxt)
 
 	return txctx, nil
@@ -661,6 +662,9 @@ func (handler *Handler) handleGetState(msg *pb.ChaincodeMessage) {
 		} else {
 			//glh
 			//res, err = txContext.txsimulator.GetState(chaincodeID, getState.Key)
+		}
+		if txContext.txsimulator != nil {
+			res, err = txContext.txsimulator.GetState(chaincodeID, getState.Key)
 		}
 
 		if err != nil {
@@ -1281,7 +1285,7 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 			triggerNextStateMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
 		}
 		//glh
-		//chaincodeID := handler.getCCRootName()
+		chaincodeID := handler.getCCRootName()
 		var err error
 		var res []byte
 
@@ -1299,7 +1303,9 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 			} else {
 				err = txContext.txsimulator.SetState(chaincodeID, putState.Key, putState.Value)
 			}
-*/
+*/			if txContext.txsimulator != nil {
+				err = txContext.txsimulator.SetState(chaincodeID, putState.Key, putState.Value)
+			}
 		} else if msg.Type.String() == pb.ChaincodeMessage_DEL_STATE.String() {
 			// Invoke ledger to delete state
 			delState := &pb.DelState{}
@@ -1317,6 +1323,8 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 				err = txContext.txsimulator.DeleteState(chaincodeID, delState.Key)
 			}
 			*/
+			err = txContext.txsimulator.DeleteState(chaincodeID, delState.Key)
+
 		} else if msg.Type.String() == pb.ChaincodeMessage_INVOKE_CHAINCODE.String() {
 			chaincodeLogger.Debugf("[%s] C-call-C", shorttxid(msg.Txid))
 			chaincodeSpec := &pb.ChaincodeSpec{}
@@ -1517,7 +1525,7 @@ func (handler *Handler) ready(ctxt context.Context, chainID string, txid string,
 
 // handleMessage is the entrance method for Peer's handling of Chaincode messages.
 func (handler *Handler) handleMessage(msg *pb.ChaincodeMessage) error {
-	chaincodeLogger.Debugf("[%s]Fabric side Handling ChaincodeMessage[Txid=%s] of type: %s in state %s",msg.Txid, shorttxid(msg.Txid), msg.Type, handler.FSM.Current())
+	chaincodeLogger.Debugf("[%s]Pallet peer side Handling ChaincodeMessage[Txid=%s] of type: %s in state %s",msg.Txid, shorttxid(msg.Txid), msg.Type, handler.FSM.Current())
 
 	if (msg.Type == pb.ChaincodeMessage_COMPLETED || msg.Type == pb.ChaincodeMessage_ERROR) && handler.FSM.Current() == "ready" {
 		chaincodeLogger.Debugf("[%s]HandleMessage- COMPLETED. Notify", msg.Txid)
