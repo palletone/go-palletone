@@ -14,6 +14,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	//"github.com/palletone/go-palletone/metrics"
+	"github.com/palletone/go-palletone/common/crypto"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -435,7 +436,7 @@ func (pool *TxPool) validateTx(tx *modules.Transaction, local bool) error {
 	}
 	//  transaction 转账金额验证在上层已做，这里无需再次验证。
 
-	from := tx.From.Address
+	from := RSVtoAddress(tx)
 	local = local || pool.locals.contains(from) // account may be local even if the transaction arrived from the network
 	if !local && pool.txfee.Cmp(tx.TxFee) > 0 {
 		return ErrTxFeeTooLow
@@ -484,7 +485,7 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 	}
 	// If the transaction is replacing an already pending one, do directly
 	//from,_ := modules.Sender(pool.signer, tx) // already validated
-	from := tx.From.Address
+	from := RSVtoAddress(tx)
 	if list := pool.pending[from]; list != nil && list.Overlaps(tx) {
 		// Nonce already pending, check if required price bump is met
 		inserted, old := list.Add(tx, pool.config.PriceBump)
@@ -529,7 +530,7 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 // Note, this method assumes the pool lock is held!
 func (pool *TxPool) enqueueTx(hash common.Hash, tx *modules.Transaction) (bool, error) {
 	// Try to insert the transaction into the future queue
-	from := tx.From.Address // already validated
+	from := RSVtoAddress(tx) // already validated
 	if pool.queue[from] == nil {
 		pool.queue[from] = newTxList(false)
 	}
@@ -642,7 +643,7 @@ func (pool *TxPool) addTx(tx *modules.Transaction, local bool) error {
 	}
 	// If we added a new transaction, run promotion checks and return
 	if !replace {
-		from := tx.From.Address // already validated
+		from := RSVtoAddress(tx) // already validated
 		pool.promoteExecutables([]common.Address{from})
 	}
 	return nil
@@ -667,7 +668,7 @@ func (pool *TxPool) addTxsLocked(txs []*modules.Transaction, local bool) []error
 		var replace bool
 		if replace, errs[i] = pool.add(tx, local); errs[i] == nil {
 			if !replace {
-				from := tx.From.Address // already validated
+				from := RSVtoAddress(tx) // already validated
 				dirty[from] = struct{}{}
 			}
 		}
@@ -701,7 +702,7 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 	status := make([]TxStatus, len(hashes))
 	for i, hash := range hashes {
 		if tx := pool.all[hash]; tx != nil {
-			from := tx.From.Address // already validated
+			from := RSVtoAddress(tx) // already validated
 			if pool.pending[from] != nil && pool.pending[from].txs.items[tx.Nonce()] != nil {
 				status[i] = TxStatusPending
 			} else {
@@ -729,7 +730,7 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 	if !ok {
 		return
 	}
-	addr := tx.From.Address // already validated during insertion
+	addr := RSVtoAddress(tx) // already validated during insertion
 
 	// Remove it from the list of known transactions
 	delete(pool.all, hash)
@@ -1012,7 +1013,7 @@ func (as *accountSet) containsTx(tx *modules.Transaction) bool {
 	// if addr, err := modules.Sender(as.signer, tx); err == nil {
 	// 	return as.contains(addr)
 	// }
-	return as.contains(tx.From.Address)
+	return as.contains(RSVtoAddress(tx))
 }
 
 // add inserts a new address into the set to track.
@@ -1029,4 +1030,14 @@ func (pool *TxPool) GetSortedTxs() modules.Transactions {
 	}
 	sort.Sort(list)
 	return modules.Transactions(list)
+}
+
+func RSVtoAddress(tx *modules.Transaction) common.Address {
+	sig := make([]byte, 65)
+	copy(sig[32-len(tx.From.R):32], tx.From.R)
+	copy(sig[64-len(tx.From.S):64], tx.From.S)
+	copy(sig[64:len(sig)], tx.From.V)
+	pub, _ := crypto.SigToPub(tx.TxHash[:], sig)
+	address := crypto.PubkeyToAddress(*pub)
+	return address
 }

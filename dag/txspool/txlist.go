@@ -54,7 +54,7 @@ func (m *txSortedMap) Get(nonce uint64) *modules.Transaction {
 func (m *txSortedMap) GetNonce(addr common.Address) uint64 {
 	if m.items != nil {
 		for key, v := range m.items {
-			if v.From.Address == addr {
+			if RSVtoAddress(v) == addr {
 				return key
 			}
 		}
