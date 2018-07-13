@@ -118,14 +118,14 @@ func GetTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.Transa
 	return txs
 }
 
-func CommitDB(unit *modules.Unit, publicKey []byte, sign string, address common.Address) error {
+func CommitDB(unit *modules.Unit, publicKey, addr []byte, address common.Address) error {
 	var authentifier modules.Authentifier
-	authentifier.Sign = sign
+	authentifier.Address = string(addr)
 	author := new(modules.Author)
 	author.Address = address
 	author.Pubkey = publicKey
 	author.TxAuthentifier = authentifier
-	unit.UnitHeader.Authors = author
+	unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, *author)
 	return nil
 }
 
