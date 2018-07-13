@@ -6,6 +6,8 @@ import (
 
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/rlp"
+	"fmt"
 )
 
 func TestNewGenesisUnit(t *testing.T) {
@@ -45,4 +47,18 @@ func TestSaveUnit(t *testing.T) {
 	if err:=SaveUnit(modules.Unit{}); err!=nil {
 		log.Println(err)
 	}
+}
+
+type TestByte string
+func TestRlpDecode(t *testing.T)  {
+	var  t1,t2,t3 TestByte
+	t1= "111"
+	t2 = "222"
+	t3 = "333"
+
+	bytes := []TestByte{t1, t2, t3}
+	encodeBytes, _ := rlp.EncodeToBytes(bytes)
+	var data []TestByte
+	rlp.DecodeBytes(encodeBytes, &data)
+	fmt.Printf("%q", data)
 }

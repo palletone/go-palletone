@@ -21,6 +21,7 @@ package modules
 import (
 	"log"
 	"testing"
+	"github.com/palletone/go-palletone/common"
 )
 
 func TestNewUnit(t *testing.T) {
@@ -55,4 +56,38 @@ func TestInteface(t *testing.T) {
 	var c USB
 	c = b
 	c.Connect()
+}
+
+func TestCopyHeader(t *testing.T) {
+	u1 := common.Hash{}
+	u1.SetString("00000000000000000000000000000000")
+	u2 := common.Hash{}
+	u2.SetString("111111111111111111111111111111111")
+	addr := common.Address{}
+	addr.SetString("0000000011111111")
+	author := Author{
+		Address: addr,
+		Pubkey: []byte("12345678901234567890"),
+		TxAuthentifier: Authentifier{R:"jsjjsjlsllls"},
+	}
+	w := []Author{}
+	w = append(w, author)
+	assetID := IDType16{}
+	assetID.SetBytes([]byte("0000000011111111"))
+	h := Header{
+		ParentUnits: []common.Hash{u1, u2},
+		AssetIDs: []IDType16{assetID},
+		Authors: &author,
+		Witness: w,
+		GasLimit: 1,
+		GasUsed: 1,
+		Root: common.Hash{},
+		Number: ChainIndex{AssetID:assetID, IsMain:true, Index:0},
+	}
+
+	newH := CopyHeader(&h)
+	newH.Authors = nil
+	newH.Witness = []Author{}
+	hh := Header{}
+	log.Printf("newh=%v \n oldH=%v \n hh=%v", *newH, h, hh)
 }
