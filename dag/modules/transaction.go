@@ -58,8 +58,18 @@ func newTransaction(nonce uint64, from *common.Address, fee *big.Int, data []byt
 	// 	f.Set(fee)
 	// }
 	au_from := &Author{Address: *from}
+	au_from.Address = *from
 
-	return &Transaction{AccountNonce: nonce, From: au_from, TxFee: fee, CreationDate: time.Now()}
+	tx := new(Transaction)
+	tx.AccountNonce = nonce
+	tx.From = au_from
+	tx.TxFee = fee
+	tx.CreationDate = time.Now().Format(TimeFormatString)
+	tx.TxHash = tx.Hash()
+	tx.Txsize = tx.Size()
+
+	tx.Priority_lvl = tx.GetPriorityLvl()
+	return tx
 }
 
 //// ChainId returns which chain id this transaction was signed for (if at all)
@@ -127,17 +137,20 @@ func newTransaction(nonce uint64, from *common.Address, fee *big.Int, data []byt
 //
 //func (tx Transaction) Data() []byte { return common.CopyBytes(tx.data.Payload) }
 //
-
+func (tx Transaction) PriorityLvl() float64 {
+	return tx.Priority_lvl
+}
 func (tx Transaction) GetPriorityLvl() float64 {
 	// priority_lvl=  fee/size*(1+(time.Now-CreationDate)/24)
 	var priority_lvl float64
 	if txfee := tx.TxFee.Int64(); txfee > 0 {
-		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee)/tx.Txsize.Float64()*(1+float64(time.Now().Hour()-tx.CreationDate.Hour())/24)), 64)
+		t0, _ := time.Parse(TimeFormatString, tx.CreationDate)
+		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee)/tx.Txsize.Float64()*(1+float64(time.Now().Hour()-t0.Hour())/24)), 64)
 	}
 	return priority_lvl
 }
 func (tx Transaction) SetPriorityLvl(priority float64) {
-	tx.priority_lvl = priority
+	tx.Priority_lvl = priority
 }
 func (tx Transaction) Nonce() uint64 { return tx.AccountNonce }
 
@@ -329,7 +342,7 @@ func (s *TxByPrice) Pop() interface{} {
 type TxByPriority Transactions
 
 func (s TxByPriority) Len() int           { return len(s) }
-func (s TxByPriority) Less(i, j int) bool { return s[i].priority_lvl > s[j].priority_lvl }
+func (s TxByPriority) Less(i, j int) bool { return s[i].Priority_lvl > s[j].Priority_lvl }
 func (s TxByPriority) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
 func (s *TxByPriority) Push(x interface{}) {

@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
+	"fmt"
 )
 
 var (
@@ -84,12 +85,12 @@ func SaveUnit(unit *modules.Unit) error {
 	return nil
 }
 
+/**
+key: [HEADER_PREFIX][chain index]_[unit hash]
+value: unit header rlp encoding bytes
+ */
 // save header
 func SaveHeader(uHahs common.Hash, h *modules.Header) error {
-	data, err := rlp.EncodeToBytes(h)
-	if err != nil {
-		return err
-	}
 
 	//chain_index := h.ChainIndex()
 	//encNum := encodeBlockNumber(chain_index.Index)
@@ -98,36 +99,33 @@ func SaveHeader(uHahs common.Hash, h *modules.Header) error {
 		return err
 	}
 
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
-	}
+	// check exists
+	key := fmt.Sprintf("%s%s_%s", HEADER_PREFIX, chain_index, uHahs.Bytes())
+	return Store(key, *h)
+}
 
+/**
+key: [BODY_PREFIX][merkle root]
+value: all transactions hash set's rlp encoding bytes
+ */
+func SaveBody(root common.Hash, txsHash []common.Hash) error {
 	// Dbconn.Put(append())
-	key := append(append(HEADERPREFIX, chain_index...), uHahs.Bytes()...)
-	log.Println(key)
-
-	if err := Dbconn.Put(key, data); err != nil {
-		return err
-	}
-	return nil
+	key := fmt.Sprintf("%s%s", BODY_PREFIX, root.String())
+	return Store(key, txsHash)
 }
 
 func SaveTransactions(txs *modules.Transactions) error {
-	log.Println("Start save header... ")
+	key := fmt.Sprintf("%s%s", TRANSACTIONSPREFIX, txs.Hash())
+	return Store(key, *txs)
+}
 
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
-	}
-	data, err := rlp.EncodeToBytes(txs)
-	if err != nil {
-		return err
-	}
-	// Dbconn.Put(append())
-
-	if err := Dbconn.Put(append(TRANSACTIONSPREFIX, txs.Hash().Bytes()...), data); err != nil {
-		return err
-	}
-	return nil
+/**
+key: [TRANSACTION_PREFIX][tx hash]
+value: transaction struct rlp encoding bytes
+ */
+func SaveTransaction(tx *modules.Transaction) error {
+	key := fmt.Sprintf("%s%s", TRANSACTION_PREFIX, tx.TxHash.String())
+	return Store(key, *tx)
 }
 
 // encodeBlockNumber encodes a block number as big endian uint64

@@ -149,6 +149,7 @@ func (n *Node) Start() error {
 
 	// Initialize the p2p server. This creates the node key and
 	// discovery databases.
+	// 初始化 P2P server, 用于跟网络中的其他节点建立联系
 	n.serverConfig = n.config.P2P
 	n.serverConfig.PrivateKey = n.config.NodeKey()
 	n.serverConfig.Name = n.config.NodeName()
@@ -162,7 +163,7 @@ func (n *Node) Start() error {
 	if n.serverConfig.NodeDatabase == "" {
 		n.serverConfig.NodeDatabase = n.config.NodeDB()
 	}
-	// 新建一个P2P服务
+	// 新建一个 p2p.Server 对象
 	running := &p2p.Server{Config: n.serverConfig}
 	n.log.Info("Starting peer-to-peer node", "instance", n.serverConfig.Name)
 
@@ -184,6 +185,7 @@ func (n *Node) Start() error {
 			ctx.services[kind] = s
 		}
 		// Construct and save the service
+		// 构建和保存所有的 service
 		service, err := constructor(ctx)
 		if err != nil {
 			return err
@@ -200,13 +202,13 @@ func (n *Node) Start() error {
 	for _, service := range services {
 		running.Protocols = append(running.Protocols, service.Protocols()...)
 	}
-	//启动P2P服务
+	// 启动 p2p.Server ，所有的service的启动都需要 p2p.Server 作为参数。
 	if err := running.Start(); err != nil {
 		return convertFileLockError(err)
 	}
 	// Start each of the services
 	started := []reflect.Type{}
-	//启动所有刚才创建的服务，分别调用， 如果出错就stop之前所有的服务并返回错误
+	// 启动所有刚才创建的服务，分别调用， 如果出错就stop之前所有的服务并返回错误
 	for kind, service := range services {
 		// Start the next service, stopping all previous upon failure
 		if err := service.Start(running); err != nil {

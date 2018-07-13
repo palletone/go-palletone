@@ -34,8 +34,8 @@ var (
 )
 
 type Asset struct {
-	AssertId IDType36 `json:"assert_id"` // 资产类别
-	UniqueId IDType36 `json:"unique_id"` // every token has its unique id
+	AssertId IDType16 `json:"assert_id"` // 资产类别
+	UniqueId IDType16 `json:"unique_id"` // every token has its unique id
 	ChainId  uint64   `json:"chain_id"`  // main chain id or sub-chain id
 }
 

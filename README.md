@@ -65,53 +65,17 @@ This command will:
 
 As an alternative to passing the numerous flags to the `gptn` binary, you can also pass a configuration file via:
 
-```
+```bash
 $ gptn --config /path/to/your_config.toml
 ```
 
-To get an idea how the file should look like you can use the `dumpconfig` subcommand to export your existing configuration:
+To get a template configuration file you can use the `dumpconfig` subcommand to export current default configurations:
 
-```
-$ gptn --your-favourite-flags dumpconfig
-```
-
-e.g. call it palletone.toml:
-
-```
-[Consensus]
-Engine="solo"
-
-[Log]
-OutputPaths =["stdout","./log/all.log"]
-ErrorOutputPaths= ["stderr","./log/error.log"]
-LoggerLvl="info"   # ("debug", "info", "warn","error", "dpanic", "panic", and "fatal")
-Encoding="console" # console,json
-Development =true
-
-[Dag]
-DbPath="./leveldb"
-DbName="palletone.db"
-
-[Ada]
-Ada1="ada1_config"
-Ada2="ada2_config"
-
-[Node]
-DataDir = "./data1"
-KeyStoreDir="./data1/keystore"
-IPCPath = "./data1/gptn.ipc"
-HTTPPort = 8541
-HTTPVirtualHosts = ["0.0.0.0"]
-HTTPCors = ["*"]
-
-[Ptn]
-NetworkId = 3369
-
-[P2P]
-ListenAddr = "0.0.0.0:30301"
-#BootstrapNodes = ["pnode://228f7e50031457d804ce6021f4a211721bacb9abba9585870efea55780bb744005a7f22e22938040684cdec32c748968f5dbe19822d4fbb44c6aaa69e7abdfee@127.0.0.1:30301"]
+```bash
+$ gptn dumpconfig /path/to/your_config.toml
 ```
 
+Open the ` /path/to/your_config.toml ` file in your favorite text editor, and set the field values what you want to change, uncommenting them if necessary.
 
 ### Operating a private network
 

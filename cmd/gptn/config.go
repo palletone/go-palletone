@@ -20,14 +20,13 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"reflect"
 	"unicode"
 
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/cmd/utils"
-	cli "gopkg.in/urfave/cli.v1"
+	"gopkg.in/urfave/cli.v1"
 
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/common/log"
@@ -90,7 +89,7 @@ type ptnstatsConfig struct {
 type FullConfig struct {
 	Ptn       ptn.Config
 	Node      node.Config
-	Ethstats  ptnstatsConfig
+	Ptnstats  ptnstatsConfig
 	Dashboard dashboard.Config
 	//	Consensus consensusconfig.Config
 	MediatorPlugin mp.Config
@@ -172,8 +171,10 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 
 	// Apply flags.
 	// 3. 将命令行中的配置参数覆盖cfg中对应的配置
+	// 注意：不是将命令行中所有的配置都覆盖cfg中对应的配置，例如 Ptnstats 配置目前没有覆盖 (可能通过命令行设置)
 	utils.SetNodeConfig(ctx, &cfg.Node)
 	cfg = adaptorConfig(cfg)
+	// 4. 通过Node的配置来创建一个Node
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
@@ -181,21 +182,23 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 
 	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
-		cfg.Ethstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
+		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
 	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
 	return stack, cfg
 }
 
 // makeFullNode 函数用创建一个 PalletOne 节点，节点类型根据ctx参数传递的命令行指令来控制。
-//生成node.Node一个结构，里面会有任务函数栈, 然后设置各个服务到serviceFuncs 里面，
-//包括：全节点，dashboard，以及状态stats服务等
+// 生成node.Node一个结构，里面会有任务函数栈, 然后设置各个服务到serviceFuncs 里面，
+// 包括：全节点，dashboard，以及状态stats服务等
 func makeFullNode(ctx *cli.Context) *node.Node {
-	// 根据命令行参数和配置文件的配置来创建一个node
+	// 1. 根据默认配置、命令行参数和配置文件的配置来创建一个node, 并获取相关配置
 	stack, cfg := makeConfigNode(ctx)
 	log.InitLogger()
-	//在stack上增加一个 PalletOne 节点，其实就是new一个 PalletOne 后加到后者的 serviceFuncs 里面去
-	//然后在stack.Run的时候会调用这些service
+
+	// 2. 创建 Ptn service、DashBoard service以及 PtnStats service 等 service ,
+	// 并注册到 Node 的 serviceFuncs 中，然后在 stack.Start() 执行的时候会调用这些 service
+	// 所有的 service 必须实现 node.Service 接口中定义的所有方法
 	utils.RegisterPtnService(stack, &cfg.Ptn)
 	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
 		//注册dashboard仪表盘服务，Dashboard会开启端口监听
@@ -203,9 +206,9 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	}
 
 	// Add the PalletOne Stats daemon if requested.
-	if cfg.Ethstats.URL != "" {
+	if cfg.Ptnstats.URL != "" {
 		// 注册状态服务。 默认情况下是没有启动的。
-		utils.RegisterPtnStatsService(stack, cfg.Ethstats.URL)
+		utils.RegisterPtnStatsService(stack, cfg.Ptnstats.URL)
 	}
 	return stack
 }
@@ -213,12 +216,12 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 // dumpConfig is the dumpconfig command.
 func dumpConfig(ctx *cli.Context) error {
 	cfg := makeDefaultConfig()
-	comment := ""
+//	comment := ""
 
-	if cfg.Ptn.Genesis != nil {
-		cfg.Ptn.Genesis = nil
-		comment += "# Note: this config doesn't contain the genesis block.\n\n"
-	}
+	//if cfg.Ptn.Genesis != nil {
+	//	cfg.Ptn.Genesis = nil
+	//	comment += "# Note: this config doesn't contain the genesis block.\n\n"
+	//}
 
 	configPath := ctx.Args().First()
 	// If no path is specified, the default path is used
@@ -226,7 +229,7 @@ func dumpConfig(ctx *cli.Context) error {
 		configPath = defaultConfigPath
 	}
 
-	io.WriteString(os.Stdout, comment)
+//	io.WriteString(os.Stdout, comment)
 
 	err := makeConfigFile(&cfg, configPath)
 	if err != nil {
@@ -241,6 +244,7 @@ func dumpConfig(ctx *cli.Context) error {
 
 // makeDefaultConfig, create a default config
 func makeDefaultConfig() FullConfig {
+	// 不是所有的配置都有默认值，例如 Ptnstats 目前没有设置默认值
 	return FullConfig{
 		Ptn:       ptn.DefaultConfig,
 		Node:      defaultNodeConfig(),
