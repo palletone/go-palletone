@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 type Backend interface {
@@ -36,7 +35,7 @@ type Backend interface {
 	//GetReceipts(ctx context.Context, blockHash common.Hash) (modules.Receipts, error)
 	//GetLogs(ctx context.Context, blockHash common.Hash) ([][]*types.Log, error)
 
-	SubscribeTxPreEvent(chan<- txspool.TxPreEvent) event.Subscription
+	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 	//SubscribeChainEvent(ch chan<- coredata.ChainEvent) event.Subscription
 	//SubscribeRemovedLogsEvent(ch chan<- coredata.RemovedLogsEvent) event.Subscription
 	//SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscription

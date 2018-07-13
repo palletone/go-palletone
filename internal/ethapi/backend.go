@@ -30,7 +30,6 @@ import (
 	//"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -64,7 +63,7 @@ type Backend interface {
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
 	Stats() (pending int, queued int)
 	TxPoolContent() (map[common.Address]modules.Transactions, map[common.Address]modules.Transactions)
-	SubscribeTxPreEvent(chan<- txspool.TxPreEvent) event.Subscription
+	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 
 	ChainConfig() *configure.ChainConfig
 	//CurrentBlock() *types.Block
