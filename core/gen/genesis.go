@@ -93,7 +93,7 @@ func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account acco
 }
 
 func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Unit, error) {
-	txs := GetTransctions(ks, genesis)
+
 	// Just commit the new block if there is no stored genesis block.
 	stored := storage.GetGenesisUnit(0)
 	// Check whether the genesis block is already written.
@@ -107,6 +107,7 @@ func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Un
 	} else {
 		log.Info("Writing custom genesis block")
 	}
+	txs := GetTransctions(ks, genesis)
 	//return modules.NewGenesisUnit(genesis, txs)
 	return dagCommon.NewGenesisUnit(txs)
 }
