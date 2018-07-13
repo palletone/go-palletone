@@ -19,22 +19,24 @@
 package common
 
 import (
+	"crypto/ecdsa"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"strconv"
 )
 
 func RHashStr(x interface{}) string {
@@ -147,7 +149,7 @@ func SaveUnit(unit modules.Unit) error {
 		return nil
 	}
 	// check unit signature, should be compare to mediator list
-	if err := checkUnitSignature(unit.UnitHeader); err!=nil {
+	if err := checkUnitSignature(unit.UnitHeader); err != nil {
 		return err
 	}
 
@@ -279,9 +281,10 @@ func checkTransactions(txs *modules.Transactions) (uint64, error) {
 			}
 		}
 		// check transaction fee
-		i := big.Int{}
-		i.SetUint64(txFee)
-		if tx.TxFee.Cmp(&i) != 0 {
+		txFee := modules.TXFEE
+		// i := big.Int{}
+		// i.SetUint64(txFee)
+		if tx.TxFee.Cmp(txFee) != 0 {
 			return 0, fmt.Errorf("Transaction(%s)'s fee is invalid.", tx.TxHash)
 		}
 	}
@@ -355,17 +358,26 @@ func saveConfigPayload(txHash common.Hash, msg *modules.Message) bool {
 
 /**
 验证单元的签名，需要比对见证人列表
- */
+*/
 func checkUnitSignature(h *modules.Header) error {
-	if h.Authors==nil || len(h.Authors.Address)<=0 {
+	if h.Authors == nil || len(h.Authors.Address) <= 0 {
 		return fmt.Errorf("No author info")
 	}
 	emptySigUnit := modules.Unit{}
 	emptySigUnit.UnitHeader.Authors = nil
 	emptySigUnit.UnitHeader.Witness = []modules.Author{}
-	sig := h.Authors.TxAuthentifier.R
-	pubKey := h.Authors.Pubkey
-	if keystore.VerifyUnitWithPK(sig, emptySigUnit, pubKey) == false{
+
+	sig := make([]byte, 65)
+	copy(sig[32-len(h.Authors.R):32], h.Authors.R)
+	copy(sig[64-len(h.Authors.S):64], h.Authors.S)
+	copy(sig[64:len(sig)], h.Authors.V)
+
+	hash := h.Hash()
+	pubKey, _ := RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
+	//
+	//  pubKey to pubKey_bytes
+	pubKey_bytes := crypto.FromECDSAPub(pubKey)
+	if keystore.VerifyUnitWithPK(sig, emptySigUnit, pubKey_bytes) == false {
 		return fmt.Errorf("Verify unit signature error.")
 	}
 
@@ -373,20 +385,38 @@ func checkUnitSignature(h *modules.Header) error {
 	data := GetConfig([]byte("MediatorCandidates"))
 	bNum := GetConfig([]byte("ActiveMediators"))
 	num, err := strconv.Atoi(string(bNum))
-	if err!=nil {
+	if err != nil {
 		return fmt.Errorf("Check unit signature error: %s", err)
 	}
-	if  num!=len(data){
+	if num != len(data) {
 		return fmt.Errorf("Check unit signature error: mediators info error, pls update network")
 	}
 
 	// decode mediator list data
 	var mediators []string
-	if err:=rlp.DecodeBytes(data, &mediators); err!=nil {
+	if err := rlp.DecodeBytes(data, &mediators); err != nil {
 		return fmt.Errorf("Check unit signature error: %s", err)
 	}
 
 	// todo group signature verify
 
 	return nil
+}
+
+func RSVtoAddress(tx *modules.Transaction) common.Address {
+	sig := make([]byte, 65)
+	copy(sig[32-len(tx.From.R):32], tx.From.R)
+	copy(sig[64-len(tx.From.S):64], tx.From.S)
+	copy(sig[64:len(sig)], tx.From.V)
+	pub, _ := crypto.SigToPub(tx.TxHash[:], sig)
+	address := crypto.PubkeyToAddress(*pub)
+	return address
+}
+
+func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {
+	sig := make([]byte, 65)
+	copy(sig[32-len(r):32], r)
+	copy(sig[64-len(s):64], s)
+	copy(sig[64:len(sig)], v)
+	return crypto.SigToPub(hash, sig)
 }

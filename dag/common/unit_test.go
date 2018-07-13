@@ -4,14 +4,14 @@ import (
 	"log"
 	"testing"
 
+	"fmt"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common/rlp"
-	"fmt"
 )
 
 func TestNewGenesisUnit(t *testing.T) {
-	gUnit := NewGenesisUnit(modules.Transactions{})
+	gUnit, _ := NewGenesisUnit(modules.Transactions{})
 
 	log.Println("Genesis unit struct:")
 	log.Println("--- Genesis unit header --- ")
@@ -46,9 +46,10 @@ func TestSaveUnit(t *testing.T) {
 }
 
 type TestByte string
-func TestRlpDecode(t *testing.T)  {
-	var  t1,t2,t3 TestByte
-	t1= "111"
+
+func TestRlpDecode(t *testing.T) {
+	var t1, t2, t3 TestByte
+	t1 = "111"
 	t2 = "222"
 	t3 = "333"
 

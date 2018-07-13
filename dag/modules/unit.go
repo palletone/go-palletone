@@ -71,13 +71,13 @@ import (
 type Header struct {
 	ParentUnits []common.Hash `json:"parent_units"`
 	AssetIDs    []IDType16    `json:"assets"`
-	Authors     *Author       `json:"authors"` // the unit creation authors
-	Witness     []Author      `json:"witness"`
-	GasLimit    uint64        `json:"gasLimit"`
-	GasUsed     uint64        `json:"gasUsed"`
+	Authors     *Authentifier `json:"author" rlp:"-"`  // the unit creation authors
+	Witness     []Author      `json:"witness" rlp:"-"` // 群签名
 	Root        common.Hash   `json:"root"`
 	Number      ChainIndex    `json:"index"`
 	Extra       []byte        `json:"extra"`
+	//FeeLimit    uint64        `json:"fee_limit"`
+	//FeeUsed     uint64        `json:"fee_used"`
 }
 
 func (cpy *Header) CopyHeader(h *Header) {
@@ -98,11 +98,11 @@ func (cpy *Header) CopyHeader(h *Header) {
 
 }
 
-func NewHeader(parents []common.Hash, asset []IDType16, gas, used uint64, extra []byte) *Header {
+func NewHeader(parents []common.Hash, asset []IDType16, used uint64, extra []byte) *Header {
 	hashs := make([]common.Hash, 0)
 	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
 	var b []byte
-	return &Header{ParentUnits: hashs, AssetIDs: asset, GasLimit: gas, GasUsed: gas, Extra: append(b, extra...)}
+	return &Header{ParentUnits: hashs, AssetIDs: asset, Extra: append(b, extra...)}
 }
 
 func HeaderEqual(oldh, newh *Header) bool {
@@ -178,8 +178,8 @@ type Transaction struct {
 	Memery       uint               `json:"memory"`
 	CreationDate string             `json:"creation_date"`
 	TxFee        *big.Int           `json:"txfee"` // user set total transaction fee.
-	Txsize       common.StorageSize `json:"txsize"  rlp:""`
-	Priority_lvl float64            `json:"priority_lvl" rlp:""`
+	Txsize       common.StorageSize `json:"txsize" rlp:""`
+	Priority_lvl float64            `json:"priority_lvl"`
 }
 
 type ChainIndex struct {
@@ -261,10 +261,10 @@ type Author struct {
 }
 
 type Authentifier struct {
-	Sign string `json:"sign"`
-	R    []byte `json:"r"`
-	S    []byte `json:"s"`
-	V    []byte `json:"v"`
+	Address string `json:"address"`
+	R       []byte `json:"r"`
+	S       []byte `json:"s"`
+	V       []byte `json:"v"`
 }
 
 func (a *Authentifier) ToDB() ([]byte, error) {
