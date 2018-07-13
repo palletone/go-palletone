@@ -25,7 +25,10 @@ import (
 var TimeFormatString = "2006/01/02 15:04:05"
 
 // type 	Hash 		[]byte
-type IDType16 [16]byte
+const (
+	ID_LENGTH = 32
+)
+type IDType16 [ID_LENGTH]byte
 
 var (
 	PTNCOIN = IDType16{'p', 't', 'n', ' ', '0', 'f', '5', ' ', ' '}
@@ -56,4 +59,12 @@ func (it *IDType16) Bytes() []byte {
 	}
 	//return idBytes
 	return idBytes
+}
+
+func (it *IDType16)SetBytes(b []byte)  {
+	if len(b) > len(it) {
+		b = b[len(b)-ID_LENGTH:]
+	}
+
+	copy(it[ID_LENGTH-len(b):], b)
 }

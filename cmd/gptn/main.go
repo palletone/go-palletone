@@ -175,8 +175,8 @@ func init() {
 		bugCommand,
 		licenseCommand,
 		// See config.go
-		dumpConfigCommand, //转储配置文件命令
-		createGenesisJsonCommand,	// 创建创世json文件命令
+		dumpConfigCommand,        //转储配置文件命令
+		createGenesisJsonCommand, // 创建创世json文件命令
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 
@@ -186,13 +186,15 @@ func init() {
 	app.Flags = append(app.Flags, consoleFlags...)
 	app.Flags = append(app.Flags, debug.Flags...)
 
-	//before函数在app.Run的开始会先调用，也就是gopkg.in/urfave/cli.v1/app.go Run函数的前面
+	// before函数在app.Run的开始会先调用，也就是gopkg.in/urfave/cli.v1/app.go Run函数的前面
 	app.Before = func(ctx *cli.Context) error {
+		// 设置最大可用处理器数
 		runtime.GOMAXPROCS(runtime.NumCPU())
 		if err := debug.Setup(ctx); err != nil {
 			return err
 		}
 		// Start system runtime metrics collection
+		// 创建一个goroutine，每3秒监测一次系统的ram和disk状态
 		go metrics.CollectProcessMetrics(3 * time.Second)
 
 		utils.SetupNetwork(ctx)
@@ -324,7 +326,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 			//}
 		}
 		// Set the gas price to the limits from the CLI
-		ethereum.TxPool().SetGasPrice(utils.GlobalBig(ctx, utils.GasPriceFlag.Name))
+		//ethereum.TxPool().SetGasPrice(utils.GlobalBig(ctx, utils.GasPriceFlag.Name))
 		//开启挖矿，创建协程到后台处理
 		//if err := ethereum.StartMining(true); err != nil {
 		//	utils.Fatalf("Failed to start mining: %v", err)

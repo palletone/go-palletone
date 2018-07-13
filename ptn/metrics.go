@@ -99,8 +99,8 @@ func (rw *meteredMsgReadWriter) ReadMsg() (p2p.Msg, error) {
 
 	case msg.Code == NewBlockHashesMsg:
 		packets, traffic = propHashInPacketsMeter, propHashInTrafficMeter
-	case msg.Code == NewBlockMsg:
-		packets, traffic = propBlockInPacketsMeter, propBlockInTrafficMeter
+		//	case msg.Code == NewBlockMsg:
+		//		packets, traffic = propBlockInPacketsMeter, propBlockInTrafficMeter
 	case msg.Code == TxMsg:
 		packets, traffic = propTxnInPacketsMeter, propTxnInTrafficMeter
 	}
@@ -126,8 +126,8 @@ func (rw *meteredMsgReadWriter) WriteMsg(msg p2p.Msg) error {
 
 	case msg.Code == NewBlockHashesMsg:
 		packets, traffic = propHashOutPacketsMeter, propHashOutTrafficMeter
-	case msg.Code == NewBlockMsg:
-		packets, traffic = propBlockOutPacketsMeter, propBlockOutTrafficMeter
+		//	case msg.Code == NewBlockMsg:
+		//		packets, traffic = propBlockOutPacketsMeter, propBlockOutTrafficMeter
 	case msg.Code == TxMsg:
 		packets, traffic = propTxnOutPacketsMeter, propTxnOutTrafficMeter
 	}

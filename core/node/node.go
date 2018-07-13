@@ -37,36 +37,65 @@ import (
 )
 
 // Node is a container on which services can be registered.
+// 在区块链网络中，节点被定义为一个可以注册多种服务的容器。
+// node也可以理解为一个进程，整个区块链网络就是由运行在世界各地的很多中类型的node组成。
+// 服务是一套独立的协议，可以基于P2P网络和PRC通信来提供具体的服务内容。
+// 一个典型的node就是一个p2p的节点。根据节点的类型，运行了不同p2p网络协议，
+// 运行了不同的业务层协议(以区别网络层协议。 参考p2p peer中的Protocol接口)。
 type Node struct {
-	eventmux *event.TypeMux // Event multiplexer used between the services of a stack
-	config   *Config
-	accman   *accounts.Manager
+	// 服务之间的事件锁
+	eventmux *event.TypeMux    // Event multiplexer used between the services of a stack
+	config   *Config           // 节点的配置信息，副本
+	accman   *accounts.Manager // 账户管理器
 
-	ephemeralKeystore string         // if non-empty, the key directory that will be removed by Stop
-	instanceDirLock   flock.Releaser // prevents concurrent use of instance directory
+	// 临时的 Keystore 目录， 当 node.stop() 时，即 node 进程结束时移除
+	ephemeralKeystore string // if non-empty, the key directory that will be removed by Stop
+	// 实例化目录锁，防止并发使用实例目录
+	instanceDirLock flock.Releaser // prevents concurrent use of instance directory
 
+	// --- P2P 相关对象 -- Start
 	serverConfig p2p.Config
 	server       *p2p.Server // Currently running P2P networking layer
+	// --- P2P 相关对象 -- End
 
-	serviceFuncs []ServiceConstructor     // Service constructors (in dependency order)
-	services     map[reflect.Type]Service // Currently running services
+	// --- 服务相关对象 -- Start
+	// 函数指针数组，保存所有注册Service的构造函数
+	serviceFuncs []ServiceConstructor // Service constructors (in dependency order)
+	// 当前节点的所有service ，按type分类保存
+	services map[reflect.Type]Service // Currently running services
+	// --- 服务相关对象 -- End
 
-	rpcAPIs       []rpc.API   // List of APIs currently provided by the node
+	// --- RPC 相关对象 -- Start
+	// RPC 提供的 API
+	rpcAPIs []rpc.API // List of APIs currently provided by the node
+	// InProc RPC 消息处理
 	inprocHandler *rpc.Server // In-process RPC request handler to process the API requests
 
-	ipcEndpoint string       // IPC endpoint to listen at (empty = IPC disabled)
+	// IPC 端点
+	ipcEndpoint string // IPC endpoint to listen at (empty = IPC disabled)
+	// IPC API 服务监听
 	ipcListener net.Listener // IPC RPC listener socket to serve API requests
-	ipcHandler  *rpc.Server  // IPC RPC request handler to process the API requests
+	// IPC API 消息处理
+	ipcHandler *rpc.Server // IPC RPC request handler to process the API requests
 
-	httpEndpoint  string       // HTTP endpoint (interface + port) to listen at (empty = HTTP disabled)
-	httpWhitelist []string     // HTTP RPC modules to allow through this endpoint
-	httpListener  net.Listener // HTTP RPC listener socket to server API requests
-	httpHandler   *rpc.Server  // HTTP RPC request handler to process the API requests
+	// HTTP 端点
+	httpEndpoint string // HTTP endpoint (interface + port) to listen at (empty = HTTP disabled)
+	// HTTP 白名单
+	httpWhitelist []string // HTTP RPC modules to allow through this endpoint
+	// HTTP API 服务监听
+	httpListener net.Listener // HTTP RPC listener socket to server API requests
+	// HTTP API 消息处理
+	httpHandler *rpc.Server // HTTP RPC request handler to process the API requests
 
-	wsEndpoint string       // Websocket endpoint (interface + port) to listen at (empty = websocket disabled)
+	// Websocket 端点
+	wsEndpoint string // Websocket endpoint (interface + port) to listen at (empty = websocket disabled)
+	// Websocket API 服务监听
 	wsListener net.Listener // Websocket RPC listener socket to server API requests
-	wsHandler  *rpc.Server  // Websocket RPC request handler to process the API requests
+	// Websocket API 消息处理
+	wsHandler *rpc.Server // Websocket RPC request handler to process the API requests
+	// --- RPC 相关对象 -- End
 
+	// 节点的等待终止通知的channel, node.New()时不创建，node.Start()时创建
 	stop chan struct{} // Channel to wait for termination notifications
 	lock sync.RWMutex
 
@@ -74,11 +103,14 @@ type Node struct {
 }
 
 // New creates a new P2P node, ready for protocol registration.
+// 创建一个 p2p 节点, 为协议(即service)注册做准备；
+// 节点的初始化并不依赖其他的外部组件， 只依赖一个Config对象。
 func New(conf *Config) (*Node, error) {
 	// Copy config and resolve the datadir so future changes to the current
 	// working directory don't affect the node.
 	confCopy := *conf
 	conf = &confCopy
+	// 把datadir转成绝对路径
 	if conf.DataDir != "" {
 		absdatadir, err := filepath.Abs(conf.DataDir)
 		if err != nil {
@@ -99,6 +131,7 @@ func New(conf *Config) (*Node, error) {
 	}
 	// Ensure that the AccountManager method works before the node has started.
 	// We rely on this in cmd/gptn.
+	// 调用makeAccountManager()初始化账号管理器和临时Keystore
 	am, ephemeralKeystore, err := makeAccountManager(conf)
 	if err != nil {
 		return nil, err
@@ -128,7 +161,7 @@ func (n *Node) Register(constructor ServiceConstructor) error {
 	if n.server != nil {
 		return ErrNodeRunning
 	}
-	// 将函数加到本节点的serviceFuncs 里面
+	// 把Service的构造函数放进node的serviceFuncs数组。等到启动结点的时候才真正调用构造函数创建Service。
 	n.serviceFuncs = append(n.serviceFuncs, constructor)
 	return nil
 }
@@ -136,20 +169,24 @@ func (n *Node) Register(constructor ServiceConstructor) error {
 // Start create a live P2P node and starts running it.
 // 启动P2P服务，并且依次启动Register的各个serviceFuncs相关服务。
 func (n *Node) Start() error {
+	// 加锁
 	n.lock.Lock()
 	defer n.lock.Unlock()
 
 	// Short circuit if the node's already running
+	// 判断是否已经运行
 	if n.server != nil {
 		return ErrNodeRunning
 	}
+	// 创建一个文件夹用于存储节点相关数据
 	if err := n.openDataDir(); err != nil {
 		return err
 	}
 
 	// Initialize the p2p server. This creates the node key and
 	// discovery databases.
-	// 初始化 P2P server, 用于跟网络中的其他节点建立联系
+	// 1. 创建 P2P server
+	// 初始化P2P server配置, 用于跟网络中的其他节点建立联系
 	n.serverConfig = n.config.P2P
 	n.serverConfig.PrivateKey = n.config.NodeKey()
 	n.serverConfig.Name = n.config.NodeName()
@@ -163,24 +200,25 @@ func (n *Node) Start() error {
 	if n.serverConfig.NodeDatabase == "" {
 		n.serverConfig.NodeDatabase = n.config.NodeDB()
 	}
-	// 新建一个 p2p.Server 对象
+	// 用配置创建了一个p2p.Server实例
 	running := &p2p.Server{Config: n.serverConfig}
 	n.log.Info("Starting peer-to-peer node", "instance", n.serverConfig.Name)
 
 	// Otherwise copy and specialize the P2P configuration
 	services := make(map[reflect.Type]Service)
-	// 遍历所有的serviceFuncs 服务
+	// 2. 创建 Service
+	// 遍历所有的serviceFuncs, 也就是之前注册的所有Service的构造函数列表
 	for _, constructor := range n.serviceFuncs {
 		// Create a new context for the particular service
 		// 为每个service 分别新建一个ServiceContext 结构
 		ctx := &ServiceContext{
-			config:         n.config,
-			//这个 services 干什么的？似乎是记录一下之前的所有serviceFuncs 的kind，service，方便其他service使用
+			config: n.config,
+			//记录之前的所有serviceFuncs 的kind，service，方便其他service使用
 			services:       make(map[reflect.Type]Service),
 			EventMux:       n.eventmux,
 			AccountManager: n.accman,
 		}
-		//重新拷贝一下services 变量的所有成员给ctx.services， 所以，这里只能拷贝之前的serviceFuncs，后面的就没办法复制了
+		//重新拷贝一下services 变量的所有成员给ctx.services
 		for kind, s := range services { // copy needed for threaded access
 			ctx.services[kind] = s
 		}
@@ -197,18 +235,24 @@ func (n *Node) Start() error {
 		// 记录一下，保存到services map里面。
 		services[kind] = service
 	}
+
 	// Gather the protocols and start the freshly assembled P2P server
-	// 收集所有的这些服务的协议名, 为后面启动服务做准备
+	// 3. 启动P2P server
+	// 收集所有的这些服务的协议, 为后面启动协议做准备
 	for _, service := range services {
 		running.Protocols = append(running.Protocols, service.Protocols()...)
 	}
 	// 启动 p2p.Server ，所有的service的启动都需要 p2p.Server 作为参数。
+	// P2P server会绑定一个UDP端口和一个TCP端口，端口号是相同的（默认30303）。
+	// UDP端口主要用于结点发现，TCP端口主要用于业务数据传输，基于RLPx加密传输协议。
 	if err := running.Start(); err != nil {
 		return convertFileLockError(err)
 	}
+
 	// Start each of the services
+	// 4. 启动Service
 	started := []reflect.Type{}
-	// 启动所有刚才创建的服务，分别调用， 如果出错就stop之前所有的服务并返回错误
+	// 启动所有刚才创建的服务，依次调用每个Service的Start()方法， 如果出错就stop之前所有的服务并返回错误
 	for kind, service := range services {
 		// Start the next service, stopping all previous upon failure
 		if err := service.Start(running); err != nil {
@@ -220,10 +264,13 @@ func (n *Node) Start() error {
 			return err
 		}
 		// Mark the service started for potential cleanup
+		// 把启动的Service的类型存储到started表中
 		started = append(started, kind)
 	}
+
 	// Lastly start the configured RPC interfaces
-	//启动节点的所有RPC服务，开启监听端口，包括HTTPS， websocket接口
+	// 5. 启动RPC server; RPC即远程调用接口，也就是Service对外暴露出来的API。
+	// 启动节点的所有RPC服务，开启监听端口，包括HTTPS， websocket接口
 	if err := n.startRPC(services); err != nil {
 		for _, service := range services {
 			service.Stop()
@@ -235,7 +282,7 @@ func (n *Node) Start() error {
 	// 记录当前节点拥有的服务列表到services上面， 设置节点停止的管道用于通信。
 	n.services = services
 	n.server = running
-	// 设置节点停止的管道用于通信。
+	// 设置节点停止的管道, 用于node停止时的通信。
 	n.stop = make(chan struct{})
 
 	return nil
@@ -263,25 +310,37 @@ func (n *Node) openDataDir() error {
 // startRPC is a helper method to start all the various RPC endpoint during node
 // startup. It's not meant to be called at any time afterwards as it makes certain
 // assumptions about the state of the node.
+// 启动4项RPC服务. 每种RPC服务都需要提供一个handler，
+// 另外除了InProc之外，其他3种服务还需要启动一个server来监听外部连接请求。
 func (n *Node) startRPC(services map[reflect.Type]Service) error {
 	// Gather all the possible APIs to surface
+	// 收集所有可能的API接口
 	apis := n.apis()
 	for _, service := range services {
 		apis = append(apis, service.APIs()...)
 	}
+
 	// Start the various API endpoints, terminating all in case of errors
+	// 1. 启动 InProc，用于进程内部的通信，严格来说这种不能算是RPC, 出于架构上的统一
 	if err := n.startInProc(apis); err != nil {
+		log.Error("startRPC startInProc err:", err.Error())
 		return err
 	}
+
+	// 2. 启动 IPC，用于节点内进程间的通信
 	if err := n.startIPC(apis); err != nil {
+		log.Error("startRPC startIPC err:", err.Error())
 		n.stopInProc()
 		return err
 	}
+	// 3. 启动 HTTP，用于 HTTP 的交互通信
 	if err := n.startHTTP(n.httpEndpoint, apis, n.config.HTTPModules, n.config.HTTPCors, n.config.HTTPVirtualHosts); err != nil {
+		log.Error("startRPC startHTTP err:", err.Error())
 		n.stopIPC()
 		n.stopInProc()
 		return err
 	}
+	// 4. 启动 WebSocket，用于浏览器与服务器的 TCP 全双工通信
 	if err := n.startWS(n.wsEndpoint, apis, n.config.WSModules, n.config.WSOrigins, n.config.WSExposeAll); err != nil {
 		n.stopHTTP()
 		n.stopIPC()
@@ -296,6 +355,7 @@ func (n *Node) startRPC(services map[reflect.Type]Service) error {
 // startInProc initializes an in-process RPC endpoint.
 func (n *Node) startInProc(apis []rpc.API) error {
 	// Register all the APIs exposed by the services
+	// 严格来说 InProc 不能算是RPC，不过出于架构上的统一，也为这种调用方式配置一个handler
 	handler := rpc.NewServer()
 	for _, api := range apis {
 		if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
@@ -318,10 +378,12 @@ func (n *Node) stopInProc() {
 // startIPC initializes and starts the IPC RPC endpoint.
 func (n *Node) startIPC(apis []rpc.API) error {
 	if n.ipcEndpoint == "" {
+		log.Info("startIPC ipcEndpoint is null")
 		return nil // IPC disabled.
 	}
 	listener, handler, err := rpc.StartIPCEndpoint(n.ipcEndpoint, apis)
 	if err != nil {
+		log.Info("startIPC StartIPCEndpoint err:", err.Error())
 		return err
 	}
 	n.ipcListener = listener
@@ -466,6 +528,7 @@ func (n *Node) Stop() error {
 
 // Wait blocks the thread until the node is stopped. If the node is not running
 // at the time of invocation, the method immediately returns.
+// 让主线程进入阻塞状态，保持进程不退出，直到从channel中收到stop消息。
 func (n *Node) Wait() {
 	n.lock.RLock()
 	if n.server == nil {

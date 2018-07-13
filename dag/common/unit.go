@@ -33,7 +33,8 @@ import (
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"math/big"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"strconv"
 )
 
 func RHashStr(x interface{}) string {
@@ -145,7 +146,10 @@ func SaveUnit(unit modules.Unit) error {
 		log.Info("Unit is null")
 		return nil
 	}
-	// check unit signature
+	// check unit signature, should be compare to mediator list
+	if err := checkUnitSignature(unit.UnitHeader); err!=nil {
+		return err
+	}
 
 	// check unit size
 	if unit.UnitSize != unit.Size() {
@@ -167,10 +171,6 @@ func SaveUnit(unit modules.Unit) error {
 	// traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for _, tx := range unit.Txs {
-		// check tx size
-		if tx.Size() != tx.Txsize {
-			return modules.ErrUnit(-4)
-		}
 		// traverse messages
 		for _, msg := range tx.TxMessages {
 			// handle different messages
@@ -203,6 +203,7 @@ func SaveUnit(unit modules.Unit) error {
 		return err
 	}
 
+	// todo send message to transaction pool to delete unit's transactions
 	return nil
 }
 
@@ -250,11 +251,16 @@ return all transactions' fee
 func checkTransactions(txs *modules.Transactions) (uint64, error) {
 	fee := uint64(0)
 	for _, tx := range *txs {
-		txFee := uint64(0)
 		for _, msg := range tx.TxMessages {
+			// check message type and payload
 			if !checkMessageType(msg.App, msg.Payload) {
 				return 0, fmt.Errorf("Transaction (%s) message (%s) type is not consistent with payload.", tx.TxHash, msg.PayloadHash)
 			}
+			// check tx size
+			if tx.Size() != tx.Txsize {
+				return 0, fmt.Errorf("Transaction(%s) Size is incorrect.", tx.TxHash)
+			}
+			// check every type payload
 			switch msg.App {
 			case modules.APP_PAYMENT:
 
@@ -279,6 +285,8 @@ func checkTransactions(txs *modules.Transactions) (uint64, error) {
 			return 0, fmt.Errorf("Transaction(%s)'s fee is invalid.", tx.TxHash)
 		}
 	}
+
+	// to check total fee with coinbase tx
 
 	return fee, nil
 }
@@ -343,4 +351,42 @@ func saveConfigPayload(txHash common.Hash, msg *modules.Message) bool {
 		return false
 	}
 	return true
+}
+
+/**
+验证单元的签名，需要比对见证人列表
+ */
+func checkUnitSignature(h *modules.Header) error {
+	if h.Authors==nil || len(h.Authors.Address)<=0 {
+		return fmt.Errorf("No author info")
+	}
+	emptySigUnit := modules.Unit{}
+	emptySigUnit.UnitHeader.Authors = nil
+	emptySigUnit.UnitHeader.Witness = []modules.Author{}
+	sig := h.Authors.TxAuthentifier.R
+	pubKey := h.Authors.Pubkey
+	if keystore.VerifyUnitWithPK(sig, emptySigUnit, pubKey) == false{
+		return fmt.Errorf("Verify unit signature error.")
+	}
+
+	// get mediators
+	data := GetConfig([]byte("MediatorCandidates"))
+	bNum := GetConfig([]byte("ActiveMediators"))
+	num, err := strconv.Atoi(string(bNum))
+	if err!=nil {
+		return fmt.Errorf("Check unit signature error: %s", err)
+	}
+	if  num!=len(data){
+		return fmt.Errorf("Check unit signature error: mediators info error, pls update network")
+	}
+
+	// decode mediator list data
+	var mediators []string
+	if err:=rlp.DecodeBytes(data, &mediators); err!=nil {
+		return fmt.Errorf("Check unit signature error: %s", err)
+	}
+
+	// todo group signature verify
+
+	return nil
 }

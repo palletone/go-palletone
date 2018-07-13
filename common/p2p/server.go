@@ -423,6 +423,7 @@ func (srv *Server) Start() (err error) {
 		unhandled chan discover.ReadPacket
 	)
 
+	// 侦听UDP端口（用于结点发现）
 	if !srv.NoDiscovery /*|| srv.DiscoveryV5*/ {
 		addr, err := net.ResolveUDPAddr("udp", srv.ListenAddr)
 		if err != nil {
@@ -450,6 +451,7 @@ func (srv *Server) Start() (err error) {
 		}
 	*/
 	// node table
+	// 发起UDP请求获取结点列表（内部会启动goroutine）
 	if !srv.NoDiscovery {
 		cfg := discover.Config{
 			PrivateKey:   srv.PrivateKey,
@@ -494,6 +496,7 @@ func (srv *Server) Start() (err error) {
 		srv.ourHandshake.Caps = append(srv.ourHandshake.Caps, p.cap())
 	}
 	// listen/dial
+	// 侦听TCP端口（用于业务数据传输，基于RLPx协议）
 	if srv.ListenAddr != "" {
 		if err := srv.startListening(); err != nil {
 			return err
@@ -504,6 +507,7 @@ func (srv *Server) Start() (err error) {
 	}
 
 	srv.loopWG.Add(1)
+	// 启动新线程发起TCP连接请求
 	go srv.run(dialer)
 	srv.running = true
 	return nil
@@ -666,7 +670,7 @@ running:
 		case pd := <-srv.delpeer:
 			// A peer disconnected.
 			d := common.PrettyDuration(mclock.Now() - pd.created)
-			pd.log.Debug("Removing p2p peer", "duration", d, "peers", len(peers)-1, "req", pd.requested, "err", pd.err)
+			log.Debug("Removing p2p peer", "duration", d, "peers", len(peers)-1, "req", pd.requested, "err", pd.err)
 			delete(peers, pd.ID())
 			if pd.Inbound() {
 				inboundCount--
@@ -693,7 +697,7 @@ running:
 	// is closed.
 	for len(peers) > 0 {
 		p := <-srv.delpeer
-		p.log.Trace("<-delpeer (spindown)", "remainingTasks", len(runningTasks))
+		log.Trace("<-delpeer (spindown)", "remainingTasks", len(runningTasks))
 		delete(peers, p.ID())
 	}
 }

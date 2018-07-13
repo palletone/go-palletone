@@ -28,10 +28,9 @@ import (
 	ethereum "github.com/palletone/go-palletone"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/core/types"
-	"github.com/palletone/go-palletone/dag/coredata"
-	//"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 // Type determines the kind of filter and is used to put the filter in to
@@ -74,13 +73,12 @@ var (
 )
 
 type subscription struct {
-	id       rpc.ID
-	typ      Type
-	created  time.Time
-	logsCrit ethereum.FilterQuery
-	//logs      chan []*types.Log
+	id        rpc.ID
+	typ       Type
+	created   time.Time
+	logsCrit  ethereum.FilterQuery
 	hashes    chan common.Hash
-	headers   chan *types.Header
+	headers   chan *modules.Header
 	installed chan struct{} // closed when the filter is installed
 	err       chan error    // closed when the filter is uninstalled
 }
@@ -91,7 +89,7 @@ type EventSystem struct {
 	mux       *event.TypeMux
 	backend   Backend
 	lightMode bool
-	lastHead  *types.Header
+	lastHead  *modules.Header
 	install   chan *subscription // install filter for event notification
 	uninstall chan *subscription // remove filter for event notification
 }
@@ -163,7 +161,7 @@ func (es *EventSystem) subscribe(sub *subscription) *Subscription {
 
 // SubscribeNewHeads creates a subscription that writes the header of a block that is
 // imported in the chain.
-func (es *EventSystem) SubscribeNewHeads(headers chan *types.Header) *Subscription {
+func (es *EventSystem) SubscribeNewHeads(headers chan *modules.Header) *Subscription {
 	sub := &subscription{
 		id:        rpc.NewID(),
 		typ:       BlocksSubscription,
@@ -184,7 +182,7 @@ func (es *EventSystem) SubscribePendingTxEvents(hashes chan common.Hash) *Subscr
 		typ:       PendingTransactionsSubscription,
 		created:   time.Now(),
 		hashes:    hashes,
-		headers:   make(chan *types.Header),
+		headers:   make(chan *modules.Header),
 		installed: make(chan struct{}),
 		err:       make(chan error),
 	}
@@ -200,46 +198,47 @@ func (es *EventSystem) broadcast(filters filterIndex, ev interface{}) {
 	}
 
 	switch e := ev.(type) {
-	case coredata.TxPreEvent:
+	case txspool.TxPreEvent:
 		for _, f := range filters[PendingTransactionsSubscription] {
 			f.hashes <- e.Tx.Hash()
 		}
-	case coredata.ChainEvent:
 
 	}
 }
 
-func (es *EventSystem) lightFilterNewHead(newHeader *types.Header, callBack func(*types.Header, bool)) {
-	oldh := es.lastHead
-	es.lastHead = newHeader
-	if oldh == nil {
-		return
-	}
-	newh := newHeader
-	// find common ancestor, create list of rolled back and new block hashes
-	var oldHeaders, newHeaders []*types.Header
-	for oldh.Hash() != newh.Hash() {
-		if oldh.Number.Uint64() >= newh.Number.Uint64() {
-			oldHeaders = append(oldHeaders, oldh)
-			oldh = coredata.GetHeader(es.backend.ChainDb(), oldh.ParentHash, oldh.Number.Uint64()-1)
+func (es *EventSystem) lightFilterNewHead(newHeader *modules.Header, callBack func(*modules.Header, bool)) {
+	/*
+		oldh := es.lastHead
+		es.lastHead = newHeader
+		if oldh == nil {
+			return
 		}
-		if oldh.Number.Uint64() < newh.Number.Uint64() {
-			newHeaders = append(newHeaders, newh)
-			newh = coredata.GetHeader(es.backend.ChainDb(), newh.ParentHash, newh.Number.Uint64()-1)
-			if newh == nil {
-				// happens when CHT syncing, nothing to do
-				newh = oldh
+		newh := newHeader
+		// find common ancestor, create list of rolled back and new block hashes
+		var oldHeaders, newHeaders []*modules.Header
+		for oldh.Hash() != newh.Hash() {
+			if oldh.Number.Uint64() >= newh.Number.Uint64() {
+				oldHeaders = append(oldHeaders, oldh)
+				oldh = coredata.GetHeader(es.backend.ChainDb(), oldh.ParentHash, oldh.Number.Uint64()-1)
+			}
+			if oldh.Number.Uint64() < newh.Number.Uint64() {
+				newHeaders = append(newHeaders, newh)
+				newh = coredata.GetHeader(es.backend.ChainDb(), newh.ParentHash, newh.Number.Uint64()-1)
+				if newh == nil {
+					// happens when CHT syncing, nothing to do
+					newh = oldh
+				}
 			}
 		}
-	}
-	// roll back old blocks
-	for _, h := range oldHeaders {
-		callBack(h, true)
-	}
-	// check new blocks (array is in reverse order)
-	for i := len(newHeaders) - 1; i >= 0; i-- {
-		callBack(newHeaders[i], false)
-	}
+		// roll back old blocks
+		for _, h := range oldHeaders {
+			callBack(h, true)
+		}
+		// check new blocks (array is in reverse order)
+		for i := len(newHeaders) - 1; i >= 0; i-- {
+			callBack(newHeaders[i], false)
+		}
+	*/
 }
 
 // eventLoop (un)installs filters and processes mux events.
@@ -249,12 +248,11 @@ func (es *EventSystem) eventLoop() {
 		index = make(filterIndex)
 		//sub   = es.mux.Subscribe(coredata.PendingLogsEvent{})
 		// Subscribe TxPreEvent form txpool
-		txCh  = make(chan coredata.TxPreEvent, txChanSize)
+		txCh  = make(chan txspool.TxPreEvent, txChanSize)
 		txSub = es.backend.SubscribeTxPreEvent(txCh)
 		// Subscribe RemovedLogsEvent
 		//		rmLogsCh  = make(chan core.RemovedLogsEvent, rmLogsChanSize)
 		//		rmLogsSub = es.backend.SubscribeRemovedLogsEvent(rmLogsCh)
-		//		// Subscribe []*types.Log
 		//		logsCh  = make(chan []*types.Log, logsChanSize)
 		//		logsSub = es.backend.SubscribeLogsEvent(logsCh)
 		//		// Subscribe ChainEvent

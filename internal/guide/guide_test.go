@@ -31,7 +31,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // Tests that the account management snippets work correctly.
@@ -75,7 +75,7 @@ func TestAccountManagement(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create signer account: %v", err)
 	}
-	tx, chain := new(types.Transaction), big.NewInt(1)
+	tx, chain := new(modules.Transaction), big.NewInt(1)
 
 	// Sign a transaction with a single authorization
 	if _, err := ks.SignTxWithPassphrase(signer, "Signer password", tx, chain); err != nil {

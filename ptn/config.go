@@ -31,10 +31,9 @@ import (
 	//"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/contracts/contractconfig"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/ptn/gasprice"
 	"github.com/palletone/go-palletone/vm/vmconfig"
 )
 
@@ -48,11 +47,8 @@ var DefaultConfig = Config{
 	TrieTimeout:   5 * time.Minute,
 	GasPrice:      big.NewInt(0.01 * configure.PalletOne),
 
-	TxPool: coredata.DefaultTxPoolConfig,
-	GPO: gasprice.Config{
-		Blocks:     20,
-		Percentile: 60,
-	},
+	TxPool: txspool.DefaultTxPoolConfig,
+
 	//Consensus: consensusconfig.DefaultConfig,
 	Dag: dagconfig.DefaultConfig,
 	Log: log.DefaultConfig,
@@ -103,10 +99,10 @@ type Config struct {
 	GasPrice     *big.Int
 
 	// Transaction pool options
-	TxPool coredata.TxPoolConfig
+	TxPool txspool.TxPoolConfig
 
 	// Gas Price Oracle options
-	GPO gasprice.Config
+	//GPO gasprice.Config
 
 	// Enables tracking of SHA3 preimages in the VM
 	EnablePreimageRecording bool

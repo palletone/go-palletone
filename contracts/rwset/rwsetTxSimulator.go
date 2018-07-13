@@ -43,11 +43,14 @@ func newBasedTxSimulator(txid string) (*RwSetTxSimulator, error) {
 
 // GetState implements method in interface `ledger.TxSimulator`
 func (s *RwSetTxSimulator) GetState(ns string, key string) ([]byte, error) {
+	var versionedValue *VersionedValue
+	testValue := []byte("abc")
+
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
 	//get value from DB !!!
-	var versionedValue *VersionedValue
+
 	//versionedValue, err := db.GetState(ns, key)
 	//if err != nil {
 	//	return nil, err
@@ -58,10 +61,17 @@ func (s *RwSetTxSimulator) GetState(ns string, key string) ([]byte, error) {
 		s.rwsetBuilder.AddToReadSet(ns, key, ver)
 	}
 
+	logger.Debugf("RW:GetState,ns[%s]--key[%s]---value[%s]", ns, key, testValue)
+
+	//todo change.
+	return testValue, nil
+
 	return val, nil
 }
 
 func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
+	logger.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)
+
 	if err := s.CheckDone(); err != nil {
 		return err
 	}

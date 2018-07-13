@@ -34,13 +34,12 @@ import (
 	//"github.com/palletone/go-palletone/common/mclock"
 	//"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/core/types"
-	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/ptn"
-	//"github.com/palletone/go-palletone/les"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/ptn"
 	"golang.org/x/net/websocket"
 )
 
@@ -59,12 +58,12 @@ const (
 type txPool interface {
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.
-	SubscribeTxPreEvent(chan<- coredata.TxPreEvent) event.Subscription
+	SubscribeTxPreEvent(chan<- txspool.TxPreEvent) event.Subscription
 }
 
-type blockChain interface {
-	SubscribeChainHeadEvent(ch chan<- coredata.ChainHeadEvent) event.Subscription
-}
+//type blockChain interface {
+//	SubscribeChainHeadEvent(ch chan<- coredata.ChainHeadEvent) event.Subscription
+//}
 
 // Service implements an PalletOne netstats reporting daemon that pushes local
 // chain statistics up to a monitoring server.
@@ -419,9 +418,9 @@ func (s *Service) report(conn *websocket.Conn) error {
 	if err := s.reportLatency(conn); err != nil {
 		return err
 	}
-	if err := s.reportBlock(conn, nil); err != nil {
-		return err
-	}
+	//	if err := s.reportBlock(conn, nil); err != nil {
+	//		return err
+	//	}
 	if err := s.reportPending(conn); err != nil {
 		return err
 	}
@@ -492,90 +491,13 @@ type txStats struct {
 
 // uncleStats is a custom wrapper around an uncle array to force serializing
 // empty arrays instead of returning null for them.
-type uncleStats []*types.Header
+type uncleStats []*modules.Header
 
 func (s uncleStats) MarshalJSON() ([]byte, error) {
-	if uncles := ([]*types.Header)(s); len(uncles) > 0 {
+	if uncles := ([]*modules.Header)(s); len(uncles) > 0 {
 		return json.Marshal(uncles)
 	}
 	return []byte("[]"), nil
-}
-
-// reportBlock retrieves the current chain head and repors it to the stats server.
-func (s *Service) reportBlock(conn *websocket.Conn, block *types.Block) error {
-	// Gather the block details from the header or block chain
-	details := s.assembleBlockStats(block)
-
-	// Assemble the block report and send it to the server
-	log.Trace("Sending new block to ethstats", "number", details.Number, "hash", details.Hash)
-
-	stats := map[string]interface{}{
-		"id":    s.node,
-		"block": details,
-	}
-	report := map[string][]interface{}{
-		"emit": {"block", stats},
-	}
-	return websocket.JSON.Send(conn, report)
-}
-
-// assembleBlockStats retrieves any required metadata to report a single block
-// and assembles the block stats. If block is nil, the current head is processed.
-func (s *Service) assembleBlockStats(block *types.Block) *blockStats {
-	// Gather the block infos from the local blockchain
-	/*wangjiyouvar (
-		header *types.Header
-		td     *big.Int
-		txs    []txStats
-		uncles []*types.Header
-	)
-	if s.eth != nil {
-		// Full nodes have all needed information available
-		if block == nil {
-			block = s.ptn.BlockChain().CurrentBlock()
-		}
-		header = block.Header()
-		td = s.eth.BlockChain().GetTd(header.Hash(), header.Number.Uint64())
-
-		txs = make([]txStats, len(block.Transactions()))
-		for i, tx := range block.Transactions() {
-			txs[i].Hash = tx.Hash()
-		}
-		uncles = block.Uncles()
-	} else {
-		// Light nodes would need on-demand lookups for transactions/uncles, skip
-		if block != nil {
-			header = block.Header()
-		} else {
-			header = s.les.BlockChain().CurrentHeader()
-		}
-		td = s.les.BlockChain().GetTd(header.Hash(), header.Number.Uint64())
-		txs = []txStats{}
-	}
-	return &blockStats{
-		TotalDiff: td.String(),
-		Uncles:    uncles,
-	}
-	// Assemble and return the block stats
-
-	author, _ := s.engine.Author(header)
-
-	return &blockStats{
-		Number:     header.Number,
-		Hash:       header.Hash(),
-		ParentHash: header.ParentHash,
-		Timestamp:  header.Time,
-		Miner:      author,
-		GasUsed:    header.GasUsed,
-		GasLimit:   header.GasLimit,
-		Diff:       header.Difficulty.String(),
-		TotalDiff:  td.String(),
-		Txs:        txs,
-		TxHash:     header.TxHash,
-		Root:       header.Root,
-		Uncles:     uncles,
-	}*/
-	return &blockStats{}
 }
 
 // reportHistory retrieves the most recent batch of blocks and reports it to the

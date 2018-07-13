@@ -37,15 +37,15 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/netutil"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
-//	"github.com/palletone/go-palletone/consensus/consensusconfig"
+	//	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/state"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/statistics/dashboard"
@@ -209,17 +209,17 @@ var (
 	TxPoolJournalFlag = cli.StringFlag{
 		Name:  "txpool.journal",
 		Usage: "Disk journal for local transaction to survive node restarts",
-		Value: coredata.DefaultTxPoolConfig.Journal,
+		Value: txspool.DefaultTxPoolConfig.Journal,
 	}
 	TxPoolRejournalFlag = cli.DurationFlag{
 		Name:  "txpool.rejournal",
 		Usage: "Time interval to regenerate the local transaction journal",
-		Value: coredata.DefaultTxPoolConfig.Rejournal,
+		Value: txspool.DefaultTxPoolConfig.Rejournal,
 	}
 	TxPoolPriceLimitFlag = cli.Uint64Flag{
 		Name:  "txpool.pricelimit",
 		Usage: "Minimum gas price limit to enforce for acceptance into the pool",
-		Value: ptn.DefaultConfig.TxPool.PriceLimit,
+		//Value: ptn.DefaultConfig.TxPool.PriceLimit,
 	}
 	TxPoolPriceBumpFlag = cli.Uint64Flag{
 		Name:  "txpool.pricebump",
@@ -805,6 +805,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 }
 
 // SetNodeConfig applies node-related command line flags to the config.
+// 检查命令行中有没有 node 相关的配置，如果有的话覆盖掉cfg中的配置。
 func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	// SetP2PConfig(ctx, &cfg.P2P)
 	// setIPC(ctx, cfg)
@@ -842,7 +843,7 @@ func setGPO(ctx *cli.Context, cfg *gasprice.Config) {
 	}
 }
 */
-func setTxPool(ctx *cli.Context, cfg *coredata.TxPoolConfig) {
+func setTxPool(ctx *cli.Context, cfg *txspool.TxPoolConfig) {
 	if ctx.GlobalIsSet(TxPoolNoLocalsFlag.Name) {
 		cfg.NoLocals = ctx.GlobalBool(TxPoolNoLocalsFlag.Name)
 	}
@@ -852,9 +853,9 @@ func setTxPool(ctx *cli.Context, cfg *coredata.TxPoolConfig) {
 	if ctx.GlobalIsSet(TxPoolRejournalFlag.Name) {
 		cfg.Rejournal = ctx.GlobalDuration(TxPoolRejournalFlag.Name)
 	}
-	if ctx.GlobalIsSet(TxPoolPriceLimitFlag.Name) {
-		cfg.PriceLimit = ctx.GlobalUint64(TxPoolPriceLimitFlag.Name)
-	}
+	//	if ctx.GlobalIsSet(TxPoolPriceLimitFlag.Name) {
+	//		cfg.PriceLimit = ctx.GlobalUint64(TxPoolPriceLimitFlag.Name)
+	//	}
 	if ctx.GlobalIsSet(TxPoolPriceBumpFlag.Name) {
 		cfg.PriceBump = ctx.GlobalUint64(TxPoolPriceBumpFlag.Name)
 	}
@@ -967,7 +968,7 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	setTxPool(ctx, &cfg.TxPool)
 	setDag(ctx, &cfg.Dag)
 	setLog(ctx, &cfg.Log)
-//	setConsensus(ctx, &cfg.Consensus)
+	//	setConsensus(ctx, &cfg.Consensus)
 
 	switch {
 	case ctx.GlobalIsSet(SyncModeFlag.Name):
@@ -1097,6 +1098,7 @@ func RegisterPtnStatsService(stack *node.Node, url string) {
 // SetupNetwork configures the system for either the main net or some test network.
 func SetupNetwork(ctx *cli.Context) {
 	// TODO(fjl): move target gas limit into config
+	// 配置gas limit值
 	configure.TargetGasLimit = ctx.GlobalUint64(TargetGasLimitFlag.Name)
 }
 

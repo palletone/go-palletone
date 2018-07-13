@@ -59,7 +59,9 @@ func TestTransactionAddingTxs(t *testing.T) {
 	config := testTxPoolConfig
 	config.GlobalSlots = 0
 	var queue_cache, queue_item, all, origin int
-	pool := NewTxPool(config, unitchain)
+	//pool := NewTxPool(config, unitchain)
+	unitchain = unitchain //would recover
+	pool := NewTxPool(config)
 
 	defer pool.Stop()
 

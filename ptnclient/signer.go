@@ -21,7 +21,8 @@ import (
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/core/types"
+	//"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // senderFromServer is a types.Signer that remembers the sender address returned by the RPC
@@ -34,26 +35,27 @@ type senderFromServer struct {
 
 var errNotCached = errors.New("sender not cached")
 
-func setSenderFromServer(tx *types.Transaction, addr common.Address, block common.Hash) {
+func setSenderFromServer(tx *modules.Transaction, addr common.Address, block common.Hash) {
 	// Use types.Sender for side-effect to store our signer into the cache.
-	types.Sender(&senderFromServer{addr, block}, tx)
+	//types.Sender(&senderFromServer{addr, block}, tx)
 }
 
+/*
 func (s *senderFromServer) Equal(other types.Signer) bool {
 	os, ok := other.(*senderFromServer)
 	return ok && os.blockhash == s.blockhash
 }
-
-func (s *senderFromServer) Sender(tx *types.Transaction) (common.Address, error) {
+*/
+func (s *senderFromServer) Sender(tx *modules.Transaction) (common.Address, error) {
 	if s.blockhash == (common.Hash{}) {
 		return common.Address{}, errNotCached
 	}
 	return s.addr, nil
 }
 
-func (s *senderFromServer) Hash(tx *types.Transaction) common.Hash {
+func (s *senderFromServer) Hash(tx *modules.Transaction) common.Hash {
 	panic("can't sign with senderFromServer")
 }
-func (s *senderFromServer) SignatureValues(tx *types.Transaction, sig []byte) (R, S, V *big.Int, err error) {
+func (s *senderFromServer) SignatureValues(tx *modules.Transaction, sig []byte) (R, S, V *big.Int, err error) {
 	panic("can't sign with senderFromServer")
 }

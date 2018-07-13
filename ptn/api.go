@@ -22,10 +22,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	//"github.com/palletone/go-palletone/common/trie"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core/types"
-	//"github.com/palletone/go-palletone/dag/coredata"
 )
 
 // PublicEthereumAPI provides an API to access PalletOne full node-related
@@ -97,8 +94,4 @@ type storageMap map[common.Hash]storageEntry
 type storageEntry struct {
 	Key   *common.Hash `json:"key"`
 	Value common.Hash  `json:"value"`
-}
-
-func (api *PrivateDebugAPI) getModifiedAccounts(startBlock, endBlock *types.Block) ([]common.Address, error) {
-	return []common.Address{}, nil
 }

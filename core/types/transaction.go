@@ -16,6 +16,7 @@
 
 package types
 
+/*
 import (
 	"container/heap"
 	"errors"
@@ -169,7 +170,7 @@ func (tx *Transaction) UnmarshalJSON(input []byte) error {
 		if !crypto.ValidateSignatureValues(V, dec.R, dec.S, false) {
 			return ErrInvalidSig
 		}
-		*tx = Transaction{data: dec}*/
+		*tx = Transaction{data: dec}
 	return nil
 }
 
@@ -198,7 +199,7 @@ func (tx *Transaction) Hash() common.Hash {
 			return hash.(common.Hash)
 		}
 		v := rlpHash(tx)
-		tx.hash.Store(v)*/
+		tx.hash.Store(v)
 	return common.Hash{}
 }
 
@@ -211,7 +212,7 @@ func (tx *Transaction) Size() common.StorageSize {
 		}
 		c := writeCounter(0)
 		rlp.Encode(&c, &tx.data)
-		tx.size.Store(common.StorageSize(c))*/
+		tx.size.Store(common.StorageSize(c))
 	return common.StorageSize(0)
 }
 
@@ -418,3 +419,4 @@ func (m Message) Gas() uint64          { return m.gasLimit }
 func (m Message) Nonce() uint64        { return m.nonce }
 func (m Message) Data() []byte         { return m.data }
 func (m Message) CheckNonce() bool     { return m.checkNonce }
+*/

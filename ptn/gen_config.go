@@ -8,13 +8,11 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-//	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/ptn/gasprice"
 )
 
 var _ = (*configMarshaling)(nil)
@@ -33,15 +31,14 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		MinerThreads            int            `toml:",omitempty"`
 		ExtraData               hexutil.Bytes  `toml:",omitempty"`
 		GasPrice                *big.Int
-		TxPool                  coredata.TxPoolConfig
-		GPO                     gasprice.Config
+		TxPool                  txspool.TxPoolConfig
 		EnablePreimageRecording bool
 		// DAG options
-		Dag       dagconfig.Config
-		Log       log.Config
-//		Consensus consensusconfig.Config
+		Dag dagconfig.Config
+		Log log.Config
+		//		Consensus consensusconfig.Config
 		MediatorPlugin mp.Config
-		DocRoot   string `toml:"-"`
+		DocRoot        string `toml:"-"`
 	}
 	var enc Config
 	//enc.Genesis = c.Genesis
@@ -57,7 +54,6 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.ExtraData = c.ExtraData
 	enc.GasPrice = c.GasPrice
 	enc.TxPool = c.TxPool
-	enc.GPO = c.GPO
 	enc.EnablePreimageRecording = c.EnablePreimageRecording
 	enc.Dag = c.Dag
 	enc.Log = c.Log
@@ -68,26 +64,24 @@ func (c Config) MarshalTOML() (interface{}, error) {
 func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	type Config struct {
 		//Genesis            *core.Genesis `toml:",omitempty"`
-		NetworkId          *uint64
-		SyncMode           *downloader.SyncMode
-		LightServ          *int  `toml:",omitempty"`
-		LightPeers         *int  `toml:",omitempty"`
-		SkipBcVersionCheck *bool `toml:"-"`
-		DatabaseHandles    *int  `toml:"-"`
-		DatabaseCache      *int
-		Etherbase          *common.Address `toml:",omitempty"`
-		MinerThreads       *int            `toml:",omitempty"`
-		ExtraData          *hexutil.Bytes  `toml:",omitempty"`
-		GasPrice           *big.Int
-		//Ethash                  *ethash.Config//wangjyiou
-		TxPool                  *coredata.TxPoolConfig
-		GPO                     *gasprice.Config
+		NetworkId               *uint64
+		SyncMode                *downloader.SyncMode
+		LightServ               *int  `toml:",omitempty"`
+		LightPeers              *int  `toml:",omitempty"`
+		SkipBcVersionCheck      *bool `toml:"-"`
+		DatabaseHandles         *int  `toml:"-"`
+		DatabaseCache           *int
+		Etherbase               *common.Address `toml:",omitempty"`
+		MinerThreads            *int            `toml:",omitempty"`
+		ExtraData               *hexutil.Bytes  `toml:",omitempty"`
+		GasPrice                *big.Int
+		TxPool                  *txspool.TxPoolConfig
 		EnablePreimageRecording *bool
 		Dag                     *dagconfig.Config
 		Log                     *log.Config
-//		Consensus               *consensusconfig.Config
-		MediatorPlugin 			*mp.Config
-		DocRoot                 *string `toml:"-"`
+		//		Consensus               *consensusconfig.Config
+		MediatorPlugin *mp.Config
+		DocRoot        *string `toml:"-"`
 	}
 	var dec Config
 	if err := unmarshal(&dec); err != nil {
@@ -131,9 +125,6 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.TxPool != nil {
 		c.TxPool = *dec.TxPool
-	}
-	if dec.GPO != nil {
-		c.GPO = *dec.GPO
 	}
 	if dec.EnablePreimageRecording != nil {
 		c.EnablePreimageRecording = *dec.EnablePreimageRecording
