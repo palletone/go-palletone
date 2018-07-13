@@ -213,7 +213,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	//go pm.txsyncLoop()
 
 	// broadcast transactions
-	pm.txCh = make(chan txspool.TxPreEvent, txChanSize)
+	pm.txCh = make(chan modules.TxPreEvent, txChanSize)
 	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
 	go pm.txBroadcastLoop()
 	/*
