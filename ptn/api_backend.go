@@ -140,8 +140,7 @@ func (b *EthApiBackend) AccountManager() *accounts.Manager {
 }
 
 func (b *EthApiBackend) BloomStatus() (uint64, uint64) {
-	sections, _, _ := b.eth.bloomIndexer.Sections()
-	return configure.BloomBitsBlocks, sections
+	return uint64(0), uint64(0)
 }
 
 func (b *EthApiBackend) ServiceFilter(ctx context.Context, session *bloombits.MatcherSession) {

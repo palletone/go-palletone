@@ -28,24 +28,22 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
 )
 
-type LesServer interface {
-	Start(srvr *p2p.Server)
-	Stop()
-	Protocols() []p2p.Protocol
-	SetBloomBitsIndexer(bbIndexer *coredata.ChainIndexer)
-}
+//type LesServer interface {
+//	Start(srvr *p2p.Server)
+//	Stop()
+//	Protocols() []p2p.Protocol
+//	SetBloomBitsIndexer(bbIndexer *coredata.ChainIndexer)
+//}
 
 // PalletOne implements the PalletOne full node service.
 type PalletOne struct {
@@ -63,7 +61,7 @@ type PalletOne struct {
 	accountManager *accounts.Manager
 
 	bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
-	bloomIndexer  *coredata.ChainIndexer         // Bloom indexer operating during block imports
+	//bloomIndexer  *coredata.ChainIndexer         // Bloom indexer operating during block imports
 
 	ApiBackend *EthApiBackend
 	gasPrice   *big.Int
@@ -101,7 +99,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		gasPrice:       config.GasPrice,
 		etherbase:      config.Etherbase,
 		bloomRequests:  make(chan chan *bloombits.Retrieval),
-		bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
+		//bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
 	}
 
 	log.Info("Initialising PalletOne protocol", "versions", ProtocolVersions, "network", config.NetworkId)
@@ -243,7 +241,7 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 // Stop implements node.Service, terminating all internal goroutines used by the
 // PalletOne protocol.
 func (s *PalletOne) Stop() error {
-	s.bloomIndexer.Close()
+	//s.bloomIndexer.Close()
 	s.protocolManager.Stop()
 	s.txPool.Stop()
 	//	s.engine.Stop()

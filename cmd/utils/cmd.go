@@ -18,23 +18,23 @@
 package utils
 
 import (
-	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
 	"runtime"
-	"strings"
 	"syscall"
 
 	//"github.com/palletone/go-palletone/common"
 	//"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
-	//"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
+
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/dag/coredata"
 	//"github.com/palletone/go-palletone/dag/modules"
+	"compress/gzip"
+	"strings"
+
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/internal/debug"
 )
 
@@ -84,7 +84,7 @@ func StartNode(stack *node.Node) {
 	}()
 }
 
-func ImportChain(chain *coredata.BlockChain, fn string) error {
+func ImportChain(fn string) error {
 	// Watch for Ctrl-C while the import is running.
 	// If a signal is received, the import will stop at the next batch.
 	interrupt := make(chan os.Signal, 1)

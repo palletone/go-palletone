@@ -20,7 +20,7 @@ import (
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/coredata"
+	//"github.com/palletone/go-palletone/dag/coredata"
 	//"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common/ptndb"
 )
@@ -30,7 +30,7 @@ import (
 // sync commands from an existing local database.
 type FakePeer struct{}
 
-func NewFakePeer(id string, db ptndb.Database, hc *coredata.HeaderChain, dl *Downloader) *FakePeer {
+func NewFakePeer(id string, db ptndb.Database, dl *Downloader) *FakePeer {
 	return &FakePeer{}
 }
 func (p *FakePeer) Head() (common.Hash, *big.Int) {
