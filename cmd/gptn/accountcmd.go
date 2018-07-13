@@ -24,12 +24,12 @@ import (
 
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/common"
 )
 
 var (
@@ -273,6 +273,7 @@ func unlockAccount(ctx *cli.Context, ks *keystore.KeyStore, address string, i in
 		}
 		if err != keystore.ErrDecrypt {
 			// No need to prompt again if the error is not decryption-related.
+			log.Info("Unlocked account err:", err.Error())
 			break
 		}
 	}
@@ -348,7 +349,7 @@ func newAccount(ctx *cli.Context) (common.Address, error) {
 	utils.SetNodeConfig(ctx, &cfg.Node)
 	scryptN, scryptP, keydir, err := cfg.Node.AccountConfig()
 
-	password := getPassPhrase("Your new account is locked with a password. Please give a password. " +
+	password := getPassPhrase("Your new account is locked with a password. Please give a password. "+
 		"Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
 
 	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
@@ -366,7 +367,7 @@ func accountCreate(ctx *cli.Context) error {
 		utils.Fatalf("%v", err)
 	}
 
-//	fmt.Printf("Address Hex: {%x}\n", address)
+	//	fmt.Printf("Address Hex: {%x}\n", address)
 	fmt.Printf("Address: %s\n", address)
 	return nil
 }

@@ -155,7 +155,8 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64,
 		return nil, errIncompatibleConfig
 	}
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(mode /*manager.eventMux,*/, manager.removePeer)
+	manager.downloader = downloader.New(mode, manager.removePeer)
+	manager.fetcher = fetcher.New(manager.removePeer)
 	/*woule recover
 	validator := func(header *types.Header) error {
 		return engine.VerifyHeader(blockchain, header, true)
@@ -206,35 +207,34 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
 	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
 	go pm.ceBroadcastLoop()
-
+	// start sync handlers
+	//定时与相邻个体进行全链的强制同步
 	go pm.syncer()
+	//将新出现的交易对象均匀的同步给相邻个体
+	//go pm.txsyncLoop()
 
 	// broadcast transactions
-	//	pm.txCh = make(chan txspool.TxPreEvent, txChanSize)
-	//	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
-	//	go pm.txBroadcastLoop()
+	pm.txCh = make(chan txspool.TxPreEvent, txChanSize)
+	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
+	go pm.txBroadcastLoop()
 	/*
 		// broadcast mined blocks
 		pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
 		go pm.minedBroadcastLoop()
-
-		// start sync handlers
-		go pm.syncer()
-		go pm.txsyncLoop()
 	*/
 }
 
 func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping PalletOne protocol")
 
-	/*would recover
 	pm.txSub.Unsubscribe() // quits txBroadcastLoop
-	pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
 
 	// Quit the sync loop.
 	// After this send has completed, no new peers will be accepted.
 	pm.noMorePeers <- struct{}{}
-	*/
+
+	//pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
+
 	// Quit fetcher, txsyncLoop.
 	close(pm.quitSync)
 
@@ -722,18 +722,15 @@ func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction
 
 func (self *ProtocolManager) txBroadcastLoop() {
 	for {
-		time.Sleep(time.Duration(5) * time.Second)
-	}
-	//	for {
-	//		select {
-	//		case event := <-self.txCh:
-	//			self.BroadcastTx(event.Tx.Hash(), event.Tx)
+		select {
+		case event := <-self.txCh:
+			self.BroadcastTx(event.Tx.Hash(), event.Tx)
 
-	//		// Err() channel will be closed when unsubscribing.
-	//		case <-self.txSub.Err():
-	//			return
-	//		}
-	//	}
+		// Err() channel will be closed when unsubscribing.
+		case <-self.txSub.Err():
+			return
+		}
+	}
 }
 
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
