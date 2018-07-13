@@ -41,7 +41,8 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
-	"github.com/palletone/go-palletone/core/vmContractPub/mocks/config"
+	"github.com/palletone/go-palletone/core/vmContractPub/config"
+	mkcfg "github.com/palletone/go-palletone/core/vmContractPub/mocks/config"
 	"github.com/palletone/go-palletone/vm/controller"
 	"github.com/palletone/go-palletone/vm/ccintf"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -1874,7 +1875,7 @@ func setupTestConfig() {
 		//panic(fmt.Errorf("Fatal error config file: %s \n", err))
 	}
 
-	config.SetupTestLogging()
+	mkcfg.SetupTestLogging()
 
 	// Set the number of maxprocs
 	var numProcsDesired = viper.GetInt("peer.gomaxprocs")

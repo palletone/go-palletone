@@ -44,6 +44,7 @@ import (
 	"github.com/palletone/go-palletone/vm/controller"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
+	"github.com/palletone/go-palletone/contracts/rwset"
 )
 
 type key string
@@ -76,15 +77,15 @@ var theChaincodeSupport *ChaincodeSupport
 
 //glh
 //use this for ledger access and make sure TXSimulator is being used
-/*
-func getTxSimulator(context context.Context) ledger.TxSimulator {
-	if txsim, ok := context.Value(TXSimulatorKey).(ledger.TxSimulator); ok {
+
+func getTxSimulator(context context.Context) rwset.TxSimulator {
+	if txsim, ok := context.Value(TXSimulatorKey).(rwset.TxSimulator); ok {
 		return txsim
 	}
 	//chaincode will not allow state operations
 	return nil
 }
-
+/*
 //use this for ledger access and make sure HistoryQueryExecutor is being used
 func getHistoryQueryExecutor(context context.Context) ledger.HistoryQueryExecutor {
 	if historyQueryExecutor, ok := context.Value(HistoryQueryExecutorKey).(ledger.HistoryQueryExecutor); ok {
