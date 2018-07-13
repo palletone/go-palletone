@@ -24,12 +24,11 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/contracts/scc"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-
 	"golang.org/x/net/context"
 	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/contracts/rwset"
-
 	ut "github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 // SupportImpl provides an implementation of the endorser.Support interface
@@ -79,7 +78,7 @@ func (s *SupportImpl) Execute(ctxt context.Context, cid, name, version, txid str
 	case *pb.ChaincodeInvocationSpec:
 		cis := spec.(*pb.ChaincodeInvocationSpec)
 
-		endorserLogger.Infof("===cis:%v", cis)
+		log.Info("===cis:%v", cis)
 		//decorate the chaincode input
 		//glh
 		//decorators := library.InitRegistry(library.Config{}).Lookup(library.Decoration).([]decoration.Decorator)
