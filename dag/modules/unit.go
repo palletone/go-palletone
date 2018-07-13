@@ -1,4 +1,4 @@
-﻿/*
+/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -10,11 +10,10 @@
    GNU General Public License for more details.
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+
+   @author PalletOne core developers <dev@pallet.one>
+   @date 2018
 */
-/*
- * @author PalletOne core developers <dev@pallet.one>
- * @date 2018
- */
 
 // unit package, unit structure and storage api
 package modules
@@ -325,7 +324,7 @@ func (u *Unit) Size() common.StorageSize {
 	//return u.UnitSize
 
 	b, err := rlp.EncodeToBytes(u)
-	if err!=nil {
+	if err != nil {
 		return common.StorageSize(0)
 	} else {
 		return common.StorageSize(len(b))
