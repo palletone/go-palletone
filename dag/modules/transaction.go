@@ -41,24 +41,23 @@ var (
 	TXFEE = big.NewInt(5) // transaction fee =5ptn
 )
 
-func NewTransaction(nonce uint64, from common.Address, fee *big.Int, data []byte) *Transaction {
-	return newTransaction(nonce, &from, fee, data)
+func NewTransaction(nonce uint64, fee *big.Int, sig []byte) *Transaction {
+	return newTransaction(nonce, fee, sig)
 }
 
-func NewContractCreation(nonce uint64, from common.Address, fee *big.Int, data []byte) *Transaction {
-	return newTransaction(nonce, &from, fee, data)
+func NewContractCreation(nonce uint64, fee *big.Int, sig []byte) *Transaction {
+	return newTransaction(nonce, fee, sig)
 }
 
-func newTransaction(nonce uint64, from *common.Address, fee *big.Int, data []byte) *Transaction {
-	if len(data) > 0 {
-		data = common.CopyBytes(data)
+func newTransaction(nonce uint64, fee *big.Int, sig []byte) *Transaction {
+	if len(sig) == 65 {
+		sig = common.CopyBytes(sig)
 	}
 	// var f *big.Int
 	// if fee != nil {
 	// 	f.Set(fee)
 	// }
-	au_from := &Author{Address: *from}
-	au_from.Address = *from
+	au_from := &Authentifier{R: sig[:32], S: sig[32:64], V: sig[64:]}
 
 	tx := new(Transaction)
 	tx.AccountNonce = nonce

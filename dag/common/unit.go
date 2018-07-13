@@ -69,7 +69,7 @@ func GetUnit(hash *common.Hash, index modules.ChainIndex) *modules.Unit {
 生成创世单元，需要传入创世单元的配置信息以及coinbase交易
 generate genesis unit, need genesis unit configure fields and transactions list
 */
-func NewGenesisUnit(txs modules.Transactions) *modules.Unit {
+func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 	gUnit := modules.Unit{Gasprice: 0, Gasused: 0, Creationdate: time.Now().UTC()}
 
 	// genesis unit asset id
@@ -111,7 +111,7 @@ func NewGenesisUnit(txs modules.Transactions) *modules.Unit {
 			gUnit.Txs[i] = &tx
 		}
 	}
-	return &gUnit
+	return &gUnit, nil
 }
 
 /**

@@ -33,7 +33,7 @@ func NewDag() *modules.Dag {
 	if storage.Dbconn == nil {
 		storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
 	}
-	genesis := NewGenesisUnit(nil)
+	genesis, _ := NewGenesisUnit(nil)
 	db, _ := palletdb.NewMemDatabase()
 	mutex := new(sync.RWMutex)
 	return &modules.Dag{

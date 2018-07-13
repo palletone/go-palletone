@@ -174,7 +174,7 @@ type Transaction struct {
 	AccountNonce uint64
 	TxHash       common.Hash        `json:"txhash" rlp:""`
 	TxMessages   []Message          `json:"messages"` //
-	From         *Author            `json:"authors"`  // the issuers of the transaction
+	From         *Authentifier      `json:"authors"`  // the issuers of the transaction
 	Excutiontime uint               `json:"excution_time"`
 	Memery       uint               `json:"memory"`
 	CreationDate string             `json:"creation_date"`
@@ -262,7 +262,10 @@ type Author struct {
 }
 
 type Authentifier struct {
-	R string `json:"r"`
+	Sign string `json:"sign"`
+	R    []byte `json:"r"`
+	S    []byte `json:"s"`
+	V    []byte `json:"v"`
 }
 
 func (a *Authentifier) ToDB() ([]byte, error) {
@@ -325,7 +328,7 @@ func (u *Unit) Size() common.StorageSize {
 	//return u.UnitSize
 
 	b, err := rlp.EncodeToBytes(u)
-	if err!=nil {
+	if err != nil {
 		return common.StorageSize(0)
 	} else {
 		return common.StorageSize(len(b))

@@ -120,7 +120,7 @@ func GetTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.Transa
 
 func CommitDB(unit *modules.Unit, publicKey []byte, sign string, address common.Address) error {
 	var authentifier modules.Authentifier
-	authentifier.R = sign
+	authentifier.Sign = sign
 	author := new(modules.Author)
 	author.Address = address
 	author.Pubkey = publicKey
