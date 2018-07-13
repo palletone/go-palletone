@@ -3,7 +3,6 @@ package txspool
 import (
 	"errors"
 	"fmt"
-	//"math"
 	"math/big"
 	"sort"
 	"sync"
@@ -12,9 +11,9 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	//"github.com/palletone/go-palletone/metrics"
-	"github.com/palletone/go-palletone/common/crypto"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -67,7 +66,7 @@ type units interface {
 	GetUnit(hash common.Hash, number uint64) *modules.Unit
 	//StateAt(root common.Hash) (*state.StateDB, error)
 
-	SubscribeChainHeadEvent(ch chan<- ChainHeadEvent) event.Subscription
+	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
@@ -126,7 +125,7 @@ type TxPool struct {
 	txfee        *big.Int
 	txFeed       event.Feed
 	scope        event.SubscriptionScope
-	chainHeadCh  chan ChainHeadEvent
+	chainHeadCh  chan modules.ChainHeadEvent
 	chainHeadSub event.Subscription
 	mu           sync.RWMutex
 
@@ -161,7 +160,7 @@ func NewTxPool(config TxPoolConfig /*, unit units*/) *TxPool { // chainconfig *p
 		queue:       make(map[common.Address]*txList),
 		beats:       make(map[common.Address]time.Time),
 		all:         make(map[common.Hash]*modules.Transaction),
-		chainHeadCh: make(chan ChainHeadEvent, chainHeadChanSize),
+		chainHeadCh: make(chan modules.ChainHeadEvent, chainHeadChanSize),
 		txfee:       new(big.Int).SetUint64(config.FeeLimit),
 	}
 	pool.locals = newAccountSet()
@@ -445,8 +444,9 @@ func (pool *TxPool) validateTx(tx *modules.Transaction, local bool) error {
 		return ErrOversizedData
 	}
 	//  transaction 转账金额验证在上层已做，这里无需再次验证。
+	// tx.R S V  to address
 
-	from := RSVtoAddress(tx)
+	from := dagcommon.RSVtoAddress(tx)
 	local = local || pool.locals.contains(from) // account may be local even if the transaction arrived from the network
 	if !local && pool.txfee.Cmp(tx.TxFee) > 0 {
 		return ErrTxFeeTooLow
@@ -495,7 +495,7 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 	}
 	// If the transaction is replacing an already pending one, do directly
 	//from,_ := modules.Sender(pool.signer, tx) // already validated
-	from := RSVtoAddress(tx)
+	from := dagcommon.RSVtoAddress(tx)
 	if list := pool.pending[from]; list != nil && list.Overlaps(tx) {
 		// Nonce already pending, check if required price bump is met
 		inserted, old := list.Add(tx, pool.config.PriceBump)
@@ -516,7 +516,7 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 		log.Trace("Pooled new executable transaction", "hash", hash, "from", from)
 
 		// We've directly injected a replacement transaction, notify subsystems
-		go pool.txFeed.Send(TxPreEvent{tx})
+		go pool.txFeed.Send(modules.TxPreEvent{tx})
 
 		return old != nil, nil
 	}
@@ -540,7 +540,7 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 // Note, this method assumes the pool lock is held!
 func (pool *TxPool) enqueueTx(hash common.Hash, tx *modules.Transaction) (bool, error) {
 	// Try to insert the transaction into the future queue
-	from := RSVtoAddress(tx) // already validated
+	from := dagcommon.RSVtoAddress(tx) // already validated
 	if pool.queue[from] == nil {
 		pool.queue[from] = newTxList(false)
 	}
@@ -609,7 +609,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *modules
 	pool.beats[addr] = time.Now()
 	// pool.pendingState.SetNonce(addr, tx.Nonce()+1)
 
-	go pool.txFeed.Send(TxPreEvent{tx})
+	go pool.txFeed.Send(modules.TxPreEvent{tx})
 }
 
 // AddLocal enqueues a single transaction into the pool if it is valid, marking
@@ -653,7 +653,7 @@ func (pool *TxPool) addTx(tx *modules.Transaction, local bool) error {
 	}
 	// If we added a new transaction, run promotion checks and return
 	if !replace {
-		from := RSVtoAddress(tx) // already validated
+		from := dagcommon.RSVtoAddress(tx) // already validated
 		pool.promoteExecutables([]common.Address{from})
 	}
 	return nil
@@ -678,7 +678,7 @@ func (pool *TxPool) addTxsLocked(txs []*modules.Transaction, local bool) []error
 		var replace bool
 		if replace, errs[i] = pool.add(tx, local); errs[i] == nil {
 			if !replace {
-				from := RSVtoAddress(tx) // already validated
+				from := dagcommon.RSVtoAddress(tx) // already validated
 				dirty[from] = struct{}{}
 			}
 		}
@@ -712,7 +712,7 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 	status := make([]TxStatus, len(hashes))
 	for i, hash := range hashes {
 		if tx := pool.all[hash]; tx != nil {
-			from := RSVtoAddress(tx) // already validated
+			from := dagcommon.RSVtoAddress(tx) // already validated
 			if pool.pending[from] != nil && pool.pending[from].txs.items[tx.Nonce()] != nil {
 				status[i] = TxStatusPending
 			} else {
@@ -740,7 +740,7 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 	if !ok {
 		return
 	}
-	addr := RSVtoAddress(tx) // already validated during insertion
+	addr := dagcommon.RSVtoAddress(tx) // already validated during insertion
 
 	// Remove it from the list of known transactions
 	delete(pool.all, hash)
@@ -1023,7 +1023,7 @@ func (as *accountSet) containsTx(tx *modules.Transaction) bool {
 	// if addr, err := modules.Sender(as.signer, tx); err == nil {
 	// 	return as.contains(addr)
 	// }
-	return as.contains(RSVtoAddress(tx))
+	return as.contains(dagcommon.RSVtoAddress(tx))
 }
 
 // add inserts a new address into the set to track.
@@ -1042,18 +1042,8 @@ func (pool *TxPool) GetSortedTxs() modules.Transactions {
 	return modules.Transactions(list)
 }
 
-func RSVtoAddress(tx *modules.Transaction) common.Address {
-	sig := make([]byte, 65)
-	copy(sig[32-len(tx.From.R):32], tx.From.R)
-	copy(sig[64-len(tx.From.S):64], tx.From.S)
-	copy(sig[64:len(sig)], tx.From.V)
-	pub, _ := crypto.SigToPub(tx.TxHash[:], sig)
-	address := crypto.PubkeyToAddress(*pub)
-	return address
-}
-
 // SubscribeTxPreEvent registers a subscription of TxPreEvent and
 // starts sending event to the given channel.
-func (pool *TxPool) SubscribeTxPreEvent(ch chan<- TxPreEvent) event.Subscription {
+func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
 }
