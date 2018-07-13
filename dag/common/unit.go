@@ -69,7 +69,7 @@ func GetUnit(hash *common.Hash, index modules.ChainIndex) *modules.Unit {
 生成创世单元，需要传入创世单元的配置信息以及coinbase交易
 generate genesis unit, need genesis unit configure fields and transactions list
 */
-func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
+func NewGenesisUnit(txs modules.Transactions) *modules.Unit {
 	gUnit := modules.Unit{Gasprice: 0, Gasused: 0, Creationdate: time.Now().UTC()}
 
 	// genesis unit asset id
@@ -84,8 +84,6 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 	// generate genesis unit header
 	header := modules.Header{
 		AssetIDs: []modules.IDType16{gAssetID},
-		GasLimit: 0,
-		GasUsed:  0,
 		Number:   chainIndex,
 		Root:     root,
 	}
@@ -113,7 +111,7 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 			gUnit.Txs[i] = &tx
 		}
 	}
-	return &gUnit, nil
+	return &gUnit
 }
 
 /**
@@ -143,7 +141,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, 
 save genesis unit data
 */
 func SaveUnit(unit modules.Unit) error {
-	if unit.UnitSize==0 || unit.Size()==0 {
+	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Info("Unit is null")
 		return nil
 	}
@@ -154,9 +152,11 @@ func SaveUnit(unit modules.Unit) error {
 		return modules.ErrUnit(-1)
 	}
 	// check transactions in unit
-	totalFee, err:=checkTransactions(&unit.Txs)
-	if err!=nil { return err }
-	if totalFee != unit.Gasprice && totalFee!=unit.Gasused {
+	totalFee, err := checkTransactions(&unit.Txs)
+	if err != nil {
+		return err
+	}
+	if totalFee != unit.Gasprice && totalFee != unit.Gasused {
 		return fmt.Errorf("Unit's gas computed error.")
 	}
 	// save unit header, key is like "[HEADER_PREFIX][chain_index]_[unit hash]"
@@ -184,7 +184,7 @@ func SaveUnit(unit modules.Unit) error {
 			case modules.APP_CONTRACT_DEPLOY:
 			case modules.APP_CONTRACT_INVOKE:
 			case modules.APP_CONFIG:
-				if ok:=saveConfigPayload(tx.TxHash, &msg); ok==false {
+				if ok := saveConfigPayload(tx.TxHash, &msg); ok == false {
 					return modules.ErrUnit(-6)
 				}
 			case modules.APP_TEXT:
@@ -193,11 +193,15 @@ func SaveUnit(unit modules.Unit) error {
 			}
 		}
 		// save transaction
-		if err=storage.SaveTransaction(tx); err!=nil{ return err}
+		if err = storage.SaveTransaction(tx); err != nil {
+			return err
+		}
 	}
 
 	// save unit body, the value only save txs' hash set, and the key is merkle root
-	if err = storage.SaveBody(unit.UnitHeader.Root, txHashSet); err!=nil {return err}
+	if err = storage.SaveBody(unit.UnitHeader.Root, txHashSet); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -242,7 +246,7 @@ func checkMessageType(app string, payload interface{}) bool {
 检查unit中所有交易的合法性，返回所有交易的交易费总和
 check all transactions in one unit
 return all transactions' fee
- */
+*/
 func checkTransactions(txs *modules.Transactions) (uint64, error) {
 	fee := uint64(0)
 	for _, tx := range *txs {
@@ -271,7 +275,7 @@ func checkTransactions(txs *modules.Transactions) (uint64, error) {
 		// check transaction fee
 		i := big.Int{}
 		i.SetUint64(txFee)
-		if tx.TxFee.Cmp(&i)!=0 {
+		if tx.TxFee.Cmp(&i) != 0 {
 			return 0, fmt.Errorf("Transaction(%s)'s fee is invalid.", tx.TxHash)
 		}
 	}
@@ -333,7 +337,7 @@ func saveConfigPayload(txHash common.Hash, msg *modules.Message) bool {
 		return false
 	}
 
-	if err := SaveConfig(payload.ConfigSet); err!=nil {
+	if err := SaveConfig(payload.ConfigSet); err != nil {
 		errMsg := fmt.Sprintf("To save config payload error: %s", err)
 		log.Error(errMsg)
 		return false

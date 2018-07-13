@@ -9,20 +9,16 @@ import (
 )
 
 func TestNewGenesisUnit(t *testing.T) {
-	gUnit, err := NewGenesisUnit(modules.Transactions{})
-	if err != nil {
-		log.Println(err)
-	} else {
-		log.Println("Genesis unit struct:")
-		log.Println("--- Genesis unit header --- ")
-		log.Println("parent units:", gUnit.UnitHeader.ParentUnits)
-		log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
-		log.Println("witness:", gUnit.UnitHeader.Witness)
-		log.Println("gaslimit:", gUnit.UnitHeader.GasLimit)
-		log.Println("gasUsed:", gUnit.UnitHeader.GasUsed)
-		log.Println("Root:", gUnit.UnitHeader.Root)
-		log.Println("Number:", gUnit.UnitHeader.Number)
-	}
+	gUnit := NewGenesisUnit(modules.Transactions{})
+
+	log.Println("Genesis unit struct:")
+	log.Println("--- Genesis unit header --- ")
+	log.Println("parent units:", gUnit.UnitHeader.ParentUnits)
+	log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
+	log.Println("witness:", gUnit.UnitHeader.Witness)
+	log.Println("Root:", gUnit.UnitHeader.Root)
+	log.Println("Number:", gUnit.UnitHeader.Number)
+
 }
 
 func TestGenGenesisConfigPayload(t *testing.T) {
@@ -42,7 +38,7 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 }
 
 func TestSaveUnit(t *testing.T) {
-	if err:=SaveUnit(modules.Unit{}); err!=nil {
+	if err := SaveUnit(modules.Unit{}); err != nil {
 		log.Println(err)
 	}
 }
