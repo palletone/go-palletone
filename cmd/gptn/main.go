@@ -175,8 +175,8 @@ func init() {
 		bugCommand,
 		licenseCommand,
 		// See config.go
-		dumpConfigCommand, //转储配置文件命令
-		createGenesisJsonCommand,	// 创建创世json文件命令
+		dumpConfigCommand,        //转储配置文件命令
+		createGenesisJsonCommand, // 创建创世json文件命令
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 
@@ -326,7 +326,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 			//}
 		}
 		// Set the gas price to the limits from the CLI
-		ethereum.TxPool().SetGasPrice(utils.GlobalBig(ctx, utils.GasPriceFlag.Name))
+		//ethereum.TxPool().SetGasPrice(utils.GlobalBig(ctx, utils.GasPriceFlag.Name))
 		//开启挖矿，创建协程到后台处理
 		//if err := ethereum.StartMining(true); err != nil {
 		//	utils.Fatalf("Failed to start mining: %v", err)

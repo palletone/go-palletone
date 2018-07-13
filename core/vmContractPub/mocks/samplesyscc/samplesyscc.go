@@ -78,6 +78,8 @@ func (t *SampleSysCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 		// Get the state from the ledger
 		valbytes, err := stub.GetState(key)
+		//return shim.Success([]byte("abc"))
+
 		if err != nil {
 			jsonResp := "{\"Error\":\"Failed to get state for " + key + "\"}"
 			return shim.Error(jsonResp)

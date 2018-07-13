@@ -56,7 +56,7 @@ func (osyscc *oldSysCCInfo) reset() {
 //		time.Sleep(2 * time.Second)
 //	}
 //}
-func initSysCCTests() (*oldSysCCInfo, net.Listener, error) {
+func InitSysCCTests() (*oldSysCCInfo, net.Listener, error) {
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
@@ -67,7 +67,7 @@ func initSysCCTests() (*oldSysCCInfo, net.Listener, error) {
 
 
 	MockInitialize()
-	//glh
+	//glhI
 	//peer.MockInitialize()
 	//mspGetter := func(cid string) []string {
 	//	return []string{"DEFAULT"}
@@ -160,7 +160,7 @@ func deploySampleSysCC(t *testing.T, ctxt context.Context, chainID string) error
 
 // Test deploy of a transaction.
 func TestExecuteDeploySysChaincode(t *testing.T) {
-	sysccinfo, lis, err := initSysCCTests()
+	sysccinfo, lis, err := InitSysCCTests()
 	if err != nil {
 		t.Fail()
 		return
@@ -193,7 +193,7 @@ func TestExecuteDeploySysChaincode(t *testing.T) {
 // Test multichains
 func TestMultichains(t *testing.T) {
 
-	sysccinfo, lis, err := initSysCCTests()
+	sysccinfo, lis, err := InitSysCCTests()
 	if err != nil {
 		t.Fail()
 		return

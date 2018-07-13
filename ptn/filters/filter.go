@@ -25,19 +25,19 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/core/types"
-	"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 type Backend interface {
 	ChainDb() ptndb.Database
 	EventMux() *event.TypeMux
-	HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Header, error)
-	GetReceipts(ctx context.Context, blockHash common.Hash) (types.Receipts, error)
+	HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*modules.Header, error)
+	//GetReceipts(ctx context.Context, blockHash common.Hash) (modules.Receipts, error)
 	//GetLogs(ctx context.Context, blockHash common.Hash) ([][]*types.Log, error)
 
-	SubscribeTxPreEvent(chan<- coredata.TxPreEvent) event.Subscription
-	SubscribeChainEvent(ch chan<- coredata.ChainEvent) event.Subscription
+	SubscribeTxPreEvent(chan<- txspool.TxPreEvent) event.Subscription
+	//SubscribeChainEvent(ch chan<- coredata.ChainEvent) event.Subscription
 	//SubscribeRemovedLogsEvent(ch chan<- coredata.RemovedLogsEvent) event.Subscription
 	//SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscription
 
@@ -102,6 +102,7 @@ func includes(addresses []common.Address, a common.Address) bool {
 	return false
 }
 
+/*
 func bloomFilter(bloom types.Bloom, addresses []common.Address, topics [][]common.Hash) bool {
 	if len(addresses) > 0 {
 		var included bool
@@ -130,3 +131,4 @@ func bloomFilter(bloom types.Bloom, addresses []common.Address, topics [][]commo
 	}
 	return true
 }
+*/

@@ -34,10 +34,9 @@ import (
 	//"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	//"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/types"
-	"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 )
@@ -79,7 +78,7 @@ type ProtocolManager struct {
 	SubProtocols []p2p.Protocol
 
 	//eventMux      *event.TypeMux
-	txCh  chan coredata.TxPreEvent
+	txCh  chan txspool.TxPreEvent
 	txSub event.Subscription
 	//minedBlockSub *event.TypeMuxSubscription
 
@@ -101,8 +100,8 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager(mode downloader.SyncMode, networkId uint64 /*mux *event.TypeMux,*/, txpool txPool,
-	engine core.ConsensusEngine) (*ProtocolManager, error) {
+func NewProtocolManager(mode downloader.SyncMode, networkId uint64,
+	txpool txPool, engine core.ConsensusEngine) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId: networkId,
@@ -211,9 +210,9 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	go pm.syncer()
 
 	// broadcast transactions
-	pm.txCh = make(chan coredata.TxPreEvent, txChanSize)
-	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
-	go pm.txBroadcastLoop()
+	//	pm.txCh = make(chan txspool.TxPreEvent, txChanSize)
+	//	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
+	//	go pm.txBroadcastLoop()
 	/*
 		// broadcast mined blocks
 		pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
@@ -263,18 +262,18 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		log.Info("ProtocolManager handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
 		return p2p.DiscTooManyPeers
 	}
-	p.Log().Debug("PalletOne peer connected", "name", p.Name())
+	log.Debug("PalletOne peer connected", "name", p.Name())
 
 	// Execute the PalletOne handshake
 	var (
 		//genesis = //common.Hash{}   //pm.blockchain.Genesis()
-		head = &types.Header{} //pm.blockchain.CurrentHeader()
+		head = &modules.Header{} //pm.blockchain.CurrentHeader()
 		hash = head.Hash()
 		//number = head.Number.Uint64()
 		td = &big.Int{} //pm.blockchain.GetTd(hash, number)
 	)
 	if err := p.Handshake(pm.networkId, td, hash /*genesis.Hash()*/, common.Hash{}); err != nil {
-		p.Log().Debug("PalletOne handshake failed", "err", err)
+		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
@@ -282,7 +281,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 	// Register the peer locally
 	if err := pm.peers.Register(p); err != nil {
-		p.Log().Error("PalletOne peer registration failed", "err", err)
+		log.Error("PalletOne peer registration failed", "err", err)
 		return err
 	}
 	defer pm.removePeer(p.id)
@@ -293,9 +292,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
-	/*would recover
-	pm.syncTransactions(p)
 
+	//pm.syncTransactions(p)
+	/*would recover
 	// If we're DAO hard-fork aware, validate any remote peer with regard to the hard-fork
 	if daoBlock := pm.chainconfig.DAOForkBlock; daoBlock != nil {
 		// Request the peer's DAO fork header for extra-data validation
@@ -318,7 +317,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
-			p.Log().Debug("PalletOne message handling failed", "err", err)
+			log.Debug("PalletOne message handling failed", "err", err)
 			return err
 		}
 	}
@@ -355,12 +354,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Gather headers until the fetch or network limits is reached
 		var (
 			bytes   common.StorageSize
-			headers []*types.Header
+			headers []*modules.Header
 			unknown bool
 		)
 		for !unknown && len(headers) < int(query.Amount) && bytes < softResponseLimit && len(headers) < downloader.MaxHeaderFetch {
 			// Retrieve the next header satisfying the query
-			var origin *types.Header
+			var origin *modules.Header
 			if hashMode {
 				//origin = pm.blockchain.GetHeaderByHash(query.Origin.Hash)
 			} else {
@@ -390,12 +389,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			case query.Origin.Hash != (common.Hash{}) && !query.Reverse:
 				// Hash based traversal towards the leaf block
 				var (
-					current = origin.Number.Uint64()
+					current = uint64(0) //origin.Number.Uint64()
 					next    = current + query.Skip + 1
 				)
 				if next <= current {
 					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
-					p.Log().Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
+					log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
 					unknown = true
 				} else { /*
 						if header := pm.blockchain.GetHeaderByNumber(next); header != nil {
@@ -425,7 +424,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case msg.Code == BlockHeadersMsg:
 		// A batch of headers arrived to one of our previous requests
-		var headers []*types.Header
+		var headers []*modules.Header
 		if err := msg.Decode(&headers); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
@@ -443,7 +442,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}*/
 			// If we're seemingly on the same chain, disable the drop timer
 			if verifyDAO {
-				p.Log().Debug("Seems to be on the same side of the DAO fork")
+				log.Debug("Seems to be on the same side of the DAO fork")
 				p.forkDrop.Stop()
 				p.forkDrop = nil
 				return nil
@@ -474,7 +473,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if len(headers) > 0 || !filter {
 			err := pm.downloader.DeliverHeaders(p.id, headers)
 			if err != nil {
-				log.Debug("Failed to deliver headers", "err", err)
+				log.Debug("Failed to deliver headers", "err", err.Error())
 			}
 		}
 
@@ -512,8 +511,8 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 		// Deliver them all to the downloader for queuing
-		transactions := make([][]*types.Transaction, len(request))
-		uncles := make([][]*types.Header, len(request))
+		transactions := make([][]*modules.Transaction, len(request))
+		uncles := make([][]*modules.Header, len(request))
 
 		for i, body := range request {
 			transactions[i] = body.Transactions
@@ -527,7 +526,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if len(transactions) > 0 || len(uncles) > 0 || !filter {
 			err := pm.downloader.DeliverBodies(p.id, transactions, uncles)
 			if err != nil {
-				log.Debug("Failed to deliver bodies", "err", err)
+				log.Debug("Failed to deliver bodies", "err", err.Error())
 			}
 		}
 
@@ -566,7 +565,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		// Deliver all to the downloader
 		if err := pm.downloader.DeliverNodeData(p.id, data); err != nil {
-			log.Debug("Failed to deliver node state data", "err", err)
+			log.Debug("Failed to deliver node state data", "err", err.Error())
 		}
 
 	case /*p.version >= pan1 &&*/ msg.Code == GetReceiptsMsg:
@@ -607,14 +606,14 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case /*p.version >= pan1 &&*/ msg.Code == ReceiptsMsg:
 		// A batch of receipts arrived to one of our previous requests
-		var receipts [][]*types.Receipt
-		if err := msg.Decode(&receipts); err != nil {
-			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		}
-		// Deliver all to the downloader
-		if err := pm.downloader.DeliverReceipts(p.id, receipts); err != nil {
-			log.Debug("Failed to deliver receipts", "err", err)
-		}
+		//		var receipts [][]*types.Receipt
+		//		if err := msg.Decode(&receipts); err != nil {
+		//			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		//		}
+		//		// Deliver all to the downloader
+		//		if err := pm.downloader.DeliverReceipts(p.id, receipts); err != nil {
+		//			log.Debug("Failed to deliver receipts", "err", err)
+		//		}
 
 	case msg.Code == NewBlockHashesMsg:
 		var announces newBlockHashesData
@@ -635,39 +634,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		for _, block := range unknown {
 			pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneHeader, p.RequestBodies)
 		}
-
 	case msg.Code == NewBlockMsg:
-		// Retrieve and decode the propagated block
-		var request newBlockData
-		if err := msg.Decode(&request); err != nil {
-			return errResp(ErrDecode, "%v: %v", msg, err)
-		}
-		request.Block.ReceivedAt = msg.ReceivedAt
-		//request.Block.ReceivedFrom = p //would recover
-
-		// Mark the peer as owning the block and schedule it for import
-		p.MarkBlock(request.Block.Hash())
-		pm.fetcher.Enqueue(p.id, request.Block)
-
-		// Assuming the block is importable by the peer, but possibly not yet done so,
-		// calculate the head hash and TD that the peer truly must have.
-		var (
-			trueHead = request.Block.ParentHash()
-			trueTD   = new(big.Int).Sub(request.TD, request.Block.Difficulty())
-		)
-		// Update the peers total difficulty if better than the previous
-		if _, td := p.Head(); trueTD.Cmp(td) > 0 {
-			p.SetHead(trueHead, trueTD)
-
-			// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
-			// a singe block (as the true TD is below the propagated block), however this
-			// scenario should easily be covered by the fetcher.
-			/*would recover
-			currentBlock := pm.blockchain.CurrentBlock()
-			if trueTD.Cmp(pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())) > 0 {
-				go pm.synchronise(p)
-			}*/
-		}
 
 	case msg.Code == TxMsg:
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
@@ -675,7 +642,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			break
 		}
 		// Transactions can be processed, parse all of them and deliver to the pool
-		var txs []*types.Transaction
+		var txs []*modules.Transaction
 		if err := msg.Decode(&txs); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
@@ -702,10 +669,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	return nil
 }
 
+/*
 // BroadcastBlock will either propagate a block to a subset of it's peers, or
 // will only announce it's availability (depending what's requested).
 func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
-	/*
+
 		hash := block.Hash()
 		peers := pm.peers.PeersWithoutBlock(hash)
 
@@ -735,35 +703,37 @@ func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
 			}
 			log.Trace("Announced block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(block.ReceivedAt)))
 		}
-	*/
-}
 
+}
+*/
 // BroadcastTx will propagate a transaction to all peers which are not known to
 // already have the given transaction.
-func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *types.Transaction) {
+func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction) {
 	/*
 		// Broadcast transaction to a batch of peers not knowing about it
 		peers := pm.peers.PeersWithoutTx(hash)
 		//FIXME include this again: peers = peers[:int(math.Sqrt(float64(len(peers))))]
 		for _, peer := range peers {
-			peer.SendTransactions(types.Transactions{tx})
+			peer.SendTransactions(modules.Transactions{tx})
 		}
 		log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
 	*/
 }
 
 func (self *ProtocolManager) txBroadcastLoop() {
-
 	for {
-		select {
-		case event := <-self.txCh:
-			self.BroadcastTx(event.Tx.Hash(), event.Tx)
-
-		// Err() channel will be closed when unsubscribing.
-		case <-self.txSub.Err():
-			return
-		}
+		time.Sleep(time.Duration(5) * time.Second)
 	}
+	//	for {
+	//		select {
+	//		case event := <-self.txCh:
+	//			self.BroadcastTx(event.Tx.Hash(), event.Tx)
+
+	//		// Err() channel will be closed when unsubscribing.
+	//		case <-self.txSub.Err():
+	//			return
+	//		}
+	//	}
 }
 
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata

@@ -20,7 +20,6 @@ package ptnclient
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -29,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // Client defines typed wrappers for the Palletone RPC API.
@@ -65,18 +64,18 @@ func (ec *Client) Close() {
 //
 // Note that loading full blocks requires two requests. Use HeaderByHash
 // if you don't need all transactions or uncle headers.
-func (ec *Client) BlockByHash(ctx context.Context, hash common.Hash) (*types.Block, error) {
-	return ec.getBlock(ctx, "eth_getBlockByHash", hash, true)
-}
+//func (ec *Client) BlockByHash(ctx context.Context, hash common.Hash) (*types.Block, error) {
+//	return ec.getBlock(ctx, "eth_getBlockByHash", hash, true)
+//}
 
 // BlockByNumber returns a block from the current canonical chain. If number is nil, the
 // latest known block is returned.
 //
 // Note that loading full blocks requires two requests. Use HeaderByNumber
 // if you don't need all transactions or uncle headers.
-func (ec *Client) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
-	return ec.getBlock(ctx, "eth_getBlockByNumber", toBlockNumArg(number), true)
-}
+//func (ec *Client) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
+//	return ec.getBlock(ctx, "eth_getBlockByNumber", toBlockNumArg(number), true)
+//}
 
 type rpcBlock struct {
 	Hash         common.Hash      `json:"hash"`
@@ -84,13 +83,13 @@ type rpcBlock struct {
 	UncleHashes  []common.Hash    `json:"uncles"`
 }
 
-func (ec *Client) getBlock(ctx context.Context, method string, args ...interface{}) (*types.Block, error) {
-	return &types.Block{}, nil
-}
+//func (ec *Client) getBlock(ctx context.Context, method string, args ...interface{}) (*types.Block, error) {
+//	return &types.Block{}, nil
+//}
 
 // HeaderByHash returns the block header with the given hash.
-func (ec *Client) HeaderByHash(ctx context.Context, hash common.Hash) (*types.Header, error) {
-	var head *types.Header
+func (ec *Client) HeaderByHash(ctx context.Context, hash common.Hash) (*modules.Header, error) {
+	var head *modules.Header
 	err := ec.c.CallContext(ctx, &head, "eth_getBlockByHash", hash, false)
 	if err == nil && head == nil {
 		err = palletone.NotFound
@@ -100,8 +99,8 @@ func (ec *Client) HeaderByHash(ctx context.Context, hash common.Hash) (*types.He
 
 // HeaderByNumber returns a block header from the current canonical chain. If number is
 // nil, the latest known header is returned.
-func (ec *Client) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
-	var head *types.Header
+func (ec *Client) HeaderByNumber(ctx context.Context, number *big.Int) (*modules.Header, error) {
+	var head *modules.Header
 	err := ec.c.CallContext(ctx, &head, "eth_getBlockByNumber", toBlockNumArg(number), false)
 	if err == nil && head == nil {
 		err = palletone.NotFound
@@ -110,7 +109,7 @@ func (ec *Client) HeaderByNumber(ctx context.Context, number *big.Int) (*types.H
 }
 
 type rpcTransaction struct {
-	tx *types.Transaction
+	tx *modules.Transaction
 	txExtraInfo
 }
 
@@ -128,17 +127,17 @@ func (tx *rpcTransaction) UnmarshalJSON(msg []byte) error {
 }
 
 // TransactionByHash returns the transaction with the given hash.
-func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error) {
+func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *modules.Transaction, isPending bool, err error) {
 	var json *rpcTransaction
 	err = ec.c.CallContext(ctx, &json, "eth_getTransactionByHash", hash)
-	if err != nil {
-		return nil, false, err
-	} else if json == nil {
-		return nil, false, palletone.NotFound
-	} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
-		return nil, false, fmt.Errorf("server returned transaction without signature")
-	}
-	setSenderFromServer(json.tx, json.From, json.BlockHash)
+	//	if err != nil {
+	//		return nil, false, err
+	//	} else if json == nil {
+	//		return nil, false, palletone.NotFound
+	//	} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
+	//		return nil, false, fmt.Errorf("server returned transaction without signature")
+	//	}
+	//setSenderFromServer(json.tx, json.From, json.BlockHash)
 	return json.tx, json.BlockNumber == nil, nil
 }
 
@@ -148,24 +147,24 @@ func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *
 //
 // There is a fast-path for transactions retrieved by TransactionByHash and
 // TransactionInBlock. Getting their sender address can be done without an RPC interaction.
-func (ec *Client) TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error) {
-	// Try to load the address from the cache.
-	sender, err := types.Sender(&senderFromServer{blockhash: block}, tx)
-	if err == nil {
-		return sender, nil
-	}
-	var meta struct {
-		Hash common.Hash
-		From common.Address
-	}
-	if err = ec.c.CallContext(ctx, &meta, "eth_getTransactionByBlockHashAndIndex", block, hexutil.Uint64(index)); err != nil {
-		return common.Address{}, err
-	}
-	if meta.Hash == (common.Hash{}) || meta.Hash != tx.Hash() {
-		return common.Address{}, errors.New("wrong inclusion block/index")
-	}
-	return meta.From, nil
-}
+//func (ec *Client) TransactionSender(ctx context.Context, tx *modules.Transaction, block common.Hash, index uint) (common.Address, error) {
+//	// Try to load the address from the cache.
+//	sender, err := types.Sender(&senderFromServer{blockhash: block}, tx)
+//	if err == nil {
+//		return sender, nil
+//	}
+//	var meta struct {
+//		Hash common.Hash
+//		From common.Address
+//	}
+//	if err = ec.c.CallContext(ctx, &meta, "eth_getTransactionByBlockHashAndIndex", block, hexutil.Uint64(index)); err != nil {
+//		return common.Address{}, err
+//	}
+//	if meta.Hash == (common.Hash{}) || meta.Hash != tx.Hash() {
+//		return common.Address{}, errors.New("wrong inclusion block/index")
+//	}
+//	return meta.From, nil
+//}
 
 // TransactionCount returns the total number of transactions in the given block.
 func (ec *Client) TransactionCount(ctx context.Context, blockHash common.Hash) (uint, error) {
@@ -175,32 +174,32 @@ func (ec *Client) TransactionCount(ctx context.Context, blockHash common.Hash) (
 }
 
 // TransactionInBlock returns a single transaction at index in the given block.
-func (ec *Client) TransactionInBlock(ctx context.Context, blockHash common.Hash, index uint) (*types.Transaction, error) {
+func (ec *Client) TransactionInBlock(ctx context.Context, blockHash common.Hash, index uint) (*modules.Transaction, error) {
 	var json *rpcTransaction
 	err := ec.c.CallContext(ctx, &json, "eth_getTransactionByBlockHashAndIndex", blockHash, hexutil.Uint64(index))
 	if err == nil {
-		if json == nil {
-			return nil, palletone.NotFound
-		} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
-			return nil, fmt.Errorf("server returned transaction without signature")
-		}
+		//		if json == nil {
+		//			return nil, palletone.NotFound
+		//		} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
+		//			return nil, fmt.Errorf("server returned transaction without signature")
+		//		}
 	}
-	setSenderFromServer(json.tx, json.From, json.BlockHash)
+	//setSenderFromServer(json.tx, json.From, json.BlockHash)
 	return json.tx, err
 }
 
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
 // Note that the receipt is not available for pending transactions.
-func (ec *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
-	var r *types.Receipt
-	err := ec.c.CallContext(ctx, &r, "eth_getTransactionReceipt", txHash)
-	if err == nil {
-		if r == nil {
-			return nil, palletone.NotFound
-		}
-	}
-	return r, err
-}
+//func (ec *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+//	var r *types.Receipt
+//	err := ec.c.CallContext(ctx, &r, "eth_getTransactionReceipt", txHash)
+//	if err == nil {
+//		if r == nil {
+//			return nil, palletone.NotFound
+//		}
+//	}
+//	return r, err
+//}
 
 func toBlockNumArg(number *big.Int) string {
 	if number == nil {
@@ -244,7 +243,7 @@ func (ec *Client) SyncProgress(ctx context.Context) (*palletone.SyncProgress, er
 
 // SubscribeNewHead subscribes to notifications about the current blockchain head
 // on the given channel.
-func (ec *Client) SubscribeNewHead(ctx context.Context, ch chan<- *types.Header) (palletone.Subscription, error) {
+func (ec *Client) SubscribeNewHead(ctx context.Context, ch chan<- *modules.Header) (palletone.Subscription, error) {
 	return ec.c.EthSubscribe(ctx, ch, "newHeads")
 }
 
@@ -416,7 +415,7 @@ func (ec *Client) EstimateGas(ctx context.Context, msg palletone.CallMsg) (uint6
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
 // contract address after the transaction has been mined.
-func (ec *Client) SendTransaction(ctx context.Context, tx *types.Transaction) error {
+func (ec *Client) SendTransaction(ctx context.Context, tx *modules.Transaction) error {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
 		return err

@@ -28,25 +28,22 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/dag/coredata"
-	//"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
-	"github.com/palletone/go-palletone/ptn/gasprice"
 )
 
-type LesServer interface {
-	Start(srvr *p2p.Server)
-	Stop()
-	Protocols() []p2p.Protocol
-	SetBloomBitsIndexer(bbIndexer *coredata.ChainIndexer)
-}
+//type LesServer interface {
+//	Start(srvr *p2p.Server)
+//	Stop()
+//	Protocols() []p2p.Protocol
+//	SetBloomBitsIndexer(bbIndexer *coredata.ChainIndexer)
+//}
 
 // PalletOne implements the PalletOne full node service.
 type PalletOne struct {
@@ -56,7 +53,7 @@ type PalletOne struct {
 	shutdownChan chan bool // Channel for shutting down the PalletOne
 
 	// Handlers
-	txPool          *coredata.TxPool
+	txPool          *txspool.TxPool
 	protocolManager *ProtocolManager
 
 	eventMux       *event.TypeMux
@@ -64,7 +61,7 @@ type PalletOne struct {
 	accountManager *accounts.Manager
 
 	bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
-	bloomIndexer  *coredata.ChainIndexer         // Bloom indexer operating during block imports
+	//bloomIndexer  *coredata.ChainIndexer         // Bloom indexer operating during block imports
 
 	ApiBackend *EthApiBackend
 	gasPrice   *big.Int
@@ -102,7 +99,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		gasPrice:       config.GasPrice,
 		etherbase:      config.Etherbase,
 		bloomRequests:  make(chan chan *bloombits.Retrieval),
-		bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
+		//bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
 	}
 
 	log.Info("Initialising PalletOne protocol", "versions", ProtocolVersions, "network", config.NetworkId)
@@ -110,19 +107,20 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	eth.txPool = coredata.NewTxPool(config.TxPool)
 
-	if eth.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId /*eth.eventMux,*/, eth.txPool, eth.engine); err != nil {
+	eth.txPool = txspool.NewTxPool(config.TxPool)
+
+	if eth.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, eth.txPool, eth.engine); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}
 
-	eth.ApiBackend = &EthApiBackend{eth, nil}
-	gpoParams := config.GPO
-	if gpoParams.Default == nil {
-		gpoParams.Default = config.GasPrice
-	}
-	eth.ApiBackend.gpo = gasprice.NewOracle(eth.ApiBackend, gpoParams)
+	eth.ApiBackend = &EthApiBackend{eth}
+	//	gpoParams := config.GPO
+	//	if gpoParams.Default == nil {
+	//		gpoParams.Default = config.GasPrice
+	//	}
+	//	eth.ApiBackend.gpo = gasprice.NewOracle(eth.ApiBackend, gpoParams)
 	return eth, nil
 }
 
@@ -208,7 +206,7 @@ func (self *PalletOne) SetEtherbase(etherbase common.Address) {
 }
 
 func (s *PalletOne) AccountManager() *accounts.Manager { return s.accountManager }
-func (s *PalletOne) TxPool() *coredata.TxPool          { return s.txPool }
+func (s *PalletOne) TxPool() *txspool.TxPool           { return s.txPool }
 func (s *PalletOne) EventMux() *event.TypeMux          { return s.eventMux }
 
 func (s *PalletOne) Engine() core.ConsensusEngine       { return s.engine }
@@ -243,7 +241,7 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 // Stop implements node.Service, terminating all internal goroutines used by the
 // PalletOne protocol.
 func (s *PalletOne) Stop() error {
-	s.bloomIndexer.Close()
+	//s.bloomIndexer.Close()
 	s.protocolManager.Stop()
 	s.txPool.Stop()
 	//	s.engine.Stop()

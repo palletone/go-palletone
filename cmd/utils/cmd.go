@@ -18,23 +18,23 @@
 package utils
 
 import (
-	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
 	"runtime"
-	"strings"
 	"syscall"
 
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
+	//"github.com/palletone/go-palletone/common"
+	//"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/core/types"
+
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/dag/coredata"
+	//"github.com/palletone/go-palletone/dag/modules"
+	"compress/gzip"
+	"strings"
+
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/internal/debug"
 )
 
@@ -85,7 +85,7 @@ func StartNode(stack *node.Node) {
 	}()
 }
 
-func ImportChain(chain *coredata.BlockChain, fn string) error {
+func ImportChain(fn string) error {
 	// Watch for Ctrl-C while the import is running.
 	// If a signal is received, the import will stop at the next batch.
 	interrupt := make(chan os.Signal, 1)
@@ -124,68 +124,52 @@ func ImportChain(chain *coredata.BlockChain, fn string) error {
 		}
 	}
 	stream := rlp.NewStream(reader, 0)
-
+	stream = stream
 	// Run actual the import.
-	blocks := make(types.Blocks, importBatchSize)
-	n := 0
+
+	//blocks := make(types.Blocks, importBatchSize)
+	//n := 0
 	for batch := 0; ; batch++ {
 		// Load a batch of RLP blocks.
 		if checkInterrupt() {
 			return fmt.Errorf("interrupted")
 		}
-		i := 0
-		for ; i < importBatchSize; i++ {
-			var b types.Block
-			if err := stream.Decode(&b); err == io.EOF {
-				break
-			} else if err != nil {
-				return fmt.Errorf("at block %d: %v", n, err)
-			}
-			// don't import first block
-			if b.NumberU64() == 0 {
-				i--
-				continue
-			}
-			blocks[i] = &b
-			n++
-		}
-		if i == 0 {
-			break
-		}
-		// Import the batch.
-		if checkInterrupt() {
-			return fmt.Errorf("interrupted")
-		}
-		missing := missingBlocks(chain, blocks[:i])
-		if len(missing) == 0 {
-			log.Info("Skipping batch as all blocks present", "batch", batch, "first", blocks[0].Hash(), "last", blocks[i-1].Hash())
-			continue
-		}
-		if _, err := chain.InsertChain(missing); err != nil {
-			return fmt.Errorf("invalid block %d: %v", n, err)
-		}
+		//		i := 0
+		//		for ; i < importBatchSize; i++ {
+		//			var b types.Block
+		//			if err := stream.Decode(&b); err == io.EOF {
+		//				break
+		//			} else if err != nil {
+		//				return fmt.Errorf("at block %d: %v", n, err)
+		//			}
+		//			// don't import first block
+		//			if b.NumberU64() == 0 {
+		//				i--
+		//				continue
+		//			}
+		//			blocks[i] = &b
+		//			n++
+		//		}
+		//		if i == 0 {
+		//			break
+		//		}
+		//		// Import the batch.
+		//		if checkInterrupt() {
+		//			return fmt.Errorf("interrupted")
+		//		}
+		//		missing := missingBlocks(chain, blocks[:i])
+		//		if len(missing) == 0 {
+		//			log.Info("Skipping batch as all blocks present", "batch", batch, "first", blocks[0].Hash(), "last", blocks[i-1].Hash())
+		//			continue
+		//		}
+		//		if _, err := chain.InsertChain(missing); err != nil {
+		//			return fmt.Errorf("invalid block %d: %v", n, err)
+		//		}
 	}
 	return nil
 }
 
-func missingBlocks(chain *coredata.BlockChain, blocks []*types.Block) []*types.Block {
-	head := chain.CurrentBlock()
-	for i, block := range blocks {
-		// If we're behind the chain head, only check block, state is available at head
-		if head.NumberU64() > block.NumberU64() {
-			if !chain.HasBlock(block.Hash(), block.NumberU64()) {
-				return blocks[i:]
-			}
-			continue
-		}
-		// If we're above the chain head, state availability is a must
-		if !chain.HasBlockAndState(block.Hash(), block.NumberU64()) {
-			return blocks[i:]
-		}
-	}
-	return nil
-}
-
+/*
 // ExportChain exports a blockchain into the specified file, truncating any data
 // already present in the file.
 func ExportChain(blockchain *coredata.BlockChain, fn string) error {
@@ -312,3 +296,4 @@ func ExportPreimages(db *ptndb.LDBDatabase, fn string) error {
 	log.Info("Exported preimages", "file", fn)
 	return nil
 }
+*/

@@ -58,8 +58,11 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	config := testTxPoolConfig
 	config.GlobalSlots = 0
+	var queue_cache, queue_item, all, origin int
+	//pool := NewTxPool(config, unitchain)
+	unitchain = unitchain //would recover
+	pool := NewTxPool(config)
 
-	pool := NewTxPool(config, unitchain)
 	defer pool.Stop()
 
 	// Create a number of test accounts and fund them
@@ -84,13 +87,13 @@ func TestTransactionAddingTxs(t *testing.T) {
 	// Import the batch and verify that limits have been enforced
 	//pool.AddRemotes(txs)
 	for i, tx := range txs {
-		txs[i].Txsize = tx.Size()
 		if txs[i].Txsize > 0 {
 			continue
 		} else {
 			log.Println("bad tx:", tx.Hash().String(), tx.Txsize)
 		}
 	}
+	origin = len(txs)
 	pool.AddLocals(txs)
 
 	log.Println("pending:", len(pool.pending))
@@ -98,15 +101,18 @@ func TestTransactionAddingTxs(t *testing.T) {
 	for addr, list := range pool.queue {
 		if list.Len() != int(config.AccountSlots) {
 			t.Errorf("addr %x: total pending transactions mismatch: have %d, want %d", addr, list.Len(), config.AccountSlots)
-		} else {
-			log.Println("account matched.", "queue addr:", addr.String(), "amont:", list.Len())
-			for _, tx := range list.txs.cache {
-				log.Println("cache tx:", tx.Txsize, tx.Hash().String(), tx.GetPriorityLvl())
-			}
-			for key, tx := range list.txs.items {
-				log.Println("iteme tx:", key, tx.Txsize, tx.Hash().String(), tx.GetPriorityLvl())
-			}
 		}
+		// Println queue list.
+		queue_cache = len(list.txs.cache)
+		queue_item = len(list.txs.items)
+		// log.Println("account matched.", "queue addr:", addr.String(), "amont:", list.Len())
+		// for _, tx := range list.txs.cache {
+		// 	log.Println("cache tx:", tx.Hash().String(), tx.Txsize, tx.PriorityLvl())
+		// }
+		// for key, tx := range list.txs.items {
+		// 	log.Println("iteme tx:", key, tx.Hash().String(), tx.Txsize, tx.PriorityLvl())
+		// }
+
 	}
 	for addr, list := range pool.pending {
 		if list.Len() != int(config.AccountSlots) {
@@ -115,6 +121,22 @@ func TestTransactionAddingTxs(t *testing.T) {
 			log.Println("account matched.", "pending addr:", addr.String(), "amont:", list.Len())
 		}
 	}
+	//  test GetSortedTxs{}
+	defer func(p *TxPool) {
+		txs := pool.GetSortedTxs()
+
+		for i, tx := range txs {
+			if i < len(txs)-1 {
+				if txs[i].PriorityLvl() < txs[i+1].PriorityLvl() {
+					t.Error("sorted failed.", i, tx.PriorityLvl())
+				}
+			}
+		}
+		all = len(txs)
+
+		log.Println(origin, all, queue_cache, queue_item, txs[10])
+
+	}(pool)
 }
 func transaction(nonce uint64, addr common.Address, txfee uint64, key *ecdsa.PrivateKey) *modules.Transaction {
 	return pricedTransaction(nonce, addr, new(big.Int).SetUint64(txfee), key)

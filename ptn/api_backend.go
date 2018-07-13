@@ -27,56 +27,41 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/core/types"
-	"github.com/palletone/go-palletone/dag/coredata"
+	//"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/ptn/gasprice"
 )
 
 // EthApiBackend implements ethapi.Backend for full nodes
 type EthApiBackend struct {
 	eth *PalletOne
-	gpo *gasprice.Oracle
+	//gpo *gasprice.Oracle
 }
 
 func (b *EthApiBackend) ChainConfig() *configure.ChainConfig {
 	return nil
 }
 
-func (b *EthApiBackend) CurrentBlock() *types.Block {
-	return &types.Block{}
-}
-
 func (b *EthApiBackend) SetHead(number uint64) {
 	b.eth.protocolManager.downloader.Cancel()
 }
 
-func (b *EthApiBackend) HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Header, error) {
+func (b *EthApiBackend) HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*modules.Header, error) {
 	// Pending block is only known by the miner
-	return &types.Header{}, nil
+	return &modules.Header{}, nil
 }
 
-func (b *EthApiBackend) BlockByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Block, error) {
-	return &types.Block{}, nil
-}
-
-func (b *EthApiBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB, *types.Header, error) {
-	return &state.StateDB{}, &types.Header{}, nil
-}
-
-func (b *EthApiBackend) GetBlock(ctx context.Context, blockHash common.Hash) (*types.Block, error) {
-	return &types.Block{}, nil
-}
-
-func (b *EthApiBackend) GetReceipts(ctx context.Context, blockHash common.Hash) (types.Receipts, error) {
-	return types.Receipts{}, nil
+func (b *EthApiBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB, *modules.Header, error) {
+	return &state.StateDB{}, &modules.Header{}, nil
 }
 
 func (b *EthApiBackend) GetTd(blockHash common.Hash) *big.Int {
 	return &big.Int{}
 }
 
+/*
 func (b *EthApiBackend) SubscribeChainEvent(ch chan<- coredata.ChainEvent) event.Subscription {
 	return nil
 }
@@ -88,45 +73,45 @@ func (b *EthApiBackend) SubscribeChainHeadEvent(ch chan<- coredata.ChainHeadEven
 func (b *EthApiBackend) SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription {
 	return nil
 }
-
+*/
 func (b *EthApiBackend) SendConsensus(ctx context.Context) error {
 	b.eth.Engine().Engine()
 	return nil
 }
 
-func (b *EthApiBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {
+func (b *EthApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
 	return b.eth.txPool.AddLocal(signedTx)
 }
 
-func (b *EthApiBackend) GetPoolTransactions() (types.Transactions, error) {
+func (b *EthApiBackend) GetPoolTransactions() (modules.Transactions, error) {
 	pending, err := b.eth.txPool.Pending()
 	if err != nil {
 		return nil, err
 	}
-	var txs types.Transactions
+	var txs modules.Transactions
 	for _, batch := range pending {
 		txs = append(txs, batch...)
 	}
 	return txs, nil
 }
 
-func (b *EthApiBackend) GetPoolTransaction(hash common.Hash) *types.Transaction {
+func (b *EthApiBackend) GetPoolTransaction(hash common.Hash) *modules.Transaction {
 	return b.eth.txPool.Get(hash)
 }
 
-func (b *EthApiBackend) GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error) {
-	return b.eth.txPool.State().GetNonce(addr), nil
-}
+//func (b *EthApiBackend) GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error) {
+//	return b.eth.txPool.State().GetNonce(addr), nil
+//}
 
 func (b *EthApiBackend) Stats() (pending int, queued int) {
 	return b.eth.txPool.Stats()
 }
 
-func (b *EthApiBackend) TxPoolContent() (map[common.Address]types.Transactions, map[common.Address]types.Transactions) {
+func (b *EthApiBackend) TxPoolContent() (map[common.Address]modules.Transactions, map[common.Address]modules.Transactions) {
 	return b.eth.TxPool().Content()
 }
 
-func (b *EthApiBackend) SubscribeTxPreEvent(ch chan<- coredata.TxPreEvent) event.Subscription {
+func (b *EthApiBackend) SubscribeTxPreEvent(ch chan<- txspool.TxPreEvent) event.Subscription {
 	return b.eth.TxPool().SubscribeTxPreEvent(ch)
 }
 
@@ -139,7 +124,7 @@ func (b *EthApiBackend) ProtocolVersion() int {
 }
 
 func (b *EthApiBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
-	return b.gpo.SuggestPrice(ctx)
+	return &big.Int{}, nil
 }
 
 func (b *EthApiBackend) ChainDb() ptndb.Database {
@@ -155,8 +140,7 @@ func (b *EthApiBackend) AccountManager() *accounts.Manager {
 }
 
 func (b *EthApiBackend) BloomStatus() (uint64, uint64) {
-	sections, _, _ := b.eth.bloomIndexer.Sections()
-	return configure.BloomBitsBlocks, sections
+	return uint64(0), uint64(0)
 }
 
 func (b *EthApiBackend) ServiceFilter(ctx context.Context, session *bloombits.MatcherSession) {

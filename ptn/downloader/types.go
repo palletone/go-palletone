@@ -19,7 +19,7 @@ package downloader
 import (
 	"fmt"
 
-	"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // peerDropFn is a callback type for dropping a peer detected as malicious.
@@ -35,7 +35,7 @@ type dataPack interface {
 // headerPack is a batch of block headers returned by a peer.
 type headerPack struct {
 	peerId  string
-	headers []*types.Header
+	headers []*modules.Header
 }
 
 func (p *headerPack) PeerId() string { return p.peerId }
@@ -45,8 +45,8 @@ func (p *headerPack) Stats() string  { return fmt.Sprintf("%d", len(p.headers)) 
 // bodyPack is a batch of block bodies returned by a peer.
 type bodyPack struct {
 	peerId       string
-	transactions [][]*types.Transaction
-	uncles       [][]*types.Header
+	transactions [][]*modules.Transaction
+	uncles       [][]*modules.Header
 }
 
 func (p *bodyPack) PeerId() string { return p.peerId }
@@ -60,13 +60,14 @@ func (p *bodyPack) Stats() string { return fmt.Sprintf("%d:%d", len(p.transactio
 
 // receiptPack is a batch of receipts returned by a peer.
 type receiptPack struct {
-	peerId   string
-	receipts [][]*types.Receipt
+	peerId string
+	//receipts [][]*types.Receipt
 }
 
 func (p *receiptPack) PeerId() string { return p.peerId }
-func (p *receiptPack) Items() int     { return len(p.receipts) }
-func (p *receiptPack) Stats() string  { return fmt.Sprintf("%d", len(p.receipts)) }
+
+//func (p *receiptPack) Items() int     { return 0 }
+func (p *receiptPack) Stats() string { return "" }
 
 // statePack is a batch of states returned by a peer.
 type statePack struct {

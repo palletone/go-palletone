@@ -16,6 +16,7 @@
 
 package types
 
+/*
 import (
 	"crypto/ecdsa"
 	"errors"
@@ -25,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
@@ -163,7 +165,7 @@ func (s EIP155Signer) Hash(tx *Transaction) common.Hash {
 		s.chainId, uint(0), uint(0),
 	})
 }
-*/
+
 // HomesteadTransaction implements TransactionInterface using the
 // homestead rules.
 type HomesteadSigner struct{ FrontierSigner }
@@ -251,3 +253,4 @@ func deriveChainId(v *big.Int) *big.Int {
 	v = new(big.Int).Sub(v, big.NewInt(35))
 	return v.Div(v, big.NewInt(2))
 }
+*/

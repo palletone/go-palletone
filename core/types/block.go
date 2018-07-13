@@ -50,8 +50,9 @@ type Body struct{}
 
 func (b *Block) Hash() common.Hash { return common.Hash{} }
 
-func (b *Block) Uncles() []*Header          { return []*Header{} }
-func (b *Block) Transactions() Transactions { return Transactions{} }
+func (b *Block) Uncles() []*Header { return []*Header{} }
+
+//func (b *Block) Transactions() Transactions { return Transactions{} }
 
 func (b *Block) Number() *big.Int         { return &big.Int{} }
 func (b *Block) GasLimit() uint64         { return uint64(0) }

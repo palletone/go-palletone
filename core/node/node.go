@@ -44,14 +44,14 @@ import (
 // 运行了不同的业务层协议(以区别网络层协议。 参考p2p peer中的Protocol接口)。
 type Node struct {
 	// 服务之间的事件锁
-	eventmux *event.TypeMux // Event multiplexer used between the services of a stack
-	config   *Config	// 节点的配置信息，副本
-	accman   *accounts.Manager	// 账户管理器
+	eventmux *event.TypeMux    // Event multiplexer used between the services of a stack
+	config   *Config           // 节点的配置信息，副本
+	accman   *accounts.Manager // 账户管理器
 
 	// 临时的 Keystore 目录， 当 node.stop() 时，即 node 进程结束时移除
-	ephemeralKeystore string         // if non-empty, the key directory that will be removed by Stop
+	ephemeralKeystore string // if non-empty, the key directory that will be removed by Stop
 	// 实例化目录锁，防止并发使用实例目录
-	instanceDirLock   flock.Releaser // prevents concurrent use of instance directory
+	instanceDirLock flock.Releaser // prevents concurrent use of instance directory
 
 	// --- P2P 相关对象 -- Start
 	serverConfig p2p.Config
@@ -60,39 +60,39 @@ type Node struct {
 
 	// --- 服务相关对象 -- Start
 	// 函数指针数组，保存所有注册Service的构造函数
-	serviceFuncs []ServiceConstructor     // Service constructors (in dependency order)
+	serviceFuncs []ServiceConstructor // Service constructors (in dependency order)
 	// 当前节点的所有service ，按type分类保存
-	services     map[reflect.Type]Service // Currently running services
+	services map[reflect.Type]Service // Currently running services
 	// --- 服务相关对象 -- End
 
 	// --- RPC 相关对象 -- Start
 	// RPC 提供的 API
-	rpcAPIs       []rpc.API   // List of APIs currently provided by the node
+	rpcAPIs []rpc.API // List of APIs currently provided by the node
 	// InProc RPC 消息处理
 	inprocHandler *rpc.Server // In-process RPC request handler to process the API requests
 
 	// IPC 端点
-	ipcEndpoint string       // IPC endpoint to listen at (empty = IPC disabled)
+	ipcEndpoint string // IPC endpoint to listen at (empty = IPC disabled)
 	// IPC API 服务监听
 	ipcListener net.Listener // IPC RPC listener socket to serve API requests
 	// IPC API 消息处理
-	ipcHandler  *rpc.Server  // IPC RPC request handler to process the API requests
+	ipcHandler *rpc.Server // IPC RPC request handler to process the API requests
 
 	// HTTP 端点
-	httpEndpoint  string       // HTTP endpoint (interface + port) to listen at (empty = HTTP disabled)
+	httpEndpoint string // HTTP endpoint (interface + port) to listen at (empty = HTTP disabled)
 	// HTTP 白名单
-	httpWhitelist []string     // HTTP RPC modules to allow through this endpoint
+	httpWhitelist []string // HTTP RPC modules to allow through this endpoint
 	// HTTP API 服务监听
-	httpListener  net.Listener // HTTP RPC listener socket to server API requests
+	httpListener net.Listener // HTTP RPC listener socket to server API requests
 	// HTTP API 消息处理
-	httpHandler   *rpc.Server  // HTTP RPC request handler to process the API requests
+	httpHandler *rpc.Server // HTTP RPC request handler to process the API requests
 
 	// Websocket 端点
-	wsEndpoint string       // Websocket endpoint (interface + port) to listen at (empty = websocket disabled)
+	wsEndpoint string // Websocket endpoint (interface + port) to listen at (empty = websocket disabled)
 	// Websocket API 服务监听
 	wsListener net.Listener // Websocket RPC listener socket to server API requests
 	// Websocket API 消息处理
-	wsHandler  *rpc.Server  // Websocket RPC request handler to process the API requests
+	wsHandler *rpc.Server // Websocket RPC request handler to process the API requests
 	// --- RPC 相关对象 -- End
 
 	// 节点的等待终止通知的channel, node.New()时不创建，node.Start()时创建
@@ -212,7 +212,7 @@ func (n *Node) Start() error {
 		// Create a new context for the particular service
 		// 为每个service 分别新建一个ServiceContext 结构
 		ctx := &ServiceContext{
-			config:         n.config,
+			config: n.config,
 			//记录之前的所有serviceFuncs 的kind，service，方便其他service使用
 			services:       make(map[reflect.Type]Service),
 			EventMux:       n.eventmux,
@@ -323,16 +323,19 @@ func (n *Node) startRPC(services map[reflect.Type]Service) error {
 	// Start the various API endpoints, terminating all in case of errors
 	// 1. 启动 InProc，用于进程内部的通信，严格来说这种不能算是RPC, 出于架构上的统一
 	if err := n.startInProc(apis); err != nil {
+		log.Error("startRPC startInProc err:", err.Error())
 		return err
 	}
 
 	// 2. 启动 IPC，用于节点内进程间的通信
 	if err := n.startIPC(apis); err != nil {
+		log.Error("startRPC startIPC err:", err.Error())
 		n.stopInProc()
 		return err
 	}
 	// 3. 启动 HTTP，用于 HTTP 的交互通信
 	if err := n.startHTTP(n.httpEndpoint, apis, n.config.HTTPModules, n.config.HTTPCors, n.config.HTTPVirtualHosts); err != nil {
+		log.Error("startRPC startHTTP err:", err.Error())
 		n.stopIPC()
 		n.stopInProc()
 		return err
@@ -375,10 +378,12 @@ func (n *Node) stopInProc() {
 // startIPC initializes and starts the IPC RPC endpoint.
 func (n *Node) startIPC(apis []rpc.API) error {
 	if n.ipcEndpoint == "" {
+		log.Info("startIPC ipcEndpoint is null")
 		return nil // IPC disabled.
 	}
 	listener, handler, err := rpc.StartIPCEndpoint(n.ipcEndpoint, apis)
 	if err != nil {
+		log.Info("startIPC StartIPCEndpoint err:", err.Error())
 		return err
 	}
 	n.ipcListener = listener

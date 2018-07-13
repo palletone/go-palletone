@@ -20,7 +20,7 @@ import (
 	"testing"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/dag/modules"
 
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
@@ -82,10 +82,11 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 	// Run each of the tests and verify the results against the chain
 	for i, tt := range tests {
 		// Collect the headers to expect in the response
-		headers := []*types.Header{}
+		headers := []*modules.Header{}
 		for _, hash := range tt.expect {
 			//headers = append(headers, pm.blockchain.GetBlockByHash(hash).Header())
-			headers = append(headers,&types.Header{ParentHash:hash})
+			hash = hash
+			headers = append(headers,&modules.Header{})
 		}
 		// Send the hash request and verify the response
 		p2p.Send(peer.app, 0x03, tt.query)

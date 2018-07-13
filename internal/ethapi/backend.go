@@ -26,10 +26,11 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/dag/coredata"
+	//"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -46,27 +47,27 @@ type Backend interface {
 
 	// BlockChain API
 	SetHead(number uint64)
-	HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Header, error)
-	BlockByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Block, error)
-	StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB, *types.Header, error)
-	GetBlock(ctx context.Context, blockHash common.Hash) (*types.Block, error)
-	GetReceipts(ctx context.Context, blockHash common.Hash) (types.Receipts, error)
+	HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*modules.Header, error)
+	//BlockByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Block, error)
+	StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB, *modules.Header, error)
+	//GetBlock(ctx context.Context, blockHash common.Hash) (*types.Block, error)
+	//GetReceipts(ctx context.Context, blockHash common.Hash) (types.Receipts, error)
 	GetTd(blockHash common.Hash) *big.Int
-	SubscribeChainEvent(ch chan<- coredata.ChainEvent) event.Subscription
-	SubscribeChainHeadEvent(ch chan<- coredata.ChainHeadEvent) event.Subscription
-	SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription
+	//SubscribeChainEvent(ch chan<- coredata.ChainEvent) event.Subscription
+	//SubscribeChainHeadEvent(ch chan<- coredata.ChainHeadEvent) event.Subscription
+	//SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription
 
 	// TxPool API
-	SendTx(ctx context.Context, signedTx *types.Transaction) error
-	GetPoolTransactions() (types.Transactions, error)
-	GetPoolTransaction(txHash common.Hash) *types.Transaction
-	GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
+	SendTx(ctx context.Context, signedTx *modules.Transaction) error
+	GetPoolTransactions() (modules.Transactions, error)
+	GetPoolTransaction(txHash common.Hash) *modules.Transaction
+	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
 	Stats() (pending int, queued int)
-	TxPoolContent() (map[common.Address]types.Transactions, map[common.Address]types.Transactions)
-	SubscribeTxPreEvent(chan<- coredata.TxPreEvent) event.Subscription
+	TxPoolContent() (map[common.Address]modules.Transactions, map[common.Address]modules.Transactions)
+	SubscribeTxPreEvent(chan<- txspool.TxPreEvent) event.Subscription
 
 	ChainConfig() *configure.ChainConfig
-	CurrentBlock() *types.Block
+	//CurrentBlock() *types.Block
 
 	//test
 	SendConsensus(ctx context.Context) error
