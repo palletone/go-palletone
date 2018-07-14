@@ -36,7 +36,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 )
@@ -78,7 +77,7 @@ type ProtocolManager struct {
 	SubProtocols []p2p.Protocol
 
 	//eventMux      *event.TypeMux
-	txCh  chan txspool.TxPreEvent
+	txCh  chan modules.TxPreEvent
 	txSub event.Subscription
 	//minedBlockSub *event.TypeMuxSubscription
 
@@ -214,7 +213,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	//go pm.txsyncLoop()
 
 	// broadcast transactions
-	pm.txCh = make(chan txspool.TxPreEvent, txChanSize)
+	pm.txCh = make(chan modules.TxPreEvent, txChanSize)
 	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
 	go pm.txBroadcastLoop()
 	/*

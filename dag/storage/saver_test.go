@@ -45,7 +45,7 @@ func TestSaveJoint(t *testing.T) {
 	ty = append(ty, modules.PTNCOIN, modules.BTCCOIN)
 	log.Println("assets:", ty[0].String(), ty[1].String())
 	p = append(p, common.HexToHash("123"), common.HexToHash("456"))
-	h := modules.NewHeader(p, ty, uint64(111), uint64(222), []byte("hello"))
+	h := modules.NewHeader(p, ty, uint64(111), []byte("hello"))
 	txs := make(modules.Transactions, 0)
 	u := modules.NewUnit(h, txs)
 	err := SaveJoint(&modules.Joint{Unit: u},

@@ -34,11 +34,9 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	//"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/common/ptndb"
-
 )
 
 var (
@@ -127,13 +125,13 @@ func (p *testTxPool) Pending() (map[common.Address]modules.Transactions, error) 
 	return batches, nil
 }
 
-func (p *testTxPool) SubscribeTxPreEvent(ch chan<- txspool.TxPreEvent) event.Subscription {
+func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return p.txFeed.Subscribe(ch)
 }
 
 // newTestTransaction create a new dummy transaction.
 func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *modules.Transaction {
-	tx := modules.NewTransaction(nonce, common.Address{}, big.NewInt(0), []byte("abc"))
+	tx := modules.NewTransaction(nonce, big.NewInt(0), []byte("abc"))
 	//tx, _ = keystore.SigTX(tx, types.HomesteadSigner{}, from)
 	return tx
 }

@@ -22,6 +22,8 @@ import (
 	"sync"
 
 	"github.com/coocood/freecache"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 )
 
@@ -29,7 +31,27 @@ type Dag struct {
 	Cache *freecache.Cache
 	Db    *palletdb.LDBDatabase
 
-	GenesisUnit *Unit
+	Mdb           *palletdb.MemDatabase
+	ChainHeadFeed *event.Feed
+	GenesisUnit   *Unit
 
 	Mutex sync.RWMutex
+}
+
+func (d *Dag) CurrentUnit() *Unit {
+	return NewUnit(&Header{
+		Extra: []byte("test pool"),
+	}, nil)
+}
+
+func (d *Dag) GetUnit(hash common.Hash, number uint64) *Unit {
+	return d.CurrentUnit()
+}
+
+func (d *Dag) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
+	return d.Mdb, nil
+}
+
+func (d *Dag) SubscribeChainHeadEvent(ch chan<- ChainHeadEvent) event.Subscription {
+	return d.ChainHeadFeed.Subscribe(ch)
 }

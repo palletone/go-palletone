@@ -18,24 +18,31 @@
 
 package common
 
-//import (
-//	"sync"
-//
-//	"github.com/palletone/go-palletone/dag/dagconfig"
-//	"github.com/palletone/go-palletone/dag/modules"
-//	"github.com/palletone/go-palletone/dag/storage"
-//	"github.com/coocood/freecache"
-//)
-//
-//func NewDag() *modules.Dag {
-//	if storage.Dbconn == nil {
-//		storage.ReNewDbConn(dagconfig.Config.DbPath)
-//	}
-//	genesis := modules.NewGenesis()
-//	return &modules.Dag{Cache: freecache.NewCache(200 * 1024 * 1024),
-//		Db:          storage.Dbconn,
-//		GenesisUnit: genesis,
-//		Mutex:       sync.RWMutex,
-//	}
-//
-//}
+import (
+	"sync"
+
+	"github.com/coocood/freecache"
+	"github.com/palletone/go-palletone/common/event"
+	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
+)
+
+func NewDag() *modules.Dag {
+	if storage.Dbconn == nil {
+		storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+	genesis, _ := NewGenesisUnit(nil)
+	db, _ := palletdb.NewMemDatabase()
+	mutex := new(sync.RWMutex)
+	return &modules.Dag{
+		Cache:         freecache.NewCache(200 * 1024 * 1024),
+		Db:            storage.Dbconn,
+		Mdb:           db,
+		GenesisUnit:   genesis,
+		ChainHeadFeed: new(event.Feed),
+		Mutex:         *mutex,
+	}
+
+}
