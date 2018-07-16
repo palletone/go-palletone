@@ -8,7 +8,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -37,7 +36,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		Dag dagconfig.Config
 		Log log.Config
 		//		Consensus consensusconfig.Config
-		MediatorPlugin mp.Config
+//		MediatorPlugin mp.Config
 		DocRoot        string `toml:"-"`
 	}
 	var enc Config
@@ -80,7 +79,7 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		Dag                     *dagconfig.Config
 		Log                     *log.Config
 		//		Consensus               *consensusconfig.Config
-		MediatorPlugin *mp.Config
+//		MediatorPlugin *mp.Config
 		DocRoot        *string `toml:"-"`
 	}
 	var dec Config
