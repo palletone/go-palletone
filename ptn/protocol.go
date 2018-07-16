@@ -25,7 +25,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 // Constants to match up protocol versions and messages
@@ -104,7 +103,7 @@ type txPool interface {
 
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.
-	SubscribeTxPreEvent(chan<- txspool.TxPreEvent) event.Subscription
+	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 }
 
 // statusData is the network packet for the status message.

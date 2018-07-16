@@ -8,6 +8,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -54,7 +55,7 @@ func (m *txSortedMap) Get(nonce uint64) *modules.Transaction {
 func (m *txSortedMap) GetNonce(addr common.Address) uint64 {
 	if m.items != nil {
 		for key, v := range m.items {
-			if v.From.Address == addr {
+			if dagcommon.RSVtoAddress(v) == addr {
 				return key
 			}
 		}

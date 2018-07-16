@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/node"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -107,8 +108,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-
-	eth.txPool = txspool.NewTxPool(config.TxPool)
+	unit := dagcommon.NewDag()
+	eth.txPool = txspool.NewTxPool(config.TxPool, unit)
 
 	if eth.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, eth.txPool, eth.engine); err != nil {
 		log.Error("NewProtocolManager err:", err)

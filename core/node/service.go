@@ -87,13 +87,15 @@ type ServiceConstructor func(ctx *ServiceContext) (Service, error)
 // • Restart logic is not required as the node will create a fresh instance
 // every time a service is started.
 // Service是一个接口，定义了4个需要实现的函数。任何实现了这4个方法的类型，都可以称之为一个Service。
+// 服务的生命周期管理已经代理给node管理。该服务允许在创建时自动初始化，但是在Start方法之外不应该启动goroutines。
+// 重新启动逻辑不是必需的，因为节点将在每次启动服务时创建一个新的实例。
 type Service interface {
 	// Protocols retrieves the P2P protocols the service wishes to start.
 	// 返回 service 要启动的 P2P 协议列表
 	Protocols() []p2p.Protocol
 
 	// APIs retrieves the list of RPC descriptors the service provides
-	// 返回本 service 可提供的 RPC 接口
+	// 返回本 service 能提供的 RPC API 接口
 	APIs() []rpc.API
 
 	// Start is called after all services have been constructed and the networking

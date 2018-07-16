@@ -191,9 +191,11 @@ func (n *Node) Start() error {
 	n.serverConfig.PrivateKey = n.config.NodeKey()
 	n.serverConfig.Name = n.config.NodeName()
 	n.serverConfig.Logger = n.log
+	// 配置固定的节点
 	if n.serverConfig.StaticNodes == nil {
 		n.serverConfig.StaticNodes = n.config.StaticNodes()
 	}
+	// 配置信任的节点
 	if n.serverConfig.TrustedNodes == nil {
 		n.serverConfig.TrustedNodes = n.config.TrustedNodes()
 	}
@@ -223,7 +225,7 @@ func (n *Node) Start() error {
 			ctx.services[kind] = s
 		}
 		// Construct and save the service
-		// 构建和保存所有的 service
+		// 构建和保存所有的 service, 即调用所有 Service 的匿名 Constructor 函数
 		service, err := constructor(ctx)
 		if err != nil {
 			return err
@@ -311,10 +313,11 @@ func (n *Node) openDataDir() error {
 // startup. It's not meant to be called at any time afterwards as it makes certain
 // assumptions about the state of the node.
 // 启动4项RPC服务. 每种RPC服务都需要提供一个handler，
+// 如果任何一个RPC启动失败，结束所有RPC endpoint，并返回err。
 // 另外除了InProc之外，其他3种服务还需要启动一个server来监听外部连接请求。
 func (n *Node) startRPC(services map[reflect.Type]Service) error {
 	// Gather all the possible APIs to surface
-	// 收集所有可能的API接口
+	// 收集所有可能的API接口, 并把收集的APIs传给 RPC endpoint。
 	apis := n.apis()
 	for _, service := range services {
 		apis = append(apis, service.APIs()...)

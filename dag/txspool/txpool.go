@@ -3,7 +3,8 @@ package txspool
 import (
 	"errors"
 	"fmt"
-	//"math"
+	"github.com/palletone/go-palletone/dag/dagconfig"
+	"math"
 	"math/big"
 	"sort"
 	"sync"
@@ -12,6 +13,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	//"github.com/palletone/go-palletone/metrics"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
@@ -66,7 +68,7 @@ type units interface {
 	GetUnit(hash common.Hash, number uint64) *modules.Unit
 	//StateAt(root common.Hash) (*state.StateDB, error)
 
-	SubscribeChainHeadEvent(ch chan<- ChainHeadEvent) event.Subscription
+	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
@@ -125,7 +127,7 @@ type TxPool struct {
 	txfee        *big.Int
 	txFeed       event.Feed
 	scope        event.SubscriptionScope
-	chainHeadCh  chan ChainHeadEvent
+	chainHeadCh  chan modules.ChainHeadEvent
 	chainHeadSub event.Subscription
 	mu           sync.RWMutex
 
@@ -147,7 +149,7 @@ type TxPool struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config TxPoolConfig /*, unit units*/) *TxPool { // chainconfig *params.ChainConfig,
+func NewTxPool(config TxPoolConfig, unit units) *TxPool { // chainconfig *params.ChainConfig,
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 
@@ -160,7 +162,7 @@ func NewTxPool(config TxPoolConfig /*, unit units*/) *TxPool { // chainconfig *p
 		queue:       make(map[common.Address]*txList),
 		beats:       make(map[common.Address]time.Time),
 		all:         make(map[common.Hash]*modules.Transaction),
-		chainHeadCh: make(chan ChainHeadEvent, chainHeadChanSize),
+		chainHeadCh: make(chan modules.ChainHeadEvent, chainHeadChanSize),
 		txfee:       new(big.Int).SetUint64(config.FeeLimit),
 	}
 	pool.locals = newAccountSet()
@@ -269,93 +271,88 @@ func (pool *TxPool) loop() {
 // reset retrieves the current state of the blockchain and ensures the content
 // of the transaction pool is valid with regard to the chain state.
 func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
-	/*
-				// If we're reorging an old state, reinject all dropped transactions
-				var reinject modules.Transactions
 
-				if oldHead != nil && modules.HeaderEqual(oldHead, newHead) {
-					// If the reorg is too deep, avoid doing it (will happen during fast sync)
-					oldNum := oldHead.Index()
-					newNum := newHead.Index()
+	// If we're reorging an old state, reinject all dropped transactions
+	var reinject modules.Transactions
 
-					if depth := uint64(math.Abs(float64(oldNum) - float64(newNum))); depth > 64 {
-						log.Debug("Skipping deep transaction reorg", "depth", depth)
-					} else {
-						// Reorg seems shallow enough to pull in all transactions into memory
-						var discarded, included modules.Transactions
+	if oldHead != nil && modules.HeaderEqual(oldHead, newHead) {
+		// If the reorg is too deep, avoid doing it (will happen during fast sync)
+		oldNum := oldHead.Index()
+		newNum := newHead.Index()
 
-						var (
-							rem = pool.unit.GetUnit(oldHead.Hash(), oldHead.Index())
-							add = pool.unit.GetUnit(newHead.Hash(), newHead.Index())
-						)
-						for rem.NumberU64() > add.NumberU64() {
-							discarded = append(discarded, rem.Transactions()...)
-							if rem = pool.unit.GetUnit(rem.ParentHash()[0], rem.NumberU64()-1); rem == nil {
-								log.Error("Unrooted old unit seen by tx pool", "block", oldHead.Number, "hash", oldHead.Hash())
-								return
-							}
-						}
-						for add.NumberU64() > rem.NumberU64() {
-							included = append(included, add.Transactions()...)
-							if add = pool.unit.GetUnit(add.ParentHash()[0], add.NumberU64()-1); add == nil {
-								log.Error("Unrooted new unit seen by tx pool", "block", newHead.Number, "hash", newHead.Hash())
-								return
-							}
-						}
-						for rem.Hash() != add.Hash() {
-							discarded = append(discarded, rem.Transactions()...)
-							if rem = pool.unit.GetUnit(rem.ParentHash()[0], rem.NumberU64()-1); rem == nil {
-								log.Error("Unrooted old unit seen by tx pool", "block", oldHead.Number, "hash", oldHead.Hash())
-								return
-							}
-							included = append(included, add.Transactions()...)
-							if add = pool.unit.GetUnit(add.ParentHash()[0], add.NumberU64()-1); add == nil {
-								log.Error("Unrooted new unit seen by tx pool", "block", newHead.Number, "hash", newHead.Hash())
-								return
-							}
-						}
-						reinject = modules.TxDifference(discarded, included)
-					}
+		if depth := uint64(math.Abs(float64(oldNum) - float64(newNum))); depth > 64 {
+			log.Debug("Skipping deep transaction reorg", "depth", depth)
+		} else {
+			// Reorg seems shallow enough to pull in all transactions into memory
+			var discarded, included modules.Transactions
+
+			var (
+				rem = pool.unit.GetUnit(oldHead.Hash(), oldHead.Index())
+				add = pool.unit.GetUnit(newHead.Hash(), newHead.Index())
+			)
+			for rem.NumberU64() > add.NumberU64() {
+				discarded = append(discarded, rem.Transactions()...)
+				if rem = pool.unit.GetUnit(rem.ParentHash()[0], rem.NumberU64()-1); rem == nil {
+					log.Error("Unrooted old unit seen by tx pool", "block", oldHead.Number, "hash", oldHead.Hash())
+					return
 				}
-				// Initialize the internal state to the current head
-				if newHead == nil {
-					//newHead = pool.unit.CurrentUnit().Header() // Special case during testing
+			}
+			for add.NumberU64() > rem.NumberU64() {
+				included = append(included, add.Transactions()...)
+				if add = pool.unit.GetUnit(add.ParentHash()[0], add.NumberU64()-1); add == nil {
+					log.Error("Unrooted new unit seen by tx pool", "block", newHead.Number, "hash", newHead.Hash())
+					return
 				}
+			}
+			for rem.Hash() != add.Hash() {
+				discarded = append(discarded, rem.Transactions()...)
+				if rem = pool.unit.GetUnit(rem.ParentHash()[0], rem.NumberU64()-1); rem == nil {
+					log.Error("Unrooted old unit seen by tx pool", "block", oldHead.Number, "hash", oldHead.Hash())
+					return
+				}
+				included = append(included, add.Transactions()...)
+				if add = pool.unit.GetUnit(add.ParentHash()[0], add.NumberU64()-1); add == nil {
+					log.Error("Unrooted new unit seen by tx pool", "block", newHead.Number, "hash", newHead.Hash())
+					return
+				}
+			}
+			reinject = modules.TxDifference(discarded, included)
+		}
+	}
+	// Initialize the internal state to the current head
+	if newHead == nil {
+		//newHead = pool.unit.CurrentUnit().Header() // Special case during testing
+	}
 
-				// statedb, err := pool.chain.StateAt(newHead.Root)
-				// if err != nil {
-				// 	log.Error("Failed to reset txpool state", "err", err)
-				// 	return
-				// }
+	// statedb, err := pool.chain.StateAt(newHead.Root)
+	// if err != nil {
+	// 	log.Error("Failed to reset txpool state", "err", err)
+	// 	return
+	// }
 
-		<<<<<<< HEAD
-				//pool.currentState = statedb
-				//pool.pendingState = state.ManageState(statedb)
-				//pool.currentMaxGas = newHead.GasLimit
-		=======
-			//pool.currentState = statedb
-			//pool.pendingState = state.ManageState(statedb)
-		>>>>>>> 50b39d8261a48bf03c60b57e5a331d0dc9d1526a
+	//pool.currentState = statedb
+	//pool.pendingState = state.ManageState(statedb)
+	//pool.currentMaxGas = newHead.GasLimit
 
-				// Inject any transactions discarded due to reorgs
-				log.Debug("Reinjecting stale transactions", "count", len(reinject))
-				// pool.addTxsLocked(reinject, false)
+	// Inject any transactions discarded due to reorgs
+	log.Debug("Reinjecting stale transactions", "count", len(reinject))
+	// pool.addTxsLocked(reinject, false)
 
-				// validate the pool of pending transactions, this will remove
-				// any transactions that have been included in the block or
-				// have been invalidated because of another transaction (e.g.
-				// higher gas price)
-				pool.demoteUnexecutables()
+	// validate the pool of pending transactions, this will remove
+	// any transactions that have been included in the block or
+	// have been invalidated because of another transaction (e.g.
+	// higher gas price)
+	pool.demoteUnexecutables()
 
-				// Update all accounts to the latest known pending nonce
-				// for addr, list := range pool.pending {
-				// 	txs := list.Flatten() // Heavy but will be cached and is needed by the miner anyway
-				// 	//	pool.pendingState.SetNonce(addr, txs[len(txs)-1].Nonce()+1)
-				// }
-				// Check the queue and move transactions over to the pending if possible
-				// or remove those that have become invalid
-				pool.promoteExecutables(nil)
-	*/
+	// Update all accounts to the latest known pending nonce
+	// for addr, list := range pool.pending {
+	// 	txs := list.Flatten() // Heavy but will be cached and is needed by the miner anyway
+	// 	//	pool.pendingState.SetNonce(addr, txs[len(txs)-1].Nonce()+1)
+	// }
+	// Check the queue and move transactions over to the pending if possible
+	// or remove those that have become invalid
+	pool.promoteExecutables(nil)
+
 }
 
 // State returns the virtual managed state of the transaction pool.
@@ -407,7 +404,7 @@ func (pool *TxPool) Content() (map[common.Address]modules.Transactions, map[comm
 }
 
 // Pending retrieves all currently processable transactions, groupped by origin
-// account and sorted by nonce. The returned transaction set is a copy and can be
+// account and sorted by priority level. The returned transaction set is a copy and can be
 // freely modified by calling code.
 func (pool *TxPool) Pending() (map[common.Address]modules.Transactions, error) {
 	pool.mu.Lock()
@@ -421,7 +418,7 @@ func (pool *TxPool) Pending() (map[common.Address]modules.Transactions, error) {
 }
 
 // local retrieves all currently known local transactions, groupped by origin
-// account and sorted by nonce. The returned transaction set is a copy and can be
+// account and sorted by price. The returned transaction set is a copy and can be
 // freely modified by calling code.
 func (pool *TxPool) local() map[common.Address]modules.Transactions {
 	txs := make(map[common.Address]modules.Transactions)
@@ -444,8 +441,9 @@ func (pool *TxPool) validateTx(tx *modules.Transaction, local bool) error {
 		return ErrOversizedData
 	}
 	//  transaction 转账金额验证在上层已做，这里无需再次验证。
+	// tx.R S V  to address
 
-	from := tx.From.Address
+	from := dagcommon.RSVtoAddress(tx)
 	local = local || pool.locals.contains(from) // account may be local even if the transaction arrived from the network
 	if !local && pool.txfee.Cmp(tx.TxFee) > 0 {
 		return ErrTxFeeTooLow
@@ -494,7 +492,7 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 	}
 	// If the transaction is replacing an already pending one, do directly
 	//from,_ := modules.Sender(pool.signer, tx) // already validated
-	from := tx.From.Address
+	from := dagcommon.RSVtoAddress(tx)
 	if list := pool.pending[from]; list != nil && list.Overlaps(tx) {
 		// Nonce already pending, check if required price bump is met
 		inserted, old := list.Add(tx, pool.config.PriceBump)
@@ -515,7 +513,7 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 		log.Trace("Pooled new executable transaction", "hash", hash, "from", from)
 
 		// We've directly injected a replacement transaction, notify subsystems
-		go pool.txFeed.Send(TxPreEvent{tx})
+		go pool.txFeed.Send(modules.TxPreEvent{tx})
 
 		return old != nil, nil
 	}
@@ -539,7 +537,7 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 // Note, this method assumes the pool lock is held!
 func (pool *TxPool) enqueueTx(hash common.Hash, tx *modules.Transaction) (bool, error) {
 	// Try to insert the transaction into the future queue
-	from := tx.From.Address // already validated
+	from := dagcommon.RSVtoAddress(tx) // already validated
 	if pool.queue[from] == nil {
 		pool.queue[from] = newTxList(false)
 	}
@@ -608,7 +606,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *modules
 	pool.beats[addr] = time.Now()
 	// pool.pendingState.SetNonce(addr, tx.Nonce()+1)
 
-	go pool.txFeed.Send(TxPreEvent{tx})
+	go pool.txFeed.Send(modules.TxPreEvent{tx})
 }
 
 // AddLocal enqueues a single transaction into the pool if it is valid, marking
@@ -652,7 +650,7 @@ func (pool *TxPool) addTx(tx *modules.Transaction, local bool) error {
 	}
 	// If we added a new transaction, run promotion checks and return
 	if !replace {
-		from := tx.From.Address // already validated
+		from := dagcommon.RSVtoAddress(tx) // already validated
 		pool.promoteExecutables([]common.Address{from})
 	}
 	return nil
@@ -677,7 +675,7 @@ func (pool *TxPool) addTxsLocked(txs []*modules.Transaction, local bool) []error
 		var replace bool
 		if replace, errs[i] = pool.add(tx, local); errs[i] == nil {
 			if !replace {
-				from := tx.From.Address // already validated
+				from := dagcommon.RSVtoAddress(tx) // already validated
 				dirty[from] = struct{}{}
 			}
 		}
@@ -711,7 +709,7 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 	status := make([]TxStatus, len(hashes))
 	for i, hash := range hashes {
 		if tx := pool.all[hash]; tx != nil {
-			from := tx.From.Address // already validated
+			from := dagcommon.RSVtoAddress(tx) // already validated
 			if pool.pending[from] != nil && pool.pending[from].txs.items[tx.Nonce()] != nil {
 				status[i] = TxStatusPending
 			} else {
@@ -739,7 +737,7 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 	if !ok {
 		return
 	}
-	addr := tx.From.Address // already validated during insertion
+	addr := dagcommon.RSVtoAddress(tx) // already validated during insertion
 
 	// Remove it from the list of known transactions
 	delete(pool.all, hash)
@@ -1022,7 +1020,7 @@ func (as *accountSet) containsTx(tx *modules.Transaction) bool {
 	// if addr, err := modules.Sender(as.signer, tx); err == nil {
 	// 	return as.contains(addr)
 	// }
-	return as.contains(tx.From.Address)
+	return as.contains(dagcommon.RSVtoAddress(tx))
 }
 
 // add inserts a new address into the set to track.
@@ -1032,17 +1030,28 @@ func (as *accountSet) add(addr common.Address) {
 
 /******  end accountSet  *****/
 
-func (pool *TxPool) GetSortedTxs() modules.Transactions {
+func (pool *TxPool) GetSortedTxs() (modules.Transactions, common.StorageSize) {
 	var list modules.TxByPriority
+	var total common.StorageSize
 	for _, tx := range pool.all {
-		list = append(list, tx)
+
+		if total += tx.Txsize; total <= common.StorageSize(dagconfig.DefaultConfig.UnitTxSize) {
+			var address common.Address
+			list = append(list, tx)
+			// add  pending
+			address.SetString(tx.From.Address)
+			pool.promoteTx(address, tx.TxHash, tx)
+		} else {
+			total = total - tx.Txsize
+			break
+		}
 	}
 	sort.Sort(list)
-	return modules.Transactions(list)
+	return modules.Transactions(list), total
 }
 
 // SubscribeTxPreEvent registers a subscription of TxPreEvent and
 // starts sending event to the given channel.
-func (pool *TxPool) SubscribeTxPreEvent(ch chan<- TxPreEvent) event.Subscription {
+func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
 }

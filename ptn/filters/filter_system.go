@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 // Type determines the kind of filter and is used to put the filter in to
@@ -198,9 +197,9 @@ func (es *EventSystem) broadcast(filters filterIndex, ev interface{}) {
 	}
 
 	switch e := ev.(type) {
-	case txspool.TxPreEvent:
+	case modules.TxPreEvent:
 		for _, f := range filters[PendingTransactionsSubscription] {
-			f.hashes <- e.Tx.Hash()
+			f.hashes <- e.Tx.TxHash
 		}
 
 	}
@@ -248,7 +247,7 @@ func (es *EventSystem) eventLoop() {
 		index = make(filterIndex)
 		//sub   = es.mux.Subscribe(coredata.PendingLogsEvent{})
 		// Subscribe TxPreEvent form txpool
-		txCh  = make(chan txspool.TxPreEvent, txChanSize)
+		txCh  = make(chan modules.TxPreEvent, txChanSize)
 		txSub = es.backend.SubscribeTxPreEvent(txCh)
 		// Subscribe RemovedLogsEvent
 		//		rmLogsCh  = make(chan core.RemovedLogsEvent, rmLogsChanSize)
