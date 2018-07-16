@@ -60,3 +60,4 @@ bin/
 /dag/storage/leveldb/
 *.rlp
 dag/common/leveldb/
+cmd/gptn/leveldb/
