@@ -73,7 +73,7 @@ func GetUnit(hash *common.Hash, index modules.ChainIndex) *modules.Unit {
 generate genesis unit, need genesis unit configure fields and transactions list
 */
 func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
-	gUnit := modules.Unit{Gasprice: 0, Gasused: 0, Creationdate: time.Now().UTC()}
+	gUnit := modules.Unit{Creationdate: time.Now().UTC()}
 
 	// genesis unit asset id
 	gAssetID := asset.NewAsset()
@@ -191,9 +191,8 @@ func SaveUnit(unit modules.Unit) error {
 	if err != nil {
 		return err
 	}
-	if totalFee != unit.Gasprice && totalFee != unit.Gasused {
-		return fmt.Errorf("Unit's gas computed error.")
-	}
+	// todo check coin base fee
+	if totalFee<=0 { }
 	// save unit header, key is like "[HEADER_PREFIX][chain_index]_[unit hash]"
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		return modules.ErrUnit(-3)

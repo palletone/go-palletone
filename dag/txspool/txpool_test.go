@@ -13,6 +13,7 @@ import (
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"fmt"
 )
 
 var testTxPoolConfig TxPoolConfig
@@ -123,7 +124,8 @@ func TestTransactionAddingTxs(t *testing.T) {
 	defer func(p *TxPool) {
 		if txs, total := pool.GetSortedTxs(); total.Float64() > dagconfig.DefaultConfig.UnitTxSize {
 			all = len(txs)
-			t.Error("total %v:total sizeof transactions is unexpected", total.Float64())
+			msg := fmt.Sprintf("total %v:total sizeof transactions is unexpected", total.Float64())
+			t.Error(msg)
 		} else {
 			log.Println(" total size is :", total, total.Float64(), "the cout: ", len(txs))
 			for i, tx := range txs {
