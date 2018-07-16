@@ -1,4 +1,4 @@
-/*
+﻿/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -115,6 +115,35 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 		}
 	}
 	return &gUnit, nil
+}
+
+/**
+从leveldb中查询GenesisUnit信息
+To get genesis unit info from leveldb
+ */
+func GetGenesisUnit(index uint64) *modules.Unit {
+	// unit key: [HEADER_PREFIX][index]_[chainindex struct]_[unit Bytes]
+	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
+	data := storage.GetPrefix([]byte(key))
+	for k, v := range data {
+		var chainIndex modules.ChainIndex
+		if err := rlp.DecodeBytes([]byte(k), &chainIndex); err != nil {
+			msg := fmt.Sprintf("Chainindex get error: %s", err)
+			log.Error(msg)
+			continue
+		}
+
+		if chainIndex.IsMain==true {
+			var unit modules.Unit
+			if err:=rlp.DecodeBytes([]byte(v), &unit); err!=nil{
+				msg := fmt.Sprintf("Chainindex get error: %s", err)
+				log.Error(msg)
+				return nil
+			}
+			return &unit
+		}
+	}
+	return nil
 }
 
 /**
@@ -419,4 +448,12 @@ func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {
 	copy(sig[64-len(s):64], s)
 	copy(sig[64:len(sig)], v)
 	return crypto.SigToPub(hash, sig)
+}
+
+/**
+从levedb中根据ChainIndex获得Unit信息
+To get unit information by its ChainIndex
+ */
+func QueryUnitByChainIndex(index *modules.ChainIndex) *modules.Unit  {
+	return nil
 }
