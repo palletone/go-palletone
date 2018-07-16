@@ -66,7 +66,7 @@ func (mp *MediatorPlugin) PluginInitialize() {
 	log.Info("mediator plugin initialize begin")
 
 	// 1.初始化生产验证单元相关的属性值
-	mp.ProductionEnabled = false
+	mp.ProductionEnabled = true		// 此处应由配置文件中的 enable-stale-production 字段设置为true
 //	mp.RequiredMediatorsParticipation = 0.33
 
 	// 1. 获取当前节点控制的所有mediator
@@ -105,7 +105,6 @@ func (mp *MediatorPlugin) PluginStartup(db *a.DataBase, ch chan int) {
 		// 2. 开启循环生产计划
 //		fmt.Printf("Launching unit verify for %d mediators.\n", len(mp.MediatorSet))
 		log.Info(fmt.Sprintf("Launching unit verify for %d mediators.", len(mp.MediatorSet)))
-		mp.ProductionEnabled = true		// 此处应由配置文件中的 enable-stale-production 字段设置为true
 
 		if mp.ProductionEnabled {
 			if mp.DB.DynGlobalProp.LastVerifiedUnitNum == 0 {

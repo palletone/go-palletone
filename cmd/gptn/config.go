@@ -147,6 +147,8 @@ func maybeLoadConfig(ctx *cli.Context, cfg *FullConfig) error {
 			utils.Fatalf("%v", err)
 			return err
 		}
+
+		log.Info("Writing new config file at ", configPath)
 	}
 
 	// 加载配置文件中的配置信息到 cfg中
