@@ -99,8 +99,7 @@ func SaveHeader(uHahs common.Hash, h *modules.Header) error {
 		return err
 	}
 
-	// check exists
-	key := fmt.Sprintf("%s%s_%s", HEADER_PREFIX, chain_index, uHahs.Bytes())
+	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, chain_index, uHahs.Bytes())
 	return Store(key, *h)
 }
 

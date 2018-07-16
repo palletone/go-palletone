@@ -163,8 +163,8 @@ type Unit struct {
 	UnitHash     common.Hash        `json:"unit_hash"`     // unit hash
 	UnitSize     common.StorageSize `json:"UnitSize"`      // unit size
 	Creationdate time.Time          `json:"creation_time"` // unit create time
-	Gasprice     uint64             `json:"gas_price"`     // user set total gas
-	Gasused      uint64             `json:"gas_used"`      // the actually used gas, mediator set
+	//Gasprice     uint64             `json:"gas_price"`     // user set total gas
+	//Gasused      uint64             `json:"gas_used"`      // the actually used gas, mediator set
 }
 
 type Transactions []*Transaction

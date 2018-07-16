@@ -28,7 +28,6 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
 )
 
 const (
@@ -95,7 +94,7 @@ func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account acco
 func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Unit, error) {
 
 	// Just commit the new block if there is no stored genesis block.
-	stored := storage.GetGenesisUnit(0)
+	stored := dagCommon.GetGenesisUnit(0)
 	// Check whether the genesis block is already written.
 	if stored != nil {
 		return stored, errors.New("the genesis block is already written")

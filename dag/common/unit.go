@@ -1,4 +1,4 @@
-/*
+﻿/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -73,7 +73,7 @@ func GetUnit(hash *common.Hash, index modules.ChainIndex) *modules.Unit {
 generate genesis unit, need genesis unit configure fields and transactions list
 */
 func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
-	gUnit := modules.Unit{Gasprice: 0, Gasused: 0, Creationdate: time.Now().UTC()}
+	gUnit := modules.Unit{Creationdate: time.Now().UTC()}
 
 	// genesis unit asset id
 	gAssetID := asset.NewAsset()
@@ -115,6 +115,35 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 		}
 	}
 	return &gUnit, nil
+}
+
+/**
+从leveldb中查询GenesisUnit信息
+To get genesis unit info from leveldb
+ */
+func GetGenesisUnit(index uint64) *modules.Unit {
+	// unit key: [HEADER_PREFIX][index]_[chainindex struct]_[unit Bytes]
+	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
+	data := storage.GetPrefix([]byte(key))
+	for k, v := range data {
+		var chainIndex modules.ChainIndex
+		if err := rlp.DecodeBytes([]byte(k), &chainIndex); err != nil {
+			msg := fmt.Sprintf("Chainindex get error: %s", err)
+			log.Error(msg)
+			continue
+		}
+
+		if chainIndex.IsMain==true {
+			var unit modules.Unit
+			if err:=rlp.DecodeBytes([]byte(v), &unit); err!=nil{
+				msg := fmt.Sprintf("Chainindex get error: %s", err)
+				log.Error(msg)
+				return nil
+			}
+			return &unit
+		}
+	}
+	return nil
 }
 
 /**
@@ -162,9 +191,8 @@ func SaveUnit(unit modules.Unit) error {
 	if err != nil {
 		return err
 	}
-	if totalFee != unit.Gasprice && totalFee != unit.Gasused {
-		return fmt.Errorf("Unit's gas computed error.")
-	}
+	// todo check coin base fee
+	if totalFee<=0 { }
 	// save unit header, key is like "[HEADER_PREFIX][chain_index]_[unit hash]"
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		return modules.ErrUnit(-3)
@@ -419,4 +447,12 @@ func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {
 	copy(sig[64-len(s):64], s)
 	copy(sig[64:len(sig)], v)
 	return crypto.SigToPub(hash, sig)
+}
+
+/**
+从levedb中根据ChainIndex获得Unit信息
+To get unit information by its ChainIndex
+ */
+func QueryUnitByChainIndex(index *modules.ChainIndex) *modules.Unit  {
+	return nil
 }
