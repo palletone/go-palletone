@@ -156,24 +156,6 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64,
 	// Construct the different synchronisation mechanisms
 	manager.downloader = downloader.New(mode, manager.removePeer)
 	manager.fetcher = fetcher.New(manager.removePeer)
-	/*woule recover
-	validator := func(header *types.Header) error {
-		return engine.VerifyHeader(blockchain, header, true)
-	}
-	_ = func() uint64 {
-		return blockchain.CurrentBlock().NumberU64()
-	}
-	_ = func(blocks types.Blocks) (int, error) {
-		// If fast sync is running, deny importing weird blocks
-		if atomic.LoadUint32(&manager.fastSync) == 1 {
-			log.Warn("Discarded bad propagated block", "number", blocks[0].Number(), "hash", blocks[0].Hash())
-			return 0, nil
-		}
-		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
-		return manager.blockchain.InsertChain(blocks)
-	}
-	manager.fetcher = fetcher.New(blockchain.GetBlockByHash, validator, manager.BroadcastBlock, heighter, inserter, manager.removePeer)
-	*/
 	return manager, nil
 }
 
@@ -198,10 +180,6 @@ func (pm *ProtocolManager) removePeer(id string) {
 
 func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.maxPeers = maxPeers
-
-	//consEngine core.ConsensusEngine
-	//ceCh       chan core.ConsensusEvent
-	//ceSub      event.Subscription
 
 	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
 	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
@@ -293,26 +271,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// after this will be sent via broadcasts.
 
 	//pm.syncTransactions(p)
-	/*would recover
-	// If we're DAO hard-fork aware, validate any remote peer with regard to the hard-fork
-	if daoBlock := pm.chainconfig.DAOForkBlock; daoBlock != nil {
-		// Request the peer's DAO fork header for extra-data validation
-		if err := p.RequestHeadersByNumber(daoBlock.Uint64(), 1, 0, false); err != nil {
-			return err
-		}
-		// Start a timer to disconnect if the peer doesn't reply in time
-		p.forkDrop = time.AfterFunc(daoChallengeTimeout, func() {
-			p.Log().Debug("Timed out DAO fork-check, dropping")
-			pm.removePeer(p.id)
-		})
-		// Make sure it's cleaned up if the peer dies off
-		defer func() {
-			if p.forkDrop != nil {
-				p.forkDrop.Stop()
-				p.forkDrop = nil
-			}
-		}()
-	}*/
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
@@ -708,15 +666,13 @@ func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
 // BroadcastTx will propagate a transaction to all peers which are not known to
 // already have the given transaction.
 func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction) {
-	/*
-		// Broadcast transaction to a batch of peers not knowing about it
-		peers := pm.peers.PeersWithoutTx(hash)
-		//FIXME include this again: peers = peers[:int(math.Sqrt(float64(len(peers))))]
-		for _, peer := range peers {
-			peer.SendTransactions(modules.Transactions{tx})
-		}
-		log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
-	*/
+	// Broadcast transaction to a batch of peers not knowing about it
+	peers := pm.peers.PeersWithoutTx(hash)
+	//FIXME include this again: peers = peers[:int(math.Sqrt(float64(len(peers))))]
+	for _, peer := range peers {
+		peer.SendTransactions(modules.Transactions{tx})
+	}
+	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
 }
 
 func (self *ProtocolManager) txBroadcastLoop() {
