@@ -208,20 +208,20 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
 	go pm.ceBroadcastLoop()
 	// start sync handlers
-	//定时与相邻个体进行全链的强制同步
+	//定时与相邻个体进行全链的强制同步,syncer()首先启动fetcher成员，然后进入一个无限循环，
+	//每次循环中都会向相邻peer列表中“最优”的那个peer作一次区块全链同步
 	go pm.syncer()
-	//将新出现的交易对象均匀的同步给相邻个体
-	//go pm.txsyncLoop()
+
+	//txsyncLoop负责把pending的交易发送给新建立的连接。
+	//txsyncLoop负责每个新连接的初始事务同步。
+	//当新的对等体出现时，我们转发所有当前待处理的事务。
+	//为了最小化出口带宽使用，我们一次将一个小包中的事务发送给一个对等体。
+	go pm.txsyncLoop()
 
 	// broadcast transactions
 	pm.txCh = make(chan txspool.TxPreEvent, txChanSize)
 	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
 	go pm.txBroadcastLoop()
-	/*
-		// broadcast mined blocks
-		pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
-		go pm.minedBroadcastLoop()
-	*/
 }
 
 func (pm *ProtocolManager) Stop() {
