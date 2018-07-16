@@ -462,7 +462,7 @@ func (l *txPricedList) Underpriced(tx *modules.Transaction, local *accountSet) b
 	// Discard stale price points if found at the heap start
 	for len(*l.items) > 0 {
 		head := []*modules.Transaction(*l.items)[0]
-		if _, ok := (*l.all)[head.Hash()]; !ok {
+		if _, ok := (*l.all)[head.TxHash]; !ok {
 			l.stales--
 			heap.Pop(l.items)
 			continue

@@ -10,11 +10,13 @@ type SystemConfig struct {
 
 type Genesis struct {
 	Version                   string       `json:"version"`
+	Alias                     string       `json:"alias"`
 	TokenAmount               uint64       `json:"tokenAmount"`
-	TokenDecimal              uint32          `json:"tokenDecimal"`
-	ChainID                   uint64          `json:"chainId"`
+	TokenDecimal              uint32       `json:"tokenDecimal"`
+	DecimalUnit               string       `json:"decimal_unit"`
+	ChainID                   uint64       `json:"chainId"`
 	TokenHolder               string       `json:"tokenHolder"`
-	InitialActiveMediators    uint16          `json:"initialActiveMediators"`
+	InitialActiveMediators    uint16       `json:"initialActiveMediators"`
 	InitialMediatorCandidates []string     `json:"initialMediatorCandidates"`
 	SystemConfig              SystemConfig `json:"systemConfig"`
 }

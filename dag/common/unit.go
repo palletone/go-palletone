@@ -120,7 +120,7 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 /**
 从leveldb中查询GenesisUnit信息
 To get genesis unit info from leveldb
- */
+*/
 func GetGenesisUnit(index uint64) *modules.Unit {
 	// unit key: [HEADER_PREFIX][index]_[chainindex struct]_[unit Bytes]
 	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
@@ -133,9 +133,9 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 			continue
 		}
 
-		if chainIndex.IsMain==true {
+		if chainIndex.IsMain == true {
 			var unit modules.Unit
-			if err:=rlp.DecodeBytes([]byte(v), &unit); err!=nil{
+			if err := rlp.DecodeBytes([]byte(v), &unit); err != nil {
 				msg := fmt.Sprintf("Chainindex get error: %s", err)
 				log.Error(msg)
 				return nil
@@ -192,7 +192,8 @@ func SaveUnit(unit modules.Unit) error {
 		return err
 	}
 	// todo check coin base fee
-	if totalFee<=0 { }
+	if totalFee <= 0 {
+	}
 	// save unit header, key is like "[HEADER_PREFIX][chain_index]_[unit hash]"
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		return modules.ErrUnit(-3)
@@ -452,7 +453,7 @@ func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {
 /**
 从levedb中根据ChainIndex获得Unit信息
 To get unit information by its ChainIndex
- */
-func QueryUnitByChainIndex(index *modules.ChainIndex) *modules.Unit  {
+*/
+func QueryUnitByChainIndex(index *modules.ChainIndex) *modules.Unit {
 	return nil
 }
