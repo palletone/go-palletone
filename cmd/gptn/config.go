@@ -187,6 +187,8 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
 	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
+	mp.SetMediatorPluginConfig(ctx, &cfg.MediatorPlugin)
+
 	return stack, cfg
 }
 
@@ -212,6 +214,9 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		// 注册状态服务。 默认情况下是没有启动的。
 		utils.RegisterPtnStatsService(stack, cfg.Ptnstats.URL)
 	}
+
+	mp.RegisterMediatorPluginService(stack, &cfg.MediatorPlugin)
+
 	return stack
 }
 

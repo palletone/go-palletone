@@ -225,7 +225,7 @@ func (n *Node) Start() error {
 			ctx.services[kind] = s
 		}
 		// Construct and save the service
-		// 构建和保存所有的 service
+		// 构建和保存所有的 service, 即调用所有 Service 的匿名 Constructor 函数
 		service, err := constructor(ctx)
 		if err != nil {
 			return err
