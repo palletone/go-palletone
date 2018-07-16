@@ -26,6 +26,10 @@ var DefaultConfig = Config{
 	//DbPath: "db/leveldb",
 	DbPath: "./leveldb",
 	DbName: "palletone",
+
+	// txpool
+
+	UnitTxSize: 1024 * 1024,
 }
 
 // global configuration of dag modules
@@ -43,6 +47,9 @@ type Config struct {
 	RedisPwd    string
 	RedisPrefix string
 	RedisDb     int
+
+	// txpool
+	UnitTxSize float64
 }
 
 type Sconfig struct {

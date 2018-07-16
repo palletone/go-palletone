@@ -10,7 +10,8 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/event"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
-	//dagcommon "github.com/palletone/go-palletone/dag/common"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -54,16 +55,16 @@ func TestTransactionAddingTxs(t *testing.T) {
 	t.Parallel()
 
 	// Create the pool to test the limit enforcement with
-	db, _ := palletdb.NewMemDatabase()
-	unitchain := &testUnitDag{db, nil, 10000, new(event.Feed)}
-	//unitchain := dagcommon.NewDag()
+	//db, _ := palletdb.NewMemDatabase()
+	//unitchain := &testUnitDag{db, nil, 10000, new(event.Feed)}
+	unitchain := dagcommon.NewDag()
 
 	config := testTxPoolConfig
 	config.GlobalSlots = 0
-	var queue_cache, queue_item, all, origin int
+	var queue_cache, queue_item, pending_cache, pending_item, all, origin int
 	//pool := NewTxPool(config, unitchain)
 	unitchain = unitchain //would recover
-	pool := NewTxPool(config)
+	pool := NewTxPool(config, unitchain)
 
 	defer pool.Stop()
 
@@ -79,7 +80,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	txs := modules.Transactions{}
 	for i, key := range keys {
 		addr := crypto.PubkeyToAddress(key.PublicKey)
-		for j := 0; j < int(config.AccountSlots)*1; j++ {
+		for j := 0; j < int(config.AccountSlots)*10; j++ {
 			txs = append(txs, transaction(nonces[addr], uint64(i)+100, key))
 			nonces[addr]++
 		}
@@ -107,12 +108,6 @@ func TestTransactionAddingTxs(t *testing.T) {
 		queue_cache = len(list.txs.cache)
 		queue_item = len(list.txs.items)
 		log.Println("queue addr: ", addr.String(), "amont:", list.Len())
-		// for _, tx := range list.txs.cache {
-		// 	log.Println("cache tx:", tx.Hash().String(), tx.Txsize, tx.PriorityLvl())
-		// }
-		// for key, tx := range list.txs.items {
-		// 	log.Println("iteme tx:", key, tx.Hash().String(), tx.Txsize, tx.PriorityLvl())
-		// }
 
 	}
 	for addr, list := range pool.pending {
@@ -121,23 +116,30 @@ func TestTransactionAddingTxs(t *testing.T) {
 		} else {
 			log.Println("account matched.", "pending addr:", addr.String(), "amont:", list.Len())
 		}
+		pending_cache = len(list.txs.cache)
+		pending_item = len(list.txs.items)
 	}
 	//  test GetSortedTxs{}
 	defer func(p *TxPool) {
-		txs := pool.GetSortedTxs()
-
-		for i, tx := range txs {
-			if i < len(txs)-1 {
-				if txs[i].PriorityLvl() < txs[i+1].PriorityLvl() {
-					t.Error("sorted failed.", i, tx.PriorityLvl())
+		if txs, total := pool.GetSortedTxs(); total.Float64() > dagconfig.DefaultConfig.UnitTxSize {
+			all = len(txs)
+			t.Error("total %v:total sizeof transactions is unexpected", total.Float64())
+		} else {
+			log.Println(" total size is :", total, total.Float64(), "the cout: ", len(txs))
+			for i, tx := range txs {
+				if i < len(txs)-1 {
+					if txs[i].PriorityLvl() < txs[i+1].PriorityLvl() {
+						t.Error("sorted failed.", i, tx.PriorityLvl())
+					}
 				}
+
+			}
+			all = len(txs)
+			for key, _ := range nonces {
+				log.Println("address: ", key.String())
 			}
 		}
-		all = len(txs)
-		for key, _ := range nonces {
-			log.Println("address: ", key.String())
-		}
-		log.Println(origin, all, queue_cache, queue_item, txs[10], len(nonces))
+		log.Println(origin, all, queue_cache, queue_item, pending_cache, pending_item, len(nonces))
 	}(pool)
 
 }
@@ -155,8 +157,10 @@ func pricedTransaction(nonce uint64, txfee *big.Int, key *ecdsa.PrivateKey) *mod
 	if err != nil {
 		return tx
 	}
+
 	tx.From.R = sig[:32]
 	tx.From.S = sig[32:64]
 	tx.From.V = sig[64:]
+	tx.From.Address = dagcommon.RSVtoAddress(tx).String()
 	return tx
 }
