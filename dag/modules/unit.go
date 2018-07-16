@@ -1,5 +1,4 @@
-/*
-   This file is part of go-palletone.
+/* This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
@@ -163,8 +162,8 @@ type Unit struct {
 	UnitHash     common.Hash        `json:"unit_hash"`     // unit hash
 	UnitSize     common.StorageSize `json:"UnitSize"`      // unit size
 	Creationdate time.Time          `json:"creation_time"` // unit create time
-	Gasprice     uint64             `json:"gas_price"`     // user set total gas
-	Gasused      uint64             `json:"gas_used"`      // the actually used gas, mediator set
+	//Gasprice     uint64             `json:"gas_price"`     // user set total gas
+	//Gasused      uint64             `json:"gas_used"`      // the actually used gas, mediator set
 }
 
 type Transactions []*Transaction

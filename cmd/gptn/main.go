@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnclient"
 	"github.com/palletone/go-palletone/statistics/metrics"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -122,6 +123,7 @@ var (
 		utils.LogValue5Flag,
 		ConfigFileFlag,
 		GenesisJsonPathFlag,
+		mp.StaleProductionFlag,
 	}
 
 	rpcFlags = []cli.Flag{

@@ -27,6 +27,7 @@ import (
 
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/internal/debug"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -228,6 +229,12 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.FakePoWFlag,
 			utils.NoCompactionFlag,
 		}, debug.Flags...),
+	},
+	{
+		Name: "MEDIATOR PLUGIN",
+		Flags: []cli.Flag{
+			mp.StaleProductionFlag,
+		},
 	},
 	/*{
 		Name:  "WHISPER (EXPERIMENTAL)",
