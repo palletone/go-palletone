@@ -61,3 +61,6 @@ bin/
 *.rlp
 dag/common/leveldb/
 cmd/gptn/leveldb/
+cmd/gptn/palletone.toml
+dag/common/unit.go.orig
+dag/txspool/leveldb/
