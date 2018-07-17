@@ -626,6 +626,31 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	return nil
 }
 
+// BroadcastTx will propagate a transaction to all peers which are not known to
+// already have the given transaction.
+func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction) {
+	// Broadcast transaction to a batch of peers not knowing about it
+	peers := pm.peers.PeersWithoutTx(hash)
+	//FIXME include this again: peers = peers[:int(math.Sqrt(float64(len(peers))))]
+	for _, peer := range peers {
+		peer.SendTransactions(modules.Transactions{tx})
+	}
+	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
+}
+
+func (self *ProtocolManager) txBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.txCh:
+			self.BroadcastTx(event.Tx.Hash(), event.Tx)
+
+		// Err() channel will be closed when unsubscribing.
+		case <-self.txSub.Err():
+			return
+		}
+	}
+}
+
 /*
 // BroadcastBlock will either propagate a block to a subset of it's peers, or
 // will only announce it's availability (depending what's requested).
@@ -663,30 +688,6 @@ func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
 
 }
 */
-// BroadcastTx will propagate a transaction to all peers which are not known to
-// already have the given transaction.
-func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction) {
-	// Broadcast transaction to a batch of peers not knowing about it
-	peers := pm.peers.PeersWithoutTx(hash)
-	//FIXME include this again: peers = peers[:int(math.Sqrt(float64(len(peers))))]
-	for _, peer := range peers {
-		peer.SendTransactions(modules.Transactions{tx})
-	}
-	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
-}
-
-func (self *ProtocolManager) txBroadcastLoop() {
-	for {
-		select {
-		case event := <-self.txCh:
-			self.BroadcastTx(event.Tx.Hash(), event.Tx)
-
-		// Err() channel will be closed when unsubscribing.
-		case <-self.txSub.Err():
-			return
-		}
-	}
-}
 
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
 // known about the host peer.
