@@ -31,6 +31,7 @@ import (
 	asset2 "github.com/palletone/go-palletone/dag/asset"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"fmt"
 )
 
 const (
@@ -110,6 +111,10 @@ func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Un
 		log.Info("Writing custom genesis block")
 	}
 	txs := GetGensisTransctions(ks, genesis)
+	log.Info("-> Genesisi transactions:")
+	for i, tx := range txs{
+		log.Info("Tx[%d]: %s", i, tx.TxHash)
+	}
 	//return modules.NewGenesisUnit(genesis, txs)
 	return dagCommon.NewGenesisUnit(txs)
 }
@@ -183,18 +188,22 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	}
 	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
 	if err!=nil{
-		log.Error("Get genesis transactions hash erro.")
+		msg := fmt.Sprintf("Get genesis transactions hash error: %s", err)
+		log.Error(msg)
 		return nil
 	}
 	tx.TxHash.SetBytes(txHash)
 	// step4, sign tx
+	R, S, V, err := ks.SigTX(tx.TxHash, holder)
+	if err!=nil {
+		msg := fmt.Sprintf("Sign transaction error: %s", err)
+		log.Error(msg)
+		return nil
+	}
 	tx.From.Address = holder.String()
-	//privateKey, err := ks.GetPublicKey(holder)
-	//if err != nil {
-	//	log.Error("Failed to Get Public Key:", err.Error())
-	//	return nil
-	//}
-	//sig, err := crypto.Sign(tx.TxHash, )
+	tx.From.R = R
+	tx.From.S = S
+	tx.From.V = V
 	txs := []*modules.Transaction{tx}
 	return txs
 }

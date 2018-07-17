@@ -210,6 +210,8 @@ func makeDecoder(typ reflect.Type, tags tags) (dec decoder, err error) {
 		return decodefloat64, nil
 	case kind.String() == "common.StorageSize":
 		return decodefloat64, nil
+	case kind == reflect.Map:
+		return makeMapDecoder(typ)
 	default:
 		return nil, fmt.Errorf("rlp: type %v is not RLP-serializable", typ)
 	}
@@ -501,6 +503,28 @@ func makeOptionalPtrDecoder(typ reflect.Type) (decoder, error) {
 			val.Set(newval)
 		}
 		return err
+	}
+	return dec, nil
+}
+
+func makeMapDecoder(typ reflect.Type) (decoder, error)  {
+	fields, err := mapFields(typ)
+	if err != nil {
+		return nil, err
+	}
+	dec := func(s *Stream, val reflect.Value) (err error) {
+		if _, err := s.List(); err != nil {
+			return wrapStreamError(err, typ)
+		}
+		for _, f := range fields {
+			err := f.info.decoder(s, val.Field(f.index))
+			if err == EOL {
+				return &decodeError{msg: "too few elements", typ: typ}
+			} else if err != nil {
+				return addErrorContext(err, "."+typ.Field(f.index).Name)
+			}
+		}
+		return wrapStreamError(s.ListEnd(), typ)
 	}
 	return dec, nil
 }
