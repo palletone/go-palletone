@@ -112,7 +112,7 @@ func (p *peer) SetHead(hash common.Hash, td *big.Int) {
 
 // MarkBlock marks a block as known for the peer, ensuring that the block will
 // never be propagated to this particular peer.
-func (p *peer) MarkBlock(hash common.Hash) {
+func (p *peer) MarkUnit(hash common.Hash) {
 	// If we reached the memory allowance, drop a previously known block hash
 	for p.knownBlocks.Size() >= maxKnownBlocks {
 		p.knownBlocks.Pop()
@@ -159,10 +159,10 @@ func (p *peer) SendNewBlockHashes(hashes []common.Hash, numbers []uint64) error 
 }
 
 // SendNewBlock propagates an entire block to a remote peer.
-//func (p *peer) SendNewBlock(block *types.Block, td *big.Int) error {
-//	p.knownBlocks.Add(block.Hash())
-//	return p2p.Send(p.rw, NewBlockMsg, []interface{}{block, td})
-//}
+func (p *peer) SendNewUnit(unit *modules.Unit) error {
+	p.knownBlocks.Add(unit.UnitHash)
+	return p2p.Send(p.rw, NewBlockMsg, []interface{}{unit})
+}
 
 // SendBlockHeaders sends a batch of block headers to the remote peer.
 func (p *peer) SendBlockHeaders(headers []*modules.Header) error {
@@ -364,7 +364,7 @@ func (ps *peerSet) Len() int {
 
 // PeersWithoutBlock retrieves a list of peers that do not have a given block in
 // their set of known hashes.
-func (ps *peerSet) PeersWithoutBlock(hash common.Hash) []*peer {
+func (ps *peerSet) PeersWithoutUnit(hash common.Hash) []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
