@@ -216,6 +216,9 @@ func CommitDB(unit *modules.Unit, publicKey, addr []byte, address common.Address
 	author.Pubkey = publicKey
 	author.TxAuthentifier = authentifier
 	unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, *author)
+	if err:=dagCommon.SaveUnit(*unit); err!=nil{
+		log.Error("Save genesis unit error.")
+	}
 	return nil
 }
 
