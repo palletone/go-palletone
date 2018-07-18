@@ -270,7 +270,7 @@ func (ks *KeyStore) SignHash(a accounts.Account, hash []byte) ([]byte, error) {
 
 // SignTx signs the given transaction with the requested account.
 func (ks *KeyStore) SignTx(a accounts.Account, tx *modules.Transaction, chainID *big.Int) (*modules.Transaction, error) {
-	authen, err := ks.SigTX(tx, a.Address)
+	R, S, V, err := ks.SigTX(tx, a.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -283,9 +283,9 @@ func (ks *KeyStore) SignTx(a accounts.Account, tx *modules.Transaction, chainID 
 		tx.From = new(modules.Authentifier)
 	}
 	tx.From.Address = a.Address.String()
-	tx.From.R = authen[:32]
-	tx.From.S = authen[32:64]
-	tx.From.V = authen[64:]
+	tx.From.R = R
+	tx.From.S = S
+	tx.From.V = V
 	return tx, nil
 }
 
@@ -574,8 +574,18 @@ func VerifyUnitWithPK(sign []byte, unit interface{}, publicKey []byte) bool {
 }
 
 //tx:TxMessages   []Message
-func (ks *KeyStore) SigTX(tx interface{}, address common.Address) ([]byte, error) {
-	return ks.SigUnit(tx, address)
+func (ks *KeyStore) SigTX(tx interface{}, address common.Address) (R, S, V []byte, e error) {
+	sig, err := ks.SigUnit(tx, address)
+	if err!=nil {
+		e = err
+		return
+	}
+
+	R = sig[:32]
+	S = sig[32:64]
+	V = append(V, sig[64]+27)
+	e = nil
+	return
 }
 
 func VerifyTXWithPK(sign []byte, tx interface{}, publicKey []byte) bool {

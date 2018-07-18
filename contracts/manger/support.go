@@ -19,16 +19,15 @@
 package manger
 
 import (
-
-	chaincode "github.com/palletone/go-palletone/contracts/core"
-	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
-	"github.com/palletone/go-palletone/contracts/scc"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"golang.org/x/net/context"
 	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/contracts/rwset"
+
+	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
+	"github.com/palletone/go-palletone/contracts/scc"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	ut "github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common/log"
+	chaincode "github.com/palletone/go-palletone/contracts/core"
 )
 
 // SupportImpl provides an implementation of the endorser.Support interface
@@ -49,19 +48,6 @@ func (s *SupportImpl) GetTxSimulator(chainid string, txid string) (rwset.TxSimul
 	return rwM.NewTxSimulator(chainid, txid)
 }
 
-// GetTransactionByID retrieves a transaction by id
-//func (s *SupportImpl) GetTransactionByID(chid, txID string) (*pb.ProcessedTransaction, error) {
-//	lgr := peer.GetLedger(chid)
-//	if lgr == nil {
-//		return nil, errors.Errorf("failed to look up the ledger for channel %s", chid)
-//	}
-//	tx, err := lgr.GetTransactionByID(txID)
-//	if err != nil {
-//		return nil, errors.WithMessage(err, "GetTransactionByID failed")
-//	}
-//	return tx, nil
-//}
-
 //IsSysCC returns true if the name matches a system chaincode's
 //system chaincode names are system, chain wide
 func (s *SupportImpl) IsSysCC(name string) bool {
@@ -78,9 +64,10 @@ func (s *SupportImpl) Execute(ctxt context.Context, cid, name, version, txid str
 	case *pb.ChaincodeInvocationSpec:
 		cis := spec.(*pb.ChaincodeInvocationSpec)
 
-		log.Info("===cis:%v", cis)
+		logger.Infof("===cis:%v", cis)
+
 		//decorate the chaincode input
-		//glh
+
 		//decorators := library.InitRegistry(library.Config{}).Lookup(library.Decoration).([]decoration.Decorator)
 		//cis.ChaincodeSpec.Input.Decorations = make(map[string][]byte)
 		//cis.ChaincodeSpec.Input = decoration.Apply(prop, cis.ChaincodeSpec.Input, decorators...)
@@ -90,27 +77,6 @@ func (s *SupportImpl) Execute(ctxt context.Context, cid, name, version, txid str
 		panic("programming error, unkwnown spec type")
 	}
 }
-
-// GetChaincodeDefinition returns resourcesconfig.ChaincodeDefinition for the chaincode with the supplied name
-//func (s *SupportImpl) GetChaincodeDefinition(ctx context.Context, chainID string, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, chaincodeID string, txsim rwset.TxSimulator) (resourcesconfig.ChaincodeDefinition, error) {
-//	ctxt := ctx
-//	if txsim != nil {
-//		ctxt = context.WithValue(ctx, chaincode.TXSimulatorKey, txsim)
-//	}
-//	return chaincode.GetChaincodeDefinition(ctxt, txid, signedProp, prop, chainID, chaincodeID)
-//}
-
-//CheckACL checks the ACL for the resource for the channel using the
-//SignedProposal from which an id can be extracted for testing against a policy
-//func (s *SupportImpl) CheckACL(signedProp *pb.SignedProposal, chdr *common.ChannelHeader, shdr *common.SignatureHeader, hdrext *pb.ChaincodeHeaderExtension) error {
-//	return aclmgmt.GetACLProvider().CheckACL(resources.PROPOSE, chdr.ChannelId, signedProp)
-//}
-
-// CheckInstantiationPolicy returns an error if the instantiation in the supplied
-// ChaincodeDefinition differs from the instantiation policy stored on the ledger
-//func (s *SupportImpl) CheckInstantiationPolicy(name, version string, cd resourcesconfig.ChaincodeDefinition) error {
-//	return ccprovider.CheckInstantiationPolicy(name, version, cd.(*ccprovider.ChaincodeData))
-//}
 
 // shorttxid replicates the chaincode package function to shorten txids.
 func shorttxid(txid string) string {
@@ -125,9 +91,30 @@ func GetBytesChaincodeEvent(event *pb.ChaincodeEvent) ([]byte, error) {
 	return eventBytes, err
 }
 
-func converRwTxResult2DagUnit(ts rwset.TxSimulator) (*ut.ContractInvokePayload, error) {
-	logger.Info("enter")
-	return nil, nil
+func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, fun []byte) (*ut.ContractInvokePayload, error) {
+	logger.Debug("enter")
+
+	invokeData := ut.ContractInvokePayload{}
+	invokeData.ContractId = txid
+
+	rd, wt, err := tx.GetRwData(nm)
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
+	dag := ut.ContractInvokePayload{ContractId:txid, Function: fun, ReadSet:make(map[string]interface{}), WriteSet:make(map[string]interface{})}
+
+	for key, val:= range rd {
+		dag.ReadSet[key] = val
+		logger.Infof("readSet: fun[%s], key[%s], val[%v]", dag.Function, key, val)
+	}
+	for key, val:= range wt {
+		dag.WriteSet[key] = val
+		logger.Infof("WriteSet: fun[%s], key[%s], val[%v]", dag.Function, key, dag.WriteSet[key])
+	}
+
+	return &dag, nil
 }
 
 var rwM *rwset.RwSetTxMgr

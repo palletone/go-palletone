@@ -118,6 +118,70 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 }
 
 /**
+创建普通单元
+create common unit
+@param mAddr is minner addr
+return: correct if error is nil, and otherwise is incorrect
+ */
+func CreateUnit(mAddr *common.Address) ([]modules.Unit, error)  {
+	units := []modules.Unit{}
+	// get mediator responsible for asset id
+	assetID := modules.IDType16{}
+	// get the chain last index
+	index := uint64(0)
+	// the unit is on main or not
+	isMain := true
+	// genesis unit height
+	chainIndex := modules.ChainIndex{AssetID: assetID, IsMain: isMain, Index: index}
+
+	// 交易池应该提供的是静态接口，不需要调用的时候去实例化
+	txs := modules.Transactions{}
+
+	/**
+	需要根据交易中涉及到的token类型来确定交易打包到哪个区块
+	如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
+	 */
+
+	// transactions merkle root
+	root := core.DeriveSha(txs)
+
+	// generate genesis unit header
+	header := modules.Header{
+		AssetIDs: []modules.IDType16{assetID},
+		Number:   chainIndex,
+		Root:     root,
+	}
+
+	unit := modules.Unit{Creationdate: time.Now().UTC()}
+	unit.UnitHeader = &header
+	// copy txs
+	if len(txs) > 0 {
+		unit.Txs = make([]*modules.Transaction, len(txs))
+		for i, pTx := range txs {
+			tx := modules.Transaction{
+				AccountNonce: pTx.AccountNonce,
+				TxHash:       pTx.TxHash,
+				From:         pTx.From,
+				Excutiontime: pTx.Excutiontime,
+				Memery:       pTx.Memery,
+				CreationDate: pTx.CreationDate,
+				TxFee:        pTx.TxFee,
+			}
+			if len(pTx.TxMessages) > 0 {
+				tx.TxMessages = make([]modules.Message, len(pTx.TxMessages))
+				for j := 0; j < len(pTx.TxMessages); j++ {
+					tx.TxMessages[j] = pTx.TxMessages[j]
+				}
+			}
+			unit.Txs[i] = &tx
+		}
+	}
+	units = append(units, unit)
+	return units, nil
+}
+
+
+/**
 从leveldb中查询GenesisUnit信息
 To get genesis unit info from leveldb
 */

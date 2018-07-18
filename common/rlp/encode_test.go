@@ -25,6 +25,7 @@ import (
 	"math/big"
 	"sync"
 	"testing"
+	"log"
 )
 
 type testEncoder struct {
@@ -279,6 +280,15 @@ func TestEncode(t *testing.T) {
 
 func TestEncodeToBytes(t *testing.T) {
 	runEncTests(t, EncodeToBytes)
+	m := map[string]interface{}{}
+	m["Alice"] = uint16(9)
+	m["Bob"] = "Unknown"
+	b, err := EncodeToBytes(m)
+	if err!=nil {
+		log.Printf("Encode map error:%s", err)
+	} else {
+		log.Printf("Encoding data: %v", b)
+	}
 }
 
 func TestEncodeToReader(t *testing.T) {

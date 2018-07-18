@@ -43,24 +43,16 @@ func (ce chaincodeError) Error() string {
 
 var logger = flogging.MustGetLogger("ccmanger")
 
-// The Jira issue that documents Endorser flow along with its relationship to
-// the lifecycle chaincode - https://jira.hyperledger.org/browse/FAB-181
-//type privateDataDistributor func(channel string, txID string, privateData *rwset.TxPvtReadWriteSet) error
-
 // Support contains functions that the endorser requires to execute its tasks
 type Support interface {
 	IsSysCCAndNotInvokableExternal(name string) bool
-// GetTxSimulator returns the transaction simulator for the specified ledger
-	// a client may obtain more than one such simulator; they are made unique
+    // GetTxSimulator returns the transaction simulator ,they are made unique
 	// by way of the supplied txid
 	GetTxSimulator(chainid string, txid string) (rwset.TxSimulator, error)
 
-	// GetTransactionByID retrieves a transaction by id
-	//GetTransactionByID(chid, txID string) (*pb.ProcessedTransaction, error)
 	IsSysCC(name string) bool
 
 	Execute(ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal, spec interface{}) (*pb.Response, *pb.ChaincodeEvent, error)
-	//GetChaincodeDefinition(ctx context.Context, chainID string, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, chaincodeID string, txsim ledger.TxSimulator) (resourcesconfig.ChaincodeDefinition, error)
 }
 
 // Endorser provides the Endorser service ProcessProposal
@@ -87,8 +79,8 @@ func NewEndorserServer(s Support) pb.EndorserServer {
 }
 
 //call specified chaincode (system or user)
-func (e *Endorser) callChaincode(ctxt context.Context, chainID string, version string, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, cis *pb.ChaincodeInvocationSpec, cid *pb.ChaincodeID, txsim rwset.TxSimulator) (*pb.Response, *pb.ChaincodeEvent, error) {
-	logger.Debugf("[%s][%s] Entry chaincode: %s version: %s", chainID, shorttxid(txid), cid, version)
+func (e *Endorser) callChaincode(ctxt context.Context, chainID string, version string, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, cis *pb.ChaincodeInvocationSpec, chaincodeName string, txsim rwset.TxSimulator) (*pb.Response, *pb.ChaincodeEvent, error) {
+	logger.Debugf("[%s][%s] Entry chaincode: %s version: %s", chainID, shorttxid(txid), chaincodeName, version)
 	defer logger.Debugf("[%s][%s] Exit", chainID, shorttxid(txid))
 	var err error
 	var res *pb.Response
@@ -98,8 +90,8 @@ func (e *Endorser) callChaincode(ctxt context.Context, chainID string, version s
 		ctxt = context.WithValue(ctxt, core.TXSimulatorKey, txsim)
 	}
 
-	scc := e.s.IsSysCC(cid.Name)
-	res, ccevent, err = e.s.Execute(ctxt, chainID, cid.Name, version, txid, scc, signedProp, prop, cis)
+	scc := e.s.IsSysCC(chaincodeName)
+	res, ccevent, err = e.s.Execute(ctxt, chainID, chaincodeName, version, txid, scc, signedProp, prop, cis)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -143,7 +135,7 @@ func (e *Endorser) simulateProposal(ctx context.Context, chainID string, txid st
 	var simResBytes []byte
 	var res *pb.Response
 	var ccevent *pb.ChaincodeEvent
-	res, ccevent, err = e.callChaincode(ctx, chainID, cid.Version, txid, signedProp, prop, cis, cid, txsim)
+	res, ccevent, err = e.callChaincode(ctx, chainID, cid.Version, txid, signedProp, prop, cis, cid.Name, txsim)
 	if err != nil {
 		logger.Errorf("[%s][%s] failed to invoke chaincode %s, error: %+v", chainID, shorttxid(txid), cid, err)
 		return  nil, nil, nil, err
@@ -157,7 +149,7 @@ func (e *Endorser) simulateProposal(ctx context.Context, chainID string, txid st
 	return res, simResBytes, ccevent, nil
 }
 
-//endorse the proposal by calling the ESCC
+//endorse the proposal
 func (e *Endorser) endorseProposal(ctx context.Context, chainID string, txid string, signedProp *pb.SignedProposal, proposal *pb.Proposal, response *pb.Response, simRes []byte, event *pb.ChaincodeEvent, visibility []byte, ccid *pb.ChaincodeID, txsim rwset.TxSimulator) (*pb.ProposalResponse, error) {
 	logger.Debugf("[%s][%s] Entry chaincode: %s", chainID, shorttxid(txid), ccid)
 	defer logger.Debugf("[%s][%s] Exit", chainID, shorttxid(txid))
@@ -209,13 +201,20 @@ func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedPro
 	}
 
 	//2 -- endorse and get a marshalled ProposalResponse message
+
+
 	pResp := &pb.ProposalResponse{Response: res}
-	unit, err := converRwTxResult2DagUnit(txsim)
+
+	cis, err := putils.GetChaincodeInvocationSpec(prop)
+	if err != nil {
+	}
+
+	unit, err := RwTxResult2DagInvokeUnit(txsim, txid, cis.ChaincodeSpec.ChaincodeId.Name, cis.ChaincodeSpec.Input.Args[0])
 	if err != nil {
 		logger.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, errors.New("Conver RwSet to dag unit fail")
 	}
-	logger.Info("write dag unit[%v], ccevent[%v]", unit, ccevent)
+	logger.Debugf("write dag unit[%v], ccevent[%v]", unit, ccevent)
 	// todo
 
 	pResp.Response.Payload = res.Payload

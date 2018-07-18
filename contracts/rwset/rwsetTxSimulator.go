@@ -20,6 +20,7 @@ package rwset
 
 import (
 	"errors"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 type RwSetTxSimulator struct {
@@ -43,18 +44,19 @@ func newBasedTxSimulator(txid string) (*RwSetTxSimulator, error) {
 
 // GetState implements method in interface `ledger.TxSimulator`
 func (s *RwSetTxSimulator) GetState(ns string, key string) ([]byte, error) {
-	var versionedValue *VersionedValue
+	versionedValue := &VersionedValue{}
 	testValue := []byte("abc")
 
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
 	//get value from DB !!!
-
-	//versionedValue, err := db.GetState(ns, key)
-	//if err != nil {
-	//	return nil, err
-	//}
+	var err error
+	versionedValue.Value, err = storage.Get([]byte(key))
+	if err != nil {
+		logger.Errorf("get value from db[%s] failed", ns)
+		//return nil, err
+	}
 
 	val, ver := decomposeVersionedValue(versionedValue)
 	if s.rwsetBuilder != nil {
@@ -87,6 +89,26 @@ func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 // DeleteState implements method in interface `ledger.TxSimulator`
 func (s *RwSetTxSimulator) DeleteState(ns string, key string) error {
 	return s.SetState(ns, key, nil)
+}
+
+func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]*KVWrite, error) {
+	var rd map[string]*KVRead
+	var wt map[string]*KVWrite
+
+	logger.Infof("ns=%s", ns)
+
+	if s.rwsetBuilder != nil {
+		if s.rwsetBuilder.pubRwBuilderMap != nil {
+			if s.rwsetBuilder.pubRwBuilderMap[ns].readMap != nil {
+				rd = s.rwsetBuilder.pubRwBuilderMap[ns].readMap
+			}
+			if s.rwsetBuilder.pubRwBuilderMap[ns].writeMap != nil {
+				wt = s.rwsetBuilder.pubRwBuilderMap[ns].writeMap
+			}
+		}
+	}
+
+	return rd, wt, nil
 }
 
 func (h *RwSetTxSimulator) CheckDone() error {

@@ -379,6 +379,8 @@ func makeWriter(typ reflect.Type, ts tags) (writer, error) {
 		return makePtrWriter(typ)
 	case kind == reflect.Float64:
 		return writefloat64, nil
+	case kind== reflect.Map:
+		return makeMapWriter(typ)
 	default:
 		return nil, fmt.Errorf("rlp: type %v is not RLP-serializable", typ)
 	}
@@ -547,6 +549,34 @@ func makeStructWriter(typ reflect.Type) (writer, error) {
 		lh := w.list()
 		for _, f := range fields {
 			if err := f.info.writer(val.Field(f.index), w); err != nil {
+				return err
+			}
+		}
+		w.listEnd(lh)
+		return nil
+	}
+	return writer, nil
+}
+
+func makeMapWriter(typ reflect.Type) (writer, error)  {
+	fields, err := mapFields(typ)
+	if err != nil {
+		return nil, err
+	}
+	// serialize to [["",""],["",""],["",""]]
+	writer := func(val reflect.Value, w *encbuf) error {
+		lh := w.list()
+		kwriter := fields[0].info.writer
+		vwriter := fields[1].info.writer
+
+		keys := val.MapKeys()
+		for _, k := range keys {
+			// write key
+			if err := kwriter(k, w); err != nil {
+				return err
+			}
+			// weite value
+			if err := vwriter(val.MapIndex(k), w); err != nil {
 				return err
 			}
 		}

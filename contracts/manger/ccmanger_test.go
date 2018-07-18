@@ -118,15 +118,15 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 	logger.Infof("ProcessProposal rsp=%v", rsp)
 }
 
-type oldSysCCInfo struct {
-	origSystemCC       []*scc.SystemChaincode
-	origSysCCWhitelist map[string]string
-}
+//type oldSysCCInfo struct {
+//	origSystemCC       []*scc.SystemChaincode
+//	origSysCCWhitelist map[string]string
+//}
 
-func (osyscc *oldSysCCInfo) reset() {
-	scc.MockResetSysCCs(osyscc.origSystemCC)
-	viper.Set("chaincode.system", osyscc.origSysCCWhitelist)
-}
+//func (osyscc *oldSysCCInfo) reset() {
+//	scc.MockResetSysCCs(osyscc.origSystemCC)
+//	viper.Set("chaincode.system", osyscc.origSysCCWhitelist)
+//}
 
 func peerMockInitialize() {
 //ledgermgmt.InitializeTestEnvWithCustomProcessors(ConfigTxProcessors)
@@ -204,16 +204,22 @@ func peerInit() {
 		return
 	}
 
-	//defer func() {
-	//	sysccinfo.reset()
-	//}()
-
 	chainID := util.GetTestChainID()
 	peerMockCreateChain(chainID)
 
 	scc.DeploySysCCs(chainID)
 	//defer scc.DeDeploySysCCs(chainID)
-
 }
 
 
+func TestExecSysCC(t *testing.T) {
+	// System chaincode has to be enabled
+	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
+
+	chainID := util.GetTestChainID()
+	f := "putval"
+	args := util.ToChaincodeArgs(f, "greeting", "hey there")
+
+	Init()
+	ContractInvoke(chainID, "sample_syscc",  args)
+}
