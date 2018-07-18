@@ -9,7 +9,6 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/cmd/utils"
 )
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {
@@ -75,7 +74,7 @@ func Initialize(node *node.Node, ctx *node.ServiceContext, cfg *Config) (*Mediat
 		addr := common.StringToAddress(address)
 		addrType, err := addr.Validate()
 		if err != nil || addrType != common.PublicKeyHash {
-			utils.Fatalf("Invalid mediator account address: %v", address)
+//			utils.Fatalf("Invalid mediator account address: %v", address)
 		}
 
 		msm[addr] = m.Passphrase

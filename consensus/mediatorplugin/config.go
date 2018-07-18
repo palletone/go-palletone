@@ -25,9 +25,9 @@ type Config struct {
 // mediator plugin default config
 var DefaultConfig = Config{
 	EnableStaleProduction: false,
-	//	Mediators: []Mediator{
-	//		{"P1XXX","123"},
-	//	},
+		Mediators: []Mediator{
+			{"P1XXX","123"},
+		},
 }
 
 func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
