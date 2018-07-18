@@ -75,10 +75,8 @@ func Initialize(node *node.Node, ctx *node.ServiceContext, cfg *Config) (*Mediat
 		addr := common.StringToAddress(address)
 		addrType, err := addr.Validate()
 		if err != nil || addrType != common.PublicKeyHash {
-			utils.Fatalf("Failed to write genesis block: %v", err)
+			utils.Fatalf("Invalid mediator account address: %v", address)
 		}
-
-		log.Info("Invalid mediator account address: ", address)
 
 		msm[addr] = m.Passphrase
 	}
