@@ -19,23 +19,25 @@
 package manger
 
 import (
-	"github.com/palletone/go-palletone/contracts/scc"
+	"time"
+	"net"
+	"os"
 	"sync"
+
+	"encoding/hex"
+	"google.golang.org/grpc"
+	"golang.org/x/net/context"
+	"github.com/spf13/viper"
 	"github.com/pkg/errors"
+	"github.com/golang/protobuf/proto"
+
+	"github.com/palletone/go-palletone/core/vmContractPub/util"
+	"github.com/palletone/go-palletone/contracts/core"
+	"github.com/palletone/go-palletone/contracts/accesscontrol"
+	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/common"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
-	"github.com/golang/protobuf/proto"
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
-	"encoding/hex"
-	"github.com/spf13/viper"
-	"time"
-	"net"
-	"github.com/palletone/go-palletone/contracts/core"
-	"os"
-	"google.golang.org/grpc"
-	"github.com/palletone/go-palletone/contracts/accesscontrol"
-	"golang.org/x/net/context"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
 
@@ -63,14 +65,53 @@ func (osyscc *oldSysCCInfo) reset() {
 	viper.Set("chaincode.system", osyscc.origSysCCWhitelist)
 }
 
+// contract manger module init
+func Init() error {
+	peerServerInit()
+	systemContractInit()
+	return nil
+}
 
-//MockInitialize resets chains for test env
-func init() {
+func Deinit() error{
+	peerServerDeInit()
+	systemContractDeInit()
+	return nil
+}
+
+func Invoke(chainID string, ccName string,  args [][]byte) error{
+	var mksupt Support = &SupportImpl{}
+	creator := []byte("palletone")
+	ccVersion := "ptn001"
+
+	es := NewEndorserServer(mksupt)
+	spec := &pb.ChaincodeSpec{
+		ChaincodeId: &pb.ChaincodeID{Name: ccName},
+		Type:        pb.ChaincodeSpec_GOLANG,
+		Input:       &pb.ChaincodeInput{Args: args},
+	}
+
+	cid := &pb.ChaincodeID {
+		Path:     "", //no use
+		Name:     ccName,
+		Version:  ccVersion,
+	}
+
+	sprop, prop := mockSignedEndorserProposalOrPanic(chainID, spec, creator, []byte("msg1"))
+	rsp, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, "txid001", cid)
+	if err != nil {
+		logger.Errorf("ProcessProposal error[%v]", err)
+	}
+	logger.Infof("ProcessProposal rsp=%v", rsp)
+
+	return nil
+}
+
+func chainsInit() {
 	chains.list = nil
 	chains.list = make(map[string]*chain)
 }
 
-func CreateChain(cid string, version int) error {
+func createChain(cid string, version int) error {
 	chains.Lock()
 	defer chains.Unlock()
 
@@ -90,25 +131,24 @@ func CreateChain(cid string, version int) error {
 	return nil
 }
 
-func InitCC() {
-	initSysCCs(nil)
-}
+//func InitCC() {
+//	initSysCCs(nil)
+//}
+//
+//func initSysCCs(cids []string) {
+//	//deploy system chaincodes
+//	scc.DeploySysCCs("")
+//
+//	//deploy multe chaincodes
+//	for	_, cid := range cids{
+//		if len(cid) > 0{
+//			scc.DeploySysCCs(cid)
+//		}
+//	}
+//	logger.Infof("Deployed system chaincodes")
+//}
 
-//start chaincodes
-func initSysCCs(cids []string) {
-	//deploy system chaincodes
-	scc.DeploySysCCs("")
-
-	//deploy multe chaincodes
-	for	_, cid := range cids{
-		if len(cid) > 0{
-			scc.DeploySysCCs(cid)
-		}
-	}
-	logger.Infof("Deployed system chaincodes")
-}
-
-func MarshalOrPanic(pb proto.Message) []byte {
+func marshalOrPanic(pb proto.Message) []byte {
 	data, err := proto.Marshal(pb)
 	if err != nil {
 		panic(err)
@@ -117,7 +157,10 @@ func MarshalOrPanic(pb proto.Message) []byte {
 }
 
 // CreateChaincodeProposalWithTxIDNonceAndTransient creates a proposal from given input
-func CreateChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.HeaderType, chainID string, cis *peer.ChaincodeInvocationSpec, nonce, creator []byte, transientMap map[string][]byte) (*peer.Proposal, string, error) {
+func createChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.HeaderType, chainID string, cis *peer.ChaincodeInvocationSpec, nonce, creator []byte, transientMap map[string][]byte) (*peer.Proposal, string, error) {
+	// get a more appropriate mechanism to handle it in.
+	var epoch uint64 = 0
+
 	ccHdrExt := &peer.ChaincodeHeaderExtension{ChaincodeId: cis.ChaincodeSpec.ChaincodeId}
 	ccHdrExtBytes, err := proto.Marshal(ccHdrExt)
 	if err != nil {
@@ -134,18 +177,16 @@ func CreateChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.He
 	if err != nil {
 		return nil, "", err
 	}
-	// get a more appropriate mechanism to handle it in.
-	var epoch uint64 = 0
 
 	timestamp := util.CreateUtcTimestamp()
-	hdr := &common.Header{ChannelHeader: MarshalOrPanic(&common.ChannelHeader{
+	hdr := &common.Header{ChannelHeader: marshalOrPanic(&common.ChannelHeader{
 		Type:      int32(typ),
 		TxId:      txid,
 		Timestamp: timestamp,
 		ChannelId: chainID,
 		Extension: ccHdrExtBytes,
 		Epoch:     epoch}),
-		SignatureHeader: MarshalOrPanic(&common.SignatureHeader{Nonce: nonce, Creator: creator})}
+		SignatureHeader: marshalOrPanic(&common.SignatureHeader{Nonce: nonce, Creator: creator})}
 
 	hdrBytes, err := proto.Marshal(hdr)
 	if err != nil {
@@ -155,30 +196,30 @@ func CreateChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.He
 	return &peer.Proposal{Header: hdrBytes, Payload: ccPropPayloadBytes}, txid, nil
 }
 
-func ComputeProposalTxID(nonce, creator []byte) (string, error) {
+func computeProposalTxID(nonce, creator []byte) (string, error) {
 	opdata := append(nonce, creator...)
 	digest := util.ComputeSHA256(opdata)
 
 	return hex.EncodeToString(digest), nil
 }
 
-func CreateChaincodeProposalWithTransient(typ common.HeaderType, chainID string, cis *peer.ChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.Proposal, string, error) {
+func createChaincodeProposalWithTransient(typ common.HeaderType, chainID string, cis *peer.ChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.Proposal, string, error) {
 	// generate a random nonce
 	nonce, err := crypto.GetRandomNonce()
 	if err != nil {
 		return nil, "", err
 	}
 	// compute txid
-	txid, err := ComputeProposalTxID(nonce, creator)
+	txid, err := computeProposalTxID(nonce, creator)
 	if err != nil {
 		return nil, "", err
 	}
 
-	return CreateChaincodeProposalWithTxIDNonceAndTransient(txid, typ, chainID, cis, nonce, creator, transientMap)
+	return createChaincodeProposalWithTxIDNonceAndTransient(txid, typ, chainID, cis, nonce, creator, transientMap)
 }
 
-func CreateChaincodeProposal(typ common.HeaderType, chainID string, cis *peer.ChaincodeInvocationSpec, creator []byte) (*peer.Proposal, string, error) {
-	return CreateChaincodeProposalWithTransient(typ, chainID, cis, creator, nil)
+func createChaincodeProposal(typ common.HeaderType, chainID string, cis *peer.ChaincodeInvocationSpec, creator []byte) (*peer.Proposal, string, error) {
+	return createChaincodeProposalWithTransient(typ, chainID, cis, creator, nil)
 }
 
 func GetBytesProposal(prop *peer.Proposal) ([]byte, error) {
@@ -186,8 +227,8 @@ func GetBytesProposal(prop *peer.Proposal) ([]byte, error) {
 	return propBytes, err
 }
 
-func MockSignedEndorserProposalOrPanic(chainID string, cs *peer.ChaincodeSpec, creator, signature []byte) (*peer.SignedProposal, *peer.Proposal) {
-	prop, _, err := CreateChaincodeProposal(
+func mockSignedEndorserProposalOrPanic(chainID string, cs *peer.ChaincodeSpec, creator, signature []byte) (*peer.SignedProposal, *peer.Proposal) {
+	prop, _, err := createChaincodeProposal(
 		common.HeaderType_ENDORSER_TRANSACTION,
 		chainID,
 		&peer.ChaincodeInvocationSpec{ChaincodeSpec: cs},
@@ -223,89 +264,43 @@ func peerCreateChain(cid string) error {
 	return nil
 }
 
-///////
-
-func Init() error {
-
-	PeerServerInit()
-
-	SystemContractInit()
-
-	return nil
-}
-
-func Deinit() {
-}
-
-
-func ContractInvoke(chainID string, ccName string,  args [][]byte) error{
-	var mksupt Support = &SupportImpl{}
-	creator := []byte("palletone")
-	ccVersion := "ptn001"
-
-	es := NewEndorserServer(mksupt)
-	spec := &pb.ChaincodeSpec{
-		ChaincodeId: &pb.ChaincodeID{Name: ccName},
-		Type:        pb.ChaincodeSpec_GOLANG,
-		Input:       &pb.ChaincodeInput{Args: args},
-	}
-
-	cid := &pb.ChaincodeID {
-		Path:     "", //no use
-		Name:     ccName,
-		Version:  ccVersion,
-	}
-
-	sprop, prop := MockSignedEndorserProposalOrPanic(chainID, spec, creator, []byte("msg1"))
-	rsp, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, "txid001", cid)
-	if err != nil {
-		logger.Errorf("ProcessProposal error[%v]", err)
-	}
-	logger.Infof("ProcessProposal rsp=%v", rsp)
-
-	return nil
-}
-
-
-func PeerServerInit() error {
+func peerServerInit() error {
 	var opts []grpc.ServerOption
-	grpcServer := grpc.NewServer(opts...)
-	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
-	viper.Set("peer.address", "127.0.0.1:12345")
-	viper.Set("chaincode.executetimeout", 20*time.Second)
 
-	peerAddress := "0.0.0.0:21726"
+	grpcServer := grpc.NewServer(opts...)
+	peerAddress := viper.GetString("peer.address")
+	if peerAddress == "" {
+		peerAddress = "0.0.0.0:21726"
+	}
+
 	lis, err := net.Listen("tcp", peerAddress)
 	if err != nil {
-		return nil
+		return err
 	}
-
 	ccStartupTimeout := time.Duration(5000) * time.Millisecond
 	ca, _ := accesscontrol.NewCA()
 	pb.RegisterChaincodeSupportServer(grpcServer, core.NewChaincodeSupport(peerAddress, false, ccStartupTimeout, ca))
-
 	go grpcServer.Serve(lis)
 
 	return nil
 }
 
-func PeerDeInit() error{
+func peerServerDeInit() error{
 	defer os.RemoveAll("/home/glh/tmp/chaincodes")
 	return nil
 }
 
-func SystemContractInit() error {
+func systemContractInit() error {
 	chainID := util.GetTestChainID()
 	peerCreateChain(chainID)
-
 	scc.RegisterSysCCs()
 	scc.DeploySysCCs(chainID)
-
 	return nil
 }
 
-func SystemContractDeInit(cid string) error {
-	scc.DeDeploySysCCs(cid)
+func systemContractDeInit() error {
+	chainID := util.GetTestChainID()
+	scc.DeDeploySysCCs(chainID)
 	return nil
 }
 

@@ -2,22 +2,23 @@ package manger
 
 import (
 	"testing"
+	"time"
+	"os"
+	"net"
+	"google.golang.org/grpc"
 	"golang.org/x/net/context"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/palletone/go-palletone/contracts/rwset"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/common"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/utils"
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/core/vmContractPub/mocks/samplesyscc"
-	"github.com/spf13/viper"
-	"net"
-	"google.golang.org/grpc"
-	"time"
-	"os"
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
 
 type mocksupt struct {}
@@ -33,13 +34,6 @@ func (*mocksupt) Execute(ctxt context.Context, cid, name, version, txid string, 
 	return nil, nil, nil
 }
 
-func TestChaincodeMgrPeerProcess(t *testing.T) {
-	var mksupt Support = &SupportImpl{}
-	es := NewEndorserServer(mksupt)
-	//signedProp := getSignedProp("ccid", "0", t)
-	_, err := es.ProcessProposal(context.Background(), nil, nil, "", "", nil)
-	assert.Error(t, err)
-}
 //
 //func singedPro(chid, ccid, ccver string, ccargs [][]byte) *pb.SignedProposal {
 //	spec := &pb.ChaincodeSpec{Type: 1, ChaincodeId: &pb.ChaincodeID{Name: ccid, Version: ccver}, Input: &pb.ChaincodeInput{Args: ccargs}}
@@ -110,7 +104,7 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 		Version:"ptn001",
 	}
 
-	sprop, prop := MockSignedEndorserProposalOrPanic(chainID, spec, creator, []byte("msg1"))
+	sprop, prop := mockSignedEndorserProposalOrPanic(chainID, spec, creator, []byte("msg1"))
 	rsp, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, "txid001", cid)
 	if err != nil {
 		logger.Errorf("ProcessProposal error[%v]", err)
@@ -211,8 +205,11 @@ func peerInit() {
 	//defer scc.DeDeploySysCCs(chainID)
 }
 
-
 func TestExecSysCC(t *testing.T) {
+	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
+	viper.Set("peer.address", "127.0.0.1:12345")
+	viper.Set("chaincode.executetimeout", 20*time.Second)
+
 	// System chaincode has to be enabled
 	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
 
@@ -221,5 +218,5 @@ func TestExecSysCC(t *testing.T) {
 	args := util.ToChaincodeArgs(f, "greeting", "hey there")
 
 	Init()
-	ContractInvoke(chainID, "sample_syscc",  args)
+	Invoke(chainID, "sample_syscc",  args)
 }
