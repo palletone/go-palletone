@@ -19,21 +19,24 @@
 package common
 
 import (
+	"crypto/ecdsa"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"math/big"
 )
 
 func RHashStr(x interface{}) string {
@@ -70,7 +73,7 @@ func GetUnit(hash *common.Hash, index modules.ChainIndex) *modules.Unit {
 generate genesis unit, need genesis unit configure fields and transactions list
 */
 func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
-	gUnit := modules.Unit{Gasprice: 0, Gasused: 0, Creationdate: time.Now().UTC()}
+	gUnit := modules.Unit{Creationdate: time.Now().UTC()}
 
 	// genesis unit asset id
 	gAssetID := asset.NewAsset()
@@ -84,8 +87,6 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 	// generate genesis unit header
 	header := modules.Header{
 		AssetIDs: []modules.IDType16{gAssetID},
-		GasLimit: 0,
-		GasUsed:  0,
 		Number:   chainIndex,
 		Root:     root,
 	}
@@ -117,6 +118,35 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 }
 
 /**
+从leveldb中查询GenesisUnit信息
+To get genesis unit info from leveldb
+*/
+func GetGenesisUnit(index uint64) *modules.Unit {
+	// unit key: [HEADER_PREFIX][index]_[chainindex struct]_[unit Bytes]
+	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
+	data := storage.GetPrefix([]byte(key))
+	for k, v := range data {
+		var chainIndex modules.ChainIndex
+		if err := rlp.DecodeBytes([]byte(k), &chainIndex); err != nil {
+			msg := fmt.Sprintf("Chainindex get error: %s", err)
+			log.Error(msg)
+			continue
+		}
+
+		if chainIndex.IsMain == true {
+			var unit modules.Unit
+			if err := rlp.DecodeBytes([]byte(v), &unit); err != nil {
+				msg := fmt.Sprintf("Chainindex get error: %s", err)
+				log.Error(msg)
+				return nil
+			}
+			return &unit
+		}
+	}
+	return nil
+}
+
+/**
 为创世单元生成ConfigPayload
 To generate config payload for genesis unit
 */
@@ -143,21 +173,26 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, 
 save genesis unit data
 */
 func SaveUnit(unit modules.Unit) error {
-	if unit.UnitSize==0 || unit.Size()==0 {
+	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Info("Unit is null")
 		return nil
 	}
-	// check unit signature
+	// check unit signature, should be compare to mediator list
+	if err := checkUnitSignature(unit.UnitHeader); err != nil {
+		return err
+	}
 
 	// check unit size
 	if unit.UnitSize != unit.Size() {
 		return modules.ErrUnit(-1)
 	}
 	// check transactions in unit
-	totalFee, err:=checkTransactions(&unit.Txs)
-	if err!=nil { return err }
-	if totalFee != unit.Gasprice && totalFee!=unit.Gasused {
-		return fmt.Errorf("Unit's gas computed error.")
+	totalFee, err := checkTransactions(&unit.Txs)
+	if err != nil {
+		return err
+	}
+	// todo check coin base fee
+	if totalFee <= 0 {
 	}
 	// save unit header, key is like "[HEADER_PREFIX][chain_index]_[unit hash]"
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
@@ -167,10 +202,6 @@ func SaveUnit(unit modules.Unit) error {
 	// traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for _, tx := range unit.Txs {
-		// check tx size
-		if tx.Size() != tx.Txsize {
-			return modules.ErrUnit(-4)
-		}
 		// traverse messages
 		for _, msg := range tx.TxMessages {
 			// handle different messages
@@ -184,7 +215,7 @@ func SaveUnit(unit modules.Unit) error {
 			case modules.APP_CONTRACT_DEPLOY:
 			case modules.APP_CONTRACT_INVOKE:
 			case modules.APP_CONFIG:
-				if ok:=saveConfigPayload(tx.TxHash, &msg); ok==false {
+				if ok := saveConfigPayload(tx.TxHash, &msg); ok == false {
 					return modules.ErrUnit(-6)
 				}
 			case modules.APP_TEXT:
@@ -193,12 +224,17 @@ func SaveUnit(unit modules.Unit) error {
 			}
 		}
 		// save transaction
-		if err=storage.SaveTransaction(tx); err!=nil{ return err}
+		if err = storage.SaveTransaction(tx); err != nil {
+			return err
+		}
 	}
 
 	// save unit body, the value only save txs' hash set, and the key is merkle root
-	if err = storage.SaveBody(unit.UnitHeader.Root, txHashSet); err!=nil {return err}
+	if err = storage.SaveBody(unit.UnitHeader.Root, txHashSet); err != nil {
+		return err
+	}
 
+	// todo send message to transaction pool to delete unit's transactions
 	return nil
 }
 
@@ -242,15 +278,20 @@ func checkMessageType(app string, payload interface{}) bool {
 检查unit中所有交易的合法性，返回所有交易的交易费总和
 check all transactions in one unit
 return all transactions' fee
- */
+*/
 func checkTransactions(txs *modules.Transactions) (uint64, error) {
 	fee := uint64(0)
 	for _, tx := range *txs {
-		txFee := uint64(0)
 		for _, msg := range tx.TxMessages {
+			// check message type and payload
 			if !checkMessageType(msg.App, msg.Payload) {
 				return 0, fmt.Errorf("Transaction (%s) message (%s) type is not consistent with payload.", tx.TxHash, msg.PayloadHash)
 			}
+			// check tx size
+			if tx.Size() != tx.Txsize {
+				return 0, fmt.Errorf("Transaction(%s) Size is incorrect.", tx.TxHash)
+			}
+			// check every type payload
 			switch msg.App {
 			case modules.APP_PAYMENT:
 
@@ -269,12 +310,15 @@ func checkTransactions(txs *modules.Transactions) (uint64, error) {
 			}
 		}
 		// check transaction fee
-		i := big.Int{}
-		i.SetUint64(txFee)
-		if tx.TxFee.Cmp(&i)!=0 {
+		txFee := modules.TXFEE
+		// i := big.Int{}
+		// i.SetUint64(txFee)
+		if tx.TxFee.Cmp(txFee) != 0 {
 			return 0, fmt.Errorf("Transaction(%s)'s fee is invalid.", tx.TxHash)
 		}
 	}
+
+	// to check total fee with coinbase tx
 
 	return fee, nil
 }
@@ -333,10 +377,83 @@ func saveConfigPayload(txHash common.Hash, msg *modules.Message) bool {
 		return false
 	}
 
-	if err := SaveConfig(payload.ConfigSet); err!=nil {
+	if err := SaveConfig(payload.ConfigSet); err != nil {
 		errMsg := fmt.Sprintf("To save config payload error: %s", err)
 		log.Error(errMsg)
 		return false
 	}
 	return true
+}
+
+/**
+验证单元的签名，需要比对见证人列表
+*/
+func checkUnitSignature(h *modules.Header) error {
+	if h.Authors == nil || len(h.Authors.Address) <= 0 {
+		return fmt.Errorf("No author info")
+	}
+	emptySigUnit := modules.Unit{}
+	emptySigUnit.UnitHeader.Authors = nil
+	emptySigUnit.UnitHeader.Witness = []modules.Author{}
+
+	sig := make([]byte, 65)
+	copy(sig[32-len(h.Authors.R):32], h.Authors.R)
+	copy(sig[64-len(h.Authors.S):64], h.Authors.S)
+	copy(sig[64:len(sig)], h.Authors.V)
+
+	hash := h.Hash()
+	pubKey, _ := RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
+	//
+	//  pubKey to pubKey_bytes
+	pubKey_bytes := crypto.FromECDSAPub(pubKey)
+	if keystore.VerifyUnitWithPK(sig, emptySigUnit, pubKey_bytes) == false {
+		return fmt.Errorf("Verify unit signature error.")
+	}
+
+	// get mediators
+	data := GetConfig([]byte("MediatorCandidates"))
+	bNum := GetConfig([]byte("ActiveMediators"))
+	num, err := strconv.Atoi(string(bNum))
+	if err != nil {
+		return fmt.Errorf("Check unit signature error: %s", err)
+	}
+	if num != len(data) {
+		return fmt.Errorf("Check unit signature error: mediators info error, pls update network")
+	}
+
+	// decode mediator list data
+	var mediators []string
+	if err := rlp.DecodeBytes(data, &mediators); err != nil {
+		return fmt.Errorf("Check unit signature error: %s", err)
+	}
+
+	// todo group signature verify
+
+	return nil
+}
+
+func RSVtoAddress(tx *modules.Transaction) common.Address {
+	sig := make([]byte, 65)
+	copy(sig[32-len(tx.From.R):32], tx.From.R)
+	copy(sig[64-len(tx.From.S):64], tx.From.S)
+	copy(sig[64:len(sig)], tx.From.V)
+	pub, _ := crypto.SigToPub(tx.TxHash[:], sig)
+	address := crypto.PubkeyToAddress(*pub)
+	return address
+}
+
+func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {
+	sig := make([]byte, 65)
+	copy(sig[32-len(r):32], r)
+	copy(sig[64-len(s):64], s)
+	copy(sig[64:len(sig)], v)
+	return crypto.SigToPub(hash, sig)
+}
+
+/**
+从levedb中根据ChainIndex获得Unit信息
+To get unit information by its ChainIndex
+*/
+func QueryUnitByChainIndex(index *modules.ChainIndex) *modules.Unit {
+	return nil
 }

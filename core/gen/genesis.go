@@ -22,13 +22,16 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/common/txscript"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	asset2 "github.com/palletone/go-palletone/dag/asset"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
+	"fmt"
 )
 
 const (
@@ -93,9 +96,9 @@ func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account acco
 }
 
 func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Unit, error) {
-	txs := GetTransctions(ks, genesis)
+
 	// Just commit the new block if there is no stored genesis block.
-	stored := storage.GetGenesisUnit(0)
+	stored := dagCommon.GetGenesisUnit(0)
 	// Check whether the genesis block is already written.
 	if stored != nil {
 		return stored, errors.New("the genesis block is already written")
@@ -107,25 +110,112 @@ func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Un
 	} else {
 		log.Info("Writing custom genesis block")
 	}
+	txs := GetGensisTransctions(ks, genesis)
+	log.Info("-> Genesisi transactions:")
+	for i, tx := range txs{
+		log.Info("Tx[%d]: %s", i, tx.TxHash)
+	}
 	//return modules.NewGenesisUnit(genesis, txs)
 	return dagCommon.NewGenesisUnit(txs)
 }
 
-func GetTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.Transactions {
-	tx := &modules.Transaction{AccountNonce: 1}
-	txs := []*modules.Transaction{}
-	txs = append(txs, tx)
+func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.Transactions {
+	// step1, generate payment payload message: coin creation
+	holder := common.Address{}
+	holder.SetString(genesis.TokenHolder)
+	if txscript.CheckP2PKHAddress(holder) == false {
+		log.Error("Genesis holder address is an invalid p2pkh address.")
+		return nil
+	}
+	assetInfo := modules.AssetInfo{
+		Alias:          genesis.Alias,
+		InitialTotal:   genesis.TokenAmount,
+		Decimal:        genesis.TokenDecimal,
+		DecimalUnit:    genesis.DecimalUnit,
+		OriginalHolder: holder,
+	}
+	extra, err := rlp.EncodeToBytes(assetInfo)
+	if err != nil {
+		log.Error("Get genesis assetinfo bytes error.")
+		return nil
+	}
+	txin := modules.Input{
+		Extra: extra, // save asset info
+	}
+	// get new asset id
+	assetId := asset2.NewAsset()
+	asset := modules.Asset{
+		AssertId: assetId,
+		UniqueId: assetId,
+		ChainId:  genesis.ChainID,
+	}
+	// generate p2pkh bytes
+	publicKey, err := ks.GetPublicKey(holder)
+	if err != nil {
+		log.Error("Failed to Get Public Key:", err.Error())
+		return nil
+	}
+	pkscript := txscript.PayToPubkeyHashScript(publicKey)
+	txout := modules.Output{
+		Value:    genesis.TokenAmount,
+		Asset:    asset,
+		PkScript: pkscript,
+	}
+	pay := modules.PaymentPayload{
+		Inputs:  []modules.Input{txin},
+		Outputs: []modules.Output{txout},
+	}
+	msg0 := modules.Message{
+		App:     modules.APP_PAYMENT,
+		Payload: pay,
+	}
+	msg0.PayloadHash = rlp.RlpHash(pay)
+	// step2, generate global config payload message
+	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis)
+	if err!=nil{
+		log.Error("Generate genesis unit config payload error.")
+		return nil
+	}
+	msg1 := modules.Message{
+		App:     modules.APP_CONFIG,
+		Payload: configPayload,
+	}
+	msg1.PayloadHash = rlp.RlpHash(configPayload)
+	// step3, genesis transaction
+	tx := &modules.Transaction{
+		AccountNonce: 1,
+		TxMessages: []modules.Message{msg0, msg1},
+	}
+	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
+	if err!=nil{
+		msg := fmt.Sprintf("Get genesis transactions hash error: %s", err)
+		log.Error(msg)
+		return nil
+	}
+	tx.TxHash.SetBytes(txHash)
+	// step4, sign tx
+	R, S, V, err := ks.SigTX(tx.TxHash, holder)
+	if err!=nil {
+		msg := fmt.Sprintf("Sign transaction error: %s", err)
+		log.Error(msg)
+		return nil
+	}
+	tx.From.Address = holder.String()
+	tx.From.R = R
+	tx.From.S = S
+	tx.From.V = V
+	txs := []*modules.Transaction{tx}
 	return txs
 }
 
-func CommitDB(unit *modules.Unit, publicKey []byte, sign string, address common.Address) error {
+func CommitDB(unit *modules.Unit, publicKey, addr []byte, address common.Address) error {
 	var authentifier modules.Authentifier
-	authentifier.R = sign
+	authentifier.Address = string(addr)
 	author := new(modules.Author)
 	author.Address = address
 	author.Pubkey = publicKey
 	author.TxAuthentifier = authentifier
-	unit.UnitHeader.Authors = author
+	unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, *author)
 	return nil
 }
 

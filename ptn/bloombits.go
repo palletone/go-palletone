@@ -22,7 +22,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -98,22 +97,14 @@ type BloomIndexer struct {
 	head    common.Hash // Head is the hash of the last header processed
 }
 
+/*
 // NewBloomIndexer returns a chain indexer that generates bloom bits data for the
 // canonical chain for fast logs filtering.
 func NewBloomIndexer(size uint64) *coredata.ChainIndexer {
-	/*would recover
-	db := ptndb.Database{}
-	backend := &BloomIndexer{
-		db:   db,
-		size: size,
-	}
-	table := ptndb.NewTable(db, string(coredata.BloomBitsIndexPrefix))
 
-	return coredata.NewChainIndexer(db, table, backend, size, bloomConfirms, bloomThrottling, "bloombits")
-	*/
 	return nil
 }
-
+*/
 // Reset implements core.ChainIndexerBackend, starting a new bloombits index
 // section.
 func (b *BloomIndexer) Reset(section uint64, lastSectionHead common.Hash) error {

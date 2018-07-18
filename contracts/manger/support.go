@@ -28,7 +28,6 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	ut "github.com/palletone/go-palletone/dag/modules"
 	chaincode "github.com/palletone/go-palletone/contracts/core"
-
 )
 
 // SupportImpl provides an implementation of the endorser.Support interface
@@ -64,7 +63,9 @@ func (s *SupportImpl) Execute(ctxt context.Context, cid, name, version, txid str
 		return chaincode.Execute(ctxt, cccid, spec)
 	case *pb.ChaincodeInvocationSpec:
 		cis := spec.(*pb.ChaincodeInvocationSpec)
+
 		logger.Infof("===cis:%v", cis)
+
 		//decorate the chaincode input
 
 		//decorators := library.InitRegistry(library.Config{}).Lookup(library.Decoration).([]decoration.Decorator)

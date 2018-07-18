@@ -118,8 +118,8 @@ func defaultNodeConfig() node.Config {
 	cfg := node.DefaultConfig
 	cfg.Name = clientIdentifier
 	cfg.Version = configure.VersionWithCommit(gitCommit)
-	cfg.HTTPModules = append(cfg.HTTPModules, "eth" /*, "shh"*/)
-	cfg.WSModules = append(cfg.WSModules, "eth" /*, "shh"*/)
+	cfg.HTTPModules = append(cfg.HTTPModules, "ptn" /*, "shh"*/)
+	cfg.WSModules = append(cfg.WSModules, "ptn" /*, "shh"*/)
 	cfg.IPCPath = "gptn.ipc"
 	return cfg
 }
@@ -147,6 +147,8 @@ func maybeLoadConfig(ctx *cli.Context, cfg *FullConfig) error {
 			utils.Fatalf("%v", err)
 			return err
 		}
+
+		log.Info("Writing new config file at ", configPath)
 	}
 
 	// 加载配置文件中的配置信息到 cfg中
@@ -170,11 +172,13 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	}
 
 	// Apply flags.
-	// 3. 将命令行中的配置参数覆盖cfg中对应的配置
+	// 3. 将命令行中的配置参数覆盖cfg中对应的配置,
+	// 先处理node的配置信息，再创建node，然后再处理其他service的配置信息，因为其他service的配置依赖node中的协议
 	// 注意：不是将命令行中所有的配置都覆盖cfg中对应的配置，例如 Ptnstats 配置目前没有覆盖 (可能通过命令行设置)
 	utils.SetNodeConfig(ctx, &cfg.Node)
 	cfg = adaptorConfig(cfg)
-	// 4. 通过Node的配置来创建一个Node
+
+	// 4. 通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
@@ -185,6 +189,8 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
 	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
+	mp.SetMediatorPluginConfig(ctx, &cfg.MediatorPlugin)
+
 	return stack, cfg
 }
 
@@ -210,6 +216,9 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		// 注册状态服务。 默认情况下是没有启动的。
 		utils.RegisterPtnStatsService(stack, cfg.Ptnstats.URL)
 	}
+
+	mp.RegisterMediatorPluginService(stack, &cfg.MediatorPlugin)
+
 	return stack
 }
 

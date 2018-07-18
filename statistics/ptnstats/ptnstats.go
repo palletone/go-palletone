@@ -38,7 +38,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn"
 	"golang.org/x/net/websocket"
 )
@@ -58,7 +57,7 @@ const (
 type txPool interface {
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.
-	SubscribeTxPreEvent(chan<- txspool.TxPreEvent) event.Subscription
+	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 }
 
 //type blockChain interface {

@@ -1,3 +1,21 @@
+/*
+   This file is part of go-palletone.
+   go-palletone is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   go-palletone is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/*
+ * @author PalletOne core developers <dev@pallet.one>
+ * @date 2018
+ */
+
 package txspool
 
 import (
@@ -8,6 +26,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -54,7 +73,7 @@ func (m *txSortedMap) Get(nonce uint64) *modules.Transaction {
 func (m *txSortedMap) GetNonce(addr common.Address) uint64 {
 	if m.items != nil {
 		for key, v := range m.items {
-			if v.From.Address == addr {
+			if dagcommon.RSVtoAddress(v) == addr {
 				return key
 			}
 		}
@@ -397,8 +416,10 @@ func newTxPricedList(all *map[common.Hash]*modules.Transaction) *txPricedList {
 }
 
 // Put inserts a new transaction into the heap.
-func (l *txPricedList) Put(tx *modules.Transaction) {
+func (l *txPricedList) Put(tx *modules.Transaction) *priceHeap {
 	heap.Push(l.items, tx)
+
+	return l.items
 }
 
 // Removed notifies the prices transaction list that an old transaction dropped
@@ -461,7 +482,7 @@ func (l *txPricedList) Underpriced(tx *modules.Transaction, local *accountSet) b
 	// Discard stale price points if found at the heap start
 	for len(*l.items) > 0 {
 		head := []*modules.Transaction(*l.items)[0]
-		if _, ok := (*l.all)[head.Hash()]; !ok {
+		if _, ok := (*l.all)[head.TxHash]; !ok {
 			l.stales--
 			heap.Pop(l.items)
 			continue

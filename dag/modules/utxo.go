@@ -163,9 +163,10 @@ type SpendProof struct {
 structure for saving asset property infomation
 */
 type AssetInfo struct {
-	Alias          string      `json:"alias"`           // asset name
-	AssetID        Asset       `json:"asset_id"`        // asset id
-	InitialTotal   uint64      `json:"initial_total"`   // total circulation
-	Decimal        uint64      `json:"deciaml"`         // asset accuracy
-	OriginalHolder common.Hash `json:"original_holder"` // holder address when creating the asset
+	Alias          string         `json:"alias"`           // asset name
+	AssetID        Asset          `json:"asset_id"`        // asset id
+	InitialTotal   uint64         `json:"initial_total"`   // total circulation
+	Decimal        uint32         `json:"deciaml"`         // asset accuracy
+	DecimalUnit    string         `json:"unit"`            // asset unit
+	OriginalHolder common.Address `json:"original_holder"` // holder address when creating the asset
 }

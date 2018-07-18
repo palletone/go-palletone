@@ -23,7 +23,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"math/big"
-	"sort"
 	"sync"
 	"testing"
 
@@ -35,11 +34,9 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	//"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag/coredata"
 )
 
 var (
@@ -118,24 +115,24 @@ func (p *testTxPool) Pending() (map[common.Address]modules.Transactions, error) 
 	defer p.lock.RUnlock()
 
 	batches := make(map[common.Address]modules.Transactions)
-	for _, tx := range p.pool {
-		from, _ := types.Sender(types.HomesteadSigner{}, tx)
-		batches[from] = append(batches[from], tx)
-	}
-	for _, batch := range batches {
-		sort.Sort(types.TxByNonce(batch))
-	}
+	//for _, tx := range p.pool {
+	//	from, _ := types.Sender(types.HomesteadSigner{}, tx)
+	//	batches[from] = append(batches[from], tx)
+	//}
+	//for _, batch := range batches {
+	//	sort.Sort(types.TxByNonce(batch))
+	//}
 	return batches, nil
 }
 
-func (p *testTxPool) SubscribeTxPreEvent(ch chan<- txspool.TxPreEvent) event.Subscription {
+func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return p.txFeed.Subscribe(ch)
 }
 
 // newTestTransaction create a new dummy transaction.
 func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *modules.Transaction {
-	tx := types.NewTransaction(nonce, common.Address{}, big.NewInt(0), 100000, big.NewInt(0), make([]byte, datasize))
-	tx, _ = types.SignTx(tx, types.HomesteadSigner{}, from)
+	tx := modules.NewTransaction(nonce, big.NewInt(0), []byte("abc"))
+	//tx, _ = keystore.SigTX(tx, types.HomesteadSigner{}, from)
 	return tx
 }
 

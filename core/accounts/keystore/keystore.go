@@ -36,7 +36,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -271,21 +270,22 @@ func (ks *KeyStore) SignHash(a accounts.Account, hash []byte) ([]byte, error) {
 
 // SignTx signs the given transaction with the requested account.
 func (ks *KeyStore) SignTx(a accounts.Account, tx *modules.Transaction, chainID *big.Int) (*modules.Transaction, error) {
-	authen, err := ks.SigTX(tx, a.Address)
+	R, S, V, err := ks.SigTX(tx, a.Address)
 	if err != nil {
 		return nil, err
 	}
-	publicKey, err1 := ks.GetPublicKey(a.Address)
-	if err1 != nil {
-		return nil, err1
-	}
+	// publicKey, err1 := ks.GetPublicKey(a.Address)
+	// if err1 != nil {
+	// 	return nil, err1
+	// }
 
 	if tx.From == nil {
-		tx.From = new(modules.Author)
+		tx.From = new(modules.Authentifier)
 	}
-	tx.From.Address = a.Address
-	tx.From.Pubkey = publicKey
-	tx.From.TxAuthentifier = modules.Authentifier{authen}
+	tx.From.Address = a.Address.String()
+	tx.From.R = R
+	tx.From.S = S
+	tx.From.V = V
 	return tx, nil
 }
 
@@ -324,17 +324,16 @@ func (ks *KeyStore) SignTxWithPassphrase(a accounts.Account, passphrase string, 
 	if err != nil {
 		return nil, err
 	}
-	publicKey, err1 := ks.GetPublicKey(a.Address)
-	if err1 != nil {
-		return nil, err1
-	}
+	// publicKey := crypto.FromECDSAPub(&key.PrivateKey.PublicKey)
 
 	if tx.From == nil {
-		tx.From = new(modules.Author)
+		tx.From = new(modules.Authentifier)
 	}
-	tx.From.Address = a.Address
-	tx.From.Pubkey = publicKey
-	tx.From.TxAuthentifier = modules.Authentifier{authen}
+
+	tx.From.Address = a.Address.String()
+	tx.From.R = authen[:32]
+	tx.From.S = authen[32:64]
+	tx.From.V = authen[64:]
 	return tx, nil
 }
 
@@ -538,10 +537,10 @@ func (ks *KeyStore) GetPublicKey(address common.Address) ([]byte, error) {
 }
 
 //unit:Unit struct
-func (ks *KeyStore) SigUnit(unit interface{}, address common.Address) (string, error) {
+func (ks *KeyStore) SigUnit(unit interface{}, address common.Address) ([]byte, error) {
 	privateKey, err := ks.getPrivateKey(address)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer ZeroKey(privateKey)
 
@@ -549,40 +548,50 @@ func (ks *KeyStore) SigUnit(unit interface{}, address common.Address) (string, e
 	//unit signature
 	sign, err := crypto.Sign(hash.Bytes(), privateKey)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return hexutil.Encode(sign), nil
+	return sign, nil
 }
 
-func (ks *KeyStore) SigUnitWithPwd(unit interface{}, privateKey *ecdsa.PrivateKey) (string, error) {
+func (ks *KeyStore) SigUnitWithPwd(unit interface{}, privateKey *ecdsa.PrivateKey) ([]byte, error) {
 	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
 	//unit signature
 	sign, err := crypto.Sign(hash.Bytes(), privateKey)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return hexutil.Encode(sign), nil
+	return sign, nil
 }
 
-func VerifyUnitWithPK(sign string, unit interface{}, publicKey []byte) bool {
+func VerifyUnitWithPK(sign []byte, unit interface{}, publicKey []byte) bool {
 	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
-	s, err := hexutil.Decode(sign)
-	if err != nil {
-		return false
-	}
-	sig := s[:len(s)-1] // remove recovery id
+	// s, err := hexutil.Decode(sign)
+	// if err != nil {
+	// 	return false
+	// }
+	sig := sign[:len(sign)-1] // remove recovery id
 	return crypto.VerifySignature(publicKey, hash.Bytes(), sig)
 }
 
 //tx:TxMessages   []Message
-func (ks *KeyStore) SigTX(tx interface{}, address common.Address) (string, error) {
-	return ks.SigUnit(tx, address)
+func (ks *KeyStore) SigTX(tx interface{}, address common.Address) (R, S, V []byte, e error) {
+	sig, err := ks.SigUnit(tx, address)
+	if err!=nil {
+		e = err
+		return
+	}
+
+	R = sig[:32]
+	S = sig[32:64]
+	V = append(V, sig[64]+27)
+	e = nil
+	return
 }
 
-func VerifyTXWithPK(sign string, tx interface{}, publicKey []byte) bool {
+func VerifyTXWithPK(sign []byte, tx interface{}, publicKey []byte) bool {
 	return VerifyUnitWithPK(sign, tx, publicKey)
 }
 
-func (ks *KeyStore) SigTXWithPwd(tx interface{}, privateKey *ecdsa.PrivateKey) (string, error) {
+func (ks *KeyStore) SigTXWithPwd(tx interface{}, privateKey *ecdsa.PrivateKey) ([]byte, error) {
 	return ks.SigUnitWithPwd(tx, privateKey)
 }

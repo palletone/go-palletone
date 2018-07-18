@@ -19,8 +19,13 @@
 package modules
 
 import (
+	"crypto/ecdsa"
 	"log"
 	"testing"
+	"unsafe"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
 func TestNewUnit(t *testing.T) {
@@ -55,4 +60,75 @@ func TestInteface(t *testing.T) {
 	var c USB
 	c = b
 	c.Connect()
+}
+
+func TestCopyHeader(t *testing.T) {
+	u1 := common.Hash{}
+	u1.SetString("00000000000000000000000000000000")
+	u2 := common.Hash{}
+	u2.SetString("111111111111111111111111111111111")
+	addr := common.Address{}
+	addr.SetString("0000000011111111")
+	auth := Authentifier{
+		Address: "signtest",
+		R:       []byte("12345678901234567890"),
+		S:       []byte("09876543210987654321"),
+		V:       []byte("1"),
+	}
+	author := Author{
+		Address:        addr,
+		Pubkey:         []byte("1234567890123456789"),
+		TxAuthentifier: auth,
+	}
+	w := []Author{}
+	w = append(w, author)
+	assetID := IDType16{}
+	assetID.SetBytes([]byte("0000000011111111"))
+	h := Header{
+		ParentUnits: []common.Hash{u1, u2},
+		AssetIDs:    []IDType16{assetID},
+		Authors:     &auth,
+		Witness:     w,
+		Root:        common.Hash{},
+		Number:      ChainIndex{AssetID: assetID, IsMain: true, Index: 0},
+	}
+
+	newH := CopyHeader(&h)
+	newH.Authors = nil
+	newH.Witness = []Author{}
+	hh := Header{}
+	log.Printf("newh=%v \n oldH=%v \n hh=%v", *newH, h, hh)
+}
+
+// test unit's size of header
+func TestUnitSize(t *testing.T) {
+	key := new(ecdsa.PrivateKey)
+	key, _ = crypto.GenerateKey()
+	h := new(Header)
+	h.AssetIDs = append(h.AssetIDs, PTNCOIN)
+	au := new(Authentifier)
+	address := crypto.PubkeyToAddress(key.PublicKey)
+	log.Println("address:", address)
+
+	author := &Author{
+		Address:        address,
+		Pubkey:         []byte("1234567890123456789"),
+		TxAuthentifier: *au,
+	}
+
+	h.Witness = append(h.Witness, *author)
+	h.Number.AssetID = PTNCOIN
+	h.Number.Index = uint64(333333)
+	h.Extra = make([]byte, 20)
+	h.ParentUnits = append(h.ParentUnits, h.Root)
+
+	h.Root = h.Hash()
+	sig, _ := crypto.Sign(h.Root[:], key)
+	au.R = sig[:32]
+	au.S = sig[32:64]
+	au.V = sig[64:]
+	h.Authors = au
+
+	log.Println("size: ", unsafe.Sizeof(h))
+
 }

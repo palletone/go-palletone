@@ -29,6 +29,9 @@ import (
 // ServiceContext is a collection of service independent options inherited from
 // the protocol stack, that is passed to all constructors to be optionally used;
 // as well as utility methods to operate on the service environment.
+// ServiceContext 是一些服务的集合，这些服务是从结点（或者叫协议栈）继承过来的，和具体服务无关，
+// 具体服务的构造函数都被传递ServiceContext类型的参数以供选择使用;
+// ServiceContext 也是在服务环境上运行的实用方法。
 type ServiceContext struct {
 	config         *Config
 	services       map[reflect.Type]Service // Index of the already constructed services
@@ -69,6 +72,8 @@ func (ctx *ServiceContext) Service(service interface{}) error {
 
 // ServiceConstructor is the function signature of the constructors needed to be
 // registered for service instantiation.
+// ServiceConstructor是服务实例化时需要的构造函数的函数签名；
+// 函数签名，如果两个函数的参数列表和返回值列表的变量类型能一一对应，那么这两个函数就有相同的签名。
 type ServiceConstructor func(ctx *ServiceContext) (Service, error)
 
 // Service is an individual protocol that can be registered into a node.
@@ -81,13 +86,16 @@ type ServiceConstructor func(ctx *ServiceContext) (Service, error)
 //
 // • Restart logic is not required as the node will create a fresh instance
 // every time a service is started.
+// Service是一个接口，定义了4个需要实现的函数。任何实现了这4个方法的类型，都可以称之为一个Service。
+// 服务的生命周期管理已经代理给node管理。该服务允许在创建时自动初始化，但是在Start方法之外不应该启动goroutines。
+// 重新启动逻辑不是必需的，因为节点将在每次启动服务时创建一个新的实例。
 type Service interface {
 	// Protocols retrieves the P2P protocols the service wishes to start.
 	// 返回 service 要启动的 P2P 协议列表
 	Protocols() []p2p.Protocol
 
 	// APIs retrieves the list of RPC descriptors the service provides
-	// 返回 service 提供的 RPC 接口
+	// 返回本 service 能提供的 RPC API 接口
 	APIs() []rpc.API
 
 	// Start is called after all services have been constructed and the networking
