@@ -27,7 +27,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 		println("No mediators configured! Please add mediator and private keys to configuration.")
 	} else {
 		// 2. 开启循环生产计划
-		log.Info(fmt.Sprintf("Launching unit verify for %d mediators.", len(mp.mediators)))
+		log.Info(fmt.Sprintf("Launching verified unit production for %d mediators.", len(mp.mediators)))
 
 		//if mp.ProductionEnabled {
 		//	if mp.DB.DynGlobalProp.LastVerifiedUnitNum == 0 {
@@ -42,7 +42,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 		//mp.ScheduleProductionLoop()
 	}
 
-	log.Info("mediator plugin startup end!")
+	log.Info("mediator plugin startup end")
 
 	return nil
 }
@@ -75,7 +75,10 @@ func Initialize(node *node.Node, ctx *node.ServiceContext, cfg *Config) (*Mediat
 		addrType, err := addr.Validate()
 		if err != nil || addrType != common.PublicKeyHash {
 //			utils.Fatalf("Invalid mediator account address: %v", address)
+			log.Info(fmt.Sprintf("Invalid mediator account address: %v", address))
 		}
+
+		log.Info(fmt.Sprintf("Mediator account address: %v", address))
 
 		msm[addr] = m.Passphrase
 	}
