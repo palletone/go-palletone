@@ -57,11 +57,11 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 	log.Info("Register Mediator Plugin Service...")
 
 	stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-		return Initialize(stack, ctx, cfg)
+		return Initialize(stack, cfg)
 	})
 }
 
-func Initialize(node *node.Node, ctx *node.ServiceContext, cfg *Config) (*MediatorPlugin, error) {
+func Initialize(node *node.Node, cfg *Config) (*MediatorPlugin, error) {
 	log.Info("mediator plugin initialize begin")
 
 	mss := 	cfg.Mediators
