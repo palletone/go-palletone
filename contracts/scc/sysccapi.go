@@ -189,6 +189,7 @@ func isWhitelisted(syscc *SystemChaincode) bool {
 //note the chaincode must still be deployed and launched like a user chaincode will be
 func RegisterSysCCs() {
 	for _, sysCC := range systemChaincodes {
+		sysccLogger.Infof("<%v>", sysCC)
 		registerSysCC(sysCC)
 	}
 }

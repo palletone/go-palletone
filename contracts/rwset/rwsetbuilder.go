@@ -47,6 +47,7 @@ func (b *RWSetBuilder) getOrCreateNsPubRwBuilder(ns string) *nsPubRwBuilder {
 	if !ok {
 		nsPubRwBuilder = newNsPubRwBuilder(ns)
 		b.pubRwBuilderMap[ns] = nsPubRwBuilder
+		logger.Infof("**************,ns[%s], %v, %v", ns, nsPubRwBuilder, b.pubRwBuilderMap[ns])
 	}
 	return nsPubRwBuilder
 }

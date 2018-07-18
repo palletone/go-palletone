@@ -19,8 +19,13 @@
 
 package scc
 
+import (
+	"github.com/palletone/go-palletone/core/vmContractPub/mocks/samplesyscc"
+)
+
 //see systemchaincode_test.go for an example using "sample_syscc"
 var systemChaincodes = []*SystemChaincode{
+/*
 	{
 		Enabled:           true,
 		Name:              "cscc",
@@ -66,7 +71,17 @@ var systemChaincodes = []*SystemChaincode{
 		InvokableExternal: true, // qscc can be invoked to retrieve blocks
 		InvokableCC2CC:    true, // qscc can be invoked to retrieve blocks also by a cc
 	},
+*/
+	//set systemChaincodes to sample
+	{
+		Enabled:   true,
+		Name:      "sample_syscc",
+		Path:      "/home/glh/project/pallet/src/common/mocks/samplesyscc/samplesyscc",
+		InitArgs:  [][]byte{},
+		Chaincode: &samplesyscc.SampleSysCC{},
+	},
 }
+
 
 //DeploySysCCs is the hook for system chaincodes where system chaincodes are registered 
 //note the chaincode must still be deployed and launched like a user chaincode will be
@@ -125,7 +140,7 @@ func IsSysCCAndNotInvokableCC2CC(name string) bool {
 func MockRegisterSysCCs(mockSysCCs []*SystemChaincode) []*SystemChaincode {
 	orig := systemChaincodes
 	systemChaincodes = mockSysCCs
-	//glh
+
 	RegisterSysCCs()
 	return orig
 }
