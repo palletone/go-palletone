@@ -90,7 +90,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	//		return nil, errors.New("the genesis block is not exsit")
 	//	}
 
-	eth := &PalletOne{
+	ptn := &PalletOne{
 		config:         config,
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
@@ -109,20 +109,20 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
 	unit := dagcommon.NewDag()
-	eth.txPool = txspool.NewTxPool(config.TxPool, unit)
+	ptn.txPool = txspool.NewTxPool(config.TxPool, unit)
 
-	if eth.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, eth.txPool, eth.engine); err != nil {
+	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}
 
-	eth.ApiBackend = &EthApiBackend{eth}
+	ptn.ApiBackend = &EthApiBackend{ptn}
 	//	gpoParams := config.GPO
 	//	if gpoParams.Default == nil {
 	//		gpoParams.Default = config.GasPrice
 	//	}
 	//	eth.ApiBackend.gpo = gasprice.NewOracle(eth.ApiBackend, gpoParams)
-	return eth, nil
+	return ptn, nil
 }
 
 //CreateConsensusEngine creates the required type of consensus engine instance for an PalletOne service

@@ -592,19 +592,16 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneHeader, p.RequestBodies)
 		}
 	case msg.Code == NewBlockMsg:
+		// Retrieve and decode the propagated block
+		var unit modules.Unit
+		if err := msg.Decode(&unit); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+
+		// Mark the peer as owning the block and schedule it for import
+		p.MarkUnit(unit.UnitHash)
+		pm.fetcher.Enqueue(p.id, &unit)
 		/*
-			// Retrieve and decode the propagated block
-			var request modules.Unit
-			if err := msg.Decode(&request); err != nil {
-				return errResp(ErrDecode, "%v: %v", msg, err)
-			}
-			//request.Block.ReceivedAt = msg.ReceivedAt
-			//request.Block.ReceivedFrom = p
-
-			// Mark the peer as owning the block and schedule it for import
-			p.MarkUnit(request.UnitHash)
-			pm.fetcher.Enqueue(p.id, request.Block)
-
 			// Assuming the block is importable by the peer, but possibly not yet done so,
 			// calculate the head hash and TD that the peer truly must have.
 			var (
