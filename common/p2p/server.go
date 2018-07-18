@@ -823,7 +823,6 @@ func (srv *Server) setupConn(c *conn, flags connFlag, dialDest *discover.Node) e
 	running := srv.running
 	srv.lock.Unlock()
 	if !running {
-		log.Info("setup conn srv.running is not running")
 		return errServerStopped
 	}
 	// Run the encryption handshake.
