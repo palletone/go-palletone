@@ -100,7 +100,7 @@ type bodyFilterTask struct {
 // inject represents a schedules import operation.
 type inject struct {
 	origin string
-	//block  *types.Block
+	unit   *modules.Unit
 }
 
 // Fetcher is responsible for accumulating block announcements from various peers
@@ -204,12 +204,11 @@ func (f *Fetcher) Notify(peer string, hash common.Hash, number uint64, time time
 	}
 }
 
-/*
 // Enqueue tries to fill gaps the the fetcher's future import queue.
-func (f *Fetcher) Enqueue(peer string, block *types.Block) error {
+func (f *Fetcher) Enqueue(peer string, unit *modules.Unit) error {
 	op := &inject{
 		origin: peer,
-		block:  block,
+		unit:   unit,
 	}
 	select {
 	case f.inject <- op:
@@ -218,7 +217,7 @@ func (f *Fetcher) Enqueue(peer string, block *types.Block) error {
 		return errTerminated
 	}
 }
-*/
+
 // FilterHeaders extracts all the headers that were explicitly requested by the fetcher,
 // returning those that should be handled differently.
 func (f *Fetcher) FilterHeaders(peer string, headers []*modules.Header, time time.Time) []*modules.Header {

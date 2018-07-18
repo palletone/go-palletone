@@ -579,7 +579,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		// Mark the hashes as present at the remote node
 		for _, block := range announces {
-			p.MarkBlock(block.Hash)
+			p.MarkUnit(block.Hash)
 		}
 		// Schedule all the unknown hashes for retrieval
 		unknown := make(newBlockHashesData, 0, len(announces))
@@ -592,7 +592,34 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneHeader, p.RequestBodies)
 		}
 	case msg.Code == NewBlockMsg:
+		// Retrieve and decode the propagated block
+		var unit modules.Unit
+		if err := msg.Decode(&unit); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
 
+		// Mark the peer as owning the block and schedule it for import
+		p.MarkUnit(unit.UnitHash)
+		pm.fetcher.Enqueue(p.id, &unit)
+		/*
+			// Assuming the block is importable by the peer, but possibly not yet done so,
+			// calculate the head hash and TD that the peer truly must have.
+			var (
+				trueHead = request.Block.ParentHash()
+				trueTD   = new(big.Int).Sub(request.TD, request.Block.Difficulty())
+			)
+			// Update the peers total difficulty if better than the previous
+			if _, td := p.Head(); trueTD.Cmp(td) > 0 {
+				p.SetHead(trueHead, trueTD)
+
+				// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
+				// a singe block (as the true TD is below the propagated block), however this
+				// scenario should easily be covered by the fetcher.
+				currentBlock := pm.blockchain.CurrentBlock()
+				if trueTD.Cmp(pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())) > 0 {
+					go pm.synchronise(p)
+				}
+			}*/
 	case msg.Code == TxMsg:
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
 		if atomic.LoadUint32(&pm.acceptTxs) == 0 {
@@ -650,44 +677,6 @@ func (self *ProtocolManager) txBroadcastLoop() {
 		}
 	}
 }
-
-/*
-// BroadcastBlock will either propagate a block to a subset of it's peers, or
-// will only announce it's availability (depending what's requested).
-func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
-
-		hash := block.Hash()
-		peers := pm.peers.PeersWithoutBlock(hash)
-
-		// If propagation is requested, send to a subset of the peer
-		if propagate {
-			// Calculate the TD of the block (it's not imported yet, so block.Td is not valid)
-			var td *big.Int
-			if parent := pm.blockchain.GetBlock(block.ParentHash(), block.NumberU64()-1); parent != nil {
-				td = new(big.Int).Add(block.Difficulty(), pm.blockchain.GetTd(block.ParentHash(), block.NumberU64()-1))
-			} else {
-				log.Error("Propagating dangling block", "number", block.Number(), "hash", hash)
-				return
-			}
-			// Send the block to a subset of our peers
-			transfer := peers[:int(math.Sqrt(float64(len(peers))))]
-			for _, peer := range transfer {
-				peer.SendNewBlock(block, td)
-			}
-			log.Trace("Propagated block", "hash", hash, "recipients", len(transfer), "duration", common.PrettyDuration(time.Since(block.ReceivedAt)))
-			return
-		}
-
-		// Otherwise if the block is indeed in out own chain, announce it
-		if pm.blockchain.HasBlock(hash, block.NumberU64()) {
-			for _, peer := range peers {
-				peer.SendNewBlockHashes([]common.Hash{hash}, []uint64{block.NumberU64()})
-			}
-			log.Trace("Announced block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(block.ReceivedAt)))
-		}
-
-}
-*/
 
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
 // known about the host peer.
