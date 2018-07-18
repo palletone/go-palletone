@@ -57,10 +57,7 @@ bin/
 /cmd/gptn/data1
 /cmd/gptn/log
 /cmd/gptn/C:\\Users\\Albert\\AppData\\Roaming\\PalletOne/
-/dag/storage/leveldb/
+/leveldb/
 *.rlp
-dag/common/leveldb/
-cmd/gptn/leveldb/
-cmd/gptn/palletone.toml
+**/palletone.toml
 dag/common/unit.go.orig
-dag/txspool/leveldb/
