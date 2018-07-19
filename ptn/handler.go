@@ -247,7 +247,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		head = &modules.Header{} //pm.blockchain.CurrentHeader()
 		hash = head.Hash()
 		//number = head.Number.Uint64()
-		td = &big.Int{} //pm.blockchain.GetTd(hash, number)
+		td = uint64(0) //&big.Int{} //pm.blockchain.GetTd(hash, number)
 	)
 	if err := p.Handshake(pm.networkId, td, hash /*genesis.Hash()*/, common.Hash{}); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
@@ -597,29 +597,42 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&unit); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-
-		// Mark the peer as owning the block and schedule it for import
 		p.MarkUnit(unit.UnitHash)
-		pm.fetcher.Enqueue(p.id, &unit)
+		//pm.fetcher.Enqueue(p.id, &unit)
 		/*
-			// Assuming the block is importable by the peer, but possibly not yet done so,
-			// calculate the head hash and TD that the peer truly must have.
-			var (
-				trueHead = request.Block.ParentHash()
-				trueTD   = new(big.Int).Sub(request.TD, request.Block.Difficulty())
-			)
-			// Update the peers total difficulty if better than the previous
 			if _, td := p.Head(); trueTD.Cmp(td) > 0 {
 				p.SetHead(trueHead, trueTD)
-
 				// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
 				// a singe block (as the true TD is below the propagated block), however this
 				// scenario should easily be covered by the fetcher.
+				//如果在我们上面安排一个同步。注意，这将不会为单个块的间隙触发同步(因为真正的TD位于传播的块之下)，
+				//但是这个场景应该很容易被fetcher所覆盖。
 				currentBlock := pm.blockchain.CurrentBlock()
 				if trueTD.Cmp(pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())) > 0 {
 					go pm.synchronise(p)
 				}
-			}*/
+			}
+		*/
+		// Assuming the block is importable by the peer, but possibly not yet done so,
+		// calculate the head hash and TD that the peer truly must have.
+		//		var (
+		//			trueHead = request.Block.ParentHash()
+		//			trueTD   = new(big.Int).Sub(request.TD, request.Block.Difficulty())
+		//		)
+		// Update the peers total difficulty if better than the previous
+		/*if _, td := p.Head(); trueTD.Cmp(td) > 0 {
+			p.SetHead(trueHead, trueTD)
+
+			// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
+			// a singe block (as the true TD is below the propagated block), however this
+			// scenario should easily be covered by the fetcher.
+			//如果在我们上面安排一个同步。注意，这将不会为单个块的间隙触发同步(因为真正的TD位于传播的块之下)，
+			//但是这个场景应该很容易被fetcher所覆盖。
+			currentBlock := pm.blockchain.CurrentBlock()
+			if trueTD.Cmp(pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())) > 0 {
+				go pm.synchronise(p)
+			}
+		}*/
 	case msg.Code == TxMsg:
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
 		if atomic.LoadUint32(&pm.acceptTxs) == 0 {

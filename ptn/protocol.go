@@ -19,7 +19,6 @@ package ptn
 import (
 	"fmt"
 	"io"
-	"math/big"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
@@ -110,7 +109,7 @@ type txPool interface {
 type statusData struct {
 	ProtocolVersion uint32
 	NetworkId       uint64
-	TD              *big.Int
+	TD              uint64 //*big.Int
 	CurrentBlock    common.Hash
 	GenesisBlock    common.Hash
 }

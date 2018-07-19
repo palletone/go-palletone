@@ -19,7 +19,6 @@ package ptn
 
 import (
 	"fmt"
-	"math/big"
 	"sync"
 
 	"github.com/palletone/go-palletone/common"
@@ -33,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/node"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -65,11 +65,13 @@ type PalletOne struct {
 	//bloomIndexer  *coredata.ChainIndexer         // Bloom indexer operating during block imports
 
 	ApiBackend *EthApiBackend
-	gasPrice   *big.Int
-	etherbase  common.Address
+	//gasPrice   *big.Int
+	//etherbase  common.Address
 
 	networkId     uint64
 	netRPCService *ethapi.PublicNetAPI
+
+	dag *modules.Dag
 
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
 }
@@ -97,9 +99,10 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		engine:         CreateConsensusEngine(ctx),
 		shutdownChan:   make(chan bool),
 		networkId:      config.NetworkId,
-		gasPrice:       config.GasPrice,
-		etherbase:      config.Etherbase,
-		bloomRequests:  make(chan chan *bloombits.Retrieval),
+		//gasPrice:       config.GasPrice,
+		//etherbase:      config.Etherbase,
+		bloomRequests: make(chan chan *bloombits.Retrieval),
+		dag:           dagcommon.NewDag(),
 		//bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
 	}
 
@@ -108,8 +111,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	unit := dagcommon.NewDag()
-	ptn.txPool = txspool.NewTxPool(config.TxPool, unit)
+
+	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
 
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine); err != nil {
 		log.Error("NewProtocolManager err:", err)
@@ -176,36 +179,6 @@ func (s *PalletOne) APIs() []rpc.API {
 	}...)
 }
 
-func (s *PalletOne) Etherbase() (eb common.Address, err error) {
-	s.lock.RLock()
-	etherbase := s.etherbase
-	s.lock.RUnlock()
-
-	if etherbase != (common.Address{}) {
-		return etherbase, nil
-	}
-	if wallets := s.AccountManager().Wallets(); len(wallets) > 0 {
-		if accounts := wallets[0].Accounts(); len(accounts) > 0 {
-			etherbase := accounts[0].Address
-
-			s.lock.Lock()
-			s.etherbase = etherbase
-			s.lock.Unlock()
-
-			log.Info("Etherbase automatically configured", "address", etherbase)
-			return etherbase, nil
-		}
-	}
-	return common.Address{}, fmt.Errorf("etherbase must be explicitly specified")
-}
-
-// set in js console via admin interface or wrapper from cli flags
-func (self *PalletOne) SetEtherbase(etherbase common.Address) {
-	self.lock.Lock()
-	self.etherbase = etherbase
-	self.lock.Unlock()
-}
-
 func (s *PalletOne) AccountManager() *accounts.Manager { return s.accountManager }
 func (s *PalletOne) TxPool() *txspool.TxPool           { return s.txPool }
 func (s *PalletOne) EventMux() *event.TypeMux          { return s.eventMux }
@@ -250,4 +223,34 @@ func (s *PalletOne) Stop() error {
 	close(s.shutdownChan)
 
 	return nil
+}
+
+// set in js console via admin interface or wrapper from cli flags
+func (self *PalletOne) SetEtherbase(etherbase common.Address) {
+	//	self.lock.Lock()
+	//	self.etherbase = etherbase
+	//	self.lock.Unlock()
+}
+func (s *PalletOne) Etherbase() (eb common.Address, err error) {
+	/*
+		s.lock.RLock()
+		etherbase := s.etherbase
+		s.lock.RUnlock()
+
+		if etherbase != (common.Address{}) {
+			return etherbase, nil
+		}
+		if wallets := s.AccountManager().Wallets(); len(wallets) > 0 {
+			if accounts := wallets[0].Accounts(); len(accounts) > 0 {
+				etherbase := accounts[0].Address
+
+				s.lock.Lock()
+				s.etherbase = etherbase
+				s.lock.Unlock()
+
+				log.Info("Etherbase automatically configured", "address", etherbase)
+				return etherbase, nil
+			}
+		}*/
+	return common.Address{}, fmt.Errorf("etherbase must be explicitly specified")
 }
