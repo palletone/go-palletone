@@ -820,17 +820,19 @@ func unhex(str string) []byte {
 }
 
 func TestDecodeBytes(t *testing.T) {
-	// test map+interface
 	type ST struct {
-		grade string
-		core float64
+		Grade string
+		Core float64
+		Age  uint8
 	}
+	// todo test map+interface
 
 	m := map[string]interface{}{}
 	m["Alice"] = uint16(9)
 	m["Bob"] = "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"
 	m["Joe"] = uint16(19)
-	m["Chen"] = ST{grade:"senior", core:89.2}
+	//m["Chen"] = ST{Grade:"senior", Core:89.2}
+	m["Chen"] = ST{Age:19, Grade:"senior", Core:89.2}
 
 	//m:=map[string]string{}
 	//m["Alice"] = "senior"
@@ -852,9 +854,34 @@ func TestDecodeBytes(t *testing.T) {
 				var s string
 				DecodeBytes(v.([]byte), &s)
 				fmt.Printf("key=%v, value=%v\n", k, s)
-			} else {
+			}else if strings.Compare(k, "Chen")==0 {
+				var st ST
+				DecodeBytes(v.([]byte), &st)
+				log.Printf("Decode data: grade=%v, core=%v, age=%v\n", st.Grade, st.Core, st.Age)
+			}else {
 				fmt.Printf("key=%v, value=%v\n", k, v)
 			}
 		}
 	}
+
+	//// todo test interface+struct
+	//fmt.Println("------------------")
+	//var i interface{}
+	//i = ST{Grade:"senior", Core:89.2, Age:12}
+	//b, err = EncodeToBytes(i)
+	//if err!=nil {
+	//	log.Printf("Encode interface error:%s", err)
+	//	return
+	//} else {
+	//	log.Printf("Encoding data: %v", b)
+	//}
+	//
+	//var ns ST
+	//err = DecodeBytes(b, &ns)
+	//if err!=nil{
+	//	log.Printf("Decode interface error:%s", err)
+	//	return
+	//} else {
+	//	log.Printf("Decode data: grade=%v, core=%v\n", ns.Grade, ns.Core)
+	//}
 }

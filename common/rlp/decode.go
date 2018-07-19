@@ -532,7 +532,6 @@ func makeMapDecoder(typ reflect.Type) (decoder, error)  {
 			}
 			// get value
 			kind, size, _ := s.Kind()
-			fmt.Printf("===Value Raw data kind=%v, size=%v\n", kind, size)
 			err = vdecoder(s, vv)
 			if err == EOL {
 				return &decodeError{msg: "too few elements", typ: typ}
@@ -543,33 +542,63 @@ func makeMapDecoder(typ reflect.Type) (decoder, error)  {
 			// value should be set its prefix
 			switch kind {
 			case String:
-				vBytes := []byte{} // at least two bytes
-				if size < 56 {
-					vBytes = append(vBytes,0x80+byte(size))
-				} else {
-					// TODO: encode to w.str directly
-					vBytes = append(vBytes, '0')
-					vBytes = append(vBytes, '0')
-					sizesize := putint(vBytes[1:], uint64(size))
-					vBytes[0] = 0xB7 + byte(sizesize)
-				}
+				vBytes := getStringPrefix(size) // at least two bytes
 				b := vv.Elem().Bytes()
 				vBytes = append(vBytes, b...)
 				vv.Set(reflect.ValueOf(vBytes))
 			case Byte:
 			case List:
+				vBytes := []byte{}
+				for i:=0; i<vv.Elem().Len(); i++ {
+					b := vv.Elem().Index(i)
+					if b.Elem().Len()>1 {
+						prefix := getStringPrefix(uint64(b.Elem().Len()))
+						vBytes = append(vBytes, prefix...)
+					}
+					vBytes = append(vBytes, b.Elem().Bytes()...)
+				}
+				newBytes := getListPrefix(uint64(len(vBytes)))
+				newBytes = append(newBytes, vBytes...)
+				vv.Set(reflect.ValueOf(newBytes))
 			default:
 			}
 			// set map
 			if !val.CanSet() {
 				val = val.Elem() //使指针指向内存地址
 			}
-			fmt.Printf("---> key=%v, value=%v\n", kv, vv)
 			val.SetMapIndex(kv, vv)
 		}
 		return wrapStreamError(s.ListEnd(), typ)
 	}
 	return dec, nil
+}
+
+func getListPrefix(size uint64) []byte {
+	vBytes := []byte{} // at least two bytes
+	if size < 56 {
+		vBytes = append(vBytes,0xC0+byte(size))
+	} else {
+		// TODO: encode to w.str directly
+		vBytes = append(vBytes, '0')
+		vBytes = append(vBytes, '0')
+		sizesize := putint(vBytes[1:], uint64(size))
+		vBytes[0] = 0xF7 + byte(sizesize)
+	}
+	return vBytes
+}
+
+func getStringPrefix(size uint64) []byte {
+	vBytes := []byte{} // at least two bytes
+	if size < 56 {
+		vBytes = append(vBytes,0x80+byte(size))
+	} else {
+		// TODO: encode to w.str directly
+		vBytes = append(vBytes, '0')
+		vBytes = append(vBytes, '0')
+		sizesize := putint(vBytes[1:], uint64(size))
+		vBytes[0] = 0xB7 + byte(sizesize)
+	}
+	return vBytes
 }
 
 var ifsliceType = reflect.TypeOf([]interface{}{})
