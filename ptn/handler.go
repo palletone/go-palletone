@@ -79,7 +79,8 @@ type ProtocolManager struct {
 	//eventMux      *event.TypeMux
 	txCh  chan modules.TxPreEvent
 	txSub event.Subscription
-	//minedBlockSub *event.TypeMuxSubscription
+
+	dag *modules.Dag
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -100,11 +101,11 @@ type ProtocolManager struct {
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64,
-	txpool txPool, engine core.ConsensusEngine) (*ProtocolManager, error) {
+	txpool txPool, engine core.ConsensusEngine, dag *modules.Dag) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		networkId: networkId,
-		//eventMux:  mux,
+		networkId:   networkId,
+		dag:         dag,
 		txpool:      txpool,
 		consEngine:  engine,
 		peers:       newPeerSet(),
@@ -598,21 +599,21 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		p.MarkUnit(unit.UnitHash)
-		//pm.fetcher.Enqueue(p.id, &unit)
-		/*
-			if _, td := p.Head(); trueTD.Cmp(td) > 0 {
-				p.SetHead(trueHead, trueTD)
-				// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
-				// a singe block (as the true TD is below the propagated block), however this
-				// scenario should easily be covered by the fetcher.
-				//如果在我们上面安排一个同步。注意，这将不会为单个块的间隙触发同步(因为真正的TD位于传播的块之下)，
-				//但是这个场景应该很容易被fetcher所覆盖。
-				currentBlock := pm.blockchain.CurrentBlock()
-				if trueTD.Cmp(pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())) > 0 {
-					go pm.synchronise(p)
-				}
+		pm.fetcher.Enqueue(p.id, &unit)
+
+		if _, index := p.Head(); unit.UnitHeader.ChainIndex().Index > index {
+			p.SetHead(unit.UnitHash, unit.UnitHeader.ChainIndex().Index)
+			// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
+			// a singe block (as the true TD is below the propagated block), however this
+			// scenario should easily be covered by the fetcher.
+			//如果在我们上面安排一个同步。注意，这将不会为单个块的间隙触发同步(因为真正的TD位于传播的块之下)，
+			//但是这个场景应该很容易被fetcher所覆盖。
+			currentUnit := pm.dag.CurrentUnit()
+			if unit.UnitHeader.ChainIndex().Index > currentUnit.UnitHeader.ChainIndex().Index {
+				go pm.synchronise(p)
 			}
-		*/
+		}
+
 		// Assuming the block is importable by the peer, but possibly not yet done so,
 		// calculate the head hash and TD that the peer truly must have.
 		//		var (

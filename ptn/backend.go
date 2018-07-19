@@ -114,7 +114,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 
 	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
 
-	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine); err != nil {
+	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine, ptn.dag); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}
@@ -188,6 +188,7 @@ func (s *PalletOne) IsListening() bool                  { return true } // Alway
 func (s *PalletOne) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *PalletOne) NetVersion() uint64                 { return s.networkId }
 func (s *PalletOne) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
+func (s *PalletOne) Dag() *modules.Dag                  { return s.dag }
 
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.

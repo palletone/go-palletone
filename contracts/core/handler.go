@@ -62,7 +62,6 @@ type transactionContext struct {
 	pendingQueryResults map[string]*pendingQueryResult
 
 	txsimulator          rwset.TxSimulator
-	//historyQueryExecutor ledger.HistoryQueryExecutor
 }
 
 type pendingQueryResult struct {
@@ -1567,6 +1566,8 @@ func filterError(errFromFSMEvent error) error {
 }
 
 func (handler *Handler) sendExecuteMessage(ctxt context.Context, chainID string, msg *pb.ChaincodeMessage, signedProp *pb.SignedProposal, prop *pb.Proposal) (chan *pb.ChaincodeMessage, error) {
+	chaincodeLogger.Infof("+++++++++++++++++ msg.Txid[%s]",  msg.Txid)
+
 	txctx, err := handler.createTxContext(ctxt, chainID, msg.Txid, signedProp, prop)
 	if err != nil {
 		chaincodeLogger.Errorf("createTxContext [%s] error:%s", shorttxid(msg.Txid), err)
