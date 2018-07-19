@@ -21,8 +21,7 @@ package modules
 
 import (
 	"time"
-
-	v "github.com/palletone/go-palletone/dag/verifiedunit"
+	//	v "github.com/palletone/go-palletone/dag/verifiedunit"
 )
 
 // 区块链属性结构体的定义
@@ -31,7 +30,7 @@ type ChainParameters struct {
 	VerifiedUnitInterval uint8
 
 	// 在维护时跳过的verifiedUnitInterval数量。 number of verifiedUnitInterval to skip at maintenance time
-//	MaintenanceSkipSlots uint8
+	//	MaintenanceSkipSlots uint8
 }
 
 // 全局属性的结构体定义
@@ -45,15 +44,15 @@ type GlobalProperty struct {
 type DynamicGlobalProperty struct {
 	LastVerifiedUnitNum uint32 // 最近的验证单元编号(数量)
 
-//	VerifiedUnitHash string // 最近的验证单元hash
+	//	VerifiedUnitHash string // 最近的验证单元hash
 
-	LastVerifiedUnit *v.VerifiedUnit	// 最近生产的验证单元
+	//	LastVerifiedUnit *v.VerifiedUnit	// 最近生产的验证单元
 
 	LastVerifiedUnitTime time.Time // 最近的验证单元时间
 
-//	CurrentMediator *Mediator // 当前生产验证单元的mediator, 用于判断是否连续同一个mediator生产验证单元
+	//	CurrentMediator *Mediator // 当前生产验证单元的mediator, 用于判断是否连续同一个mediator生产验证单元
 
-//	NextMaintenanceTime time.Time // 下一次系统维护时间
+	//	NextMaintenanceTime time.Time // 下一次系统维护时间
 
 	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == verifiedUnitNum + 丢失的槽数量
 	CurrentASlot uint64
@@ -63,5 +62,16 @@ type DynamicGlobalProperty struct {
 	The count of verifiedUnit production slots that were missed in the past 128 verifiedUnits
 	用于计算mediator的参与率。used to compute mediator participation.
 	*/
-//	RecentSlotsFilled float32
+	//	RecentSlotsFilled float32
+}
+
+func NewGlobalProp() *GlobalProperty {
+	return &GlobalProperty{}
+}
+
+func NewDynGlobalProp() *DynamicGlobalProperty {
+	return &DynamicGlobalProperty{
+		LastVerifiedUnitNum: 0,
+		CurrentASlot:        0,
+	}
 }

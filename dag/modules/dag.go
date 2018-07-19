@@ -36,6 +36,10 @@ type Dag struct {
 	GenesisUnit   *Unit
 
 	Mutex sync.RWMutex
+
+	GlobalProp    *GlobalProperty
+	DynGlobalProp *DynamicGlobalProperty
+	MediatorSchl  *MediatorSchedule
 }
 
 func (d *Dag) CurrentUnit() *Unit {
