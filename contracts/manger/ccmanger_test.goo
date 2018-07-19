@@ -19,6 +19,7 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/mocks/samplesyscc"
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"fmt"
 )
 
 type mocksupt struct {}
@@ -104,8 +105,8 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 		Version:"ptn001",
 	}
 
-	sprop, prop := mockSignedEndorserProposalOrPanic(chainID, spec, creator, []byte("msg1"))
-	rsp, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, "txid001", cid)
+	sprop, prop, err := signedEndorserProposalOrPanic(chainID, spec, creator, []byte("msg1"))
+	rsp, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid)
 	if err != nil {
 		logger.Errorf("ProcessProposal error[%v]", err)
 	}
@@ -219,4 +220,47 @@ func TestExecSysCC(t *testing.T) {
 
 	Init()
 	Invoke(chainID, "sample_syscc",  args)
+}
+
+func abc(){
+	fmt.Println("abc enter..................")
+	chainID := util.GetTestChainID()
+	f := "putval"
+	args1 := util.ToChaincodeArgs(f, "greeting", "my test1")
+	args2 := util.ToChaincodeArgs(f, "greeting", "my test2")
+	args3 := util.ToChaincodeArgs(f, "greeting", "my test3")
+
+	go Invoke(chainID, "sample_syscc", args1)
+
+
+	go Invoke(chainID, "sample_syscc", args2)
+
+	go Invoke(chainID, "sample_syscc", args3)
+
+//	go Invoke(chainID, "sample_syscc", args)
+}
+
+func TestExecSysCCMult(t *testing.T) {
+	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
+	viper.Set("peer.address", "127.0.0.1:12345")
+	viper.Set("chaincode.executetimeout", 20*time.Second)
+
+	// System chaincode has to be enabled
+	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
+
+	//chainID := util.GetTestChainID()
+	//f := "putval"
+	//args := util.ToChaincodeArgs(f, "greeting", "hey there")
+
+	Init()
+	//Invoke(chainID, "sample_syscc", args)
+	abc()
+	//func () {
+	//	go	Invoke(chainID, "sample_syscc", args)
+	//	go	Invoke(chainID, "sample_syscc", args)
+	//	go	Invoke(chainID, "sample_syscc", args)
+	//}()
+
+	time.Sleep(10*time.Second)
+
 }

@@ -103,6 +103,8 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 
 	txid := util.GenerateUUID()
 
+	sysccLogger.Infof("txid=========================%s", txid)
+
 	ctxt := context.Background()
 	//glh
 	/*
