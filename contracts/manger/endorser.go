@@ -20,16 +20,16 @@ package manger
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
+	"golang.org/x/net/context"
 
+	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/contracts/rwset"
+	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	putils "github.com/palletone/go-palletone/core/vmContractPub/protos/utils"
-	"github.com/pkg/errors"
-	"golang.org/x/net/context"
-	"github.com/palletone/go-palletone/contracts/shim"
-	"github.com/palletone/go-palletone/contracts/rwset"
-	"github.com/palletone/go-palletone/contracts/core"
 )
 
 type chaincodeError struct {
@@ -157,23 +157,68 @@ func (e *Endorser) endorseProposal(ctx context.Context, chainID string, txid str
 	return nil, nil
 }
 
+//preProcess checks the tx proposal headers, uniqueness and ACL
+func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResult, error) {
+	vr := &validateResult{}
+
+	// extract the Proposal message from signedProp
+	prop, err := putils.GetProposal(signedProp.ProposalBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1) look at the ProposalHeader
+	hdr, err := putils.GetHeader(prop.Header)
+	if err != nil {
+		return nil, err
+	}
+
+	//TODO validate the header
+
+	if err != nil {
+		vr.resp = &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}
+		return vr, err
+	}
+
+	chdr, err := putils.UnmarshalChannelHeader(hdr.ChannelHeader)
+	if err != nil {
+		vr.resp = &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}
+		return vr, err
+	}
+	//shdr, err := putils.GetSignatureHeader(hdr.SignatureHeader)
+	//if err != nil {
+	//	vr.resp = &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}
+	//	return vr, err
+	//}
+
+	vr.prop, vr.chainID, vr.txid = prop, chdr.ChannelId, chdr.TxId
+
+	return vr, nil
+}
+
 // ProcessProposal process the Proposal
 //func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
-func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, txid string, cid *pb.ChaincodeID) (*pb.ProposalResponse, error) {
+func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID) (*pb.ProposalResponse, error) {
+	var txsim rwset.TxSimulator
+
 	addr := util.ExtractRemoteAddress(ctx)
 	logger.Debug("Entering: Got request from", addr)
 	defer logger.Debugf("Exit: request from", addr)
 
 	//0 -- check and validate
-	var txsim rwset.TxSimulator
-	var err error
+	result, err := e.validateProcess(signedProp)
+	if err != nil {
+		logger.Debugf("validate signedProp err:%s", err)
+		return nil, err
+	}
+
+	txid := result.txid
 	if chainID != "" {
 		if txsim, err = e.s.GetTxSimulator(chainID, txid); err != nil {
 			return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, err
 		}
 		//defer txsim.Done()
 	}
-
 	if  err != nil {
 		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, err
 	}
@@ -183,7 +228,6 @@ func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedPro
 	if err != nil {
 		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, err
 	}
-
 	if res != nil {
 		if res.Status >= shim.ERROR {
 			logger.Errorf("[%s][%s] simulateProposal() resulted in chaincode[] response status %d for txid: %s",
@@ -201,8 +245,6 @@ func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedPro
 	}
 
 	//2 -- endorse and get a marshalled ProposalResponse message
-
-
 	pResp := &pb.ProposalResponse{Response: res}
 
 	cis, err := putils.GetChaincodeInvocationSpec(prop)

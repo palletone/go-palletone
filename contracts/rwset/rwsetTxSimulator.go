@@ -20,7 +20,7 @@ package rwset
 
 import (
 	"errors"
-	"github.com/palletone/go-palletone/dag/storage"
+	//"github.com/palletone/go-palletone/dag/storage"
 )
 
 type RwSetTxSimulator struct {
@@ -44,31 +44,31 @@ func newBasedTxSimulator(txid string) (*RwSetTxSimulator, error) {
 
 // GetState implements method in interface `ledger.TxSimulator`
 func (s *RwSetTxSimulator) GetState(ns string, key string) ([]byte, error) {
-	versionedValue := &VersionedValue{}
+	//versionedValue := &VersionedValue{}
 	testValue := []byte("abc")
 
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
 	//get value from DB !!!
-	var err error
-	versionedValue.Value, err = storage.Get([]byte(key))
-	if err != nil {
-		logger.Errorf("get value from db[%s] failed", ns)
-		//return nil, err
-	}
-
-	val, ver := decomposeVersionedValue(versionedValue)
-	if s.rwsetBuilder != nil {
-		s.rwsetBuilder.AddToReadSet(ns, key, ver)
-	}
+	//var err error
+	//versionedValue.Value, err = storage.Get([]byte(key))
+	//if err != nil {
+	//	logger.Errorf("get value from db[%s] failed", ns)
+	//	//return nil, err
+	//}
+	//
+	//val, ver := decomposeVersionedValue(versionedValue)
+	//if s.rwsetBuilder != nil {
+	//	s.rwsetBuilder.AddToReadSet(ns, key, ver)
+	//}
 
 	logger.Debugf("RW:GetState,ns[%s]--key[%s]---value[%s]", ns, key, testValue)
 
 	//todo change.
 	return testValue, nil
 
-	return val, nil
+	//return val, nil
 }
 
 func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {

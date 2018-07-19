@@ -1,32 +1,32 @@
 /*
-    This file is part of go-palletone.
-    go-palletone is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    go-palletone is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    You should have received a copy of the GNU General Public License
-    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+   This file is part of go-palletone.
+   go-palletone is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   go-palletone is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
 /*
- * @author PalletOne core developers <dev@pallet.one>
+ * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
  */
 
 package mediatorplugin
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common"
 )
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {
@@ -82,29 +82,27 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 func Initialize(node *node.Node, cfg *Config) (*MediatorPlugin, error) {
 	log.Info("mediator plugin initialize begin")
 
-	mss := 	cfg.Mediators
+	mss := cfg.Mediators
 	msm := map[common.Address]string{}
-	for i := 0; i < len(mss); i++ {
-		m := mss[i]
-
-		address := strings.TrimSpace(m.Address)
+	for address, passphrase := range mss {
+		address := strings.TrimSpace(address)
 
 		addr := common.StringToAddress(address)
 		addrType, err := addr.Validate()
 		if err != nil || addrType != common.PublicKeyHash {
-//			utils.Fatalf("Invalid mediator account address: %v", address)
+			//			utils.Fatalf("Invalid mediator account address: %v", address)
 			log.Info(fmt.Sprintf("Invalid mediator account address: %v", address))
 		}
 
 		log.Info(fmt.Sprintf("Mediator account address: %v", address))
 
-		msm[addr] = m.Passphrase
+		msm[addr] = passphrase
 	}
 
 	mp := MediatorPlugin{
-		node:	node,
+		node:              node,
 		productionEnabled: cfg.EnableStaleProduction,
-		mediators: msm,
+		mediators:         msm,
 	}
 
 	log.Info("mediator plugin initialize end")

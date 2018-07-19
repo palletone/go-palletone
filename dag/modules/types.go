@@ -28,6 +28,7 @@ var TimeFormatString = "2006/01/02 15:04:05"
 const (
 	ID_LENGTH = 32
 )
+
 type IDType16 [ID_LENGTH]byte
 
 var (
@@ -61,7 +62,7 @@ func (it *IDType16) Bytes() []byte {
 	return idBytes
 }
 
-func (it *IDType16)SetBytes(b []byte)  {
+func (it *IDType16) SetBytes(b []byte) {
 	if len(b) > len(it) {
 		b = b[len(b)-ID_LENGTH:]
 	}

@@ -21,12 +21,13 @@ package txspool
 import (
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"math"
 	"math/big"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/palletone/go-palletone/dag/dagconfig"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
@@ -81,7 +82,7 @@ var (
 	ErrOversizedData = errors.New("oversized data")
 )
 
-type units interface {
+type dags interface {
 	CurrentUnit() *modules.Unit
 	GetUnit(hash common.Hash, number uint64) *modules.Unit
 	//StateAt(root common.Hash) (*state.StateDB, error)
@@ -141,7 +142,7 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 
 type TxPool struct {
 	config       TxPoolConfig
-	unit         units
+	unit         dags
 	txfee        *big.Int
 	txFeed       event.Feed
 	scope        event.SubscriptionScope
@@ -167,7 +168,7 @@ type TxPool struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config TxPoolConfig, unit units) *TxPool { // chainconfig *params.ChainConfig,
+func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.ChainConfig,
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 
