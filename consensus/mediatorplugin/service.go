@@ -12,7 +12,7 @@
     along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
 /*
- * @author PalletOne core developers <dev@pallet.one>
+ * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
  */
 
@@ -84,10 +84,8 @@ func Initialize(node *node.Node, cfg *Config) (*MediatorPlugin, error) {
 
 	mss := 	cfg.Mediators
 	msm := map[common.Address]string{}
-	for i := 0; i < len(mss); i++ {
-		m := mss[i]
-
-		address := strings.TrimSpace(m.Address)
+	for address, passphrase := range mss {
+		address := strings.TrimSpace(address)
 
 		addr := common.StringToAddress(address)
 		addrType, err := addr.Validate()
@@ -98,7 +96,7 @@ func Initialize(node *node.Node, cfg *Config) (*MediatorPlugin, error) {
 
 		log.Info(fmt.Sprintf("Mediator account address: %v", address))
 
-		msm[addr] = m.Passphrase
+		msm[addr] =passphrase
 	}
 
 	mp := MediatorPlugin{

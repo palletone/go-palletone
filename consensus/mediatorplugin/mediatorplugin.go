@@ -12,7 +12,7 @@
     along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
 /*
- * @author PalletOne core developers <dev@pallet.one>
+ * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
  */
 
