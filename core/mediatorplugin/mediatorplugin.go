@@ -104,7 +104,7 @@ func (mp *MediatorPlugin) PluginStartup(db *a.DataBase, ch chan int) {
 	} else {
 		// 2. 开启循环生产计划
 //		fmt.Printf("Launching unit verify for %d mediators.\n", len(mp.MediatorSet))
-		log.Info(fmt.Sprintf("Launching unit verify for %d mediators.", len(mp.MediatorSet)))
+		log.Info(fmt.Sprintf("Launching verified unit production for %d mediators.", len(mp.MediatorSet)))
 
 		if mp.ProductionEnabled {
 			if mp.DB.DynGlobalProp.LastVerifiedUnitNum == 0 {

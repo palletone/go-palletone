@@ -32,7 +32,7 @@ import (
 	"path/filepath"
 )
 
-const defaultGenesisJsonPath = "./exampleGenesis.json"
+const defaultGenesisJsonPath = "./genesis.json"
 
 var (
 	//GenesisJsonPathFlag = utils.DirectoryFlag{

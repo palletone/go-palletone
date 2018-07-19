@@ -1,15 +1,32 @@
+/*
+    This file is part of go-palletone.
+    go-palletone is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    go-palletone is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/*
+ * @author PalletOne core developers <dev@pallet.one>
+ * @date 2018
+ */
+
 package mediatorplugin
 
 import (
+	"strings"
+	"fmt"
+
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/cmd/utils"
-	"strings"
-	"fmt"
+	"github.com/palletone/go-palletone/common"
 )
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {
@@ -24,11 +41,11 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	log.Info("mediator plugin startup begin")
 
 	// 1. 判断是否满足生产验证单元的条件，主要判断本节点是否控制至少一个mediator账户
-	if len(mp.Mediators) == 0 {
+	if len(mp.mediators) == 0 {
 		println("No mediators configured! Please add mediator and private keys to configuration.")
 	} else {
 		// 2. 开启循环生产计划
-		log.Info(fmt.Sprintf("Launching unit verify for %d mediators.", len(mp.Mediators)))
+		log.Info(fmt.Sprintf("Launching verified unit production for %d mediators.", len(mp.mediators)))
 
 		//if mp.ProductionEnabled {
 		//	if mp.DB.DynGlobalProp.LastVerifiedUnitNum == 0 {
@@ -43,7 +60,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 		//mp.ScheduleProductionLoop()
 	}
 
-	log.Info("mediator plugin startup end!")
+	log.Info("mediator plugin startup end")
 
 	return nil
 }
@@ -58,35 +75,36 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 	log.Info("Register Mediator Plugin Service...")
 
 	stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-		return Initialize(ctx, cfg)
+		return Initialize(stack, cfg)
 	})
 }
 
-func Initialize(ctx *node.ServiceContext, cfg *Config) (*MediatorPlugin, error) {
+func Initialize(node *node.Node, cfg *Config) (*MediatorPlugin, error) {
 	log.Info("mediator plugin initialize begin")
 
-	ks := ctx.AccountManager.Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
-
 	mss := 	cfg.Mediators
-	msm := map[accounts.Account]string{}
+	msm := map[common.Address]string{}
 	for i := 0; i < len(mss); i++ {
 		m := mss[i]
 
 		address := strings.TrimSpace(m.Address)
 
-		account, err := utils.MakeAddress(ks, address)
-		if err != nil {
-			utils.Fatalf("Could not list accounts: %v", err)
+		addr := common.StringToAddress(address)
+		addrType, err := addr.Validate()
+		if err != nil || addrType != common.PublicKeyHash {
+//			utils.Fatalf("Invalid mediator account address: %v", address)
+			log.Info(fmt.Sprintf("Invalid mediator account address: %v", address))
 		}
 
-		log.Info("Mediator account address ", address)
+		log.Info(fmt.Sprintf("Mediator account address: %v", address))
 
-		msm[account] = m.Passphrase
+		msm[addr] = m.Passphrase
 	}
 
 	mp := MediatorPlugin{
-		ProductionEnabled: cfg.EnableStaleProduction,
-		Mediators: msm,
+		node:	node,
+		productionEnabled: cfg.EnableStaleProduction,
+		mediators: msm,
 	}
 
 	log.Info("mediator plugin initialize end")

@@ -35,7 +35,8 @@ var (
 		Usage:     "Bootstrap and initialize a new genesis block",
 		ArgsUsage: "<genesisPath>",
 		Flags: []cli.Flag{
-			utils.DataDirFlag,
+//			utils.DataDirFlag,
+			GenesisJsonPathFlag,
 			utils.LightModeFlag,
 		},
 		Category: "BLOCKCHAIN COMMANDS",
@@ -91,8 +92,12 @@ func removeDB(ctx *cli.Context) error {
 func initGenesis(ctx *cli.Context) error {
 	// Make sure we have a valid genesis JSON
 	genesisPath := ctx.Args().First()
+	//if len(genesisPath) == 0 {
+	//	utils.Fatalf("Must supply path to genesis JSON file")
+	//}
+	// If no path is specified, the default path is used
 	if len(genesisPath) == 0 {
-		utils.Fatalf("Must supply path to genesis JSON file")
+		genesisPath = defaultGenesisJsonPath
 	}
 	file, err := os.Open(genesisPath)
 	if err != nil {
