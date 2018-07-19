@@ -5,8 +5,8 @@ import (
 
 	//"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 var (
@@ -34,7 +34,7 @@ func SaveConfig(confs map[string]interface{}) error {
 	for k, v := range confs {
 		key := fmt.Sprintf("%s_%s", CONF_PREFIX, k)
 		data, err := rlp.EncodeToBytes(v)
-		if err!=nil {
+		if err != nil {
 			log.Error("Save config error.")
 			return err
 		}

@@ -122,8 +122,8 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
- */
-func CreateUnit(mAddr *common.Address) ([]modules.Unit, error)  {
+*/
+func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
 	units := []modules.Unit{}
 	// get mediator responsible for asset id
 	assetID := modules.IDType16{}
@@ -140,7 +140,7 @@ func CreateUnit(mAddr *common.Address) ([]modules.Unit, error)  {
 	/**
 	需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
-	 */
+	*/
 
 	// transactions merkle root
 	root := core.DeriveSha(txs)
@@ -179,7 +179,6 @@ func CreateUnit(mAddr *common.Address) ([]modules.Unit, error)  {
 	units = append(units, unit)
 	return units, nil
 }
-
 
 /**
 从leveldb中查询GenesisUnit信息

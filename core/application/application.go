@@ -31,7 +31,7 @@ import (
 
 type DataBase struct {
 	VerifiedUnits	[]*v.VerifiedUnit
-	Mediators     	[]*d.Mediator
+//	Mediators     	[]*d.Mediator
 
 	GlobalProp		d.GlobalProperty
 	DynGlobalProp	d.DynamicGlobalProperty
@@ -62,13 +62,13 @@ func (db *DataBase) Initialize() {
 
 //	println("initilize mediators!")
 	log.Info("initilize mediators!")
-	var ms []*d.Mediator
-	ms = append(ms, &Mediator1)
-	ms = append(ms, &Mediator2)
-	ms = append(ms, &Mediator3)
+	//var ms []*d.Mediator
+	//ms = append(ms, &Mediator1)
+	//ms = append(ms, &Mediator2)
+	//ms = append(ms, &Mediator3)
 
 	db.VerifiedUnits = vus
-	db.Mediators = ms
+//	db.Mediators = ms
 
 //	println("initilize blockchain data end!\n")
 	log.Info("initilize blockchain data end!")
