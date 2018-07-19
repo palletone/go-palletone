@@ -259,7 +259,6 @@ func decodeString(s *Stream, val reflect.Value) error {
 	if err != nil {
 		return wrapStreamError(err, val.Type())
 	}
-
 	val.SetString(string(b))
 	return nil
 }
@@ -516,13 +515,57 @@ func makeMapDecoder(typ reflect.Type) (decoder, error)  {
 		if _, err := s.List(); err != nil {
 			return wrapStreamError(err, typ)
 		}
-		for _, f := range fields {
-			err := f.info.decoder(s, val.Field(f.index))
+		kdecoder := fields[0].info.decoder
+		vdecoder := fields[1].info.decoder
+		k := reflect.New(val.Type().Key())
+		kv := k.Elem()
+		v := reflect.New(val.Type().Elem())
+		vv := v.Elem()
+		for {
+			// get key
+			err := kdecoder(s, kv)
+			if err == EOL {
+				return wrapStreamError(s.ListEnd(), typ)
+				return &decodeError{msg: "too few elements", typ: typ}
+			} else if err != nil {
+				return addErrorContext(err, "."+ val.Type().Key().String())
+			}
+			// get value
+			kind, size, _ := s.Kind()
+			fmt.Printf("===Value Raw data kind=%v, size=%v\n", kind, size)
+			err = vdecoder(s, vv)
 			if err == EOL {
 				return &decodeError{msg: "too few elements", typ: typ}
 			} else if err != nil {
-				return addErrorContext(err, "."+typ.Field(f.index).Name)
+				return addErrorContext(err, "."+ val.Type().Elem().String())
 			}
+
+			// value should be set its prefix
+			switch kind {
+			case String:
+				vBytes := []byte{} // at least two bytes
+				if size < 56 {
+					vBytes = append(vBytes,0x80+byte(size))
+				} else {
+					// TODO: encode to w.str directly
+					vBytes = append(vBytes, '0')
+					vBytes = append(vBytes, '0')
+					sizesize := putint(vBytes[1:], uint64(size))
+					vBytes[0] = 0xB7 + byte(sizesize)
+				}
+				b := vv.Elem().Bytes()
+				vBytes = append(vBytes, b...)
+				vv.Set(reflect.ValueOf(vBytes))
+			case Byte:
+			case List:
+			default:
+			}
+			// set map
+			if !val.CanSet() {
+				val = val.Elem() //使指针指向内存地址
+			}
+			fmt.Printf("---> key=%v, value=%v\n", kv, vv)
+			val.SetMapIndex(kv, vv)
 		}
 		return wrapStreamError(s.ListEnd(), typ)
 	}

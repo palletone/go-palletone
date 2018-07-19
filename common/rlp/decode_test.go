@@ -26,6 +26,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"log"
 )
 
 func TestStreamKind(t *testing.T) {
@@ -816,4 +817,44 @@ func unhex(str string) []byte {
 		panic(fmt.Sprintf("invalid hex string: %q", str))
 	}
 	return b
+}
+
+func TestDecodeBytes(t *testing.T) {
+	// test map+interface
+	type ST struct {
+		grade string
+		core float64
+	}
+
+	m := map[string]interface{}{}
+	m["Alice"] = uint16(9)
+	m["Bob"] = "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"
+	m["Joe"] = uint16(19)
+	m["Chen"] = ST{grade:"senior", core:89.2}
+
+	//m:=map[string]string{}
+	//m["Alice"] = "senior"
+	//m["Bob"]="Junior"
+	b, err := EncodeToBytes(m)
+	if err!=nil {
+		log.Printf("Encode map error:%s", err)
+	} else {
+		log.Printf("Encoding data: %v", b)
+	}
+
+	m1 := map[string]interface{}{}
+	err = DecodeBytes(b, &m1)
+	if err!=nil{
+		log.Println("Decoding data error:", err)
+	} else {
+		for k, v := range m1 {
+			if strings.Compare(k, "Bob")==0 {
+				var s string
+				DecodeBytes(v.([]byte), &s)
+				fmt.Printf("key=%v, value=%v\n", k, s)
+			} else {
+				fmt.Printf("key=%v, value=%v\n", k, v)
+			}
+		}
+	}
 }
