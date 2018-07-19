@@ -21,17 +21,21 @@ package modules
 
 import (
 	"time"
-
-	d "github.com/palletone/go-palletone/consensus/dpos"
-)
+	)
 
 // Mediator调度顺序结构体
 type MediatorSchedule struct {
-	CurrentShuffledMediators []*d.Mediator
+	CurrentShuffledMediators []*Mediator
+}
+
+func NewMediatorSchl() (*MediatorSchedule) {
+	return &MediatorSchedule{
+		CurrentShuffledMediators:[]*Mediator{},
+	}
 }
 
 // 洗牌算法，更新mediator的调度顺序
-func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *d.GlobalProperty, dgp *d.DynamicGlobalProperty) {
+func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *DynamicGlobalProperty) {
 	aSize := uint32(len(gp.ActiveMediators))
 
 	// 1. 判断是否到达洗牌时刻
@@ -41,7 +45,7 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *d.GlobalProperty, dgp *d.
 
 	// 2. 判断CurrentShuffledMediators的空间是否够大
 	if uint32(len(ms.CurrentShuffledMediators)) < aSize {
-		ms.CurrentShuffledMediators = make([]*d.Mediator, aSize, aSize)
+		ms.CurrentShuffledMediators = make([]*Mediator, aSize, aSize)
 	}
 
 	// 3. 截取slice为所需大小
@@ -85,7 +89,7 @@ If slotNum == 1, return the next scheduled mediator.
 如果slotNum == 2，则返回下下一个调度Mediator。
 If slotNum == 2, return the next scheduled mediator after 1 verified uint gap.
 */
-func (ms *MediatorSchedule) GetScheduledMediator(dgp *d.DynamicGlobalProperty, slotNum uint32) *d.Mediator {
+func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) *Mediator {
 	currentASlot := dgp.CurrentASlot + uint64(slotNum)
 	// 由于创世单元不是有mediator生产，所以这里需要减1
 	return ms.CurrentShuffledMediators[(currentASlot-1)%uint64(len(ms.CurrentShuffledMediators))]
@@ -110,7 +114,7 @@ If slotNum == 0, return time.Unix(0,0).
 如果slotNum == N 且 N > 0，则返回大于verifiedUnitTime的第N个单元验证间隔的对齐时间
 If slotNum == N for N > 0, return the Nth next unit-interval-aligned time greater than head_block_time().
 */
-func GetSlotTime(gp *d.GlobalProperty, dgp *d.DynamicGlobalProperty, slotNum uint32) time.Time {
+func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32) time.Time {
 	if slotNum == 0 {
 		return time.Unix(0, 0)
 	}
@@ -147,7 +151,7 @@ func GetSlotTime(gp *d.GlobalProperty, dgp *d.DynamicGlobalProperty, slotNum uin
 /**
 获取在给定时间或之前出现的最近一个slot。 Get the last slot which occurs AT or BEFORE the given time.
 */
-func GetSlotAtTime(gp *d.GlobalProperty, dgp *d.DynamicGlobalProperty, when time.Time) uint32 {
+func GetSlotAtTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, when time.Time) uint32 {
 	/**
 	返回值是所有满足 GetSlotTime（N）<= when 中最大的N
 	The return value is the greatest value N such that GetSlotTime( N ) <= when.

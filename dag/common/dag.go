@@ -45,6 +45,7 @@ func NewDag() *modules.Dag {
 		Mutex:         *mutex,
 		GlobalProp:    modules.NewGlobalProp(),
 		DynGlobalProp: modules.NewDynGlobalProp(),
+		MediatorSchl:  modules.NewMediatorSchl(),
 	}
 
 }

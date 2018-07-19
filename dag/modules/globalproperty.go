@@ -66,7 +66,9 @@ type DynamicGlobalProperty struct {
 }
 
 func NewGlobalProp() *GlobalProperty {
-	return &GlobalProperty{}
+	return &GlobalProperty{
+		ActiveMediators:[]*Mediator{},
+	}
 }
 
 func NewDynGlobalProp() *DynamicGlobalProperty {
