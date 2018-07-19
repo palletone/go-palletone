@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -21,26 +22,23 @@ package rwset
 type RwSetTxMgr struct {
 	//db                    DB
 	//rwLock            	sync.RWMutex
-	name                    string
-	baseTxSim               map[string]TxSimulator
+	name      string
+	baseTxSim map[string]TxSimulator
 }
 
 func NewRwSetMgr(name string) (*RwSetTxMgr, error) {
-	return &RwSetTxMgr{name, make(map[string] TxSimulator)}, nil
+	return &RwSetTxMgr{name, make(map[string]TxSimulator)}, nil
 }
 
 // NewTxSimulator implements method in interface `txmgmt.TxMgr`
-func  (m *RwSetTxMgr)NewTxSimulator(chainid string, txid string) (TxSimulator, error) {
+func (m *RwSetTxMgr) NewTxSimulator(chainid string, txid string) (TxSimulator, error) {
 	logger.Debugf("constructing new tx simulator")
 
-	//for k, _ := range m.baseTxSim{
-	//	if k == chainid {
-	//		return m.baseTxSim[chainid], nil
-	//	}
-	//}
-	if _, ok := m.baseTxSim[chainid]; ok{
-		logger.Infof("chainid[%s] already exit")
-		return m.baseTxSim[chainid], nil
+	if _, ok := m.baseTxSim[chainid]; ok {
+		if m.baseTxSim[chainid].(*RwSetTxSimulator).txid == txid {
+			logger.Infof("chainid[%s] , txid[%s]already exit", chainid, txid)
+			return m.baseTxSim[chainid], nil
+		}
 	}
 
 	t, err := newBasedTxSimulator(txid)

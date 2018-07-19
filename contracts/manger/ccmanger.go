@@ -42,6 +42,7 @@ import (
 )
 
 type chainSupport struct {
+
 }
 
 type chain struct {
@@ -78,11 +79,15 @@ func Deinit() error{
 	return nil
 }
 
+var txnum int = 0
+
 func Invoke(chainID string, ccName string,  args [][]byte) error{
 	var mksupt Support = &SupportImpl{}
+
 	creator := []byte("palletone")
 	ccVersion := "ptn001"
 
+	logger.Info("Invoke +++++++++++++++++++++++++++++++++++++++++++++++++++++")
 	es := NewEndorserServer(mksupt)
 	spec := &pb.ChaincodeSpec{
 		ChaincodeId: &pb.ChaincodeID{Name: ccName},
@@ -96,14 +101,23 @@ func Invoke(chainID string, ccName string,  args [][]byte) error{
 		Version:  ccVersion,
 	}
 
-	sprop, prop := mockSignedEndorserProposalOrPanic(chainID, spec, creator, []byte("msg1"))
-	rsp, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, "txid001", cid)
+	sprop, prop, err := signedEndorserProposalOrPanic(chainID, spec, creator, []byte("msg1"))
+	if err != nil {
+		logger.Errorf("signedEndorserProposalOrPanic error[%v]", err)
+		return err
+	}
+	rsp, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid)
 	if err != nil {
 		logger.Errorf("ProcessProposal error[%v]", err)
+		return err
 	}
 	logger.Infof("ProcessProposal rsp=%v", rsp)
 
 	return nil
+}
+
+func GetSysCCList() {
+
 }
 
 func chainsInit() {
@@ -130,23 +144,6 @@ func createChain(cid string, version int) error {
 	logger.Infof("creat chainId[%s] ok", cid)
 	return nil
 }
-
-//func InitCC() {
-//	initSysCCs(nil)
-//}
-//
-//func initSysCCs(cids []string) {
-//	//deploy system chaincodes
-//	scc.DeploySysCCs("")
-//
-//	//deploy multe chaincodes
-//	for	_, cid := range cids{
-//		if len(cid) > 0{
-//			scc.DeploySysCCs(cid)
-//		}
-//	}
-//	logger.Infof("Deployed system chaincodes")
-//}
 
 func marshalOrPanic(pb proto.Message) []byte {
 	data, err := proto.Marshal(pb)
@@ -227,22 +224,22 @@ func GetBytesProposal(prop *peer.Proposal) ([]byte, error) {
 	return propBytes, err
 }
 
-func mockSignedEndorserProposalOrPanic(chainID string, cs *peer.ChaincodeSpec, creator, signature []byte) (*peer.SignedProposal, *peer.Proposal) {
+func signedEndorserProposalOrPanic(chainID string, cs *peer.ChaincodeSpec, creator, signature []byte) (*peer.SignedProposal, *peer.Proposal, error) {
 	prop, _, err := createChaincodeProposal(
 		common.HeaderType_ENDORSER_TRANSACTION,
 		chainID,
 		&peer.ChaincodeInvocationSpec{ChaincodeSpec: cs},
 		creator)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
 
 	propBytes, err := GetBytesProposal(prop)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
 
-	return &peer.SignedProposal{ProposalBytes: propBytes, Signature: signature}, prop
+	return &peer.SignedProposal{ProposalBytes: propBytes, Signature: signature}, prop, nil
 }
 
 func peerCreateChain(cid string) error {
@@ -251,13 +248,6 @@ func peerCreateChain(cid string) error {
 
 	chains.list[cid] = &chain{
 		cs: &chainSupport{
-			//Resources: &mockchannelconfig.Resources{
-			//	PolicyManagerVal: &mockpolicies.Manager{
-			//		Policy: &mockpolicies.Policy{},
-			//	},
-			//	ConfigtxValidatorVal: &mockconfigtx.Validator{},
-			//},
-			//ledger: ledger},
 		},
 	}
 
