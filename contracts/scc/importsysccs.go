@@ -20,7 +20,7 @@
 package scc
 
 import (
-	"github.com/palletone/go-palletone/core/vmContractPub/mocks/samplesyscc"
+	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
 )
 
 var systemChaincodes = []*SystemChaincode{
@@ -28,7 +28,7 @@ var systemChaincodes = []*SystemChaincode{
 	{
 		Enabled:   true,
 		Name:      "sample_syscc",
-		Path:      "/home/glh/project/pallet/src/common/mocks/samplesyscc/samplesyscc",
+		Path:      "/home/glh/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc/samplesyscc",
 		InitArgs:  [][]byte{},
 		Chaincode: &samplesyscc.SampleSysCC{},
 	},
@@ -37,7 +37,6 @@ var systemChaincodes = []*SystemChaincode{
 
 
 }
-
 //DeploySysCCs is the hook for system chaincodes where system chaincodes are registered
 //note the chaincode must still be deployed and launched like a user chaincode will be
 func DeploySysCCs(chainID string) {
