@@ -26,6 +26,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"log"
 )
 
 func TestStreamKind(t *testing.T) {
@@ -816,4 +817,71 @@ func unhex(str string) []byte {
 		panic(fmt.Sprintf("invalid hex string: %q", str))
 	}
 	return b
+}
+
+func TestDecodeBytes(t *testing.T) {
+	type ST struct {
+		Grade string
+		Core float64
+		Age  uint8
+	}
+	// todo test map+interface
+
+	m := map[string]interface{}{}
+	m["Alice"] = uint16(9)
+	m["Bob"] = "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"
+	m["Joe"] = uint16(19)
+	//m["Chen"] = ST{Grade:"senior", Core:89.2}
+	m["Chen"] = ST{Age:19, Grade:"senior", Core:89.2}
+
+	//m:=map[string]string{}
+	//m["Alice"] = "senior"
+	//m["Bob"]="Junior"
+	b, err := EncodeToBytes(m)
+	if err!=nil {
+		log.Printf("Encode map error:%s", err)
+	} else {
+		log.Printf("Encoding data: %v", b)
+	}
+
+	m1 := map[string]interface{}{}
+	err = DecodeBytes(b, &m1)
+	if err!=nil{
+		log.Println("Decoding data error:", err)
+	} else {
+		for k, v := range m1 {
+			if strings.Compare(k, "Bob")==0 {
+				var s string
+				DecodeBytes(v.([]byte), &s)
+				fmt.Printf("key=%v, value=%v\n", k, s)
+			}else if strings.Compare(k, "Chen")==0 {
+				var st ST
+				DecodeBytes(v.([]byte), &st)
+				log.Printf("Decode data: grade=%v, core=%v, age=%v\n", st.Grade, st.Core, st.Age)
+			}else {
+				fmt.Printf("key=%v, value=%v\n", k, v)
+			}
+		}
+	}
+
+	//// todo test interface+struct
+	//fmt.Println("------------------")
+	//var i interface{}
+	//i = ST{Grade:"senior", Core:89.2, Age:12}
+	//b, err = EncodeToBytes(i)
+	//if err!=nil {
+	//	log.Printf("Encode interface error:%s", err)
+	//	return
+	//} else {
+	//	log.Printf("Encoding data: %v", b)
+	//}
+	//
+	//var ns ST
+	//err = DecodeBytes(b, &ns)
+	//if err!=nil{
+	//	log.Printf("Decode interface error:%s", err)
+	//	return
+	//} else {
+	//	log.Printf("Decode data: grade=%v, core=%v\n", ns.Grade, ns.Core)
+	//}
 }
