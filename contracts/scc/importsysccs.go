@@ -23,55 +23,7 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/mocks/samplesyscc"
 )
 
-//see systemchaincode_test.go for an example using "sample_syscc"
 var systemChaincodes = []*SystemChaincode{
-/*
-	{
-		Enabled:           true,
-		Name:              "cscc",
-		Path:              "github.com/palletone/go-palletone/contracts/scc/cscc",
-		InitArgs:          [][]byte{[]byte("")},
-		//glh
-		//Chaincode:         &cscc.PeerConfiger{},
-		InvokableExternal: true, // cscc is invoked to join a channel
-	},
-	{
-		Enabled:           true,
-		Name:              "lscc",
-		Path:              "github.com/palletone/go-palletone/contracts/scc/lscc",
-		InitArgs:          [][]byte{[]byte("")},
-		//glh
-		//Chaincode:         lscc.NewLifeCycleSysCC(),
-		InvokableExternal: true, // lscc is invoked to deploy new chaincodes
-		InvokableCC2CC:    true, // lscc can be invoked by other chaincodes
-	},
-	{
-		Enabled:   true,
-		Name:      "escc",
-		Path:      "github.com/palletone/go-palletone/contracts/scc/escc",
-		InitArgs:  [][]byte{[]byte("")},
-		//glh
-		//Chaincode: &escc.EndorserOneValidSignature{},
-	},
-	{
-		Enabled:   true,
-		Name:      "vscc",
-		Path:      "github.com/palletone/go-palletone/contracts/scc/vscc",
-		InitArgs:  [][]byte{[]byte("")},
-		//glh
-		//Chaincode: &vscc.ValidatorOneValidSignature{},
-	},
-	{
-		Enabled:           true,
-		Name:              "qscc",
-		Path:              "github.com/palletone/go-palletone/contracts/scc/qscc",
-		InitArgs:          [][]byte{[]byte("")},
-		//glh
-		//Chaincode:         &qscc.LedgerQuerier{},
-		InvokableExternal: true, // qscc can be invoked to retrieve blocks
-		InvokableCC2CC:    true, // qscc can be invoked to retrieve blocks also by a cc
-	},
-*/
 	//set systemChaincodes to sample
 	{
 		Enabled:   true,
@@ -80,10 +32,13 @@ var systemChaincodes = []*SystemChaincode{
 		InitArgs:  [][]byte{},
 		Chaincode: &samplesyscc.SampleSysCC{},
 	},
+	//TODO add other system chaincodes ..
+
+
+
 }
 
-
-//DeploySysCCs is the hook for system chaincodes where system chaincodes are registered 
+//DeploySysCCs is the hook for system chaincodes where system chaincodes are registered
 //note the chaincode must still be deployed and launched like a user chaincode will be
 func DeploySysCCs(chainID string) {
 	for _, sysCC := range systemChaincodes {

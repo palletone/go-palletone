@@ -100,11 +100,7 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 	var err error
 
 	ccprov := ccprovider.GetChaincodeProvider()
-
 	txid := util.GenerateUUID()
-
-	sysccLogger.Infof("txid=========================%s", txid)
-
 	ctxt := context.Background()
 	//glh
 	/*
@@ -137,13 +133,14 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 		return err
 	}
 	sysccLogger.Info("buildSysCC chaincodeDeploymentSpec =%v", chaincodeDeploymentSpec)
-
 	version := util.GetSysCCVersion()
-
 	cccid := ccprov.GetCCContext(chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, version, txid, true, nil, nil)
 
 	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec)
 
+	if err != nil {
+		sysccLogger.Errorf("ExecuteWithErrorFilter with syscc.Name[%s] chainId[%s] err !!", syscc.Name, chainID)
+	}
 	sysccLogger.Infof("system chaincode %s/%s(%s) deployed", syscc.Name, chainID, syscc.Path)
 
 	return err
