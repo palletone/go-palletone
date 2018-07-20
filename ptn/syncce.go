@@ -18,7 +18,7 @@
 package ptn
 
 import (
-	"github.com/palletone/go-palletone/common/log"
+	//"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -58,15 +58,69 @@ func (self *ProtocolManager) unitedBroadcastLoop() {
 // BroadcastUnit will either propagate a block to a subset of it's peers, or
 // will only announce it's availability (depending what's requested).
 func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
-	hash := unit.UnitHash
-	peers := pm.peers.PeersWithoutUnit(hash)
+	//hash := unit.UnitHash
+	//peers := pm.peers.PeersWithoutUnit(hash)
+	/*
+		// If propagation is requested, send to a subset of the peer
+		if propagate {
+			// Calculate the TD of the block (it's not imported yet, so block.Td is not valid)
+			var td *big.Int
+			if parent := pm.blockchain.GetBlock(block.ParentHash(), block.NumberU64()-1); parent != nil {
+				td = new(big.Int).Add(block.Difficulty(), pm.blockchain.GetTd(block.ParentHash(), block.NumberU64()-1))
+			} else {
+				log.Error("Propagating dangling block", "number", block.Number(), "hash", hash)
+				return
+			}
+			// Send the block to a subset of our peers
+			transfer := peers[:int(math.Sqrt(float64(len(peers))))]
+			for _, peer := range transfer {
+				peer.SendNewBlock(block, td)
+			}
+			log.Trace("Propagated block", "hash", hash, "recipients", len(transfer), "duration", common.PrettyDuration(time.Since(block.ReceivedAt)))
+			return
+		}
 
-	//If this node is not mediator then Send the block to a subset of our peers
-	//transfer := peers[:int(math.Sqrt(float64(len(peers))))]
-	for _, peer := range peers {
-		peer.SendNewUnit(unit)
-	}
-	//"duration", common.PrettyDuration(time.Since(block.ReceivedAt))
-	log.Trace("Propagated unit", "hash", hash, "recipients", len(peers))
-	return
+		// Otherwise if the block is indeed in out own chain, announce it
+		if pm.blockchain.HasBlock(hash, block.NumberU64()) {
+			for _, peer := range peers {
+				peer.SendNewBlockHashes([]common.Hash{hash}, []uint64{block.NumberU64()})
+			}
+			log.Trace("Announced block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(block.ReceivedAt)))
+		}*/
 }
+
+/*
+// BroadcastBlock will either propagate a block to a subset of it's peers, or
+// will only announce it's availability (depending what's requested).
+func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
+	hash := block.Hash()
+	peers := pm.peers.PeersWithoutBlock(hash)
+
+	// If propagation is requested, send to a subset of the peer
+	if propagate {
+		// Calculate the TD of the block (it's not imported yet, so block.Td is not valid)
+		var td *big.Int
+		if parent := pm.blockchain.GetBlock(block.ParentHash(), block.NumberU64()-1); parent != nil {
+			td = new(big.Int).Add(block.Difficulty(), pm.blockchain.GetTd(block.ParentHash(), block.NumberU64()-1))
+		} else {
+			log.Error("Propagating dangling block", "number", block.Number(), "hash", hash)
+			return
+		}
+		// Send the block to a subset of our peers
+		transfer := peers[:int(math.Sqrt(float64(len(peers))))]
+		for _, peer := range transfer {
+			peer.SendNewBlock(block, td)
+		}
+		log.Trace("Propagated block", "hash", hash, "recipients", len(transfer), "duration", common.PrettyDuration(time.Since(block.ReceivedAt)))
+		return
+	}
+
+	// Otherwise if the block is indeed in out own chain, announce it
+	if pm.blockchain.HasBlock(hash, block.NumberU64()) {
+		for _, peer := range peers {
+			peer.SendNewBlockHashes([]common.Hash{hash}, []uint64{block.NumberU64()})
+		}
+		log.Trace("Announced block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(block.ReceivedAt)))
+	}
+}
+*/

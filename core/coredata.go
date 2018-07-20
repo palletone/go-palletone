@@ -17,10 +17,9 @@
  * @date 2018
  */
 
-
 package core
 
-import(
+import (
 	"github.com/palletone/go-palletone/common/event"
 )
 
@@ -33,4 +32,3 @@ type ConsensusEngine interface {
 type ConsensusEvent struct {
 	Ce string
 }
-
