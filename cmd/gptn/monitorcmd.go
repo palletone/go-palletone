@@ -25,10 +25,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/palletone/go-palletone/cmd/utils"
-	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/gizak/termui"
+	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core/node"
 	"gopkg.in/urfave/cli.v1"
 )
 
