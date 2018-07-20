@@ -62,7 +62,6 @@ type transactionContext struct {
 	pendingQueryResults map[string]*pendingQueryResult
 
 	txsimulator          rwset.TxSimulator
-	//historyQueryExecutor ledger.HistoryQueryExecutor
 }
 
 type pendingQueryResult struct {

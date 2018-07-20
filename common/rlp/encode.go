@@ -381,8 +381,10 @@ func makeWriter(typ reflect.Type, ts tags) (writer, error) {
 		return writefloat64, nil
 	case kind== reflect.Map:
 		return makeMapWriter(typ)
+	case kind==reflect.Int:
+		return writeInt, nil
 	default:
-		return nil, fmt.Errorf("rlp: type %v is not RLP-serializable", typ)
+		return nil, fmt.Errorf("rlp writer: type %v is not RLP-serializable", typ)
 	}
 }
 
@@ -392,6 +394,24 @@ func isByte(typ reflect.Type) bool {
 
 func writeRawValue(val reflect.Value, w *encbuf) error {
 	w.str = append(w.str, val.Bytes()...)
+	return nil
+}
+
+func writeInt(val reflect.Value, w *encbuf) error {
+	i := val.Int()
+	if i == 0 {
+		w.str = append(w.str, 0x80)
+	} else if i < 128 && i>-128{
+		// fits single byte
+		w.str = append(w.str, byte(i))
+	} else {
+		// TODO: encode int to w.str directly
+		ni := uint64(0)
+		if i<0 {ni=uint64(-i)}
+		s := putint(w.sizebuf[1:], ni)
+		w.sizebuf[0] = 0x80 + byte(s)
+		w.str = append(w.str, w.sizebuf[:s+1]...)
+	}
 	return nil
 }
 

@@ -43,6 +43,9 @@ func NewDag() *modules.Dag {
 		GenesisUnit:   genesis,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
+		GlobalProp:    modules.NewGlobalProp(),
+		DynGlobalProp: modules.NewDynGlobalProp(),
+		MediatorSchl:  modules.NewMediatorSchl(),
 	}
 
 }

@@ -74,14 +74,25 @@ func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account acco
 	}
 
 	sign, err1 := ks.SigUnit(unit, account.Address)
-	if err != nil {
-		log.Error("Failed to write genesis block:", err1.Error())
+	if err1 != nil {
+		msg := fmt.Sprintf("Failed to write genesis block:%v", err1.Error())
+		log.Error(msg)
 		return err1
 	}
 	publicKey, err2 := ks.GetPublicKey(account.Address)
-	if err != nil {
-		log.Error("Failed to Get Public Key:", err2.Error())
+	if err2 != nil {
+		msg:=fmt.Sprintf("Failed to Get Public Key:%v", err2.Error())
+		log.Error(msg)
 		return err2
+	}
+	r := sign[:32]
+	s := sign[32:64]
+	v := append(sign, sign[64]+27)
+	unit.UnitHeader.Authors = &modules.Authentifier{
+		Address:account.Address.String(),
+		R:r,
+		S:s,
+		V:v,
 	}
 	//	publicKey := crypto.FromECDSAPub(&privateKey.PublicKey)
 	log.Info("Successfully SIG Genesis Block")
@@ -111,9 +122,10 @@ func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Un
 		log.Info("Writing custom genesis block")
 	}
 	txs := GetGensisTransctions(ks, genesis)
-	log.Info("-> Genesisi transactions:")
+	log.Info("-> Genesis transactions:")
 	for i, tx := range txs{
-		log.Info("Tx[%d]: %s", i, tx.TxHash)
+		msg := fmt.Sprintf("Tx[%d]: %s\n", i, tx.TxHash.String())
+		log.Info(msg)
 	}
 	//return modules.NewGenesisUnit(genesis, txs)
 	return dagCommon.NewGenesisUnit(txs)
@@ -200,10 +212,13 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		log.Error(msg)
 		return nil
 	}
-	tx.From.Address = holder.String()
-	tx.From.R = R
-	tx.From.S = S
-	tx.From.V = V
+	tx.From = &modules.Authentifier{
+		Address:holder.String(),
+		R:R,
+		S:S,
+		V:V,
+	}
+	fmt.Println("tx.From", tx.From)
 	txs := []*modules.Transaction{tx}
 	return txs
 }

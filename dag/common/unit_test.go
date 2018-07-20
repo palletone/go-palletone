@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"fmt"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common"
 )
 
 func TestNewGenesisUnit(t *testing.T) {
@@ -62,10 +62,10 @@ func TestRlpDecode(t *testing.T) {
 }
 
 func TestCreateUnit(t *testing.T) {
-	addr := common.Address{}	// minner addr
+	addr := common.Address{} // minner addr
 	addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
 	units, err := CreateUnit(&addr)
-	if err!=nil {
+	if err != nil {
 		log.Println("create unit error:", err)
 	} else {
 		log.Println("New unit:", units)

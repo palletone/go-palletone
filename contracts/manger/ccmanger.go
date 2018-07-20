@@ -68,26 +68,40 @@ func (osyscc *oldSysCCInfo) reset() {
 
 // contract manger module init
 func Init() error {
-	peerServerInit()
-	systemContractInit()
+	err := peerServerInit()
+	if err != nil {
+		logger.Errorf("peerServerInit error:%s", err)
+		return err
+	}
+	err = systemContractInit()
+	if err != nil {
+		logger.Errorf("systemContractInit error:%s", err)
+		return err
+	}
+
 	return nil
 }
 
 func Deinit() error{
-	peerServerDeInit()
-	systemContractDeInit()
+	err := peerServerDeInit()
+	if err != nil {
+		logger.Errorf("peerServerDeInit error:%s", err)
+		return err
+	}
+	err = systemContractDeInit()
+	if err != nil {
+		logger.Errorf("systemContractDeInit error:%s", err)
+		return err
+	}
 	return nil
 }
 
-var txnum int = 0
-
 func Invoke(chainID string, ccName string,  args [][]byte) error{
 	var mksupt Support = &SupportImpl{}
+	creator := []byte("palletone")  //default
+	ccVersion := "ptn001"  //default
 
-	creator := []byte("palletone")
-	ccVersion := "ptn001"
-
-	logger.Info("Invoke +++++++++++++++++++++++++++++++++++++++++++++++++++++")
+	logger.Info("===== Invoke [%s][%s]======", chainID, ccName)
 	es := NewEndorserServer(mksupt)
 	spec := &pb.ChaincodeSpec{
 		ChaincodeId: &pb.ChaincodeID{Name: ccName},

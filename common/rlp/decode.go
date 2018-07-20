@@ -213,7 +213,7 @@ func makeDecoder(typ reflect.Type, tags tags) (dec decoder, err error) {
 	case kind == reflect.Map:
 		return makeMapDecoder(typ)
 	default:
-		return nil, fmt.Errorf("rlp: type %v is not RLP-serializable", typ)
+		return nil, fmt.Errorf("rlp decoder: type %v is not RLP-serializable", typ)
 	}
 }
 
@@ -244,6 +244,7 @@ func decodeBool(s *Stream, val reflect.Value) error {
 	val.SetBool(b)
 	return nil
 }
+
 func decodefloat64(s *Stream, val reflect.Value) error {
 	b, err := s.Bytes()
 	if err != nil {
@@ -259,7 +260,6 @@ func decodeString(s *Stream, val reflect.Value) error {
 	if err != nil {
 		return wrapStreamError(err, val.Type())
 	}
-
 	val.SetString(string(b))
 	return nil
 }
@@ -516,17 +516,90 @@ func makeMapDecoder(typ reflect.Type) (decoder, error)  {
 		if _, err := s.List(); err != nil {
 			return wrapStreamError(err, typ)
 		}
-		for _, f := range fields {
-			err := f.info.decoder(s, val.Field(f.index))
+		kdecoder := fields[0].info.decoder
+		vdecoder := fields[1].info.decoder
+		k := reflect.New(val.Type().Key())
+		kv := k.Elem()
+		v := reflect.New(val.Type().Elem())
+		vv := v.Elem()
+		for {
+			// get key
+			err := kdecoder(s, kv)
+			if err == EOL {
+				return wrapStreamError(s.ListEnd(), typ)
+				return &decodeError{msg: "too few elements", typ: typ}
+			} else if err != nil {
+				return addErrorContext(err, "."+ val.Type().Key().String())
+			}
+			// get value
+			kind, size, _ := s.Kind()
+			err = vdecoder(s, vv)
 			if err == EOL {
 				return &decodeError{msg: "too few elements", typ: typ}
 			} else if err != nil {
-				return addErrorContext(err, "."+typ.Field(f.index).Name)
+				return addErrorContext(err, "."+ val.Type().Elem().String())
 			}
+
+			// value should be set its prefix
+			switch kind {
+			case String:
+				vBytes := getStringPrefix(size) // at least two bytes
+				b := vv.Elem().Bytes()
+				vBytes = append(vBytes, b...)
+				vv.Set(reflect.ValueOf(vBytes))
+			case Byte:
+			case List:
+				vBytes := []byte{}
+				for i:=0; i<vv.Elem().Len(); i++ {
+					b := vv.Elem().Index(i)
+					if b.Elem().Len()>1 {
+						prefix := getStringPrefix(uint64(b.Elem().Len()))
+						vBytes = append(vBytes, prefix...)
+					}
+					vBytes = append(vBytes, b.Elem().Bytes()...)
+				}
+				newBytes := getListPrefix(uint64(len(vBytes)))
+				newBytes = append(newBytes, vBytes...)
+				vv.Set(reflect.ValueOf(newBytes))
+			default:
+			}
+			// set map
+			if !val.CanSet() {
+				val = val.Elem() //使指针指向内存地址
+			}
+			val.SetMapIndex(kv, vv)
 		}
 		return wrapStreamError(s.ListEnd(), typ)
 	}
 	return dec, nil
+}
+
+func getListPrefix(size uint64) []byte {
+	vBytes := []byte{} // at least two bytes
+	if size < 56 {
+		vBytes = append(vBytes,0xC0+byte(size))
+	} else {
+		// TODO: encode to w.str directly
+		vBytes = append(vBytes, '0')
+		vBytes = append(vBytes, '0')
+		sizesize := putint(vBytes[1:], uint64(size))
+		vBytes[0] = 0xF7 + byte(sizesize)
+	}
+	return vBytes
+}
+
+func getStringPrefix(size uint64) []byte {
+	vBytes := []byte{} // at least two bytes
+	if size < 56 {
+		vBytes = append(vBytes,0x80+byte(size))
+	} else {
+		// TODO: encode to w.str directly
+		vBytes = append(vBytes, '0')
+		vBytes = append(vBytes, '0')
+		sizesize := putint(vBytes[1:], uint64(size))
+		vBytes[0] = 0xB7 + byte(sizesize)
+	}
+	return vBytes
 }
 
 var ifsliceType = reflect.TypeOf([]interface{}{})
