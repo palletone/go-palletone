@@ -18,22 +18,18 @@ package gen
 
 import (
 	"testing"
-
-
-
-
-
 )
 
 func TestDefaultGenesisBlock(t *testing.T) {
 	amount := DefaultGenesisBlock().GetTokenAmount()
-	if amount!=1000000000{
+	if amount != 1000000000 {
 		t.Errorf("wrong mainnet genesis amount, got %v, want %v", amount, 1000000000)
 	}
 	//if block.Hash() != params.MainnetGenesisHash {
 	//	t.Errorf("wrong mainnet genesis hash, got %v, want %v", block.Hash(), params.MainnetGenesisHash)
 	//}
 }
+
 /*
 func TestSetupGenesis(t *testing.T) {
 	var (

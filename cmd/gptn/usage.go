@@ -26,8 +26,8 @@ import (
 	"strings"
 
 	"github.com/palletone/go-palletone/cmd/utils"
-	"github.com/palletone/go-palletone/internal/debug"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/internal/debug"
 	"gopkg.in/urfave/cli.v1"
 )
 

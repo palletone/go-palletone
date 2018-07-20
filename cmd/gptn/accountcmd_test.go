@@ -42,6 +42,7 @@ func TestAccountListEmpty(t *testing.T) {
 	gptn := runGptn(t, "account", "list")
 	gptn.ExpectExitEmpty()
 }
+
 /*
 func TestAccountList(t *testing.T) {
 	datadir := tmpDatadirWithKeystore(t)

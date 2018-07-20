@@ -225,7 +225,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 // dumpConfig is the dumpconfig command.
 func dumpConfig(ctx *cli.Context) error {
 	cfg := makeDefaultConfig()
-//	comment := ""
+	//	comment := ""
 
 	//if cfg.Ptn.Genesis != nil {
 	//	cfg.Ptn.Genesis = nil
@@ -238,7 +238,7 @@ func dumpConfig(ctx *cli.Context) error {
 		configPath = defaultConfigPath
 	}
 
-//	io.WriteString(os.Stdout, comment)
+	//	io.WriteString(os.Stdout, comment)
 
 	err := makeConfigFile(&cfg, configPath)
 	if err != nil {

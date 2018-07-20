@@ -35,7 +35,7 @@ var (
 		Usage:     "Bootstrap and initialize a new genesis block",
 		ArgsUsage: "<genesisPath>",
 		Flags: []cli.Flag{
-//			utils.DataDirFlag,
+			//			utils.DataDirFlag,
 			GenesisJsonPathFlag,
 			utils.LightModeFlag,
 		},

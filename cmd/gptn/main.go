@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/log"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
@@ -36,7 +37,6 @@ import (
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnclient"
 	"github.com/palletone/go-palletone/statistics/metrics"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"gopkg.in/urfave/cli.v1"
 )
 
