@@ -4,7 +4,7 @@ package core
 // fork switch-over blocks through the chain configuration.
 type SystemConfig struct {
 	//变量名一定要大些，否则外部无法访问，导致无法进行json编码和解码
-	MediatorInterval int     `json:"mediatorInterval"`
+	MediatorInterval uint16     `json:"mediatorInterval"`
 	DepositRate      float64 `json:"depositRate"`
 }
 

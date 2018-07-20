@@ -39,6 +39,7 @@ import (
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 var (
@@ -569,6 +570,10 @@ func VerifyUnitWithPK(sign []byte, unit interface{}, publicKey []byte) bool {
 	// if err != nil {
 	// 	return false
 	// }
+	if len(sign)<=0 {
+		log.Error("Unit sigature is none.")
+		return false
+	}
 	sig := sign[:len(sign)-1] // remove recovery id
 	return crypto.VerifySignature(publicKey, hash.Bytes(), sig)
 }
