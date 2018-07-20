@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 // 全局属性的结构体定义
@@ -58,6 +59,8 @@ type DynamicGlobalProperty struct {
 }
 
 func NewGlobalProp() *GlobalProperty {
+	log.Info("initilize global property...")
+
 	return &GlobalProperty{
 		ActiveMediators: []*Mediator{},
 		ChainParameters: core.NewChainParams(),
@@ -65,6 +68,8 @@ func NewGlobalProp() *GlobalProperty {
 }
 
 func NewDynGlobalProp() *DynamicGlobalProperty {
+	log.Info("initilize dynamic global property...")
+
 	return &DynamicGlobalProperty{
 		LastVerifiedUnitNum: 0,
 		CurrentASlot:        0,

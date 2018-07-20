@@ -148,7 +148,7 @@ func maybeLoadConfig(ctx *cli.Context, cfg *FullConfig) error {
 			return err
 		}
 
-		log.Info("Writing new config file at ", configPath)
+		log.Info(fmt.Sprintf("Writing new config file at: %v", configPath))
 	}
 
 	// 加载配置文件中的配置信息到 cfg中
