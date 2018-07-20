@@ -213,7 +213,7 @@ func makeDecoder(typ reflect.Type, tags tags) (dec decoder, err error) {
 	case kind == reflect.Map:
 		return makeMapDecoder(typ)
 	default:
-		return nil, fmt.Errorf("rlp: type %v is not RLP-serializable", typ)
+		return nil, fmt.Errorf("rlp decoder: type %v is not RLP-serializable", typ)
 	}
 }
 
@@ -244,6 +244,7 @@ func decodeBool(s *Stream, val reflect.Value) error {
 	val.SetBool(b)
 	return nil
 }
+
 func decodefloat64(s *Stream, val reflect.Value) error {
 	b, err := s.Bytes()
 	if err != nil {
