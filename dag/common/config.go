@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	//"github.com/palletone/go-palletone/common/rlp"
+	"bytes"
+	"encoding/binary"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -25,6 +27,19 @@ func GetConfig(name []byte) []byte {
 	}
 
 	return data
+}
+
+func GetIntParam(paramName string) int {
+	value := GetConfig([]byte(paramName))
+	buf := bytes.NewReader(value)
+
+	var tmp int
+	err := binary.Read(buf, binary.BigEndian, tmp)
+	if err != nil {
+		log.Error("binary.Read failed:", err)
+	}
+
+	return tmp
 }
 
 /**

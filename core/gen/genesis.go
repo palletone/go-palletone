@@ -19,6 +19,7 @@ package gen
 import (
 	//"crypto/ecdsa"
 	"errors"
+	"fmt"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -31,16 +32,6 @@ import (
 	asset2 "github.com/palletone/go-palletone/dag/asset"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"fmt"
-)
-
-const (
-	DefaultMediatorInterval = 5
-	DefaultMediatorCount    = 21
-	DefaultTokenAmount      = 1000000000
-	DefaultTokenDecimal     = 8
-	DefaultDepositRate      = 0.02
-	defaultTokenHolder      = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 )
 
 // SetupGenesisBlock writes or updates the genesis block in db.
@@ -112,7 +103,7 @@ func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Un
 	}
 	txs := GetGensisTransctions(ks, genesis)
 	log.Info("-> Genesisi transactions:")
-	for i, tx := range txs{
+	for i, tx := range txs {
 		log.Info("Tx[%d]: %s", i, tx.TxHash)
 	}
 	//return modules.NewGenesisUnit(genesis, txs)
@@ -172,7 +163,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	msg0.PayloadHash = rlp.RlpHash(pay)
 	// step2, generate global config payload message
 	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis)
-	if err!=nil{
+	if err != nil {
 		log.Error("Generate genesis unit config payload error.")
 		return nil
 	}
@@ -184,10 +175,10 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	// step3, genesis transaction
 	tx := &modules.Transaction{
 		AccountNonce: 1,
-		TxMessages: []modules.Message{msg0, msg1},
+		TxMessages:   []modules.Message{msg0, msg1},
 	}
 	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
-	if err!=nil{
+	if err != nil {
 		msg := fmt.Sprintf("Get genesis transactions hash error: %s", err)
 		log.Error(msg)
 		return nil
@@ -195,7 +186,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	tx.TxHash.SetBytes(txHash)
 	// step4, sign tx
 	R, S, V, err := ks.SigTX(tx.TxHash, holder)
-	if err!=nil {
+	if err != nil {
 		msg := fmt.Sprintf("Sign transaction error: %s", err)
 		log.Error(msg)
 		return nil
@@ -216,7 +207,7 @@ func CommitDB(unit *modules.Unit, publicKey, addr []byte, address common.Address
 	author.Pubkey = publicKey
 	author.TxAuthentifier = authentifier
 	unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, *author)
-	if err:=dagCommon.SaveUnit(*unit); err!=nil{
+	if err := dagCommon.SaveUnit(*unit); err != nil {
 		log.Error("Save genesis unit error.")
 	}
 	return nil
@@ -225,36 +216,40 @@ func CommitDB(unit *modules.Unit, publicKey, addr []byte, address common.Address
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
 func DefaultGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		MediatorInterval: DefaultMediatorInterval,
-		DepositRate:      DefaultDepositRate,
+		DepositRate: core.DefaultDepositRate,
 	}
+
 	return &core.Genesis{
-		Version:                   configure.Version,
-		TokenAmount:               DefaultTokenAmount,
-		TokenDecimal:              DefaultTokenDecimal,
-		ChainID:                   1,
-		TokenHolder:               defaultTokenHolder,
-		SystemConfig:              SystemConfig,
-		InitialActiveMediators:    DefaultMediatorCount,
-		InitialMediatorCandidates: InitialMediatorCandidates(DefaultMediatorCount, defaultTokenHolder),
+		Version:                configure.Version,
+		TokenAmount:            core.DefaultTokenAmount,
+		TokenDecimal:           core.DefaultTokenDecimal,
+		ChainID:                1,
+		TokenHolder:            core.DefaultTokenHolder,
+		SystemConfig:           SystemConfig,
+		InitialParameters:      core.NewChainParams(),
+		InitialActiveMediators: core.DefaultMediatorCount,
+		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
+			core.DefaultTokenHolder),
 	}
 }
 
 // DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
 func DefaultTestnetGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		MediatorInterval: DefaultMediatorInterval,
-		DepositRate:      DefaultDepositRate,
+		DepositRate: core.DefaultDepositRate,
 	}
+
 	return &core.Genesis{
-		Version:                   configure.Version,
-		TokenAmount:               DefaultTokenAmount,
-		TokenDecimal:              DefaultTokenDecimal,
-		ChainID:                   1,
-		TokenHolder:               defaultTokenHolder,
-		SystemConfig:              SystemConfig,
-		InitialActiveMediators:    DefaultMediatorCount,
-		InitialMediatorCandidates: InitialMediatorCandidates(DefaultMediatorCount, defaultTokenHolder),
+		Version:                configure.Version,
+		TokenAmount:            core.DefaultTokenAmount,
+		TokenDecimal:           core.DefaultTokenDecimal,
+		ChainID:                1,
+		TokenHolder:            core.DefaultTokenHolder,
+		SystemConfig:           SystemConfig,
+		InitialParameters:      core.NewChainParams(),
+		InitialActiveMediators: core.DefaultMediatorCount,
+		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
+			core.DefaultTokenHolder),
 	}
 }
 

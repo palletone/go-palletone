@@ -1,15 +1,15 @@
 /*
-    This file is part of go-palletone.
-    go-palletone is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    go-palletone is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    You should have received a copy of the GNU General Public License
-    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+   This file is part of go-palletone.
+   go-palletone is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   go-palletone is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
@@ -19,16 +19,16 @@
 package main
 
 import (
-	"os"
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"gopkg.in/urfave/cli.v1"
+	"os"
 
-	"github.com/palletone/go-palletone/cmd/utils"
-	"github.com/palletone/go-palletone/core/gen"
-	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/cmd/console"
+	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/gen"
 	"path/filepath"
 )
 
@@ -48,11 +48,11 @@ var (
 	}
 
 	createGenesisJsonCommand = cli.Command{
-		Action:utils.MigrateFlags(createGenesisJson),
-		Name:"create-genesis-json",
-		Usage:"Create a genesis json file template",
+		Action:    utils.MigrateFlags(createGenesisJson),
+		Name:      "create-genesis-json",
+		Usage:     "Create a genesis json file template",
 		ArgsUsage: "<genesisJsonPath>",
-		Flags:[]cli.Flag{
+		Flags: []cli.Flag{
 			GenesisJsonPathFlag,
 		},
 		Category: "BLOCKCHAIN COMMANDS",
@@ -71,13 +71,13 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisOut := ctx.Args().First()
 	// If no path is specified, the default path is used
 	if len(genesisOut) == 0 {
-//		utils.Fatalf("Must supply path to genesis JSON file")
+		//		utils.Fatalf("Must supply path to genesis JSON file")
 		genesisOut = defaultGenesisJsonPath
 	}
 
 	var (
 		genesisFile *os.File
-		err error
+		err         error
 	)
 
 	err = os.MkdirAll(filepath.Dir(genesisOut), os.ModePerm)
@@ -86,7 +86,7 @@ func createGenesisJson(ctx *cli.Context) error {
 		return err
 	}
 
-	genesisFile,err = os.Create(genesisOut)
+	genesisFile, err = os.Create(genesisOut)
 	defer genesisFile.Close()
 	if err != nil {
 		utils.Fatalf("%v", err)
@@ -123,7 +123,7 @@ func createGenesisJson(ctx *cli.Context) error {
 		return err
 	}
 
-	_ ,err = genesisFile.Write(genesisJson)
+	_, err = genesisFile.Write(genesisJson)
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
@@ -147,21 +147,21 @@ func initialAccount(ctx *cli.Context) (string, error) {
 }
 
 // createExampleGenesis, create the genesis state of new chain with the specified account
-func createExampleGenesis(account string)  *core.Genesis  {
+func createExampleGenesis(account string) *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		MediatorInterval: gen.DefaultMediatorInterval,
-		DepositRate:   gen.DefaultDepositRate,
+		DepositRate: core.DefaultDepositRate,
 	}
 
 	return &core.Genesis{
-		Version:                   configure.Version,
-		TokenAmount:               gen.DefaultTokenAmount,
-		TokenDecimal:              gen.DefaultTokenDecimal,
-		ChainID:                   1,
-		TokenHolder:               account,
-		SystemConfig:              SystemConfig,
-		InitialActiveMediators:    gen.DefaultMediatorCount,
+		Version:                configure.Version,
+		TokenAmount:            core.DefaultTokenAmount,
+		TokenDecimal:           core.DefaultTokenDecimal,
+		ChainID:                1,
+		TokenHolder:            account,
+		SystemConfig:           SystemConfig,
+		InitialParameters:      core.NewChainParams(),
+		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(
-			gen.DefaultMediatorCount, account),
+			core.DefaultMediatorCount, account),
 	}
 }
