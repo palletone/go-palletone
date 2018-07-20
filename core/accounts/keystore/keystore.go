@@ -36,10 +36,10 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common/log"
 )
 
 var (
@@ -543,7 +543,7 @@ func (ks *KeyStore) SigUnit(unit interface{}, address common.Address) ([]byte, e
 	if err != nil {
 		return nil, err
 	}
-	defer ZeroKey(privateKey)
+	//defer ZeroKey(privateKey)
 
 	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
 	//unit signature
@@ -570,7 +570,7 @@ func VerifyUnitWithPK(sign []byte, unit interface{}, publicKey []byte) bool {
 	// if err != nil {
 	// 	return false
 	// }
-	if len(sign)<=0 {
+	if len(sign) <= 0 {
 		log.Error("Unit sigature is none.")
 		return false
 	}
@@ -581,7 +581,7 @@ func VerifyUnitWithPK(sign []byte, unit interface{}, publicKey []byte) bool {
 //tx:TxMessages   []Message
 func (ks *KeyStore) SigTX(tx interface{}, address common.Address) (R, S, V []byte, e error) {
 	sig, err := ks.SigUnit(tx, address)
-	if err!=nil {
+	if err != nil {
 		e = err
 		return
 	}
