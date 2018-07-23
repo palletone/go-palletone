@@ -20,7 +20,7 @@ package rwset
 
 import (
 	"errors"
-	//"github.com/palletone/go-palletone/dag/storage"
+
 )
 
 type RwSetTxSimulator struct {

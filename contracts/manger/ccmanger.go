@@ -26,7 +26,6 @@ import (
 
 	"encoding/hex"
 	"google.golang.org/grpc"
-	"golang.org/x/net/context"
 	"github.com/spf13/viper"
 	"github.com/pkg/errors"
 	"github.com/golang/protobuf/proto"
@@ -73,89 +72,10 @@ func (osyscc *oldSysCCInfo) reset() {
 	viper.Set("chaincode.system", osyscc.origSysCCWhitelist)
 }
 
-// contract manger module init
-func Init() error {
-	err := peerServerInit()
-	if err != nil {
-		logger.Errorf("peerServerInit error:%s", err)
-		return err
-	}
-	err = systemContractInit()
-	if err != nil {
-		logger.Errorf("systemContractInit error:%s", err)
-		return err
-	}
 
-	return nil
-}
 
-func Deinit() error{
-	err := peerServerDeInit()
-	if err != nil {
-		logger.Errorf("peerServerDeInit error:%s", err)
-		return err
-	}
-	err = systemContractDeInit()
-	if err != nil {
-		logger.Errorf("systemContractDeInit error:%s", err)
-		return err
-	}
-	return nil
-}
 
-func Invoke(chainID string, ccName string,  args [][]byte) (error){
-	var mksupt Support = &SupportImpl{}
-	creator := []byte("palletone")  //default
-	ccVersion := "ptn001"  //default
 
-	logger.Info("===== Invoke [%s][%s]======", chainID, ccName)
-	es := NewEndorserServer(mksupt)
-	spec := &pb.ChaincodeSpec{
-		ChaincodeId: &pb.ChaincodeID{Name: ccName},
-		Type:        pb.ChaincodeSpec_GOLANG,
-		Input:       &pb.ChaincodeInput{Args: args},
-	}
-
-	cid := &pb.ChaincodeID {
-		Path:     "", //no use
-		Name:     ccName,
-		Version:  ccVersion,
-	}
-
-	sprop, prop, err := signedEndorserProposa(chainID, spec, creator, []byte("msg1"))
-	if err != nil {
-		logger.Errorf("signedEndorserProposa error[%v]", err)
-		return err
-	}
-	rsp, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid)
-	if err != nil {
-		logger.Errorf("ProcessProposal error[%v]", err)
-		return err
-	}
-	logger.Infof("ProcessProposal rsp=%v", rsp)
-
-	return nil
-}
-
-func GetSysCCList() (ccInf []CCInfo, ccCount int, errs error) {
-	scclist := make([]CCInfo, 0)
-	ci := CCInfo{}
-
-	cclist, count, err := scc.SysCCsList()
-	for _, ccinf := range cclist {
-		ci.Name = ccinf.Name
-		ci.Path = ccinf.Path
-		ci.Enable = ccinf.Enabled
-		ci.SysCC = true
-
-		scclist = append(scclist, ci)
-	}
-	return scclist, count, err
-}
-
-func GetUsrCCList() {
-
-}
 
 func chainsInit() {
 	chains.list = nil

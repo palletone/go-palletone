@@ -84,7 +84,6 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 	var mksupt Support = &SupportImpl{}
 
 	peerInit()
-
 	t.Logf("TestEndorserDeployExecSysCC run, cc name[%s]", deployedCCName)
 
 	chainID := util.GetTestChainID()
@@ -106,11 +105,11 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 	}
 
 	sprop, prop, err := signedEndorserProposa(chainID, spec, creator, []byte("msg1"))
-	rsp, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid)
+	rsp, unit, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid)
 	if err != nil {
 		logger.Errorf("ProcessProposal error[%v]", err)
 	}
-	logger.Infof("ProcessProposal rsp=%v", rsp)
+	logger.Infof("ProcessProposal rsp=%v, unit=%v", rsp, unit)
 }
 
 func peerMockInitialize() {
@@ -202,10 +201,10 @@ func TestExecSysCC(t *testing.T) {
 	args := util.ToChaincodeArgs(f, "greeting", "hey there")
 
 	Init()
-	Invoke(chainID, "sample_syscc",  args)
+	Invoke(chainID, "sample_syscc",  args, 0)
 }
 
-func abc(){
+func multSys(t *testing.T){
 	fmt.Println("abc enter..................")
 	chainID := util.GetTestChainID()
 	f := "putval"
@@ -213,13 +212,39 @@ func abc(){
 	args2 := util.ToChaincodeArgs(f, "greeting", "my test2")
 	args3 := util.ToChaincodeArgs(f, "greeting", "my test3")
 
-	go Invoke(chainID, "sample_syscc", args1)
-
-
-	go Invoke(chainID, "sample_syscc", args2)
-
-	go Invoke(chainID, "sample_syscc", args3)
-
+	go func() {
+		unit, err := Invoke(chainID, "sample_syscc", args1, 0)
+		if err != nil {
+			t.Error(err)
+		}else {
+			//t.Logf("ContractId[%s], Function[%s], ReadSet:%v ,WriteSet:%v", unit.ContractId, unit.Function, unit.ReadSet[unit.ContractId], unit.WriteSet[unit.ContractId])
+			for k,v := range unit.WriteSet {
+				t.Logf("k[%s], v[%v]", k, v)
+			}
+		}
+	}()
+	go func() {
+		unit, err := Invoke(chainID, "sample_syscc", args2, 0)
+		if err != nil {
+			t.Error(err)
+		}else {
+			//t.Logf("ContractId[%s], Function[%s], ReadSet:%v ,WriteSet:%v", unit.ContractId, unit.Function, unit.ReadSet[unit.ContractId], unit.WriteSet[unit.ContractId])
+			for k,v := range unit.WriteSet {
+				t.Logf("k[%s], v[%v]", k, v)
+			}
+		}
+	}()
+	go func() {
+		unit, err := Invoke(chainID, "sample_syscc", args3, 0)
+		if err != nil {
+			t.Error(err)
+		}else {
+			//t.Logf("ContractId[%s], Function[%s], ReadSet:%v ,WriteSet:%v", unit.ContractId, unit.Function, unit.ReadSet[unit.ContractId], unit.WriteSet[unit.ContractId])
+			for k,v := range unit.WriteSet {
+				t.Logf("k[%s], v[%v]", k, v)
+			}
+		}
+	}()
 //	go Invoke(chainID, "sample_syscc", args)
 }
 
@@ -237,7 +262,7 @@ func TestExecSysCCMult(t *testing.T) {
 
 	Init()
 	//Invoke(chainID, "sample_syscc", args)
-	abc()
+	multSys(t)
 	//func () {
 	//	go	Invoke(chainID, "sample_syscc", args)
 	//	go	Invoke(chainID, "sample_syscc", args)
