@@ -171,7 +171,7 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 
 	// Make sure the peer's TD is higher than our own
 	//TODO compare local assetId & chainIndex whith remote peer assetId & chainIndex
-	pHead, pTd := peer.Head()
+	pHead, index := peer.Head()
 	/*
 		currentBlock := pm.blockchain.CurrentBlock()
 		td := pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())
@@ -195,7 +195,7 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	}
 
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
-	if err := pm.downloader.Synchronise(peer.id, pHead, pTd, mode); err != nil {
+	if err := pm.downloader.Synchronise(peer.id, pHead, index, mode); err != nil {
 		log.Info("===eth sync downloader.Synchronise err:", err)
 		return
 	}
@@ -205,9 +205,8 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	}
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
 
-	//if head := pm.blockchain.CurrentBlock(); head.NumberU64() > 0 {
 	head := pm.dag.CurrentUnit()
-	if head.UnitHeader.Number.Index > 0 {
+	if head != nil && head.UnitHeader.Number.Index > 0 {
 		go pm.BroadcastUnit(head, false)
 	}
 
