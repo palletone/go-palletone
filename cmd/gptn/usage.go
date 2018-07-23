@@ -82,6 +82,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.LightPeersFlag,
 			utils.LightKDFFlag,
 			GenesisJsonPathFlag,
+			GenesisTimestampFlag,
 		},
 	},
 	{Name: "DEVELOPER CHAIN",

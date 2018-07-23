@@ -35,11 +35,11 @@ import (
 const defaultGenesisJsonPath = "./ptn-genesis.json"
 
 var (
-	//GenesisJsonPathFlag = utils.DirectoryFlag{
-	//	Name:  "genesisjsonpath",
-	//	Usage: "Path to create a Genesis State at.",
-	//	//	Value: utils.DirectoryString{node.DefaultDataDir()},
-	//}
+	GenesisTimestampFlag = cli.DurationFlag{
+		Name:  "genesis-timestamp",
+		Usage: "Replace timestamp from genesis.json with current time plus this many seconds (experts only!)",
+//		Value: 0,
+	}
 
 	GenesisJsonPathFlag = cli.StringFlag{
 		Name:  "genesis-json-path",

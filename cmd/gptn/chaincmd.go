@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	"gopkg.in/urfave/cli.v1"
+	"time"
 )
 
 var (
@@ -37,7 +38,8 @@ var (
 		Flags: []cli.Flag{
 			//			utils.DataDirFlag,
 			GenesisJsonPathFlag,
-			utils.LightModeFlag,
+			GenesisTimestampFlag,
+//			utils.LightModeFlag,
 		},
 		Category: "BLOCKCHAIN COMMANDS",
 		Description: `
@@ -108,6 +110,13 @@ func initGenesis(ctx *cli.Context) error {
 	genesis := new(core.Genesis)
 	if err := json.NewDecoder(file).Decode(genesis); err != nil {
 		utils.Fatalf("invalid genesis file: %v", err)
+	}
+
+	if ctx.GlobalIsSet(GenesisTimestampFlag.Name) {
+		secFromNow := ctx.GlobalDuration(GenesisTimestampFlag.Name)
+		mi := int64(genesis.InitialParameters.MediatorInterval)
+		genesis.InitialTimestamp = time.Now().Unix() + mi +	int64(secFromNow)
+		genesis.InitialTimestamp -= genesis.InitialTimestamp % mi
 	}
 
 	node := makeFullNode(ctx)
