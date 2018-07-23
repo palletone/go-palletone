@@ -19,6 +19,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"time"
 
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/log"
@@ -26,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	"gopkg.in/urfave/cli.v1"
-	"time"
 )
 
 var (
@@ -113,9 +113,9 @@ func initGenesis(ctx *cli.Context) error {
 	}
 
 	if ctx.GlobalIsSet(GenesisTimestampFlag.Name) {
-		secFromNow := ctx.GlobalDuration(GenesisTimestampFlag.Name)
+		secFromNow := ctx.GlobalInt64(GenesisTimestampFlag.Name)
 		mi := int64(genesis.InitialParameters.MediatorInterval)
-		genesis.InitialTimestamp = time.Now().Unix() + mi +	int64(secFromNow)
+		genesis.InitialTimestamp = time.Now().Unix() + mi +	secFromNow
 		genesis.InitialTimestamp -= genesis.InitialTimestamp % mi
 	}
 

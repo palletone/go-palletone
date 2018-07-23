@@ -35,7 +35,7 @@ import (
 const defaultGenesisJsonPath = "./ptn-genesis.json"
 
 var (
-	GenesisTimestampFlag = cli.DurationFlag{
+	GenesisTimestampFlag = cli.Int64Flag{
 		Name:  "genesis-timestamp",
 		Usage: "Replace timestamp from genesis.json with current time plus this many seconds (experts only!)",
 //		Value: 0,
