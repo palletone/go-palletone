@@ -170,6 +170,8 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	}
 
 	// Make sure the peer's TD is higher than our own
+	//TODO compare local assetId & chainIndex whith remote peer assetId & chainIndex
+	pHead, index := peer.Head()
 	/*
 		currentBlock := pm.blockchain.CurrentBlock()
 		td := pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())
@@ -179,45 +181,35 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 			return
 		}
 	*/
-	pHead, pTd := peer.Head()
+
 	// Otherwise try to sync with the downloader
 	mode := downloader.FullSync
-	/*
-		if atomic.LoadUint32(&pm.fastSync) == 1 {
-			// Fast sync was explicitly requested, and explicitly granted
-			mode = downloader.FastSync
-		} else if currentBlock.NumberU64() == 0 && pm.blockchain.CurrentFastBlock().NumberU64() > 0 {
-			// The database seems empty as the current block is the genesis. Yet the fast
-			// block is ahead, so fast sync was enabled for this node at a certain point.
-			// The only scenario where this can happen is if the user manually (or via a
-			// bad block) rolled back a fast sync node below the sync point. In this case
-			// however it's safe to reenable fast sync.
-			atomic.StoreUint32(&pm.fastSync, 1)
-			mode = downloader.FastSync
-		}
 
-		if mode == downloader.FastSync {
-			// Make sure the peer's total difficulty we are synchronizing is higher.
-			if pm.blockchain.GetTdByHash(pm.blockchain.CurrentFastBlock().Hash()).Cmp(pTd) >= 0 {
-				return
-			}
-		}
-	*/
+	if atomic.LoadUint32(&pm.fastSync) == 1 {
+		// Fast sync was explicitly requested, and explicitly granted
+		mode = downloader.FastSync
+		//TODO :Make sure the peer's total difficulty we are synchronizing is higher.
+		//		if pm.blockchain.GetTdByHash(pm.blockchain.CurrentFastBlock().Hash()).Cmp(pTd) >= 0 {
+		//			return
+		//		}
+	}
+
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
-	if err := pm.downloader.Synchronise(peer.id, pHead, pTd, mode); err != nil {
+	if err := pm.downloader.Synchronise(peer.id, pHead, index, mode); err != nil {
 		log.Info("===eth sync downloader.Synchronise err:", err)
 		return
 	}
-	//	if atomic.LoadUint32(&pm.fastSync) == 1 {
-	//		log.Info("Fast sync complete, auto disabling")
-	//		atomic.StoreUint32(&pm.fastSync, 0)
-	//	}
+	if atomic.LoadUint32(&pm.fastSync) == 1 {
+		log.Info("Fast sync complete, auto disabling")
+		atomic.StoreUint32(&pm.fastSync, 0)
+	}
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
-	/*
-		if head := pm.blockchain.CurrentBlock(); head.NumberU64() > 0 {
-			go pm.BroadcastBlock(head, false)
-		}
-	*/
+
+	head := pm.dag.CurrentUnit()
+	if head != nil && head.UnitHeader.Number.Index > 0 {
+		go pm.BroadcastUnit(head, false)
+	}
+
 }
 
 /*
