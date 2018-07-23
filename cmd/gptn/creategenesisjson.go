@@ -152,6 +152,8 @@ func createExampleGenesis(account string) *core.Genesis {
 		DepositRate: core.DefaultDepositRate,
 	}
 
+	initParams := core.NewChainParams()
+
 	return &core.Genesis{
 		Version:                configure.Version,
 		TokenAmount:            core.DefaultTokenAmount,
@@ -159,7 +161,8 @@ func createExampleGenesis(account string) *core.Genesis {
 		ChainID:                1,
 		TokenHolder:            account,
 		SystemConfig:           SystemConfig,
-		InitialParameters:      core.NewChainParams(),
+		InitialParameters:      initParams,
+		InitialTimestamp:		gen.InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(
 			core.DefaultMediatorCount, account),

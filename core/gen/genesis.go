@@ -32,6 +32,7 @@ import (
 	asset2 "github.com/palletone/go-palletone/dag/asset"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"time"
 )
 
 // SetupGenesisBlock writes or updates the genesis block in db.
@@ -234,6 +235,8 @@ func DefaultGenesisBlock() *core.Genesis {
 		DepositRate: core.DefaultDepositRate,
 	}
 
+	initParams := core.NewChainParams()
+
 	return &core.Genesis{
 		Version:                configure.Version,
 		TokenAmount:            core.DefaultTokenAmount,
@@ -241,7 +244,8 @@ func DefaultGenesisBlock() *core.Genesis {
 		ChainID:                1,
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
-		InitialParameters:      core.NewChainParams(),
+		InitialParameters:      initParams,
+		InitialTimestamp:		InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
 			core.DefaultTokenHolder),
@@ -254,6 +258,8 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		DepositRate: core.DefaultDepositRate,
 	}
 
+	initParams := core.NewChainParams()
+
 	return &core.Genesis{
 		Version:                configure.Version,
 		TokenAmount:            core.DefaultTokenAmount,
@@ -261,7 +267,8 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		ChainID:                1,
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
-		InitialParameters:      core.NewChainParams(),
+		InitialParameters:      initParams,
+		InitialTimestamp:		InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
 			core.DefaultTokenHolder),
@@ -275,4 +282,9 @@ func InitialMediatorCandidates(len int, address string) []string {
 	}
 
 	return initialMediatorSet
+}
+
+func InitialTimestamp(mediatorInterval uint8) int64 {
+	mi := int64(mediatorInterval)
+	return time.Now().Unix()/mi*mi
 }

@@ -86,13 +86,16 @@ func DevGenesisBlock() *core.Genesis {
 		DepositRate: 0.02,
 	}
 
+	initParams := core.NewChainParams()
+
 	return &core.Genesis{
 		Version:                "0.6.0",
 		TokenAmount:            1000000000,
 		TokenDecimal:           8,
 		ChainID:                1,
 		TokenHolder:            core.DefaultTokenHolder,
-		InitialParameters:      core.NewChainParams(),
+		InitialParameters:      initParams,
+		InitialTimestamp:		gen.InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(core.DefaultMediatorCount,
 			core.DefaultTokenHolder),
