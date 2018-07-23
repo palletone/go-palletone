@@ -21,16 +21,16 @@ package modules
 
 import (
 	"time"
-	)
+)
 
 // Mediator调度顺序结构体
 type MediatorSchedule struct {
 	CurrentShuffledMediators []*Mediator
 }
 
-func NewMediatorSchl() (*MediatorSchedule) {
+func NewMediatorSchl() *MediatorSchedule {
 	return &MediatorSchedule{
-		CurrentShuffledMediators:[]*Mediator{},
+		CurrentShuffledMediators: []*Mediator{},
 	}
 }
 
@@ -119,7 +119,7 @@ func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32)
 		return time.Unix(0, 0)
 	}
 
-	interval := gp.ChainParameters.VerifiedUnitInterval
+	interval := gp.ChainParameters.MediatorInterval
 
 	// 本条件是用来生产创世区块, 由于palletone创世单元不是有mediator生产, 先注释掉
 	//if dgp.LastVerifiedUnitNum == 0 {
@@ -165,7 +165,7 @@ func GetSlotAtTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, when time.Tim
 	}
 
 	diffSecs := when.Unix() - firstSlotTime.Unix()
-	interval := int64(gp.ChainParameters.VerifiedUnitInterval)
+	interval := int64(gp.ChainParameters.MediatorInterval)
 
 	return uint32(diffSecs/interval) + 1
 }

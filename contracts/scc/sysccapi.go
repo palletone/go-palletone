@@ -193,3 +193,6 @@ func RegisterSysCCs() {
 	}
 }
 
+func SysCCsList() ([]*SystemChaincode, int, error) {
+	return systemChaincodes, len(systemChaincodes), nil
+}

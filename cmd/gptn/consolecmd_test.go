@@ -34,6 +34,7 @@ func TestConsoleWelcome(t *testing.T) {
 	//gptn := runGptn(t,"console")
 	//gptn.ExpectExitConsoleWelcome()
 }
+
 /*
 // Tests that a console can be attached to a running node via various means.
 func TestIPCAttachWelcome(t *testing.T) {
@@ -107,18 +108,18 @@ func testAttachWelcome(t *testing.T, gptn *testgptn, endpoint, apis string) {
 	//attach.SetTemplateFunc("apis", func() string { return apis })
 
 	// Verify the actual welcome message to the required template
-//	attach.Expect(`
-//Welcome to the Geth JavaScript console!
-//
-//instance: Geth/v{{gethver}}/{{goos}}-{{goarch}}/{{gover}}
-//coinbase: {{etherbase}}
-//at block: 0 ({{niltime}}){{if ipc}}
-// datadir: {{datadir}}{{end}}
-// modules: {{apis}}
-//
-//> {{.InputLine "exit" }}
-//`)
-//	attach.ExpectExit()
+	//	attach.Expect(`
+	//Welcome to the Geth JavaScript console!
+	//
+	//instance: Geth/v{{gethver}}/{{goos}}-{{goarch}}/{{gover}}
+	//coinbase: {{etherbase}}
+	//at block: 0 ({{niltime}}){{if ipc}}
+	// datadir: {{datadir}}{{end}}
+	// modules: {{apis}}
+	//
+	//> {{.InputLine "exit" }}
+	//`)
+	//	attach.ExpectExit()
 }
 
 // trulyRandInt generates a crypto random integer used by the console tests to

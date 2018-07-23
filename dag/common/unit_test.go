@@ -27,7 +27,8 @@ func TestNewGenesisUnit(t *testing.T) {
 func TestGenGenesisConfigPayload(t *testing.T) {
 	var genesisConf core.Genesis
 	genesisConf.SystemConfig.DepositRate = 0.02
-	genesisConf.SystemConfig.MediatorInterval = 10
+
+	genesisConf.InitialParameters.MediatorInterval = 10
 
 	payload, err := GenGenesisConfigPayload(&genesisConf)
 

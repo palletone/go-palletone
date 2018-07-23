@@ -148,7 +148,7 @@ func maybeLoadConfig(ctx *cli.Context, cfg *FullConfig) error {
 			return err
 		}
 
-		log.Info("Writing new config file at ", configPath)
+		log.Info(fmt.Sprintf("Writing new config file at: %v", configPath))
 	}
 
 	// 加载配置文件中的配置信息到 cfg中
@@ -225,7 +225,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 // dumpConfig is the dumpconfig command.
 func dumpConfig(ctx *cli.Context) error {
 	cfg := makeDefaultConfig()
-//	comment := ""
+	//	comment := ""
 
 	//if cfg.Ptn.Genesis != nil {
 	//	cfg.Ptn.Genesis = nil
@@ -238,7 +238,7 @@ func dumpConfig(ctx *cli.Context) error {
 		configPath = defaultConfigPath
 	}
 
-//	io.WriteString(os.Stdout, comment)
+	//	io.WriteString(os.Stdout, comment)
 
 	err := makeConfigFile(&cfg, configPath)
 	if err != nil {

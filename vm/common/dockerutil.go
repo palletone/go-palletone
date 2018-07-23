@@ -34,7 +34,7 @@ import (
 func NewDockerClient() (client *docker.Client, err error) {
 	endpoint := viper.GetString("vm.endpoint")
 
-	fmt.Println("glh:NewDockerClient enter, endpoint:", endpoint)
+	fmt.Println("NewDockerClient enter, endpoint:", endpoint)
 
 	tlsenabled := viper.GetBool("vm.docker.tls.enabled")
 	if tlsenabled {

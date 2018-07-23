@@ -76,6 +76,7 @@ var customGenesisTests = []struct {
 		result: "0x0000000000000042",
 	},
 }
+
 /*
 // Tests that initializing Geth with a custom genesis block and chain definitions
 // work properly.

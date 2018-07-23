@@ -21,21 +21,14 @@ package modules
 
 import (
 	"time"
-	//	v "github.com/palletone/go-palletone/dag/verifiedunit"
+
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/common/log"
 )
-
-// 区块链属性结构体的定义
-type ChainParameters struct {
-	// 验证单元之间的间隔时间，以秒为单元。 interval in seconds between verifiedUnits
-	VerifiedUnitInterval uint8
-
-	// 在维护时跳过的verifiedUnitInterval数量。 number of verifiedUnitInterval to skip at maintenance time
-	//	MaintenanceSkipSlots uint8
-}
 
 // 全局属性的结构体定义
 type GlobalProperty struct {
-	ChainParameters ChainParameters // 区块链网络参数
+	ChainParameters *core.ChainParameters // 区块链网络参数
 
 	ActiveMediators []*Mediator // 当前活跃mediator集合；每个维护间隔更新一次
 }
@@ -66,12 +59,17 @@ type DynamicGlobalProperty struct {
 }
 
 func NewGlobalProp() *GlobalProperty {
+	log.Info("initilize global property...")
+
 	return &GlobalProperty{
-		ActiveMediators:[]*Mediator{},
+		ActiveMediators: []*Mediator{},
+		ChainParameters: core.NewChainParams(),
 	}
 }
 
 func NewDynGlobalProp() *DynamicGlobalProperty {
+	log.Info("initilize dynamic global property...")
+
 	return &DynamicGlobalProperty{
 		LastVerifiedUnitNum: 0,
 		CurrentASlot:        0,

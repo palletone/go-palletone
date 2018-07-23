@@ -18,9 +18,9 @@ package core
 
 import (
 	"bytes"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/trie"
-	"github.com/palletone/go-palletone/common"
 )
 
 type DerivableList interface {

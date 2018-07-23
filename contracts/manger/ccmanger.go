@@ -41,6 +41,13 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
 
+type CCInfo struct{
+	Name 	string
+	Path 	string
+	SysCC 	bool
+	Enable 	bool
+}
+
 type chainSupport struct {
 
 }
@@ -96,7 +103,7 @@ func Deinit() error{
 	return nil
 }
 
-func Invoke(chainID string, ccName string,  args [][]byte) error{
+func Invoke(chainID string, ccName string,  args [][]byte) (error){
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone")  //default
 	ccVersion := "ptn001"  //default
@@ -115,9 +122,9 @@ func Invoke(chainID string, ccName string,  args [][]byte) error{
 		Version:  ccVersion,
 	}
 
-	sprop, prop, err := signedEndorserProposalOrPanic(chainID, spec, creator, []byte("msg1"))
+	sprop, prop, err := signedEndorserProposa(chainID, spec, creator, []byte("msg1"))
 	if err != nil {
-		logger.Errorf("signedEndorserProposalOrPanic error[%v]", err)
+		logger.Errorf("signedEndorserProposa error[%v]", err)
 		return err
 	}
 	rsp, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid)
@@ -130,7 +137,23 @@ func Invoke(chainID string, ccName string,  args [][]byte) error{
 	return nil
 }
 
-func GetSysCCList() {
+func GetSysCCList() (ccInf []CCInfo, ccCount int, errs error) {
+	scclist := make([]CCInfo, 0)
+	ci := CCInfo{}
+
+	cclist, count, err := scc.SysCCsList()
+	for _, ccinf := range cclist {
+		ci.Name = ccinf.Name
+		ci.Path = ccinf.Path
+		ci.Enable = ccinf.Enabled
+		ci.SysCC = true
+
+		scclist = append(scclist, ci)
+	}
+	return scclist, count, err
+}
+
+func GetUsrCCList() {
 
 }
 
@@ -238,7 +261,7 @@ func GetBytesProposal(prop *peer.Proposal) ([]byte, error) {
 	return propBytes, err
 }
 
-func signedEndorserProposalOrPanic(chainID string, cs *peer.ChaincodeSpec, creator, signature []byte) (*peer.SignedProposal, *peer.Proposal, error) {
+func signedEndorserProposa(chainID string, cs *peer.ChaincodeSpec, creator, signature []byte) (*peer.SignedProposal, *peer.Proposal, error) {
 	prop, _, err := createChaincodeProposal(
 		common.HeaderType_ENDORSER_TRANSACTION,
 		chainID,

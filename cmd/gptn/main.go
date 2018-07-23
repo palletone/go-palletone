@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/log"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
@@ -36,7 +37,6 @@ import (
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnclient"
 	"github.com/palletone/go-palletone/statistics/metrics"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -214,7 +214,12 @@ func init() {
 func main() {
 	// 如果是gptn命令行启动，不带子命令，那么直接调用app.Action = gptn()函数；
 	// 如果带有子命令比如gptn console，那么会调用Command.Run, 最终会执行该子命令对应的Command.Action
-	// 对于console子命令来说就是调用的 localConsole()函数；
+	// 对于console子命令来说就是调用的 localConsole()函数；调用路径为：
+	/*
+		1. app.Run(os.Args);
+		2. c.Run(context)
+		3. HandleAction(c.Action, context)
+	*/
 	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

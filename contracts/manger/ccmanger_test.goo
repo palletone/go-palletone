@@ -16,7 +16,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
-	"github.com/palletone/go-palletone/core/vmContractPub/mocks/samplesyscc"
+	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"fmt"
@@ -105,23 +105,13 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 		Version:"ptn001",
 	}
 
-	sprop, prop, err := signedEndorserProposalOrPanic(chainID, spec, creator, []byte("msg1"))
+	sprop, prop, err := signedEndorserProposa(chainID, spec, creator, []byte("msg1"))
 	rsp, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid)
 	if err != nil {
 		logger.Errorf("ProcessProposal error[%v]", err)
 	}
 	logger.Infof("ProcessProposal rsp=%v", rsp)
 }
-
-//type oldSysCCInfo struct {
-//	origSystemCC       []*scc.SystemChaincode
-//	origSysCCWhitelist map[string]string
-//}
-
-//func (osyscc *oldSysCCInfo) reset() {
-//	scc.MockResetSysCCs(osyscc.origSystemCC)
-//	viper.Set("chaincode.system", osyscc.origSysCCWhitelist)
-//}
 
 func peerMockInitialize() {
 //ledgermgmt.InitializeTestEnvWithCustomProcessors(ConfigTxProcessors)
@@ -135,13 +125,6 @@ func peerMockCreateChain(cid string) error {
 
 	chains.list[cid] = &chain{
 		cs: &chainSupport{
-			//Resources: &mockchannelconfig.Resources{
-			//	PolicyManagerVal: &mockpolicies.Manager{
-			//		Policy: &mockpolicies.Policy{},
-			//	},
-			//	ConfigtxValidatorVal: &mockconfigtx.Validator{},
-			//},
-			//ledger: ledger},
 		},
 	}
 
@@ -262,5 +245,21 @@ func TestExecSysCCMult(t *testing.T) {
 	//}()
 
 	time.Sleep(10*time.Second)
+
+}
+
+func TestGetSysCCList(t *testing.T) {
+
+	cclist, count, err := GetSysCCList()
+	if err != nil {
+		t.Log(err)
+	}
+
+	//t.Logf("cclist:%v", cclist)
+	t.Logf("count:%d", count)
+
+	for idx, cc := range  cclist {
+		t.Logf("%d, %s---%s---%v", idx, cc.Name, cc.Path, cc.Enable)
+	}
 
 }

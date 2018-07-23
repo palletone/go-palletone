@@ -28,6 +28,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/internal/jsre"
 	"github.com/palletone/go-palletone/ptn"
@@ -82,19 +83,19 @@ type tester struct {
 
 func DevGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		MediatorInterval: 5,
-//		MediatorCount:    21,
-		//MediatorList: ["dfba98bb5c52bba028e2cc487cbd1084"],
-//		MediatorCycle: 86400,
-		DepositRate:   0.02,
+		DepositRate: 0.02,
 	}
+
 	return &core.Genesis{
-//		Height:       "0",
-		Version:      "0.6.0",
-		TokenAmount:  1000000000,
-		TokenDecimal: 8,
-		ChainID:      1,
-		TokenHolder:  "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ",
+		Version:                "0.6.0",
+		TokenAmount:            1000000000,
+		TokenDecimal:           8,
+		ChainID:                1,
+		TokenHolder:            core.DefaultTokenHolder,
+		InitialParameters:      core.NewChainParams(),
+		InitialActiveMediators: core.DefaultMediatorCount,
+		InitialMediatorCandidates: gen.InitialMediatorCandidates(core.DefaultMediatorCount,
+			core.DefaultTokenHolder),
 		SystemConfig: SystemConfig,
 	}
 }
