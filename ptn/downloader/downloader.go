@@ -398,8 +398,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode
 // syncWithPeer starts a block synchronization based on the hash chain from the
 // specified peer and head hash.
 func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uint64) (err error) {
-	/*
-		d.mux.Post(StartEvent{})
+	/*	d.mux.Post(StartEvent{})
 		defer func() {
 			// reset on error
 			if err != nil {
@@ -412,7 +411,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 			return errTooOld
 		}
 
-		log.Debug("Synchronising with the network", "peer", p.id, "eth", p.version, "head", hash, "td", td, "mode", d.mode)
+		log.Debug("Synchronising with the network", "peer", p.id, "eth", p.version, "head", hash, "index", index, "mode", d.mode)
 		defer func(start time.Time) {
 			log.Debug("Synchronisation terminated", "elapsed", time.Since(start))
 		}(time.Now())
