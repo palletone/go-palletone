@@ -91,7 +91,7 @@ func GetBytesChaincodeEvent(event *pb.ChaincodeEvent) ([]byte, error) {
 	return eventBytes, err
 }
 
-func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, fun []byte) (*ut.ContractInvokePayload, error) {
+func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, fun []byte) (*pb.ContractInvokePayload, error) {
 	logger.Debug("enter")
 
 	invokeData := ut.ContractInvokePayload{}
@@ -103,7 +103,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, fun 
 	}
 
 	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
-	dag := ut.ContractInvokePayload{ContractId:txid, Function: fun, ReadSet:make(map[string]interface{}), WriteSet:make(map[string]interface{})}
+	dag := pb.ContractInvokePayload{ContractId:txid, Function: fun, ReadSet:make(map[string]interface{}), WriteSet:make(map[string]interface{})}
 
 	for key, val:= range rd {
 		dag.ReadSet[key] = val

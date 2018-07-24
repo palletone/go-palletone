@@ -22,3 +22,4 @@ func (cpp *ChaincodeProposalPayload) StaticallyOpaqueFieldProto(name string) (pr
 	}
 	return &ChaincodeInvocationSpec{}, nil
 }
+

@@ -35,11 +35,11 @@ import (
 const defaultGenesisJsonPath = "./ptn-genesis.json"
 
 var (
-	//GenesisJsonPathFlag = utils.DirectoryFlag{
-	//	Name:  "genesisjsonpath",
-	//	Usage: "Path to create a Genesis State at.",
-	//	//	Value: utils.DirectoryString{node.DefaultDataDir()},
-	//}
+	GenesisTimestampFlag = cli.Int64Flag{
+		Name:  "genesis-timestamp",
+		Usage: "Replace timestamp from genesis.json with current time plus this many seconds (experts only!)",
+//		Value: 0,
+	}
 
 	GenesisJsonPathFlag = cli.StringFlag{
 		Name:  "genesis-json-path",
@@ -152,6 +152,8 @@ func createExampleGenesis(account string) *core.Genesis {
 		DepositRate: core.DefaultDepositRate,
 	}
 
+	initParams := core.NewChainParams()
+
 	return &core.Genesis{
 		Version:                configure.Version,
 		TokenAmount:            core.DefaultTokenAmount,
@@ -159,7 +161,8 @@ func createExampleGenesis(account string) *core.Genesis {
 		ChainID:                1,
 		TokenHolder:            account,
 		SystemConfig:           SystemConfig,
-		InitialParameters:      core.NewChainParams(),
+		InitialParameters:      initParams,
+		InitialTimestamp:		gen.InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(
 			core.DefaultMediatorCount, account),

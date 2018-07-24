@@ -123,6 +123,7 @@ var (
 		utils.LogValue5Flag,
 		ConfigFileFlag,
 		GenesisJsonPathFlag,
+		GenesisTimestampFlag,
 		mp.StaleProductionFlag,
 	}
 

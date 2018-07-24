@@ -15,6 +15,7 @@ type Genesis struct {
 	ChainID                   uint64           `json:"chainId"`
 	TokenHolder               string           `json:"tokenHolder"`
 	InitialParameters         *ChainParameters `json:"initialParameters"`
+	InitialTimestamp		  int64			   `json:"initialTimestamp"`
 	InitialActiveMediators    uint16           `json:"initialActiveMediators"`
 	InitialMediatorCandidates []string         `json:"initialMediatorCandidates"`
 	SystemConfig              SystemConfig     `json:"systemConfig"`

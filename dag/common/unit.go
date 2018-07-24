@@ -218,7 +218,9 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, 
 
 	confPay.ConfigSet = make(map[string]interface{})
 	confPay.ConfigSet["version"] = genesisConf.Version
-	confPay.ConfigSet["initialActiveMediators"] = genesisConf.InitialActiveMediators
+	confPay.ConfigSet["InitialParameters"] = *genesisConf.InitialParameters
+	confPay.ConfigSet["InitialTimestamp"] = genesisConf.InitialTimestamp
+	confPay.ConfigSet["InitialActiveMediators"] = genesisConf.InitialActiveMediators
 	confPay.ConfigSet["InitialMediatorCandidates"] = genesisConf.InitialMediatorCandidates
 	confPay.ConfigSet["ChainID"] = genesisConf.ChainID
 

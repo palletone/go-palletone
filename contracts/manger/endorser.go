@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	//ut "github.com/palletone/go-palletone/dag/modules"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	putils "github.com/palletone/go-palletone/core/vmContractPub/protos/utils"
 )
@@ -198,7 +199,7 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 
 // ProcessProposal process the Proposal
 //func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
-func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID) (*pb.ProposalResponse, error) {
+func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID) (*pb.ProposalResponse, *pb.ContractInvokePayload, error) {
 	var txsim rwset.TxSimulator
 
 	addr := util.ExtractRemoteAddress(ctx)
@@ -209,24 +210,25 @@ func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedPro
 	result, err := e.validateProcess(signedProp)
 	if err != nil {
 		logger.Debugf("validate signedProp err:%s", err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	txid := result.txid
 	if chainID != "" {
 		if txsim, err = e.s.GetTxSimulator(chainID, txid); err != nil {
-			return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, err
+			return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 		}
 		//defer txsim.Done()
 	}
 	if  err != nil {
-		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, err
+		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 	}
 
 	//1 -- simulate
 	res, _, ccevent, err := e.simulateProposal(ctx, chainID, txid, signedProp, prop, cid, txsim)
 	if err != nil {
-		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, err
+		logger.Error(ccevent)
+		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 	}
 	if res != nil {
 		if res.Status >= shim.ERROR {
@@ -236,12 +238,12 @@ func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedPro
 			resp := &pb.ProposalResponse{
 				Payload:  nil,
 				Response: &pb.Response{Status: 500, Message: "Chaincode Error"}}
-			return resp, err
+			return resp, nil, err
 		}
 	}else {
 		logger.Error("simulateProposal response is nil")
 		return &pb.ProposalResponse{
-			Payload:  nil, Response: &pb.Response{Status: 500, Message: "Chaincode Error"}}, nil
+			Payload:  nil, Response: &pb.Response{Status: 500, Message: "Chaincode Error"}}, nil, nil
 	}
 
 	//2 -- endorse and get a marshalled ProposalResponse message
@@ -254,12 +256,13 @@ func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedPro
 	unit, err := RwTxResult2DagInvokeUnit(txsim, txid, cis.ChaincodeSpec.ChaincodeId.Name, cis.ChaincodeSpec.Input.Args[0])
 	if err != nil {
 		logger.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
-		return nil, errors.New("Conver RwSet to dag unit fail")
+		return nil, nil, errors.New("Conver RwSet to dag unit fail")
 	}
-	logger.Debugf("write dag unit[%v], ccevent[%v]", unit, ccevent)
+	logger.Debug("unit:")
+	logger.Debug(unit)
 	// todo
 
 	pResp.Response.Payload = res.Payload
 
-	return pResp, nil
+	return pResp, unit, nil
 }

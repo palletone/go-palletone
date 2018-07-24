@@ -12,6 +12,7 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+
 // This structure is necessary to sign the proposal which contains the header
 // and the payload. Without this structure, we would have to concatenate the
 // header and the payload to verify the signature, which could be expensive
