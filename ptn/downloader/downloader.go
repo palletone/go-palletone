@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/statistics/metrics"
 )
@@ -219,7 +218,7 @@ func New(mode SyncMode /*, mux *event.TypeMux chain BlockChain, lightchain Light
 		stateCh:        make(chan dataPack),
 		stateSyncStart: make(chan *stateSync),
 		syncStatsState: stateSyncStats{
-			processed: coredata.GetTrieSyncProgress(),
+			processed: 0, //coredata.GetTrieSyncProgress(),
 		},
 		trackStateReq: make(chan *stateReq),
 	}
