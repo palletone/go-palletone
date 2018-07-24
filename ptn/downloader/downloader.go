@@ -398,78 +398,80 @@ func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode
 // syncWithPeer starts a block synchronization based on the hash chain from the
 // specified peer and head hash.
 func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uint64) (err error) {
-	/*	d.mux.Post(StartEvent{})
-		defer func() {
-			// reset on error
-			if err != nil {
-				d.mux.Post(FailedEvent{err})
-			} else {
-				d.mux.Post(DoneEvent{})
-			}
-		}()
-		if p.version < 62 {
-			return errTooOld
-		}
-
-		log.Debug("Synchronising with the network", "peer", p.id, "eth", p.version, "head", hash, "index", index, "mode", d.mode)
-		defer func(start time.Time) {
-			log.Debug("Synchronisation terminated", "elapsed", time.Since(start))
-		}(time.Now())
-
-		// Look up the sync boundaries: the common ancestor and the target block
-		latest, err := d.fetchHeight(p)
+	d.mux.Post(StartEvent{})
+	defer func() {
+		// reset on error
 		if err != nil {
-			return err
+			d.mux.Post(FailedEvent{err})
+		} else {
+			d.mux.Post(DoneEvent{})
 		}
-		height := latest.Number.Uint64()
+	}()
 
-		origin, err := d.findAncestor(p, height)
-		if err != nil {
-			return err
-		}
-		d.syncStatsLock.Lock()
-		if d.syncStatsChainHeight <= origin || d.syncStatsChainOrigin > origin {
-			d.syncStatsChainOrigin = origin
-		}
-		d.syncStatsChainHeight = height
-		d.syncStatsLock.Unlock()
+	if p.version < 1 {
+		return errTooOld
+	}
 
-		// Ensure our origin point is below any fast sync pivot point
-		pivot := uint64(0)
-		if d.mode == FastSync {
-			if height <= uint64(fsMinFullBlocks) {
-				origin = 0
-			} else {
-				pivot = height - uint64(fsMinFullBlocks)
-				if pivot <= origin {
-					origin = pivot - 1
-				}
+	log.Debug("Synchronising with the network", "peer", p.id, "eth", p.version, "head", hash, "index", index, "mode", d.mode)
+	defer func(start time.Time) {
+		log.Debug("Synchronisation terminated", "elapsed", time.Since(start))
+	}(time.Now())
+
+	// Look up the sync boundaries: the common ancestor and the target block
+	latest, err := d.fetchHeight(p)
+	if err != nil {
+		return err
+	}
+	height := latest.Number.Index
+	origin := height
+	//	height := latest.Number.Uint64()
+	//	origin, err := d.findAncestor(p, height)
+	//	if err != nil {
+	//		return err
+	//	}
+
+	//	d.syncStatsLock.Lock()
+	//	if d.syncStatsChainHeight <= origin || d.syncStatsChainOrigin > origin {
+	//		d.syncStatsChainOrigin = origin
+	//	}
+	//	d.syncStatsChainHeight = height
+	//	d.syncStatsLock.Unlock()
+
+	// Ensure our origin point is below any fast sync pivot point
+	pivot := uint64(0)
+	if d.mode == FastSync {
+		if height <= uint64(fsMinFullBlocks) {
+			origin = 0
+		} else {
+			pivot = height - uint64(fsMinFullBlocks)
+			if pivot <= origin {
+				origin = pivot - 1
 			}
 		}
-		d.committed = 1
-		if d.mode == FastSync && pivot != 0 {
-			d.committed = 0
-		}
-		// Initiate the sync using a concurrent header and content retrieval algorithm
-		d.queue.Prepare(origin+1, d.mode)
-		if d.syncInitHook != nil {
-			d.syncInitHook(origin, height)
-		}
+	}
+	log.Info("Downloader->syncWithPeer", "origin:", origin)
+	d.committed = 1
+	if d.mode == FastSync && pivot != 0 {
+		d.committed = 0
+	}
+	// Initiate the sync using a concurrent header and content retrieval algorithm
+	d.queue.Prepare(origin+1, d.mode)
+	if d.syncInitHook != nil {
+		d.syncInitHook(origin, height)
+	}
 
-		fetchers := []func() error{
-			func() error { return d.fetchHeaders(p, origin+1, pivot) }, // Headers are always retrieved
-			func() error { return d.fetchBodies(origin + 1) },          // Bodies are retrieved during normal and fast sync
-			func() error { return d.fetchReceipts(origin + 1) },        // Receipts are retrieved during fast sync
-			func() error { return d.processHeaders(origin+1, pivot, td) },
-		}
-		if d.mode == FastSync {
-			fetchers = append(fetchers, func() error { return d.processFastSyncContent(latest) })
-		} else if d.mode == FullSync {
-			fetchers = append(fetchers, d.processFullSyncContent)
-		}
-		return d.spawnSync(fetchers)
-	*/
-	return nil
+	fetchers := []func() error{
+		func() error { return d.fetchHeaders(p, origin+1, pivot) }, // Headers are always retrieved
+		func() error { return d.fetchBodies(origin + 1) },          // Bodies are retrieved during normal and fast sync
+		//func() error { return d.fetchReceipts(origin + 1) },        // Receipts are retrieved during fast sync
+		func() error { return d.processHeaders(origin+1, pivot, index) },
+	}
+	if d.mode == FastSync {
+		fetchers = append(fetchers, func() error { return d.processFastSyncContent(latest) })
+	} else if d.mode == FullSync {
+		fetchers = append(fetchers, d.processFullSyncContent)
+	}
+	return d.spawnSync(fetchers)
 }
 
 // spawnSync runs d.process and all given fetcher functions to completion in
@@ -1136,7 +1138,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 // processHeaders takes batches of retrieved headers from an input channel and
 // keeps processing and scheduling them into the header chain and downloader's
 // queue until the stream ends or a failure occurs.
-func (d *Downloader) processHeaders(origin uint64, pivot uint64, td *big.Int) error {
+func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64) error {
 	/*
 		// Keep a count of uncertain headers to roll back
 		rollback := []*types.Header{}
@@ -1319,6 +1321,103 @@ func (d *Downloader) processFullSyncContent() error {
 	}
 }
 
+// processFastSyncContent takes fetch results from the queue and writes them to the
+// database. It also controls the synchronisation of state nodes of the pivot block.
+func (d *Downloader) processFastSyncContent(latest *modules.Header) error {
+	// Start syncing state of the reported head block. This should get us most of
+	// the state of the pivot block.
+	stateSync := d.syncState(latest.Root)
+	defer stateSync.Cancel()
+	go func() {
+		if err := stateSync.Wait(); err != nil && err != errCancelStateFetch {
+			d.queue.Close() // wake up WaitResults
+		}
+	}()
+	// Figure out the ideal pivot block. Note, that this goalpost may move if the
+	// sync takes long enough for the chain head to move significantly.
+	pivot := uint64(0)
+	//if height := latest.Number.Uint64(); height > uint64(fsMinFullBlocks) {
+	if height := latest.Number.Index; height > uint64(fsMinFullBlocks) {
+		pivot = height - uint64(fsMinFullBlocks)
+	}
+	// To cater for moving pivot points, track the pivot block and subsequently
+	// accumulated download results separately.
+	var (
+		oldPivot *fetchResult   // Locked in pivot block, might change eventually
+		oldTail  []*fetchResult // Downloaded content after the pivot
+	)
+	for {
+		// Wait for the next batch of downloaded data to be available, and if the pivot
+		// block became stale, move the goalpost
+		results := d.queue.Results(oldPivot == nil) // Block if we're not monitoring pivot staleness
+		if len(results) == 0 {
+			// If pivot sync is done, stop
+			if oldPivot == nil {
+				return stateSync.Cancel()
+			}
+			// If sync failed, stop
+			select {
+			case <-d.cancelCh:
+				return stateSync.Cancel()
+			default:
+			}
+		}
+		if d.chainInsertHook != nil {
+			d.chainInsertHook(results)
+		}
+		if oldPivot != nil {
+			results = append(append([]*fetchResult{oldPivot}, oldTail...), results...)
+		}
+		// Split around the pivot block and process the two sides via fast/full sync
+		if atomic.LoadInt32(&d.committed) == 0 {
+			latest = results[len(results)-1].Header
+			//if height := latest.Number.Uint64(); height > pivot+2*uint64(fsMinFullBlocks) {
+			if height := latest.Number.Index; height > pivot+2*uint64(fsMinFullBlocks) {
+				log.Warn("Pivot became stale, moving", "old", pivot, "new", height-uint64(fsMinFullBlocks))
+				pivot = height - uint64(fsMinFullBlocks)
+			}
+		}
+		P, beforeP, afterP := splitAroundPivot(pivot, results)
+		if err := d.commitFastSyncData(beforeP, stateSync); err != nil {
+			return err
+		}
+		if P != nil {
+			// If new pivot block found, cancel old state retrieval and restart
+			if oldPivot != P {
+				stateSync.Cancel()
+
+				stateSync = d.syncState(P.Header.Root)
+				defer stateSync.Cancel()
+				go func() {
+					if err := stateSync.Wait(); err != nil && err != errCancelStateFetch {
+						d.queue.Close() // wake up WaitResults
+					}
+				}()
+				oldPivot = P
+			}
+			// Wait for completion, occasionally checking for pivot staleness
+			select {
+			case <-stateSync.done:
+				if stateSync.err != nil {
+					return stateSync.err
+				}
+				if err := d.commitPivotBlock(P); err != nil {
+					return err
+				}
+				oldPivot = nil
+
+			case <-time.After(time.Second):
+				oldTail = afterP
+				continue
+			}
+		}
+		// Fast sync done, pivot commit done, full import
+		if err := d.importBlockResults(afterP); err != nil {
+			return err
+		}
+	}
+}
+
 func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	return nil
 }
@@ -1444,4 +1543,20 @@ func (d *Downloader) requestTTL() time.Duration {
 		ttl = ttlLimit
 	}
 	return ttl
+}
+
+func splitAroundPivot(pivot uint64, results []*fetchResult) (p *fetchResult, before, after []*fetchResult) {
+	for _, result := range results {
+		//num := result.Header.Number.Uint64()
+		num := result.Header.Number.Index
+		switch {
+		case num < pivot:
+			before = append(before, result)
+		case num == pivot:
+			p = result
+		default:
+			after = append(after, result)
+		}
+	}
+	return p, before, after
 }
