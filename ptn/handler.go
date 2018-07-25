@@ -76,9 +76,9 @@ type ProtocolManager struct {
 
 	SubProtocols []p2p.Protocol
 
-	//eventMux      *event.TypeMux
-	txCh  chan modules.TxPreEvent
-	txSub event.Subscription
+	eventMux *event.TypeMux
+	txCh     chan modules.TxPreEvent
+	txSub    event.Subscription
 
 	dag *modules.Dag
 
@@ -101,12 +101,13 @@ type ProtocolManager struct {
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64,
-	txpool txPool, engine core.ConsensusEngine, dag *modules.Dag) (*ProtocolManager, error) {
+	txpool txPool, engine core.ConsensusEngine, dag *modules.Dag, mux *event.TypeMux) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
 		dag:         dag,
 		txpool:      txpool,
+		eventMux:    mux,
 		consEngine:  engine,
 		peers:       newPeerSet(),
 		newPeerCh:   make(chan *peer),
@@ -163,7 +164,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64,
 		return nil, errIncompatibleConfig
 	}
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(mode, manager.removePeer)
+	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, dag)
 	manager.fetcher = fetcher.New(manager.removePeer)
 	return manager, nil
 }

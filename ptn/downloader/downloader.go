@@ -106,6 +106,8 @@ type Downloader struct {
 	syncStatsState       stateSyncStats
 	syncStatsLock        sync.RWMutex // Lock protecting the sync stats fields
 
+	//lightchain LightDag
+	blockdag BlockDag
 	// Callbacks
 	dropPeer peerDropFn // Drops a peer for misbehaving
 
@@ -144,8 +146,8 @@ type Downloader struct {
 	chainInsertHook  func([]*fetchResult)    // Method to call upon inserting a chain of blocks (possibly in multiple invocations)
 }
 
-// LightChain encapsulates functions required to synchronise a light chain.
-type LightChain interface {
+// LightDag encapsulates functions required to synchronise a light chain.
+type LightDag interface {
 	// HasHeader verifies a header's presence in the local chain.
 	HasHeader(common.Hash, uint64) bool
 
@@ -165,12 +167,12 @@ type LightChain interface {
 	Rollback([]common.Hash)
 }
 
-// BlockChain encapsulates functions required to sync a (full or fast) blockchain.
-type BlockChain interface {
-	LightChain
+// BlockDag encapsulates functions required to sync a (full or fast) blockchain.
+type BlockDag interface {
+	//LightDag
 
 	// HasBlock verifies a block's presence in the local chain.
-	HasBlock(common.Hash, uint64) bool
+	//HasBlock(common.Hash, uint64) bool
 
 	// GetBlockByHash retrieves a block from the local chain.
 	//GetBlockByHash(common.Hash) *types.Block
@@ -182,7 +184,7 @@ type BlockChain interface {
 	//CurrentFastBlock() *types.Block
 
 	// FastSyncCommitHead directly commits the head block to a certain entity.
-	FastSyncCommitHead(common.Hash) error
+	//FastSyncCommitHead(common.Hash) error
 
 	// InsertChain inserts a batch of blocks into the local chain.
 	//InsertChain(types.Blocks) (int, error)
@@ -192,20 +194,15 @@ type BlockChain interface {
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
-func New(mode SyncMode /*, mux *event.TypeMux ,chain BlockChain, lightchain LightChain,*/, dropPeer peerDropFn) *Downloader {
-	/*
-		if lightchain == nil {
-			lightchain = chain
-		}*/
-
+func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, dag BlockDag) *Downloader {
 	dl := &Downloader{
-		mode: mode,
-		//mux:           mux,
+		mode:          mode,
+		mux:           mux,
 		queue:         newQueue(),
 		peers:         newPeerSet(),
 		rttEstimate:   uint64(rttMaxEstimate),
 		rttConfidence: uint64(1000000),
-		//blockchain:     chain,
+		blockdag:      dag,
 		//lightchain:     lightchain,
 		dropPeer:       dropPeer,
 		headerCh:       make(chan dataPack, 1),
