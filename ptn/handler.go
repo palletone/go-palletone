@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/configure"
 	//"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -708,7 +707,7 @@ type NodeInfo struct {
 	Network    uint64                 `json:"network"`    // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
 	Difficulty *big.Int               `json:"difficulty"` // Total difficulty of the host's blockchain
 	Genesis    common.Hash            `json:"genesis"`    // SHA3 hash of the host's genesis block
-	Config     *configure.ChainConfig `json:"config"`     // Chain configuration for the fork rules
+	//Config     *configure.ChainConfig `json:"config"`     // Chain configuration for the fork rules
 	Head       common.Hash            `json:"head"`       // SHA3 hash of the host's best owned block
 }
 

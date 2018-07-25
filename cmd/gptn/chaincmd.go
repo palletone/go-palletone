@@ -27,6 +27,8 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	"gopkg.in/urfave/cli.v1"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 var (
@@ -129,5 +131,21 @@ func initGenesis(ctx *cli.Context) error {
 		return err
 	}
 	log.Info("Successfully Get Genesis Block")
+
+	// 3, 全局属性不是交易，不需要放在Unit中
+	// @author Albert·Gou
+	gp := modules.InitGlobalProp(genesis)
+	storage.StoreGlobalProp(gp)
+
+	// 4, 动态全局属性不是交易，不需要放在Unit中
+	// @author Albert·Gou
+	dgp := modules.InitDynGlobalProp(genesis)
+	storage.StoreDynGlobalProp(dgp)
+
+	// 5, 初始化mediator调度器，并存在数据库
+	// @author Albert·Gou
+	ms := modules.InitMediatorSchl(gp, dgp)
+	storage.StoreMediatorSchl(ms)
+
 	return nil
 }
