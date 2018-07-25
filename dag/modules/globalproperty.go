@@ -84,7 +84,7 @@ func InitGlobalProp(genesis *core.Genesis) (*GlobalProperty) {
 
 	log.Info("Set active mediators...")
 	// Set active mediators
-	for i := uint16(1); i <= genesis.InitialActiveMediators; i++ {
+	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
 		ad := common.StringToAddress(genesis.InitialMediatorCandidates[i])
 		md := Mediator{
 			Address:ad,
