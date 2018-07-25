@@ -416,3 +416,7 @@ func (c *writeCounter) Write(b []byte) (int, error) {
 	*c += writeCounter(len(b))
 	return len(b), nil
 }
+
+var (
+	EmptyRootHash = DeriveSha(Transactions{})
+)

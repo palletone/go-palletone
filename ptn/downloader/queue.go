@@ -458,14 +458,17 @@ func (q *queue) ReserveHeaders(p *peerConnection, count int) *fetchRequest {
 // previously failed downloads. Beside the next batch of needed fetches, it also
 // returns a flag whether empty blocks were queued requiring processing.
 func (q *queue) ReserveBodies(p *peerConnection, count int) (*fetchRequest, bool, error) {
-	return &fetchRequest{}, true, nil
-}
+	isNoop := func(header *modules.Header) bool {
+		//return header.TxHash == modules.EmptyRootHash
+		//TODO modify
+		log.Info("ReserveBodies", "header.Root == modules.EmptyRootHash:", header.Root == modules.EmptyRootHash)
+		return header.Root == modules.EmptyRootHash
+	}
+	q.lock.Lock()
+	defer q.lock.Unlock()
 
-// ReserveReceipts reserves a set of receipt fetches for the given peer, skipping
-// any previously failed downloads. Beside the next batch of needed fetches, it
-// also returns a flag whether empty receipts were queued requiring importing.
-func (q *queue) ReserveReceipts(p *peerConnection, count int) (*fetchRequest, bool, error) {
-	return &fetchRequest{}, true, nil
+	return q.reserveHeaders(p, count, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, isNoop)
+
 }
 
 // reserveHeaders reserves a set of data download operations for a given peer,
@@ -494,44 +497,43 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 
 	progress := false
 	for proc := 0; proc < space && len(send) < count && !taskQueue.Empty(); proc++ {
-		/*
-			header := taskQueue.PopItem().(*modules.Header)
-			hash := header.Hash()
+		header := taskQueue.PopItem().(*modules.Header)
+		hash := header.Hash()
 
-			// If we're the first to request this task, initialise the result container
-			index := int(header.Number.Int64() - int64(q.resultOffset))
-			if index >= len(q.resultCache) || index < 0 {
-				common.Report("index allocation went beyond available resultCache space")
-				return nil, false, errInvalidChain
+		// If we're the first to request this task, initialise the result container
+		//index := int(header.Number.Int64() - int64(q.resultOffset))
+		index := int(header.Number.Index - q.resultOffset)
+		if index >= len(q.resultCache) || index < 0 {
+			common.Report("index allocation went beyond available resultCache space")
+			return nil, false, errInvalidChain
+		}
+		if q.resultCache[index] == nil {
+			components := 1
+			if q.mode == FastSync {
+				components = 2
 			}
-			if q.resultCache[index] == nil {
-				components := 1
-				if q.mode == FastSync {
-					components = 2
-				}
-				q.resultCache[index] = &fetchResult{
-					Pending: components,
-					Hash:    hash,
-					Header:  header,
-				}
+			q.resultCache[index] = &fetchResult{
+				Pending: components,
+				Hash:    hash,
+				Header:  header,
 			}
-			// If this fetch task is a noop, skip this fetch operation
-			if isNoop(header) {
-				donePool[hash] = struct{}{}
-				delete(taskPool, hash)
+		}
+		// If this fetch task is a noop, skip this fetch operation
+		if isNoop(header) {
+			donePool[hash] = struct{}{}
+			delete(taskPool, hash)
 
-				space, proc = space-1, proc-1
-				q.resultCache[index].Pending--
-				progress = true
-				continue
-			}
-			// Otherwise unless the peer is known not to have the data, add to the retrieve list
-			if p.Lacks(hash) {
-				skip = append(skip, header)
-			} else {
-				send = append(send, header)
-			}
-		*/
+			space, proc = space-1, proc-1
+			q.resultCache[index].Pending--
+			progress = true
+			continue
+		}
+		// Otherwise unless the peer is known not to have the data, add to the retrieve list
+		if p.Lacks(hash) {
+			skip = append(skip, header)
+		} else {
+			send = append(send, header)
+		}
 	}
 	// Merge all the skipped headers back
 	for _, header := range skip {
