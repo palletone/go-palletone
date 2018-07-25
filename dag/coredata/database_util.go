@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/statistics/metrics"
 )
@@ -268,9 +267,9 @@ func WriteBlockChainVersion(db ptndb.Putter, vsn int) {
 }
 
 // GetChainConfig will fetch the network settings based on the given hash.
-func GetChainConfig(db DatabaseReader, hash common.Hash) (*configure.ChainConfig, error) {
-	return &configure.ChainConfig{}, nil
-}
+//func GetChainConfig(db DatabaseReader, hash common.Hash) (*configure.ChainConfig, error) {
+//	return &configure.ChainConfig{}, nil
+//}
 
 // FindCommonAncestor returns the last common ancestor of two block headers
 func FindCommonAncestor(db DatabaseReader, a, b *modules.Header) *modules.Header {

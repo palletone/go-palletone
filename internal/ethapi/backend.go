@@ -25,7 +25,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/accounts"
 	//"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -65,7 +64,7 @@ type Backend interface {
 	TxPoolContent() (map[common.Address]modules.Transactions, map[common.Address]modules.Transactions)
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 
-	ChainConfig() *configure.ChainConfig
+	//ChainConfig() *configure.ChainConfig
 	//CurrentBlock() *types.Block
 
 	//test

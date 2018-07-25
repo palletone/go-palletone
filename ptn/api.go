@@ -22,7 +22,6 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/configure"
 )
 
 // PublicEthereumAPI provides an API to access PalletOne full node-related
@@ -68,15 +67,15 @@ func NewPublicDebugAPI(eth *PalletOne) *PublicDebugAPI {
 // PrivateDebugAPI is the collection of PalletOne full node APIs exposed over
 // the private debugging endpoint.
 type PrivateDebugAPI struct {
-	config *configure.ChainConfig
+	//config *configure.ChainConfig
 	eth    *PalletOne
 }
 
 // NewPrivateDebugAPI creates a new API definition for the full node-related
 // private debug methods of the PalletOne service.
-func NewPrivateDebugAPI(config *configure.ChainConfig, eth *PalletOne) *PrivateDebugAPI {
-	return &PrivateDebugAPI{config: config, eth: eth}
-}
+//func NewPrivateDebugAPI(config *configure.ChainConfig, eth *PalletOne) *PrivateDebugAPI {
+//	return &PrivateDebugAPI{config: config, eth: eth}
+//}
 
 // Preimage is a debug API function that returns the preimage for a sha3 hash, if known.
 func (api *PrivateDebugAPI) Preimage(ctx context.Context, hash common.Hash) (hexutil.Bytes, error) {
