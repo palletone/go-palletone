@@ -22,12 +22,32 @@ import (
 	"encoding/json"
 	"log"
 	"unsafe"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 
 	config "github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/common/rlp"
 )
+
+// @author Albert·Gou
+func Retrieve(key string, v interface{}) error {
+	//rv := reflect.ValueOf(v)
+	//if rv.Kind() != reflect.Ptr || rv.IsNil() {
+	//	return errors.New("an invalid argument, the argument must be a non-nil pointer")
+	//}
+
+	data, err := Get([]byte(key))
+	if err != nil {
+		return err
+	}
+
+	err = rlp.DecodeBytes(data, v)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // get bytes
 func Get(key []byte) ([]byte, error) {
