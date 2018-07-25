@@ -1,4 +1,4 @@
-// Copyright 2015 The go-ethereum Authors
+// Copyright 2014 The go-ethereum Authors
 // This file is part of the go-ethereum library.
 //
 // The go-ethereum library is free software: you can redistribute it and/or modify
@@ -14,21 +14,28 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package coredata
+package modules
 
 import (
-
+	"bytes"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/common/trie"
 )
 
-// DatabaseReader wraps the Get method of a backing data store.
-type DatabaseReader interface {
-	Get(key []byte) (value []byte, err error)
+type DerivableList interface {
+	Len() int
+	GetRlp(i int) []byte
 }
-// GetTransaction retrieves a specific transaction from the database, along with
-// its added positional metadata.
-func GetTransaction(db DatabaseReader, hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
-	return &modules.Transaction{}, common.Hash{}, uint64(0), uint64(0)
+
+func DeriveSha(list DerivableList) common.Hash {
+	keybuf := new(bytes.Buffer)
+	trie := new(trie.Trie)
+	for i := 0; i < list.Len(); i++ {
+		keybuf.Reset()
+		rlp.Encode(keybuf, uint(i))
+		trie.Update(keybuf.Bytes(), list.GetRlp(i))
+	}
+	return trie.Hash()
 }

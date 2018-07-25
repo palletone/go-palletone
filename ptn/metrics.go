@@ -92,9 +92,9 @@ func (rw *meteredMsgReadWriter) ReadMsg() (p2p.Msg, error) {
 	case msg.Code == BlockBodiesMsg:
 		packets, traffic = reqBodyInPacketsMeter, reqBodyInTrafficMeter
 
-	case /*rw.version >= pan1 &&*/ msg.Code == NodeDataMsg:
+	case msg.Code == NodeDataMsg:
 		packets, traffic = reqStateInPacketsMeter, reqStateInTrafficMeter
-	case /*rw.version >= pan1 &&*/ msg.Code == ReceiptsMsg:
+	case msg.Code == ReceiptsMsg:
 		packets, traffic = reqReceiptInPacketsMeter, reqReceiptInTrafficMeter
 
 	case msg.Code == NewBlockHashesMsg:
@@ -119,9 +119,9 @@ func (rw *meteredMsgReadWriter) WriteMsg(msg p2p.Msg) error {
 	case msg.Code == BlockBodiesMsg:
 		packets, traffic = reqBodyOutPacketsMeter, reqBodyOutTrafficMeter
 
-	case /*rw.version >= pan1 &&*/ msg.Code == NodeDataMsg:
+	case msg.Code == NodeDataMsg:
 		packets, traffic = reqStateOutPacketsMeter, reqStateOutTrafficMeter
-	case /*rw.version >= pan1 && */ msg.Code == ReceiptsMsg:
+	case msg.Code == ReceiptsMsg:
 		packets, traffic = reqReceiptOutPacketsMeter, reqReceiptOutTrafficMeter
 
 	case msg.Code == NewBlockHashesMsg:

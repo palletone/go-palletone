@@ -614,45 +614,46 @@ func (s *PublicBlockChainAPI) Call(ctx context.Context, args CallArgs, blockNr r
 // given transaction against the current pending block.
 func (s *PublicBlockChainAPI) EstimateGas(ctx context.Context, args CallArgs) (hexutil.Uint64, error) {
 	// Binary search the gas requirement, as it may be higher than the amount used
-	var (
-		lo  uint64 = configure.TxGas - 1
-		hi  uint64
-		cap uint64
-	)
-	if uint64(args.Gas) >= configure.TxGas {
-		hi = uint64(args.Gas)
-	} else {
+	//var (
+		//lo  uint64 = configure.TxGas - 1
+	//	hi  uint64
+	//	cap uint64
+	//)
+	//if uint64(args.Gas) >= configure.TxGas {
+	//	hi = uint64(args.Gas)
+	//} else {
 		// Retrieve the current pending block to act as the gas ceiling
 		//		block, err := s.b.BlockByNumber(ctx, rpc.PendingBlockNumber)
 		//		if err != nil {
 		//			return 0, err
 		//		}
 		//		hi = block.GasLimit()
-	}
-	cap = hi
+	//}
+	//cap = hi
 
 	// Create a helper to check if a gas allowance results in an executable transaction
-	executable := func(gas uint64) bool {
-		args.Gas = hexutil.Uint64(gas)
-
-		return true
-	}
+	//executable := func(gas uint64) bool {
+	//	args.Gas = hexutil.Uint64(gas)
+	//
+	//	return true
+	//}
 	// Execute the binary search and hone in on an executable gas limit
-	for lo+1 < hi {
-		mid := (hi + lo) / 2
-		if !executable(mid) {
-			lo = mid
-		} else {
-			hi = mid
-		}
-	}
+	//for lo+1 < hi {
+	//	mid := (hi + lo) / 2
+	//	if !executable(mid) {
+	//		lo = mid
+	//	} else {
+	//		hi = mid
+	//	}
+	//}
 	// Reject the transaction as invalid if it still fails at the highest allowance
-	if hi == cap {
-		if !executable(hi) {
-			return 0, fmt.Errorf("gas required exceeds allowance or always failing transaction")
-		}
-	}
-	return hexutil.Uint64(hi), nil
+	//if hi == cap {
+	//	if !executable(hi) {
+	//		return 0, fmt.Errorf("gas required exceeds allowance or always failing transaction")
+	//	}
+	//}
+	//return hexutil.Uint64(hi), nil
+	return 0, nil
 }
 
 // Start forking command.

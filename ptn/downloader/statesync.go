@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/trie"
-	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/state"
 )
 
@@ -461,6 +460,6 @@ func (s *stateSync) updateStats(written, duplicate, unexpected int, duration tim
 		log.Info("Imported new state entries", "count", written, "elapsed", common.PrettyDuration(duration), "processed", s.d.syncStatsState.processed, "pending", s.d.syncStatsState.pending, "retry", len(s.tasks), "duplicate", s.d.syncStatsState.duplicate, "unexpected", s.d.syncStatsState.unexpected)
 	}
 	if written > 0 {
-		coredata.WriteTrieSyncProgress(s.d.syncStatsState.processed)
+		//coredata.WriteTrieSyncProgress(s.d.syncStatsState.processed)
 	}
 }

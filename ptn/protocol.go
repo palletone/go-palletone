@@ -167,7 +167,7 @@ func (hn *hashOrNumber) DecodeRLP(s *rlp.Stream) error {
 // blockBody represents the data content of a single block.
 type blockBody struct {
 	Transactions []*modules.Transaction // Transactions contained within a block
-	Uncles       []*modules.Header      // Uncles contained within a block
+	//Uncles       []*modules.Header      // Uncles contained within a block
 }
 
 // blockBodiesData is the network packet for block content distribution.

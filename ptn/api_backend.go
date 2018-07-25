@@ -25,7 +25,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/accounts"
 	//"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -39,9 +38,9 @@ type EthApiBackend struct {
 	//gpo *gasprice.Oracle
 }
 
-func (b *EthApiBackend) ChainConfig() *configure.ChainConfig {
-	return nil
-}
+//func (b *EthApiBackend) ChainConfig() *configure.ChainConfig {
+//	return nil
+//}
 
 func (b *EthApiBackend) SetHead(number uint64) {
 	b.eth.protocolManager.downloader.Cancel()

@@ -282,11 +282,11 @@ var (
 		Usage: "Number of CPU threads to use for mining",
 		Value: runtime.NumCPU(),
 	}
-	TargetGasLimitFlag = cli.Uint64Flag{
-		Name:  "targetgaslimit",
-		Usage: "Target gas limit sets the artificial target gas floor for the blocks to mine",
-		Value: configure.GenesisGasLimit,
-	}
+	//TargetGasLimitFlag = cli.Uint64Flag{
+	//	Name:  "targetgaslimit",
+	//	Usage: "Target gas limit sets the artificial target gas floor for the blocks to mine",
+		//Value: configure.GenesisGasLimit,
+	//}
 	EtherbaseFlag = cli.StringFlag{
 		Name:  "etherbase",
 		Usage: "Public address for block mining rewards (default = first account created)",
@@ -1099,7 +1099,7 @@ func RegisterPtnStatsService(stack *node.Node, url string) {
 func SetupNetwork(ctx *cli.Context) {
 	// TODO(fjl): move target gas limit into config
 	// 配置gas limit值
-	configure.TargetGasLimit = ctx.GlobalUint64(TargetGasLimitFlag.Name)
+	//configure.TargetGasLimit = ctx.GlobalUint64(TargetGasLimitFlag.Name)
 }
 
 // MakeChainDatabase open an LevelDB using the flags passed to the client and will hard crash if it fails.
