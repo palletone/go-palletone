@@ -132,6 +132,8 @@ func adaptorConfig(config FullConfig) FullConfig {
 	return config
 }
 
+// 加载指定的或者默认的配置文件，如果不存在则根据默认的配置生成文件
+// @author Albert·Gou
 func maybeLoadConfig(ctx *cli.Context, cfg *FullConfig) error {
 	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
 	configPath := defaultConfigPath
@@ -223,6 +225,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 }
 
 // dumpConfig is the dumpconfig command.
+// modify by Albert·Gou
 func dumpConfig(ctx *cli.Context) error {
 	cfg := makeDefaultConfig()
 	//	comment := ""
@@ -252,6 +255,7 @@ func dumpConfig(ctx *cli.Context) error {
 }
 
 // makeDefaultConfig, create a default config
+// @author Albert·Gou
 func makeDefaultConfig() FullConfig {
 	// 不是所有的配置都有默认值，例如 Ptnstats 目前没有设置默认值
 	return FullConfig{
@@ -268,6 +272,7 @@ func makeDefaultConfig() FullConfig {
 }
 
 // Create a config file with the specified path and config info
+// @author Albert·Gou
 func makeConfigFile(cfg *FullConfig, configPath string) error {
 	var (
 		configFile *os.File = nil
