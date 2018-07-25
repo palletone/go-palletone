@@ -29,8 +29,8 @@ type ChainParameters struct {
 	//	MaintenanceSkipSlots uint8
 }
 
-func NewChainParams() *ChainParameters {
-	return &ChainParameters{
+func NewChainParams() ChainParameters {
+	return ChainParameters{
 		MediatorInterval: DefaultMediatorInterval,
 	}
 }
