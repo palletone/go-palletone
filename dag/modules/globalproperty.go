@@ -24,13 +24,14 @@ import (
 
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common"
 )
 
 // 全局属性的结构体定义
 type GlobalProperty struct {
-	ChainParameters *core.ChainParameters // 区块链网络参数
+	ChainParameters core.ChainParameters // 区块链网络参数
 
-	ActiveMediators []*Mediator // 当前活跃mediator集合；每个维护间隔更新一次
+	ActiveMediators map[Mediator]bool // 当前活跃mediator集合；每个维护间隔更新一次
 }
 
 // 动态全局属性的结构体定义
@@ -58,20 +59,48 @@ type DynamicGlobalProperty struct {
 	//	RecentSlotsFilled float32
 }
 
-func NewGlobalProp() *GlobalProperty {
-	log.Info("initilize global property...")
-
+func NewGlobalProp() (*GlobalProperty) {
 	return &GlobalProperty{
-		ActiveMediators: []*Mediator{},
 		ChainParameters: core.NewChainParams(),
+		ActiveMediators: map[Mediator]bool{},
 	}
 }
 
-func NewDynGlobalProp() *DynamicGlobalProperty {
-	log.Info("initilize dynamic global property...")
-
+func NewDynGlobalProp() (*DynamicGlobalProperty) {
 	return &DynamicGlobalProperty{
 		LastVerifiedUnitNum: 0,
 		CurrentASlot:        0,
 	}
+}
+
+func InitGlobalProp(genesis *core.Genesis) (*GlobalProperty) {
+	log.Info("initialize global property...")
+
+	// Create global properties
+	gp := NewGlobalProp()
+
+	log.Info("initialize chain parameters...")
+	gp.ChainParameters = genesis.InitialParameters
+
+	log.Info("Set active mediators...")
+	// Set active mediators
+	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
+		ad := common.StringToAddress(genesis.InitialMediatorCandidates[i])
+		md := Mediator{
+			Address:ad,
+		}
+		gp.ActiveMediators[md] = true
+	}
+
+	return gp
+}
+
+func InitDynGlobalProp(genesis *core.Genesis) (*DynamicGlobalProperty) {
+	log.Info("initialize dynamic global property...")
+
+	// Create dynamic global properties
+	dgp := NewDynGlobalProp()
+	dgp.LastVerifiedUnitTime = time.Unix(genesis.InitialTimestamp, 0)
+
+	return dgp
 }

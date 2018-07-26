@@ -24,7 +24,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strconv"
 	"time"
 	"unsafe"
 
@@ -218,10 +217,13 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, 
 
 	confPay.ConfigSet = make(map[string]interface{})
 	confPay.ConfigSet["version"] = genesisConf.Version
-	confPay.ConfigSet["InitialParameters"] = *genesisConf.InitialParameters
-	confPay.ConfigSet["InitialTimestamp"] = genesisConf.InitialTimestamp
-	confPay.ConfigSet["InitialActiveMediators"] = genesisConf.InitialActiveMediators
-	confPay.ConfigSet["InitialMediatorCandidates"] = genesisConf.InitialMediatorCandidates
+
+	// comment by Albert·Gou, 2018/07/24
+	//confPay.ConfigSet["InitialParameters"] = *genesisConf.InitialParameters
+	//confPay.ConfigSet["InitialTimestamp"] = genesisConf.InitialTimestamp
+	//confPay.ConfigSet["InitialActiveMediators"] = genesisConf.InitialActiveMediators
+	//confPay.ConfigSet["InitialMediatorCandidates"] = genesisConf.InitialMediatorCandidates
+
 	confPay.ConfigSet["ChainID"] = genesisConf.ChainID
 
 	t := reflect.TypeOf(genesisConf.SystemConfig)
@@ -475,22 +477,23 @@ func checkUnitSignature(h *modules.Header) error {
 		return fmt.Errorf("Verify unit signature error.")
 	}
 
-	// get mediators
-	data := GetConfig([]byte("MediatorCandidates"))
-	bNum := GetConfig([]byte("ActiveMediators"))
-	num, err := strconv.Atoi(string(bNum))
-	if err != nil {
-		return fmt.Errorf("Check unit signature error: %s", err)
-	}
-	if num != len(data) {
-		return fmt.Errorf("Check unit signature error: mediators info error, pls update network")
-	}
-
-	// decode mediator list data
-	var mediators []string
-	if err := rlp.DecodeBytes(data, &mediators); err != nil {
-		return fmt.Errorf("Check unit signature error: %s", err)
-	}
+	// comment by Albert·Gou, 不需要如此处理
+	//// get mediators
+	//data := GetConfig([]byte("MediatorCandidates"))
+	//bNum := GetConfig([]byte("ActiveMediators"))
+	//num, err := strconv.Atoi(string(bNum))
+	//if err != nil {
+	//	return fmt.Errorf("Check unit signature error: %s", err)
+	//}
+	//if num != len(data) {
+	//	return fmt.Errorf("Check unit signature error: mediators info error, pls update network")
+	//}
+	//
+	//// decode mediator list data
+	//var mediators []string
+	//if err := rlp.DecodeBytes(data, &mediators); err != nil {
+	//	return fmt.Errorf("Check unit signature error: %s", err)
+	//}
 
 	// todo group signature verify
 

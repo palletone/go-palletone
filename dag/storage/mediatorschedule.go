@@ -14,23 +14,33 @@
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
- *
  */
 
-package core
+package storage
 
-// ChainParameters 区块链网络参数结构体的定义
-//变量名一定要大些，否则外部无法访问，导致无法进行json编码和解码
-type ChainParameters struct {
-	// 验证单元之间的间隔时间，以秒为单元。 interval in seconds between verifiedUnits
-	MediatorInterval uint8 `json:"mediatorInterval"`
+import (
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/modules"
+)
 
-	// 在维护时跳过的verifiedUnitInterval数量。 number of verifiedUnitInterval to skip at maintenance time
-	//	MaintenanceSkipSlots uint8
+const (
+	mediatorSchlDBKey  = "MediatorSchedule"
+)
+
+func StoreMediatorSchl(ms *modules.MediatorSchedule)  {
+	err := Store(mediatorSchlDBKey, *ms)
+	if err != nil{
+		log.Error("Store mediator schedule error: %s", err)
+	}
 }
 
-func NewChainParams() ChainParameters {
-	return ChainParameters{
-		MediatorInterval: DefaultMediatorInterval,
+func RetrieveMediatorSchl() (*modules.MediatorSchedule) {
+	ms := modules.NewMediatorSchl()
+
+	err := Retrieve(mediatorSchlDBKey, ms)
+	if err != nil{
+		log.Error("Retrieve mediator schedule error: %s", err)
 	}
+
+	return ms
 }

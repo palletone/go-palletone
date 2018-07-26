@@ -21,16 +21,31 @@ package modules
 
 import (
 	"time"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 // Mediator调度顺序结构体
 type MediatorSchedule struct {
-	CurrentShuffledMediators []*Mediator
+	CurrentShuffledMediators []Mediator
 }
 
-func NewMediatorSchl() *MediatorSchedule {
+func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) (*MediatorSchedule) {
+	log.Info("initialize mediator schedule...")
+	ms := NewMediatorSchl()
+
+	// Create witness scheduler
+	for m, _ := range gp.ActiveMediators {
+		ms.CurrentShuffledMediators = append(ms.CurrentShuffledMediators, m)
+	}
+
+//	ms.UpdateMediatorSchedule(gp, dgp)
+
+	return ms
+}
+
+func NewMediatorSchl() (*MediatorSchedule) {
 	return &MediatorSchedule{
-		CurrentShuffledMediators: []*Mediator{},
+		CurrentShuffledMediators: []Mediator{},
 	}
 }
 
@@ -43,20 +58,15 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 		return
 	}
 
-	// 2. 判断CurrentShuffledMediators的空间是否够大
-	if uint32(len(ms.CurrentShuffledMediators)) < aSize {
-		ms.CurrentShuffledMediators = make([]*Mediator, aSize, aSize)
+	// 2. 清除CurrentShuffledMediators原来的空间，重新分配空间
+	ms.CurrentShuffledMediators = make([]Mediator, aSize, aSize)
+
+	// 3. 初始化数据
+	for m, _ := range gp.ActiveMediators {
+		ms.CurrentShuffledMediators = append(ms.CurrentShuffledMediators, m)
 	}
 
-	// 3. 截取slice为所需大小
-	ms.CurrentShuffledMediators = ms.CurrentShuffledMediators[:aSize]
-
-	// 4. 初始化数据
-	for i, m := range gp.ActiveMediators {
-		ms.CurrentShuffledMediators[i] = m
-	}
-
-	// 5. 打乱证人的调度顺序
+	// 4. 打乱证人的调度顺序
 	nowHi := uint64(dgp.LastVerifiedUnitTime.Unix() << 32)
 	for i := uint32(0); i < aSize; i++ {
 		// 高性能随机生成器(High performance random generator)
@@ -89,7 +99,7 @@ If slotNum == 1, return the next scheduled mediator.
 如果slotNum == 2，则返回下下一个调度Mediator。
 If slotNum == 2, return the next scheduled mediator after 1 verified uint gap.
 */
-func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) *Mediator {
+func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) (Mediator) {
 	currentASlot := dgp.CurrentASlot + uint64(slotNum)
 	// 由于创世单元不是有mediator生产，所以这里需要减1
 	return ms.CurrentShuffledMediators[(currentASlot-1)%uint64(len(ms.CurrentShuffledMediators))]

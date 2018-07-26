@@ -43,11 +43,11 @@ var (
 	MaxStateFetch   = 384 // Amount of node state values to allow fetching per request
 
 	//MaxForkAncestry  = 3 * configure.EpochDuration // Maximum chain reorganisation
-	rttMinEstimate   = 2 * time.Second             // Minimum round-trip time to target for download requests
-	rttMaxEstimate   = 20 * time.Second            // Maximum round-trip time to target for download requests
-	rttMinConfidence = 0.1                         // Worse confidence factor in our estimated RTT value
-	ttlScaling       = 3                           // Constant scaling factor for RTT -> TTL conversion
-	ttlLimit         = time.Minute                 // Maximum TTL allowance to prevent reaching crazy timeouts
+	rttMinEstimate   = 2 * time.Second  // Minimum round-trip time to target for download requests
+	rttMaxEstimate   = 20 * time.Second // Maximum round-trip time to target for download requests
+	rttMinConfidence = 0.1              // Worse confidence factor in our estimated RTT value
+	ttlScaling       = 3                // Constant scaling factor for RTT -> TTL conversion
+	ttlLimit         = time.Minute      // Maximum TTL allowance to prevent reaching crazy timeouts
 
 	qosTuningPeers   = 5    // Number of peers to tune based on (best peers)
 	qosConfidenceCap = 10   // Number of peers above which not to modify RTT confidence
@@ -105,6 +105,8 @@ type Downloader struct {
 	syncStatsState       stateSyncStats
 	syncStatsLock        sync.RWMutex // Lock protecting the sync stats fields
 
+	//lightchain LightDag
+	blockdag BlockDag
 	// Callbacks
 	dropPeer peerDropFn // Drops a peer for misbehaving
 
@@ -143,8 +145,8 @@ type Downloader struct {
 	chainInsertHook  func([]*fetchResult)    // Method to call upon inserting a chain of blocks (possibly in multiple invocations)
 }
 
-// LightChain encapsulates functions required to synchronise a light chain.
-type LightChain interface {
+// LightDag encapsulates functions required to synchronise a light chain.
+type LightDag interface {
 	// HasHeader verifies a header's presence in the local chain.
 	HasHeader(common.Hash, uint64) bool
 
@@ -164,47 +166,34 @@ type LightChain interface {
 	Rollback([]common.Hash)
 }
 
-// BlockChain encapsulates functions required to sync a (full or fast) blockchain.
-type BlockChain interface {
-	LightChain
-
-	// HasBlock verifies a block's presence in the local chain.
-	HasBlock(common.Hash, uint64) bool
-
-	// GetBlockByHash retrieves a block from the local chain.
-	//GetBlockByHash(common.Hash) *types.Block
-
-	// CurrentBlock retrieves the head block from the local chain.
-	//CurrentBlock() *types.Block
-
-	// CurrentFastBlock retrieves the head fast block from the local chain.
-	//CurrentFastBlock() *types.Block
-
-	// FastSyncCommitHead directly commits the head block to a certain entity.
+// BlockDag encapsulates functions required to sync a (full or fast) blockchain.
+type BlockDag interface {
+	//LightDag
+	GetUnit(common.Hash, uint64) *modules.Unit
+	CurrentUnit() *modules.Unit
 	FastSyncCommitHead(common.Hash) error
+	InsertDag(modules.Unit) (int, error)
 
-	// InsertChain inserts a batch of blocks into the local chain.
+	//LightDag
+	//HasBlock(common.Hash, uint64) bool
+	//GetBlockByHash(common.Hash) *types.Block
+	//CurrentBlock() *types.Block
+	//CurrentFastBlock() *types.Block
+	//FastSyncCommitHead(common.Hash) error
 	//InsertChain(types.Blocks) (int, error)
-
-	// InsertReceiptChain inserts a batch of receipts into the local chain.
 	//InsertReceiptChain(types.Blocks, []types.Receipts) (int, error)
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
-func New(mode SyncMode /*, mux *event.TypeMux ,chain BlockChain, lightchain LightChain,*/, dropPeer peerDropFn) *Downloader {
-	/*
-		if lightchain == nil {
-			lightchain = chain
-		}*/
-
+func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, dag BlockDag) *Downloader {
 	dl := &Downloader{
-		mode: mode,
-		//mux:           mux,
+		mode:          mode,
+		mux:           mux,
 		queue:         newQueue(),
 		peers:         newPeerSet(),
 		rttEstimate:   uint64(rttMaxEstimate),
 		rttConfidence: uint64(1000000),
-		//blockchain:     chain,
+		blockdag:      dag,
 		//lightchain:     lightchain,
 		dropPeer:       dropPeer,
 		headerCh:       make(chan dataPack, 1),
