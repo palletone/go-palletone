@@ -22,13 +22,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/ptn"
-	"github.com/palletone/go-palletone/cmd/utils"
 )
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {
@@ -49,12 +49,12 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 		// 2. 开启循环生产计划
 		log.Info(fmt.Sprintf("Launching verified unit production for %d mediators.", len(mp.mediators)))
 
-		//if mp.ProductionEnabled {
-		dag := mp.ptn.Dag()
-		if dag.DynGlobalProp.LastVerifiedUnitNum == 0 {
-			newChainBanner(dag)
+		if mp.productionEnabled {
+			dag := mp.ptn.Dag()
+			if dag.DynGlobalProp.LastVerifiedUnitNum == 0 {
+				newChainBanner(dag)
+			}
 		}
-		//}
 
 		go mp.ScheduleProductionLoop()
 	}
@@ -104,7 +104,7 @@ func Initialize(node *node.Node, cfg *Config) (*MediatorPlugin, error) {
 	}
 
 	mp := MediatorPlugin{
-		ptn:              ptn,
+		ptn:               ptn,
 		productionEnabled: cfg.EnableStaleProduction,
 		mediators:         msm,
 	}
