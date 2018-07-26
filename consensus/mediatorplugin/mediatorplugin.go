@@ -92,33 +92,24 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 	// 2. 打印尝试结果
 	switch result {
 	case Produced:
-		//println("Generated VerifiedUnit #" + detail["Num"] +" with timestamp " +
-		//	detail["Timestamp"] + /*" at time " + detail["Now"]*/ " with signature " + detail["MediatorSig"])
 		log.Info("Generated VerifiedUnit #" + detail["Num"] + " with timestamp " +
 			detail["Timestamp"] + /*" at time " + detail["Now"]*/ " with signature " + detail["MediatorSig"])
 	case NotSynced:
-		//println("Not producing VerifiedUnit because production is disabled " +
-		//	"until we receive a recent VerifiedUnit (see: --enable-stale-production)")
 		log.Info("Not producing VerifiedUnit because production is disabled " +
 			"until we receive a recent VerifiedUnit (see: --enable-stale-production)")
 	case NotTimeYet:
-		//fmt.Printf("Not producing VerifiedUnit because next slot time is %v, but now is %v\n",
-		//	detail["NextTime"], detail["Now"])
+		log.Info("Not producing VerifiedUnit because next slot time is " + detail["NextTime"] +
+			" , but now is " + detail["Now"])
 	case NotMyTurn:
-		//fmt.Printf("Not producing VerifiedUnit because current scheduled mediator is %v\n",
-		//	detail["ScheduledMediator"])
+		log.Info("Not producing VerifiedUnit because current scheduled mediator is " +
+			detail["ScheduledMediator"])
 	case Lag:
-		//fmt.Printf("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time." +
-		//	" Scheduled Time is: %v, but now is %v\n", detail["ScheduledTime"], detail["Now"])
 		log.Info("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time."+
 			" Scheduled Time is: %v, but now is %v\n", detail["ScheduledTime"], detail["Now"])
 	case NoPrivateKey:
-		//fmt.Printf("Not producing VerifiedUnit because I don't have the private key for %v\n",
-		//	detail["ScheduledKey"])
 		log.Info("Not producing VerifiedUnit because I don't have the private key for %v\n",
 			detail["ScheduledKey"])
 	default:
-		//println("Unknown condition!")
 		log.Info("Unknown condition!")
 	}
 
@@ -153,7 +144,6 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	slot := modules.GetSlotAtTime(gp, dgp, now)
-	//	println(slot)
 	// is anyone scheduled to produce now or one second in the future?
 	if slot == 0 {
 		detail["NextTime"] = nextSlotTime.Format("2006-01-02 15:04:05")
@@ -206,8 +196,6 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	//	mp.DB)
 	//
 	//// 3. 异步向区块链网络广播验证单元
-	////	go println("异步向网络广播新生产的验证单元...")
-	////	go println("Asynchronously broadcast the new signed verified unit to p2p networks...")
 	//go log.Info("Asynchronously broadcast the new signed verified unit to p2p networks...")
 	//
 	//detail["Num"] = strconv.FormatUint(uint64(verifiedUnit.VerifiedUnitNum), 10)
