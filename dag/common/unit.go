@@ -1,4 +1,4 @@
-/*
+﻿/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,11 +31,14 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"strings"
+	"strconv"
 )
 
 func RHashStr(x interface{}) string {
@@ -72,7 +75,7 @@ func GetUnit(hash *common.Hash, index modules.ChainIndex) *modules.Unit {
 generate genesis unit, need genesis unit configure fields and transactions list
 */
 func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
-	gUnit := modules.Unit{Creationdate: time.Now().UTC()}
+	gUnit := modules.Unit{}
 
 	// genesis unit asset id
 	gAssetID := asset.NewAsset()
@@ -85,9 +88,10 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 
 	// generate genesis unit header
 	header := modules.Header{
-		AssetIDs: []modules.IDType16{gAssetID},
-		Number:   chainIndex,
-		Root:     root,
+		AssetIDs:     []modules.IDType16{gAssetID},
+		Number:       chainIndex,
+		Root:         root,
+		Creationdate: time.Now().UTC(),
 	}
 
 	gUnit.UnitHeader = &header
@@ -103,6 +107,7 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 				Memery:       pTx.Memery,
 				CreationDate: pTx.CreationDate,
 				TxFee:        pTx.TxFee,
+				Txsize:       pTx.Txsize,
 			}
 			if len(pTx.TxMessages) > 0 {
 				tx.TxMessages = make([]modules.Message, len(pTx.TxMessages))
@@ -113,11 +118,15 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 			gUnit.Txs[i] = &tx
 		}
 	}
+	// set unit size
+	gUnit.UnitSize = gUnit.Size()
+	// set unit hash
+	gUnit.UnitHash = rlp.RlpHash(gUnit)
 	return &gUnit, nil
 }
 
 /**
-创建普通单元
+创建单元
 create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
@@ -146,12 +155,13 @@ func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
 
 	// generate genesis unit header
 	header := modules.Header{
-		AssetIDs: []modules.IDType16{assetID},
-		Number:   chainIndex,
-		Root:     root,
+		AssetIDs:     []modules.IDType16{assetID},
+		Number:       chainIndex,
+		Root:         root,
+		Creationdate: time.Now().UTC(),
 	}
 
-	unit := modules.Unit{Creationdate: time.Now().UTC()}
+	unit := modules.Unit{}
 	unit.UnitHeader = &header
 	// copy txs
 	if len(txs) > 0 {
@@ -184,28 +194,67 @@ func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
 To get genesis unit info from leveldb
 */
 func GetGenesisUnit(index uint64) *modules.Unit {
-	// unit key: [HEADER_PREFIX][index]_[chainindex struct]_[unit Bytes]
+	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
 	data := storage.GetPrefix([]byte(key))
+	if len(data) > 1 {
+		log.Error("Get genesis unit", "error", "multiple genesis unit")
+	} else if len(data)<=0 {
+		return nil
+	}
 	for k, v := range data {
-		var chainIndex modules.ChainIndex
-		if err := rlp.DecodeBytes([]byte(k), &chainIndex); err != nil {
-			msg := fmt.Sprintf("Chainindex get error: %s", err)
-			log.Error(msg)
-			continue
+		fmt.Println("Unit key:", k)
+		sk := string(k[len(storage.HEADER_PREFIX):])
+		// get index
+		skArr := strings.Split(sk, "_")
+		fmt.Println("split len=", len(skArr))
+		if len(skArr) != 3 {
+			log.Error("Get genesis unit index and hash", "error", "split error")
+			return nil
 		}
-
-		if chainIndex.IsMain == true {
-			var unit modules.Unit
-			if err := rlp.DecodeBytes([]byte(v), &unit); err != nil {
-				msg := fmt.Sprintf("Chainindex get error: %s", err)
-				log.Error(msg)
-				return nil
-			}
-			return &unit
+		// get unit hash
+		uHash := common.Hash{}
+		uHash.SetString(skArr[2])
+		fmt.Println("Genesis Unit header hash:", []byte(k))
+		// get unit header
+		fmt.Println("Unit header bytes:", []byte(v))
+		var uHeader modules.Header
+		if err := rlp.DecodeBytes([]byte(v), &uHeader); err != nil {
+			log.Error("Get genesis unit header", "error", err.Error())
+			return nil
 		}
+		// get transaction list
+		txs, err := GetUnitTransactions(uHeader.Root)
+		if err != nil {
+			log.Error("Get genesis unit transactions", "error", err.Error())
+			return nil
+		}
+		// generate unit
+		unit := modules.Unit{
+			UnitHeader: &uHeader,
+			UnitHash:   uHash,
+			Txs:        txs,
+		}
+		unit.UnitSize = unit.Size()
+		return &unit
 	}
 	return nil
+}
+
+func GetUnitTransactions(root common.Hash) (modules.Transactions, error) {
+	txs := modules.Transactions{}
+	// get body data: transaction list
+	txHashList, err := storage.GetBody(root)
+	if err!=nil{return nil, err}
+	// get transaction data
+	for _, txHash := range txHashList {
+		tx, err := storage.GetTransaction(txHash)
+		if err!=nil {
+			return nil, err
+		}
+		txs = append(txs, tx)
+	}
+	return txs, nil
 }
 
 /**
@@ -216,14 +265,9 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, 
 	var confPay modules.ConfigPayload
 
 	confPay.ConfigSet = make(map[string]interface{})
-	confPay.ConfigSet["version"] = genesisConf.Version
-
-	// comment by Albert·Gou, 2018/07/24
-	//confPay.ConfigSet["InitialParameters"] = *genesisConf.InitialParameters
-	//confPay.ConfigSet["InitialTimestamp"] = genesisConf.InitialTimestamp
-	//confPay.ConfigSet["InitialActiveMediators"] = genesisConf.InitialActiveMediators
-	//confPay.ConfigSet["InitialMediatorCandidates"] = genesisConf.InitialMediatorCandidates
-
+	confPay.ConfigSet["Version"] = genesisConf.Version
+	confPay.ConfigSet["InitialActiveMediators"] = genesisConf.InitialActiveMediators
+	confPay.ConfigSet["InitialMediatorCandidates"] = genesisConf.InitialMediatorCandidates
 	confPay.ConfigSet["ChainID"] = genesisConf.ChainID
 
 	t := reflect.TypeOf(genesisConf.SystemConfig)
@@ -239,13 +283,12 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, 
 保存单元数据，如果单元的结构基本相同
 save genesis unit data
 */
-func SaveUnit(unit modules.Unit) error {
+func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	if unit.UnitSize == 0 || unit.Size() == 0 {
-		log.Info("Unit is null")
-		return nil
+		return fmt.Errorf("Unit is null")
 	}
 	// check unit signature, should be compare to mediator list
-	if err := checkUnitSignature(unit.UnitHeader); err != nil {
+	if err := checkUnitSignature(unit.UnitHeader, isGenesis); err != nil {
 		return err
 	}
 
@@ -254,14 +297,15 @@ func SaveUnit(unit modules.Unit) error {
 		return modules.ErrUnit(-1)
 	}
 	// check transactions in unit
-	totalFee, err := checkTransactions(&unit.Txs)
+	totalFee, err := checkTransactions(&unit.Txs, isGenesis)
 	if err != nil {
 		return err
 	}
 	// todo check coin base fee
 	if totalFee <= 0 {
 	}
-	// save unit header, key is like "[HEADER_PREFIX][chain_index]_[unit hash]"
+	// save unit header
+	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		return modules.ErrUnit(-3)
 	}
@@ -346,7 +390,7 @@ func checkMessageType(app string, payload interface{}) bool {
 check all transactions in one unit
 return all transactions' fee
 */
-func checkTransactions(txs *modules.Transactions) (uint64, error) {
+func checkTransactions(txs *modules.Transactions, isGenesis bool) (uint64, error) {
 	fee := uint64(0)
 	for _, tx := range *txs {
 		for _, msg := range tx.TxMessages {
@@ -356,6 +400,7 @@ func checkTransactions(txs *modules.Transactions) (uint64, error) {
 			}
 			// check tx size
 			if tx.Size() != tx.Txsize {
+				fmt.Printf("Txsize=%v, tx.Size()=%v\n", tx.Txsize, tx.Size())
 				return 0, fmt.Errorf("Transaction(%s) Size is incorrect.", tx.TxHash)
 			}
 			// check every type payload
@@ -376,12 +421,14 @@ func checkTransactions(txs *modules.Transactions) (uint64, error) {
 				return 0, fmt.Errorf("Message type(%s) is not supported now:", msg.App)
 			}
 		}
-		// check transaction fee
-		txFee := modules.TXFEE
-		// i := big.Int{}
-		// i.SetUint64(txFee)
-		if tx.TxFee.Cmp(txFee) != 0 {
-			return 0, fmt.Errorf("Transaction(%s)'s fee is invalid.", tx.TxHash)
+		if isGenesis == true {
+			// check transaction fee
+			txFee := modules.TXFEE
+			// i := big.Int{}
+			// i.SetUint64(txFee)
+			if tx.TxFee.Cmp(txFee) != 0 {
+				return 0, fmt.Errorf("Transaction(%s)'s fee is invalid.", tx.TxHash)
+			}
 		}
 	}
 
@@ -455,47 +502,49 @@ func saveConfigPayload(txHash common.Hash, msg *modules.Message) bool {
 /**
 验证单元的签名，需要比对见证人列表
 */
-func checkUnitSignature(h *modules.Header) error {
+func checkUnitSignature(h *modules.Header, isGenesis bool) error {
 	if h.Authors == nil || len(h.Authors.Address) <= 0 {
 		return fmt.Errorf("No author info")
 	}
 	emptySigUnit := modules.Unit{}
+	// copy unit's header
+	emptySigUnit.UnitHeader = modules.CopyHeader(h)
+	// signature does not contain authors and witness fields
 	emptySigUnit.UnitHeader.Authors = nil
-	emptySigUnit.UnitHeader.Witness = []modules.Author{}
-
+	emptySigUnit.UnitHeader.Witness = []*modules.Authentifier{}
+	// recover signature
 	sig := make([]byte, 65)
 	copy(sig[32-len(h.Authors.R):32], h.Authors.R)
 	copy(sig[64-len(h.Authors.S):64], h.Authors.S)
 	copy(sig[64:len(sig)], h.Authors.V)
-
-	hash := h.Hash()
-	pubKey, _ := RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
-	//
+	// recover pubkey
+	hash := crypto.Keccak256Hash(util.RHashBytes(*emptySigUnit.UnitHeader))
+	pubKey, err := RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
 	//  pubKey to pubKey_bytes
 	pubKey_bytes := crypto.FromECDSAPub(pubKey)
-	if keystore.VerifyUnitWithPK(sig, emptySigUnit, pubKey_bytes) == false {
+	if keystore.VerifyUnitWithPK(sig, *emptySigUnit.UnitHeader, pubKey_bytes) == false {
 		return fmt.Errorf("Verify unit signature error.")
 	}
-
-	// comment by Albert·Gou, 不需要如此处理
-	//// get mediators
-	//data := GetConfig([]byte("MediatorCandidates"))
-	//bNum := GetConfig([]byte("ActiveMediators"))
-	//num, err := strconv.Atoi(string(bNum))
-	//if err != nil {
-	//	return fmt.Errorf("Check unit signature error: %s", err)
-	//}
-	//if num != len(data) {
-	//	return fmt.Errorf("Check unit signature error: mediators info error, pls update network")
-	//}
-	//
-	//// decode mediator list data
-	//var mediators []string
-	//if err := rlp.DecodeBytes(data, &mediators); err != nil {
-	//	return fmt.Errorf("Check unit signature error: %s", err)
-	//}
-
+	// if genesis unit just return
+	if isGenesis == false {
+		return nil
+	}
 	// todo group signature verify
+	// get mediators
+	data := GetConfig([]byte("MediatorCandidates"))
+	bNum := GetConfig([]byte("ActiveMediators"))
+	num, err := strconv.Atoi(string(bNum))
+	if err != nil {
+		return fmt.Errorf("Check unit signature error: %s", err)
+	}
+	if num != len(data) {
+		return fmt.Errorf("Check unit signature error: mediators info error, pls update network")
+	}
+	// decode mediator list data
+	var mediators []string
+	if err := rlp.DecodeBytes(data, &mediators); err != nil {
+		return fmt.Errorf("Check unit signature error: %s", err)
+	}
 
 	return nil
 }

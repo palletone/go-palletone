@@ -49,12 +49,6 @@ import (
 //
 // The returned chain configuration is never nil.
 func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) error {
-	//	privateKey, err := ks.GetPrivateKey(account)
-	//	if err != nil {
-	//		log.Info("SetupGenesisUnit GetPrivateKey err:", err.Error())
-	//		return err
-	//	}
-
 	unit, err := setupGenesisUnit(genesis, ks)
 	if err != nil && unit != nil {
 		log.Info("Genesis is Exist")
@@ -64,37 +58,35 @@ func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account acco
 		log.Error("Failed to write genesis block:", err.Error())
 		return err
 	}
-
-	sign, err1 := ks.SigUnit(unit, account.Address)
+	// signature unit: only sign header data(without witness and authors fields)
+	sign, err1 := ks.SigUnit(*unit.UnitHeader, account.Address)
 	if err1 != nil {
 		msg := fmt.Sprintf("Failed to write genesis block:%v", err1.Error())
 		log.Error(msg)
 		return err1
 	}
-	publicKey, err2 := ks.GetPublicKey(account.Address)
-	if err2 != nil {
-		msg := fmt.Sprintf("Failed to Get Public Key:%v", err2.Error())
-		log.Error(msg)
-		return err2
-	}
+
 	r := sign[:32]
 	s := sign[32:64]
-	v := append(sign, sign[64]+27)
+	v :=  sign[64:]
+	if len(v)!=1{
+		errors.New("error.")
+	}
 	unit.UnitHeader.Authors = &modules.Authentifier{
 		Address: account.Address.String(),
 		R:       r,
 		S:       s,
 		V:       v,
 	}
-	//	publicKey := crypto.FromECDSAPub(&privateKey.PublicKey)
-	log.Info("Successfully SIG Genesis Block")
-	pass := keystore.VerifyUnitWithPK(sign, unit, publicKey)
-	if pass {
-		log.Info("Valid signature")
-	} else {
-		log.Info("Invalid signature")
+	// to set witness list, should be creator himself
+	var authentifier modules.Authentifier
+	authentifier.Address = account.Address.String()
+	unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
+	// to save unit in db
+	if err:=CommitDB(unit, false); err!=nil{
+		log.Error("Commit genesis unit to db:", "error", err.Error())
+		return err
 	}
-	CommitDB(unit, publicKey, sign, common.Address{} /*account.Address*/)
 	return nil
 }
 
@@ -210,22 +202,20 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		S:       S,
 		V:       V,
 	}
-	fmt.Println("tx.From", tx.From)
+	tx.Txsize = tx.Size()
+	fmt.Println("Tx size:", tx.Txsize)
 	txs := []*modules.Transaction{tx}
 	return txs
 }
 
-func CommitDB(unit *modules.Unit, publicKey, addr []byte, address common.Address) error {
-	var authentifier modules.Authentifier
-	authentifier.Address = string(addr)
-	author := new(modules.Author)
-	author.Address = address
-	author.Pubkey = publicKey
-	author.TxAuthentifier = authentifier
-	unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, *author)
-	if err := dagCommon.SaveUnit(*unit); err != nil {
-		log.Error("Save genesis unit error.")
+func CommitDB(unit *modules.Unit, isGenesis bool) error {
+	// save genesis unit to leveldb
+	if err:=dagCommon.SaveUnit(*unit, isGenesis); err!=nil{
+		return err
+	} else {
+		log.Info("Save genesis unit success.")
 	}
+
 	return nil
 }
 
