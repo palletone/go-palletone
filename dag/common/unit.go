@@ -265,15 +265,20 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, 
 	var confPay modules.ConfigPayload
 
 	confPay.ConfigSet = make(map[string]interface{})
-	confPay.ConfigSet["Version"] = genesisConf.Version
-	confPay.ConfigSet["InitialActiveMediators"] = genesisConf.InitialActiveMediators
-	confPay.ConfigSet["InitialMediatorCandidates"] = genesisConf.InitialMediatorCandidates
-	confPay.ConfigSet["ChainID"] = genesisConf.ChainID
 
-	t := reflect.TypeOf(genesisConf.SystemConfig)
-	v := reflect.ValueOf(genesisConf.SystemConfig)
-	for k := 0; k < t.NumField(); k++ {
-		confPay.ConfigSet[t.Field(k).Name] = v.Field(k).Interface()
+	tt := reflect.TypeOf(*genesisConf)
+	vv := reflect.ValueOf(*genesisConf)
+
+	for i:=0; i<tt.NumField(); i++ {
+		if strings.Compare(tt.Field(i).Name, "SystemConfig")==0 {
+			t := reflect.TypeOf(genesisConf.SystemConfig)
+			v := reflect.ValueOf(genesisConf.SystemConfig)
+			for k := 0; k < t.NumField(); k++ {
+				confPay.ConfigSet[t.Field(k).Name] = v.Field(k).Interface()
+			}
+		} else {
+			confPay.ConfigSet[tt.Field(i).Name] = vv.Field(i).Interface()
+		}
 	}
 
 	return confPay, nil
