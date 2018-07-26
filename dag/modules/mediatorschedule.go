@@ -99,10 +99,11 @@ If slotNum == 1, return the next scheduled mediator.
 如果slotNum == 2，则返回下下一个调度Mediator。
 If slotNum == 2, return the next scheduled mediator after 1 verified uint gap.
 */
-func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) (Mediator) {
+func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) (*Mediator) {
 	currentASlot := dgp.CurrentASlot + uint64(slotNum)
 	// 由于创世单元不是有mediator生产，所以这里需要减1
-	return ms.CurrentShuffledMediators[(currentASlot-1)%uint64(len(ms.CurrentShuffledMediators))]
+	index := (currentASlot-1)%uint64(len(ms.CurrentShuffledMediators))
+	return &ms.CurrentShuffledMediators[index]
 }
 
 /**
