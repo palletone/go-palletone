@@ -22,15 +22,15 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"github.com/palletone/go-palletone/common/rlp"
+	"fmt"
 	"log"
 
+	"github.com/palletone/go-palletone/common"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common"
-	"fmt"
 )
 
 var (
@@ -88,7 +88,7 @@ func SaveUnit(unit *modules.Unit) error {
 /**
 key: [HEADER_PREFIX][chain index]_[unit hash]
 value: unit header rlp encoding bytes
- */
+*/
 // save header
 func SaveHeader(uHahs common.Hash, h *modules.Header) error {
 
@@ -106,7 +106,7 @@ func SaveHeader(uHahs common.Hash, h *modules.Header) error {
 /**
 key: [BODY_PREFIX][merkle root]
 value: all transactions hash set's rlp encoding bytes
- */
+*/
 func SaveBody(root common.Hash, txsHash []common.Hash) error {
 	// Dbconn.Put(append())
 	key := fmt.Sprintf("%s%s", BODY_PREFIX, root.String())
@@ -121,7 +121,7 @@ func SaveTransactions(txs *modules.Transactions) error {
 /**
 key: [TRANSACTION_PREFIX][tx hash]
 value: transaction struct rlp encoding bytes
- */
+*/
 func SaveTransaction(tx *modules.Transaction) error {
 	key := fmt.Sprintf("%s%s", TRANSACTION_PREFIX, tx.TxHash.String())
 	return Store(key, *tx)

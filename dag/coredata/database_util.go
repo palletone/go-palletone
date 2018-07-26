@@ -17,8 +17,6 @@
 package coredata
 
 import (
-
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -27,6 +25,151 @@ import (
 type DatabaseReader interface {
 	Get(key []byte) (value []byte, err error)
 }
+
+// // DatabaseDeleter wraps the Delete method of a backing data store.
+// type DatabaseDeleter interface {
+// 	Delete(key []byte) error
+// }
+
+// var (
+// 	headHeaderKey = []byte("LastHeader")
+// 	headBlockKey  = []byte("LastBlock")
+// 	headFastKey   = []byte("LastFast")
+// 	trieSyncKey   = []byte("TrieSync")
+
+// 	// Data item prefixes (use single byte to avoid mixing data types, avoid `i`).
+// 	headerPrefix        = []byte("h") // headerPrefix + num (uint64 big endian) + hash -> header
+// 	tdSuffix            = []byte("t") // headerPrefix + num (uint64 big endian) + hash + tdSuffix -> td
+// 	numSuffix           = []byte("n") // headerPrefix + num (uint64 big endian) + numSuffix -> hash
+// 	blockHashPrefix     = []byte("H") // blockHashPrefix + hash -> num (uint64 big endian)
+// 	bodyPrefix          = []byte("b") // bodyPrefix + num (uint64 big endian) + hash -> block body
+// 	blockReceiptsPrefix = []byte("r") // blockReceiptsPrefix + num (uint64 big endian) + hash -> block receipts
+// 	lookupPrefix        = []byte("l") // lookupPrefix + hash -> transaction/receipt lookup metadata
+// 	bloomBitsPrefix     = []byte("B") // bloomBitsPrefix + bit (uint16 big endian) + section (uint64 big endian) + hash -> bloom bits
+
+// 	preimagePrefix = "secure-key-"              // preimagePrefix + hash -> preimage
+// 	configPrefix   = []byte("ethereum-config-") // config prefix for the db
+
+// 	// Chain index prefixes (use `i` + single byte to avoid mixing data types).
+// 	BloomBitsIndexPrefix = []byte("iB") // BloomBitsIndexPrefix is the data table of a chain indexer to track its progress
+
+// 	// used by old db, now only used for conversion
+// 	oldReceiptsPrefix = []byte("receipts-")
+// 	oldTxMetaSuffix   = []byte{0x01}
+
+// 	ErrChainConfigNotFound = errors.New("ChainConfig not found") // general config not found error
+
+// 	preimageCounter    = metrics.NewRegisteredCounter("db/preimage/total", nil)
+// 	preimageHitCounter = metrics.NewRegisteredCounter("db/preimage/hits", nil)
+
+// 	// utxo
+// 	utxoprefix = []byte("u")
+// )
+
+// // TxLookupEntry is a positional metadata to help looking up the data content of
+// // a transaction or receipt given only its hash.
+// type TxLookupEntry struct {
+// 	BlockHash  common.Hash
+// 	BlockIndex uint64
+// 	Index      uint64
+// }
+
+// // encodeBlockNumber encodes a block number as big endian uint64
+// func encodeBlockNumber(number uint64) []byte {
+// 	enc := make([]byte, 8)
+// 	binary.BigEndian.PutUint64(enc, number)
+// 	return enc
+// }
+
+// // missingNumber is returned by GetBlockNumber if no header with the
+// // given block hash has been stored in the database
+// const MissingNumber = uint64(0xffffffffffffffff)
+
+// // GetBlockNumber returns the block number assigned to a block hash
+// // if the corresponding header is present in the database
+// func GetBlockNumber(db DatabaseReader, hash common.Hash) uint64 {
+// 	return uint64(0)
+// }
+
+// // GetHeadHeaderHash retrieves the hash of the current canonical head block's
+// // header. The difference between this and GetHeadBlockHash is that whereas the
+// // last block hash is only updated upon a full block import, the last header
+// // hash is updated already at header import, allowing head tracking for the
+// // light synchronization mechanism.
+// func GetHeadHeaderHash(db DatabaseReader) common.Hash {
+// 	return common.Hash{}
+// }
+
+// // GetHeadBlockHash retrieves the hash of the current canonical head block.
+// func GetHeadBlockHash(db DatabaseReader) common.Hash {
+// 	return common.Hash{}
+// }
+
+// // GetHeadFastBlockHash retrieves the hash of the current canonical head block during
+// // fast synchronization. The difference between this and GetHeadBlockHash is that
+// // whereas the last block hash is only updated upon a full block import, the last
+// // fast hash is updated when importing pre-processed blocks.
+// func GetHeadFastBlockHash(db DatabaseReader) common.Hash {
+// 	return common.Hash{}
+// }
+
+// // GetTrieSyncProgress retrieves the number of tries nodes fast synced to allow
+// // reportinc correct numbers across restarts.
+// func GetTrieSyncProgress() uint64 {
+// 	return uint64(0)
+// }
+
+// // GetHeaderRLP retrieves a block header in its raw RLP database encoding, or nil
+// // if the header's not found.
+// func GetHeaderRLP(db DatabaseReader, hash common.Hash, number uint64) rlp.RawValue {
+// 	return rlp.RawValue{}
+// }
+
+// // GetHeader retrieves the block header corresponding to the hash, nil if none
+// // found.
+// func GetHeader(db DatabaseReader, hash common.Hash, number uint64) *types.Header {
+// 	return &types.Header{}
+// }
+
+// // GetBodyRLP retrieves the block body (transactions and uncles) in RLP encoding.
+// func GetBodyRLP(db DatabaseReader, hash common.Hash, number uint64) rlp.RawValue {
+// 	return rlp.RawValue{}
+// }
+
+// // GetBody retrieves the block body (transactons, uncles) corresponding to the
+// // hash, nil if none found.
+// func GetBody(db DatabaseReader, hash common.Hash, number uint64) *types.Body {
+// 	return &types.Body{}
+// }
+
+// // GetTd retrieves a block's total difficulty corresponding to the hash, nil if
+// // none found.
+// func GetTd(db DatabaseReader, hash common.Hash, number uint64) *big.Int {
+// 	return &big.Int{}
+// }
+
+// // GetBlock retrieves an entire block corresponding to the hash, assembling it
+// // back from the stored header and body. If either the header or body could not
+// // be retrieved nil is returned.
+// //
+// // Note, due to concurrent download of header and block body the header and thus
+// // canonical hash can be stored in the database but the body data not (yet).
+// func GetBlock(db DatabaseReader, hash common.Hash, number uint64) *types.Block {
+// 	return &types.Block{}
+// }
+
+// // GetBlockReceipts retrieves the receipts generated by the transactions included
+// // in a block given by its hash.
+// func GetBlockReceipts(db DatabaseReader, hash common.Hash, number uint64) types.Receipts {
+// 	return types.Receipts{}
+// }
+
+// // GetTxLookupEntry retrieves the positional metadata associated with a transaction
+// // hash to allow retrieving the transaction or receipt by hash.
+// func GetTxLookupEntry(db DatabaseReader, hash common.Hash) (common.Hash, uint64, uint64) {
+// 	return common.Hash{}, uint64(0), uint64(0)
+// }
+
 // GetTransaction retrieves a specific transaction from the database, along with
 // its added positional metadata.
 func GetTransaction(db DatabaseReader, hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {

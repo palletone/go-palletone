@@ -177,7 +177,6 @@ func init() {
 		versionCommand,
 		bugCommand,
 		licenseCommand,
-		// See config.go
 		dumpConfigCommand,        //转储配置文件命令
 		createGenesisJsonCommand, // 创建创世json文件命令
 	}
@@ -204,7 +203,7 @@ func init() {
 		return nil
 	}
 
-	//after函数在最后调用，app.Run 里面会设置defer function
+	//after函数在最后调用，app.Run 里面会设置defber function
 	app.After = func(ctx *cli.Context) error {
 		debug.Exit()
 		console.Stdin.Close() // Resets terminal mode.

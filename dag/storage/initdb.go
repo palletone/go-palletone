@@ -28,7 +28,7 @@ var (
 	UNIT_PREFIX                      = []byte("ut") // unit_prefix + mci + hash
 	HEADER_PREFIX                    = []byte("uh") // prefix + hash
 	BODY_PREFIX                      = []byte("ub")
-	TRANSACTION_PREFIX                = []byte("tx")
+	TRANSACTION_PREFIX               = []byte("tx")
 	TRANSACTIONSPREFIX               = []byte("ts")
 	ALL_UNITS_PREFIX                 = []byte("au")
 	UNITAUTHORS_PREFIX               = []byte("ua")
@@ -64,9 +64,8 @@ func Init(path string) *palletdb.LDBDatabase {
 	return Dbconn
 }
 func ReNewDbConn(path string) *palletdb.LDBDatabase {
-	log.Println("renew dbconn start...")
 	if dbconn, err := palletdb.NewLDBDatabase(path, 0, 0); err != nil {
-		log.Println("renew dbconn error:", err)
+		log.Println("renew dbconn error:", path, err)
 		return nil
 	} else {
 		return dbconn
