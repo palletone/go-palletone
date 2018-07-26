@@ -59,3 +59,19 @@ func (d *Dag) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
 func (d *Dag) SubscribeChainHeadEvent(ch chan<- ChainHeadEvent) event.Subscription {
 	return d.ChainHeadFeed.Subscribe(ch)
 }
+
+// FastSyncCommitHead sets the current head block to the one defined by the hash
+// irrelevant what the chain contents were prior.
+func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
+	return nil
+}
+
+// InsertDag attempts to insert the given batch of blocks in to the canonical
+// chain or, otherwise, create a fork. If an error is returned it will return
+// the index number of the failing block as well an error describing what went
+// wrong.
+// After insertion is done, all accumulated events will be fired.
+// reference : Eth InsertChain
+func (bc *Dag) InsertDag(unit Unit) (int, error) {
+	return 0, nil
+}
