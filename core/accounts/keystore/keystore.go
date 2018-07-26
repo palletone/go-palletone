@@ -544,8 +544,10 @@ func (ks *KeyStore) SigUnit(unit interface{}, address common.Address) ([]byte, e
 		return nil, err
 	}
 	//defer ZeroKey(privateKey)
-
 	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
+	if err!=nil{
+		return nil, err
+	}
 	//unit signature
 	sign, err := crypto.Sign(hash.Bytes(), privateKey)
 	if err != nil {

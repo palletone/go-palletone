@@ -1,11 +1,9 @@
 package txscript
 
 import (
-	"regexp"
-	"fmt"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"strings"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
 /**
@@ -304,26 +302,33 @@ P2SH Example: OP_HASH160 <scripthash> OP_EQUAL
  */
 func ExtractPkScriptAddrs(pkScript []byte) (*ScriptPubKey, error) {
 	spk := ScriptPubKey{}
-
-	reg := regexp.MustCompile(`OP_DUP OP_HASH160 ([\w]+) OP_EQUALVERIFY OP_CHECKSIG`)
-	shReq := regexp.MustCompile(`OP_HASH160 ([\w]+) OP_EQUAL`)
-	// now just decode P2PKH
-	results := reg.FindStringSubmatch(string(pkScript))
-	if len(results)==2 {
+	if len(pkScript)==25 {
 		spk.Type = T_P2PKH
-		pubkey := crypto.ToECDSAPub([]byte(results[0]))
-		if pubkey==nil {return nil, fmt.Errorf("Get pubkey from bytes error.")}
+		pubkeyBytes := pkScript[3:23]
+		pubkey := crypto.ToECDSAPub(pubkeyBytes)
 		spk.Address = crypto.PubkeyToAddress(*pubkey)
-
-	} else {
-		results = shReq.FindStringSubmatch(string(pkScript))
-		if len(results)==2 {
-			spk.Type = T_P2SH
-			spk.Address = crypto.ScriptHashToAddress([]byte(results[1]))
-		} else {
-			return &spk, fmt.Errorf("Extract PkScript Addrs error")
-		}
 	}
+
+
+	//reg := regexp.MustCompile(`OP_DUP OP_HASH160 ([\w]+) OP_EQUALVERIFY OP_CHECKSIG`)
+	//shReq := regexp.MustCompile(`OP_HASH160 ([\w]+) OP_EQUAL`)
+	//// now just decode P2PKH
+	//results := reg.FindStringSubmatch(string(pkScript))
+	//if len(results)==2 {
+	//	spk.Type = T_P2PKH
+	//	pubkey := crypto.ToECDSAPub([]byte(results[0]))
+	//	if pubkey==nil {return nil, fmt.Errorf("Get pubkey from bytes error.")}
+	//	spk.Address = crypto.PubkeyToAddress(*pubkey)
+	//
+	//} else {
+	//	results = shReq.FindStringSubmatch(string(pkScript))
+	//	if len(results)==2 {
+	//		spk.Type = T_P2SH
+	//		spk.Address = crypto.ScriptHashToAddress([]byte(results[1]))
+	//	} else {
+	//		return &spk, fmt.Errorf("Extract PkScript Addrs error")
+	//	}
+	//}
 
 	return &spk, nil
 }

@@ -16,6 +16,12 @@
 
 package main
 
+import (
+	"testing"
+	"github.com/palletone/go-palletone/dag/common"
+	"fmt"
+)
+
 var customGenesisTests = []struct {
 	genesis string
 	query   string
@@ -103,3 +109,11 @@ func TestCustomGenesis(t *testing.T) {
 	}
 }
 */
+
+func TestGenesisGet(t *testing.T)  {
+	// get genesis unit by index
+	unit := common.GetGenesisUnit(0)
+	fmt.Println("Genesis unit:", unit)
+	// get account balance
+	// get all global configures
+}

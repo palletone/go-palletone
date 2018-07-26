@@ -86,7 +86,7 @@ func SaveUnit(unit *modules.Unit) error {
 }
 
 /**
-key: [HEADER_PREFIX][chain index]_[unit hash]
+key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 value: unit header rlp encoding bytes
 */
 // save header
@@ -113,6 +113,19 @@ func SaveBody(root common.Hash, txsHash []common.Hash) error {
 	return Store(key, txsHash)
 }
 
+func GetBody(root common.Hash) ([]common.Hash, error) {
+	key := fmt.Sprintf("%s%s", BODY_PREFIX, root.String())
+	data, err:=Get([]byte(key))
+	if err!=nil {
+		return nil, err
+	}
+	var txHashs []common.Hash
+	if err:=rlp.DecodeBytes(data, &txHashs);err!=nil{
+		return nil, err
+	}
+	return txHashs, nil
+}
+
 func SaveTransactions(txs *modules.Transactions) error {
 	key := fmt.Sprintf("%s%s", TRANSACTIONSPREFIX, txs.Hash())
 	return Store(key, *txs)
@@ -125,6 +138,17 @@ value: transaction struct rlp encoding bytes
 func SaveTransaction(tx *modules.Transaction) error {
 	key := fmt.Sprintf("%s%s", TRANSACTION_PREFIX, tx.TxHash.String())
 	return Store(key, *tx)
+}
+
+func GetTransaction(txHash common.Hash) (*modules.Transaction, error)  {
+	key := fmt.Sprintf("%s%s", TRANSACTION_PREFIX, txHash.String())
+	data, err := Get([]byte(key))
+	if err!=nil {return nil, err}
+	var tx modules.Transaction
+	if err:=rlp.DecodeBytes(data, &tx); err!=nil {
+		return nil, err
+	}
+	return &tx, nil
 }
 
 // encodeBlockNumber encodes a block number as big endian uint64

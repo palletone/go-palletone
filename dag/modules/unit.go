@@ -68,13 +68,14 @@ import (
 /***************************** end of update **********************************************/
 
 type Header struct {
-	ParentUnits []common.Hash `json:"parent_units"`
-	AssetIDs    []IDType16    `json:"assets"`
-	Authors     *Authentifier `json:"author" rlp:"-"`  // the unit creation authors
-	Witness     []Author      `json:"witness" rlp:"-"` // 群签名
-	Root        common.Hash   `json:"root"`
-	Number      ChainIndex    `json:"index"`
-	Extra       []byte        `json:"extra"`
+	ParentUnits  []common.Hash   `json:"parent_units"`
+	AssetIDs     []IDType16      `json:"assets"`
+	Authors      *Authentifier   `json:"author" rlp:"-"`  // the unit creation authors
+	Witness      []*Authentifier `json:"witness" rlp:"-"` // 群签名
+	Root         common.Hash     `json:"root"`
+	Number       ChainIndex      `json:"index"`
+	Extra        []byte          `json:"extra"`
+	Creationdate time.Time       `json:"creation_time"` // unit create time
 	//FeeLimit    uint64        `json:"fee_limit"`
 	//FeeUsed     uint64        `json:"fee_used"`
 }
@@ -157,11 +158,10 @@ func CopyHeader(h *Header) *Header {
 
 // key: unit.UnitHash(unit)
 type Unit struct {
-	UnitHeader   *Header            `json:"unit_header"`   // unit header
-	Txs          Transactions       `json:"transactions"`  // transaction list
-	UnitHash     common.Hash        `json:"unit_hash"`     // unit hash
-	UnitSize     common.StorageSize `json:"UnitSize"`      // unit size
-	Creationdate time.Time          `json:"creation_time"` // unit create time
+	UnitHeader *Header            `json:"unit_header"`  // unit header
+	Txs        Transactions       `json:"transactions"` // transaction list
+	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
+	UnitSize   common.StorageSize `json:"UnitSize"`     // unit size
 	//Gasprice     uint64             `json:"gas_price"`     // user set total gas
 	//Gasused      uint64             `json:"gas_used"`      // the actually used gas, mediator set
 }
@@ -278,7 +278,6 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 		UnitHeader: CopyHeader(header),
 		Txs:        CopyTransactions(txs),
 	}
-	u.Creationdate = time.Now()
 	u.UnitSize = header.Size()
 	u.UnitHash = u.Hash()
 	return u
@@ -342,7 +341,7 @@ func (u *Unit) Size() common.StorageSize {
 
 // return Creationdate
 func (u *Unit) CreationDate() time.Time {
-	return u.Creationdate
+	return u.UnitHeader.Creationdate
 }
 
 //func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }

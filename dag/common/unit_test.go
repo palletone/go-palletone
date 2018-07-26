@@ -42,7 +42,7 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 }
 
 func TestSaveUnit(t *testing.T) {
-	if err := SaveUnit(modules.Unit{}); err != nil {
+	if err := SaveUnit(modules.Unit{}, false); err != nil {
 		log.Println(err)
 	}
 }
