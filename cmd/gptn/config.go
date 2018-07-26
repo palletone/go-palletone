@@ -94,7 +94,7 @@ type FullConfig struct {
 	//	Consensus consensusconfig.Config
 	MediatorPlugin mp.Config
 	Log            *log.Config
-	Dag            dagconfig.Config
+	Dag            *dagconfig.Config
 	P2P            p2p.Config
 	Ada            adaptor.Config
 }
@@ -126,7 +126,7 @@ func defaultNodeConfig() node.Config {
 
 func adaptorConfig(config FullConfig) FullConfig {
 	config.Node.P2P = config.P2P
-	config.Ptn.Dag = config.Dag
+	config.Ptn.Dag = *config.Dag
 	config.Ptn.Log = *config.Log
 	//	config.Ptn.Consensus = config.Consensus
 	return config
@@ -218,7 +218,10 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		// 注册状态服务。 默认情况下是没有启动的。
 		utils.RegisterPtnStatsService(stack, cfg.Ptnstats.URL)
 	}
-
+	// rebuild leveldb
+	// if cfg.Dag.DbPath != "" {
+	// 	dagconfig.De
+	// }
 	mp.RegisterMediatorPluginService(stack, &cfg.MediatorPlugin)
 
 	return stack
@@ -265,7 +268,7 @@ func makeDefaultConfig() FullConfig {
 		P2P:       p2p.DefaultConfig,
 		//		Consensus: consensusconfig.DefaultConfig,
 		MediatorPlugin: mp.DefaultConfig,
-		Dag:            dagconfig.DefaultConfig,
+		Dag:            &dagconfig.DefaultConfig,
 		Log:            &log.DefaultConfig,
 		Ada:            adaptor.DefaultConfig,
 	}
