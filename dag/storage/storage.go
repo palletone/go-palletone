@@ -19,9 +19,9 @@
 package storage
 
 import (
-	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
@@ -31,11 +31,13 @@ func Store(key string, value interface{}) error {
 		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
 	}
 	val, err := rlp.EncodeToBytes(value)
-	if err!=nil { return err }
+	if err != nil {
+		return err
+	}
 
 	_, err = Dbconn.Get([]byte(key))
-	if err!=nil {
-		if err==errors.ErrNotFound {
+	if err != nil {
+		if err == errors.ErrNotFound {
 			if err := Dbconn.Put([]byte(key), val); err != nil {
 				return err
 			}
@@ -43,7 +45,9 @@ func Store(key string, value interface{}) error {
 			return err
 		}
 	} else {
-		if err = Dbconn.Delete([]byte(key)); err!=nil {return err}
+		if err = Dbconn.Delete([]byte(key)); err != nil {
+			return err
+		}
 		if err := Dbconn.Put([]byte(key), val); err != nil {
 			return err
 		}
@@ -51,7 +55,6 @@ func Store(key string, value interface{}) error {
 
 	return nil
 }
-
 
 func StoreString(key, value string) error {
 	if Dbconn == nil {

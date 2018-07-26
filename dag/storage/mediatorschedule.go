@@ -19,27 +19,29 @@
 package storage
 
 import (
+	"fmt"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 const (
-	mediatorSchlDBKey  = "MediatorSchedule"
+	mediatorSchlDBKey = "MediatorSchedule"
 )
 
-func StoreMediatorSchl(ms *modules.MediatorSchedule)  {
+func StoreMediatorSchl(ms *modules.MediatorSchedule) {
 	err := Store(mediatorSchlDBKey, *ms)
-	if err != nil{
-		log.Error("Store mediator schedule error: %s", err)
+	if err != nil {
+		log.Error(fmt.Sprintf("Store mediator schedule error: %s", err))
 	}
 }
 
-func RetrieveMediatorSchl() (*modules.MediatorSchedule) {
+func RetrieveMediatorSchl() *modules.MediatorSchedule {
 	ms := modules.NewMediatorSchl()
 
 	err := Retrieve(mediatorSchlDBKey, ms)
-	if err != nil{
-		log.Error("Retrieve mediator schedule error: %s", err)
+	if err != nil {
+		log.Error(fmt.Sprintf("Retrieve mediator schedule error: %s", err))
 	}
 
 	return ms
