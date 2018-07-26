@@ -24,15 +24,11 @@ import (
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common/event"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
 func NewDag() *modules.Dag {
-	if storage.Dbconn == nil {
-		storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
-	}
 	genesis, _ := NewGenesisUnit(nil)
 	db, _ := palletdb.NewMemDatabase()
 	mutex := new(sync.RWMutex)

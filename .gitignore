@@ -61,3 +61,4 @@ bin/
 *.rlp
 **/palletone.toml
 dag/common/unit.go.orig
+cmd/test/
