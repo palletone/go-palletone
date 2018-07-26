@@ -57,7 +57,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 		//	}
 		//}
 		//
-		//mp.ScheduleProductionLoop()
+		// go mp.ScheduleProductionLoop()
 	}
 
 	log.Info("mediator plugin startup end")
@@ -94,7 +94,7 @@ func Initialize(node *node.Node, cfg *Config) (*MediatorPlugin, error) {
 			log.Info(fmt.Sprintf("Invalid mediator account address: %v", address))
 		}
 
-		log.Info(fmt.Sprintf("Mediator account address: %v", address))
+		log.Info(fmt.Sprintf("this node controll mediator account address: %v", address))
 
 		msm[addr] = passphrase
 	}
@@ -103,6 +103,7 @@ func Initialize(node *node.Node, cfg *Config) (*MediatorPlugin, error) {
 		node:              node,
 		productionEnabled: cfg.EnableStaleProduction,
 		mediators:         msm,
+		shutdownChan:   make(chan bool),
 	}
 
 	log.Info("mediator plugin initialize end")
