@@ -66,8 +66,10 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	//if _, err := blockchain.InsertChain(chain); err != nil {
 	//	panic(err)
 	//}
-	engine := consensus.New()
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine)
+	engine := new(consensus.DPOSEngine)
+	dag := new(modules.Dag)
+	typemux := new(event.TypeMux)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine,dag,typemux)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -179,7 +181,7 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool) (*te
 
 // handshake simulates a trivial handshake that expects the same state from the
 // remote side as we are simulating locally.
-func (p *testPeer) handshake(t *testing.T, td *big.Int, head common.Hash, genesis common.Hash) {
+func (p *testPeer) handshake(t *testing.T, td uint64, head common.Hash, genesis common.Hash) {
 	msg := &statusData{
 		ProtocolVersion: uint32(p.version),
 		NetworkId:       DefaultConfig.NetworkId,
