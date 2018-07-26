@@ -177,7 +177,6 @@ func init() {
 		versionCommand,
 		bugCommand,
 		licenseCommand,
-		// See config.go
 		dumpConfigCommand,        //转储配置文件命令
 		createGenesisJsonCommand, // 创建创世json文件命令
 	}
