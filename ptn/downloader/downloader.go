@@ -25,7 +25,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	ethereum "github.com/palletone/go-palletone"
+	palletone "github.com/palletone/go-palletone"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -106,7 +106,7 @@ type Downloader struct {
 	syncStatsLock        sync.RWMutex // Lock protecting the sync stats fields
 
 	//lightchain LightDag
-	blockdag BlockDag
+	dag BlockDag
 	// Callbacks
 	dropPeer peerDropFn // Drops a peer for misbehaving
 
@@ -174,6 +174,7 @@ type BlockDag interface {
 	FastSyncCommitHead(common.Hash) error
 	InsertDag(modules.Unit) (int, error)
 
+	//TODO :
 	//LightDag
 	//HasBlock(common.Hash, uint64) bool
 	//GetBlockByHash(common.Hash) *types.Block
@@ -193,7 +194,7 @@ func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, dag BlockDag) *
 		peers:         newPeerSet(),
 		rttEstimate:   uint64(rttMaxEstimate),
 		rttConfidence: uint64(1000000),
-		blockdag:      dag,
+		dag:           dag,
 		//lightchain:     lightchain,
 		dropPeer:       dropPeer,
 		headerCh:       make(chan dataPack, 1),
@@ -222,22 +223,23 @@ func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, dag BlockDag) *
 // In addition, during the state download phase of fast synchronisation the number
 // of processed and the total number of known states are also returned. Otherwise
 // these are zero.
-func (d *Downloader) Progress() ethereum.SyncProgress {
+func (d *Downloader) Progress() palletone.SyncProgress {
 	// Lock the current stats and return the progress
 	d.syncStatsLock.RLock()
 	defer d.syncStatsLock.RUnlock()
 
 	current := uint64(0)
-	/*
-		switch d.mode {
-		case FullSync:
-			current = d.blockchain.CurrentBlock().NumberU64()
-		case FastSync:
-			current = d.blockchain.CurrentFastBlock().NumberU64()
-		case LightSync:
-			current = d.lightchain.CurrentHeader().Number.Uint64()
-		}*/
-	return ethereum.SyncProgress{
+	switch d.mode {
+	case FullSync:
+		current = d.dag.CurrentUnit().Number().Index
+	case FastSync:
+		//current = d.blockchain.CurrentFastBlock().NumberU64()
+		current = d.dag.CurrentUnit().Number().Index
+	case LightSync:
+		//current = d.lightchain.CurrentHeader().Number.Uint64()
+	}
+
+	return palletone.SyncProgress{
 		StartingBlock: d.syncStatsChainOrigin,
 		CurrentBlock:  current,
 		HighestBlock:  d.syncStatsChainHeight,
