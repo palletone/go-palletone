@@ -204,7 +204,7 @@ func init() {
 		return nil
 	}
 
-	//after函数在最后调用，app.Run 里面会设置defer function
+	//after函数在最后调用，app.Run 里面会设置defber function
 	app.After = func(ctx *cli.Context) error {
 		debug.Exit()
 		console.Stdin.Close() // Resets terminal mode.

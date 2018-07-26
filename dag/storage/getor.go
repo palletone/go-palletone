@@ -20,13 +20,13 @@ package storage
 
 import (
 	"encoding/json"
-	"log"
-	"unsafe"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"log"
+	"unsafe"
 
-	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/common/rlp"
+	config "github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 // @author Albert·Gou
@@ -54,7 +54,9 @@ func Get(key []byte) ([]byte, error) {
 	if Dbconn == nil {
 		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
 	}
-	return Dbconn.Get(key)
+	// return Dbconn.Get(key)
+	b, err := Dbconn.Get(key)
+	return b, err
 }
 
 // get string
@@ -111,30 +113,3 @@ func GetHeader(hash common.Hash, index uint64) *modules.Header {
 
 	return &header
 }
-
-// func GetFreeUnits() []string {
-// 	if list_bytes, err := Get([]byte(modules.FREEUNITS)); err != nil {
-// 		log.Error("get free units error:" + err.Error())
-// 	} else {
-// 		var list []string
-// 		json.Unmarshal(list_bytes, &list)
-// 		if len(modules.FreeUnitslist) == 0 {
-// 			return list
-// 		}
-// 		lfu := len(modules.FreeUnitslist)
-// 		var free []string
-// 		for _, v := range list {
-// 			for j, f := range modules.FreeUnitslist {
-// 				if v == f {
-// 					break
-// 				} else if v != f && j == (lfu-1) {
-// 					free = append(free, v)
-// 				}
-// 			}
-// 		}
-// 		if len(free) > 0 {
-// 			modules.FreeUnitslist = append(modules.FreeUnitslist, free...)
-// 		}
-// 	}
-// 	return modules.FreeUnitslist
-// }
