@@ -43,11 +43,11 @@ var (
 	MaxStateFetch   = 384 // Amount of node state values to allow fetching per request
 
 	//MaxForkAncestry  = 3 * configure.EpochDuration // Maximum chain reorganisation
-	rttMinEstimate   = 2 * time.Second             // Minimum round-trip time to target for download requests
-	rttMaxEstimate   = 20 * time.Second            // Maximum round-trip time to target for download requests
-	rttMinConfidence = 0.1                         // Worse confidence factor in our estimated RTT value
-	ttlScaling       = 3                           // Constant scaling factor for RTT -> TTL conversion
-	ttlLimit         = time.Minute                 // Maximum TTL allowance to prevent reaching crazy timeouts
+	rttMinEstimate   = 2 * time.Second  // Minimum round-trip time to target for download requests
+	rttMaxEstimate   = 20 * time.Second // Maximum round-trip time to target for download requests
+	rttMinConfidence = 0.1              // Worse confidence factor in our estimated RTT value
+	ttlScaling       = 3                // Constant scaling factor for RTT -> TTL conversion
+	ttlLimit         = time.Minute      // Maximum TTL allowance to prevent reaching crazy timeouts
 
 	qosTuningPeers   = 5    // Number of peers to tune based on (best peers)
 	qosConfidenceCap = 10   // Number of peers above which not to modify RTT confidence
@@ -169,26 +169,18 @@ type LightDag interface {
 // BlockDag encapsulates functions required to sync a (full or fast) blockchain.
 type BlockDag interface {
 	//LightDag
+	GetUnit(common.Hash, uint64) *modules.Unit
+	CurrentUnit() *modules.Unit
+	FastSyncCommitHead(common.Hash) error
+	InsertDag(modules.Unit) (int, error)
 
-	// HasBlock verifies a block's presence in the local chain.
+	//LightDag
 	//HasBlock(common.Hash, uint64) bool
-
-	// GetBlockByHash retrieves a block from the local chain.
 	//GetBlockByHash(common.Hash) *types.Block
-
-	// CurrentBlock retrieves the head block from the local chain.
 	//CurrentBlock() *types.Block
-
-	// CurrentFastBlock retrieves the head fast block from the local chain.
 	//CurrentFastBlock() *types.Block
-
-	// FastSyncCommitHead directly commits the head block to a certain entity.
 	//FastSyncCommitHead(common.Hash) error
-
-	// InsertChain inserts a batch of blocks into the local chain.
 	//InsertChain(types.Blocks) (int, error)
-
-	// InsertReceiptChain inserts a batch of receipts into the local chain.
 	//InsertReceiptChain(types.Blocks, []types.Receipts) (int, error)
 }
 
