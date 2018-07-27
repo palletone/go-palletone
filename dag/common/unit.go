@@ -74,7 +74,7 @@ func GetUnit(hash *common.Hash, index modules.ChainIndex) *modules.Unit {
 生成创世单元，需要传入创世单元的配置信息以及coinbase交易
 generate genesis unit, need genesis unit configure fields and transactions list
 */
-func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
+func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error) {
 	gUnit := modules.Unit{}
 
 	// genesis unit asset id
@@ -91,7 +91,7 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 		AssetIDs:     []modules.IDType16{gAssetID},
 		Number:       chainIndex,
 		Root:         root,
-		Creationdate: time.Now().UTC(),
+		Creationdate: time,
 	}
 
 	gUnit.UnitHeader = &header
@@ -131,7 +131,7 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
+func CreateUnit(mAddr *common.Address, time time.Time) ([]modules.Unit, error) {
 	units := []modules.Unit{}
 	// get mediator responsible for asset id
 	assetID := modules.IDType16{}
@@ -158,7 +158,8 @@ func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
 		AssetIDs:     []modules.IDType16{assetID},
 		Number:       chainIndex,
 		Root:         root,
-		Creationdate: time.Now().UTC(),
+//		Creationdate: time.Now().UTC(),
+		Creationdate: time.Unix(),
 	}
 
 	unit := modules.Unit{}

@@ -20,12 +20,10 @@ package modules
 import (
 	"encoding/json"
 	"math/big"
-	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/core"
 )
 
 /*****************************27 June, 2018 update unit struct type*****************************************/
@@ -75,7 +73,7 @@ type Header struct {
 	Root         common.Hash     `json:"root"`
 	Number       ChainIndex      `json:"index"`
 	Extra        []byte          `json:"extra"`
-	Creationdate time.Time       `json:"creation_time"` // unit create time
+	Creationdate int64       `json:"creation_time"` // unit create time
 	//FeeLimit    uint64        `json:"fee_limit"`
 	//FeeUsed     uint64        `json:"fee_used"`
 }
@@ -283,11 +281,12 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 	return u
 }
 
-func NewGenesisUnit(genesisConf *core.Genesis, txs Transactions) (*Unit, error) {
-	//test
-	unit := Unit{Txs: txs}
-	return &unit, nil
-}
+// comment by Albert·Gou
+//func NewGenesisUnit(genesisConf *core.Genesis, txs Transactions) (*Unit, error) {
+//	//test
+//	unit := Unit{Txs: txs}
+//	return &unit, nil
+//}
 
 func CopyTransactions(txs Transactions) Transactions {
 	cpy := txs
@@ -340,9 +339,10 @@ func (u *Unit) Size() common.StorageSize {
 }
 
 // return Creationdate
-func (u *Unit) CreationDate() time.Time {
-	return u.UnitHeader.Creationdate
-}
+// comment by Albert·Gou
+//func (u *Unit) CreationDate() time.Time {
+//	return u.UnitHeader.Creationdate
+//}
 
 //func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }
 func (u *Unit) Number() ChainIndex {
