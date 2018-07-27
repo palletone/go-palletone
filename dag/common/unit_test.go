@@ -9,10 +9,11 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"time"
 )
 
 func TestNewGenesisUnit(t *testing.T) {
-	gUnit, _ := NewGenesisUnit(modules.Transactions{})
+	gUnit, _ := NewGenesisUnit(modules.Transactions{}, time.Now().Unix())
 
 	log.Println("Genesis unit struct:")
 	log.Println("--- Genesis unit header --- ")
