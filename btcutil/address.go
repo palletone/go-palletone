@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
-        "github.com/palletone/go-palletone/common/base58"
+	"github.com/btcsuite/btcutil/base58"
 	//"github.com/btcsuite/btcutil/base58"
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
@@ -134,13 +134,13 @@ type Address interface {
 // The bitcoin network the address is associated with is extracted if possible.
 // When the address does not encode the network, such as in the case of a raw
 // public key, the address will be associated with the passed defaultNet.
-func DecodeAddress(addr string, defaultNet byte/**chaincfg.Params*/) (Address, error) {
+func DecodeAddress(addr string, defaultNet byte /**chaincfg.Params*/) (Address, error) {
 	// Bech32 encoded segwit addresses start with a human-readable part
 	// (hrp) followed by '1'. For Bitcoin mainnet the hrp is "bc", and for
 	// testnet it is "tb". If the address string has a prefix that matches
 	// one of the prefixes for the known networks, we try to decode it as
 	// a segwit address.
-        oneIndex := strings.LastIndexByte(addr, '1')
+	oneIndex := strings.LastIndexByte(addr, '1')
 	if oneIndex > 1 {
 		prefix := addr[:oneIndex+1]
 		if chaincfg.IsBech32SegwitPrefix(prefix) {
@@ -157,8 +157,8 @@ func DecodeAddress(addr string, defaultNet byte/**chaincfg.Params*/) (Address, e
 
 			// The HRP is everything before the found '1'.
 			hrp := prefix[:len(prefix)-1]
-            //fmt.Printf("hrp is %s\n",hrp)
-            //fmt.Printf("witnessprog len is %d\n",len(witnessProg))
+			//fmt.Printf("hrp is %s\n",hrp)
+			//fmt.Printf("witnessprog len is %d\n",len(witnessProg))
 			switch len(witnessProg) {
 			case 20:
 				return newAddressWitnessPubKeyHash(hrp, witnessProg)
@@ -181,7 +181,7 @@ func DecodeAddress(addr string, defaultNet byte/**chaincfg.Params*/) (Address, e
 	}
 
 	// Switch on decoded length to determine the type.
-        saddr := string([]byte(addr)[1:])
+	saddr := string([]byte(addr)[1:])
 	decoded, netID, err := base58.CheckDecode(saddr)
 	if err != nil {
 		if err == base58.ErrChecksum {
@@ -193,7 +193,7 @@ func DecodeAddress(addr string, defaultNet byte/**chaincfg.Params*/) (Address, e
 	case ripemd160.Size: // P2PKH or P2SH
 		isP2PKH := chaincfg.IsPubKeyHashAddrID(netID)
 		isP2SH := chaincfg.IsScriptHashAddrID(netID)
-                fmt.Println(isP2PKH)
+		fmt.Println(isP2PKH)
 		switch hash160 := decoded; {
 		case isP2PKH && isP2SH:
 			return nil, ErrAddressCollision
@@ -408,7 +408,7 @@ type AddressPubKey struct {
 // NewAddressPubKey returns a new AddressPubKey which represents a pay-to-pubkey
 // address.  The serializedPubKey parameter must be a valid pubkey and can be
 // uncompressed, compressed, or hybrid.
-func NewAddressPubKey(serializedPubKey []byte, netID byte/*net *chaincfg.Params*/) (*AddressPubKey, error) {
+func NewAddressPubKey(serializedPubKey []byte, netID byte /*net *chaincfg.Params*/) (*AddressPubKey, error) {
 	pubKey, err := btcec.ParsePubKey(serializedPubKey, btcec.S256())
 	if err != nil {
 		return nil, err

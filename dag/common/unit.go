@@ -1,4 +1,4 @@
-﻿/*
+/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,8 +37,8 @@ import (
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 func RHashStr(x interface{}) string {
@@ -199,7 +199,7 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 	data := storage.GetPrefix([]byte(key))
 	if len(data) > 1 {
 		log.Error("Get genesis unit", "error", "multiple genesis unit")
-	} else if len(data)<=0 {
+	} else if len(data) <= 0 {
 		return nil
 	}
 	for k, v := range data {
@@ -245,11 +245,13 @@ func GetUnitTransactions(root common.Hash) (modules.Transactions, error) {
 	txs := modules.Transactions{}
 	// get body data: transaction list
 	txHashList, err := storage.GetBody(root)
-	if err!=nil{return nil, err}
+	if err != nil {
+		return nil, err
+	}
 	// get transaction data
 	for _, txHash := range txHashList {
 		tx, err := storage.GetTransaction(txHash)
-		if err!=nil {
+		if err != nil {
 			return nil, err
 		}
 		txs = append(txs, tx)
@@ -269,8 +271,8 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, 
 	tt := reflect.TypeOf(*genesisConf)
 	vv := reflect.ValueOf(*genesisConf)
 
-	for i:=0; i<tt.NumField(); i++ {
-		if strings.Compare(tt.Field(i).Name, "SystemConfig")==0 {
+	for i := 0; i < tt.NumField(); i++ {
+		if strings.Compare(tt.Field(i).Name, "SystemConfig") == 0 {
 			t := reflect.TypeOf(genesisConf.SystemConfig)
 			v := reflect.ValueOf(genesisConf.SystemConfig)
 			for k := 0; k < t.NumField(); k++ {

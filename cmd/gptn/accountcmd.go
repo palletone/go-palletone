@@ -27,15 +27,15 @@ import (
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/wire"
-	"github.com/palletone/go-palletone/common/base58"
+	"github.com/btcsuite/btcutil/base58"
 	//"github.com/btcsuite/btcd/btcec"
 )
 
@@ -456,7 +456,7 @@ func accountDumpKey(ctx *cli.Context) error {
 	account, _ := utils.MakeAddress(ks, addr)
 	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
 	prvKey, _ := ks.DumpKey(account, pwd)
-        res := base58.Encode(prvKey)
+	res := base58.Encode(prvKey)
 	fmt.Printf("Your private key is : {%s}", res)
 	return nil
 }
@@ -512,9 +512,9 @@ func accountSignVerify(ctx *cli.Context) error {
 // 	fmt.Printf("Address: {%x}\n", acct.Address)
 // 	return nil
 // }
-//add by wzhyuan 
+//add by wzhyuan
 func accountCreateTx(ctx *cli.Context) error {
-    if len(ctx.Args()) == 0 {
+	if len(ctx.Args()) == 0 {
 		utils.Fatalf("No accounts specified to update")
 	}
 	if len(ctx.Args()) != 4 {
@@ -522,20 +522,20 @@ func accountCreateTx(ctx *cli.Context) error {
 	}
 	txid := ctx.Args().First()
 	vout := ctx.Args().Get(1)
-        address := ctx.Args().Get(2)
-        amount := ctx.Args().Get(3)
-        num, _ := strconv.ParseFloat(amount, 32)
-        v ,_:= strconv.Atoi(vout)
+	address := ctx.Args().Get(2)
+	amount := ctx.Args().Get(3)
+	num, _ := strconv.ParseFloat(amount, 32)
+	v, _ := strconv.Atoi(vout)
 	txInputs := []btcjson.TransactionInput{
-					{Txid:txid, Vout:uint32(v)},
-				}
+		{Txid: txid, Vout: uint32(v)},
+	}
 	amounts := map[string]float64{address: num}
 	s := strconv.Itoa(10)
-        s64,_ := strconv.ParseInt(s,10,64)
+	s64, _ := strconv.ParseInt(s, 10, 64)
 	arg := btcjson.NewCreateRawTransactionCmd(txInputs, amounts, &s64)
-        var tx string
-	tx,err := ethapi.CreateRawTransaction(arg)
-        if err != nil {
+	var tx string
+	tx, err := ethapi.CreateRawTransaction(arg)
+	if err != nil {
 		utils.Fatalf("Verfiy error:%s", err)
 	}
 	if tx != "" {
@@ -552,15 +552,15 @@ func accountSignTx(ctx *cli.Context) error {
 	}
 	if len(ctx.Args()) != 5 {
 		utils.Fatalf("usage: signtx rawtx txid vout scriptpubkey privkey")
-				}
+	}
 	rawtx := ctx.Args().First()
 	inputtxid := ctx.Args().Get(1)
-    vout := ctx.Args().Get(2)
-    v ,_:= strconv.Atoi(vout)
-    scriptpubkey := ctx.Args().Get(3)
-    inputkey:=ctx.Args().Get(4)
-    txInputs := []btcjson.RawTxInput{
-	    {
+	vout := ctx.Args().Get(2)
+	v, _ := strconv.Atoi(vout)
+	scriptpubkey := ctx.Args().Get(3)
+	inputkey := ctx.Args().Get(4)
+	txInputs := []btcjson.RawTxInput{
+		{
 			Txid:         inputtxid,
 			Vout:         uint32(v),
 			ScriptPubKey: scriptpubkey,
@@ -569,15 +569,15 @@ func accountSignTx(ctx *cli.Context) error {
 	}
 	prikey := []string{inputkey}
 	send_args := btcjson.NewSignRawTransactionCmd(rawtx, &txInputs, &prikey, nil)
-	signtxout,err := ethapi.SignRawTransaction(send_args)
-        if signtxout == nil {
-            utils.Fatalf("Invalid signature")
-        }
-        signtx := signtxout.(*btcjson.SignRawTransactionResult)
-        if err != nil {
+	signtxout, err := ethapi.SignRawTransaction(send_args)
+	if signtxout == nil {
+		utils.Fatalf("Invalid signature")
+	}
+	signtx := signtxout.(*btcjson.SignRawTransactionResult)
+	if err != nil {
 		utils.Fatalf("signtx error:%s", err)
 	}
-	if signtx.Complete== true {
+	if signtx.Complete == true {
 		fmt.Println("Signature success")
 		fmt.Println(signtx.Hex)
 	} else {

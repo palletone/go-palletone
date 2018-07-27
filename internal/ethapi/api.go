@@ -19,14 +19,16 @@ package ethapi
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
 	"strings"
 	"time"
-	"encoding/hex"
 
 	//"github.com/davecgh/go-spew/spew"
+	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -40,16 +42,14 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
+	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
+	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
+	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
+	"github.com/palletone/go-palletone/tokenengine/btcutil"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
-    "github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
-    "github.com/palletone/go-palletone/tokenengine/btcd/txscript"
-    "github.com/palletone/go-palletone/tokenengine/btcd/wire"
-    "github.com/palletone/go-palletone/tokenengine/btcutil"
-    "github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
-    "github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-    "github.com/palletone/go-palletone/common/base58"
-    "github.com/btcsuite/btcd/btcec"
 )
 
 const (
@@ -76,6 +76,7 @@ const (
 	// maxProtocolVersion is the max protocol version the server supports.
 	maxProtocolVersion = 70002
 )
+
 // PublicEthereumAPI provides an API to access PalletOne related information.
 // It offers only methods that operate on public data that is freely available to anyone.
 type PublicEthereumAPI struct {
@@ -644,19 +645,19 @@ func (s *PublicBlockChainAPI) Call(ctx context.Context, args CallArgs, blockNr r
 func (s *PublicBlockChainAPI) EstimateGas(ctx context.Context, args CallArgs) (hexutil.Uint64, error) {
 	// Binary search the gas requirement, as it may be higher than the amount used
 	//var (
-		//lo  uint64 = configure.TxGas - 1
+	//lo  uint64 = configure.TxGas - 1
 	//	hi  uint64
 	//	cap uint64
 	//)
 	//if uint64(args.Gas) >= configure.TxGas {
 	//	hi = uint64(args.Gas)
 	//} else {
-		// Retrieve the current pending block to act as the gas ceiling
-		//		block, err := s.b.BlockByNumber(ctx, rpc.PendingBlockNumber)
-		//		if err != nil {
-		//			return 0, err
-		//		}
-		//		hi = block.GasLimit()
+	// Retrieve the current pending block to act as the gas ceiling
+	//		block, err := s.b.BlockByNumber(ctx, rpc.PendingBlockNumber)
+	//		if err != nil {
+	//			return 0, err
+	//		}
+	//		hi = block.GasLimit()
 	//}
 	//cap = hi
 
@@ -1174,7 +1175,7 @@ func internalRPCError(errStr, context string) *btcjson.RPCError {
 	if context != "" {
 		logStr = context + ": " + errStr
 	}
-        fmt.Println(logStr)
+	fmt.Println(logStr)
 	//rpcsLog.Error(logStr)
 	return btcjson.NewRPCError(btcjson.ErrRPCInternal.Code, errStr)
 }
@@ -1186,8 +1187,9 @@ func messageToHex(msg wire.Message) (string, error) {
 	}
 	return hex.EncodeToString(buf.Bytes()), nil
 }
-//create raw transction 
-func CreateRawTransaction(/*s *rpcServer*/ cmd interface{}) (string, error) {
+
+//create raw transction
+func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	c := cmd.(*btcjson.CreateRawTransactionCmd)
 	// Validate the locktime, if given.
 	if c.LockTime != nil &&
@@ -1214,7 +1216,7 @@ func CreateRawTransaction(/*s *rpcServer*/ cmd interface{}) (string, error) {
 	}
 	// Add all transaction outputs to the transaction after performing
 	// some validity checks.
-	//only support mainnet 
+	//only support mainnet
 	var params byte = 1
 	for encodedAddr, amount := range c.Amounts {
 		// Ensure amount is in the valid range for monetary amounts.
@@ -1245,13 +1247,13 @@ func CreateRawTransaction(/*s *rpcServer*/ cmd interface{}) (string, error) {
 			}
 		}
 		/*
-		if !addr.IsForNet(params) {
-			return nil, &btcjson.RPCError{
-				Code: btcjson.ErrRPCInvalidAddressOrKey,
-				Message: "Invalid address: " + encodedAddr +
-					" is for the wrong network",
-			}
-		}*/
+			if !addr.IsForNet(params) {
+				return nil, &btcjson.RPCError{
+					Code: btcjson.ErrRPCInvalidAddressOrKey,
+					Message: "Invalid address: " + encodedAddr +
+						" is for the wrong network",
+				}
+			}*/
 		// Create a new script which pays to the provided address.
 		pkScript, err := txscript.PayToAddrScript(addr)
 		if err != nil {
@@ -1294,16 +1296,19 @@ func decodeHexStr(hexStr string) ([]byte, error) {
 	}
 	return decoded, nil
 }
+
 type Params struct {
 	*chaincfg.Params
 	RPCClientPort string
 	RPCServerPort string
 }
+
 var MainNetParams = Params{
 	Params:        &chaincfg.MainNetParams,
 	RPCClientPort: "8334",
 	RPCServerPort: "8332",
 }
+
 // TestNet3Params contains parameters specific running btcwallet and
 // btcd on the test network (version 3) (wire.TestNet3).
 var TestNet3Params = Params{
@@ -1311,11 +1316,13 @@ var TestNet3Params = Params{
 	RPCClientPort: "18334",
 	RPCServerPort: "18332",
 }
+
 type response struct {
 	result []byte
 	err    error
-	}
+}
 type FutureGetTxOutResult chan *response
+
 /*
 func GetTxOutAsync(txHash *chainhash.Hash, index uint32, mempool bool) FutureGetTxOutResult {
 	hash := ""
@@ -1330,6 +1337,7 @@ type SignatureError struct {
 	Error      error
 }
 type SigHashType uint32
+
 const (
 	SigHashOld          SigHashType = 0x0
 	SigHashAll          SigHashType = 0x1
@@ -1340,6 +1348,7 @@ const (
 	// to identify which outputs are signed.
 	sigHashMask = 0x1f
 )
+
 type (
 	// DeserializationError describes a failed deserializaion due to bad
 	// user input.  It corresponds to btcjson.ErrRPCDeserialization.
@@ -1357,11 +1366,12 @@ type (
 		error
 	}
 )
-//sign rawtranscation 
+
+//sign rawtranscation
 func SignRawTransaction(icmd interface{}) (interface{}, error) {
-     cmd := icmd.(*btcjson.SignRawTransactionCmd)
-     serializedTx, err := decodeHexStr(cmd.RawTx)
-	 if err != nil {
+	cmd := icmd.(*btcjson.SignRawTransactionCmd)
+	serializedTx, err := decodeHexStr(cmd.RawTx)
+	if err != nil {
 		return nil, err
 	}
 	var tx wire.MsgTx
@@ -1370,13 +1380,13 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		e := errors.New("TX decode failed")
 		return nil, DeserializationError{e}
 	}
-        var redeemTx wire.MsgTx
-        err = redeemTx.Deserialize(bytes.NewBuffer(serializedTx))
+	var redeemTx wire.MsgTx
+	err = redeemTx.Deserialize(bytes.NewBuffer(serializedTx))
 	if err != nil {
-	    return nil,err
+		return nil, err
 	}
 	//var hashType txscript.SigHashType
-        //hashType = txscript.SigHashAll
+	//hashType = txscript.SigHashAll
 	// TODO: really we probably should look these up with btcd anyway to
 	// make sure that they match the blockchain if present.
 	//inputs := make(map[wire.OutPoint][]byte)
@@ -1385,39 +1395,39 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	if cmd.Inputs != nil {
 		cmdInputs = *cmd.Inputs
 	}
-	//temp only support one script 
-    var script []byte
-    for _, rti := range cmdInputs {
+	//temp only support one script
+	var script []byte
+	for _, rti := range cmdInputs {
 		script, err = decodeHexStr(rti.ScriptPubKey)
 		if err != nil {
 			return nil, err
 		}
-      }
-	//temp only support one key 
-      var keys  string
-      for _, key := range *cmd.PrivKeys {
-			_, err := btcutil.DecodeWIF(key)
-			if err != nil {
-                                fmt.Println("Err:privkey is invalid.")
-				return nil, err
-			}
-                        keys=key
-      }
-      u8b5 := base58.Decode(keys)
-        //bt, _ := hex.DecodeString(test)
-      // send last 32 Byte to get privkey
-      testKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), u8b5[1:33])
-      lookupKey := func(a btcutil.Address) (*btcec.PrivateKey, bool, error) {
+	}
+	//temp only support one key
+	var keys string
+	for _, key := range *cmd.PrivKeys {
+		_, err := btcutil.DecodeWIF(key)
+		if err != nil {
+			fmt.Println("Err:privkey is invalid.")
+			return nil, err
+		}
+		keys = key
+	}
+	u8b5 := base58.Decode(keys)
+	//bt, _ := hex.DecodeString(test)
+	// send last 32 Byte to get privkey
+	testKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), u8b5[1:33])
+	lookupKey := func(a btcutil.Address) (*btcec.PrivateKey, bool, error) {
 		//
 		return testKey, true, nil
 	}
-       sigScript, err := txscript.SignTxOutput(&chaincfg.MainNetParams,
+	sigScript, err := txscript.SignTxOutput(&chaincfg.MainNetParams,
 		&redeemTx, 0, script, txscript.SigHashAll,
 		txscript.KeyClosure(lookupKey), nil, nil)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
-        redeemTx.TxIn[0].SignatureScript = sigScript
+	redeemTx.TxIn[0].SignatureScript = sigScript
 	var buf bytes.Buffer
 	buf.Grow(tx.SerializeSize())
 	// All returned errors (not OOM, which panics) encounted during
