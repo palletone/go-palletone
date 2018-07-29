@@ -212,6 +212,8 @@ func makeDecoder(typ reflect.Type, tags tags) (dec decoder, err error) {
 		return decodefloat64, nil
 	case kind == reflect.Map:
 		return makeMapDecoder(typ)
+	case isInt(kind):
+		return decodeInt, nil
 	default:
 		return nil, fmt.Errorf("rlp decoder: type %v is not RLP-serializable", typ)
 	}
@@ -233,6 +235,16 @@ func decodeUint(s *Stream, val reflect.Value) error {
 		return wrapStreamError(err, val.Type())
 	}
 	val.SetUint(num)
+	return nil
+}
+
+func decodeInt(s *Stream, val reflect.Value) error {
+	typ := val.Type()
+	num, err := s.int(typ.Bits())
+	if err != nil {
+		return wrapStreamError(err, val.Type())
+	}
+	val.SetInt(num)
 	return nil
 }
 
@@ -507,7 +519,7 @@ func makeOptionalPtrDecoder(typ reflect.Type) (decoder, error) {
 	return dec, nil
 }
 
-func makeMapDecoder(typ reflect.Type) (decoder, error)  {
+func makeMapDecoder(typ reflect.Type) (decoder, error) {
 	fields, err := mapFields(typ)
 	if err != nil {
 		return nil, err
@@ -529,7 +541,7 @@ func makeMapDecoder(typ reflect.Type) (decoder, error)  {
 				return wrapStreamError(s.ListEnd(), typ)
 				return &decodeError{msg: "too few elements", typ: typ}
 			} else if err != nil {
-				return addErrorContext(err, "."+ val.Type().Key().String())
+				return addErrorContext(err, "."+val.Type().Key().String())
 			}
 			// get value
 			kind, size, _ := s.Kind()
@@ -537,7 +549,7 @@ func makeMapDecoder(typ reflect.Type) (decoder, error)  {
 			if err == EOL {
 				return &decodeError{msg: "too few elements", typ: typ}
 			} else if err != nil {
-				return addErrorContext(err, "."+ val.Type().Elem().String())
+				return addErrorContext(err, "."+val.Type().Elem().String())
 			}
 
 			// value should be set its prefix
@@ -550,9 +562,9 @@ func makeMapDecoder(typ reflect.Type) (decoder, error)  {
 			case Byte:
 			case List:
 				vBytes := []byte{}
-				for i:=0; i<vv.Elem().Len(); i++ {
+				for i := 0; i < vv.Elem().Len(); i++ {
 					b := vv.Elem().Index(i)
-					if b.Elem().Len()>1 {
+					if b.Elem().Len() > 1 {
 						prefix := getStringPrefix(uint64(b.Elem().Len()))
 						vBytes = append(vBytes, prefix...)
 					}
@@ -577,7 +589,7 @@ func makeMapDecoder(typ reflect.Type) (decoder, error)  {
 func getListPrefix(size uint64) []byte {
 	vBytes := []byte{} // at least two bytes
 	if size < 56 {
-		vBytes = append(vBytes,0xC0+byte(size))
+		vBytes = append(vBytes, 0xC0+byte(size))
 	} else {
 		// TODO: encode to w.str directly
 		vBytes = append(vBytes, '0')
@@ -591,7 +603,7 @@ func getListPrefix(size uint64) []byte {
 func getStringPrefix(size uint64) []byte {
 	vBytes := []byte{} // at least two bytes
 	if size < 56 {
-		vBytes = append(vBytes,0x80+byte(size))
+		vBytes = append(vBytes, 0x80+byte(size))
 	} else {
 		// TODO: encode to w.str directly
 		vBytes = append(vBytes, '0')
@@ -688,6 +700,7 @@ var (
 	errNotInList    = errors.New("rlp: call of ListEnd outside of any list")
 	errNotAtEOL     = errors.New("rlp: call of ListEnd not positioned at EOL")
 	errUintOverflow = errors.New("rlp: uint overflow")
+	errIntOverflow  = errors.New("rlp: int overflow")
 )
 
 // ByteReader must be implemented by any input reader for a Stream. It
@@ -852,6 +865,49 @@ func (s *Stream) uint(maxbits int) (uint64, error) {
 	}
 }
 
+func (s *Stream) int(maxbits int) (int64, error) {
+	kind, size, err := s.Kind()
+	if err != nil {
+		return 0, err
+	}
+	switch kind {
+	case Byte:
+		if s.byteval == 0 {
+			return 0, ErrCanonInt
+		}
+		s.kind = -1 // rearm Kind
+		return int64(s.byteval), nil
+	case String:
+		if size > uint64(maxbits/8) {
+			return 0, errIntOverflow
+		}
+		// readUint can also use to decode integer
+		v, err := s.readUint(byte(size))
+		switch {
+		case err == ErrCanonSize:
+			// Adjust error because we're not reading a size right now.
+			return 0, ErrCanonInt
+		case err != nil:
+			return 0, err
+		case size > 0 && v < 128:
+			return 0, ErrCanonSize
+		default:
+			switch size {
+			case 1:
+				return int64(int8(v)), nil
+			case 2:
+				return int64(int16(v)), nil
+			case 3, 4:
+				return int64(int32(v)), nil
+			default:
+				return int64(v), nil
+			}
+		}
+	default:
+		return 0, ErrExpectedString
+	}
+}
+
 // Bool reads an RLP string of up to 1 byte and returns its contents
 // as a boolean. If the input does not contain an RLP string, the
 // returned error will be ErrExpectedString.
@@ -1005,6 +1061,7 @@ func (s *Stream) Kind() (kind Kind, size uint64, err error) {
 				if s.limited && s.size > s.remaining {
 					s.kinderr = ErrValueTooLarge
 				}
+
 			} else {
 				// Inside a list, check that the value doesn't overflow the list.
 				if s.size > tos.size-tos.pos {
