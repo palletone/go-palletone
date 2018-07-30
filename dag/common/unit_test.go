@@ -64,11 +64,9 @@ func TestRlpDecode(t *testing.T) {
 }
 
 func TestCreateUnit(t *testing.T) {
-	// modify by Albert·Gou
-	//addr := common.Address{} // minner addr
-	//addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
-	//units, err := CreateUnit(&addr)
-	units, err := CreateUnit()
+	addr := common.Address{} // minner addr
+	addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
+	units, err := CreateUnit(&addr, time.Now())
 	if err != nil {
 		log.Println("create unit error:", err)
 	} else {

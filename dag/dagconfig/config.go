@@ -28,8 +28,10 @@ var DefaultConfig = Config{
 	DbName: "palletone",
 
 	// txpool
-
 	UnitTxSize: 1024 * 1024,
+
+	// utxo
+	UtxoIndex: true,
 }
 
 // global configuration of dag modules
@@ -50,6 +52,9 @@ type Config struct {
 
 	// txpool
 	UnitTxSize float64
+
+	// utxo
+	UtxoIndex bool
 }
 
 type Sconfig struct {
