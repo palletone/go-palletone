@@ -33,6 +33,7 @@ import (
 	//"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -94,13 +95,14 @@ type ProtocolManager struct {
 
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
-	wg sync.WaitGroup
+	wg      sync.WaitGroup
+	levelDb *palletdb.LDBDatabase
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager(mode downloader.SyncMode, networkId uint64,
-	txpool txPool, engine core.ConsensusEngine, dag *modules.Dag, mux *event.TypeMux) (*ProtocolManager, error) {
+func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool,
+	engine core.ConsensusEngine, dag *modules.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -113,6 +115,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64,
 		noMorePeers: make(chan struct{}),
 		txsyncCh:    make(chan *txsync),
 		quitSync:    make(chan struct{}),
+		levelDb:     levelDb,
 	}
 
 	// Figure out whether to allow fast sync or not
@@ -163,7 +166,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64,
 		return nil, errIncompatibleConfig
 	}
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, dag)
+	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, dag, manager.levelDb)
 	manager.fetcher = fetcher.New(manager.removePeer)
 	return manager, nil
 }
@@ -704,11 +707,11 @@ func (self *ProtocolManager) txBroadcastLoop() {
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network    uint64                 `json:"network"`    // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
-	Difficulty *big.Int               `json:"difficulty"` // Total difficulty of the host's blockchain
-	Genesis    common.Hash            `json:"genesis"`    // SHA3 hash of the host's genesis block
+	Network    uint64      `json:"network"`    // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
+	Difficulty *big.Int    `json:"difficulty"` // Total difficulty of the host's blockchain
+	Genesis    common.Hash `json:"genesis"`    // SHA3 hash of the host's genesis block
 	//Config     *configure.ChainConfig `json:"config"`     // Chain configuration for the fork rules
-	Head       common.Hash            `json:"head"`       // SHA3 hash of the host's best owned block
+	Head common.Hash `json:"head"` // SHA3 hash of the host's best owned block
 }
 
 // NodeInfo retrieves some protocol metadata about the running host node.

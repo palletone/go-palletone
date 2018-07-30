@@ -90,7 +90,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error)
 	header := modules.Header{
 		AssetIDs:     []modules.IDType16{gAssetID},
 		Number:       chainIndex,
-		Root:         root,
+		TxRoot:       root,
 		Creationdate: time,
 	}
 
@@ -205,10 +205,10 @@ func CreateUnit(/*mAddr *common.Address, time time.Time*/) ([]modules.Unit, erro
 
 	// generate genesis unit header
 	header := modules.Header{
-		AssetIDs:     []modules.IDType16{assetID},
-		Number:       chainIndex,
-		Root:         root,
-//		Creationdate: time.Unix(),
+		AssetIDs: []modules.IDType16{assetID},
+		Number:   chainIndex,
+		TxRoot:   root,
+		//		Creationdate: time.Now().Unix(),
 	}
 
 	unit := modules.Unit{}
@@ -274,7 +274,7 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 			return nil
 		}
 		// get transaction list
-		txs, err := GetUnitTransactions(uHeader.Root)
+		txs, err := GetUnitTransactions(uHeader.TxRoot)
 		if err != nil {
 			log.Error("Get genesis unit transactions", "error", err.Error())
 			return nil
@@ -398,7 +398,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	}
 
 	// save unit body, the value only save txs' hash set, and the key is merkle root
-	if err = storage.SaveBody(unit.UnitHeader.Root, txHashSet); err != nil {
+	if err = storage.SaveBody(unit.UnitHeader.TxRoot, txHashSet); err != nil {
 		return err
 	}
 
