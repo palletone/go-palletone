@@ -86,7 +86,7 @@ func signAndCheck(msg string, tx *wire.MsgTx, idx int, inputAmt int64, pkScript 
 
 func TestSignTxOutput(t *testing.T) {
 	t.Parallel()
-
+        var netID byte
 	// make key
 	// make script based on key.
 	// sign with magic pixie dust.
@@ -352,7 +352,8 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := btcutil.NewAddressPubKey(pk,
-				&chaincfg.TestNet3Params)
+				//&chaincfg.TestNet3Params)
+                                netID)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -391,7 +392,8 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := btcutil.NewAddressPubKey(pk,
-				&chaincfg.TestNet3Params)
+				//&chaincfg.TestNet3Params)
+                                netID)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -452,7 +454,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := btcutil.NewAddressPubKey(pk,
-				&chaincfg.TestNet3Params)
+				netID)//&chaincfg.TestNet3Params)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -491,7 +493,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := btcutil.NewAddressPubKey(pk,
-				&chaincfg.TestNet3Params)
+				netID)//&chaincfg.TestNet3Params)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -832,7 +834,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := btcutil.NewAddressPubKey(pk,
-				&chaincfg.TestNet3Params)
+				netID)//&chaincfg.TestNet3Params)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -889,7 +891,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := btcutil.NewAddressPubKey(pk,
-				&chaincfg.TestNet3Params)
+				netID)//&chaincfg.TestNet3Params)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -970,7 +972,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := btcutil.NewAddressPubKey(pk,
-				&chaincfg.TestNet3Params)
+				netID)//&chaincfg.TestNet3Params)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -1026,7 +1028,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := btcutil.NewAddressPubKey(pk,
-				&chaincfg.TestNet3Params)
+				netID)//&chaincfg.TestNet3Params)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -1107,7 +1109,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk1 := (*btcec.PublicKey)(&key1.PublicKey).
 				SerializeCompressed()
 			address1, err := btcutil.NewAddressPubKey(pk1,
-				&chaincfg.TestNet3Params)
+				netID)//&chaincfg.TestNet3Params)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -1124,7 +1126,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk2 := (*btcec.PublicKey)(&key2.PublicKey).
 				SerializeCompressed()
 			address2, err := btcutil.NewAddressPubKey(pk2,
-				&chaincfg.TestNet3Params)
+				netID)//&chaincfg.TestNet3Params)
 			if err != nil {
 				t.Errorf("failed to make address 2 for %s: %v",
 					msg, err)
@@ -1183,7 +1185,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk1 := (*btcec.PublicKey)(&key1.PublicKey).
 				SerializeCompressed()
 			address1, err := btcutil.NewAddressPubKey(pk1,
-				&chaincfg.TestNet3Params)
+				netID)//&chaincfg.TestNet3Params)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -1200,7 +1202,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk2 := (*btcec.PublicKey)(&key2.PublicKey).
 				SerializeCompressed()
 			address2, err := btcutil.NewAddressPubKey(pk2,
-				&chaincfg.TestNet3Params)
+				netID)//&chaincfg.TestNet3Params)
 			if err != nil {
 				t.Errorf("failed to make address 2 for %s: %v",
 					msg, err)
@@ -1289,7 +1291,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk1 := (*btcec.PublicKey)(&key1.PublicKey).
 				SerializeCompressed()
 			address1, err := btcutil.NewAddressPubKey(pk1,
-				&chaincfg.TestNet3Params)
+				netID)//&chaincfg.TestNet3Params)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -1306,7 +1308,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk2 := (*btcec.PublicKey)(&key2.PublicKey).
 				SerializeCompressed()
 			address2, err := btcutil.NewAddressPubKey(pk2,
-				&chaincfg.TestNet3Params)
+				netID)//&chaincfg.TestNet3Params)
 			if err != nil {
 				t.Errorf("failed to make address 2 for %s: %v",
 					msg, err)
