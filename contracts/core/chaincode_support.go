@@ -609,7 +609,6 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	// The line below is left for debugging. It replaces the line above to keep
 	// the chaincode container around to give you a chance to get data
 	sir := container.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: cccid.ChainID, Version: cccid.Version}, Timeout: 0, Dontremove: true}
-
 	vmtype, _ := chaincodeSupport.getVMType(cds)
 
 	_, err := container.VMCProcess(context, vmtype, sir)
@@ -626,7 +625,6 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	}
 
 	delete(chaincodeSupport.runningChaincodes.chaincodeMap, canName)
-
 	chaincodeSupport.runningChaincodes.Unlock()
 
 	return err

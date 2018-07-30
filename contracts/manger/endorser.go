@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/contracts/rwset"
 	"github.com/palletone/go-palletone/contracts/core"
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	//ut "github.com/palletone/go-palletone/dag/modules"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -202,9 +201,9 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *pb.ContractInvokePayload, error) {
 	var txsim rwset.TxSimulator
 
-	addr := util.ExtractRemoteAddress(ctx)
-	logger.Debug("Entering: Got request from", addr)
-	defer logger.Debugf("Exit: request from", addr)
+	//addr := util.ExtractRemoteAddress(ctx)
+	//logger.Debug("Entering: Got request from", addr)
+	//defer logger.Debugf("Exit: request from", addr)
 
 	//0 -- check and validate
 	result, err := e.validateProcess(signedProp)
