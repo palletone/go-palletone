@@ -18,7 +18,6 @@
  */
 
 package core
-
 import (
 	"fmt"
 
@@ -28,10 +27,11 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	"time"
 )
 
 //Execute - execute proposal, return original response of chaincode
-func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}) (*pb.Response, *pb.ChaincodeEvent, error) {
+func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
 	var err error
 	var cds *pb.ChaincodeDeploymentSpec
 	var ci *pb.ChaincodeInvocationSpec
@@ -52,16 +52,15 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 	}
 
 	cMsg.Decorations = cccid.ProposalDecorations
-
 	chaincodeLogger.Infof("++++++++++++++++++++++++txid[%s]", cccid.TxID)
-
 	var ccMsg *pb.ChaincodeMessage
 	ccMsg, err = createCCMessage(cctyp, cccid.ChainID, cccid.TxID, cMsg)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "failed to create chaincode message")
 	}
 
-	resp, err := theChaincodeSupport.Execute(ctxt, cccid, ccMsg, theChaincodeSupport.executetimeout)
+
+	resp, err := theChaincodeSupport.Execute(ctxt, cccid, ccMsg, timeout)//theChaincodeSupport.executetimeout
 	if err != nil {
 		// Rollback transaction
 		return nil, nil, errors.WithMessage(err, "failed to execute transaction")
@@ -95,8 +94,8 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 
 // ExecuteWithErrorFilter is similar to Execute, but filters error contained in chaincode response and returns Payload of response only.
 // Mostly used by unit-test.
-func ExecuteWithErrorFilter(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}) ([]byte, *pb.ChaincodeEvent, error) {
-	res, event, err := Execute(ctxt, cccid, spec)
+func ExecuteWithErrorFilter(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}, timeout time.Duration) ([]byte, *pb.ChaincodeEvent, error) {
+	res, event, err := Execute(ctxt, cccid, spec, timeout)
 	if err != nil {
 		chaincodeLogger.Errorf("ExecuteWithErrorFilter %s error: %+v", cccid.Name, err)
 		return nil, nil, err

@@ -25,6 +25,7 @@ import (
 
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"time"
 )
 
 // ccProviderFactory implements the ccprovider.ChaincodeProviderFactory
@@ -79,18 +80,18 @@ func (c *ccProviderImpl) GetCCContext(cid, name, version, txid string, syscc boo
 }
 
 // ExecuteChaincode executes the chaincode specified in the context with the specified arguments
-func (c *ccProviderImpl) ExecuteChaincode(ctxt context.Context, cccid interface{}, args [][]byte) (*pb.Response, *pb.ChaincodeEvent, error) {
-	return ExecuteChaincode(ctxt, cccid.(*ccProviderContextImpl).ctx, args)
+func (c *ccProviderImpl) ExecuteChaincode(ctxt context.Context, cccid interface{}, args [][]byte, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+	return ExecuteChaincode(ctxt, cccid.(*ccProviderContextImpl).ctx, args, timeout)
 }
 
 // Execute executes the chaincode given context and spec (invocation or deploy)
-func (c *ccProviderImpl) Execute(ctxt context.Context, cccid interface{}, spec interface{}) (*pb.Response, *pb.ChaincodeEvent, error) {
-	return Execute(ctxt, cccid.(*ccProviderContextImpl).ctx, spec)
+func (c *ccProviderImpl) Execute(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+	return Execute(ctxt, cccid.(*ccProviderContextImpl).ctx, spec, timeout)
 }
 
 // ExecuteWithErrorFilter executes the chaincode given context and spec and returns payload
-func (c *ccProviderImpl) ExecuteWithErrorFilter(ctxt context.Context, cccid interface{}, spec interface{}) ([]byte, *pb.ChaincodeEvent, error) {
-	return ExecuteWithErrorFilter(ctxt, cccid.(*ccProviderContextImpl).ctx, spec)
+func (c *ccProviderImpl) ExecuteWithErrorFilter(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) ([]byte, *pb.ChaincodeEvent, error) {
+	return ExecuteWithErrorFilter(ctxt, cccid.(*ccProviderContextImpl).ctx, spec, timeout)
 }
 
 // Stop stops the chaincode given context and spec

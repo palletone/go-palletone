@@ -136,7 +136,7 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 	version := util.GetSysCCVersion()
 	cccid := ccprov.GetCCContext(chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, version, txid, true, nil, nil)
 
-	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec)
+	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec,0)
 
 	if err != nil {
 		sysccLogger.Errorf("ExecuteWithErrorFilter with syscc.Name[%s] chainId[%s] err !!", syscc.Name, chainID)
@@ -150,22 +150,17 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 func DeDeploySysCC(chainID string, syscc *SystemChaincode) error {
 	chaincodeID := &pb.ChaincodeID{Path: syscc.Path, Name: syscc.Name}
 	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: syscc.InitArgs}}
-
 	ctx := context.Background()
 	// First build and get the deployment spec
 	chaincodeDeploymentSpec, err := buildSysCC(ctx, spec)
-
 	if err != nil {
 		sysccLogger.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
 		return err
 	}
 
 	ccprov := ccprovider.GetChaincodeProvider()
-
 	version := util.GetSysCCVersion()
-
 	cccid := ccprov.GetCCContext(chainID, syscc.Name, version, "", true, nil, nil)
-
 	err = ccprov.Stop(ctx, cccid, chaincodeDeploymentSpec)
 
 	return err
