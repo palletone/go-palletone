@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"fmt"
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -17,10 +16,10 @@ func TestNewGenesisUnit(t *testing.T) {
 
 	log.Println("Genesis unit struct:")
 	log.Println("--- Genesis unit header --- ")
-	log.Println("parent units:", gUnit.UnitHeader.ParentUnits)
+	log.Println("parent units:", gUnit.UnitHeader.ParentsHash)
 	log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
 	log.Println("witness:", gUnit.UnitHeader.Witness)
-	log.Println("Root:", gUnit.UnitHeader.Root)
+	log.Println("Root:", gUnit.UnitHeader.TxRoot)
 	log.Println("Number:", gUnit.UnitHeader.Number)
 
 }
@@ -64,9 +63,10 @@ func TestRlpDecode(t *testing.T) {
 }
 
 func TestCreateUnit(t *testing.T) {
-	addr := common.Address{} // minner addr
-	addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
-	units, err := CreateUnit(&addr, time.Now())
+	//addr := common.Address{} // minner addr
+	//addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
+	//units, err := CreateUnit(&addr, time.Now())
+	units, err := CreateUnit()
 	if err != nil {
 		log.Println("create unit error:", err)
 	} else {
