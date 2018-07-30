@@ -29,14 +29,14 @@ import (
 )
 
 func NewDag() *modules.Dag {
-	genesis, _ := NewGenesisUnit(nil)
+//	genesis, _ := NewGenesisUnit(nil) // comment by Albert·Gou
 	db, _ := palletdb.NewMemDatabase()
 	mutex := new(sync.RWMutex)
 	return &modules.Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
 		Db:            storage.Dbconn,
 		Mdb:           db,
-		GenesisUnit:   genesis,
+//		GenesisUnit:   genesis,	// comment by Albert·Gou
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
 		GlobalProp:    storage.RetrieveGlobalProp(),

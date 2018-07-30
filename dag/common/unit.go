@@ -75,7 +75,7 @@ func GetUnit(hash *common.Hash, index modules.ChainIndex) *modules.Unit {
 生成创世单元，需要传入创世单元的配置信息以及coinbase交易
 generate genesis unit, need genesis unit configure fields and transactions list
 */
-func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
+func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error) {
 	gUnit := modules.Unit{}
 
 	// genesis unit asset id
@@ -92,7 +92,7 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 		AssetIDs:     []modules.IDType16{gAssetID},
 		Number:       chainIndex,
 		TxRoot:       root,
-		Creationdate: time.Now().UTC(),
+		Creationdate: time,
 	}
 
 	gUnit.UnitHeader = &header
@@ -132,7 +132,7 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
+func CreateUnit(mAddr *common.Address, time time.Time) ([]modules.Unit, error) {
 	units := []modules.Unit{}
 	// get mediator responsible for asset id
 	assetID := modules.IDType16{}
@@ -156,10 +156,11 @@ func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
 
 	// generate genesis unit header
 	header := modules.Header{
-		AssetIDs:     []modules.IDType16{assetID},
-		Number:       chainIndex,
-		TxRoot:       root,
-		Creationdate: time.Now().UTC(),
+		AssetIDs: []modules.IDType16{assetID},
+		Number:   chainIndex,
+		TxRoot:   root,
+		//		Creationdate: time.Now().UTC(),
+		Creationdate: time.Unix(),
 	}
 
 	unit := modules.Unit{}
@@ -268,15 +269,20 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, 
 	var confPay modules.ConfigPayload
 
 	confPay.ConfigSet = make(map[string]interface{})
-	confPay.ConfigSet["Version"] = genesisConf.Version
-	confPay.ConfigSet["InitialActiveMediators"] = genesisConf.InitialActiveMediators
-	confPay.ConfigSet["InitialMediatorCandidates"] = genesisConf.InitialMediatorCandidates
-	confPay.ConfigSet["ChainID"] = genesisConf.ChainID
 
-	t := reflect.TypeOf(genesisConf.SystemConfig)
-	v := reflect.ValueOf(genesisConf.SystemConfig)
-	for k := 0; k < t.NumField(); k++ {
-		confPay.ConfigSet[t.Field(k).Name] = v.Field(k).Interface()
+	tt := reflect.TypeOf(*genesisConf)
+	vv := reflect.ValueOf(*genesisConf)
+
+	for i := 0; i < tt.NumField(); i++ {
+		if strings.Compare(tt.Field(i).Name, "SystemConfig") == 0 {
+			t := reflect.TypeOf(genesisConf.SystemConfig)
+			v := reflect.ValueOf(genesisConf.SystemConfig)
+			for k := 0; k < t.NumField(); k++ {
+				confPay.ConfigSet[t.Field(k).Name] = v.Field(k).Interface()
+			}
+		} else {
+			confPay.ConfigSet[tt.Field(i).Name] = vv.Field(i).Interface()
+		}
 	}
 
 	return confPay, nil

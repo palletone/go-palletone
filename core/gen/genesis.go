@@ -112,7 +112,7 @@ func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Un
 		log.Info(msg)
 	}
 	//return modules.NewGenesisUnit(genesis, txs)
-	return dagCommon.NewGenesisUnit(txs)
+	return dagCommon.NewGenesisUnit(txs, genesis.InitialTimestamp)
 }
 
 func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.Transactions {

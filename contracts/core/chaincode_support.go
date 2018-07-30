@@ -806,8 +806,13 @@ func createCCMessage(typ pb.ChaincodeMessage_Type, cid string, txid string, cMsg
 
 // Execute executes a transaction and waits for it to complete until a timeout value.
 func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *ccprovider.CCContext, msg *pb.ChaincodeMessage, timeout time.Duration) (*pb.ChaincodeMessage, error) {
-	chaincodeLogger.Debugf("Entry")
+	chaincodeLogger.Debugf("Entry, chainId[%s], txid[%s]", msg.ChannelId, msg.Txid)
 	defer chaincodeLogger.Debugf("Exit")
+	setTimeout := 5*time.Second //default chaincode exectute timeout
+	if timeout > 0 {
+		setTimeout = timeout
+	}
+
 	canName := cccid.GetCanonicalName()
 	chaincodeLogger.Debugf("chaincode canonical name: %s", canName)
 	chaincodeSupport.runningChaincodes.Lock()
@@ -830,7 +835,9 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 	case ccresp = <-notfy:
 		//response is sent to user or calling chaincode. ChaincodeMessage_ERROR
 		//are typically treated as error
-	case <-time.After(timeout):
+		chaincodeLogger.Errorf("{{{{{{{{{{{{{{{{{{{{{{{{{{{{{ time out [%d]", setTimeout)
+	case <-time.After(setTimeout):
+		chaincodeLogger.Errorf("<<<<<<<<<<<<<<<<<<<<<<<<<<<time out [%d]", setTimeout)
 		err = errors.New("timeout expired while executing transaction")
 	}
 

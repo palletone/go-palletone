@@ -22,11 +22,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
+	"github.com/palletone/go-palletone/ptn"
 )
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {
@@ -47,17 +49,14 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 		// 2. 开启循环生产计划
 		log.Info(fmt.Sprintf("Launching verified unit production for %d mediators.", len(mp.mediators)))
 
-		//if mp.ProductionEnabled {
-		//	if mp.DB.DynGlobalProp.LastVerifiedUnitNum == 0 {
-		//		println()
-		//		println("*   ------- NEW CHAIN -------   *")
-		//		println("*   - Welcome to PalletOne! -   *")
-		//		println("*   -------------------------   *")
-		//		println()
-		//	}
-		//}
-		//
-		// go mp.ScheduleProductionLoop()
+		if mp.productionEnabled {
+			dag := mp.ptn.Dag()
+			if dag.DynGlobalProp.LastVerifiedUnitNum == 0 {
+				newChainBanner(dag)
+			}
+		}
+
+		go mp.ScheduleProductionLoop()
 	}
 
 	log.Info("mediator plugin startup end")
@@ -99,8 +98,13 @@ func Initialize(node *node.Node, cfg *Config) (*MediatorPlugin, error) {
 		msm[addr] = passphrase
 	}
 
+	var ptn *ptn.PalletOne
+	if err := node.Service(&ptn); err != nil {
+		utils.Fatalf("PalletOne service not running: %v", err)
+	}
+
 	mp := MediatorPlugin{
-		node:              node,
+		ptn:               ptn,
 		productionEnabled: cfg.EnableStaleProduction,
 		mediators:         msm,
 	}

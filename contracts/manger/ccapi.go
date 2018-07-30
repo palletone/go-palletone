@@ -66,7 +66,7 @@ func Invoke(chainID string, ccName string,  args [][]byte, timeout time.Duration
 	creator := []byte("palletone")  //default
 	ccVersion := "ptn001"  //default
 
-	logger.Info("===== Invoke [%s][%s]======", chainID, ccName)
+	logger.Infof("===== Invoke [%s][%s]======", chainID, ccName)
 	es := NewEndorserServer(mksupt)
 	spec := &pb.ChaincodeSpec{
 		ChaincodeId: &pb.ChaincodeID{Name: ccName},
@@ -91,7 +91,7 @@ func Invoke(chainID string, ccName string,  args [][]byte, timeout time.Duration
 		}
 		time.AfterFunc(timeout, timeoutProcess)
 	}
-	rsp, unit, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid)
+	rsp, unit, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid, timeout)
 	if err != nil {
 		logger.Errorf("ProcessProposal error[%v]", err)
 		return nil, err

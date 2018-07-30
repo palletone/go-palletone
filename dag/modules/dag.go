@@ -33,7 +33,7 @@ type Dag struct {
 
 	Mdb           *palletdb.MemDatabase
 	ChainHeadFeed *event.Feed
-	GenesisUnit   *Unit
+//	GenesisUnit   *Unit	// comment by Albert·Gou
 
 	Mutex sync.RWMutex
 
