@@ -22,9 +22,9 @@ package modules
 import (
 	"time"
 
-	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core"
 )
 
 // 全局属性的结构体定义
@@ -59,21 +59,21 @@ type DynamicGlobalProperty struct {
 	//	RecentSlotsFilled float32
 }
 
-func NewGlobalProp() (*GlobalProperty) {
+func NewGlobalProp() *GlobalProperty {
 	return &GlobalProperty{
 		ChainParameters: core.NewChainParams(),
 		ActiveMediators: map[Mediator]bool{},
 	}
 }
 
-func NewDynGlobalProp() (*DynamicGlobalProperty) {
+func NewDynGlobalProp() *DynamicGlobalProperty {
 	return &DynamicGlobalProperty{
 		LastVerifiedUnitNum: 0,
 		CurrentASlot:        0,
 	}
 }
 
-func InitGlobalProp(genesis *core.Genesis) (*GlobalProperty) {
+func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	log.Info("initialize global property...")
 
 	// Create global properties
@@ -87,7 +87,7 @@ func InitGlobalProp(genesis *core.Genesis) (*GlobalProperty) {
 	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
 		ad := common.StringToAddress(genesis.InitialMediatorCandidates[i])
 		md := Mediator{
-			Address:ad,
+			Address: ad,
 		}
 		gp.ActiveMediators[md] = true
 	}
@@ -95,7 +95,7 @@ func InitGlobalProp(genesis *core.Genesis) (*GlobalProperty) {
 	return gp
 }
 
-func InitDynGlobalProp(genesis *core.Genesis) (*DynamicGlobalProperty) {
+func InitDynGlobalProp(genesis *core.Genesis) *DynamicGlobalProperty {
 	log.Info("initialize dynamic global property...")
 
 	// Create dynamic global properties

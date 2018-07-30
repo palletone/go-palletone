@@ -73,7 +73,7 @@ type Header struct {
 	TxRoot       common.Hash     `json:"root"`
 	Number       ChainIndex      `json:"index"`
 	Extra        []byte          `json:"extra"`
-	Creationdate int64       `json:"creation_time"` // unit create time
+	Creationdate int64           `json:"creation_time"` // unit create time
 	//FeeLimit    uint64        `json:"fee_limit"`
 	//FeeUsed     uint64        `json:"fee_used"`
 }

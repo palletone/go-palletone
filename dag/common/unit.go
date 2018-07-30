@@ -24,9 +24,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"time"
 	"strconv"
 	"strings"
+	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -162,18 +162,6 @@ func GenerateUnit(dag *modules.Dag, when time.Time, signKey modules.Mediator) mo
 	return unit
 }
 
-// UpdateGlobalDynProp, update global dynamic data
-// @author Albert·Gou
-func UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
-	when := time.Unix(unit.UnitHeader.Creationdate, 0)
-	dgp.LastVerifiedUnitNum = unit.UnitHeader.Number.Index
-	dgp.LastVerifiedUnitTime = when
-
-	missedUnits := uint64(modules.GetSlotAtTime(gp, dgp, when))
-	//	println(missedUnits)
-	dgp.CurrentASlot += missedUnits + 1
-}
-
 /**
 创建单元
 create common unit
@@ -181,7 +169,7 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 // modify by Albert·Gou
-func CreateUnit(/*mAddr *common.Address, time time.Time*/) ([]modules.Unit, error) {
+func CreateUnit( /*mAddr *common.Address, time time.Time*/ ) ([]modules.Unit, error) {
 	units := []modules.Unit{}
 	// get mediator responsible for asset id
 	assetID := modules.IDType16{}

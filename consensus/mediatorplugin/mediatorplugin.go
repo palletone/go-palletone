@@ -20,16 +20,16 @@ package mediatorplugin
 
 import (
 	"fmt"
-	"time"
 	"strconv"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	dcom "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
-	dcom "github.com/palletone/go-palletone/dag/common"
 )
 
 type MediatorPlugin struct {

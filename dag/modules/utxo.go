@@ -49,17 +49,17 @@ func (asset *Asset) String() string {
 
 // key: utxo.UnitHash(utxo+timestamp)
 type Utxo struct {
-	AccountAddr  common.Address `json:"account_id"`    // 所属人id
-	TxID         common.Hash    `json:"unit_id"`       // transaction id
+	AccountAddr common.Address `json:"account_id"` // 所属人id
+	TxID        common.Hash    `json:"unit_id"`    // transaction id
 	//MessageIndex uint32         `json:"message_index"` // message index in transaction
-	MessageIndex common.Hash    `json:"message_index"` // message index in transaction
-	OutIndex     uint32         `json:"output_index"`
-	Amount       uint64         `json:"amount"`  // 数量
-	Asset        Asset          `json:"Asset"`   // 资产类别
-	PkScript     []byte         `json:"program"` // 要执行的代码段
+	MessageIndex common.Hash `json:"message_index"` // message index in transaction
+	OutIndex     uint32      `json:"output_index"`
+	Amount       uint64      `json:"amount"`  // 数量
+	Asset        Asset       `json:"Asset"`   // 资产类别
+	PkScript     []byte      `json:"program"` // 要执行的代码段
 	//LockTime     uint32         `json:"lock_time"`
-	IsCoinBase   bool           `json:"is_coinbase"` //
-	IsLocked     bool           `json:"is_locked"`
+	IsCoinBase bool `json:"is_coinbase"` //
+	IsLocked   bool `json:"is_locked"`
 }
 
 // utxo key
@@ -67,7 +67,7 @@ type OutPoint struct {
 	Prefix [2]byte // default 'ut'
 	Addr   common.Address
 	Asset  Asset
-	Hash       common.Hash // reference Utxo struct key field
+	Hash   common.Hash // reference Utxo struct key field
 	//TxHash       common.Hash // reference Utxo struct key field
 	//MessageIndex uint32      // message index in transaction
 	//OutIndex     uint32
