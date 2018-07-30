@@ -31,7 +31,7 @@ func (*mocksupt) IsSysCC(name string) bool {
 	return true
 }
 
-func (*mocksupt) Execute(ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal, spec interface{}) (*pb.Response, *pb.ChaincodeEvent, error) {
+func (*mocksupt) Execute(ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
 	return nil, nil, nil
 }
 
@@ -105,7 +105,7 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 	}
 
 	sprop, prop, err := signedEndorserProposa(chainID, spec, creator, []byte("msg1"))
-	rsp, unit, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid)
+	rsp, unit, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid, 5*time.Second)
 	if err != nil {
 		logger.Errorf("ProcessProposal error[%v]", err)
 	}
@@ -248,6 +248,35 @@ func multSys(t *testing.T){
 //	go Invoke(chainID, "sample_syscc", args)
 }
 
+
+func multMoreSys(t *testing.T){
+	fmt.Println("mult enter..................")
+	chainID := util.GetTestChainID()
+	f := "putval"
+
+
+	for num := 0; num <5; num += 1 {
+		testStr := fmt.Sprintf("mytest_%d", num)
+		args := util.ToChaincodeArgs(f, "greeting", testStr)
+		fmt.Println("++++++++++++++++"+ testStr)
+		go func() {
+			unit, err := Invoke(chainID, "sample_syscc", args, 3*time.Second)
+			if err != nil {
+				t.Error(err)
+			}else {
+				//t.Logf("ContractId[%s], Function[%s], ReadSet:%v ,WriteSet:%v", unit.ContractId, unit.Function, unit.ReadSet[unit.ContractId], unit.WriteSet[unit.ContractId])
+				for k,v := range unit.WriteSet {
+					t.Logf("k[%s], v[%v]", k, v)
+				}
+			}
+		}()
+	}
+
+
+
+	//	go Invoke(chainID, "sample_syscc", args)
+}
+
 func TestExecSysCCMult(t *testing.T) {
 	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
 	viper.Set("peer.address", "127.0.0.1:12345")
@@ -262,14 +291,15 @@ func TestExecSysCCMult(t *testing.T) {
 
 	Init()
 	//Invoke(chainID, "sample_syscc", args)
-	multSys(t)
+	//multSys(t)
+	multMoreSys(t)
 	//func () {
 	//	go	Invoke(chainID, "sample_syscc", args)
 	//	go	Invoke(chainID, "sample_syscc", args)
 	//	go	Invoke(chainID, "sample_syscc", args)
 	//}()
 
-	time.Sleep(10*time.Second)
+	time.Sleep(5*time.Second)
 
 }
 

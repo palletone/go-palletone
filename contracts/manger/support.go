@@ -28,6 +28,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	ut "github.com/palletone/go-palletone/dag/modules"
 	chaincode "github.com/palletone/go-palletone/contracts/core"
+	"time"
 )
 
 // SupportImpl provides an implementation of the endorser.Support interface
@@ -55,12 +56,12 @@ func (s *SupportImpl) IsSysCC(name string) bool {
 }
 
 //Execute - execute proposal, return original response of chaincode
-func (s *SupportImpl) Execute(ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal, spec interface{}) (*pb.Response, *pb.ChaincodeEvent, error) {
+func (s *SupportImpl) Execute(ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
 	cccid := ccprovider.NewCCContext(cid, name, version, txid, syscc, signedProp, prop)
 
 	switch spec.(type) {
 	case *pb.ChaincodeDeploymentSpec:
-		return chaincode.Execute(ctxt, cccid, spec)
+		return chaincode.Execute(ctxt, cccid, spec, timeout)
 	case *pb.ChaincodeInvocationSpec:
 		cis := spec.(*pb.ChaincodeInvocationSpec)
 
@@ -72,7 +73,7 @@ func (s *SupportImpl) Execute(ctxt context.Context, cid, name, version, txid str
 		//cis.ChaincodeSpec.Input.Decorations = make(map[string][]byte)
 		//cis.ChaincodeSpec.Input = decoration.Apply(prop, cis.ChaincodeSpec.Input, decorators...)
 		//cccid.ProposalDecorations = cis.ChaincodeSpec.Input.Decorations
-		return chaincode.ExecuteChaincode(ctxt, cccid, cis.ChaincodeSpec.Input.Args)
+		return chaincode.ExecuteChaincode(ctxt, cccid, cis.ChaincodeSpec.Input.Args, timeout)
 	default:
 		panic("programming error, unkwnown spec type")
 	}

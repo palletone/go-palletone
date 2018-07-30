@@ -395,22 +395,19 @@ func (ps *peerSet) PeersWithoutTx(hash common.Hash) []*peer {
 
 // BestPeer retrieves the known peer with the currently highest total difficulty.
 func (ps *peerSet) BestPeer() *peer {
-	/*
-		ps.lock.RLock()
-		defer ps.lock.RUnlock()
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
 
-		var (
-			bestPeer *peer
-			bestTd   *big.Int
-		)
-		for _, p := range ps.peers {
-			if _, td := p.Head(); bestPeer == nil || td.Cmp(bestTd) > 0 {
-				bestPeer, bestTd = p, td
-			}
+	var (
+		bestPeer *peer
+		bestTd   uint64 //*big.Int
+	)
+	for _, p := range ps.peers {
+		if _, td := p.Head(); bestPeer == nil || td > bestTd /*td.Cmp(bestTd) > 0*/ {
+			bestPeer, bestTd = p, td
 		}
-		return bestPeer
-	*/
-	return nil
+	}
+	return bestPeer
 }
 
 // Close disconnects all peers.

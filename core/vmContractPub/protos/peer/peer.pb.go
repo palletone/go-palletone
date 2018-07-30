@@ -1,7 +1,10 @@
 package peer
 
-import "golang.org/x/net/context"
+import (
+	"golang.org/x/net/context"
+	"time"
+)
 
 type EndorserServer interface {
-	ProcessProposal(context.Context, *SignedProposal, *Proposal, string, *ChaincodeID) (*ProposalResponse, *ContractInvokePayload, error)
+	ProcessProposal(context.Context, *SignedProposal, *Proposal, string, *ChaincodeID, time.Duration) (*ProposalResponse, *ContractInvokePayload, error)
 }

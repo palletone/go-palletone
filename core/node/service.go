@@ -100,7 +100,8 @@ type Service interface {
 
 	// Start is called after all services have been constructed and the networking
 	// layer was also initialized to spawn any goroutines required by the service.
-	// 启动 service ，本方法在所有服务构建之后，网络层初始化完后以服务所需的任何goroutine生成之后，才调用启动。
+	// start 方法是在所有服务构建之后和网络层初始化完后调用，
+	// 在 start 方法用于开启大量 service 所需要的任何 goroutines
 	Start(server *p2p.Server) error
 
 	// Stop terminates all goroutines belonging to the service, blocking until they

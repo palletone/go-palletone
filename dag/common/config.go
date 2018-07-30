@@ -3,7 +3,6 @@ package common
 import (
 	"fmt"
 
-
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -21,7 +20,7 @@ func GetConfig(name []byte) []byte {
 	key := fmt.Sprintf("%s_%s", CONF_PREFIX, name)
 	data, err := storage.Get([]byte(key))
 	if err != nil {
-		log.Error("Get config error.")
+		log.Error("Get config ", "error:", err.Error())
 	}
 
 	return data

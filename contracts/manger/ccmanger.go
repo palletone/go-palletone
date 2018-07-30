@@ -251,3 +251,8 @@ func systemContractDeInit() error {
 	return nil
 }
 
+func systemContractStop() error {
+
+	return nil
+}
+
