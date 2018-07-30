@@ -25,6 +25,8 @@ import (
 	"fmt"
 	"reflect"
 	"time"
+	"strconv"
+	"strings"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -37,8 +39,6 @@ import (
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"strconv"
-	"strings"
 )
 
 func RHashStr(x interface{}) string {
@@ -125,13 +125,63 @@ func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error)
 	return &gUnit, nil
 }
 
+// GenerateVerifiedUnit, generate unit
+// @author Albert·Gou
+func GenerateUnit(dag *modules.Dag, when time.Time, signKey modules.Mediator) modules.Unit {
+
+	gp := dag.GlobalProp
+	dgp := dag.DynGlobalProp
+
+	// 1. 判断是否满足生产的若干条件
+
+	// 2. 生产验证单元，添加交易集、时间戳、签名
+	log.Info("Generating Verified Unit...")
+
+	units, _ := CreateUnit()
+	unit := units[0]
+	unit.UnitHeader.Creationdate = when.Unix()
+	unit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
+
+	// 3. 从未验证交易池中移除添加的交易
+
+	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
+
+	// 4. 将验证单元添加到本地DB
+	go log.Info("storing the new verified unit to database...")
+
+	// 5. 更新全局动态属性值
+	log.Info("Updating global dynamic property...")
+	go UpdateGlobalDynProp(gp, dgp, &unit)
+
+	// 5. 判断是否到了维护周期，并维护
+
+	// 6. 洗牌
+	log.Info("shuffling the scheduling order of mediator...")
+	dag.MediatorSchl.UpdateMediatorSchedule(gp, dgp)
+
+	return unit
+}
+
+// UpdateGlobalDynProp, update global dynamic data
+// @author Albert·Gou
+func UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
+	when := time.Unix(unit.UnitHeader.Creationdate, 0)
+	dgp.LastVerifiedUnitNum = unit.UnitHeader.Number.Index
+	dgp.LastVerifiedUnitTime = when
+
+	missedUnits := uint64(modules.GetSlotAtTime(gp, dgp, when))
+	//	println(missedUnits)
+	dgp.CurrentASlot += missedUnits + 1
+}
+
 /**
 创建单元
 create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func CreateUnit(mAddr *common.Address, time time.Time) ([]modules.Unit, error) {
+// modify by Albert·Gou
+func CreateUnit(/*mAddr *common.Address, time time.Time*/) ([]modules.Unit, error) {
 	units := []modules.Unit{}
 	// get mediator responsible for asset id
 	assetID := modules.IDType16{}
@@ -158,8 +208,7 @@ func CreateUnit(mAddr *common.Address, time time.Time) ([]modules.Unit, error) {
 		AssetIDs:     []modules.IDType16{assetID},
 		Number:       chainIndex,
 		Root:         root,
-//		Creationdate: time.Now().UTC(),
-		Creationdate: time.Unix(),
+//		Creationdate: time.Unix(),
 	}
 
 	unit := modules.Unit{}
