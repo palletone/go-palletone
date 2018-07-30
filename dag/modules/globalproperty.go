@@ -36,7 +36,7 @@ type GlobalProperty struct {
 
 // 动态全局属性的结构体定义
 type DynamicGlobalProperty struct {
-	LastVerifiedUnitNum uint32 // 最近的验证单元编号(数量)
+	LastVerifiedUnitNum uint64 // 最近的验证单元编号(数量)
 
 	//	VerifiedUnitHash string // 最近的验证单元hash
 

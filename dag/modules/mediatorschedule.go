@@ -51,7 +51,7 @@ func NewMediatorSchl() (*MediatorSchedule) {
 
 // 洗牌算法，更新mediator的调度顺序
 func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *DynamicGlobalProperty) {
-	aSize := uint32(len(gp.ActiveMediators))
+	aSize := uint64(len(gp.ActiveMediators))
 
 	// 1. 判断是否到达洗牌时刻
 	if dgp.LastVerifiedUnitNum%aSize != 0 {
@@ -68,7 +68,7 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 
 	// 4. 打乱证人的调度顺序
 	nowHi := uint64(dgp.LastVerifiedUnitTime.Unix() << 32)
-	for i := uint32(0); i < aSize; i++ {
+	for i := uint64(0); i < aSize; i++ {
 		// 高性能随机生成器(High performance random generator)
 		// 原理请参考 http://xorshift.di.unimi.it/
 		k := nowHi + uint64(i)*2685821657736338717
@@ -77,8 +77,8 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 		k ^= k >> 27
 		k *= 2685821657736338717
 
-		jmax := uint32(aSize - i)
-		j := i + uint32(k%uint64(jmax))
+		jmax := aSize - i
+		j := i + k%jmax
 
 		// 进行N次随机交换
 		ms.CurrentShuffledMediators[i], ms.CurrentShuffledMediators[j] =
