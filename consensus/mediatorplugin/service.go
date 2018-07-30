@@ -103,7 +103,7 @@ func Initialize(node *node.Node, cfg *Config) (*MediatorPlugin, error) {
 		node:              node,
 		productionEnabled: cfg.EnableStaleProduction,
 		mediators:         msm,
-		shutdownChan:   make(chan bool),
+		//shutdownChan:   make(chan bool),
 	}
 
 	log.Info("mediator plugin initialize end")
