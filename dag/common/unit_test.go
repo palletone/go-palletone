@@ -9,10 +9,11 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"time"
 )
 
 func TestNewGenesisUnit(t *testing.T) {
-	gUnit, _ := NewGenesisUnit(modules.Transactions{})
+	gUnit, _ := NewGenesisUnit(modules.Transactions{}, time.Now().Unix())
 
 	log.Println("Genesis unit struct:")
 	log.Println("--- Genesis unit header --- ")
@@ -42,7 +43,7 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 }
 
 func TestSaveUnit(t *testing.T) {
-	if err := SaveUnit(modules.Unit{}); err != nil {
+	if err := SaveUnit(modules.Unit{}, false); err != nil {
 		log.Println(err)
 	}
 }
@@ -63,9 +64,11 @@ func TestRlpDecode(t *testing.T) {
 }
 
 func TestCreateUnit(t *testing.T) {
-	addr := common.Address{} // minner addr
-	addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
-	units, err := CreateUnit(&addr)
+	// modify by Albert·Gou
+	//addr := common.Address{} // minner addr
+	//addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
+	//units, err := CreateUnit(&addr)
+	units, err := CreateUnit()
 	if err != nil {
 		log.Println("create unit error:", err)
 	} else {

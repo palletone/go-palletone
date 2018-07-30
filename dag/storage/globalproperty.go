@@ -21,6 +21,7 @@ package storage
 
 import (
 	"fmt"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -33,14 +34,14 @@ const (
 func StoreGlobalProp(gp *modules.GlobalProperty) {
 	err := Store(globalPropDBKey, *gp)
 	if err != nil {
-		log.Error(fmt.Sprintf("Store global properties error:%s", err))
+		log.Info(fmt.Sprintf("Store global properties error:%s", err))
 	}
 }
 
 func StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) {
 	err := Store(dynGlobalPropDBKey, *dgp)
 	if err != nil {
-		log.Error(fmt.Sprintf("Store dynamic global properties error: %s", err))
+		log.Info(fmt.Sprintf("Store dynamic global properties error: %s", err))
 	}
 }
 
@@ -49,7 +50,7 @@ func RetrieveGlobalProp() *modules.GlobalProperty {
 
 	err := Retrieve(globalPropDBKey, gp)
 	if err != nil {
-		log.Error(fmt.Sprintf("Retrieve global properties error: %s", err))
+		log.Info(fmt.Sprintf("Retrieve global properties error: %s", err))
 	}
 
 	return gp
@@ -60,7 +61,7 @@ func RetrieveDynGlobalProp() *modules.DynamicGlobalProperty {
 
 	err := Retrieve(dynGlobalPropDBKey, dgp)
 	if err != nil {
-		log.Error(fmt.Sprintf("Retrieve dynamic global properties error: %s", err))
+		log.Info(fmt.Sprintf("Retrieve dynamic global properties error: %s", err))
 	}
 
 	return dgp

@@ -75,13 +75,13 @@ func TestCopyHeader(t *testing.T) {
 		S:       []byte("09876543210987654321"),
 		V:       []byte("1"),
 	}
-	author := Author{
-		Address:        addr,
-		Pubkey:         []byte("1234567890123456789"),
-		TxAuthentifier: auth,
-	}
-	w := []Author{}
-	w = append(w, author)
+	//author := Author{
+	//	Address:        addr,
+	//	Pubkey:         []byte("1234567890123456789"),
+	//	TxAuthentifier: auth,
+	//}
+	w := []*Authentifier{}
+	w = append(w, &auth)
 	assetID := IDType16{}
 	assetID.SetBytes([]byte("0000000011111111"))
 	h := Header{
@@ -95,7 +95,7 @@ func TestCopyHeader(t *testing.T) {
 
 	newH := CopyHeader(&h)
 	newH.Authors = nil
-	newH.Witness = []Author{}
+	newH.Witness = []*Authentifier{}
 	hh := Header{}
 	log.Printf("newh=%v \n oldH=%v \n hh=%v", *newH, h, hh)
 }
@@ -110,13 +110,13 @@ func TestUnitSize(t *testing.T) {
 	address := crypto.PubkeyToAddress(key.PublicKey)
 	log.Println("address:", address)
 
-	author := &Author{
-		Address:        address,
-		Pubkey:         []byte("1234567890123456789"),
-		TxAuthentifier: *au,
-	}
+	//author := &Author{
+	//	Address:        address,
+	//	Pubkey:         []byte("1234567890123456789"),
+	//	TxAuthentifier: *au,
+	//}
 
-	h.Witness = append(h.Witness, *author)
+	h.Witness = append(h.Witness, au)
 	h.Number.AssetID = PTNCOIN
 	h.Number.Index = uint64(333333)
 	h.Extra = make([]byte, 20)

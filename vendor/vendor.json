@@ -75,6 +75,12 @@
 			"revisionTime": "2018-05-24T03:27:03Z"
 		},
 		{
+			"checksumSHA1": "06hlOV6mAbBZuPhL9mOB1iPHAZ8=",
+			"path": "github.com/btcsuite/btcutil/bech32",
+			"revision": "d4cc87b860166d00d6b5b9e0d3b3d71d6088d4d4",
+			"revisionTime": "2018-05-24T03:27:03Z"
+		},
+		{
 			"checksumSHA1": "XmSM/gzGetfmtLlvg+D1kn40lSM=",
 			"path": "github.com/cespare/xxhash",
 			"revision": "48099fad606eafc26e3a569fad19ff510fff4df6",

@@ -14,10 +14,10 @@ func TestSaveConfig(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T) {
-	data := GetConfig([]byte("ChainID"))
+	data := GetConfig([]byte("InitialActiveMediators"))
 	if len(data) <= 0 {
 		log.Println("Get config data error")
 	} else {
-		log.Println("Get Data:", string(data))
+		log.Println("Get Data:", data)
 	}
 }

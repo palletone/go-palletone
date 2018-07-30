@@ -41,7 +41,7 @@ func RetrieveMediatorSchl() *modules.MediatorSchedule {
 
 	err := Retrieve(mediatorSchlDBKey, ms)
 	if err != nil {
-		log.Error(fmt.Sprintf("Retrieve mediator schedule error: %s", err))
+		log.Info(fmt.Sprintf("Retrieve mediator schedule error: %s", err))
 	}
 
 	return ms
