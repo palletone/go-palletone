@@ -1,4 +1,4 @@
-﻿/*
+/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -27,6 +27,9 @@ import (
 	"time"
 	"unsafe"
 
+	"strconv"
+	"strings"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -37,8 +40,6 @@ import (
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"strings"
-	"strconv"
 )
 
 func RHashStr(x interface{}) string {
@@ -90,7 +91,7 @@ func NewGenesisUnit(txs modules.Transactions) (*modules.Unit, error) {
 	header := modules.Header{
 		AssetIDs:     []modules.IDType16{gAssetID},
 		Number:       chainIndex,
-		Root:         root,
+		TxRoot:       root,
 		Creationdate: time.Now().UTC(),
 	}
 
@@ -157,7 +158,7 @@ func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
 	header := modules.Header{
 		AssetIDs:     []modules.IDType16{assetID},
 		Number:       chainIndex,
-		Root:         root,
+		TxRoot:       root,
 		Creationdate: time.Now().UTC(),
 	}
 
@@ -199,7 +200,7 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 	data := storage.GetPrefix([]byte(key))
 	if len(data) > 1 {
 		log.Error("Get genesis unit", "error", "multiple genesis unit")
-	} else if len(data)<=0 {
+	} else if len(data) <= 0 {
 		return nil
 	}
 	for k, v := range data {
@@ -224,7 +225,7 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 			return nil
 		}
 		// get transaction list
-		txs, err := GetUnitTransactions(uHeader.Root)
+		txs, err := GetUnitTransactions(uHeader.TxRoot)
 		if err != nil {
 			log.Error("Get genesis unit transactions", "error", err.Error())
 			return nil
@@ -245,11 +246,13 @@ func GetUnitTransactions(root common.Hash) (modules.Transactions, error) {
 	txs := modules.Transactions{}
 	// get body data: transaction list
 	txHashList, err := storage.GetBody(root)
-	if err!=nil{return nil, err}
+	if err != nil {
+		return nil, err
+	}
 	// get transaction data
 	for _, txHash := range txHashList {
 		tx, err := storage.GetTransaction(txHash)
-		if err!=nil {
+		if err != nil {
 			return nil, err
 		}
 		txs = append(txs, tx)
@@ -341,7 +344,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	}
 
 	// save unit body, the value only save txs' hash set, and the key is merkle root
-	if err = storage.SaveBody(unit.UnitHeader.Root, txHashSet); err != nil {
+	if err = storage.SaveBody(unit.UnitHeader.TxRoot, txHashSet); err != nil {
 		return err
 	}
 

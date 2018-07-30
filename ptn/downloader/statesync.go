@@ -237,7 +237,7 @@ type stateTask struct {
 func newStateSync(d *Downloader, root common.Hash) *stateSync {
 	return &stateSync{
 		d:       d,
-		sched:   state.NewStateSync(root),
+		sched:   state.NewStateSync(root /*, d.stateDB*/),
 		keccak:  sha3.NewKeccak256(),
 		tasks:   make(map[common.Hash]*stateTask),
 		deliver: make(chan *stateReq),
@@ -322,6 +322,22 @@ func (s *stateSync) loop() (err error) {
 }
 
 func (s *stateSync) commit(force bool) error {
+	/*
+		if !force && s.bytesUncommitted < ethdb.IdealBatchSize {
+			return nil
+		}
+		start := time.Now()
+		b := s.d.stateDB.NewBatch()
+		if written, err := s.sched.Commit(b); written == 0 || err != nil {
+			return err
+		}
+		if err := b.Write(); err != nil {
+			return fmt.Errorf("DB write error: %v", err)
+		}
+		s.updateStats(s.numUncommitted, 0, 0, time.Since(start))
+		s.numUncommitted = 0
+		s.bytesUncommitted = 0
+	*/
 	return nil
 }
 
@@ -460,6 +476,6 @@ func (s *stateSync) updateStats(written, duplicate, unexpected int, duration tim
 		log.Info("Imported new state entries", "count", written, "elapsed", common.PrettyDuration(duration), "processed", s.d.syncStatsState.processed, "pending", s.d.syncStatsState.pending, "retry", len(s.tasks), "duplicate", s.d.syncStatsState.duplicate, "unexpected", s.d.syncStatsState.unexpected)
 	}
 	if written > 0 {
-		//coredata.WriteTrieSyncProgress(s.d.syncStatsState.processed)
+		//core.WriteTrieSyncProgress(s.d.stateDB, s.d.syncStatsState.processed)
 	}
 }
