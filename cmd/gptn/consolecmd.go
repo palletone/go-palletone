@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
 	"gopkg.in/urfave/cli.v1"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 var (
@@ -139,7 +140,7 @@ func remoteConsole(ctx *cli.Context) error {
 		Client:  client,
 		Preload: utils.MakeConsolePreloads(ctx),
 	}
-
+	log.ConInitLogger()
 	console, err := console.New(config)
 	if err != nil {
 		utils.Fatalf("Failed to start the JavaScript console: %v", err)
@@ -180,7 +181,6 @@ func ephemeralConsole(ctx *cli.Context) error {
 	node := makeFullNode(ctx)
 	startNode(ctx, node)
 	defer node.Stop()
-
 	// Attach to the newly started node and start the JavaScript console
 	client, err := node.Attach()
 	if err != nil {
