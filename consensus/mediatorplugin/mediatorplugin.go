@@ -39,6 +39,7 @@ type MediatorPlugin struct {
 	productionEnabled bool
 	// Mediator`s account and passphrase controlled by this node
 	mediators map[common.Address]string
+	quit         chan struct{}  // Channel used for graceful exit
 }
 
 func newChainBanner(dag *modules.Dag) {
@@ -66,7 +67,16 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 	nextWakeup := now.Add(timeToNextSecond)
 
 	// 2. 安排验证单元生产循环
-	go mp.VerifiedUnitProductionLoop(nextWakeup)
+	// Start a timer to production unit for expiration
+	expire := time.NewTimer(nextWakeup.Sub(time.Now()))
+
+	// production unit until termination is requested
+	select {
+	case <-expire.C:
+		go mp.VerifiedUnitProductionLoop()
+	case <-mp.quit:
+		return
+	}
 }
 
 //验证单元生产状态类型
@@ -85,9 +95,7 @@ const (
 	//	ExceptionProducing
 )
 
-func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) ProductionCondition {
-	time.Sleep(wakeup.Sub(time.Now()))
-
+func (mp *MediatorPlugin) VerifiedUnitProductionLoop() ProductionCondition {
 	// 1. 尝试生产验证单元
 	result, detail := mp.MaybeProduceVerifiedUnit()
 
