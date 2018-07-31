@@ -28,9 +28,10 @@ import (
 
 var (
 	// state storage
-	CONTRACT_ATTRI    = []byte("contract_") // like contract_[contract address]_[key]
+	CONTRACT_ATTRI    = []byte("contract") // like contract_[contract address]_[key]
 	UTXO_PREFIX       = []byte("uo")
-	ASSET_INFO_PREFIX = []byte("ai_")
+	UTXO_INDEX_PREFIX = []byte("ui")
+	ASSET_INFO_PREFIX = []byte("ai")
 )
 
 type Asset struct {
@@ -47,88 +48,89 @@ func (asset *Asset) String() string {
 	return string(data)
 }
 
-// key: utxo.UnitHash(utxo+timestamp)
+func (asset *Asset) SetString(data string) error {
+	if err := rlp.DecodeBytes([]byte(data), asset); err != nil {
+		return err
+	}
+	return nil
+}
+
 type Utxo struct {
-	AccountAddr  common.Address `json:"account_id"`    // 所属人id
-	TxID         common.Hash    `json:"unit_id"`       // transaction id
-	//MessageIndex uint32         `json:"message_index"` // message index in transaction
-	MessageIndex common.Hash    `json:"message_index"` // message index in transaction
-	OutIndex     uint32         `json:"output_index"`
-	Amount       uint64         `json:"amount"`  // 数量
-	Asset        Asset          `json:"Asset"`   // 资产类别
-	PkScript     []byte         `json:"program"` // 要执行的代码段
-	//LockTime     uint32         `json:"lock_time"`
-	IsCoinBase   bool           `json:"is_coinbase"` //
-	IsLocked     bool           `json:"is_locked"`
+	TxID         common.Hash `json:"unit_id"`       // transaction id
+	MessageIndex uint32      `json:"message_index"` // message index in transaction
+	OutIndex     uint32      `json:"output_index"`
+	Amount       uint64      `json:"amount"`  // 数量
+	Asset        Asset       `json:"Asset"`   // 资产类别
+	PkScript     []byte      `json:"program"` // 要执行的代码段
+	LockTime     uint32      `json:"lock_time"`
+}
+
+// UtxoIndex is key
+// utxo index db value: amount
+type UtxoIndex struct {
+	AccountAddr common.Address `json:"account_id"` // 所属人id
+	Asset       Asset
+	OutPoint    OutPoint
+}
+
+type UtxoIndexValue struct {
+	Amount   uint64 `json:"amount"`
+	LockTime uint32 `json:"lock_time"`
+}
+
+func (utxoIndex *UtxoIndex) AssetKey() []byte {
+	key := fmt.Sprintf("%s%s_%s",
+		UTXO_INDEX_PREFIX,
+		utxoIndex.AccountAddr.String(),
+		utxoIndex.Asset.String())
+	return []byte(key)
+}
+
+func (utxoIndex *UtxoIndex) QueryFields(key []byte) error {
+	preLen := len(UTXO_INDEX_PREFIX)
+	s := string(key[preLen:])
+	ss := strings.Split(s, "_")
+	if len(ss) != 3 {
+		return fmt.Errorf("Query UtxoIndex Fields error.")
+	}
+	sAddr := ss[0]
+	sAsset := ss[1]
+	sOutpoint := ss[2]
+
+	utxoIndex.AccountAddr.SetString(sAddr)
+	if err := utxoIndex.Asset.SetString(sAsset); err != nil {
+		return err
+	}
+	if err := utxoIndex.OutPoint.SetString(sOutpoint); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (utxoIndex *UtxoIndex) ToKey() []byte {
+	s := fmt.Sprintf("%s%s_%s_%s",
+		UTXO_INDEX_PREFIX,
+		utxoIndex.AccountAddr.String(),
+		utxoIndex.Asset.String(),
+		utxoIndex.OutPoint.String())
+	return []byte(s)
 }
 
 // utxo key
 type OutPoint struct {
-	Prefix [2]byte // default 'ut'
-	Addr   common.Address
-	Asset  Asset
-	Hash       common.Hash // reference Utxo struct key field
-	//TxHash       common.Hash // reference Utxo struct key field
-	//MessageIndex uint32      // message index in transaction
-	//OutIndex     uint32
-}
-
-func (outpoint *OutPoint) SetPrefix(pre []byte) {
-	lenth := 0
-	if len(pre) > cap(outpoint.Prefix) {
-		lenth = cap(outpoint.Prefix)
-	} else {
-		lenth = len(pre)
-	}
-
-	for i := 0; i < lenth; i++ {
-		outpoint.Prefix[i] = pre[i]
-	}
-}
-
-func (outpoint *OutPoint) ToPrefixKey() []byte {
-	out := fmt.Sprintf("%s%s_%s",
-		outpoint.Prefix,
-		outpoint.Addr.String(),
-		outpoint.Asset.String())
-	return []byte(out)
+	TxHash       common.Hash // reference Utxo struct key field
+	MessageIndex uint32      // message index in transaction
+	OutIndex     uint32
 }
 
 func (outpoint *OutPoint) ToKey() []byte {
-	out := fmt.Sprintf("%s%s_%s_%s",
-		outpoint.Prefix,
-		outpoint.Addr.String(),
-		outpoint.Asset.String(),
-		outpoint.Hash.String(),
+	out := fmt.Sprintf("%s%s_%v_%v",
+		UTXO_PREFIX,
+		outpoint.TxHash.String(),
+		outpoint.MessageIndex,
+		outpoint.OutIndex,
 	)
 	return []byte(out)
-}
-
-func KeyToOutpoint(key []byte) OutPoint {
-	// key: [UTXO_PREFIX]_[Addr]_[Asset]_[utxo hash]
-	data := strings.Split(string(key), "_")
-	if len(data) != 3 {
-		return OutPoint{}
-	}
-
-	var vout OutPoint
-	// set prefix
-	vout.SetPrefix(UTXO_PREFIX)
-
-	// set address
-	if err := rlp.DecodeBytes([]byte(data[0][len(UTXO_PREFIX):]), &vout.Addr); err != nil {
-		vout.Addr = common.Address{}
-	}
-	// set asset
-	if err := rlp.DecodeBytes([]byte(data[1]), &vout.Asset); err != nil {
-		vout.Asset = Asset{}
-	}
-	// set hash
-	if err := rlp.DecodeBytes([]byte(data[2]), &vout.Hash); err != nil {
-		vout.Hash = common.Hash{}
-	}
-
-	return vout
 }
 
 func (outpoint *OutPoint) String() string {
@@ -137,6 +139,13 @@ func (outpoint *OutPoint) String() string {
 		return ""
 	}
 	return string(data)
+}
+
+func (outpoint *OutPoint) SetString(data string) error {
+	if err := rlp.DecodeBytes([]byte(data), outpoint); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (outpoint *OutPoint) Bytes() []byte {

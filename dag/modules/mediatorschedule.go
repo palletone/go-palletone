@@ -20,8 +20,8 @@
 package modules
 
 import (
-	"time"
 	"github.com/palletone/go-palletone/common/log"
+	"time"
 )
 
 // Mediator调度顺序结构体
@@ -29,7 +29,7 @@ type MediatorSchedule struct {
 	CurrentShuffledMediators []Mediator
 }
 
-func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) (*MediatorSchedule) {
+func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorSchedule {
 	log.Info("initialize mediator schedule...")
 	ms := NewMediatorSchl()
 
@@ -38,12 +38,12 @@ func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) (*Mediator
 		ms.CurrentShuffledMediators = append(ms.CurrentShuffledMediators, m)
 	}
 
-//	ms.UpdateMediatorSchedule(gp, dgp)
+	//	ms.UpdateMediatorSchedule(gp, dgp)
 
 	return ms
 }
 
-func NewMediatorSchl() (*MediatorSchedule) {
+func NewMediatorSchl() *MediatorSchedule {
 	return &MediatorSchedule{
 		CurrentShuffledMediators: []Mediator{},
 	}
@@ -51,7 +51,7 @@ func NewMediatorSchl() (*MediatorSchedule) {
 
 // 洗牌算法，更新mediator的调度顺序
 func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *DynamicGlobalProperty) {
-	aSize := uint32(len(gp.ActiveMediators))
+	aSize := uint64(len(gp.ActiveMediators))
 
 	// 1. 判断是否到达洗牌时刻
 	if dgp.LastVerifiedUnitNum%aSize != 0 {
@@ -67,8 +67,8 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 	}
 
 	// 4. 打乱证人的调度顺序
-	nowHi := uint64(dgp.LastVerifiedUnitTime.Unix() << 32)
-	for i := uint32(0); i < aSize; i++ {
+	nowHi := uint64(dgp.LastVerifiedUnitTime << 32)
+	for i := uint64(0); i < aSize; i++ {
 		// 高性能随机生成器(High performance random generator)
 		// 原理请参考 http://xorshift.di.unimi.it/
 		k := nowHi + uint64(i)*2685821657736338717
@@ -77,8 +77,8 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 		k ^= k >> 27
 		k *= 2685821657736338717
 
-		jmax := uint32(aSize - i)
-		j := i + uint32(k%uint64(jmax))
+		jmax := aSize - i
+		j := i + k%jmax
 
 		// 进行N次随机交换
 		ms.CurrentShuffledMediators[i], ms.CurrentShuffledMediators[j] =
@@ -99,10 +99,10 @@ If slotNum == 1, return the next scheduled mediator.
 如果slotNum == 2，则返回下下一个调度Mediator。
 If slotNum == 2, return the next scheduled mediator after 1 verified uint gap.
 */
-func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) (*Mediator) {
+func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) *Mediator {
 	currentASlot := dgp.CurrentASlot + uint64(slotNum)
 	// 由于创世单元不是有mediator生产，所以这里需要减1
-	index := (currentASlot-1)%uint64(len(ms.CurrentShuffledMediators))
+	index := (currentASlot - 1) % uint64(len(ms.CurrentShuffledMediators))
 	return &ms.CurrentShuffledMediators[index]
 }
 
@@ -143,7 +143,7 @@ func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32)
 	//}
 
 	// 最近的验证单元的绝对slot
-	var verifiedUnitAbsSlot = dgp.LastVerifiedUnitTime.Unix() / int64(interval)
+	var verifiedUnitAbsSlot = dgp.LastVerifiedUnitTime / int64(interval)
 	// 最近的时间槽起始时间
 	verifiedUnitSlotTime := time.Unix(verifiedUnitAbsSlot*int64(interval), 0)
 

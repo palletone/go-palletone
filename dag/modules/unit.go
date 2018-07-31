@@ -73,7 +73,7 @@ type Header struct {
 	TxRoot       common.Hash     `json:"root"`
 	Number       ChainIndex      `json:"index"`
 	Extra        []byte          `json:"extra"`
-	Creationdate int64       `json:"creation_time"` // unit create time
+	Creationdate int64           `json:"creation_time"` // unit create time
 	//FeeLimit    uint64        `json:"fee_limit"`
 	//FeeUsed     uint64        `json:"fee_used"`
 }
@@ -176,6 +176,7 @@ type Transaction struct {
 	CreationDate string             `json:"creation_date"`
 	TxFee        *big.Int           `json:"txfee"` // user set total transaction fee.
 	Txsize       common.StorageSize `json:"txsize" rlp:""`
+	Locktime     uint32             `json:"lock_time"`
 	Priority_lvl float64            `json:"priority_lvl"`
 }
 

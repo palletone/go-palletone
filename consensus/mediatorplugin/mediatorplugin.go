@@ -20,12 +20,14 @@ package mediatorplugin
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	dcom "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
 )
@@ -93,21 +95,21 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 	switch result {
 	case Produced:
 		log.Info("Generated VerifiedUnit #" + detail["Num"] + " with timestamp " +
-			detail["Timestamp"] + /*" at time " + detail["Now"]*/ " with signature " + detail["MediatorSig"])
+			detail["Timestamp"])
 	case NotSynced:
 		log.Info("Not producing VerifiedUnit because production is disabled " +
 			"until we receive a recent VerifiedUnit (see: --enable-stale-production)")
 	case NotTimeYet:
-		log.Info("Not producing VerifiedUnit because next slot time is " + detail["NextTime"] +
-			" , but now is " + detail["Now"])
+		//log.Info("Not producing VerifiedUnit because next slot time is " + detail["NextTime"] +
+		//	" , but now is " + detail["Now"])
 	case NotMyTurn:
-		log.Info("Not producing VerifiedUnit because current scheduled mediator is " +
-			detail["ScheduledMediator"])
+		//log.Info("Not producing VerifiedUnit because current scheduled mediator is " +
+		//	detail["ScheduledMediator"])
 	case Lag:
-		log.Info("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time."+
-			" Scheduled Time is: %v, but now is %v\n", detail["ScheduledTime"], detail["Now"])
+		log.Info("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time." +
+			" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
 	case NoPrivateKey:
-		log.Info("Not producing VerifiedUnit because I don't have the private key for %v\n",
+		log.Info("Not producing VerifiedUnit because I don't have the private key for " +
 			detail["ScheduledKey"])
 	default:
 		log.Info("Unknown condition!")
@@ -167,7 +169,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	// we must control the Mediator scheduled to produce the next VerifiedUnit.
 	ma := scheduledMediator.Address
 	ps, ok := mp.mediators[ma]
-	if ok {
+	if !ok {
 		detail["ScheduledMediator"] = ma.Str()
 		return NotMyTurn, detail
 	}
@@ -183,24 +185,21 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
 	ks := mp.ptn.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 	err := ks.Unlock(accounts.Account{Address: ma}, ps)
-	if err == nil {
+	if err != nil {
 		detail["ScheduledKey"] = ma.Str()
 		return NoPrivateKey, detail
 	}
 
 	// 2. 生产验证单元
-	//verifiedUnit := v.GenerateVerifiedUnit(
-	//	scheduledTime,
-	//	//		scheduledMediator,
-	//	signKey,
-	//	mp.DB)
-	//
-	//// 3. 异步向区块链网络广播验证单元
-	//go log.Info("Asynchronously broadcast the new signed verified unit to p2p networks...")
-	//
-	//detail["Num"] = strconv.FormatUint(uint64(verifiedUnit.VerifiedUnitNum), 10)
-	//detail["Timestamp"] = verifiedUnit.Timestamp.Format("2006-01-02 15:04:05")
-	////	detail["Now"] = now.Format("2006-01-02 15:04:05")
-	//detail["MediatorSig"] = verifiedUnit.MediatorSig
+	unit := dcom.GenerateUnit(mp.ptn.Dag(), scheduledTime, *scheduledMediator)
+
+	// 3. 异步向区块链网络广播验证单元
+	go log.Info("Asynchronously broadcast the new signed verified unit to p2p networks...")
+
+	num := unit.UnitHeader.Number.Index
+	detail["Num"] = strconv.FormatUint(num, 10)
+	time := time.Unix(unit.UnitHeader.Creationdate, 0)
+	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
+
 	return Produced, detail
 }

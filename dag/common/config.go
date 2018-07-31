@@ -3,7 +3,6 @@ package common
 import (
 	"fmt"
 
-
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/storage"

@@ -1084,13 +1084,15 @@ func RegisterDashboardService(stack *node.Node, cfg *dashboard.Config, commit st
 // RegisterPtnStatsService configures the PalletOne Stats daemon and adds it to
 // th egiven node.
 func RegisterPtnStatsService(stack *node.Node, url string) {
-	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-		// Retrieve both ptn and les services
+	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+		// Retrieve ptn service
 		var ethServ *ptn.PalletOne
 		ctx.Service(&ethServ)
 
 		return ptnstats.New(url, ethServ)
-	}); err != nil {
+	})
+
+	if err != nil {
 		Fatalf("Failed to register the PalletOne Stats service: %v", err)
 	}
 }

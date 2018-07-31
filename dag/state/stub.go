@@ -17,31 +17,15 @@
 package state
 
 import (
-	"math/big"
-
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/trie"
+	"github.com/palletone/go-palletone/common"
 )
 
+//
 type StateDB struct{}
 
-type ManagedState struct{}
-
-func (self *StateDB) GetBalance(addr common.Address) *big.Int       { return &big.Int{} }
-func (self *StateDB) GetNonce(addr common.Address) uint64           { return uint64(0) }
-func (ms *ManagedState) SetNonce(addr common.Address, nonce uint64) {}
-func (ms *ManagedState) GetNonce(addr common.Address) uint64        { return uint64(0) }
 func NewStateSync(root common.Hash) *trie.TrieSync {
 	return &trie.TrieSync{}
 }
-
-type Trie interface {
-	NodeIterator(startKey []byte) trie.NodeIterator
-	GetKey([]byte) []byte
-}
-type Dump struct{}
-
-func NodeIterator(startKey []byte) trie.NodeIterator { return nil }
-func GetKey([]byte) []byte                           { return []byte{} }
 
 var MaxTrieCacheGen = uint16(120)
