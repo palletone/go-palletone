@@ -20,13 +20,13 @@ package storage
 
 import (
 	"encoding/json"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/modules"
 	"log"
 	"unsafe"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // @author Albert·Gou

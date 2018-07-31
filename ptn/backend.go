@@ -89,12 +89,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
-	var err error
 
-	//  stored := storage.GetGenesisUnit(0)
-	//	if stored == nil {
-	//		return nil, errors.New("the genesis block is not exsit")
-	//	}
 	db := storage.Init(config.Dag.DbPath)
 	if db == nil {
 		return nil, errors.New("leveldb init failed")
@@ -122,17 +117,13 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 
 	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
 
+	var err error
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine, ptn.dag, ptn.eventMux, ptn.levelDb); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}
 
 	ptn.ApiBackend = &EthApiBackend{ptn}
-	//	gpoParams := config.GPO
-	//	if gpoParams.Default == nil {
-	//		gpoParams.Default = config.GasPrice
-	//	}
-	//	eth.ApiBackend.gpo = gasprice.NewOracle(eth.ApiBackend, gpoParams)
 	return ptn, nil
 }
 
