@@ -169,7 +169,7 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 // modify by Albert·Gou
-func CreateUnit( mAddr *common.Address) ([]modules.Unit, error) {
+func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
 	units := []modules.Unit{}
 	// get mediator responsible for asset id
 	assetID := modules.IDType16{}
@@ -277,6 +277,15 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 		return &unit
 	}
 	return nil
+}
+
+/**
+获取创世单元的高度
+To get genesis unit height
+*/
+func GenesisHeight() modules.ChainIndex {
+	unit := GetGenesisUnit(0)
+	return unit.UnitHeader.Number
 }
 
 func GetUnitTransactions(root common.Hash) (modules.Transactions, error) {

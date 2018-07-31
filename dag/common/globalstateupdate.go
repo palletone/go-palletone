@@ -22,7 +22,10 @@ package common
 import (
 	"time"
 
+	"fmt"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"strings"
 )
 
 // UpdateGlobalDynProp, update global dynamic data
@@ -35,4 +38,29 @@ func UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalP
 	missedUnits := uint64(modules.GetSlotAtTime(gp, dgp, time.Unix(timestamp, 0)))
 	//	println(missedUnits)
 	dgp.CurrentASlot += missedUnits + 1
+}
+
+/**
+mediator投票结果，返回区块高度
+Method for getting mediator voting results
+*/
+var lastStatisticalHeight = GenesisHeight()
+
+func MediatorVoteResult(height modules.ChainIndex) (map[common.Address]uint64, error) {
+	result := map[common.Address]uint64{}
+	// step1. check height
+	// check asset id
+	if strings.Compare(lastStatisticalHeight.AssetID.String(), height.AssetID.String()) != 0 {
+		return nil, fmt.Errorf("Mediator for different token comparing with last statistcal height.")
+	}
+	// check is main
+	if height.IsMain == false {
+		return nil, fmt.Errorf("Height must be the main height")
+	}
+	// step2. query vote db to get result
+	// step3. set lastStatisticalHeight
+	lastStatisticalHeight.AssetID.SetBytes(height.AssetID.Bytes())
+	lastStatisticalHeight.IsMain = height.IsMain
+	lastStatisticalHeight.Index = height.Index
+	return result, nil
 }

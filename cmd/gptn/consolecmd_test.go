@@ -31,7 +31,10 @@ const (
 // then terminated by closing the input stream.
 func TestConsoleWelcome(t *testing.T) {
 	// Start a gptn console, make sure it's cleaned up and terminate the console
-	//gptn := runGptn(t,"console")
+	gptn := runGptn(t,"console")
+	// Gather all the infos the welcome message needs to contain
+
+	gptn.Expect("2018")
 	//gptn.ExpectExitConsoleWelcome()
 }
 

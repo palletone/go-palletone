@@ -29,8 +29,10 @@ func NewAsset() modules.IDType16 {
 	// use version 1: timestamp and mac
 	uuid := uuid.NewUUID()
 	lenth := len(uuid)
-	if lenth > cap(assetId) {lenth = cap(assetId)}
-	for i:=0; i<lenth; i++ {
+	if lenth > cap(assetId) {
+		lenth = cap(assetId)
+	}
+	for i := 0; i < lenth; i++ {
 		assetId[i] = uuid[i]
 	}
 	return assetId

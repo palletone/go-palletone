@@ -108,7 +108,7 @@ func (tt *TestCmd) Expect(tplsource string) {
 	if err := tt.matchExactOutput(want); err != nil {
 		tt.Fatal(err)
 	}
-	tt.Logf("Matched stdout text:\n%s", want)
+	//tt.Logf("Matched stdout text:\n%s", want)
 }
 
 func (tt *TestCmd) matchExactOutput(want []byte) error {
