@@ -10,6 +10,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
+        //"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
 	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 	"github.com/palletone/go-palletone/tokenengine/btcutil"
 )
