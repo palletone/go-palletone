@@ -85,11 +85,11 @@ func TestCopyHeader(t *testing.T) {
 	assetID := IDType16{}
 	assetID.SetBytes([]byte("0000000011111111"))
 	h := Header{
-		ParentUnits: []common.Hash{u1, u2},
+		ParentsHash: []common.Hash{u1, u2},
 		AssetIDs:    []IDType16{assetID},
 		Authors:     &auth,
 		Witness:     w,
-		Root:        common.Hash{},
+		TxRoot:        common.Hash{},
 		Number:      ChainIndex{AssetID: assetID, IsMain: true, Index: 0},
 	}
 
@@ -120,10 +120,10 @@ func TestUnitSize(t *testing.T) {
 	h.Number.AssetID = PTNCOIN
 	h.Number.Index = uint64(333333)
 	h.Extra = make([]byte, 20)
-	h.ParentUnits = append(h.ParentUnits, h.Root)
+	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
 
-	h.Root = h.Hash()
-	sig, _ := crypto.Sign(h.Root[:], key)
+	h.TxRoot = h.Hash()
+	sig, _ := crypto.Sign(h.TxRoot[:], key)
 	au.R = sig[:32]
 	au.S = sig[32:64]
 	au.V = sig[64:]

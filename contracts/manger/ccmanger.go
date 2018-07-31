@@ -36,8 +36,9 @@ import (
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/common"
-	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
+	//"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 )
 
 type CCInfo struct{
@@ -157,23 +158,23 @@ func computeProposalTxID(nonce, creator []byte) (string, error) {
 	return hex.EncodeToString(digest), nil
 }
 
-func createChaincodeProposalWithTransient(typ common.HeaderType, chainID string, cis *peer.ChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.Proposal, string, error) {
+func createChaincodeProposalWithTransient(typ common.HeaderType, chainID string, txid string, cis *peer.ChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.Proposal, string, error) {
 	// generate a random nonce
 	nonce, err := crypto.GetRandomNonce()
 	if err != nil {
 		return nil, "", err
 	}
 	// compute txid
-	txid, err := computeProposalTxID(nonce, creator)
-	if err != nil {
-		return nil, "", err
-	}
+	//txid, err := computeProposalTxID(nonce, creator)
+	//if err != nil {
+	//	return nil, "", err
+	//}
 
 	return createChaincodeProposalWithTxIDNonceAndTransient(txid, typ, chainID, cis, nonce, creator, transientMap)
 }
 
-func createChaincodeProposal(typ common.HeaderType, chainID string, cis *peer.ChaincodeInvocationSpec, creator []byte) (*peer.Proposal, string, error) {
-	return createChaincodeProposalWithTransient(typ, chainID, cis, creator, nil)
+func createChaincodeProposal(typ common.HeaderType, chainID string, txid string, cis *peer.ChaincodeInvocationSpec, creator []byte) (*peer.Proposal, string, error) {
+	return createChaincodeProposalWithTransient(typ, chainID, txid, cis, creator, nil)
 }
 
 func GetBytesProposal(prop *peer.Proposal) ([]byte, error) {
@@ -181,10 +182,11 @@ func GetBytesProposal(prop *peer.Proposal) ([]byte, error) {
 	return propBytes, err
 }
 
-func signedEndorserProposa(chainID string, cs *peer.ChaincodeSpec, creator, signature []byte) (*peer.SignedProposal, *peer.Proposal, error) {
+func signedEndorserProposa(chainID string, txid string, cs *peer.ChaincodeSpec, creator, signature []byte) (*peer.SignedProposal, *peer.Proposal, error) {
 	prop, _, err := createChaincodeProposal(
 		common.HeaderType_ENDORSER_TRANSACTION,
 		chainID,
+		txid,
 		&peer.ChaincodeInvocationSpec{ChaincodeSpec: cs},
 		creator)
 	if err != nil {

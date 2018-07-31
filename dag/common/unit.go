@@ -359,11 +359,11 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	txHashSet := []common.Hash{}
 	for _, tx := range unit.Txs {
 		// traverse messages
-		for _, msg := range tx.TxMessages {
+		for msgIndex, msg := range tx.TxMessages {
 			// handle different messages
 			switch msg.App {
 			case modules.APP_PAYMENT:
-				if ok := savePaymentPayload(tx.TxHash, &msg); ok != true {
+				if ok := savePaymentPayload(tx.TxHash, &msg, uint32(msgIndex), tx.Locktime); ok != true {
 					log.Error("Save payment payload error.")
 					return modules.ErrUnit(-5)
 				}
@@ -486,7 +486,7 @@ func checkTransactions(txs *modules.Transactions, isGenesis bool) (uint64, error
 保存PaymentPayload
 save PaymentPayload data
 */
-func savePaymentPayload(txHash common.Hash, msg *modules.Message) bool {
+func savePaymentPayload(txHash common.Hash, msg *modules.Message, msgIndex uint32, lockTime uint32) bool {
 	// if inputs is none then it is just a normal coinbase transaction
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
@@ -520,7 +520,7 @@ func savePaymentPayload(txHash common.Hash, msg *modules.Message) bool {
 		}
 	}
 	// save utxo
-	UpdateUtxo(txHash, msg)
+	UpdateUtxo(txHash, msg, msgIndex, lockTime)
 	return true
 }
 
