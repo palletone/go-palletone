@@ -28,11 +28,11 @@ import (
 // UpdateGlobalDynProp, update global dynamic data
 // @author Albert·Gou
 func UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
-	when := time.Unix(unit.UnitHeader.Creationdate, 0)
+	timestamp := unit.UnitHeader.Creationdate
 	dgp.LastVerifiedUnitNum = unit.UnitHeader.Number.Index
-	dgp.LastVerifiedUnitTime = when
+	dgp.LastVerifiedUnitTime = timestamp
 
-	missedUnits := uint64(modules.GetSlotAtTime(gp, dgp, when))
+	missedUnits := uint64(modules.GetSlotAtTime(gp, dgp, time.Unix(timestamp, 0)))
 	//	println(missedUnits)
 	dgp.CurrentASlot += missedUnits + 1
 }

@@ -20,8 +20,6 @@
 package modules
 
 import (
-	"time"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
@@ -42,7 +40,7 @@ type DynamicGlobalProperty struct {
 
 	//	LastVerifiedUnit *v.VerifiedUnit	// 最近生产的验证单元
 
-	LastVerifiedUnitTime time.Time // 最近的验证单元时间
+	LastVerifiedUnitTime int64 // 最近的验证单元时间
 
 	//	CurrentMediator *Mediator // 当前生产验证单元的mediator, 用于判断是否连续同一个mediator生产验证单元
 
@@ -100,7 +98,7 @@ func InitDynGlobalProp(genesis *core.Genesis) *DynamicGlobalProperty {
 
 	// Create dynamic global properties
 	dgp := NewDynGlobalProp()
-	dgp.LastVerifiedUnitTime = time.Unix(genesis.InitialTimestamp, 0)
+	dgp.LastVerifiedUnitTime = genesis.InitialTimestamp
 
 	return dgp
 }

@@ -67,7 +67,7 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 	}
 
 	// 4. 打乱证人的调度顺序
-	nowHi := uint64(dgp.LastVerifiedUnitTime.Unix() << 32)
+	nowHi := uint64(dgp.LastVerifiedUnitTime << 32)
 	for i := uint64(0); i < aSize; i++ {
 		// 高性能随机生成器(High performance random generator)
 		// 原理请参考 http://xorshift.di.unimi.it/
@@ -143,7 +143,7 @@ func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32)
 	//}
 
 	// 最近的验证单元的绝对slot
-	var verifiedUnitAbsSlot = dgp.LastVerifiedUnitTime.Unix() / int64(interval)
+	var verifiedUnitAbsSlot = dgp.LastVerifiedUnitTime / int64(interval)
 	// 最近的时间槽起始时间
 	verifiedUnitSlotTime := time.Unix(verifiedUnitAbsSlot*int64(interval), 0)
 
