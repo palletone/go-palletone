@@ -39,7 +39,7 @@ type MediatorPlugin struct {
 	productionEnabled bool
 	// Mediator`s account and passphrase controlled by this node
 	mediators map[common.Address]string
-	quit         chan struct{}  // Channel used for graceful exit
+	quit      chan struct{} // Channel used for graceful exit
 }
 
 func newChainBanner(dag *modules.Dag) {
