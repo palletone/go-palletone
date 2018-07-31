@@ -106,7 +106,7 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 		//log.Info("Not producing VerifiedUnit because current scheduled mediator is " +
 		//	detail["ScheduledMediator"])
 	case Lag:
-		log.Info("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time."+
+		log.Info("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time." +
 			" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
 	case NoPrivateKey:
 		log.Info("Not producing VerifiedUnit because I don't have the private key for " +

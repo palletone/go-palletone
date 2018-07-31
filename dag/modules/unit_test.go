@@ -89,7 +89,7 @@ func TestCopyHeader(t *testing.T) {
 		AssetIDs:    []IDType16{assetID},
 		Authors:     &auth,
 		Witness:     w,
-		TxRoot:        common.Hash{},
+		TxRoot:      common.Hash{},
 		Number:      ChainIndex{AssetID: assetID, IsMain: true, Index: 0},
 	}
 

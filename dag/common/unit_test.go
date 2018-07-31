@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"fmt"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"time"
-	"github.com/palletone/go-palletone/common"
 )
 
 func TestNewGenesisUnit(t *testing.T) {
