@@ -15,6 +15,25 @@ import (
 	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 	"github.com/palletone/go-palletone/tokenengine/btcutil"
 )
+type Params struct {
+	*chaincfg.Params
+	RPCClientPort string
+	RPCServerPort string
+}
+
+var MainNetParams = Params{
+	Params:        &chaincfg.MainNetParams,
+	RPCClientPort: "8334",
+	RPCServerPort: "8332",
+}
+
+// TestNet3Params contains parameters specific running btcwallet and
+// btcd on the test network (version 3) (wire.TestNet3).
+var TestNet3Params = Params{
+	Params:        &chaincfg.TestNet3Params,
+	RPCClientPort: "18334",
+	RPCServerPort: "18332",
+}
 
 type addressToKey struct {
 	key        *btcec.PrivateKey
@@ -70,12 +89,12 @@ func checkScripts(msg string, tx *wire.MsgTx, idx int, inputAmt int64, sigScript
 
 	return nil
 }
-
 func signAndCheck(msg string, tx *wire.MsgTx, idx int, inputAmt int64, pkScript []byte,
 	hashType SigHashType, kdb KeyDB, sdb ScriptDB,
 	previousScript []byte) error {
-
-	sigScript, err := SignTxOutput(&chaincfg.TestNet3Params, tx, idx,
+        chainParams := &chaincfg.TestNet3Params
+        fmt.Println(chainParams)
+	sigScript, err := SignTxOutput(chainParams/*&chaincfg.TestNet3Params*/, tx, idx,
 		pkScript, hashType, kdb, sdb, nil)
 	if err != nil {
 		return fmt.Errorf("failed to sign output %s: %v", msg, err)
@@ -336,7 +355,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 		}
 	}
-
+        /*
 	// Pay to PubKey (uncompressed)
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
@@ -378,7 +397,8 @@ func TestSignTxOutput(t *testing.T) {
 			}
 		}
 	}
-
+        */
+        /*
 	// Pay to PubKey (uncompressed)
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
@@ -442,9 +462,11 @@ func TestSignTxOutput(t *testing.T) {
 			}
 		}
 	}
-        var netID byte
-        netID = 0x00
+        */
+        //var netID byte
+        //netID = 0x00
 	// Pay to PubKey (compressed)
+        /*
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
@@ -483,8 +505,10 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 		}
-	}
-
+	}*/
+        var netID byte
+        netID = 0x00
+        /*
 	// Pay to PubKey (compressed) with duplicate merge
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
@@ -501,7 +525,7 @@ func TestSignTxOutput(t *testing.T) {
 				SerializeCompressed()
 			address, err := btcutil.NewAddressPubKey(pk,
 				//&chaincfg.TestNet3Params)
-                                   netID)
+                                  netID)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -546,7 +570,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 		}
-	}
+	}*/
 
 	// As before, but with p2sh now.
 	// Pay to Pubkey Hash (uncompressed)
@@ -826,7 +850,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 		}
 	}
-
+        /*
 	// Pay to PubKey (uncompressed)
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
@@ -884,7 +908,8 @@ func TestSignTxOutput(t *testing.T) {
 			}
 		}
 	}
-
+        */
+        /*
 	// Pay to PubKey (uncompressed) with duplicate merge
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
@@ -966,7 +991,8 @@ func TestSignTxOutput(t *testing.T) {
 			}
 		}
 	}
-
+        */
+        /*
 	// Pay to PubKey (compressed)
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
@@ -1023,7 +1049,8 @@ func TestSignTxOutput(t *testing.T) {
 			}
 		}
 	}
-
+         */
+        /*
 	// Pay to PubKey (compressed)
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
@@ -1104,7 +1131,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 		}
-	}
+	}*/
 
 	// Basic Multisig
 	for _, hashType := range hashTypes {

@@ -44,9 +44,11 @@ func UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalP
 mediator投票结果，返回区块高度
 Method for getting mediator voting results
 */
-var lastStatisticalHeight = GenesisHeight()
+
+//var lastStatisticalHeight = GenesisHeight()
 
 func MediatorVoteResult(height modules.ChainIndex) (map[common.Address]uint64, error) {
+	var lastStatisticalHeight = GenesisHeight()
 	result := map[common.Address]uint64{}
 	// step1. check height
 	// check asset id
