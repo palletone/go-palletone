@@ -137,7 +137,7 @@ func GenerateUnit(dag *modules.Dag, when time.Time, signKey modules.Mediator) mo
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	log.Info("Generating Verified Unit...")
 
-	units, _ := CreateUnit()
+	units, _ := CreateUnit(&signKey.Address)
 	unit := units[0]
 	unit.UnitHeader.Creationdate = when.Unix()
 	unit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
@@ -169,7 +169,7 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 // modify by Albert·Gou
-func CreateUnit( /*mAddr *common.Address, time time.Time*/ ) ([]modules.Unit, error) {
+func CreateUnit( mAddr *common.Address) ([]modules.Unit, error) {
 	units := []modules.Unit{}
 	// get mediator responsible for asset id
 	assetID := modules.IDType16{}
