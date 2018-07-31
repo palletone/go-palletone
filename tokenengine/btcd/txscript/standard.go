@@ -524,14 +524,15 @@ func PushedData(script []byte) ([][]byte, error) {
 func ExtractPkScriptAddrs(pkScript []byte, chainParams *chaincfg.Params) (ScriptClass, []btcutil.Address, int, error) {
 	var addrs []btcutil.Address
 	var requiredSigs int
-
+        //fmt.Println("ExtractPkScriptAddrs------527   527-------")
 	// No valid addresses or required signatures if the script doesn't
 	// parse.
 	pops, err := parseScript(pkScript)
 	if err != nil {
+                // fmt.Println("ExtractPkScriptAddrs------532   532   532-------")
 		return NonStandardTy, nil, 0, err
 	}
-
+        //fmt.Println("ExtractPkScriptAddrs------535   535-------")
 	scriptClass := typeOfScript(pops)
 	switch scriptClass {
 	case PubKeyHashTy:
@@ -539,9 +540,12 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *chaincfg.Params) (Script
 		//  OP_DUP OP_HASH160 <hash> OP_EQUALVERIFY OP_CHECKSIG
 		// Therefore the pubkey hash is the 3rd item on the stack.
 		// Skip the pubkey hash if it's invalid for some reason.
+                //fmt.Println("ExtractPkScriptAddrs------542    542-------")
 		requiredSigs = 1
 		addr, err := btcutil.NewAddressPubKeyHash(pops[2].data,
 			chainParams)
+                //fmt.Println("addr is is   is ")
+                //fmt.Println(addr)
 		if err == nil {
 			addrs = append(addrs, addr)
 		}
@@ -551,6 +555,7 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *chaincfg.Params) (Script
 		//  OP_0 <20-byte hash>
 		// Therefore, the pubkey hash is the second item on the stack.
 		// Skip the pubkey hash if it's invalid for some reason.
+                //fmt.Println("ExtractPkScriptAddrs------558   558-------")
 		requiredSigs = 1
 		addr, err := btcutil.NewAddressWitnessPubKeyHash(pops[1].data,
 			chainParams)
@@ -563,13 +568,13 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *chaincfg.Params) (Script
 		//  <pubkey> OP_CHECKSIG
 		// Therefore the pubkey is the first item on the stack.
 		// Skip the pubkey if it's invalid for some reason.
-		/* defa by wuzhiyuan
+		// defa by wuzhiyuan
 		requiredSigs = 1
 		addr, err := btcutil.NewAddressPubKey(pops[0].data, chainParams)
 		if err == nil {
 			addrs = append(addrs, addr)
-		}*/
-
+		}
+                //fmt.Println("ExtractPkScriptAddrs------577    577-------")
 	case ScriptHashTy:
 		// A pay-to-script-hash script is of the form:
 		//  OP_HASH160 <scripthash> OP_EQUAL
