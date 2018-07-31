@@ -108,7 +108,7 @@ func readUtxosByIndex(addr common.Address, asset modules.Asset) (map[modules.Out
 }
 
 /**
-扫描UTXO全表，获取对应账户的指定token列表
+扫描UTXO全表，获取对应账户的指定token可用的utxo列表
 To get utxo info by scanning all utxos.
 */
 func readUtxosFrAll(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
@@ -329,9 +329,6 @@ func walletBalanceByIndex(addr common.Address, asset modules.Asset) uint64 {
 				log.Error("Decode utxo data error:", err)
 				continue
 			}
-
-			// check locktime
-
 			balance += utxoIndexVal.Amount
 		}
 	}
@@ -378,8 +375,6 @@ func walletBalanceFrAll(addr common.Address, asset modules.Asset) uint64 {
 			if strings.Compare(scriptPubKey.Address.String(), addr.String()) != 0 {
 				continue
 			}
-			// check locktime
-
 			balance += utxo.Amount
 		}
 	}
