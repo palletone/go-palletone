@@ -27,6 +27,7 @@ import (
 var (
 	UNIT_PREFIX                      = []byte("ut") // unit_prefix + mci + hash
 	HEADER_PREFIX                    = []byte("uh") // prefix + hash
+	UNIT_HASH_NUMBER                 = []byte("hn")
 	BODY_PREFIX                      = []byte("ub")
 	TRANSACTION_PREFIX               = []byte("tx")
 	TRANSACTIONSPREFIX               = []byte("ts")

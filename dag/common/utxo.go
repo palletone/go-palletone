@@ -245,8 +245,36 @@ destory utxo, delete from UTXO database
 func destoryUtxo(txins []modules.Input) {
 	for _, txin := range txins {
 		outpoint := txin.PreviousOutPoint
+		// get utxo info
+		data, err := storage.Get(outpoint.ToKey())
+		if err != nil {
+			log.Error("Query utxo when destory uxto", "error", err.Error())
+			continue
+		}
+		var utxo modules.Utxo
+		if err := rlp.DecodeBytes(data, &utxo); err != nil {
+			log.Error("Decode utxo when destory uxto", "error", err.Error())
+			continue
+		}
+		// delete utxo
 		if err := storage.Delete(outpoint.ToKey()); err != nil {
-			log.Error("Destory uxto error: %s", err)
+			log.Error("Destory uxto", "error", err.Error())
+			continue
+		}
+		// delete index data
+		scriptPubKey, err := txscript.ExtractPkScriptAddrs(utxo.PkScript)
+		if err != nil {
+			log.Error("Extract address when destory uxto", "error", err.Error())
+			continue
+		}
+		utxoIndex := modules.UtxoIndex{
+			AccountAddr: scriptPubKey.Address,
+			Asset:       utxo.Asset,
+			OutPoint:    outpoint,
+		}
+		if err := storage.Delete(utxoIndex.ToKey()); err != nil {
+			log.Error("Destory uxto index", "error", err.Error())
+			continue
 		}
 	}
 }
