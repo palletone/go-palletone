@@ -18,6 +18,7 @@
 package ptn
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/core"
@@ -33,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -61,12 +64,9 @@ type PalletOne struct {
 	engine         core.ConsensusEngine
 	accountManager *accounts.Manager
 
-	bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
-	//bloomIndexer  *coredata.ChainIndexer         // Bloom indexer operating during block imports
-
 	ApiBackend *EthApiBackend
-	//gasPrice   *big.Int
-	//etherbase  common.Address
+
+	levelDb *palletdb.LDBDatabase
 
 	networkId     uint64
 	netRPCService *ethapi.PublicNetAPI
@@ -74,6 +74,10 @@ type PalletOne struct {
 	dag *modules.Dag
 
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
+
+	bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
+	//bloomIndexer  *coredata.ChainIndexer         // Bloom indexer operating during block imports
+	//etherbase  common.Address
 }
 
 // New creates a new PalletOne object (including the
@@ -91,6 +95,10 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	//	if stored == nil {
 	//		return nil, errors.New("the genesis block is not exsit")
 	//	}
+	db := storage.Init(config.Dag.DbPath)
+	if db == nil {
+		return nil, errors.New("leveldb init failed")
+	}
 
 	ptn := &PalletOne{
 		config:         config,
@@ -99,11 +107,11 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		engine:         CreateConsensusEngine(ctx),
 		shutdownChan:   make(chan bool),
 		networkId:      config.NetworkId,
-		//gasPrice:       config.GasPrice,
-		//etherbase:      config.Etherbase,
-		bloomRequests: make(chan chan *bloombits.Retrieval),
-		dag:           dagcommon.NewDag(),
+		levelDb:        db,
+		bloomRequests:  make(chan chan *bloombits.Retrieval),
+		dag:            dagcommon.NewDag(),
 		//bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
+		//etherbase:      config.Etherbase,
 	}
 
 	log.Info("Initialising PalletOne protocol", "versions", ProtocolVersions, "network", config.NetworkId)
@@ -114,7 +122,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 
 	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
 
-	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine, ptn.dag, ptn.eventMux); err != nil {
+	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine, ptn.dag, ptn.eventMux, ptn.levelDb); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}

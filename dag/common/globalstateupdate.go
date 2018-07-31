@@ -14,35 +14,25 @@
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
+ *
  */
 
-package storage
+package common
 
 import (
-	"fmt"
+	"time"
 
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-const (
-	mediatorSchlDBKey = "MediatorSchedule"
-)
+// UpdateGlobalDynProp, update global dynamic data
+// @author Albert·Gou
+func UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
+	when := time.Unix(unit.UnitHeader.Creationdate, 0)
+	dgp.LastVerifiedUnitNum = unit.UnitHeader.Number.Index
+	dgp.LastVerifiedUnitTime = when
 
-func StoreMediatorSchl(ms *modules.MediatorSchedule) {
-	err := Store(mediatorSchlDBKey, *ms)
-	if err != nil {
-		log.Error(fmt.Sprintf("Store mediator schedule error: %s", err))
-	}
-}
-
-func RetrieveMediatorSchl() *modules.MediatorSchedule {
-	ms := modules.NewMediatorSchl()
-
-	err := Retrieve(mediatorSchlDBKey, ms)
-	if err != nil {
-		log.Info(fmt.Sprintf("Retrieve mediator schedule error: %s", err))
-	}
-
-	return ms
+	missedUnits := uint64(modules.GetSlotAtTime(gp, dgp, when))
+	//	println(missedUnits)
+	dgp.CurrentASlot += missedUnits + 1
 }

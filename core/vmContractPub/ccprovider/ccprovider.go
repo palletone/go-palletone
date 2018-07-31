@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"time"
 )
 
 var ccproviderLogger = flogging.MustGetLogger("ccprovider")
@@ -476,11 +477,11 @@ type ChaincodeProvider interface {
 	// GetCCContext returns an opaque chaincode context
 	GetCCContext(cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal) interface{}
 	// ExecuteChaincode executes the chaincode given context and args
-	ExecuteChaincode(ctxt context.Context, cccid interface{}, args [][]byte) (*pb.Response, *pb.ChaincodeEvent, error)
+	ExecuteChaincode(ctxt context.Context, cccid interface{}, args [][]byte, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error)
 	// Execute executes the chaincode given context and spec (invocation or deploy)
-	Execute(ctxt context.Context, cccid interface{}, spec interface{}) (*pb.Response, *pb.ChaincodeEvent, error)
+	Execute(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error)
 	// ExecuteWithErrorFilter executes the chaincode given context and spec and returns payload
-	ExecuteWithErrorFilter(ctxt context.Context, cccid interface{}, spec interface{}) ([]byte, *pb.ChaincodeEvent, error)
+	ExecuteWithErrorFilter(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) ([]byte, *pb.ChaincodeEvent, error)
 	// Stop stops the chaincode given context and deployment spec
 	Stop(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error
 }

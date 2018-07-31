@@ -20,6 +20,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"fmt"
+	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 )
 
 type mocksupt struct {}
@@ -31,7 +32,7 @@ func (*mocksupt) IsSysCC(name string) bool {
 	return true
 }
 
-func (*mocksupt) Execute(ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal, spec interface{}) (*pb.Response, *pb.ChaincodeEvent, error) {
+func (*mocksupt) Execute(ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
 	return nil, nil, nil
 }
 
@@ -81,6 +82,7 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 	deployedCCName := "sample_syscc"
 	SysCCMap[deployedCCName] = struct{}{}
 	creator := []byte("glh")
+	txid := "c089md9jdopdf32"
 	var mksupt Support = &SupportImpl{}
 
 	peerInit()
@@ -104,8 +106,8 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 		Version:"ptn001",
 	}
 
-	sprop, prop, err := signedEndorserProposa(chainID, spec, creator, []byte("msg1"))
-	rsp, unit, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid)
+	sprop, prop, err := signedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
+	rsp, unit, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid, 5*time.Second)
 	if err != nil {
 		logger.Errorf("ProcessProposal error[%v]", err)
 	}
@@ -201,10 +203,18 @@ func TestExecSysCC(t *testing.T) {
 	args := util.ToChaincodeArgs(f, "greeting", "hey there")
 
 	Init()
-	Invoke(chainID, "sample_syscc",  args, 0)
+
+	var txid string = "1234567890" //default
+	nonce, err := crypto.GetRandomNonce()
+	if err == nil {
+		txid, err = computeProposalTxID(nonce, []byte("glh"))
+	}
+
+	Invoke(chainID, "sample_syscc", txid, args, 0)
 }
 
 func multSys(t *testing.T){
+	var txid string = "1234567890" //default
 	fmt.Println("abc enter..................")
 	chainID := util.GetTestChainID()
 	f := "putval"
@@ -213,7 +223,12 @@ func multSys(t *testing.T){
 	args3 := util.ToChaincodeArgs(f, "greeting", "my test3")
 
 	go func() {
-		unit, err := Invoke(chainID, "sample_syscc", args1, 0)
+		nonce, err := crypto.GetRandomNonce()
+		if err == nil {
+			txid, err = computeProposalTxID(nonce, []byte("glh"))
+		}
+
+		unit, err := Invoke(chainID, "sample_syscc", txid, args1, 0)
 		if err != nil {
 			t.Error(err)
 		}else {
@@ -224,7 +239,11 @@ func multSys(t *testing.T){
 		}
 	}()
 	go func() {
-		unit, err := Invoke(chainID, "sample_syscc", args2, 0)
+		nonce, err := crypto.GetRandomNonce()
+		if err == nil {
+			txid, err = computeProposalTxID(nonce, []byte("glh"))
+		}
+		unit, err := Invoke(chainID, "sample_syscc", txid, args2, 0)
 		if err != nil {
 			t.Error(err)
 		}else {
@@ -235,7 +254,11 @@ func multSys(t *testing.T){
 		}
 	}()
 	go func() {
-		unit, err := Invoke(chainID, "sample_syscc", args3, 0)
+		nonce, err := crypto.GetRandomNonce()
+		if err == nil {
+			txid, err = computeProposalTxID(nonce, []byte("glh"))
+		}
+		unit, err := Invoke(chainID, "sample_syscc", txid, args3, 0)
 		if err != nil {
 			t.Error(err)
 		}else {
@@ -246,6 +269,47 @@ func multSys(t *testing.T){
 		}
 	}()
 //	go Invoke(chainID, "sample_syscc", args)
+}
+
+
+func multMoreSys(t *testing.T){
+	fmt.Println("mult enter..................")
+	chainID := util.GetTestChainID()
+	f := "putval"
+
+	var invokeCount int = 5
+	var tmout time.Duration = 5*time.Second
+	var txid string = "1234567890" //default
+
+	for num := 0; num <invokeCount; num += 1 {
+		nonce, err := crypto.GetRandomNonce()
+		if err == nil {
+			txid, err = computeProposalTxID(nonce, []byte("glh"))
+		}
+		testStr := fmt.Sprintf("mytest_%d", num)
+		args := util.ToChaincodeArgs(f, "greeting", testStr)
+		fmt.Println("++++++++++++++++"+ testStr, "  --txid:" + txid)
+
+		if num > 2 {
+			tmout = 1
+		}
+
+		go func(timeout time.Duration, txid string) {
+			unit, err := Invoke(chainID,"sample_syscc", txid, args, timeout)
+			if err != nil {
+				t.Error(err)
+			}else {
+				//t.Logf("ContractId[%s], Function[%s], ReadSet:%v ,WriteSet:%v", unit.ContractId, unit.Function, unit.ReadSet[unit.ContractId], unit.WriteSet[unit.ContractId])
+				for k,v := range unit.WriteSet {
+					t.Logf("k[%s], v[%v]", k, v)
+				}
+			}
+		}(tmout, txid)
+	}
+
+
+
+	//	go Invoke(chainID, "sample_syscc", args)
 }
 
 func TestExecSysCCMult(t *testing.T) {
@@ -262,14 +326,15 @@ func TestExecSysCCMult(t *testing.T) {
 
 	Init()
 	//Invoke(chainID, "sample_syscc", args)
-	multSys(t)
+	//multSys(t)
+	multMoreSys(t)
 	//func () {
 	//	go	Invoke(chainID, "sample_syscc", args)
 	//	go	Invoke(chainID, "sample_syscc", args)
 	//	go	Invoke(chainID, "sample_syscc", args)
 	//}()
 
-	time.Sleep(10*time.Second)
+	time.Sleep(20*time.Second)
 
 }
 

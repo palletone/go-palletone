@@ -61,12 +61,12 @@ func GetUsrCCList() {
 
 //timeout:ms
 // ccName can be contract Id
-func Invoke(chainID string, ccName string,  args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error){
+func Invoke(chainID string, ccName string,  txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error){
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone")  //default
 	ccVersion := "ptn001"  //default
 
-	logger.Info("===== Invoke [%s][%s]======", chainID, ccName)
+	logger.Infof("===== Invoke [%s][%s]======", chainID, ccName)
 	es := NewEndorserServer(mksupt)
 	spec := &pb.ChaincodeSpec{
 		ChaincodeId: &pb.ChaincodeID{Name: ccName},
@@ -80,18 +80,13 @@ func Invoke(chainID string, ccName string,  args [][]byte, timeout time.Duration
 		Version:  ccVersion,
 	}
 
-	sprop, prop, err := signedEndorserProposa(chainID, spec, creator, []byte("msg1"))
+	sprop, prop, err := signedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
 	if err != nil {
 		logger.Errorf("signedEndorserProposa error[%v]", err)
 		return nil, err
 	}
-	if timeout != 0 {
-		timeoutProcess := func () {
-			logger.Infof("timeoutProcess")
-		}
-		time.AfterFunc(timeout, timeoutProcess)
-	}
-	rsp, unit, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid)
+
+	rsp, unit, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid, timeout)
 	if err != nil {
 		logger.Errorf("ProcessProposal error[%v]", err)
 		return nil, err

@@ -379,9 +379,9 @@ func makeWriter(typ reflect.Type, ts tags) (writer, error) {
 		return makePtrWriter(typ)
 	case kind == reflect.Float64:
 		return writefloat64, nil
-	case kind== reflect.Map:
+	case kind == reflect.Map:
 		return makeMapWriter(typ)
-	case kind==reflect.Int:
+	case isInt(kind):
 		return writeInt, nil
 	default:
 		return nil, fmt.Errorf("rlp writer: type %v is not RLP-serializable", typ)
@@ -401,14 +401,9 @@ func writeInt(val reflect.Value, w *encbuf) error {
 	i := val.Int()
 	if i == 0 {
 		w.str = append(w.str, 0x80)
-	} else if i < 128 && i>-128{
-		// fits single byte
-		w.str = append(w.str, byte(i))
 	} else {
 		// TODO: encode int to w.str directly
-		ni := uint64(0)
-		if i<0 {ni=uint64(-i)}
-		s := putint(w.sizebuf[1:], ni)
+		s := putint2(w.sizebuf[1:], i)
 		w.sizebuf[0] = 0x80 + byte(s)
 		w.str = append(w.str, w.sizebuf[:s+1]...)
 	}
@@ -578,7 +573,7 @@ func makeStructWriter(typ reflect.Type) (writer, error) {
 	return writer, nil
 }
 
-func makeMapWriter(typ reflect.Type) (writer, error)  {
+func makeMapWriter(typ reflect.Type) (writer, error) {
 	fields, err := mapFields(typ)
 	if err != nil {
 		return nil, err
@@ -683,6 +678,67 @@ func putint(b []byte, i uint64) (size int) {
 		b[5] = byte(i)
 		return 6
 	case i < (1 << 56):
+		b[0] = byte(i >> 48)
+		b[1] = byte(i >> 40)
+		b[2] = byte(i >> 32)
+		b[3] = byte(i >> 24)
+		b[4] = byte(i >> 16)
+		b[5] = byte(i >> 8)
+		b[6] = byte(i)
+		return 7
+	default:
+		b[0] = byte(i >> 56)
+		b[1] = byte(i >> 48)
+		b[2] = byte(i >> 40)
+		b[3] = byte(i >> 32)
+		b[4] = byte(i >> 24)
+		b[5] = byte(i >> 16)
+		b[6] = byte(i >> 8)
+		b[7] = byte(i)
+		return 8
+	}
+}
+
+/**
+生成int类型的rlp编码
+generate int rlp encode code
+ */
+func putint2(b []byte, i int64) (size int) {
+	switch {
+	case i >= -(1 << 7) && i<=(1<<7-1):
+		b[0] = byte(i)
+		return 1
+	case i >= (-( 1 << 15 )) && i <= (1 << 15-1):
+		b[0] = byte(i >> 8)
+		b[1] = byte(i)
+		return 2
+	case i >= -(1 << 23) && i <= (1 << 23-1):
+		b[0] = byte(i >> 16)
+		b[1] = byte(i >> 8)
+		b[2] = byte(i)
+		return 3
+	case i >= -(1 << 31) && i <= (1 << 31-1):
+		b[0] = byte(i >> 24)
+		b[1] = byte(i >> 16)
+		b[2] = byte(i >> 8)
+		b[3] = byte(i)
+		return 4
+	case i >= -(1 << 39) && i <= (1 << 39-1):
+		b[0] = byte(i >> 32)
+		b[1] = byte(i >> 24)
+		b[2] = byte(i >> 16)
+		b[3] = byte(i >> 8)
+		b[4] = byte(i)
+		return 5
+	case i >= -(1 << 47) && i<=(1 << 47-1):
+		b[0] = byte(i >> 40)
+		b[1] = byte(i >> 32)
+		b[2] = byte(i >> 24)
+		b[3] = byte(i >> 16)
+		b[4] = byte(i >> 8)
+		b[5] = byte(i)
+		return 6
+	case i >= -(1 << 55) && i<=(1 << 55-1):
 		b[0] = byte(i >> 48)
 		b[1] = byte(i >> 40)
 		b[2] = byte(i >> 32)

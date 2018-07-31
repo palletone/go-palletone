@@ -17,20 +17,53 @@
  */
 package adaptor
 
+type adapter interface {
+	NewPrivateKey() (priKey string)
+	GetPublicKey(priKey string) (pubKey string)
+	GetAddress(priKey string) (address string)
+	CreateMultiSigAddress(params string) string
+
+	GenTransaction(params string) string
+	ContractTransaction(params string) string
+	DecodeTransaction(params string) string
+
+	SignTransaction(params string) string
+	SendTransaction(params string) string
+
+	Query(params string) string
+	ContractQuery(params string) string
+}
+
 type adapterCryptoCurrency interface {
 	NewPrivateKey() (wifPriKey string)
 	GetPublicKey(wifPriKey string) (pubKey string)
 	GetAddress(wifPriKey string) (address string)
 	CreateMultiSigAddress(params string) string
-	GetUnspendUTXO(params string) string
+
+	GetUnspendUTXO(params string) string //
+
 	RawTransactionGen(params string) string
 	DecodeRawTransaction(params string) string
 	SignTransaction(params string) string
-	GetBalance(params string) string
-	GetTransactions(params string) string
-	ImportMultisig(params string) string
+
+	GetBalance(params string) string      //
+	GetTransactions(params string) string //
+	ImportMultisig(params string) string  //
+
 	SendTransaction(params string) string
 }
 
 type adapterSmartContract interface {
+	NewPrivateKey() (priKey string)
+	GetPublicKey(priKey string) (pubKey string)
+	GetAddress(priKey string) (address string)
+
+	CreateMultiSigAddress(params string) string
+
+	GetBalance(params string) string
+	GetTransactionByHash(params string) string
+	ContractDeployment(params string) string
+
+	GetMultisigInfo(params string) string
+	CalculateSig(params string) string
 }

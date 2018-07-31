@@ -20,12 +20,10 @@ package modules
 import (
 	"encoding/json"
 	"math/big"
-	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/core"
 )
 
 /*****************************27 June, 2018 update unit struct type*****************************************/
@@ -35,7 +33,7 @@ import (
 //	Alt                   string          `json:"alt"`                      // 资产号
 //	Messages              []Message       `json:"messages"`                 // 消息
 //	Authors               []Author        `json:"authors"`                  // 发起人
-//	ParentUnits           []string        `json:"parent_units"`             // 父单元数组
+//	ParentsHash           []string        `json:"parents_hash"`             // 父单元数组
 //	CreationDate          time.Time       `json:"creation_date"`            // 创建时间
 //	LastPacket            string          `json:"last_packet"`              // 最后一个packet
 //	LastPacketUnit        string          `json:"last_packet_unit"`         // 最后一个packet对应的unit
@@ -68,24 +66,24 @@ import (
 /***************************** end of update **********************************************/
 
 type Header struct {
-	ParentUnits  []common.Hash   `json:"parent_units"`
+	ParentsHash  []common.Hash   `json:"parents_hash"`
 	AssetIDs     []IDType16      `json:"assets"`
 	Authors      *Authentifier   `json:"author" rlp:"-"`  // the unit creation authors
 	Witness      []*Authentifier `json:"witness" rlp:"-"` // 群签名
-	Root         common.Hash     `json:"root"`
+	TxRoot       common.Hash     `json:"root"`
 	Number       ChainIndex      `json:"index"`
 	Extra        []byte          `json:"extra"`
-	Creationdate time.Time       `json:"creation_time"` // unit create time
+	Creationdate int64           `json:"creation_time"` // unit create time
 	//FeeLimit    uint64        `json:"fee_limit"`
 	//FeeUsed     uint64        `json:"fee_used"`
 }
 
 func (cpy *Header) CopyHeader(h *Header) {
 	cpy = h
-	if len(h.ParentUnits) > 0 {
-		cpy.ParentUnits = make([]common.Hash, len(h.ParentUnits))
-		for i := 0; i < len(h.ParentUnits); i++ {
-			cpy.ParentUnits[i] = h.ParentUnits[i]
+	if len(h.ParentsHash) > 0 {
+		cpy.ParentsHash = make([]common.Hash, len(h.ParentsHash))
+		for i := 0; i < len(h.ParentsHash); i++ {
+			cpy.ParentsHash[i] = h.ParentsHash[i]
 		}
 	}
 
@@ -102,13 +100,13 @@ func NewHeader(parents []common.Hash, asset []IDType16, used uint64, extra []byt
 	hashs := make([]common.Hash, 0)
 	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
 	var b []byte
-	return &Header{ParentUnits: hashs, AssetIDs: asset, Extra: append(b, extra...)}
+	return &Header{ParentsHash: hashs, AssetIDs: asset, Extra: append(b, extra...)}
 }
 
 func HeaderEqual(oldh, newh *Header) bool {
-	if oldh.ParentUnits[0] == newh.ParentUnits[0] && oldh.ParentUnits[1] == newh.ParentUnits[1] {
+	if oldh.ParentsHash[0] == newh.ParentsHash[0] && oldh.ParentsHash[1] == newh.ParentsHash[1] {
 		return true
-	} else if oldh.ParentUnits[0] == newh.ParentUnits[1] && oldh.ParentUnits[1] == newh.ParentUnits[0] {
+	} else if oldh.ParentsHash[0] == newh.ParentsHash[1] && oldh.ParentsHash[1] == newh.ParentsHash[0] {
 		return true
 	}
 	return false
@@ -134,10 +132,10 @@ func (h *Header) Size() common.StorageSize {
 func CopyHeader(h *Header) *Header {
 	cpy := *h
 
-	if len(h.ParentUnits) > 0 {
-		cpy.ParentUnits = make([]common.Hash, len(h.ParentUnits))
-		for i := 0; i < len(h.ParentUnits); i++ {
-			cpy.ParentUnits[i].Set(h.ParentUnits[i])
+	if len(h.ParentsHash) > 0 {
+		cpy.ParentsHash = make([]common.Hash, len(h.ParentsHash))
+		for i := 0; i < len(h.ParentsHash); i++ {
+			cpy.ParentsHash[i].Set(h.ParentsHash[i])
 		}
 	}
 
@@ -149,8 +147,8 @@ func CopyHeader(h *Header) *Header {
 		copy(cpy.Witness, h.Witness)
 	}
 
-	if len(h.Root) > 0 {
-		cpy.Root.Set(h.Root)
+	if len(h.TxRoot) > 0 {
+		cpy.TxRoot.Set(h.TxRoot)
 	}
 
 	return &cpy
@@ -178,6 +176,7 @@ type Transaction struct {
 	CreationDate string             `json:"creation_date"`
 	TxFee        *big.Int           `json:"txfee"` // user set total transaction fee.
 	Txsize       common.StorageSize `json:"txsize" rlp:""`
+	Locktime     uint32             `json:"lock_time"`
 	Priority_lvl float64            `json:"priority_lvl"`
 }
 
@@ -283,11 +282,12 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 	return u
 }
 
-func NewGenesisUnit(genesisConf *core.Genesis, txs Transactions) (*Unit, error) {
-	//test
-	unit := Unit{Txs: txs}
-	return &unit, nil
-}
+// comment by Albert·Gou
+//func NewGenesisUnit(genesisConf *core.Genesis, txs Transactions) (*Unit, error) {
+//	//test
+//	unit := Unit{Txs: txs}
+//	return &unit, nil
+//}
 
 func CopyTransactions(txs Transactions) Transactions {
 	cpy := txs
@@ -340,9 +340,10 @@ func (u *Unit) Size() common.StorageSize {
 }
 
 // return Creationdate
-func (u *Unit) CreationDate() time.Time {
-	return u.UnitHeader.Creationdate
-}
+// comment by Albert·Gou
+//func (u *Unit) CreationDate() time.Time {
+//	return u.UnitHeader.Creationdate
+//}
 
 //func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }
 func (u *Unit) Number() ChainIndex {
@@ -354,7 +355,7 @@ func (u *Unit) NumberU64() uint64 {
 
 // return unit's parents UnitHash
 func (u *Unit) ParentHash() []common.Hash {
-	return u.UnitHeader.ParentUnits
+	return u.UnitHeader.ParentsHash
 }
 
 type ErrUnit float64

@@ -634,9 +634,11 @@ func (handler *Handler) handleGetState(msg *pb.ChaincodeMessage) {
 
 		defer func() {
 			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
-			chaincodeLogger.Debugf("[%s]handleGetState serial send %s",
-				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
-			handler.serialSendAsync(serialSendMsg, nil)
+			if serialSendMsg != nil {
+				chaincodeLogger.Debugf("[%s]handleGetState serial send %s",
+					shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+				handler.serialSendAsync(serialSendMsg, nil)
+			}
 		}()
 
 		if txContext == nil {
@@ -682,7 +684,6 @@ func (handler *Handler) handleGetState(msg *pb.ChaincodeMessage) {
 			chaincodeLogger.Debugf("[%s]Got state. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: res, Txid: msg.Txid, ChannelId: msg.ChannelId}
 		}
-
 	}()
 }
 
@@ -1270,9 +1271,11 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 
 		defer func() {
 			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
-			chaincodeLogger.Debugf("[%s]enterBusyState trigger event %s",
-				shorttxid(triggerNextStateMsg.Txid), triggerNextStateMsg.Type)
-			handler.triggerNextState(triggerNextStateMsg, true)
+			if triggerNextStateMsg != nil {
+				chaincodeLogger.Debugf("[%s]enterBusyState trigger event %s",
+					shorttxid(triggerNextStateMsg.Txid), triggerNextStateMsg.Type)
+				handler.triggerNextState(triggerNextStateMsg, true)
+			}
 		}()
 
 		if txContext == nil {
