@@ -372,26 +372,28 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	}
 	// traverse transactions and save them
 	txHashSet := []common.Hash{}
-	for _, tx := range unit.Txs {
+	for txIndex, tx := range unit.Txs {
 		// traverse messages
 		for msgIndex, msg := range tx.TxMessages {
 			// handle different messages
 			switch msg.App {
 			case modules.APP_PAYMENT:
 				if ok := savePaymentPayload(tx.TxHash, &msg, uint32(msgIndex), tx.Locktime); ok != true {
-					log.Error("Save payment payload error.")
-					return modules.ErrUnit(-5)
+					return fmt.Errorf("Save payment payload error.")
 				}
 			case modules.APP_CONTRACT_TPL:
 			case modules.APP_CONTRACT_DEPLOY:
 			case modules.APP_CONTRACT_INVOKE:
+				if ok := saveContractInvokePayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
+					return fmt.Errorf("Save contract invode payload error.")
+				}
 			case modules.APP_CONFIG:
 				if ok := saveConfigPayload(tx.TxHash, &msg); ok == false {
-					return modules.ErrUnit(-6)
+					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_TEXT:
 			default:
-				log.Error("Message type is not supported now:", msg.App)
+				return fmt.Errorf("Message type is not supported now:", msg.App)
 			}
 		}
 		// save transaction
@@ -401,7 +403,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	}
 
 	// save unit body, the value only save txs' hash set, and the key is merkle root
-	if err = storage.SaveBody(unit.UnitHeader.TxRoot, txHashSet); err != nil {
+	if err = storage.SaveBody(unit.UnitHash, txHashSet); err != nil {
 		return err
 	}
 
@@ -555,6 +557,38 @@ func saveConfigPayload(txHash common.Hash, msg *modules.Message) bool {
 		errMsg := fmt.Sprintf("To save config payload error: %s", err)
 		log.Error(errMsg)
 		return false
+	}
+	return true
+}
+
+/**
+保存模板信息
+To save contract template payload info
+*/
+func saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+	var pl interface{}
+	pl = msg.Payload
+	payload, ok := pl.(modules.ContractInvokePayload)
+	if ok == false {
+		return false
+	}
+
+	// save contract state
+	// key: [CONTRACT_STATE_PREFIX][contract id]_[field name]_[state version]
+	for k, v := range payload.WriteSet {
+		version := modules.StateVersion{
+			Height:  height,
+			TxIndex: txIndex,
+		}
+		key := fmt.Sprintf("%s%s_%s_%s",
+			storage.CONTRACT_STATE_PREFIX,
+			payload.ContractId,
+			k,
+			version.String())
+		if err := storage.Store(key, v); err != nil {
+			log.Error("Save payload key", "error", err.Error())
+			continue
+		}
 	}
 	return true
 }
