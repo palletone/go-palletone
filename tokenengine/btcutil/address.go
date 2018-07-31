@@ -134,7 +134,7 @@ type Address interface {
 // The bitcoin network the address is associated with is extracted if possible.
 // When the address does not encode the network, such as in the case of a raw
 // public key, the address will be associated with the passed defaultNet.
-func DecodeAddress(addr string, defaultNet byte /**chaincfg.Params*/) (Address, error) {
+func DecodeAddress(addr string, defaultNet *chaincfg.Params) (Address, error) {
 	// Bech32 encoded segwit addresses start with a human-readable part
 	// (hrp) followed by '1'. For Bitcoin mainnet the hrp is "bc", and for
 	// testnet it is "tb". If the address string has a prefix that matches
@@ -408,7 +408,7 @@ type AddressPubKey struct {
 // NewAddressPubKey returns a new AddressPubKey which represents a pay-to-pubkey
 // address.  The serializedPubKey parameter must be a valid pubkey and can be
 // uncompressed, compressed, or hybrid.
-func NewAddressPubKey(serializedPubKey []byte, netID byte /*net *chaincfg.Params*/) (*AddressPubKey, error) {
+func NewAddressPubKey(serializedPubKey []byte, net *chaincfg.Params) (*AddressPubKey, error) {
 	pubKey, err := btcec.ParsePubKey(serializedPubKey, btcec.S256())
 	if err != nil {
 		return nil, err
@@ -429,8 +429,8 @@ func NewAddressPubKey(serializedPubKey []byte, netID byte /*net *chaincfg.Params
 	return &AddressPubKey{
 		pubKeyFormat: pkFormat,
 		pubKey:       pubKey,
-		//pubKeyHashID: net.PubKeyHashAddrID,
-		pubKeyHashID: netID,
+		pubKeyHashID: net.PubKeyHashAddrID,
+		//pubKeyHashID: netID,
 	}, nil
 }
 
