@@ -67,15 +67,12 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 	nextWakeup := now.Add(timeToNextSecond)
 
 	// 2. 安排验证单元生产循环
-	// Start a timer to production unit for expiration
-	expire := time.NewTimer(nextWakeup.Sub(time.Now()))
-
 	// production unit until termination is requested
 	select {
-	case <-expire.C:
-		go mp.VerifiedUnitProductionLoop()
 	case <-mp.quit:
 		return
+	default:
+		go mp.VerifiedUnitProductionLoop(nextWakeup)
 	}
 }
 
@@ -95,7 +92,10 @@ const (
 	//	ExceptionProducing
 )
 
-func (mp *MediatorPlugin) VerifiedUnitProductionLoop() ProductionCondition {
+func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) ProductionCondition {
+	// Start to production unit for expiration
+	time.Sleep(wakeup.Sub(time.Now()))
+
 	// 1. 尝试生产验证单元
 	result, detail := mp.MaybeProduceVerifiedUnit()
 
