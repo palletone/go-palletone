@@ -88,6 +88,7 @@ type RawTxInput struct {
 	ScriptPubKey string `json:"scriptPubKey"`
 	RedeemScript string `json:"redeemScript"`
 }
+
 // SignRawTransactionCmd defines the signrawtransaction JSON-RPC command.
 type SignRawTransactionCmd struct {
 	RawTx    string
@@ -95,10 +96,12 @@ type SignRawTransactionCmd struct {
 	PrivKeys *[]string
 	Flags    *string `jsonrpcdefault:"\"ALL\""`
 }
+
 const (
 	NETID_MAIN = iota
 	NETID_TEST
 )
+
 type ptnstatsConfig struct {
 	URL string `toml:",omitempty"`
 }
