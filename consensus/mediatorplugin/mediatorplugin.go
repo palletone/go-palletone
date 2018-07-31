@@ -100,16 +100,16 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 		log.Info("Not producing VerifiedUnit because production is disabled " +
 			"until we receive a recent VerifiedUnit (see: --enable-stale-production)")
 	case NotTimeYet:
-		log.Info("Not producing VerifiedUnit because next slot time is " + detail["NextTime"] +
-			" , but now is " + detail["Now"])
+		//log.Info("Not producing VerifiedUnit because next slot time is " + detail["NextTime"] +
+		//	" , but now is " + detail["Now"])
 	case NotMyTurn:
-		log.Info("Not producing VerifiedUnit because current scheduled mediator is " +
-			detail["ScheduledMediator"])
+		//log.Info("Not producing VerifiedUnit because current scheduled mediator is " +
+		//	detail["ScheduledMediator"])
 	case Lag:
 		log.Info("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time."+
-			" Scheduled Time is: %v, but now is %v\n", detail["ScheduledTime"], detail["Now"])
+			" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
 	case NoPrivateKey:
-		log.Info("Not producing VerifiedUnit because I don't have the private key for %v\n",
+		log.Info("Not producing VerifiedUnit because I don't have the private key for " +
 			detail["ScheduledKey"])
 	default:
 		log.Info("Unknown condition!")
@@ -169,7 +169,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	// we must control the Mediator scheduled to produce the next VerifiedUnit.
 	ma := scheduledMediator.Address
 	ps, ok := mp.mediators[ma]
-	if ok {
+	if !ok {
 		detail["ScheduledMediator"] = ma.Str()
 		return NotMyTurn, detail
 	}
@@ -185,7 +185,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
 	ks := mp.ptn.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 	err := ks.Unlock(accounts.Account{Address: ma}, ps)
-	if err == nil {
+	if err != nil {
 		detail["ScheduledKey"] = ma.Str()
 		return NoPrivateKey, detail
 	}
