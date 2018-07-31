@@ -33,7 +33,7 @@ type Dag struct {
 
 	Mdb           *palletdb.MemDatabase
 	ChainHeadFeed *event.Feed
-//	GenesisUnit   *Unit	// comment by Albert·Gou
+	//	GenesisUnit   *Unit	// comment by Albert·Gou
 
 	Mutex sync.RWMutex
 
@@ -50,6 +50,26 @@ func (d *Dag) CurrentUnit() *Unit {
 
 func (d *Dag) GetUnit(hash common.Hash, number uint64) *Unit {
 	return d.CurrentUnit()
+}
+
+func (d *Dag) GetUnitByHash(hash common.Hash) *Unit {
+	return d.CurrentUnit()
+}
+
+func (d *Dag) GetUnitByNumber(number uint64) *Unit {
+	return d.CurrentUnit()
+}
+
+func (d *Dag) GetHeaderByHash(hash common.Hash) *Header {
+	return d.CurrentUnit().Header()
+}
+
+func (d *Dag) GetHeaderByNumber(number uint64) *Header {
+	return d.CurrentUnit().Header()
+}
+
+func (d *Dag) GetHeader(hash common.Hash, number uint64) *Header {
+	return d.CurrentUnit().Header()
 }
 
 func (d *Dag) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
@@ -74,4 +94,12 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // reference : Eth InsertChain
 func (bc *Dag) InsertDag(unit Unit) (int, error) {
 	return 0, nil
+	//SaveUnit
+}
+
+// GetBlockHashesFromHash retrieves a number of block hashes starting at a given
+// hash, fetching towards the genesis block.
+func (bc *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash {
+	//return bc.hc.GetBlockHashesFromHash(hash, max)
+	return []common.Hash{}
 }
