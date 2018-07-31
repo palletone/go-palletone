@@ -236,16 +236,15 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
 	data := storage.GetPrefix([]byte(key))
 	if len(data) > 1 {
-		log.Error("Get genesis unit", "error", "multiple genesis unit")
+		log.Info("Get genesis unit error:multiple genesis unit")
+		return nil
 	} else if len(data) <= 0 {
 		return nil
 	}
 	for k, v := range data {
-		fmt.Println("Unit key:", k)
 		sk := string(k[len(storage.HEADER_PREFIX):])
 		// get index
 		skArr := strings.Split(sk, "_")
-		fmt.Println("split len=", len(skArr))
 		if len(skArr) != 3 {
 			log.Error("Get genesis unit index and hash", "error", "split error")
 			return nil
@@ -285,6 +284,9 @@ To get genesis unit height
 */
 func GenesisHeight() modules.ChainIndex {
 	unit := GetGenesisUnit(0)
+	if unit == nil {
+		return modules.ChainIndex{}
+	}
 	return unit.UnitHeader.Number
 }
 
@@ -363,7 +365,11 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		return modules.ErrUnit(-3)
 	}
-
+	// save unit hash and chain index relation
+	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
+	if err := storage.SaveHashNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		return fmt.Errorf("Save unit hash and number error")
+	}
 	// traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for _, tx := range unit.Txs {
