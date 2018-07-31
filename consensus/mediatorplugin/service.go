@@ -116,7 +116,7 @@ func Initialize(ptn *ptn.PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		ptn:               ptn,
 		productionEnabled: cfg.EnableStaleProduction,
 		mediators:         msm,
-		quit:          make(chan struct{}),
+		quit:              make(chan struct{}),
 	}
 
 	log.Info("mediator plugin initialize end")
