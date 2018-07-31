@@ -406,7 +406,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		return errTooOld
 	}
 
-	log.Debug("Synchronising with the network", "peer", p.id, "eth", p.version, "head", hash, "index", index, "mode", d.mode)
+	log.Info("Synchronising with the network", "peer", p.id, "eth", p.version, "head", hash, "index", index, "mode", d.mode)
 	defer func(start time.Time) {
 		log.Debug("Synchronisation terminated", "elapsed", time.Since(start))
 	}(time.Now())
@@ -414,6 +414,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	// Look up the sync boundaries: the common ancestor and the target block
 	latest, err := d.fetchHeight(p)
 	if err != nil {
+		log.Info("fetchHeight", "err:", err)
 		return err
 	}
 	height := latest.Number.Index
@@ -571,16 +572,18 @@ func (d *Downloader) fetchHeight(p *peerConnection) (*modules.Header, error) {
 			// Make sure the peer actually gave something valid
 			headers := packet.(*headerPack).headers
 			if len(headers) != 1 {
-				p.log.Debug("Multiple headers for single request", "headers", len(headers))
+				log.Debug("Multiple headers for single request", "headers", len(headers))
+				log.Info("Multiple headers for single request", "headers", len(headers))
 				return nil, errBadPeer
 			}
 			head := headers[0]
-			p.log.Debug("Remote head header identified", "number", head.Number, "hash", head.Hash())
-			log.Debug("Received headers from remote peer", "peer", packet.PeerId())
+			log.Info("Remote head header identified", "number", head.Number, "hash", head.Hash())
+			log.Info("Received headers from remote peer", "peer", packet.PeerId())
 			return head, nil
 
 		case <-timeout:
-			p.log.Debug("Waiting for head header timed out", "elapsed", ttl)
+			log.Debug("Waiting for head header timed out", "elapsed", ttl)
+			log.Info("Waiting for head header timed out", "elapsed", ttl)
 			return nil, errTimeout
 
 		case <-d.bodyCh:
@@ -1316,6 +1319,7 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 // DeliverHeaders injects a new batch of block headers received from a remote
 // node into the download schedule.
 func (d *Downloader) DeliverHeaders(id string, headers []*modules.Header) (err error) {
+	log.Info("===DeliverHeaders===")
 	return d.deliver(id, d.headerCh, &headerPack{id, headers}, headerInMeter, headerDropMeter)
 }
 
