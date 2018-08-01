@@ -83,9 +83,6 @@ type PalletOne struct {
 // New creates a new PalletOne object (including the
 // initialisation of the common PalletOne object)
 func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
-	//if config.SyncMode == downloader.LightSync {
-	//	return nil, errors.New("can't run eth.PalletOne in light sync mode, use les.LightEthereum")
-	//}
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}

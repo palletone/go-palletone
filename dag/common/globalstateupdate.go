@@ -23,9 +23,10 @@ import (
 	"time"
 
 	"fmt"
+	"strings"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strings"
 )
 
 // UpdateGlobalDynProp, update global dynamic data
@@ -44,7 +45,7 @@ func UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalP
 mediator投票结果，返回区块高度
 Method for getting mediator voting results
 */
-var lastStatisticalHeight = GenesisHeight()
+var lastStatisticalHeight = modules.ChainIndex{} //GenesisHeight()
 
 func MediatorVoteResult(height modules.ChainIndex) (map[common.Address]uint64, error) {
 	result := map[common.Address]uint64{}

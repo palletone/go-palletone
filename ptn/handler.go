@@ -167,7 +167,26 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	}
 	// Construct the different synchronisation mechanisms
 	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, dag, manager.levelDb)
-	manager.fetcher = fetcher.New(manager.removePeer)
+
+	validator := func(header *modules.Header) error {
+		//return engine.VerifyHeader(blockchain, header, true)
+		return nil
+	}
+	heighter := func() uint64 {
+		return dag.CurrentUnit().NumberU64()
+	}
+	inserter := func(blocks modules.Units) (int, error) {
+		// If fast sync is running, deny importing weird blocks
+		if atomic.LoadUint32(&manager.fastSync) == 1 {
+			log.Warn("Discarded bad propagated block", "number", blocks[0].Number(), "hash", blocks[0].Hash())
+			return 0, nil
+		}
+		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
+		return manager.dag.InsertDag(blocks)
+	}
+	manager.fetcher = fetcher.New(dag.GetUnitByHash, validator, manager.BroadcastUnit, heighter, inserter, manager.removePeer)
+
+	//manager.fetcher = fetcher.New(manager.removePeer)
 	return manager, nil
 }
 
@@ -362,11 +381,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 					current = origin.Number.Index
 					next    = current + query.Skip + 1
 				)
+				log.Info("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
 				if next <= current {
 					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
 					log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
 					unknown = true
 				} else {
+					log.Info("msg.Code==GetBlockHeadersMsg", "next:", next)
 					if header := pm.dag.GetHeaderByNumber(next); header != nil {
 						/*
 							if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
