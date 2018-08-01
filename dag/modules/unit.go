@@ -155,6 +155,14 @@ func CopyHeader(h *Header) *Header {
 	return &cpy
 }
 
+func CopyBody(txs Transactions) Transactions {
+	newTxs := Transactions{}
+	for _, tx := range txs {
+		newTxs = append(newTxs, tx)
+	}
+	return newTxs
+}
+
 //wangjiyou add for ptn/fetcher.go
 type Units []*Unit
 
@@ -164,9 +172,6 @@ type Unit struct {
 	Txs        Transactions       `json:"transactions"` // transaction list
 	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
 	UnitSize   common.StorageSize `json:"UnitSize"`     // unit size
-	//Gasprice     uint64             `json:"gas_price"`     // user set total gas
-	//Gasused      uint64             `json:"gas_used"`      // the actually used gas, mediator set
-
 	// These fields are used by package ptn to track
 	// inter-peer block relay.
 	ReceivedAt   time.Time
@@ -304,17 +309,10 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 		UnitHeader: CopyHeader(header),
 		Txs:        CopyTransactions(txs),
 	}
-	u.UnitSize = header.Size()
+	u.UnitSize = u.Size()
 	u.UnitHash = u.Hash()
 	return u
 }
-
-// comment by Albert·Gou
-//func NewGenesisUnit(genesisConf *core.Genesis, txs Transactions) (*Unit, error) {
-//	//test
-//	unit := Unit{Txs: txs}
-//	return &unit, nil
-//}
 
 func CopyTransactions(txs Transactions) Transactions {
 	cpy := txs
@@ -348,22 +346,18 @@ func (u *Unit) Hash() common.Hash {
 }
 
 func (u *Unit) Size() common.StorageSize {
-	//u.UnitSize = common.StorageSize(unsafe.Sizeof(*u)) + common.StorageSize(len(u.UnitHash)/8)
-	//return u.UnitSize
+	emptyUnit := Unit{}
+	emptyUnit.UnitHeader = CopyHeader(u.UnitHeader)
+	emptyUnit.UnitHeader.Authors = nil
+	emptyUnit.UnitHeader.Witness = []*Authentifier{}
+	emptyUnit.Txs = CopyBody(u.Txs)
 
-	b, err := rlp.EncodeToBytes(u)
+	b, err := rlp.EncodeToBytes(emptyUnit)
 	if err != nil {
 		return common.StorageSize(0)
 	} else {
 		return common.StorageSize(len(b))
 	}
-	// if UnitSize := b.UnitSize.Load(); UnitSize != nil {
-	// 	return UnitSize.(common.StorageSize)
-	// }
-	// c := writeCounter(0)
-	// rlp.Encode(&c, b)
-	// b.UnitSize.Store(common.StorageSize(c))
-	// return common.StorageSize(c)
 }
 
 // return Creationdate
