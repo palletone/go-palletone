@@ -20,13 +20,13 @@
 package common
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
-	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"strings"
 )
 
 // UpdateGlobalDynProp, update global dynamic data

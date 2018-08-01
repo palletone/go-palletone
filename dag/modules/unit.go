@@ -20,6 +20,7 @@ package modules
 import (
 	"encoding/json"
 	"math/big"
+	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -154,6 +155,9 @@ func CopyHeader(h *Header) *Header {
 	return &cpy
 }
 
+//wangjiyou add for ptn/fetcher.go
+type Units []*Unit
+
 // key: unit.UnitHash(unit)
 type Unit struct {
 	UnitHeader *Header            `json:"unit_header"`  // unit header
@@ -162,6 +166,11 @@ type Unit struct {
 	UnitSize   common.StorageSize `json:"UnitSize"`     // unit size
 	//Gasprice     uint64             `json:"gas_price"`     // user set total gas
 	//Gasused      uint64             `json:"gas_used"`      // the actually used gas, mediator set
+
+	// These fields are used by package ptn to track
+	// inter-peer block relay.
+	ReceivedAt   time.Time
+	ReceivedFrom interface{}
 }
 
 type Transactions []*Transaction
@@ -399,3 +408,24 @@ func (e ErrUnit) Error() string {
 }
 
 /************************** Unit Members  *****************************/
+
+// NewBlockWithHeader creates a block with the given header data. The
+// header data is copied, changes to header and to the field values
+// will not affect the block.
+func NewUnitWithHeader(header *Header) *Unit {
+	return &Unit{UnitHeader: CopyHeader(header)}
+}
+
+// WithBody returns a new block with the given transaction and uncle contents.
+func (b *Unit) WithBody(transactions []*Transaction) *Unit {
+	//	block := &Unit{
+	//		header:       CopyHeader(b.header),
+	//		transactions: make([]*Transaction, len(transactions)),
+	//		uncles:       make([]*Header, len(uncles)),
+	//	}
+	//	copy(block.transactions, transactions)
+	//	for i := range uncles {
+	//		block.uncles[i] = CopyHeader(uncles[i])
+	//	}
+	return &Unit{UnitHeader: CopyHeader(b.UnitHeader)}
+}

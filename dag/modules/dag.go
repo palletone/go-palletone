@@ -92,7 +92,12 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // wrong.
 // After insertion is done, all accumulated events will be fired.
 // reference : Eth InsertChain
-func (bc *Dag) InsertDag(unit Unit) (int, error) {
+func (bc *Dag) SaveDag(unit Unit) (int, error) {
+	return 0, nil
+	//SaveUnit
+}
+
+func (bc *Dag) InsertDag(unit Units) (int, error) {
 	return 0, nil
 	//SaveUnit
 }

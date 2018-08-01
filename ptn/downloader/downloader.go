@@ -174,7 +174,7 @@ type BlockDag interface {
 	GetUnit(common.Hash, uint64) *modules.Unit
 	CurrentUnit() *modules.Unit
 	FastSyncCommitHead(common.Hash) error
-	InsertDag(modules.Unit) (int, error)
+	SaveDag(modules.Unit) (int, error)
 
 	//TODO :
 	//LightDag
@@ -563,6 +563,7 @@ func (d *Downloader) fetchHeight(p *peerConnection) (*modules.Header, error) {
 			return nil, errCancelBlockFetch
 
 		case packet := <-d.headerCh:
+			log.Info("fetchHeight d.headerCh")
 			// Discard anything not from the origin peer
 			if packet.PeerId() != p.id {
 				log.Debug("Received headers from incorrect peer", "peer", packet.PeerId())
