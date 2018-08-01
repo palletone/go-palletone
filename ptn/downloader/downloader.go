@@ -932,15 +932,17 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 			// Send a download request to all idle peers, until throttled
 			progressed, throttled, running := false, false, inFlight()
 			idles, total := idle()
-
+			log.Info("===idles===", "len(idles):", len(idles))
 			for _, peer := range idles {
 				// Short circuit if throttling activated
 				if throttle() {
+					log.Info("===throttle===")
 					throttled = true
 					break
 				}
 				// Short circuit if there is no more available task.
 				if pending() == 0 {
+					log.Info("===pending===")
 					break
 				}
 				// Reserve a chunk of fetches for a peer. A nil can mean either that
@@ -948,12 +950,15 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 				// have them.
 				request, progress, err := reserve(peer, capacity(peer))
 				if err != nil {
+					log.Info("===reserve===", "err:", err)
 					return err
 				}
 				if progress {
+					log.Info("===progress===")
 					progressed = true
 				}
 				if request == nil {
+					log.Info("===request===")
 					continue
 				}
 				if request.From > 0 {
@@ -963,6 +968,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 				}
 				// Fetch the chunk and make sure any errors return the hashes to the queue
 				if fetchHook != nil {
+					log.Info("===fetchHook===")
 					fetchHook(request.Headers)
 				}
 				if err := fetch(peer, request); err != nil {
@@ -978,6 +984,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 			// Make sure that we have peers available for fetching. If all peers have been tried
 			// and all failed throw an error
 			if !progressed && !throttled && !running && len(idles) == total && pending() > 0 {
+				log.Info("===errPeersUnavailable===")
 				return errPeersUnavailable
 			}
 		}

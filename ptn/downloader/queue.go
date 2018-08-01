@@ -699,7 +699,7 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 	if accepted {
 		//if headers[0].Number.Uint64() != request.From {
 		if headers[0].Number.Index != request.From {
-			log.Trace("First header broke chain ordering", "peer", id, "number", headers[0].Number, "hash", headers[0].Hash(), request.From)
+			log.Trace("First header broke chain ordering", "peer", id, "number", headers[0].Number, "hash", headers[0].Hash(), "request.From", request.From)
 			accepted = false
 		} else if headers[len(headers)-1].Hash() != target {
 			log.Trace("Last header broke skeleton structure ", "peer", id, "number", headers[len(headers)-1].Number, "hash", headers[len(headers)-1].Hash(), "expected", target)
