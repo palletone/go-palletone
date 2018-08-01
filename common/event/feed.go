@@ -26,10 +26,13 @@ var errBadChannel = errors.New("event: Subscribe argument does not have sendable
 
 // Feed implements one-to-many subscriptions where the carrier of events is a channel.
 // Values sent to a Feed are delivered to all subscribed channels simultaneously.
+// Feed 实现了 1对多的订阅模式，使用了channel来传递事件。 发送给Feed的值会同时被传递给所有订阅的channel。
 //
 // Feeds can only be used with a single type. The type is determined by the first Send or
 // Subscribe operation. Subsequent calls to these methods panic if the type does not
 // match.
+// Feed只能被单个类型使用。这个和之前的event不同，event可以使用多个类型。
+// 该类型被第一个调用Send或者调用Subscribe的决定。 后续的调用如果类型和其不一致会panic
 //
 // The zero value is ready to use.
 type Feed struct {
@@ -58,6 +61,7 @@ func (e feedTypeError) Error() string {
 	return "event: wrong type in " + e.op + " got " + e.got.String() + ", want " + e.want.String()
 }
 
+// 初始化会被once保护来保证只会被执行一次
 func (f *Feed) init() {
 	f.removeSub = make(chan interface{})
 	f.sendLock = make(chan struct{}, 1)
@@ -67,14 +71,18 @@ func (f *Feed) init() {
 
 // Subscribe adds a channel to the feed. Future sends will be delivered on the channel
 // until the subscription is canceled. All channels added must have the same element type.
+// 向Feed添加channel. 相对与event的不同, event的订阅是传入了需要订阅的类型，然后channel是在event的订阅代码里面构建然后返回的。
+// 这种直接投递channel的模式可能会更加灵活。然后根据传入的channel生成了SelectCase。放入inbox。
 //
 // The channel should have ample buffer space to avoid blocking other subscribers.
 // Slow subscribers are not dropped.
+// 该通道应具有足够的缓冲空间，以避免阻塞其他订户。
 func (f *Feed) Subscribe(channel interface{}) Subscription {
 	f.once.Do(f.init)
 
 	chanval := reflect.ValueOf(channel)
 	chantyp := chanval.Type()
+	// 如果类型不是channel。 或者是channel的方向不能发送数据。那么错误退出。
 	if chantyp.Kind() != reflect.Chan || chantyp.ChanDir()&reflect.SendDir == 0 {
 		panic(errBadChannel)
 	}
@@ -126,6 +134,9 @@ func (f *Feed) remove(sub *feedSub) {
 
 // Send delivers to all subscribed channels simultaneously.
 // It returns the number of subscribers that the value was sent to.
+// Send方法不是遍历所有的channel然后阻塞方式的发送。这样可能导致慢的客户端影响快的客户端。而是使用反射的方式使用SelectCase。
+// 首先调用非阻塞方式的TrySend来尝试发送。这样如果没有慢的客户端。数据会直接全部发送完成。 如果TrySend部分客户端失败。
+// 那么后续在循环Select的方式发送。 这也是feed会取代event的原因。
 func (f *Feed) Send(value interface{}) (nsent int) {
 	rvalue := reflect.ValueOf(value)
 

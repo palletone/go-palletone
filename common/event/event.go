@@ -40,8 +40,10 @@ type TypeMuxEvent struct {
 // The zero value is ready to use.
 //
 // Deprecated: use Feed
+// 已弃用，请使用Feed
 type TypeMux struct {
-	mutex   sync.RWMutex
+	mutex sync.RWMutex
+	// subm记录所有的订阅者, 每种类型都可以有多个订阅者
 	subm    map[reflect.Type][]*TypeMuxSubscription
 	stopped bool
 }
@@ -52,6 +54,7 @@ var ErrMuxClosed = errors.New("event: mux closed")
 // Subscribe creates a subscription for events of the given types. The
 // subscription's channel is closed when it is unsubscribed
 // or the mux is closed.
+// 创建一个订阅, 可以同时订阅多种类型
 func (mux *TypeMux) Subscribe(types ...interface{}) *TypeMuxSubscription {
 	sub := newsub(mux)
 	mux.mutex.Lock()
@@ -82,6 +85,7 @@ func (mux *TypeMux) Subscribe(types ...interface{}) *TypeMuxSubscription {
 
 // Post sends an event to all receivers registered for the given type.
 // It returns ErrMuxClosed if the mux has been stopped.
+// 发送一个 event 给TypeMux，所有订阅了这个event类型的订阅者都会收到
 func (mux *TypeMux) Post(ev interface{}) error {
 	event := &TypeMuxEvent{
 		Time: time.Now(),
@@ -96,6 +100,7 @@ func (mux *TypeMux) Post(ev interface{}) error {
 	subs := mux.subm[rtyp]
 	mux.mutex.RUnlock()
 	for _, sub := range subs {
+		// 阻塞式的投递
 		sub.deliver(event)
 	}
 	return nil
@@ -160,8 +165,10 @@ type TypeMuxSubscription struct {
 	// postC can be set to nil without affecting the return value of
 	// Chan.
 	postMu sync.RWMutex
-	readC  <-chan *TypeMuxEvent
-	postC  chan<- *TypeMuxEvent
+	// readC 和 postC 其实是同一个channel。
+	// 不过一个是从channel读 一个只从channel写, 单方向的channel
+	readC <-chan *TypeMuxEvent
+	postC chan<- *TypeMuxEvent
 }
 
 func newsub(mux *TypeMux) *TypeMuxSubscription {
@@ -208,7 +215,7 @@ func (s *TypeMuxSubscription) deliver(event *TypeMuxEvent) {
 	s.postMu.RLock()
 	defer s.postMu.RUnlock()
 
-	select {
+	select { //阻塞方式的方法
 	case s.postC <- event:
 	case <-s.closing:
 	}
