@@ -38,7 +38,7 @@ var (
 	GenesisTimestampFlag = cli.Int64Flag{
 		Name:  "genesis-timestamp",
 		Usage: "Replace timestamp from genesis.json with current time plus this many seconds (experts only!)",
-//		Value: 0,
+		//		Value: 0,
 	}
 
 	GenesisJsonPathFlag = cli.StringFlag{
@@ -162,7 +162,7 @@ func createExampleGenesis(account string) *core.Genesis {
 		TokenHolder:            account,
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
-		InitialTimestamp:		gen.InitialTimestamp(initParams.MediatorInterval),
+		InitialTimestamp:       gen.InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(
 			core.DefaultMediatorCount, account),

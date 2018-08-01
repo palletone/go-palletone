@@ -25,8 +25,8 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strings"
 	"github.com/palletone/go-palletone/dag/storage"
+	"strings"
 )
 
 // UpdateGlobalDynProp, update global dynamic data

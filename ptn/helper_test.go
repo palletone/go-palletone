@@ -69,7 +69,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	engine := new(consensus.DPOSEngine)
 	dag := new(modules.Dag)
 	typemux := new(event.TypeMux)
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine,dag,typemux)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, dag, typemux)
 	if err != nil {
 		return nil, nil, err
 	}

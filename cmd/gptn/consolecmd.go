@@ -26,10 +26,10 @@ import (
 
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
 	"gopkg.in/urfave/cli.v1"
-	"github.com/palletone/go-palletone/common/log"
 )
 
 var (

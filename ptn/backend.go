@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -40,7 +41,6 @@ import (
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 )
 
 //type LesServer interface {
