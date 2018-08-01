@@ -998,6 +998,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 // queue until the stream ends or a failure occurs.
 //从输入通道获取一批又一批的检索头，并将它们处理和调度到头链和下加载程序的队列中，直到流结束或发生故障。
 func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64) error {
+	log.Info("===Enter processHeaders===")
 	// Keep a count of uncertain headers to roll back
 	rollback := []*modules.Header{}
 	defer func() {
