@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/internal/debug"
 	"github.com/palletone/go-palletone/ptn"
@@ -257,7 +256,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 	utils.StartNode(stack)
 
 	// Unlock any account specifically requested
-	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := stack.GetKeyStore()
 
 	//自动解锁指定的账号，配置的, 这样非交互状态下方便使用
 	passwords := utils.MakePasswordList(ctx)

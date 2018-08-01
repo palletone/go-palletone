@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dcom "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
@@ -191,7 +190,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
-	ks := mp.ptn.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := mp.ptn.GetKeyStore()
 	err := ks.Unlock(accounts.Account{Address: ma}, ps)
 	if err != nil {
 		detail["ScheduledKey"] = ma.Str()

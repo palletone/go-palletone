@@ -34,6 +34,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/internal/debug"
 	"github.com/prometheus/prometheus/util/flock"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 )
 
 // Node is a container on which services can be registered.
@@ -686,4 +687,9 @@ func (n *Node) apis() []rpc.API {
 			Public:    true,
 		},
 	}
+}
+
+// @author Albert·Gou
+func (n *Node) GetKeyStore() *keystore.KeyStore {
+	return n.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 }

@@ -24,7 +24,6 @@ import (
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	"gopkg.in/urfave/cli.v1"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -122,7 +121,7 @@ func initGenesis(ctx *cli.Context) error {
 	}
 
 	node := makeFullNode(ctx)
-	ks := node.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := node.GetKeyStore()
 	account, _ := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
 
 	err = gen.SetupGenesisUnit(genesis, ks, account)

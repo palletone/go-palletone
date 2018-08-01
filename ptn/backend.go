@@ -40,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 )
 
 //type LesServer interface {
@@ -253,4 +254,9 @@ func (s *PalletOne) Etherbase() (eb common.Address, err error) {
 			}
 		}*/
 	return common.Address{}, fmt.Errorf("etherbase must be explicitly specified")
+}
+
+// @author Albert·Gou
+func (p *PalletOne) GetKeyStore() *keystore.KeyStore {
+	return p.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 }

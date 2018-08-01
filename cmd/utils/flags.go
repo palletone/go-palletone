@@ -962,7 +962,7 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	checkExclusive(ctx, LightServFlag, LightModeFlag)
 	checkExclusive(ctx, LightServFlag, SyncModeFlag, "light")
 
-	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := stack.GetKeyStore()
 	setEtherbase(ctx, ks, cfg)
 	// setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)

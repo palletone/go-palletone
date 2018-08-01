@@ -36,7 +36,6 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -143,7 +142,7 @@ func GenerateUnit(dag *modules.Dag, when time.Time, producer modules.Mediator, k
 	unit.UnitHeader.Creationdate = when.Unix()
 	unit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
 
-	_, err := GetUnitWithSig(&unit, ks, accounts.Account{Address: producer.Address})
+	_, err := GetUnitWithSig(&unit, ks, producer.Address)
 	if err != nil {
 		log.Error(fmt.Sprintf("%v", err))
 	}
@@ -171,9 +170,9 @@ func GenerateUnit(dag *modules.Dag, when time.Time, producer modules.Mediator, k
 
 // WithSignature, returns a new unit with the given signature.
 // @author Albert·Gou
-func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer accounts.Account) (*modules.Unit, error) {
+func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Address) (*modules.Unit, error) {
 	// signature unit: only sign header data(without witness and authors fields)
-	sign, err1 := ks.SigUnit(*unit.UnitHeader, signer.Address)
+	sign, err1 := ks.SigUnit(*unit.UnitHeader, signer)
 	if err1 != nil {
 		msg := fmt.Sprintf("Failed to write genesis block:%v", err1.Error())
 		log.Error(msg)
@@ -188,14 +187,14 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer accounts.A
 	}
 
 	unit.UnitHeader.Authors = &modules.Authentifier{
-		Address: signer.Address.String(),
+		Address: signer.String(),
 		R:       r,
 		S:       s,
 		V:       v,
 	}
 	// to set witness list, should be creator himself
 	var authentifier modules.Authentifier
-	authentifier.Address = signer.Address.String()
+	authentifier.Address = signer.String()
 	unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
 
 	return unit, nil

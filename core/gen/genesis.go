@@ -86,7 +86,7 @@ func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account acco
 	//unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
 
 	// modify by Albert·Gou
-	unit, err = dagCommon.GetUnitWithSig(unit, ks, account)
+	unit, err = dagCommon.GetUnitWithSig(unit, ks, account.Address)
 	if err != nil {
 		return err
 	}
