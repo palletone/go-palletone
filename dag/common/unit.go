@@ -1,4 +1,4 @@
-/*
+﻿/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -134,7 +134,7 @@ func StoreUnit(unit *modules.Unit) error {
 		return err
 	}
 
-	// 此处应当将最新的全局属性更新到DB中
+	// 此处应当更新DB中的全局属性
 	//	go storage.StoreDynGlobalProp(dgp)
 
 	return nil
@@ -393,6 +393,9 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 				}
 			case modules.APP_CONTRACT_TPL:
 			case modules.APP_CONTRACT_DEPLOY:
+				if ok:=saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok!=true{
+					return fmt.Errorf("Save contract init payload error.")
+				}
 			case modules.APP_CONTRACT_INVOKE:
 				if ok := saveContractInvokePayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
 					return fmt.Errorf("Save contract invode payload error.")
@@ -572,8 +575,8 @@ func saveConfigPayload(txHash common.Hash, msg *modules.Message) bool {
 }
 
 /**
-保存模板信息
-To save contract template payload info
+保存合约调用状态
+To save contract invoke state
 */
 func saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
@@ -582,7 +585,6 @@ func saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *m
 	if ok == false {
 		return false
 	}
-
 	// save contract state
 	// key: [CONTRACT_STATE_PREFIX][contract id]_[field name]_[state version]
 	for k, v := range payload.WriteSet {
@@ -601,6 +603,24 @@ func saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *m
 		}
 	}
 	return true
+}
+
+/**
+保存合约初始化状态
+To save contract init state
+*/
+func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message)(string, bool) {
+	var pl interface{}
+	pl = msg.Payload
+	_, ok := pl.(modules.ContractDeployPayload)
+	if ok == false {
+		return "", false
+	}
+	/**
+	涉及到合约验证和合约ID生成的问题
+	 */
+
+	return "", true
 }
 
 /**
