@@ -147,13 +147,11 @@ func GenerateUnit(dag *modules.Dag, when time.Time, producer modules.Mediator, k
 		log.Error(fmt.Sprintf("%v", err))
 	}
 
+	unit.UnitSize = unit.Size()
+
 	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
 
-	// 4. 将验证单元添加到本地DB, 从未验证交易池中移除添加的交易
-	go log.Info("storing the new verified unit to database...")
-	if err := SaveUnit(unit, false); err != nil {
-		log.Error(fmt.Sprintf("%v", err))
-	}
+	// 4. 更新区块中交易的状态
 
 	// 5. 更新全局动态属性值
 	log.Info("Updating global dynamic property...")
@@ -165,7 +163,26 @@ func GenerateUnit(dag *modules.Dag, when time.Time, producer modules.Mediator, k
 	log.Info("shuffling the scheduling order of mediator...")
 	dag.MediatorSchl.UpdateMediatorSchedule(gp, dgp)
 
+	// 4. 将验证单元添加到本地DB
+	log.Info("storing the new verified unit to database...")
+	go StoreUnit(unit)
+
 	return unit
+}
+
+// @author Albert·Gou
+func StoreUnit(unit modules.Unit) error {
+	err := SaveUnit(unit, false)
+
+	if err != nil {
+		log.Error(fmt.Sprintf("%v", err))
+		return err
+	}
+
+	// 此处应当更新DB中的全局属性
+//	go storage.StoreDynGlobalProp(dgp)
+
+	return nil
 }
 
 // WithSignature, returns a new unit with the given signature.
