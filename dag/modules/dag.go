@@ -92,19 +92,39 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // wrong.
 // After insertion is done, all accumulated events will be fired.
 // reference : Eth InsertChain
-func (bc *Dag) SaveDag(unit Unit) (int, error) {
+func (d *Dag) SaveDag(unit Unit) (int, error) {
 	return 0, nil
 	//SaveUnit
 }
 
-func (bc *Dag) InsertDag(unit Units) (int, error) {
+func (d *Dag) InsertDag(unit Units) (int, error) {
 	return 0, nil
 	//SaveUnit
 }
 
 // GetBlockHashesFromHash retrieves a number of block hashes starting at a given
 // hash, fetching towards the genesis block.
-func (bc *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash {
+func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash {
 	//return bc.hc.GetBlockHashesFromHash(hash, max)
 	return []common.Hash{}
+}
+
+func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
+	return d.CurrentUnit().Header() != nil
+}
+
+func (d *Dag) CurrentHeader() *Header {
+	return d.CurrentUnit().Header()
+}
+
+// InsertHeaderChain attempts to insert the given header chain in to the local
+// chain, possibly creating a reorg. If an error is returned, it will return the
+// index number of the failing header as well an error describing what went wrong.
+//
+// The verify parameter can be used to fine tune whether nonce verification
+// should be done or not. The reason behind the optional check is because some
+// of the header retrieval mechanisms already need to verify nonces, as well as
+// because nonces can be verified sparsely, not needing to check each.
+func (d *Dag) InsertHeaderDag(headers []*Header, checkFreq int) (int, error) {
+	return checkFreq, nil
 }
