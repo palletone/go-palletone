@@ -614,13 +614,13 @@ func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *mod
 	pl = msg.Payload
 	_, ok := pl.(modules.ContractDeployPayload)
 	if ok == false {
-		return "", false
+		return false
 	}
 	/**
 	涉及到合约验证和合约ID生成的问题
 	 */
 
-	return "", true
+	return true
 }
 
 /**
