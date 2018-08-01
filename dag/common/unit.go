@@ -27,7 +27,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -126,61 +125,17 @@ func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error)
 	return &gUnit, nil
 }
 
-// GenerateVerifiedUnit, generate unit
 // @author Albert·Gou
-func GenerateUnit(dag *modules.Dag, when time.Time, producer modules.Mediator, ks *keystore.KeyStore) modules.Unit {
-	gp := dag.GlobalProp
-	dgp := dag.DynGlobalProp
-
-	// 1. 判断是否满足生产的若干条件
-
-	// 2. 生产验证单元，添加交易集、时间戳、签名
-	log.Info("Generating Verified Unit...")
-
-	units, _ := CreateUnit(&producer.Address)
-	unit := units[0]
-	unit.UnitHeader.Creationdate = when.Unix()
-	unit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
-
-	_, err := GetUnitWithSig(&unit, ks, producer.Address)
-	if err != nil {
-		log.Error(fmt.Sprintf("%v", err))
-	}
-
-	unit.UnitSize = unit.Size()
-
-	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
-
-	// 4. 更新区块中交易的状态
-
-	// 5. 更新全局动态属性值
-	log.Info("Updating global dynamic property...")
-	go UpdateGlobalDynProp(gp, dgp, &unit)
-
-	// 5. 判断是否到了维护周期，并维护
-
-	// 6. 洗牌
-	log.Info("shuffling the scheduling order of mediator...")
-	dag.MediatorSchl.UpdateMediatorSchedule(gp, dgp)
-
-	// 4. 将验证单元添加到本地DB
-	log.Info("storing the new verified unit to database...")
-	go StoreUnit(unit)
-
-	return unit
-}
-
-// @author Albert·Gou
-func StoreUnit(unit modules.Unit) error {
-	err := SaveUnit(unit, false)
+func StoreUnit(unit *modules.Unit) error {
+	err := SaveUnit(*unit, false)
 
 	if err != nil {
 		log.Error(fmt.Sprintf("%v", err))
 		return err
 	}
 
-	// 此处应当更新DB中的全局属性
-//	go storage.StoreDynGlobalProp(dgp)
+	// 此处应当将最新的全局属性更新到DB中
+	//	go storage.StoreDynGlobalProp(dgp)
 
 	return nil
 }
