@@ -609,7 +609,7 @@ func saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *m
 保存合约初始化状态
 To save contract init state
 */
-func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message)(string, bool) {
+func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message)bool {
 	var pl interface{}
 	pl = msg.Payload
 	_, ok := pl.(modules.ContractDeployPayload)
