@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"strings"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 // UpdateGlobalDynProp, update global dynamic data
@@ -38,6 +39,8 @@ func UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalP
 	missedUnits := uint64(modules.GetSlotAtTime(gp, dgp, time.Unix(timestamp, 0)))
 	//	println(missedUnits)
 	dgp.CurrentASlot += missedUnits + 1
+
+	go storage.StoreDynGlobalProp(dgp)
 }
 
 /**

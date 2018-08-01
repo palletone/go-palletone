@@ -28,6 +28,7 @@ import (
 	"strings"
 	"time"
 	"unsafe"
+	"errors"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -35,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -127,8 +129,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error)
 
 // GenerateVerifiedUnit, generate unit
 // @author Albert·Gou
-func GenerateUnit(dag *modules.Dag, when time.Time, signKey modules.Mediator) modules.Unit {
-
+func GenerateUnit(dag *modules.Dag, when time.Time, producer modules.Mediator, ks *keystore.KeyStore) modules.Unit {
 	gp := dag.GlobalProp
 	dgp := dag.DynGlobalProp
 
@@ -137,17 +138,23 @@ func GenerateUnit(dag *modules.Dag, when time.Time, signKey modules.Mediator) mo
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	log.Info("Generating Verified Unit...")
 
-	units, _ := CreateUnit(&signKey.Address)
+	units, _ := CreateUnit(&producer.Address)
 	unit := units[0]
 	unit.UnitHeader.Creationdate = when.Unix()
 	unit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
 
-	// 3. 从未验证交易池中移除添加的交易
+	_, err := GetUnitWithSig(&unit, ks, accounts.Account{Address: producer.Address})
+	if err != nil {
+		log.Error(fmt.Sprintf("%v", err))
+	}
 
 	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
 
-	// 4. 将验证单元添加到本地DB
+	// 4. 将验证单元添加到本地DB, 从未验证交易池中移除添加的交易
 	go log.Info("storing the new verified unit to database...")
+	if err := SaveUnit(unit, false); err != nil {
+		log.Error(fmt.Sprintf("%v", err))
+	}
 
 	// 5. 更新全局动态属性值
 	log.Info("Updating global dynamic property...")
@@ -160,6 +167,38 @@ func GenerateUnit(dag *modules.Dag, when time.Time, signKey modules.Mediator) mo
 	dag.MediatorSchl.UpdateMediatorSchedule(gp, dgp)
 
 	return unit
+}
+
+// WithSignature, returns a new unit with the given signature.
+// @author Albert·Gou
+func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer accounts.Account) (*modules.Unit, error) {
+	// signature unit: only sign header data(without witness and authors fields)
+	sign, err1 := ks.SigUnit(*unit.UnitHeader, signer.Address)
+	if err1 != nil {
+		msg := fmt.Sprintf("Failed to write genesis block:%v", err1.Error())
+		log.Error(msg)
+		return unit, err1
+	}
+
+	r := sign[:32]
+	s := sign[32:64]
+	v := sign[64:]
+	if len(v) != 1 {
+		return unit, errors.New("error.")
+	}
+
+	unit.UnitHeader.Authors = &modules.Authentifier{
+		Address: signer.Address.String(),
+		R:       r,
+		S:       s,
+		V:       v,
+	}
+	// to set witness list, should be creator himself
+	var authentifier modules.Authentifier
+	authentifier.Address = signer.Address.String()
+	unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
+
+	return unit, nil
 }
 
 /**
