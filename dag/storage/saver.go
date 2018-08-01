@@ -73,12 +73,7 @@ value: unit header rlp encoding bytes
 */
 // save header
 func SaveHeader(uHash common.Hash, h *modules.Header) error {
-	chain_index, err := rlp.EncodeToBytes(h.Number)
-	if err != nil {
-		return err
-	}
-
-	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, chain_index, uHash.Bytes())
+	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.Bytes())
 	return Store(key, *h)
 }
 
@@ -91,9 +86,9 @@ func SaveHashNumber(uHash common.Hash, height modules.ChainIndex) error {
 key: [BODY_PREFIX][merkle root]
 value: all transactions hash set's rlp encoding bytes
 */
-func SaveBody(root common.Hash, txsHash []common.Hash) error {
+func SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	// Dbconn.Put(append())
-	key := fmt.Sprintf("%s%s", BODY_PREFIX, root.String())
+	key := fmt.Sprintf("%s%s", BODY_PREFIX, unitHash.String())
 	return Store(key, txsHash)
 }
 
@@ -111,7 +106,7 @@ func GetBody(root common.Hash) ([]common.Hash, error) {
 }
 
 func SaveTransactions(txs *modules.Transactions) error {
-	key := fmt.Sprintf("%s%s", TRANSACTIONSPREFIX, txs.Hash())
+	key := fmt.Sprintf("%s%s", TRANSACTIONS_PREFIX, txs.Hash())
 	return Store(key, *txs)
 }
 

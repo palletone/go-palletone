@@ -24,11 +24,10 @@ import (
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
-	"gopkg.in/urfave/cli.v1"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"gopkg.in/urfave/cli.v1"
 )
 
 var (
@@ -41,7 +40,7 @@ var (
 			//			utils.DataDirFlag,
 			GenesisJsonPathFlag,
 			GenesisTimestampFlag,
-//			utils.LightModeFlag,
+			//			utils.LightModeFlag,
 		},
 		Category: "BLOCKCHAIN COMMANDS",
 		Description: `
@@ -117,12 +116,12 @@ func initGenesis(ctx *cli.Context) error {
 	if ctx.GlobalIsSet(GenesisTimestampFlag.Name) {
 		secFromNow := ctx.GlobalInt64(GenesisTimestampFlag.Name)
 		mi := int64(genesis.InitialParameters.MediatorInterval)
-		genesis.InitialTimestamp = time.Now().Unix() + mi +	secFromNow
+		genesis.InitialTimestamp = time.Now().Unix() + mi + secFromNow
 		genesis.InitialTimestamp -= genesis.InitialTimestamp % mi
 	}
 
 	node := makeFullNode(ctx)
-	ks := node.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := node.GetKeyStore()
 	account, _ := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
 
 	err = gen.SetupGenesisUnit(genesis, ks, account)

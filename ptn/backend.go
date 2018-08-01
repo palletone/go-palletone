@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -250,4 +251,9 @@ func (s *PalletOne) Etherbase() (eb common.Address, err error) {
 			}
 		}*/
 	return common.Address{}, fmt.Errorf("etherbase must be explicitly specified")
+}
+
+// @author Albert·Gou
+func (p *PalletOne) GetKeyStore() *keystore.KeyStore {
+	return p.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 }

@@ -20,13 +20,13 @@
 package common
 
 import (
-	"time"
-
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 // UpdateGlobalDynProp, update global dynamic data
@@ -39,15 +39,19 @@ func UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalP
 	missedUnits := uint64(modules.GetSlotAtTime(gp, dgp, time.Unix(timestamp, 0)))
 	//	println(missedUnits)
 	dgp.CurrentASlot += missedUnits + 1
+
+	go storage.StoreDynGlobalProp(dgp)
 }
 
 /**
 mediator投票结果，返回区块高度
 Method for getting mediator voting results
 */
-var lastStatisticalHeight = modules.ChainIndex{} //GenesisHeight()
+
+//var lastStatisticalHeight = GenesisHeight()
 
 func MediatorVoteResult(height modules.ChainIndex) (map[common.Address]uint64, error) {
+	var lastStatisticalHeight = GenesisHeight()
 	result := map[common.Address]uint64{}
 	// step1. check height
 	// check asset id

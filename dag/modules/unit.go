@@ -195,6 +195,14 @@ type ChainIndex struct {
 	Index   uint64
 }
 
+func (height ChainIndex) String() string {
+	data, err := rlp.EncodeToBytes(height)
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}
+
 var (
 	APP_PAYMENT         = "payment"
 	APP_CONTRACT_TPL    = "contract_template"
@@ -219,32 +227,42 @@ type PaymentPayload struct {
 	Outputs []Output `json:"outputs"`
 }
 
+type StateVersion struct {
+	Height  ChainIndex
+	TxIndex uint32
+}
+
+func (version *StateVersion) String() string {
+	data, err := rlp.EncodeToBytes(*version)
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}
+
 // Contract template deploy message
 // App: contract_template
 type ContractTplPayload struct {
-	TemplateId common.Hash            `json:"template_id"` // configure xml file of contract
-	Bytecode   []byte                 `json:"bytecode"`    // contract bytecode
-	ReadSet    map[string]interface{} `json:"read_set"`    // the set data of read, and value could be any type
-	WriteSet   map[string]interface{} `json:"write_set"`   // the set data of write, and value could be any type
-
+	TemplateId common.Hash `json:"template_id"` // configure xml file of contract
+	Bytecode   []byte      `json:"bytecode"`    // contract bytecode
 }
 
 // Contract instance message
 // App: contract_deploy
 type ContractDeployPayload struct {
-	TemplateId common.Hash            `json:"template_id"` // contract template id
-	Config     []byte                 `json:"config"`      // configure xml file of contract instance parameters
-	ReadSet    map[string]interface{} `json:"read_set"`    // the set data of read, and value could be any type
-	WriteSet   map[string]interface{} `json:"write_set"`   // the set data of write, and value could be any type
+	TemplateId common.Hash              `json:"template_id"` // contract template id
+	Config     []byte                   `json:"config"`      // configure xml file of contract instance parameters
+	ReadSet    map[string]*StateVersion `json:"read_set"`    // the set data of read, and value could be any type
+	WriteSet   map[string]interface{}   `json:"write_set"`   // the set data of write, and value could be any type
 }
 
 // Contract invoke message
 // App: contract_invoke
 type ContractInvokePayload struct {
-	ContractId string                 `json:"contract_id"` // contract id
-	Function   []byte                 `json:"function"`    // serialized value of invoked function with call parameters
-	ReadSet    map[string]interface{} `json:"read_set"`    // the set data of read, and value could be any type
-	WriteSet   map[string]interface{} `json:"write_set"`   // the set data of write, and value could be any type
+	ContractId string                   `json:"contract_id"` // contract id
+	Function   []byte                   `json:"function"`    // serialized value of invoked function with call parameters
+	ReadSet    map[string]*StateVersion `json:"read_set"`    // the set data of read, and value could be any type
+	WriteSet   map[string]interface{}   `json:"write_set"`   // the set data of write, and value could be any type
 }
 
 // Token exchange message and verify message

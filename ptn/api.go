@@ -68,7 +68,7 @@ func NewPublicDebugAPI(eth *PalletOne) *PublicDebugAPI {
 // the private debugging endpoint.
 type PrivateDebugAPI struct {
 	//config *configure.ChainConfig
-	eth    *PalletOne
+	eth *PalletOne
 }
 
 // NewPrivateDebugAPI creates a new API definition for the full node-related

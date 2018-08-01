@@ -65,6 +65,9 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 }
 
 func (mp *MediatorPlugin) Stop() error {
+	close(mp.quit)
+	log.Info("mediator plugin stopped")
+
 	return nil
 }
 
@@ -113,6 +116,7 @@ func Initialize(ptn *ptn.PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		ptn:               ptn,
 		productionEnabled: cfg.EnableStaleProduction,
 		mediators:         msm,
+		quit:              make(chan struct{}),
 	}
 
 	log.Info("mediator plugin initialize end")

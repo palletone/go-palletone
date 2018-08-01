@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dcom "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
@@ -39,6 +38,7 @@ type MediatorPlugin struct {
 	productionEnabled bool
 	// Mediator`s account and passphrase controlled by this node
 	mediators map[common.Address]string
+	quit      chan struct{} // Channel used for graceful exit
 }
 
 func newChainBanner(dag *modules.Dag) {
@@ -66,7 +66,13 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 	nextWakeup := now.Add(timeToNextSecond)
 
 	// 2. 安排验证单元生产循环
-	go mp.VerifiedUnitProductionLoop(nextWakeup)
+	// production unit until termination is requested
+	select {
+	case <-mp.quit:
+		return
+	default:
+		go mp.VerifiedUnitProductionLoop(nextWakeup)
+	}
 }
 
 //验证单元生产状态类型
@@ -86,6 +92,7 @@ const (
 )
 
 func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) ProductionCondition {
+	// Start to production unit for expiration
 	time.Sleep(wakeup.Sub(time.Now()))
 
 	// 1. 尝试生产验证单元
@@ -183,7 +190,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
-	ks := mp.ptn.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := mp.ptn.GetKeyStore()
 	err := ks.Unlock(accounts.Account{Address: ma}, ps)
 	if err != nil {
 		detail["ScheduledKey"] = ma.Str()
@@ -191,7 +198,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 2. 生产验证单元
-	unit := dcom.GenerateUnit(mp.ptn.Dag(), scheduledTime, *scheduledMediator)
+	unit := dcom.GenerateUnit(mp.ptn.Dag(), scheduledTime, *scheduledMediator, ks)
 
 	// 3. 异步向区块链网络广播验证单元
 	go log.Info("Asynchronously broadcast the new signed verified unit to p2p networks...")
