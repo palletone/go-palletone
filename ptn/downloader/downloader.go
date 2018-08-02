@@ -580,8 +580,8 @@ func (d *Downloader) fetchHeight(p *peerConnection) (*modules.Header, error) {
 				return nil, errBadPeer
 			}
 			head := headers[0]
-			log.Info("Remote head header identified", "number", head.Number, "hash", head.Hash())
-			log.Info("Received headers from remote peer", "peer", packet.PeerId())
+
+			log.Info("Remote head header identified", "number", head.Number.Index, "hash", head.Hash(), "peer", packet.PeerId())
 			return head, nil
 
 		case <-timeout:
@@ -836,7 +836,6 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 	defer ticker.Stop()
 
 	update := make(chan struct{}, 1)
-
 	// Prepare the queue and fetch block parts until the block header fetcher's done
 	finished := false
 	for {
@@ -845,6 +844,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 			return errCancel
 
 		case packet := <-deliveryCh:
+			log.Info("===fetchParts <-deliveryCh===")
 			// If the peer was previously banned and failed to deliver its pack
 			// in a reasonable time frame, ignore its message.
 			if peer := d.peers.Peer(packet.PeerId()); peer != nil {
@@ -857,6 +857,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 				// caused by a timed out request which came through in the end), set it to
 				// idle. If the delivery's stale, the peer should have already been idled.
 				if err != errStaleDelivery {
+					log.Info("===fetchParts===", "deliver err:", err)
 					setIdle(peer, accepted)
 				}
 				// Issue a log to the user to see what's going on
@@ -869,6 +870,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 					peer.log.Trace("Failed to deliver retrieved data", "type", kind, "err", err)
 				}
 			}
+
 			// Blocks assembled, try to update the progress
 			select {
 			case update <- struct{}{}:
@@ -876,6 +878,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 			}
 
 		case cont := <-wakeCh:
+			log.Info("===fetchParts <-wakeCh===")
 			// The header fetcher sent a continuation flag, check if it's done
 			if !cont {
 				finished = true
@@ -887,6 +890,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 			}
 
 		case <-ticker.C:
+			log.Info("===fetchParts <-ticker.C===")
 			// Sanity check update the progress
 			select {
 			case update <- struct{}{}:
@@ -904,7 +908,6 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 					// If a lot of retrieval elements expired, we might have overestimated the remote peer or perhaps
 					// ourselves. Only reset to minimal throughput but don't drop just yet. If even the minimal times
 					// out that sync wise we need to get rid of the peer.
-					//
 					// The reason the minimum threshold is 2 is because the downloader tries to estimate the bandwidth
 					// and latency of a peer separately, which requires pushing the measures capacity a bit and seeing
 					// how response times reacts, to it always requests one more than the minimum (i.e. min 2).
@@ -924,7 +927,9 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 				}
 			}
 			// If there's nothing more to fetch, wait or terminate
-			if pending() == 0 {
+			pendingnum := pending()
+			log.Info("===fetchParts===", "pendingnum:", pendingnum)
+			if pendingnum == 0 {
 				if !inFlight() && finished {
 					log.Debug("Data fetching completed", "type", kind)
 					return nil
