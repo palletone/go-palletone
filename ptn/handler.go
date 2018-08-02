@@ -227,8 +227,12 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	//go pm.txsyncLoop()
 
 	// broadcast transactions
+	// 广播交易的通道。 txCh会作为txpool的TxPreEvent订阅通道。
+	// txpool有了这种消息会通知给这个txCh。 广播交易的goroutine会把这个消息广播出去。
 	pm.txCh = make(chan modules.TxPreEvent, txChanSize)
+	// 订阅的回执
 	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
+	// 启动广播的goroutine
 	go pm.txBroadcastLoop()
 }
 
