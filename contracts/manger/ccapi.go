@@ -24,6 +24,21 @@ func Init() error {
 	return nil
 }
 
+
+func InitNoSysCCC() error {
+	err := peerServerInit()
+	if err != nil {
+		logger.Errorf("peerServerInit error:%s", err)
+		return err
+	}
+	//err = systemContractInit()
+	//if err != nil {
+	//	logger.Errorf("systemContractInit error:%s", err)
+	//	return err
+	//}
+	return nil
+}
+
 func Deinit() error{
 	err := peerServerDeInit()
 	if err != nil {

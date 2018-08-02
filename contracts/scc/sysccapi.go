@@ -96,7 +96,6 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 		sysccLogger.Info(fmt.Sprintf("system chaincode (%s,%s) disabled", syscc.Name, syscc.Path))
 		return nil
 	}
-
 	var err error
 
 	ccprov := ccprovider.GetChaincodeProvider()
@@ -116,9 +115,7 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 		if err != nil {
 			return err
 		}
-
 		ctxt = ctxt2
-
 		defer txsim.Done()
 	}
 */
@@ -179,6 +176,7 @@ func isWhitelisted(syscc *SystemChaincode) bool {
 	enabled := val == "enable" || val == "true" || val == "yes"
 	return ok && enabled
 }
+
 //RegisterSysCCs is the hook for system chaincodes where system chaincodes are registered
 //note the chaincode must still be deployed and launched like a user chaincode will be
 func RegisterSysCCs() {
