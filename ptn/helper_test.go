@@ -38,6 +38,7 @@ import (
 	//"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/storage"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 )
 
 var (
@@ -68,7 +69,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	//	panic(err)
 	//}
 	engine := new(consensus.DPOSEngine)
-	dag := new(modules.Dag)
+	dag := new(dagcommon.Dag)
 	typemux := new(event.TypeMux)
 	DbPath:="./data1/leveldb"
 	db := storage.Init(DbPath)
