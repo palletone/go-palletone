@@ -20,13 +20,15 @@
 package modules
 
 import (
-	"github.com/palletone/go-palletone/common/log"
 	"time"
+
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common"
 )
 
 // Mediator调度顺序结构体
 type MediatorSchedule struct {
-	CurrentShuffledMediators []Mediator
+	CurrentShuffledMediators []common.Mediator
 }
 
 func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorSchedule {
@@ -45,7 +47,7 @@ func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorS
 
 func NewMediatorSchl() *MediatorSchedule {
 	return &MediatorSchedule{
-		CurrentShuffledMediators: []Mediator{},
+		CurrentShuffledMediators: []common.Mediator{},
 	}
 }
 
@@ -59,7 +61,7 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 	}
 
 	// 2. 清除CurrentShuffledMediators原来的空间，重新分配空间
-	ms.CurrentShuffledMediators = make([]Mediator, aSize, aSize)
+	ms.CurrentShuffledMediators = make([]common.Mediator, aSize, aSize)
 
 	// 3. 初始化数据
 	for m, _ := range gp.ActiveMediators {
@@ -99,7 +101,7 @@ If slotNum == 1, return the next scheduled mediator.
 如果slotNum == 2，则返回下下一个调度Mediator。
 If slotNum == 2, return the next scheduled mediator after 1 verified uint gap.
 */
-func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) *Mediator {
+func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) *common.Mediator {
 	currentASlot := dgp.CurrentASlot + uint64(slotNum)
 	// 由于创世单元不是有mediator生产，所以这里需要减1
 	index := (currentASlot - 1) % uint64(len(ms.CurrentShuffledMediators))

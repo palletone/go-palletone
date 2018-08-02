@@ -26,11 +26,12 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common"
 )
 
 // GenerateVerifiedUnit, generate unit
 // @author Albert·Gou
-func GenerateUnit(dag *modules.Dag, when time.Time, producer modules.Mediator, ks *keystore.KeyStore) modules.Unit {
+func GenerateUnit(dag *modules.Dag, when time.Time, producer common.Mediator, ks *keystore.KeyStore) modules.Unit {
 	dgp := dag.DynGlobalProp
 
 	// 1. 判断是否满足生产的若干条件

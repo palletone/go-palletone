@@ -200,13 +200,14 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	// 2. 生产验证单元
 	unit := dcom.GenerateUnit(mp.ptn.Dag(), scheduledTime, *scheduledMediator, ks)
 
-	// 3. 异步向区块链网络广播验证单元
-	go log.Info("Asynchronously broadcast the new signed verified unit to p2p networks...")
-
 	num := unit.UnitHeader.Number.Index
 	detail["Num"] = strconv.FormatUint(num, 10)
 	time := time.Unix(unit.UnitHeader.Creationdate, 0)
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
+
+	// 3. 异步向区块链网络广播验证单元
+	log.Info("Asynchronously broadcast the new signed verified unit to p2p networks...")
+	//	go mp.ptn.EventMux().Post()
 
 	return Produced, detail
 }
