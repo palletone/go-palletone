@@ -104,7 +104,7 @@ func Initialize(ptn *ptn.PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		addrType, err := addr.Validate()
 		if err != nil || addrType != common.PublicKeyHash {
 			//			utils.Fatalf("Invalid mediator account address: %v", address)
-			log.Info(fmt.Sprintf("Invalid mediator account address: %v", address))
+			log.Info(fmt.Sprintf("Invalid mediator account address %v : %v", address, err))
 		}
 
 		log.Info(fmt.Sprintf("this node controll mediator account address: %v", address))
