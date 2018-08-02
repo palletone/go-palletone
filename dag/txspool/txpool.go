@@ -495,7 +495,6 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 	}
 	// If the transaction pool is full, discard underpriced transactions
 	if uint64(len(pool.all)) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
-		fmt.Println("======================== all > globalslots + config globalQueue============= ", len(pool.all), pool.config.GlobalSlots, pool.config.GlobalQueue)
 		// If the new transaction is underpriced, don't accept it
 		if pool.priced.Underpriced(tx, pool.locals) {
 			log.Trace("Discarding underpriced transaction", "hash", hash, "price", tx.Fee())
@@ -527,7 +526,6 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 			//pendingReplaceCounter.Inc(1)
 		}
 		pool.all[tx.TxHash] = tx
-		fmt.Println("/................put priced pending............/", pool.priced.Put(tx))
 		pool.journalTx(from, tx)
 
 		log.Trace("Pooled new executable transaction", "hash", hash, "from", from)
@@ -574,7 +572,6 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *modules.Transaction) (bool, 
 		//queuedReplaceCounter.Inc(1)
 	}
 	pool.all[hash] = tx
-	fmt.Println("/................put priced queue............/", inserted, old, len(*pool.priced.items), len(*pool.priced.all))
 	return old != nil, nil
 }
 
@@ -620,7 +617,6 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *modules
 	// Failsafe to work around direct pending inserts (tests)
 	if pool.all[hash] == nil {
 		pool.all[hash] = tx
-		fmt.Println("/................put priced promote............/", pool.priced.Put(tx))
 	}
 	// Set the potentially new pending nonce and notify any subsystems of the new tx
 	pool.beats[addr] = time.Now()

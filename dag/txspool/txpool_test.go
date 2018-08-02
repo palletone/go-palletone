@@ -99,7 +99,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	txs := modules.Transactions{}
 	for i, key := range keys {
 		addr := crypto.PubkeyToAddress(key.PublicKey)
-		for j := 0; j < int(config.AccountSlots)*10; j++ {
+		for j := 0; j < int(config.AccountSlots)*1; j++ {
 			txs = append(txs, transaction(nonces[addr], uint64(i)+100, key))
 			nonces[addr]++
 		}
