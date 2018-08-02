@@ -36,20 +36,20 @@ const defaultGenesisJsonPath = "./ptn-genesis.json"
 
 var (
 	GenesisTimestampFlag = cli.Int64Flag{
-		Name:  "genesis-timestamp",
+		Name:  "genesistime",
 		Usage: "Replace timestamp from genesis.json with current time plus this many seconds (experts only!)",
 		//		Value: 0,
 	}
 
 	GenesisJsonPathFlag = cli.StringFlag{
-		Name:  "genesis-json-path",
+		Name:  "genesispath",
 		Usage: "Path to create a Genesis State at.",
 		Value: defaultGenesisJsonPath,
 	}
 
 	createGenesisJsonCommand = cli.Command{
 		Action:    utils.MigrateFlags(createGenesisJson),
-		Name:      "create-genesis-json",
+		Name:      "newgenesis",
 		Usage:     "Create a genesis json file template",
 		ArgsUsage: "<genesisJsonPath>",
 		Flags: []cli.Flag{
