@@ -694,15 +694,15 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 
 	// Ensure headers can be mapped onto the skeleton chain
 	target := q.headerTaskPool[request.From].Hash()
-
+	log.Info("===queueu.DeliverHeaders===", "len(headers):", len(headers), "MaxHeaderFetch:", MaxHeaderFetch)
 	accepted := len(headers) == MaxHeaderFetch
 	if accepted {
 		//if headers[0].Number.Uint64() != request.From {
 		if headers[0].Number.Index != request.From {
-			log.Trace("First header broke chain ordering", "peer", id, "number", headers[0].Number, "hash", headers[0].Hash(), "request.From", request.From)
+			log.Trace("First header broke chain ordering", "peer", id, "number", headers[0].Number.Index, "hash", headers[0].Hash(), "request.From", request.From)
 			accepted = false
 		} else if headers[len(headers)-1].Hash() != target {
-			log.Trace("Last header broke skeleton structure ", "peer", id, "number", headers[len(headers)-1].Number, "hash", headers[len(headers)-1].Hash(), "expected", target)
+			log.Trace("Last header broke skeleton structure ", "peer", id, "number", headers[len(headers)-1].Number.Index, "hash", headers[len(headers)-1].Hash(), "expected", target)
 			accepted = false
 		}
 	}

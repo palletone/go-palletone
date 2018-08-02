@@ -222,7 +222,6 @@ func (f *Fetcher) Enqueue(peer string, unit *modules.Unit) error {
 // returning those that should be handled differently.
 func (f *Fetcher) FilterHeaders(peer string, headers []*modules.Header, time time.Time) []*modules.Header {
 	log.Trace("Filtering headers", "peer", peer, "headers", len(headers))
-	log.Info("Filtering headers", "peer", peer, "headers", len(headers))
 
 	// Send the filter channel to the fetcher
 	filter := make(chan *headerFilterTask)

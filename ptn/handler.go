@@ -447,6 +447,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case msg.Code == GetBlockBodiesMsg:
 		// Decode the retrieval message
+		log.Info("===GetBlockBodiesMsg===")
 		msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
 		if _, err := msgStream.List(); err != nil {
 			return err
@@ -473,6 +474,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return p.SendBlockBodiesRLP(bodies)
 
 	case msg.Code == BlockBodiesMsg:
+		log.Info("===BlockBodiesMsg===")
 		// A batch of block bodies arrived to one of our previous requests
 		var request blockBodiesData
 		if err := msg.Decode(&request); err != nil {
