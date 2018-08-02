@@ -127,7 +127,12 @@ func InitLogger() {
 	initLogger()
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
+func ConInitLogger() {
 
+	DefaultConfig.LoggerLvl = "FATAL"
+	initLogger()
+	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
+}
 // init logger.
 func initLogger() {
 	// var js string

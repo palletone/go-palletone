@@ -285,7 +285,7 @@ var (
 	//TargetGasLimitFlag = cli.Uint64Flag{
 	//	Name:  "targetgaslimit",
 	//	Usage: "Target gas limit sets the artificial target gas floor for the blocks to mine",
-		//Value: configure.GenesisGasLimit,
+	//Value: configure.GenesisGasLimit,
 	//}
 	EtherbaseFlag = cli.StringFlag{
 		Name:  "etherbase",
@@ -962,7 +962,7 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	checkExclusive(ctx, LightServFlag, LightModeFlag)
 	checkExclusive(ctx, LightServFlag, SyncModeFlag, "light")
 
-	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := stack.GetKeyStore()
 	setEtherbase(ctx, ks, cfg)
 	// setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
@@ -1084,13 +1084,15 @@ func RegisterDashboardService(stack *node.Node, cfg *dashboard.Config, commit st
 // RegisterPtnStatsService configures the PalletOne Stats daemon and adds it to
 // th egiven node.
 func RegisterPtnStatsService(stack *node.Node, url string) {
-	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-		// Retrieve both ptn and les services
+	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+		// Retrieve ptn service
 		var ethServ *ptn.PalletOne
 		ctx.Service(&ethServ)
 
 		return ptnstats.New(url, ethServ)
-	}); err != nil {
+	})
+
+	if err != nil {
 		Fatalf("Failed to register the PalletOne Stats service: %v", err)
 	}
 }

@@ -65,6 +65,9 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 }
 
 func (mp *MediatorPlugin) Stop() error {
+	close(mp.quit)
+	log.Info("mediator plugin stopped")
+
 	return nil
 }
 
@@ -73,12 +76,23 @@ func (mp *MediatorPlugin) Stop() error {
 func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 	log.Info("Register Mediator Plugin Service...")
 
-	stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-		return Initialize(stack, cfg)
+	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+		// Retrieve ptn service
+		var ptn *ptn.PalletOne
+		err := ctx.Service(&ptn)
+		if err != nil {
+			return nil, fmt.Errorf("the PalletOne service not found: %v", err)
+		}
+
+		return Initialize(ptn, cfg)
 	})
+
+	if err != nil {
+		utils.Fatalf("Failed to register the Mediator Plugin service: %v", err)
+	}
 }
 
-func Initialize(node *node.Node, cfg *Config) (*MediatorPlugin, error) {
+func Initialize(ptn *ptn.PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	log.Info("mediator plugin initialize begin")
 
 	mss := cfg.Mediators
@@ -90,7 +104,7 @@ func Initialize(node *node.Node, cfg *Config) (*MediatorPlugin, error) {
 		addrType, err := addr.Validate()
 		if err != nil || addrType != common.PublicKeyHash {
 			//			utils.Fatalf("Invalid mediator account address: %v", address)
-			log.Info(fmt.Sprintf("Invalid mediator account address: %v", address))
+			log.Info(fmt.Sprintf("Invalid mediator account address %v : %v", address, err))
 		}
 
 		log.Info(fmt.Sprintf("this node controll mediator account address: %v", address))
@@ -98,15 +112,11 @@ func Initialize(node *node.Node, cfg *Config) (*MediatorPlugin, error) {
 		msm[addr] = passphrase
 	}
 
-	var ptn *ptn.PalletOne
-	if err := node.Service(&ptn); err != nil {
-		utils.Fatalf("PalletOne service not running: %v", err)
-	}
-
 	mp := MediatorPlugin{
 		ptn:               ptn,
 		productionEnabled: cfg.EnableStaleProduction,
 		mediators:         msm,
+		quit:              make(chan struct{}),
 	}
 
 	log.Info("mediator plugin initialize end")

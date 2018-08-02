@@ -17,9 +17,9 @@
 package main
 
 import (
-	"testing"
-	"github.com/palletone/go-palletone/dag/common"
 	"fmt"
+	"github.com/palletone/go-palletone/dag/common"
+	"testing"
 )
 
 var customGenesisTests = []struct {
@@ -110,7 +110,7 @@ func TestCustomGenesis(t *testing.T) {
 }
 */
 
-func TestGenesisGet(t *testing.T)  {
+func TestGenesisGet(t *testing.T) {
 	// get genesis unit by index
 	unit := common.GetGenesisUnit(0)
 	fmt.Println("Genesis unit:", unit)

@@ -17,10 +17,10 @@
 package ptn
 
 import (
-	"testing"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/dag/modules"
+	"testing"
 
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
@@ -86,7 +86,7 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		for _, hash := range tt.expect {
 			//headers = append(headers, pm.blockchain.GetBlockByHash(hash).Header())
 			hash = hash
-			headers = append(headers,&modules.Header{})
+			headers = append(headers, &modules.Header{})
 		}
 		// Send the hash request and verify the response
 		p2p.Send(peer.app, 0x03, tt.query)
@@ -103,6 +103,7 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		}
 	}
 }
+
 /*
 // Tests that block contents can be retrieved from a remote chain based on their hashes.
 func TestGetBlockBodies62(t *testing.T) { testGetBlockBodies(t, 62) }

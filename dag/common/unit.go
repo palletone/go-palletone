@@ -1,4 +1,4 @@
-/*
+﻿/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,11 +22,11 @@ import (
 	"crypto/ecdsa"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
-	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -121,45 +121,55 @@ func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error)
 	// set unit size
 	gUnit.UnitSize = gUnit.Size()
 	// set unit hash
-	gUnit.UnitHash = rlp.RlpHash(gUnit)
+	gUnit.UnitHash = gUnit.Hash()
 	return &gUnit, nil
 }
 
-// GenerateVerifiedUnit, generate unit
 // @author Albert·Gou
-func GenerateUnit(dag *modules.Dag, when time.Time, signKey modules.Mediator) modules.Unit {
+func StoreUnit(unit *modules.Unit) error {
+	err := SaveUnit(*unit, false)
 
-	gp := dag.GlobalProp
-	dgp := dag.DynGlobalProp
+	if err != nil {
+		log.Error(fmt.Sprintf("%v", err))
+		return err
+	}
 
-	// 1. 判断是否满足生产的若干条件
+	// 此处应当更新DB中的全局属性
+	//	go storage.StoreDynGlobalProp(dgp)
 
-	// 2. 生产验证单元，添加交易集、时间戳、签名
-	log.Info("Generating Verified Unit...")
+	return nil
+}
 
-	units, _ := CreateUnit()
-	unit := units[0]
-	unit.UnitHeader.Creationdate = when.Unix()
-	unit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
+// WithSignature, returns a new unit with the given signature.
+// @author Albert·Gou
+func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Address) (*modules.Unit, error) {
+	// signature unit: only sign header data(without witness and authors fields)
+	sign, err1 := ks.SigUnit(unit.UnitHeader, signer)
+	if err1 != nil {
+		msg := fmt.Sprintf("Failed to write genesis block:%v", err1.Error())
+		log.Error(msg)
+		return unit, err1
+	}
 
-	// 3. 从未验证交易池中移除添加的交易
+	r := sign[:32]
+	s := sign[32:64]
+	v := sign[64:]
+	if len(v) != 1 {
+		return unit, errors.New("error.")
+	}
 
-	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
+	unit.UnitHeader.Authors = &modules.Authentifier{
+		Address: signer.String(),
+		R:       r,
+		S:       s,
+		V:       v,
+	}
+	// to set witness list, should be creator himself
+	var authentifier modules.Authentifier
+	authentifier.Address = signer.String()
+	unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
 
-	// 4. 将验证单元添加到本地DB
-	go log.Info("storing the new verified unit to database...")
-
-	// 5. 更新全局动态属性值
-	log.Info("Updating global dynamic property...")
-	go UpdateGlobalDynProp(gp, dgp, &unit)
-
-	// 5. 判断是否到了维护周期，并维护
-
-	// 6. 洗牌
-	log.Info("shuffling the scheduling order of mediator...")
-	dag.MediatorSchl.UpdateMediatorSchedule(gp, dgp)
-
-	return unit
+	return unit, nil
 }
 
 /**
@@ -169,7 +179,7 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 // modify by Albert·Gou
-func CreateUnit( /*mAddr *common.Address, time time.Time*/ ) ([]modules.Unit, error) {
+func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
 	units := []modules.Unit{}
 	// get mediator responsible for asset id
 	assetID := modules.IDType16{}
@@ -236,16 +246,15 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
 	data := storage.GetPrefix([]byte(key))
 	if len(data) > 1 {
-		log.Error("Get genesis unit", "error", "multiple genesis unit")
+		log.Info("Get genesis unit error:multiple genesis unit")
+		return nil
 	} else if len(data) <= 0 {
 		return nil
 	}
 	for k, v := range data {
-		fmt.Println("Unit key:", k)
 		sk := string(k[len(storage.HEADER_PREFIX):])
 		// get index
 		skArr := strings.Split(sk, "_")
-		fmt.Println("split len=", len(skArr))
 		if len(skArr) != 3 {
 			log.Error("Get genesis unit index and hash", "error", "split error")
 			return nil
@@ -277,6 +286,18 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 		return &unit
 	}
 	return nil
+}
+
+/**
+获取创世单元的高度
+To get genesis unit height
+*/
+func GenesisHeight() modules.ChainIndex {
+	unit := GetGenesisUnit(0)
+	if unit == nil {
+		return modules.ChainIndex{}
+	}
+	return unit.UnitHeader.Number
 }
 
 func GetUnitTransactions(root common.Hash) (modules.Transactions, error) {
@@ -354,29 +375,38 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		return modules.ErrUnit(-3)
 	}
-
+	// save unit hash and chain index relation
+	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
+	if err := storage.SaveHashNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		return fmt.Errorf("Save unit hash and number error")
+	}
 	// traverse transactions and save them
 	txHashSet := []common.Hash{}
-	for _, tx := range unit.Txs {
+	for txIndex, tx := range unit.Txs {
 		// traverse messages
-		for _, msg := range tx.TxMessages {
+		for msgIndex, msg := range tx.TxMessages {
 			// handle different messages
 			switch msg.App {
 			case modules.APP_PAYMENT:
-				if ok := savePaymentPayload(tx.TxHash, &msg); ok != true {
-					log.Error("Save payment payload error.")
-					return modules.ErrUnit(-5)
+				if ok := savePaymentPayload(tx.TxHash, &msg, uint32(msgIndex), tx.Locktime); ok != true {
+					return fmt.Errorf("Save payment payload error.")
 				}
 			case modules.APP_CONTRACT_TPL:
 			case modules.APP_CONTRACT_DEPLOY:
+				if ok:=saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok!=true{
+					return fmt.Errorf("Save contract init payload error.")
+				}
 			case modules.APP_CONTRACT_INVOKE:
+				if ok := saveContractInvokePayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
+					return fmt.Errorf("Save contract invode payload error.")
+				}
 			case modules.APP_CONFIG:
 				if ok := saveConfigPayload(tx.TxHash, &msg); ok == false {
-					return modules.ErrUnit(-6)
+					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_TEXT:
 			default:
-				log.Error("Message type is not supported now:", msg.App)
+				return fmt.Errorf("Message type is not supported now: %s", msg.App)
 			}
 		}
 		// save transaction
@@ -386,7 +416,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	}
 
 	// save unit body, the value only save txs' hash set, and the key is merkle root
-	if err = storage.SaveBody(unit.UnitHeader.TxRoot, txHashSet); err != nil {
+	if err = storage.SaveBody(unit.UnitHash, txHashSet); err != nil {
 		return err
 	}
 
@@ -486,7 +516,7 @@ func checkTransactions(txs *modules.Transactions, isGenesis bool) (uint64, error
 保存PaymentPayload
 save PaymentPayload data
 */
-func savePaymentPayload(txHash common.Hash, msg *modules.Message) bool {
+func savePaymentPayload(txHash common.Hash, msg *modules.Message, msgIndex uint32, lockTime uint32) bool {
 	// if inputs is none then it is just a normal coinbase transaction
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
@@ -520,7 +550,7 @@ func savePaymentPayload(txHash common.Hash, msg *modules.Message) bool {
 		}
 	}
 	// save utxo
-	UpdateUtxo(txHash, msg)
+	UpdateUtxo(txHash, msg, msgIndex, lockTime)
 	return true
 }
 
@@ -541,6 +571,55 @@ func saveConfigPayload(txHash common.Hash, msg *modules.Message) bool {
 		log.Error(errMsg)
 		return false
 	}
+	return true
+}
+
+/**
+保存合约调用状态
+To save contract invoke state
+*/
+func saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+	var pl interface{}
+	pl = msg.Payload
+	payload, ok := pl.(modules.ContractInvokePayload)
+	if ok == false {
+		return false
+	}
+	// save contract state
+	// key: [CONTRACT_STATE_PREFIX][contract id]_[field name]_[state version]
+	for k, v := range payload.WriteSet {
+		version := modules.StateVersion{
+			Height:  height,
+			TxIndex: txIndex,
+		}
+		key := fmt.Sprintf("%s%s_%s_%s",
+			storage.CONTRACT_STATE_PREFIX,
+			payload.ContractId,
+			k,
+			version.String())
+		if err := storage.Store(key, v); err != nil {
+			log.Error("Save payload key", "error", err.Error())
+			continue
+		}
+	}
+	return true
+}
+
+/**
+保存合约初始化状态
+To save contract init state
+*/
+func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message)bool {
+	var pl interface{}
+	pl = msg.Payload
+	_, ok := pl.(modules.ContractDeployPayload)
+	if ok == false {
+		return false
+	}
+	/**
+	涉及到合约验证和合约ID生成的问题
+	 */
+
 	return true
 }
 

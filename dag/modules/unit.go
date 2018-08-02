@@ -20,10 +20,13 @@ package modules
 import (
 	"encoding/json"
 	"math/big"
+	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
+	"strings"
 )
 
 /*****************************27 June, 2018 update unit struct type*****************************************/
@@ -120,7 +123,10 @@ func (h *Header) ChainIndex() ChainIndex {
 }
 
 func (h *Header) Hash() common.Hash {
-	return rlp.RlpHash(h)
+	emptyHeader := CopyHeader(h)
+	emptyHeader.Authors = nil
+	emptyHeader.Witness = []*Authentifier{}
+	return rlp.RlpHash(emptyHeader)
 }
 
 func (h *Header) Size() common.StorageSize {
@@ -154,14 +160,27 @@ func CopyHeader(h *Header) *Header {
 	return &cpy
 }
 
+func CopyBody(txs Transactions) Transactions {
+	newTxs := Transactions{}
+	for _, tx := range txs {
+		newTxs = append(newTxs, tx)
+	}
+	return newTxs
+}
+
+//wangjiyou add for ptn/fetcher.go
+type Units []*Unit
+
 // key: unit.UnitHash(unit)
 type Unit struct {
 	UnitHeader *Header            `json:"unit_header"`  // unit header
 	Txs        Transactions       `json:"transactions"` // transaction list
 	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
 	UnitSize   common.StorageSize `json:"UnitSize"`     // unit size
-	//Gasprice     uint64             `json:"gas_price"`     // user set total gas
-	//Gasused      uint64             `json:"gas_used"`      // the actually used gas, mediator set
+	// These fields are used by package ptn to track
+	// inter-peer block relay.
+	ReceivedAt   time.Time
+	ReceivedFrom interface{}
 }
 
 type Transactions []*Transaction
@@ -176,6 +195,7 @@ type Transaction struct {
 	CreationDate string             `json:"creation_date"`
 	TxFee        *big.Int           `json:"txfee"` // user set total transaction fee.
 	Txsize       common.StorageSize `json:"txsize" rlp:""`
+	Locktime     uint32             `json:"lock_time"`
 	Priority_lvl float64            `json:"priority_lvl"`
 }
 
@@ -183,6 +203,14 @@ type ChainIndex struct {
 	AssetID IDType16
 	IsMain  bool
 	Index   uint64
+}
+
+func (height ChainIndex) String() string {
+	data, err := rlp.EncodeToBytes(height)
+	if err != nil {
+		return ""
+	}
+	return string(data)
 }
 
 var (
@@ -209,32 +237,42 @@ type PaymentPayload struct {
 	Outputs []Output `json:"outputs"`
 }
 
+type StateVersion struct {
+	Height  ChainIndex
+	TxIndex uint32
+}
+
+func (version *StateVersion) String() string {
+	data, err := rlp.EncodeToBytes(*version)
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}
+
 // Contract template deploy message
 // App: contract_template
 type ContractTplPayload struct {
-	TemplateId common.Hash            `json:"template_id"` // configure xml file of contract
-	Bytecode   []byte                 `json:"bytecode"`    // contract bytecode
-	ReadSet    map[string]interface{} `json:"read_set"`    // the set data of read, and value could be any type
-	WriteSet   map[string]interface{} `json:"write_set"`   // the set data of write, and value could be any type
-
+	TemplateId common.Hash `json:"template_id"` // configure xml file of contract
+	Bytecode   []byte      `json:"bytecode"`    // contract bytecode
 }
 
 // Contract instance message
 // App: contract_deploy
 type ContractDeployPayload struct {
-	TemplateId common.Hash            `json:"template_id"` // contract template id
-	Config     []byte                 `json:"config"`      // configure xml file of contract instance parameters
-	ReadSet    map[string]interface{} `json:"read_set"`    // the set data of read, and value could be any type
-	WriteSet   map[string]interface{} `json:"write_set"`   // the set data of write, and value could be any type
+	TemplateId common.Hash              `json:"template_id"` // contract template id
+	Config     []byte                   `json:"config"`      // configure xml file of contract instance parameters
+	ReadSet    map[string]*StateVersion `json:"read_set"`    // the set data of read, and value could be any type
+	WriteSet   map[string]interface{}   `json:"write_set"`   // the set data of write, and value could be any type
 }
 
 // Contract invoke message
 // App: contract_invoke
 type ContractInvokePayload struct {
-	ContractId string                 `json:"contract_id"` // contract id
-	Function   []byte                 `json:"function"`    // serialized value of invoked function with call parameters
-	ReadSet    map[string]interface{} `json:"read_set"`    // the set data of read, and value could be any type
-	WriteSet   map[string]interface{} `json:"write_set"`   // the set data of write, and value could be any type
+	ContractId string                   `json:"contract_id"` // contract id
+	Function   []byte                   `json:"function"`    // serialized value of invoked function with call parameters
+	ReadSet    map[string]*StateVersion `json:"read_set"`    // the set data of read, and value could be any type
+	WriteSet   map[string]interface{}   `json:"write_set"`   // the set data of write, and value could be any type
 }
 
 // Token exchange message and verify message
@@ -276,17 +314,10 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 		UnitHeader: CopyHeader(header),
 		Txs:        CopyTransactions(txs),
 	}
-	u.UnitSize = header.Size()
+	u.UnitSize = u.Size()
 	u.UnitHash = u.Hash()
 	return u
 }
-
-// comment by Albert·Gou
-//func NewGenesisUnit(genesisConf *core.Genesis, txs Transactions) (*Unit, error) {
-//	//test
-//	unit := Unit{Txs: txs}
-//	return &unit, nil
-//}
 
 func CopyTransactions(txs Transactions) Transactions {
 	cpy := txs
@@ -315,27 +346,22 @@ func (u *Unit) Transaction(hash common.Hash) *Transaction {
 
 // return  unit'UnitHash
 func (u *Unit) Hash() common.Hash {
-	v := rlp.RlpHash(u)
-	return v
+	return u.UnitHeader.Hash()
 }
 
 func (u *Unit) Size() common.StorageSize {
-	//u.UnitSize = common.StorageSize(unsafe.Sizeof(*u)) + common.StorageSize(len(u.UnitHash)/8)
-	//return u.UnitSize
+	emptyUnit := Unit{}
+	emptyUnit.UnitHeader = CopyHeader(u.UnitHeader)
+	emptyUnit.UnitHeader.Authors = nil
+	emptyUnit.UnitHeader.Witness = []*Authentifier{}
+	emptyUnit.Txs = CopyBody(u.Txs)
 
-	b, err := rlp.EncodeToBytes(u)
+	b, err := rlp.EncodeToBytes(emptyUnit)
 	if err != nil {
 		return common.StorageSize(0)
 	} else {
 		return common.StorageSize(len(b))
 	}
-	// if UnitSize := b.UnitSize.Load(); UnitSize != nil {
-	// 	return UnitSize.(common.StorageSize)
-	// }
-	// c := writeCounter(0)
-	// rlp.Encode(&c, b)
-	// b.UnitSize.Store(common.StorageSize(c))
-	// return common.StorageSize(c)
 }
 
 // return Creationdate
@@ -380,3 +406,33 @@ func (e ErrUnit) Error() string {
 }
 
 /************************** Unit Members  *****************************/
+
+// NewBlockWithHeader creates a block with the given header data. The
+// header data is copied, changes to header and to the field values
+// will not affect the block.
+func NewUnitWithHeader(header *Header) *Unit {
+	return &Unit{UnitHeader: CopyHeader(header)}
+}
+
+// WithBody returns a new block with the given transaction and uncle contents.
+func (b *Unit) WithBody(transactions []*Transaction) *Unit {
+	// check transactions merkle root
+	txs := CopyBody(transactions)
+	root := core.DeriveSha(txs)
+	if strings.Compare(root.String(), b.UnitHeader.TxRoot.String())!=0 {
+		return nil
+	}
+	// set unit body
+	b.Txs = CopyBody(txs)
+	return b
+}
+
+func (u *Unit) ContainsParent(pHash common.Hash) bool {
+	ps := pHash.String()
+	for _, hash := range u.UnitHeader.ParentsHash {
+		if strings.Compare(hash.String(), ps)==0 {
+			return true
+		}
+	}
+	return false
+}

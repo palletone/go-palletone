@@ -58,32 +58,41 @@ func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account acco
 		log.Error("Failed to write genesis block:", err.Error())
 		return err
 	}
-	// signature unit: only sign header data(without witness and authors fields)
-	sign, err1 := ks.SigUnit(*unit.UnitHeader, account.Address)
-	if err1 != nil {
-		msg := fmt.Sprintf("Failed to write genesis block:%v", err1.Error())
-		log.Error(msg)
-		return err1
+
+	// comment by Albert·Gou
+	//// signature unit: only sign header data(without witness and authors fields)
+	//sign, err1 := ks.SigUnit(*unit.UnitHeader, account.Address)
+	//if err1 != nil {
+	//	msg := fmt.Sprintf("Failed to write genesis block:%v", err1.Error())
+	//	log.Error(msg)
+	//	return err1
+	//}
+	//
+	//r := sign[:32]
+	//s := sign[32:64]
+	//v :=  sign[64:]
+	//if len(v)!=1{
+	//	errors.New("error.")
+	//}
+	//unit.UnitHeader.Authors = &modules.Authentifier{
+	//	Address: account.Address.String(),
+	//	R:       r,
+	//	S:       s,
+	//	V:       v,
+	//}
+	//// to set witness list, should be creator himself
+	//var authentifier modules.Authentifier
+	//authentifier.Address = account.Address.String()
+	//unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
+
+	// modify by Albert·Gou
+	unit, err = dagCommon.GetUnitWithSig(unit, ks, account.Address)
+	if err != nil {
+		return err
 	}
 
-	r := sign[:32]
-	s := sign[32:64]
-	v :=  sign[64:]
-	if len(v)!=1{
-		errors.New("error.")
-	}
-	unit.UnitHeader.Authors = &modules.Authentifier{
-		Address: account.Address.String(),
-		R:       r,
-		S:       s,
-		V:       v,
-	}
-	// to set witness list, should be creator himself
-	var authentifier modules.Authentifier
-	authentifier.Address = account.Address.String()
-	unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
 	// to save unit in db
-	if err:=CommitDB(unit, false); err!=nil{
+	if err := CommitDB(unit, false); err != nil {
 		log.Error("Commit genesis unit to db:", "error", err.Error())
 		return err
 	}
@@ -210,7 +219,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 
 func CommitDB(unit *modules.Unit, isGenesis bool) error {
 	// save genesis unit to leveldb
-	if err:=dagCommon.SaveUnit(*unit, isGenesis); err!=nil{
+	if err := dagCommon.SaveUnit(*unit, isGenesis); err != nil {
 		return err
 	} else {
 		log.Info("Save genesis unit success.")
@@ -235,7 +244,7 @@ func DefaultGenesisBlock() *core.Genesis {
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
-		InitialTimestamp:		InitialTimestamp(initParams.MediatorInterval),
+		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
 			core.DefaultTokenHolder),
@@ -258,7 +267,7 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
-		InitialTimestamp:		InitialTimestamp(initParams.MediatorInterval),
+		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
 			core.DefaultTokenHolder),
@@ -276,5 +285,5 @@ func InitialMediatorCandidates(len int, address string) []string {
 
 func InitialTimestamp(mediatorInterval uint8) int64 {
 	mi := int64(mediatorInterval)
-	return time.Now().Unix()/mi*mi
+	return time.Now().Unix() / mi * mi
 }

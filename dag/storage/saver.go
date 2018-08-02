@@ -67,67 +67,46 @@ func SaveJoint(objJoint *modules.Joint, onDone func()) (err error) {
 	return
 }
 
-// save unit
-func SaveUnit(unit *modules.Unit) error {
-	log.Println("Start save unit... ")
-	obj_unit := unit
-	obj_unit_byte, err := json.Marshal(obj_unit)
-	if err != nil {
-		return err
-	}
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
-	}
-	if err = Dbconn.Put(append(UNIT_PREFIX, obj_unit.Hash().Bytes()...), obj_unit_byte); err != nil {
-		return err
-	}
-	AddUnitKeys(string(UNIT_PREFIX) + obj_unit.Hash().String())
-	return nil
-}
-
 /**
 key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 value: unit header rlp encoding bytes
 */
 // save header
-func SaveHeader(uHahs common.Hash, h *modules.Header) error {
-
-	//chain_index := h.ChainIndex()
-	//encNum := encodeBlockNumber(chain_index.Index)
-	chain_index, err := rlp.EncodeToBytes(h.Number)
-	if err != nil {
-		return err
-	}
-
-	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, chain_index, uHahs.Bytes())
+func SaveHeader(uHash common.Hash, h *modules.Header) error {
+	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.Bytes())
 	return Store(key, *h)
+}
+
+func SaveHashNumber(uHash common.Hash, height modules.ChainIndex) error {
+	key := fmt.Sprintf("%s%s", UNIT_HASH_NUMBER, uHash)
+	return Store(key, height)
 }
 
 /**
 key: [BODY_PREFIX][merkle root]
 value: all transactions hash set's rlp encoding bytes
 */
-func SaveBody(root common.Hash, txsHash []common.Hash) error {
+func SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	// Dbconn.Put(append())
-	key := fmt.Sprintf("%s%s", BODY_PREFIX, root.String())
+	key := fmt.Sprintf("%s%s", BODY_PREFIX, unitHash.String())
 	return Store(key, txsHash)
 }
 
 func GetBody(root common.Hash) ([]common.Hash, error) {
 	key := fmt.Sprintf("%s%s", BODY_PREFIX, root.String())
-	data, err:=Get([]byte(key))
-	if err!=nil {
+	data, err := Get([]byte(key))
+	if err != nil {
 		return nil, err
 	}
 	var txHashs []common.Hash
-	if err:=rlp.DecodeBytes(data, &txHashs);err!=nil{
+	if err := rlp.DecodeBytes(data, &txHashs); err != nil {
 		return nil, err
 	}
 	return txHashs, nil
 }
 
 func SaveTransactions(txs *modules.Transactions) error {
-	key := fmt.Sprintf("%s%s", TRANSACTIONSPREFIX, txs.Hash())
+	key := fmt.Sprintf("%s%s", TRANSACTIONS_PREFIX, txs.Hash())
 	return Store(key, *txs)
 }
 
@@ -140,12 +119,14 @@ func SaveTransaction(tx *modules.Transaction) error {
 	return Store(key, *tx)
 }
 
-func GetTransaction(txHash common.Hash) (*modules.Transaction, error)  {
+func GetTransaction(txHash common.Hash) (*modules.Transaction, error) {
 	key := fmt.Sprintf("%s%s", TRANSACTION_PREFIX, txHash.String())
 	data, err := Get([]byte(key))
-	if err!=nil {return nil, err}
+	if err != nil {
+		return nil, err
+	}
 	var tx modules.Transaction
-	if err:=rlp.DecodeBytes(data, &tx); err!=nil {
+	if err := rlp.DecodeBytes(data, &tx); err != nil {
 		return nil, err
 	}
 	return &tx, nil

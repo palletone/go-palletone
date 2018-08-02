@@ -1217,7 +1217,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	// Add all transaction outputs to the transaction after performing
 	// some validity checks.
 	//only support mainnet
-	var params byte = 1
+	var params *chaincfg.Params
 	for encodedAddr, amount := range c.Amounts {
 		// Ensure amount is in the valid range for monetary amounts.
 		if amount <= 0 || amount > btcutil.MaxSatoshi {

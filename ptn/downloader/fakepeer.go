@@ -20,8 +20,7 @@ import (
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
-	//"github.com/palletone/go-palletone/dag/coredata"
-	//"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 )
 
@@ -37,29 +36,34 @@ func (p *FakePeer) Head() (common.Hash, *big.Int) {
 	return common.Hash{}, &big.Int{}
 }
 func (p *FakePeer) RequestHeadersByHash(hash common.Hash, amount int, skip int, reverse bool) error {
+	log.Info("===RequestHeadersByHash===")
 	return nil
 }
 
 // RequestHeadersByNumber implements downloader.Peer, returning a batch of headers
 // defined by the origin number and the associated query parameters.
 func (p *FakePeer) RequestHeadersByNumber(number uint64, amount int, skip int, reverse bool) error {
+	log.Info("===RequestHeadersByNumber===")
 	return nil
 }
 
 // RequestBodies implements downloader.Peer, returning a batch of block bodies
 // corresponding to the specified block hashes.
 func (p *FakePeer) RequestBodies(hashes []common.Hash) error {
+	log.Info("===RequestBodies===")
 	return nil
 }
 
 // RequestReceipts implements downloader.Peer, returning a batch of transaction
 // receipts corresponding to the specified block hashes.
 func (p *FakePeer) RequestReceipts(hashes []common.Hash) error {
+	log.Info("===RequestReceipts===")
 	return nil
 }
 
 // RequestNodeData implements downloader.Peer, returning a batch of state trie
 // nodes corresponding to the specified trie hashes.
 func (p *FakePeer) RequestNodeData(hashes []common.Hash) error {
+	log.Info("===RequestNodeData===")
 	return nil
 }

@@ -156,30 +156,32 @@ func signMultiSig(tx *wire.MsgTx, idx int, subScript []byte, hashType SigHashTyp
 func sign(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 	subScript []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB) ([]byte,
 	ScriptClass, []btcutil.Address, int, error) {
-
 	class, addresses, nrequired, err := ExtractPkScriptAddrs(subScript,
 		chainParams)
 	if err != nil {
 		return nil, NonStandardTy, nil, 0, err
 	}
-
+        fmt.Println(addresses)
 	switch class {
 	case PubKeyTy:
 		// look up key for address
-		key, _, err := kdb.GetKey(addresses[0])
+                // fmt.Println("sign       169  169 ------------")
+                fmt.Println(addresses)
+		key , _, err := kdb.GetKey(addresses[0])
 		if err != nil {
 			return nil, class, nil, 0, err
 		}
-
+                //fmt.Println("sign       173   173 ------------")
 		script, err := p2pkSignatureScript(tx, idx, subScript, hashType,
 			key)
 		if err != nil {
 			return nil, class, nil, 0, err
 		}
-
+                //fmt.Println("sign       179 179   179   ------------")
 		return script, class, addresses, nrequired, nil
 	case PubKeyHashTy:
 		// look up key for address
+                //fmt.Println("sign       183   183   183   183 ------------")
 		key, compressed, err := kdb.GetKey(addresses[0])
 		if err != nil {
 			return nil, class, nil, 0, err
@@ -190,7 +192,7 @@ func sign(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 		if err != nil {
 			return nil, class, nil, 0, err
 		}
-
+                //fmt.Println("sign       193   193 ------------")
 		return script, class, addresses, nrequired, nil
 	case ScriptHashTy:
 		script, err := sdb.GetScript(addresses[0])
@@ -202,14 +204,17 @@ func sign(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 	case MultiSigTy:
 		script, _ := signMultiSig(tx, idx, subScript, hashType,
 			addresses, nrequired, kdb)
+                //fmt.Println("sign      205   205   205 ------------")
 		return script, class, addresses, nrequired, nil
 	case NullDataTy:
 		return nil, class, nil, 0,
 			errors.New("can't sign NULLDATA transactions")
 	default:
+                //fmt.Println("sign       21000  210   ------------")
 		return nil, class, nil, 0,
 			errors.New("can't sign unknown transactions")
 	}
+        
 }
 
 // mergeScripts merges sigScript and prevScript assuming they are both
@@ -433,13 +438,12 @@ func (sc ScriptClosure) GetScript(address btcutil.Address) ([]byte, error) {
 func SignTxOutput(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 	pkScript []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB,
 	previousScript []byte) ([]byte, error) {
-
+        //fmt.Println("hahahhahahahah------43666-----------")
 	sigScript, class, addresses, nrequired, err := sign(chainParams, tx,
 		idx, pkScript, hashType, kdb, sdb)
 	if err != nil {
 		return nil, err
 	}
-
 	if class == ScriptHashTy {
 		// TODO keep the sub addressed and pass down to merge.
 		realSigScript, _, _, _, err := sign(chainParams, tx, idx,
@@ -456,7 +460,7 @@ func SignTxOutput(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 		sigScript, _ = builder.Script()
 		// TODO keep a copy of the script for merging.
 	}
-
+        //fmt.Println("hahahhahahahah------459459-----------")
 	// Merge scripts. with any previous data, if any.
 	mergedScript := mergeScripts(chainParams, tx, idx, pkScript, class,
 		addresses, nrequired, sigScript, previousScript)

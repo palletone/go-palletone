@@ -36,6 +36,7 @@ import (
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 )
@@ -80,7 +81,7 @@ type ProtocolManager struct {
 	txCh     chan modules.TxPreEvent
 	txSub    event.Subscription
 
-	dag *modules.Dag
+	dag *dagcommon.Dag
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -102,7 +103,7 @@ type ProtocolManager struct {
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool,
-	engine core.ConsensusEngine, dag *modules.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase) (*ProtocolManager, error) {
+	engine core.ConsensusEngine, dag *dagcommon.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -166,8 +167,27 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		return nil, errIncompatibleConfig
 	}
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, dag, manager.levelDb)
-	manager.fetcher = fetcher.New(manager.removePeer)
+	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, manager.levelDb)
+
+	validator := func(header *modules.Header) error {
+		//return engine.VerifyHeader(blockchain, header, true)
+		return nil
+	}
+	heighter := func() uint64 {
+		return dag.CurrentUnit().NumberU64()
+	}
+	inserter := func(blocks modules.Units) (int, error) {
+		// If fast sync is running, deny importing weird blocks
+		if atomic.LoadUint32(&manager.fastSync) == 1 {
+			log.Warn("Discarded bad propagated block", "number", blocks[0].Number(), "hash", blocks[0].Hash())
+			return 0, nil
+		}
+		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
+		return manager.dag.InsertDag(blocks)
+	}
+	manager.fetcher = fetcher.New(dag.GetUnitByHash, validator, manager.BroadcastUnit, heighter, inserter, manager.removePeer)
+
+	//manager.fetcher = fetcher.New(manager.removePeer)
 	return manager, nil
 }
 
@@ -205,7 +225,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	//txsyncLoop负责每个新连接的初始事务同步。
 	//当新的对等体出现时，我们转发所有当前待处理的事务。
 	//为了最小化出口带宽使用，我们一次将一个小包中的事务发送给一个对等体。
-	go pm.txsyncLoop()
+	//go pm.txsyncLoop()
 
 	// broadcast transactions
 	pm.txCh = make(chan modules.TxPreEvent, txChanSize)
@@ -316,6 +336,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Decode the complex header query
 		var query getBlockHeadersData
 		if err := msg.Decode(&query); err != nil {
+			log.Info("GetBlockHeadersMsg Decode", "err:", err, "msg:", msg)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		hashMode := query.Origin.Hash != (common.Hash{})
@@ -331,13 +352,20 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			var origin *modules.Header
 			if hashMode {
 				//origin = pm.blockchain.GetHeaderByHash(query.Origin.Hash)
+				origin = pm.dag.GetHeaderByHash(query.Origin.Hash)
 			} else {
-				//origin = pm.blockchain.GetHeaderByNumber(query.Origin.Number)
+				origin = pm.dag.GetHeaderByNumber(query.Origin.Number)
 			}
 			if origin == nil {
 				break
 			}
-			//number := origin.Number.Uint64()
+			//---test---
+			if origin != nil && !hashMode {
+				origin.Number.Index = query.Origin.Number
+			}
+			origin.ParentsHash = append(origin.ParentsHash, origin.Hash())
+
+			number := origin.Number.Index
 			headers = append(headers, origin)
 			bytes += estHeaderRlpSize
 
@@ -345,36 +373,40 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			switch {
 			case query.Origin.Hash != (common.Hash{}) && query.Reverse:
 				// Hash based traversal towards the genesis block
-				/*
-					for i := 0; i < int(query.Skip)+1; i++ {
-						if header := pm.blockchain.GetHeader(query.Origin.Hash, number); header != nil {
-							query.Origin.Hash = header.ParentHash
-							number--
-						} else {
-							unknown = true
-							break
-						}
-					}*/
+				for i := 0; i < int(query.Skip)+1; i++ {
+					if header := pm.dag.GetHeader(query.Origin.Hash, number); header != nil {
+						query.Origin.Hash = header.ParentsHash[0]
+						number--
+					} else {
+						unknown = true
+						break
+					}
+				}
 			case query.Origin.Hash != (common.Hash{}) && !query.Reverse:
 				// Hash based traversal towards the leaf block
 				var (
-					current = uint64(0) //origin.Number.Uint64()
+					current = origin.Number.Index
 					next    = current + query.Skip + 1
 				)
+				log.Info("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
 				if next <= current {
 					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
 					log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
 					unknown = true
-				} else { /*
-						if header := pm.blockchain.GetHeaderByNumber(next); header != nil {
-							if pm.blockchain.GetBlockHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
+				} else {
+					log.Info("msg.Code==GetBlockHeadersMsg", "next:", next)
+					if header := pm.dag.GetHeaderByNumber(next); header != nil {
+						/*
+							if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
 								query.Origin.Hash = header.Hash()
 							} else {
 								unknown = true
 							}
-						} else {
-							unknown = true
-						}*/
+						*/
+						unknown = true
+					} else {
+						unknown = true
+					}
 				}
 			case query.Reverse:
 				// Number based traversal towards the genesis block
@@ -389,57 +421,31 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				query.Origin.Number += query.Skip + 1
 			}
 		}
+		log.Info("===msg.Code == GetBlockHeadersMsg  SendBlockHeaders===")
 		return p.SendBlockHeaders(headers)
 
 	case msg.Code == BlockHeadersMsg:
+		log.Info("===handler->msg.Code == BlockHeadersMsg===")
 		// A batch of headers arrived to one of our previous requests
 		var headers []*modules.Header
 		if err := msg.Decode(&headers); err != nil {
+			log.Info("msg.Decode", "err:", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 		// If no headers were received, but we're expending a DAO fork check, maybe it's that
-		if len(headers) == 0 && p.forkDrop != nil {
-			// Possibly an empty reply to the fork header checks, sanity check TDs
-			verifyDAO := true
-
-			// If we already have a DAO header, we can check the peer's TD against it. If
-			// the peer's ahead of this, it too must have a reply to the DAO check
-			/*if daoHeader := pm.blockchain.GetHeaderByNumber(pm.chainconfig.DAOForkBlock.Uint64()); daoHeader != nil {
-				if _, td := p.Head(); td.Cmp(pm.blockchain.GetTd(daoHeader.Hash(), daoHeader.Number.Uint64())) >= 0 {
-					verifyDAO = false
-				}
-			}*/
-			// If we're seemingly on the same chain, disable the drop timer
-			if verifyDAO {
-				log.Debug("Seems to be on the same side of the DAO fork")
-				p.forkDrop.Stop()
-				p.forkDrop = nil
-				return nil
-			}
+		if len(headers) == 0 {
+			log.Info("===handler->msg.Code == BlockHeadersMsg len(headers)is 0===")
+			return nil
 		}
 		// Filter out any explicitly requested headers, deliver the rest to the downloader
 		filter := len(headers) == 1
 		if filter {
-			/*
-				// If it's a potential DAO fork check, validate against the rules
-				if p.forkDrop != nil && pm.chainconfig.DAOForkBlock.Cmp(headers[0].Number) == 0 {
-					// Disable the fork drop timer
-					p.forkDrop.Stop()
-					p.forkDrop = nil
-
-					// Validate the header and either drop the peer or continue
-
-					//				if err := misc.VerifyDAOHeaderExtraData(pm.chainconfig, headers[0]); err != nil {
-					//					p.Log().Debug("Verified to be on the other side of the DAO fork, dropping")
-					//					return err
-					//				}
-					p.Log().Debug("Verified to be on the same side of the DAO fork")
-					return nil
-				}*/
+			log.Info("===BlockHeadersMsg filter===")
 			// Irrelevant of the fork checks, send the header to the fetcher just in case
 			headers = pm.fetcher.FilterHeaders(p.id, headers, time.Now())
 		}
 		if len(headers) > 0 || !filter {
+			log.Info("===BlockHeadersMsg ===", "len(headers):", len(headers))
 			err := pm.downloader.DeliverHeaders(p.id, headers)
 			if err != nil {
 				log.Debug("Failed to deliver headers", "err", err.Error())
@@ -448,6 +454,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case msg.Code == GetBlockBodiesMsg:
 		// Decode the retrieval message
+		log.Info("===GetBlockBodiesMsg===")
 		msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
 		if _, err := msgStream.List(); err != nil {
 			return err
@@ -474,6 +481,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return p.SendBlockBodiesRLP(bodies)
 
 	case msg.Code == BlockBodiesMsg:
+		log.Info("===BlockBodiesMsg===")
 		// A batch of block bodies arrived to one of our previous requests
 		var request blockBodiesData
 		if err := msg.Decode(&request); err != nil {
