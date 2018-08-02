@@ -156,6 +156,18 @@ func (outpoint *OutPoint) Bytes() []byte {
 	return data
 }
 
+func (outpoint *OutPoint) IsEmpty() bool{
+	emptyHash := common.Hash{}
+	for i:=0;i<cap(emptyHash);i++{
+		emptyHash[i]=0
+	}
+	if len(outpoint.TxHash)==0 ||
+		strings.Compare(outpoint.TxHash.String(), emptyHash.String())==0 {
+			return true
+	}
+	return false
+}
+
 type Input struct {
 	PreviousOutPoint OutPoint
 	SignatureScript  []byte

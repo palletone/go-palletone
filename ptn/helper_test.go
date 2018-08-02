@@ -37,6 +37,8 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	//"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/storage"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 )
 
 var (
@@ -47,13 +49,13 @@ var (
 // newTestProtocolManager creates a new protocol manager for testing purposes,
 // with the given number of blocks already known, and potential notification
 // channels for different events.
-func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, *ptndb.MemDatabase, error) {
+func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, *ptndb.LDBDatabase, error) {
 	//var engine core.ConsensusEngine = &consensus.DPOSEngine{}
 	var (
 		// evmux = new(event.TypeMux)
 		//engine = ethash.NewFaker()
 
-		db, _ = ptndb.NewMemDatabase()
+		//db, _ = ptndb.NewMemDatabase()
 		//gspec  = &core.Genesis{
 		//Config: configure.TestChainConfig,
 		//Alloc:  core.GenesisAlloc{testBank: {Balance: big.NewInt(1000000)}},
@@ -67,9 +69,13 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	//	panic(err)
 	//}
 	engine := new(consensus.DPOSEngine)
-	dag := new(modules.Dag)
+	dag := new(dagcommon.Dag)
 	typemux := new(event.TypeMux)
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine,dag,typemux)
+	DbPath:="./data1/leveldb"
+	db := storage.Init(DbPath)
+
+	//want (downloader.SyncMode, uint64, txPool, core.ConsensusEngine, *modules.Dag, *event.TypeMux, *ptndb.LDBDatabase)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, dag, typemux,db)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -81,7 +87,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 // with the given number of blocks already known, and potential notification
 // channels for different events. In case of an error, the constructor force-
 // fails the test.
-func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, *ptndb.MemDatabase) {
+func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, *ptndb.LDBDatabase) {
 	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/, newtx)
 	if err != nil {
 		t.Fatalf("Failed to create protocol manager: %v", err)

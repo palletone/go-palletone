@@ -32,9 +32,9 @@ import (
 	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ethapi"
@@ -71,7 +71,7 @@ type PalletOne struct {
 	networkId     uint64
 	netRPCService *ethapi.PublicNetAPI
 
-	dag *modules.Dag
+	dag *dagcommon.Dag
 
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
 
@@ -83,9 +83,6 @@ type PalletOne struct {
 // New creates a new PalletOne object (including the
 // initialisation of the common PalletOne object)
 func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
-	//if config.SyncMode == downloader.LightSync {
-	//	return nil, errors.New("can't run eth.PalletOne in light sync mode, use les.LightEthereum")
-	//}
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
@@ -187,7 +184,7 @@ func (s *PalletOne) IsListening() bool                  { return true } // Alway
 func (s *PalletOne) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *PalletOne) NetVersion() uint64                 { return s.networkId }
 func (s *PalletOne) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
-func (s *PalletOne) Dag() *modules.Dag                  { return s.dag }
+func (s *PalletOne) Dag() *dagcommon.Dag                  { return s.dag }
 
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.
@@ -253,4 +250,9 @@ func (s *PalletOne) Etherbase() (eb common.Address, err error) {
 			}
 		}*/
 	return common.Address{}, fmt.Errorf("etherbase must be explicitly specified")
+}
+
+// @author Albert·Gou
+func (p *PalletOne) GetKeyStore() *keystore.KeyStore {
+	return p.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 }

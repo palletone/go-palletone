@@ -1,0 +1,35 @@
+{
+  "version": "0.6.0-alpha",
+  "tokenAmount": 1000000000,
+  "tokenDecimal": 8,
+  "chainId": 1,
+  "tokenHolder": "P1F9bS3wJ4MdWaa4czrT8kCqYLE82aA16Pp",
+  "initialActiveMediators": 21,
+  "initialMediatorCandidates": [
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH",
+    "P1Jjy7xEzDKizcYTVTcHHLKHaAFNHUAFCxH"
+  ],
+  "systemConfig": {
+    "mediatorInterval": 5,
+    "depositRate": 0.02
+  }
+}

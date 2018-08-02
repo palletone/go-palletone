@@ -36,6 +36,7 @@ import (
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 )
@@ -80,7 +81,7 @@ type ProtocolManager struct {
 	txCh     chan modules.TxPreEvent
 	txSub    event.Subscription
 
-	dag *modules.Dag
+	dag *dagcommon.Dag
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -102,7 +103,7 @@ type ProtocolManager struct {
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool,
-	engine core.ConsensusEngine, dag *modules.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase) (*ProtocolManager, error) {
+	engine core.ConsensusEngine, dag *dagcommon.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -166,8 +167,27 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		return nil, errIncompatibleConfig
 	}
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, dag, manager.levelDb)
-	manager.fetcher = fetcher.New(manager.removePeer)
+	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, manager.levelDb)
+
+	validator := func(header *modules.Header) error {
+		//return engine.VerifyHeader(blockchain, header, true)
+		return nil
+	}
+	heighter := func() uint64 {
+		return dag.CurrentUnit().NumberU64()
+	}
+	inserter := func(blocks modules.Units) (int, error) {
+		// If fast sync is running, deny importing weird blocks
+		if atomic.LoadUint32(&manager.fastSync) == 1 {
+			log.Warn("Discarded bad propagated block", "number", blocks[0].Number(), "hash", blocks[0].Hash())
+			return 0, nil
+		}
+		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
+		return manager.dag.InsertDag(blocks)
+	}
+	manager.fetcher = fetcher.New(dag.GetUnitByHash, validator, manager.BroadcastUnit, heighter, inserter, manager.removePeer)
+
+	//manager.fetcher = fetcher.New(manager.removePeer)
 	return manager, nil
 }
 
@@ -208,8 +228,12 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	//go pm.txsyncLoop()
 
 	// broadcast transactions
+	// 广播交易的通道。 txCh会作为txpool的TxPreEvent订阅通道。
+	// txpool有了这种消息会通知给这个txCh。 广播交易的goroutine会把这个消息广播出去。
 	pm.txCh = make(chan modules.TxPreEvent, txChanSize)
+	// 订阅的回执
 	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
+	// 启动广播的goroutine
 	go pm.txBroadcastLoop()
 }
 
@@ -339,6 +363,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			if origin == nil {
 				break
 			}
+			//---test---
+			if origin != nil && !hashMode {
+				origin.Number.Index = query.Origin.Number
+			}
+			origin.ParentsHash = append(origin.ParentsHash, origin.Hash())
+
 			number := origin.Number.Index
 			headers = append(headers, origin)
 			bytes += estHeaderRlpSize
@@ -362,11 +392,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 					current = origin.Number.Index
 					next    = current + query.Skip + 1
 				)
+				log.Info("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
 				if next <= current {
 					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
 					log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
 					unknown = true
 				} else {
+					log.Info("msg.Code==GetBlockHeadersMsg", "next:", next)
 					if header := pm.dag.GetHeaderByNumber(next); header != nil {
 						/*
 							if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
@@ -426,6 +458,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case msg.Code == GetBlockBodiesMsg:
 		// Decode the retrieval message
+		log.Info("===GetBlockBodiesMsg===")
 		msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
 		if _, err := msgStream.List(); err != nil {
 			return err
@@ -452,6 +485,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return p.SendBlockBodiesRLP(bodies)
 
 	case msg.Code == BlockBodiesMsg:
+		log.Info("===BlockBodiesMsg===")
 		// A batch of block bodies arrived to one of our previous requests
 		var request blockBodiesData
 		if err := msg.Decode(&request); err != nil {

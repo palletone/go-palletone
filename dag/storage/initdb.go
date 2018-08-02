@@ -31,7 +31,8 @@ var (
 	UNIT_NUMBER_PREFIX               = []byte("nh") // number 和unit hash 的对应关系
 	BODY_PREFIX                      = []byte("ub")
 	TRANSACTION_PREFIX               = []byte("tx")
-	TRANSACTIONSPREFIX               = []byte("ts")
+	TRANSACTIONS_PREFIX              = []byte("ts")
+	CONTRACT_STATE_PREFIX            = []byte("cs")
 	ALL_UNITS_PREFIX                 = []byte("au")
 	UNITAUTHORS_PREFIX               = []byte("ua")
 	HASH_TREE_BALLS_PREFIX           = []byte("ht")

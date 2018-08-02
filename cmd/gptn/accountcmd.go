@@ -18,9 +18,12 @@ package main
 
 import (
 	"fmt"
-	"strconv"
+	//"strconv"
 	// "io/ioutil"
-
+        "bytes"
+        "strings"
+        "encoding/hex"
+	"encoding/json"
 	"gopkg.in/urfave/cli.v1"
 
 	"github.com/palletone/go-palletone/cmd/console"
@@ -33,9 +36,11 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
-	//"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
-	//"github.com/palletone/go-palletone/tokenengine/btcd/wire"
+        "github.com/palletone/go-palletone/tokenengine/btcutil"
+	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 	"github.com/btcsuite/btcutil/base58"
+        "github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
 	//"github.com/btcsuite/btcd/btcec"
 )
 
@@ -213,7 +218,7 @@ verify the message signature.
 			},
 			{
 				Name:      "createtx",
-				Usage:     "createtx snedfrom sendto ptncount",
+				Usage:     "createtx sendfrom sendto ptncount",
 				Action:    utils.MigrateFlags(accountCreateTx),
 				ArgsUsage: "createtx <fromaddress> <toaddress> ptncount",
 				Flags: []cli.Flag{
@@ -416,7 +421,7 @@ func accountUpdate(ctx *cli.Context) error {
 		utils.Fatalf("No accounts specified to update")
 	}
 	stack, _ := makeConfigNode(ctx)
-	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := stack.GetKeyStore()
 
 	for _, addr := range ctx.Args() {
 		account, oldPassword := unlockAccount(ctx, ks, addr, 0, nil)
@@ -433,7 +438,7 @@ func accountSignString(ctx *cli.Context) error {
 	}
 
 	stack, _ := makeConfigNode(ctx)
-	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := stack.GetKeyStore()
 	addr := ctx.Args().First()
 	account, _ := utils.MakeAddress(ks, addr)
 	hash := crypto.Keccak256Hash([]byte(ctx.Args()[1]))
@@ -451,7 +456,7 @@ func accountDumpKey(ctx *cli.Context) error {
 		utils.Fatalf("No accounts specified to update")
 	}
 	stack, _ := makeConfigNode(ctx)
-	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := stack.GetKeyStore()
 	addr := ctx.Args().First()
 	account, _ := utils.MakeAddress(ks, addr)
 	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
@@ -467,7 +472,7 @@ func accountSignVerify(ctx *cli.Context) error {
 	}
 
 	stack, _ := makeConfigNode(ctx)
-	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := stack.GetKeyStore()
 	addr := ctx.Args().First()
 	account, _ := utils.MakeAddress(ks, addr)
 
@@ -513,27 +518,55 @@ func accountSignVerify(ctx *cli.Context) error {
 // 	return nil
 // }
 //add by wzhyuan
+//add by wzhyuan
+type RawTransactionGenParams struct {
+	Inputs []struct {
+		Txid string `json:"txid"`
+		Vout uint32 `json:"vout"`
+	} `json:"inputs"`
+	Outputs []struct {
+		Address string  `json:"address"`
+		Amount  float64 `json:"amount"`
+	} `json:"outputs"`
+	Locktime int64 `json:"locktime"`
+}
+type RawTransactionGenResult struct {
+	Rawtx string `json:"rawtx"`
+}
 func accountCreateTx(ctx *cli.Context) error {
 	if len(ctx.Args()) == 0 {
 		utils.Fatalf("No accounts specified to update")
 	}
-	if len(ctx.Args()) != 4 {
+	if len(ctx.Args()) != 1 {
 		utils.Fatalf("usage: createtx txid vout address amount ")
 	}
-	txid := ctx.Args().First()
-	vout := ctx.Args().Get(1)
-	address := ctx.Args().Get(2)
-	amount := ctx.Args().Get(3)
-	num, _ := strconv.ParseFloat(amount, 32)
-	v, _ := strconv.Atoi(vout)
-	txInputs := []btcjson.TransactionInput{
-		{Txid: txid, Vout: uint32(v)},
+	params := ctx.Args().First()
+	var rawTransactionGenParams RawTransactionGenParams
+	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
+	if err != nil {
+		return nil
 	}
-	amounts := map[string]float64{address: num}
-	s := strconv.Itoa(10)
-	s64, _ := strconv.ParseInt(s, 10, 64)
-	arg := btcjson.NewCreateRawTransactionCmd(txInputs, amounts, &s64)
-	var tx string
+	//transaction inputs
+	var inputs []btcjson.TransactionInput
+	for _, inputOne := range rawTransactionGenParams.Inputs {
+		input := btcjson.TransactionInput{inputOne.Txid, inputOne.Vout}
+		inputs = append(inputs, input)
+	}
+	if len(inputs) == 0 {
+		return nil
+	}
+	//realNet := &chaincfg.MainNetParams
+	amounts := map[string]float64{}
+	for _, outOne := range rawTransactionGenParams.Outputs {
+		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
+			continue
+		}
+		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
+	}
+	if len(amounts) == 0 {
+		return nil
+	}
+	arg := btcjson.NewCreateRawTransactionCmd(inputs, amounts,  &rawTransactionGenParams.Locktime)
 	tx, err := ethapi.CreateRawTransaction(arg)
 	if err != nil {
 		utils.Fatalf("Verfiy error:%s", err)
@@ -546,29 +579,98 @@ func accountCreateTx(ctx *cli.Context) error {
 	return nil
 }
 
+type SignTransactionParams struct {
+	TransactionHex string   `json:"transactionhex"`
+	RedeemHex      string   `json:"redeemhex"`
+	Privkeys       []string `json:"privkeys"`
+}
+type SignTransactionResult struct {
+	TransactionHex string `json:"transactionhex"`
+	Complete       bool   `json:"complete"`
+}
 func accountSignTx(ctx *cli.Context) error {
 	if len(ctx.Args()) == 0 {
 		utils.Fatalf("No accounts specified to update")
 	}
-	if len(ctx.Args()) != 5 {
+	if len(ctx.Args()) != 2 {
 		utils.Fatalf("usage: signtx rawtx txid vout scriptpubkey privkey")
 	}
-	rawtx := ctx.Args().First()
-	inputtxid := ctx.Args().Get(1)
-	vout := ctx.Args().Get(2)
-	v, _ := strconv.Atoi(vout)
-	scriptpubkey := ctx.Args().Get(3)
-	inputkey := ctx.Args().Get(4)
-	txInputs := []btcjson.RawTxInput{
-		{
-			Txid:         inputtxid,
-			Vout:         uint32(v),
-			ScriptPubKey: scriptpubkey,
-			RedeemScript: "",
-		},
+	params := ctx.Args().First()
+	var signTransactionParams SignTransactionParams
+	err := json.Unmarshal([]byte(params), &signTransactionParams)
+	if err != nil {
+		return nil
 	}
-	prikey := []string{inputkey}
-	send_args := btcjson.NewSignRawTransactionCmd(rawtx, &txInputs, &prikey, nil)
+
+	//check empty string
+	if "" == signTransactionParams.TransactionHex {
+		return nil
+	}
+
+	//decode Transaction hexString to bytes
+	rawTXBytes, err := hex.DecodeString(signTransactionParams.TransactionHex)
+	if err != nil {
+		return nil
+	}
+	//deserialize to MsgTx
+	var tx wire.MsgTx
+	err = tx.Deserialize(bytes.NewReader(rawTXBytes))
+	if err != nil {
+		return nil
+	}
+
+	//chainnet
+
+	//get private keys for sign
+	var keys []string
+	for _, key := range signTransactionParams.Privkeys {
+		key = strings.TrimSpace(key) //Trim whitespace
+		if len(key) == 0 {
+			continue
+		}
+		keys = append(keys, key)
+	}
+	if len(keys) == 0 {
+		return nil
+	}
+        realNet := &chaincfg.MainNetParams
+	//sign the UTXO hash, must know RedeemHex which contains in RawTxInput
+	var rawInputs []btcjson.RawTxInput
+	for {
+		if "" == signTransactionParams.RedeemHex {
+			break
+		}
+		//decode redeem's hexString to bytes
+		redeem, err := hex.DecodeString(signTransactionParams.RedeemHex)
+		if err != nil {
+			break
+		}
+		//get multisig payScript
+		scriptAddr, err := btcutil.NewAddressScriptHash(redeem, realNet)
+		scriptPkScript, err := txscript.PayToAddrScript(scriptAddr)
+		//multisig transaction need redeem for sign
+		for _, txinOne := range tx.TxIn {
+			rawInput := btcjson.RawTxInput{
+				txinOne.PreviousOutPoint.Hash.String(), //txid
+				txinOne.PreviousOutPoint.Index,         //outindex
+				hex.EncodeToString(scriptPkScript),     //multisig pay script
+				signTransactionParams.RedeemHex}        //redeem
+			rawInputs = append(rawInputs, rawInput)
+		}
+		break
+	}
+
+	txHex := ""
+	if &tx != nil {
+		// Serialize the transaction and convert to hex string.
+		buf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
+		if err := tx.Serialize(buf); err != nil {
+			return nil
+		}
+		txHex = hex.EncodeToString(buf.Bytes())
+	}
+
+	send_args := btcjson.NewSignRawTransactionCmd(txHex, &rawInputs, &keys, nil)
 	signtxout, err := ethapi.SignRawTransaction(send_args)
 	if signtxout == nil {
 		utils.Fatalf("Invalid signature")
@@ -597,7 +699,7 @@ func accountImport(ctx *cli.Context) error {
 	stack, _ := makeConfigNode(ctx)
 	passphrase := getPassPhrase("Your new account is locked with a password. Please give a password. Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
 
-	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := stack.GetKeyStore()
 	acct, err := ks.ImportECDSA(key, passphrase)
 	if err != nil {
 		utils.Fatalf("Could not create the account: %v", err)

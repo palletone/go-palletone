@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dcom "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
@@ -42,7 +41,7 @@ type MediatorPlugin struct {
 	quit      chan struct{} // Channel used for graceful exit
 }
 
-func newChainBanner(dag *modules.Dag) {
+func newChainBanner(dag *dcom.Dag) {
 	fmt.Printf("\n" +
 		"*   ------- NEW CHAIN -------   *\n" +
 		"*   - Welcome to PalletOne! -   *\n" +
@@ -67,15 +66,12 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 	nextWakeup := now.Add(timeToNextSecond)
 
 	// 2. 安排验证单元生产循环
-	// Start a timer to production unit for expiration
-	expire := time.NewTimer(nextWakeup.Sub(time.Now()))
-
 	// production unit until termination is requested
 	select {
-	case <-expire.C:
-		go mp.VerifiedUnitProductionLoop()
 	case <-mp.quit:
 		return
+	default:
+		go mp.VerifiedUnitProductionLoop(nextWakeup)
 	}
 }
 
@@ -95,7 +91,10 @@ const (
 	//	ExceptionProducing
 )
 
-func (mp *MediatorPlugin) VerifiedUnitProductionLoop() ProductionCondition {
+func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) ProductionCondition {
+	// Start to production unit for expiration
+	time.Sleep(wakeup.Sub(time.Now()))
+
 	// 1. 尝试生产验证单元
 	result, detail := mp.MaybeProduceVerifiedUnit()
 
@@ -103,7 +102,7 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop() ProductionCondition {
 	switch result {
 	case Produced:
 		log.Info("Generated VerifiedUnit #" + detail["Num"] + " with timestamp " +
-			detail["Timestamp"])
+			detail["Timestamp"] + " by mediator: " + detail["Mediator"])
 	case NotSynced:
 		log.Info("Not producing VerifiedUnit because production is disabled " +
 			"until we receive a recent VerifiedUnit (see: --enable-stale-production)")
@@ -191,7 +190,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
-	ks := mp.ptn.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := mp.ptn.GetKeyStore()
 	err := ks.Unlock(accounts.Account{Address: ma}, ps)
 	if err != nil {
 		detail["ScheduledKey"] = ma.Str()
@@ -199,15 +198,17 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 2. 生产验证单元
-	unit := dcom.GenerateUnit(mp.ptn.Dag(), scheduledTime, *scheduledMediator)
-
-	// 3. 异步向区块链网络广播验证单元
-	go log.Info("Asynchronously broadcast the new signed verified unit to p2p networks...")
+	unit := dcom.GenerateUnit(mp.ptn.Dag(), scheduledTime, *scheduledMediator, ks)
 
 	num := unit.UnitHeader.Number.Index
 	detail["Num"] = strconv.FormatUint(num, 10)
 	time := time.Unix(unit.UnitHeader.Creationdate, 0)
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
+	detail["Mediator"] = unit.UnitHeader.Authors.Address
+
+	// 3. 异步向区块链网络广播验证单元
+	log.Info("Asynchronously broadcast the new signed verified unit to p2p networks...")
+	//	go mp.ptn.EventMux().Post()
 
 	return Produced, detail
 }
