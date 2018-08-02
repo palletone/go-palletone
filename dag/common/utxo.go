@@ -245,6 +245,9 @@ destory utxo, delete from UTXO database
 func destoryUtxo(txins []modules.Input) {
 	for _, txin := range txins {
 		outpoint := txin.PreviousOutPoint
+		if outpoint.IsEmpty(){
+			continue
+		}
 		// get utxo info
 		data, err := storage.Get(outpoint.ToKey())
 		if err != nil {
