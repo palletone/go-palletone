@@ -150,6 +150,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 		return fmt.Errorf("Error creating docker client: %s", err)
 	}
 	if opts.Image == "" {
+		//通用的本地编译环境
 		opts.Image = cutil.GetDockerfileFromConfig("chaincode.builder")
 		if opts.Image == "" {
 			return fmt.Errorf("No image provided and \"chaincode.builder\" default does not exist")
@@ -160,6 +161,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 
 	//-----------------------------------------------------------------------------------
 	// Ensure the image exists locally, or pull it from a registry if it doesn't
+	//确认镜像是否存在或从远程拉取
 	//-----------------------------------------------------------------------------------
 	_, err = client.InspectImage(opts.Image)
 	if err != nil {
@@ -173,6 +175,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 
 	//-----------------------------------------------------------------------------------
 	// Create an ephemeral container, armed with our Env/Cmd
+	//创建一个暂时的容器用于链码编译
 	//-----------------------------------------------------------------------------------
 	container, err := client.CreateContainer(docker.CreateContainerOptions{
 		Config: &docker.Config{
@@ -190,9 +193,10 @@ func DockerBuild(opts DockerBuildOptions) error {
 
 	//-----------------------------------------------------------------------------------
 	// Upload our input stream
+	//上传输入
 	//-----------------------------------------------------------------------------------
 	err = client.UploadToContainer(container.ID, docker.UploadToContainerOptions{
-		Path:        "/chaincode/input", ///chaincode/input
+		Path:        "/chaincode/input", //  /chaincode/input
 		InputStream: opts.InputStream,
 	})
 	if err != nil {
@@ -218,6 +222,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 
 	//-----------------------------------------------------------------------------------
 	// Launch the actual build, realizing the Env/Cmd specified at container creation
+	//启动容器
 	//-----------------------------------------------------------------------------------
 	err = client.StartContainer(container.ID, nil)
 	if err != nil {
@@ -226,6 +231,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 
 	//-----------------------------------------------------------------------------------
 	// Wait for the build to complete and gather the return value
+	//等待容器返回
 	//-----------------------------------------------------------------------------------
 	retval, err := client.WaitContainer(container.ID)
 	if err != nil {
@@ -237,6 +243,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 
 	//-----------------------------------------------------------------------------------
 	// Finally, download the result
+	//获取容器输出
 	//-----------------------------------------------------------------------------------
 	err = client.DownloadFromContainer(container.ID, docker.DownloadFromContainerOptions{
 		Path:         "/chaincode/output/.",

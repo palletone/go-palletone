@@ -321,19 +321,19 @@ func (q *queue) Schedule(headers []*modules.Header, from uint64) []*modules.Head
 			log.Warn("Header broke chain ordering", "number", header.Number, "hash", hash, "expected", from)
 			break
 		}
-		if q.headerHead != (common.Hash{}) && q.headerHead != header.ParentsHash[0] {
-			log.Warn("Header broke chain ancestry", "number", header.Number, "hash", hash)
-			break
-		}
+		//		if q.headerHead != (common.Hash{}) && q.headerHead != header.ParentsHash[0] {
+		//			log.Warn("Header broke chain ancestry", "number", header.Number, "hash", hash)
+		//			break
+		//		}
 		// Make sure no duplicate requests are executed
 		if _, ok := q.blockTaskPool[hash]; ok {
 			log.Warn("Header  already scheduled for block fetch", "number", header.Number, "hash", hash)
 			continue
 		}
-		if _, ok := q.receiptTaskPool[hash]; ok {
-			log.Warn("Header already scheduled for receipt fetch", "number", header.Number, "hash", hash)
-			continue
-		}
+		//		if _, ok := q.receiptTaskPool[hash]; ok {
+		//			log.Warn("Header already scheduled for receipt fetch", "number", header.Number, "hash", hash)
+		//			continue
+		//		}
 		// Queue the header for content retrieval
 		q.blockTaskPool[hash] = header
 		//q.blockTaskQueue.Push(header, -float32(header.Number.Uint64()))
@@ -715,12 +715,12 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 				accepted = false
 				break
 			}
-			//if headers[i].Hash() != header.ParentHash {
-			if headers[i].Hash() != header.ParentsHash[0] {
-				log.Warn("Header broke chain ancestry", "peer", id, "number", header.Number, "hash", hash)
-				accepted = false
-				break
-			}
+			//TODO  must recover //if headers[i].Hash() != header.ParentHash { //eth
+			//if headers[i].Hash() != header.ParentsHash[0] {
+			//	log.Warn("Header broke chain ancestry", "peer", id, "number", header.Number, "hash", hash)
+			//	accepted = false
+			//	break
+			//}
 		}
 	}
 	// If the batch of headers wasn't accepted, mark as unavailable

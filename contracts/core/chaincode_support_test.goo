@@ -41,14 +41,13 @@ import (
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
-	"github.com/palletone/go-palletone/vm/controller"
-
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	putils "github.com/palletone/go-palletone/core/vmContractPub/protos/utils"
 
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
+	"github.com/palletone/go-palletone/vm/controller"
 )
 
 var globalBlockNum map[string]uint64
@@ -250,7 +249,7 @@ func mockChaincodeStreamGetter(name string) (shim.PeerChaincodeStream, error) {
 
 type mockCCLauncher struct {
 	execTime *time.Duration
-	resp     container.VMCResp
+	resp     controller.VMCResp
 	retErr   error
 	notfyb   bool
 }
@@ -347,7 +346,7 @@ func endTx(t *testing.T, cccid *ccprovider.CCContext, txsim int, cis *pb.Chainco
 func execCC(t *testing.T, ctxt context.Context, ccSide *mockpeer.MockCCComm, cccid *ccprovider.CCContext, waitForERROR bool, expectExecErr bool, done chan error, cis *pb.ChaincodeInvocationSpec, respSet *mockpeer.MockResponseSet) error {
 	ccSide.SetResponses(respSet)
 
-	_, _, err := ExecuteWithErrorFilter(ctxt, cccid, cis)
+	_, _, err := ExecuteWithErrorFilter(ctxt, cccid, cis, 30*time.Second)
 
 	if err == nil && expectExecErr {
 		t.Fatalf("expected error but succeeded")
@@ -411,7 +410,7 @@ func getTarGZ(t *testing.T, name string, contents []byte) []byte {
 }
 
 // Deploy a chaincode - i.e., build and initialize.
-func deployCC(t *testing.T, ctx context.Context, cccid *ccprovider.CCContext, spec *pb.ChaincodeSpec) {
+func deployCC(t *testing.T, ctx context.Context, cccid *ccprovider.CCContext, spec *pb.ChaincodeSpec, timeout time.Duration) {
 	// First build and get the deployment spec
 	code := getTarGZ(t, "src/dummy/dummy.go", []byte("code"))
 	cds := &pb.ChaincodeDeploymentSpec{ChaincodeSpec: spec, CodePackage: code}
@@ -434,7 +433,7 @@ func deployCC(t *testing.T, ctx context.Context, cccid *ccprovider.CCContext, sp
 	lsccid := ccprovider.NewCCContext(cccid.ChainID, lsccSpec.ChaincodeSpec.ChaincodeId.Name, sysCCVers, cccid.TxID, true, sprop, prop)
 
 	//write to lscc
-	if _, _, err := ExecuteWithErrorFilter(ctx, lsccid, lsccSpec); err != nil {
+	if _, _, err := ExecuteWithErrorFilter(ctx, lsccid, lsccSpec, timeout); err != nil {
 		t.Fatalf("Error deploying chaincode %v (err: %s)", cccid, err)
 	}
 }
@@ -956,7 +955,7 @@ func TestLaunchAndWaitSuccess(t *testing.T) {
 	cccid := ccprovider.NewCCContext("testchannel", "testcc", "0", "landwtimertest_txid", false, nil, nil)
 
 	//actual test - everythings good
-	launcher := &mockCCLauncher{execTime: nil, resp: container.VMCResp{}, retErr: nil, notfyb: true}
+	launcher := &mockCCLauncher{execTime: nil, resp: controller.VMCResp{}, retErr: nil, notfyb: true}
 	err := newCCSupport.launchAndWaitForRegister(context.Background(), cccid, cds, launcher)
 	if err != nil {
 		t.Fatalf("expected success but failed with error %s", err)
@@ -973,7 +972,7 @@ func TestLaunchAndWaitTimeout(t *testing.T) {
 
 	//the actual test - timeout 1000 > 500
 	sleepTime := time.Duration(1) * time.Second
-	launcher := &mockCCLauncher{execTime: &sleepTime, resp: container.VMCResp{}, retErr: nil, notfyb: true}
+	launcher := &mockCCLauncher{execTime: &sleepTime, resp: controller.VMCResp{}, retErr: nil, notfyb: true}
 	err := newCCSupport.launchAndWaitForRegister(context.Background(), cccid, cds, launcher)
 	if err == nil {
 		t.Fatalf("expected error but succeeded")
@@ -989,7 +988,7 @@ func TestLaunchAndWaitNotificationError(t *testing.T) {
 	cccid := ccprovider.NewCCContext("testchannel", "testcc", "0", "landwtimertest_txid", false, nil, nil)
 
 	//the actual test - notify false
-	launcher := &mockCCLauncher{execTime: nil, resp: container.VMCResp{}, retErr: nil, notfyb: false}
+	launcher := &mockCCLauncher{execTime: nil, resp: controller.VMCResp{}, retErr: nil, notfyb: false}
 	err := newCCSupport.launchAndWaitForRegister(context.Background(), cccid, cds, launcher)
 	if err == nil {
 		t.Fatalf("expected error but succeeded")
@@ -1005,7 +1004,7 @@ func TestLaunchAndWaitLaunchError(t *testing.T) {
 	cccid := ccprovider.NewCCContext("testchannel", "testcc", "0", "landwtimertest_txid", false, nil, nil)
 
 	//actual test - container launch gives error
-	launcher := &mockCCLauncher{execTime: nil, resp: container.VMCResp{Err: errors.New("Bad launch")}, retErr: nil}
+	launcher := &mockCCLauncher{execTime: nil, resp: controller.VMCResp{Err: errors.New("Bad launch")}, retErr: nil}
 	err := newCCSupport.launchAndWaitForRegister(context.Background(), cccid, cds, launcher)
 	if err == nil {
 		t.Fatalf("expected error but succeeded")
@@ -1145,7 +1144,7 @@ func genNewPld(t *testing.T, ccName string) []byte {
 	return payload
 }
 
-func cc2SameCC(t *testing.T, chainID, chainID2, ccname string, ccSide *mockpeer.MockCCComm) {
+func cc2SameCC(t *testing.T, chainID, chainID2, ccname string, ccSide *mockpeer.MockCCComm, timeout time.Duration) {
 	//first deploy the CC on chainID2
 	chaincodeID := &pb.ChaincodeID{Name: ccname, Version: "0"}
 	ci := &pb.ChaincodeInput{Args: [][]byte{[]byte("deploycc")}, Decorations: nil}
@@ -1165,7 +1164,7 @@ func cc2SameCC(t *testing.T, chainID, chainID2, ccname string, ccSide *mockpeer.
 
 	cccid := ccprovider.NewCCContext(chainID2, ccname, "0", txid, false, sprop, prop)
 
-	deployCC(t, ctxt, cccid, cis.ChaincodeSpec)
+	deployCC(t, ctxt, cccid, cis.ChaincodeSpec, timeout)
 
 	//commit
 

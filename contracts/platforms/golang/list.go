@@ -57,11 +57,11 @@ func runProgram(env Env, timeout time.Duration, pgm string, args ...string) ([]b
 		}
 	case err = <-done:
 		if err != nil {
-			return nil, fmt.Errorf("<%s, %v>: failed with error: \"%s\"\n%s", pgm, args, err, string(stdErr.Bytes()))
-		}
-
-		return stdOut.Bytes(), nil
+		return nil, fmt.Errorf("<%s, %v>: failed with error: \"%s\"\n%s", pgm, args, err, string(stdErr.Bytes()))
 	}
+
+	return stdOut.Bytes(), nil
+}
 }
 
 // Logic inspired by: https://dave.cheney.net/2014/09/14/go-list-your-swiss-army-knife

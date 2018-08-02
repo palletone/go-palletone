@@ -121,7 +121,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error)
 	// set unit size
 	gUnit.UnitSize = gUnit.Size()
 	// set unit hash
-	gUnit.UnitHash = rlp.RlpHash(gUnit)
+	gUnit.UnitHash = gUnit.Hash()
 	return &gUnit, nil
 }
 
@@ -144,7 +144,7 @@ func StoreUnit(unit *modules.Unit) error {
 // @author Albert·Gou
 func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Address) (*modules.Unit, error) {
 	// signature unit: only sign header data(without witness and authors fields)
-	sign, err1 := ks.SigUnit(*unit.UnitHeader, signer)
+	sign, err1 := ks.SigUnit(unit.UnitHeader, signer)
 	if err1 != nil {
 		msg := fmt.Sprintf("Failed to write genesis block:%v", err1.Error())
 		log.Error(msg)

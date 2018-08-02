@@ -25,6 +25,8 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
+	"strings"
 )
 
 /*****************************27 June, 2018 update unit struct type*****************************************/
@@ -121,7 +123,10 @@ func (h *Header) ChainIndex() ChainIndex {
 }
 
 func (h *Header) Hash() common.Hash {
-	return rlp.RlpHash(h)
+	emptyHeader := CopyHeader(h)
+	emptyHeader.Authors = nil
+	emptyHeader.Witness = []*Authentifier{}
+	return rlp.RlpHash(emptyHeader)
 }
 
 func (h *Header) Size() common.StorageSize {
@@ -341,8 +346,7 @@ func (u *Unit) Transaction(hash common.Hash) *Transaction {
 
 // return  unit'UnitHash
 func (u *Unit) Hash() common.Hash {
-	v := rlp.RlpHash(u)
-	return v
+	return u.UnitHeader.Hash()
 }
 
 func (u *Unit) Size() common.StorageSize {
@@ -412,14 +416,23 @@ func NewUnitWithHeader(header *Header) *Unit {
 
 // WithBody returns a new block with the given transaction and uncle contents.
 func (b *Unit) WithBody(transactions []*Transaction) *Unit {
-	//	block := &Unit{
-	//		header:       CopyHeader(b.header),
-	//		transactions: make([]*Transaction, len(transactions)),
-	//		uncles:       make([]*Header, len(uncles)),
-	//	}
-	//	copy(block.transactions, transactions)
-	//	for i := range uncles {
-	//		block.uncles[i] = CopyHeader(uncles[i])
-	//	}
-	return &Unit{UnitHeader: CopyHeader(b.UnitHeader)}
+	// check transactions merkle root
+	txs := CopyBody(transactions)
+	root := core.DeriveSha(txs)
+	if strings.Compare(root.String(), b.UnitHeader.TxRoot.String())!=0 {
+		return nil
+	}
+	// set unit body
+	b.Txs = CopyBody(txs)
+	return b
+}
+
+func (u *Unit) ContainsParent(pHash common.Hash) bool {
+	ps := pHash.String()
+	for _, hash := range u.UnitHeader.ParentsHash {
+		if strings.Compare(hash.String(), ps)==0 {
+			return true
+		}
+	}
+	return false
 }

@@ -226,7 +226,7 @@ func peerServerInit() error {
 	if err != nil {
 		return err
 	}
-	ccStartupTimeout := time.Duration(5000) * time.Millisecond
+	ccStartupTimeout := time.Duration(30) * time.Second
 	ca, _ := accesscontrol.NewCA()
 	pb.RegisterChaincodeSupportServer(grpcServer, core.NewChaincodeSupport(peerAddress, false, ccStartupTimeout, ca))
 	go grpcServer.Serve(lis)

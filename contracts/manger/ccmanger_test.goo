@@ -21,6 +21,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"fmt"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
+	"github.com/palletone/go-palletone/contracts/ucc"
 )
 
 type mocksupt struct {}
@@ -271,7 +272,6 @@ func multSys(t *testing.T){
 //	go Invoke(chainID, "sample_syscc", args)
 }
 
-
 func multMoreSys(t *testing.T){
 	fmt.Println("mult enter..................")
 	chainID := util.GetTestChainID()
@@ -307,8 +307,6 @@ func multMoreSys(t *testing.T){
 		}(tmout, txid)
 	}
 
-
-
 	//	go Invoke(chainID, "sample_syscc", args)
 }
 
@@ -339,7 +337,6 @@ func TestExecSysCCMult(t *testing.T) {
 }
 
 func TestGetSysCCList(t *testing.T) {
-
 	cclist, count, err := GetSysCCList()
 	if err != nil {
 		t.Log(err)
@@ -351,5 +348,35 @@ func TestGetSysCCList(t *testing.T) {
 	for idx, cc := range  cclist {
 		t.Logf("%d, %s---%s---%v", idx, cc.Name, cc.Path, cc.Enable)
 	}
-
 }
+
+func TestInstallCC(t *testing.T) {
+	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
+	viper.Set("peer.address", "127.0.0.1:12345")
+	viper.Set("chaincode.executetimeout", 20*time.Second)
+
+	viper.Set("vm.endpoint", "unix:///var/run/docker.sock")
+	viper.Set("chaincode.builder", "palletimg")
+
+	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
+	chainID := util.GetTestChainID()
+
+	f := "init"
+	args := util.ToChaincodeArgs(f, "a", "100", "b", "200")
+
+	usercc := &ucc.UserChaincode{
+			Enabled:   true,
+			Name:      "example01",
+			Path:      "chaincode/example01",
+			Version:   "0",
+			InitArgs:  args,
+			Chaincode: &samplesyscc.SampleSysCC{},
+		}
+
+	InitNoSysCCC()
+
+	ucc.DeployUserCC(chainID, usercc, 30*time.Second)
+
+	time.Sleep(5*time.Second)
+}
+

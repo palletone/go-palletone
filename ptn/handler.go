@@ -36,6 +36,7 @@ import (
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 )
@@ -80,7 +81,7 @@ type ProtocolManager struct {
 	txCh     chan modules.TxPreEvent
 	txSub    event.Subscription
 
-	dag *modules.Dag
+	dag *dagcommon.Dag
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -102,7 +103,7 @@ type ProtocolManager struct {
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool,
-	engine core.ConsensusEngine, dag *modules.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase) (*ProtocolManager, error) {
+	engine core.ConsensusEngine, dag *dagcommon.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -362,6 +363,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			if origin == nil {
 				break
 			}
+			//---test---
+			if origin != nil && !hashMode {
+				origin.Number.Index = query.Origin.Number
+			}
+			origin.ParentsHash = append(origin.ParentsHash, origin.Hash())
+
 			number := origin.Number.Index
 			headers = append(headers, origin)
 			bytes += estHeaderRlpSize

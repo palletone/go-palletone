@@ -31,7 +31,7 @@ import (
 
 // GenerateVerifiedUnit, generate unit
 // @author Albert·Gou
-func GenerateUnit(dag *modules.Dag, when time.Time, producer common.Mediator, ks *keystore.KeyStore) modules.Unit {
+func GenerateUnit(dag *Dag, when time.Time, producer common.Mediator, ks *keystore.KeyStore) modules.Unit {
 	dgp := dag.DynGlobalProp
 
 	// 1. 判断是否满足生产的若干条件
@@ -64,7 +64,7 @@ func GenerateUnit(dag *modules.Dag, when time.Time, producer common.Mediator, ks
  *
  * @return true if we switched forks as a result of this push.
  */
-func PushUnit(dag *modules.Dag, newUnit *modules.Unit) bool {
+func PushUnit(dag *Dag, newUnit *modules.Unit) bool {
 	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
 
 	ApplyUnit(dag, newUnit)
@@ -76,7 +76,7 @@ func PushUnit(dag *modules.Dag, newUnit *modules.Unit) bool {
 	return false
 }
 
-func ApplyUnit(dag *modules.Dag, nextUnit *modules.Unit) {
+func ApplyUnit(dag *Dag, nextUnit *modules.Unit) {
 	gp := dag.GlobalProp
 	dgp := dag.DynGlobalProp
 

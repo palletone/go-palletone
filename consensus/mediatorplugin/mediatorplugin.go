@@ -41,7 +41,7 @@ type MediatorPlugin struct {
 	quit      chan struct{} // Channel used for graceful exit
 }
 
-func newChainBanner(dag *modules.Dag) {
+func newChainBanner(dag *dcom.Dag) {
 	fmt.Printf("\n" +
 		"*   ------- NEW CHAIN -------   *\n" +
 		"*   - Welcome to PalletOne! -   *\n" +

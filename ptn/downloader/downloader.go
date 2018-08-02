@@ -1333,10 +1333,48 @@ func splitAroundPivot(pivot uint64, results []*fetchResult) (p *fetchResult, bef
 	return p, before, after
 }
 func (d *Downloader) commitFastSyncData(results []*fetchResult, stateSync *stateSync) error {
+	// Check for any early termination requests
+	if len(results) == 0 {
+		return nil
+	}
+	select {
+	case <-d.quitCh:
+		return errCancelContentProcessing
+	case <-stateSync.done:
+		if err := stateSync.Wait(); err != nil {
+			return err
+		}
+	default:
+	}
+	// Retrieve the a batch of results to import
+	first, last := results[0].Header, results[len(results)-1].Header
+	log.Debug("Inserting fast-sync blocks", "items", len(results),
+		"firstnum", first.Number, "firsthash", first.Hash(),
+		"lastnumn", last.Number, "lasthash", last.Hash(),
+	)
+	blocks := make([]*modules.Unit, len(results))
+	//receipts := make([]types.Receipts, len(results))
+	for i, result := range results {
+		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
+		//receipts[i] = result.Receipts
+	}
+	//	if index, err := d.blockchain.InsertReceiptChain(blocks, receipts); err != nil {
+	//		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
+	//		return errInvalidChain
+	//	}
 	return nil
 }
 
 func (d *Downloader) commitPivotBlock(result *fetchResult) error {
+	block := modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
+	log.Debug("Committing fast sync pivot as new head", "number", block.Number(), "hash", block.Hash())
+	//	if _, err := d.blockchain.InsertReceiptChain([]*types.Block{block}, []types.Receipts{result.Receipts}); err != nil {
+	//		return err
+	//	}
+	if err := d.dag.FastSyncCommitHead(block.Hash()); err != nil {
+		return err
+	}
+	atomic.StoreInt32(&d.committed, 1)
 	return nil
 }
 

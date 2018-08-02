@@ -537,14 +537,20 @@ func (ks *KeyStore) GetPublicKey(address common.Address) ([]byte, error) {
 	return crypto.FromECDSAPub(&unlockedKey.PrivateKey.PublicKey), nil
 }
 
-//unit:Unit struct
-func (ks *KeyStore) SigUnit(unit interface{}, address common.Address) ([]byte, error) {
+func (ks *KeyStore) SigUnit(unitHeader *modules.Header, address common.Address) ([]byte, error) {
+	emptyHeader := modules.CopyHeader(unitHeader)
+	emptyHeader.Authors = nil
+	emptyHeader.Witness = []*modules.Authentifier{}
+	return ks.SigData(emptyHeader, address)
+}
+
+func (ks *KeyStore) SigData(data interface{}, address common.Address) ([]byte, error) {
 	privateKey, err := ks.getPrivateKey(address)
 	if err != nil {
 		return nil, err
 	}
 	//defer ZeroKey(privateKey)
-	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
+	hash := crypto.Keccak256Hash(util.RHashBytes(data))
 	if err!=nil{
 		return nil, err
 	}
@@ -582,7 +588,7 @@ func VerifyUnitWithPK(sign []byte, unit interface{}, publicKey []byte) bool {
 
 //tx:TxMessages   []Message
 func (ks *KeyStore) SigTX(tx interface{}, address common.Address) (R, S, V []byte, e error) {
-	sig, err := ks.SigUnit(tx, address)
+	sig, err := ks.SigData(tx, address)
 	if err != nil {
 		e = err
 		return
