@@ -55,7 +55,7 @@ func (ud *testUnitDag) CurrentUnit() *modules.Unit {
 	}, nil)
 }
 
-func (ud *testUnitDag) GetUnit(hash common.Hash, number uint64) *modules.Unit {
+func (ud *testUnitDag) GetUnit(hash common.Hash) *modules.Unit {
 	return ud.CurrentUnit()
 }
 
@@ -155,7 +155,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 			}
 			all = len(txs)
-			for key, _ := range nonces {
+			for key := range nonces {
 				log.Println("address: ", key.String())
 			}
 		}

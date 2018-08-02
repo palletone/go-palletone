@@ -56,6 +56,36 @@ func Store(key string, value interface{}) error {
 	return nil
 }
 
+func StoreBytes(key []byte, value interface{}) error {
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+	val, err := rlp.EncodeToBytes(value)
+	if err != nil {
+		return err
+	}
+
+	_, err = Dbconn.Get(key)
+	if err != nil {
+		if err == errors.ErrNotFound {
+			if err := Dbconn.Put(key, val); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	} else {
+		if err = Dbconn.Delete(key); err != nil {
+			return err
+		}
+		if err := Dbconn.Put(key, val); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func StoreString(key, value string) error {
 	if Dbconn == nil {
 		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)

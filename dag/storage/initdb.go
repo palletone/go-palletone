@@ -28,6 +28,7 @@ var (
 	UNIT_PREFIX                      = []byte("ut") // unit_prefix + mci + hash
 	HEADER_PREFIX                    = []byte("uh") // prefix + hash
 	UNIT_HASH_NUMBER                 = []byte("hn")
+	UNIT_NUMBER_PREFIX               = []byte("nh") // number 和unit hash 的对应关系
 	BODY_PREFIX                      = []byte("ub")
 	TRANSACTION_PREFIX               = []byte("tx")
 	TRANSACTIONSPREFIX               = []byte("ts")
@@ -46,8 +47,13 @@ var (
 	ATTESTATION_PREFIX               = []byte("at")
 	ASSET_PREFIX                     = []byte("as")
 	ASSET_ATTESTORS                  = []byte("ae")
-	EAENED_HEADERS_COMMISSION        = "earned_headers_commossion"
-	ALL_UNITS                        = "array_units"
+
+	// contract
+	CONTRACT_PTEFIX = []byte("cs")
+
+	// other prefix
+	EAENED_HEADERS_COMMISSION = "earned_headers_commossion"
+	ALL_UNITS                 = "array_units"
 )
 
 func Init(path string) *palletdb.LDBDatabase {

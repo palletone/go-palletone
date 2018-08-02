@@ -87,6 +87,12 @@ func SaveHashNumber(uHash common.Hash, height modules.ChainIndex) error {
 	return Store(key, height)
 }
 
+// height and assetid can get a unit key.
+func SaveUHashIndex(height modules.ChainIndex, uHash common.Hash) error {
+	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, height.AssetID.String(), height.Index)
+	return Store(key, uHash)
+}
+
 /**
 key: [BODY_PREFIX][merkle root]
 value: all transactions hash set's rlp encoding bytes
@@ -225,5 +231,28 @@ func AddKeysWithTag(key, tag string) error {
 		return err
 	}
 	return nil
+
+}
+
+func SaveContract(contract *modules.Contract) error {
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+	if common.EmptyHash(contract.CodeHash) {
+		contract.CodeHash = rlp.RlpHash(contract.Code)
+	}
+	// key = cs+ rlphash(contract)
+	if common.EmptyHash(contract.Id) {
+		ids := rlp.RlpHash(contract)
+		if len(ids) > len(contract.Id) {
+			id := ids[len(ids)-common.HashLength:]
+			copy(contract.Id[common.HashLength-len(id):], id)
+		} else {
+			//*contract.Id = new(common.Hash)
+			copy(contract.Id[common.HashLength-len(ids):], ids[:])
+		}
+
+	}
+	return StoreBytes(append(CONTRACT_PTEFIX, contract.Id[:]...), contract)
 
 }

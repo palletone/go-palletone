@@ -58,7 +58,7 @@ func CurrentUnit() *modules.Unit {
 }
 
 // get unit
-func GetUnit(hash *common.Hash, index modules.ChainIndex) *modules.Unit {
+func GetUnit(hash *common.Hash) *modules.Unit {
 	unit_bytes, err := storage.Get(append(storage.UNIT_PREFIX, hash.Bytes()...))
 	if err != nil {
 		return nil
@@ -576,7 +576,7 @@ func checkUnitSignature(h *modules.Header, isGenesis bool) error {
 	sig := make([]byte, 65)
 	copy(sig[32-len(h.Authors.R):32], h.Authors.R)
 	copy(sig[64-len(h.Authors.S):64], h.Authors.S)
-	copy(sig[64:len(sig)], h.Authors.V)
+	copy(sig[64:], h.Authors.V)
 	// recover pubkey
 	hash := crypto.Keccak256Hash(util.RHashBytes(*emptySigUnit.UnitHeader))
 	pubKey, err := RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
@@ -613,7 +613,7 @@ func RSVtoAddress(tx *modules.Transaction) common.Address {
 	sig := make([]byte, 65)
 	copy(sig[32-len(tx.From.R):32], tx.From.R)
 	copy(sig[64-len(tx.From.S):64], tx.From.S)
-	copy(sig[64:len(sig)], tx.From.V)
+	copy(sig[64:], tx.From.V)
 	pub, _ := crypto.SigToPub(tx.TxHash[:], sig)
 	address := crypto.PubkeyToAddress(*pub)
 	return address
@@ -623,7 +623,7 @@ func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {
 	sig := make([]byte, 65)
 	copy(sig[32-len(r):32], r)
 	copy(sig[64-len(s):64], s)
-	copy(sig[64:len(sig)], v)
+	copy(sig[64:], v)
 	return crypto.SigToPub(hash, sig)
 }
 
