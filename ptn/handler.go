@@ -339,7 +339,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		hashMode := query.Origin.Hash != (common.Hash{})
-		log.Info("===msg.Code == GetBlockHeadersMsg===", "hashMode", hashMode)
+
 		// Gather headers until the fetch or network limits is reached
 		var (
 			bytes   common.StorageSize
@@ -358,6 +358,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			if origin == nil {
 				break
 			}
+			//---test---
+			if origin != nil && !hashMode {
+				origin.Number.Index = query.Origin.Number
+			}
+			origin.ParentsHash = append(origin.ParentsHash, origin.Hash())
+
 			number := origin.Number.Index
 			headers = append(headers, origin)
 			bytes += estHeaderRlpSize
