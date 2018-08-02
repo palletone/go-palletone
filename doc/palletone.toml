@@ -1,0 +1,36 @@
+#./gpan --datadir="./data1" --networkid 123456 --port 30301 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" --rpcport 8541 --verbosity=4
+#[Consensus]
+#Engine="solo"
+
+
+[Log]
+OutputPaths =["stdout","./log/all.log"]
+ErrorOutputPaths= ["stderr","./log/error.log"]
+LoggerLvl="debug"   # ("debug", "info", "warn","error", "dpanic", "panic", and "fatal")
+Encoding="console" # console,json
+Development =true
+
+[Dag]
+DbPath="./data1/leveldb"
+DbName="palletone.db"
+
+[Ada]
+Ada1="======"
+Ada2="000000"
+
+[Node]
+DataDir = "./data1"
+KeyStoreDir="./data1/keystore"
+IPCPath = "./data1/gptn.ipc"
+HTTPPort = 8541
+HTTPVirtualHosts = ["0.0.0.0"]
+HTTPCors = ["*"]
+
+[Ptn]
+NetworkId = 3369
+SyncMode =  "fast" #"full", "fast" or "light"
+
+[P2P]
+ListenAddr = "0.0.0.0:30301"
+#BootstrapNodes = ["pnode://228f7e50031457d804ce6021f4a211721bacb9abba9585870efea55780bb744005a7f22e22938040684cdec32c748968f5dbe19822d4fbb44c6aaa69e7abdfee@127.0.0.1:30301"]
+
