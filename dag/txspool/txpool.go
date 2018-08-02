@@ -84,7 +84,7 @@ var (
 
 type dags interface {
 	CurrentUnit() *modules.Unit
-	GetUnit(hash common.Hash, number uint64) *modules.Unit
+	GetUnit(hash common.Hash) *modules.Unit
 	//StateAt(root common.Hash) (*state.StateDB, error)
 
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
@@ -306,31 +306,31 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 			var discarded, included modules.Transactions
 
 			var (
-				rem = pool.unit.GetUnit(oldHead.Hash(), oldHead.Index())
-				add = pool.unit.GetUnit(newHead.Hash(), newHead.Index())
+				rem = pool.unit.GetUnit(oldHead.Hash())
+				add = pool.unit.GetUnit(newHead.Hash())
 			)
 			for rem.NumberU64() > add.NumberU64() {
 				discarded = append(discarded, rem.Transactions()...)
-				if rem = pool.unit.GetUnit(rem.ParentHash()[0], rem.NumberU64()-1); rem == nil {
+				if rem = pool.unit.GetUnit(rem.ParentHash()[0]); rem == nil {
 					log.Error("Unrooted old unit seen by tx pool", "block", oldHead.Number, "hash", oldHead.Hash())
 					return
 				}
 			}
 			for add.NumberU64() > rem.NumberU64() {
 				included = append(included, add.Transactions()...)
-				if add = pool.unit.GetUnit(add.ParentHash()[0], add.NumberU64()-1); add == nil {
+				if add = pool.unit.GetUnit(add.ParentHash()[0]); add == nil {
 					log.Error("Unrooted new unit seen by tx pool", "block", newHead.Number, "hash", newHead.Hash())
 					return
 				}
 			}
 			for rem.Hash() != add.Hash() {
 				discarded = append(discarded, rem.Transactions()...)
-				if rem = pool.unit.GetUnit(rem.ParentHash()[0], rem.NumberU64()-1); rem == nil {
+				if rem = pool.unit.GetUnit(rem.ParentHash()[0]); rem == nil {
 					log.Error("Unrooted old unit seen by tx pool", "block", oldHead.Number, "hash", oldHead.Hash())
 					return
 				}
 				included = append(included, add.Transactions()...)
-				if add = pool.unit.GetUnit(add.ParentHash()[0], add.NumberU64()-1); add == nil {
+				if add = pool.unit.GetUnit(add.ParentHash()[0]); add == nil {
 					log.Error("Unrooted new unit seen by tx pool", "block", newHead.Number, "hash", newHead.Hash())
 					return
 				}

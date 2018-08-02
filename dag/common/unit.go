@@ -393,7 +393,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 				}
 			case modules.APP_CONTRACT_TPL:
 			case modules.APP_CONTRACT_DEPLOY:
-				if ok:=saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok!=true{
+				if ok := saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
 					return fmt.Errorf("Save contract init payload error.")
 				}
 			case modules.APP_CONTRACT_INVOKE:
@@ -609,7 +609,7 @@ func saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *m
 保存合约初始化状态
 To save contract init state
 */
-func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message)bool {
+func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 	_, ok := pl.(modules.ContractDeployPayload)
@@ -618,7 +618,7 @@ func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *mod
 	}
 	/**
 	涉及到合约验证和合约ID生成的问题
-	 */
+	*/
 
 	return true
 }

@@ -36,7 +36,7 @@ type Dag struct {
 
 	Mdb           *palletdb.MemDatabase
 	ChainHeadFeed *event.Feed
-	//	GenesisUnit   *Unit	// comment by Albert·Gou
+	// GenesisUnit   *Unit  // comment by Albert·Gou
 
 	Mutex sync.RWMutex
 
@@ -51,7 +51,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	}, nil)
 }
 
-func (d *Dag) GetUnit(hash common.Hash, number uint64) *modules.Unit {
+func (d *Dag) GetUnit(hash common.Hash) *modules.Unit {
 	return d.CurrentUnit()
 }
 
@@ -103,7 +103,7 @@ func (d *Dag) SaveDag(unit modules.Unit) (int, error) {
 /**
 将连续的单元保存到DAG中
 To save some continuous units to dag storage
- */
+*/
 func (d *Dag) InsertDag(units modules.Units) (int, error) {
 	count := int(0)
 	for i, u := range units {
@@ -115,7 +115,7 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
-		if i > 0 && u.ContainsParent(units[i-1].UnitHash)==false{
+		if i > 0 && u.ContainsParent(units[i-1].UnitHash) == false {
 			return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
 				"parent unit number=%d, hash=%s; "+
 				"child unit number=%d, hash=%s",
@@ -159,14 +159,14 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 }
 
 func NewDag() *Dag {
-	//	genesis, _ := NewGenesisUnit(nil) // comment by Albert·Gou
+	// genesis, _ := NewGenesisUnit(nil) // comment by Albert·Gou
 	db, _ := palletdb.NewMemDatabase()
 	mutex := new(sync.RWMutex)
 	return &Dag{
 		Cache: freecache.NewCache(200 * 1024 * 1024),
 		Db:    storage.Dbconn,
 		Mdb:   db,
-		//		GenesisUnit:   genesis,	// comment by Albert·Gou
+		//    GenesisUnit:   genesis, // comment by Albert·Gou
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
 		GlobalProp:    storage.RetrieveGlobalProp(),
