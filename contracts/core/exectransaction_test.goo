@@ -312,7 +312,7 @@ func endTxSimulation(chainID string, ccid *pb.ChaincodeID, txsim ledger.TxSimula
 // Build a chaincode.
 func getDeploymentSpec(_ context.Context, spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
 	fmt.Printf("getting deployment spec for chaincode spec: %v\n", spec)
-	codePackageBytes, err := container.GetChaincodePackageBytes(spec)
+	codePackageBytes, err := controller.GetChaincodePackageBytes(spec)
 	if err != nil {
 		return nil, err
 	}
@@ -349,12 +349,12 @@ func deploy(ctx context.Context, cccid *ccprovider.CCContext, spec *pb.Chaincode
 func deploy2(ctx context.Context, cccid *ccprovider.CCContext, chaincodeDeploymentSpec *pb.ChaincodeDeploymentSpec, blockNumber uint64) (b []byte, err error) {
 	fmt.Println("deploy2 enter!")
 
-	cis ,err := getDeployLSCCSpec(cccid.ChainID, chaincodeDeploymentSpec)
-	if err != nil {
-		return nil, fmt.Errorf("Error creating lscc spec : %s\n", err)
-	}
-	if cis== nil {
-	}
+	//cis ,err := getDeployLSCCSpec(cccid.ChainID, chaincodeDeploymentSpec)
+	//if err != nil {
+	//	return nil, fmt.Errorf("Error creating lscc spec : %s\n", err)
+	//}
+	//if cis== nil {
+	//}
 
 	uuid := util.GenerateUUID()
 	cccid.TxID = uuid
@@ -395,7 +395,7 @@ func deploy2(ctx context.Context, cccid *ccprovider.CCContext, chaincodeDeployme
 	//}
 	fmt.Println("begin to ExecuteWithErrorFilter")
 
-	if b, _, err = ExecuteWithErrorFilter(ctx, cccid, chaincodeDeploymentSpec); err != nil {
+	if b, _, err = ExecuteWithErrorFilter(ctx, cccid, chaincodeDeploymentSpec, 30*time.Second); err != nil {
 		return nil, fmt.Errorf("Error deploying chaincode(2): %s", err)
 	}
 
@@ -404,11 +404,12 @@ func deploy2(ctx context.Context, cccid *ccprovider.CCContext, chaincodeDeployme
 
 // Invoke a chaincode.
 func invoke(ctx context.Context, chainID string, spec *pb.ChaincodeSpec, blockNumber uint64, creator []byte) (ccevt *pb.ChaincodeEvent, uuid string, retval []byte, err error) {
-	return invokeWithVersion(ctx, chainID, spec.GetChaincodeId().Version, spec, blockNumber, creator)
+
+	return invokeWithVersion(ctx, chainID, spec.GetChaincodeId().Version, spec, blockNumber, creator, 30*time.Second)
 }
 
 // Invoke a chaincode with version (needed for upgrade)
-func invokeWithVersion(ctx context.Context, chainID string, version string, spec *pb.ChaincodeSpec, blockNumber uint64, creator []byte) (ccevt *pb.ChaincodeEvent, uuid string, retval []byte, err error) {
+func invokeWithVersion(ctx context.Context, chainID string, version string, spec *pb.ChaincodeSpec, blockNumber uint64, creator []byte, timeout time.Duration) (ccevt *pb.ChaincodeEvent, uuid string, retval []byte, err error) {
 	cdInvocationSpec := &pb.ChaincodeInvocationSpec{ChaincodeSpec: spec}
 
 	// Now create the Transactions message and send to Peer.
@@ -440,7 +441,7 @@ func invokeWithVersion(ctx context.Context, chainID string, version string, spec
 	//sprop, prop := putils.MockSignedEndorserProposalOrPanic(chainID, spec, creator, []byte("msg1"))
 	sprop, prop := MockSignedEndorserProposalOrPanic(chainID, spec, creator, []byte("msg1"))
 	cccid := ccprovider.NewCCContext(chainID, cdInvocationSpec.ChaincodeSpec.ChaincodeId.Name, version, uuid, false, sprop, prop)
-	retval, ccevt, err = ExecuteWithErrorFilter(ctx, cccid, cdInvocationSpec)
+	retval, ccevt, err = ExecuteWithErrorFilter(ctx, cccid, cdInvocationSpec, timeout)
 	if err != nil {
 		return nil, uuid, nil, fmt.Errorf("Error invoking chaincode: %s", err)
 	}
@@ -458,13 +459,15 @@ func closeListenerAndSleep(l net.Listener) {
 func executeDeployTransaction(t *testing.T, chainID string, name string, url string) {
 	lis, err := initPeer(chainID)
 	if err != nil {
-		t.Fail()
+		//t.Fail()
 		t.Logf("Error creating peer: %s", err)
 	}
 
 	defer finitPeer(lis, chainID)
 
 	var ctxt = context.Background()
+
+	t.Logf(" executeDeployTransaction exec init func")
 
 	f := "init"
 	args := util.ToChaincodeArgs(f, "a", "100", "b", "200")
@@ -655,9 +658,9 @@ func invokeExample02Transaction(ctxt context.Context, cccid *ccprovider.CCContex
 
 	if destroyImage {
 		theChaincodeSupport.Stop(ctxt, cccid, &pb.ChaincodeDeploymentSpec{ChaincodeSpec: spec})
-		dir := container.DestroyImageReq{CCID: ccintf.CCID{ChaincodeSpec: spec, NetworkID: theChaincodeSupport.peerNetworkID, PeerID: theChaincodeSupport.peerID, ChainID: cccid.ChainID}, Force: true, NoPrune: true}
+		dir := controller.DestroyImageReq{CCID: ccintf.CCID{ChaincodeSpec: spec, NetworkID: theChaincodeSupport.peerNetworkID, PeerID: theChaincodeSupport.peerID, ChainID: cccid.ChainID}, Force: true, NoPrune: true}
 
-		_, err = container.VMCProcess(ctxt, container.DOCKER, dir)
+		_, err = controller.VMCProcess(ctxt, controller.DOCKER, dir)
 		if err != nil {
 			err = fmt.Errorf("Error destroying image: %s", err)
 			return err
@@ -836,6 +839,7 @@ func TestExecuteDeployTransaction(t *testing.T) {
 	chainID := util.GetTestChainID()
 
 	executeDeployTransaction(t, chainID, "example01", "chaincode/example01")
+	//executeDeployTransaction(t, chainID, "example01", "github.com/palletone/go-palletone/contracts/example/go/example01")
 }
 
 // Test deploy of a transaction with a GOPATH with multiple elements
@@ -847,7 +851,7 @@ func TestGopathExecuteDeployTransaction(t *testing.T) {
 	// add a trailing slash to GOPATH
 	// and a couple of elements - it doesn't matter what they are
 	os.Setenv("GOPATH", os.Getenv("GOPATH")+string(os.PathSeparator)+string(os.PathListSeparator)+"/tmp/foo"+string(os.PathListSeparator)+"/tmp/bar")
-	executeDeployTransaction(t, chainID, "example01", "github.com/palletone/go-palletone/contracts/examples/go/chaincode_example01")
+	executeDeployTransaction(t, chainID, "example01", "github.com/palletone/go-palletone/contracts/example/go/example01")
 }
 
 func TestExecuteInvokeTransaction(t *testing.T) {

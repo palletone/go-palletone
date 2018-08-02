@@ -96,6 +96,7 @@ func SetChaincodesPath(path string) {
 //GetChaincodePackage returns the chaincode package from the file system
 func GetChaincodePackage(ccname string, ccversion string) ([]byte, error) {
 	path := fmt.Sprintf("%s/%s.%s", chaincodeInstallPath, ccname, ccversion)
+	ccproviderLogger.Infof("path:%s", path)
 	var ccbytes []byte
 	var err error
 	if ccbytes, err = ioutil.ReadFile(path); err != nil {

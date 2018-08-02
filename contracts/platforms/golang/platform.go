@@ -254,13 +254,12 @@ func vendorDependencies(pkg string, files Sources) {
 
 // Generates a deployment payload for GOLANG as a series of src/$pkg entries in .tar.gz format
 func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error) {
-
 	var err error
 
 	// --------------------------------------------------------------------------------------
 	// retrieve a CodeDescriptor from either HTTP or the filesystem
 	// --------------------------------------------------------------------------------------
-	code, err := getCode(spec)
+	code, err := getCode(spec)//获取代码，即构造CodeDescriptor，Gopath为代码真实路径，Pkg为代码相对路径
 	if err != nil {
 		return nil, err
 	}
@@ -275,15 +274,15 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 	if err != nil {
 		return nil, err
 	}
-	gopaths := splitEnvPaths(env["GOPATH"])
-	goroots := splitEnvPaths(env["GOROOT"])
-	gopaths[code.Gopath] = true
-	env["GOPATH"] = flattenEnvPaths(gopaths)
+	gopaths := splitEnvPaths(env["GOPATH"])//GOPATH
+	goroots := splitEnvPaths(env["GOROOT"])//GOROOT，go安装路径
+	gopaths[code.Gopath] = true  //链码真实路径
+	env["GOPATH"] = flattenEnvPaths(gopaths) //GOPATH、GOROOT、链码真实路径重新拼合为新GOPATH
 
 	// --------------------------------------------------------------------------------------
 	// Retrieve the list of first-order imports referenced by the chaincode
 	// --------------------------------------------------------------------------------------
-	imports, err := listImports(env, code.Pkg)
+	imports, err := listImports(env, code.Pkg) //获取导入包列表
 	if err != nil {
 		return nil, fmt.Errorf("Error obtaining imports: %s", err)
 	}
@@ -291,9 +290,9 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 	// --------------------------------------------------------------------------------------
 	// Remove any imports that are provided by the ccenv or system
 	// --------------------------------------------------------------------------------------
-	var provided = map[string]bool{
-		"github.com/palletone/go-palletone/contracts/shim": true,
-		"github.com/palletone/go-palletone/core/vmContractPub/protos/peer":         true,
+	var provided = map[string]bool{ //如下两个包为ccenv已自带，可删除
+		//"github.com/palletone/go-palletone/contracts/shim":                  true,
+		//"github.com/palletone/go-palletone/core/vmContractPub/protos/peer":  true,
 	}
 
 	// Golang "pseudo-packages" - packages which don't actually exist
@@ -303,7 +302,7 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 
 	imports = filter(imports, func(pkg string) bool {
 		// Drop if provided by CCENV
-		if _, ok := provided[pkg]; ok == true {
+		if _, ok := provided[pkg]; ok == true { //从导入包中删除ccenv已自带的包
 			logger.Debugf("Discarding provided package %s", pkg)
 			return false
 		}
@@ -315,7 +314,7 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 		}
 
 		// Drop if provided by GOROOT
-		for goroot := range goroots {
+		for goroot := range goroots { //删除goroot中自带的包
 			fqp := filepath.Join(goroot, "src", pkg)
 			exists, err := pathExists(fqp)
 			if err == nil && exists {
@@ -339,7 +338,7 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 		// ------------------------------------------------------------------------------
 		// Resolve direct import's transitives
 		// ------------------------------------------------------------------------------
-		transitives, err := listDeps(env, pkg)
+		transitives, err := listDeps(env, pkg) //列出所有导入包的依赖包
 		if err != nil {
 			return nil, fmt.Errorf("Error obtaining dependencies for %s: %s", pkg, err)
 		}
@@ -358,12 +357,12 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 	}
 
 	// cull "" if it exists
-	delete(deps, "")
+	delete(deps, "") //删除空
 
 	// --------------------------------------------------------------------------------------
 	// Find the source from our first-order code package ...
 	// --------------------------------------------------------------------------------------
-	fileMap, err := findSource(code.Gopath, code.Pkg)
+	fileMap, err := findSource(code.Gopath, code.Pkg) //遍历链码路径下文件
 	if err != nil {
 		return nil, err
 	}
@@ -389,7 +388,7 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 			if err == nil && exists {
 
 				// We only get here when we found it, so go ahead and load its code
-				files, err := findSource(gopath, dep)
+				files, err := findSource(gopath, dep) //遍历依赖包下文件
 				if err != nil {
 					return nil, err
 				}
@@ -415,7 +414,7 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 	// --------------------------------------------------------------------------------------
 	// Remap non-package dependencies to package/vendor
 	// --------------------------------------------------------------------------------------
-	vendorDependencies(code.Pkg, files)
+	vendorDependencies(code.Pkg, files)//重新映射依赖关系
 
 	// --------------------------------------------------------------------------------------
 	// Sort on the filename so the tarball at least looks sane in terms of package grouping
@@ -523,12 +522,15 @@ func (goPlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec,
 
 	codepackage := bytes.NewReader(cds.CodePackage)
 	binpackage := bytes.NewBuffer(nil)
+
 	err = util.DockerBuild(util.DockerBuildOptions{
 		Cmd:          fmt.Sprintf("GOPATH=/chaincode/input:$GOPATH go build -tags \"%s\" %s -o /chaincode/output/chaincode %s", gotags, ldflagsOpt, pkgname),
+		//Cmd:          fmt.Sprintf("GOPATH=/chaincode/input:\"/home/glh/go\" go build -tags \"%s\" %s -o /chaincode/output/chaincode %s", gotags, ldflagsOpt, pkgname),
 		InputStream:  codepackage,
 		OutputStream: binpackage,
 	})
 	if err != nil {
+		logger.Errorf("DockerBuild err:%s", err)
 		return err
 	}
 

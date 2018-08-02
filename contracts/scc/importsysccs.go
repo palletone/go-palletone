@@ -32,7 +32,8 @@ var systemChaincodes = []*SystemChaincode{
 		InitArgs:  [][]byte{},
 		Chaincode: &samplesyscc.SampleSysCC{},
 	},
-	//TODO add other system chaincodes ..
+	//TODO add other system chaincodes ...
+
 }
 //DeploySysCCs is the hook for system chaincodes where system chaincodes are registered
 //note the chaincode must still be deployed and launched like a user chaincode will be

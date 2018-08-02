@@ -37,14 +37,14 @@ import (
 	"github.com/palletone/go-palletone/vm/api"
 	"github.com/palletone/go-palletone/vm/ccintf"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	logging "github.com/op/go-logging"
+	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
-	"github.com/palletone/go-palletone/vm/controller"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
 	"github.com/palletone/go-palletone/contracts/rwset"
+	"github.com/palletone/go-palletone/vm/controller"
 )
 
 type key string
@@ -474,11 +474,11 @@ func (ccl *ccLauncherImpl) launch(ctxt context.Context, notfy chan bool) (interf
 	}
 
 	ccid := ccintf.CCID{ChaincodeSpec: ccl.cds.ChaincodeSpec, NetworkID: ccl.ccSupport.peerNetworkID, PeerID: ccl.ccSupport.peerID, Version: ccl.cccid.Version}
-	sir := container.StartImageReq{CCID: ccid, Builder: ccl.builder, Args: args, Env: env, FilesToUpload: filesToUpload, PrelaunchFunc: preLaunchFunc}
+	sir := controller.StartImageReq{CCID: ccid, Builder: ccl.builder, Args: args, Env: env, FilesToUpload: filesToUpload, PrelaunchFunc: preLaunchFunc}
 	ipcCtxt := context.WithValue(ctxt, ccintf.GetCCHandlerKey(), ccl.ccSupport)
 
 	vmtype, _ := ccl.ccSupport.getVMType(ccl.cds)
-	resp, err := container.VMCProcess(ipcCtxt, vmtype, sir)
+	resp, err := controller.VMCProcess(ipcCtxt, vmtype, sir)
 
 	return resp, err
 }
@@ -550,9 +550,9 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 		chaincodeLogger.Debugf("launch info: %+v", launcher)
 
 		resp, err := launcher.launch(ctxt, notfy)
-		if err != nil || (resp != nil && resp.(container.VMCResp).Err != nil) {
+		if err != nil || (resp != nil && resp.(controller.VMCResp).Err != nil) {
 			if err == nil {
-				err = resp.(container.VMCResp).Err
+				err = resp.(controller.VMCResp).Err
 			} else {
 				chaincodeLogger.Debugf("launch error: %+v", err)
 			}
@@ -608,10 +608,10 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	//sir := container.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, Version: cccid.Version}, Timeout: 0}
 	// The line below is left for debugging. It replaces the line above to keep
 	// the chaincode container around to give you a chance to get data
-	sir := container.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: cccid.ChainID, Version: cccid.Version}, Timeout: 0, Dontremove: true}
+	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: cccid.ChainID, Version: cccid.Version}, Timeout: 0, Dontremove: true}
 	vmtype, _ := chaincodeSupport.getVMType(cds)
 
-	_, err := container.VMCProcess(context, vmtype, sir)
+	_, err := controller.VMCProcess(context, vmtype, sir)
 	if err != nil {
 		err = errors.WithMessage(err, "error stopping container")
 		//but proceed to cleanup
@@ -777,9 +777,9 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 //return a VM executor
 func (chaincodeSupport *ChaincodeSupport) getVMType(cds *pb.ChaincodeDeploymentSpec) (string, error) {
 	if cds.ExecEnv == pb.ChaincodeDeploymentSpec_SYSTEM {
-		return container.SYSTEM, nil
+		return controller.SYSTEM, nil
 	}
-	return container.DOCKER, nil
+	return controller.DOCKER, nil
 }
 
 // HandleChaincodeStream implements ccintf.HandleChaincodeStream for all vms to call with appropriate stream
@@ -833,9 +833,9 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 	case ccresp = <-notfy:
 		//response is sent to user or calling chaincode. ChaincodeMessage_ERROR
 		//are typically treated as error
-		chaincodeLogger.Errorf("{{{{{{{{{{{{{{{{{{{{{{{{{{{{{ time out [%d]", setTimeout)
+		//chaincodeLogger.Errorf("{{{{{ time out [%d]", setTimeout)
 	case <-time.After(setTimeout):
-		chaincodeLogger.Errorf("<<<<<<<<<<<<<<<<<<<<<<<<<<<time out [%d]", setTimeout)
+		chaincodeLogger.Errorf("<<<txid[%s] time out [%d]", cccid.TxID, setTimeout)
 		err = errors.New("timeout expired while executing transaction")
 	}
 

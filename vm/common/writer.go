@@ -173,7 +173,8 @@ func WriteJavaProjectToPackage(tw *tar.Writer, srcPath string) error {
 
 //WriteFileToPackage writes a file to the tarball
 func WriteFileToPackage(localpath string, packagepath string, tw *tar.Writer) error {
-	vmLogger.Debug("Writing file to tarball:", packagepath)
+	//glh
+	//vmLogger.Debug("Writing file to tarball:", packagepath)
 	fd, err := os.Open(localpath)
 	if err != nil {
 		return fmt.Errorf("%s: %s", localpath, err)
