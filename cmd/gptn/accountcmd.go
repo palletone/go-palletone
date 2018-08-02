@@ -18,8 +18,11 @@ package main
 
 import (
 	"fmt"
-	"strconv"
+	//"strconv"
 	// "io/ioutil"
+        "bytes"
+        "strings"
+        "encoding/hex"
 	"encoding/json"
 	"gopkg.in/urfave/cli.v1"
 
@@ -33,9 +36,11 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
-	//"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
-	//"github.com/palletone/go-palletone/tokenengine/btcd/wire"
+        "github.com/palletone/go-palletone/tokenengine/btcutil"
+	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 	"github.com/btcsuite/btcutil/base58"
+        "github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
 	//"github.com/btcsuite/btcd/btcec"
 )
 
@@ -594,33 +599,27 @@ func accountSignTx(ctx *cli.Context) error {
 	var signTransactionParams SignTransactionParams
 	err := json.Unmarshal([]byte(params), &signTransactionParams)
 	if err != nil {
-		return err.Error()
+		return nil
 	}
 
 	//check empty string
 	if "" == signTransactionParams.TransactionHex {
-		return "Params error : NO TransactionHex."
+		return nil
 	}
 
 	//decode Transaction hexString to bytes
 	rawTXBytes, err := hex.DecodeString(signTransactionParams.TransactionHex)
 	if err != nil {
-		return err.Error()
+		return nil
 	}
 	//deserialize to MsgTx
 	var tx wire.MsgTx
 	err = tx.Deserialize(bytes.NewReader(rawTXBytes))
 	if err != nil {
-		return err.Error()
+		return nil
 	}
 
 	//chainnet
-	var realNet *chaincfg.Params
-	if netID == NETID_MAIN {
-		realNet = &chaincfg.MainNetParams
-	} else {
-		realNet = &chaincfg.TestNet3Params
-	}
 
 	//get private keys for sign
 	var keys []string
@@ -632,9 +631,9 @@ func accountSignTx(ctx *cli.Context) error {
 		keys = append(keys, key)
 	}
 	if len(keys) == 0 {
-		return "Params error : NO PrivateKey."
+		return nil
 	}
-
+        realNet := &chaincfg.MainNetParams
 	//sign the UTXO hash, must know RedeemHex which contains in RawTxInput
 	var rawInputs []btcjson.RawTxInput
 	for {
@@ -662,11 +661,11 @@ func accountSignTx(ctx *cli.Context) error {
 	}
 
 	txHex := ""
-	if tx != nil {
+	if &tx != nil {
 		// Serialize the transaction and convert to hex string.
 		buf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
 		if err := tx.Serialize(buf); err != nil {
-			return newFutureError(err)
+			return nil
 		}
 		txHex = hex.EncodeToString(buf.Bytes())
 	}
