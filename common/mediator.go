@@ -16,11 +16,9 @@
  * @date 2018
  */
 
-package modules
-
-import "github.com/palletone/go-palletone/common"
+package common
 
 // mediator 结构体 和具体的账户模型有关
 type Mediator struct {
-	Address common.Address
+	Address Address
 }

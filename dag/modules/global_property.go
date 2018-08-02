@@ -29,7 +29,7 @@ import (
 type GlobalProperty struct {
 	ChainParameters core.ChainParameters // 区块链网络参数
 
-	ActiveMediators map[Mediator]bool // 当前活跃mediator集合；每个维护间隔更新一次
+	ActiveMediators map[common.Mediator]bool // 当前活跃mediator集合；每个维护间隔更新一次
 }
 
 // 动态全局属性的结构体定义
@@ -60,7 +60,7 @@ type DynamicGlobalProperty struct {
 func NewGlobalProp() *GlobalProperty {
 	return &GlobalProperty{
 		ChainParameters: core.NewChainParams(),
-		ActiveMediators: map[Mediator]bool{},
+		ActiveMediators: map[common.Mediator]bool{},
 	}
 }
 
@@ -84,7 +84,7 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	// Set active mediators
 	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
 		ad := common.StringToAddress(genesis.InitialMediatorCandidates[i])
-		md := Mediator{
+		md := common.Mediator{
 			Address: ad,
 		}
 		gp.ActiveMediators[md] = true
