@@ -339,7 +339,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		hashMode := query.Origin.Hash != (common.Hash{})
-
+		log.Info("===msg.Code == GetBlockHeadersMsg===", "hashMode", hashMode)
 		// Gather headers until the fetch or network limits is reached
 		var (
 			bytes   common.StorageSize
