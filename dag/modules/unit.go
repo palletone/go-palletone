@@ -123,7 +123,10 @@ func (h *Header) ChainIndex() ChainIndex {
 }
 
 func (h *Header) Hash() common.Hash {
-	return rlp.RlpHash(h)
+	emptyHeader := CopyHeader(h)
+	emptyHeader.Authors = nil
+	emptyHeader.Witness = []*Authentifier{}
+	return rlp.RlpHash(emptyHeader)
 }
 
 func (h *Header) Size() common.StorageSize {
@@ -343,8 +346,7 @@ func (u *Unit) Transaction(hash common.Hash) *Transaction {
 
 // return  unit'UnitHash
 func (u *Unit) Hash() common.Hash {
-	v := rlp.RlpHash(u)
-	return v
+	return u.UnitHeader.Hash()
 }
 
 func (u *Unit) Size() common.StorageSize {
