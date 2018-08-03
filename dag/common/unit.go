@@ -239,40 +239,34 @@ func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
 从leveldb中查询GenesisUnit信息
 To get genesis unit info from leveldb
 */
-func GetGenesisUnit(index uint64) *modules.Unit {
+func GetGenesisUnit(index uint64) (*modules.Unit, error) {
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
 	data := storage.GetPrefix([]byte(key))
 	if len(data) > 1 {
-		log.Info("Get genesis unit error:multiple genesis unit")
-		return nil
+		return nil, fmt.Errorf("multiple genesis unit")
 	} else if len(data) <= 0 {
-		return nil
+		return nil, nil
 	}
 	for k, v := range data {
 		sk := string(k[len(storage.HEADER_PREFIX):])
 		// get index
 		skArr := strings.Split(sk, "_")
 		if len(skArr) != 3 {
-			log.Error("Get genesis unit index and hash", "error", "split error")
-			return nil
+			return nil, fmt.Errorf("split genesis key error")
 		}
 		// get unit hash
 		uHash := common.Hash{}
 		uHash.SetString(skArr[2])
-		fmt.Println("Genesis Unit header hash:", []byte(k))
 		// get unit header
-		fmt.Println("Unit header bytes:", []byte(v))
 		var uHeader modules.Header
 		if err := rlp.DecodeBytes([]byte(v), &uHeader); err != nil {
-			log.Error("Get genesis unit header", "error", err.Error())
-			return nil
+			return nil, fmt.Errorf("Get genesis unit header:%s", err.Error())
 		}
 		// get transaction list
-		txs, err := GetUnitTransactions(uHeader.TxRoot)
+		txs, err := GetUnitTransactions(uHash)
 		if err != nil {
-			log.Error("Get genesis unit transactions", "error", err.Error())
-			return nil
+			return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
 		}
 		// generate unit
 		unit := modules.Unit{
@@ -281,9 +275,9 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 			Txs:        txs,
 		}
 		unit.UnitSize = unit.Size()
-		return &unit
+		return &unit, nil
 	}
-	return nil
+	return nil, nil
 }
 
 /**
@@ -291,17 +285,17 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 To get genesis unit height
 */
 func GenesisHeight() modules.ChainIndex {
-	unit := GetGenesisUnit(0)
-	if unit == nil {
+	unit, err := GetGenesisUnit(0)
+	if unit == nil || err != nil {
 		return modules.ChainIndex{}
 	}
 	return unit.UnitHeader.Number
 }
 
-func GetUnitTransactions(root common.Hash) (modules.Transactions, error) {
+func GetUnitTransactions(unitHash common.Hash) (modules.Transactions, error) {
 	txs := modules.Transactions{}
 	// get body data: transaction list
-	txHashList, err := storage.GetBody(root)
+	txHashList, err := storage.GetBody(unitHash)
 	if err != nil {
 		return nil, err
 	}

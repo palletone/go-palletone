@@ -50,12 +50,7 @@ import (
 // The returned chain configuration is never nil.
 func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) (*modules.Unit, error) {
 	unit, err := setupGenesisUnit(genesis, ks)
-	if err != nil && unit != nil {
-		log.Info("Genesis is Exist")
-		return unit, nil
-	}
 	if err != nil {
-		log.Error("Failed to write genesis block:", err.Error())
 		return unit, err
 	}
 
@@ -76,10 +71,13 @@ func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account acco
 func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Unit, error) {
 
 	// Just commit the new block if there is no stored genesis block.
-	stored := dagCommon.GetGenesisUnit(0)
+	stored, err := dagCommon.GetGenesisUnit(0)
+	if err != nil {
+		return nil, err
+	}
 	// Check whether the genesis block is already written.
 	if stored != nil {
-		return stored, errors.New("the genesis block is already written")
+		return stored, errors.New("the genesis block is existing")
 	}
 
 	if genesis == nil {
