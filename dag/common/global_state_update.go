@@ -34,6 +34,7 @@ import (
 func UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
 	timestamp := unit.UnitHeader.Creationdate
 	dgp.LastVerifiedUnitNum = unit.UnitHeader.Number.Index
+	dgp.LastVerifiedUnitHash = unit.UnitHash
 	dgp.LastVerifiedUnitTime = timestamp
 
 	missedUnits := uint64(modules.GetSlotAtTime(gp, dgp, time.Unix(timestamp, 0)))

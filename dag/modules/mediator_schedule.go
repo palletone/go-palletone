@@ -22,8 +22,8 @@ package modules
 import (
 	"time"
 
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 // Mediator调度顺序结构体

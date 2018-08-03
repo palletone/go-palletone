@@ -21,14 +21,14 @@ package main
 import (
 	"time"
 
-	"gopkg.in/urfave/cli.v1"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/core"
+	"gopkg.in/urfave/cli.v1"
 )
 
 // regulateGenesisTimestamp, regulate initial timestamp
 // @author Albert·Gou
-func regulateGenesisTimestamp(ctx *cli.Context, genesis *core.Genesis)  {
+func regulateGenesisTimestamp(ctx *cli.Context, genesis *core.Genesis) {
 	if ctx.GlobalIsSet(GenesisTimestampFlag.Name) {
 		secFromNow := ctx.GlobalInt64(GenesisTimestampFlag.Name)
 		mi := int64(genesis.InitialParameters.MediatorInterval)
@@ -40,17 +40,17 @@ func regulateGenesisTimestamp(ctx *cli.Context, genesis *core.Genesis)  {
 // validateGenesis, determine if the settings in genesis meet the security check, and if not, terminate the program
 // 判断genesis中的设置是否符合安全性检查，如果不满足，则终止程序
 // @author Albert·Gou
-func validateGenesis(genesis *core.Genesis)  {
+func validateGenesis(genesis *core.Genesis) {
 	initialTime := genesis.InitialTimestamp
 	fcAssert(initialTime != 0, "Must initialize genesis timestamp.")
 
 	mediatorInterv := int64(genesis.InitialParameters.MediatorInterval)
 	fcAssert(mediatorInterv > 0, "mediator interval must be larger than zero.")
 
-	fcAssert(initialTime % mediatorInterv == 0,
+	fcAssert(initialTime%mediatorInterv == 0,
 		"Genesis timestamp must be divisible by mediator interval.")
 
-	minMediatorInterval := int64(genesis.ImmutableParameters.MinMediatorCount)
+	minMediatorInterval := int64(genesis.ImmutableParameters.MinMediatorInterval)
 	fcAssert(mediatorInterv > minMediatorInterval, "mediator interval must be larger than min interval.")
 
 	mediatorCandidateCount := uint16(len(genesis.InitialMediatorCandidates))
@@ -60,7 +60,7 @@ func validateGenesis(genesis *core.Genesis)  {
 	fcAssert(initialActiveMediator <= mediatorCandidateCount,
 		"initial active mediators is larger than the number of candidate mediators.")
 
-	fcAssert((initialActiveMediator & 1) == 1, "min mediator count must be odd")
+	fcAssert((initialActiveMediator&1) == 1, "min mediator count must be odd")
 
 	minMediatorCount := uint16(genesis.ImmutableParameters.MinMediatorCount)
 	fcAssert(initialActiveMediator >= minMediatorCount,
@@ -69,8 +69,12 @@ func validateGenesis(genesis *core.Genesis)  {
 
 // fcAssert, determine if the expectation is true, if not, the program terminates and prompts
 // @author Albert·Gou
-func fcAssert(expectation bool, errTip string, args ...interface{})  {
+func fcAssert(expectation bool, errTip string, args ...interface{}) {
 	if !expectation {
-		utils.Fatalf(errTip, args)
+		if len(args) > 0 {
+			utils.Fatalf(errTip, args)
+		} else {
+			utils.Fatalf(errTip)
+		}
 	}
 }

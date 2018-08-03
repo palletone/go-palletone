@@ -23,10 +23,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common"
 )
 
 // GenerateVerifiedUnit, generate unit
@@ -43,6 +43,9 @@ func GenerateUnit(dag *Dag, when time.Time, producer common.Mediator, ks *keysto
 	pendingUnit := units[0]
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
 	pendingUnit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
+	pendingUnit.UnitHeader.ParentsHash =
+		append(pendingUnit.UnitHeader.ParentsHash, dgp.LastVerifiedUnitHash)
+	pendingUnit.UnitHash = pendingUnit.Hash()
 
 	_, err := GetUnitWithSig(&pendingUnit, ks, producer.Address)
 	if err != nil {
