@@ -139,7 +139,6 @@ func (outpoint *OutPoint) ToKey() []byte {
 		outpoint.MessageIndex,
 		outpoint.OutIndex,
 	)
-	fmt.Println("Save utxo outpoint txhash=", outpoint.TxHash.String())
 	return []byte(out)
 }
 

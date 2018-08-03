@@ -1,4 +1,4 @@
-﻿/*
+/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -358,32 +358,13 @@ func walletBalanceFrAll(addr common.Address, asset modules.Asset) uint64 {
 	preKey := fmt.Sprintf("%s", modules.UTXO_PREFIX)
 
 	if data := storage.GetPrefix([]byte(preKey)); data != nil {
-		for k, v := range data {
-			var outpoint modules.OutPoint
-			if err := rlp.DecodeBytes([]byte(k), &outpoint); err != nil {
-				log.Error("Decode utxo data ", "error:", err)
-				continue
-			}
-
+		for _, v := range data {
 			var utxo modules.Utxo
 			if err := rlp.DecodeBytes(v, &utxo); err != nil {
 				log.Error("Decode utxo data error:", err)
 				continue
 			}
-			// check asset
-			if strings.Compare(asset.AssertId.String(), utxo.Asset.AssertId.String()) != 0 ||
-				strings.Compare(asset.UniqueId.String(), utxo.Asset.UniqueId.String()) != 0 ||
-				asset.ChainId != utxo.Asset.ChainId {
-				continue
-			}
-			// get addr
-			scriptPubKey, err := txscript.ExtractPkScriptAddrs(utxo.PkScript)
-			if err != nil {
-				log.Error("Get address from utxo output script", "error", err.Error())
-				continue
-			}
-			// check address
-			if strings.Compare(scriptPubKey.Address.String(), addr.String()) != 0 {
+			if !checkUtxo(&addr, &asset, &utxo) {
 				continue
 			}
 			balance += utxo.Amount
@@ -415,6 +396,7 @@ func GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Ut
 To get someone account's list of tokens and those assetids
 */
 func GetAccountTokens(addr common.Address) (map[modules.Asset]*modules.AccountToken, error) {
+	fmt.Println("dagconfig.DefaultConfig.UtxoIndex=", dagconfig.DefaultConfig.UtxoIndex)
 	if dagconfig.DefaultConfig.UtxoIndex {
 		return getAccountTokensByIndex(addr)
 	} else {
@@ -431,6 +413,7 @@ func getAccountTokensByIndex(addr common.Address) (map[modules.Asset]*modules.Ac
 	utxoIndex := modules.UtxoIndex{AccountAddr: addr}
 	data := storage.GetPrefix(utxoIndex.AccountKey())
 	if data == nil || len(data) == 0 {
+		fmt.Println("11111111111")
 		return nil, nil
 	}
 	for k, v := range data {
@@ -466,34 +449,62 @@ To get account token info by query the whole utxo table
 */
 func getAccountTokensWhole(addr common.Address) (map[modules.Asset]*modules.AccountToken, error) {
 	tokens := map[modules.Asset]*modules.AccountToken{}
-	utxoIndex := modules.UtxoIndex{AccountAddr: addr}
-	data := storage.GetPrefix(utxoIndex.AccountKey())
-	if data == nil || len(data) == 0 {
+
+	key := fmt.Sprintf("%s", string(modules.UTXO_PREFIX))
+	data := storage.GetPrefix([]byte(key))
+	if data == nil {
+		fmt.Println("11111111111111111111")
 		return nil, nil
 	}
-	for k, v := range data {
-		if err := utxoIndex.QueryFields([]byte(k)); err != nil {
-			return nil, fmt.Errorf("Get account tokens error: data key is invalid")
+
+	for _, v := range data {
+		var utxo modules.Utxo
+		if err := rlp.DecodeBytes([]byte(v), &utxo); err != nil {
+			return nil, err
 		}
-		var utxoIndexVal modules.UtxoIndexValue
-		if err := rlp.DecodeBytes([]byte(v), &utxoIndexVal); err != nil {
-			return nil, fmt.Errorf("Get account tokens error: data value is invalid")
+		if !checkUtxo(&addr, nil, &utxo) {
+			fmt.Println("2222222222222222")
+			continue
 		}
-		val, ok := tokens[utxoIndex.Asset]
+
+		val, ok := tokens[utxo.Asset]
 		if ok {
-			val.Balance += utxoIndexVal.Amount
+			val.Balance += utxo.Amount
 		} else {
 			// get asset info
-			assetInfo, err := GetAssetInfo(&utxoIndex.Asset)
+			assetInfo, err := GetAssetInfo(&utxo.Asset)
 			if err != nil {
 				return nil, fmt.Errorf("Get acount tokens error: asset info does not exist")
 			}
-			tokens[utxoIndex.Asset] = &modules.AccountToken{
+			tokens[utxo.Asset] = &modules.AccountToken{
 				Alias:   assetInfo.Alias,
-				AssetID: utxoIndex.Asset,
-				Balance: utxoIndexVal.Amount,
+				AssetID: utxo.Asset,
+				Balance: utxo.Amount,
 			}
 		}
 	}
 	return tokens, nil
+}
+
+/**
+检查该utxo是否是需要的utxo
+*/
+func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) bool {
+	// check asset
+	if asset != nil && (strings.Compare(asset.AssertId.String(), utxo.Asset.AssertId.String()) != 0 ||
+		strings.Compare(asset.UniqueId.String(), utxo.Asset.UniqueId.String()) != 0 ||
+		asset.ChainId != utxo.Asset.ChainId) {
+		return false
+	}
+	// get addr
+	scriptPubKey, err := txscript.ExtractPkScriptAddrs(utxo.PkScript)
+	if err != nil {
+		log.Error("Get address from utxo output script", "error", err.Error())
+		return false
+	}
+	// check address
+	if strings.Compare(scriptPubKey.Address.String(), addr.String()) != 0 {
+		return false
+	}
+	return true
 }
