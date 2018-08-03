@@ -19,8 +19,6 @@ package main
 import (
 	"encoding/json"
 	"os"
-	"time"
-
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
@@ -113,12 +111,9 @@ func initGenesis(ctx *cli.Context) error {
 		utils.Fatalf("invalid genesis file: %v", err)
 	}
 
-	if ctx.GlobalIsSet(GenesisTimestampFlag.Name) {
-		secFromNow := ctx.GlobalInt64(GenesisTimestampFlag.Name)
-		mi := int64(genesis.InitialParameters.MediatorInterval)
-		genesis.InitialTimestamp = time.Now().Unix() + mi + secFromNow
-		genesis.InitialTimestamp -= genesis.InitialTimestamp % mi
-	}
+	regulateGenesisTimestamp(ctx, genesis)
+
+	validateGenesis(genesis)
 
 	node := makeFullNode(ctx)
 	ks := node.GetKeyStore()

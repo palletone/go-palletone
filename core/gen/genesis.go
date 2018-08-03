@@ -244,6 +244,7 @@ func DefaultGenesisBlock() *core.Genesis {
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
+		ImmutableParameters: core.NewImmutChainParams(),
 		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
@@ -267,6 +268,7 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
+		ImmutableParameters: core.NewImmutChainParams(),
 		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
@@ -275,12 +277,12 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 }
 
 func InitialMediatorCandidates(len int, address string) []string {
-	initialMediatorSet := make([]string, len)
+	initialMediator := make([]string, len)
 	for i := 0; i < len; i++ {
-		initialMediatorSet[i] = address
+		initialMediator[i] = address
 	}
 
-	return initialMediatorSet
+	return initialMediator
 }
 
 func InitialTimestamp(mediatorInterval uint8) int64 {

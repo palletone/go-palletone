@@ -162,6 +162,7 @@ func createExampleGenesis(account string) *core.Genesis {
 		TokenHolder:            account,
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
+		ImmutableParameters: core.NewImmutChainParams(),
 		InitialTimestamp:       gen.InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(
