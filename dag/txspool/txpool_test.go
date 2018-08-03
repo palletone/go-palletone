@@ -55,7 +55,7 @@ func (ud *testUnitDag) CurrentUnit() *modules.Unit {
 	}, nil)
 }
 
-func (ud *testUnitDag) GetUnit(hash common.Hash, number uint64) *modules.Unit {
+func (ud *testUnitDag) GetUnit(hash common.Hash) *modules.Unit {
 	return ud.CurrentUnit()
 }
 
@@ -99,7 +99,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	txs := modules.Transactions{}
 	for i, key := range keys {
 		addr := crypto.PubkeyToAddress(key.PublicKey)
-		for j := 0; j < int(config.AccountSlots)*10; j++ {
+		for j := 0; j < int(config.AccountSlots)*1; j++ {
 			txs = append(txs, transaction(nonces[addr], uint64(i)+100, key))
 			nonces[addr]++
 		}
@@ -155,7 +155,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 			}
 			all = len(txs)
-			for key, _ := range nonces {
+			for key := range nonces {
 				log.Println("address: ", key.String())
 			}
 		}

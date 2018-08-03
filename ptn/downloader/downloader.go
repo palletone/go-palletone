@@ -168,7 +168,7 @@ type LightDag interface {
 // BlockDag encapsulates functions required to sync a (full or fast) dag.
 type BlockDag interface {
 	LightDag
-	GetUnit(common.Hash, uint64) *modules.Unit
+	GetUnit(common.Hash) *modules.Unit
 	CurrentUnit() *modules.Unit
 	FastSyncCommitHead(common.Hash) error
 	SaveDag(modules.Unit) (int, error)

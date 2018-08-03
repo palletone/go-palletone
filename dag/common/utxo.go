@@ -18,6 +18,7 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"unsafe"
@@ -86,7 +87,7 @@ func readUtxosByIndex(addr common.Address, asset modules.Asset) (map[modules.Out
 	// step2. get utxo
 	vout := map[modules.OutPoint]*modules.Utxo{}
 	balance := uint64(0)
-	for k, _ := range data {
+	for k := range data {
 		if err := utxoIndex.QueryFields([]byte(k)); err != nil {
 			continue
 		}
@@ -171,23 +172,28 @@ func GetUxto(txin modules.Input) modules.Utxo {
 根据交易信息中的outputs创建UTXO， 根据交易信息中的inputs销毁UTXO
 To create utxo according to outpus in transaction, and destory utxo according to inputs in transaction
 */
-func UpdateUtxo(txHash common.Hash, msg *modules.Message, msgIndex uint32, lockTime uint32) {
+func UpdateUtxo(txHash common.Hash, msg *modules.Message, msgIndex uint32, lockTime uint32) error {
 	var payload interface{}
 
 	payload = msg.Payload
 	payment, ok := payload.(modules.PaymentPayload)
 	if ok == true {
 		// create utxo
-		writeUtxo(txHash, msgIndex, payment.Outputs, lockTime)
+		errs := writeUtxo(txHash, msgIndex, payment.Outputs, lockTime)
 		// destory utxo
 		destoryUtxo(payment.Inputs)
+		if len(errs) > 0 {
+			return errors.New("error occurred on updated utxos, check the log file to find details.")
+		}
 	}
+	return nil
 }
 
 /**
 创建UTXO
 */
-func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, lockTime uint32) {
+func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, lockTime uint32) []error {
+	var errs []error
 	for outIndex, txout := range txouts {
 		utxo := modules.Utxo{
 			TxID:         txHash,
@@ -208,6 +214,7 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 
 		if err := storage.Store(string(outpoint.ToKey()), utxo); err != nil {
 			log.Error("Write utxo", "error", err.Error())
+			errs = append(errs, err)
 		}
 
 		// write to utxo index db
@@ -219,6 +226,7 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 		spk, err := txscript.ExtractPkScriptAddrs(txout.PkScript)
 		if err != nil {
 			log.Error("Extract PkScript Address", "error", err.Error())
+			errs = append(errs, err)
 			continue
 		}
 		addr := spk.Address
@@ -234,8 +242,10 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 		}
 		if err := storage.Store(string(utxoIndex.ToKey()), utxoIndexVal); err != nil {
 			log.Error("Write utxo index error: %s", err.Error())
+			errs = append(errs, err)
 		}
 	}
+	return errs
 }
 
 /**
@@ -245,7 +255,7 @@ destory utxo, delete from UTXO database
 func destoryUtxo(txins []modules.Input) {
 	for _, txin := range txins {
 		outpoint := txin.PreviousOutPoint
-		if outpoint.IsEmpty(){
+		if outpoint.IsEmpty() {
 			continue
 		}
 		// get utxo info

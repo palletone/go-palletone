@@ -32,8 +32,8 @@ const (
 type IDType16 [ID_LENGTH]byte
 
 var (
-	PTNCOIN = IDType16{'p', 't', 'n', ' ', '0', 'f', '5', ' ', ' '}
-	BTCCOIN = IDType16{'b', 't', 'c', '0', ' '}
+	PTNCOIN = IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'}
+	BTCCOIN = IDType16{'b', 't', 'c', 'o', 'i', 'n'}
 )
 
 func (it *IDType16) String() string {
