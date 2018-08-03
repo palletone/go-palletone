@@ -24,11 +24,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
-	"strconv"
-	"strings"
-	"unsafe"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -39,6 +34,9 @@ import (
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"reflect"
+	"strconv"
+	"strings"
 )
 
 func RHashStr(x interface{}) string {
@@ -523,32 +521,11 @@ func savePaymentPayload(txHash common.Hash, msg *modules.Message, msgIndex uint3
 	// if this is a create token transaction, should be return a assetid
 	var pl interface{}
 	pl = msg.Payload
-	payload, ok := pl.(modules.PaymentPayload)
+	_, ok := pl.(modules.PaymentPayload)
 	if ok == false {
 		return false
 	}
-	if len(payload.Inputs) > 0 {
-		if len(payload.Inputs) == 1 && unsafe.Sizeof(payload.Inputs[0].PreviousOutPoint) == 0 {
-			// create new token
-			var assetInfo modules.AssetInfo
-			if err := rlp.DecodeBytes(payload.Inputs[0].Extra, &assetInfo); err != nil {
-				return false
-			}
-			// create asset id
-			assetInfo.AssetID.AssertId = asset.NewAsset()
-			assetInfo.AssetID.UniqueId = assetInfo.AssetID.AssertId
-			data := GetConfig([]byte("ChainID"))
-			chainID := common.BytesToInt(data)
-			if chainID < 0 {
-				return false
-			}
-			assetInfo.AssetID.ChainId = uint64(chainID)
-			// save asset info
-			if err := SaveAssetInfo(&assetInfo); err != nil {
-				log.Error("Save asset info error")
-			}
-		}
-	}
+
 	// save utxo
 	UpdateUtxo(txHash, msg, msgIndex, lockTime)
 	return true

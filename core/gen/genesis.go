@@ -139,6 +139,14 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		DecimalUnit:    genesis.DecimalUnit,
 		OriginalHolder: holder,
 	}
+	// get new asset id
+	assetId := asset2.NewAsset()
+	asset := modules.Asset{
+		AssertId: assetId,
+		UniqueId: assetId,
+		ChainId:  genesis.ChainID,
+	}
+	assetInfo.AssetID = asset
 	extra, err := rlp.EncodeToBytes(assetInfo)
 	if err != nil {
 		log.Error("Get genesis assetinfo bytes error.")
@@ -147,13 +155,6 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	txin := modules.Input{
 		Extra: extra, // save asset info
 	}
-	// get new asset id
-	assetId := asset2.NewAsset()
-	asset := modules.Asset{
-		AssertId: assetId,
-		UniqueId: assetId,
-		ChainId:  genesis.ChainID,
-	}
 	// generate p2pkh bytes
 	publicKey, err := ks.GetPublicKey(holder)
 	if err != nil {
@@ -161,6 +162,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		return nil
 	}
 	pkscript := txscript.PayToPubkeyHashScript(publicKey)
+
 	txout := modules.Output{
 		Value:    genesis.TokenAmount,
 		Asset:    asset,
@@ -212,7 +214,6 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		V:       V,
 	}
 	tx.Txsize = tx.Size()
-	fmt.Println("Tx size:", tx.Txsize)
 	txs := []*modules.Transaction{tx}
 	return txs
 }

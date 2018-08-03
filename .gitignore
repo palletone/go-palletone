@@ -66,3 +66,4 @@ cmd/test/
 palletone\.sublime-project
 
 palletone\.sublime-workspace
+dag/common/utxo.go.orig
