@@ -61,7 +61,7 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 	}
 
 	// 2. 清除CurrentShuffledMediators原来的空间，重新分配空间
-	ms.CurrentShuffledMediators = make([]common.Mediator, aSize, aSize)
+	ms.CurrentShuffledMediators = make([]common.Mediator, 0, aSize)
 
 	// 3. 初始化数据
 	for m, _ := range gp.ActiveMediators {
