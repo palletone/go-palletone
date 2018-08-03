@@ -1,4 +1,4 @@
-/*
+﻿/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,31 +31,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
-
-func KeyToOutpoint(key []byte) modules.OutPoint {
-	// key: [UTXO_PREFIX][TxHash]_[MessageIndex]_[OutIndex]
-	preLen := len(modules.UTXO_PREFIX)
-	sKey := key[preLen:]
-	data := strings.Split(string(sKey), "_")
-	if len(data) != 3 {
-		return modules.OutPoint{}
-	}
-	var vout modules.OutPoint
-
-	if err := rlp.DecodeBytes([]byte(data[0]), &vout.TxHash); err != nil {
-		vout.TxHash = common.Hash{}
-	}
-
-	if err := rlp.DecodeBytes([]byte(data[1]), &vout.MessageIndex); err != nil {
-		vout.MessageIndex = 0
-	}
-
-	if err := rlp.DecodeBytes([]byte(data[2]), &vout.OutIndex); err != nil {
-		vout.OutIndex = 0
-	}
-
-	return vout
-}
 
 /**
 根据用户地址、选择的资产类型、转账金额、手续费返回utxo
@@ -101,8 +76,7 @@ func readUtxosByIndex(addr common.Address, asset modules.Asset) (map[modules.Out
 			log.Error("Decode utxo data :", "error:", err.Error())
 			continue
 		}
-		outpoint := KeyToOutpoint([]byte(k))
-		vout[outpoint] = &utxo
+		vout[utxoIndex.OutPoint] = &utxo
 		balance += utxo.Amount
 	}
 	return vout, balance
@@ -146,7 +120,7 @@ func readUtxosFrAll(addr common.Address, asset modules.Asset) (map[modules.OutPo
 		if strings.Compare(scriptPubKey.Address.String(), addr.String()) != 0 {
 			continue
 		}
-		outpoint := KeyToOutpoint([]byte(k))
+		outpoint := modules.KeyToOutpoint([]byte(k))
 		vout[outpoint] = &utxo
 		balance += utxo.Amount
 	}
@@ -215,6 +189,7 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 		if err := storage.Store(string(outpoint.ToKey()), utxo); err != nil {
 			log.Error("Write utxo", "error", err.Error())
 			errs = append(errs, err)
+			continue
 		}
 
 		// write to utxo index db
@@ -256,6 +231,15 @@ func destoryUtxo(txins []modules.Input) {
 	for _, txin := range txins {
 		outpoint := txin.PreviousOutPoint
 		if outpoint.IsEmpty() {
+			if len(txin.Extra) > 0 {
+				var assetInfo modules.AssetInfo
+				if err := rlp.DecodeBytes(txin.Extra, &assetInfo); err == nil {
+					// save asset info
+					if err := SaveAssetInfo(&assetInfo); err != nil {
+						log.Error("Save asset info error")
+					}
+				}
+			}
 			continue
 		}
 		// get utxo info
@@ -297,15 +281,7 @@ func destoryUtxo(txins []modules.Input) {
 write asset info to leveldb
 */
 func SaveAssetInfo(assetInfo *modules.AssetInfo) error {
-	assetID, err := rlp.EncodeToBytes(assetInfo.AssetID)
-	if err != nil {
-		return err
-	}
-
-	key := append(modules.ASSET_INFO_PREFIX, assetID...)
-
-	err = storage.Store(string(key), *assetInfo)
-	if err != nil {
+	if err := storage.Store(string(assetInfo.Tokey()), *assetInfo); err != nil {
 		return err
 	}
 
@@ -317,13 +293,7 @@ func SaveAssetInfo(assetInfo *modules.AssetInfo) error {
 get asset infomation from leveldb by assetid ( Asset struct type )
 */
 func GetAssetInfo(assetId *modules.Asset) (modules.AssetInfo, error) {
-	assetID, err := rlp.EncodeToBytes(assetId)
-	if err != nil {
-		return modules.AssetInfo{}, err
-	}
-
-	key := append(modules.ASSET_INFO_PREFIX, assetID...)
-
+	key := append(modules.ASSET_INFO_PREFIX, assetId.AssertId.String()...)
 	data, err := storage.Get(key)
 	if err != nil {
 		return modules.AssetInfo{}, err
@@ -438,4 +408,92 @@ func GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Ut
 		total += utxo.Amount
 	}
 	return utxos, total
+}
+
+/**
+获得某个账户下的token名称和assetid信息
+To get someone account's list of tokens and those assetids
+*/
+func GetAccountTokens(addr common.Address) (map[modules.Asset]*modules.AccountToken, error) {
+	if dagconfig.DefaultConfig.UtxoIndex {
+		return getAccountTokensByIndex(addr)
+	} else {
+		return getAccountTokensWhole(addr)
+	}
+}
+
+/**
+通过索引数据库获得用户的token信息
+To get account's token info by utxo index db
+*/
+func getAccountTokensByIndex(addr common.Address) (map[modules.Asset]*modules.AccountToken, error) {
+	tokens := map[modules.Asset]*modules.AccountToken{}
+	utxoIndex := modules.UtxoIndex{AccountAddr: addr}
+	data := storage.GetPrefix(utxoIndex.AccountKey())
+	if data == nil || len(data) == 0 {
+		return nil, nil
+	}
+	for k, v := range data {
+		if err := utxoIndex.QueryFields([]byte(k)); err != nil {
+			return nil, fmt.Errorf("Get account tokens error: data key is invalid")
+		}
+		var utxoIndexVal modules.UtxoIndexValue
+		if err := rlp.DecodeBytes([]byte(v), &utxoIndexVal); err != nil {
+			return nil, fmt.Errorf("Get account tokens error: data value is invalid")
+		}
+		val, ok := tokens[utxoIndex.Asset]
+		if ok {
+			val.Balance += utxoIndexVal.Amount
+		} else {
+			// get asset info
+			assetInfo, err := GetAssetInfo(&utxoIndex.Asset)
+			if err != nil {
+				return nil, fmt.Errorf("Get acount tokens error: asset info does not exist")
+			}
+			tokens[utxoIndex.Asset] = &modules.AccountToken{
+				Alias:   assetInfo.Alias,
+				AssetID: utxoIndex.Asset,
+				Balance: utxoIndexVal.Amount,
+			}
+		}
+	}
+	return tokens, nil
+}
+
+/**
+遍历全局utxo，获取账户token信息
+To get account token info by query the whole utxo table
+*/
+func getAccountTokensWhole(addr common.Address) (map[modules.Asset]*modules.AccountToken, error) {
+	tokens := map[modules.Asset]*modules.AccountToken{}
+	utxoIndex := modules.UtxoIndex{AccountAddr: addr}
+	data := storage.GetPrefix(utxoIndex.AccountKey())
+	if data == nil || len(data) == 0 {
+		return nil, nil
+	}
+	for k, v := range data {
+		if err := utxoIndex.QueryFields([]byte(k)); err != nil {
+			return nil, fmt.Errorf("Get account tokens error: data key is invalid")
+		}
+		var utxoIndexVal modules.UtxoIndexValue
+		if err := rlp.DecodeBytes([]byte(v), &utxoIndexVal); err != nil {
+			return nil, fmt.Errorf("Get account tokens error: data value is invalid")
+		}
+		val, ok := tokens[utxoIndex.Asset]
+		if ok {
+			val.Balance += utxoIndexVal.Amount
+		} else {
+			// get asset info
+			assetInfo, err := GetAssetInfo(&utxoIndex.Asset)
+			if err != nil {
+				return nil, fmt.Errorf("Get acount tokens error: asset info does not exist")
+			}
+			tokens[utxoIndex.Asset] = &modules.AccountToken{
+				Alias:   assetInfo.Alias,
+				AssetID: utxoIndex.Asset,
+				Balance: utxoIndexVal.Amount,
+			}
+		}
+	}
+	return tokens, nil
 }

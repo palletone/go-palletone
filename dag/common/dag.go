@@ -134,7 +134,7 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 // GetBlockHashesFromHash retrieves a number of block hashes starting at a given
 // hash, fetching towards the genesis block.
 func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash {
-	//return bc.hc.GetBlockHashesFromHash(hash, max)
+	//GetUnit()
 	return []common.Hash{}
 }
 

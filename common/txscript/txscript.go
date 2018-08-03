@@ -2,8 +2,8 @@ package txscript
 
 import (
 	"github.com/palletone/go-palletone/common"
-	"strings"
 	"github.com/palletone/go-palletone/common/crypto"
+	"strings"
 )
 
 /**
@@ -21,7 +21,7 @@ scriptPubKey could be like
 
 const (
 	T_P2PKH = "pubkeyhash"
-	T_P2SH = "scripthash"
+	T_P2SH  = "scripthash"
 )
 
 const (
@@ -299,16 +299,15 @@ type ScriptPubKey struct {
 从P2SH（多签）或者P2PKH（单签）
 P2PKH Example: OP_DUP OP_HASH160 <hash> OP_EQUALVERIFY OP_CHECKSIG
 P2SH Example: OP_HASH160 <scripthash> OP_EQUAL
- */
+*/
 func ExtractPkScriptAddrs(pkScript []byte) (*ScriptPubKey, error) {
 	spk := ScriptPubKey{}
-	if len(pkScript)==25 {
+	if len(pkScript) == 70 {
 		spk.Type = T_P2PKH
-		pubkeyBytes := pkScript[3:23]
+		pubkeyBytes := pkScript[3:68]
 		pubkey := crypto.ToECDSAPub(pubkeyBytes)
 		spk.Address = crypto.PubkeyToAddress(*pubkey)
 	}
-
 
 	//reg := regexp.MustCompile(`OP_DUP OP_HASH160 ([\w]+) OP_EQUALVERIFY OP_CHECKSIG`)
 	//shReq := regexp.MustCompile(`OP_HASH160 ([\w]+) OP_EQUAL`)
@@ -335,21 +334,24 @@ func ExtractPkScriptAddrs(pkScript []byte) (*ScriptPubKey, error) {
 
 /**
 生成P2PKH脚本
- */
+*/
 func PayToPubkeyHashScript(pubkey []byte) []byte {
 	// copy data
-	pkScript := make([]byte, 5+len(pubkey))
+	lenth := 5 + len(pubkey)
+	pkScript := make([]byte, lenth)
 	pkScript[0] = OP_DUP
 	pkScript[1] = OP_HASH160
 	pkScript[2] = OP_DATA_20
 	copy(pkScript[3:], pubkey)
-	pkScript[23] = OP_EQUALVERIFY
-	pkScript[24] = OP_CHECKSIG
+	pkScript[lenth-2] = OP_EQUALVERIFY
+	pkScript[lenth-1] = OP_CHECKSIG
 	return pkScript
 }
 
-func CheckP2PKHAddress(addr common.Address)  bool{
+func CheckP2PKHAddress(addr common.Address) bool {
 	prefix := string(addr[:2])
-	if strings.Compare(prefix,"P1")!=0 {return false}
+	if strings.Compare(prefix, "P1") != 0 {
+		return false
+	}
 	return true
 }
