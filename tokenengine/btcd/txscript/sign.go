@@ -166,7 +166,7 @@ func sign(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 	case PubKeyTy:
 		// look up key for address
                 // fmt.Println("sign       169  169 ------------")
-                fmt.Println(addresses)
+                //fmt.Println(addresses)
 		key , _, err := kdb.GetKey(addresses[0])
 		if err != nil {
 			return nil, class, nil, 0, err

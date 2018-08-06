@@ -677,7 +677,7 @@ func accountSignTx(ctx *cli.Context) error {
 	if signtxout == nil {
 		utils.Fatalf("Invalid signature")
 	}
-	signtx := signtxout.(*btcjson.SignRawTransactionResult)
+	signtx := signtxout.(btcjson.SignRawTransactionResult)
 	if err != nil {
 		utils.Fatalf("signtx error:%s", err)
 	}
