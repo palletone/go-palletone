@@ -161,7 +161,7 @@ func sign(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 	if err != nil {
 		return nil, NonStandardTy, nil, 0, err
 	}
-        fmt.Println(addresses)
+        //fmt.Println(addresses)
 	switch class {
 	case PubKeyTy:
 		// look up key for address

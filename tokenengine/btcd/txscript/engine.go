@@ -532,7 +532,8 @@ func (vm *Engine) Execute() (err error) {
 		if err != nil {
 			log.Error(fmt.Sprintf("stepping (%v)", err))
 		}
-		log.Trace(fmt.Sprintf("stepping %v", dis))
+                dis = dis
+		//log.Trace(fmt.Sprintf("stepping %v", dis))
 
 		done, err = vm.Step()
 		if err != nil {
@@ -548,8 +549,9 @@ func (vm *Engine) Execute() (err error) {
 		if vm.astack.Depth() != 0 {
 			astr = "AltStack:\n" + vm.astack.String()
 		}
-
-		log.Trace(dstr + astr)
+                dstr= dstr 
+                astr = astr
+		//log.Trace(dstr + astr)
 	}
 
 	return vm.CheckErrorCondition(true)

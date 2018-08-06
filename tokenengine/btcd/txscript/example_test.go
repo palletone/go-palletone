@@ -19,6 +19,7 @@ import (
 // This example demonstrates creating a script which pays to a bitcoin address.
 // It also prints the created script hex and uses the DisasmString function to
 // display the disassembled script.
+/*
 func ExamplePayToAddrScript() {
 	// Parse the address to send the coins to into a btcutil.Address
 	// which is useful to ensure the accuracy of the address and determine
@@ -51,7 +52,7 @@ func ExamplePayToAddrScript() {
 	// Output:
 	// Script Hex: 76a914128004ff2fcaf13b2b91eb654b1dc2b674f7ec6188ac
 	// Script Disassembly: OP_DUP OP_HASH160 128004ff2fcaf13b2b91eb654b1dc2b674f7ec61 OP_EQUALVERIFY OP_CHECKSIG
-}
+}*/
 
 // This example demonstrates extracting information from a standard public key
 // script.
