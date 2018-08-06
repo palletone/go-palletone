@@ -752,7 +752,7 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 
 		select {
 		case headerProcCh <- process:
-			log.Trace("Pre-scheduled new headers", "peer", id, "count", len(process), "from", process[0].Number)
+			log.Trace("Pre-scheduled new headers", "peer", id, "count", len(process), "from", process[0].Number.Index)
 			q.headerProced += len(process)
 		default:
 		}
