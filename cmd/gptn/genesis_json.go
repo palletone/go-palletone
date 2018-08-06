@@ -155,6 +155,7 @@ func createExampleGenesis(account string) *core.Genesis {
 	initParams := core.NewChainParams()
 
 	return &core.Genesis{
+		Alias:                  core.DefaultAlias,
 		Version:                configure.Version,
 		TokenAmount:            core.DefaultTokenAmount,
 		TokenDecimal:           core.DefaultTokenDecimal,
