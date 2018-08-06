@@ -33,6 +33,7 @@ var (
 	TRANSACTION_PREFIX               = []byte("tx")
 	TRANSACTIONS_PREFIX              = []byte("ts")
 	CONTRACT_STATE_PREFIX            = []byte("cs")
+	CONTRACT_TPL                     = []byte("ct")
 	ALL_UNITS_PREFIX                 = []byte("au")
 	UNITAUTHORS_PREFIX               = []byte("ua")
 	HASH_TREE_BALLS_PREFIX           = []byte("ht")
