@@ -345,34 +345,34 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		return fmt.Errorf("Unit is null")
 	}
-	// check unit signature, should be compare to mediator list
+	// step1. check unit signature, should be compare to mediator list
 	if err := checkUnitSignature(unit.UnitHeader, isGenesis); err != nil {
 		return err
 	}
 
-	// check unit size
+	// step2. check unit size
 	if unit.UnitSize != unit.Size() {
 		return modules.ErrUnit(-1)
 	}
-	// check transactions in unit
+	// step3. check transactions in unit
 	totalFee, err := checkTransactions(&unit.Txs, isGenesis)
 	if err != nil {
 		return err
 	}
-	// todo check coin base fee
+	// step4. check coin base fee
 	if totalFee <= 0 {
 	}
-	// save unit header
+	// step5. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		return modules.ErrUnit(-3)
 	}
-	// save unit hash and chain index relation
+	// step6. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
 	if err := storage.SaveHashNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
 		return fmt.Errorf("Save unit hash and number error")
 	}
-	// traverse transactions and save them
+	// step7. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
 		// traverse messages
@@ -384,6 +384,9 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 					return fmt.Errorf("Save payment payload error.")
 				}
 			case modules.APP_CONTRACT_TPL:
+				if ok := saveContractTpl(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
+					return fmt.Errorf("Save contract template error.")
+				}
 			case modules.APP_CONTRACT_DEPLOY:
 				if ok := saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
 					return fmt.Errorf("Save contract init payload error.")
@@ -401,13 +404,13 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 				return fmt.Errorf("Message type is not supported now: %s", msg.App)
 			}
 		}
-		// save transaction
+		// step8. save transaction
 		if err = storage.SaveTransaction(tx); err != nil {
 			return err
 		}
 	}
 
-	// save unit body, the value only save txs' hash set, and the key is merkle root
+	// step9. save unit body, the value only save txs' hash set, and the key is merkle root
 	if err = storage.SaveBody(unit.UnitHash, txHashSet); err != nil {
 		return err
 	}
@@ -583,14 +586,61 @@ To save contract init state
 func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
-	_, ok := pl.(modules.ContractDeployPayload)
+	payload, ok := pl.(modules.ContractDeployPayload)
 	if ok == false {
 		return false
 	}
-	/**
-	涉及到合约验证和合约ID生成的问题
-	*/
 
+	// save contract state
+	// key: [CONTRACT_STATE_PREFIX][contract id]_[field name]_[state version]
+	for k, v := range payload.WriteSet {
+		version := modules.StateVersion{
+			Height:  height,
+			TxIndex: txIndex,
+		}
+		key := fmt.Sprintf("%s%s_%s_%s",
+			storage.CONTRACT_STATE_PREFIX,
+			payload.ContractId,
+			k,
+			version.String())
+		if err := storage.Store(key, v); err != nil {
+			log.Error("Save payload key", "error", err.Error())
+			continue
+		}
+	}
+
+	return true
+}
+
+/**
+保存合约模板代码
+To save contract template code
+*/
+func saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+	var pl interface{}
+	pl = msg.Payload
+	payload, ok := pl.(modules.ContractTplPayload)
+	if ok == false {
+		return false
+	}
+
+	// step1. generate version for every contract template
+	version := modules.StateVersion{
+		Height:  height,
+		TxIndex: txIndex,
+	}
+
+	// step2. save contract template bytecode data
+	// key:[CONTRACT_TPL][Template id]_[template version]
+	key := fmt.Sprintf("%s%s_%s",
+		storage.CONTRACT_TPL,
+		payload.TemplateId.String(),
+		version.String())
+
+	if err := storage.Store(key, payload.Bytecode); err != nil {
+		log.Error("Save contract template", "error", err.Error())
+		return false
+	}
 	return true
 }
 

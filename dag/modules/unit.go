@@ -261,6 +261,7 @@ type ContractTplPayload struct {
 // App: contract_deploy
 type ContractDeployPayload struct {
 	TemplateId common.Hash              `json:"template_id"` // contract template id
+	ContractId string                   `json:"contract_id"` // contract id
 	Config     []byte                   `json:"config"`      // configure xml file of contract instance parameters
 	ReadSet    map[string]*StateVersion `json:"read_set"`    // the set data of read, and value could be any type
 	WriteSet   map[string]interface{}   `json:"write_set"`   // the set data of write, and value could be any type
