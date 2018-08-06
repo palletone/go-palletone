@@ -208,7 +208,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	detail["Hash"] = unit.UnitHash.Hex()
 
 	// 3. 异步向区块链网络广播验证单元
-	log.Info("Asynchronously broadcast the new signed verified unit to p2p networks...")
+	go log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
 	//	go mp.ptn.EventMux().Post()
 
 	return Produced, detail
