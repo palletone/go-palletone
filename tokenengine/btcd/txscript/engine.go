@@ -423,7 +423,9 @@ func (vm *Engine) CheckErrorCondition(finalScript bool) error {
 		// Log interesting data.
 		s0, _ := vm.DisasmScript(0)
 		s1, _ := vm.DisasmScript(1)
-		log.Trace(fmt.Sprintf("scripts failed: script0: %s\n script1: %s", s0, s1))
+                s0 = s0
+                s1 = s1
+		//log.Trace(fmt.Sprintf("scripts failed: script0: %s\n script1: %s", s0, s1))
 
 		return scriptError(ErrEvalFalse,
 			"false stack entry at end of script execution")
