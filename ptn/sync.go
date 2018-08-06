@@ -196,11 +196,11 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
 	if err := pm.downloader.Synchronise(peer.id, pHead, index, mode); err != nil {
-		log.Debug("ptn sync downloader.", "Synchronise err:", err)
+		log.Info("ptn sync downloader.", "Synchronise err:", err)
 		return
 	}
 	if atomic.LoadUint32(&pm.fastSync) == 1 {
-		log.Debug("Fast sync complete, auto disabling")
+		log.Info("Fast sync complete, auto disabling")
 		atomic.StoreUint32(&pm.fastSync, 0)
 	}
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done

@@ -272,7 +272,7 @@ func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *p
 func (pm *ProtocolManager) handle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-		log.Debug("ProtocolManager handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
+		log.Info("ProtocolManager handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
 		return p2p.DiscTooManyPeers
 	}
 	log.Debug("PalletOne peer connected", "name", p.Name())

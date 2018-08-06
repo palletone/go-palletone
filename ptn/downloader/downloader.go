@@ -408,7 +408,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		return errTooOld
 	}
 
-	log.Debug("Synchronising with the network", "peer", p.id, "eth", p.version, "head", hash, "index", index, "mode", d.mode)
+	log.Info("Synchronising with the network", "peer", p.id, "eth", p.version, "head", hash, "index", index, "mode", d.mode)
 	defer func(start time.Time) {
 		log.Debug("Synchronisation terminated", "elapsed", time.Since(start))
 	}(time.Now())
@@ -416,7 +416,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	// Look up the sync boundaries: the common ancestor and the target block
 	latest, err := d.fetchHeight(p)
 	if err != nil {
-		log.Debug("fetchHeight", "err:", err)
+		log.Info("fetchHeight", "err:", err)
 		return err
 	}
 	height := latest.Number.Index
@@ -576,7 +576,6 @@ func (d *Downloader) fetchHeight(p *peerConnection) (*modules.Header, error) {
 			headers := packet.(*headerPack).headers
 			if len(headers) != 1 {
 				log.Debug("Multiple headers for single request", "headers", len(headers))
-				log.Debug("Multiple headers for single request", "headers", len(headers))
 				return nil, errBadPeer
 			}
 			head := headers[0]
@@ -585,7 +584,6 @@ func (d *Downloader) fetchHeight(p *peerConnection) (*modules.Header, error) {
 			return head, nil
 
 		case <-timeout:
-			log.Debug("Waiting for head header timed out", "elapsed", ttl)
 			log.Debug("Waiting for head header timed out", "elapsed", ttl)
 			return nil, errTimeout
 
@@ -612,7 +610,7 @@ func (d *Downloader) fetchHeight(p *peerConnection) (*modules.Header, error) {
 func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64) error {
 	p.log.Debug("Directing header downloads", "origin", from)
 	defer p.log.Debug("Header download terminated")
-	log.Debug("Downloader->fetchHeaders", "peerConnection.id:", p.id, "from:", from, "pivot:", pivot)
+	//log.Info("Downloader->fetchHeaders", "peerConnection.id:", p.id, "from:", from, "pivot:", pivot)
 
 	// Create a timeout timer, and the associated header fetcher
 	// 默认skeleton为true，表示先获取骨架（间隔的headers），然后再从其他节点填充骨架间的headers
