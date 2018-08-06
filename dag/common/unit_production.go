@@ -23,10 +23,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common"
 )
 
 // GenerateVerifiedUnit, generate unit
@@ -37,12 +37,15 @@ func GenerateUnit(dag *Dag, when time.Time, producer common.Mediator, ks *keysto
 	// 1. 判断是否满足生产的若干条件
 
 	// 2. 生产验证单元，添加交易集、时间戳、签名
-	log.Info("Generating Verified Unit...")
+	log.Debug("Generating Verified Unit...")
 
 	units, _ := CreateUnit(&producer.Address)
 	pendingUnit := units[0]
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
 	pendingUnit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
+	pendingUnit.UnitHeader.ParentsHash =
+		append(pendingUnit.UnitHeader.ParentsHash, dgp.LastVerifiedUnitHash)
+	pendingUnit.UnitHash = pendingUnit.Hash()
 
 	_, err := GetUnitWithSig(&pendingUnit, ks, producer.Address)
 	if err != nil {
@@ -70,7 +73,7 @@ func PushUnit(dag *Dag, newUnit *modules.Unit) bool {
 	ApplyUnit(dag, newUnit)
 
 	// 4. 将验证单元添加到本地DB
-	log.Info("storing the new verified unit to database...")
+	log.Debug("storing the new verified unit to database...")
 	go StoreUnit(newUnit)
 
 	return false
@@ -83,12 +86,12 @@ func ApplyUnit(dag *Dag, nextUnit *modules.Unit) {
 	// 4. 更新Unit中交易的状态
 
 	// 5. 更新全局动态属性值
-	log.Info("Updating global dynamic property...")
+	log.Debug("Updating global dynamic property...")
 	UpdateGlobalDynProp(gp, dgp, nextUnit)
 
 	// 5. 判断是否到了维护周期，并维护
 
 	// 6. 洗牌
-	log.Info("shuffling the scheduling order of mediator...")
+	log.Debug("shuffling the scheduling order of mediator...")
 	dag.MediatorSchl.UpdateMediatorSchedule(gp, dgp)
 }

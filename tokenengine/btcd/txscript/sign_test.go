@@ -11,7 +11,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
 	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 	"github.com/palletone/go-palletone/tokenengine/btcutil"
 )
@@ -83,7 +83,7 @@ func signAndCheck(msg string, tx *wire.MsgTx, idx int, inputAmt int64, pkScript 
         //fmt.Println("signAndCheck-------8383838838383838")
 	return checkScripts(msg, tx, idx, inputAmt, sigScript, pkScript)
 }
-
+/*
 func TestSignTxOutput(t *testing.T) {
 	t.Parallel()
         //var netID byte
@@ -1383,7 +1383,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 		}
 	}
-}
+}*/
 
 type tstInput struct {
 	txout              *wire.TxOut

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
+	"strconv"
 	"strings"
 )
 
@@ -86,6 +87,14 @@ func (utxoIndex *UtxoIndex) AssetKey() []byte {
 	return []byte(key)
 }
 
+func (utxoIndex *UtxoIndex) AccountKey() []byte {
+	key := fmt.Sprintf("%s%s",
+		UTXO_INDEX_PREFIX,
+		utxoIndex.AccountAddr.String())
+	fmt.Println("Account prefix:", key)
+	return []byte(key)
+}
+
 func (utxoIndex *UtxoIndex) QueryFields(key []byte) error {
 	preLen := len(UTXO_INDEX_PREFIX)
 	s := string(key[preLen:])
@@ -108,12 +117,12 @@ func (utxoIndex *UtxoIndex) QueryFields(key []byte) error {
 }
 
 func (utxoIndex *UtxoIndex) ToKey() []byte {
-	s := fmt.Sprintf("%s%s_%s_%s",
+	key := fmt.Sprintf("%s%s_%s_%s",
 		UTXO_INDEX_PREFIX,
 		utxoIndex.AccountAddr.String(),
 		utxoIndex.Asset.String(),
 		utxoIndex.OutPoint.String())
-	return []byte(s)
+	return []byte(key)
 }
 
 // utxo key
@@ -156,16 +165,41 @@ func (outpoint *OutPoint) Bytes() []byte {
 	return data
 }
 
-func (outpoint *OutPoint) IsEmpty() bool{
+func (outpoint *OutPoint) IsEmpty() bool {
 	emptyHash := common.Hash{}
-	for i:=0;i<cap(emptyHash);i++{
-		emptyHash[i]=0
+	for i := 0; i < cap(emptyHash); i++ {
+		emptyHash[i] = 0
 	}
-	if len(outpoint.TxHash)==0 ||
-		strings.Compare(outpoint.TxHash.String(), emptyHash.String())==0 {
-			return true
+	if len(outpoint.TxHash) == 0 ||
+		strings.Compare(outpoint.TxHash.String(), emptyHash.String()) == 0 {
+		return true
 	}
 	return false
+}
+
+func KeyToOutpoint(key []byte) OutPoint {
+	// key: [UTXO_PREFIX][TxHash]_[MessageIndex]_[OutIndex]
+	preLen := len(UTXO_PREFIX)
+	sKey := key[preLen:]
+	data := strings.Split(string(sKey), "_")
+	if len(data) != 3 {
+		return OutPoint{}
+	}
+	var vout OutPoint
+
+	fmt.Println("+++++ txhash=", data[0])
+	vout.TxHash.SetString(data[0])
+	i, err := strconv.Atoi(data[1])
+	if err == nil {
+		vout.MessageIndex = uint32(i)
+	}
+
+	i, err = strconv.Atoi(data[2])
+	if err == nil {
+		vout.OutIndex = uint32(i)
+	}
+
+	return vout
 }
 
 type Input struct {
@@ -195,4 +229,27 @@ type AssetInfo struct {
 	Decimal        uint32         `json:"deciaml"`         // asset accuracy
 	DecimalUnit    string         `json:"unit"`            // asset unit
 	OriginalHolder common.Address `json:"original_holder"` // holder address when creating the asset
+}
+
+func (assetInfo *AssetInfo) Tokey() []byte {
+	key := fmt.Sprintf("%s%s",
+		ASSET_INFO_PREFIX,
+		assetInfo.AssetID.AssertId.String())
+	return []byte(key)
+}
+
+func (assetInfo *AssetInfo) Print() {
+	fmt.Println("Asset alias", assetInfo.Alias)
+	fmt.Println("Asset Assetid", assetInfo.AssetID.AssertId)
+	fmt.Println("Asset UniqueId", assetInfo.AssetID.UniqueId)
+	fmt.Println("Asset ChainId", assetInfo.AssetID.ChainId)
+	fmt.Println("Asset Decimal", assetInfo.Decimal)
+	fmt.Println("Asset DecimalUnit", assetInfo.DecimalUnit)
+	fmt.Println("Asset OriginalHolder", assetInfo.OriginalHolder.String())
+}
+
+type AccountToken struct {
+	Alias   string
+	AssetID Asset
+	Balance uint64
 }

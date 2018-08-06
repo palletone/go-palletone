@@ -112,7 +112,7 @@ func TestCustomGenesis(t *testing.T) {
 
 func TestGenesisGet(t *testing.T) {
 	// get genesis unit by index
-	unit := common.GetGenesisUnit(0)
+	unit, _ := common.GetGenesisUnit(0)
 	fmt.Println("Genesis unit:", unit)
 	// get account balance
 	// get all global configures

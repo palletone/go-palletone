@@ -22,8 +22,8 @@ package modules
 import (
 	"time"
 
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 // Mediator调度顺序结构体
@@ -32,7 +32,7 @@ type MediatorSchedule struct {
 }
 
 func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorSchedule {
-	log.Info("initialize mediator schedule...")
+	log.Debug("initialize mediator schedule...")
 	ms := NewMediatorSchl()
 
 	// Create witness scheduler
@@ -61,7 +61,7 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 	}
 
 	// 2. 清除CurrentShuffledMediators原来的空间，重新分配空间
-	ms.CurrentShuffledMediators = make([]common.Mediator, aSize, aSize)
+	ms.CurrentShuffledMediators = make([]common.Mediator, 0, aSize)
 
 	// 3. 初始化数据
 	for m, _ := range gp.ActiveMediators {

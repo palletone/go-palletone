@@ -24,11 +24,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
-	"strconv"
-	"strings"
-	"unsafe"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -39,6 +34,9 @@ import (
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"reflect"
+	"strconv"
+	"strings"
 )
 
 func RHashStr(x interface{}) string {
@@ -241,40 +239,34 @@ func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
 从leveldb中查询GenesisUnit信息
 To get genesis unit info from leveldb
 */
-func GetGenesisUnit(index uint64) *modules.Unit {
+func GetGenesisUnit(index uint64) (*modules.Unit, error) {
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
 	data := storage.GetPrefix([]byte(key))
 	if len(data) > 1 {
-		log.Info("Get genesis unit error:multiple genesis unit")
-		return nil
+		return nil, fmt.Errorf("multiple genesis unit")
 	} else if len(data) <= 0 {
-		return nil
+		return nil, nil
 	}
 	for k, v := range data {
 		sk := string(k[len(storage.HEADER_PREFIX):])
 		// get index
 		skArr := strings.Split(sk, "_")
 		if len(skArr) != 3 {
-			log.Error("Get genesis unit index and hash", "error", "split error")
-			return nil
+			return nil, fmt.Errorf("split genesis key error")
 		}
 		// get unit hash
 		uHash := common.Hash{}
 		uHash.SetString(skArr[2])
-		fmt.Println("Genesis Unit header hash:", []byte(k))
 		// get unit header
-		fmt.Println("Unit header bytes:", []byte(v))
 		var uHeader modules.Header
 		if err := rlp.DecodeBytes([]byte(v), &uHeader); err != nil {
-			log.Error("Get genesis unit header", "error", err.Error())
-			return nil
+			return nil, fmt.Errorf("Get genesis unit header:%s", err.Error())
 		}
 		// get transaction list
-		txs, err := GetUnitTransactions(uHeader.TxRoot)
+		txs, err := GetUnitTransactions(uHash)
 		if err != nil {
-			log.Error("Get genesis unit transactions", "error", err.Error())
-			return nil
+			return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
 		}
 		// generate unit
 		unit := modules.Unit{
@@ -283,9 +275,9 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 			Txs:        txs,
 		}
 		unit.UnitSize = unit.Size()
-		return &unit
+		return &unit, nil
 	}
-	return nil
+	return nil, nil
 }
 
 /**
@@ -293,17 +285,17 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 To get genesis unit height
 */
 func GenesisHeight() modules.ChainIndex {
-	unit := GetGenesisUnit(0)
-	if unit == nil {
+	unit, err := GetGenesisUnit(0)
+	if unit == nil || err != nil {
 		return modules.ChainIndex{}
 	}
 	return unit.UnitHeader.Number
 }
 
-func GetUnitTransactions(root common.Hash) (modules.Transactions, error) {
+func GetUnitTransactions(unitHash common.Hash) (modules.Transactions, error) {
 	txs := modules.Transactions{}
 	// get body data: transaction list
-	txHashList, err := storage.GetBody(root)
+	txHashList, err := storage.GetBody(unitHash)
 	if err != nil {
 		return nil, err
 	}
@@ -523,32 +515,11 @@ func savePaymentPayload(txHash common.Hash, msg *modules.Message, msgIndex uint3
 	// if this is a create token transaction, should be return a assetid
 	var pl interface{}
 	pl = msg.Payload
-	payload, ok := pl.(modules.PaymentPayload)
+	_, ok := pl.(modules.PaymentPayload)
 	if ok == false {
 		return false
 	}
-	if len(payload.Inputs) > 0 {
-		if len(payload.Inputs) == 1 && unsafe.Sizeof(payload.Inputs[0].PreviousOutPoint) == 0 {
-			// create new token
-			var assetInfo modules.AssetInfo
-			if err := rlp.DecodeBytes(payload.Inputs[0].Extra, &assetInfo); err != nil {
-				return false
-			}
-			// create asset id
-			assetInfo.AssetID.AssertId = asset.NewAsset()
-			assetInfo.AssetID.UniqueId = assetInfo.AssetID.AssertId
-			data := GetConfig([]byte("ChainID"))
-			chainID := common.BytesToInt(data)
-			if chainID < 0 {
-				return false
-			}
-			assetInfo.AssetID.ChainId = uint64(chainID)
-			// save asset info
-			if err := SaveAssetInfo(&assetInfo); err != nil {
-				log.Error("Save asset info error")
-			}
-		}
-	}
+
 	// save utxo
 	UpdateUtxo(txHash, msg, msgIndex, lockTime)
 	return true

@@ -20,12 +20,13 @@ import (
 	"fmt"
 	//"strconv"
 	// "io/ioutil"
-        "bytes"
-        "strings"
-        "encoding/hex"
+	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"gopkg.in/urfave/cli.v1"
+	"strings"
 
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
@@ -36,11 +37,10 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
-        "github.com/palletone/go-palletone/tokenengine/btcutil"
+	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
-	"github.com/btcsuite/btcutil/base58"
-        "github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
+	"github.com/palletone/go-palletone/tokenengine/btcutil"
 	//"github.com/btcsuite/btcd/btcec"
 )
 
@@ -533,6 +533,7 @@ type RawTransactionGenParams struct {
 type RawTransactionGenResult struct {
 	Rawtx string `json:"rawtx"`
 }
+
 func accountCreateTx(ctx *cli.Context) error {
 	if len(ctx.Args()) == 0 {
 		utils.Fatalf("No accounts specified to update")
@@ -566,7 +567,7 @@ func accountCreateTx(ctx *cli.Context) error {
 	if len(amounts) == 0 {
 		return nil
 	}
-	arg := btcjson.NewCreateRawTransactionCmd(inputs, amounts,  &rawTransactionGenParams.Locktime)
+	arg := btcjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
 	tx, err := ethapi.CreateRawTransaction(arg)
 	if err != nil {
 		utils.Fatalf("Verfiy error:%s", err)
@@ -588,6 +589,7 @@ type SignTransactionResult struct {
 	TransactionHex string `json:"transactionhex"`
 	Complete       bool   `json:"complete"`
 }
+
 func accountSignTx(ctx *cli.Context) error {
 	if len(ctx.Args()) == 0 {
 		utils.Fatalf("No accounts specified to update")
@@ -633,7 +635,7 @@ func accountSignTx(ctx *cli.Context) error {
 	if len(keys) == 0 {
 		return nil
 	}
-        realNet := &chaincfg.MainNetParams
+	realNet := &chaincfg.MainNetParams
 	//sign the UTXO hash, must know RedeemHex which contains in RawTxInput
 	var rawInputs []btcjson.RawTxInput
 	for {
@@ -675,7 +677,7 @@ func accountSignTx(ctx *cli.Context) error {
 	if signtxout == nil {
 		utils.Fatalf("Invalid signature")
 	}
-	signtx := signtxout.(*btcjson.SignRawTransactionResult)
+	signtx := signtxout.(btcjson.SignRawTransactionResult)
 	if err != nil {
 		utils.Fatalf("signtx error:%s", err)
 	}

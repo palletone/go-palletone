@@ -419,7 +419,7 @@ func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 	// check transactions merkle root
 	txs := CopyBody(transactions)
 	root := core.DeriveSha(txs)
-	if strings.Compare(root.String(), b.UnitHeader.TxRoot.String())!=0 {
+	if strings.Compare(root.String(), b.UnitHeader.TxRoot.String()) != 0 {
 		return nil
 	}
 	// set unit body
@@ -430,7 +430,7 @@ func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 func (u *Unit) ContainsParent(pHash common.Hash) bool {
 	ps := pHash.String()
 	for _, hash := range u.UnitHeader.ParentsHash {
-		if strings.Compare(hash.String(), ps)==0 {
+		if strings.Compare(hash.String(), ps) == 0 {
 			return true
 		}
 	}

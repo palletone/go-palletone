@@ -36,7 +36,7 @@ type GlobalProperty struct {
 type DynamicGlobalProperty struct {
 	LastVerifiedUnitNum uint64 // 最近的验证单元编号(数量)
 
-	//	VerifiedUnitHash string // 最近的验证单元hash
+	LastVerifiedUnitHash common.Hash // 最近的验证单元hash
 
 	//	LastVerifiedUnit *v.VerifiedUnit	// 最近生产的验证单元
 
@@ -66,21 +66,22 @@ func NewGlobalProp() *GlobalProperty {
 
 func NewDynGlobalProp() *DynamicGlobalProperty {
 	return &DynamicGlobalProperty{
-		LastVerifiedUnitNum: 0,
-		CurrentASlot:        0,
+		LastVerifiedUnitNum:  0,
+		LastVerifiedUnitHash: common.Hash{},
+		CurrentASlot:         0,
 	}
 }
 
 func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
-	log.Info("initialize global property...")
+	log.Debug("initialize global property...")
 
 	// Create global properties
 	gp := NewGlobalProp()
 
-	log.Info("initialize chain parameters...")
+	log.Debug("initialize chain parameters...")
 	gp.ChainParameters = genesis.InitialParameters
 
-	log.Info("Set active mediators...")
+	log.Debug("Set active mediators...")
 	// Set active mediators
 	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
 		ad := common.StringToAddress(genesis.InitialMediatorCandidates[i])
@@ -93,12 +94,13 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	return gp
 }
 
-func InitDynGlobalProp(genesis *core.Genesis) *DynamicGlobalProperty {
-	log.Info("initialize dynamic global property...")
+func InitDynGlobalProp(genesis *core.Genesis, genesisUnitHash common.Hash) *DynamicGlobalProperty {
+	log.Debug("initialize dynamic global property...")
 
 	// Create dynamic global properties
 	dgp := NewDynGlobalProp()
 	dgp.LastVerifiedUnitTime = genesis.InitialTimestamp
+	dgp.LastVerifiedUnitHash = genesisUnitHash
 
 	return dgp
 }

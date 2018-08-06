@@ -19,14 +19,14 @@
 
 package core
 
-const (
-	DefaultAlias               = "PTN"
-	DefaultMediatorInterval    = 5
-	DefaultMediatorCount       = 21
-	DefaultTokenAmount         = 100000000000000000
-	DefaultTokenDecimal        = 8
-	DefaultDepositRate         = 0.02
-	DefaultTokenHolder         = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
-	DefaultMinMediatorCount    = 11
-	DefaultMinMediatorInterval = 1
-)
+type ImmutableChainParameters struct {
+	MinMediatorCount uint8
+	MinMediatorInterval uint8
+}
+
+func NewImmutChainParams() ImmutableChainParameters {
+	return ImmutableChainParameters{
+		MinMediatorCount:DefaultMinMediatorCount,
+		MinMediatorInterval:DefaultMinMediatorInterval,
+	}
+}
