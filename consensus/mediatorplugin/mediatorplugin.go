@@ -107,10 +107,10 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 		log.Info("Not producing VerifiedUnit because production is disabled " +
 			"until we receive a recent VerifiedUnit (see: --enable-stale-production)")
 	case NotTimeYet:
-		log.Info("Not producing VerifiedUnit because next slot time is " + detail["NextTime"] +
+		log.Debug("Not producing VerifiedUnit because next slot time is " + detail["NextTime"] +
 			" , but now is " + detail["Now"])
 	case NotMyTurn:
-		log.Info("Not producing VerifiedUnit because current scheduled mediator is " +
+		log.Debug("Not producing VerifiedUnit because current scheduled mediator is " +
 			detail["ScheduledMediator"])
 	case Lag:
 		log.Info("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time." +
