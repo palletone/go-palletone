@@ -73,15 +73,15 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 }
 
 func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
-	log.Info("initialize global property...")
+	log.Debug("initialize global property...")
 
 	// Create global properties
 	gp := NewGlobalProp()
 
-	log.Info("initialize chain parameters...")
+	log.Debug("initialize chain parameters...")
 	gp.ChainParameters = genesis.InitialParameters
 
-	log.Info("Set active mediators...")
+	log.Debug("Set active mediators...")
 	// Set active mediators
 	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
 		ad := common.StringToAddress(genesis.InitialMediatorCandidates[i])
@@ -95,7 +95,7 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 }
 
 func InitDynGlobalProp(genesis *core.Genesis, genesisUnitHash common.Hash) *DynamicGlobalProperty {
-	log.Info("initialize dynamic global property...")
+	log.Debug("initialize dynamic global property...")
 
 	// Create dynamic global properties
 	dgp := NewDynGlobalProp()

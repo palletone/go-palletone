@@ -32,7 +32,7 @@ type MediatorSchedule struct {
 }
 
 func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorSchedule {
-	log.Info("initialize mediator schedule...")
+	log.Debug("initialize mediator schedule...")
 	ms := NewMediatorSchl()
 
 	// Create witness scheduler
