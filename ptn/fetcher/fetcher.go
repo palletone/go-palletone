@@ -228,21 +228,21 @@ func (f *Fetcher) FilterHeaders(peer string, headers []*modules.Header, time tim
 
 	select {
 	case f.headerFilter <- filter:
-		log.Info("f.headerFilter <- filter")
+		log.Debug("f.headerFilter <- filter")
 	case <-f.quit:
 		return nil
 	}
 	// Request the filtering of the header list
 	select {
 	case filter <- &headerFilterTask{peer: peer, headers: headers, time: time}:
-		log.Info("filter <- &headerFilterTask{peer: peer, headers: headers, time: time}")
+		log.Debug("filter <- &headerFilterTask{peer: peer, headers: headers, time: time}")
 	case <-f.quit:
 		return nil
 	}
 	// Retrieve the headers remaining after filtering
 	select {
 	case task := <-filter:
-		log.Info("task := <-filter")
+		log.Debug("task := <-filter")
 		return task.headers
 	case <-f.quit:
 		return nil

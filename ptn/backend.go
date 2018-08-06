@@ -184,7 +184,7 @@ func (s *PalletOne) IsListening() bool                  { return true } // Alway
 func (s *PalletOne) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *PalletOne) NetVersion() uint64                 { return s.networkId }
 func (s *PalletOne) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
-func (s *PalletOne) Dag() *dagcommon.Dag                  { return s.dag }
+func (s *PalletOne) Dag() *dagcommon.Dag                { return s.dag }
 
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.
@@ -245,7 +245,7 @@ func (s *PalletOne) Etherbase() (eb common.Address, err error) {
 				s.etherbase = etherbase
 				s.lock.Unlock()
 
-				log.Info("Etherbase automatically configured", "address", etherbase)
+				log.Debug("Etherbase automatically configured", "address", etherbase)
 				return etherbase, nil
 			}
 		}*/

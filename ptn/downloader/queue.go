@@ -462,7 +462,7 @@ func (q *queue) ReserveBodies(p *peerConnection, count int) (*fetchRequest, bool
 	isNoop := func(header *modules.Header) bool {
 		//return header.TxHash == modules.EmptyRootHash
 		//TODO modify
-		log.Info("ReserveBodies", "header.TxRoot == modules.EmptyRootHash:", header.TxRoot == modules.EmptyRootHash)
+		log.Debug("ReserveBodies", "header.TxRoot == modules.EmptyRootHash:", header.TxRoot == modules.EmptyRootHash)
 		return header.TxRoot == modules.EmptyRootHash
 	}
 	q.lock.Lock()
@@ -694,7 +694,7 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 
 	// Ensure headers can be mapped onto the skeleton chain
 	target := q.headerTaskPool[request.From].Hash()
-	log.Info("===queueu.DeliverHeaders===", "len(headers):", len(headers), "MaxHeaderFetch:", MaxHeaderFetch)
+	log.Debug("===queueu.DeliverHeaders===", "len(headers):", len(headers), "MaxHeaderFetch:", MaxHeaderFetch)
 	accepted := len(headers) == MaxHeaderFetch
 	if accepted {
 		//if headers[0].Number.Uint64() != request.From {
