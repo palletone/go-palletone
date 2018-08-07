@@ -784,7 +784,7 @@ func (d *Downloader) fetchBodies(from uint64) error {
 	var (
 		deliver = func(packet dataPack) (int, error) {
 			pack := packet.(*bodyPack)
-			return d.queue.DeliverBodies(pack.peerId, pack.transactions, pack.uncles)
+			return d.queue.DeliverBodies(pack.peerId, pack.transactions /*, pack.uncles*/)
 		}
 		expire   = func() map[string]int { return d.queue.ExpireBodies(d.requestTTL()) }
 		fetch    = func(p *peerConnection, req *fetchRequest) error { return p.FetchBodies(req) }
@@ -855,7 +855,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 				// caused by a timed out request which came through in the end), set it to
 				// idle. If the delivery's stale, the peer should have already been idled.
 				if err != errStaleDelivery {
-					log.Debug("===fetchParts===", "deliver err:", err)
+					log.Debug("===fetchParts===", "deliver err:", err, "accepted:", accepted)
 					setIdle(peer, accepted)
 				}
 				// Issue a log to the user to see what's going on
@@ -969,7 +969,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 				if request.From > 0 {
 					peer.log.Trace("Requesting new batch of data", "type", kind, "from", request.From)
 				} else {
-					peer.log.Trace("Requesting new batch of data", "type", kind, "count", len(request.Headers), "from", request.Headers[0].Number)
+					peer.log.Trace("Requesting new batch of data", "type", kind, "count", len(request.Headers), "from", request.Headers[0].Number.Index)
 				}
 				// Fetch the chunk and make sure any errors return the hashes to the queue
 				if fetchHook != nil {
@@ -1384,8 +1384,8 @@ func (d *Downloader) DeliverHeaders(id string, headers []*modules.Header) (err e
 }
 
 // DeliverBodies injects a new batch of block bodies received from a remote node.
-func (d *Downloader) DeliverBodies(id string, transactions [][]*modules.Transaction, uncles [][]*modules.Header) (err error) {
-	return d.deliver(id, d.bodyCh, &bodyPack{id, transactions, uncles}, bodyInMeter, bodyDropMeter)
+func (d *Downloader) DeliverBodies(id string, transactions [][]*modules.Transaction /*, uncles [][]*modules.Header*/) (err error) {
+	return d.deliver(id, d.bodyCh, &bodyPack{id, transactions /*, uncles*/}, bodyInMeter, bodyDropMeter)
 }
 
 // DeliverNodeData injects a new batch of node state data received from a remote node.

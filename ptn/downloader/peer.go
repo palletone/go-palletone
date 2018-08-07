@@ -233,13 +233,6 @@ func (p *peerConnection) SetHeadersIdle(delivered int) {
 	p.setIdle(p.headerStarted, delivered, &p.headerThroughput, &p.headerIdle)
 }
 
-// SetBlocksIdle sets the peer to idle, allowing it to execute new block retrieval
-// requests. Its estimated block retrieval throughput is updated with that measured
-// just now.
-func (p *peerConnection) SetBlocksIdle(delivered int) {
-	p.setIdle(p.blockStarted, delivered, &p.blockThroughput, &p.blockIdle)
-}
-
 // SetBodiesIdle sets the peer to idle, allowing it to execute block body retrieval
 // requests. Its estimated body retrieval throughput is updated with that measured
 // just now.
@@ -266,7 +259,6 @@ func (p *peerConnection) SetNodeDataIdle(delivered int) {
 func (p *peerConnection) setIdle(started time.Time, delivered int, throughput *float64, idle *int32) {
 	// Irrelevant of the scaling, make sure the peer ends up idle
 	defer atomic.StoreInt32(idle, 0)
-
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -275,12 +267,16 @@ func (p *peerConnection) setIdle(started time.Time, delivered int, throughput *f
 		*throughput = 0
 		return
 	}
+
 	// Otherwise update the throughput with a new measurement
 	elapsed := time.Since(started) + 1 // +1 (ns) to ensure non-zero divisor
 	measured := float64(delivered) / (float64(elapsed) / float64(time.Second))
-
+	log.Debug("===peerConnection->setIdle pre===", "throughput:", *throughput)
 	*throughput = (1-measurementImpact)*(*throughput) + measurementImpact*measured
 	p.rtt = time.Duration((1-measurementImpact)*float64(p.rtt) + measurementImpact*float64(elapsed))
+
+	log.Debug("===peerConnection->setIdle===", "elapsed:", elapsed, "delivered:", delivered, "measured:", measured,
+		"throughput:", *throughput, "p.blockThroughput:", p.blockThroughput)
 
 	p.log.Trace("Peer throughput measurements updated",
 		"hps", p.headerThroughput, "bps", p.blockThroughput,
@@ -302,7 +298,8 @@ func (p *peerConnection) HeaderCapacity(targetRTT time.Duration) int {
 func (p *peerConnection) BlockCapacity(targetRTT time.Duration) int {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-
+	log.Debug("===peerConnection->BlockCapacity===", "p.blockThroughput:", p.blockThroughput,
+		"targetRTT:", targetRTT, "MaxBlockFetch:", MaxBlockFetch)
 	return int(math.Min(1+math.Max(1, p.blockThroughput*float64(targetRTT)/float64(time.Second)), float64(MaxBlockFetch)))
 }
 

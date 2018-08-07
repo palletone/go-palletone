@@ -493,19 +493,19 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		// Deliver them all to the downloader for queuing
 		transactions := make([][]*modules.Transaction, len(request))
-		uncles := make([][]*modules.Header, len(request))
+		//uncles := make([][]*modules.Header, len(request))
 
 		for i, body := range request {
 			transactions[i] = body.Transactions
 			//uncles[i] = body.Uncles
 		}
 		// Filter out any explicitly requested bodies, deliver the rest to the downloader
-		filter := len(transactions) > 0 || len(uncles) > 0
+		filter := len(transactions) > 0 /*|| len(uncles) > 0*/
 		if filter {
-			transactions, uncles = pm.fetcher.FilterBodies(p.id, transactions, uncles, time.Now())
+			transactions /*, uncles*/ = pm.fetcher.FilterBodies(p.id, transactions /*uncles,*/, time.Now())
 		}
-		if len(transactions) > 0 || len(uncles) > 0 || !filter {
-			err := pm.downloader.DeliverBodies(p.id, transactions, uncles)
+		if len(transactions) > 0 /*|| len(uncles) > 0*/ || !filter {
+			err := pm.downloader.DeliverBodies(p.id, transactions /*, uncles*/)
 			if err != nil {
 				log.Debug("Failed to deliver bodies", "err", err.Error())
 			}

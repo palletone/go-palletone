@@ -15,7 +15,6 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package event deals with subscriptions to real-time events.
-// event包处理实时事件订阅。
 package event
 
 import (
@@ -29,7 +28,6 @@ import (
 )
 
 // TypeMuxEvent is a time-tagged notification pushed to subscribers.
-// TypeMuxEvent是推送给订阅者的带时间标记的通知。
 type TypeMuxEvent struct {
 	Time time.Time
 	Data interface{}
