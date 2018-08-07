@@ -134,6 +134,7 @@ func (f *Feed) remove(sub *feedSub) {
 
 // Send delivers to all subscribed channels simultaneously.
 // It returns the number of subscribers that the value was sent to.
+// 同时发送到所有订阅的channel。返回成功发送的订阅者数量
 // Send方法不是遍历所有的channel然后阻塞方式的发送。这样可能导致慢的客户端影响快的客户端。而是使用反射的方式使用SelectCase。
 // 首先调用非阻塞方式的TrySend来尝试发送。这样如果没有慢的客户端。数据会直接全部发送完成。 如果TrySend部分客户端失败。
 // 那么后续在循环Select的方式发送。 这也是feed会取代event的原因。
