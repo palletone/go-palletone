@@ -462,7 +462,7 @@ func (q *queue) ReserveBodies(p *peerConnection, count int) (*fetchRequest, bool
 	isNoop := func(header *modules.Header) bool {
 		//return header.TxHash == modules.EmptyRootHash
 		//TODO modify
-		log.Debug("ReserveBodies", "header.TxRoot == modules.EmptyRootHash:", header.TxRoot == modules.EmptyRootHash)
+		log.Info("ReserveBodies", "header.TxRoot == modules.EmptyRootHash:", header.TxRoot == modules.EmptyRootHash)
 		return header.TxRoot == modules.EmptyRootHash
 	}
 	q.lock.Lock()
