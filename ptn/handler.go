@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	//"math"
 	"math/big"
 	"sync"
@@ -30,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
+
 	//"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -477,10 +479,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				return errResp(ErrDecode, "msg %v: %v", msg, err)
 			}
 			// Retrieve the requested block body, stopping if enough was found
-			/*if data := pm.blockchain.GetBodyRLP(hash); len(data) != 0 {
+			if data := pm.dag.GetBodyRLP(hash); len(data) != 0 {
 				bodies = append(bodies, data)
 				bytes += len(data)
-			}*/
+			}
 		}
 		return p.SendBlockBodiesRLP(bodies)
 

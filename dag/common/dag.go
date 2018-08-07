@@ -22,10 +22,12 @@ import (
 	"sync"
 
 	"fmt"
+
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
@@ -144,6 +146,16 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 
 func (d *Dag) CurrentHeader() *modules.Header {
 	return d.CurrentUnit().Header()
+}
+
+// GetBodyRLP retrieves a block body in RLP encoding from the database by hash,
+// caching it if found.
+func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
+	return rlp.RawValue{}
+}
+
+func (d *Dag) GetHeaerRLP(hash common.Hash) rlp.RawValue {
+	return rlp.RawValue{}
 }
 
 // InsertHeaderChain attempts to insert the given header chain in to the local

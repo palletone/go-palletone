@@ -778,6 +778,7 @@ func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction /*, un
 
 	reconstruct := func(header *modules.Header, index int, result *fetchResult) error {
 		if modules.DeriveSha(modules.Transactions(txLists[index])) != header.TxRoot {
+			log.Debug("===queue->DeliverBodies===", "err:", errInvalidBody)
 			return errInvalidBody
 		}
 		result.Transactions = txLists[index]
