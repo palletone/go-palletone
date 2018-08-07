@@ -26,8 +26,8 @@ option java_outer_classname = "ProposalPackage";
 
 package protos;
 
-import "peer/chaincode.proto";
-import "peer/proposal_response.proto";
+import "github.com/palletone/go-palletone/core/vmContractPub/protos/peer/chaincode.proto";
+import "github.com/palletone/go-palletone/core/vmContractPub/protos/peer/proposal_response.proto";
 
 /*
 The flow to get a generic transaction approved goes as follows:

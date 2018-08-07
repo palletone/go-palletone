@@ -20,9 +20,11 @@
 package samplesyscc
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"fmt"
 )
 
 // SampleSysCC example simple Chaincode implementation
@@ -39,12 +41,99 @@ func (t *SampleSysCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
+type BTCAddress struct {
+	Method string `json:"method"`
+	Alice  string `json:"alice"`
+	Bob    string `json:"bob"`
+}
+
+type BTCTransaction struct {
+	Method         string `json:"method"`
+	Transactionhex string `json:"transactionhex"`
+	Redeemhex      string `json:"redeemhex"`
+}
+
+type BTCQuery struct {
+	Method  string `json:"method"`
+	Addr    string `json:"addr"`
+	Minconf string `json:"minconf"`
+}
+
 // Invoke gets the supplied key and if it exists, updates the key with the newly
 // supplied value.
 func (t *SampleSysCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	f, args := stub.GetFunctionAndParameters()
 
 	switch f {
+
+	case "addrBTC":
+		chain1 := args[0]
+		chain1AddrAlice := args[1]
+		chain1AddrBob := args[2]
+
+		btc := BTCAddress{"GetMultiAddr", chain1AddrAlice, chain1AddrBob}
+		reqBytes, err := json.Marshal(btc)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		fmt.Println("Chaincode params ==== ===== ", reqBytes)
+		result, err := stub.OutChainAddress(chain1, reqBytes)
+		if err != nil {
+			fmt.Println("Chaincode result ==== ===== ", err.Error())
+			return shim.Error(string(result))
+		}
+		fmt.Println("Chaincode result ==== ===== ", string(result))
+		return shim.Success(result)
+
+	case "transactionBTC":
+		chain1 := args[0]
+		transactionhex := args[1]
+		redeemhex := args[2]
+
+		btcTX := BTCTransaction{"SignTransaction", transactionhex, redeemhex}
+		reqBytes, err := json.Marshal(btcTX)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		fmt.Println("Chaincode params ==== ===== ", reqBytes)
+		result, err := stub.OutChainAddress(chain1, reqBytes)
+		if err != nil {
+			fmt.Println("Chaincode result ==== ===== ", err.Error())
+			return shim.Error(string(result))
+		}
+		fmt.Println("Chaincode result ==== ===== ", string(result))
+		return shim.Success(result)
+	case "queryBTC":
+		chain1 := args[0]
+		addr := args[1]
+		minconf := args[2]
+
+		btcQuery := BTCQuery{"GetBalance", addr, minconf}
+		reqBytes, err := json.Marshal(btcQuery)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		fmt.Println("Chaincode params ==== ===== ", reqBytes)
+		result, err := stub.OutChainAddress(chain1, reqBytes)
+		if err != nil {
+			fmt.Println("Chaincode result ==== ===== ", err.Error())
+			return shim.Error(string(result))
+		}
+		fmt.Println("Chaincode result ==== ===== ", string(result))
+		return shim.Success(result)
+
+	case "addrETH":
+		return shim.Success(nil)
+	case "transactionETH":
+		return shim.Success(nil)
+	case "queryETH":
+		return shim.Success(nil)
+
+	case "txAddr":
+		return shim.Success(nil)
+	case "deposit":
+		return shim.Success(nil)
+
 	case "putval":
 		if len(args) != 2 {
 			return shim.Error("need 2 args (key and a value)")
@@ -69,17 +158,14 @@ func (t *SampleSysCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success(nil)
 	case "getval":
 		var err error
-
 		if len(args) != 1 {
 			return shim.Error("Incorrect number of arguments. Expecting key to query")
 		}
-
 		key := args[0]
 
 		// Get the state from the ledger
 		valbytes, err := stub.GetState(key)
 		//return shim.Success([]byte("abc"))
-
 		if err != nil {
 			jsonResp := "{\"Error\":\"Failed to get state for " + key + "\"}"
 			return shim.Error(jsonResp)
