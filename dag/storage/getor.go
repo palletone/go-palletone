@@ -19,6 +19,7 @@
 package storage
 
 import (
+	"bytes"
 	"encoding/json"
 	"log"
 	"unsafe"
@@ -28,6 +29,11 @@ import (
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
+
+// DatabaseReader wraps the Get method of a backing data store.
+type DatabaseReader interface {
+	Get(key []byte) (value []byte, err error)
+}
 
 // @author Albert·Gou
 func Retrieve(key string, v interface{}) error {
@@ -108,8 +114,19 @@ func GetHeader(hash common.Hash, index uint64) *modules.Header {
 	header_bytes, err := Get(append(key, hash.Bytes()...))
 	// rlp  to  Header struct
 	log.Println(err)
-	var header modules.Header
-	json.Unmarshal(header_bytes, &header)
+	header := new(modules.Header)
+	if err := rlp.Decode(bytes.NewReader(header_bytes), &header); err != nil {
+		log.Println("Invalid unit header rlp:", err)
+		return nil
+	}
 
-	return &header
+	return header
+}
+func GetHeaderRlp(db DatabaseReader, hash common.Hash, index uint64) rlp.RawValue {
+	encNum := encodeBlockNumber(index)
+	key := append(HEADER_PREFIX, encNum...)
+	header_bytes, err := db.Get(append(key, hash.Bytes()...))
+	// rlp  to  Header struct
+	log.Println(err)
+	return header_bytes
 }

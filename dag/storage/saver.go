@@ -229,7 +229,7 @@ func AddKeysWithTag(key, tag string) error {
 
 }
 
-func SaveContract(contract *modules.Contract) error {
+func SaveContract(contract *modules.Contract) (common.Hash, error) {
 	if Dbconn == nil {
 		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
 	}
@@ -248,6 +248,6 @@ func SaveContract(contract *modules.Contract) error {
 		}
 
 	}
-	return StoreBytes(append(CONTRACT_PTEFIX, contract.Id[:]...), contract)
 
+	return contract.Id, StoreBytes(append(CONTRACT_PTEFIX, contract.Id[:]...), contract)
 }

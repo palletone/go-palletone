@@ -49,6 +49,12 @@ var (
 	ASSET_PREFIX                     = []byte("as")
 	ASSET_ATTESTORS                  = []byte("ae")
 
+	// Head Fast Key
+	HeadHeaderKey = []byte("LastHeader")
+	HeadBlockKey  = []byte("LastUnit")
+	HeadFastKey   = []byte("LastFast")
+	TrieSyncKey   = []byte("TrieSync")
+
 	// contract
 	CONTRACT_PTEFIX = []byte("cs")
 
