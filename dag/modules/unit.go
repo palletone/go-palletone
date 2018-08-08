@@ -185,6 +185,13 @@ type Unit struct {
 	ReceivedFrom interface{}
 }
 
+func (unit *Unit) IsEmpty() bool {
+	if unit == nil || len(unit.Txs) <= 0 {
+		return true
+	}
+	return false
+}
+
 type Transactions []*Transaction
 
 type Transaction struct {

@@ -199,7 +199,11 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 
 	// 2. 生产验证单元
 	unit := GenerateUnit(mp.ptn.Dag(), scheduledTime, *scheduledMediator, ks, mp.ptn.TxPool())
-
+	// added by yangyu, 2018.8.8 12:07
+	if unit.IsEmpty() {
+		return NotSynced, detail
+	}
+	// ended added
 	num := unit.UnitHeader.Number.Index
 	detail["Num"] = strconv.FormatUint(num, 10)
 	time := time.Unix(unit.UnitHeader.Creationdate, 0)
