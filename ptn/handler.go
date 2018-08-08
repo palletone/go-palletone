@@ -132,7 +132,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	manager.SubProtocols = make([]p2p.Protocol, 0, len(ProtocolVersions))
 	for i, version := range ProtocolVersions {
 		// Skip protocol version if incompatible with the mode of operation
-		if mode == downloader.FastSync && version < pan1 {
+		if mode == downloader.FastSync && version < ptn1 {
 			continue
 		}
 		// Compatible; initialise the sub-protocol
