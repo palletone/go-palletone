@@ -28,23 +28,23 @@ import (
 
 // Constants to match up protocol versions and messages
 const (
-	pan1 = 1
+	ptn1 = 1
 )
 
 // Official short name of the protocol used during capability negotiation.
-var ProtocolName = "pan"
+var ProtocolName = "ptn"
 
 // Supported versions of the eth protocol (first is primary).
-var ProtocolVersions = []uint{pan1}
+var ProtocolVersions = []uint{ptn1}
 
 // Number of implemented message corresponding to different protocol versions.
 var ProtocolLengths = []uint64{17, 8}
 
 const ProtocolMaxMsgSize = 10 * 1024 * 1024 // Maximum cap on the size of a protocol message
 
-// pan protocol message codes
+// ptn protocol message codes
 const (
-	// Protocol messages belonging to pan/1
+	// Protocol messages belonging to ptn/1
 	StatusMsg          = 0x00
 	NewBlockHashesMsg  = 0x01
 	TxMsg              = 0x02

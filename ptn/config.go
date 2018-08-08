@@ -107,9 +107,9 @@ type Config struct {
 	// Enables tracking of SHA3 preimages in the VM
 	EnablePreimageRecording bool
 	// DAG options
-	Dag dagconfig.Config
+	Dag dagconfig.Config `toml:"-"`
 	//Log config
-	Log log.Config
+	Log log.Config `toml:"-"`
 	// Consensus options
 	//Consensus consensusconfig.Config
 	// VM config
