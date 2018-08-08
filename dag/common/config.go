@@ -5,6 +5,7 @@ import (
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -37,7 +38,10 @@ func SaveConfig(confs map[string]interface{}) error {
 			log.Error("Save config error.")
 			return err
 		}
-		if err := storage.Store(key, data); err != nil {
+		if storage.Dbconn == nil {
+			storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		}
+		if err := storage.Store(storage.Dbconn, key, data); err != nil {
 			log.Error("Save config error.")
 			return err
 		}

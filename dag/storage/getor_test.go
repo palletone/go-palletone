@@ -38,12 +38,12 @@ func TestGet(t *testing.T) {
 	}
 
 	if m := GetPrefix([]byte("unit")); m != nil {
-		for k, _ := range m {
+		for k := range m {
 			log.Println("key: ", k, "value: ", string(m[k]))
 		}
 	}
 }
 
 func TestGetUnit(t *testing.T) {
-	GetUnit(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"), 0)
+	GetUnit(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
 }

@@ -186,7 +186,7 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 			OutIndex:     uint32(outIndex),
 		}
 
-		if err := storage.Store(string(outpoint.ToKey()), utxo); err != nil {
+		if err := storage.Store(storage.Dbconn, string(outpoint.ToKey()), utxo); err != nil {
 			log.Error("Write utxo", "error", err.Error())
 			errs = append(errs, err)
 			continue
@@ -215,7 +215,7 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 			Amount:   txout.Value,
 			LockTime: lockTime,
 		}
-		if err := storage.Store(string(utxoIndex.ToKey()), utxoIndexVal); err != nil {
+		if err := storage.Store(storage.Dbconn, string(utxoIndex.ToKey()), utxoIndexVal); err != nil {
 			log.Error("Write utxo index error: %s", err.Error())
 			errs = append(errs, err)
 		}
@@ -281,7 +281,7 @@ func destoryUtxo(txins []modules.Input) {
 write asset info to leveldb
 */
 func SaveAssetInfo(assetInfo *modules.AssetInfo) error {
-	if err := storage.Store(string(assetInfo.Tokey()), *assetInfo); err != nil {
+	if err := storage.Store(storage.Dbconn, string(assetInfo.Tokey()), *assetInfo); err != nil {
 		return err
 	}
 

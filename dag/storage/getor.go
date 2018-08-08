@@ -21,7 +21,10 @@ package storage
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
+	"reflect"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -98,13 +101,23 @@ func getprefix(prefix []byte) map[string][]byte {
 	return result
 }
 
-func GetUnit(hash common.Hash, index uint64) *modules.Unit {
+func GetUnit(hash common.Hash) *modules.Unit {
 	unit_bytes, err := Get(append(UNIT_PREFIX, hash.Bytes()...))
 	log.Println(err)
 	var unit modules.Unit
 	json.Unmarshal(unit_bytes, &unit)
 
 	return &unit
+}
+func GetUnitFormIndex(height uint64, asset modules.IDType16) *modules.Unit {
+	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, asset.String(), height)
+	hash, err := Get([]byte(key))
+	if err != nil {
+		return nil
+	}
+	var h common.Hash
+	h.SetBytes(hash)
+	return GetUnit(h)
 }
 
 func GetHeader(hash common.Hash, index uint64) *modules.Header {
@@ -122,6 +135,7 @@ func GetHeader(hash common.Hash, index uint64) *modules.Header {
 
 	return header
 }
+
 func GetHeaderRlp(db DatabaseReader, hash common.Hash, index uint64) rlp.RawValue {
 	encNum := encodeBlockNumber(index)
 	key := append(HEADER_PREFIX, encNum...)
@@ -129,4 +143,72 @@ func GetHeaderRlp(db DatabaseReader, hash common.Hash, index uint64) rlp.RawValu
 	// rlp  to  Header struct
 	log.Println(err)
 	return header_bytes
+}
+
+func GetHeaderFormIndex(height uint64, asset modules.IDType16) *modules.Header {
+	unit := GetUnitFormIndex(height, asset)
+	return unit.UnitHeader
+}
+
+// Get contract
+func GetContract(id common.Hash, key string) (*modules.Contract, error) {
+	if common.EmptyHash(id) {
+		return nil, errors.New("the filed not defined")
+	}
+	con_bytes, err := Get(append(CONTRACT_PTEFIX, id[:]...))
+	if err != nil {
+		log.Println("err:", err)
+		return nil, err
+	}
+	contract := new(modules.Contract)
+	err = rlp.DecodeBytes(con_bytes, contract)
+	if err != nil {
+		log.Println("err:", err)
+		return nil, err
+	}
+	return contract, nil
+}
+
+func GetContractRlp(id common.Hash, key string) (rlp.RawValue, error) {
+	if common.EmptyHash(id) {
+		return nil, errors.New("the filed not defined")
+	}
+	con_bytes, err := Get(append(CONTRACT_PTEFIX, id[:]...))
+	if err != nil {
+		return nil, err
+	}
+	return con_bytes, nil
+}
+
+// Get contract key's value
+func GetContractKeyValue(id common.Hash, key string) (interface{}, error) {
+	var val interface{}
+	if common.EmptyHash(id) {
+		return nil, errors.New("the filed not defined")
+	}
+	con_bytes, err := Get(append(CONTRACT_PTEFIX, id[:]...))
+	if err != nil {
+		return nil, err
+	}
+	contract := new(modules.Contract)
+	err = rlp.DecodeBytes(con_bytes, contract)
+	if err != nil {
+		log.Println("err:", err)
+		return nil, err
+	}
+	obj := reflect.ValueOf(contract)
+	myref := obj.Elem()
+	typeOftype := myref.Type()
+
+	for i := 0; i < myref.NumField(); i++ {
+		filed := myref.Field(i)
+		if typeOftype.Field(i).Name == key {
+			val = filed.Interface()
+			log.Println(i, ". ", typeOftype.Field(i).Name, " ", filed.Type(), "=: ", filed.Interface())
+			break
+		} else if i == myref.NumField()-1 {
+			val = nil
+		}
+	}
+	return val, nil
 }

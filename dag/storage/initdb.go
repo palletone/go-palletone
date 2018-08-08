@@ -49,6 +49,7 @@ var (
 	ATTESTATION_PREFIX               = []byte("at")
 	ASSET_PREFIX                     = []byte("as")
 	ASSET_ATTESTORS                  = []byte("ae")
+	NumberSuffix                     = []byte("n")
 
 	// Head Fast Key
 	HeadHeaderKey = []byte("LastHeader")
