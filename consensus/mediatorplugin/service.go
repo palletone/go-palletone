@@ -99,6 +99,7 @@ func Initialize(ptn *ptn.PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	msm := map[common.Address]string{}
 	for address, passphrase := range mss {
 		address := strings.TrimSpace(address)
+		address = strings.Trim(address, "\"")
 
 		addr := common.StringToAddress(address)
 		addrType, err := addr.Validate()

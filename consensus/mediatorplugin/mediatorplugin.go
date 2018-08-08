@@ -88,7 +88,7 @@ const (
 	//	LowParticipation
 	Lag
 	//	Consecutive
-	//	ExceptionProducing
+	ExceptionProducing
 )
 
 func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) ProductionCondition {
@@ -118,6 +118,8 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 	case NoPrivateKey:
 		log.Info("Not producing VerifiedUnit because I don't have the private key for " +
 			detail["ScheduledKey"])
+	case ExceptionProducing:
+		log.Info("Exception producing unit")
 	default:
 		log.Info("Unknown condition!")
 	}
@@ -199,11 +201,10 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 
 	// 2. 生产验证单元
 	unit := GenerateUnit(mp.ptn.Dag(), scheduledTime, *scheduledMediator, ks, mp.ptn.TxPool())
-	// added by yangyu, 2018.8.8 12:07
 	if unit.IsEmpty() {
-		return NotSynced, detail
+		return ExceptionProducing, detail
 	}
-	// ended added
+
 	num := unit.UnitHeader.Number.Index
 	detail["Num"] = strconv.FormatUint(num, 10)
 	time := time.Unix(unit.UnitHeader.Creationdate, 0)

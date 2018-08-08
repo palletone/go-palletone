@@ -47,6 +47,7 @@ func GenerateUnit(dag *dag.Dag, when time.Time, producer common.Mediator, ks *ke
 		log.Info("No unit need to be packaged for now.")
 		return modules.Unit{}
 	}
+
 	pendingUnit := units[0]
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
 	pendingUnit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
