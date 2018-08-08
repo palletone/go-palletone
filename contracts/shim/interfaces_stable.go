@@ -105,6 +105,10 @@ type ChaincodeStubInterface interface {
 	// key namespace.
 	PutState(key string, value []byte) error
 
+	OutChainAddress(outChainName string, params []byte) ([]byte, error)
+	OutChainTransaction(outChainName string, params []byte) ([]byte, error)
+	OutChainQuery(outChainName string, params []byte) ([]byte, error)
+
 	// DelState records the specified `key` to be deleted in the writeset of
 	// the transaction proposal. The `key` and its value will be deleted from
 	// the ledger when the transaction is validated and successfully committed.

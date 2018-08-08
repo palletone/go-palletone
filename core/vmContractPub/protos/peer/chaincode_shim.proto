@@ -21,10 +21,11 @@ syntax = "proto3";
 
 package protos;
 option java_package = "protos.peer";
-option go_package = "protos/peer";
+//option go_package = "protos/peer";
+option go_package = "github.com/palletone/go-palletone/core/vmContractPub/protos/peer";
 
-import "github.com/palletone/go-palletone/core/protos/peer/chaincode_event.proto";
-import "peer/proposal.proto";
+import "github.com/palletone/go-palletone/core/vmContractPub/protos/peer/chaincode_event.proto";
+import "github.com/palletone/go-palletone/core/vmContractPub/protos/peer/proposal.proto";
 import "google/protobuf/timestamp.proto";
 
 
@@ -50,6 +51,9 @@ message ChaincodeMessage {
         QUERY_STATE_CLOSE = 17;
         KEEPALIVE = 18;
         GET_HISTORY_FOR_KEY = 19;
+        OUTCHAIN_ADDRESS = 20;
+        OUTCHAIN_TRANSACTION = 21;
+        OUTCHAIN_QUERY = 22;
     }
 
     Type type = 1;
@@ -118,6 +122,24 @@ message QueryResponse {
     repeated QueryResultBytes results = 1;
     bool has_more = 2;
     string id = 3;
+}
+
+message OutChainAddress {
+    string OutChainName = 1;
+    bytes params = 2;
+    string collection = 3;
+}
+
+message OutChainTransaction {
+    string OutChainName = 1;
+    bytes params = 2;
+    string collection = 3;
+}
+
+message OutChainQuery {
+    string OutChainName = 1;
+    bytes params = 2;
+    string collection = 3;
 }
 
 // Interface that provides support to chaincode execution. ChaincodeContext

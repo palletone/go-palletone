@@ -89,7 +89,7 @@ First, you'll need to create the genesis state of your networks, which all nodes
 You can create a JSON file for the genesis state of a new chain with an existing account or a newly created account named `my-genesis.json` by running this command:
 
 ```
-$ gptn create-genesis-json path/to/my-genesis.json
+$ gptn newgenesis path/to/my-genesis.json
 ```
 
 ##### Customization of the genesis file

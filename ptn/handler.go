@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	//"math"
 	"math/big"
 	"sync"
@@ -30,13 +31,14 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
+
 	//"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
-	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 )
@@ -81,7 +83,7 @@ type ProtocolManager struct {
 	txCh     chan modules.TxPreEvent
 	txSub    event.Subscription
 
-	dag *dagcommon.Dag
+	dag *dag.Dag
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -103,7 +105,7 @@ type ProtocolManager struct {
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool,
-	engine core.ConsensusEngine, dag *dagcommon.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase) (*ProtocolManager, error) {
+	engine core.ConsensusEngine, dag *dag.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -392,13 +394,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 					current = origin.Number.Index
 					next    = current + query.Skip + 1
 				)
-				log.Info("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
+				log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
 				if next <= current {
 					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
 					log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
 					unknown = true
 				} else {
-					log.Info("msg.Code==GetBlockHeadersMsg", "next:", next)
+					log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
 					if header := pm.dag.GetHeaderByNumber(next); header != nil {
 						/*
 							if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
@@ -425,11 +427,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				query.Origin.Number += query.Skip + 1
 			}
 		}
-		log.Info("===msg.Code == GetBlockHeadersMsg  SendBlockHeaders===")
+		log.Debug("===msg.Code == GetBlockHeadersMsg  SendBlockHeaders===")
 		return p.SendBlockHeaders(headers)
 
 	case msg.Code == BlockHeadersMsg:
-		log.Info("===handler->msg.Code == BlockHeadersMsg===")
+		log.Debug("===handler->msg.Code == BlockHeadersMsg===")
 		// A batch of headers arrived to one of our previous requests
 		var headers []*modules.Header
 		if err := msg.Decode(&headers); err != nil {
@@ -438,18 +440,18 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		// If no headers were received, but we're expending a DAO fork check, maybe it's that
 		if len(headers) == 0 {
-			log.Info("===handler->msg.Code == BlockHeadersMsg len(headers)is 0===")
+			log.Debug("===handler->msg.Code == BlockHeadersMsg len(headers)is 0===")
 			return nil
 		}
 		// Filter out any explicitly requested headers, deliver the rest to the downloader
 		filter := len(headers) == 1
 		if filter {
-			log.Info("===BlockHeadersMsg filter===")
+			log.Debug("===BlockHeadersMsg filter===")
 			// Irrelevant of the fork checks, send the header to the fetcher just in case
 			headers = pm.fetcher.FilterHeaders(p.id, headers, time.Now())
 		}
 		if len(headers) > 0 || !filter {
-			log.Info("===BlockHeadersMsg ===", "len(headers):", len(headers))
+			log.Debug("===BlockHeadersMsg ===", "len(headers):", len(headers))
 			err := pm.downloader.DeliverHeaders(p.id, headers)
 			if err != nil {
 				log.Debug("Failed to deliver headers", "err", err.Error())
@@ -458,7 +460,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case msg.Code == GetBlockBodiesMsg:
 		// Decode the retrieval message
-		log.Info("===GetBlockBodiesMsg===")
+		log.Debug("===GetBlockBodiesMsg===")
 		msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
 		if _, err := msgStream.List(); err != nil {
 			return err
@@ -468,6 +470,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			hash   common.Hash
 			bytes  int
 			bodies []rlp.RawValue
+			sum    int
 		)
 		for bytes < softResponseLimit && len(bodies) < downloader.MaxBlockFetch {
 			// Retrieve the hash of the next block
@@ -477,15 +480,17 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				return errResp(ErrDecode, "msg %v: %v", msg, err)
 			}
 			// Retrieve the requested block body, stopping if enough was found
-			/*if data := pm.blockchain.GetBodyRLP(hash); len(data) != 0 {
+			if data := pm.dag.GetBodyRLP(hash); len(data) != 0 {
 				bodies = append(bodies, data)
 				bytes += len(data)
-			}*/
+			}
+			sum++
 		}
+		log.Debug("===GetBlockBodiesMsg===", "sum:", sum)
 		return p.SendBlockBodiesRLP(bodies)
 
 	case msg.Code == BlockBodiesMsg:
-		log.Info("===BlockBodiesMsg===")
+		log.Debug("===BlockBodiesMsg===")
 		// A batch of block bodies arrived to one of our previous requests
 		var request blockBodiesData
 		if err := msg.Decode(&request); err != nil {
@@ -493,19 +498,17 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		// Deliver them all to the downloader for queuing
 		transactions := make([][]*modules.Transaction, len(request))
-		uncles := make([][]*modules.Header, len(request))
 
 		for i, body := range request {
 			transactions[i] = body.Transactions
-			//uncles[i] = body.Uncles
 		}
 		// Filter out any explicitly requested bodies, deliver the rest to the downloader
-		filter := len(transactions) > 0 || len(uncles) > 0
+		filter := len(transactions) > 0
 		if filter {
-			transactions, uncles = pm.fetcher.FilterBodies(p.id, transactions, uncles, time.Now())
+			transactions = pm.fetcher.FilterBodies(p.id, transactions, time.Now())
 		}
-		if len(transactions) > 0 || len(uncles) > 0 || !filter {
-			err := pm.downloader.DeliverBodies(p.id, transactions, uncles)
+		if len(transactions) > 0 || !filter {
+			err := pm.downloader.DeliverBodies(p.id, transactions)
 			if err != nil {
 				log.Debug("Failed to deliver bodies", "err", err.Error())
 			}
@@ -681,7 +684,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&consensusmsg); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		log.Info("ConsensusMsg recv:", consensusmsg)
+		log.Debug("ConsensusMsg recv:", consensusmsg)
 		if consensusmsg == "A" {
 			p.SendConsensus("Hello I received A")
 		}

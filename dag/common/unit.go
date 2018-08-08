@@ -19,16 +19,10 @@
 package common
 
 import (
-	"crypto/ecdsa"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
-	"strconv"
-	"strings"
-	"unsafe"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -39,6 +33,12 @@ import (
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/internal/ethapi"
+	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
+	"reflect"
+	"strconv"
+	"strings"
 )
 
 func RHashStr(x interface{}) string {
@@ -179,29 +179,52 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 // modify by Albert·Gou
-func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
+func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool) ([]modules.Unit, error) {
+	// step1. get transactions from txspool
+	if txspool == nil || mAddr == nil {
+		return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
+	}
+	txs, _ := txspool.GetSortedTxs()
+	if len(txs) <= 0 {
+		log.Info("Package unit: txspool is empty now.")
+		return nil, nil
+	}
+	// step2. compute coinbase transaction fees
+	fees, err := ComputeFees(txs)
+	if err != nil {
+		return nil, err
+	}
+	input := btcjson.TransactionInput{}
+	locktime := int64(0)
+	cmd := btcjson.CreateRawTransactionCmd{
+		Inputs:   []btcjson.TransactionInput{input},
+		Amounts:  map[string]float64{mAddr.String(): float64(fees)},
+		LockTime: &locktime,
+	}
+	txhex, err := ethapi.CreateRawTransaction(cmd)
+	if err != nil {
+		return nil, err
+	}
+	// todo 需要调用钱包接口将hex转为结构体，从打包为transaction
+	fmt.Println("Coinbase transaction hex:", txhex)
+
 	units := []modules.Unit{}
-	// get mediator responsible for asset id
+	// step3. get mediator responsible for asset id
 	assetID := modules.IDType16{}
-	// get the chain last index
+	// step4. compute chain height
 	index := uint64(0)
-	// the unit is on main or not
 	isMain := true
-	// genesis unit height
 	chainIndex := modules.ChainIndex{AssetID: assetID, IsMain: isMain, Index: index}
 
-	// 交易池应该提供的是静态接口，不需要调用的时候去实例化
-	txs := modules.Transactions{}
-
 	/**
-	需要根据交易中涉及到的token类型来确定交易打包到哪个区块
-	如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
+	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
+	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
 	*/
 
-	// transactions merkle root
+	// step5. transactions merkle root
 	root := core.DeriveSha(txs)
 
-	// generate genesis unit header
+	// step6. generate genesis unit header
 	header := modules.Header{
 		AssetIDs: []modules.IDType16{assetID},
 		Number:   chainIndex,
@@ -211,7 +234,7 @@ func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
 
 	unit := modules.Unit{}
 	unit.UnitHeader = &header
-	// copy txs
+	// step7. copy txs
 	if len(txs) > 0 {
 		unit.Txs = make([]*modules.Transaction, len(txs))
 		for i, pTx := range txs {
@@ -241,40 +264,34 @@ func CreateUnit(mAddr *common.Address) ([]modules.Unit, error) {
 从leveldb中查询GenesisUnit信息
 To get genesis unit info from leveldb
 */
-func GetGenesisUnit(index uint64) *modules.Unit {
+func GetGenesisUnit(index uint64) (*modules.Unit, error) {
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
 	data := storage.GetPrefix([]byte(key))
 	if len(data) > 1 {
-		log.Info("Get genesis unit error:multiple genesis unit")
-		return nil
+		return nil, fmt.Errorf("multiple genesis unit")
 	} else if len(data) <= 0 {
-		return nil
+		return nil, nil
 	}
 	for k, v := range data {
 		sk := string(k[len(storage.HEADER_PREFIX):])
 		// get index
 		skArr := strings.Split(sk, "_")
 		if len(skArr) != 3 {
-			log.Error("Get genesis unit index and hash", "error", "split error")
-			return nil
+			return nil, fmt.Errorf("split genesis key error")
 		}
 		// get unit hash
 		uHash := common.Hash{}
 		uHash.SetString(skArr[2])
-		fmt.Println("Genesis Unit header hash:", []byte(k))
 		// get unit header
-		fmt.Println("Unit header bytes:", []byte(v))
 		var uHeader modules.Header
 		if err := rlp.DecodeBytes([]byte(v), &uHeader); err != nil {
-			log.Error("Get genesis unit header", "error", err.Error())
-			return nil
+			return nil, fmt.Errorf("Get genesis unit header:%s", err.Error())
 		}
 		// get transaction list
-		txs, err := GetUnitTransactions(uHeader.TxRoot)
+		txs, err := GetUnitTransactions(uHash)
 		if err != nil {
-			log.Error("Get genesis unit transactions", "error", err.Error())
-			return nil
+			return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
 		}
 		// generate unit
 		unit := modules.Unit{
@@ -283,9 +300,9 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 			Txs:        txs,
 		}
 		unit.UnitSize = unit.Size()
-		return &unit
+		return &unit, nil
 	}
-	return nil
+	return nil, nil
 }
 
 /**
@@ -293,17 +310,17 @@ func GetGenesisUnit(index uint64) *modules.Unit {
 To get genesis unit height
 */
 func GenesisHeight() modules.ChainIndex {
-	unit := GetGenesisUnit(0)
-	if unit == nil {
+	unit, err := GetGenesisUnit(0)
+	if unit == nil || err != nil {
 		return modules.ChainIndex{}
 	}
 	return unit.UnitHeader.Number
 }
 
-func GetUnitTransactions(root common.Hash) (modules.Transactions, error) {
+func GetUnitTransactions(unitHash common.Hash) (modules.Transactions, error) {
 	txs := modules.Transactions{}
 	// get body data: transaction list
-	txHashList, err := storage.GetBody(root)
+	txHashList, err := storage.GetBody(unitHash)
 	if err != nil {
 		return nil, err
 	}
@@ -353,34 +370,34 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		return fmt.Errorf("Unit is null")
 	}
-	// check unit signature, should be compare to mediator list
+	// step1. check unit signature, should be compare to mediator list
 	if err := checkUnitSignature(unit.UnitHeader, isGenesis); err != nil {
 		return err
 	}
 
-	// check unit size
+	// step2. check unit size
 	if unit.UnitSize != unit.Size() {
 		return modules.ErrUnit(-1)
 	}
-	// check transactions in unit
+	// step3. check transactions in unit
 	totalFee, err := checkTransactions(&unit.Txs, isGenesis)
 	if err != nil {
 		return err
 	}
-	// todo check coin base fee
+	// step4. check coin base fee
 	if totalFee <= 0 {
 	}
-	// save unit header
+	// step5. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		return modules.ErrUnit(-3)
 	}
-	// save unit hash and chain index relation
+	// step6. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
 	if err := storage.SaveHashNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
 		return fmt.Errorf("Save unit hash and number error")
 	}
-	// traverse transactions and save them
+	// step7. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
 		// traverse messages
@@ -392,6 +409,9 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 					return fmt.Errorf("Save payment payload error.")
 				}
 			case modules.APP_CONTRACT_TPL:
+				if ok := saveContractTpl(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
+					return fmt.Errorf("Save contract template error.")
+				}
 			case modules.APP_CONTRACT_DEPLOY:
 				if ok := saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
 					return fmt.Errorf("Save contract init payload error.")
@@ -409,13 +429,13 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 				return fmt.Errorf("Message type is not supported now: %s", msg.App)
 			}
 		}
-		// save transaction
+		// step8. save transaction
 		if err = storage.SaveTransaction(tx); err != nil {
 			return err
 		}
 	}
 
-	// save unit body, the value only save txs' hash set, and the key is merkle root
+	// step9. save unit body, the value only save txs' hash set, and the key is merkle root
 	if err = storage.SaveBody(unit.UnitHash, txHashSet); err != nil {
 		return err
 	}
@@ -523,32 +543,11 @@ func savePaymentPayload(txHash common.Hash, msg *modules.Message, msgIndex uint3
 	// if this is a create token transaction, should be return a assetid
 	var pl interface{}
 	pl = msg.Payload
-	payload, ok := pl.(modules.PaymentPayload)
+	_, ok := pl.(modules.PaymentPayload)
 	if ok == false {
 		return false
 	}
-	if len(payload.Inputs) > 0 {
-		if len(payload.Inputs) == 1 && unsafe.Sizeof(payload.Inputs[0].PreviousOutPoint) == 0 {
-			// create new token
-			var assetInfo modules.AssetInfo
-			if err := rlp.DecodeBytes(payload.Inputs[0].Extra, &assetInfo); err != nil {
-				return false
-			}
-			// create asset id
-			assetInfo.AssetID.AssertId = asset.NewAsset()
-			assetInfo.AssetID.UniqueId = assetInfo.AssetID.AssertId
-			data := GetConfig([]byte("ChainID"))
-			chainID := common.BytesToInt(data)
-			if chainID < 0 {
-				return false
-			}
-			assetInfo.AssetID.ChainId = uint64(chainID)
-			// save asset info
-			if err := SaveAssetInfo(&assetInfo); err != nil {
-				log.Error("Save asset info error")
-			}
-		}
-	}
+
 	// save utxo
 	UpdateUtxo(txHash, msg, msgIndex, lockTime)
 	return true
@@ -612,14 +611,61 @@ To save contract init state
 func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
-	_, ok := pl.(modules.ContractDeployPayload)
+	payload, ok := pl.(modules.ContractDeployPayload)
 	if ok == false {
 		return false
 	}
-	/**
-	涉及到合约验证和合约ID生成的问题
-	*/
 
+	// save contract state
+	// key: [CONTRACT_STATE_PREFIX][contract id]_[field name]_[state version]
+	for k, v := range payload.WriteSet {
+		version := modules.StateVersion{
+			Height:  height,
+			TxIndex: txIndex,
+		}
+		key := fmt.Sprintf("%s%s_%s_%s",
+			storage.CONTRACT_STATE_PREFIX,
+			payload.ContractId,
+			k,
+			version.String())
+		if err := storage.Store(key, v); err != nil {
+			log.Error("Save payload key", "error", err.Error())
+			continue
+		}
+	}
+
+	return true
+}
+
+/**
+保存合约模板代码
+To save contract template code
+*/
+func saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+	var pl interface{}
+	pl = msg.Payload
+	payload, ok := pl.(modules.ContractTplPayload)
+	if ok == false {
+		return false
+	}
+
+	// step1. generate version for every contract template
+	version := modules.StateVersion{
+		Height:  height,
+		TxIndex: txIndex,
+	}
+
+	// step2. save contract template bytecode data
+	// key:[CONTRACT_TPL][Template id]_[template version]
+	key := fmt.Sprintf("%s%s_%s",
+		storage.CONTRACT_TPL,
+		payload.TemplateId.String(),
+		version.String())
+
+	if err := storage.Store(key, payload.Bytecode); err != nil {
+		log.Error("Save contract template", "error", err.Error())
+		return false
+	}
 	return true
 }
 
@@ -643,7 +689,7 @@ func checkUnitSignature(h *modules.Header, isGenesis bool) error {
 	copy(sig[64:], h.Authors.V)
 	// recover pubkey
 	hash := crypto.Keccak256Hash(util.RHashBytes(*emptySigUnit.UnitHeader))
-	pubKey, err := RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
+	pubKey, err := modules.RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
 	//  pubKey to pubKey_bytes
 	pubKey_bytes := crypto.FromECDSAPub(pubKey)
 	if keystore.VerifyUnitWithPK(sig, *emptySigUnit.UnitHeader, pubKey_bytes) == false {
@@ -671,24 +717,6 @@ func checkUnitSignature(h *modules.Header, isGenesis bool) error {
 	}
 
 	return nil
-}
-
-func RSVtoAddress(tx *modules.Transaction) common.Address {
-	sig := make([]byte, 65)
-	copy(sig[32-len(tx.From.R):32], tx.From.R)
-	copy(sig[64-len(tx.From.S):64], tx.From.S)
-	copy(sig[64:], tx.From.V)
-	pub, _ := crypto.SigToPub(tx.TxHash[:], sig)
-	address := crypto.PubkeyToAddress(*pub)
-	return address
-}
-
-func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {
-	sig := make([]byte, 65)
-	copy(sig[32-len(r):32], r)
-	copy(sig[64-len(s):64], s)
-	copy(sig[64:], v)
-	return crypto.SigToPub(hash, sig)
 }
 
 /**

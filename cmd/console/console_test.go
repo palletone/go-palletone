@@ -95,6 +95,7 @@ func DevGenesisBlock() *core.Genesis {
 		ChainID:                1,
 		TokenHolder:            core.DefaultTokenHolder,
 		InitialParameters:      initParams,
+		ImmutableParameters: core.NewImmutChainParams(),
 		InitialTimestamp:		gen.InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(core.DefaultMediatorCount,

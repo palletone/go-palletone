@@ -98,8 +98,8 @@ func SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	return Store(key, txsHash)
 }
 
-func GetBody(root common.Hash) ([]common.Hash, error) {
-	key := fmt.Sprintf("%s%s", BODY_PREFIX, root.String())
+func GetBody(unitHash common.Hash) ([]common.Hash, error) {
+	key := fmt.Sprintf("%s%s", BODY_PREFIX, unitHash.String())
 	data, err := Get([]byte(key))
 	if err != nil {
 		return nil, err

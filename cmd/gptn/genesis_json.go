@@ -155,6 +155,7 @@ func createExampleGenesis(account string) *core.Genesis {
 	initParams := core.NewChainParams()
 
 	return &core.Genesis{
+		Alias:                  core.DefaultAlias,
 		Version:                configure.Version,
 		TokenAmount:            core.DefaultTokenAmount,
 		TokenDecimal:           core.DefaultTokenDecimal,
@@ -162,6 +163,7 @@ func createExampleGenesis(account string) *core.Genesis {
 		TokenHolder:            account,
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
+		ImmutableParameters:    core.NewImmutChainParams(),
 		InitialTimestamp:       gen.InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(

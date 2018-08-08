@@ -18,9 +18,6 @@ package main
 
 import (
 	"encoding/json"
-	"os"
-	"time"
-
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
@@ -28,6 +25,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"gopkg.in/urfave/cli.v1"
+	"os"
+	"fmt"
 )
 
 var (
@@ -113,23 +112,22 @@ func initGenesis(ctx *cli.Context) error {
 		utils.Fatalf("invalid genesis file: %v", err)
 	}
 
-	if ctx.GlobalIsSet(GenesisTimestampFlag.Name) {
-		secFromNow := ctx.GlobalInt64(GenesisTimestampFlag.Name)
-		mi := int64(genesis.InitialParameters.MediatorInterval)
-		genesis.InitialTimestamp = time.Now().Unix() + mi + secFromNow
-		genesis.InitialTimestamp -= genesis.InitialTimestamp % mi
-	}
+	regulateGenesisTimestamp(ctx, genesis)
+
+	validateGenesis(genesis)
 
 	node := makeFullNode(ctx)
 	ks := node.GetKeyStore()
 	account, _ := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
 
-	err = gen.SetupGenesisUnit(genesis, ks, account)
+	unit, err := gen.SetupGenesisUnit(genesis, ks, account)
 	if err != nil {
-		utils.Fatalf("Failed to write genesis block: %v", err)
+		utils.Fatalf("Failed to write genesis unit: %v", err)
 		return err
 	}
-	log.Info("Successfully Get Genesis Block")
+
+	genesisUnitHash := unit.UnitHash
+	log.Info(fmt.Sprintf("Successfully Get Genesis Unit, it's hash: %v", genesisUnitHash.Hex()))
 
 	// 3, 全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
@@ -138,7 +136,7 @@ func initGenesis(ctx *cli.Context) error {
 
 	// 4, 动态全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
-	dgp := modules.InitDynGlobalProp(genesis)
+	dgp := modules.InitDynGlobalProp(genesis, genesisUnitHash)
 	storage.StoreDynGlobalProp(dgp)
 
 	// 5, 初始化mediator调度器，并存在数据库

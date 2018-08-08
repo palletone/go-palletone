@@ -48,64 +48,36 @@ import (
 // error is a *configure.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) error {
+func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) (*modules.Unit, error) {
 	unit, err := setupGenesisUnit(genesis, ks)
-	if err != nil && unit != nil {
-		log.Info("Genesis is Exist")
-		return nil
-	}
 	if err != nil {
-		log.Error("Failed to write genesis block:", err.Error())
-		return err
+		return unit, err
 	}
-
-	// comment by Albert·Gou
-	//// signature unit: only sign header data(without witness and authors fields)
-	//sign, err1 := ks.SigUnit(*unit.UnitHeader, account.Address)
-	//if err1 != nil {
-	//	msg := fmt.Sprintf("Failed to write genesis block:%v", err1.Error())
-	//	log.Error(msg)
-	//	return err1
-	//}
-	//
-	//r := sign[:32]
-	//s := sign[32:64]
-	//v :=  sign[64:]
-	//if len(v)!=1{
-	//	errors.New("error.")
-	//}
-	//unit.UnitHeader.Authors = &modules.Authentifier{
-	//	Address: account.Address.String(),
-	//	R:       r,
-	//	S:       s,
-	//	V:       v,
-	//}
-	//// to set witness list, should be creator himself
-	//var authentifier modules.Authentifier
-	//authentifier.Address = account.Address.String()
-	//unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
 
 	// modify by Albert·Gou
 	unit, err = dagCommon.GetUnitWithSig(unit, ks, account.Address)
 	if err != nil {
-		return err
+		return unit, err
 	}
 
 	// to save unit in db
 	if err := CommitDB(unit, false); err != nil {
 		log.Error("Commit genesis unit to db:", "error", err.Error())
-		return err
+		return unit, err
 	}
-	return nil
+	return unit, nil
 }
 
 func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Unit, error) {
 
 	// Just commit the new block if there is no stored genesis block.
-	stored := dagCommon.GetGenesisUnit(0)
+	stored, err := dagCommon.GetGenesisUnit(0)
+	if err != nil {
+		return nil, err
+	}
 	// Check whether the genesis block is already written.
 	if stored != nil {
-		return stored, errors.New("the genesis block is already written")
+		return stored, errors.New("the genesis block is existing")
 	}
 
 	if genesis == nil {
@@ -139,6 +111,14 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		DecimalUnit:    genesis.DecimalUnit,
 		OriginalHolder: holder,
 	}
+	// get new asset id
+	assetId := asset2.NewAsset()
+	asset := modules.Asset{
+		AssertId: assetId,
+		UniqueId: assetId,
+		ChainId:  genesis.ChainID,
+	}
+	assetInfo.AssetID = asset
 	extra, err := rlp.EncodeToBytes(assetInfo)
 	if err != nil {
 		log.Error("Get genesis assetinfo bytes error.")
@@ -147,13 +127,6 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	txin := modules.Input{
 		Extra: extra, // save asset info
 	}
-	// get new asset id
-	assetId := asset2.NewAsset()
-	asset := modules.Asset{
-		AssertId: assetId,
-		UniqueId: assetId,
-		ChainId:  genesis.ChainID,
-	}
 	// generate p2pkh bytes
 	publicKey, err := ks.GetPublicKey(holder)
 	if err != nil {
@@ -161,6 +134,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		return nil
 	}
 	pkscript := txscript.PayToPubkeyHashScript(publicKey)
+
 	txout := modules.Output{
 		Value:    genesis.TokenAmount,
 		Asset:    asset,
@@ -212,7 +186,6 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		V:       V,
 	}
 	tx.Txsize = tx.Size()
-	fmt.Println("Tx size:", tx.Txsize)
 	txs := []*modules.Transaction{tx}
 	return txs
 }
@@ -244,6 +217,7 @@ func DefaultGenesisBlock() *core.Genesis {
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
+		ImmutableParameters:    core.NewImmutChainParams(),
 		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
@@ -267,6 +241,7 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
+		ImmutableParameters:    core.NewImmutChainParams(),
 		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
@@ -275,12 +250,12 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 }
 
 func InitialMediatorCandidates(len int, address string) []string {
-	initialMediatorSet := make([]string, len)
+	initialMediator := make([]string, len)
 	for i := 0; i < len; i++ {
-		initialMediatorSet[i] = address
+		initialMediator[i] = address
 	}
 
-	return initialMediatorSet
+	return initialMediator
 }
 
 func InitialTimestamp(mediatorInterval uint8) int64 {

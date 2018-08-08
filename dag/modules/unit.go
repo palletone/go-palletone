@@ -23,7 +23,9 @@ import (
 	"time"
 	"unsafe"
 
+	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"strings"
@@ -183,6 +185,13 @@ type Unit struct {
 	ReceivedFrom interface{}
 }
 
+func (unit *Unit) IsEmpty() bool {
+	if unit == nil || len(unit.Txs) <= 0 {
+		return true
+	}
+	return false
+}
+
 type Transactions []*Transaction
 
 type Transaction struct {
@@ -261,6 +270,7 @@ type ContractTplPayload struct {
 // App: contract_deploy
 type ContractDeployPayload struct {
 	TemplateId common.Hash              `json:"template_id"` // contract template id
+	ContractId string                   `json:"contract_id"` // contract id
 	Config     []byte                   `json:"config"`      // configure xml file of contract instance parameters
 	ReadSet    map[string]*StateVersion `json:"read_set"`    // the set data of read, and value could be any type
 	WriteSet   map[string]interface{}   `json:"write_set"`   // the set data of write, and value could be any type
@@ -419,7 +429,7 @@ func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 	// check transactions merkle root
 	txs := CopyBody(transactions)
 	root := core.DeriveSha(txs)
-	if strings.Compare(root.String(), b.UnitHeader.TxRoot.String())!=0 {
+	if strings.Compare(root.String(), b.UnitHeader.TxRoot.String()) != 0 {
 		return nil
 	}
 	// set unit body
@@ -430,9 +440,27 @@ func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 func (u *Unit) ContainsParent(pHash common.Hash) bool {
 	ps := pHash.String()
 	for _, hash := range u.UnitHeader.ParentsHash {
-		if strings.Compare(hash.String(), ps)==0 {
+		if strings.Compare(hash.String(), ps) == 0 {
 			return true
 		}
 	}
 	return false
+}
+
+func RSVtoAddress(tx *Transaction) common.Address {
+	sig := make([]byte, 65)
+	copy(sig[32-len(tx.From.R):32], tx.From.R)
+	copy(sig[64-len(tx.From.S):64], tx.From.S)
+	copy(sig[64:], tx.From.V)
+	pub, _ := crypto.SigToPub(tx.TxHash[:], sig)
+	address := crypto.PubkeyToAddress(*pub)
+	return address
+}
+
+func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {
+	sig := make([]byte, 65)
+	copy(sig[32-len(r):32], r)
+	copy(sig[64-len(s):64], s)
+	copy(sig[64:], v)
+	return crypto.SigToPub(hash, sig)
 }

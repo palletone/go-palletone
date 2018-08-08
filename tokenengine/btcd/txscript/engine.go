@@ -423,7 +423,9 @@ func (vm *Engine) CheckErrorCondition(finalScript bool) error {
 		// Log interesting data.
 		s0, _ := vm.DisasmScript(0)
 		s1, _ := vm.DisasmScript(1)
-		log.Trace(fmt.Sprintf("scripts failed: script0: %s\n script1: %s", s0, s1))
+                s0 = s0
+                s1 = s1
+		//log.Trace(fmt.Sprintf("scripts failed: script0: %s\n script1: %s", s0, s1))
 
 		return scriptError(ErrEvalFalse,
 			"false stack entry at end of script execution")
@@ -532,7 +534,8 @@ func (vm *Engine) Execute() (err error) {
 		if err != nil {
 			log.Error(fmt.Sprintf("stepping (%v)", err))
 		}
-		log.Trace(fmt.Sprintf("stepping %v", dis))
+                dis = dis
+		//log.Trace(fmt.Sprintf("stepping %v", dis))
 
 		done, err = vm.Step()
 		if err != nil {
@@ -548,8 +551,9 @@ func (vm *Engine) Execute() (err error) {
 		if vm.astack.Depth() != 0 {
 			astr = "AltStack:\n" + vm.astack.String()
 		}
-
-		log.Trace(dstr + astr)
+                dstr= dstr 
+                astr = astr
+		//log.Trace(dstr + astr)
 	}
 
 	return vm.CheckErrorCondition(true)
