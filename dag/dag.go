@@ -175,6 +175,14 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 	return checkFreq, nil
 }
 
+/**
+获取account address下面的token信息
+To get account token list and tokens's information
+*/
+func (d *Dag) WalletTokens(addr common.Address) (map[modules.Asset]*modules.AccountToken, error) {
+	return dagcommon.GetAccountTokens(addr)
+}
+
 func NewDag() *Dag {
 	// genesis, _ := NewGenesisUnit(nil) // comment by Albert·Gou
 	db, _ := palletdb.NewMemDatabase()

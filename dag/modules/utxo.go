@@ -263,7 +263,7 @@ func (assetInfo *AssetInfo) Print() {
 }
 
 type AccountToken struct {
-	Alias   string
-	AssetID Asset
-	Balance uint64
+	Alias   string `json:"alias"`
+	AssetID Asset  `json:"asset_id"`
+	Balance uint64 `json:"balance"`
 }
