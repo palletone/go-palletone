@@ -23,7 +23,9 @@ import (
 	"time"
 	"unsafe"
 
+	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"strings"
@@ -181,6 +183,13 @@ type Unit struct {
 	// inter-peer block relay.
 	ReceivedAt   time.Time
 	ReceivedFrom interface{}
+}
+
+func (unit *Unit) IsEmpty() bool {
+	if unit == nil || len(unit.Txs) <= 0 {
+		return true
+	}
+	return false
 }
 
 type Transactions []*Transaction
@@ -436,4 +445,22 @@ func (u *Unit) ContainsParent(pHash common.Hash) bool {
 		}
 	}
 	return false
+}
+
+func RSVtoAddress(tx *Transaction) common.Address {
+	sig := make([]byte, 65)
+	copy(sig[32-len(tx.From.R):32], tx.From.R)
+	copy(sig[64-len(tx.From.S):64], tx.From.S)
+	copy(sig[64:], tx.From.V)
+	pub, _ := crypto.SigToPub(tx.TxHash[:], sig)
+	address := crypto.PubkeyToAddress(*pub)
+	return address
+}
+
+func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {
+	sig := make([]byte, 65)
+	copy(sig[32-len(r):32], r)
+	copy(sig[64-len(s):64], s)
+	copy(sig[64:], v)
+	return crypto.SigToPub(hash, sig)
 }
