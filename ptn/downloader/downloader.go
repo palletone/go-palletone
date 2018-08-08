@@ -20,6 +20,7 @@ package downloader
 import (
 	"errors"
 	"fmt"
+
 	//"math/big"
 	"sync"
 	"sync/atomic"
@@ -318,7 +319,7 @@ func (d *Downloader) Synchronise(id string, head common.Hash, index uint64, mode
 			// Timeouts can occur if e.g. compaction hits at the wrong time, and can be ignored
 			log.Warn("Downloader wants to drop peer, but peerdrop-function is not set", "peer", id)
 		} else {
-			//d.dropPeer(id)  //would recover
+			d.dropPeer(id)
 		}
 
 	default:
@@ -1223,6 +1224,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 func (d *Downloader) processFastSyncContent(latest *modules.Header) error {
 	// Start syncing state of the reported head block. This should get us most of
 	// the state of the pivot block.
+	log.Debug("===Enter processFastSyncContent===")
 	stateSync := d.syncState(latest.TxRoot)
 	defer stateSync.Cancel()
 	go func() {
@@ -1250,11 +1252,13 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header) error {
 		if len(results) == 0 {
 			// If pivot sync is done, stop
 			if oldPivot == nil {
+				log.Debug("===processFastSyncContent===oldPivot == nil")
 				return stateSync.Cancel()
 			}
 			// If sync failed, stop
 			select {
 			case <-d.cancelCh:
+				log.Debug("===processFastSyncContent===<-d.cancelCh")
 				return stateSync.Cancel()
 			default:
 			}
@@ -1276,6 +1280,7 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header) error {
 		}
 		P, beforeP, afterP := splitAroundPivot(pivot, results)
 		if err := d.commitFastSyncData(beforeP, stateSync); err != nil {
+			log.Debug("===processFastSyncContent===", "err:", err)
 			return err
 		}
 		if P != nil {
@@ -1296,9 +1301,11 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header) error {
 			select {
 			case <-stateSync.done:
 				if stateSync.err != nil {
+					log.Debug("===processFastSyncContent===", "stateSync.err:", stateSync.err)
 					return stateSync.err
 				}
 				if err := d.commitPivotBlock(P); err != nil {
+					log.Debug("===processFastSyncContent===", "commitPivotBlock.err:", err)
 					return err
 				}
 				oldPivot = nil
@@ -1310,6 +1317,7 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header) error {
 		}
 		// Fast sync done, pivot commit done, full import
 		if err := d.importBlockResults(afterP); err != nil {
+			log.Debug("===processFastSyncContent===", "importBlockResults.err:", err)
 			return err
 		}
 	}

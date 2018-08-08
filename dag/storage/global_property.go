@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -32,14 +33,20 @@ const (
 )
 
 func StoreGlobalProp(gp *modules.GlobalProperty) {
-	err := Store(globalPropDBKey, *gp)
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+	err := Store(Dbconn, globalPropDBKey, *gp)
 	if err != nil {
 		log.Info(fmt.Sprintf("Store global properties error:%s", err))
 	}
 }
 
 func StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) {
-	err := Store(dynGlobalPropDBKey, *dgp)
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+	err := Store(Dbconn, dynGlobalPropDBKey, *dgp)
 	if err != nil {
 		log.Info(fmt.Sprintf("Store dynamic global properties error: %s", err))
 	}

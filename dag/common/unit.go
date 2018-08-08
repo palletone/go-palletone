@@ -596,7 +596,7 @@ func saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *m
 			payload.ContractId,
 			k,
 			version.String())
-		if err := storage.Store(key, v); err != nil {
+		if err := storage.Store(storage.Dbconn, key, v); err != nil {
 			log.Error("Save payload key", "error", err.Error())
 			continue
 		}
@@ -628,7 +628,7 @@ func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *mod
 			payload.ContractId,
 			k,
 			version.String())
-		if err := storage.Store(key, v); err != nil {
+		if err := storage.Store(storage.Dbconn, key, v); err != nil {
 			log.Error("Save payload key", "error", err.Error())
 			continue
 		}
@@ -662,7 +662,7 @@ func saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Mes
 		payload.TemplateId.String(),
 		version.String())
 
-	if err := storage.Store(key, payload.Bytecode); err != nil {
+	if err := storage.Store(storage.Dbconn, key, payload.Bytecode); err != nil {
 		log.Error("Save contract template", "error", err.Error())
 		return false
 	}

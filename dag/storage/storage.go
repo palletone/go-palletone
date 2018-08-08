@@ -19,36 +19,43 @@
 package storage
 
 import (
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/util"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
+func PutCanonicalHash(db ptndb.Putter, hash common.Hash, number uint64) error {
+	key := append(HEADER_PREFIX, encodeBlockNumber(number)...)
+	if err := db.Put(append(key, NumberSuffix...), hash.Bytes()); err != nil {
+		return err
+	}
+	return nil
+}
+
 // value will serialize to rlp encoding bytes
-func Store(key string, value interface{}) error {
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
-	}
+func Store(db ptndb.Database, key string, value interface{}) error {
+
 	val, err := rlp.EncodeToBytes(value)
 	if err != nil {
 		return err
 	}
 
-	_, err = Dbconn.Get([]byte(key))
+	_, err = db.Get([]byte(key))
 	if err != nil {
 		if err == errors.ErrNotFound {
-			if err := Dbconn.Put([]byte(key), val); err != nil {
+			if err := db.Put([]byte(key), val); err != nil {
 				return err
 			}
 		} else {
 			return err
 		}
 	} else {
-		if err = Dbconn.Delete([]byte(key)); err != nil {
+		if err = db.Delete([]byte(key)); err != nil {
 			return err
 		}
-		if err := Dbconn.Put([]byte(key), val); err != nil {
+		if err := db.Put([]byte(key), val); err != nil {
 			return err
 		}
 	}
@@ -56,29 +63,26 @@ func Store(key string, value interface{}) error {
 	return nil
 }
 
-func StoreBytes(key []byte, value interface{}) error {
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
-	}
+func StoreBytes(db ptndb.Database, key []byte, value interface{}) error {
 	val, err := rlp.EncodeToBytes(value)
 	if err != nil {
 		return err
 	}
 
-	_, err = Dbconn.Get(key)
+	_, err = db.Get(key)
 	if err != nil {
 		if err == errors.ErrNotFound {
-			if err := Dbconn.Put(key, val); err != nil {
+			if err := db.Put(key, val); err != nil {
 				return err
 			}
 		} else {
 			return err
 		}
 	} else {
-		if err = Dbconn.Delete(key); err != nil {
+		if err = db.Delete(key); err != nil {
 			return err
 		}
-		if err := Dbconn.Put(key, val); err != nil {
+		if err := db.Put(key, val); err != nil {
 			return err
 		}
 	}
@@ -86,9 +90,6 @@ func StoreBytes(key []byte, value interface{}) error {
 	return nil
 }
 
-func StoreString(key, value string) error {
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
-	}
-	return Dbconn.Put(util.ToByte(key), util.ToByte(value))
+func StoreString(db ptndb.Putter, key, value string) error {
+	return db.Put(util.ToByte(key), util.ToByte(value))
 }
