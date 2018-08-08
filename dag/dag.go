@@ -16,16 +16,19 @@
  * @date 2018
  */
 
-package common
+package dag
 
 import (
 	"sync"
 
 	"fmt"
+
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rlp"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
@@ -122,7 +125,7 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
-		if err := SaveUnit(*u, false); err != nil {
+		if err := dagcommon.SaveUnit(*u, false); err != nil {
 			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
 		}
@@ -144,6 +147,16 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 
 func (d *Dag) CurrentHeader() *modules.Header {
 	return d.CurrentUnit().Header()
+}
+
+// GetBodyRLP retrieves a block body in RLP encoding from the database by hash,
+// caching it if found.
+func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
+	return rlp.RawValue{}
+}
+
+func (d *Dag) GetHeaerRLP(hash common.Hash) rlp.RawValue {
+	return rlp.RawValue{}
 }
 
 // InsertHeaderChain attempts to insert the given header chain in to the local

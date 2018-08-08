@@ -56,6 +56,13 @@ func (asset *Asset) SetString(data string) error {
 	return nil
 }
 
+func (asset *Asset) IsEmpty() bool {
+	if len(asset.AssertId) <= 0 || len(asset.UniqueId) <= 0 {
+		return true
+	}
+	return false
+}
+
 type Utxo struct {
 	TxID         common.Hash `json:"unit_id"`       // transaction id
 	MessageIndex uint32      `json:"message_index"` // message index in transaction
@@ -64,6 +71,13 @@ type Utxo struct {
 	Asset        Asset       `json:"Asset"`   // 资产类别
 	PkScript     []byte      `json:"program"` // 要执行的代码段
 	LockTime     uint32      `json:"lock_time"`
+}
+
+func (utxo *Utxo) IsEmpty() bool {
+	if len(utxo.TxID) == 0 || len(utxo.PkScript) == 0 || utxo.IsEmpty() {
+		return true
+	}
+	return false
 }
 
 // UtxoIndex is key

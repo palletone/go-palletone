@@ -17,7 +17,7 @@
  *
  */
 
-package common
+package mediatorplugin
 
 import (
 	"fmt"
@@ -26,12 +26,15 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 // GenerateVerifiedUnit, generate unit
 // @author Albert·Gou
-func GenerateUnit(dag *Dag, when time.Time, producer common.Mediator, ks *keystore.KeyStore) modules.Unit {
+func GenerateUnit(dag *dag.Dag, when time.Time, producer common.Mediator, ks *keystore.KeyStore, txspool *txspool.TxPool) modules.Unit {
 	dgp := dag.DynGlobalProp
 
 	// 1. 判断是否满足生产的若干条件
@@ -39,7 +42,11 @@ func GenerateUnit(dag *Dag, when time.Time, producer common.Mediator, ks *keysto
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	log.Debug("Generating Verified Unit...")
 
-	units, _ := CreateUnit(&producer.Address)
+	units, _ := dagcommon.CreateUnit(&producer.Address, txspool)
+	if len(units) <= 0 {
+		log.Info("No unit need to be packaged for now.")
+		return modules.Unit{}
+	}
 	pendingUnit := units[0]
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
 	pendingUnit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
@@ -47,7 +54,7 @@ func GenerateUnit(dag *Dag, when time.Time, producer common.Mediator, ks *keysto
 		append(pendingUnit.UnitHeader.ParentsHash, dgp.LastVerifiedUnitHash)
 	pendingUnit.UnitHash = pendingUnit.Hash()
 
-	_, err := GetUnitWithSig(&pendingUnit, ks, producer.Address)
+	_, err := dagcommon.GetUnitWithSig(&pendingUnit, ks, producer.Address)
 	if err != nil {
 		log.Error(fmt.Sprintf("%v", err))
 	}
@@ -67,19 +74,19 @@ func GenerateUnit(dag *Dag, when time.Time, producer common.Mediator, ks *keysto
  *
  * @return true if we switched forks as a result of this push.
  */
-func PushUnit(dag *Dag, newUnit *modules.Unit) bool {
+func PushUnit(dag *dag.Dag, newUnit *modules.Unit) bool {
 	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
 
 	ApplyUnit(dag, newUnit)
 
 	// 4. 将验证单元添加到本地DB
 	log.Debug("storing the new verified unit to database...")
-	go StoreUnit(newUnit)
+	go dagcommon.SaveUnit(*newUnit, false)
 
 	return false
 }
 
-func ApplyUnit(dag *Dag, nextUnit *modules.Unit) {
+func ApplyUnit(dag *dag.Dag, nextUnit *modules.Unit) {
 	gp := dag.GlobalProp
 	dgp := dag.DynGlobalProp
 
@@ -87,7 +94,7 @@ func ApplyUnit(dag *Dag, nextUnit *modules.Unit) {
 
 	// 5. 更新全局动态属性值
 	log.Debug("Updating global dynamic property...")
-	UpdateGlobalDynProp(gp, dgp, nextUnit)
+	dagcommon.UpdateGlobalDynProp(gp, dgp, nextUnit)
 
 	// 5. 判断是否到了维护周期，并维护
 

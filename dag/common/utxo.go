@@ -508,3 +508,48 @@ func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) b
 	}
 	return true
 }
+
+/**
+根据交易列表计算交易费总和
+To compute transactions' fees
+*/
+func ComputeFees(txs modules.Transactions) (uint64, error) {
+	fees := uint64(0)
+	for _, tx := range txs {
+		for _, msg := range tx.TxMessages {
+			payload, ok := msg.Payload.(modules.PaymentPayload)
+			if ok == false {
+				continue
+			}
+			inAmount := uint64(0)
+			outAmount := uint64(0)
+			for _, txin := range payload.Inputs {
+				utxo := GetUxto(txin)
+				if utxo.IsEmpty() {
+					return 0, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
+						txin.PreviousOutPoint.TxHash.String(),
+						txin.PreviousOutPoint.MessageIndex,
+						txin.PreviousOutPoint.OutIndex)
+				}
+				// check overflow
+				if inAmount+utxo.Amount > 1<<64-1 {
+					return 0, fmt.Errorf("Compute fees: txin total overflow")
+				}
+				inAmount += utxo.Amount
+			}
+
+			for _, txout := range payload.Outputs {
+				// check overflow
+				if outAmount+txout.Value > 1<<64-1 {
+					return 0, fmt.Errorf("Compute fees: txout total overflow")
+				}
+				outAmount += txout.Value
+			}
+			if inAmount < outAmount {
+				return 0, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount.", tx.TxHash.String())
+			}
+			fees += inAmount - outAmount
+		}
+	}
+	return fees, nil
+}

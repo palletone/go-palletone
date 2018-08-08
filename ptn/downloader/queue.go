@@ -339,11 +339,11 @@ func (q *queue) Schedule(headers []*modules.Header, from uint64) []*modules.Head
 		//q.blockTaskQueue.Push(header, -float32(header.Number.Uint64()))
 		q.blockTaskQueue.Push(header, -float32(header.Number.Index))
 
-		if q.mode == FastSync {
-			q.receiptTaskPool[hash] = header
-			//q.receiptTaskQueue.Push(header, -float32(header.Number.Uint64()))
-			q.receiptTaskQueue.Push(header, -float32(header.Number.Index))
-		}
+		//		if q.mode == FastSync {
+		//			q.receiptTaskPool[hash] = header
+		//			q.receiptTaskQueue.Push(header, -float32(header.Number.Uint64()))
+		//			q.receiptTaskQueue.Push(header, -float32(header.Number.Index))
+		//		}
 		inserts = append(inserts, header)
 		q.headerHead = hash
 		from++
@@ -462,7 +462,10 @@ func (q *queue) ReserveBodies(p *peerConnection, count int) (*fetchRequest, bool
 	isNoop := func(header *modules.Header) bool {
 		//return header.TxHash == modules.EmptyRootHash
 		//TODO modify
-		log.Info("ReserveBodies", "header.TxRoot == modules.EmptyRootHash:", header.TxRoot == modules.EmptyRootHash)
+		//return header.TxRoot == modules.EmptyRootHash
+		if header.TxRoot == modules.EmptyRootHash {
+			log.Info("ReserveBodies", "header.TxRoot == modules.EmptyRootHash:", header.TxRoot == modules.EmptyRootHash)
+		}
 		return header.TxRoot == modules.EmptyRootHash
 	}
 	q.lock.Lock()
@@ -495,7 +498,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 	// Retrieve a batch of tasks, skipping previously failed ones
 	send := make([]*modules.Header, 0, count)
 	skip := make([]*modules.Header, 0)
-
+	log.Debug("===queue->reserveHeaders===", "count:", count)
 	progress := false
 	for proc := 0; proc < space && len(send) < count && !taskQueue.Empty(); proc++ {
 		header := taskQueue.PopItem().(*modules.Header)
@@ -506,6 +509,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 		index := int(header.Number.Index - q.resultOffset)
 		if index >= len(q.resultCache) || index < 0 {
 			common.Report("index allocation went beyond available resultCache space")
+			log.Debug("index allocation went beyond available resultCache space")
 			return nil, false, errInvalidChain
 		}
 		if q.resultCache[index] == nil {
@@ -536,6 +540,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 			send = append(send, header)
 		}
 	}
+	log.Debug("===queue->reserveHeaders===", "len(skip):", len(skip), "len(send):", len(send))
 	// Merge all the skipped headers back
 	for _, header := range skip {
 		//taskQueue.Push(header, -float32(header.Number.Uint64()))
@@ -767,16 +772,17 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 // DeliverBodies injects a block body retrieval response into the results queue.
 // The method returns the number of blocks bodies accepted from the delivery and
 // also wakes any threads waiting for data delivery.
-func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction, uncleLists [][]*modules.Header) (int, error) {
+func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction) (int, error) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
 	reconstruct := func(header *modules.Header, index int, result *fetchResult) error {
-		if modules.DeriveSha(modules.Transactions(txLists[index])) != header.TxRoot {
-			return errInvalidBody
-		}
+		//TODO must recover
+		//		if modules.DeriveSha(modules.Transactions(txLists[index])) != header.TxRoot {
+		//			log.Debug("===queue->DeliverBodies===", "err:", errInvalidBody)
+		//			return errInvalidBody
+		//		}
 		result.Transactions = txLists[index]
-		result.Uncles = uncleLists[index]
 		return nil
 	}
 	return q.deliver(id, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, bodyReqTimer, len(txLists), reconstruct)
@@ -821,6 +827,7 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*modules.Header, tas
 
 	// If no data items were retrieved, mark them as unavailable for the origin peer
 	if results == 0 {
+		log.Debug("===queue->deliver===", "results:", results, "len(request.Headers):", len(request.Headers))
 		for _, header := range request.Headers {
 			request.Peer.MarkLacking(header.Hash())
 		}

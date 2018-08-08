@@ -34,7 +34,8 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
-	dagcommon "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag"
+	//dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ethapi"
@@ -71,7 +72,7 @@ type PalletOne struct {
 	networkId     uint64
 	netRPCService *ethapi.PublicNetAPI
 
-	dag *dagcommon.Dag
+	dag *dag.Dag
 
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
 
@@ -101,7 +102,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		networkId:      config.NetworkId,
 		levelDb:        db,
 		bloomRequests:  make(chan chan *bloombits.Retrieval),
-		dag:            dagcommon.NewDag(),
+		dag:            dag.NewDag(),
 		//bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
 		//etherbase:      config.Etherbase,
 	}
@@ -184,7 +185,7 @@ func (s *PalletOne) IsListening() bool                  { return true } // Alway
 func (s *PalletOne) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *PalletOne) NetVersion() uint64                 { return s.networkId }
 func (s *PalletOne) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
-func (s *PalletOne) Dag() *dagcommon.Dag                { return s.dag }
+func (s *PalletOne) Dag() *dag.Dag                      { return s.dag }
 
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.
