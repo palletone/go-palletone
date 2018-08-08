@@ -60,6 +60,8 @@ var (
 // not compatible (low protocol version restrictions and high requirements).
 var errIncompatibleConfig = errors.New("incompatible configuration")
 
+var tempGetBlockBodiesMsgSum int = 0
+
 func errResp(code errCode, format string, v ...interface{}) error {
 	return fmt.Errorf("%v - %v", code, fmt.Sprintf(format, v...))
 }
@@ -472,6 +474,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			bodies []rlp.RawValue
 			sum    int
 		)
+
 		for bytes < softResponseLimit && len(bodies) < downloader.MaxBlockFetch {
 			// Retrieve the hash of the next block
 			if err := msgStream.Decode(&hash); err == rlp.EOL {
@@ -480,13 +483,38 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				return errResp(ErrDecode, "msg %v: %v", msg, err)
 			}
 			// Retrieve the requested block body, stopping if enough was found
-			if data := pm.dag.GetBodyRLP(hash); len(data) != 0 {
+			//			if data := pm.dag.GetBodyRLP(hash); len(data) != 0 {
+			//				bodies = append(bodies, data)
+			//				bytes += len(data)
+			//			}
+			//===test===
+			/*
+				body := blockBody{}
+				tx := modules.Transaction{}
+				tx.AccountNonce = uint64(1)
+				body.Transactions = append(body.Transactions, &tx)
+				data, err := rlp.EncodeToBytes(body)
+				if err != nil {
+					log.Debug("===GetBlockBodiesMsg===", "rlp.EncodeToBytes err:", err)
+					continue
+				}
 				bodies = append(bodies, data)
 				bytes += len(data)
+			*/
+			body := blockBody{}
+			tx := TestMakeTransaction(uint64(tempGetBlockBodiesMsgSum))
+			body.Transactions = append(body.Transactions, tx)
+			data, err := rlp.EncodeToBytes(body)
+			if err != nil {
+				log.Debug("===GetBlockBodiesMsg===", "rlp.EncodeToBytes err:", err)
+				continue
 			}
+			bodies = append(bodies, data)
+			bytes += len(data)
 			sum++
+			tempGetBlockBodiesMsgSum++
 		}
-		log.Debug("===GetBlockBodiesMsg===", "sum:", sum)
+		log.Debug("===GetBlockBodiesMsg===", "tempGetBlockBodiesMsgSum:", tempGetBlockBodiesMsgSum, "sum:", sum)
 		return p.SendBlockBodiesRLP(bodies)
 
 	case msg.Code == BlockBodiesMsg:
@@ -498,16 +526,27 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		// Deliver them all to the downloader for queuing
 		transactions := make([][]*modules.Transaction, len(request))
-
+		sum := 0
 		for i, body := range request {
 			transactions[i] = body.Transactions
+			sum++
 		}
+
+		//===test===
+		//		transaction := modules.Transaction{}
+		//		transaction.AccountNonce = uint64(1)
+		//		txs := []*modules.Transaction{}
+		//		txs = append(txs, &transaction)
+		//		transactions = append(transactions, txs)
+		log.Debug("===BlockBodiesMsg===", "request sum:", sum, "len(transactions:)", len(transactions))
 		// Filter out any explicitly requested bodies, deliver the rest to the downloader
 		filter := len(transactions) > 0
 		if filter {
+			log.Debug("===BlockBodiesMsg->FilterBodies===")
 			transactions = pm.fetcher.FilterBodies(p.id, transactions, time.Now())
 		}
 		if len(transactions) > 0 || !filter {
+			log.Debug("===BlockBodiesMsg->DeliverBodies===")
 			err := pm.downloader.DeliverBodies(p.id, transactions)
 			if err != nil {
 				log.Debug("Failed to deliver bodies", "err", err.Error())
@@ -740,4 +779,45 @@ func (self *ProtocolManager) NodeInfo() *NodeInfo {
 		//Config:     self.blockchain.Config(),
 		//Head:       currentBlock.Hash(),
 	}
+}
+
+func TestMakeTransaction(nonce uint64) *modules.Transaction {
+	pay := modules.PaymentPayload{
+		Inputs:  []modules.Input{},
+		Outputs: []modules.Output{},
+	}
+	holder := common.Address{}
+	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
+	msg0 := modules.Message{
+		App:     modules.APP_PAYMENT,
+		Payload: pay,
+	}
+	msg0.PayloadHash = rlp.RlpHash(pay)
+	tx := &modules.Transaction{
+		AccountNonce: nonce,
+		TxMessages:   []modules.Message{msg0},
+	}
+	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
+	if err != nil {
+		msg := fmt.Sprintf("Get genesis transactions hash error: %s", err)
+		log.Error(msg)
+		return nil
+	}
+	tx.TxHash.SetBytes(txHash)
+	// step4, sign tx
+	//	R, S, V, err := ks.SigTX(tx.TxHash, holder)
+	//	if err != nil {
+	//		msg := fmt.Sprintf("Sign transaction error: %s", err)
+	//		log.Error(msg)
+	//		return nil
+	//	}
+	tx.From = &modules.Authentifier{
+		Address: holder.String(),
+		//		R:       R,
+		//		S:       S,
+		//		V:       V,
+	}
+	tx.Txsize = tx.Size()
+	//txs := []*modules.Transaction{tx}
+	return tx
 }
