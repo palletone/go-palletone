@@ -772,17 +772,17 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 // DeliverBodies injects a block body retrieval response into the results queue.
 // The method returns the number of blocks bodies accepted from the delivery and
 // also wakes any threads waiting for data delivery.
-func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction /*, uncleLists [][]*modules.Header*/) (int, error) {
+func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction) (int, error) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
 	reconstruct := func(header *modules.Header, index int, result *fetchResult) error {
-		if modules.DeriveSha(modules.Transactions(txLists[index])) != header.TxRoot {
-			log.Debug("===queue->DeliverBodies===", "err:", errInvalidBody)
-			return errInvalidBody
-		}
+		//TODO must recover
+		//		if modules.DeriveSha(modules.Transactions(txLists[index])) != header.TxRoot {
+		//			log.Debug("===queue->DeliverBodies===", "err:", errInvalidBody)
+		//			return errInvalidBody
+		//		}
 		result.Transactions = txLists[index]
-		//result.Uncles = uncleLists[index]
 		return nil
 	}
 	return q.deliver(id, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, bodyReqTimer, len(txLists), reconstruct)

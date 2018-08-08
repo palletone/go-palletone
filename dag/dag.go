@@ -26,6 +26,7 @@ import (
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/log"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
@@ -108,6 +109,9 @@ func (d *Dag) SaveDag(unit modules.Unit) (int, error) {
 To save some continuous units to dag storage
 */
 func (d *Dag) InsertDag(units modules.Units) (int, error) {
+	//TODO must recover
+	log.Debug("===InsertDag===", "len(units):", len(units))
+	return len(units), nil
 	count := int(0)
 	for i, u := range units {
 		// all units must be continuous

@@ -551,7 +551,7 @@ func (ks *KeyStore) SigData(data interface{}, address common.Address) ([]byte, e
 	}
 	//defer ZeroKey(privateKey)
 	hash := crypto.Keccak256Hash(util.RHashBytes(data))
-	if err!=nil{
+	if err != nil {
 		return nil, err
 	}
 	//unit signature
