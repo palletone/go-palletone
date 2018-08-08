@@ -74,7 +74,7 @@ func (ud *testUnitDag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent)
 //	unitchain := dag.NewDag()
 //
 //	config := testTxPoolConfig
-//	config.GlobalSlots = 0
+//	config.GlobalSlots = 4096
 //	var queue_cache, queue_item, pending_cache, pending_item, all, origin int
 //	//pool := NewTxPool(config, unitchain)
 //	unitchain = unitchain //would recover
