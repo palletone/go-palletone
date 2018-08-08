@@ -46,16 +46,11 @@ func (p *headerPack) Stats() string  { return fmt.Sprintf("%d", len(p.headers)) 
 type bodyPack struct {
 	peerId       string
 	transactions [][]*modules.Transaction
-	//uncles       [][]*modules.Header
 }
 
 func (p *bodyPack) PeerId() string { return p.peerId }
 func (p *bodyPack) Items() int {
 	return len(p.transactions)
-	//	if len(p.transactions) <= len(p.uncles) {
-	//		return len(p.transactions)
-	//	}
-	//	return len(p.uncles)
 }
 func (p *bodyPack) Stats() string { return fmt.Sprintf("%d", len(p.transactions)) }
 
