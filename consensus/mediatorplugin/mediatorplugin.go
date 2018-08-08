@@ -26,7 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
-	dcom "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
 )
@@ -41,7 +41,7 @@ type MediatorPlugin struct {
 	quit      chan struct{} // Channel used for graceful exit
 }
 
-func newChainBanner(dag *dcom.Dag) {
+func newChainBanner(dag *dag.Dag) {
 	fmt.Printf("\n" +
 		"*   ------- NEW CHAIN -------   *\n" +
 		"*   - Welcome to PalletOne! -   *\n" +
@@ -198,7 +198,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 2. 生产验证单元
-	unit := dcom.GenerateUnit(mp.ptn.Dag(), scheduledTime, *scheduledMediator, ks)
+	unit := GenerateUnit(mp.ptn.Dag(), scheduledTime, *scheduledMediator, ks, mp.ptn.TxPool())
 
 	num := unit.UnitHeader.Number.Index
 	detail["Num"] = strconv.FormatUint(num, 10)
