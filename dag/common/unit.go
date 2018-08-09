@@ -724,5 +724,5 @@ func checkUnitSignature(h *modules.Header, isGenesis bool) error {
 To get unit information by its ChainIndex
 */
 func QueryUnitByChainIndex(index *modules.ChainIndex) *modules.Unit {
-	return nil
+	return storage.GetUnitFormIndex(index.Index, index.AssetID)
 }

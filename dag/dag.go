@@ -179,7 +179,7 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 获取account address下面的token信息
 To get account token list and tokens's information
 */
-func (d *Dag) WalletTokens(addr common.Address) (map[modules.Asset]*modules.AccountToken, error) {
+func (d *Dag) WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error) {
 	return dagcommon.GetAccountTokens(addr)
 }
 

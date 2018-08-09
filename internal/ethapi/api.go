@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"encoding/json"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common"
@@ -534,25 +535,25 @@ func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address common.Add
 	return &big.Int{}, nil
 }
 
-func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) ([]byte, error) {
+func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
 	addr := common.Address{}
 	addr.SetString(address)
 	result, err := s.b.WalletTokens(addr)
 	if err != nil {
 		log.Error("WalletTokens:", "error", err.Error())
 	}
-	//fmt.Println("result len=", len(result))
-	//b, err := json.Marshal(result)
-	//
-	//if err != nil {
-	//	log.Error("WalletTokens 2222:", "error", err.Error())
-	//}
-	b, err := rlp.EncodeToBytes(result)
+	fmt.Println("result len=", len(result))
+	b, err := json.Marshal(result)
 
 	if err != nil {
 		log.Error("WalletTokens 2222:", "error", err.Error())
 	}
-	return b, nil
+	//b, err := rlp.EncodeToBytes(result)
+	//
+	//if err != nil {
+	//	log.Error("WalletTokense 2222:", "error", err.Error())
+	//}
+	return string(b), nil
 }
 
 /*

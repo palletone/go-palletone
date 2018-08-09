@@ -78,13 +78,13 @@ func SaveHeader(uHash common.Hash, h *modules.Header) error {
 }
 
 func SaveHashNumber(uHash common.Hash, height modules.ChainIndex) error {
-	key := fmt.Sprintf("%s%s", UNIT_HASH_NUMBER, uHash)
+	key := fmt.Sprintf("%s%s", UNIT_HASH_NUMBER_Prefix, uHash)
 	return Store(Dbconn, key, height)
 }
 
 // height and assetid can get a unit key.
-func SaveUHashIndex(height modules.ChainIndex, uHash common.Hash) error {
-	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, height.AssetID.String(), height.Index)
+func SaveUHashIndex(cIndex modules.ChainIndex, uHash common.Hash) error {
+	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, cIndex.AssetID.String(), cIndex.Index)
 	return Store(Dbconn, key, uHash)
 }
 
@@ -122,7 +122,32 @@ value: transaction struct rlp encoding bytes
 */
 func SaveTransaction(tx *modules.Transaction) error {
 	key := fmt.Sprintf("%s%s", TRANSACTION_PREFIX, tx.TxHash.String())
-	return Store(Dbconn, key, *tx)
+	// save transaction
+	if err := Store(Dbconn, key, *tx); err != nil {
+		return err
+	}
+
+	if err := StoreBytes(Dbconn, append(Transaction_Index, tx.TxHash.Bytes()...), *tx); err != nil {
+		return err
+	}
+	return nil
+}
+func SaveTxLookupEntry(unit *modules.Unit) error {
+	for i, tx := range unit.Transactions() {
+		in := modules.TxLookupEntry{
+			UnitHash:  unit.Hash(),
+			UnitIndex: unit.NumberU64(),
+			Index:     uint64(i),
+		}
+		data, err := rlp.EncodeToBytes(in)
+		if err != nil {
+			return err
+		}
+		if err := StoreBytes(Dbconn, append(LookupPrefix, tx.TxHash.Bytes()...), data); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func GetTransaction(txHash common.Hash) (*modules.Transaction, error) {
@@ -245,4 +270,25 @@ func SaveContract(contract *modules.Contract) (common.Hash, error) {
 		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
 	}
 	return contract.Id, StoreBytes(Dbconn, append(CONTRACT_PTEFIX, contract.Id[:]...), contract)
+}
+
+//  get  unit chain version
+// GetUnitChainVersion reads the version number from db.
+func GetUnitChainVersion() int {
+	var vsn uint
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+	enc, _ := Dbconn.Get([]byte("UnitchainVersion"))
+	rlp.DecodeBytes(enc, &vsn)
+	return int(vsn)
+}
+
+// SaveUnitChainVersion writes vsn as the version number to db.
+func SaveUnitChainVersion(vsn int) error {
+	enc, _ := rlp.EncodeToBytes(uint(vsn))
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+	return Dbconn.Put([]byte("UnitchainVersion"), enc)
 }

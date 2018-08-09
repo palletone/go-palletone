@@ -147,6 +147,6 @@ func (b *EthApiBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 	}
 }
 
-func (b *EthApiBackend) WalletTokens(address common.Address) (map[modules.Asset]*modules.AccountToken, error) {
+func (b *EthApiBackend) WalletTokens(address common.Address) (map[string]*modules.AccountToken, error) {
 	return b.eth.dag.WalletTokens(address)
 }
