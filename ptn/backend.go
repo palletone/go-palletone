@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-// Package eth implements the PalletOne protocol.
+// Package ptn implements the PalletOne protocol.
 package ptn
 
 import (
@@ -139,27 +139,29 @@ func (s *PalletOne) APIs() []rpc.API {
 	// Append all the local APIs and return
 	return append(apis, []rpc.API{
 		{
-			Namespace: "eth",
+			Namespace: "ptn",
 			Version:   "1.0",
 			Service:   NewPublicEthereumAPI(s),
 			Public:    true,
 		}, {
-			Namespace: "eth",
+			Namespace: "ptn",
 			Version:   "1.0",
 			//Service:   NewPublicMinerAPI(s),
 			Public: true,
 		}, {
-			Namespace: "eth",
+			Namespace: "ptn",
 			Version:   "1.0",
 			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
 			Public:    true,
-		}, {
-			Namespace: "miner",
-			Version:   "1.0",
-			//Service:   NewPrivateMinerAPI(s),
-			Public: false,
-		}, {
-			Namespace: "eth",
+		},
+		//{
+		//	Namespace: "miner",
+		//	Version:   "1.0",
+		//	//Service:   NewPrivateMinerAPI(s),
+		//	Public: false,
+		//},
+		{
+			Namespace: "ptn",
 			Version:   "1.0",
 			Service:   filters.NewPublicFilterAPI(s.ApiBackend, false),
 			Public:    true,
