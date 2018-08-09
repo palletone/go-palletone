@@ -72,6 +72,7 @@ type Backend interface {
 
 	// wallet api
 	WalletTokens(address common.Address) (map[string]*modules.AccountToken, error)
+	WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

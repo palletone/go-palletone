@@ -5447,6 +5447,13 @@ var methods = function () {
         // inputFormatter: [null]
     });
 
+    var walletBalance = new Method({
+        name: 'walletBalance',
+        call: 'ptn_walletBalance',
+        params: 4,
+        // inputFormatter: [null]
+    });
+
     return [
 		forking,
         getBalance,
@@ -5472,7 +5479,8 @@ var methods = function () {
         compileSerpent,
         submitWork,
         getWork,
-        walletTokens
+        walletTokens,
+        walletBalance
     ];
 };
 

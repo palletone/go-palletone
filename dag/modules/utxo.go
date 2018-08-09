@@ -105,7 +105,7 @@ func (utxoIndex *UtxoIndex) AccountKey() []byte {
 	key := fmt.Sprintf("%s%s",
 		UTXO_INDEX_PREFIX,
 		utxoIndex.AccountAddr.String())
-	fmt.Println("Account prefix:", key)
+	//fmt.Println("Account prefix:", key)
 	return []byte(key)
 }
 
