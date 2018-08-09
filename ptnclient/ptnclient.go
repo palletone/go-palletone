@@ -453,8 +453,18 @@ func (ec *Client) ForkingAt(ctx context.Context, account common.Address, rate ui
 
 //--------------test end
 
+/**
+rpc wallet 操作接口
+The apis for wallet by rpc
+*/
 func (ec *Client) WalletTokens(ctx context.Context, addr string) (string, error) {
 	var result string
-	err := ec.c.CallContext(ctx, &result, "eth_walletTokens", addr)
+	err := ec.c.CallContext(ctx, &result, "ptn_walletTokens", addr)
+	return result, err
+}
+
+func (ec *Client) WalletBalance(ctx context.Context, address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
+	var result uint64
+	err := ec.c.CallContext(ctx, &result, "ptn_walletBalance", address, assetid, uniqueid, chainid)
 	return result, err
 }

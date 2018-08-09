@@ -542,18 +542,20 @@ func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) 
 	if err != nil {
 		log.Error("WalletTokens:", "error", err.Error())
 	}
-	fmt.Println("result len=", len(result))
+	//fmt.Println("result len=", len(result))
 	b, err := json.Marshal(result)
 
 	if err != nil {
 		log.Error("WalletTokens 2222:", "error", err.Error())
 	}
-	//b, err := rlp.EncodeToBytes(result)
-	//
-	//if err != nil {
-	//	log.Error("WalletTokense 2222:", "error", err.Error())
-	//}
 	return string(b), nil
+}
+
+func (s *PublicBlockChainAPI) WalletBalance(ctx context.Context, address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
+	addr := common.Address{}
+	addr.SetString(address)
+
+	return s.b.WalletBalance(address, assetid, uniqueid, chainid)
 }
 
 /*

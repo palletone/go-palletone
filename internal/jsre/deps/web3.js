@@ -5442,8 +5442,15 @@ var methods = function () {
 
     var walletTokens = new Method({
         name: 'walletTokens',
-        call: 'eth_walletTokens',
+        call: 'ptn_walletTokens',
         params: 1,
+        // inputFormatter: [null]
+    });
+
+    var walletBalance = new Method({
+        name: 'walletBalance',
+        call: 'ptn_walletBalance',
+        params: 4,
         // inputFormatter: [null]
     });
 
@@ -5472,7 +5479,8 @@ var methods = function () {
         compileSerpent,
         submitWork,
         getWork,
-        walletTokens
+        walletTokens,
+        walletBalance
     ];
 };
 

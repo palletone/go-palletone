@@ -183,6 +183,34 @@ func (d *Dag) WalletTokens(addr common.Address) (map[string]*modules.AccountToke
 	return dagcommon.GetAccountTokens(addr)
 }
 
+func (d *Dag) WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
+	newAssetid := modules.IDType16{}
+	newUnitqueid := modules.IDType16{}
+
+	if len(assetid) != cap(newAssetid) {
+		return 0, fmt.Errorf("Assetid lenth is wrong")
+	}
+	if len(uniqueid) != cap(newUnitqueid) {
+		return 0, fmt.Errorf("Uniqueid lenth is wrong")
+	}
+	if chainid == 0 {
+		return 0, fmt.Errorf("Chainid is invalid")
+	}
+
+	newAssetid.SetBytes(assetid)
+	newUnitqueid.SetBytes(uniqueid)
+
+	asset := modules.Asset{
+		AssertId: newAssetid,
+		UniqueId: newUnitqueid,
+		ChainId:  chainid,
+	}
+
+	addr := common.Address{}
+	addr.SetString(address)
+	return dagcommon.WalletBalance(addr, asset), nil
+}
+
 func NewDag() *Dag {
 	// genesis, _ := NewGenesisUnit(nil) // comment by Albert·Gou
 	db, _ := palletdb.NewMemDatabase()

@@ -150,3 +150,7 @@ func (b *EthApiBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 func (b *EthApiBackend) WalletTokens(address common.Address) (map[string]*modules.AccountToken, error) {
 	return b.eth.dag.WalletTokens(address)
 }
+
+func (b *EthApiBackend) WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
+	return b.eth.dag.WalletBalance(address, assetid, uniqueid, chainid)
+}
