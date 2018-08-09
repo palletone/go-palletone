@@ -605,9 +605,9 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *chaincfg.Params) (Script
 		// Therefore the number of required signatures is the 1st item
 		// on the stack and the number of public keys is the 2nd to last
 		// item on the stack.
-		//requiredSigs = asSmallInt(pops[0].opcode)
-		//numPubKeys := asSmallInt(pops[len(pops)-2].opcode)
-        /* def by wuzhiyuan
+		requiredSigs = asSmallInt(pops[0].opcode)
+		numPubKeys := asSmallInt(pops[len(pops)-2].opcode)
+        // def by wuzhiyuan
 		// Extract the public keys while skipping any that are invalid.
 		addrs = make([]btcutil.Address, 0, numPubKeys)
 		for i := 0; i < numPubKeys; i++ {
@@ -616,7 +616,7 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *chaincfg.Params) (Script
 			if err == nil {
 				addrs = append(addrs, addr)
 			}
-		}*/
+		}
 
 	case NullDataTy:
 		// Null data transactions have no addresses or required

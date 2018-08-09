@@ -420,3 +420,9 @@ func (c *writeCounter) Write(b []byte) (int, error) {
 var (
 	EmptyRootHash = DeriveSha(Transactions{})
 )
+
+type TxLookupEntry struct {
+	UnitHash  common.Hash
+	UnitIndex uint64
+	Index     uint64
+}

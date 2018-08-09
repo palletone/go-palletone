@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/configure"
 
 	//"github.com/palletone/go-palletone/consensus/consensusconfig"
+	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts/contractconfig"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -51,9 +52,9 @@ var DefaultConfig = Config{
 
 	TxPool: txspool.DefaultTxPoolConfig,
 
-	//Consensus: consensusconfig.DefaultConfig,
-	Dag: dagconfig.DefaultConfig,
-	Log: log.DefaultConfig,
+	Dag:            dagconfig.DefaultConfig,
+	Log:            log.DefaultConfig,
+	MediatorPlugin: mediatorplugin.DefaultConfig,
 }
 
 func init() {
@@ -112,8 +113,7 @@ type Config struct {
 	Dag dagconfig.Config `toml:"-"`
 	//Log config
 	Log log.Config `toml:"-"`
-	// Consensus options
-	//Consensus consensusconfig.Config
+
 	// VM config
 	Vm vmconfig.Config
 	//Contract config
@@ -121,6 +121,9 @@ type Config struct {
 
 	// Miscellaneous options
 	DocRoot string `toml:"-"`
+
+	// append by Albert·Gou
+	MediatorPlugin mediatorplugin.Config `toml:"-"`
 }
 
 type configMarshaling struct {

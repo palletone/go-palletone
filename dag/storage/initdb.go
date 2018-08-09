@@ -27,10 +27,11 @@ import (
 var (
 	UNIT_PREFIX                      = []byte("ut") // unit_prefix + mci + hash
 	HEADER_PREFIX                    = []byte("uh") // prefix + hash
-	UNIT_HASH_NUMBER                 = []byte("hn")
+	UNIT_HASH_NUMBER_Prefix          = []byte("hn")
 	UNIT_NUMBER_PREFIX               = []byte("nh") // number 和unit hash 的对应关系
 	BODY_PREFIX                      = []byte("ub")
 	TRANSACTION_PREFIX               = []byte("tx")
+	Transaction_Index                = []byte("ti")
 	TRANSACTIONS_PREFIX              = []byte("ts")
 	CONTRACT_STATE_PREFIX            = []byte("cs")
 	CONTRACT_TPL                     = []byte("ct")
@@ -49,10 +50,13 @@ var (
 	ATTESTATION_PREFIX               = []byte("at")
 	ASSET_PREFIX                     = []byte("as")
 	ASSET_ATTESTORS                  = []byte("ae")
+	NumberSuffix                     = []byte("n")
+	// lookup
+	LookupPrefix = []byte("l")
 
 	// Head Fast Key
 	HeadHeaderKey = []byte("LastHeader")
-	HeadBlockKey  = []byte("LastUnit")
+	HeadUnitKey   = []byte("LastUnit")
 	HeadFastKey   = []byte("LastFast")
 	TrieSyncKey   = []byte("TrieSync")
 

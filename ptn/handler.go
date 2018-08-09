@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -98,6 +99,11 @@ type ProtocolManager struct {
 	ceCh       chan core.ConsensusEvent
 	ceSub      event.Subscription
 
+	// append by Albert·Gou
+	producer           producer
+	newProducedUnitCh  chan mediatorplugin.NewProducedUnitEvent
+	newProducedUnitSub event.Subscription
+
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg      sync.WaitGroup
@@ -106,8 +112,8 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool,
-	engine core.ConsensusEngine, dag *dag.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase) (*ProtocolManager, error) {
+func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool, engine core.ConsensusEngine,
+	dag *dag.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase, producer producer) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -121,6 +127,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		txsyncCh:    make(chan *txsync),
 		quitSync:    make(chan struct{}),
 		levelDb:     levelDb,
+		producer:    producer,
 	}
 
 	// Figure out whether to allow fast sync or not
@@ -238,6 +245,42 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
 	// 启动广播的goroutine
 	go pm.txBroadcastLoop()
+
+	// append by Albert·Gou
+	// broadcast new produced unit by mediator
+	pm.newProducedUnitCh = make(chan mediatorplugin.NewProducedUnitEvent)
+	pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
+	go pm.newProducedUnitBroadcastLoop()
+}
+
+// @author Albert·Gou
+// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
+func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
+	//peers := pm.peers.AtiveMeatorPeers()
+	//for _, peer := range peers {
+	//	peer.SendNewProducedUnit(unit)
+	//}
+}
+
+// @author Albert·Gou
+func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.newProducedUnitCh:
+			self.BroadcastNewProducedUnit(event.Unit)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.newProducedUnitSub.Err():
+			return
+		}
+	}
+}
+
+// @author Albert·Gou
+type producer interface {
+	// SubscribeNewProducedUnitEvent should return an event subscription of
+	// NewProducedUnitEvent and send events to the given channel.
+	SubscribeNewProducedUnitEvent(chan<- mediatorplugin.NewProducedUnitEvent) event.Subscription
 }
 
 func (pm *ProtocolManager) Stop() {

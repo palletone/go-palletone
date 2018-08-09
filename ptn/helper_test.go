@@ -37,6 +37,7 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	//"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/storage"
 )
@@ -73,9 +74,11 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	typemux := new(event.TypeMux)
 	DbPath := "./data1/leveldb"
 	db := storage.Init(DbPath)
+	producer := new(mediatorplugin.MediatorPlugin)
 
 	//want (downloader.SyncMode, uint64, txPool, core.ConsensusEngine, *modules.Dag, *event.TypeMux, *ptndb.LDBDatabase)
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, dag, typemux, db)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx},
+		engine, dag, typemux, db, producer)
 	if err != nil {
 		return nil, nil, err
 	}

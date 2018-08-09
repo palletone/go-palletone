@@ -34,7 +34,8 @@ import (
 
 // GenerateVerifiedUnit, generate unit
 // @author Albert·Gou
-func GenerateUnit(dag *dag.Dag, when time.Time, producer common.Mediator, ks *keystore.KeyStore, txspool *txspool.TxPool) modules.Unit {
+func GenerateUnit(dag *dag.Dag, when time.Time, producer common.Mediator,
+	ks *keystore.KeyStore, txspool *txspool.TxPool) *modules.Unit {
 	dgp := dag.DynGlobalProp
 
 	// 1. 判断是否满足生产的若干条件
@@ -42,26 +43,28 @@ func GenerateUnit(dag *dag.Dag, when time.Time, producer common.Mediator, ks *ke
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	log.Debug("Generating Verified Unit...")
 
-	units, _ := dagcommon.CreateUnit(&producer.Address, txspool)
-	if len(units) <= 0 {
+	units, err := dagcommon.CreateUnit(&producer.Address, txspool)
+	// added by yangyu, 2018.8.9
+	if err != nil || units == nil || len(units) == 0 || units[0].IsEmpty() {
 		log.Info("No unit need to be packaged for now.")
-		return modules.Unit{}
+		return &modules.Unit{}
 	}
-	pendingUnit := units[0]
+
+	pendingUnit := &units[0]
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
 	pendingUnit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
 	pendingUnit.UnitHeader.ParentsHash =
 		append(pendingUnit.UnitHeader.ParentsHash, dgp.LastVerifiedUnitHash)
 	pendingUnit.UnitHash = pendingUnit.Hash()
 
-	_, err := dagcommon.GetUnitWithSig(&pendingUnit, ks, producer.Address)
+	_, err = dagcommon.GetUnitWithSig(pendingUnit, ks, producer.Address)
 	if err != nil {
 		log.Error(fmt.Sprintf("%v", err))
 	}
 
 	pendingUnit.UnitSize = pendingUnit.Size()
 
-	PushUnit(dag, &pendingUnit)
+	PushUnit(dag, pendingUnit)
 
 	return pendingUnit
 }

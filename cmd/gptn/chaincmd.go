@@ -18,6 +18,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
@@ -26,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"gopkg.in/urfave/cli.v1"
 	"os"
-	"fmt"
 )
 
 var (

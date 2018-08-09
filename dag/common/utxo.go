@@ -186,7 +186,7 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 			OutIndex:     uint32(outIndex),
 		}
 
-		if err := storage.Store(string(outpoint.ToKey()), utxo); err != nil {
+		if err := storage.Store(storage.Dbconn, string(outpoint.ToKey()), utxo); err != nil {
 			log.Error("Write utxo", "error", err.Error())
 			errs = append(errs, err)
 			continue
@@ -215,7 +215,7 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 			Amount:   txout.Value,
 			LockTime: lockTime,
 		}
-		if err := storage.Store(string(utxoIndex.ToKey()), utxoIndexVal); err != nil {
+		if err := storage.Store(storage.Dbconn, string(utxoIndex.ToKey()), utxoIndexVal); err != nil {
 			log.Error("Write utxo index error: %s", err.Error())
 			errs = append(errs, err)
 		}
@@ -281,7 +281,7 @@ func destoryUtxo(txins []modules.Input) {
 write asset info to leveldb
 */
 func SaveAssetInfo(assetInfo *modules.AssetInfo) error {
-	if err := storage.Store(string(assetInfo.Tokey()), *assetInfo); err != nil {
+	if err := storage.Store(storage.Dbconn, string(assetInfo.Tokey()), *assetInfo); err != nil {
 		return err
 	}
 
@@ -395,8 +395,7 @@ func GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Ut
 获得某个账户下的token名称和assetid信息
 To get someone account's list of tokens and those assetids
 */
-func GetAccountTokens(addr common.Address) (map[modules.Asset]*modules.AccountToken, error) {
-	fmt.Println("dagconfig.DefaultConfig.UtxoIndex=", dagconfig.DefaultConfig.UtxoIndex)
+func GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, error) {
 	if dagconfig.DefaultConfig.UtxoIndex {
 		return getAccountTokensByIndex(addr)
 	} else {
@@ -408,32 +407,31 @@ func GetAccountTokens(addr common.Address) (map[modules.Asset]*modules.AccountTo
 通过索引数据库获得用户的token信息
 To get account's token info by utxo index db
 */
-func getAccountTokensByIndex(addr common.Address) (map[modules.Asset]*modules.AccountToken, error) {
-	tokens := map[modules.Asset]*modules.AccountToken{}
+func getAccountTokensByIndex(addr common.Address) (map[string]*modules.AccountToken, error) {
+	tokens := map[string]*modules.AccountToken{}
 	utxoIndex := modules.UtxoIndex{AccountAddr: addr}
 	data := storage.GetPrefix(utxoIndex.AccountKey())
 	if data == nil || len(data) == 0 {
-		fmt.Println("11111111111")
 		return nil, nil
 	}
 	for k, v := range data {
 		if err := utxoIndex.QueryFields([]byte(k)); err != nil {
-			return nil, fmt.Errorf("Get account tokens error: data key is invalid")
+			return nil, fmt.Errorf("Get account tokens by key error: data key is invalid")
 		}
 		var utxoIndexVal modules.UtxoIndexValue
 		if err := rlp.DecodeBytes([]byte(v), &utxoIndexVal); err != nil {
 			return nil, fmt.Errorf("Get account tokens error: data value is invalid")
 		}
-		val, ok := tokens[utxoIndex.Asset]
+		val, ok := tokens[utxoIndex.Asset.AssertId.String()]
 		if ok {
 			val.Balance += utxoIndexVal.Amount
 		} else {
 			// get asset info
 			assetInfo, err := GetAssetInfo(&utxoIndex.Asset)
 			if err != nil {
-				return nil, fmt.Errorf("Get acount tokens error: asset info does not exist")
+				return nil, fmt.Errorf("Get acount tokens by index error: asset info does not exist")
 			}
-			tokens[utxoIndex.Asset] = &modules.AccountToken{
+			tokens[utxoIndex.Asset.AssertId.String()] = &modules.AccountToken{
 				Alias:   assetInfo.Alias,
 				AssetID: utxoIndex.Asset,
 				Balance: utxoIndexVal.Amount,
@@ -447,13 +445,12 @@ func getAccountTokensByIndex(addr common.Address) (map[modules.Asset]*modules.Ac
 遍历全局utxo，获取账户token信息
 To get account token info by query the whole utxo table
 */
-func getAccountTokensWhole(addr common.Address) (map[modules.Asset]*modules.AccountToken, error) {
-	tokens := map[modules.Asset]*modules.AccountToken{}
+func getAccountTokensWhole(addr common.Address) (map[string]*modules.AccountToken, error) {
+	tokens := map[string]*modules.AccountToken{}
 
 	key := fmt.Sprintf("%s", string(modules.UTXO_PREFIX))
 	data := storage.GetPrefix([]byte(key))
 	if data == nil {
-		fmt.Println("11111111111111111111")
 		return nil, nil
 	}
 
@@ -463,20 +460,19 @@ func getAccountTokensWhole(addr common.Address) (map[modules.Asset]*modules.Acco
 			return nil, err
 		}
 		if !checkUtxo(&addr, nil, &utxo) {
-			fmt.Println("2222222222222222")
 			continue
 		}
 
-		val, ok := tokens[utxo.Asset]
+		val, ok := tokens[utxo.Asset.AssertId.String()]
 		if ok {
 			val.Balance += utxo.Amount
 		} else {
 			// get asset info
 			assetInfo, err := GetAssetInfo(&utxo.Asset)
 			if err != nil {
-				return nil, fmt.Errorf("Get acount tokens error: asset info does not exist")
+				return nil, fmt.Errorf("Get acount tokens by whole error: asset info does not exist")
 			}
-			tokens[utxo.Asset] = &modules.AccountToken{
+			tokens[utxo.Asset.AssertId.String()] = &modules.AccountToken{
 				Alias:   assetInfo.Alias,
 				AssetID: utxo.Asset,
 				Balance: utxo.Amount,
@@ -514,7 +510,8 @@ func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) b
 To compute transactions' fees
 */
 func ComputeFees(txs modules.Transactions) (uint64, error) {
-	fees := uint64(0)
+	// current time slice mediator default income is 1 ptn
+	fees := uint64(100000000)
 	for _, tx := range txs {
 		for _, msg := range tx.TxMessages {
 			payload, ok := msg.Payload.(modules.PaymentPayload)
