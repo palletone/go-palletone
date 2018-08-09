@@ -510,7 +510,8 @@ func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) b
 To compute transactions' fees
 */
 func ComputeFees(txs modules.Transactions) (uint64, error) {
-	fees := uint64(0)
+	// current time slice mediator default income is 1 ptn
+	fees := uint64(100000000)
 	for _, tx := range txs {
 		for _, msg := range tx.TxMessages {
 			payload, ok := msg.Payload.(modules.PaymentPayload)
