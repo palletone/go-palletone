@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag"
 	//dagcommon "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
@@ -79,6 +80,9 @@ type PalletOne struct {
 	bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
 	//bloomIndexer  *coredata.ChainIndexer         // Bloom indexer operating during block imports
 	//etherbase  common.Address
+
+	// append by Albert·Gou
+	mediatorPlugin *mediatorplugin.MediatorPlugin
 }
 
 // New creates a new PalletOne object (including the
@@ -116,12 +120,22 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
 
 	var err error
-	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine, ptn.dag, ptn.eventMux, ptn.levelDb); err != nil {
+
+	// append by Albert·Gou
+	ptn.mediatorPlugin, err = mediatorplugin.Initialize(ptn, &config.MediatorPlugin)
+	if err != nil {
+		log.Error("Initialize mediator plugin err:", err)
+		return nil, err
+	}
+
+	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine,
+		ptn.dag, ptn.eventMux, ptn.levelDb, ptn.mediatorPlugin); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}
 
 	ptn.ApiBackend = &EthApiBackend{ptn}
+
 	return ptn, nil
 }
 
@@ -135,6 +149,9 @@ func CreateConsensusEngine(ctx *node.ServiceContext) core.ConsensusEngine {
 // NOTE, some of these services probably need to be moved to somewhere else.
 func (s *PalletOne) APIs() []rpc.API {
 	apis := ptnapi.GetAPIs(s.ApiBackend)
+
+	// append by Albert·Gou
+	apis = append(apis, s.mediatorPlugin.APIs()...)
 
 	// Append all the local APIs and return
 	return append(apis, []rpc.API{
@@ -192,7 +209,8 @@ func (s *PalletOne) Dag() *dag.Dag                      { return s.dag }
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.
 func (s *PalletOne) Protocols() []p2p.Protocol {
-	return s.protocolManager.SubProtocols
+	// modify by Albert·Gou
+	return append(s.protocolManager.SubProtocols, s.mediatorPlugin.Protocols()...)
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the
@@ -209,6 +227,10 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 
 	// Start the networking layer and the light server if requested
 	s.protocolManager.Start(maxPeers)
+
+	// append by Albert·Gou
+	s.mediatorPlugin.Start(srvr)
+
 	return nil
 }
 
@@ -221,6 +243,9 @@ func (s *PalletOne) Stop() error {
 	//	s.engine.Stop()
 	s.eventMux.Stop()
 	close(s.shutdownChan)
+
+	// append by Albert·Gou
+	s.mediatorPlugin.Stop()
 
 	return nil
 }
