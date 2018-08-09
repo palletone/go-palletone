@@ -15,7 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package ethapi implements the general PalletOne API functions.
-package ethapi
+package ptnapi
 
 import (
 	"context"

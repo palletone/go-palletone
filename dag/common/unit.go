@@ -34,7 +34,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/internal/ethapi"
+	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
 	"reflect"
 	"strconv"
@@ -201,7 +201,7 @@ func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool) ([]modules.Unit,
 		Amounts:  map[string]float64{mAddr.String(): float64(fees)},
 		LockTime: &locktime,
 	}
-	txhex, err := ethapi.CreateRawTransaction(cmd)
+	txhex, err := ptnapi.CreateRawTransaction(cmd)
 	if err != nil {
 		return nil, err
 	}
