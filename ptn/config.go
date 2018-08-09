@@ -20,6 +20,7 @@ import (
 	"math/big"
 	"os"
 	"os/user"
+
 	//"path/filepath"
 	//"runtime"
 	"time"
@@ -28,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
+
 	//"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/contracts/contractconfig"
 	"github.com/palletone/go-palletone/core"
@@ -39,7 +41,7 @@ import (
 
 // DefaultConfig contains default settings for use on the PalletOne main net.
 var DefaultConfig = Config{
-	SyncMode:      downloader.FullSync,
+	SyncMode:      downloader.FastSync,
 	NetworkId:     1,
 	LightPeers:    100,
 	DatabaseCache: 768,
