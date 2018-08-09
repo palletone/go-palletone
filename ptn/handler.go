@@ -36,12 +36,12 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
-	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 )
 
 const (
@@ -100,8 +100,8 @@ type ProtocolManager struct {
 	ceSub      event.Subscription
 
 	// append by Albert·Gou
-	producer producer
-	newProducedUnitCh chan mediatorplugin.NewProducedUnitEvent
+	producer           producer
+	newProducedUnitCh  chan mediatorplugin.NewProducedUnitEvent
 	newProducedUnitSub event.Subscription
 
 	// wait group is used for graceful shutdowns during downloading
@@ -112,8 +112,8 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool,
-	engine core.ConsensusEngine, dag *dag.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase) (*ProtocolManager, error) {
+func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool, engine core.ConsensusEngine,
+	dag *dag.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase, producer producer) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -127,6 +127,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		txsyncCh:    make(chan *txsync),
 		quitSync:    make(chan struct{}),
 		levelDb:     levelDb,
+		producer:    producer,
 	}
 
 	// Figure out whether to allow fast sync or not
@@ -255,7 +256,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 
 // @author Albert·Gou
 // BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
-func (pm *ProtocolManager) BroadcastNewProducedUnit (unit *modules.Unit)  {
+func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
 	//peers := pm.peers.AtiveMeatorPeers()
 	//for _, peer := range peers {
 	//	peer.SendNewProducedUnit(unit)

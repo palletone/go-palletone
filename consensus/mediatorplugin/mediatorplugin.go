@@ -23,27 +23,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/ptn"
-	"github.com/palletone/go-palletone/common/event"
 )
-
-type MediatorPlugin struct {
-	ptn *ptn.PalletOne
-	// Enable VerifiedUnit production, even if the chain is stale.
-	// 新开启一个区块链时，必须设为true
-	productionEnabled bool
-	// Mediator`s account and passphrase controlled by this node
-	mediators map[common.Address]string
-	quit      chan struct{} // Channel used for graceful exit
-
-	newProducedUnitFeed       event.Feed
-	newProducedUnitScope      event.SubscriptionScope
-}
 
 func newChainBanner(dag *dag.Dag) {
 	fmt.Printf("\n" +
@@ -222,7 +207,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 
 	// 3. 异步向区块链网络广播验证单元
 	log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
-	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit:unit})
+	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: unit})
 
 	return Produced, detail
 }

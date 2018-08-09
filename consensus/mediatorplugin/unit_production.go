@@ -34,7 +34,8 @@ import (
 
 // GenerateVerifiedUnit, generate unit
 // @author Albert·Gou
-func GenerateUnit(dag *dag.Dag, when time.Time, producer common.Mediator, ks *keystore.KeyStore, txspool *txspool.TxPool) *modules.Unit {
+func GenerateUnit(dag *dag.Dag, when time.Time, producer common.Mediator,
+	ks *keystore.KeyStore, txspool *txspool.TxPool) *modules.Unit {
 	dgp := dag.DynGlobalProp
 
 	// 1. 判断是否满足生产的若干条件
@@ -44,7 +45,7 @@ func GenerateUnit(dag *dag.Dag, when time.Time, producer common.Mediator, ks *ke
 
 	units, err := dagcommon.CreateUnit(&producer.Address, txspool)
 	// added by yangyu, 2018.8.9
-	if err != nil {
+	if err != nil || units == nil || len(units) == 0 || units[0].IsEmpty() {
 		log.Info("No unit need to be packaged for now.")
 		return &modules.Unit{}
 	}
@@ -56,7 +57,7 @@ func GenerateUnit(dag *dag.Dag, when time.Time, producer common.Mediator, ks *ke
 		append(pendingUnit.UnitHeader.ParentsHash, dgp.LastVerifiedUnitHash)
 	pendingUnit.UnitHash = pendingUnit.Hash()
 
-	_, err := dagcommon.GetUnitWithSig(pendingUnit, ks, producer.Address)
+	_, err = dagcommon.GetUnitWithSig(pendingUnit, ks, producer.Address)
 	if err != nil {
 		log.Error(fmt.Sprintf("%v", err))
 	}
