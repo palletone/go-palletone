@@ -19,6 +19,8 @@
 package storage
 
 import (
+	"math/big"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
@@ -29,6 +31,37 @@ import (
 func PutCanonicalHash(db ptndb.Putter, hash common.Hash, number uint64) error {
 	key := append(HEADER_PREFIX, encodeBlockNumber(number)...)
 	if err := db.Put(append(key, NumberSuffix...), hash.Bytes()); err != nil {
+		return err
+	}
+	return nil
+}
+func PutHeadHeaderHash(db ptndb.Putter, hash common.Hash) error {
+	if err := db.Put(HeadHeaderKey, hash.Bytes()); err != nil {
+		return err
+	}
+	return nil
+}
+
+// PutHeadUnitHash stores the head unit's hash.
+func PutHeadUnitHash(db ptndb.Putter, hash common.Hash) error {
+	if err := db.Put(HeadUnitKey, hash.Bytes()); err != nil {
+		return err
+	}
+	return nil
+}
+
+// PutHeadFastUnitHash stores the fast head unit's hash.
+func PutHeadFastUnitHash(db ptndb.Putter, hash common.Hash) error {
+	if err := db.Put(HeadFastKey, hash.Bytes()); err != nil {
+		return err
+	}
+	return nil
+}
+
+// PutTrieSyncProgress stores the fast sync trie process counter to support
+// retrieving it across restarts.
+func PutTrieSyncProgress(db ptndb.Putter, count uint64) error {
+	if err := db.Put(TrieSyncKey, new(big.Int).SetUint64(count).Bytes()); err != nil {
 		return err
 	}
 	return nil

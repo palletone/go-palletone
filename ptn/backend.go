@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-// Package eth implements the PalletOne protocol.
+// Package ptn implements the PalletOne protocol.
 package ptn
 
 import (
@@ -38,7 +38,7 @@ import (
 	//dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/internal/ethapi"
+	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
 )
@@ -70,7 +70,7 @@ type PalletOne struct {
 	levelDb *palletdb.LDBDatabase
 
 	networkId     uint64
-	netRPCService *ethapi.PublicNetAPI
+	netRPCService *ptnapi.PublicNetAPI
 
 	dag *dag.Dag
 
@@ -134,32 +134,34 @@ func CreateConsensusEngine(ctx *node.ServiceContext) core.ConsensusEngine {
 // APIs returns the collection of RPC services the ethereum package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.
 func (s *PalletOne) APIs() []rpc.API {
-	apis := ethapi.GetAPIs(s.ApiBackend)
+	apis := ptnapi.GetAPIs(s.ApiBackend)
 
 	// Append all the local APIs and return
 	return append(apis, []rpc.API{
 		{
-			Namespace: "eth",
+			Namespace: "ptn",
 			Version:   "1.0",
 			Service:   NewPublicEthereumAPI(s),
 			Public:    true,
 		}, {
-			Namespace: "eth",
+			Namespace: "ptn",
 			Version:   "1.0",
 			//Service:   NewPublicMinerAPI(s),
 			Public: true,
 		}, {
-			Namespace: "eth",
+			Namespace: "ptn",
 			Version:   "1.0",
 			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
 			Public:    true,
-		}, {
-			Namespace: "miner",
-			Version:   "1.0",
-			//Service:   NewPrivateMinerAPI(s),
-			Public: false,
-		}, {
-			Namespace: "eth",
+		},
+		//{
+		//	Namespace: "miner",
+		//	Version:   "1.0",
+		//	//Service:   NewPrivateMinerAPI(s),
+		//	Public: false,
+		//},
+		{
+			Namespace: "ptn",
 			Version:   "1.0",
 			Service:   filters.NewPublicFilterAPI(s.ApiBackend, false),
 			Public:    true,
@@ -200,7 +202,7 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 	s.startBloomHandlers()
 
 	// Start the RPC service
-	s.netRPCService = ethapi.NewPublicNetAPI(srvr, s.NetVersion())
+	s.netRPCService = ptnapi.NewPublicNetAPI(srvr, s.NetVersion())
 
 	// Figure out a max peers count based on the server limits
 	maxPeers := srvr.MaxPeers

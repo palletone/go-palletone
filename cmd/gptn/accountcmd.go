@@ -35,7 +35,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/internal/ethapi"
+	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
 	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
@@ -568,7 +568,7 @@ func accountCreateTx(ctx *cli.Context) error {
 		return nil
 	}
 	arg := btcjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
-	tx, err := ethapi.CreateRawTransaction(arg)
+	tx, err := ptnapi.CreateRawTransaction(arg)
 	if err != nil {
 		utils.Fatalf("Verfiy error:%s", err)
 	}
@@ -673,7 +673,7 @@ func accountSignTx(ctx *cli.Context) error {
 	}
 
 	send_args := btcjson.NewSignRawTransactionCmd(txHex, &rawInputs, &keys, nil)
-	signtxout, err := ethapi.SignRawTransaction(send_args)
+	signtxout, err := ptnapi.SignRawTransaction(send_args)
 	if signtxout == nil {
 		utils.Fatalf("Invalid signature")
 	}
