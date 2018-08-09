@@ -39,8 +39,8 @@ type Config struct {
 // mediator plugin default config
 var DefaultConfig = Config{
 	EnableStaleProduction: false,
-	Mediators: map[string]string{
-		"P1XXX": "123",
+	Mediators:             map[string]string{
+		//			"P1XXX": "123",
 	},
 }
 

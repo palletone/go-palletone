@@ -5440,6 +5440,13 @@ var methods = function () {
         params: 0
     });
 
+    var walletTokens = new Method({
+        name: 'walletTokens',
+        call: 'eth_walletTokens',
+        params: 1,
+        // inputFormatter: [null]
+    });
+
     return [
 		forking,
         getBalance,
@@ -5464,7 +5471,8 @@ var methods = function () {
         compileLLL,
         compileSerpent,
         submitWork,
-        getWork
+        getWork,
+        walletTokens
     ];
 };
 

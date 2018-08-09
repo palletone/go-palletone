@@ -396,7 +396,6 @@ func GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Ut
 To get someone account's list of tokens and those assetids
 */
 func GetAccountTokens(addr common.Address) (map[modules.Asset]*modules.AccountToken, error) {
-	fmt.Println("dagconfig.DefaultConfig.UtxoIndex=", dagconfig.DefaultConfig.UtxoIndex)
 	if dagconfig.DefaultConfig.UtxoIndex {
 		return getAccountTokensByIndex(addr)
 	} else {
@@ -413,7 +412,6 @@ func getAccountTokensByIndex(addr common.Address) (map[modules.Asset]*modules.Ac
 	utxoIndex := modules.UtxoIndex{AccountAddr: addr}
 	data := storage.GetPrefix(utxoIndex.AccountKey())
 	if data == nil || len(data) == 0 {
-		fmt.Println("11111111111")
 		return nil, nil
 	}
 	for k, v := range data {
