@@ -48,7 +48,6 @@ func TestRawTransactionGen(t *testing.T) {
         var rawTransactionGenParams RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
-                fmt.Println("-------test ---- 45455454545   return ")
 		return
 	}
         //transaction inputs
@@ -59,7 +58,6 @@ func TestRawTransactionGen(t *testing.T) {
 		inputs = append(inputs, input)
 	}
 	if len(inputs) == 0 {
-                fmt.Println("-----------5858588585858")
 		return
 	}
 //realNet := &chaincfg.MainNetParams
