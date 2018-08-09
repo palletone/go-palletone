@@ -453,8 +453,8 @@ func (ec *Client) ForkingAt(ctx context.Context, account common.Address, rate ui
 
 //--------------test end
 
-func (ec *Client) WalletTokens(ctx context.Context, addr string) ([]byte, error) {
-	var result []byte
+func (ec *Client) WalletTokens(ctx context.Context, addr string) (string, error) {
+	var result string
 	err := ec.c.CallContext(ctx, &result, "eth_walletTokens", addr)
 	return result, err
 }

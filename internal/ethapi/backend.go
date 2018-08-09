@@ -71,7 +71,7 @@ type Backend interface {
 	SendConsensus(ctx context.Context) error
 
 	// wallet api
-	WalletTokens(address common.Address) (map[modules.Asset]*modules.AccountToken, error)
+	WalletTokens(address common.Address) (map[string]*modules.AccountToken, error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {
