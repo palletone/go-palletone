@@ -20,10 +20,12 @@ package storage
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"math/big"
 	"reflect"
 	"unsafe"
 
@@ -211,4 +213,66 @@ func GetContractKeyValue(id common.Hash, key string) (interface{}, error) {
 		}
 	}
 	return val, nil
+}
+
+const missingNumber = uint64(0xffffffffffffffff)
+
+func GetUnitNumber(db DatabaseReader, hash common.Hash) uint64 {
+	data, _ := db.Get(append(UNIT_HASH_NUMBER_Prefix, hash.Bytes()...))
+	if len(data) != 8 {
+		return missingNumber
+	}
+	return binary.BigEndian.Uint64(data)
+}
+
+//  GetCanonicalHash get
+
+func GetCanonicalHash(db DatabaseReader, number uint64) (common.Hash, error) {
+	key := append(HEADER_PREFIX, encodeBlockNumber(number)...)
+	data, err := db.Get(append(key, NumberSuffix...))
+	if err != nil {
+		return common.Hash{}, err
+	}
+	if len(data) == 0 {
+		return common.Hash{}, err
+	}
+	return common.BytesToHash(data), nil
+}
+func GetHeadHeaderHash(db DatabaseReader, hash common.Hash) (common.Hash, error) {
+	data, err := db.Get(HeadHeaderKey)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	if len(data) != 8 {
+		return common.Hash{}, errors.New("data's len is error.")
+	}
+	return common.BytesToHash(data), nil
+}
+
+// GetHeadUnitHash stores the head unit's hash.
+func GetHeadUnitHash(db DatabaseReader, hash common.Hash) (common.Hash, error) {
+	data, err := db.Get(HeadUnitKey)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	return common.BytesToHash(data), nil
+}
+
+// GetHeadFastUnitHash stores the fast head unit's hash.
+func GetHeadFastUnitHash(db DatabaseReader, hash common.Hash) (common.Hash, error) {
+	data, err := db.Get(HeadFastKey)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	return common.BytesToHash(data), nil
+}
+
+// GetTrieSyncProgress stores the fast sync trie process counter to support
+// retrieving it across restarts.
+func GetTrieSyncProgress(db DatabaseReader, count uint64) (uint64, error) {
+	data, err := db.Get(TrieSyncKey)
+	if err != nil {
+		return 0, err
+	}
+	return new(big.Int).SetBytes(data).Uint64(), nil
 }

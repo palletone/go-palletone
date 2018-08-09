@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/asset"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -439,7 +440,18 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	if err = storage.SaveBody(unit.UnitHash, txHashSet); err != nil {
 		return err
 	}
-
+	// step 10  save txlookupEntry
+	if err := storage.SaveTxLookupEntry(*unit); err != nil {
+		return err
+	}
+	// update state
+	if storage.Dbconn == nil {
+		storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+	go storage.PutCanonicalHash(storage.Dbconn, unit.UnitHash, unit.NumberU64())
+	go storage.PutHeadHeaderHash(storage.Dbconn, unit.UnitHash)
+	go storage.PutHeadUnitHash(storage.Dbconn, unit.UnitHash)
+	go storage.PutHeadFastUnitHash(storage.Dbconn, unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
 }
