@@ -66,6 +66,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 
 func (mp *MediatorPlugin) Stop() error {
 	close(mp.quit)
+	mp.newProducedUnitScope.Close()
 	log.Debug("mediator plugin stopped")
 
 	return nil

@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
+	"github.com/palletone/go-palletone/common/event"
 )
 
 type MediatorPlugin struct {
@@ -39,6 +40,9 @@ type MediatorPlugin struct {
 	// Mediator`s account and passphrase controlled by this node
 	mediators map[common.Address]string
 	quit      chan struct{} // Channel used for graceful exit
+
+	newProducedUnitFeed       event.Feed
+	newProducedUnitScope      event.SubscriptionScope
 }
 
 func newChainBanner(dag *dag.Dag) {
@@ -53,6 +57,10 @@ func newChainBanner(dag *dag.Dag) {
 			"Please consider using the --genesis-timestamp option to give your genesis a recent timestamp\n" +
 			"\n")
 	}
+}
+
+func (mp *MediatorPlugin) SubscribeNewProducedUnitEvent(ch chan<- NewProducedUnitEvent) event.Subscription {
+	return mp.newProducedUnitScope.Track(mp.newProducedUnitFeed.Subscribe(ch))
 }
 
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
@@ -213,8 +221,8 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	detail["Hash"] = unit.UnitHash.Hex()
 
 	// 3. 异步向区块链网络广播验证单元
-	go log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
-	//	go mp.ptn.EventMux().Post()
+	log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
+	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit:unit})
 
 	return Produced, detail
 }
