@@ -35,7 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/internal/ethapi"
+	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
 	"reflect"
 	"strconv"
@@ -181,16 +181,21 @@ return: correct if error is nil, and otherwise is incorrect
 */
 // modify by Albert·Gou
 func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool) ([]modules.Unit, error) {
-	// step1. get transactions from txspool
 	if txspool == nil || mAddr == nil {
 		return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
 	}
+
+	units := []modules.Unit{}
+	// step1. get mediator responsible for asset id
+	assetID := modules.IDType16{}
+	// step2. compute chain height
+	index := uint64(0)
+	isMain := true
+	chainIndex := modules.ChainIndex{AssetID: assetID, IsMain: isMain, Index: index}
+
+	// step3. get transactions from txspool
 	txs, _ := txspool.GetSortedTxs()
-	if len(txs) <= 0 {
-		log.Info("Package unit: txspool is empty now.")
-		return nil, nil
-	}
-	// step2. compute coinbase transaction fees
+	// step4. compute coinbase: transaction fees+
 	fees, err := ComputeFees(txs)
 	if err != nil {
 		return nil, err
@@ -202,20 +207,14 @@ func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool) ([]modules.Unit,
 		Amounts:  map[string]float64{mAddr.String(): float64(fees)},
 		LockTime: &locktime,
 	}
-	txhex, err := ethapi.CreateRawTransaction(cmd)
+	txhex, err := ptnapi.CreateRawTransaction(&cmd)
 	if err != nil {
 		return nil, err
 	}
+	// step5. signature coinbase transaction
+
 	// todo 需要调用钱包接口将hex转为结构体，从打包为transaction
 	fmt.Println("Coinbase transaction hex:", txhex)
-
-	units := []modules.Unit{}
-	// step3. get mediator responsible for asset id
-	assetID := modules.IDType16{}
-	// step4. compute chain height
-	index := uint64(0)
-	isMain := true
-	chainIndex := modules.ChainIndex{AssetID: assetID, IsMain: isMain, Index: index}
 
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块

@@ -21,11 +21,11 @@ import (
 
 	"encoding/json"
 
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/internal/ptnapi"
 )
 
 type AuditLogger struct {
@@ -46,7 +46,7 @@ func (l *AuditLogger) New(ctx context.Context) (accounts.Account, error) {
 	return l.api.New(ctx)
 }
 
-func (l *AuditLogger) SignTransaction(ctx context.Context, args SendTxArgs, methodSelector *string) (*ethapi.SignTransactionResult, error) {
+func (l *AuditLogger) SignTransaction(ctx context.Context, args SendTxArgs, methodSelector *string) (*ptnapi.SignTransactionResult, error) {
 	sel := "<nil>"
 	if methodSelector != nil {
 		sel = *methodSelector
@@ -100,13 +100,13 @@ func (l *AuditLogger) Import(ctx context.Context, keyJSON json.RawMessage) (Acco
 
 func NewAuditLogger(path string, api ExternalAPI) (*AuditLogger, error) {
 	/*
-	l := log.New("api", "signer")
-	handler, err := log.FileHandler(path, log.LogfmtFormat())
-	if err != nil {
-		return nil, err
-	}
-	l.SetHandler(handler)
-	l.Info("Configured", "audit log", path)
-	return &AuditLogger{l, api}, nil*/
-	return  &AuditLogger{},nil
+		l := log.New("api", "signer")
+		handler, err := log.FileHandler(path, log.LogfmtFormat())
+		if err != nil {
+			return nil, err
+		}
+		l.SetHandler(handler)
+		l.Info("Configured", "audit log", path)
+		return &AuditLogger{l, api}, nil*/
+	return &AuditLogger{}, nil
 }

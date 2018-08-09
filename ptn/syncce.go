@@ -18,7 +18,7 @@
 package ptn
 
 import (
-	//"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -58,6 +58,7 @@ func (self *ProtocolManager) unitedBroadcastLoop() {
 // BroadcastUnit will either propagate a block to a subset of it's peers, or
 // will only announce it's availability (depending what's requested).
 func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
+	log.Debug("===ProtocolManager->BroadcastUnit===")
 	//hash := unit.UnitHash
 	//peers := pm.peers.PeersWithoutUnit(hash)
 	/*

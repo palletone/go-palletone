@@ -22,14 +22,36 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/ptn"
+	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
+
+// PalletOne wraps all methods required for producing unit.
+type PalletOne interface {
+	Dag() *dag.Dag
+	GetKeyStore() *keystore.KeyStore
+	TxPool() *txspool.TxPool
+}
+
+type MediatorPlugin struct {
+	ptn PalletOne
+	// Enable VerifiedUnit production, even if the chain is stale.
+	// 新开启一个区块链时，必须设为true
+	productionEnabled bool
+	// Mediator`s account and passphrase controlled by this node
+	mediators map[common.Address]string
+	quit      chan struct{} // Channel used for graceful exit
+
+	newProducedUnitFeed  event.Feed
+	newProducedUnitScope event.SubscriptionScope
+}
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {
 	return nil
@@ -66,6 +88,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 
 func (mp *MediatorPlugin) Stop() error {
 	close(mp.quit)
+	mp.newProducedUnitScope.Close()
 	log.Debug("mediator plugin stopped")
 
 	return nil
@@ -78,7 +101,7 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 
 	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		// Retrieve ptn service
-		var ptn *ptn.PalletOne
+		var ptn PalletOne
 		err := ctx.Service(&ptn)
 		if err != nil {
 			return nil, fmt.Errorf("the PalletOne service not found: %v", err)
@@ -88,11 +111,11 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 	})
 
 	if err != nil {
-		utils.Fatalf("Failed to register the Mediator Plugin service: %v", err)
+		log.Error(fmt.Sprintf("failed to register the Mediator Plugin service: %v", err))
 	}
 }
 
-func Initialize(ptn *ptn.PalletOne, cfg *Config) (*MediatorPlugin, error) {
+func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	log.Debug("mediator plugin initialize begin")
 
 	mss := cfg.Mediators
@@ -104,7 +127,7 @@ func Initialize(ptn *ptn.PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		addr := common.StringToAddress(address)
 		addrType, err := addr.Validate()
 		if err != nil || addrType != common.PublicKeyHash {
-			utils.Fatalf("Invalid mediator account address %v : %v", address, err)
+			log.Error(fmt.Sprintf("Invalid mediator account address %v : %v", address, err))
 		}
 
 		log.Info(fmt.Sprintf("this node controll mediator account address: %v", address))

@@ -19,7 +19,7 @@
 package modules
 
 import (
-	"github.com/palletone/go-palletone/common/util"
+	"fmt"
 )
 
 var TimeFormatString = "2006/01/02 15:04:05"
@@ -37,20 +37,25 @@ var (
 )
 
 func (it *IDType16) String() string {
-	var b []byte
-	length := len(it)
-	for _, v := range it {
-		b = append(b, v)
+	result := string("")
+	for _, b := range it {
+		result += fmt.Sprintf("%x", b)
 	}
-	count := 0
-	for i := length - 1; i >= 0; i-- {
-		if b[i] == ' ' || b[i] == 0 {
-			count++
-		} else {
-			break
-		}
-	}
-	return util.ToString(b[:length-count])
+	return result
+	//var b []byte
+	//length := len(it)
+	//for _, v := range it {
+	//	b = append(b, v)
+	//}
+	//count := 0
+	//for i := length - 1; i >= 0; i-- {
+	//	if b[i] == ' ' || b[i] == 0 {
+	//		count++
+	//	} else {
+	//		break
+	//	}
+	//}
+	//return util.ToString(b[:length-count])
 }
 
 func (it *IDType16) Bytes() []byte {

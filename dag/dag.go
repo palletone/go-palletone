@@ -175,12 +175,46 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 	return checkFreq, nil
 }
 
+//VerifyHeader checks whether a header conforms to the consensus rules of the stock
+//Ethereum ethash engine.
+func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
+	return nil
+}
+
 /**
 获取account address下面的token信息
 To get account token list and tokens's information
 */
-func (d *Dag) WalletTokens(addr common.Address) (map[modules.Asset]*modules.AccountToken, error) {
+func (d *Dag) WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error) {
 	return dagcommon.GetAccountTokens(addr)
+}
+
+func (d *Dag) WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
+	newAssetid := modules.IDType16{}
+	newUnitqueid := modules.IDType16{}
+
+	if len(assetid) != cap(newAssetid) {
+		return 0, fmt.Errorf("Assetid lenth is wrong")
+	}
+	if len(uniqueid) != cap(newUnitqueid) {
+		return 0, fmt.Errorf("Uniqueid lenth is wrong")
+	}
+	if chainid == 0 {
+		return 0, fmt.Errorf("Chainid is invalid")
+	}
+
+	newAssetid.SetBytes(assetid)
+	newUnitqueid.SetBytes(uniqueid)
+
+	asset := modules.Asset{
+		AssertId: newAssetid,
+		UniqueId: newUnitqueid,
+		ChainId:  chainid,
+	}
+
+	addr := common.Address{}
+	addr.SetString(address)
+	return dagcommon.WalletBalance(addr, asset), nil
 }
 
 func NewDag() *Dag {
