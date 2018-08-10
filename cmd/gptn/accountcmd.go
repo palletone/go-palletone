@@ -539,7 +539,7 @@ func accountCreateTx(ctx *cli.Context) error {
 		utils.Fatalf("No accounts specified to update")
 	}
 	if len(ctx.Args()) != 1 {
-		utils.Fatalf("usage: createtx txid vout address amount ")
+		utils.Fatalf("usage: [{'txid':txid,'vout':n},...] {address:amount,...}")
 	}
 	params := ctx.Args().First()
 	var rawTransactionGenParams RawTransactionGenParams
@@ -594,8 +594,9 @@ func accountSignTx(ctx *cli.Context) error {
 	if len(ctx.Args()) == 0 {
 		utils.Fatalf("No accounts specified to update")
 	}
-	if len(ctx.Args()) != 2 {
-		utils.Fatalf("usage: signtx rawtx txid vout scriptpubkey privkey")
+	if len(ctx.Args()) != 1 {
+		utils.Fatalf("usage: [{'txid':txid,'vout':n,'scriptPubKey':hex,'redeemScript':hex},...] [,...] \
+[sighashtype='ALL']")
 	}
 	params := ctx.Args().First()
 	var signTransactionParams SignTransactionParams
