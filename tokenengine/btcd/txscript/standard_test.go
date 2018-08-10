@@ -36,8 +36,7 @@ func mustParseShortForm(script string) []byte {
 func newAddressPubKey(serializedPubKey []byte) btcutil.Address {
         //var netID byte
         //netID = 0x00
-	addr, err := btcutil.NewAddressPubKey(serializedPubKey,
-		&chaincfg.MainNetParams)
+	addr, err := btcutil.NewAddressPubKey(serializedPubKey)
 	if err != nil {
 		panic("invalid public key in test source")
 	}
@@ -625,8 +624,7 @@ func TestPayToAddrScript(t *testing.T) {
 			err)
 	}
 	p2pkCompressed2Main, err := btcutil.NewAddressPubKey(hexToBytes("03b0b"+
-		"d634234abbb1ba1e986e884185c61cf43e001f9137f23c2c409273eb16e65"),
-		&chaincfg.MainNetParams)
+		"d634234abbb1ba1e986e884185c61cf43e001f9137f23c2c409273eb16e65"))
 	if err != nil {
 		t.Fatalf("Unable to create pubkey address (compressed 2): %v",
 			err)

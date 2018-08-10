@@ -175,7 +175,7 @@ func DecodeAddress(addr string, defaultNet *chaincfg.Params) (Address, error) {
 		if err != nil {
 			return nil, err
 		}
-		return NewAddressPubKey(serializedPubKey, defaultNet)
+		return NewAddressPubKey(serializedPubKey)
 	}
 
 	// Switch on decoded length to determine the type.
