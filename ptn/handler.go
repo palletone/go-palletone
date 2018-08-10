@@ -706,6 +706,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			p.SendConsensus("Hello I received A")
 		}
 
+	// append by Albert·Gou
 	case msg.Code == NewProducedUnitMsg:
 		// Retrieve and decode the propagated new produced unit
 		var unit modules.Unit
