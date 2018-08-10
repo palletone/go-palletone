@@ -34,7 +34,7 @@ const (
 // Official short name of the protocol used during capability negotiation.
 var ProtocolName = "ptn"
 
-// Supported versions of the eth protocol (first is primary).
+// Supported versions of the ptn protocol (first is primary).
 var ProtocolVersions = []uint{ptn1}
 
 // Number of implemented message corresponding to different protocol versions.

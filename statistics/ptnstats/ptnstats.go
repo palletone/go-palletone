@@ -68,7 +68,7 @@ type txPool interface {
 // chain statistics up to a monitoring server.
 type Service struct {
 	server *p2p.Server    // Peer-to-peer server to retrieve networking infos
-	eth    *ptn.PalletOne // Full PalletOne service if monitoring a full node
+	ptn    *ptn.PalletOne // Full PalletOne service if monitoring a full node
 	//engine consensus.Engine // Consensus engine to retrieve variadic block fields//would recover
 
 	node string // Name of the node to display on the monitoring page
@@ -98,7 +98,7 @@ func New(url string, ethServ *ptn.PalletOne) (*Service, error) {
 		engine = lesServ.Engine()
 	}*/
 	return &Service{
-		eth: ethServ,
+		ptn: ethServ,
 		//engine: engine,//would recover
 		node:   parts[1],
 		pass:   parts[3],
@@ -138,9 +138,9 @@ func (s *Service) loop() {
 		// Subscribe to chain events to execute updates on
 		var blockchain blockChain
 		var txpool txPool
-		if s.eth != nil {
-			blockchain = s.eth.BlockChain()
-			txpool = s.eth.TxPool()
+		if s.ptn != nil {
+			blockchain = s.ptn.BlockChain()
+			txpool = s.ptn.TxPool()
 		} else {
 			blockchain = s.les.BlockChain()
 			txpool = s.les.TxPool()
@@ -373,9 +373,9 @@ func (s *Service) login(conn *websocket.Conn) error {
 	infos := s.server.NodeInfo()
 
 	var network, protocol string
-	if info := infos.Protocols["eth"]; info != nil {
+	if info := infos.Protocols["ptn"]; info != nil {
 		network = fmt.Sprintf("%d", info.(*ptn.NodeInfo).Network)
-		protocol = fmt.Sprintf("eth/%d", ptn.ProtocolVersions[0])
+		protocol = fmt.Sprintf("ptn/%d", ptn.ProtocolVersions[0])
 	} else {
 		//network = fmt.Sprintf("%d", infos.Protocols["les"].(*les.NodeInfo).Network)
 		//protocol = fmt.Sprintf("les/%d", les.ClientProtocolVersions[0])
@@ -511,8 +511,8 @@ func (s *Service) reportHistory(conn *websocket.Conn, list []uint64) error {
 		} else {
 			// No indexes requested, send back the top ones
 			var head int64
-			if s.eth != nil {
-				head = s.eth.BlockChain().CurrentHeader().Number.Int64()
+			if s.ptn != nil {
+				head = s.ptn.BlockChain().CurrentHeader().Number.Int64()
 			} else {
 				head = s.les.BlockChain().CurrentHeader().Number.Int64()
 			}
@@ -529,8 +529,8 @@ func (s *Service) reportHistory(conn *websocket.Conn, list []uint64) error {
 		for i, number := range indexes {
 			// Retrieve the next block if it's known to us
 			var block *types.Block
-			if s.eth != nil {
-				block = s.eth.BlockChain().GetBlockByNumber(number)
+			if s.ptn != nil {
+				block = s.ptn.BlockChain().GetBlockByNumber(number)
 			} else {
 				if header := s.les.BlockChain().GetHeaderByNumber(number); header != nil {
 					block = types.NewBlockWithHeader(header)
@@ -574,8 +574,8 @@ func (s *Service) reportPending(conn *websocket.Conn) error {
 	/*
 		// Retrieve the pending count from the local blockchain
 		var pending int
-		if s.eth != nil {
-			pending, _ = s.eth.TxPool().Stats()
+		if s.ptn != nil {
+			pending, _ = s.ptn.TxPool().Stats()
 		} else {
 			pending = s.les.TxPool().Stats()
 		}
@@ -618,14 +618,14 @@ func (s *Service) reportStats(conn *websocket.Conn) error {
 			syncing  bool
 			gasprice int
 		)
-		if s.eth != nil {
-			mining = s.eth.Miner().Mining()
-			hashrate = int(s.eth.Miner().HashRate())
+		if s.ptn != nil {
+			mining = s.ptn.Miner().Mining()
+			hashrate = int(s.ptn.Miner().HashRate())
 
-			sync := s.eth.Downloader().Progress()
-			syncing = s.eth.BlockChain().CurrentHeader().Number.Uint64() >= sync.HighestBlock
+			sync := s.ptn.Downloader().Progress()
+			syncing = s.ptn.BlockChain().CurrentHeader().Number.Uint64() >= sync.HighestBlock
 
-			price, _ := s.eth.ApiBackend.SuggestPrice(context.Background())
+			price, _ := s.ptn.ApiBackend.SuggestPrice(context.Background())
 			gasprice = int(price.Uint64())
 		} else {
 			sync := s.les.Downloader().Progress()

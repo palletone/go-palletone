@@ -65,7 +65,7 @@ type PalletOne struct {
 	engine         core.ConsensusEngine
 	accountManager *accounts.Manager
 
-	ApiBackend *EthApiBackend
+	ApiBackend *PtnApiBackend
 
 	levelDb *palletdb.LDBDatabase
 
@@ -121,7 +121,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	ptn.ApiBackend = &EthApiBackend{ptn}
+	ptn.ApiBackend = &PtnApiBackend{ptn}
 	return ptn, nil
 }
 

@@ -1792,11 +1792,11 @@ var ETH_UNITS = [
 ];
 
 module.exports = {
-    ETH_PADDING: 32,
-    ETH_SIGNATURE_LENGTH: 4,
-    ETH_UNITS: ETH_UNITS,
-    ETH_BIGNUMBER_ROUNDING_MODE: { ROUNDING_MODE: BigNumber.ROUND_DOWN },
-    ETH_POLLING_TIMEOUT: 1000/2,
+    PTN_PADDING: 32,
+    PTN_SIGNATURE_LENGTH: 4,
+    PTN_UNITS: PTN_UNITS,
+    PTN_BIGNUMBER_ROUNDING_MODE: { ROUNDING_MODE: BigNumber.ROUND_DOWN },
+    PTN_POLLING_TIMEOUT: 1000/2,
     defaultBlock: 'latest',
     defaultAccount: undefined
 };
@@ -2508,7 +2508,7 @@ module.exports={
 
 var RequestManager = require('./web3/requestmanager');
 var Iban = require('./web3/iban');
-var Eth = require('./web3/methods/ptn');
+var Ptn = require('./web3/methods/ptn');
 var DB = require('./web3/methods/db');
 var Shh = require('./web3/methods/shh');
 var Net = require('./web3/methods/net');
@@ -2530,7 +2530,7 @@ var BigNumber = require('bignumber.js');
 function Web3 (provider) {
     this._requestManager = new RequestManager(provider);
     this.currentProvider = provider;
-    this.ptn = new Eth(this);
+    this.ptn = new Ptn(this);
     this.db = new DB(this);
     this.shh = new Shh(this);
     this.net = new Net(this);
@@ -2849,7 +2849,7 @@ var addFunctionsToContract = function (contract) {
     contract.abi.filter(function (json) {
         return json.type === 'function';
     }).map(function (json) {
-        return new SolidityFunction(contract._eth, json, contract.address);
+        return new SolidityFunction(contract._ptn, json, contract.address);
     }).forEach(function (f) {
         f.attachToContract(contract);
     });
@@ -2867,11 +2867,11 @@ var addEventsToContract = function (contract) {
         return json.type === 'event';
     });
 
-    var All = new AllEvents(contract._eth._requestManager, events, contract.address);
+    var All = new AllEvents(contract._ptn._requestManager, events, contract.address);
     All.attachToContract(contract);
 
     events.map(function (json) {
-        return new SolidityEvent(contract._eth._requestManager, json, contract.address);
+        return new SolidityEvent(contract._ptn._requestManager, json, contract.address);
     }).forEach(function (e) {
         e.attachToContract(contract);
     });
@@ -2891,7 +2891,7 @@ var checkForContractAddress = function(contract, callback){
         callbackFired = false;
 
     // wait for receipt
-    var filter = contract._eth.filter('latest', function(e){
+    var filter = contract._ptn.filter('latest', function(e){
         if (!e && !callbackFired) {
             count++;
 
@@ -2909,10 +2909,10 @@ var checkForContractAddress = function(contract, callback){
 
             } else {
 
-                contract._eth.getTransactionReceipt(contract.transactionHash, function(e, receipt){
+                contract._ptn.getTransactionReceipt(contract.transactionHash, function(e, receipt){
                     if(receipt && !callbackFired) {
 
-                        contract._eth.getCode(receipt.contractAddress, function(e, code){
+                        contract._ptn.getCode(receipt.contractAddress, function(e, code){
                             /*jshint maxcomplexity: 6 */
 
                             if(callbackFired || !code)
@@ -3053,7 +3053,7 @@ var ContractFactory = function (ptn, abi) {
  * otherwise calls callback function (err, contract)
  */
 ContractFactory.prototype.at = function (address, callback) {
-    var contract = new Contract(this.eth, this.abi, address);
+    var contract = new Contract(this.ptn, this.abi, address);
 
     // this functions are not part of prototype,
     // because we dont want to spoil the interface
@@ -3997,7 +3997,7 @@ var sha3 = require('../utils/sha3');
  * This prototype should be used to call/sendTransaction to solidity functions
  */
 var SolidityFunction = function (ptn, json, address) {
-    this._eth = ptn;
+    this._ptn = ptn;
     this._inputTypes = json.inputs.map(function (i) {
         return i.type;
     });
@@ -4099,12 +4099,12 @@ SolidityFunction.prototype.call = function () {
 
 
     if (!callback) {
-        var output = this._eth.call(payload, defaultBlock);
+        var output = this._ptn.call(payload, defaultBlock);
         return this.unpackOutput(output);
     }
 
     var self = this;
-    this._eth.call(payload, defaultBlock, function (error, output) {
+    this._ptn.call(payload, defaultBlock, function (error, output) {
         if (error) return callback(error, null);
 
         var unpacked = null;
@@ -4134,10 +4134,10 @@ SolidityFunction.prototype.sendTransaction = function () {
     }
 
     if (!callback) {
-        return this._eth.sendTransaction(payload);
+        return this._ptn.sendTransaction(payload);
     }
 
-    this._eth.sendTransaction(payload, callback);
+    this._ptn.sendTransaction(payload, callback);
 };
 
 /**
@@ -4151,10 +4151,10 @@ SolidityFunction.prototype.estimateGas = function () {
     var payload = this.toPayload(args);
 
     if (!callback) {
-        return this._eth.estimateGas(payload);
+        return this._ptn.estimateGas(payload);
     }
 
-    this._eth.estimateGas(payload, callback);
+    this._ptn.estimateGas(payload, callback);
 };
 
 /**
@@ -4535,7 +4535,7 @@ Iban.fromBban = function (bban) {
  * @return {Iban} the IBAN object
  */
 Iban.createIndirect = function (options) {
-    return Iban.fromBban('ETH' + options.institution + options.identifier);
+    return Iban.fromBban('PTN' + options.institution + options.identifier);
 };
 
 /**
@@ -4557,7 +4557,7 @@ Iban.isValid = function (iban) {
  * @returns {Boolean} true if it is, otherwise false
  */
 Iban.prototype.isValid = function () {
-    return /^XE[0-9]{2}(ETH[0-9A-Z]{13}|[0-9A-Z]{30,31})$/.test(this._iban) &&
+    return /^XE[0-9]{2}(PTN[0-9A-Z]{13}|[0-9A-Z]{30,31})$/.test(this._iban) &&
         mod9710(iso13616Prepare(this._iban)) === 1;
 };
 
@@ -5185,7 +5185,7 @@ module.exports = DB;
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
 /**
- * @file eth.js
+ * @file ptn.js
  * @author Marek Kotewicz <marek@ethdev.com>
  * @author Fabian Vogelsteller <fabian@ethdev.com>
  * @date 2015
@@ -5226,7 +5226,7 @@ var uncleCountCall = function (args) {
     return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'ptn_getUncleCountByBlockHash' : 'ptn_getUncleCountByBlockNumber';
 };
 
-function Eth(web3) {
+function Ptn(web3) {
     this._requestManager = web3._requestManager;
 
     var self = this;
@@ -5246,7 +5246,7 @@ function Eth(web3) {
     this.sendIBANTransaction = transfer.bind(null, this);
 }
 
-Object.defineProperty(Eth.prototype, 'defaultBlock', {
+Object.defineProperty(Ptn.prototype, 'defaultBlock', {
     get: function () {
         return c.defaultBlock;
     },
@@ -5256,7 +5256,7 @@ Object.defineProperty(Eth.prototype, 'defaultBlock', {
     }
 });
 
-Object.defineProperty(Eth.prototype, 'defaultAccount', {
+Object.defineProperty(Ptn.prototype, 'defaultAccount', {
     get: function () {
         return c.defaultAccount;
     },
@@ -5526,28 +5526,28 @@ var properties = function () {
     ];
 };
 
-Eth.prototype.contract = function (abi) {
+Ptn.prototype.contract = function (abi) {
     var factory = new Contract(this, abi);
     return factory;
 };
 
-Eth.prototype.filter = function (options, callback, filterCreationErrorCallback) {
+Ptn.prototype.filter = function (options, callback, filterCreationErrorCallback) {
     return new Filter(options, 'ptn', this._requestManager, watches.ptn(), formatters.outputLogFormatter, callback, filterCreationErrorCallback);
 };
 
-Eth.prototype.namereg = function () {
+Ptn.prototype.namereg = function () {
     return this.contract(namereg.global.abi).at(namereg.global.address);
 };
 
-Eth.prototype.icapNamereg = function () {
+Ptn.prototype.icapNamereg = function () {
     return this.contract(namereg.icap.abi).at(namereg.icap.address);
 };
 
-Eth.prototype.isSyncing = function (callback) {
+Ptn.prototype.isSyncing = function (callback) {
     return new IsSyncing(this._requestManager, callback);
 };
 
-module.exports = Eth;
+module.exports = Ptn;
 
 },{"../../utils/config":18,"../../utils/utils":20,"../contract":25,"../filter":29,"../formatters":30,"../iban":33,"../method":36,"../namereg":44,"../property":45,"../syncing":48,"../transfer":49,"./watches":43}],39:[function(require,module,exports){
 /*
@@ -5566,7 +5566,7 @@ module.exports = Eth;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** @file eth.js
+/** @file ptn.js
  * @authors:
  *   Marek Kotewicz <marek@ethdev.com>
  * @date 2015
@@ -5586,7 +5586,7 @@ var Net = function (web3) {
     });
 };
 
-/// @returns an array of objects describing web3.eth api properties
+/// @returns an array of objects describing web3.ptn api properties
 var properties = function () {
     return [
         new Property({
@@ -5621,7 +5621,7 @@ module.exports = Net;
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
 /**
- * @file eth.js
+ * @file ptn.js
  * @author Marek Kotewicz <marek@ethdev.com>
  * @author Fabian Vogelsteller <fabian@ethdev.com>
  * @date 2015
@@ -6038,7 +6038,7 @@ module.exports = Swarm;
 
 var Method = require('../method');
 
-/// @returns an array of objects describing web3.eth.filter api methods
+/// @returns an array of objects describing web3.ptn.filter api methods
 var ptn = function () {
     var newFilterCall = function (args) {
         var type = args[0];
