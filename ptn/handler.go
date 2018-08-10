@@ -247,7 +247,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	go pm.txBroadcastLoop()
 
 	// append by Albert·Gou
-	// broadcast new produced unit by mediator
+	// broadcast new unit produced by mediator
 	pm.newProducedUnitCh = make(chan mediatorplugin.NewProducedUnitEvent)
 	pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
 	go pm.newProducedUnitBroadcastLoop()
@@ -256,10 +256,10 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 // @author Albert·Gou
 // BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
 func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
-	//peers := pm.peers.AtiveMeatorPeers()
-	//for _, peer := range peers {
-	//	peer.SendNewProducedUnit(unit)
-	//}
+	peers := pm.peers.ActiveMediatorPeers()
+	for _, peer := range peers {
+		peer.SendNewProducedUnit(unit)
+	}
 }
 
 // @author Albert·Gou
@@ -281,6 +281,9 @@ type producer interface {
 	// SubscribeNewProducedUnitEvent should return an event subscription of
 	// NewProducedUnitEvent and send events to the given channel.
 	SubscribeNewProducedUnitEvent(chan<- mediatorplugin.NewProducedUnitEvent) event.Subscription
+
+	// AddUnverifiedUnitSet should add the unverified unit to the set.
+	AddUnverifiedUnitSet(*modules.Unit) error
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -702,6 +705,15 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if consensusmsg == "A" {
 			p.SendConsensus("Hello I received A")
 		}
+
+	case msg.Code == NewProducedUnitMsg:
+		// Retrieve and decode the propagated new produced unit
+		var unit modules.Unit
+		if err := msg.Decode(&unit); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		pm.producer.AddUnverifiedUnitSet(&unit)
+
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
