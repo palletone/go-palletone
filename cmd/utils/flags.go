@@ -774,11 +774,11 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 	if !(lightClient || lightServer) {
 		lightPeers = 0
 	}
-	ethPeers := cfg.MaxPeers - lightPeers
+	ptnPeers := cfg.MaxPeers - lightPeers
 	if lightClient {
-		ethPeers = 0
+		ptnPeers = 0
 	}
-	log.Info("Maximum peer count", "PTN", ethPeers, "LES", lightPeers, "total", cfg.MaxPeers)
+	log.Info("Maximum peer count", "PTN", ptnPeers, "LES", lightPeers, "total", cfg.MaxPeers)
 
 	if ctx.GlobalIsSet(MaxPendingPeersFlag.Name) {
 		cfg.MaxPendingPeers = ctx.GlobalInt(MaxPendingPeersFlag.Name)
@@ -1086,10 +1086,10 @@ func RegisterDashboardService(stack *node.Node, cfg *dashboard.Config, commit st
 func RegisterPtnStatsService(stack *node.Node, url string) {
 	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		// Retrieve ptn service
-		var ethServ *ptn.PalletOne
-		ctx.Service(&ethServ)
+		var ptnServ *ptn.PalletOne
+		ctx.Service(&ptnServ)
 
-		return ptnstats.New(url, ethServ)
+		return ptnstats.New(url, ptnServ)
 	})
 
 	if err != nil {

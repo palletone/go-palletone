@@ -31,7 +31,7 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 
 	genesisConf.InitialParameters.MediatorInterval = 10
 
-	payload, err := GenGenesisConfigPayload(&genesisConf)
+	payload, err := GenGenesisConfigPayload(&genesisConf, &modules.Asset{})
 
 	if err != nil {
 		log.Println(err)
@@ -67,7 +67,7 @@ func TestCreateUnit(t *testing.T) {
 	addr := common.Address{} // minner addr
 	addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
 	//units, err := CreateUnit(&addr, time.Now())
-	units, err := CreateUnit(&addr, nil)
+	units, err := CreateUnit(&addr, nil, nil)
 	if err != nil {
 		log.Println("create unit error:", err)
 	} else {

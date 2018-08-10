@@ -432,3 +432,17 @@ func (ps *peerSet) GetPeers() []*peer {
 	}
 	return list
 }
+
+// AtiveMeatorPeers retrieves a list of peers that active mediator
+// @author Albert·Gou
+func (ps *peerSet) ActiveMediatorPeers() []*peer {
+	// TODO @wangjiyou
+	return nil
+}
+
+// SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
+// @author Albert·Gou
+func (p *peer) SendNewProducedUnit(unit *modules.Unit) error {
+	// TODO @wangjiyou
+	return p2p.Send(p.rw, NewProducedUnitMsg, []interface{}{unit})
+}

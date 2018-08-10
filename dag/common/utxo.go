@@ -26,10 +26,11 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/common/txscript"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
+	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 )
 
 /**
@@ -111,13 +112,10 @@ func readUtxosFrAll(addr common.Address, asset modules.Asset) (map[modules.OutPo
 			continue
 		}
 		// get addr
-		scriptPubKey, err := txscript.ExtractPkScriptAddrs(utxo.PkScript)
-		if err != nil {
-			log.Error("Get address from utxo output script", "error", err.Error())
-			continue
-		}
+		sAddr := getAddressFromScript(utxo.PkScript)
 		// check address
-		if strings.Compare(scriptPubKey.Address.String(), addr.String()) != 0 {
+		if strings.Compare(sAddr, addr.String()) != 0 {
+			fmt.Println(">>>>> address is not compare")
 			continue
 		}
 		outpoint := modules.KeyToOutpoint([]byte(k))
@@ -157,6 +155,7 @@ func UpdateUtxo(txHash common.Hash, msg *modules.Message, msgIndex uint32, lockT
 		// destory utxo
 		destoryUtxo(payment.Inputs)
 		if len(errs) > 0 {
+			log.Error("error occurred on updated utxos, check the log file to find details.")
 			return errors.New("error occurred on updated utxos, check the log file to find details.")
 		}
 	}
@@ -185,7 +184,6 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 			MessageIndex: msgIndex,
 			OutIndex:     uint32(outIndex),
 		}
-
 		if err := storage.Store(storage.Dbconn, string(outpoint.ToKey()), utxo); err != nil {
 			log.Error("Write utxo", "error", err.Error())
 			errs = append(errs, err)
@@ -198,13 +196,9 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 		}
 
 		// get address
-		spk, err := txscript.ExtractPkScriptAddrs(txout.PkScript)
-		if err != nil {
-			log.Error("Extract PkScript Address", "error", err.Error())
-			errs = append(errs, err)
-			continue
-		}
-		addr := spk.Address
+		sAddr := getAddressFromScript(txout.PkScript)
+		addr := common.Address{}
+		addr.SetString(sAddr)
 
 		utxoIndex := modules.UtxoIndex{
 			AccountAddr: addr,
@@ -259,13 +253,11 @@ func destoryUtxo(txins []modules.Input) {
 			continue
 		}
 		// delete index data
-		scriptPubKey, err := txscript.ExtractPkScriptAddrs(utxo.PkScript)
-		if err != nil {
-			log.Error("Extract address when destory uxto", "error", err.Error())
-			continue
-		}
+		sAddr := getAddressFromScript(utxo.PkScript)
+		addr := common.Address{}
+		addr.SetString(sAddr)
 		utxoIndex := modules.UtxoIndex{
-			AccountAddr: scriptPubKey.Address,
+			AccountAddr: addr,
 			Asset:       utxo.Asset,
 			OutPoint:    outpoint,
 		}
@@ -487,19 +479,19 @@ func getAccountTokensWhole(addr common.Address) (map[string]*modules.AccountToke
 */
 func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) bool {
 	// check asset
+	//fmt.Printf(">>>>> assetid=%s, utxo( assetid=%s)", asset.AssertId.String(), utxo.Asset.AssertId.String())
 	if asset != nil && (strings.Compare(asset.AssertId.String(), utxo.Asset.AssertId.String()) != 0 ||
 		strings.Compare(asset.UniqueId.String(), utxo.Asset.UniqueId.String()) != 0 ||
 		asset.ChainId != utxo.Asset.ChainId) {
+		fmt.Println(">>>>> Asset is not compare")
 		return false
 	}
 	// get addr
-	scriptPubKey, err := txscript.ExtractPkScriptAddrs(utxo.PkScript)
-	if err != nil {
-		log.Error("Get address from utxo output script", "error", err.Error())
-		return false
-	}
+	sAddr := getAddressFromScript(utxo.PkScript)
 	// check address
-	if strings.Compare(scriptPubKey.Address.String(), addr.String()) != 0 {
+	if strings.Compare(sAddr, addr.String()) != 0 {
+		fmt.Printf(">>>>> Address is not compare:scriptPubKey.Address=%s, address=%s\n",
+			sAddr, addr.String())
 		return false
 	}
 	return true
@@ -549,4 +541,18 @@ func ComputeFees(txs modules.Transactions) (uint64, error) {
 		}
 	}
 	return fees, nil
+}
+
+func getAddressFromScript(script []byte) string {
+	_, addresses, reqSigs, err := txscript.ExtractPkScriptAddrs(script, &chaincfg.MainNetParams)
+	if err != nil {
+		log.Error("Get address from utxo output script", "error", err.Error())
+		return ""
+	}
+	// for now, just support single signature
+	if reqSigs > 1 {
+		log.Error("Get address from utxo output script", "error", "multiple signature")
+		return ""
+	}
+	return "P" + addresses[0].String()
 }
