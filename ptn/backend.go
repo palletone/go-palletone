@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag"
+
 	//dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/storage"
