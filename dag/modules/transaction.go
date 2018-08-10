@@ -172,7 +172,11 @@ func (tx Transaction) Fee() *big.Int { return tx.TxFee }
 //// Hash hashes the RLP encoding of tx.
 //// It uniquely identifies the transaction.
 func (tx Transaction) Hash() common.Hash {
-	v := rlp.RlpHash(tx)
+	withoutSigTx := Transaction{}
+	withoutSigTx.CopyFrTransaction(&tx)
+	withoutSigTx.From = nil
+	withoutSigTx.TxHash = common.Hash{}
+	v := rlp.RlpHash(withoutSigTx)
 	tx.TxHash.Set(v)
 	return v
 }
@@ -186,6 +190,11 @@ func (tx *Transaction) Size() common.StorageSize {
 	c := writeCounter(0)
 	rlp.Encode(&c, &tx)
 	return common.StorageSize(c)
+}
+
+func (tx *Transaction) CreateDate() string {
+	n := time.Now()
+	return n.Format(TimeFormatString)
 }
 
 //func (tx *Transaction) String() string {
@@ -254,6 +263,30 @@ func (tx *Transaction) Cost() *big.Int {
 		tx.TxFee = TXFEE
 	}
 	return tx.TxFee
+}
+
+func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
+	tx.AccountNonce = cpy.AccountNonce
+	tx.Txsize = cpy.Txsize
+	tx.CreationDate = cpy.CreationDate
+	tx.Locktime = cpy.Locktime
+	tx.Excutiontime = cpy.Excutiontime
+	tx.Memery = cpy.Memery
+	tx.Priority_lvl = cpy.Priority_lvl
+	if cpy.TxFee != nil {
+		fee := big.Int{}
+		fee.SetUint64(cpy.TxFee.Uint64())
+		tx.TxFee = &fee
+	}
+	tx.TxMessages = make([]Message, len(cpy.TxMessages))
+	for _, msg := range cpy.TxMessages {
+		newMsg := Message{
+			App:         msg.App,
+			PayloadHash: msg.PayloadHash,
+			Payload:     msg.Payload,
+		}
+		tx.TxMessages = append(tx.TxMessages, newMsg)
+	}
 }
 
 //// AsMessage returns the transaction as a core.Message.

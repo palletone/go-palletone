@@ -95,11 +95,11 @@ func (api *PrivateDebugAPI) TraceBlockByNumber(ctx context.Context, number rpc.B
 
 		switch number {
 		case rpc.PendingBlockNumber:
-			block = api.eth.miner.PendingBlock()
+			block = api.ptn.miner.PendingBlock()
 		case rpc.LatestBlockNumber:
-			block = api.eth.blockchain.CurrentBlock()
+			block = api.ptn.blockchain.CurrentBlock()
 		default:
-			block = api.eth.blockchain.GetBlockByNumber(uint64(number))
+			block = api.ptn.blockchain.GetBlockByNumber(uint64(number))
 		}
 		// Trace the block if it was found
 		if block == nil {
@@ -114,7 +114,7 @@ func (api *PrivateDebugAPI) TraceBlockByNumber(ctx context.Context, number rpc.B
 // EVM and returns them as a JSON object.
 func (api *PrivateDebugAPI) TraceBlockByHash(ctx context.Context, hash common.Hash, config *TraceConfig) ([]*txTraceResult, error) {
 	/*
-		block := api.eth.blockchain.GetBlockByHash(hash)
+		block := api.ptn.blockchain.GetBlockByHash(hash)
 		if block == nil {
 			return nil, fmt.Errorf("block #%x not found", hash)
 		}
@@ -154,7 +154,7 @@ func (api *PrivateDebugAPI) TraceBlockFromFile(ctx context.Context, file string,
 func (api *PrivateDebugAPI) TraceTransaction(ctx context.Context, hash common.Hash, config *TraceConfig) (interface{}, error) {
 	/*
 		// Retrieve the transaction and assemble its EVM context
-		tx, blockHash, _, index := core.GetTransaction(api.eth.ChainDb(), hash)
+		tx, blockHash, _, index := core.GetTransaction(api.ptn.ChainDb(), hash)
 		if tx == nil {
 			return nil, fmt.Errorf("transaction %x not found", hash)
 		}
@@ -177,11 +177,11 @@ func (api *PrivateDebugAPI) TraceTransaction(ctx context.Context, hash common.Ha
 func (api *PrivateDebugAPI) computeTxEnv(blockHash common.Hash, txIndex int, reexec uint64) (core.Message, vm.Context, *state.StateDB, error) {
 
 		// Create the parent state database
-		block := api.eth.blockchain.GetBlockByHash(blockHash)
+		block := api.ptn.blockchain.GetBlockByHash(blockHash)
 		if block == nil {
 			return nil, vm.Context{}, nil, fmt.Errorf("block %x not found", blockHash)
 		}
-		parent := api.eth.blockchain.GetBlock(block.ParentHash(), block.NumberU64()-1)
+		parent := api.ptn.blockchain.GetBlock(block.ParentHash(), block.NumberU64()-1)
 		if parent == nil {
 			return nil, vm.Context{}, nil, fmt.Errorf("parent %x not found", block.ParentHash())
 		}
@@ -195,7 +195,7 @@ func (api *PrivateDebugAPI) computeTxEnv(blockHash common.Hash, txIndex int, ree
 		for idx, tx := range block.Transactions() {
 			// Assemble the transaction call message and return if the requested offset
 			msg, _ := tx.AsMessage(signer)
-			context := core.NewEVMContext(msg, block.Header(), api.eth.blockchain, nil)
+			context := core.NewEVMContext(msg, block.Header(), api.ptn.blockchain, nil)
 			if idx == txIndex {
 				return msg, context, statedb, nil
 			}

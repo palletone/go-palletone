@@ -55,7 +55,7 @@ var (
 	qosConfidenceCap = 10   // Number of peers above which not to modify RTT confidence
 	qosTuningImpact  = 0.25 // Impact that a new tuning target has on the previous value
 
-	maxQueuedHeaders  = 32 * 1024 // [eth/62] Maximum number of headers to queue for import (DOS protection)
+	maxQueuedHeaders  = 32 * 1024 // [ptn/62] Maximum number of headers to queue for import (DOS protection)
 	maxHeadersProcess = 2048      // Number of header download results to import at once into the chain
 	maxResultsProcess = 2048      // Number of content download results to import at once into the chain
 
@@ -120,17 +120,17 @@ type Downloader struct {
 	committed       int32
 
 	// Channels
-	headerCh      chan dataPack          // [eth/62] Channel receiving inbound block headers
-	bodyCh        chan dataPack          // [eth/62] Channel receiving inbound block bodies
-	receiptCh     chan dataPack          // [eth/63] Channel receiving inbound receipts
-	bodyWakeCh    chan bool              // [eth/62] Channel to signal the block body fetcher of new tasks
-	receiptWakeCh chan bool              // [eth/63] Channel to signal the receipt fetcher of new tasks
-	headerProcCh  chan []*modules.Header // [eth/62] Channel to feed the header processor new tasks
+	headerCh      chan dataPack          // [ptn/62] Channel receiving inbound block headers
+	bodyCh        chan dataPack          // [ptn/62] Channel receiving inbound block bodies
+	receiptCh     chan dataPack          // [ptn/63] Channel receiving inbound receipts
+	bodyWakeCh    chan bool              // [ptn/62] Channel to signal the block body fetcher of new tasks
+	receiptWakeCh chan bool              // [ptn/63] Channel to signal the receipt fetcher of new tasks
+	headerProcCh  chan []*modules.Header // [ptn/62] Channel to feed the header processor new tasks
 
 	// for stateFetcher
 	stateSyncStart chan *stateSync
 	trackStateReq  chan *stateReq
-	stateCh        chan dataPack // [eth/63] Channel receiving inbound node state data
+	stateCh        chan dataPack // [ptn/63] Channel receiving inbound node state data
 
 	// Cancellation and termination
 	cancelPeer string         // Identifier of the peer currently being used as the master (cancel on drop)
@@ -409,7 +409,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		return errTooOld
 	}
 
-	log.Info("Synchronising with the network", "peer", p.id, "eth", p.version, "head", hash, "index", index, "mode", d.mode)
+	log.Info("Synchronising with the network", "peer", p.id, "ptn", p.version, "head", hash, "index", index, "mode", d.mode)
 	defer func(start time.Time) {
 		log.Debug("Synchronisation terminated", "elapsed", time.Since(start))
 	}(time.Now())
@@ -1192,11 +1192,13 @@ func (d *Downloader) processFullSyncContent() error {
 
 func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	// Check for any early termination requests
+	log.Debug("===Downloader->importBlockResults===", "len(results):", len(results))
 	if len(results) == 0 {
 		return nil
 	}
 	select {
 	case <-d.quitCh:
+		log.Debug("===Downloader->importBlockResults===<-d.quitCh")
 		return errCancelContentProcessing
 	default:
 	}
@@ -1340,6 +1342,7 @@ func splitAroundPivot(pivot uint64, results []*fetchResult) (p *fetchResult, bef
 }
 func (d *Downloader) commitFastSyncData(results []*fetchResult, stateSync *stateSync) error {
 	// Check for any early termination requests
+	log.Debug("===Enter commitFastSyncData===", "len(results):", len(results))
 	if len(results) == 0 {
 		return nil
 	}
@@ -1358,16 +1361,17 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult, stateSync *state
 		"firstnum", first.Number, "firsthash", first.Hash(),
 		"lastnumn", last.Number, "lasthash", last.Hash(),
 	)
-	blocks := make([]*modules.Unit, len(results))
+	//blocks := make([]*modules.Unit, len(results))
+	blocks := make(modules.Units, len(results))
 	//receipts := make([]types.Receipts, len(results))
 	for i, result := range results {
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 		//receipts[i] = result.Receipts
 	}
-	//	if index, err := d.blockchain.InsertReceiptChain(blocks, receipts); err != nil {
-	//		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
-	//		return errInvalidChain
-	//	}
+	if index, err := d.dag.InsertDag(blocks); err != nil {
+		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number.Index, "hash", results[index].Header.Hash(), "err", err)
+		return errInvalidChain
+	}
 	return nil
 }
 

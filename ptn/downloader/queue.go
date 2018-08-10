@@ -46,8 +46,8 @@ var (
 // fetchRequest is a currently running data retrieval operation.
 type fetchRequest struct {
 	Peer    *peerConnection   // Peer to which the request was sent
-	From    uint64            // [eth/62] Requested chain element index (used for skeleton fills only)
-	Headers []*modules.Header // [eth/62] Requested headers, sorted by request order
+	From    uint64            // [ptn/62] Requested chain element index (used for skeleton fills only)
+	Headers []*modules.Header // [ptn/62] Requested headers, sorted by request order
 	Time    time.Time         // Time when the request was made
 }
 
@@ -57,8 +57,8 @@ type fetchResult struct {
 	Pending int         // Number of data fetches still pending
 	Hash    common.Hash // Hash of the header to prevent recalculating
 
-	Header       *modules.Header
-	Uncles       []*modules.Header
+	Header *modules.Header
+	//Uncles       []*modules.Header
 	Transactions modules.Transactions
 	//Receipts     modules.Receipts
 }
@@ -68,26 +68,26 @@ type queue struct {
 	mode SyncMode // Synchronisation mode to decide on the block parts to schedule for fetching
 
 	// Headers are "special", they download in batches, supported by a skeleton chain
-	headerHead      common.Hash                    // [eth/62] Hash of the last queued header to verify order
-	headerTaskPool  map[uint64]*modules.Header     // [eth/62] Pending header retrieval tasks, mapping starting indexes to skeleton headers
-	headerTaskQueue *prque.Prque                   // [eth/62] Priority queue of the skeleton indexes to fetch the filling headers for
-	headerPeerMiss  map[string]map[uint64]struct{} // [eth/62] Set of per-peer header batches known to be unavailable
-	headerPendPool  map[string]*fetchRequest       // [eth/62] Currently pending header retrieval operations
-	headerResults   []*modules.Header              // [eth/62] Result cache accumulating the completed headers
-	headerProced    int                            // [eth/62] Number of headers already processed from the results
-	headerOffset    uint64                         // [eth/62] Number of the first header in the result cache
-	headerContCh    chan bool                      // [eth/62] Channel to notify when header download finishes
+	headerHead      common.Hash                    // [ptn/62] Hash of the last queued header to verify order
+	headerTaskPool  map[uint64]*modules.Header     // [ptn/62] Pending header retrieval tasks, mapping starting indexes to skeleton headers
+	headerTaskQueue *prque.Prque                   // [ptn/62] Priority queue of the skeleton indexes to fetch the filling headers for
+	headerPeerMiss  map[string]map[uint64]struct{} // [ptn/62] Set of per-peer header batches known to be unavailable
+	headerPendPool  map[string]*fetchRequest       // [ptn/62] Currently pending header retrieval operations
+	headerResults   []*modules.Header              // [ptn/62] Result cache accumulating the completed headers
+	headerProced    int                            // [ptn/62] Number of headers already processed from the results
+	headerOffset    uint64                         // [ptn/62] Number of the first header in the result cache
+	headerContCh    chan bool                      // [ptn/62] Channel to notify when header download finishes
 
 	// All data retrievals below are based on an already assembles header chain
-	blockTaskPool  map[common.Hash]*modules.Header // [eth/62] Pending block (body) retrieval tasks, mapping hashes to headers
-	blockTaskQueue *prque.Prque                    // [eth/62] Priority queue of the headers to fetch the blocks (bodies) for
-	blockPendPool  map[string]*fetchRequest        // [eth/62] Currently pending block (body) retrieval operations
-	blockDonePool  map[common.Hash]struct{}        // [eth/62] Set of the completed block (body) fetches
+	blockTaskPool  map[common.Hash]*modules.Header // [ptn/62] Pending block (body) retrieval tasks, mapping hashes to headers
+	blockTaskQueue *prque.Prque                    // [ptn/62] Priority queue of the headers to fetch the blocks (bodies) for
+	blockPendPool  map[string]*fetchRequest        // [ptn/62] Currently pending block (body) retrieval operations
+	blockDonePool  map[common.Hash]struct{}        // [ptn/62] Set of the completed block (body) fetches
 
-	receiptTaskPool  map[common.Hash]*modules.Header // [eth/63] Pending receipt retrieval tasks, mapping hashes to headers
-	receiptTaskQueue *prque.Prque                    // [eth/63] Priority queue of the headers to fetch the receipts for
-	receiptPendPool  map[string]*fetchRequest        // [eth/63] Currently pending receipt retrieval operations
-	receiptDonePool  map[common.Hash]struct{}        // [eth/63] Set of the completed receipt fetches
+	receiptTaskPool  map[common.Hash]*modules.Header // [ptn/63] Pending receipt retrieval tasks, mapping hashes to headers
+	receiptTaskQueue *prque.Prque                    // [ptn/63] Priority queue of the headers to fetch the receipts for
+	receiptPendPool  map[string]*fetchRequest        // [ptn/63] Currently pending receipt retrieval operations
+	receiptDonePool  map[common.Hash]struct{}        // [ptn/63] Set of the completed receipt fetches
 
 	resultCache  []*fetchResult     // Downloaded but not yet delivered fetch results
 	resultOffset uint64             // Offset of the first cached fetch result in the block chain
@@ -365,7 +365,9 @@ func (q *queue) Results(block bool) []*fetchResult {
 		}
 		q.active.Wait()
 		nproc = q.countProcessableItems()
+		log.Debug("===queue->Results===wait OK", "nproc:", nproc)
 	}
+	log.Debug("===queue->Results===", "nproc", nproc, "maxResultsProcess:", maxResultsProcess, "len(resultCache):", len(q.resultCache))
 	// Since we have a batch limit, don't pull more into "dangling" memory
 	if nproc > maxResultsProcess {
 		nproc = maxResultsProcess
@@ -377,7 +379,7 @@ func (q *queue) Results(block bool) []*fetchResult {
 		for _, result := range results {
 			hash := result.Header.Hash()
 			delete(q.blockDonePool, hash)
-			delete(q.receiptDonePool, hash)
+			//delete(q.receiptDonePool, hash)
 		}
 		// Delete the results from the cache and clear the tail.
 		copy(q.resultCache, q.resultCache[nproc:])
@@ -390,9 +392,9 @@ func (q *queue) Results(block bool) []*fetchResult {
 		// Recalculate the result item weights to prevent memory exhaustion
 		for _, result := range results {
 			size := result.Header.Size()
-			for _, uncle := range result.Uncles {
-				size += uncle.Size()
-			}
+			//for _, uncle := range result.Uncles {
+			//	size += uncle.Size()
+			//}
 			//for _, receipt := range result.Receipts {
 			//	size += receipt.Size()
 			//}
@@ -402,6 +404,7 @@ func (q *queue) Results(block bool) []*fetchResult {
 			q.resultSize = common.StorageSize(blockCacheSizeWeight)*size + (1-common.StorageSize(blockCacheSizeWeight))*q.resultSize
 		}
 	}
+	log.Debug("===queue->Results===", "len(results):", len(results))
 	return results
 }
 
@@ -499,6 +502,8 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 	send := make([]*modules.Header, 0, count)
 	skip := make([]*modules.Header, 0)
 	log.Debug("===queue->reserveHeaders===", "count:", count)
+	var sum int = 0
+	var noopsum int = 0
 	progress := false
 	for proc := 0; proc < space && len(send) < count && !taskQueue.Empty(); proc++ {
 		header := taskQueue.PopItem().(*modules.Header)
@@ -515,15 +520,17 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 		if q.resultCache[index] == nil {
 			components := 1
 			if q.mode == FastSync {
-				components = 2
+				//components = 2
 			}
 			q.resultCache[index] = &fetchResult{
 				Pending: components,
 				Hash:    hash,
 				Header:  header,
 			}
+			sum++
 		}
 		// If this fetch task is a noop, skip this fetch operation
+		//如果header的区块中没有包含交易，那么不需要获取区块头
 		if isNoop(header) {
 			donePool[hash] = struct{}{}
 			delete(taskPool, hash)
@@ -531,6 +538,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 			space, proc = space-1, proc-1
 			q.resultCache[index].Pending--
 			progress = true
+			noopsum++
 			continue
 		}
 		// Otherwise unless the peer is known not to have the data, add to the retrieve list
@@ -540,6 +548,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 			send = append(send, header)
 		}
 	}
+	log.Debug("===queue->reserveHeaders===", "sum:", sum, "noopsum:", noopsum)
 	log.Debug("===queue->reserveHeaders===", "len(skip):", len(skip), "len(send):", len(send))
 	// Merge all the skipped headers back
 	for _, header := range skip {
@@ -548,6 +557,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 	}
 	if progress {
 		// Wake WaitResults, resultCache was modified
+		log.Debug("===queue->reserveHeaders===q.active.Signal")
 		q.active.Signal()
 	}
 	// Assemble and return the block download request
@@ -720,7 +730,7 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 				accepted = false
 				break
 			}
-			//TODO  must recover //if headers[i].Hash() != header.ParentHash { //eth
+			//TODO  must recover //if headers[i].Hash() != header.ParentHash { //ptn
 			//if headers[i].Hash() != header.ParentsHash[0] {
 			//	log.Warn("Header broke chain ancestry", "peer", id, "number", header.Number, "hash", hash)
 			//	accepted = false
@@ -824,10 +834,9 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*modules.Header, tas
 	}
 	reqTimer.UpdateSince(request.Time)
 	delete(pendPool, id)
-
+	log.Debug("===queue->deliver===", "results:", results, "len(request.Headers):", len(request.Headers))
 	// If no data items were retrieved, mark them as unavailable for the origin peer
 	if results == 0 {
-		log.Debug("===queue->deliver===", "results:", results, "len(request.Headers):", len(request.Headers))
 		for _, header := range request.Headers {
 			request.Peer.MarkLacking(header.Hash())
 		}
@@ -866,23 +875,30 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*modules.Header, tas
 		delete(taskPool, hash)
 	}
 	// Return all failed or missing fetches to the queue
+	var sum int = 0
 	for _, header := range request.Headers {
 		if header != nil {
 			//taskQueue.Push(header, -float32(header.Number.Uint64()))
 			taskQueue.Push(header, -float32(header.Number.Index))
+			sum++
 		}
 	}
+	log.Debug("===queue->deliver===", "accepted:", accepted, "taskQueue sum:", sum)
 	// Wake up WaitResults
 	if accepted > 0 {
+		log.Debug("===queue->deliver===q.active.Signal")
 		q.active.Signal()
 	}
 	// If none of the data was good, it's a stale delivery
 	switch {
 	case failure == nil || failure == errInvalidChain:
+		log.Debug("===queue->deliver===case 0")
 		return accepted, failure
 	case useful:
+		log.Debug("===queue->deliver===case 1", "failure:", failure)
 		return accepted, fmt.Errorf("partial failure: %v", failure)
 	default:
+		log.Debug("===queue->deliver===default")
 		return accepted, errStaleDelivery
 	}
 }

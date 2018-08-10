@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	AddressLength = 35 // ETH length is 20
+	AddressLength = 35 // PTN length is 20
 )
 
 var (

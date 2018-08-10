@@ -31,11 +31,11 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/asset"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/internal/ptnapi"
-	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
+	"github.com/palletone/go-palletone/tokenengine"
 	"reflect"
 	"strconv"
 	"strings"
@@ -96,28 +96,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error)
 
 	gUnit.UnitHeader = &header
 	// copy txs
-	if len(txs) > 0 {
-		gUnit.Txs = make([]*modules.Transaction, len(txs))
-		for i, pTx := range txs {
-			tx := modules.Transaction{
-				AccountNonce: pTx.AccountNonce,
-				TxHash:       pTx.TxHash,
-				From:         pTx.From,
-				Excutiontime: pTx.Excutiontime,
-				Memery:       pTx.Memery,
-				CreationDate: pTx.CreationDate,
-				TxFee:        pTx.TxFee,
-				Txsize:       pTx.Txsize,
-			}
-			if len(pTx.TxMessages) > 0 {
-				tx.TxMessages = make([]modules.Message, len(pTx.TxMessages))
-				for j := 0; j < len(pTx.TxMessages); j++ {
-					tx.TxMessages[j] = pTx.TxMessages[j]
-				}
-			}
-			gUnit.Txs[i] = &tx
-		}
-	}
+	gUnit.CopyBody(txs)
 	// set unit size
 	gUnit.UnitSize = gUnit.Size()
 	// set unit hash
@@ -178,43 +157,39 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-// modify by Albert·Gou
-func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool) ([]modules.Unit, error) {
-	// step1. get transactions from txspool
-	if txspool == nil || mAddr == nil {
+func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool, ks *keystore.KeyStore) ([]modules.Unit, error) {
+	if txspool == nil || mAddr == nil || ks == nil {
 		return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
 	}
-	txs, _ := txspool.GetSortedTxs()
-	if len(txs) <= 0 {
-		log.Info("Package unit: txspool is empty now.")
-		return nil, nil
-	}
-	// step2. compute coinbase transaction fees
-	fees, err := ComputeFees(txs)
-	if err != nil {
-		return nil, err
-	}
-	input := btcjson.TransactionInput{}
-	locktime := int64(0)
-	cmd := btcjson.CreateRawTransactionCmd{
-		Inputs:   []btcjson.TransactionInput{input},
-		Amounts:  map[string]float64{mAddr.String(): float64(fees)},
-		LockTime: &locktime,
-	}
-	txhex, err := ptnapi.CreateRawTransaction(cmd)
-	if err != nil {
-		return nil, err
-	}
-	// todo 需要调用钱包接口将hex转为结构体，从打包为transaction
-	fmt.Println("Coinbase transaction hex:", txhex)
 
 	units := []modules.Unit{}
-	// step3. get mediator responsible for asset id
-	assetID := modules.IDType16{}
-	// step4. compute chain height
-	index := uint64(0)
+	// step1. get mediator responsible for asset (for now is ptn)
+	bAsset := GetConfig([]byte("GenesisAsset"))
+	var asset modules.Asset
+	if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
+		log.Error(err.Error())
+		return nil, fmt.Errorf("Create unit: %s", err.Error())
+	}
+	// step2. compute chain height
+	index := uint64(1)
 	isMain := true
-	chainIndex := modules.ChainIndex{AssetID: assetID, IsMain: isMain, Index: index}
+	chainIndex := modules.ChainIndex{AssetID: asset.AssertId, IsMain: isMain, Index: index}
+
+	// step3. get transactions from txspool
+	poolTxs, _ := txspool.GetSortedTxs()
+	// step4. compute minner income: transaction fees + interest
+	fees, err := ComputeFees(poolTxs)
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+	coinbase, err := createCoinbase(mAddr, fees, &asset, ks)
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+
+	txs := modules.Transactions{coinbase}
 
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
@@ -226,7 +201,7 @@ func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool) ([]modules.Unit,
 
 	// step6. generate genesis unit header
 	header := modules.Header{
-		AssetIDs: []modules.IDType16{assetID},
+		AssetIDs: []modules.IDType16{asset.AssertId},
 		Number:   chainIndex,
 		TxRoot:   root,
 		//		Creationdate: time.Now().Unix(),
@@ -235,27 +210,9 @@ func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool) ([]modules.Unit,
 	unit := modules.Unit{}
 	unit.UnitHeader = &header
 	// step7. copy txs
-	if len(txs) > 0 {
-		unit.Txs = make([]*modules.Transaction, len(txs))
-		for i, pTx := range txs {
-			tx := modules.Transaction{
-				AccountNonce: pTx.AccountNonce,
-				TxHash:       pTx.TxHash,
-				From:         pTx.From,
-				Excutiontime: pTx.Excutiontime,
-				Memery:       pTx.Memery,
-				CreationDate: pTx.CreationDate,
-				TxFee:        pTx.TxFee,
-			}
-			if len(pTx.TxMessages) > 0 {
-				tx.TxMessages = make([]modules.Message, len(pTx.TxMessages))
-				for j := 0; j < len(pTx.TxMessages); j++ {
-					tx.TxMessages[j] = pTx.TxMessages[j]
-				}
-			}
-			unit.Txs[i] = &tx
-		}
-	}
+	unit.CopyBody(txs)
+	// step8. set size
+	unit.UnitSize = unit.Size()
 	units = append(units, unit)
 	return units, nil
 }
@@ -339,7 +296,7 @@ func GetUnitTransactions(unitHash common.Hash) (modules.Transactions, error) {
 为创世单元生成ConfigPayload
 To generate config payload for genesis unit
 */
-func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, error) {
+func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (modules.ConfigPayload, error) {
 	var confPay modules.ConfigPayload
 
 	confPay.ConfigSet = make(map[string]interface{})
@@ -359,6 +316,8 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis) (modules.ConfigPayload, 
 		}
 	}
 
+	confPay.ConfigSet["GenesisAsset"] = *asset
+
 	return confPay, nil
 }
 
@@ -368,36 +327,39 @@ save genesis unit data
 */
 func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	if unit.UnitSize == 0 || unit.Size() == 0 {
+		log.Error("Unit is null")
 		return fmt.Errorf("Unit is null")
 	}
 	// step1. check unit signature, should be compare to mediator list
 	if err := checkUnitSignature(unit.UnitHeader, isGenesis); err != nil {
+		log.Error(err.Error())
 		return err
 	}
 
 	// step2. check unit size
 	if unit.UnitSize != unit.Size() {
+		log.Error("Size is invalid")
 		return modules.ErrUnit(-1)
 	}
 	// step3. check transactions in unit
-	totalFee, err := checkTransactions(&unit.Txs, isGenesis)
+	_, err := checkTransactions(&unit.Txs, isGenesis)
 	if err != nil {
+		log.Error("Check transactions:", "error", err.Error())
 		return err
 	}
-	// step4. check coin base fee
-	if totalFee <= 0 {
-	}
-	// step5. save unit header
+	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
+		log.Error("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
-	// step6. save unit hash and chain index relation
+	// step5. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
 	if err := storage.SaveHashNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		log.Error("SaveHashNumber:", "error", err.Error())
 		return fmt.Errorf("Save unit hash and number error")
 	}
-	// step7. traverse transactions and save them
+	// step6. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
 		// traverse messages
@@ -406,40 +368,59 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 			switch msg.App {
 			case modules.APP_PAYMENT:
 				if ok := savePaymentPayload(tx.TxHash, &msg, uint32(msgIndex), tx.Locktime); ok != true {
+					log.Error("Save payment payload error.")
 					return fmt.Errorf("Save payment payload error.")
 				}
 			case modules.APP_CONTRACT_TPL:
 				if ok := saveContractTpl(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
+					log.Error("Save contract template error.")
 					return fmt.Errorf("Save contract template error.")
 				}
 			case modules.APP_CONTRACT_DEPLOY:
 				if ok := saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
+					log.Error("Save contract init payload error.")
 					return fmt.Errorf("Save contract init payload error.")
 				}
 			case modules.APP_CONTRACT_INVOKE:
 				if ok := saveContractInvokePayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
+					log.Error("Save contract invode payload error.")
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_CONFIG:
 				if ok := saveConfigPayload(tx.TxHash, &msg); ok == false {
+					log.Error("Save contract invode payload error.")
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_TEXT:
 			default:
+				log.Error("Message type is not supported now")
 				return fmt.Errorf("Message type is not supported now: %s", msg.App)
 			}
 		}
-		// step8. save transaction
+		// step7. save transaction
 		if err = storage.SaveTransaction(tx); err != nil {
+			log.Error("Save transaction:", "error", err.Error())
 			return err
 		}
 	}
 
-	// step9. save unit body, the value only save txs' hash set, and the key is merkle root
+	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
 	if err = storage.SaveBody(unit.UnitHash, txHashSet); err != nil {
+		log.Error("SaveBody", "error", err.Error())
 		return err
 	}
-
+	// step 10  save txlookupEntry
+	if err := storage.SaveTxLookupEntry(&unit); err != nil {
+		return err
+	}
+	// update state
+	if storage.Dbconn == nil {
+		storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+	go storage.PutCanonicalHash(storage.Dbconn, unit.UnitHash, unit.NumberU64())
+	go storage.PutHeadHeaderHash(storage.Dbconn, unit.UnitHash)
+	go storage.PutHeadUnitHash(storage.Dbconn, unit.UnitHash)
+	go storage.PutHeadFastUnitHash(storage.Dbconn, unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
 }
@@ -495,9 +476,10 @@ func checkTransactions(txs *modules.Transactions, isGenesis bool) (uint64, error
 			}
 			// check tx size
 			if tx.Size() != tx.Txsize {
-				fmt.Printf("Txsize=%v, tx.Size()=%v\n", tx.Txsize, tx.Size())
-				return 0, fmt.Errorf("Transaction(%s) Size is incorrect.", tx.TxHash)
+				log.Debug("Txsize=%v, tx.Size()=%v\n", tx.Txsize, tx.Size())
+				return 0, fmt.Errorf("Transaction(%s) Size is incorrect.", tx.TxHash.String())
 			}
+			// check transaction signature
 			// check every type payload
 			switch msg.App {
 			case modules.APP_PAYMENT:
@@ -725,4 +707,54 @@ To get unit information by its ChainIndex
 */
 func QueryUnitByChainIndex(index *modules.ChainIndex) *modules.Unit {
 	return storage.GetUnitFormIndex(index.Index, index.AssetID)
+}
+
+/**
+创建coinbase交易
+To create coinbase transaction
+*/
+
+func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, ks *keystore.KeyStore) (*modules.Transaction, error) {
+	// setp1. create P2PKH script
+	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
+	// step2. create payload
+	input := modules.Input{}
+	output := modules.Output{
+		Value:    income,
+		Asset:    *asset,
+		PkScript: script,
+	}
+	payload := modules.PaymentPayload{
+		Inputs:  []modules.Input{input},
+		Outputs: []modules.Output{output},
+	}
+	// step3. create message
+	msg := modules.Message{
+		App:         modules.APP_PAYMENT,
+		PayloadHash: rlp.RlpHash(payload),
+		Payload:     payload,
+	}
+	// step4. create coinbase
+	coinbase := modules.Transaction{
+		TxMessages: []modules.Message{msg},
+	}
+
+	coinbase.Txsize = coinbase.Size()
+	coinbase.CreationDate = coinbase.CreateDate()
+	coinbase.TxHash = coinbase.Hash()
+
+	// setp5. signature transaction
+	R, S, V, err := ks.SigTX(coinbase.TxHash, *addr)
+	if err != nil {
+		msg := fmt.Sprintf("Sign transaction error: %s", err)
+		log.Error(msg)
+		return nil, nil
+	}
+	coinbase.From = &modules.Authentifier{
+		Address: addr.String(),
+		R:       R,
+		S:       S,
+		V:       V,
+	}
+	return &coinbase, nil
 }
