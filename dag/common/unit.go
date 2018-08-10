@@ -190,6 +190,11 @@ func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool, ks *keystore.Key
 	}
 
 	txs := modules.Transactions{coinbase}
+	if len(poolTxs) > 0 {
+		for _, tx := range poolTxs {
+			txs = append(txs, tx)
+		}
+	}
 
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
@@ -573,6 +578,9 @@ func saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *m
 			Height:  height,
 			TxIndex: txIndex,
 		}
+		// delete old contract state
+		deleteContractState(payload.ContractId, k)
+		// save new contract state
 		key := fmt.Sprintf("%s%s_%s_%s",
 			storage.CONTRACT_STATE_PREFIX,
 			payload.ContractId,
@@ -605,13 +613,17 @@ func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *mod
 			Height:  height,
 			TxIndex: txIndex,
 		}
+		// delete old state from database
+		deleteContractState(payload.ContractId, k)
+
+		// save new state to database
 		key := fmt.Sprintf("%s%s_%s_%s",
 			storage.CONTRACT_STATE_PREFIX,
 			payload.ContractId,
 			k,
 			version.String())
 		if err := storage.Store(storage.Dbconn, key, v); err != nil {
-			log.Error("Save payload key", "error", err.Error())
+			log.Error("Save state", "error", err.Error())
 			continue
 		}
 	}
@@ -744,17 +756,50 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 	coinbase.TxHash = coinbase.Hash()
 
 	// setp5. signature transaction
-	R, S, V, err := ks.SigTX(coinbase.TxHash, *addr)
+	sig, err := signTransaction(coinbase.TxHash, addr, ks)
 	if err != nil {
 		msg := fmt.Sprintf("Sign transaction error: %s", err)
 		log.Error(msg)
 		return nil, nil
 	}
-	coinbase.From = &modules.Authentifier{
+	coinbase.From = sig
+	return &coinbase, nil
+}
+
+/**
+删除合约状态
+To delete contract state
+*/
+func deleteContractState(contractID string, field string) {
+	oldKeyPrefix := fmt.Sprintf("%s%s_%s",
+		storage.CONTRACT_STATE_PREFIX,
+		contractID,
+		field)
+	data := storage.GetPrefix([]byte(oldKeyPrefix))
+	for k, _ := range data {
+		if err := storage.Delete([]byte(k)); err != nil {
+			log.Error("Delete contract state", "error", err.Error())
+			continue
+		}
+	}
+}
+
+/**
+签名交易
+To Sign transaction
+*/
+func signTransaction(txHash common.Hash, addr *common.Address, ks *keystore.KeyStore) (*modules.Authentifier, error) {
+	R, S, V, err := ks.SigTX(txHash, *addr)
+	if err != nil {
+		msg := fmt.Sprintf("Sign transaction error: %s", err)
+		log.Error(msg)
+		return nil, nil
+	}
+	sig := modules.Authentifier{
 		Address: addr.String(),
 		R:       R,
 		S:       S,
 		V:       V,
 	}
-	return &coinbase, nil
+	return &sig, nil
 }
