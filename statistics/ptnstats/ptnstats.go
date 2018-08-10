@@ -82,7 +82,7 @@ type Service struct {
 type LightEthereum struct{}
 
 // New returns a monitoring service ready for stats reporting.
-func New(url string, ethServ *ptn.PalletOne) (*Service, error) {
+func New(url string, ptnServ *ptn.PalletOne) (*Service, error) {
 	// Parse the netstats connection url
 	re := regexp.MustCompile("([^:@]*)(:([^@]*))?@(.+)")
 	parts := re.FindStringSubmatch(url)
@@ -92,13 +92,13 @@ func New(url string, ethServ *ptn.PalletOne) (*Service, error) {
 	// Assemble and return the stats service
 	/*would recover
 	var engine consensus.Engine
-	if ethServ != nil {
-		engine = ethServ.Engine()
+	if ptnServ != nil {
+		engine = ptnServ.Engine()
 	} else {
 		engine = lesServ.Engine()
 	}*/
 	return &Service{
-		ptn: ethServ,
+		ptn: ptnServ,
 		//engine: engine,//would recover
 		node:   parts[1],
 		pass:   parts[3],

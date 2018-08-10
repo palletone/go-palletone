@@ -122,11 +122,11 @@ func (t *SampleSysCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		fmt.Println("Chaincode result ==== ===== ", string(result))
 		return shim.Success(result)
 
-	case "addrETH":
+	case "addrPTN":
 		return shim.Success(nil)
-	case "transactionETH":
+	case "transactionPTN":
 		return shim.Success(nil)
-	case "queryETH":
+	case "queryPTN":
 		return shim.Success(nil)
 
 	case "txAddr":
