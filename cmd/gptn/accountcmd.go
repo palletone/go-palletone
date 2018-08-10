@@ -595,8 +595,7 @@ func accountSignTx(ctx *cli.Context) error {
 		utils.Fatalf("No accounts specified to update")
 	}
 	if len(ctx.Args()) != 1 {
-		utils.Fatalf("usage: [{'txid':txid,'vout':n,'scriptPubKey':hex,'redeemScript':hex},...] [,...] \
-[sighashtype='ALL']")
+		utils.Fatalf("usage :json: [{'txid':txid,'vout':n,'scriptPubKey':hex,'redeemScript':hex},...] [,...] [sighashtype='ALL']")
 	}
 	params := ctx.Args().First()
 	var signTransactionParams SignTransactionParams
