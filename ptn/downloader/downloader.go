@@ -1192,11 +1192,13 @@ func (d *Downloader) processFullSyncContent() error {
 
 func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	// Check for any early termination requests
+	log.Debug("===Downloader->importBlockResults===", "len(results):", len(results))
 	if len(results) == 0 {
 		return nil
 	}
 	select {
 	case <-d.quitCh:
+		log.Debug("===Downloader->importBlockResults===<-d.quitCh")
 		return errCancelContentProcessing
 	default:
 	}
@@ -1340,6 +1342,7 @@ func splitAroundPivot(pivot uint64, results []*fetchResult) (p *fetchResult, bef
 }
 func (d *Downloader) commitFastSyncData(results []*fetchResult, stateSync *stateSync) error {
 	// Check for any early termination requests
+	log.Debug("===Enter commitFastSyncData===", "len(results):", len(results))
 	if len(results) == 0 {
 		return nil
 	}
@@ -1358,16 +1361,17 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult, stateSync *state
 		"firstnum", first.Number, "firsthash", first.Hash(),
 		"lastnumn", last.Number, "lasthash", last.Hash(),
 	)
-	blocks := make([]*modules.Unit, len(results))
+	//blocks := make([]*modules.Unit, len(results))
+	blocks := make(modules.Units, len(results))
 	//receipts := make([]types.Receipts, len(results))
 	for i, result := range results {
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 		//receipts[i] = result.Receipts
 	}
-	//	if index, err := d.blockchain.InsertReceiptChain(blocks, receipts); err != nil {
-	//		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
-	//		return errInvalidChain
-	//	}
+	if index, err := d.dag.InsertDag(blocks); err != nil {
+		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number.Index, "hash", results[index].Header.Hash(), "err", err)
+		return errInvalidChain
+	}
 	return nil
 }
 

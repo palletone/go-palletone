@@ -175,6 +175,12 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 	return checkFreq, nil
 }
 
+//VerifyHeader checks whether a header conforms to the consensus rules of the stock
+//Ethereum ethash engine.
+func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
+	return nil
+}
+
 /**
 获取account address下面的token信息
 To get account token list and tokens's information

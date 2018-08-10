@@ -28,7 +28,6 @@ import (
 
 	"encoding/json"
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -1397,62 +1396,157 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	var tx wire.MsgTx
-	err = tx.Deserialize(bytes.NewBuffer(serializedTx))
-	if err != nil {
-		e := errors.New("TX decode failed")
-		return nil, DeserializationError{e}
-	}
 	var redeemTx wire.MsgTx
 	err = redeemTx.Deserialize(bytes.NewBuffer(serializedTx))
 	if err != nil {
 		return nil, err
 	}
-	//var hashType txscript.SigHashType
-	//hashType = txscript.SigHashAll
-	// TODO: really we probably should look these up with btcd anyway to
-	// make sure that they match the blockchain if present.
-	//inputs := make(map[wire.OutPoint][]byte)
-	//scripts := make(map[string][]byte)
+	var hashType txscript.SigHashType
+	switch *cmd.Flags {
+	case "ALL":
+		hashType = txscript.SigHashAll
+	case "NONE":
+		hashType = txscript.SigHashNone
+	case "SINGLE":
+		hashType = txscript.SigHashSingle
+	case "ALL|ANYONECANPAY":
+		hashType = txscript.SigHashAll | txscript.SigHashAnyOneCanPay
+	case "NONE|ANYONECANPAY":
+		hashType = txscript.SigHashNone | txscript.SigHashAnyOneCanPay
+	case "SINGLE|ANYONECANPAY":
+		hashType = txscript.SigHashSingle | txscript.SigHashAnyOneCanPay
+	default:
+		//e := errors.New("Invalid sighash parameter")
+		return nil, err
+	}
+
+	inputs := make(map[wire.OutPoint][]byte)
+	scripts := make(map[string][]byte)
+	//var params *chaincfg.Params
+    params := &chaincfg.TestNet3Params
 	var cmdInputs []btcjson.RawTxInput
 	if cmd.Inputs != nil {
 		cmdInputs = *cmd.Inputs
 	}
-	//temp only support one script
-	var script []byte
 	for _, rti := range cmdInputs {
-		script, err = decodeHexStr(rti.ScriptPubKey)
+		inputHash, err := chainhash.NewHashFromStr(rti.Txid)
+		if err != nil {
+			return nil, DeserializationError{err}
+		}
+		script, err := decodeHexStr(rti.ScriptPubKey)
 		if err != nil {
 			return nil, err
 		}
+		// redeemScript is only actually used iff the user provided
+		// private keys. In which case, it is used to get the scripts
+		// for signing. If the user did not provide keys then we always
+		// get scripts from the wallet.
+		// Empty strings are ok for this one and hex.DecodeString will
+		// DTRT.
+		if rti.RedeemScript != "" {
+			redeemScript, err := decodeHexStr(rti.RedeemScript)
+			if err != nil {
+				return nil, err
+                        }
+			addr, err := btcutil.NewAddressScriptHash(redeemScript,
+				params)
+                        fmt.Println("SignRawTransaction   1445   1445   1445 ----------")
+			if err != nil {
+				return nil, DeserializationError{err}
+			   }
+			scripts[addr.String()] = redeemScript
+		}
+		inputs[wire.OutPoint{
+			Hash:  *inputHash,
+			Index: rti.Vout,
+		}] = script
 	}
-	//temp only support one key
-	var keys string
+
+	var keys map[string]*btcutil.WIF
+	if cmd.PrivKeys != nil {
+	keys = make(map[string]*btcutil.WIF)
+
+        if cmd.PrivKeys != nil {
 	for _, key := range *cmd.PrivKeys {
-		_, err := btcutil.DecodeWIF(key)
+			wif, err := btcutil.DecodeWIF(key)
 		if err != nil {
-			fmt.Println("Err:privkey is invalid.")
+				return nil, err
+			}
+
+			//if !wif.IsForNet(params) {
+				//s := "key network doesn't match wallet's"
+			//	return nil, err
+			//}
+			addr, err := btcutil.NewAddressPubKey(wif.SerializePubKey(),
+				params)
+			if err != nil {
 			return nil, err
 		}
-		keys = key
+            //todo addr + "P"
+			keys[addr.EncodeAddress()] = wif
+		}
 	}
-	u8b5 := base58.Decode(keys)
-	//bt, _ := hex.DecodeString(test)
-	// send last 32 Byte to get privkey
-	testKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), u8b5[1:33])
-	lookupKey := func(a btcutil.Address) (*btcec.PrivateKey, bool, error) {
-		//
-		return testKey, true, nil
+        }
+    for i, txIn := range redeemTx.TxIn {
+			prevOutScript, _ := inputs[txIn.PreviousOutPoint]
+
+			// Set up our callbacks that we pass to txscript so it can
+			// look up the appropriate keys and scripts by address.
+			geekey:= txscript.KeyClosure(func(addr btcutil.Address) (*btcec.PrivateKey, bool, error) {
+					addrStr := addr.EncodeAddress()
+                                        wif,ok:= keys[addrStr]
+                                        if !ok {
+						return nil, false,
+							errors.New("no key for address")
 	}
-	sigScript, err := txscript.SignTxOutput(&chaincfg.MainNetParams,
-		&redeemTx, 0, script, txscript.SigHashAll,
-		txscript.KeyClosure(lookupKey), nil, nil)
+					return wif.PrivKey, wif.CompressPubKey, nil
+			})
+			getScript := txscript.ScriptClosure(func(addr btcutil.Address) ([]byte, error) {
+				// If keys were provided then we can only use the
+				// redeem scripts provided with our inputs, too.
+					addrStr := addr.EncodeAddress()
+					script, ok := scripts[addrStr]
+					if !ok {
+						return nil, errors.New("no script for address")
+	                                }
+					return script, nil
+			})
+                        var signErrors []SignatureError
+			// SigHashSingle inputs can only be signe   d if there's a
+			// corresponding output. However this could be already signed,
+			// so we always verify the output.
+			if (hashType&txscript.SigHashSingle) !=   
+				txscript.SigHashSingle || i < len(redeemTx.TxOut) {
+				script, err := txscript.SignTxOutput(params,
+					&redeemTx, i, prevOutScript, hashType, geekey,
+					getScript, txIn.SignatureScript)
+				// Failure to sign isn't an error, it just means that
+				// the tx isn't complete.
 	if err != nil {
-		return nil, err
+					signErrors = append(signErrors, SignatureError{
+						InputIndex: uint32(i),
+						Error:      err,
+					})
+					continue
 	}
-	redeemTx.TxIn[0].SignatureScript = sigScript
+				txIn.SignatureScript = script
+			}
+			// Either it was already signed or we just signed it.
+			// Find out if it is completely satisfied or still needs more.
+			vm, err := txscript.NewEngine(prevOutScript, &redeemTx, i,
+				txscript.StandardVerifyFlags, nil, nil, 0)
+			if err == nil {
+				err = vm.Execute()
+			}
+			if err != nil {
+				signErrors = append(signErrors, SignatureError{
+					InputIndex: uint32(i),
+					Error:      err,
+				})
+			}
+		}
 	var buf bytes.Buffer
-	buf.Grow(tx.SerializeSize())
+	buf.Grow(redeemTx.SerializeSize())
 	// All returned errors (not OOM, which panics) encounted during
 	// bytes.Buffer writes are unexpected.
 	if err = redeemTx.Serialize(&buf); err != nil {

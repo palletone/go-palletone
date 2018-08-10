@@ -23,23 +23,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/ptn"
 )
-
-type MediatorPlugin struct {
-	ptn *ptn.PalletOne
-	// Enable VerifiedUnit production, even if the chain is stale.
-	// 新开启一个区块链时，必须设为true
-	productionEnabled bool
-	// Mediator`s account and passphrase controlled by this node
-	mediators map[common.Address]string
-	quit      chan struct{} // Channel used for graceful exit
-}
 
 func newChainBanner(dag *dag.Dag) {
 	fmt.Printf("\n" +
@@ -53,6 +42,10 @@ func newChainBanner(dag *dag.Dag) {
 			"Please consider using the --genesis-timestamp option to give your genesis a recent timestamp\n" +
 			"\n")
 	}
+}
+
+func (mp *MediatorPlugin) SubscribeNewProducedUnitEvent(ch chan<- NewProducedUnitEvent) event.Subscription {
+	return mp.newProducedUnitScope.Track(mp.newProducedUnitFeed.Subscribe(ch))
 }
 
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
@@ -213,8 +206,8 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	detail["Hash"] = unit.UnitHash.Hex()
 
 	// 3. 异步向区块链网络广播验证单元
-	go log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
-	//	go mp.ptn.EventMux().Post()
+	log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
+	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: unit})
 
 	return Produced, detail
 }
