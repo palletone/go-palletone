@@ -60,7 +60,7 @@ func TestWalletBalance(t *testing.T) {
 
 func TestGetAccountTokens(t *testing.T) {
 	addr := common.Address{}
-	addr.SetString("P14yBqQ4ogJ3RdEFoVTdd5ucsdu3PffZZRu")
+	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkNr")
 	tokens, err := GetAccountTokens(addr)
 	if err != nil {
 		log.Println("Get account error:", err.Error())
