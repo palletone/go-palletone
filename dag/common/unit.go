@@ -281,18 +281,18 @@ func GenesisHeight() modules.ChainIndex {
 
 func GetUnitTransactions(unitHash common.Hash) (modules.Transactions, error) {
 	txs := modules.Transactions{}
-	// get body data: transaction list
+	// get body data: transaction list.
+	// if getbody return transactions list, then don't range txHashlist.
 	txHashList, err := storage.GetBody(unitHash)
 	if err != nil {
 		return nil, err
 	}
-	// get transaction data
+	// get transaction by tx'hash.
 	for _, txHash := range txHashList {
-		tx, err := storage.GetTransaction(txHash)
+		tx, _, _, _ := storage.GetTransaction(txHash)
 		if err != nil {
-			return nil, err
+			txs = append(txs, tx)
 		}
-		txs = append(txs, tx)
 	}
 	return txs, nil
 }
@@ -776,7 +776,7 @@ func deleteContractState(contractID string, field string) {
 		contractID,
 		field)
 	data := storage.GetPrefix([]byte(oldKeyPrefix))
-	for k, _ := range data {
+	for k := range data {
 		if err := storage.Delete([]byte(k)); err != nil {
 			log.Error("Delete contract state", "error", err.Error())
 			continue
