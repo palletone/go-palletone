@@ -18,8 +18,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/dag/common"
 	"testing"
+
+	"github.com/palletone/go-palletone/dag/common"
 )
 
 var customGenesisTests = []struct {
