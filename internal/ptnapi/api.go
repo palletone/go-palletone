@@ -1477,8 +1477,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 				//s := "key network doesn't match wallet's"
 			//	return nil, err
 			//}
-			addr, err := btcutil.NewAddressPubKey(wif.SerializePubKey(),
-				params)
+			addr, err := btcutil.NewAddressPubKey(wif.SerializePubKey())
 			if err != nil {
 			return nil, err
 		}

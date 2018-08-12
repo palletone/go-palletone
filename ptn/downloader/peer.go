@@ -190,7 +190,7 @@ func (p *peerConnection) FetchReceipts(request *fetchRequest) error {
 	/*
 		// Sanity check the protocol version
 		if p.version < 63 {
-			panic(fmt.Sprintf("body fetch [eth/63+] requested on eth/%d", p.version))
+			panic(fmt.Sprintf("body fetch [ptn/63+] requested on ptn/%d", p.version))
 		}
 		// Short circuit if the peer is already fetching
 		if !atomic.CompareAndSwapInt32(&p.receiptIdle, 0, 1) {

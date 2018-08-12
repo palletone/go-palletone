@@ -55,7 +55,7 @@ var (
 	qosConfidenceCap = 10   // Number of peers above which not to modify RTT confidence
 	qosTuningImpact  = 0.25 // Impact that a new tuning target has on the previous value
 
-	maxQueuedHeaders  = 32 * 1024 // [eth/62] Maximum number of headers to queue for import (DOS protection)
+	maxQueuedHeaders  = 32 * 1024 // [ptn/62] Maximum number of headers to queue for import (DOS protection)
 	maxHeadersProcess = 2048      // Number of header download results to import at once into the chain
 	maxResultsProcess = 2048      // Number of content download results to import at once into the chain
 
@@ -120,17 +120,17 @@ type Downloader struct {
 	committed       int32
 
 	// Channels
-	headerCh      chan dataPack          // [eth/62] Channel receiving inbound block headers
-	bodyCh        chan dataPack          // [eth/62] Channel receiving inbound block bodies
-	receiptCh     chan dataPack          // [eth/63] Channel receiving inbound receipts
-	bodyWakeCh    chan bool              // [eth/62] Channel to signal the block body fetcher of new tasks
-	receiptWakeCh chan bool              // [eth/63] Channel to signal the receipt fetcher of new tasks
-	headerProcCh  chan []*modules.Header // [eth/62] Channel to feed the header processor new tasks
+	headerCh      chan dataPack          // [ptn/62] Channel receiving inbound block headers
+	bodyCh        chan dataPack          // [ptn/62] Channel receiving inbound block bodies
+	receiptCh     chan dataPack          // [ptn/63] Channel receiving inbound receipts
+	bodyWakeCh    chan bool              // [ptn/62] Channel to signal the block body fetcher of new tasks
+	receiptWakeCh chan bool              // [ptn/63] Channel to signal the receipt fetcher of new tasks
+	headerProcCh  chan []*modules.Header // [ptn/62] Channel to feed the header processor new tasks
 
 	// for stateFetcher
 	stateSyncStart chan *stateSync
 	trackStateReq  chan *stateReq
-	stateCh        chan dataPack // [eth/63] Channel receiving inbound node state data
+	stateCh        chan dataPack // [ptn/63] Channel receiving inbound node state data
 
 	// Cancellation and termination
 	cancelPeer string         // Identifier of the peer currently being used as the master (cancel on drop)
@@ -409,7 +409,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		return errTooOld
 	}
 
-	log.Info("Synchronising with the network", "peer", p.id, "eth", p.version, "head", hash, "index", index, "mode", d.mode)
+	log.Info("Synchronising with the network", "peer", p.id, "ptn", p.version, "head", hash, "index", index, "mode", d.mode)
 	defer func(start time.Time) {
 		log.Debug("Synchronisation terminated", "elapsed", time.Since(start))
 	}(time.Now())
@@ -1205,8 +1205,8 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	// Retrieve the a batch of results to import
 	first, last := results[0].Header, results[len(results)-1].Header
 	log.Debug("Inserting downloaded chain", "items", len(results),
-		"firstnum", first.Number, "firsthash", first.Hash(),
-		"lastnum", last.Number, "lasthash", last.Hash(),
+		"firstnum", first.Number.Index, "firsthash", first.Hash(),
+		"lastnum", last.Number.Index, "lasthash", last.Hash(),
 	)
 	blocks := make([]*modules.Unit, len(results))
 	for i, result := range results {

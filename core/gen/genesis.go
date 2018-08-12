@@ -24,7 +24,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/common/txscript"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -32,6 +31,7 @@ import (
 	asset2 "github.com/palletone/go-palletone/dag/asset"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine"
 	"time"
 )
 
@@ -100,10 +100,11 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	// step1, generate payment payload message: coin creation
 	holder := common.Address{}
 	holder.SetString(genesis.TokenHolder)
-	if txscript.CheckP2PKHAddress(holder) == false {
+	if common.IsValidAddress(holder.String()) == false {
 		log.Error("Genesis holder address is an invalid p2pkh address.")
 		return nil
 	}
+
 	assetInfo := modules.AssetInfo{
 		Alias:          genesis.Alias,
 		InitialTotal:   genesis.TokenAmount,
@@ -128,12 +129,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		Extra: extra, // save asset info
 	}
 	// generate p2pkh bytes
-	publicKey, err := ks.GetPublicKey(holder)
-	if err != nil {
-		log.Error("Failed to Get Public Key:", err.Error())
-		return nil
-	}
-	pkscript := txscript.PayToPubkeyHashScript(publicKey)
+	pkscript := tokenengine.GenerateP2PKHLockScript(holder.Bytes())
 
 	txout := modules.Output{
 		Value:    genesis.TokenAmount,
@@ -150,7 +146,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	}
 	msg0.PayloadHash = rlp.RlpHash(pay)
 	// step2, generate global config payload message
-	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis)
+	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis, &asset)
 	if err != nil {
 		log.Error("Generate genesis unit config payload error.")
 		return nil
@@ -165,13 +161,6 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		AccountNonce: 1,
 		TxMessages:   []modules.Message{msg0, msg1},
 	}
-	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
-	if err != nil {
-		msg := fmt.Sprintf("Get genesis transactions hash error: %s", err)
-		log.Error(msg)
-		return nil
-	}
-	tx.TxHash.SetBytes(txHash)
 	// step4, sign tx
 	R, S, V, err := ks.SigTX(tx.TxHash, holder)
 	if err != nil {
@@ -186,6 +175,8 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		V:       V,
 	}
 	tx.Txsize = tx.Size()
+	tx.CreationDate = tx.CreateDate()
+	tx.TxHash = tx.Hash()
 	txs := []*modules.Transaction{tx}
 	return txs
 }

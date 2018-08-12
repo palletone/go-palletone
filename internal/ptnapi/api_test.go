@@ -44,7 +44,7 @@ func TestRawTransactionGen(t *testing.T) {
 	}`
         params= params
      
-	testResult := "0100000001d1df9b3380e84bc2641bb30f33c226f550d23080053906e4f430d82d447a980b0000000000feffffff01c271b504000000001976a9147c0099353492e6d45dd440940605d092506e773988ac0a000000"
+	testResult := "0100000001d1df9b3380e84bc2641bb30f33c226f550d23080053906e4f430d82d447a980b0000000000ffffffff0100c0b91502111c001976a9147c0099353492e6d45dd440940605d092506e773988ac00000000"
         var rawTransactionGenParams RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {

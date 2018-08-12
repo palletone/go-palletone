@@ -55,26 +55,26 @@ func (api *PublicEthereumAPI) Hashrate() hexutil.Uint64 {
 // PublicDebugAPI is the collection of PalletOne full node APIs exposed
 // over the public debugging endpoint.
 type PublicDebugAPI struct {
-	eth *PalletOne
+	ptn *PalletOne
 }
 
 // NewPublicDebugAPI creates a new API definition for the full node-
 // related public debug methods of the PalletOne service.
-func NewPublicDebugAPI(eth *PalletOne) *PublicDebugAPI {
-	return &PublicDebugAPI{eth: eth}
+func NewPublicDebugAPI(ptn *PalletOne) *PublicDebugAPI {
+	return &PublicDebugAPI{ptn: ptn}
 }
 */
 // PrivateDebugAPI is the collection of PalletOne full node APIs exposed over
 // the private debugging endpoint.
 type PrivateDebugAPI struct {
 	//config *configure.ChainConfig
-	eth *PalletOne
+	ptn *PalletOne
 }
 
 // NewPrivateDebugAPI creates a new API definition for the full node-related
 // private debug methods of the PalletOne service.
-//func NewPrivateDebugAPI(config *configure.ChainConfig, eth *PalletOne) *PrivateDebugAPI {
-//	return &PrivateDebugAPI{config: config, eth: eth}
+//func NewPrivateDebugAPI(config *configure.ChainConfig, ptn *PalletOne) *PrivateDebugAPI {
+//	return &PrivateDebugAPI{config: config, ptn: ptn}
 //}
 
 // Preimage is a debug API function that returns the preimage for a sha3 hash, if known.

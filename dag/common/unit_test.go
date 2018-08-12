@@ -9,6 +9,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 	"time"
 )
 
@@ -31,7 +32,7 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 
 	genesisConf.InitialParameters.MediatorInterval = 10
 
-	payload, err := GenGenesisConfigPayload(&genesisConf)
+	payload, err := GenGenesisConfigPayload(&genesisConf, &modules.Asset{})
 
 	if err != nil {
 		log.Println(err)
@@ -43,8 +44,111 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 }
 
 func TestSaveUnit(t *testing.T) {
-	if err := SaveUnit(modules.Unit{}, false); err != nil {
+	addr := common.Address{}
+	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
+	//ks := keystore.NewKeyStore("./keystore", 1<<18, 1)
+
+	p := common.Hash{}
+	p.SetString("0000000000000000000000000000000")
+	aid := modules.IDType16{}
+	aid.SetBytes([]byte("xxxxxxxxxxxxxxxxxx"))
+	header := modules.Header{
+		ParentsHash: []common.Hash{p},
+		AssetIDs:    []modules.IDType16{aid},
+	}
+	contractTplPayload := modules.ContractTplPayload{
+		TemplateId: common.HexToHash("contract_template0000"),
+		Bytecode:   []byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159},
+	}
+	readSet := map[string]*modules.StateVersion{}
+	readSet["name"] = &modules.StateVersion{
+		Height:  GenesisHeight(),
+		TxIndex: 0,
+	}
+	writeSet := map[string]interface{}{
+		"name": "Joe",
+	}
+	deployPayload := modules.ContractDeployPayload{
+		TemplateId: common.HexToHash("contract_template0000"),
+		ContractId: "contract0000",
+		Config:     []byte{},
+		ReadSet:    readSet,
+		WriteSet:   writeSet,
+	}
+
+	invokePayload := modules.ContractInvokePayload{
+		ContractId: "contract0000",
+		Function:   []byte("initial"),
+		ReadSet:    readSet,
+		WriteSet: map[string]interface{}{
+			"name": "Alice",
+		},
+	}
+	tx1 := modules.Transaction{
+		TxMessages: []modules.Message{
+			modules.Message{
+				App:         modules.APP_CONTRACT_TPL,
+				PayloadHash: rlp.RlpHash(contractTplPayload),
+				Payload:     contractTplPayload,
+			},
+		},
+	}
+	tx1.Txsize = tx1.Size()
+	tx1.CreationDate = tx1.CreateDate()
+	tx1.TxHash = tx1.Hash()
+	//tx1.From, _ = signTransaction(tx1.TxHash, &addr, ks)
+
+	tx2 := modules.Transaction{
+		TxMessages: []modules.Message{
+			modules.Message{
+				App:         modules.APP_CONTRACT_DEPLOY,
+				PayloadHash: rlp.RlpHash(deployPayload),
+				Payload:     deployPayload,
+			},
+		},
+	}
+	tx2.Txsize = tx2.Size()
+	tx2.CreationDate = tx2.CreateDate()
+	tx2.TxHash = tx2.Hash()
+	//tx2.From, _ = signTransaction(tx2.TxHash, &addr, ks)
+
+	tx3 := modules.Transaction{
+		TxMessages: []modules.Message{
+			modules.Message{
+				App:         modules.APP_CONTRACT_INVOKE,
+				PayloadHash: rlp.RlpHash(invokePayload),
+				Payload:     invokePayload,
+			},
+		}}
+	tx3.Txsize = tx3.Size()
+	tx3.CreationDate = tx3.CreateDate()
+	tx3.TxHash = tx3.Hash()
+	//tx3.From, _ = signTransaction(tx3.TxHash, &addr, ks)
+
+	txs := modules.Transactions{}
+	txs = append(txs, &tx1)
+	txs = append(txs, &tx2)
+	txs = append(txs, &tx3)
+	unit := modules.Unit{
+		UnitHeader: &header,
+		Txs:        txs,
+	}
+	unit.UnitSize = unit.Size()
+	unit.UnitHash = unit.Hash()
+
+	if err := SaveUnit(unit, false); err != nil {
 		log.Println(err)
+	}
+}
+
+func TestGetstate(t *testing.T) {
+	key := fmt.Sprintf("%s%s_%s",
+		storage.CONTRACT_STATE_PREFIX,
+		"contract0000",
+		"name")
+	data := storage.GetPrefix([]byte(key))
+	for k, v := range data {
+		fmt.Println("key=", k, " ,value=", v)
 	}
 }
 
@@ -67,7 +171,7 @@ func TestCreateUnit(t *testing.T) {
 	addr := common.Address{} // minner addr
 	addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
 	//units, err := CreateUnit(&addr, time.Now())
-	units, err := CreateUnit(&addr, nil)
+	units, err := CreateUnit(&addr, nil, nil)
 	if err != nil {
 		log.Println("create unit error:", err)
 	} else {

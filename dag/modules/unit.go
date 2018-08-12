@@ -162,12 +162,30 @@ func CopyHeader(h *Header) *Header {
 	return &cpy
 }
 
-func CopyBody(txs Transactions) Transactions {
-	newTxs := Transactions{}
-	for _, tx := range txs {
-		newTxs = append(newTxs, tx)
+func (u *Unit) CopyBody(txs Transactions) Transactions {
+	if len(txs) > 0 {
+		u.Txs = make([]*Transaction, len(txs))
+		for i, pTx := range txs {
+			tx := Transaction{
+				AccountNonce: pTx.AccountNonce,
+				TxHash:       pTx.TxHash,
+				From:         pTx.From,
+				Excutiontime: pTx.Excutiontime,
+				Memery:       pTx.Memery,
+				CreationDate: pTx.CreationDate,
+				TxFee:        pTx.TxFee,
+				Txsize:       pTx.Txsize,
+			}
+			if len(pTx.TxMessages) > 0 {
+				tx.TxMessages = make([]Message, len(pTx.TxMessages))
+				for j := 0; j < len(pTx.TxMessages); j++ {
+					tx.TxMessages[j] = pTx.TxMessages[j]
+				}
+			}
+			u.Txs[i] = &tx
+		}
 	}
-	return newTxs
+	return u.Txs
 }
 
 //wangjiyou add for ptn/fetcher.go
@@ -364,7 +382,7 @@ func (u *Unit) Size() common.StorageSize {
 	emptyUnit.UnitHeader = CopyHeader(u.UnitHeader)
 	emptyUnit.UnitHeader.Authors = nil
 	emptyUnit.UnitHeader.Witness = []*Authentifier{}
-	emptyUnit.Txs = CopyBody(u.Txs)
+	emptyUnit.CopyBody(u.Txs)
 
 	b, err := rlp.EncodeToBytes(emptyUnit)
 	if err != nil {
@@ -427,13 +445,13 @@ func NewUnitWithHeader(header *Header) *Unit {
 // WithBody returns a new block with the given transaction and uncle contents.
 func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 	// check transactions merkle root
-	txs := CopyBody(transactions)
+	txs := b.CopyBody(transactions)
 	root := core.DeriveSha(txs)
 	if strings.Compare(root.String(), b.UnitHeader.TxRoot.String()) != 0 {
 		return nil
 	}
 	// set unit body
-	b.Txs = CopyBody(txs)
+	b.Txs = b.CopyBody(txs)
 	return b
 }
 

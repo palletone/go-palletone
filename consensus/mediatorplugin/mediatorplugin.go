@@ -211,3 +211,8 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 
 	return Produced, detail
 }
+
+func (mp *MediatorPlugin) AddUnverifiedUnitSet(*modules.Unit) error {
+	//TODO @Albert·Gou
+	return nil
+}
