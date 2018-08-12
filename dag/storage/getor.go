@@ -84,14 +84,28 @@ func GetString(key []byte) (string, error) {
 
 // get prefix: return maps
 func GetPrefix(prefix []byte) map[string][]byte {
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
+	if Dbconn != nil {
+		log.Println("dbconn isnot nil.")
+		return getprefix(Dbconn, prefix)
+	} else {
+		db := ReNewDbConn(config.DefaultConfig.DbPath)
+		if db == nil {
+			log.Println(" renew db faild.")
+			return nil
+		}
+		log.Println("renew db success.")
+
+		Dbconn = db
+		if Dbconn == nil {
+			log.Println("dbconn  is still nil .")
+		}
+		return getprefix(db, prefix)
 	}
-	return getprefix(prefix)
+
 }
 
 // get prefix
-func getprefix(prefix []byte) map[string][]byte {
+func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 	iter := Dbconn.NewIteratorWithPrefix(prefix)
 	result := make(map[string][]byte)
 	for iter.Next() {
