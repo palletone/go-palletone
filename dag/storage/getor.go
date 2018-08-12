@@ -152,8 +152,59 @@ func GetHeaderFormIndex(height uint64, asset modules.IDType16) *modules.Header {
 	return unit.UnitHeader
 }
 
-// Get contract
-func GetContract(id common.Hash, key string) (*modules.Contract, error) {
+// GetTxLookupEntry
+func GetTxLookupEntry(db DatabaseReader, hash common.Hash) (common.Hash, uint64, uint64) {
+	data, _ := Get(append(LookupPrefix, hash.Bytes()...))
+	if len(data) == 0 {
+		return common.Hash{}, 0, 0
+	}
+	var entry modules.TxLookupEntry
+	if err := rlp.DecodeBytes(data, &entry); err != nil {
+		return common.Hash{}, 0, 0
+	}
+	return entry.UnitHash, entry.UnitIndex, entry.Index
+
+}
+
+// GetTransaction retrieves a specific transaction from the database , along with its added positional metadata
+// p2p 同步区块 分为同步header 和body。 GetBody可以省掉节点包装交易块的过程。
+func GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
+	unitHash, unitNumber, txIndex := GetTxLookupEntry(Dbconn, hash)
+	if unitHash != (common.Hash{}) {
+		body, _ := GetBody(unitHash)
+		if body == nil || len(body) <= int(txIndex) {
+			return nil, common.Hash{}, 0, 0
+		}
+		tx, err := gettrasaction(body[txIndex])
+		if err == nil {
+			return tx, unitHash, unitNumber, txIndex
+		}
+	}
+	tx, err := gettrasaction(hash)
+	if err != nil {
+		return nil, unitHash, unitNumber, txIndex
+	}
+	return tx, unitHash, unitNumber, txIndex
+}
+
+// gettrasaction can get a transaction by hash.
+func gettrasaction(hash common.Hash) (*modules.Transaction, error) {
+	if hash == (common.Hash{}) {
+		return nil, errors.New("hash is not exist.")
+	}
+	data, err := Get(append(TRANSACTION_PREFIX, hash.Bytes()...))
+	if err != nil {
+		return nil, err
+	}
+	tx := new(modules.Transaction)
+	if err := rlp.DecodeBytes(data, &tx); err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
+// GetContract can get a Contract by the contract hash
+func GetContract(id common.Hash) (*modules.Contract, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
@@ -171,7 +222,7 @@ func GetContract(id common.Hash, key string) (*modules.Contract, error) {
 	return contract, nil
 }
 
-func GetContractRlp(id common.Hash, key string) (rlp.RawValue, error) {
+func GetContractRlp(id common.Hash) (rlp.RawValue, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}

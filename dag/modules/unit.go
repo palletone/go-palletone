@@ -205,7 +205,7 @@ type Transaction struct {
 	TxFee        *big.Int           `json:"txfee"` // user set total transaction fee.
 	Txsize       common.StorageSize `json:"txsize" rlp:""`
 	Locktime     uint32             `json:"lock_time"`
-	Priority_lvl float64            `json:"priority_lvl"`
+	Priority_lvl float64            `json:"priority_lvl"` // 打包的优先级
 }
 
 type ChainIndex struct {
