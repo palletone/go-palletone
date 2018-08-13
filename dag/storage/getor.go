@@ -335,3 +335,18 @@ func GetTrieSyncProgress(db DatabaseReader, count uint64) (uint64, error) {
 	}
 	return new(big.Int).SetBytes(data).Uint64(), nil
 }
+
+//  dbFetchUtxoEntry
+func GetUtxoEntry(db DatabaseReader, key []byte) (*modules.Utxo, error) {
+	utxo := new(modules.Utxo)
+	data, err := db.Get(key)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rlp.DecodeBytes(data, &utxo); err != nil {
+		return nil, err
+	}
+
+	return utxo, nil
+}
