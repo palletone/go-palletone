@@ -67,6 +67,7 @@ func TestSaveUnit(t *testing.T) {
 	}
 	writeSet := map[string]interface{}{
 		"name": "Joe",
+		"age":  10,
 	}
 	deployPayload := modules.ContractDeployPayload{
 		TemplateId: common.HexToHash("contract_template0000"),
@@ -82,6 +83,9 @@ func TestSaveUnit(t *testing.T) {
 		ReadSet:    readSet,
 		WriteSet: map[string]interface{}{
 			"name": "Alice",
+			"age": modules.DelContractState{
+				IsDelete: true,
+			},
 		},
 	}
 	tx1 := modules.Transaction{
@@ -142,10 +146,9 @@ func TestSaveUnit(t *testing.T) {
 }
 
 func TestGetstate(t *testing.T) {
-	key := fmt.Sprintf("%s%s_%s",
+	key := fmt.Sprintf("%s%s",
 		storage.CONTRACT_STATE_PREFIX,
-		"contract0000",
-		"name")
+		"contract0000")
 	data := storage.GetPrefix([]byte(key))
 	for k, v := range data {
 		fmt.Println("key=", k, " ,value=", v)
