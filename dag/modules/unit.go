@@ -284,6 +284,10 @@ type ContractTplPayload struct {
 	Bytecode   []byte      `json:"bytecode"`    // contract bytecode
 }
 
+type DelContractState struct {
+	IsDelete bool
+}
+
 // Contract instance message
 // App: contract_deploy
 type ContractDeployPayload struct {

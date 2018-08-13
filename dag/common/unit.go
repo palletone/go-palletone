@@ -485,6 +485,7 @@ func checkTransactions(txs *modules.Transactions, isGenesis bool) (uint64, error
 				return 0, fmt.Errorf("Transaction(%s) Size is incorrect.", tx.TxHash.String())
 			}
 			// check transaction signature
+
 			// check every type payload
 			switch msg.App {
 			case modules.APP_PAYMENT:
@@ -578,16 +579,8 @@ func saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *m
 			Height:  height,
 			TxIndex: txIndex,
 		}
-		// delete old contract state
-		deleteContractState(payload.ContractId, k)
-		// save new contract state
-		key := fmt.Sprintf("%s%s_%s_%s",
-			storage.CONTRACT_STATE_PREFIX,
-			payload.ContractId,
-			k,
-			version.String())
-		if err := storage.Store(storage.Dbconn, key, v); err != nil {
-			log.Error("Save payload key", "error", err.Error())
+		// save new state to database
+		if updateState(payload.ContractId, k, version, v) != true {
 			continue
 		}
 	}
@@ -613,17 +606,8 @@ func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *mod
 			Height:  height,
 			TxIndex: txIndex,
 		}
-		// delete old state from database
-		deleteContractState(payload.ContractId, k)
-
 		// save new state to database
-		key := fmt.Sprintf("%s%s_%s_%s",
-			storage.CONTRACT_STATE_PREFIX,
-			payload.ContractId,
-			k,
-			version.String())
-		if err := storage.Store(storage.Dbconn, key, v); err != nil {
-			log.Error("Save state", "error", err.Error())
+		if updateState(payload.ContractId, k, version, v) != true {
 			continue
 		}
 	}
@@ -802,4 +786,34 @@ func signTransaction(txHash common.Hash, addr *common.Address, ks *keystore.KeyS
 		V:       V,
 	}
 	return &sig, nil
+}
+
+/**
+保存contract state
+To save contract state
+*/
+func updateState(contractID string, key string, version modules.StateVersion, val interface{}) bool {
+	delState, isDel := val.(modules.DelContractState)
+	if isDel {
+		if delState.IsDelete == false {
+			return true
+		}
+		// delete old state from database
+		deleteContractState(contractID, key)
+
+	} else {
+		// delete old state from database
+		deleteContractState(contractID, key)
+		// insert new state
+		key := fmt.Sprintf("%s%s_%s_%s",
+			storage.CONTRACT_STATE_PREFIX,
+			contractID,
+			key,
+			version.String())
+		if err := storage.Store(storage.Dbconn, key, val); err != nil {
+			log.Error("Save state", "error", err.Error())
+			return false
+		}
+	}
+	return true
 }
