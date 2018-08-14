@@ -29,7 +29,7 @@ import (
 )
 
 func PutCanonicalHash(db ptndb.Putter, hash common.Hash, number uint64) error {
-	key := append(HEADER_PREFIX, encodeBlockNumber(number)...)
+	key := append(HeaderCanon_Prefix, encodeBlockNumber(number)...)
 	if err := db.Put(append(key, NumberSuffix...), hash.Bytes()); err != nil {
 		return err
 	}

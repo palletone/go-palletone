@@ -208,9 +208,9 @@ func (q *queue) Idle() bool {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
-	queued := q.blockTaskQueue.Size() + q.receiptTaskQueue.Size()
-	pending := len(q.blockPendPool) + len(q.receiptPendPool)
-	cached := len(q.blockDonePool) + len(q.receiptDonePool)
+	queued := q.blockTaskQueue.Size() /*+ q.receiptTaskQueue.Size()*/
+	pending := len(q.blockPendPool)   /*+ len(q.receiptPendPool)*/
+	cached := len(q.blockDonePool)    /*+ len(q.receiptDonePool)*/
 
 	return (queued + pending + cached) == 0
 }
@@ -321,6 +321,7 @@ func (q *queue) Schedule(headers []*modules.Header, from uint64) []*modules.Head
 			log.Warn("Header broke chain ordering", "number", header.Number, "hash", hash, "expected", from)
 			break
 		}
+		//TODO must recover
 		//		if q.headerHead != (common.Hash{}) && q.headerHead != header.ParentsHash[0] {
 		//			log.Warn("Header broke chain ancestry", "number", header.Number, "hash", hash)
 		//			break

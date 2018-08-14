@@ -1002,11 +1002,12 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 // queue until the stream ends or a failure occurs.
 //从输入通道获取一批又一批的检索头，并将它们处理和调度到头链和下加载程序的队列中，直到流结束或发生故障。
 func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64) error {
-	log.Debug("===Enter processHeaders===")
+	log.Debug("===Enter processHeaders===", "d.mode:", d.mode)
 	// Keep a count of uncertain headers to roll back
 	rollback := []*modules.Header{}
 	defer func() {
 		if len(rollback) > 0 {
+			log.Debug("===processHeaders===", "len(rollback):", len(rollback))
 			/*
 				// Flatten the headers and roll them back
 				hashes := make([]common.Hash, len(rollback))
@@ -1029,6 +1030,8 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64) e
 					"fast", fmt.Sprintf("%d->%d", lastFastBlock, curFastBlock),
 					"block", fmt.Sprintf("%d->%d", lastBlock, curBlock))
 			*/
+		} else {
+			log.Debug("===processHeaders===", "len(rollback):", len(rollback))
 		}
 	}()
 
@@ -1114,6 +1117,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64) e
 							unknown = append(unknown, header)
 						}
 					}
+					log.Debug("===processHeaders===", "len(unknown):", len(unknown))
 					// If we're importing pure headers, verify based on their recentness
 					frequency := fsHeaderCheckFrequency
 					//if chunk[len(chunk)-1].Number.Uint64()+uint64(fsHeaderForceVerify) > pivot {
@@ -1130,6 +1134,9 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64) e
 					}
 					// All verifications passed, store newly found uncertain headers
 					rollback = append(rollback, unknown...)
+					//test start
+					log.Debug("===processHeaders===", "len(rollback):", len(rollback))
+					//test end
 					if len(rollback) > fsHeaderSafetyNet {
 						rollback = append(rollback[:0], rollback[len(rollback)-fsHeaderSafetyNet:]...)
 					}
@@ -1137,7 +1144,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64) e
 				// Unless we're doing light chains, schedule the headers for associated content retrieval
 				if d.mode == FullSync || d.mode == FastSync {
 					// If we've reached the allowed number of pending headers, stall a bit
-					for d.queue.PendingBlocks() >= maxQueuedHeaders || d.queue.PendingReceipts() >= maxQueuedHeaders {
+					for d.queue.PendingBlocks() >= maxQueuedHeaders /* || d.queue.PendingReceipts() >= maxQueuedHeaders*/ {
 						select {
 						case <-d.cancelCh:
 							return errCancelHeaderProcessing

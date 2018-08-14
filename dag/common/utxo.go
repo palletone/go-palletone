@@ -140,6 +140,16 @@ func GetUxto(txin modules.Input) modules.Utxo {
 	return utxo
 }
 
+// GetUtosOutPoint
+func GetUtxoByOutpoint(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	key := outpoint.ToKey()
+
+	if storage.Dbconn == nil {
+		storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+	return storage.GetUtxoEntry(storage.Dbconn, key[:])
+}
+
 /**
 根据交易信息中的outputs创建UTXO， 根据交易信息中的inputs销毁UTXO
 To create utxo according to outpus in transaction, and destory utxo according to inputs in transaction

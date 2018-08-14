@@ -24,10 +24,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/asset"
@@ -37,7 +35,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"reflect"
-	"strconv"
 	"strings"
 )
 
@@ -336,7 +333,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 		return fmt.Errorf("Unit is null")
 	}
 	// step1. check unit signature, should be compare to mediator list
-	if err := checkUnitSignature(unit.UnitHeader, isGenesis); err != nil {
+	if err := ValidateUnitSignature(unit.UnitHeader, isGenesis); err != nil {
 		log.Error(err.Error())
 		return err
 	}
@@ -347,11 +344,11 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 		return modules.ErrUnit(-1)
 	}
 	// step3. check transactions in unit
-	_, err := checkTransactions(&unit.Txs, isGenesis)
-	if err != nil {
-		log.Error("Check transactions:", "error", err.Error())
-		return err
+	_, isSuccess, _ := ValidateTransactions(&unit.Txs, isGenesis)
+	if isSuccess != true {
+		return fmt.Errorf("Validate unit transactions failed")
 	}
+
 	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
@@ -403,14 +400,14 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 			}
 		}
 		// step7. save transaction
-		if err = storage.SaveTransaction(tx); err != nil {
+		if err := storage.SaveTransaction(tx); err != nil {
 			log.Error("Save transaction:", "error", err.Error())
 			return err
 		}
 	}
 
 	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
-	if err = storage.SaveBody(unit.UnitHash, txHashSet); err != nil {
+	if err := storage.SaveBody(unit.UnitHash, txHashSet); err != nil {
 		log.Error("SaveBody", "error", err.Error())
 		return err
 	}
@@ -422,102 +419,12 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	if storage.Dbconn == nil {
 		storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
 	}
-	go storage.PutCanonicalHash(storage.Dbconn, unit.UnitHash, unit.NumberU64())
+	//go storage.PutCanonicalHash(storage.Dbconn, unit.UnitHash, unit.NumberU64())
 	go storage.PutHeadHeaderHash(storage.Dbconn, unit.UnitHash)
 	go storage.PutHeadUnitHash(storage.Dbconn, unit.UnitHash)
 	go storage.PutHeadFastUnitHash(storage.Dbconn, unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
-}
-
-/**
-检查message的app与payload是否一致
-check messaage 'app' consistent with payload type
-*/
-func checkMessageType(app string, payload interface{}) bool {
-	switch payload.(type) {
-	case modules.PaymentPayload:
-		if app == modules.APP_PAYMENT {
-			return true
-		}
-	case modules.ContractTplPayload:
-		if app == modules.APP_CONTRACT_TPL {
-			return true
-		}
-	case modules.ContractDeployPayload:
-		if app == modules.APP_CONTRACT_DEPLOY {
-			return true
-		}
-	case modules.ContractInvokePayload:
-		if app == modules.APP_CONTRACT_INVOKE {
-			return true
-		}
-	case modules.ConfigPayload:
-		if app == modules.APP_CONFIG {
-			return true
-		}
-	case modules.TextPayload:
-		if app == modules.APP_TEXT {
-			return true
-		}
-	default:
-		return false
-	}
-	return false
-}
-
-/**
-检查unit中所有交易的合法性，返回所有交易的交易费总和
-check all transactions in one unit
-return all transactions' fee
-*/
-func checkTransactions(txs *modules.Transactions, isGenesis bool) (uint64, error) {
-	fee := uint64(0)
-	for _, tx := range *txs {
-		for _, msg := range tx.TxMessages {
-			// check message type and payload
-			if !checkMessageType(msg.App, msg.Payload) {
-				return 0, fmt.Errorf("Transaction (%s) message (%s) type is not consistent with payload.", tx.TxHash, msg.PayloadHash)
-			}
-			// check tx size
-			if tx.Size() != tx.Txsize {
-				log.Debug("Txsize=%v, tx.Size()=%v\n", tx.Txsize, tx.Size())
-				return 0, fmt.Errorf("Transaction(%s) Size is incorrect.", tx.TxHash.String())
-			}
-			// check transaction signature
-
-			// check every type payload
-			switch msg.App {
-			case modules.APP_PAYMENT:
-
-			case modules.APP_CONTRACT_TPL:
-
-			case modules.APP_CONTRACT_DEPLOY:
-
-			case modules.APP_CONTRACT_INVOKE:
-
-			case modules.APP_CONFIG:
-
-			case modules.APP_TEXT:
-
-			default:
-				return 0, fmt.Errorf("Message type(%s) is not supported now:", msg.App)
-			}
-		}
-		if isGenesis == true {
-			// check transaction fee
-			txFee := modules.TXFEE
-			// i := big.Int{}
-			// i.SetUint64(txFee)
-			if tx.TxFee.Cmp(txFee) != 0 {
-				return 0, fmt.Errorf("Transaction(%s)'s fee is invalid.", tx.TxHash)
-			}
-		}
-	}
-
-	// to check total fee with coinbase tx
-
-	return fee, nil
 }
 
 /**
@@ -648,56 +555,6 @@ func saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Mes
 }
 
 /**
-验证单元的签名，需要比对见证人列表
-*/
-func checkUnitSignature(h *modules.Header, isGenesis bool) error {
-	if h.Authors == nil || len(h.Authors.Address) <= 0 {
-		return fmt.Errorf("No author info")
-	}
-	emptySigUnit := modules.Unit{}
-	// copy unit's header
-	emptySigUnit.UnitHeader = modules.CopyHeader(h)
-	// signature does not contain authors and witness fields
-	emptySigUnit.UnitHeader.Authors = nil
-	emptySigUnit.UnitHeader.Witness = []*modules.Authentifier{}
-	// recover signature
-	sig := make([]byte, 65)
-	copy(sig[32-len(h.Authors.R):32], h.Authors.R)
-	copy(sig[64-len(h.Authors.S):64], h.Authors.S)
-	copy(sig[64:], h.Authors.V)
-	// recover pubkey
-	hash := crypto.Keccak256Hash(util.RHashBytes(*emptySigUnit.UnitHeader))
-	pubKey, err := modules.RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
-	//  pubKey to pubKey_bytes
-	pubKey_bytes := crypto.FromECDSAPub(pubKey)
-	if keystore.VerifyUnitWithPK(sig, *emptySigUnit.UnitHeader, pubKey_bytes) == false {
-		return fmt.Errorf("Verify unit signature error.")
-	}
-	// if genesis unit just return
-	if isGenesis == false {
-		return nil
-	}
-	// todo group signature verify
-	// get mediators
-	data := GetConfig([]byte("MediatorCandidates"))
-	bNum := GetConfig([]byte("ActiveMediators"))
-	num, err := strconv.Atoi(string(bNum))
-	if err != nil {
-		return fmt.Errorf("Check unit signature error: %s", err)
-	}
-	if num != len(data) {
-		return fmt.Errorf("Check unit signature error: mediators info error, pls update network")
-	}
-	// decode mediator list data
-	var mediators []string
-	if err := rlp.DecodeBytes(data, &mediators); err != nil {
-		return fmt.Errorf("Check unit signature error: %s", err)
-	}
-
-	return nil
-}
-
-/**
 从levedb中根据ChainIndex获得Unit信息
 To get unit information by its ChainIndex
 */
@@ -740,7 +597,7 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 	coinbase.TxHash = coinbase.Hash()
 
 	// setp5. signature transaction
-	sig, err := signTransaction(coinbase.TxHash, addr, ks)
+	sig, err := SignTransaction(coinbase.TxHash, addr, ks)
 	if err != nil {
 		msg := fmt.Sprintf("Sign transaction error: %s", err)
 		log.Error(msg)
@@ -772,7 +629,7 @@ func deleteContractState(contractID string, field string) {
 签名交易
 To Sign transaction
 */
-func signTransaction(txHash common.Hash, addr *common.Address, ks *keystore.KeyStore) (*modules.Authentifier, error) {
+func SignTransaction(txHash common.Hash, addr *common.Address, ks *keystore.KeyStore) (*modules.Authentifier, error) {
 	R, S, V, err := ks.SigTX(txHash, *addr)
 	if err != nil {
 		msg := fmt.Sprintf("Sign transaction error: %s", err)
