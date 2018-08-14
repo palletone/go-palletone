@@ -437,6 +437,7 @@ func invokeWithVersion(ctx context.Context, chainID string, version string, spec
 	if len(creator) == 0 {
 		creator = []byte("Admin")
 	}
+
 	//glh
 	//sprop, prop := putils.MockSignedEndorserProposalOrPanic(chainID, spec, creator, []byte("msg1"))
 	sprop, prop := MockSignedEndorserProposalOrPanic(chainID, spec, creator, []byte("msg1"))

@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -85,6 +86,7 @@ func getTxSimulator(context context.Context) rwset.TxSimulator {
 	//chaincode will not allow state operations
 	return nil
 }
+
 /*
 //use this for ledger access and make sure HistoryQueryExecutor is being used
 func getHistoryQueryExecutor(context context.Context) ledger.HistoryQueryExecutor {
@@ -557,7 +559,6 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 				chaincodeLogger.Debugf("launch error: %+v", err)
 			}
 
-
 			//if the launch was successful and leads to proper registration,
 			//this error could be ignored in the select below. On the other
 			//hand the error might be triggered for select in which case
@@ -600,7 +601,7 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	canName := cccid.GetCanonicalName()
 	if canName == "" {
 		return errors.New("chaincode name not set")
-	}else {
+	} else {
 		chaincodeLogger.Debugf("stopping : %+v", canName)
 	}
 
@@ -608,7 +609,7 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	//sir := container.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, Version: cccid.Version}, Timeout: 0}
 	// The line below is left for debugging. It replaces the line above to keep
 	// the chaincode container around to give you a chance to get data
-	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: cccid.ChainID, Version: cccid.Version}, Timeout: 0, Dontremove: true}
+	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: ""/*cccid.ChainID*/, Version: cccid.Version}, Timeout: 0, Dontremove: true}
 	vmtype, _ := chaincodeSupport.getVMType(cds)
 
 	_, err := controller.VMCProcess(context, vmtype, sir)
@@ -806,7 +807,8 @@ func createCCMessage(typ pb.ChaincodeMessage_Type, cid string, txid string, cMsg
 func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *ccprovider.CCContext, msg *pb.ChaincodeMessage, timeout time.Duration) (*pb.ChaincodeMessage, error) {
 	chaincodeLogger.Debugf("Entry, chainId[%s], txid[%s]", msg.ChannelId, msg.Txid)
 	defer chaincodeLogger.Debugf("Exit")
-	setTimeout := 5*time.Second //default chaincode exectute timeout
+	//glh
+	setTimeout := 5 * time.Second //default chaincode exectute timeout
 	if timeout > 0 {
 		setTimeout = timeout
 	}

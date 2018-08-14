@@ -5,6 +5,7 @@ import (
 	"time"
 	"os"
 	"net"
+	"fmt"
 	"google.golang.org/grpc"
 	"golang.org/x/net/context"
 	"github.com/spf13/viper"
@@ -18,10 +19,9 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"fmt"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	"github.com/palletone/go-palletone/contracts/ucc"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
 
 type mocksupt struct {}
@@ -117,19 +117,16 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 
 func peerMockInitialize() {
 //ledgermgmt.InitializeTestEnvWithCustomProcessors(ConfigTxProcessors)
-chains.list = nil
-chains.list = make(map[string]*chain)
+chains.clist = nil
+chains.clist = make(map[string]*chain)
 //chainInitializer = func(string) { return }
 }
 func peerMockCreateChain(cid string) error {
 	chains.Lock()
 	defer chains.Unlock()
 
-	chains.list[cid] = &chain{
-		cs: &chainSupport{
-		},
+	chains.clist[cid] = &chain{
 	}
-
 	return nil
 }
 
@@ -361,22 +358,80 @@ func TestInstallCC(t *testing.T) {
 	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
 	chainID := util.GetTestChainID()
 
+	var txid string = "1234567890" //default
+	nonce, err := crypto.GetRandomNonce()
+	if err == nil {
+		txid, err = computeProposalTxID(nonce, []byte("glh"))
+	}
+
 	f := "init"
 	args := util.ToChaincodeArgs(f, "a", "100", "b", "200")
 
 	usercc := &ucc.UserChaincode{
-			Enabled:   true,
-			Name:      "example01",
-			Path:      "chaincode/example01",
-			Version:   "0",
-			InitArgs:  args,
-			Chaincode: &samplesyscc.SampleSysCC{},
-		}
-
+		Enabled:   true,
+		Name:      "example01",
+		Path:      "chaincode/example01",
+		Version:   "ptn001",
+		InitArgs:  args,
+		//Chaincode: &samplesyscc.SampleSysCC{},
+	}
 	InitNoSysCCC()
 
-	ucc.DeployUserCC(chainID, usercc, 30*time.Second)
+	//deploy
+	fmt.Print("=======================DeployUserCC=============================")
+	err = ucc.DeployUserCC(chainID, usercc, txid, 30*time.Second)
+	if err != nil {
+		t.Errorf("DeployUserCC err:%s", err)
+	}
+	time.Sleep(1*time.Second)
+
+	//invoke
+	fmt.Print("=======================Invoke=============================")
+	f = "invoke"
+	args = util.ToChaincodeArgs(f, "111")
+	_, err = Invoke(chainID, "example01", txid, args, 0)
+	if err != nil {
+		t.Errorf("Invoke err:%s", err)
+	}
+	time.Sleep(2*time.Second)
+
+	//stop
+	usercc.Name = "example01"
+	fmt.Print("=======================StopUserCC=============================")
+	err = ucc.StopUserCC(chainID, usercc, txid,true)
+	if err != nil {
+		t.Errorf("StopUserCC err:%s", err)
+	}
+	time.Sleep(2*time.Second)
+
+
+}
+
+func invokeUserCC(t *testing.T, txid string) {
+
+	chainID := util.GetTestChainID()
+	f := "invoke"
+	args := util.ToChaincodeArgs(f, "111")
+
+
+	Invoke(chainID, "example01", txid, args, 0)
+
+
+	usercc := &ucc.UserChaincode{
+		Enabled:   true,
+		Name:      "example01",
+		Path:      "chaincode/example01",
+		Version:   "ptn001",
+		InitArgs:  args,
+		Chaincode: &samplesyscc.SampleSysCC{},
+	}
+
+	fmt.Print("=======================#################=============================")
 
 	time.Sleep(5*time.Second)
+
+	ucc.StopUserCC(chainID, usercc, txid, true)
 }
+
+
 

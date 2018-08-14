@@ -2,18 +2,16 @@ package ucc
 
 import (
 	"fmt"
+	"time"
 	"golang.org/x/net/context"
 
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
-
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/vm/controller"
-	"time"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
-
 
 type UserChaincode struct {
 	//Unique name of the chaincode
@@ -40,6 +38,7 @@ type UserChaincode struct {
 	// having to remove entry from importsysccs.go
 	Enabled bool
 }
+
 var logger = flogging.MustGetLogger("uccapi")
 
 // buildLocal builds a given chaincode code
@@ -59,10 +58,37 @@ func getDeploymentSpec(_ context.Context, spec *pb.ChaincodeSpec) (*pb.Chaincode
 	return cdDeploymentSpec, nil
 }
 
+func DeployUserCC(chainID string, usrcc *UserChaincode, txid string, timeout time.Duration) error {
+	var err error
 
-func DeployUserCC(chainID string, usrcc *UserChaincode, timeout time.Duration) error {
+	ccprov := ccprovider.GetChaincodeProvider()
+	ctxt := context.Background()
+	//todo
+	//从数据库中检查并恢复出保存的context数据
+
+	chaincodeID := &pb.ChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
+	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: usrcc.InitArgs}}
+
+	// First build and get the deployment spec
+	chaincodeDeploymentSpec, err := getDeploymentSpec(ctxt, spec)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
+		return err
+	}
+
+	cccid := ccprov.GetCCContext(chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, usrcc.Version, txid, false, nil, nil)
+	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, timeout)
+	if err != nil {
+		logger.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
+	}
+	logger.Infof("user chaincode %s/%s(%s) deployed", usrcc.Name, chainID, usrcc.Path)
+
+	return err
+}
+
+func InvokeUserCC(chainID string, usrcc *UserChaincode, timeout time.Duration) error {
 	//if !usrcc.Enabled || !isWhitelisted(usrcc) {
-	//	logger.Info(fmt.Sprintf("system chaincode (%s,%s) disabled", usrcc.Name, usrcc.Path))
+	//	logger.Info(fmt.Sprintf("chaincode (%s,%s) disabled", usrcc.Name, usrcc.Path))
 	//	return nil
 	//}
 	var err error
@@ -70,25 +96,8 @@ func DeployUserCC(chainID string, usrcc *UserChaincode, timeout time.Duration) e
 	ccprov := ccprovider.GetChaincodeProvider()
 	txid := util.GenerateUUID()
 	ctxt := context.Background()
-	//glh
-	/*
-	if chainID != "" {
-		lgr := peer.GetLedger(chainID)
-		if lgr == nil {
-			panic(fmt.Sprintf("syschain %s start up failure - unexpected nil ledger for channel %s", syscc.Name, chainID))
-		}
 
-		//init can do GetState (and other Get's) even if Puts cannot be
-		//be handled. Need ledger for this
-		ctxt2, txsim, err := ccprov.GetContext(lgr, txid)
-		if err != nil {
-			return err
-		}
-		ctxt = ctxt2
-		defer txsim.Done()
-	}
-*/
-	chaincodeID := &pb.ChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version:usrcc.Version}
+	chaincodeID := &pb.ChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
 	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: usrcc.InitArgs}}
 
 	// First build and get the deployment spec
@@ -101,7 +110,7 @@ func DeployUserCC(chainID string, usrcc *UserChaincode, timeout time.Duration) e
 	version := "aaaaa"
 
 	cccid := ccprov.GetCCContext(chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, version, txid, false, nil, nil)
-	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec,timeout)
+	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, timeout)
 
 	if err != nil {
 		logger.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
@@ -111,7 +120,43 @@ func DeployUserCC(chainID string, usrcc *UserChaincode, timeout time.Duration) e
 	return err
 }
 
-func StopUserCC(chainID string, usrcc *UserChaincode, timeout time.Duration) error {
-	//theChaincodeSupport.Stop(ctxt, cccid, &pb.ChaincodeDeploymentSpec{ChaincodeSpec: spec})
+func StopUserCC(chainID string, usrcc *UserChaincode, txid string, deleteImage bool) error {
+	var err error
+	ccprov := ccprovider.GetChaincodeProvider()
+	chaincodeID := &pb.ChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
+	spec := &pb.ChaincodeSpec{
+		Type:        pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
+		ChaincodeId: chaincodeID,
+		Input: &pb.ChaincodeInput{
+			Args: usrcc.InitArgs,
+		},
+	}
+
+	chaincodeDeploymentSpec := &pb.ChaincodeDeploymentSpec{ChaincodeSpec: spec, CodePackage: nil}
+	//chaincodeDeploymentSpec, err := getDeploymentSpec(context.Background(), spec)
+	//if err != nil {
+	//}
+
+	cccid := ccprov.GetCCContext(chainID, usrcc.Name, usrcc.Version, txid, false, nil, nil)
+	err = ccprov.Stop(context.Background(), cccid, chaincodeDeploymentSpec)
+	if err != nil {
+	}
+
+	if deleteImage {
+		logger.Info("destroyImage not complete")
+		//dir := controller.DestroyImageReq{CCID: ccintf.CCID{
+		//	ChaincodeSpec: spec,
+		//	NetworkID:     theChaincodeSupport.peerNetworkID,
+		//	PeerID:        theChaincodeSupport.peerID,
+		//	ChainID:       cccid.ChainID},Force: true,
+		//	NoPrune: true,
+		//}
+		//_, err = controller.VMCProcess(context.Background(), controller.DOCKER, dir)
+		//if err != nil {
+		//	err = fmt.Errorf("Error destroying image: %s", err)
+		//	return err
+		//}
+	}
+
 	return nil
 }
