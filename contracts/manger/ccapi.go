@@ -170,7 +170,7 @@ func Stop(chainID string, txid string, ccName string, ccPath string, ccVersion s
 	}
 	err := ucc.StopUserCC(chainID, usrcc, txid, deleteImage)
 	if err != nil {
-		errMsg := fmt.Sprintf("StopUserCC err[%]-[%s]-err[%s]", chainID, ccName, err)
+		errMsg := fmt.Sprintf("StopUserCC err[%s]-[%s]-err[%s]", chainID, ccName, err)
 		return errors.New(errMsg)
 	}
 

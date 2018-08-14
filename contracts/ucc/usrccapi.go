@@ -77,10 +77,12 @@ func DeployUserCC(chainID string, usrcc *UserChaincode, txid string, timeout tim
 	}
 
 	cccid := ccprov.GetCCContext(chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, usrcc.Version, txid, false, nil, nil)
-	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, timeout)
+	rspPaloyd, _, err := ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, timeout)
 	if err != nil {
 		logger.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
 	}
+	logger.Info("rspPaloyd =%v", rspPaloyd)
+
 	logger.Infof("user chaincode %s/%s(%s) deployed", usrcc.Name, chainID, usrcc.Path)
 
 	return err

@@ -246,10 +246,10 @@ func peerCreateChain(cid string) error {
 	chains.Lock()
 	defer chains.Unlock()
 
-	chains.list[cid] = &chain{
-		//cs: &chainSupport{
-		//},
-	}
+	//chains.list[cid] = &chain{
+	//	//cs: &chainSupport{
+	//	//},
+	//}
 
 	return nil
 }
