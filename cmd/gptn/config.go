@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/configure"
+
 	//	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"path/filepath"
 
@@ -225,6 +226,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	// 1. 根据默认配置、命令行参数和配置文件的配置来创建一个node, 并获取相关配置
 	stack, cfg := makeConfigNode(ctx)
 	log.InitLogger()
+	stack.SetDbPath(cfg.Dag.DbPath)
 
 	// 2. 创建 Ptn service、DashBoard service以及 PtnStats service 等 service ,
 	// 并注册到 Node 的 serviceFuncs 中，然后在 stack.Start() 执行的时候会调用这些 service

@@ -1510,3 +1510,51 @@ func (d *Downloader) requestTTL() time.Duration {
 	}
 	return ttl
 }
+
+/*
+// fetchHeight retrieves the head header of the remote peer to aid in estimating
+// the total time a pending synchronisation would take.
+func (d *Downloader) fetchHeight(p *peerConnection) (*modules.Header, error) {
+	p.log.Debug("Retrieving remote chain height")
+
+	// Request the advertised remote head block and wait for the response
+	head, _ := p.peer.Head()
+	go p.peer.RequestHeadersByHash(head, 1, 0, false)
+
+	ttl := d.requestTTL()
+	timeout := time.After(ttl)
+	for {
+		select {
+		case <-d.cancelCh:
+			return nil, errCancelBlockFetch
+
+		case packet := <-d.headerCh:
+			log.Debug("fetchHeight d.headerCh")
+			// Discard anything not from the origin peer
+			if packet.PeerId() != p.id {
+				log.Debug("Received headers from incorrect peer", "peer", packet.PeerId())
+				break
+			}
+
+			// Make sure the peer actually gave something valid
+			headers := packet.(*headerPack).headers
+			if len(headers) != 1 {
+				log.Debug("Multiple headers for single request", "headers", len(headers))
+				return nil, errBadPeer
+			}
+			head := headers[0]
+
+			log.Debug("Remote head header identified", "number", head.Number.Index, "hash", head.Hash(), "peer", packet.PeerId())
+			return head, nil
+
+		case <-timeout:
+			log.Debug("Waiting for head header timed out", "elapsed", ttl)
+			return nil, errTimeout
+
+		case <-d.bodyCh:
+		case <-d.receiptCh:
+			// Out of bounds delivery, ignore
+		}
+	}
+}
+*/
