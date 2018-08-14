@@ -93,8 +93,8 @@ type headerFilterTask struct {
 type bodyFilterTask struct {
 	peer         string                   // The source peer of block bodies
 	transactions [][]*modules.Transaction // Collection of transactions per block bodies
-	uncles       [][]*modules.Header      // Collection of uncles per block bodies
-	time         time.Time                // Arrival time of the blocks' contents
+	//uncles       [][]*modules.Header      // Collection of uncles per block bodies
+	time time.Time // Arrival time of the blocks' contents
 }
 
 // inject represents a schedules import operation.
@@ -140,9 +140,9 @@ type Fetcher struct {
 	// Testing hooks
 	announceChangeHook func(common.Hash, bool) // Method to call upon adding or deleting a hash from the announce list
 	queueChangeHook    func(common.Hash, bool) // Method to call upon adding or deleting a block from the import queue
-	fetchingHook       func([]common.Hash)     // Method to call upon starting a block (eth/61) or header (eth/62) fetch
-	completingHook     func([]common.Hash)     // Method to call upon starting a block body fetch (eth/62)
-	importedHook       func(*modules.Unit)     // Method to call upon successful block import (both eth/61 and eth/62)
+	fetchingHook       func([]common.Hash)     // Method to call upon starting a block (ptn/61) or header (ptn/62) fetch
+	completingHook     func([]common.Hash)     // Method to call upon starting a block body fetch (ptn/62)
+	importedHook       func(*modules.Unit)     // Method to call upon successful block import (both ptn/61 and ptn/62)
 }
 
 // New creates a block fetcher to retrieve blocks based on hash announcements.
@@ -228,21 +228,21 @@ func (f *Fetcher) FilterHeaders(peer string, headers []*modules.Header, time tim
 
 	select {
 	case f.headerFilter <- filter:
-		log.Info("f.headerFilter <- filter")
+		log.Debug("f.headerFilter <- filter")
 	case <-f.quit:
 		return nil
 	}
 	// Request the filtering of the header list
 	select {
 	case filter <- &headerFilterTask{peer: peer, headers: headers, time: time}:
-		log.Info("filter <- &headerFilterTask{peer: peer, headers: headers, time: time}")
+		log.Debug("filter <- &headerFilterTask{peer: peer, headers: headers, time: time}")
 	case <-f.quit:
 		return nil
 	}
 	// Retrieve the headers remaining after filtering
 	select {
 	case task := <-filter:
-		log.Info("task := <-filter")
+		log.Debug("task := <-filter")
 		return task.headers
 	case <-f.quit:
 		return nil
@@ -251,8 +251,8 @@ func (f *Fetcher) FilterHeaders(peer string, headers []*modules.Header, time tim
 
 // FilterBodies extracts all the block bodies that were explicitly requested by
 // the fetcher, returning those that should be handled differently.
-func (f *Fetcher) FilterBodies(peer string, transactions [][]*modules.Transaction, uncles [][]*modules.Header, time time.Time) ([][]*modules.Transaction, [][]*modules.Header) {
-	log.Trace("Filtering bodies", "peer", peer, "txs", len(transactions), "uncles", len(uncles))
+func (f *Fetcher) FilterBodies(peer string, transactions [][]*modules.Transaction /*, uncles [][]*modules.Header*/, time time.Time) [][]*modules.Transaction /*, [][]*modules.Header*/ {
+	log.Trace("Filtering bodies", "peer", peer, "txs", len(transactions) /*, "uncles", len(uncles)*/)
 
 	// Send the filter channel to the fetcher
 	filter := make(chan *bodyFilterTask)
@@ -260,20 +260,20 @@ func (f *Fetcher) FilterBodies(peer string, transactions [][]*modules.Transactio
 	select {
 	case f.bodyFilter <- filter:
 	case <-f.quit:
-		return nil, nil
+		return nil
 	}
 	// Request the filtering of the body list
 	select {
-	case filter <- &bodyFilterTask{peer: peer, transactions: transactions, uncles: uncles, time: time}:
+	case filter <- &bodyFilterTask{peer: peer, transactions: transactions /*uncles: uncles,*/, time: time}:
 	case <-f.quit:
-		return nil, nil
+		return nil
 	}
 	// Retrieve the bodies remaining after filtering
 	select {
 	case task := <-filter:
-		return task.transactions, task.uncles
+		return task.transactions /*, task.uncles*/
 	case <-f.quit:
-		return nil, nil
+		return nil
 	}
 }
 
@@ -524,7 +524,7 @@ func (f *Fetcher) loop() {
 			bodyFilterInMeter.Mark(int64(len(task.transactions)))
 
 			blocks := []*modules.Unit{}
-			for i := 0; i < len(task.transactions) && i < len(task.uncles); i++ {
+			for i := 0; i < len(task.transactions); /*&& i < len(task.uncles)*/ i++ {
 				// Match up a body to any possible completion request
 				matched := false
 
@@ -550,7 +550,7 @@ func (f *Fetcher) loop() {
 				}
 				if matched {
 					task.transactions = append(task.transactions[:i], task.transactions[i+1:]...)
-					task.uncles = append(task.uncles[:i], task.uncles[i+1:]...)
+					//task.uncles = append(task.uncles[:i], task.uncles[i+1:]...)
 					i--
 					continue
 				}

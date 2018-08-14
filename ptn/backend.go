@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-// Package eth implements the PalletOne protocol.
+// Package ptn implements the PalletOne protocol.
 package ptn
 
 import (
@@ -34,10 +34,13 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
-	dagcommon "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag"
+
+	//dagcommon "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/internal/ethapi"
+	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
 )
@@ -64,20 +67,23 @@ type PalletOne struct {
 	engine         core.ConsensusEngine
 	accountManager *accounts.Manager
 
-	ApiBackend *EthApiBackend
+	ApiBackend *PtnApiBackend
 
 	levelDb *palletdb.LDBDatabase
 
 	networkId     uint64
-	netRPCService *ethapi.PublicNetAPI
+	netRPCService *ptnapi.PublicNetAPI
 
-	dag *dagcommon.Dag
+	dag *dag.Dag
 
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
 
 	bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
 	//bloomIndexer  *coredata.ChainIndexer         // Bloom indexer operating during block imports
 	//etherbase  common.Address
+
+	// append by Albert·Gou
+	mediatorPlugin *mediatorplugin.MediatorPlugin
 }
 
 // New creates a new PalletOne object (including the
@@ -101,7 +107,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		networkId:      config.NetworkId,
 		levelDb:        db,
 		bloomRequests:  make(chan chan *bloombits.Retrieval),
-		dag:            dagcommon.NewDag(),
+		dag:            dag.NewDag(),
 		//bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
 		//etherbase:      config.Etherbase,
 	}
@@ -115,12 +121,21 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
 
 	var err error
-	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine, ptn.dag, ptn.eventMux, ptn.levelDb); err != nil {
+
+	// append by Albert·Gou
+	ptn.mediatorPlugin, err = mediatorplugin.Initialize(ptn, &config.MediatorPlugin)
+	if err != nil {
+		log.Error("Initialize mediator plugin err:", err)
+		return nil, err
+	}
+
+	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine,
+		ptn.dag, ptn.eventMux, ptn.levelDb, ptn.mediatorPlugin); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}
 
-	ptn.ApiBackend = &EthApiBackend{ptn}
+	ptn.ApiBackend = &PtnApiBackend{ptn}
 	return ptn, nil
 }
 
@@ -133,32 +148,37 @@ func CreateConsensusEngine(ctx *node.ServiceContext) core.ConsensusEngine {
 // APIs returns the collection of RPC services the ethereum package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.
 func (s *PalletOne) APIs() []rpc.API {
-	apis := ethapi.GetAPIs(s.ApiBackend)
+	apis := ptnapi.GetAPIs(s.ApiBackend)
+
+	// append by Albert·Gou
+	apis = append(apis, s.mediatorPlugin.APIs()...)
 
 	// Append all the local APIs and return
 	return append(apis, []rpc.API{
 		{
-			Namespace: "eth",
+			Namespace: "ptn",
 			Version:   "1.0",
 			Service:   NewPublicEthereumAPI(s),
 			Public:    true,
 		}, {
-			Namespace: "eth",
+			Namespace: "ptn",
 			Version:   "1.0",
 			//Service:   NewPublicMinerAPI(s),
 			Public: true,
 		}, {
-			Namespace: "eth",
+			Namespace: "ptn",
 			Version:   "1.0",
 			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
 			Public:    true,
-		}, {
-			Namespace: "miner",
-			Version:   "1.0",
-			//Service:   NewPrivateMinerAPI(s),
-			Public: false,
-		}, {
-			Namespace: "eth",
+		},
+		//{
+		//	Namespace: "miner",
+		//	Version:   "1.0",
+		//	//Service:   NewPrivateMinerAPI(s),
+		//	Public: false,
+		//},
+		{
+			Namespace: "ptn",
 			Version:   "1.0",
 			Service:   filters.NewPublicFilterAPI(s.ApiBackend, false),
 			Public:    true,
@@ -184,12 +204,13 @@ func (s *PalletOne) IsListening() bool                  { return true } // Alway
 func (s *PalletOne) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *PalletOne) NetVersion() uint64                 { return s.networkId }
 func (s *PalletOne) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
-func (s *PalletOne) Dag() *dagcommon.Dag                  { return s.dag }
+func (s *PalletOne) Dag() *dag.Dag                      { return s.dag }
 
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.
 func (s *PalletOne) Protocols() []p2p.Protocol {
-	return s.protocolManager.SubProtocols
+	// modify by Albert·Gou
+	return append(s.protocolManager.SubProtocols, s.mediatorPlugin.Protocols()...)
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the
@@ -199,13 +220,17 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 	s.startBloomHandlers()
 
 	// Start the RPC service
-	s.netRPCService = ethapi.NewPublicNetAPI(srvr, s.NetVersion())
+	s.netRPCService = ptnapi.NewPublicNetAPI(srvr, s.NetVersion())
 
 	// Figure out a max peers count based on the server limits
 	maxPeers := srvr.MaxPeers
 
 	// Start the networking layer and the light server if requested
 	s.protocolManager.Start(maxPeers)
+
+	// append by Albert·Gou
+	s.mediatorPlugin.Start(srvr)
+
 	return nil
 }
 
@@ -218,6 +243,9 @@ func (s *PalletOne) Stop() error {
 	//	s.engine.Stop()
 	s.eventMux.Stop()
 	close(s.shutdownChan)
+
+	// append by Albert·Gou
+	s.mediatorPlugin.Stop()
 
 	return nil
 }
@@ -245,7 +273,7 @@ func (s *PalletOne) Etherbase() (eb common.Address, err error) {
 				s.etherbase = etherbase
 				s.lock.Unlock()
 
-				log.Info("Etherbase automatically configured", "address", etherbase)
+				log.Debug("Etherbase automatically configured", "address", etherbase)
 				return etherbase, nil
 			}
 		}*/

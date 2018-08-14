@@ -62,3 +62,8 @@ bin/
 **/palletone.toml
 dag/common/unit.go.orig
 cmd/test/
+
+palletone\.sublime-project
+
+palletone\.sublime-workspace
+dag/common/utxo.go.orig

@@ -23,7 +23,9 @@ import (
 	"time"
 	"unsafe"
 
+	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"strings"
@@ -160,12 +162,30 @@ func CopyHeader(h *Header) *Header {
 	return &cpy
 }
 
-func CopyBody(txs Transactions) Transactions {
-	newTxs := Transactions{}
-	for _, tx := range txs {
-		newTxs = append(newTxs, tx)
+func (u *Unit) CopyBody(txs Transactions) Transactions {
+	if len(txs) > 0 {
+		u.Txs = make([]*Transaction, len(txs))
+		for i, pTx := range txs {
+			tx := Transaction{
+				AccountNonce: pTx.AccountNonce,
+				TxHash:       pTx.TxHash,
+				From:         pTx.From,
+				Excutiontime: pTx.Excutiontime,
+				Memery:       pTx.Memery,
+				CreationDate: pTx.CreationDate,
+				TxFee:        pTx.TxFee,
+				Txsize:       pTx.Txsize,
+			}
+			if len(pTx.TxMessages) > 0 {
+				tx.TxMessages = make([]Message, len(pTx.TxMessages))
+				for j := 0; j < len(pTx.TxMessages); j++ {
+					tx.TxMessages[j] = pTx.TxMessages[j]
+				}
+			}
+			u.Txs[i] = &tx
+		}
 	}
-	return newTxs
+	return u.Txs
 }
 
 //wangjiyou add for ptn/fetcher.go
@@ -183,6 +203,13 @@ type Unit struct {
 	ReceivedFrom interface{}
 }
 
+func (unit *Unit) IsEmpty() bool {
+	if unit == nil || len(unit.Txs) <= 0 {
+		return true
+	}
+	return false
+}
+
 type Transactions []*Transaction
 
 type Transaction struct {
@@ -196,7 +223,7 @@ type Transaction struct {
 	TxFee        *big.Int           `json:"txfee"` // user set total transaction fee.
 	Txsize       common.StorageSize `json:"txsize" rlp:""`
 	Locktime     uint32             `json:"lock_time"`
-	Priority_lvl float64            `json:"priority_lvl"`
+	Priority_lvl float64            `json:"priority_lvl"` // 打包的优先级
 }
 
 type ChainIndex struct {
@@ -257,10 +284,15 @@ type ContractTplPayload struct {
 	Bytecode   []byte      `json:"bytecode"`    // contract bytecode
 }
 
+type DelContractState struct {
+	IsDelete bool
+}
+
 // Contract instance message
 // App: contract_deploy
 type ContractDeployPayload struct {
 	TemplateId common.Hash              `json:"template_id"` // contract template id
+	ContractId string                   `json:"contract_id"` // contract id
 	Config     []byte                   `json:"config"`      // configure xml file of contract instance parameters
 	ReadSet    map[string]*StateVersion `json:"read_set"`    // the set data of read, and value could be any type
 	WriteSet   map[string]interface{}   `json:"write_set"`   // the set data of write, and value could be any type
@@ -354,7 +386,7 @@ func (u *Unit) Size() common.StorageSize {
 	emptyUnit.UnitHeader = CopyHeader(u.UnitHeader)
 	emptyUnit.UnitHeader.Authors = nil
 	emptyUnit.UnitHeader.Witness = []*Authentifier{}
-	emptyUnit.Txs = CopyBody(u.Txs)
+	emptyUnit.CopyBody(u.Txs)
 
 	b, err := rlp.EncodeToBytes(emptyUnit)
 	if err != nil {
@@ -417,22 +449,104 @@ func NewUnitWithHeader(header *Header) *Unit {
 // WithBody returns a new block with the given transaction and uncle contents.
 func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 	// check transactions merkle root
-	txs := CopyBody(transactions)
+	txs := b.CopyBody(transactions)
 	root := core.DeriveSha(txs)
-	if strings.Compare(root.String(), b.UnitHeader.TxRoot.String())!=0 {
+	if strings.Compare(root.String(), b.UnitHeader.TxRoot.String()) != 0 {
 		return nil
 	}
 	// set unit body
-	b.Txs = CopyBody(txs)
+	b.Txs = b.CopyBody(txs)
 	return b
 }
 
 func (u *Unit) ContainsParent(pHash common.Hash) bool {
 	ps := pHash.String()
 	for _, hash := range u.UnitHeader.ParentsHash {
-		if strings.Compare(hash.String(), ps)==0 {
+		if strings.Compare(hash.String(), ps) == 0 {
 			return true
 		}
 	}
 	return false
+}
+
+func RSVtoAddress(tx *Transaction) common.Address {
+	sig := make([]byte, 65)
+	copy(sig[32-len(tx.From.R):32], tx.From.R)
+	copy(sig[64-len(tx.From.S):64], tx.From.S)
+	copy(sig[64:], tx.From.V)
+	pub, _ := crypto.SigToPub(tx.TxHash[:], sig)
+	address := crypto.PubkeyToAddress(*pub)
+	return address
+}
+
+func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {
+	sig := make([]byte, 65)
+	copy(sig[32-len(r):32], r)
+	copy(sig[64-len(s):64], s)
+	copy(sig[64:], v)
+	return crypto.SigToPub(hash, sig)
+}
+
+type TxValidationCode int32
+
+const (
+	TxValidationCode_VALID                        TxValidationCode = 0
+	TxValidationCode_NIL_ENVELOPE                 TxValidationCode = 1
+	TxValidationCode_BAD_PAYLOAD                  TxValidationCode = 2
+	TxValidationCode_BAD_COMMON_HEADER            TxValidationCode = 3
+	TxValidationCode_BAD_CREATOR_SIGNATURE        TxValidationCode = 4
+	TxValidationCode_INVALID_ENDORSER_TRANSACTION TxValidationCode = 5
+	TxValidationCode_INVALID_CONFIG_TRANSACTION   TxValidationCode = 6
+	TxValidationCode_UNSUPPORTED_TX_PAYLOAD       TxValidationCode = 7
+	TxValidationCode_BAD_PROPOSAL_TXID            TxValidationCode = 8
+	TxValidationCode_DUPLICATE_TXID               TxValidationCode = 9
+	TxValidationCode_ENDORSEMENT_POLICY_FAILURE   TxValidationCode = 10
+	TxValidationCode_MVCC_READ_CONFLICT           TxValidationCode = 11
+	TxValidationCode_PHANTOM_READ_CONFLICT        TxValidationCode = 12
+	TxValidationCode_UNKNOWN_TX_TYPE              TxValidationCode = 13
+	TxValidationCode_TARGET_CHAIN_NOT_FOUND       TxValidationCode = 14
+	TxValidationCode_MARSHAL_TX_ERROR             TxValidationCode = 15
+	TxValidationCode_NIL_TXACTION                 TxValidationCode = 16
+	TxValidationCode_EXPIRED_CHAINCODE            TxValidationCode = 17
+	TxValidationCode_CHAINCODE_VERSION_CONFLICT   TxValidationCode = 18
+	TxValidationCode_BAD_HEADER_EXTENSION         TxValidationCode = 19
+	TxValidationCode_BAD_CHANNEL_HEADER           TxValidationCode = 20
+	TxValidationCode_BAD_RESPONSE_PAYLOAD         TxValidationCode = 21
+	TxValidationCode_BAD_RWSET                    TxValidationCode = 22
+	TxValidationCode_ILLEGAL_WRITESET             TxValidationCode = 23
+	TxValidationCode_INVALID_WRITESET             TxValidationCode = 24
+	TxValidationCode_NOT_VALIDATED                TxValidationCode = 254
+	TxValidationCode_NOT_COMPARE_SIZE             TxValidationCode = 255
+	TxValidationCode_INVALID_OTHER_REASON         TxValidationCode = 256
+)
+
+var TxValidationCode_name = map[int32]string{
+	0:   "VALID",
+	1:   "NIL_ENVELOPE",
+	2:   "BAD_PAYLOAD",
+	3:   "BAD_COMMON_HEADER",
+	4:   "BAD_CREATOR_SIGNATURE",
+	5:   "INVALID_ENDORSER_TRANSACTION",
+	6:   "INVALID_CONFIG_TRANSACTION",
+	7:   "UNSUPPORTED_TX_PAYLOAD",
+	8:   "BAD_PROPOSAL_TXID",
+	9:   "DUPLICATE_TXID",
+	10:  "ENDORSEMENT_POLICY_FAILURE",
+	11:  "MVCC_READ_CONFLICT",
+	12:  "PHANTOM_READ_CONFLICT",
+	13:  "UNKNOWN_TX_TYPE",
+	14:  "TARGET_CHAIN_NOT_FOUND",
+	15:  "MARSHAL_TX_ERROR",
+	16:  "NIL_TXACTION",
+	17:  "EXPIRED_CHAINCODE",
+	18:  "CHAINCODE_VERSION_CONFLICT",
+	19:  "BAD_HEADER_EXTENSION",
+	20:  "BAD_CHANNEL_HEADER",
+	21:  "BAD_RESPONSE_PAYLOAD",
+	22:  "BAD_RWSET",
+	23:  "ILLEGAL_WRITESET",
+	24:  "INVALID_WRITESET",
+	254: "NOT_VALIDATED",
+	255: "NOT_COMPARE_SIZE",
+	256: "INVALID_OTHER_REASON",
 }

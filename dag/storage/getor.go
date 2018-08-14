@@ -19,8 +19,14 @@
 package storage
 
 import (
+	"bytes"
+	"encoding/binary"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
+	"math/big"
+	"reflect"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -28,6 +34,11 @@ import (
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
+
+// DatabaseReader wraps the Get method of a backing data store.
+type DatabaseReader interface {
+	Get(key []byte) (value []byte, err error)
+}
 
 // @author Albert·Gou
 func Retrieve(key string, v interface{}) error {
@@ -73,14 +84,22 @@ func GetString(key []byte) (string, error) {
 
 // get prefix: return maps
 func GetPrefix(prefix []byte) map[string][]byte {
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
+	if Dbconn != nil {
+		return getprefix(Dbconn, prefix)
+	} else {
+		db := ReNewDbConn(config.DefaultConfig.DbPath)
+		if db == nil {
+			return nil
+		}
+
+		Dbconn = db
+		return getprefix(db, prefix)
 	}
-	return getprefix(prefix)
+
 }
 
 // get prefix
-func getprefix(prefix []byte) map[string][]byte {
+func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 	iter := Dbconn.NewIteratorWithPrefix(prefix)
 	result := make(map[string][]byte)
 	for iter.Next() {
@@ -92,13 +111,23 @@ func getprefix(prefix []byte) map[string][]byte {
 	return result
 }
 
-func GetUnit(hash common.Hash, index uint64) *modules.Unit {
+func GetUnit(hash common.Hash) *modules.Unit {
 	unit_bytes, err := Get(append(UNIT_PREFIX, hash.Bytes()...))
 	log.Println(err)
 	var unit modules.Unit
 	json.Unmarshal(unit_bytes, &unit)
 
 	return &unit
+}
+func GetUnitFormIndex(height uint64, asset modules.IDType16) *modules.Unit {
+	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, asset.String(), height)
+	hash, err := Get([]byte(key))
+	if err != nil {
+		return nil
+	}
+	var h common.Hash
+	h.SetBytes(hash)
+	return GetUnit(h)
 }
 
 func GetHeader(hash common.Hash, index uint64) *modules.Header {
@@ -108,8 +137,216 @@ func GetHeader(hash common.Hash, index uint64) *modules.Header {
 	header_bytes, err := Get(append(key, hash.Bytes()...))
 	// rlp  to  Header struct
 	log.Println(err)
-	var header modules.Header
-	json.Unmarshal(header_bytes, &header)
+	header := new(modules.Header)
+	if err := rlp.Decode(bytes.NewReader(header_bytes), &header); err != nil {
+		log.Println("Invalid unit header rlp:", err)
+		return nil
+	}
 
-	return &header
+	return header
+}
+
+func GetHeaderRlp(db DatabaseReader, hash common.Hash, index uint64) rlp.RawValue {
+	encNum := encodeBlockNumber(index)
+	key := append(HEADER_PREFIX, encNum...)
+	header_bytes, err := db.Get(append(key, hash.Bytes()...))
+	// rlp  to  Header struct
+	log.Println(err)
+	return header_bytes
+}
+
+func GetHeaderFormIndex(height uint64, asset modules.IDType16) *modules.Header {
+	unit := GetUnitFormIndex(height, asset)
+	return unit.UnitHeader
+}
+
+// GetTxLookupEntry
+func GetTxLookupEntry(db DatabaseReader, hash common.Hash) (common.Hash, uint64, uint64) {
+	data, _ := Get(append(LookupPrefix, hash.Bytes()...))
+	if len(data) == 0 {
+		return common.Hash{}, 0, 0
+	}
+	var entry modules.TxLookupEntry
+	if err := rlp.DecodeBytes(data, &entry); err != nil {
+		return common.Hash{}, 0, 0
+	}
+	return entry.UnitHash, entry.UnitIndex, entry.Index
+
+}
+
+// GetTransaction retrieves a specific transaction from the database , along with its added positional metadata
+// p2p 同步区块 分为同步header 和body。 GetBody可以省掉节点包装交易块的过程。
+func GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
+	unitHash, unitNumber, txIndex := GetTxLookupEntry(Dbconn, hash)
+	if unitHash != (common.Hash{}) {
+		body, _ := GetBody(unitHash)
+		if body == nil || len(body) <= int(txIndex) {
+			return nil, common.Hash{}, 0, 0
+		}
+		tx, err := gettrasaction(body[txIndex])
+		if err == nil {
+			return tx, unitHash, unitNumber, txIndex
+		}
+	}
+	tx, err := gettrasaction(hash)
+	if err != nil {
+		return nil, unitHash, unitNumber, txIndex
+	}
+	return tx, unitHash, unitNumber, txIndex
+}
+
+// gettrasaction can get a transaction by hash.
+func gettrasaction(hash common.Hash) (*modules.Transaction, error) {
+	if hash == (common.Hash{}) {
+		return nil, errors.New("hash is not exist.")
+	}
+	data, err := Get(append(TRANSACTION_PREFIX, hash.Bytes()...))
+	if err != nil {
+		return nil, err
+	}
+	tx := new(modules.Transaction)
+	if err := rlp.DecodeBytes(data, &tx); err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
+// GetContract can get a Contract by the contract hash
+func GetContract(id common.Hash) (*modules.Contract, error) {
+	if common.EmptyHash(id) {
+		return nil, errors.New("the filed not defined")
+	}
+	con_bytes, err := Get(append(CONTRACT_PTEFIX, id[:]...))
+	if err != nil {
+		log.Println("err:", err)
+		return nil, err
+	}
+	contract := new(modules.Contract)
+	err = rlp.DecodeBytes(con_bytes, contract)
+	if err != nil {
+		log.Println("err:", err)
+		return nil, err
+	}
+	return contract, nil
+}
+
+func GetContractRlp(id common.Hash) (rlp.RawValue, error) {
+	if common.EmptyHash(id) {
+		return nil, errors.New("the filed not defined")
+	}
+	con_bytes, err := Get(append(CONTRACT_PTEFIX, id[:]...))
+	if err != nil {
+		return nil, err
+	}
+	return con_bytes, nil
+}
+
+// Get contract key's value
+func GetContractKeyValue(id common.Hash, key string) (interface{}, error) {
+	var val interface{}
+	if common.EmptyHash(id) {
+		return nil, errors.New("the filed not defined")
+	}
+	con_bytes, err := Get(append(CONTRACT_PTEFIX, id[:]...))
+	if err != nil {
+		return nil, err
+	}
+	contract := new(modules.Contract)
+	err = rlp.DecodeBytes(con_bytes, contract)
+	if err != nil {
+		log.Println("err:", err)
+		return nil, err
+	}
+	obj := reflect.ValueOf(contract)
+	myref := obj.Elem()
+	typeOftype := myref.Type()
+
+	for i := 0; i < myref.NumField(); i++ {
+		filed := myref.Field(i)
+		if typeOftype.Field(i).Name == key {
+			val = filed.Interface()
+			log.Println(i, ". ", typeOftype.Field(i).Name, " ", filed.Type(), "=: ", filed.Interface())
+			break
+		} else if i == myref.NumField()-1 {
+			val = nil
+		}
+	}
+	return val, nil
+}
+
+const missingNumber = uint64(0xffffffffffffffff)
+
+func GetUnitNumber(db DatabaseReader, hash common.Hash) uint64 {
+	data, _ := db.Get(append(UNIT_HASH_NUMBER_Prefix, hash.Bytes()...))
+	if len(data) != 8 {
+		return missingNumber
+	}
+	return binary.BigEndian.Uint64(data)
+}
+
+//  GetCanonicalHash get
+
+func GetCanonicalHash(db DatabaseReader, number uint64) (common.Hash, error) {
+	key := append(HEADER_PREFIX, encodeBlockNumber(number)...)
+	data, err := db.Get(append(key, NumberSuffix...))
+	if err != nil {
+		return common.Hash{}, err
+	}
+	if len(data) == 0 {
+		return common.Hash{}, err
+	}
+	return common.BytesToHash(data), nil
+}
+func GetHeadHeaderHash(db DatabaseReader, hash common.Hash) (common.Hash, error) {
+	data, err := db.Get(HeadHeaderKey)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	if len(data) != 8 {
+		return common.Hash{}, errors.New("data's len is error.")
+	}
+	return common.BytesToHash(data), nil
+}
+
+// GetHeadUnitHash stores the head unit's hash.
+func GetHeadUnitHash(db DatabaseReader, hash common.Hash) (common.Hash, error) {
+	data, err := db.Get(HeadUnitKey)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	return common.BytesToHash(data), nil
+}
+
+// GetHeadFastUnitHash stores the fast head unit's hash.
+func GetHeadFastUnitHash(db DatabaseReader, hash common.Hash) (common.Hash, error) {
+	data, err := db.Get(HeadFastKey)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	return common.BytesToHash(data), nil
+}
+
+// GetTrieSyncProgress stores the fast sync trie process counter to support
+// retrieving it across restarts.
+func GetTrieSyncProgress(db DatabaseReader, count uint64) (uint64, error) {
+	data, err := db.Get(TrieSyncKey)
+	if err != nil {
+		return 0, err
+	}
+	return new(big.Int).SetBytes(data).Uint64(), nil
+}
+
+//  dbFetchUtxoEntry
+func GetUtxoEntry(db DatabaseReader, key []byte) (*modules.Utxo, error) {
+	utxo := new(modules.Utxo)
+	data, err := db.Get(key)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rlp.DecodeBytes(data, &utxo); err != nil {
+		return nil, err
+	}
+
+	return utxo, nil
 }

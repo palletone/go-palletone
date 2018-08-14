@@ -16,16 +16,20 @@
  * @date 2018
  */
 
-package common
+package dag
 
 import (
 	"sync"
 
 	"fmt"
+
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/log"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rlp"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
@@ -36,7 +40,7 @@ type Dag struct {
 
 	Mdb           *palletdb.MemDatabase
 	ChainHeadFeed *event.Feed
-	//	GenesisUnit   *Unit	// comment by Albert·Gou
+	// GenesisUnit   *Unit  // comment by Albert·Gou
 
 	Mutex sync.RWMutex
 
@@ -51,7 +55,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	}, nil)
 }
 
-func (d *Dag) GetUnit(hash common.Hash, number uint64) *modules.Unit {
+func (d *Dag) GetUnit(hash common.Hash) *modules.Unit {
 	return d.CurrentUnit()
 }
 
@@ -103,8 +107,11 @@ func (d *Dag) SaveDag(unit modules.Unit) (int, error) {
 /**
 将连续的单元保存到DAG中
 To save some continuous units to dag storage
- */
+*/
 func (d *Dag) InsertDag(units modules.Units) (int, error) {
+	//TODO must recover
+	log.Debug("===InsertDag===", "len(units):", len(units))
+	return len(units), nil
 	count := int(0)
 	for i, u := range units {
 		// all units must be continuous
@@ -115,14 +122,14 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
-		if i > 0 && u.ContainsParent(units[i-1].UnitHash)==false{
+		if i > 0 && u.ContainsParent(units[i-1].UnitHash) == false {
 			return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
 				"parent unit number=%d, hash=%s; "+
 				"child unit number=%d, hash=%s",
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
-		if err := SaveUnit(*u, false); err != nil {
+		if err := dagcommon.SaveUnit(*u, false); err != nil {
 			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
 		}
@@ -134,7 +141,7 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 // GetBlockHashesFromHash retrieves a number of block hashes starting at a given
 // hash, fetching towards the genesis block.
 func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash {
-	//return bc.hc.GetBlockHashesFromHash(hash, max)
+	//GetUnit()
 	return []common.Hash{}
 }
 
@@ -144,6 +151,16 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 
 func (d *Dag) CurrentHeader() *modules.Header {
 	return d.CurrentUnit().Header()
+}
+
+// GetBodyRLP retrieves a block body in RLP encoding from the database by hash,
+// caching it if found.
+func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
+	return rlp.RawValue{}
+}
+
+func (d *Dag) GetHeaerRLP(hash common.Hash) rlp.RawValue {
+	return rlp.RawValue{}
 }
 
 // InsertHeaderChain attempts to insert the given header chain in to the local
@@ -158,15 +175,57 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 	return checkFreq, nil
 }
 
+//VerifyHeader checks whether a header conforms to the consensus rules of the stock
+//Ethereum ethash engine.
+func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
+	return nil
+}
+
+/**
+获取account address下面的token信息
+To get account token list and tokens's information
+*/
+func (d *Dag) WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error) {
+	return dagcommon.GetAccountTokens(addr)
+}
+
+func (d *Dag) WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
+	newAssetid := modules.IDType16{}
+	newUnitqueid := modules.IDType16{}
+
+	if len(assetid) != cap(newAssetid) {
+		return 0, fmt.Errorf("Assetid lenth is wrong")
+	}
+	if len(uniqueid) != cap(newUnitqueid) {
+		return 0, fmt.Errorf("Uniqueid lenth is wrong")
+	}
+	if chainid == 0 {
+		return 0, fmt.Errorf("Chainid is invalid")
+	}
+
+	newAssetid.SetBytes(assetid)
+	newUnitqueid.SetBytes(uniqueid)
+
+	asset := modules.Asset{
+		AssertId: newAssetid,
+		UniqueId: newUnitqueid,
+		ChainId:  chainid,
+	}
+
+	addr := common.Address{}
+	addr.SetString(address)
+	return dagcommon.WalletBalance(addr, asset), nil
+}
+
 func NewDag() *Dag {
-	//	genesis, _ := NewGenesisUnit(nil) // comment by Albert·Gou
+	// genesis, _ := NewGenesisUnit(nil) // comment by Albert·Gou
 	db, _ := palletdb.NewMemDatabase()
 	mutex := new(sync.RWMutex)
 	return &Dag{
 		Cache: freecache.NewCache(200 * 1024 * 1024),
 		Db:    storage.Dbconn,
 		Mdb:   db,
-		//		GenesisUnit:   genesis,	// comment by Albert·Gou
+		//    GenesisUnit:   genesis, // comment by Albert·Gou
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
 		GlobalProp:    storage.RetrieveGlobalProp(),

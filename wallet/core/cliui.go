@@ -25,8 +25,8 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/internal/ethapi"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/internal/ptnapi"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -233,7 +233,7 @@ func (ui *CommandlineUI) ShowInfo(message string) {
 	fmt.Printf("Info: %v\n", message)
 }
 
-func (ui *CommandlineUI) OnApprovedTx(tx ethapi.SignTransactionResult) {
+func (ui *CommandlineUI) OnApprovedTx(tx ptnapi.SignTransactionResult) {
 	fmt.Printf("Transaction signed:\n ")
 	spew.Dump(tx.Tx)
 }

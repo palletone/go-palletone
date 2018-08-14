@@ -18,5 +18,4 @@ type Receipt struct {
 	// Implementation fields (don't reorder!)
 	TxHash          common.Hash    `json:"transactionHash" gencodec:"required"`
 	ContractAddress common.Address `json:"contractAddress"`
-	// GasUsed         uint64         `json:"gasUsed" gencodec:"required"`
 }

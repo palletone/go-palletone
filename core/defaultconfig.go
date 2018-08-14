@@ -20,10 +20,13 @@
 package core
 
 const (
-	DefaultMediatorInterval = 5
-	DefaultMediatorCount    = 21
-	DefaultTokenAmount      = 1000000000
-	DefaultTokenDecimal     = 8
-	DefaultDepositRate      = 0.02
-	DefaultTokenHolder      = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
+	DefaultAlias               = "PTN"
+	DefaultMediatorInterval    = 5
+	DefaultMediatorCount       = 21
+	DefaultTokenAmount         = 100000000000000000
+	DefaultTokenDecimal        = 8
+	DefaultDepositRate         = 0.02
+	DefaultTokenHolder         = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
+	DefaultMinMediatorCount    = 11
+	DefaultMinMediatorInterval = 1
 )

@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -30,7 +31,10 @@ const (
 )
 
 func StoreMediatorSchl(ms *modules.MediatorSchedule) {
-	err := Store(mediatorSchlDBKey, *ms)
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+	err := Store(Dbconn, mediatorSchlDBKey, *ms)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store mediator schedule error: %s", err))
 	}

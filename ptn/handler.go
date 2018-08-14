@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	//"math"
 	"math/big"
 	"sync"
@@ -30,13 +31,15 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
+
 	//"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
-	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 )
@@ -57,6 +60,8 @@ var (
 // errIncompatibleConfig is returned if the requested protocols and configs are
 // not compatible (low protocol version restrictions and high requirements).
 var errIncompatibleConfig = errors.New("incompatible configuration")
+
+var tempGetBlockBodiesMsgSum int = 0
 
 func errResp(code errCode, format string, v ...interface{}) error {
 	return fmt.Errorf("%v - %v", code, fmt.Sprintf(format, v...))
@@ -81,7 +86,7 @@ type ProtocolManager struct {
 	txCh     chan modules.TxPreEvent
 	txSub    event.Subscription
 
-	dag *dagcommon.Dag
+	dag *dag.Dag
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -94,6 +99,11 @@ type ProtocolManager struct {
 	ceCh       chan core.ConsensusEvent
 	ceSub      event.Subscription
 
+	// append by Albert·Gou
+	producer           producer
+	newProducedUnitCh  chan mediatorplugin.NewProducedUnitEvent
+	newProducedUnitSub event.Subscription
+
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg      sync.WaitGroup
@@ -102,8 +112,8 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool,
-	engine core.ConsensusEngine, dag *dagcommon.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase) (*ProtocolManager, error) {
+func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool, engine core.ConsensusEngine,
+	dag *dag.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase, producer producer) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -117,6 +127,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		txsyncCh:    make(chan *txsync),
 		quitSync:    make(chan struct{}),
 		levelDb:     levelDb,
+		producer:    producer,
 	}
 
 	// Figure out whether to allow fast sync or not
@@ -128,11 +139,12 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	if mode == downloader.FastSync {
 		manager.fastSync = uint32(1)
 	}
+
 	// Initiate a sub-protocol for every implemented version we can handle
 	manager.SubProtocols = make([]p2p.Protocol, 0, len(ProtocolVersions))
 	for i, version := range ProtocolVersions {
 		// Skip protocol version if incompatible with the mode of operation
-		if mode == downloader.FastSync && version < pan1 {
+		if mode == downloader.FastSync && version < ptn1 {
 			continue
 		}
 		// Compatible; initialise the sub-protocol
@@ -166,12 +178,12 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	if len(manager.SubProtocols) == 0 {
 		return nil, errIncompatibleConfig
 	}
+
 	// Construct the different synchronisation mechanisms
 	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, manager.levelDb)
 
 	validator := func(header *modules.Header) error {
-		//return engine.VerifyHeader(blockchain, header, true)
-		return nil
+		return dag.VerifyHeader(header, true)
 	}
 	heighter := func() uint64 {
 		return dag.CurrentUnit().NumberU64()
@@ -186,8 +198,6 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		return manager.dag.InsertDag(blocks)
 	}
 	manager.fetcher = fetcher.New(dag.GetUnitByHash, validator, manager.BroadcastUnit, heighter, inserter, manager.removePeer)
-
-	//manager.fetcher = fetcher.New(manager.removePeer)
 	return manager, nil
 }
 
@@ -228,9 +238,52 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	//go pm.txsyncLoop()
 
 	// broadcast transactions
+	// 广播交易的通道。 txCh会作为txpool的TxPreEvent订阅通道。
+	// txpool有了这种消息会通知给这个txCh。 广播交易的goroutine会把这个消息广播出去。
 	pm.txCh = make(chan modules.TxPreEvent, txChanSize)
+	// 订阅的回执
 	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
+	// 启动广播的goroutine
 	go pm.txBroadcastLoop()
+
+	// append by Albert·Gou
+	// broadcast new unit produced by mediator
+	pm.newProducedUnitCh = make(chan mediatorplugin.NewProducedUnitEvent)
+	pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
+	go pm.newProducedUnitBroadcastLoop()
+}
+
+// @author Albert·Gou
+// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
+func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
+	peers := pm.peers.ActiveMediatorPeers()
+	for _, peer := range peers {
+		peer.SendNewProducedUnit(unit)
+	}
+}
+
+// @author Albert·Gou
+func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.newProducedUnitCh:
+			self.BroadcastNewProducedUnit(event.Unit)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.newProducedUnitSub.Err():
+			return
+		}
+	}
+}
+
+// @author Albert·Gou
+type producer interface {
+	// SubscribeNewProducedUnitEvent should return an event subscription of
+	// NewProducedUnitEvent and send events to the given channel.
+	SubscribeNewProducedUnitEvent(chan<- mediatorplugin.NewProducedUnitEvent) event.Subscription
+
+	// AddUnverifiedUnitSet should add the unverified unit to the set.
+	AddUnverifiedUnitSet(*modules.Unit) error
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -263,7 +316,7 @@ func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *p
 	return newPeer(pv, p, newMeteredMsgWriter(rw))
 }
 
-// handle is the callback invoked to manage the life cycle of an eth peer. When
+// handle is the callback invoked to manage the life cycle of an ptn peer. When
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
@@ -388,21 +441,19 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 					current = origin.Number.Index
 					next    = current + query.Skip + 1
 				)
-				log.Info("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
+				log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
 				if next <= current {
 					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
 					log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
 					unknown = true
 				} else {
-					log.Info("msg.Code==GetBlockHeadersMsg", "next:", next)
+					log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
 					if header := pm.dag.GetHeaderByNumber(next); header != nil {
-						/*
-							if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
-								query.Origin.Hash = header.Hash()
-							} else {
-								unknown = true
-							}
-						*/
+						//if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
+						//	query.Origin.Hash = header.Hash()
+						//} else {
+						//	unknown = true
+						//}
 						unknown = true
 					} else {
 						unknown = true
@@ -421,11 +472,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				query.Origin.Number += query.Skip + 1
 			}
 		}
-		log.Info("===msg.Code == GetBlockHeadersMsg  SendBlockHeaders===")
+		//log.Debug("===msg.Code == GetBlockHeadersMsg  SendBlockHeaders===")
 		return p.SendBlockHeaders(headers)
 
 	case msg.Code == BlockHeadersMsg:
-		log.Info("===handler->msg.Code == BlockHeadersMsg===")
+		log.Debug("===handler->msg.Code == BlockHeadersMsg===")
 		// A batch of headers arrived to one of our previous requests
 		var headers []*modules.Header
 		if err := msg.Decode(&headers); err != nil {
@@ -434,18 +485,18 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		// If no headers were received, but we're expending a DAO fork check, maybe it's that
 		if len(headers) == 0 {
-			log.Info("===handler->msg.Code == BlockHeadersMsg len(headers)is 0===")
+			log.Debug("===handler->msg.Code == BlockHeadersMsg len(headers)is 0===")
 			return nil
 		}
 		// Filter out any explicitly requested headers, deliver the rest to the downloader
 		filter := len(headers) == 1
 		if filter {
-			log.Info("===BlockHeadersMsg filter===")
+			log.Debug("===BlockHeadersMsg filter===")
 			// Irrelevant of the fork checks, send the header to the fetcher just in case
 			headers = pm.fetcher.FilterHeaders(p.id, headers, time.Now())
 		}
 		if len(headers) > 0 || !filter {
-			log.Info("===BlockHeadersMsg ===", "len(headers):", len(headers))
+			log.Debug("===BlockHeadersMsg ===", "len(headers):", len(headers))
 			err := pm.downloader.DeliverHeaders(p.id, headers)
 			if err != nil {
 				log.Debug("Failed to deliver headers", "err", err.Error())
@@ -454,7 +505,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case msg.Code == GetBlockBodiesMsg:
 		// Decode the retrieval message
-		log.Info("===GetBlockBodiesMsg===")
+		log.Debug("===GetBlockBodiesMsg===")
 		msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
 		if _, err := msgStream.List(); err != nil {
 			return err
@@ -464,7 +515,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			hash   common.Hash
 			bytes  int
 			bodies []rlp.RawValue
+			sum    int
 		)
+
 		for bytes < softResponseLimit && len(bodies) < downloader.MaxBlockFetch {
 			// Retrieve the hash of the next block
 			if err := msgStream.Decode(&hash); err == rlp.EOL {
@@ -472,16 +525,31 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			} else if err != nil {
 				return errResp(ErrDecode, "msg %v: %v", msg, err)
 			}
+			//TODO must recover
 			// Retrieve the requested block body, stopping if enough was found
-			/*if data := pm.blockchain.GetBodyRLP(hash); len(data) != 0 {
-				bodies = append(bodies, data)
-				bytes += len(data)
-			}*/
+			//			if data := pm.dag.GetBodyRLP(hash); len(data) != 0 {
+			//				bodies = append(bodies, data)
+			//				bytes += len(data)
+			//			}
+			//======test
+			body := blockBody{}
+			tx := TestMakeTransaction(uint64(tempGetBlockBodiesMsgSum))
+			body.Transactions = append(body.Transactions, tx)
+			data, err := rlp.EncodeToBytes(body)
+			if err != nil {
+				log.Debug("===GetBlockBodiesMsg===", "rlp.EncodeToBytes err:", err)
+				continue
+			}
+			bodies = append(bodies, data)
+			bytes += len(data)
+			sum++
+			tempGetBlockBodiesMsgSum++
 		}
+		log.Debug("===GetBlockBodiesMsg===", "tempGetBlockBodiesMsgSum:", tempGetBlockBodiesMsgSum, "sum:", sum)
 		return p.SendBlockBodiesRLP(bodies)
 
 	case msg.Code == BlockBodiesMsg:
-		log.Info("===BlockBodiesMsg===")
+		log.Debug("===BlockBodiesMsg===")
 		// A batch of block bodies arrived to one of our previous requests
 		var request blockBodiesData
 		if err := msg.Decode(&request); err != nil {
@@ -489,19 +557,22 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		// Deliver them all to the downloader for queuing
 		transactions := make([][]*modules.Transaction, len(request))
-		uncles := make([][]*modules.Header, len(request))
-
+		sum := 0
 		for i, body := range request {
 			transactions[i] = body.Transactions
-			//uncles[i] = body.Uncles
+			sum++
 		}
+
+		log.Debug("===BlockBodiesMsg===", "request sum:", sum, "len(transactions:)", len(transactions))
 		// Filter out any explicitly requested bodies, deliver the rest to the downloader
-		filter := len(transactions) > 0 || len(uncles) > 0
+		filter := len(transactions) > 0
 		if filter {
-			transactions, uncles = pm.fetcher.FilterBodies(p.id, transactions, uncles, time.Now())
+			log.Debug("===BlockBodiesMsg->FilterBodies===")
+			transactions = pm.fetcher.FilterBodies(p.id, transactions, time.Now())
 		}
-		if len(transactions) > 0 || len(uncles) > 0 || !filter {
-			err := pm.downloader.DeliverBodies(p.id, transactions, uncles)
+		if len(transactions) > 0 || !filter {
+			log.Debug("===BlockBodiesMsg->DeliverBodies===")
+			err := pm.downloader.DeliverBodies(p.id, transactions)
 			if err != nil {
 				log.Debug("Failed to deliver bodies", "err", err.Error())
 			}
@@ -543,53 +614,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := pm.downloader.DeliverNodeData(p.id, data); err != nil {
 			log.Debug("Failed to deliver node state data", "err", err.Error())
 		}
-
-	case msg.Code == GetReceiptsMsg:
-		// Decode the retrieval message
-		msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
-		if _, err := msgStream.List(); err != nil {
-			return err
-		}
-		// Gather state data until the fetch or network limits is reached
-		var (
-			hash     common.Hash
-			bytes    int
-			receipts []rlp.RawValue
-		)
-		for bytes < softResponseLimit && len(receipts) < downloader.MaxReceiptFetch {
-			// Retrieve the hash of the next block
-			if err := msgStream.Decode(&hash); err == rlp.EOL {
-				break
-			} else if err != nil {
-				return errResp(ErrDecode, "msg %v: %v", msg, err)
-			}
-			// Retrieve the requested block's receipts, skipping if unknown to us
-			/*results := pm.blockchain.GetReceiptsByHash(hash)
-			if results == nil {
-				if header := pm.blockchain.GetHeaderByHash(hash); header == nil || header.ReceiptHash != types.EmptyRootHash {
-					continue
-				}
-			}
-			// If known, encode and queue for response packet
-			if encoded, err := rlp.EncodeToBytes(results); err != nil {
-				log.Error("Failed to encode receipt", "err", err)
-			} else {
-				receipts = append(receipts, encoded)
-				bytes += len(encoded)
-			}*/
-		}
-		return p.SendReceiptsRLP(receipts)
-
-	case msg.Code == ReceiptsMsg:
-		// A batch of receipts arrived to one of our previous requests
-		//		var receipts [][]*types.Receipt
-		//		if err := msg.Decode(&receipts); err != nil {
-		//			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		//		}
-		//		// Deliver all to the downloader
-		//		if err := pm.downloader.DeliverReceipts(p.id, receipts); err != nil {
-		//			log.Debug("Failed to deliver receipts", "err", err)
-		//		}
 
 	case msg.Code == NewBlockHashesMsg:
 		var announces newBlockHashesData
@@ -681,6 +705,16 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if consensusmsg == "A" {
 			p.SendConsensus("Hello I received A")
 		}
+
+	// append by Albert·Gou
+	case msg.Code == NewProducedUnitMsg:
+		// Retrieve and decode the propagated new produced unit
+		var unit modules.Unit
+		if err := msg.Decode(&unit); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		pm.producer.AddUnverifiedUnitSet(&unit)
+
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
@@ -733,4 +767,45 @@ func (self *ProtocolManager) NodeInfo() *NodeInfo {
 		//Config:     self.blockchain.Config(),
 		//Head:       currentBlock.Hash(),
 	}
+}
+
+func TestMakeTransaction(nonce uint64) *modules.Transaction {
+	pay := modules.PaymentPayload{
+		Inputs:  []modules.Input{},
+		Outputs: []modules.Output{},
+	}
+	holder := common.Address{}
+	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
+	msg0 := modules.Message{
+		App:     modules.APP_PAYMENT,
+		Payload: pay,
+	}
+	msg0.PayloadHash = rlp.RlpHash(pay)
+	tx := &modules.Transaction{
+		AccountNonce: nonce,
+		TxMessages:   []modules.Message{msg0},
+	}
+	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
+	if err != nil {
+		msg := fmt.Sprintf("Get genesis transactions hash error: %s", err)
+		log.Error(msg)
+		return nil
+	}
+	tx.TxHash.SetBytes(txHash)
+	// step4, sign tx
+	//	R, S, V, err := ks.SigTX(tx.TxHash, holder)
+	//	if err != nil {
+	//		msg := fmt.Sprintf("Sign transaction error: %s", err)
+	//		log.Error(msg)
+	//		return nil
+	//	}
+	tx.From = &modules.Authentifier{
+		Address: holder.String(),
+		//		R:       R,
+		//		S:       S,
+		//		V:       V,
+	}
+	tx.Txsize = tx.Size()
+	//txs := []*modules.Transaction{tx}
+	return tx
 }

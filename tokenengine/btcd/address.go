@@ -175,7 +175,7 @@ func DecodeAddress(addr string, defaultNet *chaincfg.Params) (Address, error) {
 		if err != nil {
 			return nil, err
 		}
-		return NewAddressPubKey(serializedPubKey, defaultNet)
+		return NewAddressPubKey(serializedPubKey)
 	}
 
 	// Switch on decoded length to determine the type.
@@ -404,7 +404,7 @@ type AddressPubKey struct {
 // NewAddressPubKey returns a new AddressPubKey which represents a pay-to-pubkey
 // address.  The serializedPubKey parameter must be a valid pubkey and can be
 // uncompressed, compressed, or hybrid.
-func NewAddressPubKey(serializedPubKey []byte, net *chaincfg.Params) (*AddressPubKey, error) {
+func NewAddressPubKey(serializedPubKey []byte) (*AddressPubKey, error) {
 	pubKey, err := btcec.ParsePubKey(serializedPubKey, btcec.S256())
 	if err != nil {
 		return nil, err
@@ -425,7 +425,7 @@ func NewAddressPubKey(serializedPubKey []byte, net *chaincfg.Params) (*AddressPu
 	return &AddressPubKey{
 		pubKeyFormat: pkFormat,
 		pubKey:       pubKey,
-		pubKeyHashID: net.PubKeyHashAddrID,
+		pubKeyHashID: 0x00,
 	}, nil
 }
 

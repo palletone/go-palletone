@@ -37,8 +37,9 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	//"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/storage"
-	dagcommon "github.com/palletone/go-palletone/dag/common"
 )
 
 var (
@@ -52,16 +53,16 @@ var (
 func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, *ptndb.LDBDatabase, error) {
 	//var engine core.ConsensusEngine = &consensus.DPOSEngine{}
 	var (
-		// evmux = new(event.TypeMux)
-		//engine = ethash.NewFaker()
+	// evmux = new(event.TypeMux)
+	//engine = ethash.NewFaker()
 
-		//db, _ = ptndb.NewMemDatabase()
-		//gspec  = &core.Genesis{
-		//Config: configure.TestChainConfig,
-		//Alloc:  core.GenesisAlloc{testBank: {Balance: big.NewInt(1000000)}},
-		//}
-		//genesis       = gspec.MustCommit(db)
-		//blockchain, _ = coredata.NewBlockChain(db, nil, configure.TestChainConfig, engine)
+	//db, _ = ptndb.NewMemDatabase()
+	//gspec  = &core.Genesis{
+	//Config: configure.TestChainConfig,
+	//Alloc:  core.GenesisAlloc{testBank: {Balance: big.NewInt(1000000)}},
+	//}
+	//genesis       = gspec.MustCommit(db)
+	//blockchain, _ = coredata.NewBlockChain(db, nil, configure.TestChainConfig, engine)
 	)
 
 	//chain, _ := core.GenerateChain(configure.TestChainConfig, genesis, ethash.NewFaker(), db, blocks, generator)
@@ -69,13 +70,15 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	//	panic(err)
 	//}
 	engine := new(consensus.DPOSEngine)
-	dag := new(dagcommon.Dag)
+	dag := new(dag.Dag)
 	typemux := new(event.TypeMux)
-	DbPath:="./data1/leveldb"
+	DbPath := "./data1/leveldb"
 	db := storage.Init(DbPath)
+	producer := new(mediatorplugin.MediatorPlugin)
 
 	//want (downloader.SyncMode, uint64, txPool, core.ConsensusEngine, *modules.Dag, *event.TypeMux, *ptndb.LDBDatabase)
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, dag, typemux,db)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx},
+		engine, dag, typemux, db, producer)
 	if err != nil {
 		return nil, nil, err
 	}

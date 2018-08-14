@@ -148,7 +148,8 @@ func adaptorConfig(config FullConfig) FullConfig {
 	config.Node.P2P = config.P2P
 	config.Ptn.Dag = *config.Dag
 	config.Ptn.Log = *config.Log
-	//	config.Ptn.Consensus = config.Consensus
+	config.Ptn.MediatorPlugin = config.MediatorPlugin
+
 	return config
 }
 
@@ -198,6 +199,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// 先处理node的配置信息，再创建node，然后再处理其他service的配置信息，因为其他service的配置依赖node中的协议
 	// 注意：不是将命令行中所有的配置都覆盖cfg中对应的配置，例如 Ptnstats 配置目前没有覆盖 (可能通过命令行设置)
 	utils.SetNodeConfig(ctx, &cfg.Node)
+
 	cfg = adaptorConfig(cfg)
 
 	// 4. 通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
@@ -238,11 +240,14 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		// 注册状态服务。 默认情况下是没有启动的。
 		utils.RegisterPtnStatsService(stack, cfg.Ptnstats.URL)
 	}
+
 	// rebuild leveldb
 	// if cfg.Dag.DbPath != "" {
 	// 	dagconfig.De
 	// }
-	mp.RegisterMediatorPluginService(stack, &cfg.MediatorPlugin)
+
+	// comment by Albert·Gou
+	//	mp.RegisterMediatorPluginService(stack, &cfg.MediatorPlugin)
 
 	return stack
 }
@@ -282,11 +287,10 @@ func dumpConfig(ctx *cli.Context) error {
 func makeDefaultConfig() FullConfig {
 	// 不是所有的配置都有默认值，例如 Ptnstats 目前没有设置默认值
 	return FullConfig{
-		Ptn:       ptn.DefaultConfig,
-		Node:      defaultNodeConfig(),
-		Dashboard: dashboard.DefaultConfig,
-		P2P:       p2p.DefaultConfig,
-		//		Consensus: consensusconfig.DefaultConfig,
+		Ptn:            ptn.DefaultConfig,
+		Node:           defaultNodeConfig(),
+		Dashboard:      dashboard.DefaultConfig,
+		P2P:            p2p.DefaultConfig,
 		MediatorPlugin: mp.DefaultConfig,
 		Dag:            &dagconfig.DefaultConfig,
 		Log:            &log.DefaultConfig,

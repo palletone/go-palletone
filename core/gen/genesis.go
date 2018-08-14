@@ -24,7 +24,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/common/txscript"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -32,6 +31,7 @@ import (
 	asset2 "github.com/palletone/go-palletone/dag/asset"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine"
 	"time"
 )
 
@@ -48,64 +48,36 @@ import (
 // error is a *configure.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) error {
+func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) (*modules.Unit, error) {
 	unit, err := setupGenesisUnit(genesis, ks)
-	if err != nil && unit != nil {
-		log.Info("Genesis is Exist")
-		return nil
-	}
 	if err != nil {
-		log.Error("Failed to write genesis block:", err.Error())
-		return err
+		return unit, err
 	}
-
-	// comment by Albert·Gou
-	//// signature unit: only sign header data(without witness and authors fields)
-	//sign, err1 := ks.SigUnit(*unit.UnitHeader, account.Address)
-	//if err1 != nil {
-	//	msg := fmt.Sprintf("Failed to write genesis block:%v", err1.Error())
-	//	log.Error(msg)
-	//	return err1
-	//}
-	//
-	//r := sign[:32]
-	//s := sign[32:64]
-	//v :=  sign[64:]
-	//if len(v)!=1{
-	//	errors.New("error.")
-	//}
-	//unit.UnitHeader.Authors = &modules.Authentifier{
-	//	Address: account.Address.String(),
-	//	R:       r,
-	//	S:       s,
-	//	V:       v,
-	//}
-	//// to set witness list, should be creator himself
-	//var authentifier modules.Authentifier
-	//authentifier.Address = account.Address.String()
-	//unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
 
 	// modify by Albert·Gou
 	unit, err = dagCommon.GetUnitWithSig(unit, ks, account.Address)
 	if err != nil {
-		return err
+		return unit, err
 	}
 
 	// to save unit in db
 	if err := CommitDB(unit, false); err != nil {
 		log.Error("Commit genesis unit to db:", "error", err.Error())
-		return err
+		return unit, err
 	}
-	return nil
+	return unit, nil
 }
 
 func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Unit, error) {
 
 	// Just commit the new block if there is no stored genesis block.
-	stored := dagCommon.GetGenesisUnit(0)
+	stored, err := dagCommon.GetGenesisUnit(0)
+	if err != nil {
+		return nil, err
+	}
 	// Check whether the genesis block is already written.
 	if stored != nil {
-		return stored, errors.New("the genesis block is already written")
+		return stored, errors.New("the genesis block is existing")
 	}
 
 	if genesis == nil {
@@ -128,24 +100,17 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	// step1, generate payment payload message: coin creation
 	holder := common.Address{}
 	holder.SetString(genesis.TokenHolder)
-	if txscript.CheckP2PKHAddress(holder) == false {
+	if common.IsValidAddress(holder.String()) == false {
 		log.Error("Genesis holder address is an invalid p2pkh address.")
 		return nil
 	}
+
 	assetInfo := modules.AssetInfo{
 		Alias:          genesis.Alias,
 		InitialTotal:   genesis.TokenAmount,
 		Decimal:        genesis.TokenDecimal,
 		DecimalUnit:    genesis.DecimalUnit,
 		OriginalHolder: holder,
-	}
-	extra, err := rlp.EncodeToBytes(assetInfo)
-	if err != nil {
-		log.Error("Get genesis assetinfo bytes error.")
-		return nil
-	}
-	txin := modules.Input{
-		Extra: extra, // save asset info
 	}
 	// get new asset id
 	assetId := asset2.NewAsset()
@@ -154,13 +119,18 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		UniqueId: assetId,
 		ChainId:  genesis.ChainID,
 	}
-	// generate p2pkh bytes
-	publicKey, err := ks.GetPublicKey(holder)
+	assetInfo.AssetID = asset
+	extra, err := rlp.EncodeToBytes(assetInfo)
 	if err != nil {
-		log.Error("Failed to Get Public Key:", err.Error())
+		log.Error("Get genesis assetinfo bytes error.")
 		return nil
 	}
-	pkscript := txscript.PayToPubkeyHashScript(publicKey)
+	txin := modules.Input{
+		Extra: extra, // save asset info
+	}
+	// generate p2pkh bytes
+	pkscript := tokenengine.GenerateP2PKHLockScript(holder.Bytes())
+
 	txout := modules.Output{
 		Value:    genesis.TokenAmount,
 		Asset:    asset,
@@ -176,7 +146,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	}
 	msg0.PayloadHash = rlp.RlpHash(pay)
 	// step2, generate global config payload message
-	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis)
+	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis, &asset)
 	if err != nil {
 		log.Error("Generate genesis unit config payload error.")
 		return nil
@@ -191,28 +161,17 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		AccountNonce: 1,
 		TxMessages:   []modules.Message{msg0, msg1},
 	}
-	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
-	if err != nil {
-		msg := fmt.Sprintf("Get genesis transactions hash error: %s", err)
-		log.Error(msg)
-		return nil
-	}
-	tx.TxHash.SetBytes(txHash)
+	tx.Txsize = tx.Size()
+	tx.CreationDate = tx.CreateDate()
+	tx.TxHash = tx.Hash()
 	// step4, sign tx
-	R, S, V, err := ks.SigTX(tx.TxHash, holder)
+	sig, err := dagCommon.SignTransaction(tx.TxHash, &holder, ks)
 	if err != nil {
 		msg := fmt.Sprintf("Sign transaction error: %s", err)
 		log.Error(msg)
 		return nil
 	}
-	tx.From = &modules.Authentifier{
-		Address: holder.String(),
-		R:       R,
-		S:       S,
-		V:       V,
-	}
-	tx.Txsize = tx.Size()
-	fmt.Println("Tx size:", tx.Txsize)
+	tx.From = sig
 	txs := []*modules.Transaction{tx}
 	return txs
 }
@@ -244,6 +203,7 @@ func DefaultGenesisBlock() *core.Genesis {
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
+		ImmutableParameters:    core.NewImmutChainParams(),
 		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
@@ -267,6 +227,7 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
+		ImmutableParameters:    core.NewImmutChainParams(),
 		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
@@ -275,12 +236,12 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 }
 
 func InitialMediatorCandidates(len int, address string) []string {
-	initialMediatorSet := make([]string, len)
+	initialMediator := make([]string, len)
 	for i := 0; i < len; i++ {
-		initialMediatorSet[i] = address
+		initialMediator[i] = address
 	}
 
-	return initialMediatorSet
+	return initialMediator
 }
 
 func InitialTimestamp(mediatorInterval uint8) int64 {

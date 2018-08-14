@@ -171,9 +171,9 @@ func (p *peer) SendBlockHeaders(headers []*modules.Header) error {
 }
 
 // SendBlockBodies sends a batch of block contents to the remote peer.
-func (p *peer) SendBlockBodies(bodies []*blockBody) error {
-	return p2p.Send(p.rw, BlockBodiesMsg, blockBodiesData(bodies))
-}
+//func (p *peer) SendBlockBodies(bodies []*blockBody) error {
+//	return p2p.Send(p.rw, BlockBodiesMsg, blockBodiesData(bodies))
+//}
 
 // SendBlockBodiesRLP sends a batch of block contents to the remote peer from
 // an already RLP encoded format.
@@ -204,7 +204,7 @@ func (p *peer) RequestOneHeader(hash common.Hash) error {
 // specified header query, based on the hash of an origin block.
 func (p *peer) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
-	log.Info("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
+
 	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
@@ -235,7 +235,7 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 	return p2p.Send(p.rw, GetReceiptsMsg, hashes)
 }
 
-// Handshake executes the eth protocol handshake, negotiating version number,
+// Handshake executes the ptn protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
 func (p *peer) Handshake(network uint64, td uint64, head common.Hash, genesis common.Hash) error {
 	// Send out own handshake in a new thread
@@ -300,7 +300,7 @@ func (p *peer) readStatus(network uint64, status *statusData, genesis common.Has
 // String implements fmt.Stringer.
 func (p *peer) String() string {
 	return fmt.Sprintf("Peer %s [%s]", p.id,
-		fmt.Sprintf("eth/%2d", p.version),
+		fmt.Sprintf("ptn/%2d", p.version),
 	)
 }
 
@@ -431,4 +431,18 @@ func (ps *peerSet) GetPeers() []*peer {
 		list = append(list, p)
 	}
 	return list
+}
+
+// AtiveMeatorPeers retrieves a list of peers that active mediator
+// @author Albert·Gou
+func (ps *peerSet) ActiveMediatorPeers() []*peer {
+	// TODO @wangjiyou
+	return nil
+}
+
+// SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
+// @author Albert·Gou
+func (p *peer) SendNewProducedUnit(unit *modules.Unit) error {
+	// TODO @wangjiyou
+	return p2p.Send(p.rw, NewProducedUnitMsg, []interface{}{unit})
 }

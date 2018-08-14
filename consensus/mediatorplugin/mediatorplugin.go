@@ -23,25 +23,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
-	dcom "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/ptn"
 )
 
-type MediatorPlugin struct {
-	ptn *ptn.PalletOne
-	// Enable VerifiedUnit production, even if the chain is stale.
-	// 新开启一个区块链时，必须设为true
-	productionEnabled bool
-	// Mediator`s account and passphrase controlled by this node
-	mediators map[common.Address]string
-	quit      chan struct{} // Channel used for graceful exit
-}
-
-func newChainBanner(dag *dcom.Dag) {
+func newChainBanner(dag *dag.Dag) {
 	fmt.Printf("\n" +
 		"*   ------- NEW CHAIN -------   *\n" +
 		"*   - Welcome to PalletOne! -   *\n" +
@@ -53,6 +42,10 @@ func newChainBanner(dag *dcom.Dag) {
 			"Please consider using the --genesis-timestamp option to give your genesis a recent timestamp\n" +
 			"\n")
 	}
+}
+
+func (mp *MediatorPlugin) SubscribeNewProducedUnitEvent(ch chan<- NewProducedUnitEvent) event.Subscription {
+	return mp.newProducedUnitScope.Track(mp.newProducedUnitFeed.Subscribe(ch))
 }
 
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
@@ -88,7 +81,7 @@ const (
 	//	LowParticipation
 	Lag
 	//	Consecutive
-	//	ExceptionProducing
+	ExceptionProducing
 )
 
 func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) ProductionCondition {
@@ -101,23 +94,25 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 	// 2. 打印尝试结果
 	switch result {
 	case Produced:
-		log.Info("Generated VerifiedUnit #" + detail["Num"] + " with timestamp " +
-			detail["Timestamp"] + " by mediator: " + detail["Mediator"])
+		log.Info("Generated VerifiedUnit #" + detail["Num"] + " hash: " + detail["Hash"] +
+			" with timestamp " + detail["Timestamp"] + " by mediator: " + detail["Mediator"])
 	case NotSynced:
 		log.Info("Not producing VerifiedUnit because production is disabled " +
 			"until we receive a recent VerifiedUnit (see: --enable-stale-production)")
 	case NotTimeYet:
-		//log.Info("Not producing VerifiedUnit because next slot time is " + detail["NextTime"] +
-		//	" , but now is " + detail["Now"])
+		log.Debug("Not producing VerifiedUnit because next slot time is " + detail["NextTime"] +
+			" , but now is " + detail["Now"])
 	case NotMyTurn:
-		//log.Info("Not producing VerifiedUnit because current scheduled mediator is " +
-		//	detail["ScheduledMediator"])
+		log.Debug("Not producing VerifiedUnit because current scheduled mediator is " +
+			detail["ScheduledMediator"])
 	case Lag:
 		log.Info("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time." +
 			" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
 	case NoPrivateKey:
 		log.Info("Not producing VerifiedUnit because I don't have the private key for " +
 			detail["ScheduledKey"])
+	case ExceptionProducing:
+		log.Info("Exception producing unit")
 	default:
 		log.Info("Unknown condition!")
 	}
@@ -198,17 +193,26 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 2. 生产验证单元
-	unit := dcom.GenerateUnit(mp.ptn.Dag(), scheduledTime, *scheduledMediator, ks)
+	unit := GenerateUnit(mp.ptn.Dag(), scheduledTime, *scheduledMediator, ks, mp.ptn.TxPool())
+	if unit.IsEmpty() {
+		return ExceptionProducing, detail
+	}
 
 	num := unit.UnitHeader.Number.Index
 	detail["Num"] = strconv.FormatUint(num, 10)
 	time := time.Unix(unit.UnitHeader.Creationdate, 0)
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
 	detail["Mediator"] = unit.UnitHeader.Authors.Address
+	detail["Hash"] = unit.UnitHash.Hex()
 
 	// 3. 异步向区块链网络广播验证单元
-	log.Info("Asynchronously broadcast the new signed verified unit to p2p networks...")
-	//	go mp.ptn.EventMux().Post()
+	log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
+	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: unit})
 
 	return Produced, detail
+}
+
+func (mp *MediatorPlugin) AddUnverifiedUnitSet(*modules.Unit) error {
+	//TODO @Albert·Gou
+	return nil
 }

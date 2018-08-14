@@ -60,7 +60,7 @@ func (pl *Plogger) New(ctx ...interface{}) *Plogger {
 }
 func (pl *Plogger) Trace(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
-	Logger.Info(msg, fileds...)
+	Logger.Debug(msg, fileds...)
 }
 
 func (pl *Plogger) Debug(msg string, ctx ...interface{}) {
@@ -133,6 +133,7 @@ func ConInitLogger() {
 	initLogger()
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
+
 // init logger.
 func initLogger() {
 	// var js string

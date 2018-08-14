@@ -17,41 +17,54 @@
  *
  */
 
-package common
+package mediatorplugin
 
 import (
 	"fmt"
 	"time"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 // GenerateVerifiedUnit, generate unit
 // @author Albert·Gou
-func GenerateUnit(dag *Dag, when time.Time, producer common.Mediator, ks *keystore.KeyStore) modules.Unit {
+func GenerateUnit(dag *dag.Dag, when time.Time, producer common.Mediator,
+	ks *keystore.KeyStore, txspool *txspool.TxPool) *modules.Unit {
 	dgp := dag.DynGlobalProp
 
 	// 1. 判断是否满足生产的若干条件
 
 	// 2. 生产验证单元，添加交易集、时间戳、签名
-	log.Info("Generating Verified Unit...")
+	log.Debug("Generating Verified Unit...")
 
-	units, _ := CreateUnit(&producer.Address)
-	pendingUnit := units[0]
+	units, err := dagcommon.CreateUnit(&producer.Address, txspool, ks)
+	// added by yangyu, 2018.8.9
+	if err != nil || units == nil || len(units) == 0 || units[0].IsEmpty() {
+		log.Info("No unit need to be packaged for now.")
+		return &modules.Unit{}
+	}
+
+	pendingUnit := &units[0]
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
 	pendingUnit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
+	pendingUnit.UnitHeader.ParentsHash =
+		append(pendingUnit.UnitHeader.ParentsHash, dgp.LastVerifiedUnitHash)
+	pendingUnit.UnitHash = pendingUnit.Hash()
 
-	_, err := GetUnitWithSig(&pendingUnit, ks, producer.Address)
+	_, err = dagcommon.GetUnitWithSig(pendingUnit, ks, producer.Address)
 	if err != nil {
 		log.Error(fmt.Sprintf("%v", err))
 	}
 
 	pendingUnit.UnitSize = pendingUnit.Size()
 
-	PushUnit(dag, &pendingUnit)
+	PushUnit(dag, pendingUnit)
 
 	return pendingUnit
 }
@@ -64,31 +77,31 @@ func GenerateUnit(dag *Dag, when time.Time, producer common.Mediator, ks *keysto
  *
  * @return true if we switched forks as a result of this push.
  */
-func PushUnit(dag *Dag, newUnit *modules.Unit) bool {
+func PushUnit(dag *dag.Dag, newUnit *modules.Unit) bool {
 	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
 
 	ApplyUnit(dag, newUnit)
 
 	// 4. 将验证单元添加到本地DB
-	log.Info("storing the new verified unit to database...")
-	go StoreUnit(newUnit)
+	log.Debug("storing the new verified unit to database...")
+	go dagcommon.SaveUnit(*newUnit, false)
 
 	return false
 }
 
-func ApplyUnit(dag *Dag, nextUnit *modules.Unit) {
+func ApplyUnit(dag *dag.Dag, nextUnit *modules.Unit) {
 	gp := dag.GlobalProp
 	dgp := dag.DynGlobalProp
 
 	// 4. 更新Unit中交易的状态
 
 	// 5. 更新全局动态属性值
-	log.Info("Updating global dynamic property...")
-	UpdateGlobalDynProp(gp, dgp, nextUnit)
+	log.Debug("Updating global dynamic property...")
+	dagcommon.UpdateGlobalDynProp(gp, dgp, nextUnit)
 
 	// 5. 判断是否到了维护周期，并维护
 
 	// 6. 洗牌
-	log.Info("shuffling the scheduling order of mediator...")
+	log.Debug("shuffling the scheduling order of mediator...")
 	dag.MediatorSchl.UpdateMediatorSchedule(gp, dgp)
 }

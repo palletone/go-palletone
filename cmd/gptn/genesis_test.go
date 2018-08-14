@@ -18,8 +18,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/dag/common"
 	"testing"
+
+	"github.com/palletone/go-palletone/dag/common"
 )
 
 var customGenesisTests = []struct {
@@ -40,7 +41,7 @@ var customGenesisTests = []struct {
 			"parentHash" : "0x0000000000000000000000000000000000000000000000000000000000000000",
 			"timestamp"  : "0x00"
 		}`,
-		query:  "eth.getBlock(0).nonce",
+		query:  "ptn.getBlock(0).nonce",
 		result: "0x0000000000000042",
 	},
 	// Genesis file with an empty chain configuration (ensure missing fields work)
@@ -57,7 +58,7 @@ var customGenesisTests = []struct {
 			"timestamp"  : "0x00",
 			"config"     : {}
 		}`,
-		query:  "eth.getBlock(0).nonce",
+		query:  "ptn.getBlock(0).nonce",
 		result: "0x0000000000000042",
 	},
 	// Genesis file with specific chain configurations
@@ -78,7 +79,7 @@ var customGenesisTests = []struct {
 				"daoForkSupport" : true
 			},
 		}`,
-		query:  "eth.getBlock(0).nonce",
+		query:  "ptn.getBlock(0).nonce",
 		result: "0x0000000000000042",
 	},
 }
@@ -112,8 +113,8 @@ func TestCustomGenesis(t *testing.T) {
 
 func TestGenesisGet(t *testing.T) {
 	// get genesis unit by index
-	unit := common.GetGenesisUnit(0)
-	fmt.Println("Genesis unit:", unit)
+	unit, err := common.GetGenesisUnit(0)
+	fmt.Println("error", err, "Genesis unit:", unit)
 	// get account balance
 	// get all global configures
 }

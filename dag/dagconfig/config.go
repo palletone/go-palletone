@@ -23,8 +23,8 @@ var (
 )
 
 var DefaultConfig = Config{
-	//DbPath: "db/leveldb",
-	DbPath: "../../cmd/gptn/leveldb",
+	DbPath: "./db/leveldb",
+	// DbPath: "../../cmd/gptn/leveldb",
 	DbName: "palletone",
 
 	// txpool

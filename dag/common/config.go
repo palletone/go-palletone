@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -32,12 +32,15 @@ func GetConfig(name []byte) []byte {
 func SaveConfig(confs map[string]interface{}) error {
 	for k, v := range confs {
 		key := fmt.Sprintf("%s_%s", CONF_PREFIX, k)
-		data, err := rlp.EncodeToBytes(v)
-		if err != nil {
-			log.Error("Save config error.")
-			return err
+		//data, err := rlp.EncodeToBytes(v)
+		//if err != nil {
+		//	log.Error("Save config error.")
+		//	return err
+		//}
+		if storage.Dbconn == nil {
+			storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
 		}
-		if err := storage.Store(key, data); err != nil {
+		if err := storage.Store(storage.Dbconn, key, v); err != nil {
 			log.Error("Save config error.")
 			return err
 		}

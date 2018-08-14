@@ -19,6 +19,7 @@
 package mediatorplugin
 
 import (
+	"github.com/palletone/go-palletone/core"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -40,7 +41,7 @@ type Config struct {
 var DefaultConfig = Config{
 	EnableStaleProduction: false,
 	Mediators: map[string]string{
-		"P1XXX": "123",
+		core.DefaultTokenHolder: "password",
 	},
 }
 

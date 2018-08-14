@@ -20,6 +20,7 @@ import (
 	"math/big"
 	"os"
 	"os/user"
+
 	//"path/filepath"
 	//"runtime"
 	"time"
@@ -28,7 +29,9 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
+
 	//"github.com/palletone/go-palletone/consensus/consensusconfig"
+	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts/contractconfig"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -39,7 +42,7 @@ import (
 
 // DefaultConfig contains default settings for use on the PalletOne main net.
 var DefaultConfig = Config{
-	SyncMode:      downloader.FullSync,
+	SyncMode:      downloader.FastSync,
 	NetworkId:     1,
 	LightPeers:    100,
 	DatabaseCache: 768,
@@ -49,9 +52,9 @@ var DefaultConfig = Config{
 
 	TxPool: txspool.DefaultTxPoolConfig,
 
-	//Consensus: consensusconfig.DefaultConfig,
-	Dag: dagconfig.DefaultConfig,
-	Log: log.DefaultConfig,
+	Dag:            dagconfig.DefaultConfig,
+	Log:            log.DefaultConfig,
+	MediatorPlugin: mediatorplugin.DefaultConfig,
 }
 
 func init() {
@@ -107,11 +110,10 @@ type Config struct {
 	// Enables tracking of SHA3 preimages in the VM
 	EnablePreimageRecording bool
 	// DAG options
-	Dag dagconfig.Config
+	Dag dagconfig.Config `toml:"-"`
 	//Log config
-	Log log.Config
-	// Consensus options
-	//Consensus consensusconfig.Config
+	Log log.Config `toml:"-"`
+
 	// VM config
 	Vm vmconfig.Config
 	//Contract config
@@ -119,6 +121,9 @@ type Config struct {
 
 	// Miscellaneous options
 	DocRoot string `toml:"-"`
+
+	// append by Albert·Gou
+	MediatorPlugin mediatorplugin.Config `toml:"-"`
 }
 
 type configMarshaling struct {

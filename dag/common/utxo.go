@@ -18,6 +18,7 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"unsafe"
@@ -25,36 +26,12 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/common/txscript"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
+	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 )
-
-func KeyToOutpoint(key []byte) modules.OutPoint {
-	// key: [UTXO_PREFIX][TxHash]_[MessageIndex]_[OutIndex]
-	preLen := len(modules.UTXO_PREFIX)
-	sKey := key[preLen:]
-	data := strings.Split(string(sKey), "_")
-	if len(data) != 3 {
-		return modules.OutPoint{}
-	}
-	var vout modules.OutPoint
-
-	if err := rlp.DecodeBytes([]byte(data[0]), &vout.TxHash); err != nil {
-		vout.TxHash = common.Hash{}
-	}
-
-	if err := rlp.DecodeBytes([]byte(data[1]), &vout.MessageIndex); err != nil {
-		vout.MessageIndex = 0
-	}
-
-	if err := rlp.DecodeBytes([]byte(data[2]), &vout.OutIndex); err != nil {
-		vout.OutIndex = 0
-	}
-
-	return vout
-}
 
 /**
 根据用户地址、选择的资产类型、转账金额、手续费返回utxo
@@ -86,7 +63,7 @@ func readUtxosByIndex(addr common.Address, asset modules.Asset) (map[modules.Out
 	// step2. get utxo
 	vout := map[modules.OutPoint]*modules.Utxo{}
 	balance := uint64(0)
-	for k, _ := range data {
+	for k := range data {
 		if err := utxoIndex.QueryFields([]byte(k)); err != nil {
 			continue
 		}
@@ -100,8 +77,7 @@ func readUtxosByIndex(addr common.Address, asset modules.Asset) (map[modules.Out
 			log.Error("Decode utxo data :", "error:", err.Error())
 			continue
 		}
-		outpoint := KeyToOutpoint([]byte(k))
-		vout[outpoint] = &utxo
+		vout[utxoIndex.OutPoint] = &utxo
 		balance += utxo.Amount
 	}
 	return vout, balance
@@ -136,16 +112,13 @@ func readUtxosFrAll(addr common.Address, asset modules.Asset) (map[modules.OutPo
 			continue
 		}
 		// get addr
-		scriptPubKey, err := txscript.ExtractPkScriptAddrs(utxo.PkScript)
-		if err != nil {
-			log.Error("Get address from utxo output script", "error", err.Error())
-			continue
-		}
+		sAddr := getAddressFromScript(utxo.PkScript)
 		// check address
-		if strings.Compare(scriptPubKey.Address.String(), addr.String()) != 0 {
+		if strings.Compare(sAddr, addr.String()) != 0 {
+			fmt.Println(">>>>> address is not compare")
 			continue
 		}
-		outpoint := KeyToOutpoint([]byte(k))
+		outpoint := modules.KeyToOutpoint([]byte(k))
 		vout[outpoint] = &utxo
 		balance += utxo.Amount
 	}
@@ -167,27 +140,43 @@ func GetUxto(txin modules.Input) modules.Utxo {
 	return utxo
 }
 
+// GetUtosOutPoint
+func GetUtxoByOutpoint(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	key := outpoint.ToKey()
+
+	if storage.Dbconn == nil {
+		storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+	}
+	return storage.GetUtxoEntry(storage.Dbconn, key[:])
+}
+
 /**
 根据交易信息中的outputs创建UTXO， 根据交易信息中的inputs销毁UTXO
 To create utxo according to outpus in transaction, and destory utxo according to inputs in transaction
 */
-func UpdateUtxo(txHash common.Hash, msg *modules.Message, msgIndex uint32, lockTime uint32) {
+func UpdateUtxo(txHash common.Hash, msg *modules.Message, msgIndex uint32, lockTime uint32) error {
 	var payload interface{}
 
 	payload = msg.Payload
 	payment, ok := payload.(modules.PaymentPayload)
 	if ok == true {
 		// create utxo
-		writeUtxo(txHash, msgIndex, payment.Outputs, lockTime)
+		errs := writeUtxo(txHash, msgIndex, payment.Outputs, lockTime)
 		// destory utxo
 		destoryUtxo(payment.Inputs)
+		if len(errs) > 0 {
+			log.Error("error occurred on updated utxos, check the log file to find details.")
+			return errors.New("error occurred on updated utxos, check the log file to find details.")
+		}
 	}
+	return nil
 }
 
 /**
 创建UTXO
 */
-func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, lockTime uint32) {
+func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, lockTime uint32) []error {
+	var errs []error
 	for outIndex, txout := range txouts {
 		utxo := modules.Utxo{
 			TxID:         txHash,
@@ -205,9 +194,10 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 			MessageIndex: msgIndex,
 			OutIndex:     uint32(outIndex),
 		}
-
-		if err := storage.Store(string(outpoint.ToKey()), utxo); err != nil {
+		if err := storage.Store(storage.Dbconn, string(outpoint.ToKey()), utxo); err != nil {
 			log.Error("Write utxo", "error", err.Error())
+			errs = append(errs, err)
+			continue
 		}
 
 		// write to utxo index db
@@ -216,12 +206,9 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 		}
 
 		// get address
-		spk, err := txscript.ExtractPkScriptAddrs(txout.PkScript)
-		if err != nil {
-			log.Error("Extract PkScript Address", "error", err.Error())
-			continue
-		}
-		addr := spk.Address
+		sAddr := getAddressFromScript(txout.PkScript)
+		addr := common.Address{}
+		addr.SetString(sAddr)
 
 		utxoIndex := modules.UtxoIndex{
 			AccountAddr: addr,
@@ -232,10 +219,12 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 			Amount:   txout.Value,
 			LockTime: lockTime,
 		}
-		if err := storage.Store(string(utxoIndex.ToKey()), utxoIndexVal); err != nil {
+		if err := storage.Store(storage.Dbconn, string(utxoIndex.ToKey()), utxoIndexVal); err != nil {
 			log.Error("Write utxo index error: %s", err.Error())
+			errs = append(errs, err)
 		}
 	}
+	return errs
 }
 
 /**
@@ -245,6 +234,18 @@ destory utxo, delete from UTXO database
 func destoryUtxo(txins []modules.Input) {
 	for _, txin := range txins {
 		outpoint := txin.PreviousOutPoint
+		if outpoint.IsEmpty() {
+			if len(txin.Extra) > 0 {
+				var assetInfo modules.AssetInfo
+				if err := rlp.DecodeBytes(txin.Extra, &assetInfo); err == nil {
+					// save asset info
+					if err := SaveAssetInfo(&assetInfo); err != nil {
+						log.Error("Save asset info error")
+					}
+				}
+			}
+			continue
+		}
 		// get utxo info
 		data, err := storage.Get(outpoint.ToKey())
 		if err != nil {
@@ -262,13 +263,11 @@ func destoryUtxo(txins []modules.Input) {
 			continue
 		}
 		// delete index data
-		scriptPubKey, err := txscript.ExtractPkScriptAddrs(utxo.PkScript)
-		if err != nil {
-			log.Error("Extract address when destory uxto", "error", err.Error())
-			continue
-		}
+		sAddr := getAddressFromScript(utxo.PkScript)
+		addr := common.Address{}
+		addr.SetString(sAddr)
 		utxoIndex := modules.UtxoIndex{
-			AccountAddr: scriptPubKey.Address,
+			AccountAddr: addr,
 			Asset:       utxo.Asset,
 			OutPoint:    outpoint,
 		}
@@ -284,15 +283,7 @@ func destoryUtxo(txins []modules.Input) {
 write asset info to leveldb
 */
 func SaveAssetInfo(assetInfo *modules.AssetInfo) error {
-	assetID, err := rlp.EncodeToBytes(assetInfo.AssetID)
-	if err != nil {
-		return err
-	}
-
-	key := append(modules.ASSET_INFO_PREFIX, assetID...)
-
-	err = storage.Store(string(key), *assetInfo)
-	if err != nil {
+	if err := storage.Store(storage.Dbconn, string(assetInfo.Tokey()), *assetInfo); err != nil {
 		return err
 	}
 
@@ -304,13 +295,7 @@ func SaveAssetInfo(assetInfo *modules.AssetInfo) error {
 get asset infomation from leveldb by assetid ( Asset struct type )
 */
 func GetAssetInfo(assetId *modules.Asset) (modules.AssetInfo, error) {
-	assetID, err := rlp.EncodeToBytes(assetId)
-	if err != nil {
-		return modules.AssetInfo{}, err
-	}
-
-	key := append(modules.ASSET_INFO_PREFIX, assetID...)
-
+	key := append(modules.ASSET_INFO_PREFIX, assetId.AssertId.String()...)
 	data, err := storage.Get(key)
 	if err != nil {
 		return modules.AssetInfo{}, err
@@ -375,32 +360,13 @@ func walletBalanceFrAll(addr common.Address, asset modules.Asset) uint64 {
 	preKey := fmt.Sprintf("%s", modules.UTXO_PREFIX)
 
 	if data := storage.GetPrefix([]byte(preKey)); data != nil {
-		for k, v := range data {
-			var outpoint modules.OutPoint
-			if err := rlp.DecodeBytes([]byte(k), &outpoint); err != nil {
-				log.Error("Decode utxo data ", "error:", err)
-				continue
-			}
-
+		for _, v := range data {
 			var utxo modules.Utxo
 			if err := rlp.DecodeBytes(v, &utxo); err != nil {
 				log.Error("Decode utxo data error:", err)
 				continue
 			}
-			// check asset
-			if strings.Compare(asset.AssertId.String(), utxo.Asset.AssertId.String()) != 0 ||
-				strings.Compare(asset.UniqueId.String(), utxo.Asset.UniqueId.String()) != 0 ||
-				asset.ChainId != utxo.Asset.ChainId {
-				continue
-			}
-			// get addr
-			scriptPubKey, err := txscript.ExtractPkScriptAddrs(utxo.PkScript)
-			if err != nil {
-				log.Error("Get address from utxo output script", "error", err.Error())
-				continue
-			}
-			// check address
-			if strings.Compare(scriptPubKey.Address.String(), addr.String()) != 0 {
+			if !checkUtxo(&addr, &asset, &utxo) {
 				continue
 			}
 			balance += utxo.Amount
@@ -425,4 +391,178 @@ func GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Ut
 		total += utxo.Amount
 	}
 	return utxos, total
+}
+
+/**
+获得某个账户下的token名称和assetid信息
+To get someone account's list of tokens and those assetids
+*/
+func GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, error) {
+	if dagconfig.DefaultConfig.UtxoIndex {
+		return getAccountTokensByIndex(addr)
+	} else {
+		return getAccountTokensWhole(addr)
+	}
+}
+
+/**
+通过索引数据库获得用户的token信息
+To get account's token info by utxo index db
+*/
+func getAccountTokensByIndex(addr common.Address) (map[string]*modules.AccountToken, error) {
+	tokens := map[string]*modules.AccountToken{}
+	utxoIndex := modules.UtxoIndex{AccountAddr: addr}
+	data := storage.GetPrefix(utxoIndex.AccountKey())
+	if data == nil || len(data) == 0 {
+		return nil, nil
+	}
+	for k, v := range data {
+		if err := utxoIndex.QueryFields([]byte(k)); err != nil {
+			return nil, fmt.Errorf("Get account tokens by key error: data key is invalid")
+		}
+		var utxoIndexVal modules.UtxoIndexValue
+		if err := rlp.DecodeBytes([]byte(v), &utxoIndexVal); err != nil {
+			return nil, fmt.Errorf("Get account tokens error: data value is invalid")
+		}
+		val, ok := tokens[utxoIndex.Asset.AssertId.String()]
+		if ok {
+			val.Balance += utxoIndexVal.Amount
+		} else {
+			// get asset info
+			assetInfo, err := GetAssetInfo(&utxoIndex.Asset)
+			if err != nil {
+				return nil, fmt.Errorf("Get acount tokens by index error: asset info does not exist")
+			}
+			tokens[utxoIndex.Asset.AssertId.String()] = &modules.AccountToken{
+				Alias:   assetInfo.Alias,
+				AssetID: utxoIndex.Asset,
+				Balance: utxoIndexVal.Amount,
+			}
+		}
+	}
+	return tokens, nil
+}
+
+/**
+遍历全局utxo，获取账户token信息
+To get account token info by query the whole utxo table
+*/
+func getAccountTokensWhole(addr common.Address) (map[string]*modules.AccountToken, error) {
+	tokens := map[string]*modules.AccountToken{}
+
+	key := fmt.Sprintf("%s", string(modules.UTXO_PREFIX))
+	data := storage.GetPrefix([]byte(key))
+	if data == nil {
+		return nil, nil
+	}
+
+	for _, v := range data {
+		var utxo modules.Utxo
+		if err := rlp.DecodeBytes([]byte(v), &utxo); err != nil {
+			return nil, err
+		}
+		if !checkUtxo(&addr, nil, &utxo) {
+			continue
+		}
+
+		val, ok := tokens[utxo.Asset.AssertId.String()]
+		if ok {
+			val.Balance += utxo.Amount
+		} else {
+			// get asset info
+			assetInfo, err := GetAssetInfo(&utxo.Asset)
+			if err != nil {
+				return nil, fmt.Errorf("Get acount tokens by whole error: asset info does not exist")
+			}
+			tokens[utxo.Asset.AssertId.String()] = &modules.AccountToken{
+				Alias:   assetInfo.Alias,
+				AssetID: utxo.Asset,
+				Balance: utxo.Amount,
+			}
+		}
+	}
+	return tokens, nil
+}
+
+/**
+检查该utxo是否是需要的utxo
+*/
+func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) bool {
+	// check asset
+	//fmt.Printf(">>>>> assetid=%s, utxo( assetid=%s)", asset.AssertId.String(), utxo.Asset.AssertId.String())
+	if asset != nil && (strings.Compare(asset.AssertId.String(), utxo.Asset.AssertId.String()) != 0 ||
+		strings.Compare(asset.UniqueId.String(), utxo.Asset.UniqueId.String()) != 0 ||
+		asset.ChainId != utxo.Asset.ChainId) {
+		fmt.Println(">>>>> Asset is not compare")
+		return false
+	}
+	// get addr
+	sAddr := getAddressFromScript(utxo.PkScript)
+	// check address
+	if strings.Compare(sAddr, addr.String()) != 0 {
+		fmt.Printf(">>>>> Address is not compare:scriptPubKey.Address=%s, address=%s\n",
+			sAddr, addr.String())
+		return false
+	}
+	return true
+}
+
+/**
+根据交易列表计算交易费总和
+To compute transactions' fees
+*/
+func ComputeFees(txs modules.Transactions) (uint64, error) {
+	// current time slice mediator default income is 1 ptn
+	fees := uint64(100000000)
+	for _, tx := range txs {
+		for _, msg := range tx.TxMessages {
+			payload, ok := msg.Payload.(modules.PaymentPayload)
+			if ok == false {
+				continue
+			}
+			inAmount := uint64(0)
+			outAmount := uint64(0)
+			for _, txin := range payload.Inputs {
+				utxo := GetUxto(txin)
+				if utxo.IsEmpty() {
+					return 0, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
+						txin.PreviousOutPoint.TxHash.String(),
+						txin.PreviousOutPoint.MessageIndex,
+						txin.PreviousOutPoint.OutIndex)
+				}
+				// check overflow
+				if inAmount+utxo.Amount > 1<<64-1 {
+					return 0, fmt.Errorf("Compute fees: txin total overflow")
+				}
+				inAmount += utxo.Amount
+			}
+
+			for _, txout := range payload.Outputs {
+				// check overflow
+				if outAmount+txout.Value > 1<<64-1 {
+					return 0, fmt.Errorf("Compute fees: txout total overflow")
+				}
+				outAmount += txout.Value
+			}
+			if inAmount < outAmount {
+				return 0, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount.", tx.TxHash.String())
+			}
+			fees += inAmount - outAmount
+		}
+	}
+	return fees, nil
+}
+
+func getAddressFromScript(script []byte) string {
+	_, addresses, reqSigs, err := txscript.ExtractPkScriptAddrs(script, &chaincfg.MainNetParams)
+	if err != nil {
+		log.Error("Get address from utxo output script", "error", err.Error())
+		return ""
+	}
+	// for now, just support single signature
+	if reqSigs > 1 {
+		log.Error("Get address from utxo output script", "error", "multiple signature")
+		return ""
+	}
+	return "P" + addresses[0].String()
 }

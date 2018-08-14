@@ -95,7 +95,8 @@ func DevGenesisBlock() *core.Genesis {
 		ChainID:                1,
 		TokenHolder:            core.DefaultTokenHolder,
 		InitialParameters:      initParams,
-		InitialTimestamp:		gen.InitialTimestamp(initParams.MediatorInterval),
+		ImmutableParameters:    core.NewImmutChainParams(),
+		InitialTimestamp:       gen.InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(core.DefaultMediatorCount,
 			core.DefaultTokenHolder),
@@ -117,15 +118,15 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	if err != nil {
 		t.Fatalf("failed to create node: %v", err)
 	}
-	ethConf := &ptn.Config{
+	ptnConf := &ptn.Config{
 		Genesis:   DevGenesisBlock(),
 		Etherbase: common.HexToAddress(testAddress),
 	}
 
 	if confOverride != nil {
-		confOverride(ethConf)
+		confOverride(ptnConf)
 	}
-	if err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) { return ptn.New(ctx, ethConf) }); err != nil {
+	if err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) { return ptn.New(ctx, ptnConf) }); err != nil {
 		t.Fatalf("failed to register PalletOne protocol: %v", err)
 	}
 	// Start the node and assemble the JavaScript console around it
