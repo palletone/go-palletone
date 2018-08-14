@@ -596,7 +596,7 @@ func (ks *KeyStore) SigTX(tx interface{}, address common.Address) (R, S, V []byt
 
 	R = sig[:32]
 	S = sig[32:64]
-	V = append(V, sig[64]+27)
+	V = append(V, sig[64])
 	e = nil
 	return
 }
