@@ -38,6 +38,17 @@ func TestConsoleWelcome(t *testing.T) {
 	//gptn.ExpectExitConsoleWelcome()
 }
 
+func TestPeerToPeer(t *testing.T) {
+	//第一个节点的 pnode://6632b753a9e83bfad296f31689e7c7566ba921babc19ff8fdb99a617f494b0afc84e06b678bb567600dda2fd78cc69aaa9424051efc95c51961ffecbb30aace5
+
+	//第二个节点添加第一个节点的 pnode
+	//_ = runGptn(t,"--exec","admin.addPeer(\"pnode://6632b753a9e83bfad296f31689e7c7566ba921babc19ff8fdb99a617f494b0afc84e06b678bb567600dda2fd78cc69aaa9424051efc95c51961ffecbb30aace5@[::]:30303\")",
+	//	"attach","\\\\.\\pipe\\gptn.ipc")
+	//第一个节点查看 addmin.peers
+	//gptn:= runGptn(t,"--exec","admin.peers[0].id","attach","\\\\.\\pipe\\gptn1.ipc")
+	//gptn.Expect("\"ffe883a450a8a6fc3316113b62cbd6fa06f7947bf7b4285a85b287b0bd79b2f512106ffcf20bbdb3e012890c703b6d5fefdb06332e24c9894ccb0d4ea667d1e2\"")
+}
+
 /*
 // Tests that a console can be attached to a running node via various means.
 func TestIPCAttachWelcome(t *testing.T) {
