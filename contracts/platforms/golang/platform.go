@@ -239,7 +239,8 @@ func vendorDependencies(pkg string, files Sources) {
 			if excluded == false {
 				origName := file.Name
 				file.Name = strings.Replace(origName, "src", vendorPath, 1)
-				logger.Debugf("vendoring %s -> %s", origName, file.Name)
+				//glh
+				//logger.Debugf("vendoring %s -> %s", origName, file.Name)
 			}
 
 			files[i] = file
@@ -373,7 +374,7 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 	// --------------------------------------------------------------------------------------
 	for dep := range deps {
 
-		logger.Debugf("processing dep: %s", dep)
+		//logger.Debugf("processing dep: %s", dep)
 
 		// Each dependency should either be in our GOPATH or GOROOT.  We are not interested in packaging
 		// any of the system packages.  However, the official way (go-list) to make this determination
@@ -383,7 +384,7 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 			fqp := filepath.Join(gopath, "src", dep)
 			exists, err := pathExists(fqp)
 
-			logger.Debugf("checking: %s exists: %v", fqp, exists)
+			//logger.Debugf("checking: %s exists: %v", fqp, exists)
 
 			if err == nil && exists {
 

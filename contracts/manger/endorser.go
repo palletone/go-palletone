@@ -109,6 +109,7 @@ func (e *Endorser) simulateProposal(ctx context.Context, chainID string, txid st
 
 	cis, err := putils.GetChaincodeInvocationSpec(prop)
 	if err != nil {
+		logger.Errorf("GetChaincodeInvocationSpec err:[%s][%s] Entry chaincode: %s", chainID, shorttxid(txid), cid)
 		return nil, nil, nil, err
 	}
 	logger.Infof("spec=%v", cis)
@@ -146,6 +147,7 @@ func (e *Endorser) simulateProposal(ctx context.Context, chainID string, txid st
 		//	return  nil, nil, nil, err
 		//}
 	}
+
 	return res, simResBytes, ccevent, nil
 }
 
@@ -231,8 +233,8 @@ func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedPro
 	}
 	if res != nil {
 		if res.Status >= shim.ERROR {
-			logger.Errorf("[%s][%s] simulateProposal() resulted in chaincode[] response status %d for txid: %s",
-				chainID, shorttxid(txid),  res.Status, txid)
+			logger.Errorf("[%s][%s] simulateProposal() resulted in chaincode, response status %d for txid %s:%s",
+				chainID, shorttxid(txid),  res.Status, txid, res.Message)
 
 			resp := &pb.ProposalResponse{
 				Payload:  nil,

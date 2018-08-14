@@ -60,14 +60,20 @@ func TestSaveUnit(t *testing.T) {
 		TemplateId: common.HexToHash("contract_template0000"),
 		Bytecode:   []byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159},
 	}
-	readSet := map[string]*modules.StateVersion{}
-	readSet["name"] = &modules.StateVersion{
+	readSet := []modules.ContractReadSet{}
+	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
 		Height:  GenesisHeight(),
 		TxIndex: 0,
-	}
-	writeSet := map[string]interface{}{
-		"name": "Joe",
-		"age":  10,
+	}})
+	writeSet := []modules.PayloadMapStruct{
+		modules.PayloadMapStruct{
+			Key:   "name",
+			Value: "Joe",
+		},
+		modules.PayloadMapStruct{
+			Key:   "age",
+			Value: 10,
+		},
 	}
 	deployPayload := modules.ContractDeployPayload{
 		TemplateId: common.HexToHash("contract_template0000"),
@@ -81,10 +87,16 @@ func TestSaveUnit(t *testing.T) {
 		ContractId: "contract0000",
 		Function:   []byte("initial"),
 		ReadSet:    readSet,
-		WriteSet: map[string]interface{}{
-			"name": "Alice",
-			"age": modules.DelContractState{
-				IsDelete: true,
+		WriteSet: []modules.PayloadMapStruct{
+			modules.PayloadMapStruct{
+				Key:   "name",
+				Value: "Alice",
+			},
+			modules.PayloadMapStruct{
+				Key: "Age",
+				Value: modules.DelContractState{
+					IsDelete: true,
+				},
 			},
 		},
 	}

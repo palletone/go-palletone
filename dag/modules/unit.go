@@ -256,7 +256,67 @@ type Message struct {
 	Payload     interface{} `json:"payload"`      // the true transaction data
 }
 
+func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
+	msg.App = cpyMsg.App
+	msg.PayloadHash = cpyMsg.PayloadHash
+	msg.Payload = cpyMsg.Payload
+	switch cpyMsg.App {
+	case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT:
+		msg.Payload = cpyMsg.Payload
+	case APP_CONFIG:
+		payload, _ := cpyMsg.Payload.(ConfigPayload)
+		newPayload := ConfigPayload{
+			ConfigSet: []PayloadMapStruct{},
+		}
+		for _, p := range payload.ConfigSet {
+			newPayload.ConfigSet = append(newPayload.ConfigSet, PayloadMapStruct{Key: p.Key, Value: p.Value})
+		}
+		msg.Payload = newPayload
+	case APP_CONTRACT_DEPLOY:
+		payload, _ := cpyMsg.Payload.(ContractDeployPayload)
+		newPayload := ContractDeployPayload{
+			TemplateId: payload.TemplateId,
+			ContractId: payload.ContractId,
+			Config:     payload.Config,
+		}
+		readSet := []ContractReadSet{}
+		for _, rs := range payload.ReadSet {
+			readSet = append(readSet, ContractReadSet{Key: rs.Key, Value: &StateVersion{Height: rs.Value.Height, TxIndex: rs.Value.TxIndex}})
+		}
+		writeSet := []PayloadMapStruct{}
+		for _, ws := range payload.WriteSet {
+			writeSet = append(writeSet, PayloadMapStruct{Key: ws.Key, Value: ws.Value})
+		}
+		newPayload.ReadSet = readSet
+		newPayload.WriteSet = writeSet
+		msg.Payload = newPayload
+	case APP_CONTRACT_INVOKE:
+		payload, _ := cpyMsg.Payload.(ContractInvokePayload)
+		newPayload := ContractInvokePayload{
+			ContractId: payload.ContractId,
+			Function:   payload.Function,
+		}
+		readSet := []ContractReadSet{}
+		for _, rs := range payload.ReadSet {
+			readSet = append(readSet, ContractReadSet{Key: rs.Key, Value: &StateVersion{Height: rs.Value.Height, TxIndex: rs.Value.TxIndex}})
+		}
+		writeSet := []PayloadMapStruct{}
+		for _, ws := range payload.WriteSet {
+			writeSet = append(writeSet, PayloadMapStruct{Key: ws.Key, Value: ws.Value})
+		}
+		newPayload.ReadSet = readSet
+		newPayload.WriteSet = writeSet
+		msg.Payload = newPayload
+	}
+	return msg
+}
+
 /************************** Payload Details ******************************************/
+type PayloadMapStruct struct {
+	Key   string
+	Value interface{}
+}
+
 // Token exchange message and verify message
 // App: payment
 type PaymentPayload struct {
@@ -288,29 +348,34 @@ type DelContractState struct {
 	IsDelete bool
 }
 
+type ContractReadSet struct {
+	Key   string
+	Value *StateVersion
+}
+
 // Contract instance message
 // App: contract_deploy
 type ContractDeployPayload struct {
-	TemplateId common.Hash              `json:"template_id"` // contract template id
-	ContractId string                   `json:"contract_id"` // contract id
-	Config     []byte                   `json:"config"`      // configure xml file of contract instance parameters
-	ReadSet    map[string]*StateVersion `json:"read_set"`    // the set data of read, and value could be any type
-	WriteSet   map[string]interface{}   `json:"write_set"`   // the set data of write, and value could be any type
+	TemplateId common.Hash        `json:"template_id"` // contract template id
+	ContractId string             `json:"contract_id"` // contract id
+	Config     []byte             `json:"config"`      // configure xml file of contract instance parameters
+	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
+	WriteSet   []PayloadMapStruct `json:"write_set"`   // the set data of write, and value could be any type
 }
 
 // Contract invoke message
 // App: contract_invoke
 type ContractInvokePayload struct {
-	ContractId string                   `json:"contract_id"` // contract id
-	Function   []byte                   `json:"function"`    // serialized value of invoked function with call parameters
-	ReadSet    map[string]*StateVersion `json:"read_set"`    // the set data of read, and value could be any type
-	WriteSet   map[string]interface{}   `json:"write_set"`   // the set data of write, and value could be any type
+	ContractId string             `json:"contract_id"` // contract id
+	Function   []byte             `json:"function"`    // serialized value of invoked function with call parameters
+	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
+	WriteSet   []PayloadMapStruct `json:"write_set"`   // the set data of write, and value could be any type
 }
 
 // Token exchange message and verify message
 // App: config	// update global config
 type ConfigPayload struct {
-	ConfigSet map[string]interface{} `json:"config_set"` // the array of global config
+	ConfigSet []PayloadMapStruct `json:"config_set"` // the array of global config
 }
 
 // Token exchange message and verify message

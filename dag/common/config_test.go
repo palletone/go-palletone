@@ -10,7 +10,7 @@ import (
 )
 
 func TestSaveConfig(t *testing.T) {
-	confs := make(map[string]interface{})
+	confs := []modules.PayloadMapStruct{}
 	aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))
 	st := modules.Asset{
@@ -18,14 +18,14 @@ func TestSaveConfig(t *testing.T) {
 		UniqueId: aid,
 		ChainId:  1,
 	}
-	confs["TestStruct"] = st
+	confs = append(confs, modules.PayloadMapStruct{Key: "TestStruct", Value: st})
 	if err := SaveConfig(confs); err != nil {
 		log.Println(err)
 	}
 }
 
 func TestGetConfig(t *testing.T) {
-	data := GetConfig([]byte("TestStruct"))
+	data := GetConfig([]byte("Test Struct"))
 	if len(data) <= 0 {
 		log.Println("Get config data error")
 	} else {

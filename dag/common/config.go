@@ -5,6 +5,7 @@ import (
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -29,18 +30,13 @@ func GetConfig(name []byte) []byte {
 /**
 存储配置信息
 */
-func SaveConfig(confs map[string]interface{}) error {
-	for k, v := range confs {
-		key := fmt.Sprintf("%s_%s", CONF_PREFIX, k)
-		//data, err := rlp.EncodeToBytes(v)
-		//if err != nil {
-		//	log.Error("Save config error.")
-		//	return err
-		//}
+func SaveConfig(confs []modules.PayloadMapStruct) error {
+	for _, conf := range confs {
+		key := fmt.Sprintf("%s_%s", CONF_PREFIX, conf.Key)
 		if storage.Dbconn == nil {
 			storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
 		}
-		if err := storage.Store(storage.Dbconn, key, v); err != nil {
+		if err := storage.Store(storage.Dbconn, key, conf.Value); err != nil {
 			log.Error("Save config error.")
 			return err
 		}

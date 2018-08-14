@@ -99,20 +99,22 @@ func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]
 
 	if s.rwsetBuilder != nil {
 		if s.rwsetBuilder.pubRwBuilderMap != nil {
-			pubRwBuilderMap, ok := s.rwsetBuilder.pubRwBuilderMap[ns]
-			if ok {
-				rd = pubRwBuilderMap.readMap
-				wt = pubRwBuilderMap.writeMap
-			} else {
-				rd = nil
-				wt = nil
+			 if s.rwsetBuilder.pubRwBuilderMap[ns] != nil {
+				if s.rwsetBuilder.pubRwBuilderMap[ns].readMap != nil {
+					rd = s.rwsetBuilder.pubRwBuilderMap[ns].readMap
+				}
+				if s.rwsetBuilder.pubRwBuilderMap[ns].writeMap != nil {
+					wt = s.rwsetBuilder.pubRwBuilderMap[ns].writeMap
+				}
+				pubRwBuilderMap, ok := s.rwsetBuilder.pubRwBuilderMap[ns]
+				if ok {
+					rd = pubRwBuilderMap.readMap
+					wt = pubRwBuilderMap.writeMap
+				} else {
+					rd = nil
+					wt = nil
+				}
 			}
-			//if s.rwsetBuilder.pubRwBuilderMap[ns].readMap != nil {
-			//	rd = s.rwsetBuilder.pubRwBuilderMap[ns].readMap
-			//}
-			//if s.rwsetBuilder.pubRwBuilderMap[ns].writeMap != nil {
-			//	wt = s.rwsetBuilder.pubRwBuilderMap[ns].writeMap
-			//}
 		}
 	}
 
