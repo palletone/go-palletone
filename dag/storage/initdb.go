@@ -79,7 +79,7 @@ func Init(path string) *palletdb.LDBDatabase {
 		if err != nil {
 			log.Println("new dbconn error:", err)
 		}
-		log.Println("db_path:", Dbconn.Path())
+		//log.Println("db_path:", Dbconn.Path())
 	}
 	return Dbconn
 }
