@@ -19,10 +19,10 @@ check all transactions in one unit
 return all transactions' fee
 */
 func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common.Hash]modules.TxValidationCode, bool, error) {
-	fee := uint64(0)
+	//fee := uint64(0)
 	txFlages := map[common.Hash]modules.TxValidationCode{}
 	isSuccess := bool(true)
-	for txIndex, tx := range *txs {
+	for _, tx := range *txs {
 		// validate transaction id duplication
 		if _, ok := txFlages[tx.TxHash]; ok == true {
 			fmt.Println(">>>>> Duplicate transaction:", tx.TxHash)
@@ -31,24 +31,24 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 			continue
 		}
 		// validate common property
-		//txCode := ValidateTx(tx)
-		//if txCode != modules.TxValidationCode_VALID {
-		//	fmt.Println(">>>>> ValidateTx error:", txCode)
-		//	isSuccess = false
-		//	txFlages[tx.TxHash] = txCode
-		//	continue
-		//}
-		// validate fee
-		if isGenesis == false && txIndex != 0 {
-			// check transaction fee
-			if tx.TxFee.Cmp(modules.TXFEE) != 0 {
-				fmt.Println(">>>>> Invalid fee")
-				isSuccess = false
-				txFlages[tx.TxHash] = modules.TxValidationCode_NOT_COMPARE_SIZE
-				continue
-			}
-			fee += tx.TxFee.Uint64()
+		txCode := ValidateTx(tx)
+		if txCode != modules.TxValidationCode_VALID {
+			fmt.Println(">>>>> ValidateTx error:", txCode)
+			isSuccess = false
+			txFlages[tx.TxHash] = txCode
+			continue
 		}
+		//// validate fee
+		//if isGenesis == false && txIndex != 0 {
+		//	// check transaction fee
+		//	if tx.TxFee.Cmp(modules.TXFEE) != 0 {
+		//		fmt.Println(">>>>> Invalid fee")
+		//		isSuccess = false
+		//		txFlages[tx.TxHash] = modules.TxValidationCode_NOT_COMPARE_SIZE
+		//		continue
+		//	}
+		//	fee += tx.TxFee.Uint64()
+		//}
 	}
 
 	// to check total fee with coinbase tx

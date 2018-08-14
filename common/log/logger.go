@@ -134,6 +134,12 @@ func ConInitLogger() {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
 
+func FileInitLogger(logfile string) {
+	DefaultConfig.OutputPaths = []string{logfile}
+	initLogger()
+	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
+}
+
 // init logger.
 func initLogger() {
 	// var js string

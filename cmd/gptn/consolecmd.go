@@ -78,6 +78,10 @@ JavaScript API. See https://github.com/palletone/go-palletone/wiki/JavaScript-Co
 // localConsole starts a new gptn node, attaching a JavaScript console to it at the
 // same time.
 func localConsole(ctx *cli.Context) error {
+	if ctx.String("log.path") != "stdout" {
+		log.FileInitLogger(ctx.String("log.path"))
+	}
+
 	// Create and start the node based on the CLI flags
 	node := makeFullNode(ctx)
 	startNode(ctx, node)

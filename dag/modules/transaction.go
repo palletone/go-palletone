@@ -177,7 +177,7 @@ func (tx Transaction) Hash() common.Hash {
 	withoutSigTx.From = nil
 	withoutSigTx.TxHash = common.Hash{}
 	v := rlp.RlpHash(withoutSigTx)
-	tx.TxHash.Set(v)
+	//tx.TxHash.Set(v)
 	return v
 }
 
@@ -280,11 +280,8 @@ func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
 	}
 	tx.TxMessages = make([]Message, len(cpy.TxMessages))
 	for _, msg := range cpy.TxMessages {
-		newMsg := Message{
-			App:         msg.App,
-			PayloadHash: msg.PayloadHash,
-			Payload:     msg.Payload,
-		}
+		newMsg := Message{}
+		newMsg = *newMsg.CopyMessages(&msg)
 		tx.TxMessages = append(tx.TxMessages, newMsg)
 	}
 }

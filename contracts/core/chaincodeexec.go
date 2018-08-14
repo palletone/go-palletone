@@ -47,6 +47,8 @@ func createCIS(ccname string, args [][]byte) (*pb.ChaincodeInvocationSpec, error
 // GetCDS retrieves a chaincode deployment spec for the required chaincode
 func GetCDS(ctxt context.Context, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, chaincodeID string) ([]byte, error) {
 	version := util.GetSysCCVersion()
+	chaincodeLogger.Infof("chainID[%s] txid[%s]", chainID, txid)
+
 	cccid := ccprovider.NewCCContext(chainID, "lscc", version, txid, true, signedProp, prop)
 	res, _, err := ExecuteChaincode(ctxt, cccid, [][]byte{[]byte("getdepspec"), []byte(chainID), []byte(chaincodeID)}, 0)
 	if err != nil {

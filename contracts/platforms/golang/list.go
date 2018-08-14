@@ -72,7 +72,6 @@ func list(env Env, template, pkg string) ([]string, error) {
 
 	fmt.Println("=============>", template,"++++", pkg)
 
-
 	lst, err := runProgram(env, 60*time.Second, "go", "list", "-f", template, pkg)
 	if err != nil {
 		return nil, err
