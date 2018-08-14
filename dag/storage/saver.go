@@ -121,13 +121,12 @@ key: [TRANSACTION_PREFIX][tx hash]
 value: transaction struct rlp encoding bytes
 */
 func SaveTransaction(tx *modules.Transaction) error {
-	key := fmt.Sprintf("%s%s", TRANSACTION_PREFIX, tx.TxHash.String())
 	// save transaction
-	if err := Store(Dbconn, key, *tx); err != nil {
+	if err := StoreBytes(Dbconn, append(TRANSACTION_PREFIX, tx.TxHash.Bytes()...), tx); err != nil {
 		return err
 	}
 
-	if err := StoreBytes(Dbconn, append(Transaction_Index, tx.TxHash.Bytes()...), *tx); err != nil {
+	if err := StoreBytes(Dbconn, append(Transaction_Index, tx.TxHash.Bytes()...), tx); err != nil {
 		return err
 	}
 	return nil
@@ -148,19 +147,6 @@ func SaveTxLookupEntry(unit *modules.Unit) error {
 		}
 	}
 	return nil
-}
-
-func GetTransaction(txHash common.Hash) (*modules.Transaction, error) {
-	key := fmt.Sprintf("%s%s", TRANSACTION_PREFIX, txHash.String())
-	data, err := Get([]byte(key))
-	if err != nil {
-		return nil, err
-	}
-	var tx modules.Transaction
-	if err := rlp.DecodeBytes(data, &tx); err != nil {
-		return nil, err
-	}
-	return &tx, nil
 }
 
 // encodeBlockNumber encodes a block number as big endian uint64

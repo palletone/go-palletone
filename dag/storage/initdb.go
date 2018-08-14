@@ -27,6 +27,7 @@ import (
 var (
 	UNIT_PREFIX                      = []byte("ut") // unit_prefix + mci + hash
 	HEADER_PREFIX                    = []byte("uh") // prefix + hash
+	HeaderCanon_Prefix               = []byte("ch") // Canon Header Prefix
 	UNIT_HASH_NUMBER_Prefix          = []byte("hn")
 	UNIT_NUMBER_PREFIX               = []byte("nh") // number 和unit hash 的对应关系
 	BODY_PREFIX                      = []byte("ub")

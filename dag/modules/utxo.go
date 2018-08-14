@@ -94,7 +94,7 @@ type UtxoIndexValue struct {
 }
 
 func (utxoIndex *UtxoIndex) AssetKey() []byte {
-	key := fmt.Sprintf("%s%s_%s",
+	key := fmt.Sprintf("%s%s||%s",
 		UTXO_INDEX_PREFIX,
 		utxoIndex.AccountAddr.String(),
 		utxoIndex.Asset.String())
@@ -112,9 +112,9 @@ func (utxoIndex *UtxoIndex) AccountKey() []byte {
 func (utxoIndex *UtxoIndex) QueryFields(key []byte) error {
 	preLen := len(UTXO_INDEX_PREFIX)
 	s := string(key[preLen:])
-	ss := strings.Split(s, "_")
+	ss := strings.Split(s, "||")
 	if len(ss) != 3 {
-		return fmt.Errorf("Query UtxoIndex Fields error.")
+		return fmt.Errorf("Query UtxoIndex Fields error: len=%d, ss=%v", len(ss), ss)
 	}
 	sAddr := ss[0]
 	sAsset := ss[1]
@@ -131,7 +131,7 @@ func (utxoIndex *UtxoIndex) QueryFields(key []byte) error {
 }
 
 func (utxoIndex *UtxoIndex) ToKey() []byte {
-	key := fmt.Sprintf("%s%s_%s_%s",
+	key := fmt.Sprintf("%s%s||%s||%s",
 		UTXO_INDEX_PREFIX,
 		utxoIndex.AccountAddr.String(),
 		utxoIndex.Asset.String(),
@@ -147,7 +147,7 @@ type OutPoint struct {
 }
 
 func (outpoint *OutPoint) ToKey() []byte {
-	out := fmt.Sprintf("%s%s_%v_%v",
+	out := fmt.Sprintf("%s%s||%v||%v",
 		UTXO_PREFIX,
 		outpoint.TxHash.String(),
 		outpoint.MessageIndex,
@@ -195,13 +195,13 @@ func KeyToOutpoint(key []byte) OutPoint {
 	// key: [UTXO_PREFIX][TxHash]_[MessageIndex]_[OutIndex]
 	preLen := len(UTXO_PREFIX)
 	sKey := key[preLen:]
-	data := strings.Split(string(sKey), "_")
+	data := strings.Split(string(sKey), "||")
 	if len(data) != 3 {
 		return OutPoint{}
 	}
 	var vout OutPoint
 
-	fmt.Println("+++++ txhash=", data[0])
+	//fmt.Println("+++++ txhash=", data[0])
 	vout.TxHash.SetString(data[0])
 	i, err := strconv.Atoi(data[1])
 	if err == nil {

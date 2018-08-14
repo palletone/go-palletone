@@ -161,22 +161,17 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		AccountNonce: 1,
 		TxMessages:   []modules.Message{msg0, msg1},
 	}
+	tx.Txsize = tx.Size()
+	tx.CreationDate = tx.CreateDate()
+	tx.TxHash = tx.Hash()
 	// step4, sign tx
-	R, S, V, err := ks.SigTX(tx.TxHash, holder)
+	sig, err := dagCommon.SignTransaction(tx.TxHash, &holder, ks)
 	if err != nil {
 		msg := fmt.Sprintf("Sign transaction error: %s", err)
 		log.Error(msg)
 		return nil
 	}
-	tx.From = &modules.Authentifier{
-		Address: holder.String(),
-		R:       R,
-		S:       S,
-		V:       V,
-	}
-	tx.Txsize = tx.Size()
-	tx.CreationDate = tx.CreateDate()
-	tx.TxHash = tx.Hash()
+	tx.From = sig
 	txs := []*modules.Transaction{tx}
 	return txs
 }
