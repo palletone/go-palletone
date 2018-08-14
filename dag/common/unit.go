@@ -301,7 +301,7 @@ To generate config payload for genesis unit
 func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (modules.ConfigPayload, error) {
 	var confPay modules.ConfigPayload
 
-	confPay.ConfigSet = make(map[string]interface{})
+	confPay.ConfigSet = []modules.PayloadMapStruct{}
 
 	tt := reflect.TypeOf(*genesisConf)
 	vv := reflect.ValueOf(*genesisConf)
@@ -311,14 +311,14 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 			t := reflect.TypeOf(genesisConf.SystemConfig)
 			v := reflect.ValueOf(genesisConf.SystemConfig)
 			for k := 0; k < t.NumField(); k++ {
-				confPay.ConfigSet[t.Field(k).Name] = v.Field(k).Interface()
+				confPay.ConfigSet = append(confPay.ConfigSet, modules.PayloadMapStruct{Key: t.Field(k).Name, Value: v.Field(k).Interface()})
 			}
 		} else {
-			confPay.ConfigSet[tt.Field(i).Name] = vv.Field(i).Interface()
+			confPay.ConfigSet = append(confPay.ConfigSet, modules.PayloadMapStruct{Key: tt.Field(i).Name, Value: vv.Field(i).Interface()})
 		}
 	}
 
-	confPay.ConfigSet["GenesisAsset"] = *asset
+	confPay.ConfigSet = append(confPay.ConfigSet, modules.PayloadMapStruct{Key: "GenesisAsset", Value: *asset})
 
 	return confPay, nil
 }
@@ -481,13 +481,13 @@ func saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *m
 	}
 	// save contract state
 	// key: [CONTRACT_STATE_PREFIX][contract id]_[field name]_[state version]
-	for k, v := range payload.WriteSet {
+	for _, ws := range payload.WriteSet {
 		version := modules.StateVersion{
 			Height:  height,
 			TxIndex: txIndex,
 		}
 		// save new state to database
-		if updateState(payload.ContractId, k, version, v) != true {
+		if updateState(payload.ContractId, ws.Key, version, ws.Value) != true {
 			continue
 		}
 	}
@@ -508,13 +508,13 @@ func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *mod
 
 	// save contract state
 	// key: [CONTRACT_STATE_PREFIX][contract id]_[field name]_[state version]
-	for k, v := range payload.WriteSet {
+	for _, ws := range payload.WriteSet {
 		version := modules.StateVersion{
 			Height:  height,
 			TxIndex: txIndex,
 		}
 		// save new state to database
-		if updateState(payload.ContractId, k, version, v) != true {
+		if updateState(payload.ContractId, ws.Key, version, ws.Value) != true {
 			continue
 		}
 	}
