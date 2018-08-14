@@ -701,7 +701,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&consensusmsg); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		log.Debug("ConsensusMsg recv:", consensusmsg)
+		log.Info("ConsensusMsg recv:", consensusmsg)
 		if consensusmsg == "A" {
 			p.SendConsensus("Hello I received A")
 		}

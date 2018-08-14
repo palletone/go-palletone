@@ -80,6 +80,7 @@ type LightPeer interface {
 	Head() (common.Hash, uint64)
 	RequestHeadersByHash(common.Hash, int, int, bool) error
 	RequestHeadersByNumber(uint64, int, int, bool) error
+	//RequestDagHeadersByHash(common.Hash, int, int, bool) error
 }
 
 // Peer encapsulates the methods required to synchronise with a remote full peer.
