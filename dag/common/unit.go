@@ -401,7 +401,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_CONFIG:
-				if ok := saveConfigPayload(tx.TxHash, &msg); ok == false {
+				if ok := saveConfigPayload(tx.TxHash, &msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
 					log.Info("Save contract invode payload error.")
 					return fmt.Errorf("Save contract invode payload error.")
 				}
@@ -464,15 +464,18 @@ func savePaymentPayload(txHash common.Hash, msg *modules.Message, msgIndex uint3
 保存配置交易
 save config payload
 */
-func saveConfigPayload(txHash common.Hash, msg *modules.Message) bool {
+func saveConfigPayload(txHash common.Hash, msg *modules.Message, height modules.ChainIndex, txIndex uint32) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(modules.ConfigPayload)
 	if ok == false {
 		return false
 	}
-
-	if err := SaveConfig(payload.ConfigSet); err != nil {
+	version := modules.StateVersion{
+		Height:  height,
+		TxIndex: txIndex,
+	}
+	if err := SaveConfig(payload.ConfigSet, &version); err != nil {
 		errMsg := fmt.Sprintf("To save config payload error: %s", err)
 		log.Error(errMsg)
 		return false
