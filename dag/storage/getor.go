@@ -24,6 +24,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/big"
+	"reflect"
 	"unsafe"
 
 	"encoding/binary"
@@ -31,8 +33,6 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"math/big"
-	"reflect"
 )
 
 // DatabaseReader wraps the Get method of a backing data store.

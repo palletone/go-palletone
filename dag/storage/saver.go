@@ -149,16 +149,23 @@ func updateAddrTransactions(addr string, hash common.Hash) error {
 	if hash == (common.Hash{}) {
 		return errors.New("empty tx hash.")
 	}
+	hashs := make([]common.Hash, 0)
 	data, err := Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
 	if err != nil {
-		return err
+		if err.Error() != "leveldb: not found" {
+			return err
+		} else { // first store the addr
+			hashs = append(hashs, hash)
+			if err := StoreBytes(Dbconn, append(AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
+				return err
+			}
+			return nil
+		}
 	}
-	hashs := make([]common.Hash, 0)
 	if err := rlp.DecodeBytes(data, hashs); err != nil {
 		return err
 	}
 	hashs = append(hashs, hash)
-
 	if err := StoreBytes(Dbconn, append(AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
 		return err
 	}
