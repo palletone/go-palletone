@@ -513,7 +513,7 @@ To compute transactions' fees
 */
 func ComputeFees(txs modules.Transactions) (uint64, error) {
 	// current time slice mediator default income is 1 ptn
-	fees := uint64(100000000)
+	fees := uint64(0)
 	for _, tx := range txs {
 		for _, msg := range tx.TxMessages {
 			payload, ok := msg.Payload.(modules.PaymentPayload)
@@ -565,4 +565,12 @@ func getAddressFromScript(script []byte) string {
 		return ""
 	}
 	return "P" + addresses[0].String()
+}
+
+/**
+计算Mediator的利息
+To compute mediator interest for packaging one unit
+*/
+func ComputeInterest() uint64 {
+	return uint64(100000000)
 }

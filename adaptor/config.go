@@ -18,11 +18,49 @@
 package adaptor
 
 type Config struct {
-	Ada1 string
-	Ada2 string
+	Btc BTC
+	Eth ETH
+}
+
+type BTC struct {
+	NetID     int
+	Host      string
+	RPCUser   string
+	RPCPasswd string
+	CertPath  string
+
+	ChaincodeKeys map[string]string
+	AddressKeys   map[string]string
+}
+type ETH struct {
+	NetID  int
+	Rawurl string
+
+	ChaincodeKeys map[string]string
+	AddressKeys   map[string]string
 }
 
 var DefaultConfig = Config{
-	Ada1: "Ada1",
-	Ada2: "Ada2",
+	Btc: BTC{
+		NetID:     1,
+		Host:      "localhost:18332",
+		RPCUser:   "zxl",
+		RPCPasswd: "123456",
+		ChaincodeKeys: map[string]string{
+			"SampleSysCC": "123",
+		},
+		AddressKeys: map[string]string{
+			"P1XXX": "123",
+		},
+	},
+	Eth: ETH{
+		NetID:  1,
+		Rawurl: "\\\\.\\pipe\\geth.ipc",
+		ChaincodeKeys: map[string]string{
+			"SampleSysCC": "123",
+		},
+		AddressKeys: map[string]string{
+			"P1XXX": "123",
+		},
+	},
 }

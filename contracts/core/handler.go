@@ -28,6 +28,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/looplab/fsm"
+	"github.com/palletone/go-palletone/contracts/outchain"
 	"github.com/palletone/go-palletone/contracts/rwset"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
@@ -38,7 +39,6 @@ import (
 	"github.com/palletone/go-palletone/vm/ccintf"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
-	"encoding/json"
 )
 
 const (
@@ -1462,10 +1462,6 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 	}()
 }
 
-type OutChainParams struct{
-	Method  string `json:"method"`
-}
-
 // Handles request to ledger to OutChainAddress
 func (handler *Handler) enterOutChainAddress(e *fsm.Event, state string) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
@@ -1527,16 +1523,9 @@ func (handler *Handler) enterOutChainAddress(e *fsm.Event, state string) {
 		//if txContext.txsimulator != nil {
 		//	res, err = txContext.txsimulator.GetState(chaincodeID, getState.OutChainName)
 		//}
-		if len(outChainAddr.OutChainName) > 0 {
-			res = []byte(outChainAddr.OutChainName)
-			fmt.Println("Get Request params zxl ==== ==== ", outChainAddr.OutChainName, outChainAddr.Params)
-			var params OutChainParams
-			err := json.Unmarshal(outChainAddr.Params, &params)
-			if err !=nil {
-				fmt.Println("Get Request error zxl ==== ==== ",err.Error())
-			} else {
-				fmt.Println("Get Request method zxl ==== ==== ",params.Method)
-			}
+		result, err := outchain.ProcessOutChainAddress(chaincodeID, outChainAddr)
+		if err == nil {
+			res = []byte(result)
 		}
 
 		if err != nil {
@@ -1619,16 +1608,9 @@ func (handler *Handler) enterOutChainTransaction(e *fsm.Event, state string) {
 		//if txContext.txsimulator != nil {
 		//	res, err = txContext.txsimulator.GetState(chaincodeID, getState.OutChainName)
 		//}
-		if len(outChainTx.OutChainName) > 0 {
-			res = []byte(outChainTx.OutChainName)
-			fmt.Println("Get Request params zxl ==== ==== ", outChainTx.OutChainName, outChainTx.Params)
-			var params OutChainParams
-			err := json.Unmarshal(outChainTx.Params, &params)
-			if err !=nil {
-				fmt.Println("Get Request error zxl ==== ==== ",err.Error())
-			} else {
-				fmt.Println("Get Request method zxl ==== ==== ",params.Method)
-			}
+		result, err := outchain.ProcessOutChainTransaction(chaincodeID, outChainTx)
+		if err == nil {
+			res = []byte(result)
 		}
 
 		if err != nil {
@@ -1711,16 +1693,9 @@ func (handler *Handler) enterOutChainQuery(e *fsm.Event, state string) {
 		//if txContext.txsimulator != nil {
 		//	res, err = txContext.txsimulator.GetState(chaincodeID, getState.OutChainName)
 		//}
-		if len(outChainQuery.OutChainName) > 0 {
-			res = []byte(outChainQuery.OutChainName)
-			fmt.Println("Get Request params zxl ==== ==== ", outChainQuery.OutChainName, outChainQuery.Params)
-			var params OutChainParams
-			err := json.Unmarshal(outChainQuery.Params, &params)
-			if err !=nil {
-				fmt.Println("Get Request error zxl ==== ==== ",err.Error())
-			} else {
-				fmt.Println("Get Request method zxl ==== ==== ",params.Method)
-			}
+		result, err := outchain.ProcessOutChainQuery(chaincodeID, outChainQuery)
+		if err == nil {
+			res = []byte(result)
 		}
 
 		if err != nil {
