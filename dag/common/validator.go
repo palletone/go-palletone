@@ -9,7 +9,6 @@ import (
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strconv"
 	"strings"
 )
 
@@ -19,10 +18,15 @@ check all transactions in one unit
 return all transactions' fee
 */
 func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common.Hash]modules.TxValidationCode, bool, error) {
-	//fee := uint64(0)
+	if txs == nil || txs.Len() < 1 {
+		return nil, false, fmt.Errorf("Transactions should not be empty.")
+	}
+
+	fee := uint64(0)
 	txFlages := map[common.Hash]modules.TxValidationCode{}
 	isSuccess := bool(true)
-	for _, tx := range *txs {
+
+	for txIndex, tx := range *txs {
 		// validate transaction id duplication
 		if _, ok := txFlages[tx.TxHash]; ok == true {
 			fmt.Println(">>>>> Duplicate transaction:", tx.TxHash)
@@ -38,19 +42,36 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 			txFlages[tx.TxHash] = txCode
 			continue
 		}
-		//// validate fee
-		//if isGenesis == false && txIndex != 0 {
-		//	// check transaction fee
-		//	if tx.TxFee.Cmp(modules.TXFEE) != 0 {
-		//		fmt.Println(">>>>> Invalid fee")
-		//		isSuccess = false
-		//		txFlages[tx.TxHash] = modules.TxValidationCode_NOT_COMPARE_SIZE
-		//		continue
-		//	}
-		//	fee += tx.TxFee.Uint64()
-		//}
+		// validate fee
+		if isGenesis == false && txIndex != 0 {
+			// check transaction fee
+			if tx.TxFee.Cmp(modules.TXFEE) != 0 {
+				fmt.Println(">>>>> Invalid fee")
+				isSuccess = false
+				txFlages[tx.TxHash] = modules.TxValidationCode_NOT_COMPARE_SIZE
+				continue
+			}
+			fee += tx.TxFee.Uint64()
+		}
 	}
+	// check coinbase fee and income
+	if !isGenesis {
+		if len((*txs)[0].TxMessages) != 1 {
+			return nil, false, fmt.Errorf("Unit coinbase length is error.")
+		}
 
+		coinIn, ok := (*txs)[0].TxMessages[0].Payload.(modules.PaymentPayload)
+		if !ok {
+			return nil, false, fmt.Errorf("Coinbase payload type error.")
+		}
+		if len(coinIn.Outputs) != 1 {
+			return nil, false, fmt.Errorf("Coinbase outputs error.")
+		}
+		income := uint64(fee) + ComputeInterest()
+		if coinIn.Outputs[0].Value != income {
+			return nil, false, fmt.Errorf("Coinbase outputs error.")
+		}
+	}
 	// to check total fee with coinbase tx
 	return txFlages, isSuccess, nil
 }
@@ -158,30 +179,32 @@ func ValidateUnitSignature(h *modules.Header, isGenesis bool) error {
 	// recover pubkey
 	hash := crypto.Keccak256Hash(util.RHashBytes(*emptySigUnit.UnitHeader))
 	pubKey, err := modules.RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
+	if err != nil {
+		return fmt.Errorf("Verify unit signature when recover pubkey error:%s", err.Error())
+	}
 	//  pubKey to pubKey_bytes
 	pubKey_bytes := crypto.FromECDSAPub(pubKey)
 	if keystore.VerifyUnitWithPK(sig, *emptySigUnit.UnitHeader, pubKey_bytes) == false {
 		return fmt.Errorf("Verify unit signature error.")
 	}
 	// if genesis unit just return
-	if isGenesis == false {
+	if isGenesis == true {
 		return nil
 	}
 	// todo group signature verify
 	// get mediators
 	data := GetConfig([]byte("MediatorCandidates"))
+	var mList []string
+	if err := rlp.DecodeBytes(data, &mList); err != nil {
+		return fmt.Errorf("Check unit signature when get mediators list error: %s", err.Error())
+	}
 	bNum := GetConfig([]byte("ActiveMediators"))
-	num, err := strconv.Atoi(string(bNum))
-	if err != nil {
-		return fmt.Errorf("Check unit signature error: %s", err)
+	var mNum uint16
+	if err := rlp.DecodeBytes(bNum, &mNum); err != nil {
+		return fmt.Errorf("Check unit signature error: %s", err.Error())
 	}
-	if num != len(data) {
+	if int(mNum) != len(mList) {
 		return fmt.Errorf("Check unit signature error: mediators info error, pls update network")
-	}
-	// decode mediator list data
-	var mediators []string
-	if err := rlp.DecodeBytes(data, &mediators); err != nil {
-		return fmt.Errorf("Check unit signature error: %s", err)
 	}
 
 	return nil

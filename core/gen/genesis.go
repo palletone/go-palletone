@@ -61,7 +61,7 @@ func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account acco
 	}
 
 	// to save unit in db
-	if err := CommitDB(unit, false); err != nil {
+	if err := CommitDB(unit, true); err != nil {
 		log.Error("Commit genesis unit to db:", "error", err.Error())
 		return unit, err
 	}

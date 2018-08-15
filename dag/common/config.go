@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	CONF_PREFIX = "conf_"
+	CONF_PREFIX = "conf"
 )
 
 /**
