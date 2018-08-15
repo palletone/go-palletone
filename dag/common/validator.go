@@ -9,6 +9,7 @@ import (
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 	"strings"
 )
 
@@ -25,28 +26,33 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 	fee := uint64(0)
 	txFlages := map[common.Hash]modules.TxValidationCode{}
 	isSuccess := bool(true)
+	// all transactions' new worldState
+	worldState := map[string]map[string]interface{}{}
 
 	for txIndex, tx := range *txs {
 		// validate transaction id duplication
 		if _, ok := txFlages[tx.TxHash]; ok == true {
-			fmt.Println(">>>>> Duplicate transaction:", tx.TxHash)
 			isSuccess = false
 			txFlages[tx.TxHash] = modules.TxValidationCode_DUPLICATE_TXID
 			continue
 		}
 		// validate common property
-		txCode := ValidateTx(tx)
+		txCode := ValidateTx(tx, &worldState)
 		if txCode != modules.TxValidationCode_VALID {
-			fmt.Println(">>>>> ValidateTx error:", txCode)
+			log.Info("ValidateTx", "txhash", tx.TxHash, "error validate code", txCode)
 			isSuccess = false
 			txFlages[tx.TxHash] = txCode
 			continue
 		}
 		// validate fee
 		if isGenesis == false && txIndex != 0 {
+			if tx.TxFee == nil {
+				isSuccess = false
+				txFlages[tx.TxHash] = modules.TxValidationCode_INVALID_FEE
+				continue
+			}
 			// check transaction fee
 			if tx.TxFee.Cmp(modules.TXFEE) != 0 {
-				fmt.Println(">>>>> Invalid fee")
 				isSuccess = false
 				txFlages[tx.TxHash] = modules.TxValidationCode_NOT_COMPARE_SIZE
 				continue
@@ -55,7 +61,7 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 		}
 	}
 	// check coinbase fee and income
-	if !isGenesis {
+	if !isGenesis && isSuccess {
 		if len((*txs)[0].TxMessages) != 1 {
 			return nil, false, fmt.Errorf("Unit coinbase length is error.")
 		}
@@ -80,7 +86,7 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 验证某个交易
 To validate one transaction
 */
-func ValidateTx(tx *modules.Transaction) modules.TxValidationCode {
+func ValidateTx(tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
 	for _, msg := range tx.TxMessages {
 		// check message type and payload
 		if !validateMessageType(msg.App, msg.Payload) {
@@ -105,13 +111,24 @@ func ValidateTx(tx *modules.Transaction) modules.TxValidationCode {
 		case modules.APP_PAYMENT:
 
 		case modules.APP_CONTRACT_TPL:
-
+			payload, _ := msg.Payload.(modules.ContractTplPayload)
+			validateCode := validateContractTplPayload(&payload)
+			if validateCode != modules.TxValidationCode_VALID {
+				return validateCode
+			}
 		case modules.APP_CONTRACT_DEPLOY:
-
+			payload, _ := msg.Payload.(modules.ContractDeployPayload)
+			validateCode := validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet, worldTmpState)
+			if validateCode != modules.TxValidationCode_VALID {
+				return validateCode
+			}
 		case modules.APP_CONTRACT_INVOKE:
-
+			payload, _ := msg.Payload.(modules.ContractInvokePayload)
+			validateCode := validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet, worldTmpState)
+			if validateCode != modules.TxValidationCode_VALID {
+				return validateCode
+			}
 		case modules.APP_CONFIG:
-
 		case modules.APP_TEXT:
 
 		default:
@@ -236,9 +253,39 @@ func validateTxSignature(txHash common.Hash, sig *modules.Authentifier) bool {
 }
 
 /**
-对unit中所有交易的读写集进行验证
-To validate read set and write set in all unit transactions'
+对unit中某个交易的读写集进行验证
+To validate read set and write set of one transaction in unit'
 */
-func validateState(txs *modules.Transactions) {
+func validateContractState(contractID string, readSet *[]modules.ContractReadSet, writeSet *[]modules.PayloadMapStruct, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+	// check read set, if read field in worldTmpState then the transaction is invalid
+	contractState, cOk := (*worldTmpState)[contractID]
+	if cOk && readSet != nil {
+		for _, rs := range *readSet {
+			if _, ok := contractState[rs.Key]; ok == true {
+				return modules.TxValidationCode_CHAINCODE_VERSION_CONFLICT
+			}
+		}
+	}
+	// save write set to worldTmpState
+	if !cOk && writeSet != nil {
+		(*worldTmpState)[contractID] = map[string]interface{}{}
+	}
 
+	for _, ws := range *writeSet {
+		(*worldTmpState)[contractID][ws.Key] = ws.Value
+	}
+	return modules.TxValidationCode_VALID
+}
+
+/**
+验证合约模板交易
+To validate contract template payload
+*/
+func validateContractTplPayload(contractTplPayload *modules.ContractTplPayload) modules.TxValidationCode {
+	// to check template whether existing or not
+	stateVersion, bytecode := storage.GetContractTpl(contractTplPayload.TemplateId.String())
+	if stateVersion != nil || bytecode != nil {
+		return modules.TxValidationCode_INVALID_CONTRACT_TEMPLATE
+	}
+	return modules.TxValidationCode_VALID
 }
