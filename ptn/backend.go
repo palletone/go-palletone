@@ -18,7 +18,7 @@
 package ptn
 
 import (
-	"errors"
+	//"errors"
 	"fmt"
 	"sync"
 
@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 
 	//dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
@@ -93,10 +94,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
 
-	db := storage.Init(config.Dag.DbPath)
-	if db == nil {
-		return nil, errors.New("leveldb init failed")
-	}
+	db, err := CreateDB(ctx, config, "leveldb")
 
 	ptn := &PalletOne{
 		config:         config,
@@ -117,10 +115,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-
 	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
-
-	var err error
 
 	// append by Albert·Gou
 	ptn.mediatorPlugin, err = mediatorplugin.Initialize(ptn, &config.MediatorPlugin)
@@ -137,6 +132,24 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 
 	ptn.ApiBackend = &PtnApiBackend{ptn}
 	return ptn, nil
+}
+
+// CreateDB creates the chain database.
+func CreateDB(ctx *node.ServiceContext, config *Config, name string) (*palletdb.LDBDatabase, error) {
+	//db, err := ptndb.NewLDBDatabase(ctx.config.resolvePath(name), cache, handles)
+	path := ctx.DatabasePath(name)
+
+	//fit dag DefaultConfig
+	dagconfig.DbPath = path
+
+	db, err := storage.Init(path, config.DatabaseCache, config.DatabaseHandles)
+	if err != nil {
+		return nil, err
+	}
+	//if db, ok := db.(*palletdb.LDBDatabase); ok {
+	//    db.Meter("eth/db/chaindata/")
+	//}
+	return db, nil
 }
 
 //CreateConsensusEngine creates the required type of consensus engine instance for an PalletOne service

@@ -62,7 +62,6 @@ type LDBDatabase struct {
 // NewLDBDatabase returns a LevelDB wrapped object.
 func NewLDBDatabase(file string, cache int, handles int) (*LDBDatabase, error) {
 	logger := log.New("database", file)
-
 	// Ensure we have some minimal caching and file guarantees
 	if cache < 16 {
 		cache = 16

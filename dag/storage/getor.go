@@ -20,19 +20,19 @@ package storage
 
 import (
 	"bytes"
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
-	"math/big"
-	"reflect"
 	"unsafe"
 
+	"encoding/binary"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"math/big"
+	"reflect"
 )
 
 // DatabaseReader wraps the Get method of a backing data store.
@@ -63,7 +63,7 @@ func Retrieve(key string, v interface{}) error {
 // get bytes
 func Get(key []byte) ([]byte, error) {
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(config.DbPath)
 	}
 	// return Dbconn.Get(key)
 	b, err := Dbconn.Get(key)
@@ -73,7 +73,7 @@ func Get(key []byte) ([]byte, error) {
 // get string
 func GetString(key []byte) (string, error) {
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(config.DbPath)
 	}
 	if re, err := Dbconn.Get(key); err != nil {
 		return "", err
@@ -87,7 +87,7 @@ func GetPrefix(prefix []byte) map[string][]byte {
 	if Dbconn != nil {
 		return getprefix(Dbconn, prefix)
 	} else {
-		db := ReNewDbConn(config.DefaultConfig.DbPath)
+		db := ReNewDbConn(config.DbPath)
 		if db == nil {
 			return nil
 		}
@@ -228,6 +228,29 @@ func GetContract(id common.Hash) (*modules.Contract, error) {
 		return nil, err
 	}
 	return contract, nil
+}
+
+/**
+获取合约模板
+To get contract template
+*/
+func GetContractTpl(templateID string) (*modules.StateVersion, []byte) {
+	key := fmt.Sprintf("%s%s",
+		CONTRACT_TPL,
+		templateID)
+	data := GetPrefix([]byte(key))
+	if len(data) == 1 {
+		for k, v := range data {
+			var stateVersion modules.StateVersion
+			stateVersion.ParseStringKey(k)
+			var byteCode []byte
+			if err := rlp.DecodeBytes([]byte(v), &byteCode); err != nil {
+				return nil, nil
+			}
+			return &stateVersion, byteCode
+		}
+	}
+	return nil, nil
 }
 
 func GetContractRlp(id common.Hash) (rlp.RawValue, error) {

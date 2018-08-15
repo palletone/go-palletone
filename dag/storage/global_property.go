@@ -34,7 +34,7 @@ const (
 
 func StoreGlobalProp(gp *modules.GlobalProperty) {
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	err := Store(Dbconn, globalPropDBKey, *gp)
 	if err != nil {
@@ -44,7 +44,7 @@ func StoreGlobalProp(gp *modules.GlobalProperty) {
 
 func StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) {
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	err := Store(Dbconn, dynGlobalPropDBKey, *dgp)
 	if err != nil {

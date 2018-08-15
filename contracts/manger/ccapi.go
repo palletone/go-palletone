@@ -80,6 +80,7 @@ func GetUsrCCList() {
 //timeout:ms
 // ccName can be contract Id
 func Invoke(chainID string, ccName string, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
+	//func Invoke(chainID string, ccName string, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone") //default
 	ccVersion := "ptn001"          //default
@@ -114,9 +115,9 @@ func Invoke(chainID string, ccName string, txid string, args [][]byte, timeout t
 	return unit, nil
 }
 
-func Deploy(chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (id []byte, respPayload *peer.ContractDeployPayload, e error) {
+func Deploy(chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId string, respPayload *peer.ContractDeployPayload, e error) {
 	setChainId := "palletone"
-	setTimeOut := time.Duration(30)*time.Second
+	setTimeOut := time.Duration(30) * time.Second
 
 	if chainID != "" {
 		setChainId = chainID
@@ -124,8 +125,12 @@ func Deploy(chainID string, txid string, ccName string, ccPath string, ccVersion
 	if timeout > 0 {
 		setTimeOut = timeout
 	}
-	if txid == "" || ccName == ""|| ccPath == "" {
-		return nil, nil, errors.New("input param is nil")
+	if txid == "" || ccName == "" || ccPath == "" {
+		return "", nil, errors.New("input param is nil")
+	}
+	randNum, err := crypto.GetRandomNonce()
+	if err != nil {
+		return "", nil, errors.New("crypto.GetRandomNonce error")
 	}
 
 	usrcc := &ucc.UserChaincode{
@@ -136,17 +141,13 @@ func Deploy(chainID string, txid string, ccName string, ccPath string, ccVersion
 		Enabled:  true,
 	}
 
-	err :=ucc.DeployUserCC(setChainId, usrcc, txid, setTimeOut)
+	err = ucc.DeployUserCC(setChainId, usrcc, txid, setTimeOut)
 	if err != nil {
-		return nil, nil, errors.New("Deploy fail")
+		return "", nil, errors.New("Deploy fail")
 	}
 
-	randNum, err := crypto.GetRandomNonce()
-	if err != nil {
-		//todo
-	}
 	cc := &CCInfo{
-		Id:      randNum,
+		Id:      string(randNum),
 		Name:    ccName,
 		Path:    ccPath,
 		Version: ccVersion,
@@ -163,10 +164,10 @@ func Deploy(chainID string, txid string, ccName string, ccPath string, ccVersion
 
 func Stop(chainID string, txid string, ccName string, ccPath string, ccVersion string, deleteImage bool) error {
 	usrcc := &ucc.UserChaincode{
-		Name:     ccName,
-		Path:     ccPath,
-		Version:  ccVersion,
-		Enabled:  true,
+		Name:    ccName,
+		Path:    ccPath,
+		Version: ccVersion,
+		Enabled: true,
 	}
 	err := ucc.StopUserCC(chainID, usrcc, txid, deleteImage)
 	if err != nil {
@@ -175,4 +176,32 @@ func Stop(chainID string, txid string, ccName string, ccPath string, ccVersion s
 	}
 
 	return nil
+}
+
+func StopById(chainID string, txid string, deployId string, deleteImage bool) error {
+	setChainId := "palletone"
+
+	if chainID != "" {
+		setChainId = chainID
+	}
+	if txid == "" {
+		return errors.New("input param txid is nil")
+	}
+
+	clist, err := getChaincodeList(chainID)
+	if err != nil {
+		logger.Errorf("not find chainlist for chainId[%s]", chainID)
+		return errors.New("getChaincodeList failed")
+	}
+
+	for k, v := range clist.cclist {
+		logger.Infof("chaincode[%s]:%v", k, *v)
+		if k == chainID {
+			if v.Id == deployId {
+				return Stop(setChainId, txid, v.Name, v.Path, v.Version, deleteImage)
+			}
+		}
+	}
+
+	return errors.New("not find deployId")
 }

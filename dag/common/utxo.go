@@ -145,7 +145,7 @@ func GetUtxoByOutpoint(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	key := outpoint.ToKey()
 
 	if storage.Dbconn == nil {
-		storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
 	}
 	return storage.GetUtxoEntry(storage.Dbconn, key[:])
 }
@@ -513,7 +513,7 @@ To compute transactions' fees
 */
 func ComputeFees(txs modules.Transactions) (uint64, error) {
 	// current time slice mediator default income is 1 ptn
-	fees := uint64(100000000)
+	fees := uint64(0)
 	for _, tx := range txs {
 		for _, msg := range tx.TxMessages {
 			payload, ok := msg.Payload.(modules.PaymentPayload)

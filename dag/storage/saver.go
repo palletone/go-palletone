@@ -38,7 +38,7 @@ var (
 	Dbconn             *palletdb.LDBDatabase = nil
 	AssocUnstableUnits map[string]modules.Joint
 	//DBPath             string = "/Users/jay/code/gocode/src/palletone/bin/leveldb"
-	DBPath string = dagconfig.DefaultConfig.DbPath
+	DBPath string = dagconfig.DbPath
 )
 
 func SaveJoint(objJoint *modules.Joint, onDone func()) (err error) {
@@ -46,7 +46,7 @@ func SaveJoint(objJoint *modules.Joint, onDone func()) (err error) {
 		return errors.New(objJoint.Unsigned)
 	}
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	obj_unit := objJoint.Unit
 	obj_unit_byte, _ := json.Marshal(obj_unit)
@@ -203,7 +203,7 @@ func encodeBlockNumber(number uint64) []byte {
 func GetUnitKeys() []string {
 	var keys []string
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	if keys_byte, err := Dbconn.Get([]byte("array_units")); err != nil {
 		log.Println("get units error:", err)
@@ -227,7 +227,7 @@ func AddUnitKeys(key string) error {
 	}
 	keys = append(keys, key)
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 
 	return Store(Dbconn, "array_units", keys)
@@ -247,7 +247,7 @@ func IsGenesisUnit(unit string) bool {
 func GetKeysWithTag(tag string) []string {
 	var keys []string
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	if keys_byte, err := Dbconn.Get([]byte(tag)); err != nil {
 		log.Println("get keys error:", err)
@@ -271,7 +271,7 @@ func AddKeysWithTag(key, tag string) error {
 	}
 	keys = append(keys, key)
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 
 	if err := Dbconn.Put([]byte(tag), ConvertBytes(keys)); err != nil {
@@ -298,7 +298,7 @@ func SaveContract(contract *modules.Contract) (common.Hash, error) {
 
 	}
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	return contract.Id, StoreBytes(Dbconn, append(CONTRACT_PTEFIX, contract.Id[:]...), contract)
 }
@@ -308,7 +308,7 @@ func SaveContract(contract *modules.Contract) (common.Hash, error) {
 func GetUnitChainVersion() int {
 	var vsn uint
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	enc, _ := Dbconn.Get([]byte("UnitchainVersion"))
 	rlp.DecodeBytes(enc, &vsn)
@@ -319,7 +319,7 @@ func GetUnitChainVersion() int {
 func SaveUnitChainVersion(vsn int) error {
 	enc, _ := rlp.EncodeToBytes(uint(vsn))
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	return Dbconn.Put([]byte("UnitchainVersion"), enc)
 }

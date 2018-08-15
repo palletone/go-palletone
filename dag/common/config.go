@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	CONF_PREFIX = "conf_"
+	CONF_PREFIX = "conf"
 )
 
 /**
@@ -19,22 +19,24 @@ get config information
 */
 func GetConfig(name []byte) []byte {
 	key := fmt.Sprintf("%s_%s", CONF_PREFIX, name)
-	data, err := storage.Get([]byte(key))
-	if err != nil {
-		log.Info("Get config ", "error:", err.Error())
+	data := storage.GetPrefix([]byte(key))
+	if len(data) != 1 {
+		log.Info("Get config ", "error", "not data")
 	}
-
-	return data
+	for _, v := range data {
+		return v
+	}
+	return nil
 }
 
 /**
 存储配置信息
 */
-func SaveConfig(confs []modules.PayloadMapStruct) error {
+func SaveConfig(confs []modules.PayloadMapStruct, stateVersion *modules.StateVersion) error {
 	for _, conf := range confs {
-		key := fmt.Sprintf("%s_%s", CONF_PREFIX, conf.Key)
+		key := fmt.Sprintf("%s_%s_%s", CONF_PREFIX, conf.Key, stateVersion.String())
 		if storage.Dbconn == nil {
-			storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+			storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
 		}
 		if err := storage.Store(storage.Dbconn, key, conf.Value); err != nil {
 			log.Error("Save config error.")

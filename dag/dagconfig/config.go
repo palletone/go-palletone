@@ -29,11 +29,12 @@ var (
 	SConfig Sconfig
 )
 
+var DbPath string = DefaultDataDir()
+
 var DefaultConfig = Config{
-	DbPath: DefaultDataDir(),
+	//DbPath: DefaultDataDir(),
 	//DbPath: "./db/leveldb",
 	// DbPath: "../../cmd/gptn/leveldb",
-	DbName: "palletone",
 
 	// txpool
 	UnitTxSize: 1024 * 1024,
@@ -44,8 +45,7 @@ var DefaultConfig = Config{
 
 // global configuration of dag modules
 type Config struct {
-	DbPath    string
-	DbName    string
+	//DbPath    string
 	DbCache   int
 	DbHandles int
 

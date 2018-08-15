@@ -37,6 +37,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/netutil"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
+
 	//	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -487,17 +488,17 @@ var (
 	//	Value: ptn.DefaultConfig.Consensus.Engine,
 	//}
 
-	DagValue1Flag = cli.StringFlag{
-		Name:  "dag.dbpath",
-		Usage: "Dag dbapth",
-		Value: ptn.DefaultConfig.Dag.DbPath,
-	}
+	//	DagValue1Flag = cli.StringFlag{
+	//		Name:  "dag.dbpath",
+	//		Usage: "Dag dbapth",
+	//		Value: ptn.DefaultConfig.Dag.DbPath,
+	//	}
 
-	DagValue2Flag = cli.StringFlag{
-		Name:  "dag.dbname",
-		Usage: "Dag dbname",
-		Value: ptn.DefaultConfig.Dag.DbName,
-	}
+	//	DagValue2Flag = cli.StringFlag{
+	//		Name:  "dag.dbname",
+	//		Usage: "Dag dbname",
+	//		Value: ptn.DefaultConfig.Dag.DbName,
+	//	}
 	LogValue1Flag = cli.StringFlag{
 		Name:  "log.path",
 		Usage: "Log path",
@@ -925,12 +926,12 @@ func checkExclusive(ctx *cli.Context, args ...interface{}) {
 
 // SetDagConfig applies dag related command line flags to the config.
 func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
-	if ctx.GlobalIsSet(DagValue1Flag.Name) {
-		cfg.DbPath = ctx.GlobalString(DagValue1Flag.Name)
-	}
-	if ctx.GlobalIsSet(DagValue2Flag.Name) {
-		cfg.DbName = ctx.GlobalString(DagValue2Flag.Name)
-	}
+	//	if ctx.GlobalIsSet(DagValue1Flag.Name) {
+	//		cfg.DbPath = ctx.GlobalString(DagValue1Flag.Name)
+	//	}
+	//	if ctx.GlobalIsSet(DagValue2Flag.Name) {
+	//		cfg.DbName = ctx.GlobalString(DagValue2Flag.Name)
+	//	}
 }
 func setLog(ctx *cli.Context, cfg *log.Config) {
 	if ctx.GlobalIsSet(LogValue1Flag.Name) {
