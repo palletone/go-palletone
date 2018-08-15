@@ -94,7 +94,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
 
-	db, err := CreateDB(ctx, config, "dagdata")
+	db, err := CreateDB(ctx, config, "leveldb")
 
 	ptn := &PalletOne{
 		config:         config,
