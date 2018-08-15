@@ -19,8 +19,6 @@ package node
 import (
 	"os"
 	"os/user"
-	"path/filepath"
-	"runtime"
 )
 
 const (
@@ -47,20 +45,23 @@ var DefaultConfig = Config{
 
 // DefaultDataDir is the default data directory to use for the databases and other
 // persistence requirements.
+// modified by Albert·Gou
 func DefaultDataDir() string {
 	// Try to place the data folder in the user's home dir
-	home := homeDir()
-	if home != "" {
-		if runtime.GOOS == "darwin" {
-			return filepath.Join(home, "Library", "PalletOne")
-		} else if runtime.GOOS == "windows" {
-			return filepath.Join(home, "AppData", "Roaming", "PalletOne")
-		} else {
-			return filepath.Join(home, ".palletone")
-		}
-	}
-	// As we cannot guess a stable location, return empty and handle later
-	return ""
+	//home := homeDir()
+	//if home != "" {
+	//	if runtime.GOOS == "darwin" {
+	//		return filepath.Join(home, "Library", "PalletOne")
+	//	} else if runtime.GOOS == "windows" {
+	//		return filepath.Join(home, "AppData", "Roaming", "PalletOne")
+	//	} else {
+	//		return filepath.Join(home, ".palletone")
+	//	}
+	//}
+	//// As we cannot guess a stable location, return empty and handle later
+	//return ""
+
+	return "./"
 }
 
 func homeDir() string {
