@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/big"
 
 	"github.com/palletone/go-palletone/common"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
@@ -129,6 +130,49 @@ func SaveTransaction(tx *modules.Transaction) error {
 	if err := StoreBytes(Dbconn, append(Transaction_Index, tx.TxHash.Bytes()...), tx); err != nil {
 		return err
 	}
+	updateAddrTransactions(tx.From.Address, tx.TxHash)
+	// store output by addr
+	for i, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(modules.PaymentPayload)
+		if ok {
+			for _, output := range payload.Outputs {
+				//  pkscript to addr
+				addr, _ := common.GetAddressFromScript(output.PkScript[:])
+				saveOutputByAddr(addr, tx.TxHash, i, output)
+			}
+		}
+	}
+
+	return nil
+}
+func updateAddrTransactions(addr string, hash common.Hash) error {
+	if hash == (common.Hash{}) {
+		return errors.New("empty tx hash.")
+	}
+	data, err := Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
+	if err != nil {
+		return err
+	}
+	hashs := make([]common.Hash, 0)
+	if err := rlp.DecodeBytes(data, hashs); err != nil {
+		return err
+	}
+	hashs = append(hashs, hash)
+
+	if err := StoreBytes(Dbconn, append(AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
+		return err
+	}
+	return nil
+}
+func saveOutputByAddr(addr string, hash common.Hash, msgindex int, output modules.Output) error {
+	if hash == (common.Hash{}) {
+		return errors.New("empty tx hash.")
+	}
+	key := append(AddrOutput_Prefix, []byte(addr)...)
+	key = append(key, hash.Bytes()...)
+	if err := StoreBytes(Dbconn, append(key, new(big.Int).SetInt64(int64(msgindex)).Bytes()...), output); err != nil {
+		return err
+	}
 	return nil
 }
 func SaveTxLookupEntry(unit *modules.Unit) error {
@@ -195,6 +239,7 @@ func ConvertBytes(val interface{}) (re []byte) {
 	}
 	return re[:]
 }
+
 func IsGenesisUnit(unit string) bool {
 	return unit == constants.GENESIS_UNIT
 }

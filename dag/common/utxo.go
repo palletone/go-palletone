@@ -29,8 +29,8 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 )
 
 /**
@@ -112,7 +112,7 @@ func readUtxosFrAll(addr common.Address, asset modules.Asset) (map[modules.OutPo
 			continue
 		}
 		// get addr
-		sAddr := getAddressFromScript(utxo.PkScript)
+		sAddr, _ := common.GetAddressFromScript(utxo.PkScript)
 		// check address
 		if strings.Compare(sAddr, addr.String()) != 0 {
 			fmt.Println(">>>>> address is not compare")
@@ -206,7 +206,7 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 		}
 
 		// get address
-		sAddr := getAddressFromScript(txout.PkScript)
+		sAddr, _ := common.GetAddressFromScript(txout.PkScript)
 		addr := common.Address{}
 		addr.SetString(sAddr)
 
@@ -263,7 +263,7 @@ func destoryUtxo(txins []modules.Input) {
 			continue
 		}
 		// delete index data
-		sAddr := getAddressFromScript(utxo.PkScript)
+		sAddr, _ := common.GetAddressFromScript(utxo.PkScript)
 		addr := common.Address{}
 		addr.SetString(sAddr)
 		utxoIndex := modules.UtxoIndex{
@@ -497,7 +497,7 @@ func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) b
 		return false
 	}
 	// get addr
-	sAddr := getAddressFromScript(utxo.PkScript)
+	sAddr, _ := common.GetAddressFromScript(utxo.PkScript)
 	// check address
 	if strings.Compare(sAddr, addr.String()) != 0 {
 		fmt.Printf(">>>>> Address is not compare:scriptPubKey.Address=%s, address=%s\n",
@@ -551,18 +551,4 @@ func ComputeFees(txs modules.Transactions) (uint64, error) {
 		}
 	}
 	return fees, nil
-}
-
-func getAddressFromScript(script []byte) string {
-	_, addresses, reqSigs, err := txscript.ExtractPkScriptAddrs(script, &chaincfg.MainNetParams)
-	if err != nil {
-		log.Error("Get address from utxo output script", "error", err.Error())
-		return ""
-	}
-	// for now, just support single signature
-	if reqSigs > 1 {
-		log.Error("Get address from utxo output script", "error", "multiple signature")
-		return ""
-	}
-	return "P" + addresses[0].String()
 }

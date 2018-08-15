@@ -350,3 +350,50 @@ func GetUtxoEntry(db DatabaseReader, key []byte) (*modules.Utxo, error) {
 
 	return utxo, nil
 }
+
+// GetAdddrTransactionsHash
+func GetAddrTransactionsHash(addr string) ([]common.Hash, error) {
+	data, err := Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
+	if err != nil {
+		return []common.Hash{}, err
+	}
+	hashs := make([]common.Hash, 0)
+	if err := rlp.DecodeBytes(data, hashs); err != nil {
+		return []common.Hash{}, err
+	}
+	return hashs, nil
+}
+
+// GetAddrTransactions
+func GetAddrTransactions(addr string) (modules.Transactions, error) {
+	data, err := Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
+	if err != nil {
+		return modules.Transactions{}, err
+	}
+	hashs := make([]common.Hash, 0)
+	if err := rlp.DecodeBytes(data, hashs); err != nil {
+		return modules.Transactions{}, err
+	}
+	txs := make(modules.Transactions, 0)
+	for _, hash := range hashs {
+		tx, _, _, _ := GetTransaction(hash)
+		txs = append(txs, tx)
+	}
+	return txs, nil
+}
+
+// Get income transactions
+func GetAddrOutput(addr string) ([]modules.Output, error) {
+	data := GetPrefix(append(AddrOutput_Prefix, []byte(addr)...))
+	outputs := make([]modules.Output, 0)
+	var err error
+	for _, b := range data {
+		out := new(modules.Output)
+		if err := rlp.DecodeBytes(b, &out); err == nil {
+			outputs = append(outputs, *out)
+		} else {
+			err = err
+		}
+	}
+	return outputs, err
+}
