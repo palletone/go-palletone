@@ -18,7 +18,10 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
+
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
@@ -26,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"gopkg.in/urfave/cli.v1"
-	"os"
 )
 
 var (
@@ -117,6 +119,14 @@ func initGenesis(ctx *cli.Context) error {
 	validateGenesis(genesis)
 
 	node := makeFullNode(ctx)
+
+	dbpath := node.GetDbPath()
+	db := storage.Init(dbpath)
+	if db == nil {
+		fmt.Println("eveldb init failed")
+		return errors.New("leveldb init failed")
+	}
+
 	ks := node.GetKeyStore()
 	account, _ := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
 

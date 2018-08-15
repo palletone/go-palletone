@@ -75,10 +75,10 @@ func ValidateTx(tx *modules.Transaction) modules.TxValidationCode {
 			fmt.Printf("tx.TxHash.String()=%s, tx.Hash()=%s\n", tx.TxHash.String(), tx.Hash().String())
 			return modules.TxValidationCode_NIL_TXACTION
 		}
-		//// validate transaction signature
-		//if validateTxSignature(tx.Hash(), tx.From) == false {
-		//	return modules.TxValidationCode_BAD_CREATOR_SIGNATURE
-		//}
+		// validate transaction signature
+		if validateTxSignature(tx.Hash(), tx.From) == false {
+			return modules.TxValidationCode_BAD_CREATOR_SIGNATURE
+		}
 		// validate every type payload
 		switch msg.App {
 		case modules.APP_PAYMENT:

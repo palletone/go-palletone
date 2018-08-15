@@ -329,18 +329,18 @@ save genesis unit data
 */
 func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	if unit.UnitSize == 0 || unit.Size() == 0 {
-		log.Error("Unit is null")
+		//log.Error("Unit is null")
 		return fmt.Errorf("Unit is null")
 	}
 	// step1. check unit signature, should be compare to mediator list
 	if err := ValidateUnitSignature(unit.UnitHeader, isGenesis); err != nil {
-		log.Error(err.Error())
+		//log.Error(err.Error())
 		return err
 	}
 
 	// step2. check unit size
 	if unit.UnitSize != unit.Size() {
-		log.Error("Size is invalid")
+		//log.Error("Size is invalid")
 		return modules.ErrUnit(-1)
 	}
 	// step3. check transactions in unit
@@ -352,13 +352,13 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
-		log.Error("SaveHeader:", "error", err.Error())
+		//log.Error("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
 	// step5. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
 	if err := storage.SaveHashNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Error("SaveHashNumber:", "error", err.Error())
+		//log.Error("SaveHashNumber:", "error", err.Error())
 		return fmt.Errorf("Save unit hash and number error")
 	}
 	// step6. traverse transactions and save them
@@ -370,38 +370,38 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 			switch msg.App {
 			case modules.APP_PAYMENT:
 				if ok := savePaymentPayload(tx.TxHash, &msg, uint32(msgIndex), tx.Locktime); ok != true {
-					log.Error("Save payment payload error.")
+					//log.Error("Save payment payload error.")
 					return fmt.Errorf("Save payment payload error.")
 				}
 			case modules.APP_CONTRACT_TPL:
 				if ok := saveContractTpl(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
-					log.Error("Save contract template error.")
+					//log.Error("Save contract template error.")
 					return fmt.Errorf("Save contract template error.")
 				}
 			case modules.APP_CONTRACT_DEPLOY:
 				if ok := saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
-					log.Error("Save contract init payload error.")
+					//log.Error("Save contract init payload error.")
 					return fmt.Errorf("Save contract init payload error.")
 				}
 			case modules.APP_CONTRACT_INVOKE:
 				if ok := saveContractInvokePayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
-					log.Error("Save contract invode payload error.")
+					//log.Error("Save contract invode payload error.")
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_CONFIG:
 				if ok := saveConfigPayload(tx.TxHash, &msg); ok == false {
-					log.Error("Save contract invode payload error.")
+					//log.Error("Save contract invode payload error.")
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_TEXT:
 			default:
-				log.Error("Message type is not supported now")
+				//log.Error("Message type is not supported now")
 				return fmt.Errorf("Message type is not supported now: %s", msg.App)
 			}
 		}
 		// step7. save transaction
 		if err := storage.SaveTransaction(tx); err != nil {
-			log.Error("Save transaction:", "error", err.Error())
+			//log.Error("Save transaction:", "error", err.Error())
 			return err
 		}
 	}

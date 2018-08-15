@@ -101,6 +101,8 @@ type Node struct {
 	lock sync.RWMutex
 
 	log log.Plogger
+	//for genesis 2018-8-14
+	dbpath string
 }
 
 // New creates a new P2P node, ready for protocol registration.
@@ -692,4 +694,12 @@ func (n *Node) apis() []rpc.API {
 // @author Albert·Gou
 func (n *Node) GetKeyStore() *keystore.KeyStore {
 	return n.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+}
+
+func (n *Node) SetDbPath(path string) {
+	n.dbpath = path
+}
+
+func (n *Node) GetDbPath() string {
+	return n.dbpath
 }
