@@ -27,17 +27,17 @@ import (
 // PublicEthereumAPI provides an API to access PalletOne full node-related
 // information.
 type PublicEthereumAPI struct {
-	e *PalletOne
+	p *PalletOne
 }
 
 // NewPublicEthereumAPI creates a new PalletOne protocol API for full nodes.
-func NewPublicEthereumAPI(e *PalletOne) *PublicEthereumAPI {
-	return &PublicEthereumAPI{e}
+func NewPublicEthereumAPI(p *PalletOne) *PublicEthereumAPI {
+	return &PublicEthereumAPI{p}
 }
 
 // Etherbase is the address that mining rewards will be send to
 func (api *PublicEthereumAPI) Etherbase() (common.Address, error) {
-	return api.e.Etherbase()
+	return api.p.Etherbase()
 }
 
 // Coinbase is the address that mining rewards will be send to (alias for Etherbase)
@@ -47,7 +47,7 @@ func (api *PublicEthereumAPI) Coinbase() (common.Address, error) {
 
 // Hashrate returns the POW hashrate
 func (api *PublicEthereumAPI) Hashrate() hexutil.Uint64 {
-	//return hexutil.Uint64(api.e.Miner().HashRate())
+	//return hexutil.Uint64(api.p.Miner().HashRate())
 	return hexutil.Uint64(0)
 }
 
