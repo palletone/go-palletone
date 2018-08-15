@@ -42,7 +42,7 @@ import (
 )
 
 type CCInfo struct {
-	Id      []byte
+	Id      string//[]byte
 	Name    string
 	Path    string
 	Version string
@@ -98,7 +98,7 @@ func setChaincode(cid string, version int, chaincode *CCInfo) error {
 
 	for k, v := range chains.clist {
 		if k == cid {
-			logger.Errorf("chainId[%s] already exit, %v", cid, v)
+			logger.Infof("chainId[%s] already exit, %v", cid, v)
 
 			return addChainCodeInfo(v, chaincode)
 		}

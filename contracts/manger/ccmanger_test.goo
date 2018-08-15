@@ -24,7 +24,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
 
-type mocksupt struct {}
+type mocksupt struct{}
 
 func (*mocksupt) GetTxSimulator(chainid string, txid string) (*rwset.TxSimulator, error) {
 	return nil, nil
@@ -102,9 +102,9 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 		Input:       &pb.ChaincodeInput{Args: args},
 	}
 	cid := &pb.ChaincodeID{
-		Path: "/home/glh/project/pallet/src/common/mocks/samplesyscc/samplesyscc", ///home/glh/project/pallet/src/common/mocks/samplesyscc
-		Name: "sample_syscc",
-		Version:"ptn001",
+		Path:    "/home/glh/project/pallet/src/common/mocks/samplesyscc/samplesyscc", ///home/glh/project/pallet/src/common/mocks/samplesyscc
+		Name:    "sample_syscc",
+		Version: "ptn001",
 	}
 
 	sprop, prop, err := signedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
@@ -116,10 +116,10 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 }
 
 func peerMockInitialize() {
-//ledgermgmt.InitializeTestEnvWithCustomProcessors(ConfigTxProcessors)
-chains.clist = nil
-chains.clist = make(map[string]*chain)
-//chainInitializer = func(string) { return }
+	//ledgermgmt.InitializeTestEnvWithCustomProcessors(ConfigTxProcessors)
+	chains.clist = nil
+	chains.clist = make(map[string]*chain)
+	//chainInitializer = func(string) { return }
 }
 func peerMockCreateChain(cid string) error {
 	chains.Lock()
@@ -211,7 +211,7 @@ func TestExecSysCC(t *testing.T) {
 	Invoke(chainID, "sample_syscc", txid, args, 0)
 }
 
-func multSys(t *testing.T){
+func multSys(t *testing.T) {
 	var txid string = "1234567890" //default
 	fmt.Println("abc enter..................")
 	chainID := util.GetTestChainID()
@@ -229,9 +229,9 @@ func multSys(t *testing.T){
 		unit, err := Invoke(chainID, "sample_syscc", txid, args1, 0)
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			//t.Logf("ContractId[%s], Function[%s], ReadSet:%v ,WriteSet:%v", unit.ContractId, unit.Function, unit.ReadSet[unit.ContractId], unit.WriteSet[unit.ContractId])
-			for k,v := range unit.WriteSet {
+			for k, v := range unit.WriteSet {
 				t.Logf("k[%s], v[%v]", k, v)
 			}
 		}
@@ -244,9 +244,9 @@ func multSys(t *testing.T){
 		unit, err := Invoke(chainID, "sample_syscc", txid, args2, 0)
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			//t.Logf("ContractId[%s], Function[%s], ReadSet:%v ,WriteSet:%v", unit.ContractId, unit.Function, unit.ReadSet[unit.ContractId], unit.WriteSet[unit.ContractId])
-			for k,v := range unit.WriteSet {
+			for k, v := range unit.WriteSet {
 				t.Logf("k[%s], v[%v]", k, v)
 			}
 		}
@@ -259,45 +259,45 @@ func multSys(t *testing.T){
 		unit, err := Invoke(chainID, "sample_syscc", txid, args3, 0)
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			//t.Logf("ContractId[%s], Function[%s], ReadSet:%v ,WriteSet:%v", unit.ContractId, unit.Function, unit.ReadSet[unit.ContractId], unit.WriteSet[unit.ContractId])
-			for k,v := range unit.WriteSet {
+			for k, v := range unit.WriteSet {
 				t.Logf("k[%s], v[%v]", k, v)
 			}
 		}
 	}()
-//	go Invoke(chainID, "sample_syscc", args)
+	//	go Invoke(chainID, "sample_syscc", args)
 }
 
-func multMoreSys(t *testing.T){
+func multMoreSys(t *testing.T) {
 	fmt.Println("mult enter..................")
 	chainID := util.GetTestChainID()
 	f := "putval"
 
 	var invokeCount int = 5
-	var tmout time.Duration = 5*time.Second
+	var tmout time.Duration = 5 * time.Second
 	var txid string = "1234567890" //default
 
-	for num := 0; num <invokeCount; num += 1 {
+	for num := 0; num < invokeCount; num += 1 {
 		nonce, err := crypto.GetRandomNonce()
 		if err == nil {
 			txid, err = computeProposalTxID(nonce, []byte("glh"))
 		}
 		testStr := fmt.Sprintf("mytest_%d", num)
 		args := util.ToChaincodeArgs(f, "greeting", testStr)
-		fmt.Println("++++++++++++++++"+ testStr, "  --txid:" + txid)
+		fmt.Println("++++++++++++++++"+testStr, "  --txid:"+txid)
 
 		if num > 2 {
 			tmout = 1
 		}
 
 		go func(timeout time.Duration, txid string) {
-			unit, err := Invoke(chainID,"sample_syscc", txid, args, timeout)
+			unit, err := Invoke(chainID, "sample_syscc", txid, args, timeout)
 			if err != nil {
 				t.Error(err)
-			}else {
+			} else {
 				//t.Logf("ContractId[%s], Function[%s], ReadSet:%v ,WriteSet:%v", unit.ContractId, unit.Function, unit.ReadSet[unit.ContractId], unit.WriteSet[unit.ContractId])
-				for k,v := range unit.WriteSet {
+				for k, v := range unit.WriteSet {
 					t.Logf("k[%s], v[%v]", k, v)
 				}
 			}
@@ -329,7 +329,7 @@ func TestExecSysCCMult(t *testing.T) {
 	//	go	Invoke(chainID, "sample_syscc", args)
 	//}()
 
-	time.Sleep(20*time.Second)
+	time.Sleep(20 * time.Second)
 
 }
 
@@ -342,7 +342,7 @@ func TestGetSysCCList(t *testing.T) {
 	//t.Logf("cclist:%v", cclist)
 	t.Logf("count:%d", count)
 
-	for idx, cc := range  cclist {
+	for idx, cc := range cclist {
 		t.Logf("%d, %s---%s---%v", idx, cc.Name, cc.Path, cc.Enable)
 	}
 }
@@ -368,11 +368,11 @@ func TestInstallCC(t *testing.T) {
 	args := util.ToChaincodeArgs(f, "a", "100", "b", "200")
 
 	usercc := &ucc.UserChaincode{
-		Enabled:   true,
-		Name:      "example01",
-		Path:      "chaincode/example01",
-		Version:   "ptn001",
-		InitArgs:  args,
+		Enabled:  true,
+		Name:     "example01",
+		Path:     "chaincode/example01",
+		Version:  "ptn001",
+		InitArgs: args,
 		//Chaincode: &samplesyscc.SampleSysCC{},
 	}
 	InitNoSysCCC()
@@ -383,7 +383,7 @@ func TestInstallCC(t *testing.T) {
 	if err != nil {
 		t.Errorf("DeployUserCC err:%s", err)
 	}
-	time.Sleep(1*time.Second)
+	time.Sleep(1 * time.Second)
 
 	//invoke
 	fmt.Print("=======================Invoke=============================")
@@ -393,17 +393,16 @@ func TestInstallCC(t *testing.T) {
 	if err != nil {
 		t.Errorf("Invoke err:%s", err)
 	}
-	time.Sleep(2*time.Second)
+	time.Sleep(2 * time.Second)
 
 	//stop
 	usercc.Name = "example01"
 	fmt.Print("=======================StopUserCC=============================")
-	err = ucc.StopUserCC(chainID, usercc, txid,true)
+	err = ucc.StopUserCC(chainID, usercc, txid, true)
 	if err != nil {
 		t.Errorf("StopUserCC err:%s", err)
 	}
-	time.Sleep(2*time.Second)
-
+	time.Sleep(2 * time.Second)
 
 }
 
@@ -413,9 +412,7 @@ func invokeUserCC(t *testing.T, txid string) {
 	f := "invoke"
 	args := util.ToChaincodeArgs(f, "111")
 
-
 	Invoke(chainID, "example01", txid, args, 0)
-
 
 	usercc := &ucc.UserChaincode{
 		Enabled:   true,
@@ -428,10 +425,34 @@ func invokeUserCC(t *testing.T, txid string) {
 
 	fmt.Print("=======================#################=============================")
 
-	time.Sleep(5*time.Second)
+	time.Sleep(5 * time.Second)
 
 	ucc.StopUserCC(chainID, usercc, txid, true)
 }
 
+func TestChainCodeList(t *testing.T) {
+	cc1 := &CCInfo{
+		Name:    "cc1",
+		Path:    "/root",
+		Version: "v1",
+		SysCC:   false,
+	}
+	cc2 := &CCInfo{
+		Name:    "cc2",
+		Path:    "/root",
+		Version: "v2",
+		SysCC:   false,
+	}
+	setChaincode("cid", 1, cc1)
+	setChaincode("cid", 1, cc2)
 
+	cl, err := getChaincodeList("cid")
+	if err != nil {
+		t.Error("not find chainlist")
+	}
+	t.Logf("vsersion=%d", cl.version)
 
+	for k, v := range cl.cclist {
+		t.Logf("%s:%v", k, *v)
+	}
+}
