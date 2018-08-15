@@ -63,7 +63,7 @@ func Retrieve(key string, v interface{}) error {
 // get bytes
 func Get(key []byte) ([]byte, error) {
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(config.DbPath)
 	}
 	// return Dbconn.Get(key)
 	b, err := Dbconn.Get(key)
@@ -73,7 +73,7 @@ func Get(key []byte) ([]byte, error) {
 // get string
 func GetString(key []byte) (string, error) {
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(config.DbPath)
 	}
 	if re, err := Dbconn.Get(key); err != nil {
 		return "", err
@@ -87,7 +87,7 @@ func GetPrefix(prefix []byte) map[string][]byte {
 	if Dbconn != nil {
 		return getprefix(Dbconn, prefix)
 	} else {
-		db := ReNewDbConn(config.DefaultConfig.DbPath)
+		db := ReNewDbConn(config.DbPath)
 		if db == nil {
 			return nil
 		}

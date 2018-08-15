@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/internal/debug"
 	"github.com/prometheus/prometheus/util/flock"
 )
@@ -653,7 +654,8 @@ func (n *Node) OpenDatabase(name string, cache, handles int) (ptndb.Database, er
 	if n.config.DataDir == "" {
 		return ptndb.NewMemDatabase()
 	}
-	return ptndb.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
+	//return ptndb.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
+	return storage.Init(n.config.resolvePath(name), cache, handles)
 }
 
 // ResolvePath returns the absolute path of a resource in the instance directory.

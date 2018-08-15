@@ -13,17 +13,17 @@ import (
 
 func TestUpdateUtxo(t *testing.T) {
 	UpdateUtxo(common.Hash{}, &modules.Message{}, 0, 0)
-	dagconfig.DefaultConfig.DbPath = getTempDir(t)
+	dagconfig.DbPath = getTempDir(t)
 }
 
 func TestReadUtxos(t *testing.T) {
-	dagconfig.DefaultConfig.DbPath = getTempDir(t)
+	dagconfig.DbPath = getTempDir(t)
 	utxos, totalAmount := ReadUtxos(common.Address{}, modules.Asset{})
 	log.Println(utxos, totalAmount)
 }
 
 func TestGetUxto(t *testing.T) {
-	dagconfig.DefaultConfig.DbPath = getTempDir(t)
+	dagconfig.DbPath = getTempDir(t)
 	log.Println(modules.Input{})
 }
 

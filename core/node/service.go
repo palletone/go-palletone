@@ -50,7 +50,13 @@ func (ctx *ServiceContext) OpenDatabase(name string, cache int, handles int) (pt
 	if err != nil {
 		return nil, err
 	}
+
 	return db, nil
+}
+
+//Get leveldb file path for initdb storage Init
+func (ctx *ServiceContext) DatabasePath(name string) string {
+	return ctx.config.resolvePath(name)
 }
 
 // ResolvePath resolves a user path into the data directory if that was relative

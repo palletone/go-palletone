@@ -64,7 +64,7 @@ func TestGetContract(t *testing.T) {
 	origin.Code = []byte(`log.PrintLn("hello world")`)
 	origin.Input = []byte("input")
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 
 	log.Println("store error: ", StoreBytes(Dbconn, append(CONTRACT_PTEFIX, origin.Id[:]...), origin))

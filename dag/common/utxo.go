@@ -145,7 +145,7 @@ func GetUtxoByOutpoint(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	key := outpoint.ToKey()
 
 	if storage.Dbconn == nil {
-		storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
 	}
 	return storage.GetUtxoEntry(storage.Dbconn, key[:])
 }

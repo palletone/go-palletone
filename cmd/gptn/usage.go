@@ -199,13 +199,13 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.GpoPercentileFlag,
 		},
 	},*/
-	{
+	/*{
 		Name: "DATA STORAGE",
 		Flags: []cli.Flag{
 			utils.DagValue1Flag,
 			utils.DagValue2Flag,
 		},
-	},
+	},*/
 	//{
 	//	Name: "CONSENSUS",
 	//	Flags: []cli.Flag{

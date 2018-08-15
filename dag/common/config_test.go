@@ -42,7 +42,7 @@ func TestGetConfig(t *testing.T) {
 
 func TestSaveStruct(t *testing.T) {
 	if storage.Dbconn == nil {
-		storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
 	}
 	aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))

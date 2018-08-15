@@ -417,7 +417,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	}
 	// update state
 	if storage.Dbconn == nil {
-		storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
 	}
 	//go storage.PutCanonicalHash(storage.Dbconn, unit.UnitHash, unit.NumberU64())
 	go storage.PutHeadHeaderHash(storage.Dbconn, unit.UnitHash)

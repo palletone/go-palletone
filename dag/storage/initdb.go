@@ -69,19 +69,20 @@ var (
 	ALL_UNITS                 = "array_units"
 )
 
-func Init(path string) *palletdb.LDBDatabase {
+func Init(path string, cache int, handles int) (*palletdb.LDBDatabase, error) {
 	var err error
-	if Dbconn == nil {
-		if path == "" {
-			path = DBPath
-		}
-		Dbconn, err = palletdb.NewLDBDatabase(path, 0, 0)
-		if err != nil {
-			log.Println("new dbconn error:", err)
-		}
-		//log.Println("db_path:", Dbconn.Path())
+	if path == "" {
+		path = DBPath
 	}
-	return Dbconn
+	if Dbconn != nil {
+		return Dbconn, nil
+	}
+
+	Dbconn, err = palletdb.NewLDBDatabase(path, cache, handles)
+	if err != nil {
+		log.Println("new dbconn error:", err)
+	}
+	return Dbconn, err
 }
 func ReNewDbConn(path string) *palletdb.LDBDatabase {
 	if dbconn, err := palletdb.NewLDBDatabase(path, 0, 0); err != nil {
