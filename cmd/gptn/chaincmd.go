@@ -94,6 +94,8 @@ func removeDB(ctx *cli.Context) error {
 // initGenesis will initialise the given JSON format genesis file and writes it as
 // the zero'd block (i.e. genesis) or will fail hard if it can't succeed.
 func initGenesis(ctx *cli.Context) error {
+	node := makeFullNode(ctx)
+
 	// Make sure we have a valid genesis JSON
 	genesisPath := ctx.Args().First()
 	//if len(genesisPath) == 0 {
@@ -101,7 +103,7 @@ func initGenesis(ctx *cli.Context) error {
 	//}
 	// If no path is specified, the default path is used
 	if len(genesisPath) == 0 {
-		genesisPath = defaultGenesisJsonPath
+		genesisPath, _ = getGenesisPath(defaultGenesisJsonPath, node.DataDir())
 	}
 	file, err := os.Open(genesisPath)
 	if err != nil {
@@ -117,8 +119,6 @@ func initGenesis(ctx *cli.Context) error {
 	regulateGenesisTimestamp(ctx, genesis)
 
 	validateGenesis(genesis)
-
-	node := makeFullNode(ctx)
 
 	dbpath := node.GetDbPath()
 	db := storage.Init(dbpath)
