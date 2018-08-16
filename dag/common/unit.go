@@ -586,7 +586,7 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 	// setp1. create P2PKH script
 	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 	// step. compute total income
-	totalIncome := uint64(income) //+ ComputeInterest()
+	totalIncome := uint64(income) + ComputeInterest()
 	fmt.Println(">>>> Totalincome", totalIncome)
 	// step2. create payload
 	input := modules.Input{}
