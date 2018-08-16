@@ -41,6 +41,8 @@ var sysccLogger = flogging.MustGetLogger("sccapi")
 // when the comes up. SystemChaincodes are installed by adding an
 // entry in importsysccs.go
 type SystemChaincode struct {
+	//
+	Id string
 	//Unique name of the system chaincode
 	Name string
 

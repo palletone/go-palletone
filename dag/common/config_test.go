@@ -19,13 +19,21 @@ func TestSaveConfig(t *testing.T) {
 		ChainId:  1,
 	}
 	confs = append(confs, modules.PayloadMapStruct{Key: "TestStruct", Value: st})
-	if err := SaveConfig(confs); err != nil {
+	stateVersion := modules.StateVersion{
+		Height: modules.ChainIndex{
+			AssetID: aid,
+			IsMain:  true,
+			Index:   0,
+		},
+		TxIndex: 0,
+	}
+	if err := SaveConfig(confs, &stateVersion); err != nil {
 		log.Println(err)
 	}
 }
 
 func TestGetConfig(t *testing.T) {
-	data := GetConfig([]byte("Test Struct"))
+	data := GetConfig([]byte("TestStruct"))
 	if len(data) <= 0 {
 		log.Println("Get config data error")
 	} else {
@@ -42,7 +50,7 @@ func TestGetConfig(t *testing.T) {
 
 func TestSaveStruct(t *testing.T) {
 	if storage.Dbconn == nil {
-		storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
 	}
 	aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))

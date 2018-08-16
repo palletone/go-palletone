@@ -24,6 +24,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/big"
+	"reflect"
 	"unsafe"
 
 	"encoding/binary"
@@ -31,8 +33,6 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"math/big"
-	"reflect"
 )
 
 // DatabaseReader wraps the Get method of a backing data store.
@@ -63,7 +63,7 @@ func Retrieve(key string, v interface{}) error {
 // get bytes
 func Get(key []byte) ([]byte, error) {
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(config.DbPath)
 	}
 	// return Dbconn.Get(key)
 	b, err := Dbconn.Get(key)
@@ -73,7 +73,7 @@ func Get(key []byte) ([]byte, error) {
 // get string
 func GetString(key []byte) (string, error) {
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(config.DbPath)
 	}
 	if re, err := Dbconn.Get(key); err != nil {
 		return "", err
@@ -87,7 +87,7 @@ func GetPrefix(prefix []byte) map[string][]byte {
 	if Dbconn != nil {
 		return getprefix(Dbconn, prefix)
 	} else {
-		db := ReNewDbConn(config.DefaultConfig.DbPath)
+		db := ReNewDbConn(config.DbPath)
 		if db == nil {
 			return nil
 		}
@@ -372,4 +372,51 @@ func GetUtxoEntry(db DatabaseReader, key []byte) (*modules.Utxo, error) {
 	}
 
 	return utxo, nil
+}
+
+// GetAdddrTransactionsHash
+func GetAddrTransactionsHash(addr string) ([]common.Hash, error) {
+	data, err := Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
+	if err != nil {
+		return []common.Hash{}, err
+	}
+	hashs := make([]common.Hash, 0)
+	if err := rlp.DecodeBytes(data, hashs); err != nil {
+		return []common.Hash{}, err
+	}
+	return hashs, nil
+}
+
+// GetAddrTransactions
+func GetAddrTransactions(addr string) (modules.Transactions, error) {
+	data, err := Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
+	if err != nil {
+		return modules.Transactions{}, err
+	}
+	hashs := make([]common.Hash, 0)
+	if err := rlp.DecodeBytes(data, hashs); err != nil {
+		return modules.Transactions{}, err
+	}
+	txs := make(modules.Transactions, 0)
+	for _, hash := range hashs {
+		tx, _, _, _ := GetTransaction(hash)
+		txs = append(txs, tx)
+	}
+	return txs, nil
+}
+
+// Get income transactions
+func GetAddrOutput(addr string) ([]modules.Output, error) {
+	data := GetPrefix(append(AddrOutput_Prefix, []byte(addr)...))
+	outputs := make([]modules.Output, 0)
+	var err error
+	for _, b := range data {
+		out := new(modules.Output)
+		if err := rlp.DecodeBytes(b, &out); err == nil {
+			outputs = append(outputs, *out)
+		} else {
+			err = err
+		}
+	}
+	return outputs, err
 }

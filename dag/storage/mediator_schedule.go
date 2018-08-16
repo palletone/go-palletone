@@ -32,7 +32,7 @@ const (
 
 func StoreMediatorSchl(ms *modules.MediatorSchedule) {
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	err := Store(Dbconn, mediatorSchlDBKey, *ms)
 	if err != nil {

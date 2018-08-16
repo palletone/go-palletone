@@ -20,6 +20,7 @@ package modules
 import (
 	"encoding/json"
 	"math/big"
+	"strings"
 	"time"
 	"unsafe"
 
@@ -28,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
-	"strings"
 )
 
 type Header struct {

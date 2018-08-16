@@ -21,10 +21,11 @@ package modules
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/rlp"
 	"strconv"
 	"strings"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/rlp"
 )
 
 var (

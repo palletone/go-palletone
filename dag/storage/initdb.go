@@ -34,24 +34,22 @@ var (
 	TRANSACTION_PREFIX               = []byte("tx")
 	Transaction_Index                = []byte("ti")
 	TRANSACTIONS_PREFIX              = []byte("ts")
+	AddrTransactionsHash_Prefix      = []byte("at") // addr  transactions hash prefix
+	AddrOutput_Prefix                = []byte("ao") // addr output tx's hash + msg index.
 	CONTRACT_STATE_PREFIX            = []byte("cs")
 	CONTRACT_TPL                     = []byte("ct")
 	ALL_UNITS_PREFIX                 = []byte("au")
-	UNITAUTHORS_PREFIX               = []byte("ua")
-	HASH_TREE_BALLS_PREFIX           = []byte("ht")
-	UNIT_WITNESS_PREFIX              = []byte("uw")
 	WITNESS_LIST_HASHES_PREFIX       = []byte("wl")
 	DEFINITIONS_PREFIX               = []byte("de")
 	ADDRESS_PREFIX                   = []byte("ad")
 	ADDRESS_DEFINITION_CHANGE_PREFIX = []byte("ac")
-	AUTHENTIFIERS_PREFIX             = []byte("au")
 	MESSAGES_PREFIX                  = []byte("me")
 	POLL_PREFIX                      = []byte("po")
 	VOTE_PREFIX                      = []byte("vo")
 	ATTESTATION_PREFIX               = []byte("at")
 	ASSET_PREFIX                     = []byte("as")
 	ASSET_ATTESTORS                  = []byte("ae")
-	NumberSuffix                     = []byte("n")
+
 	// lookup
 	LookupPrefix = []byte("l")
 
@@ -67,21 +65,25 @@ var (
 	// other prefix
 	EAENED_HEADERS_COMMISSION = "earned_headers_commossion"
 	ALL_UNITS                 = "array_units"
+
+	// suffix
+	NumberSuffix = []byte("n")
 )
 
-func Init(path string) *palletdb.LDBDatabase {
+func Init(path string, cache int, handles int) (*palletdb.LDBDatabase, error) {
 	var err error
-	if Dbconn == nil {
-		if path == "" {
-			path = DBPath
-		}
-		Dbconn, err = palletdb.NewLDBDatabase(path, 0, 0)
-		if err != nil {
-			log.Println("new dbconn error:", err)
-		}
-		//log.Println("db_path:", Dbconn.Path())
+	if path == "" {
+		path = DBPath
 	}
-	return Dbconn
+	if Dbconn != nil {
+		return Dbconn, nil
+	}
+
+	Dbconn, err = palletdb.NewLDBDatabase(path, cache, handles)
+	if err != nil {
+		log.Println("new dbconn error:", err)
+	}
+	return Dbconn, err
 }
 func ReNewDbConn(path string) *palletdb.LDBDatabase {
 	if dbconn, err := palletdb.NewLDBDatabase(path, 0, 0); err != nil {
