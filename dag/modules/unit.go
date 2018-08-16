@@ -200,6 +200,10 @@ func (height ChainIndex) String() string {
 	}
 	return string(data)
 }
+func (height ChainIndex) Bytes() ([]byte, error) {
+	data, err := rlp.EncodeToBytes(height)
+	return data[:], err
+}
 
 var (
 	APP_PAYMENT         = "payment"
