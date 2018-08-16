@@ -149,8 +149,6 @@ type TxPool struct {
 	chainHeadSub event.Subscription
 	mu           sync.RWMutex
 
-	currentMaxGas uint64 // Current gas limit for transaction caps
-
 	locals  *accountSet // Set of local transaction to exempt from eviction rules
 	journal *txJournal  // Journal of local transaction to back up to disk
 
@@ -602,16 +600,12 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *modules
 		// An older transaction was better, discard this
 		delete(pool.all, hash)
 		pool.priced.Removed()
-
-		//pendingDiscardCounter.Inc(1)
 		return
 	}
 	// Otherwise discard any previous transaction and mark this
 	if old != nil {
 		delete(pool.all, old.TxHash)
 		pool.priced.Removed()
-
-		//pendingReplaceCounter.Inc(1)
 	}
 	// Failsafe to work around direct pending inserts (tests)
 	if pool.all[hash] == nil {
@@ -779,6 +773,11 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 		if future.Empty() {
 			delete(pool.queue, addr)
 		}
+	}
+}
+func (pool *TxPool) RemoveTxs(hashs []common.Hash) {
+	for _, hash := range hashs {
+		pool.removeTx(hash)
 	}
 }
 
