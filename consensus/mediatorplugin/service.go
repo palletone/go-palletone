@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // PalletOne wraps all methods required for producing unit.
@@ -38,6 +39,12 @@ type PalletOne interface {
 	Dag() *dag.Dag
 	GetKeyStore() *keystore.KeyStore
 	TxPool() *txspool.TxPool
+}
+
+// toBLSed represents a BLS sign operation.
+type toBLSSigned struct {
+	origin string
+	unit *modules.Unit
 }
 
 type MediatorPlugin struct {
@@ -49,8 +56,13 @@ type MediatorPlugin struct {
 	mediators map[common.Address]string
 	quit      chan struct{} // Channel used for graceful exit
 
-	newProducedUnitFeed  event.Feed
-	newProducedUnitScope event.SubscriptionScope
+	// 新生产unit的事件订阅和数据发送
+	newProducedUnitFeed  event.Feed	// 订阅的时候自动初始化一次
+	newProducedUnitScope event.SubscriptionScope // 零值已准备就绪待用
+
+	// 接收新生产的unit
+	toBLSSigned chan *toBLSSigned
+//	pendingBLS map[common.Hash]*toBLSSigned //等待被验证的BLS签名的unit集合
 }
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {
@@ -78,8 +90,12 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 			}
 		}
 
+		// 调度生产unit
 		go mp.ScheduleProductionLoop()
 	}
+
+	// BLS签名循环
+	go mp.recPendingBLSSignedLoop()
 
 	log.Debug("mediator plugin startup end")
 
@@ -140,6 +156,8 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		productionEnabled: cfg.EnableStaleProduction,
 		mediators:         msm,
 		quit:              make(chan struct{}),
+		toBLSSigned: make(chan *toBLSSigned),
+//		pendingBLS: make(map[common.Hash]*toBLSSigned),
 	}
 
 	log.Debug("mediator plugin initialize end")
