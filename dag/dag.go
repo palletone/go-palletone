@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"github.com/coocood/freecache"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -199,6 +200,18 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 //VerifyHeader checks whether a header conforms to the consensus rules of the stock
 //Ethereum ethash engine.go
 func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
+	// step1. check unit signature, should be compare to mediator list
+	if err := dagcommon.ValidateUnitSignature(header, false); err != nil {
+		log.Info("Validate unit signature", "error", err.Error())
+		return err
+	}
+
+	// step2. check extra data
+	// Ensure that the header's extra-data section is of a reasonable size
+	if uint64(len(header.Extra)) > uint64(32) {
+		return fmt.Errorf("extra-data too long: %d > %d", len(header.Extra), params.MaximumExtraDataSize)
+	}
+
 	return nil
 }
 
