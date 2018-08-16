@@ -73,7 +73,7 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 		if len(coinIn.Outputs) != 1 {
 			return nil, false, fmt.Errorf("Coinbase outputs error.")
 		}
-		income := uint64(fee) //+ ComputeInterest()
+		income := uint64(fee) + ComputeInterest()
 		if coinIn.Outputs[0].Value != income {
 			return nil, false, fmt.Errorf("Coinbase outputs error.")
 		}

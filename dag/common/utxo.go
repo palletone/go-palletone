@@ -552,3 +552,11 @@ func ComputeFees(txs modules.Transactions) (uint64, error) {
 	}
 	return fees, nil
 }
+
+/**
+计算Mediator的利息
+To compute mediator interest for packaging one unit
+*/
+func ComputeInterest() uint64 {
+	return uint64(100000000)
+}
