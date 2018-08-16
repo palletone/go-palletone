@@ -28,7 +28,6 @@ import (
 	"reflect"
 	"unsafe"
 
-	"encoding/binary"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
@@ -299,12 +298,16 @@ func GetContractKeyValue(id common.Hash, key string) (interface{}, error) {
 
 const missingNumber = uint64(0xffffffffffffffff)
 
-func GetUnitNumber(db DatabaseReader, hash common.Hash) uint64 {
+func GetUnitNumber(db DatabaseReader, hash common.Hash) (modules.ChainIndex, error) {
 	data, _ := db.Get(append(UNIT_HASH_NUMBER_Prefix, hash.Bytes()...))
-	if len(data) != 8 {
-		return missingNumber
+	if len(data) <= 0 {
+		return modules.ChainIndex{}, fmt.Errorf("Get from unit number rlp data none")
 	}
-	return binary.BigEndian.Uint64(data)
+	var number modules.ChainIndex
+	if err := rlp.DecodeBytes(data, &number); err != nil {
+		return modules.ChainIndex{}, fmt.Errorf("Get unit number when rlp decode error:%s", err.Error())
+	}
+	return number, nil
 }
 
 //  GetCanonicalHash get
