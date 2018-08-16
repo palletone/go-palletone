@@ -130,7 +130,7 @@ func initGenesis(ctx *cli.Context) error {
 	dagconfig.DbPath = filepath
 
 	ks := node.GetKeyStore()
-	account, _ := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
+	account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
 
 	unit, err := gen.SetupGenesisUnit(genesis, ks, account)
 	if err != nil {
@@ -140,6 +140,15 @@ func initGenesis(ctx *cli.Context) error {
 
 	genesisUnitHash := unit.UnitHash
 	log.Info(fmt.Sprintf("Successfully Get Genesis Unit, it's hash: %v", genesisUnitHash.Hex()))
+
+	// 2, 重写配置文件，修改当前节点的mediator的地址和密码
+	// @author Albert·Gou
+	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
+	configPath := defaultConfigPath
+	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
+		configPath, _ = getConfigPath(temp, node.DataDir())
+	}
+	modifyMediatorInConf(configPath, account.Address.Str(), password)
 
 	// 3, 全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
@@ -155,6 +164,34 @@ func initGenesis(ctx *cli.Context) error {
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
 	storage.StoreMediatorSchl(ms)
+
+	return nil
+}
+
+// 重写配置文件，修改配置的的mediator的地址和密码
+// @author Albert·Gou
+func modifyMediatorInConf(configPath, address, password string) error {
+	cfg := new(FullConfig)
+
+	// 加载配置文件中的配置信息到 cfg中
+	err := loadConfig(configPath, cfg)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	cfg.MediatorPlugin.EnableStaleProduction = true
+	cfg.MediatorPlugin.Mediators = map[string]string{
+		address: password,
+	}
+
+	err = makeConfigFile(cfg, configPath)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	log.Debug(fmt.Sprintf("Rewriting config file at: %v", configPath))
 
 	return nil
 }
