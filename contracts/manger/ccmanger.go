@@ -205,12 +205,6 @@ func createChaincodeProposalWithTransient(typ common.HeaderType, chainID string,
 	if err != nil {
 		return nil, "", err
 	}
-	// compute txid
-	//txid, err := computeProposalTxID(nonce, creator)
-	//if err != nil {
-	//	return nil, "", err
-	//}
-
 	return createChaincodeProposalWithTxIDNonceAndTransient(txid, typ, chainID, cis, nonce, creator, transientMap)
 }
 
