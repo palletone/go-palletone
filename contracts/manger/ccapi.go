@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"golang.org/x/net/context"
 
+	cp "github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	unit "github.com/palletone/go-palletone/dag/modules"
+	"bytes"
 )
 
 // contract manger module init
@@ -205,3 +208,38 @@ func StopById(chainID string, txid string, deployId string, deleteImage bool) er
 
 	return errors.New("not find deployId")
 }
+
+//install chaincode into db
+func Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error) {
+	usrcc := &ucc.UserChaincode{
+		Name:    ccName,
+		Path:    ccPath,
+		Version: ccVersion,
+		Enabled: true,
+	}
+
+	paylod, err :=ucc.GetUserCCPayload(chainID, usrcc)
+	if err != nil {
+		return nil, err
+	}
+
+	var buffer bytes.Buffer
+	buffer.Write([]byte(ccName))
+	buffer.Write([]byte(ccPath))
+	buffer.Write([]byte(ccVersion))
+	tpid := cp.Keccak256Hash(buffer.Bytes())
+
+	payloadUnit := &unit.ContractTplPayload{
+		TemplateId : tpid,
+		Bytecode :paylod,
+	}
+
+	return payloadUnit, nil
+}
+
+
+
+
+
+
+

@@ -235,7 +235,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	//txsyncLoop负责每个新连接的初始事务同步。
 	//当新的对等体出现时，我们转发所有当前待处理的事务。
 	//为了最小化出口带宽使用，我们一次将一个小包中的事务发送给一个对等体。
-	//go pm.txsyncLoop()
+	go pm.txsyncLoop()
 
 	// broadcast transactions
 	// 广播交易的通道。 txCh会作为txpool的TxPreEvent订阅通道。

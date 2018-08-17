@@ -294,7 +294,13 @@ func systemContractDeInit() error {
 	return nil
 }
 
-func systemContractStop() error {
+func packChaincode(chainID string, ccName string, ccPath string, ccVersion string, args [][]byte) error {
 
 	return nil
 }
+
+func recoverChaincodeFromeDb() error {
+
+	return nil
+}
+

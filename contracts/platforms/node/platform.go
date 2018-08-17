@@ -140,6 +140,10 @@ func (nodePlatform *Platform) ValidateDeploymentSpec(cds *pb.ChaincodeDeployment
 	return nil
 }
 
+func (nodePlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
+	return nil, nil
+}
+
 // Generates a deployment payload by putting source files in src/$file entries in .tar.gz format
 func (nodePlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error) {
 
