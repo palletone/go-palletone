@@ -75,7 +75,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	dag := new(dag.Dag)
 	typemux := new(event.TypeMux)
 	DbPath := "./data1/leveldb"
-	db := storage.Init(DbPath, 0, 0)
+	db, _ := storage.Init(DbPath, 0, 0)
 	producer := new(mediatorplugin.MediatorPlugin)
 
 	//want (downloader.SyncMode, uint64, txPool, core.ConsensusEngine, *modules.Dag, *event.TypeMux, *ptndb.LDBDatabase)
