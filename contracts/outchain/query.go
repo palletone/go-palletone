@@ -16,7 +16,7 @@ func ProcessOutChainQuery(chaincodeID string, outChainAddr *pb.OutChainQuery) (s
 	var params OutChainMethod
 	err := json.Unmarshal(outChainAddr.Params, &params)
 	if err != nil {
-		return "", fmt.Errorf("Get Request error zxl ==== ==== ", err.Error())
+		return "", fmt.Errorf("Get Request error zxl ==== ==== %s", err.Error())
 	}
 	log.Debug(modName, "Get Request method zxl ==== ==== ", params.Method)
 
