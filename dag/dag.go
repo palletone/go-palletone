@@ -24,12 +24,13 @@ import (
 	"fmt"
 
 	"github.com/coocood/freecache"
-	"github.com/ethereum/go-ethereum/params"
+	//"github.com/ethereum/go-ethereum/params"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/configure"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -209,7 +210,7 @@ func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 	// step2. check extra data
 	// Ensure that the header's extra-data section is of a reasonable size
 	if uint64(len(header.Extra)) > uint64(32) {
-		return fmt.Errorf("extra-data too long: %d > %d", len(header.Extra), params.MaximumExtraDataSize)
+		return fmt.Errorf("extra-data too long: %d > %d", len(header.Extra), configure.MaximumExtraDataSize)
 	}
 
 	return nil

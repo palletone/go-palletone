@@ -80,7 +80,7 @@ type LightPeer interface {
 	Head() (common.Hash, uint64)
 	RequestHeadersByHash(common.Hash, int, int, bool) error
 	RequestHeadersByNumber(uint64, int, int, bool) error
-	//RequestDagHeadersByHash(common.Hash, int, int, bool) error
+	RequestDagHeadersByHash(common.Hash, int, int, bool) error
 }
 
 // Peer encapsulates the methods required to synchronise with a remote full peer.
@@ -111,6 +111,9 @@ func (w *lightPeerWrapper) RequestReceipts([]common.Hash) error {
 }
 func (w *lightPeerWrapper) RequestNodeData([]common.Hash) error {
 	panic("RequestNodeData not supported in light client mode sync")
+}
+func (w *lightPeerWrapper) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
+	return w.peer.RequestDagHeadersByHash(origin, amount, skip, reverse)
 }
 
 // newPeerConnection creates a new downloader peer.
