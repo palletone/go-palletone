@@ -27,6 +27,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"time"
 )
 
 func TestGet(t *testing.T) {
@@ -48,7 +49,7 @@ func TestGet(t *testing.T) {
 		for k := range m {
 			log.Println("key: ", k, "value: ", string(m[k]))
 		}
-	}()
+	}
 	time.Sleep(2 * time.Second)
 }
 
