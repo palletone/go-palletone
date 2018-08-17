@@ -21,18 +21,19 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/urfave/cli.v1"
 	"os"
+	"path/filepath"
 
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/gen"
-	"path/filepath"
+	"github.com/palletone/go-palletone/core/node"
+	"gopkg.in/urfave/cli.v1"
 )
 
-const defaultGenesisJsonPath = "./ptn-genesis.json"
+var defaultGenesisJsonPath = filepath.Join(node.DefaultDataDir(), "ptn-genesis.json")
 
 var (
 	GenesisTimestampFlag = cli.Int64Flag{
@@ -67,31 +68,10 @@ it will be replaced with an example Genesis State.`,
 
 // createGenesisJson, Create a json file for the genesis state of a new chain.
 func createGenesisJson(ctx *cli.Context) error {
-	// Make sure we have a valid genesis JSON
-	genesisOut := ctx.Args().First()
-	// If no path is specified, the default path is used
-	if len(genesisOut) == 0 {
-		//		utils.Fatalf("Must supply path to genesis JSON file")
-		genesisOut = defaultGenesisJsonPath
-	}
-
 	var (
 		genesisFile *os.File
 		err         error
 	)
-
-	err = os.MkdirAll(filepath.Dir(genesisOut), os.ModePerm)
-	if err != nil {
-		utils.Fatalf("%v", err)
-		return err
-	}
-
-	genesisFile, err = os.Create(genesisOut)
-	defer genesisFile.Close()
-	if err != nil {
-		utils.Fatalf("%v", err)
-		return err
-	}
 
 	var confirm bool
 	confirm, err = console.Stdin.PromptConfirm("Do you use an existing account?")
@@ -118,6 +98,33 @@ func createGenesisJson(ctx *cli.Context) error {
 
 	var genesisJson []byte
 	genesisJson, err = json.MarshalIndent(*genesisState, "", "  ")
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	cfg := FullConfig{Node: defaultNodeConfig()}
+	// Load config file.
+	if err := maybeLoadConfig(ctx, &cfg); err != nil {
+		utils.Fatalf("%v", err)
+	}
+
+	// Make sure we have a valid genesis JSON
+	genesisOut := ctx.Args().First()
+	// If no path is specified, the default path is used
+	if len(genesisOut) == 0 {
+		//		utils.Fatalf("Must supply path to genesis JSON file")
+		genesisOut, _ = getGenesisPath(defaultGenesisJsonPath, cfg.Node.DataDir)
+	}
+
+	err = os.MkdirAll(filepath.Dir(genesisOut), os.ModePerm)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	genesisFile, err = os.Create(genesisOut)
+	defer genesisFile.Close()
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
@@ -169,4 +176,22 @@ func createExampleGenesis(account string) *core.Genesis {
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(
 			core.DefaultMediatorCount, account),
 	}
+}
+
+// 根据指定路径和配置参数获取创世Json文件的路径
+// @author Albert·Gou
+func getGenesisPath(genesisPath, dataDir string) (string, error) {
+	if filepath.IsAbs(genesisPath) {
+		return genesisPath, nil
+	}
+
+	if dataDir != "" && genesisPath == "" {
+		return filepath.Join(dataDir, defaultGenesisJsonPath), nil
+	}
+
+	if genesisPath !="" {
+		return filepath.Abs(genesisPath)
+	}
+
+	return "", nil
 }

@@ -29,8 +29,8 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 )
 
 /**
@@ -112,7 +112,7 @@ func readUtxosFrAll(addr common.Address, asset modules.Asset) (map[modules.OutPo
 			continue
 		}
 		// get addr
-		sAddr := getAddressFromScript(utxo.PkScript)
+		sAddr, _ := common.GetAddressFromScript(utxo.PkScript)
 		// check address
 		if strings.Compare(sAddr, addr.String()) != 0 {
 			fmt.Println(">>>>> address is not compare")
@@ -145,7 +145,7 @@ func GetUtxoByOutpoint(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	key := outpoint.ToKey()
 
 	if storage.Dbconn == nil {
-		storage.Dbconn = storage.ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
 	}
 	return storage.GetUtxoEntry(storage.Dbconn, key[:])
 }
@@ -206,7 +206,7 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 		}
 
 		// get address
-		sAddr := getAddressFromScript(txout.PkScript)
+		sAddr, _ := common.GetAddressFromScript(txout.PkScript)
 		addr := common.Address{}
 		addr.SetString(sAddr)
 
@@ -263,7 +263,7 @@ func destoryUtxo(txins []modules.Input) {
 			continue
 		}
 		// delete index data
-		sAddr := getAddressFromScript(utxo.PkScript)
+		sAddr, _ := common.GetAddressFromScript(utxo.PkScript)
 		addr := common.Address{}
 		addr.SetString(sAddr)
 		utxoIndex := modules.UtxoIndex{
@@ -497,7 +497,7 @@ func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) b
 		return false
 	}
 	// get addr
-	sAddr := getAddressFromScript(utxo.PkScript)
+	sAddr, _ := common.GetAddressFromScript(utxo.PkScript)
 	// check address
 	if strings.Compare(sAddr, addr.String()) != 0 {
 		fmt.Printf(">>>>> Address is not compare:scriptPubKey.Address=%s, address=%s\n",
@@ -513,7 +513,7 @@ To compute transactions' fees
 */
 func ComputeFees(txs modules.Transactions) (uint64, error) {
 	// current time slice mediator default income is 1 ptn
-	fees := uint64(100000000)
+	fees := uint64(0)
 	for _, tx := range txs {
 		for _, msg := range tx.TxMessages {
 			payload, ok := msg.Payload.(modules.PaymentPayload)
@@ -553,16 +553,10 @@ func ComputeFees(txs modules.Transactions) (uint64, error) {
 	return fees, nil
 }
 
-func getAddressFromScript(script []byte) string {
-	_, addresses, reqSigs, err := txscript.ExtractPkScriptAddrs(script, &chaincfg.MainNetParams)
-	if err != nil {
-		log.Error("Get address from utxo output script", "error", err.Error())
-		return ""
-	}
-	// for now, just support single signature
-	if reqSigs > 1 {
-		log.Error("Get address from utxo output script", "error", "multiple signature")
-		return ""
-	}
-	return "P" + addresses[0].String()
+/**
+计算Mediator的利息
+To compute mediator interest for packaging one unit
+*/
+func ComputeInterest() uint64 {
+	return uint64(100000000)
 }

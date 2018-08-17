@@ -61,7 +61,7 @@ func TestAddUnitKey(t *testing.T) {
 	keys := []string{"unit1231526522017", "unit1231526521834"}
 	var err error
 	if Dbconn == nil {
-		Dbconn, err = palletdb.NewLDBDatabase(config.DefaultConfig.DbPath, 0, 0)
+		Dbconn, err = palletdb.NewLDBDatabase(config.DbPath, 0, 0)
 		if err != nil {
 			log.Println("new db error", err)
 			t.Fatal("error1")

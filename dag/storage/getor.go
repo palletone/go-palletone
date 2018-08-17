@@ -20,7 +20,6 @@ package storage
 
 import (
 	"bytes"
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -63,7 +62,7 @@ func Retrieve(key string, v interface{}) error {
 // get bytes
 func Get(key []byte) ([]byte, error) {
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(config.DbPath)
 	}
 	// return Dbconn.Get(key)
 	b, err := Dbconn.Get(key)
@@ -73,7 +72,7 @@ func Get(key []byte) ([]byte, error) {
 // get string
 func GetString(key []byte) (string, error) {
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(config.DbPath)
 	}
 	if re, err := Dbconn.Get(key); err != nil {
 		return "", err
@@ -87,7 +86,7 @@ func GetPrefix(prefix []byte) map[string][]byte {
 	if Dbconn != nil {
 		return getprefix(Dbconn, prefix)
 	} else {
-		db := ReNewDbConn(config.DefaultConfig.DbPath)
+		db := ReNewDbConn(config.DbPath)
 		if db == nil {
 			return nil
 		}
@@ -230,6 +229,29 @@ func GetContract(id common.Hash) (*modules.Contract, error) {
 	return contract, nil
 }
 
+/**
+获取合约模板
+To get contract template
+*/
+func GetContractTpl(templateID string) (*modules.StateVersion, []byte) {
+	key := fmt.Sprintf("%s%s",
+		CONTRACT_TPL,
+		templateID)
+	data := GetPrefix([]byte(key))
+	if len(data) == 1 {
+		for k, v := range data {
+			var stateVersion modules.StateVersion
+			stateVersion.ParseStringKey(k)
+			var byteCode []byte
+			if err := rlp.DecodeBytes([]byte(v), &byteCode); err != nil {
+				return nil, nil
+			}
+			return &stateVersion, byteCode
+		}
+	}
+	return nil, nil
+}
+
 func GetContractRlp(id common.Hash) (rlp.RawValue, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
@@ -276,12 +298,16 @@ func GetContractKeyValue(id common.Hash, key string) (interface{}, error) {
 
 const missingNumber = uint64(0xffffffffffffffff)
 
-func GetUnitNumber(db DatabaseReader, hash common.Hash) uint64 {
+func GetUnitNumber(db DatabaseReader, hash common.Hash) (modules.ChainIndex, error) {
 	data, _ := db.Get(append(UNIT_HASH_NUMBER_Prefix, hash.Bytes()...))
-	if len(data) != 8 {
-		return missingNumber
+	if len(data) <= 0 {
+		return modules.ChainIndex{}, fmt.Errorf("Get from unit number rlp data none")
 	}
-	return binary.BigEndian.Uint64(data)
+	var number modules.ChainIndex
+	if err := rlp.DecodeBytes(data, &number); err != nil {
+		return modules.ChainIndex{}, fmt.Errorf("Get unit number when rlp decode error:%s", err.Error())
+	}
+	return number, nil
 }
 
 //  GetCanonicalHash get
@@ -349,4 +375,51 @@ func GetUtxoEntry(db DatabaseReader, key []byte) (*modules.Utxo, error) {
 	}
 
 	return utxo, nil
+}
+
+// GetAdddrTransactionsHash
+func GetAddrTransactionsHash(addr string) ([]common.Hash, error) {
+	data, err := Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
+	if err != nil {
+		return []common.Hash{}, err
+	}
+	hashs := make([]common.Hash, 0)
+	if err := rlp.DecodeBytes(data, hashs); err != nil {
+		return []common.Hash{}, err
+	}
+	return hashs, nil
+}
+
+// GetAddrTransactions
+func GetAddrTransactions(addr string) (modules.Transactions, error) {
+	data, err := Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
+	if err != nil {
+		return modules.Transactions{}, err
+	}
+	hashs := make([]common.Hash, 0)
+	if err := rlp.DecodeBytes(data, hashs); err != nil {
+		return modules.Transactions{}, err
+	}
+	txs := make(modules.Transactions, 0)
+	for _, hash := range hashs {
+		tx, _, _, _ := GetTransaction(hash)
+		txs = append(txs, tx)
+	}
+	return txs, nil
+}
+
+// Get income transactions
+func GetAddrOutput(addr string) ([]modules.Output, error) {
+	data := GetPrefix(append(AddrOutput_Prefix, []byte(addr)...))
+	outputs := make([]modules.Output, 0)
+	var err error
+	for _, b := range data {
+		out := new(modules.Output)
+		if err := rlp.DecodeBytes(b, &out); err == nil {
+			outputs = append(outputs, *out)
+		} else {
+			err = err
+		}
+	}
+	return outputs, err
 }

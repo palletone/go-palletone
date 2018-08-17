@@ -24,11 +24,13 @@ import (
 	"fmt"
 
 	"github.com/coocood/freecache"
+	//"github.com/ethereum/go-ethereum/params"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/configure"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -93,21 +95,20 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 	return nil
 }
 
+func (d *Dag) SaveDag(unit modules.Unit) (int, error) {
+	if err := dagcommon.SaveUnit(unit, false); err != nil {
+		fmt.Errorf("SaveDag, save error: %s", err.Error())
+		return -1, err
+	}
+	return 0, nil
+}
+
 // InsertDag attempts to insert the given batch of blocks in to the canonical
 // chain or, otherwise, create a fork. If an error is returned it will return
 // the index number of the failing block as well an error describing what went
 // wrong.
 // After insertion is done, all accumulated events will be fired.
 // reference : Eth InsertChain
-func (d *Dag) SaveDag(unit modules.Unit) (int, error) {
-	return 0, nil
-	//SaveUnit
-}
-
-/**
-将连续的单元保存到DAG中
-To save some continuous units to dag storage
-*/
 func (d *Dag) InsertDag(units modules.Units) (int, error) {
 	//TODO must recover
 	log.Debug("===InsertDag===", "len(units):", len(units))
@@ -146,7 +147,10 @@ func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash 
 }
 
 func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
-	return d.CurrentUnit().Header() != nil
+	if storage.GetHeader(hash, number) != nil {
+		return true
+	}
+	return false
 }
 
 func (d *Dag) CurrentHeader() *modules.Header {
@@ -155,15 +159,34 @@ func (d *Dag) CurrentHeader() *modules.Header {
 
 // GetBodyRLP retrieves a block body in RLP encoding from the database by hash,
 // caching it if found.
-func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
-	return rlp.RawValue{}
+func (d *Dag) GetBodyRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
+	txs := modules.Transactions{}
+	// get hash list
+	txs, err := dagcommon.GetUnitTransactions(hash)
+	if err != nil {
+		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
+		return nil
+	}
+
+	data, err := rlp.EncodeToBytes(txs)
+	if err != nil {
+		log.Error("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
+		return nil
+	}
+	// get hash data
+	return data
 }
 
-func (d *Dag) GetHeaerRLP(hash common.Hash) rlp.RawValue {
-	return rlp.RawValue{}
+func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
+	number, err := storage.GetUnitNumber(db, hash)
+	if err != nil {
+		log.Error("Get header rlp ", "error", err.Error())
+		return nil
+	}
+	return storage.GetHeaderRlp(db, hash, number.Index)
 }
 
-// InsertHeaderChain attempts to insert the given header chain in to the local
+// InsertHeaderDag attempts to insert the given header chain in to the local
 // chain, possibly creating a reorg. If an error is returned, it will return the
 // index number of the failing header as well an error describing what went wrong.
 //
@@ -176,8 +199,20 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 }
 
 //VerifyHeader checks whether a header conforms to the consensus rules of the stock
-//Ethereum ethash engine.
+//Ethereum ethash engine.go
 func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
+	// step1. check unit signature, should be compare to mediator list
+	if err := dagcommon.ValidateUnitSignature(header, false); err != nil {
+		log.Info("Validate unit signature", "error", err.Error())
+		return err
+	}
+
+	// step2. check extra data
+	// Ensure that the header's extra-data section is of a reasonable size
+	if uint64(len(header.Extra)) > uint64(32) {
+		return fmt.Errorf("extra-data too long: %d > %d", len(header.Extra), configure.MaximumExtraDataSize)
+	}
+
 	return nil
 }
 

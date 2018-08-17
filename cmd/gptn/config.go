@@ -43,7 +43,7 @@ import (
 	"github.com/palletone/go-palletone/statistics/dashboard"
 )
 
-const defaultConfigPath = "./palletone.toml"
+var defaultConfigPath = filepath.Join(node.DefaultDataDir(), "palletone.toml")
 
 var (
 	dumpConfigCommand = cli.Command{
@@ -154,13 +154,31 @@ func adaptorConfig(config FullConfig) FullConfig {
 	return config
 }
 
+// 根据指定路径和配置参数获取配置文件的路径
+// @author Albert·Gou
+func getConfigPath(configPath, dataDir string) (string, error) {
+	if filepath.IsAbs(configPath) {
+		return configPath, nil
+	}
+
+	if dataDir != "" && configPath == "" {
+		return filepath.Join(dataDir, defaultConfigPath), nil
+	}
+
+	if configPath !="" {
+		return filepath.Abs(configPath)
+	}
+
+	return "", nil
+}
+
 // 加载指定的或者默认的配置文件，如果不存在则根据默认的配置生成文件
 // @author Albert·Gou
 func maybeLoadConfig(ctx *cli.Context, cfg *FullConfig) error {
 	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
 	configPath := defaultConfigPath
 	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-		configPath = temp
+		configPath, _ = getConfigPath(temp, cfg.Node.DataDir)
 	}
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
@@ -172,7 +190,7 @@ func maybeLoadConfig(ctx *cli.Context, cfg *FullConfig) error {
 			return err
 		}
 
-		log.Info(fmt.Sprintf("Writing new config file at: %v", configPath))
+		log.Debug(fmt.Sprintf("Writing new config file at: %v", configPath))
 	}
 
 	// 加载配置文件中的配置信息到 cfg中
@@ -226,7 +244,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	// 1. 根据默认配置、命令行参数和配置文件的配置来创建一个node, 并获取相关配置
 	stack, cfg := makeConfigNode(ctx)
 	log.InitLogger()
-	stack.SetDbPath(cfg.Dag.DbPath)
+	//stack.SetDbPath(cfg.Dag.DbPath)
 
 	// 2. 创建 Ptn service、DashBoard service以及 PtnStats service 等 service ,
 	// 并注册到 Node 的 serviceFuncs 中，然后在 stack.Start() 执行的时候会调用这些 service
@@ -268,7 +286,7 @@ func dumpConfig(ctx *cli.Context) error {
 	configPath := ctx.Args().First()
 	// If no path is specified, the default path is used
 	if len(configPath) == 0 {
-		configPath = defaultConfigPath
+		configPath, _ = getConfigPath(defaultConfigPath, cfg.Node.DataDir)
 	}
 
 	//	io.WriteString(os.Stdout, comment)

@@ -33,7 +33,7 @@ func Update(key, value []byte) error {
 // delete
 func Delete(key []byte) error {
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	return Dbconn.Delete(key)
 }

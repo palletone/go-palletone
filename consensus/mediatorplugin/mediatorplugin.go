@@ -22,12 +22,17 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+	"errors"
 
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
+)
+
+var (
+	errTerminated = errors.New("terminated")
 )
 
 func newChainBanner(dag *dag.Dag) {
@@ -212,7 +217,35 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	return Produced, detail
 }
 
-func (mp *MediatorPlugin) AddUnverifiedUnitSet(*modules.Unit) error {
-	//TODO @Albert·Gou
-	return nil
+func (mp *MediatorPlugin) AddPendingBLSSigned(peer string, unit *modules.Unit) error {
+	op := &toBLSSigned{
+		origin: peer,
+		unit:  unit,
+	}
+
+	select {
+	case <-mp.quit:
+		return errTerminated
+	case mp.toBLSSigned <- op:
+		return nil
+	}
+}
+
+func (mp *MediatorPlugin) recPendingBLSSignedLoop() {
+	for {
+		select {
+		// Mediator Plugin terminating, abort operation
+		case <-mp.quit:
+			return
+		case op := <- mp.toBLSSigned:
+//			mp.pendingBLS[op.unit.UnitHash] = op
+			PushUnit(mp.ptn.Dag(), op.unit)
+			go mp.unitBLSSign(op)
+		}
+	}
+}
+
+func (mp *MediatorPlugin) unitBLSSign(toBLSSigned *toBLSSigned)  {
+	//todo
+	
 }

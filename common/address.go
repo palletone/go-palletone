@@ -30,6 +30,8 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
+	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 )
 
 const (
@@ -251,4 +253,16 @@ func (ma *MixedcaseAddress) ValidChecksum() bool {
 // Original returns the mixed-case input string
 func (ma *MixedcaseAddress) Original() string {
 	return ma.original
+}
+
+func GetAddressFromScript(script []byte) (string, error) {
+	_, addresses, reqSigs, err := txscript.ExtractPkScriptAddrs(script, &chaincfg.MainNetParams)
+	if err != nil {
+		return "", err
+	}
+	// for now, just support single signature
+	if reqSigs > 1 {
+		return "", errors.New("Get address from utxo output script error: multiple signature")
+	}
+	return "P" + addresses[0].String(), nil
 }

@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/big"
 
 	"github.com/palletone/go-palletone/common"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
@@ -37,7 +38,7 @@ var (
 	Dbconn             *palletdb.LDBDatabase = nil
 	AssocUnstableUnits map[string]modules.Joint
 	//DBPath             string = "/Users/jay/code/gocode/src/palletone/bin/leveldb"
-	DBPath string = dagconfig.DefaultConfig.DbPath
+	DBPath string = dagconfig.DbPath
 )
 
 func SaveJoint(objJoint *modules.Joint, onDone func()) (err error) {
@@ -45,7 +46,7 @@ func SaveJoint(objJoint *modules.Joint, onDone func()) (err error) {
 		return errors.New(objJoint.Unsigned)
 	}
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	obj_unit := objJoint.Unit
 	obj_unit_byte, _ := json.Marshal(obj_unit)
@@ -129,6 +130,56 @@ func SaveTransaction(tx *modules.Transaction) error {
 	if err := StoreBytes(Dbconn, append(Transaction_Index, tx.TxHash.Bytes()...), tx); err != nil {
 		return err
 	}
+	updateAddrTransactions(tx.From.Address, tx.TxHash)
+	// store output by addr
+	for i, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(modules.PaymentPayload)
+		if ok {
+			for _, output := range payload.Outputs {
+				//  pkscript to addr
+				addr, _ := common.GetAddressFromScript(output.PkScript[:])
+				saveOutputByAddr(addr, tx.TxHash, i, output)
+			}
+		}
+	}
+
+	return nil
+}
+func updateAddrTransactions(addr string, hash common.Hash) error {
+	if hash == (common.Hash{}) {
+		return errors.New("empty tx hash.")
+	}
+	hashs := make([]common.Hash, 0)
+	data, err := Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
+	if err != nil {
+		if err.Error() != "leveldb: not found" {
+			return err
+		} else { // first store the addr
+			hashs = append(hashs, hash)
+			if err := StoreBytes(Dbconn, append(AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+	if err := rlp.DecodeBytes(data, hashs); err != nil {
+		return err
+	}
+	hashs = append(hashs, hash)
+	if err := StoreBytes(Dbconn, append(AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
+		return err
+	}
+	return nil
+}
+func saveOutputByAddr(addr string, hash common.Hash, msgindex int, output modules.Output) error {
+	if hash == (common.Hash{}) {
+		return errors.New("empty tx hash.")
+	}
+	key := append(AddrOutput_Prefix, []byte(addr)...)
+	key = append(key, hash.Bytes()...)
+	if err := StoreBytes(Dbconn, append(key, new(big.Int).SetInt64(int64(msgindex)).Bytes()...), output); err != nil {
+		return err
+	}
 	return nil
 }
 func SaveTxLookupEntry(unit *modules.Unit) error {
@@ -159,7 +210,7 @@ func encodeBlockNumber(number uint64) []byte {
 func GetUnitKeys() []string {
 	var keys []string
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	if keys_byte, err := Dbconn.Get([]byte("array_units")); err != nil {
 		log.Println("get units error:", err)
@@ -183,7 +234,7 @@ func AddUnitKeys(key string) error {
 	}
 	keys = append(keys, key)
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 
 	return Store(Dbconn, "array_units", keys)
@@ -195,6 +246,7 @@ func ConvertBytes(val interface{}) (re []byte) {
 	}
 	return re[:]
 }
+
 func IsGenesisUnit(unit string) bool {
 	return unit == constants.GENESIS_UNIT
 }
@@ -202,7 +254,7 @@ func IsGenesisUnit(unit string) bool {
 func GetKeysWithTag(tag string) []string {
 	var keys []string
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	if keys_byte, err := Dbconn.Get([]byte(tag)); err != nil {
 		log.Println("get keys error:", err)
@@ -226,7 +278,7 @@ func AddKeysWithTag(key, tag string) error {
 	}
 	keys = append(keys, key)
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 
 	if err := Dbconn.Put([]byte(tag), ConvertBytes(keys)); err != nil {
@@ -253,7 +305,7 @@ func SaveContract(contract *modules.Contract) (common.Hash, error) {
 
 	}
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	return contract.Id, StoreBytes(Dbconn, append(CONTRACT_PTEFIX, contract.Id[:]...), contract)
 }
@@ -263,7 +315,7 @@ func SaveContract(contract *modules.Contract) (common.Hash, error) {
 func GetUnitChainVersion() int {
 	var vsn uint
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	enc, _ := Dbconn.Get([]byte("UnitchainVersion"))
 	rlp.DecodeBytes(enc, &vsn)
@@ -274,7 +326,7 @@ func GetUnitChainVersion() int {
 func SaveUnitChainVersion(vsn int) error {
 	enc, _ := rlp.EncodeToBytes(uint(vsn))
 	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DefaultConfig.DbPath)
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	return Dbconn.Put([]byte("UnitchainVersion"), enc)
 }
