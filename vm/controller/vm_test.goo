@@ -85,7 +85,7 @@ func TestVM_BuildImage_ChaincodeRemote(t *testing.T) {
 }
 
 func TestVM_GetChaincodePackageBytes(t *testing.T) {
-	_, err := GetChaincodePackageBytes(nil)
+	_, err := platforms.GetDeploymentPayload(nil)
 	assert.Error(t, err,
 		"GetChaincodePackageBytes did not return error when chaincode spec is nil")
 

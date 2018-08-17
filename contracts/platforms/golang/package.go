@@ -113,13 +113,10 @@ func findSource(gopath, pkg string) (SourceMap, error) {
 	sources := make(SourceMap)
 	tld := filepath.Join(gopath, "src", pkg)
 	walkFn := func(path string, info os.FileInfo, err error) error {
-
 		if err != nil {
 			return err
 		}
-
 		if info.IsDir() {
-
 			// Allow import of the top level chaincode directory into chaincode code package
 			if path == tld {
 				return nil
