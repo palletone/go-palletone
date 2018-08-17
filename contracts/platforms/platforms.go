@@ -44,6 +44,7 @@ import (
 type Platform interface {
 	ValidateSpec(spec *pb.ChaincodeSpec) error
 	ValidateDeploymentSpec(spec *pb.ChaincodeDeploymentSpec) error
+    GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error)
 	GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error)
 	GenerateDockerfile(spec *pb.ChaincodeDeploymentSpec) (string, error)
 	GenerateDockerBuild(spec *pb.ChaincodeDeploymentSpec, tw *tar.Writer) error
@@ -74,7 +75,15 @@ func Find(chaincodeType pb.ChaincodeSpec_Type) (Platform, error) {
 	default:
 		return nil, fmt.Errorf("Unknown chaincodeType: %s", chaincodeType)
 	}
+}
 
+func GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
+	platform, err := _Find(spec.Type)
+	if err != nil {
+		return nil, err
+	}
+
+	return platform.GetChainCodePayload(spec)
 }
 
 func GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error) {

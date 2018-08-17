@@ -94,6 +94,10 @@ func (javaPlatform *Platform) ValidateDeploymentSpec(cds *pb.ChaincodeDeployment
 	return nil
 }
 
+func (javaPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
+	return nil, nil
+}
+
 // WritePackage writes the java chaincode package
 func (javaPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error) {
 

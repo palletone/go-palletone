@@ -205,3 +205,27 @@ func StopById(chainID string, txid string, deployId string, deleteImage bool) er
 
 	return errors.New("not find deployId")
 }
+
+//install chaincode into db
+func GetCCPayload(chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (payload []byte, err error) {
+	usrcc := &ucc.UserChaincode{
+		Name:    ccName,
+		Path:    ccPath,
+		Version: ccVersion,
+		Enabled: true,
+	}
+
+	paylod, err :=ucc.GetUserCCPayload(chainID, usrcc)
+	if err != nil {
+		return nil, err
+	}
+
+	return paylod, nil
+}
+
+
+
+
+
+
+
