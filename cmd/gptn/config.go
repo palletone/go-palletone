@@ -43,7 +43,7 @@ import (
 	"github.com/palletone/go-palletone/statistics/dashboard"
 )
 
-var defaultConfigPath = filepath.Join(node.DefaultDataDir(), "palletone.toml")
+const defaultConfigPath = "palletone.toml"
 
 var (
 	dumpConfigCommand = cli.Command{

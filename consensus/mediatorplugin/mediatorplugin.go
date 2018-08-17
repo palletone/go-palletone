@@ -247,5 +247,5 @@ func (mp *MediatorPlugin) recPendingBLSSignedLoop() {
 
 func (mp *MediatorPlugin) unitBLSSign(toBLSSigned *toBLSSigned)  {
 	//todo
-	
+
 }
