@@ -320,7 +320,7 @@ func GetCanonicalHash(db DatabaseReader, number uint64) (common.Hash, error) {
 	}
 	return common.BytesToHash(data), nil
 }
-func GetHeadHeaderHash(db DatabaseReader, hash common.Hash) (common.Hash, error) {
+func GetHeadHeaderHash(db DatabaseReader) (common.Hash, error) {
 	data, err := db.Get(HeadHeaderKey)
 	if err != nil {
 		return common.Hash{}, err
@@ -332,7 +332,7 @@ func GetHeadHeaderHash(db DatabaseReader, hash common.Hash) (common.Hash, error)
 }
 
 // GetHeadUnitHash stores the head unit's hash.
-func GetHeadUnitHash(db DatabaseReader, hash common.Hash) (common.Hash, error) {
+func GetHeadUnitHash(db DatabaseReader) (common.Hash, error) {
 	data, err := db.Get(HeadUnitKey)
 	if err != nil {
 		return common.Hash{}, err
@@ -341,7 +341,7 @@ func GetHeadUnitHash(db DatabaseReader, hash common.Hash) (common.Hash, error) {
 }
 
 // GetHeadFastUnitHash stores the fast head unit's hash.
-func GetHeadFastUnitHash(db DatabaseReader, hash common.Hash) (common.Hash, error) {
+func GetHeadFastUnitHash(db DatabaseReader) (common.Hash, error) {
 	data, err := db.Get(HeadFastKey)
 	if err != nil {
 		return common.Hash{}, err
@@ -351,7 +351,7 @@ func GetHeadFastUnitHash(db DatabaseReader, hash common.Hash) (common.Hash, erro
 
 // GetTrieSyncProgress stores the fast sync trie process counter to support
 // retrieving it across restarts.
-func GetTrieSyncProgress(db DatabaseReader, count uint64) (uint64, error) {
+func GetTrieSyncProgress(db DatabaseReader) (uint64, error) {
 	data, err := db.Get(TrieSyncKey)
 	if err != nil {
 		return 0, err
