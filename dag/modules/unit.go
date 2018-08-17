@@ -341,6 +341,7 @@ type ContractReadSet struct {
 type ContractDeployPayload struct {
 	TemplateId   common.Hash        `json:"template_id"`   // contract template id
 	ContractId   string             `json:"contract_id"`   // contract id
+	Name         string             `json:"name"`          // the name for contract
 	Args         [][]byte           `json:"args"`          // contract arguments list
 	Excutiontime uint16             `json:"excution_time"` // contract execution time, millisecond
 	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
