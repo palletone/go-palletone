@@ -3,14 +3,16 @@ package common
 import (
 	"log"
 	"testing"
+	"time"
 
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"time"
 )
 
 func TestNewGenesisUnit(t *testing.T) {
@@ -44,6 +46,11 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 }
 
 func TestSaveUnit(t *testing.T) {
+	if storage.Dbconn == nil {
+		log.Println("dbconn is nil , renew db  start ...")
+		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
+	}
+
 	addr := common.Address{}
 	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
 	//ks := keystore.NewKeyStore("./keystore", 1<<18, 1)
@@ -52,10 +59,22 @@ func TestSaveUnit(t *testing.T) {
 	p.SetString("0000000000000000000000000000000")
 	aid := modules.IDType16{}
 	aid.SetBytes([]byte("xxxxxxxxxxxxxxxxxx"))
-	header := modules.Header{
-		ParentsHash: []common.Hash{p},
-		AssetIDs:    []modules.IDType16{aid},
+	header := new(modules.Header)
+	header.ParentsHash = append(header.ParentsHash, p)
+	header.AssetIDs = []modules.IDType16{aid}
+	key, _ := crypto.GenerateKey()
+	addr0 := crypto.PubkeyToAddress(key.PublicKey)
+
+	sig, err := crypto.Sign(header.Hash().Bytes(), key)
+	if err != nil {
+		log.Println("sign header occured error: ", err)
 	}
+	auth := new(modules.Authentifier)
+	auth.R = sig[:32]
+	auth.S = sig[32:64]
+	auth.V = sig[64:]
+	auth.Address = addr0.String()
+	header.Authors = auth
 	contractTplPayload := modules.ContractTplPayload{
 		TemplateId: common.HexToHash("contract_template0000"),
 		Bytecode:   []byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159},
@@ -66,11 +85,11 @@ func TestSaveUnit(t *testing.T) {
 		TxIndex: 0,
 	}})
 	writeSet := []modules.PayloadMapStruct{
-		modules.PayloadMapStruct{
+		{
 			Key:   "name",
 			Value: "Joe",
 		},
-		modules.PayloadMapStruct{
+		{
 			Key:   "age",
 			Value: 10,
 		},
@@ -87,11 +106,11 @@ func TestSaveUnit(t *testing.T) {
 		Args:       [][]byte{[]byte("initial")},
 		ReadSet:    readSet,
 		WriteSet: []modules.PayloadMapStruct{
-			modules.PayloadMapStruct{
+			{
 				Key:   "name",
 				Value: "Alice",
 			},
-			modules.PayloadMapStruct{
+			{
 				Key: "Age",
 				Value: modules.DelContractState{
 					IsDelete: true,
@@ -101,7 +120,7 @@ func TestSaveUnit(t *testing.T) {
 	}
 	tx1 := modules.Transaction{
 		TxMessages: []modules.Message{
-			modules.Message{
+			{
 				App:         modules.APP_CONTRACT_TPL,
 				PayloadHash: rlp.RlpHash(contractTplPayload),
 				Payload:     contractTplPayload,
@@ -112,10 +131,15 @@ func TestSaveUnit(t *testing.T) {
 	tx1.CreationDate = tx1.CreateDate()
 	tx1.TxHash = tx1.Hash()
 	//tx1.From, _ = signTransaction(tx1.TxHash, &addr, ks)
+	sig1, _ := crypto.Sign(tx1.TxHash.Bytes(), key)
 
+	auth.R = sig1[:32]
+	auth.S = sig1[32:64]
+	auth.V = sig1[64:]
+	tx1.From = auth
 	tx2 := modules.Transaction{
 		TxMessages: []modules.Message{
-			modules.Message{
+			{
 				App:         modules.APP_CONTRACT_DEPLOY,
 				PayloadHash: rlp.RlpHash(deployPayload),
 				Payload:     deployPayload,
@@ -126,10 +150,14 @@ func TestSaveUnit(t *testing.T) {
 	tx2.CreationDate = tx2.CreateDate()
 	tx2.TxHash = tx2.Hash()
 	//tx2.From, _ = signTransaction(tx2.TxHash, &addr, ks)
-
+	sig2, _ := crypto.Sign(tx2.TxHash.Bytes(), key)
+	auth.R = sig2[:32]
+	auth.S = sig2[32:64]
+	auth.V = sig2[64:]
+	tx2.From = auth
 	tx3 := modules.Transaction{
 		TxMessages: []modules.Message{
-			modules.Message{
+			{
 				App:         modules.APP_CONTRACT_INVOKE,
 				PayloadHash: rlp.RlpHash(invokePayload),
 				Payload:     invokePayload,
@@ -139,13 +167,18 @@ func TestSaveUnit(t *testing.T) {
 	tx3.CreationDate = tx3.CreateDate()
 	tx3.TxHash = tx3.Hash()
 	//tx3.From, _ = signTransaction(tx3.TxHash, &addr, ks)
+	sig3, _ := crypto.Sign(tx3.TxHash.Bytes(), key)
+	auth.R = sig3[:32]
+	auth.S = sig3[32:64]
+	auth.V = sig3[64:]
+	tx3.From = auth
 
 	txs := modules.Transactions{}
 	txs = append(txs, &tx1)
 	txs = append(txs, &tx2)
 	txs = append(txs, &tx3)
 	unit := modules.Unit{
-		UnitHeader: &header,
+		UnitHeader: header,
 		Txs:        txs,
 	}
 	unit.UnitSize = unit.Size()

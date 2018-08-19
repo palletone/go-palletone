@@ -94,7 +94,7 @@ type Backend interface {
 
 	GetHeadUnitHash() (common.Hash, error)
 
-	GetHeadFashUnitHash() (common.Hash, error)
+	GetHeadFastUnitHash() (common.Hash, error)
 
 	GetTrieSyncProgress() (uint64, error)
 

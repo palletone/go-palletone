@@ -301,7 +301,7 @@ func (d *Dag) GetHeadUnitHash() (common.Hash, error) {
 	return storage.GetHeadUnitHash(d.Db)
 }
 
-func (d *Dag) GetHeadFashUnitHash() (common.Hash, error) {
+func (d *Dag) GetHeadFastUnitHash() (common.Hash, error) {
 	return storage.GetHeadFastUnitHash(d.Db)
 }
 

@@ -517,9 +517,9 @@ func (ec *Client) GetHeadUnitHash(ctx context.Context) (common.Hash, error) {
 	return result, err
 }
 
-func (ec *Client) GetHeadFashUnitHash(ctx context.Context) (common.Hash, error) {
+func (ec *Client) GetHeadFastUnitHash(ctx context.Context) (common.Hash, error) {
 	var result common.Hash
-	err := ec.c.CallContext(ctx, &result, "ptn_getHeadFashUnitHash", nil)
+	err := ec.c.CallContext(ctx, &result, "ptn_getHeadFastUnitHash", nil)
 	return result, err
 }
 

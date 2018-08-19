@@ -5497,9 +5497,9 @@ var methods = function () {
         params: 0,
         // inputFormatter: [null]
     });
-    var getHeadFashUnitHash = new Method({
-        name: 'getHeadFashUnitHash',
-        call: 'ptn_getHeadFashUnitHash',
+    var getHeadFastUnitHash = new Method({
+        name: 'getHeadFastUnitHash',
+        call: 'ptn_getHeadFastUnitHash',
         params: 0,
         // inputFormatter: [null]
     });
@@ -5563,7 +5563,7 @@ var methods = function () {
         getCanonicalHash,
         getHeadUnitHash,
         getHeadHeaderHash,
-        getHeadFashUnitHash,
+        getHeadFastUnitHash,
         getTrieSyncProgress,
         getUtxoEntry,
         getAddrOutput,

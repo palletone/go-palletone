@@ -190,8 +190,8 @@ func (b *PtnApiBackend) GetHeadUnitHash() (common.Hash, error) {
 	return b.ptn.dag.GetHeadUnitHash()
 }
 
-func (b *PtnApiBackend) GetHeadFashUnitHash() (common.Hash, error) {
-	return b.ptn.dag.GetHeadFashUnitHash()
+func (b *PtnApiBackend) GetHeadFastUnitHash() (common.Hash, error) {
+	return b.ptn.dag.GetHeadFastUnitHash()
 }
 
 func (b *PtnApiBackend) GetTrieSyncProgress() (uint64, error) {
