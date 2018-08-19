@@ -32,11 +32,14 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/syndtr/goleveldb/leveldb/iterator"
 )
 
 // DatabaseReader wraps the Get method of a backing data store.
 type DatabaseReader interface {
 	Get(key []byte) (value []byte, err error)
+	NewIterator() iterator.Iterator
+	NewIteratorWithPrefix(prefix []byte) iterator.Iterator
 }
 
 // @author Albert·Gou
@@ -83,23 +86,16 @@ func GetString(key []byte) (string, error) {
 
 // get prefix: return maps
 func GetPrefix(prefix []byte) map[string][]byte {
-	if Dbconn != nil {
-		return getprefix(Dbconn, prefix)
-	} else {
-		db := ReNewDbConn(config.DbPath)
-		if db == nil {
-			return nil
-		}
-
-		Dbconn = db
-		return getprefix(db, prefix)
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(config.DbPath)
 	}
+	return getprefix(Dbconn, prefix)
 
 }
 
 // get prefix
 func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
-	iter := Dbconn.NewIteratorWithPrefix(prefix)
+	iter := db.NewIteratorWithPrefix(prefix)
 	result := make(map[string][]byte)
 	for iter.Next() {
 		key := iter.Key()
@@ -110,39 +106,39 @@ func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 	return result
 }
 
-func GetUnit(hash common.Hash) *modules.Unit {
-	unit_bytes, err := Get(append(UNIT_PREFIX, hash.Bytes()...))
+func GetUnit(db DatabaseReader, hash common.Hash) *modules.Unit {
+	unit_bytes, err := db.Get(append(UNIT_PREFIX, hash.Bytes()...))
 	log.Println(err)
 	var unit modules.Unit
 	json.Unmarshal(unit_bytes, &unit)
 
 	return &unit
 }
-func GetUnitFormIndex(height uint64, asset modules.IDType16) *modules.Unit {
+func GetUnitFormIndex(db DatabaseReader, height uint64, asset modules.IDType16) *modules.Unit {
 	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, asset.String(), height)
-	hash, err := Get([]byte(key))
+	hash, err := db.Get([]byte(key))
 	if err != nil {
 		return nil
 	}
 	var h common.Hash
 	h.SetBytes(hash)
-	return GetUnit(h)
+	return GetUnit(db, h)
 }
 
-func GetHeader(hash common.Hash, index uint64) *modules.Header {
+func GetHeader(db DatabaseReader, hash common.Hash, index uint64) (*modules.Header, error) {
 
 	encNum := encodeBlockNumber(index)
 	key := append(HEADER_PREFIX, encNum...)
-	header_bytes, err := Get(append(key, hash.Bytes()...))
+	header_bytes, err := db.Get(append(key, hash.Bytes()...))
 	// rlp  to  Header struct
 	log.Println(err)
 	header := new(modules.Header)
 	if err := rlp.Decode(bytes.NewReader(header_bytes), &header); err != nil {
 		log.Println("Invalid unit header rlp:", err)
-		return nil
+		return nil, err
 	}
 
-	return header
+	return header, nil
 }
 
 func GetHeaderRlp(db DatabaseReader, hash common.Hash, index uint64) rlp.RawValue {
@@ -154,8 +150,8 @@ func GetHeaderRlp(db DatabaseReader, hash common.Hash, index uint64) rlp.RawValu
 	return header_bytes
 }
 
-func GetHeaderFormIndex(height uint64, asset modules.IDType16) *modules.Header {
-	unit := GetUnitFormIndex(height, asset)
+func GetHeaderFormIndex(db DatabaseReader, height uint64, asset modules.IDType16) *modules.Header {
+	unit := GetUnitFormIndex(db, height, asset)
 	return unit.UnitHeader
 }
 
@@ -211,11 +207,11 @@ func gettrasaction(hash common.Hash) (*modules.Transaction, error) {
 }
 
 // GetContract can get a Contract by the contract hash
-func GetContract(id common.Hash) (*modules.Contract, error) {
+func GetContract(db DatabaseReader, id common.Hash) (*modules.Contract, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
-	con_bytes, err := Get(append(CONTRACT_PTEFIX, id[:]...))
+	con_bytes, err := db.Get(append(CONTRACT_PTEFIX, id[:]...))
 	if err != nil {
 		log.Println("err:", err)
 		return nil, err
@@ -252,11 +248,11 @@ func GetContractTpl(templateID string) (*modules.StateVersion, []byte) {
 	return nil, nil
 }
 
-func GetContractRlp(id common.Hash) (rlp.RawValue, error) {
+func GetContractRlp(db DatabaseReader, id common.Hash) (rlp.RawValue, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
-	con_bytes, err := Get(append(CONTRACT_PTEFIX, id[:]...))
+	con_bytes, err := db.Get(append(CONTRACT_PTEFIX, id[:]...))
 	if err != nil {
 		return nil, err
 	}
@@ -264,12 +260,12 @@ func GetContractRlp(id common.Hash) (rlp.RawValue, error) {
 }
 
 // Get contract key's value
-func GetContractKeyValue(id common.Hash, key string) (interface{}, error) {
+func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interface{}, error) {
 	var val interface{}
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
-	con_bytes, err := Get(append(CONTRACT_PTEFIX, id[:]...))
+	con_bytes, err := db.Get(append(CONTRACT_PTEFIX, id[:]...))
 	if err != nil {
 		return nil, err
 	}
@@ -378,8 +374,8 @@ func GetUtxoEntry(db DatabaseReader, key []byte) (*modules.Utxo, error) {
 }
 
 // GetAdddrTransactionsHash
-func GetAddrTransactionsHash(addr string) ([]common.Hash, error) {
-	data, err := Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
+func GetAddrTransactionsHash(db DatabaseReader, addr string) ([]common.Hash, error) {
+	data, err := db.Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
 	if err != nil {
 		return []common.Hash{}, err
 	}
@@ -391,8 +387,8 @@ func GetAddrTransactionsHash(addr string) ([]common.Hash, error) {
 }
 
 // GetAddrTransactions
-func GetAddrTransactions(addr string) (modules.Transactions, error) {
-	data, err := Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
+func GetAddrTransactions(db DatabaseReader, addr string) (modules.Transactions, error) {
+	data, err := db.Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
 	if err != nil {
 		return modules.Transactions{}, err
 	}
@@ -409,7 +405,8 @@ func GetAddrTransactions(addr string) (modules.Transactions, error) {
 }
 
 // Get income transactions
-func GetAddrOutput(addr string) ([]modules.Output, error) {
+func GetAddrOutput(db DatabaseReader, addr string) ([]modules.Output, error) {
+
 	data := GetPrefix(append(AddrOutput_Prefix, []byte(addr)...))
 	outputs := make([]modules.Output, 0)
 	var err error

@@ -77,7 +77,7 @@ func TestGetContract(t *testing.T) {
 	log.Println("test data: ", keys)
 
 	for i, k := range keys {
-		data, err := GetContractKeyValue(origin.Id, k)
+		data, err := GetContractKeyValue(Dbconn, origin.Id, k)
 		if !reflect.DeepEqual(data, results[i]) {
 			t.Error("test error:", err, "the expect key is:", k, " value is :", results[i], ",but the return value is: ", data)
 		}

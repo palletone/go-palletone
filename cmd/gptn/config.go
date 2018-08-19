@@ -165,7 +165,7 @@ func getConfigPath(configPath, dataDir string) (string, error) {
 		return filepath.Join(dataDir, defaultConfigPath), nil
 	}
 
-	if configPath !="" {
+	if configPath != "" {
 		return filepath.Abs(configPath)
 	}
 

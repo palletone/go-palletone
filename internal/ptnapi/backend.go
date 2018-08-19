@@ -84,21 +84,21 @@ type Backend interface {
 	GetUnit(hash common.Hash) *modules.Unit
 
 	// Get UnitNumber
-	GetUnitNumber(db ptndb.Database, hash common.Hash) uint64
+	GetUnitNumber(hash common.Hash) uint64
 
 	// GetCanonicalHash
-	GetCanonicalHash(db ptndb.Database, number uint64) (common.Hash, error)
+	GetCanonicalHash(number uint64) (common.Hash, error)
 
 	// Get state
-	GetHeadHeaderHash(db ptndb.Database) (common.Hash, error)
+	GetHeadHeaderHash() (common.Hash, error)
 
-	GetHeadUnitHash(db ptndb.Database) (common.Hash, error)
+	GetHeadUnitHash() (common.Hash, error)
 
-	GetHeadFashUnitHash(db ptndb.Database) (common.Hash, error)
+	GetHeadFashUnitHash() (common.Hash, error)
 
-	GetTrieSyncProgress(db ptndb.Database) (uint64, error)
+	GetTrieSyncProgress() (uint64, error)
 
-	GetUtxoEntry(db ptndb.Database, key []byte) (*modules.Utxo, error)
+	GetUtxoEntry(key []byte) (*modules.Utxo, error)
 
 	GetAddrOutput(addr string) ([]modules.Output, error)
 

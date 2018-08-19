@@ -23,6 +23,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
@@ -34,8 +37,6 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
-	"reflect"
-	"strings"
 )
 
 func RHashStr(x interface{}) string {
@@ -573,8 +574,8 @@ func saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Mes
 从levedb中根据ChainIndex获得Unit信息
 To get unit information by its ChainIndex
 */
-func QueryUnitByChainIndex(index *modules.ChainIndex) *modules.Unit {
-	return storage.GetUnitFormIndex(index.Index, index.AssetID)
+func QueryUnitByChainIndex(db, index *modules.ChainIndex) *modules.Unit {
+	return storage.GetUnitFormIndex(storage.Dbconn, index.Index, index.AssetID)
 }
 
 /**

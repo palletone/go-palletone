@@ -5268,13 +5268,13 @@ Object.defineProperty(Ptn.prototype, 'defaultAccount', {
 
 var methods = function () {
 	
-	var forking = new Method({
-	    name: 'forking',
-	    call: 'ptn_forking',
-	    params: 1,
-	    inputFormatter: [null],
-	    outputFormatter: formatters.outputBigNumberFormatter
-	});
+	  var forking = new Method({
+	      name: 'forking',
+	      call: 'ptn_forking',
+	      params: 1,
+	      inputFormatter: [null],
+	      outputFormatter: formatters.outputBigNumberFormatter
+	  });
 	
     var getBalance = new Method({
         name: 'getBalance',
@@ -5454,8 +5454,83 @@ var methods = function () {
         // inputFormatter: [null]
     });
 
+    var getContract = new Method({
+        name: 'getContract',
+        call: 'ptn_getContract',
+        params: 1,
+        // inputFormatter: [null]
+    });
+    var getHeader = new Method({
+        name: 'getHeader',
+        call: 'ptn_getHeader',
+        params: 2,
+        // inputFormatter: [null]
+    });         
+    var getUnit = new Method({
+        name: 'getUnit',
+        call: 'ptn_getUnit',
+        params: 1,
+        // inputFormatter: [null]
+    });
+    var getUnitNumber = new Method({
+        name: 'getUnitNumber',
+        call: 'ptn_getUnitNumber',
+        params: 1,
+        // inputFormatter: [null]
+    });
+
+    var getCanonicalHash = new Method({
+        name: 'getCanonicalHash',
+        call: 'ptn_getCanonicalHash',
+        params: 1,
+        // inputFormatter: [null]
+    });
+    var getHeadHeaderHash = new Method({
+        name: 'getHeadHeaderHash',
+        call: 'ptn_getHeadHeaderHash',
+        params: 0,
+        // inputFormatter: [null]
+    });
+    var getHeadUnitHash = new Method({
+        name: 'getHeadUnitHash',
+        call: 'ptn_getHeadUnitHash',
+        params: 0,
+        // inputFormatter: [null]
+    });
+    var getHeadFashUnitHash = new Method({
+        name: 'getHeadFashUnitHash',
+        call: 'ptn_getHeadFashUnitHash',
+        params: 0,
+        // inputFormatter: [null]
+    });
+    var getTrieSyncProgress = new Method({
+        name: 'getTrieSyncProgress',
+        call: 'ptn_getTrieSyncProgress',
+        params: 0,
+        // inputFormatter: [null]
+    });
+    var getUtxoEntry = new Method({
+        name: 'getUtxoEntry',
+        call: 'ptn_getUtxoEntry',
+        params: 1,
+        // inputFormatter: [null]
+    });
+    var getAddrOutput = new Method({
+        name: 'getAddrOutput',
+        call: 'ptn_getAddrOutput',
+        params: 1,
+        // inputFormatter: [null]
+    });
+    var getAddrTxs = new Method({
+        name: 'getAddrTxs',
+        call: 'ptn_getAddrTxs',
+        params: 1,
+        // inputFormatter: [null]
+    });
+
+
     return [
-		forking,
+		    forking,
         getBalance,
         getStorageAt,
         getCode,
@@ -5480,7 +5555,19 @@ var methods = function () {
         submitWork,
         getWork,
         walletTokens,
-        walletBalance
+        walletBalance,
+        getContract,
+        getHeader,
+        getUnit,
+        getUnitNumber,
+        getCanonicalHash,
+        getHeadUnitHash,
+        getHeadHeaderHash,
+        getHeadFashUnitHash,
+        getTrieSyncProgress,
+        getUtxoEntry,
+        getAddrOutput,
+        getAddrTxs,
     ];
 };
 

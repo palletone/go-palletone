@@ -427,7 +427,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			case query.Origin.Hash != (common.Hash{}) && query.Reverse:
 				// Hash based traversal towards the genesis block
 				for i := 0; i < int(query.Skip)+1; i++ {
-					if header := pm.dag.GetHeader(query.Origin.Hash, number); header != nil {
+					if header, err := pm.dag.GetHeader(query.Origin.Hash, number); err == nil && header != nil {
 						query.Origin.Hash = header.ParentsHash[0]
 						number--
 					} else {

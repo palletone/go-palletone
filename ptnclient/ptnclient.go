@@ -468,3 +468,81 @@ func (ec *Client) WalletBalance(ctx context.Context, address string, assetid []b
 	err := ec.c.CallContext(ctx, &result, "ptn_walletBalance", address, assetid, uniqueid, chainid)
 	return result, err
 }
+
+// GetContract
+func (ec *Client) GetContract(ctx context.Context, id common.Hash) (*modules.Contract, error) {
+	result := new(modules.Contract)
+	err := ec.c.CallContext(ctx, &result, "ptn_getContract", id)
+	return result, err
+}
+
+// Get Header
+func (ec *Client) GetHeader(ctx context.Context, hash common.Hash, index uint64) (*modules.Header, error) {
+	result := new(modules.Header)
+	err := ec.c.CallContext(ctx, &result, "ptn_getHeader", hash, index)
+	return result, err
+}
+
+// Get Unit
+func (ec *Client) GetUnit(ctx context.Context, hash common.Hash) (*modules.Unit, error) {
+	result := new(modules.Unit)
+	err := ec.c.CallContext(ctx, &result, "ptn_getUnit", hash)
+	return result, err
+}
+
+// Get UnitNumber
+func (ec *Client) GetUnitNumber(ctx context.Context, hash common.Hash) (uint64, error) {
+	var result uint64
+	err := ec.c.CallContext(ctx, &result, "ptn_getUnitNumber", hash)
+	return result, err
+}
+
+// GetCanonicalHash
+func (ec *Client) GetCanonicalHash(ctx context.Context, number uint64) (common.Hash, error) {
+	var result common.Hash
+	err := ec.c.CallContext(ctx, &result, "ptn_getCanonicalHash", number)
+	return result, err
+}
+
+// Get state
+func (ec *Client) GetHeadHeaderHash(ctx context.Context) (common.Hash, error) {
+	var result common.Hash
+	err := ec.c.CallContext(ctx, &result, "ptn_getHeadHeaderHash", nil)
+	return result, err
+}
+
+func (ec *Client) GetHeadUnitHash(ctx context.Context) (common.Hash, error) {
+	var result common.Hash
+	err := ec.c.CallContext(ctx, &result, "ptn_getHeadUnitHash", nil)
+	return result, err
+}
+
+func (ec *Client) GetHeadFashUnitHash(ctx context.Context) (common.Hash, error) {
+	var result common.Hash
+	err := ec.c.CallContext(ctx, &result, "ptn_getHeadFashUnitHash", nil)
+	return result, err
+}
+
+func (ec *Client) GetTrieSyncProgress(ctx context.Context) (uint64, error) {
+	var result uint64
+	err := ec.c.CallContext(ctx, &result, "ptn_getTrieSyncProgress", nil)
+	return result, err
+}
+
+func (ec *Client) GetUtxoEntry(ctx context.Context, key []byte) (*modules.Utxo, error) {
+	result := new(modules.Utxo)
+	err := ec.c.CallContext(ctx, &result, "ptn_getUtxoEntry", key)
+	return result, err
+}
+
+func (ec *Client) GetAddrOutput(ctx context.Context, addr string) ([]modules.Output, error) {
+	result := make([]modules.Output, 0)
+	err := ec.c.CallContext(ctx, &result, "ptn_getAddrOutput", addr)
+	return result, err
+}
+
+func (ec *Client) GetAddrTransactions(ctx context.Context, addr string) (modules.Transactions, error) {
+	result := make(modules.Transactions, 0)
+	err := ec.c.CallContext(ctx, &result, "ptn_getAddrTxs", addr)
+	return result, err
+}
