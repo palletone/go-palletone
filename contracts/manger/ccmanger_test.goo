@@ -403,7 +403,70 @@ func TestInstallCC(t *testing.T) {
 		t.Errorf("StopUserCC err:%s", err)
 	}
 	time.Sleep(2 * time.Second)
+}
 
+func TestInstallCCApi(t *testing.T) {
+	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
+	viper.Set("peer.address", "127.0.0.1:12345")
+	viper.Set("chaincode.executetimeout", 20*time.Second)
+
+	viper.Set("vm.endpoint", "unix:///var/run/docker.sock")
+	viper.Set("chaincode.builder", "palletimg")
+
+	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
+	chainID := util.GetTestChainID()
+
+	var txid string = "1234567890" //default
+	nonce, err := crypto.GetRandomNonce()
+	if err == nil {
+		txid, err = computeProposalTxID(nonce, []byte("glh"))
+	}
+
+	f := "init"
+	args := util.ToChaincodeArgs(f, "a", "100", "b", "200")
+
+	usercc := &ucc.UserChaincode{
+		Enabled:  true,
+		Name:     "example01",
+		Path:     "chaincode/example01",
+		Version:  "ptn001",
+		InitArgs: args,
+		//Chaincode: &samplesyscc.SampleSysCC{},
+	}
+	InitNoSysCCC()
+
+	//intall
+	payload, err := Install(chainID, usercc.Name, usercc.Path, usercc.Version)
+	if err != nil {
+		t.Errorf("install chaincode fail [%s]", usercc.Name)
+	}
+
+	//deploy
+	fmt.Print("=======================DeployUserCC=============================")
+	deployId, rsp, err := DeployByTemplateId(chainID, txid, payload.TemplateId[:], args, 30*time.Second)
+	if err != nil {
+		t.Errorf("DeployUserCC err:%s", err)
+	}
+	time.Sleep(1 * time.Second)
+
+	//invoke
+	fmt.Print("=======================Invoke=============================")
+	f = "invoke"
+	args = util.ToChaincodeArgs(f, "111")
+	_, err = Invoke(chainID, "example01", txid, args, 0)
+	if err != nil {
+		t.Errorf("Invoke err:%s", err)
+	}
+	time.Sleep(2 * time.Second)
+
+	//stop
+	usercc.Name = "example01"
+	fmt.Print("=======================StopUserCC=============================")
+	err = Stop(chainID, txid, usercc.Name, usercc.Path, usercc.Version, true)
+	if err != nil {
+		t.Errorf("StopUserCC err:%s", err)
+	}
+	time.Sleep(2 * time.Second)
 }
 
 func invokeUserCC(t *testing.T, txid string) {
@@ -456,3 +519,8 @@ func TestChainCodeList(t *testing.T) {
 		t.Logf("%s:%v", k, *v)
 	}
 }
+
+func TestFileRW(t *testing.T) {
+	ucc.RecoverChainCodeFromDb("", nil)
+}
+

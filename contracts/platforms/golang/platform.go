@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -253,17 +254,64 @@ func vendorDependencies(pkg string, files Sources) {
 	}
 }
 
+func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
+	var err error
+
+	logger.Info("enter")
+	defer logger.Info("exit")
+
+	code, err := getCode(spec) //获取代码，即构造CodeDescriptor，Gopath为代码真实路径，Pkg为代码相对路径
+	if err != nil {
+		return nil, err
+	}
+	//logger.Infof("============path[%s], pkg[%s]", code.Gopath, code.Pkg)	//============path[/home/glh/go], pkg[chaincode/example01]
+
+	fileMap, err := findSource(code.Gopath, code.Pkg) //遍历链码路径下文件
+	if err != nil {
+		return nil, err
+	}
+
+	files := make(Sources, 0)
+	for _, file := range fileMap {
+		files = append(files, file)
+	}
+
+	vendorDependencies(code.Pkg, files)
+	sort.Sort(files)
+
+	payload := bytes.NewBuffer(nil)
+	gw := gzip.NewWriter(payload)
+	tw := tar.NewWriter(gw)
+	for _, file := range files {
+		err = cutil.WriteFileToPackage(file.Path, file.Name, tw)
+		if err != nil {
+			return nil, fmt.Errorf("Error writing %s to tar: %s", file.Name, err)
+		}
+	}
+	tw.Close()
+	gw.Close()
+
+	return payload.Bytes(), nil
+}
+
 // Generates a deployment payload for GOLANG as a series of src/$pkg entries in .tar.gz format
 func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error) {
 	var err error
 
+	logger.Info("enter")
+	defer logger.Info("exit")
+
 	// --------------------------------------------------------------------------------------
 	// retrieve a CodeDescriptor from either HTTP or the filesystem
 	// --------------------------------------------------------------------------------------
-	code, err := getCode(spec)//获取代码，即构造CodeDescriptor，Gopath为代码真实路径，Pkg为代码相对路径
+	code, err := getCode(spec) //获取代码，即构造CodeDescriptor，Gopath为代码真实路径，Pkg为代码相对路径
 	if err != nil {
 		return nil, err
 	}
+
+	//logger.Infof("============path[%s], pkg[%s]", code.Gopath, code.Pkg)
+	// ============path[/home/glh/go], pkg[chaincode/example01]
+
 	if code.Cleanup != nil {
 		defer code.Cleanup()
 	}
@@ -275,9 +323,9 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 	if err != nil {
 		return nil, err
 	}
-	gopaths := splitEnvPaths(env["GOPATH"])//GOPATH
-	goroots := splitEnvPaths(env["GOROOT"])//GOROOT，go安装路径
-	gopaths[code.Gopath] = true  //链码真实路径
+	gopaths := splitEnvPaths(env["GOPATH"])  //GOPATH
+	goroots := splitEnvPaths(env["GOROOT"])  //GOROOT，go安装路径
+	gopaths[code.Gopath] = true              //链码真实路径
 	env["GOPATH"] = flattenEnvPaths(gopaths) //GOPATH、GOROOT、链码真实路径重新拼合为新GOPATH
 
 	// --------------------------------------------------------------------------------------
@@ -415,7 +463,7 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 	// --------------------------------------------------------------------------------------
 	// Remap non-package dependencies to package/vendor
 	// --------------------------------------------------------------------------------------
-	vendorDependencies(code.Pkg, files)//重新映射依赖关系
+	vendorDependencies(code.Pkg, files) //重新映射依赖关系
 
 	// --------------------------------------------------------------------------------------
 	// Sort on the filename so the tarball at least looks sane in terms of package grouping
@@ -430,7 +478,6 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 	tw := tar.NewWriter(gw)
 
 	for _, file := range files {
-
 		// file.Path represents os localpath
 		// file.Name represents tar packagepath
 
@@ -485,7 +532,7 @@ func (goPlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec) 
 	var buf []string
 	//glh
 	//buf = append(buf, "FROM "+cutil.GetDockerfileFromConfig("chaincode.golang.runtime"))
-	buf = append(buf, "FROM "+ "palletimg")
+	buf = append(buf, "FROM "+"palletimg")
 	buf = append(buf, "ADD binpackage.tar /usr/local/bin")
 
 	dockerFileContents := strings.Join(buf, "\n")
@@ -525,7 +572,7 @@ func (goPlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec,
 	binpackage := bytes.NewBuffer(nil)
 
 	err = util.DockerBuild(util.DockerBuildOptions{
-		Cmd:          fmt.Sprintf("GOPATH=/chaincode/input:$GOPATH go build -tags \"%s\" %s -o /chaincode/output/chaincode %s", gotags, ldflagsOpt, pkgname),
+		Cmd: fmt.Sprintf("GOPATH=/chaincode/input:$GOPATH go build -tags \"%s\" %s -o /chaincode/output/chaincode %s", gotags, ldflagsOpt, pkgname),
 		//Cmd:          fmt.Sprintf("GOPATH=/chaincode/input:\"/home/glh/go\" go build -tags \"%s\" %s -o /chaincode/output/chaincode %s", gotags, ldflagsOpt, pkgname),
 		InputStream:  codepackage,
 		OutputStream: binpackage,

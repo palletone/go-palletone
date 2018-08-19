@@ -43,7 +43,8 @@ type PtnApiBackend struct {
 //}
 
 func (b *PtnApiBackend) SetHead(number uint64) {
-	b.ptn.protocolManager.downloader.Cancel()
+	//b.ptn.protocolManager.downloader.Cancel()
+	//b.ptn.dag.SetHead(number)
 }
 
 func (b *PtnApiBackend) HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*modules.Header, error) {

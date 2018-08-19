@@ -240,9 +240,10 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	case APP_CONTRACT_DEPLOY:
 		payload, _ := cpyMsg.Payload.(ContractDeployPayload)
 		newPayload := ContractDeployPayload{
-			TemplateId: payload.TemplateId,
-			ContractId: payload.ContractId,
-			Config:     payload.Config,
+			TemplateId:   payload.TemplateId,
+			ContractId:   payload.ContractId,
+			Args:         payload.Args,
+			Excutiontime: payload.Excutiontime,
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
@@ -258,8 +259,9 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	case APP_CONTRACT_INVOKE:
 		payload, _ := cpyMsg.Payload.(ContractInvokePayload)
 		newPayload := ContractInvokePayload{
-			ContractId: payload.ContractId,
-			Function:   payload.Function,
+			ContractId:   payload.ContractId,
+			Args:         payload.Args,
+			Excutiontime: payload.Excutiontime,
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
@@ -317,7 +319,11 @@ func (version *StateVersion) ParseStringKey(key string) {
 // Contract template deploy message
 // App: contract_template
 type ContractTplPayload struct {
-	TemplateId common.Hash `json:"template_id"` // configure xml file of contract
+	TemplateId common.Hash `json:"template_id"` // contract template id
+	Name       string      `json:"name"`        // contract template name
+	Path       string      `json:"path"`        // contract template execute path
+	Version    string      `json:"version"`     // contract template version
+	Memery     uint16      `json:"memory"`      // coontract template bytecode memory size(Byte), use to compute transaction fee
 	Bytecode   []byte      `json:"bytecode"`    // contract bytecode
 }
 
@@ -333,20 +339,23 @@ type ContractReadSet struct {
 // Contract instance message
 // App: contract_deploy
 type ContractDeployPayload struct {
-	TemplateId common.Hash        `json:"template_id"` // contract template id
-	ContractId string             `json:"contract_id"` // contract id
-	Config     []byte             `json:"config"`      // configure xml file of contract instance parameters
-	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
-	WriteSet   []PayloadMapStruct `json:"write_set"`   // the set data of write, and value could be any type
+	TemplateId   common.Hash        `json:"template_id"`   // contract template id
+	ContractId   string             `json:"contract_id"`   // contract id
+	Name         string             `json:"name"`          // the name for contract
+	Args         [][]byte           `json:"args"`          // contract arguments list
+	Excutiontime uint16             `json:"excution_time"` // contract execution time, millisecond
+	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
+	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
 }
 
 // Contract invoke message
 // App: contract_invoke
 type ContractInvokePayload struct {
-	ContractId string             `json:"contract_id"` // contract id
-	Function   []byte             `json:"function"`    // serialized value of invoked function with call parameters
-	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
-	WriteSet   []PayloadMapStruct `json:"write_set"`   // the set data of write, and value could be any type
+	ContractId   string             `json:"contract_id"`   // contract id
+	Args         [][]byte           `json:"args"`          // contract arguments list
+	Excutiontime uint16             `json:"excution_time"` // contract execution time, millisecond
+	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
+	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
 }
 
 // Token exchange message and verify message

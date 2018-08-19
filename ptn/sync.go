@@ -173,15 +173,15 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	//TODO compare local assetId & chainIndex whith remote peer assetId & chainIndex
 	pHead, index := peer.Head()
 	/*
-		currentBlock := pm.blockchain.CurrentBlock()
-		td := pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())
+		currentUnit := pm.dag.CurrentUnit()
+		//td := pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())
+		//index := currentUnit. //pm.dag.GetIndex(currentBlock.Hash(), currentBlock.NumberU64())
 
 		pHead, pTd := peer.Head()
 		if pTd.Cmp(td) <= 0 {
 			return
 		}
 	*/
-
 	// Otherwise try to sync with the downloader
 	mode := downloader.FullSync
 

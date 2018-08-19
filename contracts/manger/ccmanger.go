@@ -205,12 +205,6 @@ func createChaincodeProposalWithTransient(typ common.HeaderType, chainID string,
 	if err != nil {
 		return nil, "", err
 	}
-	// compute txid
-	//txid, err := computeProposalTxID(nonce, creator)
-	//if err != nil {
-	//	return nil, "", err
-	//}
-
 	return createChaincodeProposalWithTxIDNonceAndTransient(txid, typ, chainID, cis, nonce, creator, transientMap)
 }
 
@@ -294,7 +288,13 @@ func systemContractDeInit() error {
 	return nil
 }
 
-func systemContractStop() error {
+func packChaincode(chainID string, ccName string, ccPath string, ccVersion string, args [][]byte) error {
 
 	return nil
 }
+
+func recoverChaincodeFromeDb() error {
+
+	return nil
+}
+

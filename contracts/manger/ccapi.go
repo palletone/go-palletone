@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"golang.org/x/net/context"
 
+	cp "github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	unit "github.com/palletone/go-palletone/dag/modules"
+	"bytes"
 )
 
 // contract manger module init
@@ -77,42 +80,35 @@ func GetUsrCCList() {
 
 }
 
-//timeout:ms
-// ccName can be contract Id
-func Invoke(chainID string, ccName string, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-	//func Invoke(chainID string, ccName string, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-	var mksupt Support = &SupportImpl{}
-	creator := []byte("palletone") //default
-	ccVersion := "ptn001"          //default
-
-	logger.Infof("===== Invoke [%s][%s]======", chainID, ccName)
-	es := NewEndorserServer(mksupt)
-	spec := &pb.ChaincodeSpec{
-		ChaincodeId: &pb.ChaincodeID{Name: ccName},
-		Type:        pb.ChaincodeSpec_GOLANG,
-		Input:       &pb.ChaincodeInput{Args: args},
-	}
-
-	cid := &pb.ChaincodeID{
-		Path:    "", //no use
+//install but not into db
+func Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error) {
+	usrcc := &ucc.UserChaincode{
 		Name:    ccName,
+		Path:    ccPath,
 		Version: ccVersion,
+		Enabled: true,
 	}
 
-	sprop, prop, err := signedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
+	paylod, err := ucc.GetUserCCPayload(chainID, usrcc)
 	if err != nil {
-		logger.Errorf("signedEndorserProposa error[%v]", err)
 		return nil, err
 	}
 
-	rsp, unit, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid, timeout)
-	if err != nil {
-		logger.Errorf("ProcessProposal error[%v]", err)
-		return nil, err
-	}
-	logger.Infof("Invoke Ok, ProcessProposal rsp=%v", rsp)
+	var buffer bytes.Buffer
+	buffer.Write([]byte(ccName))
+	buffer.Write([]byte(ccPath))
+	buffer.Write([]byte(ccVersion))
+	tpid := cp.Keccak256Hash(buffer.Bytes())
 
-	return unit, nil
+	payloadUnit := &unit.ContractTplPayload{
+		TemplateId: tpid,
+		Name:       ccName,
+		Path:       ccPath,
+		Version:    ccVersion,
+		Bytecode:   paylod,
+	}
+
+	return payloadUnit, nil
 }
 
 func Deploy(chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId string, respPayload *peer.ContractDeployPayload, e error) {
@@ -160,6 +156,103 @@ func Deploy(chainID string, txid string, ccName string, ccPath string, ccVersion
 	}
 
 	return cc.Id, nil, err
+}
+
+//func DeployByTemplateId(chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId string, respPayload *peer.ContractDeployPayload, e error) {
+func DeployByTemplateId(chainID string, txid string, templateId []byte,  args [][]byte, timeout time.Duration) (deployId string, respPayload *peer.ContractDeployPayload, e error) {
+	setChainId := "palletone"
+	setTimeOut := time.Duration(30) * time.Second
+
+	if chainID != "" {
+		setChainId = chainID
+	}
+	if timeout > 0 {
+		setTimeOut = timeout
+	}
+
+	templateCC, err := ucc.RecoverChainCodeFromDb(chainID, templateId)
+	if err != nil {
+		logger.Errorf("chainid[%s]-templateId[%s], RecoverChainCodeFromDb fail", chainID, templateId)
+		return "", nil, err
+	}
+
+	if txid == "" || templateCC.Name == "" || templateCC.Path == "" {
+		return "", nil, errors.New("input param is nil")
+	}
+	randNum, err := crypto.GetRandomNonce()
+	if err != nil {
+		return "", nil, errors.New("crypto.GetRandomNonce error")
+	}
+
+	usrcc := &ucc.UserChaincode{
+		Name:     templateCC.Name,
+		Path:     templateCC.Path,
+		Version:  templateCC.Version,
+		InitArgs: args,
+		Enabled:  true,
+	}
+
+	err = ucc.DeployUserCC(setChainId, usrcc, txid, setTimeOut)
+	if err != nil {
+		return "", nil, errors.New("Deploy fail")
+	}
+
+	cc := &CCInfo{
+		Id:      string(randNum),
+		Name:    templateCC.Name,
+		Path:    templateCC.Path,
+		Version: templateCC.Version,
+		SysCC:   false,
+		Enable:  true,
+	}
+	err = setChaincode(setChainId, 0, cc)
+	if err != nil {
+		logger.Errorf("setchaincode[%s]-[%s] fail", setChainId, cc.Name)
+	}
+
+	return cc.Id, nil, err
+}
+
+//timeout:ms
+// ccName can be contract Id
+func Invoke(chainID string, ccName string, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
+	//func Invoke(chainID string, ccName string, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
+	var mksupt Support = &SupportImpl{}
+	creator := []byte("palletone") //default
+	ccVersion := "ptn001"          //default
+
+	logger.Infof("===== Invoke [%s][%s]======", chainID, ccName)
+	start := time.Now()
+	es := NewEndorserServer(mksupt)
+	spec := &pb.ChaincodeSpec{
+		ChaincodeId: &pb.ChaincodeID{Name: ccName},
+		Type:        pb.ChaincodeSpec_GOLANG,
+		Input:       &pb.ChaincodeInput{Args: args},
+	}
+
+	cid := &pb.ChaincodeID{
+		Path:    "", //no use
+		Name:    ccName,
+		Version: ccVersion,
+	}
+
+	sprop, prop, err := signedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
+	if err != nil {
+		logger.Errorf("signedEndorserProposa error[%v]", err)
+		return nil, err
+	}
+
+	rsp, unit, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid, timeout)
+	t0 := time.Now()
+	duration := t0.Sub(start)
+
+	if err != nil {
+		logger.Errorf("ProcessProposal error[%v]", err)
+		return nil, err
+	}
+	logger.Infof("Invoke Ok, ProcessProposal duration=%v,rsp=%v", duration, rsp)
+
+	return unit, nil
 }
 
 func Stop(chainID string, txid string, ccName string, ccPath string, ccVersion string, deleteImage bool) error {
