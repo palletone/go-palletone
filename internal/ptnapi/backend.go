@@ -73,6 +73,36 @@ type Backend interface {
 	// wallet api
 	WalletTokens(address common.Address) (map[string]*modules.AccountToken, error)
 	WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
+
+	// Get Contract Api
+	GetContract(id common.Hash) (*modules.Contract, error)
+
+	// Get Header
+	GetHeader(hash common.Hash, index uint64) (*modules.Header, error)
+
+	// Get Unit
+	GetUnit(hash common.Hash) *modules.Unit
+
+	// Get UnitNumber
+	GetUnitNumber(db ptndb.Database, hash common.Hash) uint64
+
+	// GetCanonicalHash
+	GetCanonicalHash(db ptndb.Database, number uint64) (common.Hash, error)
+
+	// Get state
+	GetHeadHeaderHash(db ptndb.Database) (common.Hash, error)
+
+	GetHeadUnitHash(db ptndb.Database) (common.Hash, error)
+
+	GetHeadFashUnitHash(db ptndb.Database) (common.Hash, error)
+
+	GetTrieSyncProgress(db ptndb.Database) (uint64, error)
+
+	GetUtxoEntry(db ptndb.Database, key []byte) (*modules.Utxo, error)
+
+	GetAddrOutput(addr string) ([]modules.Output, error)
+
+	GetAddrTransactions(addr string) (modules.Transactions, error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {
