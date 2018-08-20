@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"time"
 	"golang.org/x/net/context"
-
+	"github.com/pkg/errors"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
-	//"github.com/palletone/go-palletone/vm/controller"
 	"github.com/palletone/go-palletone/contracts/platforms"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/pkg/errors"
+	"os"
+	"io/ioutil"
 )
 
 type UserChaincode struct {
@@ -80,11 +80,11 @@ func DeployUserCC(chainID string, usrcc *UserChaincode, txid string, timeout tim
 	}
 
 	cccid := ccprov.GetCCContext(chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, usrcc.Version, txid, false, nil, nil)
-	rspPaloyd, _, err := ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, timeout)
+	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, timeout)
 	if err != nil {
 		logger.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
 	}
-	logger.Info("rspPaloyd =%v", rspPaloyd)
+	//logger.Info("rspPaloyd =%v", rspPaloyd)
 
 	logger.Infof("user chaincode %s/%s(%s) deployed", usrcc.Name, chainID, usrcc.Path)
 
@@ -180,7 +180,41 @@ func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err
 	return data, nil
 }
 
+func RecoverChainCodeFromDb(chainID string, templateId []byte) ( *UserChaincode, error) {
 
+	//从数据库读取
+	//解压到指定路径下
+
+	testFile := "/home/glh/go/src/chaincode/abc.tar.gz"
+
+	zipName := "test.tar.gz"
+	dir := "/home/glh/go/src/chaincode/"
+
+	//read
+	fi, err := os.Open(testFile)
+	if err != nil {
+		logger.Errorf("open file[%s] fail:%s", testFile, err)
+		return nil, errors.New("open file fail")
+	}
+	defer fi.Close()
+	filedata, err := ioutil.ReadAll(fi)
+	if err != nil {
+		logger.Errorf("read file[%s] fail:%s", testFile, err)
+		return nil, errors.New("read file fail")
+	}
+
+	//write
+	err = ioutil.WriteFile(dir + zipName, filedata, 0644)
+	if err != nil {
+		logger.Errorf("write file[%s] fail:%s", testFile, err)
+		return nil, errors.New("write file fail")
+	}
+
+	usrCC := &UserChaincode{
+	}
+
+	return usrCC, nil
+}
 
 
 

@@ -284,8 +284,8 @@ type producer interface {
 	// NewProducedUnitEvent and send events to the given channel.
 	SubscribeNewProducedUnitEvent(chan<- mediatorplugin.NewProducedUnitEvent) event.Subscription
 
-	// AddUnverifiedUnitSet should add the unverified unit to the set.
-	AddPendingBLSSigned(peer string, unit *modules.Unit) error
+	// UnitBLSSign is to BLS sign the unit
+	UnitBLSSign(peer string, unit *modules.Unit) error
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -429,7 +429,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			case query.Origin.Hash != (common.Hash{}) && query.Reverse:
 				// Hash based traversal towards the genesis block
 				for i := 0; i < int(query.Skip)+1; i++ {
-					if header := pm.dag.GetHeader(query.Origin.Hash, number); header != nil {
+					if header, err := pm.dag.GetHeader(query.Origin.Hash, number); err == nil && header != nil {
 						query.Origin.Hash = header.ParentsHash[0]
 						number--
 					} else {
@@ -715,7 +715,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&unit); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		pm.producer.AddPendingBLSSigned(p.id, &unit)
+		pm.producer.UnitBLSSign(p.id, &unit)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
@@ -794,20 +794,6 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 		return nil
 	}
 	tx.TxHash.SetBytes(txHash)
-	// step4, sign tx
-	//	R, S, V, err := ks.SigTX(tx.TxHash, holder)
-	//	if err != nil {
-	//		msg := fmt.Sprintf("Sign transaction error: %s", err)
-	//		log.Error(msg)
-	//		return nil
-	//	}
-	tx.From = &modules.Authentifier{
-		Address: holder.String(),
-		//		R:       R,
-		//		S:       S,
-		//		V:       V,
-	}
-	tx.Txsize = tx.Size()
-	//txs := []*modules.Transaction{tx}
+
 	return tx
 }

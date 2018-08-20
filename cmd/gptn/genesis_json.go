@@ -29,11 +29,10 @@ import (
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/gen"
-	"github.com/palletone/go-palletone/core/node"
 	"gopkg.in/urfave/cli.v1"
 )
 
-var defaultGenesisJsonPath = filepath.Join(node.DefaultDataDir(), "ptn-genesis.json")
+const defaultGenesisJsonPath = "ptn-genesis.json"
 
 var (
 	GenesisTimestampFlag = cli.Int64Flag{

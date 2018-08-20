@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -33,6 +34,7 @@ import (
 	"github.com/spf13/viper"
 
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	cclist "github.com/palletone/go-palletone/contracts/list"
 )
 
 var sysccLogger = flogging.MustGetLogger("sccapi")
@@ -42,7 +44,7 @@ var sysccLogger = flogging.MustGetLogger("sccapi")
 // entry in importsysccs.go
 type SystemChaincode struct {
 	//
-	Id string
+	Id []byte
 	//Unique name of the system chaincode
 	Name string
 
@@ -135,13 +137,23 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 	version := util.GetSysCCVersion()
 	cccid := ccprov.GetCCContext(chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, version, txid, true, nil, nil)
 
-	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec,0)
+	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, 0)
 
 	if err != nil {
 		sysccLogger.Errorf("ExecuteWithErrorFilter with syscc.Name[%s] chainId[%s] err !!", syscc.Name, chainID)
+	} else {
+		sysccLogger.Infof("system chaincode %s/%s(%s) deployed", syscc.Name, chainID, syscc.Path)
+		cc := &cclist.CCInfo{
+			Id:syscc.Id,
+			Name: syscc.Name,
+			Path:syscc.Path,
+		}
+		err = cclist.SetChaincode(chainID, 0, cc)
+		if err != nil {
+			sysccLogger.Errorf("setchaincode[%s]-[%s] fail", chainID, cc.Name)
+			return err
+		}
 	}
-	sysccLogger.Infof("system chaincode %s/%s(%s) deployed", syscc.Name, chainID, syscc.Path)
-
 	return err
 }
 

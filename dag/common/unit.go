@@ -23,6 +23,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
@@ -34,8 +37,6 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
-	"reflect"
-	"strings"
 )
 
 func RHashStr(x interface{}) string {
@@ -47,24 +48,6 @@ func RHashStr(x interface{}) string {
 	s256.Write(x_byte)
 	return fmt.Sprintf("%x", s256.Sum(nil))
 
-}
-
-//  last unit
-func CurrentUnit() *modules.Unit {
-	return &modules.Unit{}
-}
-
-// get unit
-func GetUnit(hash *common.Hash) *modules.Unit {
-	unit_bytes, err := storage.Get(append(storage.UNIT_PREFIX, hash.Bytes()...))
-	if err != nil {
-		return nil
-	}
-	unit := new(modules.Unit)
-	if err := json.Unmarshal(unit_bytes, &unit); err == nil {
-		return unit
-	}
-	return nil
 }
 
 /**
@@ -355,12 +338,13 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 		return modules.ErrUnit(-1)
 	}
 	// step3. check transactions in unit
-	_, isSuccess, err := ValidateTransactions(&unit.Txs, isGenesis)
+	_, isSuccess, _ := ValidateTransactions(&unit.Txs, isGenesis)
 	if isSuccess != true {
-		log.Info("Validate unit transactions", "error", err.Error())
-		return fmt.Errorf("Validate unit transactions failed: %s", err.Error())
+		return fmt.Errorf("Validate unit(%s) transactions failed.", unit.UnitHash)
 	}
-
+	if storage.Dbconn == nil {
+		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
+	}
 	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
@@ -416,6 +400,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 			log.Info("Save transaction:", "error", err.Error())
 			return err
 		}
+		txHashSet = append(txHashSet, tx.TxHash)
 	}
 
 	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
@@ -428,13 +413,11 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 		return err
 	}
 	// update state
-	if storage.Dbconn == nil {
-		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
-	}
-	//go storage.PutCanonicalHash(storage.Dbconn, unit.UnitHash, unit.NumberU64())
-	go storage.PutHeadHeaderHash(storage.Dbconn, unit.UnitHash)
-	go storage.PutHeadUnitHash(storage.Dbconn, unit.UnitHash)
-	go storage.PutHeadFastUnitHash(storage.Dbconn, unit.UnitHash)
+
+	storage.PutCanonicalHash(storage.Dbconn, unit.UnitHash, unit.NumberU64())
+	storage.PutHeadHeaderHash(storage.Dbconn, unit.UnitHash)
+	storage.PutHeadUnitHash(storage.Dbconn, unit.UnitHash)
+	storage.PutHeadFastUnitHash(storage.Dbconn, unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
 }
@@ -573,8 +556,8 @@ func saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Mes
 从levedb中根据ChainIndex获得Unit信息
 To get unit information by its ChainIndex
 */
-func QueryUnitByChainIndex(index *modules.ChainIndex) *modules.Unit {
-	return storage.GetUnitFormIndex(index.Index, index.AssetID)
+func QueryUnitByChainIndex(db, index *modules.ChainIndex) *modules.Unit {
+	return storage.GetUnitFormIndex(storage.Dbconn, index.Index, index.AssetID)
 }
 
 /**
@@ -610,18 +593,9 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 		TxMessages: []modules.Message{msg},
 	}
 
-	coinbase.Txsize = coinbase.Size()
 	coinbase.CreationDate = coinbase.CreateDate()
 	coinbase.TxHash = coinbase.Hash()
 
-	// setp5. signature transaction
-	sig, err := SignTransaction(coinbase.TxHash, addr, ks)
-	if err != nil {
-		msg := fmt.Sprintf("Sign transaction error: %s", err)
-		log.Error(msg)
-		return nil, nil
-	}
-	coinbase.From = sig
 	return &coinbase, nil
 }
 

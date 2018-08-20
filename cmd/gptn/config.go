@@ -43,7 +43,7 @@ import (
 	"github.com/palletone/go-palletone/statistics/dashboard"
 )
 
-var defaultConfigPath = filepath.Join(node.DefaultDataDir(), "palletone.toml")
+const defaultConfigPath = "palletone.toml"
 
 var (
 	dumpConfigCommand = cli.Command{
@@ -165,7 +165,7 @@ func getConfigPath(configPath, dataDir string) (string, error) {
 		return filepath.Join(dataDir, defaultConfigPath), nil
 	}
 
-	if configPath !="" {
+	if configPath != "" {
 		return filepath.Abs(configPath)
 	}
 

@@ -20,7 +20,6 @@ package modules
 import (
 	"crypto/ecdsa"
 	"encoding/json"
-	"math/big"
 	"strings"
 	"time"
 	"unsafe"
@@ -130,12 +129,8 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 			tx := Transaction{
 				AccountNonce: pTx.AccountNonce,
 				TxHash:       pTx.TxHash,
-				From:         pTx.From,
-				Excutiontime: pTx.Excutiontime,
-				Memery:       pTx.Memery,
 				CreationDate: pTx.CreationDate,
-				TxFee:        pTx.TxFee,
-				Txsize:       pTx.Txsize,
+				Locktime:     pTx.Locktime,
 			}
 			if len(pTx.TxMessages) > 0 {
 				tx.TxMessages = make([]Message, len(pTx.TxMessages))
@@ -174,17 +169,13 @@ func (unit *Unit) IsEmpty() bool {
 type Transactions []*Transaction
 
 type Transaction struct {
-	AccountNonce uint64
-	TxHash       common.Hash        `json:"txhash" rlp:""`
-	TxMessages   []Message          `json:"messages"` //
-	From         *Authentifier      `json:"authors"`  // the issuers of the transaction
-	Excutiontime uint               `json:"excution_time"`
-	Memery       uint               `json:"memory"`
-	CreationDate string             `json:"creation_date"`
-	TxFee        *big.Int           `json:"txfee"` // user set total transaction fee.
-	Txsize       common.StorageSize `json:"txsize" rlp:""`
-	Locktime     uint32             `json:"lock_time"`
-	Priority_lvl float64            `json:"priority_lvl"` // 打包的优先级
+	TxHash     common.Hash `json:"txhash"`
+	TxMessages []Message   `json:"messages"`
+	Locktime   uint32      `json:"lock_time"`
+	// todo AccountNonce, CreationDate, Priority_lvl 在交易池部分用的比较多，将由杨杰负责删除
+	AccountNonce uint64  `json:"account_nonce" rlp:"-"`
+	CreationDate string  `json:"creation_date" rlp:"-"`
+	Priority_lvl float64 `json:"priority_lvl" rlp:"-"` // 打包的优先级
 }
 
 type ChainIndex struct {
@@ -200,9 +191,12 @@ func (height ChainIndex) String() string {
 	}
 	return string(data)
 }
-func (height ChainIndex) Bytes() ([]byte, error) {
+func (height ChainIndex) Bytes() []byte {
 	data, err := rlp.EncodeToBytes(height)
-	return data[:], err
+	if err != nil {
+		return nil
+	}
+	return data[:]
 }
 
 var (
@@ -240,9 +234,10 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	case APP_CONTRACT_DEPLOY:
 		payload, _ := cpyMsg.Payload.(ContractDeployPayload)
 		newPayload := ContractDeployPayload{
-			TemplateId: payload.TemplateId,
-			ContractId: payload.ContractId,
-			Config:     payload.Config,
+			TemplateId:   payload.TemplateId,
+			ContractId:   payload.ContractId,
+			Args:         payload.Args,
+			Excutiontime: payload.Excutiontime,
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
@@ -258,8 +253,9 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	case APP_CONTRACT_INVOKE:
 		payload, _ := cpyMsg.Payload.(ContractInvokePayload)
 		newPayload := ContractInvokePayload{
-			ContractId: payload.ContractId,
-			Function:   payload.Function,
+			ContractId:   payload.ContractId,
+			Args:         payload.Args,
+			Excutiontime: payload.Excutiontime,
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
@@ -317,7 +313,11 @@ func (version *StateVersion) ParseStringKey(key string) {
 // Contract template deploy message
 // App: contract_template
 type ContractTplPayload struct {
-	TemplateId common.Hash `json:"template_id"` // configure xml file of contract
+	TemplateId common.Hash `json:"template_id"` // contract template id
+	Name       string      `json:"name"`        // contract template name
+	Path       string      `json:"path"`        // contract template execute path
+	Version    string      `json:"version"`     // contract template version
+	Memery     uint16      `json:"memory"`      // coontract template bytecode memory size(Byte), use to compute transaction fee
 	Bytecode   []byte      `json:"bytecode"`    // contract bytecode
 }
 
@@ -333,20 +333,23 @@ type ContractReadSet struct {
 // Contract instance message
 // App: contract_deploy
 type ContractDeployPayload struct {
-	TemplateId common.Hash        `json:"template_id"` // contract template id
-	ContractId string             `json:"contract_id"` // contract id
-	Config     []byte             `json:"config"`      // configure xml file of contract instance parameters
-	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
-	WriteSet   []PayloadMapStruct `json:"write_set"`   // the set data of write, and value could be any type
+	TemplateId   common.Hash        `json:"template_id"`   // contract template id
+	ContractId   string             `json:"contract_id"`   // contract id
+	Name         string             `json:"name"`          // the name for contract
+	Args         [][]byte           `json:"args"`          // contract arguments list
+	Excutiontime uint16             `json:"excution_time"` // contract execution time, millisecond
+	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
+	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
 }
 
 // Contract invoke message
 // App: contract_invoke
 type ContractInvokePayload struct {
-	ContractId string             `json:"contract_id"` // contract id
-	Function   []byte             `json:"function"`    // serialized value of invoked function with call parameters
-	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
-	WriteSet   []PayloadMapStruct `json:"write_set"`   // the set data of write, and value could be any type
+	ContractId   string             `json:"contract_id"`   // contract id
+	Args         [][]byte           `json:"args"`          // contract arguments list
+	Excutiontime uint16             `json:"excution_time"` // contract execution time, millisecond
+	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
+	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
 }
 
 // Token exchange message and verify message
@@ -512,13 +515,14 @@ func (u *Unit) ContainsParent(pHash common.Hash) bool {
 }
 
 func RSVtoAddress(tx *Transaction) common.Address {
-	sig := make([]byte, 65)
-	copy(sig[32-len(tx.From.R):32], tx.From.R)
-	copy(sig[64-len(tx.From.S):64], tx.From.S)
-	copy(sig[64:], tx.From.V)
-	pub, _ := crypto.SigToPub(tx.TxHash[:], sig)
-	address := crypto.PubkeyToAddress(*pub)
-	return address
+	//sig := make([]byte, 65)
+	//copy(sig[32-len(tx.From.R):32], tx.From.R)
+	//copy(sig[64-len(tx.From.S):64], tx.From.S)
+	//copy(sig[64:], tx.From.V)
+	//pub, _ := crypto.SigToPub(tx.TxHash[:], sig)
+	//address := crypto.PubkeyToAddress(*pub)
+	//return address
+	return common.Address{}
 }
 
 func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {

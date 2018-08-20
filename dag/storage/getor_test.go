@@ -20,14 +20,14 @@ package storage
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"log"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"time"
 )
 
 func TestGet(t *testing.T) {
@@ -54,7 +54,11 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetUnit(t *testing.T) {
-	GetUnit(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
+	if Dbconn == nil {
+		log.Println("dbconn is nil , renew db  start ...")
+		Dbconn = ReNewDbConn(dagconfig.DbPath)
+	}
+	GetUnit(Dbconn, common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
 }
 
 func TestGetContract(t *testing.T) {
@@ -77,7 +81,7 @@ func TestGetContract(t *testing.T) {
 	log.Println("test data: ", keys)
 
 	for i, k := range keys {
-		data, err := GetContractKeyValue(origin.Id, k)
+		data, err := GetContractKeyValue(Dbconn, origin.Id, k)
 		if !reflect.DeepEqual(data, results[i]) {
 			t.Error("test error:", err, "the expect key is:", k, " value is :", results[i], ",but the return value is: ", data)
 		}

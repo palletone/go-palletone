@@ -173,9 +173,5 @@ func pricedTransaction(nonce uint64, txfee *big.Int, key *ecdsa.PrivateKey) *mod
 		return tx
 	}
 
-	tx.From.R = sig[:32]
-	tx.From.S = sig[32:64]
-	tx.From.V = sig[64:]
-	tx.From.Address = modules.RSVtoAddress(tx).String()
 	return tx
 }

@@ -74,13 +74,16 @@ value: unit header rlp encoding bytes
 */
 // save header
 func SaveHeader(uHash common.Hash, h *modules.Header) error {
-	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.Bytes())
-	return Store(Dbconn, key, *h)
+	encNum := encodeBlockNumber(h.Number.Index)
+	key := append(HEADER_PREFIX, encNum...)
+	key = append(key, h.Number.Bytes()...)
+	// key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.Bytes())
+
+	return StoreBytes(Dbconn, append(key, uHash.Bytes()...), h)
 }
 
 func SaveHashNumber(uHash common.Hash, height modules.ChainIndex) error {
-	key := fmt.Sprintf("%s%s", UNIT_HASH_NUMBER_Prefix, uHash)
-	return Store(Dbconn, key, height)
+	return StoreBytes(Dbconn, append(UNIT_HASH_NUMBER_Prefix, uHash.Bytes()...), height)
 }
 
 // height and assetid can get a unit key.
@@ -90,18 +93,16 @@ func SaveUHashIndex(cIndex modules.ChainIndex, uHash common.Hash) error {
 }
 
 /**
-key: [BODY_PREFIX][merkle root]
+key: [BODY_PREFIX][unit hash]
 value: all transactions hash set's rlp encoding bytes
 */
 func SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	// Dbconn.Put(append())
-	key := fmt.Sprintf("%s%s", BODY_PREFIX, unitHash.String())
-	return Store(Dbconn, key, txsHash)
+	return StoreBytes(Dbconn, append(BODY_PREFIX, unitHash.Bytes()...), txsHash)
 }
 
 func GetBody(unitHash common.Hash) ([]common.Hash, error) {
-	key := fmt.Sprintf("%s%s", BODY_PREFIX, unitHash.String())
-	data, err := Get([]byte(key))
+	data, err := Get(append(BODY_PREFIX, unitHash.Bytes()...))
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +131,7 @@ func SaveTransaction(tx *modules.Transaction) error {
 	if err := StoreBytes(Dbconn, append(Transaction_Index, tx.TxHash.Bytes()...), tx); err != nil {
 		return err
 	}
-	updateAddrTransactions(tx.From.Address, tx.TxHash)
+	updateAddrTransactions(tx.Address().String(), tx.TxHash)
 	// store output by addr
 	for i, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(modules.PaymentPayload)

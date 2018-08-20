@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
 	"gopkg.in/urfave/cli.v1"
+	"runtime"
 )
 
 var (
@@ -133,7 +134,21 @@ func remoteConsole(ctx *cli.Context) error {
 			}
 		}
 		endpoint = fmt.Sprintf("%s/gptn.ipc", path)
+
+		// On windows we can only use plain top-level pipes
+		if runtime.GOOS == "windows" {
+			configPath := filepath.Join(path, defaultConfigPath)
+			cfg := new(FullConfig)
+			loadConfig(configPath, cfg)
+
+			endpoint = cfg.Node.IPCPath
+
+			if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
+				endpoint = `\\.\pipe\` + endpoint
+			}
+		}
 	}
+
 	client, err := dialRPC(endpoint)
 	if err != nil {
 		utils.Fatalf("Unable to attach to remote gptn: %v", err)

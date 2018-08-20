@@ -217,7 +217,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	return Produced, detail
 }
 
-func (mp *MediatorPlugin) AddPendingBLSSigned(peer string, unit *modules.Unit) error {
+func (mp *MediatorPlugin) UnitBLSSign(peer string, unit *modules.Unit) error {
 	op := &toBLSSigned{
 		origin: peer,
 		unit:  unit,
@@ -231,14 +231,13 @@ func (mp *MediatorPlugin) AddPendingBLSSigned(peer string, unit *modules.Unit) e
 	}
 }
 
-func (mp *MediatorPlugin) recPendingBLSSignedLoop() {
+func (mp *MediatorPlugin) unitBLSSignLoop() {
 	for {
 		select {
 		// Mediator Plugin terminating, abort operation
 		case <-mp.quit:
 			return
 		case op := <- mp.toBLSSigned:
-//			mp.pendingBLS[op.unit.UnitHash] = op
 			PushUnit(mp.ptn.Dag(), op.unit)
 			go mp.unitBLSSign(op)
 		}
@@ -247,5 +246,5 @@ func (mp *MediatorPlugin) recPendingBLSSignedLoop() {
 
 func (mp *MediatorPlugin) unitBLSSign(toBLSSigned *toBLSSigned)  {
 	//todo
-	
+
 }

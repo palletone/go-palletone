@@ -33,19 +33,18 @@ func TestSaveConfig(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T) {
-	data := GetConfig([]byte("TestStruct"))
+	data := GetConfig([]byte("TokenDecimal"))
 	if len(data) <= 0 {
 		log.Println("Get config data error")
 	} else {
 
 		log.Println("Get Data:", data)
 	}
-
-	var st modules.Asset
-	if err := rlp.DecodeBytes(data, &st); err != nil {
-		log.Println(err.Error())
-	}
-	log.Println(st)
+	//var st modules.Asset
+	//if err := rlp.DecodeBytes(data, &st); err != nil {
+	//	log.Println(err.Error())
+	//}
+	//log.Println(st)
 }
 
 func TestSaveStruct(t *testing.T) {

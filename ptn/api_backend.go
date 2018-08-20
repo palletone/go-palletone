@@ -155,3 +155,57 @@ func (b *PtnApiBackend) WalletTokens(address common.Address) (map[string]*module
 func (b *PtnApiBackend) WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
 	return b.ptn.dag.WalletBalance(address, assetid, uniqueid, chainid)
 }
+
+// GetContract
+func (b *PtnApiBackend) GetContract(id common.Hash) (*modules.Contract, error) {
+	return b.ptn.dag.GetContract(id)
+}
+
+// Get Header
+func (b *PtnApiBackend) GetHeader(hash common.Hash, index uint64) (*modules.Header, error) {
+	return b.ptn.dag.GetHeader(hash, index)
+}
+
+// Get Unit
+func (b *PtnApiBackend) GetUnit(hash common.Hash) *modules.Unit {
+	return b.ptn.dag.GetUnit(hash)
+}
+
+// Get UnitNumber
+func (b *PtnApiBackend) GetUnitNumber(hash common.Hash) uint64 {
+	return b.ptn.dag.GetUnitNumber(hash).Index
+}
+
+// GetCanonicalHash
+func (b *PtnApiBackend) GetCanonicalHash(number uint64) (common.Hash, error) {
+	return b.ptn.dag.GetCanonicalHash(number)
+}
+
+// Get state
+func (b *PtnApiBackend) GetHeadHeaderHash() (common.Hash, error) {
+	return b.ptn.dag.GetHeadHeaderHash()
+}
+
+func (b *PtnApiBackend) GetHeadUnitHash() (common.Hash, error) {
+	return b.ptn.dag.GetHeadUnitHash()
+}
+
+func (b *PtnApiBackend) GetHeadFastUnitHash() (common.Hash, error) {
+	return b.ptn.dag.GetHeadFastUnitHash()
+}
+
+func (b *PtnApiBackend) GetTrieSyncProgress() (uint64, error) {
+	return b.ptn.dag.GetTrieSyncProgress()
+}
+
+func (b *PtnApiBackend) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
+	return b.ptn.dag.GetUtxoEntry(key)
+}
+
+func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
+	return b.ptn.dag.GetAddrOutput(addr)
+}
+
+func (b *PtnApiBackend) GetAddrTransactions(addr string) (modules.Transactions, error) {
+	return b.ptn.dag.GetAddrTransactions(addr)
+}

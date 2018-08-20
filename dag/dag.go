@@ -19,9 +19,8 @@
 package dag
 
 import (
-	"sync"
-
 	"fmt"
+	"sync"
 
 	"github.com/coocood/freecache"
 	//"github.com/ethereum/go-ethereum/params"
@@ -52,13 +51,41 @@ type Dag struct {
 }
 
 func (d *Dag) CurrentUnit() *modules.Unit {
-	return modules.NewUnit(&modules.Header{
-		Extra: []byte("test pool"),
-	}, nil)
+	// step1. get current unit hash
+	hash, err := d.GetHeadUnitHash()
+	if err != nil {
+		return nil
+	}
+	// step2. get unit height
+	height := d.GetUnitNumber(hash)
+	// get unit header
+	uHeader, err := storage.GetHeader(d.Db, hash, &height)
+	if err != nil {
+		log.Error("Current unit when get unit header", "error", err.Error())
+		return nil
+	}
+	// get unit hash
+	uHash := common.Hash{}
+	uHash.SetBytes(hash.Bytes())
+
+	// get transaction list
+	txs, err := dagcommon.GetUnitTransactions(uHash)
+	if err != nil {
+		log.Error("Current unit when get transactions", "error", err.Error())
+		return nil
+	}
+	// generate unit
+	unit := modules.Unit{
+		UnitHeader: uHeader,
+		UnitHash:   uHash,
+		Txs:        txs,
+	}
+	unit.UnitSize = unit.Size()
+	return &unit
 }
 
 func (d *Dag) GetUnit(hash common.Hash) *modules.Unit {
-	return d.CurrentUnit()
+	return storage.GetUnit(d.Db, hash)
 }
 
 func (d *Dag) GetUnitByHash(hash common.Hash) *modules.Unit {
@@ -77,9 +104,9 @@ func (d *Dag) GetHeaderByNumber(number uint64) *modules.Header {
 	return d.CurrentUnit().Header()
 }
 
-func (d *Dag) GetHeader(hash common.Hash, number uint64) *modules.Header {
-	return d.CurrentUnit().Header()
-}
+// func (d *Dag) GetHeader(hash common.Hash, number uint64) *modules.Header {
+// 	return d.CurrentUnit().Header()
+// }
 
 func (d *Dag) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
 	return d.Mdb, nil
@@ -146,8 +173,13 @@ func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash 
 	return []common.Hash{}
 }
 
+// need add:   assetId modules.IDType16, onMain bool
 func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
-	if storage.GetHeader(hash, number) != nil {
+	index := new(modules.ChainIndex)
+	index.Index = number
+	// copy(index.AssetID[:], assetId[:])
+	// index.IsMain = onMain
+	if h, err := storage.GetHeader(d.Db, hash, index); err == nil && h != nil {
 		return true
 	}
 	return false
@@ -273,4 +305,55 @@ func NewDag() *Dag {
 		MediatorSchl:  storage.RetrieveMediatorSchl(),
 	}
 
+}
+
+// Get Contract Api
+func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
+	return storage.GetContract(d.Db, id)
+}
+
+// Get Header
+func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error) {
+	index := d.GetUnitNumber(hash)
+	return storage.GetHeader(d.Db, hash, &index)
+}
+
+// Get UnitNumber
+func (d *Dag) GetUnitNumber(hash common.Hash) modules.ChainIndex {
+	height, _ := storage.GetUnitNumber(d.Db, hash)
+	return height
+}
+
+// GetCanonicalHash
+func (d *Dag) GetCanonicalHash(number uint64) (common.Hash, error) {
+	return storage.GetCanonicalHash(d.Db, number)
+}
+
+// Get state
+func (d *Dag) GetHeadHeaderHash() (common.Hash, error) {
+	return storage.GetHeadHeaderHash(d.Db)
+}
+
+func (d *Dag) GetHeadUnitHash() (common.Hash, error) {
+	return storage.GetHeadUnitHash(d.Db)
+}
+
+func (d *Dag) GetHeadFastUnitHash() (common.Hash, error) {
+	return storage.GetHeadFastUnitHash(d.Db)
+}
+
+func (d *Dag) GetTrieSyncProgress() (uint64, error) {
+	return storage.GetTrieSyncProgress(d.Db)
+}
+
+func (d *Dag) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
+	return storage.GetUtxoEntry(d.Db, key)
+}
+
+func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
+	return storage.GetAddrOutput(d.Db, addr)
+}
+
+func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
+	return storage.GetAddrTransactions(d.Db, addr)
 }
