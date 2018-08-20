@@ -132,10 +132,12 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 
 	// Figure out whether to allow fast sync or not
 	/*blockchain.CurrentBlock().NumberU64() > 0 */
-	if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Number.Index > 0 {
-		log.Warn("Blockchain not empty, fast sync disabled")
-		mode = downloader.FullSync
-	}
+	//TODO must modify.The second start would Blockchain not empty, fast sync disabled
+	//	if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Number.Index > 0 {
+	//		log.Warn("Blockchain not empty, fast sync disabled")
+	//		mode = downloader.FullSync
+	//	}
+
 	if mode == downloader.FastSync {
 		manager.fastSync = uint32(1)
 	}
@@ -643,8 +645,8 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		p.MarkUnit(unit.UnitHash)
 		pm.fetcher.Enqueue(p.id, &unit)
 
-		if _, index := p.Head(); unit.UnitHeader.ChainIndex().Index > index {
-			p.SetHead(unit.UnitHash, unit.UnitHeader.ChainIndex().Index)
+		if _, number := p.Head(); unit.UnitHeader.ChainIndex().Index > number.Index {
+			p.SetHead(unit.UnitHash, unit.UnitHeader.ChainIndex())
 			// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
 			// a singe block (as the true TD is below the propagated block), however this
 			// scenario should easily be covered by the fetcher.

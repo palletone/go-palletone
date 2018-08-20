@@ -18,13 +18,13 @@
 package modules
 
 import (
+	"crypto/ecdsa"
 	"encoding/json"
 	"math/big"
 	"strings"
 	"time"
 	"unsafe"
 
-	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/rlp"

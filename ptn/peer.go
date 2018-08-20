@@ -45,9 +45,10 @@ const (
 // PeerInfo represents a short summary of the PalletOne sub-protocol metadata known
 // about a connected peer.
 type PeerInfo struct {
-	Version    int    `json:"version"`    // PalletOne protocol version negotiated
-	Difficulty uint64 `json:"difficulty"` // Total difficulty of the peer's blockchain
-	Head       string `json:"head"`       // SHA3 hash of the peer's best owned block
+	Version int `json:"version"` // PalletOne protocol version negotiated
+	//Difficulty uint64 `json:"difficulty"` // Total difficulty of the peer's blockchain
+	Index uint64 `json:"index"` // Total difficulty of the peer's blockchain
+	Head  string `json:"head"`  // SHA3 hash of the peer's best owned block
 }
 
 type peer struct {
@@ -59,13 +60,16 @@ type peer struct {
 	version  int         // Protocol version negotiated
 	forkDrop *time.Timer // Timed connection dropper if forks aren't validated in time
 
-	head common.Hash
-	//td   *big.Int
-	index uint64
-	lock  sync.RWMutex
+	head   common.Hash
+	number modules.ChainIndex
+
+	lock sync.RWMutex
 
 	knownTxs    *set.Set // Set of transaction hashes known to be known by this peer
 	knownBlocks *set.Set // Set of block hashes known to be known by this peer
+
+	//td   *big.Int
+	//index uint64
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -82,33 +86,37 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 
 // Info gathers and returns a collection of metadata known about a peer.
 func (p *peer) Info() *PeerInfo {
-	hash, index := p.Head()
+	hash, number := p.Head()
 
 	return &PeerInfo{
-		Version:    p.version,
-		Difficulty: index,
-		Head:       hash.Hex(),
+		Version: p.version,
+		Index:   number.Index,
+		Head:    hash.Hex(),
 	}
 }
 
 // Head retrieves a copy of the current head hash and total difficulty of the
 // peer.
-func (p *peer) Head() (hash common.Hash, index uint64) {
+//only retain the max index header.will in other mediator,not in ptn mediator.
+func (p *peer) Head() (hash common.Hash, number modules.ChainIndex) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
 	copy(hash[:], p.head[:])
-	index = p.index
-	return hash, index
+	number = p.number
+	return hash, number
 }
 
 // SetHead updates the head hash and total difficulty of the peer.
-func (p *peer) SetHead(hash common.Hash, index uint64) {
+//only retain the max index header
+func (p *peer) SetHead(hash common.Hash, number modules.ChainIndex) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	copy(p.head[:], hash[:])
-	p.index = index
+	if number.Index > p.number.Index {
+		copy(p.head[:], hash[:])
+		p.number = number
+	}
 }
 
 // MarkBlock marks a block as known for the peer, ensuring that the block will
@@ -215,6 +223,10 @@ func (p *peer) RequestDagHeadersByHash(origin common.Hash, amount int, skip int,
 	return nil
 }
 
+func (p *peer) RequestLeafNodes() error {
+	return nil
+}
+
 // RequestHeadersByNumber fetches a batch of blocks' headers corresponding to the
 // specified header query, based on the number of an origin block.
 func (p *peer) RequestHeadersByNumber(origin uint64, amount int, skip int, reverse bool) error {
@@ -254,8 +266,9 @@ func (p *peer) Handshake(network uint64, td uint64, head common.Hash, genesis co
 			ProtocolVersion: uint32(p.version),
 			NetworkId:       network,
 			TD:              td,
-			CurrentBlock:    head,
-			GenesisBlock:    genesis,
+			//TODO
+			CurrentBlock: head,
+			GenesisBlock: genesis,
 		})
 	}()
 	go func() {
@@ -273,7 +286,8 @@ func (p *peer) Handshake(network uint64, td uint64, head common.Hash, genesis co
 			return p2p.DiscReadTimeout
 		}
 	}
-	p.index, p.head = status.TD, status.CurrentBlock
+	//TODO would recover
+	//p.index, p.head = status.TD, status.CurrentBlock
 	return nil
 }
 
@@ -411,8 +425,8 @@ func (ps *peerSet) BestPeer() *peer {
 		bestTd   uint64 //*big.Int
 	)
 	for _, p := range ps.peers {
-		if _, td := p.Head(); bestPeer == nil || td > bestTd /*td.Cmp(bestTd) > 0*/ {
-			bestPeer, bestTd = p, td
+		if _, number := p.Head(); bestPeer == nil || number.Index > bestTd /*td.Cmp(bestTd) > 0*/ {
+			bestPeer, bestTd = p, number.Index
 		}
 	}
 	return bestPeer

@@ -171,7 +171,8 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 
 	// Make sure the peer's TD is higher than our own
 	//TODO compare local assetId & chainIndex whith remote peer assetId & chainIndex
-	pHead, index := peer.Head()
+	pHead, number := peer.Head()
+	index := number.Index
 	/*
 		currentUnit := pm.dag.CurrentUnit()
 		//td := pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())
