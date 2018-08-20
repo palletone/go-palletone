@@ -126,8 +126,6 @@ func init() {
 	if err != nil {
 		logger.Error("fail!")
 	}
-
-	chainsInit()
 }
 
 
