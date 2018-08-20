@@ -47,6 +47,12 @@ type toBLSSigned struct {
 	unit *modules.Unit
 }
 
+// toTBLSSigned, TBLS signed auxiliary structure
+type toTBLSSigned struct {
+	unit *modules.Unit
+	sigShares [][]byte
+}
+
 type MediatorPlugin struct {
 	ptn PalletOne
 	// Enable VerifiedUnit production, even if the chain is stale.
@@ -62,7 +68,9 @@ type MediatorPlugin struct {
 
 	// 接收新生产的unit
 	toBLSSigned chan *toBLSSigned
-//	pendingBLS map[common.Hash]*toBLSSigned //等待被验证的BLS签名的unit集合
+
+	// 等待TBLS阈值签名的unit
+	pendingTBLSSign  map[common.Hash]*toTBLSSigned
 }
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {
@@ -95,7 +103,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	}
 
 	// BLS签名循环
-	go mp.recPendingBLSSignedLoop()
+	go mp.unitBLSSignLoop()
 
 	log.Debug("mediator plugin startup end")
 
@@ -157,7 +165,7 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		mediators:         msm,
 		quit:              make(chan struct{}),
 		toBLSSigned: make(chan *toBLSSigned),
-//		pendingBLS: make(map[common.Hash]*toBLSSigned),
+		pendingTBLSSign: make(map[common.Hash]*toTBLSSigned),
 	}
 
 	log.Debug("mediator plugin initialize end")

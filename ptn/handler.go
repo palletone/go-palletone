@@ -282,8 +282,8 @@ type producer interface {
 	// NewProducedUnitEvent and send events to the given channel.
 	SubscribeNewProducedUnitEvent(chan<- mediatorplugin.NewProducedUnitEvent) event.Subscription
 
-	// AddUnverifiedUnitSet should add the unverified unit to the set.
-	AddPendingBLSSigned(peer string, unit *modules.Unit) error
+	// UnitBLSSign is to BLS sign the unit
+	UnitBLSSign(peer string, unit *modules.Unit) error
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -713,7 +713,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&unit); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		pm.producer.AddPendingBLSSigned(p.id, &unit)
+		pm.producer.UnitBLSSign(p.id, &unit)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
