@@ -174,31 +174,39 @@ func TestSign2InputTx(t *testing.T) {
 
 }
 
-func TestBuild2InputTx(t *testing.T) {
+func buildRawTx() *wire.MsgTx {
 	//https://testnet.blockchain.info/tx/f0d9d482eb122535e32a3ae92809dd87839e63410d5fd52816fc9fc6215018cc?show_adv=true
-
 	tx := wire.NewMsgTx(wire.TxVersion)
 	//https://testnet.blockchain.info/tx-index/239152566/1  0.4BTC
 	utxoHash, _ := chainhash.NewHashFromStr("1dda832890f85288fec616ef1f4113c0c86b7bf36b560ea244fd8a6ed12ada52")
 	point := wire.OutPoint{Hash: *utxoHash, Index: 1}
+	//构建第一个Input，指向一个0.4BTC的UTXO，第二个参数是解锁脚本，现在是nil
 	tx.AddTxIn(wire.NewTxIn(&point, nil, nil))
-	//24f284aed2b9dbc19f0d435b1fe1ee3b3ddc763f28ca28bad798d22b6bea0c66  1.1BTC
+	//https://testnet.blockchain.info/tx-index/239157459/1  1.1BTC
 	utxoHash2, _ := chainhash.NewHashFromStr("24f284aed2b9dbc19f0d435b1fe1ee3b3ddc763f28ca28bad798d22b6bea0c66")
 	point2 := wire.OutPoint{Hash: *utxoHash2, Index: 1}
+	//构建第二个Input，指向一个1.1BTC的UTXO，第二个参数是解锁脚本，现在是nil
 	tx.AddTxIn(wire.NewTxIn(&point2, nil, nil))
 
-	//找零0.2991024 BTC
+	//找零的地址（这里是16进制形式，变成Base58格式就是mx3KrUjRzzqYTcsyyvWBiHBncLrrTPXnkV）
 	pubKeyHash, _ := hex.DecodeString("b5407cec767317d41442aab35bad2712626e17ca")
 	lock, _ := txscript.NewScriptBuilder().AddOp(txscript.OP_DUP).AddOp(txscript.OP_HASH160).
 		AddData(pubKeyHash).AddOp(txscript.OP_EQUALVERIFY).AddOp(txscript.OP_CHECKSIG).
 		Script()
+	//构建第一个Output，是找零0.2991024 BTC
 	tx.AddTxOut(wire.NewTxOut(29910240, lock))
-
+	//支付给了某个地址，仍然是16进制形式，Base58形式是：mxqnGTekzKqnMqNFHKYi8FhV99WcvQGhfH。
 	pubKeyHash2, _ := hex.DecodeString("be09abcbfda1f2c26899f062979ab0708731235a")
 	lock2, _ := txscript.NewScriptBuilder().AddOp(txscript.OP_DUP).AddOp(txscript.OP_HASH160).
 		AddData(pubKeyHash2).AddOp(txscript.OP_EQUALVERIFY).AddOp(txscript.OP_CHECKSIG).
 		Script()
+	//构建第二个Output，支付1.2 BTC出去
 	tx.AddTxOut(wire.NewTxOut(120000000, lock2))
+	return tx
+}
+
+func TestBuild2InputTx(t *testing.T) {
+	tx := buildRawTx()
 
 	//txscript.SignTxOutput(&chaincfg.TestNet3Params,tx,0,pkScript,txscript.SigHashAll,)
 
