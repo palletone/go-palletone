@@ -93,7 +93,7 @@ func SaveUHashIndex(cIndex modules.ChainIndex, uHash common.Hash) error {
 }
 
 /**
-key: [BODY_PREFIX][merkle root]
+key: [BODY_PREFIX][unit hash]
 value: all transactions hash set's rlp encoding bytes
 */
 func SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
