@@ -74,7 +74,7 @@ value: unit header rlp encoding bytes
 */
 // save header
 func SaveHeader(uHash common.Hash, h *modules.Header) error {
-	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.Bytes())
+	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.String())
 	return Store(Dbconn, key, *h)
 }
 
@@ -89,7 +89,7 @@ func SaveUHashIndex(cIndex modules.ChainIndex, uHash common.Hash) error {
 }
 
 /**
-key: [BODY_PREFIX][merkle root]
+key: [BODY_PREFIX][unit hash]
 value: all transactions hash set's rlp encoding bytes
 */
 func SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
