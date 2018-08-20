@@ -1546,6 +1546,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header) (ui
 	headers, err := d.lightdag.GetAllLeafNodes()
 	if err != nil {
 		log.Info("===findAncestor===", "GetAllLeafNodes err:", err)
+
 		return floor, err
 	}
 
