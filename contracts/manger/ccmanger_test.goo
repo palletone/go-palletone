@@ -117,20 +117,20 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 
 func peerMockInitialize() {
 	//ledgermgmt.InitializeTestEnvWithCustomProcessors(ConfigTxProcessors)
-	chains.clist = nil
-	chains.clist = make(map[string]*chain)
-	//chainInitializer = func(string) { return }
+	//chains.clist = nil
+	//chains.clist = make(map[string]*chain)
+	////chainInitializer = func(string) { return }
 }
 func peerMockCreateChain(cid string) error {
-	chains.Lock()
-	defer chains.Unlock()
-
-	chains.clist[cid] = &chain{
-	}
+	//chains.Lock()
+	//defer chains.Unlock()
+	//
+	//chains.clist[cid] = &chain{
+	//}
 	return nil
 }
 
-func peerInitSysCCTests() (*oldSysCCInfo, net.Listener, error) {
+func peerInitSysCCTests() (net.Listener, error) {
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
@@ -144,7 +144,7 @@ func peerInitSysCCTests() (*oldSysCCInfo, net.Listener, error) {
 	peerAddress := "0.0.0.0:21726"
 	lis, err := net.Listen("tcp", peerAddress)
 	if err != nil {
-		return nil, nil, err
+		return  nil, err
 	}
 
 	ccStartupTimeout := time.Duration(5000) * time.Millisecond
@@ -164,19 +164,19 @@ func peerInitSysCCTests() (*oldSysCCInfo, net.Listener, error) {
 		},
 	}
 
-	sysccinfo := &oldSysCCInfo{origSysCCWhitelist: viper.GetStringMapString("chaincode.system")}
+	//sysccinfo := &oldSysCCInfo{origSysCCWhitelist: viper.GetStringMapString("chaincode.system")}
 
 	// System chaincode has to be enabled
 	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
 
-	sysccinfo.origSystemCC = scc.MockRegisterSysCCs(sysccs)
-
+	//sysccinfo.origSystemCC = scc.MockRegisterSysCCs(sysccs)
+	scc.MockRegisterSysCCs(sysccs)
 	/////^^^ system initialization completed ^^^
-	return sysccinfo, lis, nil
+	return  lis, nil
 }
 
 func peerInit() {
-	_, _, err := peerInitSysCCTests() //lis
+	_, err := peerInitSysCCTests() //lis
 	if err != nil {
 		return
 	}
@@ -208,7 +208,7 @@ func TestExecSysCC(t *testing.T) {
 		txid, err = computeProposalTxID(nonce, []byte("glh"))
 	}
 
-	Invoke(chainID, "sample_syscc", txid, args, 0)
+	Invoke(chainID, []byte("sample_syscc"), txid, args, 0)
 }
 
 func multSys(t *testing.T) {
@@ -226,7 +226,7 @@ func multSys(t *testing.T) {
 			txid, err = computeProposalTxID(nonce, []byte("glh"))
 		}
 
-		unit, err := Invoke(chainID, "sample_syscc", txid, args1, 0)
+		unit, err := Invoke(chainID, []byte("sample_syscc"), txid, args1, 0)
 		if err != nil {
 			t.Error(err)
 		} else {
@@ -241,7 +241,7 @@ func multSys(t *testing.T) {
 		if err == nil {
 			txid, err = computeProposalTxID(nonce, []byte("glh"))
 		}
-		unit, err := Invoke(chainID, "sample_syscc", txid, args2, 0)
+		unit, err := Invoke(chainID, []byte("sample_syscc"), txid, args2, 0)
 		if err != nil {
 			t.Error(err)
 		} else {
@@ -256,7 +256,7 @@ func multSys(t *testing.T) {
 		if err == nil {
 			txid, err = computeProposalTxID(nonce, []byte("glh"))
 		}
-		unit, err := Invoke(chainID, "sample_syscc", txid, args3, 0)
+		unit, err := Invoke(chainID, []byte("sample_syscc"), txid, args3, 0)
 		if err != nil {
 			t.Error(err)
 		} else {
@@ -292,7 +292,7 @@ func multMoreSys(t *testing.T) {
 		}
 
 		go func(timeout time.Duration, txid string) {
-			unit, err := Invoke(chainID, "sample_syscc", txid, args, timeout)
+			unit, err := Invoke(chainID, []byte("sample_syscc"), txid, args, timeout)
 			if err != nil {
 				t.Error(err)
 			} else {
@@ -389,7 +389,7 @@ func TestInstallCC(t *testing.T) {
 	fmt.Print("=======================Invoke=============================")
 	f = "invoke"
 	args = util.ToChaincodeArgs(f, "111")
-	_, err = Invoke(chainID, "example01", txid, args, 0)
+	_, err = Invoke(chainID, []byte("example01"), txid, args, 0)
 	if err != nil {
 		t.Errorf("Invoke err:%s", err)
 	}
@@ -436,24 +436,25 @@ func TestInstallCCApi(t *testing.T) {
 	InitNoSysCCC()
 
 	//intall
+	fmt.Println("=======================intall=============================")
 	payload, err := Install(chainID, usercc.Name, usercc.Path, usercc.Version)
 	if err != nil {
 		t.Errorf("install chaincode fail [%s]", usercc.Name)
 	}
 
 	//deploy
-	fmt.Print("=======================DeployUserCC=============================")
-	deployId, rsp, err := DeployByTemplateId(chainID, txid, payload.TemplateId[:], args, 30*time.Second)
+	fmt.Println("=======================deploy=============================")
+	deployId, _, err := Deploy(chainID, txid, payload.TemplateId[:], args, 30*time.Second)
 	if err != nil {
 		t.Errorf("DeployUserCC err:%s", err)
 	}
 	time.Sleep(1 * time.Second)
 
 	//invoke
-	fmt.Print("=======================Invoke=============================")
+	fmt.Println("=======================invoke=============================")
 	f = "invoke"
 	args = util.ToChaincodeArgs(f, "111")
-	_, err = Invoke(chainID, "example01", txid, args, 0)
+	_, err = Invoke(chainID, deployId, txid, args, 0)
 	if err != nil {
 		t.Errorf("Invoke err:%s", err)
 	}
@@ -461,8 +462,8 @@ func TestInstallCCApi(t *testing.T) {
 
 	//stop
 	usercc.Name = "example01"
-	fmt.Print("=======================StopUserCC=============================")
-	err = Stop(chainID, txid, usercc.Name, usercc.Path, usercc.Version, true)
+	fmt.Println("=======================Stop=============================")
+	err = Stop(chainID, txid, deployId, true)
 	if err != nil {
 		t.Errorf("StopUserCC err:%s", err)
 	}
@@ -475,7 +476,7 @@ func invokeUserCC(t *testing.T, txid string) {
 	f := "invoke"
 	args := util.ToChaincodeArgs(f, "111")
 
-	Invoke(chainID, "example01", txid, args, 0)
+	Invoke(chainID, []byte("example01"), txid, args, 0)
 
 	usercc := &ucc.UserChaincode{
 		Enabled:   true,
@@ -491,33 +492,6 @@ func invokeUserCC(t *testing.T, txid string) {
 	time.Sleep(5 * time.Second)
 
 	ucc.StopUserCC(chainID, usercc, txid, true)
-}
-
-func TestChainCodeList(t *testing.T) {
-	cc1 := &CCInfo{
-		Name:    "cc1",
-		Path:    "/root",
-		Version: "v1",
-		SysCC:   false,
-	}
-	cc2 := &CCInfo{
-		Name:    "cc2",
-		Path:    "/root",
-		Version: "v2",
-		SysCC:   false,
-	}
-	setChaincode("cid", 1, cc1)
-	setChaincode("cid", 1, cc2)
-
-	cl, err := getChaincodeList("cid")
-	if err != nil {
-		t.Error("not find chainlist")
-	}
-	t.Logf("vsersion=%d", cl.version)
-
-	for k, v := range cl.cclist {
-		t.Logf("%s:%v", k, *v)
-	}
 }
 
 func TestFileRW(t *testing.T) {
