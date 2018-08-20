@@ -50,24 +50,6 @@ func RHashStr(x interface{}) string {
 
 }
 
-//  last unit
-func CurrentUnit() *modules.Unit {
-	return &modules.Unit{}
-}
-
-// get unit
-func GetUnit(hash *common.Hash) *modules.Unit {
-	unit_bytes, err := storage.Get(append(storage.UNIT_PREFIX, hash.Bytes()...))
-	if err != nil {
-		return nil
-	}
-	unit := new(modules.Unit)
-	if err := json.Unmarshal(unit_bytes, &unit); err == nil {
-		return unit
-	}
-	return nil
-}
-
 /**
 生成创世单元，需要传入创世单元的配置信息以及coinbase交易
 generate genesis unit, need genesis unit configure fields and transactions list
@@ -431,7 +413,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 		return err
 	}
 	// update state
-	fmt.Println("===============================genesis unit============================", unit.UnitHash, unit)
+
 	storage.PutCanonicalHash(storage.Dbconn, unit.UnitHash, unit.NumberU64())
 	storage.PutHeadHeaderHash(storage.Dbconn, unit.UnitHash)
 	storage.PutHeadUnitHash(storage.Dbconn, unit.UnitHash)
