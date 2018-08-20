@@ -79,8 +79,7 @@ func SaveHeader(uHash common.Hash, h *modules.Header) error {
 }
 
 func SaveHashNumber(uHash common.Hash, height modules.ChainIndex) error {
-	key := fmt.Sprintf("%s%s", UNIT_HASH_NUMBER_Prefix, uHash)
-	return Store(Dbconn, key, height)
+	return StoreBytes(Dbconn, append(UNIT_HASH_NUMBER_Prefix, uHash.Bytes()...), height)
 }
 
 // height and assetid can get a unit key.
