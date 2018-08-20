@@ -58,21 +58,16 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	}
 	// step2. get unit height
 	height := d.GetUnitNumber(hash)
-	key := fmt.Sprintf("%s%v_%s_%s", storage.HEADER_PREFIX, height.Index, height.String(), hash.String())
-	data, err := storage.Get([]byte(key))
+	// get unit header
+	uHeader, err := storage.GetHeader(d.Db, hash, &height)
 	if err != nil {
-		log.Error("Current unit", "error", err.Error())
+		log.Error("Current unit when get unit header", "error", err.Error())
 		return nil
 	}
 	// get unit hash
 	uHash := common.Hash{}
 	uHash.SetBytes(hash.Bytes())
-	// get unit header
-	var uHeader modules.Header
-	if err := rlp.DecodeBytes([]byte(data), &uHeader); err != nil {
-		log.Error("Current unit when get unit header", "error", err.Error())
-		return nil
-	}
+
 	// get transaction list
 	txs, err := dagcommon.GetUnitTransactions(uHash)
 	if err != nil {
@@ -81,7 +76,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	}
 	// generate unit
 	unit := modules.Unit{
-		UnitHeader: &uHeader,
+		UnitHeader: uHeader,
 		UnitHash:   uHash,
 		Txs:        txs,
 	}
