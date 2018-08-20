@@ -127,16 +127,9 @@ func TestSaveUnit(t *testing.T) {
 			},
 		},
 	}
-	tx1.Txsize = tx1.Size()
 	tx1.CreationDate = tx1.CreateDate()
 	tx1.TxHash = tx1.Hash()
-	//tx1.From, _ = signTransaction(tx1.TxHash, &addr, ks)
-	sig1, _ := crypto.Sign(tx1.TxHash.Bytes(), key)
 
-	auth.R = sig1[:32]
-	auth.S = sig1[32:64]
-	auth.V = sig1[64:]
-	tx1.From = auth
 	tx2 := modules.Transaction{
 		TxMessages: []modules.Message{
 			{
@@ -146,15 +139,9 @@ func TestSaveUnit(t *testing.T) {
 			},
 		},
 	}
-	tx2.Txsize = tx2.Size()
 	tx2.CreationDate = tx2.CreateDate()
 	tx2.TxHash = tx2.Hash()
-	//tx2.From, _ = signTransaction(tx2.TxHash, &addr, ks)
-	sig2, _ := crypto.Sign(tx2.TxHash.Bytes(), key)
-	auth.R = sig2[:32]
-	auth.S = sig2[32:64]
-	auth.V = sig2[64:]
-	tx2.From = auth
+
 	tx3 := modules.Transaction{
 		TxMessages: []modules.Message{
 			{
@@ -163,15 +150,8 @@ func TestSaveUnit(t *testing.T) {
 				Payload:     invokePayload,
 			},
 		}}
-	tx3.Txsize = tx3.Size()
 	tx3.CreationDate = tx3.CreateDate()
 	tx3.TxHash = tx3.Hash()
-	//tx3.From, _ = signTransaction(tx3.TxHash, &addr, ks)
-	sig3, _ := crypto.Sign(tx3.TxHash.Bytes(), key)
-	auth.R = sig3[:32]
-	auth.S = sig3[32:64]
-	auth.V = sig3[64:]
-	tx3.From = auth
 
 	txs := modules.Transactions{}
 	txs = append(txs, &tx1)

@@ -38,7 +38,8 @@ import (
 )
 
 var (
-	TXFEE = big.NewInt(5) // transaction fee =5ptn
+	TXFEE      = big.NewInt(5) // transaction fee =5ptn
+	TX_MAXSIZE = uint32(256 * 1024)
 )
 
 func NewTransaction(nonce uint64, fee *big.Int, sig []byte) *Transaction {
@@ -53,19 +54,11 @@ func newTransaction(nonce uint64, fee *big.Int, sig []byte) *Transaction {
 	if len(sig) == 65 {
 		sig = common.CopyBytes(sig)
 	}
-	// var f *big.Int
-	// if fee != nil {
-	// 	f.Set(fee)
-	// }
-	au_from := &Authentifier{R: sig[:32], S: sig[32:64], V: sig[64:]}
 
 	tx := new(Transaction)
 	tx.AccountNonce = nonce
-	tx.From = au_from
-	tx.TxFee = fee
 	tx.CreationDate = time.Now().Format(TimeFormatString)
 	tx.TxHash = tx.Hash()
-	tx.Txsize = tx.Size()
 
 	tx.Priority_lvl = tx.GetPriorityLvl()
 	return tx
@@ -142,9 +135,9 @@ func (tx Transaction) PriorityLvl() float64 {
 func (tx Transaction) GetPriorityLvl() float64 {
 	// priority_lvl=  fee/size*(1+(time.Now-CreationDate)/24)
 	var priority_lvl float64
-	if txfee := tx.TxFee.Int64(); txfee > 0 {
+	if txfee := tx.Fee(); txfee.Int64() > 0 {
 		t0, _ := time.Parse(TimeFormatString, tx.CreationDate)
-		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee)/tx.Txsize.Float64()*(1+float64(time.Now().Hour()-t0.Hour())/24)), 64)
+		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/tx.Size().Float64()*(1+float64(time.Now().Hour()-t0.Hour())/24)), 64)
 	}
 	return priority_lvl
 }
@@ -153,7 +146,7 @@ func (tx Transaction) SetPriorityLvl(priority float64) {
 }
 func (tx Transaction) Nonce() uint64 { return tx.AccountNonce }
 
-func (tx Transaction) Fee() *big.Int { return tx.TxFee }
+//func (tx Transaction) Fee() *big.Int { return tx.TxFee }
 
 //func (tx Transaction) Account() *common.Address { return tx.data.From }
 
@@ -174,19 +167,14 @@ func (tx Transaction) Fee() *big.Int { return tx.TxFee }
 func (tx Transaction) Hash() common.Hash {
 	withoutSigTx := Transaction{}
 	withoutSigTx.CopyFrTransaction(&tx)
-	withoutSigTx.From = nil
 	withoutSigTx.TxHash = common.Hash{}
 	v := rlp.RlpHash(withoutSigTx)
-	//tx.TxHash.Set(v)
 	return v
 }
 
 // Size returns the true RLP encoded storage UnitSize of the transaction, either by
 // encoding and returning it, or returning a previsouly cached value.
 func (tx *Transaction) Size() common.StorageSize {
-	if size := tx.Txsize.Float64(); size > 0 {
-		return tx.Txsize
-	}
 	c := writeCounter(0)
 	rlp.Encode(&c, &tx)
 	return common.StorageSize(c)
@@ -195,6 +183,14 @@ func (tx *Transaction) Size() common.StorageSize {
 func (tx *Transaction) CreateDate() string {
 	n := time.Now()
 	return n.Format(TimeFormatString)
+}
+
+func (tx *Transaction) Fee() *big.Int {
+	return TXFEE
+}
+
+func (tx *Transaction) Address() common.Address {
+	return common.Address{}
 }
 
 //func (tx *Transaction) String() string {
@@ -259,25 +255,19 @@ func (tx *Transaction) CreateDate() string {
 
 // Cost returns amount + price
 func (tx *Transaction) Cost() *big.Int {
-	if tx.TxFee.Cmp(TXFEE) < 0 {
-		tx.TxFee = TXFEE
-	}
-	return tx.TxFee
+	//if tx.TxFee.Cmp(TXFEE) < 0 {
+	//	tx.TxFee = TXFEE
+	//}
+	//return tx.TxFee
+	return TXFEE
 }
 
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
 	tx.AccountNonce = cpy.AccountNonce
-	tx.Txsize = cpy.Txsize
 	tx.CreationDate = cpy.CreationDate
 	tx.Locktime = cpy.Locktime
-	tx.Excutiontime = cpy.Excutiontime
-	tx.Memery = cpy.Memery
 	tx.Priority_lvl = cpy.Priority_lvl
-	if cpy.TxFee != nil {
-		fee := big.Int{}
-		fee.SetUint64(cpy.TxFee.Uint64())
-		tx.TxFee = &fee
-	}
+
 	tx.TxMessages = make([]Message, len(cpy.TxMessages))
 	for _, msg := range cpy.TxMessages {
 		newMsg := Message{}
@@ -352,9 +342,8 @@ func (s TxByNonce) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 // for all at once sorting as well as individually adding and removing elements.
 type TxByPrice Transactions
 
-func (s TxByPrice) Len() int           { return len(s) }
-func (s TxByPrice) Less(i, j int) bool { return s[i].TxFee.Cmp(s[j].TxFee) < 0 }
-func (s TxByPrice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s TxByPrice) Len() int      { return len(s) }
+func (s TxByPrice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 func (s *TxByPrice) Push(x interface{}) {
 	*s = append(*s, x.(*Transaction))

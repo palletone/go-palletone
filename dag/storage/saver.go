@@ -131,7 +131,7 @@ func SaveTransaction(tx *modules.Transaction) error {
 	if err := StoreBytes(Dbconn, append(Transaction_Index, tx.TxHash.Bytes()...), tx); err != nil {
 		return err
 	}
-	updateAddrTransactions(tx.From.Address, tx.TxHash)
+	updateAddrTransactions(tx.Address().String(), tx.TxHash)
 	// store output by addr
 	for i, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(modules.PaymentPayload)

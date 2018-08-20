@@ -792,20 +792,6 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 		return nil
 	}
 	tx.TxHash.SetBytes(txHash)
-	// step4, sign tx
-	//	R, S, V, err := ks.SigTX(tx.TxHash, holder)
-	//	if err != nil {
-	//		msg := fmt.Sprintf("Sign transaction error: %s", err)
-	//		log.Error(msg)
-	//		return nil
-	//	}
-	tx.From = &modules.Authentifier{
-		Address: holder.String(),
-		//		R:       R,
-		//		S:       S,
-		//		V:       V,
-	}
-	tx.Txsize = tx.Size()
-	//txs := []*modules.Transaction{tx}
+
 	return tx
 }

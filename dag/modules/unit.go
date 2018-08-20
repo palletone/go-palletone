@@ -19,7 +19,6 @@ package modules
 
 import (
 	"encoding/json"
-	"math/big"
 	"strings"
 	"time"
 	"unsafe"
@@ -130,12 +129,8 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 			tx := Transaction{
 				AccountNonce: pTx.AccountNonce,
 				TxHash:       pTx.TxHash,
-				From:         pTx.From,
-				Excutiontime: pTx.Excutiontime,
-				Memery:       pTx.Memery,
 				CreationDate: pTx.CreationDate,
-				TxFee:        pTx.TxFee,
-				Txsize:       pTx.Txsize,
+				Locktime:     pTx.Locktime,
 			}
 			if len(pTx.TxMessages) > 0 {
 				tx.TxMessages = make([]Message, len(pTx.TxMessages))
@@ -174,17 +169,13 @@ func (unit *Unit) IsEmpty() bool {
 type Transactions []*Transaction
 
 type Transaction struct {
-	AccountNonce uint64
-	TxHash       common.Hash        `json:"txhash" rlp:""`
-	TxMessages   []Message          `json:"messages"` //
-	From         *Authentifier      `json:"authors"`  // the issuers of the transaction
-	Excutiontime uint               `json:"excution_time"`
-	Memery       uint               `json:"memory"`
-	CreationDate string             `json:"creation_date"`
-	TxFee        *big.Int           `json:"txfee"` // user set total transaction fee.
-	Txsize       common.StorageSize `json:"txsize" rlp:""`
-	Locktime     uint32             `json:"lock_time"`
-	Priority_lvl float64            `json:"priority_lvl"` // 打包的优先级
+	TxHash     common.Hash `json:"txhash"`
+	TxMessages []Message   `json:"messages"`
+	Locktime   uint32      `json:"lock_time"`
+	// todo AccountNonce, CreationDate, Priority_lvl 在交易池部分用的比较多，将由杨杰负责删除
+	AccountNonce uint64  `json:"account_nonce" rlp:"-"`
+	CreationDate string  `json:"creation_date" rlp:"-"`
+	Priority_lvl float64 `json:"priority_lvl" rlp:"-"` // 打包的优先级
 }
 
 type ChainIndex struct {
@@ -524,13 +515,14 @@ func (u *Unit) ContainsParent(pHash common.Hash) bool {
 }
 
 func RSVtoAddress(tx *Transaction) common.Address {
-	sig := make([]byte, 65)
-	copy(sig[32-len(tx.From.R):32], tx.From.R)
-	copy(sig[64-len(tx.From.S):64], tx.From.S)
-	copy(sig[64:], tx.From.V)
-	pub, _ := crypto.SigToPub(tx.TxHash[:], sig)
-	address := crypto.PubkeyToAddress(*pub)
-	return address
+	//sig := make([]byte, 65)
+	//copy(sig[32-len(tx.From.R):32], tx.From.R)
+	//copy(sig[64-len(tx.From.S):64], tx.From.S)
+	//copy(sig[64:], tx.From.V)
+	//pub, _ := crypto.SigToPub(tx.TxHash[:], sig)
+	//address := crypto.PubkeyToAddress(*pub)
+	//return address
+	return common.Address{}
 }
 
 func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {

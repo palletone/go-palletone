@@ -338,10 +338,9 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 		return modules.ErrUnit(-1)
 	}
 	// step3. check transactions in unit
-	_, isSuccess, err := ValidateTransactions(&unit.Txs, isGenesis)
+	_, isSuccess, _ := ValidateTransactions(&unit.Txs, isGenesis)
 	if isSuccess != true {
-		log.Info("Validate unit transactions", "error", err.Error())
-		return fmt.Errorf("Validate unit transactions failed: %s", err.Error())
+		return fmt.Errorf("Validate unit(%s) transactions failed.", unit.UnitHash)
 	}
 	if storage.Dbconn == nil {
 		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
@@ -594,18 +593,9 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 		TxMessages: []modules.Message{msg},
 	}
 
-	coinbase.Txsize = coinbase.Size()
 	coinbase.CreationDate = coinbase.CreateDate()
 	coinbase.TxHash = coinbase.Hash()
 
-	// setp5. signature transaction
-	sig, err := SignTransaction(coinbase.TxHash, addr, ks)
-	if err != nil {
-		msg := fmt.Sprintf("Sign transaction error: %s", err)
-		log.Error(msg)
-		return nil, nil
-	}
-	coinbase.From = sig
 	return &coinbase, nil
 }
 
