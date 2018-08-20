@@ -401,6 +401,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 			log.Info("Save transaction:", "error", err.Error())
 			return err
 		}
+		txHashSet = append(txHashSet, tx.TxHash)
 	}
 
 	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
