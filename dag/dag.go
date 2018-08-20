@@ -33,6 +33,7 @@ import (
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"strings"
 )
 
 type Dag struct {
@@ -51,11 +52,55 @@ type Dag struct {
 }
 
 func (d *Dag) CurrentUnit() *modules.Unit {
+	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
 	if err != nil {
 		return nil
 	}
-	return d.GetUnit(hash)
+	// step2. get unit height
+	height := d.GetUnitNumber(hash)
+	key := fmt.Sprintf("%s%v_%s", storage.HEADER_PREFIX, height.Index, height.String())
+	data := storage.GetPrefix([]byte(key))
+	if len(data) > 1 {
+		log.Error("multiple same height unit")
+		return nil
+	} else if len(data) <= 0 {
+		log.Info("The database for now is empty")
+		return nil
+	}
+	for k, v := range data {
+		sk := string(k[len(storage.HEADER_PREFIX):])
+		// get index
+		skArr := strings.Split(sk, "_")
+		if len(skArr) != 3 {
+			log.Error("Current unit", "error", "split genesis key error")
+			return nil
+		}
+		// get unit hash
+		uHash := common.Hash{}
+		uHash.SetString(skArr[2])
+		// get unit header
+		var uHeader modules.Header
+		if err := rlp.DecodeBytes([]byte(v), &uHeader); err != nil {
+			log.Error("Current unit when get unit header", "error", err.Error())
+			return nil
+		}
+		// get transaction list
+		txs, err := dagcommon.GetUnitTransactions(uHash)
+		if err != nil {
+			log.Error("Current unit when get transactions", "error", err.Error())
+			return nil
+		}
+		// generate unit
+		unit := modules.Unit{
+			UnitHeader: &uHeader,
+			UnitHash:   uHash,
+			Txs:        txs,
+		}
+		unit.UnitSize = unit.Size()
+		return &unit
+	}
+	return nil
 }
 
 func (d *Dag) GetUnit(hash common.Hash) *modules.Unit {
@@ -282,9 +327,9 @@ func (d *Dag) GetHeader(hash common.Hash, index uint64) (*modules.Header, error)
 }
 
 // Get UnitNumber
-func (d *Dag) GetUnitNumber(hash common.Hash) uint64 {
-	index, _ := storage.GetUnitNumber(d.Db, hash)
-	return index.Index
+func (d *Dag) GetUnitNumber(hash common.Hash) modules.ChainIndex {
+	height, _ := storage.GetUnitNumber(d.Db, hash)
+	return height
 }
 
 // GetCanonicalHash

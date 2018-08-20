@@ -72,3 +72,4 @@ dag/common/utxo.go.orig
 *.sublime-workspace
 cmd/gptn/gptn/
 cmd/gptn/keystore/
+cmd/gptn/
