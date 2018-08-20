@@ -22,7 +22,6 @@ import (
 	"time"
 	"net"
 	"os"
-	"sync"
 
 	"encoding/hex"
 	"google.golang.org/grpc"
@@ -37,112 +36,8 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/common"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
-	"github.com/pkg/errors"
-	"fmt"
+
 )
-
-type CCInfo struct {
-	Id      string//[]byte
-	Name    string
-	Path    string
-	Version string
-
-	SysCC  bool
-	Enable bool
-}
-
-type chain struct {
-	version int
-	cclist  map[string]*CCInfo
-}
-
-var chains = struct {
-	sync.RWMutex
-	clist map[string]*chain
-}{clist: make(map[string]*chain)}
-
-type oldSysCCInfo struct {
-	origSystemCC       []*scc.SystemChaincode
-	origSysCCWhitelist map[string]string
-}
-
-func (osyscc *oldSysCCInfo) reset() {
-	scc.MockResetSysCCs(osyscc.origSystemCC)
-	viper.Set("chaincode.system", osyscc.origSysCCWhitelist)
-}
-
-func chainsInit() {
-	chains.clist = nil
-	chains.clist = make(map[string]*chain)
-}
-
-func addChainCodeInfo(c *chain, cc *CCInfo) error {
-	if c == nil || cc == nil {
-		return errors.New("chain or ccinfo is nil")
-	}
-
-	for k, v := range c.cclist {
-		if k == cc.Name && v.Version == cc.Version{
-			logger.Errorf("chaincode [%s] , version[%d] already exit, %v", cc.Name, cc.Version, v)
-			return errors.New("already exit chaincode")
-		}
-	}
-	c.cclist[cc.Name] = cc
-
-	return nil
-}
-
-func setChaincode(cid string, version int, chaincode *CCInfo) error {
-	chains.Lock()
-	defer chains.Unlock()
-
-	for k, v := range chains.clist {
-		if k == cid {
-			logger.Infof("chainId[%s] already exit, %v", cid, v)
-
-			return addChainCodeInfo(v, chaincode)
-		}
-	}
-	cNew := chain{
-		version:version,
-		cclist:make(map[string]*CCInfo),
-	}
-	chains.clist[cid] = &cNew
-
-	return addChainCodeInfo(&cNew, chaincode)
-}
-
-func getChaincodeList(cid string) (*chain, error) {
-	if cid == "" {
-		return nil, errors.New("param is nil")
-	}
-
-	if chains.clist[cid] != nil {
-		return chains.clist[cid], nil
-	}
-	errmsg := fmt.Sprintf("not find chainId[%s] in chains", cid)
-
-	return nil, errors.New(errmsg)
-}
-
-func delChaincode(cid string, ccName string, version int) (error) {
-	if cid == "" || ccName == "" {
-		return  errors.New("param is nil")
-	}
-
-	if chains.clist[cid] != nil {
-		for k, _ := range chains.clist[cid].cclist {
-			if k == ccName {
-				chains.clist[cid].cclist[k] = nil
-				logger.Infof("del chaincode[%s]", ccName)
-				return nil
-			}
-		}
-	}
-	logger.Infof("not find chaincode[%s]", ccName)
-
-	return nil
-}
 
 func marshalOrPanic(pb proto.Message) []byte {
 	data, err := proto.Marshal(pb)
@@ -237,8 +132,8 @@ func signedEndorserProposa(chainID string, txid string, cs *peer.ChaincodeSpec, 
 }
 
 func peerCreateChain(cid string) error {
-	chains.Lock()
-	defer chains.Unlock()
+	//chains.Lock()
+	//defer chains.Unlock()
 
 	//chains.list[cid] = &chain{
 	//	//cs: &chainSupport{

@@ -46,18 +46,13 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 		}
 		// validate fee
 		if isGenesis == false && txIndex != 0 {
-			if tx.TxFee == nil {
+			txFee := tx.Fee()
+			if txFee.Cmp(modules.TXFEE) < 0 {
 				isSuccess = false
 				txFlages[tx.TxHash] = modules.TxValidationCode_INVALID_FEE
 				continue
 			}
-			// check transaction fee
-			if tx.TxFee.Cmp(modules.TXFEE) != 0 {
-				isSuccess = false
-				txFlages[tx.TxHash] = modules.TxValidationCode_NOT_COMPARE_SIZE
-				continue
-			}
-			fee += tx.TxFee.Uint64()
+			fee += txFee.Uint64()
 		}
 	}
 	// check coinbase fee and income
@@ -93,8 +88,8 @@ func ValidateTx(tx *modules.Transaction, worldTmpState *map[string]map[string]in
 			return modules.TxValidationCode_UNKNOWN_TX_TYPE
 		}
 		// validate tx size
-		if tx.Size() != tx.Txsize {
-			log.Debug("Txsize=%v, tx.Size()=%v\n", tx.Txsize, tx.Size())
+		if tx.Size().Float64() > float64(modules.TX_MAXSIZE) {
+			log.Debug("Tx size is to big.\n")
 			return modules.TxValidationCode_NOT_COMPARE_SIZE
 		}
 		// validate transaction hash
@@ -103,7 +98,7 @@ func ValidateTx(tx *modules.Transaction, worldTmpState *map[string]map[string]in
 			return modules.TxValidationCode_NIL_TXACTION
 		}
 		// validate transaction signature
-		if validateTxSignature(tx.Hash(), tx.From) == false {
+		if validateTxSignature(tx) == false {
 			return modules.TxValidationCode_BAD_CREATOR_SIGNATURE
 		}
 		// validate every type payload
@@ -231,25 +226,25 @@ func ValidateUnitSignature(h *modules.Header, isGenesis bool) error {
 验证交易签名
 To validate transaction signature
 */
-func validateTxSignature(txHash common.Hash, sig *modules.Authentifier) bool {
+func validateTxSignature(tx *modules.Transaction) bool {
 	// recover signature
-	cpySig := make([]byte, 65)
-	copy(cpySig[32-len(sig.R):32], sig.R)
-	copy(cpySig[64-len(sig.S):64], sig.S)
-	copy(cpySig[64:], sig.V)
-	// recover pubkey
-	hash := crypto.Keccak256Hash(util.RHashBytes(txHash))
-	pubKey, err := modules.RSVtoPublicKey(hash[:], sig.R[:], sig.S[:], sig.V[:])
-	if err != nil {
-		log.Error("Validate transaction signature", "error", err.Error())
-		return false
-	}
-	//  pubKey to pubKey_bytes
-	pubKey_bytes := crypto.FromECDSAPub(pubKey)
-	if keystore.VerifyUnitWithPK(cpySig, txHash, pubKey_bytes) == true {
-		return true
-	}
-	return false
+	//cpySig := make([]byte, 65)
+	//copy(cpySig[32-len(sig.R):32], sig.R)
+	//copy(cpySig[64-len(sig.S):64], sig.S)
+	//copy(cpySig[64:], sig.V)
+	//// recover pubkey
+	//hash := crypto.Keccak256Hash(util.RHashBytes(txHash))
+	//pubKey, err := modules.RSVtoPublicKey(hash[:], sig.R[:], sig.S[:], sig.V[:])
+	//if err != nil {
+	//	log.Error("Validate transaction signature", "error", err.Error())
+	//	return false
+	//}
+	////  pubKey to pubKey_bytes
+	//pubKey_bytes := crypto.FromECDSAPub(pubKey)
+	//if keystore.VerifyUnitWithPK(cpySig, txHash, pubKey_bytes) == true {
+	//	return true
+	//}
+	return true
 }
 
 /**

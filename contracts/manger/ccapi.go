@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"golang.org/x/net/context"
 
+	cclist "github.com/palletone/go-palletone/contracts/list"
 	cp "github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -14,7 +15,52 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	unit "github.com/palletone/go-palletone/dag/modules"
 	"bytes"
+	"container/list"
 )
+
+var debugX bool = true
+
+type TempCC struct {
+	templateId []byte
+	name       string
+	path       string
+	vers       string
+}
+
+var listCC list.List
+
+func listAdd(cc *TempCC) error {
+	if cc != nil {
+		fmt.Printf("==name[%s]", cc.name)
+		listCC.PushBack(*cc)
+	}
+	return nil
+}
+
+func listDel(templateId []byte) {
+	for e := listCC.Front(); e != nil; e = e.Next() {
+		if bytes.Equal(e.Value.(TempCC).templateId, templateId) == true {
+			listCC.Remove(e)
+		}
+	}
+}
+
+func listGet(templateId []byte) (*TempCC, error) {
+	fmt.Printf("==listGet [%v]", templateId)
+	for e := listCC.Front(); e != nil; e = e.Next() {
+		if bytes.Equal(e.Value.(TempCC).templateId, templateId) == true {
+			cc := &TempCC{
+				templateId: templateId,
+				name:       e.Value.(TempCC).name,
+				path:       e.Value.(TempCC).path,
+				vers:       e.Value.(TempCC).vers,
+			}
+			fmt.Printf("==name[%s]", cc.name)
+			return cc, nil
+		}
+	}
+	return nil, errors.New("not find")
+}
 
 // contract manger module init
 func Init() error {
@@ -60,9 +106,9 @@ func Deinit() error {
 	return nil
 }
 
-func GetSysCCList() (ccInf []CCInfo, ccCount int, errs error) {
-	scclist := make([]CCInfo, 0)
-	ci := CCInfo{}
+func GetSysCCList() (ccInf []cclist.CCInfo, ccCount int, errs error) {
+	scclist := make([]cclist.CCInfo, 0)
+	ci := cclist.CCInfo{}
 
 	cclist, count, err := scc.SysCCsList()
 	for _, ccinf := range cclist {
@@ -77,7 +123,6 @@ func GetSysCCList() (ccInf []CCInfo, ccCount int, errs error) {
 }
 
 func GetUsrCCList() {
-
 }
 
 //install but not into db
@@ -108,10 +153,14 @@ func Install(chainID string, ccName string, ccPath string, ccVersion string) (pa
 		Bytecode:   paylod,
 	}
 
+	//test
+	tcc := &TempCC{templateId: tpid[:], name: ccName, path: ccPath, vers: ccVersion}
+	listAdd(tcc)
+
 	return payloadUnit, nil
 }
 
-func Deploy(chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId string, respPayload *peer.ContractDeployPayload, e error) {
+func DeployByName(chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId []byte, respPayload *peer.ContractDeployPayload, e error) {
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
 
@@ -122,11 +171,11 @@ func Deploy(chainID string, txid string, ccName string, ccPath string, ccVersion
 		setTimeOut = timeout
 	}
 	if txid == "" || ccName == "" || ccPath == "" {
-		return "", nil, errors.New("input param is nil")
+		return nil, nil, errors.New("input param is nil")
 	}
 	randNum, err := crypto.GetRandomNonce()
 	if err != nil {
-		return "", nil, errors.New("crypto.GetRandomNonce error")
+		return nil, nil, errors.New("crypto.GetRandomNonce error")
 	}
 
 	usrcc := &ucc.UserChaincode{
@@ -139,18 +188,18 @@ func Deploy(chainID string, txid string, ccName string, ccPath string, ccVersion
 
 	err = ucc.DeployUserCC(setChainId, usrcc, txid, setTimeOut)
 	if err != nil {
-		return "", nil, errors.New("Deploy fail")
+		return nil, nil, errors.New("Deploy fail")
 	}
 
-	cc := &CCInfo{
-		Id:      string(randNum),
+	cc := &cclist.CCInfo{
+		Id:      randNum,
 		Name:    ccName,
 		Path:    ccPath,
 		Version: ccVersion,
 		SysCC:   false,
 		Enable:  true,
 	}
-	err = setChaincode(setChainId, 0, cc)
+	err = cclist.SetChaincode(setChainId, 0, cc)
 	if err != nil {
 		logger.Errorf("setchaincode[%s]-[%s] fail", setChainId, cc.Name)
 	}
@@ -159,9 +208,11 @@ func Deploy(chainID string, txid string, ccName string, ccPath string, ccVersion
 }
 
 //func DeployByTemplateId(chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId string, respPayload *peer.ContractDeployPayload, e error) {
-func DeployByTemplateId(chainID string, txid string, templateId []byte,  args [][]byte, timeout time.Duration) (deployId string, respPayload *peer.ContractDeployPayload, e error) {
+func Deploy(chainID string, txid string, templateId []byte, args [][]byte, timeout time.Duration) (deployId []byte, respPayload *peer.ContractDeployPayload, e error) {
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
+	logger.Infof("enter, chainId[%s], txid[%s],templateId[%s]", chainID, txid, string(templateId))
+	defer logger.Info("exit")
 
 	if chainID != "" {
 		setChainId = chainID
@@ -173,15 +224,26 @@ func DeployByTemplateId(chainID string, txid string, templateId []byte,  args []
 	templateCC, err := ucc.RecoverChainCodeFromDb(chainID, templateId)
 	if err != nil {
 		logger.Errorf("chainid[%s]-templateId[%s], RecoverChainCodeFromDb fail", chainID, templateId)
-		return "", nil, err
+		return nil, nil, err
 	}
 
+	//test!!!!!!
 	if txid == "" || templateCC.Name == "" || templateCC.Path == "" {
-		return "", nil, errors.New("input param is nil")
+		logger.Errorf("cc param is null")
+		//return "", nil, errors.New("cc param is nil")
+
+		//test
+		tmpcc, err := listGet(templateId)
+		if err == nil {
+			templateCC.Name = tmpcc.name
+			templateCC.Path = tmpcc.path
+			templateCC.Version = tmpcc.vers
+		}
 	}
+
 	randNum, err := crypto.GetRandomNonce()
 	if err != nil {
-		return "", nil, errors.New("crypto.GetRandomNonce error")
+		return nil, nil, errors.New("crypto.GetRandomNonce error")
 	}
 
 	usrcc := &ucc.UserChaincode{
@@ -194,18 +256,18 @@ func DeployByTemplateId(chainID string, txid string, templateId []byte,  args []
 
 	err = ucc.DeployUserCC(setChainId, usrcc, txid, setTimeOut)
 	if err != nil {
-		return "", nil, errors.New("Deploy fail")
+		return nil, nil, errors.New("Deploy fail")
 	}
 
-	cc := &CCInfo{
-		Id:      string(randNum),
+	cc := &cclist.CCInfo{
+		Id:      randNum,
 		Name:    templateCC.Name,
 		Path:    templateCC.Path,
 		Version: templateCC.Version,
 		SysCC:   false,
 		Enable:  true,
 	}
-	err = setChaincode(setChainId, 0, cc)
+	err = cclist.SetChaincode(setChainId, 0, cc)
 	if err != nil {
 		logger.Errorf("setchaincode[%s]-[%s] fail", setChainId, cc.Name)
 	}
@@ -215,24 +277,47 @@ func DeployByTemplateId(chainID string, txid string, templateId []byte,  args []
 
 //timeout:ms
 // ccName can be contract Id
-func Invoke(chainID string, ccName string, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
+func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
 	//func Invoke(chainID string, ccName string, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone") //default
 	ccVersion := "ptn001"          //default
 
-	logger.Infof("===== Invoke [%s][%s]======", chainID, ccName)
+	//var cc cclist.CCInfo
+	//clist, err := cclist.GetChaincodeList(chainID)
+	//if err != nil {
+	//	logger.Errorf("not find chainlist for chainId[%s]", chainID)
+	//	return nil, errors.New("getChaincodeList failed")
+	//}
+	//
+	//for _, v := range clist.CClist {
+	//	if bytes.Equal(v.Id, deployId) == true {
+	//		//logger.Infof("++++++++++++++++find,%s", v.Name)
+	//		cc.Name = v.Name
+	//	}
+	//}
+
+	cc, err := cclist.GetChaincode(chainID, deployId)
+	if err != nil {
+		return nil, err
+	}
+	if cc.Name == "" {
+		errstr := fmt.Sprintf("chainCode[%v] not deplay!!", deployId)
+		return nil, errors.New(errstr)
+	}
+
+	logger.Infof("Invoke [%s][%s]", chainID, cc.Name)
 	start := time.Now()
 	es := NewEndorserServer(mksupt)
 	spec := &pb.ChaincodeSpec{
-		ChaincodeId: &pb.ChaincodeID{Name: ccName},
+		ChaincodeId: &pb.ChaincodeID{Name: cc.Name},
 		Type:        pb.ChaincodeSpec_GOLANG,
 		Input:       &pb.ChaincodeInput{Args: args},
 	}
 
 	cid := &pb.ChaincodeID{
 		Path:    "", //no use
-		Name:    ccName,
+		Name:    cc.Name,
 		Version: ccVersion,
 	}
 
@@ -255,7 +340,7 @@ func Invoke(chainID string, ccName string, txid string, args [][]byte, timeout t
 	return unit, nil
 }
 
-func Stop(chainID string, txid string, ccName string, ccPath string, ccVersion string, deleteImage bool) error {
+func StopByName(chainID string, txid string, ccName string, ccPath string, ccVersion string, deleteImage bool) error {
 	usrcc := &ucc.UserChaincode{
 		Name:    ccName,
 		Path:    ccPath,
@@ -271,7 +356,7 @@ func Stop(chainID string, txid string, ccName string, ccPath string, ccVersion s
 	return nil
 }
 
-func StopById(chainID string, txid string, deployId string, deleteImage bool) error {
+func Stop(chainID string, txid string, deployId []byte, deleteImage bool) error {
 	setChainId := "palletone"
 
 	if chainID != "" {
@@ -281,20 +366,24 @@ func StopById(chainID string, txid string, deployId string, deleteImage bool) er
 		return errors.New("input param txid is nil")
 	}
 
-	clist, err := getChaincodeList(chainID)
+	//clist, err := getChaincodeList(chainID)
+	//if err != nil {
+	//	logger.Errorf("not find chainlist for chainId[%s]", chainID)
+	//	return errors.New("getChaincodeList failed")
+	//}
+	//
+	//for k, v := range clist.cclist {
+	//	logger.Infof("chaincode[%s]:%v", k, *v)
+	//	if k == chainID {
+	//		if bytes.Equal(v.Id, deployId) == true {
+	//			return StopByName(setChainId, txid, v.Name, v.Path, v.Version, deleteImage)
+	//		}
+	//	}
+	//}
+
+	cc, err := cclist.GetChaincode(chainID, deployId)
 	if err != nil {
-		logger.Errorf("not find chainlist for chainId[%s]", chainID)
-		return errors.New("getChaincodeList failed")
+		return  err
 	}
-
-	for k, v := range clist.cclist {
-		logger.Infof("chaincode[%s]:%v", k, *v)
-		if k == chainID {
-			if v.Id == deployId {
-				return Stop(setChainId, txid, v.Name, v.Path, v.Version, deleteImage)
-			}
-		}
-	}
-
-	return errors.New("not find deployId")
+	return StopByName(setChainId, txid, cc.Name, cc.Path, cc.Version, deleteImage)
 }
