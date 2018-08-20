@@ -361,7 +361,9 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 		log.Info("Validate unit transactions", "error", err.Error())
 		return fmt.Errorf("Validate unit transactions failed: %s", err.Error())
 	}
-
+	if storage.Dbconn == nil {
+		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
+	}
 	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
@@ -429,13 +431,11 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 		return err
 	}
 	// update state
-	if storage.Dbconn == nil {
-		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
-	}
-	//go storage.PutCanonicalHash(storage.Dbconn, unit.UnitHash, unit.NumberU64())
-	go storage.PutHeadHeaderHash(storage.Dbconn, unit.UnitHash)
-	go storage.PutHeadUnitHash(storage.Dbconn, unit.UnitHash)
-	go storage.PutHeadFastUnitHash(storage.Dbconn, unit.UnitHash)
+	fmt.Println("===============================genesis unit============================", unit.UnitHash, unit)
+	storage.PutCanonicalHash(storage.Dbconn, unit.UnitHash, unit.NumberU64())
+	storage.PutHeadHeaderHash(storage.Dbconn, unit.UnitHash)
+	storage.PutHeadUnitHash(storage.Dbconn, unit.UnitHash)
+	storage.PutHeadFastUnitHash(storage.Dbconn, unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
 }

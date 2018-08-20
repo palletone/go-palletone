@@ -109,10 +109,10 @@ func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 func GetUnit(db DatabaseReader, hash common.Hash) *modules.Unit {
 	unit_bytes, err := db.Get(append(UNIT_PREFIX, hash.Bytes()...))
 	log.Println(err)
-	var unit modules.Unit
+	unit := new(modules.Unit)
 	json.Unmarshal(unit_bytes, &unit)
 
-	return &unit
+	return unit
 }
 func GetUnitFormIndex(db DatabaseReader, height uint64, asset modules.IDType16) *modules.Unit {
 	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, asset.String(), height)
