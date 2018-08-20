@@ -38,28 +38,25 @@ import (
 )
 
 var (
-	TXFEE      = big.NewInt(5) // transaction fee =5ptn
+	TXFEE      = big.NewInt(5000000) // transaction fee =5ptn
 	TX_MAXSIZE = uint32(256 * 1024)
 )
 
-func NewTransaction(nonce uint64, fee *big.Int, sig []byte) *Transaction {
-	return newTransaction(nonce, fee, sig)
+func NewTransaction(hash common.Hash, msg []Message, lock uint32) *Transaction {
+	return newTransaction(hash, msg, lock)
 }
 
-func NewContractCreation(nonce uint64, fee *big.Int, sig []byte) *Transaction {
-	return newTransaction(nonce, fee, sig)
+func NewContractCreation(hash common.Hash, msg []Message, lock uint32) *Transaction {
+	return newTransaction(hash, msg, lock)
 }
 
-func newTransaction(nonce uint64, fee *big.Int, sig []byte) *Transaction {
-	if len(sig) == 65 {
-		sig = common.CopyBytes(sig)
-	}
-
+func newTransaction(hash common.Hash, msg []Message, lock uint32) *Transaction {
 	tx := new(Transaction)
-	tx.AccountNonce = nonce
-	tx.CreationDate = time.Now().Format(TimeFormatString)
-	tx.TxHash = tx.Hash()
+	tx.TxHash = hash
+	tx.TxMessages = msg[:]
+	tx.Locktime = lock
 
+	tx.CreationDate = time.Now().Format(TimeFormatString)
 	tx.Priority_lvl = tx.GetPriorityLvl()
 	return tx
 }
