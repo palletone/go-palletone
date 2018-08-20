@@ -125,10 +125,11 @@ func GetUnitFormIndex(db DatabaseReader, height uint64, asset modules.IDType16) 
 	return GetUnit(db, h)
 }
 
-func GetHeader(db DatabaseReader, hash common.Hash, index uint64) (*modules.Header, error) {
+func GetHeader(db DatabaseReader, hash common.Hash, index *modules.ChainIndex) (*modules.Header, error) {
 
-	encNum := encodeBlockNumber(index)
+	encNum := encodeBlockNumber(index.Index)
 	key := append(HEADER_PREFIX, encNum...)
+	key = append(key, index.Bytes()...)
 	header_bytes, err := db.Get(append(key, hash.Bytes()...))
 	// rlp  to  Header struct
 	log.Println(err)
@@ -137,7 +138,6 @@ func GetHeader(db DatabaseReader, hash common.Hash, index uint64) (*modules.Head
 		log.Println("Invalid unit header rlp:", err)
 		return nil, err
 	}
-
 	return header, nil
 }
 

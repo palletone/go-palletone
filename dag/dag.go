@@ -192,8 +192,13 @@ func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash 
 	return []common.Hash{}
 }
 
+// need add:   assetId modules.IDType16, onMain bool
 func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
-	if h, err := storage.GetHeader(d.Db, hash, number); err == nil && h != nil {
+	index := new(modules.ChainIndex)
+	index.Index = number
+	// copy(index.AssetID[:], assetId[:])
+	// index.IsMain = onMain
+	if h, err := storage.GetHeader(d.Db, hash, index); err == nil && h != nil {
 		return true
 	}
 	return false
@@ -322,8 +327,9 @@ func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
 }
 
 // Get Header
-func (d *Dag) GetHeader(hash common.Hash, index uint64) (*modules.Header, error) {
-	return storage.GetHeader(d.Db, hash, index)
+func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error) {
+	index := d.GetUnitNumber(hash)
+	return storage.GetHeader(d.Db, hash, &index)
 }
 
 // Get UnitNumber

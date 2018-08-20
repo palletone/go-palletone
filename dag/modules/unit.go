@@ -200,9 +200,12 @@ func (height ChainIndex) String() string {
 	}
 	return string(data)
 }
-func (height ChainIndex) Bytes() ([]byte, error) {
+func (height ChainIndex) Bytes() []byte {
 	data, err := rlp.EncodeToBytes(height)
-	return data[:], err
+	if err != nil {
+		return nil
+	}
+	return data[:]
 }
 
 var (
