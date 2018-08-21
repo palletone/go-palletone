@@ -21,7 +21,6 @@ package txspool
 import (
 	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/event"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"math/big"
@@ -163,15 +162,15 @@ func transaction(nonce uint64, txfee uint64, key *ecdsa.PrivateKey) *modules.Tra
 }
 func pricedTransaction(nonce uint64, txfee *big.Int, key *ecdsa.PrivateKey) *modules.Transaction {
 
-	sig := make([]byte, 65)
+	//sig := make([]byte, 65)
 
-	tx := modules.NewTransaction(nonce, txfee, sig)
-	h := tx.TxHash
+	tx := modules.NewTransaction(common.Hash{}, []modules.Message{}, 0)
+	//h := tx.TxHash
 
-	sig, err := crypto.Sign(h[:], key)
-	if err != nil {
-		return tx
-	}
+	//sig, err := crypto.Sign(h[:], key)
+	//if err != nil {
+	//	return tx
+	//}
 
 	return tx
 }

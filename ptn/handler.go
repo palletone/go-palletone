@@ -786,7 +786,6 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 		App:     modules.APP_PAYMENT,
 		Payload: pay,
 	}
-	msg0.PayloadHash = rlp.RlpHash(pay)
 	tx := &modules.Transaction{
 		AccountNonce: nonce,
 		TxMessages:   []modules.Message{msg0},

@@ -144,7 +144,6 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		App:     modules.APP_PAYMENT,
 		Payload: pay,
 	}
-	msg0.PayloadHash = rlp.RlpHash(pay)
 	// step2, generate global config payload message
 	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis, &asset)
 	if err != nil {
@@ -155,7 +154,6 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		App:     modules.APP_CONFIG,
 		Payload: configPayload,
 	}
-	msg1.PayloadHash = rlp.RlpHash(configPayload)
 	// step3, genesis transaction
 	tx := &modules.Transaction{
 		AccountNonce: 1,

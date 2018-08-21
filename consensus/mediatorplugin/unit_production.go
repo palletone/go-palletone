@@ -43,7 +43,7 @@ func GenerateUnit(dag *dag.Dag, when time.Time, producer common.Mediator,
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	log.Debug("Generating Verified Unit...")
 
-	units, err := dagcommon.CreateUnit(&producer.Address, txspool, ks)
+	units, err := dagcommon.CreateUnit(&producer.Address, txspool, ks, when)
 	// added by yangyu, 2018.8.9
 	if err != nil || units == nil || len(units) == 0 || units[0].IsEmpty() {
 		log.Info("No unit need to be packaged for now.")

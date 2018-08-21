@@ -73,13 +73,14 @@ func createGenesisJson(ctx *cli.Context) error {
 	)
 
 	var confirm bool
-	confirm, err = console.Stdin.PromptConfirm("Do you use an existing account?")
+	confirm, err = console.Stdin.PromptConfirm(
+		"Do you want to create a new account as the holder of the token?")
 	if err != nil {
 		utils.Fatalf("%v", err)
 	}
 
 	var account string
-	if confirm {
+	if !confirm {
 		account, err = console.Stdin.PromptInput("Please enter an existing account address: ")
 		if err != nil {
 			utils.Fatalf("%v", err)
