@@ -77,9 +77,9 @@ func SaveHeader(uHash common.Hash, h *modules.Header) error {
 	encNum := encodeBlockNumber(h.Number.Index)
 	key := append(HEADER_PREFIX, encNum...)
 	key = append(key, h.Number.Bytes()...)
-	// key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.Bytes())
-
 	return StoreBytes(Dbconn, append(key, uHash.Bytes()...), h)
+	//key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.Bytes())
+	//return StoreBytes(Dbconn, []byte(key), h)
 }
 
 func SaveHashNumber(uHash common.Hash, height modules.ChainIndex) error {

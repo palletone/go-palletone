@@ -126,13 +126,16 @@ func GetUnitFormIndex(db DatabaseReader, height uint64, asset modules.IDType16) 
 }
 
 func GetHeader(db DatabaseReader, hash common.Hash, index *modules.ChainIndex) (*modules.Header, error) {
-
 	encNum := encodeBlockNumber(index.Index)
 	key := append(HEADER_PREFIX, encNum...)
 	key = append(key, index.Bytes()...)
 	header_bytes, err := db.Get(append(key, hash.Bytes()...))
+	//key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, index.Index, index.String(), hash.Bytes())
+	//header_bytes, err := db.Get([]byte(key))
 	// rlp  to  Header struct
-	log.Println(err)
+	if err != nil {
+		return nil, err
+	}
 	header := new(modules.Header)
 	if err := rlp.Decode(bytes.NewReader(header_bytes), header); err != nil {
 		log.Println("Invalid unit header rlp:", err)
