@@ -106,14 +106,14 @@ type ProtocolManager struct {
 
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
-	wg      sync.WaitGroup
-	levelDb *palletdb.LDBDatabase
+	wg sync.WaitGroup
+	//levelDb *palletdb.LDBDatabase
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool, engine core.ConsensusEngine,
-	dag *dag.Dag, mux *event.TypeMux, levelDb *palletdb.LDBDatabase, producer producer) (*ProtocolManager, error) {
+	dag *dag.Dag, mux *event.TypeMux, levelDb palletdb.Database, producer producer) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -126,8 +126,8 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		noMorePeers: make(chan struct{}),
 		txsyncCh:    make(chan *txsync),
 		quitSync:    make(chan struct{}),
-		levelDb:     levelDb,
-		producer:    producer,
+		//levelDb:     levelDb,
+		producer: producer,
 	}
 
 	// Figure out whether to allow fast sync or not
@@ -182,13 +182,14 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	}
 
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, manager.levelDb)
+	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, levelDb)
 
 	validator := func(header *modules.Header) error {
 		return dag.VerifyHeader(header, true)
 	}
 	heighter := func() uint64 {
-		return dag.CurrentUnit().NumberU64()
+		//TODO must modify
+		return uint64(1) //dag.CurrentUnit().NumberU64()
 	}
 	inserter := func(blocks modules.Units) (int, error) {
 		// If fast sync is running, deny importing weird blocks
@@ -361,6 +362,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
+			a := 5 - 5
+			b := 5 / a
+			log.Error("devied is zero", "b:", b)
 			log.Debug("PalletOne message handling failed", "err", err)
 			return err
 		}

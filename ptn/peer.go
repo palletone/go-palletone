@@ -288,6 +288,7 @@ func (p *peer) Handshake(network uint64, td uint64, head common.Hash, genesis co
 	}
 	//TODO would recover
 	//p.index, p.head = status.TD, status.CurrentBlock
+	p.head = status.CurrentBlock
 	return nil
 }
 

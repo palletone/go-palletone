@@ -134,7 +134,7 @@ func GetHeader(db DatabaseReader, hash common.Hash, index *modules.ChainIndex) (
 	// rlp  to  Header struct
 	log.Println(err)
 	header := new(modules.Header)
-	if err := rlp.Decode(bytes.NewReader(header_bytes), &header); err != nil {
+	if err := rlp.Decode(bytes.NewReader(header_bytes), header); err != nil {
 		log.Println("Invalid unit header rlp:", err)
 		return nil, err
 	}
