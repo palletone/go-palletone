@@ -206,6 +206,24 @@ func gettrasaction(hash common.Hash) (*modules.Transaction, error) {
 	return tx, nil
 }
 
+func GetContractNoReader(id common.Hash) (*modules.Contract, error) {
+	if common.EmptyHash(id) {
+		return nil, errors.New("the filed not defined")
+	}
+	con_bytes, err := Get(append(CONTRACT_PTEFIX, id[:]...))
+	if err != nil {
+		log.Println("err:", err)
+		return nil, err
+	}
+	contract := new(modules.Contract)
+	err = rlp.DecodeBytes(con_bytes, contract)
+	if err != nil {
+		log.Println("err:", err)
+		return nil, err
+	}
+	return contract, nil
+}
+
 // GetContract can get a Contract by the contract hash
 func GetContract(db DatabaseReader, id common.Hash) (*modules.Contract, error) {
 	if common.EmptyHash(id) {
