@@ -19,10 +19,10 @@
 package mediatorplugin
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
-	"errors"
 
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -215,36 +215,4 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: unit})
 
 	return Produced, detail
-}
-
-func (mp *MediatorPlugin) UnitBLSSign(peer string, unit *modules.Unit) error {
-	op := &toBLSSigned{
-		origin: peer,
-		unit:  unit,
-	}
-
-	select {
-	case <-mp.quit:
-		return errTerminated
-	case mp.toBLSSigned <- op:
-		return nil
-	}
-}
-
-func (mp *MediatorPlugin) unitBLSSignLoop() {
-	for {
-		select {
-		// Mediator Plugin terminating, abort operation
-		case <-mp.quit:
-			return
-		case op := <- mp.toBLSSigned:
-//			PushUnit(mp.ptn.Dag(), op.unit)
-			go mp.unitBLSSign(op)
-		}
-	}
-}
-
-func (mp *MediatorPlugin) unitBLSSign(toBLSSigned *toBLSSigned)  {
-	//todo
-
 }
