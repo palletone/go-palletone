@@ -475,5 +475,5 @@ func (ps *peerSet) ActiveMediatorPeers() []*peer {
 func (p *peer) SendNewProducedUnit(unit *modules.Unit) error {
 	// TODO @wangjiyou
 
-	return p2p.Send(p.rw, NewProducedUnitMsg, []interface{}{unit})
+	return p2p.Send(p.rw, NewProducedUnitMsg, unit)
 }

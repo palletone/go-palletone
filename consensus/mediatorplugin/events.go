@@ -23,4 +23,6 @@ import (
 )
 
 // NewProducedUnitEvent is posted when a unit has been produced.
-type NewProducedUnitEvent struct{ Unit *modules.Unit }
+type NewProducedUnitEvent struct {
+	Unit *modules.Unit
+}
