@@ -714,6 +714,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Retrieve and decode the propagated new produced unit
 		var unit modules.Unit
 		if err := msg.Decode(&unit); err != nil {
+			log.Info("===NewProducedUnitMsg===", "err:", err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		pm.producer.UnitBLSSign(p.id, &unit)
