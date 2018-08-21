@@ -362,9 +362,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
-			a := 5 - 5
-			b := 5 / a
-			log.Error("devied is zero", "b:", b)
 			log.Debug("PalletOne message handling failed", "err", err)
 			return err
 		}
