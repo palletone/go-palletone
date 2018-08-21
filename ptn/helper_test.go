@@ -145,7 +145,7 @@ func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Sub
 func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *modules.Transaction {
 	msg := modules.Message{
 		App:         "payment",
-		PayloadHash: common.HexToHash("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
+		//PayloadHash: common.HexToHash("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
 		Payload:     "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 	}
 	//tx := modules.NewTransaction(nonce, big.NewInt(0), []byte("abc"))
