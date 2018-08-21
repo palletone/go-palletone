@@ -241,9 +241,17 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 // 生成node.Node一个结构，里面会有任务函数栈, 然后设置各个服务到serviceFuncs 里面，
 // 包括：全节点，dashboard，以及状态stats服务等
 func makeFullNode(ctx *cli.Context) *node.Node {
+	if ctx.String("log.path") != "stdout" {
+		log.FileInitLogger(ctx.String("log.path"))
+	}else{
+		log.InitLogger()
+	}
 	// 1. 根据默认配置、命令行参数和配置文件的配置来创建一个node, 并获取相关配置
 	stack, cfg := makeConfigNode(ctx)
 	log.InitLogger()
+	if ctx.String("log.path") != "stdout" {
+		log.FileInitLogger(ctx.String("log.path"))
+	}
 	//stack.SetDbPath(cfg.Dag.DbPath)
 
 	// 2. 创建 Ptn service、DashBoard service以及 PtnStats service 等 service ,

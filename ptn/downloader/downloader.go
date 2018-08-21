@@ -97,7 +97,7 @@ type Downloader struct {
 
 	queue   *queue   // Scheduler for selecting the hashes to download
 	peers   *peerSet // Set of active peers from which download can proceed
-	levelDb *palletdb.LDBDatabase
+	levelDb palletdb.Database
 
 	rttEstimate   uint64 // Round trip time to target for download requests
 	rttConfidence uint64 // Confidence in the estimated RTT (unit: millionths to allow atomic ops)
@@ -190,7 +190,7 @@ type BlockDag interface {
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
-func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, lightdag LightDag, dag BlockDag, levelDb *palletdb.LDBDatabase) *Downloader {
+func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, lightdag LightDag, dag BlockDag, levelDb palletdb.Database) *Downloader {
 	if lightdag == nil {
 		lightdag = dag
 	}
@@ -240,11 +240,16 @@ func (d *Downloader) Progress() palletone.SyncProgress {
 	current := uint64(0)
 	switch d.mode {
 	case FullSync:
-		current = d.dag.CurrentUnit().Number().Index
+		unit := d.dag.CurrentUnit()
+		if unit != nil {
+			current = unit.Number().Index
+		}
 	case FastSync:
-		//current = d.dag.CurrentFastBlock().NumberU64()
-		current = d.dag.CurrentUnit().Number().Index
-	case LightSync:
+		unit := d.dag.CurrentUnit()
+		if unit != nil {
+			current = unit.Number().Index
+		}
+		//case LightSync:
 		//current = d.lightdag.CurrentHeader().Number.Uint64()
 	}
 
@@ -425,10 +430,11 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	}
 
 	height := latest.Number.Index
-	origin, err := d.findAncestor(p, latest)
-	if err != nil {
-		return err
-	}
+	origin := height
+	//origin, err := d.findAncestor(p, latest)
+	//if err != nil {
+	//	return err
+	//}
 
 	d.syncStatsLock.Lock()
 	if d.syncStatsChainHeight <= origin || d.syncStatsChainOrigin > origin {

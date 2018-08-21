@@ -70,7 +70,7 @@ type PalletOne struct {
 
 	ApiBackend *PtnApiBackend
 
-	levelDb *palletdb.LDBDatabase
+	levelDb palletdb.Database
 
 	networkId     uint64
 	netRPCService *ptnapi.PublicNetAPI
@@ -135,7 +135,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 }
 
 // CreateDB creates the chain database.
-func CreateDB(ctx *node.ServiceContext, config *Config, name string) (*palletdb.LDBDatabase, error) {
+func CreateDB(ctx *node.ServiceContext, config *Config, name string) (palletdb.Database, error) {
 	//db, err := ptndb.NewLDBDatabase(ctx.config.resolvePath(name), cache, handles)
 	path := ctx.DatabasePath(name)
 
@@ -146,9 +146,9 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (*palletdb.
 	if err != nil {
 		return nil, err
 	}
-	//if db, ok := db.(*palletdb.LDBDatabase); ok {
-	//    db.Meter("eth/db/chaindata/")
-	//}
+	//	if db, ok := db.(*palletdb.LDBDatabase); ok {
+	//		db.Meter("eth/db/chaindata/")
+	//	}
 	return db, nil
 }
 

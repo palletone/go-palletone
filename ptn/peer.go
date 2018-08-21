@@ -170,7 +170,7 @@ func (p *peer) SendNewBlockHashes(hashes []common.Hash, numbers []uint64) error 
 // SendNewBlock propagates an entire block to a remote peer.
 func (p *peer) SendNewUnit(unit *modules.Unit) error {
 	p.knownBlocks.Add(unit.UnitHash)
-	return p2p.Send(p.rw, NewBlockMsg, []interface{}{unit})
+	return p2p.Send(p.rw, NewBlockMsg, unit)
 }
 
 // SendBlockHeaders sends a batch of block headers to the remote peer.
@@ -457,6 +457,8 @@ func (ps *peerSet) GetPeers() []*peer {
 // AtiveMeatorPeers retrieves a list of peers that active mediator
 // @author Albert·Gou
 func (ps *peerSet) ActiveMediatorPeers() []*peer {
+	//TODO must modify
+	return nil
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
 

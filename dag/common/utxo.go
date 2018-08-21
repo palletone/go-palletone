@@ -418,11 +418,11 @@ func getAccountTokensByIndex(addr common.Address) (map[string]*modules.AccountTo
 	}
 	for k, v := range data {
 		if err := utxoIndex.QueryFields([]byte(k)); err != nil {
-			return nil, fmt.Errorf("Get account tokens by key error: data key is invalid")
+			return nil, fmt.Errorf("Get account tokens by key error: data key is invalid(%s)", err.Error())
 		}
 		var utxoIndexVal modules.UtxoIndexValue
 		if err := rlp.DecodeBytes([]byte(v), &utxoIndexVal); err != nil {
-			return nil, fmt.Errorf("Get account tokens error: data value is invalid")
+			return nil, fmt.Errorf("Get account tokens error: data value is invalid(%s)", err.Error())
 		}
 		val, ok := tokens[utxoIndex.Asset.AssertId.String()]
 		if ok {
