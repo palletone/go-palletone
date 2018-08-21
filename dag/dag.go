@@ -58,21 +58,16 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	}
 	// step2. get unit height
 	height := d.GetUnitNumber(hash)
-	key := fmt.Sprintf("%s%v_%s_%s", storage.HEADER_PREFIX, height.Index, height.String(), hash.String())
-	data, err := storage.Get([]byte(key))
+	// get unit header
+	uHeader, err := storage.GetHeader(d.Db, hash, &height)
 	if err != nil {
-		log.Error("Current unit", "error", err.Error())
+		log.Error("Current unit when get unit header", "error", err.Error())
 		return nil
 	}
 	// get unit hash
 	uHash := common.Hash{}
 	uHash.SetBytes(hash.Bytes())
-	// get unit header
-	var uHeader modules.Header
-	if err := rlp.DecodeBytes([]byte(data), &uHeader); err != nil {
-		log.Error("Current unit when get unit header", "error", err.Error())
-		return nil
-	}
+
 	// get transaction list
 	txs, err := dagcommon.GetUnitTransactions(uHash)
 	if err != nil {
@@ -81,7 +76,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	}
 	// generate unit
 	unit := modules.Unit{
-		UnitHeader: &uHeader,
+		UnitHeader: uHeader,
 		UnitHash:   uHash,
 		Txs:        txs,
 	}
@@ -178,8 +173,13 @@ func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash 
 	return []common.Hash{}
 }
 
+// need add:   assetId modules.IDType16, onMain bool
 func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
-	if h, err := storage.GetHeader(d.Db, hash, number); err == nil && h != nil {
+	index := new(modules.ChainIndex)
+	index.Index = number
+	// copy(index.AssetID[:], assetId[:])
+	// index.IsMain = onMain
+	if h, err := storage.GetHeader(d.Db, hash, index); err == nil && h != nil {
 		return true
 	}
 	return false
@@ -248,6 +248,11 @@ func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 	return nil
 }
 
+//All leaf nodes for dag downloader
+func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
+	return []*modules.Header{}, nil
+}
+
 /**
 获取account address下面的token信息
 To get account token list and tokens's information
@@ -308,8 +313,9 @@ func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
 }
 
 // Get Header
-func (d *Dag) GetHeader(hash common.Hash, index uint64) (*modules.Header, error) {
-	return storage.GetHeader(d.Db, hash, index)
+func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error) {
+	index := d.GetUnitNumber(hash)
+	return storage.GetHeader(d.Db, hash, &index)
 }
 
 // Get UnitNumber

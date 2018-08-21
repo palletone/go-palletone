@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 const (
@@ -77,10 +78,11 @@ type peerConnection struct {
 // LightPeer encapsulates the methods required to synchronise with a remote light peer.
 type LightPeer interface {
 	//Head() (common.Hash, *big.Int)
-	Head() (common.Hash, uint64)
+	Head() (common.Hash, modules.ChainIndex)
 	RequestHeadersByHash(common.Hash, int, int, bool) error
 	RequestHeadersByNumber(uint64, int, int, bool) error
 	RequestDagHeadersByHash(common.Hash, int, int, bool) error
+	RequestLeafNodes() error
 }
 
 // Peer encapsulates the methods required to synchronise with a remote full peer.
@@ -96,7 +98,7 @@ type lightPeerWrapper struct {
 	peer LightPeer
 }
 
-func (w *lightPeerWrapper) Head() (common.Hash, uint64) { return w.peer.Head() }
+func (w *lightPeerWrapper) Head() (common.Hash, modules.ChainIndex) { return w.peer.Head() }
 func (w *lightPeerWrapper) RequestHeadersByHash(h common.Hash, amount int, skip int, reverse bool) error {
 	return w.peer.RequestHeadersByHash(h, amount, skip, reverse)
 }
@@ -114,6 +116,11 @@ func (w *lightPeerWrapper) RequestNodeData([]common.Hash) error {
 }
 func (w *lightPeerWrapper) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	return w.peer.RequestDagHeadersByHash(origin, amount, skip, reverse)
+}
+
+//RequestLeafNodes: dag all leaf nodes
+func (w *lightPeerWrapper) RequestLeafNodes() error {
+	return w.peer.RequestLeafNodes()
 }
 
 // newPeerConnection creates a new downloader peer.

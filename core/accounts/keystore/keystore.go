@@ -271,22 +271,22 @@ func (ks *KeyStore) SignHash(a accounts.Account, hash []byte) ([]byte, error) {
 
 // SignTx signs the given transaction with the requested account.
 func (ks *KeyStore) SignTx(a accounts.Account, tx *modules.Transaction, chainID *big.Int) (*modules.Transaction, error) {
-	R, S, V, err := ks.SigTX(tx, a.Address)
-	if err != nil {
-		return nil, err
-	}
-	// publicKey, err1 := ks.GetPublicKey(a.Address)
-	// if err1 != nil {
-	// 	return nil, err1
-	// }
-
-	if tx.From == nil {
-		tx.From = new(modules.Authentifier)
-	}
-	tx.From.Address = a.Address.String()
-	tx.From.R = R
-	tx.From.S = S
-	tx.From.V = V
+	//R, S, V, err := ks.SigTX(tx, a.Address)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//// publicKey, err1 := ks.GetPublicKey(a.Address)
+	//// if err1 != nil {
+	//// 	return nil, err1
+	//// }
+	//
+	//if tx.From == nil {
+	//	tx.From = new(modules.Authentifier)
+	//}
+	//tx.From.Address = a.Address.String()
+	//tx.From.R = R
+	//tx.From.S = S
+	//tx.From.V = V
 	return tx, nil
 }
 
@@ -321,20 +321,20 @@ func (ks *KeyStore) SignTxWithPassphrase(a accounts.Account, passphrase string, 
 	}
 	defer ZeroKey(key.PrivateKey)
 
-	authen, err := ks.SigTXWithPwd(tx, key.PrivateKey)
-	if err != nil {
-		return nil, err
-	}
+	//authen, err := ks.SigTXWithPwd(tx, key.PrivateKey)
+	//if err != nil {
+	//	return nil, err
+	//}
 	// publicKey := crypto.FromECDSAPub(&key.PrivateKey.PublicKey)
 
-	if tx.From == nil {
-		tx.From = new(modules.Authentifier)
-	}
-
-	tx.From.Address = a.Address.String()
-	tx.From.R = authen[:32]
-	tx.From.S = authen[32:64]
-	tx.From.V = authen[64:]
+	//if tx.From == nil {
+	//	tx.From = new(modules.Authentifier)
+	//}
+	//
+	//tx.From.Address = a.Address.String()
+	//tx.From.R = authen[:32]
+	//tx.From.S = authen[32:64]
+	//tx.From.V = authen[64:]
 	return tx, nil
 }
 

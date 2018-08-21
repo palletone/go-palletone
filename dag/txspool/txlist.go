@@ -454,7 +454,7 @@ func (l *txPricedList) Cap(threshold *big.Int, local *accountSet) modules.Transa
 			continue
 		}
 		// Stop the discards if we've reached the threshold
-		if tx.TxFee.Cmp(threshold) >= 0 {
+		if tx.Fee().Cmp(threshold) >= 0 {
 			save = append(save, tx)
 			break
 		}

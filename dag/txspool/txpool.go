@@ -461,7 +461,7 @@ func (pool *TxPool) validateTx(tx *modules.Transaction, local bool) error {
 
 	from := modules.RSVtoAddress(tx)
 	local = local || pool.locals.contains(from) // account may be local even if the transaction arrived from the network
-	if !local && pool.txfee.Cmp(tx.TxFee) > 0 {
+	if !local && pool.txfee.Cmp(tx.Fee()) > 0 {
 		return ErrTxFeeTooLow
 	}
 	// Make sure the transaction is signed properly
@@ -1049,14 +1049,14 @@ func (pool *TxPool) GetSortedTxs() (modules.Transactions, common.StorageSize) {
 	var total common.StorageSize
 	for _, tx := range pool.all {
 
-		if total += tx.Txsize; total <= common.StorageSize(dagconfig.DefaultConfig.UnitTxSize) {
+		if total += tx.Size(); total <= common.StorageSize(dagconfig.DefaultConfig.UnitTxSize) {
 			var address common.Address
 			list = append(list, tx)
 			// add  pending
-			address.SetString(tx.From.Address)
+			address.SetString(tx.Address().String())
 			pool.promoteTx(address, tx.TxHash, tx)
 		} else {
-			total = total - tx.Txsize
+			total = total - tx.Size()
 			break
 		}
 	}
