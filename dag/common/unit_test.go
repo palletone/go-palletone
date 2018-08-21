@@ -121,9 +121,8 @@ func TestSaveUnit(t *testing.T) {
 	tx1 := modules.Transaction{
 		TxMessages: []modules.Message{
 			{
-				App:         modules.APP_CONTRACT_TPL,
-				PayloadHash: rlp.RlpHash(contractTplPayload),
-				Payload:     contractTplPayload,
+				App:     modules.APP_CONTRACT_TPL,
+				Payload: contractTplPayload,
 			},
 		},
 	}
@@ -133,9 +132,8 @@ func TestSaveUnit(t *testing.T) {
 	tx2 := modules.Transaction{
 		TxMessages: []modules.Message{
 			{
-				App:         modules.APP_CONTRACT_DEPLOY,
-				PayloadHash: rlp.RlpHash(deployPayload),
-				Payload:     deployPayload,
+				App:     modules.APP_CONTRACT_DEPLOY,
+				Payload: deployPayload,
 			},
 		},
 	}
@@ -145,9 +143,8 @@ func TestSaveUnit(t *testing.T) {
 	tx3 := modules.Transaction{
 		TxMessages: []modules.Message{
 			{
-				App:         modules.APP_CONTRACT_INVOKE,
-				PayloadHash: rlp.RlpHash(invokePayload),
-				Payload:     invokePayload,
+				App:     modules.APP_CONTRACT_INVOKE,
+				Payload: invokePayload,
 			},
 		}}
 	tx3.CreationDate = tx3.CreateDate()

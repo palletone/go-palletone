@@ -570,7 +570,6 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 	// step. compute total income
 	totalIncome := uint64(income) + ComputeInterest()
-	fmt.Println(">>>> Totalincome", totalIncome)
 	// step2. create payload
 	input := modules.Input{}
 	output := modules.Output{
@@ -584,9 +583,8 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 	}
 	// step3. create message
 	msg := modules.Message{
-		App:         modules.APP_PAYMENT,
-		PayloadHash: rlp.RlpHash(payload),
-		Payload:     payload,
+		App:     modules.APP_PAYMENT,
+		Payload: payload,
 	}
 	// step4. create coinbase
 	coinbase := modules.Transaction{

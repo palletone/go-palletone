@@ -22,7 +22,7 @@ package ptn
 import (
 	"crypto/ecdsa"
 	"crypto/rand"
-	"math/big"
+	//"math/big"
 	"sync"
 	"testing"
 
@@ -144,8 +144,18 @@ func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Sub
 
 // newTestTransaction create a new dummy transaction.
 func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *modules.Transaction {
-	tx := modules.NewTransaction(nonce, big.NewInt(0), []byte("abc"))
-	//tx, _ = keystore.SigTX(tx, types.HomesteadSigner{}, from)
+	msg := modules.Message{
+		App:         "payment",
+		PayloadHash: common.HexToHash("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
+		Payload:     "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+	}
+	//tx := modules.NewTransaction(nonce, big.NewInt(0), []byte("abc"))
+	tx := modules.NewTransaction(
+		common.HexToHash("b94f5374fce5edbc8e2a8697c15331677e6ebf0b"),
+		[]modules.Message{msg, msg, msg},
+		12345,
+	)
+
 	return tx
 }
 
