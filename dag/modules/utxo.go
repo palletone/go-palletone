@@ -148,7 +148,7 @@ type OutPoint struct {
 }
 
 func (outpoint *OutPoint) ToKey() []byte {
-	out := fmt.Sprintf("%s%s||%v||%v",
+	out := fmt.Sprintf("%s%s_%d_%d",
 		UTXO_PREFIX,
 		outpoint.TxHash.String(),
 		outpoint.MessageIndex,
@@ -196,20 +196,22 @@ func KeyToOutpoint(key []byte) OutPoint {
 	// key: [UTXO_PREFIX][TxHash]_[MessageIndex]_[OutIndex]
 	preLen := len(UTXO_PREFIX)
 	sKey := key[preLen:]
-	data := strings.Split(string(sKey), "||")
-	if len(data) != 3 {
+	sTxHash := sKey[:common.HashLength]
+	sKey = sKey[common.HashLength:]
+
+	data := strings.Split(string(sKey), "_")
+	if len(data) != 2 {
 		return OutPoint{}
 	}
-	var vout OutPoint
 
-	//fmt.Println("+++++ txhash=", data[0])
-	vout.TxHash.SetString(data[0])
-	i, err := strconv.Atoi(data[1])
+	var vout OutPoint
+	vout.TxHash.SetBytes(sTxHash)
+	i, err := strconv.Atoi(data[0])
 	if err == nil {
 		vout.MessageIndex = uint32(i)
 	}
 
-	i, err = strconv.Atoi(data[2])
+	i, err = strconv.Atoi(data[1])
 	if err == nil {
 		vout.OutIndex = uint32(i)
 	}

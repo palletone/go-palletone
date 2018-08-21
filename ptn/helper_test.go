@@ -22,7 +22,7 @@ package ptn
 import (
 	"crypto/ecdsa"
 	"crypto/rand"
-	"math/big"
+	//"math/big"
 	"sync"
 	"testing"
 
@@ -41,7 +41,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/dag/storage"
 )
 
 var (
@@ -52,7 +51,7 @@ var (
 // newTestProtocolManager creates a new protocol manager for testing purposes,
 // with the given number of blocks already known, and potential notification
 // channels for different events.
-func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, *ptndb.LDBDatabase, error) {
+func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
 	//var engine core.ConsensusEngine = &consensus.DPOSEngine{}
 	var (
 	// evmux = new(event.TypeMux)
@@ -74,8 +73,8 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	engine := new(consensus.DPOSEngine)
 	dag := new(dag.Dag)
 	typemux := new(event.TypeMux)
-	DbPath := "./data1/leveldb"
-	db, _ := storage.Init(DbPath, 0, 0)
+	//DbPath := "./data1/leveldb"
+	db, _ := ptndb.NewMemDatabase()
 	producer := new(mediatorplugin.MediatorPlugin)
 
 	//want (downloader.SyncMode, uint64, txPool, core.ConsensusEngine, *modules.Dag, *event.TypeMux, *ptndb.LDBDatabase)
@@ -92,7 +91,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 // with the given number of blocks already known, and potential notification
 // channels for different events. In case of an error, the constructor force-
 // fails the test.
-func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, *ptndb.LDBDatabase) {
+func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database) {
 	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/, newtx)
 	if err != nil {
 		t.Fatalf("Failed to create protocol manager: %v", err)
@@ -144,8 +143,18 @@ func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Sub
 
 // newTestTransaction create a new dummy transaction.
 func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *modules.Transaction {
-	tx := modules.NewTransaction(nonce, big.NewInt(0), []byte("abc"))
-	//tx, _ = keystore.SigTX(tx, types.HomesteadSigner{}, from)
+	msg := modules.Message{
+		App:         "payment",
+		//PayloadHash: common.HexToHash("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
+		Payload:     "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+	}
+	//tx := modules.NewTransaction(nonce, big.NewInt(0), []byte("abc"))
+	tx := modules.NewTransaction(
+		common.HexToHash("b94f5374fce5edbc8e2a8697c15331677e6ebf0b"),
+		[]modules.Message{msg, msg, msg},
+		12345,
+	)
+
 	return tx
 }
 

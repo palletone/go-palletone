@@ -238,7 +238,7 @@ func (mp *MediatorPlugin) unitBLSSignLoop() {
 		case <-mp.quit:
 			return
 		case op := <- mp.toBLSSigned:
-			PushUnit(mp.ptn.Dag(), op.unit)
+//			PushUnit(mp.ptn.Dag(), op.unit)
 			go mp.unitBLSSign(op)
 		}
 	}

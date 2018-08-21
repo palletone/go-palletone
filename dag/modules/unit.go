@@ -18,12 +18,12 @@
 package modules
 
 import (
+	"crypto/ecdsa"
 	"encoding/json"
 	"strings"
 	"time"
 	"unsafe"
 
-	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/rlp"
@@ -210,14 +210,12 @@ var (
 
 // key: message.UnitHash(message+timestamp)
 type Message struct {
-	App         string      `json:"app"`          // message type
-	PayloadHash common.Hash `json:"payload_hash"` // payload hash
-	Payload     interface{} `json:"payload"`      // the true transaction data
+	App     string      `json:"app"`     // message type
+	Payload interface{} `json:"payload"` // the true transaction data
 }
 
 func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	msg.App = cpyMsg.App
-	msg.PayloadHash = cpyMsg.PayloadHash
 	msg.Payload = cpyMsg.Payload
 	switch cpyMsg.App {
 	case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT:

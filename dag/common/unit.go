@@ -37,6 +37,8 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
+	"math/big"
+	"time"
 )
 
 func RHashStr(x interface{}) string {
@@ -137,7 +139,7 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool, ks *keystore.KeyStore) ([]modules.Unit, error) {
+func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
 	if txspool == nil || mAddr == nil || ks == nil {
 		return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
 	}
@@ -165,7 +167,7 @@ func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool, ks *keystore.Key
 		log.Error(err.Error())
 		return nil, err
 	}
-	coinbase, err := createCoinbase(mAddr, fees, &asset, ks)
+	coinbase, err := createCoinbase(mAddr, fees, &asset, ks, t)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -565,14 +567,16 @@ func QueryUnitByChainIndex(db, index *modules.ChainIndex) *modules.Unit {
 To create coinbase transaction
 */
 
-func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, ks *keystore.KeyStore) (*modules.Transaction, error) {
+func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, ks *keystore.KeyStore, t time.Time) (*modules.Transaction, error) {
 	// setp1. create P2PKH script
 	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 	// step. compute total income
 	totalIncome := uint64(income) + ComputeInterest()
-	fmt.Println(">>>> Totalincome", totalIncome)
 	// step2. create payload
-	input := modules.Input{}
+	createT := big.Int{}
+	input := modules.Input{
+		Extra: createT.SetInt64(t.Unix()).Bytes(),
+	}
 	output := modules.Output{
 		Value:    totalIncome,
 		Asset:    *asset,
@@ -584,9 +588,8 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 	}
 	// step3. create message
 	msg := modules.Message{
-		App:         modules.APP_PAYMENT,
-		PayloadHash: rlp.RlpHash(payload),
-		Payload:     payload,
+		App:     modules.APP_PAYMENT,
+		Payload: payload,
 	}
 	// step4. create coinbase
 	coinbase := modules.Transaction{
