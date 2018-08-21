@@ -423,8 +423,6 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		log.Info("fetchHeight", "err:", err)
 		return err
 	}
-	//height := latest.Number.Index
-	//origin := height
 
 	height := latest.Number.Index
 	origin, err := d.findAncestor(p, latest)
@@ -1546,7 +1544,6 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header) (ui
 	headers, err := d.lightdag.GetAllLeafNodes()
 	if err != nil {
 		log.Info("===findAncestor===", "GetAllLeafNodes err:", err)
-
 		return floor, err
 	}
 
