@@ -195,7 +195,7 @@ func TestCreateUnit(t *testing.T) {
 	addr := common.Address{} // minner addr
 	addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
 	//units, err := CreateUnit(&addr, time.Now())
-	units, err := CreateUnit(&addr, nil, nil)
+	units, err := CreateUnit(&addr, nil, nil, time.Now())
 	if err != nil {
 		log.Println("create unit error:", err)
 	} else {
