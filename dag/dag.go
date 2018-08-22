@@ -248,7 +248,8 @@ func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 	return nil
 }
 
-//All leaf nodes for dag downloader
+//All leaf nodes for dag downloader.
+//MUST have Priority.
 func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
 	return []*modules.Header{}, nil
 }
