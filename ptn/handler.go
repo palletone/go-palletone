@@ -20,9 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	//"math"
-	"math/big"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,12 +27,10 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/rlp"
-
-	//"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
@@ -759,9 +754,10 @@ func (self *ProtocolManager) txBroadcastLoop() {
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network    uint64      `json:"network"`    // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
-	Difficulty *big.Int    `json:"difficulty"` // Total difficulty of the host's blockchain
-	Genesis    common.Hash `json:"genesis"`    // SHA3 hash of the host's genesis block
+	Network uint64 `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
+	//Difficulty *big.Int    `json:"difficulty"` // Total difficulty of the host's blockchain
+	Index   uint64
+	Genesis common.Hash `json:"genesis"` // SHA3 hash of the host's genesis block
 	//Config     *configure.ChainConfig `json:"config"`     // Chain configuration for the fork rules
 	Head common.Hash `json:"head"` // SHA3 hash of the host's best owned block
 }
@@ -770,9 +766,14 @@ type NodeInfo struct {
 func (self *ProtocolManager) NodeInfo() *NodeInfo {
 	//currentBlock := self.blockchain.CurrentBlock()
 	//var natnum nat = []uint{17179869184}
+	unit := self.dag.CurrentUnit()
+	index := uint64(0)
+	if unit != nil {
+		index = unit.Number().Index
+	}
 	return &NodeInfo{
-		Network:    self.networkId,
-		Difficulty: &big.Int{}, //self.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64()),
+		Network: self.networkId,
+		Index:   index, //&big.Int{}, //self.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64()),
 		//Genesis:    self.blockchain.Genesis().Hash(),
 		//Config:     self.blockchain.Config(),
 		//Head:       currentBlock.Hash(),
