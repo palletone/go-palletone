@@ -51,6 +51,7 @@ func NewAddNodeCmd(addr string, subCmd AddNodeSubCmd) *AddNodeCmd {
 type TransactionInput struct {
 	Txid string `json:"txid"`
 	Vout uint32 `json:"vout"`
+	MessageIndex uint32
 }
 
 // CreateRawTransactionCmd defines the createrawtransaction JSON-RPC command.
