@@ -188,7 +188,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		return dag.VerifyHeader(header, true)
 	}
 	heighter := func() uint64 {
-		if _, ok := levelDb.(*palletdb.LDBDatabase); ok{
+		if _, ok := levelDb.(*palletdb.LDBDatabase); ok {
 			unit := dag.CurrentUnit()
 			if unit != nil {
 				return unit.NumberU64()
@@ -661,7 +661,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			//但是这个场景应该很容易被fetcher所覆盖。
 			currentUnit := pm.dag.CurrentUnit()
 			if currentUnit != nil && unit.UnitHeader.ChainIndex().Index > currentUnit.UnitHeader.ChainIndex().Index {
-				go pm.synchronise(p)
+				go pm.synchronise(p, unit.Number().AssetID)
 			}
 		}
 

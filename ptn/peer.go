@@ -96,7 +96,7 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 }
 
 // Info gathers and returns a collection of metadata known about a peer.
-func (p *peer) Info() *PeerInfo {
+func (p *peer) Info( /*assetId modules.IDType16*/ ) *PeerInfo {
 	hash, number := p.Head(modules.PTNCOIN)
 
 	return &PeerInfo{
