@@ -508,17 +508,24 @@ func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *mod
 
 	// save contract state
 	// key: [CONTRACT_STATE_PREFIX][contract id]_[field name]_[state version]
+	version := modules.StateVersion{
+		Height:  height,
+		TxIndex: txIndex,
+	}
 	for _, ws := range payload.WriteSet {
-		version := modules.StateVersion{
-			Height:  height,
-			TxIndex: txIndex,
-		}
 		// save new state to database
 		if updateState(payload.ContractId, ws.Key, version, ws.Value) != true {
 			continue
 		}
 	}
-
+	// save contract name
+	if !storage.SaveContractState(storage.CONTRACT_STATE_PREFIX, payload.ContractId, "ContractName", payload.Name, version) {
+		return false
+	}
+	// save contract jury list
+	if !storage.SaveContractState(storage.CONTRACT_STATE_PREFIX, payload.ContractId, "ContractJury", payload.Jury, version) {
+		return false
+	}
 	return true
 }
 
@@ -541,14 +548,24 @@ func saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Mes
 	}
 
 	// step2. save contract template bytecode data
-	// key:[CONTRACT_TPL][Template id]_[template version]
-	key := fmt.Sprintf("%s%s_%s",
+	// key:[CONTRACT_TPL][Template id]_bytecode_[template version]
+	key := fmt.Sprintf("%s%s^*^bytecode^*^%s",
 		storage.CONTRACT_TPL,
 		payload.TemplateId.String(),
 		version.String())
 
 	if err := storage.Store(storage.Dbconn, key, payload.Bytecode); err != nil {
 		log.Error("Save contract template", "error", err.Error())
+		return false
+	}
+	// step3. save contract template name, path, Memery
+	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.String(), "tplname", payload.Name, version) {
+		return false
+	}
+	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.String(), "tplpath", payload.Path, version) {
+		return false
+	}
+	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.String(), "tplmemory", payload.Memery, version) {
 		return false
 	}
 	return true
@@ -607,7 +624,7 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 To delete contract state
 */
 func deleteContractState(contractID string, field string) {
-	oldKeyPrefix := fmt.Sprintf("%s%s_%s",
+	oldKeyPrefix := fmt.Sprintf("%s%s^*^%s",
 		storage.CONTRACT_STATE_PREFIX,
 		contractID,
 		field)
@@ -657,7 +674,7 @@ func updateState(contractID string, key string, version modules.StateVersion, va
 		// delete old state from database
 		deleteContractState(contractID, key)
 		// insert new state
-		key := fmt.Sprintf("%s%s_%s_%s",
+		key := fmt.Sprintf("%s%s^*^%s^*^%s",
 			storage.CONTRACT_STATE_PREFIX,
 			contractID,
 			key,

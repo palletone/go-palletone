@@ -26,6 +26,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 )
@@ -296,16 +297,18 @@ func (version *StateVersion) String() string {
 	return string(data)
 }
 
-func (version *StateVersion) ParseStringKey(key string) {
-	ss := strings.Split(key, "_")
-	if len(ss) != 2 {
-		return
+func (version *StateVersion) ParseStringKey(key string) bool {
+	ss := strings.Split(key, "^*^")
+	if len(ss) != 3 {
+		return false
 	}
 	var v StateVersion
-	if err := rlp.DecodeBytes([]byte(ss[1]), &v); err != nil {
-		return
+	if err := rlp.DecodeBytes([]byte(ss[2]), &v); err != nil {
+		log.Error("State version parse string key", "error", err.Error())
+		return false
 	}
 	version = &v
+	return true
 }
 
 // Contract template deploy message
@@ -336,6 +339,7 @@ type ContractDeployPayload struct {
 	Name         string             `json:"name"`          // the name for contract
 	Args         [][]byte           `json:"args"`          // contract arguments list
 	Excutiontime uint16             `json:"excution_time"` // contract execution time, millisecond
+	Jury         []common.Address   `json:"jury"`          // contract jurors list
 	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
 	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
 }
