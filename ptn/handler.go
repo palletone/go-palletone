@@ -188,8 +188,13 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		return dag.VerifyHeader(header, true)
 	}
 	heighter := func() uint64 {
-		//TODO must modify
-		return uint64(1) //dag.CurrentUnit().NumberU64()
+		if _, ok := levelDb.(*palletdb.LDBDatabase); ok{
+			unit := dag.CurrentUnit()
+			if unit != nil {
+				return unit.NumberU64()
+			}
+		}
+		return uint64(0)
 	}
 	inserter := func(blocks modules.Units) (int, error) {
 		// If fast sync is running, deny importing weird blocks
@@ -646,7 +651,8 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		p.MarkUnit(unit.UnitHash)
 		pm.fetcher.Enqueue(p.id, &unit)
 
-		if _, number := p.Head(); unit.UnitHeader.ChainIndex().Index > number.Index {
+		hash, number := p.Head(unit.Number().AssetID)
+		if !common.EmptyHash(hash) && unit.UnitHeader.ChainIndex().Index > number.Index {
 			p.SetHead(unit.UnitHash, unit.UnitHeader.ChainIndex())
 			// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
 			// a singe block (as the true TD is below the propagated block), however this
@@ -654,7 +660,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			//如果在我们上面安排一个同步。注意，这将不会为单个块的间隙触发同步(因为真正的TD位于传播的块之下)，
 			//但是这个场景应该很容易被fetcher所覆盖。
 			currentUnit := pm.dag.CurrentUnit()
-			if unit.UnitHeader.ChainIndex().Index > currentUnit.UnitHeader.ChainIndex().Index {
+			if currentUnit != nil && unit.UnitHeader.ChainIndex().Index > currentUnit.UnitHeader.ChainIndex().Index {
 				go pm.synchronise(p)
 			}
 		}

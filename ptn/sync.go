@@ -149,11 +149,11 @@ func (pm *ProtocolManager) syncer() {
 			if pm.peers.Len() < minDesiredPeerCount {
 				break
 			}
-			go pm.synchronise(pm.peers.BestPeer())
+			go pm.synchronise(pm.peers.BestPeer(modules.PTNCOIN))
 
 		case <-forceSync.C:
 			// Force a sync even if not enough peers are present
-			go pm.synchronise(pm.peers.BestPeer())
+			go pm.synchronise(pm.peers.BestPeer(modules.PTNCOIN))
 
 		case <-pm.noMorePeers:
 			return
@@ -171,7 +171,7 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 
 	// Make sure the peer's TD is higher than our own
 	//TODO compare local assetId & chainIndex whith remote peer assetId & chainIndex
-	pHead, number := peer.Head()
+	pHead, number := peer.Head(modules.PTNCOIN)
 	index := number.Index
 	/*
 		currentUnit := pm.dag.CurrentUnit()

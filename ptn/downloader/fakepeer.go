@@ -22,6 +22,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // FakePeer is a mock downloader peer that operates on a local database instance
@@ -32,7 +33,7 @@ type FakePeer struct{}
 func NewFakePeer(id string, db ptndb.Database, dl *Downloader) *FakePeer {
 	return &FakePeer{}
 }
-func (p *FakePeer) Head() (common.Hash, *big.Int) {
+func (p *FakePeer) Head(ptncoin modules.IDType16) (common.Hash, *big.Int) {
 	return common.Hash{}, &big.Int{}
 }
 func (p *FakePeer) RequestHeadersByHash(hash common.Hash, amount int, skip int, reverse bool) error {

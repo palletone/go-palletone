@@ -97,11 +97,19 @@ func (d *Dag) GetUnitByNumber(number uint64) *modules.Unit {
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
-	return d.CurrentUnit().Header()
+	unit := d.CurrentUnit()
+	if unit != nil {
+		return unit.Header()
+	}
+	return nil
 }
 
 func (d *Dag) GetHeaderByNumber(number uint64) *modules.Header {
-	return d.CurrentUnit().Header()
+	unit := d.CurrentUnit()
+	if unit != nil {
+		return unit.Header()
+	}
+	return nil
 }
 
 // func (d *Dag) GetHeader(hash common.Hash, number uint64) *modules.Header {
@@ -186,7 +194,11 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 }
 
 func (d *Dag) CurrentHeader() *modules.Header {
-	return d.CurrentUnit().Header()
+	unit := d.CurrentUnit()
+	if unit != nil {
+		return unit.Header()
+	}
+	return nil
 }
 
 // GetBodyRLP retrieves a block body in RLP encoding from the database by hash,

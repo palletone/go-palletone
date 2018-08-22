@@ -34,6 +34,9 @@ var (
 	errClosed            = errors.New("peer set is closed")
 	errAlreadyRegistered = errors.New("peer is already registered")
 	errNotRegistered     = errors.New("peer is not registered")
+
+	//ID_LENGTH = 32
+	//PTNCOIN   = [ID_LENGTH]byte{'p', 't', 'n', 'c', 'o', 'i', 'n'}
 )
 
 const (
@@ -51,6 +54,11 @@ type PeerInfo struct {
 	Head  string `json:"head"`  // SHA3 hash of the peer's best owned block
 }
 
+type peerMsg struct {
+	head   common.Hash
+	number modules.ChainIndex
+}
+
 type peer struct {
 	id string
 
@@ -60,8 +68,9 @@ type peer struct {
 	version  int         // Protocol version negotiated
 	forkDrop *time.Timer // Timed connection dropper if forks aren't validated in time
 
-	head   common.Hash
-	number modules.ChainIndex
+	//head   common.Hash
+	//number modules.ChainIndex
+	peermsg map[modules.IDType16]peerMsg
 
 	lock sync.RWMutex
 
@@ -73,6 +82,7 @@ type peer struct {
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
+
 	id := p.ID()
 	return &peer{
 		Peer:        p,
@@ -81,12 +91,13 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 		id:          fmt.Sprintf("%x", id[:8]),
 		knownTxs:    set.New(),
 		knownBlocks: set.New(),
+		peermsg:     map[modules.IDType16]peerMsg{},
 	}
 }
 
 // Info gathers and returns a collection of metadata known about a peer.
 func (p *peer) Info() *PeerInfo {
-	hash, number := p.Head()
+	hash, number := p.Head(modules.PTNCOIN)
 
 	return &PeerInfo{
 		Version: p.version,
@@ -98,12 +109,15 @@ func (p *peer) Info() *PeerInfo {
 // Head retrieves a copy of the current head hash and total difficulty of the
 // peer.
 //only retain the max index header.will in other mediator,not in ptn mediator.
-func (p *peer) Head() (hash common.Hash, number modules.ChainIndex) {
+func (p *peer) Head(assetID modules.IDType16) (hash common.Hash, number modules.ChainIndex) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	copy(hash[:], p.head[:])
-	number = p.number
+	msg, ok := p.peermsg[assetID]
+	if ok {
+		copy(hash[:], msg.head[:])
+		number = msg.number
+	}
 	return hash, number
 }
 
@@ -113,10 +127,13 @@ func (p *peer) SetHead(hash common.Hash, number modules.ChainIndex) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	if number.Index > p.number.Index {
-		copy(p.head[:], hash[:])
-		p.number = number
+	msg, ok := p.peermsg[number.AssetID]
+
+	if (ok && number.Index > msg.number.Index) || !ok {
+		copy(msg.head[:], hash[:])
+		msg.number = number
 	}
+	p.peermsg[number.AssetID] = msg
 }
 
 // MarkBlock marks a block as known for the peer, ensuring that the block will
@@ -416,7 +433,7 @@ func (ps *peerSet) PeersWithoutTx(hash common.Hash) []*peer {
 }
 
 // BestPeer retrieves the known peer with the currently highest total difficulty.
-func (ps *peerSet) BestPeer() *peer {
+func (ps *peerSet) BestPeer(assetId modules.IDType16) *peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
@@ -425,7 +442,7 @@ func (ps *peerSet) BestPeer() *peer {
 		bestTd   uint64 //*big.Int
 	)
 	for _, p := range ps.peers {
-		if _, number := p.Head(); bestPeer == nil || number.Index > bestTd /*td.Cmp(bestTd) > 0*/ {
+		if _, number := p.Head(assetId); bestPeer == nil || number.Index > bestTd /*td.Cmp(bestTd) > 0*/ {
 			bestPeer, bestTd = p, number.Index
 		}
 	}

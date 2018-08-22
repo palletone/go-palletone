@@ -108,9 +108,12 @@ func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 
 func GetUnit(db DatabaseReader, hash common.Hash) *modules.Unit {
 	unit_bytes, err := db.Get(append(UNIT_PREFIX, hash.Bytes()...))
-	log.Println(err)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
 	unit := new(modules.Unit)
-	json.Unmarshal(unit_bytes, &unit)
+	json.Unmarshal(unit_bytes, unit)
 
 	return unit
 }

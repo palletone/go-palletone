@@ -563,7 +563,7 @@ func (d *Downloader) fetchHeight(p *peerConnection) (*modules.Header, error) {
 	p.log.Debug("Retrieving remote chain height")
 
 	// Request the advertised remote head block and wait for the response
-	head, _ := p.peer.Head()
+	head, _ := p.peer.Head(modules.PTNCOIN)
 	go p.peer.RequestHeadersByHash(head, 1, 0, false)
 
 	ttl := d.requestTTL()
@@ -1076,7 +1076,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64) e
 				if d.mode != LightSync {
 					head := d.dag.CurrentUnit()
 					//if !gotHeaders && td.Cmp(d.dag.GetTd(head.Hash(), head.NumberU64())) > 0 {
-					if !gotHeaders && index > d.dag.GetHeaderByHash(head.Hash()).Index() {
+					if head != nil && !gotHeaders && index > d.dag.GetHeaderByHash(head.Hash()).Index() {
 						log.Debug("===processHeaders errStallingPeer===")
 						return errStallingPeer
 					}
