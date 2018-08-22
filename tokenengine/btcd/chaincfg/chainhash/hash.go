@@ -58,6 +58,10 @@ func (hash *Hash) SetBytes(newHash []byte) error {
 	return nil
 }
 
+const (
+	HashLength = 32
+)
+func (h *Hash) SetString(s string) { h.SetBytes([]byte(s)) }
 // IsEqual returns true if target is the same as hash.
 func (hash *Hash) IsEqual(target *Hash) bool {
 	if hash == nil && target == nil {

@@ -1210,12 +1210,22 @@ func messageToHex(msg wire.Message) (string, error) {
 	return hex.EncodeToString(buf.Bytes()), nil
 }
 
+const (
+	MaxTxInSequenceNum uint32 = 0xffffffff
+	)
 //create raw transction
 func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	c := cmd.(*btcjson.CreateRawTransactionCmd)
 	// Validate the locktime, if given.
+	aid := modules.IDType16{}
+	aid.SetBytes([]byte("1111111111111111222222222222222222"))
+	ast := modules.Asset{
+		AssertId: aid,
+		UniqueId: aid,
+		ChainId:  1,
+	}
 	if c.LockTime != nil &&
-		(*c.LockTime < 0 || *c.LockTime > int64(wire.MaxTxInSequenceNum)) {
+		(*c.LockTime < 0 || *c.LockTime > int64(MaxTxInSequenceNum)) {
 		return "", &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidParameter,
 			Message: "Locktime out of range",
@@ -1223,18 +1233,16 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	}
 	// Add all transaction inputs to a new transaction after performing
 	// some validity checks.
-	mtx := wire.NewMsgTx(wire.TxVersion)
+	//先构造PaymentPayload结构，再组装成Transaction结构
+	pload := new(modules.PaymentPayload)
 	for _, input := range c.Inputs {
-		txHash, err := chainhash.NewHashFromStr(input.Txid)
+		txHash, err := common.NewHashFromStr(input.Txid)
 		if err != nil {
 			return "", rpcDecodeHexError(input.Txid)
 		}
-		prevOut := wire.NewOutPoint(txHash, input.Vout)
-		txIn := wire.NewTxIn(prevOut, []byte{}, nil)
-		if c.LockTime != nil && *c.LockTime != 0 {
-			txIn.Sequence = wire.MaxTxInSequenceNum - 1
-		}
-		mtx.AddTxIn(txIn)
+		prevOut := modules.NewOutPoint(txHash, input.Vout,input.MessageIndex)
+		txInput := modules.NewTxIn(prevOut, []byte{})
+		pload.AddTxIn(*txInput)
 	}
 	// Add all transaction outputs to the transaction after performing
 	// some validity checks.
@@ -1283,26 +1291,38 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 			return "", internalRPCError(err.Error(), context)
 		}
 		// Convert the amount to satoshi.
-		satoshi, err := btcutil.NewAmount(amount)
+		dao, err := btcutil.NewAmount(amount)
 		if err != nil {
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
 		}
-		txOut := wire.NewTxOut(int64(satoshi), pkScript)
-		mtx.AddTxOut(txOut)
+		txOut := modules.NewTxOut(uint64(dao), pkScript,ast)
+		pload.AddTxOut(*txOut)
 	}
-	// Set the Locktime, if given.
-	if c.LockTime != nil {
-		mtx.LockTime = uint32(*c.LockTime)
-	}
+	
 	// Return the serialized and hex-encoded transaction.  Note that this
 	// is intentionally not directly returning because the first return
 	// value is a string and it would result in returning an empty string to
 	// the client instead of nothing (nil) in the case of an error.
-	mtxHex, err := messageToHex(mtx)
+	msg := modules.Message{
+		App:         modules.APP_PAYMENT,
+		Payload:     pload,
+	}
+	mtx := modules.Transaction{
+		TxMessages: []modules.Message{msg},
+	}
+	mtx.TxHash = mtx.Hash()
+	// Set the Locktime, if given.
+	if c.LockTime != nil {
+		mtx.Locktime = uint32(*c.LockTime)
+	}
+	mtxbt ,err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
 	}
+	//mtxHex, err := messageToHex(mtx)
+	mtxHex := hex.EncodeToString(mtxbt)
+	fmt.Println(mtxHex)
 	return mtxHex, nil
 }
 func decodeHexStr(hexStr string) ([]byte, error) {
