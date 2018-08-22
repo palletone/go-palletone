@@ -1522,7 +1522,7 @@ func (d *Downloader) requestTTL() time.Duration {
 func (d *Downloader) getMaxNodes(headers []*modules.Header, assetId modules.IDType16) (*modules.Header, error) {
 	size := len(headers)
 	if size == 0 {
-		return nil, errors.New("leaf nodes is zero")
+		return nil, nil
 	}
 	if size == 1 {
 		return headers[0], nil
@@ -1545,11 +1545,11 @@ func (d *Downloader) getMaxNodes(headers []*modules.Header, assetId modules.IDTy
 func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, assetId modules.IDType16) (uint64, error) {
 	height := latest.Index()
 	// Figure out the valid ancestor range to prevent rewrite attacks
-	floor := uint64(0)
+	floor, ceil := uint64(0), uint64(0)
 	headers, err := d.lightdag.GetAllLeafNodes()
 	if err != nil {
 		log.Info("===findAncestor===", "GetAllLeafNodes err:", err)
-		return floor, err
+		return floor, nil
 	}
 
 	header, err := d.getMaxNodes(headers, assetId)
@@ -1557,9 +1557,13 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 		log.Info("===findAncestor===", "getMaxNodes err:", err)
 		return floor, err
 	}
-	ceil := header.Number.Index
-
-	p.log.Debug("Looking for common ancestor", "local assetid", header.Number.AssetID.String(), "local index", ceil, "remote", latest.Number.Index)
+	if header != nil {
+		ceil = header.Number.Index
+		p.log.Debug("Looking for common ancestor", "local assetid", header.Number.AssetID.String(), "local index", ceil, "remote", latest.Number.Index)
+	} else {
+		ceil = 0
+		p.log.Debug("Looking for common ancestor", "local index", ceil, "remote", latest.Number.Index)
+	}
 
 	// Request the topmost blocks to short circuit binary ancestor lookup
 	head := ceil
@@ -1703,8 +1707,8 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 		}
 	}
 	// Ensure valid ancestry and return
-	if start <= floor {
-		p.log.Warn("Ancestor below allowance", "number", start, "hash", hash, "allowance", floor)
+	if start <= floor && start != 0 {
+		p.log.Warn("Ancestor below allowance", "start", start, "hash", hash, "allowance", floor)
 		return 0, errInvalidAncestor
 	}
 	p.log.Debug("Found common ancestor", "number", start, "hash", hash)

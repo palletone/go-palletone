@@ -181,8 +181,8 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 
 	pHead, number := peer.Head(assetId)
 	pindex := number.Index
-	if pindex < index {
-		log.Info("===synchronise peer.index < local index===")
+	if pindex < index && pindex != 0 {
+		log.Info("===synchronise peer.index < local index===", "peer.index:", pindex, "local index:", number.Index)
 		return
 	}
 
