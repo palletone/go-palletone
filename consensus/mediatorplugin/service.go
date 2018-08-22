@@ -22,6 +22,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/group/edwards25519"
+	"github.com/dedis/kyber/share/dkg/pedersen"
+	"github.com/dedis/kyber/share/vss/pedersen"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -30,8 +34,8 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 // PalletOne wraps all methods required for producing unit.
@@ -44,33 +48,37 @@ type PalletOne interface {
 // toBLSed represents a BLS sign operation.
 type toBLSSigned struct {
 	origin string
-	unit *modules.Unit
+	unit   *modules.Unit
 }
 
 // toTBLSSigned, TBLS signed auxiliary structure
 type toTBLSSigned struct {
-	unit *modules.Unit
+	unit      *modules.Unit
 	sigShares [][]byte
 }
 
 type MediatorPlugin struct {
-	ptn PalletOne
+	ptn  PalletOne
+	quit chan struct{} // Channel used for graceful exit
 	// Enable VerifiedUnit production, even if the chain is stale.
 	// 新开启一个区块链时，必须设为true
 	productionEnabled bool
 	// Mediator`s account and passphrase controlled by this node
 	mediators map[common.Address]string
-	quit      chan struct{} // Channel used for graceful exit
 
-	// 新生产unit的事件订阅和数据发送
-	newProducedUnitFeed  event.Feed	// 订阅的时候自动初始化一次
+	// 新生产unit的事件订阅和数据发送和接收
+	newProducedUnitFeed  event.Feed              // 订阅的时候自动初始化一次
 	newProducedUnitScope event.SubscriptionScope // 零值已准备就绪待用
+	toBLSSigned          chan *toBLSSigned       // 接收新生产的unit
 
-	// 接收新生产的unit
-	toBLSSigned chan *toBLSSigned
+	// dkg生成vss相关
+	suite   vss.Suite
+	partSec kyber.Scalar
+	partPub kyber.Point
+	dkg     *dkg.DistKeyGenerator
 
-	// 等待TBLS阈值签名的unit
-	pendingTBLSSign  map[common.Hash]*toTBLSSigned
+	// unit阈值签名相关
+	pendingTBLSSign map[common.Hash]*toTBLSSigned // 等待TBLS阈值签名的unit
 }
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {
@@ -164,9 +172,14 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		productionEnabled: cfg.EnableStaleProduction,
 		mediators:         msm,
 		quit:              make(chan struct{}),
-		toBLSSigned: make(chan *toBLSSigned),
+
+		toBLSSigned:     make(chan *toBLSSigned),
 		pendingTBLSSign: make(map[common.Hash]*toTBLSSigned),
 	}
+
+	mp.suite = edwards25519.NewBlakeSHA256Ed25519()
+	mp.partSec, mp.partPub = genPair(mp.suite)
+	mp.dkg = nil //dkg.NewDistKeyGenerator(mp.suite, mp.partSec, partPubs, nbParticipants/2+1)
 
 	log.Debug("mediator plugin initialize end")
 

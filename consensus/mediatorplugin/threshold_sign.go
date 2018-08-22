@@ -19,10 +19,44 @@
 package mediatorplugin
 
 import (
+	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/share/vss/pedersen"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-// NewProducedUnitEvent is posted when a unit has been produced.
-type NewProducedUnitEvent struct {
-	Unit *modules.Unit
+func genPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
+	sc := suite.Scalar().Pick(suite.RandomStream())
+	return sc, suite.Point().Mul(sc, nil)
+}
+
+func (mp *MediatorPlugin) UnitBLSSign(peer string, unit *modules.Unit) error {
+	op := &toBLSSigned{
+		origin: peer,
+		unit:   unit,
+	}
+
+	select {
+	case <-mp.quit:
+		return errTerminated
+	case mp.toBLSSigned <- op:
+		return nil
+	}
+}
+
+func (mp *MediatorPlugin) unitBLSSignLoop() {
+	for {
+		select {
+		// Mediator Plugin terminating, abort operation
+		case <-mp.quit:
+			return
+		case op := <-mp.toBLSSigned:
+			//			PushUnit(mp.ptn.Dag(), op.unit)
+			go mp.unitBLSSign(op)
+		}
+	}
+}
+
+func (mp *MediatorPlugin) unitBLSSign(toBLSSigned *toBLSSigned) {
+	//todo
+
 }
