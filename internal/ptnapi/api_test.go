@@ -17,6 +17,7 @@ type RawTransactionGenParams struct {
 	Inputs []struct {
 		Txid string `json:"txid"`
 		Vout uint32 `json:"vout"`
+                MessageIndex  uint32 `json:"messageindex"`
 	} `json:"inputs"`
 	Outputs []struct {
 		Address string  `json:"address"`
@@ -26,12 +27,12 @@ type RawTransactionGenParams struct {
 }
 
 func TestRawTransactionGen(t *testing.T) {
-
     params := `{
     "inputs": [
 		{
            "txid": "0b987a442dd830f4e40639058030d250f526c2330fb31b64c24be880339bdfd1",
-           "vout": 0
+           "vout": 0,
+           "messageindex": 0
 		}
     ],
     "outputs": [
@@ -43,18 +44,16 @@ func TestRawTransactionGen(t *testing.T) {
     "locktime": 0
 	}`
         params= params
-     
-	testResult := "0100000001d1df9b3380e84bc2641bb30f33c226f550d23080053906e4f430d82d447a980b0000000000ffffffff0100c0b91502111c001976a9147c0099353492e6d45dd440940605d092506e773988ac00000000"
+	testResult := "f8c3a0e147b603fca5a72240d68aa92f1617a0de79fc9bdb7a542fa7fc0cf50b352cf7f89ff89d877061796d656e74f893e7e6e3a0d1df9b3380e84bc2641bb30f33c226f550d23080053906e4f430d82d447a980b80808080f869f867871c110215b9c0009976a9147c0099353492e6d45dd440940605d092506e773988acf843a03131313131313131313131313131323232323232323232323232323232323232a031313131313131313131313131313232323232323232323232323232323232320180"
         var rawTransactionGenParams RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
 		return
 	}
         //transaction inputs
-       
 	var inputs []btcjson.TransactionInput
 	for _, inputOne := range rawTransactionGenParams.Inputs {
-		input := btcjson.TransactionInput{inputOne.Txid, inputOne.Vout}
+		input := btcjson.TransactionInput{inputOne.Txid, inputOne.Vout,inputOne.MessageIndex}
 		inputs = append(inputs, input)
 	}
 	if len(inputs) == 0 {
@@ -68,7 +67,6 @@ func TestRawTransactionGen(t *testing.T) {
 		}
 		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
 	}
-     
 	if len(amounts) == 0 {
 		return
 	}
@@ -76,12 +74,11 @@ func TestRawTransactionGen(t *testing.T) {
         arg := btcjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
        
 	result ,_ := CreateRawTransaction(arg)
-       
 	if !strings.Contains(result, testResult) {
 		t.Errorf("unexpected result - got: %v, "+"want: %v", result, testResult)
 	}
 	fmt.Println(result)
-	return 
+	return
 }
 /*
 func TestDecodeRawTransaction(t *testing.T) {
