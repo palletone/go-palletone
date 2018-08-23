@@ -20,9 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	//"math"
-	"math/big"
+	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,12 +28,10 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/rlp"
-
-	//"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
@@ -188,8 +184,13 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		return dag.VerifyHeader(header, true)
 	}
 	heighter := func() uint64 {
-		//TODO must modify
-		return uint64(1) //dag.CurrentUnit().NumberU64()
+		if _, ok := levelDb.(*palletdb.LDBDatabase); ok {
+			unit := dag.CurrentUnit()
+			if unit != nil {
+				return unit.NumberU64()
+			}
+		}
+		return uint64(0)
 	}
 	inserter := func(blocks modules.Units) (int, error) {
 		// If fast sync is running, deny importing weird blocks
@@ -254,29 +255,6 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.newProducedUnitCh = make(chan mediatorplugin.NewProducedUnitEvent)
 	pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
 	go pm.newProducedUnitBroadcastLoop()
-}
-
-// @author Albert·Gou
-// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
-func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
-	peers := pm.peers.ActiveMediatorPeers()
-	for _, peer := range peers {
-		peer.SendNewProducedUnit(unit)
-	}
-}
-
-// @author Albert·Gou
-func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
-	for {
-		select {
-		case event := <-self.newProducedUnitCh:
-			self.BroadcastNewProducedUnit(event.Unit)
-
-			// Err() channel will be closed when unsubscribing.
-		case <-self.newProducedUnitSub.Err():
-			return
-		}
-	}
 }
 
 // @author Albert·Gou
@@ -476,7 +454,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}
 		}
 		//log.Debug("===msg.Code == GetBlockHeadersMsg  SendBlockHeaders===")
-		return p.SendBlockHeaders(headers)
+		return p.SendUnitHeaders(headers)
 
 	case msg.Code == BlockHeadersMsg:
 		log.Debug("===handler->msg.Code == BlockHeadersMsg===")
@@ -646,7 +624,8 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		p.MarkUnit(unit.UnitHash)
 		pm.fetcher.Enqueue(p.id, &unit)
 
-		if _, number := p.Head(); unit.UnitHeader.ChainIndex().Index > number.Index {
+		hash, number := p.Head(unit.Number().AssetID)
+		if !common.EmptyHash(hash) && unit.UnitHeader.ChainIndex().Index > number.Index {
 			p.SetHead(unit.UnitHash, unit.UnitHeader.ChainIndex())
 			// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
 			// a singe block (as the true TD is below the propagated block), however this
@@ -654,8 +633,8 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			//如果在我们上面安排一个同步。注意，这将不会为单个块的间隙触发同步(因为真正的TD位于传播的块之下)，
 			//但是这个场景应该很容易被fetcher所覆盖。
 			currentUnit := pm.dag.CurrentUnit()
-			if unit.UnitHeader.ChainIndex().Index > currentUnit.UnitHeader.ChainIndex().Index {
-				go pm.synchronise(p)
+			if currentUnit != nil && unit.UnitHeader.ChainIndex().Index > currentUnit.UnitHeader.ChainIndex().Index {
+				go pm.synchronise(p, unit.Number().AssetID)
 			}
 		}
 
@@ -750,26 +729,93 @@ func (self *ProtocolManager) txBroadcastLoop() {
 	}
 }
 
+// BroadcastUnit will either propagate a unit to a subset of it's peers, or
+// will only announce it's availability (depending what's requested).
+func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
+	hash := unit.Hash()
+	peers := pm.peers.PeersWithoutUnit(hash)
+
+	// If propagation is requested, send to a subset of the peer
+	if propagate {
+		//parentsHash := unit.ParentHash()
+		for _, parentHash := range unit.ParentHash() {
+			if parent := pm.dag.GetUnit(parentHash); parent == nil {
+				log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash)
+				return
+			}
+		}
+		// Send the block to a subset of our peers
+		transfer := peers[:int(math.Sqrt(float64(len(peers))))]
+		for _, peer := range transfer {
+			peer.SendNewUnit(unit)
+		}
+		log.Trace("Propagated block", "hash", hash, "recipients", len(transfer), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+		return
+	}
+
+	// Otherwise if the block is indeed in out own chain, announce it
+	if pm.dag.HasUnit(hash) {
+		for _, peer := range peers {
+			peer.SendNewUnitHashes([]common.Hash{hash}, []uint64{unit.NumberU64()})
+		}
+		log.Trace("Announced block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+	}
+}
+
+// @author Albert·Gou
+func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.newProducedUnitCh:
+			self.BroadcastUnit(event.Unit, true)
+			self.BroadcastUnit(event.Unit, false)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.newProducedUnitSub.Err():
+			return
+		}
+	}
+}
+
+func (self *ProtocolManager) ceBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.ceCh:
+			self.BroadcastCe(event.Ce)
+
+		// Err() channel will be closed when unsubscribing.
+		case <-self.ceSub.Err():
+			return
+		}
+	}
+}
+
+func (pm *ProtocolManager) BroadcastCe(ce string) {
+	peers := pm.peers.GetPeers()
+	for _, peer := range peers {
+		peer.SendConsensus(ce)
+	}
+}
+
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network    uint64      `json:"network"`    // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
-	Difficulty *big.Int    `json:"difficulty"` // Total difficulty of the host's blockchain
-	Genesis    common.Hash `json:"genesis"`    // SHA3 hash of the host's genesis block
-	//Config     *configure.ChainConfig `json:"config"`     // Chain configuration for the fork rules
-	Head common.Hash `json:"head"` // SHA3 hash of the host's best owned block
+	Network uint64 `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
+	Index   uint64
+	Genesis common.Hash `json:"genesis"` // SHA3 hash of the host's genesis block
+	Head    common.Hash `json:"head"`    // SHA3 hash of the host's best owned block
 }
 
 // NodeInfo retrieves some protocol metadata about the running host node.
 func (self *ProtocolManager) NodeInfo() *NodeInfo {
-	//currentBlock := self.blockchain.CurrentBlock()
-	//var natnum nat = []uint{17179869184}
+	unit := self.dag.CurrentUnit()
+	index := uint64(0)
+	if unit != nil {
+		index = unit.Number().Index
+	}
 	return &NodeInfo{
-		Network:    self.networkId,
-		Difficulty: &big.Int{}, //self.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64()),
-		//Genesis:    self.blockchain.Genesis().Hash(),
-		//Config:     self.blockchain.Config(),
-		//Head:       currentBlock.Hash(),
+		Network: self.networkId,
+		Index:   index,
 	}
 }
 
@@ -798,3 +844,14 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 
 	return tx
 }
+
+/*
+// @author Albert·Gou
+// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
+func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
+	peers := pm.peers.ActiveMediatorPeers()
+	for _, peer := range peers {
+		peer.SendNewProducedUnit(unit)
+	}
+}
+*/

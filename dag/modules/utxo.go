@@ -141,11 +141,11 @@ func (utxoIndex *UtxoIndex) ToKey() []byte {
 }
 
 // utxo key
-type OutPoint struct {
+/*type OutPoint struct {
 	TxHash       common.Hash // reference Utxo struct key field
 	MessageIndex uint32      // message index in transaction
 	OutIndex     uint32
-}
+}*/
 
 func (outpoint *OutPoint) ToKey() []byte {
 	out := fmt.Sprintf("%s%s_%d_%d",
@@ -219,16 +219,25 @@ func KeyToOutpoint(key []byte) OutPoint {
 	return vout
 }
 
+type Output struct {
+	Value    uint64
+	PkScript []byte
+	Asset    Asset
+}
 type Input struct {
 	PreviousOutPoint OutPoint
 	SignatureScript  []byte
 	Extra            []byte // if user creating a new asset, this field should be it's config data. Otherwise it is null.
 }
 
-type Output struct {
-	Value    uint64
-	Asset    Asset
-	PkScript []byte
+// NewTxIn returns a new ptn transaction input with the provided
+// previous outpoint point and signature script with a default sequence of
+// MaxTxInSequenceNum.
+func NewTxIn(prevOut *OutPoint, signatureScript []byte) *Input {
+	return &Input{
+		PreviousOutPoint: *prevOut,
+		SignatureScript:  signatureScript,
+	}
 }
 
 type SpendProof struct {

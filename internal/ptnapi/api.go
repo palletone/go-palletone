@@ -25,6 +25,7 @@ import (
 	"math/big"
 	"strings"
 	"time"
+        "math/rand"
 
 	"encoding/json"
 	"github.com/btcsuite/btcd/btcec"
@@ -1210,12 +1211,22 @@ func messageToHex(msg wire.Message) (string, error) {
 	return hex.EncodeToString(buf.Bytes()), nil
 }
 
+const (
+	MaxTxInSequenceNum uint32 = 0xffffffff
+	)
 //create raw transction
 func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	c := cmd.(*btcjson.CreateRawTransactionCmd)
 	// Validate the locktime, if given.
+	aid := modules.IDType16{}
+	aid.SetBytes([]byte("1111111111111111222222222222222222"))
+	ast := modules.Asset{
+		AssertId: aid,
+		UniqueId: aid,
+		ChainId:  1,
+	}
 	if c.LockTime != nil &&
-		(*c.LockTime < 0 || *c.LockTime > int64(wire.MaxTxInSequenceNum)) {
+		(*c.LockTime < 0 || *c.LockTime > int64(MaxTxInSequenceNum)) {
 		return "", &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidParameter,
 			Message: "Locktime out of range",
@@ -1223,18 +1234,16 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	}
 	// Add all transaction inputs to a new transaction after performing
 	// some validity checks.
-	mtx := wire.NewMsgTx(wire.TxVersion)
+	//先构造PaymentPayload结构，再组装成Transaction结构
+	pload := new(modules.PaymentPayload)
 	for _, input := range c.Inputs {
-		txHash, err := chainhash.NewHashFromStr(input.Txid)
+		txHash, err := common.NewHashFromStr(input.Txid)
 		if err != nil {
 			return "", rpcDecodeHexError(input.Txid)
 		}
-		prevOut := wire.NewOutPoint(txHash, input.Vout)
-		txIn := wire.NewTxIn(prevOut, []byte{}, nil)
-		if c.LockTime != nil && *c.LockTime != 0 {
-			txIn.Sequence = wire.MaxTxInSequenceNum - 1
-		}
-		mtx.AddTxIn(txIn)
+		prevOut := modules.NewOutPoint(txHash, input.Vout,input.MessageIndex)
+		txInput := modules.NewTxIn(prevOut, []byte{})
+		pload.AddTxIn(*txInput)
 	}
 	// Add all transaction outputs to the transaction after performing
 	// some validity checks.
@@ -1283,26 +1292,38 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 			return "", internalRPCError(err.Error(), context)
 		}
 		// Convert the amount to satoshi.
-		satoshi, err := btcutil.NewAmount(amount)
+		dao, err := btcutil.NewAmount(amount)
 		if err != nil {
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
 		}
-		txOut := wire.NewTxOut(int64(satoshi), pkScript)
-		mtx.AddTxOut(txOut)
+		txOut := modules.NewTxOut(uint64(dao), pkScript,ast)
+		pload.AddTxOut(*txOut)
 	}
-	// Set the Locktime, if given.
-	if c.LockTime != nil {
-		mtx.LockTime = uint32(*c.LockTime)
-	}
+	
 	// Return the serialized and hex-encoded transaction.  Note that this
 	// is intentionally not directly returning because the first return
 	// value is a string and it would result in returning an empty string to
 	// the client instead of nothing (nil) in the case of an error.
-	mtxHex, err := messageToHex(mtx)
+	msg := modules.Message{
+		App:         modules.APP_PAYMENT,
+		Payload:     pload,
+	}
+	mtx := modules.Transaction{
+		TxMessages: []modules.Message{msg},
+	}
+	mtx.TxHash = mtx.Hash()
+	// Set the Locktime, if given.
+	if c.LockTime != nil {
+		mtx.Locktime = uint32(*c.LockTime)
+	}
+	mtxbt ,err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
 	}
+	//mtxHex, err := messageToHex(mtx)
+	mtxHex := hex.EncodeToString(mtxbt)
+	fmt.Println(mtxHex)
 	return mtxHex, nil
 }
 func decodeHexStr(hexStr string) ([]byte, error) {
@@ -1497,7 +1518,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
                                         if !ok {
 						return nil, false,
 							errors.New("no key for address")
-	}
+	        }
 					return wif.PrivKey, wif.CompressPubKey, nil
 			})
 			getScript := txscript.ScriptClosure(func(addr btcutil.Address) ([]byte, error) {
@@ -1521,13 +1542,13 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 					getScript, txIn.SignatureScript)
 				// Failure to sign isn't an error, it just means that
 				// the tx isn't complete.
-	if err != nil {
+	        if err != nil {
 					signErrors = append(signErrors, SignatureError{
 						InputIndex: uint32(i),
 						Error:      err,
 					})
 					continue
-	}
+	        }
 				txIn.SignatureScript = script
 			}
 			// Either it was already signed or we just signed it.
@@ -1592,14 +1613,24 @@ func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args Sen
 	}
 	return submitTransaction(ctx, s.b, signed)
 }
-
+type Authentifier struct {
+	Address string `json:"address"`
+	R       []byte `json:"r"`
+	S       []byte `json:"s"`
+	V       []byte `json:"v"`
+}
 // SendRawTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
-func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encodedTx hexutil.Bytes) (common.Hash, error) {
+func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encodedTx string /*hexutil.Bytes*/) (common.Hash, error) {
 	tx := new(modules.Transaction)
-	if err := rlp.DecodeBytes(encodedTx, tx); err != nil {
-		return common.Hash{}, err
-	}
+    tx.AccountNonce =uint64(rand.Intn(100000))
+	tx.CreationDate = time.Now().Format("2006-01-02 15:04:05")
+    keys :=  common.HexToHash(encodedTx)
+	tx.TxHash = keys
+	tx.Priority_lvl = tx.GetPriorityLvl()
+	//if err := rlp.DecodeBytes(encodedTx, tx); err != nil {
+	//	return common.Hash{}, err
+	//}
 	return submitTransaction(ctx, s.b, tx)
 }
 

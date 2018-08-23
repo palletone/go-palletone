@@ -33,6 +33,7 @@ import (
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
+	"strings"
 )
 
 // DatabaseReader wraps the Get method of a backing data store.
@@ -108,9 +109,12 @@ func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 
 func GetUnit(db DatabaseReader, hash common.Hash) *modules.Unit {
 	unit_bytes, err := db.Get(append(UNIT_PREFIX, hash.Bytes()...))
-	log.Println(err)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
 	unit := new(modules.Unit)
-	json.Unmarshal(unit_bytes, &unit)
+	json.Unmarshal(unit_bytes, unit)
 
 	return unit
 }
@@ -232,23 +236,38 @@ func GetContract(db DatabaseReader, id common.Hash) (*modules.Contract, error) {
 获取合约模板
 To get contract template
 */
-func GetContractTpl(templateID string) (*modules.StateVersion, []byte) {
-	key := fmt.Sprintf("%s%s",
+func GetContractTpl(templateID string) (version *modules.StateVersion, bytecode []byte, name string, path string) {
+	key := fmt.Sprintf("%s%s^*^bytecode",
 		CONTRACT_TPL,
 		templateID)
 	data := GetPrefix([]byte(key))
 	if len(data) == 1 {
 		for k, v := range data {
-			var stateVersion modules.StateVersion
-			stateVersion.ParseStringKey(k)
-			var byteCode []byte
-			if err := rlp.DecodeBytes([]byte(v), &byteCode); err != nil {
-				return nil, nil
+			if !version.ParseStringKey(k) {
+				return
 			}
-			return &stateVersion, byteCode
+			if err := rlp.DecodeBytes([]byte(v), &bytecode); err != nil {
+				log.Println("GetContractTpl when get bytecode", "error", err.Error())
+				return
+			}
+			break
 		}
 	}
-	return nil, nil
+	_, nameByte := GetTplState(templateID, "ContractName")
+	if nameByte == nil {
+		return
+	}
+	if err := rlp.DecodeBytes(nameByte, &name); err != nil {
+		log.Println("GetContractTpl when get name", "error", err.Error())
+		return
+	}
+
+	_, pathByte := GetTplState(templateID, "ContractPath")
+	if err := rlp.DecodeBytes(pathByte, &path); err != nil {
+		log.Println("GetContractTpl when get path", "error", err.Error())
+		return
+	}
+	return
 }
 
 func GetContractRlp(db DatabaseReader, id common.Hash) (rlp.RawValue, error) {
@@ -422,4 +441,74 @@ func GetAddrOutput(db DatabaseReader, addr string) ([]modules.Output, error) {
 		}
 	}
 	return outputs, err
+}
+
+/**
+获取合约（或模板）所有属性
+To get contract or contract template all fields and return
+*/
+func GetContractAllState(prefix []byte, id string) map[modules.ContractReadSet][]byte {
+	// key format: [PREFIX][ID]_[field]_[version]
+	key := fmt.Sprintf("%s%s^*^", prefix, id)
+	data := getprefix(Dbconn, []byte(key))
+	if data == nil || len(data) <= 0 {
+		return nil
+	}
+	allState := map[modules.ContractReadSet][]byte{}
+	for k, v := range data {
+		sKey := strings.Split(k, "^*^")
+		if len(sKey) != 3 {
+			continue
+		}
+		var version modules.StateVersion
+		if !version.ParseStringKey(key) {
+			continue
+		}
+		rdSet := modules.ContractReadSet{
+			Key:   sKey[1],
+			Value: &version,
+		}
+		allState[rdSet] = v
+	}
+	return allState
+}
+
+/**
+获取合约（或模板）某一个属性
+To get contract or contract template one field
+*/
+func GetTplState(id string, field string) (modules.StateVersion, []byte) {
+	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, id, field)
+	data := getprefix(Dbconn, []byte(key))
+	if data == nil || len(data) != 1 {
+		return modules.StateVersion{}, nil
+	}
+	for k, v := range data {
+		var version modules.StateVersion
+		if !version.ParseStringKey(k) {
+			return modules.StateVersion{}, nil
+		}
+		return version, v
+	}
+	return modules.StateVersion{}, nil
+}
+
+/**
+获取合约（或模板）某一个属性
+To get contract or contract template one field
+*/
+func GetContractState(id string, field string) (modules.StateVersion, []byte) {
+	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_STATE_PREFIX, id, field)
+	data := getprefix(Dbconn, []byte(key))
+	if data == nil || len(data) != 1 {
+		return modules.StateVersion{}, nil
+	}
+	for k, v := range data {
+		var version modules.StateVersion
+		if !version.ParseStringKey(k) {
+			return modules.StateVersion{}, nil
+		}
+		return version, v
+	}
+	return modules.StateVersion{}, nil
 }

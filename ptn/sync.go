@@ -149,11 +149,11 @@ func (pm *ProtocolManager) syncer() {
 			if pm.peers.Len() < minDesiredPeerCount {
 				break
 			}
-			go pm.synchronise(pm.peers.BestPeer())
+			go pm.synchronise(pm.peers.BestPeer(modules.PTNCOIN), modules.PTNCOIN)
 
 		case <-forceSync.C:
 			// Force a sync even if not enough peers are present
-			go pm.synchronise(pm.peers.BestPeer())
+			go pm.synchronise(pm.peers.BestPeer(modules.PTNCOIN), modules.PTNCOIN)
 
 		case <-pm.noMorePeers:
 			return
@@ -163,7 +163,7 @@ func (pm *ProtocolManager) syncer() {
 }
 
 // synchronise tries to sync up our local block chain with a remote peer.
-func (pm *ProtocolManager) synchronise(peer *peer) {
+func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	// Short circuit if no peers are available
 	if peer == nil {
 		return
@@ -171,18 +171,21 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 
 	// Make sure the peer's TD is higher than our own
 	//TODO compare local assetId & chainIndex whith remote peer assetId & chainIndex
-	pHead, number := peer.Head()
-	index := number.Index
-	/*
-		currentUnit := pm.dag.CurrentUnit()
-		//td := pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())
-		//index := currentUnit. //pm.dag.GetIndex(currentBlock.Hash(), currentBlock.NumberU64())
 
-		pHead, pTd := peer.Head()
-		if pTd.Cmp(td) <= 0 {
-			return
-		}
-	*/
+	currentUnit := pm.dag.CurrentUnit()
+	if currentUnit == nil {
+		log.Info("===synchronise currentUnit is nil===")
+		return
+	}
+	index := currentUnit.Number().Index
+
+	pHead, number := peer.Head(assetId)
+	pindex := number.Index
+	if pindex < index && pindex != 0 {
+		log.Info("===synchronise peer.index < local index===", "peer.index:", pindex, "local index:", number.Index)
+		return
+	}
+
 	// Otherwise try to sync with the downloader
 	mode := downloader.FullSync
 
@@ -196,7 +199,7 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	}
 
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
-	if err := pm.downloader.Synchronise(peer.id, pHead, index, mode); err != nil {
+	if err := pm.downloader.Synchronise(peer.id, pHead, index, mode, assetId); err != nil {
 		//log.Info("ptn sync downloader.", "Synchronise err:", err)
 		return
 	}

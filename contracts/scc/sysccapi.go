@@ -142,7 +142,7 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 	if err != nil {
 		sysccLogger.Errorf("ExecuteWithErrorFilter with syscc.Name[%s] chainId[%s] err !!", syscc.Name, chainID)
 	} else {
-		sysccLogger.Infof("system chaincode %s/%s(%s) deployed", syscc.Name, chainID, syscc.Path)
+		sysccLogger.Infof("system chaincode %s,%s(%s) deployed", syscc.Name, chainID, syscc.Path)
 		cc := &cclist.CCInfo{
 			Id:syscc.Id,
 			Name: syscc.Name,
@@ -173,6 +173,9 @@ func DeDeploySysCC(chainID string, syscc *SystemChaincode) error {
 	version := util.GetSysCCVersion()
 	cccid := ccprov.GetCCContext(chainID, syscc.Name, version, "", true, nil, nil)
 	err = ccprov.Stop(ctx, cccid, chaincodeDeploymentSpec)
+	if err == nil {
+		cclist.DelChaincode(chainID, syscc.Name, version)
+	}
 
 	return err
 }

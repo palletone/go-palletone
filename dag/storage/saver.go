@@ -331,3 +331,19 @@ func SaveUnitChainVersion(vsn int) error {
 	}
 	return Dbconn.Put([]byte("UnitchainVersion"), enc)
 }
+
+/**
+保存合约属性信息
+To save contract
+*/
+func SaveContractState(prefix []byte, id string, name string, value interface{}, version modules.StateVersion) bool {
+	key := fmt.Sprintf("%s%s^*^%s^*^%s",
+		prefix,
+		id, name,
+		version.String())
+	if err := Store(Dbconn, key, value); err != nil {
+		log.Println("Save contract template", "error", err.Error())
+		return false
+	}
+	return true
+}

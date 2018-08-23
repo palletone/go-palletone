@@ -88,6 +88,10 @@ func (d *Dag) GetUnit(hash common.Hash) *modules.Unit {
 	return storage.GetUnit(d.Db, hash)
 }
 
+func (d *Dag) HasUnit(hash common.Hash) bool {
+	return storage.GetUnit(d.Db, hash) != nil
+}
+
 func (d *Dag) GetUnitByHash(hash common.Hash) *modules.Unit {
 	return d.CurrentUnit()
 }
@@ -97,11 +101,19 @@ func (d *Dag) GetUnitByNumber(number uint64) *modules.Unit {
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
-	return d.CurrentUnit().Header()
+	unit := d.CurrentUnit()
+	if unit != nil {
+		return unit.Header()
+	}
+	return nil
 }
 
 func (d *Dag) GetHeaderByNumber(number uint64) *modules.Header {
-	return d.CurrentUnit().Header()
+	unit := d.CurrentUnit()
+	if unit != nil {
+		return unit.Header()
+	}
+	return nil
 }
 
 // func (d *Dag) GetHeader(hash common.Hash, number uint64) *modules.Header {
@@ -186,7 +198,11 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 }
 
 func (d *Dag) CurrentHeader() *modules.Header {
-	return d.CurrentUnit().Header()
+	unit := d.CurrentUnit()
+	if unit != nil {
+		return unit.Header()
+	}
+	return nil
 }
 
 // GetBodyRLP retrieves a block body in RLP encoding from the database by hash,
@@ -248,7 +264,8 @@ func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 	return nil
 }
 
-//All leaf nodes for dag downloader
+//All leaf nodes for dag downloader.
+//MUST have Priority.
 func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
 	return []*modules.Header{}, nil
 }

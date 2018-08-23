@@ -42,6 +42,18 @@ var (
 	TX_MAXSIZE = uint32(256 * 1024)
 )
 
+// TxOut defines a bitcoin transaction output.
+type TxOut struct {
+	Value    int64
+	PkScript []byte
+    Asset    Asset
+}
+// TxIn defines a bitcoin transaction input.
+type TxIn struct {
+	PreviousOutPoint OutPoint
+	SignatureScript  []byte
+	Sequence         uint32
+}
 func NewTransaction(hash common.Hash, msg []Message, lock uint32) *Transaction {
 	return newTransaction(hash, msg, lock)
 }
@@ -59,6 +71,14 @@ func newTransaction(hash common.Hash, msg []Message, lock uint32) *Transaction {
 	tx.CreationDate = time.Now().Format(TimeFormatString)
 	tx.Priority_lvl = tx.GetPriorityLvl()
 	return tx
+}
+// AddTxIn adds a transaction input to the message.
+func (pld *PaymentPayload) AddTxIn(ti Input) {
+	pld.Inputs = append(pld.Inputs, ti)
+}
+// AddTxOut adds a transaction output to the message.
+func (pld *PaymentPayload) AddTxOut(to Output) {
+	pld.Outputs = append(pld.Outputs, to)
 }
 
 //// ChainId returns which chain id this transaction was signed for (if at all)

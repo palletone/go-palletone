@@ -26,6 +26,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 )
@@ -159,6 +160,11 @@ type Unit struct {
 	ReceivedFrom interface{}
 }
 
+type OutPoint struct {
+ TxHash       common.Hash // reference Utxo struct key field
+ MessageIndex uint32      // message index in transaction
+ OutIndex     uint32
+}
 func (unit *Unit) IsEmpty() bool {
 	if unit == nil || len(unit.Txs) <= 0 {
 		return true
@@ -283,6 +289,22 @@ type PaymentPayload struct {
 	Outputs []Output `json:"outputs"`
 }
 
+func NewOutPoint(hash *common.Hash, messageindex uint32,outindex uint32) *OutPoint {
+	return &OutPoint{
+		TxHash:  *hash,
+		MessageIndex: messageindex,
+		OutIndex: outindex,
+	}
+}
+// NewTxOut returns a new bitcoin transaction output with the provided
+// transaction value and public key script.
+func NewTxOut(value uint64, pkScript []byte,asset Asset) *Output {
+	return &Output{
+		Value:    value,
+		PkScript: pkScript,
+		Asset : asset,
+	}
+}
 type StateVersion struct {
 	Height  ChainIndex
 	TxIndex uint32
@@ -296,16 +318,18 @@ func (version *StateVersion) String() string {
 	return string(data)
 }
 
-func (version *StateVersion) ParseStringKey(key string) {
-	ss := strings.Split(key, "_")
-	if len(ss) != 2 {
-		return
+func (version *StateVersion) ParseStringKey(key string) bool {
+	ss := strings.Split(key, "^*^")
+	if len(ss) != 3 {
+		return false
 	}
 	var v StateVersion
-	if err := rlp.DecodeBytes([]byte(ss[1]), &v); err != nil {
-		return
+	if err := rlp.DecodeBytes([]byte(ss[2]), &v); err != nil {
+		log.Error("State version parse string key", "error", err.Error())
+		return false
 	}
 	version = &v
+	return true
 }
 
 // Contract template deploy message
@@ -336,6 +360,7 @@ type ContractDeployPayload struct {
 	Name         string             `json:"name"`          // the name for contract
 	Args         [][]byte           `json:"args"`          // contract arguments list
 	Excutiontime uint16             `json:"excution_time"` // contract execution time, millisecond
+	Jury         []common.Address   `json:"jury"`          // contract jurors list
 	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
 	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
 }
