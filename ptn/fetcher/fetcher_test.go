@@ -18,55 +18,46 @@ package fetcher
 
 import (
 	"errors"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common"
 )
-
-
-var (
-	hash1 =  common.Hash{0}
-	head1 = modules.NewHeader([]common.Hash{hash1},nil,1,nil)
-	unit1 = modules.NewUnit(head1,nil)
-
-	hash2 = common.Hash{1}
-	head2 = modules.NewHeader([]common.Hash{unit1.UnitHash},nil,1,nil)
-	unit2 = modules.NewUnit(head2,nil)
-
-	hash3 = common.Hash{2}
-	head3 = modules.NewHeader([]common.Hash{unit2.UnitHash},nil,1,nil)
-	unit3 = modules.NewUnit(head3,nil)
-)
-
 
 // makeChain creates a chain of n blocks starting at and including parent.
-//创建一个n个块的链，从父级开始，包括父级
 // the returned hash chain is ordered head->parent. In addition, every 3rd block
 // contains a transaction and every 5th an uncle to allow testing correct block reassembly
-//返回的哈希链是排序的头->父级。此外，每第三个块包含一个事务，每第五个父块允许测试正确的块重新组装。
-func makeChain() ([]common.Hash, map[common.Hash]*modules.Unit) {
-	units := make([]*modules.Unit,3)
-	units = append(units,unit1,unit2,unit3)
-	hashes := make([]common.Hash, 3)
+func makeDag(unit int) ([]common.Hash, map[common.Hash]*modules.Unit) {
+	var head *modules.Header
+	head = modules.NewHeader([]common.Hash{common.Hash{0}}, nil, 1, nil)
+	genesis := modules.NewUnit(head, nil)
+	hashes := make([]common.Hash, unit+1)
+	units := make([]*modules.Unit, unit+1)
+	dag := make(map[common.Hash]*modules.Unit, unit+1)
 	hashes[0] = common.Hash{0}
-	hashes[1] = common.Hash{1}
-	hashes[2] = common.Hash{2}
-	blockm := make(map[common.Hash]*modules.Unit, 3)
-	blockm[hashes[0]] = unit1
-	blockm[hashes[1]] = unit2
-	blockm[hashes[2]] = unit3
-	return hashes, blockm
+	units[0] = genesis
+	dag[hashes[0]] = units[0]
+	if unit < 1 {
+		return hashes, dag
+	}
+	for i := 1; i <= unit; i++ {
+		hashes[i] = common.Hash{byte(i)}
+		head = modules.NewHeader([]common.Hash{units[i-1].UnitHash}, nil, 1, nil)
+		units[i] = modules.NewUnit(head, nil)
+		dag[hashes[i]] = units[i]
+	}
+	return hashes, dag
 }
+
 // fetcherTester is a test simulator for mocking out local block chain.
 type fetcherTester struct {
 	fetcher *Fetcher
 
-	hashes []common.Hash                // Hash chain belonging to the tester
+	hashes []common.Hash                 // Hash chain belonging to the tester
 	blocks map[common.Hash]*modules.Unit // Blocks belonging to the tester
-	drops  map[string]bool              // Map of peers dropped by the fetcher
+	drops  map[string]bool               // Map of peers dropped by the fetcher
 
 	lock sync.RWMutex
 }
@@ -252,7 +243,7 @@ func TestSequentialAnnouncements64(t *testing.T) { testSequentialAnnouncements(t
 func testSequentialAnnouncements(t *testing.T, protocol int) {
 	// Create a chain of blocks to import
 	//targetBlocks := 4 * hashLimit
-	hashes, blocks := makeChain()
+	hashes, blocks := makeDag(3)
 
 	tester := newTester()
 	headerFetcher := tester.makeHeaderFetcher("valid", blocks, -gatherSlack)
@@ -277,8 +268,8 @@ func TestConcurrentAnnouncements64(t *testing.T) { testConcurrentAnnouncements(t
 
 func testConcurrentAnnouncements(t *testing.T, protocol int) {
 	// Create a chain of blocks to import
-	targetBlocks := 2
-	hashes, blocks := makeChain()
+	targetBlocks := 3
+	hashes, blocks := makeDag(3)
 
 	// Assemble a tester with a built in counter for the requests
 	tester := newTester()
@@ -323,7 +314,7 @@ func TestRandomArrivalImport64(t *testing.T) { testRandomArrivalImport(t, 64) }
 func testRandomArrivalImport(t *testing.T, protocol int) {
 	// Create a chain of blocks to import, and choose one to delay
 	targetBlocks := maxQueueDist
-	hashes, blocks := makeChain()
+	hashes, blocks := makeDag(3)
 	skip := targetBlocks / 2
 
 	tester := newTester()
@@ -354,7 +345,7 @@ func TestQueueGapFill64(t *testing.T) { testQueueGapFill(t, 64) }
 func testQueueGapFill(t *testing.T, protocol int) {
 	// Create a chain of blocks to import, and choose one to not announce at all
 	targetBlocks := maxQueueDist
-	hashes, blocks := makeChain()
+	hashes, blocks := makeDag(3)
 	skip := targetBlocks / 2
 
 	tester := newTester()
@@ -384,7 +375,7 @@ func TestImportDeduplication64(t *testing.T) { testImportDeduplication(t, 64) }
 
 func testImportDeduplication(t *testing.T, protocol int) {
 	// Create two blocks to import (one for duplication, the other for stalling)
-	hashes, blocks := makeChain()
+	hashes, blocks := makeDag(3)
 
 	// Create the tester and wrap the importer with a counter
 	tester := newTester()
@@ -418,6 +409,7 @@ func testImportDeduplication(t *testing.T, protocol int) {
 		t.Fatalf("import invocation count mismatch: have %v, want %v", counter, 0)
 	}
 }
+
 // Tests that if a block is empty (i.e. header only), no body request should be
 // made, and instead the header should be assembled into a whole block in itself.
 func TestEmptyBlockShortCircuit62(t *testing.T) { testEmptyBlockShortCircuit(t, 62) }
@@ -426,7 +418,7 @@ func TestEmptyBlockShortCircuit64(t *testing.T) { testEmptyBlockShortCircuit(t, 
 
 func testEmptyBlockShortCircuit(t *testing.T, protocol int) {
 	// Create a chain of blocks to import
-	hashes, blocks := makeChain()
+	hashes, blocks := makeDag(3)
 
 	tester := newTester()
 	headerFetcher := tester.makeHeaderFetcher("valid", blocks, -gatherSlack)
@@ -480,11 +472,11 @@ func testHashMemoryExhaustionAttack(t *testing.T, protocol int) {
 	}
 	// Create a valid chain and an infinite junk chain
 	//targetBlocks := hashLimit + 2*maxQueueDist
-	hashes, blocks := makeChain()
+	hashes, blocks := makeDag(3)
 	validHeaderFetcher := tester.makeHeaderFetcher("valid", blocks, -gatherSlack)
 	validBodyFetcher := tester.makeBodyFetcher("valid", blocks, 0)
 
-	attack, _ := makeChain()
+	attack, _ := makeDag(3)
 	attackerHeaderFetcher := tester.makeHeaderFetcher("attacker", nil, -gatherSlack)
 	attackerBodyFetcher := tester.makeBodyFetcher("attacker", nil, 0)
 
@@ -495,7 +487,7 @@ func testHashMemoryExhaustionAttack(t *testing.T, protocol int) {
 		}
 		tester.fetcher.Notify("attacker", attack[i], 1 /* don't distance drop */, time.Now(), attackerHeaderFetcher, attackerBodyFetcher)
 	}
-	if count := atomic.LoadInt32(&announces); count != 3 && count != 2{
+	if count := atomic.LoadInt32(&announces); count != 3 && count != 4 {
 		t.Fatalf("queued announce count mismatch: have %d, want %d", count, hashLimit+maxQueueDist)
 	}
 	// Wait for fetches to complete
@@ -526,7 +518,7 @@ func TestBlockMemoryExhaustionAttack(t *testing.T) {
 		}
 	}
 	// Create a valid chain and a batch of dangling (but in range) blocks
-	hashes, attack := makeChain()
+	hashes, attack := makeDag(3)
 	//attack := make(map[common.Hash]*modules.Unit)
 	//for i := byte(0); len(attack) < 3; i++ {
 	//	hashes, blocks := makeChain()
