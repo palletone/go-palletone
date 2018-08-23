@@ -340,9 +340,9 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 		return modules.ErrUnit(-1)
 	}
 	// step3. check transactions in unit
-	_, isSuccess, _ := ValidateTransactions(&unit.Txs, isGenesis)
+	_, isSuccess, err := ValidateTransactions(&unit.Txs, isGenesis)
 	if isSuccess != true {
-		return fmt.Errorf("Validate unit(%s) transactions failed.", unit.UnitHash)
+		return fmt.Errorf("Validate unit(%s) transactions failed: %v", err)
 	}
 	if storage.Dbconn == nil {
 		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
@@ -679,6 +679,7 @@ func updateState(contractID string, key string, version modules.StateVersion, va
 			contractID,
 			key,
 			version.String())
+		fmt.Println(">>>>>  key:", key)
 		if err := storage.Store(storage.Dbconn, key, val); err != nil {
 			log.Error("Save state", "error", err.Error())
 			return false

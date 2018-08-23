@@ -24,16 +24,16 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 	}
 
 	fee := uint64(0)
-	txFlages := map[common.Hash]modules.TxValidationCode{}
+	txFlags := map[common.Hash]modules.TxValidationCode{}
 	isSuccess := bool(true)
 	// all transactions' new worldState
 	worldState := map[string]map[string]interface{}{}
 
 	for txIndex, tx := range *txs {
 		// validate transaction id duplication
-		if _, ok := txFlages[tx.TxHash]; ok == true {
+		if _, ok := txFlags[tx.TxHash]; ok == true {
 			isSuccess = false
-			txFlages[tx.TxHash] = modules.TxValidationCode_DUPLICATE_TXID
+			txFlags[tx.TxHash] = modules.TxValidationCode_DUPLICATE_TXID
 			continue
 		}
 		// validate common property
@@ -41,7 +41,7 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 		if txCode != modules.TxValidationCode_VALID {
 			log.Info("ValidateTx", "txhash", tx.TxHash, "error validate code", txCode)
 			isSuccess = false
-			txFlages[tx.TxHash] = txCode
+			txFlags[tx.TxHash] = txCode
 			continue
 		}
 		// validate fee
@@ -49,12 +49,14 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 			txFee := tx.Fee()
 			if txFee.Cmp(modules.TXFEE) < 0 {
 				isSuccess = false
-				txFlages[tx.TxHash] = modules.TxValidationCode_INVALID_FEE
+				txFlags[tx.TxHash] = modules.TxValidationCode_INVALID_FEE
 				continue
 			}
 			fee += txFee.Uint64()
 		}
+		txFlags[tx.TxHash] = modules.TxValidationCode_VALID
 	}
+
 	// check coinbase fee and income
 	if !isGenesis && isSuccess {
 		if len((*txs)[0].TxMessages) != 1 {
@@ -73,8 +75,7 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 			return nil, false, fmt.Errorf("Coinbase outputs error.")
 		}
 	}
-	// to check total fee with coinbase tx
-	return txFlages, isSuccess, nil
+	return txFlags, isSuccess, nil
 }
 
 /**
@@ -279,8 +280,8 @@ To validate contract template payload
 func validateContractTplPayload(contractTplPayload *modules.ContractTplPayload) modules.TxValidationCode {
 	// to check template whether existing or not
 	stateVersion, bytecode, name, path := storage.GetContractTpl(contractTplPayload.TemplateId.String())
-	if stateVersion == nil || bytecode == nil || name == "" || path == "" {
-		return modules.TxValidationCode_INVALID_CONTRACT_TEMPLATE
+	if stateVersion == nil && bytecode == nil && name == "" && path == "" {
+		return modules.TxValidationCode_VALID
 	}
-	return modules.TxValidationCode_VALID
+	return modules.TxValidationCode_INVALID_CONTRACT_TEMPLATE
 }
