@@ -37,6 +37,9 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 
+	"crypto/md5"
+	"io"
+	"fmt"
 )
 
 func marshalOrPanic(pb proto.Message) []byte {
@@ -191,5 +194,14 @@ func packChaincode(chainID string, ccName string, ccPath string, ccVersion strin
 func recoverChaincodeFromeDb() error {
 
 	return nil
+}
+
+func createDeployId(templateName string) string {
+	t := time.Now()
+	h := md5.New()
+	io.WriteString(h, templateName)
+	io.WriteString(h, t.String())
+	id := fmt.Sprintf("%x", h.Sum(nil))
+	return id
 }
 

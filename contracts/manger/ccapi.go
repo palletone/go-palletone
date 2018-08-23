@@ -246,8 +246,9 @@ func Deploy(chainID string, txid string, templateId []byte, args [][]byte, timeo
 		return nil, nil, errors.New("crypto.GetRandomNonce error")
 	}
 
+	usrccName := templateCC.Name + "_" + createDeployId(templateCC.Name)
 	usrcc := &ucc.UserChaincode{
-		Name:     templateCC.Name,
+		Name:     usrccName,
 		Path:     templateCC.Path,
 		Version:  templateCC.Version,
 		InitArgs: args,
@@ -261,7 +262,7 @@ func Deploy(chainID string, txid string, templateId []byte, args [][]byte, timeo
 
 	cc := &cclist.CCInfo{
 		Id:      randNum,
-		Name:    templateCC.Name,
+		Name:    usrccName,
 		Path:    templateCC.Path,
 		Version: templateCC.Version,
 		SysCC:   false,

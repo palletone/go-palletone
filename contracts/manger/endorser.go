@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -47,7 +48,7 @@ var logger = flogging.MustGetLogger("ccmanger")
 // Support contains functions that the endorser requires to execute its tasks
 type Support interface {
 	IsSysCCAndNotInvokableExternal(name string) bool
-    // GetTxSimulator returns the transaction simulator ,they are made unique
+	// GetTxSimulator returns the transaction simulator ,they are made unique
 	// by way of the supplied txid
 	GetTxSimulator(chainid string, txid string) (rwset.TxSimulator, error)
 
@@ -139,7 +140,7 @@ func (e *Endorser) simulateProposal(ctx context.Context, chainID string, txid st
 	res, ccevent, err = e.callChaincode(ctx, chainID, cid.Version, txid, signedProp, prop, cis, cid.Name, txsim, tmout)
 	if err != nil {
 		logger.Errorf("[%s][%s] failed to invoke chaincode %s, error: %+v", chainID, shorttxid(txid), cid, err)
-		return  nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	if txsim != nil {
@@ -213,7 +214,6 @@ func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedPro
 		logger.Debugf("validate signedProp err:%s", err)
 		return nil, nil, err
 	}
-
 	txid := result.txid
 	if chainID != "" {
 		if txsim, err = e.s.GetTxSimulator(chainID, txid); err != nil {
@@ -221,7 +221,7 @@ func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedPro
 		}
 		//defer txsim.Done()
 	}
-	if  err != nil {
+	if err != nil {
 		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 	}
 
@@ -234,17 +234,17 @@ func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedPro
 	if res != nil {
 		if res.Status >= shim.ERROR {
 			logger.Errorf("[%s][%s] simulateProposal() resulted in chaincode, response status %d for txid %s:%s",
-				chainID, shorttxid(txid),  res.Status, txid, res.Message)
+				chainID, shorttxid(txid), res.Status, txid, res.Message)
 
 			resp := &pb.ProposalResponse{
 				Payload:  nil,
 				Response: &pb.Response{Status: 500, Message: "Chaincode Error"}}
-			return resp, nil, err
+			return resp, nil, errors.New("Chaincode Error")
 		}
-	}else {
+	} else {
 		logger.Error("simulateProposal response is nil")
 		return &pb.ProposalResponse{
-			Payload:  nil, Response: &pb.Response{Status: 500, Message: "Chaincode Error"}}, nil, nil
+			Payload: nil, Response: &pb.Response{Status: 500, Message: "Chaincode Error"}}, nil, errors.New("Chaincode Error")
 	}
 
 	//2 -- endorse and get a marshalled ProposalResponse message
