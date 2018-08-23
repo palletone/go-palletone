@@ -172,7 +172,7 @@ func (p *peer) SendConsensus(msgs string) error {
 
 // SendNewBlockHashes announces the availability of a number of blocks through
 // a hash notification.
-func (p *peer) SendNewBlockHashes(hashes []common.Hash, numbers []uint64) error {
+func (p *peer) SendNewUnitHashes(hashes []common.Hash, numbers []uint64) error {
 	for _, hash := range hashes {
 		p.knownBlocks.Add(hash)
 	}
@@ -191,7 +191,7 @@ func (p *peer) SendNewUnit(unit *modules.Unit) error {
 }
 
 // SendBlockHeaders sends a batch of block headers to the remote peer.
-func (p *peer) SendBlockHeaders(headers []*modules.Header) error {
+func (p *peer) SendUnitHeaders(headers []*modules.Header) error {
 	return p2p.Send(p.rw, BlockHeadersMsg, headers)
 }
 
