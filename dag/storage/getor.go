@@ -253,7 +253,7 @@ func GetContractTpl(templateID string) (version *modules.StateVersion, bytecode 
 			break
 		}
 	}
-	_, nameByte := GetContractState(CONTRACT_TPL, templateID, "ContractName")
+	_, nameByte := GetTplState(templateID, "ContractName")
 	if nameByte == nil {
 		return
 	}
@@ -262,7 +262,7 @@ func GetContractTpl(templateID string) (version *modules.StateVersion, bytecode 
 		return
 	}
 
-	_, pathByte := GetContractState(CONTRACT_TPL, templateID, "ContractPath")
+	_, pathByte := GetTplState(templateID, "ContractPath")
 	if err := rlp.DecodeBytes(pathByte, &path); err != nil {
 		log.Println("GetContractTpl when get path", "error", err.Error())
 		return
@@ -477,8 +477,28 @@ func GetContractAllState(prefix []byte, id string) map[modules.ContractReadSet][
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */
-func GetContractState(prefix []byte, id string, field string) (modules.StateVersion, []byte) {
-	key := fmt.Sprintf("%s%s^*^%s^*^", prefix, id, field)
+func GetTplState(id string, field string) (modules.StateVersion, []byte) {
+	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, id, field)
+	data := getprefix(Dbconn, []byte(key))
+	if data == nil || len(data) != 1 {
+		return modules.StateVersion{}, nil
+	}
+	for k, v := range data {
+		var version modules.StateVersion
+		if !version.ParseStringKey(k) {
+			return modules.StateVersion{}, nil
+		}
+		return version, v
+	}
+	return modules.StateVersion{}, nil
+}
+
+/**
+获取合约（或模板）某一个属性
+To get contract or contract template one field
+*/
+func GetContractState(id string, field string) (modules.StateVersion, []byte) {
+	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_STATE_PREFIX, id, field)
 	data := getprefix(Dbconn, []byte(key))
 	if data == nil || len(data) != 1 {
 		return modules.StateVersion{}, nil

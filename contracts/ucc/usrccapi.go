@@ -181,7 +181,6 @@ func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err
 }
 
 func RecoverChainCodeFromDb(chainID string, templateId []byte) ( *UserChaincode, error) {
-
 	//从数据库读取
 	//解压到指定路径下
 
