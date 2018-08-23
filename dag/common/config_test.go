@@ -27,9 +27,10 @@ func TestSaveConfig(t *testing.T) {
 		},
 		TxIndex: 0,
 	}
-	if err := SaveConfig(confs, &stateVersion); err != nil {
-		log.Println(err)
-	}
+	log.Println(stateVersion)
+	// if err := SaveConfig(confs, &stateVersion); err != nil {
+	// 	log.Println(err)
+	// }
 }
 
 func TestGetConfig(t *testing.T) {

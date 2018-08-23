@@ -511,7 +511,7 @@ func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) b
 根据交易列表计算交易费总和
 To compute transactions' fees
 */
-func ComputeFees(txs modules.Transactions) (uint64, error) {
+func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
 	// current time slice mediator default income is 1 ptn
 	fees := uint64(0)
 	for _, tx := range txs {

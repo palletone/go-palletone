@@ -17,6 +17,7 @@
 package ptn
 
 import (
+	"github.com/palletone/go-palletone/dag/txspool"
 	"math/rand"
 	"sync/atomic"
 	"time"
@@ -47,7 +48,7 @@ func (pm *ProtocolManager) syncTransactions(p *peer) {
 	var txs modules.Transactions
 	pending, _ := pm.txpool.Pending()
 	for _, batch := range pending {
-		txs = append(txs, batch...)
+		txs = append(txs, txspool.PooltxToTx(batch))
 	}
 	if len(txs) == 0 {
 		return

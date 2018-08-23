@@ -140,22 +140,22 @@ func (s *PublicTxPoolAPI) Content() map[string]map[string]map[string]*RPCTransac
 	pending, queue := s.b.TxPoolContent()
 
 	// Flatten the pending transactions
-	for account, txs := range pending {
+	for account, tx := range pending {
 		dump := make(map[string]*RPCTransaction)
-		for _, tx := range txs {
-			tx = tx
-			//dump[fmt.Sprintf("%d", tx.Nonce())] = newRPCPendingTransaction(tx)
-		}
-		content["pending"][account.Hex()] = dump
+		// for _, tx := range txs {
+		// 	tx = tx
+		// 	//dump[fmt.Sprintf("%d", tx.Nonce())] = newRPCPendingTransaction(tx)
+		// }
+		dump[tx.TxHash.String()] = newRPCPendingTransaction(tx)
+		content["pending"][account.String()] = dump
 	}
 	// Flatten the queued transactions
-	for account, txs := range queue {
+	for account, tx := range queue {
 		dump := make(map[string]*RPCTransaction)
-		for _, tx := range txs {
-			tx = tx
-			//dump[fmt.Sprintf("%d", tx.Nonce())] = newRPCPendingTransaction(tx)
-		}
-		content["queued"][account.Hex()] = dump
+
+		dump[tx.TxHash.String()] = newRPCPendingTransaction(tx)
+
+		content["queued"][account.String()] = dump
 	}
 	return content
 }
@@ -835,45 +835,28 @@ func (s *PublicBlockChainAPI) rpcOutputBlock(b *types.Block, inclTx bool, fullTx
 */
 // RPCTransaction represents a transaction that will serialize to the RPC representation of a transaction
 type RPCTransaction struct {
-	BlockHash        common.Hash     `json:"blockHash"`
-	BlockNumber      *hexutil.Big    `json:"blockNumber"`
-	From             common.Address  `json:"from"`
-	Gas              hexutil.Uint64  `json:"gas"`
-	GasPrice         *hexutil.Big    `json:"gasPrice"`
-	Hash             common.Hash     `json:"hash"`
-	Input            hexutil.Bytes   `json:"input"`
-	Nonce            hexutil.Uint64  `json:"nonce"`
-	To               *common.Address `json:"to"`
-	TransactionIndex hexutil.Uint    `json:"transactionIndex"`
-	Value            *hexutil.Big    `json:"value"`
-	V                *hexutil.Big    `json:"v"`
-	R                *hexutil.Big    `json:"r"`
-	S                *hexutil.Big    `json:"s"`
+	BlockHash   common.Hash    `json:"blockHash"`
+	BlockNumber *hexutil.Big   `json:"blockNumber"`
+	From        common.Address `json:"from"`
+
+	Hash  common.Hash   `json:"hash"`
+	Input hexutil.Bytes `json:"input"`
+
+	TransactionIndex hexutil.Uint `json:"transactionIndex"`
 }
 
-/*
 // newRPCTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
 func newRPCTransaction(tx *modules.Transaction, blockHash common.Hash, blockNumber uint64, index uint64) *RPCTransaction {
-	var signer types.Signer = types.FrontierSigner{}
-	if tx.Protected() {
-		return nil //signer = types.NewEIP155Signer(tx.ChainId())
-	}
-	from, _ := types.Sender(signer, tx)
-	v, r, s := tx.RawSignatureValues()
+	// var signer types.Signer = types.FrontierSigner{}
+	// if tx.Protected() {
+	// 	return nil //signer = types.NewEIP155Signer(tx.ChainId())
+	// }
+	// from, _ := types.Sender(signer, tx)
+	// v, r, s := tx.RawSignatureValues()
 
 	result := &RPCTransaction{
-		From:     from,
-		Gas:      hexutil.Uint64(tx.Gas()),
-		GasPrice: (*hexutil.Big)(tx.GasPrice()),
-		Hash:     tx.Hash(),
-		Input:    hexutil.Bytes(tx.Data()),
-		Nonce:    hexutil.Uint64(tx.Nonce()),
-		To:       tx.To(),
-		Value:    (*hexutil.Big)(tx.Value()),
-		V:        (*hexutil.Big)(v),
-		R:        (*hexutil.Big)(r),
-		S:        (*hexutil.Big)(s),
+		Hash: tx.Hash(),
 	}
 	if blockHash != (common.Hash{}) {
 		result.BlockHash = blockHash
@@ -888,6 +871,7 @@ func newRPCPendingTransaction(tx *modules.Transaction) *RPCTransaction {
 	return newRPCTransaction(tx, common.Hash{}, 0, 0)
 }
 
+/*
 // newRPCTransactionFromBlockIndex returns a transaction that will serialize to the RPC representation.
 func newRPCTransactionFromBlockIndex(b *types.Block, index uint64) *RPCTransaction {
 	txs := b.Transactions()
@@ -1423,7 +1407,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	inputs := make(map[wire.OutPoint][]byte)
 	scripts := make(map[string][]byte)
 	//var params *chaincfg.Params
-    params := &chaincfg.TestNet3Params
+	params := &chaincfg.TestNet3Params
 	var cmdInputs []btcjson.RawTxInput
 	if cmd.Inputs != nil {
 		cmdInputs = *cmd.Inputs
@@ -1447,13 +1431,13 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			redeemScript, err := decodeHexStr(rti.RedeemScript)
 			if err != nil {
 				return nil, err
-                        }
+			}
 			addr, err := btcutil.NewAddressScriptHash(redeemScript,
 				params)
-                        fmt.Println("SignRawTransaction   1445   1445   1445 ----------")
+			fmt.Println("SignRawTransaction   1445   1445   1445 ----------")
 			if err != nil {
 				return nil, DeserializationError{err}
-			   }
+			}
 			scripts[addr.String()] = redeemScript
 		}
 		inputs[wire.OutPoint{
@@ -1464,86 +1448,86 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 
 	var keys map[string]*btcutil.WIF
 	if cmd.PrivKeys != nil {
-	keys = make(map[string]*btcutil.WIF)
+		keys = make(map[string]*btcutil.WIF)
 
-        if cmd.PrivKeys != nil {
-	for _, key := range *cmd.PrivKeys {
-			wif, err := btcutil.DecodeWIF(key)
-		if err != nil {
-				return nil, err
-			}
+		if cmd.PrivKeys != nil {
+			for _, key := range *cmd.PrivKeys {
+				wif, err := btcutil.DecodeWIF(key)
+				if err != nil {
+					return nil, err
+				}
 
-			//if !wif.IsForNet(params) {
+				//if !wif.IsForNet(params) {
 				//s := "key network doesn't match wallet's"
-			//	return nil, err
-			//}
-			addr, err := btcutil.NewAddressPubKey(wif.SerializePubKey())
-			if err != nil {
-			return nil, err
-		}
-            //todo addr + "P"
-			keys[addr.EncodeAddress()] = wif
+				//	return nil, err
+				//}
+				addr, err := btcutil.NewAddressPubKey(wif.SerializePubKey())
+				if err != nil {
+					return nil, err
+				}
+				//todo addr + "P"
+				keys[addr.EncodeAddress()] = wif
+			}
 		}
 	}
-        }
-    for i, txIn := range redeemTx.TxIn {
-			prevOutScript, _ := inputs[txIn.PreviousOutPoint]
+	for i, txIn := range redeemTx.TxIn {
+		prevOutScript, _ := inputs[txIn.PreviousOutPoint]
 
-			// Set up our callbacks that we pass to txscript so it can
-			// look up the appropriate keys and scripts by address.
-			geekey:= txscript.KeyClosure(func(addr btcutil.Address) (*btcec.PrivateKey, bool, error) {
-					addrStr := addr.EncodeAddress()
-                                        wif,ok:= keys[addrStr]
-                                        if !ok {
-						return nil, false,
-							errors.New("no key for address")
-	}
-					return wif.PrivKey, wif.CompressPubKey, nil
-			})
-			getScript := txscript.ScriptClosure(func(addr btcutil.Address) ([]byte, error) {
-				// If keys were provided then we can only use the
-				// redeem scripts provided with our inputs, too.
-					addrStr := addr.EncodeAddress()
-					script, ok := scripts[addrStr]
-					if !ok {
-						return nil, errors.New("no script for address")
-	                                }
-					return script, nil
-			})
-                        var signErrors []SignatureError
-			// SigHashSingle inputs can only be signe   d if there's a
-			// corresponding output. However this could be already signed,
-			// so we always verify the output.
-			if (hashType&txscript.SigHashSingle) !=   
-				txscript.SigHashSingle || i < len(redeemTx.TxOut) {
-				script, err := txscript.SignTxOutput(params,
-					&redeemTx, i, prevOutScript, hashType, geekey,
-					getScript, txIn.SignatureScript)
-				// Failure to sign isn't an error, it just means that
-				// the tx isn't complete.
-	if err != nil {
-					signErrors = append(signErrors, SignatureError{
-						InputIndex: uint32(i),
-						Error:      err,
-					})
-					continue
-	}
-				txIn.SignatureScript = script
+		// Set up our callbacks that we pass to txscript so it can
+		// look up the appropriate keys and scripts by address.
+		geekey := txscript.KeyClosure(func(addr btcutil.Address) (*btcec.PrivateKey, bool, error) {
+			addrStr := addr.EncodeAddress()
+			wif, ok := keys[addrStr]
+			if !ok {
+				return nil, false,
+					errors.New("no key for address")
 			}
-			// Either it was already signed or we just signed it.
-			// Find out if it is completely satisfied or still needs more.
-			vm, err := txscript.NewEngine(prevOutScript, &redeemTx, i,
-				txscript.StandardVerifyFlags, nil, nil, 0)
-			if err == nil {
-				err = vm.Execute()
+			return wif.PrivKey, wif.CompressPubKey, nil
+		})
+		getScript := txscript.ScriptClosure(func(addr btcutil.Address) ([]byte, error) {
+			// If keys were provided then we can only use the
+			// redeem scripts provided with our inputs, too.
+			addrStr := addr.EncodeAddress()
+			script, ok := scripts[addrStr]
+			if !ok {
+				return nil, errors.New("no script for address")
 			}
+			return script, nil
+		})
+		var signErrors []SignatureError
+		// SigHashSingle inputs can only be signe   d if there's a
+		// corresponding output. However this could be already signed,
+		// so we always verify the output.
+		if (hashType&txscript.SigHashSingle) !=
+			txscript.SigHashSingle || i < len(redeemTx.TxOut) {
+			script, err := txscript.SignTxOutput(params,
+				&redeemTx, i, prevOutScript, hashType, geekey,
+				getScript, txIn.SignatureScript)
+			// Failure to sign isn't an error, it just means that
+			// the tx isn't complete.
 			if err != nil {
 				signErrors = append(signErrors, SignatureError{
 					InputIndex: uint32(i),
 					Error:      err,
 				})
+				continue
 			}
+			txIn.SignatureScript = script
 		}
+		// Either it was already signed or we just signed it.
+		// Find out if it is completely satisfied or still needs more.
+		vm, err := txscript.NewEngine(prevOutScript, &redeemTx, i,
+			txscript.StandardVerifyFlags, nil, nil, 0)
+		if err == nil {
+			err = vm.Execute()
+		}
+		if err != nil {
+			signErrors = append(signErrors, SignatureError{
+				InputIndex: uint32(i),
+				Error:      err,
+			})
+		}
+	}
 	var buf bytes.Buffer
 	buf.Grow(redeemTx.SerializeSize())
 	// All returned errors (not OOM, which panics) encounted during

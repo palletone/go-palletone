@@ -20,7 +20,6 @@ package storage
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -107,12 +106,52 @@ func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 }
 
 func GetUnit(db DatabaseReader, hash common.Hash) *modules.Unit {
-	unit_bytes, err := db.Get(append(UNIT_PREFIX, hash.Bytes()...))
-	log.Println(err)
-	unit := new(modules.Unit)
-	json.Unmarshal(unit_bytes, &unit)
+	// 1. get chainindex
+	height, err := GetUnitNumber(db, hash)
+	if err != nil {
+		log.Println("Getunit when get unitNumber failed , error:", err)
+		return nil
+	}
+	// 2. unit header
+	uHeader, err := GetHeader(db, hash, &height)
+	if err != nil {
+		log.Println("Getunit when get header failed , error:", err)
+		return nil
+	}
 
+	// get unit hash
+	uHash := common.Hash{}
+	uHash.SetBytes(hash.Bytes())
+
+	// get transaction list
+	txs, err := GetUnitTransactions(db, uHash)
+	if err != nil {
+		log.Println("Getunit when get transactions failed , error:", err)
+		return nil
+	}
+	// generate unit
+	unit := &modules.Unit{
+		UnitHeader: uHeader,
+		UnitHash:   uHash,
+		Txs:        txs,
+	}
+	unit.UnitSize = unit.Size()
 	return unit
+}
+func GetUnitTransactions(db DatabaseReader, hash common.Hash) (modules.Transactions, error) {
+	txs := modules.Transactions{}
+	txHashList, err := GetBody(hash)
+	if err != nil {
+		return nil, err
+	}
+	// get transaction by tx'hash.
+	for _, txHash := range txHashList {
+		tx, _, _, _ := GetTransaction(txHash)
+		if err != nil {
+			txs = append(txs, tx)
+		}
+	}
+	return txs, nil
 }
 func GetUnitFormIndex(db DatabaseReader, height uint64, asset modules.IDType16) *modules.Unit {
 	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, asset.String(), height)

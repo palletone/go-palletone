@@ -19,7 +19,6 @@ package modules
 
 import (
 	"crypto/ecdsa"
-	"encoding/json"
 	"strings"
 	"time"
 	"unsafe"
@@ -127,10 +126,8 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 		u.Txs = make([]*Transaction, len(txs))
 		for i, pTx := range txs {
 			tx := Transaction{
-				AccountNonce: pTx.AccountNonce,
-				TxHash:       pTx.TxHash,
-				CreationDate: pTx.CreationDate,
-				Locktime:     pTx.Locktime,
+				TxHash:   pTx.TxHash,
+				Locktime: pTx.Locktime,
 			}
 			if len(pTx.TxMessages) > 0 {
 				tx.TxMessages = make([]Message, len(pTx.TxMessages))
@@ -167,15 +164,11 @@ func (unit *Unit) IsEmpty() bool {
 }
 
 type Transactions []*Transaction
-
+type TxPoolTxs []*TxPoolTransaction
 type Transaction struct {
-	TxHash     common.Hash `json:"txhash"`
+	TxHash     common.Hash `json:"txhash" rlp:"-"`
 	TxMessages []Message   `json:"messages"`
 	Locktime   uint32      `json:"lock_time"`
-	// todo AccountNonce, CreationDate, Priority_lvl 在交易池部分用的比较多，将由杨杰负责删除
-	AccountNonce uint64  `json:"account_nonce" rlp:"-"`
-	CreationDate string  `json:"creation_date" rlp:"-"`
-	Priority_lvl float64 `json:"priority_lvl" rlp:"-"` // 打包的优先级
 }
 
 type ChainIndex struct {
@@ -214,6 +207,13 @@ type Message struct {
 	Payload interface{} `json:"payload"` // the true transaction data
 }
 
+// return message struct
+func NewMessage(app string, payload interface{}) *Message {
+	m := new(Message)
+	m.App = app
+	m.Payload = payload
+	return m
+}
 func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	msg.App = cpyMsg.App
 	msg.Payload = cpyMsg.Payload
@@ -377,13 +377,6 @@ type Authentifier struct {
 	V       []byte `json:"v"`
 }
 
-func (a *Authentifier) ToDB() ([]byte, error) {
-	return json.Marshal(a)
-}
-func (a *Authentifier) FromDB(info []byte) error {
-	return json.Unmarshal(info, a)
-}
-
 func NewUnit(header *Header, txs Transactions) *Unit {
 	u := &Unit{
 		UnitHeader: CopyHeader(header),
@@ -523,6 +516,27 @@ func RSVtoAddress(tx *Transaction) common.Address {
 	return common.Address{}
 }
 
+func MsgstoAddress(msgs []Message) common.Address {
+	forms := make([]common.Address, 0)
+	//payment load to address.
+
+	for _, msg := range msgs {
+		payment, ok := msg.Payload.(PaymentPayload)
+		if !ok {
+			break
+		}
+		for _, pay := range payment.Inputs {
+			// 通过签名信息还原出address
+			from := new(common.Address)
+			from.SetBytes(pay.Extra[:])
+			forms = append(forms, *from)
+		}
+	}
+	if len(forms) > 0 {
+		return forms[0]
+	}
+	return common.Address{}
+}
 func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {
 	sig := make([]byte, 65)
 	copy(sig[32-len(r):32], r)

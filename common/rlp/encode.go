@@ -702,35 +702,35 @@ func putint(b []byte, i uint64) (size int) {
 /**
 生成int类型的rlp编码
 generate int rlp encode code
- */
+*/
 func putint2(b []byte, i int64) (size int) {
 	switch {
-	case i >= -(1 << 7) && i<=(1<<7-1):
+	case i >= -(1<<7) && i <= (1<<7-1):
 		b[0] = byte(i)
 		return 1
-	case i >= (-( 1 << 15 )) && i <= (1 << 15-1):
+	case i >= (-(1 << 15)) && i <= (1<<15-1):
 		b[0] = byte(i >> 8)
 		b[1] = byte(i)
 		return 2
-	case i >= -(1 << 23) && i <= (1 << 23-1):
+	case i >= -(1<<23) && i <= (1<<23-1):
 		b[0] = byte(i >> 16)
 		b[1] = byte(i >> 8)
 		b[2] = byte(i)
 		return 3
-	case i >= -(1 << 31) && i <= (1 << 31-1):
+	case i >= -(1<<31) && i <= (1<<31-1):
 		b[0] = byte(i >> 24)
 		b[1] = byte(i >> 16)
 		b[2] = byte(i >> 8)
 		b[3] = byte(i)
 		return 4
-	case i >= -(1 << 39) && i <= (1 << 39-1):
+	case i >= -(1<<39) && i <= (1<<39-1):
 		b[0] = byte(i >> 32)
 		b[1] = byte(i >> 24)
 		b[2] = byte(i >> 16)
 		b[3] = byte(i >> 8)
 		b[4] = byte(i)
 		return 5
-	case i >= -(1 << 47) && i<=(1 << 47-1):
+	case i >= -(1<<47) && i <= (1<<47-1):
 		b[0] = byte(i >> 40)
 		b[1] = byte(i >> 32)
 		b[2] = byte(i >> 24)
@@ -738,7 +738,7 @@ func putint2(b []byte, i int64) (size int) {
 		b[4] = byte(i >> 8)
 		b[5] = byte(i)
 		return 6
-	case i >= -(1 << 55) && i<=(1 << 55-1):
+	case i >= -(1<<55) && i <= (1<<55-1):
 		b[0] = byte(i >> 48)
 		b[1] = byte(i >> 40)
 		b[2] = byte(i >> 32)

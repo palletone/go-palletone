@@ -139,8 +139,8 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
-	if txspool == nil || mAddr == nil || ks == nil {
+func CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
+	if txpool == nil || mAddr == nil || ks == nil {
 		return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
 	}
 
@@ -160,8 +160,9 @@ func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool, ks *keystore.Key
 	chainIndex := modules.ChainIndex{AssetID: asset.AssertId, IsMain: isMain, Index: index}
 
 	// step3. get transactions from txspool
-	poolTxs, _ := txspool.GetSortedTxs()
+	poolTxs, _ := txpool.GetSortedTxs()
 	// step4. compute minner income: transaction fees + interest
+	//txs := txspool.PoolTxstoTxs(poolTxs)
 	fees, err := ComputeFees(poolTxs)
 	if err != nil {
 		log.Error(err.Error())
@@ -176,7 +177,8 @@ func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool, ks *keystore.Key
 	txs := modules.Transactions{coinbase}
 	if len(poolTxs) > 0 {
 		for _, tx := range poolTxs {
-			txs = append(txs, tx)
+			t := txspool.PooltxToTx(tx)
+			txs = append(txs, t)
 		}
 	}
 
@@ -331,7 +333,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	// step1. check unit signature, should be compare to mediator list
 	if err := ValidateUnitSignature(unit.UnitHeader, isGenesis); err != nil {
 		log.Info("Validate unit signature", "error", err.Error())
-		return err
+		//return err
 	}
 
 	// step2. check unit size
@@ -595,8 +597,7 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 	coinbase := modules.Transaction{
 		TxMessages: []modules.Message{msg},
 	}
-
-	coinbase.CreationDate = coinbase.CreateDate()
+	// coinbase.CreationDate = coinbase.CreateDate()
 	coinbase.TxHash = coinbase.Hash()
 
 	return &coinbase, nil
