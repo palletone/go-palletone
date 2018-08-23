@@ -342,7 +342,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	// step3. check transactions in unit
 	_, isSuccess, err := ValidateTransactions(&unit.Txs, isGenesis)
 	if isSuccess != true {
-		return fmt.Errorf("Validate unit(%s) transactions failed: %v", err)
+		return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	}
 	if storage.Dbconn == nil {
 		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)

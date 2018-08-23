@@ -148,6 +148,24 @@ func GetHeader(db DatabaseReader, hash common.Hash, index *modules.ChainIndex) (
 	return header, nil
 }
 
+func GetHeaderByHeight(db DatabaseReader, index *modules.ChainIndex) (*modules.Header, error) {
+	encNum := encodeBlockNumber(index.Index)
+	key := append(HEADER_PREFIX, encNum...)
+	key = append(key, index.Bytes()...)
+	data := getprefix(db, key)
+	if data == nil || len(data) <= 0 {
+		return nil, fmt.Errorf("No such height header")
+	}
+	for _, v := range data {
+		header := new(modules.Header)
+		if err := rlp.Decode(bytes.NewReader(v), header); err != nil {
+			return nil, fmt.Errorf("Invalid unit header rlp: %s", err.Error())
+		}
+		return header, nil
+	}
+	return nil, fmt.Errorf("No such height header")
+}
+
 func GetHeaderRlp(db DatabaseReader, hash common.Hash, index uint64) rlp.RawValue {
 	encNum := encodeBlockNumber(index)
 	key := append(HEADER_PREFIX, encNum...)
