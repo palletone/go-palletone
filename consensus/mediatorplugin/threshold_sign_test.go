@@ -1,0 +1,133 @@
+/*
+   This file is part of go-palletone.
+   go-palletone is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   go-palletone is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/*
+ * @author PalletOne core developer Albert·Gou <dev@pallet.one>
+ * @date 2018
+ */
+
+package mediatorplugin
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/pairing/bn256"
+	"github.com/dedis/kyber/share"
+	dkg "github.com/dedis/kyber/share/dkg/pedersen"
+	vss "github.com/dedis/kyber/share/vss/pedersen"
+	"github.com/dedis/kyber/sign/bls"
+	"github.com/dedis/kyber/sign/tbls"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+var suite = bn256.NewSuiteG2()
+
+var nbParticipants = 21
+var ntThreshold = nbParticipants*2/3 + 1
+
+var partSec []kyber.Scalar
+var partPubs []kyber.Point
+
+var dkgs []*dkg.DistKeyGenerator
+
+func init() {
+	partPubs = make([]kyber.Point, nbParticipants)
+	partSec = make([]kyber.Scalar, nbParticipants)
+	for i := 0; i < nbParticipants; i++ {
+		sec, pub := genPair()
+		partSec[i] = sec
+		partPubs[i] = pub
+
+		fmt.Printf("Key[%d] priv: %s, pub %s\n", i, sec.String(), pub.String())
+	}
+	dkgs = dkgGen()
+}
+
+func genPair() (kyber.Scalar, kyber.Point) {
+	sc := suite.Scalar().Pick(suite.RandomStream())
+	return sc, suite.Point().Mul(sc, nil)
+}
+
+func dkgGen() []*dkg.DistKeyGenerator {
+	dkgs := make([]*dkg.DistKeyGenerator, nbParticipants)
+	for i := 0; i < nbParticipants; i++ {
+		dkg, err := dkg.NewDistKeyGenerator(suite, partSec[i], partPubs, ntThreshold)
+		if err != nil {
+			panic(err)
+		}
+		dkgs[i] = dkg
+	}
+	return dkgs
+}
+
+func fullExchange(t *testing.T) {
+	dkgs = dkgGen()
+	// full secret sharing exchange
+	// 1. broadcast deals
+	resps := make([]*dkg.Response, 0, nbParticipants*nbParticipants)
+	for _, dkg := range dkgs {
+		deals, err := dkg.Deals()
+		require.Nil(t, err)
+		for i, d := range deals {
+			resp, err := dkgs[i].ProcessDeal(d)
+			require.Nil(t, err)
+			require.Equal(t, vss.StatusApproval, resp.Response.Status)
+			resps = append(resps, resp)
+		}
+	}
+	// 2. Broadcast responses
+	for _, resp := range resps {
+		for i, dkg := range dkgs {
+			// ignore all messages from ourself
+			if resp.Response.Index == uint32(i) {
+				continue
+			}
+			j, err := dkg.ProcessResponse(resp)
+			require.Nil(t, err)
+			require.Nil(t, j)
+		}
+	}
+}
+
+func TestTBLS(t *testing.T) {
+	fullExchange(t)
+
+	msg := []byte("Hello DKG, VSS, TBLS and BLS!")
+
+	sigShares := make([][]byte, 0)
+	for _, d := range dkgs {
+		dks, err := d.DistKeyShare()
+		assert.Nil(t, err)
+		sig, err := tbls.Sign(suite, dks.PriShare(), msg)
+		require.Nil(t, err)
+		sigShares = append(sigShares, sig)
+	}
+
+	dkg := dkgs[0]
+	dks, err := dkg.DistKeyShare()
+	require.Nil(t, err)
+
+	pubPoly := share.NewPubPoly(suite, suite.Point().Base(), dks.Commitments())
+
+	sig, err := tbls.Recover(suite, pubPoly, msg, sigShares, ntThreshold, nbParticipants)
+	require.Nil(t, err)
+
+	err = bls.Verify(suite, pubPoly.Commit(), msg, sig)
+	require.Nil(t, err)
+
+	err = bls.Verify(suite, dks.Public(), msg, sig)
+	assert.Nil(t, err)
+}
