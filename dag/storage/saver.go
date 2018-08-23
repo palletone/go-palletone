@@ -339,7 +339,8 @@ To save contract
 func SaveContractState(prefix []byte, id string, name string, value interface{}, version modules.StateVersion) bool {
 	key := fmt.Sprintf("%s%s^*^%s^*^%s",
 		prefix,
-		id, name,
+		id,
+		name,
 		version.String())
 	if err := Store(Dbconn, key, value); err != nil {
 		log.Println("Save contract template", "error", err.Error())
