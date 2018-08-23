@@ -29,6 +29,7 @@ import (
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/rlp"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -148,6 +149,24 @@ func GetHeader(db DatabaseReader, hash common.Hash, index *modules.ChainIndex) (
 	return header, nil
 }
 
+func GetHeaderByHeight(db DatabaseReader, index *modules.ChainIndex) (*modules.Header, error) {
+	encNum := encodeBlockNumber(index.Index)
+	key := append(HEADER_PREFIX, encNum...)
+	key = append(key, index.Bytes()...)
+	data := getprefix(db, key)
+	if data == nil || len(data) <= 0 {
+		return nil, fmt.Errorf("No such height header")
+	}
+	for _, v := range data {
+		header := new(modules.Header)
+		if err := rlp.Decode(bytes.NewReader(v), header); err != nil {
+			return nil, fmt.Errorf("Invalid unit header rlp: %s", err.Error())
+		}
+		return header, nil
+	}
+	return nil, fmt.Errorf("No such height header")
+}
+
 func GetHeaderRlp(db DatabaseReader, hash common.Hash, index uint64) rlp.RawValue {
 	encNum := encodeBlockNumber(index)
 	key := append(HEADER_PREFIX, encNum...)
@@ -236,10 +255,11 @@ func GetContract(db DatabaseReader, id common.Hash) (*modules.Contract, error) {
 获取合约模板
 To get contract template
 */
-func GetContractTpl(templateID string) (version *modules.StateVersion, bytecode []byte, name string, path string) {
+func GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
 	key := fmt.Sprintf("%s%s^*^bytecode",
 		CONTRACT_TPL,
-		templateID)
+		hexutil.Encode(templateID[:]),
+	)
 	data := GetPrefix([]byte(key))
 	if len(data) == 1 {
 		for k, v := range data {
@@ -444,12 +464,48 @@ func GetAddrOutput(db DatabaseReader, addr string) ([]modules.Output, error) {
 }
 
 /**
+获取模板所有属性
+To get contract or contract template all fields and return
+*/
+func GetTplAllState(id string) map[modules.ContractReadSet][]byte {
+	// key format: [PREFIX][ID]_[field]_[version]
+	key := fmt.Sprintf("%s%s^*^", CONTRACT_TPL, id)
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(config.DbPath)
+	}
+	data := getprefix(Dbconn, []byte(key))
+	if data == nil || len(data) <= 0 {
+		return nil
+	}
+	allState := map[modules.ContractReadSet][]byte{}
+	for k, v := range data {
+		sKey := strings.Split(k, "^*^")
+		if len(sKey) != 3 {
+			continue
+		}
+		var version modules.StateVersion
+		if !version.ParseStringKey(key) {
+			continue
+		}
+		rdSet := modules.ContractReadSet{
+			Key:   sKey[1],
+			Value: &version,
+		}
+		allState[rdSet] = v
+	}
+	return allState
+}
+
+/**
 获取合约（或模板）所有属性
 To get contract or contract template all fields and return
 */
-func GetContractAllState(prefix []byte, id string) map[modules.ContractReadSet][]byte {
+func GetContractAllState(id string) map[modules.ContractReadSet][]byte {
 	// key format: [PREFIX][ID]_[field]_[version]
-	key := fmt.Sprintf("%s%s^*^", prefix, id)
+	key := fmt.Sprintf("%s%s^*^", CONTRACT_STATE_PREFIX, id)
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(config.DbPath)
+	}
 	data := getprefix(Dbconn, []byte(key))
 	if data == nil || len(data) <= 0 {
 		return nil
@@ -477,8 +533,11 @@ func GetContractAllState(prefix []byte, id string) map[modules.ContractReadSet][
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */
-func GetTplState(id string, field string) (modules.StateVersion, []byte) {
-	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, id, field)
+func GetTplState(id []byte, field string) (modules.StateVersion, []byte) {
+	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, hexutil.Encode(id[:]), field)
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(config.DbPath)
+	}
 	data := getprefix(Dbconn, []byte(key))
 	if data == nil || len(data) != 1 {
 		return modules.StateVersion{}, nil
@@ -499,6 +558,9 @@ To get contract or contract template one field
 */
 func GetContractState(id string, field string) (modules.StateVersion, []byte) {
 	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_STATE_PREFIX, id, field)
+	if Dbconn == nil {
+		Dbconn = ReNewDbConn(config.DbPath)
+	}
 	data := getprefix(Dbconn, []byte(key))
 	if data == nil || len(data) != 1 {
 		return modules.StateVersion{}, nil
@@ -510,5 +572,6 @@ func GetContractState(id string, field string) (modules.StateVersion, []byte) {
 		}
 		return version, v
 	}
+	log.Println("11111111")
 	return modules.StateVersion{}, nil
 }

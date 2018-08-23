@@ -161,10 +161,11 @@ type Unit struct {
 }
 
 type OutPoint struct {
- TxHash       common.Hash // reference Utxo struct key field
- MessageIndex uint32      // message index in transaction
- OutIndex     uint32
+	TxHash       common.Hash // reference Utxo struct key field
+	MessageIndex uint32      // message index in transaction
+	OutIndex     uint32
 }
+
 func (unit *Unit) IsEmpty() bool {
 	if unit == nil || len(unit.Txs) <= 0 {
 		return true
@@ -289,22 +290,24 @@ type PaymentPayload struct {
 	Outputs []Output `json:"outputs"`
 }
 
-func NewOutPoint(hash *common.Hash, messageindex uint32,outindex uint32) *OutPoint {
+func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
 	return &OutPoint{
-		TxHash:  *hash,
+		TxHash:       *hash,
 		MessageIndex: messageindex,
-		OutIndex: outindex,
+		OutIndex:     outindex,
 	}
 }
+
 // NewTxOut returns a new bitcoin transaction output with the provided
 // transaction value and public key script.
-func NewTxOut(value uint64, pkScript []byte,asset Asset) *Output {
+func NewTxOut(value uint64, pkScript []byte, asset Asset) *Output {
 	return &Output{
 		Value:    value,
 		PkScript: pkScript,
-		Asset : asset,
+		Asset:    asset,
 	}
 }
+
 type StateVersion struct {
 	Height  ChainIndex
 	TxIndex uint32
@@ -354,12 +357,13 @@ type ContractReadSet struct {
 
 // Contract instance message
 // App: contract_deploy
+
 type ContractDeployPayload struct {
 	TemplateId   common.Hash        `json:"template_id"`   // contract template id
-	ContractId   string             `json:"contract_id"`   // contract id
+	ContractId   []byte             `json:"contract_id"`   // contract id
 	Name         string             `json:"name"`          // the name for contract
 	Args         [][]byte           `json:"args"`          // contract arguments list
-	Excutiontime uint16             `json:"excution_time"` // contract execution time, millisecond
+	Excutiontime time.Duration      `json:"excution_time"` // contract execution time, millisecond
 	Jury         []common.Address   `json:"jury"`          // contract jurors list
 	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
 	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
@@ -368,9 +372,9 @@ type ContractDeployPayload struct {
 // Contract invoke message
 // App: contract_invoke
 type ContractInvokePayload struct {
-	ContractId   string             `json:"contract_id"`   // contract id
+	ContractId   []byte             `json:"contract_id"`   // contract id
 	Args         [][]byte           `json:"args"`          // contract arguments list
-	Excutiontime uint16             `json:"excution_time"` // contract execution time, millisecond
+	Excutiontime time.Duration      `json:"excution_time"` // contract execution time, millisecond
 	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
 	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
 }

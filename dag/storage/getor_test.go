@@ -99,3 +99,13 @@ func TestUnitNumberIndex(t *testing.T) {
 		log.Println("not equal.", key2)
 	}
 }
+
+func TestGetContractState(t *testing.T) {
+	version, value := GetContractState("contract0000", "name")
+	log.Println(version)
+	log.Println(value)
+	data := GetContractAllState("contract0000")
+	for k, v := range data {
+		log.Println(k, v)
+	}
+}

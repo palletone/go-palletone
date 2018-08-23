@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
@@ -340,9 +341,9 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 		return modules.ErrUnit(-1)
 	}
 	// step3. check transactions in unit
-	_, isSuccess, _ := ValidateTransactions(&unit.Txs, isGenesis)
+	_, isSuccess, err := ValidateTransactions(&unit.Txs, isGenesis)
 	if isSuccess != true {
-		return fmt.Errorf("Validate unit(%s) transactions failed.", unit.UnitHash)
+		return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	}
 	if storage.Dbconn == nil {
 		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
@@ -559,13 +560,13 @@ func saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Mes
 		return false
 	}
 	// step3. save contract template name, path, Memery
-	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.String(), "tplname", payload.Name, version) {
+	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.Bytes(), "tplname", payload.Name, version) {
 		return false
 	}
-	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.String(), "tplpath", payload.Path, version) {
+	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.Bytes(), "tplpath", payload.Path, version) {
 		return false
 	}
-	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.String(), "tplmemory", payload.Memery, version) {
+	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.Bytes(), "tplmemory", payload.Memery, version) {
 		return false
 	}
 	return true
@@ -623,10 +624,10 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 删除合约状态
 To delete contract state
 */
-func deleteContractState(contractID string, field string) {
+func deleteContractState(contractID []byte, field string) {
 	oldKeyPrefix := fmt.Sprintf("%s%s^*^%s",
 		storage.CONTRACT_STATE_PREFIX,
-		contractID,
+		hexutil.Encode(contractID[:]),
 		field)
 	data := storage.GetPrefix([]byte(oldKeyPrefix))
 	for k := range data {
@@ -661,7 +662,7 @@ func SignTransaction(txHash common.Hash, addr *common.Address, ks *keystore.KeyS
 保存contract state
 To save contract state
 */
-func updateState(contractID string, key string, version modules.StateVersion, val interface{}) bool {
+func updateState(contractID []byte, key string, version modules.StateVersion, val interface{}) bool {
 	delState, isDel := val.(modules.DelContractState)
 	if isDel {
 		if delState.IsDelete == false {
@@ -676,7 +677,7 @@ func updateState(contractID string, key string, version modules.StateVersion, va
 		// insert new state
 		key := fmt.Sprintf("%s%s^*^%s^*^%s",
 			storage.CONTRACT_STATE_PREFIX,
-			contractID,
+			hexutil.Encode(contractID[:]),
 			key,
 			version.String())
 		if err := storage.Store(storage.Dbconn, key, val); err != nil {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/util"
@@ -24,16 +25,16 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 	}
 
 	fee := uint64(0)
-	txFlages := map[common.Hash]modules.TxValidationCode{}
+	txFlags := map[common.Hash]modules.TxValidationCode{}
 	isSuccess := bool(true)
 	// all transactions' new worldState
 	worldState := map[string]map[string]interface{}{}
 
 	for txIndex, tx := range *txs {
 		// validate transaction id duplication
-		if _, ok := txFlages[tx.TxHash]; ok == true {
+		if _, ok := txFlags[tx.TxHash]; ok == true {
 			isSuccess = false
-			txFlages[tx.TxHash] = modules.TxValidationCode_DUPLICATE_TXID
+			txFlags[tx.TxHash] = modules.TxValidationCode_DUPLICATE_TXID
 			continue
 		}
 		// validate common property
@@ -41,7 +42,7 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 		if txCode != modules.TxValidationCode_VALID {
 			log.Info("ValidateTx", "txhash", tx.TxHash, "error validate code", txCode)
 			isSuccess = false
-			txFlages[tx.TxHash] = txCode
+			txFlags[tx.TxHash] = txCode
 			continue
 		}
 		// validate fee
@@ -49,12 +50,14 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 			txFee := tx.Fee()
 			if txFee.Cmp(modules.TXFEE) < 0 {
 				isSuccess = false
-				txFlages[tx.TxHash] = modules.TxValidationCode_INVALID_FEE
+				txFlags[tx.TxHash] = modules.TxValidationCode_INVALID_FEE
 				continue
 			}
 			fee += txFee.Uint64()
 		}
+		txFlags[tx.TxHash] = modules.TxValidationCode_VALID
 	}
+
 	// check coinbase fee and income
 	if !isGenesis && isSuccess {
 		if len((*txs)[0].TxMessages) != 1 {
@@ -73,8 +76,7 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 			return nil, false, fmt.Errorf("Coinbase outputs error.")
 		}
 	}
-	// to check total fee with coinbase tx
-	return txFlages, isSuccess, nil
+	return txFlags, isSuccess, nil
 }
 
 /**
@@ -251,9 +253,9 @@ func validateTxSignature(tx *modules.Transaction) bool {
 对unit中某个交易的读写集进行验证
 To validate read set and write set of one transaction in unit'
 */
-func validateContractState(contractID string, readSet *[]modules.ContractReadSet, writeSet *[]modules.PayloadMapStruct, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+func validateContractState(contractID []byte, readSet *[]modules.ContractReadSet, writeSet *[]modules.PayloadMapStruct, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
 	// check read set, if read field in worldTmpState then the transaction is invalid
-	contractState, cOk := (*worldTmpState)[contractID]
+	contractState, cOk := (*worldTmpState)[hexutil.Encode(contractID[:])]
 	if cOk && readSet != nil {
 		for _, rs := range *readSet {
 			if _, ok := contractState[rs.Key]; ok == true {
@@ -263,11 +265,11 @@ func validateContractState(contractID string, readSet *[]modules.ContractReadSet
 	}
 	// save write set to worldTmpState
 	if !cOk && writeSet != nil {
-		(*worldTmpState)[contractID] = map[string]interface{}{}
+		(*worldTmpState)[hexutil.Encode(contractID[:])] = map[string]interface{}{}
 	}
 
 	for _, ws := range *writeSet {
-		(*worldTmpState)[contractID][ws.Key] = ws.Value
+		(*worldTmpState)[hexutil.Encode(contractID[:])][ws.Key] = ws.Value
 	}
 	return modules.TxValidationCode_VALID
 }
@@ -278,9 +280,9 @@ To validate contract template payload
 */
 func validateContractTplPayload(contractTplPayload *modules.ContractTplPayload) modules.TxValidationCode {
 	// to check template whether existing or not
-	stateVersion, bytecode, name, path := storage.GetContractTpl(contractTplPayload.TemplateId.String())
-	if stateVersion == nil || bytecode == nil || name == "" || path == "" {
-		return modules.TxValidationCode_INVALID_CONTRACT_TEMPLATE
+	stateVersion, bytecode, name, path := storage.GetContractTpl(contractTplPayload.TemplateId.Bytes())
+	if stateVersion == nil && bytecode == nil && name == "" && path == "" {
+		return modules.TxValidationCode_VALID
 	}
-	return modules.TxValidationCode_VALID
+	return modules.TxValidationCode_INVALID_CONTRACT_TEMPLATE
 }

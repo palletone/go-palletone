@@ -78,6 +78,8 @@ func TestSaveUnit(t *testing.T) {
 	contractTplPayload := modules.ContractTplPayload{
 		TemplateId: common.HexToHash("contract_template0000"),
 		Bytecode:   []byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159},
+		Name:       "TestContractTpl",
+		Path:       "./contract",
 	}
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
@@ -96,13 +98,13 @@ func TestSaveUnit(t *testing.T) {
 	}
 	deployPayload := modules.ContractDeployPayload{
 		TemplateId: common.HexToHash("contract_template0000"),
-		ContractId: "contract0000",
+		ContractId: []byte("contract0000"),
 		ReadSet:    readSet,
 		WriteSet:   writeSet,
 	}
 
 	invokePayload := modules.ContractInvokePayload{
-		ContractId: "contract0000",
+		ContractId: []byte("contract0000"),
 		Args:       [][]byte{[]byte("initial")},
 		ReadSet:    readSet,
 		WriteSet: []modules.PayloadMapStruct{
@@ -111,7 +113,7 @@ func TestSaveUnit(t *testing.T) {
 				Value: "Alice",
 			},
 			{
-				Key: "Age",
+				Key: "age",
 				Value: modules.DelContractState{
 					IsDelete: true,
 				},
@@ -151,9 +153,9 @@ func TestSaveUnit(t *testing.T) {
 	tx3.TxHash = tx3.Hash()
 
 	txs := modules.Transactions{}
-	txs = append(txs, &tx1)
+	//txs = append(txs, &tx1)
 	txs = append(txs, &tx2)
-	txs = append(txs, &tx3)
+	//txs = append(txs, &tx3)
 	unit := modules.Unit{
 		UnitHeader: header,
 		Txs:        txs,
@@ -200,5 +202,15 @@ func TestCreateUnit(t *testing.T) {
 		log.Println("create unit error:", err)
 	} else {
 		log.Println("New unit:", units)
+	}
+}
+
+func TestGetContractState(t *testing.T) {
+	version, value := storage.GetContractState("contract_template0000", "name")
+	log.Println(version)
+	log.Println(value)
+	data := storage.GetTplAllState("contract_template0000")
+	for k, v := range data {
+		log.Println(k, v)
 	}
 }
