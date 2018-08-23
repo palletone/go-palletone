@@ -814,19 +814,19 @@ func TestWalletSvrCmds(t *testing.T) {
 		{
 			name: "lockunspent",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("lockunspent", true, `[{"txid":"123","vout":1}]`)
+				return btcjson.NewCmd("lockunspent", true, `[{"txid":"123","vout":1,"messageindex":0}]`)
 			},
 			staticCmd: func() interface{} {
 				txInputs := []btcjson.TransactionInput{
-					{Txid: "123", Vout: 1},
+					{Txid: "123", Vout: 1,MessageIndex: 0},
 				}
 				return btcjson.NewLockUnspentCmd(true, txInputs)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"lockunspent","params":[true,[{"txid":"123","vout":1}]],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"lockunspent","params":[true,[{"txid":"123","vout":1,"messageindex":0}]],"id":1}`,
 			unmarshalled: &btcjson.LockUnspentCmd{
 				Unlock: true,
 				Transactions: []btcjson.TransactionInput{
-					{Txid: "123", Vout: 1},
+					{Txid: "123", Vout: 1,MessageIndex: 0},
 				},
 			},
 		},

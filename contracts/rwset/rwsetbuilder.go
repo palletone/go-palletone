@@ -18,6 +18,8 @@
 
 package rwset
 
+import "github.com/palletone/go-palletone/dag/modules"
+
 type RWSetBuilder struct {
 	pubRwBuilderMap map[string]*nsPubRwBuilder
 }
@@ -32,7 +34,7 @@ func NewRWSetBuilder() *RWSetBuilder {
 	return &RWSetBuilder{make(map[string]*nsPubRwBuilder)}
 }
 
-func (b *RWSetBuilder) AddToReadSet(ns string, key string, version *Version) {
+func (b *RWSetBuilder) AddToReadSet(ns string, key string, version *modules.StateVersion) {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
 	nsPubRwBuilder.readMap[key] = NewKVRead(key, version)
 }

@@ -283,20 +283,6 @@ func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout
 	creator := []byte("palletone") //default
 	ccVersion := "ptn001"          //default
 
-	//var cc cclist.CCInfo
-	//clist, err := cclist.GetChaincodeList(chainID)
-	//if err != nil {
-	//	logger.Errorf("not find chainlist for chainId[%s]", chainID)
-	//	return nil, errors.New("getChaincodeList failed")
-	//}
-	//
-	//for _, v := range clist.CClist {
-	//	if bytes.Equal(v.Id, deployId) == true {
-	//		//logger.Infof("++++++++++++++++find,%s", v.Name)
-	//		cc.Name = v.Name
-	//	}
-	//}
-
 	cc, err := cclist.GetChaincode(chainID, deployId)
 	if err != nil {
 		return nil, err
@@ -385,5 +371,9 @@ func Stop(chainID string, txid string, deployId []byte, deleteImage bool) error 
 	if err != nil {
 		return  err
 	}
-	return StopByName(setChainId, txid, cc.Name, cc.Path, cc.Version, deleteImage)
+	err = StopByName(setChainId, txid, cc.Name, cc.Path, cc.Version, deleteImage)
+	if err == nil {
+		cclist.DelChaincode(chainID, cc.Name, cc.Version)
+	}
+	return err
 }

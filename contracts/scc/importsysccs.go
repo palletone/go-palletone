@@ -26,7 +26,7 @@ import (
 var systemChaincodes = []*SystemChaincode{
 	//set systemChaincodes to sample
 	{
-		Id: []byte("myTestSysChaincode"),
+		Id: []byte("sample_syscc"),
 		Enabled:   true,
 		Name:      "sample_syscc",
 		Path:      "/home/glh/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc/samplesyscc",

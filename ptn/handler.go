@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -257,29 +258,6 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 }
 
 // @author Albert·Gou
-// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
-func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
-	peers := pm.peers.ActiveMediatorPeers()
-	for _, peer := range peers {
-		peer.SendNewProducedUnit(unit)
-	}
-}
-
-// @author Albert·Gou
-func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
-	for {
-		select {
-		case event := <-self.newProducedUnitCh:
-			self.BroadcastNewProducedUnit(event.Unit)
-
-			// Err() channel will be closed when unsubscribing.
-		case <-self.newProducedUnitSub.Err():
-			return
-		}
-	}
-}
-
-// @author Albert·Gou
 type producer interface {
 	// SubscribeNewProducedUnitEvent should return an event subscription of
 	// NewProducedUnitEvent and send events to the given channel.
@@ -476,7 +454,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}
 		}
 		//log.Debug("===msg.Code == GetBlockHeadersMsg  SendBlockHeaders===")
-		return p.SendBlockHeaders(headers)
+		return p.SendUnitHeaders(headers)
 
 	case msg.Code == BlockHeadersMsg:
 		log.Debug("===handler->msg.Code == BlockHeadersMsg===")
@@ -751,21 +729,85 @@ func (self *ProtocolManager) txBroadcastLoop() {
 	}
 }
 
+// BroadcastUnit will either propagate a unit to a subset of it's peers, or
+// will only announce it's availability (depending what's requested).
+func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
+	hash := unit.Hash()
+	peers := pm.peers.PeersWithoutUnit(hash)
+
+	// If propagation is requested, send to a subset of the peer
+	if propagate {
+		//parentsHash := unit.ParentHash()
+		for _, parentHash := range unit.ParentHash() {
+			if parent := pm.dag.GetUnit(parentHash); parent == nil {
+				log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash)
+				return
+			}
+		}
+		// Send the block to a subset of our peers
+		transfer := peers[:int(math.Sqrt(float64(len(peers))))]
+		for _, peer := range transfer {
+			peer.SendNewUnit(unit)
+		}
+		log.Trace("Propagated block", "hash", hash, "recipients", len(transfer), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+		return
+	}
+
+	// Otherwise if the block is indeed in out own chain, announce it
+	if pm.dag.HasUnit(hash) {
+		for _, peer := range peers {
+			peer.SendNewUnitHashes([]common.Hash{hash}, []uint64{unit.NumberU64()})
+		}
+		log.Trace("Announced block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+	}
+}
+
+// @author Albert·Gou
+func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.newProducedUnitCh:
+			self.BroadcastUnit(event.Unit, true)
+			self.BroadcastUnit(event.Unit, false)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.newProducedUnitSub.Err():
+			return
+		}
+	}
+}
+
+func (self *ProtocolManager) ceBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.ceCh:
+			self.BroadcastCe(event.Ce)
+
+		// Err() channel will be closed when unsubscribing.
+		case <-self.ceSub.Err():
+			return
+		}
+	}
+}
+
+func (pm *ProtocolManager) BroadcastCe(ce string) {
+	peers := pm.peers.GetPeers()
+	for _, peer := range peers {
+		peer.SendConsensus(ce)
+	}
+}
+
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
 	Network uint64 `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
-	//Difficulty *big.Int    `json:"difficulty"` // Total difficulty of the host's blockchain
 	Index   uint64
 	Genesis common.Hash `json:"genesis"` // SHA3 hash of the host's genesis block
-	//Config     *configure.ChainConfig `json:"config"`     // Chain configuration for the fork rules
-	Head common.Hash `json:"head"` // SHA3 hash of the host's best owned block
+	Head    common.Hash `json:"head"`    // SHA3 hash of the host's best owned block
 }
 
 // NodeInfo retrieves some protocol metadata about the running host node.
 func (self *ProtocolManager) NodeInfo() *NodeInfo {
-	//currentBlock := self.blockchain.CurrentBlock()
-	//var natnum nat = []uint{17179869184}
 	unit := self.dag.CurrentUnit()
 	index := uint64(0)
 	if unit != nil {
@@ -773,10 +815,7 @@ func (self *ProtocolManager) NodeInfo() *NodeInfo {
 	}
 	return &NodeInfo{
 		Network: self.networkId,
-		Index:   index, //&big.Int{}, //self.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64()),
-		//Genesis:    self.blockchain.Genesis().Hash(),
-		//Config:     self.blockchain.Config(),
-		//Head:       currentBlock.Hash(),
+		Index:   index,
 	}
 }
 
@@ -805,3 +844,14 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 
 	return tx
 }
+
+/*
+// @author Albert·Gou
+// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
+func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
+	peers := pm.peers.ActiveMediatorPeers()
+	for _, peer := range peers {
+		peer.SendNewProducedUnit(unit)
+	}
+}
+*/

@@ -88,6 +88,10 @@ func (d *Dag) GetUnit(hash common.Hash) *modules.Unit {
 	return storage.GetUnit(d.Db, hash)
 }
 
+func (d *Dag) HasUnit(hash common.Hash) bool {
+	return storage.GetUnit(d.Db, hash) != nil
+}
+
 func (d *Dag) GetUnitByHash(hash common.Hash) *modules.Unit {
 	return d.CurrentUnit()
 }

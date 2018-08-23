@@ -19,8 +19,8 @@
 package log
 
 var DefaultConfig = Config{
-	OutputPaths:      []string{"stdout"},
-	ErrorOutputPaths: []string{"stderr"},
+	OutputPaths:      []string{"stdout", "./log/all.log"},
+	ErrorOutputPaths: []string{"stderr", "./log/error.log"},
 	LoggerLvl:        "DEBUG",
 	Encoding:         "console", // json
 	Development:      true,
