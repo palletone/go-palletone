@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -21,6 +22,8 @@ package rwset
 import (
 	"errors"
 
+	"github.com/palletone/go-palletone/dag/storage"
+	"fmt"
 )
 
 type RwSetTxSimulator struct {
@@ -39,36 +42,37 @@ type VersionedValue struct {
 func newBasedTxSimulator(txid string) (*RwSetTxSimulator, error) {
 	rwsetBuilder := NewRWSetBuilder()
 	logger.Debugf("constructing new tx simulator txid = [%s]", txid)
-	return &RwSetTxSimulator{ txid, rwsetBuilder, false, false, false}, nil
+	return &RwSetTxSimulator{txid, rwsetBuilder, false, false, false}, nil
 }
 
 // GetState implements method in interface `ledger.TxSimulator`
 func (s *RwSetTxSimulator) GetState(ns string, key string) ([]byte, error) {
 	//versionedValue := &VersionedValue{}
-	testValue := []byte("abc")
+	//testValue := []byte("abc")
 
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-	//get value from DB !!!
-	//var err error
-	//versionedValue.Value, err = storage.Get([]byte(key))
-	//if err != nil {
-	//	logger.Errorf("get value from db[%s] failed", ns)
-	//	//return nil, err
-	//}
-	//
-	//val, ver := decomposeVersionedValue(versionedValue)
-	//if s.rwsetBuilder != nil {
-	//	s.rwsetBuilder.AddToReadSet(ns, key, ver)
-	//}
 
-	logger.Debugf("RW:GetState,ns[%s]--key[%s]---value[%s]", ns, key, testValue)
+	//get value from DB !!!
+	ver, val := storage.GetContractState(ns, key)
+	if val == nil {
+		logger.Errorf("get value from db[%s] failed", ns)
+
+		errstr := fmt.Sprintf("GetContractState [%s]-[key] failed")
+		return nil, errors.New(errstr)
+	}
+
+	//val, ver := decomposeVersionedValue(versionedValue)
+	if s.rwsetBuilder != nil {
+		s.rwsetBuilder.AddToReadSet(ns, key, &ver)
+	}
+
+	logger.Debugf("RW:GetState,ns[%s]--key[%s]---value[%s]", ns, key, val)
 
 	//todo change.
-	return testValue, nil
-
-	//return val, nil
+	//return testValue, nil
+	return val, nil
 }
 
 func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
@@ -99,7 +103,7 @@ func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]
 
 	if s.rwsetBuilder != nil {
 		if s.rwsetBuilder.pubRwBuilderMap != nil {
-			 if s.rwsetBuilder.pubRwBuilderMap[ns] != nil {
+			if s.rwsetBuilder.pubRwBuilderMap[ns] != nil {
 				if s.rwsetBuilder.pubRwBuilderMap[ns].readMap != nil {
 					rd = s.rwsetBuilder.pubRwBuilderMap[ns].readMap
 				}

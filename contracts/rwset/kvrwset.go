@@ -21,6 +21,7 @@ package rwset
 import (
 	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var logger = flogging.MustGetLogger("rwset")
@@ -51,7 +52,7 @@ func (m *KVRWSet) GetWrites() []*KVWrite {
 
 type KVRead struct {
 	Key     string   `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
-	Version *Version `protobuf:"bytes,2,opt,name=version" json:"version,omitempty"`
+	Version *modules.StateVersion `protobuf:"bytes,2,opt,name=version" json:"version,omitempty"`
 }
 
 func (m *KVRead) Reset()                    { *m = KVRead{} }
@@ -66,7 +67,7 @@ func (m *KVRead) GetKey() string {
 	return ""
 }
 
-func (m *KVRead) GetVersion() *Version {
+func (m *KVRead) GetVersion() *modules.StateVersion {
 	if m != nil {
 		return m.Version
 	}
@@ -112,7 +113,7 @@ type Version struct {
 }
 
 // NewKVRead helps constructing proto message kvrwset.KVRead
-func NewKVRead(key string, version *Version) *KVRead {
+func NewKVRead(key string, version *modules.StateVersion) *KVRead {
 	return &KVRead{Key: key, Version: version}
 }
 
