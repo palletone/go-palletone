@@ -29,6 +29,7 @@ import (
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/rlp"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -254,10 +255,11 @@ func GetContract(db DatabaseReader, id common.Hash) (*modules.Contract, error) {
 获取合约模板
 To get contract template
 */
-func GetContractTpl(templateID string) (version *modules.StateVersion, bytecode []byte, name string, path string) {
+func GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
 	key := fmt.Sprintf("%s%s^*^bytecode",
 		CONTRACT_TPL,
-		templateID)
+		hexutil.Encode(templateID[:]),
+	)
 	data := GetPrefix([]byte(key))
 	if len(data) == 1 {
 		for k, v := range data {
@@ -531,8 +533,8 @@ func GetContractAllState(id string) map[modules.ContractReadSet][]byte {
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */
-func GetTplState(id string, field string) (modules.StateVersion, []byte) {
-	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, id, field)
+func GetTplState(id []byte, field string) (modules.StateVersion, []byte) {
+	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, hexutil.Encode(id[:]), field)
 	if Dbconn == nil {
 		Dbconn = ReNewDbConn(config.DbPath)
 	}
