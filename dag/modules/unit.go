@@ -357,12 +357,13 @@ type ContractReadSet struct {
 
 // Contract instance message
 // App: contract_deploy
+
 type ContractDeployPayload struct {
 	TemplateId   common.Hash        `json:"template_id"`   // contract template id
-	ContractId   string             `json:"contract_id"`   // contract id
+	ContractId   []byte             `json:"contract_id"`   // contract id
 	Name         string             `json:"name"`          // the name for contract
 	Args         [][]byte           `json:"args"`          // contract arguments list
-	Excutiontime uint16             `json:"excution_time"` // contract execution time, millisecond
+	Excutiontime time.Duration      `json:"excution_time"` // contract execution time, millisecond
 	Jury         []common.Address   `json:"jury"`          // contract jurors list
 	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
 	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
@@ -371,9 +372,9 @@ type ContractDeployPayload struct {
 // Contract invoke message
 // App: contract_invoke
 type ContractInvokePayload struct {
-	ContractId   string             `json:"contract_id"`   // contract id
+	ContractId   []byte             `json:"contract_id"`   // contract id
 	Args         [][]byte           `json:"args"`          // contract arguments list
-	Excutiontime uint16             `json:"excution_time"` // contract execution time, millisecond
+	Excutiontime time.Duration      `json:"excution_time"` // contract execution time, millisecond
 	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
 	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
 }

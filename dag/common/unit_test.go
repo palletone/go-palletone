@@ -98,13 +98,13 @@ func TestSaveUnit(t *testing.T) {
 	}
 	deployPayload := modules.ContractDeployPayload{
 		TemplateId: common.HexToHash("contract_template0000"),
-		ContractId: "contract0000",
+		ContractId: []byte("contract0000"),
 		ReadSet:    readSet,
 		WriteSet:   writeSet,
 	}
 
 	invokePayload := modules.ContractInvokePayload{
-		ContractId: "contract0000",
+		ContractId: []byte("contract0000"),
 		Args:       [][]byte{[]byte("initial")},
 		ReadSet:    readSet,
 		WriteSet: []modules.PayloadMapStruct{

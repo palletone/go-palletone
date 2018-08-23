@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/util"
@@ -252,9 +253,9 @@ func validateTxSignature(tx *modules.Transaction) bool {
 对unit中某个交易的读写集进行验证
 To validate read set and write set of one transaction in unit'
 */
-func validateContractState(contractID string, readSet *[]modules.ContractReadSet, writeSet *[]modules.PayloadMapStruct, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+func validateContractState(contractID []byte, readSet *[]modules.ContractReadSet, writeSet *[]modules.PayloadMapStruct, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
 	// check read set, if read field in worldTmpState then the transaction is invalid
-	contractState, cOk := (*worldTmpState)[contractID]
+	contractState, cOk := (*worldTmpState)[hexutil.Encode(contractID[:])]
 	if cOk && readSet != nil {
 		for _, rs := range *readSet {
 			if _, ok := contractState[rs.Key]; ok == true {
@@ -264,11 +265,11 @@ func validateContractState(contractID string, readSet *[]modules.ContractReadSet
 	}
 	// save write set to worldTmpState
 	if !cOk && writeSet != nil {
-		(*worldTmpState)[contractID] = map[string]interface{}{}
+		(*worldTmpState)[hexutil.Encode(contractID[:])] = map[string]interface{}{}
 	}
 
 	for _, ws := range *writeSet {
-		(*worldTmpState)[contractID][ws.Key] = ws.Value
+		(*worldTmpState)[hexutil.Encode(contractID[:])][ws.Key] = ws.Value
 	}
 	return modules.TxValidationCode_VALID
 }
