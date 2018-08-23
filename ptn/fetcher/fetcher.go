@@ -24,6 +24,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+
 	//	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
@@ -308,12 +309,14 @@ func (f *Fetcher) loop() {
 					//f.queueChangeHook(op.block.Hash(), true)
 					f.queueChangeHook(op.unit.UnitHash, true)
 				}
+				log.Info("===loop===", "number:", number, "height:", height)
 				break
 			}
 			// Otherwise if fresh and still unknown, try and import
 			hash := op.unit.Hash()
 			if number+maxUncleDist < height || f.getBlock(hash) != nil {
 				f.forgetBlock(hash)
+				log.Info("======loop umber+maxUncleDist < height || f.getBlock(hash) != nil======")
 				continue
 			}
 			f.insert(op.origin, op.unit)
@@ -613,6 +616,7 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 	count := f.queues[peer] + 1
 	if count > blockLimit {
 		log.Debug("Discarded propagated block, exceeded allowance", "peer", peer, "number", block.Number(), "hash", hash, "limit", blockLimit)
+		log.Info("Discarded propagated block, exceeded allowance", "peer", peer, "number", block.Number(), "hash", hash, "limit", blockLimit)
 		propBroadcastDOSMeter.Mark(1)
 		f.forgetHash(hash)
 		return
@@ -620,6 +624,7 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 	// Discard any past or too distant blocks
 	if dist := int64(block.NumberU64()) - int64(f.chainHeight()); dist < -maxUncleDist || dist > maxQueueDist {
 		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
+		log.Info("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
 		propBroadcastDropMeter.Mark(1)
 		f.forgetHash(hash)
 		return
@@ -637,6 +642,7 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 			f.queueChangeHook(op.unit.Hash(), true)
 		}
 		log.Debug("Queued propagated block", "peer", peer, "number", block.Number(), "hash", hash, "queued", f.queue.Size())
+		log.Info("Queued propagated block", "peer", peer, "number", block.Number(), "hash", hash, "queued", f.queue.Size())
 	}
 }
 
@@ -648,6 +654,7 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 
 	// Run the import on a new thread
 	log.Debug("Importing propagated block", "peer", peer, "number", block.Number(), "hash", hash)
+	log.Info("Importing propagated block", "peer", peer, "number", block.Number(), "hash", hash)
 	go func() {
 		defer func() { f.done <- hash }()
 
@@ -656,6 +663,7 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		parent := f.getBlock(block.ParentHash()[0])
 		if parent == nil {
 			log.Debug("Unknown parent of propagated block", "peer", peer, "number", block.Number(), "hash", hash, "parent", block.ParentHash())
+			log.Info("Unknown parent of propagated block", "peer", peer, "number", block.Number(), "hash", hash, "parent", block.ParentHash())
 			return
 		}
 		// Quickly validate the header and propagate the block if it passes
@@ -671,12 +679,14 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		default:
 			// Something went very wrong, drop the peer
 			log.Debug("Propagated block verification failed", "peer", peer, "number", block.Number(), "hash", hash, "err", err)
+			log.Info("Propagated block verification failed", "peer", peer, "number", block.Number(), "hash", hash, "err", err)
 			f.dropPeer(peer)
 			return
 		}
 		// Run the actual import and log any issues
 		if _, err := f.insertChain(modules.Units{block}); err != nil {
 			log.Debug("Propagated block import failed", "peer", peer, "number", block.Number(), "hash", hash, "err", err)
+			log.Info("Propagated block import failed", "peer", peer, "number", block.Number(), "hash", hash, "err", err)
 			return
 		}
 		// If import succeeded, broadcast the block
