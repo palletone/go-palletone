@@ -161,6 +161,7 @@ func Install(chainID string, ccName string, ccPath string, ccVersion string) (pa
 }
 
 func DeployByName(chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId []byte, respPayload *peer.ContractDeployPayload, e error) {
+	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
 
@@ -178,6 +179,15 @@ func DeployByName(chainID string, txid string, ccName string, ccPath string, ccV
 		return nil, nil, errors.New("crypto.GetRandomNonce error")
 	}
 
+	txsim, err := mksupt.GetTxSimulator(chainID, txid)
+	if err != nil {
+		return nil, nil, errors.New("GetTxSimulator error")
+	}
+	//randNum, err := crypto.GetRandomNonce()
+	//if err != nil {
+	//	return nil, nil, errors.New("crypto.GetRandomNonce error")
+	//}
+
 	usrcc := &ucc.UserChaincode{
 		Name:     ccName,
 		Path:     ccPath,
@@ -186,7 +196,7 @@ func DeployByName(chainID string, txid string, ccName string, ccPath string, ccV
 		Enabled:  true,
 	}
 
-	err = ucc.DeployUserCC(setChainId, usrcc, txid, setTimeOut)
+	err = ucc.DeployUserCC(setChainId, usrcc, txid, txsim, setTimeOut)
 	if err != nil {
 		return nil, nil, errors.New("Deploy fail")
 	}
@@ -208,7 +218,8 @@ func DeployByName(chainID string, txid string, ccName string, ccPath string, ccV
 }
 
 //func DeployByTemplateId(chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId string, respPayload *peer.ContractDeployPayload, e error) {
-func Deploy(chainID string, txid string, templateId []byte, args [][]byte, timeout time.Duration) (deployId []byte, respPayload *peer.ContractDeployPayload, e error) {
+func Deploy(chainID string, txid string, templateId []byte, args [][]byte, timeout time.Duration) (deployId []byte, respPayload *unit.ContractDeployPayload /*respPayload *peer.ContractDeployPayload*/ , e error) {
+	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
 	logger.Infof("enter, chainId[%s], txid[%s],templateId[%s]", chainID, txid, string(templateId))
@@ -228,6 +239,7 @@ func Deploy(chainID string, txid string, templateId []byte, args [][]byte, timeo
 	}
 
 	//test!!!!!!
+	//todo del
 	if txid == "" || templateCC.Name == "" || templateCC.Path == "" {
 		logger.Errorf("cc param is null")
 		//return "", nil, errors.New("cc param is nil")
@@ -241,6 +253,10 @@ func Deploy(chainID string, txid string, templateId []byte, args [][]byte, timeo
 		}
 	}
 
+	txsim, err := mksupt.GetTxSimulator(chainID, txid)
+	if err != nil {
+		return nil, nil, errors.New("GetTxSimulator error")
+	}
 	randNum, err := crypto.GetRandomNonce()
 	if err != nil {
 		return nil, nil, errors.New("crypto.GetRandomNonce error")
@@ -255,11 +271,10 @@ func Deploy(chainID string, txid string, templateId []byte, args [][]byte, timeo
 		Enabled:  true,
 	}
 
-	err = ucc.DeployUserCC(setChainId, usrcc, txid, setTimeOut)
+	err = ucc.DeployUserCC(setChainId, usrcc, txid, txsim, setTimeOut)
 	if err != nil {
 		return nil, nil, errors.New("Deploy fail")
 	}
-
 	cc := &cclist.CCInfo{
 		Id:      randNum,
 		Name:    usrccName,
@@ -273,13 +288,20 @@ func Deploy(chainID string, txid string, templateId []byte, args [][]byte, timeo
 		logger.Errorf("setchaincode[%s]-[%s] fail", setChainId, cc.Name)
 	}
 
+	//respPayload = &unit.ContractDeployPayload{
+	//	TemplateId:   templateId,
+	//	ContractId:   cc.Id,
+	//	Name:         cc.Name,
+	//	Args:         args,
+	//	Excutiontime: timeout,
+	//}
+
 	return cc.Id, nil, err
 }
 
 //timeout:ms
 // ccName can be contract Id
 func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-	//func Invoke(chainID string, ccName string, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone") //default
 	ccVersion := "ptn001"          //default
@@ -370,7 +392,7 @@ func Stop(chainID string, txid string, deployId []byte, deleteImage bool) error 
 
 	cc, err := cclist.GetChaincode(chainID, deployId)
 	if err != nil {
-		return  err
+		return err
 	}
 	err = StopByName(setChainId, txid, cc.Name, cc.Path, cc.Version, deleteImage)
 	if err == nil {

@@ -303,7 +303,6 @@ func multMoreSys(t *testing.T) {
 			}
 		}(tmout, txid)
 	}
-
 	//	go Invoke(chainID, "sample_syscc", args)
 }
 
@@ -330,7 +329,6 @@ func TestExecSysCCMult(t *testing.T) {
 	//}()
 
 	time.Sleep(20 * time.Second)
-
 }
 
 func TestGetSysCCList(t *testing.T) {
@@ -379,7 +377,7 @@ func TestInstallCC(t *testing.T) {
 
 	//deploy
 	fmt.Print("=======================DeployUserCC=============================")
-	err = ucc.DeployUserCC(chainID, usercc, txid, 30*time.Second)
+	err = ucc.DeployUserCC(chainID, usercc, txid, nil, 30*time.Second)
 	if err != nil {
 		t.Errorf("DeployUserCC err:%s", err)
 	}

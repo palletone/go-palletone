@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -18,6 +19,7 @@
  */
 
 package core
+
 import (
 	"fmt"
 
@@ -52,15 +54,14 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 	}
 
 	cMsg.Decorations = cccid.ProposalDecorations
-	chaincodeLogger.Infof("++++++++++++++++++++++++txid[%s]", cccid.TxID)
+	chaincodeLogger.Infof("txid[%s]", cccid.TxID)
 	var ccMsg *pb.ChaincodeMessage
 	ccMsg, err = createCCMessage(cctyp, cccid.ChainID, cccid.TxID, cMsg)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "failed to create chaincode message")
 	}
 
-
-	resp, err := theChaincodeSupport.Execute(ctxt, cccid, ccMsg, timeout)//theChaincodeSupport.executetimeout
+	resp, err := theChaincodeSupport.Execute(ctxt, cccid, ccMsg, timeout) //theChaincodeSupport.executetimeout
 	if err != nil {
 		// Rollback transaction
 		return nil, nil, errors.WithMessage(err, "failed to execute transaction")

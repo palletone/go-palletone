@@ -249,7 +249,6 @@ func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedPro
 
 	//2 -- endorse and get a marshalled ProposalResponse message
 	pResp := &pb.ProposalResponse{Response: res}
-
 	cis, err := putils.GetChaincodeInvocationSpec(prop)
 	if err != nil {
 	}

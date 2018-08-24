@@ -96,7 +96,33 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, fun 
 	logger.Debug("enter")
 
 	invokeData := ut.ContractInvokePayload{}
-	invokeData.ContractId = txid
+	invokeData.ContractId = []byte(txid)
+
+	rd, wt, err := tx.GetRwData(nm)
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
+	dag := pb.ContractInvokePayload{ContractId:txid, Function: fun, ReadSet:make(map[string]interface{}), WriteSet:make(map[string]interface{})}
+
+	for key, val:= range rd {
+		dag.ReadSet[key] = val
+		logger.Infof("readSet: fun[%s], key[%s], val[%v]", dag.Function, key, val)
+	}
+	for key, val:= range wt {
+		dag.WriteSet[key] = val
+		logger.Infof("WriteSet: fun[%s], key[%s], val[%v]", dag.Function, key, dag.WriteSet[key])
+	}
+
+	return &dag, nil
+}
+
+func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, txid string, nm string, fun []byte) (*pb.ContractInvokePayload, error) {
+	logger.Debug("enter")
+
+	data := ut.ContractDeployPayload{}
+	data.ContractId = []byte(txid)
 
 	rd, wt, err := tx.GetRwData(nm)
 	if err != nil {
