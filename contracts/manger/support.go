@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -19,21 +20,22 @@
 package manger
 
 import (
+	"time"
 	"golang.org/x/net/context"
 	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/contracts/rwset"
-
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/contracts/scc"
+
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	ut "github.com/palletone/go-palletone/dag/modules"
 	chaincode "github.com/palletone/go-palletone/contracts/core"
-	"time"
+	unit "github.com/palletone/go-palletone/dag/modules"
 )
 
 // SupportImpl provides an implementation of the endorser.Support interface
 // issuing calls to various static methods of the peer
-type SupportImpl struct{
+type SupportImpl struct {
 }
 
 // IsSysCCAndNotInvokableExternal returns true if the supplied chaincode is
@@ -92,9 +94,8 @@ func GetBytesChaincodeEvent(event *pb.ChaincodeEvent) ([]byte, error) {
 	return eventBytes, err
 }
 
-func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, fun []byte) (*pb.ContractInvokePayload, error) {
+func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
 	logger.Debug("enter")
-
 	invokeData := ut.ContractInvokePayload{}
 	invokeData.ContractId = []byte(txid)
 
@@ -104,23 +105,38 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, fun 
 	}
 
 	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
-	dag := pb.ContractInvokePayload{ContractId:txid, Function: fun, ReadSet:make(map[string]interface{}), WriteSet:make(map[string]interface{})}
-
-	for key, val:= range rd {
-		dag.ReadSet[key] = val
-		logger.Infof("readSet: fun[%s], key[%s], val[%v]", dag.Function, key, val)
-	}
-	for key, val:= range wt {
-		dag.WriteSet[key] = val
-		logger.Infof("WriteSet: fun[%s], key[%s], val[%v]", dag.Function, key, dag.WriteSet[key])
+	invoke := &unit.ContractInvokePayload{
+		ContractId:   deployId,
+		Args:         args,
+		Excutiontime: timeout,
+		ReadSet:      make([]unit.ContractReadSet, 0),
+		WriteSet:     make([]unit.PayloadMapStruct, 0),
 	}
 
-	return &dag, nil
+	for idx, val := range rd {
+		rd := unit.ContractReadSet{
+			Key:   val.Key,
+			Value: val.Version,
+		}
+		invoke.ReadSet = append(invoke.ReadSet, rd)
+		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[0], val.Key, *val.Version)
+	}
+	for idx, val := range wt {
+		rd := unit.PayloadMapStruct{
+			Key:      val.Key,
+			Value:    val.Value,
+			IsDelete: val.IsDelete,
+		}
+		invoke.WriteSet = append(invoke.WriteSet, rd)
+		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[0], val.Key, val.Value, val.IsDelete)
+	}
+
+	return invoke, nil
 }
 
-func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, txid string, nm string, fun []byte) (*pb.ContractInvokePayload, error) {
+//func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, txid string, nm string, fun []byte) (*pb.ContractDeployPayload, error) {
+func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*unit.ContractDeployPayload, error) {
 	logger.Debug("enter")
-
 	data := ut.ContractDeployPayload{}
 	data.ContractId = []byte(txid)
 
@@ -128,30 +144,44 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, txid string, nm string, fun 
 	if err != nil {
 		return nil, err
 	}
-
 	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
-	dag := pb.ContractInvokePayload{ContractId:txid, Function: fun, ReadSet:make(map[string]interface{}), WriteSet:make(map[string]interface{})}
-
-	for key, val:= range rd {
-		dag.ReadSet[key] = val
-		logger.Infof("readSet: fun[%s], key[%s], val[%v]", dag.Function, key, val)
+	deploy := &unit.ContractDeployPayload{
+		TemplateId:   templateId,
+		ContractId:   deployId,
+		Name:         nm,
+		Args:         args,
+		Excutiontime: timeout,
+		ReadSet:      make([]unit.ContractReadSet, 0),
+		WriteSet:     make([]unit.PayloadMapStruct, 0),
 	}
-	for key, val:= range wt {
-		dag.WriteSet[key] = val
-		logger.Infof("WriteSet: fun[%s], key[%s], val[%v]", dag.Function, key, dag.WriteSet[key])
+
+	for idx, val := range rd {
+		rd := unit.ContractReadSet{
+			Key:   val.Key,
+			Value: val.Version,
+		}
+		deploy.ReadSet = append(deploy.ReadSet, rd)
+		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[0], val.Key, *val.Version)
+	}
+	for idx, val := range wt {
+		rd := unit.PayloadMapStruct{
+			Key:      val.Key,
+			Value:    val.Value,
+			IsDelete: val.IsDelete,
+		}
+		deploy.WriteSet = append(deploy.WriteSet, rd)
+		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[0], val.Key, val.Value, val.IsDelete)
 	}
 
-	return &dag, nil
+	return deploy, nil
 }
 
 var rwM *rwset.RwSetTxMgr
 
 func init() {
 	var err error
-	rwM, err =rwset.NewRwSetMgr("default")
+	rwM, err = rwset.NewRwSetMgr("default")
 	if err != nil {
 		logger.Error("fail!")
 	}
 }
-
-

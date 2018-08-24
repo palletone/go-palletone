@@ -31,6 +31,7 @@ import (
 	//ut "github.com/palletone/go-palletone/dag/modules"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	putils "github.com/palletone/go-palletone/core/vmContractPub/protos/utils"
+	unit "github.com/palletone/go-palletone/dag/modules"
 	"time"
 )
 
@@ -201,7 +202,7 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 
 // ProcessProposal process the Proposal
 //func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
-func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *pb.ContractInvokePayload, error) {
+func (e *Endorser) ProcessProposal(deployId []byte, ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *unit.ContractInvokePayload, error) {
 	var txsim rwset.TxSimulator
 
 	//addr := util.ExtractRemoteAddress(ctx)
@@ -253,7 +254,7 @@ func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedPro
 	if err != nil {
 	}
 
-	unit, err := RwTxResult2DagInvokeUnit(txsim, txid, cis.ChaincodeSpec.ChaincodeId.Name, cis.ChaincodeSpec.Input.Args[0])
+	unit, err := RwTxResult2DagInvokeUnit(txsim, txid, cis.ChaincodeSpec.ChaincodeId.Name, deployId, cis.ChaincodeSpec.Input.Args, tmout)
 	if err != nil {
 		logger.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.New("Conver RwSet to dag unit fail")
