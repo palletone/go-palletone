@@ -85,6 +85,12 @@ func fullExchange(t *testing.T) {
 		deals, err := dkg.Deals()
 		require.Nil(t, err)
 		for i, d := range deals {
+			// ignore sending all messages to ourselves
+			if uint32(i) == d.Index {
+				resps = append(resps, nil)
+				continue
+			}
+
 			resp, err := dkgs[i].ProcessDeal(d)
 			require.Nil(t, err)
 			require.Equal(t, vss.StatusApproval, resp.Response.Status)
@@ -95,10 +101,11 @@ func fullExchange(t *testing.T) {
 	// 2. Broadcast responses
 	for _, resp := range resps {
 		for i, dkg := range dkgs {
-			// ignore all messages from ourself
+			// ignore all messages from ourselves
 			if resp.Response.Index == uint32(i) {
 				continue
 			}
+
 			j, err := dkg.ProcessResponse(resp)
 			require.Nil(t, err)
 			require.Nil(t, j)
@@ -113,15 +120,15 @@ func TestTBLS(t *testing.T) {
 
 	sigShares := make([][]byte, 0)
 	for i, d := range dkgs {
+		if i == ntThreshold {
+			break
+		}
+
 		dks, err := d.DistKeyShare()
 		assert.Nil(t, err)
 		sig, err := tbls.Sign(suite, dks.PriShare(), msg)
 		require.Nil(t, err)
 		sigShares = append(sigShares, sig)
-
-		if i == 14 {
-			break
-		}
 	}
 
 	dkg := dkgs[0]
