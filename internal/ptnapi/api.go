@@ -25,8 +25,6 @@ import (
 	"math/big"
 	"strings"
 	"time"
-        "math/rand"
-
 	"encoding/json"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/common"
@@ -1491,50 +1489,8 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			}
 		}
 	}
-        }
-    for i, txIn := range redeemTx.TxIn {
-			prevOutScript, _ := inputs[txIn.PreviousOutPoint]
 
-			// Set up our callbacks that we pass to txscript so it can
-			// look up the appropriate keys and scripts by address.
-			geekey:= txscript.KeyClosure(func(addr btcutil.Address) (*btcec.PrivateKey, bool, error) {
-					addrStr := addr.EncodeAddress()
-                                        wif,ok:= keys[addrStr]
-                                        if !ok {
-						return nil, false,
-							errors.New("no key for address")
-	        }
-					return wif.PrivKey, wif.CompressPubKey, nil
-			})
-			getScript := txscript.ScriptClosure(func(addr btcutil.Address) ([]byte, error) {
-				// If keys were provided then we can only use the
-				// redeem scripts provided with our inputs, too.
-					addrStr := addr.EncodeAddress()
-					script, ok := scripts[addrStr]
-					if !ok {
-						return nil, errors.New("no script for address")
-	                                }
-					return script, nil
-			})
-                        var signErrors []SignatureError
-			// SigHashSingle inputs can only be signe   d if there's a
-			// corresponding output. However this could be already signed,
-			// so we always verify the output.
-			if (hashType&txscript.SigHashSingle) !=   
-				txscript.SigHashSingle || i < len(redeemTx.TxOut) {
-				script, err := txscript.SignTxOutput(params,
-					&redeemTx, i, prevOutScript, hashType, geekey,
-					getScript, txIn.SignatureScript)
-				// Failure to sign isn't an error, it just means that
-				// the tx isn't complete.
-	        if err != nil {
-					signErrors = append(signErrors, SignatureError{
-						InputIndex: uint32(i),
-						Error:      err,
-					})
-					continue
-	        }
-				txIn.SignatureScript = script
+
 	for i, txIn := range redeemTx.TxIn {
 		prevOutScript, _ := inputs[txIn.PreviousOutPoint]
 
@@ -1651,14 +1607,15 @@ type Authentifier struct {
 // The sender is responsible for signing the transaction and using the correct nonce.
 func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encodedTx string /*hexutil.Bytes*/) (common.Hash, error) {
 	tx := new(modules.Transaction)
-    tx.AccountNonce =uint64(rand.Intn(100000))
-	tx.CreationDate = time.Now().Format("2006-01-02 15:04:05")
+   // tx.AccountNonce =uint64(rand.Intn(100000))
+	//tx.CreationDate = time.Now().Format("2006-01-02 15:04:05")
     keys :=  common.HexToHash(encodedTx)
 	tx.TxHash = keys
-	tx.Priority_lvl = tx.GetPriorityLvl()
+	//tx.Priority_lvl = tx.GetPriorityLvl()
 	//if err := rlp.DecodeBytes(encodedTx, tx); err != nil {
 	//	return common.Hash{}, err
 	//}
+
 	return submitTransaction(ctx, s.b, tx)
 }
 

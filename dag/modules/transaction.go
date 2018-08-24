@@ -72,6 +72,8 @@ func (pld *PaymentPayload) AddTxIn(ti Input) {
 // AddTxOut adds a transaction output to the message.
 func (pld *PaymentPayload) AddTxOut(to Output) {
 	pld.Outputs = append(pld.Outputs, to)
+}
+
 func (t *Transaction) SetHash(hash common.Hash) {
 	if t.TxHash == (common.Hash{}) {
 		t.TxHash = hash
