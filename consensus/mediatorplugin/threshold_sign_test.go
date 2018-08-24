@@ -74,7 +74,7 @@ func dkgGen() []*dkg.DistKeyGenerator {
 }
 
 func fullExchange(t *testing.T) {
-	dkgs = dkgGen()
+//	dkgs = dkgGen()
 	// full secret sharing exchange
 	// 1. broadcast deals
 	resps := make([]*dkg.Response, 0, nbParticipants*nbParticipants)
@@ -129,5 +129,11 @@ func TestTBLS(t *testing.T) {
 	require.Nil(t, err)
 
 	err = bls.Verify(suite, dks.Public(), msg, sig)
+	assert.Nil(t, err)
+
+	dks2, err := dkgs[1].DistKeyShare()
+	assert.Nil(t, err)
+
+	err = bls.Verify(suite, dks2.Public(), msg, sig)
 	assert.Nil(t, err)
 }
