@@ -108,7 +108,7 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 	}
 
 	sprop, prop, err := signedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
-	rsp, unit, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid, 5*time.Second)
+	rsp, unit, err := es.ProcessProposal(nil,context.Background(), sprop, prop, chainID, cid, 5*time.Second)
 	if err != nil {
 		logger.Errorf("ProcessProposal error[%v]", err)
 	}
@@ -231,8 +231,8 @@ func multSys(t *testing.T) {
 			t.Error(err)
 		} else {
 			//t.Logf("ContractId[%s], Function[%s], ReadSet:%v ,WriteSet:%v", unit.ContractId, unit.Function, unit.ReadSet[unit.ContractId], unit.WriteSet[unit.ContractId])
-			for k, v := range unit.WriteSet {
-				t.Logf("k[%s], v[%v]", k, v)
+			for idx, v := range unit.WriteSet {
+				t.Logf("idx[%d], k[%v]-v[%v]", idx, v.Key, v.Value)
 			}
 		}
 	}()
@@ -246,8 +246,8 @@ func multSys(t *testing.T) {
 			t.Error(err)
 		} else {
 			//t.Logf("ContractId[%s], Function[%s], ReadSet:%v ,WriteSet:%v", unit.ContractId, unit.Function, unit.ReadSet[unit.ContractId], unit.WriteSet[unit.ContractId])
-			for k, v := range unit.WriteSet {
-				t.Logf("k[%s], v[%v]", k, v)
+			for idx, v := range unit.WriteSet {
+				t.Logf("idx[%d], k[%v]-v[%v]", idx, v.Key, v.Value)
 			}
 		}
 	}()
@@ -261,8 +261,8 @@ func multSys(t *testing.T) {
 			t.Error(err)
 		} else {
 			//t.Logf("ContractId[%s], Function[%s], ReadSet:%v ,WriteSet:%v", unit.ContractId, unit.Function, unit.ReadSet[unit.ContractId], unit.WriteSet[unit.ContractId])
-			for k, v := range unit.WriteSet {
-				t.Logf("k[%s], v[%v]", k, v)
+			for idx, v := range unit.WriteSet {
+				t.Logf("idx[%d], k[%v]-v[%v]", idx, v.Key, v.Value)
 			}
 		}
 	}()
@@ -297,8 +297,8 @@ func multMoreSys(t *testing.T) {
 				t.Error(err)
 			} else {
 				//t.Logf("ContractId[%s], Function[%s], ReadSet:%v ,WriteSet:%v", unit.ContractId, unit.Function, unit.ReadSet[unit.ContractId], unit.WriteSet[unit.ContractId])
-				for k, v := range unit.WriteSet {
-					t.Logf("k[%s], v[%v]", k, v)
+				for idx, v := range unit.WriteSet {
+					t.Logf("idx[%d], k[%v]-v[%v]", idx, v.Key, v.Value)
 				}
 			}
 		}(tmout, txid)
