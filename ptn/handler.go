@@ -389,6 +389,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				//origin = pm.blockchain.GetHeaderByHash(query.Origin.Hash)
 				origin = pm.dag.GetHeaderByHash(query.Origin.Hash)
 			} else {
+				//origin = pm.dag.GetHeaderByNumber(query.Origin.Number)   //GetHeaderByHeight
 				origin = pm.dag.GetHeaderByNumber(query.Origin.Number)
 			}
 			if origin == nil {
