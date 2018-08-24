@@ -59,7 +59,7 @@ func (s *RwSetTxSimulator) GetState(ns string, key string) ([]byte, error) {
 	if val == nil {
 		logger.Errorf("get value from db[%s] failed", ns)
 
-		errstr := fmt.Sprintf("GetContractState [%s]-[key] failed", ns, key)
+		errstr := fmt.Sprintf("GetContractState [%s]-[%s] failed", ns, key)
 		return nil, errors.New(errstr)
 	}
 
