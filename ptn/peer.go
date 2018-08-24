@@ -471,7 +471,6 @@ func (ps *peerSet) GetPeers() []*peer {
 	return list
 }
 
-/*
 // AtiveMeatorPeers retrieves a list of peers that active mediator
 // @author Albert·Gou
 func (ps *peerSet) ActiveMediatorPeers() []*peer {
@@ -497,4 +496,3 @@ func (p *peer) SendNewProducedUnit(unit *modules.Unit) error {
 
 	return p2p.Send(p.rw, NewProducedUnitMsg, unit)
 }
-*/
