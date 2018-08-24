@@ -338,12 +338,12 @@ func (version *StateVersion) ParseStringKey(key string) bool {
 // Contract template deploy message
 // App: contract_template
 type ContractTplPayload struct {
-	TemplateId common.Hash `json:"template_id"` // contract template id
-	Name       string      `json:"name"`        // contract template name
-	Path       string      `json:"path"`        // contract template execute path
-	Version    string      `json:"version"`     // contract template version
-	Memery     uint16      `json:"memory"`      // coontract template bytecode memory size(Byte), use to compute transaction fee
-	Bytecode   []byte      `json:"bytecode"`    // contract bytecode
+	TemplateId []byte `json:"template_id"` // contract template id
+	Name       string `json:"name"`        // contract template name
+	Path       string `json:"path"`        // contract template execute path
+	Version    string `json:"version"`     // contract template version
+	Memery     uint16 `json:"memory"`      // coontract template bytecode memory size(Byte), use to compute transaction fee
+	Bytecode   []byte `json:"bytecode"`    // contract bytecode
 }
 
 type DelContractState struct {
@@ -359,7 +359,7 @@ type ContractReadSet struct {
 // App: contract_deploy
 
 type ContractDeployPayload struct {
-	TemplateId   common.Hash        `json:"template_id"`   // contract template id
+	TemplateId   []byte             `json:"template_id"`   // contract template id
 	ContractId   []byte             `json:"contract_id"`   // contract id
 	Name         string             `json:"name"`          // the name for contract
 	Args         [][]byte           `json:"args"`          // contract arguments list

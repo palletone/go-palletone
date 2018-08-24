@@ -76,7 +76,7 @@ func TestSaveUnit(t *testing.T) {
 	auth.Address = addr0.String()
 	header.Authors = auth
 	contractTplPayload := modules.ContractTplPayload{
-		TemplateId: common.HexToHash("contract_template0000"),
+		TemplateId: []byte("contract_template0000"),
 		Bytecode:   []byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159},
 		Name:       "TestContractTpl",
 		Path:       "./contract",
@@ -97,7 +97,7 @@ func TestSaveUnit(t *testing.T) {
 		},
 	}
 	deployPayload := modules.ContractDeployPayload{
-		TemplateId: common.HexToHash("contract_template0000"),
+		TemplateId: []byte("contract_template0000"),
 		ContractId: []byte("contract0000"),
 		ReadSet:    readSet,
 		WriteSet:   writeSet,

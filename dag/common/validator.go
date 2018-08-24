@@ -280,7 +280,7 @@ To validate contract template payload
 */
 func validateContractTplPayload(contractTplPayload *modules.ContractTplPayload) modules.TxValidationCode {
 	// to check template whether existing or not
-	stateVersion, bytecode, name, path := storage.GetContractTpl(contractTplPayload.TemplateId.Bytes())
+	stateVersion, bytecode, name, path := storage.GetContractTpl(contractTplPayload.TemplateId)
 	if stateVersion == nil && bytecode == nil && name == "" && path == "" {
 		return modules.TxValidationCode_VALID
 	}
