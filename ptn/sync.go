@@ -174,14 +174,14 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 
 	currentUnit := pm.dag.CurrentUnit()
 	if currentUnit == nil {
-		log.Info("===synchronise currentUnit is nil===")
+		log.Info("===synchronise currentUnit is nil have not genesis===")
 		return
 	}
 	index := currentUnit.Number().Index
 
 	pHead, number := peer.Head(assetId)
 	pindex := number.Index
-	if index > 0 && pindex > 0 && pindex < index {
+	if index > pindex && pindex > 0 {
 		log.Info("===synchronise peer.index < local index===", "peer.index:", pindex, "local index:", number.Index)
 		return
 	}

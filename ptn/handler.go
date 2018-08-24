@@ -57,7 +57,7 @@ var (
 // not compatible (low protocol version restrictions and high requirements).
 var errIncompatibleConfig = errors.New("incompatible configuration")
 
-var tempGetBlockBodiesMsgSum int = 0
+//var tempGetBlockBodiesMsgSum int = 0
 
 func errResp(code errCode, format string, v ...interface{}) error {
 	return fmt.Errorf("%v - %v", code, fmt.Sprintf(format, v...))
@@ -381,6 +381,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			headers []*modules.Header
 			unknown bool
 		)
+
 		for !unknown && len(headers) < int(query.Amount) && bytes < softResponseLimit && len(headers) < downloader.MaxHeaderFetch {
 			// Retrieve the next header satisfying the query
 			var origin *modules.Header
@@ -393,12 +394,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			if origin == nil {
 				break
 			}
-			//---test---
-			if origin != nil && !hashMode {
-				origin.Number.Index = query.Origin.Number
-			}
-			origin.ParentsHash = append(origin.ParentsHash, origin.Hash())
-
+			/*
+				if origin != nil && !hashMode {
+					origin.Number.Index = query.Origin.Number
+				}
+				origin.ParentsHash = append(origin.ParentsHash, origin.Hash())
+			*/
 			number := origin.Number.Index
 			headers = append(headers, origin)
 			bytes += estHeaderRlpSize
@@ -412,6 +413,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 						query.Origin.Hash = header.ParentsHash[0]
 						number--
 					} else {
+						log.Info("========GetBlockHeadersMsg========", "number", number, "err:", err)
 						unknown = true
 						break
 					}
@@ -422,20 +424,21 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 					current = origin.Number.Index
 					next    = current + query.Skip + 1
 				)
-				log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
+				//log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
 				if next <= current {
 					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
 					log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
 					unknown = true
 				} else {
-					log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
+					//log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
 					if header := pm.dag.GetHeaderByNumber(next); header != nil {
+						query.Origin.Hash = header.Hash()
+						//TODO must recover
 						//if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
 						//	query.Origin.Hash = header.Hash()
 						//} else {
 						//	unknown = true
 						//}
-						unknown = true
 					} else {
 						unknown = true
 					}
@@ -445,6 +448,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				if query.Origin.Number >= query.Skip+1 {
 					query.Origin.Number -= query.Skip + 1
 				} else {
+					log.Info("========GetBlockHeadersMsg========", "query.Reverse", "unknown is true")
 					unknown = true
 				}
 
@@ -453,11 +457,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				query.Origin.Number += query.Skip + 1
 			}
 		}
-		//log.Debug("===msg.Code == GetBlockHeadersMsg  SendBlockHeaders===")
+		log.Debug("========GetBlockHeadersMsg========", "query.Amount", query.Amount, "send number:", len(headers))
 		return p.SendUnitHeaders(headers)
 
 	case msg.Code == BlockHeadersMsg:
-		log.Debug("===handler->msg.Code == BlockHeadersMsg===")
 		// A batch of headers arrived to one of our previous requests
 		var headers []*modules.Header
 		if err := msg.Decode(&headers); err != nil {
@@ -472,7 +475,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Filter out any explicitly requested headers, deliver the rest to the downloader
 		filter := len(headers) == 1
 		if filter {
-			log.Debug("===BlockHeadersMsg filter===")
 			// Irrelevant of the fork checks, send the header to the fetcher just in case
 			headers = pm.fetcher.FilterHeaders(p.id, headers, time.Now())
 		}
@@ -486,7 +488,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case msg.Code == GetBlockBodiesMsg:
 		// Decode the retrieval message
-		log.Debug("===GetBlockBodiesMsg===")
+		//log.Debug("===GetBlockBodiesMsg===")
 		msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
 		if _, err := msgStream.List(); err != nil {
 			return err
@@ -496,7 +498,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			hash   common.Hash
 			bytes  int
 			bodies []rlp.RawValue
-			sum    int
 		)
 
 		for bytes < softResponseLimit && len(bodies) < downloader.MaxBlockFetch {
@@ -508,29 +509,33 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}
 			//TODO must recover
 			// Retrieve the requested block body, stopping if enough was found
-			//			if data := pm.dag.GetBodyRLP(hash); len(data) != 0 {
-			//				bodies = append(bodies, data)
-			//				bytes += len(data)
-			//			}
-			//======test
-			body := blockBody{}
-			tx := TestMakeTransaction(uint64(tempGetBlockBodiesMsgSum))
-			body.Transactions = append(body.Transactions, tx)
-			data, err := rlp.EncodeToBytes(body)
-			if err != nil {
-				log.Debug("===GetBlockBodiesMsg===", "rlp.EncodeToBytes err:", err)
-				continue
+			if data := pm.dag.GetBodyRLP(hash); len(data) != 0 {
+				bodies = append(bodies, data)
+				bytes += len(data)
 			}
-			bodies = append(bodies, data)
-			bytes += len(data)
-			sum++
-			tempGetBlockBodiesMsgSum++
+			//======test start=======
+			/*
+				body := blockBody{}
+				tx := TestMakeTransaction(uint64(tempGetBlockBodiesMsgSum))
+				body.Transactions = append(body.Transactions, tx)
+				data, err := rlp.EncodeToBytes(body)
+				if err != nil {
+					log.Debug("===GetBlockBodiesMsg===", "rlp.EncodeToBytes err:", err)
+					continue
+				}
+				bodies = append(bodies, data)
+				bytes += len(data)
+				sum++
+				tempGetBlockBodiesMsgSum++
+			*/
+			//======test end=======
 		}
-		log.Debug("===GetBlockBodiesMsg===", "tempGetBlockBodiesMsgSum:", tempGetBlockBodiesMsgSum, "sum:", sum)
+		//log.Debug("===GetBlockBodiesMsg===", "tempGetBlockBodiesMsgSum:", tempGetBlockBodiesMsgSum, "sum:", sum)
+		log.Debug("===GetBlockBodiesMsg===", "len(bodies):", len(bodies))
 		return p.SendBlockBodiesRLP(bodies)
 
 	case msg.Code == BlockBodiesMsg:
-		log.Debug("===BlockBodiesMsg===")
+		//log.Debug("===BlockBodiesMsg===")
 		// A batch of block bodies arrived to one of our previous requests
 		var request blockBodiesData
 		if err := msg.Decode(&request); err != nil {
@@ -625,12 +630,17 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		unit.ReceivedAt = msg.ReceivedAt
 		unit.ReceivedFrom = p
 		log.Info("===NewBlockMsg===", "index:", unit.Number().Index)
+
 		// Mark the peer as owning the block and schedule it for import
 		p.MarkUnit(unit.UnitHash)
 		pm.fetcher.Enqueue(p.id, &unit)
+
 		hash, number := p.Head(unit.Number().AssetID)
-		if !common.EmptyHash(hash) && unit.UnitHeader.ChainIndex().Index > number.Index {
-			p.SetHead(unit.UnitHash, unit.UnitHeader.ChainIndex())
+
+		if common.EmptyHash(hash) || (!common.EmptyHash(hash) && unit.UnitHeader.ChainIndex().Index > number.Index) {
+			trueHead := unit.Hash()
+			log.Info("=================handler p.SetHead===============")
+			p.SetHead(trueHead, unit.UnitHeader.ChainIndex())
 			// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
 			// a singe block (as the true TD is below the propagated block), however this
 			// scenario should easily be covered by the fetcher.
@@ -716,7 +726,6 @@ func (self *ProtocolManager) txBroadcastLoop() {
 // BroadcastUnit will either propagate a unit to a subset of it's peers, or
 // will only announce it's availability (depending what's requested).
 func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
-	return
 	hash := unit.Hash()
 	peers := pm.peers.PeersWithoutUnit(hash)
 
@@ -736,7 +745,7 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 		for _, peer := range transfer {
 			peer.SendNewUnit(unit)
 		}
-		log.Trace("Propagated block", "hash", hash, "recipients", len(transfer), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+		log.Trace("BroadcastUnit Propagated block", "hash", hash, "recipients", len(transfer), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 		return
 	}
 
@@ -745,7 +754,7 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 		for _, peer := range peers {
 			peer.SendNewUnitHashes([]common.Hash{hash}, []uint64{unit.NumberU64()})
 		}
-		log.Trace("Announced block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+		log.Trace("BroadcastUnit Announced block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 	}
 }
 
@@ -754,7 +763,6 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.newProducedUnitCh:
-			//TODO must recover
 			self.BroadcastUnit(event.Unit, true)
 			self.BroadcastUnit(event.Unit, false)
 

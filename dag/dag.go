@@ -151,7 +151,6 @@ func (d *Dag) SaveDag(unit modules.Unit) (int, error) {
 func (d *Dag) InsertDag(units modules.Units) (int, error) {
 	//TODO must recover
 	log.Debug("===InsertDag===", "len(units):", len(units))
-	return len(units), nil
 	count := int(0)
 	for i, u := range units {
 		// all units must be continuous
@@ -207,7 +206,11 @@ func (d *Dag) CurrentHeader() *modules.Header {
 
 // GetBodyRLP retrieves a block body in RLP encoding from the database by hash,
 // caching it if found.
-func (d *Dag) GetBodyRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
+func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
+	return d.getBodyRLP(d.Db, hash)
+}
+
+func (d *Dag) getBodyRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
 	txs := modules.Transactions{}
 	// get hash list
 	txs, err := dagcommon.GetUnitTransactions(hash)
@@ -332,6 +335,7 @@ func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
 // Get Header
 func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error) {
 	index := d.GetUnitNumber(hash)
+	//TODO compare index with number
 	return storage.GetHeader(d.Db, hash, &index)
 }
 
