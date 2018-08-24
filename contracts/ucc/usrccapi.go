@@ -13,6 +13,8 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"os"
 	"io/ioutil"
+	"github.com/palletone/go-palletone/contracts/rwset"
+	"github.com/palletone/go-palletone/contracts/core"
 )
 
 type UserChaincode struct {
@@ -61,11 +63,15 @@ func getDeploymentSpec(_ context.Context, spec *pb.ChaincodeSpec) (*pb.Chaincode
 	return cdDeploymentSpec, nil
 }
 
-func DeployUserCC(chainID string, usrcc *UserChaincode, txid string, timeout time.Duration) error {
+func DeployUserCC(chainID string, usrcc *UserChaincode, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
 	var err error
 
 	ccprov := ccprovider.GetChaincodeProvider()
 	ctxt := context.Background()
+	if txsim != nil {
+		ctxt = context.WithValue(ctxt, core.TXSimulatorKey, txsim)
+	}
+
 	//todo
 	//从数据库中检查并恢复出保存的context数据
 
@@ -185,9 +191,9 @@ func RecoverChainCodeFromDb(chainID string, templateId []byte) ( *UserChaincode,
 	//解压到指定路径下
 
 	testFile := "/home/glh/go/src/chaincode/abc.tar.gz"
-
 	zipName := "test.tar.gz"
 	dir := "/home/glh/go/src/chaincode/"
+	//version, zipdata, name, path := storage.GetContractTpl(templateId)
 
 	//read
 	fi, err := os.Open(testFile)

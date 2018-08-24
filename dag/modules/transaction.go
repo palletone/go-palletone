@@ -20,20 +20,15 @@ package modules
 
 import (
 	"fmt"
+	"math/big"
 	"strconv"
 	"time"
-	//	"errors"
-	//	"fmt"
-	//	"io"
-	"math/big"
-	//	"sync/atomic"
-	//	"time"
-	//
-	"github.com/palletone/go-palletone/common"
+
 	//	"github.com/palletone/go-palletone/common/crypto"
 	//	"github.com/palletone/go-palletone/common/crypto/sha3"
 	//	"github.com/palletone/go-palletone/common/hexutil"
-	//"github.com/Re-volution/sizestruct"
+	//  "github.com/Re-volution/sizestruct"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 )
 
@@ -54,22 +49,20 @@ type TxIn struct {
 	SignatureScript  []byte
 	Sequence         uint32
 }
-func NewTransaction(hash common.Hash, msg []Message, lock uint32) *Transaction {
-	return newTransaction(hash, msg, lock)
+
+func NewTransaction(msg []Message, lock uint32) *Transaction {
+	return newTransaction(msg, lock)
 }
 
-func NewContractCreation(hash common.Hash, msg []Message, lock uint32) *Transaction {
-	return newTransaction(hash, msg, lock)
+func NewContractCreation(msg []Message, lock uint32) *Transaction {
+	return newTransaction(msg, lock)
 }
 
-func newTransaction(hash common.Hash, msg []Message, lock uint32) *Transaction {
+func newTransaction(msg []Message, lock uint32) *Transaction {
 	tx := new(Transaction)
-	tx.TxHash = hash
 	tx.TxMessages = msg[:]
 	tx.Locktime = lock
 
-	tx.CreationDate = time.Now().Format(TimeFormatString)
-	tx.Priority_lvl = tx.GetPriorityLvl()
 	return tx
 }
 // AddTxIn adds a transaction input to the message.
@@ -79,6 +72,25 @@ func (pld *PaymentPayload) AddTxIn(ti Input) {
 // AddTxOut adds a transaction output to the message.
 func (pld *PaymentPayload) AddTxOut(to Output) {
 	pld.Outputs = append(pld.Outputs, to)
+}
+
+func (t *Transaction) SetHash(hash common.Hash) {
+	if t.TxHash == (common.Hash{}) {
+		t.TxHash = hash
+	} else {
+		t.TxHash.Set(hash)
+	}
+}
+
+type TxPoolTransaction struct {
+	Transaction
+
+	CreationDate string  `json:"creation_date" rlp:"-"`
+	Priority_lvl float64 `json:"priority_lvl" rlp:"-"` // 打包的优先级
+	Nonce        uint64  // transaction'hash maybe repeat.
+	Pending      bool
+	Confirmed    bool
+	Extra        []byte
 }
 
 //// ChainId returns which chain id this transaction was signed for (if at all)
@@ -146,10 +158,8 @@ func (pld *PaymentPayload) AddTxOut(to Output) {
 //
 //func (tx Transaction) Data() []byte { return common.CopyBytes(tx.data.Payload) }
 //
-func (tx Transaction) PriorityLvl() float64 {
-	return tx.Priority_lvl
-}
-func (tx Transaction) GetPriorityLvl() float64 {
+
+func (tx *TxPoolTransaction) GetPriorityLvl() float64 {
 	// priority_lvl=  fee/size*(1+(time.Now-CreationDate)/24)
 	var priority_lvl float64
 	if txfee := tx.Fee(); txfee.Int64() > 0 {
@@ -158,29 +168,12 @@ func (tx Transaction) GetPriorityLvl() float64 {
 	}
 	return priority_lvl
 }
-func (tx Transaction) SetPriorityLvl(priority float64) {
+func (tx *TxPoolTransaction) SetPriorityLvl(priority float64) {
 	tx.Priority_lvl = priority
 }
-func (tx Transaction) Nonce() uint64 { return tx.AccountNonce }
 
-//func (tx Transaction) Fee() *big.Int { return tx.TxFee }
-
-//func (tx Transaction) Account() *common.Address { return tx.data.From }
-
-//func (tx Transaction) CheckNonce() bool         { return true }
-//
-//// To returns the recipient address of theTransaction .
-//// It returns nil if the transaction is a contract creation.
-//func (tx Transaction) ToAddress() *common.Address {
-//	if tx.data.Recipient == nil {
-//		return nil
-//	}
-//	to := *tx.data.Recipient
-//	return &to
-//}
-//
-//// Hash hashes the RLP encoding of tx.
-//// It uniquely identifies the transaction.
+// Hash hashes the RLP encoding of tx.
+// It uniquely identifies the transaction.
 func (tx Transaction) Hash() common.Hash {
 	withoutSigTx := Transaction{}
 	withoutSigTx.CopyFrTransaction(&tx)
@@ -210,66 +203,6 @@ func (tx *Transaction) Address() common.Address {
 	return common.Address{}
 }
 
-//func (tx *Transaction) String() string {
-//	var from, to string
-//	if tx.data.V != nil {
-//		// make a best guess about the signer and use that to derive
-//		// the sender.
-//		signer := deriveSigner(tx.data.V)
-//		if f, err := Sender(signer, tx); err != nil { // derive but don't cache
-//			from = "[invalid sender: invalid sig]"
-//		} else {
-//			from = fmt.Sprintf("%x", f[:])
-//		}
-//	} else {
-//		from = "[invalid sender: nil V field]"
-//	}
-//
-//	if tx.data.Recipient == nil {
-//		to = "[contract creation]"
-//	} else {
-//		to = fmt.Sprintf("%x", tx.data.Recipient[:])
-//	}
-//	enc, _ := rlp.EncodeToBytes(&tx.data)
-//	return fmt.Sprintf(`
-//	TX(%x)
-//	Contract: %v
-//	From:     %s
-//	To:       %s
-//	Nonce:    %v
-//	Price: %#x
-//	Value:    %#x
-//	Data:     0x%x
-//	V:        %#x
-//	R:        %#x
-//	S:        %#x
-//	Hex:      %x
-//`,
-//		tx.Hash(),
-//		tx.data.Recipient == nil,
-//		from,
-//		to,
-//		tx.data.From,
-//		tx.data.Price,
-//		tx.data.Amount,
-//		tx.data.Payload,
-//		tx.data.V,
-//		tx.data.R,
-//		tx.data.S,
-//		enc,
-//	)
-//}
-
-// func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, error) {
-// 	r, s, v, err := signer.SignatureValues(tx, sig)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	cpy := &Transaction{data: tx.data}
-// 	cpy.data.R, cpy.data.S, cpy.data.V = r, s, v
-// 	return cpy, nil
-// }
-
 // Cost returns amount + price
 func (tx *Transaction) Cost() *big.Int {
 	//if tx.TxFee.Cmp(TXFEE) < 0 {
@@ -280,11 +213,8 @@ func (tx *Transaction) Cost() *big.Int {
 }
 
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
-	tx.AccountNonce = cpy.AccountNonce
-	tx.CreationDate = cpy.CreationDate
+	tx.TxHash.Set(cpy.TxHash)
 	tx.Locktime = cpy.Locktime
-	tx.Priority_lvl = cpy.Priority_lvl
-
 	tx.TxMessages = make([]Message, len(cpy.TxMessages))
 	for _, msg := range cpy.TxMessages {
 		newMsg := Message{}
@@ -349,21 +279,21 @@ func TxDifference(a, b Transactions) (keep Transactions) {
 }
 
 // single account, otherwise a nonce comparison doesn't make much sense.
-type TxByNonce Transactions
+type TxByNonce TxPoolTxs
 
 func (s TxByNonce) Len() int           { return len(s) }
-func (s TxByNonce) Less(i, j int) bool { return s[i].AccountNonce < s[j].AccountNonce }
+func (s TxByNonce) Less(i, j int) bool { return s[i].Nonce < s[j].Nonce }
 func (s TxByNonce) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
 // TxByPrice implements both the sort and the heap interface, making it useful
 // for all at once sorting as well as individually adding and removing elements.
-type TxByPrice Transactions
+type TxByPrice TxPoolTxs
 
 func (s TxByPrice) Len() int      { return len(s) }
 func (s TxByPrice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 func (s *TxByPrice) Push(x interface{}) {
-	*s = append(*s, x.(*Transaction))
+	*s = append(*s, x.(*TxPoolTransaction))
 }
 
 func (s *TxByPrice) Pop() interface{} {
@@ -374,14 +304,14 @@ func (s *TxByPrice) Pop() interface{} {
 	return x
 }
 
-type TxByPriority Transactions
+type TxByPriority []*TxPoolTransaction
 
 func (s TxByPriority) Len() int           { return len(s) }
 func (s TxByPriority) Less(i, j int) bool { return s[i].Priority_lvl > s[j].Priority_lvl }
 func (s TxByPriority) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
 func (s *TxByPriority) Push(x interface{}) {
-	*s = append(*s, x.(*Transaction))
+	*s = append(*s, x.(*TxPoolTransaction))
 }
 
 func (s *TxByPriority) Pop() interface{} {

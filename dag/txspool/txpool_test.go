@@ -19,13 +19,19 @@
 package txspool
 
 import (
-	"crypto/ecdsa"
+	"fmt"
+	"log"
+	"math/big"
+	"testing"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
-	"math/big"
-
+	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 var testTxPoolConfig TxPoolConfig
@@ -64,113 +70,127 @@ func (ud *testUnitDag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent)
 // Tests that if the transaction count belonging to multiple accounts go above
 // some hard threshold, if they are under the minimum guaranteed slot count then
 // the transactions are still kept.
-//func TestTransactionAddingTxs(t *testing.T) {
-//	t.Parallel()
-//
-//	// Create the pool to test the limit enforcement with
-//	//db, _ := palletdb.NewMemDatabase()
-//	//unitchain := &testUnitDag{db, nil, 10000, new(event.Feed)}
-//	unitchain := dag.NewDag()
-//
-//	config := testTxPoolConfig
-//	config.GlobalSlots = 4096
-//	var queue_cache, queue_item, pending_cache, pending_item, all, origin int
-//	//pool := NewTxPool(config, unitchain)
-//	unitchain = unitchain //would recover
-//	pool := NewTxPool(config, unitchain)
-//
-//	defer pool.Stop()
-//
-//	// Create a number of test accounts and fund them
-//	keys := make([]*ecdsa.PrivateKey, 5)
-//	for i := 0; i < len(keys); i++ {
-//		keys[i], _ = crypto.GenerateKey()
-//		// add address balance  and save db.
-//	}
-//	// Generate and queue a batch of transactions
-//	nonces := make(map[common.Address]uint64)
-//
-//	txs := modules.Transactions{}
-//	for i, key := range keys {
-//		addr := crypto.PubkeyToAddress(key.PublicKey)
-//		for j := 0; j < int(config.AccountSlots)*1; j++ {
-//			txs = append(txs, transaction(nonces[addr], uint64(i)+100, key))
-//			nonces[addr]++
-//		}
-//	}
-//	log.Println("all addr:", len(nonces))
-//	// Import the batch and verify that limits have been enforced
-//	//pool.AddRemotes(txs)
-//	for i, tx := range txs {
-//		if txs[i].Txsize > 0 {
-//			continue
-//		} else {
-//			log.Println("bad tx:", tx.Hash().String(), tx.Txsize)
-//		}
-//	}
-//	origin = len(txs)
-//	pool.AddLocals(txs)
-//
-//	log.Println("pending:", len(pool.pending))
-//	log.Println("queue:", len(pool.queue))
-//	for addr, list := range pool.queue {
-//		if list.Len() != int(config.AccountSlots) {
-//			//t.Errorf("addr %x: total queue transactions mismatch: have %d, want %d", addr, list.Len(), config.AccountSlots)
-//		}
-//		// Println queue list.
-//		queue_cache = len(list.txs.cache)
-//		queue_item = len(list.txs.items)
-//		log.Println("queue addr: ", addr.String(), "amont:", list.Len())
-//
-//	}
-//	for addr, list := range pool.pending {
-//		if list.Len() != int(config.AccountSlots) {
-//			t.Errorf("addr %x: total pending transactions mismatch: have %d, want %d", addr, list.Len(), config.AccountSlots)
-//		} else {
-//			log.Println("account matched.", "pending addr:", addr.String(), "amont:", list.Len())
-//		}
-//		pending_cache = len(list.txs.cache)
-//		pending_item = len(list.txs.items)
-//	}
-//	//  test GetSortedTxs{}
-//	defer func(p *TxPool) {
-//		if txs, total := pool.GetSortedTxs(); total.Float64() > dagconfig.DefaultConfig.UnitTxSize {
-//			all = len(txs)
-//			msg := fmt.Sprintf("total %v:total sizeof transactions is unexpected", total.Float64())
-//			t.Error(msg)
-//		} else {
-//			log.Println(" total size is :", total, total.Float64(), "the cout: ", len(txs))
-//			for i, tx := range txs {
-//				if i < len(txs)-1 {
-//					if txs[i].PriorityLvl() < txs[i+1].PriorityLvl() {
-//						t.Error("sorted failed.", i, tx.PriorityLvl())
-//					}
-//				}
-//
-//			}
-//			all = len(txs)
-//			for key := range nonces {
-//				log.Println("address: ", key.String())
-//			}
-//		}
-//		log.Println(origin, all, queue_cache, queue_item, pending_cache, pending_item, len(nonces))
-//	}(pool)
-//
-//}
-func transaction(nonce uint64, txfee uint64, key *ecdsa.PrivateKey) *modules.Transaction {
-	return pricedTransaction(nonce, new(big.Int).SetUint64(txfee), key)
+func TestTransactionAddingTxs(t *testing.T) {
+	t0 := time.Now()
+	fmt.Println("script start.... ", t0)
+	//t.Parallel()
+
+	// Create the pool to test the limit enforcement with
+	db, _ := palletdb.NewMemDatabase()
+	unitchain := &testUnitDag{db, nil, 10000, new(event.Feed)}
+	//unitchain := dag.NewDag()
+
+	config := testTxPoolConfig
+	config.GlobalSlots = 4096
+	var pending_cache, queue_cache, all, origin int
+	//pool := NewTxPool(config, unitchain)
+	pool := NewTxPool(config, unitchain)
+
+	defer pool.Stop()
+
+	txs := modules.Transactions{}
+
+	msgs := make([]modules.Message, 0)
+	addr := new(common.Address)
+	addr.SetString("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+
+	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
+	// step. compute total income
+
+	totalIncome := uint64(100000000)
+	// step2. create payload
+	createT := big.Int{}
+	input := modules.Input{
+		Extra: createT.SetInt64(time.Now().Unix()).Bytes(),
+	}
+	output := modules.Output{
+		Value: totalIncome,
+		Asset: modules.Asset{
+			AssertId: modules.BTCCOIN,
+			ChainId:  1},
+		PkScript: script,
+	}
+	payload0 := modules.PaymentPayload{
+		Inputs:  []modules.Input{input},
+		Outputs: []modules.Output{output},
+	}
+	copy(input.Extra[:], []byte("1234567890"))
+	payload1 := modules.PaymentPayload{
+		Inputs:  []modules.Input{input},
+		Outputs: []modules.Output{output},
+	}
+	copy(input.Extra[:], []byte("0987654321"))
+	payload2 := modules.PaymentPayload{
+		Inputs:  []modules.Input{input},
+		Outputs: []modules.Output{output},
+	}
+	msgs = append(msgs, *modules.NewMessage(modules.APP_PAYMENT+"1", payload0), *modules.NewMessage(modules.APP_PAYMENT+"2", payload1), *modules.NewMessage(modules.APP_PAYMENT+"3", payload2))
+	for j := 0; j < int(config.AccountSlots)*1; j++ {
+		txs = append(txs, transaction(msgs, uint32(j+100)))
+	}
+	fmt.Println("range txs start.... ", time.Now().Unix()-t0.Unix())
+	// Import the batch and verify that limits have been enforced
+	//	pool.AddRemotes(txs)
+	for i, tx := range txs {
+		if txs[i].Size() > 0 {
+			continue
+		} else {
+			log.Println("bad tx:", tx.Hash().String(), tx.Size())
+		}
+	}
+
+	origin = len(txs)
+	txpool_txs := make([]*modules.TxPoolTransaction, 0)
+	for _, tx := range txs {
+		txpool_txs = append(txpool_txs, TxtoTxpoolTx(pool, tx))
+	}
+
+	t1 := time.Now()
+	fmt.Println("addlocals start.... ", (t1.Unix() - t0.Unix()))
+	pool.AddLocals(txpool_txs)
+
+	log.Println("pending:", len(pool.pending))
+	fmt.Println("addlocals over.... ", time.Now().Unix()-t0.Unix())
+	for hash := range pool.pending {
+		if len(pool.pending) != int(config.AccountSlots) {
+			t.Errorf("addr %x: total pending transactions mismatch: have %d, want %d", hash.String(), len(pool.pending), config.AccountSlots)
+		} else {
+			log.Println("account matched.", "pending addr:", addr.String(), "amont:", len(pool.pending))
+		}
+	}
+	fmt.Println("defer start.... ", time.Now().Unix()-t0.Unix())
+	//  test GetSortedTxs{}
+	defer func(p *TxPool) {
+		if txs, total := pool.GetSortedTxs(); total.Float64() > dagconfig.DefaultConfig.UnitTxSize {
+			all = len(txs)
+			msg := fmt.Sprintf("total %v:total sizeof transactions is unexpected", total.Float64())
+			t.Error(msg)
+		} else {
+			log.Println(" total size is :", total, total.Float64(), "the cout: ", len(txs))
+			for i, tx := range txs {
+				if i < len(txs)-1 {
+					if txs[i].Priority_lvl < txs[i+1].Priority_lvl {
+						t.Error("sorted failed.", i, tx.Priority_lvl)
+					}
+				}
+
+			}
+			all = len(txs)
+			pending_cache = len(pool.pending)
+			queue_cache = len(pool.queue)
+			//txsss := PoolTxstoTxs(txs)
+			//fmt.Println("txssssss===========", txsss[0])
+		}
+		log.Println(origin, all, len(pool.all), pending_cache, queue_cache)
+		fmt.Println("defer over.... ", time.Now().Unix()-t0.Unix())
+	}(pool)
+
 }
-func pricedTransaction(nonce uint64, txfee *big.Int, key *ecdsa.PrivateKey) *modules.Transaction {
-
-	//sig := make([]byte, 65)
-
-	tx := modules.NewTransaction(common.Hash{}, []modules.Message{}, 0)
-	//h := tx.TxHash
-
-	//sig, err := crypto.Sign(h[:], key)
-	//if err != nil {
-	//	return tx
-	//}
-
+func transaction(msg []modules.Message, lock uint32) *modules.Transaction {
+	return pricedTransaction(msg, lock)
+}
+func pricedTransaction(msg []modules.Message, lock uint32) *modules.Transaction {
+	tx := modules.NewTransaction(msg, lock)
+	tx.SetHash(rlp.RlpHash(tx))
 	return tx
 }

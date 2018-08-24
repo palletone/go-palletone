@@ -20,7 +20,6 @@ package storage
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -28,12 +27,14 @@ import (
 	"reflect"
 	"unsafe"
 
+	"strings"
+
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/rlp"
 	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
-	"strings"
 )
 
 // DatabaseReader wraps the Get method of a backing data store.
@@ -108,15 +109,52 @@ func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 }
 
 func GetUnit(db DatabaseReader, hash common.Hash) *modules.Unit {
-	unit_bytes, err := db.Get(append(UNIT_PREFIX, hash.Bytes()...))
+	// 1. get chainindex
+	height, err := GetUnitNumber(db, hash)
 	if err != nil {
-		log.Println(err)
+		log.Println("Getunit when get unitNumber failed , error:", err)
 		return nil
 	}
-	unit := new(modules.Unit)
-	json.Unmarshal(unit_bytes, unit)
+	// 2. unit header
+	uHeader, err := GetHeader(db, hash, &height)
+	if err != nil {
+		log.Println("Getunit when get header failed , error:", err)
+		return nil
+	}
 
+	// get unit hash
+	uHash := common.Hash{}
+	uHash.SetBytes(hash.Bytes())
+
+	// get transaction list
+	txs, err := GetUnitTransactions(db, uHash)
+	if err != nil {
+		log.Println("Getunit when get transactions failed , error:", err)
+		return nil
+	}
+	// generate unit
+	unit := &modules.Unit{
+		UnitHeader: uHeader,
+		UnitHash:   uHash,
+		Txs:        txs,
+	}
+	unit.UnitSize = unit.Size()
 	return unit
+}
+func GetUnitTransactions(db DatabaseReader, hash common.Hash) (modules.Transactions, error) {
+	txs := modules.Transactions{}
+	txHashList, err := GetBody(hash)
+	if err != nil {
+		return nil, err
+	}
+	// get transaction by tx'hash.
+	for _, txHash := range txHashList {
+		tx, _, _, _ := GetTransaction(txHash)
+		if err != nil {
+			txs = append(txs, tx)
+		}
+	}
+	return txs, nil
 }
 func GetUnitFormIndex(db DatabaseReader, height uint64, asset modules.IDType16) *modules.Unit {
 	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, asset.String(), height)
@@ -146,6 +184,24 @@ func GetHeader(db DatabaseReader, hash common.Hash, index *modules.ChainIndex) (
 		return nil, err
 	}
 	return header, nil
+}
+
+func GetHeaderByHeight(db DatabaseReader, index *modules.ChainIndex) (*modules.Header, error) {
+	encNum := encodeBlockNumber(index.Index)
+	key := append(HEADER_PREFIX, encNum...)
+	key = append(key, index.Bytes()...)
+	data := getprefix(db, key)
+	if data == nil || len(data) <= 0 {
+		return nil, fmt.Errorf("No such height header")
+	}
+	for _, v := range data {
+		header := new(modules.Header)
+		if err := rlp.Decode(bytes.NewReader(v), header); err != nil {
+			return nil, fmt.Errorf("Invalid unit header rlp: %s", err.Error())
+		}
+		return header, nil
+	}
+	return nil, fmt.Errorf("No such height header")
 }
 
 func GetHeaderRlp(db DatabaseReader, hash common.Hash, index uint64) rlp.RawValue {
@@ -213,6 +269,24 @@ func gettrasaction(hash common.Hash) (*modules.Transaction, error) {
 	return tx, nil
 }
 
+func GetContractNoReader(id common.Hash) (*modules.Contract, error) {
+	if common.EmptyHash(id) {
+		return nil, errors.New("the filed not defined")
+	}
+	con_bytes, err := Get(append(CONTRACT_PTEFIX, id[:]...))
+	if err != nil {
+		log.Println("err:", err)
+		return nil, err
+	}
+	contract := new(modules.Contract)
+	err = rlp.DecodeBytes(con_bytes, contract)
+	if err != nil {
+		log.Println("err:", err)
+		return nil, err
+	}
+	return contract, nil
+}
+
 // GetContract can get a Contract by the contract hash
 func GetContract(db DatabaseReader, id common.Hash) (*modules.Contract, error) {
 	if common.EmptyHash(id) {
@@ -236,10 +310,11 @@ func GetContract(db DatabaseReader, id common.Hash) (*modules.Contract, error) {
 获取合约模板
 To get contract template
 */
-func GetContractTpl(templateID string) (version *modules.StateVersion, bytecode []byte, name string, path string) {
+func GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
 	key := fmt.Sprintf("%s%s^*^bytecode",
 		CONTRACT_TPL,
-		templateID)
+		hexutil.Encode(templateID[:]),
+	)
 	data := GetPrefix([]byte(key))
 	if len(data) == 1 {
 		for k, v := range data {
@@ -513,8 +588,8 @@ func GetContractAllState(id string) map[modules.ContractReadSet][]byte {
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */
-func GetTplState(id string, field string) (modules.StateVersion, []byte) {
-	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, id, field)
+func GetTplState(id []byte, field string) (modules.StateVersion, []byte) {
+	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, hexutil.Encode(id[:]), field)
 	if Dbconn == nil {
 		Dbconn = ReNewDbConn(config.DbPath)
 	}

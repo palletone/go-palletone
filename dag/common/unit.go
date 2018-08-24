@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
@@ -139,8 +140,8 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
-	if txspool == nil || mAddr == nil || ks == nil {
+func CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
+	if txpool == nil || mAddr == nil || ks == nil {
 		return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
 	}
 
@@ -160,8 +161,9 @@ func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool, ks *keystore.Key
 	chainIndex := modules.ChainIndex{AssetID: asset.AssertId, IsMain: isMain, Index: index}
 
 	// step3. get transactions from txspool
-	poolTxs, _ := txspool.GetSortedTxs()
+	poolTxs, _ := txpool.GetSortedTxs()
 	// step4. compute minner income: transaction fees + interest
+	//txs := txspool.PoolTxstoTxs(poolTxs)
 	fees, err := ComputeFees(poolTxs)
 	if err != nil {
 		log.Error(err.Error())
@@ -176,7 +178,8 @@ func CreateUnit(mAddr *common.Address, txspool *txspool.TxPool, ks *keystore.Key
 	txs := modules.Transactions{coinbase}
 	if len(poolTxs) > 0 {
 		for _, tx := range poolTxs {
-			txs = append(txs, tx)
+			t := txspool.PooltxToTx(tx)
+			txs = append(txs, t)
 		}
 	}
 
@@ -331,7 +334,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	// step1. check unit signature, should be compare to mediator list
 	if err := ValidateUnitSignature(unit.UnitHeader, isGenesis); err != nil {
 		log.Info("Validate unit signature", "error", err.Error())
-		return err
+		//return err
 	}
 
 	// step2. check unit size
@@ -342,7 +345,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	// step3. check transactions in unit
 	_, isSuccess, err := ValidateTransactions(&unit.Txs, isGenesis)
 	if isSuccess != true {
-		return fmt.Errorf("Validate unit(%s) transactions failed: %v", err)
+		return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	}
 	if storage.Dbconn == nil {
 		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
@@ -559,13 +562,13 @@ func saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Mes
 		return false
 	}
 	// step3. save contract template name, path, Memery
-	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.String(), "tplname", payload.Name, version) {
+	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.Bytes(), "tplname", payload.Name, version) {
 		return false
 	}
-	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.String(), "tplpath", payload.Path, version) {
+	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.Bytes(), "tplpath", payload.Path, version) {
 		return false
 	}
-	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.String(), "tplmemory", payload.Memery, version) {
+	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.Bytes(), "tplmemory", payload.Memery, version) {
 		return false
 	}
 	return true
@@ -612,8 +615,7 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 	coinbase := modules.Transaction{
 		TxMessages: []modules.Message{msg},
 	}
-
-	coinbase.CreationDate = coinbase.CreateDate()
+	// coinbase.CreationDate = coinbase.CreateDate()
 	coinbase.TxHash = coinbase.Hash()
 
 	return &coinbase, nil
@@ -623,10 +625,10 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 删除合约状态
 To delete contract state
 */
-func deleteContractState(contractID string, field string) {
+func deleteContractState(contractID []byte, field string) {
 	oldKeyPrefix := fmt.Sprintf("%s%s^*^%s",
 		storage.CONTRACT_STATE_PREFIX,
-		contractID,
+		hexutil.Encode(contractID[:]),
 		field)
 	data := storage.GetPrefix([]byte(oldKeyPrefix))
 	for k := range data {
@@ -661,7 +663,7 @@ func SignTransaction(txHash common.Hash, addr *common.Address, ks *keystore.KeyS
 保存contract state
 To save contract state
 */
-func updateState(contractID string, key string, version modules.StateVersion, val interface{}) bool {
+func updateState(contractID []byte, key string, version modules.StateVersion, val interface{}) bool {
 	delState, isDel := val.(modules.DelContractState)
 	if isDel {
 		if delState.IsDelete == false {
@@ -676,10 +678,9 @@ func updateState(contractID string, key string, version modules.StateVersion, va
 		// insert new state
 		key := fmt.Sprintf("%s%s^*^%s^*^%s",
 			storage.CONTRACT_STATE_PREFIX,
-			contractID,
+			hexutil.Encode(contractID[:]),
 			key,
 			version.String())
-		fmt.Println(">>>>>  key:", key)
 		if err := storage.Store(storage.Dbconn, key, val); err != nil {
 			log.Error("Save state", "error", err.Error())
 			return false

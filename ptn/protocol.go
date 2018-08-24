@@ -99,7 +99,7 @@ type txPool interface {
 
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.
-	Pending() (map[common.Address]modules.Transactions, error)
+	Pending() (map[common.Hash]*modules.TxPoolTransaction, error)
 
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.

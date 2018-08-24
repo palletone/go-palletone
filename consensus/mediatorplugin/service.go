@@ -178,7 +178,7 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	}
 
 	mp.suite = edwards25519.NewBlakeSHA256Ed25519()
-	mp.partSec, mp.partPub = genPair(mp.suite)
+	//	mp.partSec, mp.partPub = genPair(mp.suite)
 	mp.dkg = nil //dkg.NewDistKeyGenerator(mp.suite, mp.partSec, partPubs, nbParticipants/2+1)
 
 	log.Debug("mediator plugin initialize end")

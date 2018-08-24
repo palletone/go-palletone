@@ -101,14 +101,18 @@ func (d *Dag) GetUnitByNumber(number uint64) *modules.Unit {
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
-	unit := d.CurrentUnit()
-	if unit != nil {
-		return unit.Header()
+	height := d.GetUnitNumber(hash)
+	// get unit header
+	uHeader, err := storage.GetHeader(d.Db, hash, &height)
+	if err != nil {
+		log.Error("Current unit when get unit header", "error", err.Error())
+		return nil
 	}
-	return nil
+	return uHeader
 }
 
 func (d *Dag) GetHeaderByNumber(number uint64) *modules.Header {
+	// TODO  should call storage.GetHeaderByHeight(..)
 	unit := d.CurrentUnit()
 	if unit != nil {
 		return unit.Header()

@@ -29,6 +29,7 @@ import (
 
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -79,7 +80,7 @@ func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 }
 
 func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	return b.ptn.txPool.AddLocal(signedTx)
+	return b.ptn.txPool.AddLocal(txspool.TxtoTxpoolTx(b.ptn.txPool, signedTx))
 }
 
 func (b *PtnApiBackend) GetPoolTransactions() (modules.Transactions, error) {
@@ -89,13 +90,13 @@ func (b *PtnApiBackend) GetPoolTransactions() (modules.Transactions, error) {
 	}
 	var txs modules.Transactions
 	for _, batch := range pending {
-		txs = append(txs, batch...)
+		txs = append(txs, txspool.PooltxToTx(batch))
 	}
 	return txs, nil
 }
 
 func (b *PtnApiBackend) GetPoolTransaction(hash common.Hash) *modules.Transaction {
-	return b.ptn.txPool.Get(hash)
+	return txspool.PooltxToTx(b.ptn.txPool.Get(hash))
 }
 
 //func (b *PtnApiBackend) GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error) {
@@ -106,7 +107,7 @@ func (b *PtnApiBackend) Stats() (pending int, queued int) {
 	return b.ptn.txPool.Stats()
 }
 
-func (b *PtnApiBackend) TxPoolContent() (map[common.Address]modules.Transactions, map[common.Address]modules.Transactions) {
+func (b *PtnApiBackend) TxPoolContent() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
 	return b.ptn.TxPool().Content()
 }
 

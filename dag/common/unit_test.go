@@ -98,13 +98,13 @@ func TestSaveUnit(t *testing.T) {
 	}
 	deployPayload := modules.ContractDeployPayload{
 		TemplateId: common.HexToHash("contract_template0000"),
-		ContractId: "contract0000",
+		ContractId: []byte("contract0000"),
 		ReadSet:    readSet,
 		WriteSet:   writeSet,
 	}
 
 	invokePayload := modules.ContractInvokePayload{
-		ContractId: "contract0000",
+		ContractId: []byte("contract0000"),
 		Args:       [][]byte{[]byte("initial")},
 		ReadSet:    readSet,
 		WriteSet: []modules.PayloadMapStruct{
@@ -128,7 +128,6 @@ func TestSaveUnit(t *testing.T) {
 			},
 		},
 	}
-	tx1.CreationDate = tx1.CreateDate()
 	tx1.TxHash = tx1.Hash()
 
 	tx2 := modules.Transaction{
@@ -139,7 +138,6 @@ func TestSaveUnit(t *testing.T) {
 			},
 		},
 	}
-	tx2.CreationDate = tx2.CreateDate()
 	tx2.TxHash = tx2.Hash()
 
 	tx3 := modules.Transaction{
@@ -149,7 +147,6 @@ func TestSaveUnit(t *testing.T) {
 				Payload: invokePayload,
 			},
 		}}
-	tx3.CreationDate = tx3.CreateDate()
 	tx3.TxHash = tx3.Hash()
 
 	txs := modules.Transactions{}

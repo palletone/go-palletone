@@ -52,27 +52,27 @@ func (h *nonceHeap) Pop() interface{} {
 // txSortedMap is a nonce->transaction hash map with a heap based index to allow
 // iterating over the contents in a nonce-incrementing way.
 type txSortedMap struct {
-	items map[uint64]*modules.Transaction // Hash map storing the transaction data
-	index *nonceHeap                      // Heap of nonces of all the stored transactions (non-strict mode)
-	cache modules.Transactions            // Cache of the transactions already sorted
+	items map[uint64]*modules.TxPoolTransaction // Hash map storing the transaction data
+	index *nonceHeap                            // Heap of nonces of all the stored transactions (non-strict mode)
+	cache modules.TxPoolTxs                     // Cache of the transactions already sorted
 }
 
 // newTxSortedMap creates a new nonce-sorted transaction map.
 func newTxSortedMap() *txSortedMap {
 	return &txSortedMap{
-		items: make(map[uint64]*modules.Transaction),
+		items: make(map[uint64]*modules.TxPoolTransaction),
 		index: new(nonceHeap),
 	}
 }
 
 // Get retrieves the current transactions associated with the given nonce.
-func (m *txSortedMap) Get(nonce uint64) *modules.Transaction {
+func (m *txSortedMap) Get(nonce uint64) *modules.TxPoolTransaction {
 	return m.items[nonce]
 }
-func (m *txSortedMap) GetNonce(addr common.Address) uint64 {
+func (m *txSortedMap) GetNonce(hash common.Hash) uint64 {
 	if m.items != nil {
 		for key, v := range m.items {
-			if modules.RSVtoAddress(v) == addr {
+			if v.TxHash == hash {
 				return key
 			}
 		}
@@ -82,8 +82,8 @@ func (m *txSortedMap) GetNonce(addr common.Address) uint64 {
 
 // Put inserts a new transaction into the map, also updating the map's nonce
 // index. If a transaction already exists with the same nonce, it's overwritten.
-func (m *txSortedMap) Put(tx *modules.Transaction) {
-	nonce := tx.Nonce()
+func (m *txSortedMap) Put(tx *modules.TxPoolTransaction) {
+	nonce := tx.Nonce
 	if m.items[nonce] == nil {
 		heap.Push(m.index, nonce)
 	}
@@ -93,8 +93,8 @@ func (m *txSortedMap) Put(tx *modules.Transaction) {
 // Forward removes all transactions from the map with a nonce lower than the
 // provided threshold. Every removed transaction is returned for any post-removal
 // maintenance.
-func (m *txSortedMap) Forward(threshold uint64) modules.Transactions {
-	var removed modules.Transactions
+func (m *txSortedMap) Forward(threshold uint64) modules.TxPoolTxs {
+	var removed modules.TxPoolTxs
 
 	// Pop off heap items until the threshold is reached
 	for m.index.Len() > 0 && (*m.index)[0] < threshold {
@@ -111,8 +111,8 @@ func (m *txSortedMap) Forward(threshold uint64) modules.Transactions {
 
 // Filter iterates over the list of transactions and removes all of them for which
 // the specified function evaluates to true.
-func (m *txSortedMap) Filter(filter func(*modules.Transaction) bool) modules.Transactions {
-	var removed modules.Transactions
+func (m *txSortedMap) Filter(filter func(*modules.TxPoolTransaction) bool) modules.TxPoolTxs {
+	var removed modules.TxPoolTxs
 
 	// Collect all the transactions to filter out
 	for nonce, tx := range m.items {
@@ -136,13 +136,13 @@ func (m *txSortedMap) Filter(filter func(*modules.Transaction) bool) modules.Tra
 
 // Cap places a hard limit on the number of items, returning all transactions
 // exceeding that limit.
-func (m *txSortedMap) Cap(threshold int) modules.Transactions {
+func (m *txSortedMap) Cap(threshold int) modules.TxPoolTxs {
 	// Short circuit if the number of items is under the limit
 	if len(m.items) <= threshold {
 		return nil
 	}
 	// Otherwise gather and drop the highest nonce'd transactions
-	var drops modules.Transactions
+	var drops modules.TxPoolTxs
 
 	sort.Sort(*m.index)
 	for size := len(m.items); size > threshold; size-- {
@@ -187,13 +187,13 @@ func (m *txSortedMap) Remove(nonce uint64) bool {
 // Note, all transactions with nonces lower than start will also be returned to
 // prevent getting into and invalid state. This is not something that should ever
 // happen but better to be self correcting than failing!
-func (m *txSortedMap) Ready(start uint64) modules.Transactions {
+func (m *txSortedMap) Ready(start uint64) modules.TxPoolTxs {
 	// Short circuit if no transactions are available
 	if m.index.Len() == 0 || (*m.index)[0] > start {
 		return nil
 	}
 	// Otherwise start accumulating incremental transactions
-	var ready modules.Transactions
+	var ready modules.TxPoolTxs
 	for next := (*m.index)[0]; m.index.Len() > 0 && (*m.index)[0] == next; next++ {
 		ready = append(ready, m.items[next])
 		delete(m.items, next)
@@ -212,17 +212,17 @@ func (m *txSortedMap) Len() int {
 // Flatten creates a nonce-sorted slice of transactions based on the loosely
 // sorted internal representation. The result of the sorting is cached in case
 // it's requested again before any modifications are made to the contents.
-func (m *txSortedMap) Flatten() modules.Transactions {
+func (m *txSortedMap) Flatten() modules.TxPoolTxs {
 	// If the sorting was not cached yet, create and cache it
 	if m.cache == nil {
-		m.cache = make(modules.Transactions, 0, len(m.items))
+		m.cache = make(modules.TxPoolTxs, 0, len(m.items))
 		for _, tx := range m.items {
 			m.cache = append(m.cache, tx)
 		}
 		sort.Sort(modules.TxByPriority(m.cache))
 	}
 	// Copy the cache to prevent accidental modifications
-	txs := make(modules.Transactions, len(m.cache))
+	txs := make(modules.TxPoolTxs, len(m.cache))
 	copy(txs, m.cache)
 	return txs
 }
@@ -248,14 +248,14 @@ func newTxList(strict bool) *txList {
 		costcap: new(big.Int),
 	}
 }
-func (l *txList) GetNonce(addr common.Address) uint64 {
-	return l.txs.GetNonce(addr)
+func (l *txList) GetNonce(hash common.Hash) uint64 {
+	return l.txs.GetNonce(hash)
 }
 
 // Overlaps returns whether the transaction specified has the same nonce as one
 // already contained within the list.
-func (l *txList) Overlaps(tx *modules.Transaction) bool {
-	return l.txs.Get(tx.Nonce()) != nil
+func (l *txList) Overlaps(tx *modules.TxPoolTransaction) bool {
+	return l.txs.Get(tx.Nonce) != nil
 }
 
 // Add tries to insert a new transaction into the list, returning whether the
@@ -263,9 +263,9 @@ func (l *txList) Overlaps(tx *modules.Transaction) bool {
 //
 // If the new transaction is accepted into the list, the lists' cost and gas
 // thresholds are also potentially updated.
-func (l *txList) Add(tx *modules.Transaction, priceBump uint64) (bool, *modules.Transaction) {
+func (l *txList) Add(tx *modules.TxPoolTransaction, priceBump uint64) (bool, *modules.TxPoolTransaction) {
 	// If there's an older better transaction, abort
-	old := l.txs.Get(tx.Nonce())
+	old := l.txs.Get(tx.Nonce)
 	if old != nil {
 		//threshold := new(big.Int).Div(new(big.Int).Mul(old.Price(), big.NewInt(100+int64(priceBump))), big.NewInt(100))
 		// Have to ensure that the new gas price is higher than the old gas
@@ -289,7 +289,7 @@ func (l *txList) Add(tx *modules.Transaction, priceBump uint64) (bool, *modules.
 // Forward removes all transactions from the list with a nonce lower than the
 // provided threshold. Every removed transaction is returned for any post-removal
 // maintenance.
-func (l *txList) Forward(threshold uint64) modules.Transactions {
+func (l *txList) Forward(threshold uint64) modules.TxPoolTxs {
 	return l.txs.Forward(threshold)
 }
 
@@ -302,7 +302,7 @@ func (l *txList) Forward(threshold uint64) modules.Transactions {
 // a point in calculating all the costs or if the balance covers all. If the threshold
 // is lower than the costgas cap, the caps will be reset to a new high after removing
 // the newly invalidated transactions.
-func (l *txList) Filter(costLimit *big.Int) (modules.Transactions, modules.Transactions) {
+func (l *txList) Filter(costLimit *big.Int) (modules.TxPoolTxs, modules.TxPoolTxs) {
 	// If all transactions are below the threshold, short circuit
 	if l.costcap.Cmp(costLimit) <= 0 {
 		return nil, nil
@@ -311,41 +311,41 @@ func (l *txList) Filter(costLimit *big.Int) (modules.Transactions, modules.Trans
 	//l.gascap = gasLimit
 
 	// Filter out all the transactions above the account's funds
-	removed := l.txs.Filter(func(tx *modules.Transaction) bool { return tx.Cost().Cmp(costLimit) > 0 })
+	removed := l.txs.Filter(func(tx *modules.TxPoolTransaction) bool { return tx.Cost().Cmp(costLimit) > 0 })
 
 	// If the list was strict, filter anything above the lowest nonce
-	var invalids modules.Transactions
+	var invalids modules.TxPoolTxs
 
 	if l.strict && len(removed) > 0 {
 		lowest := uint64(math.MaxUint64)
 		for _, tx := range removed {
-			if nonce := tx.Nonce(); lowest > nonce {
+			if nonce := tx.Nonce; lowest > nonce {
 				lowest = nonce
 			}
 		}
-		invalids = l.txs.Filter(func(tx *modules.Transaction) bool { return tx.Nonce() > lowest })
+		invalids = l.txs.Filter(func(tx *modules.TxPoolTransaction) bool { return tx.Nonce > lowest })
 	}
 	return removed, invalids
 }
 
 // Cap places a hard limit on the number of items, returning all transactions
 // exceeding that limit.
-func (l *txList) Cap(threshold int) modules.Transactions {
+func (l *txList) Cap(threshold int) modules.TxPoolTxs {
 	return l.txs.Cap(threshold)
 }
 
 // Remove deletes a transaction from the maintained list, returning whether the
 // transaction was found, and also returning any transaction invalidated due to
 // the deletion (strict mode only).
-func (l *txList) Remove(tx *modules.Transaction) (bool, modules.Transactions) {
+func (l *txList) Remove(tx *modules.TxPoolTransaction) (bool, modules.TxPoolTxs) {
 	// Remove the transaction from the set
-	nonce := tx.Nonce()
+	nonce := tx.Nonce
 	if removed := l.txs.Remove(nonce); !removed {
 		return false, nil
 	}
 	// In strict mode, filter out non-executable transactions
 	if l.strict {
-		return true, l.txs.Filter(func(tx *modules.Transaction) bool { return tx.Nonce() > nonce })
+		return true, l.txs.Filter(func(tx *modules.TxPoolTransaction) bool { return tx.Nonce > nonce })
 	}
 	return true, nil
 }
@@ -357,7 +357,7 @@ func (l *txList) Remove(tx *modules.Transaction) (bool, modules.Transactions) {
 // // Note, all transactions with nonces lower than start will also be returned to
 // // prevent getting into and invalid state. This is not something that should ever
 // // happen but better to be self correcting than failing!
-// func (l *txList) Ready(start uint64) modules.Transactions {
+// func (l *txList) Ready(start uint64) modules.TxPoolTxs {
 // 	return l.txs.Ready(start)
 // }
 
@@ -374,20 +374,20 @@ func (l *txList) Empty() bool {
 // // Flatten creates a nonce-sorted slice of transactions based on the loosely
 // // sorted internal representation. The result of the sorting is cached in case
 // // it's requested again before any modifications are made to the contents.
-func (l *txList) Flatten() modules.Transactions {
+func (l *txList) Flatten() modules.TxPoolTxs {
 	return l.txs.Flatten()
 }
 
 // priceHeap is a heap.Interface implementation over transactions for retrieving
 // price-sorted transactions to discard when the pool fills up.
-type priceHeap []*modules.Transaction
+type priceHeap []*modules.TxPoolTransaction
 
 func (h priceHeap) Len() int           { return len(h) }
 func (h priceHeap) Less(i, j int) bool { return h[i].Fee().Cmp(h[j].Fee()) < 0 }
 func (h priceHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
 
 func (h *priceHeap) Push(x interface{}) {
-	*h = append(*h, x.(*modules.Transaction))
+	*h = append(*h, x.(*modules.TxPoolTransaction))
 }
 
 func (h *priceHeap) Pop() interface{} {
@@ -398,16 +398,35 @@ func (h *priceHeap) Pop() interface{} {
 	return x
 }
 
+type priorityHeap []*modules.TxPoolTransaction
+
+func (h priorityHeap) Len() int           { return len(h) }
+func (h priorityHeap) Less(i, j int) bool { return h[i].Priority_lvl < h[j].Priority_lvl }
+func (h priorityHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *priorityHeap) Push(x interface{}) {
+	*h = append(*h, x.(*modules.TxPoolTransaction))
+}
+
+func (h *priorityHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
+}
+
 // txPricedList is a price-sorted heap to allow operating on transactions pool
 // contents in a price-incrementing way.
 type txPricedList struct {
-	all    *map[common.Hash]*modules.Transaction // Pointer to the map of all transactions
-	items  *priceHeap                            // Heap of prices of all the stored transactions
-	stales int                                   // Number of stale price points to (re-heap trigger)
+	all        *map[common.Hash]*modules.TxPoolTransaction // Pointer to the map of all transactions
+	items      *priceHeap                                  // Heap of prices of all the stored transactions
+	prio_items *priorityHeap
+	stales     int // Number of stale price points to (re-heap trigger)
 }
 
 // newTxPricedList creates a new price-sorted transaction heap.
-func newTxPricedList(all *map[common.Hash]*modules.Transaction) *txPricedList {
+func newTxPricedList(all *map[common.Hash]*modules.TxPoolTransaction) *txPricedList {
 	return &txPricedList{
 		all:   all,
 		items: new(priceHeap),
@@ -415,7 +434,7 @@ func newTxPricedList(all *map[common.Hash]*modules.Transaction) *txPricedList {
 }
 
 // Put inserts a new transaction into the heap.
-func (l *txPricedList) Put(tx *modules.Transaction) *priceHeap {
+func (l *txPricedList) Put(tx *modules.TxPoolTransaction) *priceHeap {
 	heap.Push(l.items, tx)
 
 	return l.items
@@ -442,13 +461,13 @@ func (l *txPricedList) Removed() {
 
 // Cap finds all the transactions below the given price threshold, drops them
 // from the priced list and returs them for further removal from the entire pool.
-func (l *txPricedList) Cap(threshold *big.Int, local *accountSet) modules.Transactions {
-	drop := make(modules.Transactions, 0, 128) // Remote underpriced transactions to drop
-	save := make(modules.Transactions, 0, 64)  // Local underpriced transactions to keep
+func (l *txPricedList) Cap(threshold *big.Int, local *accountSet) modules.TxPoolTxs {
+	drop := make(modules.TxPoolTxs, 0, 128) // Remote underpriced transactions to drop
+	save := make(modules.TxPoolTxs, 0, 64)  // Local underpriced transactions to keep
 
 	for len(*l.items) > 0 {
 		// Discard stale transactions if found during cleanup
-		tx := heap.Pop(l.items).(*modules.Transaction)
+		tx := heap.Pop(l.items).(*modules.TxPoolTransaction)
 		if _, ok := (*l.all)[tx.Hash()]; !ok {
 			l.stales--
 			continue
@@ -473,14 +492,14 @@ func (l *txPricedList) Cap(threshold *big.Int, local *accountSet) modules.Transa
 
 // Underpriced checks whether a transaction is cheaper than (or as cheap as) the
 // lowest priced transaction currently being tracked.
-func (l *txPricedList) Underpriced(tx *modules.Transaction, local *accountSet) bool {
+func (l *txPricedList) Underpriced(tx *modules.TxPoolTransaction, local *accountSet) bool {
 	// Local transactions cannot be underpriced
 	if local.containsTx(tx) {
 		return false
 	}
 	// Discard stale price points if found at the heap start
 	for len(*l.items) > 0 {
-		head := []*modules.Transaction(*l.items)[0]
+		head := []*modules.TxPoolTransaction(*l.items)[0]
 		if _, ok := (*l.all)[head.TxHash]; !ok {
 			l.stales--
 			heap.Pop(l.items)
@@ -493,19 +512,19 @@ func (l *txPricedList) Underpriced(tx *modules.Transaction, local *accountSet) b
 		log.Error("Pricing query for empty pool") // This cannot happen, print to catch programming errors
 		return false
 	}
-	cheapest := []*modules.Transaction(*l.items)[0]
+	cheapest := []*modules.TxPoolTransaction(*l.items)[0]
 	return cheapest.Fee().Cmp(tx.Fee()) >= 0
 }
 
 // Discard finds a number of most underpriced transactions, removes them from the
 // priced list and returns them for further removal from the entire pool.
-func (l *txPricedList) Discard(count int, local *accountSet) modules.Transactions {
-	drop := make(modules.Transactions, 0, count) // Remote underpriced transactions to drop
-	save := make(modules.Transactions, 0, 64)    // Local underpriced transactions to keep
+func (l *txPricedList) Discard(count int, local *accountSet) modules.TxPoolTxs {
+	drop := make(modules.TxPoolTxs, 0, count) // Remote underpriced transactions to drop
+	save := make(modules.TxPoolTxs, 0, 64)    // Local underpriced transactions to keep
 
 	for len(*l.items) > 0 && count > 0 {
 		// Discard stale transactions if found during cleanup
-		tx := heap.Pop(l.items).(*modules.Transaction)
+		tx := heap.Pop(l.items).(*modules.TxPoolTransaction)
 		if _, ok := (*l.all)[tx.Hash()]; !ok {
 			l.stales--
 			continue
