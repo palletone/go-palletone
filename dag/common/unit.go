@@ -554,7 +554,7 @@ func saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Mes
 	// key:[CONTRACT_TPL][Template id]_bytecode_[template version]
 	key := fmt.Sprintf("%s%s^*^bytecode^*^%s",
 		storage.CONTRACT_TPL,
-		payload.TemplateId.String(),
+		hexutil.Encode(payload.TemplateId[:]),
 		version.String())
 
 	if err := storage.Store(storage.Dbconn, key, payload.Bytecode); err != nil {
@@ -562,13 +562,13 @@ func saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Mes
 		return false
 	}
 	// step3. save contract template name, path, Memery
-	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.Bytes(), "tplname", payload.Name, version) {
+	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId, "tplname", payload.Name, version) {
 		return false
 	}
-	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.Bytes(), "tplpath", payload.Path, version) {
+	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId, "tplpath", payload.Path, version) {
 		return false
 	}
-	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId.Bytes(), "tplmemory", payload.Memery, version) {
+	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId, "tplmemory", payload.Memery, version) {
 		return false
 	}
 	return true

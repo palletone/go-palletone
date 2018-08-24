@@ -104,7 +104,7 @@ func TestGetContractState(t *testing.T) {
 	version, value := GetContractState("contract0000", "name")
 	log.Println(version)
 	log.Println(value)
-	data := GetContractAllState("contract0000")
+	data := GetContractAllState([]byte("contract0000"))
 	for k, v := range data {
 		log.Println(k, v)
 	}
