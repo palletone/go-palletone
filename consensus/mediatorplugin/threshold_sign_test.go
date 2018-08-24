@@ -46,6 +46,7 @@ var dkgs []*dkg.DistKeyGenerator
 func init() {
 	partPubs = make([]kyber.Point, nbParticipants)
 	partSec = make([]kyber.Scalar, nbParticipants)
+
 	for i := 0; i < nbParticipants; i++ {
 		sec, pub := genPair()
 		partSec[i] = sec
@@ -53,7 +54,8 @@ func init() {
 
 		fmt.Printf("Key[%d] priv: %s, pub %s\n", i, sec.String(), pub.String())
 	}
-	dkgs = dkgGen()
+
+//	dkgs = dkgGen()
 }
 
 func genPair() (kyber.Scalar, kyber.Point) {
@@ -74,7 +76,8 @@ func dkgGen() []*dkg.DistKeyGenerator {
 }
 
 func fullExchange(t *testing.T) {
-//	dkgs = dkgGen()
+	dkgs = dkgGen()
+
 	// full secret sharing exchange
 	// 1. broadcast deals
 	resps := make([]*dkg.Response, 0, nbParticipants*nbParticipants)
@@ -88,6 +91,7 @@ func fullExchange(t *testing.T) {
 			resps = append(resps, resp)
 		}
 	}
+
 	// 2. Broadcast responses
 	for _, resp := range resps {
 		for i, dkg := range dkgs {
@@ -108,12 +112,16 @@ func TestTBLS(t *testing.T) {
 	msg := []byte("Hello DKG, VSS, TBLS and BLS!")
 
 	sigShares := make([][]byte, 0)
-	for _, d := range dkgs {
+	for i, d := range dkgs {
 		dks, err := d.DistKeyShare()
 		assert.Nil(t, err)
 		sig, err := tbls.Sign(suite, dks.PriShare(), msg)
 		require.Nil(t, err)
 		sigShares = append(sigShares, sig)
+
+		if i == 14 {
+			break
+		}
 	}
 
 	dkg := dkgs[0]
@@ -136,4 +144,6 @@ func TestTBLS(t *testing.T) {
 
 	err = bls.Verify(suite, dks2.Public(), msg, sig)
 	assert.Nil(t, err)
+
+	require.NotEqual(t, dks.Public(), dks2.Public())
 }
