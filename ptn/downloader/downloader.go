@@ -425,16 +425,21 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	// Look up the sync boundaries: the common ancestor and the target block
 	latest, err := d.fetchHeight(p, assetId)
 	if err != nil {
+		if err == errPeersUnavailable {
+			log.Info("==========fetchHeight return==============")
+			return nil
+		}
 		log.Info("fetchHeight", "err:", err)
 		return err
 	}
 
 	height := latest.Number.Index
-	//origin := height
+	log.Info("=====fetchHeight=====", "latest height:", height)
 	origin, err := d.findAncestor(p, latest, assetId)
 	if err != nil {
 		return err
 	}
+	log.Info("=====fetchHeight=====", "origin:", origin)
 
 	d.syncStatsLock.Lock()
 	if d.syncStatsChainHeight <= origin || d.syncStatsChainOrigin > origin {
@@ -564,6 +569,10 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*
 
 	// Request the advertised remote head block and wait for the response
 	head, _ := p.peer.Head(assetId)
+	if common.EmptyHash(head) {
+		return nil, errPeersUnavailable
+	}
+	log.Debug("===fetchHeight===", "head:", head)
 	go p.peer.RequestHeadersByHash(head, 1, 0, false)
 
 	ttl := d.requestTTL()
@@ -1580,6 +1589,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	if count > limit {
 		count = limit
 	}
+	log.Debug("===findAncestor===", "RequestHeadersByNumber from", from, "count", count)
 	go p.peer.RequestHeadersByNumber(uint64(from), count, 15, false)
 
 	// Wait for the remote response to the head fetch

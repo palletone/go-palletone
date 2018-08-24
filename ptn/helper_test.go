@@ -99,6 +99,7 @@ func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks i
 	return pm, db
 }
 
+
 // testTxPool is a fake, helper transaction pool for testing purposes
 type testTxPool struct {
 	txFeed event.Feed
@@ -121,23 +122,24 @@ func (p *testTxPool) AddRemotes(txs []*modules.Transaction) []error {
 	return make([]error, len(txs))
 }
 
+
 // Pending returns all the transactions known to the pool
-func (p *testTxPool) Pending() (map[common.Address]modules.Transactions, error) {
+func (p *testTxPool) Pending() (map[common.Hash]*modules.TxPoolTransaction, error) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	batches := make(map[common.Address]modules.Transactions)
+	batches := make(map[common.Hash]*modules.TxPoolTransaction)
 	//for _, tx := range p.pool {
-	//	from, _ := types.Sender(types.HomesteadSigner{}, tx)
-	//	batches[from] = append(batches[from], tx)
+	// from, _ := types.Sender(types.HomesteadSigner{}, tx)
+	// batches[from] = append(batches[from], tx)
 	//}
 	//for _, batch := range batches {
-	//	sort.Sort(types.TxByNonce(batch))
+	// sort.Sort(types.TxByNonce(batch))
 	//}
 	return batches, nil
 }
 
-func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
+func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription{
 	return p.txFeed.Subscribe(ch)
 }
 
