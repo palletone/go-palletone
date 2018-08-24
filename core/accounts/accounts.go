@@ -22,8 +22,8 @@ import (
 
 	ethereum "github.com/palletone/go-palletone"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // Account represents an PalletOne account located at a specific location defined

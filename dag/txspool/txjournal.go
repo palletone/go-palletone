@@ -58,7 +58,7 @@ func newTxJournal(path string) *txJournal {
 
 // load parses a transaction journal dump from disk, loading its contents into
 // the specified pool.
-func (journal *txJournal) load(add func(*modules.Transaction) error) error {
+func (journal *txJournal) load(add func(*modules.TxPoolTransaction) error) error {
 	// Skip the parsing if the journal file doens't exist at all
 	if _, err := os.Stat(journal.path); os.IsNotExist(err) {
 		return nil
@@ -81,7 +81,7 @@ func (journal *txJournal) load(add func(*modules.Transaction) error) error {
 	var failure error
 	for {
 		// Parse the next transaction and terminate on error
-		tx := new(modules.Transaction)
+		tx := new(modules.TxPoolTransaction)
 		if err = stream.Decode(tx); err != nil {
 			if err != io.EOF {
 				failure = err
@@ -102,7 +102,7 @@ func (journal *txJournal) load(add func(*modules.Transaction) error) error {
 }
 
 // insert adds the specified transaction to the local disk journal.
-func (journal *txJournal) insert(tx *modules.Transaction) error {
+func (journal *txJournal) insert(tx *modules.TxPoolTransaction) error {
 	if journal.writer == nil {
 		return errNoActiveJournal
 	}
@@ -114,7 +114,7 @@ func (journal *txJournal) insert(tx *modules.Transaction) error {
 
 // rotate regenerates the transaction journal based on the current contents of
 // the transaction pool.
-func (journal *txJournal) rotate(all map[common.Address]modules.Transactions) error {
+func (journal *txJournal) rotate(all map[common.Hash]*modules.TxPoolTransaction) error {
 	// Close the current journal (if any is open)
 	if journal.writer != nil {
 		if err := journal.writer.Close(); err != nil {
@@ -128,14 +128,12 @@ func (journal *txJournal) rotate(all map[common.Address]modules.Transactions) er
 		return err
 	}
 	journaled := 0
-	for _, txs := range all {
-		for _, tx := range txs {
-			if err = rlp.Encode(replacement, tx); err != nil {
-				replacement.Close()
-				return err
-			}
+	for _, tx := range all {
+		if err = rlp.Encode(replacement, tx); err != nil {
+			replacement.Close()
+			return err
 		}
-		journaled += len(txs)
+		journaled += 1
 	}
 	replacement.Close()
 
@@ -156,7 +154,6 @@ func (journal *txJournal) rotate(all map[common.Address]modules.Transactions) er
 // close flushes the transaction journal contents to disk and closes the file.
 func (journal *txJournal) close() error {
 	var err error
-
 	if journal.writer != nil {
 		err = journal.writer.Close()
 		journal.writer = nil

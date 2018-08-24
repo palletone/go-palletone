@@ -156,10 +156,9 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	}
 	// step3, genesis transaction
 	tx := &modules.Transaction{
-		AccountNonce: 1,
-		TxMessages:   []modules.Message{msg0, msg1},
+		TxMessages: []modules.Message{msg0, msg1},
 	}
-	tx.CreationDate = tx.CreateDate()
+	// tx.CreationDate = tx.CreateDate()
 	tx.TxHash = tx.Hash()
 
 	txs := []*modules.Transaction{tx}

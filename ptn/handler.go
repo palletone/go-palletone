@@ -704,6 +704,7 @@ func (self *ProtocolManager) txBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.txCh:
+
 			self.BroadcastTx(event.Tx.Hash(), event.Tx)
 
 		// Err() channel will be closed when unsubscribing.
@@ -819,8 +820,7 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 		Payload: pay,
 	}
 	tx := &modules.Transaction{
-		AccountNonce: nonce,
-		TxMessages:   []modules.Message{msg0},
+		TxMessages: []modules.Message{msg0},
 	}
 	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
 	if err != nil {

@@ -61,7 +61,7 @@ type Backend interface {
 	GetPoolTransaction(txHash common.Hash) *modules.Transaction
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
 	Stats() (pending int, queued int)
-	TxPoolContent() (map[common.Address]modules.Transactions, map[common.Address]modules.Transactions)
+	TxPoolContent() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 
 	//ChainConfig() *configure.ChainConfig
