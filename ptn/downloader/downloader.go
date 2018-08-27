@@ -1589,7 +1589,8 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	}
 	from := int64(head) - int64(MaxHeaderFetch)
 	if from < 0 {
-		from = 0
+		//from = 0
+		from = 1
 	}
 	// Span out with 15 block gaps into the future to catch bad head reports
 	limit := 2 * MaxHeaderFetch / 16

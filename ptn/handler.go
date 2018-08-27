@@ -375,12 +375,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		hashMode := query.Origin.Hash != (common.Hash{})
 
-		//adaptor   query.Origin.Number modules.ChainIndexA to modules.ChainIndex
-		//		srcNumber := modules.ChainIndex{}
-		//		srcNumber.AssetID.SetBytes([]byte(query.Origin.Number.AssetID))
-		//		srcNumber.Index = query.Origin.Number.Index
-		//		srcNumber.IsMain = query.Origin.Number.IsMain
-
 		// Gather headers until the fetch or network limits is reached
 		var (
 			bytes   common.StorageSize

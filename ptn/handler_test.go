@@ -103,7 +103,13 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		//}
 		// If the test used number origins, repeat with hashes as the too
 		if tt.query.Origin.Hash == (common.Hash{}) {
-			tt.query.Origin.Hash, tt.query.Origin.Number = common.Hash{}, 0
+			index := modules.ChainIndex{
+				IsMain:  true,
+				Index:   uint64(0),
+			}
+			index.AssetID.SetBytes([]byte("test"))
+
+			tt.query.Origin.Hash, tt.query.Origin.Number = common.Hash{}, index
 			p2p.Send(peer.app, 0x03, tt.query)
 			if err := p2p.ExpectMsg(peer.app, 0x04, headers); err != nil {
 				t.Errorf("test %d: headers mismatch: %v", i, err)
