@@ -80,7 +80,7 @@ type LightPeer interface {
 	//Head() (common.Hash, *big.Int)
 	Head(modules.IDType16) (common.Hash, modules.ChainIndex)
 	RequestHeadersByHash(common.Hash, int, int, bool) error
-	RequestHeadersByNumber(uint64, int, int, bool) error
+	RequestHeadersByNumber(modules.ChainIndex, int, int, bool) error
 	RequestDagHeadersByHash(common.Hash, int, int, bool) error
 	RequestLeafNodes() error
 }
@@ -104,8 +104,8 @@ func (w *lightPeerWrapper) Head(coin modules.IDType16) (common.Hash, modules.Cha
 func (w *lightPeerWrapper) RequestHeadersByHash(h common.Hash, amount int, skip int, reverse bool) error {
 	return w.peer.RequestHeadersByHash(h, amount, skip, reverse)
 }
-func (w *lightPeerWrapper) RequestHeadersByNumber(i uint64, amount int, skip int, reverse bool) error {
-	return w.peer.RequestHeadersByNumber(i, amount, skip, reverse)
+func (w *lightPeerWrapper) RequestHeadersByNumber(index modules.ChainIndex, amount int, skip int, reverse bool) error {
+	return w.peer.RequestHeadersByNumber(index, amount, skip, reverse)
 }
 func (w *lightPeerWrapper) RequestBodies([]common.Hash) error {
 	panic("RequestBodies not supported in light client mode sync")
@@ -157,7 +157,7 @@ func (p *peerConnection) Reset() {
 }
 
 // FetchHeaders sends a header retrieval request to the remote peer.
-func (p *peerConnection) FetchHeaders(from uint64, count int) error {
+func (p *peerConnection) FetchHeaders(from uint64, count int, assetId modules.IDType16) error {
 	// Sanity check the protocol version
 	//if p.version < 62 {
 	if p.version < 0 {
@@ -169,8 +169,14 @@ func (p *peerConnection) FetchHeaders(from uint64, count int) error {
 	}
 	p.headerStarted = time.Now()
 
+	index := modules.ChainIndex{
+		AssetID: assetId,
+		IsMain:  true,
+		Index:   from,
+	}
+
 	// Issue the header retrieval request (absolut upwards without gaps)
-	go p.peer.RequestHeadersByNumber(from, count, 0, false)
+	go p.peer.RequestHeadersByNumber(index, count, 0, false)
 
 	return nil
 }

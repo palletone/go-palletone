@@ -475,13 +475,12 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	}
 
 	fetchers := []func() error{
-		func() error { return d.fetchHeaders(p, origin+1, pivot) }, // Headers are always retrieved
-		func() error { return d.fetchBodies(origin + 1) },          // Bodies are retrieved during normal and fast sync
-		//func() error { return d.fetchReceipts(origin + 1) },        // Receipts are retrieved during fast sync
-		func() error { return d.processHeaders(origin+1, pivot, index) },
+		func() error { return d.fetchHeaders(p, origin+1, pivot, assetId) },
+		func() error { return d.fetchBodies(origin+1, assetId) },
+		func() error { return d.processHeaders(origin+1, pivot, index, assetId) },
 	}
 	if d.mode == FastSync {
-		fetchers = append(fetchers, func() error { return d.processFastSyncContent(latest) })
+		fetchers = append(fetchers, func() error { return d.processFastSyncContent(latest, assetId) })
 	} else if d.mode == FullSync {
 		fetchers = append(fetchers, d.processFullSyncContent)
 	}
@@ -625,7 +624,7 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*
 //我们使用我们正在同步的“origin”peer构造一个头文件链骨架，并使用其他人填充缺失的header。
 //其他peer的header只有在干净地映射到骨架上时才被接受。
 //如果没有人能够填充骨架 - 甚至origin peer也不能填充 - 它被认为是无效的，并且origin peer也被丢弃。
-func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64) error {
+func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, assetId modules.IDType16) error {
 	p.log.Debug("Directing header downloads", "origin", from)
 	defer p.log.Debug("Header download terminated")
 	//log.Info("Downloader->fetchHeaders", "peerConnection.id:", p.id, "from:", from, "pivot:", pivot)
@@ -640,22 +639,29 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64) 
 	defer timeout.Stop()
 
 	var ttl time.Duration
-	getHeaders := func(from uint64) {
+	getHeaders := func(from uint64, assetId modules.IDType16) {
 		request = time.Now()
 
 		ttl = d.requestTTL()
 		timeout.Reset(ttl)
 
+		index := modules.ChainIndex{
+			AssetID: assetId,
+			IsMain:  true,
+		}
+
 		if skeleton {
 			p.log.Trace("Fetching skeleton headers", "count", MaxHeaderFetch, "from", from)
-			go p.peer.RequestHeadersByNumber(from+uint64(MaxHeaderFetch)-1, MaxSkeletonSize, MaxHeaderFetch-1, false)
+			index.Index = from + uint64(MaxHeaderFetch) - 1
+			go p.peer.RequestHeadersByNumber(index, MaxSkeletonSize, MaxHeaderFetch-1, false)
 		} else {
 			p.log.Trace("Fetching full headers", "count", MaxHeaderFetch, "from", from)
-			go p.peer.RequestHeadersByNumber(from, MaxHeaderFetch, 0, false)
+			index.Index = from
+			go p.peer.RequestHeadersByNumber(index, MaxHeaderFetch, 0, false)
 		}
 	}
 	// Start pulling the header chain skeleton until all is done
-	getHeaders(from)
+	getHeaders(from, assetId)
 
 	for {
 		select {
@@ -675,7 +681,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64) 
 			if packet.Items() == 0 && skeleton {
 				log.Debug("===packet.Items() == 0 && skeleton===")
 				skeleton = false
-				getHeaders(from)
+				getHeaders(from, assetId)
 				continue
 			}
 			// If no more headers are inbound, notify the content fetchers and return
@@ -687,7 +693,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64) 
 					select {
 					case <-time.After(fsHeaderContCheck):
 						log.Debug("===time.After(fsHeaderContCheck)===")
-						getHeaders(from)
+						getHeaders(from, assetId)
 						continue
 					case <-d.cancelCh:
 						return errCancelHeaderFetch
@@ -707,7 +713,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64) 
 			// If we received a skeleton batch, resolve internals concurrently
 			if skeleton {
 				log.Debug("===skeleton===")
-				filled, proced, err := d.fillHeaderSkeleton(from, headers)
+				filled, proced, err := d.fillHeaderSkeleton(from, headers, assetId)
 				if err != nil {
 					p.log.Debug("Skeleton chain invalid", "err", err)
 					return errInvalidChain
@@ -726,7 +732,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64) 
 				from += uint64(len(headers))
 			}
 			log.Debug("===last getHeaders===")
-			getHeaders(from)
+			getHeaders(from, assetId)
 
 		case <-timeout.C:
 			if d.dropPeer == nil {
@@ -765,7 +771,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64) 
 //
 // The method returns the entire filled skeleton and also the number of headers
 // already forwarded for processing.
-func (d *Downloader) fillHeaderSkeleton(from uint64, skeleton []*modules.Header) ([]*modules.Header, int, error) {
+func (d *Downloader) fillHeaderSkeleton(from uint64, skeleton []*modules.Header, assetId modules.IDType16) ([]*modules.Header, int, error) {
 	log.Debug("Filling up skeleton", "from", from)
 	d.queue.ScheduleSkeleton(from, skeleton)
 
@@ -779,7 +785,9 @@ func (d *Downloader) fillHeaderSkeleton(from uint64, skeleton []*modules.Header)
 		reserve  = func(p *peerConnection, count int) (*fetchRequest, bool, error) {
 			return d.queue.ReserveHeaders(p, count), false, nil
 		}
-		fetch    = func(p *peerConnection, req *fetchRequest) error { return p.FetchHeaders(req.From, MaxHeaderFetch) }
+		fetch = func(p *peerConnection, req *fetchRequest) error {
+			return p.FetchHeaders(req.From, MaxHeaderFetch, assetId)
+		}
 		capacity = func(p *peerConnection) int { return p.HeaderCapacity(d.requestRTT()) }
 		setIdle  = func(p *peerConnection, accepted int) { p.SetHeadersIdle(accepted) }
 	)
@@ -796,7 +804,7 @@ func (d *Downloader) fillHeaderSkeleton(from uint64, skeleton []*modules.Header)
 // fetchBodies iteratively downloads the scheduled block bodies, taking any
 // available peers, reserving a chunk of blocks for each, waiting for delivery
 // and also periodically checking for timeouts.
-func (d *Downloader) fetchBodies(from uint64) error {
+func (d *Downloader) fetchBodies(from uint64, assetId modules.IDType16) error {
 	log.Debug("Downloading block bodies", "origin", from)
 
 	var (
@@ -1018,7 +1026,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 // keeps processing and scheduling them into the header chain and downloader's
 // queue until the stream ends or a failure occurs.
 //从输入通道获取一批又一批的检索头，并将它们处理和调度到头链和下加载程序的队列中，直到流结束或发生故障。
-func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64) error {
+func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, assetId modules.IDType16) error {
 	log.Debug("===Enter processHeaders===", "d.mode:", d.mode)
 	// Keep a count of uncertain headers to roll back
 	rollback := []*modules.Header{}
@@ -1247,7 +1255,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 
 // processFastSyncContent takes fetch results from the queue and writes them to the
 // database. It also controls the synchronisation of state nodes of the pivot block.
-func (d *Downloader) processFastSyncContent(latest *modules.Header) error {
+func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modules.IDType16) error {
 	// Start syncing state of the reported head block. This should get us most of
 	// the state of the pivot block.
 	log.Debug("===Enter processFastSyncContent===")
@@ -1590,7 +1598,12 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 		count = limit
 	}
 	log.Debug("===findAncestor===", "RequestHeadersByNumber from", from, "count", count)
-	go p.peer.RequestHeadersByNumber(uint64(from), count, 15, false)
+	index := modules.ChainIndex{
+		AssetID: assetId,
+		IsMain:  true,
+		Index:   uint64(from),
+	}
+	go p.peer.RequestHeadersByNumber(index, count, 15, false)
 
 	// Wait for the remote response to the head fetch
 	number, hash := uint64(0), common.Hash{}
@@ -1672,7 +1685,8 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 		ttl := d.requestTTL()
 		timeout := time.After(ttl)
 
-		go p.peer.RequestHeadersByNumber(check, 1, 0, false)
+		index.Index = check
+		go p.peer.RequestHeadersByNumber(index /*check*/, 1, 0, false)
 
 		// Wait until a reply arrives to this request
 		for arrived := false; !arrived; {

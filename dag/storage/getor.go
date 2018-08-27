@@ -186,7 +186,7 @@ func GetHeader(db DatabaseReader, hash common.Hash, index *modules.ChainIndex) (
 	return header, nil
 }
 
-func GetHeaderByHeight(db DatabaseReader, index *modules.ChainIndex) (*modules.Header, error) {
+func GetHeaderByHeight(db DatabaseReader, index modules.ChainIndex) (*modules.Header, error) {
 	encNum := encodeBlockNumber(index.Index)
 	key := append(HEADER_PREFIX, encNum...)
 	key = append(key, index.Bytes()...)

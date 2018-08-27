@@ -375,6 +375,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		hashMode := query.Origin.Hash != (common.Hash{})
 
+		//adaptor   query.Origin.Number modules.ChainIndexA to modules.ChainIndex
+		//		srcNumber := modules.ChainIndex{}
+		//		srcNumber.AssetID.SetBytes([]byte(query.Origin.Number.AssetID))
+		//		srcNumber.Index = query.Origin.Number.Index
+		//		srcNumber.IsMain = query.Origin.Number.IsMain
+
 		// Gather headers until the fetch or network limits is reached
 		var (
 			bytes   common.StorageSize
@@ -389,18 +395,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				//origin = pm.blockchain.GetHeaderByHash(query.Origin.Hash)
 				origin = pm.dag.GetHeaderByHash(query.Origin.Hash)
 			} else {
-				//origin = pm.dag.GetHeaderByNumber(query.Origin.Number)   //GetHeaderByHeight
+				//index *modules.ChainIndex
 				origin = pm.dag.GetHeaderByNumber(query.Origin.Number)
 			}
 			if origin == nil {
 				break
 			}
-			/*
-				if origin != nil && !hashMode {
-					origin.Number.Index = query.Origin.Number
-				}
-				origin.ParentsHash = append(origin.ParentsHash, origin.Hash())
-			*/
+
 			number := origin.Number.Index
 			headers = append(headers, origin)
 			bytes += estHeaderRlpSize
@@ -432,7 +433,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 					unknown = true
 				} else {
 					//log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
-					if header := pm.dag.GetHeaderByNumber(next); header != nil {
+
+					index := query.Origin.Number
+					//index := modules.ChainIndex{}
+					//index.AssetID.SetBytes([]byte(query.Origin.Number.AssetID))
+					//index.Index = next
+					//index.IsMain = true
+					if header := pm.dag.GetHeaderByNumber(index); header != nil {
 						query.Origin.Hash = header.Hash()
 						//TODO must recover
 						//if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
@@ -446,8 +453,8 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				}
 			case query.Reverse:
 				// Number based traversal towards the genesis block
-				if query.Origin.Number >= query.Skip+1 {
-					query.Origin.Number -= query.Skip + 1
+				if query.Origin.Number.Index >= query.Skip+1 {
+					query.Origin.Number.Index -= query.Skip + 1
 				} else {
 					log.Info("========GetBlockHeadersMsg========", "query.Reverse", "unknown is true")
 					unknown = true
@@ -455,7 +462,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 			case !query.Reverse:
 				// Number based traversal towards the leaf block
-				query.Origin.Number += query.Skip + 1
+				query.Origin.Number.Index += query.Skip + 1
 			}
 		}
 		log.Debug("========GetBlockHeadersMsg========", "query.Amount", query.Amount, "send number:", len(headers))
