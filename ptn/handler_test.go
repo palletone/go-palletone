@@ -33,10 +33,12 @@ func TestProtocolCompatibility(t *testing.T) {
 		mode       downloader.SyncMode
 		compatible bool
 	}{
+		{0, downloader.FullSync, true},
+		{0, downloader.FullSync, true},
 		{1, downloader.FullSync, true},
-		{1, downloader.FullSync, true},
-		{3, downloader.FullSync, true},
-		{63, downloader.FastSync, true},
+		{0, downloader.FastSync, false},
+		{0, downloader.FastSync, false},
+		{1, downloader.FastSync, true},
 	}
 	// Make sure anything we screw up is restored
 	backup := ProtocolVersions

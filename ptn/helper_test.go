@@ -72,7 +72,13 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	//if _, err := blockchain.InsertChain(chain); err != nil {
 	//	panic(err)
 	//}
-	dag := makedag()
+	var dag1 dag.Dag
+	if blocks == 0 {
+		dag1 = *dag.NewDag()
+	}else{
+
+		dag1 = *makedag()
+	}
 	engine := new(consensus.DPOSEngine)
 	//dag := dag.NewDag()
 	typemux := new(event.TypeMux)
@@ -82,7 +88,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 
 	//want (downloader.SyncMode, uint64, txPool, core.ConsensusEngine, *modules.Dag, *event.TypeMux, *ptndb.LDBDatabase)
 	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx},
-		engine, dag, typemux, db, producer)
+		engine, &dag1, typemux, db, producer)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -172,7 +178,7 @@ func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Sub
 // newTestTransaction create a new dummy transaction.
 func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *modules.Transaction {
 	msg := modules.Message{
-		App: "payment",
+		App: modules.APP_PAYMENT,
 		//PayloadHash: common.HexToHash("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
 		Payload: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 	}
