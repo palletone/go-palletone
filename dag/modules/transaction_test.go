@@ -13,7 +13,7 @@ import (
 // at github.com/ethereum/tests.
 var (
 	msg = Message{
-		App:     "payment",
+		App:     APP_PAYMENT,
 		Payload: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 	}
 	emptyTx = NewTransaction(

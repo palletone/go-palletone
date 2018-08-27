@@ -397,7 +397,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 			case modules.APP_TEXT:
 			default:
 				log.Info("Message type is not supported now")
-				return fmt.Errorf("Message type is not supported now: %s", msg.App)
+				return fmt.Errorf("Message type is not supported now: %v", msg.App)
 			}
 		}
 		// step7. save transaction
