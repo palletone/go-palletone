@@ -41,12 +41,12 @@ func TestStatusMsgErrors62(t *testing.T) { testStatusMsgErrors(t, 1) }
 func TestStatusMsgErrors63(t *testing.T) { testStatusMsgErrors(t, 1) }
 
 func testStatusMsgErrors(t *testing.T, protocol int) {
-	/*
+
 		pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil)
 		var (
-			genesis = pm.blockchain.Genesis()
-			head    = pm.blockchain.CurrentHeader()
-			td      = pm.blockchain.GetTd(head.Hash(), head.Number.Uint64())
+			//genesis = pm.dag.GetUnitByNumber(0)
+			//head    = pm.dag.CurrentHeader()
+			//td      = uint64(0)
 		)
 		defer pm.Stop()
 
@@ -59,18 +59,18 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 				code: TxMsg, data: []interface{}{},
 				wantError: errResp(ErrNoStatusMsg, "first msg has code 2 (!= 0)"),
 			},
-			{
-				code: StatusMsg, data: statusData{10, DefaultConfig.NetworkId, td, head.Hash(), genesis.Hash()},
-				wantError: errResp(ErrProtocolVersionMismatch, "10 (!= %d)", protocol),
-			},
-			{
-				code: StatusMsg, data: statusData{uint32(protocol), 999, td, head.Hash(), genesis.Hash()},
-				wantError: errResp(ErrNetworkIdMismatch, "999 (!= 1)"),
-			},
-			{
-				code: StatusMsg, data: statusData{uint32(protocol), DefaultConfig.NetworkId, td, head.Hash(), common.Hash{3}},
-				wantError: errResp(ErrGenesisBlockMismatch, "0300000000000000 (!= %x)", genesis.Hash().Bytes()[:8]),
-			},
+			//{
+			//	code: StatusMsg, data: statusData{10, DefaultConfig.NetworkId, td, head.Hash(), genesis.Hash()},
+			//	wantError: errResp(ErrProtocolVersionMismatch, "ae32d0732f7b701f (!= 0000000000000000)", 0000000000000000),
+			//},
+			//{
+			//	code: StatusMsg, data: statusData{uint32(protocol), 999, td, head.Hash(), genesis.Hash()},
+			//	wantError: errResp(ErrNetworkIdMismatch, "999 (!= 1)"),
+			//},
+			//{
+			//	code: StatusMsg, data: statusData{uint32(protocol), DefaultConfig.NetworkId, td, head.Hash(), common.Hash{3}},
+			//	wantError: errResp(ErrGenesisBlockMismatch, "0300000000000000 (!= %x)", genesis.Hash().Bytes()[:8]),
+			//},
 		}
 
 		for i, test := range tests {
@@ -91,7 +91,7 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 			}
 			p.close()
 		}
-	*/
+
 }
 
 // This test checks that received transactions are added to the local pool.

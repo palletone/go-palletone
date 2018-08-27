@@ -41,6 +41,8 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag"
+	"time"
+	common2 "github.com/palletone/go-palletone/dag/common"
 )
 
 var (
@@ -70,8 +72,15 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	//if _, err := blockchain.InsertChain(chain); err != nil {
 	//	panic(err)
 	//}
+	var dag1 dag.Dag
+	if blocks == 0 {
+		dag1 = *dag.NewDag()
+	}else{
+
+		dag1 = *makedag()
+	}
 	engine := new(consensus.DPOSEngine)
-	dag := new(dag.Dag)
+	//dag := dag.NewDag()
 	typemux := new(event.TypeMux)
 	//DbPath := "./data1/leveldb"
 	db, _ := ptndb.NewMemDatabase()
@@ -79,7 +88,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 
 	//want (downloader.SyncMode, uint64, txPool, core.ConsensusEngine, *modules.Dag, *event.TypeMux, *ptndb.LDBDatabase)
 	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx},
-		engine, dag, typemux, db, producer)
+		engine, &dag1, typemux, db, producer)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -97,6 +106,29 @@ func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks i
 		t.Fatalf("Failed to create protocol manager: %v", err)
 	}
 	return pm, db
+}
+
+func makedag()*dag.Dag{
+	dag := dag.NewDag()
+	pay := modules.PaymentPayload{
+		Inputs:  []modules.Input{},
+		Outputs: []modules.Output{},
+	}
+	holder := common.Address{}
+	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
+	msg0 := modules.Message{
+		App:     modules.APP_PAYMENT,
+		Payload: pay,
+	}
+	tx := &modules.Transaction{
+		TxMessages:   []modules.Message{msg0},
+	}
+	genesis,_ := common2.NewGenesisUnit(modules.Transactions{tx},time.Now().Unix())
+	//fmt.Printf("-----------%+v\n",genesis)
+	//fmt.Printf("-------1----%+v\n",genesis.Header().Number.Index)
+	dag.SaveDag(*genesis)
+	//fmt.Printf("===========111=%+v\n",dag.CurrentUnit())
+	return dag
 }
 
 
@@ -146,7 +178,7 @@ func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Sub
 // newTestTransaction create a new dummy transaction.
 func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *modules.Transaction {
 	msg := modules.Message{
-		App: "payment",
+		App: modules.APP_PAYMENT,
 		//PayloadHash: common.HexToHash("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
 		Payload: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 	}
@@ -189,14 +221,14 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool) (*te
 	}()
 	tp := &testPeer{app: app, net: net, peer: peer}
 	// Execute any implicitly requested handshakes and return
-	//if shake {
-	//	var (
-	//		genesis = pm.blockchain.Genesis()
-	//		head    = pm.blockchain.CurrentHeader()
-	//		td      = pm.blockchain.GetTd(head.Hash(), head.Number.Uint64())
-	//	)
-	//	tp.handshake(nil, td, head.Hash(), genesis.Hash())
-	//}
+	if shake {
+		var (
+			//genesis = pm.dag.GetUnitByNumber(0)
+			//head  ,_ = pm.dag.GetHeader(genesis.Header().Hash(),0)
+			//td      = pm.dag.GetUnitByNumber(0).Number().Index
+		)
+		//tp.handshake(nil, 0, common.Hash{}, common.Hash{})
+	}
 	return tp, errc
 }
 

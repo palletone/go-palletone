@@ -772,6 +772,9 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.newProducedUnitCh:
+			self.BroadcastNewProducedUnit(event.Unit)
+
+			// appended by wangjiyou
 			self.BroadcastUnit(event.Unit, true)
 			self.BroadcastUnit(event.Unit, false)
 
@@ -849,7 +852,6 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 	return tx
 }
 
-/*
 // @author Albert·Gou
 // BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
 func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
@@ -858,4 +860,3 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
 		peer.SendNewProducedUnit(unit)
 	}
 }
-*/

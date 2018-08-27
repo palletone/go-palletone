@@ -139,7 +139,7 @@ func ValidateTx(tx *modules.Transaction, worldTmpState *map[string]map[string]in
 检查message的app与payload是否一致
 check messaage 'app' consistent with payload type
 */
-func validateMessageType(app string, payload interface{}) bool {
+func validateMessageType(app byte, payload interface{}) bool {
 	switch payload.(type) {
 	case modules.PaymentPayload:
 		if app == modules.APP_PAYMENT {
@@ -280,7 +280,7 @@ To validate contract template payload
 */
 func validateContractTplPayload(contractTplPayload *modules.ContractTplPayload) modules.TxValidationCode {
 	// to check template whether existing or not
-	stateVersion, bytecode, name, path := storage.GetContractTpl(contractTplPayload.TemplateId.Bytes())
+	stateVersion, bytecode, name, path := storage.GetContractTpl(contractTplPayload.TemplateId)
 	if stateVersion == nil && bytecode == nil && name == "" && path == "" {
 		return modules.TxValidationCode_VALID
 	}

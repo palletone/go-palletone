@@ -555,9 +555,9 @@ func GetTplAllState(id string) map[modules.ContractReadSet][]byte {
 获取合约（或模板）所有属性
 To get contract or contract template all fields and return
 */
-func GetContractAllState(id string) map[modules.ContractReadSet][]byte {
+func GetContractAllState(id []byte) map[modules.ContractReadSet][]byte {
 	// key format: [PREFIX][ID]_[field]_[version]
-	key := fmt.Sprintf("%s%s^*^", CONTRACT_STATE_PREFIX, id)
+	key := fmt.Sprintf("%s%s^*^", CONTRACT_STATE_PREFIX, hexutil.Encode(id))
 	if Dbconn == nil {
 		Dbconn = ReNewDbConn(config.DbPath)
 	}

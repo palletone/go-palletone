@@ -199,23 +199,23 @@ func (height ChainIndex) Bytes() []byte {
 	return data[:]
 }
 
-var (
-	APP_PAYMENT         = "payment"
-	APP_CONTRACT_TPL    = "contract_template"
-	APP_CONTRACT_DEPLOY = "contract_deploy"
-	APP_CONTRACT_INVOKE = "contract_invoke"
-	APP_CONFIG          = "config"
-	APP_TEXT            = "text"
+const (
+	APP_PAYMENT         = 0x01
+	APP_CONTRACT_TPL    = 0x02
+	APP_CONTRACT_DEPLOY = 0x03
+	APP_CONTRACT_INVOKE = 0x04
+	APP_CONFIG          = 0x05
+	APP_TEXT            = 0x06
 )
 
 // key: message.UnitHash(message+timestamp)
 type Message struct {
-	App     string      `json:"app"`     // message type
+	App     byte        `json:"app"`     // message type
 	Payload interface{} `json:"payload"` // the true transaction data
 }
 
 // return message struct
-func NewMessage(app string, payload interface{}) *Message {
+func NewMessage(app byte, payload interface{}) *Message {
 	m := new(Message)
 	m.App = app
 	m.Payload = payload
@@ -338,12 +338,12 @@ func (version *StateVersion) ParseStringKey(key string) bool {
 // Contract template deploy message
 // App: contract_template
 type ContractTplPayload struct {
-	TemplateId common.Hash `json:"template_id"` // contract template id
-	Name       string      `json:"name"`        // contract template name
-	Path       string      `json:"path"`        // contract template execute path
-	Version    string      `json:"version"`     // contract template version
-	Memery     uint16      `json:"memory"`      // coontract template bytecode memory size(Byte), use to compute transaction fee
-	Bytecode   []byte      `json:"bytecode"`    // contract bytecode
+	TemplateId []byte `json:"template_id"` // contract template id
+	Name       string `json:"name"`        // contract template name
+	Path       string `json:"path"`        // contract template execute path
+	Version    string `json:"version"`     // contract template version
+	Memery     uint16 `json:"memory"`      // coontract template bytecode memory size(Byte), use to compute transaction fee
+	Bytecode   []byte `json:"bytecode"`    // contract bytecode
 }
 
 type DelContractState struct {
@@ -359,7 +359,7 @@ type ContractReadSet struct {
 // App: contract_deploy
 
 type ContractDeployPayload struct {
-	TemplateId   common.Hash        `json:"template_id"`   // contract template id
+	TemplateId   []byte             `json:"template_id"`   // contract template id
 	ContractId   []byte             `json:"contract_id"`   // contract id
 	Name         string             `json:"name"`          // the name for contract
 	Args         [][]byte           `json:"args"`          // contract arguments list

@@ -146,7 +146,7 @@ func Install(chainID string, ccName string, ccPath string, ccVersion string) (pa
 	tpid := cp.Keccak256Hash(buffer.Bytes())
 
 	payloadUnit := &unit.ContractTplPayload{
-		TemplateId: tpid,
+		TemplateId: tpid[:],
 		Name:       ccName,
 		Path:       ccPath,
 		Version:    ccVersion,
@@ -217,8 +217,7 @@ func DeployByName(chainID string, txid string, ccName string, ccPath string, ccV
 	return cc.Id, nil, err
 }
 
-//func DeployByTemplateId(chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId string, respPayload *peer.ContractDeployPayload, e error) {
-func Deploy(chainID string, txid string, templateId []byte, args [][]byte, timeout time.Duration) (deployId []byte, respPayload *unit.ContractDeployPayload /*respPayload *peer.ContractDeployPayload*/ , e error) {
+func Deploy(chainID string, txid string, templateId []byte, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *unit.ContractDeployPayload, e error) {
 	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
@@ -288,20 +287,19 @@ func Deploy(chainID string, txid string, templateId []byte, args [][]byte, timeo
 		logger.Errorf("setchaincode[%s]-[%s] fail", setChainId, cc.Name)
 	}
 
-	//respPayload = &unit.ContractDeployPayload{
-	//	TemplateId:   templateId,
-	//	ContractId:   cc.Id,
-	//	Name:         cc.Name,
-	//	Args:         args,
-	//	Excutiontime: timeout,
-	//}
+	unit, err := RwTxResult2DagDeployUnit(txsim, templateId, txid, cc.Name, cc.Id, args, timeout)
+	if err != nil {
+		logger.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
+		return nil, nil, errors.New("Conver RwSet to dag unit fail")
+	}
 
-	return cc.Id, nil, err
+	return cc.Id, unit, err
 }
 
 //timeout:ms
 // ccName can be contract Id
-func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
+//func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
+func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone") //default
 	ccVersion := "ptn001"          //default
@@ -336,7 +334,7 @@ func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout
 		return nil, err
 	}
 
-	rsp, unit, err := es.ProcessProposal(context.Background(), sprop, prop, chainID, cid, timeout)
+	rsp, unit, err := es.ProcessProposal(deployId, context.Background(), sprop, prop, chainID, cid, timeout)
 	t0 := time.Now()
 	duration := t0.Sub(start)
 

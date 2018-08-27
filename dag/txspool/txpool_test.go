@@ -124,7 +124,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		Inputs:  []modules.Input{input},
 		Outputs: []modules.Output{output},
 	}
-	msgs = append(msgs, *modules.NewMessage(modules.APP_PAYMENT+"1", payload0), *modules.NewMessage(modules.APP_PAYMENT+"2", payload1), *modules.NewMessage(modules.APP_PAYMENT+"3", payload2))
+	msgs = append(msgs, *modules.NewMessage(modules.APP_PAYMENT, payload0), *modules.NewMessage(modules.APP_PAYMENT, payload1), *modules.NewMessage(modules.APP_PAYMENT, payload2))
 	for j := 0; j < int(config.AccountSlots)*1; j++ {
 		txs = append(txs, transaction(msgs, uint32(j+100)))
 	}
