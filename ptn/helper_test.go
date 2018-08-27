@@ -41,8 +41,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag"
-	"time"
-	common2 "github.com/palletone/go-palletone/dag/common"
+	"fmt"
 )
 
 var (
@@ -76,8 +75,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	if blocks == 0 {
 		dag1 = *dag.NewDag()
 	}else{
-
-		dag1 = *makedag()
+		dag1 = *makedag(blocks)
 	}
 	engine := new(consensus.DPOSEngine)
 	//dag := dag.NewDag()
@@ -108,27 +106,52 @@ func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks i
 	return pm, db
 }
 
-func makedag()*dag.Dag{
+func makedag(blocks int)*dag.Dag{
+	//PrintDag()
+	fmt.Println("=============")
 	dag := dag.NewDag()
-	pay := modules.PaymentPayload{
-		Inputs:  []modules.Input{},
-		Outputs: []modules.Output{},
-	}
-	holder := common.Address{}
-	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
-	msg0 := modules.Message{
-		App:     modules.APP_PAYMENT,
-		Payload: pay,
-	}
-	tx := &modules.Transaction{
-		TxMessages:   []modules.Message{msg0},
-	}
-	genesis,_ := common2.NewGenesisUnit(modules.Transactions{tx},time.Now().Unix())
+	//pay := modules.PaymentPayload{
+	//	Inputs:  []modules.Input{},
+	//	Outputs: []modules.Output{},
+	//}
+	//holder := common.Address{}
+	//holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
+	//
+	//msg0 := modules.Message{
+	//	App:     modules.APP_PAYMENT,
+	//	Payload: pay,
+	//}
+	//tx := &modules.Transaction{
+	//	TxMessages:   []modules.Message{msg0},
+	//}
+	//genesis,_ := common2.NewGenesisUnit(modules.Transactions{tx},time.Now().Unix())
 	//fmt.Printf("-----------%+v\n",genesis)
 	//fmt.Printf("-------1----%+v\n",genesis.Header().Number.Index)
-	dag.SaveDag(*genesis)
-	//fmt.Printf("===========111=%+v\n",dag.CurrentUnit())
+	//authentifiier := &modules.Authentifier{holder.String(),nil,nil,nil}
+	//genesis.UnitHeader.Authors = authentifiier
+	//fmt.Println("--",authentifiier)
+	//fmt.Println("--",genesis.UnitHeader.Authors)
+	//genesis.Header().Number.Index = 0
+	//dag.SaveDag(*genesis)
+	//fmt.Printf("===========111=%#v\n",dag.CurrentHeader())
+	//fmt.Printf("===========111=%#v\n",dag.CurrentUnit())
+	//fmt.Printf("===========111=%#v\n",dag.GetUnitByNumber(0).Header())
+	//fmt.Printf("===========111=%#v\n",dag.CurrentHeader())
 	return dag
+}
+
+func PrintDag() {
+	dag := dag.NewDag()
+	unit := dag.CurrentUnit()
+	fmt.Printf("0===========111=%#v\n",unit)
+	fmt.Printf("0===========111=%#v\n",unit.UnitHeader)
+	i := 0
+	if len(unit.UnitHeader.ParentsHash) > 0 {
+		unit = dag.GetUnit(unit.ParentHash()[0])
+		fmt.Printf("%d===========111=%#v\n",i,unit)
+		fmt.Printf("%d===========111=%#v\n",i,unit.UnitHeader)
+		i++
+	}
 }
 
 
