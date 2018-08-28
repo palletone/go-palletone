@@ -297,16 +297,13 @@ func (f *Fetcher) loop() {
 		for !f.queue.Empty() {
 			op := f.queue.PopItem().(*inject)
 			if f.queueChangeHook != nil {
-				//f.queueChangeHook(op.block.Hash(), false)
 				f.queueChangeHook(op.unit.UnitHash, false)
 			}
 			// If too high up the chain or phase, continue later
 			number := op.unit.NumberU64()
 			if number > height+1 {
-				//f.queue.Push(op, -float32(op.block.NumberU64()))
 				f.queue.Push(op, -float32(op.unit.NumberU64()))
 				if f.queueChangeHook != nil {
-					//f.queueChangeHook(op.block.Hash(), true)
 					f.queueChangeHook(op.unit.UnitHash, true)
 				}
 				log.Info("===loop===", "number:", number, "height:", height)

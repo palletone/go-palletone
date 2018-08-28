@@ -85,6 +85,10 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	return &unit
 }
 
+func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
+	return d.CurrentUnit()
+}
+
 func (d *Dag) GetUnit(hash common.Hash) *modules.Unit {
 	return storage.GetUnit(d.Db, hash)
 }
@@ -97,8 +101,8 @@ func (d *Dag) GetUnitByHash(hash common.Hash) *modules.Unit {
 	return d.CurrentUnit()
 }
 
-func (d *Dag) GetUnitByNumber(number uint64) *modules.Unit {
-	return d.CurrentUnit()
+func (d *Dag) GetUnitByNumber(number modules.ChainIndex) *modules.Unit {
+	return storage.GetUnitFormIndex(d.Db, number.Index, number.AssetID)
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
