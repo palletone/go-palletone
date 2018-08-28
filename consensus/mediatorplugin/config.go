@@ -19,9 +19,9 @@
 package mediatorplugin
 
 import (
-	"gopkg.in/urfave/cli.v1"
-	"github.com/palletone/go-palletone/common"
 	"github.com/dedis/kyber"
+	"github.com/palletone/go-palletone/common"
+	"gopkg.in/urfave/cli.v1"
 )
 
 var (
@@ -41,7 +41,7 @@ type Config struct {
 // mediator plugin default config
 var DefaultConfig = Config{
 	EnableStaleProduction: false,
-	Mediators: map[NormalAccount]MediatorAccount{},
+	Mediators:             map[NormalAccount]MediatorAccount{},
 }
 
 func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
@@ -52,7 +52,7 @@ func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
 }
 
 type NormalAccount struct {
-	Address common.Address
+	Address  common.Address
 	Password string
 }
 

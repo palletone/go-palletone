@@ -29,13 +29,13 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
 // PalletOne wraps all methods required for producing unit.
@@ -60,8 +60,8 @@ type toTBLSSigned struct {
 
 type MediatorPlugin struct {
 	server *p2p.Server   // Peer-to-peer server to maintain the connection with other active mediator peer
-	ptn  PalletOne		// Full PalletOne service to retrieve other function
-	quit chan struct{} // Channel used for graceful exit
+	ptn    PalletOne     // Full PalletOne service to retrieve other function
+	quit   chan struct{} // Channel used for graceful exit
 	// Enable VerifiedUnit production, even if the chain is stale.
 	// 新开启一个区块链时，必须设为true
 	productionEnabled bool
@@ -92,7 +92,7 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 }
 
 func (mp *MediatorPlugin) AddActiveMediatorPeers() {
-	for _, n := range mp.ptn.GetActiveMediatorNodes(){
+	for _, n := range mp.ptn.GetActiveMediatorNodes() {
 		mp.server.AddPeer(n)
 	}
 }
@@ -180,8 +180,8 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		log.Info(fmt.Sprintf("this node controll mediator account address: %v", address))
 
 		msm[address] = mediator{
-			NormalAccount:normA,
-			MediatorAccount:mediA,
+			NormalAccount:   normA,
+			MediatorAccount: mediA,
 		}
 	}
 

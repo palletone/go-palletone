@@ -55,7 +55,7 @@ func init() {
 		fmt.Printf("Key[%d] priv: %s, pub %s\n", i, sec.String(), pub.String())
 	}
 
-//	dkgs = dkgGen()
+	//	dkgs = dkgGen()
 }
 
 func genPair() (kyber.Scalar, kyber.Point) {

@@ -19,12 +19,12 @@
 package mediatorplugin
 
 import (
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/dedis/kyber"
 	vss "github.com/dedis/kyber/share/vss/pedersen"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func genInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
+func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
 	sc := suite.Scalar().Pick(suite.RandomStream())
 
 	return sc, suite.Point().Mul(sc, nil)
