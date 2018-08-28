@@ -614,11 +614,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		// Schedule all the unknown hashes for retrieval
 		unknown := make(newBlockHashesData, 0, len(announces))
-		/*for _, block := range announces {
-			if !pm.blockchain.HasBlock(block.Hash, block.Number) {
+		for _, block := range announces {
+			if !pm.dag.HasUnit(block.Hash) {
 				unknown = append(unknown, block)
 			}
-		}*/
+		}
 		for _, block := range unknown {
 			pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneHeader, p.RequestBodies)
 		}
