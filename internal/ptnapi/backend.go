@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/ptn/downloader"
+	"time"
 )
 
 // Backend interface provides the common API services (that are provided by
@@ -103,6 +104,12 @@ type Backend interface {
 	GetAddrOutput(addr string) ([]modules.Output, error)
 
 	GetAddrTransactions(addr string) (modules.Transactions, error)
+
+	//contract control
+	ContractInstall(ccName string, ccPath string, ccVersion string)(TemplateId []byte, err error)
+	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration)(deployId []byte, err error)
+	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (error)
+	ContractStop(deployId []byte, txid string, deleteImage bool)(error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

@@ -20,7 +20,6 @@ package ptn
 import (
 	//"errors"
 	"fmt"
-	"sync"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
@@ -44,6 +43,9 @@ import (
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
+
+	"github.com/palletone/go-palletone/contracts"
+	"sync"
 )
 
 //type LesServer interface {
@@ -76,6 +78,8 @@ type PalletOne struct {
 	netRPCService *ptnapi.PublicNetAPI
 
 	dag *dag.Dag
+
+	contract *contracts.Contract
 
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
 
