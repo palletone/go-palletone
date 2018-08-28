@@ -58,7 +58,7 @@ type DynamicGlobalProperty struct {
 	//	RecentSlotsFilled float32
 }
 
-func (gp *GlobalProperty) GetActiveMediatorNode() []*discover.Node {
+func (gp *GlobalProperty) GetActiveMediatorNodes() []*discover.Node {
 	aSize := len(gp.ActiveMediators)
 	nodes := make([]*discover.Node, 0, aSize)
 

@@ -44,7 +44,7 @@ type PalletOne interface {
 	Dag() *dag.Dag
 	GetKeyStore() *keystore.KeyStore
 	TxPool() *txspool.TxPool
-	GetActiveMediatorNode() []*discover.Node
+	GetActiveMediatorNodes() []*discover.Node
 }
 
 // toBLSed represents a BLS sign operation.
@@ -92,8 +92,8 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 	return nil
 }
 
-func (mp *MediatorPlugin) AddActiveMediatorPeer() {
-	for _, n := range mp.ptn.GetActiveMediatorNode(){
+func (mp *MediatorPlugin) AddActiveMediatorPeers() {
+	for _, n := range mp.ptn.GetActiveMediatorNodes(){
 		mp.server.AddPeer(n)
 	}
 }
@@ -102,7 +102,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	log.Debug("mediator plugin startup begin")
 
 	mp.server = server
-	go mp.AddActiveMediatorPeer()
+	go mp.AddActiveMediatorPeers()
 
 	// 1. 判断是否满足生产验证单元的条件，主要判断本节点是否控制至少一个mediator账户
 	if len(mp.mediators) == 0 {

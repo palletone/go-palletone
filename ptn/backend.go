@@ -300,6 +300,6 @@ func (p *PalletOne) GetKeyStore() *keystore.KeyStore {
 }
 
 // @author Albert·Gou
-func (p *PalletOne) GetActiveMediatorNode() []*discover.Node {
-	return p.Dag().GetActiveMediatorNode()
+func (p *PalletOne) GetActiveMediatorNodes() []*discover.Node {
+	return p.Dag().GetActiveMediatorNodes()
 }

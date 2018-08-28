@@ -848,7 +848,7 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 // @author Albert·Gou
 // BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
 func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
-	peers := pm.peers.ActiveMediatorPeers()
+	peers := pm.peers.GetActiveMediatorPeers(pm.dag.GetActiveMediatorNodes())
 	for _, peer := range peers {
 		peer.SendNewProducedUnit(unit)
 	}
