@@ -44,6 +44,7 @@ import (
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
 //type LesServer interface {
@@ -296,4 +297,9 @@ func (s *PalletOne) Etherbase() (eb common.Address, err error) {
 // @author Albert·Gou
 func (p *PalletOne) GetKeyStore() *keystore.KeyStore {
 	return p.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+}
+
+// @author Albert·Gou
+func (p *PalletOne) GetActiveMediatorNode() []*discover.Node {
+	return p.Dag().GetActiveMediatorNode()
 }

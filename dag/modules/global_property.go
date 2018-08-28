@@ -23,6 +23,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
 // 全局属性的结构体定义
@@ -55,6 +56,17 @@ type DynamicGlobalProperty struct {
 	用于计算mediator的参与率。used to compute mediator participation.
 	*/
 	//	RecentSlotsFilled float32
+}
+
+func (gp *GlobalProperty) GetActiveMediatorNode() []*discover.Node {
+	aSize := len(gp.ActiveMediators)
+	nodes := make([]*discover.Node, 0, aSize)
+
+	for m := range gp.ActiveMediators {
+		nodes = append(nodes, m.Node)
+	}
+
+	return nodes
 }
 
 func NewGlobalProp() *GlobalProperty {
