@@ -20,7 +20,6 @@ package mediatorplugin
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/group/edwards25519"
@@ -163,20 +162,27 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	log.Debug("mediator plugin initialize begin")
 
 	mss := cfg.Mediators
-	msm := map[common.Address]string{}
-	for address, passphrase := range mss {
-		address := strings.TrimSpace(address)
-		address = strings.Trim(address, "\"")
+	msm := map[common.Address]mediator{}
 
-		addr := common.StringToAddress(address)
-		addrType, err := addr.Validate()
+	//for address, passphrase := range mss {
+	//	address := strings.TrimSpace(address)
+	//	address = strings.Trim(address, "\"")
+	//
+	//	addr := common.StringToAddress(address)
+
+	for normA, mediA := range mss {
+		address := normA.Address
+		addrType, err := address.Validate()
 		if err != nil || addrType != common.PublicKeyHash {
 			log.Error(fmt.Sprintf("Invalid mediator account address %v : %v", address, err))
 		}
 
 		log.Info(fmt.Sprintf("this node controll mediator account address: %v", address))
 
-		msm[addr] = passphrase
+		msm[address] = mediator{
+			NormalAccount:normA,
+			MediatorAccount:mediA,
+		}
 	}
 
 	mp := MediatorPlugin{

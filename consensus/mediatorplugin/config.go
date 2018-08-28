@@ -19,61 +19,29 @@
 package mediatorplugin
 
 import (
-	"github.com/palletone/go-palletone/core"
 	"gopkg.in/urfave/cli.v1"
 	"github.com/palletone/go-palletone/common"
 	"github.com/dedis/kyber"
-	"github.com/palletone/go-palletone/cmd/utils"
-	"fmt"
-	"github.com/dedis/kyber/pairing/bn256"
 )
 
 var (
-	CreateInitDKSCommand = cli.Command{
-		Action:    utils.MigrateFlags(CreateInitDKS),
-		Name:      "initdks",
-		Usage:     "Generate the initial distributed key share",
-		ArgsUsage: " ",
-		Category:  "MEDIATOR COMMANDS",
-		Description: `
-The output of this command will be used to initialize a DistKeyGenerator.
-`,
-	}
-
 	StaleProductionFlag = cli.BoolFlag{
 		Name:  "enable-stale-production",
 		Usage: "Enable Verified Unit production, even if the chain is stale.",
 	}
 )
 
-func CreateInitDKS(ctx *cli.Context) error {
-	suite := bn256.NewSuiteG2()
-	priv, pub := genInitPair(suite)
-	privB, _ := priv.MarshalBinary()
-	pubB, _ := pub.MarshalBinary()
-
-	fmt.Println("Generate a initial distributed key share:")
-	fmt.Println("{")
-	fmt.Printf("\tprivate key: %x\n", privB)
-	fmt.Printf("\tpublic key: %x\n", pubB)
-	fmt.Println("}")
-
-	return nil
-}
-
 // config data for mediator plugin
 type Config struct {
 	EnableStaleProduction bool // Enable Verified Unit production, even if the chain is stale.
 	//	RequiredParticipation float32	// Percent of mediators (0-99) that must be participating in order to produce
-	Mediators map[common.Address]mediator // the map of  Address and  the mediator
+	Mediators map[NormalAccount]MediatorAccount // the map of the normal account and  the mediator account
 }
 
 // mediator plugin default config
 var DefaultConfig = Config{
 	EnableStaleProduction: false,
-	Mediators: map[string]string{
-		core.DefaultTokenHolder: "password",
-	},
+	Mediators: map[NormalAccount]MediatorAccount{},
 }
 
 func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
@@ -83,17 +51,17 @@ func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
 	}
 }
 
-type normalAccount struct {
-	address common.Address
-	password string
+type NormalAccount struct {
+	Address common.Address
+	Password string
 }
 
-type mediatorAccount struct {
-	initPartSec kyber.Scalar
-	initPartPub kyber.Point
+type MediatorAccount struct {
+	InitPartSec kyber.Scalar
+	InitPartPub kyber.Point
 }
 
 type mediator struct {
-	normalAccount
-	mediatorAccount
+	NormalAccount
+	MediatorAccount
 }
