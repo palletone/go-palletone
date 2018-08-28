@@ -192,6 +192,7 @@ func TestGetBlockHeadersDataEncodeDecode(t *testing.T) {
 		packet *getBlockHeadersData
 		fail   bool
 	}{
+
 		// Providing the origin as either a hash or a number should both work
 		//{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number: 314}}},
 		//{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Hash: hash}}},

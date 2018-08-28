@@ -146,7 +146,7 @@ func Install(chainID string, ccName string, ccPath string, ccVersion string) (pa
 	tpid := cp.Keccak256Hash(buffer.Bytes())
 
 	payloadUnit := &unit.ContractTplPayload{
-		TemplateId: tpid[:],
+		TemplateId: []byte(tpid[:]),
 		Name:       ccName,
 		Path:       ccPath,
 		Version:    ccVersion,
@@ -154,7 +154,7 @@ func Install(chainID string, ccName string, ccPath string, ccVersion string) (pa
 	}
 
 	//test
-	tcc := &TempCC{templateId: tpid[:], name: ccName, path: ccPath, vers: ccVersion}
+	tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
 	listAdd(tcc)
 
 	return payloadUnit, nil

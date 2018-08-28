@@ -41,6 +41,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag"
+	"fmt"
 	"time"
 	common2 "github.com/palletone/go-palletone/dag/common"
 )
@@ -54,33 +55,15 @@ var (
 // with the given number of blocks already known, and potential notification
 // channels for different events.
 func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
-	//var engine core.ConsensusEngine = &consensus.DPOSEngine{}
-	var (
-	// evmux = new(event.TypeMux)
-	//engine = ethash.NewFaker()
-
-	//db, _ = ptndb.NewMemDatabase()
-	//gspec  = &core.Genesis{
-	//Config: configure.TestChainConfig,
-	//Alloc:  core.GenesisAlloc{testBank: {Balance: big.NewInt(1000000)}},
+	//var dag1 dag.Dag
+	//if blocks == 0 {
+	//	dag1 = *dag.NewDag()
+	//}else{
+	//	dag1 = *makedag(blocks)
 	//}
-	//genesis       = gspec.MustCommit(db)
-	//blockchain, _ = coredata.NewBlockChain(db, nil, configure.TestChainConfig, engine)
-	)
-
-	//chain, _ := core.GenerateChain(configure.TestChainConfig, genesis, ethash.NewFaker(), db, blocks, generator)
-	//if _, err := blockchain.InsertChain(chain); err != nil {
-	//	panic(err)
-	//}
-	var dag1 dag.Dag
-	if blocks == 0 {
-		dag1 = *dag.NewDag()
-	}else{
-
-		dag1 = *makedag()
-	}
+	//PrintDag()
 	engine := new(consensus.DPOSEngine)
-	//dag := dag.NewDag()
+	dag := dag.NewDag()
 	typemux := new(event.TypeMux)
 	//DbPath := "./data1/leveldb"
 	db, _ := ptndb.NewMemDatabase()
@@ -88,7 +71,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 
 	//want (downloader.SyncMode, uint64, txPool, core.ConsensusEngine, *modules.Dag, *event.TypeMux, *ptndb.LDBDatabase)
 	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx},
-		engine, &dag1, typemux, db, producer)
+		engine, dag, typemux, db, producer)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -108,7 +91,9 @@ func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks i
 	return pm, db
 }
 
-func makedag()*dag.Dag{
+func makedag(blocks int)*dag.Dag{
+	//PrintDag()
+	//fmt.Println("=============")
 	dag := dag.NewDag()
 	pay := modules.PaymentPayload{
 		Inputs:  []modules.Input{},
@@ -116,6 +101,7 @@ func makedag()*dag.Dag{
 	}
 	holder := common.Address{}
 	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
+
 	msg0 := modules.Message{
 		App:     modules.APP_PAYMENT,
 		Payload: pay,
@@ -126,9 +112,38 @@ func makedag()*dag.Dag{
 	genesis,_ := common2.NewGenesisUnit(modules.Transactions{tx},time.Now().Unix())
 	//fmt.Printf("-----------%+v\n",genesis)
 	//fmt.Printf("-------1----%+v\n",genesis.Header().Number.Index)
+	authentifiier := &modules.Authentifier{holder.String(),nil,nil,nil}
+	genesis.UnitHeader.Authors = authentifiier
+	//fmt.Println("--",authentifiier)
+	//fmt.Println("--",genesis.UnitHeader.Authors)
+	genesis.Header().Number.Index = 0
 	dag.SaveDag(*genesis)
-	//fmt.Printf("===========111=%+v\n",dag.CurrentUnit())
+	//fmt.Printf("===========111=%#v\n",dag.CurrentHeader())
+	//fmt.Printf("===========111=%#v\n",dag.CurrentUnit())
+	//fmt.Printf("===========111=%#v\n",dag.GetUnitByNumber(0).Header())
+	//fmt.Printf("===========111=%#v\n",dag.CurrentHeader())
 	return dag
+}
+
+func PrintDag() {
+	dag := dag.NewDag()
+	chainindex := modules.ChainIndex{
+		modules.IDType16{},
+		true,
+		1,
+	}
+	header := dag.GetHeaderByNumber(chainindex)
+	fmt.Println("header=1111",header)
+	unit := dag.CurrentUnit()
+	fmt.Printf("0===========111=%#v\n",unit)
+	fmt.Printf("0===========111=%#v\n",unit.UnitHeader)
+	i := 0
+	if len(unit.UnitHeader.ParentsHash) > 0 {
+		unit = dag.GetUnit(unit.ParentHash()[0])
+		fmt.Printf("%d===========111=%#v\n",i,unit)
+		fmt.Printf("%d===========111=%#v\n",i,unit.UnitHeader)
+		i++
+	}
 }
 
 
