@@ -16,6 +16,7 @@ import (
 	unit "github.com/palletone/go-palletone/dag/modules"
 	"bytes"
 	"container/list"
+	"github.com/spf13/viper"
 )
 
 var debugX bool = true
@@ -217,7 +218,7 @@ func DeployByName(chainID string, txid string, ccName string, ccPath string, ccV
 	return cc.Id, nil, err
 }
 
-func Deploy(chainID string, txid string, templateId []byte, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *unit.ContractDeployPayload, e error) {
+func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *unit.ContractDeployPayload, e error) {
 	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
@@ -363,7 +364,7 @@ func StopByName(chainID string, txid string, ccName string, ccPath string, ccVer
 	return nil
 }
 
-func Stop(chainID string, txid string, deployId []byte, deleteImage bool) error {
+func Stop(chainID string, deployId []byte, txid string, deleteImage bool) error {
 	setChainId := "palletone"
 
 	if chainID != "" {
@@ -397,4 +398,23 @@ func Stop(chainID string, txid string, deployId []byte, deleteImage bool) error 
 		cclist.DelChaincode(chainID, cc.Name, cc.Version)
 	}
 	return err
+}
+
+
+func peerContractMockConfigInit() {
+	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
+	viper.Set("peer.address", "127.0.0.1:12345")
+	viper.Set("chaincode.executetimeout", 20*time.Second)
+
+	viper.Set("vm.endpoint", "unix:///var/run/docker.sock")
+	viper.Set("chaincode.builder", "palletimg")
+
+	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
+}
+
+func init() {
+	peerContractMockConfigInit()
+
+	InitNoSysCCC()
+	//Init()
 }

@@ -14,8 +14,6 @@ import (
 
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/adaptor"
-	"github.com/palletone/go-palletone/cmd/utils"
-
 	//"github.com/palletone/go-palletone/adaptor/btc-adaptor"
 	//"github.com/palletone/go-palletone/adaptor/eth-adaptor"
 
@@ -23,7 +21,6 @@ import (
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 )
 
@@ -35,7 +32,6 @@ type ptnstatsConfig struct {
 	URL string `toml:",omitempty"`
 }
 type FullConfig struct {
-	Ptn       ptn.Config
 	Node      node.Config
 	Ptnstats  ptnstatsConfig
 	Dashboard dashboard.Config
@@ -97,14 +93,12 @@ func makeConfigFile(cfg *FullConfig, configPath string) error {
 
 	err = os.MkdirAll(filepath.Dir(configPath), os.ModePerm)
 	if err != nil {
-		utils.Fatalf("%v", err)
 		return err
 	}
 
 	configFile, err = os.Create(configPath)
 	defer configFile.Close()
 	if err != nil {
-		utils.Fatalf("%v", err)
 		return err
 	}
 
@@ -116,7 +110,6 @@ func makeConfigFile(cfg *FullConfig, configPath string) error {
 
 	_, err = configFile.Write(configToml)
 	if err != nil {
-		utils.Fatalf("%v", err)
 		return err
 	}
 

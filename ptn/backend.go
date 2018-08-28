@@ -20,13 +20,13 @@ package ptn
 import (
 	//"errors"
 	"fmt"
-	"sync"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/consensus"
@@ -38,13 +38,15 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 
 	//dagcommon "github.com/palletone/go-palletone/dag/common"
+	"sync"
+
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
-	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
 //type LesServer interface {
@@ -77,6 +79,8 @@ type PalletOne struct {
 	netRPCService *ptnapi.PublicNetAPI
 
 	dag *dag.Dag
+
+	contract *contracts.Contract
 
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
 

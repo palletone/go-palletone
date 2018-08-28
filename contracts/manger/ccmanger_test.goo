@@ -442,7 +442,7 @@ func TestInstallCCApi(t *testing.T) {
 
 	//deploy
 	fmt.Println("=======================deploy=============================")
-	deployId, _, err := Deploy(chainID, txid, payload.TemplateId[:], args, 30*time.Second)
+	deployId, _, err := Deploy(chainID, payload.TemplateId[:], txid, args, 30*time.Second)
 	if err != nil {
 		t.Errorf("DeployUserCC err:%s", err)
 	}
@@ -461,7 +461,7 @@ func TestInstallCCApi(t *testing.T) {
 	//stop
 	usercc.Name = "example01"
 	fmt.Println("=======================Stop=============================")
-	err = Stop(chainID, txid, deployId, true)
+	err = Stop(chainID, deployId, txid, true)
 	if err != nil {
 		t.Errorf("StopUserCC err:%s", err)
 	}
@@ -495,4 +495,7 @@ func invokeUserCC(t *testing.T, txid string) {
 func TestFileRW(t *testing.T) {
 	ucc.RecoverChainCodeFromDb("", nil)
 }
+
+
+
 

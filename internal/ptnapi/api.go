@@ -48,6 +48,8 @@ import (
 	"github.com/palletone/go-palletone/tokenengine/btcutil"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
+
+	ut "github.com/palletone/go-palletone/core/vmContractPub/util"
 )
 
 const (
@@ -710,6 +712,47 @@ func (s *PublicBlockChainAPI) EstimateGas(ctx context.Context, args CallArgs) (h
 // Start forking command.
 func (s *PublicBlockChainAPI) Forking(ctx context.Context, rate uint64) uint64 {
 	return forking(ctx, s.b)
+}
+
+//contract command
+//install
+func (s *PublicBlockChainAPI) Ccinstall(ctx context.Context, ccname string, ccpath string, ccversion string) (hexutil.Bytes, error) {
+	log.Info("CcInstall:"+ccname + ":" + ccpath + "_" + ccversion)
+
+	templateId, err := s.b.ContractInstall(ccname, ccpath, ccversion)
+	return hexutil.Bytes(templateId), err
+}
+
+func (s *PublicBlockChainAPI) Ccdeploy(ctx context.Context, templateId string, txid string) (hexutil.Bytes, error) {
+	tempId, _ := hex.DecodeString(templateId)
+
+	log.Info("Ccdeploy:"+ templateId + ":" + txid)
+	fmt.Printf("templateid=%v", tempId)
+
+	f := "init"
+	args := ut.ToChaincodeArgs(f, "a", "100", "b", "200")
+
+	deployId, err := s.b.ContractDeploy(tempId, txid, args, 30*time.Second)
+	return hexutil.Bytes(deployId), err
+}
+
+func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string) ( error) {
+	depId, _ := hex.DecodeString(deployId)
+	log.Info("Ccinvoke:"+ deployId + ":" + txid + "_")
+
+	f := "putval"
+	args := ut.ToChaincodeArgs(f, "greeting", "my test")
+
+	err := s.b.ContractInvoke(depId, txid, args, 0)
+	return  err
+}
+
+func (s *PublicBlockChainAPI) Ccstop(ctx context.Context, deployId string, txid string) ( error) {
+	depId, _ := hex.DecodeString(deployId)
+	log.Info("Ccstop:"+ deployId + ":" + txid + "_")
+
+	err := s.b.ContractStop(depId, txid,  false)
+	return  err
 }
 
 // ExecutionResult groups all structured logs emitted by the EVM
