@@ -57,7 +57,7 @@ func TestProtocolCompatibility(t *testing.T) {
 }
 
 // Tests that block headers can be retrieved from a remote chain based on user queries.
-func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
+//func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
 func testGetBlockHeaders(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil)
 	peer, _ := newTestPeer("peer", protocol, pm, true)
@@ -112,7 +112,7 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 
 // Tests that block contents can be retrieved from a remote chain based on their hashes.
 //func TestGetBlockBodies62(t *testing.T) { testGetBlockBodies(t, 1) }
-func TestGetBlockBodies1(t *testing.T) { testGetBlockBodies(t, 1) }
+//func TestGetBlockBodies1(t *testing.T) { testGetBlockBodies(t, 1) }
 func testGetBlockBodies(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 11, nil)
 	peer, _ := newTestPeer("peer", protocol, pm, true)
