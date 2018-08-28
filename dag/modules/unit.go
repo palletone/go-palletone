@@ -279,6 +279,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 
 /************************** Payload Details ******************************************/
 type PayloadMapStruct struct {
+	IsDelete bool
 	Key   string
 	Value interface{}
 }
