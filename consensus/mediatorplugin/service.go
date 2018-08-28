@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
 // PalletOne wraps all methods required for producing unit.
@@ -43,6 +44,7 @@ type PalletOne interface {
 	Dag() *dag.Dag
 	GetKeyStore() *keystore.KeyStore
 	TxPool() *txspool.TxPool
+	GetActiveMediatorNode() []*discover.Node
 }
 
 // toBLSed represents a BLS sign operation.
@@ -58,13 +60,14 @@ type toTBLSSigned struct {
 }
 
 type MediatorPlugin struct {
-	ptn  PalletOne
+	server *p2p.Server   // Peer-to-peer server to maintain the connection with other active mediator peer
+	ptn  PalletOne		// Full PalletOne service to retrieve other function
 	quit chan struct{} // Channel used for graceful exit
 	// Enable VerifiedUnit production, even if the chain is stale.
 	// 新开启一个区块链时，必须设为true
 	productionEnabled bool
 	// Mediator`s account and passphrase controlled by this node
-	mediators map[common.Address]string
+	mediators map[common.Address]mediator
 
 	// 新生产unit的事件订阅和数据发送和接收
 	newProducedUnitFeed  event.Feed              // 订阅的时候自动初始化一次
@@ -89,8 +92,17 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 	return nil
 }
 
+func (mp *MediatorPlugin) AddActiveMediatorPeer() {
+	for _, n := range mp.ptn.GetActiveMediatorNode(){
+		mp.server.AddPeer(n)
+	}
+}
+
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	log.Debug("mediator plugin startup begin")
+
+	mp.server = server
+	go mp.AddActiveMediatorPeer()
 
 	// 1. 判断是否满足生产验证单元的条件，主要判断本节点是否控制至少一个mediator账户
 	if len(mp.mediators) == 0 {

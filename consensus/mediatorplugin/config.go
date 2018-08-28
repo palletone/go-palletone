@@ -21,6 +21,8 @@ package mediatorplugin
 import (
 	"github.com/palletone/go-palletone/core"
 	"gopkg.in/urfave/cli.v1"
+	"github.com/palletone/go-palletone/common"
+	"github.com/dedis/kyber"
 )
 
 var (
@@ -34,7 +36,7 @@ var (
 type Config struct {
 	EnableStaleProduction bool // Enable Verified Unit production, even if the chain is stale.
 	//	RequiredParticipation float32	// Percent of mediators (0-99) that must be participating in order to produce
-	Mediators map[string]string // the map of  Address and Passphrase of the Mediator
+	Mediators map[common.Address]mediator // the map of  Address and  the mediator
 }
 
 // mediator plugin default config
@@ -52,4 +54,19 @@ func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
 		//case :
 		//
 	}
+}
+
+type normalAccount struct {
+	address common.Address
+	password string
+}
+
+type mediatorAccount struct {
+	initPartSec kyber.Scalar
+	initPartPub kyber.Point
+}
+
+type mediator struct {
+	normalAccount
+	mediatorAccount
 }
