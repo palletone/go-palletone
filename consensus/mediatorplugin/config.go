@@ -23,14 +23,43 @@ import (
 	"gopkg.in/urfave/cli.v1"
 	"github.com/palletone/go-palletone/common"
 	"github.com/dedis/kyber"
+	"github.com/palletone/go-palletone/cmd/utils"
+	"fmt"
+	"github.com/dedis/kyber/pairing/bn256"
 )
 
 var (
+	CreateInitDKSCommand = cli.Command{
+		Action:    utils.MigrateFlags(CreateInitDKS),
+		Name:      "initdks",
+		Usage:     "Generate the initial distributed key share",
+		ArgsUsage: " ",
+		Category:  "MEDIATOR COMMANDS",
+		Description: `
+The output of this command will be used to initialize a DistKeyGenerator.
+`,
+	}
+
 	StaleProductionFlag = cli.BoolFlag{
 		Name:  "enable-stale-production",
 		Usage: "Enable Verified Unit production, even if the chain is stale.",
 	}
 )
+
+func CreateInitDKS(ctx *cli.Context) error {
+	suite := bn256.NewSuiteG2()
+	priv, pub := genInitPair(suite)
+	privB, _ := priv.MarshalBinary()
+	pubB, _ := pub.MarshalBinary()
+
+	fmt.Println("Generate a initial distributed key share:")
+	fmt.Println("{")
+	fmt.Printf("\tprivate key: %x\n", privB)
+	fmt.Printf("\tpublic key: %x\n", pubB)
+	fmt.Println("}")
+
+	return nil
+}
 
 // config data for mediator plugin
 type Config struct {
@@ -51,8 +80,6 @@ func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
 	switch {
 	case ctx.GlobalIsSet(StaleProductionFlag.Name):
 		cfg.EnableStaleProduction = ctx.GlobalBool(StaleProductionFlag.Name)
-		//case :
-		//
 	}
 }
 

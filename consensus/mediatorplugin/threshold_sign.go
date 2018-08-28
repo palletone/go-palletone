@@ -20,12 +20,15 @@ package mediatorplugin
 
 import (
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/dedis/kyber"
+	vss "github.com/dedis/kyber/share/vss/pedersen"
 )
 
-//func genPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
-//	sc := suite.Scalar().Pick(suite.RandomStream())
-//	return sc, suite.Point().Mul(sc, nil)
-//}
+func genInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
+	sc := suite.Scalar().Pick(suite.RandomStream())
+
+	return sc, suite.Point().Mul(sc, nil)
+}
 
 func (mp *MediatorPlugin) UnitBLSSign(peer string, unit *modules.Unit) error {
 	op := &toBLSSigned{
