@@ -17,12 +17,13 @@
 package ptn
 
 import (
-	"fmt"
-	"io"
+	//"fmt"
+	//"io"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/common/rlp"
+
+	//"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -133,16 +134,17 @@ type getBlockHeadersData struct {
 // hashOrNumber is a combined field for specifying an origin block.
 type hashOrNumber struct {
 	Hash   common.Hash // Block hash from which to retrieve headers (excludes Number)
-	Number uint64      // Block hash from which to retrieve headers (excludes Hash)
+	Number modules.ChainIndex
 }
 
+/*
 // EncodeRLP is a specialized encoder for hashOrNumber to encode only one of the
 // two contained union fields.
 func (hn *hashOrNumber) EncodeRLP(w io.Writer) error {
 	if hn.Hash == (common.Hash{}) {
 		return rlp.Encode(w, hn.Number)
 	}
-	if hn.Number != 0 {
+	if hn.Number.Index != 0 {
 		return fmt.Errorf("both origin hash (%x) and number (%d) provided", hn.Hash, hn.Number)
 	}
 	return rlp.Encode(w, hn.Hash)
@@ -165,6 +167,7 @@ func (hn *hashOrNumber) DecodeRLP(s *rlp.Stream) error {
 	}
 	return err
 }
+*/
 
 // blockBody represents the data content of a single block.
 type blockBody struct {
@@ -173,3 +176,17 @@ type blockBody struct {
 
 // blockBodiesData is the network packet for block content distribution.
 type blockBodiesData []*blockBody
+
+///////////////////test
+
+//type hashOrNumberA struct {
+//	Hash   common.Hash // Block hash from which to retrieve headers (excludes Number)
+//	Number modules.ChainIndex
+//}
+
+//type getUnitHeadersData struct {
+//	Origin  hashOrNumberA // Block from which to retrieve headers
+//	Amount  uint64        // Maximum number of headers to retrieve
+//	Skip    uint64        // Blocks to skip between consecutive headers
+//	Reverse bool          // Query direction (false = rising towards latest, true = falling towards genesis)
+//}

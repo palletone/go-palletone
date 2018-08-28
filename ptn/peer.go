@@ -69,8 +69,6 @@ type peer struct {
 	version  int         // Protocol version negotiated
 	forkDrop *time.Timer // Timed connection dropper if forks aren't validated in time
 
-	//head   common.Hash
-	//number modules.ChainIndex
 	peermsg map[modules.IDType16]peerMsg
 
 	lock sync.RWMutex
@@ -237,7 +235,6 @@ func (p *peer) RequestHeadersByHash(origin common.Hash, amount int, skip int, re
 // specified header query, based on the hash of an origin block.
 func (p *peer) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	//log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
-	//return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 	return nil
 }
 
@@ -247,8 +244,29 @@ func (p *peer) RequestLeafNodes() error {
 
 // RequestHeadersByNumber fetches a batch of blocks' headers corresponding to the
 // specified header query, based on the number of an origin block.
-func (p *peer) RequestHeadersByNumber(origin uint64, amount int, skip int, reverse bool) error {
-	log.Debug("Fetching batch of headers", "count", amount, "fromnum", origin, "skip", skip, "reverse", reverse)
+func (p *peer) RequestHeadersByNumber(origin modules.ChainIndex, amount int, skip int, reverse bool) error {
+	log.Debug("Fetching batch of headers", "count", amount, "index", origin.Index, "skip", skip, "reverse", reverse)
+	//TODO delete test
+	//	log.Debug("============================================================")
+	//	temp := modules.ChainIndex{}
+	//	temp.AssetID.SetBytes([]byte("wangjiyou"))
+	//	data := &getUnitHeadersData{Origin: hashOrNumberA{Number: temp}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse}
+	//	size, r, err := rlp.EncodeToReader(data)
+	//	if err != nil {
+	//		log.Info("RequestHeadersByNumber", "EncodeToBytes err", err, "data:", data)
+	//		return err
+	//	}
+
+	//	//func NewStream(r io.Reader, inputLimit uint64)
+	//	s := rlp.NewStream(r, uint64(size))
+	//	var query getUnitHeadersData
+	//	if err := s.Decode(&query); err != nil {
+	//		log.Info("RequestHeadersByNumber", "Decode err", err, "data:", data)
+	//		return err
+	//	}
+	//	id := query.Origin.Number.AssetID.String()
+	//	log.Info("===============", "query.Origin.AssetID", id)
+
 	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 

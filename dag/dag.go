@@ -112,9 +112,9 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 	return uHeader
 }
 
-func (d *Dag) GetHeaderByNumber(number uint64) *modules.Header {
-	return nil
-	//return storage.GetHeaderByHeight(d.Db, number)
+func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
+	header, _ := storage.GetHeaderByHeight(d.Db, number)
+	return header
 }
 
 // func (d *Dag) GetHeader(hash common.Hash, number uint64) *modules.Header {
