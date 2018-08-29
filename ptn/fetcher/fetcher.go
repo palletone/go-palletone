@@ -34,7 +34,7 @@ const (
 	arriveTimeout = 500 * time.Millisecond // Time allowance before an announced block is explicitly requested
 	gatherSlack   = 100 * time.Millisecond // Interval used to collate almost-expired announces with fetches
 	fetchTimeout  = 5 * time.Second        // Maximum allotted time to return an explicitly requested block
-	maxUncleDist  = 7                      // Maximum allowed backward distance from the chain head
+	maxUncleDist  = 14                     /*7*/ // Maximum allowed backward distance from the chain head
 	maxQueueDist  = 32                     // Maximum allowed distance from the chain head to queue
 	hashLimit     = 256                    // Maximum number of unique blocks a peer may have announced
 	blockLimit    = 64                     // Maximum number of unique blocks a peer may have delivered
@@ -60,7 +60,7 @@ type headerVerifierFn func(header *modules.Header) error
 type blockBroadcasterFn func(block *modules.Unit, propagate bool)
 
 // chainHeightFn is a callback type to retrieve the current chain height.
-type chainHeightFn func() uint64
+type chainHeightFn func(assetId modules.IDType16) uint64
 
 // chainInsertFn is a callback type to insert a batch of blocks into the local chain.
 type chainInsertFn func(modules.Units) (int, error)
@@ -71,10 +71,10 @@ type peerDropFn func(id string)
 // announce is the hash notification of the availability of a new block in the
 // network.
 type announce struct {
-	hash   common.Hash     // Hash of the block being announced
-	number uint64          // Number of the block being announced (0 = unknown | old protocol)
-	header *modules.Header // Header of the block partially reassembled (new protocol)
-	time   time.Time       // Timestamp of the announcement
+	hash   common.Hash        // Hash of the block being announced
+	number modules.ChainIndex /*uint64*/ // Number of the block being announced (0 = unknown | old protocol)
+	header *modules.Header    // Header of the block partially reassembled (new protocol)
+	time   time.Time          // Timestamp of the announcement
 
 	origin string // Identifier of the peer originating the notification
 
@@ -187,7 +187,7 @@ func (f *Fetcher) Stop() {
 
 // Notify announces the fetcher of the potential availability of a new block in
 // the network.
-func (f *Fetcher) Notify(peer string, hash common.Hash, number uint64, time time.Time,
+func (f *Fetcher) Notify(peer string, hash common.Hash, number modules.ChainIndex, time time.Time,
 	headerFetcher headerRequesterFn, bodyFetcher bodyRequesterFn) error {
 	block := &announce{
 		hash:        hash,
@@ -293,13 +293,14 @@ func (f *Fetcher) loop() {
 			}
 		}
 		// Import any queued blocks that could potentially fit
-		height := f.chainHeight()
+		var height uint64
 		for !f.queue.Empty() {
 			op := f.queue.PopItem().(*inject)
 			if f.queueChangeHook != nil {
 				f.queueChangeHook(op.unit.UnitHash, false)
 			}
 			// If too high up the chain or phase, continue later
+			height = f.chainHeight(op.unit.Header().ChainIndex().AssetID)
 			number := op.unit.NumberU64()
 			if number > height+1 {
 				f.queue.Push(op, -float32(op.unit.NumberU64()))
@@ -335,8 +336,8 @@ func (f *Fetcher) loop() {
 				break
 			}
 			// If we have a valid block number, check that it's potentially useful
-			if notification.number > 0 {
-				if dist := int64(notification.number) - int64(f.chainHeight()); dist < -maxUncleDist || dist > maxQueueDist {
+			if notification.number.Index > 0 {
+				if dist := int64(notification.number.Index) - int64(f.chainHeight(notification.number.AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
 					log.Debug("Peer discarded announcement", "peer", notification.origin, "number", notification.number, "hash", notification.hash, "distance", dist)
 					propAnnounceDropMeter.Mark(1)
 					break
@@ -391,7 +392,7 @@ func (f *Fetcher) loop() {
 
 				// Create a closure of the fetch and schedule in on a new thread
 				fetchHeader, hashes := f.fetching[hashes[0]].fetchHeader, hashes
-				go func() {
+				go func(fetchHeader headerRequesterFn, hashes []common.Hash) {
 					if f.fetchingHook != nil {
 						f.fetchingHook(hashes)
 					}
@@ -399,7 +400,7 @@ func (f *Fetcher) loop() {
 						headerFetchMeter.Mark(1)
 						fetchHeader(hash) // Suboptimal, but protocol doesn't allow batch header retrievals
 					}
-				}()
+				}(fetchHeader, hashes)
 			}
 			// Schedule the next fetch if blocks are still pending
 			f.rescheduleFetch(fetchTimer)
@@ -454,8 +455,8 @@ func (f *Fetcher) loop() {
 				// Filter fetcher-requested headers from other synchronisation algorithms
 				if announce := f.fetching[hash]; announce != nil && announce.origin == task.peer && f.fetched[hash] == nil && f.completing[hash] == nil && f.queued[hash] == nil {
 					// If the delivered header does not match the promised number, drop the announcer
-					//if header.Number.Uint64() != announce.number {
-					if header.Number.Index != announce.number {
+					if header.Number.Index != announce.number.Index &&
+						header.Number.AssetID == announce.number.AssetID {
 						log.Trace("Invalid block number fetched", "peer", announce.origin, "hash", header.Hash(), "announced", announce.number, "provided", header.Number)
 						f.dropPeer(announce.origin)
 						f.forgetHash(hash)
@@ -468,6 +469,7 @@ func (f *Fetcher) loop() {
 
 						// If the block is empty (header only), short circuit into the final import queue
 						//if header.TxHash == types.DeriveSha(modules.Transactions{}) && header.UncleHash == types.CalcUncleHash([]*types.Header{}) {
+						//TODO modify
 						if header.TxRoot == modules.DeriveSha(modules.Transactions{}) {
 							log.Trace("Block empty, skipping body retrieval", "peer", announce.origin, "number", header.Number, "hash", header.Hash())
 
@@ -619,7 +621,7 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 		return
 	}
 	// Discard any past or too distant blocks
-	if dist := int64(block.NumberU64()) - int64(f.chainHeight()); dist < -maxUncleDist || dist > maxQueueDist {
+	if dist := int64(block.NumberU64()) - int64(f.chainHeight(block.Number().AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
 		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
 		log.Info("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
 		propBroadcastDropMeter.Mark(1)
