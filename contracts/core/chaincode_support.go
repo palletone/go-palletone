@@ -145,7 +145,7 @@ func (chaincodeSupport *ChaincodeSupport) launchStarted(chaincode string) bool {
 
 // NewChaincodeSupport creates a new ChaincodeSupport instance
 func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout time.Duration, ca accesscontrol.CA) pb.ChaincodeSupportServer {
-	path := config.GetPath("peer.fileSystemPath") + string(filepath.Separator) + "chaincodes"
+	path := config.GetPath("peer.fileSystemPath") + string(filepath.Separator) //+ "chaincodes"
 	chaincodeLogger.Infof("NewChaincodeSupport chaincodes path: %s\n", path)
 
 	ccprovider.SetChaincodesPath(path)
