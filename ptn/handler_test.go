@@ -97,8 +97,8 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		// If the test used number origins, repeat with hashes as the too
 		if tt.query.Origin.Hash == (common.Hash{}) {
 			index := modules.ChainIndex{
-				IsMain:  true,
-				Index:   uint64(0),
+				IsMain: true,
+				Index:  uint64(0),
 			}
 			index.AssetID.SetBytes([]byte("test"))
 			tt.query.Origin.Hash, tt.query.Origin.Number = common.Hash{}, index
@@ -125,7 +125,7 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 		available []bool        // Availability of explicitly requested blocks
 		expected  int           // Total number of existing blocks to expect
 	}{
-		{1, nil, nil, 1},                                                         // A single random block should be retrievable
+		{1, nil, nil, 1}, // A single random block should be retrievable
 	}
 	// Run each of the tests and verify the results against the chain
 	for i, tt := range tests {
@@ -138,7 +138,10 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 				if !seen[0] {
 					seen[0] = true
 
-					block := pm.dag.GetUnitByNumber(uint64(0))
+					chain := modules.ChainIndex{
+						Index: 0,
+					}
+					block := pm.dag.GetUnitByNumber(chain)
 					hashes = append(hashes, block.Hash())
 					if len(bodies) < tt.expected {
 						bodies = append(bodies, &blockBody{Transactions: block.Transactions()})
@@ -163,10 +166,9 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 			Payload: pay,
 		}
 		tx := &modules.Transaction{
-			TxMessages:   []modules.Message{msg0},
+			TxMessages: []modules.Message{msg0},
 		}
 		bodies = append(bodies, &blockBody{Transactions: []*modules.Transaction{tx}})
-
 
 		// Send the hash request and verify the response
 		p2p.Send(peer.app, 0x00, hashes)
@@ -175,6 +177,7 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 		}
 	}
 }
+
 /*
 // Tests that the node state database can be retrieved based on hashes.
 func TestGetNodeData63(t *testing.T) { testGetNodeData(t, 63) }
