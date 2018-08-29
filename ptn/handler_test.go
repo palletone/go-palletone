@@ -390,3 +390,4 @@ func testDAOChallenge(t *testing.T, localForked, remoteForked bool, timeout bool
 		}
 	}
 }
+*/
