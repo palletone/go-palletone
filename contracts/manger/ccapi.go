@@ -303,7 +303,6 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone") //default
-	ccVersion := "ptn001"          //default
 
 	cc, err := cclist.GetChaincode(chainID, deployId)
 	if err != nil {
@@ -326,7 +325,7 @@ func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout
 	cid := &pb.ChaincodeID{
 		Path:    "", //no use
 		Name:    cc.Name,
-		Version: ccVersion,
+		Version: cc.Version,
 	}
 
 	sprop, prop, err := signedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
@@ -400,9 +399,8 @@ func Stop(chainID string, deployId []byte, txid string, deleteImage bool) error 
 	return err
 }
 
-
 func peerContractMockConfigInit() {
-	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
+	viper.Set("peer.fileSystemPath", "./chaincodes")
 	viper.Set("peer.address", "127.0.0.1:12345")
 	viper.Set("chaincode.executetimeout", 20*time.Second)
 

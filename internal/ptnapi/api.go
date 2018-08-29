@@ -740,8 +740,8 @@ func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txi
 	depId, _ := hex.DecodeString(deployId)
 	log.Info("Ccinvoke:"+ deployId + ":" + txid + "_")
 
-	f := "putval"
-	args := ut.ToChaincodeArgs(f, "greeting", "my test")
+	f := "invoke"
+	args := ut.ToChaincodeArgs(f, "123")
 
 	err := s.b.ContractInvoke(depId, txid, args, 0)
 	return  err

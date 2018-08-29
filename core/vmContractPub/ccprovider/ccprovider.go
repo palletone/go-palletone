@@ -80,14 +80,14 @@ type CCPackage interface {
 func SetChaincodesPath(path string) {
 	if s, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			if err := os.Mkdir(path, 0755); err != nil {
-				panic(fmt.Sprintf("Could not create chaincodes install path: %s", err))
+			if err := os.MkdirAll(path, 0755); err != nil {
+				ccproviderLogger.Errorf("Could not create chaincodes install path: %s", err)
 			}
 		} else {
-			panic(fmt.Sprintf("Could not stat chaincodes install path: %s", err))
+			ccproviderLogger.Errorf("Could not stat chaincodes install path: %s", err)
 		}
 	} else if !s.IsDir() {
-		panic(fmt.Errorf("chaincode path exists but not a dir: %s", path))
+		ccproviderLogger.Errorf("chaincode path exists but not a dir: %s", path)
 	}
 
 	chaincodeInstallPath = path
