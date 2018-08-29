@@ -212,7 +212,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 
 	// 3. 异步向区块链网络广播验证单元
 	log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
-	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: unit})
+	mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: unit})
 
 	return Produced, detail
 }

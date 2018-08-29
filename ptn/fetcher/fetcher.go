@@ -307,14 +307,14 @@ func (f *Fetcher) loop() {
 				if f.queueChangeHook != nil {
 					f.queueChangeHook(op.unit.UnitHash, true)
 				}
-				log.Info("===loop===", "number:", number, "height:", height)
+				log.Debug("===loop===", "number:", number, "height:", height)
 				break
 			}
 			// Otherwise if fresh and still unknown, try and import
 			hash := op.unit.Hash()
 			if number+maxUncleDist < height || f.getBlock(hash) != nil {
 				f.forgetBlock(hash)
-				log.Info("======loop umber+maxUncleDist < height || f.getBlock(hash) != nil======")
+				log.Debug("======loop umber+maxUncleDist < height || f.getBlock(hash) != nil======")
 				continue
 			}
 			f.insert(op.origin, op.unit)
@@ -328,6 +328,7 @@ func (f *Fetcher) loop() {
 		case notification := <-f.notify:
 			// A block was announced, make sure the peer isn't DOSing us
 			propAnnounceInMeter.Mark(1)
+			log.Debug("===fetcher notification===")
 
 			count := f.announces[notification.origin] + 1
 			if count > hashLimit {
@@ -336,20 +337,26 @@ func (f *Fetcher) loop() {
 				break
 			}
 			// If we have a valid block number, check that it's potentially useful
-			if notification.number.Index > 0 {
-				if dist := int64(notification.number.Index) - int64(f.chainHeight(notification.number.AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
-					log.Debug("Peer discarded announcement", "peer", notification.origin, "number", notification.number, "hash", notification.hash, "distance", dist)
-					propAnnounceDropMeter.Mark(1)
-					break
+			//TODO must recover
+			/*
+				if notification.number.Index > 0 {
+					if dist := int64(notification.number.Index) - int64(f.chainHeight(notification.number.AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
+						log.Debug("Peer discarded announcement", "peer", notification.origin, "number", notification.number, "hash", notification.hash, "distance", dist)
+						propAnnounceDropMeter.Mark(1)
+						break
+					}
 				}
-			}
+			*/
 			// All is well, schedule the announce if block's not yet downloading
 			if _, ok := f.fetching[notification.hash]; ok {
+				log.Debug("===fetcher fetching have===")
 				break
 			}
 			if _, ok := f.completing[notification.hash]; ok {
+				log.Debug("===fetcher completing have===")
 				break
 			}
+			log.Debug("===fetcher announced append===")
 			f.announces[notification.origin] = count
 			f.announced[notification.hash] = append(f.announced[notification.hash], notification)
 			if f.announceChangeHook != nil && len(f.announced[notification.hash]) == 1 {
@@ -386,6 +393,7 @@ func (f *Fetcher) loop() {
 					}
 				}
 			}
+			log.Debug("===fetcher <-fetchTimer.C===", "len(request):", len(request))
 			// Send out all block header requests
 			for peer, hashes := range request {
 				log.Trace("Fetching scheduled headers", "peer", peer, "list", hashes)
@@ -524,7 +532,7 @@ func (f *Fetcher) loop() {
 				return
 			}
 			bodyFilterInMeter.Mark(int64(len(task.transactions)))
-
+			log.Debug("===fetcher  <-f.bodyFilter===")
 			blocks := []*modules.Unit{}
 			for i := 0; i < len(task.transactions); /*&& i < len(task.uncles)*/ i++ {
 				// Match up a body to any possible completion request
@@ -534,7 +542,7 @@ func (f *Fetcher) loop() {
 					if f.queued[hash] == nil {
 						txnHash := modules.DeriveSha(modules.Transactions(task.transactions[i]))
 						//uncleHash := types.CalcUncleHash(task.uncles[i])
-
+						//TODO
 						if txnHash == announce.header.TxRoot && announce.origin == task.peer {
 							// Mark the body matched, reassemble if still unknown
 							matched = true
@@ -587,6 +595,7 @@ func (f *Fetcher) rescheduleFetch(fetch *time.Timer) {
 			earliest = announces[0].time
 		}
 	}
+	log.Debug("===fetcher rescheduleFetch===")
 	fetch.Reset(arriveTimeout - time.Since(earliest))
 }
 
@@ -610,12 +619,11 @@ func (f *Fetcher) rescheduleComplete(complete *time.Timer) {
 // has not yet been seen.
 func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 	hash := block.Hash()
-
+	log.Debug("=====fetcher enqueue======")
 	// Ensure the peer isn't DOSing us
 	count := f.queues[peer] + 1
 	if count > blockLimit {
 		log.Debug("Discarded propagated block, exceeded allowance", "peer", peer, "number", block.Number(), "hash", hash, "limit", blockLimit)
-		log.Info("Discarded propagated block, exceeded allowance", "peer", peer, "number", block.Number(), "hash", hash, "limit", blockLimit)
 		propBroadcastDOSMeter.Mark(1)
 		f.forgetHash(hash)
 		return
@@ -623,7 +631,6 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 	// Discard any past or too distant blocks
 	if dist := int64(block.NumberU64()) - int64(f.chainHeight(block.Number().AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
 		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
-		log.Info("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
 		propBroadcastDropMeter.Mark(1)
 		f.forgetHash(hash)
 		return
@@ -641,7 +648,6 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 			f.queueChangeHook(op.unit.Hash(), true)
 		}
 		log.Debug("Queued propagated block", "peer", peer, "number", block.Number(), "hash", hash, "queued", f.queue.Size())
-		log.Info("Queued propagated block", "peer", peer, "number", block.Number(), "hash", hash, "queued", f.queue.Size())
 	}
 }
 
