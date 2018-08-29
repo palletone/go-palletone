@@ -44,6 +44,7 @@ import (
 	"fmt"
 	"time"
 	common2 "github.com/palletone/go-palletone/dag/common"
+	"log"
 )
 
 var (
@@ -65,7 +66,6 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	engine := new(consensus.DPOSEngine)
 	dag := dag.NewDag()
 	typemux := new(event.TypeMux)
-	//DbPath := "./data1/leveldb"
 	db, _ := ptndb.NewMemDatabase()
 	producer := new(mediatorplugin.MediatorPlugin)
 
@@ -236,14 +236,14 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool) (*te
 	}()
 	tp := &testPeer{app: app, net: net, peer: peer}
 	// Execute any implicitly requested handshakes and return
-	if shake {
-		var (
-			//genesis = pm.dag.GetUnitByNumber(0)
-			//head  ,_ = pm.dag.GetHeader(genesis.Header().Hash(),0)
-			//td      = pm.dag.GetUnitByNumber(0).Number().Index
-		)
-		//tp.handshake(nil, 0, common.Hash{}, common.Hash{})
-	}
+	//if shake {
+	//	var (
+	//		//genesis = pm.dag.CurrentUnit()
+	//		//head  = pm.dag.CurrentUnit().UnitHeader
+	//		//td      = head.Number.Index
+	//	)
+	//	tp.handshake(nil, 0, common.Hash{}, common.Hash{})
+	//}
 	return tp, errc
 }
 
@@ -258,10 +258,10 @@ func (p *testPeer) handshake(t *testing.T, td uint64, head common.Hash, genesis 
 		GenesisBlock:    genesis,
 	}
 	if err := p2p.ExpectMsg(p.app, StatusMsg, msg); err != nil {
-		t.Fatalf("status recv: %v", err)
+		log.Fatalf("status recv: %v", err)
 	}
 	if err := p2p.Send(p.app, StatusMsg, msg); err != nil {
-		t.Fatalf("status send: %v", err)
+		log.Fatalf("status send: %v", err)
 	}
 }
 
