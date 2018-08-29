@@ -25,7 +25,6 @@ import (
 	"sync/atomic"
 	"time"
 
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -184,9 +183,9 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	validator := func(header *modules.Header) error {
 		return dag.VerifyHeader(header, true)
 	}
-	heighter := func() uint64 {
+	heighter := func(assetId modules.IDType16) uint64 {
 		if _, ok := levelDb.(*palletdb.LDBDatabase); ok {
-			unit := dag.CurrentUnit()
+			unit := dag.GetCurrentUnit(assetId)
 			if unit != nil {
 				return unit.NumberU64()
 			}
@@ -756,7 +755,7 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	// Otherwise if the block is indeed in out own chain, announce it
 	if pm.dag.HasUnit(hash) {
 		for _, peer := range peers {
-			peer.SendNewUnitHashes([]common.Hash{hash}, []uint64{unit.NumberU64()})
+			peer.SendNewUnitHashes([]common.Hash{hash}, []modules.ChainIndex{unit.Number()})
 		}
 		log.Trace("BroadcastUnit Announced block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 	}
