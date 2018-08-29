@@ -412,8 +412,8 @@ func peerContractMockConfigInit() {
 }
 
 func init() {
-	peerContractMockConfigInit()
+	//peerContractMockConfigInit()
 
-	InitNoSysCCC()
+	//InitNoSysCCC()
 	//Init()
 }
