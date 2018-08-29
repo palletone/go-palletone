@@ -399,9 +399,8 @@ func Stop(chainID string, deployId []byte, txid string, deleteImage bool) error 
 	return err
 }
 
-
 func peerContractMockConfigInit() {
-	viper.Set("peer.fileSystemPath", "~/chaincodes")
+	viper.Set("peer.fileSystemPath", "./chaincodes")
 	viper.Set("peer.address", "127.0.0.1:12345")
 	viper.Set("chaincode.executetimeout", 20*time.Second)
 
@@ -412,8 +411,8 @@ func peerContractMockConfigInit() {
 }
 
 func init() {
-	//peerContractMockConfigInit()
+	peerContractMockConfigInit()
 
-	//InitNoSysCCC()
+	InitNoSysCCC()
 	//Init()
 }
