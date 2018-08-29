@@ -25,6 +25,7 @@ import (
 	"sync/atomic"
 	"time"
 
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
