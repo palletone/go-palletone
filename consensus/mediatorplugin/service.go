@@ -36,6 +36,9 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"strings"
+	"encoding/base64"
+	"github.com/dedis/kyber/pairing/bn256"
 )
 
 // PalletOne wraps all methods required for producing unit.
@@ -164,25 +167,41 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	mss := cfg.Mediators
 	msm := map[common.Address]mediator{}
 
-	//for address, passphrase := range mss {
-	//	address := strings.TrimSpace(address)
-	//	address = strings.Trim(address, "\"")
-	//
-	//	addr := common.StringToAddress(address)
+	for address, medI := range mss {
+		address := strings.TrimSpace(address)
+		address = strings.Trim(address, "\"")
 
-	for normA, mediA := range mss {
-		address := normA.Address
-		addrType, err := address.Validate()
+		addr := common.StringToAddress(address)
+		addrType, err := addr.Validate()
 		if err != nil || addrType != common.PublicKeyHash {
 			log.Error(fmt.Sprintf("Invalid mediator account address %v : %v", address, err))
 		}
 
 		log.Info(fmt.Sprintf("this node controll mediator account address: %v", address))
 
-		msm[address] = mediator{
-			NormalAccount:   normA,
-			MediatorAccount: mediA,
+		secB, err := base64.StdEncoding.DecodeString(medI.InitPartSec)
+		if err != nil {
+			log.Error(fmt.Sprintf("initPartSec %v : %v", medI.InitPartSec, err))
 		}
+		pubB, err := base64.StdEncoding.DecodeString(medI.InitPartPub)
+		if err != nil {
+			log.Error(fmt.Sprintf("initPartPub %v : %v", medI.InitPartPub, err))
+		}
+
+		suite := bn256.NewSuiteG2()
+		sec	:= suite.Scalar().Zero()
+		pub := suite.Point().Null()
+
+		err = sec.UnmarshalBinary(secB)
+		if err != nil {
+			log.Error(fmt.Sprintf("Invalid mediator account initPartSec %v : %v", medI.InitPartSec, err))
+		}
+		err = pub.UnmarshalBinary(pubB)
+		if err != nil {
+			log.Error(fmt.Sprintf("Invalid mediator account initPartPub %v : %v", medI.InitPartPub, err))
+		}
+
+		msm[addr] = mediator{addr, medI.Password, sec, pub}
 	}
 
 	mp := MediatorPlugin{
@@ -202,4 +221,11 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	log.Debug("mediator plugin initialize end")
 
 	return &mp, nil
+}
+
+type mediator struct {
+	Address common.Address
+	Password string
+	InitPartSec kyber.Scalar
+	InitPartPub kyber.Point
 }

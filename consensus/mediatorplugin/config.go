@@ -19,9 +19,16 @@
 package mediatorplugin
 
 import (
-	"github.com/dedis/kyber"
-	"github.com/palletone/go-palletone/common"
 	"gopkg.in/urfave/cli.v1"
+	"github.com/palletone/go-palletone/core"
+)
+
+const (
+	//defaultMediator = "P113o9hNFyPv7ys5TxpCcaJDYbZ4b7hsPyt"
+	defaultPassword = "password"
+	DefaultInitPartSec = "Tj1wNXLM6YkAxnvmag5ydh8qbBJ9wEtZDMeTE0qfacI="
+	DefaultInitPartPub = "AXkVypTVHRI94Vd7ggAdN62rLW57tcJrTw/0nErnXfFlcQpaSA1qMaYiJI7HxKJBhxWmTzRloEfB" +
+		"93mSTDuqs+40LJFNJ/h+gNlZxTHiWEw9MuFhNMC0j5CzfGFvUkDcs0XTIYLGhMomImqw9n5cURXOm0Qhhr92gdO8kYZheIq/"
 )
 
 var (
@@ -35,13 +42,18 @@ var (
 type Config struct {
 	EnableStaleProduction bool // Enable Verified Unit production, even if the chain is stale.
 	//	RequiredParticipation float32	// Percent of mediators (0-99) that must be participating in order to produce
-	Mediators map[NormalAccount]MediatorAccount // the map of the normal account and  the mediator account
+	Mediators map[string]MediatorInfo // the map of  mediator`s address and  the mediator info
 }
 
 // mediator plugin default config
 var DefaultConfig = Config{
 	EnableStaleProduction: false,
-	Mediators:             map[NormalAccount]MediatorAccount{},
+	Mediators:             map[string]MediatorInfo{
+		core.DefaultTokenHolder:
+			MediatorInfo{defaultPassword,DefaultInitPartSec, DefaultInitPartPub},
+		//defaultMediator:
+		//	MediatorInfo{defaultPassword,DefaultInitPartSec, DefaultInitPartPub},
+	},
 }
 
 func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
@@ -51,17 +63,8 @@ func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
 	}
 }
 
-type NormalAccount struct {
-	Address  common.Address
+type MediatorInfo struct {
 	Password string
-}
-
-type MediatorAccount struct {
-	InitPartSec kyber.Scalar
-	InitPartPub kyber.Point
-}
-
-type mediator struct {
-	NormalAccount
-	MediatorAccount
+	InitPartSec string
+	InitPartPub string
 }
