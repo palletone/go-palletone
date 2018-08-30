@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/fatih/set.v0"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
 var (
@@ -170,7 +171,7 @@ func (p *peer) SendConsensus(msgs string) error {
 
 // SendNewBlockHashes announces the availability of a number of blocks through
 // a hash notification.
-func (p *peer) SendNewUnitHashes(hashes []common.Hash, numbers []uint64) error {
+func (p *peer) SendNewUnitHashes(hashes []common.Hash, numbers []modules.ChainIndex) error {
 	for _, hash := range hashes {
 		p.knownBlocks.Add(hash)
 	}
@@ -194,9 +195,9 @@ func (p *peer) SendUnitHeaders(headers []*modules.Header) error {
 }
 
 // SendBlockBodies sends a batch of block contents to the remote peer.
-//func (p *peer) SendBlockBodies(bodies []*blockBody) error {
-//	return p2p.Send(p.rw, BlockBodiesMsg, blockBodiesData(bodies))
-//}
+func (p *peer) SendBlockBodies(bodies []*blockBody) error {
+	return p2p.Send(p.rw, BlockBodiesMsg, blockBodiesData(bodies))
+}
 
 // SendBlockBodiesRLP sends a batch of block contents to the remote peer from
 // an already RLP encoded format.
@@ -491,17 +492,15 @@ func (ps *peerSet) GetPeers() []*peer {
 
 // AtiveMeatorPeers retrieves a list of peers that active mediator
 // @author Albert·Gou
-func (ps *peerSet) ActiveMediatorPeers() []*peer {
-	//TODO must modify
-	return nil
+func (ps *peerSet) GetActiveMediatorPeers(nodes []*discover.Node) []*peer {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
 
-	list := make([]*peer, 0, len(ps.peers))
-	for _, p := range ps.peers {
-		// TODO @wangjiyou
-
-		list = append(list, p)
+	list := make([]*peer, 0, len(nodes))
+	for _, node := range nodes {
+		if p, b := ps.peers[node.String()]; b {
+			list = append(list, p)
+		}
 	}
 
 	return list
@@ -510,7 +509,5 @@ func (ps *peerSet) ActiveMediatorPeers() []*peer {
 // SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
 // @author Albert·Gou
 func (p *peer) SendNewProducedUnit(unit *modules.Unit) error {
-	// TODO @wangjiyou
-
 	return p2p.Send(p.rw, NewProducedUnitMsg, unit)
 }

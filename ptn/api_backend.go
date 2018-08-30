@@ -19,6 +19,8 @@ package ptn
 import (
 	"context"
 	"math/big"
+	"time"
+	"log"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
@@ -31,6 +33,8 @@ import (
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
+
+	//cc "github.com/palletone/go-palletone/contracts/manger"
 )
 
 // PtnApiBackend implements ethapi.Backend for full nodes
@@ -209,4 +213,41 @@ func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
 
 func (b *PtnApiBackend) GetAddrTransactions(addr string) (modules.Transactions, error) {
 	return b.ptn.dag.GetAddrTransactions(addr)
+}
+
+//contract control
+func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string)(TemplateId []byte, err error) {
+	//tempid := []byte{0x1, 0x2, 0x3}
+	log.Printf("======>ContractInstall:name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
+
+	//payload, err := cc.Install("palletone", ccName, ccPath, ccVersion)
+	payload, err := b.ptn.contract.Install("palletone", ccName, ccPath, ccVersion)
+
+	return payload.TemplateId, err
+}
+
+func (b *PtnApiBackend)ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration)(deployId []byte, err error){
+	//depid := []byte{0x4, 0x5, 0x6}
+	log.Printf("======>ContractDeploy:tmId[%v]txid[%s]", templateId, txid)
+
+	//depid, _, err := cc.Deploy("palletone", templateId, txid, args, timeout)
+	depid, _, err := b.ptn.contract.Deploy("palletone", templateId, txid, args, timeout)
+	return depid, err
+}
+
+func (b *PtnApiBackend)ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (error) {
+	log.Printf("======>ContractInvoke:deployId[%v]txid[%s]", deployId, txid)
+
+	//_, err := cc.Invoke("palletone", deployId, txid, args, timeout)
+	_, err := b.ptn.contract.Invoke("palletone", deployId, txid, args, timeout)
+	//todo print rwset
+	return err
+}
+
+func (b *PtnApiBackend)ContractStop(deployId []byte, txid string, deleteImage bool)(error) {
+	log.Printf("======>ContractStop:deployId[%v]txid[%s]", deployId, txid)
+
+	//err := cc.Stop("palletone", deployId, txid, deleteImage)
+	err := b.ptn.contract.Stop("palletone", deployId, txid, deleteImage)
+	return err
 }

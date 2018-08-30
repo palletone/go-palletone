@@ -789,7 +789,7 @@ func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction) (int,
 
 	reconstruct := func(header *modules.Header, index int, result *fetchResult) error {
 		//TODO must recover
-		//		if modules.DeriveSha(modules.Transactions(txLists[index])) != header.TxRoot {
+		//		if core.DeriveSha(modules.Transactions(txLists[index])) != header.TxRoot {
 		//			log.Debug("===queue->DeliverBodies===", "err:", errInvalidBody)
 		//			return errInvalidBody
 		//		}
@@ -797,26 +797,6 @@ func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction) (int,
 		return nil
 	}
 	return q.deliver(id, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, bodyReqTimer, len(txLists), reconstruct)
-}
-
-// DeliverReceipts injects a receipt retrieval response into the results queue.
-// The method returns the number of transaction receipts accepted from the delivery
-// and also wakes any threads waiting for data delivery.
-func (q *queue) DeliverReceipts(id string, receiptList [][]*modules.Receipt) (int, error) {
-	/*
-		q.lock.Lock()
-		defer q.lock.Unlock()
-
-		reconstruct := func(header *modules.Header, index int, result *fetchResult) error {
-			if modules.DeriveSha(modules.Receipts(receiptList[index])) != header.ReceiptHash {
-				return errInvalidReceipt
-			}
-			result.Receipts = receiptList[index]
-			return nil
-		}
-		return q.deliver(id, q.receiptTaskPool, q.receiptTaskQueue, q.receiptPendPool, q.receiptDonePool, receiptReqTimer, len(receiptList), reconstruct)
-	*/
-	return 0, nil
 }
 
 // deliver injects a data retrieval response into the results queue.

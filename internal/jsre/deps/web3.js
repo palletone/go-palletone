@@ -1761,7 +1761,7 @@ if (typeof XMLHttpRequest === 'undefined') {
 /// required to define ETH_BIGNUMBER_ROUNDING_MODE
 var BigNumber = require('bignumber.js');
 
-var ETH_UNITS = [
+var PTN_UNITS = [
     'wei',
     'kwei',
     'Mwei',
@@ -5528,6 +5528,35 @@ var methods = function () {
         // inputFormatter: [null]
     });
 
+// del ptn_getStorageAt
+//Contract
+    var ccinstall = new Method({
+        name: 'ccinstall',
+        call: 'ptn_ccinstall',
+        params: 3, //ccName string, ccPath string, ccVersion string
+        inputFormatter: [null, null, null],
+    });
+
+    var ccdeploy = new Method({
+        name: 'ccdeploy',
+        call: 'ptn_ccdeploy',
+        params: 2, //templateId string, txid string, args [][]byte
+        inputFormatter: [null, null],
+    });
+
+    var ccinvoke = new Method({
+        name: 'ccinvoke',
+        call: 'ptn_ccinvoke',
+        params: 2, //deployId string, txid string, args [][]byte,
+        inputFormatter: [null, null],
+    });
+
+    var ccstop = new Method({
+        name: 'ccstop',
+        call: 'ptn_ccstop',
+        params: 2, //deployIdstring, txid string, deleteImage bool
+        inputFormatter: [null, null]
+    });
 
     return [
 		    forking,
@@ -5568,6 +5597,10 @@ var methods = function () {
         getUtxoEntry,
         getAddrOutput,
         getAddrTxs,
+        ccinstall,
+        ccdeploy,
+        ccinvoke,
+        ccstop,
     ];
 };
 

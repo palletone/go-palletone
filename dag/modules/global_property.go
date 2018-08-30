@@ -23,13 +23,14 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
 // 全局属性的结构体定义
 type GlobalProperty struct {
 	ChainParameters core.ChainParameters // 区块链网络参数
 
-	ActiveMediators map[common.Mediator]bool // 当前活跃mediator集合；每个维护间隔更新一次
+	ActiveMediators map[core.Mediator]bool // 当前活跃mediator集合；每个维护间隔更新一次
 }
 
 // 动态全局属性的结构体定义
@@ -57,10 +58,21 @@ type DynamicGlobalProperty struct {
 	//	RecentSlotsFilled float32
 }
 
+func (gp *GlobalProperty) GetActiveMediatorNodes() []*discover.Node {
+	aSize := len(gp.ActiveMediators)
+	nodes := make([]*discover.Node, 0, aSize)
+
+	for m := range gp.ActiveMediators {
+		nodes = append(nodes, m.Node)
+	}
+
+	return nodes
+}
+
 func NewGlobalProp() *GlobalProperty {
 	return &GlobalProperty{
 		ChainParameters: core.NewChainParams(),
-		ActiveMediators: map[common.Mediator]bool{},
+		ActiveMediators: map[core.Mediator]bool{},
 	}
 }
 
@@ -85,7 +97,7 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	// Set active mediators
 	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
 		ad := common.StringToAddress(genesis.InitialMediatorCandidates[i])
-		md := common.Mediator{
+		md := core.Mediator{
 			Address: ad,
 		}
 		gp.ActiveMediators[md] = true

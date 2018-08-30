@@ -24,12 +24,9 @@ import (
 	"strconv"
 	"time"
 
-	//	"github.com/palletone/go-palletone/common/crypto"
-	//	"github.com/palletone/go-palletone/common/crypto/sha3"
-	//	"github.com/palletone/go-palletone/common/hexutil"
-	//  "github.com/Re-volution/sizestruct"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
 )
 
 var (
@@ -393,7 +390,7 @@ func (c *writeCounter) Write(b []byte) (int, error) {
 }
 
 var (
-	EmptyRootHash = DeriveSha(Transactions{})
+	EmptyRootHash = core.DeriveSha(Transactions{})
 )
 
 type TxLookupEntry struct {

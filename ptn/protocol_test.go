@@ -21,35 +21,18 @@ import (
 	"sync"
 	"testing"
 	"time"
-
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
+	"github.com/palletone/go-palletone/common/rlp"
 )
 
-func init() {
-	// log.Root().SetHandler(log.LvlFilterHandler(log.LvlTrace, log.StreamHandler(os.Stderr, log.TerminalFormat(false))))
-}
-
-var testAccount, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-
 // Tests that handshake failures are detected and reported correctly.
-func TestStatusMsgErrors62(t *testing.T) { testStatusMsgErrors(t, 1) }
-func TestStatusMsgErrors63(t *testing.T) { testStatusMsgErrors(t, 1) }
-
+func TestStatusMsgErrors1(t *testing.T) { testStatusMsgErrors(t, 1) }
 func testStatusMsgErrors(t *testing.T, protocol int) {
-
 		pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil)
-		var (
-			//genesis = pm.dag.GetUnitByNumber(0)
-			//head    = pm.dag.CurrentHeader()
-			//td      = uint64(0)
-		)
 		defer pm.Stop()
-
 		tests := []struct {
 			code      uint64
 			data      interface{}
@@ -59,26 +42,24 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 				code: TxMsg, data: []interface{}{},
 				wantError: errResp(ErrNoStatusMsg, "first msg has code 2 (!= 0)"),
 			},
-			//{
-			//	code: StatusMsg, data: statusData{10, DefaultConfig.NetworkId, td, head.Hash(), genesis.Hash()},
-			//	wantError: errResp(ErrProtocolVersionMismatch, "ae32d0732f7b701f (!= 0000000000000000)", 0000000000000000),
-			//},
-			//{
-			//	code: StatusMsg, data: statusData{uint32(protocol), 999, td, head.Hash(), genesis.Hash()},
-			//	wantError: errResp(ErrNetworkIdMismatch, "999 (!= 1)"),
-			//},
-			//{
-			//	code: StatusMsg, data: statusData{uint32(protocol), DefaultConfig.NetworkId, td, head.Hash(), common.Hash{3}},
-			//	wantError: errResp(ErrGenesisBlockMismatch, "0300000000000000 (!= %x)", genesis.Hash().Bytes()[:8]),
-			//},
+			{
+				code: StatusMsg, data: statusData{10, DefaultConfig.NetworkId, 0, common.Hash{}, common.Hash{}},
+				wantError: errResp(ErrProtocolVersionMismatch, "10 (!= %d)", protocol),
+			},
+			{
+				code: StatusMsg, data: statusData{uint32(protocol), 999, 0, common.Hash{}, common.Hash{}},
+				wantError: errResp(ErrNetworkIdMismatch, "999 (!= 1)"),
+			},
+			{
+				code: StatusMsg, data: statusData{uint32(protocol), DefaultConfig.NetworkId, 0, common.Hash{}, common.Hash{3}},
+				wantError: errResp(ErrGenesisBlockMismatch, "0300000000000000 (!= %x)", common.Hash{}.Bytes()[:8]),
+			},
 		}
-
 		for i, test := range tests {
 			p, errc := newTestPeer("peer", protocol, pm, false)
 			// The send call might hang until reset because
 			// the protocol might not read the payload.
 			go p2p.Send(p.app, test.code, test.data)
-
 			select {
 			case err := <-errc:
 				if err == nil {
@@ -91,13 +72,10 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 			}
 			p.close()
 		}
-
 }
 
 // This test checks that received transactions are added to the local pool.
 //func TestRecvTransactions1(t *testing.T) { testRecvTransactions(t, 1) }
-//func TestRecvTransactions63(t *testing.T) { testRecvTransactions(t, 63) }
-
 func testRecvTransactions(t *testing.T, protocol int) {
 	txAdded := make(chan []*modules.Transaction)
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil)
@@ -106,7 +84,7 @@ func testRecvTransactions(t *testing.T, protocol int) {
 	defer pm.Stop()
 	defer p.close()
 
-	tx := newTestTransaction(testAccount, 0, 0)
+	tx := newTestTransaction(nil, 0, 0)
 	if err := p2p.Send(p.app, TxMsg, []interface{}{tx}); err != nil {
 		t.Fatalf("send error: %v", err)
 	}
@@ -121,23 +99,18 @@ func testRecvTransactions(t *testing.T, protocol int) {
 		t.Errorf("no TxPreEvent received within 2 seconds")
 	}
 }
-
 // This test checks that pending transactions are sent.
-//func TestSendTransactions62(t *testing.T) { testSendTransactions(t, 1) }
-//func TestSendTransactions63(t *testing.T) { testSendTransactions(t, 1) }
-
+//func TestSendTransactions1(t *testing.T) { testSendTransactions(t, 1) }
 func testSendTransactions(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil)
 	defer pm.Stop()
-
 	// Fill the pool with big transactions.
 	const txsize = txsyncPackSize / 10
 	alltxs := make([]*modules.Transaction, 100)
 	for nonce := range alltxs {
-		alltxs[nonce] = newTestTransaction(testAccount, uint64(nonce), txsize)
+		alltxs[nonce] = newTestTransaction(nil, uint64(nonce), txsize)
 	}
 	pm.txpool.AddRemotes(alltxs)
-
 	// Connect several peers. They should all receive the pending transactions.
 	var wg sync.WaitGroup
 	checktxs := func(p *testPeer) {
@@ -152,14 +125,15 @@ func testSendTransactions(t *testing.T, protocol int) {
 			msg, err := p.app.ReadMsg()
 			if err != nil {
 				t.Errorf("%v: read error: %v", p.Peer, err)
-			} else if msg.Code != TxMsg {
+			} else if msg.Code != 0x00 {
 				t.Errorf("%v: got code %d, want TxMsg", p.Peer, msg.Code)
 			}
 			if err := msg.Decode(&txs); err != nil {
 				t.Errorf("%v: %v", p.Peer, err)
 			}
 			for _, tx := range txs {
-				hash := tx.Hash()
+				_ = tx
+				hash := common.Hash{}
 				seentx, want := seen[hash]
 				if seentx {
 					t.Errorf("%v: got tx more than once: %x", p.Peer, hash)
@@ -192,17 +166,14 @@ func TestGetBlockHeadersDataEncodeDecode(t *testing.T) {
 		packet *getBlockHeadersData
 		fail   bool
 	}{
+		//Providing the origin as either a hash or a number should both work
+		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number: modules.ChainIndex{modules.IDType16{},true,0}}}},
+		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Hash: hash}}},
 
-		// Providing the origin as either a hash or a number should both work
-		//{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number: 314}}},
-		//{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Hash: hash}}},
-		//
-		//// Providing arbitrary query field should also work
-		//{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number: 314}, Amount: 314, Skip: 1, Reverse: true}},
-		//{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Hash: hash}, Amount: 314, Skip: 1, Reverse: true}},
-		//
-		//// Providing both the origin hash and origin number must fail
-		//{fail: true, packet: &getBlockHeadersData{Origin: hashOrNumber{Hash: hash, Number: 314}}},
+		// Providing arbitrary query field should also work
+		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number: modules.ChainIndex{modules.IDType16{},true,0}}, Amount: 314, Skip: 1, Reverse: true}},
+		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Hash: hash}, Amount: 314, Skip: 1, Reverse: true}},
+
 	}
 	// Iterate over each of the tests and try to encode and then decode
 	for i, tt := range tests {

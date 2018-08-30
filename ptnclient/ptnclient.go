@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/dag/modules"
+	"log"
 )
 
 // Client defines typed wrappers for the Palletone RPC API.
@@ -451,6 +452,33 @@ func (ec *Client) ForkingAt(ctx context.Context, account common.Address, rate ui
 	return uint64(result), err
 }
 
+func (ec *Client) CcinstallAt(ctx context.Context, ccname string, ccpath string, ccversion string) (uint64, error) {
+	var result hexutil.Uint64
+	log.Printf("==============================CcInstallAt:"+ ccname + ":" + ccpath + ":" + ccversion)
+	err := ec.c.CallContext(ctx, &result, "ptn_ccinstall", ccname, ccpath, ccversion)
+	return uint64(result), err
+}
+
+func (ec *Client) CcdeployAt(ctx context.Context, templateId string, txid string) (uint64, error) {
+	var result hexutil.Uint64
+	log.Printf("==============================CcdeployAt:"+ templateId + ":" + txid + ":" )
+	err := ec.c.CallContext(ctx, &result, "ptn_ccdeploy", templateId, txid)
+	return uint64(result), err
+}
+
+func (ec *Client) CcinvokeAt(ctx context.Context, deployId string, txid string) (uint64, error) {
+	var result hexutil.Uint64
+	log.Printf("==============================CcinvokeAt:"+ deployId + ":" + txid + ":" )
+	err := ec.c.CallContext(ctx, &result, "ptn_ccinvoke", deployId, txid)
+	return uint64(result), err
+}
+
+func (ec *Client) CcstopAt(ctx context.Context, deployId string, txid string) (uint64, error) {
+	var result hexutil.Uint64
+	log.Printf("==============================CcstopAt:"+ deployId + ":" + txid + ":" )
+	err := ec.c.CallContext(ctx, &result, "ptn_ccstop", deployId, txid)
+	return uint64(result), err
+}
 //--------------test end
 
 /**
