@@ -129,10 +129,10 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	// Figure out whether to allow fast sync or not
 	/*blockchain.CurrentBlock().NumberU64() > 0 */
 	//TODO must modify.The second start would Blockchain not empty, fast sync disabled
-		if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Number.Index > 0 {
-			//log.Warn("Blockchain not empty, fast sync disabled")
-			mode = downloader.FullSync
-		}
+	if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Number.Index > 0 {
+		//log.Warn("Blockchain not empty, fast sync disabled")
+		mode = downloader.FullSync
+	}
 	if mode == downloader.FastSync {
 		manager.fastSync = uint32(1)
 	}
@@ -516,7 +516,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				log.Debug("===GetBlockBodiesMsg===", "GetTransactionsByHash err:", err)
 				return errResp(ErrDecode, "msg %v: %v", msg, err)
 			}
-
+			log.Debug("===GetBlockBodiesMsg===", "GetTransactionsByHash txs:", txs)
 			data, err := rlp.EncodeToBytes(txs)
 			if err != nil {
 				log.Debug("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
@@ -569,7 +569,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			sum++
 		}
 
-		log.Debug("===BlockBodiesMsg===", "request sum:", sum, "len(transactions:)", len(transactions))
+		log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(transactions), "transactions[0]:", transactions[0])
 		// Filter out any explicitly requested bodies, deliver the rest to the downloader
 		filter := len(transactions) > 0
 		if filter {

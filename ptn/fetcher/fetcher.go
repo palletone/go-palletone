@@ -532,21 +532,24 @@ func (f *Fetcher) loop() {
 				return
 			}
 			bodyFilterInMeter.Mark(int64(len(task.transactions)))
-			log.Debug("===fetcher  <-f.bodyFilter===")
+			log.Debug("===fetcher  <-f.bodyFilter pre===", "len(task.transactions):", len(task.transactions))
 			blocks := []*modules.Unit{}
 
 			for i := 0; i < len(task.transactions); i++ {
 				//TODO  modify the txhash compare
-				//test start
 				matched := true
-				//test end
 				/*
 					// Match up a body to any possible completion request
 					matched := false
 					for hash, announce := range f.completing {
 						if f.queued[hash] == nil {
 							txnHash := core.DeriveSha(modules.Transactions(task.transactions[i]))
-							if txnHash == announce.header.TxRoot && announce.origin == task.peer {
+							log.Debug("<-f.bodyFilter", "Transactions", modules.Transactions(task.transactions[i]))
+							log.Debug("<-f.bodyFilter", "txnHash", txnHash, "announce.header.TxRoot", announce.header.TxRoot)
+							log.Debug("<-f.bodyFilter", "task.peer", task.peer, "announce.origin", announce.origin)
+							//TODO must recover
+							//if txnHash == announce.header.TxRoot && announce.origin == task.peer {
+							if announce.origin == task.peer {
 								// Mark the body matched, reassemble if still unknown
 								matched = true
 
@@ -570,7 +573,7 @@ func (f *Fetcher) loop() {
 			}
 
 			bodyFilterOutMeter.Mark(int64(len(task.transactions)))
-			log.Debug("===fetcher  filter <- task pre===", "len(task.transactions):", len(task.transactions))
+			log.Debug("===fetcher  filter <- task last===", "len(task.transactions):", len(task.transactions))
 			select {
 			case filter <- task:
 				log.Debug("===fetcher  filter <- task===")
@@ -634,12 +637,13 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 		return
 	}
 	// Discard any past or too distant blocks
-	if dist := int64(block.NumberU64()) - int64(f.chainHeight(block.Number().AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
-		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
-		propBroadcastDropMeter.Mark(1)
-		f.forgetHash(hash)
-		return
-	}
+	//TODO must recover
+	//if dist := int64(block.NumberU64()) - int64(f.chainHeight(block.Number().AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
+	//	log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
+	//	propBroadcastDropMeter.Mark(1)
+	//	f.forgetHash(hash)
+	//	return
+	//}
 	// Schedule the block for future importing
 	if _, ok := f.queued[hash]; !ok {
 		op := &inject{
@@ -663,8 +667,8 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 	hash := block.Hash()
 
 	// Run the import on a new thread
-	log.Debug("Importing propagated block", "peer", peer, "number", block.Number(), "hash", hash)
-	log.Info("Importing propagated block", "peer", peer, "number", block.Number(), "hash", hash)
+	log.Debug("Importing propagated block insert DAG", "peer", peer, "number", block.Number(), "hash", hash)
+	log.Info("Importing propagated block insert DAG", "peer", peer, "number", block.Number(), "hash", hash)
 	go func() {
 		defer func() { f.done <- hash }()
 
