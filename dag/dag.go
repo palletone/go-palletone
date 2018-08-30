@@ -97,6 +97,8 @@ func (d *Dag) HasUnit(hash common.Hash) bool {
 }
 
 func (d *Dag) GetUnitByHash(hash common.Hash) *modules.Unit {
+	//TODO must modify
+	return nil
 	return d.CurrentUnit()
 }
 
@@ -212,6 +214,15 @@ func (d *Dag) CurrentHeader() *modules.Header {
 // caching it if found.
 func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 	return d.getBodyRLP(d.Db, hash)
+}
+
+func (d *Dag) GetTransactionsByHash(hash common.Hash) (modules.Transactions, error) {
+	txs, err := dagcommon.GetUnitTransactions(hash)
+	if err != nil {
+		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
+		return nil, err
+	}
+	return txs, nil
 }
 
 func (d *Dag) getBodyRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
