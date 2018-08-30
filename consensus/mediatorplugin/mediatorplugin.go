@@ -87,6 +87,7 @@ const (
 	Lag
 	//	Consecutive
 	ExceptionProducing
+	UnknownCondition
 )
 
 func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) ProductionCondition {
@@ -118,7 +119,7 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 			detail["ScheduledKey"])
 	case ExceptionProducing:
 		log.Info("Exception producing unit")
-	default:
+	case UnknownCondition:
 		log.Info("Unknown condition!")
 	}
 
@@ -174,7 +175,8 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 
 	scheduledMediator := ms.GetScheduledMediator(dgp, slot)
 	if scheduledMediator == nil {
-		return -1, detail
+		log.Error("The current shuffled mediators is nil!")
+		return UnknownCondition, detail
 	}
 
 	// we must control the Mediator scheduled to produce the next VerifiedUnit.
