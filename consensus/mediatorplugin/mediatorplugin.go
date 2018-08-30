@@ -173,6 +173,10 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	//}
 
 	scheduledMediator := ms.GetScheduledMediator(dgp, slot)
+	if scheduledMediator == nil {
+		return -1, detail
+	}
+
 	// we must control the Mediator scheduled to produce the next VerifiedUnit.
 	ma := scheduledMediator.Address
 	med, ok := mp.mediators[ma]

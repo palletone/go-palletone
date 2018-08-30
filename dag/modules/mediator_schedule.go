@@ -35,6 +35,10 @@ func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorS
 	log.Debug("initialize mediator schedule...")
 	ms := NewMediatorSchl()
 
+	if len(gp.ActiveMediators) == 0 {
+		log.Error("The current number of active mediators is 0!")
+	}
+
 	// Create witness scheduler
 	for m := range gp.ActiveMediators {
 		ms.CurrentShuffledMediators = append(ms.CurrentShuffledMediators, m)
@@ -62,6 +66,10 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 
 	// 2. 清除CurrentShuffledMediators原来的空间，重新分配空间
 	ms.CurrentShuffledMediators = make([]core.Mediator, 0, aSize)
+
+	if len(gp.ActiveMediators) == 0 {
+		log.Error("The current number of active mediators is 0!")
+	}
 
 	// 3. 初始化数据
 	for m := range gp.ActiveMediators {
@@ -103,8 +111,14 @@ If slotNum == 2, return the next scheduled mediator after 1 verified uint gap.
 */
 func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) *core.Mediator {
 	currentASlot := dgp.CurrentASlot + uint64(slotNum)
+	csmLen := len(ms.CurrentShuffledMediators)
+	if csmLen == 0 {
+		log.Error("The current number of shuffled mediators is 0!")
+		return nil
+	}
+
 	// 由于创世单元不是有mediator生产，所以这里需要减1
-	index := (currentASlot - 1) % uint64(len(ms.CurrentShuffledMediators))
+	index := (currentASlot - 1) % uint64(csmLen)
 	return &ms.CurrentShuffledMediators[index]
 }
 
