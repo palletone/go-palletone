@@ -25,7 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 
-	//	"github.com/palletone/go-palletone/consensus"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
@@ -243,7 +243,7 @@ func (f *Fetcher) FilterHeaders(peer string, headers []*modules.Header, time tim
 	// Retrieve the headers remaining after filtering
 	select {
 	case task := <-filter:
-		log.Debug("task := <-filter")
+		log.Debug("===FilterHeaders===", "task := <-filter len(task.headers):", len(task.headers))
 		return task.headers
 	case <-f.quit:
 		return nil
@@ -252,8 +252,8 @@ func (f *Fetcher) FilterHeaders(peer string, headers []*modules.Header, time tim
 
 // FilterBodies extracts all the block bodies that were explicitly requested by
 // the fetcher, returning those that should be handled differently.
-func (f *Fetcher) FilterBodies(peer string, transactions [][]*modules.Transaction /*, uncles [][]*modules.Header*/, time time.Time) [][]*modules.Transaction /*, [][]*modules.Header*/ {
-	log.Trace("Filtering bodies", "peer", peer, "txs", len(transactions) /*, "uncles", len(uncles)*/)
+func (f *Fetcher) FilterBodies(peer string, transactions [][]*modules.Transaction, time time.Time) [][]*modules.Transaction {
+	log.Trace("Filtering bodies", "peer", peer, "txs", len(transactions))
 
 	// Send the filter channel to the fetcher
 	filter := make(chan *bodyFilterTask)
@@ -265,14 +265,15 @@ func (f *Fetcher) FilterBodies(peer string, transactions [][]*modules.Transactio
 	}
 	// Request the filtering of the body list
 	select {
-	case filter <- &bodyFilterTask{peer: peer, transactions: transactions /*uncles: uncles,*/, time: time}:
+	case filter <- &bodyFilterTask{peer: peer, transactions: transactions, time: time}:
 	case <-f.quit:
 		return nil
 	}
 	// Retrieve the bodies remaining after filtering
 	select {
 	case task := <-filter:
-		return task.transactions /*, task.uncles*/
+		log.Debug("===FilterBodies===", "task := <-filter len(task.transactions):", len(task.transactions))
+		return task.transactions
 	case <-f.quit:
 		return nil
 	}
@@ -307,14 +308,14 @@ func (f *Fetcher) loop() {
 				if f.queueChangeHook != nil {
 					f.queueChangeHook(op.unit.UnitHash, true)
 				}
-				log.Info("===loop===", "number:", number, "height:", height)
+				log.Debug("===loop===", "number:", number, "height:", height)
 				break
 			}
 			// Otherwise if fresh and still unknown, try and import
 			hash := op.unit.Hash()
 			if number+maxUncleDist < height || f.getBlock(hash) != nil {
 				f.forgetBlock(hash)
-				log.Info("======loop umber+maxUncleDist < height || f.getBlock(hash) != nil======")
+				log.Debug("======loop umber+maxUncleDist < height || f.getBlock(hash) != nil======")
 				continue
 			}
 			f.insert(op.origin, op.unit)
@@ -328,6 +329,7 @@ func (f *Fetcher) loop() {
 		case notification := <-f.notify:
 			// A block was announced, make sure the peer isn't DOSing us
 			propAnnounceInMeter.Mark(1)
+			log.Debug("===fetcher notification===")
 
 			count := f.announces[notification.origin] + 1
 			if count > hashLimit {
@@ -336,20 +338,26 @@ func (f *Fetcher) loop() {
 				break
 			}
 			// If we have a valid block number, check that it's potentially useful
-			if notification.number.Index > 0 {
-				if dist := int64(notification.number.Index) - int64(f.chainHeight(notification.number.AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
-					log.Debug("Peer discarded announcement", "peer", notification.origin, "number", notification.number, "hash", notification.hash, "distance", dist)
-					propAnnounceDropMeter.Mark(1)
-					break
+			//TODO must recover
+			/*
+				if notification.number.Index > 0 {
+					if dist := int64(notification.number.Index) - int64(f.chainHeight(notification.number.AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
+						log.Debug("Peer discarded announcement", "peer", notification.origin, "number", notification.number, "hash", notification.hash, "distance", dist)
+						propAnnounceDropMeter.Mark(1)
+						break
+					}
 				}
-			}
+			*/
 			// All is well, schedule the announce if block's not yet downloading
 			if _, ok := f.fetching[notification.hash]; ok {
+				log.Debug("===fetcher fetching have===")
 				break
 			}
 			if _, ok := f.completing[notification.hash]; ok {
+				log.Debug("===fetcher completing have===")
 				break
 			}
+			log.Debug("===fetcher announced append===")
 			f.announces[notification.origin] = count
 			f.announced[notification.hash] = append(f.announced[notification.hash], notification)
 			if f.announceChangeHook != nil && len(f.announced[notification.hash]) == 1 {
@@ -386,6 +394,7 @@ func (f *Fetcher) loop() {
 					}
 				}
 			}
+			log.Debug("===fetcher <-fetchTimer.C===", "len(request):", len(request))
 			// Send out all block header requests
 			for peer, hashes := range request {
 				log.Trace("Fetching scheduled headers", "peer", peer, "list", hashes)
@@ -468,9 +477,8 @@ func (f *Fetcher) loop() {
 						announce.time = task.time
 
 						// If the block is empty (header only), short circuit into the final import queue
-						//if header.TxHash == types.DeriveSha(modules.Transactions{}) && header.UncleHash == types.CalcUncleHash([]*types.Header{}) {
 						//TODO modify
-						if header.TxRoot == modules.DeriveSha(modules.Transactions{}) {
+						if header.TxRoot == core.DeriveSha(modules.Transactions{}) {
 							log.Trace("Block empty, skipping body retrieval", "peer", announce.origin, "number", header.Number, "hash", header.Hash())
 
 							block := modules.NewUnitWithHeader(header)
@@ -524,43 +532,51 @@ func (f *Fetcher) loop() {
 				return
 			}
 			bodyFilterInMeter.Mark(int64(len(task.transactions)))
-
+			log.Debug("===fetcher  <-f.bodyFilter pre===", "len(task.transactions):", len(task.transactions))
 			blocks := []*modules.Unit{}
-			for i := 0; i < len(task.transactions); /*&& i < len(task.uncles)*/ i++ {
-				// Match up a body to any possible completion request
-				matched := false
 
-				for hash, announce := range f.completing {
-					if f.queued[hash] == nil {
-						txnHash := modules.DeriveSha(modules.Transactions(task.transactions[i]))
-						//uncleHash := types.CalcUncleHash(task.uncles[i])
+			for i := 0; i < len(task.transactions); i++ {
+				//TODO  modify the txhash compare
+				matched := true
+				/*
+					// Match up a body to any possible completion request
+					matched := false
+					for hash, announce := range f.completing {
+						if f.queued[hash] == nil {
+							txnHash := core.DeriveSha(modules.Transactions(task.transactions[i]))
+							log.Debug("<-f.bodyFilter", "Transactions", modules.Transactions(task.transactions[i]))
+							log.Debug("<-f.bodyFilter", "txnHash", txnHash, "announce.header.TxRoot", announce.header.TxRoot)
+							log.Debug("<-f.bodyFilter", "task.peer", task.peer, "announce.origin", announce.origin)
+							//TODO must recover
+							//if txnHash == announce.header.TxRoot && announce.origin == task.peer {
+							if announce.origin == task.peer {
+								// Mark the body matched, reassemble if still unknown
+								matched = true
 
-						if txnHash == announce.header.TxRoot && announce.origin == task.peer {
-							// Mark the body matched, reassemble if still unknown
-							matched = true
+								if f.getBlock(hash) == nil {
+									block := modules.NewUnitWithHeader(announce.header).WithBody(task.transactions[i])
+									block.ReceivedAt = task.time
 
-							if f.getBlock(hash) == nil {
-								block := modules.NewUnitWithHeader(announce.header).WithBody(task.transactions[i])
-								block.ReceivedAt = task.time
-
-								blocks = append(blocks, block)
-							} else {
-								f.forgetHash(hash)
+									blocks = append(blocks, block)
+								} else {
+									f.forgetHash(hash)
+								}
 							}
 						}
 					}
-				}
+				*/
 				if matched {
 					task.transactions = append(task.transactions[:i], task.transactions[i+1:]...)
-					//task.uncles = append(task.uncles[:i], task.uncles[i+1:]...)
 					i--
 					continue
 				}
 			}
 
 			bodyFilterOutMeter.Mark(int64(len(task.transactions)))
+			log.Debug("===fetcher  filter <- task last===", "len(task.transactions):", len(task.transactions))
 			select {
 			case filter <- task:
+				log.Debug("===fetcher  filter <- task===")
 			case <-f.quit:
 				return
 			}
@@ -587,6 +603,7 @@ func (f *Fetcher) rescheduleFetch(fetch *time.Timer) {
 			earliest = announces[0].time
 		}
 	}
+	log.Debug("===fetcher rescheduleFetch===")
 	fetch.Reset(arriveTimeout - time.Since(earliest))
 }
 
@@ -610,24 +627,23 @@ func (f *Fetcher) rescheduleComplete(complete *time.Timer) {
 // has not yet been seen.
 func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 	hash := block.Hash()
-
+	log.Debug("=====fetcher enqueue======")
 	// Ensure the peer isn't DOSing us
 	count := f.queues[peer] + 1
 	if count > blockLimit {
 		log.Debug("Discarded propagated block, exceeded allowance", "peer", peer, "number", block.Number(), "hash", hash, "limit", blockLimit)
-		log.Info("Discarded propagated block, exceeded allowance", "peer", peer, "number", block.Number(), "hash", hash, "limit", blockLimit)
 		propBroadcastDOSMeter.Mark(1)
 		f.forgetHash(hash)
 		return
 	}
 	// Discard any past or too distant blocks
-	if dist := int64(block.NumberU64()) - int64(f.chainHeight(block.Number().AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
-		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
-		log.Info("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
-		propBroadcastDropMeter.Mark(1)
-		f.forgetHash(hash)
-		return
-	}
+	//TODO must recover
+	//if dist := int64(block.NumberU64()) - int64(f.chainHeight(block.Number().AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
+	//	log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
+	//	propBroadcastDropMeter.Mark(1)
+	//	f.forgetHash(hash)
+	//	return
+	//}
 	// Schedule the block for future importing
 	if _, ok := f.queued[hash]; !ok {
 		op := &inject{
@@ -641,7 +657,6 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 			f.queueChangeHook(op.unit.Hash(), true)
 		}
 		log.Debug("Queued propagated block", "peer", peer, "number", block.Number(), "hash", hash, "queued", f.queue.Size())
-		log.Info("Queued propagated block", "peer", peer, "number", block.Number(), "hash", hash, "queued", f.queue.Size())
 	}
 }
 
@@ -652,8 +667,8 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 	hash := block.Hash()
 
 	// Run the import on a new thread
-	log.Debug("Importing propagated block", "peer", peer, "number", block.Number(), "hash", hash)
-	log.Info("Importing propagated block", "peer", peer, "number", block.Number(), "hash", hash)
+	log.Debug("Importing propagated block insert DAG", "peer", peer, "number", block.Number(), "hash", hash)
+	log.Info("Importing propagated block insert DAG", "peer", peer, "number", block.Number(), "hash", hash)
 	go func() {
 		defer func() { f.done <- hash }()
 

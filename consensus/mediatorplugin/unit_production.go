@@ -84,7 +84,7 @@ func PushUnit(dag *dag.Dag, newUnit *modules.Unit) bool {
 
 	// 4. 将验证单元添加到本地DB
 	log.Debug("storing the new verified unit to database...")
-	go dagcommon.SaveUnit(*newUnit, false)
+	dagcommon.SaveUnit(*newUnit, false)
 
 	return false
 }

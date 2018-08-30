@@ -17,11 +17,10 @@
 package ptn
 
 import (
-	"github.com/palletone/go-palletone/dag/txspool"
 	"math/rand"
 	"sync/atomic"
 	"time"
-
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -165,6 +164,8 @@ func (pm *ProtocolManager) syncer() {
 
 // synchronise tries to sync up our local block chain with a remote peer.
 func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
+	//TODO must delete
+	return
 	// Short circuit if no peers are available
 	if peer == nil {
 		return

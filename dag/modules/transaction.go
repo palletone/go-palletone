@@ -24,12 +24,9 @@ import (
 	"strconv"
 	"time"
 
-	//	"github.com/palletone/go-palletone/common/crypto"
-	//	"github.com/palletone/go-palletone/common/crypto/sha3"
-	//	"github.com/palletone/go-palletone/common/hexutil"
-	//  "github.com/Re-volution/sizestruct"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
 )
 
 var (
@@ -41,8 +38,9 @@ var (
 type TxOut struct {
 	Value    int64
 	PkScript []byte
-    Asset    Asset
+	Asset    Asset
 }
+
 // TxIn defines a bitcoin transaction input.
 type TxIn struct {
 	PreviousOutPoint OutPoint
@@ -65,10 +63,12 @@ func newTransaction(msg []Message, lock uint32) *Transaction {
 
 	return tx
 }
+
 // AddTxIn adds a transaction input to the message.
 func (pld *PaymentPayload) AddTxIn(ti Input) {
 	pld.Inputs = append(pld.Inputs, ti)
 }
+
 // AddTxOut adds a transaction output to the message.
 func (pld *PaymentPayload) AddTxOut(to Output) {
 	pld.Outputs = append(pld.Outputs, to)
@@ -384,7 +384,7 @@ func (c *writeCounter) Write(b []byte) (int, error) {
 }
 
 var (
-	EmptyRootHash = DeriveSha(Transactions{})
+	EmptyRootHash = core.DeriveSha(Transactions{})
 )
 
 type TxLookupEntry struct {

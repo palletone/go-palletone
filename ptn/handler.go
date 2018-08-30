@@ -129,11 +129,10 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	// Figure out whether to allow fast sync or not
 	/*blockchain.CurrentBlock().NumberU64() > 0 */
 	//TODO must modify.The second start would Blockchain not empty, fast sync disabled
-	//	if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Number.Index > 0 {
-	//		log.Warn("Blockchain not empty, fast sync disabled")
-	//		mode = downloader.FullSync
-	//	}
-
+	if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Number.Index > 0 {
+		//log.Warn("Blockchain not empty, fast sync disabled")
+		mode = downloader.FullSync
+	}
 	if mode == downloader.FastSync {
 		manager.fastSync = uint32(1)
 	}
@@ -497,12 +496,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		// Gather blocks until the fetch or network limits is reached
 		var (
-			hash   common.Hash
-			bytes  int
-			bodies []rlp.RawValue
+			hash  common.Hash
+			bytes int
+			//bodies []rlp.RawValue
+			bodies blockBody
 		)
 
-		for bytes < softResponseLimit && len(bodies) < downloader.MaxBlockFetch {
+		for bytes < softResponseLimit && len(bodies.Transactions) < downloader.MaxBlockFetch {
 			// Retrieve the hash of the next block
 			if err := msgStream.Decode(&hash); err == rlp.EOL {
 				break
@@ -511,10 +511,27 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}
 			//TODO must recover
 			// Retrieve the requested block body, stopping if enough was found
-			if data := pm.dag.GetBodyRLP(hash); len(data) != 0 {
-				bodies = append(bodies, data)
-				bytes += len(data)
+			txs, err := pm.dag.GetTransactionsByHash(hash)
+			if err != nil {
+				log.Debug("===GetBlockBodiesMsg===", "GetTransactionsByHash err:", err)
+				return errResp(ErrDecode, "msg %v: %v", msg, err)
 			}
+			log.Debug("===GetBlockBodiesMsg===", "GetTransactionsByHash txs:", txs)
+			data, err := rlp.EncodeToBytes(txs)
+			if err != nil {
+				log.Debug("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
+				return errResp(ErrDecode, "msg %v: %v", msg, err)
+			}
+			bytes += len(data)
+
+			for _, tx := range txs {
+				bodies.Transactions = append(bodies.Transactions, tx)
+			}
+
+			//if data := pm.dag.GetBodyRLP(hash); len(data) != 0 {
+			//	bodies = append(bodies, data)
+			//	bytes += len(data)
+			//}
 			//======test start=======
 			/*
 				body := blockBody{}
@@ -533,8 +550,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			//======test end=======
 		}
 		//log.Debug("===GetBlockBodiesMsg===", "tempGetBlockBodiesMsgSum:", tempGetBlockBodiesMsgSum, "sum:", sum)
-		log.Debug("===GetBlockBodiesMsg===", "len(bodies):", len(bodies))
-		return p.SendBlockBodiesRLP(bodies)
+		log.Debug("===GetBlockBodiesMsg===", "len(bodies):", len(bodies.Transactions), "bytes:", bytes)
+		return p.SendBlockBodies([]*blockBody{&bodies})
+		//return p.SendBlockBodiesRLP(bodies)
 
 	case msg.Code == BlockBodiesMsg:
 		//log.Debug("===BlockBodiesMsg===")
@@ -551,7 +569,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			sum++
 		}
 
-		log.Debug("===BlockBodiesMsg===", "request sum:", sum, "len(transactions:)", len(transactions))
+		log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(transactions), "transactions[0]:", transactions[0])
 		// Filter out any explicitly requested bodies, deliver the rest to the downloader
 		filter := len(transactions) > 0
 		if filter {
@@ -604,8 +622,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 
 	case msg.Code == NewBlockHashesMsg:
+		log.Debug("===NewBlockHashesMsg===")
 		var announces newBlockHashesData
 		if err := msg.Decode(&announces); err != nil {
+			log.Debug("===NewBlockHashesMsg===", "Decode err:", err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		// Mark the hashes as present at the remote node
@@ -619,6 +639,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				unknown = append(unknown, block)
 			}
 		}
+		log.Debug("===NewBlockHashesMsg===", "len(unknown):", len(unknown))
 		for _, block := range unknown {
 			pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneHeader, p.RequestBodies)
 		}
@@ -758,6 +779,8 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 			peer.SendNewUnitHashes([]common.Hash{hash}, []modules.ChainIndex{unit.Number()})
 		}
 		log.Trace("BroadcastUnit Announced block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+	} else {
+		log.Debug("===BroadcastUnit===", "pm.dag.HasUnit(hash) is false hash:", hash.String())
 	}
 }
 
@@ -769,6 +792,7 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 			self.BroadcastNewProducedUnit(event.Unit)
 
 			// appended by wangjiyou
+			//TODO must recover
 			self.BroadcastUnit(event.Unit, true)
 			self.BroadcastUnit(event.Unit, false)
 
