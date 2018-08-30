@@ -183,9 +183,9 @@ func modifyMediatorInConf(configPath, password string, address common.Address) e
 	}
 
 	cfg.MediatorPlugin.EnableStaleProduction = true
-	cfg.MediatorPlugin.Mediators = map[string]mp.MediatorInfo{
-		address.Str():
-			mp.MediatorInfo{password,mp.DefaultInitPartSec, mp.DefaultInitPartPub},
+	cfg.MediatorPlugin.Mediators = []mp.MediatorInfo{
+		mp.MediatorInfo{address.Str(), password,
+		mp.DefaultInitPartSec, mp.DefaultInitPartPub},
 	}
 
 	err = makeConfigFile(cfg, configPath)

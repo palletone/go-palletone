@@ -19,13 +19,12 @@
 package mediatorplugin
 
 import (
-	"gopkg.in/urfave/cli.v1"
 	"github.com/palletone/go-palletone/core"
+	"gopkg.in/urfave/cli.v1"
 )
 
 const (
-	//defaultMediator = "P113o9hNFyPv7ys5TxpCcaJDYbZ4b7hsPyt"
-	defaultPassword = "password"
+	defaultPassword    = "password"
 	DefaultInitPartSec = "Vh52_xy-bE5U2mUDFYxLJwRke2IQ7u0Nb9L3_cPyXKY"
 	DefaultInitPartPub = "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ" +
 		"0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj"
@@ -42,17 +41,15 @@ var (
 type Config struct {
 	EnableStaleProduction bool // Enable Verified Unit production, even if the chain is stale.
 	//	RequiredParticipation float32	// Percent of mediators (0-99) that must be participating in order to produce
-	Mediators map[string]MediatorInfo // the map of  mediator`s address and  the mediator info
+	Mediators []MediatorInfo // the set of the mediator info
 }
 
 // mediator plugin default config
 var DefaultConfig = Config{
 	EnableStaleProduction: false,
-	Mediators:             map[string]MediatorInfo{
-		core.DefaultTokenHolder:
-			MediatorInfo{defaultPassword,DefaultInitPartSec, DefaultInitPartPub},
-		//defaultMediator:
-		//	MediatorInfo{defaultPassword,DefaultInitPartSec, DefaultInitPartPub},
+	Mediators: []MediatorInfo{
+		MediatorInfo{core.DefaultTokenHolder, defaultPassword,
+			DefaultInitPartSec, DefaultInitPartPub},
 	},
 }
 
@@ -64,7 +61,8 @@ func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
 }
 
 type MediatorInfo struct {
-	Password string
-	InitPartSec string
+	Address,
+	Password,
+	InitPartSec,
 	InitPartPub string
 }
