@@ -29,6 +29,7 @@ import (
 	"gopkg.in/urfave/cli.v1"
 	"github.com/dedis/kyber/pairing/bn256"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/common/log"
 	"encoding/base64"
 )
 
@@ -152,15 +153,25 @@ along with gptn. If not, see <http://www.gnu.org/licenses/>.`)
 
 // author Albert·Gou
 func createInitDKS(ctx *cli.Context) error {
+	var err error
 	suite := bn256.NewSuiteG2()
 	sec, pub := mp.GenInitPair(suite)
-	secB, _ := sec.MarshalBinary()
-	pubB, _ := pub.MarshalBinary()
 
+	secB, err := sec.MarshalBinary()
+	if err != nil {
+		log.Error(fmt.Sprintln(err))
+	}
+	pubB, err := pub.MarshalBinary()
+	if err != nil {
+		log.Error(fmt.Sprintln(err))
+	}
+
+	secStr := base64.RawURLEncoding.EncodeToString(secB)
+	pubStr := base64.RawURLEncoding.EncodeToString(pubB)
 	fmt.Println("Generate a initial distributed key share:")
 	fmt.Println("{")
-	fmt.Println("\tprivate key: ", base64.StdEncoding.EncodeToString(secB))
-	fmt.Println("\tpublic key: ", base64.StdEncoding.EncodeToString(pubB))
+	fmt.Println("\tprivate key: ", secStr)
+	fmt.Println("\tpublic key: ", pubStr)
 	fmt.Println("}")
 
 	return nil

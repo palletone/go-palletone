@@ -179,18 +179,18 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 
 		log.Info(fmt.Sprintf("this node controll mediator account address: %v", address))
 
-		secB, err := base64.StdEncoding.DecodeString(medI.InitPartSec)
+		secB, err := base64.RawURLEncoding.DecodeString(medI.InitPartSec)
 		if err != nil {
 			log.Error(fmt.Sprintf("initPartSec %v : %v", medI.InitPartSec, err))
 		}
-		pubB, err := base64.StdEncoding.DecodeString(medI.InitPartPub)
+		pubB, err := base64.RawURLEncoding.DecodeString(medI.InitPartPub)
 		if err != nil {
 			log.Error(fmt.Sprintf("initPartPub %v : %v", medI.InitPartPub, err))
 		}
 
 		suite := bn256.NewSuiteG2()
-		sec	:= suite.Scalar().Zero()
-		pub := suite.Point().Null()
+		sec	:= suite.Scalar()
+		pub := suite.Point()
 
 		err = sec.UnmarshalBinary(secB)
 		if err != nil {

@@ -26,9 +26,9 @@ import (
 const (
 	//defaultMediator = "P113o9hNFyPv7ys5TxpCcaJDYbZ4b7hsPyt"
 	defaultPassword = "password"
-	DefaultInitPartSec = "Tj1wNXLM6YkAxnvmag5ydh8qbBJ9wEtZDMeTE0qfacI="
-	DefaultInitPartPub = "AXkVypTVHRI94Vd7ggAdN62rLW57tcJrTw/0nErnXfFlcQpaSA1qMaYiJI7HxKJBhxWmTzRloEfB" +
-		"93mSTDuqs+40LJFNJ/h+gNlZxTHiWEw9MuFhNMC0j5CzfGFvUkDcs0XTIYLGhMomImqw9n5cURXOm0Qhhr92gdO8kYZheIq/"
+	DefaultInitPartSec = "Vh52_xy-bE5U2mUDFYxLJwRke2IQ7u0Nb9L3_cPyXKY"
+	DefaultInitPartPub = "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ" +
+		"0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj"
 )
 
 var (
