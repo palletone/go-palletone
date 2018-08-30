@@ -72,7 +72,7 @@ func (m *txSortedMap) Get(nonce uint64) *modules.TxPoolTransaction {
 func (m *txSortedMap) GetNonce(hash common.Hash) uint64 {
 	if m.items != nil {
 		for key, v := range m.items {
-			if v.TxHash == hash {
+			if v.Tx.Hash() == hash {
 				return key
 			}
 		}
@@ -271,13 +271,13 @@ func (l *txList) Add(tx *modules.TxPoolTransaction, priceBump uint64) (bool, *mo
 		// Have to ensure that the new gas price is higher than the old gas
 		// price as well as checking the percentage threshold to ensure that
 		// this is accurate for low (Wei-level) gas price replacements
-		if old.Fee().Cmp(tx.Fee()) >= 0 {
+		if old.Tx.Fee().Cmp(tx.Tx.Fee()) >= 0 {
 			return false, nil
 		}
 	}
 	// Otherwise overwrite the old transaction with the current one
 	l.txs.Put(tx)
-	if cost := tx.Cost(); l.costcap.Cmp(cost) < 0 {
+	if cost := tx.Tx.Cost(); l.costcap.Cmp(cost) < 0 {
 		l.costcap = cost
 	}
 	// if gas := tx.Gas(); l.gascap < gas {
@@ -311,7 +311,7 @@ func (l *txList) Filter(costLimit *big.Int) (modules.TxPoolTxs, modules.TxPoolTx
 	//l.gascap = gasLimit
 
 	// Filter out all the transactions above the account's funds
-	removed := l.txs.Filter(func(tx *modules.TxPoolTransaction) bool { return tx.Cost().Cmp(costLimit) > 0 })
+	removed := l.txs.Filter(func(tx *modules.TxPoolTransaction) bool { return tx.Tx.Cost().Cmp(costLimit) > 0 })
 
 	// If the list was strict, filter anything above the lowest nonce
 	var invalids modules.TxPoolTxs
@@ -383,7 +383,7 @@ func (l *txList) Flatten() modules.TxPoolTxs {
 type priceHeap []*modules.TxPoolTransaction
 
 func (h priceHeap) Len() int           { return len(h) }
-func (h priceHeap) Less(i, j int) bool { return h[i].Fee().Cmp(h[j].Fee()) < 0 }
+func (h priceHeap) Less(i, j int) bool { return h[i].Tx.Fee().Cmp(h[j].Tx.Fee()) < 0 }
 func (h priceHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
 
 func (h *priceHeap) Push(x interface{}) {
@@ -468,12 +468,12 @@ func (l *txPricedList) Cap(threshold *big.Int, local *accountSet) modules.TxPool
 	for len(*l.items) > 0 {
 		// Discard stale transactions if found during cleanup
 		tx := heap.Pop(l.items).(*modules.TxPoolTransaction)
-		if _, ok := (*l.all)[tx.Hash()]; !ok {
+		if _, ok := (*l.all)[tx.Tx.Hash()]; !ok {
 			l.stales--
 			continue
 		}
 		// Stop the discards if we've reached the threshold
-		if tx.Fee().Cmp(threshold) >= 0 {
+		if tx.Tx.Fee().Cmp(threshold) >= 0 {
 			save = append(save, tx)
 			break
 		}
@@ -500,7 +500,7 @@ func (l *txPricedList) Underpriced(tx *modules.TxPoolTransaction, local *account
 	// Discard stale price points if found at the heap start
 	for len(*l.items) > 0 {
 		head := []*modules.TxPoolTransaction(*l.items)[0]
-		if _, ok := (*l.all)[head.TxHash]; !ok {
+		if _, ok := (*l.all)[head.Tx.Hash()]; !ok {
 			l.stales--
 			heap.Pop(l.items)
 			continue
@@ -513,7 +513,7 @@ func (l *txPricedList) Underpriced(tx *modules.TxPoolTransaction, local *account
 		return false
 	}
 	cheapest := []*modules.TxPoolTransaction(*l.items)[0]
-	return cheapest.Fee().Cmp(tx.Fee()) >= 0
+	return cheapest.Tx.Fee().Cmp(tx.Tx.Fee()) >= 0
 }
 
 // Discard finds a number of most underpriced transactions, removes them from the
@@ -525,7 +525,7 @@ func (l *txPricedList) Discard(count int, local *accountSet) modules.TxPoolTxs {
 	for len(*l.items) > 0 && count > 0 {
 		// Discard stale transactions if found during cleanup
 		tx := heap.Pop(l.items).(*modules.TxPoolTransaction)
-		if _, ok := (*l.all)[tx.Hash()]; !ok {
+		if _, ok := (*l.all)[tx.Tx.Hash()]; !ok {
 			l.stales--
 			continue
 		}
