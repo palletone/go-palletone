@@ -25,7 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 
-	//	"github.com/palletone/go-palletone/consensus"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
@@ -243,7 +243,7 @@ func (f *Fetcher) FilterHeaders(peer string, headers []*modules.Header, time tim
 	// Retrieve the headers remaining after filtering
 	select {
 	case task := <-filter:
-		log.Debug("task := <-filter")
+		log.Debug("===FilterHeaders===", "task := <-filter len(task.headers):", len(task.headers))
 		return task.headers
 	case <-f.quit:
 		return nil
@@ -252,8 +252,8 @@ func (f *Fetcher) FilterHeaders(peer string, headers []*modules.Header, time tim
 
 // FilterBodies extracts all the block bodies that were explicitly requested by
 // the fetcher, returning those that should be handled differently.
-func (f *Fetcher) FilterBodies(peer string, transactions [][]*modules.Transaction /*, uncles [][]*modules.Header*/, time time.Time) [][]*modules.Transaction /*, [][]*modules.Header*/ {
-	log.Trace("Filtering bodies", "peer", peer, "txs", len(transactions) /*, "uncles", len(uncles)*/)
+func (f *Fetcher) FilterBodies(peer string, transactions [][]*modules.Transaction, time time.Time) [][]*modules.Transaction {
+	log.Trace("Filtering bodies", "peer", peer, "txs", len(transactions))
 
 	// Send the filter channel to the fetcher
 	filter := make(chan *bodyFilterTask)
@@ -265,14 +265,15 @@ func (f *Fetcher) FilterBodies(peer string, transactions [][]*modules.Transactio
 	}
 	// Request the filtering of the body list
 	select {
-	case filter <- &bodyFilterTask{peer: peer, transactions: transactions /*uncles: uncles,*/, time: time}:
+	case filter <- &bodyFilterTask{peer: peer, transactions: transactions, time: time}:
 	case <-f.quit:
 		return nil
 	}
 	// Retrieve the bodies remaining after filtering
 	select {
 	case task := <-filter:
-		return task.transactions /*, task.uncles*/
+		log.Debug("===FilterBodies===", "task := <-filter len(task.transactions):", len(task.transactions))
+		return task.transactions
 	case <-f.quit:
 		return nil
 	}
@@ -476,9 +477,8 @@ func (f *Fetcher) loop() {
 						announce.time = task.time
 
 						// If the block is empty (header only), short circuit into the final import queue
-						//if header.TxHash == types.DeriveSha(modules.Transactions{}) && header.UncleHash == types.CalcUncleHash([]*types.Header{}) {
 						//TODO modify
-						if header.TxRoot == modules.DeriveSha(modules.Transactions{}) {
+						if header.TxRoot == core.DeriveSha(modules.Transactions{}) {
 							log.Trace("Block empty, skipping body retrieval", "peer", announce.origin, "number", header.Number, "hash", header.Hash())
 
 							block := modules.NewUnitWithHeader(header)
@@ -534,41 +534,46 @@ func (f *Fetcher) loop() {
 			bodyFilterInMeter.Mark(int64(len(task.transactions)))
 			log.Debug("===fetcher  <-f.bodyFilter===")
 			blocks := []*modules.Unit{}
-			for i := 0; i < len(task.transactions); /*&& i < len(task.uncles)*/ i++ {
-				// Match up a body to any possible completion request
-				matched := false
 
-				for hash, announce := range f.completing {
-					if f.queued[hash] == nil {
-						txnHash := modules.DeriveSha(modules.Transactions(task.transactions[i]))
-						//uncleHash := types.CalcUncleHash(task.uncles[i])
-						//TODO
-						if txnHash == announce.header.TxRoot && announce.origin == task.peer {
-							// Mark the body matched, reassemble if still unknown
-							matched = true
+			for i := 0; i < len(task.transactions); i++ {
+				//TODO  modify the txhash compare
+				//test start
+				matched := true
+				//test end
+				/*
+					// Match up a body to any possible completion request
+					matched := false
+					for hash, announce := range f.completing {
+						if f.queued[hash] == nil {
+							txnHash := core.DeriveSha(modules.Transactions(task.transactions[i]))
+							if txnHash == announce.header.TxRoot && announce.origin == task.peer {
+								// Mark the body matched, reassemble if still unknown
+								matched = true
 
-							if f.getBlock(hash) == nil {
-								block := modules.NewUnitWithHeader(announce.header).WithBody(task.transactions[i])
-								block.ReceivedAt = task.time
+								if f.getBlock(hash) == nil {
+									block := modules.NewUnitWithHeader(announce.header).WithBody(task.transactions[i])
+									block.ReceivedAt = task.time
 
-								blocks = append(blocks, block)
-							} else {
-								f.forgetHash(hash)
+									blocks = append(blocks, block)
+								} else {
+									f.forgetHash(hash)
+								}
 							}
 						}
 					}
-				}
+				*/
 				if matched {
 					task.transactions = append(task.transactions[:i], task.transactions[i+1:]...)
-					//task.uncles = append(task.uncles[:i], task.uncles[i+1:]...)
 					i--
 					continue
 				}
 			}
 
 			bodyFilterOutMeter.Mark(int64(len(task.transactions)))
+			log.Debug("===fetcher  filter <- task pre===", "len(task.transactions):", len(task.transactions))
 			select {
 			case filter <- task:
+				log.Debug("===fetcher  filter <- task===")
 			case <-f.quit:
 				return
 			}
