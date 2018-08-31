@@ -41,8 +41,8 @@ var (
 	MaxHeaderFetch  = 192 // Amount of block headers to be fetched per retrieval request
 	MaxSkeletonSize = 128 // Number of header fetches to need for a skeleton assembly
 	MaxBodyFetch    = 128 // Amount of block bodies to be fetched per retrieval request
-	MaxReceiptFetch = 256 // Amount of transaction receipts to allow fetching per request
-	MaxStateFetch   = 384 // Amount of node state values to allow fetching per request
+	//MaxReceiptFetch = 256 // Amount of transaction receipts to allow fetching per request
+	MaxStateFetch = 384 // Amount of node state values to allow fetching per request
 
 	//MaxForkAncestry  = 3 * configure.EpochDuration // Maximum chain reorganisation
 	rttMinEstimate   = 2 * time.Second  // Minimum round-trip time to target for download requests
@@ -625,8 +625,8 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*
 //其他peer的header只有在干净地映射到骨架上时才被接受。
 //如果没有人能够填充骨架 - 甚至origin peer也不能填充 - 它被认为是无效的，并且origin peer也被丢弃。
 func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, assetId modules.IDType16) error {
-	p.log.Debug("Directing header downloads", "origin", from)
-	defer p.log.Debug("Header download terminated")
+	log.Debug("Directing header downloads", "origin", from)
+	defer log.Debug("Header download terminated")
 	//log.Info("Downloader->fetchHeaders", "peerConnection.id:", p.id, "from:", from, "pivot:", pivot)
 
 	// Create a timeout timer, and the associated header fetcher
@@ -651,11 +651,11 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 		}
 
 		if skeleton {
-			p.log.Trace("Fetching skeleton headers", "count", MaxHeaderFetch, "from", from)
 			index.Index = from + uint64(MaxHeaderFetch) - 1
+			p.log.Trace("Fetching skeleton headers", "count", MaxHeaderFetch, "from", from, "index:", index.Index)
 			go p.peer.RequestHeadersByNumber(index, MaxSkeletonSize, MaxHeaderFetch-1, false)
 		} else {
-			p.log.Trace("Fetching full headers", "count", MaxHeaderFetch, "from", from)
+			p.log.Trace("Fetching full headers", "count", MaxHeaderFetch, "from", from, "index:", index.Index)
 			index.Index = from
 			go p.peer.RequestHeadersByNumber(index, MaxHeaderFetch, 0, false)
 		}
@@ -1033,6 +1033,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 	defer func() {
 		if len(rollback) > 0 {
 			log.Debug("===processHeaders===", "len(rollback):", len(rollback))
+			//TODO must recover
 			/*
 				// Flatten the headers and roll them back
 				hashes := make([]common.Hash, len(rollback))
@@ -1589,8 +1590,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	}
 	from := int64(head) - int64(MaxHeaderFetch)
 	if from < 0 {
-		//from = 0
-		from = 1
+		from = 0
 	}
 	// Span out with 15 block gaps into the future to catch bad head reports
 	limit := 2 * MaxHeaderFetch / 16
@@ -1687,7 +1687,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 		timeout := time.After(ttl)
 
 		index.Index = check
-		go p.peer.RequestHeadersByNumber(index /*check*/, 1, 0, false)
+		go p.peer.RequestHeadersByNumber(index, 1, 0, false)
 
 		// Wait until a reply arrives to this request
 		for arrived := false; !arrived; {
