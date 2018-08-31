@@ -20,6 +20,7 @@ import (
 	//"crypto/ecdsa"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -32,8 +33,11 @@ import (
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
-	"time"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 )
+
+const deFaultNode = "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f" +
+	"59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
 
 // SetupGenesisBlock writes or updates the genesis block in db.
 // The block that will be used is:
@@ -227,7 +231,11 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 func InitialMediatorCandidates(len int, address string) []core.MediatorInfo {
 	initialMediator := make([]core.MediatorInfo, len)
 	for i := 0; i < len; i++ {
-		initialMediator[i] = core.MediatorInfo{Address: address}
+		initialMediator[i] = core.MediatorInfo{
+			Address: address,
+			InitPartPub: mp.DefaultInitPartPub,
+			Node: deFaultNode,
+		}
 	}
 
 	return initialMediator

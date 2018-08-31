@@ -109,7 +109,7 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 		add := common.StringToAddress(medInfo.Address)
 		addrType, err := add.Validate()
 		if err != nil || addrType != common.PublicKeyHash {
-			log.Error(fmt.Sprintf("Invalid mediator account address %v : %v", address, err))
+			log.Error(fmt.Sprintf("Invalid mediator account address \"%v\" : %v", address, err))
 		}
 
 		// 2. 解析 mediator 的 DKS 初始公钥
@@ -121,11 +121,14 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 		pub := bn256.NewSuiteG2().Point()
 		err = pub.UnmarshalBinary(pubB)
 		if err != nil {
-			log.Error(fmt.Sprintf("Invalid mediator account initPartPub %v : %v", medInfo.InitPartPub, err))
+			log.Error(fmt.Sprintf("Invalid mediator account initPartPub \"%v\" : %v", medInfo.InitPartPub, err))
 		}
 
 		// 3. 解析mediator 的 node 节点信息
-		node := discover.MustParseNode(medInfo.Node)
+		node, err := discover.ParseNode(medInfo.Node)
+		if err != nil {
+			log.Error(fmt.Sprintf("Invalid mediator account node \"%v\" : %v", medInfo.Node, err))
+		}
 
 		md := core.Mediator{
 			Address:     add,

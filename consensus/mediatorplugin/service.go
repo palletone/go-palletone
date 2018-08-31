@@ -175,7 +175,7 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		addr := common.StringToAddress(address)
 		addrType, err := addr.Validate()
 		if err != nil || addrType != common.PublicKeyHash {
-			log.Error(fmt.Sprintf("Invalid mediator account address %v : %v", address, err))
+			log.Error(fmt.Sprintf("Invalid mediator account address \"%v\" : %v", address, err))
 		}
 
 		log.Info(fmt.Sprintf("this node controll mediator account address: %v", address))
@@ -183,11 +183,11 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		// 2. 解析 mediator 的 DKS 初始公私钥
 		secB, err := base64.RawURLEncoding.DecodeString(medInfo.InitPartSec)
 		if err != nil {
-			log.Error(fmt.Sprintf("initPartSec %v : %v", medInfo.InitPartSec, err))
+			log.Error(fmt.Sprintf("initPartSec \"%v\" : %v", medInfo.InitPartSec, err))
 		}
 		pubB, err := base64.RawURLEncoding.DecodeString(medInfo.InitPartPub)
 		if err != nil {
-			log.Error(fmt.Sprintf("initPartPub %v : %v", medInfo.InitPartPub, err))
+			log.Error(fmt.Sprintf("initPartPub \"%v\" : %v", medInfo.InitPartPub, err))
 		}
 
 		suite := bn256.NewSuiteG2()
@@ -196,11 +196,11 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 
 		err = sec.UnmarshalBinary(secB)
 		if err != nil {
-			log.Error(fmt.Sprintf("Invalid mediator account initPartSec %v : %v", medInfo.InitPartSec, err))
+			log.Error(fmt.Sprintf("Invalid mediator account initPartSec \"%v\" : %v", medInfo.InitPartSec, err))
 		}
 		err = pub.UnmarshalBinary(pubB)
 		if err != nil {
-			log.Error(fmt.Sprintf("Invalid mediator account initPartPub %v : %v", medInfo.InitPartPub, err))
+			log.Error(fmt.Sprintf("Invalid mediator account initPartPub \"%v\" : %v", medInfo.InitPartPub, err))
 		}
 
 		med := mediator{
