@@ -280,8 +280,8 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 /************************** Payload Details ******************************************/
 type PayloadMapStruct struct {
 	IsDelete bool
-	Key   string
-	Value interface{}
+	Key      string
+	Value    interface{}
 }
 
 // Token exchange message and verify message

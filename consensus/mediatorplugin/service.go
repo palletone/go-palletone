@@ -168,6 +168,7 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	msm := map[common.Address]mediator{}
 
 	for _, medInfo := range mss {
+		// 1. 解析 mediator 账户地址
 		address := strings.TrimSpace(medInfo.Address)
 		address = strings.Trim(address, "\"")
 
@@ -179,6 +180,7 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 
 		log.Info(fmt.Sprintf("this node controll mediator account address: %v", address))
 
+		// 2. 解析 mediator 的 DKS 初始公私钥
 		secB, err := base64.RawURLEncoding.DecodeString(medInfo.InitPartSec)
 		if err != nil {
 			log.Error(fmt.Sprintf("initPartSec %v : %v", medInfo.InitPartSec, err))
@@ -201,7 +203,13 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 			log.Error(fmt.Sprintf("Invalid mediator account initPartPub %v : %v", medInfo.InitPartPub, err))
 		}
 
-		msm[addr] = mediator{addr, medInfo.Password, sec, pub}
+		med := mediator{
+			addr,
+			medInfo.Password,
+			sec,
+			pub,
+		}
+		msm[addr] = med
 	}
 
 	mp := MediatorPlugin{

@@ -23,14 +23,14 @@ import (
 	"strconv"
 	"strings"
 
+	"encoding/base64"
+	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/ptn"
 	"gopkg.in/urfave/cli.v1"
-	"github.com/dedis/kyber/pairing/bn256"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"github.com/palletone/go-palletone/common/log"
-	"encoding/base64"
 )
 
 var (

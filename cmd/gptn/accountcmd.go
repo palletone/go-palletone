@@ -522,8 +522,8 @@ func accountSignVerify(ctx *cli.Context) error {
 //add by wzhyuan
 type RawTransactionGenParams struct {
 	Inputs []struct {
-		Txid string `json:"txid"`
-		Vout uint32 `json:"vout"`
+		Txid         string `json:"txid"`
+		Vout         uint32 `json:"vout"`
 		MessageIndex uint32 `json:"messageindex"`
 	} `json:"inputs"`
 	Outputs []struct {
@@ -552,7 +552,7 @@ func accountCreateTx(ctx *cli.Context) error {
 	//transaction inputs
 	var inputs []btcjson.TransactionInput
 	for _, inputOne := range rawTransactionGenParams.Inputs {
-		input := btcjson.TransactionInput{inputOne.Txid, inputOne.Vout,inputOne.MessageIndex}
+		input := btcjson.TransactionInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex}
 		inputs = append(inputs, input)
 	}
 	if len(inputs) == 0 {

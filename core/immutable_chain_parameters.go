@@ -20,13 +20,13 @@
 package core
 
 type ImmutableChainParameters struct {
-	MinMediatorCount uint8
+	MinMediatorCount    uint8
 	MinMediatorInterval uint8
 }
 
 func NewImmutChainParams() ImmutableChainParameters {
 	return ImmutableChainParameters{
-		MinMediatorCount:DefaultMinMediatorCount,
-		MinMediatorInterval:DefaultMinMediatorInterval,
+		MinMediatorCount:    DefaultMinMediatorCount,
+		MinMediatorInterval: DefaultMinMediatorInterval,
 	}
 }

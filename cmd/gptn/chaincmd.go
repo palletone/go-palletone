@@ -23,15 +23,15 @@ import (
 	"os"
 
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"gopkg.in/urfave/cli.v1"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"github.com/palletone/go-palletone/common"
 )
 
 var (
@@ -185,7 +185,7 @@ func modifyMediatorInConf(configPath, password string, address common.Address) e
 	cfg.MediatorPlugin.EnableStaleProduction = true
 	cfg.MediatorPlugin.Mediators = []mp.MediatorInfo{
 		mp.MediatorInfo{address.Str(), password,
-		mp.DefaultInitPartSec, mp.DefaultInitPartPub},
+			mp.DefaultInitPartSec, mp.DefaultInitPartPub},
 	}
 
 	err = makeConfigFile(cfg, configPath)

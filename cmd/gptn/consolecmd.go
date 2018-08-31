@@ -80,7 +80,6 @@ JavaScript API. See https://github.com/palletone/go-palletone/wiki/JavaScript-Co
 // same time.
 func localConsole(ctx *cli.Context) error {
 
-
 	// Create and start the node based on the CLI flags
 	node := makeFullNode(ctx)
 	startNode(ctx, node)
