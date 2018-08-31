@@ -23,7 +23,6 @@ import (
 	"log"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
