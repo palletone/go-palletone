@@ -324,12 +324,12 @@ func (p *peerConnection) BlockCapacity(targetRTT time.Duration) int {
 
 // ReceiptCapacity retrieves the peers receipt download allowance based on its
 // previously discovered throughput.
-func (p *peerConnection) ReceiptCapacity(targetRTT time.Duration) int {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
+//func (p *peerConnection) ReceiptCapacity(targetRTT time.Duration) int {
+//	p.lock.RLock()
+//	defer p.lock.RUnlock()
 
-	return int(math.Min(1+math.Max(1, p.receiptThroughput*float64(targetRTT)/float64(time.Second)), float64(MaxReceiptFetch)))
-}
+//	return int(math.Min(1+math.Max(1, p.receiptThroughput*float64(targetRTT)/float64(time.Second)), float64(MaxReceiptFetch)))
+//}
 
 // NodeDataCapacity retrieves the peers state download allowance based on its
 // previously discovered throughput.

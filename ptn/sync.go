@@ -20,11 +20,12 @@ import (
 	"math/rand"
 	"sync/atomic"
 	"time"
-	"github.com/palletone/go-palletone/dag/txspool"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -164,8 +165,6 @@ func (pm *ProtocolManager) syncer() {
 
 // synchronise tries to sync up our local block chain with a remote peer.
 func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
-	//TODO must delete
-	return
 	// Short circuit if no peers are available
 	if peer == nil {
 		return
@@ -173,7 +172,6 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 
 	// Make sure the peer's TD is higher than our own
 	//TODO compare local assetId & chainIndex whith remote peer assetId & chainIndex
-
 	currentUnit := pm.dag.CurrentUnit()
 	if currentUnit == nil {
 		log.Info("===synchronise currentUnit is nil have not genesis===")

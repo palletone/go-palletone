@@ -16,18 +16,7 @@
 
 package ptn
 
-
-import (
-	"sync/atomic"
-	"testing"
-	"time"
-
-	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/dag/modules"
-)
-
+/*
 // Tests that fast sync gets disabled as soon as a real block is successfully
 // imported into the blockchain.
 func TestFastSyncDisabling(t *testing.T) {
@@ -57,3 +46,4 @@ func TestFastSyncDisabling(t *testing.T) {
 		t.Fatalf("fast sync not disabled after successful synchronisation")
 	}
 }
+*/
