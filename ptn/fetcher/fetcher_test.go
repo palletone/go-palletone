@@ -24,6 +24,7 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+	dag2 "github.com/palletone/go-palletone/dag"
 )
 
 // makeChain creates a chain of n blocks starting at and including parent.
@@ -93,12 +94,15 @@ func (f *fetcherTester) broadcastBlock(block *modules.Unit, propagate bool) {
 }
 
 // chainHeight retrieves the current height (block number) of the chain.
-func (f *fetcherTester) chainHeight() uint64 {
+func (f *fetcherTester) chainHeight(assetId modules.IDType16) uint64 {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
-
-	//return f.blocks[f.hashes[len(f.hashes)-1]].NumberU64()
-	return 0
+	dag := dag2.NewDag()
+	unit := dag.GetCurrentUnit(assetId)
+	if unit != nil {
+		return unit.NumberU64()
+	}
+	return uint64(0)
 }
 
 // insertChain injects a new blocks into the simulated chain.
@@ -254,7 +258,12 @@ func testSequentialAnnouncements(t *testing.T, protocol int) {
 	tester.fetcher.importedHook = func(block *modules.Unit) { imported <- block }
 
 	for i := len(hashes) - 2; i >= 0; i-- {
-		tester.fetcher.Notify("valid", hashes[i], uint64(len(hashes)-i-1), time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
+		chain := modules.ChainIndex{
+			AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
+			IsMain:true,
+			Index:uint64(len(hashes)-i-1),
+		}
+		tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
 		//verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)
@@ -292,9 +301,14 @@ func testConcurrentAnnouncements(t *testing.T, protocol int) {
 	tester.fetcher.importedHook = func(block *modules.Unit) { imported <- block }
 
 	for i := len(hashes) - 2; i >= 0; i-- {
-		tester.fetcher.Notify("first", hashes[i], uint64(len(hashes)-i-1), time.Now().Add(-arriveTimeout), firstHeaderWrapper, firstBodyFetcher)
-		tester.fetcher.Notify("second", hashes[i], uint64(len(hashes)-i-1), time.Now().Add(-arriveTimeout+time.Millisecond), secondHeaderWrapper, secondBodyFetcher)
-		tester.fetcher.Notify("second", hashes[i], uint64(len(hashes)-i-1), time.Now().Add(-arriveTimeout-time.Millisecond), secondHeaderWrapper, secondBodyFetcher)
+		chain := modules.ChainIndex{
+			AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
+			IsMain:true,
+			Index:uint64(len(hashes)-i-1),
+		}
+		tester.fetcher.Notify("first", hashes[i], chain, time.Now().Add(-arriveTimeout), firstHeaderWrapper, firstBodyFetcher)
+		tester.fetcher.Notify("second", hashes[i], chain, time.Now().Add(-arriveTimeout+time.Millisecond), secondHeaderWrapper, secondBodyFetcher)
+		tester.fetcher.Notify("second", hashes[i], chain, time.Now().Add(-arriveTimeout-time.Millisecond), secondHeaderWrapper, secondBodyFetcher)
 		//verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)
@@ -327,7 +341,12 @@ func testRandomArrivalImport(t *testing.T, protocol int) {
 
 	for i := len(hashes) - 1; i >= 0; i-- {
 		if i != skip {
-			tester.fetcher.Notify("valid", hashes[i], uint64(len(hashes)-i-1), time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
+			chain := modules.ChainIndex{
+				AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
+				IsMain:true,
+				Index:uint64(len(hashes)-i-1),
+			}
+			tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
 			time.Sleep(time.Millisecond)
 		}
 	}
@@ -358,7 +377,12 @@ func testQueueGapFill(t *testing.T, protocol int) {
 
 	for i := len(hashes) - 1; i >= 0; i-- {
 		if i != skip {
-			tester.fetcher.Notify("valid", hashes[i], uint64(len(hashes)-i-1), time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
+			chain := modules.ChainIndex{
+				AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
+				IsMain:true,
+				Index:uint64(len(hashes)-i-1),
+			}
+			tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
 			time.Sleep(time.Millisecond)
 		}
 	}
@@ -394,7 +418,12 @@ func testImportDeduplication(t *testing.T, protocol int) {
 	tester.fetcher.importedHook = func(block *modules.Unit) { imported <- block }
 
 	// Announce the duplicating block, wait for retrieval, and also propagate directly
-	tester.fetcher.Notify("valid", hashes[0], 1, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
+	chain := modules.ChainIndex{
+		AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
+		IsMain:true,
+		Index:1,
+	}
+	tester.fetcher.Notify("valid", hashes[0], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
 	<-fetching
 
 	tester.fetcher.Enqueue("valid", blocks[hashes[0]])
@@ -436,7 +465,12 @@ func testEmptyBlockShortCircuit(t *testing.T, protocol int) {
 
 	// Iteratively announce blocks until all are imported
 	for i := len(hashes) - 2; i >= 0; i-- {
-		tester.fetcher.Notify("valid", hashes[i], uint64(len(hashes)-i-1), time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
+		chain := modules.ChainIndex{
+			AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
+			IsMain:true,
+			Index:uint64(len(hashes))-uint64(i)-1,
+		}
+		tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
 
 		// All announces should fetch the header
 		verifyFetchingEvent(t, fetching, true)
@@ -483,9 +517,19 @@ func testHashMemoryExhaustionAttack(t *testing.T, protocol int) {
 	// Feed the tester a huge hashset from the attacker, and a limited from the valid peer
 	for i := 0; i < len(attack); i++ {
 		if i < 2 {
-			tester.fetcher.Notify("valid", hashes[len(hashes)-2-i], uint64(i+1), time.Now(), validHeaderFetcher, validBodyFetcher)
+			chain := modules.ChainIndex{
+				AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
+				IsMain:true,
+				Index:uint64(i)+1,
+			}
+			tester.fetcher.Notify("valid", hashes[len(hashes)-2-i], chain, time.Now(), validHeaderFetcher, validBodyFetcher)
 		}
-		tester.fetcher.Notify("attacker", attack[i], 1 /* don't distance drop */, time.Now(), attackerHeaderFetcher, attackerBodyFetcher)
+		chain := modules.ChainIndex{
+			AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
+			IsMain:true,
+			Index:1,
+		}
+		tester.fetcher.Notify("attacker", attack[i], chain /* don't distance drop */, time.Now(), attackerHeaderFetcher, attackerBodyFetcher)
 	}
 	if count := atomic.LoadInt32(&announces); count != 3 && count != 4 {
 		t.Fatalf("queued announce count mismatch: have %d, want %d", count, hashLimit+maxQueueDist)
@@ -495,7 +539,12 @@ func testHashMemoryExhaustionAttack(t *testing.T, protocol int) {
 
 	// Feed the remaining valid hashes to ensure DOS protection state remains clean
 	for i := len(hashes) - maxQueueDist - 2; i >= 0; i-- {
-		tester.fetcher.Notify("valid", hashes[i], uint64(len(hashes)-i-1), time.Now().Add(-arriveTimeout), validHeaderFetcher, validBodyFetcher)
+		chain := modules.ChainIndex{
+			AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
+			IsMain:true,
+			Index:uint64(len(hashes)-i-1),
+		}
+		tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), validHeaderFetcher, validBodyFetcher)
 		//verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)

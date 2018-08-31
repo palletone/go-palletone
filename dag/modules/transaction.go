@@ -24,12 +24,9 @@ import (
 	"strconv"
 	"time"
 
-	//	"github.com/palletone/go-palletone/common/crypto"
-	//	"github.com/palletone/go-palletone/common/crypto/sha3"
-	//	"github.com/palletone/go-palletone/common/hexutil"
-	//  "github.com/Re-volution/sizestruct"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
 )
 
 var (
@@ -41,8 +38,9 @@ var (
 type TxOut struct {
 	Value    int64
 	PkScript []byte
-    Asset    Asset
+	Asset    Asset
 }
+
 // TxIn defines a bitcoin transaction input.
 type TxIn struct {
 	PreviousOutPoint OutPoint
@@ -65,10 +63,12 @@ func newTransaction(msg []Message, lock uint32) *Transaction {
 
 	return tx
 }
+
 // AddTxIn adds a transaction input to the message.
 func (pld *PaymentPayload) AddTxIn(ti Input) {
 	pld.Inputs = append(pld.Inputs, ti)
 }
+
 // AddTxOut adds a transaction output to the message.
 func (pld *PaymentPayload) AddTxOut(to Output) {
 	pld.Outputs = append(pld.Outputs, to)
@@ -83,7 +83,7 @@ func (t *Transaction) SetHash(hash common.Hash) {
 }
 
 type TxPoolTransaction struct {
-	Transaction
+	Tx *Transaction
 
 	CreationDate string  `json:"creation_date" rlp:"-"`
 	Priority_lvl float64 `json:"priority_lvl" rlp:"-"` // 打包的优先级
@@ -161,11 +161,16 @@ type TxPoolTransaction struct {
 
 func (tx *TxPoolTransaction) GetPriorityLvl() float64 {
 	// priority_lvl=  fee/size*(1+(time.Now-CreationDate)/24)
-	var priority_lvl float64
-	if txfee := tx.Fee(); txfee.Int64() > 0 {
-		t0, _ := time.Parse(TimeFormatString, tx.CreationDate)
-		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/tx.Size().Float64()*(1+float64(time.Now().Hour()-t0.Hour())/24)), 64)
+
+	if tx.Priority_lvl > 0 {
+		return tx.Priority_lvl
 	}
+	var priority_lvl float64
+	if txfee := tx.Tx.Fee(); txfee.Int64() > 0 {
+		t0, _ := time.Parse(TimeFormatString, tx.CreationDate)
+		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/tx.Tx.Size().Float64()*(1+float64(time.Now().Hour()-t0.Hour())/24)), 64)
+	}
+	tx.Priority_lvl = priority_lvl
 	return priority_lvl
 }
 func (tx *TxPoolTransaction) SetPriorityLvl(priority float64) {
@@ -174,11 +179,12 @@ func (tx *TxPoolTransaction) SetPriorityLvl(priority float64) {
 
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
-func (tx Transaction) Hash() common.Hash {
-	withoutSigTx := Transaction{}
-	withoutSigTx.CopyFrTransaction(&tx)
-	withoutSigTx.TxHash = common.Hash{}
-	v := rlp.RlpHash(withoutSigTx)
+func (tx *Transaction) Hash() common.Hash {
+	if tx.TxHash != (common.Hash{}) {
+		return tx.TxHash
+	}
+	v := rlp.RlpHash(tx)
+	tx.TxHash = v
 	return v
 }
 
@@ -384,7 +390,7 @@ func (c *writeCounter) Write(b []byte) (int, error) {
 }
 
 var (
-	EmptyRootHash = DeriveSha(Transactions{})
+	EmptyRootHash = core.DeriveSha(Transactions{})
 )
 
 type TxLookupEntry struct {

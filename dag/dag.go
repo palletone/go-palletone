@@ -33,6 +33,7 @@ import (
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
 type Dag struct {
@@ -97,6 +98,8 @@ func (d *Dag) HasUnit(hash common.Hash) bool {
 }
 
 func (d *Dag) GetUnitByHash(hash common.Hash) *modules.Unit {
+	//TODO must modify
+	return nil
 	return d.CurrentUnit()
 }
 
@@ -212,6 +215,15 @@ func (d *Dag) CurrentHeader() *modules.Header {
 // caching it if found.
 func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 	return d.getBodyRLP(d.Db, hash)
+}
+
+func (d *Dag) GetTransactionsByHash(hash common.Hash) (modules.Transactions, error) {
+	txs, err := dagcommon.GetUnitTransactions(hash)
+	if err != nil {
+		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
+		return nil, err
+	}
+	return txs, nil
 }
 
 func (d *Dag) getBodyRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
@@ -381,4 +393,9 @@ func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 
 func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
 	return storage.GetAddrTransactions(d.Db, addr)
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediatorNodes() []*discover.Node {
+	return d.GlobalProp.GetActiveMediatorNodes()
 }

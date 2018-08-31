@@ -20,22 +20,25 @@ package mediatorplugin
 
 import (
 	"fmt"
-	"strings"
 
+	"encoding/base64"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/group/edwards25519"
+	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"strings"
 )
 
 // PalletOne wraps all methods required for producing unit.
@@ -43,6 +46,7 @@ type PalletOne interface {
 	Dag() *dag.Dag
 	GetKeyStore() *keystore.KeyStore
 	TxPool() *txspool.TxPool
+	GetActiveMediatorNodes() []*discover.Node
 }
 
 // toBLSed represents a BLS sign operation.
@@ -58,13 +62,14 @@ type toTBLSSigned struct {
 }
 
 type MediatorPlugin struct {
-	ptn  PalletOne
-	quit chan struct{} // Channel used for graceful exit
+	server *p2p.Server   // Peer-to-peer server to maintain the connection with other active mediator peer
+	ptn    PalletOne     // Full PalletOne service to retrieve other function
+	quit   chan struct{} // Channel used for graceful exit
 	// Enable VerifiedUnit production, even if the chain is stale.
 	// 新开启一个区块链时，必须设为true
 	productionEnabled bool
 	// Mediator`s account and passphrase controlled by this node
-	mediators map[common.Address]string
+	mediators map[common.Address]mediator
 
 	// 新生产unit的事件订阅和数据发送和接收
 	newProducedUnitFeed  event.Feed              // 订阅的时候自动初始化一次
@@ -89,8 +94,17 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 	return nil
 }
 
+func (mp *MediatorPlugin) AddActiveMediatorPeers() {
+	for _, n := range mp.ptn.GetActiveMediatorNodes() {
+		mp.server.AddPeer(n)
+	}
+}
+
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	log.Debug("mediator plugin startup begin")
+
+	mp.server = server
+	go mp.AddActiveMediatorPeers()
 
 	// 1. 判断是否满足生产验证单元的条件，主要判断本节点是否控制至少一个mediator账户
 	if len(mp.mediators) == 0 {
@@ -151,9 +165,10 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	log.Debug("mediator plugin initialize begin")
 
 	mss := cfg.Mediators
-	msm := map[common.Address]string{}
-	for address, passphrase := range mss {
-		address := strings.TrimSpace(address)
+	msm := map[common.Address]mediator{}
+
+	for _, medInfo := range mss {
+		address := strings.TrimSpace(medInfo.Address)
 		address = strings.Trim(address, "\"")
 
 		addr := common.StringToAddress(address)
@@ -164,7 +179,29 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 
 		log.Info(fmt.Sprintf("this node controll mediator account address: %v", address))
 
-		msm[addr] = passphrase
+		secB, err := base64.RawURLEncoding.DecodeString(medInfo.InitPartSec)
+		if err != nil {
+			log.Error(fmt.Sprintf("initPartSec %v : %v", medInfo.InitPartSec, err))
+		}
+		pubB, err := base64.RawURLEncoding.DecodeString(medInfo.InitPartPub)
+		if err != nil {
+			log.Error(fmt.Sprintf("initPartPub %v : %v", medInfo.InitPartPub, err))
+		}
+
+		suite := bn256.NewSuiteG2()
+		sec := suite.Scalar()
+		pub := suite.Point()
+
+		err = sec.UnmarshalBinary(secB)
+		if err != nil {
+			log.Error(fmt.Sprintf("Invalid mediator account initPartSec %v : %v", medInfo.InitPartSec, err))
+		}
+		err = pub.UnmarshalBinary(pubB)
+		if err != nil {
+			log.Error(fmt.Sprintf("Invalid mediator account initPartPub %v : %v", medInfo.InitPartPub, err))
+		}
+
+		msm[addr] = mediator{addr, medInfo.Password, sec, pub}
 	}
 
 	mp := MediatorPlugin{
@@ -184,4 +221,11 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	log.Debug("mediator plugin initialize end")
 
 	return &mp, nil
+}
+
+type mediator struct {
+	Address     common.Address
+	Password    string
+	InitPartSec kyber.Scalar
+	InitPartPub kyber.Point
 }

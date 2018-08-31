@@ -17,7 +17,6 @@
 package ptn
 
 import (
-	"github.com/palletone/go-palletone/dag/txspool"
 	"math/rand"
 	"sync/atomic"
 	"time"
@@ -26,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -172,7 +172,6 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 
 	// Make sure the peer's TD is higher than our own
 	//TODO compare local assetId & chainIndex whith remote peer assetId & chainIndex
-
 	currentUnit := pm.dag.CurrentUnit()
 	if currentUnit == nil {
 		log.Info("===synchronise currentUnit is nil have not genesis===")

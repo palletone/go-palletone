@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/fatih/set.v0"
@@ -170,7 +171,7 @@ func (p *peer) SendConsensus(msgs string) error {
 
 // SendNewBlockHashes announces the availability of a number of blocks through
 // a hash notification.
-func (p *peer) SendNewUnitHashes(hashes []common.Hash, numbers []uint64) error {
+func (p *peer) SendNewUnitHashes(hashes []common.Hash, numbers []modules.ChainIndex) error {
 	for _, hash := range hashes {
 		p.knownBlocks.Add(hash)
 	}
@@ -194,9 +195,9 @@ func (p *peer) SendUnitHeaders(headers []*modules.Header) error {
 }
 
 // SendBlockBodies sends a batch of block contents to the remote peer.
-//func (p *peer) SendBlockBodies(bodies []*blockBody) error {
-//	return p2p.Send(p.rw, BlockBodiesMsg, blockBodiesData(bodies))
-//}
+func (p *peer) SendBlockBodies(bodies []*blockBody) error {
+	return p2p.Send(p.rw, BlockBodiesMsg, blockBodiesData(bodies))
+}
 
 // SendBlockBodiesRLP sends a batch of block contents to the remote peer from
 // an already RLP encoded format.
@@ -245,27 +246,6 @@ func (p *peer) RequestLeafNodes() error {
 // specified header query, based on the number of an origin block.
 func (p *peer) RequestHeadersByNumber(origin modules.ChainIndex, amount int, skip int, reverse bool) error {
 	log.Debug("Fetching batch of headers", "count", amount, "index", origin.Index, "skip", skip, "reverse", reverse)
-	//TODO delete test
-	//	log.Debug("============================================================")
-	//	temp := modules.ChainIndex{}
-	//	temp.AssetID.SetBytes([]byte("wangjiyou"))
-	//	data := &getUnitHeadersData{Origin: hashOrNumberA{Number: temp}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse}
-	//	size, r, err := rlp.EncodeToReader(data)
-	//	if err != nil {
-	//		log.Info("RequestHeadersByNumber", "EncodeToBytes err", err, "data:", data)
-	//		return err
-	//	}
-
-	//	//func NewStream(r io.Reader, inputLimit uint64)
-	//	s := rlp.NewStream(r, uint64(size))
-	//	var query getUnitHeadersData
-	//	if err := s.Decode(&query); err != nil {
-	//		log.Info("RequestHeadersByNumber", "Decode err", err, "data:", data)
-	//		return err
-	//	}
-	//	id := query.Origin.Number.AssetID.String()
-	//	log.Info("===============", "query.Origin.AssetID", id)
-
 	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
@@ -491,17 +471,15 @@ func (ps *peerSet) GetPeers() []*peer {
 
 // AtiveMeatorPeers retrieves a list of peers that active mediator
 // @author Albert·Gou
-func (ps *peerSet) ActiveMediatorPeers() []*peer {
-	//TODO must modify
-	return nil
+func (ps *peerSet) GetActiveMediatorPeers(nodes []*discover.Node) []*peer {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
 
-	list := make([]*peer, 0, len(ps.peers))
-	for _, p := range ps.peers {
-		// TODO @wangjiyou
-
-		list = append(list, p)
+	list := make([]*peer, 0, len(nodes))
+	for _, node := range nodes {
+		if p, b := ps.peers[node.String()]; b {
+			list = append(list, p)
+		}
 	}
 
 	return list
@@ -510,7 +488,5 @@ func (ps *peerSet) ActiveMediatorPeers() []*peer {
 // SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
 // @author Albert·Gou
 func (p *peer) SendNewProducedUnit(unit *modules.Unit) error {
-	// TODO @wangjiyou
-
 	return p2p.Send(p.rw, NewProducedUnitMsg, unit)
 }

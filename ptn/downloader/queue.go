@@ -54,13 +54,12 @@ type fetchRequest struct {
 // fetchResult is a struct collecting partial results from data fetchers until
 // all outstanding pieces complete and the result as a whole can be processed.
 type fetchResult struct {
-	Pending int         // Number of data fetches still pending
-	Hash    common.Hash // Hash of the header to prevent recalculating
-
-	Header *modules.Header
-	//Uncles       []*modules.Header
+	Pending      int         // Number of data fetches still pending
+	Hash         common.Hash // Hash of the header to prevent recalculating
+	Header       *modules.Header
 	Transactions modules.Transactions
 	//Receipts     modules.Receipts
+	//Uncles       []*modules.Header
 }
 
 // queue represents hashes that are either need fetching or are being fetched
@@ -102,19 +101,15 @@ type queue struct {
 func newQueue() *queue {
 	lock := new(sync.Mutex)
 	return &queue{
-		headerPendPool:   make(map[string]*fetchRequest),
-		headerContCh:     make(chan bool),
-		blockTaskPool:    make(map[common.Hash]*modules.Header),
-		blockTaskQueue:   prque.New(),
-		blockPendPool:    make(map[string]*fetchRequest),
-		blockDonePool:    make(map[common.Hash]struct{}),
-		receiptTaskPool:  make(map[common.Hash]*modules.Header),
-		receiptTaskQueue: prque.New(),
-		receiptPendPool:  make(map[string]*fetchRequest),
-		receiptDonePool:  make(map[common.Hash]struct{}),
-		resultCache:      make([]*fetchResult, blockCacheItems),
-		active:           sync.NewCond(lock),
-		lock:             lock,
+		headerPendPool: make(map[string]*fetchRequest),
+		headerContCh:   make(chan bool),
+		blockTaskPool:  make(map[common.Hash]*modules.Header),
+		blockTaskQueue: prque.New(),
+		blockPendPool:  make(map[string]*fetchRequest),
+		blockDonePool:  make(map[common.Hash]struct{}),
+		resultCache:    make([]*fetchResult, blockCacheItems),
+		active:         sync.NewCond(lock),
+		lock:           lock,
 	}
 }
 
@@ -789,7 +784,7 @@ func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction) (int,
 
 	reconstruct := func(header *modules.Header, index int, result *fetchResult) error {
 		//TODO must recover
-		//		if modules.DeriveSha(modules.Transactions(txLists[index])) != header.TxRoot {
+		//		if core.DeriveSha(modules.Transactions(txLists[index])) != header.TxRoot {
 		//			log.Debug("===queue->DeliverBodies===", "err:", errInvalidBody)
 		//			return errInvalidBody
 		//		}
@@ -797,26 +792,6 @@ func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction) (int,
 		return nil
 	}
 	return q.deliver(id, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, bodyReqTimer, len(txLists), reconstruct)
-}
-
-// DeliverReceipts injects a receipt retrieval response into the results queue.
-// The method returns the number of transaction receipts accepted from the delivery
-// and also wakes any threads waiting for data delivery.
-func (q *queue) DeliverReceipts(id string, receiptList [][]*modules.Receipt) (int, error) {
-	/*
-		q.lock.Lock()
-		defer q.lock.Unlock()
-
-		reconstruct := func(header *modules.Header, index int, result *fetchResult) error {
-			if modules.DeriveSha(modules.Receipts(receiptList[index])) != header.ReceiptHash {
-				return errInvalidReceipt
-			}
-			result.Receipts = receiptList[index]
-			return nil
-		}
-		return q.deliver(id, q.receiptTaskPool, q.receiptTaskQueue, q.receiptPendPool, q.receiptDonePool, receiptReqTimer, len(receiptList), reconstruct)
-	*/
-	return 0, nil
 }
 
 // deliver injects a data retrieval response into the results queue.
