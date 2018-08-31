@@ -19,14 +19,12 @@
 package core
 
 import (
-	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 )
 
 // mediator 结构体 和具体的账户模型有关
 type Mediator struct {
 	Address common.Address
-	InitPartPub kyber.Point
-	Node *discover.Node
+	//InitPartPub kyber.Point
+	//Node *discover.Node
 }

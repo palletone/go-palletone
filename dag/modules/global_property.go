@@ -62,9 +62,9 @@ func (gp *GlobalProperty) GetActiveMediatorNodes() []*discover.Node {
 	aSize := len(gp.ActiveMediators)
 	nodes := make([]*discover.Node, 0, aSize)
 
-	for m := range gp.ActiveMediators {
-		nodes = append(nodes, m.Node)
-	}
+	//for m := range gp.ActiveMediators {
+	//	nodes = append(nodes, m.Node)
+	//}
 
 	return nodes
 }
