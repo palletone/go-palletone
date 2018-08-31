@@ -54,13 +54,12 @@ type fetchRequest struct {
 // fetchResult is a struct collecting partial results from data fetchers until
 // all outstanding pieces complete and the result as a whole can be processed.
 type fetchResult struct {
-	Pending int         // Number of data fetches still pending
-	Hash    common.Hash // Hash of the header to prevent recalculating
-
-	Header *modules.Header
-	//Uncles       []*modules.Header
+	Pending      int         // Number of data fetches still pending
+	Hash         common.Hash // Hash of the header to prevent recalculating
+	Header       *modules.Header
 	Transactions modules.Transactions
 	//Receipts     modules.Receipts
+	//Uncles       []*modules.Header
 }
 
 // queue represents hashes that are either need fetching or are being fetched
@@ -102,19 +101,15 @@ type queue struct {
 func newQueue() *queue {
 	lock := new(sync.Mutex)
 	return &queue{
-		headerPendPool:   make(map[string]*fetchRequest),
-		headerContCh:     make(chan bool),
-		blockTaskPool:    make(map[common.Hash]*modules.Header),
-		blockTaskQueue:   prque.New(),
-		blockPendPool:    make(map[string]*fetchRequest),
-		blockDonePool:    make(map[common.Hash]struct{}),
-		receiptTaskPool:  make(map[common.Hash]*modules.Header),
-		receiptTaskQueue: prque.New(),
-		receiptPendPool:  make(map[string]*fetchRequest),
-		receiptDonePool:  make(map[common.Hash]struct{}),
-		resultCache:      make([]*fetchResult, blockCacheItems),
-		active:           sync.NewCond(lock),
-		lock:             lock,
+		headerPendPool: make(map[string]*fetchRequest),
+		headerContCh:   make(chan bool),
+		blockTaskPool:  make(map[common.Hash]*modules.Header),
+		blockTaskQueue: prque.New(),
+		blockPendPool:  make(map[string]*fetchRequest),
+		blockDonePool:  make(map[common.Hash]struct{}),
+		resultCache:    make([]*fetchResult, blockCacheItems),
+		active:         sync.NewCond(lock),
+		lock:           lock,
 	}
 }
 
