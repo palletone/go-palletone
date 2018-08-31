@@ -51,6 +51,8 @@ type SystemChaincode struct {
 	//Path to the system chaincode; currently not used
 	Path string
 
+	Version string
+
 	//InitArgs initialization arguments to startup the system chaincode
 	InitArgs [][]byte
 
@@ -142,11 +144,13 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 	if err != nil {
 		sysccLogger.Errorf("ExecuteWithErrorFilter with syscc.Name[%s] chainId[%s] err !!", syscc.Name, chainID)
 	} else {
-		sysccLogger.Infof("system chaincode %s,%s(%s) deployed", syscc.Name, chainID, syscc.Path)
+		sysccLogger.Info("system chaincode deployed ok!!")
+		sysccLogger.Infof("contract name[%s],path[%s]", syscc.Name, syscc.Path)
 		cc := &cclist.CCInfo{
-			Id:syscc.Id,
-			Name: syscc.Name,
-			Path:syscc.Path,
+			Id:      syscc.Id,
+			Name:    syscc.Name,
+			Path:    syscc.Path,
+			Version: syscc.Version,
 		}
 		err = cclist.SetChaincode(chainID, 0, cc)
 		if err != nil {

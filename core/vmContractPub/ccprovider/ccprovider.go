@@ -368,14 +368,15 @@ func NewCCContext(cid, name, version, txid string, syscc bool, signedProp *pb.Si
 	//All system chaincodes share the same version given by utils.GetSysCCVersion. Note
 	//that neither Chain Name or Version are stored in a chaincodes state on the ledger
 	if version == "" {
-		panic(fmt.Sprintf("---empty version---(chain=%s,chaincode=%s,version=%s,txid=%s,syscc=%t,proposal=%p", cid, name, version, txid, syscc, prop))
+		ccproviderLogger.Errorf("empty version(chain=%s,chaincode=%s,version=%s,txid=%s,syscc=%t,proposal=%p", cid, name, version, txid, syscc, prop)
+		return nil
 	}
 
 	canName := name + ":" + version
 
 	cccid := &CCContext{cid, name, version, txid, syscc, signedProp, prop, canName, nil}
 
-	ccproviderLogger.Debugf("NewCCCC (chain=%s,chaincode=%s,version=%s,txid=%s,syscc=%t,proposal=%p,canname=%s", cid, name, version, txid, syscc, prop, cccid.canonicalName)
+	ccproviderLogger.Debugf("NewCCCC (chain[%s],chaincode[%s],version[%s],txid[%s],syscc[%t],proposal[%p],canname[%s])", cid, name, version, txid, syscc, prop, cccid.canonicalName)
 
 	return cccid
 }

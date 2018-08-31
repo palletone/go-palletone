@@ -11,8 +11,6 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/contracts/platforms"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"os"
-	"io/ioutil"
 	"github.com/palletone/go-palletone/contracts/rwset"
 	"github.com/palletone/go-palletone/contracts/core"
 )
@@ -53,7 +51,7 @@ func buildUserCC(context context.Context, spec *pb.ChaincodeSpec) (*pb.Chaincode
 }
 
 func getDeploymentSpec(_ context.Context, spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
-	fmt.Printf("getting deployment spec for chaincode spec: %v\n", spec)
+	logger.Infof("getting deployment spec for chaincode spec: %v\n", spec)
 	codePackageBytes, err := platforms.GetDeploymentPayload(spec)
 	if err != nil {
 		return nil, err
@@ -190,30 +188,30 @@ func RecoverChainCodeFromDb(chainID string, templateId []byte) ( *UserChaincode,
 	//从数据库读取
 	//解压到指定路径下
 
-	testFile := "/home/glh/go/src/chaincode/abc.tar.gz"
-	zipName := "test.tar.gz"
-	dir := "/home/glh/go/src/chaincode/"
-	//version, zipdata, name, path := storage.GetContractTpl(templateId)
-
-	//read
-	fi, err := os.Open(testFile)
-	if err != nil {
-		logger.Errorf("open file[%s] fail:%s", testFile, err)
-		return nil, errors.New("open file fail")
-	}
-	defer fi.Close()
-	filedata, err := ioutil.ReadAll(fi)
-	if err != nil {
-		logger.Errorf("read file[%s] fail:%s", testFile, err)
-		return nil, errors.New("read file fail")
-	}
-
-	//write
-	err = ioutil.WriteFile(dir + zipName, filedata, 0644)
-	if err != nil {
-		logger.Errorf("write file[%s] fail:%s", testFile, err)
-		return nil, errors.New("write file fail")
-	}
+	//testFile := "/home/glh/go/src/chaincode/abc.tar.gz"
+	//zipName := "test.tar.gz"
+	//dir := "/home/glh/go/src/chaincode/"
+	////version, zipdata, name, path := storage.GetContractTpl(templateId)
+	//
+	////read
+	//fi, err := os.Open(testFile)
+	//if err != nil {
+	//	logger.Errorf("open file[%s] fail:%s", testFile, err)
+	//	return nil, errors.New("open file fail")
+	//}
+	//defer fi.Close()
+	//filedata, err := ioutil.ReadAll(fi)
+	//if err != nil {
+	//	logger.Errorf("read file[%s] fail:%s", testFile, err)
+	//	return nil, errors.New("read file fail")
+	//}
+	//
+	////write
+	//err = ioutil.WriteFile(dir + zipName, filedata, 0644)
+	//if err != nil {
+	//	logger.Errorf("write file[%s] fail:%s", testFile, err)
+	//	return nil, errors.New("write file fail")
+	//}
 
 	usrCC := &UserChaincode{
 	}

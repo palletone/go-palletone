@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"container/list"
 	"github.com/spf13/viper"
+	"encoding/hex"
 )
 
 var debugX bool = true
@@ -32,7 +33,7 @@ var listCC list.List
 
 func listAdd(cc *TempCC) error {
 	if cc != nil {
-		fmt.Printf("==name[%s]", cc.name)
+		//fmt.Printf("==name[%s]", cc.name)
 		listCC.PushBack(*cc)
 	}
 	return nil
@@ -47,7 +48,7 @@ func listDel(templateId []byte) {
 }
 
 func listGet(templateId []byte) (*TempCC, error) {
-	fmt.Printf("==listGet [%v]", templateId)
+	logger.Infof("listGet [%v]", templateId)
 	for e := listCC.Front(); e != nil; e = e.Next() {
 		if bytes.Equal(e.Value.(TempCC).templateId, templateId) == true {
 			cc := &TempCC{
@@ -56,7 +57,7 @@ func listGet(templateId []byte) (*TempCC, error) {
 				path:       e.Value.(TempCC).path,
 				vers:       e.Value.(TempCC).vers,
 			}
-			fmt.Printf("==name[%s]", cc.name)
+			//fmt.Printf("==name[%s]", cc.name)
 			return cc, nil
 		}
 	}
@@ -128,6 +129,9 @@ func GetUsrCCList() {
 
 //install but not into db
 func Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error) {
+	logger.Infof("==========install enter=======")
+	logger.Infof("name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
+	defer logger.Infof("-----------install exit--------")
 	usrcc := &ucc.UserChaincode{
 		Name:    ccName,
 		Path:    ccPath,
@@ -219,6 +223,10 @@ func DeployByName(chainID string, txid string, ccName string, ccPath string, ccV
 }
 
 func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *unit.ContractDeployPayload, e error) {
+	logger.Infof("==========Deploy enter=======")
+	logger.Infof("templateId[%s]txid[%s]", hex.EncodeToString(templateId), txid)
+	defer logger.Infof("-----------Deploy exit--------")
+
 	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
@@ -241,7 +249,7 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 	//test!!!!!!
 	//todo del
 	if txid == "" || templateCC.Name == "" || templateCC.Path == "" {
-		logger.Errorf("cc param is null")
+		//logger.Errorf("cc param is null")
 		//return "", nil, errors.New("cc param is nil")
 
 		//test
@@ -262,7 +270,8 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 		return nil, nil, errors.New("crypto.GetRandomNonce error")
 	}
 
-	usrccName := templateCC.Name + "_" + createDeployId(templateCC.Name)
+	usrccName := templateCC.Name + "_" + hex.EncodeToString(randNum)[0:8]//createDeployId(templateCC.Name)
+
 	usrcc := &ucc.UserChaincode{
 		Name:     usrccName,
 		Path:     templateCC.Path,
@@ -301,6 +310,10 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
 func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
+	logger.Infof("==========Invoke enter=======")
+	logger.Infof("deployId[%s] txid[%s]", hex.EncodeToString(deployId), txid)
+	defer logger.Infof("-----------Invoke exit--------")
+
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone") //default
 
@@ -342,7 +355,8 @@ func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout
 		logger.Errorf("ProcessProposal error[%v]", err)
 		return nil, err
 	}
-	logger.Infof("Invoke Ok, ProcessProposal duration=%v,rsp=%v", duration, rsp)
+
+	logger.Infof("Invoke Ok, ProcessProposal duration=%v,rsp=%v,%s", duration, rsp, unit.Payload)
 
 	return unit, nil
 }
@@ -364,8 +378,11 @@ func StopByName(chainID string, txid string, ccName string, ccPath string, ccVer
 }
 
 func Stop(chainID string, deployId []byte, txid string, deleteImage bool) error {
-	setChainId := "palletone"
+	logger.Infof("==========Stop enter=======")
+	logger.Infof("deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
+	defer logger.Infof("-----------Stop exit--------")
 
+	setChainId := "palletone"
 	if chainID != "" {
 		setChainId = chainID
 	}
@@ -413,6 +430,6 @@ func peerContractMockConfigInit() {
 func init() {
 	peerContractMockConfigInit()
 
-	InitNoSysCCC()
-	//Init()
+	//InitNoSysCCC()
+	Init()
 }

@@ -691,6 +691,9 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 	chaincodeSupport.runningChaincodes.Unlock()
 
 	if cds == nil {
+
+		//return cID, cMsg, errors.Errorf("contract not running:%s", canName)
+
 		if cccid.Syscc {
 			return cID, cMsg, errors.Errorf("a syscc should be running (it cannot be launched) %s", canName)
 		}
@@ -713,7 +716,6 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 
 		cds = &pb.ChaincodeDeploymentSpec{}
 
-		//Get lang from original deployment
 		err = proto.Unmarshal(depPayload, cds)
 		if err != nil {
 			return cID, cMsg, errors.Wrap(err, fmt.Sprintf("failed to unmarshal deployment transactions for %s", canName))

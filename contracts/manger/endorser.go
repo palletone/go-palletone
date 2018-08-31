@@ -264,6 +264,7 @@ func (e *Endorser) ProcessProposal(deployId []byte, ctx context.Context, signedP
 	// todo
 
 	pResp.Response.Payload = res.Payload
+	unit.Payload = res.Payload
 
 	return pResp, unit, nil
 }

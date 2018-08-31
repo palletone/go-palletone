@@ -22,8 +22,6 @@ package util
 import (
 	"runtime"
 	"strings"
-	"fmt"
-
 	"github.com/spf13/viper"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
@@ -34,7 +32,7 @@ import (
 func NewDockerClient() (client *docker.Client, err error) {
 	endpoint := viper.GetString("vm.endpoint")
 
-	fmt.Println("NewDockerClient enter, endpoint:", endpoint)
+	vmLogger.Infof("NewDockerClient enter, endpoint:%s", endpoint)
 
 	tlsenabled := viper.GetBool("vm.docker.tls.enabled")
 	if tlsenabled {

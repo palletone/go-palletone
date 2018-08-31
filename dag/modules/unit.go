@@ -280,8 +280,8 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 /************************** Payload Details ******************************************/
 type PayloadMapStruct struct {
 	IsDelete bool
-	Key   string
-	Value interface{}
+	Key      string
+	Value    interface{}
 }
 
 // Token exchange message and verify message
@@ -378,6 +378,7 @@ type ContractInvokePayload struct {
 	Excutiontime time.Duration      `json:"excution_time"` // contract execution time, millisecond
 	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
 	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
+	Payload      []byte             `json:"payload"`
 }
 
 // Token exchange message and verify message
@@ -395,9 +396,9 @@ type TextPayload struct {
 /************************** End of Payload Details ******************************************/
 
 type Author struct {
-	Address        common.Address `json:"address"`
-	Pubkey         []byte/*common.Hash*/ `json:"pubkey"`
-	TxAuthentifier Authentifier `json:"authentifiers"`
+	Address        common.Address         `json:"address"`
+	Pubkey         []byte /*common.Hash*/ `json:"pubkey"`
+	TxAuthentifier Authentifier           `json:"authentifiers"`
 }
 
 type Authentifier struct {

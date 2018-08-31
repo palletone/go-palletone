@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"bytes"
+	"encoding/hex"
 )
 
 var logger = flogging.MustGetLogger("cclist")
@@ -55,6 +56,7 @@ func SetChaincode(cid string, version int, chaincode *CCInfo) error {
 	chains.Lock()
 	defer chains.Unlock()
 
+	logger.Infof("chainId[%s] ,%d, chaincode[%s]id[%s]", cid, version, chaincode.Name, hex.EncodeToString(chaincode.Id))
 	for k, v := range chains.Clist {
 		if k == cid {
 			logger.Infof("chainId[%s] already exit, %v", cid, v)
@@ -92,9 +94,9 @@ func GetChaincode(cid string, deployId []byte) (*CCInfo, error) {
 	if chains.Clist[cid] != nil {
 		clist := chains.Clist[cid]
 		for _, v := range clist.CClist {
-			logger.Infof("find,%s, id[%v]", v.Name, v.Id)
+			logger.Infof("find,%s, id[%s]--[%s], ", v.Name, hex.EncodeToString(v.Id), hex.EncodeToString(deployId))
 			if bytes.Equal(v.Id, deployId) == true {
-				//logger.Infof("++++++++++++++++find,%s", v.Name)
+				logger.Infof("++++++++++++++++find,%s", v.Name)
 				return v, nil
 			}
 		}

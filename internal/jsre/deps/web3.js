@@ -5547,8 +5547,8 @@ var methods = function () {
     var ccinvoke = new Method({
         name: 'ccinvoke',
         call: 'ptn_ccinvoke',
-        params: 2, //deployId string, txid string, args [][]byte,
-        inputFormatter: [null, null],
+        params: 5, //deployId string, txid string, args [][]byte------>fun, key, value,
+        inputFormatter: [null, null, null, null, null],
     });
 
     var ccstop = new Method({

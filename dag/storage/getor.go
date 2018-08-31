@@ -112,7 +112,7 @@ func GetUnit(db DatabaseReader, hash common.Hash) *modules.Unit {
 	// 1. get chainindex
 	height, err := GetUnitNumber(db, hash)
 	if err != nil {
-		log.Println("Getunit when get unitNumber failed , error:", err)
+		//log.Println("Getunit when get unitNumber failed , error:", err)
 		return nil
 	}
 	// 2. unit header
