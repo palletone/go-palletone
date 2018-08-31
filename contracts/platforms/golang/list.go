@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -57,11 +58,11 @@ func runProgram(env Env, timeout time.Duration, pgm string, args ...string) ([]b
 		}
 	case err = <-done:
 		if err != nil {
-		return nil, fmt.Errorf("<%s, %v>: failed with error: \"%s\"\n%s", pgm, args, err, string(stdErr.Bytes()))
-	}
+			return nil, fmt.Errorf("<%s, %v>: failed with error: \"%s\"\n%s", pgm, args, err, string(stdErr.Bytes()))
+		}
 
-	return stdOut.Bytes(), nil
-}
+		return stdOut.Bytes(), nil
+	}
 }
 
 // Logic inspired by: https://dave.cheney.net/2014/09/14/go-list-your-swiss-army-knife
@@ -70,8 +71,7 @@ func list(env Env, template, pkg string) ([]string, error) {
 		env = getEnv()
 	}
 
-	fmt.Println("=============>", template,"++++", pkg)
-
+	logger.Infof("template[%v],pkg[%s]", template, pkg)
 	lst, err := runProgram(env, 60*time.Second, "go", "list", "-f", template, pkg)
 	if err != nil {
 		return nil, err

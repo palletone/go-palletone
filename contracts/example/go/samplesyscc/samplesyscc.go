@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -43,7 +44,7 @@ func (t *SampleSysCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	//as system chaincodes do not take part in consensus and are part of the system,
 	//best practice to do nothing (or very little) in Init.
 
-	fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+	fmt.Println("***sample system contract init***")
 	return shim.Success(nil)
 }
 
@@ -67,10 +68,10 @@ type BTCQuery struct {
 }
 
 type ETHAddress struct {
-	Method     string   `json:"method"`
+	Method    string   `json:"method"`
 	Addresses []string `json:"addresses"`
-	N          int      `json:"n"`
-	M          int      `json:"m"`
+	N         int      `json:"n"`
+	M         int      `json:"m"`
 }
 
 // Invoke gets the supplied key and if it exists, updates the key with the newly
@@ -186,7 +187,7 @@ func (t *SampleSysCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		fmt.Println("Chaincode result ==== ===== ", string(result))
 		return shim.Success(result)
-		
+
 	case "transaction":
 		return shim.Success(nil)
 	case "queryETH":
@@ -204,6 +205,34 @@ func (t *SampleSysCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "queryPTN":
 		return shim.Success(nil)
 
+	case "add":
+		{
+			a, _ := strconv.Atoi(args[0])
+			b, _ := strconv.Atoi(args[1])
+			rspStr := fmt.Sprintf("Value:%d", a+b)
+			return shim.Success([]byte(rspStr))
+		}
+	case "sub":
+		{
+			a, _ := strconv.Atoi(args[0])
+			b, _ := strconv.Atoi(args[1])
+			rspStr := fmt.Sprintf("Value:%d", a-b)
+			return shim.Success([]byte(rspStr))
+		}
+	case "mul":
+		{
+			a, _ := strconv.Atoi(args[0])
+			b, _ := strconv.Atoi(args[1])
+			rspStr := fmt.Sprintf("Value:%d", a*b)
+			return shim.Success([]byte(rspStr))
+		}
+	case "div":
+		{
+			a, _ := strconv.Atoi(args[0])
+			b, _ := strconv.Atoi(args[1])
+			rspStr := fmt.Sprintf("Value:%d", a/b)
+			return shim.Success([]byte(rspStr))
+		}
 	case "putval":
 		if len(args) < 2 {
 			return shim.Error("need 2 args (key and a value)")

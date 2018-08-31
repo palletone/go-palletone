@@ -343,7 +343,8 @@ func (handler *Handler) processStream() error {
 				chaincodeLogger.Debugf("%+v", err)
 				return err
 			} else if err != nil {
-				chaincodeLogger.Errorf("Error handling chaincode support stream: %+v", err)
+				//chaincodeLogger.Errorf("Error handling chaincode support stream: %+v", err)
+				chaincodeLogger.Infof("Error handling chaincode support stream: %+v", err)
 				return err
 			} else if in == nil {
 				err = errors.New("received nil message, ending chaincode support stream")
@@ -1788,7 +1789,7 @@ func (handler *Handler) ready(ctxt context.Context, chainID string, txid string,
 
 // handleMessage is the entrance method for Peer's handling of Chaincode messages.
 func (handler *Handler) handleMessage(msg *pb.ChaincodeMessage) error {
-	chaincodeLogger.Debugf("[%s]Pallet peer side Handling ChaincodeMessage[Txid=%s] of type: %s in state %s",msg.Txid, shorttxid(msg.Txid), msg.Type, handler.FSM.Current())
+	chaincodeLogger.Debugf("[%s]Pallet peer side Handling ChaincodeMessage of type: %s in state %s",shorttxid(msg.Txid), msg.Type, handler.FSM.Current())
 
 	if (msg.Type == pb.ChaincodeMessage_COMPLETED || msg.Type == pb.ChaincodeMessage_ERROR) && handler.FSM.Current() == "ready" {
 		chaincodeLogger.Debugf("[%s]HandleMessage- COMPLETED. Notify", msg.Txid)

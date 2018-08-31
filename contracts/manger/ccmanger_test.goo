@@ -292,7 +292,7 @@ func multMoreSys(t *testing.T) {
 		}
 
 		go func(timeout time.Duration, txid string) {
-			unit, err := Invoke(chainID, []byte("sample_syscc"), txid, args, timeout)
+			unit, err := Invoke(chainID, []byte{0x95, 0x27}, txid, args, timeout)
 			if err != nil {
 				t.Error(err)
 			} else {

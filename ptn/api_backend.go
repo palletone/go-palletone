@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 
 	//cc "github.com/palletone/go-palletone/contracts/manger"
+	"encoding/hex"
 )
 
 // PtnApiBackend implements ethapi.Backend for full nodes
@@ -228,24 +229,28 @@ func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion 
 
 func (b *PtnApiBackend)ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration)(deployId []byte, err error){
 	//depid := []byte{0x4, 0x5, 0x6}
-	log.Printf("======>ContractDeploy:tmId[%v]txid[%s]", templateId, txid)
+	log.Printf("======>ContractDeploy:tmId[%s]txid[%s]", hex.EncodeToString(templateId), txid)
 
 	//depid, _, err := cc.Deploy("palletone", templateId, txid, args, timeout)
 	depid, _, err := b.ptn.contract.Deploy("palletone", templateId, txid, args, timeout)
 	return depid, err
 }
 
-func (b *PtnApiBackend)ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (error) {
-	log.Printf("======>ContractInvoke:deployId[%v]txid[%s]", deployId, txid)
+func (b *PtnApiBackend)ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
+	log.Printf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 
 	//_, err := cc.Invoke("palletone", deployId, txid, args, timeout)
-	_, err := b.ptn.contract.Invoke("palletone", deployId, txid, args, timeout)
+	unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, args, timeout)
 	//todo print rwset
-	return err
+	if err != nil {
+		return nil, err
+	}
+
+	return unit.Payload, err
 }
 
 func (b *PtnApiBackend)ContractStop(deployId []byte, txid string, deleteImage bool)(error) {
-	log.Printf("======>ContractStop:deployId[%v]txid[%s]", deployId, txid)
+	log.Printf("======>ContractStop:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 
 	//err := cc.Stop("palletone", deployId, txid, deleteImage)
 	err := b.ptn.contract.Stop("palletone", deployId, txid, deleteImage)

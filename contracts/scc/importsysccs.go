@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -26,15 +27,15 @@ import (
 var systemChaincodes = []*SystemChaincode{
 	//set systemChaincodes to sample
 	{
-		Id: []byte("sample_syscc"),
+		Id:        []byte{0x95, 0x27},
 		Enabled:   true,
 		Name:      "sample_syscc",
-		Path:      "/home/glh/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc/samplesyscc",
+		Path:      "~/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc/samplesyscc",
+		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &samplesyscc.SampleSysCC{},
 	},
 	//TODO add other system chaincodes ...
-
 }
 //DeploySysCCs is the hook for system chaincodes where system chaincodes are registered
 //note the chaincode must still be deployed and launched like a user chaincode will be
