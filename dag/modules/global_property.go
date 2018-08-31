@@ -20,17 +20,22 @@
 package modules
 
 import (
+	"encoding/base64"
+	"fmt"
+	"strings"
+
+	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/core"
 )
 
 // 全局属性的结构体定义
 type GlobalProperty struct {
 	ChainParameters core.ChainParameters // 区块链网络参数
 
-	ActiveMediators map[core.Mediator]bool // 当前活跃mediator集合；每个维护间隔更新一次
+	ActiveMediators map[common.Address]core.Mediator // 当前活跃mediator集合；每个维护间隔更新一次
 }
 
 // 动态全局属性的结构体定义
@@ -62,9 +67,9 @@ func (gp *GlobalProperty) GetActiveMediatorNodes() []*discover.Node {
 	aSize := len(gp.ActiveMediators)
 	nodes := make([]*discover.Node, 0, aSize)
 
-	//for m := range gp.ActiveMediators {
-	//	nodes = append(nodes, m.Node)
-	//}
+	for _, m := range gp.ActiveMediators {
+		nodes = append(nodes, m.Node)
+	}
 
 	return nodes
 }
@@ -72,7 +77,7 @@ func (gp *GlobalProperty) GetActiveMediatorNodes() []*discover.Node {
 func NewGlobalProp() *GlobalProperty {
 	return &GlobalProperty{
 		ChainParameters: core.NewChainParams(),
-		ActiveMediators: map[core.Mediator]bool{},
+		ActiveMediators: map[common.Address]core.Mediator{},
 	}
 }
 
@@ -96,11 +101,38 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	log.Debug("Set active mediators...")
 	// Set active mediators
 	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
-		ad := common.StringToAddress(genesis.InitialMediatorCandidates[i])
-		md := core.Mediator{
-			Address: ad,
+		// 1. 解析 mediator 账户地址
+		medInfo := genesis.InitialMediatorCandidates[i]
+		address := strings.TrimSpace(medInfo.Address)
+		address = strings.Trim(address, "\"")
+
+		add := common.StringToAddress(medInfo.Address)
+		addrType, err := add.Validate()
+		if err != nil || addrType != common.PublicKeyHash {
+			log.Error(fmt.Sprintf("Invalid mediator account address %v : %v", address, err))
 		}
-		gp.ActiveMediators[md] = true
+
+		// 2. 解析 mediator 的 DKS 初始公钥
+		pubB, err := base64.RawURLEncoding.DecodeString(medInfo.InitPartPub)
+		if err != nil {
+			log.Error(fmt.Sprintf("initPartPub %v : %v", medInfo.InitPartPub, err))
+		}
+
+		pub := bn256.NewSuiteG2().Point()
+		err = pub.UnmarshalBinary(pubB)
+		if err != nil {
+			log.Error(fmt.Sprintf("Invalid mediator account initPartPub %v : %v", medInfo.InitPartPub, err))
+		}
+
+		// 3. 解析mediator 的 node 节点信息
+		node := discover.MustParseNode(medInfo.Node)
+
+		md := core.Mediator{
+			Address:     add,
+			InitPartPub: pub,
+			Node:        node,
+		}
+		gp.ActiveMediators[add] = md
 	}
 
 	return gp
