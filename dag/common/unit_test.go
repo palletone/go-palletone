@@ -13,6 +13,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"reflect"
 )
 
 func TestNewGenesisUnit(t *testing.T) {
@@ -209,5 +210,146 @@ func TestGetContractState(t *testing.T) {
 	data := storage.GetTplAllState("contract_template0000")
 	for k, v := range data {
 		log.Println(k, v)
+	}
+}
+
+func TestPaymentTransactionRLP(t *testing.T) {
+	p := common.Hash{}
+	p.SetString("0000000000000000022222222222")
+	aid := modules.IDType16{}
+	aid.SetBytes([]byte("xxxxxxxxxxxxxxxxxx"))
+
+	// TODO test PaymentPayload
+	txin := modules.Input{
+		PreviousOutPoint: modules.OutPoint{
+			TxHash:       p,
+			MessageIndex: 1234,
+			OutIndex:     12344,
+		},
+		SignatureScript: []byte("1234567890"),
+		Extra:           []byte("990019202020"),
+	}
+	txout := modules.Output{
+		Value:    1,
+		PkScript: []byte("kssssssssssssssssssslsll"),
+		Asset: modules.Asset{
+			AssertId: aid,
+			UniqueId: aid,
+			ChainId:  11,
+		},
+	}
+	payment := modules.PaymentPayload{
+		Inputs:  []modules.Input{txin},
+		Outputs: []modules.Output{txout},
+	}
+
+	tx2 := modules.Transaction{
+		TxMessages: []modules.Message{
+			{
+				App:     modules.APP_PAYMENT,
+				Payload: payment,
+			},
+		},
+		Locktime: 1,
+	}
+	tx2.TxHash = tx2.Hash()
+	fmt.Println("Original data:", payment)
+	b, _ := rlp.EncodeToBytes(tx2)
+	var tx modules.Transaction
+	if err := rlp.DecodeBytes(b, &tx); err != nil {
+		fmt.Println("TestPaymentTransactionRLP error:", err.Error())
+	} else {
+		for _, msg := range tx.TxMessages {
+			if msg.App == modules.APP_PAYMENT {
+				var pl modules.PaymentPayload
+				if err := pl.ExtractFrInterface(msg.Payload); err != nil {
+					fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
+				} else {
+					fmt.Println("Payment payload:", pl)
+				}
+			}
+		}
+	}
+
+}
+
+func TestTransactionRLP(t *testing.T) {
+	addr := common.Address{}
+	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
+	//ks := keystore.NewKeyStore("./keystore", 1<<18, 1)
+	p := common.Hash{}
+	p.SetString("0000000000000000022222222222")
+	aid := modules.IDType16{}
+	aid.SetBytes([]byte("xxxxxxxxxxxxxxxxxx"))
+	header := new(modules.Header)
+	header.ParentsHash = append(header.ParentsHash, p)
+	header.AssetIDs = []modules.IDType16{aid}
+	key, _ := crypto.GenerateKey()
+	addr0 := crypto.PubkeyToAddress(key.PublicKey)
+
+	sig, err := crypto.Sign(header.Hash().Bytes(), key)
+	if err != nil {
+		log.Println("sign header occured error: ", err)
+	}
+	auth := new(modules.Authentifier)
+	auth.R = sig[:32]
+	auth.S = sig[32:64]
+	auth.V = sig[64:]
+	auth.Address = addr0.String()
+	header.Authors = auth
+	// TODO test ContractTplPayload
+	contractTplPayload := modules.ContractTplPayload{
+		TemplateId: []byte("contract_template0000"),
+		Bytecode:   []byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159},
+		Name:       "TestContractTpl",
+		Path:       "./contract",
+	}
+	readSet := []modules.ContractReadSet{}
+	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
+		Height:  GenesisHeight(),
+		TxIndex: 0,
+	}})
+	tx1 := modules.Transaction{
+		TxMessages: []modules.Message{
+			{
+				App:     modules.APP_CONTRACT_TPL,
+				Payload: contractTplPayload,
+			},
+		},
+		Locktime: 1,
+	}
+	tx1.TxHash = tx1.Hash()
+
+	fmt.Println(">>>>>>>>  Original transaction:")
+	fmt.Println(">>>>>>>>  hash:", tx1.TxHash)
+	for index, msg := range tx1.TxMessages {
+		fmt.Printf(">>>>>>>>  message[%d]:%v\n", index, msg)
+		fmt.Println(">>>>>>>> payload type:", reflect.TypeOf(msg.Payload))
+		fmt.Printf(">>>>>>>>  message[%d] payload:%v\n", index, msg.Payload)
+	}
+	fmt.Println(">>>>>>>>  locktime:", tx1.Locktime)
+	encodeData, err := rlp.EncodeToBytes(tx1)
+	if err != nil {
+		fmt.Println("Encode tx1 error:", err.Error())
+	} else {
+		var txDecode modules.Transaction
+		if err := rlp.DecodeBytes(encodeData, &txDecode); err != nil {
+			fmt.Println("Decode tx error:", err.Error())
+		} else {
+			fmt.Println("======== Decode transaction:")
+			fmt.Println("======== hash:", txDecode.TxHash)
+			for index, msg := range txDecode.TxMessages {
+				fmt.Printf("======== message[%d]:%v\n", index, msg)
+				switch msg.App {
+				case modules.APP_CONTRACT_TPL:
+					fmt.Println("======== payload type:", reflect.TypeOf(reflect.TypeOf(msg.Payload).Elem()))
+					payload, ok := msg.Payload.(modules.ContractTplPayload)
+					if ok {
+						fmt.Printf("========  message[%d] payload:%v\n", index, payload)
+					}
+				}
+			}
+			fmt.Println("========  locktime:", txDecode.Locktime)
+		}
 	}
 }

@@ -18,10 +18,12 @@ package rlp
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"math/big"
 	"reflect"
 	"strings"
@@ -819,25 +821,24 @@ func unhex(str string) []byte {
 }
 
 func TestDecodeBytes(t *testing.T) {
-	//type ST struct {
-	//	Grade string
-	//	Core float64
-	//	Age  uint8
-	//}
-	//// todo test map+interface
-	//
+	type ST struct {
+		Grade string
+		Core  float64
+		Age   uint8
+	}
+	// TODO test map+interface
 	//m := map[string]interface{}{}
 	//m["Alice"] = uint16(9)
 	//m["Bob"] = "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"
 	//m["Joe"] = uint16(19)
 	////m["Chen"] = ST{Grade:"senior", Core:89.2}
-	//m["Chen"] = ST{Age:19, Grade:"senior", Core:89.2}
+	//m["Chen"] = ST{Age: 19, Grade: "senior", Core: 89.2}
 	//
 	////m:=map[string]string{}
 	////m["Alice"] = "senior"
 	////m["Bob"]="Junior"
 	//b, err := EncodeToBytes(m)
-	//if err!=nil {
+	//if err != nil {
 	//	log.Printf("Encode map error:%s", err)
 	//} else {
 	//	log.Printf("Encoding data: %v", b)
@@ -845,30 +846,75 @@ func TestDecodeBytes(t *testing.T) {
 	//
 	//m1 := map[string]interface{}{}
 	//err = DecodeBytes(b, &m1)
-	//if err!=nil{
+	//if err != nil {
 	//	log.Println("Decoding data error:", err)
 	//} else {
 	//	for k, v := range m1 {
-	//		if strings.Compare(k, "Bob")==0 {
+	//		if strings.Compare(k, "Bob") == 0 {
 	//			var s string
 	//			DecodeBytes(v.([]byte), &s)
 	//			fmt.Printf("key=%v, value=%v\n", k, s)
-	//		}else if strings.Compare(k, "Chen")==0 {
+	//		} else if strings.Compare(k, "Chen") == 0 {
+	//			fmt.Printf("key=%v, value=%v\n", k, v)
 	//			var st ST
 	//			DecodeBytes(v.([]byte), &st)
 	//			log.Printf("Decode data: grade=%v, core=%v, age=%v\n", st.Grade, st.Core, st.Age)
-	//		}else {
+	//		} else {
 	//			fmt.Printf("key=%v, value=%v\n", k, v)
 	//		}
 	//	}
 	//}
 
+	// TODO struct + interface + struct
+	type STI struct {
+		App   byte
+		Value interface{}
+	}
+
+	s := STI{
+		App:   0x01,
+		Value: ST{Age: 19, Grade: "senior", Core: 89.2},
+	}
+
+	code, err := EncodeToBytes(s)
+	if err != nil {
+		fmt.Println("RLP encode error:", err.Error())
+	}
+
+	var ss STI
+	if err := DecodeBytes(code, &ss); err != nil {
+		fmt.Println("RLP decode error:", err.Error())
+	} else {
+		fmt.Println("Decode data:", ss)
+
+		ii, ok := ss.Value.([]interface{})
+		if ok {
+			if len(ii) != 3 {
+				fmt.Println(",,,,,,,,,,,,,,,")
+			}
+			for _, i := range ii {
+				fmt.Println("Type :", reflect.TypeOf(i))
+				fmt.Println("DATA :", i)
+			}
+			grade := string(ii[0].([]byte))
+			fmt.Println("Grade:", grade)
+			bits := binary.LittleEndian.Uint64(ii[1].([]byte))
+			core := math.Float64frombits(bits)
+			fmt.Println("Core:", core)
+			age := ii[2].([]byte)
+			fmt.Println("Age:", age)
+		} else {
+			fmt.Println("------------")
+		}
+
+	}
+
 	//// todo test interface+struct
 	//fmt.Println("------------------")
 	//var i interface{}
-	//i = ST{Grade:"senior", Core:89.2, Age:12}
-	//b, err = EncodeToBytes(i)
-	//if err!=nil {
+	//i = ST{Grade: "senior", Core: 89.2, Age: 12}
+	//b, err := EncodeToBytes(i)
+	//if err != nil {
 	//	log.Printf("Encode interface error:%s", err)
 	//	return
 	//} else {
@@ -877,7 +923,7 @@ func TestDecodeBytes(t *testing.T) {
 	//
 	//var ns ST
 	//err = DecodeBytes(b, &ns)
-	//if err!=nil{
+	//if err != nil {
 	//	log.Printf("Decode interface error:%s", err)
 	//	return
 	//} else {
@@ -893,20 +939,20 @@ func TestDecodeBytes(t *testing.T) {
 	//i := int64(9223372036854775807)
 	//i := int8(127)
 	//i := int32(-2147483648)
-	i := int16(-32768)
-	b, err := EncodeToBytes(i)
-	if err!=nil {
-		fmt.Println("Encode int to bytes error:",err)
-		return
-	} else {
-		fmt.Printf("Encode int data: %v\n", b)
-	}
-	var ni int16
-	if err:=DecodeBytes(b, &ni); err!=nil {
-		fmt.Println("Decode int error:", err.Error())
-	} else {
-		fmt.Println("Decode int data:", ni)
-	}
+	//i := int16(-32768)
+	//b, err := EncodeToBytes(i)
+	//if err!=nil {
+	//	fmt.Println("Encode int to bytes error:",err)
+	//	return
+	//} else {
+	//	fmt.Printf("Encode int data: %v\n", b)
+	//}
+	//var ni int16
+	//if err:=DecodeBytes(b, &ni); err!=nil {
+	//	fmt.Println("Decode int error:", err.Error())
+	//} else {
+	//	fmt.Println("Decode int data:", ni)
+	//}
 }
 
 func TestDecodeInt(t *testing.T) {
@@ -919,14 +965,14 @@ func TestDecodeInt(t *testing.T) {
 	//i := int32(2147483647)
 	i := int16(-32768)
 	b, err := EncodeToBytes(i)
-	if err!=nil {
-		fmt.Println("Encode int to bytes error:",err)
+	if err != nil {
+		fmt.Println("Encode int to bytes error:", err)
 		return
 	} else {
 		fmt.Printf("Encode int data: %v\n", b)
 	}
 	var ni int64
-	if err:=DecodeBytes(b, &ni); err!=nil {
+	if err := DecodeBytes(b, &ni); err != nil {
 		fmt.Println("Decode int error:", err.Error())
 	} else {
 		fmt.Println("Decode int data:", ni)

@@ -23,6 +23,8 @@ import (
 	"time"
 	"unsafe"
 
+	"encoding/binary"
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -173,7 +175,7 @@ func (unit *Unit) IsEmpty() bool {
 type Transactions []*Transaction
 type TxPoolTxs []*TxPoolTransaction
 type Transaction struct {
-	TxHash     common.Hash `json:"txhash" rlp:"-"`
+	TxHash     common.Hash `json:"txhash"`
 	TxMessages []Message   `json:"messages"`
 	Locktime   uint32      `json:"lock_time"`
 }
@@ -289,6 +291,132 @@ type PayloadMapStruct struct {
 type PaymentPayload struct {
 	Inputs  []Input  `json:"inputs"`
 	Outputs []Output `json:"outputs"`
+}
+
+/**
+从RLP的解码中解析出对应的payload
+*/
+func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
+	// check data
+	fields, ok := data.([]interface{})
+	if !ok {
+		return fmt.Errorf("Data error, should be []interface{}")
+	}
+	if len(fields) != 2 {
+		return fmt.Errorf("Data is not type of PaymentPayload")
+	}
+	// extract inputs
+	txins, ok := fields[0].([]interface{})
+	if !ok {
+		return fmt.Errorf("Data is not type of PaymentPayload: invalid inputs")
+	}
+	fmt.Println("txins:", txins)
+	pl.Inputs = []Input{}
+
+	for _, in := range txins {
+		// extract one input
+		input, ok := in.([]interface{})
+		if !ok || len(input) != 3 {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid input")
+		}
+		outpoint, ok := input[0].([]interface{})
+		if !ok || len(outpoint) != 3 {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid outpoint")
+		}
+		// extract outpoint
+		txHash := common.Hash{}
+		txHash.SetBytes(outpoint[0].([]byte))
+		if _, ok := outpoint[1].([]byte); !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid outpoint -1")
+		}
+		if _, ok := outpoint[2].([]byte); !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid outpoint -2")
+		}
+		// extract output message index
+		msgIndex := binary.BigEndian.Uint32(FillBytes(outpoint[1].([]byte), 4))
+		// extract output out index
+		outIndex := binary.BigEndian.Uint32(FillBytes(outpoint[2].([]byte), 4))
+		// extract signature
+		sig, ok := input[1].([]byte)
+		if !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid signature")
+		}
+		// extract extra data
+		extra, ok := input[2].([]byte)
+		if !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid extra")
+		}
+		// save input
+		newInput := Input{
+			PreviousOutPoint: OutPoint{
+				TxHash:       txHash,
+				MessageIndex: msgIndex,
+				OutIndex:     outIndex,
+			},
+			SignatureScript: sig,
+			Extra:           extra,
+		}
+		pl.Inputs = append(pl.Inputs, newInput)
+	}
+	// extract outputs
+	txouts, ok := fields[1].([]interface{})
+	if !ok {
+		return fmt.Errorf("Data is not type of PaymentPayload: invalid outputs")
+	}
+	pl.Outputs = []Output{}
+	for _, out := range txouts {
+		// extract one output
+		output, ok := out.([]interface{})
+		if !ok || len(output) != 3 {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid output")
+		}
+		// extract output value
+		if _, ok := output[0].([]byte); !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid output value")
+		}
+		val := binary.BigEndian.Uint64(FillBytes(output[0].([]byte), 8))
+		// extract output PKScript
+		pkscript, ok := output[1].([]byte)
+		if !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid output script")
+		}
+		// extract output Asset
+		asset, ok := output[2].([]interface{})
+		if !ok || len(asset) != 3 {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid output script")
+		}
+		// extract asset id
+		aid, ok := asset[0].([]byte)
+		if !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid output asset id")
+		}
+		newAid := IDType16{}
+		newAid.SetBytes(aid)
+		// extract asset unique id
+		uqid, ok := asset[1].([]byte)
+		if !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid output unique id")
+		}
+		newUniqueID := IDType16{}
+		newUniqueID.SetBytes(uqid)
+		// extract asset chainid id
+		if _, ok := asset[2].([]byte); !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid output chain id")
+		}
+		chainId := binary.BigEndian.Uint64(FillBytes(asset[2].([]byte), 8))
+
+		newOutput := Output{
+			Value:    val,
+			PkScript: pkscript,
+			Asset: Asset{
+				AssertId: newAid,
+				UniqueId: newUniqueID,
+				ChainId:  chainId,
+			},
+		}
+		pl.Outputs = append(pl.Outputs, newOutput)
+	}
+	return nil
 }
 
 func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
@@ -638,4 +766,21 @@ var TxValidationCode_name = map[int32]string{
 	254: "NOT_VALIDATED",
 	255: "NOT_COMPARE_SIZE",
 	256: "INVALID_OTHER_REASON",
+}
+
+/**
+根据大端规则填充字节
+To full fill bytes according bigendian
+*/
+func FillBytes(data []byte, lenth uint8) []byte {
+	newBytes := make([]byte, lenth)
+	if len(data) < int(lenth) {
+		len := int(lenth) - len(data)
+		for i, b := range data {
+			newBytes[len+i] = b
+		}
+	} else {
+		newBytes = data[:lenth]
+	}
+	return newBytes
 }
