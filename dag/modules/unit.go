@@ -475,6 +475,57 @@ type ContractTplPayload struct {
 	Bytecode   []byte `json:"bytecode"`    // contract bytecode
 }
 
+func (tplpayload *ContractTplPayload) ExtractFrInterface(data interface{}) error {
+	// check data
+	fields, ok := data.([]interface{})
+	if !ok {
+		return fmt.Errorf("ContractTplPayload extract Data error, should be []interface{}")
+	}
+
+	if len(fields) != 6 {
+		return fmt.Errorf("ContractTplPayload extract: Data is not type of PaymentPayload")
+	}
+
+	// extract templateid
+	tplID, ok := fields[0].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractTplPayload extract: invalid template id")
+	}
+	// extract name
+	name, ok := fields[1].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractTplPayload extract: invalid name")
+	}
+	// extract path
+	path, ok := fields[2].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractTplPayload extract: invalid path")
+	}
+	// extract version
+	version, ok := fields[3].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractTplPayload extract: invalid version")
+	}
+	// extract memory
+	mem, ok := fields[4].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractTplPayload extract: invalid memory")
+	}
+	memory := binary.BigEndian.Uint16(FillBytes(mem, 2))
+	// extract bytecode
+	bytecode, ok := fields[5].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractTplPayload extract: invalid bytecode")
+	}
+	tplpayload.TemplateId = tplID
+	tplpayload.Name = string(name)
+	tplpayload.Path = string(path)
+	tplpayload.Version = string(version)
+	tplpayload.Memery = memory
+	tplpayload.Bytecode = bytecode
+	return nil
+}
+
 type DelContractState struct {
 	IsDelete bool
 }
@@ -524,9 +575,9 @@ type TextPayload struct {
 /************************** End of Payload Details ******************************************/
 
 type Author struct {
-	Address        common.Address         `json:"address"`
-	Pubkey         []byte /*common.Hash*/ `json:"pubkey"`
-	TxAuthentifier Authentifier           `json:"authentifiers"`
+	Address        common.Address `json:"address"`
+	Pubkey         []byte/*common.Hash*/ `json:"pubkey"`
+	TxAuthentifier Authentifier `json:"authentifiers"`
 }
 
 type Authentifier struct {

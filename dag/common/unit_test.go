@@ -273,7 +273,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 
 }
 
-func TestTransactionRLP(t *testing.T) {
+func TestContractTplPayloadTransactionRLP(t *testing.T) {
 	addr := common.Address{}
 	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
 	//ks := keystore.NewKeyStore("./keystore", 1<<18, 1)
@@ -342,10 +342,11 @@ func TestTransactionRLP(t *testing.T) {
 				fmt.Printf("======== message[%d]:%v\n", index, msg)
 				switch msg.App {
 				case modules.APP_CONTRACT_TPL:
-					fmt.Println("======== payload type:", reflect.TypeOf(reflect.TypeOf(msg.Payload).Elem()))
-					payload, ok := msg.Payload.(modules.ContractTplPayload)
-					if ok {
-						fmt.Printf("========  message[%d] payload:%v\n", index, payload)
+					var tplPayload modules.ContractTplPayload
+					if err := tplPayload.ExtractFrInterface(msg.Payload); err != nil {
+						fmt.Println("Contract template payload ExtractFrInterface error:", err.Error())
+					} else {
+						fmt.Println("Contract template payload:", tplPayload)
 					}
 				}
 			}
