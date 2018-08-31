@@ -20,11 +20,7 @@
 package modules
 
 import (
-	"encoding/base64"
 	"fmt"
-	"strings"
-
-	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -89,6 +85,28 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 	}
 }
 
+func InfoToMediator(medInfo *core.MediatorInfo) core.Mediator {
+	// 1. 解析 mediator 账户地址
+	add := core.StrToMedAdd(medInfo.Address)
+
+	// 2. 解析 mediator 的 DKS 初始公钥
+	pub := core.StrToPoint(medInfo.InitPartPub)
+
+	// 3. 解析mediator 的 node 节点信息
+	node, err := discover.ParseNode(medInfo.Node)
+	if err != nil {
+		log.Error(fmt.Sprintf("Invalid mediator account node \"%v\" : %v", medInfo.Node, err))
+	}
+
+	md := core.Mediator{
+		Address:     add,
+		InitPartPub: pub,
+		Node:        node,
+	}
+
+	return md
+}
+
 func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	log.Debug("initialize global property...")
 
@@ -101,41 +119,10 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	log.Debug("Set active mediators...")
 	// Set active mediators
 	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
-		// 1. 解析 mediator 账户地址
 		medInfo := genesis.InitialMediatorCandidates[i]
-		address := strings.TrimSpace(medInfo.Address)
-		address = strings.Trim(address, "\"")
+		md := InfoToMediator(&medInfo)
 
-		add := common.StringToAddress(medInfo.Address)
-		addrType, err := add.Validate()
-		if err != nil || addrType != common.PublicKeyHash {
-			log.Error(fmt.Sprintf("Invalid mediator account address \"%v\" : %v", address, err))
-		}
-
-		// 2. 解析 mediator 的 DKS 初始公钥
-		pubB, err := base64.RawURLEncoding.DecodeString(medInfo.InitPartPub)
-		if err != nil {
-			log.Error(fmt.Sprintf("initPartPub %v : %v", medInfo.InitPartPub, err))
-		}
-
-		pub := bn256.NewSuiteG2().Point()
-		err = pub.UnmarshalBinary(pubB)
-		if err != nil {
-			log.Error(fmt.Sprintf("Invalid mediator account initPartPub \"%v\" : %v", medInfo.InitPartPub, err))
-		}
-
-		// 3. 解析mediator 的 node 节点信息
-		node, err := discover.ParseNode(medInfo.Node)
-		if err != nil {
-			log.Error(fmt.Sprintf("Invalid mediator account node \"%v\" : %v", medInfo.Node, err))
-		}
-
-		md := core.Mediator{
-			Address:     add,
-			InitPartPub: pub,
-			Node:        node,
-		}
-		gp.ActiveMediators[add] = md
+		gp.ActiveMediators[md.Address] = md
 	}
 
 	return gp

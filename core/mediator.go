@@ -19,8 +19,14 @@
 package core
 
 import (
+	"encoding/base64"
+	"fmt"
+	"strings"
+
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
@@ -29,4 +35,47 @@ type Mediator struct {
 	Address     common.Address
 	InitPartPub kyber.Point
 	Node        *discover.Node
+}
+
+func StrToMedAdd(addStr string) common.Address {
+	address := strings.TrimSpace(addStr)
+	address = strings.Trim(address, "\"")
+
+	addr := common.StringToAddress(address)
+	addrType, err := addr.Validate()
+	if err != nil || addrType != common.PublicKeyHash {
+		log.Error(fmt.Sprintf("Invalid mediator account address \"%v\" : %v", address, err))
+	}
+
+	return addr
+}
+
+func StrToScalar(secStr string) kyber.Scalar {
+	secB, err := base64.RawURLEncoding.DecodeString(secStr)
+	if err != nil {
+		log.Error(fmt.Sprintln(err))
+	}
+
+	sec := bn256.NewSuiteG2().Scalar()
+	err = sec.UnmarshalBinary(secB)
+	if err != nil {
+		log.Error(fmt.Sprintln(err))
+	}
+
+	return sec
+}
+
+func StrToPoint(pubStr string) kyber.Point {
+	pubB, err := base64.RawURLEncoding.DecodeString(pubStr)
+	if err != nil {
+		log.Error(fmt.Sprintln(err))
+	}
+
+	pub := bn256.NewSuiteG2().Point()
+	err = pub.UnmarshalBinary(pubB)
+	if err != nil {
+		log.Error(fmt.Sprintln(err))
+	}
+
+	return pub
 }
