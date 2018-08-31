@@ -25,10 +25,10 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/fatih/set.v0"
-	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
 var (
@@ -246,27 +246,6 @@ func (p *peer) RequestLeafNodes() error {
 // specified header query, based on the number of an origin block.
 func (p *peer) RequestHeadersByNumber(origin modules.ChainIndex, amount int, skip int, reverse bool) error {
 	log.Debug("Fetching batch of headers", "count", amount, "index", origin.Index, "skip", skip, "reverse", reverse)
-	//TODO delete test
-	//	log.Debug("============================================================")
-	//	temp := modules.ChainIndex{}
-	//	temp.AssetID.SetBytes([]byte("wangjiyou"))
-	//	data := &getUnitHeadersData{Origin: hashOrNumberA{Number: temp}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse}
-	//	size, r, err := rlp.EncodeToReader(data)
-	//	if err != nil {
-	//		log.Info("RequestHeadersByNumber", "EncodeToBytes err", err, "data:", data)
-	//		return err
-	//	}
-
-	//	//func NewStream(r io.Reader, inputLimit uint64)
-	//	s := rlp.NewStream(r, uint64(size))
-	//	var query getUnitHeadersData
-	//	if err := s.Decode(&query); err != nil {
-	//		log.Info("RequestHeadersByNumber", "Decode err", err, "data:", data)
-	//		return err
-	//	}
-	//	id := query.Origin.Number.AssetID.String()
-	//	log.Info("===============", "query.Origin.AssetID", id)
-
 	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 

@@ -651,11 +651,11 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 		}
 
 		if skeleton {
-			p.log.Trace("Fetching skeleton headers", "count", MaxHeaderFetch, "from", from)
 			index.Index = from + uint64(MaxHeaderFetch) - 1
+			p.log.Trace("Fetching skeleton headers", "count", MaxHeaderFetch, "from", from, "index:", index.Index)
 			go p.peer.RequestHeadersByNumber(index, MaxSkeletonSize, MaxHeaderFetch-1, false)
 		} else {
-			p.log.Trace("Fetching full headers", "count", MaxHeaderFetch, "from", from)
+			p.log.Trace("Fetching full headers", "count", MaxHeaderFetch, "from", from, "index:", index.Index)
 			index.Index = from
 			go p.peer.RequestHeadersByNumber(index, MaxHeaderFetch, 0, false)
 		}
@@ -1590,8 +1590,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	}
 	from := int64(head) - int64(MaxHeaderFetch)
 	if from < 0 {
-		//from = 0
-		from = 1
+		from = 0
 	}
 	// Span out with 15 block gaps into the future to catch bad head reports
 	limit := 2 * MaxHeaderFetch / 16
@@ -1688,7 +1687,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 		timeout := time.After(ttl)
 
 		index.Index = check
-		go p.peer.RequestHeadersByNumber(index /*check*/, 1, 0, false)
+		go p.peer.RequestHeadersByNumber(index, 1, 0, false)
 
 		// Wait until a reply arrives to this request
 		for arrived := false; !arrived; {
