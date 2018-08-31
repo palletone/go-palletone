@@ -41,14 +41,14 @@ var (
 type Config struct {
 	EnableStaleProduction bool // Enable Verified Unit production, even if the chain is stale.
 	//	RequiredParticipation float32	// Percent of mediators (0-99) that must be participating in order to produce
-	Mediators []MediatorInfo // the set of the mediator info
+	Mediators []MediatorConf // the set of the mediator info
 }
 
 // mediator plugin default config
 var DefaultConfig = Config{
 	EnableStaleProduction: false,
-	Mediators: []MediatorInfo{
-		MediatorInfo{core.DefaultTokenHolder, defaultPassword,
+	Mediators: []MediatorConf{
+		MediatorConf{core.DefaultTokenHolder, defaultPassword,
 			DefaultInitPartSec, DefaultInitPartPub},
 	},
 }
@@ -60,7 +60,7 @@ func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
 	}
 }
 
-type MediatorInfo struct {
+type MediatorConf struct {
 	Address,
 	Password,
 	InitPartSec,

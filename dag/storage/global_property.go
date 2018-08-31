@@ -32,10 +32,32 @@ const (
 	dynGlobalPropDBKey = "DynamicGlobalProperty"
 )
 
+//type globalProperty struct {
+//	ChainParameters core.ChainParameters
+//
+//	ActiveMediators []core.MediatorInfo
+//}
+//
+//func getInfoFromMediator(m core.Mediator) core.MediatorInfo {
+//
+//}
+//
+//func getGlobalProperty(gp *modules.GlobalProperty) globalProperty {
+//	gpt := globalProperty{ChainParameters: gp.ChainParameters}
+//	for _, medInfo := range gp.ActiveMediators{
+//
+//	}
+//
+//	return gpt
+//}
+
 func StoreGlobalProp(gp *modules.GlobalProperty) {
 	if Dbconn == nil {
 		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
+
+//	gpt :=
+
 	err := Store(Dbconn, globalPropDBKey, *gp)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store global properties error:%s", err))
@@ -46,6 +68,7 @@ func StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) {
 	if Dbconn == nil {
 		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
+
 	err := Store(Dbconn, dynGlobalPropDBKey, *dgp)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store dynamic global properties error: %s", err))
