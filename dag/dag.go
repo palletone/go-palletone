@@ -33,6 +33,7 @@ import (
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
 type Dag struct {
@@ -392,4 +393,9 @@ func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 
 func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
 	return storage.GetAddrTransactions(d.Db, addr)
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediatorNodes() []*discover.Node {
+	return d.GlobalProp.GetActiveMediatorNodes()
 }

@@ -87,6 +87,7 @@ const (
 	Lag
 	//	Consecutive
 	ExceptionProducing
+	UnknownCondition
 )
 
 func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) ProductionCondition {
@@ -118,7 +119,7 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 			detail["ScheduledKey"])
 	case ExceptionProducing:
 		log.Info("Exception producing unit")
-	default:
+	case UnknownCondition:
 		log.Info("Unknown condition!")
 	}
 
@@ -173,9 +174,14 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	//}
 
 	scheduledMediator := ms.GetScheduledMediator(dgp, slot)
+	if scheduledMediator == nil {
+		log.Error("The current shuffled mediators is nil!")
+		return UnknownCondition, detail
+	}
+
 	// we must control the Mediator scheduled to produce the next VerifiedUnit.
 	ma := scheduledMediator.Address
-	ps, ok := mp.mediators[ma]
+	med, ok := mp.mediators[ma]
 	if !ok {
 		detail["ScheduledMediator"] = ma.Str()
 		return NotMyTurn, detail
@@ -191,7 +197,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 
 	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
 	ks := mp.ptn.GetKeyStore()
-	err := ks.Unlock(accounts.Account{Address: ma}, ps)
+	err := ks.Unlock(accounts.Account{Address: ma}, med.Password)
 	if err != nil {
 		detail["ScheduledKey"] = ma.Str()
 		return NoPrivateKey, detail

@@ -30,6 +30,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"gopkg.in/urfave/cli.v1"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/common"
 )
 
 var (
@@ -148,7 +150,7 @@ func initGenesis(ctx *cli.Context) error {
 	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
 		configPath, _ = getConfigPath(temp, node.DataDir())
 	}
-	modifyMediatorInConf(configPath, account.Address.Str(), password)
+	modifyMediatorInConf(configPath, password, account.Address)
 
 	// 3, 全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
@@ -170,7 +172,7 @@ func initGenesis(ctx *cli.Context) error {
 
 // 重写配置文件，修改配置的的mediator的地址和密码
 // @author Albert·Gou
-func modifyMediatorInConf(configPath, address, password string) error {
+func modifyMediatorInConf(configPath, password string, address common.Address) error {
 	cfg := new(FullConfig)
 
 	// 加载配置文件中的配置信息到 cfg中
@@ -181,8 +183,9 @@ func modifyMediatorInConf(configPath, address, password string) error {
 	}
 
 	cfg.MediatorPlugin.EnableStaleProduction = true
-	cfg.MediatorPlugin.Mediators = map[string]string{
-		address: password,
+	cfg.MediatorPlugin.Mediators = []mp.MediatorInfo{
+		mp.MediatorInfo{address.Str(), password,
+		mp.DefaultInitPartSec, mp.DefaultInitPartPub},
 	}
 
 	err = makeConfigFile(cfg, configPath)

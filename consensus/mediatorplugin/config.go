@@ -23,6 +23,13 @@ import (
 	"gopkg.in/urfave/cli.v1"
 )
 
+const (
+	defaultPassword    = "password"
+	DefaultInitPartSec = "Vh52_xy-bE5U2mUDFYxLJwRke2IQ7u0Nb9L3_cPyXKY"
+	DefaultInitPartPub = "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ" +
+		"0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj"
+)
+
 var (
 	StaleProductionFlag = cli.BoolFlag{
 		Name:  "enable-stale-production",
@@ -34,14 +41,15 @@ var (
 type Config struct {
 	EnableStaleProduction bool // Enable Verified Unit production, even if the chain is stale.
 	//	RequiredParticipation float32	// Percent of mediators (0-99) that must be participating in order to produce
-	Mediators map[string]string // the map of  Address and Passphrase of the Mediator
+	Mediators []MediatorInfo // the set of the mediator info
 }
 
 // mediator plugin default config
 var DefaultConfig = Config{
 	EnableStaleProduction: false,
-	Mediators: map[string]string{
-		core.DefaultTokenHolder: "password",
+	Mediators: []MediatorInfo{
+		MediatorInfo{core.DefaultTokenHolder, defaultPassword,
+			DefaultInitPartSec, DefaultInitPartPub},
 	},
 }
 
@@ -49,7 +57,12 @@ func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
 	switch {
 	case ctx.GlobalIsSet(StaleProductionFlag.Name):
 		cfg.EnableStaleProduction = ctx.GlobalBool(StaleProductionFlag.Name)
-		//case :
-		//
 	}
+}
+
+type MediatorInfo struct {
+	Address,
+	Password,
+	InitPartSec,
+	InitPartPub string
 }

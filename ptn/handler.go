@@ -129,10 +129,10 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	// Figure out whether to allow fast sync or not
 	/*blockchain.CurrentBlock().NumberU64() > 0 */
 	//TODO must modify.The second start would Blockchain not empty, fast sync disabled
-	if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Number.Index > 0 {
-		//log.Warn("Blockchain not empty, fast sync disabled")
-		mode = downloader.FullSync
-	}
+	//if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Number.Index > 0 {
+	//	//log.Warn("Blockchain not empty, fast sync disabled")
+	//	mode = downloader.FullSync
+	//}
 	if mode == downloader.FastSync {
 		manager.fastSync = uint32(1)
 	}
@@ -873,7 +873,7 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 // @author Albert·Gou
 // BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
 func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
-	peers := pm.peers.ActiveMediatorPeers()
+	peers := pm.peers.GetActiveMediatorPeers(pm.dag.GetActiveMediatorNodes())
 	for _, peer := range peers {
 		peer.SendNewProducedUnit(unit)
 	}

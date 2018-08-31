@@ -23,8 +23,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
@@ -34,7 +34,7 @@ import (
 
 // GenerateVerifiedUnit, generate unit
 // @author Albert·Gou
-func GenerateUnit(dag *dag.Dag, when time.Time, producer common.Mediator,
+func GenerateUnit(dag *dag.Dag, when time.Time, producer core.Mediator,
 	ks *keystore.KeyStore, txspool *txspool.TxPool) *modules.Unit {
 	dgp := dag.DynGlobalProp
 

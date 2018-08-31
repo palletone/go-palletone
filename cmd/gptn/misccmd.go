@@ -24,10 +24,13 @@ import (
 	"strings"
 
 	"github.com/palletone/go-palletone/cmd/utils"
-	//
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/ptn"
 	"gopkg.in/urfave/cli.v1"
+	"github.com/dedis/kyber/pairing/bn256"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/common/log"
+	"encoding/base64"
 )
 
 var (
@@ -73,6 +76,18 @@ The output of this command is supposed to be machine-readable.
 		Usage:     "Display license information",
 		ArgsUsage: " ",
 		Category:  "MISCELLANEOUS COMMANDS",
+	}
+
+	// append by Albert·Gou
+	createInitDKSCommand = cli.Command{
+		Action:    utils.MigrateFlags(createInitDKS),
+		Name:      "initdks",
+		Usage:     "Generate the initial distributed key share",
+		ArgsUsage: " ",
+		Category:  "MEDIATOR COMMANDS",
+		Description: `
+The output of this command will be used to initialize a DistKeyGenerator.
+`,
 	}
 )
 
@@ -133,5 +148,31 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with gptn. If not, see <http://www.gnu.org/licenses/>.`)
+	return nil
+}
+
+// author Albert·Gou
+func createInitDKS(ctx *cli.Context) error {
+	var err error
+	suite := bn256.NewSuiteG2()
+	sec, pub := mp.GenInitPair(suite)
+
+	secB, err := sec.MarshalBinary()
+	if err != nil {
+		log.Error(fmt.Sprintln(err))
+	}
+	pubB, err := pub.MarshalBinary()
+	if err != nil {
+		log.Error(fmt.Sprintln(err))
+	}
+
+	secStr := base64.RawURLEncoding.EncodeToString(secB)
+	pubStr := base64.RawURLEncoding.EncodeToString(pubB)
+	fmt.Println("Generate a initial distributed key share:")
+	fmt.Println("{")
+	fmt.Println("\tprivate key: ", secStr)
+	fmt.Println("\tpublic key: ", pubStr)
+	fmt.Println("}")
+
 	return nil
 }

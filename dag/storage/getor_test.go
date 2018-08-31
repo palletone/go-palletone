@@ -30,29 +30,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func TestGet(t *testing.T) {
-	if m := GetPrefix([]byte("unit")); m != nil {
-		for k, v := range m {
-			log.Println("key1: ", k, "value: ", string(v))
-		}
-	}
-
-	go func() {
-		if m := GetPrefix([]byte("unit")); m != nil {
-			for k, v := range m {
-				log.Println("key2: ", k, "value: ", string(v))
-			}
-		}
-	}()
-
-	if m := GetPrefix([]byte("unit")); m != nil {
-		for k := range m {
-			log.Println("key: ", k, "value: ", string(m[k]))
-		}
-	}
-	time.Sleep(2 * time.Second)
-}
-
 func TestGetUnit(t *testing.T) {
 	if Dbconn == nil {
 		log.Println("dbconn is nil , renew db  start ...")
