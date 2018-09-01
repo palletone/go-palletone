@@ -419,13 +419,13 @@ func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
 	}
 	return nil
 }
-func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
-	return &OutPoint{
-		TxHash:       *hash,
-		MessageIndex: messageindex,
-		OutIndex:     outindex,
-	}
-}
+//func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
+//	return &OutPoint{
+//		TxHash:       *hash,
+//		MessageIndex: messageindex,
+//		OutIndex:     outindex,
+//	}
+//}
 
 // NewTxOut returns a new bitcoin transaction output with the provided
 // transaction value and public key script.

@@ -804,9 +804,9 @@ func NewEngine(scriptPubKey []byte, tx *modules.PaymentPayload/**wire.MsgTx*/, t
 	sigCache *SigCache, hashCache *TxSigHashes, inputAmount int64) (*Engine, error) {
 
 	// The provided transaction input index must refer to a valid input.
-	if txIdx < 0 || txIdx >= len(tx.TxIn) {
+	if txIdx < 0 || txIdx >= len(tx.Input) {
 		str := fmt.Sprintf("transaction input index %d is negative or "+
-			">= %d", txIdx, len(tx.TxIn))
+			">= %d", txIdx, len(tx.Input))
 		return nil, scriptError(ErrInvalidIndex, str)
 	}
 	scriptSig := tx.Input[txIdx].SignatureScript

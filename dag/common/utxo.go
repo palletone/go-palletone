@@ -516,7 +516,7 @@ func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
 	// current time slice mediator default income is 1 ptn
 	fees := uint64(0)
 	for _, tx := range txs {
-		for _, msg := range tx.TxMessages {
+		for _, msg := range tx.Tx.TxMessages {
 			payload, ok := msg.Payload.(modules.PaymentPayload)
 			if ok == false {
 				continue

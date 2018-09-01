@@ -24,7 +24,7 @@ import (
 	"math/rand"
 	"reflect"
 	// "strings"
-
+    "crypto/sha256"
 	// "github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/hexutil"
 )
@@ -170,4 +170,8 @@ func Decode(dst *Hash, src string) error {
 		dst[i], dst[HashLength-1-i] = reversedHash[HashLength-1-i], b
 	}
 	return nil
+}
+func DoubleHashH(b []byte) Hash {
+	first := sha256.Sum256(b)
+	return Hash(sha256.Sum256(first[:]))
 }

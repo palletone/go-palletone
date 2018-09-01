@@ -24,11 +24,9 @@ import (
 	"strconv"
 	"time"
 	"bytes"
-	//	"fmt"
 	"io"
     "encoding/binary"
 	"math"
-	//
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
@@ -231,7 +229,7 @@ func (tx *Transaction) Cost() *big.Int {
 
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
 	tx.TxHash.Set(cpy.TxHash)
-	tx.Locktime = cpy.Locktime
+	//tx.Locktime = cpy.Locktime
 	tx.TxMessages = make([]Message, len(cpy.TxMessages))
 	for _, msg := range cpy.TxMessages {
 		newMsg := Message{}
@@ -450,32 +448,32 @@ func NewOutPoint(hash *common.Hash, messageindex uint32,outindex uint32) *OutPoi
 //}
 // NewTxOut returns a new bitcoin transaction output with the provided
 // transaction value and public key script.
-func NewTxOut(value uint64, pkScript []byte,asset Asset) *Output {
-	return &Output{
-		Value:    value,
-		PkScript: pkScript,
-		Asset : asset,
-	}
-}
-type Output struct {
-	Value    uint64
-	PkScript []byte
-	Asset    Asset
-}
-type Input struct {
-	PreviousOutPoint OutPoint
-	SignatureScript  []byte
-	Extra            []byte // if user creating a new asset, this field should be it's config data. Otherwise it is null.
-}
+//func NewTxOut(value uint64, pkScript []byte,asset Asset) *Output {
+//	return &Output{
+//		Value:    value,
+//		PkScript: pkScript,
+//		Asset : asset,
+//	}
+//}
+//type Output struct {
+//	Value    uint64
+//	PkScript []byte
+//	Asset    Asset
+//}
+//type Input struct {
+//	PreviousOutPoint OutPoint
+//	SignatureScript  []byte
+//	Extra            []byte // if user creating a new asset, this field should be it's config data. Otherwise it is null.
+//}
 // NewTxIn returns a new ptn transaction input with the provided
 // previous outpoint point and signature script with a default sequence of
 // MaxTxInSequenceNum.
-func NewTxIn(prevOut *OutPoint, signatureScript []byte) *Input {
-	return &Input{
-		PreviousOutPoint: *prevOut,
-		SignatureScript:  signatureScript,
-	}
-}
+//func NewTxIn(prevOut *OutPoint, signatureScript []byte) *Input {
+//	return &Input{
+//		PreviousOutPoint: *prevOut,
+//		SignatureScript:  signatureScript,
+//	}
+//}
 // VarIntSerializeSize returns the number of bytes it would take to serialize
 // val as a variable length integer.
 func VarIntSerializeSize(val uint64) int {

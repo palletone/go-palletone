@@ -1548,7 +1548,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			payload, _ := msg.Payload.(modules.PaymentPayload)
                         fmt.Printf("-------%+v\n",payload)
                         fmt.Printf("-----%+v\n",msg.App)
-			if msg.App != "payment" {
+			if msg.App != modules.APP_PAYMENT {
 				continue
 			}
                         fmt.Println("----------1523---------1523---------")
