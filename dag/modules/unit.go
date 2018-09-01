@@ -289,8 +289,9 @@ type PayloadMapStruct struct {
 // Token exchange message and verify message
 // App: payment
 type PaymentPayload struct {
-	Inputs  []Input  `json:"inputs"`
-	Outputs []Output `json:"outputs"`
+	Input  []*Input  `json:"inputs"`
+	Output []*Output `json:"outputs"`
+	LockTime uint32  `json:"lock_time"`
 }
 
 /**
