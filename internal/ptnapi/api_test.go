@@ -45,7 +45,7 @@ func TestRawTransactionGen(t *testing.T) {
     "locktime": 0
 	}`
         params= params
-        testResult:="f89bf898f89601f893e7e6e3a0d1df9b3380e84bc2641bb30f33c226f550d23080053906e4f430d82d447a980b80808080f869f867871c110215b9c0009976a9147c0099353492e6d45dd440940605d092506e773988acf843a03131313131313131313131313131323232323232323232323232323232323232a031313131313131313131313131313232323232323232323232323232323232320180"
+        testResult:="f8bca03794883d747507a9b5ee079eeb99d051c0555e708a6bdd8af17f10f3269e9498f899f89701f894e7e6e3a0d1df9b3380e84bc2641bb30f33c226f550d23080053906e4f430d82d447a980b80808080f869f867871c110215b9c0009976a9147c0099353492e6d45dd440940605d092506e773988acf843a03131313131313131313131313131323232323232323232323232323232323232a031313131313131313131313131313232323232323232323232323232323232320180"
       var rawTransactionGenParams RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
@@ -137,10 +137,10 @@ func TestSignTransaction(t *testing.T) {
 		return
 	}
 	//decode Transaction hexString to bytes
-	rawTXBytes, err := hex.DecodeString(signTransactionParams.TransactionHex)
-	if err != nil {
-		return
-	}
+	//rawTXBytes, err := hex.DecodeString(signTransactionParams.TransactionHex)
+	//if err != nil {
+	//	return
+	//}
 	//deserialize to MsgTx
        
 	var tx modules.Transaction
