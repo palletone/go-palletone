@@ -159,11 +159,11 @@ type Unit struct {
 	ReceivedFrom interface{}
 }
 
-type OutPoint struct {
-	TxHash       common.Hash // reference Utxo struct key field
-	MessageIndex uint32      // message index in transaction
-	OutIndex     uint32
-}
+//type OutPoint struct {
+//	TxHash       common.Hash // reference Utxo struct key field
+//	MessageIndex uint32      // message index in transaction
+//	OutIndex     uint32
+//}
 
 func (unit *Unit) IsEmpty() bool {
 	if unit == nil || len(unit.Txs) <= 0 {
@@ -172,13 +172,13 @@ func (unit *Unit) IsEmpty() bool {
 	return false
 }
 
-type Transactions []*Transaction
+//type Transactions []*Transaction
 type TxPoolTxs []*TxPoolTransaction
-type Transaction struct {
-	TxHash     common.Hash `json:"txhash"`
-	TxMessages []Message   `json:"messages"`
-	Locktime   uint32      `json:"lock_time"`
-}
+//type Transaction struct {
+//	TxHash     common.Hash `json:"txhash"`
+//	TxMessages []Message   `json:"messages"`
+//	Locktime   uint32      `json:"lock_time"`
+//}
 
 type ChainIndex struct {
 	AssetID IDType16
@@ -417,7 +417,7 @@ func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
 		pl.Output = append(pl.Output, newOutput)
 	}
 	return nil
-
+}
 func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
 	return &OutPoint{
 		TxHash:       *hash,

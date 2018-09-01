@@ -431,22 +431,23 @@ func NewOutPoint(hash *common.Hash, messageindex uint32,outindex uint32) *OutPoi
 	}
 }
 // key: message.UnitHash(message+timestamp)
-type Message struct {
-	App     string      `json:"app"`     // message type
-	Payload interface{} `json:"payload"` // the true transaction data
-}
+//type Message struct {
+//	App     string      `json:"app"`     // message type
+//	Payload interface{} `json:"payload"` // the true transaction data
+//}
 /************************** Payload Details ******************************************/
-type PayloadMapStruct struct {
-	Key   string
-	Value interface{}
-}
+//type PayloadMapStruct struct {
+//
+//	Key   string
+//	Value interface{}
+//}
 // Token exchange message and verify message
 // App: payment
-type PaymentPayload struct {
-	Input  []*Input  `json:"inputs"`
-	Output []*Output `json:"outputs"`
-	LockTime uint32  `json:"lock_time"`
-}
+//type PaymentPayload struct {
+//	Input  []*Input  `json:"inputs"`
+//	Output []*Output `json:"outputs"`
+//	LockTime uint32  `json:"lock_time"`
+//}
 // NewTxOut returns a new bitcoin transaction output with the provided
 // transaction value and public key script.
 func NewTxOut(value uint64, pkScript []byte,asset Asset) *Output {
