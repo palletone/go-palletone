@@ -7,11 +7,13 @@ import (
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec"
+        "github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
-	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 	"github.com/palletone/go-palletone/tokenengine/btcutil"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func TestValidateTokenPayment(t *testing.T) {
@@ -39,31 +41,46 @@ func TestValidateTokenPayment(t *testing.T) {
 	}
 }
 
-func buildTx() *wire.MsgTx {
+func buildTx() *modules.PaymentPayload {
+	aid := modules.IDType16{}
+	aid.SetBytes([]byte("1111111111111111222222222222222222"))
+	ast := modules.Asset{
+		AssertId: aid,
+		UniqueId: aid,
+		ChainId:  1,
+	}
 	sign, _ := hex.DecodeString("3045022100cac2be20a3e6667057583d97a49a89225aa242567bcfcc1a619060e292dad3d0022065a04f0720e42b7d18ff840226d25b262a68a50dd18ab87e4d111b173e85cec401")
 	pubKey, _ := hex.DecodeString("0206e6e881f5d183cfa4b868dbe7b7eac26569c16df5329400561f272e21f1c739")
 	unlock, _ := txscript.NewScriptBuilder().AddData(sign).AddData(pubKey).Script()
 
-	tx := wire.NewMsgTx(1)
-	utxoHash, _ := chainhash.NewHashFromStr("5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
-	point := wire.OutPoint{Hash: *utxoHash, Index: 0}
-	tx.AddTxIn(wire.NewTxIn(&point, unlock, nil))
+	tx := modules.NewPaymentPayload()
+	utxoHash, _ := common.NewHashFromStr("5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	point := modules.OutPoint{TxHash: *utxoHash, OutIndex: 0,MessageIndex:0}
+	tx.AddTxIn(*modules.NewTxIn(&point, unlock))
 
 	pubKeyHash, _ := hex.DecodeString("540ad1b52601df08b6b43cc52808c97c4901351d")
 	lock, _ := txscript.NewScriptBuilder().AddOp(txscript.OP_DUP).AddOp(txscript.OP_HASH160).
 		AddData(pubKeyHash).AddOp(txscript.OP_EQUALVERIFY).AddOp(txscript.OP_CHECKSIG).
 		Script()
-	tx.AddTxOut(wire.NewTxOut(21970, lock))
+	tx.AddTxOut(*modules.NewTxOut(21970, lock,ast))
 
 	data, _ := hex.DecodeString("e69bbee6b885e5928c2d3ee69bbee980b8e5a4ab28e69bbee78e89e5bfa0292d3ee69bbee4b8bee59bbd2d3ee69bbee6af85")
 	opreturn, _ := txscript.NewScriptBuilder().AddOp(txscript.OP_RETURN).AddData(data).Script()
-	tx.AddTxOut(wire.NewTxOut(1, opreturn)) //0.00000001 BTC
+	tx.AddTxOut(*modules.NewTxOut(1, opreturn,ast)) //0.00000001 BTC
+        fmt.Printf("-----72  tx is %+v\n",tx)
 	buf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
-	_ = tx.Serialize(buf)
+	buf.Grow(tx.SerializeSize())
+	//_ = tx.Serialize(buf)
+	mtxbt ,err := rlp.EncodeToBytes(buf)
+	if err != nil {
+		return nil
+	}
+	txHex := hex.EncodeToString(mtxbt)
+	fmt.Println(txHex)
 	fmt.Printf("RawTX:%x\n", buf.Bytes())
 
 	//fmt.Printf("Hash:%x\n", chainhash.HashB(buf.Bytes()))
-	fmt.Printf("DoubleHash:%s\n", chainhash.DoubleHashH(buf.Bytes()).String())
+	fmt.Printf("DoubleHash:%s\n", common.DoubleHashH(buf.Bytes()).String())
 	fmt.Printf("TxHash:%s\n", tx.TxHash().String())
 	return tx
 }
@@ -78,6 +95,13 @@ func TestSign2InputTx(t *testing.T) {
 
 	// Ordinarily the private key would come from whatever storage mechanism
 	// is being used, but for this example just hard code it.
+	aid := modules.IDType16{}
+	aid.SetBytes([]byte("1111111111111111222222222222222222"))
+	ast := modules.Asset{
+		AssertId: aid,
+		UniqueId: aid,
+		ChainId:  1,
+	}
 	privKeyBytes, err := hex.DecodeString("22a47fa09a223f2aa079edf85a7c2" +
 		"d4f8720ee63e502ee2869afab7de234b80c")
 	if err != nil {
@@ -96,33 +120,33 @@ func TestSign2InputTx(t *testing.T) {
 	// For this example, create a fake transaction that represents what
 	// would ordinarily be the real transaction that is being spent.  It
 	// contains a single output that pays to address in the amount of 1 BTC.
-	originTx := wire.NewMsgTx(wire.TxVersion)
-	prevOut := wire.NewOutPoint(&chainhash.Hash{}, ^uint32(0))
-	txIn := wire.NewTxIn(prevOut, []byte{txscript.OP_0, txscript.OP_0}, nil)
-	originTx.AddTxIn(txIn)
+	originTx := modules.NewPaymentPayload()
+	prevOut := modules.NewOutPoint(&common.Hash{}, ^uint32(0),^uint32(0))
+	txIn := modules.NewTxIn(prevOut, []byte{txscript.OP_0, txscript.OP_0})
+	originTx.AddTxIn(*txIn)
 	pkScript, err := txscript.PayToAddrScript(addr)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	txOut := wire.NewTxOut(100000000, pkScript)
-	originTx.AddTxOut(txOut)
+	txOut := modules.NewTxOut(100000000, pkScript,ast)
+	originTx.AddTxOut(*txOut)
 	originTxHash := originTx.TxHash()
 
 	// Create the transaction to redeem the fake transaction.
-	redeemTx := wire.NewMsgTx(wire.TxVersion)
+	redeemTx := modules.NewPaymentPayload()
 
 	// Add the input(s) the redeeming transaction will spend.  There is no
 	// signature script at this point since it hasn't been created or signed
 	// yet, hence nil is provided for it.
-	prevOut = wire.NewOutPoint(&originTxHash, 0)
-	txIn = wire.NewTxIn(prevOut, nil, nil)
-	redeemTx.AddTxIn(txIn)
+	prevOut = modules.NewOutPoint(&originTxHash, 0,0)
+	txIn = modules.NewTxIn(prevOut, nil)
+	redeemTx.AddTxIn(*txIn)
 
 	// Ordinarily this would contain that actual destination of the funds,
 	// but for this example don't bother.
-	txOut = wire.NewTxOut(0, nil)
-	redeemTx.AddTxOut(txOut)
+	txOut = modules.NewTxOut(0, nil,ast)
+	redeemTx.AddTxOut(*txOut)
 
 	// Sign the redeeming transaction.
 	lookupKey := func(a btcutil.Address) (*btcec.PrivateKey, bool, error) {
@@ -147,20 +171,20 @@ func TestSign2InputTx(t *testing.T) {
 	// used.  It must be specified when pay-to-script-hash transactions are
 	// being signed.
 	sigScript, err := txscript.SignTxOutput(&chaincfg.MainNetParams,
-		redeemTx, 0, originTx.TxOut[0].PkScript, txscript.SigHashAll,
+		redeemTx, 0, originTx.Output[0].PkScript, txscript.SigHashAll,
 		txscript.KeyClosure(lookupKey), nil, nil)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	redeemTx.TxIn[0].SignatureScript = sigScript
+	redeemTx.Input[0].SignatureScript = sigScript
 
 	// Prove that the transaction has been validly signed by executing the
 	// script pair.
 	flags := txscript.ScriptBip16 | txscript.ScriptVerifyDERSignatures |
 		txscript.ScriptStrictMultiSig |
 		txscript.ScriptDiscourageUpgradableNops
-	vm, err := txscript.NewEngine(originTx.TxOut[0].PkScript, redeemTx, 0,
+	vm, err := txscript.NewEngine(originTx.Output[0].PkScript, redeemTx, 0,
 		flags, nil, nil, -1)
 	if err != nil {
 		fmt.Println(err)
@@ -174,19 +198,26 @@ func TestSign2InputTx(t *testing.T) {
 
 }
 
-func buildRawTx() *wire.MsgTx {
+func buildRawTx() *modules.PaymentPayload {
 	//https://testnet.blockchain.info/tx/f0d9d482eb122535e32a3ae92809dd87839e63410d5fd52816fc9fc6215018cc?show_adv=true
-	tx := wire.NewMsgTx(wire.TxVersion)
+       aid := modules.IDType16{}
+	aid.SetBytes([]byte("1111111111111111222222222222222222"))
+	ast := modules.Asset{
+		AssertId: aid,
+		UniqueId: aid,
+		ChainId:  1,
+	}
+	tx := modules.NewPaymentPayload()
 	//https://testnet.blockchain.info/tx-index/239152566/1  0.4BTC
-	utxoHash, _ := chainhash.NewHashFromStr("1dda832890f85288fec616ef1f4113c0c86b7bf36b560ea244fd8a6ed12ada52")
-	point := wire.OutPoint{Hash: *utxoHash, Index: 1}
+	utxoHash, _ := common.NewHashFromStr("1dda832890f85288fec616ef1f4113c0c86b7bf36b560ea244fd8a6ed12ada52")
+	point := modules.OutPoint{TxHash: *utxoHash, OutIndex: 1,MessageIndex:0}
 	//构建第一个Input，指向一个0.4BTC的UTXO，第二个参数是解锁脚本，现在是nil
-	tx.AddTxIn(wire.NewTxIn(&point, nil, nil))
+	tx.AddTxIn(*modules.NewTxIn(&point, nil))
 	//https://testnet.blockchain.info/tx-index/239157459/1  1.1BTC
-	utxoHash2, _ := chainhash.NewHashFromStr("24f284aed2b9dbc19f0d435b1fe1ee3b3ddc763f28ca28bad798d22b6bea0c66")
-	point2 := wire.OutPoint{Hash: *utxoHash2, Index: 1}
+	utxoHash2, _ := common.NewHashFromStr("24f284aed2b9dbc19f0d435b1fe1ee3b3ddc763f28ca28bad798d22b6bea0c66")
+	point2 := modules.OutPoint{TxHash: *utxoHash2, OutIndex: 1,MessageIndex:0}
 	//构建第二个Input，指向一个1.1BTC的UTXO，第二个参数是解锁脚本，现在是nil
-	tx.AddTxIn(wire.NewTxIn(&point2, nil, nil))
+	tx.AddTxIn(*modules.NewTxIn(&point2, nil))
 
 	//找零的地址（这里是16进制形式，变成Base58格式就是mx3KrUjRzzqYTcsyyvWBiHBncLrrTPXnkV）
 	pubKeyHash, _ := hex.DecodeString("b5407cec767317d41442aab35bad2712626e17ca")
@@ -194,14 +225,14 @@ func buildRawTx() *wire.MsgTx {
 		AddData(pubKeyHash).AddOp(txscript.OP_EQUALVERIFY).AddOp(txscript.OP_CHECKSIG).
 		Script()
 	//构建第一个Output，是找零0.2991024 BTC
-	tx.AddTxOut(wire.NewTxOut(29910240, lock))
+	tx.AddTxOut(*modules.NewTxOut(29910240, lock,ast))
 	//支付给了某个地址，仍然是16进制形式，Base58形式是：mxqnGTekzKqnMqNFHKYi8FhV99WcvQGhfH。
 	pubKeyHash2, _ := hex.DecodeString("be09abcbfda1f2c26899f062979ab0708731235a")
 	lock2, _ := txscript.NewScriptBuilder().AddOp(txscript.OP_DUP).AddOp(txscript.OP_HASH160).
 		AddData(pubKeyHash2).AddOp(txscript.OP_EQUALVERIFY).AddOp(txscript.OP_CHECKSIG).
 		Script()
 	//构建第二个Output，支付1.2 BTC出去
-	tx.AddTxOut(wire.NewTxOut(120000000, lock2))
+	tx.AddTxOut(*modules.NewTxOut(120000000, lock2,ast))
 	return tx
 }
 
@@ -244,15 +275,21 @@ func TestBuild2InputTx(t *testing.T) {
 
 	}
 	t.Logf("Raw Txhash is:%s\n", tx.TxHash().String())
-	tx.TxIn[0].SignatureScript = sigScript
+	tx.Input[0].SignatureScript = sigScript
 	t.Logf("Sign:%x\n", sigScript)
 
-	tx.TxIn[1].SignatureScript = sigScript2
+	tx.Input[1].SignatureScript = sigScript2
 
 	t.Logf("Sign2:%x\n", sigScript2)
 	t.Logf("Txhash is:%s\n", tx.TxHash().String())
 	buf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
-	_ = tx.Serialize(buf)
+	//                  _ = tx.Serialize(buf)
+        mtxbt ,err := rlp.EncodeToBytes(buf)
+	if err != nil {
+		fmt.Println(err)
+	}
+	txHex := hex.EncodeToString(mtxbt)
+	fmt.Println(txHex)
 	t.Logf("RawTX:%x\n", buf.Bytes())
 
 }

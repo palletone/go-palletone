@@ -130,7 +130,7 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 		for i, pTx := range txs {
 			tx := Transaction{
 				TxHash:   pTx.TxHash,
-				Locktime: pTx.Locktime,
+				//Locktime: pTx.Locktime,
 			}
 			if len(pTx.TxMessages) > 0 {
 				tx.TxMessages = make([]Message, len(pTx.TxMessages))
@@ -311,7 +311,7 @@ func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
 		return fmt.Errorf("Data is not type of PaymentPayload: invalid inputs")
 	}
 	fmt.Println("txins:", txins)
-	pl.Inputs = []Input{}
+	pl.Input = []*Input{}
 
 	for _, in := range txins {
 		// extract one input
@@ -347,7 +347,7 @@ func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
 			return fmt.Errorf("Data is not type of PaymentPayload: invalid extra")
 		}
 		// save input
-		newInput := Input{
+		newInput := &Input{
 			PreviousOutPoint: OutPoint{
 				TxHash:       txHash,
 				MessageIndex: msgIndex,
@@ -356,14 +356,14 @@ func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
 			SignatureScript: sig,
 			Extra:           extra,
 		}
-		pl.Inputs = append(pl.Inputs, newInput)
+		pl.Input = append(pl.Input, newInput)
 	}
 	// extract outputs
 	txouts, ok := fields[1].([]interface{})
 	if !ok {
 		return fmt.Errorf("Data is not type of PaymentPayload: invalid outputs")
 	}
-	pl.Outputs = []Output{}
+	pl.Output = []*Output{}
 	for _, out := range txouts {
 		// extract one output
 		output, ok := out.([]interface{})
@@ -405,7 +405,7 @@ func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
 		}
 		chainId := binary.BigEndian.Uint64(FillBytes(asset[2].([]byte), 8))
 
-		newOutput := Output{
+		newOutput := &Output{
 			Value:    val,
 			PkScript: pkscript,
 			Asset: Asset{
@@ -414,10 +414,9 @@ func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
 				ChainId:  chainId,
 			},
 		}
-		pl.Outputs = append(pl.Outputs, newOutput)
+		pl.Output = append(pl.Output, newOutput)
 	}
 	return nil
-}
 
 func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
 	return &OutPoint{
@@ -735,7 +734,7 @@ func MsgstoAddress(msgs []Message) common.Address {
 		if !ok {
 			break
 		}
-		for _, pay := range payment.Inputs {
+		for _, pay := range payment.Input{
 			// 通过签名信息还原出address
 			from := new(common.Address)
 			from.SetBytes(pay.Extra[:])

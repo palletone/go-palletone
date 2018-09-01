@@ -42,7 +42,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
 	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 	"github.com/palletone/go-palletone/tokenengine/btcutil"
@@ -1236,7 +1236,17 @@ func messageToHex(msg wire.Message) (string, error) {
 	}
 	return hex.EncodeToString(buf.Bytes()), nil
 }
-
+func GetAddressFromScript(script []byte) (string, error) {
+	_, addresses, reqSigs, err := txscript.ExtractPkScriptAddrs(script, &chaincfg.MainNetParams)
+	if err != nil {
+		return "", err
+	}
+	// for now, just support single signature
+	if reqSigs > 1 {
+		return "", errors.New("Get address from utxo output script error: multiple signature")
+	}
+	return "P" + addresses[0].String(), nil
+}
 const (
 	MaxTxInSequenceNum uint32 = 0xffffffff
 	)
@@ -1326,7 +1336,10 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		txOut := modules.NewTxOut(uint64(dao), pkScript,ast)
 		pload.AddTxOut(*txOut)
 	}
-	
+	// Set the Locktime, if given.
+	if c.LockTime != nil {
+		pload.LockTime = uint32(*c.LockTime)
+	}
 	// Return the serialized and hex-encoded transaction.  Note that this
 	// is intentionally not directly returning because the first return
 	// value is a string and it would result in returning an empty string to
@@ -1339,10 +1352,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		TxMessages: []modules.Message{msg},
 	}
 	mtx.TxHash = mtx.Hash()
-	// Set the Locktime, if given.
-	if c.LockTime != nil {
-		mtx.Locktime = uint32(*c.LockTime)
-	}
+    fmt.Printf("mtx is ------1312----------%+v\n",mtx)
 	mtxbt ,err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
@@ -1443,9 +1453,9 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	var redeemTx wire.MsgTx
-	err = redeemTx.Deserialize(bytes.NewBuffer(serializedTx))
-	if err != nil {
+	var redeemTx modules.Transaction
+	if err := rlp.DecodeBytes(serializedTx, &redeemTx); err != nil {
+                fmt.Println("-------1420-------1420-----------------")
 		return nil, err
 	}
 	var hashType txscript.SigHashType
@@ -1467,7 +1477,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		return nil, err
 	}
 
-	inputs := make(map[wire.OutPoint][]byte)
+	inputpoints := make(map[modules.OutPoint][]byte)
 	scripts := make(map[string][]byte)
 	//var params *chaincfg.Params
 	params := &chaincfg.TestNet3Params
@@ -1476,7 +1486,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		cmdInputs = *cmd.Inputs
 	}
 	for _, rti := range cmdInputs {
-		inputHash, err := chainhash.NewHashFromStr(rti.Txid)
+		inputHash, err := common.NewHashFromStr(rti.Txid)
 		if err != nil {
 			return nil, DeserializationError{err}
 		}
@@ -1495,17 +1505,16 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			addr, err := btcutil.NewAddressScriptHash(redeemScript,
-				params)
-			fmt.Println("SignRawTransaction   1445   1445   1445 ----------")
+			addr, err := btcutil.NewAddressScriptHash(redeemScript,params)
 			if err != nil {
 				return nil, DeserializationError{err}
 			}
 			scripts[addr.String()] = redeemScript
 		}
-		inputs[wire.OutPoint{
-			Hash:  *inputHash,
-			Index: rti.Vout,
+		inputpoints[modules.OutPoint{
+			TxHash:  *inputHash,
+			OutIndex: rti.Vout,
+			MessageIndex:rti.MessageIndex,
 		}] = script
 	}
 
@@ -1535,8 +1544,16 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	}
 
 
-	for i, txIn := range redeemTx.TxIn {
-		prevOutScript, _ := inputs[txIn.PreviousOutPoint]
+    for _, msg := range redeemTx.TxMessages {
+			payload, _ := msg.Payload.(modules.PaymentPayload)
+                        fmt.Printf("-------%+v\n",payload)
+                        fmt.Printf("-----%+v\n",msg.App)
+			if msg.App != "payment" {
+				continue
+			}
+                        fmt.Println("----------1523---------1523---------")
+                        for i, txIn := range payload.Input {
+			    prevOutScript, _ := inputpoints[txIn.PreviousOutPoint]
 
 		// Set up our callbacks that we pass to txscript so it can
 		// look up the appropriate keys and scripts by address.
@@ -1564,9 +1581,9 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		// corresponding output. However this could be already signed,
 		// so we always verify the output.
 		if (hashType&txscript.SigHashSingle) !=
-			txscript.SigHashSingle || i < len(redeemTx.TxOut) {
+				txscript.SigHashSingle || i < len(payload.Output) {
 			script, err := txscript.SignTxOutput(params,
-				&redeemTx, i, prevOutScript, hashType, geekey,
+					&payload, i, prevOutScript, hashType, geekey,
 				getScript, txIn.SignatureScript)
 			// Failure to sign isn't an error, it just means that
 			// the tx isn't complete.
@@ -1581,7 +1598,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		}
 		// Either it was already signed or we just signed it.
 		// Find out if it is completely satisfied or still needs more.
-		vm, err := txscript.NewEngine(prevOutScript, &redeemTx, i,
+			vm, err := txscript.NewEngine(prevOutScript, &payload, i,
 			txscript.StandardVerifyFlags, nil, nil, 0)
 		if err == nil {
 			err = vm.Execute()
@@ -1593,16 +1610,24 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			})
 		}
 	}
+	    msg := modules.Message{
+			App:         modules.APP_PAYMENT,
+			Payload:     payload,
+		}
+        redeemTx.TxMessages = append(redeemTx.TxMessages, msg)
+    }
 	var buf bytes.Buffer
 	buf.Grow(redeemTx.SerializeSize())
 	// All returned errors (not OOM, which panics) encounted during
 	// bytes.Buffer writes are unexpected.
-	if err = redeemTx.Serialize(&buf); err != nil {
-		panic(err)
+        mtxbt ,err := rlp.EncodeToBytes(redeemTx)
+	if err != nil {
+		return "", err
 	}
+	signedHex := hex.EncodeToString(mtxbt)
 	signErrors := make([]btcjson.SignRawTransactionError, 0, 10)
 	return btcjson.SignRawTransactionResult{
-		Hex:      hex.EncodeToString(buf.Bytes()),
+		Hex:      signedHex,
 		Complete: len(signErrors) == 0,
 		Errors:   signErrors,
 	}, nil

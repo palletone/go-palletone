@@ -23,7 +23,12 @@ import (
 	"math/big"
 	"strconv"
 	"time"
-
+	"bytes"
+	//	"fmt"
+	"io"
+    "encoding/binary"
+	"math"
+	//
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
@@ -59,19 +64,19 @@ func NewContractCreation(msg []Message, lock uint32) *Transaction {
 func newTransaction(msg []Message, lock uint32) *Transaction {
 	tx := new(Transaction)
 	tx.TxMessages = msg[:]
-	tx.Locktime = lock
+	//tx.Locktime = lock
 
 	return tx
 }
 
 // AddTxIn adds a transaction input to the message.
 func (pld *PaymentPayload) AddTxIn(ti Input) {
-	pld.Inputs = append(pld.Inputs, ti)
+	pld.Input = append(pld.Input, &ti)
 }
 
 // AddTxOut adds a transaction output to the message.
 func (pld *PaymentPayload) AddTxOut(to Output) {
-	pld.Outputs = append(pld.Outputs, to)
+	pld.Output = append(pld.Output, &to)
 }
 
 func (t *Transaction) SetHash(hash common.Hash) {
@@ -82,6 +87,12 @@ func (t *Transaction) SetHash(hash common.Hash) {
 	}
 }
 
+func NewPaymentPayload() *PaymentPayload {
+	return &PaymentPayload{
+		Input:    make([]*Input, 0, defaultTxInOutAlloc),
+		Output:   make([]*Output, 0, defaultTxInOutAlloc),
+	}
+}
 type TxPoolTransaction struct {
 	Tx *Transaction
 
@@ -397,4 +408,346 @@ type TxLookupEntry struct {
 	UnitHash  common.Hash
 	UnitIndex uint64
 	Index     uint64
+}
+type Transactions []*Transaction
+type Transaction struct {
+	TxHash     common.Hash `json:"txhash"`
+	TxMessages []Message   `json:"messages"`
+	// todo AccountNonce, CreationDate, Priority_lvl 在交易池部分用的比较多，将由杨杰负责删除
+	AccountNonce uint64  `json:"account_nonce" rlp:"-"`
+	CreationDate string  `json:"creation_date" rlp:"-"`
+	Priority_lvl float64 `json:"priority_lvl" rlp:"-"` // 打包的优先级
+}
+type OutPoint struct {
+ TxHash       common.Hash // reference Utxo struct key field
+ MessageIndex uint32      // message index in transaction
+ OutIndex     uint32
+}
+func NewOutPoint(hash *common.Hash, messageindex uint32,outindex uint32) *OutPoint {
+	return &OutPoint{
+		TxHash:  *hash,
+		MessageIndex: messageindex,
+		OutIndex: outindex,
+	}
+}
+// key: message.UnitHash(message+timestamp)
+type Message struct {
+	App     string      `json:"app"`     // message type
+	Payload interface{} `json:"payload"` // the true transaction data
+}
+/************************** Payload Details ******************************************/
+type PayloadMapStruct struct {
+	Key   string
+	Value interface{}
+}
+// Token exchange message and verify message
+// App: payment
+type PaymentPayload struct {
+	Input  []*Input  `json:"inputs"`
+	Output []*Output `json:"outputs"`
+	LockTime uint32  `json:"lock_time"`
+}
+// NewTxOut returns a new bitcoin transaction output with the provided
+// transaction value and public key script.
+func NewTxOut(value uint64, pkScript []byte,asset Asset) *Output {
+	return &Output{
+		Value:    value,
+		PkScript: pkScript,
+		Asset : asset,
+	}
+}
+type Output struct {
+	Value    uint64
+	PkScript []byte
+	Asset    Asset
+}
+type Input struct {
+	PreviousOutPoint OutPoint
+	SignatureScript  []byte
+	Extra            []byte // if user creating a new asset, this field should be it's config data. Otherwise it is null.
+}
+// NewTxIn returns a new ptn transaction input with the provided
+// previous outpoint point and signature script with a default sequence of
+// MaxTxInSequenceNum.
+func NewTxIn(prevOut *OutPoint, signatureScript []byte) *Input {
+	return &Input{
+		PreviousOutPoint: *prevOut,
+		SignatureScript:  signatureScript,
+	}
+}
+// VarIntSerializeSize returns the number of bytes it would take to serialize
+// val as a variable length integer.
+func VarIntSerializeSize(val uint64) int {
+	// The value is small enough to be represented by itself, so it's
+	// just 1 byte.
+	if val < 0xfd {
+		return 1
+	}
+	// Discriminant 1 byte plus 2 bytes for the uint16.
+	if val <= math.MaxUint16 {
+		return 3
+	}
+	// Discriminant 1 byte plus 4 bytes for the uint32.
+	if val <= math.MaxUint32 {
+		return 5
+	}
+	// Discriminant 1 byte plus 8 bytes for the uint64.
+	return 9
+}
+// SerializeSize returns the number of bytes it would take to serialize the
+// the transaction output.
+func (t *Output) SerializeSize() int {
+	// Value 8 bytes + serialized varint size for the length of PkScript +
+	// PkScript bytes.
+	return 8 + VarIntSerializeSize(uint64(len(t.PkScript))) + len(t.PkScript)
+}
+func (t *Input) SerializeSize() int {
+	// Outpoint Hash 32 bytes + Outpoint Index 4 bytes + Sequence 4 bytes +
+	// serialized varint size for the length of SignatureScript +
+	// SignatureScript bytes.
+	return 40 + VarIntSerializeSize(uint64(len(t.SignatureScript))) +
+		len(t.SignatureScript)
+}
+func (msg *PaymentPayload) SerializeSize() int {
+	n := msg.baseSize()
+	return n
+}
+func (msg *Transaction) SerializeSize() int {
+	n := msg.baseSize()
+	return n
+}
+// AddTxOut adds a transaction output to the message.
+//func (msg *PaymentPayload) AddTxOut(to *Output) {
+//	msg.Output = append(msg.Output, to)
+//}
+// AddTxIn adds a transaction input to the message.
+//func (msg *PaymentPayload) AddTxIn(ti *Input) {
+//	msg.Input = append(msg.Input, ti)
+//}
+const HashSize = 32
+const defaultTxInOutAlloc = 15
+type Hash [HashSize]byte
+// DoubleHashH calculates hash(hash(b)) and returns the resulting bytes as a
+// Hash.
+// TxHash generates the Hash for the transaction.
+func (msg *PaymentPayload) TxHash() common.Hash {
+	// Encode the transaction and calculate double sha256 on the result.
+	// Ignore the error returns since the only way the encode could fail
+	// is being out of memory or due to nil pointers, both of which would
+	// cause a run-time panic.
+	buf := bytes.NewBuffer(make([]byte, 0, msg.SerializeSizeStripped()))
+	_ = msg.SerializeNoWitness(buf)
+	return common.DoubleHashH(buf.Bytes())
+}
+// SerializeNoWitness encodes the transaction to w in an identical manner to
+// Serialize, however even if the source transaction has inputs with witness
+// data, the old serialization format will still be used.
+func (msg *PaymentPayload) SerializeNoWitness(w io.Writer) error {
+	//return msg.BtcEncode(w, 0, BaseEncoding)
+	return nil
+}
+// baseSize returns the serialized size of the transaction without accounting
+// for any witness data.
+func (msg *PaymentPayload) baseSize() int {
+	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
+	// number of transaction inputs and outputs.
+	n := 8 + VarIntSerializeSize(uint64(len(msg.Input))) +
+		VarIntSerializeSize(uint64(len(msg.Output)))
+	for _, txIn := range msg.Input {
+		n += txIn.SerializeSize()
+	}
+	for _, txOut := range msg.Output {
+		n += txOut.SerializeSize()
+	}
+	return n
+}
+func (msg *Transaction) baseSize() int {
+	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
+	// number of transaction inputs and outputs.
+	n := 16 + VarIntSerializeSize(uint64(len(msg.TxMessages))) +
+		VarIntSerializeSize(uint64(len(msg.TxHash))) +
+		VarIntSerializeSize(uint64(len(msg.CreationDate)))
+    for _, mtx := range msg.TxMessages {
+	    payload := mtx.Payload
+		payment, ok := payload.(PaymentPayload)
+		if ok == true {
+			for _, txIn := range payment.Input {
+			    n += txIn.SerializeSize()
+		    }
+		    for _, txOut := range payment.Output {
+			    n += txOut.SerializeSize()
+		    }
+		}
+	}
+	return n
+}
+// SerializeSizeStripped returns the number of bytes it would take to serialize
+// the transaction, excluding any included witness data.
+func (msg *PaymentPayload) SerializeSizeStripped() int {
+	return msg.baseSize()
+}
+// WriteVarBytes serializes a variable length byte array to w as a varInt
+// containing the number of bytes, followed by the bytes themselves.
+func WriteVarBytes(w io.Writer, pver uint32, bytes []byte) error {
+	slen := uint64(len(bytes))
+	err := WriteVarInt(w, pver, slen)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(bytes)
+	return err
+}
+const binaryFreeListMaxItems = 1024
+type binaryFreeList chan []byte
+var binarySerializer binaryFreeList = make(chan []byte, binaryFreeListMaxItems)
+// WriteVarInt serializes val to w using a variable number of bytes depending
+// on its value.
+func WriteVarInt(w io.Writer, pver uint32, val uint64) error {
+	if val < 0xfd {
+		return binarySerializer.PutUint8(w, uint8(val))
+	}
+	if val <= math.MaxUint16 {
+		err := binarySerializer.PutUint8(w, 0xfd)
+		if err != nil {
+			return err
+		}
+		return binarySerializer.PutUint16(w, littleEndian, uint16(val))
+	}
+	if val <= math.MaxUint32 {
+		err := binarySerializer.PutUint8(w, 0xfe)
+		if err != nil {
+			return err
+		}
+		return binarySerializer.PutUint32(w, littleEndian, uint32(val))
+	}
+	err := binarySerializer.PutUint8(w, 0xff)
+	if err != nil {
+		return err
+	}
+	return binarySerializer.PutUint64(w, littleEndian, val)
+}
+// Borrow returns a byte slice from the free list with a length of 8.  A new
+// buffer is allocated if there are not any available on the free list.
+func (l binaryFreeList) Borrow() []byte {
+	var buf []byte
+	select {
+	case buf = <-l:
+	default:
+		buf = make([]byte, 8)
+	}
+	return buf[:8]
+}
+// Return puts the provided byte slice back on the free list.  The buffer MUST
+// have been obtained via the Borrow function and therefore have a cap of 8.
+func (l binaryFreeList) Return(buf []byte) {
+	select {
+	case l <- buf:
+	default:
+		// Let it go to the garbage collector.
+	}
+}
+// Uint8 reads a single byte from the provided reader using a buffer from the
+// free list and returns it as a uint8.
+func (l binaryFreeList) Uint8(r io.Reader) (uint8, error) {
+	buf := l.Borrow()[:1]
+	if _, err := io.ReadFull(r, buf); err != nil {
+		l.Return(buf)
+		return 0, err
+	}
+	rv := buf[0]
+	l.Return(buf)
+	return rv, nil
+}
+// Uint16 reads two bytes from the provided reader using a buffer from the
+// free list, converts it to a number using the provided byte order, and returns
+// the resulting uint16.
+func (l binaryFreeList) Uint16(r io.Reader, byteOrder binary.ByteOrder) (uint16, error) {
+	buf := l.Borrow()[:2]
+	if _, err := io.ReadFull(r, buf); err != nil {
+		l.Return(buf)
+		return 0, err
+	}
+	rv := byteOrder.Uint16(buf)
+	l.Return(buf)
+	return rv, nil
+}
+// Uint32 reads four bytes from the provided reader using a buffer from the
+// free list, converts it to a number using the provided byte order, and returns
+// the resulting uint32.
+func (l binaryFreeList) Uint32(r io.Reader, byteOrder binary.ByteOrder) (uint32, error) {
+	buf := l.Borrow()[:4]
+	if _, err := io.ReadFull(r, buf); err != nil {
+		l.Return(buf)
+		return 0, err
+	}
+	rv := byteOrder.Uint32(buf)
+	l.Return(buf)
+	return rv, nil
+}
+// Uint64 reads eight bytes from the provided reader using a buffer from the
+// free list, converts it to a number using the provided byte order, and returns
+// the resulting uint64.
+func (l binaryFreeList) Uint64(r io.Reader, byteOrder binary.ByteOrder) (uint64, error) {
+	buf := l.Borrow()[:8]
+	if _, err := io.ReadFull(r, buf); err != nil {
+		l.Return(buf)
+		return 0, err
+	}
+	rv := byteOrder.Uint64(buf)
+	l.Return(buf)
+	return rv, nil
+}
+// PutUint8 copies the provided uint8 into a buffer from the free list and
+// writes the resulting byte to the given writer.
+func (l binaryFreeList) PutUint8(w io.Writer, val uint8) error {
+	buf := l.Borrow()[:1]
+	buf[0] = val
+	_, err := w.Write(buf)
+	l.Return(buf)
+	return err
+}
+var (
+	// littleEndian is a convenience variable since binary.LittleEndian is
+	// quite long.
+	littleEndian = binary.LittleEndian
+	// bigEndian is a convenience variable since binary.BigEndian is quite
+	// long.
+	bigEndian = binary.BigEndian
+)
+// PutUint16 serializes the provided uint16 using the given byte order into a
+// buffer from the free list and writes the resulting two bytes to the given
+// writer.
+func (l binaryFreeList) PutUint16(w io.Writer, byteOrder binary.ByteOrder, val uint16) error {
+	buf := l.Borrow()[:2]
+	byteOrder.PutUint16(buf, val)
+	_, err := w.Write(buf)
+	l.Return(buf)
+	return err
+}
+// PutUint32 serializes the provided uint32 using the given byte order into a
+// buffer from the free list and writes the resulting four bytes to the given
+// writer.
+func (l binaryFreeList) PutUint32(w io.Writer, byteOrder binary.ByteOrder, val uint32) error {
+	buf := l.Borrow()[:4]
+	byteOrder.PutUint32(buf, val)
+	_, err := w.Write(buf)
+	l.Return(buf)
+	return err
+}
+// PutUint64 serializes the provided uint64 using the given byte order into a
+// buffer from the free list and writes the resulting eight bytes to the given
+// writer.
+func (l binaryFreeList) PutUint64(w io.Writer, byteOrder binary.ByteOrder, val uint64) error {
+	buf := l.Borrow()[:8]
+	byteOrder.PutUint64(buf, val)
+	_, err := w.Write(buf)
+	l.Return(buf)
+	return err
+}
+func WriteTxOut(w io.Writer, pver uint32, version int32, to *Output) error {
+	err := binarySerializer.PutUint64(w, littleEndian, uint64(to.Value))
+	if err != nil {
+		return err
+	}
+	return WriteVarBytes(w, pver, to.PkScript)
 }
