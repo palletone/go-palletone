@@ -239,8 +239,9 @@ func TestPaymentTransactionRLP(t *testing.T) {
 		},
 	}
 	payment := modules.PaymentPayload{
-		Input:  []*modules.Input{&txin},
-		Output: []*modules.Output{&txout},
+		Input:    []*modules.Input{&txin},
+		Output:   []*modules.Output{&txout},
+		LockTime: 12,
 	}
 
 	tx2 := modules.Transaction{

@@ -129,7 +129,7 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 		u.Txs = make([]*Transaction, len(txs))
 		for i, pTx := range txs {
 			tx := Transaction{
-				TxHash:   pTx.TxHash,
+				TxHash: pTx.TxHash,
 				//Locktime: pTx.Locktime,
 			}
 			if len(pTx.TxMessages) > 0 {
@@ -174,6 +174,7 @@ func (unit *Unit) IsEmpty() bool {
 
 //type Transactions []*Transaction
 type TxPoolTxs []*TxPoolTransaction
+
 //type Transaction struct {
 //	TxHash     common.Hash `json:"txhash"`
 //	TxMessages []Message   `json:"messages"`
@@ -289,24 +290,24 @@ type PayloadMapStruct struct {
 // Token exchange message and verify message
 // App: payment
 type PaymentPayload struct {
-	Input  []*Input  `json:"inputs"`
-	Output []*Output `json:"outputs"`
-	LockTime uint32  `json:"lock_time"`
+	Input    []*Input  `json:"inputs"`
+	Output   []*Output `json:"outputs"`
+	LockTime uint32    `json:"lock_time"`
 }
 
 /**
 从RLP的解码中解析出对应的payload
 */
 func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
-	// check data
+	// step1. check data
 	fields, ok := data.([]interface{})
 	if !ok {
 		return fmt.Errorf("Data error, should be []interface{}")
 	}
-	if len(fields) != 2 {
-		return fmt.Errorf("Data is not type of PaymentPayload")
+	if len(fields) != 3 {
+		return fmt.Errorf("Data is not type of PaymentPayload: len=%d", len(fields))
 	}
-	// extract inputs
+	// step2. extract inputs
 	txins, ok := fields[0].([]interface{})
 	if !ok {
 		return fmt.Errorf("Data is not type of PaymentPayload: invalid inputs")
@@ -359,7 +360,7 @@ func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
 		}
 		pl.Input = append(pl.Input, newInput)
 	}
-	// extract outputs
+	// step3. extract outputs
 	txouts, ok := fields[1].([]interface{})
 	if !ok {
 		return fmt.Errorf("Data is not type of PaymentPayload: invalid outputs")
@@ -417,8 +418,15 @@ func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
 		}
 		pl.Output = append(pl.Output, newOutput)
 	}
+
+	// step4. extract locktime
+	if _, ok := fields[2].([]byte); !ok {
+		return fmt.Errorf("Data is not type of PaymentPayload: invalid locktime")
+	}
+	pl.LockTime = binary.BigEndian.Uint32(FillBytes(fields[2].([]byte), 4))
 	return nil
 }
+
 //func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
 //	return &OutPoint{
 //		TxHash:       *hash,
@@ -735,7 +743,7 @@ func MsgstoAddress(msgs []Message) common.Address {
 		if !ok {
 			break
 		}
-		for _, pay := range payment.Input{
+		for _, pay := range payment.Input {
 			// 通过签名信息还原出address
 			from := new(common.Address)
 			from.SetBytes(pay.Extra[:])
