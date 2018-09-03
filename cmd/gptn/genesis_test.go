@@ -21,6 +21,8 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 var customGenesisTests = []struct {
@@ -112,8 +114,13 @@ func TestCustomGenesis(t *testing.T) {
 */
 
 func TestGenesisGet(t *testing.T) {
+	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
 	// get genesis unit by index
-	unit, err := common.GetGenesisUnit(0)
+	unit, err := common.GetGenesisUnit(Dbconn, 0)
 	fmt.Println("error", err, "Genesis unit:", unit)
 	// get account balance
 	// get all global configures
