@@ -77,3 +77,11 @@ func PointToStr(pub kyber.Point) string {
 
 	return base64.RawURLEncoding.EncodeToString(pubB)
 }
+
+func MediatorToInfo(m *Mediator) MediatorInfo {
+	return MediatorInfo{
+		Address:     m.Address.Str(),
+		InitPartPub: PointToStr(m.InitPartPub),
+		Node:        m.Node.String(),
+	}
+}

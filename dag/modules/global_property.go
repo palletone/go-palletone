@@ -20,7 +20,6 @@
 package modules
 
 import (
-	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -85,28 +84,6 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 	}
 }
 
-func InfoToMediator(medInfo *core.MediatorInfo) core.Mediator {
-	// 1. 解析 mediator 账户地址
-	add := core.StrToMedAdd(medInfo.Address)
-
-	// 2. 解析 mediator 的 DKS 初始公钥
-	pub := core.StrToPoint(medInfo.InitPartPub)
-
-	// 3. 解析mediator 的 node 节点信息
-	node, err := discover.ParseNode(medInfo.Node)
-	if err != nil {
-		log.Error(fmt.Sprintf("Invalid mediator account node \"%v\" : %v", medInfo.Node, err))
-	}
-
-	md := core.Mediator{
-		Address:     add,
-		InitPartPub: pub,
-		Node:        node,
-	}
-
-	return md
-}
-
 func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	log.Debug("initialize global property...")
 
@@ -120,7 +97,7 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	// Set active mediators
 	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
 		medInfo := genesis.InitialMediatorCandidates[i]
-		md := InfoToMediator(&medInfo)
+		md := core.InfoToMediator(&medInfo)
 
 		gp.ActiveMediators[md.Address] = md
 	}
