@@ -167,12 +167,6 @@ func TestTransactionAddingTxs(t *testing.T) {
 			t.Error(msg)
 		} else {
 			log.Println(" total size is :", total, total.Float64(), "the cout: ", len(txs))
-			// for addr, list := range pool.pending {
-			// 	if list.Len() != int(config.AccountSlots) {
-			// 		t.Errorf("addr %x: total pending transactions mismatch: have %d, want %d", addr, list.Len(), config.AccountSlots)
-			// 	}
-
-			// }
 			for i, tx := range txs {
 				if i < len(txs)-1 {
 					if txs[i].Priority_lvl < txs[i+1].Priority_lvl {
@@ -188,8 +182,6 @@ func TestTransactionAddingTxs(t *testing.T) {
 		log.Println(origin, all, len(pool.all), pending_cache, queue_cache)
 		fmt.Println("defer over.... ", time.Now().Unix()-t0.Unix())
 	}(pool)
-	// pend, queue := pool.Content()
-	// log.Println("content===================", pend, queue)
 
 }
 func transaction(msg []modules.Message, lock uint32) *modules.Transaction {
