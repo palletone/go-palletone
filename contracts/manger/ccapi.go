@@ -66,6 +66,8 @@ func listGet(templateId []byte) (*TempCC, error) {
 
 // contract manger module init
 func Init() error {
+	peerContractMockConfigInit()
+
 	err := peerServerInit()
 	if err != nil {
 		logger.Errorf("peerServerInit error:%s", err)
@@ -427,7 +429,7 @@ func peerContractMockConfigInit() {
 	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
 }
 
-func init() {
+func init2() {
 	peerContractMockConfigInit()
 
 	//InitNoSysCCC()

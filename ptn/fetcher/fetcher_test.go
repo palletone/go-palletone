@@ -99,7 +99,7 @@ func (f *fetcherTester) chainHeight(assetId modules.IDType16) uint64 {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
 	mem,_ := ptndb.NewMemDatabase()
-	dag := dag2.NewDag(mem)
+	dag,_ := dag2.NewDag(mem)
 	unit := dag.GetCurrentUnit(assetId)
 	if unit != nil {
 		return unit.NumberU64()
