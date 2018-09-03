@@ -323,18 +323,35 @@ func (d *Dag) WalletBalance(address string, assetid []byte, uniqueid []byte, cha
 	return dagcommon.WalletBalance(d.Db,addr, asset), nil
 }
 
-func NewDag(db ptndb.Database) *Dag {
+func NewDag(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
-	return &Dag{
+
+	gp, err := storage.RetrieveGlobalProp(db)
+	if err != nil {
+		return nil, err
+	}
+
+	dgp, err := storage.RetrieveDynGlobalProp(db)
+	if err != nil {
+		return nil, err
+	}
+
+	ms, err := storage.RetrieveMediatorSchl(db)
+	if err != nil {
+		return nil, err
+	}
+
+	dag := &Dag{
 		Cache: freecache.NewCache(200 * 1024 * 1024),
 		Db:    db,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
-		GlobalProp:    storage.RetrieveGlobalProp(db),
-		DynGlobalProp: storage.RetrieveDynGlobalProp(db),
-		MediatorSchl:  storage.RetrieveMediatorSchl(db),
+		GlobalProp:    gp,
+		DynGlobalProp: dgp,
+		MediatorSchl:  ms,
 	}
 
+	return dag, nil
 }
 
 // Get Contract Api
