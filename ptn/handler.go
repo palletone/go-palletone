@@ -183,11 +183,9 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		return dag.VerifyHeader(header, true)
 	}
 	heighter := func(assetId modules.IDType16) uint64 {
-		if _, ok := levelDb.(*palletdb.LDBDatabase); ok {
-			unit := dag.GetCurrentUnit(assetId)
-			if unit != nil {
-				return unit.NumberU64()
-			}
+		unit := dag.GetCurrentUnit(assetId)
+		if unit != nil {
+			return unit.NumberU64()
 		}
 		return uint64(0)
 	}
@@ -527,27 +525,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			for _, tx := range txs {
 				bodies.Transactions = append(bodies.Transactions, tx)
 			}
-
-			//if data := pm.dag.GetBodyRLP(hash); len(data) != 0 {
-			//	bodies = append(bodies, data)
-			//	bytes += len(data)
-			//}
-			//======test start=======
-			/*
-				body := blockBody{}
-				tx := TestMakeTransaction(uint64(tempGetBlockBodiesMsgSum))
-				body.Transactions = append(body.Transactions, tx)
-				data, err := rlp.EncodeToBytes(body)
-				if err != nil {
-					log.Debug("===GetBlockBodiesMsg===", "rlp.EncodeToBytes err:", err)
-					continue
-				}
-				bodies = append(bodies, data)
-				bytes += len(data)
-				sum++
-				tempGetBlockBodiesMsgSum++
-			*/
-			//======test end=======
 		}
 		//log.Debug("===GetBlockBodiesMsg===", "tempGetBlockBodiesMsgSum:", tempGetBlockBodiesMsgSum, "sum:", sum)
 		log.Debug("===GetBlockBodiesMsg===", "len(bodies):", len(bodies.Transactions), "bytes:", bytes)
@@ -878,3 +855,20 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
 		peer.SendNewProducedUnit(unit)
 	}
 }
+
+/*
+func test() {
+	body := blockBody{}
+	tx := TestMakeTransaction(uint64(tempGetBlockBodiesMsgSum))
+	body.Transactions = append(body.Transactions, tx)
+	data, err := rlp.EncodeToBytes(body)
+	if err != nil {
+		log.Debug("===GetBlockBodiesMsg===", "rlp.EncodeToBytes err:", err)
+		continue
+	}
+	bodies = append(bodies, data)
+	bytes += len(data)
+	sum++
+	tempGetBlockBodiesMsgSum++
+}
+*/
