@@ -89,9 +89,9 @@ func makedag(blocks int) *dag.Dag {
 	//fmt.Println("=============")
 	memdb, _ := ptndb.NewMemDatabase()
 	dag := dag.NewDag(memdb)
-	pay := fortest.PaymentPayload{
-		Inputs:  []fortest.Input{},
-		Outputs: []fortest.Output{},
+	pay := modules.PaymentPayload{
+		Input:  []*modules.Input{},
+		Output: []*modules.Output{},
 	}
 	holder := common.Address{}
 	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")

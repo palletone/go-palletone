@@ -47,9 +47,10 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 }
 
 func TestSaveUnit(t *testing.T) {
-	if storage.Dbconn == nil {
-		log.Println("dbconn is nil , renew db  start ...")
-		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
+	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
 	}
 
 	addr := common.Address{}
@@ -84,7 +85,7 @@ func TestSaveUnit(t *testing.T) {
 	}
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
-		Height:  GenesisHeight(),
+		Height:  GenesisHeight(Dbconn),
 		TxIndex: 0,
 	}})
 	writeSet := []modules.PayloadMapStruct{
@@ -161,16 +162,21 @@ func TestSaveUnit(t *testing.T) {
 	unit.UnitSize = unit.Size()
 	unit.UnitHash = unit.Hash()
 
-	if err := SaveUnit(unit, false); err != nil {
+	if err := SaveUnit(Dbconn, unit, false); err != nil {
 		log.Println(err)
 	}
 }
 
 func TestGetstate(t *testing.T) {
+	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
 	key := fmt.Sprintf("%s%s",
 		storage.CONTRACT_STATE_PREFIX,
 		"contract0000")
-	data := storage.GetPrefix([]byte(key))
+	data := storage.GetPrefix(Dbconn, []byte(key))
 	for k, v := range data {
 		fmt.Println("key=", k, " ,value=", v)
 	}
@@ -192,10 +198,16 @@ func TestRlpDecode(t *testing.T) {
 }
 
 func TestCreateUnit(t *testing.T) {
+
+	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
 	addr := common.Address{} // minner addr
 	addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
 	//units, err := CreateUnit(&addr, time.Now())
-	units, err := CreateUnit(&addr, nil, nil, time.Now())
+	units, err := CreateUnit(Dbconn, &addr, nil, nil, time.Now())
 	if err != nil {
 		log.Println("create unit error:", err)
 	} else {
@@ -204,10 +216,15 @@ func TestCreateUnit(t *testing.T) {
 }
 
 func TestGetContractState(t *testing.T) {
-	version, value := storage.GetContractState("contract_template0000", "name")
+	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
+	version, value := storage.GetContractState(Dbconn, "contract_template0000", "name")
 	log.Println(version)
 	log.Println(value)
-	data := storage.GetTplAllState("contract_template0000")
+	data := storage.GetTplAllState(Dbconn, "contract_template0000")
 	for k, v := range data {
 		log.Println(k, v)
 	}
@@ -274,29 +291,11 @@ func TestPaymentTransactionRLP(t *testing.T) {
 }
 
 func TestContractTplPayloadTransactionRLP(t *testing.T) {
-	addr := common.Address{}
-	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
-	//ks := keystore.NewKeyStore("./keystore", 1<<18, 1)
-	p := common.Hash{}
-	p.SetString("0000000000000000022222222222")
-	aid := modules.IDType16{}
-	aid.SetBytes([]byte("xxxxxxxxxxxxxxxxxx"))
-	header := new(modules.Header)
-	header.ParentsHash = append(header.ParentsHash, p)
-	header.AssetIDs = []modules.IDType16{aid}
-	key, _ := crypto.GenerateKey()
-	addr0 := crypto.PubkeyToAddress(key.PublicKey)
-
-	sig, err := crypto.Sign(header.Hash().Bytes(), key)
-	if err != nil {
-		log.Println("sign header occured error: ", err)
+	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
 	}
-	auth := new(modules.Authentifier)
-	auth.R = sig[:32]
-	auth.S = sig[32:64]
-	auth.V = sig[64:]
-	auth.Address = addr0.String()
-	header.Authors = auth
 	// TODO test ContractTplPayload
 	contractTplPayload := modules.ContractTplPayload{
 		TemplateId: []byte("contract_template0000"),
@@ -306,7 +305,7 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 	}
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
-		Height:  GenesisHeight(),
+		Height:  GenesisHeight(Dbconn),
 		TxIndex: 0,
 	}})
 	tx1 := modules.Transaction{
@@ -345,6 +344,77 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 						fmt.Println("Contract template payload ExtractFrInterface error:", err.Error())
 					} else {
 						fmt.Println("Contract template payload:", tplPayload)
+					}
+				}
+			}
+		}
+	}
+}
+
+func TestContractDeployPayloadTransactionRLP(t *testing.T) {
+	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
+	// TODO test ContractTplPayload
+	readSet := []modules.ContractReadSet{}
+	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
+		Height:  GenesisHeight(Dbconn),
+		TxIndex: 0,
+	}})
+	writeSet := []modules.PayloadMapStruct{
+		{
+			Key:   "name",
+			Value: "Joe",
+		},
+		{
+			Key:   "age",
+			Value: 10,
+		},
+	}
+	deployPayload := modules.ContractDeployPayload{
+		TemplateId: []byte("contract_template0000"),
+		ContractId: []byte("contract0000"),
+		ReadSet:    readSet,
+		WriteSet:   writeSet,
+	}
+	tx1 := modules.Transaction{
+		TxMessages: []modules.Message{
+			{
+				App:     modules.APP_CONTRACT_DEPLOY,
+				Payload: deployPayload,
+			},
+		},
+	}
+	tx1.TxHash = tx1.Hash()
+
+	fmt.Println(">>>>>>>>  Original transaction:")
+	fmt.Println(">>>>>>>>  hash:", tx1.TxHash)
+	for index, msg := range tx1.TxMessages {
+		fmt.Printf(">>>>>>>>  message[%d]:%v\n", index, msg)
+		fmt.Println(">>>>>>>> payload type:", reflect.TypeOf(msg.Payload))
+		fmt.Printf(">>>>>>>>  message[%d] payload:%v\n", index, msg.Payload)
+	}
+	encodeData, err := rlp.EncodeToBytes(tx1)
+	if err != nil {
+		fmt.Println("Encode tx1 error:", err.Error())
+	} else {
+		var txDecode modules.Transaction
+		if err := rlp.DecodeBytes(encodeData, &txDecode); err != nil {
+			fmt.Println("Decode tx error:", err.Error())
+		} else {
+			fmt.Println("======== Decode transaction:")
+			fmt.Println("======== hash:", txDecode.TxHash)
+			for index, msg := range txDecode.TxMessages {
+				fmt.Printf("======== message[%d]:%v\n", index, msg)
+				switch msg.App {
+				case modules.APP_CONTRACT_DEPLOY:
+					var deployPayload modules.ContractDeployPayload
+					if err := deployPayload.ExtractFrInterface(msg.Payload); err != nil {
+						fmt.Println("Contract template payload ExtractFrInterface error:", err.Error())
+					} else {
+						fmt.Println("Contract template payload:", deployPayload)
 					}
 				}
 			}
