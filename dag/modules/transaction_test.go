@@ -44,9 +44,9 @@ func TestTransactionEncode(t *testing.T) {
 
 	tx := new(Transaction)
 	rlp.DecodeBytes(txb, tx)
-	if tx.Locktime != 12345 {
-		log.Error("decode RLP mismatch", "error", txb)
-	}
+	//if tx.Locktime != 12345 {
+	//	log.Error("decode RLP mismatch", "error", txb)
+	//}
 
 	tx.SetHash(rlp.RlpHash(tx))
 	if tx.TxHash != rightvrsTx.TxHash {

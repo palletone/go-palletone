@@ -12,7 +12,7 @@ import (
 )
 
 func TestUpdateUtxo(t *testing.T) {
-	UpdateUtxo(common.Hash{}, &modules.Message{}, 0, 0)
+	UpdateUtxo(common.Hash{}, &modules.Message{}, uint32(0))
 	dagconfig.DbPath = getTempDir(t)
 }
 

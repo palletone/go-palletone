@@ -37,6 +37,15 @@ type Mediator struct {
 	Node        *discover.Node
 }
 
+func StrToMedNode(mn string) *discover.Node {
+	node, err := discover.ParseNode(mn)
+	if err != nil {
+		log.Error(fmt.Sprintf("Invalid mediator node \"%v\" : %v", mn, err))
+	}
+
+	return node
+}
+
 func StrToMedAdd(addStr string) common.Address {
 	address := strings.TrimSpace(addStr)
 	address = strings.Trim(address, "\"")
@@ -78,4 +87,23 @@ func StrToPoint(pubStr string) kyber.Point {
 	}
 
 	return pub
+}
+
+func InfoToMediator(medInfo *MediatorInfo) Mediator {
+	// 1. 解析 mediator 账户地址
+	add := StrToMedAdd(medInfo.Address)
+
+	// 2. 解析 mediator 的 DKS 初始公钥
+	pub := StrToPoint(medInfo.InitPartPub)
+
+	// 3. 解析mediator 的 node 节点信息
+	node := StrToMedNode(medInfo.Node)
+
+	md := Mediator{
+		Address:     add,
+		InitPartPub: pub,
+		Node:        node,
+	}
+
+	return md
 }

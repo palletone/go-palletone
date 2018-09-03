@@ -111,18 +111,18 @@ func TestTransactionAddingTxs(t *testing.T) {
 		PkScript: script,
 	}
 	payload0 := modules.PaymentPayload{
-		Inputs:  []modules.Input{input},
-		Outputs: []modules.Output{output},
+		Input:  []*modules.Input{&input},
+		Output: []*modules.Output{&output},
 	}
 	copy(input.Extra[:], []byte("1234567890"))
 	payload1 := modules.PaymentPayload{
-		Inputs:  []modules.Input{input},
-		Outputs: []modules.Output{output},
+		Input:  []*modules.Input{&input},
+		Output: []*modules.Output{&output},
 	}
 	copy(input.Extra[:], []byte("0987654321"))
 	payload2 := modules.PaymentPayload{
-		Inputs:  []modules.Input{input},
-		Outputs: []modules.Output{output},
+		Input:  []*modules.Input{&input},
+		Output: []*modules.Output{&output},
 	}
 	msgs = append(msgs, *modules.NewMessage(modules.APP_PAYMENT, payload0), *modules.NewMessage(modules.APP_PAYMENT, payload1), *modules.NewMessage(modules.APP_PAYMENT, payload2))
 	for j := 0; j < int(config.AccountSlots)*1; j++ {

@@ -934,7 +934,13 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 	for _, msg := range tx.Tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
-			inputs := msg.Payload.(modules.PaymentPayload)
+			var inputs modules.PaymentPayload
+			inputs, ok := msg.Payload.(modules.PaymentPayload)
+			if !ok {
+				if err := inputs.ExtractFrInterface(msg.Payload); err != nil {
+					continue
+				}
+			}
 			for _, input := range inputs.Input {
 				if tx, ok := pool.outpoints[input.PreviousOutPoint]; ok {
 					str := fmt.Sprintf("output %v already spent by "+

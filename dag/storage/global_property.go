@@ -22,9 +22,13 @@ package storage
 import (
 	"fmt"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/modules"
+
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 const (
@@ -32,37 +36,54 @@ const (
 	dynGlobalPropDBKey = "DynamicGlobalProperty"
 )
 
-//type globalProperty struct {
-//	ChainParameters core.ChainParameters
-//
-//	ActiveMediators []core.MediatorInfo
-//}
-//
-//func getInfoFromMediator(m core.Mediator) core.MediatorInfo {
-//
-//}
-//
-//func getGlobalProperty(gp *modules.GlobalProperty) globalProperty {
-//	gpt := globalProperty{ChainParameters: gp.ChainParameters}
-//	for _, medInfo := range gp.ActiveMediators{
-//
-//	}
-//
-//	return gpt
-//}
+type globalProperty struct {
+	ChainParameters core.ChainParameters
 
-func StoreGlobalProp(db ptndb.Database,gp *modules.GlobalProperty) {
+	ActiveMediators []core.MediatorInfo
+}
 
+func getGPT(gp *modules.GlobalProperty) globalProperty {
+	ams := make([]core.MediatorInfo, 0)
 
-//	gpt :=
+	for _, med := range gp.ActiveMediators {
+		medInfo := core.MediatorToInfo(&med)
+		ams = append(ams, medInfo)
+	}
 
-	err := Store(db, globalPropDBKey, *gp)
+	gpt := globalProperty{
+		ChainParameters: gp.ChainParameters,
+		ActiveMediators: ams,
+	}
+
+	return gpt
+}
+
+func getGP(gpt *globalProperty) *modules.GlobalProperty {
+	ams := make(map[common.Address]core.Mediator, 0)
+	for _, medInfo := range gpt.ActiveMediators {
+		med := core.InfoToMediator(&medInfo)
+		ams[med.Address] = med
+	}
+
+	gp := modules.NewGlobalProp()
+	gp.ChainParameters = gpt.ChainParameters
+	gp.ActiveMediators = ams
+
+	return gp
+}
+
+func StoreGlobalProp(db ptndb.Database, gp *modules.GlobalProperty) {
+
+	gpt := getGPT(gp)
+
+	err := Store(db, globalPropDBKey, gpt)
+
 	if err != nil {
 		log.Error(fmt.Sprintf("Store global properties error:%s", err))
 	}
 }
 
-func StoreDynGlobalProp(db ptndb.Database,dgp *modules.DynamicGlobalProperty) {
+func StoreDynGlobalProp(db ptndb.Database, dgp *modules.DynamicGlobalProperty) {
 
 	err := Store(db, dynGlobalPropDBKey, *dgp)
 	if err != nil {
@@ -71,12 +92,15 @@ func StoreDynGlobalProp(db ptndb.Database,dgp *modules.DynamicGlobalProperty) {
 }
 
 func RetrieveGlobalProp(db ptndb.Database) *modules.GlobalProperty {
-	gp := modules.NewGlobalProp()
+	gpt := new(globalProperty)
 
-	err := Retrieve(db,globalPropDBKey, gp)
+	err := Retrieve(db, globalPropDBKey, gpt)
+
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve global properties error: %s", err))
 	}
+
+	gp := getGP(gpt)
 
 	return gp
 }
@@ -84,7 +108,7 @@ func RetrieveGlobalProp(db ptndb.Database) *modules.GlobalProperty {
 func RetrieveDynGlobalProp(db ptndb.Database) *modules.DynamicGlobalProperty {
 	dgp := modules.NewDynGlobalProp()
 
-	err := Retrieve(db,dynGlobalPropDBKey, dgp)
+	err := Retrieve(db, dynGlobalPropDBKey, dgp)
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve dynamic global properties error: %s", err))
 	}

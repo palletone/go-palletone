@@ -22,9 +22,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"testing"
 
-	"github.com/palletone/go-palletone/ptn/downloader"
 	"fmt"
-	"github.com/palletone/go-palletone/ptn/fortest"
+	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
 // Tests that protocol versions and modes of operations are matched up properly.
@@ -142,7 +141,7 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 						Index: 0,
 					}
 					block := pm.dag.GetUnitByNumber(chain)
-					fmt.Println("block===>",block)
+					fmt.Println("block===>", block)
 					hashes = append(hashes, block.Hash())
 					if len(bodies) < tt.expected {
 						bodies = append(bodies, &blockBody{Transactions: block.Transactions()})
@@ -159,9 +158,9 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 			}
 		}
 
-		pay := fortest.PaymentPayload{
-			Inputs:  []fortest.Input{},
-			Outputs: []fortest.Output{},
+		pay := modules.PaymentPayload{
+			Input:  []*modules.Input{},
+			Output: []*modules.Output{},
 		}
 		msg0 := modules.Message{
 			App:     modules.APP_PAYMENT,
