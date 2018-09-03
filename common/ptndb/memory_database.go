@@ -21,6 +21,9 @@ import (
 	"sync"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/iterator"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 /*
@@ -29,8 +32,16 @@ import (
 type MemDatabase struct {
 	db   map[string][]byte
 	lock sync.RWMutex
+	DB *leveldb.DB // LevelDB instance
+}
+func (db *MemDatabase) NewIterator() iterator.Iterator {
+	return db.DB.NewIterator(nil, nil)
 }
 
+// NewIteratorWithPrefix returns a iterator to iterate over subset of database content with a particular prefix.
+func (db *MemDatabase) NewIteratorWithPrefix(prefix []byte) iterator.Iterator {
+	return db.DB.NewIterator(util.BytesPrefix(prefix), nil)
+}
 func NewMemDatabase() (*MemDatabase, error) {
 	return &MemDatabase{
 		db: make(map[string][]byte),

@@ -45,6 +45,7 @@ import (
 	"time"
 	common2 "github.com/palletone/go-palletone/dag/common"
 	"log"
+	"github.com/palletone/go-palletone/ptn/fortest"
 )
 
 var (
@@ -56,19 +57,12 @@ var (
 // with the given number of blocks already known, and potential notification
 // channels for different events.
 func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
-	//var dag1 dag.Dag
-	//if blocks == 0 {
-	//	dag1 = *dag.NewDag()
-	//}else{
-	//	dag1 = *makedag(blocks)
-	//}
-	//PrintDag()
+	memdb , _:= ptndb.NewMemDatabase()
+	dag := dag.NewDag(memdb)
 	engine := new(consensus.DPOSEngine)
-	dag := dag.NewDag()
 	typemux := new(event.TypeMux)
 	db, _ := ptndb.NewMemDatabase()
 	producer := new(mediatorplugin.MediatorPlugin)
-
 	//want (downloader.SyncMode, uint64, txPool, core.ConsensusEngine, *modules.Dag, *event.TypeMux, *ptndb.LDBDatabase)
 	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx},
 		engine, dag, typemux, db, producer)
@@ -94,10 +88,11 @@ func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks i
 func makedag(blocks int)*dag.Dag{
 	//PrintDag()
 	//fmt.Println("=============")
-	dag := dag.NewDag()
-	pay := modules.PaymentPayload{
-		Inputs:  []modules.Input{},
-		Outputs: []modules.Output{},
+	memdb , _:= ptndb.NewMemDatabase()
+	dag := dag.NewDag(memdb)
+	pay := fortest.PaymentPayload{
+		Inputs:  []fortest.Input{},
+		Outputs: []fortest.Output{},
 	}
 	holder := common.Address{}
 	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
@@ -126,7 +121,8 @@ func makedag(blocks int)*dag.Dag{
 }
 
 func PrintDag() {
-	dag := dag.NewDag()
+	memdb , _:= ptndb.NewMemDatabase()
+	dag := dag.NewDag(memdb)
 	chainindex := modules.ChainIndex{
 		modules.IDType16{},
 		true,

@@ -27,11 +27,12 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/common/ptndb"
 )
 
 // UpdateGlobalDynProp, update global dynamic data
 // @author Albert·Gou
-func UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
+func UpdateGlobalDynProp(db ptndb.Database,gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
 	timestamp := unit.UnitHeader.Creationdate
 	dgp.LastVerifiedUnitNum = unit.UnitHeader.Number.Index
 	dgp.LastVerifiedUnitHash = unit.UnitHash
@@ -41,7 +42,7 @@ func UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalP
 	//	println(missedUnits)
 	dgp.CurrentASlot += missedUnits + 1
 
-	go storage.StoreDynGlobalProp(dgp)
+	go storage.StoreDynGlobalProp(db,dgp)
 }
 
 /**
@@ -51,8 +52,8 @@ Method for getting mediator voting results
 
 //var lastStatisticalHeight = GenesisHeight()
 
-func MediatorVoteResult(height modules.ChainIndex) (map[common.Address]uint64, error) {
-	var lastStatisticalHeight = GenesisHeight()
+func MediatorVoteResult(db ptndb.Database,height modules.ChainIndex) (map[common.Address]uint64, error) {
+	var lastStatisticalHeight = GenesisHeight(db)
 	result := map[common.Address]uint64{}
 	// step1. check height
 	// check asset id

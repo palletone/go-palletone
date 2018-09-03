@@ -25,6 +25,7 @@ import (
 	"testing"
 	"time"
 	dag2 "github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/common/ptndb"
 )
 
 // makeChain creates a chain of n blocks starting at and including parent.
@@ -97,7 +98,8 @@ func (f *fetcherTester) broadcastBlock(block *modules.Unit, propagate bool) {
 func (f *fetcherTester) chainHeight(assetId modules.IDType16) uint64 {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
-	dag := dag2.NewDag()
+	mem,_ := ptndb.NewMemDatabase()
+	dag := dag2.NewDag(mem)
 	unit := dag.GetCurrentUnit(assetId)
 	if unit != nil {
 		return unit.NumberU64()

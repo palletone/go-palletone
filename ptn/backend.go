@@ -110,7 +110,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		networkId:      config.NetworkId,
 		levelDb:        db,
 		bloomRequests:  make(chan chan *bloombits.Retrieval),
-		dag:            dag.NewDag(),
+		dag:            dag.NewDag(db),
 		//bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
 		//etherbase:      config.Etherbase,
 	}

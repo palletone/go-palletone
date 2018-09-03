@@ -27,7 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
@@ -36,16 +36,14 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
+
+
 type Dag struct {
 	Cache *freecache.Cache
-	Db    *palletdb.LDBDatabase
-
-	Mdb           *palletdb.MemDatabase
+	Db ptndb.Database
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
-
 	Mutex sync.RWMutex
-
 	GlobalProp    *modules.GlobalProperty
 	DynGlobalProp *modules.DynamicGlobalProperty
 	MediatorSchl  *modules.MediatorSchedule
@@ -70,7 +68,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	uHash.SetBytes(hash.Bytes())
 
 	// get transaction list
-	txs, err := dagcommon.GetUnitTransactions(uHash)
+	txs, err := dagcommon.GetUnitTransactions(d.Db, uHash)
 	if err != nil {
 		log.Error("Current unit when get transactions", "error", err.Error())
 		return nil
@@ -127,8 +125,8 @@ func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
 // 	return d.CurrentUnit().Header()
 // }
 
-func (d *Dag) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
-	return d.Mdb, nil
+func (d *Dag) StateAt(common.Hash) (*ptndb.Database, error) {
+	return &d.Db, nil
 }
 
 func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
@@ -142,7 +140,7 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 }
 
 func (d *Dag) SaveDag(unit modules.Unit) (int, error) {
-	if err := dagcommon.SaveUnit(unit, false); err != nil {
+	if err := dagcommon.SaveUnit(d.Db, unit, false); err != nil {
 		fmt.Errorf("SaveDag, save error: %s", err.Error())
 		return -1, err
 	}
@@ -175,7 +173,7 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
-		if err := dagcommon.SaveUnit(*u, false); err != nil {
+		if err := dagcommon.SaveUnit(d.Db, *u, false); err != nil {
 			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
 		}
@@ -218,7 +216,7 @@ func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 }
 
 func (d *Dag) GetTransactionsByHash(hash common.Hash) (modules.Transactions, error) {
-	txs, err := dagcommon.GetUnitTransactions(hash)
+	txs, err := dagcommon.GetUnitTransactions(d.Db, hash)
 	if err != nil {
 		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
 		return nil, err
@@ -229,7 +227,7 @@ func (d *Dag) GetTransactionsByHash(hash common.Hash) (modules.Transactions, err
 func (d *Dag) getBodyRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
 	txs := modules.Transactions{}
 	// get hash list
-	txs, err := dagcommon.GetUnitTransactions(hash)
+	txs, err := dagcommon.GetUnitTransactions(d.Db, hash)
 	if err != nil {
 		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
 		return nil
@@ -269,7 +267,7 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 //Ethereum ethash engine.go
 func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 	// step1. check unit signature, should be compare to mediator list
-	if err := dagcommon.ValidateUnitSignature(header, false); err != nil {
+	if err := dagcommon.ValidateUnitSignature(d.Db,header, false); err != nil {
 		log.Info("Validate unit signature", "error", err.Error())
 		return err
 	}
@@ -294,7 +292,7 @@ func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
 To get account token list and tokens's information
 */
 func (d *Dag) WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error) {
-	return dagcommon.GetAccountTokens(addr)
+	return dagcommon.GetAccountTokens(d.Db,addr)
 }
 
 func (d *Dag) WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
@@ -322,23 +320,19 @@ func (d *Dag) WalletBalance(address string, assetid []byte, uniqueid []byte, cha
 
 	addr := common.Address{}
 	addr.SetString(address)
-	return dagcommon.WalletBalance(addr, asset), nil
+	return dagcommon.WalletBalance(d.Db,addr, asset), nil
 }
 
-func NewDag() *Dag {
-	// genesis, _ := NewGenesisUnit(nil) // comment by Albert·Gou
-	db, _ := palletdb.NewMemDatabase()
+func NewDag(db ptndb.Database) *Dag {
 	mutex := new(sync.RWMutex)
 	return &Dag{
 		Cache: freecache.NewCache(200 * 1024 * 1024),
-		Db:    storage.Dbconn,
-		Mdb:   db,
-		//    GenesisUnit:   genesis, // comment by Albert·Gou
+		Db:    db,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
-		GlobalProp:    storage.RetrieveGlobalProp(),
-		DynGlobalProp: storage.RetrieveDynGlobalProp(),
-		MediatorSchl:  storage.RetrieveMediatorSchl(),
+		GlobalProp:    storage.RetrieveGlobalProp(db),
+		DynGlobalProp: storage.RetrieveDynGlobalProp(db),
+		MediatorSchl:  storage.RetrieveMediatorSchl(db),
 	}
 
 }

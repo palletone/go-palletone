@@ -22,28 +22,25 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/ptndb"
 )
 
 const (
 	mediatorSchlDBKey = "MediatorSchedule"
 )
 
-func StoreMediatorSchl(ms *modules.MediatorSchedule) {
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DbPath)
-	}
-	err := Store(Dbconn, mediatorSchlDBKey, *ms)
+func StoreMediatorSchl(db ptndb.Database,ms *modules.MediatorSchedule) {
+
+	err := Store(db, mediatorSchlDBKey, *ms)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store mediator schedule error: %s", err))
 	}
 }
 
-func RetrieveMediatorSchl() *modules.MediatorSchedule {
+func RetrieveMediatorSchl(db ptndb.Database) *modules.MediatorSchedule {
 	ms := modules.NewMediatorSchl()
-
-	err := Retrieve(mediatorSchlDBKey, ms)
+	err := Retrieve(db,mediatorSchlDBKey, ms)
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve mediator schedule error: %s", err))
 	}

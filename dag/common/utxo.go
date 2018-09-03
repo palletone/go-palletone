@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"strings"
 	"unsafe"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
@@ -30,19 +29,18 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/internal/ptnapi"
-	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	//"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+	"github.com/palletone/go-palletone/common/ptndb"
 )
 
 /**
 根据用户地址、选择的资产类型、转账金额、手续费返回utxo
 Return utxo struct and his total amount according to user's address, asset type
 */
-func ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
+func ReadUtxos(db ptndb.Database,addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
 	if dagconfig.DefaultConfig.UtxoIndex {
-		return readUtxosByIndex(addr, asset)
+		return readUtxosByIndex(db,addr, asset)
 	} else {
-		return readUtxosFrAll(addr, asset)
+		return readUtxosFrAll(db,addr, asset)
 	}
 }
 
@@ -50,14 +48,14 @@ func ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*
 根据UTXO索引数据库读取UTXO信息
 To get utxo info by utxo index db
 */
-func readUtxosByIndex(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
+func readUtxosByIndex(db ptndb.Database,addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
 	// step1. read outpoint from utxo index
 	utxoIndex := modules.UtxoIndex{
 		AccountAddr: addr,
 		Asset:       asset,
 	}
 	key := utxoIndex.AssetKey()
-	data := storage.GetPrefix([]byte(key))
+	data := storage.GetPrefix(db,[]byte(key))
 	if data == nil {
 		return nil, 0
 	}
@@ -68,7 +66,7 @@ func readUtxosByIndex(addr common.Address, asset modules.Asset) (map[modules.Out
 		if err := utxoIndex.QueryFields([]byte(k)); err != nil {
 			continue
 		}
-		udata, err := storage.Get(utxoIndex.OutPoint.ToKey())
+		udata, err := storage.Get(db,utxoIndex.OutPoint.ToKey())
 		if err != nil {
 			log.Error("Get utxo error by outpoint", "error:", err.Error())
 			continue
@@ -88,10 +86,10 @@ func readUtxosByIndex(addr common.Address, asset modules.Asset) (map[modules.Out
 扫描UTXO全表，获取对应账户的指定token可用的utxo列表
 To get utxo info by scanning all utxos.
 */
-func readUtxosFrAll(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
+func readUtxosFrAll(db ptndb.Database,addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
 	// key: [UTXO_PREFIX][addr]_[asset]_[msgindex]_[out index]
 	key := fmt.Sprintf("%s", string(modules.UTXO_PREFIX))
-	data := storage.GetPrefix([]byte(key))
+	data := storage.GetPrefix(db,[]byte(key))
 	if data == nil {
 		return nil, 0
 	}
@@ -131,8 +129,9 @@ func readUtxosFrAll(addr common.Address, asset modules.Asset) (map[modules.OutPo
 获取某个input对应的utxo信息
 To get utxo struct according to it's input information
 */
-func GetUxto(txin modules.Input) modules.Utxo {
-	data, err := storage.Get(txin.PreviousOutPoint.ToKey())
+func GetUxto(db ptndb.Database,txin modules.Input) modules.Utxo {
+
+	data, err := storage.Get(db,txin.PreviousOutPoint.ToKey())
 	if err != nil {
 		return modules.Utxo{}
 	}
@@ -142,29 +141,27 @@ func GetUxto(txin modules.Input) modules.Utxo {
 }
 
 // GetUtosOutPoint
-func GetUtxoByOutpoint(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+func GetUtxoByOutpoint(db ptndb.Database,outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	key := outpoint.ToKey()
 
-	if storage.Dbconn == nil {
-		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
-	}
-	return storage.GetUtxoEntry(storage.Dbconn, key[:])
+
+	return storage.GetUtxoEntry(db, key[:])
 }
 
 /**
 根据交易信息中的outputs创建UTXO， 根据交易信息中的inputs销毁UTXO
 To create utxo according to outpus in transaction, and destory utxo according to inputs in transaction
 */
-func UpdateUtxo(txHash common.Hash, msg *modules.Message, msgIndex uint32) error {
+func UpdateUtxo(db ptndb.Database,txHash common.Hash, msg *modules.Message, msgIndex uint32) error {
 	var payload interface{}
 
 	payload = msg.Payload
 	payment, ok := payload.(modules.PaymentPayload)
 	if ok == true {
 		// create utxo
-		errs := writeUtxo(txHash, msgIndex,payment.Output, payment.LockTime)
+		errs := writeUtxo(db,txHash, msgIndex,payment.Output, payment.LockTime)
 		// destory utxo
-		destoryUtxo(payment.Input)
+		destoryUtxo(db,payment.Input)
 		if len(errs) > 0 {
 			log.Error("error occurred on updated utxos, check the log file to find details.")
 			return errors.New("error occurred on updated utxos, check the log file to find details.")
@@ -176,7 +173,7 @@ func UpdateUtxo(txHash common.Hash, msg *modules.Message, msgIndex uint32) error
 /**
 创建UTXO
 */
-func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []*modules.Output, lockTime uint32) []error {
+func writeUtxo(db ptndb.Database,txHash common.Hash, msgIndex uint32, txouts []*modules.Output, lockTime uint32) []error {
 	var errs []error
 	for outIndex, txout := range txouts {
 		utxo := modules.Utxo{
@@ -195,7 +192,7 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []*modules.Output, lo
 			MessageIndex: msgIndex,
 			OutIndex:     uint32(outIndex),
 		}
-		if err := storage.Store(storage.Dbconn, string(outpoint.ToKey()), utxo); err != nil {
+		if err := storage.Store(db, string(outpoint.ToKey()), utxo); err != nil {
 			log.Error("Write utxo", "error", err.Error())
 			errs = append(errs, err)
 			continue
@@ -220,7 +217,7 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []*modules.Output, lo
 			Amount:   txout.Value,
 			LockTime: lockTime,
 		}
-		if err := storage.Store(storage.Dbconn, string(utxoIndex.ToKey()), utxoIndexVal); err != nil {
+		if err := storage.Store(db, string(utxoIndex.ToKey()), utxoIndexVal); err != nil {
 			log.Error("Write utxo index error: %s", err.Error())
 			errs = append(errs, err)
 		}
@@ -232,7 +229,7 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []*modules.Output, lo
 销毁utxo
 destory utxo, delete from UTXO database
 */
-func destoryUtxo(txins []*modules.Input) {
+func destoryUtxo(db ptndb.Database,txins []*modules.Input) {
 	for _, txin := range txins {
 		outpoint := txin.PreviousOutPoint
 		if outpoint.IsEmpty() {
@@ -240,7 +237,7 @@ func destoryUtxo(txins []*modules.Input) {
 				var assetInfo modules.AssetInfo
 				if err := rlp.DecodeBytes(txin.Extra, &assetInfo); err == nil {
 					// save asset info
-					if err := SaveAssetInfo(&assetInfo); err != nil {
+					if err := SaveAssetInfo(db,&assetInfo); err != nil {
 						log.Error("Save asset info error")
 					}
 				}
@@ -248,7 +245,7 @@ func destoryUtxo(txins []*modules.Input) {
 			continue
 		}
 		// get utxo info
-		data, err := storage.Get(outpoint.ToKey())
+		data, err := storage.Get(db,outpoint.ToKey())
 		if err != nil {
 			log.Error("Query utxo when destory uxto", "error", err.Error())
 			continue
@@ -259,7 +256,7 @@ func destoryUtxo(txins []*modules.Input) {
 			continue
 		}
 		// delete utxo
-		if err := storage.Delete(outpoint.ToKey()); err != nil {
+		if err := storage.Delete(db,outpoint.ToKey()); err != nil {
 			log.Error("Destory uxto", "error", err.Error())
 			continue
 		}
@@ -272,7 +269,7 @@ func destoryUtxo(txins []*modules.Input) {
 			Asset:       utxo.Asset,
 			OutPoint:    outpoint,
 		}
-		if err := storage.Delete(utxoIndex.ToKey()); err != nil {
+		if err := storage.Delete(db,utxoIndex.ToKey()); err != nil {
 			log.Error("Destory uxto index", "error", err.Error())
 			continue
 		}
@@ -283,8 +280,9 @@ func destoryUtxo(txins []*modules.Input) {
 存储Asset的信息
 write asset info to leveldb
 */
-func SaveAssetInfo(assetInfo *modules.AssetInfo) error {
-	if err := storage.Store(storage.Dbconn, string(assetInfo.Tokey()), *assetInfo); err != nil {
+func SaveAssetInfo(db ptndb.Database,assetInfo *modules.AssetInfo) error {
+
+	if err := storage.Store(db, string(assetInfo.Tokey()), *assetInfo); err != nil {
 		return err
 	}
 
@@ -295,9 +293,9 @@ func SaveAssetInfo(assetInfo *modules.AssetInfo) error {
 根据assetid从数据库中获取asset的信息
 get asset infomation from leveldb by assetid ( Asset struct type )
 */
-func GetAssetInfo(assetId *modules.Asset) (modules.AssetInfo, error) {
+func GetAssetInfo(db ptndb.Database,assetId *modules.Asset) (modules.AssetInfo, error) {
 	key := append(modules.ASSET_INFO_PREFIX, assetId.AssertId.String()...)
-	data, err := storage.Get(key)
+	data, err := storage.Get(db,key)
 	if err != nil {
 		return modules.AssetInfo{}, err
 	}
@@ -315,11 +313,11 @@ func GetAssetInfo(assetId *modules.Asset) (modules.AssetInfo, error) {
 获得某个账户下面的余额信息
 To get balance by wallet address and his/her chosen asset type
 */
-func WalletBalance(addr common.Address, asset modules.Asset) uint64 {
+func WalletBalance(db ptndb.Database,addr common.Address, asset modules.Asset) uint64 {
 	if dagconfig.DefaultConfig.UtxoIndex {
-		return walletBalanceByIndex(addr, asset)
+		return walletBalanceByIndex(db,addr, asset)
 	} else {
-		return walletBalanceFrAll(addr, asset)
+		return walletBalanceFrAll(db,addr, asset)
 	}
 }
 
@@ -327,7 +325,7 @@ func WalletBalance(addr common.Address, asset modules.Asset) uint64 {
 通过索引数据库获得账户余额
 To get balance by utxo index db
 */
-func walletBalanceByIndex(addr common.Address, asset modules.Asset) uint64 {
+func walletBalanceByIndex(db ptndb.Database,addr common.Address, asset modules.Asset) uint64 {
 	balance := uint64(0)
 
 	utxoIndex := modules.UtxoIndex{
@@ -336,7 +334,7 @@ func walletBalanceByIndex(addr common.Address, asset modules.Asset) uint64 {
 	}
 	preKey := utxoIndex.AssetKey()
 
-	if data := storage.GetPrefix(preKey); data != nil {
+	if data := storage.GetPrefix(db,preKey); data != nil {
 		for _, v := range data {
 			var utxoIndexVal modules.UtxoIndexValue
 			if err := rlp.DecodeBytes(v, &utxoIndexVal); err != nil {
@@ -355,19 +353,19 @@ func walletBalanceByIndex(addr common.Address, asset modules.Asset) uint64 {
 通过查询全表获得账户余额
 To get balance by query all utxo table
 */
-func walletBalanceFrAll(addr common.Address, asset modules.Asset) uint64 {
+func walletBalanceFrAll(db ptndb.Database,addr common.Address, asset modules.Asset) uint64 {
 	balance := uint64(0)
 
 	preKey := fmt.Sprintf("%s", modules.UTXO_PREFIX)
 
-	if data := storage.GetPrefix([]byte(preKey)); data != nil {
+	if data := storage.GetPrefix(db,[]byte(preKey)); data != nil {
 		for _, v := range data {
 			var utxo modules.Utxo
 			if err := rlp.DecodeBytes(v, &utxo); err != nil {
 				log.Error("Decode utxo data error:", err)
 				continue
 			}
-			if !checkUtxo(&addr, &asset, &utxo) {
+			if !checkUtxo(db,&addr, &asset, &utxo) {
 				continue
 			}
 			balance += utxo.Amount
@@ -380,11 +378,11 @@ func walletBalanceFrAll(addr common.Address, asset modules.Asset) uint64 {
 /**
 根据payload中的inputs获得对应的UTXO map
 */
-func GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64) {
+func GetUxtoSetByInputs(db ptndb.Database,txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64) {
 	utxos := map[modules.OutPoint]*modules.Utxo{}
 	total := uint64(0)
 	for _, in := range txins {
-		utxo := GetUxto(in)
+		utxo := GetUxto(db,in)
 		if unsafe.Sizeof(utxo) == 0 {
 			continue
 		}
@@ -398,11 +396,11 @@ func GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Ut
 获得某个账户下的token名称和assetid信息
 To get someone account's list of tokens and those assetids
 */
-func GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, error) {
+func GetAccountTokens(db ptndb.Database,addr common.Address) (map[string]*modules.AccountToken, error) {
 	if dagconfig.DefaultConfig.UtxoIndex {
-		return getAccountTokensByIndex(addr)
+		return getAccountTokensByIndex(db,addr)
 	} else {
-		return getAccountTokensWhole(addr)
+		return getAccountTokensWhole(db,addr)
 	}
 }
 
@@ -410,10 +408,10 @@ func GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, er
 通过索引数据库获得用户的token信息
 To get account's token info by utxo index db
 */
-func getAccountTokensByIndex(addr common.Address) (map[string]*modules.AccountToken, error) {
+func getAccountTokensByIndex(db ptndb.Database,addr common.Address) (map[string]*modules.AccountToken, error) {
 	tokens := map[string]*modules.AccountToken{}
 	utxoIndex := modules.UtxoIndex{AccountAddr: addr}
-	data := storage.GetPrefix(utxoIndex.AccountKey())
+	data := storage.GetPrefix(db,utxoIndex.AccountKey())
 	if data == nil || len(data) == 0 {
 		return nil, nil
 	}
@@ -430,7 +428,7 @@ func getAccountTokensByIndex(addr common.Address) (map[string]*modules.AccountTo
 			val.Balance += utxoIndexVal.Amount
 		} else {
 			// get asset info
-			assetInfo, err := GetAssetInfo(&utxoIndex.Asset)
+			assetInfo, err := GetAssetInfo(db,&utxoIndex.Asset)
 			if err != nil {
 				return nil, fmt.Errorf("Get acount tokens by index error: asset info does not exist")
 			}
@@ -448,11 +446,11 @@ func getAccountTokensByIndex(addr common.Address) (map[string]*modules.AccountTo
 遍历全局utxo，获取账户token信息
 To get account token info by query the whole utxo table
 */
-func getAccountTokensWhole(addr common.Address) (map[string]*modules.AccountToken, error) {
+func getAccountTokensWhole(db ptndb.Database,addr common.Address) (map[string]*modules.AccountToken, error) {
 	tokens := map[string]*modules.AccountToken{}
 
 	key := fmt.Sprintf("%s", string(modules.UTXO_PREFIX))
-	data := storage.GetPrefix([]byte(key))
+	data := storage.GetPrefix(db,[]byte(key))
 	if data == nil {
 		return nil, nil
 	}
@@ -462,7 +460,7 @@ func getAccountTokensWhole(addr common.Address) (map[string]*modules.AccountToke
 		if err := rlp.DecodeBytes([]byte(v), &utxo); err != nil {
 			return nil, err
 		}
-		if !checkUtxo(&addr, nil, &utxo) {
+		if !checkUtxo(db,&addr, nil, &utxo) {
 			continue
 		}
 
@@ -471,7 +469,7 @@ func getAccountTokensWhole(addr common.Address) (map[string]*modules.AccountToke
 			val.Balance += utxo.Amount
 		} else {
 			// get asset info
-			assetInfo, err := GetAssetInfo(&utxo.Asset)
+			assetInfo, err := GetAssetInfo(db,&utxo.Asset)
 			if err != nil {
 				return nil, fmt.Errorf("Get acount tokens by whole error: asset info does not exist")
 			}
@@ -488,7 +486,7 @@ func getAccountTokensWhole(addr common.Address) (map[string]*modules.AccountToke
 /**
 检查该utxo是否是需要的utxo
 */
-func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) bool {
+func checkUtxo(db ptndb.Database,addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) bool {
 	// check asset
 	//fmt.Printf(">>>>> assetid=%s, utxo( assetid=%s)", asset.AssertId.String(), utxo.Asset.AssertId.String())
 	if asset != nil && (strings.Compare(asset.AssertId.String(), utxo.Asset.AssertId.String()) != 0 ||
@@ -512,7 +510,7 @@ func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) b
 根据交易列表计算交易费总和
 To compute transactions' fees
 */
-func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
+func ComputeFees(db ptndb.Database,txs []*modules.TxPoolTransaction) (uint64, error) {
 	// current time slice mediator default income is 1 ptn
 	fees := uint64(0)
 	for _, tx := range txs {
@@ -524,7 +522,7 @@ func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
 			inAmount := uint64(0)
 			outAmount := uint64(0)
 			for _, txin := range payload.Input {
-				utxo := GetUxto(*txin)
+				utxo := GetUxto(db,*txin)
 				if utxo.IsEmpty() {
 					return 0, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
 						txin.PreviousOutPoint.TxHash.String(),

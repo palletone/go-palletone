@@ -43,7 +43,7 @@ func GenerateUnit(dag *dag.Dag, when time.Time, producer core.Mediator,
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	log.Debug("Generating Verified Unit...")
 
-	units, err := dagcommon.CreateUnit(&producer.Address, txspool, ks, when)
+	units, err := dagcommon.CreateUnit(dag.Db,&producer.Address, txspool, ks, when)
 	// added by yangyu, 2018.8.9
 	if err != nil || units == nil || len(units) == 0 || units[0].IsEmpty() {
 		log.Info("No unit need to be packaged for now.")
@@ -84,7 +84,7 @@ func PushUnit(dag *dag.Dag, newUnit *modules.Unit) bool {
 
 	// 4. 将验证单元添加到本地DB
 	log.Debug("storing the new verified unit to database...")
-	dagcommon.SaveUnit(*newUnit, false)
+	dagcommon.SaveUnit(dag.Db,*newUnit, false)
 
 	return false
 }
@@ -97,7 +97,7 @@ func ApplyUnit(dag *dag.Dag, nextUnit *modules.Unit) {
 
 	// 5. 更新全局动态属性值
 	log.Debug("Updating global dynamic property...")
-	dagcommon.UpdateGlobalDynProp(gp, dgp, nextUnit)
+	dagcommon.UpdateGlobalDynProp(dag.Db,gp, dgp, nextUnit)
 
 	// 5. 判断是否到了维护周期，并维护
 

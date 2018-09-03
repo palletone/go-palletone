@@ -27,7 +27,7 @@ import (
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
-	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -36,27 +36,22 @@ import (
 )
 
 var (
-	Dbconn             *palletdb.LDBDatabase = nil
 	AssocUnstableUnits map[string]modules.Joint
 	//DBPath             string = "/Users/jay/code/gocode/src/palletone/bin/leveldb"
-	DBPath string = dagconfig.DbPath
 )
 
-func SaveJoint(objJoint *modules.Joint, onDone func()) (err error) {
+func SaveJoint(db ptndb.Database, objJoint *modules.Joint, onDone func()) (err error) {
 	if objJoint.Unsigned != "" {
 		return errors.New(objJoint.Unsigned)
-	}
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DbPath)
 	}
 	obj_unit := objJoint.Unit
 	obj_unit_byte, _ := json.Marshal(obj_unit)
 
-	if err = Dbconn.Put(append(UNIT_PREFIX, obj_unit.Hash().Bytes()...), obj_unit_byte); err != nil {
+	if err = db.Put(append(UNIT_PREFIX, obj_unit.Hash().Bytes()...), obj_unit_byte); err != nil {
 		return
 	}
 	// add key in  unit_keys
-	log.Println("add unit key:", string(UNIT_PREFIX)+obj_unit.Hash().String(), AddUnitKeys(string(UNIT_PREFIX)+obj_unit.Hash().String()))
+	log.Println("add unit key:", string(UNIT_PREFIX)+obj_unit.Hash().String(), AddUnitKeys(db, string(UNIT_PREFIX)+obj_unit.Hash().String()))
 
 	if dagconfig.SConfig.Blight {
 		// save  update utxo , message , transaction
@@ -74,36 +69,36 @@ key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 value: unit header rlp encoding bytes
 */
 // save header
-func SaveHeader(uHash common.Hash, h *modules.Header) error {
+func SaveHeader(db ptndb.Database, uHash common.Hash, h *modules.Header) error {
 	encNum := encodeBlockNumber(h.Number.Index)
 	key := append(HEADER_PREFIX, encNum...)
 	key = append(key, h.Number.Bytes()...)
-	return StoreBytes(Dbconn, append(key, uHash.Bytes()...), h)
+	return StoreBytes(db, append(key, uHash.Bytes()...), h)
 	//key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.Bytes())
-	//return StoreBytes(Dbconn, []byte(key), h)
+	//return StoreBytes(db, []byte(key), h)
 }
 
-func SaveHashNumber(uHash common.Hash, height modules.ChainIndex) error {
-	return StoreBytes(Dbconn, append(UNIT_HASH_NUMBER_Prefix, uHash.Bytes()...), height)
+func SaveHashNumber(db ptndb.Database, uHash common.Hash, height modules.ChainIndex) error {
+	return StoreBytes(db, append(UNIT_HASH_NUMBER_Prefix, uHash.Bytes()...), height)
 }
 
 // height and assetid can get a unit key.
-func SaveUHashIndex(cIndex modules.ChainIndex, uHash common.Hash) error {
+func SaveUHashIndex(db ptndb.Database, cIndex modules.ChainIndex, uHash common.Hash) error {
 	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, cIndex.AssetID.String(), cIndex.Index)
-	return Store(Dbconn, key, uHash)
+	return Store(db, key, uHash)
 }
 
 /**
 key: [BODY_PREFIX][unit hash]
 value: all transactions hash set's rlp encoding bytes
 */
-func SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
-	// Dbconn.Put(append())
-	return StoreBytes(Dbconn, append(BODY_PREFIX, unitHash.Bytes()...), txsHash)
+func SaveBody(db ptndb.Database, unitHash common.Hash, txsHash []common.Hash) error {
+	// db.Put(append())
+	return StoreBytes(db, append(BODY_PREFIX, unitHash.Bytes()...), txsHash)
 }
 
-func GetBody(unitHash common.Hash) ([]common.Hash, error) {
-	data, err := Get(append(BODY_PREFIX, unitHash.Bytes()...))
+func GetBody(db ptndb.Database, unitHash common.Hash) ([]common.Hash, error) {
+	data, err := Get(db, append(BODY_PREFIX, unitHash.Bytes()...))
 	if err != nil {
 		return nil, err
 	}
@@ -114,25 +109,25 @@ func GetBody(unitHash common.Hash) ([]common.Hash, error) {
 	return txHashs, nil
 }
 
-func SaveTransactions(txs *modules.Transactions) error {
+func SaveTransactions(db ptndb.Database, txs *modules.Transactions) error {
 	key := fmt.Sprintf("%s%s", TRANSACTIONS_PREFIX, txs.Hash())
-	return Store(Dbconn, key, *txs)
+	return Store(db, key, *txs)
 }
 
 /**
 key: [TRANSACTION_PREFIX][tx hash]
 value: transaction struct rlp encoding bytes
 */
-func SaveTransaction(tx *modules.Transaction) error {
+func SaveTransaction(db ptndb.Database, tx *modules.Transaction) error {
 	// save transaction
-	if err := StoreBytes(Dbconn, append(TRANSACTION_PREFIX, tx.TxHash.Bytes()...), tx); err != nil {
+	if err := StoreBytes(db, append(TRANSACTION_PREFIX, tx.TxHash.Bytes()...), tx); err != nil {
 		return err
 	}
 
-	if err := StoreBytes(Dbconn, append(Transaction_Index, tx.TxHash.Bytes()...), tx); err != nil {
+	if err := StoreBytes(db, append(Transaction_Index, tx.TxHash.Bytes()...), tx); err != nil {
 		return err
 	}
-	updateAddrTransactions(tx.Address().String(), tx.TxHash)
+	updateAddrTransactions(db, tx.Address().String(), tx.TxHash)
 	// store output by addr
 	for i, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(modules.PaymentPayload)
@@ -140,25 +135,25 @@ func SaveTransaction(tx *modules.Transaction) error {
 			for _, output := range payload.Output {
 				//  pkscript to addr
 				addr, _ := ptnapi.GetAddressFromScript(output.PkScript[:])
-				saveOutputByAddr(addr, tx.TxHash, i, *output)
+				saveOutputByAddr(db, addr, tx.TxHash, i, *output)
 			}
 		}
 	}
 
 	return nil
 }
-func updateAddrTransactions(addr string, hash common.Hash) error {
+func updateAddrTransactions(db ptndb.Database, addr string, hash common.Hash) error {
 	if hash == (common.Hash{}) {
 		return errors.New("empty tx hash.")
 	}
 	hashs := make([]common.Hash, 0)
-	data, err := Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
+	data, err := Get(db, append(AddrTransactionsHash_Prefix, []byte(addr)...))
 	if err != nil {
 		if err.Error() != "leveldb: not found" {
 			return err
 		} else { // first store the addr
 			hashs = append(hashs, hash)
-			if err := StoreBytes(Dbconn, append(AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
+			if err := StoreBytes(db, append(AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
 				return err
 			}
 			return nil
@@ -168,23 +163,23 @@ func updateAddrTransactions(addr string, hash common.Hash) error {
 		return err
 	}
 	hashs = append(hashs, hash)
-	if err := StoreBytes(Dbconn, append(AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
+	if err := StoreBytes(db, append(AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
 		return err
 	}
 	return nil
 }
-func saveOutputByAddr(addr string, hash common.Hash, msgindex int, output modules.Output) error {
+func saveOutputByAddr(db ptndb.Database, addr string, hash common.Hash, msgindex int, output modules.Output) error {
 	if hash == (common.Hash{}) {
 		return errors.New("empty tx hash.")
 	}
 	key := append(AddrOutput_Prefix, []byte(addr)...)
 	key = append(key, hash.Bytes()...)
-	if err := StoreBytes(Dbconn, append(key, new(big.Int).SetInt64(int64(msgindex)).Bytes()...), output); err != nil {
+	if err := StoreBytes(db, append(key, new(big.Int).SetInt64(int64(msgindex)).Bytes()...), output); err != nil {
 		return err
 	}
 	return nil
 }
-func SaveTxLookupEntry(unit *modules.Unit) error {
+func SaveTxLookupEntry(db ptndb.Database, unit *modules.Unit) error {
 	for i, tx := range unit.Transactions() {
 		in := modules.TxLookupEntry{
 			UnitHash:  unit.Hash(),
@@ -195,7 +190,7 @@ func SaveTxLookupEntry(unit *modules.Unit) error {
 		if err != nil {
 			return err
 		}
-		if err := StoreBytes(Dbconn, append(LookupPrefix, tx.TxHash.Bytes()...), data); err != nil {
+		if err := StoreBytes(db, append(LookupPrefix, tx.TxHash.Bytes()...), data); err != nil {
 			return err
 		}
 	}
@@ -209,12 +204,9 @@ func encodeBlockNumber(number uint64) []byte {
 	return enc
 }
 
-func GetUnitKeys() []string {
+func GetUnitKeys(db ptndb.Database) []string {
 	var keys []string
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DbPath)
-	}
-	if keys_byte, err := Dbconn.Get([]byte("array_units")); err != nil {
+	if keys_byte, err := db.Get([]byte("array_units")); err != nil {
 		log.Println("get units error:", err)
 	} else {
 		if err := rlp.DecodeBytes(keys_byte[:], &keys); err != nil {
@@ -223,8 +215,8 @@ func GetUnitKeys() []string {
 	}
 	return keys
 }
-func AddUnitKeys(key string) error {
-	keys := GetUnitKeys()
+func AddUnitKeys(db ptndb.Database, key string) error {
+	keys := GetUnitKeys(db)
 	if len(keys) <= 0 {
 		return errors.New("null keys.")
 	}
@@ -235,11 +227,8 @@ func AddUnitKeys(key string) error {
 		}
 	}
 	keys = append(keys, key)
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DbPath)
-	}
 
-	return Store(Dbconn, "array_units", keys)
+	return Store(db, "array_units", keys)
 }
 func ConvertBytes(val interface{}) (re []byte) {
 	var err error
@@ -253,12 +242,10 @@ func IsGenesisUnit(unit string) bool {
 	return unit == constants.GENESIS_UNIT
 }
 
-func GetKeysWithTag(tag string) []string {
+func GetKeysWithTag(db ptndb.Database, tag string) []string {
 	var keys []string
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DbPath)
-	}
-	if keys_byte, err := Dbconn.Get([]byte(tag)); err != nil {
+
+	if keys_byte, err := db.Get([]byte(tag)); err != nil {
 		log.Println("get keys error:", err)
 	} else {
 		if err := json.Unmarshal(keys_byte, &keys); err != nil {
@@ -267,8 +254,8 @@ func GetKeysWithTag(tag string) []string {
 	}
 	return keys
 }
-func AddKeysWithTag(key, tag string) error {
-	keys := GetKeysWithTag(tag)
+func AddKeysWithTag(db ptndb.Database, key, tag string) error {
+	keys := GetKeysWithTag(db, tag)
 	if len(keys) <= 0 {
 		return errors.New("null keys.")
 	}
@@ -279,18 +266,15 @@ func AddKeysWithTag(key, tag string) error {
 		}
 	}
 	keys = append(keys, key)
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DbPath)
-	}
 
-	if err := Dbconn.Put([]byte(tag), ConvertBytes(keys)); err != nil {
+	if err := db.Put([]byte(tag), ConvertBytes(keys)); err != nil {
 		return err
 	}
 	return nil
 
 }
 
-func SaveContract(contract *modules.Contract) (common.Hash, error) {
+func SaveContract(db ptndb.Database, contract *modules.Contract) (common.Hash, error) {
 	if common.EmptyHash(contract.CodeHash) {
 		contract.CodeHash = rlp.RlpHash(contract.Code)
 	}
@@ -306,44 +290,37 @@ func SaveContract(contract *modules.Contract) (common.Hash, error) {
 		}
 
 	}
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DbPath)
-	}
-	return contract.Id, StoreBytes(Dbconn, append(CONTRACT_PTEFIX, contract.Id[:]...), contract)
+
+	return contract.Id, StoreBytes(db, append(CONTRACT_PTEFIX, contract.Id[:]...), contract)
 }
 
 //  get  unit chain version
 // GetUnitChainVersion reads the version number from db.
-func GetUnitChainVersion() int {
+func GetUnitChainVersion(db ptndb.Database) int {
 	var vsn uint
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DbPath)
-	}
-	enc, _ := Dbconn.Get([]byte("UnitchainVersion"))
+
+	enc, _ := db.Get([]byte("UnitchainVersion"))
 	rlp.DecodeBytes(enc, &vsn)
 	return int(vsn)
 }
 
 // SaveUnitChainVersion writes vsn as the version number to db.
-func SaveUnitChainVersion(vsn int) error {
+func SaveUnitChainVersion(db ptndb.Database, vsn int) error {
 	enc, _ := rlp.EncodeToBytes(uint(vsn))
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DbPath)
-	}
-	return Dbconn.Put([]byte("UnitchainVersion"), enc)
+	return db.Put([]byte("UnitchainVersion"), enc)
 }
 
 /**
 保存合约属性信息
 To save contract
 */
-func SaveContractState(prefix []byte, id []byte, name string, value interface{}, version modules.StateVersion) bool {
+func SaveContractState(db ptndb.Database, prefix []byte, id []byte, name string, value interface{}, version modules.StateVersion) bool {
 	key := fmt.Sprintf("%s%s^*^%s^*^%s",
 		prefix,
 		id,
 		name,
 		version.String())
-	if err := Store(Dbconn, key, value); err != nil {
+	if err := Store(db, key, value); err != nil {
 		log.Println("Save contract template", "error", err.Error())
 		return false
 	}

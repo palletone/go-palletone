@@ -18,6 +18,7 @@ func TestUpdateUtxo(t *testing.T) {
 
 func TestReadUtxos(t *testing.T) {
 	dagconfig.DbPath = getTempDir(t)
+
 	utxos, totalAmount := ReadUtxos(common.Address{}, modules.Asset{})
 	log.Println(utxos, totalAmount)
 }

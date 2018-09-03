@@ -23,8 +23,8 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/ptndb"
 )
 
 const (
@@ -51,34 +51,29 @@ const (
 //	return gpt
 //}
 
-func StoreGlobalProp(gp *modules.GlobalProperty) {
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DbPath)
-	}
+func StoreGlobalProp(db ptndb.Database,gp *modules.GlobalProperty) {
+
 
 //	gpt :=
 
-	err := Store(Dbconn, globalPropDBKey, *gp)
+	err := Store(db, globalPropDBKey, *gp)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store global properties error:%s", err))
 	}
 }
 
-func StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) {
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DbPath)
-	}
+func StoreDynGlobalProp(db ptndb.Database,dgp *modules.DynamicGlobalProperty) {
 
-	err := Store(Dbconn, dynGlobalPropDBKey, *dgp)
+	err := Store(db, dynGlobalPropDBKey, *dgp)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store dynamic global properties error: %s", err))
 	}
 }
 
-func RetrieveGlobalProp() *modules.GlobalProperty {
+func RetrieveGlobalProp(db ptndb.Database) *modules.GlobalProperty {
 	gp := modules.NewGlobalProp()
 
-	err := Retrieve(globalPropDBKey, gp)
+	err := Retrieve(db,globalPropDBKey, gp)
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve global properties error: %s", err))
 	}
@@ -86,10 +81,10 @@ func RetrieveGlobalProp() *modules.GlobalProperty {
 	return gp
 }
 
-func RetrieveDynGlobalProp() *modules.DynamicGlobalProperty {
+func RetrieveDynGlobalProp(db ptndb.Database) *modules.DynamicGlobalProperty {
 	dgp := modules.NewDynGlobalProp()
 
-	err := Retrieve(dynGlobalPropDBKey, dgp)
+	err := Retrieve(db,dynGlobalPropDBKey, dgp)
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve dynamic global properties error: %s", err))
 	}
