@@ -26,12 +26,19 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
-	config "github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func TestSaveJoint(t *testing.T) {
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
+
 	if IsGenesisUnit("123") {
 		log.Println("faile")
 		t.Error("faild")
@@ -48,25 +55,19 @@ func TestSaveJoint(t *testing.T) {
 	h := modules.NewHeader(p, ty, uint64(111), []byte("hello"))
 	txs := make(modules.Transactions, 0)
 	u := modules.NewUnit(h, txs)
-	err := SaveJoint(&modules.Joint{Unit: u},
+	err := SaveJoint(Dbconn, &modules.Joint{Unit: u},
 		func() { log.Println("ok") })
 	log.Println("error:", err)
 }
 
 func TestAddUnitKey(t *testing.T) {
-	//keys := GetUnitKeys()
-	// if len(keys) <= 0 {
-	// 	return errors.New("null keys.")
-	// }
-	keys := []string{"unit1231526522017", "unit1231526521834"}
-	var err error
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
 	if Dbconn == nil {
-		Dbconn, err = palletdb.NewLDBDatabase(config.DbPath, 0, 0)
-		if err != nil {
-			log.Println("new db error", err)
-			t.Fatal("error1")
-		}
+		fmt.Println("Connect ro db error.")
+		return
 	}
+	keys := []string{"unit1231526522017", "unit1231526521834"}
+
 	value := []int{123456, 987654}
 	for i, v := range keys {
 		log.Println("key: ", v, "value: ", value[i])
@@ -81,9 +82,14 @@ func TestAddUnitKey(t *testing.T) {
 }
 
 func TestGetUnitKeys(t *testing.T) {
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
 	t0 := time.Now()
 
-	keys := GetUnitKeys()
+	keys := GetUnitKeys(Dbconn)
 	var this []string
 	for i, v := range keys {
 		var exist bool
@@ -101,7 +107,7 @@ func TestGetUnitKeys(t *testing.T) {
 		}
 	}
 
-	err := AddUnitKeys("unit1231526521834")
+	err := AddUnitKeys(Dbconn, "unit1231526521834")
 	if errors.New("key is already exist.").Error() == err.Error() {
 		log.Println("success test add unit", keys) // this
 	} else {
@@ -111,6 +117,11 @@ func TestGetUnitKeys(t *testing.T) {
 }
 
 func TestDBBatch(t *testing.T) {
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
 	log.Println("db_path:", DBPath)
 	table := palletdb.NewTable(Dbconn, "hehe")
 	err0 := table.Put([]byte("jay"), []byte("baby"))

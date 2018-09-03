@@ -12,6 +12,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"strings"
+	"github.com/palletone/go-palletone/common/ptndb"
 )
 
 /**
@@ -19,7 +20,7 @@ import (
 check all transactions in one unit
 return all transactions' fee
 */
-func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common.Hash]modules.TxValidationCode, bool, error) {
+func ValidateTransactions(db ptndb.Database,txs *modules.Transactions, isGenesis bool) (map[common.Hash]modules.TxValidationCode, bool, error) {
 	if txs == nil || txs.Len() < 1 {
 		return nil, false, fmt.Errorf("Transactions should not be empty.")
 	}
@@ -38,7 +39,7 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 			continue
 		}
 		// validate common property
-		txCode := ValidateTx(tx, &worldState)
+		txCode := ValidateTx(db,tx, &worldState)
 		if txCode != modules.TxValidationCode_VALID {
 			log.Info("ValidateTx", "txhash", tx.TxHash, "error validate code", txCode)
 			isSuccess = false
@@ -68,11 +69,11 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 		if !ok {
 			return nil, false, fmt.Errorf("Coinbase payload type error.")
 		}
-		if len(coinIn.Outputs) != 1 {
+		if len(coinIn.Output) != 1 {
 			return nil, false, fmt.Errorf("Coinbase outputs error.")
 		}
 		income := uint64(fee) + ComputeInterest()
-		if coinIn.Outputs[0].Value != income {
+		if coinIn.Output[0].Value != income {
 			return nil, false, fmt.Errorf("Coinbase outputs error.")
 		}
 	}
@@ -83,7 +84,7 @@ func ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common
 验证某个交易
 To validate one transaction
 */
-func ValidateTx(tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+func ValidateTx(db ptndb.Database,tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
 	for _, msg := range tx.TxMessages {
 		// check message type and payload
 		if !validateMessageType(msg.App, msg.Payload) {
@@ -109,7 +110,7 @@ func ValidateTx(tx *modules.Transaction, worldTmpState *map[string]map[string]in
 
 		case modules.APP_CONTRACT_TPL:
 			payload, _ := msg.Payload.(modules.ContractTplPayload)
-			validateCode := validateContractTplPayload(&payload)
+			validateCode := validateContractTplPayload(db,&payload)
 			if validateCode != modules.TxValidationCode_VALID {
 				return validateCode
 			}
@@ -175,7 +176,7 @@ func validateMessageType(app byte, payload interface{}) bool {
 验证单元的签名，需要比对见证人列表
 To validate unit's signature, and mediators' signature
 */
-func ValidateUnitSignature(h *modules.Header, isGenesis bool) error {
+func ValidateUnitSignature(db ptndb.Database,h *modules.Header, isGenesis bool) error {
 	if h.Authors == nil || len(h.Authors.Address) <= 0 {
 		return fmt.Errorf("No author info")
 	}
@@ -207,12 +208,12 @@ func ValidateUnitSignature(h *modules.Header, isGenesis bool) error {
 	}
 	// todo group signature verify
 	// get mediators
-	data := GetConfig([]byte("MediatorCandidates"))
+	data := GetConfig(db,[]byte("MediatorCandidates"))
 	var mList []string
 	if err := rlp.DecodeBytes(data, &mList); err != nil {
 		return fmt.Errorf("Check unit signature when get mediators list error: %s", err.Error())
 	}
-	bNum := GetConfig([]byte("ActiveMediators"))
+	bNum := GetConfig(db,[]byte("ActiveMediators"))
 	var mNum uint16
 	if err := rlp.DecodeBytes(bNum, &mNum); err != nil {
 		return fmt.Errorf("Check unit signature error: %s", err.Error())
@@ -278,9 +279,9 @@ func validateContractState(contractID []byte, readSet *[]modules.ContractReadSet
 验证合约模板交易
 To validate contract template payload
 */
-func validateContractTplPayload(contractTplPayload *modules.ContractTplPayload) modules.TxValidationCode {
+func validateContractTplPayload(db ptndb.Database,contractTplPayload *modules.ContractTplPayload) modules.TxValidationCode {
 	// to check template whether existing or not
-	stateVersion, bytecode, name, path := storage.GetContractTpl(contractTplPayload.TemplateId)
+	stateVersion, bytecode, name, path := storage.GetContractTpl(db,contractTplPayload.TemplateId)
 	if stateVersion == nil && bytecode == nil && name == "" && path == "" {
 		return modules.TxValidationCode_VALID
 	}

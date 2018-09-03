@@ -7,8 +7,10 @@ package txscript
 import (
 	"sync"
 
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
-	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/wire"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // TxSigHashes houses the partial set of sighashes introduced within BIP0143.
@@ -16,17 +18,17 @@ import (
 // transaction when validating all inputs. As a result, validation complexity
 // for SigHashAll can be reduced by a polynomial factor.
 type TxSigHashes struct {
-	HashPrevOuts chainhash.Hash
-	HashSequence chainhash.Hash
-	HashOutputs  chainhash.Hash
+	HashPrevOuts common.Hash
+	//HashSequence chainhash.Hash
+	HashOutputs  common.Hash
 }
 
 // NewTxSigHashes computes, and returns the cached sighashes of the given
 // transaction.
-func NewTxSigHashes(tx *wire.MsgTx) *TxSigHashes {
+func NewTxSigHashes(tx *modules.PaymentPayload) *TxSigHashes {
 	return &TxSigHashes{
 		HashPrevOuts: calcHashPrevOuts(tx),
-		HashSequence: calcHashSequence(tx),
+		//HashSequence: calcHashSequence(tx),
 		HashOutputs:  calcHashOutputs(tx),
 	}
 }
@@ -37,7 +39,7 @@ func NewTxSigHashes(tx *wire.MsgTx) *TxSigHashes {
 // multiple goroutines can safely re-use the pre-computed partial sighashes
 // speeding up validation time amongst all inputs found within a block.
 type HashCache struct {
-	sigHashes map[chainhash.Hash]*TxSigHashes
+	sigHashes map[common.Hash]*TxSigHashes
 
 	sync.RWMutex
 }
@@ -46,13 +48,13 @@ type HashCache struct {
 // of entries which may exist within it at anytime.
 func NewHashCache(maxSize uint) *HashCache {
 	return &HashCache{
-		sigHashes: make(map[chainhash.Hash]*TxSigHashes, maxSize),
+		sigHashes: make(map[common.Hash]*TxSigHashes, maxSize),
 	}
 }
 
 // AddSigHashes computes, then adds the partial sighashes for the passed
 // transaction.
-func (h *HashCache) AddSigHashes(tx *wire.MsgTx) {
+func (h *HashCache) AddSigHashes(tx *modules.PaymentPayload) {
 	h.Lock()
 	h.sigHashes[tx.TxHash()] = NewTxSigHashes(tx)
 	h.Unlock()
@@ -60,7 +62,7 @@ func (h *HashCache) AddSigHashes(tx *wire.MsgTx) {
 
 // ContainsHashes returns true if the partial sighashes for the passed
 // transaction currently exist within the HashCache, and false otherwise.
-func (h *HashCache) ContainsHashes(txid *chainhash.Hash) bool {
+func (h *HashCache) ContainsHashes(txid *common.Hash) bool {
 	h.RLock()
 	_, found := h.sigHashes[*txid]
 	h.RUnlock()
@@ -72,7 +74,7 @@ func (h *HashCache) ContainsHashes(txid *chainhash.Hash) bool {
 // the passed transaction. This function also returns an additional boolean
 // value indicating if the sighashes for the passed transaction were found to
 // be present within the HashCache.
-func (h *HashCache) GetSigHashes(txid *chainhash.Hash) (*TxSigHashes, bool) {
+func (h *HashCache) GetSigHashes(txid *common.Hash) (*TxSigHashes, bool) {
 	h.RLock()
 	item, found := h.sigHashes[*txid]
 	h.RUnlock()
@@ -82,7 +84,7 @@ func (h *HashCache) GetSigHashes(txid *chainhash.Hash) (*TxSigHashes, bool) {
 
 // PurgeSigHashes removes all partial sighashes from the HashCache belonging to
 // the passed transaction.
-func (h *HashCache) PurgeSigHashes(txid *chainhash.Hash) {
+func (h *HashCache) PurgeSigHashes(txid *common.Hash) {
 	h.Lock()
 	delete(h.sigHashes, *txid)
 	h.Unlock()

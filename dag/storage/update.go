@@ -19,21 +19,18 @@
 package storage
 
 import (
-	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/common/ptndb"
 )
 
 // update
-func Update(key, value []byte) error {
-	if err := Delete(key); err != nil {
+func Update(db ptndb.Database,key, value []byte) error {
+	if err := Delete(db,key); err != nil {
 		return err
 	}
-	return Dbconn.Put(key, value)
+	return db.Put(key, value)
 }
 
 // delete
-func Delete(key []byte) error {
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DbPath)
-	}
-	return Dbconn.Delete(key)
+func Delete(db ptndb.Database,key []byte) error {
+	return db.Delete(key)
 }

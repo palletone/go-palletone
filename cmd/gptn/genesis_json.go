@@ -189,7 +189,7 @@ func getGenesisPath(genesisPath, dataDir string) (string, error) {
 		return filepath.Join(dataDir, defaultGenesisJsonPath), nil
 	}
 
-	if genesisPath !="" {
+	if genesisPath != "" {
 		return filepath.Abs(genesisPath)
 	}
 

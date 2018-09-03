@@ -39,9 +39,11 @@ import (
 	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
 	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
-	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 	"github.com/palletone/go-palletone/tokenengine/btcutil"
 	//"github.com/btcsuite/btcd/btcec"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/rlp"
 )
 
 var (
@@ -296,8 +298,7 @@ func accountList(ctx *cli.Context) error {
 }
 
 // tries unlocking the specified account a few times.
-func unlockAccount(ctx *cli.Context, ks *keystore.KeyStore, address string, i int,
-	passwords []string) (accounts.Account, string) {
+func unlockAccount(ctx *cli.Context, ks *keystore.KeyStore, address string, i int,passwords []string) (accounts.Account, string) {
 	account, err := utils.MakeAddress(ks, address)
 	if err != nil {
 		utils.Fatalf("Could not list accounts: %v", err)
@@ -522,8 +523,8 @@ func accountSignVerify(ctx *cli.Context) error {
 //add by wzhyuan
 type RawTransactionGenParams struct {
 	Inputs []struct {
-		Txid string `json:"txid"`
-		Vout uint32 `json:"vout"`
+		Txid         string `json:"txid"`
+		Vout         uint32 `json:"vout"`
 		MessageIndex uint32 `json:"messageindex"`
 	} `json:"inputs"`
 	Outputs []struct {
@@ -552,7 +553,7 @@ func accountCreateTx(ctx *cli.Context) error {
 	//transaction inputs
 	var inputs []btcjson.TransactionInput
 	for _, inputOne := range rawTransactionGenParams.Inputs {
-		input := btcjson.TransactionInput{inputOne.Txid, inputOne.Vout,inputOne.MessageIndex}
+		input := btcjson.TransactionInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex}
 		inputs = append(inputs, input)
 	}
 	if len(inputs) == 0 {
@@ -618,9 +619,8 @@ func accountSignTx(ctx *cli.Context) error {
 		return nil
 	}
 	//deserialize to MsgTx
-	var tx wire.MsgTx
-	err = tx.Deserialize(bytes.NewReader(rawTXBytes))
-	if err != nil {
+	tx := new(modules.Transaction)
+	if err := rlp.DecodeBytes(rawTXBytes, tx); err != nil {
 		return nil
 	}
 
@@ -654,14 +654,21 @@ func accountSignTx(ctx *cli.Context) error {
 		scriptAddr, err := btcutil.NewAddressScriptHash(redeem, realNet)
 		scriptPkScript, err := txscript.PayToAddrScript(scriptAddr)
 		//multisig transaction need redeem for sign
-		for _, txinOne := range tx.TxIn {
+		for _, mtx := range tx.TxMessages {
+	    payload := mtx.Payload
+		payment, ok := payload.(modules.PaymentPayload)
+		if ok == true {
+			for _, txinOne := range payment.Input {
 			rawInput := btcjson.RawTxInput{
-				txinOne.PreviousOutPoint.Hash.String(), //txid
-				txinOne.PreviousOutPoint.Index,         //outindex
-				hex.EncodeToString(scriptPkScript),     //multisig pay script
+				txinOne.PreviousOutPoint.TxHash.String(), //txid
+				txinOne.PreviousOutPoint.OutIndex,  
+				txinOne.PreviousOutPoint.MessageIndex,//outindex
+				string(scriptPkScript),     //multisig pay script
 				signTransactionParams.RedeemHex}        //redeem
 			rawInputs = append(rawInputs, rawInput)
 		}
+		    }
+	    } 
 		break
 	}
 
@@ -669,12 +676,18 @@ func accountSignTx(ctx *cli.Context) error {
 	if &tx != nil {
 		// Serialize the transaction and convert to hex string.
 		buf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
-		if err := tx.Serialize(buf); err != nil {
-			return nil
+		buf.Grow(tx.SerializeSize())
+		mtxbt ,err := rlp.EncodeToBytes(buf)
+	    if err != nil {
+		    return err
 		}
-		txHex = hex.EncodeToString(buf.Bytes())
+		txHex = hex.EncodeToString(mtxbt)
+		fmt.Println(txHex)
 	}
 
+	// All returned errors (not OOM, which panics) encounted during
+	// bytes.Buffer writes are unexpected.
+	//mtxHex, err := messageToHex(mtx)
 	send_args := btcjson.NewSignRawTransactionCmd(txHex, &rawInputs, &keys, nil)
 	signtxout, err := ptnapi.SignRawTransaction(send_args)
 	if signtxout == nil {

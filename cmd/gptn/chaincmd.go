@@ -23,15 +23,15 @@ import (
 	"os"
 
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"gopkg.in/urfave/cli.v1"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"github.com/palletone/go-palletone/common"
 )
 
 var (
@@ -123,7 +123,7 @@ func initGenesis(ctx *cli.Context) error {
 
 	validateGenesis(genesis)
 
-	_, err = node.OpenDatabase("leveldb", 0, 0)
+	Dbconn, err := node.OpenDatabase("leveldb", 0, 0)
 	if err != nil {
 		fmt.Println("eveldb init failed")
 		return errors.New("leveldb init failed")
@@ -134,7 +134,7 @@ func initGenesis(ctx *cli.Context) error {
 	ks := node.GetKeyStore()
 	account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
 
-	unit, err := gen.SetupGenesisUnit(genesis, ks, account)
+	unit, err := gen.SetupGenesisUnit(Dbconn, genesis, ks, account)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis unit: %v", err)
 		return err
@@ -155,17 +155,29 @@ func initGenesis(ctx *cli.Context) error {
 	// 3, 全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	gp := modules.InitGlobalProp(genesis)
-	storage.StoreGlobalProp(gp)
+	storage.StoreGlobalProp(Dbconn, gp)
+	if err != nil {
+		utils.Fatalf("Failed to write global properties: %v", err)
+		return err
+	}
 
 	// 4, 动态全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	dgp := modules.InitDynGlobalProp(genesis, genesisUnitHash)
-	storage.StoreDynGlobalProp(dgp)
+	storage.StoreDynGlobalProp(Dbconn, dgp)
+	if err != nil {
+		utils.Fatalf("Failed to write dynamic global properties: %v", err)
+		return err
+	}
 
 	// 5, 初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
-	storage.StoreMediatorSchl(ms)
+	storage.StoreMediatorSchl(Dbconn, ms)
+	if err != nil {
+		utils.Fatalf("Failed to write mediator schedule: %v", err)
+		return err
+	}
 
 	return nil
 }
@@ -183,9 +195,9 @@ func modifyMediatorInConf(configPath, password string, address common.Address) e
 	}
 
 	cfg.MediatorPlugin.EnableStaleProduction = true
-	cfg.MediatorPlugin.Mediators = []mp.MediatorInfo{
-		mp.MediatorInfo{address.Str(), password,
-		mp.DefaultInitPartSec, mp.DefaultInitPartPub},
+	cfg.MediatorPlugin.Mediators = []mp.MediatorConf{
+		mp.MediatorConf{address.Str(), password,
+			mp.DefaultInitPartSec, mp.DefaultInitPartPub},
 	}
 
 	err = makeConfigFile(cfg, configPath)

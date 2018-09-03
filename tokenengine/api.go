@@ -4,7 +4,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
-	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 //Generate a P2PKH lock script, just only need input 20bytes public key hash.
@@ -84,7 +84,7 @@ func GenerateP2SHUnlockScript(signs [][]byte, redeemScript []byte) []byte {
 }
 
 //validate this transaction and input index script can unlock the utxo.
-func ScriptValidate(utxoLockScript []byte, utxoAmount int64, tx *wire.MsgTx, inputIndex int) error {
+func ScriptValidate(utxoLockScript []byte, utxoAmount int64, tx *modules.PaymentPayload, inputIndex int) error {
 	vm, err := txscript.NewEngine(utxoLockScript, tx, 0, txscript.StandardVerifyFlags, nil, nil, utxoAmount)
 	if err != nil {
 		log.Error("Failed to create script: ", err)

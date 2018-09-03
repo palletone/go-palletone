@@ -20,6 +20,7 @@ import (
 	//"crypto/ecdsa"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -32,8 +33,12 @@ import (
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
-	"time"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/common/ptndb"
 )
+
+const deFaultNode = "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f" +
+	"59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
 
 // SetupGenesisBlock writes or updates the genesis block in db.
 // The block that will be used is:
@@ -48,8 +53,8 @@ import (
 // error is a *configure.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) (*modules.Unit, error) {
-	unit, err := setupGenesisUnit(genesis, ks)
+func SetupGenesisUnit(db ptndb.Database,genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) (*modules.Unit, error) {
+	unit, err := setupGenesisUnit(db,genesis, ks)
 	if err != nil {
 		return unit, err
 	}
@@ -61,17 +66,17 @@ func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account acco
 	}
 
 	// to save unit in db
-	if err := CommitDB(unit, true); err != nil {
+	if err := CommitDB(db,unit, true); err != nil {
 		log.Error("Commit genesis unit to db:", "error", err.Error())
 		return unit, err
 	}
 	return unit, nil
 }
 
-func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Unit, error) {
+func setupGenesisUnit(db ptndb.Database,genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Unit, error) {
 
 	// Just commit the new block if there is no stored genesis block.
-	stored, err := dagCommon.GetGenesisUnit(0)
+	stored, err := dagCommon.GetGenesisUnit(db,0)
 	if err != nil {
 		return nil, err
 	}
@@ -125,20 +130,20 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		log.Error("Get genesis assetinfo bytes error.")
 		return nil
 	}
-	txin := modules.Input{
+	txin := &modules.Input{
 		Extra: extra, // save asset info
 	}
 	// generate p2pkh bytes
 	pkscript := tokenengine.GenerateP2PKHLockScript(holder.Bytes())
 
-	txout := modules.Output{
+	txout := &modules.Output{
 		Value:    genesis.TokenAmount,
 		Asset:    asset,
 		PkScript: pkscript,
 	}
 	pay := modules.PaymentPayload{
-		Inputs:  []modules.Input{txin},
-		Outputs: []modules.Output{txout},
+		Input:  []*modules.Input{txin},
+		Output: []*modules.Output{txout},
 	}
 	msg0 := modules.Message{
 		App:     modules.APP_PAYMENT,
@@ -165,9 +170,9 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	return txs
 }
 
-func CommitDB(unit *modules.Unit, isGenesis bool) error {
+func CommitDB(db ptndb.Database,unit *modules.Unit, isGenesis bool) error {
 	// save genesis unit to leveldb
-	if err := dagCommon.SaveUnit(*unit, isGenesis); err != nil {
+	if err := dagCommon.SaveUnit(db,*unit, isGenesis); err != nil {
 		return err
 	} else {
 		log.Info("Save genesis unit success.")
@@ -224,10 +229,14 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 	}
 }
 
-func InitialMediatorCandidates(len int, address string) []string {
-	initialMediator := make([]string, len)
+func InitialMediatorCandidates(len int, address string) []core.MediatorInfo {
+	initialMediator := make([]core.MediatorInfo, len)
 	for i := 0; i < len; i++ {
-		initialMediator[i] = address
+		initialMediator[i] = core.MediatorInfo{
+			Address: address,
+			InitPartPub: mp.DefaultInitPartPub,
+			Node: deFaultNode,
+		}
 	}
 
 	return initialMediator

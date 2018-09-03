@@ -111,18 +111,18 @@ func TestTransactionAddingTxs(t *testing.T) {
 		PkScript: script,
 	}
 	payload0 := modules.PaymentPayload{
-		Inputs:  []modules.Input{input},
-		Outputs: []modules.Output{output},
+		Input:  []*modules.Input{&input},
+		Output: []*modules.Output{&output},
 	}
 	copy(input.Extra[:], []byte("1234567890"))
 	payload1 := modules.PaymentPayload{
-		Inputs:  []modules.Input{input},
-		Outputs: []modules.Output{output},
+		Input:  []*modules.Input{&input},
+		Output: []*modules.Output{&output},
 	}
 	copy(input.Extra[:], []byte("0987654321"))
 	payload2 := modules.PaymentPayload{
-		Inputs:  []modules.Input{input},
-		Outputs: []modules.Output{output},
+		Input:  []*modules.Input{&input},
+		Output: []*modules.Output{&output},
 	}
 	msgs = append(msgs, *modules.NewMessage(modules.APP_PAYMENT, payload0), *modules.NewMessage(modules.APP_PAYMENT, payload1), *modules.NewMessage(modules.APP_PAYMENT, payload2))
 	for j := 0; j < int(config.AccountSlots)*1; j++ {
@@ -167,6 +167,12 @@ func TestTransactionAddingTxs(t *testing.T) {
 			t.Error(msg)
 		} else {
 			log.Println(" total size is :", total, total.Float64(), "the cout: ", len(txs))
+			// for addr, list := range pool.pending {
+			// 	if list.Len() != int(config.AccountSlots) {
+			// 		t.Errorf("addr %x: total pending transactions mismatch: have %d, want %d", addr, list.Len(), config.AccountSlots)
+			// 	}
+
+			// }
 			for i, tx := range txs {
 				if i < len(txs)-1 {
 					if txs[i].Priority_lvl < txs[i+1].Priority_lvl {
@@ -178,8 +184,6 @@ func TestTransactionAddingTxs(t *testing.T) {
 			all = len(txs)
 			pending_cache = len(pool.pending)
 			queue_cache = len(pool.queue)
-			//txsss := PoolTxstoTxs(txs)
-			//fmt.Println("txssssss===========", txsss[0])
 		}
 		log.Println(origin, all, len(pool.all), pending_cache, queue_cache)
 		fmt.Println("defer over.... ", time.Now().Unix()-t0.Unix())

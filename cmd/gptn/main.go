@@ -178,7 +178,7 @@ func init() {
 		licenseCommand,
 		dumpConfigCommand,        //转储配置文件命令
 		createGenesisJsonCommand, // 创建创世json文件命令
-		createInitDKSCommand,	// 创建Mediator初始秘钥分片
+		createInitDKSCommand,     // 创建Mediator初始秘钥分片
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 

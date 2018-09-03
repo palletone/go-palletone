@@ -31,8 +31,8 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
-	config "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 )
@@ -45,13 +45,13 @@ type DatabaseReader interface {
 }
 
 // @author Albert·Gou
-func Retrieve(key string, v interface{}) error {
+func Retrieve(db ptndb.Database, key string, v interface{}) error {
 	//rv := reflect.ValueOf(v)
 	//if rv.Kind() != reflect.Ptr || rv.IsNil() {
 	//	return errors.New("an invalid argument, the argument must be a non-nil pointer")
 	//}
 
-	data, err := Get([]byte(key))
+	data, err := Get(db, []byte(key))
 	if err != nil {
 		return err
 	}
@@ -65,21 +65,15 @@ func Retrieve(key string, v interface{}) error {
 }
 
 // get bytes
-func Get(key []byte) ([]byte, error) {
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DbPath)
-	}
-	// return Dbconn.Get(key)
-	b, err := Dbconn.Get(key)
+func Get(db ptndb.Database, key []byte) ([]byte, error) {
+	// return db.Get(key)
+	b, err := db.Get(key)
 	return b, err
 }
 
 // get string
-func GetString(key []byte) (string, error) {
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DbPath)
-	}
-	if re, err := Dbconn.Get(key); err != nil {
+func GetString(db ptndb.Database, key []byte) (string, error) {
+	if re, err := db.Get(key); err != nil {
 		return "", err
 	} else {
 		return *(*string)(unsafe.Pointer(&re)), nil
@@ -87,11 +81,8 @@ func GetString(key []byte) (string, error) {
 }
 
 // get prefix: return maps
-func GetPrefix(prefix []byte) map[string][]byte {
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DbPath)
-	}
-	return getprefix(Dbconn, prefix)
+func GetPrefix(db ptndb.Database, prefix []byte) map[string][]byte {
+	return getprefix(db, prefix)
 
 }
 
@@ -108,7 +99,7 @@ func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 	return result
 }
 
-func GetUnit(db DatabaseReader, hash common.Hash) *modules.Unit {
+func GetUnit(db ptndb.Database, hash common.Hash) *modules.Unit {
 	// 1. get chainindex
 	height, err := GetUnitNumber(db, hash)
 	if err != nil {
@@ -141,22 +132,22 @@ func GetUnit(db DatabaseReader, hash common.Hash) *modules.Unit {
 	unit.UnitSize = unit.Size()
 	return unit
 }
-func GetUnitTransactions(db DatabaseReader, hash common.Hash) (modules.Transactions, error) {
+func GetUnitTransactions(db ptndb.Database, hash common.Hash) (modules.Transactions, error) {
 	txs := modules.Transactions{}
-	txHashList, err := GetBody(hash)
+	txHashList, err := GetBody(db, hash)
 	if err != nil {
 		return nil, err
 	}
 	// get transaction by tx'hash.
 	for _, txHash := range txHashList {
-		tx, _, _, _ := GetTransaction(txHash)
+		tx, _, _, _ := GetTransaction(db,txHash)
 		if err != nil {
 			txs = append(txs, tx)
 		}
 	}
 	return txs, nil
 }
-func GetUnitFormIndex(db DatabaseReader, height uint64, asset modules.IDType16) *modules.Unit {
+func GetUnitFormIndex(db ptndb.Database, height uint64, asset modules.IDType16) *modules.Unit {
 	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, asset.String(), height)
 	hash, err := db.Get([]byte(key))
 	if err != nil {
@@ -213,14 +204,14 @@ func GetHeaderRlp(db DatabaseReader, hash common.Hash, index uint64) rlp.RawValu
 	return header_bytes
 }
 
-func GetHeaderFormIndex(db DatabaseReader, height uint64, asset modules.IDType16) *modules.Header {
+func GetHeaderFormIndex(db ptndb.Database, height uint64, asset modules.IDType16) *modules.Header {
 	unit := GetUnitFormIndex(db, height, asset)
 	return unit.UnitHeader
 }
 
 // GetTxLookupEntry
-func GetTxLookupEntry(db DatabaseReader, hash common.Hash) (common.Hash, uint64, uint64) {
-	data, _ := Get(append(LookupPrefix, hash.Bytes()...))
+func GetTxLookupEntry(db ptndb.Database, hash common.Hash) (common.Hash, uint64, uint64) {
+	data, _ := Get(db,append(LookupPrefix, hash.Bytes()...))
 	if len(data) == 0 {
 		return common.Hash{}, 0, 0
 	}
@@ -234,19 +225,19 @@ func GetTxLookupEntry(db DatabaseReader, hash common.Hash) (common.Hash, uint64,
 
 // GetTransaction retrieves a specific transaction from the database , along with its added positional metadata
 // p2p 同步区块 分为同步header 和body。 GetBody可以省掉节点包装交易块的过程。
-func GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
-	unitHash, unitNumber, txIndex := GetTxLookupEntry(Dbconn, hash)
+func GetTransaction(db ptndb.Database,hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
+	unitHash, unitNumber, txIndex := GetTxLookupEntry(db, hash)
 	if unitHash != (common.Hash{}) {
-		body, _ := GetBody(unitHash)
+		body, _ := GetBody(db,unitHash)
 		if body == nil || len(body) <= int(txIndex) {
 			return nil, common.Hash{}, 0, 0
 		}
-		tx, err := gettrasaction(body[txIndex])
+		tx, err := gettrasaction(db,body[txIndex])
 		if err == nil {
 			return tx, unitHash, unitNumber, txIndex
 		}
 	}
-	tx, err := gettrasaction(hash)
+	tx, err := gettrasaction(db,hash)
 	if err != nil {
 		return nil, unitHash, unitNumber, txIndex
 	}
@@ -254,11 +245,11 @@ func GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64
 }
 
 // gettrasaction can get a transaction by hash.
-func gettrasaction(hash common.Hash) (*modules.Transaction, error) {
+func gettrasaction(db ptndb.Database,hash common.Hash) (*modules.Transaction, error) {
 	if hash == (common.Hash{}) {
 		return nil, errors.New("hash is not exist.")
 	}
-	data, err := Get(append(TRANSACTION_PREFIX, hash.Bytes()...))
+	data, err := Get(db,append(TRANSACTION_PREFIX, hash.Bytes()...))
 	if err != nil {
 		return nil, err
 	}
@@ -269,11 +260,11 @@ func gettrasaction(hash common.Hash) (*modules.Transaction, error) {
 	return tx, nil
 }
 
-func GetContractNoReader(id common.Hash) (*modules.Contract, error) {
+func GetContractNoReader(db ptndb.Database,id common.Hash) (*modules.Contract, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
-	con_bytes, err := Get(append(CONTRACT_PTEFIX, id[:]...))
+	con_bytes, err := Get(db,append(CONTRACT_PTEFIX, id[:]...))
 	if err != nil {
 		log.Println("err:", err)
 		return nil, err
@@ -310,12 +301,12 @@ func GetContract(db DatabaseReader, id common.Hash) (*modules.Contract, error) {
 获取合约模板
 To get contract template
 */
-func GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
+func GetContractTpl(db ptndb.Database,templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
 	key := fmt.Sprintf("%s%s^*^bytecode",
 		CONTRACT_TPL,
 		hexutil.Encode(templateID[:]),
 	)
-	data := GetPrefix([]byte(key))
+	data := GetPrefix(db,[]byte(key))
 	if len(data) == 1 {
 		for k, v := range data {
 			if !version.ParseStringKey(k) {
@@ -328,7 +319,7 @@ func GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode 
 			break
 		}
 	}
-	_, nameByte := GetTplState(templateID, "ContractName")
+	_, nameByte := GetTplState(db,templateID, "ContractName")
 	if nameByte == nil {
 		return
 	}
@@ -337,7 +328,7 @@ func GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode 
 		return
 	}
 
-	_, pathByte := GetTplState(templateID, "ContractPath")
+	_, pathByte := GetTplState(db,templateID, "ContractPath")
 	if err := rlp.DecodeBytes(pathByte, &path); err != nil {
 		log.Println("GetContractTpl when get path", "error", err.Error())
 		return
@@ -484,7 +475,7 @@ func GetAddrTransactionsHash(db DatabaseReader, addr string) ([]common.Hash, err
 }
 
 // GetAddrTransactions
-func GetAddrTransactions(db DatabaseReader, addr string) (modules.Transactions, error) {
+func GetAddrTransactions(db ptndb.Database, addr string) (modules.Transactions, error) {
 	data, err := db.Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
 	if err != nil {
 		return modules.Transactions{}, err
@@ -495,16 +486,16 @@ func GetAddrTransactions(db DatabaseReader, addr string) (modules.Transactions, 
 	}
 	txs := make(modules.Transactions, 0)
 	for _, hash := range hashs {
-		tx, _, _, _ := GetTransaction(hash)
+		tx, _, _, _ := GetTransaction(db,hash)
 		txs = append(txs, tx)
 	}
 	return txs, nil
 }
 
 // Get income transactions
-func GetAddrOutput(db DatabaseReader, addr string) ([]modules.Output, error) {
+func GetAddrOutput(db ptndb.Database, addr string) ([]modules.Output, error) {
 
-	data := GetPrefix(append(AddrOutput_Prefix, []byte(addr)...))
+	data := GetPrefix(db,append(AddrOutput_Prefix, []byte(addr)...))
 	outputs := make([]modules.Output, 0)
 	var err error
 	for _, b := range data {
@@ -522,13 +513,10 @@ func GetAddrOutput(db DatabaseReader, addr string) ([]modules.Output, error) {
 获取模板所有属性
 To get contract or contract template all fields and return
 */
-func GetTplAllState(id string) map[modules.ContractReadSet][]byte {
+func GetTplAllState(db ptndb.Database,id string) map[modules.ContractReadSet][]byte {
 	// key format: [PREFIX][ID]_[field]_[version]
 	key := fmt.Sprintf("%s%s^*^", CONTRACT_TPL, id)
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DbPath)
-	}
-	data := getprefix(Dbconn, []byte(key))
+	data := getprefix(db, []byte(key))
 	if data == nil || len(data) <= 0 {
 		return nil
 	}
@@ -555,13 +543,10 @@ func GetTplAllState(id string) map[modules.ContractReadSet][]byte {
 获取合约（或模板）所有属性
 To get contract or contract template all fields and return
 */
-func GetContractAllState(id []byte) map[modules.ContractReadSet][]byte {
+func GetContractAllState(db ptndb.Database,id []byte) map[modules.ContractReadSet][]byte {
 	// key format: [PREFIX][ID]_[field]_[version]
 	key := fmt.Sprintf("%s%s^*^", CONTRACT_STATE_PREFIX, hexutil.Encode(id))
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DbPath)
-	}
-	data := getprefix(Dbconn, []byte(key))
+	data := getprefix(db, []byte(key))
 	if data == nil || len(data) <= 0 {
 		return nil
 	}
@@ -588,12 +573,9 @@ func GetContractAllState(id []byte) map[modules.ContractReadSet][]byte {
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */
-func GetTplState(id []byte, field string) (modules.StateVersion, []byte) {
+func GetTplState(db ptndb.Database,id []byte, field string) (modules.StateVersion, []byte) {
 	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, hexutil.Encode(id[:]), field)
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DbPath)
-	}
-	data := getprefix(Dbconn, []byte(key))
+	data := getprefix(db, []byte(key))
 	if data == nil || len(data) != 1 {
 		return modules.StateVersion{}, nil
 	}
@@ -611,12 +593,9 @@ func GetTplState(id []byte, field string) (modules.StateVersion, []byte) {
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */
-func GetContractState(id string, field string) (modules.StateVersion, []byte) {
+func GetContractState(db ptndb.Database,id string, field string) (modules.StateVersion, []byte) {
 	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_STATE_PREFIX, id, field)
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(config.DbPath)
-	}
-	data := getprefix(Dbconn, []byte(key))
+	data := getprefix(db, []byte(key))
 	if data == nil || len(data) != 1 {
 		return modules.StateVersion{}, nil
 	}

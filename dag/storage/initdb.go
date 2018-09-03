@@ -22,6 +22,7 @@ import (
 	"log"
 
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 var (
@@ -68,6 +69,8 @@ var (
 
 	// suffix
 	NumberSuffix = []byte("n")
+	DBPath = dagconfig.DefaultDataDir()
+
 )
 
 func Init(path string, cache int, handles int) (*palletdb.LDBDatabase, error) {
@@ -75,11 +78,8 @@ func Init(path string, cache int, handles int) (*palletdb.LDBDatabase, error) {
 	if path == "" {
 		path = DBPath
 	}
-	if Dbconn != nil {
-		return Dbconn, nil
-	}
 
-	Dbconn, err = palletdb.NewLDBDatabase(path, cache, handles)
+	Dbconn, err := palletdb.NewLDBDatabase(path, cache, handles)
 	if err != nil {
 		log.Println("new dbconn error:", err)
 	}

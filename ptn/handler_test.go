@@ -22,8 +22,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"testing"
 
-	"github.com/palletone/go-palletone/ptn/downloader"
 	"fmt"
+	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
 // Tests that protocol versions and modes of operations are matched up properly.
@@ -58,7 +58,7 @@ func TestProtocolCompatibility(t *testing.T) {
 }
 
 // Tests that block headers can be retrieved from a remote chain based on user queries.
-//func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
+func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
 func testGetBlockHeaders(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil)
 	peer, _ := newTestPeer("peer", protocol, pm, true)
@@ -141,7 +141,7 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 						Index: 0,
 					}
 					block := pm.dag.GetUnitByNumber(chain)
-					fmt.Println("block===>",block)
+					fmt.Println("block===>", block)
 					hashes = append(hashes, block.Hash())
 					if len(bodies) < tt.expected {
 						bodies = append(bodies, &blockBody{Transactions: block.Transactions()})
@@ -157,9 +157,10 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 				bodies = append(bodies, &blockBody{Transactions: block.Transactions()})
 			}
 		}
+
 		pay := modules.PaymentPayload{
-			Inputs:  []modules.Input{},
-			Outputs: []modules.Output{},
+			Input:  []*modules.Input{},
+			Output: []*modules.Output{},
 		}
 		msg0 := modules.Message{
 			App:     modules.APP_PAYMENT,

@@ -20,11 +20,8 @@ package mediatorplugin
 
 import (
 	"fmt"
-
-	"encoding/base64"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/group/edwards25519"
-	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
 	"github.com/palletone/go-palletone/common"
@@ -33,12 +30,12 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"strings"
 )
 
 // PalletOne wraps all methods required for producing unit.
@@ -69,7 +66,7 @@ type MediatorPlugin struct {
 	// 新开启一个区块链时，必须设为true
 	productionEnabled bool
 	// Mediator`s account and passphrase controlled by this node
-	mediators map[common.Address]mediator
+	mediators map[common.Address]MediatorAccount
 
 	// 新生产unit的事件订阅和数据发送和接收
 	newProducedUnitFeed  event.Feed              // 订阅的时候自动初始化一次
@@ -165,43 +162,14 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	log.Debug("mediator plugin initialize begin")
 
 	mss := cfg.Mediators
-	msm := map[common.Address]mediator{}
+	msm := map[common.Address]MediatorAccount{}
 
-	for _, medInfo := range mss {
-		address := strings.TrimSpace(medInfo.Address)
-		address = strings.Trim(address, "\"")
+	for _, medConf := range mss {
+		medAcc := ConfigToAccount(medConf)
+		addr := medAcc.Address
+		log.Info(fmt.Sprintf("this node controll mediator account address: %v", addr.Str()))
 
-		addr := common.StringToAddress(address)
-		addrType, err := addr.Validate()
-		if err != nil || addrType != common.PublicKeyHash {
-			log.Error(fmt.Sprintf("Invalid mediator account address %v : %v", address, err))
-		}
-
-		log.Info(fmt.Sprintf("this node controll mediator account address: %v", address))
-
-		secB, err := base64.RawURLEncoding.DecodeString(medInfo.InitPartSec)
-		if err != nil {
-			log.Error(fmt.Sprintf("initPartSec %v : %v", medInfo.InitPartSec, err))
-		}
-		pubB, err := base64.RawURLEncoding.DecodeString(medInfo.InitPartPub)
-		if err != nil {
-			log.Error(fmt.Sprintf("initPartPub %v : %v", medInfo.InitPartPub, err))
-		}
-
-		suite := bn256.NewSuiteG2()
-		sec := suite.Scalar()
-		pub := suite.Point()
-
-		err = sec.UnmarshalBinary(secB)
-		if err != nil {
-			log.Error(fmt.Sprintf("Invalid mediator account initPartSec %v : %v", medInfo.InitPartSec, err))
-		}
-		err = pub.UnmarshalBinary(pubB)
-		if err != nil {
-			log.Error(fmt.Sprintf("Invalid mediator account initPartPub %v : %v", medInfo.InitPartPub, err))
-		}
-
-		msm[addr] = mediator{addr, medInfo.Password, sec, pub}
+		msm[addr] = medAcc
 	}
 
 	mp := MediatorPlugin{
@@ -223,7 +191,25 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	return &mp, nil
 }
 
-type mediator struct {
+func ConfigToAccount(medConf MediatorConf) MediatorAccount {
+	// 1. 解析 mediator 账户地址
+	addr := core.StrToMedAdd(medConf.Address)
+
+	// 2. 解析 mediator 的 DKS 初始公私钥
+	sec := core.StrToScalar(medConf.InitPartSec)
+	pub := core.StrToPoint(medConf.InitPartPub)
+
+	medAcc := MediatorAccount{
+		addr,
+		medConf.Password,
+		sec,
+		pub,
+	}
+
+	return medAcc
+}
+
+type MediatorAccount struct {
 	Address     common.Address
 	Password    string
 	InitPartSec kyber.Scalar

@@ -33,13 +33,13 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/asset"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"math/big"
 	"time"
+	"github.com/palletone/go-palletone/common/ptndb"
 )
 
 func RHashStr(x interface{}) string {
@@ -88,8 +88,8 @@ func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error)
 }
 
 // @author Albert·Gou
-func StoreUnit(unit *modules.Unit) error {
-	err := SaveUnit(*unit, false)
+func StoreUnit(db ptndb.Database,unit *modules.Unit) error {
+	err := SaveUnit(db,*unit, false)
 
 	if err != nil {
 		log.Error(fmt.Sprintf("%v", err))
@@ -140,14 +140,14 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
+func CreateUnit(db ptndb.Database,mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
 	if txpool == nil || mAddr == nil || ks == nil {
 		return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
 	}
 
 	units := []modules.Unit{}
 	// step1. get mediator responsible for asset (for now is ptn)
-	bAsset := GetConfig([]byte("GenesisAsset"))
+	bAsset := GetConfig(db,[]byte("GenesisAsset"))
 	if len(bAsset) <= 0 {
 		return nil, fmt.Errorf("Create unit error: query asset info empty")
 	}
@@ -164,7 +164,7 @@ func CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyS
 	poolTxs, _ := txpool.GetSortedTxs()
 	// step4. compute minner income: transaction fees + interest
 	//txs := txspool.PoolTxstoTxs(poolTxs)
-	fees, err := ComputeFees(poolTxs)
+	fees, err := ComputeFees(db,poolTxs)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -213,10 +213,10 @@ func CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyS
 从leveldb中查询GenesisUnit信息
 To get genesis unit info from leveldb
 */
-func GetGenesisUnit(index uint64) (*modules.Unit, error) {
+func GetGenesisUnit(db ptndb.Database,index uint64) (*modules.Unit, error) {
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
-	data := storage.GetPrefix([]byte(key))
+	data := storage.GetPrefix(db,[]byte(key))
 	if len(data) > 1 {
 		return nil, fmt.Errorf("multiple genesis unit")
 	} else if len(data) <= 0 {
@@ -238,7 +238,7 @@ func GetGenesisUnit(index uint64) (*modules.Unit, error) {
 			return nil, fmt.Errorf("Get genesis unit header:%s", err.Error())
 		}
 		// get transaction list
-		txs, err := GetUnitTransactions(uHash)
+		txs, err := GetUnitTransactions(db,uHash)
 		if err != nil {
 			return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
 		}
@@ -258,25 +258,25 @@ func GetGenesisUnit(index uint64) (*modules.Unit, error) {
 获取创世单元的高度
 To get genesis unit height
 */
-func GenesisHeight() modules.ChainIndex {
-	unit, err := GetGenesisUnit(0)
+func GenesisHeight(db ptndb.Database) modules.ChainIndex {
+	unit, err := GetGenesisUnit(db,0)
 	if unit == nil || err != nil {
 		return modules.ChainIndex{}
 	}
 	return unit.UnitHeader.Number
 }
 
-func GetUnitTransactions(unitHash common.Hash) (modules.Transactions, error) {
+func GetUnitTransactions(db ptndb.Database,unitHash common.Hash) (modules.Transactions, error) {
 	txs := modules.Transactions{}
 	// get body data: transaction list.
 	// if getbody return transactions list, then don't range txHashlist.
-	txHashList, err := storage.GetBody(unitHash)
+	txHashList, err := storage.GetBody(db,unitHash)
 	if err != nil {
 		return nil, err
 	}
 	// get transaction by tx'hash.
 	for _, txHash := range txHashList {
-		tx, _, _, _ := storage.GetTransaction(txHash)
+		tx, _, _, _ := storage.GetTransaction(db,txHash)
 		if err != nil {
 			txs = append(txs, tx)
 		}
@@ -326,13 +326,14 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 保存单元数据，如果单元的结构基本相同
 save genesis unit data
 */
-func SaveUnit(unit modules.Unit, isGenesis bool) error {
+func SaveUnit(db ptndb.Database,unit modules.Unit, isGenesis bool) error {
+
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Error("Unit is null")
 		return fmt.Errorf("Unit is null")
 	}
 	// step1. check unit signature, should be compare to mediator list
-	if err := ValidateUnitSignature(unit.UnitHeader, isGenesis); err != nil {
+	if err := ValidateUnitSignature(db,unit.UnitHeader, isGenesis); err != nil {
 		log.Info("Validate unit signature", "error", err.Error())
 		//return err
 	}
@@ -343,22 +344,19 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 		return modules.ErrUnit(-1)
 	}
 	// step3. check transactions in unit
-	_, isSuccess, err := ValidateTransactions(&unit.Txs, isGenesis)
+	_, isSuccess, err := ValidateTransactions(db,&unit.Txs, isGenesis)
 	if isSuccess != true {
 		return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	}
-	if storage.Dbconn == nil {
-		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
-	}
 	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
-	if err := storage.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
+	if err := storage.SaveHeader(db,unit.UnitHash, unit.UnitHeader); err != nil {
 		log.Info("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
 	// step5. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-	if err := storage.SaveHashNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	if err := storage.SaveHashNumber(db,unit.UnitHash, unit.UnitHeader.Number); err != nil {
 		log.Info("SaveHashNumber:", "error", err.Error())
 		return fmt.Errorf("Save unit hash and number error")
 	}
@@ -370,27 +368,27 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 			// handle different messages
 			switch msg.App {
 			case modules.APP_PAYMENT:
-				if ok := savePaymentPayload(tx.TxHash, &msg, uint32(msgIndex), tx.Locktime); ok != true {
+				if ok := savePaymentPayload(db,tx.TxHash, &msg, uint32(msgIndex)); ok != true {
 					log.Info("Save payment payload error.")
 					return fmt.Errorf("Save payment payload error.")
 				}
 			case modules.APP_CONTRACT_TPL:
-				if ok := saveContractTpl(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
+				if ok := saveContractTpl(db,unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
 					log.Info("Save contract template error.")
 					return fmt.Errorf("Save contract template error.")
 				}
 			case modules.APP_CONTRACT_DEPLOY:
-				if ok := saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
+				if ok := saveContractInitPayload(db,unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
 					log.Info("Save contract init payload error.")
 					return fmt.Errorf("Save contract init payload error.")
 				}
 			case modules.APP_CONTRACT_INVOKE:
-				if ok := saveContractInvokePayload(unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
+				if ok := saveContractInvokePayload(db,unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
 					log.Info("Save contract invode payload error.")
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_CONFIG:
-				if ok := saveConfigPayload(tx.TxHash, &msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
+				if ok := saveConfigPayload(db,tx.TxHash, &msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
 					log.Info("Save contract invode payload error.")
 					return fmt.Errorf("Save contract invode payload error.")
 				}
@@ -401,7 +399,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 			}
 		}
 		// step7. save transaction
-		if err := storage.SaveTransaction(tx); err != nil {
+		if err := storage.SaveTransaction(db,tx); err != nil {
 			log.Info("Save transaction:", "error", err.Error())
 			return err
 		}
@@ -409,20 +407,20 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 	}
 
 	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
-	if err := storage.SaveBody(unit.UnitHash, txHashSet); err != nil {
+	if err := storage.SaveBody(db,unit.UnitHash, txHashSet); err != nil {
 		log.Info("SaveBody", "error", err.Error())
 		return err
 	}
 	// step 10  save txlookupEntry
-	if err := storage.SaveTxLookupEntry(&unit); err != nil {
+	if err := storage.SaveTxLookupEntry(db,&unit); err != nil {
 		return err
 	}
 	// update state
 
-	storage.PutCanonicalHash(storage.Dbconn, unit.UnitHash, unit.NumberU64())
-	storage.PutHeadHeaderHash(storage.Dbconn, unit.UnitHash)
-	storage.PutHeadUnitHash(storage.Dbconn, unit.UnitHash)
-	storage.PutHeadFastUnitHash(storage.Dbconn, unit.UnitHash)
+	storage.PutCanonicalHash(db, unit.UnitHash, unit.NumberU64())
+	storage.PutHeadHeaderHash(db, unit.UnitHash)
+	storage.PutHeadUnitHash(db, unit.UnitHash)
+	storage.PutHeadFastUnitHash(db, unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
 }
@@ -431,7 +429,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 保存PaymentPayload
 save PaymentPayload data
 */
-func savePaymentPayload(txHash common.Hash, msg *modules.Message, msgIndex uint32, lockTime uint32) bool {
+func savePaymentPayload(db ptndb.Database,txHash common.Hash, msg *modules.Message, msgIndex uint32) bool {
 	// if inputs is none then it is just a normal coinbase transaction
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
@@ -444,7 +442,7 @@ func savePaymentPayload(txHash common.Hash, msg *modules.Message, msgIndex uint3
 	}
 
 	// save utxo
-	UpdateUtxo(txHash, msg, msgIndex, lockTime)
+	UpdateUtxo(db,txHash, msg, msgIndex)
 	return true
 }
 
@@ -452,7 +450,7 @@ func savePaymentPayload(txHash common.Hash, msg *modules.Message, msgIndex uint3
 保存配置交易
 save config payload
 */
-func saveConfigPayload(txHash common.Hash, msg *modules.Message, height modules.ChainIndex, txIndex uint32) bool {
+func saveConfigPayload(db ptndb.Database,txHash common.Hash, msg *modules.Message, height modules.ChainIndex, txIndex uint32) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(modules.ConfigPayload)
@@ -463,7 +461,7 @@ func saveConfigPayload(txHash common.Hash, msg *modules.Message, height modules.
 		Height:  height,
 		TxIndex: txIndex,
 	}
-	if err := SaveConfig(payload.ConfigSet, &version); err != nil {
+	if err := SaveConfig(db,payload.ConfigSet, &version); err != nil {
 		errMsg := fmt.Sprintf("To save config payload error: %s", err)
 		log.Error(errMsg)
 		return false
@@ -475,7 +473,7 @@ func saveConfigPayload(txHash common.Hash, msg *modules.Message, height modules.
 保存合约调用状态
 To save contract invoke state
 */
-func saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+func saveContractInvokePayload(db ptndb.Database,height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(modules.ContractInvokePayload)
@@ -490,7 +488,7 @@ func saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *m
 			TxIndex: txIndex,
 		}
 		// save new state to database
-		if updateState(payload.ContractId, ws.Key, version, ws.Value) != true {
+		if updateState(db,payload.ContractId, ws.Key, version, ws.Value) != true {
 			continue
 		}
 	}
@@ -501,7 +499,7 @@ func saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *m
 保存合约初始化状态
 To save contract init state
 */
-func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+func saveContractInitPayload(db ptndb.Database,height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(modules.ContractDeployPayload)
@@ -517,16 +515,16 @@ func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *mod
 	}
 	for _, ws := range payload.WriteSet {
 		// save new state to database
-		if updateState(payload.ContractId, ws.Key, version, ws.Value) != true {
+		if updateState(db,payload.ContractId, ws.Key, version, ws.Value) != true {
 			continue
 		}
 	}
 	// save contract name
-	if !storage.SaveContractState(storage.CONTRACT_STATE_PREFIX, payload.ContractId, "ContractName", payload.Name, version) {
+	if !storage.SaveContractState(db,storage.CONTRACT_STATE_PREFIX, payload.ContractId, "ContractName", payload.Name, version) {
 		return false
 	}
 	// save contract jury list
-	if !storage.SaveContractState(storage.CONTRACT_STATE_PREFIX, payload.ContractId, "ContractJury", payload.Jury, version) {
+	if !storage.SaveContractState(db,storage.CONTRACT_STATE_PREFIX, payload.ContractId, "ContractJury", payload.Jury, version) {
 		return false
 	}
 	return true
@@ -536,7 +534,7 @@ func saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *mod
 保存合约模板代码
 To save contract template code
 */
-func saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+func saveContractTpl(db ptndb.Database,height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(modules.ContractTplPayload)
@@ -557,18 +555,18 @@ func saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Mes
 		hexutil.Encode(payload.TemplateId[:]),
 		version.String())
 
-	if err := storage.Store(storage.Dbconn, key, payload.Bytecode); err != nil {
+	if err := storage.Store(db, key, payload.Bytecode); err != nil {
 		log.Error("Save contract template", "error", err.Error())
 		return false
 	}
 	// step3. save contract template name, path, Memery
-	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId, "tplname", payload.Name, version) {
+	if !storage.SaveContractState(db,storage.CONTRACT_TPL, payload.TemplateId, "tplname", payload.Name, version) {
 		return false
 	}
-	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId, "tplpath", payload.Path, version) {
+	if !storage.SaveContractState(db,storage.CONTRACT_TPL, payload.TemplateId, "tplpath", payload.Path, version) {
 		return false
 	}
-	if !storage.SaveContractState(storage.CONTRACT_TPL, payload.TemplateId, "tplmemory", payload.Memery, version) {
+	if !storage.SaveContractState(db,storage.CONTRACT_TPL, payload.TemplateId, "tplmemory", payload.Memery, version) {
 		return false
 	}
 	return true
@@ -578,8 +576,8 @@ func saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Mes
 从levedb中根据ChainIndex获得Unit信息
 To get unit information by its ChainIndex
 */
-func QueryUnitByChainIndex(db, index *modules.ChainIndex) *modules.Unit {
-	return storage.GetUnitFormIndex(storage.Dbconn, index.Index, index.AssetID)
+func QueryUnitByChainIndex(db ptndb.Database, index *modules.ChainIndex) *modules.Unit {
+	return storage.GetUnitFormIndex(db, index.Index, index.AssetID)
 }
 
 /**
@@ -591,20 +589,20 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 	// setp1. create P2PKH script
 	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 	// step. compute total income
-	totalIncome := uint64(income) + ComputeInterest()
+	totalIncome := int64(income) + int64(ComputeInterest())
 	// step2. create payload
 	createT := big.Int{}
 	input := modules.Input{
 		Extra: createT.SetInt64(t.Unix()).Bytes(),
 	}
 	output := modules.Output{
-		Value:    totalIncome,
+		Value:    uint64(totalIncome),
 		Asset:    *asset,
 		PkScript: script,
 	}
 	payload := modules.PaymentPayload{
-		Inputs:  []modules.Input{input},
-		Outputs: []modules.Output{output},
+		Input:  []*modules.Input{&input},
+		Output: []*modules.Output{&output},
 	}
 	// step3. create message
 	msg := modules.Message{
@@ -625,14 +623,14 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 删除合约状态
 To delete contract state
 */
-func deleteContractState(contractID []byte, field string) {
+func deleteContractState(db ptndb.Database,contractID []byte, field string) {
 	oldKeyPrefix := fmt.Sprintf("%s%s^*^%s",
 		storage.CONTRACT_STATE_PREFIX,
 		hexutil.Encode(contractID[:]),
 		field)
-	data := storage.GetPrefix([]byte(oldKeyPrefix))
+	data := storage.GetPrefix(db,[]byte(oldKeyPrefix))
 	for k := range data {
-		if err := storage.Delete([]byte(k)); err != nil {
+		if err := storage.Delete(db,[]byte(k)); err != nil {
 			log.Error("Delete contract state", "error", err.Error())
 			continue
 		}
@@ -663,25 +661,25 @@ func SignTransaction(txHash common.Hash, addr *common.Address, ks *keystore.KeyS
 保存contract state
 To save contract state
 */
-func updateState(contractID []byte, key string, version modules.StateVersion, val interface{}) bool {
+func updateState(db ptndb.Database,contractID []byte, key string, version modules.StateVersion, val interface{}) bool {
 	delState, isDel := val.(modules.DelContractState)
 	if isDel {
 		if delState.IsDelete == false {
 			return true
 		}
 		// delete old state from database
-		deleteContractState(contractID, key)
+		deleteContractState(db,contractID, key)
 
 	} else {
 		// delete old state from database
-		deleteContractState(contractID, key)
+		deleteContractState(db,contractID, key)
 		// insert new state
 		key := fmt.Sprintf("%s%s^*^%s^*^%s",
 			storage.CONTRACT_STATE_PREFIX,
 			hexutil.Encode(contractID[:]),
 			key,
 			version.String())
-		if err := storage.Store(storage.Dbconn, key, val); err != nil {
+		if err := storage.Store(db, key, val); err != nil {
 			log.Error("Save state", "error", err.Error())
 			return false
 		}

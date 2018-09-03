@@ -397,7 +397,12 @@ func NewTable(db Database, prefix string) Database {
 		prefix: prefix,
 	}
 }
-
+func (dt *table) NewIterator() iterator.Iterator{
+	return nil
+}
+func (dt *table) NewIteratorWithPrefix(prefix []byte) iterator.Iterator {
+	return nil
+}
 func (dt *table) Put(key []byte, value []byte) error {
 	return dt.db.Put(append([]byte(dt.prefix), key...), value)
 }

@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -34,7 +35,12 @@ func TestSaveConfig(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T) {
-	data := GetConfig([]byte("TokenDecimal"))
+	Dbconn := storage.ReNewDbConn("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb")
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
+	data := GetConfig(Dbconn, []byte("tokenAmount"))
 	if len(data) <= 0 {
 		log.Println("Get config data error")
 	} else {
@@ -49,8 +55,10 @@ func TestGetConfig(t *testing.T) {
 }
 
 func TestSaveStruct(t *testing.T) {
-	if storage.Dbconn == nil {
-		storage.Dbconn = storage.ReNewDbConn(dagconfig.DbPath)
+	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
 	}
 	aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))
@@ -59,13 +67,19 @@ func TestSaveStruct(t *testing.T) {
 		UniqueId: aid,
 		ChainId:  1,
 	}
-	if err := storage.Store(storage.Dbconn, "TestStruct", st); err != nil {
+	if err := storage.Store(Dbconn, "TestStruct", st); err != nil {
 		t.Error(err.Error())
 	}
 }
 
 func TestReadStruct(t *testing.T) {
-	data, err := storage.Get([]byte("TestStruct"))
+	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
+
+	data, err := storage.Get(Dbconn, []byte("TestStruct"))
 	if err != nil {
 		t.Error(err.Error())
 	}

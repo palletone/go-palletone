@@ -100,6 +100,14 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 
 	db, err := CreateDB(ctx, config, "leveldb")
+	if err != nil {
+		return nil, err
+	}
+
+	dag, err := dag.NewDag(db)
+	if err != nil {
+		return nil, err
+	}
 
 	ptn := &PalletOne{
 		config:         config,
@@ -110,7 +118,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		networkId:      config.NetworkId,
 		levelDb:        db,
 		bloomRequests:  make(chan chan *bloombits.Retrieval),
-		dag:            dag.NewDag(),
+		dag:            dag,
 		//bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
 		//etherbase:      config.Etherbase,
 	}

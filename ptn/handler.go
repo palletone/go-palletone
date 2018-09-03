@@ -847,8 +847,8 @@ func (self *ProtocolManager) NodeInfo() *NodeInfo {
 
 func TestMakeTransaction(nonce uint64) *modules.Transaction {
 	pay := modules.PaymentPayload{
-		Inputs:  []modules.Input{},
-		Outputs: []modules.Output{},
+		Input:  []*modules.Input{},
+		Output: []*modules.Output{},
 	}
 	holder := common.Address{}
 	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")

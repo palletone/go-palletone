@@ -588,6 +588,7 @@ func NewSignMessageCmd(address, message string) *SignMessageCmd {
 type RawTxInput struct {
 	Txid         string `json:"txid"`
 	Vout         uint32 `json:"vout"`
+	MessageIndex uint32 `json:"messageindex"`
 	ScriptPubKey string `json:"scriptPubKey"`
 	RedeemScript string `json:"redeemScript"`
 }

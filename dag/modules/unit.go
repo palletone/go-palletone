@@ -23,6 +23,8 @@ import (
 	"time"
 	"unsafe"
 
+	"encoding/binary"
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -127,8 +129,8 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 		u.Txs = make([]*Transaction, len(txs))
 		for i, pTx := range txs {
 			tx := Transaction{
-				TxHash:   pTx.TxHash,
-				Locktime: pTx.Locktime,
+				TxHash: pTx.TxHash,
+				//Locktime: pTx.Locktime,
 			}
 			if len(pTx.TxMessages) > 0 {
 				tx.TxMessages = make([]Message, len(pTx.TxMessages))
@@ -157,11 +159,11 @@ type Unit struct {
 	ReceivedFrom interface{}
 }
 
-type OutPoint struct {
-	TxHash       common.Hash // reference Utxo struct key field
-	MessageIndex uint32      // message index in transaction
-	OutIndex     uint32
-}
+//type OutPoint struct {
+//	TxHash       common.Hash // reference Utxo struct key field
+//	MessageIndex uint32      // message index in transaction
+//	OutIndex     uint32
+//}
 
 func (unit *Unit) IsEmpty() bool {
 	if unit == nil || len(unit.Txs) <= 0 {
@@ -170,13 +172,14 @@ func (unit *Unit) IsEmpty() bool {
 	return false
 }
 
-type Transactions []*Transaction
+//type Transactions []*Transaction
 type TxPoolTxs []*TxPoolTransaction
-type Transaction struct {
-	TxHash     common.Hash `json:"txhash" rlp:"-"`
-	TxMessages []Message   `json:"messages"`
-	Locktime   uint32      `json:"lock_time"`
-}
+
+//type Transaction struct {
+//	TxHash     common.Hash `json:"txhash"`
+//	TxMessages []Message   `json:"messages"`
+//	Locktime   uint32      `json:"lock_time"`
+//}
 
 type ChainIndex struct {
 	AssetID IDType16
@@ -287,17 +290,150 @@ type PayloadMapStruct struct {
 // Token exchange message and verify message
 // App: payment
 type PaymentPayload struct {
-	Inputs  []Input  `json:"inputs"`
-	Outputs []Output `json:"outputs"`
+	Input    []*Input  `json:"inputs"`
+	Output   []*Output `json:"outputs"`
+	LockTime uint32    `json:"lock_time"`
 }
 
-func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
-	return &OutPoint{
-		TxHash:       *hash,
-		MessageIndex: messageindex,
-		OutIndex:     outindex,
+/**
+从RLP的解码中解析出对应的payload
+*/
+func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
+	// step1. check data
+	fields, ok := data.([]interface{})
+	if !ok {
+		return fmt.Errorf("Data error, should be []interface{}")
 	}
+	if len(fields) != 3 {
+		return fmt.Errorf("Data is not type of PaymentPayload: len=%d", len(fields))
+	}
+	// step2. extract inputs
+	txins, ok := fields[0].([]interface{})
+	if !ok {
+		return fmt.Errorf("Data is not type of PaymentPayload: invalid inputs")
+	}
+	fmt.Println("txins:", txins)
+	pl.Input = []*Input{}
+
+	for _, in := range txins {
+		// extract one input
+		input, ok := in.([]interface{})
+		if !ok || len(input) != 3 {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid input")
+		}
+		outpoint, ok := input[0].([]interface{})
+		if !ok || len(outpoint) != 3 {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid outpoint")
+		}
+		// extract outpoint
+		txHash := common.Hash{}
+		txHash.SetBytes(outpoint[0].([]byte))
+		if _, ok := outpoint[1].([]byte); !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid outpoint -1")
+		}
+		if _, ok := outpoint[2].([]byte); !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid outpoint -2")
+		}
+		// extract output message index
+		msgIndex := binary.BigEndian.Uint32(FillBytes(outpoint[1].([]byte), 4))
+		// extract output out index
+		outIndex := binary.BigEndian.Uint32(FillBytes(outpoint[2].([]byte), 4))
+		// extract signature
+		sig, ok := input[1].([]byte)
+		if !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid signature")
+		}
+		// extract extra data
+		extra, ok := input[2].([]byte)
+		if !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid extra")
+		}
+		// save input
+		newInput := &Input{
+			PreviousOutPoint: OutPoint{
+				TxHash:       txHash,
+				MessageIndex: msgIndex,
+				OutIndex:     outIndex,
+			},
+			SignatureScript: sig,
+			Extra:           extra,
+		}
+		pl.Input = append(pl.Input, newInput)
+	}
+	// step3. extract outputs
+	txouts, ok := fields[1].([]interface{})
+	if !ok {
+		return fmt.Errorf("Data is not type of PaymentPayload: invalid outputs")
+	}
+	pl.Output = []*Output{}
+	for _, out := range txouts {
+		// extract one output
+		output, ok := out.([]interface{})
+		if !ok || len(output) != 3 {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid output")
+		}
+		// extract output value
+		if _, ok := output[0].([]byte); !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid output value")
+		}
+		val := binary.BigEndian.Uint64(FillBytes(output[0].([]byte), 8))
+		// extract output PKScript
+		pkscript, ok := output[1].([]byte)
+		if !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid output script")
+		}
+		// extract output Asset
+		asset, ok := output[2].([]interface{})
+		if !ok || len(asset) != 3 {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid output script")
+		}
+		// extract asset id
+		aid, ok := asset[0].([]byte)
+		if !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid output asset id")
+		}
+		newAid := IDType16{}
+		newAid.SetBytes(aid)
+		// extract asset unique id
+		uqid, ok := asset[1].([]byte)
+		if !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid output unique id")
+		}
+		newUniqueID := IDType16{}
+		newUniqueID.SetBytes(uqid)
+		// extract asset chainid id
+		if _, ok := asset[2].([]byte); !ok {
+			return fmt.Errorf("Data is not type of PaymentPayload: invalid output chain id")
+		}
+		chainId := binary.BigEndian.Uint64(FillBytes(asset[2].([]byte), 8))
+
+		newOutput := &Output{
+			Value:    val,
+			PkScript: pkscript,
+			Asset: Asset{
+				AssertId: newAid,
+				UniqueId: newUniqueID,
+				ChainId:  chainId,
+			},
+		}
+		pl.Output = append(pl.Output, newOutput)
+	}
+
+	// step4. extract locktime
+	if _, ok := fields[2].([]byte); !ok {
+		return fmt.Errorf("Data is not type of PaymentPayload: invalid locktime")
+	}
+	pl.LockTime = binary.BigEndian.Uint32(FillBytes(fields[2].([]byte), 4))
+	return nil
 }
+
+//func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
+//	return &OutPoint{
+//		TxHash:       *hash,
+//		MessageIndex: messageindex,
+//		OutIndex:     outindex,
+//	}
+//}
 
 // NewTxOut returns a new bitcoin transaction output with the provided
 // transaction value and public key script.
@@ -347,6 +483,57 @@ type ContractTplPayload struct {
 	Bytecode   []byte `json:"bytecode"`    // contract bytecode
 }
 
+func (tplpayload *ContractTplPayload) ExtractFrInterface(data interface{}) error {
+	// check data
+	fields, ok := data.([]interface{})
+	if !ok {
+		return fmt.Errorf("ContractTplPayload extract Data error, should be []interface{}")
+	}
+
+	if len(fields) != 6 {
+		return fmt.Errorf("ContractTplPayload extract: Data is not type of ContractTplPayload")
+	}
+
+	// extract templateid
+	tplID, ok := fields[0].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractTplPayload extract: invalid template id")
+	}
+	// extract name
+	name, ok := fields[1].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractTplPayload extract: invalid name")
+	}
+	// extract path
+	path, ok := fields[2].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractTplPayload extract: invalid path")
+	}
+	// extract version
+	version, ok := fields[3].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractTplPayload extract: invalid version")
+	}
+	// extract memory
+	mem, ok := fields[4].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractTplPayload extract: invalid memory")
+	}
+	memory := binary.BigEndian.Uint16(FillBytes(mem, 2))
+	// extract bytecode
+	bytecode, ok := fields[5].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractTplPayload extract: invalid bytecode")
+	}
+	tplpayload.TemplateId = tplID
+	tplpayload.Name = string(name)
+	tplpayload.Path = string(path)
+	tplpayload.Version = string(version)
+	tplpayload.Memery = memory
+	tplpayload.Bytecode = bytecode
+	return nil
+}
+
 type DelContractState struct {
 	IsDelete bool
 }
@@ -368,6 +555,49 @@ type ContractDeployPayload struct {
 	Jury         []common.Address   `json:"jury"`          // contract jurors list
 	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
 	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
+}
+
+func (deployPayload *ContractDeployPayload) ExtractFrInterface(data interface{}) error {
+	// step1. check data
+	fields, ok := data.([]interface{})
+	if !ok {
+		return fmt.Errorf("ContractDeployPayload extract Data error, should be []interface{}")
+	}
+
+	if len(fields) != 8 {
+		return fmt.Errorf("ContractDeployPayload extract: Data is not type of ContractDeployPayload")
+	}
+
+	// step2. extract templateid
+	tplID, ok := fields[0].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractDeployPayload extract: invalid template id")
+	}
+	// step3. extract contractid
+	contractID, ok := fields[1].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractDeployPayload extract: invalid contract id")
+	}
+	// step4. extract name
+	name, ok := fields[2].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractDeployPayload extract: invalid name")
+	}
+	// step5. extract args
+	fmt.Println("Args:", fields[2])
+	// step6. extract Excutiontime time.Duration
+	fmt.Println("Args:", fields[2])
+	// step7. extract Jury []common.Address
+	fmt.Println("Args:", fields[2])
+	// step8. extract ReadSet []ContractReadSet
+	fmt.Println("Args:", fields[2])
+	// step9. extract WriteSet []PayloadMapStruct
+	fmt.Println("Args:", fields[2])
+
+	deployPayload.TemplateId = tplID
+	deployPayload.ContractId = contractID
+	deployPayload.Name = string(name)
+	return nil
 }
 
 // Contract invoke message
@@ -396,9 +626,9 @@ type TextPayload struct {
 /************************** End of Payload Details ******************************************/
 
 type Author struct {
-	Address        common.Address         `json:"address"`
-	Pubkey         []byte /*common.Hash*/ `json:"pubkey"`
-	TxAuthentifier Authentifier           `json:"authentifiers"`
+	Address        common.Address `json:"address"`
+	Pubkey         []byte/*common.Hash*/ `json:"pubkey"`
+	TxAuthentifier Authentifier `json:"authentifiers"`
 }
 
 type Authentifier struct {
@@ -556,7 +786,7 @@ func MsgstoAddress(msgs []Message) common.Address {
 		if !ok {
 			break
 		}
-		for _, pay := range payment.Inputs {
+		for _, pay := range payment.Input {
 			// 通过签名信息还原出address
 			from := new(common.Address)
 			from.SetBytes(pay.Extra[:])
@@ -638,4 +868,21 @@ var TxValidationCode_name = map[int32]string{
 	254: "NOT_VALIDATED",
 	255: "NOT_COMPARE_SIZE",
 	256: "INVALID_OTHER_REASON",
+}
+
+/**
+根据大端规则填充字节
+To full fill bytes according bigendian
+*/
+func FillBytes(data []byte, lenth uint8) []byte {
+	newBytes := make([]byte, lenth)
+	if len(data) < int(lenth) {
+		len := int(lenth) - len(data)
+		for i, b := range data {
+			newBytes[len+i] = b
+		}
+	} else {
+		newBytes = data[:lenth]
+	}
+	return newBytes
 }
