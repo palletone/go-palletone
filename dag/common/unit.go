@@ -370,7 +370,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 			// handle different messages
 			switch msg.App {
 			case modules.APP_PAYMENT:
-				if ok := savePaymentPayload(tx.TxHash, &msg, uint32(msgIndex), tx.Locktime); ok != true {
+				if ok := savePaymentPayload(tx.TxHash, &msg, uint32(msgIndex)); ok != true {
 					log.Info("Save payment payload error.")
 					return fmt.Errorf("Save payment payload error.")
 				}
@@ -431,7 +431,7 @@ func SaveUnit(unit modules.Unit, isGenesis bool) error {
 保存PaymentPayload
 save PaymentPayload data
 */
-func savePaymentPayload(txHash common.Hash, msg *modules.Message, msgIndex uint32, lockTime uint32) bool {
+func savePaymentPayload(txHash common.Hash, msg *modules.Message, msgIndex uint32) bool {
 	// if inputs is none then it is just a normal coinbase transaction
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
@@ -444,7 +444,7 @@ func savePaymentPayload(txHash common.Hash, msg *modules.Message, msgIndex uint3
 	}
 
 	// save utxo
-	UpdateUtxo(txHash, msg, msgIndex, lockTime)
+	UpdateUtxo(txHash, msg, msgIndex)
 	return true
 }
 
@@ -591,20 +591,20 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 	// setp1. create P2PKH script
 	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 	// step. compute total income
-	totalIncome := uint64(income) + ComputeInterest()
+	totalIncome := int64(income) + int64(ComputeInterest())
 	// step2. create payload
 	createT := big.Int{}
 	input := modules.Input{
 		Extra: createT.SetInt64(t.Unix()).Bytes(),
 	}
 	output := modules.Output{
-		Value:    totalIncome,
+		Value:    uint64(totalIncome),
 		Asset:    *asset,
 		PkScript: script,
 	}
 	payload := modules.PaymentPayload{
-		Inputs:  []modules.Input{input},
-		Outputs: []modules.Output{output},
+		Input:  []*modules.Input{&input},
+		Output: []*modules.Output{&output},
 	}
 	// step3. create message
 	msg := modules.Message{

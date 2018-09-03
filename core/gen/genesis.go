@@ -129,20 +129,20 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		log.Error("Get genesis assetinfo bytes error.")
 		return nil
 	}
-	txin := modules.Input{
+	txin := &modules.Input{
 		Extra: extra, // save asset info
 	}
 	// generate p2pkh bytes
 	pkscript := tokenengine.GenerateP2PKHLockScript(holder.Bytes())
 
-	txout := modules.Output{
+	txout := &modules.Output{
 		Value:    genesis.TokenAmount,
 		Asset:    asset,
 		PkScript: pkscript,
 	}
 	pay := modules.PaymentPayload{
-		Inputs:  []modules.Input{txin},
-		Outputs: []modules.Output{txout},
+		Input:  []*modules.Input{txin},
+		Output: []*modules.Output{txout},
 	}
 	msg0 := modules.Message{
 		App:     modules.APP_PAYMENT,

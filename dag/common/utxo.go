@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/internal/ptnapi"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 )
@@ -112,7 +113,7 @@ func readUtxosFrAll(addr common.Address, asset modules.Asset) (map[modules.OutPo
 			continue
 		}
 		// get addr
-		sAddr, _ := common.GetAddressFromScript(utxo.PkScript)
+		sAddr, _ := ptnapi.GetAddressFromScript(utxo.PkScript)
 		// check address
 		if strings.Compare(sAddr, addr.String()) != 0 {
 			fmt.Println(">>>>> address is not compare")
@@ -154,16 +155,16 @@ func GetUtxoByOutpoint(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 根据交易信息中的outputs创建UTXO， 根据交易信息中的inputs销毁UTXO
 To create utxo according to outpus in transaction, and destory utxo according to inputs in transaction
 */
-func UpdateUtxo(txHash common.Hash, msg *modules.Message, msgIndex uint32, lockTime uint32) error {
+func UpdateUtxo(txHash common.Hash, msg *modules.Message, msgIndex uint32) error {
 	var payload interface{}
 
 	payload = msg.Payload
 	payment, ok := payload.(modules.PaymentPayload)
 	if ok == true {
 		// create utxo
-		errs := writeUtxo(txHash, msgIndex, payment.Outputs, lockTime)
+		errs := writeUtxo(txHash, msgIndex,payment.Output, payment.LockTime)
 		// destory utxo
-		destoryUtxo(payment.Inputs)
+		destoryUtxo(payment.Input)
 		if len(errs) > 0 {
 			log.Error("error occurred on updated utxos, check the log file to find details.")
 			return errors.New("error occurred on updated utxos, check the log file to find details.")
@@ -175,7 +176,7 @@ func UpdateUtxo(txHash common.Hash, msg *modules.Message, msgIndex uint32, lockT
 /**
 创建UTXO
 */
-func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, lockTime uint32) []error {
+func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []*modules.Output, lockTime uint32) []error {
 	var errs []error
 	for outIndex, txout := range txouts {
 		utxo := modules.Utxo{
@@ -206,7 +207,7 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 		}
 
 		// get address
-		sAddr, _ := common.GetAddressFromScript(txout.PkScript)
+		sAddr, _ := ptnapi.GetAddressFromScript(txout.PkScript)
 		addr := common.Address{}
 		addr.SetString(sAddr)
 
@@ -231,7 +232,7 @@ func writeUtxo(txHash common.Hash, msgIndex uint32, txouts []modules.Output, loc
 销毁utxo
 destory utxo, delete from UTXO database
 */
-func destoryUtxo(txins []modules.Input) {
+func destoryUtxo(txins []*modules.Input) {
 	for _, txin := range txins {
 		outpoint := txin.PreviousOutPoint
 		if outpoint.IsEmpty() {
@@ -263,7 +264,7 @@ func destoryUtxo(txins []modules.Input) {
 			continue
 		}
 		// delete index data
-		sAddr, _ := common.GetAddressFromScript(utxo.PkScript)
+		sAddr, _ := ptnapi.GetAddressFromScript(utxo.PkScript)
 		addr := common.Address{}
 		addr.SetString(sAddr)
 		utxoIndex := modules.UtxoIndex{
@@ -497,7 +498,7 @@ func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) b
 		return false
 	}
 	// get addr
-	sAddr, _ := common.GetAddressFromScript(utxo.PkScript)
+	sAddr, _ := ptnapi.GetAddressFromScript(utxo.PkScript)
 	// check address
 	if strings.Compare(sAddr, addr.String()) != 0 {
 		fmt.Printf(">>>>> Address is not compare:scriptPubKey.Address=%s, address=%s\n",
@@ -522,8 +523,8 @@ func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
 			}
 			inAmount := uint64(0)
 			outAmount := uint64(0)
-			for _, txin := range payload.Inputs {
-				utxo := GetUxto(txin)
+			for _, txin := range payload.Input {
+				utxo := GetUxto(*txin)
 				if utxo.IsEmpty() {
 					return 0, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
 						txin.PreviousOutPoint.TxHash.String(),
@@ -537,7 +538,7 @@ func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
 				inAmount += utxo.Amount
 			}
 
-			for _, txout := range payload.Outputs {
+			for _, txout := range payload.Output {
 				// check overflow
 				if outAmount+txout.Value > 1<<64-1 {
 					return 0, fmt.Errorf("Compute fees: txout total overflow")

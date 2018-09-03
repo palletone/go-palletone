@@ -11,8 +11,8 @@ import (
 	"math/big"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 )
 
 // ScriptFlags is a bitmask defining additional operations or tests that will be
@@ -124,7 +124,7 @@ type Engine struct {
 	lastCodeSep     int
 	dstack          stack // data stack
 	astack          stack // alt stack
-	tx              wire.MsgTx
+	tx              modules.PaymentPayload
 	txIdx           int
 	condStack       []int
 	numOps          int
@@ -506,10 +506,10 @@ func (vm *Engine) Step() (done bool, err error) {
 
 			vm.scriptIdx++
 
-			witness := vm.tx.TxIn[vm.txIdx].Witness
-			if err := vm.verifyWitnessProgram(witness); err != nil {
-				return false, err
-			}
+			//witness := vm.tx.TxIn[vm.txIdx].Witness
+			//if err := vm.verifyWitnessProgram(witness); err != nil {
+			//	return false, err
+			//}
 		} else {
 			vm.scriptIdx++
 		}
@@ -800,16 +800,16 @@ func (vm *Engine) SetAltStack(data [][]byte) {
 // NewEngine returns a new script engine for the provided public key script,
 // transaction, and input index.  The flags modify the behavior of the script
 // engine according to the description provided by each flag.
-func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags,
+func NewEngine(scriptPubKey []byte, tx *modules.PaymentPayload/**wire.MsgTx*/, txIdx int, flags ScriptFlags,
 	sigCache *SigCache, hashCache *TxSigHashes, inputAmount int64) (*Engine, error) {
 
 	// The provided transaction input index must refer to a valid input.
-	if txIdx < 0 || txIdx >= len(tx.TxIn) {
+	if txIdx < 0 || txIdx >= len(tx.Input) {
 		str := fmt.Sprintf("transaction input index %d is negative or "+
-			">= %d", txIdx, len(tx.TxIn))
+			">= %d", txIdx, len(tx.Input))
 		return nil, scriptError(ErrInvalidIndex, str)
 	}
-	scriptSig := tx.TxIn[txIdx].SignatureScript
+	scriptSig := tx.Input[txIdx].SignatureScript
 
 	// When both the signature script and public key script are empty the
 	// result is necessarily an error since the stack would end up being
@@ -910,23 +910,10 @@ func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags
 			}
 
 			witProgram = scriptPubKey
-		case len(tx.TxIn[txIdx].Witness) != 0 && vm.bip16:
-			// The sigScript MUST be *exactly* a single canonical
-			// data push of the witness program, otherwise we
-			// reintroduce malleability.
-			sigPops := vm.scripts[0]
-			if len(sigPops) == 1 && canonicalPush(sigPops[0]) &&
-				IsWitnessProgram(sigPops[0].data) {
 
-				witProgram = sigPops[0].data
-			} else {
-				errStr := "signature script for witness " +
-					"nested p2sh is not canonical"
-				return nil, scriptError(ErrWitnessMalleatedP2SH, errStr)
-			}
 		}
-
-		if witProgram != nil {
+          witProgram=witProgram
+		/*if witProgram != nil {
 			var err error
 			vm.witnessVersion, vm.witnessProgram, err = ExtractWitnessProgramInfo(witProgram)
 			if err != nil {
@@ -937,11 +924,11 @@ func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags
 			// pkScript or as a datapush within the sigScript, then
 			// there MUST NOT be any witness data associated with
 			// the input being validated.
-			if vm.witnessProgram == nil && len(tx.TxIn[txIdx].Witness) != 0 {
+			if vm.witnessProgram == nil && len(tx.Inputs[txIdx].Witness) != 0 {
 				errStr := "non-witness inputs cannot have a witness"
 				return nil, scriptError(ErrWitnessUnexpected, errStr)
 			}
-		}
+		}*/
 
 	}
 

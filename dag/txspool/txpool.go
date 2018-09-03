@@ -562,7 +562,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	for i, msgcopy := range tx.Tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
-				for j := range msg.Outputs {
+				for j := range msg.Output {
 					preout.MessageIndex = uint32(i)
 					preout.OutIndex = uint32(j)
 					// get utxo entry , if the utxo entry is spent, then return  error.
@@ -871,7 +871,7 @@ func (pool *TxPool) removeTransaction(tx *modules.Transaction, removeRedeemers b
 		for i, msgcopy := range tx.TxMessages {
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
-					for j := uint32(0); j < uint32(len(msg.Outputs)); j++ {
+					for j := uint32(0); j < uint32(len(msg.Output)); j++ {
 						preout := modules.OutPoint{TxHash: hash, MessageIndex: uint32(i), OutIndex: j}
 						if pooltxRedeemer, exist := pool.outpoints[preout]; exist {
 							txRedeemer := PooltxToTx(pooltxRedeemer)
@@ -895,7 +895,7 @@ func (pool *TxPool) removeTransaction(tx *modules.Transaction, removeRedeemers b
 		for _, msgcopy := range pooltx.Tx.TxMessages {
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
-					for _, input := range msg.Inputs {
+					for _, input := range msg.Input {
 						delete(pool.outpoints, input.PreviousOutPoint)
 					}
 				}
@@ -921,7 +921,7 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
 			inputs := msg.Payload.(modules.PaymentPayload)
-			for _, input := range inputs.Inputs {
+			for _, input := range inputs.Input {
 				if tx, ok := pool.outpoints[input.PreviousOutPoint]; ok {
 					pool.removeTransaction(tx.Tx, true)
 				}
@@ -935,7 +935,7 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 	for _, msg := range tx.Tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
 			inputs := msg.Payload.(modules.PaymentPayload)
-			for _, input := range inputs.Inputs {
+			for _, input := range inputs.Input {
 				if tx, ok := pool.outpoints[input.PreviousOutPoint]; ok {
 					str := fmt.Sprintf("output %v already spent by "+
 						"transaction %v in the memory pool",

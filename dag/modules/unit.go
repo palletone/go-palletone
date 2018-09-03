@@ -130,7 +130,7 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 		for i, pTx := range txs {
 			tx := Transaction{
 				TxHash:   pTx.TxHash,
-				Locktime: pTx.Locktime,
+				//Locktime: pTx.Locktime,
 			}
 			if len(pTx.TxMessages) > 0 {
 				tx.TxMessages = make([]Message, len(pTx.TxMessages))
@@ -159,11 +159,11 @@ type Unit struct {
 	ReceivedFrom interface{}
 }
 
-type OutPoint struct {
-	TxHash       common.Hash // reference Utxo struct key field
-	MessageIndex uint32      // message index in transaction
-	OutIndex     uint32
-}
+//type OutPoint struct {
+//	TxHash       common.Hash // reference Utxo struct key field
+//	MessageIndex uint32      // message index in transaction
+//	OutIndex     uint32
+//}
 
 func (unit *Unit) IsEmpty() bool {
 	if unit == nil || len(unit.Txs) <= 0 {
@@ -172,13 +172,13 @@ func (unit *Unit) IsEmpty() bool {
 	return false
 }
 
-type Transactions []*Transaction
+//type Transactions []*Transaction
 type TxPoolTxs []*TxPoolTransaction
-type Transaction struct {
-	TxHash     common.Hash `json:"txhash"`
-	TxMessages []Message   `json:"messages"`
-	Locktime   uint32      `json:"lock_time"`
-}
+//type Transaction struct {
+//	TxHash     common.Hash `json:"txhash"`
+//	TxMessages []Message   `json:"messages"`
+//	Locktime   uint32      `json:"lock_time"`
+//}
 
 type ChainIndex struct {
 	AssetID IDType16
@@ -289,8 +289,9 @@ type PayloadMapStruct struct {
 // Token exchange message and verify message
 // App: payment
 type PaymentPayload struct {
-	Inputs  []Input  `json:"inputs"`
-	Outputs []Output `json:"outputs"`
+	Input  []*Input  `json:"inputs"`
+	Output []*Output `json:"outputs"`
+	LockTime uint32  `json:"lock_time"`
 }
 
 /**
@@ -311,7 +312,7 @@ func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
 		return fmt.Errorf("Data is not type of PaymentPayload: invalid inputs")
 	}
 	fmt.Println("txins:", txins)
-	pl.Inputs = []Input{}
+	pl.Input = []*Input{}
 
 	for _, in := range txins {
 		// extract one input
@@ -347,7 +348,7 @@ func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
 			return fmt.Errorf("Data is not type of PaymentPayload: invalid extra")
 		}
 		// save input
-		newInput := Input{
+		newInput := &Input{
 			PreviousOutPoint: OutPoint{
 				TxHash:       txHash,
 				MessageIndex: msgIndex,
@@ -356,14 +357,14 @@ func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
 			SignatureScript: sig,
 			Extra:           extra,
 		}
-		pl.Inputs = append(pl.Inputs, newInput)
+		pl.Input = append(pl.Input, newInput)
 	}
 	// extract outputs
 	txouts, ok := fields[1].([]interface{})
 	if !ok {
 		return fmt.Errorf("Data is not type of PaymentPayload: invalid outputs")
 	}
-	pl.Outputs = []Output{}
+	pl.Output = []*Output{}
 	for _, out := range txouts {
 		// extract one output
 		output, ok := out.([]interface{})
@@ -405,7 +406,7 @@ func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
 		}
 		chainId := binary.BigEndian.Uint64(FillBytes(asset[2].([]byte), 8))
 
-		newOutput := Output{
+		newOutput := &Output{
 			Value:    val,
 			PkScript: pkscript,
 			Asset: Asset{
@@ -414,18 +415,17 @@ func (pl *PaymentPayload) ExtractFrInterface(data interface{}) error {
 				ChainId:  chainId,
 			},
 		}
-		pl.Outputs = append(pl.Outputs, newOutput)
+		pl.Output = append(pl.Output, newOutput)
 	}
 	return nil
 }
-
-func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
-	return &OutPoint{
-		TxHash:       *hash,
-		MessageIndex: messageindex,
-		OutIndex:     outindex,
-	}
-}
+//func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
+//	return &OutPoint{
+//		TxHash:       *hash,
+//		MessageIndex: messageindex,
+//		OutIndex:     outindex,
+//	}
+//}
 
 // NewTxOut returns a new bitcoin transaction output with the provided
 // transaction value and public key script.
@@ -735,7 +735,7 @@ func MsgstoAddress(msgs []Message) common.Address {
 		if !ok {
 			break
 		}
-		for _, pay := range payment.Inputs {
+		for _, pay := range payment.Input{
 			// 通过签名信息还原出address
 			from := new(common.Address)
 			from.SetBytes(pay.Extra[:])

@@ -227,14 +227,14 @@ func (t *TxIn) SerializeSize() int {
 // NewTxIn returns a new bitcoin transaction input with the provided
 // previous outpoint point and signature script with a default sequence of
 // MaxTxInSequenceNum.
-func NewTxIn(prevOut *OutPoint, signatureScript []byte, witness [][]byte) *TxIn {
+/*func NewTxIn(prevOut *OutPoint, signatureScript []byte, witness [][]byte) *TxIn {
 	return &TxIn{
 		PreviousOutPoint: *prevOut,
 		SignatureScript:  signatureScript,
 		Witness:          witness,
 		Sequence:         MaxTxInSequenceNum,
 	}
-}
+}*/
 
 // TxWitness defines the witness for a TxIn. A witness is to be interpreted as
 // a slice of byte slices, or a stack with one or many elements.
@@ -274,12 +274,12 @@ func (t *TxOut) SerializeSize() int {
 
 // NewTxOut returns a new bitcoin transaction output with the provided
 // transaction value and public key script.
-func NewTxOut(value int64, pkScript []byte) *TxOut {
-	return &TxOut{
-		Value:    value,
-		PkScript: pkScript,
-	}
-}
+//func NewTxOut(value int64, pkScript []byte) *TxOut {
+//	return &TxOut{
+//		Value:    value,
+//		PkScript: pkScript,
+//	}
+//}
 
 // MsgTx implements the Message interface and represents a bitcoin tx message.
 // It is used to deliver transaction information in response to a getdata
@@ -709,12 +709,12 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32, enc MessageEncoding) error
 		return err
 	}
 
-	for _, ti := range msg.TxIn {
+	/*for _, ti := range msg.TxIn {
 		err = writeTxIn(w, pver, msg.Version, ti)
 		if err != nil {
 			return err
 		}
-	}
+	}*/
 
 	count = uint64(len(msg.TxOut))
 	err = WriteVarInt(w, pver, count)
@@ -722,12 +722,12 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32, enc MessageEncoding) error
 		return err
 	}
 
-	for _, to := range msg.TxOut {
+	/*for _, to := range msg.TxOut {
 		err = WriteTxOut(w, pver, msg.Version, to)
 		if err != nil {
 			return err
 		}
-	}
+	}*/
 
 	// If this transaction is a witness transaction, and the witness
 	// encoded is desired, then encode the witness for each of the inputs

@@ -239,8 +239,8 @@ func TestPaymentTransactionRLP(t *testing.T) {
 		},
 	}
 	payment := modules.PaymentPayload{
-		Inputs:  []modules.Input{txin},
-		Outputs: []modules.Output{txout},
+		Input:  []*modules.Input{&txin},
+		Output: []*modules.Output{&txout},
 	}
 
 	tx2 := modules.Transaction{
@@ -250,7 +250,6 @@ func TestPaymentTransactionRLP(t *testing.T) {
 				Payload: payment,
 			},
 		},
-		Locktime: 1,
 	}
 	tx2.TxHash = tx2.Hash()
 	fmt.Println("Original data:", payment)
@@ -316,7 +315,6 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 				Payload: contractTplPayload,
 			},
 		},
-		Locktime: 1,
 	}
 	tx1.TxHash = tx1.Hash()
 
@@ -327,7 +325,6 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 		fmt.Println(">>>>>>>> payload type:", reflect.TypeOf(msg.Payload))
 		fmt.Printf(">>>>>>>>  message[%d] payload:%v\n", index, msg.Payload)
 	}
-	fmt.Println(">>>>>>>>  locktime:", tx1.Locktime)
 	encodeData, err := rlp.EncodeToBytes(tx1)
 	if err != nil {
 		fmt.Println("Encode tx1 error:", err.Error())
@@ -350,7 +347,6 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 					}
 				}
 			}
-			fmt.Println("========  locktime:", txDecode.Locktime)
 		}
 	}
 }

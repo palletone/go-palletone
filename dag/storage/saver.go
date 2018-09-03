@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/internal/ptnapi"
 )
 
 var (
@@ -136,10 +137,10 @@ func SaveTransaction(tx *modules.Transaction) error {
 	for i, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(modules.PaymentPayload)
 		if ok {
-			for _, output := range payload.Outputs {
+			for _, output := range payload.Output {
 				//  pkscript to addr
-				addr, _ := common.GetAddressFromScript(output.PkScript[:])
-				saveOutputByAddr(addr, tx.TxHash, i, output)
+				addr, _ := ptnapi.GetAddressFromScript(output.PkScript[:])
+				saveOutputByAddr(addr, tx.TxHash, i, *output)
 			}
 		}
 	}
