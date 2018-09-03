@@ -1352,14 +1352,13 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		TxMessages: []modules.Message{msg},
 	}
 	mtx.TxHash = mtx.Hash()
-    fmt.Printf("mtx is ------1312----------%+v\n",mtx)
 	mtxbt ,err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
 	}
 	//mtxHex, err := messageToHex(mtx)
 	mtxHex := hex.EncodeToString(mtxbt)
-	fmt.Println(mtxHex)
+	//fmt.Println(mtxHex)
 	return mtxHex, nil
 }
 func decodeHexStr(hexStr string) ([]byte, error) {
@@ -1453,9 +1452,8 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	var redeemTx modules.Transaction
-	if err := rlp.DecodeBytes(serializedTx, &redeemTx); err != nil {
-                fmt.Println("-------1420-------1420-----------------")
+	var tx modules.Transaction
+	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
 		return nil, err
 	}
 	var hashType txscript.SigHashType
@@ -1544,14 +1542,16 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	}
 
 
-    for _, msg := range redeemTx.TxMessages {
-			payload, _ := msg.Payload.(modules.PaymentPayload)
-                        fmt.Printf("-------%+v\n",payload)
-                        fmt.Printf("-----%+v\n",msg.App)
+    for _, msg := range tx.TxMessages {
 			if msg.App != modules.APP_PAYMENT {
 				continue
-			}
-                        fmt.Println("----------1523---------1523---------")
+			} else {
+				var payload modules.PaymentPayload
+				if err := payload.ExtractFrInterface(msg.Payload); err != nil {
+					fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
+				} //else {
+				//	fmt.Println("Payment payload:", payload)
+				//}
                         for i, txIn := range payload.Input {
 			    prevOutScript, _ := inputpoints[txIn.PreviousOutPoint]
 
@@ -1561,8 +1561,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			addrStr := addr.EncodeAddress()
 			wif, ok := keys[addrStr]
 			if !ok {
-				return nil, false,
-					errors.New("no key for address")
+				return nil, false,errors.New("no key for address")
 			}
 			return wif.PrivKey, wif.CompressPubKey, nil
 		})
@@ -1614,13 +1613,14 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			App:         modules.APP_PAYMENT,
 			Payload:     payload,
 		}
-        redeemTx.TxMessages = append(redeemTx.TxMessages, msg)
+        tx.TxMessages = append(tx.TxMessages, msg)
     }
+}
 	var buf bytes.Buffer
-	buf.Grow(redeemTx.SerializeSize())
+	buf.Grow(tx.SerializeSize())
 	// All returned errors (not OOM, which panics) encounted during
 	// bytes.Buffer writes are unexpected.
-        mtxbt ,err := rlp.EncodeToBytes(redeemTx)
+        mtxbt ,err := rlp.EncodeToBytes(tx)
 	if err != nil {
 		return "", err
 	}
