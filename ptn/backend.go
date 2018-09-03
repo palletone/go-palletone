@@ -249,6 +249,8 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 	// append by Albert·Gou
 	s.mediatorPlugin.Start(srvr)
 
+	s.contract.Start()
+
 	return nil
 }
 
