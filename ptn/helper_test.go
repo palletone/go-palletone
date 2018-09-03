@@ -38,13 +38,13 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 
 	//"github.com/palletone/go-palletone/configure"
+	"fmt"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag"
-	"fmt"
-	"time"
 	common2 "github.com/palletone/go-palletone/dag/common"
 	"log"
+	"time"
 )
 
 var (
@@ -91,13 +91,13 @@ func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks i
 	return pm, db
 }
 
-func makedag(blocks int)*dag.Dag{
+func makedag(blocks int) *dag.Dag {
 	//PrintDag()
 	//fmt.Println("=============")
 	dag := dag.NewDag()
 	pay := modules.PaymentPayload{
-		Inputs:  []modules.Input{},
-		Outputs: []modules.Output{},
+		Input:  []*modules.Input{},
+		Output: []*modules.Output{},
 	}
 	holder := common.Address{}
 	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
@@ -107,12 +107,12 @@ func makedag(blocks int)*dag.Dag{
 		Payload: pay,
 	}
 	tx := &modules.Transaction{
-		TxMessages:   []modules.Message{msg0},
+		TxMessages: []modules.Message{msg0},
 	}
-	genesis,_ := common2.NewGenesisUnit(modules.Transactions{tx},time.Now().Unix())
+	genesis, _ := common2.NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix())
 	//fmt.Printf("-----------%+v\n",genesis)
 	//fmt.Printf("-------1----%+v\n",genesis.Header().Number.Index)
-	authentifiier := &modules.Authentifier{holder.String(),nil,nil,nil}
+	authentifiier := &modules.Authentifier{holder.String(), nil, nil, nil}
 	genesis.UnitHeader.Authors = authentifiier
 	//fmt.Println("--",authentifiier)
 	//fmt.Println("--",genesis.UnitHeader.Authors)
@@ -133,19 +133,18 @@ func PrintDag() {
 		1,
 	}
 	header := dag.GetHeaderByNumber(chainindex)
-	fmt.Println("header=1111",header)
+	fmt.Println("header=1111", header)
 	unit := dag.CurrentUnit()
-	fmt.Printf("0===========111=%#v\n",unit)
-	fmt.Printf("0===========111=%#v\n",unit.UnitHeader)
+	fmt.Printf("0===========111=%#v\n", unit)
+	fmt.Printf("0===========111=%#v\n", unit.UnitHeader)
 	i := 0
 	if len(unit.UnitHeader.ParentsHash) > 0 {
 		unit = dag.GetUnit(unit.ParentHash()[0])
-		fmt.Printf("%d===========111=%#v\n",i,unit)
-		fmt.Printf("%d===========111=%#v\n",i,unit.UnitHeader)
+		fmt.Printf("%d===========111=%#v\n", i, unit)
+		fmt.Printf("%d===========111=%#v\n", i, unit.UnitHeader)
 		i++
 	}
 }
-
 
 // testTxPool is a fake, helper transaction pool for testing purposes
 type testTxPool struct {
@@ -169,7 +168,6 @@ func (p *testTxPool) AddRemotes(txs []*modules.Transaction) []error {
 	return make([]error, len(txs))
 }
 
-
 // Pending returns all the transactions known to the pool
 func (p *testTxPool) Pending() (map[common.Hash]*modules.TxPoolTransaction, error) {
 	p.lock.RLock()
@@ -186,7 +184,7 @@ func (p *testTxPool) Pending() (map[common.Hash]*modules.TxPoolTransaction, erro
 	return batches, nil
 }
 
-func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription{
+func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return p.txFeed.Subscribe(ch)
 }
 
