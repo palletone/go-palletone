@@ -148,15 +148,15 @@ func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32)
 
 	interval := gp.ChainParameters.MediatorInterval
 
-	// 本条件是用来生产创世区块, 由于palletone创世单元不是有mediator生产, 先注释掉
-	//if dgp.LastVerifiedUnitNum == 0 {
-	//	/**
-	//	注：第一个验证单元在genesisTime加上一个验证单元间隔
-	//	n.b. first verifiedUnit is at genesisTime plus one verifiedUnitInterval
-	//	*/
-	//	genesisTime := dgp.LastVerifiedUnitTime.Unix()
-	//	return time.Unix(genesisTime + int64(slotNum) * int64(interval), 0)
-	//}
+	// 本条件是用来生产第一个unit
+	if dgp.LastVerifiedUnitNum == 0 {
+		/**
+		注：第一个验证单元在genesisTime加上一个验证单元间隔
+		n.b. first verifiedUnit is at genesisTime plus one verifiedUnitInterval
+		*/
+		genesisTime := dgp.LastVerifiedUnitTime
+		return time.Unix(genesisTime + int64(slotNum) * int64(interval), 0)
+	}
 
 	// 最近的验证单元的绝对slot
 	var verifiedUnitAbsSlot = dgp.LastVerifiedUnitTime / int64(interval)

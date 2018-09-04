@@ -106,11 +106,11 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 		log.Info("Not producing VerifiedUnit because production is disabled " +
 			"until we receive a recent VerifiedUnit (see: --enable-stale-production)")
 	case NotTimeYet:
-		log.Debug("Not producing VerifiedUnit because next slot time is " + detail["NextTime"] +
-			" , but now is " + detail["Now"])
+		//log.Debug("Not producing VerifiedUnit because next slot time is " + detail["NextTime"] +
+		//	" , but now is " + detail["Now"])
 	case NotMyTurn:
-		log.Debug("Not producing VerifiedUnit because current scheduled mediator is " +
-			detail["ScheduledMediator"])
+		//log.Debug("Not producing VerifiedUnit because current scheduled mediator is " +
+		//	detail["ScheduledMediator"])
 	case Lag:
 		log.Info("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time." +
 			" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
@@ -161,17 +161,15 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 		return NotTimeYet, detail
 	}
 
-	//
 	// this Conditional judgment should fail, because now <= LastVerifiedUnitTime
 	// should have resulted in slot == 0.
 	//
 	// if this assert triggers, there is a serious bug in GetSlotAtTime()
 	// which would result in allowing a later block to have a timestamp
 	// less than or equal to the previous VerifiedUnit
-	//
-	//if !now.After(dgp.LastVerifiedUnitTime) {
-	//	panic("\n The later VerifiedUnit have a timestamp less than or equal to the previous!")
-	//}
+	if !(now.Unix() > dgp.LastVerifiedUnitTime) {
+		panic("\n The later VerifiedUnit have a timestamp less than or equal to the previous!")
+	}
 
 	scheduledMediator := ms.GetScheduledMediator(dgp, slot)
 	if scheduledMediator == nil {
@@ -187,20 +185,20 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 		return NotMyTurn, detail
 	}
 
-	scheduledTime := modules.GetSlotTime(gp, dgp, slot)
-	diff := scheduledTime.Sub(now)
-	if diff > 500*time.Millisecond || diff < -500*time.Millisecond {
-		detail["ScheduledTime"] = scheduledTime.Format("2006-01-02 15:04:05")
-		detail["Now"] = now.Format("2006-01-02 15:04:05")
-		return Lag, detail
-	}
-
 	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
 	ks := mp.ptn.GetKeyStore()
 	err := ks.Unlock(accounts.Account{Address: ma}, med.Password)
 	if err != nil {
 		detail["ScheduledKey"] = ma.Str()
 		return NoPrivateKey, detail
+	}
+
+	scheduledTime := modules.GetSlotTime(gp, dgp, slot)
+	diff := scheduledTime.Sub(now)
+	if diff > 500*time.Millisecond || diff < -500*time.Millisecond {
+		detail["ScheduledTime"] = scheduledTime.Format("2006-01-02 15:04:05")
+		detail["Now"] = now.Format("2006-01-02 15:04:05")
+		return Lag, detail
 	}
 
 	// 2. 生产验证单元
