@@ -436,6 +436,7 @@ func newTxPricedList(all *map[common.Hash]*modules.TxPoolTransaction) *txPricedL
 // Put inserts a new transaction into the heap.
 func (l *txPricedList) Put(tx *modules.TxPoolTransaction) *priceHeap {
 	heap.Push(l.items, tx)
+	heap.Push(l.prio_items, tx)
 
 	return l.items
 }
@@ -455,8 +456,10 @@ func (l *txPricedList) Removed() {
 	l.stales, l.items = 0, &reheap
 	for _, tx := range *l.all {
 		*l.items = append(*l.items, tx)
+		*l.prio_items = append(*l.prio_items, tx)
 	}
 	heap.Init(l.items)
+	heap.Init(l.prio_items)
 }
 
 // Cap finds all the transactions below the given price threshold, drops them

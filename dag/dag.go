@@ -20,6 +20,7 @@ package dag
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"sync"
 
 	"github.com/coocood/freecache"
@@ -27,23 +28,21 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
-
-
 type Dag struct {
-	Cache *freecache.Cache
-	Db ptndb.Database
+	Cache         *freecache.Cache
+	Db            ptndb.Database
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
-	Mutex sync.RWMutex
+	Mutex         sync.RWMutex
 	GlobalProp    *modules.GlobalProperty
 	DynGlobalProp *modules.DynamicGlobalProperty
 	MediatorSchl  *modules.MediatorSchedule
@@ -267,7 +266,7 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 //Ethereum ethash engine.go
 func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 	// step1. check unit signature, should be compare to mediator list
-	if err := dagcommon.ValidateUnitSignature(d.Db,header, false); err != nil {
+	if err := dagcommon.ValidateUnitSignature(d.Db, header, false); err != nil {
 		log.Info("Validate unit signature", "error", err.Error())
 		return err
 	}
@@ -292,7 +291,7 @@ func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
 To get account token list and tokens's information
 */
 func (d *Dag) WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error) {
-	return dagcommon.GetAccountTokens(d.Db,addr)
+	return dagcommon.GetAccountTokens(d.Db, addr)
 }
 
 func (d *Dag) WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
@@ -320,7 +319,7 @@ func (d *Dag) WalletBalance(address string, assetid []byte, uniqueid []byte, cha
 
 	addr := common.Address{}
 	addr.SetString(address)
-	return dagcommon.WalletBalance(d.Db,addr, asset), nil
+	return dagcommon.WalletBalance(d.Db, addr, asset), nil
 }
 
 func NewDag(db ptndb.Database) (*Dag, error) {
@@ -342,8 +341,8 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	}
 
 	dag := &Dag{
-		Cache: freecache.NewCache(200 * 1024 * 1024),
-		Db:    db,
+		Cache:         freecache.NewCache(200 * 1024 * 1024),
+		Db:            db,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
 		GlobalProp:    gp,
@@ -395,7 +394,35 @@ func (d *Dag) GetTrieSyncProgress() (uint64, error) {
 }
 
 func (d *Dag) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
+	d.Mutex.RLock()
+	defer d.Mutex.RUnlock()
 	return storage.GetUtxoEntry(d.Db, key)
+}
+func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
+	neededSet := make(map[modules.OutPoint]struct{})
+	preout := modules.OutPoint{TxHash: tx.Hash()}
+	for i, msgcopy := range tx.TxMessages {
+		if msgcopy.App == modules.APP_PAYMENT {
+			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+				msgIdx := uint32(i)
+				preout.MessageIndex = msgIdx
+				for j := range msg.Output {
+					txoutIdx := uint32(j)
+					preout.OutIndex = txoutIdx
+					neededSet[preout] = struct{}{}
+				}
+			}
+		}
+
+	}
+	// if tx is Not CoinBase
+	// add txIn previousoutpoint
+	view := txspool.NewUtxoViewpoint()
+	d.Mutex.RLock()
+	err := view.FetchUtxos(&d.Db, neededSet)
+	d.Mutex.RUnlock()
+
+	return view, err
 }
 
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
