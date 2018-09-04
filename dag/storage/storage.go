@@ -78,9 +78,11 @@ func Store(db ptndb.Database, key string, value interface{}) error {
 	_, err = db.Get([]byte(key))
 	if err != nil {
 		if err == errors.ErrNotFound {
-			if err := db.Put([]byte(key), val); err != nil {
-				return err
-			}
+			//if err := db.Put([]byte(key), val); err != nil {
+			//	return err
+			//}
+			// modified by Albert·Gou
+			return db.Put([]byte(key), val)
 		} else {
 			return err
 		}
