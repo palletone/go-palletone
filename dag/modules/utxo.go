@@ -64,6 +64,21 @@ func (asset *Asset) IsEmpty() bool {
 	return false
 }
 
+func (asset *Asset) Bytes() []byte {
+	data, err := rlp.EncodeToBytes(asset)
+	if err != nil {
+		return nil
+	}
+	return data
+}
+
+func (asset *Asset) SetBytes(data []byte) error {
+	if err := rlp.DecodeBytes(data, asset); err != nil {
+		return err
+	}
+	return nil
+}
+
 type Utxo struct {
 	TxID         common.Hash `json:"unit_id"`       // transaction id
 	MessageIndex uint32      `json:"message_index"` // message index in transaction

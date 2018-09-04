@@ -19,13 +19,11 @@
 package modules
 
 import (
-
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 
 	"io"
-
 )
 
 type transactionTemp struct {
@@ -44,7 +42,7 @@ func (tx *Transaction) DecodeRLP(s *rlp.Stream) error {
 	}
 	var txTemp transactionTemp
 	rlp.DecodeBytes(raw, &txTemp)
-	temp2Tx(txTemp,tx)
+	temp2Tx(txTemp, tx)
 	//fmt.Println("Use DecodeRLP")
 	return nil
 }
@@ -54,7 +52,7 @@ func (tx *Transaction) EncodeRLP(w io.Writer) error {
 	return rlp.Encode(w, temp)
 }
 func tx2Temp(tx Transaction) transactionTemp {
-	temp := transactionTemp{TxHash:tx.TxHash}
+	temp := transactionTemp{TxHash: tx.TxHash}
 
 	for _, m := range tx.TxMessages {
 
@@ -62,13 +60,13 @@ func tx2Temp(tx Transaction) transactionTemp {
 			App: m.App,
 		}
 		m1.Data, _ = rlp.EncodeToBytes(m.Payload)
-		temp.TxMessages=append(temp.TxMessages, m1)
+		temp.TxMessages = append(temp.TxMessages, m1)
 
 	}
 	return temp
 }
-func temp2Tx(temp transactionTemp,tx *Transaction )  {
-	tx.TxHash=temp.TxHash
+func temp2Tx(temp transactionTemp, tx *Transaction) {
+	tx.TxHash = temp.TxHash
 
 	for _, m := range temp.TxMessages {
 		m1 := Message{
@@ -79,30 +77,30 @@ func temp2Tx(temp transactionTemp,tx *Transaction )  {
 			rlp.DecodeBytes(m.Data, &pay)
 			m1.Payload = &pay
 
-		} else if m.App== APP_TEXT {
+		} else if m.App == APP_TEXT {
 			var text TextPayload
-			rlp.DecodeBytes(m.Data,&text)
-			m1.Payload=&text
+			rlp.DecodeBytes(m.Data, &text)
+			m1.Payload = &text
 
-		}  else if m.App== APP_CONTRACT_INVOKE {
+		} else if m.App == APP_CONTRACT_INVOKE {
 			var invoke ContractInvokePayload
-			rlp.DecodeBytes(m.Data,&invoke)
-			m1.Payload=&invoke
+			rlp.DecodeBytes(m.Data, &invoke)
+			m1.Payload = &invoke
 
-		} else if m.App== APP_CONTRACT_DEPLOY {
+		} else if m.App == APP_CONTRACT_DEPLOY {
 			var deploy ContractDeployPayload
-			rlp.DecodeBytes(m.Data,&deploy)
-			m1.Payload=&deploy
+			rlp.DecodeBytes(m.Data, &deploy)
+			m1.Payload = &deploy
 
-		} else if m.App== APP_CONFIG {
+		} else if m.App == APP_CONFIG {
 			var conf ConfigPayload
-			rlp.DecodeBytes(m.Data,&conf)
-			m1.Payload=&conf
+			rlp.DecodeBytes(m.Data, &conf)
+			m1.Payload = &conf
 
-		} else{
+		} else {
 			fmt.Println("Unknown message app type")
 		}
-		tx.TxMessages=append(tx.TxMessages, m1)
+		tx.TxMessages = append(tx.TxMessages, m1)
 
 	}
 }
