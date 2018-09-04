@@ -30,10 +30,9 @@ import (
 )
 
 func TestGetUnit(t *testing.T) {
-	if Dbconn == nil {
-		log.Println("dbconn is nil , renew db  start ...")
-		Dbconn = ReNewDbConn(dagconfig.DbPath)
-	}
+	log.Println("dbconn is nil , renew db  start ...")
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
+
 	GetUnit(Dbconn, common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
 }
 
@@ -41,15 +40,14 @@ func TestGetContract(t *testing.T) {
 	var keys []string
 	var results []interface{}
 	var origin modules.Contract
-	//copy(origin.Id[32-len(id):], id.Bytes())
+
 	origin.Id = common.HexToHash("123456")
 
 	origin.Name = "test"
 	origin.Code = []byte(`log.PrintLn("hello world")`)
 	origin.Input = []byte("input")
-	if Dbconn == nil {
-		Dbconn = ReNewDbConn(dagconfig.DbPath)
-	}
+
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
 
 	log.Println("store error: ", StoreBytes(Dbconn, append(CONTRACT_PTEFIX, origin.Id[:]...), origin))
 	keys = append(keys, "Id", "id", "Name", "Code", "code", "codes", "inputs")
@@ -77,10 +75,12 @@ func TestUnitNumberIndex(t *testing.T) {
 }
 
 func TestGetContractState(t *testing.T) {
-	version, value := GetContractState("contract0000", "name")
+
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	version, value := GetContractState(Dbconn, "contract0000", "name")
 	log.Println(version)
 	log.Println(value)
-	data := GetContractAllState([]byte("contract0000"))
+	data := GetContractAllState(Dbconn, []byte("contract0000"))
 	for k, v := range data {
 		log.Println(k, v)
 	}
