@@ -1484,7 +1484,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		cmdInputs = *cmd.Inputs
 	}
 	for _, rti := range cmdInputs {
-		inputHash, err := common.NewHashFromStr(rti.Txid)
+		inputHash, err := common.NewHashFromStr(rti.Txid[2:])
 		if err != nil {
 			return nil, DeserializationError{err}
 		}
