@@ -396,10 +396,10 @@ func (pool *TxPool) Content() (map[common.Hash]*modules.Transaction, map[common.
 	pending := make(map[common.Hash]*modules.Transaction)
 	queue := make(map[common.Hash]*modules.Transaction)
 	for hash, tx := range pool.pending {
-		pending[hash] = PooltxToTx(tx)
+		pending[hash] = tx.Tx
 	}
 	for hash, tx := range pool.queue {
-		pending[hash] = PooltxToTx(tx)
+		queue[hash] = tx.Tx
 	}
 	return pending, queue
 }
@@ -512,7 +512,7 @@ func TxtoTxpoolTx(txpool *TxPool, tx *modules.Transaction) *modules.TxPoolTransa
 	txpool_tx := new(modules.TxPoolTransaction)
 	txpool_tx.Tx = tx
 
-	txpool_tx.CreationDate = time.Now().Format(modules.TimeFormatString)
+	txpool_tx.CreationDate = time.Now()
 	txpool_tx.Nonce = txpool.GetNonce(tx.TxHash) + 1
 	txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
 	return txpool_tx
@@ -637,12 +637,12 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 func (pool *TxPool) enqueueTx(hash common.Hash, tx *modules.TxPoolTransaction) (bool, error) {
 	// Try to insert the transaction into the future queue
 
-	// inserted, old := pool.queue[from].Add(tx, pool.config.PriceBump)
-	// if !inserted {
-	// 	// An older transaction was better, discard this
-	// 	//queuedDiscardCounter.Inc(1)
-	// 	return false, ErrReplaceUnderpriced
-	// }
+	old, ok := pool.queue[hash]
+	if !ok {
+		// An older transaction was better, discard this
+		//queuedDiscardCounter.Inc(1)
+		return false, ErrReplaceUnderpriced
+	}
 
 	pool.all[hash] = tx
 	return true, nil
