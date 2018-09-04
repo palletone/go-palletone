@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
+	"github.com/dedis/kyber"
 )
 
 // 全局属性的结构体定义
@@ -56,6 +57,25 @@ type DynamicGlobalProperty struct {
 	用于计算mediator的参与率。used to compute mediator participation.
 	*/
 	//	RecentSlotsFilled float32
+}
+
+func (gp *GlobalProperty) GetCurThreshold() int {
+	aSize := len(gp.ActiveMediators)
+	offset := (core.PalletOne100Percent - core.PalletOneIrreversibleThreshold) * aSize /
+		core.PalletOne100Percent
+
+	return aSize - offset
+}
+
+func (gp *GlobalProperty) GetActiveMediatorInitPubs() []kyber.Point {
+	aSize := len(gp.ActiveMediators)
+	pubs := make([]kyber.Point, 0, aSize)
+
+	for _, med := range gp.ActiveMediators {
+		pubs = append(pubs, med.InitPartPub)
+	}
+
+	return pubs
 }
 
 func (gp *GlobalProperty) GetActiveMediatorNodes() []*discover.Node {

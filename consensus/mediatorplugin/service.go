@@ -21,7 +21,6 @@ package mediatorplugin
 import (
 	"fmt"
 	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/group/edwards25519"
 	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
 	"github.com/palletone/go-palletone/common"
@@ -36,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/dedis/kyber/pairing/bn256"
 )
 
 // PalletOne wraps all methods required for producing unit.
@@ -75,9 +75,7 @@ type MediatorPlugin struct {
 
 	// dkg生成vss相关
 	suite   vss.Suite
-	partSec kyber.Scalar
-	partPub kyber.Point
-	dkg     *dkg.DistKeyGenerator
+	dkgs    map[common.Address]*dkg.DistKeyGenerator
 
 	// unit阈值签名相关
 	pendingTBLSSign map[common.Hash]*toTBLSSigned // 等待TBLS阈值签名的unit
@@ -91,18 +89,36 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 	return nil
 }
 
+func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
+	ams := make([]common.Address, 0)
+
+	gp := mp.getDag().GlobalProp
+	for add := range mp.mediators  {
+		if _, ok := gp.ActiveMediators[add]; ok {
+			ams = append(ams, add)
+		}
+	}
+
+	return ams
+}
+
+func (mp *MediatorPlugin) HaveActiveMediator() bool {
+	ams := mp.GetLocalActiveMediators()
+
+	return len(ams) != 0
+}
+
 func (mp *MediatorPlugin) AddActiveMediatorPeers() {
+	if !mp.HaveActiveMediator() {
+		return
+	}
+
 	for _, n := range mp.ptn.GetActiveMediatorNodes() {
 		mp.server.AddPeer(n)
 	}
 }
 
-func (mp *MediatorPlugin) Start(server *p2p.Server) error {
-	log.Debug("mediator plugin startup begin")
-
-	mp.server = server
-	go mp.AddActiveMediatorPeers()
-
+func (mp *MediatorPlugin) ScheduleProductionLoop() {
 	// 1. 判断是否满足生产验证单元的条件，主要判断本节点是否控制至少一个mediator账户
 	if len(mp.mediators) == 0 {
 		println("No mediators configured! Please add mediator and private keys to configuration.")
@@ -111,17 +127,48 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 		log.Info(fmt.Sprintf("Launching verified unit production for %d mediators.", len(mp.mediators)))
 
 		if mp.productionEnabled {
-			dag := mp.ptn.Dag()
+			dag := mp.getDag()
 			if dag.DynGlobalProp.LastVerifiedUnitNum == 0 {
 				newChainBanner(dag)
 			}
 		}
 
 		// 调度生产unit
-		go mp.ScheduleProductionLoop()
+		go mp.scheduleProductionLoop()
 	}
+}
 
-	// BLS签名循环
+func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
+	ams := mp.GetLocalActiveMediators()
+	initPubs := mp.getDag().GetActiveMediatorInitPubs()
+	curThreshold := mp.getDag().GetCurThreshold()
+
+	for _, med := range ams {
+		initSec := mp.mediators[med].InitPartSec
+
+		dkg, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
+		if err != nil {
+			panic(err)
+		}
+
+		mp.dkgs[med] = dkg
+	}
+}
+
+func (mp *MediatorPlugin) Start(server *p2p.Server) error {
+	log.Debug("mediator plugin startup begin")
+	mp.server = server
+
+	// 1. 如果当前节点有活跃mediator，则静态连接其他活跃mediator
+	go mp.AddActiveMediatorPeers()
+
+	// 2. 开启循环生产计划
+	go mp.ScheduleProductionLoop()
+
+	// 3. 给当前节点控制的活跃mediator，初始化对应的DKG
+	go mp.NewActiveMediatorsDKG()
+
+	// 4. BLS签名循环
 	go mp.unitBLSSignLoop()
 
 	log.Debug("mediator plugin startup end")
@@ -180,15 +227,18 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 
 		toBLSSigned:     make(chan *toBLSSigned),
 		pendingTBLSSign: make(map[common.Hash]*toTBLSSigned),
-	}
 
-	mp.suite = edwards25519.NewBlakeSHA256Ed25519()
-	//	mp.partSec, mp.partPub = genPair(mp.suite)
-	mp.dkg = nil //dkg.NewDistKeyGenerator(mp.suite, mp.partSec, partPubs, nbParticipants/2+1)
+		suite: bn256.NewSuiteG2(),
+		dkgs: make(map[common.Address]*dkg.DistKeyGenerator),
+	}
 
 	log.Debug("mediator plugin initialize end")
 
 	return &mp, nil
+}
+
+func (mp *MediatorPlugin) getDag() *dag.Dag {
+	return mp.ptn.Dag()
 }
 
 func ConfigToAccount(medConf MediatorConf) MediatorAccount {

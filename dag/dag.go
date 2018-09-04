@@ -34,6 +34,7 @@ import (
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/dedis/kyber"
 )
 
 type Dag struct {
@@ -430,4 +431,14 @@ func (d *Dag) GetActiveMediatorNodes() []*discover.Node {
 // get contract state
 func (d *Dag) GetContractState(id string, field string) (modules.StateVersion, []byte) {
 	return storage.GetContractState(d.Db, id, field)
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
+	return d.GlobalProp.GetActiveMediatorInitPubs()
+}
+
+// author Albert·Gou
+func (d *Dag) GetCurThreshold() int {
+	return d.GlobalProp.GetCurThreshold()
 }
