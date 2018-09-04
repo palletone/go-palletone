@@ -333,9 +333,9 @@ func SaveUnit(db ptndb.Database, unit modules.Unit, isGenesis bool) error {
 		return fmt.Errorf("Unit is null")
 	}
 	// step1. check unit signature, should be compare to mediator list
-	if err := ValidateUnitSignature(db, unit.UnitHeader, isGenesis); err != nil {
-		log.Info("Validate unit signature", "error", err.Error())
-		//return err
+	errno := ValidateUnitSignature(db, unit.UnitHeader, isGenesis)
+	if int(errno) != modules.UNIT_STATE_VALIDATED && int(errno) != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+		return fmt.Errorf("Validate unit signature, errno=%d", errno)
 	}
 
 	// step2. check unit size

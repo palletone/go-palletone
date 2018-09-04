@@ -46,6 +46,9 @@ type Dag struct {
 	GlobalProp    *modules.GlobalProperty
 	DynGlobalProp *modules.DynamicGlobalProperty
 	MediatorSchl  *modules.MediatorSchedule
+
+	// memory unit
+	Memdag *modules.MemDag
 }
 
 func (d *Dag) CurrentUnit() *modules.Unit {
@@ -144,10 +147,28 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 }
 
 func (d *Dag) SaveDag(unit modules.Unit) (int, error) {
-	if err := dagcommon.SaveUnit(d.Db, unit, false); err != nil {
-		fmt.Errorf("SaveDag, save error: %s", err.Error())
-		return -1, err
+	// step1. check exists
+	if d.Memdag.Exists(unit.UnitHash) || d.GetUnit(unit.UnitHash) != nil {
+		return 0, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash)
 	}
+	// step2. validate unit
+	unitState := dagcommon.ValidateUnit(d.Db, &unit, false)
+	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+		return 0, fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
+	}
+	if unitState == modules.UNIT_STATE_VALIDATED {
+		// step3.1. pass and with group signature, put into leveldb
+		if err := dagcommon.SaveUnit(d.Db, unit, false); err != nil {
+			return -1, fmt.Errorf("SaveDag, save error: %s", err.Error())
+		}
+		// step3.2. if pass and with group signature, prune fork data
+	} else {
+		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
+		if err := d.Memdag.Save(&unit); err != nil {
+			return -1, fmt.Errorf("SaveDag, save error: %s", err.Error())
+		}
+	}
+	// step5. check if it is need to switch
 	return 0, nil
 }
 
@@ -271,9 +292,9 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 //Ethereum ethash engine.go
 func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 	// step1. check unit signature, should be compare to mediator list
-	if err := dagcommon.ValidateUnitSignature(d.Db, header, false); err != nil {
-		log.Info("Validate unit signature", "error", err.Error())
-		return err
+	unitState := dagcommon.ValidateUnitSignature(d.Db, header, false)
+	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+		return fmt.Errorf("Validate unit signature error, errno=%d", unitState)
 	}
 
 	// step2. check extra data
@@ -353,6 +374,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		GlobalProp:    gp,
 		DynGlobalProp: dgp,
 		MediatorSchl:  ms,
+		Memdag:        modules.InitMemDag(),
 	}
 
 	return dag, nil
@@ -367,6 +389,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		GlobalProp:    nil,
 		DynGlobalProp: nil,
 		MediatorSchl:  nil,
+		Memdag:        modules.InitMemDag(),
 	}
 	return dag, nil
 }

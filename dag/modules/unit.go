@@ -30,6 +30,19 @@ import (
 	"github.com/palletone/go-palletone/core"
 )
 
+// validate unit state
+const (
+	UNIT_STATE_VALIDATED                = 0x00
+	UNIT_STATE_AUTHOR_SIGNATURE_PASSED  = 0x01
+	UNIT_STATE_EMPTY                    = 0x02
+	UNIT_STATE_INVALID_AUTHOR_SIGNATURE = 0x03
+	UNIT_STATE_INVALID_GROUP_SIGNATURE  = 0x04
+	UNIT_STATE_HAS_INVALID_TRANSACTIONS = 0x05
+	UNIT_STATE_INVALID_SIZE             = 0x06
+	UNIT_STATE_INVALID_EXTRA_DATA       = 0x07
+	UNIT_STATE_OTHER_ERROR              = 0xFF
+)
+
 type Header struct {
 	ParentsHash  []common.Hash   `json:"parents_hash"`
 	AssetIDs     []IDType16      `json:"assets"`
@@ -39,8 +52,6 @@ type Header struct {
 	Number       ChainIndex      `json:"index"`
 	Extra        []byte          `json:"extra"`
 	Creationdate int64           `json:"creation_time"` // unit create time
-	//FeeLimit    uint64        `json:"fee_limit"`
-	//FeeUsed     uint64        `json:"fee_used"`
 }
 
 func (cpy *Header) CopyHeader(h *Header) {

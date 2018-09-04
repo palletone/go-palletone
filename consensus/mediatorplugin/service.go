@@ -148,7 +148,7 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 
 		dkg, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
-			panic(err)
+			//panic(err)
 		}
 
 		mp.dkgs[med] = dkg

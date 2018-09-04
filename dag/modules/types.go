@@ -19,7 +19,7 @@
 package modules
 
 import (
-	"fmt"
+	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 var TimeFormatString = "2006/01/02 15:04:05"
@@ -37,11 +37,12 @@ var (
 )
 
 func (it *IDType16) String() string {
-	result := string("")
-	for _, b := range it {
-		result += fmt.Sprintf("%x", b)
-	}
-	return result
+	//result := string("")
+	//for _, b := range it {
+	//	result += fmt.Sprintf("%x", b)
+	//}
+	//return result
+	return hexutil.Encode(it.Bytes())
 	//var b []byte
 	//length := len(it)
 	//for _, v := range it {

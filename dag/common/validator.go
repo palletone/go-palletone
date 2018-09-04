@@ -1,3 +1,20 @@
+/*
+   This file is part of go-palletone.
+   go-palletone is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   go-palletone is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/*
+ * @author PalletOne core developers <dev@pallet.one>
+ * @date 2018
+ */
 package common
 
 import (
@@ -7,7 +24,9 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -175,9 +194,9 @@ func validateMessageType(app byte, payload interface{}) bool {
 验证单元的签名，需要比对见证人列表
 To validate unit's signature, and mediators' signature
 */
-func ValidateUnitSignature(db ptndb.Database, h *modules.Header, isGenesis bool) error {
+func ValidateUnitSignature(db ptndb.Database, h *modules.Header, isGenesis bool) byte {
 	if h.Authors == nil || len(h.Authors.Address) <= 0 {
-		return fmt.Errorf("No author info")
+		return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
 	emptySigUnit := modules.Unit{}
 	// copy unit's header
@@ -194,34 +213,42 @@ func ValidateUnitSignature(db ptndb.Database, h *modules.Header, isGenesis bool)
 	hash := crypto.Keccak256Hash(util.RHashBytes(*emptySigUnit.UnitHeader))
 	pubKey, err := modules.RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
 	if err != nil {
-		return fmt.Errorf("Verify unit signature when recover pubkey error:%s", err.Error())
+		log.Debug("Verify unit signature when recover pubkey", "error", err.Error())
+		return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
 	//  pubKey to pubKey_bytes
 	pubKey_bytes := crypto.FromECDSAPub(pubKey)
 	if keystore.VerifyUnitWithPK(sig, *emptySigUnit.UnitHeader, pubKey_bytes) == false {
-		return fmt.Errorf("Verify unit signature error.")
+		log.Debug("Verify unit signature error.")
+		return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
 	// if genesis unit just return
 	if isGenesis == true {
-		return nil
+		return modules.UNIT_STATE_VALIDATED
 	}
 	// todo group signature verify
-	//// get mediators
-	//data := GetConfig(db,[]byte("MediatorCandidates"))
-	//var mList []string
-	//if err := rlp.DecodeBytes(data, &mList); err != nil {
-	//	return fmt.Errorf("Check unit signature when get mediators list error: %s", err.Error())
-	//}
-	//bNum := GetConfig(db,[]byte("ActiveMediators"))
-	//var mNum uint16
-	//if err := rlp.DecodeBytes(bNum, &mNum); err != nil {
-	//	return fmt.Errorf("Check unit signature error: %s", err.Error())
-	//}
-	//if int(mNum) != len(mList) {
-	//	return fmt.Errorf("Check unit signature error: mediators info error, pls update network")
-	//}
+	if len(h.Witness) <= 0 {
+		return modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED
+	}
+	// get mediators
+	data := GetConfig(db, []byte("MediatorCandidates"))
+	var mList []string
+	if err := rlp.DecodeBytes(data, &mList); err != nil {
+		log.Debug("Check unit signature when get mediators list", "error", err.Error())
+		return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
+	}
+	bNum := GetConfig(db, []byte("ActiveMediators"))
+	var mNum uint16
+	if err := rlp.DecodeBytes(bNum, &mNum); err != nil {
+		log.Debug("Check unit signature", "error", err.Error())
+		return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
+	}
+	if int(mNum) != len(mList) {
+		log.Debug("Check unit signature", "error", "mediators info error, pls update network")
+		return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
+	}
 
-	return nil
+	return modules.UNIT_STATE_VALIDATED
 }
 
 /**
@@ -285,4 +312,41 @@ func validateContractTplPayload(db ptndb.Database, contractTplPayload *modules.C
 		return modules.TxValidationCode_VALID
 	}
 	return modules.TxValidationCode_INVALID_CONTRACT_TEMPLATE
+}
+
+/**
+验证Unit
+Validate unit
+*/
+func ValidateUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) byte {
+	if unit.UnitSize == 0 || unit.Size() == 0 {
+		return modules.UNIT_STATE_EMPTY
+	}
+	// step1. check unit signature, should be compare to mediator list
+	sigState := ValidateUnitSignature(db, unit.UnitHeader, isGenesis)
+	if sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED && sigState != modules.UNIT_STATE_VALIDATED {
+		return sigState
+	}
+
+	// step2. check unit size
+	if unit.UnitSize != unit.Size() {
+		log.Debug("Validate size", "error", "Size is invalid")
+		return modules.UNIT_STATE_INVALID_SIZE
+	}
+
+	// step3. check header extra data
+	if uint64(len(unit.UnitHeader.Extra)) > uint64(32) {
+		msg := fmt.Sprintf("extra-data too long: %d > %d", len(unit.UnitHeader.Extra), configure.MaximumExtraDataSize)
+		log.Debug(msg)
+		return modules.UNIT_STATE_INVALID_EXTRA_DATA
+	}
+
+	// step4. check transactions in unit
+	_, isSuccess, err := ValidateTransactions(db, &unit.Txs, isGenesis)
+	if isSuccess != true {
+		msg := fmt.Sprintf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+		log.Debug(msg)
+		return modules.UNIT_STATE_HAS_INVALID_TRANSACTIONS
+	}
+	return modules.UNIT_STATE_VALIDATED
 }
