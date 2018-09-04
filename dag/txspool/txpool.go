@@ -638,10 +638,12 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *modules.TxPoolTransaction) (
 	// Try to insert the transaction into the future queue
 
 	old, ok := pool.queue[hash]
-	if !ok {
+	if ok {
 		// An older transaction was better, discard this
-		//queuedDiscardCounter.Inc(1)
-		return false, ErrReplaceUnderpriced
+		if old.GetPriorityLvl() > tx.GetPriorityLvl() {
+			return false, ErrReplaceUnderpriced
+		}
+		delete(pool.all, hash)
 	}
 
 	pool.all[hash] = tx
