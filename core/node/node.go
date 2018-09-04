@@ -616,6 +616,16 @@ func (n *Node) DataDir() string {
 	return n.config.DataDir
 }
 
+// author Albert·Gou
+func (n *Node) ListenAddr() string {
+	return n.config.P2P.ListenAddr
+}
+
+// author Albert·Gou
+func (n *Node) Config() *Config {
+	return n.config
+}
+
 // InstanceDir retrieves the instance directory used by the protocol stack.
 func (n *Node) InstanceDir() string {
 	return n.config.instanceDir()

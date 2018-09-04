@@ -673,11 +673,14 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 
 		// If the parent's unknown, abort insertion
 		//parent := f.getBlock(block.ParentHash())
-		parent := f.getBlock(block.ParentHash()[0])
-		if parent == nil {
-			log.Debug("Unknown parent of propagated block", "peer", peer, "number", block.Number(), "hash", hash, "parent", block.ParentHash())
-			return
+		parentsHash := block.ParentHash()
+		for _, parentHash := range parentsHash {
+			if f.getBlock(parentHash) == nil {
+				log.Debug("Unknown parent of propagated block", "peer", peer, "number", block.Number().Index, "hash", hash, "parent", parentHash)
+				return
+			}
 		}
+
 		// Quickly validate the header and propagate the block if it passes
 		switch err := f.verifyHeader(block.Header()); err {
 		case nil:

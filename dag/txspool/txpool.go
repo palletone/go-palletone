@@ -942,9 +942,7 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 			var inputs modules.PaymentPayload
 			inputs, ok := msg.Payload.(modules.PaymentPayload)
 			if !ok {
-				if err := inputs.ExtractFrInterface(msg.Payload); err != nil {
-					continue
-				}
+				continue
 			}
 			for _, input := range inputs.Input {
 				if tx, ok := pool.outpoints[input.PreviousOutPoint]; ok {

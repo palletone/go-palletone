@@ -1,3 +1,5 @@
+// Copyright 2018 PalletOne
+
 // Copyright 2016 The go-ethereum Authors
 // This file is part of go-ethereum.
 //
@@ -30,6 +32,8 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/ptn"
 	"gopkg.in/urfave/cli.v1"
+	"net"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
 var (
@@ -85,7 +89,19 @@ The output of this command is supposed to be machine-readable.
 		ArgsUsage: " ",
 		Category:  "MEDIATOR COMMANDS",
 		Description: `
-The output of this command will be used to initialize a DistKeyGenerator.
+The output of this command will be used to initialize the DistKeyGenerator.
+`,
+	}
+
+	// append by Albert·Gou
+	nodeInfo = cli.Command{
+		Action:    utils.MigrateFlags(getNodeInfo),
+		Name:      "nodeInfo",
+		Usage:     "get info of current node",
+		ArgsUsage: " ",
+		Category:  "MEDIATOR COMMANDS",
+		Description: `
+The output of this command will be used to set the genesis json file.
 `,
 	}
 )
@@ -163,6 +179,29 @@ func createInitDKS(ctx *cli.Context) error {
 	fmt.Println("\tprivate key: ", secStr)
 	fmt.Println("\tpublic key: ", pubStr)
 	fmt.Println("}")
+
+	return nil
+}
+
+// author Albert·Gou
+func getNodeInfo(ctx *cli.Context) error {
+	stack := makeFullNode(ctx)
+	privateKey := stack.Config().NodeKey()
+	listenAddr := stack.ListenAddr()
+
+	listener, err := net.Listen("tcp", listenAddr)
+	if err != nil {
+		return err
+	}
+	realaddr := listener.Addr().(*net.TCPAddr)
+
+	node := discover.NewNode(
+		discover.PubkeyID(&privateKey.PublicKey),
+		realaddr.IP,
+		uint16(realaddr.Port),
+		uint16(realaddr.Port))
+
+	fmt.Println(node.String())
 
 	return nil
 }

@@ -53,8 +53,6 @@ func TestGetContract(t *testing.T) {
 		return
 	}
 
-	Dbconn := ReNewDbConn(dagconfig.DbPath)
-
 	log.Println("store error: ", StoreBytes(Dbconn, append(CONTRACT_PTEFIX, origin.Id[:]...), origin))
 	keys = append(keys, "Id", "id", "Name", "Code", "code", "codes", "inputs")
 	results = append(results, common.HexToHash("123456"), nil, "test", []byte(`log.PrintLn("hello world")`), nil, nil, nil)

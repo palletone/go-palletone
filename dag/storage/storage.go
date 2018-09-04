@@ -103,10 +103,10 @@ func StoreBytes(db ptndb.Database, key []byte, value interface{}) error {
 	if err != nil {
 		return err
 	}
-
 	_, err = db.Get(key)
 	if err != nil {
-		if err == errors.ErrNotFound {
+		if err.Error() == errors.ErrNotFound.Error() {
+		//	if err == errors.New("not found") {
 			if err := db.Put(key, val); err != nil {
 				return err
 			}
@@ -121,7 +121,9 @@ func StoreBytes(db ptndb.Database, key []byte, value interface{}) error {
 			return err
 		}
 	}
-
+	if err := db.Put(key, val); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -4,6 +4,7 @@ import (
 	unit "github.com/palletone/go-palletone/dag/modules"
 	cc "github.com/palletone/go-palletone/contracts/manger"
 	"time"
+	"github.com/palletone/go-palletone/dag"
 )
 
 
@@ -11,8 +12,8 @@ type Contract struct {
 
 }
 
-func (c *Contract) Start() {
-	cc.Init()
+func (c *Contract) Start(dag *dag.Dag) {
+	go cc.Init(dag)
 }
 
 func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error) {

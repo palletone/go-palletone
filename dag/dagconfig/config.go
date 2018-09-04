@@ -41,6 +41,9 @@ var DefaultConfig = Config{
 
 	// utxo
 	UtxoIndex: true,
+
+	// memory unit, unit number
+	MemoryUnitSize: 128,
 }
 
 // global configuration of dag modules
@@ -63,6 +66,9 @@ type Config struct {
 
 	// utxo
 	UtxoIndex bool
+
+	// memory unit size, unit number
+	MemoryUnitSize uint8
 }
 
 type Sconfig struct {

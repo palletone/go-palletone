@@ -29,4 +29,9 @@ const (
 	DefaultTokenHolder         = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 	DefaultMinMediatorCount    = 11
 	DefaultMinMediatorInterval = 1
+
+	/* percentage fields are fixed point with a denominator of 10,000 */
+	PalletOne100Percent            = 10000
+	PalletOne1Percent              = PalletOne100Percent / 100
+	PalletOneIrreversibleThreshold = 70 * PalletOne1Percent
 )

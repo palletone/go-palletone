@@ -17,13 +17,13 @@
 package ptndb
 
 import (
-	"errors"
 	"sync"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/util"
+	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
 /*
@@ -77,7 +77,7 @@ func (db *MemDatabase) Get(key []byte) ([]byte, error) {
 	if entry, ok := db.db[string(key)]; ok {
 		return common.CopyBytes(entry), nil
 	}
-	return nil, errors.New("not found")
+	return nil, errors.New("leveldb: not found")
 }
 
 func (db *MemDatabase) Keys() [][]byte {
