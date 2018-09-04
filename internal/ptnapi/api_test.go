@@ -111,7 +111,7 @@ type SignTransactionParams struct {
 func TestSignTransaction(t *testing.T) {
 	//from TestRawTransactionGen A --> B C
 	params := `{      
-        "transactionhex": "f8c3a0dbaf803246d0589bc8bdccf1aa548e2a69d0f66cd37c1acbe709328e52fb8640f8a0f89e877061796d656e74f894e7e6e3a0d1df9b3380e84bc2641bb30f33c226f550d23080053906e4f430d82d447a980b80808080f869f867871c110215b9c0009976a9147c0099353492e6d45dd440940605d092506e773988acf843a03131313131313131313131313131323232323232323232323232323232323232a031313131313131313131313131313232323232323232323232323232323232320180",
+        "transactionhex": "f8bca03794883d747507a9b5ee079eeb99d051c0555e708a6bdd8af17f10f3269e9498f899f89701f894e7e6e3a0d1df9b3380e84bc2641bb30f33c226f550d23080053906e4f430d82d447a980b80808080f869f867871c110215b9c0009976a9147c0099353492e6d45dd440940605d092506e773988acf843a03131313131313131313131313131323232323232323232323232323232323232a031313131313131313131313131313232323232323232323232323232323232320180",
         "redeemhex": "",
 	"privkeys": ["cPXW9UVJdjLvCmAxPHdQ1gHkpD5paWpf2PmH5MwsXN5MxnRjbAgE"]
   	}`
@@ -186,10 +186,14 @@ func TestSignTransaction(t *testing.T) {
 		scriptAddr, err := btcutil.NewAddressScriptHash(redeem, realNet)
 		scriptPkScript, err := txscript.PayToAddrScript(scriptAddr)
 		//multisig transaction need redeem for sign
-        for _, mtx := range tx.TxMessages {
-	        payload := mtx.Payload
-                payment, _ := payload.(modules.PaymentPayload)
-			for _, txinOne := range payment.Input {
+        for _, msg := range tx.TxMessages {
+                var payload modules.PaymentPayload
+                if err := payload.ExtractFrInterface(msg.Payload); err != nil {
+		   fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
+		} else {
+			fmt.Println("Payment payload:", payload)
+		}
+			for _, txinOne := range payload.Input {
 			rawInput := btcjson.RawTxInput{
 					txinOne.PreviousOutPoint.TxHash.String(), //txid
 					txinOne.PreviousOutPoint.OutIndex,         //outindex
@@ -216,7 +220,7 @@ func TestSignTransaction(t *testing.T) {
 	//		t.Errorf("complete - got: false, want: true")
 	//	}
        
-	fmt.Println(resultTransToMultsigAddr)
+	fmt.Println("Signed Result is:",resultTransToMultsigAddr)
 	return
 }
 

@@ -491,7 +491,7 @@ func (tplpayload *ContractTplPayload) ExtractFrInterface(data interface{}) error
 	}
 
 	if len(fields) != 6 {
-		return fmt.Errorf("ContractTplPayload extract: Data is not type of PaymentPayload")
+		return fmt.Errorf("ContractTplPayload extract: Data is not type of ContractTplPayload")
 	}
 
 	// extract templateid
@@ -555,6 +555,49 @@ type ContractDeployPayload struct {
 	Jury         []common.Address   `json:"jury"`          // contract jurors list
 	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
 	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
+}
+
+func (deployPayload *ContractDeployPayload) ExtractFrInterface(data interface{}) error {
+	// step1. check data
+	fields, ok := data.([]interface{})
+	if !ok {
+		return fmt.Errorf("ContractDeployPayload extract Data error, should be []interface{}")
+	}
+
+	if len(fields) != 8 {
+		return fmt.Errorf("ContractDeployPayload extract: Data is not type of ContractDeployPayload")
+	}
+
+	// step2. extract templateid
+	tplID, ok := fields[0].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractDeployPayload extract: invalid template id")
+	}
+	// step3. extract contractid
+	contractID, ok := fields[1].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractDeployPayload extract: invalid contract id")
+	}
+	// step4. extract name
+	name, ok := fields[2].([]byte)
+	if !ok {
+		return fmt.Errorf("ContractDeployPayload extract: invalid name")
+	}
+	// step5. extract args
+	fmt.Println("Args:", fields[2])
+	// step6. extract Excutiontime time.Duration
+	fmt.Println("Args:", fields[2])
+	// step7. extract Jury []common.Address
+	fmt.Println("Args:", fields[2])
+	// step8. extract ReadSet []ContractReadSet
+	fmt.Println("Args:", fields[2])
+	// step9. extract WriteSet []PayloadMapStruct
+	fmt.Println("Args:", fields[2])
+
+	deployPayload.TemplateId = tplID
+	deployPayload.ContractId = contractID
+	deployPayload.Name = string(name)
+	return nil
 }
 
 // Contract invoke message

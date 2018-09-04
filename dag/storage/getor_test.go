@@ -48,6 +48,12 @@ func TestGetContract(t *testing.T) {
 	origin.Input = []byte("input")
 
 	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
+
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
 
 	log.Println("store error: ", StoreBytes(Dbconn, append(CONTRACT_PTEFIX, origin.Id[:]...), origin))
 	keys = append(keys, "Id", "id", "Name", "Code", "code", "codes", "inputs")
@@ -75,8 +81,11 @@ func TestUnitNumberIndex(t *testing.T) {
 }
 
 func TestGetContractState(t *testing.T) {
-
 	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
 	version, value := GetContractState(Dbconn, "contract0000", "name")
 	log.Println(version)
 	log.Println(value)

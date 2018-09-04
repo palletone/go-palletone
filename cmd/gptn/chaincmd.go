@@ -32,7 +32,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"gopkg.in/urfave/cli.v1"
-	dag2 "github.com/palletone/go-palletone/dag"
 )
 
 var (
@@ -99,8 +98,7 @@ func removeDB(ctx *cli.Context) error {
 // the zero'd block (i.e. genesis) or will fail hard if it can't succeed.
 func initGenesis(ctx *cli.Context) error {
 	node := makeFullNode(ctx)
-	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
-	dag := dag2.NewDag(Dbconn)
+
 	// Make sure we have a valid genesis JSON
 	genesisPath := ctx.Args().First()
 	//if len(genesisPath) == 0 {
@@ -125,7 +123,7 @@ func initGenesis(ctx *cli.Context) error {
 
 	validateGenesis(genesis)
 
-	_, err = node.OpenDatabase("leveldb", 0, 0)
+	Dbconn, err := node.OpenDatabase("leveldb", 0, 0)
 	if err != nil {
 		fmt.Println("eveldb init failed")
 		return errors.New("leveldb init failed")
@@ -136,7 +134,7 @@ func initGenesis(ctx *cli.Context) error {
 	ks := node.GetKeyStore()
 	account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
 
-	unit, err := gen.SetupGenesisUnit(dag.Db,genesis, ks, account)
+	unit, err := gen.SetupGenesisUnit(Dbconn, genesis, ks, account)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis unit: %v", err)
 		return err
@@ -157,19 +155,29 @@ func initGenesis(ctx *cli.Context) error {
 	// 3, 全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	gp := modules.InitGlobalProp(genesis)
-
-	storage.StoreGlobalProp(dag.Db,gp)
+	storage.StoreGlobalProp(Dbconn, gp)
+	if err != nil {
+		utils.Fatalf("Failed to write global properties: %v", err)
+		return err
+	}
 
 	// 4, 动态全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	dgp := modules.InitDynGlobalProp(genesis, genesisUnitHash)
-
-	storage.StoreDynGlobalProp(dag.Db,dgp)
+	storage.StoreDynGlobalProp(Dbconn, dgp)
+	if err != nil {
+		utils.Fatalf("Failed to write dynamic global properties: %v", err)
+		return err
+	}
 
 	// 5, 初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
-	storage.StoreMediatorSchl(dag.Db,ms)
+	storage.StoreMediatorSchl(Dbconn, ms)
+	if err != nil {
+		utils.Fatalf("Failed to write mediator schedule: %v", err)
+		return err
+	}
 
 	return nil
 }

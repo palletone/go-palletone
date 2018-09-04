@@ -11,6 +11,10 @@ type Contract struct {
 
 }
 
+func (c *Contract) Start() {
+	cc.Init()
+}
+
 func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error) {
 	return cc.Install(chainID, ccName, ccPath, ccVersion)
 }

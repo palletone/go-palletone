@@ -178,14 +178,10 @@ func TestTransactionAddingTxs(t *testing.T) {
 			all = len(txs)
 			pending_cache = len(pool.pending)
 			queue_cache = len(pool.queue)
-			//txsss := PoolTxstoTxs(txs)
-			//fmt.Println("txssssss===========", txsss[0])
 		}
 		log.Println(origin, all, len(pool.all), pending_cache, queue_cache)
 		fmt.Println("defer over.... ", time.Now().Unix()-t0.Unix())
 	}(pool)
-	// pend, queue := pool.Content()
-	// log.Println("content===================", pend, queue)
 
 }
 func transaction(msg []modules.Message, lock uint32) *modules.Transaction {

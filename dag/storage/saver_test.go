@@ -26,14 +26,19 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func TestSaveJoint(t *testing.T) {
-
 	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
+
 	if IsGenesisUnit("123") {
 		log.Println("faile")
 		t.Error("faild")
@@ -56,17 +61,12 @@ func TestSaveJoint(t *testing.T) {
 }
 
 func TestAddUnitKey(t *testing.T) {
-	//keys := GetUnitKeys()
-	// if len(keys) <= 0 {
-	// 	return errors.New("null keys.")
-	// }
-	keys := []string{"unit1231526522017", "unit1231526521834"}
-
-	Dbconn, err := palletdb.NewLDBDatabase(dagconfig.DbPath, 0, 0)
-	if err != nil {
-		log.Println("new db error", err)
-		t.Fatal("error1")
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect ro db error.")
+		return
 	}
+	keys := []string{"unit1231526522017", "unit1231526521834"}
 
 	value := []int{123456, 987654}
 	for i, v := range keys {
@@ -82,8 +82,13 @@ func TestAddUnitKey(t *testing.T) {
 }
 
 func TestGetUnitKeys(t *testing.T) {
-	t0 := time.Now()
 	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
+	t0 := time.Now()
+
 	keys := GetUnitKeys(Dbconn)
 	var this []string
 	for i, v := range keys {
@@ -113,6 +118,10 @@ func TestGetUnitKeys(t *testing.T) {
 
 func TestDBBatch(t *testing.T) {
 	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
 	log.Println("db_path:", DBPath)
 	table := palletdb.NewTable(Dbconn, "hehe")
 	err0 := table.Put([]byte("jay"), []byte("baby"))

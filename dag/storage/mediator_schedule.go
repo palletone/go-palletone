@@ -64,17 +64,18 @@ func getMS(mst *mediatorSchedule) *modules.MediatorSchedule {
 	return ms
 }
 
-func StoreMediatorSchl(db ptndb.Database, ms *modules.MediatorSchedule) {
-
+func StoreMediatorSchl(db ptndb.Database, ms *modules.MediatorSchedule) error {
 	mst := getMST(ms)
 
 	err := Store(db, mediatorSchlDBKey, mst)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store mediator schedule error: %s", err))
 	}
+
+	return err
 }
 
-func RetrieveMediatorSchl(db ptndb.Database) *modules.MediatorSchedule {
+func RetrieveMediatorSchl(db ptndb.Database) (*modules.MediatorSchedule, error) {
 	mst := new(mediatorSchedule)
 
 	err := Retrieve(db, mediatorSchlDBKey, mst)
@@ -84,5 +85,5 @@ func RetrieveMediatorSchl(db ptndb.Database) *modules.MediatorSchedule {
 
 	ms := getMS(mst)
 
-	return ms
+	return ms, err
 }

@@ -37,14 +37,11 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 
-	//"github.com/palletone/go-palletone/configure"
-	"fmt"
+
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag"
-	common2 "github.com/palletone/go-palletone/dag/common"
 	"log"
-	"time"
 )
 
 var (
@@ -57,7 +54,7 @@ var (
 // channels for different events.
 func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
 	memdb, _ := ptndb.NewMemDatabase()
-	dag := dag.NewDag(memdb)
+	dag,_:= dag.NewDag(memdb)
 	engine := new(consensus.DPOSEngine)
 	typemux := new(event.TypeMux)
 	db, _ := ptndb.NewMemDatabase()
@@ -82,63 +79,6 @@ func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks i
 		t.Fatalf("Failed to create protocol manager: %v", err)
 	}
 	return pm, db
-}
-
-func makedag(blocks int) *dag.Dag {
-	//PrintDag()
-	//fmt.Println("=============")
-	memdb, _ := ptndb.NewMemDatabase()
-	dag := dag.NewDag(memdb)
-	pay := fortest.PaymentPayload{
-		Inputs:  []fortest.Input{},
-		Outputs: []fortest.Output{},
-	}
-	holder := common.Address{}
-	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
-
-	msg0 := modules.Message{
-		App:     modules.APP_PAYMENT,
-		Payload: pay,
-	}
-	tx := &modules.Transaction{
-		TxMessages: []modules.Message{msg0},
-	}
-	genesis, _ := common2.NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix())
-	//fmt.Printf("-----------%+v\n",genesis)
-	//fmt.Printf("-------1----%+v\n",genesis.Header().Number.Index)
-	authentifiier := &modules.Authentifier{holder.String(), nil, nil, nil}
-	genesis.UnitHeader.Authors = authentifiier
-	//fmt.Println("--",authentifiier)
-	//fmt.Println("--",genesis.UnitHeader.Authors)
-	genesis.Header().Number.Index = 0
-	dag.SaveDag(*genesis)
-	//fmt.Printf("===========111=%#v\n",dag.CurrentHeader())
-	//fmt.Printf("===========111=%#v\n",dag.CurrentUnit())
-	//fmt.Printf("===========111=%#v\n",dag.GetUnitByNumber(0).Header())
-	//fmt.Printf("===========111=%#v\n",dag.CurrentHeader())
-	return dag
-}
-
-func PrintDag() {
-	memdb, _ := ptndb.NewMemDatabase()
-	dag := dag.NewDag(memdb)
-	chainindex := modules.ChainIndex{
-		modules.IDType16{},
-		true,
-		1,
-	}
-	header := dag.GetHeaderByNumber(chainindex)
-	fmt.Println("header=1111", header)
-	unit := dag.CurrentUnit()
-	fmt.Printf("0===========111=%#v\n", unit)
-	fmt.Printf("0===========111=%#v\n", unit.UnitHeader)
-	i := 0
-	if len(unit.UnitHeader.ParentsHash) > 0 {
-		unit = dag.GetUnit(unit.ParentHash()[0])
-		fmt.Printf("%d===========111=%#v\n", i, unit)
-		fmt.Printf("%d===========111=%#v\n", i, unit.UnitHeader)
-		i++
-	}
 }
 
 // testTxPool is a fake, helper transaction pool for testing purposes

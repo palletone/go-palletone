@@ -5,21 +5,33 @@ import (
 	"log"
 	"testing"
 
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 func TestUpdateUtxo(t *testing.T) {
-	UpdateUtxo(common.Hash{}, &modules.Message{}, uint32(0))
+	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
+	UpdateUtxo(Dbconn, common.Hash{}, &modules.Message{}, uint32(0))
 	dagconfig.DbPath = getTempDir(t)
 }
 
 func TestReadUtxos(t *testing.T) {
+	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
 	dagconfig.DbPath = getTempDir(t)
 
-	utxos, totalAmount := ReadUtxos(common.Address{}, modules.Asset{})
+	utxos, totalAmount := ReadUtxos(Dbconn, common.Address{}, modules.Asset{})
 	log.Println(utxos, totalAmount)
 }
 
@@ -53,16 +65,26 @@ func TestSaveAssetInfo(t *testing.T) {
 }
 
 func TestWalletBalance(t *testing.T) {
+	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
 	addr := common.Address{}
 	addr.SetString("P1CXn936dYuPKGyweKPZRycGNcwmTnqeDaA")
-	balance := WalletBalance(addr, modules.Asset{})
+	balance := WalletBalance(Dbconn, addr, modules.Asset{})
 	log.Println("Address total =", balance)
 }
 
 func TestGetAccountTokens(t *testing.T) {
+	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
 	addr := common.Address{}
 	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkNr")
-	tokens, err := GetAccountTokens(addr)
+	tokens, err := GetAccountTokens(Dbconn, addr)
 	if err != nil {
 		log.Println("Get account error:", err.Error())
 	} else if len(tokens) == 0 {
@@ -72,9 +94,9 @@ func TestGetAccountTokens(t *testing.T) {
 			log.Printf("Token (%s, %v) = %v\n",
 				token.Alias, token.AssetID.AssertId, token.Balance)
 			// test WalletBalance method
-			log.Println(WalletBalance(addr, token.AssetID))
+			log.Println(WalletBalance(Dbconn, addr, token.AssetID))
 			// test ReadUtxos method
-			utxos, amount := ReadUtxos(addr, token.AssetID)
+			utxos, amount := ReadUtxos(Dbconn, addr, token.AssetID)
 			log.Printf("Addr(%s) balance=%v\n", addr.String(), amount)
 			for outpoint, utxo := range utxos {
 				log.Println(">>> UTXO txhash =", outpoint.TxHash.String())
