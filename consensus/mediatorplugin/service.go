@@ -21,6 +21,7 @@ package mediatorplugin
 import (
 	"fmt"
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
 	"github.com/palletone/go-palletone/common"
@@ -35,7 +36,6 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/dedis/kyber/pairing/bn256"
 )
 
 // PalletOne wraps all methods required for producing unit.
@@ -74,8 +74,8 @@ type MediatorPlugin struct {
 	toBLSSigned          chan *toBLSSigned       // 接收新生产的unit
 
 	// dkg生成vss相关
-	suite   vss.Suite
-	dkgs    map[common.Address]*dkg.DistKeyGenerator
+	suite vss.Suite
+	dkgs  map[common.Address]*dkg.DistKeyGenerator
 
 	// unit阈值签名相关
 	pendingTBLSSign map[common.Hash]*toTBLSSigned // 等待TBLS阈值签名的unit
@@ -93,7 +93,7 @@ func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 	ams := make([]common.Address, 0)
 
 	gp := mp.getDag().GlobalProp
-	for add := range mp.mediators  {
+	for add := range mp.mediators {
 		if _, ok := gp.ActiveMediators[add]; ok {
 			ams = append(ams, add)
 		}
@@ -229,7 +229,7 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		pendingTBLSSign: make(map[common.Hash]*toTBLSSigned),
 
 		suite: bn256.NewSuiteG2(),
-		dkgs: make(map[common.Address]*dkg.DistKeyGenerator),
+		dkgs:  make(map[common.Address]*dkg.DistKeyGenerator),
 	}
 
 	log.Debug("mediator plugin initialize end")

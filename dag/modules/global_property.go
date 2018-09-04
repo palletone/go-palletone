@@ -20,11 +20,11 @@
 package modules
 
 import (
+	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
-	"github.com/dedis/kyber"
 )
 
 // 全局属性的结构体定义

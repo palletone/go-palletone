@@ -24,6 +24,7 @@ import (
 
 	"github.com/coocood/freecache"
 	//"github.com/ethereum/go-ethereum/params"
+	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -34,7 +35,6 @@ import (
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/dedis/kyber"
 )
 
 type Dag struct {
@@ -51,7 +51,7 @@ type Dag struct {
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
-	fmt.Println("d.GetHeadUnitHash()/===",hash)
+	fmt.Println("d.GetHeadUnitHash()/===", hash)
 	if err != nil {
 		return nil
 	}
@@ -360,8 +360,8 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 	dag := &Dag{
-		Cache: freecache.NewCache(200 * 1024 * 1024),
-		Db:    db,
+		Cache:         freecache.NewCache(200 * 1024 * 1024),
+		Db:            db,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
 		GlobalProp:    nil,

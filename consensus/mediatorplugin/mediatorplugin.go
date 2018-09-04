@@ -53,7 +53,7 @@ func (mp *MediatorPlugin) SubscribeNewProducedUnitEvent(ch chan<- NewProducedUni
 	return mp.newProducedUnitScope.Track(mp.newProducedUnitFeed.Subscribe(ch))
 }
 
-func (mp *MediatorPlugin) ScheduleProductionLoop() {
+func (mp *MediatorPlugin) scheduleProductionLoop() {
 	// 1. 计算下一秒的滴答时刻，如果少于50毫秒，则多等一秒开始
 	now := time.Now()
 	timeToNextSecond := time.Second - time.Duration(now.Nanosecond())
@@ -124,7 +124,7 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 	}
 
 	// 3. 继续循环生产计划
-	mp.ScheduleProductionLoop()
+	mp.scheduleProductionLoop()
 
 	return result
 }
@@ -133,7 +133,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	//	println("\n尝试生产验证单元...")
 	detail := map[string]string{}
 
-	dag := mp.ptn.Dag()
+	dag := mp.getDag()
 	gp := dag.GlobalProp
 	dgp := dag.DynGlobalProp
 	ms := dag.MediatorSchl
@@ -202,7 +202,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 2. 生产验证单元
-	unit := GenerateUnit(mp.ptn.Dag(), scheduledTime, *scheduledMediator, ks, mp.ptn.TxPool())
+	unit := GenerateUnit(mp.getDag(), scheduledTime, *scheduledMediator, ks, mp.ptn.TxPool())
 	if unit.IsEmpty() {
 		return ExceptionProducing, detail
 	}

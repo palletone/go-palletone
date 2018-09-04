@@ -155,7 +155,7 @@ func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32)
 		n.b. first verifiedUnit is at genesisTime plus one verifiedUnitInterval
 		*/
 		genesisTime := dgp.LastVerifiedUnitTime
-		return time.Unix(genesisTime + int64(slotNum) * int64(interval), 0)
+		return time.Unix(genesisTime+int64(slotNum)*int64(interval), 0)
 	}
 
 	// 最近的验证单元的绝对slot
