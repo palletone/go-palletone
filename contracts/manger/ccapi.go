@@ -18,6 +18,8 @@ import (
 	"container/list"
 	"github.com/spf13/viper"
 	"encoding/hex"
+	"github.com/palletone/go-palletone/dag"
+	db "github.com/palletone/go-palletone/contracts/comm"
 )
 
 var debugX bool = true
@@ -65,10 +67,14 @@ func listGet(templateId []byte) (*TempCC, error) {
 }
 
 // contract manger module init
-func Init() error {
+func Init(dag *dag.Dag) error {
 	peerContractMockConfigInit()
 
-	err := peerServerInit()
+	err := db.SetCcDagHand(dag)
+	if err != nil {
+		return err
+	}
+	err = peerServerInit()
 	if err != nil {
 		logger.Errorf("peerServerInit error:%s", err)
 		return err
@@ -78,6 +84,7 @@ func Init() error {
 		logger.Errorf("systemContractInit error:%s", err)
 		return err
 	}
+	logger.Info("contract manger init ok")
 
 	return nil
 }
@@ -430,8 +437,6 @@ func peerContractMockConfigInit() {
 }
 
 func init2() {
-	peerContractMockConfigInit()
-
-	//InitNoSysCCC()
-	Init()
+	//Init()
 }
+
