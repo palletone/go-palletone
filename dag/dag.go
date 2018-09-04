@@ -52,13 +52,16 @@ type Dag struct {
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
+	fmt.Println("d.GetHeadUnitHash()/===",hash)
 	if err != nil {
 		return nil
 	}
 	// step2. get unit height
 	height := d.GetUnitNumber(hash)
+	//fmt.Printf("d.GetUnitNumber(hash)===%#v\n",height)
 	// get unit header
 	uHeader, err := storage.GetHeader(d.Db, hash, &height)
+	//fmt.Printf("storage.GetHeader(d.Db, hash, &height)==%#v\n",uHeader)
 	if err != nil {
 		log.Error("Current unit when get unit header", "error", err.Error())
 		return nil
@@ -71,6 +74,8 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	txs, err := dagcommon.GetUnitTransactions(d.Db, uHash)
 	if err != nil {
 		log.Error("Current unit when get transactions", "error", err.Error())
+		//fmt.Println("植同学===》Current unit when get transactions/error===",err.Error())
+		//测试时需要注释掉
 		return nil
 	}
 	// generate unit
@@ -351,6 +356,19 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		MediatorSchl:  ms,
 	}
 
+	return dag, nil
+}
+func NewDagForTest(db ptndb.Database) (*Dag, error) {
+	mutex := new(sync.RWMutex)
+	dag := &Dag{
+		Cache: freecache.NewCache(200 * 1024 * 1024),
+		Db:    db,
+		ChainHeadFeed: new(event.Feed),
+		Mutex:         *mutex,
+		GlobalProp:    nil,
+		DynGlobalProp: nil,
+		MediatorSchl:  nil,
+	}
 	return dag, nil
 }
 

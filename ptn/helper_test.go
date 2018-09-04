@@ -40,7 +40,6 @@ import (
 
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"github.com/palletone/go-palletone/dag"
 	"log"
 )
 
@@ -54,19 +53,24 @@ var (
 // channels for different events.
 func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
 	memdb, _ := ptndb.NewMemDatabase()
-	dag,_:= dag.NewDag(memdb)
+	dag, _ := MakeDags(memdb,3)
+	//uu := dag.CurrentUnit()
+	//fmt.Printf("current===>>>%#v\n",uu)
+	//fmt.Printf("--------newTestProtocolManager----unit.UnitHeader-----%#v\n", uu.UnitHeader)
+	//fmt.Printf("--------newTestProtocolManager----unit.UnitHash-----%#v\n", uu.UnitHash)
+	//fmt.Printf("--------newTestProtocolManager----unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
+	//fmt.Printf("--------newTestProtocolManager----unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
 	engine := new(consensus.DPOSEngine)
 	typemux := new(event.TypeMux)
-	db, _ := ptndb.NewMemDatabase()
 	producer := new(mediatorplugin.MediatorPlugin)
 	//want (downloader.SyncMode, uint64, txPool, core.ConsensusEngine, *modules.Dag, *event.TypeMux, *ptndb.LDBDatabase)
 	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx},
-		engine, dag, typemux, db, producer)
+		engine, dag, typemux, memdb, producer)
 	if err != nil {
 		return nil, nil, err
 	}
 	pm.Start(1000)
-	return pm, db, nil
+	return pm, memdb, nil
 }
 
 // newTestProtocolManagerMust creates a new protocol manager for testing purposes,
@@ -138,6 +142,7 @@ func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *mod
 
 	return tx
 }
+
 
 // testPeer is a simulated peer to allow testing direct network calls.
 type testPeer struct {
