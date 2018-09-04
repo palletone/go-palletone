@@ -30,10 +30,9 @@ import (
 )
 
 func TestGetUnit(t *testing.T) {
+	log.Println("dbconn is nil , renew db  start ...")
 	Dbconn := ReNewDbConn(dagconfig.DbPath)
-	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
-	}
+
 	GetUnit(Dbconn, common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
 }
 
@@ -41,7 +40,7 @@ func TestGetContract(t *testing.T) {
 	var keys []string
 	var results []interface{}
 	var origin modules.Contract
-	//copy(origin.Id[32-len(id):], id.Bytes())
+
 	origin.Id = common.HexToHash("123456")
 
 	origin.Name = "test"
@@ -53,6 +52,8 @@ func TestGetContract(t *testing.T) {
 		fmt.Println("Connect to db error.")
 		return
 	}
+
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
 
 	log.Println("store error: ", StoreBytes(Dbconn, append(CONTRACT_PTEFIX, origin.Id[:]...), origin))
 	keys = append(keys, "Id", "id", "Name", "Code", "code", "codes", "inputs")
