@@ -121,6 +121,8 @@ func GetUnit(db ptndb.Database, hash common.Hash) *modules.Unit {
 	txs, err := GetUnitTransactions(db, uHash)
 	if err != nil {
 		log.Println("Getunit when get transactions failed , error:", err)
+		//fmt.Println("植同学===》Current unit when get transactions/error===",err.Error())
+		//测试时需要注释掉
 		return nil
 	}
 	// generate unit
