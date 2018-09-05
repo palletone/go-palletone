@@ -77,7 +77,8 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	txs, err := dagcommon.GetUnitTransactions(d.Db, uHash)
 	if err != nil {
 		log.Error("Current unit when get transactions", "error", err.Error())
-		log.Info("植同学===》》》测试时需要注释掉》》》Current unit when get transactions/error===",err.Error())
+		//log.Info("植同学===》》》测试时需要注释掉》》》Current unit when get transactions/error===",err.Error())
+		//fmt.Println("植同学===》》》测试时需要注释掉》》》")
 		//测试时需要注释掉
 		return nil
 	}
@@ -126,6 +127,8 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 }
 
 func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
+
+
 	header, _ := storage.GetHeaderByHeight(d.Db, number)
 	return header
 }

@@ -38,7 +38,7 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	log.Println("创建 genesis unit 完成并保存===》》》")
 	log.Println()
 	log.Println("开始创建其他 unit===》》》")
-	units, _ := newDag(dag.Db, genesisUnit, 3)
+	units, _ := newDag(dag.Db, genesisUnit, unitAccount)
 	log.Println("创建其他 unit 完成并保存===》》》")
 	log.Println("全部unit的数量===》》》", len(units)+1)
 	return dag, nil
@@ -61,12 +61,12 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 			log.Println("保存其他unit出错===》》》", err)
 			return nil,err
 		}
-		log.Printf("--------第 %d 个unit====》》》----unit--------------%#v\n",i+1,unit)
-		log.Printf("--------第 %d 个unit====》》》----unit.UnitHeader---%#v\n",i+1,unit.UnitHeader)
-		log.Printf("--------第 %d 个unit====》》》----unit.Txs----------%#v\n",i+1,unit.Txs[0].Hash())
-		log.Printf("--------第 %d 个unit====》》》----unit.UnitHash-----%#v\n",i+1,unit.UnitHash)
-		log.Printf("--------第 %d 个unit====》》》----unit.UnitHeader.ParentsHash-----%#v\n",i+1,unit.UnitHeader.ParentsHash)
-		log.Printf("--------第 %d 个unit====》》》----unit.UnitHeader.Number.Index----%#v\n",i+1,unit.UnitHeader.Number.Index)
+		//log.Printf("--------第 %d 个unit====》》》----unit--------------%#v\n",i+1,unit)
+		//log.Printf("--------第 %d 个unit====》》》----unit.UnitHeader---%#v\n",i+1,unit.UnitHeader)
+		//log.Printf("--------第 %d 个unit====》》》----unit.Txs----------%#v\n",i+1,unit.Txs[0].Hash())
+		//log.Printf("--------第 %d 个unit====》》》----unit.UnitHash-----%#v\n",i+1,unit.UnitHash)
+		//log.Printf("--------第 %d 个unit====》》》----unit.UnitHeader.ParentsHash-----%#v\n",i+1,unit.UnitHeader.ParentsHash)
+		//log.Printf("--------第 %d 个unit====》》》----unit.UnitHeader.Number.Index----%#v\n",i+1,unit.UnitHeader.Number.Index)
 		units[i] = unit
 		par = unit
 	}
@@ -120,6 +120,9 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 		if err := storage.SaveTxLookupEntry(db,unit); err != nil {
 			return err
 		}
+		if err := saveHashByIndex(db,unit.UnitHash,unit.UnitHeader.Number.Index); err != nil {
+			return err
+		}
 		// update state
 		storage.PutCanonicalHash(db, unit.UnitHash, unit.NumberU64())
 		storage.PutHeadHeaderHash(db, unit.UnitHash)
@@ -160,4 +163,12 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	}
 	coinbase.TxHash = coinbase.Hash()
 	return coinbase, nil
+}
+
+
+
+func saveHashByIndex(db ptndb.Database,hash common.Hash,index uint64) error{
+	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
+	err := db.Put([]byte(key),hash.Bytes())
+	return err
 }

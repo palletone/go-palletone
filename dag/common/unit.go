@@ -216,40 +216,51 @@ To get genesis unit info from leveldb
 func GetGenesisUnit(db ptndb.Database, index uint64) (*modules.Unit, error) {
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
-	data := storage.GetPrefix(db, []byte(key))
-	if len(data) > 1 {
-		return nil, fmt.Errorf("multiple genesis unit")
-	} else if len(data) <= 0 {
-		return nil, nil
-	}
-	for k, v := range data {
-		sk := string(k[len(storage.HEADER_PREFIX):])
-		// get index
-		skArr := strings.Split(sk, "_")
-		if len(skArr) != 3 {
-			return nil, fmt.Errorf("split genesis key error")
-		}
-		// get unit hash
-		uHash := common.Hash{}
-		uHash.SetString(skArr[2])
-		// get unit header
-		var uHeader modules.Header
-		if err := rlp.DecodeBytes([]byte(v), &uHeader); err != nil {
-			return nil, fmt.Errorf("Get genesis unit header:%s", err.Error())
-		}
-		// get transaction list
-		txs, err := GetUnitTransactions(db, uHash)
+	if memdb,ok := db.(*ptndb.MemDatabase);ok {
+		hash, err := memdb.Get([]byte(key))
 		if err != nil {
-			return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
+			return nil,err
 		}
-		// generate unit
-		unit := modules.Unit{
-			UnitHeader: &uHeader,
-			UnitHash:   uHash,
-			Txs:        txs,
+		var h common.Hash
+		h.SetBytes(hash)
+		unit := storage.GetUnit(db, h)
+		return unit,nil
+	}else if _,ok := db.(*ptndb.LDBDatabase);ok{
+		data := storage.GetPrefix(db, []byte(key))
+		if len(data) > 1 {
+			return nil, fmt.Errorf("multiple genesis unit")
+		} else if len(data) <= 0 {
+			return nil, nil
 		}
-		unit.UnitSize = unit.Size()
-		return &unit, nil
+		for k, v := range data {
+			sk := string(k[len(storage.HEADER_PREFIX):])
+			// get index
+			skArr := strings.Split(sk, "_")
+			if len(skArr) != 3 {
+				return nil, fmt.Errorf("split genesis key error")
+			}
+			// get unit hash
+			uHash := common.Hash{}
+			uHash.SetString(skArr[2])
+			// get unit header
+			var uHeader modules.Header
+			if err := rlp.DecodeBytes([]byte(v), &uHeader); err != nil {
+				return nil, fmt.Errorf("Get genesis unit header:%s", err.Error())
+			}
+			// get transaction list
+			txs, err := GetUnitTransactions(db, uHash)
+			if err != nil {
+				return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
+			}
+			// generate unit
+			unit := modules.Unit{
+				UnitHeader: &uHeader,
+				UnitHash:   uHash,
+				Txs:        txs,
+			}
+			unit.UnitSize = unit.Size()
+			return &unit, nil
+		}
 	}
 	return nil, nil
 }

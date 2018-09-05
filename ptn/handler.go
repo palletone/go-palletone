@@ -326,11 +326,16 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		index = head.Number.Index
 	)
 	genesis, err := common2.GetGenesisUnit(pm.dag.Db, 0)
+	//fmt.Println("----handle----genesis----unit.UnitHeader-----%#v\n", genesis.UnitHeader)
+	//fmt.Println("----handle----genesis----unit.Txs------------%#v\n", genesis.Txs[0].Hash())
+	//fmt.Println("----handle----genesis----unit.UnitHash-------%#v\n", genesis.UnitHash)
+	//fmt.Println("----handle----genesis----unit.UnitHeader.ParentsHash-----%#v\n", genesis.UnitHeader.ParentsHash)
+	//fmt.Println("----handle----genesis----unit.UnitHeader.Number.Index----%#v\n", genesis.UnitHeader.Number.Index)
 	if err != nil {
 		fmt.Println("GetGenesisUnit===error:=", err)
+		return err
 	}
-	genesis = genesis
-	if err := p.Handshake(pm.networkId, index, hash, common.Hash{} /*genesis.Hash()*/); err != nil {
+	if err := p.Handshake(pm.networkId, index, hash,  genesis.Hash()); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}

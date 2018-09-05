@@ -41,6 +41,8 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"log"
+	common2 "github.com/palletone/go-palletone/dag/common"
+	"fmt"
 )
 
 var (
@@ -54,21 +56,21 @@ var (
 func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
 	memdb, _ := ptndb.NewMemDatabase()
 	dag, _ := MakeDags(memdb,blocks)
-	//uu := dag.CurrentUnit()
-	//log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHeader-----%#v\n", uu.UnitHeader)
-	//log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHash-------%#v\n", uu.UnitHash)
-	//log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
-	//log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
-	//index := modules.ChainIndex{
-	//	modules.PTNCOIN,
-	//	true,
-	//	0,
-	//}
-	//uu = dag.GetUnitByNumber(index)
-	//log.Printf("--------newTestProtocolManager--index=0--unit.UnitHeader-----%#v\n", uu.UnitHeader)
-	//log.Printf("--------newTestProtocolManager--index=0--unit.UnitHash-------%#v\n", uu.UnitHash)
-	//log.Printf("--------newTestProtocolManager--index=0--unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
-	//log.Printf("--------newTestProtocolManager--index=0--unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
+	uu := dag.CurrentUnit()
+	log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHeader-----%#v\n", uu.UnitHeader)
+	log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHash-------%#v\n", uu.UnitHash)
+	log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
+	log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
+	index := modules.ChainIndex{
+		modules.PTNCOIN,
+		true,
+		0,
+	}
+	uu = dag.GetUnitByNumber(index)
+	log.Printf("--------newTestProtocolManager--index=0--unit.UnitHeader-----%#v\n", uu.UnitHeader)
+	log.Printf("--------newTestProtocolManager--index=0--unit.UnitHash-------%#v\n", uu.UnitHash)
+	log.Printf("--------newTestProtocolManager--index=0--unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
+	log.Printf("--------newTestProtocolManager--index=0--unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
 	engine := new(consensus.DPOSEngine)
 	typemux := new(event.TypeMux)
 	producer := new(mediatorplugin.MediatorPlugin)
@@ -184,15 +186,21 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool) (*te
 	// Execute any implicitly requested handshakes and return
 	if shake {
 		var (
-			number = modules.ChainIndex{
-				modules.PTNCOIN,
-				true,
-				0,
-			}
-			genesis = pm.dag.GetUnitByNumber(number)
+			//number = modules.ChainIndex{
+			//	modules.PTNCOIN,
+			//	true,
+			//	0,
+			//}
+			//genesis = pm.dag.GetUnitByNumber(number)
 			head  = pm.dag.CurrentHeader()
 			td      = head.Number.Index
 		)
+		//fmt.Println("	if shake {===》》》",td)
+		genesis, err := common2.GetGenesisUnit(pm.dag.Db, 0)
+		//fmt.Println("genesis unti if shake {===》》》",genesis.UnitHash)
+		if err != nil {
+			fmt.Println("GetGenesisUnit===error:=", err)
+		}
 		tp.handshake(nil, td, head.Hash(),genesis.Hash())
 	}
 	return tp, errc
