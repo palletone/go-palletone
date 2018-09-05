@@ -5,6 +5,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
+	"crypto/ecdsa"
 )
 
 //Generate a P2PKH lock script, just only need input 20bytes public key hash.
@@ -91,4 +93,17 @@ func ScriptValidate(utxoLockScript []byte, utxoAmount int64, tx *modules.Transac
 		return err
 	}
 	return vm.Execute()
+}
+//对交易中的Payment类型中的某个Input生成解锁脚本
+func SignOnePaymentInput(tx *modules.Transaction,msgIdx,id int,utxoLockScript []byte, privKey *ecdsa.PrivateKey) ([]byte,error){
+	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
+		return privKey, true, nil
+	}
+	sigScript, err := txscript.SignTxOutput(&chaincfg.MainNetParams,
+		tx, msgIdx,id, utxoLockScript, txscript.SigHashAll,
+		txscript.KeyClosure(lookupKey), nil, nil)
+	if err!=nil{
+		return []byte{},err
+	}
+	return sigScript,nil
 }

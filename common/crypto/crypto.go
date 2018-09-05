@@ -28,11 +28,11 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var (
@@ -193,35 +193,26 @@ func ValidateSignatureValues(v byte, r, s *big.Int, homestead bool) bool {
 }
 
 //This is only for P2PKH account address.
-func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
-	pubBytes := FromECDSAPub(&p)
+func PubkeyToAddress(p *ecdsa.PublicKey) common.Address {
+	pubBytes := crypto.CompressPubkey(p)
 	// return common.BytesToAddress(Keccak256(pubBytes[1:])[12:])
 	pubKeyHash := Hash160(pubBytes)
-	addrStr := "P" + base58.CheckEncode(pubKeyHash, byte(0))
-	//if len<35 add suffix "_" to make len=35
-	addrLen := len(addrStr)
-	for i := addrLen; i < 35; i++ {
-		addrStr += "_"
-	}
-	return common.BytesToAddress([]byte(addrStr))
+	return common.NewAddress(pubKeyHash,common.PublicKeyHash)
 }
 
 //This is for P2SH address, start with P3
 func ScriptToAddress(redeemScript []byte) common.Address {
 	scriptHash := Hash160(redeemScript)
-	addrStr := "P" + base58.CheckEncode(scriptHash, byte(5))
-	return common.BytesToAddress([]byte(addrStr))
+	return common.NewAddress(scriptHash,common.PublicKeyHash)
 }
 
 func ScriptHashToAddress(scriptHash []byte) common.Address{
-	addrStr := "P" + base58.CheckEncode(scriptHash, byte(5))
-	return common.BytesToAddress([]byte(addrStr))
+	return common.NewAddress(scriptHash,common.PublicKeyHash)
 }
 
 func ContractIdToAddress(contractId []byte) common.Address {
 	scriptHash := Hash160(contractId)
-	addrStr := "P" + base58.CheckEncode(scriptHash, byte(28))
-	return common.BytesToAddress([]byte(addrStr))
+	return common.NewAddress(scriptHash,common.PublicKeyHash)
 }
 func zeroBytes(bytes []byte) {
 	for i := range bytes {

@@ -30,12 +30,10 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common/hexutil"
-	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	//"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 )
 
 const (
-	AddressLength = 35 // PTN length is 20
+	AddressLength = 21 //byte[0:20] is hash160, byte[20] is AddressType
 )
 
 var (
@@ -45,48 +43,60 @@ var (
 /////////// Address
 
 // Address represents the 35 byte address of an PalletOne account.
-// for personal address, start with P1, script address start with P3, contract address start with Pc
+// for personal address, start with P1 (version 0), script address start with P3(version 5), contract address start with Pc(version 28)
 type Address [AddressLength]byte
 type AddressType byte
 
 const (
-	ErrorAddress  AddressType = iota
-	PublicKeyHash AddressType = 1
-	ScriptHash    AddressType = 2
-	ContractHash  AddressType = 3
+	ErrorAddress  AddressType = 0xff
+	PublicKeyHash AddressType = 0
+	ScriptHash    AddressType = 5
+	ContractHash  AddressType = 28
 )
+func (a Address) GetType() AddressType{
+	return AddressType(a[20])
+}
+func NewAddress(hash160 []byte,ty AddressType) Address{
+	return BytesToAddress(append(hash160,byte(ty)))
+}
 
-func (a Address) Validate() (AddressType, error) {
+//将一个字符串格式的Address转换为Address对象
+func StringToAddress(a string) (Address,error) {
 	if a[0] != byte('P') {
-		return ErrorAddress, errors.New("PalletOne address must start with 'P'")
+		return Address{}, errors.New("PalletOne address must start with 'P'")
 	}
-	_, version, err := base58.CheckDecode(string(a[1:]))
+	addrb, version, err := base58.CheckDecode(string(a[1:]))
 	if err != nil {
-		return ErrorAddress, err
+		return Address{}, err
 	}
 	switch version {
 	case 0:
-		return PublicKeyHash, nil
+		return BytesToAddress(append(addrb, byte(PublicKeyHash))), nil
 	case 5:
-		return ScriptHash, nil
+		return BytesToAddress(append(addrb, byte(ScriptHash))), nil
 	case 28:
-		return ContractHash, nil
+		return BytesToAddress(append(addrb, byte(ContractHash))), nil
 	default:
-		return ErrorAddress, errors.New("Invalid address type")
+		return Address{}, errors.New("Invalid address type")
 	}
-
 }
-func IsValidAddress(s string) bool {
-	addr := StringToAddress(s)
-	_, err := addr.Validate()
-	return err == nil
+func (a Address) Validate() (AddressType, error) {
+	var ty AddressType=AddressType(a[20])
+	return ty,nil
+}
+func IsValidAddress(s string) (AddressType, error) {
+	a,err := StringToAddress(s)
+	if err!=nil{
+		return ErrorAddress,err
+	}
+	return a.GetType(),nil
 }
 func BytesToAddress(b []byte) Address {
 	var a Address
 	a.SetBytes(b)
 	return a
 }
-func StringToAddress(s string) Address { return BytesToAddress([]byte(s)) }
+
 func HexToAddress(s string) Address    { return BytesToAddress(FromHex(s)) }
 func PubKeyHashHexToAddress(s string) Address {
 	pubKeyHash := FromHex(s)
@@ -104,38 +114,16 @@ func IsHexAddress(s string) bool {
 }
 
 // Get the string representation of the underlying address
-func (a Address) Str() string { return string(a[:]) }
+func (a Address) Str() string {
+	return "P" + base58.CheckEncode(a[0:20], byte(a[20]))
+}
 func (a Address) Bytes() []byte {
-
-	result, _, _ := base58.CheckDecode(a.String()[1:])
-	return result
+	return a[0:20]
 }
 
 func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a.Bytes()) }
 func (a Address) Hash() Hash    { return BytesToHash(a.Bytes()) }
 func (a Address) Hex() string   { return fmt.Sprintf("0x%x", a.Bytes()) }
-
-// Hex returns an EIP55-compliant hex string representation of the address.
-// func (a Address) Hex() string {
-// 	unchecksummed := hex.EncodeToString(a[:])
-// 	sha := sha3.NewKeccak256()
-// 	sha.Write([]byte(unchecksummed))
-// 	hash := sha.Sum(nil)
-
-// 	result := []byte(unchecksummed)
-// 	for i := 0; i < len(result); i++ {
-// 		hashByte := hash[i/2]
-// 		if i%2 == 0 {
-// 			hashByte = hashByte >> 4
-// 		} else {
-// 			hashByte &= 0xf
-// 		}
-// 		if result[i] > '9' && hashByte > 7 {
-// 			result[i] -= 32
-// 		}
-// 	}
-// 	return "0x" + string(result)
-// }
 
 // String implements the stringer interface and is used also by the logger.
 func (a Address) String() string {

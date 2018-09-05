@@ -23,6 +23,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
+	"strings"
+	"time"
+
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -39,9 +43,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
 	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	"math/big"
-	"strings"
-	"time"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
@@ -1307,8 +1308,8 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		// the network encoded with the address matches the network the
 		// server is currently on.
 		switch addr.(type) {
-		case *btcutil.AddressPubKeyHash:
-		case *btcutil.AddressScriptHash:
+		case *common.AddressPubKeyHash:
+		case *common.AddressScriptHash:
 		default:
 			return "", &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInvalidAddressOrKey,
@@ -1543,7 +1544,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		}
 	}
 
-	for _, msg := range tx.TxMessages {
+	for msgIdx, msg := range tx.TxMessages {
 		if msg.App != modules.APP_PAYMENT {
 			continue
 		} else {
@@ -1559,7 +1560,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 
 				// Set up our callbacks that we pass to txscript so it can
 				// look up the appropriate keys and scripts by address.
-				geekey := txscript.KeyClosure(func(addr btcutil.Address) (*btcec.PrivateKey, bool, error) {
+				geekey := txscript.KeyClosure(func(addr common.Address) (*btcec.PrivateKey, bool, error) {
 					addrStr := addr.EncodeAddress()
 					wif, ok := keys[addrStr]
 					if !ok {
@@ -1567,7 +1568,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 					}
 					return wif.PrivKey, wif.CompressPubKey, nil
 				})
-				getScript := txscript.ScriptClosure(func(addr btcutil.Address) ([]byte, error) {
+				getScript := txscript.ScriptClosure(func(addr common.Address) ([]byte, error) {
 					// If keys were provided then we can only use the
 					// redeem scripts provided with our inputs, too.
 					addrStr := addr.EncodeAddress()
@@ -1584,7 +1585,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 				if (hashType&txscript.SigHashSingle) !=
 					txscript.SigHashSingle || i < len(payload.Output) {
 					script, err := txscript.SignTxOutput(params,
-						&payload, i, prevOutScript, hashType, geekey,
+						&tx, msgIdx, i, prevOutScript, hashType, geekey,
 						getScript, txIn.SignatureScript)
 					// Failure to sign isn't an error, it just means that
 					// the tx isn't complete.
@@ -1599,7 +1600,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 				}
 				// Either it was already signed or we just signed it.
 				// Find out if it is completely satisfied or still needs more.
-				vm, err := txscript.NewEngine(prevOutScript, &payload, i,
+				vm, err := txscript.NewEngine(prevOutScript, &tx, msgIdx, i,
 					txscript.StandardVerifyFlags, nil, nil, 0)
 				if err == nil {
 					err = vm.Execute()
@@ -1611,7 +1612,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 					})
 				}
 			}
-			msg := modules.Message{
+			msg := &modules.Message{
 				App:     modules.APP_PAYMENT,
 				Payload: payload,
 			}

@@ -10,76 +10,79 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
-	"github.com/palletone/go-palletone/tokenengine/btcutil"
+
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common"
+	"crypto/ecdsa"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
 // RawTxInWitnessSignature returns the serialized ECDA signature for the input
 // idx of the given transaction, with the hashType appended to it. This
 // function is identical to RawTxInSignature, however the signature generated
 // signs a new sighash digest defined in BIP0143.
-func RawTxInWitnessSignature(tx *modules.Transaction, sigHashes *TxSigHashes,msgIdx, idx int,
-	amt int64, subScript []byte, hashType SigHashType,
-	key *btcec.PrivateKey) ([]byte, error) {
-
-	parsedScript, err := parseScript(subScript)
-	if err != nil {
-		return nil, fmt.Errorf("cannot parse output script: %v", err)
-	}
-
-	hash, err := calcWitnessSignatureHash(parsedScript, sigHashes, hashType,
-		tx,msgIdx,
-		idx, amt)
-	if err != nil {
-		return nil, err
-	}
-
-	signature, err := key.Sign(hash)
-	if err != nil {
-		return nil, fmt.Errorf("cannot sign tx input: %s", err)
-	}
-
-	return append(signature.Serialize(), byte(hashType)), nil
-}
+//func RawTxInWitnessSignature(tx *modules.Transaction, sigHashes *TxSigHashes,msgIdx, idx int,
+//	amt int64, subScript []byte, hashType SigHashType,
+//	key *btcec.PrivateKey) ([]byte, error) {
+//
+//	parsedScript, err := parseScript(subScript)
+//	if err != nil {
+//		return nil, fmt.Errorf("cannot parse output script: %v", err)
+//	}
+//
+//	hash, err := calcWitnessSignatureHash(parsedScript, sigHashes, hashType,
+//		tx,msgIdx,
+//		idx, amt)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	signature, err := key.Sign(hash)
+//	if err != nil {
+//		return nil, fmt.Errorf("cannot sign tx input: %s", err)
+//	}
+//
+//	return append(signature.Serialize(), byte(hashType)), nil
+//}
 
 // WitnessSignature creates an input witness stack for tx to spend BTC sent
 // from a previous output to the owner of privKey using the p2wkh script
 // template. The passed transaction must contain all the inputs and outputs as
 // dictated by the passed hashType. The signature generated observes the new
 // transaction digest algorithm defined within BIP0143.
-func WitnessSignature(tx *modules.Transaction, sigHashes *TxSigHashes,msgIdx, idx int, amt int64,
-	subscript []byte, hashType SigHashType, privKey *btcec.PrivateKey,
-	compress bool) (wire.TxWitness, error) {
-
-	sig, err := RawTxInWitnessSignature(tx, sigHashes,msgIdx, idx, amt, subscript,
-		hashType, privKey)
-	if err != nil {
-		return nil, err
-	}
-
-	pk := (*btcec.PublicKey)(&privKey.PublicKey)
-	var pkData []byte
-	if compress {
-		pkData = pk.SerializeCompressed()
-	} else {
-		pkData = pk.SerializeUncompressed()
-	}
-
-	// A witness script is actually a stack, so we return an array of byte
-	// slices here, rather than a single byte slice.
-	return wire.TxWitness{sig, pkData}, nil
-}
+//func WitnessSignature(tx *modules.Transaction, sigHashes *TxSigHashes,msgIdx, idx int, amt int64,
+//	subscript []byte, hashType SigHashType, privKey *btcec.PrivateKey,
+//	compress bool) (wire.TxWitness, error) {
+//
+//	sig, err := RawTxInWitnessSignature(tx, sigHashes,msgIdx, idx, amt, subscript,
+//		hashType, privKey)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	pk := (*btcec.PublicKey)(&privKey.PublicKey)
+//	var pkData []byte
+//	if compress {
+//		pkData = pk.SerializeCompressed()
+//	} else {
+//		pkData = pk.SerializeUncompressed()
+//	}
+//
+//	// A witness script is actually a stack, so we return an array of byte
+//	// slices here, rather than a single byte slice.
+//	return wire.TxWitness{sig, pkData}, nil
+//}
 
 // RawTxInSignature returns the serialized ECDSA signature for the input idx of
 // the given transaction, with hashType appended to it.
 func RawTxInSignature(tx *modules.Transaction/**wire.MsgTx*/, msgIdx,idx int, subScript []byte,
-	hashType SigHashType, key *btcec.PrivateKey) ([]byte, error) {
+	hashType SigHashType, key *ecdsa.PrivateKey) ([]byte, error) {
 
 	hash, err := CalcSignatureHash(subScript, hashType, tx, msgIdx,idx)
 	if err != nil {
 		return nil, err
 	}
+	crypto.Sign(hash,key)
 	signature, err := key.Sign(hash)
 	if err != nil {
 		return nil, fmt.Errorf("cannot sign tx input: %s", err)
@@ -127,7 +130,7 @@ func p2pkSignatureScript(tx *modules.Transaction/**wire.MsgTx*/,msgIdx, idx int,
 // the contract (i.e. nrequired signatures are provided).  Since it is arguably
 // legal to not be able to sign any of the outputs, no error is returned.
 func signMultiSig(tx *modules.Transaction,msgIdx, idx int, subScript []byte, hashType SigHashType,
-	addresses []btcutil.Address, nRequired int, kdb KeyDB) ([]byte, bool) {
+	addresses []common.Address, nRequired int, kdb KeyDB) ([]byte, bool) {
 	// We start with a single OP_FALSE to work around the (now standard)
 	// but in the reference implementation that causes a spurious pop at
 	// the end of OP_CHECKMULTISIG.
@@ -157,7 +160,7 @@ func signMultiSig(tx *modules.Transaction,msgIdx, idx int, subScript []byte, has
 
 func sign(chainParams *chaincfg.Params, tx *modules.Transaction/**wire.MsgTx*/,msgIdx, idx int,
 	subScript []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB) ([]byte,
-	ScriptClass, []btcutil.Address, int, error) {
+	ScriptClass, []common.Address, int, error) {
 	class, addresses, nrequired, err := ExtractPkScriptAddrs(subScript,
 		chainParams)
 	if err != nil {
@@ -225,7 +228,7 @@ func sign(chainParams *chaincfg.Params, tx *modules.Transaction/**wire.MsgTx*/,m
 // function with addresses, class and nrequired that do not match pkScript is
 // an error and results in undefined behaviour.
 func mergeScripts(chainParams *chaincfg.Params, tx *modules.Transaction,msgIdx, idx int,
-	pkScript []byte, class ScriptClass, addresses []btcutil.Address,
+	pkScript []byte, class ScriptClass, addresses []common.Address,
 	nRequired int, sigScript, prevScript []byte) []byte {
 
 	// TODO: the scripthash and multisig paths here are overly
@@ -291,126 +294,129 @@ func mergeScripts(chainParams *chaincfg.Params, tx *modules.Transaction,msgIdx, 
 // pkScript. Since this function is internal only we assume that the arguments
 // have come from other functions internally and thus are all consistent with
 // each other, behaviour is undefined if this contract is broken.
-func mergeMultiSig(tx *modules.Transaction,msgIdx, idx int, addresses []btcutil.Address,
+func mergeMultiSig(tx *modules.Transaction,msgIdx, idx int, addresses []common.Address,
 	nRequired int, pkScript, sigScript, prevScript []byte) []byte {
 
+		return []byte{}
+		//TODO For multi sign
 	// This is an internal only function and we already parsed this script
 	// as ok for multisig (this is how we got here), so if this fails then
 	// all assumptions are broken and who knows which way is up?
-	pkPops, _ := parseScript(pkScript)
-
-	sigPops, err := parseScript(sigScript)
-	if err != nil || len(sigPops) == 0 {
-		return prevScript
-	}
-
-	prevPops, err := parseScript(prevScript)
-	if err != nil || len(prevPops) == 0 {
-		return sigScript
-	}
-
-	// Convenience function to avoid duplication.
-	extractSigs := func(pops []parsedOpcode, sigs [][]byte) [][]byte {
-		for _, pop := range pops {
-			if len(pop.data) != 0 {
-				sigs = append(sigs, pop.data)
-			}
-		}
-		return sigs
-	}
-
-	possibleSigs := make([][]byte, 0, len(sigPops)+len(prevPops))
-	possibleSigs = extractSigs(sigPops, possibleSigs)
-	possibleSigs = extractSigs(prevPops, possibleSigs)
-
-	// Now we need to match the signatures to pubkeys, the only real way to
-	// do that is to try to verify them all and match it to the pubkey
-	// that verifies it. we then can go through the addresses in order
-	// to build our script. Anything that doesn't parse or doesn't verify we
-	// throw away.
-	addrToSig := make(map[string][]byte)
-sigLoop:
-	for _, sig := range possibleSigs {
-
-		// can't have a valid signature that doesn't at least have a
-		// hashtype, in practise it is even longer than this. but
-		// that'll be checked next.
-		if len(sig) < 1 {
-			continue
-		}
-		tSig := sig[:len(sig)-1]
-		hashType := SigHashType(sig[len(sig)-1])
-
-		pSig, err := btcec.ParseDERSignature(tSig, btcec.S256())
-		if err != nil {
-			continue
-		}
-
-		// We have to do this each round since hash types may vary
-		// between signatures and so the hash will vary. We can,
-		// however, assume no sigs etc are in the script since that
-		// would make the transaction nonstandard and thus not
-		// MultiSigTy, so we just need to hash the full thing.
-		hash := calcSignatureHash(pkPops, hashType, tx,msgIdx, idx)
-
-		for _, addr := range addresses {
-			// All multisig addresses should be pubkey addresses
-			// it is an error to call this internal function with
-			// bad input.
-			pkaddr := addr.(*btcutil.AddressPubKey)
-
-			pubKey := pkaddr.PubKey()
-
-			// If it matches we put it in the map. We only
-			// can take one signature per public key so if we
-			// already have one, we can throw this away.
-			if pSig.Verify(hash, pubKey) {
-				aStr := addr.EncodeAddress()
-				if _, ok := addrToSig[aStr]; !ok {
-					addrToSig[aStr] = sig
-				}
-				continue sigLoop
-			}
-		}
-	}
-
-	// Extra opcode to handle the extra arg consumed (due to previous bugs
-	// in the reference implementation).
-	builder := NewScriptBuilder().AddOp(OP_FALSE)
-	doneSigs := 0
-	// This assumes that addresses are in the same order as in the script.
-	for _, addr := range addresses {
-		sig, ok := addrToSig[addr.EncodeAddress()]
-		if !ok {
-			continue
-		}
-		builder.AddData(sig)
-		doneSigs++
-		if doneSigs == nRequired {
-			break
-		}
-	}
-
-	// padding for missing ones.
-	for i := doneSigs; i < nRequired; i++ {
-		builder.AddOp(OP_0)
-	}
-
-	script, _ := builder.Script()
-	return script
+//	pkPops, _ := parseScript(pkScript)
+//
+//	sigPops, err := parseScript(sigScript)
+//	if err != nil || len(sigPops) == 0 {
+//		return prevScript
+//	}
+//
+//	prevPops, err := parseScript(prevScript)
+//	if err != nil || len(prevPops) == 0 {
+//		return sigScript
+//	}
+//
+//	// Convenience function to avoid duplication.
+//	extractSigs := func(pops []parsedOpcode, sigs [][]byte) [][]byte {
+//		for _, pop := range pops {
+//			if len(pop.data) != 0 {
+//				sigs = append(sigs, pop.data)
+//			}
+//		}
+//		return sigs
+//	}
+//
+//	possibleSigs := make([][]byte, 0, len(sigPops)+len(prevPops))
+//	possibleSigs = extractSigs(sigPops, possibleSigs)
+//	possibleSigs = extractSigs(prevPops, possibleSigs)
+//
+//	// Now we need to match the signatures to pubkeys, the only real way to
+//	// do that is to try to verify them all and match it to the pubkey
+//	// that verifies it. we then can go through the addresses in order
+//	// to build our script. Anything that doesn't parse or doesn't verify we
+//	// throw away.
+//	addrToSig := make(map[string][]byte)
+//sigLoop:
+//	for _, sig := range possibleSigs {
+//
+//		// can't have a valid signature that doesn't at least have a
+//		// hashtype, in practise it is even longer than this. but
+//		// that'll be checked next.
+//		if len(sig) < 1 {
+//			continue
+//		}
+//		tSig := sig[:len(sig)-1]
+//		hashType := SigHashType(sig[len(sig)-1])
+//
+//		pSig, err := btcec.ParseDERSignature(tSig, btcec.S256())
+//		if err != nil {
+//			continue
+//		}
+//
+//		// We have to do this each round since hash types may vary
+//		// between signatures and so the hash will vary. We can,
+//		// however, assume no sigs etc are in the script since that
+//		// would make the transaction nonstandard and thus not
+//		// MultiSigTy, so we just need to hash the full thing.
+//		hash := calcSignatureHash(pkPops, hashType, tx,msgIdx, idx)
+//
+//		//for _, addr := range addresses {
+//		//	// All multisig addresses should be pubkey addresses
+//		//	// it is an error to call this internal function with
+//		//	// bad input.
+//		//	pkaddr := addr
+//		//
+//		//	pubKey := pkaddr.PubKey()
+//		//
+//		//	// If it matches we put it in the map. We only
+//		//	// can take one signature per public key so if we
+//		//	// already have one, we can throw this away.
+//		//	if pSig.Verify(hash, pubKey) {
+//		//		aStr := addr.EncodeAddress()
+//		//		if _, ok := addrToSig[aStr]; !ok {
+//		//			addrToSig[aStr] = sig
+//		//		}
+//		//		continue sigLoop
+//		//	}
+//		//}
+//	}
+//
+//	// Extra opcode to handle the extra arg consumed (due to previous bugs
+//	// in the reference implementation).
+//	builder := NewScriptBuilder().AddOp(OP_FALSE)
+//	doneSigs := 0
+//	// This assumes that addresses are in the same order as in the script.
+//	for _, addr := range addresses {
+//		sig, ok := addrToSig[addr.EncodeAddress()]
+//		if !ok {
+//			continue
+//		}
+//		builder.AddData(sig)
+//		doneSigs++
+//		if doneSigs == nRequired {
+//			break
+//		}
+//	}
+//
+//	// padding for missing ones.
+//	for i := doneSigs; i < nRequired; i++ {
+//		builder.AddOp(OP_0)
+//	}
+//
+//	script, _ := builder.Script()
+//	return script
 }
 
 // KeyDB is an interface type provided to SignTxOutput, it encapsulates
 // any user state required to get the private keys for an address.
 type KeyDB interface {
-	GetKey(btcutil.Address) (*btcec.PrivateKey, bool, error)
+	GetKey(common.Address) (*ecdsa.PrivateKey, bool, error)
 }
 
 // KeyClosure implements KeyDB with a closure.
-type KeyClosure func(btcutil.Address) (*btcec.PrivateKey, bool, error)
-
+type KeyClosure func(common.Address) (*ecdsa.PrivateKey, bool, error)
+//传入一个hash,返回对该Hash的签名
+type SignHash func( hash []byte) ([]byte, error)
 // GetKey implements KeyDB by returning the result of calling the closure.
-func (kc KeyClosure) GetKey(address btcutil.Address) (*btcec.PrivateKey,
+func (kc KeyClosure) GetKey(address common.Address) (*ecdsa.PrivateKey,
 	bool, error) {
 	return kc(address)
 }
@@ -418,14 +424,14 @@ func (kc KeyClosure) GetKey(address btcutil.Address) (*btcec.PrivateKey,
 // ScriptDB is an interface type provided to SignTxOutput, it encapsulates any
 // user state required to get the scripts for an pay-to-script-hash address.
 type ScriptDB interface {
-	GetScript(btcutil.Address) ([]byte, error)
+	GetScript(common.Address) ([]byte, error)
 }
 
 // ScriptClosure implements ScriptDB with a closure.
-type ScriptClosure func(btcutil.Address) ([]byte, error)
+type ScriptClosure func(common.Address) ([]byte, error)
 
 // GetScript implements ScriptDB by returning the result of calling the closure.
-func (sc ScriptClosure) GetScript(address btcutil.Address) ([]byte, error) {
+func (sc ScriptClosure) GetScript(address common.Address) ([]byte, error) {
 	return sc(address)
 }
 

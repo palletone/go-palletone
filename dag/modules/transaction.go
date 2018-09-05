@@ -22,15 +22,16 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/core"
 	"io"
 	"math"
 	"math/big"
 	"strconv"
 	"time"
+
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/obj"
+	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
 )
 
 var (
@@ -52,15 +53,15 @@ type TxIn struct {
 	Sequence         uint32
 }
 
-func NewTransaction(msg []Message, lock uint32) *Transaction {
+func NewTransaction(msg []*Message, lock uint32) *Transaction {
 	return newTransaction(msg, lock)
 }
 
-func NewContractCreation(msg []Message, lock uint32) *Transaction {
+func NewContractCreation(msg []*Message, lock uint32) *Transaction {
 	return newTransaction(msg, lock)
 }
 
-func newTransaction(msg []Message, lock uint32) *Transaction {
+func newTransaction(msg []*Message, lock uint32) *Transaction {
 	tx := new(Transaction)
 	tx.TxMessages = msg[:]
 	//tx.Locktime = lock
@@ -233,14 +234,9 @@ func (tx *Transaction) Cost() *big.Int {
 }
 
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
-	tx.TxHash.Set(cpy.TxHash)
-	//tx.Locktime = cpy.Locktime
-	tx.TxMessages = make([]Message, len(cpy.TxMessages))
-	for _, msg := range cpy.TxMessages {
-		newMsg := Message{}
-		newMsg = *newMsg.CopyMessages(&msg)
-		tx.TxMessages = append(tx.TxMessages, newMsg)
-	}
+
+	obj.DeepCopy(&tx, cpy)
+
 }
 
 //// AsMessage returns the transaction as a core.Message.
@@ -415,7 +411,7 @@ type TxLookupEntry struct {
 type Transactions []*Transaction
 type Transaction struct {
 	TxHash     common.Hash `json:"txhash"`
-	TxMessages []Message   `json:"messages"`
+	TxMessages []*Message  `json:"messages"`
 	// todo AccountNonce, CreationDate, Priority_lvl 在交易池部分用的比较多，将由杨杰负责删除
 }
 type OutPoint struct {
@@ -520,10 +516,11 @@ func (msg *Transaction) SerializeSize() int {
 	n := msg.baseSize()
 	return n
 }
+
 //Deep copy transaction to a new object
-func (tx *Transaction) Clone() Transaction{
+func (tx *Transaction) Clone() Transaction {
 	var newTx Transaction
-	obj.DeepCopy(&newTx,tx)
+	obj.DeepCopy(&newTx, tx)
 	return newTx
 }
 

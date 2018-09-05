@@ -36,6 +36,9 @@ var (
 	ASSET_INFO_PREFIX = []byte("ai")
 )
 
+//Asset to identify token
+//By default, system asset id=0,UniqueId=0,ChainId=1
+//默认的PTN资产，则AssetId=0，UniqueId=0,ChainId是当前链的ID
 type Asset struct {
 	AssertId IDType16 `json:"assert_id"` // 资产类别
 	UniqueId IDType16 `json:"unique_id"` // every token has its unique id
