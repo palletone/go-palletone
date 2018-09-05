@@ -139,10 +139,9 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 		for i, pTx := range txs {
 			tx := Transaction{
 				TxHash: pTx.TxHash,
-				//Locktime: pTx.Locktime,
 			}
 			if len(pTx.TxMessages) > 0 {
-				tx.TxMessages = make([]Message, len(pTx.TxMessages))
+				tx.TxMessages = make([]*Message, len(pTx.TxMessages))
 				for j := 0; j < len(pTx.TxMessages); j++ {
 					tx.TxMessages[j] = pTx.TxMessages[j]
 				}

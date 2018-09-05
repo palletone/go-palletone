@@ -1245,6 +1245,9 @@ func GetAddressFromScript(script []byte) (string, error) {
 	if reqSigs > 1 {
 		return "", errors.New("Get address from utxo output script error: multiple signature")
 	}
+	if len(addresses) == 0 {
+		return "", errors.New("Get address from utxo output script error: get failed address")
+	}
 	return "P" + addresses[0].String(), nil
 }
 
@@ -1351,7 +1354,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		Payload: pload,
 	}
 	mtx := modules.Transaction{
-		TxMessages: []modules.Message{msg},
+		TxMessages: []*modules.Message{&msg},
 	}
 	mtx.TxHash = mtx.Hash()
 	mtxbt, err := rlp.EncodeToBytes(mtx)
@@ -1615,7 +1618,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 				App:     modules.APP_PAYMENT,
 				Payload: payload,
 			}
-			tx.TxMessages = append(tx.TxMessages, msg)
+			tx.TxMessages = append(tx.TxMessages, &msg)
 		}
 	}
 	var buf bytes.Buffer

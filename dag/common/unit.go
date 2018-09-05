@@ -383,27 +383,27 @@ func SaveUnit(db ptndb.Database, unit modules.Unit, isGenesis bool) error {
 			// handle different messages
 			switch msg.App {
 			case modules.APP_PAYMENT:
-				if ok := savePaymentPayload(db, tx.TxHash, &msg, uint32(msgIndex)); ok != true {
+				if ok := savePaymentPayload(db, tx.TxHash, msg, uint32(msgIndex)); ok != true {
 					log.Info("Save payment payload error.")
 					return fmt.Errorf("Save payment payload error.")
 				}
 			case modules.APP_CONTRACT_TPL:
-				if ok := saveContractTpl(db, unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
+				if ok := saveContractTpl(db, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
 					log.Info("Save contract template error.")
 					return fmt.Errorf("Save contract template error.")
 				}
 			case modules.APP_CONTRACT_DEPLOY:
-				if ok := saveContractInitPayload(db, unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
+				if ok := saveContractInitPayload(db, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
 					log.Info("Save contract init payload error.")
 					return fmt.Errorf("Save contract init payload error.")
 				}
 			case modules.APP_CONTRACT_INVOKE:
-				if ok := saveContractInvokePayload(db, unit.UnitHeader.Number, uint32(txIndex), &msg); ok != true {
+				if ok := saveContractInvokePayload(db, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
 					log.Info("Save contract invode payload error.")
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_CONFIG:
-				if ok := saveConfigPayload(db, tx.TxHash, &msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
+				if ok := saveConfigPayload(db, tx.TxHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
 					log.Info("Save contract invode payload error.")
 					return fmt.Errorf("Save contract invode payload error.")
 				}
@@ -625,7 +625,7 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 	}
 	// step4. create coinbase
 	coinbase := modules.Transaction{
-		TxMessages: []modules.Message{msg},
+		TxMessages: []*modules.Message{&msg},
 	}
 	// coinbase.CreationDate = coinbase.CreateDate()
 	coinbase.TxHash = coinbase.Hash()

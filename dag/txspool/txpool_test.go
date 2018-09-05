@@ -104,7 +104,8 @@ func TestTransactionAddingTxs(t *testing.T) {
 	// step2. create payload
 	createT := big.Int{}
 	input := modules.Input{
-		Extra: createT.SetInt64(time.Now().Unix()).Bytes(),
+		SignatureScript: []byte("xxxxxxxxxx"),
+		Extra:           createT.SetInt64(time.Now().Unix()).Bytes(),
 	}
 	output := modules.Output{
 		Value: totalIncome,

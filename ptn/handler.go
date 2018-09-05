@@ -857,7 +857,7 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 		Payload: pay,
 	}
 	tx := &modules.Transaction{
-		TxMessages: []modules.Message{msg0},
+		TxMessages: []*modules.Message{&msg0},
 	}
 	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
 	if err != nil {
