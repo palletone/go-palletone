@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
+	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
@@ -305,14 +306,31 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	log.Debug("PalletOne peer connected", "name", p.Name())
 
 	// Execute the PalletOne handshake
+	//var (
+	//	//genesis = //common.Hash{}   //pm.blockchain.Genesis()
+	//	head = &modules.Header{} //pm.blockchain.CurrentHeader()
+	//	hash = head.Hash()
+	//	//number = head.Number.Uint64()
+	//	td = uint64(0) //&big.Int{} //pm.blockchain.GetTd(hash, number)
+	//)
 	var (
-		//genesis = //common.Hash{}   //pm.blockchain.Genesis()
-		head = &modules.Header{} //pm.blockchain.CurrentHeader()
-		hash = head.Hash()
-		//number = head.Number.Uint64()
-		td = uint64(0) //&big.Int{} //pm.blockchain.GetTd(hash, number)
+		//number = modules.ChainIndex{
+		//	modules.PTNCOIN,
+		//	true,
+		//	0,
+		//}
+		//genesis = pm.dag.GetUnitByNumber(number)
+
+		head  = pm.dag.CurrentHeader()
+		hash  = head.Hash()
+		index = head.Number.Index
 	)
-	if err := p.Handshake(pm.networkId, td, hash /*genesis.Hash()*/, common.Hash{}); err != nil {
+	genesis, err := common2.GetGenesisUnit(pm.dag.Db, 0)
+	if err != nil {
+		fmt.Println("GetGenesisUnit===error:=", err)
+	}
+	genesis = genesis
+	if err := p.Handshake(pm.networkId, index, hash, common.Hash{} /*genesis.Hash()*/); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}

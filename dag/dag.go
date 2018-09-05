@@ -55,7 +55,7 @@ type Dag struct {
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
-	fmt.Println("d.GetHeadUnitHash()/===", hash)
+	//fmt.Println("d.GetHeadUnitHash()/===",hash)
 	if err != nil {
 		return nil
 	}
@@ -76,7 +76,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	// get transaction list
 	txs, err := dagcommon.GetUnitTransactions(d.Db, uHash)
 	if err != nil {
-		log.Error("Current unit when get transactions", "error", err.Error())
+		//log.Error("Current unit when get transactions", "error", err.Error())
 		//fmt.Println("植同学===》Current unit when get transactions/error===",err.Error())
 		//测试时需要注释掉
 		return nil
@@ -104,13 +104,11 @@ func (d *Dag) HasUnit(hash common.Hash) bool {
 }
 
 func (d *Dag) GetUnitByHash(hash common.Hash) *modules.Unit {
-	//TODO must modify
-	return nil
-	return d.CurrentUnit()
+	return storage.GetUnit(d.Db, hash)
 }
 
 func (d *Dag) GetUnitByNumber(number modules.ChainIndex) *modules.Unit {
-	return storage.GetUnitFormIndex(d.Db, number.Index, number.AssetID)
+	return storage.GetUnitFormIndex(d.Db, number)
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {

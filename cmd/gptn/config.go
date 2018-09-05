@@ -50,7 +50,7 @@ var (
 		Action:    utils.MigrateFlags(dumpConfig),
 		Name:      "dumpconfig",
 		Usage:     "Dumps configuration to a specified file",
-		ArgsUsage: "",
+		ArgsUsage: "<configFilePath>",
 		//		Flags:       append(append(nodeFlags, rpcFlags...)),
 		Flags: []cli.Flag{
 			ConfigFileFlag,

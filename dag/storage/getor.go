@@ -102,6 +102,8 @@ func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 func GetUnit(db ptndb.Database, hash common.Hash) *modules.Unit {
 	// 1. get chainindex
 	height, err := GetUnitNumber(db, hash)
+	fmt.Printf("height=%#v\n", height)
+	//fmt.Println("err", err)
 	if err != nil {
 		log.Println("Getunit when get unitNumber failed , error:", err)
 		return nil
@@ -120,7 +122,7 @@ func GetUnit(db ptndb.Database, hash common.Hash) *modules.Unit {
 	// get transaction list
 	txs, err := GetUnitTransactions(db, uHash)
 	if err != nil {
-		log.Println("Getunit when get transactions failed , error:", err)
+		//log.Println("Getunit when get transactions failed , error:", err)
 		//fmt.Println("植同学===》Current unit when get transactions/error===",err.Error())
 		//测试时需要注释掉
 		return nil
@@ -149,14 +151,24 @@ func GetUnitTransactions(db ptndb.Database, hash common.Hash) (modules.Transacti
 	}
 	return txs, nil
 }
-func GetUnitFormIndex(db ptndb.Database, height uint64, asset modules.IDType16) *modules.Unit {
-	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, asset.String(), height)
+func GetUnitFormIndex(db ptndb.Database, number modules.ChainIndex) *modules.Unit {
+	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, number.AssetID.String(), number.Index)
+	//fmt.Println("GetUnitFormIndex=>",[]byte(key))
 	hash, err := db.Get([]byte(key))
+	//fmt.Println("hash, err=",hash, err)
 	if err != nil {
 		return nil
 	}
+	h1 := []byte{}
+	err = rlp.DecodeBytes(hash, &h1)
+	if err != nil {
+		log.Println("DecodeBytes", err)
+		return nil
+	}
+	//fmt.Println("h1, err=",h1, err)
 	var h common.Hash
-	h.SetBytes(hash)
+	h.SetBytes(h1)
+	//fmt.Println("h=",h)
 	return GetUnit(db, h)
 }
 
@@ -206,8 +218,8 @@ func GetHeaderRlp(db DatabaseReader, hash common.Hash, index uint64) rlp.RawValu
 	return header_bytes
 }
 
-func GetHeaderFormIndex(db ptndb.Database, height uint64, asset modules.IDType16) *modules.Header {
-	unit := GetUnitFormIndex(db, height, asset)
+func GetHeaderFormIndex(db ptndb.Database, number modules.ChainIndex) *modules.Header {
+	unit := GetUnitFormIndex(db, number)
 	return unit.UnitHeader
 }
 

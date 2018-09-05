@@ -75,9 +75,9 @@ type peer struct {
 
 	knownTxs    *set.Set // Set of transaction hashes known to be known by this peer
 	knownBlocks *set.Set // Set of block hashes known to be known by this peer
-
+	head common.Hash
 	//td   *big.Int
-	//index uint64
+	index uint64
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -302,7 +302,7 @@ func (p *peer) Handshake(network uint64, td uint64, head common.Hash, genesis co
 		}
 	}
 	//TODO would recover
-	//p.index, p.head = status.TD, status.CurrentBlock
+	p.index, p.head = status.TD, status.CurrentBlock
 	return nil
 }
 
