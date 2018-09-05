@@ -59,6 +59,10 @@ type DynamicGlobalProperty struct {
 	//	RecentSlotsFilled float32
 }
 
+func (gp *GlobalProperty) GetActiveMediatorCount() int {
+	return len(gp.ActiveMediators)
+}
+
 func (gp *GlobalProperty) GetCurThreshold() int {
 	aSize := len(gp.ActiveMediators)
 	offset := (core.PalletOne100Percent - core.PalletOneIrreversibleThreshold) * aSize /

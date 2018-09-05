@@ -136,7 +136,6 @@ func TestTBLS(t *testing.T) {
 	require.Nil(t, err)
 
 	pubPoly := share.NewPubPoly(suite, suite.Point().Base(), dks.Commitments())
-
 	sig, err := tbls.Recover(suite, pubPoly, msg, sigShares, ntThreshold, nbParticipants)
 	require.Nil(t, err)
 
@@ -146,6 +145,8 @@ func TestTBLS(t *testing.T) {
 	err = bls.Verify(suite, dks.Public(), msg, sig)
 	assert.Nil(t, err)
 
+	require.Equal(t, pubPoly.Commit(), dks.Public())
+
 	dks2, err := dkgs[1].DistKeyShare()
 	assert.Nil(t, err)
 
@@ -153,4 +154,10 @@ func TestTBLS(t *testing.T) {
 	assert.Nil(t, err)
 
 	require.NotEqual(t, dks.Public(), dks2.Public())
+
+	maybepub2 := dks.Commitments()[1]
+	err = bls.Verify(suite, maybepub2, msg, sig)
+	assert.NotNil(t, err)
+
+	require.NotEqual(t, maybepub2, dks2.Public())
 }

@@ -492,3 +492,8 @@ func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
 func (d *Dag) GetCurThreshold() int {
 	return d.GlobalProp.GetCurThreshold()
 }
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediatorCount() int {
+	return d.GlobalProp.GetActiveMediatorCount()
+}
