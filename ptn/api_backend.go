@@ -179,7 +179,12 @@ func (b *PtnApiBackend) GetUnit(hash common.Hash) *modules.Unit {
 
 // Get UnitNumber
 func (b *PtnApiBackend) GetUnitNumber(hash common.Hash) uint64 {
-	return b.ptn.dag.GetUnitNumber(hash).Index
+	number,err := b.ptn.dag.GetUnitNumber(hash)
+	if err != nil {
+		log.Println("GetUnitNumber when b.ptn.dag.GetUnitNumber",err.Error())
+		return uint64(0)
+	}
+	return number.Index
 }
 
 // GetCanonicalHash

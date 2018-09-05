@@ -55,12 +55,12 @@ type Dag struct {
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
-	//fmt.Println("d.GetHeadUnitHash()/===",hash)
 	if err != nil {
+		log.Error("CurrentUnit when GetHeadUnitHash()", "error", err.Error())
 		return nil
 	}
 	// step2. get unit height
-	height := d.GetUnitNumber(hash)
+	height, err := d.GetUnitNumber(hash)
 	//fmt.Printf("d.GetUnitNumber(hash)===%#v\n",height)
 	// get unit header
 	uHeader, err := storage.GetHeader(d.Db, hash, &height)
@@ -76,8 +76,9 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	// get transaction list
 	txs, err := dagcommon.GetUnitTransactions(d.Db, uHash)
 	if err != nil {
-		//log.Error("Current unit when get transactions", "error", err.Error())
-		//fmt.Println("植同学===》Current unit when get transactions/error===",err.Error())
+		log.Error("Current unit when get transactions", "error", err.Error())
+		//log.Info("植同学===》》》测试时需要注释掉》》》Current unit when get transactions/error===",err.Error())
+		//fmt.Println("植同学===》》》测试时需要注释掉》》》")
 		//测试时需要注释掉
 		return nil
 	}
@@ -112,7 +113,10 @@ func (d *Dag) GetUnitByNumber(number modules.ChainIndex) *modules.Unit {
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
-	height := d.GetUnitNumber(hash)
+	height,err := d.GetUnitNumber(hash)
+	if err != nil {
+		log.Error("GetHeaderByHash when GetUnitNumber", "error", err.Error())
+	}
 	// get unit header
 	uHeader, err := storage.GetHeader(d.Db, hash, &height)
 	if err != nil {
@@ -123,6 +127,8 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 }
 
 func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
+
+
 	header, _ := storage.GetHeaderByHeight(d.Db, number)
 	return header
 }
@@ -267,7 +273,7 @@ func (d *Dag) getBodyRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawVal
 }
 
 func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
-	number, err := storage.GetUnitNumber(db, hash)
+	number, err := storage.GetNumberWithUnitHash(db, hash)
 	if err != nil {
 		log.Error("Get header rlp ", "error", err.Error())
 		return nil
@@ -400,15 +406,14 @@ func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
 
 // Get Header
 func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error) {
-	index := d.GetUnitNumber(hash)
+	index,_ := d.GetUnitNumber(hash)
 	//TODO compare index with number
 	return storage.GetHeader(d.Db, hash, &index)
 }
 
 // Get UnitNumber
-func (d *Dag) GetUnitNumber(hash common.Hash) modules.ChainIndex {
-	height, _ := storage.GetUnitNumber(d.Db, hash)
-	return height
+func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex,error){
+	return storage.GetNumberWithUnitHash(d.Db, hash)
 }
 
 // GetCanonicalHash

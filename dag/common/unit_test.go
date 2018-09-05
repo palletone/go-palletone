@@ -123,7 +123,7 @@ func TestSaveUnit(t *testing.T) {
 		},
 	}
 	tx1 := modules.Transaction{
-		TxMessages: []modules.Message{
+		TxMessages: []*modules.Message{
 			{
 				App:     modules.APP_CONTRACT_TPL,
 				Payload: contractTplPayload,
@@ -133,7 +133,7 @@ func TestSaveUnit(t *testing.T) {
 	tx1.TxHash = tx1.Hash()
 
 	tx2 := modules.Transaction{
-		TxMessages: []modules.Message{
+		TxMessages: []*modules.Message{
 			{
 				App:     modules.APP_CONTRACT_DEPLOY,
 				Payload: deployPayload,
@@ -143,7 +143,7 @@ func TestSaveUnit(t *testing.T) {
 	tx2.TxHash = tx2.Hash()
 
 	tx3 := modules.Transaction{
-		TxMessages: []modules.Message{
+		TxMessages: []*modules.Message{
 			{
 				App:     modules.APP_CONTRACT_INVOKE,
 				Payload: invokePayload,
@@ -262,7 +262,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 	}
 
 	tx2 := modules.Transaction{
-		TxMessages: []modules.Message{
+		TxMessages: []*modules.Message{
 			{
 				App:     modules.APP_PAYMENT,
 				Payload: payment,
@@ -309,7 +309,7 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 		TxIndex: 0,
 	}})
 	tx1 := modules.Transaction{
-		TxMessages: []modules.Message{
+		TxMessages: []*modules.Message{
 			{
 				App:     modules.APP_CONTRACT_TPL,
 				Payload: contractTplPayload,
@@ -387,7 +387,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 		WriteSet:     writeSet,
 	}
 	tx1 := modules.Transaction{
-		TxMessages: []modules.Message{
+		TxMessages: []*modules.Message{
 			{
 				App:     modules.APP_CONTRACT_DEPLOY,
 				Payload: deployPayload,

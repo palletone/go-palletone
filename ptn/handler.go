@@ -35,10 +35,10 @@ import (
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
+	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
-	common2 "github.com/palletone/go-palletone/dag/common"
 )
 
 const (
@@ -321,15 +321,21 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		//}
 		//genesis = pm.dag.GetUnitByNumber(number)
 
-		head = pm.dag.CurrentHeader()
-		hash = head.Hash()
+		head  = pm.dag.CurrentHeader()
+		hash  = head.Hash()
 		index = head.Number.Index
 	)
-	genesis,err := common2.GetGenesisUnit(pm.dag.Db,0)
+	genesis, err := common2.GetGenesisUnit(pm.dag.Db, 0)
+	//fmt.Println("----handle----genesis----unit.UnitHeader-----%#v\n", genesis.UnitHeader)
+	//fmt.Println("----handle----genesis----unit.Txs------------%#v\n", genesis.Txs[0].Hash())
+	//fmt.Println("----handle----genesis----unit.UnitHash-------%#v\n", genesis.UnitHash)
+	//fmt.Println("----handle----genesis----unit.UnitHeader.ParentsHash-----%#v\n", genesis.UnitHeader.ParentsHash)
+	//fmt.Println("----handle----genesis----unit.UnitHeader.Number.Index----%#v\n", genesis.UnitHeader.Number.Index)
 	if err != nil {
-		fmt.Println("GetGenesisUnit===error:=",err)
+		fmt.Println("GetGenesisUnit===error:=", err)
+		return err
 	}
-	if err := p.Handshake(pm.networkId, index, hash ,genesis.Hash()); err != nil {
+	if err := p.Handshake(pm.networkId, index, hash,  genesis.Hash()); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
@@ -851,7 +857,7 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 		Payload: pay,
 	}
 	tx := &modules.Transaction{
-		TxMessages: []modules.Message{msg0},
+		TxMessages: []*modules.Message{&msg0},
 	}
 	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
 	if err != nil {

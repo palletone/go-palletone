@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"math"
+	"log"
 )
 
 // Tests that protocol versions and modes of operations are matched up properly.
@@ -63,6 +64,11 @@ func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
 func testGetBlockHeaders(t *testing.T, protocol int) {
 	//pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil)
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil)
+	uu := pm.dag.CurrentUnit()
+	log.Printf("--------testGetBlockHeaders--CurrentUnit--unit.UnitHeader-----%#v\n", uu.UnitHeader)
+	log.Printf("--------testGetBlockHeaders--CurrentUnit--unit.UnitHash-------%#v\n", uu.UnitHash)
+	log.Printf("--------testGetBlockHeaders--CurrentUnit--unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
+	log.Printf("--------testGetBlockHeaders--CurrentUnit--unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
 	peer, _ := newTestPeer("peer", protocol, pm, true)
 	defer peer.close()
 	// Create a "random" unknown hash for testing
