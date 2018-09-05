@@ -14,7 +14,7 @@ import (
 
 func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	dag, _ := dag.NewDagForTest(Memdb)
-	log.Println("开始创建 genesis unit===》》》")
+	//log.Println("开始创建 genesis unit===》》》")
 	header := NewHeader([]common.Hash{}, []modules.IDType16{modules.PTNCOIN}, []byte{})
 	header.Number.AssetID = modules.PTNCOIN
 	header.Number.IsMain = true
@@ -35,12 +35,12 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	//log.Printf("--------genesis----unit.UnitHash-------%#v\n", genesisUnit.UnitHash)
 	//log.Printf("--------genesis----unit.UnitHeader.ParentsHash-----%#v\n", genesisUnit.UnitHeader.ParentsHash)
 	//log.Printf("--------genesis----unit.UnitHeader.Number.Index----%#v\n", genesisUnit.UnitHeader.Number.Index)
-	log.Println("创建 genesis unit 完成并保存===》》》")
-	log.Println()
-	log.Println("开始创建其他 unit===》》》")
-	units, _ := newDag(dag.Db, genesisUnit, unitAccount)
-	log.Println("创建其他 unit 完成并保存===》》》")
-	log.Println("全部unit的数量===》》》", len(units)+1)
+	//log.Println("创建 genesis unit 完成并保存===》》》")
+	//log.Println()
+	//log.Println("开始创建其他 unit===》》》")
+	newDag(dag.Db, genesisUnit, unitAccount)
+	//log.Println("创建其他 unit 完成并保存===》》》")
+	//log.Println("全部unit的数量===》》》", len(units)+1)
 	return dag, nil
 }
 func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Units, error) {
