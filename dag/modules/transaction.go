@@ -51,7 +51,7 @@ type TxIn struct {
 	Sequence         uint32
 }
 
-func NewTransaction(msg []*Message, lock uint32) *Transaction {
+func NewTransaction(msg []Message, lock uint32) *Transaction {
 	return newTransaction(msg, lock)
 }
 
