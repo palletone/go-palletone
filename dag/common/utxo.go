@@ -177,13 +177,10 @@ func writeUtxo(db ptndb.Database, txHash common.Hash, msgIndex uint32, txouts []
 	var errs []error
 	for outIndex, txout := range txouts {
 		utxo := modules.Utxo{
-			TxID:         txHash,
-			MessageIndex: msgIndex,
-			OutIndex:     uint32(outIndex),
-			Amount:       txout.Value,
-			Asset:        txout.Asset,
-			PkScript:     txout.PkScript,
-			LockTime:     lockTime,
+			Amount:   txout.Value,
+			Asset:    &txout.Asset,
+			PkScript: txout.PkScript,
+			LockTime: lockTime,
 		}
 
 		// write to database
@@ -266,7 +263,7 @@ func destoryUtxo(db ptndb.Database, txins []*modules.Input) {
 		addr.SetString(sAddr)
 		utxoIndex := modules.UtxoIndex{
 			AccountAddr: addr,
-			Asset:       utxo.Asset,
+			Asset:       *utxo.Asset,
 			OutPoint:    outpoint,
 		}
 		if err := storage.Delete(db, utxoIndex.ToKey()); err != nil {
@@ -469,13 +466,13 @@ func getAccountTokensWhole(db ptndb.Database, addr common.Address) (map[string]*
 			val.Balance += utxo.Amount
 		} else {
 			// get asset info
-			assetInfo, err := GetAssetInfo(db, &utxo.Asset)
+			assetInfo, err := GetAssetInfo(db, utxo.Asset)
 			if err != nil {
 				return nil, fmt.Errorf("Get acount tokens by whole error: asset info does not exist")
 			}
 			tokens[utxo.Asset.AssertId.String()] = &modules.AccountToken{
 				Alias:   assetInfo.Alias,
-				AssetID: utxo.Asset,
+				AssetID: *utxo.Asset,
 				Balance: utxo.Amount,
 			}
 		}

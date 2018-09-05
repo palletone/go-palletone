@@ -1214,9 +1214,6 @@ func (view *UtxoViewpoint) addTxOut(outpoint modules.OutPoint, txOut *modules.Tx
 	utxo.Asset.ChainId = txOut.Asset.ChainId
 	utxo.Asset.UniqueId = txOut.Asset.UniqueId
 
-	utxo.MessageIndex = outpoint.MessageIndex
-	utxo.OutIndex = outpoint.OutIndex
-	utxo.TxID = outpoint.TxHash
 	// isCoinbase ?
 	// flags --->  标记utxo状态
 }
