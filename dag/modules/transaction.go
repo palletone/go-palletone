@@ -61,8 +61,9 @@ func NewContractCreation(msg []Message, lock uint32) *Transaction {
 
 func newTransaction(msg []Message, lock uint32) *Transaction {
 	tx := new(Transaction)
-	tx.TxMessages = msg[:]
-	//tx.Locktime = lock
+	for _, m := range msg {
+		tx.TxMessages = append(tx.TxMessages, &m)
+	}
 
 	return tx
 }
@@ -95,6 +96,7 @@ func NewPaymentPayload() *PaymentPayload {
 type TxPoolTransaction struct {
 	Tx *Transaction
 
+	From         []*common.Address
 	CreationDate time.Time `json:"creation_date"`
 	Priority_lvl float64   `json:"priority_lvl"` // 打包的优先级
 	Nonce        uint64    // transaction'hash maybe repeat.
@@ -234,11 +236,11 @@ func (tx *Transaction) Cost() *big.Int {
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
 	tx.TxHash.Set(cpy.TxHash)
 	//tx.Locktime = cpy.Locktime
-	tx.TxMessages = make([]Message, len(cpy.TxMessages))
-	for _, msg := range cpy.TxMessages {
-		newMsg := Message{}
-		newMsg = *newMsg.CopyMessages(&msg)
-		tx.TxMessages = append(tx.TxMessages, newMsg)
+	tx.TxMessages = make([]*Message, len(cpy.TxMessages))
+	for i, msg := range cpy.TxMessages {
+		newMsg := new(Message)
+		newMsg = msg
+		tx.TxMessages[i] = newMsg
 	}
 }
 
@@ -414,8 +416,7 @@ type TxLookupEntry struct {
 type Transactions []*Transaction
 type Transaction struct {
 	TxHash     common.Hash `json:"txhash"`
-	TxMessages []Message   `json:"messages"`
-	// todo AccountNonce, CreationDate, Priority_lvl 在交易池部分用的比较多，将由杨杰负责删除
+	TxMessages []*Message  `json:"messages"`
 }
 type OutPoint struct {
 	TxHash       common.Hash // reference Utxo struct key field

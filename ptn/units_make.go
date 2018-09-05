@@ -377,7 +377,7 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 		Payload: payload,
 	}
 	coinbase := &modules.Transaction{
-		TxMessages: []modules.Message{msg},
+		TxMessages: []*modules.Message{&msg},
 	}
 	coinbase.TxHash = coinbase.Hash()
 	return coinbase, nil
