@@ -461,7 +461,7 @@ func GetTrieSyncProgress(db DatabaseReader) (uint64, error) {
 }
 
 //  dbFetchUtxoEntry
-func GetUtxoEntry(db DatabaseReader, key []byte) (*modules.Utxo, error) {
+func GetUtxoEntry(db ptndb.Database, key []byte) (*modules.Utxo, error) {
 	utxo := new(modules.Utxo)
 	data, err := db.Get(key)
 	if err != nil {

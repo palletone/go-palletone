@@ -63,6 +63,9 @@ func (ud *testUnitDag) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
 	return ud.Db, nil
 }
 
+func (ud *testUnitDag) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
+	return nil, nil
+}
 func (ud *testUnitDag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
 	return ud.chainHeadFeed.Subscribe(ch)
 }

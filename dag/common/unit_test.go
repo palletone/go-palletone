@@ -91,11 +91,11 @@ func TestSaveUnit(t *testing.T) {
 	writeSet := []modules.PayloadMapStruct{
 		{
 			Key:   "name",
-			Value: "Joe",
+			Value: modules.ToPayloadMapValueBytes("Joe"),
 		},
 		{
 			Key:   "age",
-			Value: 10,
+			Value: modules.ToPayloadMapValueBytes(10),
 		},
 	}
 	deployPayload := modules.ContractDeployPayload{
@@ -112,13 +112,13 @@ func TestSaveUnit(t *testing.T) {
 		WriteSet: []modules.PayloadMapStruct{
 			{
 				Key:   "name",
-				Value: "Alice",
+				Value: modules.ToPayloadMapValueBytes("Alice"),
 			},
 			{
 				Key: "age",
-				Value: modules.DelContractState{
+				Value: modules.ToPayloadMapValueBytes(modules.DelContractState{
 					IsDelete: true,
-				},
+				}),
 			},
 		},
 	}
@@ -162,7 +162,7 @@ func TestSaveUnit(t *testing.T) {
 	unit.UnitSize = unit.Size()
 	unit.UnitHash = unit.Hash()
 
-	if err := SaveUnit(Dbconn, unit, false); err != nil {
+	if err := SaveUnit(Dbconn, unit, true); err != nil {
 		log.Println(err)
 	}
 }
@@ -271,16 +271,16 @@ func TestPaymentTransactionRLP(t *testing.T) {
 	}
 	tx2.TxHash = tx2.Hash()
 	fmt.Println("Original data:", payment)
-	b, _ := rlp.EncodeToBytes(tx2)
+	b, _ := rlp.EncodeToBytes(&tx2)
 	var tx modules.Transaction
 	if err := rlp.DecodeBytes(b, &tx); err != nil {
 		fmt.Println("TestPaymentTransactionRLP error:", err.Error())
 	} else {
 		for _, msg := range tx.TxMessages {
 			if msg.App == modules.APP_PAYMENT {
-				var pl modules.PaymentPayload
-				if err := pl.ExtractFrInterface(msg.Payload); err != nil {
-					fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
+				pl, ok := msg.Payload.(*modules.PaymentPayload)
+				if !ok {
+					fmt.Println("Payment payload ExtractFrInterface error")
 				} else {
 					fmt.Println("Payment payload:", pl)
 				}
@@ -325,12 +325,12 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 		fmt.Println(">>>>>>>> payload type:", reflect.TypeOf(msg.Payload))
 		fmt.Printf(">>>>>>>>  message[%d] payload:%v\n", index, msg.Payload)
 	}
-	encodeData, err := rlp.EncodeToBytes(tx1)
+	encodeData, err := rlp.EncodeToBytes(&tx1)
 	if err != nil {
 		fmt.Println("Encode tx1 error:", err.Error())
 	} else {
-		var txDecode modules.Transaction
-		if err := rlp.DecodeBytes(encodeData, &txDecode); err != nil {
+		txDecode := new(modules.Transaction)
+		if err := rlp.DecodeBytes(encodeData, txDecode); err != nil {
 			fmt.Println("Decode tx error:", err.Error())
 		} else {
 			fmt.Println("======== Decode transaction:")
@@ -339,9 +339,9 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 				fmt.Printf("======== message[%d]:%v\n", index, msg)
 				switch msg.App {
 				case modules.APP_CONTRACT_TPL:
-					var tplPayload modules.ContractTplPayload
-					if err := tplPayload.ExtractFrInterface(msg.Payload); err != nil {
-						fmt.Println("Contract template payload ExtractFrInterface error:", err.Error())
+					tplPayload, ok := msg.Payload.(*modules.ContractTplPayload)
+					if !ok {
+						fmt.Println("Contract template payload ExtractFrInterface error:")
 					} else {
 						fmt.Println("Contract template payload:", tplPayload)
 					}
@@ -366,18 +366,25 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 	writeSet := []modules.PayloadMapStruct{
 		{
 			Key:   "name",
-			Value: "Joe",
+			Value: []byte("Joe"),
 		},
 		{
 			Key:   "age",
-			Value: 10,
+			Value: modules.ToPayloadMapValueBytes(uint8(10)),
 		},
 	}
+	addr := common.Address{}
+	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
+	et := time.Duration(12)
 	deployPayload := modules.ContractDeployPayload{
-		TemplateId: []byte("contract_template0000"),
-		ContractId: []byte("contract0000"),
-		ReadSet:    readSet,
-		WriteSet:   writeSet,
+		TemplateId:   []byte("contract_template0000"),
+		ContractId:   []byte("contract0000"),
+		Name:         "testdeploy",
+		Args:         [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
+		Excutiontime: et,
+		Jury:         []common.Address{addr},
+		ReadSet:      readSet,
+		WriteSet:     writeSet,
 	}
 	tx1 := modules.Transaction{
 		TxMessages: []modules.Message{
@@ -396,12 +403,13 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 		fmt.Println(">>>>>>>> payload type:", reflect.TypeOf(msg.Payload))
 		fmt.Printf(">>>>>>>>  message[%d] payload:%v\n", index, msg.Payload)
 	}
-	encodeData, err := rlp.EncodeToBytes(tx1)
+	encodeData, err := rlp.EncodeToBytes(&tx1)
 	if err != nil {
 		fmt.Println("Encode tx1 error:", err.Error())
 	} else {
-		var txDecode modules.Transaction
-		if err := rlp.DecodeBytes(encodeData, &txDecode); err != nil {
+		txDecode := new(modules.Transaction)
+		if err := rlp.DecodeBytes(encodeData, txDecode); err != nil {
+			fmt.Println("Encode data:", encodeData)
 			fmt.Println("Decode tx error:", err.Error())
 		} else {
 			fmt.Println("======== Decode transaction:")
@@ -410,11 +418,13 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 				fmt.Printf("======== message[%d]:%v\n", index, msg)
 				switch msg.App {
 				case modules.APP_CONTRACT_DEPLOY:
-					var deployPayload modules.ContractDeployPayload
-					if err := deployPayload.ExtractFrInterface(msg.Payload); err != nil {
-						fmt.Println("Contract template payload ExtractFrInterface error:", err.Error())
+					deployPayload, ok := msg.Payload.(*modules.ContractDeployPayload)
+					if !ok {
+						fmt.Println("Get contract deploypayload error.")
 					} else {
-						fmt.Println("Contract template payload:", deployPayload)
+						fmt.Println(deployPayload.Name)
+						fmt.Println(deployPayload.ContractId)
+						fmt.Println(deployPayload.Excutiontime)
 					}
 				}
 			}

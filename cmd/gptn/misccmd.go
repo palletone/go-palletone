@@ -1,3 +1,5 @@
+// Copyright 2018 PalletOne
+
 // Copyright 2016 The go-ethereum Authors
 // This file is part of go-ethereum.
 //
@@ -185,20 +187,19 @@ func createInitDKS(ctx *cli.Context) error {
 func getNodeInfo(ctx *cli.Context) error {
 	stack := makeFullNode(ctx)
 	privateKey := stack.Config().NodeKey()
-	addr := stack.ListenAddr()
+	listenAddr := stack.ListenAddr()
 
-	listener, err := net.Listen("tcp", addr)
+	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		return err
 	}
-	laddr := listener.Addr().(*net.TCPAddr)
+	realaddr := listener.Addr().(*net.TCPAddr)
 
-	node := &discover.Node{
-		ID:  discover.PubkeyID(&privateKey.PublicKey),
-		IP:  laddr.IP,
-		TCP: uint16(laddr.Port),
-		UDP: uint16(laddr.Port),
-	}
+	node := discover.NewNode(
+		discover.PubkeyID(&privateKey.PublicKey),
+		realaddr.IP,
+		uint16(realaddr.Port),
+		uint16(realaddr.Port))
 
 	fmt.Println(node.String())
 

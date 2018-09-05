@@ -30,9 +30,11 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	//"github.com/palletone/go-palletone/metrics"
+	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -85,6 +87,7 @@ type dags interface {
 	GetUnit(hash common.Hash) *modules.Unit
 	//StateAt(root common.Hash) (*state.StateDB, error)
 
+	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 }
 
@@ -939,9 +942,7 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 			var inputs modules.PaymentPayload
 			inputs, ok := msg.Payload.(modules.PaymentPayload)
 			if !ok {
-				if err := inputs.ExtractFrInterface(msg.Payload); err != nil {
-					continue
-				}
+				continue
 			}
 			for _, input := range inputs.Input {
 				if tx, ok := pool.outpoints[input.PreviousOutPoint]; ok {
@@ -961,6 +962,31 @@ func (pool *TxPool) CheckSpend(output modules.OutPoint) *modules.Transaction {
 	tx := pool.outpoints[output]
 	pool.mu.RUnlock()
 	return tx.Tx
+}
+func (pool *TxPool) fetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, error) {
+	utxoView, err := pool.unit.GetUtxoView(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Attempt to populate any missing inputs from the transaction pool.
+	for i, msgcopy := range tx.TxMessages {
+		if msgcopy.App == modules.APP_PAYMENT {
+			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+				for _, txIn := range msg.Input {
+					preout := &txIn.PreviousOutPoint
+					utxo := utxoView.LookupUtxo(*preout)
+					if utxo != nil {
+						continue
+					}
+					if pooltx, exist := pool.all[preout.TxHash]; exist {
+						utxoView.AddTxOut(pooltx.Tx, uint32(i), preout.OutIndex)
+					}
+				}
+			}
+		}
+	}
+	return utxoView, nil
 }
 
 // promoteExecutables moves transactions that have become processable from the
@@ -1127,4 +1153,127 @@ func (pool *TxPool) GetSortedTxs() ([]*modules.TxPoolTransaction, common.Storage
 // starts sending event to the given channel.
 func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
+}
+
+//  UtxoViewpoint
+type UtxoViewpoint struct {
+	entries  map[modules.OutPoint]*modules.Utxo
+	bestHash common.Hash
+}
+
+func (view *UtxoViewpoint) BestHash() *common.Hash {
+	return &view.bestHash
+}
+func (view *UtxoViewpoint) SetBestHash(hash *common.Hash) {
+	view.bestHash = *hash
+}
+func (view *UtxoViewpoint) LookupUtxo(outpoint modules.OutPoint) *modules.Utxo {
+	return view.entries[outpoint]
+}
+func (view *UtxoViewpoint) FetchUtxos(db *ptndb.Database, outpoints map[modules.OutPoint]struct{}) error {
+	if len(outpoints) == 0 {
+		return nil
+	}
+	neededSet := make(map[modules.OutPoint]struct{})
+	for outpoint := range outpoints {
+		if _, ok := view.entries[outpoint]; ok {
+			continue
+		}
+		neededSet[outpoint] = struct{}{}
+	}
+	return view.fetchUtxosMain(db, neededSet)
+
+}
+func (view *UtxoViewpoint) fetchUtxosMain(db *ptndb.Database, outpoints map[modules.OutPoint]struct{}) error {
+	if len(outpoints) == 0 {
+		return nil
+	}
+	for outpoint := range outpoints {
+		utxo, err := storage.GetUtxoEntry(*db, outpoint.ToKey())
+		if err != nil {
+			return err
+		}
+		view.entries[outpoint] = utxo
+	}
+	return nil
+}
+
+func (view *UtxoViewpoint) addTxOut(outpoint modules.OutPoint, txOut *modules.TxOut, isCoinbase bool) {
+	// Don't add provably unspendable outputs.
+	if txscript.IsUnspendable(txOut.PkScript) {
+		return
+	}
+	utxo := view.LookupUtxo(outpoint)
+	if utxo == nil {
+		utxo = new(modules.Utxo)
+		view.entries[outpoint] = utxo
+	}
+	utxo.Amount = uint64(txOut.Value)
+	utxo.PkScript = txOut.PkScript
+	utxo.Asset.AssertId = txOut.Asset.AssertId
+	utxo.Asset.ChainId = txOut.Asset.ChainId
+	utxo.Asset.UniqueId = txOut.Asset.UniqueId
+
+	utxo.MessageIndex = outpoint.MessageIndex
+	utxo.OutIndex = outpoint.OutIndex
+	utxo.TxID = outpoint.TxHash
+	// isCoinbase ?
+	// flags --->  标记utxo状态
+}
+
+func (view *UtxoViewpoint) AddTxOut(tx *modules.Transaction, msgIdx, txoutIdx uint32) {
+	if msgIdx >= uint32(len(tx.TxMessages)) {
+		return
+	}
+
+	for i, msgcopy := range tx.TxMessages {
+
+		if (uint32(i) == msgIdx) && (msgcopy.App == modules.APP_PAYMENT) {
+			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+				if txoutIdx >= uint32(len(msg.Output)) {
+					return
+				}
+				preout := modules.OutPoint{TxHash: tx.Hash(), MessageIndex: msgIdx, OutIndex: txoutIdx}
+				output := msg.Output[txoutIdx]
+				asset := &modules.Asset{AssertId: output.Asset.AssertId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
+				txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: *asset}
+				view.addTxOut(preout, txout, false)
+			}
+		}
+
+	}
+}
+
+func (view *UtxoViewpoint) AddTxOuts(tx *modules.Transaction) {
+	preout := modules.OutPoint{TxHash: tx.Hash()}
+	for i, msgcopy := range tx.TxMessages {
+		if msgcopy.App == modules.APP_PAYMENT {
+			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+				msgIdx := uint32(i)
+				preout.MessageIndex = msgIdx
+				for j, output := range msg.Output {
+					txoutIdx := uint32(j)
+					preout.OutIndex = txoutIdx
+					//asset := &modules.Asset{AssertId: output.Asset.AssertId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
+					txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: modules.Asset{AssertId: output.Asset.AssertId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}}
+					view.addTxOut(preout, txout, false)
+				}
+			}
+		}
+
+	}
+}
+
+func (view *UtxoViewpoint) RemoveUtxo(outpoint modules.OutPoint) {
+	delete(view.entries, outpoint)
+}
+
+func (view *UtxoViewpoint) Entries() map[modules.OutPoint]*modules.Utxo {
+	return view.entries
+}
+
+func NewUtxoViewpoint() *UtxoViewpoint {
+	return &UtxoViewpoint{
+		entries: make(map[modules.OutPoint]*modules.Utxo),
+	}
 }
