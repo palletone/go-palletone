@@ -25,11 +25,11 @@ type TxSigHashes struct {
 
 // NewTxSigHashes computes, and returns the cached sighashes of the given
 // transaction.
-func NewTxSigHashes(tx *modules.PaymentPayload) *TxSigHashes {
+func NewTxSigHashes(pl *modules.PaymentPayload) *TxSigHashes {
 	return &TxSigHashes{
-		HashPrevOuts: calcHashPrevOuts(tx),
+		HashPrevOuts: calcHashPrevOuts(pl),
 		//HashSequence: calcHashSequence(tx),
-		HashOutputs:  calcHashOutputs(tx),
+		HashOutputs:  calcHashOutputs(pl),
 	}
 }
 

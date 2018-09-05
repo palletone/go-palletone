@@ -856,9 +856,11 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 		App:     modules.APP_PAYMENT,
 		Payload: pay,
 	}
-	tx := &modules.Transaction{
-		TxMessages: []*modules.Message{&msg0},
-	}
+	//tx := &modules.Transaction{
+	//	TxMessages: []modules.Message{msg0},
+	//}
+	var tx modules.Transaction
+	tx.TxMessages = append(tx.TxMessages, &msg0)
 	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
 	if err != nil {
 		msg := fmt.Sprintf("Get genesis transactions hash error: %s", err)
@@ -867,7 +869,7 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 	}
 	tx.TxHash.SetBytes(txHash)
 
-	return tx
+	return &tx
 }
 
 // @author Albert·Gou

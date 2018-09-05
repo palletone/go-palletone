@@ -76,6 +76,7 @@ type MediatorPlugin struct {
 	// dkg生成vss相关
 	suite vss.Suite
 	dkgs  map[common.Address]*dkg.DistKeyGenerator
+	resps map[common.Address][]*dkg.Response
 
 	// unit阈值签名相关
 	pendingTBLSSign map[common.Hash]*toTBLSSigned // 等待TBLS阈值签名的unit
@@ -148,7 +149,7 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 
 		dkg, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
-			//panic(err)
+			log.Error(err.Error())
 		}
 
 		mp.dkgs[med] = dkg
@@ -230,6 +231,7 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 
 		suite: bn256.NewSuiteG2(),
 		dkgs:  make(map[common.Address]*dkg.DistKeyGenerator),
+		resps: make(map[common.Address][]*dkg.Response),
 	}
 
 	log.Debug("mediator plugin initialize end")

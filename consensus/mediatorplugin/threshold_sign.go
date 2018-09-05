@@ -30,6 +30,10 @@ func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
 	return sc, suite.Point().Mul(sc, nil)
 }
 
+func (mp *MediatorPlugin) BroadcastDeals() {
+
+}
+
 func (mp *MediatorPlugin) UnitBLSSign(peer string, unit *modules.Unit) error {
 	op := &toBLSSigned{
 		origin: peer,

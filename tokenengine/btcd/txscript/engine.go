@@ -800,16 +800,16 @@ func (vm *Engine) SetAltStack(data [][]byte) {
 // NewEngine returns a new script engine for the provided public key script,
 // transaction, and input index.  The flags modify the behavior of the script
 // engine according to the description provided by each flag.
-func NewEngine(scriptPubKey []byte, tx *modules.PaymentPayload/**wire.MsgTx*/, txIdx int, flags ScriptFlags,
+func NewEngine(scriptPubKey []byte, pl *modules.PaymentPayload/**wire.MsgTx*/, txIdx int, flags ScriptFlags,
 	sigCache *SigCache, hashCache *TxSigHashes, inputAmount int64) (*Engine, error) {
 
 	// The provided transaction input index must refer to a valid input.
-	if txIdx < 0 || txIdx >= len(tx.Input) {
+	if txIdx < 0 || txIdx >= len(pl.Input) {
 		str := fmt.Sprintf("transaction input index %d is negative or "+
-			">= %d", txIdx, len(tx.Input))
+			">= %d", txIdx, len(pl.Input))
 		return nil, scriptError(ErrInvalidIndex, str)
 	}
-	scriptSig := tx.Input[txIdx].SignatureScript
+    scriptSig := pl.Input[txIdx].SignatureScript
 
 	// When both the signature script and public key script are empty the
 	// result is necessarily an error since the stack would end up being
@@ -932,7 +932,7 @@ func NewEngine(scriptPubKey []byte, tx *modules.PaymentPayload/**wire.MsgTx*/, t
 
 	}
 
-	vm.tx = *tx
+	vm.tx = *pl
 	vm.txIdx = txIdx
 
 	return &vm, nil
