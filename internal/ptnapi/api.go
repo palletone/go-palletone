@@ -1550,8 +1550,9 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			continue
 		} else {
 			var payload modules.PaymentPayload
-				if err := payload.ExtractFrInterface(msg.Payload); err != nil {
-					fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
+			payload, ok := msg.Payload.(modules.PaymentPayload)
+			if !ok {
+				fmt.Println("Get Payment payload error:")
 			} //else {
 			//	fmt.Println("Payment payload:", payload)
 			//}
