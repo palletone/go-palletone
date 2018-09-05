@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -232,7 +233,7 @@ func ValidateUnitSignature(db ptndb.Database, h *modules.Header, isGenesis bool)
 	}
 	// get mediators
 	data := GetConfig(db, []byte("MediatorCandidates"))
-	var mList []string
+	var mList []core.MediatorInfo
 	if err := rlp.DecodeBytes(data, &mList); err != nil {
 		log.Debug("Check unit signature when get mediators list", "error", err.Error())
 		return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
