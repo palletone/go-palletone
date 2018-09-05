@@ -57,7 +57,6 @@ func NewMemDatabaseWithCap(size int) (*MemDatabase, error) {
 func (db *MemDatabase) Put(key []byte, value []byte) error {
 	db.lock.Lock()
 	defer db.lock.Unlock()
-
 	db.db[string(key)] = common.CopyBytes(value)
 	return nil
 }
@@ -73,7 +72,6 @@ func (db *MemDatabase) Has(key []byte) (bool, error) {
 func (db *MemDatabase) Get(key []byte) ([]byte, error) {
 	db.lock.RLock()
 	defer db.lock.RUnlock()
-
 	if entry, ok := db.db[string(key)]; ok {
 		return common.CopyBytes(entry), nil
 	}

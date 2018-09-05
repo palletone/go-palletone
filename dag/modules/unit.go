@@ -462,7 +462,9 @@ func CopyTransactions(txs Transactions) Transactions {
 type UnitNonce [8]byte
 
 /************************** Unit Members  *****************************/
-func (u *Unit) Header() *Header { return CopyHeader(u.UnitHeader) }
+func (u *Unit) Header() *Header {
+	return CopyHeader(u.UnitHeader)
+}
 
 // transactions
 func (u *Unit) Transactions() []*Transaction {

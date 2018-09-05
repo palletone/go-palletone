@@ -101,11 +101,13 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 
 	db, err := CreateDB(ctx, config, "leveldb")
 	if err != nil {
+		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
 
 	dag, err := dag.NewDag(db)
 	if err != nil {
+		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
 	}
 

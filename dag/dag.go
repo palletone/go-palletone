@@ -20,6 +20,7 @@ package dag
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"sync"
 
 	"github.com/coocood/freecache"
@@ -54,7 +55,7 @@ type Dag struct {
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
-	fmt.Println("d.GetHeadUnitHash()/===", hash)
+	//fmt.Println("d.GetHeadUnitHash()/===",hash)
 	if err != nil {
 		return nil
 	}
@@ -75,7 +76,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	// get transaction list
 	txs, err := dagcommon.GetUnitTransactions(d.Db, uHash)
 	if err != nil {
-		log.Error("Current unit when get transactions", "error", err.Error())
+		//log.Error("Current unit when get transactions", "error", err.Error())
 		//fmt.Println("植同学===》Current unit when get transactions/error===",err.Error())
 		//测试时需要注释掉
 		return nil
@@ -103,13 +104,11 @@ func (d *Dag) HasUnit(hash common.Hash) bool {
 }
 
 func (d *Dag) GetUnitByHash(hash common.Hash) *modules.Unit {
-	//TODO must modify
-	return nil
-	return d.CurrentUnit()
+	return storage.GetUnit(d.Db, hash)
 }
 
 func (d *Dag) GetUnitByNumber(number modules.ChainIndex) *modules.Unit {
-	return storage.GetUnitFormIndex(d.Db, number.Index, number.AssetID)
+	return storage.GetUnitFormIndex(d.Db, number)
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
@@ -435,7 +434,35 @@ func (d *Dag) GetTrieSyncProgress() (uint64, error) {
 }
 
 func (d *Dag) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
+	d.Mutex.RLock()
+	defer d.Mutex.RUnlock()
 	return storage.GetUtxoEntry(d.Db, key)
+}
+func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
+	neededSet := make(map[modules.OutPoint]struct{})
+	preout := modules.OutPoint{TxHash: tx.Hash()}
+	for i, msgcopy := range tx.TxMessages {
+		if msgcopy.App == modules.APP_PAYMENT {
+			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+				msgIdx := uint32(i)
+				preout.MessageIndex = msgIdx
+				for j := range msg.Output {
+					txoutIdx := uint32(j)
+					preout.OutIndex = txoutIdx
+					neededSet[preout] = struct{}{}
+				}
+			}
+		}
+
+	}
+	// if tx is Not CoinBase
+	// add txIn previousoutpoint
+	view := txspool.NewUtxoViewpoint()
+	d.Mutex.RLock()
+	err := view.FetchUtxos(&d.Db, neededSet)
+	d.Mutex.RUnlock()
+
+	return view, err
 }
 
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {

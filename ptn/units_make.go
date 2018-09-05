@@ -170,14 +170,14 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 		fmt.Println("SaveGenesis, err", err)
 		return nil, err
 	}
-	fmt.Printf("--------这是最新块----unit-----%#v\n", genesisUnit)
-	fmt.Printf("--------这是最新块----unit.UnitHeader-----%#v\n", genesisUnit.UnitHeader)
-	fmt.Printf("--------这是最新块----unit.Txs-----%#v\n", genesisUnit.Txs[0].Hash())
-	fmt.Printf("--------这是最新块----unit.UnitHash-----%#v\n", genesisUnit.UnitHash)
-	fmt.Printf("--------这是最新块----unit.UnitHeader.ParentsHash-----%#v\n", genesisUnit.UnitHeader.ParentsHash)
-	fmt.Printf("--------这是最新块----unit.UnitHeader.Number.Index-----%#v\n", genesisUnit.UnitHeader.Number.Index)
-	newDag(dag.Db, genesisUnit, unitAccount)
-	//fmt.Println("len(units).........", len(units))
+	//fmt.Printf("--------这是最新块----unit-----%#v\n", genesisUnit)
+	//fmt.Printf("--------这是最新块----unit.UnitHeader-----%#v\n", genesisUnit.UnitHeader)
+	//fmt.Printf("--------这是最新块----unit.Txs-----%#v\n", genesisUnit.Txs[0].Hash())
+	//fmt.Printf("--------这是最新块----unit.UnitHash-----%#v\n", genesisUnit.UnitHash)
+	//fmt.Printf("--------这是最新块----unit.UnitHeader.ParentsHash-----%#v\n", genesisUnit.UnitHeader.ParentsHash)
+	//fmt.Printf("--------这是最新块----unit.UnitHeader.Number.Index-----%#v\n", genesisUnit.UnitHeader.Number.Index)
+	units,_ := newDag(dag.Db, genesisUnit, unitAccount)
+	fmt.Println("len(units).........", len(units))
 	//for i, v := range units {
 	//	fmt.Printf("%d====%#v\n", i, v)
 	//}
@@ -201,7 +201,38 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 			break
 		}
 	}
-	fmt.Println("---------------退出循坏-------------")
+	fmt.Println("MakeDags=",dag.GetUnitByNumber(index))
+	uu := dag.CurrentUnit()
+		fmt.Printf("current===>>>%#v\n",uu)
+		//fmt.Printf("--------current----unit.UnitHeader-----%#v\n", uu.UnitHeader)
+		////fmt.Printf("--------这是最新块----unit.Txs-----%#v\n", uu.Txs[0].Hash())
+		//fmt.Printf("--------current----unit.UnitHash-----%#v\n", uu.UnitHash)
+		//fmt.Printf("--------current----unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
+		//fmt.Printf("--------current----unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
+	//if uu == nil {
+	//	fmt.Println("dag.CurrentUnit()====>get nil===>",uu)
+	//}else{
+	//	//fmt.Printf("current===>>>%#v\n",uu)
+	//	//fmt.Printf("--------current----unit.UnitHeader-----%#v\n", uu.UnitHeader)
+	//	////fmt.Printf("--------这是最新块----unit.Txs-----%#v\n", uu.Txs[0].Hash())
+	//	//fmt.Printf("--------current----unit.UnitHash-----%#v\n", uu.UnitHash)
+	//	//fmt.Printf("--------current----unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
+	//	//fmt.Printf("--------current----unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
+	//	fmt.Println("---------------进入循坏-------------")
+	//	for {
+	//		fmt.Printf("查找===>>>%#v\n",uu)
+	//		fmt.Printf("--------current----unit.UnitHeader-----%#v\n", uu.UnitHeader)
+	//		fmt.Printf("--------current----unit.UnitHash-----%#v\n", uu.UnitHash)
+	//		fmt.Printf("--------current----unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
+	//		fmt.Printf("--------current----unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
+	//		if len(uu.ParentHash()) > 0 {
+	//			uu = dag.GetUnit(uu.ParentHash()[0])
+	//		}else{
+	//			break
+	//		}
+	//	}
+	//	fmt.Println("---------------退出循坏-------------")
+	//}
 	return dag, nil
 }
 func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Units, error) {
@@ -225,12 +256,12 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 		if err != nil {
 			fmt.Println("Save==", err)
 		}
-		fmt.Printf("--------这是父块----unit-----%#v\n", unit)
-		fmt.Printf("--------这是父块----unit.UnitHeader-----%#v\n", unit.UnitHeader)
-		fmt.Printf("--------这是父块----unit.Txs-----%#v\n", unit.Txs[0].Hash())
-		fmt.Printf("--------这是父块----unit.UnitHash-----%#v\n", unit.UnitHash)
-		fmt.Printf("--------这是父块----unit.UnitHeader.ParentsHash-----%#v\n", unit.UnitHeader.ParentsHash)
-		fmt.Printf("--------这是父块----unit.UnitHeader.Number.Index-----%#v\n", unit.UnitHeader.Number.Index)
+		//fmt.Printf("--------这是父块----unit-----%#v\n",unit)
+		//fmt.Printf("--------这是父块----unit.UnitHeader-----%#v\n",unit.UnitHeader)
+		//fmt.Printf("--------这是父块----unit.Txs-----%#v\n", unit.Txs[0].Hash())
+		//fmt.Printf("--------这是父块----unit.UnitHash-----%#v\n",unit.UnitHash)
+		//fmt.Printf("--------这是父块----unit.UnitHeader.ParentsHash-----%#v\n",unit.UnitHeader.ParentsHash)
+		//fmt.Printf("--------这是父块----unit.UnitHeader.Number.Index-----%#v\n",unit.UnitHeader.Number.Index)
 		//fmt.Println("createUnit",i)
 		units[i] = unit
 		par = unit
@@ -257,6 +288,7 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 		//return fmt.Errorf("Unit is null")
 	}
 	// step1. check unit signature, should be compare to mediator list
+
 	errno := common2.ValidateUnitSignature(db, unit.UnitHeader, isGenesis)
 	if int(errno) != modules.UNIT_STATE_VALIDATED && int(errno) != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
 		return fmt.Errorf("Validate unit signature error, errno=%d", errno)
@@ -280,13 +312,28 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	}
 	// step5. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-	if err := storage.SaveHashNumber(db, unit.UnitHash, unit.UnitHeader.Number); err != nil {
+
+	//fmt.Printf("==============unit.UnitHeader.Number=%#v\n",unit.UnitHeader.Number)
+	//fmt.Printf("--------这是最新块----unit.UnitHash-----%#v\n", unit.UnitHash)
+	if err := storage.SaveNumberByHash(db,unit.UnitHash, unit.UnitHeader.Number); err != nil {
+
 		log.Println("SaveHashNumber:", "error", err.Error())
 		//return fmt.Errorf("Save unit hash and number error")
+		//fmt.Println("jinru===============")
 	}
+
+	if err := storage.SaveHashByNumber(db,unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		log.Println("SaveNumberByHash:", "error", err.Error())
+		//return fmt.Errorf("Save unit hash and number error")
+		//fmt.Println("jinru===============")
+
 	if err := storage.SaveTxLookupEntry(db, unit); err != nil {
 		return err
+
 	}
+	//if err := storage.SaveTxLookupEntry(db,unit); err != nil {
+	//	return err
+	//}
 	// update state
 	storage.PutCanonicalHash(db, unit.UnitHash, unit.NumberU64())
 	storage.PutHeadHeaderHash(db, unit.UnitHash)

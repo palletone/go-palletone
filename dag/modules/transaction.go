@@ -416,9 +416,6 @@ type Transaction struct {
 	TxHash     common.Hash `json:"txhash"`
 	TxMessages []Message   `json:"messages"`
 	// todo AccountNonce, CreationDate, Priority_lvl 在交易池部分用的比较多，将由杨杰负责删除
-	AccountNonce uint64  `json:"account_nonce" rlp:"-"`
-	CreationDate string  `json:"creation_date" rlp:"-"`
-	Priority_lvl float64 `json:"priority_lvl" rlp:"-"` // 打包的优先级
 }
 type OutPoint struct {
 	TxHash       common.Hash // reference Utxo struct key field
@@ -576,8 +573,7 @@ func (msg *Transaction) baseSize() int {
 	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
 	// number of transaction inputs and outputs.
 	n := 16 + VarIntSerializeSize(uint64(len(msg.TxMessages))) +
-		VarIntSerializeSize(uint64(len(msg.TxHash))) +
-		VarIntSerializeSize(uint64(len(msg.CreationDate)))
+		VarIntSerializeSize(uint64(len(msg.TxHash)))
 	for _, mtx := range msg.TxMessages {
 		payload := mtx.Payload
 		payment, ok := payload.(PaymentPayload)
