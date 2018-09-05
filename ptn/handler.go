@@ -35,10 +35,10 @@ import (
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
+	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
-	common2 "github.com/palletone/go-palletone/dag/common"
 )
 
 const (
@@ -321,15 +321,16 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		//}
 		//genesis = pm.dag.GetUnitByNumber(number)
 
-		head = pm.dag.CurrentHeader()
-		hash = head.Hash()
+		head  = pm.dag.CurrentHeader()
+		hash  = head.Hash()
 		index = head.Number.Index
 	)
-	genesis,err := common2.GetGenesisUnit(pm.dag.Db,0)
+	genesis, err := common2.GetGenesisUnit(pm.dag.Db, 0)
 	if err != nil {
-		fmt.Println("GetGenesisUnit===error:=",err)
+		fmt.Println("GetGenesisUnit===error:=", err)
 	}
-	if err := p.Handshake(pm.networkId, index, hash ,genesis.Hash()); err != nil {
+	genesis = genesis
+	if err := p.Handshake(pm.networkId, index, hash, common.Hash{} /*genesis.Hash()*/); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}

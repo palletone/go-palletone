@@ -3,15 +3,17 @@ package ptn
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
-	common2 "github.com/palletone/go-palletone/dag/common"
+
+	//common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"log"
-	"time"
 )
 
 var jsongenesis string = `{
@@ -176,7 +178,7 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	//fmt.Printf("--------这是最新块----unit.UnitHash-----%#v\n", genesisUnit.UnitHash)
 	//fmt.Printf("--------这是最新块----unit.UnitHeader.ParentsHash-----%#v\n", genesisUnit.UnitHeader.ParentsHash)
 	//fmt.Printf("--------这是最新块----unit.UnitHeader.Number.Index-----%#v\n", genesisUnit.UnitHeader.Number.Index)
-	units,_ := newDag(dag.Db, genesisUnit, unitAccount)
+	units, _ := newDag(dag.Db, genesisUnit, unitAccount)
 	fmt.Println("len(units).........", len(units))
 	//for i, v := range units {
 	//	fmt.Printf("%d====%#v\n", i, v)
@@ -201,14 +203,17 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 			break
 		}
 	}
-	fmt.Println("MakeDags=",dag.GetUnitByNumber(index))
-	uu := dag.CurrentUnit()
-		fmt.Printf("current===>>>%#v\n",uu)
-		//fmt.Printf("--------current----unit.UnitHeader-----%#v\n", uu.UnitHeader)
-		////fmt.Printf("--------这是最新块----unit.Txs-----%#v\n", uu.Txs[0].Hash())
-		//fmt.Printf("--------current----unit.UnitHash-----%#v\n", uu.UnitHash)
-		//fmt.Printf("--------current----unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
-		//fmt.Printf("--------current----unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
+	//wangjiyou add
+	index := modules.ChainIndex{}
+	index.Index = 0
+	fmt.Println("MakeDags=", dag.GetUnitByNumber(index))
+	uu = dag.CurrentUnit()
+	fmt.Printf("current===>>>%#v\n", uu)
+	//fmt.Printf("--------current----unit.UnitHeader-----%#v\n", uu.UnitHeader)
+	////fmt.Printf("--------这是最新块----unit.Txs-----%#v\n", uu.Txs[0].Hash())
+	//fmt.Printf("--------current----unit.UnitHash-----%#v\n", uu.UnitHash)
+	//fmt.Printf("--------current----unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
+	//fmt.Printf("--------current----unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
 	//if uu == nil {
 	//	fmt.Println("dag.CurrentUnit()====>get nil===>",uu)
 	//}else{
@@ -283,62 +288,64 @@ func SaveGenesis(db ptndb.Database, unit *modules.Unit) error {
 }
 
 func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
-	if unit.UnitSize == 0 || unit.Size() == 0 {
-		log.Println("Unit is null")
-		//return fmt.Errorf("Unit is null")
-	}
-	// step1. check unit signature, should be compare to mediator list
+	/*
+		if unit.UnitSize == 0 || unit.Size() == 0 {
+			log.Println("Unit is null")
+			//return fmt.Errorf("Unit is null")
+		}
+		// step1. check unit signature, should be compare to mediator list
 
-	errno := common2.ValidateUnitSignature(db, unit.UnitHeader, isGenesis)
-	if int(errno) != modules.UNIT_STATE_VALIDATED && int(errno) != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-		return fmt.Errorf("Validate unit signature error, errno=%d", errno)
-	}
-	// step2. check unit size
-	if unit.UnitSize != unit.Size() {
-		log.Println("Validate size", "error", "Size is invalid")
-		//return modules.ErrUnit(-1)
-	}
-	// step3. check transactions in unit
-	_, isSuccess, err := common2.ValidateTransactions(db, &unit.Txs, isGenesis)
-	if isSuccess != true {
-		fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
-		//return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
-	}
-	// step4. save unit header
-	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
-	if err := storage.SaveHeader(db, unit.UnitHash, unit.UnitHeader); err != nil {
-		log.Println("SaveHeader:", "error", err.Error())
-		//return modules.ErrUnit(-3)
-	}
-	// step5. save unit hash and chain index relation
-	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
+		errno := common2.ValidateUnitSignature(db, unit.UnitHeader, isGenesis)
+		if int(errno) != modules.UNIT_STATE_VALIDATED && int(errno) != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+			return fmt.Errorf("Validate unit signature error, errno=%d", errno)
+		}
+		// step2. check unit size
+		if unit.UnitSize != unit.Size() {
+			log.Println("Validate size", "error", "Size is invalid")
+			//return modules.ErrUnit(-1)
+		}
+		// step3. check transactions in unit
+		_, isSuccess, err := common2.ValidateTransactions(db, &unit.Txs, isGenesis)
+		if isSuccess != true {
+			fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+			//return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+		}
+		// step4. save unit header
+		// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
+		if err := storage.SaveHeader(db, unit.UnitHash, unit.UnitHeader); err != nil {
+			log.Println("SaveHeader:", "error", err.Error())
+			//return modules.ErrUnit(-3)
+		}
+		// step5. save unit hash and chain index relation
+		// key is like "[UNIT_HASH_NUMBER][unit_hash]"
 
-	//fmt.Printf("==============unit.UnitHeader.Number=%#v\n",unit.UnitHeader.Number)
-	//fmt.Printf("--------这是最新块----unit.UnitHash-----%#v\n", unit.UnitHash)
-	if err := storage.SaveNumberByHash(db,unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		//fmt.Printf("==============unit.UnitHeader.Number=%#v\n",unit.UnitHeader.Number)
+		//fmt.Printf("--------这是最新块----unit.UnitHash-----%#v\n", unit.UnitHash)
+		if err := storage.SaveNumberByHash(db,unit.UnitHash, unit.UnitHeader.Number); err != nil {
 
-		log.Println("SaveHashNumber:", "error", err.Error())
-		//return fmt.Errorf("Save unit hash and number error")
-		//fmt.Println("jinru===============")
-	}
+			log.Println("SaveHashNumber:", "error", err.Error())
+			//return fmt.Errorf("Save unit hash and number error")
+			//fmt.Println("jinru===============")
+		}
 
-	if err := storage.SaveHashByNumber(db,unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Println("SaveNumberByHash:", "error", err.Error())
-		//return fmt.Errorf("Save unit hash and number error")
-		//fmt.Println("jinru===============")
+		if err := storage.SaveHashByNumber(db,unit.UnitHash, unit.UnitHeader.Number); err != nil {
+			log.Println("SaveNumberByHash:", "error", err.Error())
+			//return fmt.Errorf("Save unit hash and number error")
+			//fmt.Println("jinru===============")
 
-	if err := storage.SaveTxLookupEntry(db, unit); err != nil {
-		return err
+		if err := storage.SaveTxLookupEntry(db, unit); err != nil {
+			return err
 
-	}
-	//if err := storage.SaveTxLookupEntry(db,unit); err != nil {
-	//	return err
-	//}
-	// update state
-	storage.PutCanonicalHash(db, unit.UnitHash, unit.NumberU64())
-	storage.PutHeadHeaderHash(db, unit.UnitHash)
-	storage.PutHeadUnitHash(db, unit.UnitHash)
-	storage.PutHeadFastUnitHash(db, unit.UnitHash)
+		}
+		//if err := storage.SaveTxLookupEntry(db,unit); err != nil {
+		//	return err
+		//}
+		// update state
+		storage.PutCanonicalHash(db, unit.UnitHash, unit.NumberU64())
+		storage.PutHeadHeaderHash(db, unit.UnitHash)
+		storage.PutHeadUnitHash(db, unit.UnitHash)
+		storage.PutHeadFastUnitHash(db, unit.UnitHash)
+	*/
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
 }
