@@ -41,6 +41,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"log"
+	"fmt"
 )
 
 var (
@@ -53,9 +54,15 @@ var (
 // channels for different events.
 func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
 	memdb, _ := ptndb.NewMemDatabase()
-	dag, _ := MakeDags(memdb,3)
+	dag, _ := MakeDags(memdb,blocks)
 	//uu := dag.CurrentUnit()
 	//fmt.Printf("current===>>>%#v\n",uu)
+	//index := modules.ChainIndex{
+	//	modules.PTNCOIN,
+	//	true,
+	//	0,
+	//}
+	//fmt.Println("newTestProtocolManager=======",dag.GetUnitByNumber(index))
 	//fmt.Printf("--------newTestProtocolManager----unit.UnitHeader-----%#v\n", uu.UnitHeader)
 	//fmt.Printf("--------newTestProtocolManager----unit.UnitHash-----%#v\n", uu.UnitHash)
 	//fmt.Printf("--------newTestProtocolManager----unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
@@ -82,6 +89,12 @@ func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks i
 	if err != nil {
 		t.Fatalf("Failed to create protocol manager: %v", err)
 	}
+	index := modules.ChainIndex{
+		modules.PTNCOIN,
+		true,
+		0,
+	}
+	fmt.Println("newTestProtocolManagerMust=",pm.dag.GetUnitByNumber(index))
 	return pm, db
 }
 
@@ -174,14 +187,19 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool) (*te
 	}()
 	tp := &testPeer{app: app, net: net, peer: peer}
 	// Execute any implicitly requested handshakes and return
-	//if shake {
-	//	var (
-	//		//genesis = pm.dag.CurrentUnit()
-	//		//head  = pm.dag.CurrentUnit().UnitHeader
-	//		//td      = head.Number.Index
-	//	)
-	//	tp.handshake(nil, 0, common.Hash{}, common.Hash{})
-	//}
+	if shake {
+		var (
+			number = modules.ChainIndex{
+				modules.PTNCOIN,
+				true,
+				0,
+			}
+			genesis = pm.dag.GetUnitByNumber(number)
+			head  = pm.dag.CurrentHeader()
+			td      = head.Number.Index
+		)
+		tp.handshake(nil, td, head.Hash(),genesis.Hash())
+	}
 	return tp, errc
 }
 

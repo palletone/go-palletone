@@ -356,9 +356,13 @@ func SaveUnit(db ptndb.Database,unit modules.Unit, isGenesis bool) error {
 	}
 	// step5. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-	if err := storage.SaveHashNumber(db,unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	if err := storage.SaveNumberByHash(db,unit.UnitHash, unit.UnitHeader.Number); err != nil {
 		log.Info("SaveHashNumber:", "error", err.Error())
-		return fmt.Errorf("Save unit hash and number error")
+		return fmt.Errorf("Save unit hash error")
+	}
+	if err := storage.SaveHashByNumber(db,unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		log.Info("SaveNumberByHash:", "error", err.Error())
+		return fmt.Errorf("Save unit number error")
 	}
 	// step6. traverse transactions and save them
 	txHashSet := []common.Hash{}
@@ -416,7 +420,6 @@ func SaveUnit(db ptndb.Database,unit modules.Unit, isGenesis bool) error {
 		return err
 	}
 	// update state
-
 	storage.PutCanonicalHash(db, unit.UnitHash, unit.NumberU64())
 	storage.PutHeadHeaderHash(db, unit.UnitHash)
 	storage.PutHeadUnitHash(db, unit.UnitHash)
@@ -576,8 +579,8 @@ func saveContractTpl(db ptndb.Database,height modules.ChainIndex, txIndex uint32
 从levedb中根据ChainIndex获得Unit信息
 To get unit information by its ChainIndex
 */
-func QueryUnitByChainIndex(db ptndb.Database, index *modules.ChainIndex) *modules.Unit {
-	return storage.GetUnitFormIndex(db, index.Index, index.AssetID)
+func QueryUnitByChainIndex(db ptndb.Database, number modules.ChainIndex) *modules.Unit {
+	return storage.GetUnitFormIndex(db, number)
 }
 
 /**
