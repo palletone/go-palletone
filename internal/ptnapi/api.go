@@ -1345,6 +1345,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	if c.LockTime != nil {
 		pload.LockTime = uint32(*c.LockTime)
 	}
+	mtx := new(modules.Transaction)
 	// Return the serialized and hex-encoded transaction.  Note that this
 	// is intentionally not directly returning because the first return
 	// value is a string and it would result in returning an empty string to
@@ -1353,9 +1354,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		App:     modules.APP_PAYMENT,
 		Payload: pload,
 	}
-	mtx := modules.Transaction{
-		TxMessages: []*modules.Message{&msg},
-	}
+	mtx.AddMessage(msg)
 	mtx.TxHash = mtx.Hash()
 	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
@@ -1551,9 +1550,8 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			continue
 		} else {
 			var payload modules.PaymentPayload
-			payload, ok := msg.Payload.(modules.PaymentPayload)
-			if !ok {
-				fmt.Println("Get Payment payload error:")
+				if err := payload.ExtractFrInterface(msg.Payload); err != nil {
+					fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
 			} //else {
 			//	fmt.Println("Payment payload:", payload)
 			//}
