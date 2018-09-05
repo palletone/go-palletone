@@ -76,11 +76,11 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	// get transaction list
 	txs, err := dagcommon.GetUnitTransactions(d.Db, uHash)
 	if err != nil {
-		log.Error("Current unit when get transactions", "error", err.Error())
-		//log.Info("植同学===》》》测试时需要注释掉》》》Current unit when get transactions/error===",err.Error())
-		//fmt.Println("植同学===》》》测试时需要注释掉》》》")
+		//log.Error("Current unit when get transactions", "error", err.Error())
+		//log.Info("》》》测试时需要注释掉》》》Current unit when get transactions/error===",err.Error())
+		//fmt.Println("》》》测试时需要注释掉》》》")
 		//测试时需要注释掉
-		return nil
+		//return nil
 	}
 	// generate unit
 	unit := modules.Unit{
@@ -127,10 +127,32 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 }
 
 func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
-
-
-	header, _ := storage.GetHeaderByHeight(d.Db, number)
-	return header
+	if memdb,ok := d.Db.(*ptndb.MemDatabase);ok {
+		encNum := ptndb.EncodeBlockNumber(number.Index)
+		key := append(storage.HEADER_PREFIX, encNum...)
+		key = append(key, number.Bytes()...)
+		hashkey := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, number.Index)
+		hash, err := memdb.Get([]byte(hashkey))
+		if err != nil {
+			return nil
+		}
+		var h common.Hash
+		h.SetBytes(hash)
+		headerbyte,err := memdb.Get(append(key, h.Bytes()...))
+		if err != nil {
+			return nil
+		}
+		header := &modules.Header{}
+		err = rlp.DecodeBytes(headerbyte,header)
+		if err != nil {
+			return nil
+		}
+		return header
+	}else if lvldb,ok := d.Db.(*ptndb.LDBDatabase);ok {
+		header, _ := storage.GetHeaderByHeight(lvldb, number)
+		return header
+	}
+	return nil
 }
 
 // func (d *Dag) GetHeader(hash common.Hash, number uint64) *modules.Header {

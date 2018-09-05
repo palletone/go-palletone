@@ -29,12 +29,12 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 		log.Println("SaveGenesis, err", err)
 		return nil, err
 	}
-	log.Printf("--------genesis----unit----------------%#v\n", genesisUnit)
-	log.Printf("--------genesis----unit.UnitHeader-----%#v\n", genesisUnit.UnitHeader)
-	log.Printf("--------genesis----unit.Txs------------%#v\n", genesisUnit.Txs[0].Hash())
-	log.Printf("--------genesis----unit.UnitHash-------%#v\n", genesisUnit.UnitHash)
-	log.Printf("--------genesis----unit.UnitHeader.ParentsHash-----%#v\n", genesisUnit.UnitHeader.ParentsHash)
-	log.Printf("--------genesis----unit.UnitHeader.Number.Index----%#v\n", genesisUnit.UnitHeader.Number.Index)
+	//log.Printf("--------genesis----unit----------------%#v\n", genesisUnit)
+	//log.Printf("--------genesis----unit.UnitHeader-----%#v\n", genesisUnit.UnitHeader)
+	//log.Printf("--------genesis----unit.Txs------------%#v\n", genesisUnit.Txs[0].Hash())
+	//log.Printf("--------genesis----unit.UnitHash-------%#v\n", genesisUnit.UnitHash)
+	//log.Printf("--------genesis----unit.UnitHeader.ParentsHash-----%#v\n", genesisUnit.UnitHeader.ParentsHash)
+	//log.Printf("--------genesis----unit.UnitHeader.Number.Index----%#v\n", genesisUnit.UnitHeader.Number.Index)
 	log.Println("创建 genesis unit 完成并保存===》》》")
 	log.Println()
 	log.Println("开始创建其他 unit===》》》")
