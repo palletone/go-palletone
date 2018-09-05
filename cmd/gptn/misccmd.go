@@ -24,6 +24,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/palletone/go-palletone/cmd/utils"
@@ -86,7 +87,7 @@ The output of this command is supposed to be machine-readable.
 		Action:    utils.MigrateFlags(createInitDKS),
 		Name:      "initdks",
 		Usage:     "Generate the initial distributed key share",
-		ArgsUsage: " ",
+		ArgsUsage: "",
 		Category:  "MEDIATOR COMMANDS",
 		Description: `
 The output of this command will be used to initialize the DistKeyGenerator.
@@ -94,15 +95,38 @@ The output of this command will be used to initialize the DistKeyGenerator.
 	}
 
 	// append by Albert·Gou
-	nodeInfo = cli.Command{
+	nodeInfoCommand = cli.Command{
 		Action:    utils.MigrateFlags(getNodeInfo),
 		Name:      "nodeInfo",
 		Usage:     "get info of current node",
-		ArgsUsage: " ",
+		ArgsUsage: "",
 		Category:  "MEDIATOR COMMANDS",
 		Description: `
 The output of this command will be used to set the genesis json file.
 `,
+	}
+
+	// append by Albert·Gou
+	timestampCommand = cli.Command{
+		Action:    utils.MigrateFlags(getTimestamp),
+		Name:      "timestamp",
+		Usage:     "get the timestamp of the Unix epoch at the specified time",
+		ArgsUsage: "<specified time>",
+		Flags: []cli.Flag{
+			timeStringFlag,
+		},
+		Category:  "MEDIATOR COMMANDS",
+		Description: `
+The format of the specified time should be like "2006-01-02 15:04:05", 
+and If not specified, displays the timestamp of 
+the time when the current command is running.
+`,
+	}
+
+	timeStringFlag = cli.StringFlag{
+		Name:  "timeString",
+		Usage: "time formatted as \"2006-01-02 15:04:05\"",
+		Value: "",
 	}
 )
 
@@ -202,6 +226,27 @@ func getNodeInfo(ctx *cli.Context) error {
 		uint16(realaddr.Port))
 
 	fmt.Println(node.String())
+
+	return nil
+}
+
+// author Albert·Gou
+func getTimestamp(ctx *cli.Context) error {
+	var timeUnix time.Time
+	var err error
+
+	timeStr := ctx.Args().First()
+	if len(timeStr) == 0 {
+		timeUnix = time.Now()
+	} else {
+		timeUnix, err = time.Parse("2006-01-02 15:04:05", timeStr)
+		if err != nil {
+			fmt.Println("Please enter the time in the following format: \"2006-01-02 15:04:05\"")
+			return nil
+		}
+	}
+
+	fmt.Println(timeUnix.Unix())
 
 	return nil
 }
