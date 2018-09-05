@@ -30,6 +30,7 @@ import (
 	"math/big"
 	"strconv"
 	"time"
+	"github.com/palletone/go-palletone/common/obj"
 )
 
 var (
@@ -518,6 +519,12 @@ func (msg *PaymentPayload) SerializeSize() int {
 func (msg *Transaction) SerializeSize() int {
 	n := msg.baseSize()
 	return n
+}
+//Deep copy transaction to a new object
+func (tx *Transaction) Clone() Transaction{
+	var newTx Transaction
+	obj.DeepCopy(&newTx,tx)
+	return newTx
 }
 
 // AddTxOut adds a transaction output to the message.

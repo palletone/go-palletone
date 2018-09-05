@@ -17,6 +17,7 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
 	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // An opcode defines the information related to a txscript opcode.  opfunc, if
@@ -1165,7 +1166,8 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 	// which the transaction is finalized or a timestamp depending on if the
 	// value is before the txscript.LockTimeThreshold.  When it is under the
 	// threshold it is a block height.
-	err = verifyLockTime(int64(vm.tx.LockTime), LockTimeThreshold,
+	payment:=vm.tx.TxMessages[vm.msgIdx].Payload.(*modules.PaymentPayload)
+	err = verifyLockTime(int64(payment.LockTime), LockTimeThreshold,
 		int64(lockTime))
 	if err != nil {
 		return err
@@ -2100,7 +2102,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		hash, err = calcWitnessSignatureHash(subScript, sigHashes, hashType,
-			&vm.tx, vm.txIdx, vm.inputAmount)
+			&vm.tx,vm.msgIdx, vm.txIdx, vm.inputAmount)
 		if err != nil {
 			return err
 		}
@@ -2109,7 +2111,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		// to sign itself.
 		subScript = removeOpcodeByData(subScript, fullSigBytes)
 
-		hash = calcSignatureHash(subScript, hashType, &vm.tx, vm.txIdx)
+		hash = calcSignatureHash(subScript, hashType, &vm.tx,vm.msgIdx, vm.txIdx)
 	}
 
 	pubKey, err := btcec.ParsePubKey(pkBytes, btcec.S256())
@@ -2373,12 +2375,12 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 			}
 
 			hash, err = calcWitnessSignatureHash(script, sigHashes, hashType,
-				&vm.tx, vm.txIdx, vm.inputAmount)
+				&vm.tx,vm.msgIdx, vm.txIdx, vm.inputAmount)
 			if err != nil {
 				return err
 			}
 		} else {
-			hash = calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
+			hash = calcSignatureHash(script, hashType, &vm.tx,vm.msgIdx, vm.txIdx)
 		}
 
 		var valid bool

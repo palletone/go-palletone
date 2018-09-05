@@ -124,7 +124,8 @@ type Engine struct {
 	lastCodeSep     int
 	dstack          stack // data stack
 	astack          stack // alt stack
-	tx              modules.PaymentPayload
+	tx              modules.Transaction
+	msgIdx			int
 	txIdx           int
 	condStack       []int
 	numOps          int
@@ -800,16 +801,21 @@ func (vm *Engine) SetAltStack(data [][]byte) {
 // NewEngine returns a new script engine for the provided public key script,
 // transaction, and input index.  The flags modify the behavior of the script
 // engine according to the description provided by each flag.
-func NewEngine(scriptPubKey []byte, tx *modules.PaymentPayload/**wire.MsgTx*/, txIdx int, flags ScriptFlags,
+func NewEngine(scriptPubKey []byte, tx *modules.Transaction/**wire.MsgTx*/,msgIdx, txIdx int, flags ScriptFlags,
 	sigCache *SigCache, hashCache *TxSigHashes, inputAmount int64) (*Engine, error) {
 
 	// The provided transaction input index must refer to a valid input.
-	if txIdx < 0 || txIdx >= len(tx.Input) {
+	if txIdx < 0 || msgIdx<0 || msgIdx>=len(tx.TxMessages) {
 		str := fmt.Sprintf("transaction input index %d is negative or "+
-			">= %d", txIdx, len(tx.Input))
+			">= %d", msgIdx, len(tx.TxMessages))
 		return nil, scriptError(ErrInvalidIndex, str)
 	}
-	scriptSig := tx.Input[txIdx].SignatureScript
+	msg:=tx.TxMessages[msgIdx]
+	if msg.App!= modules.APP_PAYMENT{
+		return nil, scriptError(ErrInvalidIndex, "Message not a payment payload")
+	}
+	payment:=msg.Payload.(*modules.PaymentPayload)
+	scriptSig := payment.Input[txIdx].SignatureScript
 
 	// When both the signature script and public key script are empty the
 	// result is necessarily an error since the stack would end up being
@@ -934,6 +940,6 @@ func NewEngine(scriptPubKey []byte, tx *modules.PaymentPayload/**wire.MsgTx*/, t
 
 	vm.tx = *tx
 	vm.txIdx = txIdx
-
+	vm.msgIdx=msgIdx
 	return &vm, nil
 }
