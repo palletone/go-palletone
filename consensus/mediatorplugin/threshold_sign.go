@@ -21,7 +21,7 @@ package mediatorplugin
 import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/share/dkg/pedersen"
-	vss "github.com/dedis/kyber/share/vss/pedersen"
+	"github.com/dedis/kyber/share/vss/pedersen"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -42,7 +42,13 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 		resps := make([]*dkg.Response, 0, nParticipants)
 		mp.resps[medF] = resps
 
-		deals, err := mp.dkgs[medF].Deals()
+		dkg := mp.dkgs[medF]
+		if dkg == nil {
+			log.Error("DKG was not successfully generated!")
+			continue
+		}
+
+		deals, err := dkg.Deals()
 		if err != nil {
 			log.Error(err.Error())
 		}
