@@ -63,6 +63,9 @@ func (ud *testUnitDag) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
 	return ud.Db, nil
 }
 
+func (ud *testUnitDag) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
+	return nil, nil
+}
 func (ud *testUnitDag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
 	return ud.chainHeadFeed.Subscribe(ch)
 }
@@ -101,7 +104,8 @@ func TestTransactionAddingTxs(t *testing.T) {
 	// step2. create payload
 	createT := big.Int{}
 	input := modules.Input{
-		Extra: createT.SetInt64(time.Now().Unix()).Bytes(),
+		SignatureScript: []byte("xxxxxxxxxx"),
+		Extra:           createT.SetInt64(time.Now().Unix()).Bytes(),
 	}
 	output := modules.Output{
 		Value: totalIncome,

@@ -378,9 +378,9 @@ func removeOpcodeByData(pkscript []parsedOpcode, data []byte) []parsedOpcode {
 // signature hash type of SigHashAll. This allows validation to re-use previous
 // hashing computation, reducing the complexity of validating SigHashAll inputs
 // from  O(N^2) to O(N).
-func calcHashPrevOuts(tx *modules.PaymentPayload) common.Hash {
+func calcHashPrevOuts(pl *modules.PaymentPayload) common.Hash {
 	var b bytes.Buffer
-	for _, in := range tx.Input {
+		for _, in := range pl.Input {
 		// First write out the 32-byte transaction ID one of whose
 		// outputs are being referenced by this input.
 		b.Write(in.PreviousOutPoint.TxHash[:])
@@ -420,9 +420,9 @@ func calcHashSequence(tx *wire.MsgTx) chainhash.Hash {
 // when validating all inputs spending witness programs, which include
 // signatures using the SigHashAll sighash type. This allows computation to be
 // cached, reducing the total hashing complexity from O(N^2) to O(N).
-func calcHashOutputs(tx *modules.PaymentPayload) common.Hash {
+func calcHashOutputs(pl *modules.PaymentPayload) common.Hash {
 	var b bytes.Buffer
-	for _, out := range tx.Output {
+		for _, out := range pl.Output {
 		modules.WriteTxOut(&b, 0, 0, out)
 	}
 
@@ -441,12 +441,12 @@ func calcHashOutputs(tx *modules.PaymentPayload) common.Hash {
 // wallet if fed an invalid input amount, the real sighash will differ causing
 // the produced signature to be invalid.
 func calcWitnessSignatureHash(subScript []parsedOpcode, sigHashes *TxSigHashes,
-	hashType SigHashType, tx *modules.PaymentPayload, idx int, amt int64) ([]byte, error) {
+	hashType SigHashType, pl *modules.PaymentPayload, idx int, amt int64) ([]byte, error) {
 
 	// As a sanity check, ensure the passed input index for the transaction
 	// is valid.
-	if idx > len(tx.Input)-1 {
-		return nil, fmt.Errorf("idx %d but %d txins", idx, len(tx.Input))
+	if idx > len(pl.Input)-1 {
+		return nil, fmt.Errorf("idx %d but %d txins", idx, len(pl.Input))
 	}
 
 	// We'll utilize this buffer throughout to incrementally calculate
@@ -482,7 +482,7 @@ func calcWitnessSignatureHash(subScript []parsedOpcode, sigHashes *TxSigHashes,
 		sigHash.Write(zeroHash[:])
 	}
 
-	txIn := tx.Input[idx]
+	txIn := *pl.Input[idx]
 
 	// Next, write the outpoint being spent.
 	sigHash.Write(txIn.PreviousOutPoint.TxHash[:])
@@ -509,7 +509,7 @@ func calcWitnessSignatureHash(subScript []parsedOpcode, sigHashes *TxSigHashes,
 		// the original script, with all code separators removed,
 		// serialized with a var int length prefix.
 		rawScript, _ := unparseScript(subScript)
-		wire.WriteVarBytes(&sigHash, 0, rawScript)
+		modules.WriteVarBytes(&sigHash, 0, rawScript)
 	}
 
 	// Next, add the input amount, and sequence number of the input being
@@ -528,10 +528,10 @@ func calcWitnessSignatureHash(subScript []parsedOpcode, sigHashes *TxSigHashes,
 	if hashType&SigHashSingle != SigHashSingle &&
 		hashType&SigHashNone != SigHashNone {
 		sigHash.Write(sigHashes.HashOutputs[:])
-	} else if hashType&sigHashMask == SigHashSingle && idx < len(tx.Output) {
+	} else if hashType&sigHashMask == SigHashSingle && idx < len(pl.Output) {
 		var b bytes.Buffer
-		modules.WriteTxOut(&b, 0, 0, tx.Output[idx])
-		sigHash.Write(chainhash.DoubleHashB(b.Bytes()))
+		modules.WriteTxOut(&b, 0, 0, pl.Output[idx])
+		sigHash.Write(common.DoubleHashB(b.Bytes()))
 	} else {
 		sigHash.Write(zeroHash[:])
 	}
@@ -539,13 +539,13 @@ func calcWitnessSignatureHash(subScript []parsedOpcode, sigHashes *TxSigHashes,
 	// Finally, write out the transaction's locktime, and the sig hash
 	// type.
 	var bLockTime [4]byte
-	binary.LittleEndian.PutUint32(bLockTime[:], tx.LockTime)
+	binary.LittleEndian.PutUint32(bLockTime[:], pl.LockTime)
 	sigHash.Write(bLockTime[:])
 	var bHashType [4]byte
 	binary.LittleEndian.PutUint32(bHashType[:], uint32(hashType))
 	sigHash.Write(bHashType[:])
 
-	return chainhash.DoubleHashB(sigHash.Bytes()), nil
+	return common.DoubleHashB(sigHash.Bytes()), nil
 }
 
 // CalcWitnessSigHash computes the sighash digest for the specified input of
@@ -566,7 +566,7 @@ func CalcWitnessSigHash(script []byte, sigHashes *TxSigHashes, hType SigHashType
 // calculating the signature hash.  It is used over the Copy method on the
 // transaction itself since that is a deep copy and therefore does more work and
 // allocates much more space than needed.
-func shallowCopyTx(tx *modules.PaymentPayload/**wire.MsgTx*/) modules.PaymentPayload {
+func shallowCopyTx(tx *modules.PaymentPayload) modules.PaymentPayload {
 	// As an additional memory optimization, use contiguous backing arrays
 	// for the copied inputs and outputs and point the final slice of
 	// pointers into the contiguous arrays.  This avoids a lot of small
@@ -574,6 +574,7 @@ func shallowCopyTx(tx *modules.PaymentPayload/**wire.MsgTx*/) modules.PaymentPay
 	txCopy := modules.PaymentPayload{
 		Input:     make([]*modules.Input, len(tx.Input)),
 		Output:    make([]*modules.Output,len(tx.Output)),
+		LockTime: tx.LockTime,
 	}
 	txIns := make([]modules.Input, len(tx.Input))
 	for i, oldTxIn := range tx.Input {
@@ -591,7 +592,7 @@ func shallowCopyTx(tx *modules.PaymentPayload/**wire.MsgTx*/) modules.PaymentPay
 // CalcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func CalcSignatureHash(script []byte, hashType SigHashType, tx *modules.PaymentPayload/**wire.MsgTx*/, idx int) ([]byte, error) {
+func CalcSignatureHash(script []byte, hashType SigHashType, tx *modules.PaymentPayload, idx int) ([]byte, error) {
 	parsedScript, err := parseScript(script)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse output script: %v", err)
@@ -602,7 +603,7 @@ func CalcSignatureHash(script []byte, hashType SigHashType, tx *modules.PaymentP
 // calcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.PaymentPayload/*wire.MsgTx*/, idx int) []byte {
+func calcSignatureHash(script []parsedOpcode, hashType SigHashType, pl *modules.PaymentPayload, idx int) []byte {
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
 	//
@@ -623,7 +624,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.
 	// hash of 1.  This in turn presents an opportunity for attackers to
 	// cleverly construct transactions which can steal those coins provided
 	// they can reuse signatures.
-	if hashType&sigHashMask == SigHashSingle && idx >= len(tx.Output) {
+	if hashType&sigHashMask == SigHashSingle && idx >= len(pl.Output) {
 		var hash chainhash.Hash
 		hash[0] = 0x01
 		return hash[:]
@@ -634,40 +635,40 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.
 
 	// Make a shallow copy of the transaction, zeroing out the script for
 	// all inputs that are not currently being processed.
-	txCopy := shallowCopyTx(tx)
-	for i := range txCopy.Input {
+	plCopy := shallowCopyTx(pl)
+	for i := range plCopy.Input {
 		if i == idx {
 			// UnparseScript cannot fail here because removeOpcode
 			// above only returns a valid script.
 			sigScript, _ := unparseScript(script)
-			txCopy.Input[idx].SignatureScript = sigScript
+			plCopy.Input[idx].SignatureScript = sigScript
 		} else {
-			txCopy.Input[i].SignatureScript = nil
+			plCopy.Input[i].SignatureScript = nil
 		}
 	}
 
 	switch hashType & sigHashMask {
 	case SigHashNone:
-		txCopy.Output = txCopy.Output[0:0] // Empty slice.
-		for i := range txCopy.Input {
-			if i != idx {
-			//	txCopy.Inputs[i].Sequence = 0
-			}
-		}
+		plCopy.Output = plCopy.Output[0:0] // Empty slice.
+		//for i := range plCopy.Input {
+		//	if i != idx {
+		//	    plCopy.Input[i].Sequence = 0
+		//	}
+		//}
 
 	case SigHashSingle:
 		// Resize output array to up to and including requested index.
-		txCopy.Output = txCopy.Output[:idx+1]
+		plCopy.Output = plCopy.Output[:idx+1]
 
 		// All but current output get zeroed out.
 		//modify -1 to 0 by wzhyuan 
 		for i := 0; i < idx; i++ {
-			txCopy.Output[i].Value = 0
-			txCopy.Output[i].PkScript = nil
+			plCopy.Output[i].Value = 0
+			plCopy.Output[i].PkScript = nil
 		}
 
 		// Sequence on all other inputs is 0, too.
-		for i := range txCopy.Input {
+		for i := range plCopy.Input {
 			if i != idx {
 				//txCopy.Inputs[i].Sequence = 0
 			}
@@ -683,16 +684,16 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.
 		// Nothing special here.
 	}
 	if hashType&SigHashAnyOneCanPay != 0 {
-		txCopy.Input = txCopy.Input[idx : idx+1]
+			plCopy.Input = plCopy.Input[idx : idx+1]
 	}
 
 	// The final hash is the double sha256 of both the serialized modified
 	// transaction and the hash type (encoded as a 4-byte little-endian
 	// value) appended.
-	wbuf := bytes.NewBuffer(make([]byte, 0, txCopy.SerializeSizeStripped()+4))
-	txCopy.SerializeNoWitness(wbuf)
+	wbuf := bytes.NewBuffer(make([]byte, 0, plCopy.SerializeSizeStripped()+4))
+	//txCopy.SerializeNoWitness(wbuf)
 	binary.Write(wbuf, binary.LittleEndian, hashType)
-	return chainhash.DoubleHashB(wbuf.Bytes())
+	return common.DoubleHashB(wbuf.Bytes())
 }
 
 // asSmallInt returns the passed opcode, which must be true according to

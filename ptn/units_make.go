@@ -1,288 +1,127 @@
 package ptn
 
 import (
-	"github.com/palletone/go-palletone/core"
-	"encoding/json"
 	"fmt"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag"
+	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/dag"
-	"time"
-	"github.com/palletone/go-palletone/common"
 	"log"
-	common2 "github.com/palletone/go-palletone/dag/common"
+	"time"
 )
-var jsongenesis string=`{
-  "version": "0.6.0-alpha",
-  "alias": "PTN",
-  "tokenAmount": 100000000000000000,
-  "tokenDecimal": 8,
-  "decimal_unit": "",
-  "chainId": 1,
-  "tokenHolder": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-  "initialParameters": {
-    "mediatorInterval": 5
-  },
-  "immutableChainParameters": {
-    "MinMediatorCount": 11,
-    "MinMediatorInterval": 1
-  },
-  "initialTimestamp": 1535963775,
-  "initialActiveMediators": 21,
-  "initialMediatorCandidates": [
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    },
-    {
-      "Address": "P1NcbtaDEAf7hRFem71k6A2qQDbZo59RQfo",
-      "InitPartPub": "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj",
-      "Node": "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f59599896d4d3621f70fbbc63e05c95151e154c84aad7825008b118824a99d27541b@127.0.0.1:30303"
-    }
-  ],
-  "systemConfig": {
-    "depositRate": 0.02
-  }
-}`
-var genesis = &core.Genesis{}
-func makegenesis(memdb ptndb.Database){
-	err:=json.Unmarshal([]byte(jsongenesis),genesis)
-	if err!=nil{
-		log.Fatal("err",err.Error())
-	}
-	fmt.Printf("=======%#v\n",genesis)
-	gp := modules.InitGlobalProp(genesis)
-	storage.StoreGlobalProp(memdb, gp)
-}
-func MakeDags(Memdb ptndb.Database,unitAccount int) (*dag.Dag, error) {
-	dag,_:= dag.NewDagForTest(Memdb)
+
+func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
+	dag, _ := dag.NewDagForTest(Memdb)
+	//log.Println("开始创建 genesis unit===》》》")
 	header := NewHeader([]common.Hash{}, []modules.IDType16{modules.PTNCOIN}, []byte{})
 	header.Number.AssetID = modules.PTNCOIN
 	header.Number.IsMain = true
 	header.Number.Index = 0
-	header.Authors = &modules.Authentifier{"",[]byte{},[]byte{},[]byte{}}
-	header.Witness = []*modules.Authentifier{&modules.Authentifier{"",[]byte{},[]byte{},[]byte{}}}
+	header.Authors = &modules.Authentifier{"", []byte{}, []byte{}, []byte{}}
+	header.Witness = []*modules.Authentifier{&modules.Authentifier{"", []byte{}, []byte{}, []byte{}}}
 	tx, _ := NewCoinbaseTransaction()
 	txs := modules.Transactions{tx}
 	genesisUnit := NewUnit(header, txs)
-	//fmt.Printf("--------这是最新块----unit.UnitHeader-----%#v\n", genesisUnit.UnitHeader)
 	err := SaveGenesis(dag.Db, genesisUnit)
 	if err != nil {
-		fmt.Println("SaveGenesis, err",err)
-		return nil,err
+		log.Println("SaveGenesis, err", err)
+		return nil, err
 	}
-	fmt.Printf("--------这是最新块----unit-----%#v\n", genesisUnit)
-	fmt.Printf("--------这是最新块----unit.UnitHeader-----%#v\n", genesisUnit.UnitHeader)
-	fmt.Printf("--------这是最新块----unit.Txs-----%#v\n", genesisUnit.Txs[0].Hash())
-	fmt.Printf("--------这是最新块----unit.UnitHash-----%#v\n", genesisUnit.UnitHash)
-	fmt.Printf("--------这是最新块----unit.UnitHeader.ParentsHash-----%#v\n", genesisUnit.UnitHeader.ParentsHash)
-	fmt.Printf("--------这是最新块----unit.UnitHeader.Number.Index-----%#v\n", genesisUnit.UnitHeader.Number.Index)
+	//log.Printf("--------genesis----unit----------------%#v\n", genesisUnit)
+	//log.Printf("--------genesis----unit.UnitHeader-----%#v\n", genesisUnit.UnitHeader)
+	//log.Printf("--------genesis----unit.Txs------------%#v\n", genesisUnit.Txs[0].Hash())
+	//log.Printf("--------genesis----unit.UnitHash-------%#v\n", genesisUnit.UnitHash)
+	//log.Printf("--------genesis----unit.UnitHeader.ParentsHash-----%#v\n", genesisUnit.UnitHeader.ParentsHash)
+	//log.Printf("--------genesis----unit.UnitHeader.Number.Index----%#v\n", genesisUnit.UnitHeader.Number.Index)
+	//log.Println("创建 genesis unit 完成并保存===》》》")
+	//log.Println()
+	//log.Println("开始创建其他 unit===》》》")
+	//units,_ := newDag(dag.Db, genesisUnit, unitAccount)
 	newDag(dag.Db, genesisUnit, unitAccount)
-	//fmt.Println("len(units).........", len(units))
-	//for i, v := range units {
-	//	fmt.Printf("%d====%#v\n", i, v)
-	//}
-	uu := dag.CurrentUnit()
-	fmt.Printf("current===>>>%#v\n",uu)
-	fmt.Printf("--------current----unit.UnitHeader-----%#v\n", uu.UnitHeader)
-	//fmt.Printf("--------这是最新块----unit.Txs-----%#v\n", uu.Txs[0].Hash())
-	fmt.Printf("--------current----unit.UnitHash-----%#v\n", uu.UnitHash)
-	fmt.Printf("--------current----unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
-	fmt.Printf("--------current----unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
-	fmt.Println("---------------进入循坏-------------")
-	for {
-		fmt.Printf("查找===>>>%#v\n",uu)
-		fmt.Printf("--------current----unit.UnitHeader-----%#v\n", uu.UnitHeader)
-		fmt.Printf("--------current----unit.UnitHash-----%#v\n", uu.UnitHash)
-		fmt.Printf("--------current----unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
-		fmt.Printf("--------current----unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
-		if len(uu.ParentHash()) > 0 {
-			uu = dag.GetUnit(uu.ParentHash()[0])
-		}else{
-			break
-		}
-	}
-	fmt.Println("---------------退出循坏-------------")
+	//log.Println("创建其他 unit 完成并保存===》》》")
+	//log.Println("全部unit的数量===》》》", len(units)+1)
 	return dag, nil
 }
-func newDag(memdb ptndb.Database,gunit *modules.Unit,number int) (modules.Units,error){
-	units := make(modules.Units,number)
+func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Units, error) {
+	units := make(modules.Units, number)
 	par := gunit
-	//fmt.Println("len(units).........",len(units))
-	//fmt.Println("number.........",number)
-	for i := 0; i < number;i++ {
-		//fmt.Println("createUnit",i)
-		header := NewHeader([]common.Hash{par.UnitHash},[]modules.IDType16{modules.PTNCOIN},[]byte{})
+	for i := 0; i < number; i++ {
+		header := NewHeader([]common.Hash{par.UnitHash}, []modules.IDType16{modules.PTNCOIN}, []byte{})
 		header.Number.AssetID = par.UnitHeader.Number.AssetID
 		header.Number.IsMain = par.UnitHeader.Number.IsMain
-		header.Number.Index = par.UnitHeader.Number.Index+1
-		header.Authors = &modules.Authentifier{"",[]byte{},[]byte{},[]byte{}}
-		header.Witness = []*modules.Authentifier{&modules.Authentifier{"",[]byte{},[]byte{},[]byte{}}}
-		tx,_:= NewCoinbaseTransaction()
+		header.Number.Index = par.UnitHeader.Number.Index + 1
+		header.Authors = &modules.Authentifier{"", []byte{}, []byte{}, []byte{}}
+		header.Witness = []*modules.Authentifier{&modules.Authentifier{"", []byte{}, []byte{}, []byte{}}}
+		tx, _ := NewCoinbaseTransaction()
 		txs := modules.Transactions{tx}
-		unit := NewUnit(header,txs)
-		//fmt.Println("start saveUnit")
-		err := SaveUnit(memdb,unit,true)
+		unit := NewUnit(header, txs)
+		err := SaveUnit(memdb, unit, true)
 		if err != nil {
-			fmt.Println("Save==",err)
+			log.Println("保存其他unit出错===》》》", err)
+			return nil, err
 		}
-		fmt.Printf("--------这是父块----unit-----%#v\n",unit)
-		fmt.Printf("--------这是父块----unit.UnitHeader-----%#v\n",unit.UnitHeader)
-		fmt.Printf("--------这是父块----unit.Txs-----%#v\n", unit.Txs[0].Hash())
-		fmt.Printf("--------这是父块----unit.UnitHash-----%#v\n",unit.UnitHash)
-		fmt.Printf("--------这是父块----unit.UnitHeader.ParentsHash-----%#v\n",unit.UnitHeader.ParentsHash)
-		fmt.Printf("--------这是父块----unit.UnitHeader.Number.Index-----%#v\n",unit.UnitHeader.Number.Index)
-		//fmt.Println("createUnit",i)
+		//log.Printf("--------第 %d 个unit====》》》----unit--------------%#v\n",i+1,unit)
+		//log.Printf("--------第 %d 个unit====》》》----unit.UnitHeader---%#v\n",i+1,unit.UnitHeader)
+		//log.Printf("--------第 %d 个unit====》》》----unit.Txs----------%#v\n",i+1,unit.Txs[0].Hash())
+		//log.Printf("--------第 %d 个unit====》》》----unit.UnitHash-----%#v\n",i+1,unit.UnitHash)
+		//log.Printf("--------第 %d 个unit====》》》----unit.UnitHeader.ParentsHash-----%#v\n",i+1,unit.UnitHeader.ParentsHash)
+		//log.Printf("--------第 %d 个unit====》》》----unit.UnitHeader.Number.Index----%#v\n",i+1,unit.UnitHeader.Number.Index)
 		units[i] = unit
 		par = unit
 	}
-	return units,nil
+	return units, nil
 }
-func  SaveGenesis(db ptndb.Database,unit *modules.Unit) error{
-	//fmt.Println("unit.NumberU64()====",unit.NumberU64())
+func SaveGenesis(db ptndb.Database, unit *modules.Unit) error {
 	if unit.NumberU64() != 0 {
 		return fmt.Errorf("can't commit genesis unit with number > 0")
 	}
-	//fmt.Println("start saveUnit")
-	err := SaveUnit(db,unit,true)
+	err := SaveUnit(db, unit, true)
 	if err != nil {
-		fmt.Println("SaveGenesis==",err)
+		log.Println("SaveGenesis==", err)
+		return err
 	}
-	//fmt.Println("end saveUnit")
-	return  nil
+	return nil
 }
 
-func SaveUnit(db ptndb.Database,unit *modules.Unit,isGenesis bool) error {
+func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Println("Unit is null")
-		//return fmt.Errorf("Unit is null")
+		return fmt.Errorf("Unit is null")
 	}
-	// step1. check unit signature, should be compare to mediator list
-	if err := common2.ValidateUnitSignature(db,unit.UnitHeader, isGenesis); err != nil {
-		log.Println("Validate unit signature", "error", err.Error())
-		//return err
-	}
-	// step2. check unit size
 	if unit.UnitSize != unit.Size() {
 		log.Println("Validate size", "error", "Size is invalid")
-		//return modules.ErrUnit(-1)
+		return modules.ErrUnit(-1)
 	}
-	// step3. check transactions in unit
-	_, isSuccess, err := common2.ValidateTransactions(db,&unit.Txs, isGenesis)
+	_, isSuccess, err := common2.ValidateTransactions(db, &unit.Txs, isGenesis)
 	if isSuccess != true {
 		fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
-		//return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+		return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	}
 	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
-	if err := storage.SaveHeader(db,unit.UnitHash, unit.UnitHeader); err != nil {
+	if err := storage.SaveHeader(db, unit.UnitHash, unit.UnitHeader); err != nil {
 		log.Println("SaveHeader:", "error", err.Error())
-		//return modules.ErrUnit(-3)
+		return modules.ErrUnit(-3)
 	}
 	// step5. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-	if err := storage.SaveHashNumber(db,unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	if err := storage.SaveNumberByHash(db, unit.UnitHash, unit.UnitHeader.Number); err != nil {
 		log.Println("SaveHashNumber:", "error", err.Error())
-		//return fmt.Errorf("Save unit hash and number error")
+		return fmt.Errorf("Save unit hash and number error")
 	}
-	if err := storage.SaveTxLookupEntry(db,unit); err != nil {
+	if err := storage.SaveHashByNumber(db, unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		log.Println("SaveNumberByHash:", "error", err.Error())
+		return fmt.Errorf("Save unit hash and number error")
+	}
+	if err := storage.SaveTxLookupEntry(db, unit); err != nil {
+		return err
+	}
+	if err := storage.SaveTxLookupEntry(db, unit); err != nil {
+		return err
+	}
+	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.Number.Index); err != nil {
 		return err
 	}
 	// update state
@@ -303,13 +142,13 @@ func NewUnit(header *modules.Header, txs modules.Transactions) *modules.Unit {
 	u.UnitHash = u.Hash()
 	return u
 }
-func NewHeader(parents []common.Hash, asset []modules.IDType16,extra []byte) *modules.Header {
+func NewHeader(parents []common.Hash, asset []modules.IDType16, extra []byte) *modules.Header {
 	hashs := make([]common.Hash, 0)
 	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
 	var b []byte
-	return &modules.Header{ParentsHash: hashs, AssetIDs: asset, Extra: append(b, extra...),Creationdate:time.Now().Unix()}
+	return &modules.Header{ParentsHash: hashs, AssetIDs: asset, Extra: append(b, extra...), Creationdate: time.Now().Unix()}
 }
-func NewCoinbaseTransaction() (*modules.Transaction,error){
+func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	input := &modules.Input{}
 	output := &modules.Output{}
 	payload := modules.PaymentPayload{
@@ -320,9 +159,17 @@ func NewCoinbaseTransaction() (*modules.Transaction,error){
 		App:     modules.APP_PAYMENT,
 		Payload: payload,
 	}
-	coinbase := &modules.Transaction{
-		TxMessages: []modules.Message{msg},
-	}
+	//coinbase := &modules.Transaction{
+	//	TxMessages: []modules.Message{msg},
+	//}
+	var coinbase modules.Transaction
+	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
 	coinbase.TxHash = coinbase.Hash()
-	return coinbase,nil
+	return &coinbase, nil
+}
+
+func saveHashByIndex(db ptndb.Database, hash common.Hash, index uint64) error {
+	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
+	err := db.Put([]byte(key), hash.Bytes())
+	return err
 }

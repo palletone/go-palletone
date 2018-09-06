@@ -28,6 +28,14 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 )
 
+type txoFlags uint8
+
+const (
+	tfSpent txoFlags = 1 << iota
+
+	tfModified
+)
+
 var (
 	// state storage
 	CONTRACT_ATTRI    = []byte("contract") // like contract_[contract address]_[key]
@@ -80,20 +88,45 @@ func (asset *Asset) SetBytes(data []byte) error {
 }
 
 type Utxo struct {
-	TxID         common.Hash `json:"unit_id"`       // transaction id
-	MessageIndex uint32      `json:"message_index"` // message index in transaction
-	OutIndex     uint32      `json:"output_index"`
-	Amount       uint64      `json:"amount"`  // 数量
-	Asset        Asset       `json:"Asset"`   // 资产类别
-	PkScript     []byte      `json:"program"` // 要执行的代码段
-	LockTime     uint32      `json:"lock_time"`
+	Amount   uint64 `json:"amount"`  // 数量
+	Asset    *Asset `json:"Asset"`   // 资产类别
+	PkScript []byte `json:"program"` // 要执行的代码段
+	LockTime uint32 `json:"lock_time"`
+
+	// falgs contains additional info about output such as whether it is spent, and whether is has
+	// been modified since is was loaded.
+	Flags txoFlags
 }
 
 func (utxo *Utxo) IsEmpty() bool {
-	if len(utxo.TxID) == 0 || len(utxo.PkScript) == 0 || utxo.IsEmpty() {
-		return true
+	if len(utxo.PkScript) != 0 || utxo.Amount > 0 || utxo.LockTime > 0 || utxo.Asset != nil {
+		return false
 	}
-	return false
+	return true
+}
+func (utxo *Utxo) IsModified() bool {
+	return utxo.Flags*tfModified == tfModified
+}
+func (utxo *Utxo) IsSpent() bool {
+	return utxo.Flags&tfSpent == tfSpent
+}
+func (utxo *Utxo) Spend() {
+	if utxo.IsSpent() {
+		return
+	}
+	utxo.Flags |= tfSpent | tfModified
+}
+func (utxo *Utxo) Clone() *Utxo {
+	if utxo == nil {
+		return nil
+	}
+	return &Utxo{
+		PkScript: utxo.PkScript,
+		Asset:    utxo.Asset,
+		Amount:   utxo.Amount,
+		LockTime: utxo.LockTime,
+		Flags:    utxo.Flags,
+	}
 }
 
 // UtxoIndex is key

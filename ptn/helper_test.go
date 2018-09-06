@@ -23,6 +23,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	//"math/big"
+	"fmt"
+	"log"
 	"sync"
 	"testing"
 
@@ -37,10 +39,9 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 
-
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"log"
+	common2 "github.com/palletone/go-palletone/dag/common"
 )
 
 var (
@@ -53,17 +54,25 @@ var (
 // channels for different events.
 func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
 	memdb, _ := ptndb.NewMemDatabase()
-	dag, _ := MakeDags(memdb,3)
+	dag, _ := MakeDags(memdb, blocks)
 	//uu := dag.CurrentUnit()
-	//fmt.Printf("current===>>>%#v\n",uu)
-	//fmt.Printf("--------newTestProtocolManager----unit.UnitHeader-----%#v\n", uu.UnitHeader)
-	//fmt.Printf("--------newTestProtocolManager----unit.UnitHash-----%#v\n", uu.UnitHash)
-	//fmt.Printf("--------newTestProtocolManager----unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
-	//fmt.Printf("--------newTestProtocolManager----unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
+	//log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHeader-----%#v\n", uu.UnitHeader)
+	//log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHash-------%#v\n", uu.UnitHash)
+	//log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
+	//log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
+	//index := modules.ChainIndex{
+	//	modules.PTNCOIN,
+	//	true,
+	//	0,
+	//}
+	//uu = dag.GetUnitByNumber(index)
+	//log.Printf("--------newTestProtocolManager--index=0--unit.UnitHeader-----%#v\n", uu.UnitHeader)
+	//log.Printf("--------newTestProtocolManager--index=0--unit.UnitHash-------%#v\n", uu.UnitHash)
+	//log.Printf("--------newTestProtocolManager--index=0--unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
+	//log.Printf("--------newTestProtocolManager--index=0--unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
 	engine := new(consensus.DPOSEngine)
 	typemux := new(event.TypeMux)
 	producer := new(mediatorplugin.MediatorPlugin)
-	//want (downloader.SyncMode, uint64, txPool, core.ConsensusEngine, *modules.Dag, *event.TypeMux, *ptndb.LDBDatabase)
 	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx},
 		engine, dag, typemux, memdb, producer)
 	if err != nil {
@@ -143,7 +152,6 @@ func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *mod
 	return tx
 }
 
-
 // testPeer is a simulated peer to allow testing direct network calls.
 type testPeer struct {
 	net p2p.MsgReadWriter // Network layer reader/writer to simulate remote messaging
@@ -174,14 +182,25 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool) (*te
 	}()
 	tp := &testPeer{app: app, net: net, peer: peer}
 	// Execute any implicitly requested handshakes and return
-	//if shake {
-	//	var (
-	//		//genesis = pm.dag.CurrentUnit()
-	//		//head  = pm.dag.CurrentUnit().UnitHeader
-	//		//td      = head.Number.Index
-	//	)
-	//	tp.handshake(nil, 0, common.Hash{}, common.Hash{})
-	//}
+	if shake {
+		var (
+			//number = modules.ChainIndex{
+			//	modules.PTNCOIN,
+			//	true,
+			//	0,
+			//}
+			//genesis = pm.dag.GetUnitByNumber(number)
+			head = pm.dag.CurrentHeader()
+			td   = head.Number.Index
+		)
+		//fmt.Println("	if shake {===》》》",td)
+		genesis, err := common2.GetGenesisUnit(pm.dag.Db, 0)
+		//fmt.Println("genesis unti if shake {===》》》",genesis.UnitHash)
+		if err != nil {
+			fmt.Println("GetGenesisUnit===error:=", err)
+		}
+		tp.handshake(nil, td, head.Hash(), genesis.Hash())
+	}
 	return tp, errc
 }
 

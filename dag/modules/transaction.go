@@ -61,10 +61,16 @@ func NewContractCreation(msg []Message, lock uint32) *Transaction {
 
 func newTransaction(msg []Message, lock uint32) *Transaction {
 	tx := new(Transaction)
-	tx.TxMessages = msg[:]
-	//tx.Locktime = lock
+	for _, m := range msg {
+		tx.TxMessages = append(tx.TxMessages, &m)
+	}
 
 	return tx
+}
+
+// AddTxIn adds a transaction input to the message.
+func (tx *Transaction) AddMessage(me Message) {
+	tx.TxMessages = append(tx.TxMessages, &me)
 }
 
 // AddTxIn adds a transaction input to the message.
@@ -95,6 +101,7 @@ func NewPaymentPayload() *PaymentPayload {
 type TxPoolTransaction struct {
 	Tx *Transaction
 
+	From         []*common.Address
 	CreationDate time.Time `json:"creation_date"`
 	Priority_lvl float64   `json:"priority_lvl"` // 打包的优先级
 	Nonce        uint64    // transaction'hash maybe repeat.
@@ -234,11 +241,11 @@ func (tx *Transaction) Cost() *big.Int {
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
 	tx.TxHash.Set(cpy.TxHash)
 	//tx.Locktime = cpy.Locktime
-	tx.TxMessages = make([]Message, len(cpy.TxMessages))
-	for _, msg := range cpy.TxMessages {
-		newMsg := Message{}
-		newMsg = *newMsg.CopyMessages(&msg)
-		tx.TxMessages = append(tx.TxMessages, newMsg)
+	tx.TxMessages = make([]*Message, len(cpy.TxMessages))
+	for i, msg := range cpy.TxMessages {
+		newMsg := new(Message)
+		newMsg = msg
+		tx.TxMessages[i] = newMsg
 	}
 }
 
@@ -414,11 +421,7 @@ type TxLookupEntry struct {
 type Transactions []*Transaction
 type Transaction struct {
 	TxHash     common.Hash `json:"txhash"`
-	TxMessages []Message   `json:"messages"`
-	// todo AccountNonce, CreationDate, Priority_lvl 在交易池部分用的比较多，将由杨杰负责删除
-	AccountNonce uint64  `json:"account_nonce" rlp:"-"`
-	CreationDate string  `json:"creation_date" rlp:"-"`
-	Priority_lvl float64 `json:"priority_lvl" rlp:"-"` // 打包的优先级
+	TxMessages []*Message  `json:"messages"`
 }
 type OutPoint struct {
 	TxHash       common.Hash // reference Utxo struct key field
@@ -576,8 +579,7 @@ func (msg *Transaction) baseSize() int {
 	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
 	// number of transaction inputs and outputs.
 	n := 16 + VarIntSerializeSize(uint64(len(msg.TxMessages))) +
-		VarIntSerializeSize(uint64(len(msg.TxHash))) +
-		VarIntSerializeSize(uint64(len(msg.CreationDate)))
+		VarIntSerializeSize(uint64(len(msg.TxHash)))
 	for _, mtx := range msg.TxMessages {
 		payload := mtx.Payload
 		payment, ok := payload.(PaymentPayload)
@@ -597,6 +599,12 @@ func (msg *Transaction) baseSize() int {
 // the transaction, excluding any included witness data.
 func (msg *PaymentPayload) SerializeSizeStripped() int {
 	return msg.baseSize()
+}
+
+// SerializeSizeStripped returns the number of bytes it would take to serialize
+// the transaction, excluding any included witness data.
+func (tx *Transaction) SerializeSizeStripped() int {
+	return tx.baseSize()
 }
 
 // WriteVarBytes serializes a variable length byte array to w as a varInt

@@ -56,6 +56,7 @@ const (
 	NewBlockMsg        = 0x07
 	ConsensusMsg       = 0x08
 	NewProducedUnitMsg = 0x09
+	VSSDealMsg         = 0x0a
 
 	GetNodeDataMsg = 0x0d
 	NodeDataMsg    = 0x0e

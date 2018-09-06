@@ -30,9 +30,12 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	//"github.com/palletone/go-palletone/metrics"
+	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/internal/ptnapi"
+	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -85,6 +88,7 @@ type dags interface {
 	GetUnit(hash common.Hash) *modules.Unit
 	//StateAt(root common.Hash) (*state.StateDB, error)
 
+	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 }
 
@@ -479,12 +483,15 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	if tx.Tx.Size() > 32*1024 {
 		return ErrOversizedData
 	}
-
-	from := modules.MsgstoAddress(tx.Tx.TxMessages[:])
-	local = local || pool.locals.contains(from) // account may be local even if the transaction arrived from the network
-	if !local && pool.txfee.Cmp(tx.Tx.Fee()) > 0 {
-		return ErrTxFeeTooLow
+	if len(tx.From) > 0 {
+		for _, from := range tx.From {
+			local = local || pool.locals.contains(*from) // account may be local even if the transaction arrived from the network
+			if !local && pool.txfee.Cmp(tx.Tx.Fee()) > 0 {
+				return ErrTxFeeTooLow
+			}
+		}
 	}
+
 	// Make sure the transaction is signed properly
 
 	// Verify crypto signatures for each input and reject the transaction if any don't verify.
@@ -512,9 +519,26 @@ func TxtoTxpoolTx(txpool *TxPool, tx *modules.Transaction) *modules.TxPoolTransa
 	txpool_tx := new(modules.TxPoolTransaction)
 	txpool_tx.Tx = tx
 
+	for _, msgcopy := range tx.TxMessages {
+		if msgcopy.App == modules.APP_PAYMENT {
+			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+				for _, script := range msg.Input {
+					if addr, err := ptnapi.GetAddressFromScript(script.SignatureScript[:]); err == nil {
+						var from common.Address
+						from.SetString(addr)
+						txpool_tx.From = append(txpool_tx.From, &from)
+					} else {
+						fmt.Println("get failed address: ", err)
+					}
+				}
+			}
+		}
+	}
+
 	txpool_tx.CreationDate = time.Now()
 	txpool_tx.Nonce = txpool.GetNonce(tx.TxHash) + 1
 	txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
+
 	return txpool_tx
 }
 
@@ -591,12 +615,11 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		for _, tx := range drop {
 			log.Trace("Discarding freshly underpriced transaction", "hash", tx.Tx.TxHash, "price", tx.Tx.Fee())
 			//underpricedTxCounter.Inc(1)
-			pool.removeTransaction(tx.Tx, true)
+			pool.removeTransaction(tx, true)
 		}
 	}
 	// If the transaction is replacing an already pending one, do directly
-	//from,_ := modules.Sender(pool.signer, tx) // already validated
-	from := modules.MsgstoAddress(tx.Tx.TxMessages[:])
+
 	if list := pool.pending[tx.Tx.Hash()]; list != nil {
 		// Nonce already pending, check if required price bump is met
 		old := list
@@ -623,11 +646,13 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 	// Mark local addresses and journal local transactions
 	if local {
-		pool.locals.add(from)
+		for _, from := range tx.From {
+			pool.locals.add(*from)
+		}
 	}
 	pool.journalTx(tx)
 
-	log.Trace("Pooled new future transaction", "hash", hash, "from", from, "repalce", replace, "err", err)
+	log.Trace("Pooled new future transaction", "hash", hash, "repalce", replace, "err", err)
 	return replace, nil
 }
 
@@ -654,11 +679,15 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *modules.TxPoolTransaction) (
 // deemed to have been sent from a local account.
 func (pool *TxPool) journalTx(tx *modules.TxPoolTransaction) {
 	// Only journal if it's enabled and the transaction is local
-	from := modules.MsgstoAddress(tx.Tx.TxMessages[:])
-	if pool.journal == nil || !pool.locals.contains(from) {
-		log.Trace("Pool journal is nil.", "journal", pool.journal.path, "locals", pool.locals.accounts)
-		return
+	if len(tx.From) > 0 {
+		for _, from := range tx.From {
+			if pool.journal == nil || !pool.locals.contains(*from) {
+				log.Trace("Pool journal is nil.", "journal", pool.journal.path, "locals", pool.locals.accounts)
+				return
+			}
+		}
 	}
+
 	if err := pool.journal.insert(tx); err != nil {
 		log.Warn("Failed to journal local transaction", "err", err)
 	}
@@ -696,8 +725,11 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 		pool.pending[hash] = tx
 	}
 	// Set the potentially new pending nonce and notify any subsystems of the new tx
-	from := modules.MsgstoAddress(tx.Tx.TxMessages)
-	pool.beats[from] = time.Now()
+	if len(tx.From) > 0 {
+		for _, from := range tx.From {
+			pool.beats[*from] = time.Now()
+		}
+	}
 
 	go pool.txFeed.Send(modules.TxPreEvent{tx.Tx})
 }
@@ -748,8 +780,12 @@ func (pool *TxPool) addTx(tx *modules.TxPoolTransaction, local bool) error {
 	}
 	// If we added a new transaction, run promotion checks and return
 	if !replace {
-		from := modules.MsgstoAddress(tx.Tx.TxMessages[:]) // already validated
-		pool.promoteExecutables([]common.Address{from})
+		if len(tx.From) > 0 {
+			for _, from := range tx.From { // already validated
+				pool.promoteExecutables([]common.Address{*from})
+			}
+		}
+
 	}
 	return nil
 }
@@ -772,8 +808,12 @@ func (pool *TxPool) addTxsLocked(txs []*modules.TxPoolTransaction, local bool) [
 		var replace bool
 		if replace, errs[i] = pool.add(tx, local); errs[i] == nil {
 			if !replace {
-				from := modules.MsgstoAddress(tx.Tx.TxMessages) // already validated
-				dirty[from] = struct{}{}
+				if len(tx.From) > 0 {
+					for _, from := range tx.From { // already validated
+						dirty[*from] = struct{}{}
+					}
+				}
+
 			}
 		}
 	}
@@ -843,8 +883,12 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 	// Remove the transaction from the pending lists and reset the account nonce
 	if pending := pool.pending[hash]; pending != nil {
 		delete(pool.pending, hash)
-		from := modules.MsgstoAddress(pending.Tx.TxMessages[:])
-		delete(pool.beats, from)
+		if len(tx.From) > 0 {
+			for _, from := range tx.From {
+				delete(pool.beats, *from)
+			}
+		}
+
 		// if removed, invalids := pending.Remove(tx); removed {
 		// 	// If no more pending transactions are left, remove the list
 		// 	if pending.Empty() {
@@ -866,18 +910,17 @@ func (pool *TxPool) RemoveTxs(hashs []common.Hash) {
 	}
 }
 
-func (pool *TxPool) removeTransaction(tx *modules.Transaction, removeRedeemers bool) {
-	hash := tx.Hash()
+func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedeemers bool) {
+	hash := tx.Tx.Hash()
 	if removeRedeemers {
 		// Remove any transactions whitch rely on this one.
-		for i, msgcopy := range tx.TxMessages {
+		for i, msgcopy := range tx.Tx.TxMessages {
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
 					for j := uint32(0); j < uint32(len(msg.Output)); j++ {
 						preout := modules.OutPoint{TxHash: hash, MessageIndex: uint32(i), OutIndex: j}
 						if pooltxRedeemer, exist := pool.outpoints[preout]; exist {
-							txRedeemer := PooltxToTx(pooltxRedeemer)
-							pool.removeTransaction(txRedeemer, true)
+							pool.removeTransaction(pooltxRedeemer, true)
 						}
 					}
 				}
@@ -885,10 +928,13 @@ func (pool *TxPool) removeTransaction(tx *modules.Transaction, removeRedeemers b
 		}
 	}
 	// Remove the transaction from the pending lists and reset the account nonce
-	if pending := pool.pending[tx.Hash()]; pending != nil {
-		delete(pool.pending, tx.TxHash)
-		from := modules.MsgstoAddress(pending.Tx.TxMessages[:])
-		delete(pool.beats, from)
+	if pending := pool.pending[hash]; pending != nil {
+		delete(pool.pending, hash)
+		if len(tx.From) > 0 {
+			for _, from := range tx.From {
+				delete(pool.beats, *from)
+			}
+		}
 	}
 
 	// Remove the transaction if needed.
@@ -907,9 +953,14 @@ func (pool *TxPool) removeTransaction(tx *modules.Transaction, removeRedeemers b
 		pool.priority_priced.Removed()
 	}
 }
-func (pool *TxPool) RemoveTransaction(tx *modules.Transaction, removeRedeemers bool) {
+func (pool *TxPool) RemoveTransaction(hash common.Hash, removeRedeemers bool) {
 	pool.mu.Lock()
-	pool.removeTransaction(tx, removeRedeemers)
+	if tx, exist := pool.all[hash]; exist {
+		pool.removeTransaction(tx, removeRedeemers)
+	} else {
+		pool.removeTx(hash)
+	}
+
 	pool.mu.Unlock()
 }
 
@@ -925,7 +976,7 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 			inputs := msg.Payload.(modules.PaymentPayload)
 			for _, input := range inputs.Input {
 				if tx, ok := pool.outpoints[input.PreviousOutPoint]; ok {
-					pool.removeTransaction(tx.Tx, true)
+					pool.removeTransaction(tx, true)
 				}
 			}
 		}
@@ -959,6 +1010,31 @@ func (pool *TxPool) CheckSpend(output modules.OutPoint) *modules.Transaction {
 	tx := pool.outpoints[output]
 	pool.mu.RUnlock()
 	return tx.Tx
+}
+func (pool *TxPool) fetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, error) {
+	utxoView, err := pool.unit.GetUtxoView(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Attempt to populate any missing inputs from the transaction pool.
+	for i, msgcopy := range tx.TxMessages {
+		if msgcopy.App == modules.APP_PAYMENT {
+			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+				for _, txIn := range msg.Input {
+					preout := &txIn.PreviousOutPoint
+					utxo := utxoView.LookupUtxo(*preout)
+					if utxo != nil {
+						continue
+					}
+					if pooltx, exist := pool.all[preout.TxHash]; exist {
+						utxoView.AddTxOut(pooltx.Tx, uint32(i), preout.OutIndex)
+					}
+				}
+			}
+		}
+	}
+	return utxoView, nil
 }
 
 // promoteExecutables moves transactions that have become processable from the
@@ -1028,8 +1104,12 @@ func (pool *TxPool) demoteUnexecutables() {
 		// Delete the entire queue entry if it became empty.
 		if tx == nil {
 			delete(pool.pending, hash)
-			from := modules.MsgstoAddress(tx.Tx.TxMessages[:])
-			delete(pool.beats, from)
+			if len(tx.From) > 0 {
+				for _, from := range tx.From {
+					delete(pool.beats, *from)
+				}
+			}
+
 		}
 	}
 }
@@ -1083,6 +1163,9 @@ func newAccountSet() *accountSet {
 
 // contains checks if a given address is contained within the set.
 func (as *accountSet) contains(addr common.Address) bool {
+	if !common.IsValidAddress(addr.String()) {
+		return false
+	}
 	_, exist := as.accounts[addr]
 	return exist
 }
@@ -1093,8 +1176,15 @@ func (as *accountSet) containsTx(tx *modules.TxPoolTransaction) bool {
 	// if addr, err := modules.Sender(as.signer, tx); err == nil {
 	// 	return as.contains(addr)
 	// }
-	addr := modules.MsgstoAddress(tx.Tx.TxMessages[:])
-	return as.contains(addr)
+	if len(tx.From) == 0 {
+		return false
+	}
+	for _, from := range tx.From {
+		if !as.contains(*from) {
+			return false
+		}
+	}
+	return true
 }
 
 // add inserts a new address into the set to track.
@@ -1125,4 +1215,124 @@ func (pool *TxPool) GetSortedTxs() ([]*modules.TxPoolTransaction, common.Storage
 // starts sending event to the given channel.
 func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
+}
+
+//  UtxoViewpoint
+type UtxoViewpoint struct {
+	entries  map[modules.OutPoint]*modules.Utxo
+	bestHash common.Hash
+}
+
+func (view *UtxoViewpoint) BestHash() *common.Hash {
+	return &view.bestHash
+}
+func (view *UtxoViewpoint) SetBestHash(hash *common.Hash) {
+	view.bestHash = *hash
+}
+func (view *UtxoViewpoint) LookupUtxo(outpoint modules.OutPoint) *modules.Utxo {
+	return view.entries[outpoint]
+}
+func (view *UtxoViewpoint) FetchUtxos(db *ptndb.Database, outpoints map[modules.OutPoint]struct{}) error {
+	if len(outpoints) == 0 {
+		return nil
+	}
+	neededSet := make(map[modules.OutPoint]struct{})
+	for outpoint := range outpoints {
+		if _, ok := view.entries[outpoint]; ok {
+			continue
+		}
+		neededSet[outpoint] = struct{}{}
+	}
+	return view.fetchUtxosMain(db, neededSet)
+
+}
+func (view *UtxoViewpoint) fetchUtxosMain(db *ptndb.Database, outpoints map[modules.OutPoint]struct{}) error {
+	if len(outpoints) == 0 {
+		return nil
+	}
+	for outpoint := range outpoints {
+		utxo, err := storage.GetUtxoEntry(*db, outpoint.ToKey())
+		if err != nil {
+			return err
+		}
+		view.entries[outpoint] = utxo
+	}
+	return nil
+}
+
+func (view *UtxoViewpoint) addTxOut(outpoint modules.OutPoint, txOut *modules.TxOut, isCoinbase bool) {
+	// Don't add provably unspendable outputs.
+	if txscript.IsUnspendable(txOut.PkScript) {
+		return
+	}
+	utxo := view.LookupUtxo(outpoint)
+	if utxo == nil {
+		utxo = new(modules.Utxo)
+		view.entries[outpoint] = utxo
+	}
+	utxo.Amount = uint64(txOut.Value)
+	utxo.PkScript = txOut.PkScript
+	utxo.Asset.AssertId = txOut.Asset.AssertId
+	utxo.Asset.ChainId = txOut.Asset.ChainId
+	utxo.Asset.UniqueId = txOut.Asset.UniqueId
+
+	// isCoinbase ?
+	// flags --->  标记utxo状态
+}
+
+func (view *UtxoViewpoint) AddTxOut(tx *modules.Transaction, msgIdx, txoutIdx uint32) {
+	if msgIdx >= uint32(len(tx.TxMessages)) {
+		return
+	}
+
+	for i, msgcopy := range tx.TxMessages {
+
+		if (uint32(i) == msgIdx) && (msgcopy.App == modules.APP_PAYMENT) {
+			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+				if txoutIdx >= uint32(len(msg.Output)) {
+					return
+				}
+				preout := modules.OutPoint{TxHash: tx.Hash(), MessageIndex: msgIdx, OutIndex: txoutIdx}
+				output := msg.Output[txoutIdx]
+				asset := &modules.Asset{AssertId: output.Asset.AssertId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
+				txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: *asset}
+				view.addTxOut(preout, txout, false)
+			}
+		}
+
+	}
+}
+
+func (view *UtxoViewpoint) AddTxOuts(tx *modules.Transaction) {
+	preout := modules.OutPoint{TxHash: tx.Hash()}
+	for i, msgcopy := range tx.TxMessages {
+		if msgcopy.App == modules.APP_PAYMENT {
+			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+				msgIdx := uint32(i)
+				preout.MessageIndex = msgIdx
+				for j, output := range msg.Output {
+					txoutIdx := uint32(j)
+					preout.OutIndex = txoutIdx
+					//asset := &modules.Asset{AssertId: output.Asset.AssertId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
+					txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: modules.Asset{AssertId: output.Asset.AssertId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}}
+					view.addTxOut(preout, txout, false)
+				}
+			}
+		}
+
+	}
+}
+
+func (view *UtxoViewpoint) RemoveUtxo(outpoint modules.OutPoint) {
+	delete(view.entries, outpoint)
+}
+
+func (view *UtxoViewpoint) Entries() map[modules.OutPoint]*modules.Utxo {
+	return view.entries
+}
+
+func NewUtxoViewpoint() *UtxoViewpoint {
+	return &UtxoViewpoint{
+		entries: make(map[modules.OutPoint]*modules.Utxo),
+	}
 }

@@ -1245,6 +1245,9 @@ func GetAddressFromScript(script []byte) (string, error) {
 	if reqSigs > 1 {
 		return "", errors.New("Get address from utxo output script error: multiple signature")
 	}
+	if len(addresses) == 0 {
+		return "", errors.New("Get address from utxo output script error: get failed address")
+	}
 	return "P" + addresses[0].String(), nil
 }
 
@@ -1342,6 +1345,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	if c.LockTime != nil {
 		pload.LockTime = uint32(*c.LockTime)
 	}
+	mtx := new(modules.Transaction)
 	// Return the serialized and hex-encoded transaction.  Note that this
 	// is intentionally not directly returning because the first return
 	// value is a string and it would result in returning an empty string to
@@ -1350,9 +1354,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		App:     modules.APP_PAYMENT,
 		Payload: pload,
 	}
-	mtx := modules.Transaction{
-		TxMessages: []modules.Message{msg},
-	}
+	mtx.AddMessage(msg)
 	mtx.TxHash = mtx.Hash()
 	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
@@ -1547,14 +1549,16 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		if msg.App != modules.APP_PAYMENT {
 			continue
 		} else {
-			var payload modules.PaymentPayload
-			payload, ok := msg.Payload.(modules.PaymentPayload)
-			if !ok {
-				fmt.Println("Get Payment payload error:")
-			} //else {
-			//	fmt.Println("Payment payload:", payload)
-			//}
-			for i, txIn := range payload.Input {
+                         payload := msg.Payload
+		         payment := payload.(*modules.PaymentPayload)
+                         fmt.Printf("-1554 is payment is --------%+v\n",payment)
+			 //if !ok {
+				fmt.Println("--------1556    not ok  Get Payment payload error:")
+			 //} //else {
+			 //	fmt.Println("Payment payload:", payload)
+			 //}
+			 for i, txIn := range msg.Payload.(*modules.PaymentPayload).Input {
+                                fmt.Println("-----1561-----txIn-----------------",txIn)
 				prevOutScript, _ := inputpoints[txIn.PreviousOutPoint]
 
 				// Set up our callbacks that we pass to txscript so it can
@@ -1581,14 +1585,17 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 				// SigHashSingle inputs can only be signe   d if there's a
 				// corresponding output. However this could be already signed,
 				// so we always verify the output.
+                                fmt.Println("--------1588-----1588------")
 				if (hashType&txscript.SigHashSingle) !=
-					txscript.SigHashSingle || i < len(payload.Output) {
+					txscript.SigHashSingle || i < len(msg.Payload.(*modules.PaymentPayload).Output) {
 					script, err := txscript.SignTxOutput(params,
-						&payload, i, prevOutScript, hashType, geekey,
+						payment, i, prevOutScript, hashType, geekey,
 						getScript, txIn.SignatureScript)
 					// Failure to sign isn't an error, it just means that
 					// the tx isn't complete.
+                                        fmt.Println("------------1596-----------------------")
 					if err != nil {
+                                                fmt.Println("err is not nil")
 						signErrors = append(signErrors, SignatureError{
 							InputIndex: uint32(i),
 							Error:      err,
@@ -1596,10 +1603,12 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 						continue
 					}
 					txIn.SignatureScript = script
+                                        fmt.Println("------1603--------",script)
 				}
+                                fmt.Println("-----1606----------")
 				// Either it was already signed or we just signed it.
 				// Find out if it is completely satisfied or still needs more.
-				vm, err := txscript.NewEngine(prevOutScript, &payload, i,
+				vm, err := txscript.NewEngine(prevOutScript, payment, i,
 					txscript.StandardVerifyFlags, nil, nil, 0)
 				if err == nil {
 					err = vm.Execute()
@@ -1615,7 +1624,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 				App:     modules.APP_PAYMENT,
 				Payload: payload,
 			}
-			tx.TxMessages = append(tx.TxMessages, msg)
+			tx.TxMessages = append(tx.TxMessages, &msg)
 		}
 	}
 	var buf bytes.Buffer

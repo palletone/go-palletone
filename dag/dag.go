@@ -35,6 +35,7 @@ import (
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 type Dag struct {
@@ -46,17 +47,20 @@ type Dag struct {
 	GlobalProp    *modules.GlobalProperty
 	DynGlobalProp *modules.DynamicGlobalProperty
 	MediatorSchl  *modules.MediatorSchedule
+
+	// memory unit
+	Memdag *modules.MemDag
 }
 
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
-	fmt.Println("d.GetHeadUnitHash()/===", hash)
 	if err != nil {
+		log.Error("CurrentUnit when GetHeadUnitHash()", "error", err.Error())
 		return nil
 	}
 	// step2. get unit height
-	height := d.GetUnitNumber(hash)
+	height, err := d.GetUnitNumber(hash)
 	//fmt.Printf("d.GetUnitNumber(hash)===%#v\n",height)
 	// get unit header
 	uHeader, err := storage.GetHeader(d.Db, hash, &height)
@@ -73,8 +77,6 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	txs, err := dagcommon.GetUnitTransactions(d.Db, uHash)
 	if err != nil {
 		log.Error("Current unit when get transactions", "error", err.Error())
-		//fmt.Println("植同学===》Current unit when get transactions/error===",err.Error())
-		//测试时需要注释掉
 		return nil
 	}
 	// generate unit
@@ -100,17 +102,18 @@ func (d *Dag) HasUnit(hash common.Hash) bool {
 }
 
 func (d *Dag) GetUnitByHash(hash common.Hash) *modules.Unit {
-	//TODO must modify
-	return nil
-	return d.CurrentUnit()
+	return storage.GetUnit(d.Db, hash)
 }
 
 func (d *Dag) GetUnitByNumber(number modules.ChainIndex) *modules.Unit {
-	return storage.GetUnitFormIndex(d.Db, number.Index, number.AssetID)
+	return storage.GetUnitFormIndex(d.Db, number)
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
-	height := d.GetUnitNumber(hash)
+	height, err := d.GetUnitNumber(hash)
+	if err != nil {
+		log.Error("GetHeaderByHash when GetUnitNumber", "error", err.Error())
+	}
 	// get unit header
 	uHeader, err := storage.GetHeader(d.Db, hash, &height)
 	if err != nil {
@@ -121,8 +124,32 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 }
 
 func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
-	header, _ := storage.GetHeaderByHeight(d.Db, number)
-	return header
+	if memdb, ok := d.Db.(*ptndb.MemDatabase); ok {
+		encNum := ptndb.EncodeBlockNumber(number.Index)
+		key := append(storage.HEADER_PREFIX, encNum...)
+		key = append(key, number.Bytes()...)
+		hashkey := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, number.Index)
+		hash, err := memdb.Get([]byte(hashkey))
+		if err != nil {
+			return nil
+		}
+		var h common.Hash
+		h.SetBytes(hash)
+		headerbyte, err := memdb.Get(append(key, h.Bytes()...))
+		if err != nil {
+			return nil
+		}
+		header := &modules.Header{}
+		err = rlp.DecodeBytes(headerbyte, header)
+		if err != nil {
+			return nil
+		}
+		return header
+	} else if lvldb, ok := d.Db.(*ptndb.LDBDatabase); ok {
+		header, _ := storage.GetHeaderByHeight(lvldb, number)
+		return header
+	}
+	return nil
 }
 
 // func (d *Dag) GetHeader(hash common.Hash, number uint64) *modules.Header {
@@ -144,10 +171,28 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 }
 
 func (d *Dag) SaveDag(unit modules.Unit) (int, error) {
-	if err := dagcommon.SaveUnit(d.Db, unit, false); err != nil {
-		fmt.Errorf("SaveDag, save error: %s", err.Error())
-		return -1, err
+	// step1. check exists
+	if d.Memdag.Exists(unit.UnitHash) || d.GetUnit(unit.UnitHash) != nil {
+		return 0, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash)
 	}
+	// step2. validate unit
+	unitState := dagcommon.ValidateUnit(d.Db, &unit, false)
+	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+		return 0, fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
+	}
+	if unitState == modules.UNIT_STATE_VALIDATED {
+		// step3.1. pass and with group signature, put into leveldb
+		if err := dagcommon.SaveUnit(d.Db, unit, false); err != nil {
+			return -1, fmt.Errorf("SaveDag, save error: %s", err.Error())
+		}
+		// step3.2. if pass and with group signature, prune fork data
+	} else {
+		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
+		if err := d.Memdag.Save(&unit); err != nil {
+			return -1, fmt.Errorf("SaveDag, save error: %s", err.Error())
+		}
+	}
+	// step5. check if it is need to switch
 	return 0, nil
 }
 
@@ -189,8 +234,25 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 // GetBlockHashesFromHash retrieves a number of block hashes starting at a given
 // hash, fetching towards the genesis block.
 func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash {
-	//GetUnit()
-	return []common.Hash{}
+	header := d.GetHeaderByHash(hash)
+	if header == nil {
+		return nil
+	}
+	// Iterate the headers until enough is collected or the genesis reached
+	chain := make([]common.Hash, 0, max)
+	for i := uint64(0); i < max; i++ {
+		if header.Index() == 0 {
+			break
+		}
+		next := header.ParentsHash[0]
+		h, err := d.GetHeader(next, header.Index()-1)
+		if err != nil {
+			break
+		}
+		header = h
+		chain = append(chain, next)
+	}
+	return chain
 }
 
 // need add:   assetId modules.IDType16, onMain bool
@@ -247,7 +309,7 @@ func (d *Dag) getBodyRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawVal
 }
 
 func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
-	number, err := storage.GetUnitNumber(db, hash)
+	number, err := storage.GetNumberWithUnitHash(db, hash)
 	if err != nil {
 		log.Error("Get header rlp ", "error", err.Error())
 		return nil
@@ -271,9 +333,9 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 //Ethereum ethash engine.go
 func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 	// step1. check unit signature, should be compare to mediator list
-	if err := dagcommon.ValidateUnitSignature(d.Db, header, false); err != nil {
-		log.Info("Validate unit signature", "error", err.Error())
-		return err
+	unitState := dagcommon.ValidateUnitSignature(d.Db, header, false)
+	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+		return fmt.Errorf("Validate unit signature error, errno=%d", unitState)
 	}
 
 	// step2. check extra data
@@ -356,6 +418,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		GlobalProp:    gp,
 		DynGlobalProp: dgp,
 		MediatorSchl:  ms,
+		Memdag:        modules.InitMemDag(),
 	}
 
 	return dag, nil
@@ -370,6 +433,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		GlobalProp:    nil,
 		DynGlobalProp: nil,
 		MediatorSchl:  nil,
+		Memdag:        modules.InitMemDag(),
 	}
 	return dag, nil
 }
@@ -381,15 +445,20 @@ func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
 
 // Get Header
 func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error) {
-	index := d.GetUnitNumber(hash)
+	index, err := d.GetUnitNumber(hash)
+	if err != nil {
+		return nil, err
+	}
 	//TODO compare index with number
-	return storage.GetHeader(d.Db, hash, &index)
+	if index.Index == number {
+		return storage.GetHeader(d.Db, hash, &index)
+	}
+	return nil, err
 }
 
 // Get UnitNumber
-func (d *Dag) GetUnitNumber(hash common.Hash) modules.ChainIndex {
-	height, _ := storage.GetUnitNumber(d.Db, hash)
-	return height
+func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex, error) {
+	return storage.GetNumberWithUnitHash(d.Db, hash)
 }
 
 // GetCanonicalHash
@@ -415,7 +484,35 @@ func (d *Dag) GetTrieSyncProgress() (uint64, error) {
 }
 
 func (d *Dag) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
+	d.Mutex.RLock()
+	defer d.Mutex.RUnlock()
 	return storage.GetUtxoEntry(d.Db, key)
+}
+func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
+	neededSet := make(map[modules.OutPoint]struct{})
+	preout := modules.OutPoint{TxHash: tx.Hash()}
+	for i, msgcopy := range tx.TxMessages {
+		if msgcopy.App == modules.APP_PAYMENT {
+			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+				msgIdx := uint32(i)
+				preout.MessageIndex = msgIdx
+				for j := range msg.Output {
+					txoutIdx := uint32(j)
+					preout.OutIndex = txoutIdx
+					neededSet[preout] = struct{}{}
+				}
+			}
+		}
+
+	}
+	// if tx is Not CoinBase
+	// add txIn previousoutpoint
+	view := txspool.NewUtxoViewpoint()
+	d.Mutex.RLock()
+	err := view.FetchUtxos(&d.Db, neededSet)
+	d.Mutex.RUnlock()
+
+	return view, err
 }
 
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
@@ -444,4 +541,19 @@ func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
 // author Albert·Gou
 func (d *Dag) GetCurThreshold() int {
 	return d.GlobalProp.GetCurThreshold()
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediatorCount() int {
+	return d.GlobalProp.GetActiveMediatorCount()
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediators() []common.Address {
+	return d.GlobalProp.GetActiveMediators()
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediatorNode(mediator common.Address) *discover.Node {
+	return d.GlobalProp.GetActiveMediatorNode(mediator)
 }

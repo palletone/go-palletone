@@ -42,8 +42,8 @@ import (
 	//"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 	"github.com/palletone/go-palletone/tokenengine/btcutil"
 	//"github.com/btcsuite/btcd/btcec"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
@@ -298,7 +298,7 @@ func accountList(ctx *cli.Context) error {
 }
 
 // tries unlocking the specified account a few times.
-func unlockAccount(ctx *cli.Context, ks *keystore.KeyStore, address string, i int,passwords []string) (accounts.Account, string) {
+func unlockAccount(ctx *cli.Context, ks *keystore.KeyStore, address string, i int, passwords []string) (accounts.Account, string) {
 	account, err := utils.MakeAddress(ks, address)
 	if err != nil {
 		utils.Fatalf("Could not list accounts: %v", err)
@@ -655,20 +655,20 @@ func accountSignTx(ctx *cli.Context) error {
 		scriptPkScript, err := txscript.PayToAddrScript(scriptAddr)
 		//multisig transaction need redeem for sign
 		for _, mtx := range tx.TxMessages {
-	    payload := mtx.Payload
-		payment, ok := payload.(modules.PaymentPayload)
-		if ok == true {
-			for _, txinOne := range payment.Input {
-			rawInput := btcjson.RawTxInput{
-				txinOne.PreviousOutPoint.TxHash.String(), //txid
-				txinOne.PreviousOutPoint.OutIndex,  
-				txinOne.PreviousOutPoint.MessageIndex,//outindex
-				string(scriptPkScript),     //multisig pay script
-				signTransactionParams.RedeemHex}        //redeem
-			rawInputs = append(rawInputs, rawInput)
+			payload := mtx.Payload
+			payment, ok := payload.(modules.PaymentPayload)
+			if ok == true {
+				for _, txinOne := range payment.Input {
+					rawInput := btcjson.RawTxInput{
+						txinOne.PreviousOutPoint.TxHash.String(), //txid
+						txinOne.PreviousOutPoint.OutIndex,
+						txinOne.PreviousOutPoint.MessageIndex, //outindex
+						string(scriptPkScript),                //multisig pay script
+						signTransactionParams.RedeemHex}       //redeem
+					rawInputs = append(rawInputs, rawInput)
+				}
+			}
 		}
-		    }
-	    } 
 		break
 	}
 
@@ -677,9 +677,9 @@ func accountSignTx(ctx *cli.Context) error {
 		// Serialize the transaction and convert to hex string.
 		buf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
 		buf.Grow(tx.SerializeSize())
-		mtxbt ,err := rlp.EncodeToBytes(buf)
-	    if err != nil {
-		    return err
+		mtxbt, err := rlp.EncodeToBytes(buf)
+		if err != nil {
+			return err
 		}
 		txHex = hex.EncodeToString(mtxbt)
 		fmt.Println(txHex)

@@ -20,6 +20,7 @@ package mediatorplugin
 
 import (
 	"fmt"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/kyber/share/dkg/pedersen"
@@ -77,6 +78,11 @@ type MediatorPlugin struct {
 	suite vss.Suite
 	dkgs  map[common.Address]*dkg.DistKeyGenerator
 
+	vssDealFeed  event.Feed
+	vssDealScope event.SubscriptionScope
+
+	resps map[common.Address][]*dkg.Response
+
 	// unit阈值签名相关
 	pendingTBLSSign map[common.Hash]*toTBLSSigned // 等待TBLS阈值签名的unit
 }
@@ -90,22 +96,22 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 }
 
 func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
-	ams := make([]common.Address, 0)
+	lams := make([]common.Address, 0)
 
 	gp := mp.getDag().GlobalProp
 	for add := range mp.mediators {
 		if _, ok := gp.ActiveMediators[add]; ok {
-			ams = append(ams, add)
+			lams = append(lams, add)
 		}
 	}
 
-	return ams
+	return lams
 }
 
 func (mp *MediatorPlugin) HaveActiveMediator() bool {
-	ams := mp.GetLocalActiveMediators()
+	lams := mp.GetLocalActiveMediators()
 
-	return len(ams) != 0
+	return len(lams) != 0
 }
 
 func (mp *MediatorPlugin) AddActiveMediatorPeers() {
@@ -139,20 +145,22 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 }
 
 func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
-	ams := mp.GetLocalActiveMediators()
+	lams := mp.GetLocalActiveMediators()
 	initPubs := mp.getDag().GetActiveMediatorInitPubs()
 	curThreshold := mp.getDag().GetCurThreshold()
 
-	for _, med := range ams {
+	for _, med := range lams {
 		initSec := mp.mediators[med].InitPartSec
 
 		dkg, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
-			panic(err)
+			log.Error(err.Error())
 		}
 
 		mp.dkgs[med] = dkg
 	}
+
+	go mp.BroadcastVSSDeals()
 }
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
@@ -230,6 +238,7 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 
 		suite: bn256.NewSuiteG2(),
 		dkgs:  make(map[common.Address]*dkg.DistKeyGenerator),
+		resps: make(map[common.Address][]*dkg.Response),
 	}
 
 	log.Debug("mediator plugin initialize end")

@@ -179,7 +179,8 @@ func init() {
 		dumpConfigCommand,        //转储配置文件命令
 		createGenesisJsonCommand, // 创建创世json文件命令
 		createInitDKSCommand,     // 创建Mediator初始秘钥分片
-		nodeInfo,	// 获取本节点信息
+		nodeInfoCommand,          // 获取本节点信息
+		timestampCommand,         // 获取指定时间的时间戳
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 

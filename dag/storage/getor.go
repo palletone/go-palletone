@@ -101,28 +101,26 @@ func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 
 func GetUnit(db ptndb.Database, hash common.Hash) *modules.Unit {
 	// 1. get chainindex
-	height, err := GetUnitNumber(db, hash)
+	height, err := GetNumberWithUnitHash(db, hash)
+	//fmt.Printf("height=%#v\n", height)
 	if err != nil {
-		log.Println("Getunit when get unitNumber failed , error:", err)
+		log.Println("GetUnit when GetUnitNumber failed , error:", err)
 		return nil
 	}
 	// 2. unit header
 	uHeader, err := GetHeader(db, hash, &height)
+	//log.Printf("--------GetHeader(db, hash, &height)t====》》》%#v\n",uHeader)
 	if err != nil {
-		log.Println("Getunit when get header failed , error:", err)
+		log.Println("GetUnit when GetHeader failed , error:", err)
 		return nil
 	}
-
 	// get unit hash
 	uHash := common.Hash{}
 	uHash.SetBytes(hash.Bytes())
-
 	// get transaction list
 	txs, err := GetUnitTransactions(db, uHash)
 	if err != nil {
-		log.Println("Getunit when get transactions failed , error:", err)
-		//fmt.Println("植同学===》Current unit when get transactions/error===",err.Error())
-		//测试时需要注释掉
+		log.Println("GetUnit when GetUnitTransactions failed , error:", err)
 		return nil
 	}
 	// generate unit
@@ -149,8 +147,8 @@ func GetUnitTransactions(db ptndb.Database, hash common.Hash) (modules.Transacti
 	}
 	return txs, nil
 }
-func GetUnitFormIndex(db ptndb.Database, height uint64, asset modules.IDType16) *modules.Unit {
-	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, asset.String(), height)
+func GetUnitFormIndex(db ptndb.Database, number modules.ChainIndex) *modules.Unit {
+	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, number.AssetID.String(), number.Index)
 	hash, err := db.Get([]byte(key))
 	if err != nil {
 		return nil
@@ -183,6 +181,7 @@ func GetHeaderByHeight(db DatabaseReader, index modules.ChainIndex) (*modules.He
 	encNum := encodeBlockNumber(index.Index)
 	key := append(HEADER_PREFIX, encNum...)
 	key = append(key, index.Bytes()...)
+
 	data := getprefix(db, key)
 	if data == nil || len(data) <= 0 {
 		return nil, fmt.Errorf("No such height header")
@@ -206,8 +205,8 @@ func GetHeaderRlp(db DatabaseReader, hash common.Hash, index uint64) rlp.RawValu
 	return header_bytes
 }
 
-func GetHeaderFormIndex(db ptndb.Database, height uint64, asset modules.IDType16) *modules.Header {
-	unit := GetUnitFormIndex(db, height, asset)
+func GetHeaderFormIndex(db ptndb.Database, number modules.ChainIndex) *modules.Header {
+	unit := GetUnitFormIndex(db, number)
 	return unit.UnitHeader
 }
 
@@ -384,7 +383,18 @@ func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interfa
 
 const missingNumber = uint64(0xffffffffffffffff)
 
-func GetUnitNumber(db DatabaseReader, hash common.Hash) (modules.ChainIndex, error) {
+//func GetUnitNumber(db DatabaseReader, hash common.Hash) (modules.ChainIndex, error) {
+//	data, _ := db.Get(append(UNIT_HASH_NUMBER_Prefix, hash.Bytes()...))
+//	if len(data) <= 0 {
+//		return modules.ChainIndex{}, fmt.Errorf("Get from unit number rlp data none")
+//	}
+//	var number modules.ChainIndex
+//	if err := rlp.DecodeBytes(data, &number); err != nil {
+//		return modules.ChainIndex{}, fmt.Errorf("Get unit number when rlp decode error:%s", err.Error())
+//	}
+//	return number, nil
+//}
+func GetNumberWithUnitHash(db DatabaseReader, hash common.Hash) (modules.ChainIndex, error) {
 	data, _ := db.Get(append(UNIT_HASH_NUMBER_Prefix, hash.Bytes()...))
 	if len(data) <= 0 {
 		return modules.ChainIndex{}, fmt.Errorf("Get from unit number rlp data none")
@@ -449,7 +459,7 @@ func GetTrieSyncProgress(db DatabaseReader) (uint64, error) {
 }
 
 //  dbFetchUtxoEntry
-func GetUtxoEntry(db DatabaseReader, key []byte) (*modules.Utxo, error) {
+func GetUtxoEntry(db ptndb.Database, key []byte) (*modules.Utxo, error) {
 	utxo := new(modules.Utxo)
 	data, err := db.Get(key)
 	if err != nil {

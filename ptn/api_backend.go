@@ -18,9 +18,9 @@ package ptn
 
 import (
 	"context"
+	"log"
 	"math/big"
 	"time"
-	"log"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
@@ -179,7 +179,12 @@ func (b *PtnApiBackend) GetUnit(hash common.Hash) *modules.Unit {
 
 // Get UnitNumber
 func (b *PtnApiBackend) GetUnitNumber(hash common.Hash) uint64 {
-	return b.ptn.dag.GetUnitNumber(hash).Index
+	number, err := b.ptn.dag.GetUnitNumber(hash)
+	if err != nil {
+		log.Println("GetUnitNumber when b.ptn.dag.GetUnitNumber", err.Error())
+		return uint64(0)
+	}
+	return number.Index
 }
 
 // GetCanonicalHash
@@ -217,7 +222,7 @@ func (b *PtnApiBackend) GetAddrTransactions(addr string) (modules.Transactions, 
 }
 
 //contract control
-func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string)(TemplateId []byte, err error) {
+func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error) {
 	//tempid := []byte{0x1, 0x2, 0x3}
 	log.Printf("======>ContractInstall:name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
 
@@ -227,7 +232,7 @@ func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion 
 	return payload.TemplateId, err
 }
 
-func (b *PtnApiBackend)ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration)(deployId []byte, err error){
+func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error) {
 	//depid := []byte{0x4, 0x5, 0x6}
 	log.Printf("======>ContractDeploy:tmId[%s]txid[%s]", hex.EncodeToString(templateId), txid)
 
@@ -236,7 +241,7 @@ func (b *PtnApiBackend)ContractDeploy(templateId []byte, txid string, args [][]b
 	return depid, err
 }
 
-func (b *PtnApiBackend)ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
+func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
 	log.Printf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 
 	//_, err := cc.Invoke("palletone", deployId, txid, args, timeout)
@@ -249,7 +254,7 @@ func (b *PtnApiBackend)ContractInvoke(deployId []byte, txid string, args [][]byt
 	return unit.Payload, err
 }
 
-func (b *PtnApiBackend)ContractStop(deployId []byte, txid string, deleteImage bool)(error) {
+func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage bool) error {
 	log.Printf("======>ContractStop:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 
 	//err := cc.Stop("palletone", deployId, txid, deleteImage)
