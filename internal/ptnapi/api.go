@@ -41,15 +41,16 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
-	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
-	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
 	ut "github.com/palletone/go-palletone/core/vmContractPub/util"
+	"github.com/btcsuite/btcd/btcjson"
 )
 
 const (
@@ -1214,39 +1215,39 @@ func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) 
 		}*/
 	return tx.Hash(), nil
 }
-func rpcDecodeHexError(gotHex string) *btcjson.RPCError {
-	return btcjson.NewRPCError(btcjson.ErrRPCDecodeHexString,
-		fmt.Sprintf("Argument must be hexadecimal string (not %q)",
-			gotHex))
-}
-func internalRPCError(errStr, context string) *btcjson.RPCError {
-	logStr := errStr
-	if context != "" {
-		logStr = context + ": " + errStr
-	}
-	fmt.Println(logStr)
-	//rpcsLog.Error(logStr)
-	return btcjson.NewRPCError(btcjson.ErrRPCInternal.Code, errStr)
-}
-func messageToHex(msg wire.Message) (string, error) {
-	var buf bytes.Buffer
-	if err := msg.BtcEncode(&buf, maxProtocolVersion, wire.WitnessEncoding); err != nil {
-		context := fmt.Sprintf("Failed to encode msg of type %T", msg)
-		return "", internalRPCError(err.Error(), context)
-	}
-	return hex.EncodeToString(buf.Bytes()), nil
-}
-func GetAddressFromScript(script []byte) (string, error) {
-	_, addresses, reqSigs, err := txscript.ExtractPkScriptAddrs(script, &chaincfg.MainNetParams)
-	if err != nil {
-		return "", err
-	}
-	// for now, just support single signature
-	if reqSigs > 1 {
-		return "", errors.New("Get address from utxo output script error: multiple signature")
-	}
-	return "P" + addresses[0].String(), nil
-}
+//func rpcDecodeHexError(gotHex string) *btcjson.RPCError {
+//	return btcjson.NewRPCError(btcjson.ErrRPCDecodeHexString,
+//		fmt.Sprintf("Argument must be hexadecimal string (not %q)",
+//			gotHex))
+//}
+//func internalRPCError(errStr, context string) *btcjson.RPCError {
+//	logStr := errStr
+//	if context != "" {
+//		logStr = context + ": " + errStr
+//	}
+//	fmt.Println(logStr)
+//	//rpcsLog.Error(logStr)
+//	return btcjson.NewRPCError(btcjson.ErrRPCInternal.Code, errStr)
+//}
+//func messageToHex(msg wire.Message) (string, error) {
+//	var buf bytes.Buffer
+//	if err := msg.BtcEncode(&buf, maxProtocolVersion, wire.WitnessEncoding); err != nil {
+//		context := fmt.Sprintf("Failed to encode msg of type %T", msg)
+//		return "", internalRPCError(err.Error(), context)
+//	}
+//	return hex.EncodeToString(buf.Bytes()), nil
+//}
+//func GetAddressFromScript(script []byte) (string, error) {
+//	_, addresses, reqSigs, err := txscript.ExtractPkScriptAddrs(script, &chaincfg.MainNetParams)
+//	if err != nil {
+//		return "", err
+//	}
+//	// for now, just support single signature
+//	if reqSigs > 1 {
+//		return "", errors.New("Get address from utxo output script error: multiple signature")
+//	}
+//	return "P" + addresses[0].String(), nil
+//}
 
 const (
 	MaxTxInSequenceNum uint32 = 0xffffffff
@@ -1376,26 +1377,26 @@ func decodeHexStr(hexStr string) ([]byte, error) {
 	}
 	return decoded, nil
 }
-
-type Params struct {
-	*chaincfg.Params
-	RPCClientPort string
-	RPCServerPort string
-}
-
-var MainNetParams = Params{
-	Params:        &chaincfg.MainNetParams,
-	RPCClientPort: "8334",
-	RPCServerPort: "8332",
-}
-
-// TestNet3Params contains parameters specific running btcwallet and
-// btcd on the test network (version 3) (wire.TestNet3).
-var TestNet3Params = Params{
-	Params:        &chaincfg.TestNet3Params,
-	RPCClientPort: "18334",
-	RPCServerPort: "18332",
-}
+//
+//type Params struct {
+//	*chaincfg.Params
+//	RPCClientPort string
+//	RPCServerPort string
+//}
+//
+//var MainNetParams = Params{
+//	Params:        &chaincfg.MainNetParams,
+//	RPCClientPort: "8334",
+//	RPCServerPort: "8332",
+//}
+//
+//// TestNet3Params contains parameters specific running btcwallet and
+//// btcd on the test network (version 3) (wire.TestNet3).
+//var TestNet3Params = Params{
+//	Params:        &chaincfg.TestNet3Params,
+//	RPCClientPort: "18334",
+//	RPCServerPort: "18332",
+//}
 
 type response struct {
 	result []byte

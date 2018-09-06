@@ -8,8 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
 	"crypto/ecdsa"
@@ -160,11 +158,10 @@ func signMultiSig(tx *modules.Transaction,msgIdx, idx int, subScript []byte, has
 	return script, signed == nRequired
 }
 
-func sign(chainParams *chaincfg.Params, tx *modules.Transaction/**wire.MsgTx*/,msgIdx, idx int,
+func sign( tx *modules.Transaction/**wire.MsgTx*/,msgIdx, idx int,
 	subScript []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB) ([]byte,
 	ScriptClass, []common.Address, int, error) {
-	class, addresses, nrequired, err := ExtractPkScriptAddrs(subScript,
-		chainParams)
+	class, addresses, nrequired, err := ExtractPkScriptAddrs(subScript)
 	if err != nil {
 		return nil, NonStandardTy, nil, 0, err
 	}
@@ -229,7 +226,7 @@ func sign(chainParams *chaincfg.Params, tx *modules.Transaction/**wire.MsgTx*/,m
 // The return value is the best effort merging of the two scripts. Calling this
 // function with addresses, class and nrequired that do not match pkScript is
 // an error and results in undefined behaviour.
-func mergeScripts(chainParams *chaincfg.Params, tx *modules.Transaction,msgIdx, idx int,
+func mergeScripts(tx *modules.Transaction,msgIdx, idx int,
 	pkScript []byte, class ScriptClass, addresses []common.Address,
 	nRequired int, sigScript, prevScript []byte) []byte {
 
@@ -256,14 +253,14 @@ func mergeScripts(chainParams *chaincfg.Params, tx *modules.Transaction,msgIdx, 
 
 		// We already know this information somewhere up the stack.
 		class, addresses, nrequired, _ :=
-			ExtractPkScriptAddrs(script, chainParams)
+			ExtractPkScriptAddrs(script)
 
 		// regenerate scripts.
 		sigScript, _ := unparseScript(sigPops)
 		prevScript, _ := unparseScript(prevPops)
 
 		// Merge
-		mergedScript := mergeScripts(chainParams, tx,msgIdx, idx, script,
+		mergedScript := mergeScripts( tx,msgIdx, idx, script,
 			class, addresses, nrequired, sigScript, prevScript)
 
 		// Reappend the script and return the result.
@@ -444,18 +441,18 @@ func (sc ScriptClosure) GetScript(address common.Address) ([]byte, error) {
 // getScript. If previousScript is provided then the results in previousScript
 // will be merged in a type-dependent manner with the newly generated.
 // signature script.
-func SignTxOutput(chainParams *chaincfg.Params, tx *modules.Transaction/**wire.MsgTx*/,msgIdx, idx int,
+func SignTxOutput(tx *modules.Transaction/**wire.MsgTx*/,msgIdx, idx int,
 	pkScript []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB,
 	previousScript []byte) ([]byte, error) {
         //fmt.Println("hahahhahahahah------43666-----------")
-	sigScript, class, addresses, nrequired, err := sign(chainParams, tx,
+	sigScript, class, addresses, nrequired, err := sign( tx,
 	msgIdx,	idx, pkScript, hashType, kdb, sdb)
 	if err != nil {
 		return nil, err
 	}
 	if class == ScriptHashTy {
 		// TODO keep the sub addressed and pass down to merge.
-		realSigScript, _, _, _, err := sign(chainParams, tx,msgIdx, idx,
+		realSigScript, _, _, _, err := sign( tx,msgIdx, idx,
 			sigScript, hashType, kdb, sdb)
 		if err != nil {
 			return nil, err
@@ -471,7 +468,7 @@ func SignTxOutput(chainParams *chaincfg.Params, tx *modules.Transaction/**wire.M
 	}
         //fmt.Println("hahahhahahahah------459459-----------")
 	// Merge scripts. with any previous data, if any.
-	mergedScript := mergeScripts(chainParams, tx,msgIdx, idx, pkScript, class,
+	mergedScript := mergeScripts( tx,msgIdx, idx, pkScript, class,
 		addresses, nrequired, sigScript, previousScript)
 	return mergedScript, nil
 }

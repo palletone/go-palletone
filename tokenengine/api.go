@@ -5,7 +5,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
 	"crypto/ecdsa"
 )
 
@@ -28,7 +27,11 @@ func GenerateP2SHLockScript(redeemScriptHash []byte) []byte {
 		Script()
 	return lock
 }
-
+//根据锁定脚本获得对应的地址
+func GetAddressFromScript([]byte) (common.Address,error){
+	return common.Address{},nil
+	//TODO
+}
 //生成多签用的赎回脚本
 //Generate redeem script
 func GenerateRedeemScript(needed byte, pubKeys [][]byte) []byte {
@@ -99,8 +102,7 @@ func SignOnePaymentInput(tx *modules.Transaction,msgIdx,id int,utxoLockScript []
 	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
 		return privKey, true, nil
 	}
-	sigScript, err := txscript.SignTxOutput(&chaincfg.MainNetParams,
-		tx, msgIdx,id, utxoLockScript, txscript.SigHashAll,
+	sigScript, err := txscript.SignTxOutput(tx, msgIdx,id, utxoLockScript, txscript.SigHashAll,
 		txscript.KeyClosure(lookupKey), nil, nil)
 	if err!=nil{
 		return []byte{},err
@@ -117,8 +119,7 @@ func SignTxAllPaymentInput(tx *modules.Transaction,utxoLockScripts map[modules.O
 			pay:=msg.Payload.(*modules.PaymentPayload)
 			for j,input:=range pay.Input{
 				utxoLockScript:=utxoLockScripts[input.PreviousOutPoint]
-				sigScript, err := txscript.SignTxOutput(&chaincfg.MainNetParams,
-					tx, i,j, utxoLockScript, txscript.SigHashAll,
+				sigScript, err := txscript.SignTxOutput(tx, i,j, utxoLockScript, txscript.SigHashAll,
 					txscript.KeyClosure(lookupKey), nil, nil)
 				if err!=nil{
 					return err

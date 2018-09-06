@@ -15,10 +15,9 @@ import (
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
-	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/studyzy/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common"
 )
 
 // An opcode defines the information related to a txscript opcode.  opfunc, if
@@ -1238,14 +1237,14 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 		return scriptError(ErrNegativeLockTime, str)
 	}
 
-	sequence := int64(stackSequence)
+	//sequence := int64(stackSequence)
 
 	// To provide for future soft-fork extensibility, if the
 	// operand has the disabled lock-time flag set,
 	// CHECKSEQUENCEVERIFY behaves as a NOP.
-	if sequence&int64(wire.SequenceLockTimeDisabled) != 0 {
-		return nil
-	}
+	//if sequence&int64(wire.SequenceLockTimeDisabled) != 0 {
+	//	return nil
+	//}
 
 	// Transaction version numbers not high enough to trigger CSV rules must
 	// fail.
@@ -2019,7 +2018,7 @@ func opcodeHash256(op *parsedOpcode, vm *Engine) error {
 		return err
 	}
 
-	vm.dstack.PushByteArray(chainhash.DoubleHashB(buf))
+	vm.dstack.PushByteArray(crypto.Keccak256(buf))
 	return nil
 }
 
@@ -2389,7 +2388,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 
 		var valid bool
 		if vm.sigCache != nil {
-			var sigHash chainhash.Hash
+			var sigHash common.Hash
 			copy(sigHash[:], hash)
 
 			valid = vm.sigCache.Exists(sigHash, parsedSig, parsedPubKey)
