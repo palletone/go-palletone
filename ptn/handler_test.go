@@ -15,6 +15,7 @@
 //// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 //
 package ptn
+
 //
 //import (
 //	"github.com/palletone/go-palletone/dag/modules"

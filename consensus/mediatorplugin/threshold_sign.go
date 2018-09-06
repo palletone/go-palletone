@@ -19,6 +19,7 @@
 package mediatorplugin
 
 import (
+	"fmt"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
@@ -42,9 +43,10 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 		resps := make([]*dkg.Response, 0, nParticipants)
 		mp.resps[medF] = resps
 
-		dkg := mp.dkgs[medF]
-		if dkg == nil {
-			log.Error("DKG was not successfully generated!")
+		dkg, ok := mp.dkgs[medF]
+		if !ok || dkg == nil {
+			log.Error(fmt.Sprintf("The following mediator`s dkg was not successfully generated: %v",
+				medF.String()))
 			continue
 		}
 
@@ -55,9 +57,8 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 
 		for index, deal := range deals {
 			event := VSSDealEvent{
-				AddFrom: medF,
-				AddTo:   ams[index],
-				Deal:    deal,
+				DstMed: ams[index],
+				Deal:   deal,
 			}
 
 			mp.vssDealFeed.Send(event)
@@ -69,7 +70,48 @@ func (mp *MediatorPlugin) SubscribeVSSDealEvent(ch chan<- VSSDealEvent) event.Su
 	return mp.vssDealScope.Track(mp.vssDealFeed.Subscribe(ch))
 }
 
-func (mp *MediatorPlugin) UnitBLSSign(peer string, unit *modules.Unit) error {
+func (mp *MediatorPlugin) ToProcessDeal(deal *VSSDealEvent) error {
+	select {
+	case <-mp.quit:
+		return errTerminated
+	case mp.toProcessDealCh <- deal:
+		return nil
+	}
+}
+
+func (mp *MediatorPlugin) processDealLoop() {
+	for {
+		select {
+		case <-mp.quit:
+			return
+		case deal := <-mp.toProcessDealCh:
+			go mp.processVSSDeal(deal)
+		}
+	}
+}
+
+func (mp *MediatorPlugin) processVSSDeal(deal *VSSDealEvent) {
+	dstMed := deal.DstMed
+
+	dkg, ok := mp.dkgs[dstMed]
+	if !ok || dkg == nil {
+		log.Error(fmt.Sprintf("The following mediator`s dkg is not existed: %v", dstMed.String()))
+		return
+	}
+
+	resp, err := dkg.ProcessDeal(deal.Deal)
+	if err != nil {
+		log.Error(err.Error())
+	}
+
+	if resp.Response.Status != vss.StatusApproval {
+		log.Error(fmt.Sprintf("DKG: own deal gave a complaint: %v", dstMed.String()))
+	}
+
+	// todo broadcasts the resulting response
+}
+
+func (mp *MediatorPlugin) ToUnitTBLSSign(peer string, unit *modules.Unit) error {
 	op := &toBLSSigned{
 		origin: peer,
 		unit:   unit,
