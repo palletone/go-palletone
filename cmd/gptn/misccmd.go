@@ -25,16 +25,16 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"net"
 
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/configure"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/ptn"
 	"gopkg.in/urfave/cli.v1"
-	"net"
-	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
 var (
@@ -115,7 +115,7 @@ The output of this command will be used to set the genesis json file.
 		Flags: []cli.Flag{
 			timeStringFlag,
 		},
-		Category:  "MEDIATOR COMMANDS",
+		Category: "MEDIATOR COMMANDS",
 		Description: `
 The format of the specified time should be like "2006-01-02 15:04:05", 
 and If not specified, displays the timestamp of 

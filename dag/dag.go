@@ -21,7 +21,7 @@ package dag
 import (
 	"fmt"
 	"sync"
-	
+
 	"github.com/coocood/freecache"
 	//"github.com/ethereum/go-ethereum/params"
 	"github.com/dedis/kyber"
