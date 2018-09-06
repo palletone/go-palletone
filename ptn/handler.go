@@ -919,7 +919,7 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 	}
 	tx.TxHash.SetBytes(txHash)
 
-	return &tx
+	return tx
 }
 
 // @author Albert·Gou

@@ -166,7 +166,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	// tx.CreationDate = tx.CreateDate()
 	tx.TxHash = tx.Hash()
 
-	txs := []*modules.Transaction{&tx}
+	txs := []*modules.Transaction{tx}
 	return txs
 }
 
