@@ -16,8 +16,8 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/studyzy/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
 // An opcode defines the information related to a txscript opcode.  opfunc, if
