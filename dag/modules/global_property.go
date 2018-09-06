@@ -84,6 +84,33 @@ func (gp *GlobalProperty) GetActiveMediatorInitPubs() []kyber.Point {
 	return pubs
 }
 
+func (gp *GlobalProperty) getActiveMediator(add common.Address) *core.Mediator {
+	med, ok := gp.ActiveMediators[add]
+	if !ok {
+		log.Error(fmt.Sprintf("%v is not active mediator!", add.Str()))
+		return nil
+	}
+
+	return &med
+}
+
+func (gp *GlobalProperty) GetActiveMediatorNode(mediator common.Address) *discover.Node {
+	med := gp.getActiveMediator(mediator)
+
+	return med.Node
+}
+
+func (gp *GlobalProperty) GetActiveMediators() []common.Address {
+	aSize := len(gp.ActiveMediators)
+	mediators := make([]common.Address, 0, aSize)
+
+	for _, m := range gp.ActiveMediators {
+		mediators = append(mediators, m.Address)
+	}
+
+	return mediators
+}
+
 func (gp *GlobalProperty) GetActiveMediatorNodes() []*discover.Node {
 	aSize := len(gp.ActiveMediators)
 	nodes := make([]*discover.Node, 0, aSize)
@@ -93,18 +120,6 @@ func (gp *GlobalProperty) GetActiveMediatorNodes() []*discover.Node {
 	}
 
 	return nodes
-}
-
-func (gp *GlobalProperty) GetActiveMediatorNodeIDs() []string {
-	aSize := len(gp.ActiveMediators)
-	nodeIDs := make([]string, 0, aSize)
-
-	for _, med := range gp.ActiveMediators {
-		nodeID := fmt.Sprintf("%x", med.Node.ID[:8])
-		nodeIDs = append(nodeIDs, nodeID)
-	}
-
-	return nodeIDs
 }
 
 func NewGlobalProp() *GlobalProperty {

@@ -34,22 +34,27 @@ func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
 }
 
 func (mp *MediatorPlugin) BroadcastVSSDeals() {
-	ams := mp.GetLocalActiveMediators()
+	lams := mp.GetLocalActiveMediators()
 	nParticipants := mp.getDag().GetActiveMediatorCount()
-	nodeIDs := mp.getDag().GetActiveMediatorNodeIDs()
+	ams := mp.getDag().GetActiveMediators()
 
-	for _, med := range ams {
+	for _, medF := range lams {
 		resps := make([]*dkg.Response, 0, nParticipants)
-		mp.resps[med] = resps
+		mp.resps[medF] = resps
 
-		deals, err := mp.dkgs[med].Deals()
+		deals, err := mp.dkgs[medF].Deals()
 		if err != nil {
 			log.Error(err.Error())
 		}
 
 		for index, deal := range deals {
-			nodeID := nodeIDs[index]
-			mp.vssDealFeed.Send(VSSDealEvent{NodeID: nodeID, Deal: deal})
+			event := VSSDealEvent{
+				AddFrom: medF,
+				AddTo:   ams[index],
+				Deal:    deal,
+			}
+
+			mp.vssDealFeed.Send(event)
 		}
 	}
 }
