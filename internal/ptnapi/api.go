@@ -27,6 +27,7 @@ import (
 	"strings"
 	"time"
 
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -49,7 +50,6 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/util"
 
 	ut "github.com/palletone/go-palletone/core/vmContractPub/util"
-	//"github.com/btcsuite/btcd/btcjson"
 )
 
 const (
@@ -493,7 +493,7 @@ func (s *PrivateAccountAPI) EcRecover(ctx context.Context, data, sig hexutil.Byt
 		return common.Address{}, err
 	}
 	pubKey := crypto.ToECDSAPub(rpk)
-	recoveredAddr := crypto.PubkeyToAddress(*pubKey)
+	recoveredAddr := crypto.PubkeyToAddress(pubKey)
 	return recoveredAddr, nil
 }
 
@@ -1535,8 +1535,8 @@ type (
 //				//}
 //				addr, err := btcutil.NewAddressPubKey(wif.SerializePubKey())
 //				if err != nil {
-				//	return nil, err
-				//}
+//					return nil, err
+//				}
 //				//todo addr + "P"
 //				keys[addr.EncodeAddress()] = wif
 //			}

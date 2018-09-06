@@ -130,7 +130,7 @@ func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
 	id := uuid.NewRandom()
 	key := &Key{
 		Id:         id,
-		Address:    crypto.PubkeyToAddress(privateKeyECDSA.PublicKey),
+		Address:    crypto.PubkeyToAddress(&privateKeyECDSA.PublicKey),
 		PrivateKey: privateKeyECDSA,
 	}
 	return key

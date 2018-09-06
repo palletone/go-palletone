@@ -27,6 +27,7 @@ import (
 	"math/big"
 	"strconv"
 	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/obj"
 	"github.com/palletone/go-palletone/common/rlp"
@@ -240,14 +241,9 @@ func (tx *Transaction) Cost() *big.Int {
 }
 
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
-	tx.TxHash.Set(cpy.TxHash)
-	//tx.Locktime = cpy.Locktime
-	tx.TxMessages = make([]*Message, len(cpy.TxMessages))
-	for i, msg := range cpy.TxMessages {
-		newMsg := new(Message)
-		newMsg = msg
-		tx.TxMessages[i] = newMsg
-	}
+
+	obj.DeepCopy(&tx, cpy)
+
 }
 
 //// AsMessage returns the transaction as a core.Message.
@@ -533,6 +529,7 @@ func (tx *Transaction) Clone() Transaction {
 	obj.DeepCopy(&newTx, tx)
 	return newTx
 }
+
 // AddTxOut adds a transaction output to the message.
 //func (msg *PaymentPayload) AddTxOut(to *Output) {
 //	msg.Output = append(msg.Output, to)

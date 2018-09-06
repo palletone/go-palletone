@@ -619,7 +619,7 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 		Output: []*modules.Output{&output},
 	}
 	// step3. create message
-	msg := modules.Message{
+	msg := &modules.Message{
 		App:     modules.APP_PAYMENT,
 		Payload: payload,
 	}
@@ -628,7 +628,7 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 	//coinbase := modules.Transaction{
 	//	TxMessages: []modules.Message{msg},
 	//}
-	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
+	coinbase.TxMessages = append(coinbase.TxMessages, msg)
 	// coinbase.CreationDate = coinbase.CreateDate()
 	coinbase.TxHash = coinbase.Hash()
 

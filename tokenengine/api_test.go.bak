@@ -171,7 +171,7 @@ func TestSign2InputTx(t *testing.T) {
 	// used.  It must be specified when pay-to-script-hash transactions are
 	// being signed.
 	sigScript, err := txscript.SignTxOutput(&chaincfg.MainNetParams,
-		redeemTx, 0, originTx.Output[0].PkScript, txscript.SigHashAll,
+		redeemTx, 0,0, originTx.Output[0].PkScript, txscript.SigHashAll,
 		txscript.KeyClosure(lookupKey), nil, nil)
 	if err != nil {
 		fmt.Println(err)

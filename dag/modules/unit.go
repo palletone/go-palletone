@@ -584,7 +584,7 @@ func RSVtoAddress(tx *Transaction) common.Address {
 	return common.Address{}
 }
 
-func MsgstoAddress(msgs []Message) common.Address {
+func MsgstoAddress(msgs []*Message) common.Address {
 	forms := make([]common.Address, 0)
 	//payment load to address.
 
