@@ -21,11 +21,10 @@ package dag
 import (
 	"fmt"
 	"sync"
-	
+
 	"github.com/coocood/freecache"
 	//"github.com/ethereum/go-ethereum/params"
 	"github.com/dedis/kyber"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -36,6 +35,7 @@ import (
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 type Dag struct {
@@ -239,18 +239,18 @@ func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash 
 		return nil
 	}
 	// Iterate the headers until enough is collected or the genesis reached
-	chain := make([]common.Hash,0,max)
+	chain := make([]common.Hash, 0, max)
 	for i := uint64(0); i < max; i++ {
 		if header.Index() == 0 {
 			break
 		}
 		next := header.ParentsHash[0]
-		h,err := d.GetHeader(next,header.Index()-1)
+		h, err := d.GetHeader(next, header.Index()-1)
 		if err != nil {
 			break
 		}
 		header = h
-		chain = append(chain,next)
+		chain = append(chain, next)
 	}
 	return chain
 }
@@ -442,16 +442,15 @@ func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
 
 // Get Header
 func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error) {
-<<<<<<< HEAD
-	index,err := d.GetUnitNumber(hash)
-=======
-	index, _ := d.GetUnitNumber(hash)
->>>>>>> ddae8c928765903557d43db2de9107b30c679772
+	index, err := d.GetUnitNumber(hash)
+	if err != nil {
+		return nil, err
+	}
 	//TODO compare index with number
-	if index.Index == number{
+	if index.Index == number {
 		return storage.GetHeader(d.Db, hash, &index)
 	}
-	return nil,err
+	return nil, err
 }
 
 // Get UnitNumber
