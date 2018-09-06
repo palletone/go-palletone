@@ -107,7 +107,7 @@ func TestUnitSize(t *testing.T) {
 	h := new(Header)
 	h.AssetIDs = append(h.AssetIDs, PTNCOIN)
 	au := new(Authentifier)
-	address := crypto.PubkeyToAddress(key.PublicKey)
+	address := crypto.PubkeyToAddress(&key.PublicKey)
 	log.Println("address:", address)
 
 	//author := &Author{

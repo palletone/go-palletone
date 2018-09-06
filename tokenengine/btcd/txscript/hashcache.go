@@ -25,11 +25,11 @@ type TxSigHashes struct {
 
 // NewTxSigHashes computes, and returns the cached sighashes of the given
 // transaction.
-func NewTxSigHashes(pl *modules.PaymentPayload) *TxSigHashes {
+func NewTxSigHashes(tx *modules.Transaction) *TxSigHashes {
 	return &TxSigHashes{
-		HashPrevOuts: calcHashPrevOuts(pl),
+		HashPrevOuts: calcHashPrevOuts(tx),
 		//HashSequence: calcHashSequence(tx),
-		HashOutputs:  calcHashOutputs(pl),
+		HashOutputs:  calcHashOutputs(tx),
 	}
 }
 
@@ -54,9 +54,9 @@ func NewHashCache(maxSize uint) *HashCache {
 
 // AddSigHashes computes, then adds the partial sighashes for the passed
 // transaction.
-func (h *HashCache) AddSigHashes(tx *modules.PaymentPayload) {
+func (h *HashCache) AddSigHashes(tx *modules.Transaction) {
 	h.Lock()
-	h.sigHashes[tx.TxHash()] = NewTxSigHashes(tx)
+	h.sigHashes[tx.TxHash] = NewTxSigHashes(tx)
 	h.Unlock()
 }
 

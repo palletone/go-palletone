@@ -22,14 +22,15 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/core"
 	"io"
 	"math"
 	"math/big"
 	"strconv"
 	"time"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/obj"
+	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
 )
 
 var (
@@ -51,18 +52,18 @@ type TxIn struct {
 	Sequence         uint32
 }
 
-func NewTransaction(msg []Message, lock uint32) *Transaction {
+func NewTransaction(msg []*Message, lock uint32) *Transaction {
 	return newTransaction(msg, lock)
 }
 
-func NewContractCreation(msg []Message, lock uint32) *Transaction {
+func NewContractCreation(msg []*Message, lock uint32) *Transaction {
 	return newTransaction(msg, lock)
 }
 
-func newTransaction(msg []Message, lock uint32) *Transaction {
+func newTransaction(msg []*Message, lock uint32) *Transaction {
 	tx := new(Transaction)
 	for _, m := range msg {
-		tx.TxMessages = append(tx.TxMessages, &m)
+		tx.TxMessages = append(tx.TxMessages, m)
 	}
 
 	return tx
@@ -526,6 +527,12 @@ func (msg *Transaction) SerializeSize() int {
 	return n
 }
 
+//Deep copy transaction to a new object
+func (tx *Transaction) Clone() Transaction {
+	var newTx Transaction
+	obj.DeepCopy(&newTx, tx)
+	return newTx
+}
 // AddTxOut adds a transaction output to the message.
 //func (msg *PaymentPayload) AddTxOut(to *Output) {
 //	msg.Output = append(msg.Output, to)
