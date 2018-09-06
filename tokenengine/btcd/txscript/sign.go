@@ -7,7 +7,6 @@ package txscript
 import (
 	"errors"
 	"fmt"
-
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
 
@@ -82,13 +81,16 @@ func RawTxInSignature(tx *modules.Transaction/**wire.MsgTx*/, msgIdx,idx int, su
 	if err != nil {
 		return nil, err
 	}
+	//fmt.Printf("Hash is :%x to sign\n",hash)
 	sign,err:=crypto.Sign(hash,key)
 	//signature, err := key.Sign(hash)
 	if err != nil {
 		return nil, fmt.Errorf("cannot sign tx input: %s", err)
 	}
-
-	return append(sign, byte(hashType)), nil
+	//fmt.Printf("Sign result:%x\n",sign[0:64])
+	//signature,err:=btcec.ParseSignature(sign[0:64],btcec.S256())
+	return sign[0:64],nil
+	//return append(signature.Serialize(), byte(hashType)), err
 }
 
 // SignatureScript creates an input signature script for tx to spend BTC sent

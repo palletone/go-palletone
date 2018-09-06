@@ -9,8 +9,8 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/binary"
-	"fmt"
 	"hash"
+	"fmt"
 
 	"golang.org/x/crypto/ripemd160"
 
@@ -18,6 +18,7 @@ import (
 	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
 	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/studyzy/go-palletone/common/crypto"
 )
 
 // An opcode defines the information related to a txscript opcode.  opfunc, if
@@ -2076,18 +2077,18 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	// the data stack.  This is required because the more general script
 	// validation consensus rules do not have the new strict encoding
 	// requirements enabled by the flags.
-	hashType := SigHashType(fullSigBytes[len(fullSigBytes)-1])
-	sigBytes := fullSigBytes[:len(fullSigBytes)-1]
-	if err := vm.checkHashTypeEncoding(hashType); err != nil {
-		return err
-	}
-	if err := vm.checkSignatureEncoding(sigBytes); err != nil {
-		return err
-	}
-	if err := vm.checkPubKeyEncoding(pkBytes); err != nil {
-		return err
-	}
-
+	//hashType := SigHashType(fullSigBytes[len(fullSigBytes)-1])
+	//sigBytes := fullSigBytes[:len(fullSigBytes)-1]
+	//if err := vm.checkHashTypeEncoding(hashType); err != nil {
+	//	return err
+	//}
+	//if err := vm.checkSignatureEncoding(sigBytes); err != nil {
+	//	return err
+	//}
+	//if err := vm.checkPubKeyEncoding(pkBytes); err != nil {
+	//	return err
+	//}
+	hashType:=SigHashAll
 	// Get script starting from the most recent OP_CODESEPARATOR.
 	subScript := vm.subScript()
 
@@ -2114,43 +2115,46 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		hash = calcSignatureHash(subScript, hashType, &vm.tx,vm.msgIdx, vm.txIdx)
 	}
 
-	pubKey, err := btcec.ParsePubKey(pkBytes, btcec.S256())
-	if err != nil {
-		vm.dstack.PushBool(false)
-		return nil
-	}
-
-	var signature *btcec.Signature
-	if vm.hasFlag(ScriptVerifyStrictEncoding) ||
-		vm.hasFlag(ScriptVerifyDERSignatures) {
-
-		signature, err = btcec.ParseDERSignature(sigBytes, btcec.S256())
-	} else {
-		signature, err = btcec.ParseSignature(sigBytes, btcec.S256())
-	}
-	if err != nil {
-		vm.dstack.PushBool(false)
-		return nil
-	}
-
-	var valid bool
-	if vm.sigCache != nil {
-		var sigHash chainhash.Hash
-		copy(sigHash[:], hash)
-
-		valid = vm.sigCache.Exists(sigHash, signature, pubKey)
-		if !valid && signature.Verify(hash, pubKey) {
-			vm.sigCache.Add(sigHash, signature, pubKey)
-			valid = true
-		}
-	} else {
-		valid = signature.Verify(hash, pubKey)
-	}
-
-	if !valid && vm.hasFlag(ScriptVerifyNullFail) && len(sigBytes) > 0 {
-		str := "signature not empty on failed checksig"
-		return scriptError(ErrNullFail, str)
-	}
+	valid:=crypto.VerifySignature(pkBytes,hash,fullSigBytes)
+	//fmt.Printf("Sign:%x, Validate Hash:%x,PubKey:%x,is valid:%s\n",
+	//	fullSigBytes, hash,pkBytes,valid)
+	//pubKey, err := btcec.ParsePubKey(pkBytes, btcec.S256())
+	//if err != nil {
+	//	vm.dstack.PushBool(false)
+	//	return nil
+	//}
+	//
+	//var signature *btcec.Signature
+	//if vm.hasFlag(ScriptVerifyStrictEncoding) ||
+	//	vm.hasFlag(ScriptVerifyDERSignatures) {
+	//
+	//	signature, err = btcec.ParseDERSignature(sigBytes, btcec.S256())
+	//} else {
+	//	signature, err = btcec.ParseSignature(sigBytes, btcec.S256())
+	//}
+	//if err != nil {
+	//	vm.dstack.PushBool(false)
+	//	return nil
+	//}
+	//
+	//var valid bool
+	//if vm.sigCache != nil {
+	//	var sigHash chainhash.Hash
+	//	copy(sigHash[:], hash)
+	//
+	//	valid = vm.sigCache.Exists(sigHash, signature, pubKey)
+	//	if !valid && signature.Verify(hash, pubKey) {
+	//		vm.sigCache.Add(sigHash, signature, pubKey)
+	//		valid = true
+	//	}
+	//} else {
+	//	valid = signature.Verify(hash, pubKey)
+	//}
+	//
+	//if !valid && vm.hasFlag(ScriptVerifyNullFail) && len(sigBytes) > 0 {
+	//	str := "signature not empty on failed checksig"
+	//	return scriptError(ErrNullFail, str)
+	//}
 
 	vm.dstack.PushBool(valid)
 	return nil
