@@ -332,17 +332,20 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 
 	gp, err := storage.RetrieveGlobalProp(db)
 	if err != nil {
-		return nil, err
+		log.Error(err.Error())
+		//return nil, err
 	}
 
 	dgp, err := storage.RetrieveDynGlobalProp(db)
 	if err != nil {
-		return nil, err
+		log.Error(err.Error())
+		//return nil, err
 	}
 
 	ms, err := storage.RetrieveMediatorSchl(db)
 	if err != nil {
-		return nil, err
+		log.Error(err.Error())
+		//return nil, err
 	}
 
 	dag := &Dag{
