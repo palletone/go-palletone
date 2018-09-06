@@ -29,7 +29,7 @@ import (
 )
 
 // Tests that handshake failures are detected and reported correctly.
-func TestStatusMsgErrors1(t *testing.T) { testStatusMsgErrors(t, 1) }
+//func TestStatusMsgErrors1(t *testing.T) { testStatusMsgErrors(t, 1) }
 func testStatusMsgErrors(t *testing.T, protocol int) {
 		pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil)
 		defer pm.Stop()

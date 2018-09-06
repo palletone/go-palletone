@@ -120,10 +120,8 @@ func GetUnit(db ptndb.Database, hash common.Hash) *modules.Unit {
 	// get transaction list
 	txs, err := GetUnitTransactions(db, uHash)
 	if err != nil {
-		//log.Println("GetUnit when GetUnitTransactions failed , error:", err)
-		//log.Println("》》》测试时需要注释掉》》》GetUnit when GetUnitTransactions failed , error:",err)
-		//fmt.Println("》》》测试时需要注释掉》》》")
-		//return nil
+		log.Println("GetUnit when GetUnitTransactions failed , error:", err)
+		return nil
 	}
 	// generate unit
 	unit := &modules.Unit{
