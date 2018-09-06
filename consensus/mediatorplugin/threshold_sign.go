@@ -20,6 +20,7 @@ package mediatorplugin
 
 import (
 	"fmt"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"

@@ -496,6 +496,10 @@ func TestFileRW(t *testing.T) {
 	ucc.RecoverChainCodeFromDb("", nil)
 }
 
+func init() {
+	Init()
+}
+
 
 
 
