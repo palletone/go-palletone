@@ -160,13 +160,16 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		Payload: configPayload,
 	}
 	// step3, genesis transaction
-	tx := &modules.Transaction{
-		TxMessages: []*modules.Message{&msg0, &msg1},
-	}
+	//tx := &modules.Transaction{
+	//	TxMessages: []modules.Message{msg0, msg1},
+	//}
+	var tx modules.Transaction
+	tx.TxMessages = append(tx.TxMessages, &msg0)
+	tx.TxMessages = append(tx.TxMessages, &msg1)
 	// tx.CreationDate = tx.CreateDate()
 	tx.TxHash = tx.Hash()
 
-	txs := []*modules.Transaction{tx}
+	txs := []*modules.Transaction{&tx}
 	return txs
 }
 

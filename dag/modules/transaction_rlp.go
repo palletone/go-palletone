@@ -69,7 +69,7 @@ func temp2Tx(temp transactionTemp, tx *Transaction) {
 	tx.TxHash = temp.TxHash
 
 	for _, m := range temp.TxMessages {
-		m1 := &Message{
+		m1 := Message{
 			App: m.App,
 		}
 		if m.App == APP_PAYMENT {
@@ -100,7 +100,7 @@ func temp2Tx(temp transactionTemp, tx *Transaction) {
 		} else {
 			fmt.Println("Unknown message app type")
 		}
-		tx.TxMessages = append(tx.TxMessages, m1)
+		tx.TxMessages=append(tx.TxMessages, &m1)
 
 	}
 }
