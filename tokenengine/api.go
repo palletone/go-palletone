@@ -107,3 +107,25 @@ func SignOnePaymentInput(tx *modules.Transaction,msgIdx,id int,utxoLockScript []
 	}
 	return sigScript,nil
 }
+//Sign a full transaction
+func SignTxAllPaymentInput(tx *modules.Transaction,utxoLockScripts map[modules.OutPoint] []byte, privKeys map[common.Address] *ecdsa.PrivateKey) error {
+	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
+		return privKeys[a], true, nil
+	}
+	for i,msg:=range tx.TxMessages{
+		if msg.App== modules.APP_PAYMENT{
+			pay:=msg.Payload.(*modules.PaymentPayload)
+			for j,input:=range pay.Input{
+				utxoLockScript:=utxoLockScripts[input.PreviousOutPoint]
+				sigScript, err := txscript.SignTxOutput(&chaincfg.MainNetParams,
+					tx, i,j, utxoLockScript, txscript.SigHashAll,
+					txscript.KeyClosure(lookupKey), nil, nil)
+				if err!=nil{
+					return err
+				}
+				input.SignatureScript=sigScript
+			}
+		}
+	}
+	return nil
+}

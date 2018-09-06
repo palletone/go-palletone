@@ -814,7 +814,7 @@ func NewEngine(scriptPubKey []byte, tx *modules.Transaction/**wire.MsgTx*/,msgId
 	if msg.App!= modules.APP_PAYMENT{
 		return nil, scriptError(ErrInvalidIndex, "Message not a payment payload")
 	}
-	payment:=msg.Payload.(modules.PaymentPayload)
+	payment:=msg.Payload.(*modules.PaymentPayload)
 	scriptSig := payment.Input[txIdx].SignatureScript
 
 	// When both the signature script and public key script are empty the
