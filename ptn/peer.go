@@ -22,11 +22,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/fatih/set.v0"
 )
@@ -87,7 +87,7 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 		Peer:        p,
 		rw:          rw,
 		version:     version,
-		id:          fmt.Sprintf("%x", id[:8]),
+		id:          id.TerminalString(),
 		knownTxs:    set.New(),
 		knownBlocks: set.New(),
 		peermsg:     map[modules.IDType16]peerMsg{},
@@ -476,6 +476,6 @@ func (p *peer) SendNewProducedUnit(unit *modules.Unit) error {
 }
 
 // @author Albert·Gou
-func (p *peer) SendVSSDeal(deal *dkg.Deal) error {
+func (p *peer) SendVSSDeal(deal *mp.VSSDealEvent) error {
 	return p2p.Send(p.rw, VSSDealMsg, deal)
 }

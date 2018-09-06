@@ -96,22 +96,22 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 }
 
 func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
-	ams := make([]common.Address, 0)
+	lams := make([]common.Address, 0)
 
 	gp := mp.getDag().GlobalProp
 	for add := range mp.mediators {
 		if _, ok := gp.ActiveMediators[add]; ok {
-			ams = append(ams, add)
+			lams = append(lams, add)
 		}
 	}
 
-	return ams
+	return lams
 }
 
 func (mp *MediatorPlugin) HaveActiveMediator() bool {
-	ams := mp.GetLocalActiveMediators()
+	lams := mp.GetLocalActiveMediators()
 
-	return len(ams) != 0
+	return len(lams) != 0
 }
 
 func (mp *MediatorPlugin) AddActiveMediatorPeers() {
@@ -145,11 +145,11 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 }
 
 func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
-	ams := mp.GetLocalActiveMediators()
+	lams := mp.GetLocalActiveMediators()
 	initPubs := mp.getDag().GetActiveMediatorInitPubs()
 	curThreshold := mp.getDag().GetCurThreshold()
 
-	for _, med := range ams {
+	for _, med := range lams {
 		initSec := mp.mediators[med].InitPartSec
 
 		dkg, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)

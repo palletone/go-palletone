@@ -25,7 +25,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -171,7 +170,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 				return manager.NodeInfo()
 			},
 			PeerInfo: func(id discover.NodeID) interface{} {
-				if p := manager.peers.Peer(fmt.Sprintf("%x", id[:8])); p != nil {
+				if p := manager.peers.Peer(id.TerminalString()); p != nil {
 					return p.Info()
 				}
 				return nil
@@ -268,10 +267,10 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 
 // @author Albert·Gou
 // BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
-func (pm *ProtocolManager) TransmitVSSDeal(nodeID string, deal *dkg.Deal) {
-	peer := pm.peers.Peer(nodeID)
+func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDealEvent) {
+	peer := pm.peers.Peer(node.ID.TerminalString())
 	if peer == nil {
-		log.Error(fmt.Sprintf("peer not exist: %v", nodeID))
+		log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
 	}
 
 	err := peer.SendVSSDeal(deal)
@@ -285,7 +284,8 @@ func (self *ProtocolManager) VSSDealTransmitLoop() {
 	for {
 		select {
 		case event := <-self.vssDealCh:
-			self.TransmitVSSDeal(event.NodeID, event.Deal)
+			node := self.dag.GetActiveMediatorNode(event.AddTo)
+			self.TransmitVSSDeal(node, &event)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-self.vssDealSub.Err():
@@ -932,8 +932,7 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() []*peer {
 	list := make([]*peer, 0, len(nodes))
 
 	for _, node := range nodes {
-		nodeID := fmt.Sprintf("%x", node.ID[:8])
-		peer := pm.peers.Peer(nodeID)
+		peer := pm.peers.Peer(node.ID.TerminalString())
 		if peer == nil {
 			log.Error(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
 		} else {

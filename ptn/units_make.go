@@ -164,7 +164,7 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	var coinbase modules.Transaction
 	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
 	coinbase.TxHash = coinbase.Hash()
-	return &coinbase,nil
+	return &coinbase, nil
 }
 
 func saveHashByIndex(db ptndb.Database, hash common.Hash, index uint64) error {

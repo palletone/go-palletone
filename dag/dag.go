@@ -21,12 +21,11 @@ package dag
 import (
 	"fmt"
 	"sync"
-
-	"github.com/palletone/go-palletone/dag/txspool"
-
+	
 	"github.com/coocood/freecache"
 	//"github.com/ethereum/go-ethereum/params"
 	"github.com/dedis/kyber"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -527,6 +526,11 @@ func (d *Dag) GetActiveMediatorCount() int {
 }
 
 // author Albert·Gou
-func (d *Dag) GetActiveMediatorNodeIDs() []string {
-	return d.GlobalProp.GetActiveMediatorNodeIDs()
+func (d *Dag) GetActiveMediators() []common.Address {
+	return d.GlobalProp.GetActiveMediators()
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediatorNode(mediator common.Address) *discover.Node {
+	return d.GlobalProp.GetActiveMediatorNode(mediator)
 }
