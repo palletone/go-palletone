@@ -25,7 +25,6 @@ import (
 	"github.com/coocood/freecache"
 	//"github.com/ethereum/go-ethereum/params"
 	"github.com/dedis/kyber"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -36,6 +35,7 @@ import (
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 type Dag struct {
@@ -76,11 +76,8 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	// get transaction list
 	txs, err := dagcommon.GetUnitTransactions(d.Db, uHash)
 	if err != nil {
-		//log.Error("Current unit when get transactions", "error", err.Error())
-		//log.Info("》》》测试时需要注释掉》》》Current unit when get transactions/error===",err.Error())
-		//fmt.Println("》》》测试时需要注释掉》》》")
-		//测试时需要注释掉
-		//return nil
+		log.Error("Current unit when get transactions", "error", err.Error())
+		return nil
 	}
 	// generate unit
 	unit := modules.Unit{
@@ -237,8 +234,25 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 // GetBlockHashesFromHash retrieves a number of block hashes starting at a given
 // hash, fetching towards the genesis block.
 func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash {
-	//GetUnit()
-	return []common.Hash{}
+	header := d.GetHeaderByHash(hash)
+	if header == nil {
+		return nil
+	}
+	// Iterate the headers until enough is collected or the genesis reached
+	chain := make([]common.Hash, 0, max)
+	for i := uint64(0); i < max; i++ {
+		if header.Index() == 0 {
+			break
+		}
+		next := header.ParentsHash[0]
+		h, err := d.GetHeader(next, header.Index()-1)
+		if err != nil {
+			break
+		}
+		header = h
+		chain = append(chain, next)
+	}
+	return chain
 }
 
 // need add:   assetId modules.IDType16, onMain bool
@@ -428,9 +442,15 @@ func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
 
 // Get Header
 func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error) {
-	index, _ := d.GetUnitNumber(hash)
+	index, err := d.GetUnitNumber(hash)
+	if err != nil {
+		return nil, err
+	}
 	//TODO compare index with number
-	return storage.GetHeader(d.Db, hash, &index)
+	if index.Index == number {
+		return storage.GetHeader(d.Db, hash, &index)
+	}
+	return nil, err
 }
 
 // Get UnitNumber

@@ -38,6 +38,7 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	//log.Println("创建 genesis unit 完成并保存===》》》")
 	//log.Println()
 	//log.Println("开始创建其他 unit===》》》")
+	//units,_ := newDag(dag.Db, genesisUnit, unitAccount)
 	newDag(dag.Db, genesisUnit, unitAccount)
 	//log.Println("创建其他 unit 完成并保存===》》》")
 	//log.Println("全部unit的数量===》》》", len(units)+1)

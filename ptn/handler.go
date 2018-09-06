@@ -17,7 +17,6 @@
 package ptn
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -134,10 +133,10 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	// Figure out whether to allow fast sync or not
 	/*blockchain.CurrentBlock().NumberU64() > 0 */
 	//TODO must modify.The second start would Blockchain not empty, fast sync disabled
-	//if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Number.Index > 0 {
-	//	//log.Warn("Blockchain not empty, fast sync disabled")
-	//	mode = downloader.FullSync
-	//}
+	if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Index() > 0{
+		log.Warn("dag not empty, fast sync disabled")
+		mode = downloader.FullSync
+	}
 	if mode == downloader.FastSync {
 		manager.fastSync = uint32(1)
 	}
@@ -367,13 +366,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		index = head.Number.Index
 	)
 	genesis, err := common2.GetGenesisUnit(pm.dag.Db, 0)
-	//fmt.Println("----handle----genesis----unit.UnitHeader-----%#v\n", genesis.UnitHeader)
-	//fmt.Println("----handle----genesis----unit.Txs------------%#v\n", genesis.Txs[0].Hash())
-	//fmt.Println("----handle----genesis----unit.UnitHash-------%#v\n", genesis.UnitHash)
-	//fmt.Println("----handle----genesis----unit.UnitHeader.ParentsHash-----%#v\n", genesis.UnitHeader.ParentsHash)
-	//fmt.Println("----handle----genesis----unit.UnitHeader.Number.Index----%#v\n", genesis.UnitHeader.Number.Index)
 	if err != nil {
-		fmt.Println("GetGenesisUnit===error:=", err)
+		log.Info("GetGenesisUnit error","err", err)
 		return err
 	}
 	if err := p.Handshake(pm.networkId, index, hash, genesis.Hash()); err != nil {
@@ -467,7 +461,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				// Hash based traversal towards the genesis block
 				for i := 0; i < int(query.Skip)+1; i++ {
 					if header, err := pm.dag.GetHeader(query.Origin.Hash, number); err == nil && header != nil {
-						query.Origin.Hash = header.ParentsHash[0]
+						if number != 0{
+							query.Origin.Hash = header.ParentsHash[0]
+						}
 						number--
 					} else {
 						log.Info("========GetBlockHeadersMsg========", "number", number, "err:", err)
@@ -475,37 +471,42 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 						break
 					}
 				}
-			case query.Origin.Hash != (common.Hash{}) && !query.Reverse:
-				// Hash based traversal towards the leaf block
-				var (
-					current = origin.Number.Index
-					next    = current + query.Skip + 1
-				)
-				//log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
-				if next <= current {
-					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
-					log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
-					unknown = true
-				} else {
-					//log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
-
-					index := query.Origin.Number
-					//index := modules.ChainIndex{}
-					//index.AssetID.SetBytes([]byte(query.Origin.Number.AssetID))
-					//index.Index = next
-					//index.IsMain = true
-					if header := pm.dag.GetHeaderByNumber(index); header != nil {
-						query.Origin.Hash = header.Hash()
-						//TODO must recover
-						//if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
-						//	query.Origin.Hash = header.Hash()
-						//} else {
-						//	unknown = true
-						//}
-					} else {
-						unknown = true
-					}
-				}
+			//case query.Origin.Hash != (common.Hash{}) && !query.Reverse:
+				//			//	// Hash based traversal towards the leaf block
+				//			//	var (
+				//			//		current = origin.Number.Index
+				//			//		next    = current + query.Skip + 1
+				//			//	)
+				//			//	//log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
+				//			//	if next <= current {
+				//			//		infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
+				//			//		log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
+				//			//		unknown = true
+				//			//	} else {
+				//			//		//log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
+				//			//
+				//			//		//index := query.Origin.Number
+				//			//		//index := modules.ChainIndex{}
+				//			//		//index.AssetID.SetBytes([]byte(query.Origin.Number.AssetID))
+				//			//		//index.Index = next
+				//			//		//index.IsMain = true
+				//			//		indexNext := modules.ChainIndex{
+				//			//			modules.PTNCOIN,
+				//			//			true,
+				//			//			next,
+				//			//		}
+				//			//		if header := pm.dag.GetHeaderByNumber(indexNext); header != nil {
+				//			//			//query.Origin.Hash = header.Hash()
+				//			//			//TODO must recover
+				//			//			if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
+				//			//				query.Origin.Hash = header.Hash()
+				//			//			} else {
+				//			//				unknown = true
+				//			//			}
+				//			//		} else {
+				//			//			unknown = true
+				//			//		}
+				//			//	}
 			case query.Reverse:
 				// Number based traversal towards the genesis block
 				if query.Origin.Number.Index >= query.Skip+1 {
