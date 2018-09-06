@@ -17,17 +17,20 @@
 package ptn
 
 import (
-	"testing"
-	"github.com/palletone/go-palletone/dag/modules"
-	"math/rand"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	common2 "github.com/palletone/go-palletone/dag/common"
 	"math"
+	"testing"
+	"github.com/palletone/go-palletone/dag/modules"
+	"math/rand"
 )
 
+
+
 // Tests that protocol versions and modes of operations are matched up properly.
+/*
 func TestProtocolCompatibility(t *testing.T) {
 	// Define the compatibility chart
 	tests := []struct {
@@ -57,8 +60,9 @@ func TestProtocolCompatibility(t *testing.T) {
 		}
 	}
 }
+*/
 // Tests that block headers can be retrieved from a remote chain based on user queries.
-func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
+//func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
 func testGetBlockHeaders(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil)
 	peer, _ := newTestPeer("peer", protocol, pm, true)
