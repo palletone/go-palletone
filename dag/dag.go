@@ -113,7 +113,7 @@ func (d *Dag) GetUnitByNumber(number modules.ChainIndex) *modules.Unit {
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
-	height,err := d.GetUnitNumber(hash)
+	height, err := d.GetUnitNumber(hash)
 	if err != nil {
 		log.Error("GetHeaderByHash when GetUnitNumber", "error", err.Error())
 	}
@@ -127,7 +127,6 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 }
 
 func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
-
 
 	header, _ := storage.GetHeaderByHeight(d.Db, number)
 	return header
@@ -406,13 +405,13 @@ func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
 
 // Get Header
 func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error) {
-	index,_ := d.GetUnitNumber(hash)
+	index, _ := d.GetUnitNumber(hash)
 	//TODO compare index with number
 	return storage.GetHeader(d.Db, hash, &index)
 }
 
 // Get UnitNumber
-func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex,error){
+func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex, error) {
 	return storage.GetNumberWithUnitHash(d.Db, hash)
 }
 
@@ -501,4 +500,9 @@ func (d *Dag) GetCurThreshold() int {
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorCount() int {
 	return d.GlobalProp.GetActiveMediatorCount()
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediatorNodeIDs() []string {
+	return d.GlobalProp.GetActiveMediatorNodeIDs()
 }

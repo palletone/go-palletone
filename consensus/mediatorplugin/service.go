@@ -20,6 +20,7 @@ package mediatorplugin
 
 import (
 	"fmt"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/kyber/share/dkg/pedersen"
@@ -76,6 +77,10 @@ type MediatorPlugin struct {
 	// dkg生成vss相关
 	suite vss.Suite
 	dkgs  map[common.Address]*dkg.DistKeyGenerator
+
+	vssDealFeed  event.Feed
+	vssDealScope event.SubscriptionScope
+
 	resps map[common.Address][]*dkg.Response
 
 	// unit阈值签名相关
@@ -154,6 +159,8 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 
 		mp.dkgs[med] = dkg
 	}
+
+	go mp.BroadcastVSSDeals()
 }
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
