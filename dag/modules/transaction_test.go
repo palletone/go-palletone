@@ -12,14 +12,14 @@ import (
 // The values in those tests are from the Transaction Tests
 // at github.com/ethereum/tests.
 var (
-	pay1=PaymentPayload{LockTime:12345}
-	msg = Message{
+	pay1 = PaymentPayload{LockTime: 12345}
+	msg  = Message{
 		App:     APP_PAYMENT,
 		Payload: pay1,
 	}
 	msg2 = Message{
 		App:     APP_TEXT,
-		Payload: TextPayload{Text:[]byte("Hello PalletOne")},
+		Payload: TextPayload{Text: []byte("Hello PalletOne")},
 	}
 	emptyTx = NewTransaction(
 		[]Message{msg, msg},
@@ -30,7 +30,6 @@ var (
 		[]Message{msg, msg2, msg},
 		12345,
 	)
-
 )
 
 func TestTransactionEncode(t *testing.T) {
@@ -53,14 +52,14 @@ func TestTransactionEncode(t *testing.T) {
 	//if tx.Locktime != 12345 {
 	//	log.Error("decode RLP mismatch", "error", txb)
 	//}
-	if len(tx.TxMessages)!=3{
+	if len(tx.TxMessages) != 3 {
 		t.Error("Rlp decode message count error")
 	}
-	pay1:= tx.TxMessages[0]
-	if pay1.App!= APP_PAYMENT{
+	pay1 := tx.TxMessages[0]
+	if pay1.App != APP_PAYMENT {
 		t.Error("Payment decode error")
 	}
-	if pay1.Payload.(*PaymentPayload).LockTime!=12345{
+	if pay1.Payload.(*PaymentPayload).LockTime != 12345 {
 		t.Error("payment locktime decode error.")
 	}
 	tx.SetHash(rlp.RlpHash(tx))

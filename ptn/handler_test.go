@@ -24,8 +24,8 @@ import (
 
 	"fmt"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"math"
 	"log"
+	"math"
 )
 
 // Tests that protocol versions and modes of operations are matched up properly.
@@ -138,17 +138,17 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 	jia1 := modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
-		i.Index+1,
+		i.Index + 1,
 	}
 	in1 := modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
-		i.Index-1,
+		i.Index - 1,
 	}
 	in4 := modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
-		i.Index-4,
+		i.Index - 4,
 	}
 	i1 := modules.ChainIndex{
 		modules.PTNCOIN,
@@ -303,10 +303,10 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		if tt.query.Origin.Hash == (common.Hash{}) {
 			if origin := pm.dag.GetUnitByNumber(tt.query.Origin.Number); origin != nil {
 				index := modules.ChainIndex{
-						AssetID:modules.PTNCOIN,
-						IsMain: true,
-						Index:  uint64(0),
-					}
+					AssetID: modules.PTNCOIN,
+					IsMain:  true,
+					Index:   uint64(0),
+				}
 				tt.query.Origin.Hash, tt.query.Origin.Number = origin.Hash(), index
 				p2p.Send(peer.app, 0x03, tt.query)
 				if err := p2p.ExpectMsg(peer.app, 0x04, headers); err != nil {

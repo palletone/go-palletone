@@ -37,12 +37,11 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 
-
+	"fmt"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"log"
 	common2 "github.com/palletone/go-palletone/dag/common"
-	"fmt"
+	"log"
 )
 
 var (
@@ -55,7 +54,7 @@ var (
 // channels for different events.
 func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
 	memdb, _ := ptndb.NewMemDatabase()
-	dag, _ := MakeDags(memdb,blocks)
+	dag, _ := MakeDags(memdb, blocks)
 	uu := dag.CurrentUnit()
 	log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHeader-----%#v\n", uu.UnitHeader)
 	log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHash-------%#v\n", uu.UnitHash)
@@ -153,7 +152,6 @@ func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *mod
 	return tx
 }
 
-
 // testPeer is a simulated peer to allow testing direct network calls.
 type testPeer struct {
 	net p2p.MsgReadWriter // Network layer reader/writer to simulate remote messaging
@@ -192,8 +190,8 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool) (*te
 			//	0,
 			//}
 			//genesis = pm.dag.GetUnitByNumber(number)
-			head  = pm.dag.CurrentHeader()
-			td      = head.Number.Index
+			head = pm.dag.CurrentHeader()
+			td   = head.Number.Index
 		)
 		//fmt.Println("	if shake {===》》》",td)
 		genesis, err := common2.GetGenesisUnit(pm.dag.Db, 0)
@@ -201,7 +199,7 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool) (*te
 		if err != nil {
 			fmt.Println("GetGenesisUnit===error:=", err)
 		}
-		tp.handshake(nil, td, head.Hash(),genesis.Hash())
+		tp.handshake(nil, td, head.Hash(), genesis.Hash())
 	}
 	return tp, errc
 }

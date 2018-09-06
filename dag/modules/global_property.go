@@ -20,6 +20,8 @@
 package modules
 
 import (
+	"fmt"
+
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -91,6 +93,18 @@ func (gp *GlobalProperty) GetActiveMediatorNodes() []*discover.Node {
 	}
 
 	return nodes
+}
+
+func (gp *GlobalProperty) GetActiveMediatorNodeIDs() []string {
+	aSize := len(gp.ActiveMediators)
+	nodeIDs := make([]string, 0, aSize)
+
+	for _, med := range gp.ActiveMediators {
+		nodeID := fmt.Sprintf("%x", med.Node.ID[:8])
+		nodeIDs = append(nodeIDs, nodeID)
+	}
+
+	return nodeIDs
 }
 
 func NewGlobalProp() *GlobalProperty {
