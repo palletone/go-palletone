@@ -35,10 +35,10 @@ import (
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
+	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
-	common2 "github.com/palletone/go-palletone/dag/common"
 )
 
 const (
@@ -321,15 +321,15 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		//}
 		//genesis = pm.dag.GetUnitByNumber(number)
 
-		head = pm.dag.CurrentHeader()
-		hash = head.Hash()
+		head  = pm.dag.CurrentHeader()
+		hash  = head.Hash()
 		index = head.Number.Index
 	)
-	genesis,err := common2.GetGenesisUnit(pm.dag.Db,0)
+	genesis, err := common2.GetGenesisUnit(pm.dag.Db, 0)
 	if err != nil {
-		fmt.Println("GetGenesisUnit===error:=",err)
+		fmt.Println("GetGenesisUnit===error:=", err)
 	}
-	if err := p.Handshake(pm.networkId, index, hash ,genesis.Hash()); err != nil {
+	if err := p.Handshake(pm.networkId, index, hash, genesis.Hash()); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
@@ -846,12 +846,12 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 	}
 	holder := common.Address{}
 	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
-	msg0 := modules.Message{
+	msg0 := &modules.Message{
 		App:     modules.APP_PAYMENT,
 		Payload: pay,
 	}
 	tx := &modules.Transaction{
-		TxMessages: []modules.Message{msg0},
+		TxMessages: []*modules.Message{msg0},
 	}
 	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
 	if err != nil {

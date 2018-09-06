@@ -35,15 +35,16 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/internal/ptnapi"
+	//"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+	// "github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
+	// "github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/wire"
-	"github.com/palletone/go-palletone/tokenengine/btcutil"
+	// "github.com/palletone/go-palletone/tokenengine/btcutil"
 	//"github.com/btcsuite/btcd/btcec"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 var (
@@ -298,7 +299,7 @@ func accountList(ctx *cli.Context) error {
 }
 
 // tries unlocking the specified account a few times.
-func unlockAccount(ctx *cli.Context, ks *keystore.KeyStore, address string, i int,passwords []string) (accounts.Account, string) {
+func unlockAccount(ctx *cli.Context, ks *keystore.KeyStore, address string, i int, passwords []string) (accounts.Account, string) {
 	account, err := utils.MakeAddress(ks, address)
 	if err != nil {
 		utils.Fatalf("Could not list accounts: %v", err)
@@ -412,7 +413,7 @@ func accountCreate(ctx *cli.Context) error {
 	}
 
 	//	fmt.Printf("Address Hex: {%x}\n", address)
-	fmt.Printf("Address: %s\n", address)
+	fmt.Printf("Address: %s\n", address.String())
 	return nil
 }
 
@@ -570,16 +571,16 @@ func accountCreateTx(ctx *cli.Context) error {
 	if len(amounts) == 0 {
 		return nil
 	}
-	arg := btcjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
-	tx, err := ptnapi.CreateRawTransaction(arg)
-	if err != nil {
-		utils.Fatalf("Verfiy error:%s", err)
-	}
-	if tx != "" {
-		fmt.Println("Create transcation success")
-	} else {
-		utils.Fatalf("Invalid create action")
-	}
+	//arg := btcjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
+	// tx, err := ptnapi.CreateRawTransaction(arg)
+	// if err != nil {
+	// 	utils.Fatalf("Verfiy error:%s", err)
+	// }
+	// if tx != "" {
+	// 	fmt.Println("Create transcation success")
+	// } else {
+	// 	utils.Fatalf("Invalid create action")
+	// }
 	return nil
 }
 
@@ -638,7 +639,7 @@ func accountSignTx(ctx *cli.Context) error {
 	if len(keys) == 0 {
 		return nil
 	}
-	realNet := &chaincfg.MainNetParams
+	//realNet := &chaincfg.MainNetParams
 	//sign the UTXO hash, must know RedeemHex which contains in RawTxInput
 	var rawInputs []btcjson.RawTxInput
 	for {
@@ -651,24 +652,26 @@ func accountSignTx(ctx *cli.Context) error {
 			break
 		}
 		//get multisig payScript
-		scriptAddr, err := btcutil.NewAddressScriptHash(redeem, realNet)
-		scriptPkScript, err := txscript.PayToAddrScript(scriptAddr)
+		//scriptAddr, err := btcutil.NewAddressScriptHash(redeem, realNet)
+		//scriptPkScript, err := txscript.PayToAddrScript(scriptAddr)
+		h := crypto.Hash160(redeem)
+		scriptPkScript := tokenengine.GenerateP2SHLockScript(h)
 		//multisig transaction need redeem for sign
 		for _, mtx := range tx.TxMessages {
-	    payload := mtx.Payload
-		payment, ok := payload.(modules.PaymentPayload)
-		if ok == true {
-			for _, txinOne := range payment.Input {
-			rawInput := btcjson.RawTxInput{
-				txinOne.PreviousOutPoint.TxHash.String(), //txid
-				txinOne.PreviousOutPoint.OutIndex,  
-				txinOne.PreviousOutPoint.MessageIndex,//outindex
-				string(scriptPkScript),     //multisig pay script
-				signTransactionParams.RedeemHex}        //redeem
-			rawInputs = append(rawInputs, rawInput)
+			payload := mtx.Payload
+			payment, ok := payload.(modules.PaymentPayload)
+			if ok == true {
+				for _, txinOne := range payment.Input {
+					rawInput := btcjson.RawTxInput{
+						txinOne.PreviousOutPoint.TxHash.String(), //txid
+						txinOne.PreviousOutPoint.OutIndex,
+						txinOne.PreviousOutPoint.MessageIndex, //outindex
+						string(scriptPkScript),                //multisig pay script
+						signTransactionParams.RedeemHex}       //redeem
+					rawInputs = append(rawInputs, rawInput)
+				}
+			}
 		}
-		    }
-	    } 
 		break
 	}
 
@@ -677,9 +680,9 @@ func accountSignTx(ctx *cli.Context) error {
 		// Serialize the transaction and convert to hex string.
 		buf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
 		buf.Grow(tx.SerializeSize())
-		mtxbt ,err := rlp.EncodeToBytes(buf)
-	    if err != nil {
-		    return err
+		mtxbt, err := rlp.EncodeToBytes(buf)
+		if err != nil {
+			return err
 		}
 		txHex = hex.EncodeToString(mtxbt)
 		fmt.Println(txHex)
@@ -688,21 +691,21 @@ func accountSignTx(ctx *cli.Context) error {
 	// All returned errors (not OOM, which panics) encounted during
 	// bytes.Buffer writes are unexpected.
 	//mtxHex, err := messageToHex(mtx)
-	send_args := btcjson.NewSignRawTransactionCmd(txHex, &rawInputs, &keys, nil)
-	signtxout, err := ptnapi.SignRawTransaction(send_args)
-	if signtxout == nil {
-		utils.Fatalf("Invalid signature")
-	}
-	signtx := signtxout.(btcjson.SignRawTransactionResult)
-	if err != nil {
-		utils.Fatalf("signtx error:%s", err)
-	}
-	if signtx.Complete == true {
-		fmt.Println("Signature success")
-		fmt.Println(signtx.Hex)
-	} else {
-		utils.Fatalf("Invalid signature")
-	}
+	//send_args := btcjson.NewSignRawTransactionCmd(txHex, &rawInputs, &keys, nil)
+	// signtxout, err := ptnapi.SignRawTransaction(send_args)
+	// if signtxout == nil {
+	// 	utils.Fatalf("Invalid signature")
+	// }
+	// signtx := signtxout.(btcjson.SignRawTransactionResult)
+	// if err != nil {
+	// 	utils.Fatalf("signtx error:%s", err)
+	// }
+	// if signtx.Complete == true {
+	// 	fmt.Println("Signature success")
+	// 	fmt.Println(signtx.Hex)
+	// } else {
+	// 	utils.Fatalf("Invalid signature")
+	// }
 	return nil
 }
 func accountImport(ctx *cli.Context) error {

@@ -53,15 +53,16 @@ const (
 	ScriptHash    AddressType = 5
 	ContractHash  AddressType = 28
 )
-func (a Address) GetType() AddressType{
+
+func (a Address) GetType() AddressType {
 	return AddressType(a[20])
 }
-func NewAddress(hash160 []byte,ty AddressType) Address{
-	return BytesToAddress(append(hash160,byte(ty)))
+func NewAddress(hash160 []byte, ty AddressType) Address {
+	return BytesToAddress(append(hash160, byte(ty)))
 }
 
 //将一个字符串格式的Address转换为Address对象
-func StringToAddress(a string) (Address,error) {
+func StringToAddress(a string) (Address, error) {
 	if a[0] != byte('P') {
 		return Address{}, errors.New("PalletOne address must start with 'P'")
 	}
@@ -81,15 +82,16 @@ func StringToAddress(a string) (Address,error) {
 	}
 }
 func (a Address) Validate() (AddressType, error) {
-	var ty AddressType=AddressType(a[20])
-	return ty,nil
+	var ty AddressType = AddressType(a[20])
+	return ty, nil
 }
-func IsValidAddress(s string) (AddressType, error) {
-	a,err := StringToAddress(s)
-	if err!=nil{
-		return ErrorAddress,err
-	}
-	return a.GetType(),nil
+func IsValidAddress(s string) bool {
+	_, err := StringToAddress(s)
+	// if err!=nil{
+	// 	return ErrorAddress,err
+	// }
+	// return a.GetType(),nil
+	return err == nil
 }
 func BytesToAddress(b []byte) Address {
 	var a Address
@@ -97,7 +99,7 @@ func BytesToAddress(b []byte) Address {
 	return a
 }
 
-func HexToAddress(s string) Address    { return BytesToAddress(FromHex(s)) }
+func HexToAddress(s string) Address { return BytesToAddress(FromHex(s)) }
 func PubKeyHashHexToAddress(s string) Address {
 	pubKeyHash := FromHex(s)
 	addrStr := "P" + base58.CheckEncode(pubKeyHash, byte(0))
@@ -242,6 +244,3 @@ func (ma *MixedcaseAddress) ValidChecksum() bool {
 func (ma *MixedcaseAddress) Original() string {
 	return ma.original
 }
-
-
-
