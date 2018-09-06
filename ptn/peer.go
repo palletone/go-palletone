@@ -25,8 +25,8 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rlp"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/fatih/set.v0"
 )
@@ -75,7 +75,7 @@ type peer struct {
 
 	knownTxs    *set.Set // Set of transaction hashes known to be known by this peer
 	knownBlocks *set.Set // Set of block hashes known to be known by this peer
-	head common.Hash
+	head        common.Hash
 	//td   *big.Int
 	index uint64
 }
@@ -87,7 +87,7 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 		Peer:        p,
 		rw:          rw,
 		version:     version,
-		id:          fmt.Sprintf("%x", id[:8]),
+		id:          id.TerminalString(),
 		knownTxs:    set.New(),
 		knownBlocks: set.New(),
 		peermsg:     map[modules.IDType16]peerMsg{},
@@ -469,24 +469,13 @@ func (ps *peerSet) GetPeers() []*peer {
 	return list
 }
 
-// AtiveMeatorPeers retrieves a list of peers that active mediator
-// @author Albert·Gou
-func (ps *peerSet) GetActiveMediatorPeers(nodes []*discover.Node) []*peer {
-	ps.lock.Lock()
-	defer ps.lock.Unlock()
-
-	list := make([]*peer, 0, len(nodes))
-	for _, node := range nodes {
-		if p, b := ps.peers[node.String()]; b {
-			list = append(list, p)
-		}
-	}
-
-	return list
-}
-
 // SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
 // @author Albert·Gou
 func (p *peer) SendNewProducedUnit(unit *modules.Unit) error {
 	return p2p.Send(p.rw, NewProducedUnitMsg, unit)
+}
+
+// @author Albert·Gou
+func (p *peer) SendVSSDeal(deal *mp.VSSDealEvent) error {
+	return p2p.Send(p.rw, VSSDealMsg, deal)
 }

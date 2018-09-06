@@ -100,7 +100,7 @@ func temp2Tx(temp transactionTemp, tx *Transaction) {
 		} else {
 			fmt.Println("Unknown message app type")
 		}
-		tx.TxMessages=append(tx.TxMessages, &m1)
+		tx.TxMessages = append(tx.TxMessages, &m1)
 
 	}
 }

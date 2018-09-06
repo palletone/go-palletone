@@ -20,7 +20,10 @@ package mediatorplugin
 
 import (
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/share/dkg/pedersen"
 	vss "github.com/dedis/kyber/share/vss/pedersen"
+	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -30,8 +33,34 @@ func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
 	return sc, suite.Point().Mul(sc, nil)
 }
 
-func (mp *MediatorPlugin) BroadcastDeals() {
+func (mp *MediatorPlugin) BroadcastVSSDeals() {
+	lams := mp.GetLocalActiveMediators()
+	nParticipants := mp.getDag().GetActiveMediatorCount()
+	ams := mp.getDag().GetActiveMediators()
 
+	for _, medF := range lams {
+		resps := make([]*dkg.Response, 0, nParticipants)
+		mp.resps[medF] = resps
+
+		deals, err := mp.dkgs[medF].Deals()
+		if err != nil {
+			log.Error(err.Error())
+		}
+
+		for index, deal := range deals {
+			event := VSSDealEvent{
+				AddFrom: medF,
+				AddTo:   ams[index],
+				Deal:    deal,
+			}
+
+			mp.vssDealFeed.Send(event)
+		}
+	}
+}
+
+func (mp *MediatorPlugin) SubscribeVSSDealEvent(ch chan<- VSSDealEvent) event.Subscription {
+	return mp.vssDealScope.Track(mp.vssDealFeed.Subscribe(ch))
 }
 
 func (mp *MediatorPlugin) UnitBLSSign(peer string, unit *modules.Unit) error {

@@ -20,12 +20,12 @@ package dag
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"sync"
-
+	
 	"github.com/coocood/freecache"
 	//"github.com/ethereum/go-ethereum/params"
 	"github.com/dedis/kyber"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -110,7 +110,7 @@ func (d *Dag) GetUnitByNumber(number modules.ChainIndex) *modules.Unit {
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
-	height,err := d.GetUnitNumber(hash)
+	height, err := d.GetUnitNumber(hash)
 	if err != nil {
 		log.Error("GetHeaderByHash when GetUnitNumber", "error", err.Error())
 	}
@@ -124,7 +124,7 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 }
 
 func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
-	if memdb,ok := d.Db.(*ptndb.MemDatabase);ok {
+	if memdb, ok := d.Db.(*ptndb.MemDatabase); ok {
 		encNum := ptndb.EncodeBlockNumber(number.Index)
 		key := append(storage.HEADER_PREFIX, encNum...)
 		key = append(key, number.Bytes()...)
@@ -135,17 +135,17 @@ func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
 		}
 		var h common.Hash
 		h.SetBytes(hash)
-		headerbyte,err := memdb.Get(append(key, h.Bytes()...))
+		headerbyte, err := memdb.Get(append(key, h.Bytes()...))
 		if err != nil {
 			return nil
 		}
 		header := &modules.Header{}
-		err = rlp.DecodeBytes(headerbyte,header)
+		err = rlp.DecodeBytes(headerbyte, header)
 		if err != nil {
 			return nil
 		}
 		return header
-	}else if lvldb,ok := d.Db.(*ptndb.LDBDatabase);ok {
+	} else if lvldb, ok := d.Db.(*ptndb.LDBDatabase); ok {
 		header, _ := storage.GetHeaderByHeight(lvldb, number)
 		return header
 	}
@@ -442,7 +442,11 @@ func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
 
 // Get Header
 func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error) {
+<<<<<<< HEAD
 	index,err := d.GetUnitNumber(hash)
+=======
+	index, _ := d.GetUnitNumber(hash)
+>>>>>>> ddae8c928765903557d43db2de9107b30c679772
 	//TODO compare index with number
 	if index.Index == number{
 		return storage.GetHeader(d.Db, hash, &index)
@@ -451,7 +455,7 @@ func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error
 }
 
 // Get UnitNumber
-func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex,error){
+func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex, error) {
 	return storage.GetNumberWithUnitHash(d.Db, hash)
 }
 
@@ -540,4 +544,14 @@ func (d *Dag) GetCurThreshold() int {
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorCount() int {
 	return d.GlobalProp.GetActiveMediatorCount()
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediators() []common.Address {
+	return d.GlobalProp.GetActiveMediators()
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediatorNode(mediator common.Address) *discover.Node {
+	return d.GlobalProp.GetActiveMediatorNode(mediator)
 }

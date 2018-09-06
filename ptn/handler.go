@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/consensus/mediatorplugin"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
 	common2 "github.com/palletone/go-palletone/dag/common"
@@ -97,8 +97,12 @@ type ProtocolManager struct {
 
 	// append by Albert·Gou
 	producer           producer
-	newProducedUnitCh  chan mediatorplugin.NewProducedUnitEvent
+	newProducedUnitCh  chan mp.NewProducedUnitEvent
 	newProducedUnitSub event.Subscription
+
+	// append by Albert·Gou
+	vssDealCh  chan mp.VSSDealEvent
+	vssDealSub event.Subscription
 
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
@@ -165,7 +169,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 				return manager.NodeInfo()
 			},
 			PeerInfo: func(id discover.NodeID) interface{} {
-				if p := manager.peers.Peer(fmt.Sprintf("%x", id[:8])); p != nil {
+				if p := manager.peers.Peer(id.TerminalString()); p != nil {
 					return p.Info()
 				}
 				return nil
@@ -249,19 +253,56 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 
 	// append by Albert·Gou
 	// broadcast new unit produced by mediator
-	pm.newProducedUnitCh = make(chan mediatorplugin.NewProducedUnitEvent)
+	pm.newProducedUnitCh = make(chan mp.NewProducedUnitEvent)
 	pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
 	go pm.newProducedUnitBroadcastLoop()
+
+	// append by Albert·Gou
+	// send  VSS deal
+	pm.vssDealCh = make(chan mp.VSSDealEvent)
+	pm.vssDealSub = pm.producer.SubscribeVSSDealEvent(pm.vssDealCh)
+	go pm.VSSDealTransmitLoop()
+}
+
+// @author Albert·Gou
+// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
+func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDealEvent) {
+	peer := pm.peers.Peer(node.ID.TerminalString())
+	if peer == nil {
+		log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
+	}
+
+	err := peer.SendVSSDeal(deal)
+	if err != nil {
+		log.Error(err.Error())
+	}
+}
+
+// @author Albert·Gou
+func (self *ProtocolManager) VSSDealTransmitLoop() {
+	for {
+		select {
+		case event := <-self.vssDealCh:
+			node := self.dag.GetActiveMediatorNode(event.AddTo)
+			self.TransmitVSSDeal(node, &event)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.vssDealSub.Err():
+			return
+		}
+	}
 }
 
 // @author Albert·Gou
 type producer interface {
 	// SubscribeNewProducedUnitEvent should return an event subscription of
 	// NewProducedUnitEvent and send events to the given channel.
-	SubscribeNewProducedUnitEvent(chan<- mediatorplugin.NewProducedUnitEvent) event.Subscription
+	SubscribeNewProducedUnitEvent(chan<- mp.NewProducedUnitEvent) event.Subscription
 
 	// UnitBLSSign is to BLS sign the unit
 	UnitBLSSign(peer string, unit *modules.Unit) error
+
+	SubscribeVSSDealEvent(chan<- mp.VSSDealEvent) event.Subscription
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -329,7 +370,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		log.Info("GetGenesisUnit error","err", err)
 		return err
 	}
-	if err := p.Handshake(pm.networkId, index, hash,  genesis.Hash()); err != nil {
+	if err := p.Handshake(pm.networkId, index, hash, genesis.Hash()); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
@@ -876,10 +917,31 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 // @author Albert·Gou
 // BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
 func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
-	peers := pm.peers.GetActiveMediatorPeers(pm.dag.GetActiveMediatorNodes())
+	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
-		peer.SendNewProducedUnit(unit)
+		err := peer.SendNewProducedUnit(unit)
+		if err != nil {
+			log.Error(err.Error())
+		}
 	}
+}
+
+// AtiveMeatorPeers retrieves a list of peers that active mediator
+// @author Albert·Gou
+func (pm *ProtocolManager) GetActiveMediatorPeers() []*peer {
+	nodes := pm.dag.GetActiveMediatorNodes()
+	list := make([]*peer, 0, len(nodes))
+
+	for _, node := range nodes {
+		peer := pm.peers.Peer(node.ID.TerminalString())
+		if peer == nil {
+			log.Error(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
+		} else {
+			list = append(list, peer)
+		}
+	}
+
+	return list
 }
 
 /*

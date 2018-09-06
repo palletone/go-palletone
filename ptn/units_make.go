@@ -2,14 +2,14 @@ package ptn
 
 import (
 	"fmt"
-	"log"
-	"time"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag"
+	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	common2 "github.com/palletone/go-palletone/dag/common"
+	"log"
+	"time"
 )
 
 func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
@@ -60,7 +60,7 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 		err := SaveUnit(memdb, unit, true)
 		if err != nil {
 			log.Println("保存其他unit出错===》》》", err)
-			return nil,err
+			return nil, err
 		}
 		//log.Printf("--------第 %d 个unit====》》》----unit--------------%#v\n",i+1,unit)
 		//log.Printf("--------第 %d 个unit====》》》----unit.UnitHeader---%#v\n",i+1,unit.UnitHeader)
@@ -86,51 +86,51 @@ func SaveGenesis(db ptndb.Database, unit *modules.Unit) error {
 }
 
 func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
-		if unit.UnitSize == 0 || unit.Size() == 0 {
-			log.Println("Unit is null")
-			return fmt.Errorf("Unit is null")
-		}
-		if unit.UnitSize != unit.Size() {
-			log.Println("Validate size", "error", "Size is invalid")
-			return modules.ErrUnit(-1)
-		}
-		_, isSuccess, err := common2.ValidateTransactions(db, &unit.Txs, isGenesis)
-		if isSuccess != true {
-			fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
-			return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
-		}
-		// step4. save unit header
-		// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
-		if err := storage.SaveHeader(db, unit.UnitHash, unit.UnitHeader); err != nil {
-			log.Println("SaveHeader:", "error", err.Error())
-			return modules.ErrUnit(-3)
-		}
-		// step5. save unit hash and chain index relation
-		// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-		if err := storage.SaveNumberByHash(db,unit.UnitHash, unit.UnitHeader.Number); err != nil {
-			log.Println("SaveHashNumber:", "error", err.Error())
-			return fmt.Errorf("Save unit hash and number error")
-		}
-		if err := storage.SaveHashByNumber(db,unit.UnitHash, unit.UnitHeader.Number); err != nil {
-			log.Println("SaveNumberByHash:", "error", err.Error())
-			return fmt.Errorf("Save unit hash and number error")
-		}
-		if err := storage.SaveTxLookupEntry(db, unit); err != nil {
-			return err
-		}
-		if err := storage.SaveTxLookupEntry(db,unit); err != nil {
-			return err
-		}
-		if err := saveHashByIndex(db,unit.UnitHash,unit.UnitHeader.Number.Index); err != nil {
-			return err
-		}
-		// update state
-		storage.PutCanonicalHash(db, unit.UnitHash, unit.NumberU64())
-		storage.PutHeadHeaderHash(db, unit.UnitHash)
-		storage.PutHeadUnitHash(db, unit.UnitHash)
-		storage.PutHeadFastUnitHash(db, unit.UnitHash)
+	if unit.UnitSize == 0 || unit.Size() == 0 {
+		log.Println("Unit is null")
+		return fmt.Errorf("Unit is null")
+	}
+	if unit.UnitSize != unit.Size() {
+		log.Println("Validate size", "error", "Size is invalid")
+		return modules.ErrUnit(-1)
+	}
+	_, isSuccess, err := common2.ValidateTransactions(db, &unit.Txs, isGenesis)
+	if isSuccess != true {
+		fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+		return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+	}
+	// step4. save unit header
+	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
+	if err := storage.SaveHeader(db, unit.UnitHash, unit.UnitHeader); err != nil {
+		log.Println("SaveHeader:", "error", err.Error())
+		return modules.ErrUnit(-3)
+	}
+	// step5. save unit hash and chain index relation
+	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
+	if err := storage.SaveNumberByHash(db, unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		log.Println("SaveHashNumber:", "error", err.Error())
+		return fmt.Errorf("Save unit hash and number error")
+	}
+	if err := storage.SaveHashByNumber(db, unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		log.Println("SaveNumberByHash:", "error", err.Error())
+		return fmt.Errorf("Save unit hash and number error")
+	}
+	if err := storage.SaveTxLookupEntry(db, unit); err != nil {
+		return err
+	}
+	if err := storage.SaveTxLookupEntry(db, unit); err != nil {
+		return err
+	}
+	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.Number.Index); err != nil {
+		return err
+	}
+	// update state
+	storage.PutCanonicalHash(db, unit.UnitHash, unit.NumberU64())
+	storage.PutHeadHeaderHash(db, unit.UnitHash)
+	storage.PutHeadUnitHash(db, unit.UnitHash)
+	storage.PutHeadFastUnitHash(db, unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
-	   return nil
+	return nil
 }
 func NewUnit(header *modules.Header, txs modules.Transactions) *modules.Unit {
 	u := &modules.Unit{
@@ -165,13 +165,11 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	var coinbase modules.Transaction
 	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
 	coinbase.TxHash = coinbase.Hash()
-	return &coinbase,nil
+	return &coinbase, nil
 }
 
-
-
-func saveHashByIndex(db ptndb.Database,hash common.Hash,index uint64) error{
+func saveHashByIndex(db ptndb.Database, hash common.Hash, index uint64) error {
 	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
-	err := db.Put([]byte(key),hash.Bytes())
+	err := db.Put([]byte(key), hash.Bytes())
 	return err
 }

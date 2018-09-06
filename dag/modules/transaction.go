@@ -67,10 +67,12 @@ func newTransaction(msg []Message, lock uint32) *Transaction {
 
 	return tx
 }
+
 // AddTxIn adds a transaction input to the message.
 func (tx *Transaction) AddMessage(me Message) {
 	tx.TxMessages = append(tx.TxMessages, &me)
 }
+
 // AddTxIn adds a transaction input to the message.
 func (pld *PaymentPayload) AddTxIn(ti Input) {
 	pld.Input = append(pld.Input, &ti)
@@ -598,6 +600,7 @@ func (msg *Transaction) baseSize() int {
 func (msg *PaymentPayload) SerializeSizeStripped() int {
 	return msg.baseSize()
 }
+
 // SerializeSizeStripped returns the number of bytes it would take to serialize
 // the transaction, excluding any included witness data.
 func (tx *Transaction) SerializeSizeStripped() int {
