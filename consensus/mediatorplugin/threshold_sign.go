@@ -46,8 +46,10 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 		}
 
 		for index, deal := range deals {
+			dstMed := ams[index]
+
 			event := VSSDealEvent{
-				DstMed: ams[index],
+				DstMed: dstMed,
 				Deal:   deal,
 			}
 
@@ -109,10 +111,11 @@ func (mp *MediatorPlugin) BroadcastVSSResponse(srcMed common.Address, resp *dkg.
 
 	for _, dstMed := range ams {
 		if dstMed == srcMed {
-			continue
+			continue // ignore sending response to myself
 		}
 
 		event := VSSResponseEvent{
+			SrcMed: srcMed,
 			DstMed: dstMed,
 			Resp:   resp,
 		}
@@ -143,6 +146,9 @@ func (mp *MediatorPlugin) processResponseLoop() {
 
 func (mp *MediatorPlugin) processVSSResponse(resp *VSSResponseEvent) {
 	dstMed := resp.DstMed
+	if dstMed == resp.SrcMed {
+		return //ignore the message from myself
+	}
 
 	dkg, ok := mp.dkgs[dstMed]
 	if !ok || dkg == nil {

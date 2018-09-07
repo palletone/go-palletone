@@ -85,12 +85,6 @@ func fullExchange(t *testing.T) {
 		deals, err := dkg.Deals()
 		require.Nil(t, err)
 		for i, d := range deals {
-			// // ignore sending all messages to ourselves
-			//if uint32(i) == d.Index {
-			//	resps = append(resps, nil)
-			//	continue
-			//}
-
 			resp, err := dkgs[i].ProcessDeal(d)
 			require.Nil(t, err)
 			require.Equal(t, vss.StatusApproval, resp.Response.Status)
