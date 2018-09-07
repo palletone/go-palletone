@@ -2,13 +2,14 @@ package main
 
 import (
 	"bufio"
-	//	"encoding/json"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/naoina/toml"
-	//	"github.com/palletone/eth-adaptor"
+
+	"github.com/palletone/eth-adaptor"
 )
 
 type ETHConfig struct {
@@ -79,228 +80,228 @@ func saveConfig(file string, w *MyWallet) error {
 }
 
 func createKey(name string) error {
-	//	var ethadaptor adaptoreth.AdaptorETH
-	//	//
-	//	key := ethadaptor.NewPrivateKey()
-	//	gWallet.NameKey[name] = key
+	var ethadaptor adaptoreth.AdaptorETH
+	//
+	key := ethadaptor.NewPrivateKey()
+	gWallet.NameKey[name] = key
 
-	//	//
-	//	pubkey := ethadaptor.GetPublicKey(key)
-	//	gWallet.NamePubkey[name] = pubkey
+	//
+	pubkey := ethadaptor.GetPublicKey(key)
+	gWallet.NamePubkey[name] = pubkey
 
-	//	//
-	//	address := ethadaptor.GetAddress(key)
-	//	gWallet.NameAddress[name] = address
-	//	gWallet.AddressKey[address] = key
+	//
+	address := ethadaptor.GetAddress(key)
+	gWallet.NameAddress[name] = address
+	gWallet.AddressKey[address] = key
 
 	return saveConfig(gWalletFile, gWallet)
 }
 
 func bobSendETHToMultiSigAddr(value string, gasPrice string, gasLimit string, redeem string) error {
-	//	//
-	//	sender := "bob"
+	//
+	sender := "bob"
 
-	//	//
-	//	callerAddr := gWallet.NameAddress[sender]
-	//	//	value := "1000000000000000000"
-	//	//	gasPrice := "1000"
-	//	//	gasLimit := "2100000"
-	//	//
-	//	method := "deposit"
-	//	paramsArray := []string{redeem}
-	//	paramsJson, err := json.Marshal(paramsArray)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	}
+	//
+	callerAddr := gWallet.NameAddress[sender]
+	//	value := "1000000000000000000"
+	//	gasPrice := "1000"
+	//	gasLimit := "2100000"
+	//
+	method := "deposit"
+	paramsArray := []string{redeem}
+	paramsJson, err := json.Marshal(paramsArray)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
 
-	//	//
-	//	var ethadaptor adaptoreth.AdaptorETH
-	//	ethadaptor.Rawurl = gWallet.EthConfig.Rawurl
+	//
+	var ethadaptor adaptoreth.AdaptorETH
+	ethadaptor.Rawurl = gWallet.EthConfig.Rawurl
 
-	//	//
-	//	var invokeContractParams adaptoreth.GenInvokeContractTXParams
-	//	invokeContractParams.ContractABI = contractABI
-	//	invokeContractParams.ContractAddr = contractAddr
-	//	invokeContractParams.CallerAddr = callerAddr //user
-	//	invokeContractParams.Value = value
-	//	invokeContractParams.GasPrice = gasPrice
-	//	invokeContractParams.GasLimit = gasLimit
-	//	invokeContractParams.Method = method //params
-	//	invokeContractParams.Params = string(paramsJson)
+	//
+	var invokeContractParams adaptoreth.GenInvokeContractTXParams
+	invokeContractParams.ContractABI = contractABI
+	invokeContractParams.ContractAddr = contractAddr
+	invokeContractParams.CallerAddr = callerAddr //user
+	invokeContractParams.Value = value
+	invokeContractParams.GasPrice = gasPrice
+	invokeContractParams.GasLimit = gasLimit
+	invokeContractParams.Method = method //params
+	invokeContractParams.Params = string(paramsJson)
 
-	//	//1.gen tx
-	//	resultTx, err := ethadaptor.GenInvokeContractTX(&invokeContractParams)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	} else {
-	//		fmt.Println(resultTx)
-	//	}
-	//	//parse result
-	//	var genInvokeContractTXResult adaptoreth.GenInvokeContractTXResult
-	//	err = json.Unmarshal([]byte(resultTx), &genInvokeContractTXResult)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//	}
+	//1.gen tx
+	resultTx, err := ethadaptor.GenInvokeContractTX(&invokeContractParams)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(resultTx)
+	}
+	//parse result
+	var genInvokeContractTXResult adaptoreth.GenInvokeContractTXResult
+	err = json.Unmarshal([]byte(resultTx), &genInvokeContractTXResult)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 
-	//	//2.sign tx
-	//	var signTransactionParams adaptoreth.SignTransactionParams
-	//	signTransactionParams.PrivateKeyHex = gWallet.NameKey[sender]
-	//	fmt.Println("gWallet.NameKey[sender] : ", gWallet.NameKey[sender])
-	//	signTransactionParams.TransactionHex = genInvokeContractTXResult.TransactionHex
-	//	resultSign, err := ethadaptor.SignTransaction(&signTransactionParams)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	} else {
-	//		fmt.Println(resultSign)
-	//	}
+	//2.sign tx
+	var signTransactionParams adaptoreth.SignTransactionParams
+	signTransactionParams.PrivateKeyHex = gWallet.NameKey[sender]
+	fmt.Println("gWallet.NameKey[sender] : ", gWallet.NameKey[sender])
+	signTransactionParams.TransactionHex = genInvokeContractTXResult.TransactionHex
+	resultSign, err := ethadaptor.SignTransaction(&signTransactionParams)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(resultSign)
+	}
 
-	//	//parse result
-	//	var signTransactionResult adaptoreth.SignTransactionResult
-	//	err = json.Unmarshal([]byte(resultSign), &signTransactionResult)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//	}
+	//parse result
+	var signTransactionResult adaptoreth.SignTransactionResult
+	err = json.Unmarshal([]byte(resultSign), &signTransactionResult)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 
-	//	//3.send tx
-	//	var sendTransactionParams adaptoreth.SendTransactionParams
-	//	sendTransactionParams.TransactionHex = signTransactionResult.TransactionHex
-	//	resultSend, err := ethadaptor.SendTransaction(&sendTransactionParams)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	} else {
-	//		fmt.Println(resultSend)
-	//	}
+	//3.send tx
+	var sendTransactionParams adaptoreth.SendTransactionParams
+	sendTransactionParams.TransactionHex = signTransactionResult.TransactionHex
+	resultSend, err := ethadaptor.SendTransaction(&sendTransactionParams)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(resultSend)
+	}
 
 	return nil
 }
 
 func aliceSpendEtHFromMultiAddr(gasPrice string, gasLimit string, redeem string, amount string, sigJury string) error {
-	//	//
-	//	spender := "alice"
+	//
+	spender := "alice"
 
-	//	//keccak256(abi.encodePacked(redeem, recver, address(this), amount, nonece));
-	//	paramTypesArray := []string{"Bytes", "Address", "Address", "Uint", "Uint"} //eth
-	//	paramTypesJson, err := json.Marshal(paramTypesArray)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//	}
-	//	calSigParamsArray := []string{
-	//		redeem,
-	//		gWallet.NameAddress[spender],
-	//		contractAddr,
-	//		amount,
-	//		"1"}
-	//	calSigParamsJson, err := json.Marshal(calSigParamsArray)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	}
+	//keccak256(abi.encodePacked(redeem, recver, address(this), amount, nonece));
+	paramTypesArray := []string{"Bytes", "Address", "Address", "Uint", "Uint"} //eth
+	paramTypesJson, err := json.Marshal(paramTypesArray)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	calSigParamsArray := []string{
+		redeem,
+		gWallet.NameAddress[spender],
+		contractAddr,
+		amount,
+		"1"}
+	calSigParamsJson, err := json.Marshal(calSigParamsArray)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
 
-	//	//
-	//	var ethadaptor adaptoreth.AdaptorETH
-	//	ethadaptor.Rawurl = gWallet.EthConfig.Rawurl
+	//
+	var ethadaptor adaptoreth.AdaptorETH
+	ethadaptor.Rawurl = gWallet.EthConfig.Rawurl
 
-	//	//
-	//	var sigParams adaptoreth.Keccak256HashPackedSigParams
-	//	sigParams.ParamTypes = string(paramTypesJson)
-	//	sigParams.Params = string(calSigParamsJson)
-	//	sigParams.PrivateKeyHex = gWallet.NameKey[spender]
+	//
+	var sigParams adaptoreth.Keccak256HashPackedSigParams
+	sigParams.ParamTypes = string(paramTypesJson)
+	sigParams.Params = string(calSigParamsJson)
+	sigParams.PrivateKeyHex = gWallet.NameKey[spender]
 
-	//	//0.calculate Alice's signature
-	//	resultSig, err := ethadaptor.Keccak256HashPackedSig(&sigParams)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	} else {
-	//		fmt.Println(resultSig)
-	//	}
+	//0.calculate Alice's signature
+	resultSig, err := ethadaptor.Keccak256HashPackedSig(&sigParams)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(resultSig)
+	}
 
-	//	//parse result
-	//	var calSigResult adaptoreth.Keccak256HashPackedSigResult
-	//	err = json.Unmarshal([]byte(resultSig), &calSigResult)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//	}
-	//	sigAlice := calSigResult.Signature
+	//parse result
+	var calSigResult adaptoreth.Keccak256HashPackedSigResult
+	err = json.Unmarshal([]byte(resultSig), &calSigResult)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	sigAlice := calSigResult.Signature
 
-	//	//
-	//	callerAddr := gWallet.NameAddress[spender]
-	//	value := "0"
-	//	//	gasPrice := "1000"
-	//	//	gasLimit := "2100000"
-	//	//
-	//	method := "withdraw"
-	//	paramsArray := []string{
-	//		redeem,
-	//		callerAddr,
-	//		amount, //"1000000000000000000"
-	//		"1",    //nonece,
-	//		sigJury,
-	//		sigAlice}
-	//	paramsJson, err := json.Marshal(paramsArray)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	}
-	//	//
-	//	var invokeContractParams adaptoreth.GenInvokeContractTXParams
-	//	invokeContractParams.ContractABI = contractABI
-	//	invokeContractParams.ContractAddr = contractAddr
-	//	invokeContractParams.CallerAddr = callerAddr //user
-	//	invokeContractParams.Value = value
-	//	invokeContractParams.GasPrice = gasPrice
-	//	invokeContractParams.GasLimit = gasLimit
-	//	invokeContractParams.Method = method //params
-	//	invokeContractParams.Params = string(paramsJson)
+	//
+	callerAddr := gWallet.NameAddress[spender]
+	value := "0"
+	//	gasPrice := "1000"
+	//	gasLimit := "2100000"
+	//
+	method := "withdraw"
+	paramsArray := []string{
+		redeem,
+		callerAddr,
+		amount, //"1000000000000000000"
+		"1",    //nonece,
+		sigJury,
+		sigAlice}
+	paramsJson, err := json.Marshal(paramsArray)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+	//
+	var invokeContractParams adaptoreth.GenInvokeContractTXParams
+	invokeContractParams.ContractABI = contractABI
+	invokeContractParams.ContractAddr = contractAddr
+	invokeContractParams.CallerAddr = callerAddr //user
+	invokeContractParams.Value = value
+	invokeContractParams.GasPrice = gasPrice
+	invokeContractParams.GasLimit = gasLimit
+	invokeContractParams.Method = method //params
+	invokeContractParams.Params = string(paramsJson)
 
-	//	//1.gen tx
-	//	resultTx, err := ethadaptor.GenInvokeContractTX(&invokeContractParams)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	} else {
-	//		fmt.Println(resultTx)
-	//	}
-	//	//parse result
-	//	var genInvokeContractTXResult adaptoreth.GenInvokeContractTXResult
-	//	err = json.Unmarshal([]byte(resultTx), &genInvokeContractTXResult)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//	}
+	//1.gen tx
+	resultTx, err := ethadaptor.GenInvokeContractTX(&invokeContractParams)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(resultTx)
+	}
+	//parse result
+	var genInvokeContractTXResult adaptoreth.GenInvokeContractTXResult
+	err = json.Unmarshal([]byte(resultTx), &genInvokeContractTXResult)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 
-	//	//2.sign tx
-	//	var signTransactionParams adaptoreth.SignTransactionParams
-	//	signTransactionParams.PrivateKeyHex = gWallet.NameKey[spender]
-	//	signTransactionParams.TransactionHex = genInvokeContractTXResult.TransactionHex
-	//	resultSign, err := ethadaptor.SignTransaction(&signTransactionParams)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	} else {
-	//		fmt.Println(resultSign)
-	//	}
+	//2.sign tx
+	var signTransactionParams adaptoreth.SignTransactionParams
+	signTransactionParams.PrivateKeyHex = gWallet.NameKey[spender]
+	signTransactionParams.TransactionHex = genInvokeContractTXResult.TransactionHex
+	resultSign, err := ethadaptor.SignTransaction(&signTransactionParams)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(resultSign)
+	}
 
-	//	//parse result
-	//	var signTransactionResult adaptoreth.SignTransactionResult
-	//	err = json.Unmarshal([]byte(resultSign), &signTransactionResult)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//	}
+	//parse result
+	var signTransactionResult adaptoreth.SignTransactionResult
+	err = json.Unmarshal([]byte(resultSign), &signTransactionResult)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 
-	//	//3.send tx
-	//	var sendTransactionParams adaptoreth.SendTransactionParams
-	//	sendTransactionParams.TransactionHex = signTransactionResult.TransactionHex
-	//	resultSend, err := ethadaptor.SendTransaction(&sendTransactionParams)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	} else {
-	//		fmt.Println(resultSend)
-	//	}
+	//3.send tx
+	var sendTransactionParams adaptoreth.SendTransactionParams
+	sendTransactionParams.TransactionHex = signTransactionResult.TransactionHex
+	resultSend, err := ethadaptor.SendTransaction(&sendTransactionParams)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(resultSend)
+	}
 
 	return nil
 }

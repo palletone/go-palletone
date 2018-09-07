@@ -2,15 +2,16 @@ package main
 
 import (
 	"bufio"
-	//	"encoding/json"
-	//	"errors"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
-	//	"strconv"
+	"strconv"
 	"strings"
 
 	"github.com/naoina/toml"
-	//	"github.com/palletone/btc-adaptor"
+
+	"github.com/palletone/btc-adaptor"
 )
 
 type BTCConfig struct {
@@ -82,190 +83,190 @@ func saveConfig(file string, w *MyWallet) error {
 }
 
 func createKey(name string) error {
-	//	var btcadaptor adaptorbtc.AdaptorBTC
-	//	btcadaptor.NetID = gWallet.BtcConfig.NetID
-	//	//
-	//	key := btcadaptor.NewPrivateKey()
-	//	gWallet.NameKey[name] = key
+	var btcadaptor adaptorbtc.AdaptorBTC
+	btcadaptor.NetID = gWallet.BtcConfig.NetID
+	//
+	key := btcadaptor.NewPrivateKey()
+	gWallet.NameKey[name] = key
 
-	//	//
-	//	pubkey := btcadaptor.GetPublicKey(key)
-	//	gWallet.NamePubkey[name] = pubkey
-	//	fmt.Println(name, "'s pubkey : ", pubkey)
+	//
+	pubkey := btcadaptor.GetPublicKey(key)
+	gWallet.NamePubkey[name] = pubkey
+	fmt.Println(name, "'s pubkey : ", pubkey)
 
-	//	//
-	//	addr := btcadaptor.GetAddress(key)
-	//	gWallet.NameAddress[name] = addr
-	//	gWallet.AddressKey[addr] = key
+	//
+	addr := btcadaptor.GetAddress(key)
+	gWallet.NameAddress[name] = addr
+	gWallet.AddressKey[addr] = key
 
 	return saveConfig(gWalletFile, gWallet)
 }
 
 func giveAlice(txid string, index string, amount string, fee string, prikey string) error {
-	//	//
-	//	vout, err := strconv.Atoi(index)
-	//	if err != nil {
-	//		return errors.New("Index is Invalid.")
-	//	}
+	//
+	vout, err := strconv.Atoi(index)
+	if err != nil {
+		return errors.New("Index is Invalid.")
+	}
 
-	//	amountValue, err := strconv.ParseFloat(amount, 64)
-	//	if err != nil {
-	//		return errors.New("Amount is Invalid.")
-	//	}
-	//	feeValue, err := strconv.ParseFloat(fee, 64)
-	//	if err != nil {
-	//		return errors.New("Fee is Invalid.")
-	//	}
-	//	//
-	//	var rawTransactionGenParams adaptorbtc.RawTransactionGenParams
-	//	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptorbtc.Input{txid, uint32(vout)})
-	//	rawTransactionGenParams.Outputs = append(rawTransactionGenParams.Outputs, adaptorbtc.Output{gWallet.NameAddress["alice"], amountValue - feeValue})
-	//	//
-	//	var btcadaptor adaptorbtc.AdaptorBTC
-	//	btcadaptor.NetID = gWallet.BtcConfig.NetID
-	//	btcadaptor.Host = gWallet.BtcConfig.Host
-	//	btcadaptor.RPCUser = gWallet.BtcConfig.RPCUser
-	//	btcadaptor.RPCPasswd = gWallet.BtcConfig.RPCPasswd
-	//	btcadaptor.CertPath = gWallet.BtcConfig.CertPath
-	//	//
-	//	rawResult, err := btcadaptor.RawTransactionGen(&rawTransactionGenParams)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	} else {
-	//		fmt.Println(rawResult)
-	//	}
-	//	//
-	//	var rawTransactionGenResult adaptorbtc.RawTransactionGenResult
-	//	err = json.Unmarshal([]byte(rawResult), &rawTransactionGenResult)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//	}
-	//	//
-	//	var signTxSendParams adaptorbtc.SignTxSendParams
-	//	signTxSendParams.TransactionHex = rawTransactionGenResult.Rawtx
-	//	signTxSendParams.Privkeys = append(signTxSendParams.Privkeys, prikey)
-	//	sendReuslt, err := btcadaptor.SignTxSend(&signTxSendParams)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	} else {
-	//		fmt.Println(sendReuslt)
-	//	}
+	amountValue, err := strconv.ParseFloat(amount, 64)
+	if err != nil {
+		return errors.New("Amount is Invalid.")
+	}
+	feeValue, err := strconv.ParseFloat(fee, 64)
+	if err != nil {
+		return errors.New("Fee is Invalid.")
+	}
+	//
+	var rawTransactionGenParams adaptorbtc.RawTransactionGenParams
+	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptorbtc.Input{txid, uint32(vout)})
+	rawTransactionGenParams.Outputs = append(rawTransactionGenParams.Outputs, adaptorbtc.Output{gWallet.NameAddress["alice"], amountValue - feeValue})
+	//
+	var btcadaptor adaptorbtc.AdaptorBTC
+	btcadaptor.NetID = gWallet.BtcConfig.NetID
+	btcadaptor.Host = gWallet.BtcConfig.Host
+	btcadaptor.RPCUser = gWallet.BtcConfig.RPCUser
+	btcadaptor.RPCPasswd = gWallet.BtcConfig.RPCPasswd
+	btcadaptor.CertPath = gWallet.BtcConfig.CertPath
+	//
+	rawResult, err := btcadaptor.RawTransactionGen(&rawTransactionGenParams)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(rawResult)
+	}
+	//
+	var rawTransactionGenResult adaptorbtc.RawTransactionGenResult
+	err = json.Unmarshal([]byte(rawResult), &rawTransactionGenResult)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	//
+	var signTxSendParams adaptorbtc.SignTxSendParams
+	signTxSendParams.TransactionHex = rawTransactionGenResult.Rawtx
+	signTxSendParams.Privkeys = append(signTxSendParams.Privkeys, prikey)
+	sendReuslt, err := btcadaptor.SignTxSend(&signTxSendParams)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(sendReuslt)
+	}
 
 	return nil
 }
 
 func aliceSendBTCToMultiSigAddr(txid string, index string, amount string, fee string, multiSigAddr string) error {
-	//	//
-	//	vout, err := strconv.Atoi(index)
-	//	if err != nil {
-	//		return errors.New("Index is Invalid.")
-	//	}
+	//
+	vout, err := strconv.Atoi(index)
+	if err != nil {
+		return errors.New("Index is Invalid.")
+	}
 
-	//	amountValue, err := strconv.ParseFloat(amount, 64)
-	//	if err != nil {
-	//		return errors.New("Amount is Invalid.")
-	//	}
-	//	feeValue, err := strconv.ParseFloat(fee, 64)
-	//	if err != nil {
-	//		return errors.New("Fee is Invalid.")
-	//	}
-	//	//
-	//	var rawTransactionGenParams adaptorbtc.RawTransactionGenParams
-	//	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptorbtc.Input{txid, uint32(vout)})
-	//	rawTransactionGenParams.Outputs = append(rawTransactionGenParams.Outputs, adaptorbtc.Output{multiSigAddr, amountValue - feeValue})
-	//	//
-	//	var btcadaptor adaptorbtc.AdaptorBTC
-	//	btcadaptor.NetID = gWallet.BtcConfig.NetID
-	//	btcadaptor.Host = gWallet.BtcConfig.Host
-	//	btcadaptor.RPCUser = gWallet.BtcConfig.RPCUser
-	//	btcadaptor.RPCPasswd = gWallet.BtcConfig.RPCPasswd
-	//	btcadaptor.CertPath = gWallet.BtcConfig.CertPath
-	//	//
-	//	rawResult, err := btcadaptor.RawTransactionGen(&rawTransactionGenParams)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	} else {
-	//		fmt.Println(rawResult)
-	//	}
-	//	//
-	//	var rawTransactionGenResult adaptorbtc.RawTransactionGenResult
-	//	err = json.Unmarshal([]byte(rawResult), &rawTransactionGenResult)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//	}
-	//	//
-	//	var signTxSendParams adaptorbtc.SignTxSendParams
-	//	signTxSendParams.TransactionHex = rawTransactionGenResult.Rawtx
-	//	signTxSendParams.Privkeys = append(signTxSendParams.Privkeys, gWallet.NameKey["alice"])
-	//	sendReuslt, err := btcadaptor.SignTxSend(&signTxSendParams)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	} else {
-	//		fmt.Println(sendReuslt)
-	//	}
+	amountValue, err := strconv.ParseFloat(amount, 64)
+	if err != nil {
+		return errors.New("Amount is Invalid.")
+	}
+	feeValue, err := strconv.ParseFloat(fee, 64)
+	if err != nil {
+		return errors.New("Fee is Invalid.")
+	}
+	//
+	var rawTransactionGenParams adaptorbtc.RawTransactionGenParams
+	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptorbtc.Input{txid, uint32(vout)})
+	rawTransactionGenParams.Outputs = append(rawTransactionGenParams.Outputs, adaptorbtc.Output{multiSigAddr, amountValue - feeValue})
+	//
+	var btcadaptor adaptorbtc.AdaptorBTC
+	btcadaptor.NetID = gWallet.BtcConfig.NetID
+	btcadaptor.Host = gWallet.BtcConfig.Host
+	btcadaptor.RPCUser = gWallet.BtcConfig.RPCUser
+	btcadaptor.RPCPasswd = gWallet.BtcConfig.RPCPasswd
+	btcadaptor.CertPath = gWallet.BtcConfig.CertPath
+	//
+	rawResult, err := btcadaptor.RawTransactionGen(&rawTransactionGenParams)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(rawResult)
+	}
+	//
+	var rawTransactionGenResult adaptorbtc.RawTransactionGenResult
+	err = json.Unmarshal([]byte(rawResult), &rawTransactionGenResult)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	//
+	var signTxSendParams adaptorbtc.SignTxSendParams
+	signTxSendParams.TransactionHex = rawTransactionGenResult.Rawtx
+	signTxSendParams.Privkeys = append(signTxSendParams.Privkeys, gWallet.NameKey["alice"])
+	sendReuslt, err := btcadaptor.SignTxSend(&signTxSendParams)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(sendReuslt)
+	}
 
 	return nil
 }
 
 func bobSpendBTCFromMultiAddr(txid string, index string, amount string, fee string, redeem string) error {
-	//	//
-	//	vout, err := strconv.Atoi(index)
-	//	if err != nil {
-	//		return errors.New("Index is Invalid.")
-	//	}
+	//
+	vout, err := strconv.Atoi(index)
+	if err != nil {
+		return errors.New("Index is Invalid.")
+	}
 
-	//	amountValue, err := strconv.ParseFloat(amount, 64)
-	//	if err != nil {
-	//		return errors.New("Amount is Invalid.")
-	//	}
-	//	feeValue, err := strconv.ParseFloat(fee, 64)
-	//	if err != nil {
-	//		return errors.New("Fee is Invalid.")
-	//	}
+	amountValue, err := strconv.ParseFloat(amount, 64)
+	if err != nil {
+		return errors.New("Amount is Invalid.")
+	}
+	feeValue, err := strconv.ParseFloat(fee, 64)
+	if err != nil {
+		return errors.New("Fee is Invalid.")
+	}
 
-	//	//
-	//	var btcadaptor adaptorbtc.AdaptorBTC
-	//	btcadaptor.NetID = gWallet.BtcConfig.NetID
-	//	bobAddr := btcadaptor.GetAddress(gWallet.NameKey["bob"])
-	//	//
-	//	var rawTransactionGenParams adaptorbtc.RawTransactionGenParams
-	//	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptorbtc.Input{txid, uint32(vout)})
-	//	rawTransactionGenParams.Outputs = append(rawTransactionGenParams.Outputs, adaptorbtc.Output{bobAddr, amountValue - feeValue})
-	//	//
-	//	btcadaptor.Host = gWallet.BtcConfig.Host
-	//	btcadaptor.RPCUser = gWallet.BtcConfig.RPCUser
-	//	btcadaptor.RPCPasswd = gWallet.BtcConfig.RPCPasswd
-	//	btcadaptor.CertPath = gWallet.BtcConfig.CertPath
-	//	//
-	//	rawResult, err := btcadaptor.RawTransactionGen(&rawTransactionGenParams)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	} else {
-	//		fmt.Println(rawResult)
-	//	}
-	//	//
-	//	var rawTransactionGenResult adaptorbtc.RawTransactionGenResult
-	//	err = json.Unmarshal([]byte(rawResult), &rawTransactionGenResult)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//	}
-	//	//
-	//	var signTxParams adaptorbtc.SignTransactionParams
-	//	signTxParams.TransactionHex = rawTransactionGenResult.Rawtx
-	//	signTxParams.RedeemHex = redeem
-	//	signTxParams.Privkeys = append(signTxParams.Privkeys, gWallet.NameKey["bob"])
-	//	signReuslt, err := btcadaptor.SignTransaction(&signTxParams)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		return err
-	//	} else {
-	//		fmt.Println(signReuslt)
-	//	}
+	//
+	var btcadaptor adaptorbtc.AdaptorBTC
+	btcadaptor.NetID = gWallet.BtcConfig.NetID
+	bobAddr := btcadaptor.GetAddress(gWallet.NameKey["bob"])
+	//
+	var rawTransactionGenParams adaptorbtc.RawTransactionGenParams
+	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptorbtc.Input{txid, uint32(vout)})
+	rawTransactionGenParams.Outputs = append(rawTransactionGenParams.Outputs, adaptorbtc.Output{bobAddr, amountValue - feeValue})
+	//
+	btcadaptor.Host = gWallet.BtcConfig.Host
+	btcadaptor.RPCUser = gWallet.BtcConfig.RPCUser
+	btcadaptor.RPCPasswd = gWallet.BtcConfig.RPCPasswd
+	btcadaptor.CertPath = gWallet.BtcConfig.CertPath
+	//
+	rawResult, err := btcadaptor.RawTransactionGen(&rawTransactionGenParams)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(rawResult)
+	}
+	//
+	var rawTransactionGenResult adaptorbtc.RawTransactionGenResult
+	err = json.Unmarshal([]byte(rawResult), &rawTransactionGenResult)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	//
+	var signTxParams adaptorbtc.SignTransactionParams
+	signTxParams.TransactionHex = rawTransactionGenResult.Rawtx
+	signTxParams.RedeemHex = redeem
+	signTxParams.Privkeys = append(signTxParams.Privkeys, gWallet.NameKey["bob"])
+	signReuslt, err := btcadaptor.SignTransaction(&signTxParams)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(signReuslt)
+	}
 
 	return nil
 }
