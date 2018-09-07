@@ -288,7 +288,6 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		}
 		// Send the hash request and verify the response
 		p2p.Send(peer.app, 0x03, tt.query)
-		//fmt.Println(len(headers))
 		if err := p2p.ExpectMsg(peer.app, 0x04, headers); err != nil {
 			t.Errorf("test %d: headers mismatch: %v", i, err)
 		}
