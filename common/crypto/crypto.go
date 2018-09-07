@@ -28,11 +28,11 @@ import (
 	"math/big"
 	"os"
 
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var (
@@ -197,22 +197,22 @@ func PubkeyToAddress(p *ecdsa.PublicKey) common.Address {
 	pubBytes := crypto.CompressPubkey(p)
 	// return common.BytesToAddress(Keccak256(pubBytes[1:])[12:])
 	pubKeyHash := Hash160(pubBytes)
-	return common.NewAddress(pubKeyHash,common.PublicKeyHash)
+	return common.NewAddress(pubKeyHash, common.PublicKeyHash)
 }
 
 //This is for P2SH address, start with P3
 func ScriptToAddress(redeemScript []byte) common.Address {
 	scriptHash := Hash160(redeemScript)
-	return common.NewAddress(scriptHash,common.PublicKeyHash)
+	return common.NewAddress(scriptHash, common.ScriptHash)
 }
 
-func ScriptHashToAddress(scriptHash []byte) common.Address{
-	return common.NewAddress(scriptHash,common.PublicKeyHash)
+func ScriptHashToAddress(scriptHash []byte) common.Address {
+	return common.NewAddress(scriptHash, common.ScriptHash)
 }
 
 func ContractIdToAddress(contractId []byte) common.Address {
 	scriptHash := Hash160(contractId)
-	return common.NewAddress(scriptHash,common.PublicKeyHash)
+	return common.NewAddress(scriptHash, common.ContractHash)
 }
 func zeroBytes(bytes []byte) {
 	for i := range bytes {

@@ -30,7 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 )
 
-var testAddrHex = "5031336b6a334b656a50585168673348577a35314d7448443177387248614657503138" //P13kj3KejPXQhg3HWz51MtHD1w8rHaFWP18
+var testAddr = "P136gdm7CfJcAeG2RFZNXvwwteg3uGzVqr5"
 var testPrivHex = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"
 
 // These tests are sanity checks.
@@ -60,7 +60,9 @@ func BenchmarkSha3(b *testing.B) {
 
 func TestSign(t *testing.T) {
 	key, _ := HexToECDSA(testPrivHex)
-	addr := common.HexToAddress(testAddrHex)
+
+	// t.Logf("Address is :%s", PubkeyToAddress(&key.PublicKey).String())
+	addr, _ := common.StringToAddress(testAddr)
 
 	msg := Keccak256([]byte("foo"))
 	sig, err := Sign(msg, key)
@@ -72,9 +74,9 @@ func TestSign(t *testing.T) {
 		t.Errorf("ECRecover error: %s", err)
 	}
 	pubKey := ToECDSAPub(recoveredPub)
-	recoveredAddr := PubkeyToAddress(*pubKey)
+	recoveredAddr := PubkeyToAddress(pubKey)
 	if addr != recoveredAddr {
-		t.Errorf("Address mismatch: want: %x have: %x", addr, recoveredAddr)
+		t.Errorf("Address mismatch: want: %s have: %s", addr.Str(), recoveredAddr.Str())
 	}
 
 	// should be equal to SigToPub
@@ -82,7 +84,7 @@ func TestSign(t *testing.T) {
 	if err != nil {
 		t.Errorf("ECRecover error: %s", err)
 	}
-	recoveredAddr2 := PubkeyToAddress(*recoveredPub2)
+	recoveredAddr2 := PubkeyToAddress(recoveredPub2)
 	if addr != recoveredAddr2 {
 		t.Errorf("Address mismatch: want: %x have: %x", addr, recoveredAddr2)
 	}
@@ -117,7 +119,8 @@ func TestLoadECDSAFile(t *testing.T) {
 	fileName0 := "test_key0"
 	fileName1 := "test_key1"
 	checkKey := func(k *ecdsa.PrivateKey) {
-		checkAddr(t, PubkeyToAddress(k.PublicKey), common.HexToAddress(testAddrHex))
+		addr, _ := common.StringToAddress(testAddr)
+		checkAddr(t, PubkeyToAddress(&k.PublicKey), addr)
 		loadedKeyBytes := FromECDSA(k)
 		if !bytes.Equal(loadedKeyBytes, keyBytes) {
 			t.Fatalf("private key mismatch: want: %x have: %x", keyBytes, loadedKeyBytes)
@@ -202,7 +205,7 @@ func checkhash(t *testing.T, name string, f func([]byte) []byte, msg, exp []byte
 
 func checkAddr(t *testing.T, addr0, addr1 common.Address) {
 	if addr0 != addr1 {
-		t.Fatalf("address mismatch: want: %x have: %x", addr0, addr1)
+		t.Fatalf("address mismatch: want: %s have: %s", addr0.String(), addr1.String())
 	}
 }
 
@@ -230,7 +233,7 @@ func TestPubkeyToAddress(t *testing.T) {
 
 	pb := FromECDSAPub(&pubKey)
 	t.Logf("Public Key: %s", hex.EncodeToString(pb))
-	address := PubkeyToAddress(pubKey)
+	address := PubkeyToAddress(&pubKey)
 	addStr := address.Str()
 	t.Logf("Address: %s", addStr)
 }
@@ -240,7 +243,7 @@ func TestImportPrivateKeyAndGenerateAddress(t *testing.T) {
 	prvKeyB, _ := hexutil.Decode(prvKeyHex)
 	prvKey, _ := ToECDSA(prvKeyB)
 	pubKey := prvKey.PublicKey
-	addr := PubkeyToAddress(pubKey)
+	addr := PubkeyToAddress(&pubKey)
 	t.Logf("Address:[%s]", addr)
 }
 
@@ -249,12 +252,12 @@ func ExamplePubkeyToAddress() {
 	prvKeyBytes, _ := hex.DecodeString(prvKeyString)
 	prvKey, _ := ToECDSA(prvKeyBytes)
 	pubKey := prvKey.PublicKey
-	address := PubkeyToAddress(pubKey)
+	address := PubkeyToAddress(&pubKey)
 	addStr := address.Str()
 	fmt.Println("Encoded Address Data:", addStr)
 
 	// Output:
-	// Encoded Address Data: P13kj3KejPXQhg3HWz51MtHD1w8rHaFWP18
+	// Encoded Address Data: P136gdm7CfJcAeG2RFZNXvwwteg3uGzVqr5
 }
 
 func TestScriptToAddress(t *testing.T) {
