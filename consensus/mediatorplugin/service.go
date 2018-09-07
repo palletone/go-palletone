@@ -80,6 +80,10 @@ type MediatorPlugin struct {
 	vssDealScope    event.SubscriptionScope
 	toProcessDealCh chan *VSSDealEvent
 
+	vssResponseFeed     event.Feed
+	vssResponseScope    event.SubscriptionScope
+	toProcessResponseCh chan *VSSResponseEvent
+
 	// unit阈值签名相关
 	pendingTBLSSign map[common.Hash]*toTBLSSigned // 等待TBLS阈值签名的unit
 }

@@ -22,10 +22,12 @@ import (
 	"fmt"
 
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common"
 )
 
 func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
@@ -98,13 +100,37 @@ func (mp *MediatorPlugin) processVSSDeal(deal *VSSDealEvent) {
 	resp, err := dkg.ProcessDeal(deal.Deal)
 	if err != nil {
 		log.Error(err.Error())
+		return
 	}
 
 	if resp.Response.Status != vss.StatusApproval {
 		log.Error(fmt.Sprintf("DKG: own deal gave a complaint: %v", dstMed.String()))
+		return
 	}
 
-	// todo, broadcast to every other participant
+	go mp.BroadcastVSSResponse(dstMed, resp)
+}
+
+// BroadcastVSSResponse, broadcast response to every other participant
+func (mp *MediatorPlugin) BroadcastVSSResponse(srcMed common.Address, resp *dkg.Response) {
+	ams := mp.getDag().GetActiveMediators()
+
+	for _, dstMed := range ams {
+		if dstMed == srcMed {
+			continue
+		}
+
+		event := VSSResponseEvent{
+			DstMed: dstMed,
+			Resp:   resp,
+		}
+
+		mp.vssResponseFeed.Send(event)
+	}
+}
+
+func (mp *MediatorPlugin) SubscribeVSSResponseEvent(ch chan<- VSSResponseEvent) event.Subscription {
+	return mp.vssResponseScope.Track(mp.vssResponseFeed.Subscribe(ch))
 }
 
 func (mp *MediatorPlugin) ToUnitTBLSSign(peer string, unit *modules.Unit) error {

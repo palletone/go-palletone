@@ -479,3 +479,8 @@ func (p *peer) SendNewProducedUnit(unit *modules.Unit) error {
 func (p *peer) SendVSSDeal(deal *mp.VSSDealEvent) error {
 	return p2p.Send(p.rw, VSSDealMsg, deal)
 }
+
+// @author Albert·Gou
+func (p *peer) SendVSSResponse(resp *mp.VSSResponseEvent) error {
+	return p2p.Send(p.rw, VSSResponseMsg, resp)
+}

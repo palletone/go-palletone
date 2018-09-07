@@ -29,8 +29,12 @@ type NewProducedUnitEvent struct {
 	Unit *modules.Unit
 }
 
-// NewProducedUnitEvent is posted when a unit has been produced.
 type VSSDealEvent struct {
 	DstMed common.Address
 	Deal   *dkg.Deal
+}
+
+type VSSResponseEvent struct {
+	DstMed common.Address
+	Resp *dkg.Response
 }
