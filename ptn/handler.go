@@ -432,7 +432,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
 
-	//pm.syncTransactions(p)
+	pm.syncTransactions(p)
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
@@ -894,7 +894,6 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 			self.BroadcastNewProducedUnit(event.Unit)
 
 			// appended by wangjiyou
-			//TODO must recover
 			self.BroadcastUnit(event.Unit, true)
 			self.BroadcastUnit(event.Unit, false)
 
