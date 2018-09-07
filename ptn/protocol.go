@@ -57,7 +57,7 @@ const (
 	ConsensusMsg       = 0x08
 	NewProducedUnitMsg = 0x09
 	VSSDealMsg         = 0x0a
-	VSSResponseMsg         = 0x0b
+	VSSResponseMsg     = 0x0b
 
 	GetNodeDataMsg = 0x0d
 	NodeDataMsg    = 0x0e

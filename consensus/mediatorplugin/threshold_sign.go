@@ -24,10 +24,10 @@ import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common"
 )
 
 func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {

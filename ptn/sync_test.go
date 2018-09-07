@@ -43,4 +43,3 @@ package ptn
 //		t.Fatalf("fast sync not disabled after successful synchronisation")
 //	}
 //}
-

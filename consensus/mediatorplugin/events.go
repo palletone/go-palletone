@@ -36,5 +36,5 @@ type VSSDealEvent struct {
 
 type VSSResponseEvent struct {
 	DstMed common.Address
-	Resp *dkg.Response
+	Resp   *dkg.Response
 }
