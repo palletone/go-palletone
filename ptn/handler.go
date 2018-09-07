@@ -343,7 +343,7 @@ type producer interface {
 	ToProcessDeal(deal *mp.VSSDealEvent) error
 
 	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
-	ToProcessResponse(resp *mp.VSSResponseEvent)
+	ToProcessResponse(resp *mp.VSSResponseEvent) error
 }
 
 func (pm *ProtocolManager) Stop() {
