@@ -28,9 +28,18 @@ func GenerateP2SHLockScript(redeemScriptHash []byte) []byte {
 	return lock
 }
 //根据锁定脚本获得对应的地址
-func GetAddressFromScript([]byte) (common.Address,error){
-	return common.Address{},nil
-	//TODO
+func GetAddressFromScript(lockScript []byte) (common.Address,error){
+	scriptClass, addrs, _,err:=txscript.ExtractPkScriptAddrs(lockScript)
+	if err!=nil{
+		return  common.Address{}, err
+	}
+	if scriptClass==txscript.NonStandardTy{
+		return  common.Address{}, err
+	}
+	if len(addrs)!=1{
+		return  common.Address{}, err
+	}
+	return addrs[0],nil
 }
 //生成多签用的赎回脚本
 //Generate redeem script
@@ -44,16 +53,17 @@ func GenerateRedeemScript(needed byte, pubKeys [][]byte) []byte {
 		AddOp(txscript.OP_CHECKMULTISIG).Script()
 	return redeemScript
 }
-
+//根据地址产生对应的锁定脚本
 func GenerateLockScript(address common.Address) []byte {
 
-	t, _ := address.Validate()
-	if t == common.PublicKeyHash {
-		return GenerateP2PKHLockScript(address.Bytes())
-	} else {
-		return GenerateP2SHLockScript(address.Bytes())
-	}
-	// TODO contract
+	//t, _ := address.Validate()
+	//if t == common.PublicKeyHash {
+	//	return GenerateP2PKHLockScript(address.Bytes())
+	//} else {
+	//	return GenerateP2SHLockScript(address.Bytes())
+	//}
+	script,_:=  txscript.PayToAddrScript(address)
+	return script
 }
 /*
 //Give a lock script, and parse it then pick the address string out.
