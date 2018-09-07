@@ -121,7 +121,7 @@ func GetUnit(db ptndb.Database, hash common.Hash) *modules.Unit {
 	txs, err := GetUnitTransactions(db, uHash)
 	if err != nil {
 		log.Println("GetUnit when GetUnitTransactions failed , error:", err)
-		log.Println("植同学===》》》测试时需要注释掉》》》GetUnit when GetUnitTransactions failed , error:",err)
+		log.Println("植同学===》》》测试时需要注释掉》》》GetUnit when GetUnitTransactions failed , error:", err)
 		return nil
 	}
 	// generate unit
@@ -459,7 +459,7 @@ func GetTrieSyncProgress(db DatabaseReader) (uint64, error) {
 }
 
 //  dbFetchUtxoEntry
-func GetUtxoEntry(db ptndb.Database, key []byte) (*modules.Utxo, error) {
+func GetUtxoEntry(db DatabaseReader, key []byte) (*modules.Utxo, error) {
 	utxo := new(modules.Utxo)
 	data, err := db.Get(key)
 	if err != nil {

@@ -77,7 +77,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	txs, err := dagcommon.GetUnitTransactions(d.Db, uHash)
 	if err != nil {
 		log.Error("Current unit when get transactions", "error", err.Error())
-		log.Info("植同学===》》》测试时需要注释掉》》》Current unit when get transactions/error===",err.Error())
+		//log.Info("植同学===》》》测试时需要注释掉》》》Current unit when get transactions/error===", err.Error())
 		//测试时需要注释掉
 		return nil
 	}
@@ -112,7 +112,7 @@ func (d *Dag) GetUnitByNumber(number modules.ChainIndex) *modules.Unit {
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
-	height,err := d.GetUnitNumber(hash)
+	height, err := d.GetUnitNumber(hash)
 	if err != nil {
 		log.Error("GetHeaderByHash when GetUnitNumber", "error", err.Error())
 	}
@@ -403,13 +403,13 @@ func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
 
 // Get Header
 func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error) {
-	index,_ := d.GetUnitNumber(hash)
+	index, _ := d.GetUnitNumber(hash)
 	//TODO compare index with number
 	return storage.GetHeader(d.Db, hash, &index)
 }
 
 // Get UnitNumber
-func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex,error){
+func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex, error) {
 	return storage.GetNumberWithUnitHash(d.Db, hash)
 }
 
@@ -461,10 +461,13 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 	// add txIn previousoutpoint
 	view := txspool.NewUtxoViewpoint()
 	d.Mutex.RLock()
-	err := view.FetchUtxos(&d.Db, neededSet)
+	err := view.FetchUtxos(d.Db, neededSet)
 	d.Mutex.RUnlock()
 
 	return view, err
+}
+func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
+	return txspool.SaveUtxoView(d.Db, view)
 }
 
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {

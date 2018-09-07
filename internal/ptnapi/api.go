@@ -1261,7 +1261,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	// Validate the locktime, if given.
 	aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))
-	ast := modules.Asset{
+	ast := &modules.Asset{
 		AssertId: aid,
 		UniqueId: aid,
 		ChainId:  1,
@@ -1558,7 +1558,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			//	fmt.Println("Payment payload:", payload)
 			//}
 			for i, txIn := range payload.Input {
-				prevOutScript, _ := inputpoints[txIn.PreviousOutPoint]
+				prevOutScript, _ := inputpoints[*txIn.PreviousOutPoint]
 
 				// Set up our callbacks that we pass to txscript so it can
 				// look up the appropriate keys and scripts by address.

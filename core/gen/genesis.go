@@ -119,7 +119,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	}
 	// get new asset id
 	assetId := asset2.NewAsset()
-	asset := modules.Asset{
+	asset := &modules.Asset{
 		AssertId: assetId,
 		UniqueId: assetId,
 		ChainId:  genesis.ChainID,
@@ -150,7 +150,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		Payload: pay,
 	}
 	// step2, generate global config payload message
-	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis, &asset)
+	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis, asset)
 	if err != nil {
 		log.Error("Generate genesis unit config payload error.")
 		return nil

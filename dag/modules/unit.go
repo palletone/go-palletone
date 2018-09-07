@@ -321,7 +321,7 @@ type PaymentPayload struct {
 
 // NewTxOut returns a new bitcoin transaction output with the provided
 // transaction value and public key script.
-func NewTxOut(value uint64, pkScript []byte, asset Asset) *Output {
+func NewTxOut(value uint64, pkScript []byte, asset *Asset) *Output {
 	return &Output{
 		Value:    value,
 		PkScript: pkScript,

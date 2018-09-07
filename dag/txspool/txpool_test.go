@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"sync"
 	"testing"
 	"time"
 
@@ -42,12 +43,20 @@ func init() {
 }
 
 type testUnitDag struct {
-	Db *palletdb.MemDatabase
-
+	Db            *palletdb.MemDatabase
+	mux           sync.RWMutex
 	GenesisUnit   *modules.Unit
 	gasLimit      uint64
 	chainHeadFeed *event.Feed
 }
+
+// type testUtxoDagInterface interface {
+// 	CurrentUnit() *modules.Unit
+// 	GetUnit(hash common.Hash) *modules.Unit
+// 	StateAt(common.Hash) (*palletdb.MemDatabase, error)
+// 	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
+// 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
+// }
 
 func (ud *testUnitDag) CurrentUnit() *modules.Unit {
 	return modules.NewUnit(&modules.Header{
@@ -64,7 +73,34 @@ func (ud *testUnitDag) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
 }
 
 func (ud *testUnitDag) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
-	return nil, nil
+	neededSet := make(map[modules.OutPoint]struct{})
+	preout := modules.OutPoint{TxHash: tx.Hash()}
+	for i, msgcopy := range tx.TxMessages {
+		if msgcopy.App == modules.APP_PAYMENT {
+			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+				msgIdx := uint32(i)
+				preout.MessageIndex = msgIdx
+				for j := range msg.Output {
+					txoutIdx := uint32(j)
+					preout.OutIndex = txoutIdx
+					neededSet[preout] = struct{}{}
+				}
+			}
+		}
+
+	}
+	view := NewUtxoViewpoint()
+	ud.addUtxoview(view, tx)
+	ud.mux.RLock()
+	err := view.FetchUtxos(ud.Db, neededSet)
+	ud.mux.RUnlock()
+	return view, err
+}
+
+func (ud *testUnitDag) addUtxoview(view *UtxoViewpoint, tx *modules.Transaction) {
+	ud.mux.Lock()
+	view.AddTxOuts(tx)
+	ud.mux.Unlock()
 }
 func (ud *testUnitDag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
 	return ud.chainHeadFeed.Subscribe(ch)
@@ -76,17 +112,16 @@ func (ud *testUnitDag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent)
 func TestTransactionAddingTxs(t *testing.T) {
 	t0 := time.Now()
 	fmt.Println("script start.... ", t0)
-	//t.Parallel()
+	t.Parallel()
 
 	// Create the pool to test the limit enforcement with
 	db, _ := palletdb.NewMemDatabase()
-	unitchain := &testUnitDag{db, nil, 10000, new(event.Feed)}
-	//unitchain := dag.NewDag()
+	mutex := new(sync.RWMutex)
+	unitchain := &testUnitDag{db, *mutex, nil, 10000, new(event.Feed)}
 
 	config := testTxPoolConfig
 	config.GlobalSlots = 4096
 	var pending_cache, queue_cache, all, origin int
-	//pool := NewTxPool(config, unitchain)
 	pool := NewTxPool(config, unitchain)
 
 	defer pool.Stop()
@@ -103,28 +138,36 @@ func TestTransactionAddingTxs(t *testing.T) {
 	totalIncome := uint64(100000000)
 	// step2. create payload
 	createT := big.Int{}
+
+	outpoint := modules.OutPoint{
+		// TxHash: ,
+		MessageIndex: 2,
+		OutIndex:     3,
+	}
 	input := modules.Input{
-		SignatureScript: []byte("xxxxxxxxxx"),
-		Extra:           createT.SetInt64(time.Now().Unix()).Bytes(),
+		PreviousOutPoint: &outpoint,
+		SignatureScript:  []byte("xxxxxxxxxx"),
+		Extra:            createT.SetInt64(time.Now().Unix()).Bytes(),
 	}
 	output := modules.Output{
 		Value: totalIncome,
-		Asset: modules.Asset{
+		Asset: &modules.Asset{
 			AssertId: modules.BTCCOIN,
 			ChainId:  1},
 		PkScript: script,
 	}
-	payload0 := modules.PaymentPayload{
+
+	payload0 := &modules.PaymentPayload{
 		Input:  []*modules.Input{&input},
 		Output: []*modules.Output{&output},
 	}
 	copy(input.Extra[:], []byte("1234567890"))
-	payload1 := modules.PaymentPayload{
+	payload1 := &modules.PaymentPayload{
 		Input:  []*modules.Input{&input},
 		Output: []*modules.Output{&output},
 	}
 	copy(input.Extra[:], []byte("0987654321"))
-	payload2 := modules.PaymentPayload{
+	payload2 := &modules.PaymentPayload{
 		Input:  []*modules.Input{&input},
 		Output: []*modules.Output{&output},
 	}
@@ -150,7 +193,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	}
 
 	t1 := time.Now()
-	fmt.Println("addlocals start.... ", (t1.Unix() - t0.Unix()))
+	fmt.Println("addlocals start.... ", t1)
 	pool.AddLocals(txpool_txs)
 
 	log.Println("pending:", len(pool.pending))

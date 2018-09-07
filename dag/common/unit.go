@@ -600,7 +600,7 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 	}
 	output := modules.Output{
 		Value:    uint64(totalIncome),
-		Asset:    *asset,
+		Asset:    asset,
 		PkScript: script,
 	}
 	payload := modules.PaymentPayload{

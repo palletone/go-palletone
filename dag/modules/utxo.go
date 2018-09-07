@@ -133,8 +133,8 @@ func (utxo *Utxo) Clone() *Utxo {
 // utxo index db value: amount
 type UtxoIndex struct {
 	AccountAddr common.Address `json:"account_id"` // 所属人id
-	Asset       Asset
-	OutPoint    OutPoint
+	Asset       *Asset
+	OutPoint    *OutPoint
 }
 
 type UtxoIndexValue struct {
@@ -240,7 +240,7 @@ func (outpoint *OutPoint) IsEmpty() bool {
 	return false
 }
 
-func KeyToOutpoint(key []byte) OutPoint {
+func KeyToOutpoint(key []byte) *OutPoint {
 	// key: [UTXO_PREFIX][TxHash]_[MessageIndex]_[OutIndex]
 	preLen := len(UTXO_PREFIX)
 	sKey := key[preLen:]
@@ -249,7 +249,7 @@ func KeyToOutpoint(key []byte) OutPoint {
 
 	data := strings.Split(string(sKey), "_")
 	if len(data) != 2 {
-		return OutPoint{}
+		return nil
 	}
 
 	var vout OutPoint
@@ -264,16 +264,16 @@ func KeyToOutpoint(key []byte) OutPoint {
 		vout.OutIndex = uint32(i)
 	}
 
-	return vout
+	return &vout
 }
 
 type Output struct {
 	Value    uint64
 	PkScript []byte
-	Asset    Asset
+	Asset    *Asset
 }
 type Input struct {
-	PreviousOutPoint OutPoint
+	PreviousOutPoint *OutPoint
 	SignatureScript  []byte
 	Extra            []byte // if user creating a new asset, this field should be it's config data. Otherwise it is null.
 }
@@ -283,7 +283,7 @@ type Input struct {
 // MaxTxInSequenceNum.
 func NewTxIn(prevOut *OutPoint, signatureScript []byte) *Input {
 	return &Input{
-		PreviousOutPoint: *prevOut,
+		PreviousOutPoint: prevOut,
 		SignatureScript:  signatureScript,
 	}
 }
@@ -298,7 +298,7 @@ structure for saving asset property infomation
 */
 type AssetInfo struct {
 	Alias          string         `json:"alias"`           // asset name
-	AssetID        Asset          `json:"asset_id"`        // asset id
+	AssetID        *Asset         `json:"asset_id"`        // asset id
 	InitialTotal   uint64         `json:"initial_total"`   // total circulation
 	Decimal        uint32         `json:"deciaml"`         // asset accuracy
 	DecimalUnit    string         `json:"unit"`            // asset unit
@@ -324,6 +324,6 @@ func (assetInfo *AssetInfo) Print() {
 
 type AccountToken struct {
 	Alias   string `json:"alias"`
-	AssetID Asset  `json:"asset_id"`
+	AssetID *Asset `json:"asset_id"`
 	Balance uint64 `json:"balance"`
 }
