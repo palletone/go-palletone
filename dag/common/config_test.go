@@ -21,7 +21,7 @@ func TestSaveConfig(t *testing.T) {
 	aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))
 	st := modules.Asset{
-		AssertId: aid,
+		AssetId:  aid,
 		UniqueId: aid,
 		ChainId:  1,
 	}
@@ -61,7 +61,7 @@ func TestGetConfig(t *testing.T) {
 	//	log.Println("Get config data error:", err.Error())
 	//	return
 	//}
-	//log.Println(st.ChainId, st.UniqueId, st.AssertId)
+	//log.Println(st.ChainId, st.UniqueId, st.AssetId)
 	//// todo get int
 	//int_data := GetConfig(Dbconn, []byte("TestInt"))
 	//if len(data) <= 0 {
@@ -106,7 +106,7 @@ func TestSaveStruct(t *testing.T) {
 	aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))
 	st := modules.Asset{
-		AssertId: aid,
+		AssetId:  aid,
 		UniqueId: aid,
 		ChainId:  1,
 	}

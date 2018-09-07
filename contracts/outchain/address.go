@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	//	"github.com/palletone/btc-adaptor"
-	//	"github.com/palletone/eth-adaptor"
+	"github.com/palletone/btc-adaptor"
+	"github.com/palletone/eth-adaptor"
 	"github.com/palletone/go-palletone/common/log"
 
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -35,63 +35,63 @@ func ProcessOutChainAddress(chaincodeID string, outChainAddr *pb.OutChainAddress
 func processAddressMethodBTC(chaincodeID string, outChainAddr *pb.OutChainAddress,
 	params *OutChainMethod) (string, error) {
 	switch params.Method {
-	//	case "CreateMultiSigAddress":
-	//		var createMultiSigParams adaptorbtc.CreateMultiSigParams
-	//		err := json.Unmarshal(outChainAddr.Params, &createMultiSigParams)
-	//		if err != nil {
-	//			return "", fmt.Errorf("CreateMultiSigAddress params error : %s", err.Error())
-	//		}
-	//		log.Debug(modName, "CreateMultiSigAddress PublicKeys ==== ==== ", createMultiSigParams.PublicKeys)
+	case "CreateMultiSigAddress":
+		var createMultiSigParams adaptorbtc.CreateMultiSigParams
+		err := json.Unmarshal(outChainAddr.Params, &createMultiSigParams)
+		if err != nil {
+			return "", fmt.Errorf("CreateMultiSigAddress params error : %s", err.Error())
+		}
+		log.Debug(modName, "CreateMultiSigAddress PublicKeys ==== ==== ", createMultiSigParams.PublicKeys)
 
-	//		needJuryPubkeys := createMultiSigParams.N - len(createMultiSigParams.PublicKeys)
-	//		if needJuryPubkeys > 0 {
-	//			pubkeys, err := ClolletJuryBTCPubkeysTest(chaincodeID)
-	//			if err != nil {
-	//				return "", err
-	//			}
-	//			if len(pubkeys) == 0 || needJuryPubkeys > len(pubkeys) {
-	//				return "", errors.New("Collect Jury Pubkeys error.")
-	//			}
-	//			for i := 0; i < needJuryPubkeys; i++ {
-	//				createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, pubkeys[i])
-	//			}
-	//		} else {
-	//			return "", errors.New("params N error or Jury Pubkeys be set.")
-	//		}
+		needJuryPubkeys := createMultiSigParams.N - len(createMultiSigParams.PublicKeys)
+		if needJuryPubkeys > 0 {
+			pubkeys, err := ClolletJuryBTCPubkeysTest(chaincodeID)
+			if err != nil {
+				return "", err
+			}
+			if len(pubkeys) == 0 || needJuryPubkeys > len(pubkeys) {
+				return "", errors.New("Collect Jury Pubkeys error.")
+			}
+			for i := 0; i < needJuryPubkeys; i++ {
+				createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, pubkeys[i])
+			}
+		} else {
+			return "", errors.New("params N error or Jury Pubkeys be set.")
+		}
 
-	//		log.Debug(modName, "CreateMultiSigAddress PublicKeys ==== ==== ", createMultiSigParams.PublicKeys)
-	//		var btcAdaptor adaptorbtc.AdaptorBTC
-	//		btcAdaptor.NetID = cfg.Ada.Btc.NetID
-	//		//
-	//		result, err := btcAdaptor.CreateMultiSigAddress(&createMultiSigParams)
-	//		if err != nil {
-	//			return "", err
-	//		}
-	//		//
-	//		btcAdaptor.NetID = cfg.Ada.Btc.NetID
-	//		btcAdaptor.Host = cfg.Ada.Btc.Host
-	//		btcAdaptor.RPCUser = cfg.Ada.Btc.RPCUser
-	//		btcAdaptor.RPCPasswd = cfg.Ada.Btc.RPCPasswd
-	//		btcAdaptor.CertPath = cfg.Ada.Btc.CertPath
-	//		//
-	//		var importMultisigParams adaptorbtc.ImportMultisigParams
-	//		importMultisigParams.PublicKeys = createMultiSigParams.PublicKeys
-	//		importMultisigParams.MRequires = createMultiSigParams.M
-	//		importMultisigParams.WalletPasswd = cfg.Ada.Btc.WalletPasswd
-	//		resultImport, err := btcAdaptor.ImportMultisig(&importMultisigParams)
-	//		if err != nil {
-	//			return "", err
-	//		}
-	//		if strings.Contains(resultImport, "true") {
-	//			return result, nil
-	//		} else {
-	//			return "", errors.New("Import Multisig Failed.")
-	//		}
+		log.Debug(modName, "CreateMultiSigAddress PublicKeys ==== ==== ", createMultiSigParams.PublicKeys)
+		var btcAdaptor adaptorbtc.AdaptorBTC
+		btcAdaptor.NetID = cfg.Ada.Btc.NetID
+		//
+		result, err := btcAdaptor.CreateMultiSigAddress(&createMultiSigParams)
+		if err != nil {
+			return "", err
+		}
+		//
+		btcAdaptor.NetID = cfg.Ada.Btc.NetID
+		btcAdaptor.Host = cfg.Ada.Btc.Host
+		btcAdaptor.RPCUser = cfg.Ada.Btc.RPCUser
+		btcAdaptor.RPCPasswd = cfg.Ada.Btc.RPCPasswd
+		btcAdaptor.CertPath = cfg.Ada.Btc.CertPath
+		//
+		var importMultisigParams adaptorbtc.ImportMultisigParams
+		importMultisigParams.PublicKeys = createMultiSigParams.PublicKeys
+		importMultisigParams.MRequires = createMultiSigParams.M
+		importMultisigParams.WalletPasswd = cfg.Ada.Btc.WalletPasswd
+		resultImport, err := btcAdaptor.ImportMultisig(&importMultisigParams)
+		if err != nil {
+			return "", err
+		}
+		if strings.Contains(resultImport, "true") {
+			return result, nil
+		} else {
+			return "", errors.New("Import Multisig Failed.")
+		}
 
-	//	case "GetAddressByPubkey":
-	//		var btcAdaptor adaptorbtc.AdaptorBTC
-	//		btcAdaptor.NetID = cfg.Ada.Btc.NetID
-	//		return btcAdaptor.GetAddressByPubkey(string(outChainAddr.Params))
+	case "GetAddressByPubkey":
+		var btcAdaptor adaptorbtc.AdaptorBTC
+		btcAdaptor.NetID = cfg.Ada.Btc.NetID
+		return btcAdaptor.GetAddressByPubkey(string(outChainAddr.Params))
 	}
 
 	return "", errors.New("Unspport out chain Address method.")
@@ -106,64 +106,64 @@ type GetJuryAddressParams struct {
 func processAddressMethodETH(chaincodeID string, outChainAddr *pb.OutChainAddress,
 	params *OutChainMethod) (string, error) {
 	switch params.Method {
-	//	case "CreateMultiSigAddress":
-	//		var createMultiSigAddressParams adaptoreth.CreateMultiSigAddressParams
-	//		err := json.Unmarshal(outChainAddr.Params, &createMultiSigAddressParams)
-	//		if err != nil {
-	//			return "", fmt.Errorf("CreateMultiSigAddress params error : %s", err.Error())
-	//		}
-	//		log.Debug(modName, "CreateMultiSigAddress Address ==== ==== ", createMultiSigAddressParams.Addresses)
+	case "CreateMultiSigAddress":
+		var createMultiSigAddressParams adaptoreth.CreateMultiSigAddressParams
+		err := json.Unmarshal(outChainAddr.Params, &createMultiSigAddressParams)
+		if err != nil {
+			return "", fmt.Errorf("CreateMultiSigAddress params error : %s", err.Error())
+		}
+		log.Debug(modName, "CreateMultiSigAddress Address ==== ==== ", createMultiSigAddressParams.Addresses)
 
-	//		needJuryAddresses := createMultiSigAddressParams.N - len(createMultiSigAddressParams.Addresses)
-	//		if needJuryAddresses > 0 {
-	//			addresses, err := ClolletJuryETHAddressesTest(chaincodeID)
-	//			if err != nil {
-	//				return "", err
-	//			}
-	//			if len(addresses) == 0 || needJuryAddresses > len(addresses) {
-	//				return "", errors.New("Collect Jury Address error.")
-	//			}
-	//			for i := 0; i < needJuryAddresses; i++ {
-	//				createMultiSigAddressParams.Addresses = append(createMultiSigAddressParams.Addresses, addresses[i])
-	//			}
-	//		} else {
-	//			return "", errors.New("params N error or Jury Addresses not be reserved.")
-	//		}
+		needJuryAddresses := createMultiSigAddressParams.N - len(createMultiSigAddressParams.Addresses)
+		if needJuryAddresses > 0 {
+			addresses, err := ClolletJuryETHAddressesTest(chaincodeID)
+			if err != nil {
+				return "", err
+			}
+			if len(addresses) == 0 || needJuryAddresses > len(addresses) {
+				return "", errors.New("Collect Jury Address error.")
+			}
+			for i := 0; i < needJuryAddresses; i++ {
+				createMultiSigAddressParams.Addresses = append(createMultiSigAddressParams.Addresses, addresses[i])
+			}
+		} else {
+			return "", errors.New("params N error or Jury Addresses not be reserved.")
+		}
 
-	//		log.Debug(modName, "CreateMultiSigAddress Address ==== ==== ", createMultiSigAddressParams.Addresses)
-	//		var ethAdaptor adaptoreth.AdaptorETH
-	//		return ethAdaptor.CreateMultiSigAddress(&createMultiSigAddressParams)
+		log.Debug(modName, "CreateMultiSigAddress Address ==== ==== ", createMultiSigAddressParams.Addresses)
+		var ethAdaptor adaptoreth.AdaptorETH
+		return ethAdaptor.CreateMultiSigAddress(&createMultiSigAddressParams)
 
-	//	case "GetJuryETHAddr":
-	//		var getJuryAddressParams GetJuryAddressParams
-	//		err := json.Unmarshal(outChainAddr.Params, &getJuryAddressParams)
-	//		if err != nil {
-	//			return "", fmt.Errorf("GetJuryETHAddr params error : %s", err.Error())
-	//		}
-	//		log.Debug(modName, "GetJuryETHAddr PublicKeys ==== ==== ", getJuryAddressParams.Addresses)
+	case "GetJuryETHAddr":
+		var getJuryAddressParams GetJuryAddressParams
+		err := json.Unmarshal(outChainAddr.Params, &getJuryAddressParams)
+		if err != nil {
+			return "", fmt.Errorf("GetJuryETHAddr params error : %s", err.Error())
+		}
+		log.Debug(modName, "GetJuryETHAddr PublicKeys ==== ==== ", getJuryAddressParams.Addresses)
 
-	//		var addrArray []string
-	//		needJuryAddresses := getJuryAddressParams.N - len(getJuryAddressParams.Addresses)
-	//		if needJuryAddresses > 0 {
-	//			addresses, err := ClolletJuryETHAddressesTest(chaincodeID)
-	//			if err != nil {
-	//				return "", err
-	//			}
-	//			if len(addresses) == 0 || needJuryAddresses > len(addresses) {
-	//				return "", errors.New("Collect Jury Pubkeys error.")
-	//			}
-	//			for i := 0; i < needJuryAddresses; i++ {
-	//				addrArray = append(addrArray, addresses[i])
-	//			}
-	//		} else {
-	//			return "", errors.New("params N error or Jury Addresses not be reserved.")
-	//		}
+		var addrArray []string
+		needJuryAddresses := getJuryAddressParams.N - len(getJuryAddressParams.Addresses)
+		if needJuryAddresses > 0 {
+			addresses, err := ClolletJuryETHAddressesTest(chaincodeID)
+			if err != nil {
+				return "", err
+			}
+			if len(addresses) == 0 || needJuryAddresses > len(addresses) {
+				return "", errors.New("Collect Jury Pubkeys error.")
+			}
+			for i := 0; i < needJuryAddresses; i++ {
+				addrArray = append(addrArray, addresses[i])
+			}
+		} else {
+			return "", errors.New("params N error or Jury Addresses not be reserved.")
+		}
 
-	//		addrArrayJson, err := json.Marshal(addrArray)
-	//		if err != nil {
-	//			return "", err
-	//		}
-	//		return string(addrArrayJson), nil
+		addrArrayJson, err := json.Marshal(addrArray)
+		if err != nil {
+			return "", err
+		}
+		return string(addrArrayJson), nil
 	}
 
 	return "", errors.New("Unspport out chain Address method.")

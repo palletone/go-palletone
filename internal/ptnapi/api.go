@@ -1259,7 +1259,7 @@ const (
 //	aid := modules.IDType16{}
 //	aid.SetBytes([]byte("1111111111111111222222222222222222"))
 //	ast := modules.Asset{
-//		AssertId: aid,
+//		AssetId: aid,
 //		UniqueId: aid,
 //		ChainId:  1,
 //	}

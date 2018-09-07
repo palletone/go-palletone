@@ -48,7 +48,7 @@ var (
 //By default, system asset id=0,UniqueId=0,ChainId=1
 //默认的PTN资产，则AssetId=0，UniqueId=0,ChainId是当前链的ID
 type Asset struct {
-	AssertId IDType16 `json:"assert_id"` // 资产类别
+	AssetId  IDType16 `json:"asset_id"` // 资产类别
 	UniqueId IDType16 `json:"unique_id"` // every token has its unique id
 	ChainId  uint64   `json:"chain_id"`  // main chain id or sub-chain id
 }
@@ -69,7 +69,7 @@ func (asset *Asset) SetString(data string) error {
 }
 
 func (asset *Asset) IsEmpty() bool {
-	if len(asset.AssertId) <= 0 || len(asset.UniqueId) <= 0 {
+	if len(asset.AssetId) <= 0 || len(asset.UniqueId) <= 0 {
 		return true
 	}
 	return false
@@ -311,13 +311,13 @@ type AssetInfo struct {
 func (assetInfo *AssetInfo) Tokey() []byte {
 	key := fmt.Sprintf("%s%s",
 		ASSET_INFO_PREFIX,
-		assetInfo.AssetID.AssertId.String())
+		assetInfo.AssetID.AssetId.String())
 	return []byte(key)
 }
 
 func (assetInfo *AssetInfo) Print() {
 	fmt.Println("Asset alias", assetInfo.Alias)
-	fmt.Println("Asset Assetid", assetInfo.AssetID.AssertId)
+	fmt.Println("Asset Assetid", assetInfo.AssetID.AssetId)
 	fmt.Println("Asset UniqueId", assetInfo.AssetID.UniqueId)
 	fmt.Println("Asset ChainId", assetInfo.AssetID.ChainId)
 	fmt.Println("Asset Decimal", assetInfo.Decimal)
