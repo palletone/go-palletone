@@ -28,7 +28,6 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/math"
