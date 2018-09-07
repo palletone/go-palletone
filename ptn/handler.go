@@ -133,7 +133,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	// Figure out whether to allow fast sync or not
 	/*blockchain.CurrentBlock().NumberU64() > 0 */
 	//TODO must modify.The second start would Blockchain not empty, fast sync disabled
-	if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Index() > 0{
+	if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Index() > 0 {
 		log.Warn("dag not empty, fast sync disabled")
 		mode = downloader.FullSync
 	}
@@ -283,7 +283,7 @@ func (self *ProtocolManager) VSSDealTransmitLoop() {
 	for {
 		select {
 		case event := <-self.vssDealCh:
-			node := self.dag.GetActiveMediatorNode(event.AddTo)
+			node := self.dag.GetActiveMediatorNode(event.DstMed)
 			self.TransmitVSSDeal(node, &event)
 
 			// Err() channel will be closed when unsubscribing.
@@ -298,11 +298,11 @@ type producer interface {
 	// SubscribeNewProducedUnitEvent should return an event subscription of
 	// NewProducedUnitEvent and send events to the given channel.
 	SubscribeNewProducedUnitEvent(chan<- mp.NewProducedUnitEvent) event.Subscription
-
 	// UnitBLSSign is to BLS sign the unit
-	UnitBLSSign(peer string, unit *modules.Unit) error
+	ToUnitTBLSSign(peer string, unit *modules.Unit) error
 
 	SubscribeVSSDealEvent(chan<- mp.VSSDealEvent) event.Subscription
+	ToProcessDeal(deal *mp.VSSDealEvent) error
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -367,7 +367,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	)
 	genesis, err := common2.GetGenesisUnit(pm.dag.Db, 0)
 	if err != nil {
-		log.Info("GetGenesisUnit error","err", err)
+		log.Info("GetGenesisUnit error", "err", err)
 		return err
 	}
 	if err := p.Handshake(pm.networkId, index, hash, genesis.Hash()); err != nil {
@@ -461,7 +461,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				// Hash based traversal towards the genesis block
 				for i := 0; i < int(query.Skip)+1; i++ {
 					if header, err := pm.dag.GetHeader(query.Origin.Hash, number); err == nil && header != nil {
-						if number != 0{
+						if number != 0 {
 							query.Origin.Hash = header.ParentsHash[0]
 						}
 						number--
@@ -472,41 +472,41 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 					}
 				}
 			//case query.Origin.Hash != (common.Hash{}) && !query.Reverse:
-				//			//	// Hash based traversal towards the leaf block
-				//			//	var (
-				//			//		current = origin.Number.Index
-				//			//		next    = current + query.Skip + 1
-				//			//	)
-				//			//	//log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
-				//			//	if next <= current {
-				//			//		infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
-				//			//		log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
-				//			//		unknown = true
-				//			//	} else {
-				//			//		//log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
-				//			//
-				//			//		//index := query.Origin.Number
-				//			//		//index := modules.ChainIndex{}
-				//			//		//index.AssetID.SetBytes([]byte(query.Origin.Number.AssetID))
-				//			//		//index.Index = next
-				//			//		//index.IsMain = true
-				//			//		indexNext := modules.ChainIndex{
-				//			//			modules.PTNCOIN,
-				//			//			true,
-				//			//			next,
-				//			//		}
-				//			//		if header := pm.dag.GetHeaderByNumber(indexNext); header != nil {
-				//			//			//query.Origin.Hash = header.Hash()
-				//			//			//TODO must recover
-				//			//			if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
-				//			//				query.Origin.Hash = header.Hash()
-				//			//			} else {
-				//			//				unknown = true
-				//			//			}
-				//			//		} else {
-				//			//			unknown = true
-				//			//		}
-				//			//	}
+			//			//	// Hash based traversal towards the leaf block
+			//			//	var (
+			//			//		current = origin.Number.Index
+			//			//		next    = current + query.Skip + 1
+			//			//	)
+			//			//	//log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
+			//			//	if next <= current {
+			//			//		infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
+			//			//		log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
+			//			//		unknown = true
+			//			//	} else {
+			//			//		//log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
+			//			//
+			//			//		//index := query.Origin.Number
+			//			//		//index := modules.ChainIndex{}
+			//			//		//index.AssetID.SetBytes([]byte(query.Origin.Number.AssetID))
+			//			//		//index.Index = next
+			//			//		//index.IsMain = true
+			//			//		indexNext := modules.ChainIndex{
+			//			//			modules.PTNCOIN,
+			//			//			true,
+			//			//			next,
+			//			//		}
+			//			//		if header := pm.dag.GetHeaderByNumber(indexNext); header != nil {
+			//			//			//query.Origin.Hash = header.Hash()
+			//			//			//TODO must recover
+			//			//			if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
+			//			//				query.Origin.Hash = header.Hash()
+			//			//			} else {
+			//			//				unknown = true
+			//			//			}
+			//			//		} else {
+			//			//			unknown = true
+			//			//		}
+			//			//	}
 			case query.Reverse:
 				// Number based traversal towards the genesis block
 				if query.Origin.Number.Index >= query.Skip+1 {
@@ -755,11 +755,21 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			log.Info("===NewProducedUnitMsg===", "err:", err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		pm.producer.UnitBLSSign(p.id, &unit)
+		pm.producer.ToUnitTBLSSign(p.id, &unit)
+
+		// append by Albert·Gou
+	case msg.Code == VSSDealMsg:
+		var deal mp.VSSDealEvent
+		if err := msg.Decode(&deal); err != nil {
+			log.Info("===VSSDealMsg===", "err:", err)
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		pm.producer.ToProcessDeal(&deal)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
+
 	return nil
 }
 
@@ -894,15 +904,13 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 	}
 	holder := common.Address{}
 	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
-	msg0 := modules.Message{
+	msg0 := &modules.Message{
 		App:     modules.APP_PAYMENT,
 		Payload: pay,
 	}
-	//tx := &modules.Transaction{
-	//	TxMessages: []modules.Message{msg0},
-	//}
-	var tx modules.Transaction
-	tx.TxMessages = append(tx.TxMessages, &msg0)
+	tx := &modules.Transaction{
+		TxMessages: []*modules.Message{msg0},
+	}
 	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
 	if err != nil {
 		msg := fmt.Sprintf("Get genesis transactions hash error: %s", err)
@@ -911,7 +919,7 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 	}
 	tx.TxHash.SetBytes(txHash)
 
-	return &tx
+	return tx
 }
 
 // @author Albert·Gou

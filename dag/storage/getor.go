@@ -109,7 +109,6 @@ func GetUnit(db ptndb.Database, hash common.Hash) *modules.Unit {
 	}
 	// 2. unit header
 	uHeader, err := GetHeader(db, hash, &height)
-	//log.Printf("--------GetHeader(db, hash, &height)t====》》》%#v\n",uHeader)
 	if err != nil {
 		log.Println("GetUnit when GetHeader failed , error:", err)
 		return nil

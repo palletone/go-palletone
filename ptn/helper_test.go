@@ -29,7 +29,7 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
+	//"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/consensus"
 
 	//"github.com/palletone/go-palletone/core"
@@ -44,10 +44,10 @@ import (
 	common2 "github.com/palletone/go-palletone/dag/common"
 )
 
-var (
-	testBankKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	testBank       = crypto.PubkeyToAddress(testBankKey.PublicKey)
-)
+//var (
+//	testBankKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+//	testBank       = crypto.PubkeyToAddress(testBankKey.PublicKey)
+//)
 
 // newTestProtocolManager creates a new protocol manager for testing purposes,
 // with the given number of blocks already known, and potential notification
@@ -138,14 +138,14 @@ func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Sub
 
 // newTestTransaction create a new dummy transaction.
 func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *modules.Transaction {
-	msg := modules.Message{
+	msg := &modules.Message{
 		App: modules.APP_PAYMENT,
 		//PayloadHash: common.HexToHash("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
 		Payload: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 	}
 	//tx := modules.NewTransaction(nonce, big.NewInt(0), []byte("abc"))
 	tx := modules.NewTransaction(
-		[]modules.Message{msg, msg, msg},
+		[]*modules.Message{msg, msg, msg},
 		12345,
 	)
 

@@ -21,7 +21,6 @@ package dag
 import (
 	"fmt"
 	"sync"
-
 	"github.com/coocood/freecache"
 	//"github.com/ethereum/go-ethereum/params"
 	"github.com/dedis/kyber"
@@ -47,7 +46,6 @@ type Dag struct {
 	GlobalProp    *modules.GlobalProperty
 	DynGlobalProp *modules.DynamicGlobalProperty
 	MediatorSchl  *modules.MediatorSchedule
-
 	// memory unit
 	Memdag *modules.MemDag
 }
@@ -61,10 +59,8 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	}
 	// step2. get unit height
 	height, err := d.GetUnitNumber(hash)
-	//fmt.Printf("d.GetUnitNumber(hash)===%#v\n",height)
 	// get unit header
 	uHeader, err := storage.GetHeader(d.Db, hash, &height)
-	//fmt.Printf("storage.GetHeader(d.Db, hash, &height)==%#v\n",uHeader)
 	if err != nil {
 		log.Error("Current unit when get unit header", "error", err.Error())
 		return nil
@@ -72,7 +68,6 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	// get unit hash
 	uHash := common.Hash{}
 	uHash.SetBytes(hash.Bytes())
-
 	// get transaction list
 	txs, err := dagcommon.GetUnitTransactions(d.Db, uHash)
 	if err != nil {

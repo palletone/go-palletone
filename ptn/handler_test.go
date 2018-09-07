@@ -17,17 +17,19 @@
 package ptn
 
 import (
-	"testing"
-	"github.com/palletone/go-palletone/dag/modules"
-	"math/rand"
-	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/ptn/downloader"
-	common2 "github.com/palletone/go-palletone/dag/common"
 	"math"
+	"math/rand"
+	"testing"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/p2p"
+	common2 "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
 // Tests that protocol versions and modes of operations are matched up properly.
+/*
 func TestProtocolCompatibility(t *testing.T) {
 	// Define the compatibility chart
 	tests := []struct {
@@ -57,8 +59,9 @@ func TestProtocolCompatibility(t *testing.T) {
 		}
 	}
 }
+*/
 // Tests that block headers can be retrieved from a remote chain based on user queries.
-func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
+//func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
 func testGetBlockHeaders(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil)
 	peer, _ := newTestPeer("peer", protocol, pm, true)
@@ -129,17 +132,17 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 	jia1 := modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
-		i.Index+1,
+		i.Index + 1,
 	}
 	in1 := modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
-		i.Index-1,
+		i.Index - 1,
 	}
 	in4 := modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
-		i.Index-4,
+		i.Index - 4,
 	}
 	i1 := modules.ChainIndex{
 		modules.PTNCOIN,
@@ -285,7 +288,6 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		}
 		// Send the hash request and verify the response
 		p2p.Send(peer.app, 0x03, tt.query)
-		//fmt.Println(len(headers))
 		if err := p2p.ExpectMsg(peer.app, 0x04, headers); err != nil {
 			t.Errorf("test %d: headers mismatch: %v", i, err)
 		}
@@ -293,10 +295,10 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		if tt.query.Origin.Hash == (common.Hash{}) {
 			if origin := pm.dag.GetUnitByNumber(tt.query.Origin.Number); origin != nil {
 				index := modules.ChainIndex{
-						AssetID:modules.PTNCOIN,
-						IsMain: true,
-						Index:  uint64(0),
-					}
+					AssetID: modules.PTNCOIN,
+					IsMain:  true,
+					Index:   uint64(0),
+				}
 				tt.query.Origin.Hash, tt.query.Origin.Number = origin.Hash(), index
 				p2p.Send(peer.app, 0x03, tt.query)
 				if err := p2p.ExpectMsg(peer.app, 0x04, headers); err != nil {
@@ -315,18 +317,18 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	defer peer.close()
 	// Create a batch of tests for various scenarios
 	limit := downloader.MaxBlockFetch
-	gUnit,_:=common2.GetGenesisUnit(pm.dag.Db,0)
+	gUnit, _ := common2.GetGenesisUnit(pm.dag.Db, 0)
 	tests := []struct {
 		random    int           // Number of blocks to fetch randomly from the chain
 		explicit  []common.Hash // Explicitly requested blocks
 		available []bool        // Availability of explicitly requested blocks
 		expected  int           // Total number of existing blocks to expect
 	}{
-		{1, nil, nil, 1},                                                         // A single random block should be retrievable
-		{10, nil, nil, 10},                                                       // Multiple random blocks should be retrievable
-		{limit, nil, nil, limit},                                                 // The maximum possible blocks should be retrievable
-		{limit + 1, nil, nil, limit},                                             // No more than the possible block count should be returned
-		{0, []common.Hash{gUnit.Hash()}, []bool{true}, 1},      // The genesis block should be retrievable
+		{1, nil, nil, 1},                                                 // A single random block should be retrievable
+		{10, nil, nil, 10},                                               // Multiple random blocks should be retrievable
+		{limit, nil, nil, limit},                                         // The maximum possible blocks should be retrievable
+		{limit + 1, nil, nil, limit},                                     // No more than the possible block count should be returned
+		{0, []common.Hash{gUnit.Hash()}, []bool{true}, 1},                // The genesis block should be retrievable
 		{0, []common.Hash{pm.dag.CurrentUnit().Hash()}, []bool{true}, 1}, // The chains head block should be retrievable
 		{0, []common.Hash{{}}, []bool{false}, 0},
 	}

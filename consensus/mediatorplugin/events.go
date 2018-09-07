@@ -31,7 +31,6 @@ type NewProducedUnitEvent struct {
 
 // NewProducedUnitEvent is posted when a unit has been produced.
 type VSSDealEvent struct {
-	AddFrom common.Address
-	AddTo   common.Address
-	Deal    *dkg.Deal
+	DstMed common.Address
+	Deal   *dkg.Deal
 }

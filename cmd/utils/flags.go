@@ -710,8 +710,9 @@ func makeDatabaseHandles() int {
 // a key index in the key store to an internal account representation.
 func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error) {
 	// If the specified account is a valid address, return it
-	if common.IsValidAddress(account) {
-		return accounts.Account{Address: common.StringToAddress(account)}, nil
+	addr, err := common.StringToAddress(account)
+	if err == nil {
+		return accounts.Account{Address: addr}, nil
 	} else {
 		return accounts.Account{}, fmt.Errorf("invalid account address: %s", account)
 	}

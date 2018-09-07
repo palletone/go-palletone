@@ -50,9 +50,9 @@ func StrToMedAdd(addStr string) common.Address {
 	address := strings.TrimSpace(addStr)
 	address = strings.Trim(address, "\"")
 
-	addr := common.StringToAddress(address)
-	addrType, err := addr.Validate()
-	if err != nil || addrType != common.PublicKeyHash {
+	addr, err := common.StringToAddress(address)
+	// addrType, err := addr.Validate()
+	if err != nil || addr.GetType() != common.PublicKeyHash {
 		log.Error(fmt.Sprintf("Invalid mediator account address \"%v\" : %v", address, err))
 	}
 

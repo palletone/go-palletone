@@ -34,8 +34,8 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+        "github.com/palletone/go-palletone/tokenengine"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -523,9 +523,10 @@ func TxtoTxpoolTx(txpool *TxPool, tx *modules.Transaction) *modules.TxPoolTransa
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
 				for _, script := range msg.Input {
-					if addr, err := ptnapi.GetAddressFromScript(script.SignatureScript[:]); err == nil {
+					if addr, err := tokenengine.GetAddressFromScript(script.SignatureScript[:]); err == nil {
 						var from common.Address
-						from.SetString(addr)
+                                        addr = addr  
+					//	from.SetString(addr)
 						txpool_tx.From = append(txpool_tx.From, &from)
 					} else {
 						fmt.Println("get failed address: ", err)

@@ -22,14 +22,16 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/core"
 	"io"
 	"math"
 	"math/big"
 	"strconv"
 	"time"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/obj"
+	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
 )
 
 var (
@@ -51,18 +53,18 @@ type TxIn struct {
 	Sequence         uint32
 }
 
-func NewTransaction(msg []Message, lock uint32) *Transaction {
+func NewTransaction(msg []*Message, lock uint32) *Transaction {
 	return newTransaction(msg, lock)
 }
 
-func NewContractCreation(msg []Message, lock uint32) *Transaction {
+func NewContractCreation(msg []*Message, lock uint32) *Transaction {
 	return newTransaction(msg, lock)
 }
 
-func newTransaction(msg []Message, lock uint32) *Transaction {
+func newTransaction(msg []*Message, lock uint32) *Transaction {
 	tx := new(Transaction)
 	for _, m := range msg {
-		tx.TxMessages = append(tx.TxMessages, &m)
+		tx.TxMessages = append(tx.TxMessages, m)
 	}
 
 	return tx
@@ -239,14 +241,9 @@ func (tx *Transaction) Cost() *big.Int {
 }
 
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
-	tx.TxHash.Set(cpy.TxHash)
-	//tx.Locktime = cpy.Locktime
-	tx.TxMessages = make([]*Message, len(cpy.TxMessages))
-	for i, msg := range cpy.TxMessages {
-		newMsg := new(Message)
-		newMsg = msg
-		tx.TxMessages[i] = newMsg
-	}
+
+	obj.DeepCopy(&tx, cpy)
+
 }
 
 //// AsMessage returns the transaction as a core.Message.
@@ -524,6 +521,13 @@ func (msg *PaymentPayload) SerializeSize() int {
 func (msg *Transaction) SerializeSize() int {
 	n := msg.baseSize()
 	return n
+}
+
+//Deep copy transaction to a new object
+func (tx *Transaction) Clone() Transaction {
+	var newTx Transaction
+	obj.DeepCopy(&newTx, tx)
+	return newTx
 }
 
 // AddTxOut adds a transaction output to the message.

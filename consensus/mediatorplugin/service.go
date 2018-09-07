@@ -78,8 +78,9 @@ type MediatorPlugin struct {
 	suite vss.Suite
 	dkgs  map[common.Address]*dkg.DistKeyGenerator
 
-	vssDealFeed  event.Feed
-	vssDealScope event.SubscriptionScope
+	vssDealFeed     event.Feed
+	vssDealScope    event.SubscriptionScope
+	toProcessDealCh chan *VSSDealEvent
 
 	resps map[common.Address][]*dkg.Response
 
@@ -175,6 +176,9 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 
 	// 3. 给当前节点控制的活跃mediator，初始化对应的DKG
 	go mp.NewActiveMediatorsDKG()
+
+	// 4. 处理 VSS deal 循环
+	go mp.processDealLoop()
 
 	// 4. BLS签名循环
 	go mp.unitBLSSignLoop()
