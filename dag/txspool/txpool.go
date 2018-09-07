@@ -36,7 +36,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
-        "github.com/palletone/go-palletone/tokenengine"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -1281,9 +1280,10 @@ func (view *UtxoViewpoint) addTxOut(outpoint modules.OutPoint, txOut *modules.Tx
 	}
 	utxo.Amount = uint64(txOut.Value)
 	utxo.PkScript = txOut.PkScript
-	utxo.Asset.AssertId = txOut.Asset.AssertId
-	utxo.Asset.UniqueId = txOut.Asset.UniqueId
-	utxo.Asset.ChainId = txOut.Asset.ChainId
+	utxo.Asset = txOut.Asset
+	// utxo.Asset.AssertId = txOut.Asset.AssertId
+	// utxo.Asset.UniqueId = txOut.Asset.UniqueId
+	// utxo.Asset.ChainId = txOut.Asset.ChainId
 
 	// isCoinbase ?
 	// flags --->  标记utxo状态
@@ -1303,8 +1303,8 @@ func (view *UtxoViewpoint) AddTxOut(tx *modules.Transaction, msgIdx, txoutIdx ui
 				}
 				preout := modules.OutPoint{TxHash: tx.Hash(), MessageIndex: msgIdx, OutIndex: txoutIdx}
 				output := msg.Output[txoutIdx]
-				asset := &modules.Asset{AssertId: output.Asset.AssertId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
-				txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: asset}
+				//asset := &modules.Asset{AssetId: output.Asset.AssetId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
+				txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: output.Asset}
 				view.addTxOut(preout, txout, false)
 			}
 		}
