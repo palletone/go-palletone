@@ -18,13 +18,9 @@ package main
 
 import (
 	"fmt"
-	//"strconv"
-	// "io/ioutil"
-	"bytes"
-	"encoding/hex"
-	"encoding/json"
+
 	"gopkg.in/urfave/cli.v1"
-	"strings"
+
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/cmd/console"
@@ -35,15 +31,16 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/internal/ptnapi"
-	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+	//"github.com/palletone/go-palletone/internal/ptnapi"
+	// "github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
+	// "github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/wire"
-	"github.com/palletone/go-palletone/tokenengine/btcutil"
+	// "github.com/palletone/go-palletone/tokenengine/btcutil"
 	//"github.com/btcsuite/btcd/btcec"
-	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/dag/modules"
+	//"github.com/palletone/go-palletone/common/rlp"
+	//"github.com/palletone/go-palletone/dag/modules"
+	//"github.com/palletone/go-palletone/tokenengine"
+	//"github.com/btcsuite/btcd/btcjson"
 )
 
 var (
@@ -218,36 +215,36 @@ verify the message signature.
 	Dump the private key.
 `,
 			},
-			{
-				Name:      "createtx",
-				Usage:     "createtx sendfrom sendto ptncount",
-				Action:    utils.MigrateFlags(accountCreateTx),
-				ArgsUsage: "createtx <fromaddress> <toaddress> ptncount",
-				Flags: []cli.Flag{
-					utils.DataDirFlag,
-					utils.KeyStoreDirFlag,
-					utils.PasswordFileFlag,
-				},
-				Description: `
-    gptn account createtx <fromaddress> <toaddress> count
-	Dump the private key.
-`,
-			},
-			{
-				Name:      "signtx",
-				Usage:     "signtx a raw transcaction",
-				Action:    utils.MigrateFlags(accountSignTx),
-				ArgsUsage: "signtx <rawtx> <script> privkey",
-				Flags: []cli.Flag{
-					utils.DataDirFlag,
-					utils.KeyStoreDirFlag,
-					utils.PasswordFileFlag,
-				},
-				Description: `
-    gptn account createtx <fromaddress> <toaddress> count
-	Dump the private key.
-`,
-			},
+//			{
+//				Name:      "createtx",
+//				Usage:     "createtx sendfrom sendto ptncount",
+//				Action:    utils.MigrateFlags(accountCreateTx),
+//				ArgsUsage: "createtx <fromaddress> <toaddress> ptncount",
+//				Flags: []cli.Flag{
+//					utils.DataDirFlag,
+//					utils.KeyStoreDirFlag,
+//					utils.PasswordFileFlag,
+//				},
+//				Description: `
+//    gptn account createtx <fromaddress> <toaddress> count
+//	Dump the private key.
+//`,
+//			},
+//			{
+//				Name:      "signtx",
+//				Usage:     "signtx a raw transcaction",
+//				Action:    utils.MigrateFlags(accountSignTx),
+//				ArgsUsage: "signtx <rawtx> <script> privkey",
+//				Flags: []cli.Flag{
+//					utils.DataDirFlag,
+//					utils.KeyStoreDirFlag,
+//					utils.PasswordFileFlag,
+//				},
+//				Description: `
+//    gptn account createtx <fromaddress> <toaddress> count
+//	Dump the private key.
+//`,
+//			},
 			{
 				Name:   "import",
 				Usage:  "Import a private key into a new account",
@@ -412,7 +409,7 @@ func accountCreate(ctx *cli.Context) error {
 	}
 
 	//	fmt.Printf("Address Hex: {%x}\n", address)
-	fmt.Printf("Address: %s\n", address)
+	fmt.Printf("Address: %s\n", address.String())
 	return nil
 }
 
@@ -537,51 +534,51 @@ type RawTransactionGenResult struct {
 	Rawtx string `json:"rawtx"`
 }
 
-func accountCreateTx(ctx *cli.Context) error {
-	if len(ctx.Args()) == 0 {
-		utils.Fatalf("No accounts specified to update")
-	}
-	if len(ctx.Args()) != 1 {
-		utils.Fatalf("usage: [{'txid':txid,'vout':n},...] {address:amount,...}")
-	}
-	params := ctx.Args().First()
-	var rawTransactionGenParams RawTransactionGenParams
-	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
-	if err != nil {
-		return nil
-	}
-	//transaction inputs
-	var inputs []btcjson.TransactionInput
-	for _, inputOne := range rawTransactionGenParams.Inputs {
-		input := btcjson.TransactionInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex}
-		inputs = append(inputs, input)
-	}
-	if len(inputs) == 0 {
-		return nil
-	}
-	//realNet := &chaincfg.MainNetParams
-	amounts := map[string]float64{}
-	for _, outOne := range rawTransactionGenParams.Outputs {
-		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
-			continue
-		}
-		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
-	}
-	if len(amounts) == 0 {
-		return nil
-	}
-	arg := btcjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
-	tx, err := ptnapi.CreateRawTransaction(arg)
-	if err != nil {
-		utils.Fatalf("Verfiy error:%s", err)
-	}
-	if tx != "" {
-		fmt.Println("Create transcation success")
-	} else {
-		utils.Fatalf("Invalid create action")
-	}
-	return nil
-}
+//func accountCreateTx(ctx *cli.Context) error {
+//	if len(ctx.Args()) == 0 {
+//		utils.Fatalf("No accounts specified to update")
+//	}
+//	if len(ctx.Args()) != 1 {
+//		utils.Fatalf("usage: [{'txid':txid,'vout':n},...] {address:amount,...}")
+//	}
+//	params := ctx.Args().First()
+//	var rawTransactionGenParams RawTransactionGenParams
+//	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
+//	if err != nil {
+//		return nil
+//	}
+//	//transaction inputs
+//	var inputs []btcjson.TransactionInput
+//	for _, inputOne := range rawTransactionGenParams.Inputs {
+//		input := btcjson.TransactionInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex}
+//		inputs = append(inputs, input)
+//	}
+//	if len(inputs) == 0 {
+//		return nil
+//	}
+//	//realNet := &chaincfg.MainNetParams
+//	amounts := map[string]float64{}
+//	for _, outOne := range rawTransactionGenParams.Outputs {
+//		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
+//			continue
+//		}
+//		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
+//	}
+//	if len(amounts) == 0 {
+//		return nil
+//	}
+//	//arg := btcjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
+//	// tx, err := ptnapi.CreateRawTransaction(arg)
+//	// if err != nil {
+//	// 	utils.Fatalf("Verfiy error:%s", err)
+//	// }
+//	// if tx != "" {
+//	// 	fmt.Println("Create transcation success")
+//	// } else {
+//	// 	utils.Fatalf("Invalid create action")
+//	// }
+//	return nil
+//}
 
 type SignTransactionParams struct {
 	TransactionHex string   `json:"transactionhex"`
@@ -593,118 +590,120 @@ type SignTransactionResult struct {
 	Complete       bool   `json:"complete"`
 }
 
-func accountSignTx(ctx *cli.Context) error {
-	if len(ctx.Args()) == 0 {
-		utils.Fatalf("No accounts specified to update")
-	}
-	if len(ctx.Args()) != 1 {
-		utils.Fatalf("usage :json: [{'txid':txid,'vout':n,'scriptPubKey':hex,'redeemScript':hex},...] [,...] " +
-			"[sighashtype='ALL']")
-	}
-	params := ctx.Args().First()
-	var signTransactionParams SignTransactionParams
-	err := json.Unmarshal([]byte(params), &signTransactionParams)
-	if err != nil {
-		return nil
-	}
-
-	//check empty string
-	if "" == signTransactionParams.TransactionHex {
-		return nil
-	}
-
-	//decode Transaction hexString to bytes
-	rawTXBytes, err := hex.DecodeString(signTransactionParams.TransactionHex)
-	if err != nil {
-		return nil
-	}
-	//deserialize to MsgTx
-	tx := new(modules.Transaction)
-	if err := rlp.DecodeBytes(rawTXBytes, tx); err != nil {
-		return nil
-	}
-
-	//chainnet
-
-	//get private keys for sign
-	var keys []string
-	for _, key := range signTransactionParams.Privkeys {
-		key = strings.TrimSpace(key) //Trim whitespace
-		if len(key) == 0 {
-			continue
-		}
-		keys = append(keys, key)
-	}
-	if len(keys) == 0 {
-		return nil
-	}
-	realNet := &chaincfg.MainNetParams
-	//sign the UTXO hash, must know RedeemHex which contains in RawTxInput
-	var rawInputs []btcjson.RawTxInput
-	for {
-		if "" == signTransactionParams.RedeemHex {
-			break
-		}
-		//decode redeem's hexString to bytes
-		redeem, err := hex.DecodeString(signTransactionParams.RedeemHex)
-		if err != nil {
-			break
-		}
-		//get multisig payScript
-		scriptAddr, err := btcutil.NewAddressScriptHash(redeem, realNet)
-		scriptPkScript, err := txscript.PayToAddrScript(scriptAddr)
-		//multisig transaction need redeem for sign
-		for _, mtx := range tx.TxMessages {
-			payload := mtx.Payload
-			payment, ok := payload.(modules.PaymentPayload)
-			if ok == true {
-				for _, txinOne := range payment.Input {
-					rawInput := btcjson.RawTxInput{
-						txinOne.PreviousOutPoint.TxHash.String(), //txid
-						txinOne.PreviousOutPoint.OutIndex,
-						txinOne.PreviousOutPoint.MessageIndex, //outindex
-						string(scriptPkScript),                //multisig pay script
-						signTransactionParams.RedeemHex}       //redeem
-					rawInputs = append(rawInputs, rawInput)
-				}
-			}
-		}
-		break
-	}
-
-	txHex := ""
-	if &tx != nil {
-		// Serialize the transaction and convert to hex string.
-		buf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
-		buf.Grow(tx.SerializeSize())
-		mtxbt, err := rlp.EncodeToBytes(buf)
-		if err != nil {
-			return err
-		}
-		txHex = hex.EncodeToString(mtxbt)
-		fmt.Println(txHex)
-	}
-
-	// All returned errors (not OOM, which panics) encounted during
-	// bytes.Buffer writes are unexpected.
-	//mtxHex, err := messageToHex(mtx)
-	send_args := btcjson.NewSignRawTransactionCmd(txHex, &rawInputs, &keys, nil)
-	signtxout, err := ptnapi.SignRawTransaction(send_args)
-	if signtxout == nil {
-		utils.Fatalf("Invalid signature")
-	}
-	signtx := signtxout.(btcjson.SignRawTransactionResult)
-	if err != nil {
-		utils.Fatalf("signtx error:%s", err)
-	}
-	if signtx.Complete == true {
-		fmt.Println("Signature success")
-		fmt.Println(signtx.Hex)
-	} else {
-		utils.Fatalf("Invalid signature")
-	}
-	return nil
-}
+//func accountSignTx(ctx *cli.Context) error {
+//	if len(ctx.Args()) == 0 {
+//		utils.Fatalf("No accounts specified to update")
+//	}
+//	if len(ctx.Args()) != 1 {
+//		utils.Fatalf("usage :json: [{'txid':txid,'vout':n,'scriptPubKey':hex,'redeemScript':hex},...] [,...] " +
+//			"[sighashtype='ALL']")
+//	}
+//	params := ctx.Args().First()
+//	var signTransactionParams SignTransactionParams
+//	err := json.Unmarshal([]byte(params), &signTransactionParams)
+//	if err != nil {
+//		return nil
+//	}
+//
+//	//check empty string
+//	if "" == signTransactionParams.TransactionHex {
+//		return nil
+//	}
+//
+//	//decode Transaction hexString to bytes
+//	rawTXBytes, err := hex.DecodeString(signTransactionParams.TransactionHex)
+//	if err != nil {
+//		return nil
+//	}
+//	//deserialize to MsgTx
+//	tx := new(modules.Transaction)
+//	if err := rlp.DecodeBytes(rawTXBytes, tx); err != nil {
+//		return nil
+//	}
+//
+//	//chainnet
+//
+//	//get private keys for sign
+//	var keys []string
+//	for _, key := range signTransactionParams.Privkeys {
+//		key = strings.TrimSpace(key) //Trim whitespace
+//		if len(key) == 0 {
+//			continue
+//		}
+//		keys = append(keys, key)
+//	}
+//	if len(keys) == 0 {
+//		return nil
+//	}
+//	//realNet := &chaincfg.MainNetParams
+//	//sign the UTXO hash, must know RedeemHex which contains in RawTxInput
+//	var rawInputs []btcjson.RawTxInput
+//	for {
+//		if "" == signTransactionParams.RedeemHex {
+//			break
+//		}
+//		//decode redeem's hexString to bytes
+//		redeem, err := hex.DecodeString(signTransactionParams.RedeemHex)
+//		if err != nil {
+//			break
+//		}
+//		//get multisig payScript
+//		//scriptAddr, err := btcutil.NewAddressScriptHash(redeem, realNet)
+//		//scriptPkScript, err := txscript.PayToAddrScript(scriptAddr)
+//		h := crypto.Hash160(redeem)
+//		scriptPkScript := tokenengine.GenerateP2SHLockScript(h)
+//		//multisig transaction need redeem for sign
+//		for _, mtx := range tx.TxMessages {
+//			payload := mtx.Payload
+//			payment, ok := payload.(modules.PaymentPayload)
+//			if ok == true {
+//				for _, txinOne := range payment.Input {
+//					rawInput := btcjson.RawTxInput{
+//						txinOne.PreviousOutPoint.TxHash.String(), //txid
+//						txinOne.PreviousOutPoint.OutIndex,
+//						txinOne.PreviousOutPoint.MessageIndex, //outindex
+//						string(scriptPkScript),                //multisig pay script
+//						signTransactionParams.RedeemHex}       //redeem
+//					rawInputs = append(rawInputs, rawInput)
+//				}
+//			}
+//		}
+//		break
+//	}
+//
+//	txHex := ""
+//	if &tx != nil {
+//		// Serialize the transaction and convert to hex string.
+//		buf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
+//		buf.Grow(tx.SerializeSize())
+//		mtxbt, err := rlp.EncodeToBytes(buf)
+//		if err != nil {
+//			return err
+//		}
+//		txHex = hex.EncodeToString(mtxbt)
+//		fmt.Println(txHex)
+//	}
+//
+//	// All returned errors (not OOM, which panics) encounted during
+//	// bytes.Buffer writes are unexpected.
+//	//mtxHex, err := messageToHex(mtx)
+//	//send_args := btcjson.NewSignRawTransactionCmd(txHex, &rawInputs, &keys, nil)
+//	// signtxout, err := ptnapi.SignRawTransaction(send_args)
+//	// if signtxout == nil {
+//	// 	utils.Fatalf("Invalid signature")
+//	// }
+//	// signtx := signtxout.(btcjson.SignRawTransactionResult)
+//	// if err != nil {
+//	// 	utils.Fatalf("signtx error:%s", err)
+//	// }
+//	// if signtx.Complete == true {
+//	// 	fmt.Println("Signature success")
+//	// 	fmt.Println(signtx.Hex)
+//	// } else {
+//	// 	utils.Fatalf("Invalid signature")
+//	// }
+//	return nil
+//}
 func accountImport(ctx *cli.Context) error {
 	keyfile := ctx.Args().First()
 	if len(keyfile) == 0 {

@@ -30,7 +30,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/internal/ptnapi"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 /**
@@ -112,9 +112,9 @@ func readUtxosFrAll(db ptndb.Database, addr common.Address, asset modules.Asset)
 			continue
 		}
 		// get addr
-		sAddr, _ := ptnapi.GetAddressFromScript(utxo.PkScript)
+		sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
 		// check address
-		if strings.Compare(sAddr, addr.String()) != 0 {
+		if strings.Compare(sAddr.String(), addr.String()) != 0 {
 			fmt.Println(">>>>> address is not compare")
 			continue
 		}
@@ -201,9 +201,9 @@ func writeUtxo(db ptndb.Database, txHash common.Hash, msgIndex uint32, txouts []
 		}
 
 		// get address
-		sAddr, _ := ptnapi.GetAddressFromScript(txout.PkScript)
+		sAddr, _ := tokenengine.GetAddressFromScript(txout.PkScript)
 		addr := common.Address{}
-		addr.SetString(sAddr)
+		addr.SetString(sAddr.Str())
 
 		utxoIndex := modules.UtxoIndex{
 			AccountAddr: addr,
@@ -258,12 +258,12 @@ func destoryUtxo(db ptndb.Database, txins []*modules.Input) {
 			continue
 		}
 		// delete index data
-		sAddr, _ := ptnapi.GetAddressFromScript(utxo.PkScript)
+		sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
 		addr := common.Address{}
-		addr.SetString(sAddr)
+		addr.SetString(sAddr.String())
 		utxoIndex := modules.UtxoIndex{
 			AccountAddr: addr,
-			Asset:       *utxo.Asset,
+			Asset:      *utxo.Asset,
 			OutPoint:    outpoint,
 		}
 		if err := storage.Delete(db, utxoIndex.ToKey()); err != nil {
@@ -493,9 +493,9 @@ func checkUtxo(db ptndb.Database, addr *common.Address, asset *modules.Asset, ut
 		return false
 	}
 	// get addr
-	sAddr, _ := ptnapi.GetAddressFromScript(utxo.PkScript)
+	sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
 	// check address
-	if strings.Compare(sAddr, addr.String()) != 0 {
+	if strings.Compare(sAddr.String(), addr.String()) != 0 {
 		fmt.Printf(">>>>> Address is not compare:scriptPubKey.Address=%s, address=%s\n",
 			sAddr, addr.String())
 		return false

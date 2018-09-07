@@ -23,7 +23,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/btcsuite/btcd/btcec"
+	"math/big"
+	"strings"
+	"time"
+
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -37,15 +41,11 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	"math/big"
-	"strings"
-	"time"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
-	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
-	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
-	"github.com/palletone/go-palletone/tokenengine/btcutil"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+	//"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
@@ -493,7 +493,7 @@ func (s *PrivateAccountAPI) EcRecover(ctx context.Context, data, sig hexutil.Byt
 		return common.Address{}, err
 	}
 	pubKey := crypto.ToECDSAPub(rpk)
-	recoveredAddr := crypto.PubkeyToAddress(*pubKey)
+	recoveredAddr := crypto.PubkeyToAddress(pubKey)
 	return recoveredAddr, nil
 }
 
@@ -1214,190 +1214,188 @@ func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) 
 		}*/
 	return tx.Hash(), nil
 }
-func rpcDecodeHexError(gotHex string) *btcjson.RPCError {
-	return btcjson.NewRPCError(btcjson.ErrRPCDecodeHexString,
-		fmt.Sprintf("Argument must be hexadecimal string (not %q)",
-			gotHex))
-}
-func internalRPCError(errStr, context string) *btcjson.RPCError {
-	logStr := errStr
-	if context != "" {
-		logStr = context + ": " + errStr
-	}
-	fmt.Println(logStr)
-	//rpcsLog.Error(logStr)
-	return btcjson.NewRPCError(btcjson.ErrRPCInternal.Code, errStr)
-}
-func messageToHex(msg wire.Message) (string, error) {
-	var buf bytes.Buffer
-	if err := msg.BtcEncode(&buf, maxProtocolVersion, wire.WitnessEncoding); err != nil {
-		context := fmt.Sprintf("Failed to encode msg of type %T", msg)
-		return "", internalRPCError(err.Error(), context)
-	}
-	return hex.EncodeToString(buf.Bytes()), nil
-}
-func GetAddressFromScript(script []byte) (string, error) {
-	_, addresses, reqSigs, err := txscript.ExtractPkScriptAddrs(script, &chaincfg.MainNetParams)
-	if err != nil {
-		return "", err
-	}
-	// for now, just support single signature
-	if reqSigs > 1 {
-		return "", errors.New("Get address from utxo output script error: multiple signature")
-	}
-	if len(addresses) == 0 {
-		return "", errors.New("Get address from utxo output script error: get failed address")
-	}
-	return "P" + addresses[0].String(), nil
-}
+//func rpcDecodeHexError(gotHex string) *btcjson.RPCError {
+//	return btcjson.NewRPCError(btcjson.ErrRPCDecodeHexString,
+//		fmt.Sprintf("Argument must be hexadecimal string (not %q)",
+//			gotHex))
+//}
+//func internalRPCError(errStr, context string) *btcjson.RPCError {
+//	logStr := errStr
+//	if context != "" {
+//		logStr = context + ": " + errStr
+//	}
+//	fmt.Println(logStr)
+//	//rpcsLog.Error(logStr)
+//	return btcjson.NewRPCError(btcjson.ErrRPCInternal.Code, errStr)
+//}
+//func messageToHex(msg wire.Message) (string, error) {
+//	var buf bytes.Buffer
+//	if err := msg.BtcEncode(&buf, maxProtocolVersion, wire.WitnessEncoding); err != nil {
+//		context := fmt.Sprintf("Failed to encode msg of type %T", msg)
+//		return "", internalRPCError(err.Error(), context)
+//	}
+//	return hex.EncodeToString(buf.Bytes()), nil
+//}
+//func GetAddressFromScript(script []byte) (string, error) {
+//	_, addresses, reqSigs, err := txscript.ExtractPkScriptAddrs(script, &chaincfg.MainNetParams)
+//	if err != nil {
+//		return "", err
+//	}
+//	// for now, just support single signature
+//	if reqSigs > 1 {
+//		return "", errors.New("Get address from utxo output script error: multiple signature")
+//	}
+//	return "P" + addresses[0].String(), nil
+//}
 
 const (
 	MaxTxInSequenceNum uint32 = 0xffffffff
 )
 
 //create raw transction
-func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
-	c := cmd.(*btcjson.CreateRawTransactionCmd)
-	// Validate the locktime, if given.
-	aid := modules.IDType16{}
-	aid.SetBytes([]byte("1111111111111111222222222222222222"))
-	ast := modules.Asset{
-		AssertId: aid,
-		UniqueId: aid,
-		ChainId:  1,
-	}
-	if c.LockTime != nil &&
-		(*c.LockTime < 0 || *c.LockTime > int64(MaxTxInSequenceNum)) {
-		return "", &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInvalidParameter,
-			Message: "Locktime out of range",
-		}
-	}
-	// Add all transaction inputs to a new transaction after performing
-	// some validity checks.
-	//先构造PaymentPayload结构，再组装成Transaction结构
-	pload := new(modules.PaymentPayload)
-	for _, input := range c.Inputs {
-		txHash, err := common.NewHashFromStr(input.Txid)
-		if err != nil {
-			return "", rpcDecodeHexError(input.Txid)
-		}
-		prevOut := modules.NewOutPoint(txHash, input.Vout, input.MessageIndex)
-		txInput := modules.NewTxIn(prevOut, []byte{})
-		pload.AddTxIn(*txInput)
-	}
-	// Add all transaction outputs to the transaction after performing
-	// some validity checks.
-	//only support mainnet
-	var params *chaincfg.Params
-	for encodedAddr, amount := range c.Amounts {
-		// Ensure amount is in the valid range for monetary amounts.
-		if amount <= 0 || amount > btcutil.MaxSatoshi {
-			return "", &btcjson.RPCError{
-				Code:    btcjson.ErrRPCType,
-				Message: "Invalid amount",
-			}
-		}
-		// Decode the provided address.
-		addr, err := btcutil.DecodeAddress(encodedAddr, params)
-		if err != nil {
-			return "", &btcjson.RPCError{
-				Code:    btcjson.ErrRPCInvalidAddressOrKey,
-				Message: "Invalid address or key: " + err.Error(),
-			}
-		}
-		// Ensure the address is one of the supported types and that
-		// the network encoded with the address matches the network the
-		// server is currently on.
-		switch addr.(type) {
-		case *btcutil.AddressPubKeyHash:
-		case *btcutil.AddressScriptHash:
-		default:
-			return "", &btcjson.RPCError{
-				Code:    btcjson.ErrRPCInvalidAddressOrKey,
-				Message: "Invalid address or key",
-			}
-		}
-		/*
-			if !addr.IsForNet(params) {
-				return nil, &btcjson.RPCError{
-					Code: btcjson.ErrRPCInvalidAddressOrKey,
-					Message: "Invalid address: " + encodedAddr +
-						" is for the wrong network",
-				}
-			}*/
-		// Create a new script which pays to the provided address.
-		pkScript, err := txscript.PayToAddrScript(addr)
-		if err != nil {
-			context := "Failed to generate pay-to-address script"
-			return "", internalRPCError(err.Error(), context)
-		}
-		// Convert the amount to satoshi.
-		dao, err := btcutil.NewAmount(amount)
-		if err != nil {
-			context := "Failed to convert amount"
-			return "", internalRPCError(err.Error(), context)
-		}
-		txOut := modules.NewTxOut(uint64(dao), pkScript, ast)
-		pload.AddTxOut(*txOut)
-	}
-	// Set the Locktime, if given.
-	if c.LockTime != nil {
-		pload.LockTime = uint32(*c.LockTime)
-	}
-	mtx := new(modules.Transaction)
-	// Return the serialized and hex-encoded transaction.  Note that this
-	// is intentionally not directly returning because the first return
-	// value is a string and it would result in returning an empty string to
-	// the client instead of nothing (nil) in the case of an error.
-	msg := modules.Message{
-		App:     modules.APP_PAYMENT,
-		Payload: pload,
-	}
-	mtx.AddMessage(msg)
-	mtx.TxHash = mtx.Hash()
-	mtxbt, err := rlp.EncodeToBytes(mtx)
-	if err != nil {
-		return "", err
-	}
-	//mtxHex, err := messageToHex(mtx)
-	mtxHex := hex.EncodeToString(mtxbt)
-	//fmt.Println(mtxHex)
-	return mtxHex, nil
-}
-func decodeHexStr(hexStr string) ([]byte, error) {
-	if len(hexStr)%2 != 0 {
-		hexStr = "0" + hexStr
-	}
-	decoded, err := hex.DecodeString(hexStr)
-	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCDecodeHexString,
-			Message: "Hex string decode failed: " + err.Error(),
-		}
-	}
-	return decoded, nil
-}
-
-type Params struct {
-	*chaincfg.Params
-	RPCClientPort string
-	RPCServerPort string
-}
-
-var MainNetParams = Params{
-	Params:        &chaincfg.MainNetParams,
-	RPCClientPort: "8334",
-	RPCServerPort: "8332",
-}
-
-// TestNet3Params contains parameters specific running btcwallet and
-// btcd on the test network (version 3) (wire.TestNet3).
-var TestNet3Params = Params{
-	Params:        &chaincfg.TestNet3Params,
-	RPCClientPort: "18334",
-	RPCServerPort: "18332",
-}
+//func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
+//	c := cmd.(*btcjson.CreateRawTransactionCmd)
+//	// Validate the locktime, if given.
+//	aid := modules.IDType16{}
+//	aid.SetBytes([]byte("1111111111111111222222222222222222"))
+//	ast := modules.Asset{
+//		AssertId: aid,
+//		UniqueId: aid,
+//		ChainId:  1,
+//	}
+//	if c.LockTime != nil &&
+//		(*c.LockTime < 0 || *c.LockTime > int64(MaxTxInSequenceNum)) {
+//		return "", &btcjson.RPCError{
+//			Code:    btcjson.ErrRPCInvalidParameter,
+//			Message: "Locktime out of range",
+//		}
+//	}
+//	// Add all transaction inputs to a new transaction after performing
+//	// some validity checks.
+//	//先构造PaymentPayload结构，再组装成Transaction结构
+//	pload := new(modules.PaymentPayload)
+//	for _, input := range c.Inputs {
+//		txHash, err := common.NewHashFromStr(input.Txid)
+//		if err != nil {
+//			return "", rpcDecodeHexError(input.Txid)
+//		}
+//		prevOut := modules.NewOutPoint(txHash, input.Vout, input.MessageIndex)
+//		txInput := modules.NewTxIn(prevOut, []byte{})
+//		pload.AddTxIn(*txInput)
+//	}
+//	// Add all transaction outputs to the transaction after performing
+//	// some validity checks.
+//	//only support mainnet
+//	var params *chaincfg.Params
+//	for encodedAddr, amount := range c.Amounts {
+//		// Ensure amount is in the valid range for monetary amounts.
+//		if amount <= 0 || amount > btcutil.MaxSatoshi {
+//			return "", &btcjson.RPCError{
+//				Code:    btcjson.ErrRPCType,
+//				Message: "Invalid amount",
+//			}
+//		}
+//		// Decode the provided address.
+//		addr, err := btcutil.DecodeAddress(encodedAddr, params)
+//		if err != nil {
+//			return "", &btcjson.RPCError{
+//				Code:    btcjson.ErrRPCInvalidAddressOrKey,
+//				Message: "Invalid address or key: " + err.Error(),
+//			}
+//		}
+//		// Ensure the address is one of the supported types and that
+//		// the network encoded with the address matches the network the
+//		// server is currently on.
+//		switch addr.(type) {
+//		case *common.AddressPubKeyHash:
+//		case *common.AddressScriptHash:
+//		default:
+//			return "", &btcjson.RPCError{
+//				Code:    btcjson.ErrRPCInvalidAddressOrKey,
+//				Message: "Invalid address or key",
+//			}
+//		}
+//		/*
+//			if !addr.IsForNet(params) {
+//				return nil, &btcjson.RPCError{
+//					Code: btcjson.ErrRPCInvalidAddressOrKey,
+//					Message: "Invalid address: " + encodedAddr +
+//						" is for the wrong network",
+//				}
+//			}*/
+//		// Create a new script which pays to the provided address.
+//		pkScript, err := txscript.PayToAddrScript(addr)
+//		if err != nil {
+//			context := "Failed to generate pay-to-address script"
+//			return "", internalRPCError(err.Error(), context)
+//		}
+//		// Convert the amount to satoshi.
+//		dao, err := btcutil.NewAmount(amount)
+//		if err != nil {
+//			context := "Failed to convert amount"
+//			return "", internalRPCError(err.Error(), context)
+//		}
+//		txOut := modules.NewTxOut(uint64(dao), pkScript, ast)
+//		pload.AddTxOut(*txOut)
+//	}
+//	// Set the Locktime, if given.
+//	if c.LockTime != nil {
+//		pload.LockTime = uint32(*c.LockTime)
+//	}
+//	// Return the serialized and hex-encoded transaction.  Note that this
+//	// is intentionally not directly returning because the first return
+//	// value is a string and it would result in returning an empty string to
+//	// the client instead of nothing (nil) in the case of an error.
+//	msg := &modules.Message{
+//		App:     modules.APP_PAYMENT,
+//		Payload: pload,
+//	}
+//	mtx := modules.Transaction{
+//		TxMessages: []*modules.Message{msg},
+//	}
+//	mtx.TxHash = mtx.Hash()
+//	mtxbt, err := rlp.EncodeToBytes(mtx)
+//	if err != nil {
+//		return "", err
+//	}
+//	//mtxHex, err := messageToHex(mtx)
+//	mtxHex := hex.EncodeToString(mtxbt)
+//	//fmt.Println(mtxHex)
+//	return mtxHex, nil
+//}
+//func decodeHexStr(hexStr string) ([]byte, error) {
+//	if len(hexStr)%2 != 0 {
+//		hexStr = "0" + hexStr
+//	}
+//	decoded, err := hex.DecodeString(hexStr)
+//	if err != nil {
+//		return nil, &btcjson.RPCError{
+//			Code:    btcjson.ErrRPCDecodeHexString,
+//			Message: "Hex string decode failed: " + err.Error(),
+//		}
+//	}
+//	return decoded, nil
+//}
+//
+//type Params struct {
+//	*chaincfg.Params
+//	RPCClientPort string
+//	RPCServerPort string
+//}
+//
+//var MainNetParams = Params{
+//	Params:        &chaincfg.MainNetParams,
+//	RPCClientPort: "8334",
+//	RPCServerPort: "8332",
+//}
+//
+//// TestNet3Params contains parameters specific running btcwallet and
+//// btcd on the test network (version 3) (wire.TestNet3).
+//var TestNet3Params = Params{
+//	Params:        &chaincfg.TestNet3Params,
+//	RPCClientPort: "18334",
+//	RPCServerPort: "18332",
+//}
 
 type response struct {
 	result []byte
@@ -1450,187 +1448,192 @@ type (
 )
 
 //sign rawtranscation
-func SignRawTransaction(icmd interface{}) (interface{}, error) {
-	cmd := icmd.(*btcjson.SignRawTransactionCmd)
-	serializedTx, err := decodeHexStr(cmd.RawTx)
-	if err != nil {
-		return nil, err
-	}
-	var tx modules.Transaction
-	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
-		return nil, err
-	}
-	var hashType txscript.SigHashType
-	switch *cmd.Flags {
-	case "ALL":
-		hashType = txscript.SigHashAll
-	case "NONE":
-		hashType = txscript.SigHashNone
-	case "SINGLE":
-		hashType = txscript.SigHashSingle
-	case "ALL|ANYONECANPAY":
-		hashType = txscript.SigHashAll | txscript.SigHashAnyOneCanPay
-	case "NONE|ANYONECANPAY":
-		hashType = txscript.SigHashNone | txscript.SigHashAnyOneCanPay
-	case "SINGLE|ANYONECANPAY":
-		hashType = txscript.SigHashSingle | txscript.SigHashAnyOneCanPay
-	default:
-		//e := errors.New("Invalid sighash parameter")
-		return nil, err
-	}
-
-	inputpoints := make(map[modules.OutPoint][]byte)
-	scripts := make(map[string][]byte)
-	//var params *chaincfg.Params
-	params := &chaincfg.TestNet3Params
-	var cmdInputs []btcjson.RawTxInput
-	if cmd.Inputs != nil {
-		cmdInputs = *cmd.Inputs
-	}
-	for _, rti := range cmdInputs {
-		inputHash, err := common.NewHashFromStr(rti.Txid[2:])
-		if err != nil {
-			return nil, DeserializationError{err}
-		}
-		script, err := decodeHexStr(rti.ScriptPubKey)
-		if err != nil {
-			return nil, err
-		}
-		// redeemScript is only actually used iff the user provided
-		// private keys. In which case, it is used to get the scripts
-		// for signing. If the user did not provide keys then we always
-		// get scripts from the wallet.
-		// Empty strings are ok for this one and hex.DecodeString will
-		// DTRT.
-		if rti.RedeemScript != "" {
-			redeemScript, err := decodeHexStr(rti.RedeemScript)
-			if err != nil {
-				return nil, err
-			}
-			addr, err := btcutil.NewAddressScriptHash(redeemScript, params)
-			if err != nil {
-				return nil, DeserializationError{err}
-			}
-			scripts[addr.String()] = redeemScript
-		}
-		inputpoints[modules.OutPoint{
-			TxHash:       *inputHash,
-			OutIndex:     rti.Vout,
-			MessageIndex: rti.MessageIndex,
-		}] = script
-	}
-
-	var keys map[string]*btcutil.WIF
-	if cmd.PrivKeys != nil {
-		keys = make(map[string]*btcutil.WIF)
-
-		if cmd.PrivKeys != nil {
-			for _, key := range *cmd.PrivKeys {
-				wif, err := btcutil.DecodeWIF(key)
-				if err != nil {
-					return nil, err
-				}
-
-				//if !wif.IsForNet(params) {
-				//s := "key network doesn't match wallet's"
-				//	return nil, err
-				//}
-				addr, err := btcutil.NewAddressPubKey(wif.SerializePubKey())
-				if err != nil {
-					return nil, err
-				}
-				//todo addr + "P"
-				keys[addr.EncodeAddress()] = wif
-			}
-		}
-	}
-
-	for _, msg := range tx.TxMessages {
-		if msg.App != modules.APP_PAYMENT {
-			continue
-		} else {
-                         payload := msg.Payload.(*modules.PaymentPayload)
-			 for i, txIn := range msg.Payload.(*modules.PaymentPayload).Input {
-				prevOutScript, _ := inputpoints[txIn.PreviousOutPoint]
-
-				// Set up our callbacks that we pass to txscript so it can
-				// look up the appropriate keys and scripts by address.
-				geekey := txscript.KeyClosure(func(addr btcutil.Address) (*btcec.PrivateKey, bool, error) {
-					addrStr := addr.EncodeAddress()
-					wif, ok := keys[addrStr]
-					if !ok {
-						return nil, false, errors.New("no key for address")
-					}
-					return wif.PrivKey, wif.CompressPubKey, nil
-				})
-				getScript := txscript.ScriptClosure(func(addr btcutil.Address) ([]byte, error) {
-					// If keys were provided then we can only use the
-					// redeem scripts provided with our inputs, too.
-					addrStr := addr.EncodeAddress()
-					script, ok := scripts[addrStr]
-					if !ok {
-						return nil, errors.New("no script for address")
-					}
-					return script, nil
-				})
-				var signErrors []SignatureError
-				// SigHashSingle inputs can only be signe   d if there's a
-				// corresponding output. However this could be already signed,
-				// so we always verify the output.
-				if (hashType&txscript.SigHashSingle) !=
-					txscript.SigHashSingle || i < len(payload.Output) {
-					script, err := txscript.SignTxOutput(params,
-						payload, i, prevOutScript, hashType, geekey,
-						getScript, txIn.SignatureScript)
-					// Failure to sign isn't an error, it just means that
-					// the tx isn't complete.
-					if err != nil {
-                                                fmt.Println("err is not nil")
-						signErrors = append(signErrors, SignatureError{
-							InputIndex: uint32(i),
-							Error:      err,
-						})
-						continue
-					}
-					txIn.SignatureScript = script
-				}
-				// Either it was already signed or we just signed it.
-				// Find out if it is completely satisfied or still needs more.
-				vm, err := txscript.NewEngine(prevOutScript, payload, i,
-					txscript.StandardVerifyFlags, nil, nil, 0)
-				if err == nil {
-					err = vm.Execute()
-				}
-				if err != nil {
-					signErrors = append(signErrors, SignatureError{
-						InputIndex: uint32(i),
-						Error:      err,
-					})
-				}
-			}
-			msg := modules.Message{
-				App:     modules.APP_PAYMENT,
-				Payload: payload,
-			}
-			tx.TxMessages = append(tx.TxMessages, &msg)
-		}
-	}
-	var buf bytes.Buffer
-	buf.Grow(tx.SerializeSize())
-	// All returned errors (not OOM, which panics) encounted during
-	// bytes.Buffer writes are unexpected.
-	mtxbt, err := rlp.EncodeToBytes(tx)
-	if err != nil {
-		return "", err
-	}
-	signedHex := hex.EncodeToString(mtxbt)
-	signErrors := make([]btcjson.SignRawTransactionError, 0, 10)
-	return btcjson.SignRawTransactionResult{
-		Hex:      signedHex,
-		Complete: len(signErrors) == 0,
-		Errors:   signErrors,
-	}, nil
-}
+//func SignRawTransaction(icmd interface{}) (interface{}, error) {
+//	cmd := icmd.(*btcjson.SignRawTransactionCmd)
+//	serializedTx, err := decodeHexStr(cmd.RawTx)
+//	if err != nil {
+//		return nil, err
+//	}
+//	var tx modules.Transaction
+//	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
+//		return nil, err
+//	}
+//	var hashType txscript.SigHashType
+//	switch *cmd.Flags {
+//	case "ALL":
+//		hashType = txscript.SigHashAll
+//	case "NONE":
+//		hashType = txscript.SigHashNone
+//	case "SINGLE":
+//		hashType = txscript.SigHashSingle
+//	case "ALL|ANYONECANPAY":
+//		hashType = txscript.SigHashAll | txscript.SigHashAnyOneCanPay
+//	case "NONE|ANYONECANPAY":
+//		hashType = txscript.SigHashNone | txscript.SigHashAnyOneCanPay
+//	case "SINGLE|ANYONECANPAY":
+//		hashType = txscript.SigHashSingle | txscript.SigHashAnyOneCanPay
+//	default:
+//		//e := errors.New("Invalid sighash parameter")
+//		return nil, err
+//	}
+//
+//	inputpoints := make(map[modules.OutPoint][]byte)
+//	scripts := make(map[string][]byte)
+//	//var params *chaincfg.Params
+//	params := &chaincfg.TestNet3Params
+//	var cmdInputs []btcjson.RawTxInput
+//	if cmd.Inputs != nil {
+//		cmdInputs = *cmd.Inputs
+//	}
+//	for _, rti := range cmdInputs {
+//		inputHash, err := common.NewHashFromStr(rti.Txid[2:])
+//		if err != nil {
+//			return nil, DeserializationError{err}
+//		}
+//		script, err := decodeHexStr(rti.ScriptPubKey)
+//		if err != nil {
+//			return nil, err
+//		}
+//		// redeemScript is only actually used iff the user provided
+//		// private keys. In which case, it is used to get the scripts
+//		// for signing. If the user did not provide keys then we always
+//		// get scripts from the wallet.
+//		// Empty strings are ok for this one and hex.DecodeString will
+//		// DTRT.
+//		if rti.RedeemScript != "" {
+//			redeemScript, err := decodeHexStr(rti.RedeemScript)
+//			if err != nil {
+//				return nil, err
+//			}
+//			addr, err := btcutil.NewAddressScriptHash(redeemScript, params)
+//			if err != nil {
+//				return nil, DeserializationError{err}
+//			}
+//			scripts[addr.String()] = redeemScript
+//		}
+//		inputpoints[modules.OutPoint{
+//			TxHash:       *inputHash,
+//			OutIndex:     rti.Vout,
+//			MessageIndex: rti.MessageIndex,
+//		}] = script
+//	}
+//
+//	var keys map[string]*btcutil.WIF
+//	if cmd.PrivKeys != nil {
+//		keys = make(map[string]*btcutil.WIF)
+//
+//		if cmd.PrivKeys != nil {
+//			for _, key := range *cmd.PrivKeys {
+//				wif, err := btcutil.DecodeWIF(key)
+//				if err != nil {
+//					return nil, err
+//				}
+//
+//				//if !wif.IsForNet(params) {
+//				//s := "key network doesn't match wallet's"
+//				//	return nil, err
+//				//}
+//				addr, err := btcutil.NewAddressPubKey(wif.SerializePubKey())
+//				if err != nil {
+//					return nil, err
+//				}
+//				//todo addr + "P"
+//				keys[addr.EncodeAddress()] = wif
+//			}
+//		}
+//	}
+//
+//	for msgIdx, msg := range tx.TxMessages {
+//		if msg.App != modules.APP_PAYMENT {
+//			continue
+//		} else {
+//			var payload modules.PaymentPayload
+//			payload, ok := msg.Payload.(modules.PaymentPayload)
+//			if !ok {
+//				fmt.Println("Get Payment payload error:")
+//			} //else {
+//			//	fmt.Println("Payment payload:", payload)
+//			//}
+//			for i, txIn := range payload.Input {
+//				prevOutScript, _ := inputpoints[txIn.PreviousOutPoint]
+//
+//				// Set up our callbacks that we pass to txscript so it can
+//				// look up the appropriate keys and scripts by address.
+//				geekey := txscript.KeyClosure(func(addr common.Address) (*btcec.PrivateKey, bool, error) {
+//					addrStr := addr.EncodeAddress()
+//					wif, ok := keys[addrStr]
+//					if !ok {
+//						return nil, false, errors.New("no key for address")
+//					}
+//					return wif.PrivKey, wif.CompressPubKey, nil
+//				})
+//				getScript := txscript.ScriptClosure(func(addr common.Address) ([]byte, error) {
+//					// If keys were provided then we can only use the
+//					// redeem scripts provided with our inputs, too.
+//					addrStr := addr.EncodeAddress()
+//					script, ok := scripts[addrStr]
+//					if !ok {
+//						return nil, errors.New("no script for address")
+//					}
+//					return script, nil
+//				})
+//				var signErrors []SignatureError
+//				// SigHashSingle inputs can only be signe   d if there's a
+//				// corresponding output. However this could be already signed,
+//				// so we always verify the output.
+//				if (hashType&txscript.SigHashSingle) !=
+//					txscript.SigHashSingle || i < len(payload.Output) {
+//					script, err := txscript.SignTxOutput(params,
+//						&tx, msgIdx, i, prevOutScript, hashType, geekey,
+//						getScript, txIn.SignatureScript)
+//					// Failure to sign isn't an error, it just means that
+//					// the tx isn't complete.
+//					if err != nil {
+//						signErrors = append(signErrors, SignatureError{
+//							InputIndex: uint32(i),
+//							Error:      err,
+//						})
+//						continue
+//					}
+//					txIn.SignatureScript = script
+//				}
+//				// Either it was already signed or we just signed it.
+//				// Find out if it is completely satisfied or still needs more.
+//				vm, err := txscript.NewEngine(prevOutScript, &tx, msgIdx, i,
+//					txscript.StandardVerifyFlags, nil, nil, 0)
+//				if err == nil {
+//					err = vm.Execute()
+//				}
+//				if err != nil {
+//					signErrors = append(signErrors, SignatureError{
+//						InputIndex: uint32(i),
+//						Error:      err,
+//					})
+//				}
+//			}
+//			msg := &modules.Message{
+//				App:     modules.APP_PAYMENT,
+//				Payload: payload,
+//			}
+//			tx.TxMessages = append(tx.TxMessages, msg)
+//		}
+//	}
+//	var buf bytes.Buffer
+//	buf.Grow(tx.SerializeSize())
+//	// All returned errors (not OOM, which panics) encounted during
+//	// bytes.Buffer writes are unexpected.
+//	mtxbt, err := rlp.EncodeToBytes(tx)
+//	if err != nil {
+//		return "", err
+//	}
+//	signedHex := hex.EncodeToString(mtxbt)
+//	signErrors := make([]btcjson.SignRawTransactionError, 0, 10)
+//	return btcjson.SignRawTransactionResult{
+//		Hex:      signedHex,
+//		Complete: len(signErrors) == 0,
+//		Errors:   signErrors,
+//	}, nil
+//}
 
 // SendTransaction creates a transaction for the given argument, sign it and submit it to the
 // transaction pool.

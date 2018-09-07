@@ -32,7 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/internal/ptnapi"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 var (
@@ -141,8 +141,8 @@ func SaveTransaction(db ptndb.Database, tx *modules.Transaction) error {
 		if ok {
 			for _, output := range payload.Output {
 				//  pkscript to addr
-				addr, _ := ptnapi.GetAddressFromScript(output.PkScript[:])
-				saveOutputByAddr(db, addr, tx.TxHash, i, *output)
+				addr, _ := tokenengine.GetAddressFromScript(output.PkScript[:])
+				saveOutputByAddr(db, addr.String(), tx.TxHash, i, *output)
 			}
 		}
 	}

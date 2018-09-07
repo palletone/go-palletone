@@ -7,9 +7,9 @@ package txscript
 import (
 	"fmt"
 
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
-	"github.com/palletone/go-palletone/tokenengine/btcutil"
+	"github.com/palletone/go-palletone/common"
+	"crypto/ecdsa"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
 const (
@@ -252,109 +252,109 @@ type ScriptInfo struct {
 // pair.  It will error if the pair is in someway invalid such that they can not
 // be analysed, i.e. if they do not parse or the pkScript is not a push-only
 // script
-func CalcScriptInfo(sigScript, pkScript []byte, witness wire.TxWitness,
-	bip16, segwit bool) (*ScriptInfo, error) {
-
-	sigPops, err := parseScript(sigScript)
-	if err != nil {
-		return nil, err
-	}
-
-	pkPops, err := parseScript(pkScript)
-	if err != nil {
-		return nil, err
-	}
-
-	// Push only sigScript makes little sense.
-	si := new(ScriptInfo)
-	si.PkScriptClass = typeOfScript(pkPops)
-
-	// Can't have a signature script that doesn't just push data.
-	if !isPushOnly(sigPops) {
-		return nil, scriptError(ErrNotPushOnly,
-			"signature script is not push only")
-	}
-
-	si.ExpectedInputs = expectedInputs(pkPops, si.PkScriptClass)
-
-	switch {
-	// Count sigops taking into account pay-to-script-hash.
-	case si.PkScriptClass == ScriptHashTy && bip16 && !segwit:
-		// The pay-to-hash-script is the final data push of the
-		// signature script.
-		script := sigPops[len(sigPops)-1].data
-		shPops, err := parseScript(script)
-		if err != nil {
-			return nil, err
-		}
-
-		shInputs := expectedInputs(shPops, typeOfScript(shPops))
-		if shInputs == -1 {
-			si.ExpectedInputs = -1
-		} else {
-			si.ExpectedInputs += shInputs
-		}
-		si.SigOps = getSigOpCount(shPops, true)
-
-		// All entries pushed to stack (or are OP_RESERVED and exec
-		// will fail).
-		si.NumInputs = len(sigPops)
-
-	// If segwit is active, and this is a regular p2wkh output, then we'll
-	// treat the script as a p2pkh output in essence.
-	case si.PkScriptClass == WitnessV0PubKeyHashTy && segwit:
-
-		si.SigOps = GetWitnessSigOpCount(sigScript, pkScript, witness)
-		si.NumInputs = len(witness)
-
-	// We'll attempt to detect the nested p2sh case so we can accurately
-	// count the signature operations involved.
-	case si.PkScriptClass == ScriptHashTy &&
-		IsWitnessProgram(sigScript[1:]) && bip16 && segwit:
-
-		// Extract the pushed witness program from the sigScript so we
-		// can determine the number of expected inputs.
-		pkPops, _ := parseScript(sigScript[1:])
-		shInputs := expectedInputs(pkPops, typeOfScript(pkPops))
-		if shInputs == -1 {
-			si.ExpectedInputs = -1
-		} else {
-			si.ExpectedInputs += shInputs
-		}
-
-		si.SigOps = GetWitnessSigOpCount(sigScript, pkScript, witness)
-
-		si.NumInputs = len(witness)
-		si.NumInputs += len(sigPops)
-
-	// If segwit is active, and this is a p2wsh output, then we'll need to
-	// examine the witness script to generate accurate script info.
-	case si.PkScriptClass == WitnessV0ScriptHashTy && segwit:
-		// The witness script is the final element of the witness
-		// stack.
-		witnessScript := witness[len(witness)-1]
-		pops, _ := parseScript(witnessScript)
-
-		shInputs := expectedInputs(pops, typeOfScript(pops))
-		if shInputs == -1 {
-			si.ExpectedInputs = -1
-		} else {
-			si.ExpectedInputs += shInputs
-		}
-
-		si.SigOps = GetWitnessSigOpCount(sigScript, pkScript, witness)
-		si.NumInputs = len(witness)
-
-	default:
-		si.SigOps = getSigOpCount(pkPops, true)
-
-		// All entries pushed to stack (or are OP_RESERVED and exec
-		// will fail).
-		si.NumInputs = len(sigPops)
-	}
-
-	return si, nil
-}
+//func CalcScriptInfo(sigScript, pkScript []byte, witness wire.TxWitness,
+//	bip16, segwit bool) (*ScriptInfo, error) {
+//
+//	sigPops, err := parseScript(sigScript)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	pkPops, err := parseScript(pkScript)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	// Push only sigScript makes little sense.
+//	si := new(ScriptInfo)
+//	si.PkScriptClass = typeOfScript(pkPops)
+//
+//	// Can't have a signature script that doesn't just push data.
+//	if !isPushOnly(sigPops) {
+//		return nil, scriptError(ErrNotPushOnly,
+//			"signature script is not push only")
+//	}
+//
+//	si.ExpectedInputs = expectedInputs(pkPops, si.PkScriptClass)
+//
+//	switch {
+//	// Count sigops taking into account pay-to-script-hash.
+//	case si.PkScriptClass == ScriptHashTy && bip16 && !segwit:
+//		// The pay-to-hash-script is the final data push of the
+//		// signature script.
+//		script := sigPops[len(sigPops)-1].data
+//		shPops, err := parseScript(script)
+//		if err != nil {
+//			return nil, err
+//		}
+//
+//		shInputs := expectedInputs(shPops, typeOfScript(shPops))
+//		if shInputs == -1 {
+//			si.ExpectedInputs = -1
+//		} else {
+//			si.ExpectedInputs += shInputs
+//		}
+//		si.SigOps = getSigOpCount(shPops, true)
+//
+//		// All entries pushed to stack (or are OP_RESERVED and exec
+//		// will fail).
+//		si.NumInputs = len(sigPops)
+//
+//	// If segwit is active, and this is a regular p2wkh output, then we'll
+//	// treat the script as a p2pkh output in essence.
+//	case si.PkScriptClass == WitnessV0PubKeyHashTy && segwit:
+//
+//		si.SigOps = GetWitnessSigOpCount(sigScript, pkScript, witness)
+//		si.NumInputs = len(witness)
+//
+//	// We'll attempt to detect the nested p2sh case so we can accurately
+//	// count the signature operations involved.
+//	case si.PkScriptClass == ScriptHashTy &&
+//		IsWitnessProgram(sigScript[1:]) && bip16 && segwit:
+//
+//		// Extract the pushed witness program from the sigScript so we
+//		// can determine the number of expected inputs.
+//		pkPops, _ := parseScript(sigScript[1:])
+//		shInputs := expectedInputs(pkPops, typeOfScript(pkPops))
+//		if shInputs == -1 {
+//			si.ExpectedInputs = -1
+//		} else {
+//			si.ExpectedInputs += shInputs
+//		}
+//
+//		si.SigOps = GetWitnessSigOpCount(sigScript, pkScript, witness)
+//
+//		si.NumInputs = len(witness)
+//		si.NumInputs += len(sigPops)
+//
+//	// If segwit is active, and this is a p2wsh output, then we'll need to
+//	// examine the witness script to generate accurate script info.
+//	case si.PkScriptClass == WitnessV0ScriptHashTy && segwit:
+//		// The witness script is the final element of the witness
+//		// stack.
+//		witnessScript := witness[len(witness)-1]
+//		pops, _ := parseScript(witnessScript)
+//
+//		shInputs := expectedInputs(pops, typeOfScript(pops))
+//		if shInputs == -1 {
+//			si.ExpectedInputs = -1
+//		} else {
+//			si.ExpectedInputs += shInputs
+//		}
+//
+//		si.SigOps = GetWitnessSigOpCount(sigScript, pkScript, witness)
+//		si.NumInputs = len(witness)
+//
+//	default:
+//		si.SigOps = getSigOpCount(pkPops, true)
+//
+//		// All entries pushed to stack (or are OP_RESERVED and exec
+//		// will fail).
+//		si.NumInputs = len(sigPops)
+//	}
+//
+//	return si, nil
+//}
 
 // CalcMultiSigStats returns the number of public keys and signatures from
 // a multi-signature transaction script.  The passed script MUST already be
@@ -416,46 +416,26 @@ func payToPubKeyScript(serializedPubKey []byte) ([]byte, error) {
 	return NewScriptBuilder().AddData(serializedPubKey).
 		AddOp(OP_CHECKSIG).Script()
 }
-
+func payToContractHash(serializedPubKey []byte) ([]byte, error) {
+	return NewScriptBuilder().AddData(serializedPubKey).
+		AddOp(OP_CHECKSIG).Script()
+}
 // PayToAddrScript creates a new script to pay a transaction output to a the
 // specified address.
-func PayToAddrScript(addr btcutil.Address) ([]byte, error) {
-	const nilAddrErrStr = "unable to generate payment script for nil address"
+func PayToAddrScript(addr common.Address) ([]byte, error) {
 
-	switch addr := addr.(type) {
-	case *btcutil.AddressPubKeyHash:
-		if addr == nil {
-			return nil, scriptError(ErrUnsupportedAddress,
-				nilAddrErrStr)
-		}
-		return payToPubKeyHashScript(addr.ScriptAddress())
+	switch  addr.GetType() {
+	case common.PublicKeyHash:
 
-	case *btcutil.AddressScriptHash:
-		if addr == nil {
-			return nil, scriptError(ErrUnsupportedAddress,
-				nilAddrErrStr)
-		}
-		return payToScriptHashScript(addr.ScriptAddress())
+		return payToPubKeyHashScript(addr.Bytes())
 
-	case *btcutil.AddressPubKey:
-		if addr == nil {
-			return nil, scriptError(ErrUnsupportedAddress,
-				nilAddrErrStr)
-		}
-		return payToPubKeyScript(addr.ScriptAddress())
+	case common.ScriptHash:
 
-	case *btcutil.AddressWitnessPubKeyHash:
-		if addr == nil {
-			return nil, scriptError(ErrUnsupportedAddress,
-				nilAddrErrStr)
-		}
-		return payToWitnessPubKeyHashScript(addr.ScriptAddress())
-	case *btcutil.AddressWitnessScriptHash:
-		if addr == nil {
-			return nil, scriptError(ErrUnsupportedAddress,
-				nilAddrErrStr)
-		}
-		return payToWitnessScriptHashScript(addr.ScriptAddress())
+		return payToScriptHashScript(addr.Bytes())
+
+	case common.ContractHash:
+		return payToContractHash(addr.Bytes())
+
 	}
 
 	str := fmt.Sprintf("unable to generate payment script for unsupported "+
@@ -480,7 +460,7 @@ func NullDataScript(data []byte) ([]byte, error) {
 // nrequired of the keys in pubkeys are required to have signed the transaction
 // for success.  An Error with the error code ErrTooManyRequiredSigs will be
 // returned if nrequired is larger than the number of keys provided.
-func MultiSigScript(pubkeys []*btcutil.AddressPubKey, nrequired int) ([]byte, error) {
+func MultiSigScript(pubkeys []*ecdsa.PublicKey, nrequired int) ([]byte, error) {
 	if len(pubkeys) < nrequired {
 		str := fmt.Sprintf("unable to generate multisig script with "+
 			"%d required signatures when there are only %d public "+
@@ -490,7 +470,8 @@ func MultiSigScript(pubkeys []*btcutil.AddressPubKey, nrequired int) ([]byte, er
 
 	builder := NewScriptBuilder().AddInt64(int64(nrequired))
 	for _, key := range pubkeys {
-		builder.AddData(key.ScriptAddress())
+		keyBytes:= crypto.CompressPubkey(key)
+		builder.AddData(keyBytes)
 	}
 	builder.AddInt64(int64(len(pubkeys)))
 	builder.AddOp(OP_CHECKMULTISIG)
@@ -521,8 +502,8 @@ func PushedData(script []byte) ([][]byte, error) {
 // signatures associated with the passed PkScript.  Note that it only works for
 // 'standard' transaction script types.  Any data such as public keys which are
 // invalid are omitted from the results.
-func ExtractPkScriptAddrs(pkScript []byte, chainParams *chaincfg.Params) (ScriptClass, []btcutil.Address, int, error) {
-	var addrs []btcutil.Address
+func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []common.Address, int, error) {
+	var addrs []common.Address
 	var requiredSigs int
         //fmt.Println("ExtractPkScriptAddrs------527   527-------")
 	// No valid addresses or required signatures if the script doesn't
@@ -542,38 +523,38 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *chaincfg.Params) (Script
 		// Skip the pubkey hash if it's invalid for some reason.
                 //fmt.Println("ExtractPkScriptAddrs------542    542-------")
 		requiredSigs = 1
-		addr, err := btcutil.NewAddressPubKeyHash(pops[2].data,
-			chainParams)
+		addr := common.NewAddress( pops[2].data,common.PublicKeyHash)
+			//btcutil.NewAddressPubKeyHash(pops[2].data,			chainParams)
                 //fmt.Println("addr is is   is ")
                 //fmt.Println(addr)
 		if err == nil {
 			addrs = append(addrs, addr)
 		}
 
-	case WitnessV0PubKeyHashTy:
-		// A pay-to-witness-pubkey-hash script is of thw form:
-		//  OP_0 <20-byte hash>
-		// Therefore, the pubkey hash is the second item on the stack.
-		// Skip the pubkey hash if it's invalid for some reason.
-                //fmt.Println("ExtractPkScriptAddrs------558   558-------")
-		requiredSigs = 1
-		addr, err := btcutil.NewAddressWitnessPubKeyHash(pops[1].data,
-			chainParams)
-		if err == nil {
-			addrs = append(addrs, addr)
-		}
-
-	case PubKeyTy:
-		// A pay-to-pubkey script is of the form:
-		//  <pubkey> OP_CHECKSIG
-		// Therefore the pubkey is the first item on the stack.
-		// Skip the pubkey if it's invalid for some reason.
-		// defa by wuzhiyuan
-		requiredSigs = 1
-		addr, err := btcutil.NewAddressPubKey(pops[0].data)
-		if err == nil {
-			addrs = append(addrs, addr)
-		}
+	//case WitnessV0PubKeyHashTy:
+	//	// A pay-to-witness-pubkey-hash script is of thw form:
+	//	//  OP_0 <20-byte hash>
+	//	// Therefore, the pubkey hash is the second item on the stack.
+	//	// Skip the pubkey hash if it's invalid for some reason.
+     //           //fmt.Println("ExtractPkScriptAddrs------558   558-------")
+	//	requiredSigs = 1
+	//	addr, err := btcutil.NewAddressWitnessPubKeyHash(pops[1].data,
+	//		chainParams)
+	//	if err == nil {
+	//		addrs = append(addrs, addr)
+	//	}
+	//
+	//case PubKeyTy:
+	//	// A pay-to-pubkey script is of the form:
+	//	//  <pubkey> OP_CHECKSIG
+	//	// Therefore the pubkey is the first item on the stack.
+	//	// Skip the pubkey if it's invalid for some reason.
+	//	// defa by wuzhiyuan
+	//	requiredSigs = 1
+	//	addr, err := btcutil.NewAddressPubKey(pops[0].data)
+	//	if err == nil {
+	//		addrs = append(addrs, addr)
+	//	}
                 //fmt.Println("ExtractPkScriptAddrs------577    577-------")
 	case ScriptHashTy:
 		// A pay-to-script-hash script is of the form:
@@ -581,41 +562,42 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *chaincfg.Params) (Script
 		// Therefore the script hash is the 2nd item on the stack.
 		// Skip the script hash if it's invalid for some reason.
 		requiredSigs = 1
-		addr, err := btcutil.NewAddressScriptHashFromHash(pops[1].data,
-			chainParams)
+		addr:= common.NewAddress( pops[1].data,common.ScriptHash)
+		//addr, err := btcutil.NewAddressScriptHashFromHash(pops[1].data,
+		//	chainParams)
 		if err == nil {
 			addrs = append(addrs, addr)
 		}
 
-	case WitnessV0ScriptHashTy:
-		// A pay-to-witness-script-hash script is of the form:
-		//  OP_0 <32-byte hash>
-		// Therefore, the script hash is the second item on the stack.
-		// Skip the script hash if it's invalid for some reason.
-		requiredSigs = 1
-		addr, err := btcutil.NewAddressWitnessScriptHash(pops[1].data,
-			chainParams)
-		if err == nil {
-			addrs = append(addrs, addr)
-		}
-
-	case MultiSigTy:
-		// A multi-signature script is of the form:
-		//  <numsigs> <pubkey> <pubkey> <pubkey>... <numpubkeys> OP_CHECKMULTISIG
-		// Therefore the number of required signatures is the 1st item
-		// on the stack and the number of public keys is the 2nd to last
-		// item on the stack.
-		requiredSigs = asSmallInt(pops[0].opcode)
-		numPubKeys := asSmallInt(pops[len(pops)-2].opcode)
-        // def by wuzhiyuan
-		// Extract the public keys while skipping any that are invalid.
-		addrs = make([]btcutil.Address, 0, numPubKeys)
-		for i := 0; i < numPubKeys; i++ {
-			addr, err := btcutil.NewAddressPubKey(pops[i+1].data)
-			if err == nil {
-				addrs = append(addrs, addr)
-			}
-		}
+	//case WitnessV0ScriptHashTy:
+	//	// A pay-to-witness-script-hash script is of the form:
+	//	//  OP_0 <32-byte hash>
+	//	// Therefore, the script hash is the second item on the stack.
+	//	// Skip the script hash if it's invalid for some reason.
+	//	requiredSigs = 1
+	//	addr, err := btcutil.NewAddressWitnessScriptHash(pops[1].data,
+	//		chainParams)
+	//	if err == nil {
+	//		addrs = append(addrs, addr)
+	//	}
+	//
+	//case MultiSigTy:
+	//	// A multi-signature script is of the form:
+	//	//  <numsigs> <pubkey> <pubkey> <pubkey>... <numpubkeys> OP_CHECKMULTISIG
+	//	// Therefore the number of required signatures is the 1st item
+	//	// on the stack and the number of public keys is the 2nd to last
+	//	// item on the stack.
+	//	requiredSigs = asSmallInt(pops[0].opcode)
+	//	numPubKeys := asSmallInt(pops[len(pops)-2].opcode)
+     //   // def by wuzhiyuan
+	//	// Extract the public keys while skipping any that are invalid.
+	//	addrs = make([]common.Address, 0, numPubKeys)
+	//	for i := 0; i < numPubKeys; i++ {
+	//		addr, err := btcutil.NewAddressPubKey(pops[i+1].data)
+	//		if err == nil {
+	//			addrs = append(addrs, addr)
+	//		}
+	//	}
 
 	case NullDataTy:
 		// Null data transactions have no addresses or required

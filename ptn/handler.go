@@ -134,7 +134,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	/*blockchain.CurrentBlock().NumberU64() > 0 */
 	//TODO must modify.The second start would Blockchain not empty, fast sync disabled
 	if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Index() > 0 {
-		log.Warn("dag not empty, fast sync disabled")
+		log.Info("dag not empty, fast sync disabled")
 		mode = downloader.FullSync
 	}
 	if mode == downloader.FastSync {
@@ -904,15 +904,13 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 	}
 	holder := common.Address{}
 	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
-	msg0 := modules.Message{
+	msg0 := &modules.Message{
 		App:     modules.APP_PAYMENT,
 		Payload: pay,
 	}
-	//tx := &modules.Transaction{
-	//	TxMessages: []modules.Message{msg0},
-	//}
-	var tx modules.Transaction
-	tx.TxMessages = append(tx.TxMessages, &msg0)
+	tx := &modules.Transaction{
+		TxMessages: []*modules.Message{msg0},
+	}
 	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
 	if err != nil {
 		msg := fmt.Sprintf("Get genesis transactions hash error: %s", err)
@@ -921,7 +919,7 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 	}
 	tx.TxHash.SetBytes(txHash)
 
-	return &tx
+	return tx
 }
 
 // @author Albert·Gou
