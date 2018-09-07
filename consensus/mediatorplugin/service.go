@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -44,7 +43,6 @@ type PalletOne interface {
 	Dag() *dag.Dag
 	GetKeyStore() *keystore.KeyStore
 	TxPool() *txspool.TxPool
-	GetActiveMediatorNodes() []*discover.Node
 }
 
 // toBLSed represents a BLS sign operation.
@@ -82,8 +80,6 @@ type MediatorPlugin struct {
 	vssDealScope    event.SubscriptionScope
 	toProcessDealCh chan *VSSDealEvent
 
-	resps map[common.Address][]*dkg.Response
-
 	// unit阈值签名相关
 	pendingTBLSSign map[common.Hash]*toTBLSSigned // 等待TBLS阈值签名的unit
 }
@@ -120,7 +116,7 @@ func (mp *MediatorPlugin) AddActiveMediatorPeers() {
 		return
 	}
 
-	for _, n := range mp.ptn.GetActiveMediatorNodes() {
+	for _, n := range mp.getDag().GetActiveMediatorNodes() {
 		mp.server.AddPeer(n)
 	}
 }
@@ -242,7 +238,6 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 
 		suite: bn256.NewSuiteG2(),
 		dkgs:  make(map[common.Address]*dkg.DistKeyGenerator),
-		resps: make(map[common.Address][]*dkg.Response),
 	}
 
 	log.Debug("mediator plugin initialize end")
