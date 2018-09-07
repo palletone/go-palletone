@@ -103,9 +103,9 @@ func setupGenesisUnit(db ptndb.Database, genesis *core.Genesis, ks *keystore.Key
 
 func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.Transactions {
 	// step1, generate payment payload message: coin creation
-	holder := common.Address{}
-	holder.SetString(genesis.TokenHolder)
-	if common.IsValidAddress(holder.String()) == false {
+	holder, err := common.StringToAddress(genesis.TokenHolder)
+
+	if err != nil || holder.GetType() != common.PublicKeyHash {
 		log.Error("Genesis holder address is an invalid p2pkh address.")
 		return nil
 	}
