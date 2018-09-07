@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -37,13 +36,9 @@ func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
 
 func (mp *MediatorPlugin) BroadcastVSSDeals() {
 	lams := mp.GetLocalActiveMediators()
-	nParticipants := mp.getDag().GetActiveMediatorCount()
 	ams := mp.getDag().GetActiveMediators()
 
 	for _, medF := range lams {
-		resps := make([]*dkg.Response, 0, nParticipants)
-		mp.resps[medF] = resps
-
 		dkg, ok := mp.dkgs[medF]
 		if !ok || dkg == nil {
 			log.Error(fmt.Sprintf("The following mediator`s dkg was not successfully generated: %v",
@@ -109,7 +104,7 @@ func (mp *MediatorPlugin) processVSSDeal(deal *VSSDealEvent) {
 		log.Error(fmt.Sprintf("DKG: own deal gave a complaint: %v", dstMed.String()))
 	}
 
-	// todo broadcasts the resulting response
+	// todo, broadcast to every other participant
 }
 
 func (mp *MediatorPlugin) ToUnitTBLSSign(peer string, unit *modules.Unit) error {

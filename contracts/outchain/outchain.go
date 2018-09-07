@@ -5,13 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"reflect"
 	"unicode"
 
+	"path/filepath"
+
 	"github.com/naoina/toml"
-	//	"github.com/palletone/btc-adaptor"
-	//	"github.com/palletone/eth-adaptor"
+	"github.com/palletone/btc-adaptor"
+	"github.com/palletone/eth-adaptor"
 	"github.com/palletone/go-palletone/common/log"
 )
 
@@ -180,19 +181,19 @@ func GetJuryBTCPrikeyTest(chaincode string) (string, error) {
 		log.Error("loadconfig() failed !!!!!!")
 		return "", err
 	}
-	//	var btcAdaptor adaptorbtc.AdaptorBTC
-	//	btcAdaptor.NetID = cfg.Ada.Btc.NetID
-	//	if _, ok := cfg.Ada.Btc.ChaincodeKeys[chaincode]; ok {
-	//		return cfg.Ada.Btc.ChaincodeKeys[chaincode], nil
-	//	} else {
-	//		prikey := btcAdaptor.NewPrivateKey()
-	//		addr := btcAdaptor.GetAddress(prikey)
-	//		cfg.Ada.Btc.ChaincodeKeys[chaincode] = prikey
-	//		cfg.Ada.Btc.AddressKeys[addr] = prikey
-	//		// todo save config
-	//		saveConfigTest()
-	//		return prikey, nil
-	//	}
+	var btcAdaptor adaptorbtc.AdaptorBTC
+	btcAdaptor.NetID = cfg.Ada.Btc.NetID
+	if _, ok := cfg.Ada.Btc.ChaincodeKeys[chaincode]; ok {
+		return cfg.Ada.Btc.ChaincodeKeys[chaincode], nil
+	} else {
+		prikey := btcAdaptor.NewPrivateKey()
+		addr := btcAdaptor.GetAddress(prikey)
+		cfg.Ada.Btc.ChaincodeKeys[chaincode] = prikey
+		cfg.Ada.Btc.AddressKeys[addr] = prikey
+		// todo save config
+		saveConfigTest()
+		return prikey, nil
+	}
 	return "", errors.New("No private key of this chaicode")
 }
 
@@ -202,21 +203,21 @@ func getJuryBTCPubkeyTest(chaincode string) (string, error) {
 		log.Error("loadconfig() failed !!!!!!")
 		return "", err
 	}
-	//	var btcAdaptor adaptorbtc.AdaptorBTC
-	//	btcAdaptor.NetID = cfg.Ada.Btc.NetID
-	//	if _, ok := cfg.Ada.Btc.ChaincodeKeys[chaincode]; ok {
-	//		pubkey := btcAdaptor.GetPublicKey(cfg.Ada.Btc.ChaincodeKeys[chaincode])
-	//		return pubkey, nil
-	//	} else {
-	//		prikey := btcAdaptor.NewPrivateKey()
-	//		pubkey := btcAdaptor.GetPublicKey(prikey)
-	//		addr := btcAdaptor.GetAddress(prikey)
-	//		cfg.Ada.Btc.ChaincodeKeys[chaincode] = prikey
-	//		cfg.Ada.Btc.AddressKeys[addr] = prikey
-	//		// todo save config
-	//		saveConfigTest()
-	//		return pubkey, nil
-	//	}
+	var btcAdaptor adaptorbtc.AdaptorBTC
+	btcAdaptor.NetID = cfg.Ada.Btc.NetID
+	if _, ok := cfg.Ada.Btc.ChaincodeKeys[chaincode]; ok {
+		pubkey := btcAdaptor.GetPublicKey(cfg.Ada.Btc.ChaincodeKeys[chaincode])
+		return pubkey, nil
+	} else {
+		prikey := btcAdaptor.NewPrivateKey()
+		pubkey := btcAdaptor.GetPublicKey(prikey)
+		addr := btcAdaptor.GetAddress(prikey)
+		cfg.Ada.Btc.ChaincodeKeys[chaincode] = prikey
+		cfg.Ada.Btc.AddressKeys[addr] = prikey
+		// todo save config
+		saveConfigTest()
+		return pubkey, nil
+	}
 	return "", errors.New("No private key of this chaicode")
 }
 
@@ -235,19 +236,19 @@ func GetJuryETHPrikeyTest(chaincode string) (string, error) {
 		log.Error("loadconfig() failed !!!!!!")
 		return "", err
 	}
-	//	var ethAdaptor adaptoreth.AdaptorETH
-	//	ethAdaptor.NetID = cfg.Ada.Eth.NetID
-	//	if _, ok := cfg.Ada.Eth.ChaincodeKeys[chaincode]; ok {
-	//		return cfg.Ada.Eth.ChaincodeKeys[chaincode], nil
-	//	} else {
-	//		prikey := ethAdaptor.NewPrivateKey()
-	//		addr := ethAdaptor.GetAddress(prikey)
-	//		cfg.Ada.Eth.ChaincodeKeys[chaincode] = prikey
-	//		cfg.Ada.Eth.AddressKeys[addr] = prikey
-	//		// todo save config
-	//		saveConfigTest()
-	//		return prikey, nil
-	//	}
+	var ethAdaptor adaptoreth.AdaptorETH
+	ethAdaptor.NetID = cfg.Ada.Eth.NetID
+	if _, ok := cfg.Ada.Eth.ChaincodeKeys[chaincode]; ok {
+		return cfg.Ada.Eth.ChaincodeKeys[chaincode], nil
+	} else {
+		prikey := ethAdaptor.NewPrivateKey()
+		addr := ethAdaptor.GetAddress(prikey)
+		cfg.Ada.Eth.ChaincodeKeys[chaincode] = prikey
+		cfg.Ada.Eth.AddressKeys[addr] = prikey
+		// todo save config
+		saveConfigTest()
+		return prikey, nil
+	}
 	return "", errors.New("No private key of this chaicode")
 }
 
@@ -257,19 +258,19 @@ func getJuryETHAddressTest(chaincode string) (string, error) {
 		log.Error("loadconfig() failed !!!!!!")
 		return "", err
 	}
-	//	var ethAdaptor adaptoreth.AdaptorETH
-	//	if _, ok := cfg.Ada.Eth.ChaincodeKeys[chaincode]; ok {
-	//		addr := ethAdaptor.GetAddress(cfg.Ada.Eth.ChaincodeKeys[chaincode])
-	//		return addr, nil
-	//	} else {
-	//		prikey := ethAdaptor.NewPrivateKey()
-	//		addr := ethAdaptor.GetAddress(prikey)
-	//		cfg.Ada.Eth.ChaincodeKeys[chaincode] = prikey
-	//		cfg.Ada.Eth.AddressKeys[addr] = prikey
-	//		// todo save config
-	//		saveConfigTest()
-	//		return addr, nil
-	//	}
+	var ethAdaptor adaptoreth.AdaptorETH
+	if _, ok := cfg.Ada.Eth.ChaincodeKeys[chaincode]; ok {
+		addr := ethAdaptor.GetAddress(cfg.Ada.Eth.ChaincodeKeys[chaincode])
+		return addr, nil
+	} else {
+		prikey := ethAdaptor.NewPrivateKey()
+		addr := ethAdaptor.GetAddress(prikey)
+		cfg.Ada.Eth.ChaincodeKeys[chaincode] = prikey
+		cfg.Ada.Eth.AddressKeys[addr] = prikey
+		// todo save config
+		saveConfigTest()
+		return addr, nil
+	}
 	return "", errors.New("No private key of this chaicode")
 }
 

@@ -51,7 +51,7 @@ func getTempDir(t *testing.T) string {
 func TestSaveAssetInfo(t *testing.T) {
 	assetid := asset.NewAsset()
 	asset := modules.Asset{
-		AssertId: assetid,
+		AssetId:  assetid,
 		UniqueId: assetid,
 		ChainId:  0,
 	}
@@ -92,7 +92,7 @@ func TestGetAccountTokens(t *testing.T) {
 	} else {
 		for _, token := range tokens {
 			log.Printf("Token (%s, %v) = %v\n",
-				token.Alias, token.AssetID.AssertId, token.Balance)
+				token.Alias, token.AssetID.AssetId, token.Balance)
 			// test WalletBalance method
 			log.Println(WalletBalance(Dbconn, addr, token.AssetID))
 			// test ReadUtxos method
