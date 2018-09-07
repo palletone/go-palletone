@@ -250,7 +250,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 		Value:    1,
 		PkScript: []byte("kssssssssssssssssssslsll"),
 		Asset: modules.Asset{
-			AssertId: aid,
+			AssetId:  aid,
 			UniqueId: aid,
 			ChainId:  11,
 		},

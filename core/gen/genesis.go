@@ -120,7 +120,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	// get new asset id
 	assetId := asset2.NewAsset()
 	asset := modules.Asset{
-		AssertId: assetId,
+		AssetId:  assetId,
 		UniqueId: assetId,
 		ChainId:  genesis.ChainID,
 	}

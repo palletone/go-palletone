@@ -158,7 +158,7 @@ func CreateUnit(db ptndb.Database, mAddr *common.Address, txpool *txspool.TxPool
 	// step2. compute chain height
 	index := uint64(1)
 	isMain := true
-	chainIndex := modules.ChainIndex{AssetID: asset.AssertId, IsMain: isMain, Index: index}
+	chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index}
 
 	// step3. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs()
@@ -193,7 +193,7 @@ func CreateUnit(db ptndb.Database, mAddr *common.Address, txpool *txspool.TxPool
 
 	// step6. generate genesis unit header
 	header := modules.Header{
-		AssetIDs: []modules.IDType16{asset.AssertId},
+		AssetIDs: []modules.IDType16{asset.AssetId},
 		Number:   chainIndex,
 		TxRoot:   root,
 		//		Creationdate: time.Now().Unix(),

@@ -110,8 +110,8 @@ func TestTransactionAddingTxs(t *testing.T) {
 	output := modules.Output{
 		Value: totalIncome,
 		Asset: modules.Asset{
-			AssertId: modules.BTCCOIN,
-			ChainId:  1},
+			AssetId: modules.BTCCOIN,
+			ChainId: 1},
 		PkScript: script,
 	}
 	payload0 := modules.PaymentPayload{
