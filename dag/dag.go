@@ -20,8 +20,8 @@ package dag
 
 import (
 	"fmt"
-	"sync"
 	"github.com/coocood/freecache"
+	"sync"
 	//"github.com/ethereum/go-ethereum/params"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/memunit"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -47,7 +48,7 @@ type Dag struct {
 	DynGlobalProp *modules.DynamicGlobalProperty
 	MediatorSchl  *modules.MediatorSchedule
 	// memory unit
-	Memdag *modules.MemDag
+	Memdag *memunit.MemDag
 }
 
 func (d *Dag) CurrentUnit() *modules.Unit {
@@ -178,9 +179,12 @@ func (d *Dag) SaveDag(unit modules.Unit) (int, error) {
 	if unitState == modules.UNIT_STATE_VALIDATED {
 		// step3.1. pass and with group signature, put into leveldb
 		if err := dagcommon.SaveUnit(d.Db, unit, false); err != nil {
-			return -1, fmt.Errorf("SaveDag, save error: %s", err.Error())
+			return -1, fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
 		}
 		// step3.2. if pass and with group signature, prune fork data
+		if err := d.Memdag.Prune(unit.UnitHeader.Number.AssetID.String(), unit.UnitHash); err != nil {
+			return -1, fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
+		}
 	} else {
 		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
 		if err := d.Memdag.Save(&unit); err != nil {
@@ -188,6 +192,9 @@ func (d *Dag) SaveDag(unit modules.Unit) (int, error) {
 		}
 	}
 	// step5. check if it is need to switch
+	if err := d.Memdag.SwitchMainChain(); err != nil {
+		return -1, fmt.Errorf("SaveDag, save error when switch chain: %s", err.Error())
+	}
 	return 0, nil
 }
 
@@ -413,7 +420,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		GlobalProp:    gp,
 		DynGlobalProp: dgp,
 		MediatorSchl:  ms,
-		Memdag:        modules.InitMemDag(),
+		Memdag:        memunit.InitMemDag(db),
 	}
 
 	return dag, nil
@@ -428,7 +435,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		GlobalProp:    nil,
 		DynGlobalProp: nil,
 		MediatorSchl:  nil,
-		Memdag:        modules.InitMemDag(),
+		Memdag:        memunit.InitMemDag(db),
 	}
 	return dag, nil
 }

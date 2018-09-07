@@ -152,8 +152,8 @@ func TestTransactionAddingTxs(t *testing.T) {
 	output := modules.Output{
 		Value: totalIncome,
 		Asset: &modules.Asset{
-			AssertId: modules.BTCCOIN,
-			ChainId:  1},
+			AssetId: modules.BTCCOIN,
+			ChainId: 1},
 		PkScript: script,
 	}
 
@@ -173,7 +173,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	}
 	msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload0),
 		modules.NewMessage(modules.APP_PAYMENT, payload1),
-			modules.NewMessage(modules.APP_PAYMENT, payload2))
+		modules.NewMessage(modules.APP_PAYMENT, payload2))
 	for j := 0; j < int(config.AccountSlots)*1; j++ {
 		txs = append(txs, transaction(msgs, uint32(j+100)))
 	}

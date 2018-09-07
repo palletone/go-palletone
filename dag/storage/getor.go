@@ -147,7 +147,11 @@ func GetUnitTransactions(db ptndb.Database, hash common.Hash) (modules.Transacti
 	return txs, nil
 }
 func GetUnitFormIndex(db ptndb.Database, number modules.ChainIndex) *modules.Unit {
-	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, number.AssetID.String(), number.Index)
+	i := 0
+	if number.IsMain {
+		i = 1
+	}
+	key := fmt.Sprintf("%s_%s_%d_%d", UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
 	hash, err := db.Get([]byte(key))
 	if err != nil {
 		return nil
@@ -155,6 +159,28 @@ func GetUnitFormIndex(db ptndb.Database, number modules.ChainIndex) *modules.Uni
 	var h common.Hash
 	h.SetBytes(hash)
 	return GetUnit(db, h)
+}
+
+func GetLastIrreversibleUnit(db ptndb.Database, assetID modules.IDType16) *modules.Unit {
+	key := fmt.Sprintf("%s_%s_1_", UNIT_NUMBER_PREFIX, assetID.String())
+
+	data := GetPrefix(db, []byte(key))
+	irreKey := string("")
+	for k, _ := range data {
+		if strings.Compare(k, irreKey) > 0 {
+			irreKey = k
+		}
+	}
+	if strings.Compare(irreKey, "") > 0 {
+		rlpUnitHash := data[irreKey]
+		var unitHash common.Hash
+		if err := rlp.DecodeBytes(rlpUnitHash, &unitHash); err != nil {
+			log.Println("GetLastIrreversibleUnit error:", err.Error())
+			return nil
+		}
+		return GetUnit(db, unitHash)
+	}
+	return nil
 }
 
 func GetHeader(db DatabaseReader, hash common.Hash, index *modules.ChainIndex) (*modules.Header, error) {

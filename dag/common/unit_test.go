@@ -238,7 +238,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 
 	// TODO test PaymentPayload
 	txin := modules.Input{
-		PreviousOutPoint: modules.OutPoint{
+		PreviousOutPoint: &modules.OutPoint{
 			TxHash:       p,
 			MessageIndex: 1234,
 			OutIndex:     12344,
@@ -249,7 +249,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 	txout := modules.Output{
 		Value:    1,
 		PkScript: []byte("kssssssssssssssssssslsll"),
-		Asset: modules.Asset{
+		Asset: &modules.Asset{
 			AssetId:  aid,
 			UniqueId: aid,
 			ChainId:  11,
@@ -278,14 +278,13 @@ func TestPaymentTransactionRLP(t *testing.T) {
 	} else {
 		for _, msg := range tx.TxMessages {
 			if msg.App == modules.APP_PAYMENT {
-				//var pl modules.PaymentPayload
-				//if _,err := msg.Payload.(*modules.PaymentPayload); err != nil {
-				//	fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
-				//} else {
-				//	fmt.Println("Payment payload:", pl)
-				//}
-				pl:=msg.Payload.(*modules.PaymentPayload)
-				fmt.Println("Payment payload:", pl)
+				var pl modules.PaymentPayload
+				pl, ok := msg.Payload.(modules.PaymentPayload)
+				if !ok {
+					fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
+				} else {
+					fmt.Println("Payment payload:", pl)
+				}
 			}
 		}
 	}
