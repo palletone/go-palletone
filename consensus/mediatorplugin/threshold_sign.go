@@ -22,7 +22,9 @@ import (
 	"fmt"
 
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -35,17 +37,9 @@ func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
 }
 
 func (mp *MediatorPlugin) BroadcastVSSDeals() {
-	lams := mp.GetLocalActiveMediators()
 	ams := mp.getDag().GetActiveMediators()
 
-	for _, medF := range lams {
-		dkg, ok := mp.dkgs[medF]
-		if !ok || dkg == nil {
-			log.Error(fmt.Sprintf("The following mediator`s dkg was not successfully generated: %v",
-				medF.String()))
-			continue
-		}
-
+	for _, dkg := range mp.dkgs {
 		deals, err := dkg.Deals()
 		if err != nil {
 			log.Error(err.Error())
@@ -98,13 +92,78 @@ func (mp *MediatorPlugin) processVSSDeal(deal *VSSDealEvent) {
 	resp, err := dkg.ProcessDeal(deal.Deal)
 	if err != nil {
 		log.Error(err.Error())
+		return
 	}
 
 	if resp.Response.Status != vss.StatusApproval {
 		log.Error(fmt.Sprintf("DKG: own deal gave a complaint: %v", dstMed.String()))
+		return
 	}
 
-	// todo, broadcast to every other participant
+	go mp.BroadcastVSSResponse(dstMed, resp)
+}
+
+// BroadcastVSSResponse, broadcast response to every other participant
+func (mp *MediatorPlugin) BroadcastVSSResponse(srcMed common.Address, resp *dkg.Response) {
+	ams := mp.getDag().GetActiveMediators()
+
+	for _, dstMed := range ams {
+		if dstMed == srcMed {
+			continue
+		}
+
+		event := VSSResponseEvent{
+			DstMed: dstMed,
+			Resp:   resp,
+		}
+
+		mp.vssResponseFeed.Send(event)
+	}
+}
+
+func (mp *MediatorPlugin) ToProcessResponse(resp *VSSResponseEvent) error {
+	select {
+	case <-mp.quit:
+		return errTerminated
+	case mp.toProcessResponseCh <- resp:
+		return nil
+	}
+}
+
+func (mp *MediatorPlugin) processResponseLoop() {
+	for {
+		select {
+		case <-mp.quit:
+			return
+		case resp := <-mp.toProcessResponseCh:
+			go mp.processVSSResponse(resp)
+		}
+	}
+}
+
+func (mp *MediatorPlugin) processVSSResponse(resp *VSSResponseEvent) {
+	dstMed := resp.DstMed
+
+	dkg, ok := mp.dkgs[dstMed]
+	if !ok || dkg == nil {
+		log.Error(fmt.Sprintf("The following mediator`s dkg is not existed: %v", dstMed.String()))
+		return
+	}
+
+	jstf, err := dkg.ProcessResponse(resp.Resp)
+	if err != nil {
+		log.Error(err.Error())
+		return
+	}
+
+	if jstf != nil {
+		log.Error(fmt.Sprintf("DKG: wrong Process Response: %v", dstMed.String()))
+		return
+	}
+}
+
+func (mp *MediatorPlugin) SubscribeVSSResponseEvent(ch chan<- VSSResponseEvent) event.Subscription {
+	return mp.vssResponseScope.Track(mp.vssResponseFeed.Subscribe(ch))
 }
 
 func (mp *MediatorPlugin) ToUnitTBLSSign(peer string, unit *modules.Unit) error {

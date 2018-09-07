@@ -104,6 +104,9 @@ type ProtocolManager struct {
 	vssDealCh  chan mp.VSSDealEvent
 	vssDealSub event.Subscription
 
+	vssResponseCh  chan mp.VSSResponseEvent
+	vssResponseSub event.Subscription
+
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg sync.WaitGroup
@@ -262,6 +265,41 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.vssDealCh = make(chan mp.VSSDealEvent)
 	pm.vssDealSub = pm.producer.SubscribeVSSDealEvent(pm.vssDealCh)
 	go pm.VSSDealTransmitLoop()
+
+	// append by Albert·Gou
+	// send  VSS deal
+	pm.vssResponseCh = make(chan mp.VSSResponseEvent)
+	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
+	go pm.VSSResponseTransmitLoop()
+}
+
+// @author Albert·Gou
+func (self *ProtocolManager) VSSResponseTransmitLoop() {
+	for {
+		select {
+		case event := <-self.vssResponseCh:
+			node := self.dag.GetActiveMediatorNode(event.DstMed)
+			self.TransmitVSSResponse(node, &event)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.vssDealSub.Err():
+			return
+		}
+	}
+}
+
+// @author Albert·Gou
+// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
+func (pm *ProtocolManager) TransmitVSSResponse(node *discover.Node, resp *mp.VSSResponseEvent) {
+	peer := pm.peers.Peer(node.ID.TerminalString())
+	if peer == nil {
+		log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
+	}
+
+	err := peer.SendVSSResponse(resp)
+	if err != nil {
+		log.Error(err.Error())
+	}
 }
 
 // @author Albert·Gou
@@ -303,6 +341,9 @@ type producer interface {
 
 	SubscribeVSSDealEvent(chan<- mp.VSSDealEvent) event.Subscription
 	ToProcessDeal(deal *mp.VSSDealEvent) error
+
+	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
+	ToProcessResponse(resp *mp.VSSResponseEvent) error
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -765,6 +806,15 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		pm.producer.ToProcessDeal(&deal)
+
+		// append by Albert·Gou
+	case msg.Code == VSSResponseMsg:
+		var resp mp.VSSResponseEvent
+		if err := msg.Decode(&resp); err != nil {
+			log.Info("===VSSDealMsg===", "err:", err)
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		pm.producer.ToProcessResponse(&resp)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)

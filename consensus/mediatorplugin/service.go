@@ -80,6 +80,10 @@ type MediatorPlugin struct {
 	vssDealScope    event.SubscriptionScope
 	toProcessDealCh chan *VSSDealEvent
 
+	vssResponseFeed     event.Feed
+	vssResponseScope    event.SubscriptionScope
+	toProcessResponseCh chan *VSSResponseEvent
+
 	// unit阈值签名相关
 	pendingTBLSSign map[common.Hash]*toTBLSSigned // 等待TBLS阈值签名的unit
 }
@@ -145,6 +149,7 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 	lams := mp.GetLocalActiveMediators()
 	initPubs := mp.getDag().GetActiveMediatorInitPubs()
 	curThreshold := mp.getDag().GetCurThreshold()
+	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, len(lams))
 
 	for _, med := range lams {
 		initSec := mp.mediators[med].InitPartSec
@@ -157,6 +162,7 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 		mp.dkgs[med] = dkg
 	}
 
+	// todo 后面换成事件通知响应在调用
 	go mp.BroadcastVSSDeals()
 }
 
@@ -176,7 +182,10 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	// 4. 处理 VSS deal 循环
 	go mp.processDealLoop()
 
-	// 4. BLS签名循环
+	// 5. 处理 VSS response 循环
+	go mp.processResponseLoop()
+
+	// 6. BLS签名循环
 	go mp.unitBLSSignLoop()
 
 	log.Debug("mediator plugin startup end")
@@ -237,7 +246,6 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		pendingTBLSSign: make(map[common.Hash]*toTBLSSigned),
 
 		suite: bn256.NewSuiteG2(),
-		dkgs:  make(map[common.Address]*dkg.DistKeyGenerator),
 	}
 
 	log.Debug("mediator plugin initialize end")
