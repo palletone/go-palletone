@@ -343,6 +343,7 @@ type producer interface {
 	ToProcessDeal(deal *mp.VSSDealEvent) error
 
 	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
+	ToProcessResponse(resp *mp.VSSResponseEvent)
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -805,6 +806,15 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		pm.producer.ToProcessDeal(&deal)
+
+		// append by Albert·Gou
+	case msg.Code == VSSResponseMsg:
+		var resp mp.VSSResponseEvent
+		if err := msg.Decode(&resp); err != nil {
+			log.Info("===VSSDealMsg===", "err:", err)
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		pm.producer.ToProcessResponse(&resp)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
