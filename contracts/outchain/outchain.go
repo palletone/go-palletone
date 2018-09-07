@@ -10,43 +10,86 @@ import (
 
 	"path/filepath"
 
-	"github.com/palletone/go-palletone/common/p2p"
-
 	"github.com/naoina/toml"
-	"github.com/palletone/go-palletone/adaptor"
-	//"github.com/palletone/go-palletone/adaptor/btc-adaptor"
-	//"github.com/palletone/go-palletone/adaptor/eth-adaptor"
-
+	"github.com/palletone/btc-adaptor"
+	"github.com/palletone/eth-adaptor"
 	"github.com/palletone/go-palletone/common/log"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/statistics/dashboard"
+)
+
+type Config struct {
+	Ada
+}
+
+type Ada struct {
+	Btc      BTC
+	Eth      ETH
+	CCInfoKV map[string]CCInfo
+}
+
+type BTC struct {
+	NetID        int
+	Host         string
+	RPCUser      string
+	RPCPasswd    string
+	CertPath     string
+	WalletPasswd string
+
+	ChaincodeKeys map[string]string
+	AddressKeys   map[string]string
+}
+type ETH struct {
+	NetID  int
+	Rawurl string
+
+	ChaincodeKeys map[string]string
+	AddressKeys   map[string]string
+}
+type CCInfo struct {
+	CCName      string
+	ChainCodeKV map[string][]byte
+}
+
+var DefaultConfig = Config{
+	Ada{
+		Btc: BTC{
+			NetID:         1,
+			Host:          "localhost:18332",
+			RPCUser:       "zxl",
+			RPCPasswd:     "123456",
+			CertPath:      "",
+			WalletPasswd:  "1",
+			ChaincodeKeys: map[string]string{},
+			AddressKeys:   map[string]string{},
+		},
+		Eth: ETH{
+			NetID:         1,
+			Rawurl:        "\\\\.\\pipe\\geth.ipc",
+			ChaincodeKeys: map[string]string{},
+			AddressKeys:   map[string]string{},
+		},
+		CCInfoKV: map[string]CCInfo{
+			"test": CCInfo{
+				ChainCodeKV: map[string][]byte{
+					"testk": []byte("testv"),
+				},
+			},
+		},
+	},
+}
+
+const (
+	modName    = "OutChain"
+	configPath = "F:/work/src/github.com/palletone/go-palletone/contracts/outchain/outchain.toml"
+)
+
+var (
+	gloaded = false
+	cfg     = makeDefaultConfig()
 )
 
 type OutChainMethod struct {
 	Method string `json:"method"`
 }
-
-type ptnstatsConfig struct {
-	URL string `toml:",omitempty"`
-}
-type FullConfig struct {
-	Node      node.Config
-	Ptnstats  ptnstatsConfig
-	Dashboard dashboard.Config
-	//	Consensus consensusconfig.Config
-	MediatorPlugin mp.Config
-	Log            *log.Config
-	Dag            *dagconfig.Config
-	P2P            p2p.Config
-	Ada            adaptor.Config
-}
-
-const modName = "OutChain"
-
-var gloaded = false
-var cfg = makeDefaultConfig()
 
 var tomlSettings = toml.Config{
 	NormFieldName: func(rt reflect.Type, key string) string {
@@ -64,13 +107,11 @@ var tomlSettings = toml.Config{
 	},
 }
 
-func makeDefaultConfig() FullConfig {
-	return FullConfig{
-		Ada: adaptor.DefaultConfig,
-	}
+func makeDefaultConfig() Config {
+	return DefaultConfig
 }
 
-func loadConfig(file string, cfg *FullConfig) error {
+func loadConfig(file string, cfg *Config) error {
 	f, err := os.Open(file)
 	if err != nil {
 		return err
@@ -85,7 +126,7 @@ func loadConfig(file string, cfg *FullConfig) error {
 	return err
 }
 
-func makeConfigFile(cfg *FullConfig, configPath string) error {
+func makeConfigFile(cfg *Config, configPath string) error {
 	var (
 		configFile *os.File = nil
 		err        error    = nil
@@ -117,7 +158,6 @@ func makeConfigFile(cfg *FullConfig, configPath string) error {
 }
 
 func GetConfigTest() error {
-	configPath := "F:/work/src/github.com/palletone/go-palletone/cmd/gptn/palletone.toml"
 	if !gloaded {
 		if err := loadConfig(configPath, &cfg); err != nil {
 			return err
@@ -128,7 +168,6 @@ func GetConfigTest() error {
 }
 
 func saveConfigTest() error {
-	configPath := "F:/work/src/github.com/palletone/go-palletone/cmd/gptn/palletone.toml"
 	err1 := makeConfigFile(&cfg, configPath)
 	if err1 != nil {
 		log.Error("makeConfigFile() failed !!!!!!")
@@ -142,19 +181,19 @@ func GetJuryBTCPrikeyTest(chaincode string) (string, error) {
 		log.Error("loadconfig() failed !!!!!!")
 		return "", err
 	}
-	//var btcAdaptor adaptorbtc.AdaptorBTC
-	//btcAdaptor.NetID = cfg.Ada.Btc.NetID
-	//if _, ok := cfg.Ada.Btc.ChaincodeKeys[chaincode]; ok {
-	//	return cfg.Ada.Btc.ChaincodeKeys[chaincode], nil
-	//} else {
-	//	prikey := btcAdaptor.NewPrivateKey()
-	//	addr := btcAdaptor.GetAddress(prikey)
-	//	cfg.Ada.Btc.ChaincodeKeys[chaincode] = prikey
-	//	cfg.Ada.Btc.AddressKeys[addr] = prikey
-	//	// todo save config
-	//	saveConfigTest()
-	//	return prikey, nil
-	//}
+	var btcAdaptor adaptorbtc.AdaptorBTC
+	btcAdaptor.NetID = cfg.Ada.Btc.NetID
+	if _, ok := cfg.Ada.Btc.ChaincodeKeys[chaincode]; ok {
+		return cfg.Ada.Btc.ChaincodeKeys[chaincode], nil
+	} else {
+		prikey := btcAdaptor.NewPrivateKey()
+		addr := btcAdaptor.GetAddress(prikey)
+		cfg.Ada.Btc.ChaincodeKeys[chaincode] = prikey
+		cfg.Ada.Btc.AddressKeys[addr] = prikey
+		// todo save config
+		saveConfigTest()
+		return prikey, nil
+	}
 	return "", errors.New("No private key of this chaicode")
 }
 
@@ -164,21 +203,21 @@ func getJuryBTCPubkeyTest(chaincode string) (string, error) {
 		log.Error("loadconfig() failed !!!!!!")
 		return "", err
 	}
-	//var btcAdaptor adaptorbtc.AdaptorBTC
-	//btcAdaptor.NetID = cfg.Ada.Btc.NetID
-	//if _, ok := cfg.Ada.Btc.ChaincodeKeys[chaincode]; ok {
-	//	pubkey := btcAdaptor.GetPublicKey(cfg.Ada.Btc.ChaincodeKeys[chaincode])
-	//	return pubkey, nil
-	//} else {
-	//	prikey := btcAdaptor.NewPrivateKey()
-	//	pubkey := btcAdaptor.GetPublicKey(prikey)
-	//	addr := btcAdaptor.GetAddress(prikey)
-	//	cfg.Ada.Btc.ChaincodeKeys[chaincode] = prikey
-	//	cfg.Ada.Btc.AddressKeys[addr] = prikey
-	//	// todo save config
-	//	saveConfigTest()
-	//	return pubkey, nil
-	//}
+	var btcAdaptor adaptorbtc.AdaptorBTC
+	btcAdaptor.NetID = cfg.Ada.Btc.NetID
+	if _, ok := cfg.Ada.Btc.ChaincodeKeys[chaincode]; ok {
+		pubkey := btcAdaptor.GetPublicKey(cfg.Ada.Btc.ChaincodeKeys[chaincode])
+		return pubkey, nil
+	} else {
+		prikey := btcAdaptor.NewPrivateKey()
+		pubkey := btcAdaptor.GetPublicKey(prikey)
+		addr := btcAdaptor.GetAddress(prikey)
+		cfg.Ada.Btc.ChaincodeKeys[chaincode] = prikey
+		cfg.Ada.Btc.AddressKeys[addr] = prikey
+		// todo save config
+		saveConfigTest()
+		return pubkey, nil
+	}
 	return "", errors.New("No private key of this chaicode")
 }
 
@@ -191,25 +230,47 @@ func ClolletJuryBTCPubkeysTest(chaincode string) ([]string, error) {
 	return pubkeys, nil
 }
 
+func GetJuryETHPrikeyTest(chaincode string) (string, error) {
+	err := GetConfigTest()
+	if err != nil {
+		log.Error("loadconfig() failed !!!!!!")
+		return "", err
+	}
+	var ethAdaptor adaptoreth.AdaptorETH
+	ethAdaptor.NetID = cfg.Ada.Eth.NetID
+	if _, ok := cfg.Ada.Eth.ChaincodeKeys[chaincode]; ok {
+		return cfg.Ada.Eth.ChaincodeKeys[chaincode], nil
+	} else {
+		prikey := ethAdaptor.NewPrivateKey()
+		addr := ethAdaptor.GetAddress(prikey)
+		cfg.Ada.Eth.ChaincodeKeys[chaincode] = prikey
+		cfg.Ada.Eth.AddressKeys[addr] = prikey
+		// todo save config
+		saveConfigTest()
+		return prikey, nil
+	}
+	return "", errors.New("No private key of this chaicode")
+}
+
 func getJuryETHAddressTest(chaincode string) (string, error) {
 	err := GetConfigTest()
 	if err != nil {
 		log.Error("loadconfig() failed !!!!!!")
 		return "", err
 	}
-	//var ethAdaptor adaptoreth.AdaptorETH
-	//if _, ok := cfg.Ada.Eth.ChaincodeKeys[chaincode]; ok {
-	//	addr := ethAdaptor.GetAddress(cfg.Ada.Eth.ChaincodeKeys[chaincode])
-	//	return addr, nil
-	//} else {
-	//	prikey := ethAdaptor.NewPrivateKey()
-	//	addr := ethAdaptor.GetAddress(prikey)
-	//	cfg.Ada.Eth.ChaincodeKeys[chaincode] = prikey
-	//	cfg.Ada.Eth.AddressKeys[addr] = prikey
-	//	// todo save config
-	//	saveConfigTest()
-	//	return addr, nil
-	//}
+	var ethAdaptor adaptoreth.AdaptorETH
+	if _, ok := cfg.Ada.Eth.ChaincodeKeys[chaincode]; ok {
+		addr := ethAdaptor.GetAddress(cfg.Ada.Eth.ChaincodeKeys[chaincode])
+		return addr, nil
+	} else {
+		prikey := ethAdaptor.NewPrivateKey()
+		addr := ethAdaptor.GetAddress(prikey)
+		cfg.Ada.Eth.ChaincodeKeys[chaincode] = prikey
+		cfg.Ada.Eth.AddressKeys[addr] = prikey
+		// todo save config
+		saveConfigTest()
+		return addr, nil
+	}
 	return "", errors.New("No private key of this chaicode")
 }
 
@@ -220,4 +281,40 @@ func ClolletJuryETHAddressesTest(chaincode string) ([]string, error) {
 		addresses = append(addresses, address)
 	}
 	return addresses, nil
+}
+
+func GetChainCodeValue(chaincode string, key string) ([]byte, error) {
+	err := GetConfigTest()
+	if err != nil {
+		log.Error("loadconfig() failed !!!!!!")
+		return []byte(""), err
+	}
+	if _, ok := cfg.Ada.CCInfoKV[chaincode]; ok {
+		if _, ok := cfg.Ada.CCInfoKV[chaincode].ChainCodeKV[key]; ok {
+			return cfg.Ada.CCInfoKV[chaincode].ChainCodeKV[key], nil
+		} else {
+			return []byte(""), err
+		}
+	} else {
+		return []byte(""), err
+	}
+	return []byte(""), errors.New("No private key of this chaicode")
+}
+
+func PutChainCodeValue(chaincode string, key string, value []byte) error {
+	err := GetConfigTest()
+	if err != nil {
+		log.Error("loadconfig() failed !!!!!!")
+		return err
+	}
+	if _, ok := cfg.Ada.CCInfoKV[chaincode]; ok {
+		cfg.Ada.CCInfoKV[chaincode].ChainCodeKV[key] = value
+	} else {
+		cfg.Ada.CCInfoKV[chaincode] = CCInfo{CCName: chaincode,
+			ChainCodeKV: map[string][]byte{key: value}}
+	}
+	// todo save config
+	saveConfigTest()
+
+	return nil
 }

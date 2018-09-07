@@ -242,9 +242,9 @@ func verifyImportDone(t *testing.T, imported chan *modules.Unit) {
 
 // Tests that a fetcher accepts block announcements and initiates retrievals for
 // them, successfully importing into the local chain.
-func TestSequentialAnnouncements62(t *testing.T) { testSequentialAnnouncements(t, 62) }
-func TestSequentialAnnouncements63(t *testing.T) { testSequentialAnnouncements(t, 63) }
-func TestSequentialAnnouncements64(t *testing.T) { testSequentialAnnouncements(t, 64) }
+//func TestSequentialAnnouncements62(t *testing.T) { testSequentialAnnouncements(t, 62) }
+//func TestSequentialAnnouncements63(t *testing.T) { testSequentialAnnouncements(t, 63) }
+//func TestSequentialAnnouncements64(t *testing.T) { testSequentialAnnouncements(t, 64) }
 
 func testSequentialAnnouncements(t *testing.T, protocol int) {
 	// Create a chain of blocks to import
@@ -273,9 +273,9 @@ func testSequentialAnnouncements(t *testing.T, protocol int) {
 
 // Tests that if blocks are announced by multiple peers (or even the same buggy
 // peer), they will only get downloaded at most once.
-func TestConcurrentAnnouncements62(t *testing.T) { testConcurrentAnnouncements(t, 62) }
-func TestConcurrentAnnouncements63(t *testing.T) { testConcurrentAnnouncements(t, 63) }
-func TestConcurrentAnnouncements64(t *testing.T) { testConcurrentAnnouncements(t, 64) }
+//func TestConcurrentAnnouncements62(t *testing.T) { testConcurrentAnnouncements(t, 62) }
+//func TestConcurrentAnnouncements63(t *testing.T) { testConcurrentAnnouncements(t, 63) }
+//func TestConcurrentAnnouncements64(t *testing.T) { testConcurrentAnnouncements(t, 64) }
 
 func testConcurrentAnnouncements(t *testing.T, protocol int) {
 	// Create a chain of blocks to import
@@ -323,9 +323,9 @@ func testConcurrentAnnouncements(t *testing.T, protocol int) {
 
 // Tests that announcements retrieved in a random order are cached and eventually
 // imported when all the gaps are filled in.
-func TestRandomArrivalImport62(t *testing.T) { testRandomArrivalImport(t, 62) }
-func TestRandomArrivalImport63(t *testing.T) { testRandomArrivalImport(t, 63) }
-func TestRandomArrivalImport64(t *testing.T) { testRandomArrivalImport(t, 64) }
+//func TestRandomArrivalImport62(t *testing.T) { testRandomArrivalImport(t, 62) }
+//func TestRandomArrivalImport63(t *testing.T) { testRandomArrivalImport(t, 63) }
+//func TestRandomArrivalImport64(t *testing.T) { testRandomArrivalImport(t, 64) }
 
 func testRandomArrivalImport(t *testing.T, protocol int) {
 	// Create a chain of blocks to import, and choose one to delay
@@ -359,9 +359,9 @@ func testRandomArrivalImport(t *testing.T, protocol int) {
 
 // Tests that direct block enqueues (due to block propagation vs. hash announce)
 // are correctly schedule, filling and import queue gaps.
-func TestQueueGapFill62(t *testing.T) { testQueueGapFill(t, 62) }
-func TestQueueGapFill63(t *testing.T) { testQueueGapFill(t, 63) }
-func TestQueueGapFill64(t *testing.T) { testQueueGapFill(t, 64) }
+//func TestQueueGapFill62(t *testing.T) { testQueueGapFill(t, 62) }
+//func TestQueueGapFill63(t *testing.T) { testQueueGapFill(t, 63) }
+//func TestQueueGapFill64(t *testing.T) { testQueueGapFill(t, 64) }
 
 func testQueueGapFill(t *testing.T, protocol int) {
 	// Create a chain of blocks to import, and choose one to not announce at all
@@ -395,9 +395,9 @@ func testQueueGapFill(t *testing.T, protocol int) {
 
 // Tests that blocks arriving from various sources (multiple propagations, hash
 //announces, etc) do not get scheduled for import multiple times.
-func TestImportDeduplication62(t *testing.T) { testImportDeduplication(t, 62) }
-func TestImportDeduplication63(t *testing.T) { testImportDeduplication(t, 63) }
-func TestImportDeduplication64(t *testing.T) { testImportDeduplication(t, 64) }
+//func TestImportDeduplication62(t *testing.T) { testImportDeduplication(t, 62) }
+//func TestImportDeduplication63(t *testing.T) { testImportDeduplication(t, 63) }
+//func TestImportDeduplication64(t *testing.T) { testImportDeduplication(t, 64) }
 
 func testImportDeduplication(t *testing.T, protocol int) {
 	// Create two blocks to import (one for duplication, the other for stalling)
@@ -443,9 +443,9 @@ func testImportDeduplication(t *testing.T, protocol int) {
 
 // Tests that if a block is empty (i.e. header only), no body request should be
 // made, and instead the header should be assembled into a whole block in itself.
-func TestEmptyBlockShortCircuit62(t *testing.T) { testEmptyBlockShortCircuit(t, 62) }
-func TestEmptyBlockShortCircuit63(t *testing.T) { testEmptyBlockShortCircuit(t, 63) }
-func TestEmptyBlockShortCircuit64(t *testing.T) { testEmptyBlockShortCircuit(t, 64) }
+//func TestEmptyBlockShortCircuit62(t *testing.T) { testEmptyBlockShortCircuit(t, 62) }
+//func TestEmptyBlockShortCircuit63(t *testing.T) { testEmptyBlockShortCircuit(t, 63) }
+//func TestEmptyBlockShortCircuit64(t *testing.T) { testEmptyBlockShortCircuit(t, 64) }
 
 func testEmptyBlockShortCircuit(t *testing.T, protocol int) {
 	// Create a chain of blocks to import
@@ -555,6 +555,7 @@ func testHashMemoryExhaustionAttack(t *testing.T, protocol int) {
 // Tests that blocks sent to the fetcher (either through propagation or via hash
 // announces and retrievals) don't pile up indefinitely, exhausting available
 // system memory.
+/*
 func TestBlockMemoryExhaustionAttack(t *testing.T) {
 	// Create a tester with instrumented import hooks
 	tester := newTester()
@@ -604,3 +605,4 @@ func TestBlockMemoryExhaustionAttack(t *testing.T) {
 	}
 	verifyImportDone(t, imported)
 }
+*/

@@ -9,14 +9,15 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/binary"
-	"fmt"
 	"hash"
+	"fmt"
 
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
-	"github.com/palletone/go-palletone/tokenengine/btcd/wire"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
 // An opcode defines the information related to a txscript opcode.  opfunc, if
@@ -1165,7 +1166,8 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 	// which the transaction is finalized or a timestamp depending on if the
 	// value is before the txscript.LockTimeThreshold.  When it is under the
 	// threshold it is a block height.
-	err = verifyLockTime(int64(vm.tx.LockTime), LockTimeThreshold,
+	payment:=vm.tx.TxMessages[vm.msgIdx].Payload.(*modules.PaymentPayload)
+	err = verifyLockTime(int64(payment.LockTime), LockTimeThreshold,
 		int64(lockTime))
 	if err != nil {
 		return err
@@ -1235,14 +1237,14 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 		return scriptError(ErrNegativeLockTime, str)
 	}
 
-	sequence := int64(stackSequence)
+	//sequence := int64(stackSequence)
 
 	// To provide for future soft-fork extensibility, if the
 	// operand has the disabled lock-time flag set,
 	// CHECKSEQUENCEVERIFY behaves as a NOP.
-	if sequence&int64(wire.SequenceLockTimeDisabled) != 0 {
-		return nil
-	}
+	//if sequence&int64(wire.SequenceLockTimeDisabled) != 0 {
+	//	return nil
+	//}
 
 	// Transaction version numbers not high enough to trigger CSV rules must
 	// fail.
@@ -2016,7 +2018,7 @@ func opcodeHash256(op *parsedOpcode, vm *Engine) error {
 		return err
 	}
 
-	vm.dstack.PushByteArray(chainhash.DoubleHashB(buf))
+	vm.dstack.PushByteArray(crypto.Keccak256(buf))
 	return nil
 }
 
@@ -2074,18 +2076,18 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	// the data stack.  This is required because the more general script
 	// validation consensus rules do not have the new strict encoding
 	// requirements enabled by the flags.
-	hashType := SigHashType(fullSigBytes[len(fullSigBytes)-1])
-	sigBytes := fullSigBytes[:len(fullSigBytes)-1]
-	if err := vm.checkHashTypeEncoding(hashType); err != nil {
-		return err
-	}
-	if err := vm.checkSignatureEncoding(sigBytes); err != nil {
-		return err
-	}
-	if err := vm.checkPubKeyEncoding(pkBytes); err != nil {
-		return err
-	}
-
+	//hashType := SigHashType(fullSigBytes[len(fullSigBytes)-1])
+	//sigBytes := fullSigBytes[:len(fullSigBytes)-1]
+	//if err := vm.checkHashTypeEncoding(hashType); err != nil {
+	//	return err
+	//}
+	//if err := vm.checkSignatureEncoding(sigBytes); err != nil {
+	//	return err
+	//}
+	//if err := vm.checkPubKeyEncoding(pkBytes); err != nil {
+	//	return err
+	//}
+	hashType:=SigHashAll
 	// Get script starting from the most recent OP_CODESEPARATOR.
 	subScript := vm.subScript()
 
@@ -2100,7 +2102,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		hash, err = calcWitnessSignatureHash(subScript, sigHashes, hashType,
-			&vm.tx, vm.txIdx, vm.inputAmount)
+			&vm.tx,vm.msgIdx, vm.txIdx, vm.inputAmount)
 		if err != nil {
 			return err
 		}
@@ -2109,46 +2111,49 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		// to sign itself.
 		subScript = removeOpcodeByData(subScript, fullSigBytes)
 
-		hash = calcSignatureHash(subScript, hashType, &vm.tx, vm.txIdx)
+		hash = calcSignatureHash(subScript, hashType, &vm.tx,vm.msgIdx, vm.txIdx)
 	}
 
-	pubKey, err := btcec.ParsePubKey(pkBytes, btcec.S256())
-	if err != nil {
-		vm.dstack.PushBool(false)
-		return nil
-	}
-
-	var signature *btcec.Signature
-	if vm.hasFlag(ScriptVerifyStrictEncoding) ||
-		vm.hasFlag(ScriptVerifyDERSignatures) {
-
-		signature, err = btcec.ParseDERSignature(sigBytes, btcec.S256())
-	} else {
-		signature, err = btcec.ParseSignature(sigBytes, btcec.S256())
-	}
-	if err != nil {
-		vm.dstack.PushBool(false)
-		return nil
-	}
-
-	var valid bool
-	if vm.sigCache != nil {
-		var sigHash chainhash.Hash
-		copy(sigHash[:], hash)
-
-		valid = vm.sigCache.Exists(sigHash, signature, pubKey)
-		if !valid && signature.Verify(hash, pubKey) {
-			vm.sigCache.Add(sigHash, signature, pubKey)
-			valid = true
-		}
-	} else {
-		valid = signature.Verify(hash, pubKey)
-	}
-
-	if !valid && vm.hasFlag(ScriptVerifyNullFail) && len(sigBytes) > 0 {
-		str := "signature not empty on failed checksig"
-		return scriptError(ErrNullFail, str)
-	}
+	valid:=crypto.VerifySignature(pkBytes,hash,fullSigBytes)
+	//fmt.Printf("Sign:%x, Validate Hash:%x,PubKey:%x,is valid:%s\n",
+	//	fullSigBytes, hash,pkBytes,valid)
+	//pubKey, err := btcec.ParsePubKey(pkBytes, btcec.S256())
+	//if err != nil {
+	//	vm.dstack.PushBool(false)
+	//	return nil
+	//}
+	//
+	//var signature *btcec.Signature
+	//if vm.hasFlag(ScriptVerifyStrictEncoding) ||
+	//	vm.hasFlag(ScriptVerifyDERSignatures) {
+	//
+	//	signature, err = btcec.ParseDERSignature(sigBytes, btcec.S256())
+	//} else {
+	//	signature, err = btcec.ParseSignature(sigBytes, btcec.S256())
+	//}
+	//if err != nil {
+	//	vm.dstack.PushBool(false)
+	//	return nil
+	//}
+	//
+	//var valid bool
+	//if vm.sigCache != nil {
+	//	var sigHash chainhash.Hash
+	//	copy(sigHash[:], hash)
+	//
+	//	valid = vm.sigCache.Exists(sigHash, signature, pubKey)
+	//	if !valid && signature.Verify(hash, pubKey) {
+	//		vm.sigCache.Add(sigHash, signature, pubKey)
+	//		valid = true
+	//	}
+	//} else {
+	//	valid = signature.Verify(hash, pubKey)
+	//}
+	//
+	//if !valid && vm.hasFlag(ScriptVerifyNullFail) && len(sigBytes) > 0 {
+	//	str := "signature not empty on failed checksig"
+	//	return scriptError(ErrNullFail, str)
+	//}
 
 	vm.dstack.PushBool(valid)
 	return nil
@@ -2373,17 +2378,17 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 			}
 
 			hash, err = calcWitnessSignatureHash(script, sigHashes, hashType,
-				&vm.tx, vm.txIdx, vm.inputAmount)
+				&vm.tx,vm.msgIdx, vm.txIdx, vm.inputAmount)
 			if err != nil {
 				return err
 			}
 		} else {
-			hash = calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
+			hash = calcSignatureHash(script, hashType, &vm.tx,vm.msgIdx, vm.txIdx)
 		}
 
 		var valid bool
 		if vm.sigCache != nil {
-			var sigHash chainhash.Hash
+			var sigHash common.Hash
 			copy(sigHash[:], hash)
 
 			valid = vm.sigCache.Exists(sigHash, parsedSig, parsedPubKey)

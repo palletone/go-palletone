@@ -22,6 +22,9 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 type mocksupt struct{}
@@ -189,7 +192,7 @@ func peerInit() {
 }
 
 func TestExecSysCC(t *testing.T) {
-	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
+	viper.Set("peer.fileSystemPath", "D:\\test\\chaincodes") //"D:\\test\\chaincodes"   "/home/glh/tmp/chaincodes"
 	viper.Set("peer.address", "127.0.0.1:12345")
 	viper.Set("chaincode.executetimeout", 20*time.Second)
 
@@ -200,7 +203,11 @@ func TestExecSysCC(t *testing.T) {
 	f := "putval"
 	args := util.ToChaincodeArgs(f, "greeting", "hey there")
 
-	Init()
+	dag, err := creatTestDag()
+	if err == nil {
+		Init(dag)
+		t.Error("creatTestDag err")
+	}
 
 	var txid string = "1234567890" //default
 	nonce, err := crypto.GetRandomNonce()
@@ -274,7 +281,7 @@ func multMoreSys(t *testing.T) {
 	chainID := util.GetTestChainID()
 	f := "putval"
 
-	var invokeCount int = 5
+	var invokeCount int = 1
 	var tmout time.Duration = 5 * time.Second
 	var txid string = "1234567890" //default
 
@@ -307,7 +314,8 @@ func multMoreSys(t *testing.T) {
 }
 
 func TestExecSysCCMult(t *testing.T) {
-	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
+
+	viper.Set("peer.fileSystemPath", "D:\\test\\chaincodes") //D:\\test\\chaincodes   "/home/glh/tmp/chaincodes"
 	viper.Set("peer.address", "127.0.0.1:12345")
 	viper.Set("chaincode.executetimeout", 20*time.Second)
 
@@ -318,7 +326,11 @@ func TestExecSysCCMult(t *testing.T) {
 	//f := "putval"
 	//args := util.ToChaincodeArgs(f, "greeting", "hey there")
 
-	Init()
+	dag, err := creatTestDag()
+	if err == nil {
+		Init(dag)
+		t.Error("creatTestDag err")
+	}
 	//Invoke(chainID, "sample_syscc", args)
 	//multSys(t)
 	multMoreSys(t)
@@ -494,6 +506,30 @@ func invokeUserCC(t *testing.T, txid string) {
 
 func TestFileRW(t *testing.T) {
 	ucc.RecoverChainCodeFromDb("", nil)
+}
+
+func creatTestDag() (*dag.Dag, error){
+	path := "D:\\test\\levedb"
+
+	dagconfig.DbPath = path
+	db, err := storage.Init(path, 16, 16)
+	if err != nil {
+		return nil, err
+	}
+	dag, err := dag.NewDag(db)
+	if err != nil {
+		return nil, err
+	}
+
+	return dag, nil
+}
+
+func init() {
+	//var dag *dag.Dag
+	dag, err := creatTestDag()
+	if err == nil {
+		Init(dag)
+	}
 }
 
 

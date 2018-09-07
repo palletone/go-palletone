@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+        "github.com/palletone/go-palletone/tokenengine"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 

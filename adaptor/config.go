@@ -18,16 +18,18 @@
 package adaptor
 
 type Config struct {
-	Btc BTC
-	Eth ETH
+	Btc      BTC
+	Eth      ETH
+	CCInfoKV map[string]CCInfo
 }
 
 type BTC struct {
-	NetID     int
-	Host      string
-	RPCUser   string
-	RPCPasswd string
-	CertPath  string
+	NetID        int
+	Host         string
+	RPCUser      string
+	RPCPasswd    string
+	CertPath     string
+	WalletPasswd string
 
 	ChaincodeKeys map[string]string
 	AddressKeys   map[string]string
@@ -39,28 +41,33 @@ type ETH struct {
 	ChaincodeKeys map[string]string
 	AddressKeys   map[string]string
 }
+type CCInfo struct {
+	CCName      string
+	ChainCodeKV map[string][]byte
+}
 
 var DefaultConfig = Config{
 	Btc: BTC{
-		NetID:     1,
-		Host:      "localhost:18332",
-		RPCUser:   "zxl",
-		RPCPasswd: "123456",
-		ChaincodeKeys: map[string]string{
-			"SampleSysCC": "123",
-		},
-		AddressKeys: map[string]string{
-			"P1XXX": "123",
-		},
+		NetID:         1,
+		Host:          "localhost:18332",
+		RPCUser:       "zxl",
+		RPCPasswd:     "123456",
+		CertPath:      "",
+		WalletPasswd:  "1",
+		ChaincodeKeys: map[string]string{},
+		AddressKeys:   map[string]string{},
 	},
 	Eth: ETH{
-		NetID:  1,
-		Rawurl: "\\\\.\\pipe\\geth.ipc",
-		ChaincodeKeys: map[string]string{
-			"SampleSysCC": "123",
-		},
-		AddressKeys: map[string]string{
-			"P1XXX": "123",
+		NetID:         1,
+		Rawurl:        "\\\\.\\pipe\\geth.ipc",
+		ChaincodeKeys: map[string]string{},
+		AddressKeys:   map[string]string{},
+	},
+	CCInfoKV: map[string]CCInfo{
+		"test": CCInfo{
+			ChainCodeKV: map[string][]byte{
+				"testk": []byte("testv"),
+			},
 		},
 	},
 }

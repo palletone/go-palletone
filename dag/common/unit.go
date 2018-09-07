@@ -158,7 +158,7 @@ func CreateUnit(db ptndb.Database, mAddr *common.Address, txpool *txspool.TxPool
 	// step2. compute chain height
 	index := uint64(1)
 	isMain := true
-	chainIndex := modules.ChainIndex{AssetID: asset.AssertId, IsMain: isMain, Index: index}
+	chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index}
 
 	// step3. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs()
@@ -193,7 +193,7 @@ func CreateUnit(db ptndb.Database, mAddr *common.Address, txpool *txspool.TxPool
 
 	// step6. generate genesis unit header
 	header := modules.Header{
-		AssetIDs: []modules.IDType16{asset.AssertId},
+		AssetIDs: []modules.IDType16{asset.AssetId},
 		Number:   chainIndex,
 		TxRoot:   root,
 		//		Creationdate: time.Now().Unix(),
@@ -216,40 +216,51 @@ To get genesis unit info from leveldb
 func GetGenesisUnit(db ptndb.Database, index uint64) (*modules.Unit, error) {
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
-	data := storage.GetPrefix(db, []byte(key))
-	if len(data) > 1 {
-		return nil, fmt.Errorf("multiple genesis unit")
-	} else if len(data) <= 0 {
-		return nil, nil
-	}
-	for k, v := range data {
-		sk := string(k[len(storage.HEADER_PREFIX):])
-		// get index
-		skArr := strings.Split(sk, "_")
-		if len(skArr) != 3 {
-			return nil, fmt.Errorf("split genesis key error")
-		}
-		// get unit hash
-		uHash := common.Hash{}
-		uHash.SetString(skArr[2])
-		// get unit header
-		var uHeader modules.Header
-		if err := rlp.DecodeBytes([]byte(v), &uHeader); err != nil {
-			return nil, fmt.Errorf("Get genesis unit header:%s", err.Error())
-		}
-		// get transaction list
-		txs, err := GetUnitTransactions(db, uHash)
+	if memdb,ok := db.(*ptndb.MemDatabase);ok {
+		hash, err := memdb.Get([]byte(key))
 		if err != nil {
-			return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
+			return nil,err
 		}
-		// generate unit
-		unit := modules.Unit{
-			UnitHeader: &uHeader,
-			UnitHash:   uHash,
-			Txs:        txs,
+		var h common.Hash
+		h.SetBytes(hash)
+		unit := storage.GetUnit(db, h)
+		return unit,nil
+	}else if _,ok := db.(*ptndb.LDBDatabase);ok{
+		data := storage.GetPrefix(db, []byte(key))
+		if len(data) > 1 {
+			return nil, fmt.Errorf("multiple genesis unit")
+		} else if len(data) <= 0 {
+			return nil, nil
 		}
-		unit.UnitSize = unit.Size()
-		return &unit, nil
+		for k, v := range data {
+			sk := string(k[len(storage.HEADER_PREFIX):])
+			// get index
+			skArr := strings.Split(sk, "_")
+			if len(skArr) != 3 {
+				return nil, fmt.Errorf("split genesis key error")
+			}
+			// get unit hash
+			uHash := common.Hash{}
+			uHash.SetString(skArr[2])
+			// get unit header
+			var uHeader modules.Header
+			if err := rlp.DecodeBytes([]byte(v), &uHeader); err != nil {
+				return nil, fmt.Errorf("Get genesis unit header:%s", err.Error())
+			}
+			// get transaction list
+			txs, err := GetUnitTransactions(db, uHash)
+			if err != nil {
+				return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
+			}
+			// generate unit
+			unit := modules.Unit{
+				UnitHeader: &uHeader,
+				UnitHash:   uHash,
+				Txs:        txs,
+			}
+			unit.UnitSize = unit.Size()
+			return &unit, nil
+		}
 	}
 	return nil, nil
 }
@@ -608,14 +619,16 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 		Output: []*modules.Output{&output},
 	}
 	// step3. create message
-	msg := modules.Message{
+	msg := &modules.Message{
 		App:     modules.APP_PAYMENT,
 		Payload: payload,
 	}
 	// step4. create coinbase
-	coinbase := modules.Transaction{
-		TxMessages: []*modules.Message{&msg},
-	}
+	var  coinbase modules.Transaction
+	//coinbase := modules.Transaction{
+	//	TxMessages: []modules.Message{msg},
+	//}
+	coinbase.TxMessages = append(coinbase.TxMessages, msg)
 	// coinbase.CreationDate = coinbase.CreateDate()
 	coinbase.TxHash = coinbase.Hash()
 

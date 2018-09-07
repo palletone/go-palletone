@@ -63,10 +63,6 @@ func (mu *MemUnit) Lenth() uint64 {
 // fork data
 type ForkData []common.Hash
 
-func initForkData() *ForkData {
-	forkdata := ForkData{}
-	return &forkdata
-}
 func (f *ForkData) Add(hash common.Hash) error {
 	if f.Exists(hash) {
 		return fmt.Errorf("Save fork data: unit is already existing.")
@@ -106,7 +102,6 @@ type MemDag struct {
 	forkId            map[string]int8 // fork chain id
 	lastValidatedUnit *Unit
 	forkIndex         map[string]*ForkIndex
-	forkData          *ForkData
 	memUnit           *MemUnit
 	memSize           uint8
 }
@@ -116,7 +111,6 @@ func InitMemDag() *MemDag {
 		forkId:            map[string]int8{},
 		lastValidatedUnit: nil,
 		forkIndex:         map[string]*ForkIndex{},
-		forkData:          initForkData(),
 		memUnit:           InitMemUnit(),
 		memSize:           dagconfig.DefaultConfig.MemoryUnitSize,
 	}
@@ -144,7 +138,7 @@ func (chain *MemDag) Save(unit *Unit) error {
 	// save fork index
 	assetId := unit.UnitHeader.Number.AssetID.String()
 	forkIndex, ok := chain.forkIndex[assetId]
-	if ok {
+	if !ok {
 		forkIndex = &ForkIndex{}
 		if err := forkIndex.AddData(0, unit.UnitHash); err != nil {
 			return err
@@ -160,9 +154,8 @@ func (chain *MemDag) Save(unit *Unit) error {
 	if err := chain.memUnit.Add(unit); err != nil {
 		return err
 	}
-	// save fork data
-
 	// prune fork
+
 	return nil
 }
 

@@ -128,7 +128,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	txs := modules.Transactions{}
 
-	msgs := make([]modules.Message, 0)
+	msgs := make([]*modules.Message, 0)
 	addr := new(common.Address)
 	addr.SetString("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
 
@@ -171,7 +171,9 @@ func TestTransactionAddingTxs(t *testing.T) {
 		Input:  []*modules.Input{&input},
 		Output: []*modules.Output{&output},
 	}
-	msgs = append(msgs, *modules.NewMessage(modules.APP_PAYMENT, payload0), *modules.NewMessage(modules.APP_PAYMENT, payload1), *modules.NewMessage(modules.APP_PAYMENT, payload2))
+	msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload0),
+		modules.NewMessage(modules.APP_PAYMENT, payload1),
+			modules.NewMessage(modules.APP_PAYMENT, payload2))
 	for j := 0; j < int(config.AccountSlots)*1; j++ {
 		txs = append(txs, transaction(msgs, uint32(j+100)))
 	}
@@ -231,10 +233,10 @@ func TestTransactionAddingTxs(t *testing.T) {
 	}(pool)
 
 }
-func transaction(msg []modules.Message, lock uint32) *modules.Transaction {
+func transaction(msg []*modules.Message, lock uint32) *modules.Transaction {
 	return pricedTransaction(msg, lock)
 }
-func pricedTransaction(msg []modules.Message, lock uint32) *modules.Transaction {
+func pricedTransaction(msg []*modules.Message, lock uint32) *modules.Transaction {
 	tx := modules.NewTransaction(msg, lock)
 	tx.SetHash(rlp.RlpHash(tx))
 	return tx

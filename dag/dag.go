@@ -20,9 +20,7 @@ package dag
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"sync"
-
 	"github.com/coocood/freecache"
 	//"github.com/ethereum/go-ethereum/params"
 	"github.com/dedis/kyber"
@@ -36,6 +34,7 @@ import (
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 type Dag struct {
@@ -47,7 +46,6 @@ type Dag struct {
 	GlobalProp    *modules.GlobalProperty
 	DynGlobalProp *modules.DynamicGlobalProperty
 	MediatorSchl  *modules.MediatorSchedule
-
 	// memory unit
 	Memdag *modules.MemDag
 }
@@ -61,10 +59,8 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	}
 	// step2. get unit height
 	height, err := d.GetUnitNumber(hash)
-	//fmt.Printf("d.GetUnitNumber(hash)===%#v\n",height)
 	// get unit header
 	uHeader, err := storage.GetHeader(d.Db, hash, &height)
-	//fmt.Printf("storage.GetHeader(d.Db, hash, &height)==%#v\n",uHeader)
 	if err != nil {
 		log.Error("Current unit when get unit header", "error", err.Error())
 		return nil
@@ -72,13 +68,10 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	// get unit hash
 	uHash := common.Hash{}
 	uHash.SetBytes(hash.Bytes())
-
 	// get transaction list
 	txs, err := dagcommon.GetUnitTransactions(d.Db, uHash)
 	if err != nil {
 		log.Error("Current unit when get transactions", "error", err.Error())
-		//log.Info("植同学===》》》测试时需要注释掉》》》Current unit when get transactions/error===", err.Error())
-		//测试时需要注释掉
 		return nil
 	}
 	// generate unit
@@ -126,8 +119,32 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 }
 
 func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
-	header, _ := storage.GetHeaderByHeight(d.Db, number)
-	return header
+	if memdb, ok := d.Db.(*ptndb.MemDatabase); ok {
+		encNum := ptndb.EncodeBlockNumber(number.Index)
+		key := append(storage.HEADER_PREFIX, encNum...)
+		key = append(key, number.Bytes()...)
+		hashkey := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, number.Index)
+		hash, err := memdb.Get([]byte(hashkey))
+		if err != nil {
+			return nil
+		}
+		var h common.Hash
+		h.SetBytes(hash)
+		headerbyte, err := memdb.Get(append(key, h.Bytes()...))
+		if err != nil {
+			return nil
+		}
+		header := &modules.Header{}
+		err = rlp.DecodeBytes(headerbyte, header)
+		if err != nil {
+			return nil
+		}
+		return header
+	} else if lvldb, ok := d.Db.(*ptndb.LDBDatabase); ok {
+		header, _ := storage.GetHeaderByHeight(lvldb, number)
+		return header
+	}
+	return nil
 }
 
 // func (d *Dag) GetHeader(hash common.Hash, number uint64) *modules.Header {
@@ -212,8 +229,25 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 // GetBlockHashesFromHash retrieves a number of block hashes starting at a given
 // hash, fetching towards the genesis block.
 func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash {
-	//GetUnit()
-	return []common.Hash{}
+	header := d.GetHeaderByHash(hash)
+	if header == nil {
+		return nil
+	}
+	// Iterate the headers until enough is collected or the genesis reached
+	chain := make([]common.Hash, 0, max)
+	for i := uint64(0); i < max; i++ {
+		if header.Index() == 0 {
+			break
+		}
+		next := header.ParentsHash[0]
+		h, err := d.GetHeader(next, header.Index()-1)
+		if err != nil {
+			break
+		}
+		header = h
+		chain = append(chain, next)
+	}
+	return chain
 }
 
 // need add:   assetId modules.IDType16, onMain bool
@@ -340,7 +374,7 @@ func (d *Dag) WalletBalance(address string, assetid []byte, uniqueid []byte, cha
 	newUnitqueid.SetBytes(uniqueid)
 
 	asset := modules.Asset{
-		AssertId: newAssetid,
+		AssetId:  newAssetid,
 		UniqueId: newUnitqueid,
 		ChainId:  chainid,
 	}
@@ -355,17 +389,20 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 
 	gp, err := storage.RetrieveGlobalProp(db)
 	if err != nil {
-		return nil, err
+		log.Error(err.Error())
+		//return nil, err
 	}
 
 	dgp, err := storage.RetrieveDynGlobalProp(db)
 	if err != nil {
-		return nil, err
+		log.Error(err.Error())
+		//return nil, err
 	}
 
 	ms, err := storage.RetrieveMediatorSchl(db)
 	if err != nil {
-		return nil, err
+		log.Error(err.Error())
+		//return nil, err
 	}
 
 	dag := &Dag{
@@ -403,9 +440,15 @@ func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
 
 // Get Header
 func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error) {
-	index, _ := d.GetUnitNumber(hash)
+	index, err := d.GetUnitNumber(hash)
+	if err != nil {
+		return nil, err
+	}
 	//TODO compare index with number
-	return storage.GetHeader(d.Db, hash, &index)
+	if index.Index == number {
+		return storage.GetHeader(d.Db, hash, &index)
+	}
+	return nil, err
 }
 
 // Get UnitNumber
@@ -496,4 +539,19 @@ func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
 // author Albert·Gou
 func (d *Dag) GetCurThreshold() int {
 	return d.GlobalProp.GetCurThreshold()
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediatorCount() int {
+	return d.GlobalProp.GetActiveMediatorCount()
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediators() []common.Address {
+	return d.GlobalProp.GetActiveMediators()
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediatorNode(mediator common.Address) *discover.Node {
+	return d.GlobalProp.GetActiveMediatorNode(mediator)
 }

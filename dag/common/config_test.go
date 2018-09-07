@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -20,7 +21,7 @@ func TestSaveConfig(t *testing.T) {
 	aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))
 	st := modules.Asset{
-		AssertId: aid,
+		AssetId:  aid,
 		UniqueId: aid,
 		ChainId:  1,
 	}
@@ -41,38 +42,59 @@ func TestSaveConfig(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T) {
-	Dbconn := storage.ReNewDbConn("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb")
+	//Dbconn := storage.ReNewDbConn("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb")
+	Dbconn := storage.ReNewDbConn("../../cmd/gptn/gptn/leveldb")
 	if Dbconn == nil {
 		fmt.Println("Connect to db error.")
 		return
 	}
-	// todo get struct
-	data := GetConfig(Dbconn, []byte("TestStruct"))
-	if len(data) <= 0 {
-		log.Println("Get config data error")
-	} else {
-		log.Println("Get Data:", data)
-	}
-
-	var st modules.Asset
-	if err := rlp.DecodeBytes(data, &st); err != nil {
-		log.Println("Get config data error:", err.Error())
+	//// todo get struct
+	//data := GetConfig(Dbconn, []byte("TestStruct"))
+	//if len(data) <= 0 {
+	//	log.Println("Get config data error")
+	//} else {
+	//	log.Println("Get Data:", data)
+	//}
+	//
+	//var st modules.Asset
+	//if err := rlp.DecodeBytes(data, &st); err != nil {
+	//	log.Println("Get config data error:", err.Error())
+	//	return
+	//}
+	//log.Println(st.ChainId, st.UniqueId, st.AssetId)
+	//// todo get int
+	//int_data := GetConfig(Dbconn, []byte("TestInt"))
+	//if len(data) <= 0 {
+	//	log.Println("Get config int data error")
+	//} else {
+	//	log.Println("Get int Data:", int_data)
+	//}
+	//var i uint32
+	//if err := rlp.DecodeBytes(int_data, &i); err != nil {
+	//	log.Println("Get config data error:", err.Error())
+	//	return
+	//}
+	//log.Println("int value=", i)
+	// todo get MediatorCandidates
+	data := GetConfig(Dbconn, []byte("MediatorCandidates"))
+	var mList []core.MediatorInfo
+	fmt.Println(data)
+	if err := rlp.DecodeBytes(data, &mList); err != nil {
+		log.Println("Check unit signature when get mediators list", "error", err.Error())
 		return
 	}
-	log.Println(st.ChainId, st.UniqueId, st.AssertId)
-	// todo get int
-	int_data := GetConfig(Dbconn, []byte("TestInt"))
-	if len(data) <= 0 {
-		log.Println("Get config int data error")
-	} else {
-		log.Println("Get int Data:", int_data)
-	}
-	var i uint32
-	if err := rlp.DecodeBytes(int_data, &i); err != nil {
-		log.Println("Get config data error:", err.Error())
+	// todo get ActiveMediators
+	bNum := GetConfig(Dbconn, []byte("ActiveMediators"))
+	var mNum uint16
+	if err := rlp.DecodeBytes(bNum, &mNum); err != nil {
+		log.Println("Check unit signature", "error", err.Error())
 		return
 	}
-	log.Println("int value=", i)
+	if int(mNum) != len(mList) {
+		log.Println("Check unit signature", "error", "mediators info error, pls update network")
+		return
+	}
+	log.Println(">>>>>>>>> Pass >>>>>>>>>>.")
 }
 
 func TestSaveStruct(t *testing.T) {
@@ -84,7 +106,7 @@ func TestSaveStruct(t *testing.T) {
 	aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))
 	st := modules.Asset{
-		AssertId: aid,
+		AssetId:  aid,
 		UniqueId: aid,
 		ChainId:  1,
 	}

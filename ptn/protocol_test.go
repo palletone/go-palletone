@@ -18,60 +18,60 @@ package ptn
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/ptn/downloader"
 	"sync"
 	"testing"
 	"time"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/common/rlp"
 )
 
 // Tests that handshake failures are detected and reported correctly.
-func TestStatusMsgErrors1(t *testing.T) { testStatusMsgErrors(t, 1) }
+//func TestStatusMsgErrors1(t *testing.T) { testStatusMsgErrors(t, 1) }
 func testStatusMsgErrors(t *testing.T, protocol int) {
-		pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil)
-		defer pm.Stop()
-		tests := []struct {
-			code      uint64
-			data      interface{}
-			wantError error
-		}{
-			{
-				code: TxMsg, data: []interface{}{},
-				wantError: errResp(ErrNoStatusMsg, "first msg has code 2 (!= 0)"),
-			},
-			{
-				code: StatusMsg, data: statusData{10, DefaultConfig.NetworkId, 0, common.Hash{}, common.Hash{}},
-				wantError: errResp(ErrProtocolVersionMismatch, "10 (!= %d)", protocol),
-			},
-			{
-				code: StatusMsg, data: statusData{uint32(protocol), 999, 0, common.Hash{}, common.Hash{}},
-				wantError: errResp(ErrNetworkIdMismatch, "999 (!= 1)"),
-			},
-			{
-				code: StatusMsg, data: statusData{uint32(protocol), DefaultConfig.NetworkId, 0, common.Hash{}, common.Hash{3}},
-				wantError: errResp(ErrGenesisBlockMismatch, "0300000000000000 (!= %x)", common.Hash{}.Bytes()[:8]),
-			},
-		}
-		for i, test := range tests {
-			p, errc := newTestPeer("peer", protocol, pm, false)
-			// The send call might hang until reset because
-			// the protocol might not read the payload.
-			go p2p.Send(p.app, test.code, test.data)
-			select {
-			case err := <-errc:
-				if err == nil {
-					t.Errorf("test %d: protocol returned nil error, want %q", i, test.wantError)
-				} else if err.Error() != test.wantError.Error() {
-					t.Errorf("test %d: wrong error: got %q, want %q", i, err, test.wantError)
-				}
-			case <-time.After(2 * time.Second):
-				t.Errorf("protocol did not shut down within 2 seconds")
+	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil)
+	defer pm.Stop()
+	tests := []struct {
+		code      uint64
+		data      interface{}
+		wantError error
+	}{
+		{
+			code: TxMsg, data: []interface{}{},
+			wantError: errResp(ErrNoStatusMsg, "first msg has code 2 (!= 0)"),
+		},
+		{
+			code: StatusMsg, data: statusData{10, DefaultConfig.NetworkId, 0, common.Hash{}, common.Hash{}},
+			wantError: errResp(ErrProtocolVersionMismatch, "10 (!= %d)", protocol),
+		},
+		{
+			code: StatusMsg, data: statusData{uint32(protocol), 999, 0, common.Hash{}, common.Hash{}},
+			wantError: errResp(ErrNetworkIdMismatch, "999 (!= 1)"),
+		},
+		{
+			code: StatusMsg, data: statusData{uint32(protocol), DefaultConfig.NetworkId, 0, common.Hash{}, common.Hash{3}},
+			wantError: errResp(ErrGenesisBlockMismatch, "0300000000000000 (!= %x)", common.Hash{}.Bytes()[:8]),
+		},
+	}
+	for i, test := range tests {
+		p, errc := newTestPeer("peer", protocol, pm, false)
+		// The send call might hang until reset because
+		// the protocol might not read the payload.
+		go p2p.Send(p.app, test.code, test.data)
+		select {
+		case err := <-errc:
+			if err == nil {
+				t.Errorf("test %d: protocol returned nil error, want %q", i, test.wantError)
+			} else if err.Error() != test.wantError.Error() {
+				t.Errorf("test %d: wrong error: got %q, want %q", i, err, test.wantError)
 			}
-			p.close()
+		case <-time.After(2 * time.Second):
+			t.Errorf("protocol did not shut down within 2 seconds")
 		}
+		p.close()
+	}
 }
 
 // This test checks that received transactions are added to the local pool.
@@ -99,6 +99,7 @@ func testRecvTransactions(t *testing.T, protocol int) {
 		t.Errorf("no TxPreEvent received within 2 seconds")
 	}
 }
+
 // This test checks that pending transactions are sent.
 //func TestSendTransactions1(t *testing.T) { testSendTransactions(t, 1) }
 func testSendTransactions(t *testing.T, protocol int) {
@@ -167,13 +168,12 @@ func TestGetBlockHeadersDataEncodeDecode(t *testing.T) {
 		fail   bool
 	}{
 		//Providing the origin as either a hash or a number should both work
-		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number: modules.ChainIndex{modules.IDType16{},true,0}}}},
+		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number: modules.ChainIndex{modules.IDType16{}, true, 0}}}},
 		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Hash: hash}}},
 
 		// Providing arbitrary query field should also work
-		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number: modules.ChainIndex{modules.IDType16{},true,0}}, Amount: 314, Skip: 1, Reverse: true}},
+		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number: modules.ChainIndex{modules.IDType16{}, true, 0}}, Amount: 314, Skip: 1, Reverse: true}},
 		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Hash: hash}, Amount: 314, Skip: 1, Reverse: true}},
-
 	}
 	// Iterate over each of the tests and try to encode and then decode
 	for i, tt := range tests {

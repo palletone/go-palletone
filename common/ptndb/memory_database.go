@@ -24,6 +24,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"github.com/syndtr/goleveldb/leveldb/errors"
+	"encoding/binary"
 )
 
 /*
@@ -137,3 +138,11 @@ func (b *memBatch) Reset() {
 	b.writes = b.writes[:0]
 	b.size = 0
 }
+
+// encodeBlockNumber encodes a block number as big endian uint64
+func EncodeBlockNumber(number uint64) []byte {
+	enc := make([]byte, 8)
+	binary.BigEndian.PutUint64(enc, number)
+	return enc
+}
+

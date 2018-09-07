@@ -69,7 +69,6 @@ func listGet(templateId []byte) (*TempCC, error) {
 // contract manger module init
 func Init(dag *dag.Dag) error {
 	peerContractMockConfigInit()
-
 	err := db.SetCcDagHand(dag)
 	if err != nil {
 		return err
@@ -436,7 +435,4 @@ func peerContractMockConfigInit() {
 	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
 }
 
-func init2() {
-	//Init()
-}
 

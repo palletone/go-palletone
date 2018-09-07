@@ -22,14 +22,16 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/core"
 	"io"
 	"math"
 	"math/big"
 	"strconv"
 	"time"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/obj"
+	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
 )
 
 var (
@@ -51,21 +53,26 @@ type TxIn struct {
 	Sequence         uint32
 }
 
-func NewTransaction(msg []Message, lock uint32) *Transaction {
+func NewTransaction(msg []*Message, lock uint32) *Transaction {
 	return newTransaction(msg, lock)
 }
 
-func NewContractCreation(msg []Message, lock uint32) *Transaction {
+func NewContractCreation(msg []*Message, lock uint32) *Transaction {
 	return newTransaction(msg, lock)
 }
 
-func newTransaction(msg []Message, lock uint32) *Transaction {
+func newTransaction(msg []*Message, lock uint32) *Transaction {
 	tx := new(Transaction)
 	for _, m := range msg {
-		tx.TxMessages = append(tx.TxMessages, &m)
+		tx.TxMessages = append(tx.TxMessages, m)
 	}
 
 	return tx
+}
+
+// AddTxIn adds a transaction input to the message.
+func (tx *Transaction) AddMessage(me Message) {
+	tx.TxMessages = append(tx.TxMessages, &me)
 }
 
 // AddTxIn adds a transaction input to the message.
@@ -234,14 +241,9 @@ func (tx *Transaction) Cost() *big.Int {
 }
 
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
-	tx.TxHash.Set(cpy.TxHash)
-	//tx.Locktime = cpy.Locktime
-	tx.TxMessages = make([]*Message, len(cpy.TxMessages))
-	for i, msg := range cpy.TxMessages {
-		newMsg := new(Message)
-		newMsg = msg
-		tx.TxMessages[i] = newMsg
-	}
+
+	obj.DeepCopy(&tx, cpy)
+
 }
 
 //// AsMessage returns the transaction as a core.Message.
@@ -521,6 +523,13 @@ func (msg *Transaction) SerializeSize() int {
 	return n
 }
 
+//Deep copy transaction to a new object
+func (tx *Transaction) Clone() Transaction {
+	var newTx Transaction
+	obj.DeepCopy(&newTx, tx)
+	return newTx
+}
+
 // AddTxOut adds a transaction output to the message.
 //func (msg *PaymentPayload) AddTxOut(to *Output) {
 //	msg.Output = append(msg.Output, to)
@@ -594,6 +603,12 @@ func (msg *Transaction) baseSize() int {
 // the transaction, excluding any included witness data.
 func (msg *PaymentPayload) SerializeSizeStripped() int {
 	return msg.baseSize()
+}
+
+// SerializeSizeStripped returns the number of bytes it would take to serialize
+// the transaction, excluding any included witness data.
+func (tx *Transaction) SerializeSizeStripped() int {
+	return tx.baseSize()
 }
 
 // WriteVarBytes serializes a variable length byte array to w as a varInt

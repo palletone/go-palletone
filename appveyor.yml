@@ -26,7 +26,9 @@ install:
   - 7z x go1.10.3.windows-%GETH_ARCH%.zip -y -oC:\ > NUL
   - go version
   - gcc --version
-
+before_build:
+  - go get -u github.com/palletone/btc-adaptor
+  - go get -u github.com/palletone/eth-adaptor
 build_script:
   - go run build\ci.go install
 

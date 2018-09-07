@@ -20,6 +20,8 @@
 package modules
 
 import (
+	"fmt"
+
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -59,6 +61,10 @@ type DynamicGlobalProperty struct {
 	//	RecentSlotsFilled float32
 }
 
+func (gp *GlobalProperty) GetActiveMediatorCount() int {
+	return len(gp.ActiveMediators)
+}
+
 func (gp *GlobalProperty) GetCurThreshold() int {
 	aSize := len(gp.ActiveMediators)
 	offset := (core.PalletOne100Percent - core.PalletOneIrreversibleThreshold) * aSize /
@@ -76,6 +82,33 @@ func (gp *GlobalProperty) GetActiveMediatorInitPubs() []kyber.Point {
 	}
 
 	return pubs
+}
+
+func (gp *GlobalProperty) getActiveMediator(add common.Address) *core.Mediator {
+	med, ok := gp.ActiveMediators[add]
+	if !ok {
+		log.Error(fmt.Sprintf("%v is not active mediator!", add.Str()))
+		return nil
+	}
+
+	return &med
+}
+
+func (gp *GlobalProperty) GetActiveMediatorNode(mediator common.Address) *discover.Node {
+	med := gp.getActiveMediator(mediator)
+
+	return med.Node
+}
+
+func (gp *GlobalProperty) GetActiveMediators() []common.Address {
+	aSize := len(gp.ActiveMediators)
+	mediators := make([]common.Address, 0, aSize)
+
+	for _, m := range gp.ActiveMediators {
+		mediators = append(mediators, m.Address)
+	}
+
+	return mediators
 }
 
 func (gp *GlobalProperty) GetActiveMediatorNodes() []*discover.Node {

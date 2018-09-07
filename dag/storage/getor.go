@@ -109,7 +109,6 @@ func GetUnit(db ptndb.Database, hash common.Hash) *modules.Unit {
 	}
 	// 2. unit header
 	uHeader, err := GetHeader(db, hash, &height)
-	//log.Printf("--------GetHeader(db, hash, &height)t====》》》%#v\n",uHeader)
 	if err != nil {
 		log.Println("GetUnit when GetHeader failed , error:", err)
 		return nil
@@ -121,7 +120,6 @@ func GetUnit(db ptndb.Database, hash common.Hash) *modules.Unit {
 	txs, err := GetUnitTransactions(db, uHash)
 	if err != nil {
 		log.Println("GetUnit when GetUnitTransactions failed , error:", err)
-		log.Println("植同学===》》》测试时需要注释掉》》》GetUnit when GetUnitTransactions failed , error:", err)
 		return nil
 	}
 	// generate unit
@@ -182,6 +180,7 @@ func GetHeaderByHeight(db DatabaseReader, index modules.ChainIndex) (*modules.He
 	encNum := encodeBlockNumber(index.Index)
 	key := append(HEADER_PREFIX, encNum...)
 	key = append(key, index.Bytes()...)
+
 	data := getprefix(db, key)
 	if data == nil || len(data) <= 0 {
 		return nil, fmt.Errorf("No such height header")

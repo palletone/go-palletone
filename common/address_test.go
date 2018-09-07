@@ -6,19 +6,19 @@ import (
 
 func TestAddressValidate(t *testing.T) {
 	p2pkh := "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
-	addr := StringToAddress(p2pkh)
-	addrt, err := addr.Validate()
+	addr, err := StringToAddress(p2pkh)
+
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log(addrt)
+	t.Log(addr)
 }
 func TestAddressNotValidate(t *testing.T) {
 	p2pkh := "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gj"
-	addr := StringToAddress(p2pkh)
-	addrt, err := addr.Validate()
+	addr, err := StringToAddress(p2pkh)
+
 	if err != nil {
-		t.Log(addrt)
+		t.Log(addr)
 		t.Log(err)
 	} else {
 		t.Error("It must invalid, but pass, please check your code")

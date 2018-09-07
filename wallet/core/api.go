@@ -439,7 +439,7 @@ func (api *SignerAPI) EcRecover(ctx context.Context, data, sig hexutil.Bytes) (c
 		return common.Address{}, err
 	}
 	pubKey := crypto.ToECDSAPub(rpk)
-	recoveredAddr := crypto.PubkeyToAddress(*pubKey)
+	recoveredAddr := crypto.PubkeyToAddress(pubKey)
 	return recoveredAddr, nil
 }
 

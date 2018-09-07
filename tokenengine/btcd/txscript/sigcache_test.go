@@ -9,19 +9,19 @@ import (
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
+	"github.com/palletone/go-palletone/common"
 )
 
 // genRandomSig returns a random message, a signature of the message under the
 // public key and the public key. This function is used to generate randomized
 // test data.
-func genRandomSig() (*chainhash.Hash, *btcec.Signature, *btcec.PublicKey, error) {
+func genRandomSig() (*common.Hash, *btcec.Signature, *btcec.PublicKey, error) {
 	privKey, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	var msgHash chainhash.Hash
+	var msgHash common.Hash
 	if _, err := rand.Read(msgHash[:]); err != nil {
 		return nil, nil, nil, err
 	}

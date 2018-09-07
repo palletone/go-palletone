@@ -20,6 +20,7 @@ package mediatorplugin
 
 import (
 	"fmt"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/kyber/share/dkg/pedersen"
@@ -28,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -43,7 +43,6 @@ type PalletOne interface {
 	Dag() *dag.Dag
 	GetKeyStore() *keystore.KeyStore
 	TxPool() *txspool.TxPool
-	GetActiveMediatorNodes() []*discover.Node
 }
 
 // toBLSed represents a BLS sign operation.
@@ -77,6 +76,14 @@ type MediatorPlugin struct {
 	suite vss.Suite
 	dkgs  map[common.Address]*dkg.DistKeyGenerator
 
+	vssDealFeed     event.Feed
+	vssDealScope    event.SubscriptionScope
+	toProcessDealCh chan *VSSDealEvent
+
+	vssResponseFeed     event.Feed
+	vssResponseScope    event.SubscriptionScope
+	toProcessResponseCh chan *VSSResponseEvent
+
 	// unit阈值签名相关
 	pendingTBLSSign map[common.Hash]*toTBLSSigned // 等待TBLS阈值签名的unit
 }
@@ -90,22 +97,22 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 }
 
 func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
-	ams := make([]common.Address, 0)
+	lams := make([]common.Address, 0)
 
 	gp := mp.getDag().GlobalProp
 	for add := range mp.mediators {
 		if _, ok := gp.ActiveMediators[add]; ok {
-			ams = append(ams, add)
+			lams = append(lams, add)
 		}
 	}
 
-	return ams
+	return lams
 }
 
 func (mp *MediatorPlugin) HaveActiveMediator() bool {
-	ams := mp.GetLocalActiveMediators()
+	lams := mp.GetLocalActiveMediators()
 
-	return len(ams) != 0
+	return len(lams) != 0
 }
 
 func (mp *MediatorPlugin) AddActiveMediatorPeers() {
@@ -113,7 +120,7 @@ func (mp *MediatorPlugin) AddActiveMediatorPeers() {
 		return
 	}
 
-	for _, n := range mp.ptn.GetActiveMediatorNodes() {
+	for _, n := range mp.getDag().GetActiveMediatorNodes() {
 		mp.server.AddPeer(n)
 	}
 }
@@ -139,20 +146,24 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 }
 
 func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
-	ams := mp.GetLocalActiveMediators()
+	lams := mp.GetLocalActiveMediators()
 	initPubs := mp.getDag().GetActiveMediatorInitPubs()
 	curThreshold := mp.getDag().GetCurThreshold()
+	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, len(lams))
 
-	for _, med := range ams {
+	for _, med := range lams {
 		initSec := mp.mediators[med].InitPartSec
 
 		dkg, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
-			//panic(err)
+			log.Error(err.Error())
 		}
 
 		mp.dkgs[med] = dkg
 	}
+
+	// todo 后面换成事件通知响应在调用, 并开启定时器
+	go mp.BroadcastVSSDeals()
 }
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
@@ -168,7 +179,13 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	// 3. 给当前节点控制的活跃mediator，初始化对应的DKG
 	go mp.NewActiveMediatorsDKG()
 
-	// 4. BLS签名循环
+	// 4. 处理 VSS deal 循环
+	go mp.processDealLoop()
+
+	// 5. 处理 VSS response 循环
+	go mp.processResponseLoop()
+
+	// 6. BLS签名循环
 	go mp.unitBLSSignLoop()
 
 	log.Debug("mediator plugin startup end")
@@ -229,7 +246,6 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		pendingTBLSSign: make(map[common.Hash]*toTBLSSigned),
 
 		suite: bn256.NewSuiteG2(),
-		dkgs:  make(map[common.Address]*dkg.DistKeyGenerator),
 	}
 
 	log.Debug("mediator plugin initialize end")

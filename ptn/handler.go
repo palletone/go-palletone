@@ -17,7 +17,6 @@
 package ptn
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -32,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/consensus/mediatorplugin"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
 	common2 "github.com/palletone/go-palletone/dag/common"
@@ -98,8 +97,15 @@ type ProtocolManager struct {
 
 	// append by Albert·Gou
 	producer           producer
-	newProducedUnitCh  chan mediatorplugin.NewProducedUnitEvent
+	newProducedUnitCh  chan mp.NewProducedUnitEvent
 	newProducedUnitSub event.Subscription
+
+	// append by Albert·Gou
+	vssDealCh  chan mp.VSSDealEvent
+	vssDealSub event.Subscription
+
+	vssResponseCh  chan mp.VSSResponseEvent
+	vssResponseSub event.Subscription
 
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
@@ -130,10 +136,10 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	// Figure out whether to allow fast sync or not
 	/*blockchain.CurrentBlock().NumberU64() > 0 */
 	//TODO must modify.The second start would Blockchain not empty, fast sync disabled
-	//if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Number.Index > 0 {
-	//	//log.Warn("Blockchain not empty, fast sync disabled")
-	//	mode = downloader.FullSync
-	//}
+	if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Index() > 0 {
+		log.Info("dag not empty, fast sync disabled")
+		mode = downloader.FullSync
+	}
 	if mode == downloader.FastSync {
 		manager.fastSync = uint32(1)
 	}
@@ -166,7 +172,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 				return manager.NodeInfo()
 			},
 			PeerInfo: func(id discover.NodeID) interface{} {
-				if p := manager.peers.Peer(fmt.Sprintf("%x", id[:8])); p != nil {
+				if p := manager.peers.Peer(id.TerminalString()); p != nil {
 					return p.Info()
 				}
 				return nil
@@ -250,19 +256,94 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 
 	// append by Albert·Gou
 	// broadcast new unit produced by mediator
-	pm.newProducedUnitCh = make(chan mediatorplugin.NewProducedUnitEvent)
+	pm.newProducedUnitCh = make(chan mp.NewProducedUnitEvent)
 	pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
 	go pm.newProducedUnitBroadcastLoop()
+
+	// append by Albert·Gou
+	// send  VSS deal
+	pm.vssDealCh = make(chan mp.VSSDealEvent)
+	pm.vssDealSub = pm.producer.SubscribeVSSDealEvent(pm.vssDealCh)
+	go pm.VSSDealTransmitLoop()
+
+	// append by Albert·Gou
+	// send  VSS deal
+	pm.vssResponseCh = make(chan mp.VSSResponseEvent)
+	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
+	go pm.VSSResponseTransmitLoop()
+}
+
+// @author Albert·Gou
+func (self *ProtocolManager) VSSResponseTransmitLoop() {
+	for {
+		select {
+		case event := <-self.vssResponseCh:
+			node := self.dag.GetActiveMediatorNode(event.DstMed)
+			self.TransmitVSSResponse(node, &event)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.vssDealSub.Err():
+			return
+		}
+	}
+}
+
+// @author Albert·Gou
+// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
+func (pm *ProtocolManager) TransmitVSSResponse(node *discover.Node, resp *mp.VSSResponseEvent) {
+	peer := pm.peers.Peer(node.ID.TerminalString())
+	if peer == nil {
+		log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
+	}
+
+	err := peer.SendVSSResponse(resp)
+	if err != nil {
+		log.Error(err.Error())
+	}
+}
+
+// @author Albert·Gou
+// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
+func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDealEvent) {
+	peer := pm.peers.Peer(node.ID.TerminalString())
+	if peer == nil {
+		log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
+	}
+
+	err := peer.SendVSSDeal(deal)
+	if err != nil {
+		log.Error(err.Error())
+	}
+}
+
+// @author Albert·Gou
+func (self *ProtocolManager) VSSDealTransmitLoop() {
+	for {
+		select {
+		case event := <-self.vssDealCh:
+			node := self.dag.GetActiveMediatorNode(event.DstMed)
+			self.TransmitVSSDeal(node, &event)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.vssDealSub.Err():
+			return
+		}
+	}
 }
 
 // @author Albert·Gou
 type producer interface {
 	// SubscribeNewProducedUnitEvent should return an event subscription of
 	// NewProducedUnitEvent and send events to the given channel.
-	SubscribeNewProducedUnitEvent(chan<- mediatorplugin.NewProducedUnitEvent) event.Subscription
-
+	SubscribeNewProducedUnitEvent(chan<- mp.NewProducedUnitEvent) event.Subscription
 	// UnitBLSSign is to BLS sign the unit
-	UnitBLSSign(peer string, unit *modules.Unit) error
+	ToUnitTBLSSign(peer string, unit *modules.Unit) error
+
+	SubscribeVSSDealEvent(chan<- mp.VSSDealEvent) event.Subscription
+	ToProcessDeal(deal *mp.VSSDealEvent) error
+
+	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
+	ToProcessResponse(resp *mp.VSSResponseEvent) error
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -327,10 +408,10 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	)
 	genesis, err := common2.GetGenesisUnit(pm.dag.Db, 0)
 	if err != nil {
-		fmt.Println("GetGenesisUnit===error:=", err)
+		log.Info("GetGenesisUnit error", "err", err)
+		return err
 	}
-	genesis = genesis
-	if err := p.Handshake(pm.networkId, index, hash, common.Hash{} /*genesis.Hash()*/); err != nil {
+	if err := p.Handshake(pm.networkId, index, hash, genesis.Hash()); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
@@ -351,7 +432,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
 
-	//pm.syncTransactions(p)
+	pm.syncTransactions(p)
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
@@ -421,7 +502,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				// Hash based traversal towards the genesis block
 				for i := 0; i < int(query.Skip)+1; i++ {
 					if header, err := pm.dag.GetHeader(query.Origin.Hash, number); err == nil && header != nil {
-						query.Origin.Hash = header.ParentsHash[0]
+						if number != 0 {
+							query.Origin.Hash = header.ParentsHash[0]
+						}
 						number--
 					} else {
 						log.Info("========GetBlockHeadersMsg========", "number", number, "err:", err)
@@ -429,37 +512,42 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 						break
 					}
 				}
-			case query.Origin.Hash != (common.Hash{}) && !query.Reverse:
-				// Hash based traversal towards the leaf block
-				var (
-					current = origin.Number.Index
-					next    = current + query.Skip + 1
-				)
-				//log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
-				if next <= current {
-					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
-					log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
-					unknown = true
-				} else {
-					//log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
-
-					index := query.Origin.Number
-					//index := modules.ChainIndex{}
-					//index.AssetID.SetBytes([]byte(query.Origin.Number.AssetID))
-					//index.Index = next
-					//index.IsMain = true
-					if header := pm.dag.GetHeaderByNumber(index); header != nil {
-						query.Origin.Hash = header.Hash()
-						//TODO must recover
-						//if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
-						//	query.Origin.Hash = header.Hash()
-						//} else {
-						//	unknown = true
-						//}
-					} else {
-						unknown = true
-					}
-				}
+			//case query.Origin.Hash != (common.Hash{}) && !query.Reverse:
+			//			//	// Hash based traversal towards the leaf block
+			//			//	var (
+			//			//		current = origin.Number.Index
+			//			//		next    = current + query.Skip + 1
+			//			//	)
+			//			//	//log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
+			//			//	if next <= current {
+			//			//		infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
+			//			//		log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
+			//			//		unknown = true
+			//			//	} else {
+			//			//		//log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
+			//			//
+			//			//		//index := query.Origin.Number
+			//			//		//index := modules.ChainIndex{}
+			//			//		//index.AssetID.SetBytes([]byte(query.Origin.Number.AssetID))
+			//			//		//index.Index = next
+			//			//		//index.IsMain = true
+			//			//		indexNext := modules.ChainIndex{
+			//			//			modules.PTNCOIN,
+			//			//			true,
+			//			//			next,
+			//			//		}
+			//			//		if header := pm.dag.GetHeaderByNumber(indexNext); header != nil {
+			//			//			//query.Origin.Hash = header.Hash()
+			//			//			//TODO must recover
+			//			//			if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
+			//			//				query.Origin.Hash = header.Hash()
+			//			//			} else {
+			//			//				unknown = true
+			//			//			}
+			//			//		} else {
+			//			//			unknown = true
+			//			//		}
+			//			//	}
 			case query.Reverse:
 				// Number based traversal towards the genesis block
 				if query.Origin.Number.Index >= query.Skip+1 {
@@ -708,11 +796,30 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			log.Info("===NewProducedUnitMsg===", "err:", err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		pm.producer.UnitBLSSign(p.id, &unit)
+		pm.producer.ToUnitTBLSSign(p.id, &unit)
+
+		// append by Albert·Gou
+	case msg.Code == VSSDealMsg:
+		var deal mp.VSSDealEvent
+		if err := msg.Decode(&deal); err != nil {
+			log.Info("===VSSDealMsg===", "err:", err)
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		pm.producer.ToProcessDeal(&deal)
+
+		// append by Albert·Gou
+	case msg.Code == VSSResponseMsg:
+		var resp mp.VSSResponseEvent
+		if err := msg.Decode(&resp); err != nil {
+			log.Info("===VSSDealMsg===", "err:", err)
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		pm.producer.ToProcessResponse(&resp)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
+
 	return nil
 }
 
@@ -787,7 +894,6 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 			self.BroadcastNewProducedUnit(event.Unit)
 
 			// appended by wangjiyou
-			//TODO must recover
 			self.BroadcastUnit(event.Unit, true)
 			self.BroadcastUnit(event.Unit, false)
 
@@ -847,12 +953,12 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 	}
 	holder := common.Address{}
 	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
-	msg0 := modules.Message{
+	msg0 := &modules.Message{
 		App:     modules.APP_PAYMENT,
 		Payload: pay,
 	}
 	tx := &modules.Transaction{
-		TxMessages: []*modules.Message{&msg0},
+		TxMessages: []*modules.Message{msg0},
 	}
 	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
 	if err != nil {
@@ -868,10 +974,31 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 // @author Albert·Gou
 // BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
 func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
-	peers := pm.peers.GetActiveMediatorPeers(pm.dag.GetActiveMediatorNodes())
+	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
-		peer.SendNewProducedUnit(unit)
+		err := peer.SendNewProducedUnit(unit)
+		if err != nil {
+			log.Error(err.Error())
+		}
 	}
+}
+
+// AtiveMeatorPeers retrieves a list of peers that active mediator
+// @author Albert·Gou
+func (pm *ProtocolManager) GetActiveMediatorPeers() []*peer {
+	nodes := pm.dag.GetActiveMediatorNodes()
+	list := make([]*peer, 0, len(nodes))
+
+	for _, node := range nodes {
+		peer := pm.peers.Peer(node.ID.TerminalString())
+		if peer == nil {
+			log.Error(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
+		} else {
+			list = append(list, peer)
+		}
+	}
+
+	return list
 }
 
 /*

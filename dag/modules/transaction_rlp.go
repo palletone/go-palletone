@@ -20,6 +20,7 @@ package modules
 
 import (
 	"fmt"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 
