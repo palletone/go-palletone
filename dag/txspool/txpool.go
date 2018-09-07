@@ -1273,7 +1273,7 @@ func (view *UtxoViewpoint) addTxOut(outpoint modules.OutPoint, txOut *modules.Tx
 	}
 	utxo.Amount = uint64(txOut.Value)
 	utxo.PkScript = txOut.PkScript
-	utxo.Asset.AssertId = txOut.Asset.AssertId
+	utxo.Asset.AssetId = txOut.Asset.AssetId
 	utxo.Asset.ChainId = txOut.Asset.ChainId
 	utxo.Asset.UniqueId = txOut.Asset.UniqueId
 
@@ -1295,7 +1295,7 @@ func (view *UtxoViewpoint) AddTxOut(tx *modules.Transaction, msgIdx, txoutIdx ui
 				}
 				preout := modules.OutPoint{TxHash: tx.Hash(), MessageIndex: msgIdx, OutIndex: txoutIdx}
 				output := msg.Output[txoutIdx]
-				asset := &modules.Asset{AssertId: output.Asset.AssertId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
+				asset := &modules.Asset{AssetId: output.Asset.AssetId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
 				txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: *asset}
 				view.addTxOut(preout, txout, false)
 			}
@@ -1314,8 +1314,8 @@ func (view *UtxoViewpoint) AddTxOuts(tx *modules.Transaction) {
 				for j, output := range msg.Output {
 					txoutIdx := uint32(j)
 					preout.OutIndex = txoutIdx
-					//asset := &modules.Asset{AssertId: output.Asset.AssertId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
-					txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: modules.Asset{AssertId: output.Asset.AssertId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}}
+					//asset := &modules.Asset{AssetId: output.Asset.AssetId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
+					txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: modules.Asset{AssetId: output.Asset.AssetId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}}
 					view.addTxOut(preout, txout, false)
 				}
 			}

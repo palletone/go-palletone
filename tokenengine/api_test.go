@@ -10,7 +10,24 @@ import (
 	"encoding/hex"
 	"github.com/palletone/go-palletone/common/crypto"
 	"crypto/ecdsa"
+	"github.com/stretchr/testify/assert"
 )
+
+func TestGetAddressFromScript(t *testing.T) {
+	addrStr:="P1JEStL6tb7TB8e6ZJSpJhQoqin2A6pabdA"
+	addr,_:= common.StringToAddress(addrStr)
+	p2pkhLock:= GenerateP2PKHLockScript(addr.Bytes())
+	getAddr,_:= GetAddressFromScript(p2pkhLock)
+	t.Logf("Get Address:%s",getAddr.Str())
+	assert.True(t,getAddr==addr,"Address parse error")
+
+	addr2,_:= common.StringToAddress("P35SbSqXuXcHrtZuJKzbStpcqzwCg88jXfn")
+	p2shLock:=GenerateP2SHLockScript(addr2.Bytes())
+	getAddr2,_:=GetAddressFromScript(p2shLock)
+	t.Logf("Get Script Address:%s",getAddr2.Str())
+	assert.True(t,getAddr2==addr2,"Address parse error")
+
+}
 
 func TestSignAndVerifyATx(t *testing.T) {
 

@@ -134,7 +134,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	/*blockchain.CurrentBlock().NumberU64() > 0 */
 	//TODO must modify.The second start would Blockchain not empty, fast sync disabled
 	if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Index() > 0 {
-		log.Warn("dag not empty, fast sync disabled")
+		log.Info("dag not empty, fast sync disabled")
 		mode = downloader.FullSync
 	}
 	if mode == downloader.FastSync {

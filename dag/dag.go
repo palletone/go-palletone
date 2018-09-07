@@ -374,7 +374,7 @@ func (d *Dag) WalletBalance(address string, assetid []byte, uniqueid []byte, cha
 	newUnitqueid.SetBytes(uniqueid)
 
 	asset := modules.Asset{
-		AssertId: newAssetid,
+		AssetId:  newAssetid,
 		UniqueId: newUnitqueid,
 		ChainId:  chainid,
 	}
