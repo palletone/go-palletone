@@ -53,9 +53,9 @@ func TestRawTransactionGen(t *testing.T) {
 		return
 	}
 	//transaction inputs
-	var inputs []btcjson.TransactionInput
+	var inputs []ptnjson.TransactionInput
 	for _, inputOne := range rawTransactionGenParams.Inputs {
-		input := btcjson.TransactionInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex}
+		input := ptnjson.TransactionInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex}
 		inputs = append(inputs, input)
 	}
 	if len(inputs) == 0 {
@@ -73,7 +73,7 @@ func TestRawTransactionGen(t *testing.T) {
 		return
 	}
 
-	arg := btcjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
+	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
 
 	result, _ := CreateRawTransaction(arg)
 	if !strings.Contains(result, testResult) {
@@ -170,7 +170,7 @@ func TestSignTransaction(t *testing.T) {
 	realNet := &chaincfg.MainNetParams
 	//sign the UTXO hash, must know RedeemHex which contains in RawTxInput
 
-	var rawInputs []btcjson.RawTxInput
+	var rawInputs []ptnjson.RawTxInput
 	for {
 		//decode redeem's hexString to bytes
 		redeem, err := hex.DecodeString(signTransactionParams.RedeemHex)
@@ -190,7 +190,7 @@ func TestSignTransaction(t *testing.T) {
 			//}
 			for _, txinOne := range msg.Payload.(*modules.PaymentPayload).Input {
 				fmt.Println("-------189-------")
-				rawInput := btcjson.RawTxInput{
+				rawInput := ptnjson.RawTxInput{
 					txinOne.PreviousOutPoint.TxHash.String(), //txid
 					txinOne.PreviousOutPoint.OutIndex,        //outindex
 					txinOne.PreviousOutPoint.MessageIndex,    //messageindex
@@ -208,7 +208,7 @@ func TestSignTransaction(t *testing.T) {
 		txHex = hex.EncodeToString(serializedTx)
 	}
 
-	send_args := btcjson.NewSignRawTransactionCmd(txHex, &rawInputs, &keys, btcjson.String("ALL"))
+	send_args := ptnjson.NewSignRawTransactionCmd(txHex, &rawInputs, &keys, ptnjson.String("ALL"))
 	//the return 'transactionhex' is used in next step
 
 	resultTransToMultsigAddr, err := SignRawTransaction(send_args)
