@@ -1230,7 +1230,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))
 	ast := modules.Asset{
-		AssertId: aid,
+		AssetId: aid,
 		UniqueId: aid,
 		ChainId:  1,
 	}
@@ -1316,7 +1316,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
 		}
-		txOut := modules.NewTxOut(uint64(dao), pkScript, ast)
+		txOut := modules.NewTxOut(uint64(dao), pkScript, &ast)
 		pload.AddTxOut(*txOut)
 	}
 //	// Set the Locktime, if given.
@@ -1521,7 +1521,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			//	fmt.Println("Payment payload:", payload)
 			//}
 			for i, txIn := range payload.Input {
-				prevOutScript, _ := inputpoints[txIn.PreviousOutPoint]
+				prevOutScript, _ := inputpoints[*txIn.PreviousOutPoint]
 
 //				// Set up our callbacks that we pass to txscript so it can
 //				// look up the appropriate keys and scripts by address.

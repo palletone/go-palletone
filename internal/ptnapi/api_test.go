@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 	// "github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	"github.com/palletone/go-palletone/tokenengine/btcutil"
+	"github.com/palletone/go-palletone/ptnjson"
 	// "github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -167,7 +167,7 @@ func TestSignTransaction(t *testing.T) {
 		return
 	}
 
-	realNet := &chaincfg.MainNetParams
+	//realNet := &chaincfg.MainNetParams
 	//sign the UTXO hash, must know RedeemHex which contains in RawTxInput
 
 	var rawInputs []ptnjson.RawTxInput
@@ -178,7 +178,9 @@ func TestSignTransaction(t *testing.T) {
 			break
 		}
 		//get multisig payScript
-		scriptAddr, err := btcutil.NewAddressScriptHash(redeem, realNet)
+                var realNet byte
+                realNet = 1
+		scriptAddr, err := ptnjson.NewAddressScriptHash(redeem, realNet)
 		scriptPkScript, err := txscript.PayToAddrScript(scriptAddr)
 		//multisig transaction need redeem for sign
 		for _, msg := range tx.TxMessages {
