@@ -1,11 +1,12 @@
 package tokenengine
 
 import (
-	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common"
+	//"github.com/palletone/go-palletone/ptnec"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+	"github.com/palletone/go-palletone/dag/modules"
+	"crypto/ecdsa"
 )
 
 //Generate a P2PKH lock script, just only need input 20bytes public key hash.

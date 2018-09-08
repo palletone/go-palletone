@@ -7,7 +7,7 @@ package txscript
 import (
 	"errors"
 	"fmt"
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/palletone/go-palletone/ptnec"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
 	"crypto/ecdsa"
@@ -20,7 +20,7 @@ import (
 // signs a new sighash digest defined in BIP0143.
 //func RawTxInWitnessSignature(tx *modules.Transaction, sigHashes *TxSigHashes,msgIdx, idx int,
 //	amt int64, subScript []byte, hashType SigHashType,
-//	key *btcec.PrivateKey) ([]byte, error) {
+//	key *ptnec.PrivateKey) ([]byte, error) {
 //
 //	parsedScript, err := parseScript(subScript)
 //	if err != nil {
@@ -48,7 +48,7 @@ import (
 // dictated by the passed hashType. The signature generated observes the new
 // transaction digest algorithm defined within BIP0143.
 //func WitnessSignature(tx *modules.Transaction, sigHashes *TxSigHashes,msgIdx, idx int, amt int64,
-//	subscript []byte, hashType SigHashType, privKey *btcec.PrivateKey,
+//	subscript []byte, hashType SigHashType, privKey *ptnec.PrivateKey,
 //	compress bool) (wire.TxWitness, error) {
 //
 //	sig, err := RawTxInWitnessSignature(tx, sigHashes,msgIdx, idx, amt, subscript,
@@ -57,7 +57,7 @@ import (
 //		return nil, err
 //	}
 //
-//	pk := (*btcec.PublicKey)(&privKey.PublicKey)
+//	pk := (*ptnec.PublicKey)(&privKey.PublicKey)
 //	var pkData []byte
 //	if compress {
 //		pkData = pk.SerializeCompressed()
@@ -86,7 +86,7 @@ func RawTxInSignature(tx *modules.Transaction/**wire.MsgTx*/, msgIdx,idx int, su
 		return nil, fmt.Errorf("cannot sign tx input: %s", err)
 	}
 	//fmt.Printf("Sign result:%x\n",sign[0:64])
-	//signature,err:=btcec.ParseSignature(sign[0:64],btcec.S256())
+	//signature,err:=ptnec.ParseSignature(sign[0:64],ptnec.S256())
 	return sign[0:64],nil
 	//return append(signature.Serialize(), byte(hashType)), err
 }
@@ -105,7 +105,7 @@ func SignatureScript(tx *modules.Transaction,msgIdx, idx int, subscript []byte, 
 		return nil, err
 	}
 
-	pk := (*btcec.PublicKey)(&privKey.PublicKey)
+	pk := (*ptnec.PublicKey)(&privKey.PublicKey)
 	var pkData []byte
 	if compress {
 		pkData = pk.SerializeCompressed()
@@ -345,7 +345,7 @@ func mergeMultiSig(tx *modules.Transaction,msgIdx, idx int, addresses []common.A
 //		tSig := sig[:len(sig)-1]
 //		hashType := SigHashType(sig[len(sig)-1])
 //
-//		pSig, err := btcec.ParseDERSignature(tSig, btcec.S256())
+//		pSig, err := ptnec.ParseDERSignature(tSig, ptnec.S256())
 //		if err != nil {
 //			continue
 //		}
@@ -415,8 +415,7 @@ type KeyClosure func(common.Address) (*ecdsa.PrivateKey, bool, error)
 //传入一个hash,返回对该Hash的签名
 type SignHash func( hash []byte) ([]byte, error)
 // GetKey implements KeyDB by returning the result of calling the closure.
-func (kc KeyClosure) GetKey(address common.Address) (*ecdsa.PrivateKey,
-	bool, error) {
+func (kc KeyClosure) GetKey(address common.Address) (*ecdsa.PrivateKey,bool, error) {
 	return kc(address)
 }
 
