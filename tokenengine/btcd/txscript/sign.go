@@ -7,7 +7,8 @@ package txscript
 import (
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/ptnec"
+	//"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
 	"crypto/ecdsa"
@@ -20,7 +21,7 @@ import (
 // signs a new sighash digest defined in BIP0143.
 //func RawTxInWitnessSignature(tx *modules.Transaction, sigHashes *TxSigHashes,msgIdx, idx int,
 //	amt int64, subScript []byte, hashType SigHashType,
-//	key *ptnec.PrivateKey) ([]byte, error) {
+//	key *btcec.PrivateKey) ([]byte, error) {
 //
 //	parsedScript, err := parseScript(subScript)
 //	if err != nil {
@@ -48,7 +49,7 @@ import (
 // dictated by the passed hashType. The signature generated observes the new
 // transaction digest algorithm defined within BIP0143.
 //func WitnessSignature(tx *modules.Transaction, sigHashes *TxSigHashes,msgIdx, idx int, amt int64,
-//	subscript []byte, hashType SigHashType, privKey *ptnec.PrivateKey,
+//	subscript []byte, hashType SigHashType, privKey *btcec.PrivateKey,
 //	compress bool) (wire.TxWitness, error) {
 //
 //	sig, err := RawTxInWitnessSignature(tx, sigHashes,msgIdx, idx, amt, subscript,
@@ -57,7 +58,7 @@ import (
 //		return nil, err
 //	}
 //
-//	pk := (*ptnec.PublicKey)(&privKey.PublicKey)
+//	pk := (*btcec.PublicKey)(&privKey.PublicKey)
 //	var pkData []byte
 //	if compress {
 //		pkData = pk.SerializeCompressed()
@@ -86,7 +87,7 @@ func RawTxInSignature(tx *modules.Transaction/**wire.MsgTx*/, msgIdx,idx int, su
 		return nil, fmt.Errorf("cannot sign tx input: %s", err)
 	}
 	//fmt.Printf("Sign result:%x\n",sign[0:64])
-	//signature,err:=ptnec.ParseSignature(sign[0:64],ptnec.S256())
+	//signature,err:=btcec.ParseSignature(sign[0:64],btcec.S256())
 	return sign[0:64],nil
 	//return append(signature.Serialize(), byte(hashType)), err
 }
@@ -105,7 +106,7 @@ func SignatureScript(tx *modules.Transaction,msgIdx, idx int, subscript []byte, 
 		return nil, err
 	}
 
-	pk := (*ptnec.PublicKey)(&privKey.PublicKey)
+	pk := (*btcec.PublicKey)(&privKey.PublicKey)
 	var pkData []byte
 	if compress {
 		pkData = pk.SerializeCompressed()
@@ -345,7 +346,7 @@ func mergeMultiSig(tx *modules.Transaction,msgIdx, idx int, addresses []common.A
 //		tSig := sig[:len(sig)-1]
 //		hashType := SigHashType(sig[len(sig)-1])
 //
-//		pSig, err := ptnec.ParseDERSignature(tSig, ptnec.S256())
+//		pSig, err := btcec.ParseDERSignature(tSig, btcec.S256())
 //		if err != nil {
 //			continue
 //		}
