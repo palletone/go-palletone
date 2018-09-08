@@ -42,7 +42,7 @@ import (
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
-	//"github.com/palletone/go-palletone/ptnec"
+	//"github.com/btcsuite/btcd/btcec"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"

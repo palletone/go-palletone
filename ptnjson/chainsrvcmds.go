@@ -10,7 +10,7 @@ import (
 	"crypto/sha256"
 	"github.com/palletone/go-palletone/common"
 	
-	"github.com/palletone/go-palletone/ptnec"
+	"github.com/btcsuite/btcd/btcec"
 	"golang.org/x/crypto/ripemd160"
 	"github.com/btcsuite/btcutil/base58"
 )
@@ -324,7 +324,7 @@ type PubKeyFormat int
 // AddressPubKey is an Address for a pay-to-pubkey transaction.
 type AddressPubKey struct {
 	pubKeyFormat PubKeyFormat
-	pubKey       *ptnec.PublicKey
+	pubKey       *btcec.PublicKey
 	pubKeyHashID byte
 }
 const (
@@ -367,13 +367,13 @@ func (a *AddressPubKey) EncodeAddress() string {
 	return encodeAddress(Hash160(a.serialize()), a.pubKeyHashID)
 }
 func NewAddressPubKey(serializedPubKey []byte) (*AddressPubKey, error) {
-	pubKey, err := ptnec.ParsePubKey(serializedPubKey, ptnec.S256())
+	pubKey, err := btcec.ParsePubKey(serializedPubKey, btcec.S256())
 	if err != nil {
 		return nil, err
 	}
 
 	// Set the format of the pubkey.  This probably should be returned
-	// from ptnec, but do it here to avoid API churn.  We already know the
+	// from btcec, but do it here to avoid API churn.  We already know the
 	// pubkey is valid since it parsed above, so it's safe to simply examine
 	// the leading byte to get the format.
 	pkFormat := PKFUncompressed
@@ -449,13 +449,13 @@ func DecodeWIF(wif string) (*WIF, error) {
 
 	netID := decoded[0]
 	privKeyBytes := decoded[1 : 1+PrivKeyBytesLen]
-	privKey, _ := ptnec.PrivKeyFromBytes(ptnec.S256(), privKeyBytes)
+	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyBytes)
 	return &WIF{privKey, compress, netID}, nil
 }
 
 type WIF struct {
 	// PrivKey is the private key being imported or exported.
-	PrivKey *ptnec.PrivateKey
+	PrivKey *btcec.PrivateKey
 
 	// CompressPubKey specifies whether the address controlled by the
 	// imported or exported private key was created by hashing a
@@ -480,7 +480,7 @@ func paddedAppend(size uint, dst, src []byte) []byte {
 // exported private key in either a compressed or uncompressed format.  The
 // serialization format chosen depends on the value of w.CompressPubKey.
 func (w *WIF) SerializePubKey() []byte {
-	pk := (*ptnec.PublicKey)(&w.PrivKey.PublicKey)
+	pk := (*btcec.PublicKey)(&w.PrivKey.PublicKey)
 	if w.CompressPubKey {
 		return pk.SerializeCompressed()
 	}
@@ -494,7 +494,7 @@ func (w *WIF) String() string {
 	// is one byte for the network, 32 bytes of private key, possibly one
 	// extra byte if the pubkey is to be compressed, and finally four
 	// bytes of checksum.
-	encodeLen := 1 + ptnec.PrivKeyBytesLen + 4
+	encodeLen := 1 + btcec.PrivKeyBytesLen + 4
 	if w.CompressPubKey {
 		encodeLen++
 	}
@@ -503,7 +503,7 @@ func (w *WIF) String() string {
 	a = append(a, w.netID)
 	// Pad and append bytes manually, instead of using Serialize, to
 	// avoid another call to make.
-	a = paddedAppend(ptnec.PrivKeyBytesLen, a, w.PrivKey.D.Bytes())
+	a = paddedAppend(btcec.PrivKeyBytesLen, a, w.PrivKey.D.Bytes())
 	if w.CompressPubKey {
 		a = append(a, compressMagic)
 	}

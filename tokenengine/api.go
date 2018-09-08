@@ -2,7 +2,7 @@ package tokenengine
 
 import (
 	"github.com/palletone/go-palletone/common"
-	//"github.com/palletone/go-palletone/ptnec"
+	//"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	"github.com/palletone/go-palletone/dag/modules"

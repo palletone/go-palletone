@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package ptnec
+package btcec
 
 import (
 	"bytes"
@@ -525,7 +525,7 @@ func TestSignCompact(t *testing.T) {
 }
 
 // recoveryTests assert basic tests for public key recovery from signatures.
-// The cases are borrowed from github.com/fjl/ptnec-issue.
+// The cases are borrowed from github.com/fjl/btcec-issue.
 var recoveryTests = []struct {
 	msg string
 	sig string
