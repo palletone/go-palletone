@@ -43,7 +43,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	//"github.com/btcsuite/btcd/btcec"
-	//"github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
+	"github.com/palletone/go-palletone/tokenengine"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
@@ -1234,6 +1234,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		UniqueId: aid,
 		ChainId:  1,
 	}
+        ast = ast
 	if c.LockTime != nil &&
 		(*c.LockTime < 0 || *c.LockTime > int64(MaxTxInSequenceNum)) {
 		return "", &ptnjson.RPCError{
@@ -1266,18 +1267,6 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 				Message: "Invalid amount",
 			}
 		}
-//		// Decode the provided address.
-//		addr, err := btcutil.DecodeAddress(encodedAddr, params)
-//		if err != nil {
-		//	return "", &ptnjson.RPCError{
-		//		Code:    ptnjson.ErrRPCInvalidAddressOrKey,
-//				Message: "Invalid address or key: " + err.Error(),
-//			}
-//		}
-		// Ensure the address is one of the supported types and that
-//		// the network encoded with the address matches the network the
-//		// server is currently on.
-		//addr := []byte(encodedAddr)
 		addr ,err := common.StringToAddress(encodedAddr)
 		if err != nil{
 			return "", &ptnjson.RPCError{
@@ -1296,27 +1285,17 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 				Message: "Invalid address or key",
 			}
 		}
-		/*
-			if !addr.IsForNet(params) {
-				return nil, &btcjson.RPCError{
-					Code: btcjson.ErrRPCInvalidAddressOrKey,
-					Message: "Invalid address: " + encodedAddr +
-						" is for the wrong network",
-				}
-			}*/
 		// Create a new script which pays to the provided address.
-		pkScript, err := txscript.PayToAddrScript(addr)
-		if err != nil {
-			context := "Failed to generate pay-to-address script"
-			return "", internalRPCError(err.Error(), context)
-		}
+                pkScript := tokenengine.GenerateP2PKHLockScript(addr[0:20])
 		// Convert the amount to satoshi.
 		dao, err := ptnjson.NewAmount(amount)
+                dao = dao
 		if err != nil {
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
 		}
-		txOut := modules.NewTxOut(uint64(dao), pkScript, &ast)
+		txOut := modules.NewTxOut(1, pkScript, &modules.Asset{})
+                //fmt.Printf("------1324--------txout is %+v\n",pkScript)
 		pload.AddTxOut(*txOut)
 	}
 //	// Set the Locktime, if given.
@@ -1327,20 +1306,15 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 //	// is intentionally not directly returning because the first return
 //	// value is a string and it would result in returning an empty string to
 //	// the client instead of nothing (nil) in the case of an error.
-	msg := &modules.Message{
-		App:     modules.APP_PAYMENT,
-		Payload: pload,
+        mtx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
 	}
-	mtx := modules.Transaction{
-		TxMessages: []*modules.Message{msg},
-	}
-	mtx.TxHash = mtx.Hash()
+        mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
 	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
 	}
 	mtxHex := hex.EncodeToString(mtxbt)
-	//fmt.Println(mtxHex)
 	return mtxHex, nil
 }
 func decodeHexStr(hexStr string) ([]byte, error) {
@@ -1415,7 +1389,10 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	var tx modules.Transaction
+        //fmt.Printf("seri is ---%+v\n",serializedTx)
+        tx := &modules.Transaction{
+                TxMessages: make([]*modules.Message, 0),
+        }
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
 		return nil, err
 	}
@@ -1448,7 +1425,8 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		cmdInputs = *cmd.Inputs
 	}
 	for _, rti := range cmdInputs {
-		inputHash, err := common.NewHashFromStr(rti.Txid[2:])
+		//inputHash, err := common.NewHashFromStr(rti.Txid[2:])
+                inputHash, err := common.NewHashFromStr("5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
 		if err != nil {
 			return nil, DeserializationError{err}
 		}
@@ -1486,23 +1464,10 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 
 		if cmd.PrivKeys != nil {
 			for _, key := range *cmd.PrivKeys {
-				/*wif, err := ptnjson.DecodeWIF(key)
-				if err != nil {
-					return nil, err
-				}
 
-				//if !wif.IsForNet(params) {
-				//s := "key network doesn't match wallet's"
-//					return nil, err
-//				}
-				//todo from prikey get address
-				addr, err := ptnjson.NewAddressPubKey(wif.SerializePubKey())
-				if err != nil {
-					return nil, err
-				}
-				//todo addr + "P"*/
 				privKeyBytes, _ := hex.DecodeString(key)
 				privKey, _ := crypto.ToECDSA(privKeyBytes)
+                                //fmt.Printf("---1509---------%+v\n"      ,&privKey.PublicKey)
 	            addr := crypto.PubkeyToAddress(&privKey.PublicKey)
 				keys[addr.String()] = privKey
 			}
@@ -1513,13 +1478,13 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		if msg.App != modules.APP_PAYMENT {
 			continue
 		} else {
-			var payload modules.PaymentPayload
-			payload, ok := msg.Payload.(modules.PaymentPayload)
+			//var payload modules.PaymentPayload
+			payload, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {
 				fmt.Println("Get Payment payload error:")
-			} //else {
-			//	fmt.Println("Payment payload:", payload)
-			//}
+			} else {
+				fmt.Println("Payment payload:", payload)
+			}
 			for i, txIn := range payload.Input {
 				prevOutScript, _ := inputpoints[*txIn.PreviousOutPoint]
 
@@ -1549,7 +1514,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 				// so we always verify the output.
 				if (hashType&txscript.SigHashSingle) !=
 					txscript.SigHashSingle || i < len(payload.Output) {
-					script, err := txscript.SignTxOutput(&tx, msgIdx, i, prevOutScript, hashType, geekey,
+					script, err := txscript.SignTxOutput(tx, msgIdx, i, prevOutScript, hashType, geekey,
 						getScript, txIn.SignatureScript)
 					// Failure to sign isn't an error, it just means that
 					// the tx isn't complete.
@@ -1564,7 +1529,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 				}
 				// Either it was already signed or we just signed it.
 //				// Find out if it is completely satisfied or still needs more.
-				vm, err := txscript.NewEngine(prevOutScript, &tx, msgIdx, i,
+				vm, err := txscript.NewEngine(prevOutScript, tx, msgIdx, i,
 					txscript.StandardVerifyFlags, nil, nil, 0)
 				if err == nil {
 					err = vm.Execute()
@@ -1576,15 +1541,11 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 					})
 				}
 			}
-			msg := &modules.Message{
-				App:     modules.APP_PAYMENT,
-				Payload: payload,
-			}
-			tx.TxMessages = append(tx.TxMessages, msg)
+                        //tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payload))
 		}
 	}
-	var buf bytes.Buffer
-	buf.Grow(tx.SerializeSize())
+	//var buf bytes.Buffer
+	//buf.Grow(tx.SerializeSize())
 	// All returned errors (not OOM, which panics) encounted during
 	// bytes.Buffer writes are unexpected.
 	mtxbt, err := rlp.EncodeToBytes(tx)

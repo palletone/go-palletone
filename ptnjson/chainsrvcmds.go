@@ -512,3 +512,16 @@ func (w *WIF) String() string {
 	return base58.Encode(a)
 }
 
+// String is a helper routine that allocates a new string value to store v and
+// returns a pointer to it.  This is useful when assigning optional parameters.
+func String(v string) *string {
+	p := new(string)
+	*p = v
+	return p
+}
+ // NewAddressScriptHash returns a new AddressScriptHash.
+// NewAddressScriptHashFromHash returns a new AddressScriptHash.  scriptHash
+// must be 20 bytes.
+func NewAddressScriptHashFromHash(scriptHash []byte, netScriptHashAddrID byte) (*AddressScriptHash, error) {
+	return newAddressScriptHashFromHash(scriptHash, netScriptHashAddrID)
+}
