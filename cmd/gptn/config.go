@@ -83,13 +83,6 @@ var tomlSettings = toml.Config{
 	},
 }
 
-type RawTxInput struct {
-	Txid         string `json:"txid"`
-	Vout         uint32 `json:"vout"`
-	ScriptPubKey string `json:"scriptPubKey"`
-	RedeemScript string `json:"redeemScript"`
-}
-
 // SignRawTransactionCmd defines the signrawtransaction JSON-RPC command.
 type SignRawTransactionCmd struct {
 	RawTx    string
