@@ -23,7 +23,7 @@ or, to build the full suite of utilities:
 
     make all
 
-but, to build the full suite of utilities with Windown,you should:
+but, to build the full suite of utilities in window,you should:
 
     go get -u github.com/palletone/btc-adaptor
     go get -u github.com/palletone/eth-adaptor
