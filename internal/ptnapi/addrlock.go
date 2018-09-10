@@ -18,8 +18,9 @@ package ptnapi
 
 import (
 	"sync"
-
+	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/ptnjson"
 )
 
 type AddrLocker struct {
@@ -50,4 +51,18 @@ func (l *AddrLocker) LockAddr(address common.Address) {
 // UnlockAddr unlocks the mutex of the given account.
 func (l *AddrLocker) UnlockAddr(address common.Address) {
 	l.lock(address).Unlock()
+}
+func rpcDecodeHexError(gotHex string) *ptnjson.RPCError {
+	return ptnjson.NewRPCError(ptnjson.ErrRPCDecodeHexString,
+		fmt.Sprintf("Argument must be hexadecimal string (not %q)",
+			gotHex))
+}
+func internalRPCError(errStr, context string) *ptnjson.RPCError {
+	logStr := errStr
+	if context != "" {
+		logStr = context + ": " + errStr
+	}
+	fmt.Println(logStr)
+	//rpcsLog.Error(logStr)
+	return ptnjson.NewRPCError(ptnjson.ErrRPCInternal.Code, errStr)
 }

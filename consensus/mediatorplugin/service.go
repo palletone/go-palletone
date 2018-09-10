@@ -162,7 +162,7 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 		mp.dkgs[med] = dkg
 	}
 
-	// todo 后面换成事件通知响应在调用
+	// todo 后面换成事件通知响应在调用, 并开启定时器
 	go mp.BroadcastVSSDeals()
 }
 

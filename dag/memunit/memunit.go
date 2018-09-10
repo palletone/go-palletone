@@ -15,23 +15,26 @@
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
  */
-package modules
+package memunit
 
 import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 	"strings"
 )
 
 // non validated units set
-type MemUnit map[common.Hash]*Unit
+type MemUnit map[common.Hash]*modules.Unit
 
 func InitMemUnit() *MemUnit {
 	return &MemUnit{}
 }
 
-func (mu *MemUnit) Add(u *Unit) error {
+func (mu *MemUnit) Add(u *modules.Unit) error {
 	_, ok := (*mu)[u.UnitHash]
 	if !ok {
 		(*mu)[u.UnitHash] = u
@@ -39,7 +42,7 @@ func (mu *MemUnit) Add(u *Unit) error {
 	return nil
 }
 
-func (mu *MemUnit) Get(u *Unit) (*Unit, error) {
+func (mu *MemUnit) Get(u *modules.Unit) (*modules.Unit, error) {
 	unit, ok := (*mu)[u.UnitHash]
 	if !ok {
 		return nil, fmt.Errorf("Get mem unit: unit does not be found.")
@@ -84,13 +87,37 @@ func (f *ForkData) Exists(hash common.Hash) bool {
 // forkIndex
 type ForkIndex []*ForkData
 
-func (forkIndex *ForkIndex) AddData(index int, unitHash common.Hash) error {
-	if index < 0 || index > forkIndex.Lenth() {
-		return fmt.Errorf("Add fork data error: index is invalid")
+func (forkIndex *ForkIndex) AddData(unitHash common.Hash, parentsHash []common.Hash) (int, error) {
+	for index, fi := range *forkIndex {
+		lenth := len(*fi)
+		if lenth <= 0 {
+			continue
+		}
+		if common.CheckExists((*fi)[lenth-1], parentsHash) >= 0 {
+			if err := (*fi).Add(unitHash); err != nil {
+				return -1, err
+			}
+			return int(index), nil
+		}
 	}
-	forkData := (*forkIndex)[index]
-	*forkData = append(*forkData, unitHash)
-	return nil
+	return -2, fmt.Errorf("Unit(%s) is not continuously", unitHash)
+}
+
+func (forkIndex *ForkIndex) IsReachedIrreversibleHeight(index int) bool {
+	if index < 0 {
+		return false
+	}
+	if len(*(*forkIndex)[index]) >= dagconfig.DefaultConfig.IrreversibleHeight {
+		return true
+	}
+	return false
+}
+
+func (forkIndex *ForkIndex) GetReachedIrreversibleHeightUnitHash(index int) common.Hash {
+	if index < 0 {
+		return common.Hash{}
+	}
+	return (*(*forkIndex)[index])[0]
 }
 
 func (forkIndex *ForkIndex) Lenth() int {
@@ -98,22 +125,24 @@ func (forkIndex *ForkIndex) Lenth() int {
 }
 
 /*********************************************************************/
+// TODO MemDag
 type MemDag struct {
-	forkId            map[string]int8 // fork chain id
-	lastValidatedUnit *Unit
-	forkIndex         map[string]*ForkIndex
+	db                ptndb.Database
+	lastValidatedUnit map[string]common.Hash // the key is asset id
+	forkIndex         map[string]*ForkIndex  // the key is asset id
+	mainChain         map[string]int         // the key is asset id
 	memUnit           *MemUnit
 	memSize           uint8
 }
 
-func InitMemDag() *MemDag {
+func InitMemDag(db ptndb.Database) *MemDag {
 	memdag := MemDag{
-		forkId:            map[string]int8{},
 		lastValidatedUnit: nil,
 		forkIndex:         map[string]*ForkIndex{},
 		memUnit:           InitMemUnit(),
 		memSize:           dagconfig.DefaultConfig.MemoryUnitSize,
 	}
+	memdag.db = db
 	return &memdag
 }
 
@@ -124,7 +153,7 @@ func (chain *MemDag) validateMemory() bool {
 	return true
 }
 
-func (chain *MemDag) Save(unit *Unit) error {
+func (chain *MemDag) Save(unit *modules.Unit) error {
 	if unit == nil {
 		return fmt.Errorf("Save mem unit: unit is null")
 	}
@@ -135,27 +164,53 @@ func (chain *MemDag) Save(unit *Unit) error {
 		return fmt.Errorf("Save mem unit: size is out of limit")
 	}
 
-	// save fork index
 	assetId := unit.UnitHeader.Number.AssetID.String()
+
+	// save fork index
 	forkIndex, ok := chain.forkIndex[assetId]
 	if !ok {
-		forkIndex = &ForkIndex{}
-		if err := forkIndex.AddData(0, unit.UnitHash); err != nil {
-			return err
+		// create forindex
+		chain.forkIndex[assetId] = &ForkIndex{}
+		forkIndex = chain.forkIndex[assetId]
+	}
+
+	// get asset chain's las irreversible unit
+	irreUnitHash, ok := chain.lastValidatedUnit[assetId]
+	if !ok {
+		lastIrreUnit := storage.GetLastIrreversibleUnit(chain.db, unit.UnitHeader.Number.AssetID)
+		if lastIrreUnit != nil {
+			irreUnitHash = lastIrreUnit.UnitHash
 		}
-		chain.forkId[assetId] = 0
-	} else {
-		id := chain.forkId[assetId]
-		if err := forkIndex.AddData(int(id), unit.UnitHash); err != nil {
-			return err
+	}
+	// save unit to index
+	index, err := forkIndex.AddData(unit.UnitHash, unit.UnitHeader.ParentsHash)
+	switch index {
+	case -1:
+		return err
+	case -2:
+		if strings.Compare(irreUnitHash.String(), "") != 0 {
+			if common.CheckExists(irreUnitHash, unit.UnitHeader.ParentsHash) < 0 {
+				return fmt.Errorf("The unit(%s) is not continious.", unit.UnitHash)
+			}
 		}
+		forkData := ForkData{}
+		forkData = append(forkData, unit.UnitHash)
+		index = len(*forkIndex)
+		*forkIndex = append(*forkIndex, &forkData)
 	}
 	// save memory unit
 	if err := chain.memUnit.Add(unit); err != nil {
 		return err
 	}
-	// prune fork
-
+	// Check if the irreversible height has been reached
+	if forkIndex.IsReachedIrreversibleHeight(index) {
+		// set unit irreversible
+		unitHash := forkIndex.GetReachedIrreversibleHeightUnitHash(index)
+		// prune fork if the irreversible height has been reached
+		if err := chain.Prune(assetId, unitHash); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -164,4 +219,16 @@ func (chain *MemDag) Exists(uHash common.Hash) bool {
 		return true
 	}
 	return false
+}
+
+func (chain *MemDag) Prune(assetId string, maturedUnitHash common.Hash) error {
+	// get fork index
+	// save all the units before matured unit into db
+	// save the matured unit
+	// refresh forkindex
+	return nil
+}
+
+func (chain *MemDag) SwitchMainChain() error {
+	return nil
 }

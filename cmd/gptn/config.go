@@ -40,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
+        "github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 )
 
@@ -83,17 +84,10 @@ var tomlSettings = toml.Config{
 	},
 }
 
-type RawTxInput struct {
-	Txid         string `json:"txid"`
-	Vout         uint32 `json:"vout"`
-	ScriptPubKey string `json:"scriptPubKey"`
-	RedeemScript string `json:"redeemScript"`
-}
-
 // SignRawTransactionCmd defines the signrawtransaction JSON-RPC command.
 type SignRawTransactionCmd struct {
 	RawTx    string
-	Inputs   *[]RawTxInput
+	Inputs   *[]ptnjson.RawTxInput
 	PrivKeys *[]string
 	Flags    *string `jsonrpcdefault:"\"ALL\""`
 }

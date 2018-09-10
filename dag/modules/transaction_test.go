@@ -1,8 +1,8 @@
 package modules
 
 import (
-	"fmt"
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
@@ -13,16 +13,12 @@ import (
 // The values in those tests are from the Transaction Tests
 // at github.com/ethereum/tests.
 
-
-
-
-
 func TestTransactionEncode(t *testing.T) {
 
 	pay1s := PaymentPayload{
 		LockTime: 12345,
 	}
-	output:=NewTxOut(1, []byte{}, Asset{})
+	output := NewTxOut(1, []byte{}, &Asset{})
 	pay1s.AddTxOut(*output)
 
 	msg := &Message{
@@ -31,7 +27,7 @@ func TestTransactionEncode(t *testing.T) {
 	}
 	msg2 := &Message{
 		App:     APP_TEXT,
-		Payload: TextPayload{Text:[]byte("Hello PalletOne")},
+		Payload: TextPayload{Text: []byte("Hello PalletOne")},
 	}
 	emptyTx := NewTransaction(
 		[]*Message{msg, msg},
@@ -62,21 +58,21 @@ func TestTransactionEncode(t *testing.T) {
 	//if tx.Locktime != 12345 {
 	//	log.Error("decode RLP mismatch", "error", txb)
 	//}
-	if len(tx.TxMessages)!=3{
+	if len(tx.TxMessages) != 3 {
 		t.Error("Rlp decode message count error")
 	}
-	msg0:= tx.TxMessages[0]
-	if msg0.App!= APP_PAYMENT{
+	msg0 := tx.TxMessages[0]
+	if msg0.App != APP_PAYMENT {
 		t.Error("Payment decode error")
 	}
-	payment:= msg0.Payload.(*PaymentPayload)
-	if payment.LockTime!=12345{
+	payment := msg0.Payload.(*PaymentPayload)
+	if payment.LockTime != 12345 {
 		t.Error("payment locktime decode error.")
 	}
-	if len(payment.Output)==0{
+	if len(payment.Output) == 0 {
 		t.Error("payment out decode error.")
 	}
-	fmt.Printf("PaymentData:%+v",payment)
+	fmt.Printf("PaymentData:%+v", payment)
 	tx.SetHash(rlp.RlpHash(tx))
 	if tx.TxHash != rightvrsTx.TxHash {
 		log.Error("tx hash mismatch ", "right_hash", rightvrsTx.TxHash, "tx_hash", tx.TxHash)

@@ -103,9 +103,9 @@ func setupGenesisUnit(db ptndb.Database, genesis *core.Genesis, ks *keystore.Key
 
 func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.Transactions {
 	// step1, generate payment payload message: coin creation
-	holder := common.Address{}
-	holder.SetString(genesis.TokenHolder)
-	if common.IsValidAddress(holder.String()) == false {
+	holder, err := common.StringToAddress(genesis.TokenHolder)
+
+	if err != nil || holder.GetType() != common.PublicKeyHash {
 		log.Error("Genesis holder address is an invalid p2pkh address.")
 		return nil
 	}
@@ -119,7 +119,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	}
 	// get new asset id
 	assetId := asset2.NewAsset()
-	asset := modules.Asset{
+	asset := &modules.Asset{
 		AssetId:  assetId,
 		UniqueId: assetId,
 		ChainId:  genesis.ChainID,
@@ -141,7 +141,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		Asset:    asset,
 		PkScript: pkscript,
 	}
-	pay := modules.PaymentPayload{
+	pay := &modules.PaymentPayload{
 		Input:  []*modules.Input{txin},
 		Output: []*modules.Output{txout},
 	}
@@ -150,14 +150,14 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		Payload: pay,
 	}
 	// step2, generate global config payload message
-	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis, &asset)
+	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis, asset)
 	if err != nil {
 		log.Error("Generate genesis unit config payload error.")
 		return nil
 	}
 	msg1 := &modules.Message{
 		App:     modules.APP_CONFIG,
-		Payload: configPayload,
+		Payload: &configPayload,
 	}
 	// step3, genesis transaction
 	tx := &modules.Transaction{

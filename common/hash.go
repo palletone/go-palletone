@@ -24,15 +24,17 @@ import (
 	"math/rand"
 	"reflect"
 	// "strings"
-    "crypto/sha256"
+	"crypto/sha256"
 	// "github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/hexutil"
+	"strings"
 )
 
 const (
 	HashLength = 32
 )
 const MaxHashStringSize = HashLength * 2
+
 var ErrHashStrSize = fmt.Errorf("max hash string length is %v bytes", MaxHashStringSize)
 
 var (
@@ -141,6 +143,7 @@ func NewHashFromStr(hash string) (*Hash, error) {
 	}
 	return ret, nil
 }
+
 // Decode decodes the byte-reversed hexadecimal string encoding of a Hash to a
 // destination.
 func Decode(dst *Hash, src string) error {
@@ -175,9 +178,19 @@ func DoubleHashH(b []byte) Hash {
 	first := sha256.Sum256(b)
 	return Hash(sha256.Sum256(first[:]))
 }
+
 // DoubleHashB calculates hash(hash(b)) and returns the resulting bytes.
 func DoubleHashB(b []byte) []byte {
 	first := sha256.Sum256(b)
 	second := sha256.Sum256(first[:])
 	return second[:]
+}
+
+func CheckExists(search Hash, array []Hash) int {
+	for index, h := range array {
+		if strings.Compare(search.String(), h.String()) == 0 {
+			return index
+		}
+	}
+	return -1
 }

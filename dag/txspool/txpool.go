@@ -31,11 +31,11 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
-        "github.com/palletone/go-palletone/tokenengine"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -155,7 +155,7 @@ type TxPool struct {
 	locals  *accountSet // Set of local transaction to exempt from eviction rules
 	journal *txJournal  // Journal of local transaction to back up to disk
 
-	beats map[common.Address]time.Time
+	beats map[modules.OutPoint]time.Time
 	queue map[common.Hash]*modules.TxPoolTransaction
 
 	pending         map[common.Hash]*modules.TxPoolTransaction // All currently processable transactions
@@ -180,7 +180,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 		config:      config,
 		unit:        unit,
 		queue:       make(map[common.Hash]*modules.TxPoolTransaction),
-		beats:       make(map[common.Address]time.Time),
+		beats:       make(map[modules.OutPoint]time.Time),
 		pending:     make(map[common.Hash]*modules.TxPoolTransaction),
 		all:         make(map[common.Hash]*modules.TxPoolTransaction),
 		chainHeadCh: make(chan modules.ChainHeadEvent, chainHeadChanSize),
@@ -368,14 +368,6 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 
 }
 
-// State returns the virtual managed state of the transaction pool.
-// func (pool *TxPool) State() *state.ManagedState {
-// 	pool.mu.RLock()
-// 	defer pool.mu.RUnlock()
-
-// 	return pool.pendingState
-// }
-
 // Stats retrieves the current pool stats, namely the number of pending and the
 // number of queued (non-executable) transactions.
 func (pool *TxPool) Stats() (int, int) {
@@ -477,8 +469,8 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	if pool.isTransactionInPool(&hash) {
 		return errors.New(fmt.Sprintf("already have transaction %v", tx.Tx.Hash()))
 	}
-	// 调用致远那边的校验接口， 做一次交易的校验
-
+	// 交易的校验， 包括inputs校验
+	// dagcommon.ValidateTx(db , tx, nil )
 	// Heuristic limit, reject transactions over 32KB to prevent DOS attacks
 	if tx.Tx.Size() > 32*1024 {
 		return ErrOversizedData
@@ -523,14 +515,7 @@ func TxtoTxpoolTx(txpool *TxPool, tx *modules.Transaction) *modules.TxPoolTransa
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
 				for _, script := range msg.Input {
-					if addr, err := tokenengine.GetAddressFromScript(script.SignatureScript[:]); err == nil {
-						var from common.Address
-                                        addr = addr  
-					//	from.SetString(addr)
-						txpool_tx.From = append(txpool_tx.From, &from)
-					} else {
-						fmt.Println("get failed address: ", err)
-					}
+					txpool_tx.From = append(txpool_tx.From, script.PreviousOutPoint)
 				}
 			}
 		}
@@ -578,8 +563,19 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		log.Trace("Discarding already known transaction", "hash", hash)
 		return false, fmt.Errorf("known transaction: %x", hash)
 	}
+	// If the transaction fails basic validation, discard it
+	if err := pool.validateTx(tx, local); err != nil {
+		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+		return false, err
+	}
 
 	if err := pool.checkPoolDoubleSpend(tx); err != nil {
+		return false, err
+	}
+
+	utxoview, err := pool.fetchInputUtxos(tx.Tx)
+	if err != nil {
+		fmt.Println("getchInputUtxo is error", err)
 		return false, err
 	}
 	// Check the transaction if it exists in the main chain and is not already fully spent.
@@ -591,53 +587,60 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 					preout.MessageIndex = uint32(i)
 					preout.OutIndex = uint32(j)
 					// get utxo entry , if the utxo entry is spent, then return  error.
-
+					utxo := utxoview.LookupUtxo(preout)
+					if utxo != nil && !utxo.IsSpent() {
+						return false, errors.New("transaction already exists.")
+					}
+					utxoview.RemoveUtxo(preout)
 				}
 			}
-
 		}
 	}
-	// If the transaction fails basic validation, discard it
-	if err := pool.validateTx(tx, local); err != nil {
-		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
-		//invalidTxCounter.Inc(1)
-		return false, err
-	}
+
 	// If the transaction pool is full, discard underpriced transactions
 	if uint64(len(pool.all)) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
 		// If the new transaction is underpriced, don't accept it
 		if pool.priority_priced.Underpriced(tx, pool.locals) {
 			log.Trace("Discarding underpriced transaction", "hash", hash, "price", tx.Tx.Fee())
-			//underpricedTxCounter.Inc(1)
 			return false, ErrUnderpriced
 		}
 		// New transaction is better than our worse ones, make room for it
 		drop := pool.priority_priced.Discard(len(pool.all)-int(pool.config.GlobalSlots+pool.config.GlobalQueue-1), pool.locals)
 		for _, tx := range drop {
 			log.Trace("Discarding freshly underpriced transaction", "hash", tx.Tx.TxHash, "price", tx.Tx.Fee())
-			//underpricedTxCounter.Inc(1)
 			pool.removeTransaction(tx, true)
 		}
 	}
 	// If the transaction is replacing an already pending one, do directly
-
 	if list := pool.pending[tx.Tx.Hash()]; list != nil {
 		// Nonce already pending, check if required price bump is met
 		old := list
 
 		// New transaction is better, replace old one
 		if old != nil {
-			delete(pool.all, old.Tx.Hash())
-			pool.priority_priced.Removed()
-			//pendingReplaceCounter.Inc(1)
+			if old.Priority_lvl <= tx.Priority_lvl {
+				delete(pool.all, old.Tx.Hash())
+				pool.priority_priced.Removed()
+			}
 		}
 		return old != nil, nil
 	}
+	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
 	pool.all[tx.Tx.Hash()] = tx
+	for _, msgcopy := range tx.Tx.TxMessages {
+		if msgcopy.App == modules.APP_PAYMENT {
+			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+				for _, txin := range msg.Input {
+					pool.outpoints[*txin.PreviousOutPoint] = tx
+				}
+			}
+
+		}
+	}
+	//pool.priority_priced.Put(tx)
 	pool.journalTx(tx)
 
 	// We've directly injected a replacement transaction, notify subsystems
-
 	go pool.txFeed.Send(modules.TxPreEvent{tx.Tx})
 
 	// New transaction isn't replacing a pending one, push into queue
@@ -783,7 +786,7 @@ func (pool *TxPool) addTx(tx *modules.TxPoolTransaction, local bool) error {
 	if !replace {
 		if len(tx.From) > 0 {
 			for _, from := range tx.From { // already validated
-				pool.promoteExecutables([]common.Address{*from})
+				pool.promoteExecutables([]modules.OutPoint{*from})
 			}
 		}
 
@@ -803,7 +806,7 @@ func (pool *TxPool) addTxs(txs []*modules.TxPoolTransaction, local bool) []error
 // whilst assuming the transaction pool lock is already held.
 func (pool *TxPool) addTxsLocked(txs []*modules.TxPoolTransaction, local bool) []error {
 	// Add the batch of transaction, tracking the accepted ones
-	dirty := make(map[common.Address]struct{})
+	dirty := make(map[modules.OutPoint]struct{})
 	errs := make([]error, len(txs))
 	for i, tx := range txs {
 		var replace bool
@@ -820,7 +823,7 @@ func (pool *TxPool) addTxsLocked(txs []*modules.TxPoolTransaction, local bool) [
 	}
 	// Only reprocess the internal state if something was actually added
 	if len(dirty) > 0 {
-		addrs := make([]common.Address, 0, len(dirty))
+		addrs := make([]modules.OutPoint, 0, len(dirty))
 		for addr := range dirty {
 			addrs = append(addrs, addr)
 		}
@@ -945,7 +948,7 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
 					for _, input := range msg.Input {
-						delete(pool.outpoints, input.PreviousOutPoint)
+						delete(pool.outpoints, *input.PreviousOutPoint)
 					}
 				}
 			}
@@ -976,7 +979,7 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 		if msg.App == modules.APP_PAYMENT {
 			inputs := msg.Payload.(modules.PaymentPayload)
 			for _, input := range inputs.Input {
-				if tx, ok := pool.outpoints[input.PreviousOutPoint]; ok {
+				if tx, ok := pool.outpoints[*input.PreviousOutPoint]; ok {
 					pool.removeTransaction(tx, true)
 				}
 			}
@@ -988,17 +991,21 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 	for _, msg := range tx.Tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
-			var inputs modules.PaymentPayload
-			inputs, ok := msg.Payload.(modules.PaymentPayload)
+			inputs, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {
 				continue
 			}
-			for _, input := range inputs.Input {
-				if tx, ok := pool.outpoints[input.PreviousOutPoint]; ok {
-					str := fmt.Sprintf("output %v already spent by "+
-						"transaction %v in the memory pool",
-						input.PreviousOutPoint, tx.Tx.Hash())
-					return errors.New(str)
+			if inputs != nil {
+				for _, input := range inputs.Input {
+					if input == nil {
+						break
+					}
+					if tx, ok := pool.outpoints[*input.PreviousOutPoint]; ok {
+						str := fmt.Sprintf("output %v already spent by "+
+							"transaction %v in the memory pool",
+							input.PreviousOutPoint, tx.Tx.Hash())
+						return errors.New(str)
+					}
 				}
 			}
 		}
@@ -1015,6 +1022,7 @@ func (pool *TxPool) CheckSpend(output modules.OutPoint) *modules.Transaction {
 func (pool *TxPool) fetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, error) {
 	utxoView, err := pool.unit.GetUtxoView(tx)
 	if err != nil {
+		fmt.Println("getUtxoView is error:", err)
 		return nil, err
 	}
 
@@ -1023,7 +1031,7 @@ func (pool *TxPool) fetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, er
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
 				for _, txIn := range msg.Input {
-					preout := &txIn.PreviousOutPoint
+					preout := txIn.PreviousOutPoint
 					utxo := utxoView.LookupUtxo(*preout)
 					if utxo != nil {
 						continue
@@ -1041,7 +1049,7 @@ func (pool *TxPool) fetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, er
 // promoteExecutables moves transactions that have become processable from the
 // future queue to the set of pending transactions. During this process, all
 // invalidated transactions (low nonce, low balance) are deleted.
-func (pool *TxPool) promoteExecutables(accounts []common.Address) {
+func (pool *TxPool) promoteExecutables(accounts []modules.OutPoint) {
 
 	// If the pending limit is overflown, start equalizing allowances
 	pending := uint64(len(pool.pending))
@@ -1145,26 +1153,22 @@ func (a addresssByHeartbeat) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
 /******     accountSet  *****/
 
-// accountSet is simply a set of addresses to check for existence, and a signer
-// capable of deriving addresses from transactions.
+// accountSet is simply a set of addresses to check for existence
 type accountSet struct {
-	accounts map[common.Address]struct{}
-	addrs    map[modules.OutPoint]struct{}
-	//signer   modules.Signer
+	accounts map[modules.OutPoint]struct{}
 }
 
 // newAccountSet creates a new address set with an associated signer for sender
 // derivations.
 func newAccountSet() *accountSet {
 	return &accountSet{
-		accounts: make(map[common.Address]struct{}),
-		//signer:   signer,
+		accounts: make(map[modules.OutPoint]struct{}),
 	}
 }
 
 // contains checks if a given address is contained within the set.
-func (as *accountSet) contains(addr common.Address) bool {
-	if !common.IsValidAddress(addr.String()) {
+func (as *accountSet) contains(addr modules.OutPoint) bool {
+	if addr.IsEmpty() {
 		return false
 	}
 	_, exist := as.accounts[addr]
@@ -1189,7 +1193,7 @@ func (as *accountSet) containsTx(tx *modules.TxPoolTransaction) bool {
 }
 
 // add inserts a new address into the set to track.
-func (as *accountSet) add(addr common.Address) {
+func (as *accountSet) add(addr modules.OutPoint) {
 	as.accounts[addr] = struct{}{}
 }
 
@@ -1231,9 +1235,12 @@ func (view *UtxoViewpoint) SetBestHash(hash *common.Hash) {
 	view.bestHash = *hash
 }
 func (view *UtxoViewpoint) LookupUtxo(outpoint modules.OutPoint) *modules.Utxo {
+	if view == nil {
+		return nil
+	}
 	return view.entries[outpoint]
 }
-func (view *UtxoViewpoint) FetchUtxos(db *ptndb.Database, outpoints map[modules.OutPoint]struct{}) error {
+func (view *UtxoViewpoint) FetchUtxos(db storage.DatabaseReader, outpoints map[modules.OutPoint]struct{}) error {
 	if len(outpoints) == 0 {
 		return nil
 	}
@@ -1247,12 +1254,12 @@ func (view *UtxoViewpoint) FetchUtxos(db *ptndb.Database, outpoints map[modules.
 	return view.fetchUtxosMain(db, neededSet)
 
 }
-func (view *UtxoViewpoint) fetchUtxosMain(db *ptndb.Database, outpoints map[modules.OutPoint]struct{}) error {
+func (view *UtxoViewpoint) fetchUtxosMain(db storage.DatabaseReader, outpoints map[modules.OutPoint]struct{}) error {
 	if len(outpoints) == 0 {
 		return nil
 	}
 	for outpoint := range outpoints {
-		utxo, err := storage.GetUtxoEntry(*db, outpoint.ToKey())
+		utxo, err := storage.GetUtxoEntry(db, outpoint.ToKey())
 		if err != nil {
 			return err
 		}
@@ -1273,9 +1280,10 @@ func (view *UtxoViewpoint) addTxOut(outpoint modules.OutPoint, txOut *modules.Tx
 	}
 	utxo.Amount = uint64(txOut.Value)
 	utxo.PkScript = txOut.PkScript
-	utxo.Asset.AssetId = txOut.Asset.AssetId
-	utxo.Asset.ChainId = txOut.Asset.ChainId
-	utxo.Asset.UniqueId = txOut.Asset.UniqueId
+	utxo.Asset = txOut.Asset
+	// utxo.Asset.AssertId = txOut.Asset.AssertId
+	// utxo.Asset.UniqueId = txOut.Asset.UniqueId
+	// utxo.Asset.ChainId = txOut.Asset.ChainId
 
 	// isCoinbase ?
 	// flags --->  标记utxo状态
@@ -1295,8 +1303,8 @@ func (view *UtxoViewpoint) AddTxOut(tx *modules.Transaction, msgIdx, txoutIdx ui
 				}
 				preout := modules.OutPoint{TxHash: tx.Hash(), MessageIndex: msgIdx, OutIndex: txoutIdx}
 				output := msg.Output[txoutIdx]
-				asset := &modules.Asset{AssetId: output.Asset.AssetId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
-				txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: *asset}
+				//asset := &modules.Asset{AssetId: output.Asset.AssetId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
+				txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: output.Asset}
 				view.addTxOut(preout, txout, false)
 			}
 		}
@@ -1314,8 +1322,8 @@ func (view *UtxoViewpoint) AddTxOuts(tx *modules.Transaction) {
 				for j, output := range msg.Output {
 					txoutIdx := uint32(j)
 					preout.OutIndex = txoutIdx
-					//asset := &modules.Asset{AssetId: output.Asset.AssetId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
-					txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: modules.Asset{AssetId: output.Asset.AssetId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}}
+					//asset := &modules.Asset{AssertId: output.Asset.AssertId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
+					txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: output.Asset}
 					view.addTxOut(preout, txout, false)
 				}
 			}
@@ -1336,4 +1344,32 @@ func NewUtxoViewpoint() *UtxoViewpoint {
 	return &UtxoViewpoint{
 		entries: make(map[modules.OutPoint]*modules.Utxo),
 	}
+}
+
+// SaveUtxoView to update the utxo set in the database based on the provided utxo view.
+func SaveUtxoView(db ptndb.Database, view *UtxoViewpoint) error {
+	for outpoint, utxo := range view.entries {
+		// No need to update the database if the utxo was not modified.
+		if utxo == nil || !utxo.IsModified() {
+			continue
+		}
+		key := outpoint.ToKey()
+		// Remove the utxo if it is spent
+		if utxo.IsSpent() {
+
+			err := db.Delete(key)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+		val, err := rlp.EncodeToBytes(utxo)
+		if err != nil {
+			return err
+		}
+		if err := db.Put(key, val); err != nil {
+			return err
+		}
+	}
+	return nil
 }

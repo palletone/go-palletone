@@ -148,7 +148,7 @@ func initialAccount(ctx *cli.Context) (string, error) {
 		utils.Fatalf("%v", err)
 	}
 
-	fmt.Printf("Initial account address: %s\n", address)
+	fmt.Printf("Initial account address: %s\n", address.String())
 
 	return address.Str(), nil
 }

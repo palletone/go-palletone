@@ -9,8 +9,8 @@ import (
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	"strings"
 	"testing"
-	// "github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	"github.com/palletone/go-palletone/tokenengine/btcutil"
+	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/ptnjson"
 	// "github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -32,30 +32,30 @@ func TestRawTransactionGen(t *testing.T) {
 	params := `{
     "inputs": [
 		{
-           "txid": "0b987a442dd830f4e40639058030d250f526c2330fb31b64c24be880339bdfd1",
+           "txid": "5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873",
            "vout": 0,
            "messageindex": 0
 		}
     ],
     "outputs": [
 		{
-           "address": "P1CJfWNRCx4AAfjfqHimurLgdzX7rJZ3Qce",
+           "address": "P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX",
            "amount": 0.79
 		}
     ],
     "locktime": 0
 	}`
 	params = params
-	testResult := "f8bea05b0c48a458c3f7893c2af60bd94e1cd88537d9d582e81c7020882fca34769655f89bf89901b896f894e7e6e3a0d1df9b3380e84bc2641bb30f33c226f550d23080053906e4f430d82d447a980b80808080f869f867871c110215b9c0009976a9147c0099353492e6d45dd440940605d092506e773988acf843a03131313131313131313131313131323232323232323232323232323232323232a031313131313131313131313131313232323232323232323232323232323232320180"
+	testResult := "f8b7a00000000000000000000000000000000000000000000000000000000000000000f894f89201b88ff88de7e6e3a07348b3dba6d43e10d7140e737a05bed70a1d17220a96bd6d3794c8a80a87515680808080f862f860019976a914b5407cec767317d41442aab35bad2712626e17ca88acf843a00000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000008080"
 	var rawTransactionGenParams RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
 		return
 	}
 	//transaction inputs
-	var inputs []btcjson.TransactionInput
+	var inputs []ptnjson.TransactionInput
 	for _, inputOne := range rawTransactionGenParams.Inputs {
-		input := btcjson.TransactionInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex}
+		input := ptnjson.TransactionInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex}
 		inputs = append(inputs, input)
 	}
 	if len(inputs) == 0 {
@@ -73,7 +73,7 @@ func TestRawTransactionGen(t *testing.T) {
 		return
 	}
 
-	arg := btcjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
+	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
 
 	result, _ := CreateRawTransaction(arg)
 	if !strings.Contains(result, testResult) {
@@ -113,11 +113,12 @@ type SignTransactionParams struct {
 
 func TestSignTransaction(t *testing.T) {
 	//from TestRawTransactionGen A --> B C
-	params := `{      
-        "transactionhex": "f8bea05b0c48a458c3f7893c2af60bd94e1cd88537d9d582e81c7020882fca34769655f89bf89901b896f894e7e6e3a0d1df9b3380e84bc2641bb30f33c226f550d23080053906e4f430d82d447a980b80808080f869f867871c110215b9c0009976a9147c0099353492e6d45dd440940605d092506e773988acf843a03131313131313131313131313131323232323232323232323232323232323232a031313131313131313131313131313232323232323232323232323232323232320180",
-        "redeemhex": "",
-	"privkeys": ["cPXW9UVJdjLvCmAxPHdQ1gHkpD5paWpf2PmH5MwsXN5MxnRjbAgE"]
-  	}`
+	//参数格式错误
+	/*params := `{      
+    "transactionhex": "f8b7a00000000000000000000000000000000000000000000000000000000000000000f894f89201b88ff88de7e6e3a07348b3dba6d43e10d7140e737a05bed70a1d17220a96bd6d3794c8a80a87515680808080f862f860019976a914b5407cec767317d41442aab35bad2712626e17ca88acf843a00000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000008080",
+    "redeemhex": "",
+	"privkeys": ["2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644"]
+  	}`*/
 	/*params := `{
 	  "transactionhex": "010000000236045404e65bd741109db92227ca0dc9274ef717a6612c96cd77b24a17d1bcd70000000000ffffffff7c1f7d5407b41abf29d41cf6f122ef2d40f76d956900d2c89314970951ef5b940000000000ffffffff014431d309000000001976a914bddc9a62e9b7c3cfdbe1c817520e24e32c339f3288ac00000000",
 	  "redeemhex": "522103940ab29fbf214da2d8ec99c47db63879957311bd90d2f1c635828604d541051421020106ca23b4f28dbc83838ee4745accf90e5621fe70df5b1ee8f7e1b3b41b64cb21029d80ff37838e4989a6aa26af41149d4f671976329e9ddb9b78fdea9814ae6ef553ae",
@@ -129,34 +130,33 @@ func TestSignTransaction(t *testing.T) {
 	      "privkeys": ["cQJB6w8SxVNoprVwp2xyxUFxvExMbpR2qj3banXYYXmhtTc1WxC8"]
 	      }`*/
 
-	var signTransactionParams SignTransactionParams
-	err := json.Unmarshal([]byte(params), &signTransactionParams)
-	if err != nil {
-		return
-	}
-
-	//check empty string
-	if "" == signTransactionParams.TransactionHex {
-		return
-	}
-	//decode Transaction hexString to bytes
-	//rawTXBytes, err := hex.DecodeString(signTransactionParams.TransactionHex)
+	//var signTransactionParams SignTransactionParams
+	//err := json.Unmarshal([]byte(params), &signTransactionParams)
 	//if err != nil {
 	//	return
 	//}
-	//deserialize to MsgTx
-
-	var tx modules.Transaction
-	serializedTx, err := decodeHexStr(signTransactionParams.TransactionHex)
-	if err != nil {
+    newsign := ptnjson.SignRawTransactionCmd{
+				RawTx: "f8b7a00000000000000000000000000000000000000000000000000000000000000000f894f89201b88ff88de7e6e3a07348b3dba6d43e10d7140e737a05bed70a1d17220a96bd6d3794c8a80a87515680808080f862f860019976a914b5407cec767317d41442aab35bad2712626e17ca88acf843a00000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000008080",
+				Inputs: &[]ptnjson.RawTxInput{
+					{
+						Txid:         "5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873",
+						Vout:         0,
+						MessageIndex: 0,
+						ScriptPubKey: "76a914b5407cec767317d41442aab35bad2712626e17ca88ac",
+						RedeemScript: "",
+					},
+				},
+				PrivKeys: &[]string{"2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644"},
+				Flags:    ptnjson.String("ALL"),
+			}
+	//check empty string
+	if "" == newsign.RawTx {
 		return
 	}
-	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
-		return
-	}
+	
 	//get private keys for sign
 	var keys []string
-	for _, key := range signTransactionParams.Privkeys {
+	for _, key := range newsign.Privkeys {
 		key = strings.TrimSpace(key) //Trim whitespace
 		if len(key) == 0 {
 			continue
@@ -167,48 +167,18 @@ func TestSignTransaction(t *testing.T) {
 		return
 	}
 
-	realNet := &chaincfg.MainNetParams
-	//sign the UTXO hash, must know RedeemHex which contains in RawTxInput
-
-	var rawInputs []btcjson.RawTxInput
-	for {
-		//decode redeem's hexString to bytes
-		redeem, err := hex.DecodeString(signTransactionParams.RedeemHex)
-		if err != nil {
-			break
-		}
-		//get multisig payScript
-		scriptAddr, err := btcutil.NewAddressScriptHash(redeem, realNet)
-		scriptPkScript, err := txscript.PayToAddrScript(scriptAddr)
-		//multisig transaction need redeem for sign
-		for _, msg := range tx.TxMessages {
-			//payload, ok := msg.Payload.(*modules.PaymentPayload).
-			//if !ok {
-			//	fmt.Println("Get Payment payload error:")
-			//} else {
-			//      fmt.Println("Payment payload:", payload)
-			//}
-			for _, txinOne := range msg.Payload.(*modules.PaymentPayload).Input {
-				fmt.Println("-------189-------")
-				rawInput := btcjson.RawTxInput{
-					txinOne.PreviousOutPoint.TxHash.String(), //txid
-					txinOne.PreviousOutPoint.OutIndex,        //outindex
-					txinOne.PreviousOutPoint.MessageIndex,    //messageindex
-					hex.EncodeToString(scriptPkScript),       //multisig pay script
-					signTransactionParams.RedeemHex}          //redeem
+    var rawInputs []ptnjson.RawTxInput
+    for _, txOne := range newsign.Inputs {
+				rawInput := ptnjson.RawTxInput{
+					txOne.Txid, //txid
+					txOne.Vout,         //outindex
+		            txOne.MessageIndex,//messageindex
+				    txOne.ScriptPubKey,
+					txOne.RedeemHex}          //redeem
 				rawInputs = append(rawInputs, rawInput)
-			}
-		}
-		break
-	}
-	txHex := ""
-	if &tx != nil {
-		// Serialize the transaction and convert to hex string
-
-		txHex = hex.EncodeToString(serializedTx)
 	}
 
-	send_args := btcjson.NewSignRawTransactionCmd(txHex, &rawInputs, &keys, btcjson.String("ALL"))
+	send_args := ptnjson.NewSignRawTransactionCmd(newsign.RawTx, &rawInputs, &keys, ptnjson.String("ALL"))
 	//the return 'transactionhex' is used in next step
 
 	resultTransToMultsigAddr, err := SignRawTransaction(send_args)

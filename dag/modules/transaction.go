@@ -43,12 +43,12 @@ var (
 type TxOut struct {
 	Value    int64
 	PkScript []byte
-	Asset    Asset
+	Asset    *Asset
 }
 
 // TxIn defines a bitcoin transaction input.
 type TxIn struct {
-	PreviousOutPoint OutPoint
+	PreviousOutPoint *OutPoint
 	SignatureScript  []byte
 	Sequence         uint32
 }
@@ -103,7 +103,7 @@ func NewPaymentPayload() *PaymentPayload {
 type TxPoolTransaction struct {
 	Tx *Transaction
 
-	From         []*common.Address
+	From         []*OutPoint
 	CreationDate time.Time `json:"creation_date"`
 	Priority_lvl float64   `json:"priority_lvl"` // 打包的优先级
 	Nonce        uint64    // transaction'hash maybe repeat.

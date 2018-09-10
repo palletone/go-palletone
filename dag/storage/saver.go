@@ -82,13 +82,19 @@ func SaveHeader(db ptndb.Database, uHash common.Hash, h *modules.Header) error {
 func SaveNumberByHash(db ptndb.Database, uHash common.Hash, number modules.ChainIndex) error {
 	return StoreBytes(db, append(UNIT_HASH_NUMBER_Prefix, uHash.Bytes()...), number)
 }
+
 //這是通過hash存儲modules.ChainIndex
 func SaveHashByNumber(db ptndb.Database, uHash common.Hash, number modules.ChainIndex) error {
-	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, number.AssetID.String(), number.Index)
+	i := 0
+	if number.IsMain {
+		i = 1
+	}
+	key := fmt.Sprintf("%s_%s_%d_%d", UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
 	//fmt.Println("SaveHashByNumber=[]byte(key)=>",[]byte(key))
 	//fmt.Println("====",uHash)
 	return StoreBytes(db, []byte(key), uHash)
 }
+
 // height and assetid can get a unit key.
 func SaveUHashIndex(db ptndb.Database, cIndex modules.ChainIndex, uHash common.Hash) error {
 	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, cIndex.AssetID.String(), cIndex.Index)
