@@ -161,27 +161,27 @@ check messaage 'app' consistent with payload type
 */
 func validateMessageType(app byte, payload interface{}) bool {
 	switch payload.(type) {
-	case modules.PaymentPayload:
+	case *modules.PaymentPayload:
 		if app == modules.APP_PAYMENT {
 			return true
 		}
-	case modules.ContractTplPayload:
+	case *modules.ContractTplPayload:
 		if app == modules.APP_CONTRACT_TPL {
 			return true
 		}
-	case modules.ContractDeployPayload:
+	case *modules.ContractDeployPayload:
 		if app == modules.APP_CONTRACT_DEPLOY {
 			return true
 		}
-	case modules.ContractInvokePayload:
+	case *modules.ContractInvokePayload:
 		if app == modules.APP_CONTRACT_INVOKE {
 			return true
 		}
-	case modules.ConfigPayload:
+	case *modules.ConfigPayload:
 		if app == modules.APP_CONFIG {
 			return true
 		}
-	case modules.TextPayload:
+	case *modules.TextPayload:
 		if app == modules.APP_TEXT {
 			return true
 		}

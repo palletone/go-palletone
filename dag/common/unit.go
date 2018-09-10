@@ -216,16 +216,16 @@ To get genesis unit info from leveldb
 func GetGenesisUnit(db ptndb.Database, index uint64) (*modules.Unit, error) {
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
-	if memdb,ok := db.(*ptndb.MemDatabase);ok {
+	if memdb, ok := db.(*ptndb.MemDatabase); ok {
 		hash, err := memdb.Get([]byte(key))
 		if err != nil {
-			return nil,err
+			return nil, err
 		}
 		var h common.Hash
 		h.SetBytes(hash)
 		unit := storage.GetUnit(db, h)
-		return unit,nil
-	}else if _,ok := db.(*ptndb.LDBDatabase);ok{
+		return unit, nil
+	} else if _, ok := db.(*ptndb.LDBDatabase); ok {
 		data := storage.GetPrefix(db, []byte(key))
 		if len(data) > 1 {
 			return nil, fmt.Errorf("multiple genesis unit")
@@ -450,7 +450,7 @@ func savePaymentPayload(db ptndb.Database, txHash common.Hash, msg *modules.Mess
 	// if this is a create token transaction, should be return a assetid
 	var pl interface{}
 	pl = msg.Payload
-	_, ok := pl.(modules.PaymentPayload)
+	_, ok := pl.(*modules.PaymentPayload)
 	if ok == false {
 		return false
 	}
@@ -467,7 +467,7 @@ save config payload
 func saveConfigPayload(db ptndb.Database, txHash common.Hash, msg *modules.Message, height modules.ChainIndex, txIndex uint32) bool {
 	var pl interface{}
 	pl = msg.Payload
-	payload, ok := pl.(modules.ConfigPayload)
+	payload, ok := pl.(*modules.ConfigPayload)
 	if ok == false {
 		return false
 	}
@@ -490,7 +490,7 @@ To save contract invoke state
 func saveContractInvokePayload(db ptndb.Database, height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
-	payload, ok := pl.(modules.ContractInvokePayload)
+	payload, ok := pl.(*modules.ContractInvokePayload)
 	if ok == false {
 		return false
 	}
@@ -516,7 +516,7 @@ To save contract init state
 func saveContractInitPayload(db ptndb.Database, height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
-	payload, ok := pl.(modules.ContractDeployPayload)
+	payload, ok := pl.(*modules.ContractDeployPayload)
 	if ok == false {
 		return false
 	}
@@ -551,7 +551,7 @@ To save contract template code
 func saveContractTpl(db ptndb.Database, height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
-	payload, ok := pl.(modules.ContractTplPayload)
+	payload, ok := pl.(*modules.ContractTplPayload)
 	if ok == false {
 		return false
 	}
@@ -624,7 +624,7 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 		Payload: payload,
 	}
 	// step4. create coinbase
-	var  coinbase modules.Transaction
+	var coinbase modules.Transaction
 	//coinbase := modules.Transaction{
 	//	TxMessages: []modules.Message{msg},
 	//}
