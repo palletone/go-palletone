@@ -16,11 +16,11 @@ import (
 	"os"
 	"io/ioutil"
 	"io"
-	"strings"
 	"compress/gzip"
 	"archive/tar"
 	"github.com/palletone/go-palletone/dag/storage"
 	comdb "github.com/palletone/go-palletone/contracts/comm"
+	"path"
 )
 
 type UserChaincode struct {
@@ -196,9 +196,9 @@ func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, 
 	//从数据库读取
 	//解压到指定路径下
 
-	usrCC := &UserChaincode{
-	}
-	return usrCC, nil
+	//usrCC := &UserChaincode{
+	//}
+	//return usrCC, nil
 
 	if 1 == 0 {
 		dag, err := comdb.GetCcDagHand()
@@ -220,7 +220,7 @@ func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, 
 			return nil, errors.New("write file fail")
 		}
 
-		if err = DeCompress(targzFile, decompressFile); err != nil {
+		if err = UnTarGz(targzFile, decompressFile); err != nil {
 			return nil, err
 		}
 
@@ -255,7 +255,8 @@ func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, 
 			return nil, errors.New("write file fail")
 		}
 
-		if err = DeCompress(dir+zipName, "./"); err != nil {
+		if err = UnTarGz(dir+zipName, "./"); err != nil {
+			logger.Errorf("DeCompress[%s] fail:%s", testFile, err)
 			return nil, err
 		}
 
@@ -265,98 +266,164 @@ func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, 
 	}
 }
 
-//压缩 使用gzip压缩成tar.gz
-func Compress(files []*os.File, dest string) error {
-	d, _ := os.Create(dest)
-	defer d.Close()
-	gw := gzip.NewWriter(d)
-	defer gw.Close()
-	tw := tar.NewWriter(gw)
-	defer tw.Close()
-	for _, file := range files {
-		err := compress(file, "", tw)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
+//+++++++++++++
+func UnTarGz(srcFilePath string, destDirPath string) error {
+	fmt.Println("UnTarGzing " + srcFilePath + "...")
+	// Create destination directory
+	os.Mkdir(destDirPath, os.ModePerm)
 
-func compress(file *os.File, prefix string, tw *tar.Writer) error {
-	info, err := file.Stat()
+	fr, err := os.Open(srcFilePath)
 	if err != nil {
+		fmt.Printf("os.Open  err =%s", err)
 		return err
 	}
-	if info.IsDir() {
-		prefix = prefix + "/" + info.Name()
-		fileInfos, err := file.Readdir(-1)
-		if err != nil {
-			return err
-		}
-		for _, fi := range fileInfos {
-			f, err := os.Open(file.Name() + "/" + fi.Name())
-			if err != nil {
-				return err
-			}
-			err = compress(f, prefix, tw)
-			if err != nil {
-				return err
-			}
-		}
-	} else {
-		header, err := tar.FileInfoHeader(info, "")
-		header.Name = prefix + "/" + header.Name
-		if err != nil {
-			return err
-		}
-		err = tw.WriteHeader(header)
-		if err != nil {
-			return err
-		}
-		_, err = io.Copy(tw, file)
-		file.Close()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
-func DeCompress(tarFile, dest string) error {
-	srcFile, err := os.Open(tarFile)
+	defer fr.Close()
+
+	// Gzip reader
+	gr, err := gzip.NewReader(fr)
 	if err != nil {
+		fmt.Printf("gzip.NewReader  err =%s", err)
 		return err
 	}
-	defer srcFile.Close()
-	gr, err := gzip.NewReader(srcFile)
-	if err != nil {
-		return err
-	}
-	defer gr.Close()
+
+	// Tar reader
 	tr := tar.NewReader(gr)
 	for {
 		hdr, err := tr.Next()
-		if err != nil {
-			if err == io.EOF {
-				break
-			} else {
+		if err == io.EOF {
+			// End of tar archive
+			break
+		}
+		//handleError(err)
+		//fmt.Println("UnTarGzing file..." + hdr.Name)
+		// Check if it is diretory or file
+		if hdr.Typeflag != tar.TypeDir {
+			// Get files from archive
+			// Create diretory before create file
+			os.MkdirAll(destDirPath+"/"+path.Dir(hdr.Name), os.ModePerm)
+			// Write data to file
+			fw, err := os.Create(destDirPath + "/" + hdr.Name)
+			if err != nil {
+				fmt.Printf("os.Createdoc  err =%s", err)
+				return err
+			}
+			_, err = io.Copy(fw, tr)
+			if err != nil {
+				fmt.Printf("os.Createdoc  err =%s", err)
 				return err
 			}
 		}
-		filename := dest + hdr.Name
-		file, err := createFile(filename)
-		if err != nil {
-			return err
-		}
-		io.Copy(file, tr)
 	}
+	fmt.Println("Well done!")
 	return nil
 }
 
-func createFile(name string) (*os.File, error) {
-	err := os.MkdirAll(string([]rune(name)[0:strings.LastIndex(name, "/")]), 0755)
-	if err != nil {
-		return nil, err
+/*
+func TarGz(srcDirPath string, destFilePath string) {
+	fw, err := os.Create(destFilePath)
+	handleError(err)
+	defer fw.Close()
+
+	// Gzip writer
+	gw := gzip.NewWriter(fw)
+	defer gw.Close()
+
+	// Tar writer
+	tw := tar.NewWriter(gw)
+	defer tw.Close()
+
+	// Check if it's a file or a directory
+	f, err := os.Open(srcDirPath)
+	handleError(err)
+	fi, err := f.Stat()
+	handleError(err)
+	if fi.IsDir() {
+		// handle source directory
+		fmt.Println("Cerating tar.gz from directory...")
+		tarGzDir(srcDirPath, path.Base(srcDirPath), tw)
+	} else {
+		// handle file directly
+		fmt.Println("Cerating tar.gz from " + fi.Name() + "...")
+		tarGzFile(srcDirPath, fi.Name(), tw, fi)
 	}
-	return os.Create(name)
+	fmt.Println("Well done!")
 }
+
+// Deal with directories
+// if find files, handle them with tarGzFile
+// Every recurrence append the base path to the recPath
+// recPath is the path inside of tar.gz
+func tarGzDir(srcDirPath string, recPath string, tw *tar.Writer) {
+	// Open source diretory
+	dir, err := os.Open(srcDirPath)
+	handleError(err)
+	defer dir.Close()
+
+	// Get file info slice
+	fis, err := dir.Readdir(0)
+	handleError(err)
+	for _, fi := range fis {
+		// Append path
+		curPath := srcDirPath + "/" + fi.Name()
+		// Check it is directory or file
+		if fi.IsDir() {
+			// Directory
+			// (Directory won't add unitl all subfiles are added)
+			fmt.Printf("Adding path...%s\\n", curPath)
+			tarGzDir(curPath, recPath+"/"+fi.Name(), tw)
+		} else {
+			// File
+			fmt.Printf("Adding file...%s\\n", curPath)
+		}
+
+		tarGzFile(curPath, recPath+"/"+fi.Name(), tw, fi)
+	}
+}
+
+// Deal with files
+func tarGzFile(srcFile string, recPath string, tw *tar.Writer, fi os.FileInfo) {
+	if fi.IsDir() {
+		// Create tar header
+		hdr := new(tar.Header)
+		// if last character of header name is '/' it also can be directory
+		// but if you don't set Typeflag, error will occur when you untargz
+		hdr.Name = recPath + "/"
+		hdr.Typeflag = tar.TypeDir
+		hdr.Size = 0
+		//hdr.Mode = 0755 | c_ISDIR
+		hdr.Mode = int64(fi.Mode())
+		hdr.ModTime = fi.ModTime()
+
+		// Write hander
+		err := tw.WriteHeader(hdr)
+		handleError(err)
+	} else {
+		// File reader
+		fr, err := os.Open(srcFile)
+		handleError(err)
+		defer fr.Close()
+
+		// Create tar header
+		hdr := new(tar.Header)
+		hdr.Name = recPath
+		hdr.Size = fi.Size()
+		hdr.Mode = int64(fi.Mode())
+		hdr.ModTime = fi.ModTime()
+
+		// Write hander
+		err = tw.WriteHeader(hdr)
+		if err != nil {
+			fmt.Printf("gzip.NewReader  err =%s", err)
+			return
+		}
+
+		// Write file data
+		_, err = io.Copy(tw, fr)
+		if err != nil {
+			fmt.Printf("gzip.NewReader  err =%s", err)
+			return
+		}
+	}
+}
+*/
