@@ -159,7 +159,7 @@ func signMultiSig(tx *modules.Transaction,msgIdx, idx int, subScript []byte, has
 	return script, signed == nRequired
 }
 
-func sign( tx *modules.Transaction/**wire.MsgTx*/,msgIdx, idx int,
+func sign( tx *modules.Transaction/**wire.MsgTx*/,msgIdx int, idx int,
 	subScript []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB) ([]byte,
 	ScriptClass, []common.Address, int, error) {
 	class, addresses, nrequired, err := ExtractPkScriptAddrs(subScript)
