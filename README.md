@@ -23,6 +23,12 @@ or, to build the full suite of utilities:
 
     make all
 
+but, to build the full suite of utilities with Windown,you should:
+
+    go get -u github.com/palletone/btc-adaptor
+    go get -u github.com/palletone/eth-adaptor
+    go build
+
 ## Executables
 
 The go-palletone project comes with several wrappers/executables found in the `cmd` directory.
