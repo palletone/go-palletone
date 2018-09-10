@@ -166,7 +166,7 @@ func multMoreSys(args [][]byte) {
 			if unit != nil {
 				fmt.Println("len(unit.WriteSet) ==== ==== ", len(unit.WriteSet))
 				for k, v := range unit.WriteSet {
-					fmt.Printf("k[%s], v[%v]\n", k, v)
+					fmt.Printf("k[%d], v[%v]\n", k, v)
 				}
 			} else {
 				fmt.Println("Not nil error. But nil unit !!!")

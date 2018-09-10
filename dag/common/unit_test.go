@@ -65,7 +65,7 @@ func TestSaveUnit(t *testing.T) {
 	header.ParentsHash = append(header.ParentsHash, p)
 	header.AssetIDs = []modules.IDType16{aid}
 	key, _ := crypto.GenerateKey()
-	addr0 := crypto.PubkeyToAddress(key.PublicKey)
+	addr0 := crypto.PubkeyToAddress(&key.PublicKey)
 
 	sig, err := crypto.Sign(header.Hash().Bytes(), key)
 	if err != nil {
@@ -123,7 +123,7 @@ func TestSaveUnit(t *testing.T) {
 		},
 	}
 	tx1 := modules.Transaction{
-		TxMessages: []modules.Message{
+		TxMessages: []*modules.Message{
 			{
 				App:     modules.APP_CONTRACT_TPL,
 				Payload: contractTplPayload,
@@ -133,7 +133,7 @@ func TestSaveUnit(t *testing.T) {
 	tx1.TxHash = tx1.Hash()
 
 	tx2 := modules.Transaction{
-		TxMessages: []modules.Message{
+		TxMessages: []*modules.Message{
 			{
 				App:     modules.APP_CONTRACT_DEPLOY,
 				Payload: deployPayload,
@@ -143,7 +143,7 @@ func TestSaveUnit(t *testing.T) {
 	tx2.TxHash = tx2.Hash()
 
 	tx3 := modules.Transaction{
-		TxMessages: []modules.Message{
+		TxMessages: []*modules.Message{
 			{
 				App:     modules.APP_CONTRACT_INVOKE,
 				Payload: invokePayload,
@@ -238,7 +238,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 
 	// TODO test PaymentPayload
 	txin := modules.Input{
-		PreviousOutPoint: modules.OutPoint{
+		PreviousOutPoint: &modules.OutPoint{
 			TxHash:       p,
 			MessageIndex: 1234,
 			OutIndex:     12344,
@@ -249,7 +249,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 	txout := modules.Output{
 		Value:    1,
 		PkScript: []byte("kssssssssssssssssssslsll"),
-		Asset: modules.Asset{
+		Asset: &modules.Asset{
 			AssetId:  aid,
 			UniqueId: aid,
 			ChainId:  11,
@@ -262,7 +262,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 	}
 
 	tx2 := modules.Transaction{
-		TxMessages: []modules.Message{
+		TxMessages: []*modules.Message{
 			{
 				App:     modules.APP_PAYMENT,
 				Payload: payment,
@@ -279,7 +279,8 @@ func TestPaymentTransactionRLP(t *testing.T) {
 		for _, msg := range tx.TxMessages {
 			if msg.App == modules.APP_PAYMENT {
 				var pl modules.PaymentPayload
-				if err := pl.ExtractFrInterface(msg.Payload); err != nil {
+				pl, ok := msg.Payload.(modules.PaymentPayload)
+				if !ok {
 					fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
 				} else {
 					fmt.Println("Payment payload:", pl)
@@ -309,7 +310,7 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 		TxIndex: 0,
 	}})
 	tx1 := modules.Transaction{
-		TxMessages: []modules.Message{
+		TxMessages: []*modules.Message{
 			{
 				App:     modules.APP_CONTRACT_TPL,
 				Payload: contractTplPayload,
@@ -387,7 +388,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 		WriteSet:     writeSet,
 	}
 	tx1 := modules.Transaction{
-		TxMessages: []modules.Message{
+		TxMessages: []*modules.Message{
 			{
 				App:     modules.APP_CONTRACT_DEPLOY,
 				Payload: deployPayload,

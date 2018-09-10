@@ -15,6 +15,9 @@ if [ ! -L "$ethdir/go-palletone" ]; then
     mkdir -p "$ethdir"
     cd "$ethdir"
     ln -s ../../../../../. go-palletone
+    ln -s ../../../../../../btc-adaptor/. btc-adaptor
+    ln -s ../../../../../../eth-adaptor/. eth-adaptor
+
     cd "$root"
 fi
 

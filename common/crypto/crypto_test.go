@@ -28,6 +28,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/stretchr/testify/assert"
 )
 
 var testAddr = "P136gdm7CfJcAeG2RFZNXvwwteg3uGzVqr5"
@@ -274,4 +275,17 @@ func TestNewContractIdAddress(t *testing.T) {
 	contractId := "0000000000000"
 	address := ContractIdToAddress([]byte(contractId))
 	t.Log(address.Str())
+}
+
+func TestToWIFAndFromWIF(t *testing.T) {
+	prvKey,_:=GenerateKey()
+	wif:= ToWIF(FromECDSA(prvKey))
+	assert.True(t,wif[0]=='K'|| wif[0]=='L',"Invalid WIF format")
+
+	pk,err:= FromWIF(wif)
+	if err!=nil{
+		t.Errorf("FromWIF error:%s",err)
+	}
+
+	assert.True(t,bytes.Equal(FromECDSA(pk),FromECDSA(prvKey)),"Export private key not equal import key")
 }

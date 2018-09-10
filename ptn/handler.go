@@ -343,6 +343,7 @@ type producer interface {
 	ToProcessDeal(deal *mp.VSSDealEvent) error
 
 	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
+	ToProcessResponse(resp *mp.VSSResponseEvent) error
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -431,7 +432,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
 
-	//pm.syncTransactions(p)
+	pm.syncTransactions(p)
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
@@ -806,6 +807,15 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		pm.producer.ToProcessDeal(&deal)
 
+		// append by Albert·Gou
+	case msg.Code == VSSResponseMsg:
+		var resp mp.VSSResponseEvent
+		if err := msg.Decode(&resp); err != nil {
+			log.Info("===VSSDealMsg===", "err:", err)
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		pm.producer.ToProcessResponse(&resp)
+
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
@@ -884,7 +894,6 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 			self.BroadcastNewProducedUnit(event.Unit)
 
 			// appended by wangjiyou
-			//TODO must recover
 			self.BroadcastUnit(event.Unit, true)
 			self.BroadcastUnit(event.Unit, false)
 

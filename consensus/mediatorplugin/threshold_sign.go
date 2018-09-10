@@ -37,25 +37,19 @@ func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
 }
 
 func (mp *MediatorPlugin) BroadcastVSSDeals() {
-	lams := mp.GetLocalActiveMediators()
 	ams := mp.getDag().GetActiveMediators()
 
-	for _, medF := range lams {
-		dkg, ok := mp.dkgs[medF]
-		if !ok || dkg == nil {
-			log.Error(fmt.Sprintf("The following mediator`s dkg was not successfully generated: %v",
-				medF.String()))
-			continue
-		}
-
+	for _, dkg := range mp.dkgs {
 		deals, err := dkg.Deals()
 		if err != nil {
 			log.Error(err.Error())
 		}
 
 		for index, deal := range deals {
+			dstMed := ams[index]
+
 			event := VSSDealEvent{
-				DstMed: ams[index],
+				DstMed: dstMed,
 				Deal:   deal,
 			}
 
@@ -117,15 +111,60 @@ func (mp *MediatorPlugin) BroadcastVSSResponse(srcMed common.Address, resp *dkg.
 
 	for _, dstMed := range ams {
 		if dstMed == srcMed {
-			continue
+			continue // ignore sending response to myself
 		}
 
 		event := VSSResponseEvent{
+			SrcMed: srcMed,
 			DstMed: dstMed,
 			Resp:   resp,
 		}
 
 		mp.vssResponseFeed.Send(event)
+	}
+}
+
+func (mp *MediatorPlugin) ToProcessResponse(resp *VSSResponseEvent) error {
+	select {
+	case <-mp.quit:
+		return errTerminated
+	case mp.toProcessResponseCh <- resp:
+		return nil
+	}
+}
+
+func (mp *MediatorPlugin) processResponseLoop() {
+	for {
+		select {
+		case <-mp.quit:
+			return
+		case resp := <-mp.toProcessResponseCh:
+			go mp.processVSSResponse(resp)
+		}
+	}
+}
+
+func (mp *MediatorPlugin) processVSSResponse(resp *VSSResponseEvent) {
+	dstMed := resp.DstMed
+	if dstMed == resp.SrcMed {
+		return //ignore the message from myself
+	}
+
+	dkg, ok := mp.dkgs[dstMed]
+	if !ok || dkg == nil {
+		log.Error(fmt.Sprintf("The following mediator`s dkg is not existed: %v", dstMed.String()))
+		return
+	}
+
+	jstf, err := dkg.ProcessResponse(resp.Resp)
+	if err != nil {
+		log.Error(err.Error())
+		return
+	}
+
+	if jstf != nil {
+		log.Error(fmt.Sprintf("DKG: wrong Process Response: %v", dstMed.String()))
+		return
 	}
 }
 

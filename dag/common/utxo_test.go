@@ -57,7 +57,7 @@ func TestSaveAssetInfo(t *testing.T) {
 	}
 	assetInfo := modules.AssetInfo{
 		Alias:        "Test",
-		AssetID:      asset,
+		AssetID:      &asset,
 		InitialTotal: 1000000000,
 		Decimal:      100000000,
 	}
@@ -94,9 +94,9 @@ func TestGetAccountTokens(t *testing.T) {
 			log.Printf("Token (%s, %v) = %v\n",
 				token.Alias, token.AssetID.AssetId, token.Balance)
 			// test WalletBalance method
-			log.Println(WalletBalance(Dbconn, addr, token.AssetID))
+			log.Println(WalletBalance(Dbconn, addr, *token.AssetID))
 			// test ReadUtxos method
-			utxos, amount := ReadUtxos(Dbconn, addr, token.AssetID)
+			utxos, amount := ReadUtxos(Dbconn, addr, *token.AssetID)
 			log.Printf("Addr(%s) balance=%v\n", addr.String(), amount)
 			for outpoint, utxo := range utxos {
 				log.Println(">>> UTXO txhash =", outpoint.TxHash.String())

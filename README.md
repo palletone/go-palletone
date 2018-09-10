@@ -23,6 +23,12 @@ or, to build the full suite of utilities:
 
     make all
 
+but, to build the full suite of utilities in window,you should:
+
+    go get -u github.com/palletone/btc-adaptor
+    go get -u github.com/palletone/eth-adaptor
+    go build
+
 ## Executables
 
 The go-palletone project comes with several wrappers/executables found in the `cmd` directory.
@@ -46,7 +52,10 @@ the user doesn't care about years-old historical data, so we can fast-sync quick
 state of the network. To do so:
 
 ```
-$ gptn --config /path/to/your_config.toml console 
+$ mkdir your_dir
+$ gptn --datadir=your_dir newgenesis
+$ gptn --datadir=your_dir init ./ptn-genesis.json
+$ gptn --datadir=your_dir --configfile="palletone.toml"
 ```
 
 This command will:
@@ -66,7 +75,7 @@ This command will:
 As an alternative to passing the numerous flags to the `gptn` binary, you can also pass a configuration file via:
 
 ```bash
-$ gptn --config /path/to/your_config.toml
+$ gptn --configfile /path/to/your_config.toml
 ```
 
 To get a template configuration file you can use the `dumpconfig` subcommand to export current default configurations:

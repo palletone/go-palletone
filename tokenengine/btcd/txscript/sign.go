@@ -7,6 +7,7 @@ package txscript
 import (
 	"errors"
 	"fmt"
+	//"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
@@ -415,8 +416,7 @@ type KeyClosure func(common.Address) (*ecdsa.PrivateKey, bool, error)
 //传入一个hash,返回对该Hash的签名
 type SignHash func( hash []byte) ([]byte, error)
 // GetKey implements KeyDB by returning the result of calling the closure.
-func (kc KeyClosure) GetKey(address common.Address) (*ecdsa.PrivateKey,
-	bool, error) {
+func (kc KeyClosure) GetKey(address common.Address) (*ecdsa.PrivateKey,bool, error) {
 	return kc(address)
 }
 

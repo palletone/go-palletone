@@ -27,11 +27,11 @@ import (
 	"io/ioutil"
 	"math/big"
 	"os"
-
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/math"
-	"github.com/palletone/go-palletone/common/rlp"
+
 )
 
 var (
@@ -69,16 +69,36 @@ func Keccak512(data ...[]byte) []byte {
 }
 
 // Creates an ethereum address given the bytes and the nonce
-func CreateAddress(b common.Address, nonce uint64) common.Address {
-	data, _ := rlp.EncodeToBytes([]interface{}{b, nonce})
-	return common.BytesToAddress(Keccak256(data)[12:])
-}
+//func CreateAddress(b common.Address, nonce uint64) common.Address {
+//	data, _ := rlp.EncodeToBytes([]interface{}{b, nonce})
+//	return common.BytesToAddress(Keccak256(data)[12:])
+//}
 
 // ToECDSA creates a private key with the given D value.
 func ToECDSA(d []byte) (*ecdsa.PrivateKey, error) {
 	return toECDSA(d, true)
 }
-
+//Export private key to a WIF format with compress
+func ToWIF(prvKey []byte) string{
+	return base58.CheckEncode(append( prvKey,0x01),128)
+}
+func PrvKeyToWIF(prvKey *ecdsa.PrivateKey) string{
+	return ToWIF( FromECDSA(prvKey))
+}
+//Import a WIF string to get a private key
+func FromWIF(wif string) (*ecdsa.PrivateKey,error){
+	data,version,err:= base58.CheckDecode(wif)
+	if err!=nil{
+		return nil,err
+	}
+	if version!= 128{
+		return nil,errors.New("Invalid base58 version for WIF,version must 128")
+	}
+	if data[32]!=0x01{
+		return nil,errors.New("Must use a compress key")
+	}
+	return toECDSA( data[0:32],true)
+}
 // ToECDSAUnsafe blindly converts a binary blob to a private key. It should almost
 // never be used unless you are sure the input is valid and want to avoid hitting
 // errors due to bad origin encoding (0 prefixes cut off).

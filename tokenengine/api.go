@@ -2,6 +2,7 @@ package tokenengine
 
 import (
 	"github.com/palletone/go-palletone/common"
+	//"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -27,20 +28,22 @@ func GenerateP2SHLockScript(redeemScriptHash []byte) []byte {
 		Script()
 	return lock
 }
+
 //根据锁定脚本获得对应的地址
-func GetAddressFromScript(lockScript []byte) (common.Address,error){
-	scriptClass, addrs, _,err:=txscript.ExtractPkScriptAddrs(lockScript)
-	if err!=nil{
-		return  common.Address{}, err
+func GetAddressFromScript(lockScript []byte) (common.Address, error) {
+	scriptClass, addrs, _, err := txscript.ExtractPkScriptAddrs(lockScript)
+	if err != nil {
+		return common.Address{}, err
 	}
-	if scriptClass==txscript.NonStandardTy{
-		return  common.Address{}, err
+	if scriptClass == txscript.NonStandardTy {
+		return common.Address{}, err
 	}
-	if len(addrs)!=1{
-		return  common.Address{}, err
+	if len(addrs) != 1 {
+		return common.Address{}, err
 	}
-	return addrs[0],nil
+	return addrs[0], nil
 }
+
 //生成多签用的赎回脚本
 //Generate redeem script
 func GenerateRedeemScript(needed byte, pubKeys [][]byte) []byte {
@@ -53,6 +56,7 @@ func GenerateRedeemScript(needed byte, pubKeys [][]byte) []byte {
 		AddOp(txscript.OP_CHECKMULTISIG).Script()
 	return redeemScript
 }
+
 //根据地址产生对应的锁定脚本
 func GenerateLockScript(address common.Address) []byte {
 
@@ -62,9 +66,10 @@ func GenerateLockScript(address common.Address) []byte {
 	//} else {
 	//	return GenerateP2SHLockScript(address.Bytes())
 	//}
-	script,_:=  txscript.PayToAddrScript(address)
+	script, _ := txscript.PayToAddrScript(address)
 	return script
 }
+
 /*
 //Give a lock script, and parse it then pick the address string out.
 func PickAddress(lockscript []byte) (common.Address, error) {
@@ -99,42 +104,44 @@ func GenerateP2SHUnlockScript(signs [][]byte, redeemScript []byte) []byte {
 }
 
 //validate this transaction and input index script can unlock the utxo.
-func ScriptValidate(utxoLockScript []byte, utxoAmount int64, tx *modules.Transaction,msgIdx, inputIndex int) error {
-	vm, err := txscript.NewEngine(utxoLockScript, tx, msgIdx,inputIndex, txscript.StandardVerifyFlags, nil, nil, utxoAmount)
+func ScriptValidate(utxoLockScript []byte, utxoAmount int64, tx *modules.Transaction, msgIdx, inputIndex int) error {
+	vm, err := txscript.NewEngine(utxoLockScript, tx, msgIdx, inputIndex, txscript.StandardVerifyFlags, nil, nil, utxoAmount)
 	if err != nil {
 		log.Error("Failed to create script: ", err)
 		return err
 	}
 	return vm.Execute()
 }
+
 //对交易中的Payment类型中的某个Input生成解锁脚本
-func SignOnePaymentInput(tx *modules.Transaction,msgIdx,id int,utxoLockScript []byte, privKey *ecdsa.PrivateKey) ([]byte,error){
+func SignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, privKey *ecdsa.PrivateKey) ([]byte, error) {
 	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
 		return privKey, true, nil
 	}
-	sigScript, err := txscript.SignTxOutput(tx, msgIdx,id, utxoLockScript, txscript.SigHashAll,
+	sigScript, err := txscript.SignTxOutput(tx, msgIdx, id, utxoLockScript, txscript.SigHashAll,
 		txscript.KeyClosure(lookupKey), nil, nil)
-	if err!=nil{
-		return []byte{},err
+	if err != nil {
+		return []byte{}, err
 	}
-	return sigScript,nil
+	return sigScript, nil
 }
+
 //Sign a full transaction
-func SignTxAllPaymentInput(tx *modules.Transaction,utxoLockScripts map[modules.OutPoint] []byte, privKeys map[common.Address] *ecdsa.PrivateKey) error {
+func SignTxAllPaymentInput(tx *modules.Transaction, utxoLockScripts map[modules.OutPoint][]byte, privKeys map[common.Address]*ecdsa.PrivateKey) error {
 	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
 		return privKeys[a], true, nil
 	}
-	for i,msg:=range tx.TxMessages{
-		if msg.App== modules.APP_PAYMENT{
-			pay:=msg.Payload.(*modules.PaymentPayload)
-			for j,input:=range pay.Input{
-				utxoLockScript:=utxoLockScripts[input.PreviousOutPoint]
-				sigScript, err := txscript.SignTxOutput(tx, i,j, utxoLockScript, txscript.SigHashAll,
+	for i, msg := range tx.TxMessages {
+		if msg.App == modules.APP_PAYMENT {
+			pay := msg.Payload.(*modules.PaymentPayload)
+			for j, input := range pay.Input {
+				utxoLockScript := utxoLockScripts[*input.PreviousOutPoint]
+				sigScript, err := txscript.SignTxOutput(tx, i, j, utxoLockScript, txscript.SigHashAll,
 					txscript.KeyClosure(lookupKey), nil, nil)
-				if err!=nil{
+				if err != nil {
 					return err
 				}
-				input.SignatureScript=sigScript
+				input.SignatureScript = sigScript
 			}
 		}
 	}

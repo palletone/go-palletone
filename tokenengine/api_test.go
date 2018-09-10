@@ -6,26 +6,26 @@ import (
 	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
 	"github.com/palletone/go-palletone/common"
 
-	"github.com/palletone/go-palletone/dag/modules"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"github.com/palletone/go-palletone/common/crypto"
-	"crypto/ecdsa"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetAddressFromScript(t *testing.T) {
-	addrStr:="P1JEStL6tb7TB8e6ZJSpJhQoqin2A6pabdA"
-	addr,_:= common.StringToAddress(addrStr)
-	p2pkhLock:= GenerateP2PKHLockScript(addr.Bytes())
-	getAddr,_:= GetAddressFromScript(p2pkhLock)
-	t.Logf("Get Address:%s",getAddr.Str())
-	assert.True(t,getAddr==addr,"Address parse error")
+	addrStr := "P1JEStL6tb7TB8e6ZJSpJhQoqin2A6pabdA"
+	addr, _ := common.StringToAddress(addrStr)
+	p2pkhLock := GenerateP2PKHLockScript(addr.Bytes())
+	getAddr, _ := GetAddressFromScript(p2pkhLock)
+	t.Logf("Get Address:%s", getAddr.Str())
+	assert.True(t, getAddr == addr, "Address parse error")
 
-	addr2,_:= common.StringToAddress("P35SbSqXuXcHrtZuJKzbStpcqzwCg88jXfn")
-	p2shLock:=GenerateP2SHLockScript(addr2.Bytes())
-	getAddr2,_:=GetAddressFromScript(p2shLock)
-	t.Logf("Get Script Address:%s",getAddr2.Str())
-	assert.True(t,getAddr2==addr2,"Address parse error")
+	addr2, _ := common.StringToAddress("P35SbSqXuXcHrtZuJKzbStpcqzwCg88jXfn")
+	p2shLock := GenerateP2SHLockScript(addr2.Bytes())
+	getAddr2, _ := GetAddressFromScript(p2shLock)
+	t.Logf("Get Script Address:%s", getAddr2.Str())
+	assert.True(t, getAddr2 == addr2, "Address parse error")
 
 }
 
@@ -36,7 +36,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	pubKey := privKey.PublicKey
 	pubKeyBytes := crypto.CompressPubkey(&pubKey)
 	pubKeyHash := crypto.Hash160(pubKeyBytes)
-	t.Logf("Public Key:%x",pubKeyBytes)
+	t.Logf("Public Key:%x", pubKeyBytes)
 	addr := crypto.PubkeyToAddress(&privKey.PublicKey)
 	t.Logf("Addr:%s", addr.String())
 	lockScript := GenerateP2PKHLockScript(pubKeyHash)
@@ -57,11 +57,11 @@ func TestSignAndVerifyATx(t *testing.T) {
 	txIn2 := modules.NewTxIn(outPoint2, []byte{})
 	payment2.AddTxIn(*txIn2)
 
-	payment.AddTxOut(*modules.NewTxOut(1, lockScript, modules.Asset{}))
+	payment.AddTxOut(*modules.NewTxOut(1, lockScript, &modules.Asset{}))
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment2))
 
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_TEXT, &modules.TextPayload{Text: []byte("Hello PalletOne"),}))
+	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_TEXT, &modules.TextPayload{Text: []byte("Hello PalletOne")}))
 
 	//signResult, err := SignOnePaymentInput(tx, 0, 0, lockScript, privKey)
 	//if err != nil {
@@ -73,16 +73,16 @@ func TestSignAndVerifyATx(t *testing.T) {
 	//
 	//signResult2, err := SignOnePaymentInput(tx, 1, 0, lockScript, privKey)
 	//tx.TxMessages[1].Payload.(*modules.PaymentPayload).Input[0].SignatureScript = signResult2
-	lockScripts:=map[modules.OutPoint][]byte{
-		*outPoint:lockScript[:],
-		*outPoint2:GenerateP2PKHLockScript(pubKeyHash),
+	lockScripts := map[modules.OutPoint][]byte{
+		*outPoint:  lockScript[:],
+		*outPoint2: GenerateP2PKHLockScript(pubKeyHash),
 	}
-	privKeys:=map[common.Address]*ecdsa.PrivateKey{
-		addr:privKey,
+	privKeys := map[common.Address]*ecdsa.PrivateKey{
+		addr: privKey,
 	}
-	err:=SignTxAllPaymentInput(tx,lockScripts,privKeys)
-	if err!=nil{
-		t.Logf("Sign error:%s",err)
+	err := SignTxAllPaymentInput(tx, lockScripts, privKeys)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
 	}
 	err = ScriptValidate(GenerateP2PKHLockScript(pubKeyHash), 100, tx, 0, 0)
 	if err != nil {

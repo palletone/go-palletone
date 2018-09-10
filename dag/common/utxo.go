@@ -53,7 +53,7 @@ func readUtxosByIndex(db ptndb.Database, addr common.Address, asset modules.Asse
 	// step1. read outpoint from utxo index
 	utxoIndex := modules.UtxoIndex{
 		AccountAddr: addr,
-		Asset:       asset,
+		Asset:       &asset,
 	}
 	key := utxoIndex.AssetKey()
 	data := storage.GetPrefix(db, []byte(key))
@@ -77,7 +77,7 @@ func readUtxosByIndex(db ptndb.Database, addr common.Address, asset modules.Asse
 			log.Error("Decode utxo data :", "error:", err.Error())
 			continue
 		}
-		vout[utxoIndex.OutPoint] = &utxo
+		vout[*utxoIndex.OutPoint] = &utxo
 		balance += utxo.Amount
 	}
 	return vout, balance
@@ -119,7 +119,7 @@ func readUtxosFrAll(db ptndb.Database, addr common.Address, asset modules.Asset)
 			continue
 		}
 		outpoint := modules.KeyToOutpoint([]byte(k))
-		vout[outpoint] = &utxo
+		vout[*outpoint] = &utxo
 		balance += utxo.Amount
 	}
 
@@ -178,7 +178,7 @@ func writeUtxo(db ptndb.Database, txHash common.Hash, msgIndex uint32, txouts []
 	for outIndex, txout := range txouts {
 		utxo := modules.Utxo{
 			Amount:   txout.Value,
-			Asset:    &txout.Asset,
+			Asset:    txout.Asset,
 			PkScript: txout.PkScript,
 			LockTime: lockTime,
 		}
@@ -208,7 +208,7 @@ func writeUtxo(db ptndb.Database, txHash common.Hash, msgIndex uint32, txouts []
 		utxoIndex := modules.UtxoIndex{
 			AccountAddr: addr,
 			Asset:       txout.Asset,
-			OutPoint:    outpoint,
+			OutPoint:    &outpoint,
 		}
 		utxoIndexVal := modules.UtxoIndexValue{
 			Amount:   txout.Value,
@@ -263,7 +263,7 @@ func destoryUtxo(db ptndb.Database, txins []*modules.Input) {
 		addr.SetString(sAddr.String())
 		utxoIndex := modules.UtxoIndex{
 			AccountAddr: addr,
-			Asset:      *utxo.Asset,
+			Asset:       utxo.Asset,
 			OutPoint:    outpoint,
 		}
 		if err := storage.Delete(db, utxoIndex.ToKey()); err != nil {
@@ -327,7 +327,7 @@ func walletBalanceByIndex(db ptndb.Database, addr common.Address, asset modules.
 
 	utxoIndex := modules.UtxoIndex{
 		AccountAddr: addr,
-		Asset:       asset,
+		Asset:       &asset,
 	}
 	preKey := utxoIndex.AssetKey()
 
@@ -383,7 +383,7 @@ func GetUxtoSetByInputs(db ptndb.Database, txins []modules.Input) (map[modules.O
 		if unsafe.Sizeof(utxo) == 0 {
 			continue
 		}
-		utxos[in.PreviousOutPoint] = &utxo
+		utxos[*in.PreviousOutPoint] = &utxo
 		total += utxo.Amount
 	}
 	return utxos, total
@@ -425,7 +425,7 @@ func getAccountTokensByIndex(db ptndb.Database, addr common.Address) (map[string
 			val.Balance += utxoIndexVal.Amount
 		} else {
 			// get asset info
-			assetInfo, err := GetAssetInfo(db, &utxoIndex.Asset)
+			assetInfo, err := GetAssetInfo(db, utxoIndex.Asset)
 			if err != nil {
 				return nil, fmt.Errorf("Get acount tokens by index error: asset info does not exist")
 			}
@@ -472,7 +472,7 @@ func getAccountTokensWhole(db ptndb.Database, addr common.Address) (map[string]*
 			}
 			tokens[utxo.Asset.AssetId.String()] = &modules.AccountToken{
 				Alias:   assetInfo.Alias,
-				AssetID: *utxo.Asset,
+				AssetID: utxo.Asset,
 				Balance: utxo.Amount,
 			}
 		}

@@ -44,6 +44,8 @@ var DefaultConfig = Config{
 
 	// memory unit, unit number
 	MemoryUnitSize: 128,
+	// Irreversible Height
+	IrreversibleHeight: 16,
 }
 
 // global configuration of dag modules
@@ -69,6 +71,9 @@ type Config struct {
 
 	// memory unit size, unit number
 	MemoryUnitSize uint8
+
+	// Irreversible height
+	IrreversibleHeight int
 }
 
 type Sconfig struct {
