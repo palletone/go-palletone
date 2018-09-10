@@ -7,6 +7,10 @@ if [ ! -f "build/env.sh" ]; then
     exit 2
 fi
 
+go get -u github.com/palletone/btc-adaptor
+go get -u github.com/palletone/eth-adaptor
+
+
 # Create fake Go workspace if it doesn't exist yet.
 workspace="$PWD/build/_workspace"
 root="$PWD"

@@ -216,7 +216,7 @@ func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, lightdag LightD
 		stateCh:        make(chan dataPack),
 		stateSyncStart: make(chan *stateSync),
 		syncStatsState: stateSyncStats{
-			processed: 0, //core.GetTrieSyncProgress(stateDb),
+			processed: 0, //TODO must recover core.GetTrieSyncProgress(stateDb),
 		},
 		trackStateReq: make(chan *stateReq),
 	}

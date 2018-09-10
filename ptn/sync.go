@@ -172,7 +172,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 
 	// Make sure the peer's TD is higher than our own
 	//TODO compare local assetId & chainIndex whith remote peer assetId & chainIndex
-	currentUnit := pm.dag.CurrentUnit()
+	currentUnit := pm.dag.GetCurrentUnit(assetId) //pm.dag.CurrentUnit()
 	if currentUnit == nil {
 		log.Info("===synchronise currentUnit is nil have not genesis===")
 		return
