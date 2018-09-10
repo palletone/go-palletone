@@ -3,16 +3,11 @@ package ptnapi
 import (
 	"fmt"
 	//"bytes"
-	"encoding/hex"
 	"encoding/json"
-	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	"strings"
 	"testing"
-	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/ptnjson"
 	// "github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
-	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type RawTransactionGenParams struct {
@@ -156,7 +151,7 @@ func TestSignTransaction(t *testing.T) {
 	
 	//get private keys for sign
 	var keys []string
-	for _, key := range newsign.Privkeys {
+	for _, key := range *newsign.PrivKeys {
 		key = strings.TrimSpace(key) //Trim whitespace
 		if len(key) == 0 {
 			continue
@@ -168,20 +163,20 @@ func TestSignTransaction(t *testing.T) {
 	}
 
     var rawInputs []ptnjson.RawTxInput
-    for _, txOne := range newsign.Inputs {
+    for _, txOne := range *newsign.Inputs {
 				rawInput := ptnjson.RawTxInput{
 					txOne.Txid, //txid
 					txOne.Vout,         //outindex
 		            txOne.MessageIndex,//messageindex
 				    txOne.ScriptPubKey,
-					txOne.RedeemHex}          //redeem
+					txOne.RedeemScript}          //redeem
 				rawInputs = append(rawInputs, rawInput)
 	}
 
 	send_args := ptnjson.NewSignRawTransactionCmd(newsign.RawTx, &rawInputs, &keys, ptnjson.String("ALL"))
 	//the return 'transactionhex' is used in next step
 
-	resultTransToMultsigAddr, err := SignRawTransaction(send_args)
+	resultTransToMultsigAddr, _ := SignRawTransaction(send_args)
 	//	if !strings.Contains(resultTransToMultsigAddr, theComplete) {
 	//		t.Errorf("complete - got: false, want: true")
 	//	}
