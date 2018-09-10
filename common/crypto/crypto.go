@@ -214,11 +214,12 @@ func ValidateSignatureValues(v byte, r, s *big.Int, homestead bool) bool {
 //This is only for P2PKH account address.
 func PubkeyToAddress(p *ecdsa.PublicKey) common.Address {
 	pubBytes := CompressPubkey(p)
-	// return common.BytesToAddress(Keccak256(pubBytes[1:])[12:])
-	pubKeyHash := Hash160(pubBytes)
+	return PubkeyBytesToAddress(pubBytes)
+}
+func PubkeyBytesToAddress(pubKeyCompressBytes []byte) common.Address {
+	pubKeyHash := Hash160(pubKeyCompressBytes)
 	return common.NewAddress(pubKeyHash, common.PublicKeyHash)
 }
-
 //This is for P2SH address, start with P3
 func ScriptToAddress(redeemScript []byte) common.Address {
 	scriptHash := Hash160(redeemScript)

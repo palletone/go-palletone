@@ -31,7 +31,10 @@ func GenerateP2SHLockScript(redeemScriptHash []byte) []byte {
 
 //根据锁定脚本获得对应的地址
 func GetAddressFromScript(lockScript []byte) (common.Address, error) {
-	scriptClass, addrs, _, err := txscript.ExtractPkScriptAddrs(lockScript)
+
+	scriptCp:=make([]byte,len(lockScript))
+	copy(scriptCp,lockScript)
+	scriptClass, addrs, _, err := txscript.ExtractPkScriptAddrs(scriptCp)
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -125,11 +128,30 @@ func SignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript
 	}
 	return sigScript, nil
 }
-
+func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, redeemScript []byte, privKeys map[common.Address]*ecdsa.PrivateKey,previousScript []byte) ([]byte, error) {
+	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
+		if privKey,ok:=privKeys[a];ok{
+			return privKey,true,nil
+		}
+		return nil,false,nil
+	}
+	lookupRedeemScript:=func(a common.Address)  ([]byte, error){
+		return redeemScript,nil
+	}
+	sigScript, err := txscript.SignTxOutput(tx, msgIdx, id, utxoLockScript, txscript.SigHashAll,
+		txscript.KeyClosure(lookupKey), txscript.ScriptClosure(lookupRedeemScript), previousScript)
+	if err != nil {
+		return []byte{}, err
+	}
+	return sigScript, nil
+}
 //Sign a full transaction
 func SignTxAllPaymentInput(tx *modules.Transaction, utxoLockScripts map[modules.OutPoint][]byte, privKeys map[common.Address]*ecdsa.PrivateKey) error {
 	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
-		return privKeys[a], true, nil
+		if privKey,ok:=privKeys[a];ok{
+			return privKey,true,nil
+		}
+		return nil,false,nil
 	}
 	for i, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {

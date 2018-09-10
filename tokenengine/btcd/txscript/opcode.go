@@ -16,7 +16,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common"
+
 	"github.com/palletone/go-palletone/common/crypto"
 )
 
@@ -2318,87 +2318,89 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Split the signature into hash type and signature components.
-		hashType := SigHashType(rawSig[len(rawSig)-1])
-		signature := rawSig[:len(rawSig)-1]
-
-		// Only parse and check the signature encoding once.
-		var parsedSig *btcec.Signature
-		if !sigInfo.parsed {
-			if err := vm.checkHashTypeEncoding(hashType); err != nil {
-				return err
-			}
-			if err := vm.checkSignatureEncoding(signature); err != nil {
-				return err
-			}
-
-			// Parse the signature.
-			var err error
-			if vm.hasFlag(ScriptVerifyStrictEncoding) ||
-				vm.hasFlag(ScriptVerifyDERSignatures) {
-
-				parsedSig, err = btcec.ParseDERSignature(signature,
-					btcec.S256())
-			} else {
-				parsedSig, err = btcec.ParseSignature(signature,
-					btcec.S256())
-			}
-			sigInfo.parsed = true
-			if err != nil {
-				continue
-			}
-			sigInfo.parsedSignature = parsedSig
-		} else {
-			// Skip to the next pubkey if the signature is invalid.
-			if sigInfo.parsedSignature == nil {
-				continue
-			}
-
-			// Use the already parsed signature.
-			parsedSig = sigInfo.parsedSignature
-		}
-
-		if err := vm.checkPubKeyEncoding(pubKey); err != nil {
-			return err
-		}
-
-		// Parse the pubkey.
-		parsedPubKey, err := btcec.ParsePubKey(pubKey, btcec.S256())
-		if err != nil {
-			continue
-		}
-
-		// Generate the signature hash based on the signature hash type.
-		var hash []byte
-		if vm.isWitnessVersionActive(0) {
-			var sigHashes *TxSigHashes
-			if vm.hashCache != nil {
-				sigHashes = vm.hashCache
-			} else {
-				sigHashes = NewTxSigHashes(&vm.tx)
-			}
-
-			hash, err = calcWitnessSignatureHash(script, sigHashes, hashType,
-				&vm.tx,vm.msgIdx, vm.txIdx, vm.inputAmount)
-			if err != nil {
-				return err
-			}
-		} else {
-			hash = calcSignatureHash(script, hashType, &vm.tx,vm.msgIdx, vm.txIdx)
-		}
+		//hashType := SigHashType(rawSig[len(rawSig)-1])
+		//signature := rawSig[:len(rawSig)-1]
+		//
+		//// Only parse and check the signature encoding once.
+		//var parsedSig *btcec.Signature
+		//if !sigInfo.parsed {
+		//	if err := vm.checkHashTypeEncoding(hashType); err != nil {
+		//		return err
+		//	}
+		//	if err := vm.checkSignatureEncoding(signature); err != nil {
+		//		return err
+		//	}
+		//
+		//	// Parse the signature.
+		//	var err error
+		//	if vm.hasFlag(ScriptVerifyStrictEncoding) ||
+		//		vm.hasFlag(ScriptVerifyDERSignatures) {
+		//
+		//		parsedSig, err = btcec.ParseDERSignature(signature,
+		//			btcec.S256())
+		//	} else {
+		//		parsedSig, err = btcec.ParseSignature(signature,
+		//			btcec.S256())
+		//	}
+		//	sigInfo.parsed = true
+		//	if err != nil {
+		//		continue
+		//	}
+		//	sigInfo.parsedSignature = parsedSig
+		//} else {
+		//	// Skip to the next pubkey if the signature is invalid.
+		//	if sigInfo.parsedSignature == nil {
+		//		continue
+		//	}
+		//
+		//	// Use the already parsed signature.
+		//	parsedSig = sigInfo.parsedSignature
+		//}
+		//
+		//if err := vm.checkPubKeyEncoding(pubKey); err != nil {
+		//	return err
+		//}
+		//
+		//// Parse the pubkey.
+		//parsedPubKey, err := btcec.ParsePubKey(pubKey, btcec.S256())
+		//if err != nil {
+		//	continue
+		//}
+		//
+		//// Generate the signature hash based on the signature hash type.
+		//var hash []byte
+		//if vm.isWitnessVersionActive(0) {
+		//	var sigHashes *TxSigHashes
+		//	if vm.hashCache != nil {
+		//		sigHashes = vm.hashCache
+		//	} else {
+		//		sigHashes = NewTxSigHashes(&vm.tx)
+		//	}
+		//
+		//	hash, err = calcWitnessSignatureHash(script, sigHashes, hashType,
+		//		&vm.tx,vm.msgIdx, vm.txIdx, vm.inputAmount)
+		//	if err != nil {
+		//		return err
+		//	}
+		//} else {
+		//	hash = calcSignatureHash(script, hashType, &vm.tx,vm.msgIdx, vm.txIdx)
+		//}
+		hash := calcSignatureHash(script, SigHashAll, &vm.tx,vm.msgIdx, vm.txIdx)
 
 		var valid bool
-		if vm.sigCache != nil {
-			var sigHash common.Hash
-			copy(sigHash[:], hash)
-
-			valid = vm.sigCache.Exists(sigHash, parsedSig, parsedPubKey)
-			if !valid && parsedSig.Verify(hash, parsedPubKey) {
-				vm.sigCache.Add(sigHash, parsedSig, parsedPubKey)
-				valid = true
-			}
-		} else {
-			valid = parsedSig.Verify(hash, parsedPubKey)
-		}
+		valid=crypto.VerifySignature(pubKey,hash,sigInfo.signature)
+		//if vm.sigCache != nil {
+		//	var sigHash common.Hash
+		//	copy(sigHash[:], hash)
+		//
+		//	valid = vm.sigCache.Exists(sigHash, parsedSig, parsedPubKey)
+		//	if !valid && parsedSig.Verify(hash, parsedPubKey) {
+		//		vm.sigCache.Add(sigHash, parsedSig, parsedPubKey)
+		//		valid = true
+		//	}
+		//} else {
+		//	valid = parsedSig.Verify(hash, parsedPubKey)
+		//}
 
 		if valid {
 			// PubKey verified, move on to the next signature.
