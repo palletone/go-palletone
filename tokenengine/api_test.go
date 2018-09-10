@@ -11,6 +11,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
+	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 )
 
 func TestGetAddressFromScript(t *testing.T) {
@@ -154,20 +155,64 @@ func TestMultiSign1Step(t *testing.T)  {
 	t.Logf("PrvKey1&2 sign result:%x\n",sign12)
 	 pay1:=tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 	pay1.Input[0].SignatureScript=sign12
-
+	str,_:= txscript.DisasmString(sign12)
+	t.Logf("Signed script:{%s}",str)
 	err=ScriptValidate(lockScript,123,tx,0,0)
 	//err = ScriptValidate(GenerateP2PKHLockScript(pubKeyHash), 100, tx, 0, 0)
 	if err != nil {
 		t.Logf("validate error:%s", err)
 	}
-	//// textPayload :=tx.TxMessages[2].Payload.(*modules.TextPayload)
-	////textPayload.Text=[]byte("Bad")
-	////fmt.Printf("%s", tx.TxMessages[2].Payload.(*modules.TextPayload))
-	//
-	//err = ScriptValidate(GenerateP2PKHLockScript(pubKeyHash), 11, tx, 1, 0)
-	//if err != nil {
-	//	t.Logf("validate error:%s", err)
-	//}
+
+	t.Logf("Good! all validated")
+}
+
+//构造一个2/3签名的地址和UTXO，然后用其中的2个私钥分两步对其进行签名
+func TestMultiSign2Step(t *testing.T)  {
+	lockScript,redeemScript,addressMulti:= build23Address()
+	t.Logf("MultiSign Address:%s\n",addressMulti)
+	t.Logf("RedeemScript: %x\n",redeemScript)
+	t.Logf("RedeemScript: %d\n",redeemScript)
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	payment := &modules.PaymentPayload{}
+	utxoTxId, _ := common.NewHashFromStr("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
+	txIn := modules.NewTxIn(outPoint, []byte{})
+	payment.AddTxIn(*txIn)
+	p1lockScript := GenerateP2PKHLockScript(crypto.Hash160(pubKey1B))
+	payment.AddTxOut(*modules.NewTxOut(1, p1lockScript, &modules.Asset{}))
+	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
+	scriptCp:=make([]byte,len(lockScript))
+	copy(scriptCp,lockScript)
+	privKeys := map[common.Address]*ecdsa.PrivateKey{
+		address2: prvKey2,
+	}
+	sign1,err := MultiSignOnePaymentInput(tx,0,0, scriptCp,redeemScript, privKeys,nil)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	t.Logf("PrvKey2 sign result:%x\n",sign1)
+	privKeys2 := map[common.Address]*ecdsa.PrivateKey{
+		address1: prvKey1,
+	}
+	scriptCp2:=make([]byte,len(lockScript))
+	copy(scriptCp2,lockScript)
+	sign2,err:=MultiSignOnePaymentInput(tx,0,0, scriptCp2,redeemScript, privKeys2,sign1)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	t.Logf("PrvKey1 sign result:%x\n",sign2)
+
+	pay1:=tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	pay1.Input[0].SignatureScript=sign2
+	str,_:= txscript.DisasmString(sign2)
+	t.Logf("Signed script:{%s}",str)
+	err=ScriptValidate(lockScript,123,tx,0,0)
+	//err = ScriptValidate(GenerateP2PKHLockScript(pubKeyHash), 100, tx, 0, 0)
+	if err != nil {
+		t.Logf("validate error:%s", err)
+	}
 
 	t.Logf("Good! all validated")
 }

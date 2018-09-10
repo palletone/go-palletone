@@ -297,114 +297,112 @@ func mergeScripts(tx *modules.Transaction,msgIdx, idx int,
 func mergeMultiSig(tx *modules.Transaction,msgIdx, idx int, addresses []common.Address,
 	nRequired int, pkScript, sigScript, prevScript []byte) []byte {
 
-		return []byte{}
-		//TODO For multi sign
 	// This is an internal only function and we already parsed this script
 	// as ok for multisig (this is how we got here), so if this fails then
 	// all assumptions are broken and who knows which way is up?
-//	pkPops, _ := parseScript(pkScript)
-//
-//	sigPops, err := parseScript(sigScript)
-//	if err != nil || len(sigPops) == 0 {
-//		return prevScript
-//	}
-//
-//	prevPops, err := parseScript(prevScript)
-//	if err != nil || len(prevPops) == 0 {
-//		return sigScript
-//	}
-//
-//	// Convenience function to avoid duplication.
-//	extractSigs := func(pops []parsedOpcode, sigs [][]byte) [][]byte {
-//		for _, pop := range pops {
-//			if len(pop.data) != 0 {
-//				sigs = append(sigs, pop.data)
-//			}
-//		}
-//		return sigs
-//	}
-//
-//	possibleSigs := make([][]byte, 0, len(sigPops)+len(prevPops))
-//	possibleSigs = extractSigs(sigPops, possibleSigs)
-//	possibleSigs = extractSigs(prevPops, possibleSigs)
-//
-//	// Now we need to match the signatures to pubkeys, the only real way to
-//	// do that is to try to verify them all and match it to the pubkey
-//	// that verifies it. we then can go through the addresses in order
-//	// to build our script. Anything that doesn't parse or doesn't verify we
-//	// throw away.
-//	addrToSig := make(map[string][]byte)
+	pkPops, _ := parseScript(pkScript)
+	fmt.Printf("pk pops:%+v",pkPops)
+	sigPops, err := parseScript(sigScript)
+	if err != nil || len(sigPops) == 0 {
+		return prevScript
+	}
+
+	prevPops, err := parseScript(prevScript)
+	if err != nil || len(prevPops) == 0 {
+		return sigScript
+	}
+
+	// Convenience function to avoid duplication.
+	extractSigs := func(pops []parsedOpcode, sigs [][]byte) [][]byte {
+		for _, pop := range pops {
+			if len(pop.data) == 64 {//Devin: only support 64bytes sign
+				//TODO distinct
+				sigs = append(sigs, pop.data)
+			}
+		}
+		return sigs
+	}
+
+	possibleSigs := make([][]byte, 0, len(sigPops)+len(prevPops))
+	possibleSigs = extractSigs(sigPops, possibleSigs)
+	possibleSigs = extractSigs(prevPops, possibleSigs)
+
+	// Now we need to match the signatures to pubkeys, the only real way to
+	// do that is to try to verify them all and match it to the pubkey
+	// that verifies it. we then can go through the addresses in order
+	// to build our script. Anything that doesn't parse or doesn't verify we
+	// throw away.
+	//addrToSig := make(map[string][]byte)
 //sigLoop:
 //	for _, sig := range possibleSigs {
-//
-//		// can't have a valid signature that doesn't at least have a
-//		// hashtype, in practise it is even longer than this. but
-//		// that'll be checked next.
-//		if len(sig) < 1 {
-//			continue
-//		}
-//		tSig := sig[:len(sig)-1]
-//		hashType := SigHashType(sig[len(sig)-1])
-//
-//		pSig, err := btcec.ParseDERSignature(tSig, btcec.S256())
-//		if err != nil {
-//			continue
-//		}
-//
-//		// We have to do this each round since hash types may vary
-//		// between signatures and so the hash will vary. We can,
-//		// however, assume no sigs etc are in the script since that
-//		// would make the transaction nonstandard and thus not
-//		// MultiSigTy, so we just need to hash the full thing.
-//		hash := calcSignatureHash(pkPops, hashType, tx,msgIdx, idx)
-//
-//		//for _, addr := range addresses {
-//		//	// All multisig addresses should be pubkey addresses
-//		//	// it is an error to call this internal function with
-//		//	// bad input.
-//		//	pkaddr := addr
-//		//
-//		//	pubKey := pkaddr.PubKey()
-//		//
-//		//	// If it matches we put it in the map. We only
-//		//	// can take one signature per public key so if we
-//		//	// already have one, we can throw this away.
-//		//	if pSig.Verify(hash, pubKey) {
-//		//		aStr := addr.EncodeAddress()
-//		//		if _, ok := addrToSig[aStr]; !ok {
-//		//			addrToSig[aStr] = sig
-//		//		}
-//		//		continue sigLoop
-//		//	}
-//		//}
-//	}
-//
-//	// Extra opcode to handle the extra arg consumed (due to previous bugs
-//	// in the reference implementation).
-//	builder := NewScriptBuilder().AddOp(OP_FALSE)
-//	doneSigs := 0
-//	// This assumes that addresses are in the same order as in the script.
-//	for _, addr := range addresses {
-//		sig, ok := addrToSig[addr.EncodeAddress()]
-//		if !ok {
-//			continue
-//		}
-//		builder.AddData(sig)
-//		doneSigs++
-//		if doneSigs == nRequired {
-//			break
-//		}
-//	}
-//
-//	// padding for missing ones.
-//	for i := doneSigs; i < nRequired; i++ {
-//		builder.AddOp(OP_0)
-//	}
-//
-//	script, _ := builder.Script()
-//	return script
-}
 
+		// can't have a valid signature that doesn't at least have a
+		// hashtype, in practise it is even longer than this. but
+		// that'll be checked next.
+		//if len(sig) < 1 {
+		//	continue
+		//}
+		//tSig := sig[:len(sig)-1]
+		//hashType := SigHashType(sig[len(sig)-1])
+		//
+		//pSig, err := btcec.ParseDERSignature(tSig, btcec.S256())
+		//if err != nil {
+		//	continue
+		//}
+
+		// We have to do this each round since hash types may vary
+		// between signatures and so the hash will vary. We can,
+		// however, assume no sigs etc are in the script since that
+		// would make the transaction nonstandard and thus not
+		// MultiSigTy, so we just need to hash the full thing.
+		//hash := calcSignatureHash(pkPops, hashType, tx,msgIdx, idx)
+		//
+		//for _, addr := range addresses {
+		//	// All multisig addresses should be pubkey addresses
+		//	// it is an error to call this internal function with
+		//	// bad input.
+		//	pkaddr := addr.(*btcutil.AddressPubKey)
+		//
+		//	pubKey := pkaddr.PubKey()
+		//
+		//	// If it matches we put it in the map. We only
+		//	// can take one signature per public key so if we
+		//	// already have one, we can throw this away.
+		//	if pSig.Verify(hash, pubKey) {
+		//		aStr := addr.EncodeAddress()
+		//		if _, ok := addrToSig[aStr]; !ok {
+		//			addrToSig[aStr] = sig
+		//		}
+		//		continue sigLoop
+		//	}
+		//}
+	//}
+
+	// Extra opcode to handle the extra arg consumed (due to previous bugs
+	// in the reference implementation).
+	builder := NewScriptBuilder().AddOp(OP_FALSE)
+	doneSigs := 0
+	// This assumes that addresses are in the same order as in the script.
+	for _, sig := range possibleSigs {
+		//sig, ok := addrToSig[addr.Str()]
+		//if !ok {
+		//	continue
+		//}
+		builder.AddData(sig)
+		doneSigs++
+		if doneSigs == nRequired {
+			break
+		}
+	}
+
+	// padding for missing ones.
+	for i := doneSigs; i < nRequired; i++ {
+		builder.AddOp(OP_0)
+	}
+
+	script, _ := builder.Script()
+	return script
+}
 // KeyDB is an interface type provided to SignTxOutput, it encapsulates
 // any user state required to get the private keys for an address.
 type KeyDB interface {

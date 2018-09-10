@@ -7,6 +7,7 @@ import (
 	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	"github.com/palletone/go-palletone/dag/modules"
 	"crypto/ecdsa"
+	"errors"
 )
 
 //Generate a P2PKH lock script, just only need input 20bytes public key hash.
@@ -133,7 +134,7 @@ func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockS
 		if privKey,ok:=privKeys[a];ok{
 			return privKey,true,nil
 		}
-		return nil,false,nil
+		return nil,false,errors.New("PrivateKey not exist")
 	}
 	lookupRedeemScript:=func(a common.Address)  ([]byte, error){
 		return redeemScript,nil
