@@ -19,8 +19,8 @@ import (
 	"strings"
 	"compress/gzip"
 	"archive/tar"
-    "github.com/palletone/go-palletone/dag/storage"
-    comdb "github.com/palletone/go-palletone/contracts/comm"
+	"github.com/palletone/go-palletone/dag/storage"
+	comdb "github.com/palletone/go-palletone/contracts/comm"
 )
 
 type UserChaincode struct {
@@ -195,6 +195,10 @@ func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err
 func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, error) {
 	//从数据库读取
 	//解压到指定路径下
+
+	usrCC := &UserChaincode{
+	}
+	return usrCC, nil
 
 	if 1 == 0 {
 		dag, err := comdb.GetCcDagHand()
