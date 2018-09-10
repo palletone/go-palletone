@@ -156,18 +156,19 @@ func UpdateUtxo(db ptndb.Database, txHash common.Hash, msg *modules.Message, msg
 	var payload interface{}
 
 	payload = msg.Payload
-	payment, ok := payload.(modules.PaymentPayload)
+	payment, ok := payload.(*modules.PaymentPayload)
 	if ok == true {
 		// create utxo
 		errs := writeUtxo(db, txHash, msgIndex, payment.Output, payment.LockTime)
-		// destory utxo
-		destoryUtxo(db, payment.Input)
 		if len(errs) > 0 {
 			log.Error("error occurred on updated utxos, check the log file to find details.")
 			return errors.New("error occurred on updated utxos, check the log file to find details.")
 		}
+		// destory utxo
+		destoryUtxo(db, payment.Input)
+		return nil
 	}
-	return nil
+	return errors.New("UpdateUtxo: the transaction payload is not payment.")
 }
 
 /**
@@ -228,8 +229,9 @@ destory utxo, delete from UTXO database
 */
 func destoryUtxo(db ptndb.Database, txins []*modules.Input) {
 	for _, txin := range txins {
+		log.Info("Txin", "value=", txin)
 		outpoint := txin.PreviousOutPoint
-		if outpoint.IsEmpty() {
+		if outpoint == nil || outpoint.IsEmpty() {
 			if len(txin.Extra) > 0 {
 				var assetInfo modules.AssetInfo
 				if err := rlp.DecodeBytes(txin.Extra, &assetInfo); err == nil {
@@ -407,7 +409,11 @@ To get account's token info by utxo index db
 */
 func getAccountTokensByIndex(db ptndb.Database, addr common.Address) (map[string]*modules.AccountToken, error) {
 	tokens := map[string]*modules.AccountToken{}
-	utxoIndex := modules.UtxoIndex{AccountAddr: addr}
+	utxoIndex := modules.UtxoIndex{
+		AccountAddr: addr,
+		Asset:       &modules.Asset{},
+		OutPoint:    &modules.OutPoint{},
+	}
 	data := storage.GetPrefix(db, utxoIndex.AccountKey())
 	if data == nil || len(data) == 0 {
 		return nil, nil
@@ -485,7 +491,6 @@ func getAccountTokensWhole(db ptndb.Database, addr common.Address) (map[string]*
 */
 func checkUtxo(db ptndb.Database, addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) bool {
 	// check asset
-	//fmt.Printf(">>>>> assetid=%s, utxo( assetid=%s)", asset.AssetId.String(), utxo.Asset.AssetId.String())
 	if asset != nil && (strings.Compare(asset.AssetId.String(), utxo.Asset.AssetId.String()) != 0 ||
 		strings.Compare(asset.UniqueId.String(), utxo.Asset.UniqueId.String()) != 0 ||
 		asset.ChainId != utxo.Asset.ChainId) {
@@ -493,11 +498,14 @@ func checkUtxo(db ptndb.Database, addr *common.Address, asset *modules.Asset, ut
 		return false
 	}
 	// get addr
+	fmt.Println(">>>>>>>>>> PkScript", utxo.PkScript)
 	sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
 	// check address
 	if strings.Compare(sAddr.String(), addr.String()) != 0 {
-		fmt.Printf(">>>>> Address is not compare:scriptPubKey.Address=%s, address=%s\n",
-			sAddr, addr.String())
+		//fmt.Printf(">>>>> Address is not compare:scriptPubKey.Address=%s, address=%s\n",
+		//	sAddr, addr.String())
+		fmt.Println(">>>>>>>>>>>>  saddr", sAddr.String())
+		fmt.Println(">>>>>>>>>>>>  addr", addr.String())
 		return false
 	}
 	return true

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
+	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -188,11 +189,14 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 	case -1:
 		return err
 	case -2:
+		// check last irreversible unit
+		// if it is not null, check continuously
 		if strings.Compare(irreUnitHash.String(), "") != 0 {
 			if common.CheckExists(irreUnitHash, unit.UnitHeader.ParentsHash) < 0 {
 				return fmt.Errorf("The unit(%s) is not continious.", unit.UnitHash)
 			}
 		}
+		// add new fork into index
 		forkData := ForkData{}
 		forkData = append(forkData, unit.UnitHash)
 		index = len(*forkIndex)
@@ -210,6 +214,10 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 		if err := chain.Prune(assetId, unitHash); err != nil {
 			return err
 		}
+		// save the matured unit into leveldb
+		if err := dagCommon.SaveUnit(chain.db, *unit, false); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -221,14 +229,73 @@ func (chain *MemDag) Exists(uHash common.Hash) bool {
 	return false
 }
 
+/**
+对分叉数据进行剪支
+Prune fork data
+*/
 func (chain *MemDag) Prune(assetId string, maturedUnitHash common.Hash) error {
 	// get fork index
+	index, subindex := chain.QueryIndex(assetId, maturedUnitHash)
+	if index < 0 {
+		return fmt.Errorf("Prune error: matured unit is not found in memory")
+	}
 	// save all the units before matured unit into db
-	// save the matured unit
+	forkdata := (*(chain.forkIndex[assetId]))[index]
+	for i := 0; i < subindex; i++ {
+		unitHash := (*forkdata)[i]
+		unit := (*chain.memUnit)[unitHash]
+		if err := dagCommon.SaveUnit(chain.db, *unit, false); err != nil {
+			return fmt.Errorf("Prune error when save unit: ", err.Error())
+		}
+	}
+	// rollback transaction pool
+
 	// refresh forkindex
+	if lenth := len(*forkdata); lenth > subindex {
+		newForkData := ForkData{}
+		for i := subindex + 1; i < lenth; i++ {
+			newForkData = append(newForkData, (*forkdata)[i])
+		}
+		// prune other forks
+		newForkindex := ForkIndex{}
+		newForkindex = append(newForkindex, &newForkData)
+		chain.forkIndex[assetId] = &newForkindex
+	}
+	// save the matured unit
+	chain.lastValidatedUnit[assetId] = maturedUnitHash
+
 	return nil
 }
 
+/**
+切换主链：将最长链作为主链
+Switch to the longest fork
+*/
 func (chain *MemDag) SwitchMainChain() error {
+	// chose the longest fork as the main chain
+	for assetid, forkindex := range chain.forkIndex {
+		maxLenth := 0
+		for index, forkdata := range *forkindex {
+			if len(*forkdata) > maxLenth {
+				chain.mainChain[assetid] = index
+				maxLenth = len(*forkdata)
+			}
+		}
+	}
 	return nil
+}
+
+func (chain *MemDag) QueryIndex(assetId string, maturedUnitHash common.Hash) (int, int) {
+	forkindex, ok := chain.forkIndex[assetId]
+	if !ok {
+		return -1, -1
+	}
+	for index, forkdata := range *forkindex {
+		for subindex, unitHash := range *forkdata {
+			if strings.Compare(unitHash.String(), maturedUnitHash.String()) == 0 {
+				return index, subindex
+			}
+		}
+	}
+	return -1, -1
 }
