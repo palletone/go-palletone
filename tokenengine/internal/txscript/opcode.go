@@ -18,6 +18,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 // An opcode defines the information related to a txscript opcode.  opfunc, if
@@ -2250,14 +2251,14 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		return scriptError(ErrInvalidSignatureCount, str)
 	}
 
-	signatures := make([]*parsedSigInfo, 0, numSignatures)
+	signatures := make(map[string]bool)
 	for i := 0; i < numSignatures; i++ {
 		signature, err := vm.dstack.PopByteArray()
 		if err != nil {
 			return err
 		}
-		sigInfo := &parsedSigInfo{signature: signature}
-		signatures = append(signatures, sigInfo)
+		sigInfo := hexutil.Encode(signature)
+		signatures[sigInfo]=false //使用Map可以去除签名重复的情况
 	}
 
 	// A bug in the original Satoshi client implementation means one more
@@ -2283,139 +2284,40 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 
 	// Remove the signature in pre version 0 segwit scripts since there is
 	// no way for a signature to sign itself.
-	if !vm.isWitnessVersionActive(0) {
-		for _, sigInfo := range signatures {
-			script = removeOpcodeByData(script, sigInfo.signature)
-		}
-	}
-
-	success := true
-	numPubKeys++
-	pubKeyIdx := -1
-	signatureIdx := 0
-	for numSignatures > 0 {
-		// When there are more signatures than public keys remaining,
-		// there is no way to succeed since too many signatures are
-		// invalid, so exit early.
-		pubKeyIdx++
-		numPubKeys--
-		if numSignatures > numPubKeys {
-			success = false
-			break
-		}
-
-		sigInfo := signatures[signatureIdx]
-		pubKey := pubKeys[pubKeyIdx]
-
-		// The order of the signature and public key evaluation is
-		// important here since it can be distinguished by an
-		// OP_CHECKMULTISIG NOT when the strict encoding flag is set.
-
-		rawSig := sigInfo.signature
-		if len(rawSig) == 0 {
-			// Skip to the next pubkey if signature is empty.
-			continue
-		}
-
-		// Split the signature into hash type and signature components.
-		//hashType := SigHashType(rawSig[len(rawSig)-1])
-		//signature := rawSig[:len(rawSig)-1]
-		//
-		//// Only parse and check the signature encoding once.
-		//var parsedSig *btcec.Signature
-		//if !sigInfo.parsed {
-		//	if err := vm.checkHashTypeEncoding(hashType); err != nil {
-		//		return err
-		//	}
-		//	if err := vm.checkSignatureEncoding(signature); err != nil {
-		//		return err
-		//	}
-		//
-		//	// Parse the signature.
-		//	var err error
-		//	if vm.hasFlag(ScriptVerifyStrictEncoding) ||
-		//		vm.hasFlag(ScriptVerifyDERSignatures) {
-		//
-		//		parsedSig, err = btcec.ParseDERSignature(signature,
-		//			btcec.S256())
-		//	} else {
-		//		parsedSig, err = btcec.ParseSignature(signature,
-		//			btcec.S256())
-		//	}
-		//	sigInfo.parsed = true
-		//	if err != nil {
-		//		continue
-		//	}
-		//	sigInfo.parsedSignature = parsedSig
-		//} else {
-		//	// Skip to the next pubkey if the signature is invalid.
-		//	if sigInfo.parsedSignature == nil {
-		//		continue
-		//	}
-		//
-		//	// Use the already parsed signature.
-		//	parsedSig = sigInfo.parsedSignature
-		//}
-		//
-		//if err := vm.checkPubKeyEncoding(pubKey); err != nil {
-		//	return err
-		//}
-		//
-		//// Parse the pubkey.
-		//parsedPubKey, err := btcec.ParsePubKey(pubKey, btcec.S256())
-		//if err != nil {
-		//	continue
-		//}
-		//
-		//// Generate the signature hash based on the signature hash type.
-		//var hash []byte
-		//if vm.isWitnessVersionActive(0) {
-		//	var sigHashes *TxSigHashes
-		//	if vm.hashCache != nil {
-		//		sigHashes = vm.hashCache
-		//	} else {
-		//		sigHashes = NewTxSigHashes(&vm.tx)
-		//	}
-		//
-		//	hash, err = calcWitnessSignatureHash(script, sigHashes, hashType,
-		//		&vm.tx,vm.msgIdx, vm.txIdx, vm.inputAmount)
-		//	if err != nil {
-		//		return err
-		//	}
-		//} else {
-		//	hash = calcSignatureHash(script, hashType, &vm.tx,vm.msgIdx, vm.txIdx)
-		//}
-		hash := calcSignatureHash(script, SigHashAll, &vm.tx,vm.msgIdx, vm.txIdx)
-
-		var valid bool
-		valid=crypto.VerifySignature(pubKey,hash,sigInfo.signature)
-		//if vm.sigCache != nil {
-		//	var sigHash common.Hash
-		//	copy(sigHash[:], hash)
-		//
-		//	valid = vm.sigCache.Exists(sigHash, parsedSig, parsedPubKey)
-		//	if !valid && parsedSig.Verify(hash, parsedPubKey) {
-		//		vm.sigCache.Add(sigHash, parsedSig, parsedPubKey)
-		//		valid = true
-		//	}
-		//} else {
-		//	valid = parsedSig.Verify(hash, parsedPubKey)
-		//}
-
-		if valid {
-			// PubKey verified, move on to the next signature.
-			signatureIdx++
-			numSignatures--
-		}
-	}
-
-	if !success && vm.hasFlag(ScriptVerifyNullFail) {
-		for _, sig := range signatures {
-			if len(sig.signature) > 0 {
-				str := "not all signatures empty on failed checkmultisig"
-				return scriptError(ErrNullFail, str)
+	//if !vm.isWitnessVersionActive(0) {
+	//	for _, sigInfo := range signatures {
+	//		script = removeOpcodeByData(script, sigInfo.signature)
+	//	}
+	//}
+	hash := calcSignatureHash(script, SigHashAll, &vm.tx,vm.msgIdx, vm.txIdx)
+	validCount:=0
+	//TODO Devin这个算法不够优化，按理说如果一个公钥已经被验证有效了，那么接下来签名就不需要再使用这个公钥来验证
+	for signStr :=range signatures{
+		for _,pubKey:=range pubKeys{
+			rawSig,_:=hexutil.Decode(signStr)
+			valid:=crypto.VerifySignature(pubKey,hash,rawSig)
+			if valid{
+				signatures[signStr]=true
+				validCount++
 			}
 		}
+	}
+
+	success := false
+	if validCount>=numSignatures{
+		success=true
+	}
+
+
+	if !success && vm.hasFlag(ScriptVerifyNullFail) {
+		//for _, sig := range signatures {
+		//	if len(sig) > 0 {
+		//		str := "not all signatures empty on failed checkmultisig"
+		//		return scriptError(ErrNullFail, str)
+		//	}
+		//}
+		str := "not all signatures empty on failed checkmultisig"
+		return scriptError(ErrNullFail, str)
 	}
 
 	vm.dstack.PushBool(success)

@@ -141,14 +141,14 @@ func TestMultiSign1Step(t *testing.T)  {
 	p1lockScript := GenerateP2PKHLockScript(crypto.Hash160(pubKey1B))
 	payment.AddTxOut(*modules.NewTxOut(1, p1lockScript, &modules.Asset{}))
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
-	scriptCp:=make([]byte,len(lockScript))
-	copy(scriptCp,lockScript)
+	//scriptCp:=make([]byte,len(lockScript))
+	//copy(scriptCp,lockScript)
 	privKeys := map[common.Address]*ecdsa.PrivateKey{
 		address1: prvKey1,
 		address2:prvKey2,
 	}
 
-	sign12,err := MultiSignOnePaymentInput(tx,0,0, scriptCp,redeemScript, privKeys,nil)
+	sign12,err := MultiSignOnePaymentInput(tx,0,0, lockScript,redeemScript, privKeys,nil)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -183,26 +183,26 @@ func TestMultiSign2Step(t *testing.T)  {
 	p1lockScript := GenerateP2PKHLockScript(crypto.Hash160(pubKey1B))
 	payment.AddTxOut(*modules.NewTxOut(1, p1lockScript, &modules.Asset{}))
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
-	scriptCp:=make([]byte,len(lockScript))
-	copy(scriptCp,lockScript)
+	//scriptCp:=make([]byte,len(lockScript))
+	//copy(scriptCp,lockScript)
 	privKeys := map[common.Address]*ecdsa.PrivateKey{
-		address2: prvKey2,
-	}
-	sign1,err := MultiSignOnePaymentInput(tx,0,0, scriptCp,redeemScript, privKeys,nil)
-	if err != nil {
-		t.Logf("Sign error:%s", err)
-	}
-	t.Logf("PrvKey2 sign result:%x\n",sign1)
-	privKeys2 := map[common.Address]*ecdsa.PrivateKey{
 		address1: prvKey1,
 	}
-	scriptCp2:=make([]byte,len(lockScript))
-	copy(scriptCp2,lockScript)
-	sign2,err:=MultiSignOnePaymentInput(tx,0,0, scriptCp2,redeemScript, privKeys2,sign1)
+	sign1,err := MultiSignOnePaymentInput(tx,0,0, lockScript,redeemScript, privKeys,nil)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
-	t.Logf("PrvKey1 sign result:%x\n",sign2)
+	t.Logf("PrvKey1 sign result:%x\n",sign1)
+	privKeys2 := map[common.Address]*ecdsa.PrivateKey{
+		address2: prvKey2,
+	}
+	//scriptCp2:=make([]byte,len(lockScript))
+	//copy(scriptCp2,lockScript)
+	sign2,err:=MultiSignOnePaymentInput(tx,0,0, lockScript,redeemScript, privKeys2,sign1)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	t.Logf("PrvKey2 sign result:%x\n",sign2)
 
 	pay1:=tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 	pay1.Input[0].SignatureScript=sign2
