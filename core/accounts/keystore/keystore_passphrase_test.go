@@ -35,7 +35,7 @@ func TestKeyEncryptDecrypt(t *testing.T) {
 		t.Fatal(err)
 	}
 	password := "1"
-	address := common.HexToAddress("503148333466705a524e37554a32747563336a66526365315550384d44514733324670")
+	address,_ := common.StringToAddress("P153e7LE7k8vq2tWEbuEjcH7JXB6UyyKYCj")
 
 	// Do a few rounds of decryption and encryption
 	for i := 0; i < 3; i++ {
@@ -48,6 +48,7 @@ func TestKeyEncryptDecrypt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("test %d: json key failed to decrypt: %v", i, err)
 		}
+		//t.Logf("Address from keystore:{%s}",key.Address.Str())
 		if key.Address != address {
 			t.Errorf("test %d: key address mismatch: have %x, want %x", i, key.Address, address)
 		}
