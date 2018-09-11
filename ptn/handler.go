@@ -280,15 +280,23 @@ func (pm *ProtocolManager) BroadcastVssResp(dstId string, resp *mp.VSSResponseEv
 		return
 	}
 	pm.peers.MarkVssResp(dstId)
-	nodes := pm.dag.GetActiveMediatorNodes()
-	for _, node := range nodes {
-		peer := pm.peers.Peer(node.ID.TerminalString())
+	peers := pm.GetActiveMediatorPeers()
+	for _, peer := range peers {
 		msg := &vssMsgResp{
 			NodeId: dstId,
 			Resp:   resp,
 		}
 		peer.SendVSSResponse(msg)
 	}
+	//	nodes := pm.dag.GetActiveMediatorNodes()
+	//	for _, node := range nodes {
+	//		peer := pm.peers.Peer(node.ID.TerminalString())
+	//		msg := &vssMsgResp{
+	//			NodeId: dstId,
+	//			Resp:   resp,
+	//		}
+	//		peer.SendVSSResponse(msg)
+	//	}
 }
 
 // @author Albert·Gou
@@ -315,15 +323,23 @@ func (pm *ProtocolManager) BroadcastVss(dstId string, deal *mp.VSSDealEvent) {
 		return
 	}
 	pm.peers.MarkVss(dstId)
-	nodes := pm.dag.GetActiveMediatorNodes()
-	for _, node := range nodes {
-		peer := pm.peers.Peer(node.ID.TerminalString())
+	peers := pm.GetActiveMediatorPeers()
+	for _, peer := range peers {
 		msg := &vssMsg{
 			NodeId: dstId,
 			Deal:   deal,
 		}
 		peer.SendVSSDeal(msg)
 	}
+	//	nodes := pm.dag.GetActiveMediatorNodes()
+	//	for _, node := range nodes {
+	//		peer := pm.peers.Peer(node.ID.TerminalString())
+	//		msg := &vssMsg{
+	//			NodeId: dstId,
+	//			Deal:   deal,
+	//		}
+	//		peer.SendVSSDeal(msg)
+	//	}
 }
 
 // @author Albert·Gou
