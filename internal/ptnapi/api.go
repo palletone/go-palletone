@@ -534,9 +534,7 @@ func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address common.Add
 }
 
 func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
-	addr := common.Address{}
-	addr.SetString(address)
-	result, err := s.b.WalletTokens(addr)
+	result, err := s.b.WalletTokens(address)
 	if err != nil {
 		log.Error("WalletTokens:", "error", err.Error())
 	}
@@ -550,9 +548,6 @@ func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) 
 }
 
 func (s *PublicBlockChainAPI) WalletBalance(ctx context.Context, address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
-	addr := common.Address{}
-	addr.SetString(address)
-
 	return s.b.WalletBalance(address, assetid, uniqueid, chainid)
 }
 

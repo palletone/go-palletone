@@ -115,7 +115,6 @@ func readUtxosFrAll(db ptndb.Database, addr common.Address, asset modules.Asset)
 		sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
 		// check address
 		if strings.Compare(sAddr.String(), addr.String()) != 0 {
-			fmt.Println(">>>>> address is not compare")
 			continue
 		}
 		outpoint := modules.KeyToOutpoint([]byte(k))
@@ -203,11 +202,11 @@ func writeUtxo(db ptndb.Database, txHash common.Hash, msgIndex uint32, txouts []
 
 		// get address
 		sAddr, _ := tokenengine.GetAddressFromScript(txout.PkScript)
-		addr := common.Address{}
-		addr.SetString(sAddr.Str())
+		//addr := common.Address{}
+		//addr.SetString(sAddr.Str())
 
 		utxoIndex := modules.UtxoIndex{
-			AccountAddr: addr,
+			AccountAddr: sAddr,
 			Asset:       txout.Asset,
 			OutPoint:    &outpoint,
 		}
@@ -494,18 +493,14 @@ func checkUtxo(db ptndb.Database, addr *common.Address, asset *modules.Asset, ut
 	if asset != nil && (strings.Compare(asset.AssetId.String(), utxo.Asset.AssetId.String()) != 0 ||
 		strings.Compare(asset.UniqueId.String(), utxo.Asset.UniqueId.String()) != 0 ||
 		asset.ChainId != utxo.Asset.ChainId) {
-		fmt.Println(">>>>> Asset is not compare")
 		return false
 	}
 	// get addr
-	fmt.Println(">>>>>>>>>> PkScript", utxo.PkScript)
 	sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
 	// check address
 	if strings.Compare(sAddr.String(), addr.String()) != 0 {
 		//fmt.Printf(">>>>> Address is not compare:scriptPubKey.Address=%s, address=%s\n",
 		//	sAddr, addr.String())
-		fmt.Println(">>>>>>>>>>>>  saddr", sAddr.String())
-		fmt.Println(">>>>>>>>>>>>  addr", addr.String())
 		return false
 	}
 	return true
