@@ -58,7 +58,10 @@ func (a Address) GetType() AddressType {
 	return AddressType(a[20])
 }
 func NewAddress(hash160 []byte, ty AddressType) Address {
-	return BytesToAddress(append(hash160, byte(ty)))
+	newBytes := make([]byte, 21)
+	copy(newBytes, hash160)
+	newBytes[20]=byte(ty)
+	return BytesToAddress(newBytes)
 }
 
 //将一个字符串格式的Address转换为Address对象
