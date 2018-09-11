@@ -195,10 +195,10 @@ func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err
 func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, error) {
 	//从数据库读取
 	//解压到指定路径下
-
-	//usrCC := &UserChaincode{
-	//}
-	//return usrCC, nil
+//todo del
+	usrCC := &UserChaincode{
+	}
+	return usrCC, nil
 
 	if 1 == 0 {
 		dag, err := comdb.GetCcDagHand()
@@ -270,11 +270,14 @@ func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, 
 func UnTarGz(srcFilePath string, destDirPath string) error {
 	fmt.Println("UnTarGzing " + srcFilePath + "...")
 	// Create destination directory
-	os.Mkdir(destDirPath, os.ModePerm)
+	if err := os.Mkdir(destDirPath, os.ModePerm); err != nil {
+		fmt.Printf("os.Mkdir err =%s", err)
+		return err
+	}
 
 	fr, err := os.Open(srcFilePath)
 	if err != nil {
-		fmt.Printf("os.Open  err =%s", err)
+		fmt.Printf("os.Open err =%s", err)
 		return err
 	}
 
