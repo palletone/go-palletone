@@ -42,6 +42,19 @@ import (
 	"time"
 )
 
+type UnitOperator interface {
+
+}
+type UnitOperate struct{
+	dagdb storage.DagDb
+	idxdb storage.IndexDb
+	uxtodb storage.UtxoDb
+	statedb storage.StateDb
+}
+func NewUnitOperate(dagdb storage.DagDb,idxdb storage.IndexDb,utxodb storage.UtxoDb,statedb storage.StateDb) *UnitOperate {
+	return &UnitOperate{dagdb:dagdb,idxdb: idxdb, uxtodb: utxodb, statedb: statedb,}
+}
+
 func RHashStr(x interface{}) string {
 	x_byte, err := json.Marshal(x)
 	if err != nil {
@@ -87,20 +100,20 @@ func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error)
 	return &gUnit, nil
 }
 
-// @author Albert·Gou
-func StoreUnit(db ptndb.Database, unit *modules.Unit) error {
-	err := SaveUnit(db, *unit, false)
-
-	if err != nil {
-		log.Error(fmt.Sprintf("%v", err))
-		return err
-	}
-
-	// 此处应当更新DB中的全局属性
-	//	go storage.StoreDynGlobalProp(dgp)
-
-	return nil
-}
+//// @author Albert·Gou
+//func StoreUnit(db ptndb.Database, unit *modules.Unit) error {
+//	err := SaveUnit(db, *unit, false)
+//
+//	if err != nil {
+//		log.Error(fmt.Sprintf("%v", err))
+//		return err
+//	}
+//
+//	// 此处应当更新DB中的全局属性
+//	//	go storage.StoreDynGlobalProp(dgp)
+//
+//	return nil
+//}
 
 // WithSignature, returns a new unit with the given signature.
 // @author Albert·Gou
@@ -271,17 +284,17 @@ func GenesisHeight(db ptndb.Database) modules.ChainIndex {
 	return unit.UnitHeader.Number
 }
 
-func GetUnitTransactions(db ptndb.Database, unitHash common.Hash) (modules.Transactions, error) {
+func (unitOp *UnitOperate)GetUnitTransactions(unitHash common.Hash) (modules.Transactions, error) {
 	txs := modules.Transactions{}
 	// get body data: transaction list.
 	// if getbody return transactions list, then don't range txHashlist.
-	txHashList, err := storage.GetBody(db, unitHash)
+	txHashList, err := unitOp.dagdb.GetBody( unitHash)
 	if err != nil {
 		return nil, err
 	}
 	// get transaction by tx'hash.
 	for _, txHash := range txHashList {
-		tx, _, _, _ := storage.GetTransaction(db, txHash)
+		tx, _, _, _ := unitOp.dagdb.GetTransaction(txHash)
 		if err != nil {
 			txs = append(txs, tx)
 		}
@@ -331,14 +344,14 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 保存单元数据，如果单元的结构基本相同
 save genesis unit data
 */
-func SaveUnit(db ptndb.Database, unit modules.Unit, isGenesis bool) error {
+func (unitOp *UnitOperate)SaveUnit( unit modules.Unit, isGenesis bool) error {
 
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Error("Unit is null")
 		return fmt.Errorf("Unit is null")
 	}
 	// step1. check unit signature, should be compare to mediator list
-	errno := ValidateUnitSignature(db, unit.UnitHeader, isGenesis)
+	errno := ValidateUnitSignature(unitOp.statedb, unit.UnitHeader, isGenesis)
 	if int(errno) != modules.UNIT_STATE_VALIDATED && int(errno) != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
 		return fmt.Errorf("Validate unit signature, errno=%d", errno)
 	}
@@ -355,17 +368,17 @@ func SaveUnit(db ptndb.Database, unit modules.Unit, isGenesis bool) error {
 	}
 	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
-	if err := storage.SaveHeader(db, unit.UnitHash, unit.UnitHeader); err != nil {
+	if err := unitOp.dagdb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		log.Info("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
 	// step5. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-	if err := storage.SaveNumberByHash(db, unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	if err := unitOp.dagdb.SaveNumberByHash( unit.UnitHash, unit.UnitHeader.Number); err != nil {
 		log.Info("SaveHashNumber:", "error", err.Error())
 		return fmt.Errorf("Save unit hash error")
 	}
-	if err := storage.SaveHashByNumber(db, unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	if err := unitOp.dagdb.SaveHashByNumber( unit.UnitHash, unit.UnitHeader.Number); err != nil {
 		log.Info("SaveNumberByHash:", "error", err.Error())
 		return fmt.Errorf("Save unit number error")
 	}
@@ -402,7 +415,7 @@ func SaveUnit(db ptndb.Database, unit modules.Unit, isGenesis bool) error {
 			}
 		}
 		// step7. save transaction
-		if err := storage.SaveTransaction(db, tx); err != nil {
+		if err := unitOp.dagdb.SaveTransaction(tx); err != nil {
 			log.Info("Save transaction:", "error", err.Error())
 			return err
 		}
@@ -410,19 +423,19 @@ func SaveUnit(db ptndb.Database, unit modules.Unit, isGenesis bool) error {
 	}
 
 	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
-	if err := storage.SaveBody(db, unit.UnitHash, txHashSet); err != nil {
+	if err := unitOp.dagdb.SaveBody(unit.UnitHash, txHashSet); err != nil {
 		log.Info("SaveBody", "error", err.Error())
 		return err
 	}
 	// step 10  save txlookupEntry
-	if err := storage.SaveTxLookupEntry(db, &unit); err != nil {
+	if err := unitOp.dagdb.SaveTxLookupEntry( &unit); err != nil {
 		return err
 	}
 	// update state
-	storage.PutCanonicalHash(db, unit.UnitHash, unit.NumberU64())
-	storage.PutHeadHeaderHash(db, unit.UnitHash)
-	storage.PutHeadUnitHash(db, unit.UnitHash)
-	storage.PutHeadFastUnitHash(db, unit.UnitHash)
+	unitOp.dagdb.PutCanonicalHash( unit.UnitHash, unit.NumberU64())
+	unitOp.dagdb.PutHeadHeaderHash( unit.UnitHash)
+	unitOp.dagdb.PutHeadUnitHash( unit.UnitHash)
+	unitOp.dagdb.PutHeadFastUnitHash( unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
 }
