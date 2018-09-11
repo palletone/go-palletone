@@ -5540,15 +5540,15 @@ var methods = function () {
     var ccdeploy = new Method({
         name: 'ccdeploy',
         call: 'ptn_ccdeploy',
-        params: 2, //templateId string, txid string, args [][]byte
-        inputFormatter: [null, null],
+        params: 3, //templateId string, txid string, args []string ---->["init", "a", "1", "b", 10]
+        inputFormatter: [null, null, null],
     });
 
     var ccinvoke = new Method({
         name: 'ccinvoke',
         call: 'ptn_ccinvoke',
-        params: 5, //deployId string, txid string, args [][]byte------>fun, key, value,
-        inputFormatter: [null, null, null, null, null],
+        params: 3, //deployId string, txid string, args[]string------>["fun", "key", "value"]
+        inputFormatter: [null, null, null],
     });
 
     var ccstop = new Method({

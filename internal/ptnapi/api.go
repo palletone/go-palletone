@@ -47,7 +47,6 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
-	ut "github.com/palletone/go-palletone/core/vmContractPub/util"
 )
 
 const (
@@ -721,24 +720,35 @@ func (s *PublicBlockChainAPI) Ccinstall(ctx context.Context, ccname string, ccpa
 	return hexutil.Bytes(templateId), err
 }
 
-func (s *PublicBlockChainAPI) Ccdeploy(ctx context.Context, templateId string, txid string) (hexutil.Bytes, error) {
+func (s *PublicBlockChainAPI) Ccdeploy(ctx context.Context, templateId string, txid string, param []string) (hexutil.Bytes, error) {
 	tempId, _ := hex.DecodeString(templateId)
 
-	log.Info("Ccdeploy:" + templateId + ":" + txid)
-	fmt.Printf("templateid=%v", tempId)
+	//log.Info("Ccdeploy:" + templateId + ":" + txid)
+	//fmt.Printf("templateid=%v", tempId)
+	//fmt.Printf("-----------------parm len=%d", len(param))
 
-	f := "init"
-	args := ut.ToChaincodeArgs(f, "a", "100", "b", "200")
-
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		fmt.Printf("index[%d], value[%s]\n", i, arg)
+	}
+	//f := "init"
+	//args := ut.ToChaincodeArgs(f, "a", "100", "b", "200")
 	deployId, err := s.b.ContractDeploy(tempId, txid, args, 30*time.Second)
 	return hexutil.Bytes(deployId), err
 }
 
-func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string, fun string, key string, val string) (string, error) {
+func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string, param []string/*fun string, key string, val string*/) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
-	log.Info("-----Ccinvoke:" + deployId + ":" + txid + " fun:" + fun + " key:" + key + " val:" + val)
+	log.Info("-----Ccinvoke:" + deployId + ":" + txid)
 
-	args := ut.ToChaincodeArgs(fun, key, val)
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		fmt.Printf("index[%d], value[%s]\n", i, arg)
+	}
+
+	//args := ut.ToChaincodeArgs(fun, key, val)
 	rsp, err := s.b.ContractInvoke(depId, txid, args, 0)
 
 	log.Info("-----ContractInvoke:" + string(rsp))
@@ -1271,8 +1281,8 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		switch addr.GetType() {
 		case common.PublicKeyHash:
 		case common.ScriptHash:
-		//case *ptnjson.AddressPubKeyHash:
-		//case *ptnjson.AddressScriptHash:
+			//case *ptnjson.AddressPubKeyHash:
+			//case *ptnjson.AddressScriptHash:
 		default:
 			return "", &ptnjson.RPCError{
 				Code:    ptnjson.ErrRPCInvalidAddressOrKey,
