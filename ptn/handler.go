@@ -1010,7 +1010,7 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() []*peer {
 	for _, node := range nodes {
 		peer := pm.peers.Peer(node.ID.TerminalString())
 		if peer == nil {
-			log.Error(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
+			log.Info(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
 		} else {
 			list = append(list, peer)
 		}

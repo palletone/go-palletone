@@ -192,16 +192,16 @@ func TestV1_1(t *testing.T) {
 func TestV1_2(t *testing.T) {
 	t.Parallel()
 	ks := &keyStorePassphrase{"testdata/v1", LightScryptN, LightScryptP}
-	addr := common.HexToAddress("503148333466705a524e37554a32747563336a66526365315550384d44514733324670")
-	file := "testdata/v1/503148333466705a524e37554a32747563336a66526365315550384d44514733324670/503148333466705a524e37554a32747563336a66526365315550384d44514733324670"
+	addr,_ := common.StringToAddress("P1QJNzZhqGoxNL2igkdthNBQLNWdNGTWzQU")
+	file := "testdata/v1/P1QJNzZhqGoxNL2igkdthNBQLNWdNGTWzQU"
 	k, err := ks.GetKey(addr, file, "1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	privHex := hex.EncodeToString(crypto.FromECDSA(k.PrivateKey))
-	expectedHex := "b66dc1d6f78a867abf058414281c9b7ec0b9564fc3cc3d4675aee8c951070841"
-	if privHex != expectedHex {
-		t.Fatal(fmt.Errorf("Unexpected privkey: %v, expected %v", privHex, expectedHex))
+	privWIF := crypto.PrvKeyToWIF(k.PrivateKey)
+	expectedWIF := "KwN8TdhAMeU8b9UrEYTNTVEvDsy9CSyepwRVNEy2Fc9nbGqDZw4J"
+	if privWIF != expectedWIF {
+		t.Fatal(fmt.Errorf("Unexpected privkey: %v, expected %v", privWIF, expectedWIF))
 	}
 }
 

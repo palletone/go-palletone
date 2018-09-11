@@ -488,11 +488,7 @@ The apis for wallet by rpc
 */
 func (ec *Client) WalletTokens(ctx context.Context, addr string) (string, error) {
 	var result string
-	comAddr, err := common.StringToAddress(addr)
-	if err != nil {
-		return result, err
-	}
-	err = ec.c.CallContext(ctx, &result, "ptn_walletTokens", comAddr)
+	err := ec.c.CallContext(ctx, &result, "ptn_walletTokens", addr)
 	return result, err
 }
 
