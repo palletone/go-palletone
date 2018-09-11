@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/fatih/set.v0"
 )
@@ -43,6 +42,7 @@ var (
 const (
 	maxKnownTxs      = 32768 // Maximum transactions hashes to keep in the known list (prevent DOS)
 	maxKnownBlocks   = 1024  // Maximum block hashes to keep in the known list (prevent DOS)
+	maxKnownVsss     = 25    // Maximum Vss hashes to keep in the known list (prevent DOS)
 	handshakeTimeout = 5 * time.Second
 )
 
@@ -75,7 +75,10 @@ type peer struct {
 
 	knownTxs    *set.Set // Set of transaction hashes known to be known by this peer
 	knownBlocks *set.Set // Set of block hashes known to be known by this peer
-	head        common.Hash
+	//knownVsss    *set.Set // Set of vss hashes known to be known by this peer
+	//knownVssResp *set.Set // Set of vssResp hashes known to be known by this peer
+
+	head common.Hash
 	//td   *big.Int
 	index uint64
 }
@@ -343,15 +346,19 @@ func (p *peer) String() string {
 // peerSet represents the collection of active peers currently participating in
 // the PalletOne sub-protocol.
 type peerSet struct {
-	peers  map[string]*peer
-	lock   sync.RWMutex
-	closed bool
+	peers        map[string]*peer
+	knownVss     *set.Set
+	knownVssResp *set.Set
+	lock         sync.RWMutex
+	closed       bool
 }
 
 // newPeerSet creates a new peer set to track the active participants.
 func newPeerSet() *peerSet {
 	return &peerSet{
-		peers: make(map[string]*peer),
+		peers:        make(map[string]*peer),
+		knownVss:     set.New(),
+		knownVssResp: set.New(),
 	}
 }
 
@@ -430,6 +437,44 @@ func (ps *peerSet) PeersWithoutTx(hash common.Hash) []*peer {
 	return list
 }
 
+// PeersWithoutVss retrieves a list of peers that do not have a given transaction
+// in their set of known hashes.
+func (ps *peerSet) PeersWithoutVss(nodeId string) bool {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	return ps.knownVss.Has(nodeId)
+}
+
+// MarkVss marks a block as known for the peer, ensuring that the block will
+// never be propagated to this particular peer.
+func (ps *peerSet) MarkVss(nodeId string) {
+	// If we reached the memory allowance, drop a previously known block hash
+	for ps.knownVss.Size() >= maxKnownVsss {
+		ps.knownVss.Pop()
+	}
+	ps.knownVss.Add(nodeId)
+}
+
+// PeersWithoutVssResp retrieves a list of peers that do not have a given transaction
+// in their set of known hashes.
+func (ps *peerSet) PeersWithoutVssResp(nodeId string) bool {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	return ps.knownVssResp.Has(nodeId)
+}
+
+// MarkVssResp marks a block as known for the peer, ensuring that the block will
+// never be propagated to this particular peer.
+func (ps *peerSet) MarkVssResp(nodeId string) {
+	// If we reached the memory allowance, drop a previously known block hash
+	for ps.knownVssResp.Size() >= maxKnownVsss {
+		ps.knownVssResp.Pop()
+	}
+	ps.knownVssResp.Add(nodeId)
+}
+
 // BestPeer retrieves the known peer with the currently highest total difficulty.
 func (ps *peerSet) BestPeer(assetId modules.IDType16) *peer {
 	ps.lock.RLock()
@@ -456,6 +501,10 @@ func (ps *peerSet) Close() {
 	for _, p := range ps.peers {
 		p.Disconnect(p2p.DiscQuitting)
 	}
+	for id, _ := range ps.peers {
+		delete(ps.peers, id)
+	}
+	ps.peers = nil
 	ps.closed = true
 }
 
@@ -476,11 +525,11 @@ func (p *peer) SendNewProducedUnit(unit *modules.Unit) error {
 }
 
 // @author Albert·Gou
-func (p *peer) SendVSSDeal(deal *mp.VSSDealEvent) error {
+func (p *peer) SendVSSDeal(deal *vssMsg) error {
 	return p2p.Send(p.rw, VSSDealMsg, deal)
 }
 
 // @author Albert·Gou
-func (p *peer) SendVSSResponse(resp *mp.VSSResponseEvent) error {
+func (p *peer) SendVSSResponse(resp *vssMsgResp) error {
 	return p2p.Send(p.rw, VSSResponseMsg, resp)
 }

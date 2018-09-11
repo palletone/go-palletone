@@ -274,12 +274,32 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 }
 
 // @author Albert·Gou
+// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
+func (pm *ProtocolManager) BroadcastVssResp(dstId string, resp *mp.VSSResponseEvent) {
+	if pm.peers.PeersWithoutVssResp(dstId) {
+		return
+	}
+	pm.peers.MarkVssResp(dstId)
+	nodes := pm.dag.GetActiveMediatorNodes()
+	for _, node := range nodes {
+		peer := pm.peers.Peer(node.ID.TerminalString())
+		msg := &vssMsgResp{
+			NodeId: dstId,
+			Resp:   resp,
+		}
+		peer.SendVSSResponse(msg)
+	}
+}
+
+// @author Albert·Gou
 func (self *ProtocolManager) VSSResponseTransmitLoop() {
 	for {
 		select {
 		case event := <-self.vssResponseCh:
 			node := self.dag.GetActiveMediatorNode(event.DstMed)
-			self.TransmitVSSResponse(node, &event)
+			if self.producer.HaveActiveMediator() {
+				self.BroadcastVssResp(node.ID.TerminalString(), &event)
+			}
 
 			// Err() channel will be closed when unsubscribing.
 		case <-self.vssDealSub.Err():
@@ -288,31 +308,21 @@ func (self *ProtocolManager) VSSResponseTransmitLoop() {
 	}
 }
 
-// @author Albert·Gou
-// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
-func (pm *ProtocolManager) TransmitVSSResponse(node *discover.Node, resp *mp.VSSResponseEvent) {
-	peer := pm.peers.Peer(node.ID.TerminalString())
-	if peer == nil {
-		log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
+// BroadcastUnit will either propagate a unit to a subset of it's peers, or
+// will only announce it's availability (depending what's requested).
+func (pm *ProtocolManager) BroadcastVss(dstId string, deal *mp.VSSDealEvent) {
+	if pm.peers.PeersWithoutVss(dstId) {
+		return
 	}
-
-	err := peer.SendVSSResponse(resp)
-	if err != nil {
-		log.Error(err.Error())
-	}
-}
-
-// @author Albert·Gou
-// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
-func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDealEvent) {
-	peer := pm.peers.Peer(node.ID.TerminalString())
-	if peer == nil {
-		log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
-	}
-
-	err := peer.SendVSSDeal(deal)
-	if err != nil {
-		log.Error(err.Error())
+	pm.peers.MarkVss(dstId)
+	nodes := pm.dag.GetActiveMediatorNodes()
+	for _, node := range nodes {
+		peer := pm.peers.Peer(node.ID.TerminalString())
+		msg := &vssMsg{
+			NodeId: dstId,
+			Deal:   deal,
+		}
+		peer.SendVSSDeal(msg)
 	}
 }
 
@@ -322,8 +332,9 @@ func (self *ProtocolManager) VSSDealTransmitLoop() {
 		select {
 		case event := <-self.vssDealCh:
 			node := self.dag.GetActiveMediatorNode(event.DstMed)
-			self.TransmitVSSDeal(node, &event)
-
+			if self.producer.HaveActiveMediator() {
+				self.BroadcastVss(node.ID.TerminalString(), &event)
+			}
 			// Err() channel will be closed when unsubscribing.
 		case <-self.vssDealSub.Err():
 			return
@@ -344,6 +355,8 @@ type producer interface {
 
 	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
 	ToProcessResponse(resp *mp.VSSResponseEvent) error
+
+	HaveActiveMediator() bool
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -800,18 +813,23 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 		// append by Albert·Gou
 	case msg.Code == VSSDealMsg:
-		var deal mp.VSSDealEvent
-		if err := msg.Decode(&deal); err != nil {
+		var vssmsg vssMsg //mp.VSSDealEvent
+		if err := msg.Decode(&vssmsg); err != nil {
 			log.Info("===VSSDealMsg===", "err:", err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		pm.producer.ToProcessDeal(&deal)
+		//TODO vssmark
+		if !pm.peers.PeersWithoutVss(vssmsg.NodeId) {
+			pm.producer.ToProcessDeal(vssmsg.Deal)
+			pm.peers.MarkVss(vssmsg.NodeId)
+			pm.BroadcastVss(vssmsg.NodeId, vssmsg.Deal)
+		}
 
 		// append by Albert·Gou
 	case msg.Code == VSSResponseMsg:
 		var resp mp.VSSResponseEvent
 		if err := msg.Decode(&resp); err != nil {
-			log.Info("===VSSDealMsg===", "err:", err)
+			log.Info("===VSSResponseMsg===", "err:", err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		pm.producer.ToProcessResponse(&resp)
@@ -1000,6 +1018,37 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() []*peer {
 
 	return list
 }
+
+/*
+// @author Albert·Gou
+// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
+func (pm *ProtocolManager) TransmitVSSResponse(node *discover.Node, resp *mp.VSSResponseEvent) {
+	peer := pm.peers.Peer(node.ID.TerminalString())
+	if peer == nil {
+		log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
+	}
+
+	err := peer.SendVSSResponse(resp)
+	if err != nil {
+		log.Error(err.Error())
+	}
+}
+
+// @author Albert·Gou
+func (self *ProtocolManager) VSSResponseTransmitLoop() {
+	for {
+		select {
+		case event := <-self.vssResponseCh:
+			node := self.dag.GetActiveMediatorNode(event.DstMed)
+			self.TransmitVSSResponse(node, &event)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.vssDealSub.Err():
+			return
+		}
+	}
+}
+*/
 
 /*
 func test() {

@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 
 	//"github.com/palletone/go-palletone/common/rlp"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -178,16 +179,14 @@ type blockBody struct {
 // blockBodiesData is the network packet for block content distribution.
 type blockBodiesData []*blockBody
 
-///////////////////test
+// vss boardcast the data content of a single vss message.
+type vssMsg struct {
+	NodeId string
+	Deal   *mp.VSSDealEvent
+}
 
-//type hashOrNumberA struct {
-//	Hash   common.Hash // Block hash from which to retrieve headers (excludes Number)
-//	Number modules.ChainIndex
-//}
-
-//type getUnitHeadersData struct {
-//	Origin  hashOrNumberA // Block from which to retrieve headers
-//	Amount  uint64        // Maximum number of headers to retrieve
-//	Skip    uint64        // Blocks to skip between consecutive headers
-//	Reverse bool          // Query direction (false = rising towards latest, true = falling towards genesis)
-//}
+// vss response boardcast the data content of a single vss message.
+type vssMsgResp struct {
+	NodeId string
+	Resp   *mp.VSSResponseEvent
+}

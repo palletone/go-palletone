@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+
 	//dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
@@ -238,6 +239,19 @@ func (s *PalletOne) Protocols() []p2p.Protocol {
 	return append(s.protocolManager.SubProtocols, s.mediatorPlugin.Protocols()...)
 }
 
+//Start MediatorNetwork
+func (s *PalletOne) startMediatorNetwork(srvr *p2p.Server) error {
+	if !s.mediatorPlugin.HaveActiveMediator() {
+		return nil
+	}
+	peers := s.dag.GetActiveMediatorNodes()
+	for _, peer := range peers {
+		srvr.AddPeer(peer)
+	}
+	log.Debug("PalletOne", "startMediatorNetwork mediators:", len(peers))
+	return nil
+}
+
 // Start implements node.Service, starting all internal goroutines needed by the
 // PalletOne protocol implementation.
 func (s *PalletOne) Start(srvr *p2p.Server) error {
@@ -252,6 +266,9 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 
 	// Start the networking layer and the light server if requested
 	s.protocolManager.Start(maxPeers)
+
+	// Start Mediator networking
+	s.startMediatorNetwork(srvr)
 
 	// append by Albert·Gou
 	s.mediatorPlugin.Start(srvr)
