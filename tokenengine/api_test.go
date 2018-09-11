@@ -12,6 +12,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
+	"github.com/palletone/go-palletone/dag/asset"
+	"fmt"
 )
 
 func TestGetAddressFromScript(t *testing.T) {
@@ -51,14 +53,15 @@ func TestSignAndVerifyATx(t *testing.T) {
 	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
 	txIn := modules.NewTxIn(outPoint, []byte{})
 	payment.AddTxIn(*txIn)
-
+	asset0:=&modules.Asset{}
+	payment.AddTxOut(*modules.NewTxOut(1, lockScript, asset0))
 	payment2 := &modules.PaymentPayload{}
 	utxoTxId2, _ := common.NewHashFromStr("1651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
 	outPoint2 := modules.NewOutPoint(utxoTxId2, 1, 1)
 	txIn2 := modules.NewTxIn(outPoint2, []byte{})
 	payment2.AddTxIn(*txIn2)
-
-	payment.AddTxOut(*modules.NewTxOut(1, lockScript, &modules.Asset{}))
+	asset1:=&modules.Asset{AssetId:asset.NewAsset()}
+	payment2.AddTxOut(*modules.NewTxOut(1, lockScript, asset1))
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment2))
 
@@ -85,7 +88,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
-	err = ScriptValidate(GenerateP2PKHLockScript(pubKeyHash), 100, tx, 0, 0)
+	err = ScriptValidate(lockScript,  tx, 0,0)
 	if err != nil {
 		t.Logf("validate error:%s", err)
 	}
@@ -93,12 +96,9 @@ func TestSignAndVerifyATx(t *testing.T) {
 	//textPayload.Text=[]byte("Bad")
 	//fmt.Printf("%s", tx.TxMessages[2].Payload.(*modules.TextPayload))
 
-	err = ScriptValidate(GenerateP2PKHLockScript(pubKeyHash), 11, tx, 1, 0)
-	if err != nil {
-		t.Logf("validate error:%s", err)
-	}
+	err = ScriptValidate(lockScript, tx, 1,0)
+	assert.Nil(t,err,fmt.Sprintf( "validate error:",err))
 
-	t.Logf("Good! all validated")
 }
 
 
@@ -133,13 +133,14 @@ func TestMultiSign1Step(t *testing.T)  {
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
+	asset0:=&modules.Asset{}
 	payment := &modules.PaymentPayload{}
 	utxoTxId, _ := common.NewHashFromStr("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
 	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
 	txIn := modules.NewTxIn(outPoint, []byte{})
 	payment.AddTxIn(*txIn)
 	p1lockScript := GenerateP2PKHLockScript(crypto.Hash160(pubKey1B))
-	payment.AddTxOut(*modules.NewTxOut(1, p1lockScript, &modules.Asset{}))
+	payment.AddTxOut(*modules.NewTxOut(1, p1lockScript, asset0))
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
 	//scriptCp:=make([]byte,len(lockScript))
 	//copy(scriptCp,lockScript)
@@ -157,13 +158,9 @@ func TestMultiSign1Step(t *testing.T)  {
 	pay1.Input[0].SignatureScript=sign12
 	str,_:= txscript.DisasmString(sign12)
 	t.Logf("Signed script:{%s}",str)
-	err=ScriptValidate(lockScript,123,tx,0,0)
-	//err = ScriptValidate(GenerateP2PKHLockScript(pubKeyHash), 100, tx, 0, 0)
-	if err != nil {
-		t.Logf("validate error:%s", err)
-	}
 
-	t.Logf("Good! all validated")
+	err=ScriptValidate(lockScript,tx,0,0)
+	assert.Nil(t,err,fmt.Sprintf( "validate error:",err))
 }
 
 //构造一个2/3签名的地址和UTXO，然后用其中的2个私钥分两步对其进行签名
@@ -181,7 +178,8 @@ func TestMultiSign2Step(t *testing.T)  {
 	txIn := modules.NewTxIn(outPoint, []byte{})
 	payment.AddTxIn(*txIn)
 	p1lockScript := GenerateP2PKHLockScript(crypto.Hash160(pubKey1B))
-	payment.AddTxOut(*modules.NewTxOut(1, p1lockScript, &modules.Asset{}))
+	asset0:=&modules.Asset{}
+	payment.AddTxOut(*modules.NewTxOut(1, p1lockScript, asset0))
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
 	//scriptCp:=make([]byte,len(lockScript))
 	//copy(scriptCp,lockScript)
@@ -208,11 +206,7 @@ func TestMultiSign2Step(t *testing.T)  {
 	pay1.Input[0].SignatureScript=sign2
 	str,_:= txscript.DisasmString(sign2)
 	t.Logf("Signed script:{%s}",str)
-	err=ScriptValidate(lockScript,123,tx,0,0)
-	//err = ScriptValidate(GenerateP2PKHLockScript(pubKeyHash), 100, tx, 0, 0)
-	if err != nil {
-		t.Logf("validate error:%s", err)
-	}
 
-	t.Logf("Good! all validated")
+	err=ScriptValidate(lockScript,tx,0,0)
+	assert.Nil(t,err,fmt.Sprintf( "validate error:",err))
 }

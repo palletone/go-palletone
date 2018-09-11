@@ -136,7 +136,7 @@ type Engine struct {
 	savedFirstStack [][]byte // stack from first script for bip16 scripts
 	witnessVersion  int
 	witnessProgram  []byte
-	inputAmount     int64
+	inputAmount     uint64
 }
 
 // hasFlag returns whether the script engine instance has the passed flag set.
@@ -802,7 +802,7 @@ func (vm *Engine) SetAltStack(data [][]byte) {
 // transaction, and input index.  The flags modify the behavior of the script
 // engine according to the description provided by each flag.
 func NewEngine(scriptPubKey []byte, tx *modules.Transaction/**wire.MsgTx*/,msgIdx, txIdx int, flags ScriptFlags,
-	sigCache *SigCache, hashCache *TxSigHashes, inputAmount int64) (*Engine, error) {
+	sigCache *SigCache, hashCache *TxSigHashes, inputAmount uint64) (*Engine, error) {
 
 	// The provided transaction input index must refer to a valid input.
 	if txIdx < 0 || msgIdx<0 || msgIdx>=len(tx.TxMessages) {

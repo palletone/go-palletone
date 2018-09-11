@@ -445,7 +445,7 @@ func calcHashOutputs(tx *modules.Transaction) common.Hash {
 // wallet if fed an invalid input amount, the real sighash will differ causing
 // the produced signature to be invalid.
 func calcWitnessSignatureHash(subScript []parsedOpcode, sigHashes *TxSigHashes,
-	hashType SigHashType, tx *modules.Transaction,msgIdx, idx int, amt int64) ([]byte, error) {
+	hashType SigHashType, tx *modules.Transaction,msgIdx, idx int, amt uint64) ([]byte, error) {
 
 	//// As a sanity check, ensure the passed input index for the transaction
 	//// is valid.

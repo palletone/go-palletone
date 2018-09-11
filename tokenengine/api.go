@@ -108,14 +108,15 @@ func GenerateP2SHUnlockScript(signs [][]byte, redeemScript []byte) []byte {
 }
 
 //validate this transaction and input index script can unlock the utxo.
-func ScriptValidate(utxoLockScript []byte, utxoAmount int64, tx *modules.Transaction, msgIdx, inputIndex int) error {
-	vm, err := txscript.NewEngine(utxoLockScript, tx, msgIdx, inputIndex, txscript.StandardVerifyFlags, nil, nil, utxoAmount)
+func ScriptValidate(utxoLockScript []byte, tx *modules.Transaction, msgIdx, inputIndex int) error {
+	vm, err := txscript.NewEngine(utxoLockScript, tx, msgIdx, inputIndex, txscript.StandardVerifyFlags, nil, nil, 0)
 	if err != nil {
 		log.Error("Failed to create script: ", err)
 		return err
 	}
 	return vm.Execute()
 }
+
 
 //对交易中的Payment类型中的某个Input生成解锁脚本
 func SignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, privKey *ecdsa.PrivateKey) ([]byte, error) {
