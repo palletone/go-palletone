@@ -72,7 +72,7 @@ type Backend interface {
 	SendConsensus(ctx context.Context) error
 
 	// wallet api
-	WalletTokens(address common.Address) (map[string]*modules.AccountToken, error)
+	WalletTokens(address string) (map[string]*modules.AccountToken, error)
 	WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 
 	// Get Contract Api
@@ -106,10 +106,10 @@ type Backend interface {
 	GetAddrTransactions(addr string) (modules.Transactions, error)
 
 	//contract control
-	ContractInstall(ccName string, ccPath string, ccVersion string)(TemplateId []byte, err error)
-	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration)(deployId []byte, err error)
+	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)
+	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
 	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
-	ContractStop(deployId []byte, txid string, deleteImage bool)(error)
+	ContractStop(deployId []byte, txid string, deleteImage bool) error
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

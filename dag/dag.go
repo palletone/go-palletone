@@ -363,7 +363,7 @@ func (d *Dag) WalletTokens(addr common.Address) (map[string]*modules.AccountToke
 	return dagcommon.GetAccountTokens(d.Db, addr)
 }
 
-func (d *Dag) WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
+func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
 	newAssetid := modules.IDType16{}
 	newUnitqueid := modules.IDType16{}
 
@@ -386,9 +386,7 @@ func (d *Dag) WalletBalance(address string, assetid []byte, uniqueid []byte, cha
 		ChainId:  chainid,
 	}
 
-	addr := common.Address{}
-	addr.SetString(address)
-	return dagcommon.WalletBalance(d.Db, addr, asset), nil
+	return dagcommon.WalletBalance(d.Db, address, asset), nil
 }
 
 func NewDag(db ptndb.Database) (*Dag, error) {

@@ -245,7 +245,7 @@ func (chain *MemDag) Prune(assetId string, maturedUnitHash common.Hash) error {
 		unitHash := (*forkdata)[i]
 		unit := (*chain.memUnit)[unitHash]
 		if err := dagCommon.SaveUnit(chain.db, *unit, false); err != nil {
-			return fmt.Errorf("Prune error when save unit: ", err.Error())
+			return fmt.Errorf("Prune error when save unit: %s", err.Error())
 		}
 	}
 	// rollback transaction pool
