@@ -118,7 +118,7 @@ var (
 func build23Address() ([]byte,[]byte,string) {
 
 	redeemScript:= GenerateRedeemScript(2,[][]byte{pubKey1B,pubKey2B,pubKey3B})
-	lockScript:=GenerateP2SHLockScript(crypto.Hash160(redeemScript))
+	lockScript := GenerateP2SHLockScript(crypto.Hash160(redeemScript))
 	addressMulti,_:=GetAddressFromScript(lockScript)
 
 	return  lockScript,redeemScript, addressMulti.Str()
@@ -146,7 +146,7 @@ func TestMultiSign1Step(t *testing.T)  {
 	//copy(scriptCp,lockScript)
 	privKeys := map[common.Address]*ecdsa.PrivateKey{
 		address1: prvKey1,
-		address2:prvKey2,
+		address2: prvKey2,
 	}
 
 	sign12,err := MultiSignOnePaymentInput(tx,0,0, lockScript,redeemScript, privKeys,nil)
@@ -154,7 +154,7 @@ func TestMultiSign1Step(t *testing.T)  {
 		t.Logf("Sign error:%s", err)
 	}
 	t.Logf("PrvKey1&2 sign result:%x\n",sign12)
-	 pay1:=tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	pay1:=tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 	pay1.Input[0].SignatureScript=sign12
 	str,_:= txscript.DisasmString(sign12)
 	t.Logf("Signed script:{%s}",str)
@@ -191,12 +191,15 @@ func TestMultiSign2Step(t *testing.T)  {
 		t.Logf("Sign error:%s", err)
 	}
 	t.Logf("PrvKey1 sign result:%x\n",sign1)
+	pay1:=tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	pay1.Input[0].SignatureScript=sign1
+
 	privKeys2 := map[common.Address]*ecdsa.PrivateKey{
 		address2: prvKey2,
 	}
 	//scriptCp2:=make([]byte,len(lockScript))
 	//copy(scriptCp2,lockScript)
-	sign2,err:=MultiSignOnePaymentInput(tx,0,0, lockScript,redeemScript, privKeys2,sign1)
+	sign2,err := MultiSignOnePaymentInput(tx,0,0, lockScript,redeemScript, privKeys2,sign1)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}

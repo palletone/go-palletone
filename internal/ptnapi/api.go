@@ -1412,9 +1412,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	// 	//e := errors.New("Invalid sighash parameter")
 	// 	return nil, err
 	// }
-	//
-	var params byte
-	params = 1
+	
 	inputpoints := make(map[modules.OutPoint][]byte)
 	scripts := make(map[string][]byte)
 	//var params *chaincfg.Params
@@ -1422,6 +1420,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	if cmd.Inputs != nil {
 		cmdInputs = *cmd.Inputs
 	}
+        var    redeem []byte
 	for _, rti := range cmdInputs {
 		//inputHash, err := common.NewHashFromStr(rti.Txid[2:])
 
@@ -1444,11 +1443,14 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			addr, err := ptnjson.NewAddressScriptHash(redeemScript, params)
-			if err != nil {
-				return nil, DeserializationError{err}
-			}
-			scripts[addr.String()] = redeemScript
+                        //lockScript := tokenengine.GenerateP2SHLockScript(crypto.Hash160(redeemScript))
+                  	//addressMulti,err:=tokenengine.GetAddressFromScript(lockScript)
+			//if err != nil {
+			//	return nil, DeserializationError{err}
+			//}
+                        //mutiAddr = addressMulti
+			//scripts[addressMulti.Str()] = redeemScript
+                       redeem = redeemScript
 		}
 		inputpoints[modules.OutPoint{
 			TxHash:       *inputHash,
@@ -1457,95 +1459,97 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		}] = script
 	}
 
-	var keys map[string]*ecdsa.PrivateKey
+	var keys map[common.Address]*ecdsa.PrivateKey
 	if cmd.PrivKeys != nil {
-		keys = make(map[string]*ecdsa.PrivateKey)
+		keys = make(map[common.Address]*ecdsa.PrivateKey)
 
 		if cmd.PrivKeys != nil {
 			for _, key := range *cmd.PrivKeys {
-
-				privKeyBytes, _ := hex.DecodeString(key)
-				privKey, _ := crypto.ToECDSA(privKeyBytes)
-				//fmt.Printf("---1509---------%+v\n"      ,&privKey.PublicKey)
+                                privKey,_ :=crypto.FromWIF(key)
+				//privKeyBytes, _ := hex.DecodeString(key)
+				//privKey, _ := crypto.ToECDSA(privKeyBytes)
 				addr := crypto.PubkeyToAddress(&privKey.PublicKey)
-				keys[addr.String()] = privKey
+				keys[addr] = privKey
 			}
 		}
 	}
-	//TODO: tokenengine.SignTxAllPaymentInput(tx,)
-
-	// for msgIdx, msg := range tx.TxMessages {
-	// 	if msg.App != modules.APP_PAYMENT {
-	// 		continue
-	// 	} else {
-	// 		//var payload modules.PaymentPayload
-	// 		payload, ok := msg.Payload.(*modules.PaymentPayload)
-	// 		if !ok {
-	// 			fmt.Println("Get Payment payload error:")
-	// 		} else {
-	// 			fmt.Println("Payment payload:", payload)
-	// 		}
-	// 		for i, txIn := range payload.Input {
-	// 			prevOutScript, _ := inputpoints[*txIn.PreviousOutPoint]
-	// 			checkscript := make([]byte, len(prevOutScript))
-	// 			copy(checkscript, prevOutScript)
-	// 			//				// Set up our callbacks that we pass to txscript so it can
-	// 			//				// look up the appropriate keys and scripts by address.
-	// 			geekey := txscript.KeyClosure(func(addr common.Address) (*ecdsa.PrivateKey, bool, error) {
-	// 				//					addrStr := addr.EncodeAddress()
-	// 				pkey, ok := keys[addr.String()]
-	// 				if !ok {
-	// 					return nil, false, errors.New("no key for address")
-	// 				}
-	// 				return pkey, true, nil
-	// 			})
-	// 			getScript := txscript.ScriptClosure(func(addr common.Address) ([]byte, error) {
-	// 				// If keys were provided then we can only use the
-	// 				// redeem scripts provided with our inputs, too.
-	// 				addrStr := addr.String()
-	// 				script, ok := scripts[addrStr]
-	// 				if !ok {
-	// 					return nil, errors.New("no script for address")
-	// 				}
-	// 				return script, nil
-	// 			})
-	// 			var signErrors []SignatureError
-	// 			// SigHashSingle inputs can only be signe   d if there's a
-	// 			// corresponding output. However this could be already signed,
-	// 			// so we always verify the output.
-	// 			if (hashType&txscript.SigHashSingle) !=
-	// 				txscript.SigHashSingle || i < len(payload.Output) {
-	// 				script, err := txscript.SignTxOutput(tx, msgIdx, i, prevOutScript, hashType, geekey,
-	// 					getScript, txIn.SignatureScript)
-	// 				// Failure to sign isn't an error, it just means that
-	// 				// the tx isn't complete.
-	// 				if err != nil {
-	// 					signErrors = append(signErrors, SignatureError{
-	// 						InputIndex: uint32(i),
-	// 						Error:      err,
-	// 					})
-	// 					continue
-	// 				}
-	// 				txIn.SignatureScript = script
-	// 			}
-	// 			// Either it was already signed or we just signed it.
-	// 			//				// Find out if it is completely satisfied or still needs more.
-	// 			vm, err := txscript.NewEngine(checkscript, tx, msgIdx, i,
-	// 				txscript.StandardVerifyFlags, nil, nil, 0)
-	// 			if err == nil {
-	// 				err = vm.Execute()
-	// 			}
-	// 			checkscript = nil
-	// 			if err != nil {
-	// 				signErrors = append(signErrors, SignatureError{
-	// 					InputIndex: uint32(i),
-	// 					Error:      err,
-	// 				})
-	// 			}
-	// 		}
-	// 		//tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payload))
-	// 	}
-	// }
+	err = tokenengine.SignTxAllPaymentInput(tx,inputpoints,redeem,keys)
+    if err != nil {
+        fmt.Println("----------ptnapi.go----1476-------")
+		return nil, DeserializationError{err}
+	}
+	/*for msgIdx, msg := range tx.TxMessages {
+	 	if msg.App != modules.APP_PAYMENT {
+	 		continue
+	 	} else {
+	 		//var payload modules.PaymentPayload
+	 		payload, ok := msg.Payload.(*modules.PaymentPayload)
+	 		if !ok {
+				fmt.Println("Get Payment payload error:")
+			} else {
+	 			fmt.Println("Payment payload:", payload)
+	 		}
+	 		for i, txIn := range payload.Input {
+	 			prevOutScript, _ := inputpoints[*txIn.PreviousOutPoint]
+	 			checkscript := make([]byte, len(prevOutScript))
+	 			copy(checkscript, prevOutScript)
+	 			//				// Set up our callbacks that we pass to txscript so it can
+	 			//				// look up the appropriate keys and scripts by address.
+	 			geekey := txscript.KeyClosure(func(addr common.Address) (*ecdsa.PrivateKey, bool, error) {
+	 				//					addrStr := addr.EncodeAddress()
+	 				pkey, ok := keys[addr.String()]
+	 				if !ok {
+	 					return nil, false, errors.New("no key for address")
+	 				}
+	 				return pkey, true, nil
+	 			})
+	 			getScript := txscript.ScriptClosure(func(addr common.Address) ([]byte, error) {
+	 				// If keys were provided then we can only use the
+	 				// redeem scripts provided with our inputs, too.
+	 				addrStr := addr.String()
+	 				script, ok := scripts[addrStr]
+	 				if !ok {
+	 					return nil, errors.New("no script for address")
+	 				}
+	 				return script, nil
+	 			})
+	 			var signErrors []SignatureError
+	 			// SigHashSingle inputs can only be signe   d if there's a
+	 			// corresponding output. However this could be already signed,
+	 			// so we always verify the output.
+	 			if (hashType&txscript.SigHashSingle) !=
+	 				txscript.SigHashSingle || i < len(payload.Output) {
+	 				script, err := txscript.SignTxOutput(tx, msgIdx, i, prevOutScript, hashType, geekey,
+	 					getScript, txIn.SignatureScript)
+	 				// Failure to sign isn't an error, it just means that
+	 				// the tx isn't complete.
+	 				if err != nil {
+	 					signErrors = append(signErrors, SignatureError{
+	 						InputIndex: uint32(i),
+	 						Error:      err,
+	 					})
+	 					continue
+	 				}
+	 				txIn.SignatureScript = script
+	 			}
+	 			// Either it was already signed or we just signed it.
+	 			//				// Find out if it is completely satisfied or still needs more.
+	 			vm, err := txscript.NewEngine(checkscript, tx, msgIdx, i,
+	 				txscript.StandardVerifyFlags, nil, nil, 0)
+	 			if err == nil {
+	 				err = vm.Execute()
+	 			}
+	 			checkscript = nil
+	 			if err != nil {
+	 				signErrors = append(signErrors, SignatureError{
+	 					InputIndex: uint32(i),
+	 					Error:      err,
+	 				})
+	 			}
+	 		}
+	 		//tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payload))
+	 	}
+	 }*/
 	//var buf bytes.Buffer
 	//buf.Grow(tx.SerializeSize())
 	// All returned errors (not OOM, which panics) encounted during
