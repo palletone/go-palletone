@@ -449,6 +449,8 @@ func (ps *peerSet) PeersWithoutVss(nodeId string) bool {
 // MarkVss marks a block as known for the peer, ensuring that the block will
 // never be propagated to this particular peer.
 func (ps *peerSet) MarkVss(nodeId string) {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
 	// If we reached the memory allowance, drop a previously known block hash
 	for ps.knownVss.Size() >= maxKnownVsss {
 		ps.knownVss.Pop()
