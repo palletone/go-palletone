@@ -166,13 +166,13 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 	return nil
 }
 
-func (d *Dag) SaveDag(unit modules.Unit) (int, error) {
+func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
 	// step1. check exists
 	if d.Memdag.Exists(unit.UnitHash) || d.GetUnit(unit.UnitHash) != nil {
 		return 0, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash)
 	}
 	// step2. validate unit
-	unitState := dagcommon.ValidateUnit(d.Db, &unit, false)
+	unitState := dagcommon.ValidateUnit(d.Db, &unit, isGenesis)
 	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
 		return 0, fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
 	}
@@ -493,7 +493,7 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 	preout := modules.OutPoint{TxHash: tx.Hash()}
 	for i, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
-			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				msgIdx := uint32(i)
 				preout.MessageIndex = msgIdx
 				for j := range msg.Output {

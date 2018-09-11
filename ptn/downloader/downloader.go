@@ -175,7 +175,7 @@ type BlockDag interface {
 	GetUnit(common.Hash) *modules.Unit
 	CurrentUnit() *modules.Unit
 	FastSyncCommitHead(common.Hash) error
-	SaveDag(modules.Unit) (int, error)
+	SaveDag(unit modules.Unit, isGenesis bool) (int, error)
 	InsertDag(modules.Units) (int, error)
 
 	//TODO :

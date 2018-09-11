@@ -215,7 +215,9 @@ To get genesis unit info from leveldb
 */
 func GetGenesisUnit(db ptndb.Database, index uint64) (*modules.Unit, error) {
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
-	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
+	//key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
+	encNum := ptndb.EncodeBlockNumber(index)
+	key := append(storage.HEADER_PREFIX, encNum...)
 	if memdb, ok := db.(*ptndb.MemDatabase); ok {
 		hash, err := memdb.Get([]byte(key))
 		if err != nil {
@@ -232,32 +234,24 @@ func GetGenesisUnit(db ptndb.Database, index uint64) (*modules.Unit, error) {
 		} else if len(data) <= 0 {
 			return nil, nil
 		}
-		for k, v := range data {
-			sk := string(k[len(storage.HEADER_PREFIX):])
-			// get index
-			skArr := strings.Split(sk, "_")
-			if len(skArr) != 3 {
-				return nil, fmt.Errorf("split genesis key error")
-			}
-			// get unit hash
-			uHash := common.Hash{}
-			uHash.SetString(skArr[2])
+		for _, v := range data {
 			// get unit header
 			var uHeader modules.Header
 			if err := rlp.DecodeBytes([]byte(v), &uHeader); err != nil {
 				return nil, fmt.Errorf("Get genesis unit header:%s", err.Error())
 			}
-			// get transaction list
-			txs, err := GetUnitTransactions(db, uHash)
-			if err != nil {
-				return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
-			}
 			// generate unit
 			unit := modules.Unit{
 				UnitHeader: &uHeader,
-				UnitHash:   uHash,
-				Txs:        txs,
 			}
+			// compute unit hash
+			unit.UnitHash = unit.Hash()
+			// get transaction list
+			txs, err := GetUnitTransactions(db, unit.UnitHash)
+			if err != nil {
+				return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
+			}
+			unit.Txs = txs
 			unit.UnitSize = unit.Size()
 			return &unit, nil
 		}
@@ -384,32 +378,26 @@ func SaveUnit(db ptndb.Database, unit modules.Unit, isGenesis bool) error {
 			switch msg.App {
 			case modules.APP_PAYMENT:
 				if ok := savePaymentPayload(db, tx.TxHash, msg, uint32(msgIndex)); ok != true {
-					log.Info("Save payment payload error.")
 					return fmt.Errorf("Save payment payload error.")
 				}
 			case modules.APP_CONTRACT_TPL:
 				if ok := saveContractTpl(db, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
-					log.Info("Save contract template error.")
 					return fmt.Errorf("Save contract template error.")
 				}
 			case modules.APP_CONTRACT_DEPLOY:
 				if ok := saveContractInitPayload(db, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
-					log.Info("Save contract init payload error.")
 					return fmt.Errorf("Save contract init payload error.")
 				}
 			case modules.APP_CONTRACT_INVOKE:
 				if ok := saveContractInvokePayload(db, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
-					log.Info("Save contract invode payload error.")
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_CONFIG:
 				if ok := saveConfigPayload(db, tx.TxHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
-					log.Info("Save contract invode payload error.")
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_TEXT:
 			default:
-				log.Info("Message type is not supported now")
 				return fmt.Errorf("Message type is not supported now: %v", msg.App)
 			}
 		}
@@ -621,7 +609,7 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 	// step3. create message
 	msg := &modules.Message{
 		App:     modules.APP_PAYMENT,
-		Payload: payload,
+		Payload: &payload,
 	}
 	// step4. create coinbase
 	var coinbase modules.Transaction

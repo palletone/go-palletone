@@ -54,6 +54,14 @@ const deFaultNode = "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b
 //
 // The returned chain configuration is never nil.
 func SetupGenesisUnit(db ptndb.Database, genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) (*modules.Unit, error) {
+	// TODO check genesis unit existing
+	genesisUnit, err := dagCommon.GetGenesisUnit(db, 0)
+	if err != nil {
+		return nil, err
+	}
+	if genesisUnit != nil {
+		return nil, fmt.Errorf("Genesis unit(%s) has been created.", genesisUnit.UnitHash.String())
+	}
 	unit, err := setupGenesisUnit(db, genesis, ks)
 	if err != nil {
 		return unit, err
