@@ -53,6 +53,14 @@ type TxIn struct {
 	Sequence         uint32
 }
 
+// return message struct
+func NewMessage(app byte, payload interface{}) *Message {
+	m := new(Message)
+	m.App = app
+	m.Payload = payload
+	return m
+}
+
 func NewTransaction(msg []*Message, lock uint32) *Transaction {
 	return newTransaction(msg, lock)
 }
@@ -66,6 +74,7 @@ func newTransaction(msg []*Message, lock uint32) *Transaction {
 	for _, m := range msg {
 		tx.TxMessages = append(tx.TxMessages, m)
 	}
+	tx.TxHash = tx.Hash()
 
 	return tx
 }
@@ -93,10 +102,48 @@ func (t *Transaction) SetHash(hash common.Hash) {
 	}
 }
 
-func NewPaymentPayload() *PaymentPayload {
+func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {
 	return &PaymentPayload{
-		Input:  make([]*Input, 0, defaultTxInOutAlloc),
-		Output: make([]*Output, 0, defaultTxInOutAlloc),
+		Input:    inputs,
+		Output:   outputs,
+		LockTime: defaultTxInOutAlloc,
+	}
+}
+
+func NewContractTplPayload(templateId []byte, name string, path string, version string, memory uint16, bytecode []byte) *ContractTplPayload {
+	return &ContractTplPayload{
+		TemplateId: templateId,
+		Name:       name,
+		Path:       path,
+		Version:    version,
+		Memery:     memory,
+		Bytecode:   bytecode,
+	}
+}
+
+func NewContractDeployPayload(templateid []byte, contractid []byte, name string, args [][]byte, excutiontime time.Duration,
+	jury []common.Address, readset []ContractReadSet, writeset []PayloadMapStruct) *ContractDeployPayload {
+	return &ContractDeployPayload{
+		TemplateId:   templateid,
+		ContractId:   contractid,
+		Name:         name,
+		Args:         args,
+		Excutiontime: excutiontime,
+		Jury:         jury,
+		ReadSet:      readset,
+		WriteSet:     writeset,
+	}
+}
+
+func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime time.Duration,
+	readset []ContractReadSet, writeset []PayloadMapStruct, payload []byte) *ContractInvokePayload {
+	return &ContractInvokePayload{
+		ContractId:   contractid,
+		Args:         args,
+		Excutiontime: excutiontime,
+		ReadSet:      readset,
+		WriteSet:     writeset,
+		Payload:      payload,
 	}
 }
 

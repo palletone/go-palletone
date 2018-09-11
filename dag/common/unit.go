@@ -34,6 +34,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/asset"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -169,7 +170,7 @@ func CreateUnit(db ptndb.Database, mAddr *common.Address, txpool *txspool.TxPool
 		log.Error(err.Error())
 		return nil, err
 	}
-	coinbase, err := createCoinbase(mAddr, fees, &asset, ks, t)
+	coinbase, err := CreateCoinbase(mAddr, fees, &asset, t)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -338,9 +339,11 @@ func SaveUnit(db ptndb.Database, unit modules.Unit, isGenesis bool) error {
 		return fmt.Errorf("Unit is null")
 	}
 	// step1. check unit signature, should be compare to mediator list
-	errno := ValidateUnitSignature(db, unit.UnitHeader, isGenesis)
-	if int(errno) != modules.UNIT_STATE_VALIDATED && int(errno) != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-		return fmt.Errorf("Validate unit signature, errno=%d", errno)
+	if dagconfig.DefaultConfig.WhetherValidateUnitSignature {
+		errno := ValidateUnitSignature(db, unit.UnitHeader, isGenesis)
+		if int(errno) != modules.UNIT_STATE_VALIDATED && int(errno) != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+			return fmt.Errorf("Validate unit signature, errno=%d", errno)
+		}
 	}
 
 	// step2. check unit size
@@ -587,7 +590,7 @@ func QueryUnitByChainIndex(db ptndb.Database, number modules.ChainIndex) *module
 To create coinbase transaction
 */
 
-func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, ks *keystore.KeyStore, t time.Time) (*modules.Transaction, error) {
+func CreateCoinbase(addr *common.Address, income uint64, asset *modules.Asset, t time.Time) (*modules.Transaction, error) {
 	// setp1. create P2PKH script
 	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 	// step. compute total income

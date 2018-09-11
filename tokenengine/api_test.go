@@ -97,7 +97,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	//fmt.Printf("%s", tx.TxMessages[2].Payload.(*modules.TextPayload))
 
 	err = ScriptValidate(lockScript, tx, 1,0)
-	assert.Nil(t,err,fmt.Sprintf( "validate error:",err))
+	assert.Nil(t,err,fmt.Sprintf( "validate error:%s",err))
 
 }
 
@@ -160,7 +160,7 @@ func TestMultiSign1Step(t *testing.T)  {
 	t.Logf("Signed script:{%s}",str)
 
 	err=ScriptValidate(lockScript,tx,0,0)
-	assert.Nil(t,err,fmt.Sprintf( "validate error:",err))
+	assert.Nil(t,err,fmt.Sprintf( "validate error:%s",err))
 }
 
 //构造一个2/3签名的地址和UTXO，然后用其中的2个私钥分两步对其进行签名
@@ -211,5 +211,5 @@ func TestMultiSign2Step(t *testing.T)  {
 	t.Logf("Signed script:{%s}",str)
 
 	err=ScriptValidate(lockScript,tx,0,0)
-	assert.Nil(t,err,fmt.Sprintf( "validate error:",err))
+	assert.Nil(t,err,fmt.Sprintf( "validate error:%s",err))
 }

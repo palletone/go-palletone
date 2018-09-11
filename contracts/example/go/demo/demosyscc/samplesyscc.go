@@ -17,7 +17,7 @@
  * @date 2018
  */
 
-package samplesyscc
+package main
 
 import (
 	"encoding/base64"
@@ -1003,4 +1003,11 @@ func calSigETH(args *[]string, stub *shim.ChaincodeStubInterface) pb.Response {
 	}
 	fmt.Println("calSigETH Chaincode result ==== ===== ", string(result))
 	return shim.Success(result)
+}
+
+func main() {
+	err := shim.Start(new(SampleSysCC))
+	if err != nil {
+		fmt.Printf("Error starting Simple chaincode: %s", err)
+	}
 }

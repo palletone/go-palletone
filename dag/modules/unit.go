@@ -225,13 +225,6 @@ type Message struct {
 	Payload interface{} `json:"payload"` // the true transaction data
 }
 
-// return message struct
-func NewMessage(app byte, payload interface{}) *Message {
-	m := new(Message)
-	m.App = app
-	m.Payload = payload
-	return m
-}
 func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	msg.App = cpyMsg.App
 	msg.Payload = cpyMsg.Payload
