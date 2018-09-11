@@ -3,11 +3,11 @@ package tokenengine
 import (
 	"github.com/palletone/go-palletone/common"
 	//"github.com/btcsuite/btcd/btcec"
-	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
-	"github.com/palletone/go-palletone/dag/modules"
 	"crypto/ecdsa"
 	"errors"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
 )
 
 //Generate a P2PKH lock script, just only need input 20bytes public key hash.
@@ -33,8 +33,8 @@ func GenerateP2SHLockScript(redeemScriptHash []byte) []byte {
 //根据锁定脚本获得对应的地址
 func GetAddressFromScript(lockScript []byte) (common.Address, error) {
 
-	scriptCp:=make([]byte,len(lockScript))
-	copy(scriptCp,lockScript)
+	scriptCp := make([]byte, len(lockScript))
+	copy(scriptCp, lockScript)
 	scriptClass, addrs, _, err := txscript.ExtractPkScriptAddrs(scriptCp)
 	if err != nil {
 		return common.Address{}, err
@@ -129,15 +129,15 @@ func SignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript
 	}
 	return sigScript, nil
 }
-func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, redeemScript []byte, privKeys map[common.Address]*ecdsa.PrivateKey,previousScript []byte) ([]byte, error) {
+func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, redeemScript []byte, privKeys map[common.Address]*ecdsa.PrivateKey, previousScript []byte) ([]byte, error) {
 	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
-		if privKey,ok:=privKeys[a];ok{
-			return privKey,true,nil
+		if privKey, ok := privKeys[a]; ok {
+			return privKey, true, nil
 		}
-		return nil,false,errors.New("PrivateKey not exist")
+		return nil, false, errors.New("PrivateKey not exist")
 	}
-	lookupRedeemScript:=func(a common.Address)  ([]byte, error){
-		return redeemScript,nil
+	lookupRedeemScript := func(a common.Address) ([]byte, error) {
+		return redeemScript, nil
 	}
 	sigScript, err := txscript.SignTxOutput(tx, msgIdx, id, utxoLockScript, txscript.SigHashAll,
 		txscript.KeyClosure(lookupKey), txscript.ScriptClosure(lookupRedeemScript), previousScript)
@@ -146,13 +146,14 @@ func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockS
 	}
 	return sigScript, nil
 }
+
 //Sign a full transaction
 func SignTxAllPaymentInput(tx *modules.Transaction, utxoLockScripts map[modules.OutPoint][]byte, privKeys map[common.Address]*ecdsa.PrivateKey) error {
 	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
-		if privKey,ok:=privKeys[a];ok{
-			return privKey,true,nil
+		if privKey, ok := privKeys[a]; ok {
+			return privKey, true, nil
 		}
-		return nil,false,nil
+		return nil, false, nil
 	}
 	for i, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
@@ -169,4 +170,12 @@ func SignTxAllPaymentInput(tx *modules.Transaction, utxoLockScripts map[modules.
 		}
 	}
 	return nil
+}
+
+//传入一个脚本二进制，解析为可读的文本形式
+func DisasmString(script []byte) (string, error) {
+	return txscript.DisasmString(script)
+}
+func IsUnspendable(script []byte) bool {
+	return txscript.IsUnspendable(script)
 }

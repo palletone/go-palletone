@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-    "crypto/ecdsa"
+	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -44,10 +44,6 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	//"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/tokenengine"
-	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
-	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
-	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
-	//"github.com/palletone/go-palletone/tokenengine/btcd/wire"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
@@ -1217,8 +1213,6 @@ func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) 
 	return tx.Hash(), nil
 }
 
-
-
 const (
 	MaxTxInSequenceNum uint32 = 0xffffffff
 )
@@ -1230,11 +1224,11 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))
 	ast := modules.Asset{
-		AssetId: aid,
+		AssetId:  aid,
 		UniqueId: aid,
 		ChainId:  1,
 	}
-        ast = ast
+	ast = ast
 	if c.LockTime != nil &&
 		(*c.LockTime < 0 || *c.LockTime > int64(MaxTxInSequenceNum)) {
 		return "", &ptnjson.RPCError{
@@ -1256,27 +1250,27 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		pload.AddTxIn(*txInput)
 	}
 	// Add all transaction outputs to the transaction after performing
-//	// some validity checks.
-//	//only support mainnet
-//	var params *chaincfg.Params
+	//	// some validity checks.
+	//	//only support mainnet
+	//	var params *chaincfg.Params
 	for encodedAddr, amount := range c.Amounts {
-//		// Ensure amount is in the valid range for monetary amounts.
+		//		// Ensure amount is in the valid range for monetary amounts.
 		if amount <= 0 || amount > ptnjson.MaxSatoshi {
 			return "", &ptnjson.RPCError{
 				Code:    ptnjson.ErrRPCType,
 				Message: "Invalid amount",
 			}
 		}
-		addr ,err := common.StringToAddress(encodedAddr)
-		if err != nil{
+		addr, err := common.StringToAddress(encodedAddr)
+		if err != nil {
 			return "", &ptnjson.RPCError{
 				Code:    ptnjson.ErrRPCInvalidAddressOrKey,
 				Message: "Invalid address or key",
 			}
 		}
 		switch addr.GetType() {
-		case	common.PublicKeyHash:
-		case	common.ScriptHash:
+		case common.PublicKeyHash:
+		case common.ScriptHash:
 		//case *ptnjson.AddressPubKeyHash:
 		//case *ptnjson.AddressScriptHash:
 		default:
@@ -1286,30 +1280,30 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 			}
 		}
 		// Create a new script which pays to the provided address.
-                pkScript := tokenengine.GenerateP2PKHLockScript(addr[0:20])
+		pkScript := tokenengine.GenerateP2PKHLockScript(addr[0:20])
 		// Convert the amount to satoshi.
 		dao, err := ptnjson.NewAmount(amount)
-                dao = dao
+		dao = dao
 		if err != nil {
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
 		}
 		txOut := modules.NewTxOut(1, pkScript, &modules.Asset{})
-                //fmt.Printf("------1324--------txout is %+v\n",pkScript)
+		//fmt.Printf("------1324--------txout is %+v\n",pkScript)
 		pload.AddTxOut(*txOut)
 	}
-//	// Set the Locktime, if given.
+	//	// Set the Locktime, if given.
 	if c.LockTime != nil {
 		pload.LockTime = uint32(*c.LockTime)
 	}
-//	// Return the serialized and hex-encoded transaction.  Note that this
-//	// is intentionally not directly returning because the first return
-//	// value is a string and it would result in returning an empty string to
-//	// the client instead of nothing (nil) in the case of an error.
-        mtx := &modules.Transaction{
+	//	// Return the serialized and hex-encoded transaction.  Note that this
+	//	// is intentionally not directly returning because the first return
+	//	// value is a string and it would result in returning an empty string to
+	//	// the client instead of nothing (nil) in the case of an error.
+	mtx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
-        mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
+	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
 	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
@@ -1330,7 +1324,6 @@ func decodeHexStr(hexStr string) ([]byte, error) {
 	}
 	return decoded, nil
 }
-
 
 type response struct {
 	result []byte
@@ -1389,32 +1382,32 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-        //fmt.Printf("seri is ---%+v\n",serializedTx)
-        tx := &modules.Transaction{
-                TxMessages: make([]*modules.Message, 0),
-        }
+	//fmt.Printf("seri is ---%+v\n",serializedTx)
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
 		return nil, err
 	}
-	var hashType txscript.SigHashType
-	switch *cmd.Flags {
-	case "ALL":
-		hashType = txscript.SigHashAll
-	case "NONE":
-		hashType = txscript.SigHashNone
-	case "SINGLE":
-		hashType = txscript.SigHashSingle
-	case "ALL|ANYONECANPAY":
-		hashType = txscript.SigHashAll | txscript.SigHashAnyOneCanPay
-	case "NONE|ANYONECANPAY":
-		hashType = txscript.SigHashNone | txscript.SigHashAnyOneCanPay
-	case "SINGLE|ANYONECANPAY":
-		hashType = txscript.SigHashSingle | txscript.SigHashAnyOneCanPay
-	default:
-		//e := errors.New("Invalid sighash parameter")
-		return nil, err
-	}
-//
+	// var hashType txscript.SigHashType
+	// switch *cmd.Flags {
+	// case "ALL":
+	// 	hashType = txscript.SigHashAll
+	// case "NONE":
+	// 	hashType = txscript.SigHashNone
+	// case "SINGLE":
+	// 	hashType = txscript.SigHashSingle
+	// case "ALL|ANYONECANPAY":
+	// 	hashType = txscript.SigHashAll | txscript.SigHashAnyOneCanPay
+	// case "NONE|ANYONECANPAY":
+	// 	hashType = txscript.SigHashNone | txscript.SigHashAnyOneCanPay
+	// case "SINGLE|ANYONECANPAY":
+	// 	hashType = txscript.SigHashSingle | txscript.SigHashAnyOneCanPay
+	// default:
+	// 	//e := errors.New("Invalid sighash parameter")
+	// 	return nil, err
+	// }
+	//
 	var params byte
 	params = 1
 	inputpoints := make(map[modules.OutPoint][]byte)
@@ -1426,8 +1419,8 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	}
 	for _, rti := range cmdInputs {
 		//inputHash, err := common.NewHashFromStr(rti.Txid[2:])
-               
-		inputHash ,err := common.NewHashFromStr(rti.Txid)
+
+		inputHash, err := common.NewHashFromStr(rti.Txid)
 		if err != nil {
 			return nil, DeserializationError{err}
 		}
@@ -1439,9 +1432,9 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		// private keys. In which case, it is used to get the scripts
 		// for signing. If the user did not provide keys then we always
 		// get scripts from the wallet.
-//		// Empty strings are ok for this one and hex.DecodeString will
-//		// DTRT.
-			if rti.RedeemScript != "" {
+		//		// Empty strings are ok for this one and hex.DecodeString will
+		//		// DTRT.
+		if rti.RedeemScript != "" {
 			redeemScript, err := decodeHexStr(rti.RedeemScript)
 			if err != nil {
 				return nil, err
@@ -1468,85 +1461,86 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 
 				privKeyBytes, _ := hex.DecodeString(key)
 				privKey, _ := crypto.ToECDSA(privKeyBytes)
-                                //fmt.Printf("---1509---------%+v\n"      ,&privKey.PublicKey)
-	            addr := crypto.PubkeyToAddress(&privKey.PublicKey)
+				//fmt.Printf("---1509---------%+v\n"      ,&privKey.PublicKey)
+				addr := crypto.PubkeyToAddress(&privKey.PublicKey)
 				keys[addr.String()] = privKey
 			}
 		}
 	}
+	//TODO: tokenengine.SignTxAllPaymentInput(tx,)
 
-	for msgIdx, msg := range tx.TxMessages {
-		if msg.App != modules.APP_PAYMENT {
-			continue
-		} else {
-			//var payload modules.PaymentPayload
-			payload, ok := msg.Payload.(*modules.PaymentPayload)
-			if !ok {
-				fmt.Println("Get Payment payload error:")
-			} else {
-				fmt.Println("Payment payload:", payload)
-			}
-			for i, txIn := range payload.Input {
-				prevOutScript, _ := inputpoints[*txIn.PreviousOutPoint]
-                                checkscript:= make([]byte,len(prevOutScript))
-                                copy(checkscript,prevOutScript)
-//				// Set up our callbacks that we pass to txscript so it can
-//				// look up the appropriate keys and scripts by address.
-				geekey := txscript.KeyClosure(func(addr common.Address) (*ecdsa.PrivateKey, bool,error) {
-//					addrStr := addr.EncodeAddress()
-					pkey, ok := keys[addr.String()]
-					if !ok {
-						return nil, false, errors.New("no key for address")
-					}
-					return pkey,true, nil
-				})
-				getScript := txscript.ScriptClosure(func(addr common.Address) ([]byte, error) {
-					// If keys were provided then we can only use the
-					// redeem scripts provided with our inputs, too.
-					addrStr := addr.String()
-					script, ok := scripts[addrStr]
-					if !ok {
-						return nil, errors.New("no script for address")
-					}
-					return script, nil
-				})
-				var signErrors []SignatureError
-				// SigHashSingle inputs can only be signe   d if there's a
-				// corresponding output. However this could be already signed,
-				// so we always verify the output.
-				if (hashType&txscript.SigHashSingle) !=
-					txscript.SigHashSingle || i < len(payload.Output) {
-					script, err := txscript.SignTxOutput(tx, msgIdx, i, prevOutScript, hashType, geekey,
-						getScript, txIn.SignatureScript)
-					// Failure to sign isn't an error, it just means that
-					// the tx isn't complete.
-					if err != nil {
-						signErrors = append(signErrors, SignatureError{
-							InputIndex: uint32(i),
-							Error:      err,
-						})
-						continue
-					}
-					txIn.SignatureScript = script
-				}
-				// Either it was already signed or we just signed it.
-//				// Find out if it is completely satisfied or still needs more.
-				vm, err := txscript.NewEngine(checkscript, tx, msgIdx, i,
-					txscript.StandardVerifyFlags, nil, nil, 0)
-				if err == nil {
-					err = vm.Execute()
-				}
-                                checkscript = nil
-				if err != nil {
-					signErrors = append(signErrors, SignatureError{
-						InputIndex: uint32(i),
-						Error:      err,
-					})
-				}
-			}
-                        //tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payload))
-		}
-	}
+	// for msgIdx, msg := range tx.TxMessages {
+	// 	if msg.App != modules.APP_PAYMENT {
+	// 		continue
+	// 	} else {
+	// 		//var payload modules.PaymentPayload
+	// 		payload, ok := msg.Payload.(*modules.PaymentPayload)
+	// 		if !ok {
+	// 			fmt.Println("Get Payment payload error:")
+	// 		} else {
+	// 			fmt.Println("Payment payload:", payload)
+	// 		}
+	// 		for i, txIn := range payload.Input {
+	// 			prevOutScript, _ := inputpoints[*txIn.PreviousOutPoint]
+	// 			checkscript := make([]byte, len(prevOutScript))
+	// 			copy(checkscript, prevOutScript)
+	// 			//				// Set up our callbacks that we pass to txscript so it can
+	// 			//				// look up the appropriate keys and scripts by address.
+	// 			geekey := txscript.KeyClosure(func(addr common.Address) (*ecdsa.PrivateKey, bool, error) {
+	// 				//					addrStr := addr.EncodeAddress()
+	// 				pkey, ok := keys[addr.String()]
+	// 				if !ok {
+	// 					return nil, false, errors.New("no key for address")
+	// 				}
+	// 				return pkey, true, nil
+	// 			})
+	// 			getScript := txscript.ScriptClosure(func(addr common.Address) ([]byte, error) {
+	// 				// If keys were provided then we can only use the
+	// 				// redeem scripts provided with our inputs, too.
+	// 				addrStr := addr.String()
+	// 				script, ok := scripts[addrStr]
+	// 				if !ok {
+	// 					return nil, errors.New("no script for address")
+	// 				}
+	// 				return script, nil
+	// 			})
+	// 			var signErrors []SignatureError
+	// 			// SigHashSingle inputs can only be signe   d if there's a
+	// 			// corresponding output. However this could be already signed,
+	// 			// so we always verify the output.
+	// 			if (hashType&txscript.SigHashSingle) !=
+	// 				txscript.SigHashSingle || i < len(payload.Output) {
+	// 				script, err := txscript.SignTxOutput(tx, msgIdx, i, prevOutScript, hashType, geekey,
+	// 					getScript, txIn.SignatureScript)
+	// 				// Failure to sign isn't an error, it just means that
+	// 				// the tx isn't complete.
+	// 				if err != nil {
+	// 					signErrors = append(signErrors, SignatureError{
+	// 						InputIndex: uint32(i),
+	// 						Error:      err,
+	// 					})
+	// 					continue
+	// 				}
+	// 				txIn.SignatureScript = script
+	// 			}
+	// 			// Either it was already signed or we just signed it.
+	// 			//				// Find out if it is completely satisfied or still needs more.
+	// 			vm, err := txscript.NewEngine(checkscript, tx, msgIdx, i,
+	// 				txscript.StandardVerifyFlags, nil, nil, 0)
+	// 			if err == nil {
+	// 				err = vm.Execute()
+	// 			}
+	// 			checkscript = nil
+	// 			if err != nil {
+	// 				signErrors = append(signErrors, SignatureError{
+	// 					InputIndex: uint32(i),
+	// 					Error:      err,
+	// 				})
+	// 			}
+	// 		}
+	// 		//tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payload))
+	// 	}
+	// }
 	//var buf bytes.Buffer
 	//buf.Grow(tx.SerializeSize())
 	// All returned errors (not OOM, which panics) encounted during
