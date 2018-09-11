@@ -11,7 +11,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
-	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
 )
 
 func TestGetAddressFromScript(t *testing.T) {

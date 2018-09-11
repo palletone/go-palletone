@@ -35,7 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/tokenengine/btcd/txscript"
+	"github.com/palletone/go-palletone/tokenengine"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -1270,7 +1270,7 @@ func (view *UtxoViewpoint) fetchUtxosMain(db storage.DatabaseReader, outpoints m
 
 func (view *UtxoViewpoint) addTxOut(outpoint modules.OutPoint, txOut *modules.TxOut, isCoinbase bool) {
 	// Don't add provably unspendable outputs.
-	if txscript.IsUnspendable(txOut.PkScript) {
+	if tokenengine.IsUnspendable(txOut.PkScript) {
 		return
 	}
 	utxo := view.LookupUtxo(outpoint)
