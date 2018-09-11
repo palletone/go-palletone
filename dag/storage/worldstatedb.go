@@ -20,8 +20,11 @@
 
 package storage
 
-import "github.com/palletone/go-palletone/common/ptndb"
-
+import (
+	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/modules"
+)
+//保存了对合约写集、Config、Asset信息
 type WorldStateDatabase struct{
 	db ptndb.Database
 
@@ -32,4 +35,17 @@ func NewWorldStateDatabase (db ptndb.Database) *WorldStateDatabase{
 
 type StateDb interface {
 	GetConfig(name []byte) []byte
+	GetPrefix(prefix []byte) map[string][]byte
+	SaveConfig( confs []modules.PayloadMapStruct, stateVersion *modules.StateVersion) error
+	SaveAssetInfo(assetInfo *modules.AssetInfo) error
+	GetAssetInfo( assetId *modules.Asset) (modules.AssetInfo, error)
+	SaveContractState(id []byte, name string, value interface{}, version modules.StateVersion) error
+	SaveContractTemplate(templateId []byte,bytecode []byte,version string) error
+	SaveContractTemplateState(id []byte, name string, value interface{}, version modules.StateVersion) error
+	DeleteState(key []byte) error
+	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string)
+	GetContractState(id string, field string) (modules.StateVersion, []byte)
+	GetTplAllState( id string) map[modules.ContractReadSet][]byte
+	GetContractAllState(id []byte) map[modules.ContractReadSet][]byte
+	GetTplState( id []byte, field string) (modules.StateVersion, []byte)
 } 

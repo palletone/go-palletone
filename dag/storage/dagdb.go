@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
 
+	"github.com/palletone/go-palletone/common/rlp"
 )
 //对DAG对象的操作，包括：Unit，Tx等
 type DagDatabase struct {
@@ -36,8 +37,8 @@ func NewDagDatabase(db ptndb.Database) *DagDatabase{
 	}
 }
 type DagDb interface {
-	GetGenesisUnit() (*modules.Unit, error)
-	SaveUnit(unit *modules.Unit, isGenesis bool) error
+	//GetGenesisUnit() (*modules.Unit, error)
+	//SaveUnit(unit *modules.Unit, isGenesis bool) error
 	SaveHeader(uHash common.Hash, h *modules.Header) error
 	SaveTransaction( tx *modules.Transaction) error
 	SaveBody(unitHash common.Hash, txsHash []common.Hash) error
@@ -56,10 +57,18 @@ type DagDb interface {
 	GetUnit(hash common.Hash) *modules.Unit
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64)
-}
-func(dagdb *DagDatabase) GetGenesisUnit() (*modules.Unit, error){
-
-}
-func(dagdb *DagDatabase) SaveUnit(unit *modules.Unit, isGenesis bool) error{
-
+	GetPrefix(prefix []byte) map[string][]byte
+	GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error)
+	GetUnitFormIndex(number modules.ChainIndex) *modules.Unit
+	GetHeaderByHeight( index modules.ChainIndex) (*modules.Header, error)
+	GetNumberWithUnitHash( hash common.Hash) (modules.ChainIndex, error)
+	GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
+	GetCanonicalHash(number uint64) (common.Hash, error)
+	GetAddrOutput(addr string) ([]modules.Output, error)
+	GetAddrTransactions(addr string) (modules.Transactions, error)
+	GetHeadHeaderHash() (common.Hash, error)
+	GetHeadUnitHash() (common.Hash, error)
+	GetHeadFastUnitHash() (common.Hash, error)
+	GetTrieSyncProgress() (uint64, error)
+	GetLastIrreversibleUnit(assetID modules.IDType16) *modules.Unit
 }

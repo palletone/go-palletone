@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 var (
@@ -327,7 +328,7 @@ func SaveUnitChainVersion(db ptndb.Database, vsn int) error {
 保存合约属性信息
 To save contract
 */
-func SaveContractState(db ptndb.Database, prefix []byte, id []byte, name string, value interface{}, version modules.StateVersion) bool {
+func SaveContractState(db ptndb.Database, prefix []byte, id []byte, name string, value interface{}, version modules.StateVersion) error {
 	key := fmt.Sprintf("%s%s^*^%s^*^%s",
 		prefix,
 		id,
@@ -335,7 +336,43 @@ func SaveContractState(db ptndb.Database, prefix []byte, id []byte, name string,
 		version.String())
 	if err := Store(db, key, value); err != nil {
 		log.Println("Save contract template", "error", err.Error())
-		return false
+		return err
 	}
-	return true
+	return nil
+}
+func (statedb *WorldStateDatabase)SaveContractTemplate(templateId []byte,bytecode []byte,version string) error{
+	// key:[CONTRACT_TPL][Template id]_bytecode_[template version]
+	key := fmt.Sprintf("%s%s^*^bytecode^*^%s",
+		CONTRACT_TPL,
+		hexutil.Encode(templateId),
+		version)
+
+	if err := statedb.db.Put([]byte (key), bytecode); err != nil {
+		return err
+	}
+	return nil
+}
+func(statedb *WorldStateDatabase) SaveContractTemplateState(id []byte, name string, value interface{}, version modules.StateVersion) error{
+	return SaveContractState(statedb.db,CONTRACT_TPL,id,name,value,version)
+}
+func(statedb *WorldStateDatabase) SaveContractState(id []byte, name string, value interface{}, version modules.StateVersion) error{
+	return SaveContractState(statedb.db,CONTRACT_STATE_PREFIX,id,name,value,version)
+}
+func(statedb *WorldStateDatabase)DeleteState(key []byte) error{
+	return statedb.db.Delete(key)
+}
+
+func(utxodb *UtxoDatabase) SaveUtxoEntity(key []byte,utxo modules.Utxo) error{
+	return StoreBytes(utxodb.db,key,utxo)
+}
+
+func(utxodb *UtxoDatabase) DeleteUtxo(key []byte) error{
+	return utxodb.db.Delete(key)
+}
+func(idxdb *IndexDatabase) SaveIndexValue(key []byte,value interface{}) error{
+	return StoreBytes(idxdb.db,key,value)
+}
+func (statedb *WorldStateDatabase)SaveAssetInfo(assetInfo *modules.AssetInfo) error{
+	key:=assetInfo.Tokey()
+	return StoreBytes(statedb.db,key,assetInfo)
 }

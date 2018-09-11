@@ -79,7 +79,17 @@ func (dagdb *DagDatabase)GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(dagdb.db, prefix)
 
 }
-
+// get prefix: return maps
+func (db *UtxoDatabase)GetPrefix(prefix []byte) map[string][]byte {
+	return getprefix(db.db, prefix)
+}
+// get prefix: return maps
+func (db *WorldStateDatabase)GetPrefix(prefix []byte) map[string][]byte {
+	return getprefix(db.db, prefix)
+}
+func (db *IndexDatabase)GetPrefix(prefix []byte) map[string][]byte {
+	return getprefix(db.db, prefix)
+}
 // get prefix
 func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 	iter := db.NewIteratorWithPrefix(prefix)
@@ -321,12 +331,12 @@ func GetContract(db DatabaseReader, id common.Hash) (*modules.Contract, error) {
 获取合约模板
 To get contract template
 */
-func (dagdb *DagDatabase)GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
+func (statedb *WorldStateDatabase)GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
 	key := fmt.Sprintf("%s%s^*^bytecode",
 		CONTRACT_TPL,
 		hexutil.Encode(templateID[:]),
 	)
-	data :=dagdb. GetPrefix( []byte(key))
+	data :=statedb. GetPrefix( []byte(key))
 	if len(data) == 1 {
 		for k, v := range data {
 			if !version.ParseStringKey(k) {
@@ -339,7 +349,7 @@ func (dagdb *DagDatabase)GetContractTpl(templateID []byte) (version *modules.Sta
 			break
 		}
 	}
-	_, nameByte := GetTplState(dagdb.db, templateID, "ContractName")
+	_, nameByte :=statedb.GetTplState( templateID, "ContractName")
 	if nameByte == nil {
 		return
 	}
@@ -348,7 +358,7 @@ func (dagdb *DagDatabase)GetContractTpl(templateID []byte) (version *modules.Sta
 		return
 	}
 
-	_, pathByte := GetTplState(dagdb.db, templateID, "ContractPath")
+	_, pathByte := statedb.GetTplState( templateID, "ContractPath")
 	if err := rlp.DecodeBytes(pathByte, &path); err != nil {
 		log.Println("GetContractTpl when get path", "error", err.Error())
 		return
@@ -478,9 +488,9 @@ func (dagdb *DagDatabase)GetTrieSyncProgress() (uint64, error) {
 }
 
 //  dbFetchUtxoEntry
-func GetUtxoEntry(db DatabaseReader, key []byte) (*modules.Utxo, error) {
+func (utxodb *UtxoDatabase)GetUtxoEntry( key []byte) (*modules.Utxo, error) {
 	utxo := new(modules.Utxo)
-	data, err := db.Get(key)
+	data, err := utxodb.db.Get(key)
 	if err != nil {
 		return nil, err
 	}
@@ -488,8 +498,10 @@ func GetUtxoEntry(db DatabaseReader, key []byte) (*modules.Utxo, error) {
 	if err := rlp.DecodeBytes(data, &utxo); err != nil {
 		return nil, err
 	}
-
 	return utxo, nil
+}
+func (utxodb *UtxoDatabase)GetUtxoByIndex(indexKey []byte) ([]byte,error){
+	return utxodb.db.Get(indexKey)
 }
 
 // GetAdddrTransactionsHash
@@ -544,10 +556,10 @@ func (dagdb *DagDatabase)GetAddrOutput(addr string) ([]modules.Output, error) {
 获取模板所有属性
 To get contract or contract template all fields and return
 */
-func GetTplAllState(db ptndb.Database, id string) map[modules.ContractReadSet][]byte {
+func (statedb *WorldStateDatabase)GetTplAllState( id string) map[modules.ContractReadSet][]byte {
 	// key format: [PREFIX][ID]_[field]_[version]
 	key := fmt.Sprintf("%s%s^*^", CONTRACT_TPL, id)
-	data := getprefix(db, []byte(key))
+	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) <= 0 {
 		return nil
 	}
@@ -574,10 +586,10 @@ func GetTplAllState(db ptndb.Database, id string) map[modules.ContractReadSet][]
 获取合约（或模板）所有属性
 To get contract or contract template all fields and return
 */
-func GetContractAllState(db ptndb.Database, id []byte) map[modules.ContractReadSet][]byte {
+func (statedb *WorldStateDatabase)GetContractAllState(id []byte) map[modules.ContractReadSet][]byte {
 	// key format: [PREFIX][ID]_[field]_[version]
 	key := fmt.Sprintf("%s%s^*^", CONTRACT_STATE_PREFIX, hexutil.Encode(id))
-	data := getprefix(db, []byte(key))
+	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) <= 0 {
 		return nil
 	}
@@ -604,9 +616,9 @@ func GetContractAllState(db ptndb.Database, id []byte) map[modules.ContractReadS
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */
-func GetTplState(db ptndb.Database, id []byte, field string) (modules.StateVersion, []byte) {
+func(statedb *WorldStateDatabase) GetTplState( id []byte, field string) (modules.StateVersion, []byte) {
 	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, hexutil.Encode(id[:]), field)
-	data := getprefix(db, []byte(key))
+	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) != 1 {
 		return modules.StateVersion{}, nil
 	}
@@ -624,9 +636,9 @@ func GetTplState(db ptndb.Database, id []byte, field string) (modules.StateVersi
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */
-func GetContractState(db ptndb.Database, id string, field string) (modules.StateVersion, []byte) {
+func(statedb *WorldStateDatabase) GetContractState(id string, field string) (modules.StateVersion, []byte) {
 	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_STATE_PREFIX, id, field)
-	data := getprefix(db, []byte(key))
+	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) != 1 {
 		return modules.StateVersion{}, nil
 	}
@@ -639,4 +651,19 @@ func GetContractState(db ptndb.Database, id string, field string) (modules.State
 	}
 	log.Println("11111111")
 	return modules.StateVersion{}, nil
+}
+func (statedb *WorldStateDatabase) GetAssetInfo( assetId *modules.Asset) (modules.AssetInfo, error){
+	key := append(modules.ASSET_INFO_PREFIX, assetId.AssetId.String()...)
+	data, err := statedb.db.Get(key)
+	if err != nil {
+		return modules.AssetInfo{}, err
+	}
+
+	var assetInfo modules.AssetInfo
+	err = rlp.DecodeBytes(data, &assetInfo)
+
+	if err != nil {
+		return assetInfo, err
+	}
+	return assetInfo, nil
 }

@@ -30,5 +30,6 @@ func NewIndexDatabase (db ptndb.Database) *IndexDatabase{
 }
 
 type IndexDb interface {
-	Save()
+	GetPrefix(prefix []byte) map[string][]byte
+	SaveIndexValue(key []byte,value interface{}) error
 } 

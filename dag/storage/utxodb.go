@@ -20,15 +20,22 @@
 
 package storage
 
-import "github.com/palletone/go-palletone/common/ptndb"
+import (
+	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/modules"
+)
 
 type UtxoDatabase struct{
 	db ptndb.Database
-	idxdb IndexDb
+
 }
-func NewUtxoDatabase(db ptndb.Database,idxdb IndexDb) *UtxoDatabase {
-	return &UtxoDatabase{db:db,idxdb:idxdb}
+func NewUtxoDatabase(db ptndb.Database) *UtxoDatabase {
+	return &UtxoDatabase{db:db,}
 }
 type UtxoDb interface {
-
+	GetPrefix(prefix []byte) map[string][]byte
+	GetUtxoByIndex(indexKey []byte) ([]byte,error)
+	GetUtxoEntry( key []byte) (*modules.Utxo, error)
+	SaveUtxoEntity(key []byte,utxo modules.Utxo) error
+	DeleteUtxo(key []byte) error
 }
