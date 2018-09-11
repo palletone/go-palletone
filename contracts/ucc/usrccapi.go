@@ -2,17 +2,25 @@ package ucc
 
 import (
 	"fmt"
-	"time"
-	"golang.org/x/net/context"
-	"github.com/pkg/errors"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
+	"github.com/palletone/go-palletone/contracts/core"
+	"github.com/palletone/go-palletone/contracts/platforms"
+	"github.com/palletone/go-palletone/contracts/rwset"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
-	"github.com/palletone/go-palletone/contracts/platforms"
+	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/contracts/rwset"
-	"github.com/palletone/go-palletone/contracts/core"
+	"github.com/palletone/go-palletone/core/vmContractPub/util"
+	"github.com/pkg/errors"
+	"golang.org/x/net/context"
+	"time"
+	"os"
+	"io/ioutil"
+	"io"
+	"compress/gzip"
+	"archive/tar"
+	"github.com/palletone/go-palletone/dag/storage"
+	comdb "github.com/palletone/go-palletone/contracts/comm"
+	"path"
 )
 
 type UserChaincode struct {
@@ -184,40 +192,238 @@ func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err
 	return data, nil
 }
 
-func RecoverChainCodeFromDb(chainID string, templateId []byte) ( *UserChaincode, error) {
+func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, error) {
 	//从数据库读取
 	//解压到指定路径下
 
-	//testFile := "/home/glh/go/src/chaincode/abc.tar.gz"
-	//zipName := "test.tar.gz"
-	//dir := "/home/glh/go/src/chaincode/"
-	////version, zipdata, name, path := storage.GetContractTpl(templateId)
-	//
-	////read
-	//fi, err := os.Open(testFile)
-	//if err != nil {
-	//	logger.Errorf("open file[%s] fail:%s", testFile, err)
-	//	return nil, errors.New("open file fail")
+	//usrCC := &UserChaincode{
 	//}
-	//defer fi.Close()
-	//filedata, err := ioutil.ReadAll(fi)
-	//if err != nil {
-	//	logger.Errorf("read file[%s] fail:%s", testFile, err)
-	//	return nil, errors.New("read file fail")
-	//}
-	//
-	////write
-	//err = ioutil.WriteFile(dir + zipName, filedata, 0644)
-	//if err != nil {
-	//	logger.Errorf("write file[%s] fail:%s", testFile, err)
-	//	return nil, errors.New("write file fail")
-	//}
+	//return usrCC, nil
 
-	usrCC := &UserChaincode{
+	if 1 == 0 {
+		dag, err := comdb.GetCcDagHand()
+		if err != nil {
+			return nil, err
+		}
+		_, data, name, path := storage.GetContractTpl(dag.Db, templateId)
+		if data == nil || name == "" || path == "" {
+			return nil, errors.New("et contract template err")
+		}
+
+		targzFile := path + "/" + name + ".tar.gz"
+		decompressFile := path + "/" + name
+
+		logger.Infof("write file contract template info [%s]", targzFile)
+		err = ioutil.WriteFile(targzFile, data, 0644)
+		if err != nil {
+			logger.Errorf("write file[%s] fail:%s", targzFile, err)
+			return nil, errors.New("write file fail")
+		}
+
+		if err = UnTarGz(targzFile, decompressFile); err != nil {
+			return nil, err
+		}
+
+		usrCC := &UserChaincode{
+			Name: name,
+			//Version:ver,
+			Path: path,
+		}
+		return usrCC, nil
+	} else {
+		testFile := "/home/glh/go/src/chaincode/abc.tar.gz"
+		zipName := "test.tar.gz"
+		dir := "/home/glh/go/src/chaincode/"
+		//version, zipdata, name, path := storage.GetContractTpl(templateId)
+		//read
+		fi, err := os.Open(testFile)
+		if err != nil {
+			logger.Errorf("open file[%s] fail:%s", testFile, err)
+			return nil, errors.New("open file fail")
+		}
+		defer fi.Close()
+		filedata, err := ioutil.ReadAll(fi)
+		if err != nil {
+			logger.Errorf("read file[%s] fail:%s", testFile, err)
+			return nil, errors.New("read file fail")
+		}
+
+		//write
+		err = ioutil.WriteFile(dir+zipName, filedata, 0644)
+		if err != nil {
+			logger.Errorf("write file[%s] fail:%s", testFile, err)
+			return nil, errors.New("write file fail")
+		}
+
+		if err = UnTarGz(dir+zipName, "./"); err != nil {
+			logger.Errorf("DeCompress[%s] fail:%s", testFile, err)
+			return nil, err
+		}
+
+		usrCC := &UserChaincode{
+		}
+		return usrCC, nil
 	}
-
-	return usrCC, nil
 }
 
+//+++++++++++++
+func UnTarGz(srcFilePath string, destDirPath string) error {
+	fmt.Println("UnTarGzing " + srcFilePath + "...")
+	// Create destination directory
+	os.Mkdir(destDirPath, os.ModePerm)
 
+	fr, err := os.Open(srcFilePath)
+	if err != nil {
+		fmt.Printf("os.Open  err =%s", err)
+		return err
+	}
 
+	defer fr.Close()
+
+	// Gzip reader
+	gr, err := gzip.NewReader(fr)
+	if err != nil {
+		fmt.Printf("gzip.NewReader  err =%s", err)
+		return err
+	}
+
+	// Tar reader
+	tr := tar.NewReader(gr)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			// End of tar archive
+			break
+		}
+		//handleError(err)
+		//fmt.Println("UnTarGzing file..." + hdr.Name)
+		// Check if it is diretory or file
+		if hdr.Typeflag != tar.TypeDir {
+			// Get files from archive
+			// Create diretory before create file
+			os.MkdirAll(destDirPath+"/"+path.Dir(hdr.Name), os.ModePerm)
+			// Write data to file
+			fw, err := os.Create(destDirPath + "/" + hdr.Name)
+			if err != nil {
+				fmt.Printf("os.Createdoc  err =%s", err)
+				return err
+			}
+			_, err = io.Copy(fw, tr)
+			if err != nil {
+				fmt.Printf("os.Createdoc  err =%s", err)
+				return err
+			}
+		}
+	}
+	fmt.Println("Well done!")
+	return nil
+}
+
+/*
+func TarGz(srcDirPath string, destFilePath string) {
+	fw, err := os.Create(destFilePath)
+	handleError(err)
+	defer fw.Close()
+
+	// Gzip writer
+	gw := gzip.NewWriter(fw)
+	defer gw.Close()
+
+	// Tar writer
+	tw := tar.NewWriter(gw)
+	defer tw.Close()
+
+	// Check if it's a file or a directory
+	f, err := os.Open(srcDirPath)
+	handleError(err)
+	fi, err := f.Stat()
+	handleError(err)
+	if fi.IsDir() {
+		// handle source directory
+		fmt.Println("Cerating tar.gz from directory...")
+		tarGzDir(srcDirPath, path.Base(srcDirPath), tw)
+	} else {
+		// handle file directly
+		fmt.Println("Cerating tar.gz from " + fi.Name() + "...")
+		tarGzFile(srcDirPath, fi.Name(), tw, fi)
+	}
+	fmt.Println("Well done!")
+}
+
+// Deal with directories
+// if find files, handle them with tarGzFile
+// Every recurrence append the base path to the recPath
+// recPath is the path inside of tar.gz
+func tarGzDir(srcDirPath string, recPath string, tw *tar.Writer) {
+	// Open source diretory
+	dir, err := os.Open(srcDirPath)
+	handleError(err)
+	defer dir.Close()
+
+	// Get file info slice
+	fis, err := dir.Readdir(0)
+	handleError(err)
+	for _, fi := range fis {
+		// Append path
+		curPath := srcDirPath + "/" + fi.Name()
+		// Check it is directory or file
+		if fi.IsDir() {
+			// Directory
+			// (Directory won't add unitl all subfiles are added)
+			fmt.Printf("Adding path...%s\\n", curPath)
+			tarGzDir(curPath, recPath+"/"+fi.Name(), tw)
+		} else {
+			// File
+			fmt.Printf("Adding file...%s\\n", curPath)
+		}
+
+		tarGzFile(curPath, recPath+"/"+fi.Name(), tw, fi)
+	}
+}
+
+// Deal with files
+func tarGzFile(srcFile string, recPath string, tw *tar.Writer, fi os.FileInfo) {
+	if fi.IsDir() {
+		// Create tar header
+		hdr := new(tar.Header)
+		// if last character of header name is '/' it also can be directory
+		// but if you don't set Typeflag, error will occur when you untargz
+		hdr.Name = recPath + "/"
+		hdr.Typeflag = tar.TypeDir
+		hdr.Size = 0
+		//hdr.Mode = 0755 | c_ISDIR
+		hdr.Mode = int64(fi.Mode())
+		hdr.ModTime = fi.ModTime()
+
+		// Write hander
+		err := tw.WriteHeader(hdr)
+		handleError(err)
+	} else {
+		// File reader
+		fr, err := os.Open(srcFile)
+		handleError(err)
+		defer fr.Close()
+
+		// Create tar header
+		hdr := new(tar.Header)
+		hdr.Name = recPath
+		hdr.Size = fi.Size()
+		hdr.Mode = int64(fi.Mode())
+		hdr.ModTime = fi.ModTime()
+
+		// Write hander
+		err = tw.WriteHeader(hdr)
+		if err != nil {
+			fmt.Printf("gzip.NewReader  err =%s", err)
+			return
+		}
+
+		// Write file data
+		_, err = io.Copy(tw, fr)
+		if err != nil {
+			fmt.Printf("gzip.NewReader  err =%s", err)
+			return
+		}
+	}
+}
+*/

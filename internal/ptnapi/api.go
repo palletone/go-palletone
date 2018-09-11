@@ -1488,7 +1488,8 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			}
 			for i, txIn := range payload.Input {
 				prevOutScript, _ := inputpoints[*txIn.PreviousOutPoint]
-
+                                checkscript:= make([]byte,len(prevOutScript))
+                                copy(checkscript,prevOutScript)
 //				// Set up our callbacks that we pass to txscript so it can
 //				// look up the appropriate keys and scripts by address.
 				geekey := txscript.KeyClosure(func(addr common.Address) (*ecdsa.PrivateKey, bool,error) {
@@ -1530,11 +1531,12 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 				}
 				// Either it was already signed or we just signed it.
 //				// Find out if it is completely satisfied or still needs more.
-				vm, err := txscript.NewEngine(prevOutScript, tx, msgIdx, i,
+				vm, err := txscript.NewEngine(checkscript, tx, msgIdx, i,
 					txscript.StandardVerifyFlags, nil, nil, 0)
 				if err == nil {
 					err = vm.Execute()
 				}
+                                checkscript = nil
 				if err != nil {
 					signErrors = append(signErrors, SignatureError{
 						InputIndex: uint32(i),

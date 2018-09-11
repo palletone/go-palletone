@@ -48,7 +48,7 @@ var (
 //By default, system asset id=0,UniqueId=0,ChainId=1
 //默认的PTN资产，则AssetId=0，UniqueId=0,ChainId是当前链的ID
 type Asset struct {
-	AssetId  IDType16 `json:"asset_id"` // 资产类别
+	AssetId  IDType16 `json:"asset_id"`  // 资产类别
 	UniqueId IDType16 `json:"unique_id"` // every token has its unique id
 	ChainId  uint64   `json:"chain_id"`  // main chain id or sub-chain id
 }
@@ -157,7 +157,6 @@ func (utxoIndex *UtxoIndex) AccountKey() []byte {
 	key := fmt.Sprintf("%s%s",
 		UTXO_INDEX_PREFIX,
 		utxoIndex.AccountAddr.String())
-	//fmt.Println("Account prefix:", key)
 	return []byte(key)
 }
 
@@ -174,10 +173,10 @@ func (utxoIndex *UtxoIndex) QueryFields(key []byte) error {
 
 	utxoIndex.AccountAddr.SetString(sAddr)
 	if err := utxoIndex.Asset.SetString(sAsset); err != nil {
-		return err
+		return fmt.Errorf("Query UtxoIndex Asset Fields error: %s", err.Error())
 	}
 	if err := utxoIndex.OutPoint.SetString(sOutpoint); err != nil {
-		return err
+		return fmt.Errorf("Query UtxoIndex OutPoint Fields error: %s", err.Error())
 	}
 	return nil
 }

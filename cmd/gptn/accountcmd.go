@@ -17,24 +17,23 @@
 package main
 
 import (
-	"fmt"
-	"strings"
 	"bytes"
-    "encoding/hex"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"gopkg.in/urfave/cli.v1"
-    "encoding/json"
+	"strings"
 
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/internal/ptnapi"
+	"github.com/palletone/go-palletone/ptnjson"
 	// "github.com/palletone/go-palletone/tokenengine/btcd/chaincfg"
 	// "github.com/palletone/go-palletone/tokenengine/btcd/txscript"
 	//"github.com/palletone/go-palletone/tokenengine/btcd/wire"
@@ -463,8 +462,11 @@ func accountDumpKey(ctx *cli.Context) error {
 	account, _ := utils.MakeAddress(ks, addr)
 	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
 	prvKey, _ := ks.DumpKey(account, pwd)
-	res := base58.Encode(prvKey)
-	fmt.Printf("Your private key is : {%s}", res)
+	wif := crypto.ToWIF(prvKey)
+	fmt.Printf("Your private key hex is : {%x}, WIF is {%s}\n", prvKey, wif)
+	pK,_:= crypto.ToECDSA(prvKey)
+	pubBytes:=crypto.CompressPubkey(	&pK.PublicKey)
+	fmt.Printf("Compressed public key hex is {%x}",pubBytes)
 	return nil
 }
 
@@ -573,13 +575,13 @@ func accountCreateTx(ctx *cli.Context) error {
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
 	tx, err := ptnapi.CreateRawTransaction(arg)
 	if err != nil {
-	 	utils.Fatalf("Verfiy error:%s", err)
-	 }
-	 if tx != "" {
-	 	fmt.Println("Create transcation success")
-	 } else {
-	 	utils.Fatalf("Invalid create action")
-	 }
+		utils.Fatalf("Verfiy error:%s", err)
+	}
+	if tx != "" {
+		fmt.Println("Create transcation success")
+	} else {
+		utils.Fatalf("Invalid create action")
+	}
 	return nil
 }
 
@@ -612,8 +614,8 @@ func accountSignTx(ctx *cli.Context) error {
 	if "" == signTransactionParams.TransactionHex {
 		return nil
 	}
-//
-//	//decode Transaction hexString to bytes
+	//
+	//	//decode Transaction hexString to bytes
 	rawTXBytes, err := hex.DecodeString(signTransactionParams.TransactionHex)
 	if err != nil {
 		return nil
@@ -623,10 +625,10 @@ func accountSignTx(ctx *cli.Context) error {
 	if err := rlp.DecodeBytes(rawTXBytes, tx); err != nil {
 		return nil
 	}
-//
-//	//chainnet
-//
-//	//get private keys for sign
+	//
+	//	//chainnet
+	//
+	//	//get private keys for sign
 	var keys []string
 	for _, key := range signTransactionParams.Privkeys {
 		key = strings.TrimSpace(key) //Trim whitespace
@@ -645,17 +647,17 @@ func accountSignTx(ctx *cli.Context) error {
 		if "" == signTransactionParams.RedeemHex {
 			break
 		}
-//		//decode redeem's hexString to bytes
+		//		//decode redeem's hexString to bytes
 		redeem, err := hex.DecodeString(signTransactionParams.RedeemHex)
 		if err != nil {
 			break
 		}
-//		//get multisig payScript
+		//		//get multisig payScript
 		//scriptAddr, err := btcutil.NewAddressScriptHash(redeem, realNet)
 		//scriptPkScript, err := txscript.PayToAddrScript(scriptAddr)
 		h := crypto.Hash160(redeem)
 		scriptPkScript := tokenengine.GenerateP2SHLockScript(h)
-//		//multisig transaction need redeem for sign
+		//		//multisig transaction need redeem for sign
 		for _, mtx := range tx.TxMessages {
 			payload := mtx.Payload
 			payment, ok := payload.(modules.PaymentPayload)
@@ -686,25 +688,25 @@ func accountSignTx(ctx *cli.Context) error {
 		txHex = hex.EncodeToString(mtxbt)
 		fmt.Println(txHex)
 	}
-//
-//	// All returned errors (not OOM, which panics) encounted during
-//	// bytes.Buffer writes are unexpected.
-    send_args := ptnjson.NewSignRawTransactionCmd(txHex, &rawInputs, &keys, nil)
-    signtxout, err := ptnapi.SignRawTransaction(send_args)
-     if signtxout == nil {
-     	utils.Fatalf("Invalid signature")
-     }
-     signtx := signtxout.(ptnjson.SignRawTransactionResult)
-    if err != nil {
-     	utils.Fatalf("signtx error:%s", err)
-     }
-    if signtx.Complete == true {
-    	fmt.Println("Signature success")
-    	fmt.Println(signtx.Hex)
-    } else {
-    	utils.Fatalf("Invalid signature")
-    }
-    return nil
+	//
+	//	// All returned errors (not OOM, which panics) encounted during
+	//	// bytes.Buffer writes are unexpected.
+	send_args := ptnjson.NewSignRawTransactionCmd(txHex, &rawInputs, &keys, nil)
+	signtxout, err := ptnapi.SignRawTransaction(send_args)
+	if signtxout == nil {
+		utils.Fatalf("Invalid signature")
+	}
+	signtx := signtxout.(ptnjson.SignRawTransactionResult)
+	if err != nil {
+		utils.Fatalf("signtx error:%s", err)
+	}
+	if signtx.Complete == true {
+		fmt.Println("Signature success")
+		fmt.Println(signtx.Hex)
+	} else {
+		utils.Fatalf("Invalid signature")
+	}
+	return nil
 }
 func accountImport(ctx *cli.Context) error {
 	keyfile := ctx.Args().First()
