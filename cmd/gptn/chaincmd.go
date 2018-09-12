@@ -132,7 +132,8 @@ func initGenesis(ctx *cli.Context) error {
 	dagconfig.DbPath = filepath
 
 	ks := node.GetKeyStore()
-	account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
+	//account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
+	account, _ := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
 
 	unit, err := gen.SetupGenesisUnit(Dbconn, genesis, ks, account)
 	if err != nil {
