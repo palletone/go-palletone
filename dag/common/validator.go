@@ -34,19 +34,20 @@ import (
 )
 
 type Validate struct {
-	dagdb storage.DagDb
-	utxodb storage.UtxoDb
+	dagdb   storage.DagDb
+	utxodb  storage.UtxoDb
 	statedb storage.StateDb
 }
-func NewValidate(dagdb storage.DagDb,utxodb storage.UtxoDb,statedb storage.StateDb) *Validate{
-	return &Validate{dagdb:dagdb,utxodb:utxodb,statedb:statedb}
+
+func NewValidate(dagdb storage.DagDb, utxodb storage.UtxoDb, statedb storage.StateDb) *Validate {
+	return &Validate{dagdb: dagdb, utxodb: utxodb, statedb: statedb}
 }
 
 type Validator interface {
-	ValidateTransactions( txs *modules.Transactions, isGenesis bool) (map[common.Hash]modules.TxValidationCode, bool, error)
-	ValidateUnit( unit *modules.Unit, isGenesis bool) byte
+	ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common.Hash]modules.TxValidationCode, bool, error)
+	ValidateUnit(unit *modules.Unit, isGenesis bool) byte
 	ValidateTx(tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode
-	ValidateUnitSignature( h *modules.Header, isGenesis bool) byte
+	ValidateUnitSignature(h *modules.Header, isGenesis bool) byte
 }
 
 /**
@@ -54,7 +55,7 @@ type Validator interface {
 check all transactions in one unit
 return all transactions' fee
 */
-func (validate *Validate)ValidateTransactions( txs *modules.Transactions, isGenesis bool) (map[common.Hash]modules.TxValidationCode, bool, error) {
+func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common.Hash]modules.TxValidationCode, bool, error) {
 	if txs == nil || txs.Len() < 1 {
 		return nil, false, fmt.Errorf("Transactions should not be empty.")
 	}
@@ -73,7 +74,7 @@ func (validate *Validate)ValidateTransactions( txs *modules.Transactions, isGene
 			continue
 		}
 		// validate common property
-		txCode :=validate. ValidateTx( tx, &worldState)
+		txCode := validate.ValidateTx(tx, &worldState)
 		if txCode != modules.TxValidationCode_VALID {
 			log.Info("ValidateTx", "txhash", tx.TxHash, "error validate code", txCode)
 			isSuccess = false
@@ -118,11 +119,11 @@ func (validate *Validate)ValidateTransactions( txs *modules.Transactions, isGene
 验证某个交易
 To validate one transaction
 */
-func (validate *Validate)ValidateTx(tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
-	if len(tx.TxMessages)==0{
+func (validate *Validate) ValidateTx(tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+	if len(tx.TxMessages) == 0 {
 		return modules.TxValidationCode_INVALID_MSG
 	}
-	if(tx.TxMessages[0].App!= modules.APP_PAYMENT){
+	if tx.TxMessages[0].App != modules.APP_PAYMENT {
 		return modules.TxValidationCode_INVALID_MSG
 	}
 	for _, msg := range tx.TxMessages {
@@ -147,26 +148,29 @@ func (validate *Validate)ValidateTx(tx *modules.Transaction, worldTmpState *map[
 		// validate every type payload
 		switch msg.App {
 		case modules.APP_PAYMENT:
-			payment:=msg.Payload.(*modules.PaymentPayload)
-			validateCode :=validate. validatePaymentPayload( payment)
+			payment, ok := msg.Payload.(*modules.PaymentPayload)
+			if !ok {
+				return modules.TxValidationCode_INVALID_PAYMMENTLOAd
+			}
+			validateCode := validate.validatePaymentPayload(payment)
 			if validateCode != modules.TxValidationCode_VALID {
 				return validateCode
 			}
 		case modules.APP_CONTRACT_TPL:
 			payload, _ := msg.Payload.(*modules.ContractTplPayload)
-			validateCode :=validate. validateContractTplPayload( payload)
+			validateCode := validate.validateContractTplPayload(payload)
 			if validateCode != modules.TxValidationCode_VALID {
 				return validateCode
 			}
 		case modules.APP_CONTRACT_DEPLOY:
 			payload, _ := msg.Payload.(*modules.ContractDeployPayload)
-			validateCode :=validate. validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet, worldTmpState)
+			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet, worldTmpState)
 			if validateCode != modules.TxValidationCode_VALID {
 				return validateCode
 			}
 		case modules.APP_CONTRACT_INVOKE:
 			payload, _ := msg.Payload.(*modules.ContractInvokePayload)
-			validateCode :=validate. validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet, worldTmpState)
+			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet, worldTmpState)
 			if validateCode != modules.TxValidationCode_VALID {
 				return validateCode
 			}
@@ -185,7 +189,7 @@ func (validate *Validate)ValidateTx(tx *modules.Transaction, worldTmpState *map[
 check messaage 'app' consistent with payload type
 */
 func validateMessageType(app byte, payload interface{}) bool {
-	switch payload.(type) {
+	switch t := payload.(type) {
 	case *modules.PaymentPayload:
 		if app == modules.APP_PAYMENT {
 			return true
@@ -211,6 +215,7 @@ func validateMessageType(app byte, payload interface{}) bool {
 			return true
 		}
 	default:
+		log.Info("The payload of message type is not expect. ", "payload_type", t)
 		return false
 	}
 	return false
@@ -220,7 +225,7 @@ func validateMessageType(app byte, payload interface{}) bool {
 验证单元的签名，需要比对见证人列表
 To validate unit's signature, and mediators' signature
 */
-func (validate *Validate)ValidateUnitSignature( h *modules.Header, isGenesis bool) byte {
+func (validate *Validate) ValidateUnitSignature(h *modules.Header, isGenesis bool) byte {
 	if h.Authors == nil || len(h.Authors.Address) <= 0 {
 		return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
@@ -257,13 +262,13 @@ func (validate *Validate)ValidateUnitSignature( h *modules.Header, isGenesis boo
 		return modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED
 	}
 	// get mediators
-	data := validate.statedb.GetConfig( []byte("MediatorCandidates"))
+	data := validate.statedb.GetConfig([]byte("MediatorCandidates"))
 	var mList []core.MediatorInfo
 	if err := rlp.DecodeBytes(data, &mList); err != nil {
 		log.Debug("Check unit signature when get mediators list", "error", err.Error())
 		return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
 	}
-	bNum := validate.statedb.GetConfig( []byte("ActiveMediators"))
+	bNum := validate.statedb.GetConfig([]byte("ActiveMediators"))
 	var mNum uint16
 	if err := rlp.DecodeBytes(bNum, &mNum); err != nil {
 		log.Debug("Check unit signature", "error", err.Error())
@@ -306,7 +311,7 @@ func validateTxSignature(tx *modules.Transaction) bool {
 对unit中某个交易的读写集进行验证
 To validate read set and write set of one transaction in unit'
 */
-func (validate *Validate)validateContractState(contractID []byte, readSet *[]modules.ContractReadSet, writeSet *[]modules.PayloadMapStruct, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+func (validate *Validate) validateContractState(contractID []byte, readSet *[]modules.ContractReadSet, writeSet *[]modules.PayloadMapStruct, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
 	// check read set, if read field in worldTmpState then the transaction is invalid
 	contractState, cOk := (*worldTmpState)[hexutil.Encode(contractID[:])]
 	if cOk && readSet != nil {
@@ -331,33 +336,35 @@ func (validate *Validate)validateContractState(contractID []byte, readSet *[]mod
 验证合约模板交易
 To validate contract template payload
 */
-func (validate *Validate)validateContractTplPayload(contractTplPayload *modules.ContractTplPayload) modules.TxValidationCode {
+func (validate *Validate) validateContractTplPayload(contractTplPayload *modules.ContractTplPayload) modules.TxValidationCode {
 	// to check template whether existing or not
-	stateVersion, bytecode, name, path := validate.statedb .GetContractTpl(contractTplPayload.TemplateId)
+	stateVersion, bytecode, name, path := validate.statedb.GetContractTpl(contractTplPayload.TemplateId)
 	if stateVersion == nil && bytecode == nil && name == "" && path == "" {
 		return modules.TxValidationCode_VALID
 	}
 	return modules.TxValidationCode_INVALID_CONTRACT_TEMPLATE
 }
+
 //验证一个Payment
 //Validate a payment message
 //1. Amount correct
 //2. Asset must be equal
 //3. Unlock correct
-func (validate *Validate)validatePaymentPayload(payment *modules.PaymentPayload)modules.TxValidationCode {
+func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload) modules.TxValidationCode {
 
 	return modules.TxValidationCode_VALID
 }
+
 /**
 验证Unit
 Validate unit
 */
-func (validate *Validate)ValidateUnit( unit *modules.Unit, isGenesis bool) byte {
+func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte {
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		return modules.UNIT_STATE_EMPTY
 	}
 	// step1. check unit signature, should be compare to mediator list
-	sigState :=validate.ValidateUnitSignature( unit.UnitHeader, isGenesis)
+	sigState := validate.ValidateUnitSignature(unit.UnitHeader, isGenesis)
 	if sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED && sigState != modules.UNIT_STATE_VALIDATED {
 		return sigState
 	}
@@ -376,7 +383,7 @@ func (validate *Validate)ValidateUnit( unit *modules.Unit, isGenesis bool) byte 
 	}
 
 	// step4. check transactions in unit
-	_, isSuccess, err :=validate. ValidateTransactions( &unit.Txs, isGenesis)
+	_, isSuccess, err := validate.ValidateTransactions(&unit.Txs, isGenesis)
 	if isSuccess != true {
 		msg := fmt.Sprintf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 		log.Debug(msg)

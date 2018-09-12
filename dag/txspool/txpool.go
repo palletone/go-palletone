@@ -560,7 +560,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	hash := tx.Tx.Hash()
 
 	if pool.all[hash] != nil {
-		log.Trace("Discarding already known transaction", "hash", hash)
+		log.Trace("Discarding already known transaction", "hash", hash, "old_hash", pool.all[hash].Tx.TxHash)
 		return false, fmt.Errorf("known transaction: %x", hash)
 	}
 	// If the transaction fails basic validation, discard it
@@ -654,7 +654,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 			pool.locals.add(*from)
 		}
 	}
-	pool.journalTx(tx)
+	// pool.journalTx(tx)
 
 	log.Trace("Pooled new future transaction", "hash", hash, "repalce", replace, "err", err)
 	return replace, nil
