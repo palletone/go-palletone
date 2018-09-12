@@ -534,6 +534,7 @@ func (p *peer) SendVSSDeal(deal *mp.VSSDealEvent) error {
 }
 
 // @author Albert·Gou
-func (p *peer) SendVSSResponse(resp *vssMsgResp) error {
+//func (p *peer) SendVSSResponse(resp *vssRespMsg) error {
+func (p *peer) SendVSSResponse(resp *mp.VSSResponseEvent) error {
 	return p2p.Send(p.rw, VSSResponseMsg, resp)
 }

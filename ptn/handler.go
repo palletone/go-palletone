@@ -274,29 +274,33 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 }
 
 // @author Albert·Gou
-// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
-func (pm *ProtocolManager) BroadcastVssResp(dstId string, resp *mp.VSSResponseEvent) {
+//func (pm *ProtocolManager) BroadcastVssResp(dstId string, resp *mp.VSSResponseEvent) {
+func (pm *ProtocolManager) BroadcastVssResp(node *discover.Node, resp *mp.VSSResponseEvent) {
+	dstId := node.ID.TerminalString()
+	peer := pm.peers.Peer(dstId)
+	if peer == nil {
+		log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
+	}
+
 	if pm.peers.PeersWithoutVssResp(dstId) {
 		return
 	}
 	pm.peers.MarkVssResp(dstId)
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
-		msg := &vssMsgResp{
-			NodeId: dstId,
-			Resp:   resp,
+		// comment by Albert·Gou
+		//msg := &vssRespMsg{
+		//	NodeId: dstId,
+		//	Resp:   resp,
+		//}
+		//
+		//err := peer.SendVSSResponse(msg)
+
+		err := peer.SendVSSResponse(resp)
+		if err != nil {
+			log.Error(err.Error())
 		}
-		peer.SendVSSResponse(msg)
 	}
-	//	nodes := pm.dag.GetActiveMediatorNodes()
-	//	for _, node := range nodes {
-	//		peer := pm.peers.Peer(node.ID.TerminalString())
-	//		msg := &vssMsgResp{
-	//			NodeId: dstId,
-	//			Resp:   resp,
-	//		}
-	//		peer.SendVSSResponse(msg)
-	//	}
 }
 
 // @author Albert·Gou
@@ -305,7 +309,7 @@ func (self *ProtocolManager) vssResponseBroadcastLoop() {
 		select {
 		case event := <-self.vssResponseCh:
 			node := self.dag.GetActiveMediatorNode(event.DstMed)
-			self.BroadcastVssResp(node.ID.TerminalString(), &event)
+			self.BroadcastVssResp(node, &event)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-self.vssResponseSub.Err():
@@ -435,8 +439,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	)
 	//TODO Devin
 	var unitRep common2.IUnitRepository
-	unitRep=common2.NewUnitRepository4Db(pm.dag.Db)
-	genesis, err := unitRep.GetGenesisUnit( 0)
+	unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
+	genesis, err := unitRep.GetGenesisUnit(0)
 	if err != nil {
 		log.Info("GetGenesisUnit error", "err", err)
 		return err

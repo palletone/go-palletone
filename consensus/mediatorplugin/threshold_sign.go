@@ -107,6 +107,7 @@ func (mp *MediatorPlugin) processVSSDeal(deal *VSSDealEvent) {
 
 // BroadcastVSSResponse, broadcast response to every other participant
 func (mp *MediatorPlugin) BroadcastVSSResponse(srcMed common.Address, resp *dkg.Response) {
+	// todo
 	ams := mp.getDag().GetActiveMediators()
 
 	for _, dstMed := range ams {
@@ -145,6 +146,7 @@ func (mp *MediatorPlugin) processResponseLoop() {
 }
 
 func (mp *MediatorPlugin) processVSSResponse(resp *VSSResponseEvent) {
+	//todo
 	dstMed := resp.DstMed
 	//if dstMed == resp.SrcMed {
 	//	return //ignore the message from myself
