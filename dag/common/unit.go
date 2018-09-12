@@ -292,7 +292,7 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 获取创世单元的高度
 To get genesis unit height
 */
-func (unitRep *UnitRepository)GenesisHeight() modules.ChainIndex {
+func (unitRep *UnitRepository) GenesisHeight() modules.ChainIndex {
 	unit, err := unitRep.GetGenesisUnit(0)
 	if unit == nil || err != nil {
 		return modules.ChainIndex{}

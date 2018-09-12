@@ -18,6 +18,7 @@
 package common
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -30,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"bytes"
 )
 
 type Validate struct {
@@ -109,7 +109,7 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		}
 		income := uint64(fee) + ComputeInterest()
 		if coinIn.Output[0].Value >= income {
-			return nil, false, fmt.Errorf("Coinbase outputs error1.%d",income)
+			return nil, false, fmt.Errorf("Coinbase outputs error1.%d", income)
 		}
 	}
 	return txFlags, isSuccess, nil
@@ -121,7 +121,6 @@ To validate one transaction
 */
 func (validate *Validate) ValidateTx(tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
 	if len(tx.TxMessages) == 0 {
-		fmt.Println("-----------ValidateTx 1")
 		return modules.TxValidationCode_INVALID_MSG
 	}
 	if tx.TxMessages[0].App != modules.APP_PAYMENT {
@@ -129,9 +128,7 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, worldTmpState *map
 		//return modules.TxValidationCode_INVALID_MSG
 	}
 	// validate transaction hash
-	a := bytes.Equal([]byte(tx.TxHash.String()),[]byte(tx.Hash().String()))
-	if !a  { //tx.TxHash.Bytes(), tx.Hash().Bytes()
-		fmt.Printf("+++tx.TxHash.String()=%s, tx.Hash()=%s,\n", tx.TxHash.String(), tx.Hash().String())
+	if !bytes.Equal(tx.TxHash.Bytes(), tx.Hash().Bytes()) {
 		return modules.TxValidationCode_NIL_TXACTION
 	}
 	for _, msg := range tx.TxMessages {
@@ -141,7 +138,7 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, worldTmpState *map
 		}
 		// validate tx size
 		if tx.Size().Float64() > float64(modules.TX_MAXSIZE) {
-			log.Debug("Tx size is to big.\n")
+			log.Debug("Tx size is to big.")
 			return modules.TxValidationCode_NOT_COMPARE_SIZE
 		}
 
@@ -355,7 +352,45 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 //2. Asset must be equal
 //3. Unlock correct
 func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload) modules.TxValidationCode {
+	// check locktime
+	if payment.LockTime <= uint32(10) || payment.LockTime >= uint32(10000) {
+		return modules.TxValidationCode_INVALID_PAYMMENT_LOCKTIME
+	}
+	if len(payment.Input) <= 0 {
+		return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
+	}
+	for _, in := range payment.Input {
+		// checkout input
+		if in.PreviousOutPoint == nil {
+			return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
+		}
+		if utxo, err := validate.utxodb.GetUtxoEntry(in.PreviousOutPoint.ToKey()); utxo == nil || err != nil {
+			return modules.TxValidationCode_INVALID_OUTPOINT
+		}
+		// check SignatureScript
 
+	}
+
+	if len(payment.Output) <= 0 {
+		return modules.TxValidationCode_INVALID_PAYMMENT_OUTPUT
+	}
+
+	for i, out := range payment.Output {
+		// checkout output
+		if i < 1 {
+			continue //			asset = out.Asset
+		} else {
+			if out.Asset == nil {
+				return modules.TxValidationCode_INVALID_ASSET
+			}
+			if !out.Asset.IsSimilar(payment.Output[i-1].Asset) {
+				return modules.TxValidationCode_INVALID_ASSET
+			}
+		}
+		if out.Value <= 0 || out.Value >= 1000000000 {
+			return modules.TxValidationCode_INVALID_AMOUNT
+		}
+	}
 	return modules.TxValidationCode_VALID
 }
 

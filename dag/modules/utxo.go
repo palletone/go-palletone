@@ -90,6 +90,16 @@ func (asset *Asset) SetBytes(data []byte) error {
 	return nil
 }
 
+func (asset *Asset) IsSimilar(similar *Asset) bool {
+	if !strings.EqualFold(asset.AssetId.String(), similar.AssetId.String()) {
+		return false
+	}
+	if !strings.EqualFold(asset.UniqueId.String(), similar.UniqueId.String()) {
+		return false
+	}
+	return true
+}
+
 type Utxo struct {
 	Amount   uint64 `json:"amount"`  // 数量
 	Asset    *Asset `json:"Asset"`   // 资产类别
