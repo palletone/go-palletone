@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/fatih/set.v0"
 )
@@ -527,7 +528,8 @@ func (p *peer) SendNewProducedUnit(unit *modules.Unit) error {
 }
 
 // @author Albert·Gou
-func (p *peer) SendVSSDeal(deal *vssMsg) error {
+//func (p *peer) SendVSSDeal(deal *vssMsg) error {
+func (p *peer) SendVSSDeal(deal *mp.VSSDealEvent) error {
 	return p2p.Send(p.rw, VSSDealMsg, deal)
 }
 

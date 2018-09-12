@@ -267,7 +267,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	go pm.vssDealTransmitLoop()
 
 	// append by Albert·Gou
-	// send  VSS deal
+	// send  VSS Response
 	pm.vssResponseCh = make(chan mp.VSSResponseEvent)
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
 	go pm.vssResponseBroadcastLoop()
@@ -308,36 +308,37 @@ func (self *ProtocolManager) vssResponseBroadcastLoop() {
 			self.BroadcastVssResp(node.ID.TerminalString(), &event)
 
 			// Err() channel will be closed when unsubscribing.
-		case <-self.vssDealSub.Err():
+		case <-self.vssResponseSub.Err():
 			return
 		}
 	}
 }
 
-// BroadcastUnit will either propagate a unit to a subset of it's peers, or
-// will only announce it's availability (depending what's requested).
-func (pm *ProtocolManager) BroadcastVss(dstId string, deal *mp.VSSDealEvent) {
-	if pm.peers.PeersWithoutVss(dstId) {
-		return
+// @author Albert·Gou
+func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDealEvent) {
+	dstId := node.ID.TerminalString()
+	peer := pm.peers.Peer(dstId)
+	if peer == nil {
+		log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
 	}
-	pm.peers.MarkVss(dstId)
-	peers := pm.GetActiveMediatorPeers()
-	for _, peer := range peers {
-		msg := &vssMsg{
-			NodeId: dstId,
-			Deal:   deal,
-		}
-		peer.SendVSSDeal(msg)
+
+	// comment by Albert·Gou
+	// // append by wangjiyou
+	//if pm.peers.PeersWithoutVss(dstId) {
+	//	return
+	//}
+	//pm.peers.MarkVss(dstId)
+
+	//msg := &vssMsg{
+	//	NodeId: dstId,
+	//	Deal:   deal,
+	//}
+	//err := peer.SendVSSDeal(msg)
+
+	err := peer.SendVSSDeal(deal)
+	if err != nil {
+		log.Error(err.Error())
 	}
-	//	nodes := pm.dag.GetActiveMediatorNodes()
-	//	for _, node := range nodes {
-	//		peer := pm.peers.Peer(node.ID.TerminalString())
-	//		msg := &vssMsg{
-	//			NodeId: dstId,
-	//			Deal:   deal,
-	//		}
-	//		peer.SendVSSDeal(msg)
-	//	}
 }
 
 // @author Albert·Gou
@@ -346,7 +347,7 @@ func (self *ProtocolManager) vssDealTransmitLoop() {
 		select {
 		case event := <-self.vssDealCh:
 			node := self.dag.GetActiveMediatorNode(event.DstMed)
-			self.BroadcastVss(node.ID.TerminalString(), &event)
+			self.TransmitVSSDeal(node, &event)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-self.vssDealSub.Err():
@@ -826,17 +827,24 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 		// append by Albert·Gou
 	case msg.Code == VSSDealMsg:
-		var vssmsg vssMsg //mp.VSSDealEvent
-		if err := msg.Decode(&vssmsg); err != nil {
+		// comment by Albert·Gou
+		//var vssmsg vssMsg
+		//if err := msg.Decode(&vssmsg); err != nil {
+
+		var deal mp.VSSDealEvent
+		if err := msg.Decode(&deal); err != nil {
 			log.Info("===VSSDealMsg===", "err:", err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		//TODO vssmark
-		if !pm.peers.PeersWithoutVss(vssmsg.NodeId) {
-			pm.producer.ToProcessDeal(vssmsg.Deal)
-			pm.peers.MarkVss(vssmsg.NodeId)
-			pm.BroadcastVss(vssmsg.NodeId, vssmsg.Deal)
-		}
+		pm.producer.ToProcessDeal(&deal)
+
+		// comment by Albert·Gou
+		////TODO vssmark
+		//if !pm.peers.PeersWithoutVss(vssmsg.NodeId) {
+		//	pm.producer.ToProcessDeal(vssmsg.Deal)
+		//	pm.peers.MarkVss(vssmsg.NodeId)
+		//	pm.BroadcastVss(vssmsg.NodeId, vssmsg.Deal)
+		//}
 
 		// append by Albert·Gou
 	case msg.Code == VSSResponseMsg:
@@ -1031,37 +1039,6 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() []*peer {
 
 	return list
 }
-
-/*
-// @author Albert·Gou
-// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
-func (pm *ProtocolManager) TransmitVSSResponse(node *discover.Node, resp *mp.VSSResponseEvent) {
-	peer := pm.peers.Peer(node.ID.TerminalString())
-	if peer == nil {
-		log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
-	}
-
-	err := peer.SendVSSResponse(resp)
-	if err != nil {
-		log.Error(err.Error())
-	}
-}
-
-// @author Albert·Gou
-func (self *ProtocolManager) VSSResponseTransmitLoop() {
-	for {
-		select {
-		case event := <-self.vssResponseCh:
-			node := self.dag.GetActiveMediatorNode(event.DstMed)
-			self.TransmitVSSResponse(node, &event)
-
-			// Err() channel will be closed when unsubscribing.
-		case <-self.vssDealSub.Err():
-			return
-		}
-	}
-}
-*/
 
 /*
 func test() {
