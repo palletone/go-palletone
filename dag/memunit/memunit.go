@@ -129,7 +129,7 @@ func (forkIndex *ForkIndex) Lenth() int {
 type MemDag struct {
 	//db                ptndb.Database
 	dagdb storage.DagDb
-	unitRep dagCommon.UnitOperator
+	unitRep dagCommon.IUnitRepository
 	lastValidatedUnit map[string]common.Hash // the key is asset id
 	forkIndex         map[string]*ForkIndex  // the key is asset id
 	mainChain         map[string]int         // the key is asset id
@@ -137,14 +137,15 @@ type MemDag struct {
 	memSize           uint8
 }
 
-func InitMemDag(db storage.DagDb) *MemDag {
+func NewMemDag(db storage.DagDb,unitRep dagCommon.IUnitRepository) *MemDag {
 	memdag := MemDag{
 		lastValidatedUnit: nil,
 		forkIndex:         map[string]*ForkIndex{},
 		memUnit:           InitMemUnit(),
 		memSize:           dagconfig.DefaultConfig.MemoryUnitSize,
+		dagdb:db,
+		unitRep:unitRep,
 	}
-	memdag.dagdb = db
 	return &memdag
 }
 

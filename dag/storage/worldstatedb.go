@@ -23,6 +23,7 @@ package storage
 import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common"
 )
 //保存了对合约写集、Config、Asset信息
 type WorldStateDatabase struct{
@@ -48,4 +49,5 @@ type StateDb interface {
 	GetTplAllState( id string) map[modules.ContractReadSet][]byte
 	GetContractAllState(id []byte) map[modules.ContractReadSet][]byte
 	GetTplState( id []byte, field string) (modules.StateVersion, []byte)
+	GetContract( id common.Hash) (*modules.Contract, error)
 } 

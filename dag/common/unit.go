@@ -42,10 +42,12 @@ import (
 	"time"
 )
 
-type UnitOperator interface {
+type IUnitRepository interface {
+	GetGenesisUnit( index uint64) (*modules.Unit, error)
 	SaveUnit( unit modules.Unit, isGenesis bool) error
+	CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 }
-type UnitOperate struct{
+type UnitRepository struct{
 	dagdb storage.DagDb
 	idxdb storage.IndexDb
 	uxtodb storage.UtxoDb
@@ -53,12 +55,20 @@ type UnitOperate struct{
 	validate Validator
 	utxoRepository IUtxoRepository
 }
-func NewUnitOperate(dagdb storage.DagDb,idxdb storage.IndexDb,utxodb storage.UtxoDb,statedb storage.StateDb) *UnitOperate {
+func NewUnitRepository(dagdb storage.DagDb,idxdb storage.IndexDb,utxodb storage.UtxoDb,statedb storage.StateDb) *UnitRepository {
 	val:=NewValidate(dagdb,utxodb,statedb)
 	utxoRep:=NewUtxoRepository(utxodb,idxdb,statedb)
-	return &UnitOperate{dagdb:dagdb,idxdb: idxdb, uxtodb: utxodb, statedb: statedb,validate:val,utxoRepository:utxoRep}
+	return &UnitRepository{dagdb:dagdb,idxdb: idxdb, uxtodb: utxodb, statedb: statedb,validate:val,utxoRepository:utxoRep}
 }
-
+func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
+	dagdb:=storage.NewDagDatabase(db)
+	utxodb:=storage.NewUtxoDatabase(db)
+	statedb:=storage.NewWorldStateDatabase(db)
+	idxdb:=storage.NewIndexDatabase(db)
+	val:=NewValidate(dagdb,utxodb,statedb)
+	utxoRep:=NewUtxoRepository(utxodb,idxdb,statedb)
+	return &UnitRepository{dagdb:dagdb,idxdb: idxdb, uxtodb: utxodb, statedb: statedb,validate:val,utxoRepository:utxoRep}
+}
 func RHashStr(x interface{}) string {
 	x_byte, err := json.Marshal(x)
 	if err != nil {
@@ -157,7 +167,7 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (unitOp *UnitOperate)CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
+func (unitOp *UnitRepository)CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
 	if txpool == nil || mAddr == nil || ks == nil {
 		return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
 	}
@@ -229,7 +239,7 @@ func (unitOp *UnitOperate)CreateUnit(mAddr *common.Address, txpool *txspool.TxPo
 从leveldb中查询GenesisUnit信息
 To get genesis unit info from leveldb
 */
-func (unitOp *UnitOperate)GetGenesisUnit( index uint64) (*modules.Unit, error) {
+func (unitOp *UnitRepository)GetGenesisUnit( index uint64) (*modules.Unit, error) {
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 	//key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
 	encNum := ptndb.EncodeBlockNumber(index)
@@ -287,7 +297,7 @@ To get genesis unit height
 //	return unit.UnitHeader.Number
 //}
 
-func (unitOp *UnitOperate)GetUnitTransactions(unitHash common.Hash) (modules.Transactions, error) {
+func (unitOp *UnitRepository)GetUnitTransactions(unitHash common.Hash) (modules.Transactions, error) {
 	txs := modules.Transactions{}
 	// get body data: transaction list.
 	// if getbody return transactions list, then don't range txHashlist.
@@ -347,7 +357,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 保存单元数据，如果单元的结构基本相同
 save genesis unit data
 */
-func (unitOp *UnitOperate)SaveUnit( unit modules.Unit, isGenesis bool) error {
+func (unitOp *UnitRepository)SaveUnit( unit modules.Unit, isGenesis bool) error {
 
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Error("Unit is null")
@@ -447,7 +457,7 @@ func (unitOp *UnitOperate)SaveUnit( unit modules.Unit, isGenesis bool) error {
 保存PaymentPayload
 save PaymentPayload data
 */
-func (unitOp *UnitOperate)savePaymentPayload( txHash common.Hash, msg *modules.Message, msgIndex uint32) bool {
+func (unitOp *UnitRepository)savePaymentPayload( txHash common.Hash, msg *modules.Message, msgIndex uint32) bool {
 	// if inputs is none then it is just a normal coinbase transaction
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
@@ -468,7 +478,7 @@ func (unitOp *UnitOperate)savePaymentPayload( txHash common.Hash, msg *modules.M
 保存配置交易
 save config payload
 */
-func (unitOp *UnitOperate)saveConfigPayload( txHash common.Hash, msg *modules.Message, height modules.ChainIndex, txIndex uint32) bool {
+func (unitOp *UnitRepository)saveConfigPayload( txHash common.Hash, msg *modules.Message, height modules.ChainIndex, txIndex uint32) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ConfigPayload)
@@ -491,7 +501,7 @@ func (unitOp *UnitOperate)saveConfigPayload( txHash common.Hash, msg *modules.Me
 保存合约调用状态
 To save contract invoke state
 */
-func (unitOp *UnitOperate)saveContractInvokePayload( height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+func (unitOp *UnitRepository)saveContractInvokePayload( height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractInvokePayload)
@@ -517,7 +527,7 @@ func (unitOp *UnitOperate)saveContractInvokePayload( height modules.ChainIndex, 
 保存合约初始化状态
 To save contract init state
 */
-func (unitOp *UnitOperate)saveContractInitPayload( height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+func (unitOp *UnitRepository)saveContractInitPayload( height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractDeployPayload)
@@ -552,7 +562,7 @@ func (unitOp *UnitOperate)saveContractInitPayload( height modules.ChainIndex, tx
 保存合约模板代码
 To save contract template code
 */
-func (unitOp *UnitOperate)saveContractTpl( height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+func (unitOp *UnitRepository)saveContractTpl( height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractTplPayload)
@@ -634,7 +644,7 @@ func createCoinbase(addr *common.Address, income uint64, asset *modules.Asset, k
 删除合约状态
 To delete contract state
 */
-func (unitOp *UnitOperate)deleteContractState( contractID []byte, field string) {
+func (unitOp *UnitRepository)deleteContractState( contractID []byte, field string) {
 	oldKeyPrefix := fmt.Sprintf("%s%s^*^%s",
 		storage.CONTRACT_STATE_PREFIX,
 		hexutil.Encode(contractID[:]),
@@ -672,7 +682,7 @@ To Sign transaction
 保存contract state
 To save contract state
 */
-func (unitOp *UnitOperate)updateState( contractID []byte, key string, version modules.StateVersion, val interface{}) bool {
+func (unitOp *UnitRepository)updateState( contractID []byte, key string, version modules.StateVersion, val interface{}) bool {
 	delState, isDel := val.(modules.DelContractState)
 	if isDel {
 		if delState.IsDelete == false {

@@ -46,6 +46,9 @@ type IUtxoRepository interface {
 	GetUxto(txin modules.Input) modules.Utxo
 	UpdateUtxo( txHash common.Hash, msg *modules.Message, msgIndex uint32) error
 	ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error)
+	GetUxtoSetByInputs( txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64)
+	GetAccountTokens( addr common.Address) (map[string]*modules.AccountToken, error)
+	WalletBalance( addr common.Address, asset modules.Asset) uint64
 }
 
 

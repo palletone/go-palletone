@@ -309,11 +309,11 @@ func (dagdb *DagDatabase)GetContractNoReader(db ptndb.Database, id common.Hash) 
 }
 
 // GetContract can get a Contract by the contract hash
-func GetContract(db DatabaseReader, id common.Hash) (*modules.Contract, error) {
+func (statedb *WorldStateDatabase)GetContract( id common.Hash) (*modules.Contract, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
-	con_bytes, err := db.Get(append(CONTRACT_PTEFIX, id[:]...))
+	con_bytes, err :=statedb.db.Get(append(CONTRACT_PTEFIX, id[:]...))
 	if err != nil {
 		log.Println("err:", err)
 		return nil, err
