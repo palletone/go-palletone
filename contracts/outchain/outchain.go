@@ -79,7 +79,7 @@ var DefaultConfig = Config{
 
 const (
 	modName    = "OutChain"
-	configPath = "F:/work/src/github.com/palletone/go-palletone/contracts/outchain/outchain.toml"
+	configPath = "./outchain.toml"
 )
 
 var (
