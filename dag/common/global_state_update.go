@@ -20,11 +20,8 @@
 package common
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -52,22 +49,22 @@ Method for getting mediator voting results
 
 //var lastStatisticalHeight = GenesisHeight()
 
-func MediatorVoteResult(db ptndb.Database,height modules.ChainIndex) (map[common.Address]uint64, error) {
-	var lastStatisticalHeight = GenesisHeight(db)
-	result := map[common.Address]uint64{}
-	// step1. check height
-	// check asset id
-	if strings.Compare(lastStatisticalHeight.AssetID.String(), height.AssetID.String()) != 0 {
-		return nil, fmt.Errorf("Mediator for different token comparing with last statistcal height.")
-	}
-	// check is main
-	if height.IsMain == false {
-		return nil, fmt.Errorf("Height must be the main height")
-	}
-	// step2. query vote db to get result
-	// step3. set lastStatisticalHeight
-	lastStatisticalHeight.AssetID.SetBytes(height.AssetID.Bytes())
-	lastStatisticalHeight.IsMain = height.IsMain
-	lastStatisticalHeight.Index = height.Index
-	return result, nil
-}
+//func MediatorVoteResult(db ptndb.Database,height modules.ChainIndex) (map[common.Address]uint64, error) {
+//	var lastStatisticalHeight = GenesisHeight(db)
+//	result := map[common.Address]uint64{}
+//	// step1. check height
+//	// check asset id
+//	if strings.Compare(lastStatisticalHeight.AssetID.String(), height.AssetID.String()) != 0 {
+//		return nil, fmt.Errorf("Mediator for different token comparing with last statistcal height.")
+//	}
+//	// check is main
+//	if height.IsMain == false {
+//		return nil, fmt.Errorf("Height must be the main height")
+//	}
+//	// step2. query vote db to get result
+//	// step3. set lastStatisticalHeight
+//	lastStatisticalHeight.AssetID.SetBytes(height.AssetID.Bytes())
+//	lastStatisticalHeight.IsMain = height.IsMain
+//	lastStatisticalHeight.Index = height.Index
+//	return result, nil
+//}
