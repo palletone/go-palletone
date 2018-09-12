@@ -340,7 +340,7 @@ func SaveContractState(db ptndb.Database, prefix []byte, id []byte, name string,
 	}
 	return nil
 }
-func (statedb *WorldStateDatabase)SaveContractTemplate(templateId []byte,bytecode []byte,version string) error{
+func (statedb *StateDatabase)SaveContractTemplate(templateId []byte,bytecode []byte,version string) error{
 	// key:[CONTRACT_TPL][Template id]_bytecode_[template version]
 	key := fmt.Sprintf("%s%s^*^bytecode^*^%s",
 		CONTRACT_TPL,
@@ -352,13 +352,13 @@ func (statedb *WorldStateDatabase)SaveContractTemplate(templateId []byte,bytecod
 	}
 	return nil
 }
-func(statedb *WorldStateDatabase) SaveContractTemplateState(id []byte, name string, value interface{}, version modules.StateVersion) error{
+func(statedb *StateDatabase) SaveContractTemplateState(id []byte, name string, value interface{}, version modules.StateVersion) error{
 	return SaveContractState(statedb.db,CONTRACT_TPL,id,name,value,version)
 }
-func(statedb *WorldStateDatabase) SaveContractState(id []byte, name string, value interface{}, version modules.StateVersion) error{
+func(statedb *StateDatabase) SaveContractState(id []byte, name string, value interface{}, version modules.StateVersion) error{
 	return SaveContractState(statedb.db,CONTRACT_STATE_PREFIX,id,name,value,version)
 }
-func(statedb *WorldStateDatabase)DeleteState(key []byte) error{
+func(statedb *StateDatabase)DeleteState(key []byte) error{
 	return statedb.db.Delete(key)
 }
 
@@ -372,7 +372,7 @@ func(utxodb *UtxoDatabase) DeleteUtxo(key []byte) error{
 func(idxdb *IndexDatabase) SaveIndexValue(key []byte,value interface{}) error{
 	return StoreBytes(idxdb.db,key,value)
 }
-func (statedb *WorldStateDatabase)SaveAssetInfo(assetInfo *modules.AssetInfo) error{
+func (statedb *StateDatabase)SaveAssetInfo(assetInfo *modules.AssetInfo) error{
 	key:=assetInfo.Tokey()
 	return StoreBytes(statedb.db,key,assetInfo)
 }

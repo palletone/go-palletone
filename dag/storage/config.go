@@ -17,7 +17,7 @@ var (
 获取配置信息
 get config information
 */
-func(statedb *WorldStateDatabase) GetConfig( name []byte) []byte {
+func(statedb *StateDatabase) GetConfig( name []byte) []byte {
 	key := fmt.Sprintf("%s_%s", CONF_PREFIX, name)
 	data := statedb.GetPrefix( []byte(key))
 	if len(data) != 1 {
@@ -36,7 +36,7 @@ func(statedb *WorldStateDatabase) GetConfig( name []byte) []byte {
 /**
 存储配置信息
 */
-func (statedb *WorldStateDatabase) SaveConfig( confs []modules.PayloadMapStruct, stateVersion *modules.StateVersion) error {
+func (statedb *StateDatabase) SaveConfig( confs []modules.PayloadMapStruct, stateVersion *modules.StateVersion) error {
 	for _, conf := range confs {
 		key := fmt.Sprintf("%s_%s_%s", CONF_PREFIX, conf.Key, stateVersion.String())
 		if err := statedb.db.Put([]byte( key), conf.Value); err != nil {

@@ -18,13 +18,10 @@ package ptndb
 
 import (
 	"sync"
-
+	"errors"
 	"github.com/palletone/go-palletone/common"
-	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/iterator"
-	"github.com/syndtr/goleveldb/leveldb/util"
-	"github.com/syndtr/goleveldb/leveldb/errors"
 	"encoding/binary"
+	"strings"
 )
 
 /*
@@ -33,15 +30,50 @@ import (
 type MemDatabase struct {
 	db   map[string][]byte
 	lock sync.RWMutex
-	DB *leveldb.DB // LevelDB instance
 }
-func (db *MemDatabase) NewIterator() iterator.Iterator {
-	return db.DB.NewIterator(nil, nil)
+type KeyValue struct{
+	Key []byte
+	Value []byte
+}
+type MemIterator struct{
+	result   []KeyValue
+	idx int
+}
+func(i *MemIterator) Next() bool{
+	i.idx++
+	return i.idx<len(i.result)
+}
+func(i *MemIterator) Key() []byte{
+	if i.idx==-1{
+		return nil
+	}
+	return i.result[i.idx].Key
+}
+func(i *MemIterator) Value() []byte{
+	if i.idx==-1{
+		return nil
+	}
+	return i.result[i.idx].Value
+}
+func (db *MemDatabase) NewIterator() Iterator {
+	result:=[]KeyValue{}
+	for key:= range db.db{
+		kv:=KeyValue{[]byte(key),db.db[key]}
+		result =append(result,kv)
+	}
+	return &MemIterator{result:result,idx:-1}
 }
 
 // NewIteratorWithPrefix returns a iterator to iterate over subset of database content with a particular prefix.
-func (db *MemDatabase) NewIteratorWithPrefix(prefix []byte) iterator.Iterator {
-	return db.DB.NewIterator(util.BytesPrefix(prefix), nil)
+func (db *MemDatabase) NewIteratorWithPrefix(prefix []byte) Iterator {
+	result:=[]KeyValue{}
+	for key:= range db.db{
+		if strings.HasPrefix(key,string(prefix)){
+			kv := KeyValue{[]byte(key), db.db[key]}
+			result = append(result, kv)
+		}
+	}
+	return &MemIterator{result:result,idx:-1}
 }
 func NewMemDatabase() (*MemDatabase, error) {
 	return &MemDatabase{

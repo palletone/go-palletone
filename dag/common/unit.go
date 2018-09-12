@@ -65,7 +65,7 @@ func NewUnitRepository(dagdb storage.DagDb, idxdb storage.IndexDb, utxodb storag
 func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 	dagdb := storage.NewDagDatabase(db)
 	utxodb := storage.NewUtxoDatabase(db)
-	statedb := storage.NewWorldStateDatabase(db)
+	statedb := storage.NewStateDatabase(db)
 	idxdb := storage.NewIndexDatabase(db)
 	val := NewValidate(dagdb, utxodb, statedb)
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)

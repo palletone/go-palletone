@@ -26,12 +26,12 @@ import (
 	"github.com/palletone/go-palletone/common"
 )
 //保存了对合约写集、Config、Asset信息
-type WorldStateDatabase struct{
+type StateDatabase struct{
 	db ptndb.Database
 
 }
-func NewWorldStateDatabase (db ptndb.Database) *WorldStateDatabase{
-	return &WorldStateDatabase{db:db,}
+func NewStateDatabase(db ptndb.Database) *StateDatabase {
+	return &StateDatabase{db:db,}
 }
 
 type StateDb interface {
