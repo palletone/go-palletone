@@ -264,13 +264,13 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	// send  VSS deal
 	pm.vssDealCh = make(chan mp.VSSDealEvent)
 	pm.vssDealSub = pm.producer.SubscribeVSSDealEvent(pm.vssDealCh)
-	go pm.VSSDealTransmitLoop()
+	go pm.vssDealTransmitLoop()
 
 	// append by Albert·Gou
 	// send  VSS deal
 	pm.vssResponseCh = make(chan mp.VSSResponseEvent)
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
-	go pm.VSSResponseTransmitLoop()
+	go pm.vssResponseBroadcastLoop()
 }
 
 // @author Albert·Gou
@@ -300,7 +300,7 @@ func (pm *ProtocolManager) BroadcastVssResp(dstId string, resp *mp.VSSResponseEv
 }
 
 // @author Albert·Gou
-func (self *ProtocolManager) VSSResponseTransmitLoop() {
+func (self *ProtocolManager) vssResponseBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.vssResponseCh:
@@ -343,7 +343,7 @@ func (pm *ProtocolManager) BroadcastVss(dstId string, deal *mp.VSSDealEvent) {
 }
 
 // @author Albert·Gou
-func (self *ProtocolManager) VSSDealTransmitLoop() {
+func (self *ProtocolManager) vssDealTransmitLoop() {
 	for {
 		select {
 		case event := <-self.vssDealCh:

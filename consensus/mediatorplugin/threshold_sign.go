@@ -115,7 +115,7 @@ func (mp *MediatorPlugin) BroadcastVSSResponse(srcMed common.Address, resp *dkg.
 		}
 
 		event := VSSResponseEvent{
-			SrcMed: srcMed,
+			//			SrcMed: srcMed,
 			DstMed: dstMed,
 			Resp:   resp,
 		}
@@ -146,9 +146,9 @@ func (mp *MediatorPlugin) processResponseLoop() {
 
 func (mp *MediatorPlugin) processVSSResponse(resp *VSSResponseEvent) {
 	dstMed := resp.DstMed
-	if dstMed == resp.SrcMed {
-		return //ignore the message from myself
-	}
+	//if dstMed == resp.SrcMed {
+	//	return //ignore the message from myself
+	//}
 
 	dkg, ok := mp.dkgs[dstMed]
 	if !ok || dkg == nil {
