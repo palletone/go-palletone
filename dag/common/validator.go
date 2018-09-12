@@ -30,7 +30,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"strings"
+	"bytes"
 )
 
 type Validate struct {
@@ -105,11 +105,11 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 			return nil, false, fmt.Errorf("Coinbase payload type error.")
 		}
 		if len(coinIn.Output) != 1 {
-			return nil, false, fmt.Errorf("Coinbase outputs error.")
+			return nil, false, fmt.Errorf("Coinbase outputs error0.")
 		}
 		income := uint64(fee) + ComputeInterest()
-		if coinIn.Output[0].Value != income {
-			return nil, false, fmt.Errorf("Coinbase outputs error.")
+		if coinIn.Output[0].Value >= income {
+			return nil, false, fmt.Errorf("Coinbase outputs error1.%d",income)
 		}
 	}
 	return txFlags, isSuccess, nil
@@ -121,10 +121,18 @@ To validate one transaction
 */
 func (validate *Validate) ValidateTx(tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
 	if len(tx.TxMessages) == 0 {
+		fmt.Println("-----------ValidateTx 1")
 		return modules.TxValidationCode_INVALID_MSG
 	}
 	if tx.TxMessages[0].App != modules.APP_PAYMENT {
-		return modules.TxValidationCode_INVALID_MSG
+		fmt.Printf("-----------ValidateTx , %d\n", tx.TxMessages[0].App)
+		//return modules.TxValidationCode_INVALID_MSG
+	}
+	// validate transaction hash
+	a := bytes.Equal([]byte(tx.TxHash.String()),[]byte(tx.Hash().String()))
+	if !a  { //tx.TxHash.Bytes(), tx.Hash().Bytes()
+		fmt.Printf("+++tx.TxHash.String()=%s, tx.Hash()=%s,\n", tx.TxHash.String(), tx.Hash().String())
+		return modules.TxValidationCode_NIL_TXACTION
 	}
 	for _, msg := range tx.TxMessages {
 		// check message type and payload
@@ -136,11 +144,7 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, worldTmpState *map
 			log.Debug("Tx size is to big.\n")
 			return modules.TxValidationCode_NOT_COMPARE_SIZE
 		}
-		// validate transaction hash
-		if strings.Compare(tx.TxHash.String(), tx.Hash().String()) != 0 {
-			fmt.Printf("tx.TxHash.String()=%s, tx.Hash()=%s\n", tx.TxHash.String(), tx.Hash().String())
-			return modules.TxValidationCode_NIL_TXACTION
-		}
+
 		// validate transaction signature
 		if validateTxSignature(tx) == false {
 			return modules.TxValidationCode_BAD_CREATOR_SIGNATURE

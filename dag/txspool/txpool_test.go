@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 var testTxPoolConfig TxPoolConfig
@@ -44,6 +45,7 @@ func init() {
 
 type testUnitDag struct {
 	Db            *palletdb.MemDatabase
+	utxodb storage.UtxoDb
 	mux           sync.RWMutex
 	GenesisUnit   *modules.Unit
 	gasLimit      uint64
@@ -92,7 +94,7 @@ func (ud *testUnitDag) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, err
 	view := NewUtxoViewpoint()
 	ud.addUtxoview(view, tx)
 	ud.mux.RLock()
-	err := view.FetchUtxos(ud.Db, neededSet)
+	err := view.FetchUtxos(ud.utxodb, neededSet)
 	ud.mux.RUnlock()
 	return view, err
 }
@@ -116,8 +118,9 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	// Create the pool to test the limit enforcement with
 	db, _ := palletdb.NewMemDatabase()
+	utxodb:=storage.NewUtxoDatabase(db)
 	mutex := new(sync.RWMutex)
-	unitchain := &testUnitDag{db, *mutex, nil, 10000, new(event.Feed)}
+	unitchain := &testUnitDag{db, utxodb,*mutex, nil, 10000, new(event.Feed)}
 
 	config := testTxPoolConfig
 	config.GlobalSlots = 4096

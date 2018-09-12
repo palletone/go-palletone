@@ -359,6 +359,12 @@ type Error struct {
 	Description string
 }
 
+type SignatureError struct {
+        InputIndex uint32
+        MsgIndex uint32
+        Error      error
+}
+
 // Error satisfies the error interface and prints human-readable errors.
 func (e Error) Error() string {
 	return e.Description

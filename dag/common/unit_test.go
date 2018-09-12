@@ -1,3 +1,23 @@
+/*
+ *
+ *    This file is part of go-palletone.
+ *    go-palletone is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    go-palletone is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+ * /
+ *
+ *  * @author PalletOne core developer <dev@pallet.one>
+ *  * @date 2018
+ *
+ */
+
 package common
 
 import (
@@ -10,11 +30,16 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
 	"reflect"
+	"github.com/palletone/go-palletone/common/ptndb"
 )
+
+func mockUnitRepository() *UnitRepository{
+	db,_:=ptndb.NewMemDatabase()
+	return NewUnitRepository4Db(db)
+}
+
 
 func TestNewGenesisUnit(t *testing.T) {
 	gUnit, _ := NewGenesisUnit(modules.Transactions{}, time.Now().Unix())
@@ -25,7 +50,7 @@ func TestNewGenesisUnit(t *testing.T) {
 	log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
 	log.Println("witness:", gUnit.UnitHeader.Witness)
 	log.Println("Root:", gUnit.UnitHeader.TxRoot)
-	log.Println("Number:", gUnit.UnitHeader.Number)
+	log.Println("Number:", gUnit.UnitHeader.Number.String())
 
 }
 
@@ -47,11 +72,7 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 }
 
 func TestSaveUnit(t *testing.T) {
-	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
-	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
-		return
-	}
+	rep:=mockUnitRepository()
 
 	addr := common.Address{}
 	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
@@ -82,7 +103,7 @@ func TestSaveUnit(t *testing.T) {
 		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159})
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
-		Height:  GenesisHeight(Dbconn),
+		Height: rep. GenesisHeight(),
 		TxIndex: 0,
 	}})
 	writeSet := []modules.PayloadMapStruct{
@@ -155,25 +176,21 @@ func TestSaveUnit(t *testing.T) {
 	unit.UnitSize = unit.Size()
 	unit.UnitHash = unit.Hash()
 
-	if err := SaveUnit(Dbconn, unit, true); err != nil {
+	if err := rep.SaveUnit(unit, true); err != nil {
 		log.Println(err)
 	}
 }
 
-func TestGetstate(t *testing.T) {
-	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
-	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
-		return
-	}
-	key := fmt.Sprintf("%s%s",
-		storage.CONTRACT_STATE_PREFIX,
-		"contract0000")
-	data := storage.GetPrefix(Dbconn, []byte(key))
-	for k, v := range data {
-		fmt.Println("key=", k, " ,value=", v)
-	}
-}
+//func TestGetstate(t *testing.T) {
+//	rep:=mockUnitRepository()
+//	key := fmt.Sprintf("%s%s",
+//		storage.CONTRACT_STATE_PREFIX,
+//		"contract0000")
+//	data := rep.GetPrefix(Dbconn, []byte(key))
+//	for k, v := range data {
+//		fmt.Println("key=", k, " ,value=", v)
+//	}
+//}
 
 type TestByte string
 
@@ -192,15 +209,11 @@ func TestRlpDecode(t *testing.T) {
 
 func TestCreateUnit(t *testing.T) {
 
-	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
-	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
-		return
-	}
+	rep:=mockUnitRepository()
 	addr := common.Address{} // minner addr
 	addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
 	//units, err := CreateUnit(&addr, time.Now())
-	units, err := CreateUnit(Dbconn, &addr, nil, nil, time.Now())
+	units, err := rep.CreateUnit( &addr, nil, nil, time.Now())
 	if err != nil {
 		log.Println("create unit error:", err)
 	} else {
@@ -208,20 +221,16 @@ func TestCreateUnit(t *testing.T) {
 	}
 }
 
-func TestGetContractState(t *testing.T) {
-	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
-	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
-		return
-	}
-	version, value := storage.GetContractState(Dbconn, "contract_template0000", "name")
-	log.Println(version)
-	log.Println(value)
-	data := storage.GetTplAllState(Dbconn, "contract_template0000")
-	for k, v := range data {
-		log.Println(k, v)
-	}
-}
+//func TestGetContractState(t *testing.T) {
+//	rep:=mockUnitRepository()
+//	version, value := rep.GetContractState( "contract_template0000", "name")
+//	log.Println(version)
+//	log.Println(value)
+//	data := rep.GetTplAllState( "contract_template0000")
+//	for k, v := range data {
+//		log.Println(k, v)
+//	}
+//}
 
 func TestPaymentTransactionRLP(t *testing.T) {
 	p := common.Hash{}
@@ -285,11 +294,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 }
 
 func TestContractTplPayloadTransactionRLP(t *testing.T) {
-	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
-	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
-		return
-	}
+	rep:=mockUnitRepository()
 	// TODO test ContractTplPayload
 	contractTplPayload := modules.ContractTplPayload{
 		TemplateId: []byte("contract_template0000"),
@@ -299,7 +304,7 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 	}
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
-		Height:  GenesisHeight(Dbconn),
+		Height:  rep.GenesisHeight(),
 		TxIndex: 0,
 	}})
 	tx1 := modules.Transaction{
@@ -346,15 +351,11 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 }
 
 func TestContractDeployPayloadTransactionRLP(t *testing.T) {
-	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
-	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
-		return
-	}
+	rep:=mockUnitRepository()
 	// TODO test ContractTplPayload
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
-		Height:  GenesisHeight(Dbconn),
+		Height: rep. GenesisHeight(),
 		TxIndex: 0,
 	}})
 	writeSet := []modules.PayloadMapStruct{

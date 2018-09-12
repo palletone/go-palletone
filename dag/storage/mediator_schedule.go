@@ -80,7 +80,7 @@ func RetrieveMediatorSchl(db ptndb.Database) (*modules.MediatorSchedule, error) 
 
 	err := Retrieve(db, mediatorSchlDBKey, mst)
 	if err != nil {
-		log.Error(fmt.Sprintf("Retrieve mediator schedule error: %s", err))
+		//log.Error(fmt.Sprintf("Retrieve mediator schedule error: %s", err))
 	}
 
 	ms := getMS(mst)
