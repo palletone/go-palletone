@@ -114,13 +114,22 @@ func TestCustomGenesis(t *testing.T) {
 */
 
 func TestGenesisGet(t *testing.T) {
-	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
-	if Dbconn == nil {
+	dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	if dbconn == nil {
 		fmt.Println("Connect to db error.")
 		return
 	}
+	dagDb := storage.NewDagDatabase(dbconn)
+	idxDb := storage.NewIndexDatabase(dbconn)
+	utxoDb := storage.NewUtxoDatabase(dbconn)
+	stateDb := storage.NewStateDatabase(dbconn)
+
+	unitrep := common.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
+	if unitrep == nil {
+		t.Error("new unit rep error.")
+	}
 	// get genesis unit by index
-	unit, err := common.GetGenesisUnit(Dbconn, 0)
+	unit, err := unitrep.GetGenesisUnit(0)
 	fmt.Println("error", err, "Genesis unit:", unit)
 	// get account balance
 	// get all global configures

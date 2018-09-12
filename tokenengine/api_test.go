@@ -1,3 +1,23 @@
+/*
+ *
+ *    This file is part of go-palletone.
+ *    go-palletone is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    go-palletone is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+ * /
+ *
+ *  * @author PalletOne core developer <dev@pallet.one>
+ *  * @date 2018
+ *
+ */
+
 package tokenengine
 
 import (
@@ -84,7 +104,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	privKeys := map[common.Address]*ecdsa.PrivateKey{
 		addr: privKey,
 	}
-	err := SignTxAllPaymentInput(tx, lockScripts, privKeys)
+	err := SignTxAllPaymentInput(tx, lockScripts,nil, privKeys)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -205,7 +225,7 @@ func TestMultiSign2Step(t *testing.T)  {
 	}
 	t.Logf("PrvKey2 sign result:%x\n",sign2)
 
-	pay1:=tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	pay1=tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 	pay1.Input[0].SignatureScript=sign2
 	str,_:= txscript.DisasmString(sign2)
 	t.Logf("Signed script:{%s}",str)

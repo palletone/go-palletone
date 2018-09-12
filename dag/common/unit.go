@@ -45,6 +45,7 @@ import (
 
 type IUnitRepository interface {
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
+	GenesisHeight() modules.ChainIndex
 	SaveUnit(unit modules.Unit, isGenesis bool) error
 	CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 }
@@ -291,13 +292,13 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 获取创世单元的高度
 To get genesis unit height
 */
-//func GenesisHeight(db ptndb.Database) modules.ChainIndex {
-//	unit, err := GetGenesisUnit(db, 0)
-//	if unit == nil || err != nil {
-//		return modules.ChainIndex{}
-//	}
-//	return unit.UnitHeader.Number
-//}
+func (unitRep *UnitRepository)GenesisHeight() modules.ChainIndex {
+	unit, err := unitRep.GetGenesisUnit(0)
+	if unit == nil || err != nil {
+		return modules.ChainIndex{}
+	}
+	return unit.UnitHeader.Number
+}
 
 func (unitOp *UnitRepository) GetUnitTransactions(unitHash common.Hash) (modules.Transactions, error) {
 	txs := modules.Transactions{}

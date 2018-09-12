@@ -19,6 +19,7 @@ package ptnapi
 import (
 	"sync"
 	"fmt"
+        "encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/ptnjson"
 )
@@ -66,3 +67,53 @@ func internalRPCError(errStr, context string) *ptnjson.RPCError {
 	//rpcsLog.Error(logStr)
 	return ptnjson.NewRPCError(ptnjson.ErrRPCInternal.Code, errStr)
 }
+func decodeHexStr(hexStr string) ([]byte, error) {
+        if len(hexStr)%2 != 0 {
+                hexStr = "0" + hexStr
+        }
+        decoded, err := hex.DecodeString(hexStr)
+        if err != nil {
+                return nil, &ptnjson.RPCError{
+                        Code:    ptnjson.ErrRPCDecodeHexString,
+                        Message: "Hex string decode failed: " + err.Error(),
+                }
+        }
+        return decoded, nil
+}
+type response struct {
+        result []byte
+        err    error
+}
+type FutureGetTxOutResult chan *response
+type SignatureError struct {
+        InputIndex uint32
+        Error      error
+}
+type SigHashType uint32
+const (
+        SigHashOld          SigHashType = 0x0
+        SigHashAll          SigHashType = 0x1
+        SigHashNone         SigHashType = 0x2
+        SigHashSingle       SigHashType = 0x3
+        SigHashAnyOneCanPay SigHashType = 0x80
+        // sigHashMask defines the number of bits of the hash type which is used
+        // to identify which outputs are signed.
+        sigHashMask = 0x1f
+)
+type (
+        // DeserializationError describes a failed deserializaion due to bad
+        // user input.  It corresponds to btcjson.ErrRPCDeserialization.
+        DeserializationError struct {
+                error
+        }
+        // InvalidParameterError describes an invalid parameter passed by
+        // the user.  It corresponds to btcjson.ErrRPCInvalidParameter.
+        InvalidParameterError struct {
+                error
+        }
+        // ParseError describes a failed parse due to bad user input.  It
+        // corresponds to btcjson.ErrRPCParse.
+        ParseError struct {
+                error
+        }
+)
