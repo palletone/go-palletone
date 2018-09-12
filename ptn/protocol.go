@@ -180,13 +180,13 @@ type blockBody struct {
 type blockBodiesData []*blockBody
 
 // vss boardcast the data content of a single vss message.
-type vssMsg struct {
+type vssDealMsg struct {
 	NodeId string
 	Deal   *mp.VSSDealEvent
 }
 
 // vss response boardcast the data content of a single vss message.
-type vssMsgResp struct {
+type vssRespMsg struct {
 	NodeId string
 	Resp   *mp.VSSResponseEvent
 }

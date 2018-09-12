@@ -13,35 +13,23 @@
  *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
  * /
  *
- *  * @author PalletOne core developer <dev@pallet.one>
+ *  * @author PalletOne core developer  <dev@pallet.one>
  *  * @date 2018
  *
  */
 
-package common
+package storage
 
-import (
-	"testing"
-)
+import "github.com/palletone/go-palletone/common/ptndb"
 
-func TestAddressValidate(t *testing.T) {
-	p2pkh := "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
-	addr, err := StringToAddress(p2pkh)
-
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(addr)
+type IndexDatabase struct{
+	db ptndb.Database
 }
-func TestAddressNotValidate(t *testing.T) {
-	p2pkh := "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gj"
-	addr, err := StringToAddress(p2pkh)
-
-	if err != nil {
-		t.Log(addr)
-		t.Log(err)
-	} else {
-		t.Error("It must invalid, but pass, please check your code")
-	}
-
+func NewIndexDatabase (db ptndb.Database) *IndexDatabase{
+	return &IndexDatabase{db:db,}
 }
+
+type IndexDb interface {
+	GetPrefix(prefix []byte) map[string][]byte
+	SaveIndexValue(key []byte,value interface{}) error
+} 

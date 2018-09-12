@@ -49,6 +49,8 @@ type Logger struct {
 	addStack  zapcore.LevelEnabler
 
 	callerSkip int
+
+	openModule []string
 }
 
 // New constructs a new Logger from the provided zapcore.Core and Options. If
@@ -119,6 +121,10 @@ func NewExample(options ...Option) *Logger {
 	return New(core).WithOptions(options...)
 }
 
+func (log *Logger) SetOpenModule(modules []string) {
+	log.openModule = modules
+}
+
 // Sugar wraps the Logger to provide a more ergonomic, but slightly slower,
 // API. Sugaring a Logger is quite inexpensive, so it's reasonable for a
 // single application to use both Loggers and SugaredLoggers, converting
@@ -172,11 +178,26 @@ func (log *Logger) Check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 	return log.check(lvl, msg)
 }
 
+func (log *Logger) filter(c *zapcore.CheckedEntry, fie ...Field) {
+	ce := c
+	fields := fie
+	if len(log.openModule) == 1 && log.openModule[0] == "all" {
+		ce.Write(fields...)
+		return
+	}
+	for _, v := range log.openModule {
+		if v == ce.Entry.Caller.TrimmedRootPath() {
+			ce.Write(fields...)
+		}
+	}
+}
+
 // Debug logs a message at DebugLevel. The message includes any fields passed
 // at the log site, as well as any fields accumulated on the logger.
 func (log *Logger) Debug(msg string, fields ...Field) {
 	if ce := log.check(DebugLevel, msg); ce != nil {
-		ce.Write(fields...)
+		//ce.Write(fields...)
+		log.filter(ce, fields...)
 	}
 }
 
@@ -184,7 +205,7 @@ func (log *Logger) Debug(msg string, fields ...Field) {
 // at the log site, as well as any fields accumulated on the logger.
 func (log *Logger) Info(msg string, fields ...Field) {
 	if ce := log.check(InfoLevel, msg); ce != nil {
-		ce.Write(fields...)
+		log.filter(ce, fields...)
 	}
 }
 
@@ -192,7 +213,8 @@ func (log *Logger) Info(msg string, fields ...Field) {
 // at the log site, as well as any fields accumulated on the logger.
 func (log *Logger) Warn(msg string, fields ...Field) {
 	if ce := log.check(WarnLevel, msg); ce != nil {
-		ce.Write(fields...)
+		//ce.Write(fields...)
+		log.filter(ce, fields...)
 	}
 }
 
@@ -200,7 +222,8 @@ func (log *Logger) Warn(msg string, fields ...Field) {
 // at the log site, as well as any fields accumulated on the logger.
 func (log *Logger) Error(msg string, fields ...Field) {
 	if ce := log.check(ErrorLevel, msg); ce != nil {
-		ce.Write(fields...)
+		//ce.Write(fields...)
+		log.filter(ce, fields...)
 	}
 }
 
@@ -212,7 +235,8 @@ func (log *Logger) Error(msg string, fields ...Field) {
 // recoverable, but shouldn't ever happen.
 func (log *Logger) DPanic(msg string, fields ...Field) {
 	if ce := log.check(DPanicLevel, msg); ce != nil {
-		ce.Write(fields...)
+		//ce.Write(fields...)
+		log.filter(ce, fields...)
 	}
 }
 
@@ -222,7 +246,8 @@ func (log *Logger) DPanic(msg string, fields ...Field) {
 // The logger then panics, even if logging at PanicLevel is disabled.
 func (log *Logger) Panic(msg string, fields ...Field) {
 	if ce := log.check(PanicLevel, msg); ce != nil {
-		ce.Write(fields...)
+		//ce.Write(fields...)
+		log.filter(ce, fields...)
 	}
 }
 
@@ -233,7 +258,8 @@ func (log *Logger) Panic(msg string, fields ...Field) {
 // disabled.
 func (log *Logger) Fatal(msg string, fields ...Field) {
 	if ce := log.check(FatalLevel, msg); ce != nil {
-		ce.Write(fields...)
+		//ce.Write(fields...)
+		log.filter(ce, fields...)
 	}
 }
 

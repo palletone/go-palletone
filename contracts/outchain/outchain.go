@@ -79,7 +79,7 @@ var DefaultConfig = Config{
 
 const (
 	modName    = "OutChain"
-	configPath = "F:/work/src/github.com/palletone/go-palletone/contracts/outchain/outchain.toml"
+	configPath = "./outchain.toml"
 )
 
 var (
@@ -105,6 +105,13 @@ var tomlSettings = toml.Config{
 		}
 		return fmt.Errorf("field '%s' is not defined in %s%s", field, rt.String(), link)
 	},
+}
+
+func init() {
+	_, err := os.Open(configPath)
+	if err != nil && os.IsNotExist(err) {
+		saveConfigTest() // save default config
+	}
 }
 
 func makeDefaultConfig() Config {
@@ -168,9 +175,10 @@ func GetConfigTest() error {
 }
 
 func saveConfigTest() error {
-	err1 := makeConfigFile(&cfg, configPath)
-	if err1 != nil {
+	err := makeConfigFile(&cfg, configPath)
+	if err != nil {
 		log.Error("makeConfigFile() failed !!!!!!")
+		return err
 	}
 	return nil
 }

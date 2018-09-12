@@ -23,6 +23,16 @@ import (
 	"github.com/palletone/go-palletone/contracts/ucc"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/modules"
+	"log"
+
+	cmn "github.com/palletone/go-palletone/common"
+	cpt "github.com/palletone/go-palletone/common/crypto"
+
+	cdb "github.com/palletone/go-palletone/contracts/comm"
+	"math/big"
+	"github.com/palletone/go-palletone/tokenengine"
+
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/storage"
 )
@@ -509,19 +519,214 @@ func TestFileRW(t *testing.T) {
 }
 
 func creatTestDag() (*dag.Dag, error){
-	path := "D:\\test\\levedb"
+	//path := "D:\\test\\levedb"
+	path := "/home/glh/test/dag"
 
 	dagconfig.DbPath = path
 	db, err := storage.Init(path, 16, 16)
 	if err != nil {
 		return nil, err
 	}
+
+	//db, err := ptndb.NewMemDatabaseWithCap(1024)
+	//if err != nil {
+	//	return nil, err
+	//}
+
 	dag, err := dag.NewDag(db)
 	if err != nil {
 		return nil, err
 	}
 
 	return dag, nil
+}
+
+
+func TestContractApi(t *testing.T) {
+	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
+	viper.Set("peer.address", "127.0.0.1:12345")
+	viper.Set("chaincode.executetimeout", 20*time.Second)
+
+	viper.Set("vm.endpoint", "unix:///var/run/docker.sock")
+	viper.Set("chaincode.builder", "palletimg")
+
+	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
+	chainID := util.GetTestChainID()
+	var txid string = "1234567890"
+
+
+	nonce, err := crypto.GetRandomNonce()
+	if err == nil {
+		txid, err = computeProposalTxID(nonce, []byte("glh"))
+	}
+
+	f := "init"
+	args := util.ToChaincodeArgs(f, "a", "100", "b", "200")
+
+	usercc := &ucc.UserChaincode{
+		Enabled:  true,
+		Name:     "ccTpl",
+		Path:     "chaincode/testPtnContractTemplate",
+		Version:  "ptn001",
+		InitArgs: args,
+		//Chaincode: &samplesyscc.SampleSysCC{},
+	}
+
+	//intall
+	fmt.Println("=======================intall=============================")
+	payload, err := Install(chainID, usercc.Name, usercc.Path, usercc.Version)
+	if err != nil {
+		t.Errorf("install chaincode fail [%s]", usercc.Name)
+	}
+
+	if err = saveTpl(payload); err != nil {
+		t.Error("saveTpl failed")
+	}
+	return
+
+	//deploy
+	fmt.Println("=======================deploy=============================")
+	deployId, _, err := Deploy(chainID, payload.TemplateId[:], txid, args, 30*time.Second)
+	if err != nil {
+		t.Errorf("DeployUserCC err:%s", err)
+	}
+	time.Sleep(1 * time.Second)
+
+	//invoke
+	fmt.Println("=======================invoke=============================")
+	f = "invoke"
+	args = util.ToChaincodeArgs(f, "111")
+	_, err = Invoke(chainID, deployId, txid, args, 0)
+	if err != nil {
+		t.Errorf("Invoke err:%s", err)
+	}
+	time.Sleep(2 * time.Second)
+
+	//stop
+	usercc.Name = "example01"
+	fmt.Println("=======================Stop=============================")
+	err = Stop(chainID, deployId, txid, true)
+	if err != nil {
+		t.Errorf("StopUserCC err:%s", err)
+	}
+	time.Sleep(2 * time.Second)
+}
+
+func creatHeader() (*modules.Header, error) {
+	addr := cmn.Address{}
+	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
+	//ks := keystore.NewKeyStore("./keystore", 1<<18, 1)
+
+	p := cmn.Hash{}
+	p.SetString("0000000000000000000000000000000")
+	aid := modules.IDType16{}
+	aid.SetBytes([]byte("xxxxxxxxxxxxxxxxxx"))
+	header := new(modules.Header)
+	header.ParentsHash = append(header.ParentsHash, p)
+	header.AssetIDs = []modules.IDType16{aid}
+	key, _ := cpt.GenerateKey()
+	addr0 := cpt.PubkeyToAddress(&key.PublicKey)
+
+	sig, err := cpt.Sign(header.Hash().Bytes(), key)
+	if err != nil {
+		log.Println("sign header occured error: ", err)
+		return nil, err
+	}
+	auth := new(modules.Authentifier)
+	auth.R = sig[:32]
+	auth.S = sig[32:64]
+	auth.V = sig[64:]
+	auth.Address = addr0.String()
+	header.Authors = auth
+
+	return header, nil
+}
+
+func saveTpl(payload *modules.ContractTplPayload) error {
+	fmt.Printf("ccTpl:name[%s]path[%s]ver[%s]\n", payload.Name, payload.Path, payload.Version)
+	header, err := creatHeader()
+	if err != nil {
+		return err
+	}
+
+	outpoint := modules.OutPoint{
+		MessageIndex: 2,
+		OutIndex:     3,
+	}
+	createT := big.Int{}
+	totalIncome := uint64(100000000)
+	addr := new(cmn.Address)
+	addr.SetString("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+
+	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
+	input := &modules.Input{
+		PreviousOutPoint: &outpoint,
+		SignatureScript:  []byte("xxxxxxxxxx"),
+		Extra:            createT.SetInt64(time.Now().Unix()).Bytes(),
+	}
+	output := &modules.Output{
+		Value: totalIncome,
+		Asset: &modules.Asset{
+			AssetId: modules.BTCCOIN,
+			ChainId: 1},
+		PkScript: script,
+	}
+
+	inputs := make([]*modules.Input, 0)
+	outputs := make([]*modules.Output, 0)
+	inputs = append(inputs, input)
+	outputs = append(outputs, output)
+
+	tx0 := modules.Transaction{
+		TxMessages: []*modules.Message{
+			{
+				App: modules.APP_PAYMENT,
+				Payload: &modules.PaymentPayload{
+					Input:    inputs,
+					Output:   outputs,
+					LockTime: uint32(999),
+				},
+			},
+		},
+	}
+
+	tx1 := modules.Transaction{
+		TxMessages: []*modules.Message{
+			{
+				App:     modules.APP_CONTRACT_TPL,
+				Payload: payload,
+			},
+		},
+	}
+
+	tx0.TxHash = tx0.Hash()
+	tx1.TxHash = tx1.Hash()
+	txs := modules.Transactions{}
+	txs = append(txs, &tx0)
+	txs = append(txs, &tx1)
+	unit := modules.Unit{
+		UnitHeader: header,
+		Txs:        txs,
+	}
+	unit.UnitSize = unit.Size()
+	unit.UnitHash = unit.Hash()
+
+	//Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	//if Dbconn == nil {
+	//	fmt.Println("Connect to db error.")
+	//	return errors.New("ReNewDbConn err")
+	//}
+
+	dag, err :=cdb.GetCcDagHand()
+	if _, err := dag.SaveDag(unit, false); err != nil {
+		log.Println("opopo",err)
+	}
+	return nil
+}
+
+
+func TestDag(t *testing.T) {
+
 }
 
 func init() {

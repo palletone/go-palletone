@@ -31,12 +31,10 @@ func TestTransactionEncode(t *testing.T) {
 	}
 	emptyTx := NewTransaction(
 		[]*Message{msg, msg},
-		1234,
 	)
 
 	rightvrsTx := NewTransaction(
 		[]*Message{msg, msg2, msg},
-		12345,
 	)
 
 	emptyTx.SetHash(common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87"))

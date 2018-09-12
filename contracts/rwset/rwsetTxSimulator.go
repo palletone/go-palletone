@@ -22,12 +22,14 @@ package rwset
 import (
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/storage"
+
 	db "github.com/palletone/go-palletone/contracts/comm"
+
 )
 
 type RwSetTxSimulator struct {
 	txid                    string
+
 	rwsetBuilder            *RWSetBuilder
 	writePerformed          bool
 	pvtdataQueriesPerformed bool
@@ -57,7 +59,8 @@ func (s *RwSetTxSimulator) GetState(ns string, key string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	ver, val := storage.GetContractState(dag.Db, ns, key)
+	//TODO Devin
+	ver, val := dag.GetContractState( ns, key)
 	if val == nil {
 		logger.Errorf("get value from db[%s] failed", ns)
 

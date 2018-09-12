@@ -16,7 +16,7 @@
 
 package ptndb
 
-import "github.com/syndtr/goleveldb/leveldb/iterator"
+
 
 // Code using batches should try to add this much data to the batch.
 // The value was determined empirically.
@@ -35,8 +35,8 @@ type Database interface {
 	Delete(key []byte) error
 	Close()
 	NewBatch() Batch
-	NewIterator() iterator.Iterator
-	NewIteratorWithPrefix(prefix []byte) iterator.Iterator
+	NewIterator() Iterator
+	NewIteratorWithPrefix(prefix []byte) Iterator
 }
 
 // Batch is a write-only database that commits changes to its host database
@@ -47,4 +47,19 @@ type Batch interface {
 	Write() error
 	// Reset resets the batch for reuse
 	Reset()
+}
+type Iterator interface {
+	// Next moves the iterator to the next key/value pair.
+	// It returns whether the iterator is exhausted.
+	Next() bool
+
+	// Key returns the key of the current key/value pair, or nil if done.
+	// The caller should not modify the contents of the returned slice, and
+	// its contents may change on the next call to any 'seeks method'.
+	Key() []byte
+
+	// Value returns the value of the current key/value pair, or nil if done.
+	// The caller should not modify the contents of the returned slice, and
+	// its contents may change on the next call to any 'seeks method'.
+	Value() []byte
 }

@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"crypto/ecdsa"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -42,11 +43,11 @@ import (
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
+
 	//"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
-
 )
 
 const (
@@ -733,7 +734,7 @@ func (s *PublicBlockChainAPI) Ccdeploy(ctx context.Context, templateId string, t
 	return hexutil.Bytes(deployId), err
 }
 
-func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string, param []string/*fun string, key string, val string*/) (string, error) {
+func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string, param []string /*fun string, key string, val string*/) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
 	log.Info("-----Ccinvoke:" + deployId + ":" + txid)
 
@@ -1352,15 +1353,15 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	// 	//e := errors.New("Invalid sighash parameter")
 	// 	return nil, err
 	// }
-	
+
 	inputpoints := make(map[modules.OutPoint][]byte)
-	scripts := make(map[string][]byte)
+	//scripts := make(map[string][]byte)
 	//var params *chaincfg.Params
 	var cmdInputs []ptnjson.RawTxInput
 	if cmd.Inputs != nil {
 		cmdInputs = *cmd.Inputs
 	}
-        var  redeem []byte
+	var redeem []byte
 	for _, rti := range cmdInputs {
 		inputHash, err := common.NewHashFromStr(rti.Txid)
 		if err != nil {
@@ -1381,7 +1382,14 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-            redeem = redeemScript
+			//lockScript := tokenengine.GenerateP2SHLockScript(crypto.Hash160(redeemScript))
+			//addressMulti,err:=tokenengine.GetAddressFromScript(lockScript)
+			//if err != nil {
+			//	return nil, DeserializationError{err}
+			//}
+			//mutiAddr = addressMulti
+			//scripts[addressMulti.Str()] = redeemScript
+			redeem = redeemScript
 		}
 		inputpoints[modules.OutPoint{
 			TxHash:       *inputHash,
@@ -1396,7 +1404,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 
 		if cmd.PrivKeys != nil {
 			for _, key := range *cmd.PrivKeys {
-                privKey,_ :=crypto.FromWIF(key)
+				privKey, _ := crypto.FromWIF(key)
 				//privKeyBytes, _ := hex.DecodeString(key)
 				//privKey, _ := crypto.ToECDSA(privKeyBytes)
 				addr := crypto.PubkeyToAddress(&privKey.PublicKey)
@@ -1404,9 +1412,11 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			}
 		}
 	}
+
 	var signErrors []SignatureError
 	signErrors,err = tokenengine.SignTxAllPaymentInput(tx,inputpoints,redeem,keys)
     if err != nil {
+
 		return nil, DeserializationError{err}
 	}
 

@@ -244,11 +244,14 @@ func (s *PalletOne) startMediatorNetwork(srvr *p2p.Server) error {
 	if !s.mediatorPlugin.HaveActiveMediator() {
 		return nil
 	}
+
 	peers := s.dag.GetActiveMediatorNodes()
 	for _, peer := range peers {
 		srvr.AddPeer(peer)
 	}
+
 	log.Debug("PalletOne", "startMediatorNetwork mediators:", len(peers))
+
 	return nil
 }
 

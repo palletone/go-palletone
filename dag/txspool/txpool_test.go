@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 var testTxPoolConfig TxPoolConfig
@@ -44,6 +45,7 @@ func init() {
 
 type testUnitDag struct {
 	Db            *palletdb.MemDatabase
+	utxodb storage.UtxoDb
 	mux           sync.RWMutex
 	GenesisUnit   *modules.Unit
 	gasLimit      uint64
@@ -92,7 +94,7 @@ func (ud *testUnitDag) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, err
 	view := NewUtxoViewpoint()
 	ud.addUtxoview(view, tx)
 	ud.mux.RLock()
-	err := view.FetchUtxos(ud.Db, neededSet)
+	err := view.FetchUtxos(ud.utxodb, neededSet)
 	ud.mux.RUnlock()
 	return view, err
 }
@@ -111,13 +113,14 @@ func (ud *testUnitDag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent)
 // the transactions are still kept.
 func TestTransactionAddingTxs(t *testing.T) {
 	t0 := time.Now()
-	fmt.Println("script start.... ", t0)
+	fmt.Println("TestTransactionAddingTxs start.... ", t0)
 	t.Parallel()
 
 	// Create the pool to test the limit enforcement with
 	db, _ := palletdb.NewMemDatabase()
+	utxodb:=storage.NewUtxoDatabase(db)
 	mutex := new(sync.RWMutex)
-	unitchain := &testUnitDag{db, *mutex, nil, 10000, new(event.Feed)}
+	unitchain := &testUnitDag{db, utxodb,*mutex, nil, 10000, new(event.Feed)}
 
 	config := testTxPoolConfig
 	config.GlobalSlots = 4096
@@ -129,6 +132,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	txs := modules.Transactions{}
 
 	msgs := make([]*modules.Message, 0)
+	msgs1 := make([]*modules.Message, 0)
 	addr := new(common.Address)
 	addr.SetString("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
 
@@ -149,6 +153,18 @@ func TestTransactionAddingTxs(t *testing.T) {
 		SignatureScript:  []byte("xxxxxxxxxx"),
 		Extra:            createT.SetInt64(time.Now().Unix()).Bytes(),
 	}
+	time.Sleep(1 * time.Second)
+	input1 := modules.Input{
+		PreviousOutPoint: &outpoint,
+		SignatureScript:  []byte("cccccccccc"),
+		Extra:            createT.SetInt64(time.Now().Unix()).Bytes(),
+	}
+	time.Sleep(1 * time.Second)
+	input2 := modules.Input{
+		PreviousOutPoint: &outpoint,
+		SignatureScript:  []byte("vvvvvvvvvv"),
+		Extra:            createT.SetInt64(time.Now().Unix()).Bytes(),
+	}
 	output := modules.Output{
 		Value: totalIncome,
 		Asset: &modules.Asset{
@@ -161,25 +177,37 @@ func TestTransactionAddingTxs(t *testing.T) {
 		Input:  []*modules.Input{&input},
 		Output: []*modules.Output{&output},
 	}
-	copy(input.Extra[:], []byte("1234567890"))
 	payload1 := &modules.PaymentPayload{
-		Input:  []*modules.Input{&input},
+		Input:  []*modules.Input{&input1},
 		Output: []*modules.Output{&output},
 	}
-	copy(input.Extra[:], []byte("0987654321"))
 	payload2 := &modules.PaymentPayload{
-		Input:  []*modules.Input{&input},
+		Input:  []*modules.Input{&input2},
 		Output: []*modules.Output{&output},
 	}
-	msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload0),
-		modules.NewMessage(modules.APP_PAYMENT, payload1),
-		modules.NewMessage(modules.APP_PAYMENT, payload2))
+	for i := 0; i < 16; i++ {
+		if i == 0 {
+			fmt.Println("payload0: ", payload0.Input)
+			msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload0))
+		}
+		if i == 1 {
+			fmt.Println("payload0: ", payload1.Input)
+			msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload1))
+		}
+		if i == 2 {
+			fmt.Println("payload0: ", payload2.Input)
+			msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload2))
+		}
+		msgs = append(msgs, modules.NewMessage(modules.APP_TEXT, modules.TextPayload{Text: []byte(fmt.Sprintf("text%d", i))}))
+	}
+
 	for j := 0; j < int(config.AccountSlots)*1; j++ {
-		txs = append(txs, transaction(msgs, uint32(j+100)))
+		txs = append(txs, transaction(append(msgs1, msgs[j])))
 	}
 	fmt.Println("range txs start.... ", time.Now().Unix()-t0.Unix())
 	// Import the batch and verify that limits have been enforced
 	//	pool.AddRemotes(txs)
+	return
 	for i, tx := range txs {
 		if txs[i].Size() > 0 {
 			continue
@@ -233,11 +261,11 @@ func TestTransactionAddingTxs(t *testing.T) {
 	}(pool)
 
 }
-func transaction(msg []*modules.Message, lock uint32) *modules.Transaction {
-	return pricedTransaction(msg, lock)
+func transaction(msg []*modules.Message) *modules.Transaction {
+	return pricedTransaction(msg)
 }
-func pricedTransaction(msg []*modules.Message, lock uint32) *modules.Transaction {
-	tx := modules.NewTransaction(msg, lock)
+func pricedTransaction(msgs []*modules.Message) *modules.Transaction {
+	tx := modules.NewTransaction(msgs)
 	tx.SetHash(rlp.RlpHash(tx))
 	return tx
 }

@@ -21,8 +21,9 @@ package log
 var DefaultConfig = Config{
 	OutputPaths:      []string{"stdout", "./log/all.log"},
 	ErrorOutputPaths: []string{"stderr", "./log/error.log"},
+	OpenModule:       []string{"all"},
 	LoggerLvl:        "DEBUG",
-	Encoding:         "console", // json
+	Encoding:         "console",
 	Development:      true,
 }
 
@@ -30,6 +31,7 @@ type Config struct {
 	// logger
 	OutputPaths      []string
 	ErrorOutputPaths []string
+	OpenModule       []string
 	LoggerLvl        string // log level
 	Encoding         string // encoding
 	Development      bool

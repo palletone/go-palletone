@@ -20,7 +20,6 @@ package memunit
 import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/ptndb"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -128,7 +127,9 @@ func (forkIndex *ForkIndex) Lenth() int {
 /*********************************************************************/
 // TODO MemDag
 type MemDag struct {
-	db                ptndb.Database
+	//db                ptndb.Database
+	dagdb storage.DagDb
+	unitRep dagCommon.IUnitRepository
 	lastValidatedUnit map[string]common.Hash // the key is asset id
 	forkIndex         map[string]*ForkIndex  // the key is asset id
 	mainChain         map[string]int         // the key is asset id
@@ -136,14 +137,15 @@ type MemDag struct {
 	memSize           uint8
 }
 
-func InitMemDag(db ptndb.Database) *MemDag {
+func NewMemDag(db storage.DagDb,unitRep dagCommon.IUnitRepository) *MemDag {
 	memdag := MemDag{
 		lastValidatedUnit: nil,
 		forkIndex:         map[string]*ForkIndex{},
 		memUnit:           InitMemUnit(),
 		memSize:           dagconfig.DefaultConfig.MemoryUnitSize,
+		dagdb:db,
+		unitRep:unitRep,
 	}
-	memdag.db = db
 	return &memdag
 }
 
@@ -178,7 +180,7 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 	// get asset chain's las irreversible unit
 	irreUnitHash, ok := chain.lastValidatedUnit[assetId]
 	if !ok {
-		lastIrreUnit := storage.GetLastIrreversibleUnit(chain.db, unit.UnitHeader.Number.AssetID)
+		lastIrreUnit := chain.dagdb.GetLastIrreversibleUnit( unit.UnitHeader.Number.AssetID)
 		if lastIrreUnit != nil {
 			irreUnitHash = lastIrreUnit.UnitHash
 		}
@@ -215,7 +217,7 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 			return err
 		}
 		// save the matured unit into leveldb
-		if err := dagCommon.SaveUnit(chain.db, *unit, false); err != nil {
+		if err := chain.unitRep.SaveUnit( *unit, false); err != nil {
 			return err
 		}
 	}
@@ -244,7 +246,7 @@ func (chain *MemDag) Prune(assetId string, maturedUnitHash common.Hash) error {
 	for i := 0; i < subindex; i++ {
 		unitHash := (*forkdata)[i]
 		unit := (*chain.memUnit)[unitHash]
-		if err := dagCommon.SaveUnit(chain.db, *unit, false); err != nil {
+		if err := chain.unitRep.SaveUnit(*unit, false); err != nil {
 			return fmt.Errorf("Prune error when save unit: %s", err.Error())
 		}
 	}

@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"sync"
 	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
 func newTestLDB() (*LDBDatabase, func()) {
@@ -43,6 +44,29 @@ func newTestLDB() (*LDBDatabase, func()) {
 }
 
 var test_values = []string{"", "a", "1251", "\x00123\x00"}
+
+func TestLDBDatabase_NewIteratorWithPrefix(t *testing.T) {
+	db, remove := newTestLDB()
+	defer remove()
+	db.Put([]byte("a"),[]byte("aaa"))
+	db.Put([]byte("ab"),[]byte("aaabbb"))
+	db.Put([]byte("b"),[]byte("bbb"))
+	db.Put([]byte("c"),[]byte("ccc"))
+	db.Put([]byte("ba"),[]byte("bbbaaa"))
+	db.Put([]byte("abc"),[]byte("abcabc"))
+	it:=db.NewIteratorWithPrefix([]byte("a"))
+	itCount:=0
+	t.Logf("StartKey:%s",it.Key())
+
+	for it.Next(){
+		t.Logf("{%d} Key[%s], Value[%s]",itCount,it.Key(),it.Value())
+		itCount++
+	}
+	assert.True(t,itCount==3,"Result count not match")
+
+	it2:=db.NewIteratorWithPrefix([]byte("x"))
+	assert.False(t,it2.Next())
+}
 
 func TestLDB_PutGet(t *testing.T) {
 	db, remove := newTestLDB()

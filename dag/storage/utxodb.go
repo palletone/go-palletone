@@ -18,30 +18,24 @@
  *
  */
 
-package common
+package storage
 
 import (
-	"testing"
+	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func TestAddressValidate(t *testing.T) {
-	p2pkh := "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
-	addr, err := StringToAddress(p2pkh)
+type UtxoDatabase struct{
+	db ptndb.Database
 
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(addr)
 }
-func TestAddressNotValidate(t *testing.T) {
-	p2pkh := "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gj"
-	addr, err := StringToAddress(p2pkh)
-
-	if err != nil {
-		t.Log(addr)
-		t.Log(err)
-	} else {
-		t.Error("It must invalid, but pass, please check your code")
-	}
-
+func NewUtxoDatabase(db ptndb.Database) *UtxoDatabase {
+	return &UtxoDatabase{db:db,}
+}
+type UtxoDb interface {
+	GetPrefix(prefix []byte) map[string][]byte
+	GetUtxoByIndex(indexKey []byte) ([]byte,error)
+	GetUtxoEntry( key []byte) (*modules.Utxo, error)
+	SaveUtxoEntity(key []byte,utxo modules.Utxo) error
+	DeleteUtxo(key []byte) error
 }

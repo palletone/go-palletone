@@ -205,7 +205,10 @@ func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, 
 		if err != nil {
 			return nil, err
 		}
-		_, data, name, path := storage.GetContractTpl(dag.Db, templateId)
+		//TODO Devin
+		var statedb storage.StateDb
+		statedb=storage.NewStateDatabase(dag.Db)
+		_, data, name, path := statedb.GetContractTpl(templateId)
 		if data == nil || name == "" || path == "" {
 			return nil, errors.New("et contract template err")
 		}

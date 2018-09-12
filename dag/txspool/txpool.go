@@ -560,7 +560,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	hash := tx.Tx.Hash()
 
 	if pool.all[hash] != nil {
-		log.Trace("Discarding already known transaction", "hash", hash)
+		log.Trace("Discarding already known transaction", "hash", hash, "old_hash", pool.all[hash].Tx.TxHash)
 		return false, fmt.Errorf("known transaction: %x", hash)
 	}
 	// If the transaction fails basic validation, discard it
@@ -654,7 +654,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 			pool.locals.add(*from)
 		}
 	}
-	pool.journalTx(tx)
+	// pool.journalTx(tx)
 
 	log.Trace("Pooled new future transaction", "hash", hash, "repalce", replace, "err", err)
 	return replace, nil
@@ -1240,7 +1240,7 @@ func (view *UtxoViewpoint) LookupUtxo(outpoint modules.OutPoint) *modules.Utxo {
 	}
 	return view.entries[outpoint]
 }
-func (view *UtxoViewpoint) FetchUtxos(db storage.DatabaseReader, outpoints map[modules.OutPoint]struct{}) error {
+func (view *UtxoViewpoint) FetchUtxos(db storage.UtxoDb, outpoints map[modules.OutPoint]struct{}) error {
 	if len(outpoints) == 0 {
 		return nil
 	}
@@ -1254,12 +1254,12 @@ func (view *UtxoViewpoint) FetchUtxos(db storage.DatabaseReader, outpoints map[m
 	return view.fetchUtxosMain(db, neededSet)
 
 }
-func (view *UtxoViewpoint) fetchUtxosMain(db storage.DatabaseReader, outpoints map[modules.OutPoint]struct{}) error {
+func (view *UtxoViewpoint) fetchUtxosMain(db storage.UtxoDb, outpoints map[modules.OutPoint]struct{}) error {
 	if len(outpoints) == 0 {
 		return nil
 	}
 	for outpoint := range outpoints {
-		utxo, err := storage.GetUtxoEntry(db, outpoint.ToKey())
+		utxo, err := db.GetUtxoEntry(outpoint.ToKey())
 		if err != nil {
 			return err
 		}

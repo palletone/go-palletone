@@ -226,6 +226,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.LogValue3Flag,
 			utils.LogValue4Flag,
 			utils.LogValue5Flag,
+			utils.LogOpenModuleFlag,
 			utils.MetricsEnabledFlag,
 			utils.FakePoWFlag,
 			utils.NoCompactionFlag,

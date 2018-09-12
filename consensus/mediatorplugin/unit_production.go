@@ -37,13 +37,16 @@ import (
 func GenerateUnit(dag *dag.Dag, when time.Time, producer core.Mediator,
 	ks *keystore.KeyStore, txspool *txspool.TxPool) *modules.Unit {
 	dgp := dag.DynGlobalProp
+	//TODO Devin will refactory it
+	var unitRep dagcommon.IUnitRepository
+	unitRep=dagcommon.NewUnitRepository4Db(dag.Db)
 
 	// 1. 判断是否满足生产的若干条件
 
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	log.Debug("Generating Verified Unit...")
 
-	units, err := dagcommon.CreateUnit(dag.Db, &producer.Address, txspool, ks, when)
+	units, err := unitRep.CreateUnit( &producer.Address, txspool, ks, when)
 	// added by yangyu, 2018.8.9
 	if err != nil || units == nil || len(units) == 0 || units[0].IsEmpty() {
 		log.Info("No unit need to be packaged for now.")
@@ -81,10 +84,12 @@ func PushUnit(dag *dag.Dag, newUnit *modules.Unit) bool {
 	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
 
 	ApplyUnit(dag, newUnit)
-
+	//TODO Devin below 2 rows
+	var unitRep dagcommon.IUnitRepository
+	unitRep=dagcommon.NewUnitRepository4Db(dag.Db)
 	// 4. 将验证单元添加到本地DB
 	log.Debug("storing the new verified unit to database...")
-	err := dagcommon.SaveUnit(dag.Db, *newUnit, false)
+	err := unitRep.SaveUnit( *newUnit, false)
 	if err != nil {
 		log.Info("unit_production", "PushUnit err:", err)
 	}

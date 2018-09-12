@@ -20,12 +20,12 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
-	"net"
 
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/palletone/go-palletone/cmd/utils"
