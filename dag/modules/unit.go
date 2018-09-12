@@ -196,11 +196,7 @@ type ChainIndex struct {
 }
 
 func (height ChainIndex) String() string {
-	data, err := rlp.EncodeToBytes(height)
-	if err != nil {
-		return ""
-	}
-	return string(data)
+	return 	common.Bytes2Hex(height.Bytes())
 }
 func (height ChainIndex) Bytes() []byte {
 	data, err := rlp.EncodeToBytes(height)

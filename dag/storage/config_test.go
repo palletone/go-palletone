@@ -16,7 +16,7 @@ func MockStateMemDb() StateDb{
 	return statedb
 }
 
-func TestSaveConfig(t *testing.T) {
+func TestSaveAndGetConfig(t *testing.T) {
 	//Dbconn := storage.ReNewDbConn("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb")
 	//if Dbconn == nil {
 	//	fmt.Println("Connect to db error.")
@@ -45,44 +45,8 @@ func TestSaveConfig(t *testing.T) {
 	if err := db.SaveConfig(confs, &stateVersion); err != nil {
 		log.Println(err)
 	}
-}
 
-func TestGetConfig(t *testing.T) {
-	//Dbconn := storage.ReNewDbConn("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb")
-	//Dbconn := storage.ReNewDbConn("../../cmd/gptn/gptn/leveldb")
-	//if Dbconn == nil {
-	//	fmt.Println("Connect to db error.")
-	//	return
-	//}
-	//// todo get struct
-	//data := GetConfig(Dbconn, []byte("TestStruct"))
-	//if len(data) <= 0 {
-	//	log.Println("Get config data error")
-	//} else {
-	//	log.Println("Get Data:", data)
-	//}
-	//
-	//var st modules.Asset
-	//if err := rlp.DecodeBytes(data, &st); err != nil {
-	//	log.Println("Get config data error:", err.Error())
-	//	return
-	//}
-	//log.Println(st.ChainId, st.UniqueId, st.AssetId)
-	//// todo get int
-	//int_data := GetConfig(Dbconn, []byte("TestInt"))
-	//if len(data) <= 0 {
-	//	log.Println("Get config int data error")
-	//} else {
-	//	log.Println("Get int Data:", int_data)
-	//}
-	//var i uint32
-	//if err := rlp.DecodeBytes(int_data, &i); err != nil {
-	//	log.Println("Get config data error:", err.Error())
-	//	return
-	//}
-	//log.Println("int value=", i)
-	// todo get MediatorCandidates
-	db:=MockStateMemDb()
+
 	data := db.GetConfig( []byte("MediatorCandidates"))
 	var mList []core.MediatorInfo
 	fmt.Println(data)
