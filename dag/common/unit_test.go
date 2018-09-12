@@ -77,12 +77,9 @@ func TestSaveUnit(t *testing.T) {
 	auth.V = sig[64:]
 	auth.Address = addr0.String()
 	header.Authors = auth
-	contractTplPayload := modules.ContractTplPayload{
-		TemplateId: []byte("contract_template0000"),
-		Bytecode:   []byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159},
-		Name:       "TestContractTpl",
-		Path:       "./contract",
-	}
+	contractTplPayload := modules.NewContractTplPayload([]byte("contract_template0000"),
+		"TestContractTpl", "./contract", "1.1.1", 1024,
+		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159})
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
 		Height:  GenesisHeight(Dbconn),
@@ -98,14 +95,10 @@ func TestSaveUnit(t *testing.T) {
 			Value: modules.ToPayloadMapValueBytes(10),
 		},
 	}
-	deployPayload := modules.ContractDeployPayload{
-		TemplateId: []byte("contract_template0000"),
-		ContractId: []byte("contract0000"),
-		ReadSet:    readSet,
-		WriteSet:   writeSet,
-	}
+	deployPayload := modules.NewContractDeployPayload([]byte("contract_template0000"), []byte("contract0000"),
+		"testDeploy", nil, 10, nil, readSet, writeSet)
 
-	invokePayload := modules.ContractInvokePayload{
+	invokePayload := &modules.ContractInvokePayload{
 		ContractId: []byte("contract0000"),
 		Args:       [][]byte{[]byte("initial")},
 		ReadSet:    readSet,

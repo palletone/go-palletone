@@ -2094,26 +2094,26 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 
 	// Generate the signature hash based on the signature hash type.
 	var hash []byte
-	if vm.isWitnessVersionActive(0) {
-		var sigHashes *TxSigHashes
-		if vm.hashCache != nil {
-			sigHashes = vm.hashCache
-		} else {
-			sigHashes = NewTxSigHashes(&vm.tx)
-		}
-
-		hash, err = calcWitnessSignatureHash(subScript, sigHashes, hashType,
-			&vm.tx,vm.msgIdx, vm.txIdx, vm.inputAmount)
-		if err != nil {
-			return err
-		}
-	} else {
+	//if vm.isWitnessVersionActive(0) {
+	//	var sigHashes *TxSigHashes
+	//	if vm.hashCache != nil {
+	//		sigHashes = vm.hashCache
+	//	} else {
+	//		sigHashes = NewTxSigHashes(&vm.tx)
+	//	}
+	//
+	//	hash, err = calcWitnessSignatureHash(subScript, sigHashes, hashType,
+	//		&vm.tx,vm.msgIdx, vm.txIdx, vm.inputAmount)
+	//	if err != nil {
+	//		return err
+	//	}
+	//} else {
 		// Remove the signature since there is no way for a signature
 		// to sign itself.
 		subScript = removeOpcodeByData(subScript, fullSigBytes)
 
 		hash = calcSignatureHash(subScript, hashType, &vm.tx,vm.msgIdx, vm.txIdx)
-	}
+	//}
 
 	valid:=crypto.VerifySignature(pkBytes,hash,fullSigBytes)
 	//fmt.Printf("Sign:%x, Validate Hash:%x,PubKey:%x,is valid:%s\n",

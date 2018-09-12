@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"time"
 )
 
 type Dag struct {
@@ -47,8 +48,7 @@ type Dag struct {
 	GlobalProp    *modules.GlobalProperty
 	DynGlobalProp *modules.DynamicGlobalProperty
 	MediatorSchl  *modules.MediatorSchedule
-	// memory unit
-	Memdag *memunit.MemDag
+	Memdag        *memunit.MemDag // memory unit
 }
 
 func (d *Dag) CurrentUnit() *modules.Unit {
@@ -166,13 +166,13 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 	return nil
 }
 
-func (d *Dag) SaveDag(unit modules.Unit) (int, error) {
+func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
 	// step1. check exists
 	if d.Memdag.Exists(unit.UnitHash) || d.GetUnit(unit.UnitHash) != nil {
 		return 0, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash)
 	}
 	// step2. validate unit
-	unitState := dagcommon.ValidateUnit(d.Db, &unit, false)
+	unitState := dagcommon.ValidateUnit(d.Db, &unit, isGenesis)
 	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
 		return 0, fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
 	}
@@ -493,7 +493,7 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 	preout := modules.OutPoint{TxHash: tx.Hash()}
 	for i, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
-			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				msgIdx := uint32(i)
 				preout.MessageIndex = msgIdx
 				for j := range msg.Output {
@@ -559,4 +559,60 @@ func (d *Dag) GetActiveMediators() []common.Address {
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorNode(mediator common.Address) *discover.Node {
 	return d.GlobalProp.GetActiveMediatorNode(mediator)
+}
+
+func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error) {
+	// get current unit
+	currentUnit := d.CurrentUnit()
+	if currentUnit == nil {
+		return nil, fmt.Errorf("CreateUnitForTest ERROR: genesis unit is null")
+	}
+	// compute height
+	height := modules.ChainIndex{
+		AssetID: currentUnit.UnitHeader.Number.AssetID,
+		IsMain:  currentUnit.UnitHeader.Number.IsMain,
+		Index:   currentUnit.UnitHeader.Number.Index + 1,
+	}
+	//
+	unitHeader := modules.Header{
+		ParentsHash:  []common.Hash{currentUnit.UnitHash},
+		AssetIDs:     []modules.IDType16{currentUnit.UnitHeader.Number.AssetID},
+		Authors:      nil,
+		Witness:      []*modules.Authentifier{},
+		Number:       height,
+		Creationdate: time.Now().Unix(),
+	}
+
+	sAddr := "P1NsG3kiKJc87M6Di6YriqHxqfPhdvxVj2B"
+	addr, err := common.StringToAddress(sAddr)
+	if err != nil {
+
+	}
+	bAsset := dagcommon.GetConfig(d.Db, []byte("GenesisAsset"))
+	if len(bAsset) <= 0 {
+		return nil, fmt.Errorf("Create unit error: query asset info empty")
+	}
+	var asset modules.Asset
+	if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
+		return nil, fmt.Errorf("Create unit: %s", err.Error())
+	}
+	coinbase, err := dagcommon.CreateCoinbase(&addr, 0, &asset, time.Now())
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+	newTxs := modules.Transactions{coinbase}
+	if len(txs) > 0 {
+		for _, tx := range txs {
+			txs = append(txs, tx)
+		}
+	}
+
+	unit := modules.Unit{
+		UnitHeader: &unitHeader,
+		Txs:        newTxs,
+	}
+	unit.UnitHash = unit.Hash()
+	unit.UnitSize = unit.Size()
+	return &unit, nil
 }

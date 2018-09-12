@@ -84,7 +84,7 @@ func ValidateTransactions(db ptndb.Database, txs *modules.Transactions, isGenesi
 			return nil, false, fmt.Errorf("Unit coinbase length is error.")
 		}
 
-		coinIn, ok := (*txs)[0].TxMessages[0].Payload.(modules.PaymentPayload)
+		coinIn, ok := (*txs)[0].TxMessages[0].Payload.(*modules.PaymentPayload)
 		if !ok {
 			return nil, false, fmt.Errorf("Coinbase payload type error.")
 		}
@@ -128,19 +128,19 @@ func ValidateTx(db ptndb.Database, tx *modules.Transaction, worldTmpState *map[s
 		case modules.APP_PAYMENT:
 
 		case modules.APP_CONTRACT_TPL:
-			payload, _ := msg.Payload.(modules.ContractTplPayload)
-			validateCode := validateContractTplPayload(db, &payload)
+			payload, _ := msg.Payload.(*modules.ContractTplPayload)
+			validateCode := validateContractTplPayload(db, payload)
 			if validateCode != modules.TxValidationCode_VALID {
 				return validateCode
 			}
 		case modules.APP_CONTRACT_DEPLOY:
-			payload, _ := msg.Payload.(modules.ContractDeployPayload)
+			payload, _ := msg.Payload.(*modules.ContractDeployPayload)
 			validateCode := validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet, worldTmpState)
 			if validateCode != modules.TxValidationCode_VALID {
 				return validateCode
 			}
 		case modules.APP_CONTRACT_INVOKE:
-			payload, _ := msg.Payload.(modules.ContractInvokePayload)
+			payload, _ := msg.Payload.(*modules.ContractInvokePayload)
 			validateCode := validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet, worldTmpState)
 			if validateCode != modules.TxValidationCode_VALID {
 				return validateCode

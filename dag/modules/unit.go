@@ -225,13 +225,6 @@ type Message struct {
 	Payload interface{} `json:"payload"` // the true transaction data
 }
 
-// return message struct
-func NewMessage(app byte, payload interface{}) *Message {
-	m := new(Message)
-	m.App = app
-	m.Payload = payload
-	return m
-}
 func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	msg.App = cpyMsg.App
 	msg.Payload = cpyMsg.Payload
@@ -239,7 +232,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT:
 		msg.Payload = cpyMsg.Payload
 	case APP_CONFIG:
-		payload, _ := cpyMsg.Payload.(ConfigPayload)
+		payload, _ := cpyMsg.Payload.(*ConfigPayload)
 		newPayload := ConfigPayload{
 			ConfigSet: []PayloadMapStruct{},
 		}
@@ -248,7 +241,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 		}
 		msg.Payload = newPayload
 	case APP_CONTRACT_DEPLOY:
-		payload, _ := cpyMsg.Payload.(ContractDeployPayload)
+		payload, _ := cpyMsg.Payload.(*ContractDeployPayload)
 		newPayload := ContractDeployPayload{
 			TemplateId:   payload.TemplateId,
 			ContractId:   payload.ContractId,
@@ -267,7 +260,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 		newPayload.WriteSet = writeSet
 		msg.Payload = newPayload
 	case APP_CONTRACT_INVOKE:
-		payload, _ := cpyMsg.Payload.(ContractInvokePayload)
+		payload, _ := cpyMsg.Payload.(*ContractInvokePayload)
 		newPayload := ContractInvokePayload{
 			ContractId:   payload.ContractId,
 			Args:         payload.Args,

@@ -3,6 +3,7 @@ package tokenengine
 import (
 	"github.com/palletone/go-palletone/common"
 	//"github.com/btcsuite/btcd/btcec"
+        "fmt"
 	"crypto/ecdsa"
 	"errors"
 	"github.com/palletone/go-palletone/common/log"
@@ -108,14 +109,15 @@ func GenerateP2SHUnlockScript(signs [][]byte, redeemScript []byte) []byte {
 }
 
 //validate this transaction and input index script can unlock the utxo.
-func ScriptValidate(utxoLockScript []byte, utxoAmount int64, tx *modules.Transaction, msgIdx, inputIndex int) error {
-	vm, err := txscript.NewEngine(utxoLockScript, tx, msgIdx, inputIndex, txscript.StandardVerifyFlags, nil, nil, utxoAmount)
+func ScriptValidate(utxoLockScript []byte, tx *modules.Transaction, msgIdx, inputIndex int) error {
+	vm, err := txscript.NewEngine(utxoLockScript, tx, msgIdx, inputIndex, txscript.StandardVerifyFlags, nil, nil, 0)
 	if err != nil {
 		log.Error("Failed to create script: ", err)
 		return err
 	}
 	return vm.Execute()
 }
+
 
 //对交易中的Payment类型中的某个Input生成解锁脚本
 func SignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, privKey *ecdsa.PrivateKey) ([]byte, error) {
@@ -148,24 +150,41 @@ func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockS
 }
 
 //Sign a full transaction
-func SignTxAllPaymentInput(tx *modules.Transaction, utxoLockScripts map[modules.OutPoint][]byte, privKeys map[common.Address]*ecdsa.PrivateKey) error {
+func SignTxAllPaymentInput(tx *modules.Transaction, utxoLockScripts map[modules.OutPoint][]byte, redeemScript []byte,privKeys map[common.Address]*ecdsa.PrivateKey) error {
 	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
 		if privKey, ok := privKeys[a]; ok {
 			return privKey, true, nil
 		}
 		return nil, false, nil
 	}
+	lookupRedeemScript := func(a common.Address) ([]byte, error) {
+		//addrStr := a.String()
+		//redeemScript, ok := scripts[addrStr]
+		//if !ok {
+		//	return nil, errors.New("no script for address")
+		//}
+		return redeemScript, nil
+	}
 	for i, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
-			pay := msg.Payload.(*modules.PaymentPayload)
+			pay , ok:= msg.Payload.(*modules.PaymentPayload)
+			if !ok {
+				fmt.Println("Get Payment payload error:")
+			} else {
+	 			fmt.Println("Payment payload:", pay)
+	 		}
 			for j, input := range pay.Input {
-				utxoLockScript := utxoLockScripts[*input.PreviousOutPoint]
+				utxoLockScript , _:= utxoLockScripts[*input.PreviousOutPoint]
+				checkscript := make([]byte, len(utxoLockScript))
+	 			copy(checkscript, utxoLockScript)
+
 				sigScript, err := txscript.SignTxOutput(tx, i, j, utxoLockScript, txscript.SigHashAll,
-					txscript.KeyClosure(lookupKey), nil, nil)
+					txscript.KeyClosure(lookupKey),  txscript.ScriptClosure(lookupRedeemScript), input.SignatureScript)
 				if err != nil {
 					return err
 				}
 				input.SignatureScript = sigScript
+				checkscript = nil
 			}
 		}
 	}
