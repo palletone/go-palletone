@@ -275,19 +275,27 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 
 // @author Albert·Gou
 //func (pm *ProtocolManager) BroadcastVssResp(dstId string, resp *mp.VSSResponseEvent) {
-func (pm *ProtocolManager) BroadcastVssResp(node *discover.Node, resp *mp.VSSResponseEvent) {
-	dstId := node.ID.TerminalString()
-	peer := pm.peers.Peer(dstId)
-	if peer == nil {
-		log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
-	}
+func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
+	//dstId := node.ID.TerminalString()
+	//peer := pm.peers.Peer(dstId)
+	//if peer == nil {
+	//	log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
+	//}
 
-	if pm.peers.PeersWithoutVssResp(dstId) {
-		return
-	}
-	pm.peers.MarkVssResp(dstId)
+	// comment by Albert·Gou
+	//if pm.peers.PeersWithoutVssResp(dstId) {
+	//	return
+	//}
+	//pm.peers.MarkVssResp(dstId)
+
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
+		dstId := peer.id
+		if pm.peers.PeersWithoutVssResp(dstId) {
+			return
+		}
+		pm.peers.MarkVssResp(dstId)
+
 		// comment by Albert·Gou
 		//msg := &vssRespMsg{
 		//	NodeId: dstId,
@@ -308,8 +316,9 @@ func (self *ProtocolManager) vssResponseBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.vssResponseCh:
-			node := self.dag.GetActiveMediatorNode(event.DstMed)
-			self.BroadcastVssResp(node, &event)
+			//node := self.dag.GetActiveMediatorNode(event.DstMed)
+			//self.BroadcastVssResp(node, &event)
+			self.BroadcastVssResp(&event)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-self.vssResponseSub.Err():

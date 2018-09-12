@@ -108,21 +108,21 @@ func (mp *MediatorPlugin) processVSSDeal(deal *VSSDealEvent) {
 // BroadcastVSSResponse, broadcast response to every other participant
 func (mp *MediatorPlugin) BroadcastVSSResponse(srcMed common.Address, resp *dkg.Response) {
 	// todo
-	ams := mp.getDag().GetActiveMediators()
+	//ams := mp.getDag().GetActiveMediators()
+	//
+	//for _, dstMed := range ams {
+	//	if dstMed == srcMed {
+	//		continue // ignore sending response to myself
+	//	}
 
-	for _, dstMed := range ams {
-		if dstMed == srcMed {
-			continue // ignore sending response to myself
-		}
-
-		event := VSSResponseEvent{
-			//			SrcMed: srcMed,
-			DstMed: dstMed,
-			Resp:   resp,
-		}
-
-		mp.vssResponseFeed.Send(event)
+	event := VSSResponseEvent{
+		//			SrcMed: srcMed,
+		//DstMed: dstMed,
+		Resp: resp,
 	}
+
+	mp.vssResponseFeed.Send(event)
+	//}
 }
 
 func (mp *MediatorPlugin) ToProcessResponse(resp *VSSResponseEvent) error {
@@ -147,26 +147,29 @@ func (mp *MediatorPlugin) processResponseLoop() {
 
 func (mp *MediatorPlugin) processVSSResponse(resp *VSSResponseEvent) {
 	//todo
-	dstMed := resp.DstMed
+	//	dstMed := resp.DstMed
 	//if dstMed == resp.SrcMed {
 	//	return //ignore the message from myself
 	//}
 
-	dkg, ok := mp.dkgs[dstMed]
-	if !ok || dkg == nil {
-		log.Error(fmt.Sprintf("The following mediator`s dkg is not existed: %v", dstMed.String()))
-		return
-	}
+	lams := mp.GetLocalActiveMediators()
+	for _, dstMed := range lams {
+		dkg, ok := mp.dkgs[dstMed]
+		if !ok || dkg == nil {
+			log.Error(fmt.Sprintf("The following mediator`s dkg is not existed: %v", dstMed.String()))
+			return
+		}
 
-	jstf, err := dkg.ProcessResponse(resp.Resp)
-	if err != nil {
-		log.Error(err.Error())
-		return
-	}
+		jstf, err := dkg.ProcessResponse(resp.Resp)
+		if err != nil {
+			log.Error(err.Error())
+			return
+		}
 
-	if jstf != nil {
-		log.Error(fmt.Sprintf("DKG: wrong Process Response: %v", dstMed.String()))
-		return
+		if jstf != nil {
+			log.Error(fmt.Sprintf("DKG: wrong Process Response: %v", dstMed.String()))
+			return
+		}
 	}
 }
 
