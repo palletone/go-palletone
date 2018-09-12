@@ -101,7 +101,7 @@ func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 
 	gp := mp.getDag().GlobalProp
 	for add := range mp.mediators {
-		if _, ok := gp.ActiveMediators[add]; ok {
+		if gp.IsActiveMediator(add) {
 			lams = append(lams, add)
 		}
 	}
@@ -172,7 +172,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	mp.server = server
 
 	// 1. 如果当前节点有活跃mediator，则静态连接其他活跃mediator
-//	go mp.AddActiveMediatorPeers()
+	go mp.AddActiveMediatorPeers()
 
 	// 2. 开启循环生产计划
 	go mp.ScheduleProductionLoop()

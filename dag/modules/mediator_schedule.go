@@ -35,13 +35,17 @@ func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorS
 	log.Debug("initialize mediator schedule...")
 	ms := NewMediatorSchl()
 
-	if len(gp.ActiveMediators) == 0 {
+	aSize := uint64(len(gp.ActiveMediators))
+	if aSize == 0 {
 		log.Error("The current number of active mediators is 0!")
 	}
 
 	// Create witness scheduler
-	for _, m := range gp.ActiveMediators {
-		ms.CurrentShuffledMediators = append(ms.CurrentShuffledMediators, m)
+	ms.CurrentShuffledMediators = make([]core.Mediator, 0, aSize)
+	meds := gp.GetActiveMediators()
+	for i, add := range meds {
+		med := gp.GetActiveMediator(add)
+		ms.CurrentShuffledMediators[i] = *med
 	}
 
 	//	ms.UpdateMediatorSchedule(gp, dgp)
@@ -72,8 +76,10 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 	ms.CurrentShuffledMediators = make([]core.Mediator, 0, aSize)
 
 	// 3. 初始化数据
-	for _, m := range gp.ActiveMediators {
-		ms.CurrentShuffledMediators = append(ms.CurrentShuffledMediators, m)
+	meds := gp.GetActiveMediators()
+	for i, add := range meds {
+		med := gp.GetActiveMediator(add)
+		ms.CurrentShuffledMediators[i] = *med
 	}
 
 	// 4. 打乱证人的调度顺序

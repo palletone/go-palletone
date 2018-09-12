@@ -21,6 +21,7 @@ package modules
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
@@ -66,7 +67,7 @@ func (gp *GlobalProperty) GetActiveMediatorCount() int {
 }
 
 func (gp *GlobalProperty) GetCurThreshold() int {
-	aSize := len(gp.ActiveMediators)
+	aSize := gp.GetActiveMediatorCount()
 	offset := (core.PalletOne100Percent - core.PalletOneIrreversibleThreshold) * aSize /
 		core.PalletOne100Percent
 
@@ -74,49 +75,75 @@ func (gp *GlobalProperty) GetCurThreshold() int {
 }
 
 func (gp *GlobalProperty) GetActiveMediatorInitPubs() []kyber.Point {
-	aSize := len(gp.ActiveMediators)
-	pubs := make([]kyber.Point, 0, aSize)
+	pubs := make([]kyber.Point, 0, gp.GetActiveMediatorCount())
 
-	for _, med := range gp.ActiveMediators {
-		pubs = append(pubs, med.InitPartPub)
+	meds := gp.GetActiveMediators()
+	for i, add := range meds {
+		med := gp.GetActiveMediator(add)
+
+		pubs[i] = med.InitPartPub
 	}
 
 	return pubs
 }
 
-func (gp *GlobalProperty) getActiveMediator(add common.Address) *core.Mediator {
-	med, ok := gp.ActiveMediators[add]
-	if !ok {
+func (gp *GlobalProperty) IsActiveMediator(add common.Address) bool {
+	_, ok := gp.ActiveMediators[add]
+
+	return ok
+}
+
+func (gp *GlobalProperty) GetActiveMediator(add common.Address) *core.Mediator {
+	if !gp.IsActiveMediator(add) {
 		log.Error(fmt.Sprintf("%v is not active mediator!", add.Str()))
 		return nil
 	}
+
+	med, _ := gp.ActiveMediators[add]
 
 	return &med
 }
 
 func (gp *GlobalProperty) GetActiveMediatorNode(mediator common.Address) *discover.Node {
-	med := gp.getActiveMediator(mediator)
+	med := gp.GetActiveMediator(mediator)
 
 	return med.Node
 }
 
+// GetActiveMediators, return the list of active mediators, and the order of the list from small to large
 func (gp *GlobalProperty) GetActiveMediators() []common.Address {
-	aSize := len(gp.ActiveMediators)
-	mediators := make([]common.Address, 0, aSize)
+	mediators := make([]common.Address, 0, gp.GetActiveMediatorCount())
 
 	for _, m := range gp.ActiveMediators {
 		mediators = append(mediators, m.Address)
 	}
 
+	sortAddress(mediators)
+
 	return mediators
 }
 
-func (gp *GlobalProperty) GetActiveMediatorNodes() []*discover.Node {
-	aSize := len(gp.ActiveMediators)
-	nodes := make([]*discover.Node, 0, aSize)
+func sortAddress(adds []common.Address) {
+	addStrs := make([]string, 0, len(adds))
+	for i, add := range adds {
+		addStrs[i] = add.Str()
+	}
 
-	for _, m := range gp.ActiveMediators {
-		nodes = append(nodes, m.Node)
+	sort.Strings(addStrs)
+
+	for i, addStr := range addStrs {
+		adds[i] = common.PubKeyHashHexToAddress(addStr)
+	}
+}
+
+func (gp *GlobalProperty) GetActiveMediatorNodes() []*discover.Node {
+	nodes := make([]*discover.Node, 0, gp.GetActiveMediatorCount())
+
+	meds := gp.GetActiveMediators()
+	for i, add := range meds {
+		med := gp.GetActiveMediator(add)
+
+		nodes[i] = med.Node
 	}
 
 	return nodes
