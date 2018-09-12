@@ -308,7 +308,7 @@ func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
 
 		err := peer.SendVSSResponse(resp)
 		if err != nil {
-			log.Error(err.Error())
+			log.Info(err.Error())
 		}
 	}
 }
@@ -334,7 +334,8 @@ func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDeal
 	dstId := node.ID.TerminalString()
 	peer := pm.peers.Peer(dstId)
 	if peer == nil {
-		log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
+		log.Info(fmt.Sprintf("peer not exist: %v", node.String()))
+		return
 	}
 
 	// comment by Albert·Gou
