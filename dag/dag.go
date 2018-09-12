@@ -393,7 +393,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	}
 	dagDb:=storage.NewDagDatabase(db)
 	utxoDb:=storage.NewUtxoDatabase(db)
-	stateDb:=storage.NewWorldStateDatabase(db)
+	stateDb:=storage.NewStateDatabase(db)
 	idxDb:=storage.NewIndexDatabase(db)
 
 	utxoRep:=dagcommon.NewUtxoRepository(utxoDb,idxDb,stateDb)
@@ -424,7 +424,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 
 	dagDb:=storage.NewDagDatabase(db)
 	utxoDb:=storage.NewUtxoDatabase(db)
-	stateDb:=storage.NewWorldStateDatabase(db)
+	stateDb:=storage.NewStateDatabase(db)
 	idxDb:=storage.NewIndexDatabase(db)
 
 	utxoRep:=dagcommon.NewUtxoRepository(utxoDb,idxDb,stateDb)

@@ -34,14 +34,14 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/syndtr/goleveldb/leveldb/iterator"
+
 )
 
 // DatabaseReader wraps the Get method of a backing data store.
 type DatabaseReader interface {
 	Get(key []byte) (value []byte, err error)
-	NewIterator() iterator.Iterator
-	NewIteratorWithPrefix(prefix []byte) iterator.Iterator
+	NewIterator() ptndb.Iterator
+	NewIteratorWithPrefix(prefix []byte) ptndb.Iterator
 }
 
 // @author Albert·Gou
@@ -84,7 +84,7 @@ func (db *UtxoDatabase)GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
 }
 // get prefix: return maps
-func (db *WorldStateDatabase)GetPrefix(prefix []byte) map[string][]byte {
+func (db *StateDatabase)GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
 }
 func (db *IndexDatabase)GetPrefix(prefix []byte) map[string][]byte {
@@ -309,7 +309,7 @@ func (dagdb *DagDatabase)GetContractNoReader(db ptndb.Database, id common.Hash) 
 }
 
 // GetContract can get a Contract by the contract hash
-func (statedb *WorldStateDatabase)GetContract( id common.Hash) (*modules.Contract, error) {
+func (statedb *StateDatabase)GetContract( id common.Hash) (*modules.Contract, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
@@ -331,7 +331,7 @@ func (statedb *WorldStateDatabase)GetContract( id common.Hash) (*modules.Contrac
 获取合约模板
 To get contract template
 */
-func (statedb *WorldStateDatabase)GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
+func (statedb *StateDatabase)GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
 	key := fmt.Sprintf("%s%s^*^bytecode",
 		CONTRACT_TPL,
 		hexutil.Encode(templateID[:]),
@@ -556,7 +556,7 @@ func (dagdb *DagDatabase)GetAddrOutput(addr string) ([]modules.Output, error) {
 获取模板所有属性
 To get contract or contract template all fields and return
 */
-func (statedb *WorldStateDatabase)GetTplAllState( id string) map[modules.ContractReadSet][]byte {
+func (statedb *StateDatabase)GetTplAllState( id string) map[modules.ContractReadSet][]byte {
 	// key format: [PREFIX][ID]_[field]_[version]
 	key := fmt.Sprintf("%s%s^*^", CONTRACT_TPL, id)
 	data := getprefix(statedb.db, []byte(key))
@@ -586,7 +586,7 @@ func (statedb *WorldStateDatabase)GetTplAllState( id string) map[modules.Contrac
 获取合约（或模板）所有属性
 To get contract or contract template all fields and return
 */
-func (statedb *WorldStateDatabase)GetContractAllState(id []byte) map[modules.ContractReadSet][]byte {
+func (statedb *StateDatabase)GetContractAllState(id []byte) map[modules.ContractReadSet][]byte {
 	// key format: [PREFIX][ID]_[field]_[version]
 	key := fmt.Sprintf("%s%s^*^", CONTRACT_STATE_PREFIX, hexutil.Encode(id))
 	data := getprefix(statedb.db, []byte(key))
@@ -616,7 +616,7 @@ func (statedb *WorldStateDatabase)GetContractAllState(id []byte) map[modules.Con
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */
-func(statedb *WorldStateDatabase) GetTplState( id []byte, field string) (modules.StateVersion, []byte) {
+func(statedb *StateDatabase) GetTplState( id []byte, field string) (modules.StateVersion, []byte) {
 	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, hexutil.Encode(id[:]), field)
 	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) != 1 {
@@ -636,7 +636,7 @@ func(statedb *WorldStateDatabase) GetTplState( id []byte, field string) (modules
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */
-func(statedb *WorldStateDatabase) GetContractState(id string, field string) (modules.StateVersion, []byte) {
+func(statedb *StateDatabase) GetContractState(id string, field string) (modules.StateVersion, []byte) {
 	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_STATE_PREFIX, id, field)
 	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) != 1 {
@@ -652,7 +652,7 @@ func(statedb *WorldStateDatabase) GetContractState(id string, field string) (mod
 	log.Println("11111111")
 	return modules.StateVersion{}, nil
 }
-func (statedb *WorldStateDatabase) GetAssetInfo( assetId *modules.Asset) (modules.AssetInfo, error){
+func (statedb *StateDatabase) GetAssetInfo( assetId *modules.Asset) (modules.AssetInfo, error){
 	key := append(modules.ASSET_INFO_PREFIX, assetId.AssetId.String()...)
 	data, err := statedb.db.Get(key)
 	if err != nil {

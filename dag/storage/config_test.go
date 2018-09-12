@@ -4,18 +4,25 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"log"
 	"testing"
+	"github.com/palletone/go-palletone/common/ptndb"
 )
 
+func MockStateMemDb() StateDb{
+	db,_:=ptndb.NewMemDatabase()
+	statedb:=NewStateDatabase(db)
+	return statedb
+}
+
 func TestSaveConfig(t *testing.T) {
-	Dbconn := storage.ReNewDbConn("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb")
-	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
-		return
-	}
+	//Dbconn := storage.ReNewDbConn("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb")
+	//if Dbconn == nil {
+	//	fmt.Println("Connect to db error.")
+	//	return
+	//}
+	db:=MockStateMemDb()
 	confs := []modules.PayloadMapStruct{}
 	aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))
@@ -35,18 +42,18 @@ func TestSaveConfig(t *testing.T) {
 		TxIndex: 0,
 	}
 	log.Println(stateVersion)
-	if err := SaveConfig(Dbconn, confs, &stateVersion); err != nil {
+	if err := db.SaveConfig(confs, &stateVersion); err != nil {
 		log.Println(err)
 	}
 }
 
 func TestGetConfig(t *testing.T) {
 	//Dbconn := storage.ReNewDbConn("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb")
-	Dbconn := storage.ReNewDbConn("../../cmd/gptn/gptn/leveldb")
-	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
-		return
-	}
+	//Dbconn := storage.ReNewDbConn("../../cmd/gptn/gptn/leveldb")
+	//if Dbconn == nil {
+	//	fmt.Println("Connect to db error.")
+	//	return
+	//}
 	//// todo get struct
 	//data := GetConfig(Dbconn, []byte("TestStruct"))
 	//if len(data) <= 0 {
@@ -75,7 +82,8 @@ func TestGetConfig(t *testing.T) {
 	//}
 	//log.Println("int value=", i)
 	// todo get MediatorCandidates
-	data := GetConfig(Dbconn, []byte("MediatorCandidates"))
+	db:=MockStateMemDb()
+	data := db.GetConfig( []byte("MediatorCandidates"))
 	var mList []core.MediatorInfo
 	fmt.Println(data)
 	if err := rlp.DecodeBytes(data, &mList); err != nil {
@@ -83,7 +91,7 @@ func TestGetConfig(t *testing.T) {
 		return
 	}
 	// todo get ActiveMediators
-	bNum := GetConfig(Dbconn, []byte("ActiveMediators"))
+	bNum := db.GetConfig( []byte("ActiveMediators"))
 	var mNum uint16
 	if err := rlp.DecodeBytes(bNum, &mNum); err != nil {
 		log.Println("Check unit signature", "error", err.Error())
@@ -95,41 +103,43 @@ func TestGetConfig(t *testing.T) {
 	}
 	log.Println(">>>>>>>>> Pass >>>>>>>>>>.")
 }
-
-func TestSaveStruct(t *testing.T) {
-	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
-	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
-		return
-	}
-	aid := modules.IDType16{}
-	aid.SetBytes([]byte("1111111111111111222222222222222222"))
-	st := modules.Asset{
-		AssetId:  aid,
-		UniqueId: aid,
-		ChainId:  1,
-	}
-	if err := storage.Store(Dbconn, "TestStruct", st); err != nil {
-		t.Error(err.Error())
-	}
-}
-
-func TestReadStruct(t *testing.T) {
-	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
-	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
-		return
-	}
-
-	data, err := storage.Get(Dbconn, []byte("TestStruct"))
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	var st modules.Asset
-	if err := rlp.DecodeBytes(data, &st); err != nil {
-		t.Error(err.Error())
-	}
-	log.Println("Data:", data)
-	log.Println(st)
-}
+//
+//func TestSaveStruct(t *testing.T) {
+//	//Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+//	//if Dbconn == nil {
+//	//	fmt.Println("Connect to db error.")
+//	//	return
+//	//}
+//	db:=MockStateMemDb()
+//	aid := modules.IDType16{}
+//	aid.SetBytes([]byte("1111111111111111222222222222222222"))
+//	st := modules.Asset{
+//		AssetId:  aid,
+//		UniqueId: aid,
+//		ChainId:  1,
+//	}
+//
+//	if err := storage.Store(Dbconn, "TestStruct", st); err != nil {
+//		t.Error(err.Error())
+//	}
+//}
+//
+//func TestReadStruct(t *testing.T) {
+//	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+//	if Dbconn == nil {
+//		fmt.Println("Connect to db error.")
+//		return
+//	}
+//
+//	data, err := storage.Get(Dbconn, []byte("TestStruct"))
+//	if err != nil {
+//		t.Error(err.Error())
+//	}
+//
+//	var st modules.Asset
+//	if err := rlp.DecodeBytes(data, &st); err != nil {
+//		t.Error(err.Error())
+//	}
+//	log.Println("Data:", data)
+//	log.Println(st)
+//}
