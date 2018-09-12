@@ -146,11 +146,12 @@ func initGenesis(ctx *cli.Context) error {
 	// 2, 重写配置文件，修改当前节点的mediator的地址和密码
 	// @author Albert·Gou
 	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
-	configPath := defaultConfigPath
-	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-		configPath, _ = getConfigPath(temp, node.DataDir())
-	}
-	modifyMediatorInConf(configPath, password, account.Address)
+	// todo Albert·Gou
+	//configPath := defaultConfigPath
+	//if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
+	//	configPath, _ = getConfigPath(temp, node.DataDir())
+	//}
+	//modifyMediatorInConf(configPath, password, account.Address)
 
 	// 3, 全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
