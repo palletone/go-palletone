@@ -55,14 +55,17 @@ const deFaultNode = "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b
 // The returned chain configuration is never nil.
 func SetupGenesisUnit(db ptndb.Database, genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) (*modules.Unit, error) {
 	// TODO check genesis unit existing
-	genesisUnit, err := dagCommon.GetGenesisUnit(db, 0)
+	//TODO Devin
+	var unitRep dagCommon.IUnitRepository
+	unitRep=dagCommon.NewUnitRepository4Db(db)
+	genesisUnit, err := unitRep.GetGenesisUnit( 0)
 	if err != nil {
 		return nil, err
 	}
 	if genesisUnit != nil {
 		return nil, fmt.Errorf("Genesis unit(%s) has been created.", genesisUnit.UnitHash.String())
 	}
-	unit, err := setupGenesisUnit(db, genesis, ks)
+	unit, err := setupGenesisUnit(unitRep, genesis, ks)
 	if err != nil {
 		return unit, err
 	}
@@ -74,17 +77,16 @@ func SetupGenesisUnit(db ptndb.Database, genesis *core.Genesis, ks *keystore.Key
 	}
 
 	// to save unit in db
-	if err := CommitDB(db, unit, true); err != nil {
+	if err := CommitDB(unitRep, unit, true); err != nil {
 		log.Error("Commit genesis unit to db:", "error", err.Error())
 		return unit, err
 	}
 	return unit, nil
 }
 
-func setupGenesisUnit(db ptndb.Database, genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Unit, error) {
-
+func setupGenesisUnit(unitRep dagCommon.IUnitRepository, genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Unit, error) {
 	// Just commit the new block if there is no stored genesis block.
-	stored, err := dagCommon.GetGenesisUnit(db, 0)
+	stored, err := unitRep.GetGenesisUnit( 0)
 	if err != nil {
 		return nil, err
 	}
@@ -179,9 +181,9 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	return txs
 }
 
-func CommitDB(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
+func CommitDB(unitRep dagCommon.IUnitRepository, unit *modules.Unit, isGenesis bool) error {
 	// save genesis unit to leveldb
-	if err := dagCommon.SaveUnit(db, *unit, isGenesis); err != nil {
+	if err := unitRep.SaveUnit(*unit, isGenesis); err != nil {
 		return err
 	} else {
 		log.Info("Save genesis unit success.")

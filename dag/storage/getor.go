@@ -51,7 +51,7 @@ func Retrieve(db ptndb.Database, key string, v interface{}) error {
 	//	return errors.New("an invalid argument, the argument must be a non-nil pointer")
 	//}
 
-	data, err := Get(db, []byte(key))
+	data, err := db.Get( []byte(key))
 	if err != nil {
 		return err
 	}
@@ -64,12 +64,6 @@ func Retrieve(db ptndb.Database, key string, v interface{}) error {
 	return nil
 }
 
-// get bytes
-func Get(db ptndb.Database, key []byte) ([]byte, error) {
-	// return db.Get(key)
-	b, err := db.Get(key)
-	return b, err
-}
 
 // get string
 func GetString(db ptndb.Database, key []byte) (string, error) {
@@ -81,11 +75,21 @@ func GetString(db ptndb.Database, key []byte) (string, error) {
 }
 
 // get prefix: return maps
-func GetPrefix(db ptndb.Database, prefix []byte) map[string][]byte {
-	return getprefix(db, prefix)
+func (dagdb *DagDatabase)GetPrefix(prefix []byte) map[string][]byte {
+	return getprefix(dagdb.db, prefix)
 
 }
-
+// get prefix: return maps
+func (db *UtxoDatabase)GetPrefix(prefix []byte) map[string][]byte {
+	return getprefix(db.db, prefix)
+}
+// get prefix: return maps
+func (db *WorldStateDatabase)GetPrefix(prefix []byte) map[string][]byte {
+	return getprefix(db.db, prefix)
+}
+func (db *IndexDatabase)GetPrefix(prefix []byte) map[string][]byte {
+	return getprefix(db.db, prefix)
+}
 // get prefix
 func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 	iter := db.NewIteratorWithPrefix(prefix)
@@ -99,16 +103,16 @@ func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 	return result
 }
 
-func GetUnit(db ptndb.Database, hash common.Hash) *modules.Unit {
+func (dagdb *DagDatabase)GetUnit(hash common.Hash) *modules.Unit {
 	// 1. get chainindex
-	height, err := GetNumberWithUnitHash(db, hash)
+	height, err := dagdb.GetNumberWithUnitHash( hash)
 	//fmt.Printf("height=%#v\n", height)
 	if err != nil {
 		log.Println("GetUnit when GetUnitNumber failed , error:", err)
 		return nil
 	}
 	// 2. unit header
-	uHeader, err := GetHeader(db, hash, &height)
+	uHeader, err := dagdb.GetHeader( hash, &height)
 	if err != nil {
 		log.Println("GetUnit when GetHeader failed , error:", err)
 		return nil
@@ -117,7 +121,7 @@ func GetUnit(db ptndb.Database, hash common.Hash) *modules.Unit {
 	uHash := common.Hash{}
 	uHash.SetBytes(hash.Bytes())
 	// get transaction list
-	txs, err := GetUnitTransactions(db, uHash)
+	txs, err := dagdb.GetUnitTransactions(uHash)
 	if err != nil {
 		log.Println("GetUnit when GetUnitTransactions failed , error:", err)
 		return nil
@@ -131,40 +135,40 @@ func GetUnit(db ptndb.Database, hash common.Hash) *modules.Unit {
 	unit.UnitSize = unit.Size()
 	return unit
 }
-func GetUnitTransactions(db ptndb.Database, hash common.Hash) (modules.Transactions, error) {
+func (dagdb *DagDatabase)GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
 	txs := modules.Transactions{}
-	txHashList, err := GetBody(db, hash)
+	txHashList, err := dagdb.GetBody(hash)
 	if err != nil {
 		return nil, err
 	}
 	// get transaction by tx'hash.
 	for _, txHash := range txHashList {
-		tx, _, _, _ := GetTransaction(db, txHash)
+		tx, _, _, _ := dagdb.GetTransaction(txHash)
 		if err != nil {
 			txs = append(txs, tx)
 		}
 	}
 	return txs, nil
 }
-func GetUnitFormIndex(db ptndb.Database, number modules.ChainIndex) *modules.Unit {
+func (dagdb *DagDatabase)GetUnitFormIndex(number modules.ChainIndex) *modules.Unit {
 	i := 0
 	if number.IsMain {
 		i = 1
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
-	hash, err := db.Get([]byte(key))
+	hash, err := dagdb.db.Get([]byte(key))
 	if err != nil {
 		return nil
 	}
 	var h common.Hash
 	h.SetBytes(hash)
-	return GetUnit(db, h)
+	return dagdb.GetUnit( h)
 }
 
-func GetLastIrreversibleUnit(db ptndb.Database, assetID modules.IDType16) *modules.Unit {
+func (dagdb *DagDatabase)GetLastIrreversibleUnit(assetID modules.IDType16) *modules.Unit {
 	key := fmt.Sprintf("%s_%s_1_", UNIT_NUMBER_PREFIX, assetID.String())
 
-	data := GetPrefix(db, []byte(key))
+	data := dagdb.GetPrefix( []byte(key))
 	irreKey := string("")
 	for k, _ := range data {
 		if strings.Compare(k, irreKey) > 0 {
@@ -178,16 +182,16 @@ func GetLastIrreversibleUnit(db ptndb.Database, assetID modules.IDType16) *modul
 			log.Println("GetLastIrreversibleUnit error:", err.Error())
 			return nil
 		}
-		return GetUnit(db, unitHash)
+		return dagdb.GetUnit( unitHash)
 	}
 	return nil
 }
 
-func GetHeader(db DatabaseReader, hash common.Hash, index *modules.ChainIndex) (*modules.Header, error) {
+func (dagdb *DagDatabase)GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error) {
 	encNum := encodeBlockNumber(index.Index)
 	key := append(HEADER_PREFIX, encNum...)
 	key = append(key, index.Bytes()...)
-	header_bytes, err := db.Get(append(key, hash.Bytes()...))
+	header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
 	//key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, index.Index, index.String(), hash.Bytes())
 	//header_bytes, err := db.Get([]byte(key))
 	// rlp  to  Header struct
@@ -202,12 +206,12 @@ func GetHeader(db DatabaseReader, hash common.Hash, index *modules.ChainIndex) (
 	return header, nil
 }
 
-func GetHeaderByHeight(db DatabaseReader, index modules.ChainIndex) (*modules.Header, error) {
+func (dagdb *DagDatabase)GetHeaderByHeight( index modules.ChainIndex) (*modules.Header, error) {
 	encNum := encodeBlockNumber(index.Index)
 	key := append(HEADER_PREFIX, encNum...)
 	key = append(key, index.Bytes()...)
 
-	data := getprefix(db, key)
+	data := getprefix(dagdb.db, key)
 	if data == nil || len(data) <= 0 {
 		return nil, fmt.Errorf("No such height header")
 	}
@@ -221,23 +225,23 @@ func GetHeaderByHeight(db DatabaseReader, index modules.ChainIndex) (*modules.He
 	return nil, fmt.Errorf("No such height header")
 }
 
-func GetHeaderRlp(db DatabaseReader, hash common.Hash, index uint64) rlp.RawValue {
+func (dagdb *DagDatabase)GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
 	encNum := encodeBlockNumber(index)
 	key := append(HEADER_PREFIX, encNum...)
-	header_bytes, err := db.Get(append(key, hash.Bytes()...))
+	header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
 	// rlp  to  Header struct
 	log.Println(err)
 	return header_bytes
 }
 
-func GetHeaderFormIndex(db ptndb.Database, number modules.ChainIndex) *modules.Header {
-	unit := GetUnitFormIndex(db, number)
+func (dagdb *DagDatabase)GetHeaderFormIndex( number modules.ChainIndex) *modules.Header {
+	unit :=dagdb. GetUnitFormIndex( number)
 	return unit.UnitHeader
 }
 
 // GetTxLookupEntry
-func GetTxLookupEntry(db ptndb.Database, hash common.Hash) (common.Hash, uint64, uint64) {
-	data, _ := Get(db, append(LookupPrefix, hash.Bytes()...))
+func (dagdb *DagDatabase)GetTxLookupEntry( hash common.Hash) (common.Hash, uint64, uint64) {
+	data, _ := dagdb.db.Get(append(LookupPrefix, hash.Bytes()...))
 	if len(data) == 0 {
 		return common.Hash{}, 0, 0
 	}
@@ -251,19 +255,19 @@ func GetTxLookupEntry(db ptndb.Database, hash common.Hash) (common.Hash, uint64,
 
 // GetTransaction retrieves a specific transaction from the database , along with its added positional metadata
 // p2p 同步区块 分为同步header 和body。 GetBody可以省掉节点包装交易块的过程。
-func GetTransaction(db ptndb.Database, hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
-	unitHash, unitNumber, txIndex := GetTxLookupEntry(db, hash)
+func (dagdb *DagDatabase)GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
+	unitHash, unitNumber, txIndex :=dagdb. GetTxLookupEntry(hash)
 	if unitHash != (common.Hash{}) {
-		body, _ := GetBody(db, unitHash)
+		body, _ :=dagdb. GetBody( unitHash)
 		if body == nil || len(body) <= int(txIndex) {
 			return nil, common.Hash{}, 0, 0
 		}
-		tx, err := gettrasaction(db, body[txIndex])
+		tx, err := dagdb. gettrasaction(body[txIndex])
 		if err == nil {
 			return tx, unitHash, unitNumber, txIndex
 		}
 	}
-	tx, err := gettrasaction(db, hash)
+	tx, err :=dagdb. gettrasaction( hash)
 	if err != nil {
 		return nil, unitHash, unitNumber, txIndex
 	}
@@ -271,11 +275,11 @@ func GetTransaction(db ptndb.Database, hash common.Hash) (*modules.Transaction, 
 }
 
 // gettrasaction can get a transaction by hash.
-func gettrasaction(db ptndb.Database, hash common.Hash) (*modules.Transaction, error) {
+func (dagdb *DagDatabase)gettrasaction( hash common.Hash) (*modules.Transaction, error) {
 	if hash == (common.Hash{}) {
 		return nil, errors.New("hash is not exist.")
 	}
-	data, err := Get(db, append(TRANSACTION_PREFIX, hash.Bytes()...))
+	data, err := dagdb.db.Get( append(TRANSACTION_PREFIX, hash.Bytes()...))
 	if err != nil {
 		return nil, err
 	}
@@ -286,11 +290,11 @@ func gettrasaction(db ptndb.Database, hash common.Hash) (*modules.Transaction, e
 	return tx, nil
 }
 
-func GetContractNoReader(db ptndb.Database, id common.Hash) (*modules.Contract, error) {
+func (dagdb *DagDatabase)GetContractNoReader(db ptndb.Database, id common.Hash) (*modules.Contract, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
-	con_bytes, err := Get(db, append(CONTRACT_PTEFIX, id[:]...))
+	con_bytes, err := dagdb.db.Get( append(CONTRACT_PTEFIX, id[:]...))
 	if err != nil {
 		log.Println("err:", err)
 		return nil, err
@@ -305,11 +309,11 @@ func GetContractNoReader(db ptndb.Database, id common.Hash) (*modules.Contract, 
 }
 
 // GetContract can get a Contract by the contract hash
-func GetContract(db DatabaseReader, id common.Hash) (*modules.Contract, error) {
+func (statedb *WorldStateDatabase)GetContract( id common.Hash) (*modules.Contract, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
-	con_bytes, err := db.Get(append(CONTRACT_PTEFIX, id[:]...))
+	con_bytes, err :=statedb.db.Get(append(CONTRACT_PTEFIX, id[:]...))
 	if err != nil {
 		log.Println("err:", err)
 		return nil, err
@@ -327,12 +331,12 @@ func GetContract(db DatabaseReader, id common.Hash) (*modules.Contract, error) {
 获取合约模板
 To get contract template
 */
-func GetContractTpl(db ptndb.Database, templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
+func (statedb *WorldStateDatabase)GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
 	key := fmt.Sprintf("%s%s^*^bytecode",
 		CONTRACT_TPL,
 		hexutil.Encode(templateID[:]),
 	)
-	data := GetPrefix(db, []byte(key))
+	data :=statedb. GetPrefix( []byte(key))
 	if len(data) == 1 {
 		for k, v := range data {
 			if !version.ParseStringKey(k) {
@@ -345,7 +349,7 @@ func GetContractTpl(db ptndb.Database, templateID []byte) (version *modules.Stat
 			break
 		}
 	}
-	_, nameByte := GetTplState(db, templateID, "ContractName")
+	_, nameByte :=statedb.GetTplState( templateID, "ContractName")
 	if nameByte == nil {
 		return
 	}
@@ -354,7 +358,7 @@ func GetContractTpl(db ptndb.Database, templateID []byte) (version *modules.Stat
 		return
 	}
 
-	_, pathByte := GetTplState(db, templateID, "ContractPath")
+	_, pathByte := statedb.GetTplState( templateID, "ContractPath")
 	if err := rlp.DecodeBytes(pathByte, &path); err != nil {
 		log.Println("GetContractTpl when get path", "error", err.Error())
 		return
@@ -419,8 +423,8 @@ const missingNumber = uint64(0xffffffffffffffff)
 //	}
 //	return number, nil
 //}
-func GetNumberWithUnitHash(db DatabaseReader, hash common.Hash) (modules.ChainIndex, error) {
-	data, _ := db.Get(append(UNIT_HASH_NUMBER_Prefix, hash.Bytes()...))
+func (dagdb *DagDatabase)GetNumberWithUnitHash( hash common.Hash) (modules.ChainIndex, error) {
+	data, _ := dagdb.db.Get(append(UNIT_HASH_NUMBER_Prefix, hash.Bytes()...))
 	if len(data) <= 0 {
 		return modules.ChainIndex{}, fmt.Errorf("Get from unit number rlp data none")
 	}
@@ -433,9 +437,9 @@ func GetNumberWithUnitHash(db DatabaseReader, hash common.Hash) (modules.ChainIn
 
 //  GetCanonicalHash get
 
-func GetCanonicalHash(db DatabaseReader, number uint64) (common.Hash, error) {
+func (dagdb *DagDatabase)GetCanonicalHash(number uint64) (common.Hash, error) {
 	key := append(HEADER_PREFIX, encodeBlockNumber(number)...)
-	data, err := db.Get(append(key, NumberSuffix...))
+	data, err := dagdb.db.Get(append(key, NumberSuffix...))
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -444,8 +448,8 @@ func GetCanonicalHash(db DatabaseReader, number uint64) (common.Hash, error) {
 	}
 	return common.BytesToHash(data), nil
 }
-func GetHeadHeaderHash(db DatabaseReader) (common.Hash, error) {
-	data, err := db.Get(HeadHeaderKey)
+func (dagdb *DagDatabase)GetHeadHeaderHash() (common.Hash, error) {
+	data, err := dagdb.db.Get(HeadHeaderKey)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -456,8 +460,8 @@ func GetHeadHeaderHash(db DatabaseReader) (common.Hash, error) {
 }
 
 // GetHeadUnitHash stores the head unit's hash.
-func GetHeadUnitHash(db DatabaseReader) (common.Hash, error) {
-	data, err := db.Get(HeadUnitKey)
+func(dagdb *DagDatabase) GetHeadUnitHash() (common.Hash, error) {
+	data, err := dagdb.db.Get(HeadUnitKey)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -465,8 +469,8 @@ func GetHeadUnitHash(db DatabaseReader) (common.Hash, error) {
 }
 
 // GetHeadFastUnitHash stores the fast head unit's hash.
-func GetHeadFastUnitHash(db DatabaseReader) (common.Hash, error) {
-	data, err := db.Get(HeadFastKey)
+func (dagdb *DagDatabase)GetHeadFastUnitHash() (common.Hash, error) {
+	data, err := dagdb.db.Get(HeadFastKey)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -475,8 +479,8 @@ func GetHeadFastUnitHash(db DatabaseReader) (common.Hash, error) {
 
 // GetTrieSyncProgress stores the fast sync trie process counter to support
 // retrieving it across restarts.
-func GetTrieSyncProgress(db DatabaseReader) (uint64, error) {
-	data, err := db.Get(TrieSyncKey)
+func (dagdb *DagDatabase)GetTrieSyncProgress() (uint64, error) {
+	data, err := dagdb.db.Get(TrieSyncKey)
 	if err != nil {
 		return 0, err
 	}
@@ -484,9 +488,9 @@ func GetTrieSyncProgress(db DatabaseReader) (uint64, error) {
 }
 
 //  dbFetchUtxoEntry
-func GetUtxoEntry(db DatabaseReader, key []byte) (*modules.Utxo, error) {
+func (utxodb *UtxoDatabase)GetUtxoEntry( key []byte) (*modules.Utxo, error) {
 	utxo := new(modules.Utxo)
-	data, err := db.Get(key)
+	data, err := utxodb.db.Get(key)
 	if err != nil {
 		return nil, err
 	}
@@ -494,8 +498,10 @@ func GetUtxoEntry(db DatabaseReader, key []byte) (*modules.Utxo, error) {
 	if err := rlp.DecodeBytes(data, &utxo); err != nil {
 		return nil, err
 	}
-
 	return utxo, nil
+}
+func (utxodb *UtxoDatabase)GetUtxoByIndex(indexKey []byte) ([]byte,error){
+	return utxodb.db.Get(indexKey)
 }
 
 // GetAdddrTransactionsHash
@@ -512,8 +518,8 @@ func GetAddrTransactionsHash(db DatabaseReader, addr string) ([]common.Hash, err
 }
 
 // GetAddrTransactions
-func GetAddrTransactions(db ptndb.Database, addr string) (modules.Transactions, error) {
-	data, err := db.Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
+func(dagdb *DagDatabase) GetAddrTransactions(addr string) (modules.Transactions, error) {
+	data, err := dagdb.db.Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
 	if err != nil {
 		return modules.Transactions{}, err
 	}
@@ -523,16 +529,16 @@ func GetAddrTransactions(db ptndb.Database, addr string) (modules.Transactions, 
 	}
 	txs := make(modules.Transactions, 0)
 	for _, hash := range hashs {
-		tx, _, _, _ := GetTransaction(db, hash)
+		tx, _, _, _ :=dagdb. GetTransaction( hash)
 		txs = append(txs, tx)
 	}
 	return txs, nil
 }
 
 // Get income transactions
-func GetAddrOutput(db ptndb.Database, addr string) ([]modules.Output, error) {
+func (dagdb *DagDatabase)GetAddrOutput(addr string) ([]modules.Output, error) {
 
-	data := GetPrefix(db, append(AddrOutput_Prefix, []byte(addr)...))
+	data :=dagdb. GetPrefix(append(AddrOutput_Prefix, []byte(addr)...))
 	outputs := make([]modules.Output, 0)
 	var err error
 	for _, b := range data {
@@ -550,10 +556,10 @@ func GetAddrOutput(db ptndb.Database, addr string) ([]modules.Output, error) {
 获取模板所有属性
 To get contract or contract template all fields and return
 */
-func GetTplAllState(db ptndb.Database, id string) map[modules.ContractReadSet][]byte {
+func (statedb *WorldStateDatabase)GetTplAllState( id string) map[modules.ContractReadSet][]byte {
 	// key format: [PREFIX][ID]_[field]_[version]
 	key := fmt.Sprintf("%s%s^*^", CONTRACT_TPL, id)
-	data := getprefix(db, []byte(key))
+	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) <= 0 {
 		return nil
 	}
@@ -580,10 +586,10 @@ func GetTplAllState(db ptndb.Database, id string) map[modules.ContractReadSet][]
 获取合约（或模板）所有属性
 To get contract or contract template all fields and return
 */
-func GetContractAllState(db ptndb.Database, id []byte) map[modules.ContractReadSet][]byte {
+func (statedb *WorldStateDatabase)GetContractAllState(id []byte) map[modules.ContractReadSet][]byte {
 	// key format: [PREFIX][ID]_[field]_[version]
 	key := fmt.Sprintf("%s%s^*^", CONTRACT_STATE_PREFIX, hexutil.Encode(id))
-	data := getprefix(db, []byte(key))
+	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) <= 0 {
 		return nil
 	}
@@ -610,9 +616,9 @@ func GetContractAllState(db ptndb.Database, id []byte) map[modules.ContractReadS
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */
-func GetTplState(db ptndb.Database, id []byte, field string) (modules.StateVersion, []byte) {
+func(statedb *WorldStateDatabase) GetTplState( id []byte, field string) (modules.StateVersion, []byte) {
 	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, hexutil.Encode(id[:]), field)
-	data := getprefix(db, []byte(key))
+	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) != 1 {
 		return modules.StateVersion{}, nil
 	}
@@ -630,9 +636,9 @@ func GetTplState(db ptndb.Database, id []byte, field string) (modules.StateVersi
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */
-func GetContractState(db ptndb.Database, id string, field string) (modules.StateVersion, []byte) {
+func(statedb *WorldStateDatabase) GetContractState(id string, field string) (modules.StateVersion, []byte) {
 	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_STATE_PREFIX, id, field)
-	data := getprefix(db, []byte(key))
+	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) != 1 {
 		return modules.StateVersion{}, nil
 	}
@@ -645,4 +651,19 @@ func GetContractState(db ptndb.Database, id string, field string) (modules.State
 	}
 	log.Println("11111111")
 	return modules.StateVersion{}, nil
+}
+func (statedb *WorldStateDatabase) GetAssetInfo( assetId *modules.Asset) (modules.AssetInfo, error){
+	key := append(modules.ASSET_INFO_PREFIX, assetId.AssetId.String()...)
+	data, err := statedb.db.Get(key)
+	if err != nil {
+		return modules.AssetInfo{}, err
+	}
+
+	var assetInfo modules.AssetInfo
+	err = rlp.DecodeBytes(data, &assetInfo)
+
+	if err != nil {
+		return assetInfo, err
+	}
+	return assetInfo, nil
 }

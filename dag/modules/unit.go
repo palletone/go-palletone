@@ -634,6 +634,7 @@ const (
 	TxValidationCode_BAD_RWSET                    TxValidationCode = 22
 	TxValidationCode_ILLEGAL_WRITESET             TxValidationCode = 23
 	TxValidationCode_INVALID_WRITESET             TxValidationCode = 24
+	TxValidationCode_INVALID_MSG             	TxValidationCode = 25
 	TxValidationCode_NOT_VALIDATED                TxValidationCode = 254
 	TxValidationCode_NOT_COMPARE_SIZE             TxValidationCode = 255
 	TxValidationCode_INVALID_OTHER_REASON         TxValidationCode = 256

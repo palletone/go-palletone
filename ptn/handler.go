@@ -433,7 +433,10 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		hash  = head.Hash()
 		index = head.Number.Index
 	)
-	genesis, err := common2.GetGenesisUnit(pm.dag.Db, 0)
+	//TODO Devin
+	var unitRep common2.IUnitRepository
+	unitRep=common2.NewUnitRepository4Db(pm.dag.Db)
+	genesis, err := unitRep.GetGenesisUnit( 0)
 	if err != nil {
 		log.Info("GetGenesisUnit error", "err", err)
 		return err
