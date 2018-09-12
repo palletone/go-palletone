@@ -53,23 +53,15 @@ type TxIn struct {
 	Sequence         uint32
 }
 
-// return message struct
-func NewMessage(app byte, payload interface{}) *Message {
-	m := new(Message)
-	m.App = app
-	m.Payload = payload
-	return m
+func NewTransaction(msg []*Message) *Transaction {
+	return newTransaction(msg)
 }
 
-func NewTransaction(msg []*Message, lock uint32) *Transaction {
-	return newTransaction(msg, lock)
+func NewContractCreation(msg []*Message) *Transaction {
+	return newTransaction(msg)
 }
 
-func NewContractCreation(msg []*Message, lock uint32) *Transaction {
-	return newTransaction(msg, lock)
-}
-
-func newTransaction(msg []*Message, lock uint32) *Transaction {
+func newTransaction(msg []*Message) *Transaction {
 	tx := new(Transaction)
 	for _, m := range msg {
 		tx.TxMessages = append(tx.TxMessages, m)
@@ -392,23 +384,18 @@ func (s *TxByPriority) Pop() interface{} {
 	return x
 }
 
-//// Message is a fully derived transaction and implements core.Message
-////
-//// NOTE: In a future PR this will be removed.
+// Message is a fully derived transaction and implements Message
 //
-//func NewMessage(from, to *common.Address, nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, checkNonce bool) Message {
-//	return Message{
-//		from:       *from,
-//		to:         to,
-//		nonce:      nonce,
-//		amount:     amount,
-//		gasLimit:   gasLimit,
-//		gasPrice:   gasPrice,
-//		data:       data,
-//		checkNonce: checkNonce,
-//	}
-//}
-//
+// NOTE: In a future PR this will be removed.
+
+// return message struct
+func NewMessage(app byte, payload interface{}) *Message {
+	m := new(Message)
+	m.App = app
+	m.Payload = payload
+	return m
+}
+
 //func (m Message) From() *common.Address { return &m.from }
 //func (m Message) To() *common.Address   { return m.to }
 //func (m Message) GasPrice() *big.Int    { return m.gasPrice }
