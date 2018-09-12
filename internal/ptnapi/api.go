@@ -1293,7 +1293,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
 		}
-		txOut := modules.NewTxOut(1, pkScript, &modules.Asset{})
+		txOut := modules.NewTxOut(uint64(dao), pkScript, &modules.Asset{})
 		//fmt.Printf("------1324--------txout is %+v\n",pkScript)
 		pload.AddTxOut(*txOut)
 	}
@@ -1316,69 +1316,10 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	mtxHex := hex.EncodeToString(mtxbt)
 	return mtxHex, nil
 }
-func decodeHexStr(hexStr string) ([]byte, error) {
-	if len(hexStr)%2 != 0 {
-		hexStr = "0" + hexStr
-	}
-	decoded, err := hex.DecodeString(hexStr)
-	if err != nil {
-		return nil, &ptnjson.RPCError{
-			Code:    ptnjson.ErrRPCDecodeHexString,
-			Message: "Hex string decode failed: " + err.Error(),
-		}
-	}
-	return decoded, nil
-}
 
-type response struct {
-	result []byte
-	err    error
-}
-type FutureGetTxOutResult chan *response
 
-/*
-func GetTxOutAsync(txHash *chainhash.Hash, index uint32, mempool bool) FutureGetTxOutResult {
-	hash := ""
-	if txHash != nil {
-		hash = txHash.String()
-	}
-	cmd := btcjson.NewGetTxOutCmd(hash, index, &mempool)
-	return c.sendCmd(cmd)
-}*/
-type SignatureError struct {
-	InputIndex uint32
-	Error      error
-}
-type SigHashType uint32
 
-const (
-	SigHashOld          SigHashType = 0x0
-	SigHashAll          SigHashType = 0x1
-	SigHashNone         SigHashType = 0x2
-	SigHashSingle       SigHashType = 0x3
-	SigHashAnyOneCanPay SigHashType = 0x80
-	// sigHashMask defines the number of bits of the hash type which is used
-	// to identify which outputs are signed.
-	sigHashMask = 0x1f
-)
 
-type (
-	// DeserializationError describes a failed deserializaion due to bad
-	// user input.  It corresponds to btcjson.ErrRPCDeserialization.
-	DeserializationError struct {
-		error
-	}
-	// InvalidParameterError describes an invalid parameter passed by
-	// the user.  It corresponds to btcjson.ErrRPCInvalidParameter.
-	InvalidParameterError struct {
-		error
-	}
-	// ParseError describes a failed parse due to bad user input.  It
-	// corresponds to btcjson.ErrRPCParse.
-	ParseError struct {
-		error
-	}
-)
 
 //sign rawtranscation
 func SignRawTransaction(icmd interface{}) (interface{}, error) {
@@ -1387,7 +1328,6 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	//fmt.Printf("seri is ---%+v\n",serializedTx)
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
@@ -1420,10 +1360,8 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	if cmd.Inputs != nil {
 		cmdInputs = *cmd.Inputs
 	}
-        var    redeem []byte
+        var  redeem []byte
 	for _, rti := range cmdInputs {
-		//inputHash, err := common.NewHashFromStr(rti.Txid[2:])
-
 		inputHash, err := common.NewHashFromStr(rti.Txid)
 		if err != nil {
 			return nil, DeserializationError{err}
@@ -1443,14 +1381,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-                        //lockScript := tokenengine.GenerateP2SHLockScript(crypto.Hash160(redeemScript))
-                  	//addressMulti,err:=tokenengine.GetAddressFromScript(lockScript)
-			//if err != nil {
-			//	return nil, DeserializationError{err}
-			//}
-                        //mutiAddr = addressMulti
-			//scripts[addressMulti.Str()] = redeemScript
-                       redeem = redeemScript
+            redeem = redeemScript
 		}
 		inputpoints[modules.OutPoint{
 			TxHash:       *inputHash,
@@ -1465,7 +1396,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 
 		if cmd.PrivKeys != nil {
 			for _, key := range *cmd.PrivKeys {
-                                privKey,_ :=crypto.FromWIF(key)
+                privKey,_ :=crypto.FromWIF(key)
 				//privKeyBytes, _ := hex.DecodeString(key)
 				//privKey, _ := crypto.ToECDSA(privKeyBytes)
 				addr := crypto.PubkeyToAddress(&privKey.PublicKey)
@@ -1473,85 +1404,12 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 			}
 		}
 	}
-	err = tokenengine.SignTxAllPaymentInput(tx,inputpoints,redeem,keys)
+	var signErrors []SignatureError
+	signErrors,err = tokenengine.SignTxAllPaymentInput(tx,inputpoints,redeem,keys)
     if err != nil {
-        fmt.Println("----------ptnapi.go----1476-------")
 		return nil, DeserializationError{err}
 	}
-	/*for msgIdx, msg := range tx.TxMessages {
-	 	if msg.App != modules.APP_PAYMENT {
-	 		continue
-	 	} else {
-	 		//var payload modules.PaymentPayload
-	 		payload, ok := msg.Payload.(*modules.PaymentPayload)
-	 		if !ok {
-				fmt.Println("Get Payment payload error:")
-			} else {
-	 			fmt.Println("Payment payload:", payload)
-	 		}
-	 		for i, txIn := range payload.Input {
-	 			prevOutScript, _ := inputpoints[*txIn.PreviousOutPoint]
-	 			checkscript := make([]byte, len(prevOutScript))
-	 			copy(checkscript, prevOutScript)
-	 			//				// Set up our callbacks that we pass to txscript so it can
-	 			//				// look up the appropriate keys and scripts by address.
-	 			geekey := txscript.KeyClosure(func(addr common.Address) (*ecdsa.PrivateKey, bool, error) {
-	 				//					addrStr := addr.EncodeAddress()
-	 				pkey, ok := keys[addr.String()]
-	 				if !ok {
-	 					return nil, false, errors.New("no key for address")
-	 				}
-	 				return pkey, true, nil
-	 			})
-	 			getScript := txscript.ScriptClosure(func(addr common.Address) ([]byte, error) {
-	 				// If keys were provided then we can only use the
-	 				// redeem scripts provided with our inputs, too.
-	 				addrStr := addr.String()
-	 				script, ok := scripts[addrStr]
-	 				if !ok {
-	 					return nil, errors.New("no script for address")
-	 				}
-	 				return script, nil
-	 			})
-	 			var signErrors []SignatureError
-	 			// SigHashSingle inputs can only be signe   d if there's a
-	 			// corresponding output. However this could be already signed,
-	 			// so we always verify the output.
-	 			if (hashType&txscript.SigHashSingle) !=
-	 				txscript.SigHashSingle || i < len(payload.Output) {
-	 				script, err := txscript.SignTxOutput(tx, msgIdx, i, prevOutScript, hashType, geekey,
-	 					getScript, txIn.SignatureScript)
-	 				// Failure to sign isn't an error, it just means that
-	 				// the tx isn't complete.
-	 				if err != nil {
-	 					signErrors = append(signErrors, SignatureError{
-	 						InputIndex: uint32(i),
-	 						Error:      err,
-	 					})
-	 					continue
-	 				}
-	 				txIn.SignatureScript = script
-	 			}
-	 			// Either it was already signed or we just signed it.
-	 			//				// Find out if it is completely satisfied or still needs more.
-	 			vm, err := txscript.NewEngine(checkscript, tx, msgIdx, i,
-	 				txscript.StandardVerifyFlags, nil, nil, 0)
-	 			if err == nil {
-	 				err = vm.Execute()
-	 			}
-	 			checkscript = nil
-	 			if err != nil {
-	 				signErrors = append(signErrors, SignatureError{
-	 					InputIndex: uint32(i),
-	 					Error:      err,
-	 				})
-	 			}
-	 		}
-	 		//tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payload))
-	 	}
-	 }*/
-	//var buf bytes.Buffer
-	//buf.Grow(tx.SerializeSize())
+
 	// All returned errors (not OOM, which panics) encounted during
 	// bytes.Buffer writes are unexpected.
 	mtxbt, err := rlp.EncodeToBytes(tx)
@@ -1559,7 +1417,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		return "", err
 	}
 	signedHex := hex.EncodeToString(mtxbt)
-	signErrors := make([]ptnjson.SignRawTransactionError, 0, 10)
+	signErrors := make([]ptnjson.SignRawTransactionError, 0, len(signErrs))
 	return ptnjson.SignRawTransactionResult{
 		Hex:      signedHex,
 		Complete: len(signErrors) == 0,

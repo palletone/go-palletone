@@ -150,7 +150,7 @@ func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockS
 }
 
 //Sign a full transaction
-func SignTxAllPaymentInput(tx *modules.Transaction, utxoLockScripts map[modules.OutPoint][]byte, redeemScript []byte,privKeys map[common.Address]*ecdsa.PrivateKey) error {
+func SignTxAllPaymentInput(tx *modules.Transaction, utxoLockScripts map[modules.OutPoint][]byte, redeemScript []byte,privKeys map[common.Address]*ecdsa.PrivateKey) ([]SignatureError ,error){
 	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
 		if privKey, ok := privKeys[a]; ok {
 			return privKey, true, nil
@@ -165,6 +165,7 @@ func SignTxAllPaymentInput(tx *modules.Transaction, utxoLockScripts map[modules.
 		//}
 		return redeemScript, nil
 	}
+	var signErrors []SignatureError
 	for i, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
 			pay , ok:= msg.Payload.(*modules.PaymentPayload)
@@ -181,14 +182,19 @@ func SignTxAllPaymentInput(tx *modules.Transaction, utxoLockScripts map[modules.
 				sigScript, err := txscript.SignTxOutput(tx, i, j, utxoLockScript, txscript.SigHashAll,
 					txscript.KeyClosure(lookupKey),  txscript.ScriptClosure(lookupRedeemScript), input.SignatureScript)
 				if err != nil {
-					return err
+					signErrors = append(signErrors, SignatureError{
+	 						InputIndex: uint32(j),
+	 						MsgIndex :  uint32(i),
+	 						Error:      err,
+	 					})
+					return signErrors,err
 				}
 				input.SignatureScript = sigScript
 				checkscript = nil
 			}
 		}
 	}
-	return nil
+	return signErrors,nil
 }
 
 //传入一个脚本二进制，解析为可读的文本形式
