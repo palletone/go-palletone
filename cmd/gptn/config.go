@@ -40,7 +40,7 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
-        "github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 )
 
@@ -140,7 +140,7 @@ func defaultNodeConfig() node.Config {
 }
 
 func adaptorConfig(config FullConfig) FullConfig {
-	config.Node.P2P = config.P2P
+	//config.Node.P2P = config.P2P
 	config.Ptn.Dag = *config.Dag
 	config.Ptn.Log = *config.Log
 	config.Ptn.MediatorPlugin = config.MediatorPlugin
@@ -212,16 +212,18 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// 先处理node的配置信息，再创建node，然后再处理其他service的配置信息，因为其他service的配置依赖node中的协议
 	// 注意：不是将命令行中所有的配置都覆盖cfg中对应的配置，例如 Ptnstats 配置目前没有覆盖 (可能通过命令行设置)
 	utils.SetNodeConfig(ctx, &cfg.Node)
-
-	cfg = adaptorConfig(cfg)
-
+	//cfg = adaptorConfig(cfg)
+	cfg.Node.P2P = cfg.P2P
 	// 4. 通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
-
+	cfg = adaptorConfig(cfg)
 	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
+	//fmt.Println("cfg.Ptn.Log.OpenModule", cfg.Ptn.Log.OpenModule)
+	cfg.Log.OpenModule = cfg.Ptn.Log.OpenModule
+
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}

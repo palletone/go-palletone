@@ -86,6 +86,9 @@ type Config struct {
 	ErrorOutputPaths []string `json:"errorOutputPaths" yaml:"errorOutputPaths"`
 	// InitialFields is a collection of fields to add to the root logger.
 	InitialFields map[string]interface{} `json:"initialFields" yaml:"initialFields"`
+
+	//open modules log
+	OpenModule []string
 }
 
 // NewProductionEncoderConfig returns an opinionated EncoderConfig for

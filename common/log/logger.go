@@ -21,8 +21,8 @@
 package log
 
 import (
+	//"fmt"
 	"log"
-	// "strings"
 
 	"github.com/palletone/go-palletone/common/files"
 	"go.uber.org/zap"
@@ -30,6 +30,21 @@ import (
 )
 
 const errorKey = "ZAPLOG_ERROR"
+const (
+	RootBuild      = "build"
+	RootCmd        = "cmd"
+	RootCommon     = "common"
+	RootConfigure  = "configure"
+	RootCore       = "core"
+	RootInternal   = "internal"
+	RootPtnclient  = "ptnclient"
+	RootPtnjson    = "ptnjson"
+	RootStatistics = "statistics"
+	RootVendor     = "vendor"
+	RootWallet     = "wallet"
+)
+
+var defaultLogModule = []string{RootBuild, RootCmd, RootCommon, RootConfigure, RootCore, RootInternal, RootPtnclient, RootPtnjson, RootStatistics, RootVendor, RootWallet}
 
 var Logger *zap.Logger
 
@@ -177,6 +192,15 @@ func initLogger() {
 	if err != nil {
 		log.Fatal("init logger error: ", err)
 	}
+	//TODO add openModule
+	//fmt.Println("DefaultConfig.OpenModule:", DefaultConfig.OpenModule)
+	if len(DefaultConfig.OpenModule) == 1 && DefaultConfig.OpenModule[0] == "all" {
+		l.SetOpenModule(DefaultConfig.OpenModule)
+	} else {
+		DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, defaultLogModule...)
+		l.SetOpenModule(DefaultConfig.OpenModule)
+	}
+
 	Logger = l.WithOptions(zap.AddCallerSkip(1))
 }
 
@@ -185,61 +209,56 @@ func Trace(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		//log.Println("logger is nil.")
 		InitLogger()
-	} else {
-		//log.Println("logger trace is  ok.")
-		fileds := ctxTOfileds(ctx...)
-		Logger.Debug(msg, fileds...)
 	}
+	//log.Println("logger trace is  ok.")
+	fileds := ctxTOfileds(ctx...)
+	Logger.Debug(msg, fileds...)
+
 }
 
 // Debug
 func Debug(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
-	} else {
-		fileds := ctxTOfileds(ctx...)
-		Logger.Debug(msg, fileds...)
 	}
+	fileds := ctxTOfileds(ctx...)
+	Logger.Debug(msg, fileds...)
 }
 
 // Info
 func Info(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
-	} else {
-		fileds := ctxTOfileds(ctx...)
-		Logger.Info(msg, fileds...)
 	}
+	fileds := ctxTOfileds(ctx...)
+	Logger.Info(msg, fileds...)
 }
 
 // Warn
 func Warn(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
-	} else {
-		fileds := ctxTOfileds(ctx...)
-		Logger.Warn(msg, fileds...)
 	}
+	fileds := ctxTOfileds(ctx...)
+	Logger.Warn(msg, fileds...)
 }
 
 // Error
 func Error(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
-	} else {
-		fileds := ctxTOfileds(ctx...)
-		Logger.Error(msg, fileds...)
 	}
+	fileds := ctxTOfileds(ctx...)
+	Logger.Error(msg, fileds...)
 }
 
 // Crit
 func Crit(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
-	} else {
-		fileds := ctxTOfileds(ctx...)
-		Logger.Error(msg, fileds...)
 	}
+	fileds := ctxTOfileds(ctx...)
+	Logger.Error(msg, fileds...)
 }
 
 // ctx transfer to  fileds

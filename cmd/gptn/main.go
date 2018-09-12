@@ -120,6 +120,7 @@ var (
 		utils.LogValue3Flag,
 		utils.LogValue4Flag,
 		utils.LogValue5Flag,
+		utils.LogOpenModuleFlag,
 		ConfigFileFlag,
 		GenesisJsonPathFlag,
 		GenesisTimestampFlag,

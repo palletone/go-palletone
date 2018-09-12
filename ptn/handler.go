@@ -305,9 +305,7 @@ func (self *ProtocolManager) vssResponseBroadcastLoop() {
 		select {
 		case event := <-self.vssResponseCh:
 			node := self.dag.GetActiveMediatorNode(event.DstMed)
-			if self.producer.HaveActiveMediator() {
-				self.BroadcastVssResp(node.ID.TerminalString(), &event)
-			}
+			self.BroadcastVssResp(node.ID.TerminalString(), &event)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-self.vssDealSub.Err():
@@ -348,9 +346,8 @@ func (self *ProtocolManager) vssDealTransmitLoop() {
 		select {
 		case event := <-self.vssDealCh:
 			node := self.dag.GetActiveMediatorNode(event.DstMed)
-			if self.producer.HaveActiveMediator() {
-				self.BroadcastVss(node.ID.TerminalString(), &event)
-			}
+			self.BroadcastVss(node.ID.TerminalString(), &event)
+
 			// Err() channel will be closed when unsubscribing.
 		case <-self.vssDealSub.Err():
 			return

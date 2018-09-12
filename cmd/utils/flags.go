@@ -525,6 +525,11 @@ var (
 		Usage: "Log encoding",
 		Value: ptn.DefaultConfig.Log.Encoding,
 	}
+	LogOpenModuleFlag = cli.StringFlag{
+		Name:  "log.openmodule",
+		Usage: "Log openmodule",
+		Value: strings.Join(ptn.DefaultConfig.Log.OpenModule, ","),
+	}
 )
 
 // MakeDataDir retrieves the currently requested data directory, terminating
@@ -946,6 +951,9 @@ func setLog(ctx *cli.Context, cfg *log.Config) {
 	}
 	if ctx.GlobalIsSet(LogValue4Flag.Name) {
 		cfg.ErrorOutputPaths = []string{ctx.GlobalString(LogValue4Flag.Name)}
+	}
+	if ctx.GlobalIsSet(LogOpenModuleFlag.Name) {
+		cfg.OpenModule = []string{ctx.GlobalString(LogOpenModuleFlag.Name)}
 	}
 }
 
