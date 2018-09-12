@@ -96,6 +96,62 @@ func (ec EntryCaller) FullPath() string {
 	return caller
 }
 
+//
+func (ec EntryCaller) TrimmedRootPath() string {
+	if !ec.Defined {
+		return "undefined"
+	}
+	buf := bufferpool.Get()
+	buf.AppendString(ec.File)
+	buf.AppendByte(':')
+	buf.AppendInt(int64(ec.Line))
+	caller := buf.String()
+	buf.Free()
+
+	substr := "go-palletone"
+	count := strings.Count(caller, substr)
+	if count != 2 {
+		return ""
+	}
+	index := strings.LastIndex(caller, substr)
+	last := Substr(caller, index+len(substr), len(caller)-index-len(substr))
+	arr := strings.Split(last, "/")
+	if len(arr) < 3 {
+		return ""
+	}
+	return arr[1]
+}
+
+func Substr(str string, start, length int) string {
+	rs := []rune(str)
+	rl := len(rs)
+	end := 0
+
+	if start < 0 {
+		start = rl - 1 + start
+	}
+	end = start + length
+
+	if start > end {
+		start, end = end, start
+	}
+
+	if start < 0 {
+		start = 0
+	}
+	if start > rl {
+		start = rl
+	}
+	if end < 0 {
+		end = 0
+	}
+	if end > rl {
+		end = rl
+	}
+
+	return string(rs[start:end])
+}
+
 // TrimmedPath returns a package/file:line description of the caller,
 // preserving only the leaf directory name and file name.
 func (ec EntryCaller) TrimmedPath() string {
