@@ -172,7 +172,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	mp.server = server
 
 	// 1. 如果当前节点有活跃mediator，则静态连接其他活跃mediator
-	go mp.AddActiveMediatorPeers()
+//	go mp.AddActiveMediatorPeers()
 
 	// 2. 开启循环生产计划
 	go mp.ScheduleProductionLoop()

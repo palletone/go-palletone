@@ -170,7 +170,7 @@ func (dagdb *DagDatabase)GetLastIrreversibleUnit(assetID modules.IDType16) *modu
 
 	data := dagdb.GetPrefix( []byte(key))
 	irreKey := string("")
-	for k, _ := range data {
+	for k := range data {
 		if strings.Compare(k, irreKey) > 0 {
 			irreKey = k
 		}
