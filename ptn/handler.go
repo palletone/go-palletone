@@ -276,6 +276,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 // @author Albert·Gou
 //func (pm *ProtocolManager) BroadcastVssResp(dstId string, resp *mp.VSSResponseEvent) {
 func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
+	// comment by Albert·Gou
 	//dstId := node.ID.TerminalString()
 	//peer := pm.peers.Peer(dstId)
 	//if peer == nil {
@@ -290,11 +291,12 @@ func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
 
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
-		dstId := peer.id
-		if pm.peers.PeersWithoutVssResp(dstId) {
-			return
-		}
-		pm.peers.MarkVssResp(dstId)
+		// comment by Albert·Gou
+		//dstId := peer.id
+		//if pm.peers.PeersWithoutVssResp(dstId) {
+		//	return
+		//}
+		//pm.peers.MarkVssResp(dstId)
 
 		// comment by Albert·Gou
 		//msg := &vssRespMsg{
