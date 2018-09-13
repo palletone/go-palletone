@@ -1024,7 +1024,16 @@ func (s *PublicTransactionPoolAPI) GetTransactionCount(ctx context.Context, addr
 	v := hexutil.Uint64(0)
 	return &v, nil
 }
-
+func (s *PublicTransactionPoolAPI) GetTransactionsByTxid(txid string) (modules.Transactions, error) {
+	hash := []byte(txid)
+	txs, err := s.b.dag.dagdb.GetUnitTransactions(hash)
+	if err != nil {
+		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
+		return nil, err
+	}
+	return txs, nil
+}
+/* old version 
 // GetTransactionByHash returns the transaction for the given hash
 func (s *PublicTransactionPoolAPI) GetTransactionByHash(ctx context.Context, hash common.Hash) *RPCTransaction {
 	// Try to return an already finalized transaction
@@ -1040,7 +1049,7 @@ func (s *PublicTransactionPoolAPI) GetTransactionByHash(ctx context.Context, has
 	}
 	// Transaction unknown, return as such
 	return nil
-}
+}*/
 
 // GetRawTransactionByHash returns the bytes of the transaction for the given hash.
 func (s *PublicTransactionPoolAPI) GetRawTransactionByHash(ctx context.Context, hash common.Hash) (hexutil.Bytes, error) {
