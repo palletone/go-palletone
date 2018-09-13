@@ -1310,6 +1310,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		TxMessages: make([]*modules.Message, 0),
 	}
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
+	mtx.TxHash=mtx.Hash()
 	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
