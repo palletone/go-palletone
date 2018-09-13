@@ -1024,11 +1024,10 @@ func (s *PublicTransactionPoolAPI) GetTransactionCount(ctx context.Context, addr
 	v := hexutil.Uint64(0)
 	return &v, nil
 }
-func (s *PublicTransactionPoolAPI) GetTransactionsByTxid(txid string) (modules.Transactions, error) {
-	hash := []byte(txid)
-	txs, err := s.b.dag.dagdb.GetUnitTransactions(hash)
+func (s *PublicTransactionPoolAPI) GetTransactionsByTxid(ctx context.Context,txid string) (modules.Transactions, error) {
+	txs, err := s.b.GetTxByTxid_back(txid)
 	if err != nil {
-		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
+		log.Error("Get transcation by hash ", "unit hash", txid, "error", err.Error())
 		return nil, err
 	}
 	return txs, nil
