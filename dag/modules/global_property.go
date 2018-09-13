@@ -118,21 +118,21 @@ func (gp *GlobalProperty) GetActiveMediators() []common.Address {
 		mediators = append(mediators, m.Address)
 	}
 
-	sortAddress(mediators)
+	sortAddress(&mediators)
 
 	return mediators
 }
 
-func sortAddress(adds []common.Address) {
-	addStrs := make([]string, 0, len(adds))
-	for i, add := range adds {
+func sortAddress(adds *[]common.Address) {
+	addStrs := make([]string, 0, len(*adds))
+	for i, add := range *adds {
 		addStrs[i] = add.Str()
 	}
 
 	sort.Strings(addStrs)
 
 	for i, addStr := range addStrs {
-		adds[i] = common.PubKeyHashHexToAddress(addStr)
+		(*adds)[i] = common.PubKeyHashHexToAddress(addStr)
 	}
 }
 
