@@ -28,31 +28,31 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
-func (dagdb *DagDatabase)PutCanonicalHash(hash common.Hash, number uint64) error {
+func (dagdb *DagDatabase) PutCanonicalHash(hash common.Hash, number uint64) error {
 	key := append(HeaderCanon_Prefix, encodeBlockNumber(number)...)
-	if err := dagdb. db.Put(append(key, NumberSuffix...), hash.Bytes()); err != nil {
+	if err := dagdb.db.Put(append(key, NumberSuffix...), hash.Bytes()); err != nil {
 		return err
 	}
 	return nil
 }
-func (dagdb *DagDatabase)PutHeadHeaderHash( hash common.Hash) error {
-	if err :=dagdb. db.Put(HeadHeaderKey, hash.Bytes()); err != nil {
+func (dagdb *DagDatabase) PutHeadHeaderHash(hash common.Hash) error {
+	if err := dagdb.db.Put(HeadHeaderKey, hash.Bytes()); err != nil {
 		return err
 	}
 	return nil
 }
 
 // PutHeadUnitHash stores the head unit's hash.
-func (dagdb *DagDatabase)PutHeadUnitHash(hash common.Hash) error {
-	if err := dagdb. db.Put(HeadUnitKey, hash.Bytes()); err != nil {
+func (dagdb *DagDatabase) PutHeadUnitHash(hash common.Hash) error {
+	if err := dagdb.db.Put(HeadUnitKey, hash.Bytes()); err != nil {
 		return err
 	}
 	return nil
 }
 
 // PutHeadFastUnitHash stores the fast head unit's hash.
-func (dagdb *DagDatabase)PutHeadFastUnitHash( hash common.Hash) error {
-	if err := dagdb. db.Put(HeadFastKey, hash.Bytes()); err != nil {
+func (dagdb *DagDatabase) PutHeadFastUnitHash(hash common.Hash) error {
+	if err := dagdb.db.Put(HeadFastKey, hash.Bytes()); err != nil {
 		return err
 	}
 	return nil
@@ -60,8 +60,8 @@ func (dagdb *DagDatabase)PutHeadFastUnitHash( hash common.Hash) error {
 
 // PutTrieSyncProgress stores the fast sync trie process counter to support
 // retrieving it across restarts.
-func (dagdb *DagDatabase)PutTrieSyncProgress(count uint64) error {
-	if err := dagdb. db.Put(TrieSyncKey, new(big.Int).SetUint64(count).Bytes()); err != nil {
+func (dagdb *DagDatabase) PutTrieSyncProgress(count uint64) error {
+	if err := dagdb.db.Put(TrieSyncKey, new(big.Int).SetUint64(count).Bytes()); err != nil {
 		return err
 	}
 	return nil
@@ -79,10 +79,6 @@ func Store(db ptndb.Database, key string, value interface{}) error {
 	if err != nil {
 
 		if err == errors.ErrNotFound {
-			//if err := db.Put([]byte(key), val); err != nil {
-			//	return err
-			//}
-			// modified by Albert·Gou
 			return db.Put([]byte(key), val)
 		} else {
 			return err
@@ -107,7 +103,7 @@ func StoreBytes(db ptndb.Database, key []byte, value interface{}) error {
 	_, err = db.Get(key)
 	if err != nil {
 		if err.Error() == errors.ErrNotFound.Error() {
-		//	if err == errors.New("not found") {
+			//	if err == errors.New("not found") {
 			if err := db.Put(key, val); err != nil {
 				return err
 			}

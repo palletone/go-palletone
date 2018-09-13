@@ -1413,8 +1413,8 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		}
 	}
 
-	var signErrors []SignatureError
-	signErrors,err = tokenengine.SignTxAllPaymentInput(tx,inputpoints,redeem,keys)
+	var signErrs []common.SignatureError
+	signErrs,err = tokenengine.SignTxAllPaymentInput(tx,inputpoints,redeem,keys)
     if err != nil {
 
 		return nil, DeserializationError{err}

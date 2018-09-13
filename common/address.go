@@ -247,3 +247,8 @@ func (ma *MixedcaseAddress) ValidChecksum() bool {
 func (ma *MixedcaseAddress) Original() string {
 	return ma.original
 }
+type SignatureError struct {
+        InputIndex uint32
+        MsgIndex uint32
+        Error    error
+}

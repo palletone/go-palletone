@@ -32,8 +32,8 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 var testTxPoolConfig TxPoolConfig
@@ -45,7 +45,7 @@ func init() {
 
 type testUnitDag struct {
 	Db            *palletdb.MemDatabase
-	utxodb storage.UtxoDb
+	utxodb        storage.UtxoDb
 	mux           sync.RWMutex
 	GenesisUnit   *modules.Unit
 	gasLimit      uint64
@@ -118,9 +118,9 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	// Create the pool to test the limit enforcement with
 	db, _ := palletdb.NewMemDatabase()
-	utxodb:=storage.NewUtxoDatabase(db)
+	utxodb := storage.NewUtxoDatabase(db)
 	mutex := new(sync.RWMutex)
-	unitchain := &testUnitDag{db, utxodb,*mutex, nil, 10000, new(event.Feed)}
+	unitchain := &testUnitDag{db, utxodb, *mutex, nil, 10000, new(event.Feed)}
 
 	config := testTxPoolConfig
 	config.GlobalSlots = 4096
@@ -187,18 +187,15 @@ func TestTransactionAddingTxs(t *testing.T) {
 	}
 	for i := 0; i < 16; i++ {
 		if i == 0 {
-			fmt.Println("payload0: ", payload0.Input)
 			msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload0))
 		}
 		if i == 1 {
-			fmt.Println("payload0: ", payload1.Input)
 			msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload1))
 		}
 		if i == 2 {
-			fmt.Println("payload0: ", payload2.Input)
 			msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload2))
 		}
-		msgs = append(msgs, modules.NewMessage(modules.APP_TEXT, modules.TextPayload{Text: []byte(fmt.Sprintf("text%d", i))}))
+		msgs = append(msgs, modules.NewMessage(modules.APP_TEXT, modules.TextPayload{Text: []byte(fmt.Sprintf("text%d%v", i, time.Now()))}))
 	}
 
 	for j := 0; j < int(config.AccountSlots)*1; j++ {
@@ -207,7 +204,6 @@ func TestTransactionAddingTxs(t *testing.T) {
 	fmt.Println("range txs start.... ", time.Now().Unix()-t0.Unix())
 	// Import the batch and verify that limits have been enforced
 	//	pool.AddRemotes(txs)
-	return
 	for i, tx := range txs {
 		if txs[i].Size() > 0 {
 			continue

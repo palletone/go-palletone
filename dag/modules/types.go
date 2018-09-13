@@ -64,7 +64,6 @@ func (it *IDType16) Bytes() []byte {
 	for i := 0; i < len(it); i++ {
 		idBytes[i] = it[i]
 	}
-	//return idBytes
 	return idBytes
 }
 
