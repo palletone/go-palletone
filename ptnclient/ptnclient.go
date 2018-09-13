@@ -498,8 +498,8 @@ func (ec *Client) WalletBalance(ctx context.Context, address string, assetid []b
 	return result, err
 }
 func (ec *Client) GetTransactionsByTxid(ctx context.Context, txid string) (modules.Transactions, error) {
-	var result string
-	err := ec.c.CallContext(ctx, &result, "ptn_getTransactionsByTxid", addr)
+	var result modules.Transactions
+	err := ec.c.CallContext(ctx, &result, "ptn_getTransactionsByTxid", txid)
 	return result, err
 }
 
