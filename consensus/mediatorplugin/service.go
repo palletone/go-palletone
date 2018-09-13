@@ -109,14 +109,28 @@ func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 	return lams
 }
 
-func (mp *MediatorPlugin) HaveActiveMediator() bool {
+func (mp *MediatorPlugin) LocalHaveActiveMediator() bool {
 	lams := mp.GetLocalActiveMediators()
 
 	return len(lams) != 0
 }
 
+func (mp *MediatorPlugin) IsLocalMediator(add common.Address) bool {
+	_, ok := mp.mediators[add]
+
+	return ok
+}
+
+func (mp *MediatorPlugin) IsLocalActiveMediator(add common.Address) bool {
+	if mp.IsLocalMediator(add) {
+		return mp.getDag().IsActiveMediator(add)
+	}
+
+	return false
+}
+
 func (mp *MediatorPlugin) AddActiveMediatorPeers() {
-	if !mp.HaveActiveMediator() {
+	if !mp.LocalHaveActiveMediator() {
 		return
 	}
 

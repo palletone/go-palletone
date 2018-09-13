@@ -570,8 +570,18 @@ func (d *Dag) GetActiveMediators() []common.Address {
 }
 
 // author Albert·Gou
-func (d *Dag) GetActiveMediatorNode(mediator common.Address) *discover.Node {
-	return d.GlobalProp.GetActiveMediatorNode(mediator)
+func (d *Dag) GetActiveMediatorAddr(index int) common.Address {
+	return d.GlobalProp.GetActiveMediatorAddr(index)
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
+	return d.GlobalProp.GetActiveMediatorNode(index)
+}
+
+// author Albert·Gou
+func (d *Dag) IsActiveMediator(add common.Address) bool {
+	return d.GlobalProp.IsActiveMediator(add)
 }
 
 func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error) {
