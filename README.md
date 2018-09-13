@@ -53,9 +53,9 @@ state of the network. To do so:
 
 ```
 $ mkdir your_dir
-$ gptn --datadir=your_dir newgenesis
-$ gptn --datadir=your_dir init ./ptn-genesis.json
-$ gptn --datadir=your_dir --configfile="palletone.toml"
+$ gptn --datadir="your_dir" newgenesis
+$ gptn --datadir="your_dir" init ./ptn-genesis.json
+$ gptn --datadir="your_dir" --configfile="palletone.toml"
 ```
 
 This command will:
@@ -99,6 +99,27 @@ You can create a JSON file for the genesis state of a new chain with an existing
 
 ```
 $ gptn newgenesis path/to/my-genesis.json
+```
+
+#### Defining the private mediator parameters
+
+First, you'll need to create the mediator parameters of your networks, which all nodes need to be aware of and agree upon. This consists of a TOML file (e.g. call it `palletone.toml`):
+
+```
+[MediatorPlugin]
+EnableStaleProduction = true
+
+[[MediatorPlugin.Mediators]]
+Address = ""
+Password = ""
+InitPartSec = ""
+InitPartPub = ""
+
+$ gptn initdks
+InitPartSec = private key
+InitPartPub = public key
+
+When gptn --datadir="your_dir" newgenesis will create Address and input your password.
 ```
 
 ##### Customization of the genesis file
