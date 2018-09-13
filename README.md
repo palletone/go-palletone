@@ -119,8 +119,7 @@ $ gptn initdks
 InitPartSec = private key
 InitPartPub = public key
 
-$ gptnexe --datadir="your_dir" account new
-will create Address and input your password
+When gptn --datadir="your_dir" newgenesis will create Address and input your password.
 ```
 
 ##### Customization of the genesis file
