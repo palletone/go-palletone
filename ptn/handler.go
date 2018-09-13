@@ -318,8 +318,6 @@ func (self *ProtocolManager) vssResponseBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.vssResponseCh:
-			//node := self.dag.GetActiveMediatorNode(event.DstMed)
-			//self.BroadcastVssResp(node, &event)
 			self.BroadcastVssResp(&event)
 
 			// Err() channel will be closed when unsubscribing.
@@ -362,7 +360,7 @@ func (self *ProtocolManager) vssDealTransmitLoop() {
 	for {
 		select {
 		case event := <-self.vssDealCh:
-			node := self.dag.GetActiveMediatorNode(event.DstMed)
+			node := self.dag.GetActiveMediatorNode(event.DstIndex)
 			self.TransmitVSSDeal(node, &event)
 
 			// Err() channel will be closed when unsubscribing.
@@ -385,8 +383,6 @@ type producer interface {
 
 	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
 	ToProcessResponse(resp *mp.VSSResponseEvent) error
-
-	HaveActiveMediator() bool
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -1043,16 +1039,17 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
 
 // AtiveMeatorPeers retrieves a list of peers that active mediator
 // @author Albert·Gou
-func (pm *ProtocolManager) GetActiveMediatorPeers() []*peer {
+func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 	nodes := pm.dag.GetActiveMediatorNodes()
-	list := make([]*peer, 0, len(nodes))
+	list := make(map[string]*peer, len(nodes))
 
 	for _, node := range nodes {
-		peer := pm.peers.Peer(node.ID.TerminalString())
+		id := node.ID.TerminalString()
+		peer := pm.peers.Peer(id)
 		if peer == nil {
 			log.Info(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
 		} else {
-			list = append(list, peer)
+			list[id] = peer
 		}
 	}
 

@@ -37,8 +37,6 @@ func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
 }
 
 func (mp *MediatorPlugin) BroadcastVSSDeals() {
-	ams := mp.getDag().GetActiveMediators()
-
 	for _, dkg := range mp.dkgs {
 		deals, err := dkg.Deals()
 		if err != nil {
@@ -46,11 +44,9 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 		}
 
 		for index, deal := range deals {
-			dstMed := ams[index]
-
 			event := VSSDealEvent{
-				DstMed: dstMed,
-				Deal:   deal,
+				DstIndex: index,
+				Deal:     deal,
 			}
 
 			mp.vssDealFeed.Send(event)
@@ -82,12 +78,25 @@ func (mp *MediatorPlugin) processDealLoop() {
 	}
 }
 
-func (mp *MediatorPlugin) processVSSDeal(deal *VSSDealEvent) {
-	dstMed := deal.DstMed
+func (mp *MediatorPlugin) getLocalActiveMediatorDKG(add common.Address) *dkg.DistKeyGenerator {
+	if !mp.IsLocalActiveMediator(add) {
+		return nil
+	}
 
-	dkg, ok := mp.dkgs[dstMed]
+	dkg, ok := mp.dkgs[add]
 	if !ok || dkg == nil {
-		log.Error(fmt.Sprintf("The following mediator`s dkg is not existed: %v", dstMed.String()))
+		log.Error(fmt.Sprintf("The following mediator`s dkg is not existed: %v", add.String()))
+		return nil
+	}
+
+	return dkg
+}
+
+func (mp *MediatorPlugin) processVSSDeal(deal *VSSDealEvent) {
+	dstMed := mp.getDag().GetActiveMediatorAddr(deal.DstIndex)
+
+	dkg := mp.getLocalActiveMediatorDKG(dstMed)
+	if dkg == nil {
 		return
 	}
 
@@ -107,22 +116,11 @@ func (mp *MediatorPlugin) processVSSDeal(deal *VSSDealEvent) {
 
 // BroadcastVSSResponse, broadcast response to every other participant
 func (mp *MediatorPlugin) BroadcastVSSResponse(srcMed common.Address, resp *dkg.Response) {
-	// todo
-	//ams := mp.getDag().GetActiveMediators()
-	//
-	//for _, dstMed := range ams {
-	//	if dstMed == srcMed {
-	//		continue // ignore sending response to myself
-	//	}
-
 	event := VSSResponseEvent{
-		//			SrcMed: srcMed,
-		//DstMed: dstMed,
 		Resp: resp,
 	}
 
 	mp.vssResponseFeed.Send(event)
-	//}
 }
 
 func (mp *MediatorPlugin) ToProcessResponse(resp *VSSResponseEvent) error {
@@ -146,29 +144,29 @@ func (mp *MediatorPlugin) processResponseLoop() {
 }
 
 func (mp *MediatorPlugin) processVSSResponse(resp *VSSResponseEvent) {
-	//todo
-	//	dstMed := resp.DstMed
-	//if dstMed == resp.SrcMed {
-	//	return //ignore the message from myself
-	//}
-
 	lams := mp.GetLocalActiveMediators()
 	for _, dstMed := range lams {
-		dkg, ok := mp.dkgs[dstMed]
-		if !ok || dkg == nil {
-			log.Error(fmt.Sprintf("The following mediator`s dkg is not existed: %v", dstMed.String()))
-			return
+		//ignore the message from myself
+		srcIndex := resp.Resp.Response.Index
+		srcMed := mp.getDag().GetActiveMediatorAddr(int(srcIndex))
+		if srcMed == dstMed {
+			continue
+		}
+
+		dkg := mp.getLocalActiveMediatorDKG(dstMed)
+		if dkg == nil {
+			continue
 		}
 
 		jstf, err := dkg.ProcessResponse(resp.Resp)
 		if err != nil {
 			log.Error(err.Error())
-			return
+			continue
 		}
 
 		if jstf != nil {
 			log.Error(fmt.Sprintf("DKG: wrong Process Response: %v", dstMed.String()))
-			return
+			continue
 		}
 	}
 }
