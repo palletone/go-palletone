@@ -23,25 +23,21 @@ import (
 	"os"
 	"reflect"
 	"unicode"
-
+	"path/filepath"
+	"gopkg.in/urfave/cli.v1"
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/cmd/utils"
-	"gopkg.in/urfave/cli.v1"
-
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/configure"
-
-	//	"github.com/palletone/go-palletone/consensus/consensusconfig"
-	"path/filepath"
-
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
+	"github.com/palletone/go-palletone/contracts"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 )
 
 const defaultConfigPath = "palletone.toml"
@@ -102,16 +98,16 @@ type ptnstatsConfig struct {
 }
 
 type FullConfig struct {
-	Ptn       ptn.Config
-	Node      node.Config
-	Ptnstats  ptnstatsConfig
-	Dashboard dashboard.Config
-	//	Consensus consensusconfig.Config
+	Ptn            ptn.Config
+	Node           node.Config
+	Ptnstats       ptnstatsConfig
+	Dashboard      dashboard.Config
 	MediatorPlugin mp.Config
 	Log            *log.Config
 	Dag            *dagconfig.Config
 	P2P            p2p.Config
 	Ada            adaptor.Config
+	Contract       contracts.Config
 }
 
 func loadConfig(file string, cfg *FullConfig) error {
@@ -319,6 +315,7 @@ func makeDefaultConfig() FullConfig {
 		Dag:            &dagconfig.DefaultConfig,
 		Log:            &log.DefaultConfig,
 		Ada:            adaptor.DefaultConfig,
+		Contract:       contracts.DefaultConfig,
 	}
 }
 

@@ -32,12 +32,11 @@ import (
 
 	//"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"github.com/palletone/go-palletone/contracts/contractconfig"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/vm/vmconfig"
+	"github.com/palletone/go-palletone/contracts"
 )
 
 // DefaultConfig contains default settings for use on the PalletOne main net.
@@ -114,10 +113,8 @@ type Config struct {
 	//Log config
 	Log log.Config `toml:"-"`
 
-	// VM config
-	Vm vmconfig.Config
 	//Contract config
-	Contract contractconfig.Config
+	Contract contracts.Config
 
 	// Miscellaneous options
 	DocRoot string `toml:"-"`
