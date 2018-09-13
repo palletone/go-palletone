@@ -261,7 +261,7 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 	s.netRPCService = ptnapi.NewPublicNetAPI(srvr, s.NetVersion())
 
 	// Start Mediator networking
-	if s.mediatorPlugin.HaveActiveMediator() {
+	if s.mediatorPlugin.LocalHaveActiveMediator() {
 		s.startMediatorNetwork(srvr)
 	}
 
