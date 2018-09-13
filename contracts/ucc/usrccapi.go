@@ -196,11 +196,11 @@ func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, 
 	//从数据库读取
 	//解压到指定路径下
 //todo del
-	usrCC := &UserChaincode{
-	}
-	return usrCC, nil
+//	usrCC := &UserChaincode{
+//	}
+//	return usrCC, nil
 
-	if 1 == 0 {
+	if 1 == 1 {
 		dag, err := comdb.GetCcDagHand()
 		if err != nil {
 			return nil, err
@@ -208,10 +208,12 @@ func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, 
 		//TODO Devin
 		var statedb storage.StateDb
 		statedb=storage.NewStateDatabase(dag.Db)
-		_, data, name, path := statedb.GetContractTpl(templateId)
+		v, data, name, path := statedb.GetContractTpl(templateId)
+		logger.Infof("n====================","name: ",name,"path: ",path,"data: ",data)
 		if data == nil || name == "" || path == "" {
-			return nil, errors.New("et contract template err")
+			return nil, errors.New("GetContractTpl contract template err")
 		}
+		logger.Infof("name[%s]path[%s]ver[%v]", name, path, v)
 
 		targzFile := path + "/" + name + ".tar.gz"
 		decompressFile := path + "/" + name
@@ -232,7 +234,8 @@ func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, 
 			//Version:ver,
 			Path: path,
 		}
-		return usrCC, nil
+		//todo
+		return usrCC, errors.New("23323423423423")
 	} else {
 		testFile := "/home/glh/go/src/chaincode/abc.tar.gz"
 		zipName := "test.tar.gz"

@@ -170,6 +170,8 @@ func Install(chainID string, ccName string, ccPath string, ccVersion string) (pa
 	tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
 	listAdd(tcc)
 
+	logger.Infof("template id [%v]", tcc.templateId)
+
 	return payloadUnit, nil
 }
 
@@ -250,7 +252,7 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 
 	templateCC, err := ucc.RecoverChainCodeFromDb(chainID, templateId)
 	if err != nil {
-		logger.Errorf("chainid[%s]-templateId[%s], RecoverChainCodeFromDb fail", chainID, templateId)
+		logger.Errorf("chainid[%s]-templateId[%v], RecoverChainCodeFromDb fail:%s", chainID, templateId, err)
 		return nil, nil, err
 	}
 

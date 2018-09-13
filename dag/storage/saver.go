@@ -27,18 +27,17 @@ import (
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
+	// "github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 var (
 	AssocUnstableUnits map[string]modules.Joint
-
 )
 
 func SaveJoint(db ptndb.Database, objJoint *modules.Joint, onDone func()) (err error) {
@@ -80,12 +79,12 @@ func (dagdb *DagDatabase) SaveHeader(uHash common.Hash, h *modules.Header) error
 }
 
 //這是通過modules.ChainIndex存儲hash
-func (dagdb *DagDatabase) SaveNumberByHash( uHash common.Hash, number modules.ChainIndex) error {
+func (dagdb *DagDatabase) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
 	return StoreBytes(dagdb.db, append(UNIT_HASH_NUMBER_Prefix, uHash.Bytes()...), number)
 }
 
 //這是通過hash存儲modules.ChainIndex
-func (dagdb *DagDatabase) SaveHashByNumber( uHash common.Hash, number modules.ChainIndex) error {
+func (dagdb *DagDatabase) SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error {
 	i := 0
 	if number.IsMain {
 		i = 1
@@ -97,7 +96,7 @@ func (dagdb *DagDatabase) SaveHashByNumber( uHash common.Hash, number modules.Ch
 }
 
 // height and assetid can get a unit key.
-func (dagdb *DagDatabase) SaveUHashIndex( cIndex modules.ChainIndex, uHash common.Hash) error {
+func (dagdb *DagDatabase) SaveUHashIndex(cIndex modules.ChainIndex, uHash common.Hash) error {
 	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, cIndex.AssetID.String(), cIndex.Index)
 	return Store(dagdb.db, key, uHash.Bytes())
 }
@@ -111,8 +110,8 @@ func (dagdb *DagDatabase) SaveBody(unitHash common.Hash, txsHash []common.Hash) 
 	return StoreBytes(dagdb.db, append(BODY_PREFIX, unitHash.Bytes()...), txsHash)
 }
 
-func (dagdb *DagDatabase) GetBody( unitHash common.Hash) ([]common.Hash, error) {
-	data, err := dagdb.db.Get( append(BODY_PREFIX, unitHash.Bytes()...))
+func (dagdb *DagDatabase) GetBody(unitHash common.Hash) ([]common.Hash, error) {
+	data, err := dagdb.db.Get(append(BODY_PREFIX, unitHash.Bytes()...))
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +122,7 @@ func (dagdb *DagDatabase) GetBody( unitHash common.Hash) ([]common.Hash, error) 
 	return txHashs, nil
 }
 
-func (dagdb *DagDatabase) SaveTransactions( txs *modules.Transactions) error {
+func (dagdb *DagDatabase) SaveTransactions(txs *modules.Transactions) error {
 	key := fmt.Sprintf("%s%s", TRANSACTIONS_PREFIX, txs.Hash())
 	return Store(dagdb.db, key, *txs)
 }
@@ -141,7 +140,7 @@ func (dagdb *DagDatabase) SaveTransaction(tx *modules.Transaction) error {
 	if err := StoreBytes(dagdb.db, append(Transaction_Index, tx.TxHash.Bytes()...), tx); err != nil {
 		return err
 	}
-	dagdb.updateAddrTransactions( tx.Address().String(), tx.TxHash)
+	dagdb.updateAddrTransactions(tx.Address().String(), tx.TxHash)
 	// store output by addr
 	for i, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(modules.PaymentPayload)
@@ -149,7 +148,7 @@ func (dagdb *DagDatabase) SaveTransaction(tx *modules.Transaction) error {
 			for _, output := range payload.Output {
 				//  pkscript to addr
 				addr, _ := tokenengine.GetAddressFromScript(output.PkScript[:])
-				dagdb.saveOutputByAddr( addr.String(), tx.TxHash, i, *output)
+				dagdb.saveOutputByAddr(addr.String(), tx.TxHash, i, *output)
 			}
 		}
 	}
@@ -161,7 +160,7 @@ func (dagdb *DagDatabase) updateAddrTransactions(addr string, hash common.Hash) 
 		return errors.New("empty tx hash.")
 	}
 	hashs := make([]common.Hash, 0)
-	data, err := dagdb.db.Get( append(AddrTransactionsHash_Prefix, []byte(addr)...))
+	data, err := dagdb.db.Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
 	if err != nil {
 		if err.Error() != "leveldb: not found" {
 			return err
@@ -328,7 +327,7 @@ func SaveUnitChainVersion(db ptndb.Database, vsn int) error {
 保存合约属性信息
 To save contract
 */
-func SaveContractState(db ptndb.Database, prefix []byte, id []byte, name string, value interface{}, version modules.StateVersion) error {
+func SaveContractState(db ptndb.Database, prefix []byte, id []byte, name string, value interface{}, version *modules.StateVersion) error {
 	key := fmt.Sprintf("%s%s^*^%s^*^%s",
 		prefix,
 		id,
@@ -340,39 +339,42 @@ func SaveContractState(db ptndb.Database, prefix []byte, id []byte, name string,
 	}
 	return nil
 }
-func (statedb *StateDatabase)SaveContractTemplate(templateId []byte,bytecode []byte,version string) error{
+func (statedb *StateDatabase) SaveContractTemplate(templateId []byte, bytecode []byte, version string) error {
 	// key:[CONTRACT_TPL][Template id]_bytecode_[template version]
-	key := fmt.Sprintf("%s%s^*^bytecode^*^%s",
-		CONTRACT_TPL,
-		hexutil.Encode(templateId),
-		version)
+	// key := fmt.Sprintf("%s%s^*^bytecode^*^%s",
+	// 	CONTRACT_TPL,
+	// 	hexutil.Encode(templateId),
+	// 	version)
 
-	if err := statedb.db.Put([]byte (key), bytecode); err != nil {
+	key := append(CONTRACT_TPL, templateId...)
+	key = append(key, []byte("^*^bytecode^*^")...)
+	key = append(key, []byte(version)...)
+	if err := statedb.db.Put(key, bytecode); err != nil {
 		return err
 	}
 	return nil
 }
-func(statedb *StateDatabase) SaveContractTemplateState(id []byte, name string, value interface{}, version modules.StateVersion) error{
-	return SaveContractState(statedb.db,CONTRACT_TPL,id,name,value,version)
+func (statedb *StateDatabase) SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
+	return SaveContractState(statedb.db, CONTRACT_TPL, id, name, value, version)
 }
-func(statedb *StateDatabase) SaveContractState(id []byte, name string, value interface{}, version modules.StateVersion) error{
-	return SaveContractState(statedb.db,CONTRACT_STATE_PREFIX,id,name,value,version)
+func (statedb *StateDatabase) SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
+	return SaveContractState(statedb.db, CONTRACT_STATE_PREFIX, id, name, value, version)
 }
-func(statedb *StateDatabase)DeleteState(key []byte) error{
+func (statedb *StateDatabase) DeleteState(key []byte) error {
 	return statedb.db.Delete(key)
 }
 
-func(utxodb *UtxoDatabase) SaveUtxoEntity(key []byte,utxo modules.Utxo) error{
-	return StoreBytes(utxodb.db,key,utxo)
+func (utxodb *UtxoDatabase) SaveUtxoEntity(key []byte, utxo modules.Utxo) error {
+	return StoreBytes(utxodb.db, key, utxo)
 }
 
-func(utxodb *UtxoDatabase) DeleteUtxo(key []byte) error{
+func (utxodb *UtxoDatabase) DeleteUtxo(key []byte) error {
 	return utxodb.db.Delete(key)
 }
-func(idxdb *IndexDatabase) SaveIndexValue(key []byte,value interface{}) error{
-	return StoreBytes(idxdb.db,key,value)
+func (idxdb *IndexDatabase) SaveIndexValue(key []byte, value interface{}) error {
+	return StoreBytes(idxdb.db, key, value)
 }
-func (statedb *StateDatabase)SaveAssetInfo(assetInfo *modules.AssetInfo) error{
-	key:=assetInfo.Tokey()
-	return StoreBytes(statedb.db,key,assetInfo)
+func (statedb *StateDatabase) SaveAssetInfo(assetInfo *modules.AssetInfo) error {
+	key := assetInfo.Tokey()
+	return StoreBytes(statedb.db, key, assetInfo)
 }

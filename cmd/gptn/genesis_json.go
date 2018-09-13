@@ -168,6 +168,7 @@ func createExampleGenesis(account string) *core.Genesis {
 		TokenDecimal:           core.DefaultTokenDecimal,
 		ChainID:                1,
 		TokenHolder:            account,
+		Text:                   "Hello PalletOne!",
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
 		ImmutableParameters:    core.NewImmutChainParams(),

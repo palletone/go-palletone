@@ -545,7 +545,7 @@ func (d *Dag) GetActiveMediatorNodes() []*discover.Node {
 }
 
 // get contract state
-func (d *Dag) GetContractState(id string, field string) (modules.StateVersion, []byte) {
+func (d *Dag) GetContractState(id string, field string) (*modules.StateVersion, []byte) {
 	return d.statedb.GetContractState(id, field)
 }
 
