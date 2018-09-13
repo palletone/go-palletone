@@ -516,7 +516,7 @@ func (unitOp *UnitRepository) saveContractInvokePayload(height modules.ChainInde
 	// save contract state
 	// key: [CONTRACT_STATE_PREFIX][contract id]_[field name]_[state version]
 	for _, ws := range payload.WriteSet {
-		version := modules.StateVersion{
+		version := &modules.StateVersion{
 			Height:  height,
 			TxIndex: txIndex,
 		}
@@ -542,7 +542,7 @@ func (unitOp *UnitRepository) saveContractInitPayload(height modules.ChainIndex,
 
 	// save contract state
 	// key: [CONTRACT_STATE_PREFIX][contract id]_[field name]_[state version]
-	version := modules.StateVersion{
+	version := &modules.StateVersion{
 		Height:  height,
 		TxIndex: txIndex,
 	}
@@ -576,7 +576,7 @@ func (unitOp *UnitRepository) saveContractTpl(height modules.ChainIndex, txIndex
 	}
 
 	// step1. generate version for every contract template
-	version := modules.StateVersion{
+	version := &modules.StateVersion{
 		Height:  height,
 		TxIndex: txIndex,
 	}
@@ -687,7 +687,7 @@ To Sign transaction
 保存contract state
 To save contract state
 */
-func (unitOp *UnitRepository) updateState(contractID []byte, key string, version modules.StateVersion, val interface{}) bool {
+func (unitOp *UnitRepository) updateState(contractID []byte, key string, version *modules.StateVersion, val interface{}) bool {
 	delState, isDel := val.(modules.DelContractState)
 	if isDel {
 		if delState.IsDelete == false {
