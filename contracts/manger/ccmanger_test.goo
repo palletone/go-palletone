@@ -582,13 +582,14 @@ func TestContractApi(t *testing.T) {
 	if err = saveTpl(payload); err != nil {
 		t.Error("saveTpl failed")
 	}
-	return
+
 
 	//deploy
 	fmt.Println("=======================deploy=============================")
 	deployId, _, err := Deploy(chainID, payload.TemplateId[:], txid, args, 30*time.Second)
 	if err != nil {
 		t.Errorf("DeployUserCC err:%s", err)
+		return
 	}
 	time.Sleep(1 * time.Second)
 
@@ -710,12 +711,6 @@ func saveTpl(payload *modules.ContractTplPayload) error {
 	}
 	unit.UnitSize = unit.Size()
 	unit.UnitHash = unit.Hash()
-
-	//Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
-	//if Dbconn == nil {
-	//	fmt.Println("Connect to db error.")
-	//	return errors.New("ReNewDbConn err")
-	//}
 
 	dag, err :=cdb.GetCcDagHand()
 	if _, err := dag.SaveDag(unit, false); err != nil {

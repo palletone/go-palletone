@@ -362,7 +362,7 @@ func (self *ProtocolManager) vssDealTransmitLoop() {
 	for {
 		select {
 		case event := <-self.vssDealCh:
-			node := self.dag.GetActiveMediatorNode(event.DstMed)
+			node := self.dag.GetActiveMediatorNode(event.DstIndex)
 			self.TransmitVSSDeal(node, &event)
 
 			// Err() channel will be closed when unsubscribing.
@@ -385,8 +385,6 @@ type producer interface {
 
 	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
 	ToProcessResponse(resp *mp.VSSResponseEvent) error
-
-	HaveActiveMediator() bool
 }
 
 func (pm *ProtocolManager) Stop() {

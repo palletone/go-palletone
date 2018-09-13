@@ -345,6 +345,11 @@ func (version *StateVersion) ParseStringKey(key string) bool {
 	return true
 }
 
+func (version *StateVersion) Bytes() []byte {
+	b, _ := rlp.EncodeToBytes(version)
+	return b[:]
+}
+
 // Contract template deploy message
 // App: contract_template
 type ContractTplPayload struct {

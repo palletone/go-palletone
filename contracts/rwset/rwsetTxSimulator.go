@@ -24,12 +24,10 @@ import (
 	"fmt"
 
 	db "github.com/palletone/go-palletone/contracts/comm"
-
 )
 
 type RwSetTxSimulator struct {
 	txid                    string
-
 	rwsetBuilder            *RWSetBuilder
 	writePerformed          bool
 	pvtdataQueriesPerformed bool
@@ -60,7 +58,7 @@ func (s *RwSetTxSimulator) GetState(ns string, key string) ([]byte, error) {
 		return nil, err
 	}
 	//TODO Devin
-	ver, val := dag.GetContractState( ns, key)
+	ver, val := dag.GetContractState(ns, key)
 	if val == nil {
 		logger.Errorf("get value from db[%s] failed", ns)
 
@@ -70,7 +68,7 @@ func (s *RwSetTxSimulator) GetState(ns string, key string) ([]byte, error) {
 
 	//val, ver := decomposeVersionedValue(versionedValue)
 	if s.rwsetBuilder != nil {
-		s.rwsetBuilder.AddToReadSet(ns, key, &ver)
+		s.rwsetBuilder.AddToReadSet(ns, key, ver)
 	}
 
 	logger.Debugf("RW:GetState,ns[%s]--key[%s]---value[%s]", ns, key, val)

@@ -75,7 +75,8 @@ func (gp *GlobalProperty) GetCurThreshold() int {
 }
 
 func (gp *GlobalProperty) GetActiveMediatorInitPubs() []kyber.Point {
-	pubs := make([]kyber.Point, 0, gp.GetActiveMediatorCount())
+	aSize := gp.GetActiveMediatorCount()
+	pubs := make([]kyber.Point, aSize, aSize)
 
 	meds := gp.GetActiveMediators()
 	for i, add := range meds {
@@ -104,8 +105,19 @@ func (gp *GlobalProperty) GetActiveMediator(add common.Address) *core.Mediator {
 	return &med
 }
 
-func (gp *GlobalProperty) GetActiveMediatorNode(mediator common.Address) *discover.Node {
-	med := gp.GetActiveMediator(mediator)
+func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
+	if index < 0 || index > gp.GetActiveMediatorCount()-1 {
+		log.Error(fmt.Sprintf("%v is out of the bounds of active mediator list!", index))
+	}
+
+	meds := gp.GetActiveMediators()
+
+	return meds[index]
+}
+
+func (gp *GlobalProperty) GetActiveMediatorNode(index int) *discover.Node {
+	ma := gp.GetActiveMediatorAddr(index)
+	med := gp.GetActiveMediator(ma)
 
 	return med.Node
 }
@@ -118,26 +130,28 @@ func (gp *GlobalProperty) GetActiveMediators() []common.Address {
 		mediators = append(mediators, m.Address)
 	}
 
-	sortAddress(&mediators)
+	sortAddress(mediators)
 
 	return mediators
 }
 
-func sortAddress(adds *[]common.Address) {
-	addStrs := make([]string, 0, len(*adds))
-	for i, add := range *adds {
+func sortAddress(adds []common.Address) {
+	aSize := len(adds)
+	addStrs := make([]string, aSize, aSize)
+	for i, add := range adds {
 		addStrs[i] = add.Str()
 	}
 
 	sort.Strings(addStrs)
 
 	for i, addStr := range addStrs {
-		(*adds)[i] = common.PubKeyHashHexToAddress(addStr)
+		adds[i], _ = common.StringToAddress(addStr)
 	}
 }
 
 func (gp *GlobalProperty) GetActiveMediatorNodes() []*discover.Node {
-	nodes := make([]*discover.Node, 0, gp.GetActiveMediatorCount())
+	aSize := gp.GetActiveMediatorCount()
+	nodes := make([]*discover.Node, aSize, aSize)
 
 	meds := gp.GetActiveMediators()
 	for i, add := range meds {

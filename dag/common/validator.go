@@ -46,7 +46,7 @@ func NewValidate(dagdb storage.DagDb, utxodb storage.UtxoDb, statedb storage.Sta
 type Validator interface {
 	ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common.Hash]modules.TxValidationCode, bool, error)
 	ValidateUnit(unit *modules.Unit, isGenesis bool) byte
-	ValidateTx(tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode
+	ValidateTx(tx *modules.Transaction, isCoinbase bool, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode
 	ValidateUnitSignature(h *modules.Header, isGenesis bool) byte
 }
 
@@ -74,7 +74,8 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 			continue
 		}
 		// validate common property
-		txCode := validate.ValidateTx(tx, &worldState)
+		//The first Tx(txIdx==0) is a coinbase tx.
+		txCode := validate.ValidateTx(tx, txIndex == 0, &worldState)
 		if txCode != modules.TxValidationCode_VALID {
 			log.Info("ValidateTx", "txhash", tx.TxHash, "error validate code", txCode)
 			isSuccess = false
@@ -119,7 +120,7 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 验证某个交易
 To validate one transaction
 */
-func (validate *Validate) ValidateTx(tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
 	if len(tx.TxMessages) == 0 {
 		return modules.TxValidationCode_INVALID_MSG
 	}
@@ -153,7 +154,7 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, worldTmpState *map
 			if !ok {
 				return modules.TxValidationCode_INVALID_PAYMMENTLOAd
 			}
-			validateCode := validate.validatePaymentPayload(payment)
+			validateCode := validate.validatePaymentPayload(payment, isCoinbase)
 			if validateCode != modules.TxValidationCode_VALID {
 				return validateCode
 			}
@@ -351,24 +352,25 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 //1. Amount correct
 //2. Asset must be equal
 //3. Unlock correct
-func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload) modules.TxValidationCode {
+func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload, isCoinbase bool) modules.TxValidationCode {
 	// check locktime
-	if payment.LockTime <= uint32(10) || payment.LockTime >= uint32(10000) {
-		return modules.TxValidationCode_INVALID_PAYMMENT_LOCKTIME
-	}
+	// if payment.LockTime <= uint32(10) || payment.LockTime >= uint32(10000) {
+	// 	return modules.TxValidationCode_INVALID_PAYMMENT_LOCKTIME
+	// }
 	if len(payment.Input) <= 0 {
 		return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
 	}
-	for _, in := range payment.Input {
-		// checkout input
-		if in.PreviousOutPoint == nil {
-			return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
+	if !isCoinbase {
+		for _, in := range payment.Input {
+			// checkout input
+			if in.PreviousOutPoint == nil {
+				return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
+			}
+			if utxo, err := validate.utxodb.GetUtxoEntry(in.PreviousOutPoint.ToKey()); utxo == nil || err != nil {
+				return modules.TxValidationCode_INVALID_OUTPOINT
+			}
+			// check SignatureScript
 		}
-		if utxo, err := validate.utxodb.GetUtxoEntry(in.PreviousOutPoint.ToKey()); utxo == nil || err != nil {
-			return modules.TxValidationCode_INVALID_OUTPOINT
-		}
-		// check SignatureScript
-
 	}
 
 	if len(payment.Output) <= 0 {
@@ -387,7 +389,7 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 				return modules.TxValidationCode_INVALID_ASSET
 			}
 		}
-		if out.Value <= 0 || out.Value >= 1000000000 {
+		if out.Value <= 0 || out.Value >= 100000000000000000 {
 			return modules.TxValidationCode_INVALID_AMOUNT
 		}
 	}

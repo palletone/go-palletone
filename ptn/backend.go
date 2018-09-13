@@ -276,8 +276,7 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 	s.protocolManager.Start(maxPeers)
 
 	// Start Mediator networking
-	//unit := s.dag.CurrentUnit();unit != nil && unit.Number().Index == 0
-	if s.mediatorPlugin.HaveActiveMediator() {
+	if s.mediatorPlugin.LocalHaveActiveMediator() {
 		if err := s.startMediatorNetwork(srvr, maxPeers); err != nil {
 			return err
 		}
