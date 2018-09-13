@@ -57,8 +57,8 @@ func SetupGenesisUnit(db ptndb.Database, genesis *core.Genesis, ks *keystore.Key
 	// TODO check genesis unit existing
 	//TODO Devin
 	var unitRep dagCommon.IUnitRepository
-	unitRep=dagCommon.NewUnitRepository4Db(db)
-	genesisUnit, err := unitRep.GetGenesisUnit( 0)
+	unitRep = dagCommon.NewUnitRepository4Db(db)
+	genesisUnit, err := unitRep.GetGenesisUnit(0)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func SetupGenesisUnit(db ptndb.Database, genesis *core.Genesis, ks *keystore.Key
 
 func setupGenesisUnit(unitRep dagCommon.IUnitRepository, genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Unit, error) {
 	// Just commit the new block if there is no stored genesis block.
-	stored, err := unitRep.GetGenesisUnit( 0)
+	stored, err := unitRep.GetGenesisUnit(0)
 	if err != nil {
 		return nil, err
 	}
@@ -170,9 +170,13 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 		App:     modules.APP_CONFIG,
 		Payload: &configPayload,
 	}
+	msg2 := &modules.Message{
+		App:     modules.APP_TEXT,
+		Payload: &modules.TextPayload{Text: []byte(genesis.Text)},
+	}
 	// step3, genesis transaction
 	tx := &modules.Transaction{
-		TxMessages: []*modules.Message{msg0, msg1},
+		TxMessages: []*modules.Message{msg0, msg1, msg2},
 	}
 	// tx.CreationDate = tx.CreateDate()
 	tx.TxHash = tx.Hash()

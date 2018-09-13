@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -346,14 +347,16 @@ func (statedb *StateDatabase) GetContractTpl(templateID []byte) (version *module
 			if !version.ParseStringKey(k) {
 				return
 			}
-			if err := rlp.DecodeBytes([]byte(v), &bytecode); err != nil {
-				log.Println("GetContractTpl when get bytecode", "error", err.Error())
+			if err := rlp.DecodeBytes(v, &bytecode); err != nil {
+				log.Println("GetContractTpl when get bytecode", "error", err.Error(), "codeing:", v, "val:", bytecode)
 				return
+			} else {
+				fmt.Println("interface get success.-----------",bytecode)
 			}
-			break
 		}
 	}
-	_, nameByte := statedb.GetTplState(templateID, "ContractName")
+	_, nameByte := statedb.GetTplState(templateID, "tplname")
+	fmt.Println("GetTplState -----------",nameByte)
 	if nameByte == nil {
 		return
 	}

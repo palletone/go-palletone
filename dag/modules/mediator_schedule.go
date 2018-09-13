@@ -41,7 +41,7 @@ func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorS
 	}
 
 	// Create witness scheduler
-	ms.CurrentShuffledMediators = make([]core.Mediator, 0, aSize)
+	ms.CurrentShuffledMediators = make([]core.Mediator, aSize, aSize)
 	meds := gp.GetActiveMediators()
 	for i, add := range meds {
 		med := gp.GetActiveMediator(add)
@@ -73,7 +73,7 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 	}
 
 	// 2. 清除CurrentShuffledMediators原来的空间，重新分配空间
-	ms.CurrentShuffledMediators = make([]core.Mediator, 0, aSize)
+	ms.CurrentShuffledMediators = make([]core.Mediator, aSize, aSize)
 
 	// 3. 初始化数据
 	meds := gp.GetActiveMediators()
