@@ -105,6 +105,12 @@
 			"revisionTime": "2016-10-29T20:57:26Z"
 		},
 		{
+			"checksumSHA1": "KLYE0IvFlrTPK4MeS9LGJvxOwIc=",
+			"path": "github.com/dedis/kyber",
+			"revision": "ca626fd2efa3f8446087a3437d250582f5057314",
+			"revisionTime": "2018-09-10T12:26:38Z"
+		},
+		{
 			"checksumSHA1": "2Fy1Y6Z3lRRX1891WF/+HT4XS2I=",
 			"path": "github.com/dgrijalva/jwt-go",
 			"revision": "2268707a8f0843315e2004ee4f1d021dc08baedf",
