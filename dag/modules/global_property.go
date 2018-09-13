@@ -145,7 +145,7 @@ func sortAddress(adds []common.Address) {
 	sort.Strings(addStrs)
 
 	for i, addStr := range addStrs {
-		adds[i] = common.PubKeyHashHexToAddress(addStr)
+		adds[i], _ = common.StringToAddress(addStr)
 	}
 }
 
