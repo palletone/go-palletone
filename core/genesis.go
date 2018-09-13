@@ -40,6 +40,7 @@ type Genesis struct {
 	DecimalUnit               string                   `json:"decimal_unit"`
 	ChainID                   uint64                   `json:"chainId"`
 	TokenHolder               string                   `json:"tokenHolder"`
+	Text                      string                   `json:"text"`
 	InitialParameters         ChainParameters          `json:"initialParameters"`
 	ImmutableParameters       ImmutableChainParameters `json:"immutableChainParameters"`
 	InitialTimestamp          int64                    `json:"initialTimestamp"`
