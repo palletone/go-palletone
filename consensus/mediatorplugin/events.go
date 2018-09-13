@@ -20,7 +20,6 @@ package mediatorplugin
 
 import (
 	"github.com/dedis/kyber/share/dkg/pedersen"
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -30,8 +29,8 @@ type NewProducedUnitEvent struct {
 }
 
 type VSSDealEvent struct {
-	DstMed common.Address
-	Deal   *dkg.Deal
+	DstIndex int
+	Deal     *dkg.Deal
 }
 
 type VSSResponseEvent struct {

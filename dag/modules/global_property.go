@@ -105,8 +105,19 @@ func (gp *GlobalProperty) GetActiveMediator(add common.Address) *core.Mediator {
 	return &med
 }
 
-func (gp *GlobalProperty) GetActiveMediatorNode(mediator common.Address) *discover.Node {
-	med := gp.GetActiveMediator(mediator)
+func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
+	if index < 0 || index > gp.GetActiveMediatorCount()-1 {
+		log.Error(fmt.Sprintf("%v is out of the bounds of active mediator list!", index))
+	}
+
+	meds := gp.GetActiveMediators()
+
+	return meds[index]
+}
+
+func (gp *GlobalProperty) GetActiveMediatorNode(index int) *discover.Node {
+	ma := gp.GetActiveMediatorAddr(index)
+	med := gp.GetActiveMediator(ma)
 
 	return med.Node
 }
