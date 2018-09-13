@@ -35,14 +35,14 @@ var (
 	errTerminated = errors.New("terminated")
 )
 
-func newChainBanner(dag *dag.Dag) {
+func newChainBanner(dag dag.IDag) {
 	fmt.Printf("\n" +
 		"*   ------- NEW CHAIN -------   *\n" +
 		"*   - Welcome to PalletOne! -   *\n" +
 		"*   -------------------------   *\n" +
 		"\n")
 
-	if modules.GetSlotAtTime(dag.GlobalProp, dag.DynGlobalProp, time.Now()) > 200 {
+	if modules.GetSlotAtTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), time.Now()) > 200 {
 		fmt.Printf("Your genesis seems to have an old timestamp\n" +
 			"Please consider using the --genesis-timestamp option to give your genesis a recent timestamp\n" +
 			"\n")
@@ -134,9 +134,9 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	detail := map[string]string{}
 
 	dag := mp.getDag()
-	gp := dag.GlobalProp
-	dgp := dag.DynGlobalProp
-	ms := dag.MediatorSchl
+	gp := dag.GetGlobalProp()
+	dgp := dag.GetDynGlobalProp()
+	ms := dag.GetMediatorSchl()
 
 	// 整秒调整，四舍五入
 	nowFine := time.Now()

@@ -76,7 +76,7 @@ type PalletOne struct {
 	networkId     uint64
 	netRPCService *ptnapi.PublicNetAPI
 
-	dag *dag.Dag
+	dag dag.IDag
 
 	contract *contracts.Contract
 
@@ -230,7 +230,7 @@ func (s *PalletOne) IsListening() bool                  { return true } // Alway
 func (s *PalletOne) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *PalletOne) NetVersion() uint64                 { return s.networkId }
 func (s *PalletOne) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
-func (s *PalletOne) Dag() *dag.Dag                      { return s.dag }
+func (s *PalletOne) Dag() dag.IDag                      { return s.dag }
 
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.

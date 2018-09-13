@@ -34,7 +34,6 @@ import (
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
-	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
@@ -82,7 +81,7 @@ type ProtocolManager struct {
 	txCh     chan modules.TxPreEvent
 	txSub    event.Subscription
 
-	dag *dag.Dag
+	dag dag.IDag
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -116,7 +115,7 @@ type ProtocolManager struct {
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool, engine core.ConsensusEngine,
-	dag *dag.Dag, mux *event.TypeMux, levelDb palletdb.Database, producer producer) (*ProtocolManager, error) {
+	dag dag.IDag, mux *event.TypeMux, levelDb palletdb.Database, producer producer) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -448,9 +447,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		index = head.Number.Index
 	)
 	//TODO Devin
-	var unitRep common2.IUnitRepository
-	unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
-	genesis, err := unitRep.GetGenesisUnit(0)
+	//var unitRep common2.IUnitRepository
+	//unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
+	genesis, err := pm.dag.GetGenesisUnit(0)
 	if err != nil {
 		log.Info("GetGenesisUnit error", "err", err)
 		return err
