@@ -116,22 +116,11 @@ func (mp *MediatorPlugin) processVSSDeal(deal *VSSDealEvent) {
 
 // BroadcastVSSResponse, broadcast response to every other participant
 func (mp *MediatorPlugin) BroadcastVSSResponse(srcMed common.Address, resp *dkg.Response) {
-	// todo
-	//ams := mp.getDag().GetActiveMediators()
-	//
-	//for _, dstMed := range ams {
-	//	if dstMed == srcMed {
-	//		continue // ignore sending response to myself
-	//	}
-
 	event := VSSResponseEvent{
-		//			SrcMed: srcMed,
-		//DstMed: dstMed,
 		Resp: resp,
 	}
 
 	mp.vssResponseFeed.Send(event)
-	//}
 }
 
 func (mp *MediatorPlugin) ToProcessResponse(resp *VSSResponseEvent) error {
@@ -155,28 +144,29 @@ func (mp *MediatorPlugin) processResponseLoop() {
 }
 
 func (mp *MediatorPlugin) processVSSResponse(resp *VSSResponseEvent) {
-	//todo
-	//	dstMed := resp.DstMed
-	//if dstMed == resp.SrcMed {
-	//	return //ignore the message from myself
-	//}
-
 	lams := mp.GetLocalActiveMediators()
 	for _, dstMed := range lams {
+		//ignore the message from myself
+		srcIndex := resp.Resp.Response.Index
+		srcMed := mp.getDag().GetActiveMediatorAddr(int(srcIndex))
+		if srcMed == dstMed {
+			continue
+		}
+
 		dkg := mp.getLocalActiveMediatorDKG(dstMed)
 		if dkg == nil {
-			return
+			continue
 		}
 
 		jstf, err := dkg.ProcessResponse(resp.Resp)
 		if err != nil {
 			log.Error(err.Error())
-			return
+			continue
 		}
 
 		if jstf != nil {
 			log.Error(fmt.Sprintf("DKG: wrong Process Response: %v", dstMed.String()))
-			return
+			continue
 		}
 	}
 }

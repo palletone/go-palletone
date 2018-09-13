@@ -52,14 +52,6 @@ type testUnitDag struct {
 	chainHeadFeed *event.Feed
 }
 
-// type testUtxoDagInterface interface {
-// 	CurrentUnit() *modules.Unit
-// 	GetUnit(hash common.Hash) *modules.Unit
-// 	StateAt(common.Hash) (*palletdb.MemDatabase, error)
-// 	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
-// 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
-// }
-
 func (ud *testUnitDag) CurrentUnit() *modules.Unit {
 	return modules.NewUnit(&modules.Header{
 		Extra: []byte("test pool"),

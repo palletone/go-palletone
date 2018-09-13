@@ -18,7 +18,7 @@
 package ptn
 
 import (
-	//"errors"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -240,15 +240,24 @@ func (s *PalletOne) Protocols() []p2p.Protocol {
 }
 
 //Start MediatorNetwork
-func (s *PalletOne) startMediatorNetwork(srvr *p2p.Server) error {
+func (s *PalletOne) startMediatorNetwork(srvr *p2p.Server, maxPeers int) error {
 	peers := s.dag.GetActiveMediatorNodes()
+	if maxPeers < len(peers)+3 {
+		log.Error("PalletOne start", "maxpeers", maxPeers, "mediator size", len(peers)+3) //3:nomediator
+		return errors.New("maxpeers < mediator size")
+	}
+
 	for _, peer := range peers {
 		srvr.AddPeer(peer)
 	}
 
 	log.Debug("PalletOne", "startMediatorNetwork mediators:", len(peers))
-
 	return nil
+}
+
+//mediatormonitor
+func (s *PalletOne) mediatormonitor(maxPeers int) {
+	//peers := s.dag.GetActiveMediatorNodes()
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the
@@ -260,23 +269,25 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 	// Start the RPC service
 	s.netRPCService = ptnapi.NewPublicNetAPI(srvr, s.NetVersion())
 
-	// Start Mediator networking
-	if s.mediatorPlugin.LocalHaveActiveMediator() {
-		s.startMediatorNetwork(srvr)
-	}
-
 	// Figure out a max peers count based on the server limits
 	maxPeers := srvr.MaxPeers
 
 	// Start the networking layer and the light server if requested
 	s.protocolManager.Start(maxPeers)
 
+	// Start Mediator networking
+	if s.mediatorPlugin.LocalHaveActiveMediator() {
+		if err := s.startMediatorNetwork(srvr, maxPeers); err != nil {
+			return err
+		}
+	}
+
 	// append by Albert·Gou
 	s.mediatorPlugin.Start(srvr)
 
 	s.contract.Start(s.dag)
 
-	//go s.mediatormonitor()
+	go s.mediatormonitor(maxPeers)
 
 	return nil
 }
