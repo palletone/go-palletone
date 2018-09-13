@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -65,7 +66,8 @@ func TestValidator(t *testing.T) {
 		&modules.Message{App: modules.APP_TEXT, Payload: &modules.TextPayload{Text: []byte("test text.")}}, &modules.Message{App: modules.APP_CONTRACT_TPL, Payload: &modules.ContractTplPayload{Name: "contract name"}})
 	tx.Hash()
 	log.Println("tx hash :", tx.TxHash.String(), tx.TxMessages[2])
-	dbconn := storage.ReNewDbConn("D:\\Workspace\\Code\\Go\\src\\github.com\\palletone\\go-palletone\\bin\\gptn\\leveldb")
+	//dbconn := storage.ReNewDbConn("D:\\Workspace\\Code\\Go\\src\\github.com\\palletone\\go-palletone\\bin\\gptn\\leveldb")
+	dbconn := storage.ReNewDbConn(dagconfig.DbPath)
 	worldTmpState := map[string]map[string]interface{}{}
 	dagDb := storage.NewDagDatabase(dbconn)
 	utxoDb := storage.NewUtxoDatabase(dbconn)

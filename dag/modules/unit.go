@@ -196,7 +196,7 @@ type ChainIndex struct {
 }
 
 func (height ChainIndex) String() string {
-	return 	common.Bytes2Hex(height.Bytes())
+	return common.Bytes2Hex(height.Bytes())
 }
 func (height ChainIndex) Bytes() []byte {
 	data, err := rlp.EncodeToBytes(height)
@@ -632,6 +632,12 @@ const (
 	TxValidationCode_INVALID_WRITESET             TxValidationCode = 24
 	TxValidationCode_INVALID_MSG                  TxValidationCode = 25
 	TxValidationCode_INVALID_PAYMMENTLOAd         TxValidationCode = 26
+	TxValidationCode_INVALID_PAYMMENT_INPUT       TxValidationCode = 27
+	TxValidationCode_INVALID_PAYMMENT_OUTPUT      TxValidationCode = 28
+	TxValidationCode_INVALID_PAYMMENT_LOCKTIME    TxValidationCode = 29
+	TxValidationCode_INVALID_OUTPOINT             TxValidationCode = 30
+	TxValidationCode_INVALID_AMOUNT               TxValidationCode = 31
+	TxValidationCode_INVALID_ASSET                TxValidationCode = 32
 	TxValidationCode_NOT_VALIDATED                TxValidationCode = 254
 	TxValidationCode_NOT_COMPARE_SIZE             TxValidationCode = 255
 	TxValidationCode_INVALID_OTHER_REASON         TxValidationCode = 256

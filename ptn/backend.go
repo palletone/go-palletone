@@ -241,10 +241,6 @@ func (s *PalletOne) Protocols() []p2p.Protocol {
 
 //Start MediatorNetwork
 func (s *PalletOne) startMediatorNetwork(srvr *p2p.Server) error {
-	if !s.mediatorPlugin.HaveActiveMediator() {
-		return nil
-	}
-
 	peers := s.dag.GetActiveMediatorNodes()
 	for _, peer := range peers {
 		srvr.AddPeer(peer)
@@ -265,7 +261,9 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 	s.netRPCService = ptnapi.NewPublicNetAPI(srvr, s.NetVersion())
 
 	// Start Mediator networking
-	s.startMediatorNetwork(srvr)
+	if s.mediatorPlugin.HaveActiveMediator() {
+		s.startMediatorNetwork(srvr)
+	}
 
 	// Figure out a max peers count based on the server limits
 	maxPeers := srvr.MaxPeers
@@ -277,6 +275,8 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 	s.mediatorPlugin.Start(srvr)
 
 	s.contract.Start(s.dag)
+
+	//go s.mediatormonitor()
 
 	return nil
 }
