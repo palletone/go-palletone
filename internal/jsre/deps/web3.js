@@ -5439,7 +5439,12 @@ var methods = function () {
         call: 'ptn_getWork',
         params: 0
     });
-
+    var getTransactionsByTxid = new Method({
+        name: 'getTransactionsByTxid',
+        call: 'ptn_getTransactionsByTxid',
+        params: 1,
+        // inputFormatter: [null]
+    });
     var walletTokens = new Method({
         name: 'walletTokens',
         call: 'ptn_walletTokens',

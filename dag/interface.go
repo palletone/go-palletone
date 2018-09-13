@@ -68,6 +68,7 @@ type IDag interface {
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	GetTrieSyncProgress() (uint64, error)
 	GetUtxoEntry(key []byte) (*modules.Utxo, error)
+	GetTransactionsByHash(hash common.Hash) (modules.Transactions, error) 
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	GetAddrTransactions(addr string) (modules.Transactions, error)
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string)
