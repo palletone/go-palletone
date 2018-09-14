@@ -70,12 +70,12 @@ type PalletOne struct {
 
 	ApiBackend *PtnApiBackend
 
-	levelDb palletdb.Database
+	//levelDb palletdb.Database
 
 	networkId     uint64
 	netRPCService *ptnapi.PublicNetAPI
 
-	dag *dag.Dag
+	dag dag.IDag
 
 	contract *contracts.Contract
 
@@ -115,9 +115,9 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		engine:         CreateConsensusEngine(ctx),
 		shutdownChan:   make(chan bool),
 		networkId:      config.NetworkId,
-		levelDb:        db,
-		bloomRequests:  make(chan chan *bloombits.Retrieval),
-		dag:            dag,
+		//levelDb:        db,
+		bloomRequests: make(chan chan *bloombits.Retrieval),
+		dag:           dag,
 		//bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
 		//etherbase:      config.Etherbase,
 	}
@@ -137,7 +137,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine,
-		ptn.dag, ptn.eventMux, ptn.levelDb, ptn.mediatorPlugin); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}
@@ -229,7 +229,7 @@ func (s *PalletOne) IsListening() bool                  { return true } // Alway
 func (s *PalletOne) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *PalletOne) NetVersion() uint64                 { return s.networkId }
 func (s *PalletOne) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
-func (s *PalletOne) Dag() *dag.Dag                      { return s.dag }
+func (s *PalletOne) Dag() dag.IDag                      { return s.dag }
 
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.

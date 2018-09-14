@@ -29,12 +29,10 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
-	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
@@ -82,7 +80,7 @@ type ProtocolManager struct {
 	txCh     chan modules.TxPreEvent
 	txSub    event.Subscription
 
-	dag *dag.Dag
+	dag dag.IDag
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -116,7 +114,7 @@ type ProtocolManager struct {
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool, engine core.ConsensusEngine,
-	dag *dag.Dag, mux *event.TypeMux, levelDb palletdb.Database, producer producer) (*ProtocolManager, error) {
+	dag dag.IDag, mux *event.TypeMux, producer producer) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -184,7 +182,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	}
 
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, levelDb)
+	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag)
 
 	validator := func(header *modules.Header) error {
 		return dag.VerifyHeader(header, true)
@@ -320,8 +318,6 @@ func (self *ProtocolManager) vssResponseBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.vssResponseCh:
-			//node := self.dag.GetActiveMediatorNode(event.DstMed)
-			//self.BroadcastVssResp(node, &event)
 			self.BroadcastVssResp(&event)
 
 			// Err() channel will be closed when unsubscribing.
@@ -452,9 +448,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		index = head.Number.Index
 	)
 	//TODO Devin
-	var unitRep common2.IUnitRepository
-	unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
-	genesis, err := unitRep.GetGenesisUnit(0)
+	//var unitRep common2.IUnitRepository
+	//unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
+	genesis, err := pm.dag.GetGenesisUnit(0)
 	if err != nil {
 		log.Info("GetGenesisUnit error", "err", err)
 		return err
@@ -1045,16 +1041,17 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
 
 // AtiveMeatorPeers retrieves a list of peers that active mediator
 // @author Albert·Gou
-func (pm *ProtocolManager) GetActiveMediatorPeers() []*peer {
+func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 	nodes := pm.dag.GetActiveMediatorNodes()
-	list := make([]*peer, 0, len(nodes))
+	list := make(map[string]*peer, len(nodes))
 
 	for _, node := range nodes {
-		peer := pm.peers.Peer(node.ID.TerminalString())
+		id := node.ID.TerminalString()
+		peer := pm.peers.Peer(id)
 		if peer == nil {
 			log.Info(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
 		} else {
-			list = append(list, peer)
+			list[id] = peer
 		}
 	}
 

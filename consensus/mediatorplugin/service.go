@@ -40,7 +40,7 @@ import (
 
 // PalletOne wraps all methods required for producing unit.
 type PalletOne interface {
-	Dag() *dag.Dag
+	Dag() dag.IDag
 	GetKeyStore() *keystore.KeyStore
 	TxPool() *txspool.TxPool
 }
@@ -58,9 +58,8 @@ type toTBLSSigned struct {
 }
 
 type MediatorPlugin struct {
-	server *p2p.Server   // Peer-to-peer server to maintain the connection with other active mediator peer
-	ptn    PalletOne     // Full PalletOne service to retrieve other function
-	quit   chan struct{} // Channel used for graceful exit
+	ptn  PalletOne     // Full PalletOne service to retrieve other function
+	quit chan struct{} // Channel used for graceful exit
 	// Enable VerifiedUnit production, even if the chain is stale.
 	// 新开启一个区块链时，必须设为true
 	productionEnabled bool
@@ -99,7 +98,7 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 	lams := make([]common.Address, 0)
 
-	gp := mp.getDag().GlobalProp
+	gp := mp.getDag().GetGlobalProp()
 	for add := range mp.mediators {
 		if gp.IsActiveMediator(add) {
 			lams = append(lams, add)
@@ -129,16 +128,6 @@ func (mp *MediatorPlugin) IsLocalActiveMediator(add common.Address) bool {
 	return false
 }
 
-func (mp *MediatorPlugin) AddActiveMediatorPeers() {
-	if !mp.LocalHaveActiveMediator() {
-		return
-	}
-
-	for _, n := range mp.getDag().GetActiveMediatorNodes() {
-		mp.server.AddPeer(n)
-	}
-}
-
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
 	// 1. 判断是否满足生产验证单元的条件，主要判断本节点是否控制至少一个mediator账户
 	if len(mp.mediators) == 0 {
@@ -149,7 +138,7 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 
 		if mp.productionEnabled {
 			dag := mp.getDag()
-			if dag.DynGlobalProp.LastVerifiedUnitNum == 0 {
+			if dag.GetDynGlobalProp().LastVerifiedUnitNum == 0 {
 				newChainBanner(dag)
 			}
 		}
@@ -183,24 +172,20 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	log.Debug("mediator plugin startup begin")
-	mp.server = server
 
-	// 1. 如果当前节点有活跃mediator，则静态连接其他活跃mediator
-	//	go mp.AddActiveMediatorPeers()
-
-	// 2. 开启循环生产计划
+	// 1. 开启循环生产计划
 	go mp.ScheduleProductionLoop()
 
-	// 3. 给当前节点控制的活跃mediator，初始化对应的DKG
+	// 2. 给当前节点控制的活跃mediator，初始化对应的DKG
 	go mp.NewActiveMediatorsDKG()
 
-	// 4. 处理 VSS deal 循环
+	// 3. 处理 VSS deal 循环
 	go mp.processDealLoop()
 
-	// 5. 处理 VSS response 循环
+	// 4. 处理 VSS response 循环
 	go mp.processResponseLoop()
 
-	// 6. BLS签名循环
+	// 5. BLS签名循环
 	go mp.unitBLSSignLoop()
 
 	log.Debug("mediator plugin startup end")
@@ -268,7 +253,7 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	return &mp, nil
 }
 
-func (mp *MediatorPlugin) getDag() *dag.Dag {
+func (mp *MediatorPlugin) getDag() dag.IDag {
 	return mp.ptn.Dag()
 }
 

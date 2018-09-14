@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -25,17 +26,17 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common/ptndb"
 )
 
 func TestGetUnit(t *testing.T) {
 	log.Println("dbconn is nil , renew db  start ...")
 
-	db,_:=ptndb.NewMemDatabase()
-	dagdb:=NewDagDatabase(db)
-	dagdb.GetUnit( common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
+	db, _ := ptndb.NewMemDatabase()
+	dagdb := NewDagDatabase(db)
+	dagdb.GetUnit(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
 }
 
 func TestGetContract(t *testing.T) {
@@ -81,12 +82,12 @@ func TestUnitNumberIndex(t *testing.T) {
 }
 
 func TestGetContractState(t *testing.T) {
-	db,_:=ptndb.NewMemDatabase()
-	statedb:=NewStateDatabase(db)
-	version, value := statedb.GetContractState( "contract0000", "name")
+	db, _ := ptndb.NewMemDatabase()
+	statedb := NewStateDatabase(db)
+	version, value := statedb.GetContractState("contract0000", "name")
 	log.Println(version)
 	log.Println(value)
-	data := statedb.GetContractAllState( []byte("contract0000"))
+	data := statedb.GetContractAllState([]byte("contract0000"))
 	for k, v := range data {
 		log.Println(k, v)
 	}

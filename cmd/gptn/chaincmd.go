@@ -133,7 +133,7 @@ func initGenesis(ctx *cli.Context) error {
 
 	ks := node.GetKeyStore()
 	//account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
-	account, _ := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
+	account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
 
 	unit, err := gen.SetupGenesisUnit(Dbconn, genesis, ks, account)
 	if err != nil {
@@ -148,11 +148,11 @@ func initGenesis(ctx *cli.Context) error {
 	// @author Albert·Gou
 	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
 	// todo Albert·Gou
-	//configPath := defaultConfigPath
-	//if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-	//	configPath, _ = getConfigPath(temp, node.DataDir())
-	//}
-	//modifyMediatorInConf(configPath, password, account.Address)
+	configPath := defaultConfigPath
+	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
+		configPath, _ = getConfigPath(temp, node.DataDir())
+	}
+	modifyMediatorInConf(configPath, password, account.Address)
 
 	// 3, 全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou

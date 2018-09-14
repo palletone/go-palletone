@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/statistics/metrics"
 )
@@ -95,9 +94,9 @@ type Downloader struct {
 	mode SyncMode       // Synchronisation mode defining the strategy used (per sync cycle)
 	mux  *event.TypeMux // Event multiplexer to announce sync operation events
 
-	queue   *queue   // Scheduler for selecting the hashes to download
-	peers   *peerSet // Set of active peers from which download can proceed
-	levelDb palletdb.Database
+	queue *queue   // Scheduler for selecting the hashes to download
+	peers *peerSet // Set of active peers from which download can proceed
+	//levelDb palletdb.Database
 
 	rttEstimate   uint64 // Round trip time to target for download requests
 	rttConfidence uint64 // Confidence in the estimated RTT (unit: millionths to allow atomic ops)
@@ -190,14 +189,14 @@ type BlockDag interface {
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
-func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, lightdag LightDag, dag BlockDag, levelDb palletdb.Database) *Downloader {
+func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, lightdag LightDag, dag BlockDag) *Downloader {
 	if lightdag == nil {
 		lightdag = dag
 	}
 
 	dl := &Downloader{
-		mode:           mode,
-		levelDb:        levelDb,
+		mode: mode,
+		//levelDb:        levelDb,
 		mux:            mux,
 		queue:          newQueue(),
 		peers:          newPeerSet(),

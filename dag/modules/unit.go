@@ -332,7 +332,7 @@ func (version *StateVersion) String() string {
 }
 
 func (version *StateVersion) ParseStringKey(key string) bool {
-	ss := strings.Split(key, "^*^")
+	ss := strings.Split(key, FIELD_SPLIT_STR)
 	if len(ss) != 3 {
 		return false
 	}
@@ -341,7 +341,11 @@ func (version *StateVersion) ParseStringKey(key string) bool {
 		log.Error("State version parse string key", "error", err.Error())
 		return false
 	}
-	version = &v
+	if version == nil {
+		version = &StateVersion{}
+	}
+	version.Height = v.Height
+	version.TxIndex = v.TxIndex
 	return true
 }
 
@@ -357,9 +361,17 @@ type ContractTplPayload struct {
 	Name       string `json:"name"`        // contract template name
 	Path       string `json:"path"`        // contract template execute path
 	Version    string `json:"version"`     // contract template version
-	Memery     uint16 `json:"memory"`      // coontract template bytecode memory size(Byte), use to compute transaction fee
+	Memory     uint16 `json:"memory"`      // coontract template bytecode memory size(Byte), use to compute transaction fee
 	Bytecode   []byte `json:"bytecode"`    // contract bytecode
 }
+
+const (
+	FIELD_TPL_BYTECODE = "TplBytecode"
+	FIELD_TPL_NAME     = "TplName"
+	FIELD_TPL_PATH     = "TplPath"
+	FIELD_TPL_Memory   = "TplMemory"
+	FIELD_SPLIT_STR    = "^*^"
+)
 
 type DelContractState struct {
 	IsDelete bool
