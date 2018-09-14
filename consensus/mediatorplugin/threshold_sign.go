@@ -80,6 +80,7 @@ func (mp *MediatorPlugin) processDealLoop() {
 
 func (mp *MediatorPlugin) getLocalActiveMediatorDKG(add common.Address) *dkg.DistKeyGenerator {
 	if !mp.IsLocalActiveMediator(add) {
+		log.Error(fmt.Sprintf("The following mediator is not local active mediator: %v", add.String()))
 		return nil
 	}
 
