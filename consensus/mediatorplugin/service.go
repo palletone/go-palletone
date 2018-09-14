@@ -57,6 +57,11 @@ type toTBLSSigned struct {
 	sigShares [][]byte
 }
 
+type dkgVerifier struct {
+	medLocal common.Address
+	srcIndex uint32
+}
+
 type MediatorPlugin struct {
 	ptn  PalletOne     // Full PalletOne service to retrieve other function
 	quit chan struct{} // Channel used for graceful exit
@@ -71,10 +76,13 @@ type MediatorPlugin struct {
 	newProducedUnitScope event.SubscriptionScope // 零值已准备就绪待用
 	toBLSSigned          chan *toBLSSigned       // 接收新生产的unit
 
-	// dkg生成vss相关
-	suite     vss.Suite
-	dkgs      map[common.Address]*dkg.DistKeyGenerator
-	vrfrReady map[common.Address]map[uint32]bool
+	// dkg 完成 vss 协议相关
+	suite vss.Suite
+	dkgs  map[common.Address]*dkg.DistKeyGenerator
+
+	vrfrReady   map[common.Address]map[uint32]bool
+	vrfrReadyCh chan *dkgVerifier
+	respBuf     map[common.Address]map[uint32]chan*dkg.Response
 
 	vssDealFeed     event.Feed
 	vssDealScope    event.SubscriptionScope
@@ -157,18 +165,22 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 	ll := len(lams)
 	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, ll)
 	mp.vrfrReady = make(map[common.Address]map[uint32]bool, ll)
+	mp.respBuf = make(map[common.Address]map[uint32]chan*dkg.Response, ll)
 
 	for _, med := range lams {
 		initSec := mp.mediators[med].InitPartSec
 
-		dkg, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
+		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
 			log.Error(err.Error())
 			continue
 		}
 
-		mp.dkgs[med] = dkg
-		mp.vrfrReady[med] = make(map[uint32]bool, mp.getDag().GetActiveMediatorCount()-1)
+		mp.dkgs[med] = dkgr
+
+		vc := mp.getDag().GetActiveMediatorCount() - 1
+		mp.vrfrReady[med] = make(map[uint32]bool, vc)
+		mp.respBuf[med] = make(map[uint32]chan*dkg.Response, vc)
 	}
 
 	// todo 后面换成事件通知响应在调用, 并开启定时器
@@ -250,7 +262,8 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		toBLSSigned:     make(chan *toBLSSigned),
 		pendingTBLSSign: make(map[common.Hash]*toTBLSSigned),
 
-		suite: bn256.NewSuiteG2(),
+		suite:       bn256.NewSuiteG2(),
+		vrfrReadyCh: make(chan *dkgVerifier),
 	}
 
 	log.Debug("mediator plugin initialize end")

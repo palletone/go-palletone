@@ -96,15 +96,17 @@ func (mp *MediatorPlugin) getLocalActiveMediatorDKG(add common.Address) *dkg.Dis
 func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
 	dstMed := mp.getDag().GetActiveMediatorAddr(dealEvent.DstIndex)
 
-	dkg := mp.getLocalActiveMediatorDKG(dstMed)
-	if dkg == nil {
+	dkgr := mp.getLocalActiveMediatorDKG(dstMed)
+	if dkgr == nil {
 		return
 	}
 
 	deal := dealEvent.Deal
 	mp.vrfrReady[dstMed][deal.Index] = true
+	mp.respBuf[dstMed][deal.Index] = make(chan *dkg.Response, mp.getDag().GetActiveMediatorCount()-1)
+	go mp.notifyProcessResp(&dkgVerifier{dstMed, deal.Index})
 
-	resp, err := dkg.ProcessDeal(deal)
+	resp, err := dkgr.ProcessDeal(deal)
 	if err != nil {
 		log.Error(err.Error())
 		return
@@ -116,6 +118,10 @@ func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
 	}
 
 	go mp.BroadcastVSSResponse(dstMed, resp)
+}
+
+func (mp *MediatorPlugin) notifyProcessResp(dvp *dkgVerifier) {
+	mp.vrfrReadyCh <- dvp
 }
 
 // BroadcastVSSResponse, broadcast response to every other participant
@@ -143,6 +149,34 @@ func (mp *MediatorPlugin) processResponseLoop() {
 			return
 		case resp := <-mp.toProcessResponseCh:
 			go mp.processVSSResponse(resp)
+		case dvp := <-mp.vrfrReadyCh:
+			go mp.processResponseBuf(dvp)
+		}
+	}
+}
+
+func (mp *MediatorPlugin) processResponseBuf(dvp *dkgVerifier) {
+	dstMed := dvp.medLocal
+	if !mp.vrfrReady[dstMed][dvp.srcIndex] {
+		return
+	}
+
+	dkg := mp.getLocalActiveMediatorDKG(dstMed)
+	if dkg == nil {
+		return
+	}
+
+	for resp := range mp.respBuf[dstMed][dvp.srcIndex] {
+
+		jstf, err := dkg.ProcessResponse(resp)
+		if err != nil {
+			log.Error(err.Error())
+			continue
+		}
+
+		if jstf != nil {
+			log.Error(fmt.Sprintf("DKG: wrong Process Response: %v", dstMed.String()))
+			continue
 		}
 	}
 }
@@ -162,16 +196,8 @@ func (mp *MediatorPlugin) processVSSResponse(resp *VSSResponseEvent) {
 			continue
 		}
 
-		jstf, err := dkg.ProcessResponse(resp.Resp)
-		if err != nil {
-			log.Error(err.Error())
-			continue
-		}
-
-		if jstf != nil {
-			log.Error(fmt.Sprintf("DKG: wrong Process Response: %v", dstMed.String()))
-			continue
-		}
+		mp.respBuf[dstMed][srcIndex] <- resp.Resp
+		go mp.notifyProcessResp(&dkgVerifier{dstMed, srcIndex})
 	}
 }
 
