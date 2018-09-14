@@ -228,7 +228,7 @@ func (pm *ProtocolManager) removePeer(id string) {
 	}
 }
 
-func (pm *ProtocolManager) Start(maxPeers int) {
+func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.maxPeers = maxPeers
 
 	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
@@ -271,6 +271,8 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.vssResponseCh = make(chan mp.VSSResponseEvent)
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
 	go pm.vssResponseBroadcastLoop()
+
+	go pm.StartMediatorMonitor(srvr, maxPeers)
 }
 
 // @author Albert·Gou
@@ -385,6 +387,8 @@ type producer interface {
 
 	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
 	ToProcessResponse(resp *mp.VSSResponseEvent) error
+
+	LocalHaveActiveMediator() bool
 }
 
 func (pm *ProtocolManager) Stop() {
