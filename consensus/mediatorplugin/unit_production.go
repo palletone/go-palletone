@@ -34,19 +34,16 @@ import (
 
 // GenerateVerifiedUnit, generate unit
 // @author Albert·Gou
-func GenerateUnit(dag *dag.Dag, when time.Time, producer core.Mediator,
+func GenerateUnit(dag dag.IDag, when time.Time, producer core.Mediator,
 	ks *keystore.KeyStore, txspool *txspool.TxPool) *modules.Unit {
-	dgp := dag.DynGlobalProp
-	//TODO Devin will refactory it
-	var unitRep dagcommon.IUnitRepository
-	unitRep=dagcommon.NewUnitRepository4Db(dag.Db)
+	dgp := dag.GetDynGlobalProp()
 
 	// 1. 判断是否满足生产的若干条件
 
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	log.Debug("Generating Verified Unit...")
 
-	units, err := unitRep.CreateUnit( &producer.Address, txspool, ks, when)
+	units, err := dag.CreateUnit(&producer.Address, txspool, ks, when)
 	// added by yangyu, 2018.8.9
 	if err != nil || units == nil || len(units) == 0 || units[0].IsEmpty() {
 		log.Info("No unit need to be packaged for now.")
@@ -80,16 +77,14 @@ func GenerateUnit(dag *dag.Dag, when time.Time, producer core.Mediator,
  *
  * @return true if we switched forks as a result of this push.
  */
-func PushUnit(dag *dag.Dag, newUnit *modules.Unit) bool {
+func PushUnit(dag dag.IDag, newUnit *modules.Unit) bool {
 	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
 
 	ApplyUnit(dag, newUnit)
-	//TODO Devin below 2 rows
-	var unitRep dagcommon.IUnitRepository
-	unitRep=dagcommon.NewUnitRepository4Db(dag.Db)
+
 	// 4. 将验证单元添加到本地DB
 	log.Debug("storing the new verified unit to database...")
-	err := unitRep.SaveUnit( *newUnit, false)
+	err := dag.SaveUnit(*newUnit, false)
 	if err != nil {
 		log.Info("unit_production", "PushUnit err:", err)
 	}
@@ -97,19 +92,19 @@ func PushUnit(dag *dag.Dag, newUnit *modules.Unit) bool {
 	return false
 }
 
-func ApplyUnit(dag *dag.Dag, nextUnit *modules.Unit) {
-	gp := dag.GlobalProp
-	dgp := dag.DynGlobalProp
+func ApplyUnit(dag dag.IDag, nextUnit *modules.Unit) {
+	gp := dag.GetGlobalProp()
+	dgp := dag.GetDynGlobalProp()
 
 	// 4. 更新Unit中交易的状态
 
 	// 5. 更新全局动态属性值
 	log.Debug("Updating global dynamic property...")
-	dagcommon.UpdateGlobalDynProp(dag.Db, gp, dgp, nextUnit)
-
+	//dagcommon.UpdateGlobalDynProp(dag.Db, gp, dgp, nextUnit)
+	//TODO Devin
 	// 5. 判断是否到了维护周期，并维护
 
 	// 6. 洗牌
 	log.Debug("shuffling the scheduling order of mediator...")
-	dag.MediatorSchl.UpdateMediatorSchedule(gp, dgp)
+	dag.GetMediatorSchl().UpdateMediatorSchedule(gp, dgp)
 }

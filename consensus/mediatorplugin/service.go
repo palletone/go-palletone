@@ -40,7 +40,7 @@ import (
 
 // PalletOne wraps all methods required for producing unit.
 type PalletOne interface {
-	Dag() *dag.Dag
+	Dag() dag.IDag
 	GetKeyStore() *keystore.KeyStore
 	TxPool() *txspool.TxPool
 }
@@ -98,7 +98,7 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 	lams := make([]common.Address, 0)
 
-	gp := mp.getDag().GlobalProp
+	gp := mp.getDag().GetGlobalProp()
 	for add := range mp.mediators {
 		if gp.IsActiveMediator(add) {
 			lams = append(lams, add)
@@ -138,7 +138,7 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 
 		if mp.productionEnabled {
 			dag := mp.getDag()
-			if dag.DynGlobalProp.LastVerifiedUnitNum == 0 {
+			if dag.GetDynGlobalProp().LastVerifiedUnitNum == 0 {
 				newChainBanner(dag)
 			}
 		}
@@ -253,7 +253,7 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	return &mp, nil
 }
 
-func (mp *MediatorPlugin) getDag() *dag.Dag {
+func (mp *MediatorPlugin) getDag() dag.IDag {
 	return mp.ptn.Dag()
 }
 

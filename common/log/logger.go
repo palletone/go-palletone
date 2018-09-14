@@ -48,6 +48,15 @@ var defaultLogModule = []string{RootBuild, RootCmd, RootCommon, RootConfigure, R
 
 var Logger *zap.Logger
 
+type ILogger interface {
+	Trace(msg string, ctx ...interface{})
+	Debug(msg string, ctx ...interface{})
+	Info(msg string, ctx ...interface{})
+	Warn(msg string, ctx ...interface{})
+	Error(msg string, ctx ...interface{})
+	Crit(msg string, ctx ...interface{})
+}
+
 type Plogger struct {
 	logger zap.Logger
 }

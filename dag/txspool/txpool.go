@@ -86,7 +86,6 @@ var (
 type dags interface {
 	CurrentUnit() *modules.Unit
 	GetUnit(hash common.Hash) *modules.Unit
-	//StateAt(root common.Hash) (*state.StateDB, error)
 
 	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
@@ -152,8 +151,8 @@ type TxPool struct {
 	chainHeadSub event.Subscription
 	mu           sync.RWMutex
 
-	locals  *accountSet // Set of local transaction to exempt from eviction rules
-	journal *txJournal  // Journal of local transaction to back up to disk
+	locals  *utxoSet   // Set of local transaction to exempt from eviction rules
+	journal *txJournal // Journal of local transaction to back up to disk
 
 	beats map[modules.OutPoint]time.Time
 	queue map[common.Hash]*modules.TxPoolTransaction
@@ -186,7 +185,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 		chainHeadCh: make(chan modules.ChainHeadEvent, chainHeadChanSize),
 		txfee:       new(big.Int).SetUint64(config.FeeLimit),
 	}
-	pool.locals = newAccountSet()
+	pool.locals = newUtxoSet()
 	pool.priority_priced = newTxPricedList(&pool.all)
 	//pool.reset(nil, unit.CurrentUnit().Header())
 
@@ -232,10 +231,7 @@ func (pool *TxPool) loop() {
 
 	// Track the previous head headers for transaction reorgs
 	head := pool.unit.CurrentUnit()
-	// head := new(modules.Unit)
-	// head.UnitHeader = &modules.Header{
-	// 	Creationdate: int64(1),
-	// }
+
 	// Keep waiting for and reacting to the various events
 	for {
 		select {
@@ -269,7 +265,7 @@ func (pool *TxPool) loop() {
 		// Handle inactive account transaction eviction
 		case <-evict.C:
 
-		// Handle local transaction journal rotation
+		// Handle local transaction journal rotation ----- once a honr -----
 		case <-journal.C:
 			if pool.journal != nil {
 				pool.mu.Lock()
@@ -686,7 +682,7 @@ func (pool *TxPool) journalTx(tx *modules.TxPoolTransaction) {
 	if len(tx.From) > 0 {
 		for _, from := range tx.From {
 			if pool.journal == nil || !pool.locals.contains(*from) {
-				log.Trace("Pool journal is nil.", "journal", pool.journal.path, "locals", pool.locals.accounts)
+				log.Trace("Pool journal is nil.", "journal", pool.journal.path, "locals", pool.locals.utxos)
 				return
 			}
 		}
@@ -1151,33 +1147,33 @@ func (a addresssByHeartbeat) Len() int           { return len(a) }
 func (a addresssByHeartbeat) Less(i, j int) bool { return a[i].heartbeat.Before(a[j].heartbeat) }
 func (a addresssByHeartbeat) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
-/******     accountSet  *****/
+/******     utxoSet  *****/
 
-// accountSet is simply a set of addresses to check for existence
-type accountSet struct {
-	accounts map[modules.OutPoint]struct{}
+// utxoSet is simply a set of addresses to check for existence
+type utxoSet struct {
+	utxos map[modules.OutPoint]struct{}
 }
 
-// newAccountSet creates a new address set with an associated signer for sender
+// newutxoSet creates a new address set with an associated signer for sender
 // derivations.
-func newAccountSet() *accountSet {
-	return &accountSet{
-		accounts: make(map[modules.OutPoint]struct{}),
+func newUtxoSet() *utxoSet {
+	return &utxoSet{
+		utxos: make(map[modules.OutPoint]struct{}),
 	}
 }
 
 // contains checks if a given address is contained within the set.
-func (as *accountSet) contains(addr modules.OutPoint) bool {
+func (as *utxoSet) contains(addr modules.OutPoint) bool {
 	if addr.IsEmpty() {
 		return false
 	}
-	_, exist := as.accounts[addr]
+	_, exist := as.utxos[addr]
 	return exist
 }
 
 // containsTx checks if the sender of a given tx is within the set. If the sender
 // cannot be derived, this method returns false.
-func (as *accountSet) containsTx(tx *modules.TxPoolTransaction) bool {
+func (as *utxoSet) containsTx(tx *modules.TxPoolTransaction) bool {
 	// if addr, err := modules.Sender(as.signer, tx); err == nil {
 	// 	return as.contains(addr)
 	// }
@@ -1193,11 +1189,11 @@ func (as *accountSet) containsTx(tx *modules.TxPoolTransaction) bool {
 }
 
 // add inserts a new address into the set to track.
-func (as *accountSet) add(addr modules.OutPoint) {
-	as.accounts[addr] = struct{}{}
+func (as *utxoSet) add(addr modules.OutPoint) {
+	as.utxos[addr] = struct{}{}
 }
 
-/******  end accountSet  *****/
+/******  end utxoSet  *****/
 //  这个接口后期需要调整， 需要先将all 进行排序， 然后按序从前到后一次取出足够多tx。
 func (pool *TxPool) GetSortedTxs() ([]*modules.TxPoolTransaction, common.StorageSize) {
 	var list modules.TxByPriority
@@ -1281,9 +1277,6 @@ func (view *UtxoViewpoint) addTxOut(outpoint modules.OutPoint, txOut *modules.Tx
 	utxo.Amount = uint64(txOut.Value)
 	utxo.PkScript = txOut.PkScript
 	utxo.Asset = txOut.Asset
-	// utxo.Asset.AssertId = txOut.Asset.AssertId
-	// utxo.Asset.UniqueId = txOut.Asset.UniqueId
-	// utxo.Asset.ChainId = txOut.Asset.ChainId
 
 	// isCoinbase ?
 	// flags --->  标记utxo状态
@@ -1303,7 +1296,6 @@ func (view *UtxoViewpoint) AddTxOut(tx *modules.Transaction, msgIdx, txoutIdx ui
 				}
 				preout := modules.OutPoint{TxHash: tx.Hash(), MessageIndex: msgIdx, OutIndex: txoutIdx}
 				output := msg.Output[txoutIdx]
-				//asset := &modules.Asset{AssetId: output.Asset.AssetId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
 				txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: output.Asset}
 				view.addTxOut(preout, txout, false)
 			}
@@ -1322,7 +1314,6 @@ func (view *UtxoViewpoint) AddTxOuts(tx *modules.Transaction) {
 				for j, output := range msg.Output {
 					txoutIdx := uint32(j)
 					preout.OutIndex = txoutIdx
-					//asset := &modules.Asset{AssertId: output.Asset.AssertId, UniqueId: output.Asset.UniqueId, ChainId: output.Asset.ChainId}
 					txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: output.Asset}
 					view.addTxOut(preout, txout, false)
 				}

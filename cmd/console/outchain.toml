@@ -1,0 +1,17 @@
+[Ada.Btc]
+NetID = 1
+Host = "localhost:18332"
+RPCUser = "zxl"
+RPCPasswd = "123456"
+CertPath = ""
+WalletPasswd = "1"
+
+[Ada.Eth]
+NetID = 1
+Rawurl = "\\\\.\\pipe\\geth.ipc"
+
+[Ada.CCInfoKV.test]
+CCName = ""
+
+[Ada.CCInfoKV.test.ChainCodeKV]
+testk = [116, 101, 115, 116, 118]

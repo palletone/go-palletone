@@ -30,14 +30,14 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"sort"
+	"strings"
 
-	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
 	"github.com/palletone/go-palletone/contracts/platforms/util"
 	ccmetadata "github.com/palletone/go-palletone/core/vmContractPub/ccprovider/metadata"
-	cutil "github.com/palletone/go-palletone/vm/common"
+	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	cutil "github.com/palletone/go-palletone/vm/common"
 	"github.com/spf13/viper"
 	"io/ioutil"
 )
@@ -85,7 +85,7 @@ func getGopath() (string, error) {
 		return "", err
 	}
 	// Only take the first element of GOPATH
-	splitGoPath := filepath.SplitList(env["GOPATH"])
+	splitGoPath := filepath.SplitList(env["set GOPATH"])
 	if len(splitGoPath) == 0 {
 		return "", fmt.Errorf("invalid GOPATH environment variable value:[%s]", env["GOPATH"])
 	}

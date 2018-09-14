@@ -108,7 +108,7 @@ func NewContractTplPayload(templateId []byte, name string, path string, version 
 		Name:       name,
 		Path:       path,
 		Version:    version,
-		Memery:     memory,
+		Memory:     memory,
 		Bytecode:   bytecode,
 	}
 }
