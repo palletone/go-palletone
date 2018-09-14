@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	ptnLog "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -38,8 +39,6 @@ import (
 type DagDatabase struct {
 	db ptndb.Database
 }
-
-
 
 func NewDagDatabase(db ptndb.Database) *DagDatabase {
 	return &DagDatabase{db: db}
@@ -152,6 +151,7 @@ value: transaction struct rlp encoding bytes
 */
 func (dagdb *DagDatabase) SaveTransaction(tx *modules.Transaction) error {
 	// save transaction
+	ptnLog.Info(">>>>>>>　SaveTransactio", "txhash=", tx.TxHash.Bytes())
 	if err := StoreBytes(dagdb.db, append(TRANSACTION_PREFIX, tx.TxHash.Bytes()...), tx); err != nil {
 		return err
 	}
@@ -231,6 +231,7 @@ func (dagdb *DagDatabase) SaveTxLookupEntry(unit *modules.Unit) error {
 	}
 	return nil
 }
+
 // ###################### SAVE IMPL END ######################
 // ###################### GET IMPL START ######################
 // GetAddrTransactions
@@ -381,9 +382,11 @@ func (dagdb *DagDatabase) GetUnit(hash common.Hash) *modules.Unit {
 	return unit
 }
 func (dagdb *DagDatabase) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
+	ptnLog.Info(">>>>>>  GetUnitTransactions", "txhash=", hash.Bytes())
 	txs := modules.Transactions{}
 	txHashList, err := dagdb.GetBody(hash)
 	if err != nil {
+		ptnLog.Info(">>>>>>  GetUnitTransactions when get body error", "error", err.Error())
 		return nil, err
 	}
 	// get transaction by tx'hash.
@@ -501,7 +504,9 @@ func (dagdb *DagDatabase) GetTxLookupEntry(hash common.Hash) (common.Hash, uint6
 // GetTransaction retrieves a specific transaction from the database , along with its added positional metadata
 // p2p 同步区块 分为同步header 和body。 GetBody可以省掉节点包装交易块的过程。
 func (dagdb *DagDatabase) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
+	ptnLog.Info(">>>>>>>　GetTransaction", "txhash=", hash.Bytes())
 	unitHash, unitNumber, txIndex := dagdb.GetTxLookupEntry(hash)
+	log.Println("Unithash:", unitHash)
 	if unitHash != (common.Hash{}) {
 		body, _ := dagdb.GetBody(unitHash)
 		if body == nil || len(body) <= int(txIndex) {
@@ -512,8 +517,10 @@ func (dagdb *DagDatabase) GetTransaction(hash common.Hash) (*modules.Transaction
 			return tx, unitHash, unitNumber, txIndex
 		}
 	}
+	log.Println("111111111111111111111")
 	tx, err := dagdb.gettrasaction(hash)
 	if err != nil {
+		fmt.Println("gettrasaction error:", err.Error())
 		return nil, unitHash, unitNumber, txIndex
 	}
 	return tx, unitHash, unitNumber, txIndex
@@ -552,4 +559,5 @@ func (dagdb *DagDatabase) GetContractNoReader(db ptndb.Database, id common.Hash)
 	}
 	return contract, nil
 }
+
 // ###################### GET IMPL END ######################

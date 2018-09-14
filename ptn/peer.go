@@ -76,12 +76,11 @@ type peer struct {
 
 	knownTxs    *set.Set // Set of transaction hashes known to be known by this peer
 	knownBlocks *set.Set // Set of block hashes known to be known by this peer
-	//knownVsss    *set.Set // Set of vss hashes known to be known by this peer
-	//knownVssResp *set.Set // Set of vssResp hashes known to be known by this peer
 
-	head common.Hash
-	//td   *big.Int
+	head  common.Hash
 	index uint64
+
+	isMediator bool
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {

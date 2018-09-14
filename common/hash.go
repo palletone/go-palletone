@@ -102,6 +102,14 @@ func (h *Hash) SetBytes(b []byte) {
 
 // Set string `s` to h. If s is larger than len(h) s will be cropped (from left) to fit.
 func (h *Hash) SetString(s string) { h.SetBytes([]byte(s)) }
+func (h *Hash) SetHexString(s string) error {
+	bytes, err := hexutil.Decode(s)
+	if err != nil {
+		return err
+	}
+	h.SetBytes(bytes)
+	return nil
+}
 
 // Sets h to other
 func (h *Hash) Set(other Hash) {
