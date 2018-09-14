@@ -72,8 +72,9 @@ type MediatorPlugin struct {
 	toBLSSigned          chan *toBLSSigned       // 接收新生产的unit
 
 	// dkg生成vss相关
-	suite vss.Suite
-	dkgs  map[common.Address]*dkg.DistKeyGenerator
+	suite     vss.Suite
+	dkgs      map[common.Address]*dkg.DistKeyGenerator
+	vrfrReady map[common.Address]map[uint32]bool
 
 	vssDealFeed     event.Feed
 	vssDealScope    event.SubscriptionScope
@@ -152,7 +153,10 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 	lams := mp.GetLocalActiveMediators()
 	initPubs := mp.getDag().GetActiveMediatorInitPubs()
 	curThreshold := mp.getDag().GetCurThreshold()
-	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, len(lams))
+
+	ll := len(lams)
+	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, ll)
+	mp.vrfrReady = make(map[common.Address]map[uint32]bool, ll)
 
 	for _, med := range lams {
 		initSec := mp.mediators[med].InitPartSec
@@ -164,6 +168,7 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 		}
 
 		mp.dkgs[med] = dkg
+		mp.vrfrReady[med] = make(map[uint32]bool, mp.getDag().GetActiveMediatorCount()-1)
 	}
 
 	// todo 后面换成事件通知响应在调用, 并开启定时器

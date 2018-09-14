@@ -81,4 +81,5 @@ type IDag interface {
 	GetGlobalProp() *modules.GlobalProperty
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetMediatorSchl() *modules.MediatorSchedule
+	GetActiveMediatorCount() int
 }

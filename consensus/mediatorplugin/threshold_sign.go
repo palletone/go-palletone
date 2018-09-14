@@ -92,15 +92,18 @@ func (mp *MediatorPlugin) getLocalActiveMediatorDKG(add common.Address) *dkg.Dis
 	return dkg
 }
 
-func (mp *MediatorPlugin) processVSSDeal(deal *VSSDealEvent) {
-	dstMed := mp.getDag().GetActiveMediatorAddr(deal.DstIndex)
+func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
+	dstMed := mp.getDag().GetActiveMediatorAddr(dealEvent.DstIndex)
 
 	dkg := mp.getLocalActiveMediatorDKG(dstMed)
 	if dkg == nil {
 		return
 	}
 
-	resp, err := dkg.ProcessDeal(deal.Deal)
+	deal := dealEvent.Deal
+	mp.vrfrReady[dstMed][deal.Index] = true
+
+	resp, err := dkg.ProcessDeal(deal)
 	if err != nil {
 		log.Error(err.Error())
 		return
