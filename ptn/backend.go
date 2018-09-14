@@ -71,7 +71,7 @@ type PalletOne struct {
 
 	ApiBackend *PtnApiBackend
 
-	levelDb palletdb.Database
+	//levelDb palletdb.Database
 
 	networkId     uint64
 	netRPCService *ptnapi.PublicNetAPI
@@ -116,9 +116,9 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		engine:         CreateConsensusEngine(ctx),
 		shutdownChan:   make(chan bool),
 		networkId:      config.NetworkId,
-		levelDb:        db,
-		bloomRequests:  make(chan chan *bloombits.Retrieval),
-		dag:            dag,
+		//levelDb:        db,
+		bloomRequests: make(chan chan *bloombits.Retrieval),
+		dag:           dag,
 		//bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
 		//etherbase:      config.Etherbase,
 	}
@@ -138,7 +138,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine,
-		ptn.dag, ptn.eventMux, ptn.levelDb, ptn.mediatorPlugin); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}
