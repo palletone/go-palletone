@@ -572,6 +572,7 @@ func (unitOp *UnitRepository) saveContractTpl(height modules.ChainIndex, txIndex
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractTplPayload)
 	if ok == false {
+		log.Error("saveContractTpl", "error", "payload is not ContractTplPayload")
 		return false
 	}
 
@@ -582,15 +583,21 @@ func (unitOp *UnitRepository) saveContractTpl(height modules.ChainIndex, txIndex
 	}
 
 	// step2. save contract template bytecode data
-	unitOp.statedb.SaveContractTemplate(payload.TemplateId, payload.Bytecode, version.String())
-	// step3. save contract template name, path, Memery
-	if unitOp.statedb.SaveContractTemplateState(payload.TemplateId, "tplname", payload.Name, version) != nil {
+	if err := unitOp.statedb.SaveContractTemplate(payload.TemplateId, payload.Bytecode, version.Bytes()); err != nil {
+		log.Error("SaveContractTemplate", "error", err.Error())
 		return false
 	}
-	if unitOp.statedb.SaveContractTemplateState(payload.TemplateId, "tplpath", payload.Path, version) != nil {
+	// step3. save contract template name, path, Memory
+	if err := unitOp.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_NAME, payload.Name, version); err != nil {
+		log.Error("SaveContractTemplateState when save name", "error", err.Error())
 		return false
 	}
-	if unitOp.statedb.SaveContractTemplateState(payload.TemplateId, "tplmemory", payload.Memery, version) != nil {
+	if err := unitOp.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_PATH, payload.Path, version); err != nil {
+		log.Error("SaveContractTemplateState when save path", "error", err.Error())
+		return false
+	}
+	if err := unitOp.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_Memory, payload.Memory, version); err != nil {
+		log.Error("SaveContractTemplateState when save memory", "error", err.Error())
 		return false
 	}
 	return true

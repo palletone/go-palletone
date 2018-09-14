@@ -48,12 +48,12 @@ type StateDb interface {
 	SaveAssetInfo(assetInfo *modules.AssetInfo) error
 	GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error)
 	SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error
-	SaveContractTemplate(templateId []byte, bytecode []byte, version string) error
+	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
 	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
 	DeleteState(key []byte) error
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string)
 	GetContractState(id string, field string) (*modules.StateVersion, []byte)
-	GetTplAllState(id string) map[modules.ContractReadSet][]byte
+	GetTplAllState(id []byte) map[modules.ContractReadSet][]byte
 	GetContractAllState(id []byte) map[modules.ContractReadSet][]byte
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id common.Hash) (*modules.Contract, error)
@@ -76,17 +76,13 @@ func (statedb *StateDatabase) DeleteState(key []byte) error {
 	return statedb.db.Delete(key)
 }
 
-func (statedb *StateDatabase) SaveContractTemplate(templateId []byte, bytecode []byte, version string) error {
-	// key:[CONTRACT_TPL][Template id]_bytecode_[template version]
-	// key := fmt.Sprintf("%s%s^*^bytecode^*^%s",
-	// 	CONTRACT_TPL,
-	// 	hexutil.Encode(templateId),
-	// 	version)
-
+func (statedb *StateDatabase) SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error {
 	key := append(CONTRACT_TPL, templateId...)
-	key = append(key, []byte("^*^bytecode^*^")...)
-	key = append(key, []byte(version)...)
-	if err := statedb.db.Put(key, bytecode); err != nil {
+	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
+	key = append(key, []byte(modules.FIELD_TPL_BYTECODE)...)
+	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
+	key = append(key, version...)
+	if err := StoreBytes(statedb.db, key, bytecode); err != nil {
 		return err
 	}
 	return nil
@@ -100,9 +96,10 @@ func (statedb *StateDatabase) SaveContractTemplate(templateId []byte, bytecode [
 获取模板所有属性
 To get contract or contract template all fields and return
 */
-func (statedb *StateDatabase) GetTplAllState(id string) map[modules.ContractReadSet][]byte {
+func (statedb *StateDatabase) GetTplAllState(id []byte) map[modules.ContractReadSet][]byte {
 	// key format: [PREFIX][ID]_[field]_[version]
-	key := fmt.Sprintf("%s%s^*^", CONTRACT_TPL, id)
+	key := append(CONTRACT_TPL, id...)
+	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) <= 0 {
 		return nil
@@ -114,7 +111,7 @@ func (statedb *StateDatabase) GetTplAllState(id string) map[modules.ContractRead
 			continue
 		}
 		var version modules.StateVersion
-		if !version.ParseStringKey(key) {
+		if !version.ParseStringKey(k) {
 			continue
 		}
 		rdSet := modules.ContractReadSet{
@@ -161,7 +158,10 @@ func (statedb *StateDatabase) GetContractAllState(id []byte) map[modules.Contrac
 To get contract or contract template one field
 */
 func (statedb *StateDatabase) GetTplState(id []byte, field string) (*modules.StateVersion, []byte) {
-	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, hexutil.Encode(id[:]), field)
+	//key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, hexutil.Encode(id[:]), field)
+	key := append(CONTRACT_TPL, id...)
+	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
+	key = append(key, []byte(field)...)
 	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) != 1 {
 		return nil, nil
@@ -217,7 +217,6 @@ func (db *StateDatabase) GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
 }
 
-
 // GetContract can get a Contract by the contract hash
 func (statedb *StateDatabase) GetContract(id common.Hash) (*modules.Contract, error) {
 	if common.EmptyHash(id) {
@@ -242,29 +241,21 @@ func (statedb *StateDatabase) GetContract(id common.Hash) (*modules.Contract, er
 To get contract template
 */
 func (statedb *StateDatabase) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
-	// key := fmt.Sprintf("%s%s^*^bytecode",
-	// 	CONTRACT_TPL,
-	// 	hexutil.Encode(templateID[:]),
-	// )
-
 	key := append(CONTRACT_TPL, templateID...)
-	key = append(key, []byte("^*^bytecode^*^")...)
+	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
+	key = append(key, []byte(modules.FIELD_TPL_BYTECODE)...)
 	data := statedb.GetPrefix(key)
+
 	if len(data) == 1 {
-		for k, v := range data {
-			if !version.ParseStringKey(k) {
-				return
-			}
+		for _, v := range data {
 			if err := rlp.DecodeBytes(v, &bytecode); err != nil {
-				log.Println("GetContractTpl when get bytecode", "error", err.Error(), "codeing:", v, "val:", bytecode)
+				fmt.Println("GetContractTpl when get bytecode", "error", err.Error(), "codeing:", v, "val:", bytecode)
 				return
-			} else {
-				fmt.Println("interface get success.-----------", bytecode)
 			}
 		}
 	}
-	_, nameByte := statedb.GetTplState(templateID, "tplname")
-	fmt.Println("GetTplState -----------", nameByte)
+
+	version, nameByte := statedb.GetTplState(templateID, modules.FIELD_TPL_NAME)
 	if nameByte == nil {
 		return
 	}
@@ -273,7 +264,7 @@ func (statedb *StateDatabase) GetContractTpl(templateID []byte) (version *module
 		return
 	}
 
-	_, pathByte := statedb.GetTplState(templateID, "ContractPath")
+	_, pathByte := statedb.GetTplState(templateID, modules.FIELD_TPL_PATH)
 	if err := rlp.DecodeBytes(pathByte, &path); err != nil {
 		log.Println("GetContractTpl when get path", "error", err.Error())
 		return

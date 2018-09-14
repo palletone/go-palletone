@@ -162,7 +162,7 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
 	// step1. check exists
 	if d.Memdag.Exists(unit.UnitHash) || d.GetUnit(unit.UnitHash) != nil {
-		return 0, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash)
+		return 0, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash.String())
 	}
 	// step2. validate unit
 	unitState := d.validate.ValidateUnit(&unit, isGenesis)
