@@ -5599,6 +5599,7 @@ var methods = function () {
         getHeadHeaderHash,
         getHeadFastUnitHash,
         getTrieSyncProgress,
+        getTransactionsByTxid,
         getUtxoEntry,
         getAddrOutput,
         getAddrTxs,

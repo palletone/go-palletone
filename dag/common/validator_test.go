@@ -73,6 +73,6 @@ func TestValidator(t *testing.T) {
 	utxoDb := storage.NewUtxoDatabase(dbconn)
 	stateDb := storage.NewStateDatabase(dbconn)
 	validate := NewValidate(dagDb, utxoDb, stateDb)
-	code := validate.ValidateTx(tx, &worldTmpState)
+	code := validate.ValidateTx(tx, false, &worldTmpState)
 	log.Println("validator code:", code, worldTmpState)
 }
