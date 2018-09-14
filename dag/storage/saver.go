@@ -23,17 +23,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
-	"math/big"
-
 	"github.com/palletone/go-palletone/common"
+	"log"
 	// "github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
 )
 
 var (
@@ -62,152 +59,6 @@ func SaveJoint(db ptndb.Database, objJoint *modules.Joint, onDone func()) (err e
 		onDone()
 	}
 	return
-}
-
-/**
-key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
-value: unit header rlp encoding bytes
-*/
-// save header
-func (dagdb *DagDatabase) SaveHeader(uHash common.Hash, h *modules.Header) error {
-	encNum := encodeBlockNumber(h.Number.Index)
-	key := append(HEADER_PREFIX, encNum...)
-	key = append(key, h.Number.Bytes()...)
-	return StoreBytes(dagdb.db, append(key, uHash.Bytes()...), h)
-	//key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.Bytes())
-	//return StoreBytes(db, []byte(key), h)
-}
-
-//這是通過modules.ChainIndex存儲hash
-func (dagdb *DagDatabase) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
-	return StoreBytes(dagdb.db, append(UNIT_HASH_NUMBER_Prefix, uHash.Bytes()...), number)
-}
-
-//這是通過hash存儲modules.ChainIndex
-func (dagdb *DagDatabase) SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error {
-	i := 0
-	if number.IsMain {
-		i = 1
-	}
-	key := fmt.Sprintf("%s_%s_%d_%d", UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
-	//fmt.Println("SaveHashByNumber=[]byte(key)=>",[]byte(key))
-	//fmt.Println("====",uHash)
-	return StoreBytes(dagdb.db, []byte(key), uHash)
-}
-
-// height and assetid can get a unit key.
-func (dagdb *DagDatabase) SaveUHashIndex(cIndex modules.ChainIndex, uHash common.Hash) error {
-	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, cIndex.AssetID.String(), cIndex.Index)
-	return Store(dagdb.db, key, uHash.Bytes())
-}
-
-/**
-key: [BODY_PREFIX][unit hash]
-value: all transactions hash set's rlp encoding bytes
-*/
-func (dagdb *DagDatabase) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
-	// db.Put(append())
-	return StoreBytes(dagdb.db, append(BODY_PREFIX, unitHash.Bytes()...), txsHash)
-}
-
-func (dagdb *DagDatabase) GetBody(unitHash common.Hash) ([]common.Hash, error) {
-	data, err := dagdb.db.Get(append(BODY_PREFIX, unitHash.Bytes()...))
-	if err != nil {
-		return nil, err
-	}
-	var txHashs []common.Hash
-	if err := rlp.DecodeBytes(data, &txHashs); err != nil {
-		return nil, err
-	}
-	return txHashs, nil
-}
-
-func (dagdb *DagDatabase) SaveTransactions(txs *modules.Transactions) error {
-	key := fmt.Sprintf("%s%s", TRANSACTIONS_PREFIX, txs.Hash())
-	return Store(dagdb.db, key, *txs)
-}
-
-/**
-key: [TRANSACTION_PREFIX][tx hash]
-value: transaction struct rlp encoding bytes
-*/
-func (dagdb *DagDatabase) SaveTransaction(tx *modules.Transaction) error {
-	// save transaction
-	if err := StoreBytes(dagdb.db, append(TRANSACTION_PREFIX, tx.TxHash.Bytes()...), tx); err != nil {
-		return err
-	}
-
-	if err := StoreBytes(dagdb.db, append(Transaction_Index, tx.TxHash.Bytes()...), tx); err != nil {
-		return err
-	}
-	dagdb.updateAddrTransactions(tx.Address().String(), tx.TxHash)
-	// store output by addr
-	for i, msg := range tx.TxMessages {
-		payload, ok := msg.Payload.(modules.PaymentPayload)
-		if ok {
-			for _, output := range payload.Output {
-				//  pkscript to addr
-				addr, _ := tokenengine.GetAddressFromScript(output.PkScript[:])
-				dagdb.saveOutputByAddr(addr.String(), tx.TxHash, i, *output)
-			}
-		}
-	}
-
-	return nil
-}
-func (dagdb *DagDatabase) updateAddrTransactions(addr string, hash common.Hash) error {
-	if hash == (common.Hash{}) {
-		return errors.New("empty tx hash.")
-	}
-	hashs := make([]common.Hash, 0)
-	data, err := dagdb.db.Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
-	if err != nil {
-		if err.Error() != "leveldb: not found" {
-			return err
-		} else { // first store the addr
-			hashs = append(hashs, hash)
-			if err := StoreBytes(dagdb.db, append(AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
-				return err
-			}
-			return nil
-		}
-	}
-	if err := rlp.DecodeBytes(data, hashs); err != nil {
-		return err
-	}
-	hashs = append(hashs, hash)
-	if err := StoreBytes(dagdb.db, append(AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
-		return err
-	}
-	return nil
-}
-func (dagdb *DagDatabase) saveOutputByAddr(addr string, hash common.Hash, msgindex int, output modules.Output) error {
-	if hash == (common.Hash{}) {
-		return errors.New("empty tx hash.")
-	}
-	key := append(AddrOutput_Prefix, []byte(addr)...)
-	key = append(key, hash.Bytes()...)
-	if err := StoreBytes(dagdb.db, append(key, new(big.Int).SetInt64(int64(msgindex)).Bytes()...), output); err != nil {
-		return err
-	}
-	return nil
-}
-func (dagdb *DagDatabase) SaveTxLookupEntry(unit *modules.Unit) error {
-	for i, tx := range unit.Transactions() {
-		in := modules.TxLookupEntry{
-			UnitHash:  unit.Hash(),
-			UnitIndex: unit.NumberU64(),
-			Index:     uint64(i),
-		}
-		data, err := rlp.EncodeToBytes(in)
-		if err != nil {
-			return err
-		}
-		if err := StoreBytes(dagdb.db, append(LookupPrefix, tx.TxHash.Bytes()...), data); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // encodeBlockNumber encodes a block number as big endian uint64
@@ -339,42 +190,9 @@ func SaveContractState(db ptndb.Database, prefix []byte, id []byte, name string,
 	}
 	return nil
 }
-func (statedb *StateDatabase) SaveContractTemplate(templateId []byte, bytecode []byte, version string) error {
-	// key:[CONTRACT_TPL][Template id]_bytecode_[template version]
-	// key := fmt.Sprintf("%s%s^*^bytecode^*^%s",
-	// 	CONTRACT_TPL,
-	// 	hexutil.Encode(templateId),
-	// 	version)
 
-	key := append(CONTRACT_TPL, templateId...)
-	key = append(key, []byte("^*^bytecode^*^")...)
-	key = append(key, []byte(version)...)
-	if err := statedb.db.Put(key, bytecode); err != nil {
-		return err
-	}
-	return nil
-}
-func (statedb *StateDatabase) SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
-	return SaveContractState(statedb.db, CONTRACT_TPL, id, name, value, version)
-}
-func (statedb *StateDatabase) SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
-	return SaveContractState(statedb.db, CONTRACT_STATE_PREFIX, id, name, value, version)
-}
-func (statedb *StateDatabase) DeleteState(key []byte) error {
-	return statedb.db.Delete(key)
-}
 
-func (utxodb *UtxoDatabase) SaveUtxoEntity(key []byte, utxo modules.Utxo) error {
-	return StoreBytes(utxodb.db, key, utxo)
-}
 
-func (utxodb *UtxoDatabase) DeleteUtxo(key []byte) error {
-	return utxodb.db.Delete(key)
-}
-func (idxdb *IndexDatabase) SaveIndexValue(key []byte, value interface{}) error {
-	return StoreBytes(idxdb.db, key, value)
-}
-func (statedb *StateDatabase) SaveAssetInfo(assetInfo *modules.AssetInfo) error {
-	key := assetInfo.Tokey()
-	return StoreBytes(statedb.db, key, assetInfo)
-}
+
+
+

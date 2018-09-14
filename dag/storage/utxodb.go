@@ -22,6 +22,7 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -39,3 +40,40 @@ type UtxoDb interface {
 	SaveUtxoEntity(key []byte,utxo modules.Utxo) error
 	DeleteUtxo(key []byte) error
 }
+
+// ###################### SAVE IMPL START ######################
+
+func (utxodb *UtxoDatabase) SaveUtxoEntity(key []byte, utxo modules.Utxo) error {
+	return StoreBytes(utxodb.db, key, utxo)
+}
+
+func (utxodb *UtxoDatabase) DeleteUtxo(key []byte) error {
+	return utxodb.db.Delete(key)
+}
+
+
+// ###################### SAVE IMPL END ######################
+
+// ###################### GET IMPL START ######################
+//  dbFetchUtxoEntry
+func (utxodb *UtxoDatabase) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
+	utxo := new(modules.Utxo)
+	data, err := utxodb.db.Get(key)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rlp.DecodeBytes(data, &utxo); err != nil {
+		return nil, err
+	}
+	return utxo, nil
+}
+func (utxodb *UtxoDatabase) GetUtxoByIndex(indexKey []byte) ([]byte, error) {
+	return utxodb.db.Get(indexKey)
+}
+
+// get prefix: return maps
+func (db *UtxoDatabase) GetPrefix(prefix []byte) map[string][]byte {
+	return getprefix(db.db, prefix)
+}
+// ###################### GET IMPL END ######################
