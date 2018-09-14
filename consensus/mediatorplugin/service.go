@@ -76,18 +76,21 @@ type MediatorPlugin struct {
 	newProducedUnitScope event.SubscriptionScope // 零值已准备就绪待用
 	toBLSSigned          chan *toBLSSigned       // 接收新生产的unit
 
-	// dkg 完成 vss 协议相关
+	// dkg 生成 dks 相关
 	suite vss.Suite
 	dkgs  map[common.Address]*dkg.DistKeyGenerator
 
+	// dkg 完成 vss 协议相关
 	vrfrReady   map[common.Address]map[uint32]bool
 	vrfrReadyCh chan *dkgVerifier
-	respBuf     map[common.Address]map[uint32]chan*dkg.Response
+	respBuf     map[common.Address]map[uint32]chan *dkg.Response
 
+	// 广播和处理 vss 协议 deal
 	vssDealFeed     event.Feed
 	vssDealScope    event.SubscriptionScope
 	toProcessDealCh chan *VSSDealEvent
 
+	// 广播和处理 vss 协议 response
 	vssResponseFeed     event.Feed
 	vssResponseScope    event.SubscriptionScope
 	toProcessResponseCh chan *VSSResponseEvent
@@ -165,7 +168,7 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 	ll := len(lams)
 	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, ll)
 	mp.vrfrReady = make(map[common.Address]map[uint32]bool, ll)
-	mp.respBuf = make(map[common.Address]map[uint32]chan*dkg.Response, ll)
+	mp.respBuf = make(map[common.Address]map[uint32]chan *dkg.Response, ll)
 
 	for _, med := range lams {
 		initSec := mp.mediators[med].InitPartSec
@@ -180,11 +183,19 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 
 		vc := mp.getDag().GetActiveMediatorCount() - 1
 		mp.vrfrReady[med] = make(map[uint32]bool, vc)
-		mp.respBuf[med] = make(map[uint32]chan*dkg.Response, vc)
+		mp.respBuf[med] = make(map[uint32]chan *dkg.Response, vc)
+		mp.initRespBuf(med)
 	}
 
 	// todo 后面换成事件通知响应在调用, 并开启定时器
 	go mp.BroadcastVSSDeals()
+}
+
+func (mp *MediatorPlugin) initRespBuf(dstMed common.Address) {
+	amc := mp.getDag().GetActiveMediatorCount()
+	for i := 0; i < amc; i++ {
+		mp.respBuf[dstMed][uint32(i)] = make(chan *dkg.Response, amc-1)
+	}
 }
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {

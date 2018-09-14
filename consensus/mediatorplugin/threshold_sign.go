@@ -103,7 +103,6 @@ func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
 
 	deal := dealEvent.Deal
 	mp.vrfrReady[dstMed][deal.Index] = true
-	mp.respBuf[dstMed][deal.Index] = make(chan *dkg.Response, mp.getDag().GetActiveMediatorCount()-1)
 	go mp.notifyProcessResp(&dkgVerifier{dstMed, deal.Index})
 
 	resp, err := dkgr.ProcessDeal(deal)
@@ -157,16 +156,17 @@ func (mp *MediatorPlugin) processResponseLoop() {
 
 func (mp *MediatorPlugin) processResponseBuf(dvp *dkgVerifier) {
 	dstMed := dvp.medLocal
-	if !mp.vrfrReady[dstMed][dvp.srcIndex] {
-		return
-	}
-
+	srcIndex := dvp.srcIndex
 	dkg := mp.getLocalActiveMediatorDKG(dstMed)
 	if dkg == nil {
 		return
 	}
 
-	for resp := range mp.respBuf[dstMed][dvp.srcIndex] {
+	if !mp.vrfrReady[dstMed][srcIndex] {
+		return
+	}
+
+	for resp := range mp.respBuf[dstMed][srcIndex] {
 
 		jstf, err := dkg.ProcessResponse(resp)
 		if err != nil {
