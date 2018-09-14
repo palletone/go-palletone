@@ -162,13 +162,23 @@ func createExampleGenesis(account string) *core.Genesis {
 	initParams := core.NewChainParams()
 
 	return &core.Genesis{
-		Alias:                  core.DefaultAlias,
-		Version:                configure.Version,
-		TokenAmount:            core.DefaultTokenAmount,
-		TokenDecimal:           core.DefaultTokenDecimal,
-		ChainID:                1,
-		TokenHolder:            account,
-		Text:                   "Hello PalletOne!",
+		Alias:        core.DefaultAlias,
+		Version:      configure.Version,
+		TokenAmount:  core.DefaultTokenAmount,
+		TokenDecimal: core.DefaultTokenDecimal,
+		ChainID:      1,
+		TokenHolder:  account,
+		Text:         "Hello PalletOne!",
+		//Text: "孟岩	北京	通证派倡导者、CSDN副总裁、柏链道捷CEO。" +
+		//	"刘百祥	上海	GoC-lab发起人兼技术社群负责人，复旦大学计算机博士。" +
+		//	"陈澄	上海	引力区开发者社区总理事，EOS超级节点负责人。" +
+		//	"孙红景	北京	CTO、13年IT开发和管理经验。" +
+		//	"kobegpfan	北京	世界500强企业技术总监。" +
+		//	"余奎	上海	加密经济学研究员、产品研发经理。" +
+		//	"Shangsong	北京	Fabric、 多链、 分片 、跨链技术。" +
+		//	"郑广军	上海	区块链java应用开发。" +
+		//	"钮祜禄虫	北京	大数据架构、Dapp开发。" +
+		//	"彭敏	四川	计算机网络和系统集成十余年有经验。",
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
 		ImmutableParameters:    core.NewImmutChainParams(),

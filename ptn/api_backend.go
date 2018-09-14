@@ -104,15 +104,18 @@ func (b *PtnApiBackend) GetPoolTransaction(hash common.Hash) *modules.Transactio
 	return txspool.PooltxToTx(b.ptn.txPool.Get(hash))
 }
 
-func (b *PtnApiBackend) GetTxByTxid_back(txid string) (modules.Transactions, error) {
-    sh:=[]byte(txid)
-    hash:=common.BytesToHash(sh)
-	txs, err := b.ptn.dag.GetTransactionsByHash(hash)
+func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*modules.Transaction, error) {
+	hash := common.Hash{}
+	if err := hash.SetHexString(txid); err != nil {
+		return nil, err
+	}
+	tx, err := b.ptn.dag.GetTransactionByHash(hash)
 	if err != nil {
 		return nil, err
 	}
-	return txs, nil
+	return tx, nil
 }
+
 //func (b *PtnApiBackend) GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error) {
 //	return b.ptn.txPool.State().GetNonce(addr), nil
 //}

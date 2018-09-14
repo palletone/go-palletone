@@ -659,12 +659,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}
 			//TODO must recover
 			// Retrieve the requested block body, stopping if enough was found
-			txs, err := pm.dag.GetTransactionsByHash(hash)
+			txs, err := pm.dag.GetTransactionByHash(hash)
 			if err != nil {
-				log.Debug("===GetBlockBodiesMsg===", "GetTransactionsByHash err:", err)
+				log.Debug("===GetBlockBodiesMsg===", "GetTransactionByHash err:", err)
 				return errResp(ErrDecode, "msg %v: %v", msg, err)
 			}
-			log.Debug("===GetBlockBodiesMsg===", "GetTransactionsByHash txs:", txs)
+			log.Debug("===GetBlockBodiesMsg===", "GetTransactionByHash txs:", txs)
 			data, err := rlp.EncodeToBytes(txs)
 			if err != nil {
 				log.Debug("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
@@ -672,9 +672,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}
 			bytes += len(data)
 
-			for _, tx := range txs {
-				bodies.Transactions = append(bodies.Transactions, tx)
-			}
+			//for _, tx := range txs {
+			bodies.Transactions = append(bodies.Transactions, txs)
+			//}
 		}
 		//log.Debug("===GetBlockBodiesMsg===", "tempGetBlockBodiesMsgSum:", tempGetBlockBodiesMsgSum, "sum:", sum)
 		log.Debug("===GetBlockBodiesMsg===", "len(bodies):", len(bodies.Transactions), "bytes:", bytes)

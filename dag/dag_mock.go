@@ -187,17 +187,17 @@ func (mr *MockIDagMockRecorder) CurrentHeader() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentHeader", reflect.TypeOf((*MockIDag)(nil).CurrentHeader))
 }
 
-// GetTransactionsByHash mocks base method
+// GetTransactionByHash mocks base method
 func (m *MockIDag) GetTransactionsByHash(hash common.Hash) (modules.Transactions, error) {
-	ret := m.ctrl.Call(m, "GetTransactionsByHash", hash)
+	ret := m.ctrl.Call(m, "GetTransactionByHash", hash)
 	ret0, _ := ret[0].(modules.Transactions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetTransactionsByHash indicates an expected call of GetTransactionsByHash
+// GetTransactionByHash indicates an expected call of GetTransactionByHash
 func (mr *MockIDagMockRecorder) GetTransactionsByHash(hash interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionsByHash", reflect.TypeOf((*MockIDag)(nil).GetTransactionsByHash), hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionByHash", reflect.TypeOf((*MockIDag)(nil).GetTransactionsByHash), hash)
 }
 
 // InsertHeaderDag mocks base method
