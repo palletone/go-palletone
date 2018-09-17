@@ -24,7 +24,6 @@ import (
 )
 
 const (
-	defaultPassword    = "password"
 	DefaultInitPartSec = "Vh52_xy-bE5U2mUDFYxLJwRke2IQ7u0Nb9L3_cPyXKY"
 	DefaultInitPartPub = "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ" +
 		"0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj"
@@ -48,7 +47,7 @@ type Config struct {
 var DefaultConfig = Config{
 	EnableStaleProduction: false,
 	Mediators: []MediatorConf{
-		MediatorConf{core.DefaultTokenHolder, defaultPassword,
+		MediatorConf{core.DefaultTokenHolder, core.DefaultPassword,
 			DefaultInitPartSec, DefaultInitPartPub},
 	},
 }

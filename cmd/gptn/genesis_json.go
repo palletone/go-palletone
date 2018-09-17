@@ -65,15 +65,8 @@ it will be replaced with an example Genesis State.`,
 	}
 )
 
-// createGenesisJson, Create a json file for the genesis state of a new chain.
-func createGenesisJson(ctx *cli.Context) error {
-	var (
-		genesisFile *os.File
-		err         error
-	)
-
-	var confirm bool
-	confirm, err = console.Stdin.PromptConfirm(
+func getTokenAccount(ctx *cli.Context) (string, error) {
+	confirm, err := console.Stdin.PromptConfirm(
 		"Do you want to create a new account as the holder of the token?")
 	if err != nil {
 		utils.Fatalf("%v", err)
@@ -84,16 +77,30 @@ func createGenesisJson(ctx *cli.Context) error {
 		account, err = console.Stdin.PromptInput("Please enter an existing account address: ")
 		if err != nil {
 			utils.Fatalf("%v", err)
-			return err
+			return "", err
 		}
 	} else {
 		account, err = initialAccount(ctx)
 		if err != nil {
 			utils.Fatalf("%v", err)
-			return err
+			return "", err
 		}
 	}
 
+	return account, nil
+}
+
+// createGenesisJson, Create a json file for the genesis state of a new chain.
+func createGenesisJson(ctx *cli.Context) error {
+	var (
+		genesisFile *os.File
+		err         error
+	)
+
+	account, err := getTokenAccount(ctx)
+	if err != nil {
+		return err
+	}
 	genesisState := createExampleGenesis(account)
 
 	var genesisJson []byte

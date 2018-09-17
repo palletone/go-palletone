@@ -21,23 +21,25 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"unicode"
-	"path/filepath"
-	"gopkg.in/urfave/cli.v1"
+
 	"github.com/naoina/toml"
-	"github.com/palletone/go-palletone/cmd/utils"
+	"gopkg.in/urfave/cli.v1"
+
 	"github.com/palletone/go-palletone/adaptor"
+	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/configure"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
-	"github.com/palletone/go-palletone/contracts"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 )
 
 const defaultConfigPath = "palletone.toml"
@@ -180,7 +182,7 @@ func maybeLoadConfig(ctx *cli.Context, cfg *FullConfig) error {
 			return err
 		}
 
-		log.Debug(fmt.Sprintf("Writing new config file at: %v", configPath))
+		fmt.Sprintf("Writing new config file at: %v", configPath)
 	}
 
 	// 加载配置文件中的配置信息到 cfg中

@@ -27,6 +27,7 @@ const (
 	DefaultTokenDecimal        = 8
 	DefaultDepositRate         = 0.02
 	DefaultTokenHolder         = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
+	DefaultPassword            = "password"
 	DefaultMinMediatorCount    = 11
 	DefaultMinMediatorInterval = 1
 
