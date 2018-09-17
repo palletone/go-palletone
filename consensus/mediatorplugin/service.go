@@ -110,9 +110,9 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 	lams := make([]common.Address, 0)
 
-	gp := mp.getDag().GetGlobalProp()
+	dag := mp.getDag()
 	for add := range mp.mediators {
-		if gp.IsActiveMediator(add) {
+		if dag.IsActiveMediator(add) {
 			lams = append(lams, add)
 		}
 	}
@@ -181,21 +181,14 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 
 		mp.dkgs[med] = dkgr
 
-		vc := mp.getDag().GetActiveMediatorCount() - 1
-		mp.vrfrReady[med] = make(map[uint32]bool, vc)
-		mp.respBuf[med] = make(map[uint32]chan *dkg.Response, vc)
+		aSize := mp.getDag().GetActiveMediatorCount()
+		mp.vrfrReady[med] = make(map[uint32]bool, aSize-1)
+		mp.respBuf[med] = make(map[uint32]chan *dkg.Response, aSize)
 		mp.initRespBuf(med)
 	}
 
 	// todo 后面换成事件通知响应在调用, 并开启定时器
 	go mp.BroadcastVSSDeals()
-}
-
-func (mp *MediatorPlugin) initRespBuf(dstMed common.Address) {
-	amc := mp.getDag().GetActiveMediatorCount()
-	for i := 0; i < amc; i++ {
-		mp.respBuf[dstMed][uint32(i)] = make(chan *dkg.Response, amc-1)
-	}
 }
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
