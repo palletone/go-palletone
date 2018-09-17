@@ -18,39 +18,187 @@ package fetcher
 
 import (
 	"errors"
+	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/ptndb"
+	dag2 "github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
+	"log"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
-	dag2 "github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/common/ptndb"
 )
+
+var (
+	memdb, _    = ptndb.NewMemDatabase()
+	genesisUnit = newGenesisForTest(memdb)
+	//unknownUnit = modules.NewUnit(nil, nil)
+)
+
+func newGenesisForTest(db ptndb.Database) *modules.Unit {
+	header := modules.NewHeader([]common.Hash{}, []modules.IDType16{modules.PTNCOIN}, 1, []byte{})
+	header.Number.AssetID = modules.PTNCOIN
+	header.Number.IsMain = true
+	header.Number.Index = 0
+	header.Authors = &modules.Authentifier{"", []byte{}, []byte{}, []byte{}}
+	header.Witness = []*modules.Authentifier{&modules.Authentifier{"", []byte{}, []byte{}, []byte{}}}
+	tx, _ := NewCoinbaseTransaction()
+	txs := modules.Transactions{tx}
+	genesisUnit := modules.NewUnit(header, txs)
+	err := SaveGenesis(db, genesisUnit)
+	if err != nil {
+		log.Println("SaveGenesis, err", err)
+		return nil
+	}
+	return genesisUnit
+}
+func SaveGenesis(db ptndb.Database, unit *modules.Unit) error {
+	if unit.NumberU64() != 0 {
+		return fmt.Errorf("can't commit genesis unit with number > 0")
+	}
+	err := SaveUnit(db, unit, true)
+	if err != nil {
+		log.Println("SaveGenesis==", err)
+		return err
+	}
+	return nil
+}
+func NewCoinbaseTransaction() (*modules.Transaction, error) {
+	input := &modules.Input{}
+	output := &modules.Output{}
+	payload := modules.PaymentPayload{
+		Input:  []*modules.Input{input},
+		Output: []*modules.Output{output},
+	}
+	msg := modules.Message{
+		App:     modules.APP_PAYMENT,
+		Payload: payload,
+	}
+	var coinbase modules.Transaction
+	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
+	coinbase.TxHash = coinbase.Hash()
+	return &coinbase, nil
+}
+func newDag(db ptndb.Database, gunit *modules.Unit, number int) (modules.Units, error) {
+	units := make(modules.Units, number)
+	par := gunit
+	for i := 0; i < number; i++ {
+		header := modules.NewHeader([]common.Hash{par.UnitHash}, []modules.IDType16{modules.PTNCOIN}, 1, []byte{})
+		header.Number.AssetID = par.UnitHeader.Number.AssetID
+		header.Number.IsMain = par.UnitHeader.Number.IsMain
+		header.Number.Index = par.UnitHeader.Number.Index + 1
+		header.Authors = &modules.Authentifier{"", []byte{}, []byte{}, []byte{}}
+		header.Witness = []*modules.Authentifier{&modules.Authentifier{"", []byte{}, []byte{}, []byte{}}}
+		tx, _ := NewCoinbaseTransaction()
+		txs := modules.Transactions{tx}
+		unit := modules.NewUnit(header, txs)
+		err := SaveUnit(db, unit, true)
+		if err != nil {
+			log.Println("save genesis error", err)
+			return nil, err
+		}
+		units[i] = unit
+		par = unit
+	}
+	return units, nil
+}
+
+func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
+	if unit.UnitSize == 0 || unit.Size() == 0 {
+		log.Println("Unit is null")
+		return fmt.Errorf("Unit is null")
+	}
+	if unit.UnitSize != unit.Size() {
+		log.Println("Validate size", "error", "Size is invalid")
+		return modules.ErrUnit(-1)
+	}
+	//_, isSuccess, err := dag.ValidateTransactions(&unit.Txs, isGenesis)
+	//if isSuccess != true {
+	//	fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+	//}
+	// step4. save unit header
+	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
+
+	dagDb := storage.NewDagDatabase(db)
+
+	if err := dagDb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
+		log.Println("SaveHeader:", "error", err.Error())
+		return modules.ErrUnit(-3)
+	}
+	// step5. save unit hash and chain index relation
+	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
+	if err := dagDb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		log.Println("SaveHashNumber:", "error", err.Error())
+		return fmt.Errorf("Save unit hash and number error")
+	}
+	if err := dagDb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		log.Println("SaveNumberByHash:", "error", err.Error())
+		return fmt.Errorf("Save unit hash and number error")
+	}
+	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
+		return err
+	}
+	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
+		return err
+	}
+	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.Number.Index); err != nil {
+		return err
+	}
+	// update state
+	dagDb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
+	dagDb.PutHeadHeaderHash(unit.UnitHash)
+	dagDb.PutHeadUnitHash(unit.UnitHash)
+	dagDb.PutHeadFastUnitHash(unit.UnitHash)
+	// todo send message to transaction pool to delete unit's transactions
+	return nil
+}
+func saveHashByIndex(db ptndb.Database, hash common.Hash, index uint64) error {
+	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
+	err := db.Put([]byte(key), hash.Bytes())
+	return err
+}
 
 // makeChain creates a chain of n blocks starting at and including parent.
 // the returned hash chain is ordered head->parent. In addition, every 3rd block
 // contains a transaction and every 5th an uncle to allow testing correct block reassembly
-func makeDag(unit int) ([]common.Hash, map[common.Hash]*modules.Unit) {
-	var head *modules.Header
-	head = modules.NewHeader([]common.Hash{common.Hash{0}}, nil, 1, nil)
-	genesis := modules.NewUnit(head, nil)
-	hashes := make([]common.Hash, unit+1)
-	units := make([]*modules.Unit, unit+1)
-	dag := make(map[common.Hash]*modules.Unit, unit+1)
-	hashes[0] = common.Hash{0}
-	units[0] = genesis
-	dag[hashes[0]] = units[0]
-	if unit < 1 {
-		return hashes, dag
+func makeDag(n int, parent *modules.Unit) ([]common.Hash, map[common.Hash]*modules.Unit) {
+	//var head *modules.Header
+	//head = modules.NewHeader([]common.Hash{common.Hash{0}}, nil, 1, nil)
+	//genesis := modules.NewUnit(head, nil)
+
+	hashes := make([]common.Hash, n+1)
+	hashes[len(hashes)-1] = parent.Hash()
+	dags := make(map[common.Hash]*modules.Unit, n+1)
+	dags[parent.Hash()] = parent
+	memdb, _ := ptndb.NewMemDatabase()
+	dag, _ := dag2.NewDagForTest(memdb)
+	units, err := newDag(dag.Db, parent, n)
+	//fmt.Println("len(units)=", len(units))
+	if err != nil {
+		log.Println("new dag err", err.Error())
 	}
-	for i := 1; i <= unit; i++ {
-		hashes[i] = common.Hash{byte(i)}
-		head = modules.NewHeader([]common.Hash{units[i-1].UnitHash}, nil, 1, nil)
-		units[i] = modules.NewUnit(head, nil)
-		dag[hashes[i]] = units[i]
+	for i, u := range units {
+		hashes[len(hashes)-i-2] = u.Hash()
+		dags[u.Hash()] = u
 	}
-	return hashes, dag
+	return hashes, dags
+	//dag := make(map[common.Hash]*modules.Unit, unit+1)
+	//hashes[0] = common.Hash{0}
+	//units[0] = genesis
+	//dag[hashes[0]] = units[0]
+	//if unit < 1 {
+	//	return hashes, dag
+	//}
+	//for i := 1; i <= unit; i++ {
+	//	hashes[i] = common.Hash{byte(i)}
+	//	head = modules.NewHeader([]common.Hash{units[i-1].UnitHash}, nil, 1, nil)
+	//	units[i] = modules.NewUnit(head, nil)
+	//	dag[hashes[i]] = units[i]
+	//}
+
 }
 
 // fetcherTester is a test simulator for mocking out local block chain.
@@ -66,9 +214,15 @@ type fetcherTester struct {
 
 // newTester creates a new fetcher test mocker.
 func newTester() *fetcherTester {
+	//tester := &fetcherTester{
+	//	hashes: []common.Hash{modules.EmptyRootHash},
+	//	blocks: map[common.Hash]*modules.Unit{modules.EmptyRootHash: nil},
+	//	drops:  make(map[string]bool),
+	//}
+
 	tester := &fetcherTester{
-		hashes: []common.Hash{modules.EmptyRootHash},
-		blocks: map[common.Hash]*modules.Unit{modules.EmptyRootHash: nil},
+		hashes: []common.Hash{genesisUnit.Hash()},
+		blocks: map[common.Hash]*modules.Unit{},
 		drops:  make(map[string]bool),
 	}
 	tester.fetcher = New(tester.getBlock, tester.verifyHeader, tester.broadcastBlock, tester.chainHeight, tester.insertChain, tester.dropPeer)
@@ -98,13 +252,14 @@ func (f *fetcherTester) broadcastBlock(block *modules.Unit, propagate bool) {
 func (f *fetcherTester) chainHeight(assetId modules.IDType16) uint64 {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
-	mem,_ := ptndb.NewMemDatabase()
-	dag,_ := dag2.NewDag(mem)
+	//mem, _ := ptndb.NewMemDatabase()
+	dag, _ := dag2.NewDag(memdb)
 	unit := dag.GetCurrentUnit(assetId)
 	if unit != nil {
 		return unit.NumberU64()
 	}
 	return uint64(0)
+	//return f.blocks[f.hashes[len(f.hashes)-1]].NumberU64()
 }
 
 // insertChain injects a new blocks into the simulated chain.
@@ -231,6 +386,19 @@ func verifyImportEvent(t *testing.T, imported chan *modules.Unit, arrive bool) {
 	}
 }
 
+// verifyImportCount verifies that exactly count number of events arrive on an
+// import hook channel.
+func verifyImportCount(t *testing.T, imported chan *modules.Unit, count int) {
+	for i := 0; i < count; i++ {
+		select {
+		case <-imported:
+		case <-time.After(time.Second):
+			t.Fatalf("block %d: import timeout", i+1)
+		}
+	}
+	verifyImportDone(t, imported)
+}
+
 // verifyImportDone verifies that no more events are arriving on an import channel.
 func verifyImportDone(t *testing.T, imported chan *modules.Unit) {
 	select {
@@ -242,30 +410,26 @@ func verifyImportDone(t *testing.T, imported chan *modules.Unit) {
 
 // Tests that a fetcher accepts block announcements and initiates retrievals for
 // them, successfully importing into the local chain.
-//func TestSequentialAnnouncements62(t *testing.T) { testSequentialAnnouncements(t, 62) }
-//func TestSequentialAnnouncements63(t *testing.T) { testSequentialAnnouncements(t, 63) }
-//func TestSequentialAnnouncements64(t *testing.T) { testSequentialAnnouncements(t, 64) }
-
+func TestSequentialAnnouncements1(t *testing.T) { testSequentialAnnouncements(t, 1) }
 func testSequentialAnnouncements(t *testing.T, protocol int) {
 	// Create a chain of blocks to import
-	//targetBlocks := 4 * hashLimit
-	hashes, blocks := makeDag(3)
-
+	targetunits := 4 * hashLimit
+	hashes, blocks := makeDag(targetunits, genesisUnit)
 	tester := newTester()
 	headerFetcher := tester.makeHeaderFetcher("valid", blocks, -gatherSlack)
 	bodyFetcher := tester.makeBodyFetcher("valid", blocks, 0)
-
 	// Iteratively announce blocks until all are imported
 	imported := make(chan *modules.Unit)
 	tester.fetcher.importedHook = func(block *modules.Unit) { imported <- block }
 
 	for i := len(hashes) - 2; i >= 0; i-- {
 		chain := modules.ChainIndex{
-			AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
-			IsMain:true,
-			Index:uint64(len(hashes)-i-1),
+			AssetID: modules.PTNCOIN,
+			IsMain:  true,
+			Index:   uint64(len(hashes) - i - 1),
 		}
 		tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
+		//todo xiaozhi
 		//verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)
@@ -273,22 +437,17 @@ func testSequentialAnnouncements(t *testing.T, protocol int) {
 
 // Tests that if blocks are announced by multiple peers (or even the same buggy
 // peer), they will only get downloaded at most once.
-//func TestConcurrentAnnouncements62(t *testing.T) { testConcurrentAnnouncements(t, 62) }
-//func TestConcurrentAnnouncements63(t *testing.T) { testConcurrentAnnouncements(t, 63) }
-//func TestConcurrentAnnouncements64(t *testing.T) { testConcurrentAnnouncements(t, 64) }
-
+func TestConcurrentAnnouncements1(t *testing.T) { testConcurrentAnnouncements(t, 1) }
 func testConcurrentAnnouncements(t *testing.T, protocol int) {
 	// Create a chain of blocks to import
-	targetBlocks := 3
-	hashes, blocks := makeDag(3)
-
+	targetunits := 4 * hashLimit
+	hashes, blocks := makeDag(targetunits, genesisUnit)
 	// Assemble a tester with a built in counter for the requests
 	tester := newTester()
 	firstHeaderFetcher := tester.makeHeaderFetcher("first", blocks, -gatherSlack)
 	firstBodyFetcher := tester.makeBodyFetcher("first", blocks, 0)
 	secondHeaderFetcher := tester.makeHeaderFetcher("second", blocks, -gatherSlack)
 	secondBodyFetcher := tester.makeBodyFetcher("second", blocks, 0)
-
 	counter := uint32(0)
 	firstHeaderWrapper := func(hash common.Hash) error {
 		atomic.AddUint32(&counter, 1)
@@ -301,38 +460,33 @@ func testConcurrentAnnouncements(t *testing.T, protocol int) {
 	// Iteratively announce blocks until all are imported
 	imported := make(chan *modules.Unit)
 	tester.fetcher.importedHook = func(block *modules.Unit) { imported <- block }
-
 	for i := len(hashes) - 2; i >= 0; i-- {
 		chain := modules.ChainIndex{
-			AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
-			IsMain:true,
-			Index:uint64(len(hashes)-i-1),
+			AssetID: modules.PTNCOIN,
+			IsMain:  true,
+			Index:   uint64(len(hashes) - i - 1),
 		}
 		tester.fetcher.Notify("first", hashes[i], chain, time.Now().Add(-arriveTimeout), firstHeaderWrapper, firstBodyFetcher)
 		tester.fetcher.Notify("second", hashes[i], chain, time.Now().Add(-arriveTimeout+time.Millisecond), secondHeaderWrapper, secondBodyFetcher)
 		tester.fetcher.Notify("second", hashes[i], chain, time.Now().Add(-arriveTimeout-time.Millisecond), secondHeaderWrapper, secondBodyFetcher)
+		//todo xiaozhi
 		//verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)
-
 	// Make sure no blocks were retrieved twice
-	if int(counter) != targetBlocks {
-		t.Fatalf("retrieval count mismatch: have %v, want %v", counter, targetBlocks)
+	if int(counter) != targetunits {
+		t.Fatalf("retrieval count mismatch: have %v, want %v", counter, targetunits)
 	}
 }
 
 // Tests that announcements retrieved in a random order are cached and eventually
 // imported when all the gaps are filled in.
-//func TestRandomArrivalImport62(t *testing.T) { testRandomArrivalImport(t, 62) }
-//func TestRandomArrivalImport63(t *testing.T) { testRandomArrivalImport(t, 63) }
-//func TestRandomArrivalImport64(t *testing.T) { testRandomArrivalImport(t, 64) }
-
+func TestRandomArrivalImport1(t *testing.T) { testRandomArrivalImport(t, 1) }
 func testRandomArrivalImport(t *testing.T, protocol int) {
 	// Create a chain of blocks to import, and choose one to delay
-	targetBlocks := maxQueueDist
-	hashes, blocks := makeDag(3)
-	skip := targetBlocks / 2
-
+	targetunits := maxQueueDist
+	hashes, blocks := makeDag(targetunits, genesisUnit)
+	skip := targetunits / 2
 	tester := newTester()
 	headerFetcher := tester.makeHeaderFetcher("valid", blocks, -gatherSlack)
 	bodyFetcher := tester.makeBodyFetcher("valid", blocks, 0)
@@ -344,30 +498,33 @@ func testRandomArrivalImport(t *testing.T, protocol int) {
 	for i := len(hashes) - 1; i >= 0; i-- {
 		if i != skip {
 			chain := modules.ChainIndex{
-				AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
-				IsMain:true,
-				Index:uint64(len(hashes)-i-1),
+				AssetID: modules.PTNCOIN,
+				IsMain:  true,
+				Index:   uint64(len(hashes) - i - 1),
 			}
 			tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
 			time.Sleep(time.Millisecond)
 		}
 	}
 	// Finally announce the skipped entry and check full import
-	//tester.fetcher.Notify("valid", hashes[skip], uint64(len(hashes)-skip-1), time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
+	chainskip := modules.ChainIndex{
+		AssetID: modules.PTNCOIN,
+		IsMain:  true,
+		Index:   uint64(len(hashes) - skip - 1),
+	}
+	tester.fetcher.Notify("valid", hashes[skip], chainskip, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
+	//todo xiaozhi
 	//verifyImportCount(t, imported, len(hashes)-1)
 }
 
 // Tests that direct block enqueues (due to block propagation vs. hash announce)
 // are correctly schedule, filling and import queue gaps.
-//func TestQueueGapFill62(t *testing.T) { testQueueGapFill(t, 62) }
-//func TestQueueGapFill63(t *testing.T) { testQueueGapFill(t, 63) }
-//func TestQueueGapFill64(t *testing.T) { testQueueGapFill(t, 64) }
-
+func TestQueueGapFill1(t *testing.T) { testQueueGapFill(t, 1) }
 func testQueueGapFill(t *testing.T, protocol int) {
 	// Create a chain of blocks to import, and choose one to not announce at all
-	targetBlocks := maxQueueDist
-	hashes, blocks := makeDag(3)
-	skip := targetBlocks / 2
+	targetunits := maxQueueDist
+	hashes, blocks := makeDag(targetunits, genesisUnit)
+	skip := targetunits / 2
 
 	tester := newTester()
 	headerFetcher := tester.makeHeaderFetcher("valid", blocks, -gatherSlack)
@@ -380,28 +537,26 @@ func testQueueGapFill(t *testing.T, protocol int) {
 	for i := len(hashes) - 1; i >= 0; i-- {
 		if i != skip {
 			chain := modules.ChainIndex{
-				AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
-				IsMain:true,
-				Index:uint64(len(hashes)-i-1),
+				AssetID: modules.PTNCOIN,
+				IsMain:  true,
+				Index:   uint64(len(hashes) - i - 1),
 			}
 			tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
 			time.Sleep(time.Millisecond)
 		}
 	}
 	// Fill the missing block directly as if propagated
-	//tester.fetcher.Enqueue("valid", blocks[hashes[skip]])
+	tester.fetcher.Enqueue("valid", blocks[hashes[skip]])
+	//todo xiaozhi
 	//verifyImportCount(t, imported, len(hashes)-1)
 }
 
 // Tests that blocks arriving from various sources (multiple propagations, hash
 //announces, etc) do not get scheduled for import multiple times.
-//func TestImportDeduplication62(t *testing.T) { testImportDeduplication(t, 62) }
-//func TestImportDeduplication63(t *testing.T) { testImportDeduplication(t, 63) }
-//func TestImportDeduplication64(t *testing.T) { testImportDeduplication(t, 64) }
-
+func TestImportDeduplication1(t *testing.T) { testImportDeduplication(t, 1) }
 func testImportDeduplication(t *testing.T, protocol int) {
 	// Create two blocks to import (one for duplication, the other for stalling)
-	hashes, blocks := makeDag(3)
+	hashes, blocks := makeDag(2, genesisUnit)
 
 	// Create the tester and wrap the importer with a counter
 	tester := newTester()
@@ -421,9 +576,9 @@ func testImportDeduplication(t *testing.T, protocol int) {
 
 	// Announce the duplicating block, wait for retrieval, and also propagate directly
 	chain := modules.ChainIndex{
-		AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
-		IsMain:true,
-		Index:1,
+		AssetID: modules.PTNCOIN,
+		IsMain:  true,
+		Index:   1,
 	}
 	tester.fetcher.Notify("valid", hashes[0], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
 	<-fetching
@@ -434,6 +589,7 @@ func testImportDeduplication(t *testing.T, protocol int) {
 
 	// Fill the missing block directly as if propagated, and check import uniqueness
 	tester.fetcher.Enqueue("valid", blocks[hashes[1]])
+	//todo xiaozhi
 	//verifyImportCount(t, imported, 2)
 
 	if counter != 0 {
@@ -443,13 +599,10 @@ func testImportDeduplication(t *testing.T, protocol int) {
 
 // Tests that if a block is empty (i.e. header only), no body request should be
 // made, and instead the header should be assembled into a whole block in itself.
-//func TestEmptyBlockShortCircuit62(t *testing.T) { testEmptyBlockShortCircuit(t, 62) }
-//func TestEmptyBlockShortCircuit63(t *testing.T) { testEmptyBlockShortCircuit(t, 63) }
-//func TestEmptyBlockShortCircuit64(t *testing.T) { testEmptyBlockShortCircuit(t, 64) }
-
+func TestEmptyBlockShortCircuit1(t *testing.T) { testEmptyBlockShortCircuit(t, 1) }
 func testEmptyBlockShortCircuit(t *testing.T, protocol int) {
 	// Create a chain of blocks to import
-	hashes, blocks := makeDag(3)
+	hashes, blocks := makeDag(32, genesisUnit)
 
 	tester := newTester()
 	headerFetcher := tester.makeHeaderFetcher("valid", blocks, -gatherSlack)
@@ -468,9 +621,9 @@ func testEmptyBlockShortCircuit(t *testing.T, protocol int) {
 	// Iteratively announce blocks until all are imported
 	for i := len(hashes) - 2; i >= 0; i-- {
 		chain := modules.ChainIndex{
-			AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
-			IsMain:true,
-			Index:uint64(len(hashes))-uint64(i)-1,
+			AssetID: modules.PTNCOIN,
+			IsMain:  true,
+			Index:   uint64(len(hashes) - i - 1),
 		}
 		tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
 
@@ -481,6 +634,7 @@ func testEmptyBlockShortCircuit(t *testing.T, protocol int) {
 		verifyCompletingEvent(t, completing, len(blocks[hashes[i]].Transactions()) > 0)
 
 		// Irrelevant of the construct, import should succeed
+		//todo xiaozhi
 		//verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)
@@ -489,10 +643,7 @@ func testEmptyBlockShortCircuit(t *testing.T, protocol int) {
 // Tests that a peer is unable to use unbounded memory with sending infinite
 // block announcements to a node, but that even in the face of such an attack,
 // the fetcher remains operational.
-func TestHashMemoryExhaustionAttack62(t *testing.T) { testHashMemoryExhaustionAttack(t, 62) }
-func TestHashMemoryExhaustionAttack63(t *testing.T) { testHashMemoryExhaustionAttack(t, 63) }
-func TestHashMemoryExhaustionAttack64(t *testing.T) { testHashMemoryExhaustionAttack(t, 64) }
-
+func TestHashMemoryExhaustionAttack1(t *testing.T) { testHashMemoryExhaustionAttack(t, 1) }
 func testHashMemoryExhaustionAttack(t *testing.T, protocol int) {
 	// Create a tester with instrumented import hooks
 	tester := newTester()
@@ -507,46 +658,48 @@ func testHashMemoryExhaustionAttack(t *testing.T, protocol int) {
 		}
 	}
 	// Create a valid chain and an infinite junk chain
-	//targetBlocks := hashLimit + 2*maxQueueDist
-	hashes, blocks := makeDag(3)
+	targetUnits := hashLimit + 2*maxQueueDist
+	hashes, blocks := makeDag(targetUnits, genesisUnit)
 	validHeaderFetcher := tester.makeHeaderFetcher("valid", blocks, -gatherSlack)
 	validBodyFetcher := tester.makeBodyFetcher("valid", blocks, 0)
 
-	attack, _ := makeDag(3)
+	attack, _ := makeDag(targetUnits, genesisUnit)
 	attackerHeaderFetcher := tester.makeHeaderFetcher("attacker", nil, -gatherSlack)
 	attackerBodyFetcher := tester.makeBodyFetcher("attacker", nil, 0)
 
 	// Feed the tester a huge hashset from the attacker, and a limited from the valid peer
 	for i := 0; i < len(attack); i++ {
-		if i < 2 {
+		if i < maxQueueDist {
 			chain := modules.ChainIndex{
-				AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
-				IsMain:true,
-				Index:uint64(i)+1,
+				AssetID: modules.PTNCOIN,
+				IsMain:  true,
+				Index:   uint64(i) + 1,
 			}
 			tester.fetcher.Notify("valid", hashes[len(hashes)-2-i], chain, time.Now(), validHeaderFetcher, validBodyFetcher)
 		}
 		chain := modules.ChainIndex{
-			AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
-			IsMain:true,
-			Index:1,
+			AssetID: modules.PTNCOIN,
+			IsMain:  true,
+			Index:   1,
 		}
 		tester.fetcher.Notify("attacker", attack[i], chain /* don't distance drop */, time.Now(), attackerHeaderFetcher, attackerBodyFetcher)
 	}
-	if count := atomic.LoadInt32(&announces); count != 3 && count != 4 {
+	if count := atomic.LoadInt32(&announces); count != hashLimit+maxQueueDist {
 		t.Fatalf("queued announce count mismatch: have %d, want %d", count, hashLimit+maxQueueDist)
 	}
 	// Wait for fetches to complete
+	//todo xiaozhi
 	//verifyImportCount(t, imported, maxQueueDist)
 
 	// Feed the remaining valid hashes to ensure DOS protection state remains clean
 	for i := len(hashes) - maxQueueDist - 2; i >= 0; i-- {
 		chain := modules.ChainIndex{
-			AssetID:modules.IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'},
-			IsMain:true,
-			Index:uint64(len(hashes)-i-1),
+			AssetID: modules.PTNCOIN,
+			IsMain:  true,
+			Index:   uint64(len(hashes) - i - 1),
 		}
 		tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), validHeaderFetcher, validBodyFetcher)
+		//todo xiaozhi
 		//verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)
@@ -570,39 +723,40 @@ func TestBlockMemoryExhaustionAttack(t *testing.T) {
 		}
 	}
 	// Create a valid chain and a batch of dangling (but in range) blocks
-	hashes, attack := makeDag(3)
-	//attack := make(map[common.Hash]*modules.Unit)
-	//for i := byte(0); len(attack) < 3; i++ {
-	//	hashes, blocks := makeChain()
-	//	for _, hash := range hashes[:2] {
-	//		attack[hash] = blocks[hash]
-	//	}
-	//}
+	targetBlocks := hashLimit + 2*maxQueueDist
+	hashes, blocks := makeDag(targetBlocks, genesisUnit)
+	attack := make(map[common.Hash]*modules.Unit)
+	for i := byte(0); len(attack) < blockLimit+2*maxQueueDist; i++ {
+		//hashes, blocks := makeChain(maxQueueDist-1, i, unknownBlock)
+		hashes, blocks := makeDag(maxQueueDist-1, genesisUnit)
+		for _, hash := range hashes[:maxQueueDist-2] {
+			attack[hash] = blocks[hash]
+		}
+	}
 	// Try to feed all the attacker blocks make sure only a limited batch is accepted
 	for _, block := range attack {
 		tester.fetcher.Enqueue("attacker", block)
 	}
 	time.Sleep(200 * time.Millisecond)
-	if queued := atomic.LoadInt32(&enqueued); queued != 0 {
+	if queued := atomic.LoadInt32(&enqueued); queued != blockLimit {
 		t.Fatalf("queued block count mismatch: have %d, want %d", queued, blockLimit)
 	}
 	// Queue up a batch of valid blocks, and check that a new peer is allowed to do so
-	for i := 0; i < 2; i++ {
-		tester.fetcher.Enqueue("valid", attack[hashes[i]])
+	for i := 0; i < maxQueueDist-1; i++ {
+		tester.fetcher.Enqueue("valid", blocks[hashes[len(hashes)-3-i]])
 	}
 	time.Sleep(100 * time.Millisecond)
-	if queued := atomic.LoadInt32(&enqueued); queued != 0 {
+	if queued := atomic.LoadInt32(&enqueued); queued != blockLimit+maxQueueDist-1 {
 		t.Fatalf("queued block count mismatch: have %d, want %d", queued, blockLimit+maxQueueDist-1)
 	}
 	// Insert the missing piece (and sanity check the import)
-	tester.fetcher.Enqueue("valid", attack[hashes[len(hashes)-2]])
-	//verifyImportCount(t, imported, maxQueueDist)
+	tester.fetcher.Enqueue("valid", blocks[hashes[len(hashes)-2]])
+	verifyImportCount(t, imported, maxQueueDist)
 
 	// Insert the remaining blocks in chunks to ensure clean DOS protection
 	for i := maxQueueDist; i < len(hashes)-1; i++ {
-		tester.fetcher.Enqueue("valid", attack[hashes[len(hashes)-2-i]])
+		tester.fetcher.Enqueue("valid", blocks[hashes[len(hashes)-2-i]])
 		verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)
-}
-*/
+}*/

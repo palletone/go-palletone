@@ -175,17 +175,18 @@ func createExampleGenesis(account string) *core.Genesis {
 		TokenDecimal: core.DefaultTokenDecimal,
 		ChainID:      1,
 		TokenHolder:  account,
-		Text:         "Hello PalletOne!",
-		//Text: "孟岩	北京	通证派倡导者、CSDN副总裁、柏链道捷CEO。" +
-		//	"刘百祥	上海	GoC-lab发起人兼技术社群负责人，复旦大学计算机博士。" +
-		//	"陈澄	上海	引力区开发者社区总理事，EOS超级节点负责人。" +
-		//	"孙红景	北京	CTO、13年IT开发和管理经验。" +
-		//	"kobegpfan	北京	世界500强企业技术总监。" +
-		//	"余奎	上海	加密经济学研究员、产品研发经理。" +
-		//	"Shangsong	北京	Fabric、 多链、 分片 、跨链技术。" +
-		//	"郑广军	上海	区块链java应用开发。" +
-		//	"钮祜禄虫	北京	大数据架构、Dapp开发。" +
-		//	"彭敏	四川	计算机网络和系统集成十余年有经验。",
+		//Text:         "Hello PalletOne!",
+                Text: "姓名 丨 坐标 丨 简介   \r\n" +
+		"孟岩丨北京丨通证派倡导者、CSDN副总裁、柏链道捷CEO.\r\n" +
+		"刘百祥丨上海丨 GoC-lab发起人兼技术社群负责人,复旦大学计算机博士.\r\n" +
+		"陈澄丨上海丨引力区开发者社区总理事,EOS超级节点负责人.\r\n" +
+		"孙红景丨北京丨CTO、13年IT开发和管理经验.\r\n" +
+		"kobegpfan丨北京丨世界500强企业技术总监.\r\n" +
+		"余奎丨上海丨加密经济学研究员、产品研发经理.\r\n" +
+		"Shangsong丨北京丨Fabric、 多链、 分片 、跨链技术.\r\n" +
+		"郑广军丨上海丨区块链java应用开发.\r\n" +
+		"钮祜禄虫丨北京丨大数据架构、Dapp开发.\r\n" +
+		"彭敏丨四川丨计算机网络和系统集成十余年有经验.\r\n",
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
 		ImmutableParameters:    core.NewImmutChainParams(),

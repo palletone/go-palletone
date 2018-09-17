@@ -82,4 +82,6 @@ type IDag interface {
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetMediatorSchl() *modules.MediatorSchedule
 	GetActiveMediatorCount() int
+	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
+	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
 }

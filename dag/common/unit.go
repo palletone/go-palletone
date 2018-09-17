@@ -278,6 +278,7 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 		// get transaction list
 		txs, err := unitOp.dagdb.GetUnitTransactions(unit.UnitHash)
 		if err != nil {
+			//todo xiaozhi
 			return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
 		}
 		unit.Txs = txs
