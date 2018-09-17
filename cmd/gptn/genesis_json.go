@@ -110,18 +110,9 @@ func createGenesisJson(ctx *cli.Context) error {
 		return err
 	}
 
-	cfg := FullConfig{Node: defaultNodeConfig()}
-	// Load config file.
-	if err := maybeLoadConfig(ctx, &cfg); err != nil {
-		utils.Fatalf("%v", err)
-	}
-
-	// Make sure we have a valid genesis JSON
-	genesisOut := ctx.Args().First()
-	// If no path is specified, the default path is used
-	if len(genesisOut) == 0 {
-		//		utils.Fatalf("Must supply path to genesis JSON file")
-		genesisOut, _ = getGenesisPath(defaultGenesisJsonPath, cfg.Node.DataDir)
+	genesisOut, err := getGenesisPathFromConfig(ctx)
+	if err != nil {
+		return err
 	}
 
 	err = os.MkdirAll(filepath.Dir(genesisOut), os.ModePerm)
@@ -148,6 +139,25 @@ func createGenesisJson(ctx *cli.Context) error {
 	return nil
 }
 
+func getGenesisPathFromConfig(ctx *cli.Context) (string, error) {
+	cfg := FullConfig{Node: defaultNodeConfig()}
+	// Load config file.
+	if err := maybeLoadConfig(ctx, &cfg); err != nil {
+		utils.Fatalf("%v", err)
+		return "", err
+	}
+
+	// Make sure we have a valid genesis JSON
+	genesisOut := ctx.Args().First()
+	// If no path is specified, the default path is used
+	if len(genesisOut) == 0 {
+		//		utils.Fatalf("Must supply path to genesis JSON file")
+		genesisOut, _ = getGenesisPath(defaultGenesisJsonPath, cfg.Node.DataDir)
+	}
+
+	return genesisOut, nil
+}
+
 // initialAccount, create a initial account for a new account
 func initialAccount(ctx *cli.Context) (string, error) {
 	address, err := newAccount(ctx)
@@ -160,6 +170,13 @@ func initialAccount(ctx *cli.Context) (string, error) {
 	return address.Str(), nil
 }
 
+func createExampleAccount(ctx *cli.Context) (addrStr, password string) {
+	password = core.DefaultPassword
+	address, _ := createAccount(ctx, password)
+	addrStr = address.Str()
+	return
+}
+
 // createExampleGenesis, create the genesis state of new chain with the specified account
 func createExampleGenesis(account string) *core.Genesis {
 	SystemConfig := core.SystemConfig{
@@ -169,24 +186,13 @@ func createExampleGenesis(account string) *core.Genesis {
 	initParams := core.NewChainParams()
 
 	return &core.Genesis{
-		Alias:        core.DefaultAlias,
-		Version:      configure.Version,
-		TokenAmount:  core.DefaultTokenAmount,
-		TokenDecimal: core.DefaultTokenDecimal,
-		ChainID:      1,
-		TokenHolder:  account,
-		//Text:         "Hello PalletOne!",
-                Text: "姓名 丨 坐标 丨 简介   \r\n" +
-		"孟岩丨北京丨通证派倡导者、CSDN副总裁、柏链道捷CEO.\r\n" +
-		"刘百祥丨上海丨 GoC-lab发起人兼技术社群负责人,复旦大学计算机博士.\r\n" +
-		"陈澄丨上海丨引力区开发者社区总理事,EOS超级节点负责人.\r\n" +
-		"孙红景丨北京丨CTO、13年IT开发和管理经验.\r\n" +
-		"kobegpfan丨北京丨世界500强企业技术总监.\r\n" +
-		"余奎丨上海丨加密经济学研究员、产品研发经理.\r\n" +
-		"Shangsong丨北京丨Fabric、 多链、 分片 、跨链技术.\r\n" +
-		"郑广军丨上海丨区块链java应用开发.\r\n" +
-		"钮祜禄虫丨北京丨大数据架构、Dapp开发.\r\n" +
-		"彭敏丨四川丨计算机网络和系统集成十余年有经验.\r\n",
+		Alias:                  core.DefaultAlias,
+		Version:                configure.Version,
+		TokenAmount:            core.DefaultTokenAmount,
+		TokenDecimal:           core.DefaultTokenDecimal,
+		ChainID:                core.DefaultChainID,
+		TokenHolder:            account,
+		Text:                   core.DefaultText,
 		SystemConfig:           SystemConfig,
 		InitialParameters:      initParams,
 		ImmutableParameters:    core.NewImmutChainParams(),

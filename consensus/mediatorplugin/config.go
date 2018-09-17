@@ -24,9 +24,9 @@ import (
 )
 
 const (
-	DefaultInitPartSec = "Vh52_xy-bE5U2mUDFYxLJwRke2IQ7u0Nb9L3_cPyXKY"
-	DefaultInitPartPub = "AV0a95Ex-pTGAAYXg277329ewkWDOOdkuo-Va1ogVnEQiCc-efOZlFMFWCYDhld8uxoRggzxRJJzPJ" +
-		"0r4hKKVKRZOW-aLJYuGilc5ONNi3riQBCoOry7cX65yLx9_yMENAnWI_fN6USJpDG2dJBTCyuY-N_GOZf9wD-2qhP5-lDj"
+	DefaultInitPartSec = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
+	DefaultInitPartPub = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
+		"MpbsWk45ymz4kmjU2AZo8Rm3mJ3MQHpdAgTo2nzWmqU3vCTW6qCfviPD1MKu3FJtmaWiLzdavLx831eCBXA1CdaiXAeU5MPcQ"
 )
 
 var (

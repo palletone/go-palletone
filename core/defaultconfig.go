@@ -25,11 +25,25 @@ const (
 	DefaultMediatorCount       = 21
 	DefaultTokenAmount         = 100000000000000000
 	DefaultTokenDecimal        = 8
+	DefaultChainID             = 1
 	DefaultDepositRate         = 0.02
 	DefaultTokenHolder         = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 	DefaultPassword            = "password"
 	DefaultMinMediatorCount    = 11
 	DefaultMinMediatorInterval = 1
+
+	//DefaultText = "Hello PalletOne!",
+	DefaultText = "姓名 丨 坐标 丨 简介   \r\n" +
+		"孟岩丨北京丨通证派倡导者、CSDN副总裁、柏链道捷CEO.\r\n" +
+		"刘百祥丨上海丨 GoC-lab发起人兼技术社群负责人,复旦大学计算机博士.\r\n" +
+		"陈澄丨上海丨引力区开发者社区总理事,EOS超级节点负责人.\r\n" +
+		"孙红景丨北京丨CTO、13年IT开发和管理经验.\r\n" +
+		"kobegpfan丨北京丨世界500强企业技术总监.\r\n" +
+		"余奎丨上海丨加密经济学研究员、产品研发经理.\r\n" +
+		"Shangsong丨北京丨Fabric、 多链、 分片 、跨链技术.\r\n" +
+		"郑广军丨上海丨区块链java应用开发.\r\n" +
+		"钮祜禄虫丨北京丨大数据架构、Dapp开发.\r\n" +
+		"彭敏丨四川丨计算机网络和系统集成十余年有经验.\r\n"
 
 	/* percentage fields are fixed point with a denominator of 10,000 */
 	PalletOne100Percent            = 10000
