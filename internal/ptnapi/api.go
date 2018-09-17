@@ -1024,7 +1024,7 @@ func (s *PublicTransactionPoolAPI) GetTransactionCount(ctx context.Context, addr
 	v := hexutil.Uint64(0)
 	return &v, nil
 }
-func (s *PublicTransactionPoolAPI) GetTransactionsByTxid(ctx context.Context, txid string) (*modules.Transaction, error) {
+func (s *PublicTransactionPoolAPI) GetTransactionsByTxid(ctx context.Context, txid string) (*ptnjson.GetTxIdResult, error) {
 	tx, err := s.b.GetTxByTxid_back(txid)
 	if err != nil {
 		log.Error("Get transcation by hash ", "unit hash", txid, "error", err.Error())
