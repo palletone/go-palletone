@@ -16,16 +16,16 @@
 
 package ptn
 
-
 import (
-	"testing"
-	"github.com/palletone/go-palletone/dag/modules"
-	"math/rand"
-	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"math"
+	"math/rand"
+	"testing"
 )
+
 /*
 // Tests that protocol versions and modes of operations are matched up properly.
 func TestProtocolCompatibility(t *testing.T) {
@@ -62,7 +62,7 @@ func TestProtocolCompatibility(t *testing.T) {
 //func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
 func testGetBlockHeaders(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil)
-	peer, _ := newTestPeer("peer", protocol, pm, true,pm.dag)
+	peer, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
 	defer peer.close()
 	// Create a "random" unknown hash for testing
 	var unknown common.Hash
@@ -311,7 +311,7 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 //func TestGetBlockBodies1(t *testing.T) { testGetBlockBodies(t, 1) }
 func testGetBlockBodies(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxBlockFetch+15, nil)
-	peer, _ := newTestPeer("peer", protocol, pm, true,pm.dag)
+	peer, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
 	defer peer.close()
 	// Create a batch of tests for various scenarios
 	limit := downloader.MaxBlockFetch
