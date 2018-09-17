@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/configure"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/gen"
 	"gopkg.in/urfave/cli.v1"
@@ -90,6 +91,23 @@ func getTokenAccount(ctx *cli.Context) (string, error) {
 	return account, nil
 }
 
+func createExampleMediators(ctx *cli.Context, mcLen int) []mp.MediatorConf {
+	exampleMediators := make([]mp.MediatorConf, mcLen, mcLen)
+	for i := 0; i < mcLen; i++ {
+		account, password, _ := createExampleAccount(ctx)
+		secStr, pubStr := newInitDKS()
+
+		exampleMediators[i] = mp.MediatorConf{
+			Address:     account,
+			Password:    password,
+			InitPartSec: secStr,
+			InitPartPub: pubStr,
+		}
+	}
+
+	return exampleMediators
+}
+
 // createGenesisJson, Create a json file for the genesis state of a new chain.
 func createGenesisJson(ctx *cli.Context) error {
 	var (
@@ -97,11 +115,23 @@ func createGenesisJson(ctx *cli.Context) error {
 		err         error
 	)
 
-	account, err := getTokenAccount(ctx)
+	// comment by Albert·Gou
+	//account, err := getTokenAccount(ctx)
+	//if err != nil {
+	//	return err
+	//}
+
+	account, _, err := createExampleAccount(ctx)
 	if err != nil {
 		return err
 	}
-	genesisState := createExampleGenesis(account)
+	mcs := createExampleMediators(ctx, core.DefaultMediatorCount)
+	nodeStr, err := getNodeInfo(ctx)
+	if err != nil {
+		return err
+	}
+
+	genesisState := createExampleGenesis(account, mcs, nodeStr)
 
 	var genesisJson []byte
 	genesisJson, err = json.MarshalIndent(*genesisState, "", "  ")
@@ -170,15 +200,15 @@ func initialAccount(ctx *cli.Context) (string, error) {
 	return address.Str(), nil
 }
 
-func createExampleAccount(ctx *cli.Context) (addrStr, password string) {
+func createExampleAccount(ctx *cli.Context) (addrStr, password string, err error) {
 	password = core.DefaultPassword
-	address, _ := createAccount(ctx, password)
+	address, err := createAccount(ctx, password)
 	addrStr = address.Str()
 	return
 }
 
 // createExampleGenesis, create the genesis state of new chain with the specified account
-func createExampleGenesis(account string) *core.Genesis {
+func createExampleGenesis(tokenAccount string, mediators []mp.MediatorConf, nodeInfo string) *core.Genesis {
 	SystemConfig := core.SystemConfig{
 		DepositRate: core.DefaultDepositRate,
 	}
@@ -186,21 +216,34 @@ func createExampleGenesis(account string) *core.Genesis {
 	initParams := core.NewChainParams()
 
 	return &core.Genesis{
-		Alias:                  core.DefaultAlias,
-		Version:                configure.Version,
-		TokenAmount:            core.DefaultTokenAmount,
-		TokenDecimal:           core.DefaultTokenDecimal,
-		ChainID:                core.DefaultChainID,
-		TokenHolder:            account,
-		Text:                   core.DefaultText,
-		SystemConfig:           SystemConfig,
-		InitialParameters:      initParams,
-		ImmutableParameters:    core.NewImmutChainParams(),
-		InitialTimestamp:       gen.InitialTimestamp(initParams.MediatorInterval),
-		InitialActiveMediators: core.DefaultMediatorCount,
-		InitialMediatorCandidates: gen.InitialMediatorCandidates(
-			core.DefaultMediatorCount, account),
+		Alias:                     core.DefaultAlias,
+		Version:                   configure.Version,
+		TokenAmount:               core.DefaultTokenAmount,
+		TokenDecimal:              core.DefaultTokenDecimal,
+		ChainID:                   core.DefaultChainID,
+		TokenHolder:               tokenAccount,
+		Text:                      core.DefaultText,
+		SystemConfig:              SystemConfig,
+		InitialParameters:         initParams,
+		ImmutableParameters:       core.NewImmutChainParams(),
+		InitialTimestamp:          gen.InitialTimestamp(initParams.MediatorInterval),
+		InitialActiveMediators:    core.DefaultMediatorCount,
+		InitialMediatorCandidates: initialMediatorCandidates(mediators, nodeInfo),
 	}
+}
+
+func initialMediatorCandidates(mediators []mp.MediatorConf, nodeInfo string) []core.MediatorInfo {
+	mcLen := len(mediators)
+	initialMediators := make([]core.MediatorInfo, mcLen)
+	for i := 0; i < mcLen; i++ {
+		initialMediators[i] = core.MediatorInfo{
+			Address:     mediators[i].Address,
+			InitPartPub: mediators[i].InitPartPub,
+			Node:        nodeInfo,
+		}
+	}
+
+	return initialMediators
 }
 
 // 根据指定路径和配置参数获取创世Json文件的路径
