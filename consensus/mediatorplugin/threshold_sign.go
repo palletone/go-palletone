@@ -154,6 +154,13 @@ func (mp *MediatorPlugin) processResponseLoop() {
 	}
 }
 
+func (mp *MediatorPlugin) initRespBuf(dstMed common.Address) {
+	aSize := mp.getDag().GetActiveMediatorCount()
+	for i := 0; i < aSize; i++ {
+		mp.respBuf[dstMed][uint32(i)] = make(chan *dkg.Response, aSize-1)
+	}
+}
+
 func (mp *MediatorPlugin) processResponseBuf(dvp *dkgVerifier) {
 	dstMed := dvp.medLocal
 	srcIndex := dvp.srcIndex
