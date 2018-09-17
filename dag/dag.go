@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/memunit"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -57,6 +58,16 @@ type Dag struct {
 	Memdag        *memunit.MemDag // memory unit
 }
 
+func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
+	return d.GlobalProp
+}
+
+func (d *Dag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
+	return d.DynGlobalProp
+}
+func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
+	return d.MediatorSchl
+}
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
@@ -79,6 +90,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	txs, err := d.dagdb.GetUnitTransactions(uHash)
 	if err != nil {
 		log.Error("Current unit when get transactions", "error", err.Error())
+		//todo xiaozhi
 		return nil
 	}
 	// generate unit
@@ -151,7 +163,7 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
 	// step1. check exists
 	if d.Memdag.Exists(unit.UnitHash) || d.GetUnit(unit.UnitHash) != nil {
-		return 0, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash)
+		return 0, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash.String())
 	}
 	// step2. validate unit
 	unitState := d.validate.ValidateUnit(&unit, isGenesis)
@@ -265,13 +277,12 @@ func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 	return d.getBodyRLP(hash)
 }
 
-func (d *Dag) GetTransactionsByHash(hash common.Hash) (modules.Transactions, error) {
-	txs, err := d.dagdb.GetUnitTransactions(hash)
-	if err != nil {
-		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
-		return nil, err
+func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, error) {
+	tx, _, _, _ := d.dagdb.GetTransaction(hash)
+	if tx == nil {
+		return nil, fmt.Errorf("GetTransactionByHash: get none transaction")
 	}
-	return txs, nil
+	return tx, nil
 }
 
 func (d *Dag) getBodyRLP(hash common.Hash) rlp.RawValue {
@@ -584,6 +595,12 @@ func (d *Dag) IsActiveMediator(add common.Address) bool {
 	return d.GlobalProp.IsActiveMediator(add)
 }
 
+func (d *Dag) CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
+	return d.unitRep.CreateUnit(mAddr, txpool, ks, t)
+}
+func (d *Dag) SaveUnit(unit modules.Unit, isGenesis bool) error {
+	return d.unitRep.SaveUnit(unit, isGenesis)
+}
 func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error) {
 	// get current unit
 	currentUnit := d.CurrentUnit()
@@ -638,4 +655,10 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	unit.UnitHash = unit.Hash()
 	unit.UnitSize = unit.Size()
 	return &unit, nil
+}
+func (d *Dag) GetGenesisUnit(index uint64) (*modules.Unit, error) {
+	return d.unitRep.GetGenesisUnit(index)
+}
+func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
+	return d.statedb.GetContractTpl(templateID)
 }

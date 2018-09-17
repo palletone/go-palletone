@@ -70,6 +70,7 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		// validate transaction id duplication
 		if _, ok := txFlags[tx.TxHash]; ok == true {
 			isSuccess = false
+			log.Info("ValidateTx", "txhash", tx.TxHash, "error validate code", modules.TxValidationCode_DUPLICATE_TXID)
 			txFlags[tx.TxHash] = modules.TxValidationCode_DUPLICATE_TXID
 			continue
 		}
@@ -88,6 +89,7 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 			if txFee.Cmp(modules.TXFEE) < 0 {
 				isSuccess = false
 				txFlags[tx.TxHash] = modules.TxValidationCode_INVALID_FEE
+				log.Info("ValidateTx", "txhash", tx.TxHash, "error validate code", modules.TxValidationCode_INVALID_FEE)
 				continue
 			}
 			fee += txFee.Uint64()
@@ -344,6 +346,10 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 	if stateVersion == nil && bytecode == nil && name == "" && path == "" {
 		return modules.TxValidationCode_VALID
 	}
+	fmt.Println(">>>>>> stateVersion:", stateVersion)
+	fmt.Println(">>>>>> bytecode:", bytecode)
+	fmt.Println(">>>>>> name:", name)
+	fmt.Println(">>>>>> path:", path)
 	return modules.TxValidationCode_INVALID_CONTRACT_TEMPLATE
 }
 

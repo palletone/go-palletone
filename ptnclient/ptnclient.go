@@ -497,6 +497,11 @@ func (ec *Client) WalletBalance(ctx context.Context, address string, assetid []b
 	err := ec.c.CallContext(ctx, &result, "ptn_walletBalance", address, assetid, uniqueid, chainid)
 	return result, err
 }
+func (ec *Client) GetTransactionsByTxid(ctx context.Context, txid string) (*modules.Transaction, error) {
+	var result *modules.Transaction
+	err := ec.c.CallContext(ctx, &result, "ptn_getTransactionsByTxid", txid)
+	return result, err
+}
 
 // GetContract
 func (ec *Client) GetContract(ctx context.Context, id common.Hash) (*modules.Contract, error) {

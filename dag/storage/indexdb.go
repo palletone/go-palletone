@@ -32,4 +32,15 @@ func NewIndexDatabase (db ptndb.Database) *IndexDatabase{
 type IndexDb interface {
 	GetPrefix(prefix []byte) map[string][]byte
 	SaveIndexValue(key []byte,value interface{}) error
-} 
+}
+// ###################### SAVE IMPL START ######################
+func (idxdb *IndexDatabase) SaveIndexValue(key []byte, value interface{}) error {
+	return StoreBytes(idxdb.db, key, value)
+}
+
+// ###################### SAVE IMPL END ######################
+// ###################### GET IMPL START ######################
+func (db *IndexDatabase) GetPrefix(prefix []byte) map[string][]byte {
+	return getprefix(db.db, prefix)
+}
+// ###################### GET IMPL END ######################

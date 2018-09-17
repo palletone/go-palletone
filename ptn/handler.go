@@ -29,12 +29,10 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
-	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
@@ -82,7 +80,7 @@ type ProtocolManager struct {
 	txCh     chan modules.TxPreEvent
 	txSub    event.Subscription
 
-	dag *dag.Dag
+	dag dag.IDag
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -115,8 +113,7 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool, engine core.ConsensusEngine,
-	dag *dag.Dag, mux *event.TypeMux, levelDb palletdb.Database, producer producer) (*ProtocolManager, error) {
+func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool, engine core.ConsensusEngine, dag dag.IDag, mux *event.TypeMux, producer producer) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -184,7 +181,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	}
 
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, levelDb)
+	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag)
 
 	validator := func(header *modules.Header) error {
 		return dag.VerifyHeader(header, true)
@@ -228,7 +225,7 @@ func (pm *ProtocolManager) removePeer(id string) {
 	}
 }
 
-func (pm *ProtocolManager) Start(maxPeers int) {
+func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.maxPeers = maxPeers
 
 	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
@@ -271,6 +268,9 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.vssResponseCh = make(chan mp.VSSResponseEvent)
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
 	go pm.vssResponseBroadcastLoop()
+
+	//todo xiaozhi
+	go pm.StartMediatorMonitor(srvr, maxPeers)
 }
 
 // @author Albert·Gou
@@ -383,6 +383,8 @@ type producer interface {
 
 	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
 	ToProcessResponse(resp *mp.VSSResponseEvent) error
+
+	LocalHaveActiveMediator() bool
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -433,22 +435,25 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	//	//number = head.Number.Uint64()
 	//	td = uint64(0) //&big.Int{} //pm.blockchain.GetTd(hash, number)
 	//)
-	var (
-		//number = modules.ChainIndex{
-		//	modules.PTNCOIN,
-		//	true,
-		//	0,
-		//}
-		//genesis = pm.dag.GetUnitByNumber(number)
-
-		head  = pm.dag.CurrentHeader()
-		hash  = head.Hash()
-		index = head.Number.Index
-	)
+	//var (
+	//	//number = modules.ChainIndex{
+	//	//	modules.PTNCOIN,
+	//	//	true,
+	//	//	0,
+	//	//}
+	//	//genesis = pm.dag.GetUnitByNumber(number)
+	//
+	//	head  = pm.dag.CurrentHeader()
+	//	hash  = head.Hash()
+	//	index = head.Number.Index
+	//)
+	head  := pm.dag.CurrentHeader()
+		hash  := head.Hash()
+		index := head.Number.Index
 	//TODO Devin
-	var unitRep common2.IUnitRepository
-	unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
-	genesis, err := unitRep.GetGenesisUnit(0)
+	//var unitRep common2.IUnitRepository
+	//unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
+	genesis, err := pm.dag.GetGenesisUnit(0)
 	if err != nil {
 		log.Info("GetGenesisUnit error", "err", err)
 		return err
@@ -657,12 +662,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}
 			//TODO must recover
 			// Retrieve the requested block body, stopping if enough was found
-			txs, err := pm.dag.GetTransactionsByHash(hash)
+			txs, err := pm.dag.GetTransactionByHash(hash)
 			if err != nil {
-				log.Debug("===GetBlockBodiesMsg===", "GetTransactionsByHash err:", err)
+				log.Debug("===GetBlockBodiesMsg===", "GetTransactionByHash err:", err)
 				return errResp(ErrDecode, "msg %v: %v", msg, err)
 			}
-			log.Debug("===GetBlockBodiesMsg===", "GetTransactionsByHash txs:", txs)
+			log.Debug("===GetBlockBodiesMsg===", "GetTransactionByHash txs:", txs)
 			data, err := rlp.EncodeToBytes(txs)
 			if err != nil {
 				log.Debug("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
@@ -670,9 +675,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}
 			bytes += len(data)
 
-			for _, tx := range txs {
-				bodies.Transactions = append(bodies.Transactions, tx)
-			}
+			//for _, tx := range txs {
+			bodies.Transactions = append(bodies.Transactions, txs)
+			//}
 		}
 		//log.Debug("===GetBlockBodiesMsg===", "tempGetBlockBodiesMsgSum:", tempGetBlockBodiesMsgSum, "sum:", sum)
 		log.Debug("===GetBlockBodiesMsg===", "len(bodies):", len(bodies.Transactions), "bytes:", bytes)

@@ -1,25 +1,25 @@
 package manger
 
 import (
-	"time"
 	"errors"
 	"fmt"
 	"golang.org/x/net/context"
+	"time"
 
-	cclist "github.com/palletone/go-palletone/contracts/list"
-	cp "github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/contracts/scc"
-	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
-	"github.com/palletone/go-palletone/contracts/ucc"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	unit "github.com/palletone/go-palletone/dag/modules"
 	"bytes"
 	"container/list"
-	"github.com/spf13/viper"
 	"encoding/hex"
-	"github.com/palletone/go-palletone/dag"
+	cp "github.com/palletone/go-palletone/common/crypto"
 	db "github.com/palletone/go-palletone/contracts/comm"
+	cclist "github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/contracts/scc"
+	"github.com/palletone/go-palletone/contracts/ucc"
+	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
+	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag"
+	unit "github.com/palletone/go-palletone/dag/modules"
+	"github.com/spf13/viper"
 )
 
 var debugX bool = true
@@ -67,7 +67,7 @@ func listGet(templateId []byte) (*TempCC, error) {
 }
 
 // contract manger module init
-func Init(dag *dag.Dag) error {
+func Init(dag dag.IDag) error {
 	peerContractMockConfigInit()
 	err := db.SetCcDagHand(dag)
 	if err != nil {
@@ -280,7 +280,7 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 		return nil, nil, errors.New("crypto.GetRandomNonce error")
 	}
 
-	usrccName := templateCC.Name + "_" + hex.EncodeToString(randNum)[0:8]//createDeployId(templateCC.Name)
+	usrccName := templateCC.Name + "_" + hex.EncodeToString(randNum)[0:8] //createDeployId(templateCC.Name)
 
 	usrcc := &ucc.UserChaincode{
 		Name:     usrccName,
@@ -436,5 +436,3 @@ func peerContractMockConfigInit() {
 
 	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
 }
-
-

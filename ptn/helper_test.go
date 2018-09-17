@@ -41,10 +41,9 @@ import (
 
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
-	common2 "github.com/palletone/go-palletone/dag/common"
-	"time"
-	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/storage"
+	"time"
 )
 
 //var (
@@ -76,12 +75,13 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	engine := new(consensus.DPOSEngine)
 	typemux := new(event.TypeMux)
 	producer := new(mediatorplugin.MediatorPlugin)
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx},
-		engine, dag, typemux, memdb, producer)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, dag, typemux,  producer)
 	if err != nil {
 		return nil, nil, err
 	}
-	pm.Start(1000)
+	config := p2p.DefaultConfig
+	running := &p2p.Server{Config: config}
+	pm.Start(running,1000)
 	return pm, memdb, nil
 }
 
@@ -149,7 +149,6 @@ func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *mod
 	//tx := modules.NewTransaction(nonce, big.NewInt(0), []byte("abc"))
 	tx := modules.NewTransaction(
 		[]*modules.Message{msg, msg, msg},
-		12345,
 	)
 
 	return tx
@@ -163,7 +162,7 @@ type testPeer struct {
 }
 
 // newTestPeer creates a new peer registered at the given protocol manager.
-func newTestPeer(name string, version int, pm *ProtocolManager, shake bool) (*testPeer, <-chan error) {
+func newTestPeer(name string, version int, pm *ProtocolManager, shake bool, dag dag.IDag) (*testPeer, <-chan error) {
 	// Create a message pipe to communicate through
 	app, net := p2p.MsgPipe()
 
@@ -197,8 +196,8 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool) (*te
 			td   = head.Number.Index
 		)
 		//fmt.Println("	if shake {===》》》",td)
-		genesis, err := common2.GetGenesisUnit(pm.dag.Db, 0)
-		//fmt.Println("genesis unti if shake {===》》》",genesis.UnitHash)
+		genesis, err := dag.GetGenesisUnit(0)
+		fmt.Println("genesis unti if shake {===》》》",genesis.UnitHash)
 		if err != nil {
 			fmt.Println("GetGenesisUnit===error:=", err)
 		}
@@ -233,6 +232,7 @@ func (p *testPeer) close() {
 
 func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	dag, _ := dag.NewDagForTest(Memdb)
+
 	header := NewHeader([]common.Hash{}, []modules.IDType16{modules.PTNCOIN}, []byte{})
 	header.Number.AssetID = modules.PTNCOIN
 	header.Number.IsMain = true
@@ -242,6 +242,9 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	tx, _ := NewCoinbaseTransaction()
 	txs := modules.Transactions{tx}
 	genesisUnit := NewUnit(header, txs)
+
+	//dag.SaveDag(*genesisUnit,true)
+
 	err := SaveGenesis(dag.Db, genesisUnit)
 	if err != nil {
 		log.Println("SaveGenesis, err", err)
@@ -273,7 +276,8 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 	}
 	return units, nil
 }
-func SaveGenesis(db ptndb.Database, unit *modules.Unit) error {
+
+func SaveGenesis(db ptndb.Database,unit *modules.Unit) error {
 	if unit.NumberU64() != 0 {
 		return fmt.Errorf("can't commit genesis unit with number > 0")
 	}
@@ -285,7 +289,7 @@ func SaveGenesis(db ptndb.Database, unit *modules.Unit) error {
 	return nil
 }
 
-func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
+func SaveUnit(db ptndb.Database,unit *modules.Unit, isGenesis bool) error {
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Println("Unit is null")
 		return fmt.Errorf("Unit is null")
@@ -294,41 +298,44 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 		log.Println("Validate size", "error", "Size is invalid")
 		return modules.ErrUnit(-1)
 	}
-	_, isSuccess, err := common2.ValidateTransactions(db, &unit.Txs, isGenesis)
-	if isSuccess != true {
-		fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
-		return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
-	}
+	//_, isSuccess, err := dag.ValidateTransactions(&unit.Txs, isGenesis)
+	//if isSuccess != true {
+	//	fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+	//}
 	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
-	if err := storage.SaveHeader(db, unit.UnitHash, unit.UnitHeader); err != nil {
+
+	dagDb := storage.NewDagDatabase(db)
+
+	if err := dagDb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		log.Println("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
 	// step5. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-	if err := storage.SaveNumberByHash(db, unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	if err := dagDb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
 		log.Println("SaveHashNumber:", "error", err.Error())
 		return fmt.Errorf("Save unit hash and number error")
 	}
-	if err := storage.SaveHashByNumber(db, unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	if err := dagDb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
 		log.Println("SaveNumberByHash:", "error", err.Error())
 		return fmt.Errorf("Save unit hash and number error")
 	}
-	if err := storage.SaveTxLookupEntry(db, unit); err != nil {
+	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
 		return err
 	}
-	if err := storage.SaveTxLookupEntry(db, unit); err != nil {
+	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
 		return err
 	}
 	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.Number.Index); err != nil {
 		return err
 	}
 	// update state
-	storage.PutCanonicalHash(db, unit.UnitHash, unit.NumberU64())
-	storage.PutHeadHeaderHash(db, unit.UnitHash)
-	storage.PutHeadUnitHash(db, unit.UnitHash)
-	storage.PutHeadFastUnitHash(db, unit.UnitHash)
+	dagDb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
+	dagDb.PutHeadHeaderHash(unit.UnitHash)
+	dagDb.PutHeadUnitHash(unit.UnitHash)
+	dagDb.PutHeadFastUnitHash(unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
 }
@@ -370,4 +377,3 @@ func saveHashByIndex(db ptndb.Database, hash common.Hash, index uint64) error {
 	err := db.Put([]byte(key), hash.Bytes())
 	return err
 }
-

@@ -104,15 +104,18 @@ func (b *PtnApiBackend) GetPoolTransaction(hash common.Hash) *modules.Transactio
 	return txspool.PooltxToTx(b.ptn.txPool.Get(hash))
 }
 
-func (b *PtnApiBackend) GetTransactionsByTxid(txid string) (modules.Transactions, error) {
-	hash:=[]byte(txid)
-	txs, err := b.dag.dagdb.GetUnitTransactions(hash)
-	if err != nil {
-		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
+func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*modules.Transaction, error) {
+	hash := common.Hash{}
+	if err := hash.SetHexString(txid); err != nil {
 		return nil, err
 	}
-	return txs, nil
+	tx, err := b.ptn.dag.GetTransactionByHash(hash)
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
 }
+
 //func (b *PtnApiBackend) GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error) {
 //	return b.ptn.txPool.State().GetNonce(addr), nil
 //}

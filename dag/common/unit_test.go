@@ -28,18 +28,22 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"reflect"
-	"github.com/palletone/go-palletone/common/ptndb"
 )
 
-func mockUnitRepository() *UnitRepository{
-	db,_:=ptndb.NewMemDatabase()
+func mockUnitRepository() *UnitRepository {
+	db, _ := ptndb.NewMemDatabase()
 	return NewUnitRepository4Db(db)
 }
 
+func mockUnitRepositoryLeveldb(path string) *UnitRepository {
+	db, _ := ptndb.NewLDBDatabase(path, 0, 0)
+	return NewUnitRepository4Db(db)
+}
 
 func TestNewGenesisUnit(t *testing.T) {
 	gUnit, _ := NewGenesisUnit(modules.Transactions{}, time.Now().Unix())
@@ -72,7 +76,7 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 }
 
 func TestSaveUnit(t *testing.T) {
-	rep:=mockUnitRepository()
+	rep := mockUnitRepository()
 
 	addr := common.Address{}
 	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
@@ -103,7 +107,7 @@ func TestSaveUnit(t *testing.T) {
 		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159})
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
-		Height: rep. GenesisHeight(),
+		Height:  rep.GenesisHeight(),
 		TxIndex: 0,
 	}})
 	writeSet := []modules.PayloadMapStruct{
@@ -209,11 +213,11 @@ func TestRlpDecode(t *testing.T) {
 
 func TestCreateUnit(t *testing.T) {
 
-	rep:=mockUnitRepository()
+	rep := mockUnitRepository()
 	addr := common.Address{} // minner addr
 	addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
 	//units, err := CreateUnit(&addr, time.Now())
-	units, err := rep.CreateUnit( &addr, nil, nil, time.Now())
+	units, err := rep.CreateUnit(&addr, nil, nil, time.Now())
 	if err != nil {
 		log.Println("create unit error:", err)
 	} else {
@@ -230,6 +234,29 @@ func TestCreateUnit(t *testing.T) {
 //	for k, v := range data {
 //		log.Println(k, v)
 //	}
+//}
+
+//func TestGetContractTplState(t *testing.T) {
+//	rep := mockUnitRepositoryLeveldb("D:\\test\\levedb")
+//	version, bytecode, name, path := rep.statedb.GetContractTpl([]byte{161, 143, 28, 181, 148, 91, 16, 93, 244, 3, 53, 1, 129, 124, 224, 247, 234, 93, 92, 36, 193, 44, 0, 194, 159, 239, 237, 151, 224, 47, 240, 84})
+//	log.Println("version=", version.Height, version.TxIndex)
+//	log.Println("bytecode=", bytecode)
+//	log.Println("name=", name)
+//	log.Println("path=", path)
+//}
+
+//func TestGetTransaction(t *testing.T) {
+//	rep := mockUnitRepositoryLeveldb("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb")
+//	txHash := common.Hash{}
+//	if err := txHash.SetHexString("0xe146ada75bbdeeebac5902e553154104f4349d3ddab3a5ffbdc3d33c9d72792b"); err != nil {
+//		log.Println("get tx hex hash error:", err.Error())
+//		return
+//	}
+//	tx, unithash, number, index := rep.dagdb.GetTransaction(txHash)
+//	fmt.Println("tx:", tx)
+//	fmt.Println("unithash:", unithash)
+//	fmt.Println("number:", number)
+//	fmt.Println("index:", index)
 //}
 
 func TestPaymentTransactionRLP(t *testing.T) {
@@ -294,7 +321,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 }
 
 func TestContractTplPayloadTransactionRLP(t *testing.T) {
-	rep:=mockUnitRepository()
+	rep := mockUnitRepository()
 	// TODO test ContractTplPayload
 	contractTplPayload := modules.ContractTplPayload{
 		TemplateId: []byte("contract_template0000"),
@@ -351,11 +378,11 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 }
 
 func TestContractDeployPayloadTransactionRLP(t *testing.T) {
-	rep:=mockUnitRepository()
+	rep := mockUnitRepository()
 	// TODO test ContractTplPayload
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
-		Height: rep. GenesisHeight(),
+		Height:  rep.GenesisHeight(),
 		TxIndex: 0,
 	}})
 	writeSet := []modules.PayloadMapStruct{

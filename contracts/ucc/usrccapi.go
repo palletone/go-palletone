@@ -1,7 +1,10 @@
 package ucc
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"fmt"
+	comdb "github.com/palletone/go-palletone/contracts/comm"
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/platforms"
 	"github.com/palletone/go-palletone/contracts/rwset"
@@ -12,15 +15,11 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
-	"time"
-	"os"
-	"io/ioutil"
 	"io"
-	"compress/gzip"
-	"archive/tar"
-	"github.com/palletone/go-palletone/dag/storage"
-	comdb "github.com/palletone/go-palletone/contracts/comm"
+	"io/ioutil"
+	"os"
 	"path"
+	"time"
 )
 
 type UserChaincode struct {
@@ -195,21 +194,19 @@ func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err
 func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, error) {
 	//从数据库读取
 	//解压到指定路径下
-//todo del
-//	usrCC := &UserChaincode{
-//	}
-//	return usrCC, nil
+	//todo del
+	//	usrCC := &UserChaincode{
+	//	}
+	//	return usrCC, nil
 
 	if 1 == 1 {
 		dag, err := comdb.GetCcDagHand()
 		if err != nil {
 			return nil, err
 		}
-		//TODO Devin
-		var statedb storage.StateDb
-		statedb=storage.NewStateDatabase(dag.Db)
-		v, data, name, path := statedb.GetContractTpl(templateId)
-		logger.Infof("n====================","name: ",name,"path: ",path,"data: ",data)
+
+		v, data, name, path := dag.GetContractTpl(templateId)
+		logger.Infof("n====================", "name: ", name, "path: ", path, "data: ", data)
 		if data == nil || name == "" || path == "" {
 			return nil, errors.New("GetContractTpl contract template err")
 		}
@@ -266,8 +263,7 @@ func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, 
 			return nil, err
 		}
 
-		usrCC := &UserChaincode{
-		}
+		usrCC := &UserChaincode{}
 		return usrCC, nil
 	}
 }

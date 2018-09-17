@@ -98,8 +98,12 @@ func temp2Tx(temp transactionTemp, tx *Transaction) {
 			rlp.DecodeBytes(m.Data, &conf)
 			m1.Payload = &conf
 
+		} else if m.App == APP_CONTRACT_TPL {
+			var tplPayload ContractTplPayload
+			rlp.DecodeBytes(m.Data, &tplPayload)
+			m1.Payload = &tplPayload
 		} else {
-			fmt.Println("Unknown message app type")
+			fmt.Println("Unknown message app type:", m.App)
 		}
 		tx.TxMessages = append(tx.TxMessages, m1)
 

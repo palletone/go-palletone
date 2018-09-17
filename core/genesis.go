@@ -19,9 +19,9 @@
 package core
 
 import (
-	"encoding/base64"
 	"fmt"
 
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common/log"
 )
@@ -66,7 +66,7 @@ func ScalarToStr(sec kyber.Scalar) string {
 		log.Error(fmt.Sprintln(err))
 	}
 
-	return base64.RawURLEncoding.EncodeToString(secB)
+	return base58.Encode(secB)
 }
 
 // author Albert·Gou
@@ -76,7 +76,7 @@ func PointToStr(pub kyber.Point) string {
 		log.Error(fmt.Sprintln(err))
 	}
 
-	return base64.RawURLEncoding.EncodeToString(pubB)
+	return base58.Encode(pubB)
 }
 
 func MediatorToInfo(m *Mediator) MediatorInfo {
