@@ -90,6 +90,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	txs, err := d.dagdb.GetUnitTransactions(uHash)
 	if err != nil {
 		log.Error("Current unit when get transactions", "error", err.Error())
+		//todo xiaozhi
 		return nil
 	}
 	// generate unit
