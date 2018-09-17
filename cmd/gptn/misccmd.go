@@ -96,7 +96,7 @@ The output of this command will be used to initialize the DistKeyGenerator.
 
 	// append by Albert·Gou
 	nodeInfoCommand = cli.Command{
-		Action:    utils.MigrateFlags(getNodeInfo),
+		Action:    utils.MigrateFlags(showNodeInfo),
 		Name:      "nodeInfo",
 		Usage:     "get info of current node",
 		ArgsUsage: "",
@@ -191,12 +191,19 @@ along with gptn. If not, see <http://www.gnu.org/licenses/>.`)
 }
 
 // author Albert·Gou
-func createInitDKS(ctx *cli.Context) error {
+func newInitDKS() (secStr, pubStr string) {
 	suite := bn256.NewSuiteG2()
 	sec, pub := mp.GenInitPair(suite)
 
-	secStr := core.ScalarToStr(sec)
-	pubStr := core.PointToStr(pub)
+	secStr = core.ScalarToStr(sec)
+	pubStr = core.PointToStr(pub)
+
+	return
+}
+
+// author Albert·Gou
+func createInitDKS(ctx *cli.Context) error {
+	secStr, pubStr := newInitDKS()
 
 	fmt.Println("Generate a initial distributed key share:")
 	fmt.Println("{")
@@ -208,14 +215,15 @@ func createInitDKS(ctx *cli.Context) error {
 }
 
 // author Albert·Gou
-func getNodeInfo(ctx *cli.Context) error {
+func getNodeInfo(ctx *cli.Context) (string, error) {
 	stack := makeFullNode(ctx)
 	privateKey := stack.Config().NodeKey()
 	listenAddr := stack.ListenAddr()
 
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
-		return err
+		return "", err
+		utils.Fatalf("Invalid listen address : %v", err)
 	}
 	realaddr := listener.Addr().(*net.TCPAddr)
 
@@ -225,7 +233,17 @@ func getNodeInfo(ctx *cli.Context) error {
 		uint16(realaddr.Port),
 		uint16(realaddr.Port))
 
-	fmt.Println(node.String())
+	return node.String(), nil
+}
+
+// author Albert·Gou
+func showNodeInfo(ctx *cli.Context) error {
+	nodeStr, err := getNodeInfo(ctx)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(nodeStr)
 
 	return nil
 }
