@@ -1025,7 +1025,9 @@ func (s *PublicTransactionPoolAPI) GetTransactionCount(ctx context.Context, addr
 	return &v, nil
 }
 func (s *PublicTransactionPoolAPI) GetTransactionsByTxid(txid string) (modules.Transactions, error) {
-	hash := []byte(txid)
+	//hash := []byte(txid)
+	var hash common.Hash
+	hash.SetString(txid)
 	txs, err := s.b.dag.dagdb.GetUnitTransactions(hash)
 	if err != nil {
 		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
@@ -1033,7 +1035,8 @@ func (s *PublicTransactionPoolAPI) GetTransactionsByTxid(txid string) (modules.T
 	}
 	return txs, nil
 }
-/* old version 
+
+/* old version
 // GetTransactionByHash returns the transaction for the given hash
 func (s *PublicTransactionPoolAPI) GetTransactionByHash(ctx context.Context, hash common.Hash) *RPCTransaction {
 	// Try to return an already finalized transaction
@@ -1319,7 +1322,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		TxMessages: make([]*modules.Message, 0),
 	}
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
-	mtx.TxHash=mtx.Hash()
+	mtx.TxHash = mtx.Hash()
 	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
@@ -1327,10 +1330,6 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	mtxHex := hex.EncodeToString(mtxbt)
 	return mtxHex, nil
 }
-
-
-
-
 
 //sign rawtranscation
 func SignRawTransaction(icmd interface{}) (interface{}, error) {
@@ -1424,8 +1423,8 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	}
 
 	var signErrs []common.SignatureError
-	signErrs,err = tokenengine.SignTxAllPaymentInput(tx,inputpoints,redeem,keys)
-    if err != nil {
+	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, inputpoints, redeem, keys)
+	if err != nil {
 
 		return nil, DeserializationError{err}
 	}
