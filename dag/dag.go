@@ -321,6 +321,40 @@ func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawV
 // of the header retrieval mechanisms already need to verify nonces, as well as
 // because nonces can be verified sparsely, not needing to check each.
 func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, error) {
+	for _, header := range headers {
+		hash := header.Hash()
+		index = header.Index()
+
+		err := d.dagdb.PutCanonicalHash(hash, index)
+		if err != nil {
+			return index, err
+		}
+
+		err = d.dagdb.PutHeadHeaderHash(hash)
+		if err != nil {
+			return index, err
+		}
+
+		err = d.dagdb.PutHeadUnitHash(hash)
+		if err != nil {
+			return index, err
+		}
+
+		err = d.dagdb.PutHeadFastUnitHash(hash)
+		if err != nil {
+			return index, err
+		}
+
+		err = d.dagdb.SaveNumberByHash(hash, index)
+		if err != nil {
+			return index, err
+		}
+
+		err = d.dagdb.SaveHashByNumber(hash, index)
+		if err != nil {
+			return index, err
+		}
+	}
 	return checkFreq, nil
 }
 
