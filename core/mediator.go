@@ -19,10 +19,10 @@
 package core
 
 import (
-	"encoding/base64"
 	"fmt"
 	"strings"
 
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/palletone/go-palletone/common"
@@ -60,13 +60,10 @@ func StrToMedAdd(addStr string) common.Address {
 }
 
 func StrToScalar(secStr string) kyber.Scalar {
-	secB, err := base64.RawURLEncoding.DecodeString(secStr)
-	if err != nil {
-		log.Error(fmt.Sprintln(err))
-	}
-
+	secB := base58.Decode(secStr)
 	sec := bn256.NewSuiteG2().Scalar()
-	err = sec.UnmarshalBinary(secB)
+
+	err := sec.UnmarshalBinary(secB)
 	if err != nil {
 		log.Error(fmt.Sprintln(err))
 	}
@@ -75,15 +72,12 @@ func StrToScalar(secStr string) kyber.Scalar {
 }
 
 func StrToPoint(pubStr string) kyber.Point {
-	pubB, err := base64.RawURLEncoding.DecodeString(pubStr)
-	if err != nil {
-		log.Error(fmt.Sprintln(err))
-	}
-
+	pubB := base58.Decode(pubStr)
 	pub := bn256.NewSuiteG2().Point()
-	err = pub.UnmarshalBinary(pubB)
+
+	err := pub.UnmarshalBinary(pubB)
 	if err != nil {
-		log.Error(fmt.Sprintln(err))
+		//log.Error(fmt.Sprintln(err))
 	}
 
 	return pub

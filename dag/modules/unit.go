@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/core"
 )
 
 // validate unit state
@@ -40,6 +39,9 @@ const (
 	UNIT_STATE_HAS_INVALID_TRANSACTIONS = 0x05
 	UNIT_STATE_INVALID_SIZE             = 0x06
 	UNIT_STATE_INVALID_EXTRA_DATA       = 0x07
+	UNIT_STATE_INVALID_HEADER           = 0x08
+	UNIT_STATE_CHECK_HEADER_PASSED      = 0x09
+	UNIT_STATE_INVALID_HEADER_WITNESS   = 0x10
 	UNIT_STATE_OTHER_ERROR              = 0xFF
 )
 
@@ -332,7 +334,7 @@ func (version *StateVersion) String() string {
 }
 
 func (version *StateVersion) ParseStringKey(key string) bool {
-	ss := strings.Split(key, "^*^")
+	ss := strings.Split(key, FIELD_SPLIT_STR)
 	if len(ss) != 3 {
 		return false
 	}
@@ -341,7 +343,11 @@ func (version *StateVersion) ParseStringKey(key string) bool {
 		log.Error("State version parse string key", "error", err.Error())
 		return false
 	}
-	version = &v
+	if version == nil {
+		version = &StateVersion{}
+	}
+	version.Height = v.Height
+	version.TxIndex = v.TxIndex
 	return true
 }
 
@@ -357,9 +363,18 @@ type ContractTplPayload struct {
 	Name       string `json:"name"`        // contract template name
 	Path       string `json:"path"`        // contract template execute path
 	Version    string `json:"version"`     // contract template version
-	Memery     uint16 `json:"memory"`      // coontract template bytecode memory size(Byte), use to compute transaction fee
+	Memory     uint16 `json:"memory"`      // coontract template bytecode memory size(Byte), use to compute transaction fee
 	Bytecode   []byte `json:"bytecode"`    // contract bytecode
 }
+
+const (
+	FIELD_TPL_BYTECODE  = "TplBytecode"
+	FIELD_TPL_NAME      = "TplName"
+	FIELD_TPL_PATH      = "TplPath"
+	FIELD_TPL_Memory    = "TplMemory"
+	FIELD_SPLIT_STR     = "^*^"
+	FIELD_GENESIS_ASSET = "GenesisAsset"
+)
 
 type DelContractState struct {
 	IsDelete bool
@@ -474,12 +489,20 @@ func (u *Unit) Transaction(hash common.Hash) *Transaction {
 	return nil
 }
 
-// return  unit'UnitHash
+// function Hash, return the unit's hash.
 func (u *Unit) Hash() common.Hash {
-	return u.UnitHeader.Hash()
+	if u.UnitHash != u.UnitHeader.Hash() {
+		u.UnitHash = common.Hash{}
+		u.UnitHash.Set(u.UnitHeader.Hash())
+	}
+	return u.UnitHash
 }
 
+// function Size, return the unit's StorageSize.
 func (u *Unit) Size() common.StorageSize {
+	if u.UnitSize > 0 {
+		return u.UnitSize
+	}
 	emptyUnit := Unit{}
 	emptyUnit.UnitHeader = CopyHeader(u.UnitHeader)
 	emptyUnit.UnitHeader.Authors = nil
@@ -490,15 +513,12 @@ func (u *Unit) Size() common.StorageSize {
 	if err != nil {
 		return common.StorageSize(0)
 	} else {
+		if len(b) > 0 {
+			u.UnitSize = common.StorageSize(len(b))
+		}
 		return common.StorageSize(len(b))
 	}
 }
-
-// return Creationdate
-// comment by Albert·Gou
-//func (u *Unit) CreationDate() time.Time {
-//	return u.UnitHeader.Creationdate
-//}
 
 //func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }
 func (u *Unit) Number() ChainIndex {
@@ -548,12 +568,16 @@ func NewUnitWithHeader(header *Header) *Unit {
 func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 	// check transactions merkle root
 	txs := b.CopyBody(transactions)
-	root := core.DeriveSha(txs)
-	if strings.Compare(root.String(), b.UnitHeader.TxRoot.String()) != 0 {
-		return nil
-	}
+	//fmt.Printf("withbody==>%#v\n", txs[0])
+	//TODO xiaozhi
+	//root := core.DeriveSha(txs)
+	//if strings.Compare(root.String(), b.UnitHeader.TxRoot.String()) != 0 {
+	//	return nil
+	//}
 	// set unit body
-	b.Txs = b.CopyBody(txs)
+	b.Txs = CopyTransactions(txs)
+	b.UnitSize = b.Size()
+	b.UnitHash = b.Hash()
 	return b
 }
 

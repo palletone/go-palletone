@@ -75,4 +75,5 @@ func TestValidator(t *testing.T) {
 	validate := NewValidate(dagDb, utxoDb, stateDb)
 	code := validate.ValidateTx(tx, false, &worldTmpState)
 	log.Println("validator code:", code, worldTmpState)
+
 }

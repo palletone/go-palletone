@@ -18,7 +18,6 @@
 package ptn
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 
@@ -137,8 +136,14 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
+	genesis, err := ptn.dag.GetGenesisUnit(0)
+	if err != nil {
+		log.Error("PalletOne New", "get genesis err:", err)
+		return nil, err
+	}
+
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine,
-		ptn.dag, ptn.eventMux, ptn.mediatorPlugin); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}
@@ -239,27 +244,6 @@ func (s *PalletOne) Protocols() []p2p.Protocol {
 	return append(s.protocolManager.SubProtocols, s.mediatorPlugin.Protocols()...)
 }
 
-//Start MediatorNetwork
-func (s *PalletOne) startMediatorNetwork(srvr *p2p.Server, maxPeers int) error {
-	peers := s.dag.GetActiveMediatorNodes()
-	if maxPeers < len(peers)+3 {
-		log.Error("PalletOne start", "maxpeers", maxPeers, "mediator size", len(peers)+3) //3:nomediator
-		return errors.New("maxpeers < mediator size")
-	}
-
-	for _, peer := range peers {
-		srvr.AddPeer(peer)
-	}
-
-	log.Debug("PalletOne", "startMediatorNetwork mediators:", len(peers))
-	return nil
-}
-
-//mediatormonitor
-func (s *PalletOne) mediatormonitor(maxPeers int) {
-	//peers := s.dag.GetActiveMediatorNodes()
-}
-
 // Start implements node.Service, starting all internal goroutines needed by the
 // PalletOne protocol implementation.
 func (s *PalletOne) Start(srvr *p2p.Server) error {
@@ -273,21 +257,12 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 	maxPeers := srvr.MaxPeers
 
 	// Start the networking layer and the light server if requested
-	s.protocolManager.Start(maxPeers)
-
-	// Start Mediator networking
-	if s.mediatorPlugin.LocalHaveActiveMediator() {
-		if err := s.startMediatorNetwork(srvr, maxPeers); err != nil {
-			return err
-		}
-	}
+	s.protocolManager.Start(srvr, maxPeers)
 
 	// append by Albert·Gou
 	s.mediatorPlugin.Start(srvr)
 
 	s.contract.Start(s.dag)
-
-	go s.mediatormonitor(maxPeers)
 
 	return nil
 }

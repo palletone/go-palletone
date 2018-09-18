@@ -525,3 +525,10 @@ func String(v string) *string {
 func NewAddressScriptHashFromHash(scriptHash []byte, netScriptHashAddrID byte) (*AddressScriptHash, error) {
 	return newAddressScriptHashFromHash(scriptHash, netScriptHashAddrID)
 }
+ // GetTxOutResult models the data from the getTransactionsByTxid command.
+type GetTxIdResult struct {
+	Txid        string             `json:"txid"`
+	Apptype     string              `json:"apptype"`
+	Content     []byte            `json:"content"`
+	Coinbase    bool               `json:"coinbase"`
+}

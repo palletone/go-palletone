@@ -21,7 +21,7 @@ import (
 	"log"
 	"math/big"
 	"time"
-
+        "github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
@@ -104,15 +104,32 @@ func (b *PtnApiBackend) GetPoolTransaction(hash common.Hash) *modules.Transactio
 	return txspool.PooltxToTx(b.ptn.txPool.Get(hash))
 }
 
-func (b *PtnApiBackend) GetTxByTxid_back(txid string) (modules.Transactions, error) {
-    sh:=[]byte(txid)
-    hash:=common.BytesToHash(sh)
-	txs, err := b.ptn.dag.GetTransactionsByHash(hash)
+func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, error) {
+	hash := common.Hash{}
+	if err := hash.SetHexString(txid); err != nil {
+		return nil, err
+	}
+	tx, err := b.ptn.dag.GetTransactionByHash(hash)
 	if err != nil {
 		return nil, err
 	}
-	return txs, nil
+        var txresult []byte
+	for _, msgcopy := range tx.TxMessages {
+		if msgcopy.App == modules.APP_TEXT {
+			if msg, ok := msgcopy.Payload.(*modules.TextPayload); ok {
+				txresult = msg.Text
+			}
+		}
+	}
+	txOutReply := &ptnjson.GetTxIdResult{
+        Txid:  txid,
+        Apptype :"APP_TEXT",
+        Content : txresult,
+        Coinbase: true ,
+	}
+	return txOutReply, nil
 }
+
 //func (b *PtnApiBackend) GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error) {
 //	return b.ptn.txPool.State().GetNonce(addr), nil
 //}

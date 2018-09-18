@@ -57,10 +57,14 @@ type toTBLSSigned struct {
 	sigShares [][]byte
 }
 
+type dkgVerifier struct {
+	medLocal common.Address
+	srcIndex uint32
+}
+
 type MediatorPlugin struct {
-	server *p2p.Server   // Peer-to-peer server to maintain the connection with other active mediator peer
-	ptn    PalletOne     // Full PalletOne service to retrieve other function
-	quit   chan struct{} // Channel used for graceful exit
+	ptn  PalletOne     // Full PalletOne service to retrieve other function
+	quit chan struct{} // Channel used for graceful exit
 	// Enable VerifiedUnit production, even if the chain is stale.
 	// 新开启一个区块链时，必须设为true
 	productionEnabled bool
@@ -72,14 +76,21 @@ type MediatorPlugin struct {
 	newProducedUnitScope event.SubscriptionScope // 零值已准备就绪待用
 	toBLSSigned          chan *toBLSSigned       // 接收新生产的unit
 
-	// dkg生成vss相关
+	// dkg 生成 dks 相关
 	suite vss.Suite
 	dkgs  map[common.Address]*dkg.DistKeyGenerator
 
+	// dkg 完成 vss 协议相关
+	vrfrReady   map[common.Address]map[uint32]bool
+	vrfrReadyCh chan *dkgVerifier
+	respBuf     map[common.Address]map[uint32]chan *dkg.Response
+
+	// 广播和处理 vss 协议 deal
 	vssDealFeed     event.Feed
 	vssDealScope    event.SubscriptionScope
 	toProcessDealCh chan *VSSDealEvent
 
+	// 广播和处理 vss 协议 response
 	vssResponseFeed     event.Feed
 	vssResponseScope    event.SubscriptionScope
 	toProcessResponseCh chan *VSSResponseEvent
@@ -99,9 +110,9 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 	lams := make([]common.Address, 0)
 
-	gp := mp.getDag().GetGlobalProp()
+	dag := mp.getDag()
 	for add := range mp.mediators {
-		if gp.IsActiveMediator(add) {
+		if dag.IsActiveMediator(add) {
 			lams = append(lams, add)
 		}
 	}
@@ -129,16 +140,6 @@ func (mp *MediatorPlugin) IsLocalActiveMediator(add common.Address) bool {
 	return false
 }
 
-func (mp *MediatorPlugin) AddActiveMediatorPeers() {
-	if !mp.LocalHaveActiveMediator() {
-		return
-	}
-
-	for _, n := range mp.getDag().GetActiveMediatorNodes() {
-		mp.server.AddPeer(n)
-	}
-}
-
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
 	// 1. 判断是否满足生产验证单元的条件，主要判断本节点是否控制至少一个mediator账户
 	if len(mp.mediators) == 0 {
@@ -163,18 +164,27 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 	lams := mp.GetLocalActiveMediators()
 	initPubs := mp.getDag().GetActiveMediatorInitPubs()
 	curThreshold := mp.getDag().GetCurThreshold()
-	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, len(lams))
+
+	ll := len(lams)
+	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, ll)
+	mp.vrfrReady = make(map[common.Address]map[uint32]bool, ll)
+	mp.respBuf = make(map[common.Address]map[uint32]chan *dkg.Response, ll)
 
 	for _, med := range lams {
 		initSec := mp.mediators[med].InitPartSec
 
-		dkg, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
+		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
 			log.Error(err.Error())
 			continue
 		}
 
-		mp.dkgs[med] = dkg
+		mp.dkgs[med] = dkgr
+
+		aSize := mp.getDag().GetActiveMediatorCount()
+		mp.vrfrReady[med] = make(map[uint32]bool, aSize-1)
+		mp.respBuf[med] = make(map[uint32]chan *dkg.Response, aSize)
+		mp.initRespBuf(med)
 	}
 
 	// todo 后面换成事件通知响应在调用, 并开启定时器
@@ -183,24 +193,20 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	log.Debug("mediator plugin startup begin")
-	mp.server = server
 
-	// 1. 如果当前节点有活跃mediator，则静态连接其他活跃mediator
-	//	go mp.AddActiveMediatorPeers()
-
-	// 2. 开启循环生产计划
+	// 1. 开启循环生产计划
 	go mp.ScheduleProductionLoop()
 
-	// 3. 给当前节点控制的活跃mediator，初始化对应的DKG
+	// 2. 给当前节点控制的活跃mediator，初始化对应的DKG
 	go mp.NewActiveMediatorsDKG()
 
-	// 4. 处理 VSS deal 循环
+	// 3. 处理 VSS deal 循环
 	go mp.processDealLoop()
 
-	// 5. 处理 VSS response 循环
+	// 4. 处理 VSS response 循环
 	go mp.processResponseLoop()
 
-	// 6. BLS签名循环
+	// 5. BLS签名循环
 	go mp.unitBLSSignLoop()
 
 	log.Debug("mediator plugin startup end")
@@ -246,10 +252,12 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	for _, medConf := range mss {
 		medAcc := ConfigToAccount(medConf)
 		addr := medAcc.Address
-		log.Info(fmt.Sprintf("this node controll mediator account address: %v", addr.Str()))
+		//log.Debug(fmt.Sprintf("this node control mediator account address: %v", addr.Str()))
 
 		msm[addr] = medAcc
 	}
+
+	log.Debug(fmt.Sprintf("This node controls %v mediators.", len(msm)))
 
 	mp := MediatorPlugin{
 		ptn:               ptn,
@@ -260,7 +268,8 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		toBLSSigned:     make(chan *toBLSSigned),
 		pendingTBLSSign: make(map[common.Hash]*toTBLSSigned),
 
-		suite: bn256.NewSuiteG2(),
+		suite:       bn256.NewSuiteG2(),
+		vrfrReadyCh: make(chan *dkgVerifier),
 	}
 
 	log.Debug("mediator plugin initialize end")

@@ -90,6 +90,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	txs, err := d.dagdb.GetUnitTransactions(uHash)
 	if err != nil {
 		log.Error("Current unit when get transactions", "error", err.Error())
+		//TODO xiaozhi
 		return nil
 	}
 	// generate unit
@@ -104,6 +105,15 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 
 func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
 	return d.CurrentUnit()
+}
+
+func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit {
+	curUnit, err := d.Memdag.GetCurrentUnit(assetId)
+	if err != nil {
+		log.Error("GetCurrentMemUnit", "error", err.Error())
+		return nil
+	}
+	return curUnit
 }
 
 func (d *Dag) GetUnit(hash common.Hash) *modules.Unit {
@@ -162,7 +172,7 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
 	// step1. check exists
 	if d.Memdag.Exists(unit.UnitHash) || d.GetUnit(unit.UnitHash) != nil {
-		return 0, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash)
+		return 0, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash.String())
 	}
 	// step2. validate unit
 	unitState := d.validate.ValidateUnit(&unit, isGenesis)
@@ -276,13 +286,12 @@ func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 	return d.getBodyRLP(hash)
 }
 
-func (d *Dag) GetTransactionsByHash(hash common.Hash) (modules.Transactions, error) {
-	txs, err := d.dagdb.GetUnitTransactions(hash)
-	if err != nil {
-		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
-		return nil, err
+func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, error) {
+	tx, _, _, _ := d.dagdb.GetTransaction(hash)
+	if tx == nil {
+		return nil, fmt.Errorf("GetTransactionByHash: get none transaction")
 	}
-	return txs, nil
+	return tx, nil
 }
 
 func (d *Dag) getBodyRLP(hash common.Hash) rlp.RawValue {

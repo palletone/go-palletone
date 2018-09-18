@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	ptnLog "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -38,8 +39,6 @@ import (
 type DagDatabase struct {
 	db ptndb.Database
 }
-
-
 
 func NewDagDatabase(db ptndb.Database) *DagDatabase {
 	return &DagDatabase{db: db}
@@ -109,7 +108,7 @@ func (dagdb *DagDatabase) SaveHashByNumber(uHash common.Hash, number modules.Cha
 		i = 1
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
-	//fmt.Println("SaveHashByNumber=[]byte(key)=>",[]byte(key))
+	//fmt.Println("SaveHashByNumber=[]byte(key)=>", key)
 	//fmt.Println("====",uHash)
 	return StoreBytes(dagdb.db, []byte(key), uHash)
 }
@@ -231,6 +230,7 @@ func (dagdb *DagDatabase) SaveTxLookupEntry(unit *modules.Unit) error {
 	}
 	return nil
 }
+
 // ###################### SAVE IMPL END ######################
 // ###################### GET IMPL START ######################
 // GetAddrTransactions
@@ -282,7 +282,7 @@ func (dagdb *DagDatabase) GetAddrOutput(addr string) ([]modules.Output, error) {
 func (dagdb *DagDatabase) GetNumberWithUnitHash(hash common.Hash) (modules.ChainIndex, error) {
 	data, _ := dagdb.db.Get(append(UNIT_HASH_NUMBER_Prefix, hash.Bytes()...))
 	if len(data) <= 0 {
-		return modules.ChainIndex{}, fmt.Errorf("Get from unit number rlp data none")
+		return modules.ChainIndex{}, nil
 	}
 	var number modules.ChainIndex
 	if err := rlp.DecodeBytes(data, &number); err != nil {
@@ -369,6 +369,7 @@ func (dagdb *DagDatabase) GetUnit(hash common.Hash) *modules.Unit {
 	txs, err := dagdb.GetUnitTransactions(uHash)
 	if err != nil {
 		log.Println("GetUnit when GetUnitTransactions failed , error:", err)
+		//TODO xiaozhi
 		return nil
 	}
 	// generate unit
@@ -384,6 +385,7 @@ func (dagdb *DagDatabase) GetUnitTransactions(hash common.Hash) (modules.Transac
 	txs := modules.Transactions{}
 	txHashList, err := dagdb.GetBody(hash)
 	if err != nil {
+		ptnLog.Info("GetUnitTransactions when get body error", "error", err.Error())
 		return nil, err
 	}
 	// get transaction by tx'hash.
@@ -514,6 +516,7 @@ func (dagdb *DagDatabase) GetTransaction(hash common.Hash) (*modules.Transaction
 	}
 	tx, err := dagdb.gettrasaction(hash)
 	if err != nil {
+		fmt.Println("gettrasaction error:", err.Error())
 		return nil, unitHash, unitNumber, txIndex
 	}
 	return tx, unitHash, unitNumber, txIndex
@@ -552,4 +555,5 @@ func (dagdb *DagDatabase) GetContractNoReader(db ptndb.Database, id common.Hash)
 	}
 	return contract, nil
 }
+
 // ###################### GET IMPL END ######################

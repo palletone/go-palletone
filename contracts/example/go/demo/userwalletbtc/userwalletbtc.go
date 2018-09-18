@@ -270,21 +270,38 @@ func bobSpendBTCFromMultiAddr(txid string, index string, amount string, fee stri
 
 	return nil
 }
+func helper() {
+	fmt.Println("functions : init, give, alice, bob")
+	fmt.Println("Params : init")
+	fmt.Println("Params : give, txid, index, amount, fee, prikey")
+	fmt.Println("Params : alice, txid, index, amount, fee, multiSigAddr")
+	fmt.Println("Params : bob, txid, index, amount, fee, redeem")
+}
 func main() {
-	err := loadConfig(gWalletFile, gWallet)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
+	f, err := os.Open(gWalletFile)
+	if err != nil && os.IsNotExist(err) { //check wallet config file
+		saveConfig(gWalletFile, gWallet)
+	} else {
+		f.Close()
+		err = loadConfig(gWalletFile, gWallet) //load wallet config
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
 	}
 
 	args := os.Args
+	if len(args) < 2 {
+		helper()
+		return
+	}
 	cmd := strings.ToLower(args[1])
 
 	switch cmd {
-	case "init":
+	case "init": //init alice's key and bob's key
 		createKey("alice")
 		createKey("bob")
-	case "give":
+	case "give": //give alice some btc for test
 		if len(args) < 7 {
 			fmt.Println("Params : give, txid, index, amount, fee, prikey")
 			return
@@ -293,7 +310,7 @@ func main() {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
-	case "alice":
+	case "alice": //alice send btc to multisigAddr
 		if len(args) < 7 {
 			fmt.Println("Params : alice, txid, index, amount, fee, multiSigAddr")
 			return
@@ -302,7 +319,7 @@ func main() {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
-	case "bob":
+	case "bob": //bob spend btc of multisigAddr
 		if len(args) < 7 {
 			fmt.Println("Params : bob, txid, index, amount, fee, redeem")
 			return
@@ -313,5 +330,6 @@ func main() {
 		}
 	default:
 		fmt.Println("Invalid cmd.")
+		helper()
 	}
 }

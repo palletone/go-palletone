@@ -33,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -87,21 +86,18 @@ func RHashStr(x interface{}) string {
 生成创世单元，需要传入创世单元的配置信息以及coinbase交易
 generate genesis unit, need genesis unit configure fields and transactions list
 */
-func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error) {
+func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset) (*modules.Unit, error) {
 	gUnit := modules.Unit{}
 
-	// genesis unit asset id
-	gAssetID := asset.NewAsset()
-
 	// genesis unit height
-	chainIndex := modules.ChainIndex{AssetID: gAssetID, IsMain: true, Index: 0}
+	chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: true, Index: 0}
 
 	// transactions merkle root
 	root := core.DeriveSha(txs)
 
 	// generate genesis unit header
 	header := modules.Header{
-		AssetIDs:     []modules.IDType16{gAssetID},
+		AssetIDs:     []modules.IDType16{asset.AssetId},
 		Number:       chainIndex,
 		TxRoot:       root,
 		Creationdate: time,
@@ -126,6 +122,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error)
 //		return err
 //	}
 //
+// TODO YangYu
 //	// 此处应当更新DB中的全局属性
 //	//	go storage.StoreDynGlobalProp(dgp)
 //
@@ -176,7 +173,7 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool *txspool.
 	}
 	units := []modules.Unit{}
 	// step1. get mediator responsible for asset (for now is ptn)
-	bAsset := unitOp.statedb.GetConfig([]byte("GenesisAsset"))
+	bAsset := unitOp.statedb.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
 	if len(bAsset) <= 0 {
 		return nil, fmt.Errorf("Create unit error: query asset info empty")
 	}
@@ -222,12 +219,12 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool *txspool.
 
 	// step6. generate genesis unit header
 	header := modules.Header{
-		AssetIDs: []modules.IDType16{asset.AssetId},
+		AssetIDs: []modules.IDType16{},
 		Number:   chainIndex,
 		TxRoot:   root,
 		//		Creationdate: time.Now().Unix(),
 	}
-
+	header.AssetIDs = append(header.AssetIDs, asset.AssetId)
 	unit := modules.Unit{}
 	unit.UnitHeader = &header
 	// step7. copy txs
@@ -278,6 +275,7 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 		// get transaction list
 		txs, err := unitOp.dagdb.GetUnitTransactions(unit.UnitHash)
 		if err != nil {
+			//TODO xiaozhi
 			return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
 		}
 		unit.Txs = txs
@@ -351,7 +349,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 		}
 	}
 
-	confPay.ConfigSet = append(confPay.ConfigSet, modules.PayloadMapStruct{Key: "GenesisAsset", Value: modules.ToPayloadMapValueBytes(asset)})
+	confPay.ConfigSet = append(confPay.ConfigSet, modules.PayloadMapStruct{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
 
 	return confPay, nil
 }
@@ -572,6 +570,7 @@ func (unitOp *UnitRepository) saveContractTpl(height modules.ChainIndex, txIndex
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractTplPayload)
 	if ok == false {
+		log.Error("saveContractTpl", "error", "payload is not ContractTplPayload")
 		return false
 	}
 
@@ -582,15 +581,21 @@ func (unitOp *UnitRepository) saveContractTpl(height modules.ChainIndex, txIndex
 	}
 
 	// step2. save contract template bytecode data
-	unitOp.statedb.SaveContractTemplate(payload.TemplateId, payload.Bytecode, version.String())
-	// step3. save contract template name, path, Memery
-	if unitOp.statedb.SaveContractTemplateState(payload.TemplateId, "tplname", payload.Name, version) != nil {
+	if err := unitOp.statedb.SaveContractTemplate(payload.TemplateId, payload.Bytecode, version.Bytes()); err != nil {
+		log.Error("SaveContractTemplate", "error", err.Error())
 		return false
 	}
-	if unitOp.statedb.SaveContractTemplateState(payload.TemplateId, "tplpath", payload.Path, version) != nil {
+	// step3. save contract template name, path, Memory
+	if err := unitOp.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_NAME, payload.Name, version); err != nil {
+		log.Error("SaveContractTemplateState when save name", "error", err.Error())
 		return false
 	}
-	if unitOp.statedb.SaveContractTemplateState(payload.TemplateId, "tplmemory", payload.Memery, version) != nil {
+	if err := unitOp.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_PATH, payload.Path, version); err != nil {
+		log.Error("SaveContractTemplateState when save path", "error", err.Error())
+		return false
+	}
+	if err := unitOp.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_Memory, payload.Memory, version); err != nil {
+		log.Error("SaveContractTemplateState when save memory", "error", err.Error())
 		return false
 	}
 	return true

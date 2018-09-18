@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -94,6 +95,26 @@ func removeDB(ctx *cli.Context) error {
 	return nil
 }
 
+func getAccountFromConf(configPath string) (account accounts.Account, passphrase string) {
+	cfg := new(FullConfig)
+
+	// 加载配置文件中的配置信息到 cfg中
+	err := loadConfig(configPath, cfg)
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+
+	med := cfg.MediatorPlugin.Mediators[0]
+	addr, err := common.StringToAddress(med.Address)
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+
+	account = accounts.Account{Address: addr}
+	passphrase = med.Password
+	return
+}
+
 // initGenesis will initialise the given JSON format genesis file and writes it as
 // the zero'd block (i.e. genesis) or will fail hard if it can't succeed.
 func initGenesis(ctx *cli.Context) error {
@@ -133,7 +154,20 @@ func initGenesis(ctx *cli.Context) error {
 
 	ks := node.GetKeyStore()
 	//account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
-	account, _ := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
+
+	// 从配置文件中获取账户和密码
+	// modify by Albert·Gou
+	configPath := defaultConfigPath
+	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
+		configPath, _ = getConfigPath(temp, node.DataDir())
+	}
+	account, password := getAccountFromConf(configPath)
+
+	err = ks.Unlock(account, password)
+	if err != nil {
+		utils.Fatalf("Failed to unlock account: %v, address: %v", err, account.Address.Str())
+		return err
+	}
 
 	unit, err := gen.SetupGenesisUnit(Dbconn, genesis, ks, account)
 	if err != nil {
@@ -146,8 +180,6 @@ func initGenesis(ctx *cli.Context) error {
 
 	// 2, 重写配置文件，修改当前节点的mediator的地址和密码
 	// @author Albert·Gou
-	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
-	// todo Albert·Gou
 	//configPath := defaultConfigPath
 	//if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
 	//	configPath, _ = getConfigPath(temp, node.DataDir())

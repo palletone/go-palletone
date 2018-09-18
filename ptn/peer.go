@@ -76,12 +76,10 @@ type peer struct {
 
 	knownTxs    *set.Set // Set of transaction hashes known to be known by this peer
 	knownBlocks *set.Set // Set of block hashes known to be known by this peer
-	//knownVsss    *set.Set // Set of vss hashes known to be known by this peer
-	//knownVssResp *set.Set // Set of vssResp hashes known to be known by this peer
 
-	head common.Hash
-	//td   *big.Int
-	index uint64
+	index modules.ChainIndex
+
+	mediator bool
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -275,7 +273,7 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 
 // Handshake executes the ptn protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(network uint64, td uint64, head common.Hash, genesis common.Hash) error {
+func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis common.Hash, mediator bool) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 	var status statusData // safe to read after two values have been received from errc
@@ -284,10 +282,9 @@ func (p *peer) Handshake(network uint64, td uint64, head common.Hash, genesis co
 		errc <- p2p.Send(p.rw, StatusMsg, &statusData{
 			ProtocolVersion: uint32(p.version),
 			NetworkId:       network,
-			TD:              td,
-			//TODO
-			CurrentBlock: head,
-			GenesisBlock: genesis,
+			Index:           index,
+			GenesisUnit:     genesis,
+			Mediator:        mediator,
 		})
 	}()
 	go func() {
@@ -305,8 +302,8 @@ func (p *peer) Handshake(network uint64, td uint64, head common.Hash, genesis co
 			return p2p.DiscReadTimeout
 		}
 	}
-	//TODO would recover
-	p.index, p.head = status.TD, status.CurrentBlock
+	p.index, p.mediator = status.Index, status.Mediator
+	//p.index, p.head = status.TD, status.CurrentBlock
 	return nil
 }
 
@@ -325,8 +322,8 @@ func (p *peer) readStatus(network uint64, status *statusData, genesis common.Has
 	if err := msg.Decode(&status); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
-	if status.GenesisBlock != genesis {
-		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisBlock[:8], genesis[:8])
+	if status.GenesisUnit != genesis {
+		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisUnit[:8], genesis[:8])
 	}
 	if status.NetworkId != network {
 		return errResp(ErrNetworkIdMismatch, "%d (!= %d)", status.NetworkId, network)
@@ -350,6 +347,7 @@ type peerSet struct {
 	peers        map[string]*peer
 	knownVss     *set.Set
 	knownVssResp *set.Set
+	mediators    *set.Set
 	lock         sync.RWMutex
 	closed       bool
 }
@@ -360,7 +358,42 @@ func newPeerSet() *peerSet {
 		peers:        make(map[string]*peer),
 		knownVss:     set.New(),
 		knownVssResp: set.New(),
+		mediators:    set.New(),
 	}
+}
+
+func (ps *peerSet) MediatorsReset(nodes []string) {
+	ps.lock.Lock()
+	defer ps.lock.Unlock()
+	ps.mediators.Clear()
+	for _, node := range nodes {
+		ps.mediators.Add(node)
+	}
+}
+
+func (ps *peerSet) MediatorsClean() {
+	ps.lock.Lock()
+	defer ps.lock.Unlock()
+	ps.mediators.Clear()
+}
+
+//Make sure there is plenty of connection for Mediator
+func (ps *peerSet) MediatorCheck(p *peer, maxPeers int) bool {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+	if p.mediator {
+		return ps.mediators.Has(p.ID().TerminalString())
+	}
+	size := 0
+	for _, p := range ps.peers {
+		if !p.mediator {
+			size++
+		}
+	}
+	if size >= maxPeers-ps.mediators.Size() {
+		return false
+	}
+	return true
 }
 
 // Register injects a new peer into the working set, or returns an error if the

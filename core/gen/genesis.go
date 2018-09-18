@@ -101,23 +101,23 @@ func setupGenesisUnit(unitRep dagCommon.IUnitRepository, genesis *core.Genesis, 
 	} else {
 		log.Info("Writing custom genesis block")
 	}
-	txs := GetGensisTransctions(ks, genesis)
+	txs, asset := GetGensisTransctions(ks, genesis)
 	log.Info("-> Genesis transactions:")
 	for i, tx := range txs {
 		msg := fmt.Sprintf("Tx[%d]: %s\n", i, tx.TxHash.String())
 		log.Info(msg)
 	}
 	//return modules.NewGenesisUnit(genesis, txs)
-	return dagCommon.NewGenesisUnit(txs, genesis.InitialTimestamp)
+	return dagCommon.NewGenesisUnit(txs, genesis.InitialTimestamp, asset)
 }
 
-func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.Transactions {
+func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules.Transactions, *modules.Asset) {
 	// step1, generate payment payload message: coin creation
 	holder, err := common.StringToAddress(genesis.TokenHolder)
 
 	if err != nil || holder.GetType() != common.PublicKeyHash {
 		log.Error("Genesis holder address is an invalid p2pkh address.")
-		return nil
+		return nil, nil
 	}
 
 	assetInfo := modules.AssetInfo{
@@ -138,7 +138,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	extra, err := rlp.EncodeToBytes(assetInfo)
 	if err != nil {
 		log.Error("Get genesis assetinfo bytes error.")
-		return nil
+		return nil, nil
 	}
 	txin := &modules.Input{
 		Extra: extra, // save asset info
@@ -164,7 +164,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis, asset)
 	if err != nil {
 		log.Error("Generate genesis unit config payload error.")
-		return nil
+		return nil, nil
 	}
 	msg1 := &modules.Message{
 		App:     modules.APP_CONFIG,
@@ -182,7 +182,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) modules.
 	tx.TxHash = tx.Hash()
 
 	txs := []*modules.Transaction{tx}
-	return txs
+	return txs, asset
 }
 
 func CommitDB(unitRep dagCommon.IUnitRepository, unit *modules.Unit, isGenesis bool) error {

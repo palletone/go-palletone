@@ -22,7 +22,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"log"
 	// "github.com/palletone/go-palletone/common/hexutil"
@@ -178,21 +177,17 @@ func SaveUnitChainVersion(db ptndb.Database, vsn int) error {
 保存合约属性信息
 To save contract
 */
-func SaveContractState(db ptndb.Database, prefix []byte, id []byte, name string, value interface{}, version *modules.StateVersion) error {
-	key := fmt.Sprintf("%s%s^*^%s^*^%s",
-		prefix,
-		id,
-		name,
-		version.String())
-	if err := Store(db, key, value); err != nil {
+func SaveContractState(db ptndb.Database, prefix []byte, id []byte, field string, value interface{}, version *modules.StateVersion) error {
+	key := []byte{}
+	key = append(prefix, id...)
+	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
+	key = append(key, []byte(field)...)
+	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
+	key = append(key, version.Bytes()...)
+
+	if err := StoreBytes(db, key, value); err != nil {
 		log.Println("Save contract template", "error", err.Error())
 		return err
 	}
 	return nil
 }
-
-
-
-
-
-

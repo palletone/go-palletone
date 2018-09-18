@@ -37,6 +37,7 @@ type IDag interface {
 	GetActiveMediatorNodes() []*discover.Node
 	VerifyHeader(header *modules.Header, seal bool) error
 	GetCurrentUnit(assetId modules.IDType16) *modules.Unit
+	GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit
 	InsertDag(units modules.Units) (int, error)
 	GetUnitByHash(hash common.Hash) *modules.Unit
 	HasHeader(common.Hash, uint64) bool
@@ -46,7 +47,7 @@ type IDag interface {
 	GetHeader(hash common.Hash, number uint64) (*modules.Header, error)
 	// CurrentHeader retrieves the head header from the local chain.
 	CurrentHeader() *modules.Header
-	GetTransactionsByHash(hash common.Hash) (modules.Transactions, error)
+	GetTransactionByHash(hash common.Hash) (*modules.Transaction, error)
 	// InsertHeaderDag inserts a batch of headers into the local chain.
 	InsertHeaderDag([]*modules.Header, int) (int, error)
 	HasUnit(hash common.Hash) bool
@@ -81,4 +82,7 @@ type IDag interface {
 	GetGlobalProp() *modules.GlobalProperty
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetMediatorSchl() *modules.MediatorSchedule
+	GetActiveMediatorCount() int
+	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
+	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
 }
