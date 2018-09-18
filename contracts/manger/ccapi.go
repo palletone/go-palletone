@@ -1,7 +1,6 @@
 package manger
 
 import (
-	"errors"
 	"fmt"
 	"golang.org/x/net/context"
 	"time"
@@ -20,6 +19,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	unit "github.com/palletone/go-palletone/dag/modules"
 	"github.com/spf13/viper"
+	errors "github.com/pkg/errors"
 )
 
 var debugX bool = true
@@ -288,11 +288,11 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 	}
 	txsim, err := mksupt.GetTxSimulator(chainID, txid)
 	if err != nil {
-		return nil, nil, errors.New("GetTxSimulator error")
+		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
 	}
 	randNum, err := crypto.GetRandomNonce()
 	if err != nil {
-		return nil, nil, errors.New("crypto.GetRandomNonce error")
+		return nil, nil, errors.WithMessage(err, "crypto.GetRandomNonce error")
 	}
 
 	usrccName := templateCC.Name + "_" + hex.EncodeToString(randNum)[0:8] //createDeployId(templateCC.Name)
@@ -312,7 +312,7 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 	spec.ChaincodeId = chaincodeID
 	err = ucc.DeployUserCC(spec, setChainId, usrcc, txid, txsim, setTimeOut)
 	if err != nil {
-		return nil, nil, errors.New("Deploy fail")
+		return nil, nil, errors.WithMessage(err,"Deploy fail")
 	}
 	cc := &cclist.CCInfo{
 		Id:      randNum,
@@ -330,9 +330,8 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 	unit, err := RwTxResult2DagDeployUnit(txsim, templateId, txid, cc.Name, cc.Id, args, timeout)
 	if err != nil {
 		logger.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
-		return nil, nil, errors.New("Conver RwSet to dag unit fail")
+		return nil, nil, errors.WithMessage(err, "Conver RwSet to dag unit fail")
 	}
-
 	return cc.Id, unit, err
 }
 
