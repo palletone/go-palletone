@@ -212,3 +212,7 @@ func (nodePlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpe
 
 	return cutil.WriteBytesToPackage("binpackage.tar", binpackage.Bytes(), tw)
 }
+
+func (goPlatform *Platform) GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error) {
+	return "", errors.New("undo")
+}

@@ -285,27 +285,6 @@ func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
 
 }
 
-//// AsMessage returns the transaction as a core.Message.
-////
-//// AsMessage requires a signer to derive the sender.
-////
-//// XXX Rename message to something less arbitrary?
-//func (tx *Transaction) AsMessage(s Signer) (Message, error) {
-//	msg := Message{
-//		from:       *tx.data.From,
-//		gasPrice:   new(big.Int).Set(tx.data.Price),
-//		to:         tx.data.Recipient,
-//		amount:     tx.data.Amount,
-//		data:       tx.data.Payload,
-//		checkNonce: true,
-//	}
-//
-//	var err error
-//	msg.from, err = Sender(s, tx)
-//	return msg, err
-//}
-//
-
 // Len returns the length of s.
 func (s Transactions) Len() int { return len(s) }
 
@@ -396,43 +375,6 @@ func NewMessage(app byte, payload interface{}) *Message {
 	return m
 }
 
-//func (m Message) From() *common.Address { return &m.from }
-//func (m Message) To() *common.Address   { return m.to }
-//func (m Message) GasPrice() *big.Int    { return m.gasPrice }
-//func (m Message) Value() *big.Int       { return m.amount }
-//func (m Message) Gas() uint64           { return m.gasLimit }
-//func (m Message) Nonce() uint64         { return m.nonce }
-//func (m Message) Data() []byte          { return m.data }
-//func (m Message) CheckNonce() bool      { return m.checkNonce }
-//
-//// deriveChainId derives the chain id from the given v parameter
-//func deriveChainId(v *big.Int) *big.Int {
-//	if v.BitLen() <= 64 {
-//		v := v.Uint64()
-//		if v == 27 || v == 28 {
-//			return new(big.Int)
-//		}
-//		return new(big.Int).SetUint64((v - 35) / 2)
-//	}
-//	v = new(big.Int).Sub(v, big.NewInt(35))
-//	return v.Div(v, big.NewInt(2))
-//}
-//func rlpHash(x interface{}) (h common.Hash) {
-//	hw := sha3.NewKeccak256()
-//	rlp.Encode(hw, x)
-//	hw.Sum(h[:0])
-//	return h
-//}
-//
-//// deriveSigner makes a *best* guess about which signer to use.
-//func deriveSigner(V *big.Int) Signer {
-//	if V.Sign() != 0 && isProtectedV(V) {
-//		return NewEIP155Signer(deriveChainId(V))
-//	} else {
-//		return HomesteadSigner{}
-//	}
-//}
-//
 type writeCounter common.StorageSize
 
 func (c *writeCounter) Write(b []byte) (int, error) {

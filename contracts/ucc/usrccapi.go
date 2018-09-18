@@ -1,25 +1,26 @@
 package ucc
 
 import (
+	"io"
+	"io/ioutil"
+	"os"
+	"path"
+	"time"
 	"archive/tar"
 	"compress/gzip"
 	"fmt"
-	comdb "github.com/palletone/go-palletone/contracts/comm"
+	"github.com/pkg/errors"
+	"golang.org/x/net/context"
+
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/platforms"
 	"github.com/palletone/go-palletone/contracts/rwset"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
-	"github.com/pkg/errors"
-	"golang.org/x/net/context"
-	"io"
-	"io/ioutil"
-	"os"
-	"path"
-	"time"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	comdb "github.com/palletone/go-palletone/contracts/comm"
 )
 
 type UserChaincode struct {
@@ -68,7 +69,7 @@ func getDeploymentSpec(_ context.Context, spec *pb.ChaincodeSpec) (*pb.Chaincode
 	return cdDeploymentSpec, nil
 }
 
-func DeployUserCC(chainID string, usrcc *UserChaincode, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
+func DeployUserCC(spec *pb.ChaincodeSpec, chainID string, usrcc *UserChaincode, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
 	var err error
 
 	ccprov := ccprovider.GetChaincodeProvider()
@@ -76,14 +77,6 @@ func DeployUserCC(chainID string, usrcc *UserChaincode, txid string, txsim rwset
 	if txsim != nil {
 		ctxt = context.WithValue(ctxt, core.TXSimulatorKey, txsim)
 	}
-
-	//todo
-	//从数据库中检查并恢复出保存的context数据
-
-	chaincodeID := &pb.ChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
-	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: usrcc.InitArgs}}
-
-	// First build and get the deployment spec
 	chaincodeDeploymentSpec, err := getDeploymentSpec(ctxt, spec)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
@@ -95,8 +88,6 @@ func DeployUserCC(chainID string, usrcc *UserChaincode, txid string, txsim rwset
 	if err != nil {
 		logger.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
 	}
-	//logger.Info("rspPaloyd =%v", rspPaloyd)
-
 	logger.Infof("user chaincode %s/%s(%s) deployed", usrcc.Name, chainID, usrcc.Path)
 
 	return err
@@ -191,37 +182,41 @@ func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err
 	return data, nil
 }
 
-func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, error) {
+func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId []byte) (*UserChaincode, error) {
 	//从数据库读取
 	//解压到指定路径下
 	//todo del
-	//	usrCC := &UserChaincode{
-	//	}
-	//	return usrCC, nil
+		usrCC := &UserChaincode{
+		}
+		return usrCC, nil
 
 	if 1 == 1 {
+		envpath, err := platforms.GetPlatformEnvPath(spec)
+
 		dag, err := comdb.GetCcDagHand()
 		if err != nil {
 			return nil, err
 		}
-
 		v, data, name, path := dag.GetContractTpl(templateId)
-		logger.Infof("n====================", "name: ", name, "path: ", path, "data: ", data)
 		if data == nil || name == "" || path == "" {
 			return nil, errors.New("GetContractTpl contract template err")
 		}
-		logger.Infof("name[%s]path[%s]ver[%v]", name, path, v)
+		targzFile := envpath + "/tmp/" + name + ".tar.gz"
+		decompressFile := envpath
+		logger.Infof("name[%s]path[%s]ver[%v]-tar[%s]untar path[%s]", name, path, v, targzFile, decompressFile)
 
-		targzFile := path + "/" + name + ".tar.gz"
-		decompressFile := path + "/" + name
+		_, err = os.Stat(targzFile)
+		if err != nil {
+			if os.IsExist(err) {
+				os.Remove(targzFile)
+			}
+		}
 
-		logger.Infof("write file contract template info [%s]", targzFile)
 		err = ioutil.WriteFile(targzFile, data, 0644)
 		if err != nil {
 			logger.Errorf("write file[%s] fail:%s", targzFile, err)
 			return nil, errors.New("write file fail")
 		}
-
 		if err = UnTarGz(targzFile, decompressFile); err != nil {
 			return nil, err
 		}
@@ -232,7 +227,7 @@ func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, 
 			Path: path,
 		}
 		//todo
-		return usrCC, errors.New("23323423423423")
+		return usrCC, nil
 	} else {
 		testFile := "/home/glh/go/src/chaincode/abc.tar.gz"
 		zipName := "test.tar.gz"
@@ -270,13 +265,17 @@ func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, 
 
 //+++++++++++++
 func UnTarGz(srcFilePath string, destDirPath string) error {
-	fmt.Println("UnTarGzing " + srcFilePath + "...")
-	// Create destination directory
-	if err := os.Mkdir(destDirPath, os.ModePerm); err != nil {
-		fmt.Printf("os.Mkdir err =%s", err)
-		return err
-	}
+	fmt.Println("UnTarGzing enter, srcPath:" + srcFilePath + ", destPath:" + destDirPath)
 
+	_, err := os.Stat(destDirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if err := os.Mkdir(destDirPath, os.ModePerm); err != nil {
+				fmt.Printf("os.Mkdir err =%s", err)
+				return err
+			}
+		}
+	}
 	fr, err := os.Open(srcFilePath)
 	if err != nil {
 		fmt.Printf("os.Open err =%s", err)

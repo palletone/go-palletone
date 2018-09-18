@@ -22,6 +22,7 @@ import (
 	"crypto/ecdsa"
 	"log"
 	"testing"
+	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -30,8 +31,17 @@ import (
 
 func TestNewUnit(t *testing.T) {
 	txs := make(Transactions, 0)
-	unit := NewUnit(&Header{}, txs)
-	log.Println("unit", unit)
+	unit := NewUnit(&Header{Extra: []byte("hello"), Creationdate: time.Now().Unix()}, txs)
+	hash := unit.Hash()
+	unit.UnitHash = common.Hash{}
+	if unit.UnitHash != (common.Hash{}) {
+		t.Fatal("unit hash initialized failed.")
+	}
+	unit.UnitHash.Set(unit.UnitHeader.Hash())
+
+	if unit.UnitHash != hash {
+		t.Fatal("wrong unit hash.")
+	}
 }
 
 // test interface
