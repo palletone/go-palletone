@@ -252,10 +252,12 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	for _, medConf := range mss {
 		medAcc := ConfigToAccount(medConf)
 		addr := medAcc.Address
-		log.Info(fmt.Sprintf("this node controll mediator account address: %v", addr.Str()))
+		//log.Debug(fmt.Sprintf("this node control mediator account address: %v", addr.Str()))
 
 		msm[addr] = medAcc
 	}
+
+	log.Debug(fmt.Sprintf("This node controls %v mediators.", len(msm)))
 
 	mp := MediatorPlugin{
 		ptn:               ptn,

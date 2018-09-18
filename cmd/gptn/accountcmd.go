@@ -382,7 +382,8 @@ func ambiguousAddrRecovery(ks *keystore.KeyStore, err *keystore.AmbiguousAddrErr
 	return *match
 }
 
-func newAccount(ctx *cli.Context) (common.Address, error) {
+// @author Albert·Gou
+func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 	cfg := FullConfig{Node: defaultNodeConfig()}
 	// Load config file.
 	if err := maybeLoadConfig(ctx, &cfg); err != nil {
@@ -392,13 +393,19 @@ func newAccount(ctx *cli.Context) (common.Address, error) {
 	utils.SetNodeConfig(ctx, &cfg.Node)
 	scryptN, scryptP, keydir, err := cfg.Node.AccountConfig()
 
-	password := getPassPhrase("Your new account is locked with a password. Please give a password. "+
-		"Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
-
 	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
 	if err != nil {
 		utils.Fatalf("Failed to create account: %v", err)
 	}
+
+	return address, nil
+}
+
+func newAccount(ctx *cli.Context) (common.Address, error) {
+	password := getPassPhrase("Your new account is locked with a password. Please give a password. "+
+		"Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
+
+	address, _ := createAccount(ctx, password)
 
 	return address, nil
 }

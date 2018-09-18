@@ -42,7 +42,7 @@ var (
 		ClientTimeout:     time.Duration(20) * time.Second, // 20 sec - gRPC default
 		ServerInterval:    time.Duration(2) * time.Hour,    // 2 hours - gRPC default
 		ServerTimeout:     time.Duration(20) * time.Second, // 20 sec - gRPC default
-		ServerMinInterval: time.Duration(1) * time.Minute,  // match ClientInterval
+		ServerMinInterval: time.Duration(10) * time.Minute,  //1 match ClientInterval
 	}
 	// strong TLS cipher suites
 	tlsCipherSuites = []uint16{
@@ -100,18 +100,25 @@ type SecureOptions struct {
 type KeepaliveOptions struct {
 	// ClientInterval is the duration after which if the client does not see
 	// any activity from the server it pings the server to see if it is alive
+	//ClientInterval是持续时间之后的持续时间，如果客户端没有看到来自服务器的任何活动，
+	// 它会ping服务器以查看它是否处于活动状态
 	ClientInterval time.Duration
 	// ClientTimeout is the duration the client waits for a response
 	// from the server after sending a ping before closing the connection
+	//ClientTimeout是客户端在关闭连接之前发送ping之后等待服务器响应的持续时间
 	ClientTimeout time.Duration
 	// ServerInterval is the duration after which if the server does not see
 	// any activity from the client it pings the client to see if it is alive
+	//ServerInterval是持续时间之后的持续时间，如果服务器没有看到来自客户端的任何活动，
+	// 它会ping客户端以查看它是否处于活动状态
 	ServerInterval time.Duration
 	// ServerTimeout is the duration the server waits for a response
 	// from the client after sending a ping before closing the connection
+	//ServerTimeout是服务器在关闭连接之前发送ping之后等待客户端响应的持续时间
 	ServerTimeout time.Duration
 	// ServerMinInterval is the minimum permitted time between client pings.
 	// If clients send pings more frequently, the server will disconnect them
+	//ServerMinInterval是客户端ping之间允许的最短时间。 如果客户端更频繁地发送ping，服务器将断开它们
 	ServerMinInterval time.Duration
 }
 
@@ -177,7 +184,7 @@ func ServerKeepaliveOptions(ka *KeepaliveOptions) []grpc.ServerOption {
 	kep := keepalive.EnforcementPolicy{
 		MinTime: ka.ServerMinInterval,
 		// allow keepalive w/o rpc
-		PermitWithoutStream: true,
+		PermitWithoutStream: true,//true,
 	}
 	serverOpts = append(serverOpts, grpc.KeepaliveEnforcementPolicy(kep))
 	return serverOpts
@@ -195,7 +202,7 @@ func ClientKeepaliveOptions(ka *KeepaliveOptions) []grpc.DialOption {
 	kap := keepalive.ClientParameters{
 		Time:                ka.ClientInterval,
 		Timeout:             ka.ClientTimeout,
-		PermitWithoutStream: true,
+		PermitWithoutStream: true,//true,
 	}
 	dialOpts = append(dialOpts, grpc.WithKeepaliveParams(kap))
 	return dialOpts

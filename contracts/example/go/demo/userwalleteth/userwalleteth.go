@@ -305,7 +305,12 @@ func aliceSpendEtHFromMultiAddr(gasPrice string, gasLimit string, redeem string,
 
 	return nil
 }
-
+func helper() {
+	fmt.Println("functions : init, alice, bob")
+	fmt.Println("Params : init")
+	fmt.Println("Params : bob, value, gasPrice, gasLimit, redeem")
+	fmt.Println("Params : alice, gasPrice, gasLimit, redeem, amount, sigJury")
+}
 func main() {
 	err := loadConfig(gWalletFile, gWallet)
 	if err != nil {
@@ -313,13 +318,17 @@ func main() {
 		return
 	}
 	args := os.Args
+	if len(args) < 2 {
+		helper()
+		return
+	}
 	cmd := strings.ToLower(args[1])
 
 	switch cmd {
-	case "init":
+	case "init": //init alice's key and bob's key
 		createKey("alice")
 		createKey("bob")
-	case "bob":
+	case "bob": //bob send eth to multisigAddr
 		if len(args) < 6 {
 			fmt.Println("Params : bob, value, gasPrice, gasLimit, redeem")
 			return
@@ -328,7 +337,7 @@ func main() {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
-	case "alice":
+	case "alice": //bob spend eth of multisigAddr
 		if len(args) < 7 {
 			fmt.Println("Params : alice, gasPrice, gasLimit, redeem, amount, sigJury")
 			return
@@ -339,5 +348,6 @@ func main() {
 		}
 	default:
 		fmt.Println("Invalid cmd.")
+		helper()
 	}
 }

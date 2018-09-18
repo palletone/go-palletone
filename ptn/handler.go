@@ -335,7 +335,7 @@ func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDeal
 	dstId := node.ID.TerminalString()
 	peer := pm.peers.Peer(dstId)
 	if peer == nil {
-		log.Info(fmt.Sprintf("peer not exist: %v", node.String()))
+		//		log.Info(fmt.Sprintf("peer not exist: %v", node.String()))
 		return
 	}
 
@@ -1031,7 +1031,7 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 		id := node.ID.TerminalString()
 		peer := pm.peers.Peer(id)
 		if peer == nil {
-			log.Info(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
+			//log.Info(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
 		} else {
 			list[id] = peer
 		}

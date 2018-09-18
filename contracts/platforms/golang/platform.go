@@ -85,7 +85,7 @@ func getGopath() (string, error) {
 		return "", err
 	}
 	// Only take the first element of GOPATH
-	splitGoPath := filepath.SplitList(env["set GOPATH"])
+	splitGoPath := filepath.SplitList(env["GOPATH"])
 	if len(splitGoPath) == 0 {
 		return "", fmt.Errorf("invalid GOPATH environment variable value:[%s]", env["GOPATH"])
 	}
@@ -583,4 +583,27 @@ func (goPlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec,
 	}
 
 	return cutil.WriteBytesToPackage("binpackage.tar", binpackage.Bytes(), tw)
+}
+
+func (goPlatform *Platform) GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error) {
+	var err error
+
+	code, err := getCode(spec) //获取代码，即构造CodeDescriptor，Gopath为代码真实路径，Pkg为代码相对路径
+	if err != nil {
+		return "", err
+	}
+	if code.Cleanup != nil {
+		defer code.Cleanup()
+	}
+	env, err := getGoEnv()
+	if err != nil {
+		return "", err
+	}
+	gopaths := splitEnvPaths(env["GOPATH"]) //GOPATH
+	//goroots := splitEnvPaths(env["GOROOT"])  //GOROOT，go安装路径
+	gopaths[code.Gopath] = true              //链码真实路径
+	env["GOPATH"] = flattenEnvPaths(gopaths) //GOPATH、GOROOT、链码真实路径重新拼合为新GOPATH
+
+	logger.Infof("go path:%s", env["GOPATH"])
+	return env["GOPATH"], nil
 }

@@ -54,16 +54,16 @@ var DefaultConfig = Config{
 		Btc: BTC{
 			NetID:         1,
 			Host:          "localhost:18332",
-			RPCUser:       "zxl",
+			RPCUser:       "test",
 			RPCPasswd:     "123456",
-			CertPath:      "",
+			CertPath:      "/home/pallet/wallet/btc/btctest/rpc.cert",
 			WalletPasswd:  "1",
 			ChaincodeKeys: map[string]string{},
 			AddressKeys:   map[string]string{},
 		},
 		Eth: ETH{
 			NetID:         1,
-			Rawurl:        "\\\\.\\pipe\\geth.ipc",
+			Rawurl:        "/home/pallet/data/eth/gethtest/geth.ipc",
 			ChaincodeKeys: map[string]string{},
 			AddressKeys:   map[string]string{},
 		},
@@ -111,6 +111,8 @@ func init() {
 	_, err := os.Open(configPath)
 	if err != nil && os.IsNotExist(err) {
 		saveConfigTest() // save default config
+	} else {
+		GetConfigTest()
 	}
 }
 
