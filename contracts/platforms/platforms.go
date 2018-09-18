@@ -48,6 +48,8 @@ type Platform interface {
 	GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error)
 	GenerateDockerfile(spec *pb.ChaincodeDeploymentSpec) (string, error)
 	GenerateDockerBuild(spec *pb.ChaincodeDeploymentSpec, tw *tar.Writer) error
+
+	GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error)
 }
 
 var logger = flogging.MustGetLogger("chaincode-platform")
@@ -95,8 +97,16 @@ func GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error) {
 	return platform.GetDeploymentPayload(spec)
 }
 
-func generateDockerfile(platform Platform, cds *pb.ChaincodeDeploymentSpec) ([]byte, error) {
+func GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error) {
+	platform, err := _Find(spec.Type)
+	if err != nil {
+		return "", err
+	}
 
+	return platform.GetPlatformEnvPath(spec)
+}
+
+func generateDockerfile(platform Platform, cds *pb.ChaincodeDeploymentSpec) ([]byte, error) {
 	var buf []string
 
 	// ----------------------------------------------------------------------------------------------------

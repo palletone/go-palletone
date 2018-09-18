@@ -152,3 +152,8 @@ func (javaPlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec
 func (javaPlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec, tw *tar.Writer) error {
 	return cutil.WriteBytesToPackage("codepackage.tgz", cds.CodePackage, tw)
 }
+
+
+func (goPlatform *Platform) GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error) {
+	return "", errors.New("undo")
+}
