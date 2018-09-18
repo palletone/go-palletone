@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/configure"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/gen"
 	"gopkg.in/urfave/cli.v1"
@@ -65,15 +66,8 @@ it will be replaced with an example Genesis State.`,
 	}
 )
 
-// createGenesisJson, Create a json file for the genesis state of a new chain.
-func createGenesisJson(ctx *cli.Context) error {
-	var (
-		genesisFile *os.File
-		err         error
-	)
-
-	var confirm bool
-	confirm, err = console.Stdin.PromptConfirm(
+func getTokenAccount(ctx *cli.Context) (string, error) {
+	confirm, err := console.Stdin.PromptConfirm(
 		"Do you want to create a new account as the holder of the token?")
 	if err != nil {
 		utils.Fatalf("%v", err)
@@ -84,17 +78,60 @@ func createGenesisJson(ctx *cli.Context) error {
 		account, err = console.Stdin.PromptInput("Please enter an existing account address: ")
 		if err != nil {
 			utils.Fatalf("%v", err)
-			return err
+			return "", err
 		}
 	} else {
 		account, err = initialAccount(ctx)
 		if err != nil {
 			utils.Fatalf("%v", err)
-			return err
+			return "", err
 		}
 	}
 
-	genesisState := createExampleGenesis(account)
+	return account, nil
+}
+
+func createExampleMediators(ctx *cli.Context, mcLen int) []mp.MediatorConf {
+	exampleMediators := make([]mp.MediatorConf, mcLen, mcLen)
+	for i := 0; i < mcLen; i++ {
+		account, password, _ := createExampleAccount(ctx)
+		secStr, pubStr := newInitDKS()
+
+		exampleMediators[i] = mp.MediatorConf{
+			Address:     account,
+			Password:    password,
+			InitPartSec: secStr,
+			InitPartPub: pubStr,
+		}
+	}
+
+	return exampleMediators
+}
+
+// createGenesisJson, Create a json file for the genesis state of a new chain.
+func createGenesisJson(ctx *cli.Context) error {
+	var (
+		genesisFile *os.File
+		err         error
+	)
+
+	// comment by Albert·Gou
+	//account, err := getTokenAccount(ctx)
+	//if err != nil {
+	//	return err
+	//}
+
+	account, _, err := createExampleAccount(ctx)
+	if err != nil {
+		return err
+	}
+	mcs := createExampleMediators(ctx, core.DefaultMediatorCount)
+	nodeStr, err := getNodeInfo(ctx)
+	if err != nil {
+		return err
+	}
+
+	genesisState := createExampleGenesis(account, mcs, nodeStr)
 
 	var genesisJson []byte
 	genesisJson, err = json.MarshalIndent(*genesisState, "", "  ")
@@ -103,18 +140,9 @@ func createGenesisJson(ctx *cli.Context) error {
 		return err
 	}
 
-	cfg := FullConfig{Node: defaultNodeConfig()}
-	// Load config file.
-	if err := maybeLoadConfig(ctx, &cfg); err != nil {
-		utils.Fatalf("%v", err)
-	}
-
-	// Make sure we have a valid genesis JSON
-	genesisOut := ctx.Args().First()
-	// If no path is specified, the default path is used
-	if len(genesisOut) == 0 {
-		//		utils.Fatalf("Must supply path to genesis JSON file")
-		genesisOut, _ = getGenesisPath(defaultGenesisJsonPath, cfg.Node.DataDir)
+	genesisOut, err := getGenesisPathFromConfig(ctx)
+	if err != nil {
+		return err
 	}
 
 	err = os.MkdirAll(filepath.Dir(genesisOut), os.ModePerm)
@@ -138,7 +166,56 @@ func createGenesisJson(ctx *cli.Context) error {
 
 	fmt.Println("Creating example genesis state in file " + genesisOut)
 
+	modifyConfig(ctx, mcs)
+
 	return nil
+}
+
+func modifyConfig(ctx *cli.Context, mediators []mp.MediatorConf) error {
+	cfg := &FullConfig{Node: defaultNodeConfig()}
+	configPath := defaultConfigPath
+	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
+		configPath, _ = getConfigPath(temp, cfg.Node.DataDir)
+	}
+
+	// 加载配置文件中的配置信息到 cfg中
+	err := loadConfig(configPath, cfg)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	cfg.MediatorPlugin.EnableStaleProduction = true
+	cfg.MediatorPlugin.Mediators = mediators
+
+	err = makeConfigFile(cfg, configPath)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	fmt.Println("Rewriting config file at:", configPath)
+
+	return nil
+}
+
+func getGenesisPathFromConfig(ctx *cli.Context) (string, error) {
+	cfg := FullConfig{Node: defaultNodeConfig()}
+	// Load config file.
+	if err := maybeLoadConfig(ctx, &cfg); err != nil {
+		utils.Fatalf("%v", err)
+		return "", err
+	}
+
+	// Make sure we have a valid genesis JSON
+	genesisOut := ctx.Args().First()
+	// If no path is specified, the default path is used
+	if len(genesisOut) == 0 {
+		//		utils.Fatalf("Must supply path to genesis JSON file")
+		genesisOut, _ = getGenesisPath(defaultGenesisJsonPath, cfg.Node.DataDir)
+	}
+
+	return genesisOut, nil
 }
 
 // initialAccount, create a initial account for a new account
@@ -148,13 +225,20 @@ func initialAccount(ctx *cli.Context) (string, error) {
 		utils.Fatalf("%v", err)
 	}
 
-	fmt.Printf("Initial account address: %s\n", address.String())
+	fmt.Printf("Initial token holder's account address: %s\n", address.String())
 
 	return address.Str(), nil
 }
 
+func createExampleAccount(ctx *cli.Context) (addrStr, password string, err error) {
+	password = core.DefaultPassword
+	address, err := createAccount(ctx, password)
+	addrStr = address.Str()
+	return
+}
+
 // createExampleGenesis, create the genesis state of new chain with the specified account
-func createExampleGenesis(account string) *core.Genesis {
+func createExampleGenesis(tokenAccount string, mediators []mp.MediatorConf, nodeInfo string) *core.Genesis {
 	SystemConfig := core.SystemConfig{
 		DepositRate: core.DefaultDepositRate,
 	}
@@ -162,31 +246,34 @@ func createExampleGenesis(account string) *core.Genesis {
 	initParams := core.NewChainParams()
 
 	return &core.Genesis{
-		Alias:        core.DefaultAlias,
-		Version:      configure.Version,
-		TokenAmount:  core.DefaultTokenAmount,
-		TokenDecimal: core.DefaultTokenDecimal,
-		ChainID:      1,
-		TokenHolder:  account,
-		Text:         "Hello PalletOne!",
-		//Text: "孟岩	北京	通证派倡导者、CSDN副总裁、柏链道捷CEO。" +
-		//	"刘百祥	上海	GoC-lab发起人兼技术社群负责人，复旦大学计算机博士。" +
-		//	"陈澄	上海	引力区开发者社区总理事，EOS超级节点负责人。" +
-		//	"孙红景	北京	CTO、13年IT开发和管理经验。" +
-		//	"kobegpfan	北京	世界500强企业技术总监。" +
-		//	"余奎	上海	加密经济学研究员、产品研发经理。" +
-		//	"Shangsong	北京	Fabric、 多链、 分片 、跨链技术。" +
-		//	"郑广军	上海	区块链java应用开发。" +
-		//	"钮祜禄虫	北京	大数据架构、Dapp开发。" +
-		//	"彭敏	四川	计算机网络和系统集成十余年有经验。",
-		SystemConfig:           SystemConfig,
-		InitialParameters:      initParams,
-		ImmutableParameters:    core.NewImmutChainParams(),
-		InitialTimestamp:       gen.InitialTimestamp(initParams.MediatorInterval),
-		InitialActiveMediators: core.DefaultMediatorCount,
-		InitialMediatorCandidates: gen.InitialMediatorCandidates(
-			core.DefaultMediatorCount, account),
+		Alias:                     core.DefaultAlias,
+		Version:                   configure.Version,
+		TokenAmount:               core.DefaultTokenAmount,
+		TokenDecimal:              core.DefaultTokenDecimal,
+		ChainID:                   core.DefaultChainID,
+		TokenHolder:               tokenAccount,
+		Text:                      core.DefaultText,
+		SystemConfig:              SystemConfig,
+		InitialParameters:         initParams,
+		ImmutableParameters:       core.NewImmutChainParams(),
+		InitialTimestamp:          gen.InitialTimestamp(initParams.MediatorInterval),
+		InitialActiveMediators:    core.DefaultMediatorCount,
+		InitialMediatorCandidates: initialMediatorCandidates(mediators, nodeInfo),
 	}
+}
+
+func initialMediatorCandidates(mediators []mp.MediatorConf, nodeInfo string) []core.MediatorInfo {
+	mcLen := len(mediators)
+	initialMediators := make([]core.MediatorInfo, mcLen)
+	for i := 0; i < mcLen; i++ {
+		initialMediators[i] = core.MediatorInfo{
+			Address:     mediators[i].Address,
+			InitPartPub: mediators[i].InitPartPub,
+			Node:        nodeInfo,
+		}
+	}
+
+	return initialMediators
 }
 
 // 根据指定路径和配置参数获取创世Json文件的路径

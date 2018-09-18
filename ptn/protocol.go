@@ -114,9 +114,9 @@ type txPool interface {
 type statusData struct {
 	ProtocolVersion uint32
 	NetworkId       uint64
-	TD              uint64 //*big.Int
-	CurrentBlock    common.Hash
-	GenesisBlock    common.Hash
+	Index           modules.ChainIndex
+	GenesisUnit     common.Hash
+	//CurrentBlock common.Hash
 }
 
 // newBlockHashesData is the network packet for the block announcements.

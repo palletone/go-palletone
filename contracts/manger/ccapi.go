@@ -1,7 +1,6 @@
 package manger
 
 import (
-	"errors"
 	"fmt"
 	"golang.org/x/net/context"
 	"time"
@@ -20,6 +19,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	unit "github.com/palletone/go-palletone/dag/modules"
 	"github.com/spf13/viper"
+	errors "github.com/pkg/errors"
 )
 
 var debugX bool = true
@@ -211,7 +211,19 @@ func DeployByName(chainID string, txid string, ccName string, ccPath string, ccV
 		Enabled:  true,
 	}
 
-	err = ucc.DeployUserCC(setChainId, usrcc, txid, txsim, setTimeOut)
+	spec := &pb.ChaincodeSpec{
+		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
+		Input: &pb.ChaincodeInput{
+			Args: args,
+		},
+		ChaincodeId: &pb.ChaincodeID{
+			Name:    ccName,
+			Path:    ccPath,
+			Version: ccVersion,
+		},
+	}
+
+	err = ucc.DeployUserCC(spec, setChainId, usrcc, txid, txsim, setTimeOut)
 	if err != nil {
 		return nil, nil, errors.New("Deploy fail")
 	}
@@ -249,8 +261,14 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 	if timeout > 0 {
 		setTimeOut = timeout
 	}
-
-	templateCC, err := ucc.RecoverChainCodeFromDb(chainID, templateId)
+	spec := &pb.ChaincodeSpec{
+		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
+		Input: &pb.ChaincodeInput{
+			Args: args,
+		},
+		//ChaincodeId: &pb.ChaincodeID{},
+	}
+	templateCC, err := ucc.RecoverChainCodeFromDb(spec, chainID, templateId)
 	if err != nil {
 		logger.Errorf("chainid[%s]-templateId[%v], RecoverChainCodeFromDb fail:%s", chainID, templateId, err)
 		return nil, nil, err
@@ -259,9 +277,7 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 	//test!!!!!!
 	//todo del
 	if txid == "" || templateCC.Name == "" || templateCC.Path == "" {
-		//logger.Errorf("cc param is null")
-		//return "", nil, errors.New("cc param is nil")
-
+		logger.Errorf("cc param is null")
 		//test
 		tmpcc, err := listGet(templateId)
 		if err == nil {
@@ -270,18 +286,16 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 			templateCC.Version = tmpcc.vers
 		}
 	}
-
 	txsim, err := mksupt.GetTxSimulator(chainID, txid)
 	if err != nil {
-		return nil, nil, errors.New("GetTxSimulator error")
+		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
 	}
 	randNum, err := crypto.GetRandomNonce()
 	if err != nil {
-		return nil, nil, errors.New("crypto.GetRandomNonce error")
+		return nil, nil, errors.WithMessage(err, "crypto.GetRandomNonce error")
 	}
 
 	usrccName := templateCC.Name + "_" + hex.EncodeToString(randNum)[0:8] //createDeployId(templateCC.Name)
-
 	usrcc := &ucc.UserChaincode{
 		Name:     usrccName,
 		Path:     templateCC.Path,
@@ -290,9 +304,15 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 		Enabled:  true,
 	}
 
-	err = ucc.DeployUserCC(setChainId, usrcc, txid, txsim, setTimeOut)
+	chaincodeID := &pb.ChaincodeID{
+		Name:    usrcc.Name,
+		Path:    usrcc.Path,
+		Version: usrcc.Version,
+	}
+	spec.ChaincodeId = chaincodeID
+	err = ucc.DeployUserCC(spec, setChainId, usrcc, txid, txsim, setTimeOut)
 	if err != nil {
-		return nil, nil, errors.New("Deploy fail")
+		return nil, nil, errors.WithMessage(err,"Deploy fail")
 	}
 	cc := &cclist.CCInfo{
 		Id:      randNum,
@@ -310,9 +330,8 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 	unit, err := RwTxResult2DagDeployUnit(txsim, templateId, txid, cc.Name, cc.Id, args, timeout)
 	if err != nil {
 		logger.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
-		return nil, nil, errors.New("Conver RwSet to dag unit fail")
+		return nil, nil, errors.WithMessage(err, "Conver RwSet to dag unit fail")
 	}
-
 	return cc.Id, unit, err
 }
 
@@ -434,5 +453,5 @@ func peerContractMockConfigInit() {
 	viper.Set("vm.endpoint", "unix:///var/run/docker.sock")
 	viper.Set("chaincode.builder", "palletimg")
 
-	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
+	viper.Set("chaincode.system", map[string]string{/*"sample_syscc": "true", */"adapter": "true"})
 }

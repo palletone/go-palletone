@@ -54,11 +54,17 @@ func (pm *ProtocolManager) StartMediatorMonitor(srvr *p2p.Server, maxPeers int) 
 		log.Info("This node is not Mediator")
 		return
 	}
+	log.Info("mediator transition")
 	for {
 		if err := pm.startMediatorNetwork(srvr, maxPeers); err != nil {
 			return
 		}
 		//TODO must modify
+		go pm.monitor()
 		break
 	}
+}
+
+func (pm *ProtocolManager) monitor() {
+
 }

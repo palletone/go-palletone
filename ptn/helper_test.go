@@ -232,8 +232,12 @@ func (p *testPeer) close() {
 
 func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	dag, _ := dag.NewDagForTest(Memdb)
-
-	header := NewHeader([]common.Hash{}, []modules.IDType16{modules.PTNCOIN}, []byte{})
+	genesisUnit := newGenesisForTest(dag.Db)
+	newDag(dag.Db, genesisUnit, unitAccount)
+	return dag, nil
+}
+func newGenesisForTest(db ptndb.Database) *modules.Unit {
+	header := modules.NewHeader([]common.Hash{}, []modules.IDType16{modules.PTNCOIN},1, []byte{})
 	header.Number.AssetID = modules.PTNCOIN
 	header.Number.IsMain = true
 	header.Number.Index = 0
@@ -241,23 +245,19 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	header.Witness = []*modules.Authentifier{&modules.Authentifier{"", []byte{}, []byte{}, []byte{}}}
 	tx, _ := NewCoinbaseTransaction()
 	txs := modules.Transactions{tx}
-	genesisUnit := NewUnit(header, txs)
-
-	//dag.SaveDag(*genesisUnit,true)
-
-	err := SaveGenesis(dag.Db, genesisUnit)
+	genesisUnit := modules.NewUnit(header, txs)
+	err := SaveGenesis(db, genesisUnit)
 	if err != nil {
 		log.Println("SaveGenesis, err", err)
-		return nil, err
+		return nil
 	}
-	newDag(dag.Db, genesisUnit, unitAccount)
-	return dag, nil
+	return genesisUnit
 }
 func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Units, error) {
 	units := make(modules.Units, number)
 	par := gunit
 	for i := 0; i < number; i++ {
-		header := NewHeader([]common.Hash{par.UnitHash}, []modules.IDType16{modules.PTNCOIN}, []byte{})
+		header := modules.NewHeader([]common.Hash{par.UnitHash}, []modules.IDType16{modules.PTNCOIN}, 1,[]byte{})
 		header.Number.AssetID = par.UnitHeader.Number.AssetID
 		header.Number.IsMain = par.UnitHeader.Number.IsMain
 		header.Number.Index = par.UnitHeader.Number.Index + 1
@@ -265,7 +265,7 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 		header.Witness = []*modules.Authentifier{&modules.Authentifier{"", []byte{}, []byte{}, []byte{}}}
 		tx, _ := NewCoinbaseTransaction()
 		txs := modules.Transactions{tx}
-		unit := NewUnit(header, txs)
+		unit := modules.NewUnit(header, txs)
 		err := SaveUnit(memdb, unit, true)
 		if err != nil {
 			log.Println("save genesis error", err)
