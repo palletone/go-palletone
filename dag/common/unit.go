@@ -126,6 +126,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error)
 //		return err
 //	}
 //
+// TODO YangYu
 //	// 此处应当更新DB中的全局属性
 //	//	go storage.StoreDynGlobalProp(dgp)
 //
