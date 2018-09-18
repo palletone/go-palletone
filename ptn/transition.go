@@ -42,7 +42,7 @@ func (pm *ProtocolManager) startMediatorConnect(srvr *p2p.Server, maxPeers int) 
 			pm.peers.MediatorsReset(nodes)
 		}
 	}
-	//TODO  not exsit will connect
+	//not exsit and no self will connect
 	ps := pm.peers.GetPeers()
 	for _, peer := range peers {
 		if peer.ID.String() != srvr.NodeInfo().ID && !pm.isexist(peer.ID.String(), ps) {
@@ -56,7 +56,7 @@ func (pm *ProtocolManager) startMediatorConnect(srvr *p2p.Server, maxPeers int) 
 
 func (pm *ProtocolManager) isexist(pid string, peers []*peer) bool {
 	for _, peer := range peers {
-		if pid == peer.ID.String() {
+		if pid == peer.id {
 			return true
 		}
 	}
