@@ -78,11 +78,17 @@ func (pm *ProtocolManager) mediatorConnect(srvr *p2p.Server, maxPeers int) {
 	log.Info("mediator transition")
 	pm.peers.MediatorsClean()
 	//TODO  The main network is launched for the first time
+
+	//add interval
+	forceSync := time.NewTicker(forceSyncCycle)
+	defer forceSync.Stop()
 	for {
-		if err := pm.startMediatorConnect(srvr, maxPeers); err != nil {
-			return
+		select {
+		case <-forceSync.C:
+			if err := pm.startMediatorConnect(srvr, maxPeers); err != nil {
+				return
+			}
 		}
-		//TODO add interval
-		time.Sleep(time.Duration(10) * time.Second)
+
 	}
 }
