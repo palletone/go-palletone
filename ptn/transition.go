@@ -44,7 +44,9 @@ func (pm *ProtocolManager) startMediatorConnect(srvr *p2p.Server, maxPeers int) 
 	}
 	//TODO  not exsit will connect
 	for _, peer := range peers {
-		srvr.AddPeer(peer)
+		if peer.ID.String() != srvr.NodeInfo().ID {
+			srvr.AddPeer(peer)
+		}
 	}
 
 	log.Debug("PalletOne", "startMediatorNetwork mediators:", len(peers))
