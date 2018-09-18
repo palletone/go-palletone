@@ -15,16 +15,16 @@
 //// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 //
 package ptn
-//
+
 //
 //import (
-//	"testing"
-//	"sync/atomic"
-//	"time"
-//	"github.com/palletone/go-palletone/dag/modules"
-//	"github.com/palletone/go-palletone/ptn/downloader"
 //	"github.com/palletone/go-palletone/common/p2p"
 //	"github.com/palletone/go-palletone/common/p2p/discover"
+//	"github.com/palletone/go-palletone/dag/modules"
+//	"github.com/palletone/go-palletone/ptn/downloader"
+//	"sync/atomic"
+//	"testing"
+//	"time"
 //)
 //
 //// Tests that fast sync gets disabled as soon as a real block is successfully imported into the blockchain.
@@ -47,11 +47,10 @@ package ptn
 //
 //	time.Sleep(250 * time.Millisecond)
 //
-//	pmEmpty.synchronise(pmEmpty.peers.BestPeer(modules.PTNCOIN),modules.PTNCOIN)
+//	pmEmpty.synchronise(pmEmpty.peers.BestPeer(modules.PTNCOIN), modules.PTNCOIN)
 //
 //	// Check that fast sync was disabled
 //	if atomic.LoadUint32(&pmEmpty.fastSync) == 1 {
 //		t.Fatalf("fast sync not disabled after successful synchronisation")
 //	}
 //}
-//

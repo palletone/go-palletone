@@ -33,10 +33,9 @@ import (
 func testStatusMsgErrors(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil)
 	var (
-		genesis,_ = pm.dag.GetGenesisUnit(0)
-		head = pm.dag.CurrentHeader()
-		index = head.Index()
-
+		genesis, _ = pm.dag.GetGenesisUnit(0)
+		head       = pm.dag.CurrentHeader()
+		index      = head.Index()
 	)
 	defer pm.Stop()
 	tests := []struct {
@@ -62,7 +61,7 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 		},
 	}
 	for i, test := range tests {
-		p, errc := newTestPeer("peer", protocol, pm, false,pm.dag)
+		p, errc := newTestPeer("peer", protocol, pm, false, pm.dag)
 		// The send call might hang until reset because
 		// the protocol might not read the payload.
 		go p2p.Send(p.app, test.code, test.data)
@@ -86,7 +85,7 @@ func testRecvTransactions(t *testing.T, protocol int) {
 	txAdded := make(chan []*modules.Transaction)
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil)
 	pm.acceptTxs = 1 // mark synced to accept transactions
-	p, _ := newTestPeer("peer", protocol, pm, true,pm.dag)
+	p, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
 	defer pm.Stop()
 	defer p.close()
 
@@ -154,7 +153,7 @@ func testSendTransactions(t *testing.T, protocol int) {
 		}
 	}
 	for i := 0; i < 3; i++ {
-		p, _ := newTestPeer(fmt.Sprintf("peer #%d", i), protocol, pm, true,pm.dag)
+		p, _ := newTestPeer(fmt.Sprintf("peer #%d", i), protocol, pm, true, pm.dag)
 		wg.Add(1)
 		go checktxs(p)
 	}
