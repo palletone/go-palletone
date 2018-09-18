@@ -21,7 +21,6 @@
 package common
 
 import (
-	"fmt"
 	"log"
 	"math/big"
 	"testing"

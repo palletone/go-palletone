@@ -40,6 +40,9 @@ const (
 	UNIT_STATE_HAS_INVALID_TRANSACTIONS = 0x05
 	UNIT_STATE_INVALID_SIZE             = 0x06
 	UNIT_STATE_INVALID_EXTRA_DATA       = 0x07
+	UNIT_STATE_INVALID_HEADER           = 0x08
+	UNIT_STATE_CHECK_HEADER_PASSED      = 0x09
+	UNIT_STATE_INVALID_HEADER_WITNESS   = 0x10
 	UNIT_STATE_OTHER_ERROR              = 0xFF
 )
 
@@ -486,12 +489,20 @@ func (u *Unit) Transaction(hash common.Hash) *Transaction {
 	return nil
 }
 
-// return  unit'UnitHash
+// function Hash, return the unit's hash.
 func (u *Unit) Hash() common.Hash {
-	return u.UnitHeader.Hash()
+	if u.UnitHash != u.UnitHeader.Hash() {
+		u.UnitHash = common.Hash{}
+		u.UnitHash.Set(u.UnitHeader.Hash())
+	}
+	return u.UnitHash
 }
 
+// function Size, return the unit's StorageSize.
 func (u *Unit) Size() common.StorageSize {
+	if u.UnitSize > 0 {
+		return u.UnitSize
+	}
 	emptyUnit := Unit{}
 	emptyUnit.UnitHeader = CopyHeader(u.UnitHeader)
 	emptyUnit.UnitHeader.Authors = nil
@@ -502,15 +513,12 @@ func (u *Unit) Size() common.StorageSize {
 	if err != nil {
 		return common.StorageSize(0)
 	} else {
+		if len(b) > 0 {
+			u.UnitSize = common.StorageSize(len(b))
+		}
 		return common.StorageSize(len(b))
 	}
 }
-
-// return Creationdate
-// comment by Albert·Gou
-//func (u *Unit) CreationDate() time.Time {
-//	return u.UnitHeader.Creationdate
-//}
 
 //func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }
 func (u *Unit) Number() ChainIndex {
