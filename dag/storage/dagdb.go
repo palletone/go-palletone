@@ -370,7 +370,7 @@ func (dagdb *DagDatabase) GetUnit(hash common.Hash) *modules.Unit {
 	txs, err := dagdb.GetUnitTransactions(uHash)
 	if err != nil {
 		log.Println("GetUnit when GetUnitTransactions failed , error:", err)
-		//todo xiaozhi
+		//TODO xiaozhi
 		return nil
 	}
 	// generate unit

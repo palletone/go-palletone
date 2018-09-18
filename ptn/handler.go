@@ -272,7 +272,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
 	go pm.vssResponseBroadcastLoop()
 
-	//todo xiaozhi
+	//TODO xiaozhi
 	go pm.StartMediatorMonitor(srvr, maxPeers)
 }
 
