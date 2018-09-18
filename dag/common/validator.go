@@ -111,8 +111,8 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 			return nil, false, fmt.Errorf("Coinbase outputs error0.")
 		}
 		income := uint64(fee) + ComputeInterest()
-		if coinIn.Output[0].Value >= income {
-			return nil, false, fmt.Errorf("Coinbase outputs error1.%d", income)
+		if coinIn.Output[0].Value < income {
+			return nil, false, fmt.Errorf("Coinbase outputs error: 1.%d", income)
 		}
 	}
 	return txFlags, isSuccess, nil
@@ -276,7 +276,8 @@ func (validate *Validate) ValidateUnitSignature(h *modules.Header, isGenesis boo
 		return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
 	}
 
-	return modules.UNIT_STATE_VALIDATED
+	//return modules.UNIT_STATE_VALIDATED
+	return modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED
 }
 
 /**
@@ -339,10 +340,6 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 	if stateVersion == nil && bytecode == nil && name == "" && path == "" {
 		return modules.TxValidationCode_VALID
 	}
-	fmt.Println(">>>>>> stateVersion:", stateVersion)
-	fmt.Println(">>>>>> bytecode:", bytecode)
-	fmt.Println(">>>>>> name:", name)
-	fmt.Println(">>>>>> path:", path)
 	return modules.TxValidationCode_INVALID_CONTRACT_TEMPLATE
 }
 
@@ -416,7 +413,7 @@ func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte 
 		log.Debug(msg)
 		return modules.UNIT_STATE_HAS_INVALID_TRANSACTIONS
 	}
-	return modules.UNIT_STATE_VALIDATED
+	return sigState
 }
 
 func (validate *Validate) validateHeader(header *modules.Header, isGenesis bool) byte {
