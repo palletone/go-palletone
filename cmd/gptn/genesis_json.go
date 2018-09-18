@@ -166,6 +166,36 @@ func createGenesisJson(ctx *cli.Context) error {
 
 	fmt.Println("Creating example genesis state in file " + genesisOut)
 
+	modifyConfig(ctx, mcs)
+
+	return nil
+}
+
+func modifyConfig(ctx *cli.Context, mediators []mp.MediatorConf) error {
+	cfg := &FullConfig{Node: defaultNodeConfig()}
+	configPath := defaultConfigPath
+	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
+		configPath, _ = getConfigPath(temp, cfg.Node.DataDir)
+	}
+
+	// 加载配置文件中的配置信息到 cfg中
+	err := loadConfig(configPath, cfg)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	cfg.MediatorPlugin.EnableStaleProduction = true
+	cfg.MediatorPlugin.Mediators = mediators
+
+	err = makeConfigFile(cfg, configPath)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	fmt.Println("Rewriting config file at:", configPath)
+
 	return nil
 }
 
