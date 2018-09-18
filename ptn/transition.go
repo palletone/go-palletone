@@ -43,14 +43,24 @@ func (pm *ProtocolManager) startMediatorConnect(srvr *p2p.Server, maxPeers int) 
 		}
 	}
 	//TODO  not exsit will connect
+	ps := pm.peers.GetPeers()
 	for _, peer := range peers {
-		if peer.ID.String() != srvr.NodeInfo().ID {
+		if peer.ID.String() != srvr.NodeInfo().ID && !pm.isexist(peer.ID.String(), ps) {
 			srvr.AddPeer(peer)
 		}
 	}
 
 	log.Debug("PalletOne", "startMediatorNetwork mediators:", len(peers))
 	return nil
+}
+
+func (pm *ProtocolManager) isexist(pid string, peers []*peer) bool {
+	for _, peer := range peers {
+		if pid == peer.ID.String() {
+			return true
+		}
+	}
+	return false
 }
 
 /*
