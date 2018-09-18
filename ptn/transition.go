@@ -20,6 +20,7 @@ package ptn
 
 import (
 	"errors"
+	"time"
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
@@ -27,13 +28,21 @@ import (
 
 //go pm.mediatorMonitor(maxPeers)
 //Start MediatorNetwork
-func (pm *ProtocolManager) startMediatorNetwork(srvr *p2p.Server, maxPeers int) error {
+func (pm *ProtocolManager) startMediatorConnect(srvr *p2p.Server, maxPeers int) error {
 	peers := pm.dag.GetActiveMediatorNodes()
 	if maxPeers < len(peers)+3 {
 		log.Error("PalletOne start", "maxpeers", maxPeers, "mediator size", len(peers)+3) //3:nomediator
 		return errors.New("maxpeers < mediator size")
 	}
-
+	if pm.peers.mediators.Size() != len(peers) {
+		nodes := []string{}
+		for _, peer := range peers {
+			nodeId := peer.ID.TerminalString()
+			nodes = append(nodes, nodeId)
+			pm.peers.MediatorsReset(nodes)
+		}
+	}
+	//TODO  not exsit will connect
 	for _, peer := range peers {
 		srvr.AddPeer(peer)
 	}
@@ -49,22 +58,19 @@ func (pm *ProtocolManager) startMediatorNetwork(srvr *p2p.Server, maxPeers int) 
 		2.2 no mediator node:unlimited
 	3.all the mediators node is connectin.Notice the mediator plugin
 */
-func (pm *ProtocolManager) StartMediatorMonitor(srvr *p2p.Server, maxPeers int) {
+func (pm *ProtocolManager) mediatorConnect(srvr *p2p.Server, maxPeers int) {
 	if !pm.producer.LocalHaveActiveMediator() {
 		log.Info("This node is not Mediator")
 		return
 	}
 	log.Info("mediator transition")
+	pm.peers.MediatorsClean()
+	//TODO  The main network is launched for the first time
 	for {
-		if err := pm.startMediatorNetwork(srvr, maxPeers); err != nil {
+		if err := pm.startMediatorConnect(srvr, maxPeers); err != nil {
 			return
 		}
-		//TODO must modify
-		go pm.monitor()
-		break
+		//TODO add interval
+		time.Sleep(time.Duration(10) * time.Second)
 	}
-}
-
-func (pm *ProtocolManager) monitor() {
-
 }
