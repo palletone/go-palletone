@@ -366,11 +366,12 @@ type ContractTplPayload struct {
 }
 
 const (
-	FIELD_TPL_BYTECODE = "TplBytecode"
-	FIELD_TPL_NAME     = "TplName"
-	FIELD_TPL_PATH     = "TplPath"
-	FIELD_TPL_Memory   = "TplMemory"
-	FIELD_SPLIT_STR    = "^*^"
+	FIELD_TPL_BYTECODE  = "TplBytecode"
+	FIELD_TPL_NAME      = "TplName"
+	FIELD_TPL_PATH      = "TplPath"
+	FIELD_TPL_Memory    = "TplMemory"
+	FIELD_SPLIT_STR     = "^*^"
+	FIELD_GENESIS_ASSET = "GenesisAsset"
 )
 
 type DelContractState struct {
