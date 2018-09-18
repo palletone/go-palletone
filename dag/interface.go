@@ -46,7 +46,7 @@ type IDag interface {
 	GetHeader(hash common.Hash, number uint64) (*modules.Header, error)
 	// CurrentHeader retrieves the head header from the local chain.
 	CurrentHeader() *modules.Header
-	GetTransactionsByHash(hash common.Hash) (modules.Transactions, error)
+	GetTransactionByHash(hash common.Hash) (*modules.Transaction, error)
 	// InsertHeaderDag inserts a batch of headers into the local chain.
 	InsertHeaderDag([]*modules.Header, int) (int, error)
 	HasUnit(hash common.Hash) bool
@@ -81,4 +81,7 @@ type IDag interface {
 	GetGlobalProp() *modules.GlobalProperty
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetMediatorSchl() *modules.MediatorSchedule
+	GetActiveMediatorCount() int
+	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
+	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
 }

@@ -245,6 +245,20 @@ func TestCreateUnit(t *testing.T) {
 //	log.Println("path=", path)
 //}
 
+//func TestGetTransaction(t *testing.T) {
+//	rep := mockUnitRepositoryLeveldb("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb")
+//	txHash := common.Hash{}
+//	if err := txHash.SetHexString("0xe146ada75bbdeeebac5902e553154104f4349d3ddab3a5ffbdc3d33c9d72792b"); err != nil {
+//		log.Println("get tx hex hash error:", err.Error())
+//		return
+//	}
+//	tx, unithash, number, index := rep.dagdb.GetTransaction(txHash)
+//	fmt.Println("tx:", tx)
+//	fmt.Println("unithash:", unithash)
+//	fmt.Println("number:", number)
+//	fmt.Println("index:", index)
+//}
+
 func TestPaymentTransactionRLP(t *testing.T) {
 	p := common.Hash{}
 	p.SetString("0000000000000000022222222222")

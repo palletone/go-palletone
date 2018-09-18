@@ -22,6 +22,7 @@ import (
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
+        "github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
@@ -60,7 +61,7 @@ type Backend interface {
 	SendTx(ctx context.Context, signedTx *modules.Transaction) error
 	GetPoolTransactions() (modules.Transactions, error)
 	GetPoolTransaction(txHash common.Hash) *modules.Transaction
-	GetTxByTxid_back (txid string) (modules.Transactions, error)
+	GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, error)
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
 	Stats() (pending int, queued int)
 	TxPoolContent() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
@@ -158,4 +159,3 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 		},
 	}
 }
-

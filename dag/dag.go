@@ -90,6 +90,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	txs, err := d.dagdb.GetUnitTransactions(uHash)
 	if err != nil {
 		log.Error("Current unit when get transactions", "error", err.Error())
+		//todo xiaozhi
 		return nil
 	}
 	// generate unit
@@ -276,13 +277,12 @@ func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 	return d.getBodyRLP(hash)
 }
 
-func (d *Dag) GetTransactionsByHash(hash common.Hash) (modules.Transactions, error) {
-	txs, err := d.dagdb.GetUnitTransactions(hash)
-	if err != nil {
-		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
-		return nil, err
+func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, error) {
+	tx, _, _, _ := d.dagdb.GetTransaction(hash)
+	if tx == nil {
+		return nil, fmt.Errorf("GetTransactionByHash: get none transaction")
 	}
-	return txs, nil
+	return tx, nil
 }
 
 func (d *Dag) getBodyRLP(hash common.Hash) rlp.RawValue {
