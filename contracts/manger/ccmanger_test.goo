@@ -543,7 +543,7 @@ func creatTestDag() (*dag.Dag, error){
 
 
 func TestContractApi(t *testing.T) {
-	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
+	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes") ///home/glh/tmp/chaincodes //"D://tmp/chaincodes"
 	viper.Set("peer.address", "127.0.0.1:12345")
 	viper.Set("chaincode.executetimeout", 20*time.Second)
 
@@ -582,7 +582,6 @@ func TestContractApi(t *testing.T) {
 	if err = saveTpl(payload); err != nil {
 		t.Error("saveTpl failed")
 	}
-
 
 	//deploy
 	fmt.Println("=======================deploy=============================")
@@ -644,7 +643,9 @@ func creatHeader() (*modules.Header, error) {
 }
 
 func saveTpl(payload *modules.ContractTplPayload) error {
+	fmt.Println("------001")
 	fmt.Printf("ccTpl:name[%s]path[%s]ver[%s]\n", payload.Name, payload.Path, payload.Version)
+	fmt.Println("------002")
 	header, err := creatHeader()
 	if err != nil {
 		return err
@@ -713,9 +714,11 @@ func saveTpl(payload *modules.ContractTplPayload) error {
 	unit.UnitHash = unit.Hash()
 
 	dag, err :=cdb.GetCcDagHand()
+	log.Println("opopo----111")
 	if _, err := dag.SaveDag(unit, false); err != nil {
 		log.Println("opopo",err)
 	}
+	log.Println("opopo----222")
 	return nil
 }
 

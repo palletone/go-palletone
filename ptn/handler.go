@@ -108,12 +108,15 @@ type ProtocolManager struct {
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg sync.WaitGroup
-	//levelDb *palletdb.LDBDatabase
+
+	genesis *modules.Unit
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool, engine core.ConsensusEngine, dag dag.IDag, mux *event.TypeMux, producer producer) (*ProtocolManager, error) {
+func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool,
+	engine core.ConsensusEngine, dag dag.IDag, mux *event.TypeMux, producer producer,
+	genesis *modules.Unit) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -126,8 +129,8 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		noMorePeers: make(chan struct{}),
 		txsyncCh:    make(chan *txsync),
 		quitSync:    make(chan struct{}),
-		//levelDb:     levelDb,
-		producer: producer,
+		genesis:     genesis,
+		producer:    producer,
 	}
 
 	// Figure out whether to allow fast sync or not
@@ -332,7 +335,7 @@ func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDeal
 	dstId := node.ID.TerminalString()
 	peer := pm.peers.Peer(dstId)
 	if peer == nil {
-		log.Info(fmt.Sprintf("peer not exist: %v", node.String()))
+		//		log.Info(fmt.Sprintf("peer not exist: %v", node.String()))
 		return
 	}
 
@@ -427,38 +430,14 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 	log.Debug("PalletOne peer connected", "name", p.Name())
 
-	// Execute the PalletOne handshake
-	//var (
-	//	//genesis = //common.Hash{}   //pm.blockchain.Genesis()
-	//	head = &modules.Header{} //pm.blockchain.CurrentHeader()
-	//	hash = head.Hash()
-	//	//number = head.Number.Uint64()
-	//	td = uint64(0) //&big.Int{} //pm.blockchain.GetTd(hash, number)
-	//)
-	//var (
-	//	//number = modules.ChainIndex{
-	//	//	modules.PTNCOIN,
-	//	//	true,
-	//	//	0,
-	//	//}
-	//	//genesis = pm.dag.GetUnitByNumber(number)
-	//
-	//	head  = pm.dag.CurrentHeader()
-	//	hash  = head.Hash()
-	//	index = head.Number.Index
-	//)
-	head  := pm.dag.CurrentHeader()
-		hash  := head.Hash()
-		index := head.Number.Index
 	//TODO Devin
 	//var unitRep common2.IUnitRepository
 	//unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
-	genesis, err := pm.dag.GetGenesisUnit(0)
-	if err != nil {
-		log.Info("GetGenesisUnit error", "err", err)
-		return err
-	}
-	if err := p.Handshake(pm.networkId, index, hash, genesis.Hash()); err != nil {
+
+	// Execute the PalletOne handshake
+	head := pm.dag.CurrentHeader()
+
+	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash()); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
@@ -1052,7 +1031,7 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 		id := node.ID.TerminalString()
 		peer := pm.peers.Peer(id)
 		if peer == nil {
-			log.Info(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
+			//log.Info(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
 		} else {
 			list[id] = peer
 		}

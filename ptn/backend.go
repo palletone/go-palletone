@@ -136,8 +136,14 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
+	genesis, err := ptn.dag.GetGenesisUnit(0)
+	if err != nil {
+		log.Error("PalletOne New", "get genesis err:", err)
+		return nil, err
+	}
+
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine,
-		ptn.dag, ptn.eventMux, ptn.mediatorPlugin); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis); err != nil {
 		log.Error("NewProtocolManager err:", err)
 		return nil, err
 	}

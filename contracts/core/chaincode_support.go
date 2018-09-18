@@ -657,6 +657,7 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 	}
 
 	canName := cccid.GetCanonicalName()
+	chaincodeLogger.Infof("canName= %s", canName)
 	chaincodeSupport.runningChaincodes.Lock()
 	var chrte *chaincodeRTEnv
 	var ok bool

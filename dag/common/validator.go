@@ -126,9 +126,9 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 	if len(tx.TxMessages) == 0 {
 		return modules.TxValidationCode_INVALID_MSG
 	}
-	if tx.TxMessages[0].App != modules.APP_PAYMENT {
+	if tx.TxMessages[0].App != modules.APP_PAYMENT { // 交易费
 		fmt.Printf("-----------ValidateTx , %d\n", tx.TxMessages[0].App)
-		//return modules.TxValidationCode_INVALID_MSG
+		return modules.TxValidationCode_INVALID_MSG
 	}
 	// validate transaction hash
 	if !bytes.Equal(tx.TxHash.Bytes(), tx.Hash().Bytes()) {
@@ -230,9 +230,6 @@ func validateMessageType(app byte, payload interface{}) bool {
 To validate unit's signature, and mediators' signature
 */
 func (validate *Validate) ValidateUnitSignature(h *modules.Header, isGenesis bool) byte {
-	if h.Authors == nil || len(h.Authors.Address) <= 0 {
-		return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
-	}
 	emptySigUnit := modules.Unit{}
 	// copy unit's header
 	emptySigUnit.UnitHeader = modules.CopyHeader(h)
@@ -260,10 +257,6 @@ func (validate *Validate) ValidateUnitSignature(h *modules.Header, isGenesis boo
 	// if genesis unit just return
 	if isGenesis == true {
 		return modules.UNIT_STATE_VALIDATED
-	}
-	// todo group signature verify
-	if len(h.Witness) <= 0 {
-		return modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED
 	}
 	// get mediators
 	data := validate.statedb.GetConfig([]byte("MediatorCandidates"))
@@ -360,9 +353,7 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 //3. Unlock correct
 func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload, isCoinbase bool) modules.TxValidationCode {
 	// check locktime
-	// if payment.LockTime <= uint32(10) || payment.LockTime >= uint32(10000) {
-	// 	return modules.TxValidationCode_INVALID_PAYMMENT_LOCKTIME
-	// }
+
 	if len(payment.Input) <= 0 {
 		return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
 	}
@@ -386,7 +377,7 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 	for i, out := range payment.Output {
 		// checkout output
 		if i < 1 {
-			continue //			asset = out.Asset
+			continue // asset = out.Asset
 		} else {
 			if out.Asset == nil {
 				return modules.TxValidationCode_INVALID_ASSET
@@ -407,29 +398,18 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 Validate unit
 */
 func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte {
-	if unit.UnitSize == 0 || unit.Size() == 0 {
-		return modules.UNIT_STATE_EMPTY
-	}
-	// step1. check unit signature, should be compare to mediator list
-	sigState := validate.ValidateUnitSignature(unit.UnitHeader, isGenesis)
-	if sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED && sigState != modules.UNIT_STATE_VALIDATED {
-		return sigState
-	}
-
-	// step2. check unit size
-	if unit.UnitSize != unit.Size() {
-		log.Debug("Validate size", "error", "Size is invalid")
+	//  unit's size  should bigger than minimum.
+	if unit.Size() < 125 {
+		log.Debug("Validate size", "error", "size is invalid", "size", unit.Size())
 		return modules.UNIT_STATE_INVALID_SIZE
 	}
 
-	// step3. check header extra data
-	if uint64(len(unit.UnitHeader.Extra)) > uint64(32) {
-		msg := fmt.Sprintf("extra-data too long: %d > %d", len(unit.UnitHeader.Extra), configure.MaximumExtraDataSize)
-		log.Debug(msg)
-		return modules.UNIT_STATE_INVALID_EXTRA_DATA
+	// step1. check header.
+	if sigState := validate.validateHeader(unit.UnitHeader, isGenesis); sigState != modules.UNIT_STATE_VALIDATED {
+		log.Debug("Validate unit's header failed.", "error code", sigState)
+		return sigState
 	}
-
-	// step4. check transactions in unit
+	// step2. check transactions in unit
 	_, isSuccess, err := validate.ValidateTransactions(&unit.Txs, isGenesis)
 	if isSuccess != true {
 		msg := fmt.Sprintf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
@@ -437,4 +417,69 @@ func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte 
 		return modules.UNIT_STATE_HAS_INVALID_TRANSACTIONS
 	}
 	return modules.UNIT_STATE_VALIDATED
+}
+
+func (validate *Validate) validateHeader(header *modules.Header, isGenesis bool) byte {
+	if header == nil {
+		return modules.UNIT_STATE_INVALID_HEADER
+	}
+
+	if len(header.ParentsHash) == 0 {
+		if !isGenesis {
+			return modules.UNIT_STATE_INVALID_HEADER
+		}
+	}
+	//  check header's extra data
+	if uint64(len(header.Extra)) > configure.MaximumExtraDataSize {
+		msg := fmt.Sprintf("extra-data too long: %d > %d", len(header.Extra), configure.MaximumExtraDataSize)
+		log.Debug(msg)
+		return modules.UNIT_STATE_INVALID_EXTRA_DATA
+	}
+	// check txroot
+	if header.TxRoot == (common.Hash{}) {
+		return modules.UNIT_STATE_INVALID_HEADER
+	}
+
+	// check creation_time
+	if header.Creationdate <= modules.UNIT_CREATION_DATE_INITIAL_UINT64 {
+		return modules.UNIT_STATE_INVALID_HEADER
+	}
+
+	// check header's number
+	if header.Number == (modules.ChainIndex{}) {
+		return modules.UNIT_STATE_INVALID_HEADER
+	}
+	if len(header.AssetIDs) == 0 {
+		return modules.UNIT_STATE_INVALID_HEADER
+	}
+
+	if isGenesis {
+		if len(header.AssetIDs) != 1 {
+			return modules.UNIT_STATE_INVALID_HEADER
+		}
+		if header.AssetIDs[0] != modules.PTNCOIN || !header.Number.IsMain || header.Number.Index != 0 {
+			return modules.UNIT_STATE_INVALID_HEADER
+		}
+		return modules.UNIT_STATE_CHECK_HEADER_PASSED
+	}
+	var isValidAssetId bool
+	for _, asset := range header.AssetIDs {
+		if asset == header.Number.AssetID {
+			isValidAssetId = true
+			break
+		}
+	}
+	if !isValidAssetId {
+		return modules.UNIT_STATE_INVALID_HEADER
+	}
+
+	// check authors
+	if header.Authors == nil {
+		return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
+	}
+	if len(header.Witness) > 21 || len(header.Witness) < 16 {
+		return modules.UNIT_STATE_INVALID_HEADER_WITNESS
+	}
+	sigState := validate.ValidateUnitSignature(header, isGenesis)
+	return sigState
 }

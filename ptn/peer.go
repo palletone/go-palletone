@@ -77,8 +77,7 @@ type peer struct {
 	knownTxs    *set.Set // Set of transaction hashes known to be known by this peer
 	knownBlocks *set.Set // Set of block hashes known to be known by this peer
 
-	head  common.Hash
-	index uint64
+	index modules.ChainIndex
 
 	isMediator bool
 }
@@ -274,7 +273,7 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 
 // Handshake executes the ptn protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(network uint64, td uint64, head common.Hash, genesis common.Hash) error {
+func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis common.Hash) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 	var status statusData // safe to read after two values have been received from errc
@@ -283,10 +282,8 @@ func (p *peer) Handshake(network uint64, td uint64, head common.Hash, genesis co
 		errc <- p2p.Send(p.rw, StatusMsg, &statusData{
 			ProtocolVersion: uint32(p.version),
 			NetworkId:       network,
-			TD:              td,
-			//TODO
-			CurrentBlock: head,
-			GenesisBlock: genesis,
+			Index:           index,
+			GenesisUnit:     genesis,
 		})
 	}()
 	go func() {
@@ -304,8 +301,8 @@ func (p *peer) Handshake(network uint64, td uint64, head common.Hash, genesis co
 			return p2p.DiscReadTimeout
 		}
 	}
-	//TODO would recover
-	p.index, p.head = status.TD, status.CurrentBlock
+	p.index = status.Index
+	//p.index, p.head = status.TD, status.CurrentBlock
 	return nil
 }
 
@@ -324,8 +321,8 @@ func (p *peer) readStatus(network uint64, status *statusData, genesis common.Has
 	if err := msg.Decode(&status); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
-	if status.GenesisBlock != genesis {
-		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisBlock[:8], genesis[:8])
+	if status.GenesisUnit != genesis {
+		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisUnit[:8], genesis[:8])
 	}
 	if status.NetworkId != network {
 		return errResp(ErrNetworkIdMismatch, "%d (!= %d)", status.NetworkId, network)
