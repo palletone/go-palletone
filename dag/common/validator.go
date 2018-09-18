@@ -402,7 +402,8 @@ func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte 
 	}
 
 	// step1. check header.
-	if sigState := validate.validateHeader(unit.UnitHeader, isGenesis); sigState != modules.UNIT_STATE_VALIDATED {
+	sigState := validate.validateHeader(unit.UnitHeader, isGenesis)
+	if sigState != modules.UNIT_STATE_VALIDATED {
 		log.Debug("Validate unit's header failed.", "error code", sigState)
 		return sigState
 	}
