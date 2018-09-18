@@ -182,7 +182,7 @@ func maybeLoadConfig(ctx *cli.Context, cfg *FullConfig) error {
 			return err
 		}
 
-		fmt.Sprintf("Writing new config file at: %v", configPath)
+		fmt.Println("Writing new config file at: ", configPath)
 	}
 
 	// 加载配置文件中的配置信息到 cfg中

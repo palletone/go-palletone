@@ -164,7 +164,7 @@ func initGenesis(ctx *cli.Context) error {
 	account, password := getAccountFromConf(configPath)
 
 	err = ks.Unlock(account, password)
-	if err == nil {
+	if err != nil {
 		utils.Fatalf("Failed to unlock account: %v, address: %v", err, account.Address.Str())
 		return err
 	}
