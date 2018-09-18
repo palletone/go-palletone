@@ -240,12 +240,12 @@ func (e *Endorser) ProcessProposal(deployId []byte, ctx context.Context, signedP
 			resp := &pb.ProposalResponse{
 				Payload:  nil,
 				Response: &pb.Response{Status: 500, Message: "Chaincode Error"}}
-			return resp, nil, errors.New("Chaincode Error")
+			return resp, nil, errors.New("Chaincode Error:" + res.Message)
 		}
 	} else {
 		logger.Error("simulateProposal response is nil")
 		return &pb.ProposalResponse{
-			Payload: nil, Response: &pb.Response{Status: 500, Message: "Chaincode Error"}}, nil, errors.New("Chaincode Error")
+			Payload: nil, Response: &pb.Response{Status: 500, Message: "Chaincode Error"}}, nil, errors.New("Chaincode Error:" + res.Message)
 	}
 
 	//2 -- endorse and get a marshalled ProposalResponse message

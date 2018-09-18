@@ -671,7 +671,7 @@ func (t *http2Server) handlePing(f *http2.PingFrame) {
 
 	if t.pingStrikes > maxPingStrikes {
 		// Send goaway and close the connection.
-		infof("transport0: Got too many pings from the client, closing the connection.")
+		infof("transport0: Got too many pings from the client, but not close the connection.")
 		//errorf("transport: Got too many pings from the client, closing the connection.")
 		//t.controlBuf.put(&goAway{code: http2.ErrCodeEnhanceYourCalm, debugData: []byte("too_many_pings"), closeConn: true})
 	}

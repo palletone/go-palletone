@@ -126,6 +126,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error)
 //		return err
 //	}
 //
+// TODO YangYu
 //	// 此处应当更新DB中的全局属性
 //	//	go storage.StoreDynGlobalProp(dgp)
 //
@@ -278,7 +279,7 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 		// get transaction list
 		txs, err := unitOp.dagdb.GetUnitTransactions(unit.UnitHash)
 		if err != nil {
-			//todo xiaozhi
+			//TODO xiaozhi
 			return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
 		}
 		unit.Txs = txs

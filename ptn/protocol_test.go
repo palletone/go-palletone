@@ -33,10 +33,9 @@ import (
 func testStatusMsgErrors(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil)
 	var (
-		genesis,_ = pm.dag.GetGenesisUnit(0)
-		head = pm.dag.CurrentHeader()
-		index = head.Index()
-
+		genesis, _ = pm.dag.GetGenesisUnit(0)
+		head       = pm.dag.CurrentHeader()
+		index      = head.Number
 	)
 	defer pm.Stop()
 	tests := []struct {
@@ -49,20 +48,20 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 			wantError: errResp(ErrNoStatusMsg, "first msg has code 2 (!= 0)"),
 		},
 		{
-			code: StatusMsg, data: statusData{10, DefaultConfig.NetworkId, index, head.Hash(), genesis.Hash()},
+			code: StatusMsg, data: statusData{10, DefaultConfig.NetworkId, index, genesis.Hash()},
 			wantError: errResp(ErrProtocolVersionMismatch, "10 (!= %d)", protocol),
 		},
 		{
-			code: StatusMsg, data: statusData{uint32(protocol), 999, index, head.Hash(), genesis.Hash()},
+			code: StatusMsg, data: statusData{uint32(protocol), 999, index, genesis.Hash()},
 			wantError: errResp(ErrNetworkIdMismatch, "999 (!= 1)"),
 		},
 		{
-			code: StatusMsg, data: statusData{uint32(protocol), DefaultConfig.NetworkId, index, head.Hash(), common.Hash{3}},
+			code: StatusMsg, data: statusData{uint32(protocol), DefaultConfig.NetworkId, index, common.Hash{3}},
 			wantError: errResp(ErrGenesisBlockMismatch, "0300000000000000 (!= %x)", genesis.Hash().Bytes()[:8]),
 		},
 	}
 	for i, test := range tests {
-		p, errc := newTestPeer("peer", protocol, pm, false,pm.dag)
+		p, errc := newTestPeer("peer", protocol, pm, false, pm.dag)
 		// The send call might hang until reset because
 		// the protocol might not read the payload.
 		go p2p.Send(p.app, test.code, test.data)
@@ -86,7 +85,7 @@ func testRecvTransactions(t *testing.T, protocol int) {
 	txAdded := make(chan []*modules.Transaction)
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil)
 	pm.acceptTxs = 1 // mark synced to accept transactions
-	p, _ := newTestPeer("peer", protocol, pm, true,pm.dag)
+	p, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
 	defer pm.Stop()
 	defer p.close()
 
@@ -154,7 +153,7 @@ func testSendTransactions(t *testing.T, protocol int) {
 		}
 	}
 	for i := 0; i < 3; i++ {
-		p, _ := newTestPeer(fmt.Sprintf("peer #%d", i), protocol, pm, true,pm.dag)
+		p, _ := newTestPeer(fmt.Sprintf("peer #%d", i), protocol, pm, true, pm.dag)
 		wg.Add(1)
 		go checktxs(p)
 	}

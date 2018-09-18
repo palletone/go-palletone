@@ -278,10 +278,16 @@ func helper() {
 	fmt.Println("Params : bob, txid, index, amount, fee, redeem")
 }
 func main() {
-	err := loadConfig(gWalletFile, gWallet)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
+	f, err := os.Open(gWalletFile)
+	if err != nil && os.IsNotExist(err) { //check wallet config file
+		saveConfig(gWalletFile, gWallet)
+	} else {
+		f.Close()
+		err = loadConfig(gWalletFile, gWallet) //load wallet config
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
 	}
 
 	args := os.Args

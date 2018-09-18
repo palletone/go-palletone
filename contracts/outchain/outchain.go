@@ -108,12 +108,16 @@ var tomlSettings = toml.Config{
 }
 
 func init() {
-	_, err := os.Open(configPath)
+	f, err := os.Open(configPath)
 	if err != nil && os.IsNotExist(err) {
 		saveConfigTest() // save default config
 	} else {
-		GetConfigTest()
+		f.Close()
 	}
+
+	//load config
+	GetConfigTest()
+
 }
 
 func makeDefaultConfig() Config {
