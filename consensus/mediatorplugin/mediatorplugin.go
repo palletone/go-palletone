@@ -208,6 +208,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	num := unit.UnitHeader.Number.Index
+	log.Info(">>>>>>>>>>>>>>>>>>>>>>>> ", "unit height", num)
 	detail["Num"] = strconv.FormatUint(num, 10)
 	time := time.Unix(unit.UnitHeader.Creationdate, 0)
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")

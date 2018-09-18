@@ -44,17 +44,33 @@ func GenerateUnit(dag dag.IDag, when time.Time, producer core.Mediator,
 	log.Debug("Generating Verified Unit...")
 
 	units, err := dag.CreateUnit(&producer.Address, txspool, ks, when)
+	if err != nil {
+		log.Error("GenerateUnit", "error", err.Error())
+		return &modules.Unit{}
+	}
 	// added by yangyu, 2018.8.9
-	if err != nil || units == nil || len(units) == 0 || units[0].IsEmpty() {
+	if units == nil || len(units) == 0 || units[0].IsEmpty() {
 		log.Info("No unit need to be packaged for now.")
 		return &modules.Unit{}
 	}
 
 	pendingUnit := &units[0]
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
-	pendingUnit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
-	pendingUnit.UnitHeader.ParentsHash =
-		append(pendingUnit.UnitHeader.ParentsHash, dgp.LastVerifiedUnitHash)
+	if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
+		curUnit := dag.GetCurrentMemUnit(pendingUnit.UnitHeader.AssetIDs[0])
+		if curUnit == nil {
+			curUnit = dag.GetCurrentUnit(pendingUnit.UnitHeader.AssetIDs[0])
+		}
+		if curUnit != nil {
+			pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
+			pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
+			pendingUnit.UnitHeader.Number.Index += 1
+		}
+	} else {
+		pendingUnit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
+		pendingUnit.UnitHeader.ParentsHash =
+			append(pendingUnit.UnitHeader.ParentsHash, dgp.LastVerifiedUnitHash)
+	}
 	pendingUnit.UnitHash = pendingUnit.Hash()
 
 	_, err = dagcommon.GetUnitWithSig(pendingUnit, ks, producer.Address)
@@ -86,7 +102,8 @@ func PushUnit(dag dag.IDag, newUnit *modules.Unit) bool {
 	log.Debug("storing the new verified unit to database...")
 	// TODO YangYu
 	// 参考 StoreUnit ,还应当调用 StoreDynGlobalProp()
-	err := dag.SaveUnit(*newUnit, false)
+	//err := dag.SaveUnit(*newUnit, false)
+	_, err := dag.SaveDag(*newUnit, false)
 	if err != nil {
 		log.Info("unit_production", "PushUnit err:", err)
 	}

@@ -107,6 +107,15 @@ func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
 	return d.CurrentUnit()
 }
 
+func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit {
+	curUnit, err := d.Memdag.GetCurrentUnit(assetId)
+	if err != nil {
+		log.Error("GetCurrentMemUnit", "error", err.Error())
+		return nil
+	}
+	return curUnit
+}
+
 func (d *Dag) GetUnit(hash common.Hash) *modules.Unit {
 	return d.dagdb.GetUnit(hash)
 }
