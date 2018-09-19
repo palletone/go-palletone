@@ -460,6 +460,14 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		return p2p.DiscTooManyPeers
 	}
 
+	//TODO
+	/*
+		1.CheckMediator notice consensus when full mediator connected.
+		2.Holdup
+		3.Proceing vss
+		4.Vss success.mediator notice ptn.Clean ps.mediators
+		5.Continue when Transition to complete
+	*/
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
 		rw.Init(p.version)
 	}
@@ -479,7 +487,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	pm.syncTransactions(p)
 	log.Debug("PalletOne pm handle syncTransactions")
-	//TODO CheckMediator notice consensus when full mediator connected
 
 	// main loop. handle incoming messages.
 	for {
@@ -492,58 +499,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 //switchover: vote mediator all connected next to switchover official peerset
 func (pm *ProtocolManager) switchover(p *peer) error {
-	// Ignore maxPeers if this is a trusted peer
-	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
-		return p2p.DiscTooManyPeers
-	}
-	log.Debug("PalletOne peer connected", "name", p.Name())
-
-	//TODO Devin
-	//var unitRep common2.IUnitRepository
-	//unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
-
-	// Execute the PalletOne handshake
-	head := pm.dag.CurrentHeader()
-	mediator := pm.producer.LocalHaveActiveMediator()
-
-	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), mediator); err != nil {
-		log.Debug("PalletOne handshake failed", "err", err)
-		return err
-	}
-
-	if pm.peers.MediatorCheck(p, pm.maxPeers) {
-		log.Info("ProtocolManager handler nomediator too many peers")
-		return p2p.DiscTooManyPeers
-	}
-
-	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
-		rw.Init(p.version)
-	}
-	// Register the peer locally
-	if err := pm.peers.Register(p); err != nil {
-		log.Error("PalletOne peer registration failed", "err", err)
-		return err
-	}
-	defer pm.removePeer(p.id)
-
-	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
-	if err := pm.downloader.RegisterPeer(p.id, p.version, p); err != nil {
-		return err
-	}
-	// Propagate existing transactions. new transactions appearing
-	// after this will be sent via broadcasts.
-	pm.syncTransactions(p)
-
-	//TODO CheckMediator notice consensus when full mediator connected
-
-	// main loop. handle incoming messages.
-	for {
-		if err := pm.handleMsg(p); err != nil {
-			log.Debug("PalletOne message handling failed", "err", err)
-			return err
-		}
-	}
+	return nil
 }
 
 // handleMsg is invoked whenever an inbound message is received from a remote
@@ -557,6 +513,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	if msg.Size > ProtocolMaxMsgSize {
 		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
 	}
+	//TODO judge msg.Code must vss code when peer In the vss processing stage.
+	//Otherwise, immediatly return errResp.On the basis of ps.mediators
+
 	defer msg.Discard()
 
 	// Handle the message depending on its contents
