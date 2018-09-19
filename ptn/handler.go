@@ -454,7 +454,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		return err
 	}
 
-	if pm.peers.MediatorCheck(p, pm.maxPeers) {
+	if !pm.peers.MediatorCheck(p, pm.maxPeers) {
 		log.Info("ProtocolManager handler nomediator too many peers")
 		return p2p.DiscTooManyPeers
 	}
