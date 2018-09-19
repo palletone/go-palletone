@@ -188,7 +188,8 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag)
 
 	validator := func(header *modules.Header) error {
-		return dag.VerifyHeader(header, true)
+		//TODO must recover
+		return nil //dag.VerifyHeader(header, false)
 	}
 	heighter := func(assetId modules.IDType16) uint64 {
 		unit := dag.GetCurrentUnit(assetId)
@@ -475,8 +476,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
-	pm.syncTransactions(p)
 
+	pm.syncTransactions(p)
+	log.Debug("PalletOne pm handle syncTransactions")
 	//TODO CheckMediator notice consensus when full mediator connected
 
 	// main loop. handle incoming messages.
