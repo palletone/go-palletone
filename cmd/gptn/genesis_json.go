@@ -115,16 +115,17 @@ func createGenesisJson(ctx *cli.Context) error {
 		err         error
 	)
 
+	account, err := getTokenAccount(ctx)
+	if err != nil {
+		return err
+	}
+
 	// comment by Albert·Gou
-	//account, err := getTokenAccount(ctx)
+	//account, _, err := createExampleAccount(ctx)
 	//if err != nil {
 	//	return err
 	//}
 
-	account, _, err := createExampleAccount(ctx)
-	if err != nil {
-		return err
-	}
 	mcs := createExampleMediators(ctx, core.DefaultMediatorCount)
 	nodeStr, err := getNodeInfo(ctx)
 	if err != nil {
