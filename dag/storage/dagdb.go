@@ -61,6 +61,7 @@ type DagDb interface {
 	PutHeadUnitHash(hash common.Hash) error
 	PutHeadFastUnitHash(hash common.Hash) error
 	PutTrieSyncProgress(count uint64) error
+	UpdateHeadByBatch(hash common.Hash, number uint64) error
 
 	GetUnit(hash common.Hash) *modules.Unit
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)

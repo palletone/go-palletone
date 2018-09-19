@@ -33,7 +33,8 @@ import (
 type MemUnit map[common.Hash]*modules.Unit
 
 func InitMemUnit() *MemUnit {
-	return &MemUnit{}
+	memunit := new(MemUnit)
+	return memunit
 }
 
 func (mu *MemUnit) Add(u *modules.Unit) error {
@@ -141,13 +142,13 @@ type MemDag struct {
 
 func NewMemDag(db storage.DagDb, unitRep dagCommon.IUnitRepository) *MemDag {
 	memdag := MemDag{
-		lastValidatedUnit: map[string]common.Hash{},
-		forkIndex:         map[string]*ForkIndex{},
+		lastValidatedUnit: make(map[string]common.Hash),
+		forkIndex:         make(map[string]*ForkIndex),
 		memUnit:           InitMemUnit(),
 		memSize:           dagconfig.DefaultConfig.MemoryUnitSize,
-		mainChain:         map[string]int{},
 		dagdb:             db,
 		unitRep:           unitRep,
+		mainChain:         make(map[string]int),
 	}
 	// get genesis Last Irreversible Unit
 	genesisUnit, err := unitRep.GetGenesisUnit(0)

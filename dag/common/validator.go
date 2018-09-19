@@ -275,6 +275,7 @@ func (validate *Validate) ValidateUnitSignature(h *modules.Header, isGenesis boo
 		log.Debug("Check unit signature", "error", "mediators info error, pls update network")
 		return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
 	}
+	// 这一步后续添加： 调用 mediator 模块校验见证人的接口
 
 	//return modules.UNIT_STATE_VALIDATED
 	return modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED
