@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -330,6 +331,27 @@ func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawV
 // of the header retrieval mechanisms already need to verify nonces, as well as
 // because nonces can be verified sparsely, not needing to check each.
 func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, error) {
+	for i, header := range headers {
+		hash := header.Hash()
+		number := header.Number
+		index := header.Number.Index
+
+		// ###save unit hash and chain index relation
+		err := d.dagdb.SaveNumberByHash(hash, number)
+		if err != nil {
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveNumberByHash Error", i)
+		}
+		err = d.dagdb.SaveHashByNumber(hash, number)
+		if err != nil {
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveHashByNumber Error", i)
+		}
+		// ###save HeaderCanon & HeaderKey & HeadUnitKey & HeadFastKey
+		err = d.dagdb.UpdateHeadByBatch(hash, index)
+		if err != nil {
+			return i, err
+		}
+
+	}
 	return checkFreq, nil
 }
 
@@ -560,7 +582,7 @@ func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
 }
 
 // author Albert·Gou
-func (d *Dag) GetActiveMediatorNodes() []*discover.Node {
+func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
 	return d.GlobalProp.GetActiveMediatorNodes()
 }
 

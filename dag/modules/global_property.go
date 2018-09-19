@@ -149,15 +149,15 @@ func sortAddress(adds []common.Address) {
 	}
 }
 
-func (gp *GlobalProperty) GetActiveMediatorNodes() []*discover.Node {
-	aSize := gp.GetActiveMediatorCount()
-	nodes := make([]*discover.Node, aSize, aSize)
+func (gp *GlobalProperty) GetActiveMediatorNodes() map[string]*discover.Node {
+	nodes := make(map[string]*discover.Node)
 
 	meds := gp.GetActiveMediators()
-	for i, add := range meds {
+	for _, add := range meds {
 		med := gp.GetActiveMediator(add)
+		node := med.Node
 
-		nodes[i] = med.Node
+		nodes[node.ID.TerminalString()] = node
 	}
 
 	return nodes

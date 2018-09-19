@@ -63,6 +63,7 @@ func errResp(code errCode, format string, v ...interface{}) error {
 
 type ProtocolManager struct {
 	networkId uint64
+	srvr      *p2p.Server
 
 	fastSync  uint32 // Flag whether fast sync is enabled (gets disabled if we already have blocks)
 	acceptTxs uint32 // Flag whether we're considered synchronised (enables transaction processing)
@@ -229,6 +230,7 @@ func (pm *ProtocolManager) removePeer(id string) {
 }
 
 func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
+	pm.srvr = srvr
 	pm.maxPeers = maxPeers
 
 	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
@@ -295,6 +297,11 @@ func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
 
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
+		if peer == nil {
+			go pm.producer.ToProcessResponse(resp)
+			continue
+		}
+
 		// comment by Albert·Gou
 		//dstId := peer.id
 		//if pm.peers.PeersWithoutVssResp(dstId) {
@@ -333,10 +340,13 @@ func (self *ProtocolManager) vssResponseBroadcastLoop() {
 
 // @author Albert·Gou
 func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDealEvent) {
-	dstId := node.ID.TerminalString()
-	peer := pm.peers.Peer(dstId)
+	peer, self := pm.getActiveMediatorPeer(node)
+	if self {
+		go pm.producer.ToProcessDeal(deal)
+		return
+	}
+
 	if peer == nil {
-		//log.Debug(fmt.Sprintf("peer not exist: %v", node.String()))
 		return
 	}
 
@@ -1080,6 +1090,11 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
+		if peer == nil {
+			go pm.producer.ToUnitTBLSSign("", unit)
+			continue
+		}
+
 		err := peer.SendNewProducedUnit(unit)
 		if err != nil {
 			log.Error(err.Error())
@@ -1087,18 +1102,33 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
 	}
 }
 
-// AtiveMeatorPeers retrieves a list of peers that active mediator
+// getActiveMediatorPeer, retrieve specified active mediator peer.
+// If it is the node itself, p is nil and self is true
+// @author Albert·Gou
+func (pm *ProtocolManager) getActiveMediatorPeer(node *discover.Node) (p *peer, self bool) {
+	id := node.ID
+	if pm.srvr.Self().ID == id {
+		self = true
+	}
+
+	p = pm.peers.Peer(id.TerminalString())
+	if p == nil && !self {
+		log.Debug(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
+	}
+
+	return
+}
+
+// AtiveMeatorPeers retrieves a list of peers that active mediator.
+// If the value is nil, it is the node itself
 // @author Albert·Gou
 func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 	nodes := pm.dag.GetActiveMediatorNodes()
 	list := make(map[string]*peer, len(nodes))
 
-	for _, node := range nodes {
-		id := node.ID.TerminalString()
-		peer := pm.peers.Peer(id)
-		if peer == nil {
-			//log.Debug(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
-		} else {
+	for id, node := range nodes {
+		peer, self := pm.getActiveMediatorPeer(node)
+		if peer != nil || self {
 			list[id] = peer
 		}
 	}
