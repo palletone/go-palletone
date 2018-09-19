@@ -453,5 +453,5 @@ func peerContractMockConfigInit() {
 	viper.Set("vm.endpoint", "unix:///var/run/docker.sock")
 	viper.Set("chaincode.builder", "palletimg")
 
-	viper.Set("chaincode.system", map[string]string{/*"sample_syscc": "true", */"adapter": "true"})
+	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
 }

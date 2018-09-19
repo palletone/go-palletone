@@ -36,7 +36,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 // DefaultConfig contains default settings for use on the PalletOne main net.
@@ -114,7 +114,7 @@ type Config struct {
 	Log log.Config `toml:"-"`
 
 	//Contract config
-	Contract contracts.Config
+	Contract contractcfg.Config `toml:"-"`
 
 	// Miscellaneous options
 	DocRoot string `toml:"-"`
