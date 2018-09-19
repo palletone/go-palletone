@@ -185,9 +185,11 @@ func (log *Logger) filter(c *zapcore.CheckedEntry, fie ...Field) {
 		ce.Write(fields...)
 		return
 	}
+	//fmt.Printf("====================log filter openModule %v", log.openModule)
 	for _, v := range log.openModule {
 		if v == ce.Entry.Caller.TrimmedRootPath() {
 			ce.Write(fields...)
+			return
 		}
 	}
 }
