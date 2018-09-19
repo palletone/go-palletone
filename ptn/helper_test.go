@@ -75,13 +75,14 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	engine := new(consensus.DPOSEngine)
 	typemux := new(event.TypeMux)
 	producer := new(mediatorplugin.MediatorPlugin)
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, dag, typemux,  producer)
+	genesisUint, _ := dag.GetGenesisUnit(0)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, dag, typemux, producer, genesisUint)
 	if err != nil {
 		return nil, nil, err
 	}
 	config := p2p.DefaultConfig
 	running := &p2p.Server{Config: config}
-	pm.Start(running,1000)
+	pm.Start(running, 1000)
 	return pm, memdb, nil
 }
 
@@ -192,29 +193,28 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool, dag 
 			//	0,
 			//}
 			//genesis = pm.dag.GetUnitByNumber(number)
-			head = pm.dag.CurrentHeader()
-			td   = head.Number.Index
+			head  = pm.dag.CurrentHeader()
+			index = head.Number
 		)
 		//fmt.Println("	if shake {===》》》",td)
 		genesis, err := dag.GetGenesisUnit(0)
-		fmt.Println("genesis unti if shake {===》》》",genesis.UnitHash)
+		fmt.Println("genesis unti if shake {===》》》", genesis.UnitHash)
 		if err != nil {
 			fmt.Println("GetGenesisUnit===error:=", err)
 		}
-		tp.handshake(nil, td, head.Hash(), genesis.Hash())
+		tp.handshake(nil, index, head.Hash(), genesis.Hash())
 	}
 	return tp, errc
 }
 
 // handshake simulates a trivial handshake that expects the same state from the
 // remote side as we are simulating locally.
-func (p *testPeer) handshake(t *testing.T, td uint64, head common.Hash, genesis common.Hash) {
+func (p *testPeer) handshake(t *testing.T, index modules.ChainIndex, head common.Hash, genesis common.Hash) {
 	msg := &statusData{
 		ProtocolVersion: uint32(p.version),
 		NetworkId:       DefaultConfig.NetworkId,
-		TD:              td,
-		CurrentBlock:    head,
-		GenesisBlock:    genesis,
+		Index:           index,
+		GenesisUnit:     genesis,
 	}
 	if err := p2p.ExpectMsg(p.app, StatusMsg, msg); err != nil {
 		log.Fatalf("status recv: %v", err)
@@ -237,7 +237,7 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	return dag, nil
 }
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
-	header := modules.NewHeader([]common.Hash{}, []modules.IDType16{modules.PTNCOIN},1, []byte{})
+	header := modules.NewHeader([]common.Hash{}, []modules.IDType16{modules.PTNCOIN}, 1, []byte{})
 	header.Number.AssetID = modules.PTNCOIN
 	header.Number.IsMain = true
 	header.Number.Index = 0
@@ -257,7 +257,7 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 	units := make(modules.Units, number)
 	par := gunit
 	for i := 0; i < number; i++ {
-		header := modules.NewHeader([]common.Hash{par.UnitHash}, []modules.IDType16{modules.PTNCOIN}, 1,[]byte{})
+		header := modules.NewHeader([]common.Hash{par.UnitHash}, []modules.IDType16{modules.PTNCOIN}, 1, []byte{})
 		header.Number.AssetID = par.UnitHeader.Number.AssetID
 		header.Number.IsMain = par.UnitHeader.Number.IsMain
 		header.Number.Index = par.UnitHeader.Number.Index + 1
@@ -277,7 +277,7 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 	return units, nil
 }
 
-func SaveGenesis(db ptndb.Database,unit *modules.Unit) error {
+func SaveGenesis(db ptndb.Database, unit *modules.Unit) error {
 	if unit.NumberU64() != 0 {
 		return fmt.Errorf("can't commit genesis unit with number > 0")
 	}
@@ -289,7 +289,7 @@ func SaveGenesis(db ptndb.Database,unit *modules.Unit) error {
 	return nil
 }
 
-func SaveUnit(db ptndb.Database,unit *modules.Unit, isGenesis bool) error {
+func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Println("Unit is null")
 		return fmt.Errorf("Unit is null")

@@ -272,8 +272,9 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
 	go pm.vssResponseBroadcastLoop()
 
-	//todo xiaozhi
-	go pm.StartMediatorMonitor(srvr, maxPeers)
+	//TODO xiaozhi
+	go pm.mediatorConnect(srvr, maxPeers)
+
 }
 
 // @author Albert·Gou
@@ -425,7 +426,7 @@ func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *p
 func (pm *ProtocolManager) handle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-		log.Info("ProtocolManager handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
+		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
 		return p2p.DiscTooManyPeers
 	}
 	log.Debug("PalletOne peer connected", "name", p.Name())
@@ -436,11 +437,18 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	// Execute the PalletOne handshake
 	head := pm.dag.CurrentHeader()
+	mediator := pm.producer.LocalHaveActiveMediator()
 
-	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash()); err != nil {
+	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), mediator); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
+
+	if pm.peers.MediatorCheck(p, pm.maxPeers) {
+		log.Info("ProtocolManager handler nomediator too many peers")
+		return p2p.DiscTooManyPeers
+	}
+
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
 		rw.Init(p.version)
 	}
@@ -457,8 +465,66 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
-
 	pm.syncTransactions(p)
+
+	//TODO CheckMediator notice consensus when full mediator connected
+
+	// main loop. handle incoming messages.
+	for {
+		if err := pm.handleMsg(p); err != nil {
+			log.Debug("PalletOne message handling failed", "err", err)
+			return err
+		}
+	}
+}
+
+//switchover: vote mediator all connected next to switchover official peerset
+func (pm *ProtocolManager) switchover(p *peer) error {
+	// Ignore maxPeers if this is a trusted peer
+	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
+		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
+		return p2p.DiscTooManyPeers
+	}
+	log.Debug("PalletOne peer connected", "name", p.Name())
+
+	//TODO Devin
+	//var unitRep common2.IUnitRepository
+	//unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
+
+	// Execute the PalletOne handshake
+	head := pm.dag.CurrentHeader()
+	mediator := pm.producer.LocalHaveActiveMediator()
+
+	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), mediator); err != nil {
+		log.Debug("PalletOne handshake failed", "err", err)
+		return err
+	}
+
+	if pm.peers.MediatorCheck(p, pm.maxPeers) {
+		log.Info("ProtocolManager handler nomediator too many peers")
+		return p2p.DiscTooManyPeers
+	}
+
+	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
+		rw.Init(p.version)
+	}
+	// Register the peer locally
+	if err := pm.peers.Register(p); err != nil {
+		log.Error("PalletOne peer registration failed", "err", err)
+		return err
+	}
+	defer pm.removePeer(p.id)
+
+	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
+	if err := pm.downloader.RegisterPeer(p.id, p.version, p); err != nil {
+		return err
+	}
+	// Propagate existing transactions. new transactions appearing
+	// after this will be sent via broadcasts.
+	pm.syncTransactions(p)
+
+	//TODO CheckMediator notice consensus when full mediator connected
+
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
@@ -538,42 +604,42 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 						break
 					}
 				}
-			//case query.Origin.Hash != (common.Hash{}) && !query.Reverse:
-			//			//	// Hash based traversal towards the leaf block
-			//			//	var (
-			//			//		current = origin.Number.Index
-			//			//		next    = current + query.Skip + 1
-			//			//	)
-			//			//	//log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
-			//			//	if next <= current {
-			//			//		infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
-			//			//		log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
-			//			//		unknown = true
-			//			//	} else {
-			//			//		//log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
-			//			//
-			//			//		//index := query.Origin.Number
-			//			//		//index := modules.ChainIndex{}
-			//			//		//index.AssetID.SetBytes([]byte(query.Origin.Number.AssetID))
-			//			//		//index.Index = next
-			//			//		//index.IsMain = true
-			//			//		indexNext := modules.ChainIndex{
-			//			//			modules.PTNCOIN,
-			//			//			true,
-			//			//			next,
-			//			//		}
-			//			//		if header := pm.dag.GetHeaderByNumber(indexNext); header != nil {
-			//			//			//query.Origin.Hash = header.Hash()
-			//			//			//TODO must recover
-			//			//			if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
-			//			//				query.Origin.Hash = header.Hash()
-			//			//			} else {
-			//			//				unknown = true
-			//			//			}
-			//			//		} else {
-			//			//			unknown = true
-			//			//		}
-			//			//	}
+			case query.Origin.Hash != (common.Hash{}) && !query.Reverse:
+				//	// Hash based traversal towards the leaf block
+				//	var (
+				//		current = origin.Number.Index
+				//		next    = current + query.Skip + 1
+				//	)
+				//	//log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
+				//	if next <= current {
+				//		infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
+				//		log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
+				//		unknown = true
+				//	} else {
+				//		//log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
+				//
+				//		//index := query.Origin.Number
+				//		//index := modules.ChainIndex{}
+				//		//index.AssetID.SetBytes([]byte(query.Origin.Number.AssetID))
+				//		//index.Index = next
+				//		//index.IsMain = true
+				//		indexNext := modules.ChainIndex{
+				//			modules.PTNCOIN,
+				//			true,
+				//			next,
+				//		}
+				//		if header := pm.dag.GetHeaderByNumber(indexNext); header != nil {
+				//			//query.Origin.Hash = header.Hash()
+				//			//TODO must recover
+				//			if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
+				//				query.Origin.Hash = header.Hash()
+				//			} else {
+				//				unknown = true
+				//			}
+				//		} else {
+				//			unknown = true
+				//		}
+				//	}
 			case query.Reverse:
 				// Number based traversal towards the genesis block
 				if query.Origin.Number.Index >= query.Skip+1 {
@@ -1041,6 +1107,61 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 }
 
 /*
+func (pm *ProtocolManager) handle(p *peer) error {
+	// Ignore maxPeers if this is a trusted peer
+	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
+		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
+		return p2p.DiscTooManyPeers
+	}
+	log.Debug("PalletOne peer connected", "name", p.Name())
+
+	//TODO Devin
+	//var unitRep common2.IUnitRepository
+	//unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
+
+	// Execute the PalletOne handshake
+	head := pm.dag.CurrentHeader()
+	mediator := pm.producer.LocalHaveActiveMediator()
+
+	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), mediator); err != nil {
+		log.Debug("PalletOne handshake failed", "err", err)
+		return err
+	}
+
+	if pm.peers.MediatorCheck(p, pm.maxPeers) {
+		log.Info("ProtocolManager handler nomediator too many peers")
+		return p2p.DiscTooManyPeers
+	}
+
+	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
+		rw.Init(p.version)
+	}
+	// Register the peer locally
+	if err := pm.peers.Register(p); err != nil {
+		log.Error("PalletOne peer registration failed", "err", err)
+		return err
+	}
+	defer pm.removePeer(p.id)
+
+	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
+	if err := pm.downloader.RegisterPeer(p.id, p.version, p); err != nil {
+		return err
+	}
+	// Propagate existing transactions. new transactions appearing
+	// after this will be sent via broadcasts.
+	pm.syncTransactions(p)
+
+	//TODO CheckMediator notice consensus when full mediator connected
+
+	// main loop. handle incoming messages.
+	for {
+		if err := pm.handleMsg(p); err != nil {
+			log.Debug("PalletOne message handling failed", "err", err)
+			return err
+		}
+	}
+}
+
 func test() {
 	body := blockBody{}
 	tx := TestMakeTransaction(uint64(tempGetBlockBodiesMsgSum))

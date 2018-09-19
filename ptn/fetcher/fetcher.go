@@ -564,7 +564,7 @@ func (f *Fetcher) loop() {
 							//fmt.Printf("%#v\n", announce.origin)
 							if f.getBlock(hash) == nil {
 								//fmt.Println("1212==", hash)
-								//todo xiaozhi
+								//TODO xiaozhi
 								//fmt.Printf("%#v\n", task.transactions[i][i])
 								block := modules.NewUnitWithHeader(announce.header).WithBody(task.transactions[i])
 								//fmt.Printf("announce.header==%#v\n", announce.header)

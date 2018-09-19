@@ -656,7 +656,7 @@ func testHashMemoryExhaustionAttack(t *testing.T, protocol int) {
 		t.Fatalf("queued announce count mismatch: have %d, want %d", count, hashLimit+maxQueueDist)
 	}
 	// Wait for fetches to complete
-	//todo xiaozhi
+	//TODO xiaozhi
 	verifyImportCount(t, imported, maxQueueDist)
 
 	// Feed the remaining valid hashes to ensure DOS protection state remains clean
@@ -667,7 +667,7 @@ func testHashMemoryExhaustionAttack(t *testing.T, protocol int) {
 			Index:   uint64(len(hashes) - i - 1),
 		}
 		tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), validHeaderFetcher, validBodyFetcher)
-		//todo xiaozhi
+		//TODO xiaozhi
 		verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)

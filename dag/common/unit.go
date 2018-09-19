@@ -33,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -87,21 +86,18 @@ func RHashStr(x interface{}) string {
 生成创世单元，需要传入创世单元的配置信息以及coinbase交易
 generate genesis unit, need genesis unit configure fields and transactions list
 */
-func NewGenesisUnit(txs modules.Transactions, time int64) (*modules.Unit, error) {
+func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset) (*modules.Unit, error) {
 	gUnit := modules.Unit{}
 
-	// genesis unit asset id
-	gAssetID := asset.NewAsset()
-
 	// genesis unit height
-	chainIndex := modules.ChainIndex{AssetID: gAssetID, IsMain: true, Index: 0}
+	chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: true, Index: 0}
 
 	// transactions merkle root
 	root := core.DeriveSha(txs)
 
 	// generate genesis unit header
 	header := modules.Header{
-		AssetIDs:     []modules.IDType16{gAssetID},
+		AssetIDs:     []modules.IDType16{asset.AssetId},
 		Number:       chainIndex,
 		TxRoot:       root,
 		Creationdate: time,
@@ -177,7 +173,7 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool *txspool.
 	}
 	units := []modules.Unit{}
 	// step1. get mediator responsible for asset (for now is ptn)
-	bAsset := unitOp.statedb.GetConfig([]byte("GenesisAsset"))
+	bAsset := unitOp.statedb.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
 	if len(bAsset) <= 0 {
 		return nil, fmt.Errorf("Create unit error: query asset info empty")
 	}
@@ -223,12 +219,12 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool *txspool.
 
 	// step6. generate genesis unit header
 	header := modules.Header{
-		AssetIDs: []modules.IDType16{asset.AssetId},
+		AssetIDs: []modules.IDType16{},
 		Number:   chainIndex,
 		TxRoot:   root,
 		//		Creationdate: time.Now().Unix(),
 	}
-
+	header.AssetIDs = append(header.AssetIDs, asset.AssetId)
 	unit := modules.Unit{}
 	unit.UnitHeader = &header
 	// step7. copy txs
@@ -279,7 +275,7 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 		// get transaction list
 		txs, err := unitOp.dagdb.GetUnitTransactions(unit.UnitHash)
 		if err != nil {
-			//todo xiaozhi
+			//TODO xiaozhi
 			return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
 		}
 		unit.Txs = txs
@@ -353,7 +349,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 		}
 	}
 
-	confPay.ConfigSet = append(confPay.ConfigSet, modules.PayloadMapStruct{Key: "GenesisAsset", Value: modules.ToPayloadMapValueBytes(asset)})
+	confPay.ConfigSet = append(confPay.ConfigSet, modules.PayloadMapStruct{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
 
 	return confPay, nil
 }

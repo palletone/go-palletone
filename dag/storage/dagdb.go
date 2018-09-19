@@ -108,7 +108,7 @@ func (dagdb *DagDatabase) SaveHashByNumber(uHash common.Hash, number modules.Cha
 		i = 1
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
-	//fmt.Println("SaveHashByNumber=[]byte(key)=>",[]byte(key))
+	//fmt.Println("SaveHashByNumber=[]byte(key)=>", key)
 	//fmt.Println("====",uHash)
 	return StoreBytes(dagdb.db, []byte(key), uHash)
 }
@@ -151,7 +151,6 @@ value: transaction struct rlp encoding bytes
 */
 func (dagdb *DagDatabase) SaveTransaction(tx *modules.Transaction) error {
 	// save transaction
-	ptnLog.Info(">>>>>>>　SaveTransactio", "txhash=", tx.TxHash.Bytes())
 	if err := StoreBytes(dagdb.db, append(TRANSACTION_PREFIX, tx.TxHash.Bytes()...), tx); err != nil {
 		return err
 	}
@@ -283,7 +282,7 @@ func (dagdb *DagDatabase) GetAddrOutput(addr string) ([]modules.Output, error) {
 func (dagdb *DagDatabase) GetNumberWithUnitHash(hash common.Hash) (modules.ChainIndex, error) {
 	data, _ := dagdb.db.Get(append(UNIT_HASH_NUMBER_Prefix, hash.Bytes()...))
 	if len(data) <= 0 {
-		return modules.ChainIndex{}, fmt.Errorf("Get from unit number rlp data none")
+		return modules.ChainIndex{}, nil
 	}
 	var number modules.ChainIndex
 	if err := rlp.DecodeBytes(data, &number); err != nil {
@@ -370,7 +369,7 @@ func (dagdb *DagDatabase) GetUnit(hash common.Hash) *modules.Unit {
 	txs, err := dagdb.GetUnitTransactions(uHash)
 	if err != nil {
 		log.Println("GetUnit when GetUnitTransactions failed , error:", err)
-		//todo xiaozhi
+		//TODO xiaozhi
 		return nil
 	}
 	// generate unit
@@ -383,11 +382,10 @@ func (dagdb *DagDatabase) GetUnit(hash common.Hash) *modules.Unit {
 	return unit
 }
 func (dagdb *DagDatabase) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
-	ptnLog.Info(">>>>>>  GetUnitTransactions", "txhash=", hash.Bytes())
 	txs := modules.Transactions{}
 	txHashList, err := dagdb.GetBody(hash)
 	if err != nil {
-		ptnLog.Info(">>>>>>  GetUnitTransactions when get body error", "error", err.Error())
+		ptnLog.Info("GetUnitTransactions when get body error", "error", err.Error())
 		return nil, err
 	}
 	// get transaction by tx'hash.
@@ -505,9 +503,7 @@ func (dagdb *DagDatabase) GetTxLookupEntry(hash common.Hash) (common.Hash, uint6
 // GetTransaction retrieves a specific transaction from the database , along with its added positional metadata
 // p2p 同步区块 分为同步header 和body。 GetBody可以省掉节点包装交易块的过程。
 func (dagdb *DagDatabase) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
-	ptnLog.Info(">>>>>>>　GetTransaction", "txhash=", hash.Bytes())
 	unitHash, unitNumber, txIndex := dagdb.GetTxLookupEntry(hash)
-	log.Println("Unithash:", unitHash)
 	if unitHash != (common.Hash{}) {
 		body, _ := dagdb.GetBody(unitHash)
 		if body == nil || len(body) <= int(txIndex) {
@@ -518,7 +514,6 @@ func (dagdb *DagDatabase) GetTransaction(hash common.Hash) (*modules.Transaction
 			return tx, unitHash, unitNumber, txIndex
 		}
 	}
-	log.Println("111111111111111111111")
 	tx, err := dagdb.gettrasaction(hash)
 	if err != nil {
 		fmt.Println("gettrasaction error:", err.Error())

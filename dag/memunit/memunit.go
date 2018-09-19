@@ -20,6 +20,8 @@ package memunit
 import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/common/log"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -133,7 +135,7 @@ type MemDag struct {
 	unitRep           dagCommon.IUnitRepository
 	lastValidatedUnit map[string]common.Hash // the key is asset id
 	forkIndex         map[string]*ForkIndex  // the key is asset id
-	mainChain         map[string]int         // the key is asset id
+	mainChain         map[string]int         // the key is asset id, value is fork index
 	memUnit           *MemUnit
 	memSize           uint8
 }
@@ -148,6 +150,17 @@ func NewMemDag(db storage.DagDb, unitRep dagCommon.IUnitRepository) *MemDag {
 		unitRep:           unitRep,
 		mainChain:         make(map[string]int),
 	}
+	// get genesis Last Irreversible Unit
+	genesisUnit, err := unitRep.GetGenesisUnit(0)
+	if err != nil {
+		log.Error("NewMemDag when GetGenesisUnit", "error", err.Error())
+		return nil
+	}
+	lastIrreUnit := db.GetLastIrreversibleUnit(genesisUnit.UnitHeader.Number.AssetID)
+	if lastIrreUnit != nil {
+		memdag.lastValidatedUnit[genesisUnit.UnitHeader.Number.AssetID.String()] = lastIrreUnit.UnitHash
+	}
+
 	return &memdag
 }
 
@@ -185,6 +198,7 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 		lastIrreUnit := chain.dagdb.GetLastIrreversibleUnit(unit.UnitHeader.Number.AssetID)
 		if lastIrreUnit != nil {
 			irreUnitHash = lastIrreUnit.UnitHash
+			chain.lastValidatedUnit[assetId] = irreUnitHash
 		}
 	}
 	// save unit to index
@@ -216,10 +230,12 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 		unitHash := forkIndex.GetReachedIrreversibleHeightUnitHash(index)
 		// prune fork if the irreversible height has been reached
 		if err := chain.Prune(assetId, unitHash); err != nil {
+			log.Error("Check if the irreversible height has been reached", "error", err.Error())
 			return err
 		}
 		// save the matured unit into leveldb
 		if err := chain.unitRep.SaveUnit(*unit, false); err != nil {
+			log.Error("save the matured unit into leveldb", "error", err.Error())
 			return err
 		}
 	}
@@ -302,4 +318,43 @@ func (chain *MemDag) QueryIndex(assetId string, maturedUnitHash common.Hash) (in
 		}
 	}
 	return -1, -1
+}
+
+func (chain *MemDag) GetCurrentUnit(assetid modules.IDType16) (*modules.Unit, error) {
+	sAssetID := assetid.String()
+	bAssetID, _ := hexutil.Decode(sAssetID)
+	fmt.Println("GetCurrentUnit", "assetid", sAssetID, "byte assetid", bAssetID)
+	mainIndex, ok := chain.mainChain[sAssetID]
+	for k, _ := range chain.lastValidatedUnit {
+		fmt.Println("string key=", k)
+		bk, _ := hexutil.Decode(k)
+		fmt.Println("byte key=", bk)
+	}
+	if !ok {
+		// to get from lastValidatedUnit
+		lastValidatedUnitHash, ok := chain.lastValidatedUnit[sAssetID]
+		if !ok {
+			return nil, nil
+		}
+		unit := chain.dagdb.GetUnit(lastValidatedUnitHash)
+		return unit, nil
+	}
+	fork, ok := chain.forkIndex[sAssetID]
+	if !ok {
+		return nil, fmt.Errorf("MemDag.GetCurrentUnit error: forkIndex has no asset(%s) info.", assetid.String())
+	}
+	if mainIndex >= fork.Lenth() {
+		return nil, fmt.Errorf("MemDag.GetCurrentUnit error: forkindex is out of range")
+	}
+	forkdata := *(*fork)[mainIndex]
+
+	if len(forkdata) > 0 {
+		curHash := forkdata[len(forkdata)-1]
+		curUnit, ok := (*chain.memUnit)[curHash]
+		if !ok {
+			return nil, fmt.Errorf("MemDag.GetCurrentUnit error: get no unit hash(%s) in memUnit", curHash.String())
+		}
+		return curUnit, nil
+	}
+	return nil, nil
 }

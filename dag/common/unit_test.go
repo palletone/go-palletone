@@ -46,7 +46,7 @@ func mockUnitRepositoryLeveldb(path string) *UnitRepository {
 }
 
 func TestNewGenesisUnit(t *testing.T) {
-	gUnit, _ := NewGenesisUnit(modules.Transactions{}, time.Now().Unix())
+	gUnit, _ := NewGenesisUnit(modules.Transactions{}, time.Now().Unix(), &modules.Asset{})
 
 	log.Println("Genesis unit struct:")
 	log.Println("--- Genesis unit header --- ")
