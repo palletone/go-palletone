@@ -25,6 +25,8 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 
+	"fmt"
+
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
@@ -302,11 +304,13 @@ func (f *Fetcher) loop() {
 			}
 			// If too high up the chain or phase, continue later
 			height = f.chainHeight(op.unit.Header().ChainIndex().AssetID)
+			//fmt.Println("height=", height)
 			number := op.unit.NumberU64()
+			//fmt.Println("number=", number)
 			if number > height+1 {
 				f.queue.Push(op, -float32(op.unit.NumberU64()))
 				if f.queueChangeHook != nil {
-					f.queueChangeHook(op.unit.UnitHash, true)
+					f.queueChangeHook(op.unit.Hash(), true)
 				}
 				log.Debug("===loop===", "number:", number, "height:", height)
 				break
@@ -330,6 +334,7 @@ func (f *Fetcher) loop() {
 			// A block was announced, make sure the peer isn't DOSing us
 			propAnnounceInMeter.Mark(1)
 			log.Debug("===fetcher notification===")
+			//fmt.Printf("=notification.hash==%#v\n", notification.hash)
 
 			count := f.announces[notification.origin] + 1
 			if count > hashLimit {
@@ -339,15 +344,15 @@ func (f *Fetcher) loop() {
 			}
 			// If we have a valid block number, check that it's potentially useful
 			//TODO must recover
-			/*
-				if notification.number.Index > 0 {
-					if dist := int64(notification.number.Index) - int64(f.chainHeight(notification.number.AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
-						log.Debug("Peer discarded announcement", "peer", notification.origin, "number", notification.number, "hash", notification.hash, "distance", dist)
-						propAnnounceDropMeter.Mark(1)
-						break
-					}
+
+			if notification.number.Index > 0 {
+				if dist := int64(notification.number.Index) - int64(f.chainHeight(notification.number.AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
+					log.Debug("Peer discarded announcement", "peer", notification.origin, "number", notification.number, "hash", notification.hash, "distance", dist)
+					propAnnounceDropMeter.Mark(1)
+					break
 				}
-			*/
+			}
+
 			// All is well, schedule the announce if block's not yet downloading
 			if _, ok := f.fetching[notification.hash]; ok {
 				log.Debug("===fetcher fetching have===")
@@ -389,6 +394,7 @@ func (f *Fetcher) loop() {
 
 					// If the block still didn't arrive, queue for fetching
 					if f.getBlock(hash) == nil {
+						//fmt.Println("hash=", hash)
 						request[announce.origin] = append(request[announce.origin], hash)
 						f.fetching[hash] = announce
 					}
@@ -398,7 +404,8 @@ func (f *Fetcher) loop() {
 			// Send out all block header requests
 			for peer, hashes := range request {
 				log.Trace("Fetching scheduled headers", "peer", peer, "list", hashes)
-
+				//fmt.Println("len(hashes)=", len(hashes))
+				//fmt.Println(hashes[0])
 				// Create a closure of the fetch and schedule in on a new thread
 				fetchHeader, hashes := f.fetching[hashes[0]].fetchHeader, hashes
 				go func(fetchHeader headerRequesterFn, hashes []common.Hash) {
@@ -537,34 +544,44 @@ func (f *Fetcher) loop() {
 
 			for i := 0; i < len(task.transactions); i++ {
 				//TODO  modify the txhash compare
-				matched := true
-				/*
-					// Match up a body to any possible completion request
-					matched := false
-					for hash, announce := range f.completing {
-						if f.queued[hash] == nil {
-							txnHash := core.DeriveSha(modules.Transactions(task.transactions[i]))
-							log.Debug("<-f.bodyFilter", "Transactions", modules.Transactions(task.transactions[i]))
-							log.Debug("<-f.bodyFilter", "txnHash", txnHash, "announce.header.TxRoot", announce.header.TxRoot)
-							log.Debug("<-f.bodyFilter", "task.peer", task.peer, "announce.origin", announce.origin)
-							//TODO must recover
-							//if txnHash == announce.header.TxRoot && announce.origin == task.peer {
-							if announce.origin == task.peer {
-								// Mark the body matched, reassemble if still unknown
-								matched = true
+				//matched := true
 
-								if f.getBlock(hash) == nil {
-									block := modules.NewUnitWithHeader(announce.header).WithBody(task.transactions[i])
-									block.ReceivedAt = task.time
+				// Match up a body to any possible completion request
+				matched := false
+				for hash, announce := range f.completing {
+					if f.queued[hash] == nil {
+						txnHash := core.DeriveSha(modules.Transactions(task.transactions[i]))
+						log.Debug("<-f.bodyFilter", "Transactions", modules.Transactions(task.transactions[i]))
+						log.Debug("<-f.bodyFilter", "txnHash", txnHash, "announce.header.TxRoot", announce.header.TxRoot)
+						log.Debug("<-f.bodyFilter", "task.peer", task.peer, "announce.origin", announce.origin)
+						//TODO must recover
+						//if txnHash == announce.header.TxRoot && announce.origin == task.peer {
+						if announce.origin == task.peer {
+							// Mark the body matched, reassemble if still unknown
+							matched = true
+							//fmt.Printf("%#v\n", announce.hash)
+							//fmt.Printf("%#v\n", announce.number)
+							//fmt.Printf("%#v\n", announce.header)
+							//fmt.Printf("%#v\n", announce.origin)
+							if f.getBlock(hash) == nil {
+								//fmt.Println("1212==", hash)
+								//TODO xiaozhi
+								//fmt.Printf("%#v\n", task.transactions[i][i])
+								block := modules.NewUnitWithHeader(announce.header).WithBody(task.transactions[i])
+								//fmt.Printf("announce.header==%#v\n", announce.header)
+								//block := modules.NewUnitWithHeader(announce.header)
+								//fmt.Printf("block=%#v\n", block)
+								//fmt.Println("block=", block.Transactions()[0])
+								block.ReceivedAt = task.time
 
-									blocks = append(blocks, block)
-								} else {
-									f.forgetHash(hash)
-								}
+								blocks = append(blocks, block)
+							} else {
+								f.forgetHash(hash)
 							}
 						}
 					}
-				*/
+				}
+
 				if matched {
 					task.transactions = append(task.transactions[:i], task.transactions[i+1:]...)
 					i--
@@ -638,24 +655,27 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 	}
 	// Discard any past or too distant blocks
 	//TODO must recover
-	//if dist := int64(block.NumberU64()) - int64(f.chainHeight(block.Number().AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
-	//	log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
-	//	propBroadcastDropMeter.Mark(1)
-	//	f.forgetHash(hash)
-	//	return
-	//}
+	if dist := int64(block.NumberU64()) - int64(f.chainHeight(block.Number().AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
+		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
+		propBroadcastDropMeter.Mark(1)
+		f.forgetHash(hash)
+		return
+	}
 	// Schedule the block for future importing
 	if _, ok := f.queued[hash]; !ok {
 		op := &inject{
 			origin: peer,
 			unit:   block,
 		}
+		//fmt.Println("queued,", block.UnitHash)
+		//fmt.Println(hash)
 		f.queues[peer] = count
 		f.queued[hash] = op
 		f.queue.Push(op, -float32(block.NumberU64()))
 		if f.queueChangeHook != nil {
 			f.queueChangeHook(op.unit.Hash(), true)
 		}
+		//fmt.Printf("%#v\n", block.Number())
 		log.Debug("Queued propagated block", "peer", peer, "number", block.Number(), "hash", hash, "queued", f.queue.Size())
 	}
 }
@@ -664,6 +684,7 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 // block's number is at the same height as the current import phase, it updates
 // the phase states accordingly.
 func (f *Fetcher) insert(peer string, block *modules.Unit) {
+	//fmt.Println("=====>")
 	hash := block.Hash()
 
 	// Run the import on a new thread
@@ -675,8 +696,10 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		//parent := f.getBlock(block.ParentHash())
 		parentsHash := block.ParentHash()
 		for _, parentHash := range parentsHash {
+			//fmt.Println("parentHash=>", parentHash)
 			if f.getBlock(parentHash) == nil {
 				log.Debug("Unknown parent of propagated block", "peer", peer, "number", block.Number().Index, "hash", hash, "parent", parentHash)
+				//TODO xiaozhi
 				return
 			}
 		}
@@ -708,6 +731,7 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 
 		// Invoke the testing hook if needed
 		if f.importedHook != nil {
+			fmt.Println("f.importedHook(block)")
 			f.importedHook(block)
 		}
 	}()

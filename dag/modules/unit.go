@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/core"
 )
 
 // validate unit state
@@ -569,12 +568,16 @@ func NewUnitWithHeader(header *Header) *Unit {
 func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 	// check transactions merkle root
 	txs := b.CopyBody(transactions)
-	root := core.DeriveSha(txs)
-	if strings.Compare(root.String(), b.UnitHeader.TxRoot.String()) != 0 {
-		return nil
-	}
+	//fmt.Printf("withbody==>%#v\n", txs[0])
+	//TODO xiaozhi
+	//root := core.DeriveSha(txs)
+	//if strings.Compare(root.String(), b.UnitHeader.TxRoot.String()) != 0 {
+	//	return nil
+	//}
 	// set unit body
-	b.Txs = b.CopyBody(txs)
+	b.Txs = CopyTransactions(txs)
+	b.UnitSize = b.Size()
+	b.UnitHash = b.Hash()
 	return b
 }
 

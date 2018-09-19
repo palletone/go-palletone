@@ -116,6 +116,7 @@ type statusData struct {
 	NetworkId       uint64
 	Index           modules.ChainIndex
 	GenesisUnit     common.Hash
+	Mediator        bool
 	//CurrentBlock common.Hash
 }
 

@@ -34,9 +34,10 @@ import (
 type IDag interface {
 	CurrentUnit() *modules.Unit
 	SaveDag(unit modules.Unit, isGenesis bool) (int, error)
-	GetActiveMediatorNodes() []*discover.Node
+	GetActiveMediatorNodes() map[string]*discover.Node
 	VerifyHeader(header *modules.Header, seal bool) error
 	GetCurrentUnit(assetId modules.IDType16) *modules.Unit
+	GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit
 	InsertDag(units modules.Units) (int, error)
 	GetUnitByHash(hash common.Hash) *modules.Unit
 	HasHeader(common.Hash, uint64) bool

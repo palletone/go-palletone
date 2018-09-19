@@ -148,6 +148,12 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
+	ptn.contract, err = contracts.Initialize(&config.Contract)
+	if err != nil {
+		log.Error("Contract Initialize err:", err)
+		return nil, err
+	}
+
 	ptn.ApiBackend = &PtnApiBackend{ptn}
 	return ptn, nil
 }

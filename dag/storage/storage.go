@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -19,6 +20,7 @@
 package storage
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
@@ -126,4 +128,30 @@ func StoreBytes(db ptndb.Database, key []byte, value interface{}) error {
 
 func StoreString(db ptndb.Putter, key, value string) error {
 	return db.Put(util.ToByte(key), util.ToByte(value))
+}
+
+//batch put HeaderCanon & HeaderKey & HeadUnitKey & HeadFastKey
+func (dagdb *DagDatabase) UpdateHeadByBatch(hash common.Hash, number uint64) error {
+	batch := dagdb.db.NewBatch()
+	errorList := &[]error{}
+
+	key := append(HeaderCanon_Prefix, encodeBlockNumber(number)...)
+	BatchErrorHandler(batch.Put(append(key, NumberSuffix...), hash.Bytes()), errorList) //PutCanonicalHash
+	BatchErrorHandler(batch.Put(HeadHeaderKey, hash.Bytes()), errorList)                //PutHeadHeaderHash
+	BatchErrorHandler(batch.Put(HeadUnitKey, hash.Bytes()), errorList)                  //PutHeadUnitHash
+	BatchErrorHandler(batch.Put(HeadFastKey, hash.Bytes()), errorList)                  //PutHeadFastUnitHash
+	if len(*errorList) == 0 { //each function call succeed.
+		batchErr := batch.Write()
+		if batchErr != nil { //batch exec succeed.
+			return nil
+		}
+		return fmt.Errorf("UpdateHeadByBatch, batch.write failed.")
+	}
+	return fmt.Errorf("UpdateHeadByBatch, at least one sub function call failed.")
+}
+
+func BatchErrorHandler(err error, errorList *[]error) {
+	if err != nil {
+		*errorList = append(*errorList, err)
+	}
 }

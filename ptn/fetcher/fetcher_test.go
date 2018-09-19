@@ -34,7 +34,6 @@ import (
 var (
 	memdb, _    = ptndb.NewMemDatabase()
 	genesisUnit = newGenesisForTest(memdb)
-	//unknownUnit = modules.NewUnit(nil, nil)
 )
 
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
@@ -47,6 +46,8 @@ func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	tx, _ := NewCoinbaseTransaction()
 	txs := modules.Transactions{tx}
 	genesisUnit := modules.NewUnit(header, txs)
+	//fmt.Println("genesisUnit=", genesisUnit.Hash())
+	//fmt.Println("genesisUTx=", genesisUnit.Transactions()[0])
 	err := SaveGenesis(db, genesisUnit)
 	if err != nil {
 		log.Println("SaveGenesis, err", err)
@@ -119,11 +120,9 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	//	fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	//}
+	dagDb := storage.NewDagDatabase(db)
 	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
-
-	dagDb := storage.NewDagDatabase(db)
-
 	if err := dagDb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		log.Println("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
@@ -165,10 +164,6 @@ func saveHashByIndex(db ptndb.Database, hash common.Hash, index uint64) error {
 // the returned hash chain is ordered head->parent. In addition, every 3rd block
 // contains a transaction and every 5th an uncle to allow testing correct block reassembly
 func makeDag(n int, parent *modules.Unit) ([]common.Hash, map[common.Hash]*modules.Unit) {
-	//var head *modules.Header
-	//head = modules.NewHeader([]common.Hash{common.Hash{0}}, nil, 1, nil)
-	//genesis := modules.NewUnit(head, nil)
-
 	hashes := make([]common.Hash, n+1)
 	hashes[len(hashes)-1] = parent.Hash()
 	dags := make(map[common.Hash]*modules.Unit, n+1)
@@ -176,7 +171,6 @@ func makeDag(n int, parent *modules.Unit) ([]common.Hash, map[common.Hash]*modul
 	memdb, _ := ptndb.NewMemDatabase()
 	dag, _ := dag2.NewDagForTest(memdb)
 	units, err := newDag(dag.Db, parent, n)
-	//fmt.Println("len(units)=", len(units))
 	if err != nil {
 		log.Println("new dag err", err.Error())
 	}
@@ -185,20 +179,6 @@ func makeDag(n int, parent *modules.Unit) ([]common.Hash, map[common.Hash]*modul
 		dags[u.Hash()] = u
 	}
 	return hashes, dags
-	//dag := make(map[common.Hash]*modules.Unit, unit+1)
-	//hashes[0] = common.Hash{0}
-	//units[0] = genesis
-	//dag[hashes[0]] = units[0]
-	//if unit < 1 {
-	//	return hashes, dag
-	//}
-	//for i := 1; i <= unit; i++ {
-	//	hashes[i] = common.Hash{byte(i)}
-	//	head = modules.NewHeader([]common.Hash{units[i-1].UnitHash}, nil, 1, nil)
-	//	units[i] = modules.NewUnit(head, nil)
-	//	dag[hashes[i]] = units[i]
-	//}
-
 }
 
 // fetcherTester is a test simulator for mocking out local block chain.
@@ -214,15 +194,10 @@ type fetcherTester struct {
 
 // newTester creates a new fetcher test mocker.
 func newTester() *fetcherTester {
-	//tester := &fetcherTester{
-	//	hashes: []common.Hash{modules.EmptyRootHash},
-	//	blocks: map[common.Hash]*modules.Unit{modules.EmptyRootHash: nil},
-	//	drops:  make(map[string]bool),
-	//}
 
 	tester := &fetcherTester{
 		hashes: []common.Hash{genesisUnit.Hash()},
-		blocks: map[common.Hash]*modules.Unit{},
+		blocks: map[common.Hash]*modules.Unit{genesisUnit.Hash(): genesisUnit},
 		drops:  make(map[string]bool),
 	}
 	tester.fetcher = New(tester.getBlock, tester.verifyHeader, tester.broadcastBlock, tester.chainHeight, tester.insertChain, tester.dropPeer)
@@ -235,7 +210,6 @@ func newTester() *fetcherTester {
 func (f *fetcherTester) getBlock(hash common.Hash) *modules.Unit {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
-
 	return f.blocks[hash]
 }
 
@@ -253,20 +227,20 @@ func (f *fetcherTester) chainHeight(assetId modules.IDType16) uint64 {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
 	//mem, _ := ptndb.NewMemDatabase()
-	dag, _ := dag2.NewDag(memdb)
-	unit := dag.GetCurrentUnit(assetId)
-	if unit != nil {
-		return unit.NumberU64()
-	}
-	return uint64(0)
-	//return f.blocks[f.hashes[len(f.hashes)-1]].NumberU64()
+	//dag, _ := dag2.NewDag(memdb)
+	//unit := dag.GetCurrentUnit(assetId)
+	//if unit != nil {
+	//	return unit.NumberU64()
+	//}
+	//return uint64(0)
+	return f.blocks[f.hashes[len(f.hashes)-1]].NumberU64()
 }
 
 // insertChain injects a new blocks into the simulated chain.
 func (f *fetcherTester) insertChain(units modules.Units) (int, error) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-
+	fmt.Println(len(units))
 	for i, unit := range units {
 		// Make sure the parent in known
 		if _, ok := f.blocks[unit.ParentHash()[0]]; !ok {
@@ -429,8 +403,7 @@ func testSequentialAnnouncements(t *testing.T, protocol int) {
 			Index:   uint64(len(hashes) - i - 1),
 		}
 		tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
-		//todo xiaozhi
-		//verifyImportEvent(t, imported, true)
+		verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)
 }
@@ -469,8 +442,7 @@ func testConcurrentAnnouncements(t *testing.T, protocol int) {
 		tester.fetcher.Notify("first", hashes[i], chain, time.Now().Add(-arriveTimeout), firstHeaderWrapper, firstBodyFetcher)
 		tester.fetcher.Notify("second", hashes[i], chain, time.Now().Add(-arriveTimeout+time.Millisecond), secondHeaderWrapper, secondBodyFetcher)
 		tester.fetcher.Notify("second", hashes[i], chain, time.Now().Add(-arriveTimeout-time.Millisecond), secondHeaderWrapper, secondBodyFetcher)
-		//todo xiaozhi
-		//verifyImportEvent(t, imported, true)
+		verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)
 	// Make sure no blocks were retrieved twice
@@ -513,8 +485,7 @@ func testRandomArrivalImport(t *testing.T, protocol int) {
 		Index:   uint64(len(hashes) - skip - 1),
 	}
 	tester.fetcher.Notify("valid", hashes[skip], chainskip, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
-	//todo xiaozhi
-	//verifyImportCount(t, imported, len(hashes)-1)
+	verifyImportCount(t, imported, len(hashes)-1)
 }
 
 // Tests that direct block enqueues (due to block propagation vs. hash announce)
@@ -547,8 +518,7 @@ func testQueueGapFill(t *testing.T, protocol int) {
 	}
 	// Fill the missing block directly as if propagated
 	tester.fetcher.Enqueue("valid", blocks[hashes[skip]])
-	//todo xiaozhi
-	//verifyImportCount(t, imported, len(hashes)-1)
+	verifyImportCount(t, imported, len(hashes)-1)
 }
 
 // Tests that blocks arriving from various sources (multiple propagations, hash
@@ -589,11 +559,10 @@ func testImportDeduplication(t *testing.T, protocol int) {
 
 	// Fill the missing block directly as if propagated, and check import uniqueness
 	tester.fetcher.Enqueue("valid", blocks[hashes[1]])
-	//todo xiaozhi
-	//verifyImportCount(t, imported, 2)
+	verifyImportCount(t, imported, 2)
 
-	if counter != 0 {
-		t.Fatalf("import invocation count mismatch: have %v, want %v", counter, 0)
+	if counter != 2 {
+		t.Fatalf("import invocation count mismatch: have %v, want %v", counter, 2)
 	}
 }
 
@@ -634,15 +603,13 @@ func testEmptyBlockShortCircuit(t *testing.T, protocol int) {
 		verifyCompletingEvent(t, completing, len(blocks[hashes[i]].Transactions()) > 0)
 
 		// Irrelevant of the construct, import should succeed
-		//todo xiaozhi
-		//verifyImportEvent(t, imported, true)
+		verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)
 }
 
-// Tests that a peer is unable to use unbounded memory with sending infinite
-// block announcements to a node, but that even in the face of such an attack,
-// the fetcher remains operational.
+/*
+// Tests that a peer is unable to use unbounded memory with sending infinite block announcements to a node, but that even in the face of such an attack, the fetcher remains operational.
 func TestHashMemoryExhaustionAttack1(t *testing.T) { testHashMemoryExhaustionAttack(t, 1) }
 func testHashMemoryExhaustionAttack(t *testing.T, protocol int) {
 	// Create a tester with instrumented import hooks
@@ -682,14 +649,15 @@ func testHashMemoryExhaustionAttack(t *testing.T, protocol int) {
 			IsMain:  true,
 			Index:   1,
 		}
-		tester.fetcher.Notify("attacker", attack[i], chain /* don't distance drop */, time.Now(), attackerHeaderFetcher, attackerBodyFetcher)
+		//tester.fetcher.Notify("attacker", attack[i], chain  don't distance drop , time.Now(), attackerHeaderFetcher, attackerBodyFetcher)
+		tester.fetcher.Notify("attacker", attack[i], chain , time.Now(), attackerHeaderFetcher, attackerBodyFetcher)
 	}
 	if count := atomic.LoadInt32(&announces); count != hashLimit+maxQueueDist {
 		t.Fatalf("queued announce count mismatch: have %d, want %d", count, hashLimit+maxQueueDist)
 	}
 	// Wait for fetches to complete
-	//todo xiaozhi
-	//verifyImportCount(t, imported, maxQueueDist)
+	//TODO xiaozhi
+	verifyImportCount(t, imported, maxQueueDist)
 
 	// Feed the remaining valid hashes to ensure DOS protection state remains clean
 	for i := len(hashes) - maxQueueDist - 2; i >= 0; i-- {
@@ -699,16 +667,14 @@ func testHashMemoryExhaustionAttack(t *testing.T, protocol int) {
 			Index:   uint64(len(hashes) - i - 1),
 		}
 		tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), validHeaderFetcher, validBodyFetcher)
-		//todo xiaozhi
-		//verifyImportEvent(t, imported, true)
+		//TODO xiaozhi
+		verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)
 }
 
-// Tests that blocks sent to the fetcher (either through propagation or via hash
-// announces and retrievals) don't pile up indefinitely, exhausting available
-// system memory.
-/*
+// Tests that blocks sent to the fetcher (either through propagation or via hash announces and retrievals) don't pile up indefinitely, exhausting available system memory.
+
 func TestBlockMemoryExhaustionAttack(t *testing.T) {
 	// Create a tester with instrumented import hooks
 	tester := newTester()
@@ -759,4 +725,5 @@ func TestBlockMemoryExhaustionAttack(t *testing.T) {
 		verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)
-}*/
+}
+*/

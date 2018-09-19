@@ -20,6 +20,7 @@ package ptn
 
 import (
 	"errors"
+	"time"
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
@@ -27,19 +28,41 @@ import (
 
 //go pm.mediatorMonitor(maxPeers)
 //Start MediatorNetwork
-func (pm *ProtocolManager) startMediatorNetwork(srvr *p2p.Server, maxPeers int) error {
+func (pm *ProtocolManager) startMediatorConnect(srvr *p2p.Server, maxPeers int) error {
 	peers := pm.dag.GetActiveMediatorNodes()
 	if maxPeers < len(peers)+3 {
 		log.Error("PalletOne start", "maxpeers", maxPeers, "mediator size", len(peers)+3) //3:nomediator
 		return errors.New("maxpeers < mediator size")
 	}
+	if pm.peers.mediators.Size() != len(peers) {
+		nodes := []string{}
+		for _, peer := range peers {
+			nodeId := peer.ID.TerminalString()
+			nodes = append(nodes, nodeId)
+			pm.peers.MediatorsReset(nodes)
+		}
+	}
 
+	//not exsit and no self will connect
+	ps := pm.peers.GetPeers()
 	for _, peer := range peers {
-		srvr.AddPeer(peer)
+		if peer.ID.String() != srvr.NodeInfo().ID && !pm.isexist(peer.ID.String(), ps) {
+			log.Debug("========transition AddPeer==========", "peer.ID.String():", peer.ID.String())
+			srvr.AddPeer(peer)
+		}
 	}
 
 	log.Debug("PalletOne", "startMediatorNetwork mediators:", len(peers))
 	return nil
+}
+
+func (pm *ProtocolManager) isexist(pid string, peers []*peer) bool {
+	for _, peer := range peers {
+		if pid == peer.id {
+			return true
+		}
+	}
+	return false
 }
 
 /*
@@ -49,22 +72,25 @@ func (pm *ProtocolManager) startMediatorNetwork(srvr *p2p.Server, maxPeers int) 
 		2.2 no mediator node:unlimited
 	3.all the mediators node is connectin.Notice the mediator plugin
 */
-func (pm *ProtocolManager) StartMediatorMonitor(srvr *p2p.Server, maxPeers int) {
+func (pm *ProtocolManager) mediatorConnect(srvr *p2p.Server, maxPeers int) {
 	if !pm.producer.LocalHaveActiveMediator() {
 		log.Info("This node is not Mediator")
 		return
 	}
-	log.Info("mediator transition")
+	log.Info("Mediator transition")
+	pm.peers.MediatorsClean()
+	//TODO  The main network is launched for the first time
+
+	//add interval
+	forceSync := time.NewTicker(forceSyncCycle)
+	defer forceSync.Stop()
 	for {
-		if err := pm.startMediatorNetwork(srvr, maxPeers); err != nil {
-			return
+		select {
+		case <-forceSync.C:
+			if err := pm.startMediatorConnect(srvr, maxPeers); err != nil {
+				return
+			}
 		}
-		//TODO must modify
-		go pm.monitor()
-		break
+
 	}
-}
-
-func (pm *ProtocolManager) monitor() {
-
 }

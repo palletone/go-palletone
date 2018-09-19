@@ -20,6 +20,7 @@ package common
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -111,8 +112,8 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 			return nil, false, fmt.Errorf("Coinbase outputs error0.")
 		}
 		income := uint64(fee) + ComputeInterest()
-		if coinIn.Output[0].Value >= income {
-			return nil, false, fmt.Errorf("Coinbase outputs error1.%d", income)
+		if coinIn.Output[0].Value < income {
+			return nil, false, fmt.Errorf("Coinbase outputs error: 1.%d", income)
 		}
 	}
 	return txFlags, isSuccess, nil
@@ -237,6 +238,10 @@ func (validate *Validate) ValidateUnitSignature(h *modules.Header, isGenesis boo
 	emptySigUnit.UnitHeader.Authors = nil
 	emptySigUnit.UnitHeader.Witness = []*modules.Authentifier{}
 	// recover signature
+	if h.Authors == nil {
+		log.Debug("Verify unit signature ,header's authors is nil.")
+		return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
+	}
 	sig := make([]byte, 65)
 	copy(sig[32-len(h.Authors.R):32], h.Authors.R)
 	copy(sig[64-len(h.Authors.S):64], h.Authors.S)
@@ -275,8 +280,10 @@ func (validate *Validate) ValidateUnitSignature(h *modules.Header, isGenesis boo
 		log.Debug("Check unit signature", "error", "mediators info error, pls update network")
 		return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
 	}
+	// 这一步后续添加： 调用 mediator 模块校验见证人的接口
 
-	return modules.UNIT_STATE_VALIDATED
+	//return modules.UNIT_STATE_VALIDATED
+	return modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED
 }
 
 /**
@@ -339,10 +346,6 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 	if stateVersion == nil && bytecode == nil && name == "" && path == "" {
 		return modules.TxValidationCode_VALID
 	}
-	fmt.Println(">>>>>> stateVersion:", stateVersion)
-	fmt.Println(">>>>>> bytecode:", bytecode)
-	fmt.Println(">>>>>> name:", name)
-	fmt.Println(">>>>>> path:", path)
 	return modules.TxValidationCode_INVALID_CONTRACT_TEMPLATE
 }
 
@@ -405,7 +408,8 @@ func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte 
 	}
 
 	// step1. check header.
-	if sigState := validate.validateHeader(unit.UnitHeader, isGenesis); sigState != modules.UNIT_STATE_VALIDATED {
+	sigState := validate.validateHeader(unit.UnitHeader, isGenesis)
+	if sigState != modules.UNIT_STATE_VALIDATED {
 		log.Debug("Validate unit's header failed.", "error code", sigState)
 		return sigState
 	}
@@ -416,7 +420,7 @@ func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte 
 		log.Debug(msg)
 		return modules.UNIT_STATE_HAS_INVALID_TRANSACTIONS
 	}
-	return modules.UNIT_STATE_VALIDATED
+	return sigState
 }
 
 func (validate *Validate) validateHeader(header *modules.Header, isGenesis bool) byte {
