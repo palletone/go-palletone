@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -90,7 +91,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	txs, err := d.dagdb.GetUnitTransactions(uHash)
 	if err != nil {
 		log.Error("Current unit when get transactions", "error", err.Error())
-		//todo xiaozhi
+		//TODO xiaozhi
 		return nil
 	}
 	// generate unit
@@ -105,6 +106,15 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 
 func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
 	return d.CurrentUnit()
+}
+
+func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit {
+	curUnit, err := d.Memdag.GetCurrentUnit(assetId)
+	if err != nil {
+		log.Error("GetCurrentMemUnit", "error", err.Error())
+		return nil
+	}
+	return curUnit
 }
 
 func (d *Dag) GetUnit(hash common.Hash) *modules.Unit {
@@ -321,8 +331,45 @@ func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawV
 // of the header retrieval mechanisms already need to verify nonces, as well as
 // because nonces can be verified sparsely, not needing to check each.
 func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, error) {
+	for i, header := range headers {
+		hash := header.Hash()
+		index := header.Index()
+		number := header.Number
+
+
+		err := d.dagdb.PutCanonicalHash(hash, index)
+		if err != nil {
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at PutCanonicalHash Error", i)
+		}
+
+		err = d.dagdb.PutHeadHeaderHash(hash)
+		if err != nil {
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at PutHeadHeaderHash Error", i)
+		}
+
+		err = d.dagdb.PutHeadUnitHash(hash)
+		if err != nil {
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at PutHeadUnitHash Error", i)
+		}
+
+		err = d.dagdb.PutHeadFastUnitHash(hash)
+		if err != nil {
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at PutHeadFastUnitHash Error", i)
+		}
+
+		err = d.dagdb.SaveNumberByHash(hash, number)
+		if err != nil {
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveNumberByHash Error", i)
+		}
+
+		err = d.dagdb.SaveHashByNumber(hash, number)
+		if err != nil {
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveHashByNumber Error", i)
+		}
+	}
 	return checkFreq, nil
 }
+
 
 //VerifyHeader checks whether a header conforms to the consensus rules of the stock
 //Ethereum ethash engine.go

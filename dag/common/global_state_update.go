@@ -22,14 +22,14 @@ package common
 import (
 	"time"
 
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/common/ptndb"
 )
 
 // UpdateGlobalDynProp, update global dynamic data
 // @author Albert·Gou
-func UpdateGlobalDynProp(db ptndb.Database,gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
+func UpdateGlobalDynProp(db ptndb.Database, gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
 	timestamp := unit.UnitHeader.Creationdate
 	dgp.LastVerifiedUnitNum = unit.UnitHeader.Number.Index
 	dgp.LastVerifiedUnitHash = unit.UnitHash
@@ -39,7 +39,7 @@ func UpdateGlobalDynProp(db ptndb.Database,gp *modules.GlobalProperty, dgp *modu
 	//	println(missedUnits)
 	dgp.CurrentASlot += missedUnits + 1
 
-	go storage.StoreDynGlobalProp(db,dgp)
+	go storage.StoreDynGlobalProp(db, dgp)
 }
 
 /**

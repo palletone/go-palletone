@@ -79,7 +79,7 @@ type peer struct {
 
 	index modules.ChainIndex
 
-	isMediator bool
+	mediator bool
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -273,7 +273,7 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 
 // Handshake executes the ptn protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis common.Hash) error {
+func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis common.Hash, mediator bool) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 	var status statusData // safe to read after two values have been received from errc
@@ -284,6 +284,7 @@ func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis commo
 			NetworkId:       network,
 			Index:           index,
 			GenesisUnit:     genesis,
+			Mediator:        mediator,
 		})
 	}()
 	go func() {
@@ -301,7 +302,7 @@ func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis commo
 			return p2p.DiscReadTimeout
 		}
 	}
-	p.index = status.Index
+	p.index, p.mediator = status.Index, status.Mediator
 	//p.index, p.head = status.TD, status.CurrentBlock
 	return nil
 }
@@ -346,6 +347,7 @@ type peerSet struct {
 	peers        map[string]*peer
 	knownVss     *set.Set
 	knownVssResp *set.Set
+	mediators    *set.Set
 	lock         sync.RWMutex
 	closed       bool
 }
@@ -356,7 +358,42 @@ func newPeerSet() *peerSet {
 		peers:        make(map[string]*peer),
 		knownVss:     set.New(),
 		knownVssResp: set.New(),
+		mediators:    set.New(),
 	}
+}
+
+func (ps *peerSet) MediatorsReset(nodes []string) {
+	ps.lock.Lock()
+	defer ps.lock.Unlock()
+	ps.mediators.Clear()
+	for _, node := range nodes {
+		ps.mediators.Add(node)
+	}
+}
+
+func (ps *peerSet) MediatorsClean() {
+	ps.lock.Lock()
+	defer ps.lock.Unlock()
+	ps.mediators.Clear()
+}
+
+//Make sure there is plenty of connection for Mediator
+func (ps *peerSet) MediatorCheck(p *peer, maxPeers int) bool {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+	if p.mediator {
+		return ps.mediators.Has(p.ID().TerminalString())
+	}
+	size := 0
+	for _, p := range ps.peers {
+		if !p.mediator {
+			size++
+		}
+	}
+	if size >= maxPeers-ps.mediators.Size() {
+		return false
+	}
+	return true
 }
 
 // Register injects a new peer into the working set, or returns an error if the

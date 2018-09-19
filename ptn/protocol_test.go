@@ -35,7 +35,7 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 	var (
 		genesis, _ = pm.dag.GetGenesisUnit(0)
 		head       = pm.dag.CurrentHeader()
-		index      = head.Index()
+		index      = head.Number
 	)
 	defer pm.Stop()
 	tests := []struct {
@@ -48,15 +48,15 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 			wantError: errResp(ErrNoStatusMsg, "first msg has code 2 (!= 0)"),
 		},
 		{
-			code: StatusMsg, data: statusData{10, DefaultConfig.NetworkId, index, head.Hash(), genesis.Hash()},
+			code: StatusMsg, data: statusData{10, DefaultConfig.NetworkId, index, genesis.Hash()},
 			wantError: errResp(ErrProtocolVersionMismatch, "10 (!= %d)", protocol),
 		},
 		{
-			code: StatusMsg, data: statusData{uint32(protocol), 999, index, head.Hash(), genesis.Hash()},
+			code: StatusMsg, data: statusData{uint32(protocol), 999, index, genesis.Hash()},
 			wantError: errResp(ErrNetworkIdMismatch, "999 (!= 1)"),
 		},
 		{
-			code: StatusMsg, data: statusData{uint32(protocol), DefaultConfig.NetworkId, index, head.Hash(), common.Hash{3}},
+			code: StatusMsg, data: statusData{uint32(protocol), DefaultConfig.NetworkId, index, common.Hash{3}},
 			wantError: errResp(ErrGenesisBlockMismatch, "0300000000000000 (!= %x)", genesis.Hash().Bytes()[:8]),
 		},
 	}

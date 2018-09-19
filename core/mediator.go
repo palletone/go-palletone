@@ -77,7 +77,7 @@ func StrToPoint(pubStr string) kyber.Point {
 
 	err := pub.UnmarshalBinary(pubB)
 	if err != nil {
-		log.Error(fmt.Sprintln(err))
+		//log.Error(fmt.Sprintln(err))
 	}
 
 	return pub

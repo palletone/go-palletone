@@ -26,38 +26,38 @@ import (
 	"testing"
 )
 
-//
-//// Tests that protocol versions and modes of operations are matched up properly.
-//func TestProtocolCompatibility(t *testing.T) {
-//	// Define the compatibility chart
-//	tests := []struct {
-//		version    uint
-//		mode       downloader.SyncMode
-//		compatible bool
-//	}{
-//		{0, downloader.FullSync, true},
-//		{0, downloader.FullSync, true},
-//		{1, downloader.FullSync, true},
-//		{0, downloader.FastSync, false},
-//		{0, downloader.FastSync, false},
-//		{1, downloader.FastSync, true},
-//	}
-//	// Make sure anything we screw up is restored
-//	backup := ProtocolVersions
-//	defer func() { ProtocolVersions = backup }()
-//	// Try all available compatibility configs and check for errors
-//	for i, tt := range tests {
-//		ProtocolVersions = []uint{tt.version}
-//		pm, _, err := newTestProtocolManager(tt.mode, 0, nil)
-//		if pm != nil {
-//			defer pm.Stop()
-//		}
-//		if (err == nil && !tt.compatible) || (err != nil && tt.compatible) {
-//			t.Errorf("test %d: compatibility mismatch: have error %v, want compatibility %v", i, err, tt.compatible)
-//		}
-//	}
-//}
-
+/*
+// Tests that protocol versions and modes of operations are matched up properly.
+func TestProtocolCompatibility(t *testing.T) {
+	// Define the compatibility chart
+	tests := []struct {
+		version    uint
+		mode       downloader.SyncMode
+		compatible bool
+	}{
+		{0, downloader.FullSync, true},
+		{0, downloader.FullSync, true},
+		{1, downloader.FullSync, true},
+		{0, downloader.FastSync, false},
+		{0, downloader.FastSync, false},
+		{1, downloader.FastSync, true},
+	}
+	// Make sure anything we screw up is restored
+	backup := ProtocolVersions
+	defer func() { ProtocolVersions = backup }()
+	// Try all available compatibility configs and check for errors
+	for i, tt := range tests {
+		ProtocolVersions = []uint{tt.version}
+		pm, _, err := newTestProtocolManager(tt.mode, 0, nil)
+		if pm != nil {
+			defer pm.Stop()
+		}
+		if (err == nil && !tt.compatible) || (err != nil && tt.compatible) {
+			t.Errorf("test %d: compatibility mismatch: have error %v, want compatibility %v", i, err, tt.compatible)
+		}
+	}
+}
+*/
 // Tests that block headers can be retrieved from a remote chain based on user queries.
 //func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
 func testGetBlockHeaders(t *testing.T, protocol int) {
