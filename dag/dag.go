@@ -333,43 +333,27 @@ func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawV
 func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, error) {
 	for i, header := range headers {
 		hash := header.Hash()
-		index := header.Index()
 		number := header.Number
+		index := header.Number.Index
 
-
-		err := d.dagdb.PutCanonicalHash(hash, index)
-		if err != nil {
-			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at PutCanonicalHash Error", i)
-		}
-
-		err = d.dagdb.PutHeadHeaderHash(hash)
-		if err != nil {
-			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at PutHeadHeaderHash Error", i)
-		}
-
-		err = d.dagdb.PutHeadUnitHash(hash)
-		if err != nil {
-			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at PutHeadUnitHash Error", i)
-		}
-
-		err = d.dagdb.PutHeadFastUnitHash(hash)
-		if err != nil {
-			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at PutHeadFastUnitHash Error", i)
-		}
-
-		err = d.dagdb.SaveNumberByHash(hash, number)
+		// ###save unit hash and chain index relation
+		err := d.dagdb.SaveNumberByHash(hash, number)
 		if err != nil {
 			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveNumberByHash Error", i)
 		}
-
 		err = d.dagdb.SaveHashByNumber(hash, number)
 		if err != nil {
 			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveHashByNumber Error", i)
 		}
+		// ###save HeaderCanon & HeaderKey & HeadUnitKey & HeadFastKey
+		err = d.dagdb.UpdateHeadByBatch(hash, index)
+		if err != nil {
+			return i, err
+		}
+
 	}
 	return checkFreq, nil
 }
-
 
 //VerifyHeader checks whether a header conforms to the consensus rules of the stock
 //Ethereum ethash engine.go
