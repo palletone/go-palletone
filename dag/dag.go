@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -338,36 +339,37 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 
 		err := d.dagdb.PutCanonicalHash(hash, index)
 		if err != nil {
-			return i, err
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at PutCanonicalHash Error", i)
 		}
 
 		err = d.dagdb.PutHeadHeaderHash(hash)
 		if err != nil {
-			return i, err
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at PutHeadHeaderHash Error", i)
 		}
 
 		err = d.dagdb.PutHeadUnitHash(hash)
 		if err != nil {
-			return i, err
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at PutHeadUnitHash Error", i)
 		}
 
 		err = d.dagdb.PutHeadFastUnitHash(hash)
 		if err != nil {
-			return i, err
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at PutHeadFastUnitHash Error", i)
 		}
 
 		err = d.dagdb.SaveNumberByHash(hash, number)
 		if err != nil {
-			return i, err
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveNumberByHash Error", i)
 		}
 
 		err = d.dagdb.SaveHashByNumber(hash, number)
 		if err != nil {
-			return i, err
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveHashByNumber Error", i)
 		}
 	}
 	return checkFreq, nil
 }
+
 
 //VerifyHeader checks whether a header conforms to the consensus rules of the stock
 //Ethereum ethash engine.go
