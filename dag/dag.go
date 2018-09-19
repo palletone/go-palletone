@@ -551,7 +551,7 @@ func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
 }
 
 // author Albert·Gou
-func (d *Dag) GetActiveMediatorNodes() []*discover.Node {
+func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
 	return d.GlobalProp.GetActiveMediatorNodes()
 }
 

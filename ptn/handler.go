@@ -63,6 +63,7 @@ func errResp(code errCode, format string, v ...interface{}) error {
 
 type ProtocolManager struct {
 	networkId uint64
+	srvr      *p2p.Server
 
 	fastSync  uint32 // Flag whether fast sync is enabled (gets disabled if we already have blocks)
 	acceptTxs uint32 // Flag whether we're considered synchronised (enables transaction processing)
@@ -229,6 +230,7 @@ func (pm *ProtocolManager) removePeer(id string) {
 }
 
 func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
+	pm.srvr = srvr
 	pm.maxPeers = maxPeers
 
 	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
@@ -335,7 +337,7 @@ func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDeal
 	dstId := node.ID.TerminalString()
 	peer := pm.peers.Peer(dstId)
 	if peer == nil {
-		//log.Debug(fmt.Sprintf("peer not exist: %v", node.String()))
+		log.Debug(fmt.Sprintf("peer not exist: %v", node.String()))
 		return
 	}
 
@@ -1027,11 +1029,10 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 	nodes := pm.dag.GetActiveMediatorNodes()
 	list := make(map[string]*peer, len(nodes))
 
-	for _, node := range nodes {
-		id := node.ID.TerminalString()
+	for id, node := range nodes {
 		peer := pm.peers.Peer(id)
 		if peer == nil {
-			//log.Debug(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
+			log.Debug(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
 		} else {
 			list[id] = peer
 		}
