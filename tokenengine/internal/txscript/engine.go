@@ -567,13 +567,13 @@ func (vm *Engine) subScript() []parsedOpcode {
 
 // checkHashTypeEncoding returns whether or not the passed hashtype adheres to
 // the strict encoding requirements if enabled.
-func (vm *Engine) checkHashTypeEncoding(hashType SigHashType) error {
+func (vm *Engine) checkHashTypeEncoding(hashType uint32) error {
 	if !vm.hasFlag(ScriptVerifyStrictEncoding) {
 		return nil
 	}
 
-	sigHashType := hashType & ^SigHashAnyOneCanPay
-	if sigHashType < SigHashAll || sigHashType > SigHashSingle {
+	uint32 := hashType & ^SigHashAnyOneCanPay
+	if uint32 < SigHashAll || uint32 > SigHashSingle {
 		str := fmt.Sprintf("invalid hash type 0x%x", hashType)
 		return scriptError(ErrInvalidSigHashType, str)
 	}

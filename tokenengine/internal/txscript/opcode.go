@@ -2077,7 +2077,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	// the data stack.  This is required because the more general script
 	// validation consensus rules do not have the new strict encoding
 	// requirements enabled by the flags.
-	//hashType := SigHashType(fullSigBytes[len(fullSigBytes)-1])
+	//hashType := uint32(fullSigBytes[len(fullSigBytes)-1])
 	//sigBytes := fullSigBytes[:len(fullSigBytes)-1]
 	//if err := vm.checkHashTypeEncoding(hashType); err != nil {
 	//	return err
