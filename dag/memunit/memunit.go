@@ -31,7 +31,8 @@ import (
 type MemUnit map[common.Hash]*modules.Unit
 
 func InitMemUnit() *MemUnit {
-	return &MemUnit{}
+	memunit := new(MemUnit)
+	return memunit
 }
 
 func (mu *MemUnit) Add(u *modules.Unit) error {
@@ -128,8 +129,8 @@ func (forkIndex *ForkIndex) Lenth() int {
 // TODO MemDag
 type MemDag struct {
 	//db                ptndb.Database
-	dagdb storage.DagDb
-	unitRep dagCommon.IUnitRepository
+	dagdb             storage.DagDb
+	unitRep           dagCommon.IUnitRepository
 	lastValidatedUnit map[string]common.Hash // the key is asset id
 	forkIndex         map[string]*ForkIndex  // the key is asset id
 	mainChain         map[string]int         // the key is asset id
@@ -137,14 +138,15 @@ type MemDag struct {
 	memSize           uint8
 }
 
-func NewMemDag(db storage.DagDb,unitRep dagCommon.IUnitRepository) *MemDag {
+func NewMemDag(db storage.DagDb, unitRep dagCommon.IUnitRepository) *MemDag {
 	memdag := MemDag{
-		lastValidatedUnit: nil,
-		forkIndex:         map[string]*ForkIndex{},
+		lastValidatedUnit: make(map[string]common.Hash),
+		forkIndex:         make(map[string]*ForkIndex),
 		memUnit:           InitMemUnit(),
 		memSize:           dagconfig.DefaultConfig.MemoryUnitSize,
-		dagdb:db,
-		unitRep:unitRep,
+		dagdb:             db,
+		unitRep:           unitRep,
+		mainChain:         make(map[string]int),
 	}
 	return &memdag
 }
@@ -180,7 +182,7 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 	// get asset chain's las irreversible unit
 	irreUnitHash, ok := chain.lastValidatedUnit[assetId]
 	if !ok {
-		lastIrreUnit := chain.dagdb.GetLastIrreversibleUnit( unit.UnitHeader.Number.AssetID)
+		lastIrreUnit := chain.dagdb.GetLastIrreversibleUnit(unit.UnitHeader.Number.AssetID)
 		if lastIrreUnit != nil {
 			irreUnitHash = lastIrreUnit.UnitHash
 		}
@@ -217,7 +219,7 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 			return err
 		}
 		// save the matured unit into leveldb
-		if err := chain.unitRep.SaveUnit( *unit, false); err != nil {
+		if err := chain.unitRep.SaveUnit(*unit, false); err != nil {
 			return err
 		}
 	}
