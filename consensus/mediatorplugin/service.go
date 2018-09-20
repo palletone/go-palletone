@@ -58,8 +58,8 @@ type toTBLSSigned struct {
 }
 
 type dkgVerifier struct {
-	medLocal common.Address
-	srcIndex uint32
+	medLocal  common.Address
+	vrfrIndex uint32
 }
 
 type MediatorPlugin struct {
@@ -183,12 +183,22 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 
 		aSize := mp.getDag().GetActiveMediatorCount()
 		mp.vrfrReady[med] = make(map[uint32]bool, aSize-1)
-		mp.respBuf[med] = make(map[uint32]chan *dkg.Response, aSize)
 		mp.initRespBuf(med)
 	}
 
 	// todo 后面换成事件通知响应在调用, 并开启定时器
 	go mp.BroadcastVSSDeals()
+
+	//timeout := time.NewTimer(10 * time.Second)
+	//defer timeout.Stop()
+	//select {
+	//case <-mp.quit:
+	//	return
+	//case <-timeout.C:
+	//	for med, dkg := range mp.dkgs {
+	//		log.Debug(fmt.Sprintf("%v 's DKG certifing is %v", med.Str(), dkg.Certified()))
+	//	}
+	//}
 }
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
@@ -270,6 +280,9 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 
 		suite:       bn256.NewSuiteG2(),
 		vrfrReadyCh: make(chan *dkgVerifier),
+
+		toProcessDealCh:     make(chan *VSSDealEvent),
+		toProcessResponseCh: make(chan *VSSResponseEvent),
 	}
 
 	log.Debug("mediator plugin initialize end")

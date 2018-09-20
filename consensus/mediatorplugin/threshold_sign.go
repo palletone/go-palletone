@@ -102,8 +102,6 @@ func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
 	}
 
 	deal := dealEvent.Deal
-	mp.vrfrReady[dstMed][deal.Index] = true
-	go mp.notifyProcessResp(&dkgVerifier{dstMed, deal.Index})
 
 	resp, err := dkgr.ProcessDeal(deal)
 	if err != nil {
@@ -111,12 +109,16 @@ func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
 		return
 	}
 
+	vrfrIndex := deal.Index
+	mp.vrfrReady[dstMed][vrfrIndex] = true
+	go mp.notifyProcessResp(&dkgVerifier{dstMed, vrfrIndex})
+
 	if resp.Response.Status != vss.StatusApproval {
 		log.Error(fmt.Sprintf("DKG: own deal gave a complaint: %v", dstMed.String()))
 		return
 	}
 
-	go mp.BroadcastVSSResponse(dstMed, resp)
+	go mp.BroadcastVSSResponse(resp)
 }
 
 func (mp *MediatorPlugin) notifyProcessResp(dvp *dkgVerifier) {
@@ -124,7 +126,7 @@ func (mp *MediatorPlugin) notifyProcessResp(dvp *dkgVerifier) {
 }
 
 // BroadcastVSSResponse, broadcast response to every other participant
-func (mp *MediatorPlugin) BroadcastVSSResponse(srcMed common.Address, resp *dkg.Response) {
+func (mp *MediatorPlugin) BroadcastVSSResponse(resp *dkg.Response) {
 	event := VSSResponseEvent{
 		Resp: resp,
 	}
@@ -156,6 +158,7 @@ func (mp *MediatorPlugin) processResponseLoop() {
 
 func (mp *MediatorPlugin) initRespBuf(dstMed common.Address) {
 	aSize := mp.getDag().GetActiveMediatorCount()
+	mp.respBuf[dstMed] = make(map[uint32]chan *dkg.Response, aSize)
 	for i := 0; i < aSize; i++ {
 		mp.respBuf[dstMed][uint32(i)] = make(chan *dkg.Response, aSize-1)
 	}
@@ -163,17 +166,20 @@ func (mp *MediatorPlugin) initRespBuf(dstMed common.Address) {
 
 func (mp *MediatorPlugin) processResponseBuf(dvp *dkgVerifier) {
 	dstMed := dvp.medLocal
-	srcIndex := dvp.srcIndex
+	vrfrIndex := dvp.vrfrIndex
 	dkg := mp.getLocalActiveMediatorDKG(dstMed)
 	if dkg == nil {
 		return
 	}
 
-	if !mp.vrfrReady[dstMed][srcIndex] {
+	if !mp.vrfrReady[dstMed][vrfrIndex] {
 		return
 	}
 
-	for resp := range mp.respBuf[dstMed][srcIndex] {
+	respCount := 0
+	aSize := mp.getDag().GetActiveMediatorCount()
+	for resp := range mp.respBuf[dstMed][vrfrIndex] {
+		respCount++
 
 		jstf, err := dkg.ProcessResponse(resp)
 		if err != nil {
@@ -185,16 +191,23 @@ func (mp *MediatorPlugin) processResponseBuf(dvp *dkgVerifier) {
 			log.Error(fmt.Sprintf("DKG: wrong Process Response: %v", dstMed.String()))
 			continue
 		}
+
+		if respCount+1 == aSize-1 {
+			log.Debug(fmt.Sprintf("%v 's DKG certifing is %v, vrfrIndex: %v, count: %v",
+				dstMed.Str(), dkg.Certified(), vrfrIndex, respCount))
+		}
 	}
 }
 
-func (mp *MediatorPlugin) processVSSResponse(resp *VSSResponseEvent) {
+func (mp *MediatorPlugin) processVSSResponse(respEvent *VSSResponseEvent) {
+	resp := respEvent.Resp
 	lams := mp.GetLocalActiveMediators()
 	for _, dstMed := range lams {
 		//ignore the message from myself
-		srcIndex := resp.Resp.Response.Index
+		srcIndex := resp.Response.Index
 		srcMed := mp.getDag().GetActiveMediatorAddr(int(srcIndex))
 		if srcMed == dstMed {
+			log.Debug(fmt.Sprintf("ignore the message from myself: %v", srcMed.Str()))
 			continue
 		}
 
@@ -203,8 +216,9 @@ func (mp *MediatorPlugin) processVSSResponse(resp *VSSResponseEvent) {
 			continue
 		}
 
-		mp.respBuf[dstMed][srcIndex] <- resp.Resp
-		go mp.notifyProcessResp(&dkgVerifier{dstMed, srcIndex})
+		vrfrIndex := resp.Index
+		mp.respBuf[dstMed][vrfrIndex] <- resp
+		//go mp.notifyProcessResp(&dkgVerifier{dstMed, vrfrIndex})
 	}
 }
 
