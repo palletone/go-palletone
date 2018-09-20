@@ -20,12 +20,10 @@ package txspool
 
 import (
 	"container/heap"
-	"math/big"
-	"sort"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
+	"math/big"
 )
 
 // priceHeap is a heap.Interface implementation over transactions for retrieving
@@ -64,10 +62,10 @@ func (h *priceHeap) Update(item *modules.TxPoolTransaction, priority float64) {
 type priorityHeap []*modules.TxPoolTransaction
 
 func (h priorityHeap) Len() int           { return len(h) }
-func (h priorityHeap) Less(i, j int) bool { return h[i].Priority_lvl < h[j].Priority_lvl }
+func (h priorityHeap) Less(i, j int) bool { return h[i].Priority_lvl > h[j].Priority_lvl }
 func (h priorityHeap) Swap(i, j int) {
 	h[i], h[j] = h[j], h[i]
-	h[i].Index, h[j].Index = i, j
+	//h[i].Index, h[j].Index = i, j
 }
 
 func (h *priorityHeap) Push(x interface{}) {
@@ -79,10 +77,16 @@ func (h *priorityHeap) Push(x interface{}) {
 
 // -1 标识该数据已经出了优先级队列了 ,弹出优先级最高的
 func (h *priorityHeap) Pop() interface{} {
+	//old := *h
+	//n := len(old)
+	//x := old[0]
+	//*h = old[1:n]
+	//x.Index = -1
+	//return x
 	old := *h
 	n := len(old)
-	x := old[0]
-	*h = old[1:n]
+	x := old[n-1]
+	*h = old[0 : n-1]
 	x.Index = -1
 	return x
 }
@@ -94,7 +98,7 @@ func (h *priorityHeap) Update(item *modules.TxPoolTransaction, priority float64)
 
 // txPricedList is a price-sorted heap to allow operating on transactions pool
 // contents in a price-incrementing way.
-type txPricedList struct {
+type  txPricedList struct {
 	all    *map[common.Hash]*modules.TxPoolTransaction // Pointer to the map of all transactions
 	items  *priorityHeap                               // Heap of prices of all the stored transactions
 	stales int                                         // Number of stale price points to (re-heap trigger)
@@ -111,13 +115,14 @@ func newTxPricedList(all *map[common.Hash]*modules.TxPoolTransaction) *txPricedL
 // Put inserts a new transaction into the heap.
 func (l *txPricedList) Put(tx *modules.TxPoolTransaction) *priorityHeap {
 	heap.Push(l.items, tx)
-	sort.Sort(l.items)
+	//sort.Sort(l.items)
 	return l.items
 }
 func (l *txPricedList) Get() *modules.TxPoolTransaction {
 	if l != nil {
 		if l.items.Len() > 0 {
-			return l.items.Pop().(*modules.TxPoolTransaction)
+			//return l.items.Pop().(*modules.TxPoolTransaction)
+			return heap.Pop(l.items).(*modules.TxPoolTransaction)
 		}
 	}
 	return nil
