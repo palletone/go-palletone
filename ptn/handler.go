@@ -111,6 +111,9 @@ type ProtocolManager struct {
 	wg sync.WaitGroup
 
 	genesis *modules.Unit
+
+	peersTransition *peerSet
+	transCh         chan int
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
@@ -120,18 +123,20 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	genesis *modules.Unit) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		networkId:   networkId,
-		dag:         dag,
-		txpool:      txpool,
-		eventMux:    mux,
-		consEngine:  engine,
-		peers:       newPeerSet(),
-		newPeerCh:   make(chan *peer),
-		noMorePeers: make(chan struct{}),
-		txsyncCh:    make(chan *txsync),
-		quitSync:    make(chan struct{}),
-		genesis:     genesis,
-		producer:    producer,
+		networkId:       networkId,
+		dag:             dag,
+		txpool:          txpool,
+		eventMux:        mux,
+		consEngine:      engine,
+		peers:           newPeerSet(),
+		newPeerCh:       make(chan *peer),
+		noMorePeers:     make(chan struct{}),
+		txsyncCh:        make(chan *txsync),
+		quitSync:        make(chan struct{}),
+		transCh:         make(chan int, 1),
+		genesis:         genesis,
+		producer:        producer,
+		peersTransition: newPeerSet(),
 	}
 
 	// Figure out whether to allow fast sync or not
@@ -209,6 +214,24 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	}
 	manager.fetcher = fetcher.New(dag.GetUnitByHash, validator, manager.BroadcastUnit, heighter, inserter, manager.removePeer)
 	return manager, nil
+}
+
+func (pm *ProtocolManager) removeTransitionPeer(id string) {
+	// Short circuit if the peer was already removed
+	peer := pm.peersTransition.Peer(id)
+	if peer == nil {
+		return
+	}
+	log.Debug("Removing PalletOne peer", "peer", id)
+
+	// Unregister the peer from the PalletOne peer set
+	if err := pm.peersTransition.Unregister(id); err != nil {
+		log.Error("Peer removal failed", "peer", id, "err", err)
+	}
+	// Hard disconnect at the networking layer
+	if peer != nil {
+		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+	}
 }
 
 func (pm *ProtocolManager) removePeer(id string) {
@@ -296,7 +319,7 @@ func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
 	//}
 	//pm.peers.MarkVssResp(dstId)
 
-	peers := pm.GetActiveMediatorPeers()
+	peers := pm.GetTransitionPeers() //pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
 			go pm.producer.ToProcessResponse(resp)
@@ -341,7 +364,7 @@ func (self *ProtocolManager) vssResponseBroadcastLoop() {
 
 // @author Albert·Gou
 func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDealEvent) {
-	peer, self := pm.getActiveMediatorPeer(node)
+	peer, self := pm.getTransitionPeer(node)
 	if self {
 		go pm.producer.ToProcessDeal(deal)
 		return
@@ -400,6 +423,8 @@ type producer interface {
 	ToProcessResponse(resp *mp.VSSResponseEvent) error
 
 	LocalHaveActiveMediator() bool
+
+	BroadcastVSSDeals()
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -436,6 +461,7 @@ func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *p
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
+	//TODO must modify make sure  have enough connections for mediators
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
 		return p2p.DiscTooManyPeers
@@ -455,19 +481,13 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		return err
 	}
 
-	if !pm.peers.MediatorCheck(p, pm.maxPeers) {
-		log.Info("ProtocolManager handler nomediator too many peers")
-		return p2p.DiscTooManyPeers
+	if pm.producer.LocalHaveActiveMediator() && p.mediator &&
+		!pm.peersTransition.mediators.Has(p.ID().TerminalString()) {
+		if err := pm.handleTransitionMsg(p); err != nil {
+			return err
+		}
 	}
 
-	//TODO
-	/*
-		1.CheckMediator notice consensus when full mediator connected.
-		2.Holdup
-		3.Proceing vss
-		4.Vss success.mediator notice ptn.Clean ps.mediators
-		5.Continue when Transition to complete
-	*/
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
 		rw.Init(p.version)
 	}
@@ -484,7 +504,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
-
 	pm.syncTransactions(p)
 	log.Debug("PalletOne pm handle syncTransactions")
 
@@ -497,6 +516,116 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 }
 
+/*
+	1.CheckMediator notice consensus when full mediator connected.
+	2.Holdup
+	3.Proceing vss
+	4.Vss success.mediator notice ptn.Clean ps.mediators
+	5.Continue when Transition to complete
+*/
+func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
+	//	if p.mediator && !pm.peersTransition.mediators.Has(p.ID().TerminalString()) {
+	//		log.Debug("PalletOne handshake failed Lying is mediator")
+	//		return errors.New("PalletOne handshake failed Lying is mediator")
+	//	}
+
+	if err := pm.peersTransition.Register(p); err != nil {
+		log.Error("PalletOne peer registration failed", "err", err)
+		return err
+	}
+	defer pm.removeTransitionPeer(p.id)
+
+	if pm.peersTransition.MediatorsSize() == len(pm.peersTransition.peers) {
+		//notice consensus all mediator connected
+		//if The main network is launched for the first time.
+		//(Judge node have private key).Only notice consensus go to the next vote.
+		//Vote finish we will transition
+
+		//if temporary mediators should to notice consensus and p.transitionCh <- transitionCancel
+		pm.producer.BroadcastVSSDeals()
+		//p.transitionCh <- transitionCancel
+		pm.transCh <- transitionCancel
+	}
+	for {
+		select {
+		case event := <-p.transitionCh:
+			if event == transitionCancel {
+				//TODO restart transtion connect
+				log.Debug("PalletOne handleTransitionMsg transitions each other connected ok")
+				return nil
+			}
+		default:
+		}
+		log.Debug("PalletOne handleTransitionMsg transitions ReadMsg")
+		// Read the next message from the remote peer, and ensure it's fully consumed
+		msg, err := p.rw.ReadMsg()
+		if err != nil {
+			return err
+		}
+		if msg.Size > ProtocolMaxMsgSize {
+			return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
+		}
+		//TODO judge msg.Code must vss code when peer In the vss processing stage.
+		//Otherwise, immediatly return errResp.On the basis of ps.mediators
+
+		defer msg.Discard()
+
+		// Handle the message depending on its contents
+		switch {
+		case msg.Code == TransitionReq:
+		case msg.Code == TransitionResp:
+			//21*21 resp
+			// append by Albert·Gou
+		case msg.Code == VSSDealMsg:
+			// comment by Albert·Gou
+			//var vssmsg vssMsg
+			//if err := msg.Decode(&vssmsg); err != nil {
+
+			var deal mp.VSSDealEvent
+			if err := msg.Decode(&deal); err != nil {
+				log.Info("===VSSDealMsg===", "err:", err)
+				return errResp(ErrDecode, "%v: %v", msg, err)
+			}
+			pm.producer.ToProcessDeal(&deal)
+
+			// comment by Albert·Gou
+			////TODO vssmark
+			//if !pm.peers.PeersWithoutVss(vssmsg.NodeId) {
+			//	pm.producer.ToProcessDeal(vssmsg.Deal)
+			//	pm.peers.MarkVss(vssmsg.NodeId)
+			//	pm.BroadcastVss(vssmsg.NodeId, vssmsg.Deal)
+			//}
+
+			// append by Albert·Gou
+		case msg.Code == VSSResponseMsg:
+			var resp mp.VSSResponseEvent
+			if err := msg.Decode(&resp); err != nil {
+				log.Info("===VSSResponseMsg===", "err:", err)
+				return errResp(ErrDecode, "%v: %v", msg, err)
+			}
+			pm.producer.ToProcessResponse(&resp)
+		default:
+			return errResp(ErrInvalidMsgCode, "%v", msg.Code)
+		}
+	}
+
+	/*
+		//2.holdup
+		step := <-p.transitionCh
+		switch {
+		case step == transitionStep1:
+			log.Info("PalletOne transition all mediators each other connected", "mediators num:", pm.peersTransition.MediatorsSize())
+		}
+
+		select {
+		case event := <-p.transitionCh:
+			if event == transitionCancel {
+				//TODO restart transtion connect
+			}
+		}
+	*/
+}
+
 //switchover: vote mediator all connected next to switchover official peerset
 func (pm *ProtocolManager) switchover(p *peer) error {
 	return nil
@@ -505,6 +634,7 @@ func (pm *ProtocolManager) switchover(p *peer) error {
 // handleMsg is invoked whenever an inbound message is received from a remote
 // peer. The remote connection is torn down upon returning any error.
 func (pm *ProtocolManager) handleMsg(p *peer) error {
+
 	// Read the next message from the remote peer, and ensure it's fully consumed
 	msg, err := p.rw.ReadMsg()
 	if err != nil {
@@ -576,41 +706,44 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 					}
 				}
 			case query.Origin.Hash != (common.Hash{}) && !query.Reverse:
-				//	// Hash based traversal towards the leaf block
-				//	var (
-				//		current = origin.Number.Index
-				//		next    = current + query.Skip + 1
-				//	)
-				//	//log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
-				//	if next <= current {
-				//		infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
-				//		log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
-				//		unknown = true
-				//	} else {
-				//		//log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
-				//
-				//		//index := query.Origin.Number
-				//		//index := modules.ChainIndex{}
-				//		//index.AssetID.SetBytes([]byte(query.Origin.Number.AssetID))
-				//		//index.Index = next
-				//		//index.IsMain = true
-				//		indexNext := modules.ChainIndex{
-				//			modules.PTNCOIN,
-				//			true,
-				//			next,
-				//		}
-				//		if header := pm.dag.GetHeaderByNumber(indexNext); header != nil {
-				//			//query.Origin.Hash = header.Hash()
-				//			//TODO must recover
-				//			if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
-				//				query.Origin.Hash = header.Hash()
-				//			} else {
-				//				unknown = true
-				//			}
-				//		} else {
-				//			unknown = true
-				//		}
-				//	}
+			//TODO must recover
+			/*
+				// Hash based traversal towards the leaf block
+				var (
+					current = origin.Number.Index
+					next    = current + query.Skip + 1
+				)
+				//log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
+				if next <= current {
+					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
+					log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
+					unknown = true
+				} else {
+					//log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
+
+					//index := query.Origin.Number
+					//index := modules.ChainIndex{}
+					//index.AssetID.SetBytes([]byte(query.Origin.Number.AssetID))
+					//index.Index = next
+					//index.IsMain = true
+					indexNext := modules.ChainIndex{
+						modules.PTNCOIN,
+						true,
+						next,
+					}
+					if header := pm.dag.GetHeaderByNumber(indexNext); header != nil {
+						//query.Origin.Hash = header.Hash()
+						//TODO must recover
+						if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
+							query.Origin.Hash = header.Hash()
+						} else {
+							unknown = true
+						}
+					} else {
+						unknown = true
+					}
+				}
+			*/
 			case query.Reverse:
 				// Number based traversal towards the genesis block
 				if query.Origin.Number.Index >= query.Skip+1 {
@@ -861,36 +994,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		pm.producer.ToUnitTBLSSign(p.id, &unit)
 
-		// append by Albert·Gou
-	case msg.Code == VSSDealMsg:
-		// comment by Albert·Gou
-		//var vssmsg vssMsg
-		//if err := msg.Decode(&vssmsg); err != nil {
-
-		var deal mp.VSSDealEvent
-		if err := msg.Decode(&deal); err != nil {
-			log.Info("===VSSDealMsg===", "err:", err)
-			return errResp(ErrDecode, "%v: %v", msg, err)
-		}
-		pm.producer.ToProcessDeal(&deal)
-
-		// comment by Albert·Gou
-		////TODO vssmark
-		//if !pm.peers.PeersWithoutVss(vssmsg.NodeId) {
-		//	pm.producer.ToProcessDeal(vssmsg.Deal)
-		//	pm.peers.MarkVss(vssmsg.NodeId)
-		//	pm.BroadcastVss(vssmsg.NodeId, vssmsg.Deal)
-		//}
-
-		// append by Albert·Gou
-	case msg.Code == VSSResponseMsg:
-		var resp mp.VSSResponseEvent
-		if err := msg.Decode(&resp); err != nil {
-			log.Info("===VSSResponseMsg===", "err:", err)
-			return errResp(ErrDecode, "%v: %v", msg, err)
-		}
-		pm.producer.ToProcessResponse(&resp)
-
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
@@ -1089,6 +1192,33 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 
 	for id, node := range nodes {
 		peer, self := pm.getActiveMediatorPeer(node)
+		if peer != nil || self {
+			list[id] = peer
+		}
+	}
+
+	return list
+}
+
+func (pm *ProtocolManager) getTransitionPeer(node *discover.Node) (p *peer, self bool) {
+	id := node.ID
+	if pm.srvr.Self().ID == id {
+		self = true
+	}
+
+	p = pm.peersTransition.Peer(id.TerminalString())
+	if p == nil && !self {
+		log.Debug(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
+	}
+
+	return
+}
+func (pm *ProtocolManager) GetTransitionPeers() map[string]*peer {
+	nodes := pm.dag.GetActiveMediatorNodes()
+	list := make(map[string]*peer, len(nodes))
+
+	for id, node := range nodes {
+		peer, self := pm.getTransitionPeer(node)
 		if peer != nil || self {
 			list[id] = peer
 		}
