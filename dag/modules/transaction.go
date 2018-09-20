@@ -148,6 +148,7 @@ type TxPoolTransaction struct {
 	Nonce        uint64    // transaction'hash maybe repeat.
 	Pending      bool
 	Confirmed    bool
+	Index        int `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
 }
 
@@ -229,7 +230,7 @@ func (tx *TxPoolTransaction) GetPriorityLvl() float64 {
 		if tx.CreationDate.Unix() <= 0 {
 			tx.CreationDate = time.Now()
 		}
-		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/tx.Tx.Size().Float64()*(1+float64(time.Now().Hour()-tx.CreationDate.Hour())/24)), 64)
+		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/24)), 64)
 	}
 	tx.Priority_lvl = priority_lvl
 	return priority_lvl
