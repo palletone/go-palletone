@@ -21,16 +21,15 @@ import (
 // This timestamp corresponds to Sun Apr 1 00:00:00 UTC 2012.
 var Bip16Activation = time.Unix(1333238400, 0)
 
-// SigHashType represents hash type bits at the end of a signature.
-type SigHashType uint32
+// uint32 represents hash type bits at the end of a signature.
 
 // Hash type bits from the end of a signature.
 const (
-	SigHashOld          SigHashType = 0x0
-	SigHashAll          SigHashType = 0x1
-	SigHashNone         SigHashType = 0x2
-	SigHashSingle       SigHashType = 0x3
-	SigHashAnyOneCanPay SigHashType = 0x80
+	SigHashOld          uint32 = 0x0
+	SigHashAll          uint32 = 0x1
+	SigHashNone         uint32 = 0x2
+	SigHashSingle       uint32 = 0x3
+	SigHashAnyOneCanPay uint32 = 0x80
 
 	// sigHashMask defines the number of bits of the hash type which is used
 	// to identify which outputs are signed.
@@ -445,7 +444,7 @@ func calcHashOutputs(tx *modules.Transaction) common.Hash {
 // wallet if fed an invalid input amount, the real sighash will differ causing
 // the produced signature to be invalid.
 func calcWitnessSignatureHash(subScript []parsedOpcode, sigHashes *TxSigHashes,
-	hashType SigHashType, tx *modules.Transaction,msgIdx, idx int, amt uint64) ([]byte, error) {
+	hashType uint32, tx *modules.Transaction,msgIdx, idx int, amt uint64) ([]byte, error) {
 
 	//// As a sanity check, ensure the passed input index for the transaction
 	//// is valid.
@@ -555,7 +554,7 @@ func calcWitnessSignatureHash(subScript []parsedOpcode, sigHashes *TxSigHashes,
 
 // CalcWitnessSigHash computes the sighash digest for the specified input of
 // the target transaction observing the desired sig hash type.
-//func CalcWitnessSigHash(script []byte, sigHashes *TxSigHashes, hType SigHashType,
+//func CalcWitnessSigHash(script []byte, sigHashes *TxSigHashes, hType uint32,
 //	tx *wire.MsgTx, idx int, amt int64) ([]byte, error) {
 //
 //	//parsedScript, err := parseScript(script)
@@ -578,7 +577,7 @@ func shallowCopyTx(tx *modules.Transaction/**wire.MsgTx*/) modules.Transaction {
 // CalcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func CalcSignatureHash(script []byte, hashType SigHashType, tx *modules.Transaction/**wire.MsgTx*/,msgIdx, idx int) ([]byte, error) {
+func CalcSignatureHash(script []byte, hashType uint32, tx *modules.Transaction/**wire.MsgTx*/,msgIdx, idx int) ([]byte, error) {
 	parsedScript, err := parseScript(script)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse output script: %v", err)
@@ -589,7 +588,7 @@ func CalcSignatureHash(script []byte, hashType SigHashType, tx *modules.Transact
 // calcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.Transaction/*wire.MsgTx*/,msgIdx, idx int) []byte {
+func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Transaction/*wire.MsgTx*/,msgIdx, idx int) []byte {
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
 	//

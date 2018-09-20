@@ -5,12 +5,32 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	unit "github.com/palletone/go-palletone/dag/modules"
 	"time"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 type Contract struct {
+	//cfg *contractcfg.Config
+	dag dag.IDag
+}
+
+func Initialize(cfg *contractcfg.Config) (*Contract, error) {
+	var contractCfg contractcfg.Config
+	if cfg == nil {
+		contractCfg = contractcfg.DefaultConfig
+	} else {
+		contractCfg = *cfg
+	}
+	cc := &Contract{
+	}
+	contractcfg.SetConfig(&contractCfg)
+
+	log.Debug("contract initialize ok")
+	return cc, nil
 }
 
 func (c *Contract) Start(dag dag.IDag) {
+	//c.dag = dag
 	go cc.Init(dag)
 }
 

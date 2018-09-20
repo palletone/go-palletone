@@ -170,7 +170,7 @@ func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockS
 }
 
 //Sign a full transaction
-func SignTxAllPaymentInput(tx *modules.Transaction, utxoLockScripts map[modules.OutPoint][]byte, redeemScript []byte,privKeys map[common.Address]*ecdsa.PrivateKey) ([]common.SignatureError ,error){
+func SignTxAllPaymentInput(tx *modules.Transaction,hashType uint32, utxoLockScripts map[modules.OutPoint][]byte, redeemScript []byte,privKeys map[common.Address]*ecdsa.PrivateKey) ([]common.SignatureError ,error){
 	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
 		if privKey, ok := privKeys[a]; ok {
 			return privKey, true, nil
@@ -198,8 +198,9 @@ func SignTxAllPaymentInput(tx *modules.Transaction, utxoLockScripts map[modules.
 				utxoLockScript , _:= utxoLockScripts[*input.PreviousOutPoint]
 				checkscript := make([]byte, len(utxoLockScript))
 	 			copy(checkscript, utxoLockScript)
-
-				sigScript, err := txscript.SignTxOutput(tx, i, j, utxoLockScript, txscript.SigHashAll,
+                if (hashType&txscript.SigHashSingle) !=
+				txscript.SigHashSingle || j < len(pay.Output) {
+				sigScript, err := txscript.SignTxOutput(tx, i, j, utxoLockScript, hashType,
 					txscript.KeyClosure(lookupKey),  txscript.ScriptClosure(lookupRedeemScript), input.SignatureScript)
 				if err != nil {
 					signErrors = append(signErrors, common.SignatureError{
@@ -211,6 +212,7 @@ func SignTxAllPaymentInput(tx *modules.Transaction, utxoLockScripts map[modules.
 				}
 				input.SignatureScript = sigScript
 				checkscript = nil
+			   }
 			}
 		}
 	}

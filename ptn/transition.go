@@ -42,10 +42,12 @@ func (pm *ProtocolManager) startMediatorConnect(srvr *p2p.Server, maxPeers int) 
 			pm.peers.MediatorsReset(nodes)
 		}
 	}
+
 	//not exsit and no self will connect
 	ps := pm.peers.GetPeers()
 	for _, peer := range peers {
 		if peer.ID.String() != srvr.NodeInfo().ID && !pm.isexist(peer.ID.String(), ps) {
+			log.Debug("========transition AddPeer==========", "peer.ID.String():", peer.ID.String())
 			srvr.AddPeer(peer)
 		}
 	}
@@ -75,7 +77,7 @@ func (pm *ProtocolManager) mediatorConnect(srvr *p2p.Server, maxPeers int) {
 		log.Info("This node is not Mediator")
 		return
 	}
-	log.Info("mediator transition")
+	log.Info("Mediator transition")
 	pm.peers.MediatorsClean()
 	//TODO  The main network is launched for the first time
 

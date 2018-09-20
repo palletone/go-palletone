@@ -20,6 +20,7 @@ package common
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -237,6 +238,10 @@ func (validate *Validate) ValidateUnitSignature(h *modules.Header, isGenesis boo
 	emptySigUnit.UnitHeader.Authors = nil
 	emptySigUnit.UnitHeader.Witness = []*modules.Authentifier{}
 	// recover signature
+	if h.Authors == nil {
+		log.Debug("Verify unit signature ,header's authors is nil.")
+		return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
+	}
 	sig := make([]byte, 65)
 	copy(sig[32-len(h.Authors.R):32], h.Authors.R)
 	copy(sig[64-len(h.Authors.S):64], h.Authors.S)

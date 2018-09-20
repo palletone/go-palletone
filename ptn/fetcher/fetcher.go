@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 
 	"fmt"
+
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
@@ -683,7 +684,7 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 // block's number is at the same height as the current import phase, it updates
 // the phase states accordingly.
 func (f *Fetcher) insert(peer string, block *modules.Unit) {
-	fmt.Println("=====>")
+	//fmt.Println("=====>")
 	hash := block.Hash()
 
 	// Run the import on a new thread
