@@ -1304,7 +1304,6 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 			return "", internalRPCError(err.Error(), context)
 		}
 		txOut := modules.NewTxOut(uint64(dao), pkScript, &modules.Asset{})
-		//fmt.Printf("------1324--------txout is %+v\n",pkScript)
 		pload.AddTxOut(*txOut)
 	}
 	//	// Set the Locktime, if given.
@@ -1341,24 +1340,24 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
 		return nil, err
 	}
-	// var hashType txscript.SigHashType
-	// switch *cmd.Flags {
-	// case "ALL":
-	// 	hashType = txscript.SigHashAll
-	// case "NONE":
-	// 	hashType = txscript.SigHashNone
-	// case "SINGLE":
-	// 	hashType = txscript.SigHashSingle
-	// case "ALL|ANYONECANPAY":
-	// 	hashType = txscript.SigHashAll | txscript.SigHashAnyOneCanPay
-	// case "NONE|ANYONECANPAY":
-	// 	hashType = txscript.SigHashNone | txscript.SigHashAnyOneCanPay
-	// case "SINGLE|ANYONECANPAY":
-	// 	hashType = txscript.SigHashSingle | txscript.SigHashAnyOneCanPay
-	// default:
-	// 	//e := errors.New("Invalid sighash parameter")
-	// 	return nil, err
-	// }
+	var hashType uint32
+	 switch *cmd.Flags {
+	 case "ALL":
+	 	hashType = SigHashAll
+	 case "NONE":
+	 	hashType = SigHashNone
+	 case "SINGLE":
+	 	hashType = SigHashSingle
+	 case "ALL|ANYONECANPAY":
+	 	hashType = SigHashAll | SigHashAnyOneCanPay
+	 case "NONE|ANYONECANPAY":
+	 	hashType = SigHashNone | SigHashAnyOneCanPay
+	 case "SINGLE|ANYONECANPAY":
+	 	hashType = SigHashSingle | SigHashAnyOneCanPay
+	 default:
+		//e := errors.New("Invalid sighash parameter")
+	 	return nil, err
+	 }
 
 	inputpoints := make(map[modules.OutPoint][]byte)
 	//scripts := make(map[string][]byte)
@@ -1420,7 +1419,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	}
 
 	var signErrs []common.SignatureError
-	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, inputpoints, redeem, keys)
+	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType,inputpoints, redeem, keys)
 	if err != nil {
 
 		return nil, DeserializationError{err}

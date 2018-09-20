@@ -608,7 +608,7 @@ func accountSignTx(ctx *cli.Context) error {
 	}
 	if len(ctx.Args()) != 1 {
 		utils.Fatalf("usage :json: [{'txid':txid,'vout':n,'scriptPubKey':hex,'redeemScript':hex},...] [,...] " +
-			"[sighashtype='ALL']")
+			"[uint32='ALL']")
 	}
 	params := ctx.Args().First()
 	var signTransactionParams SignTransactionParams

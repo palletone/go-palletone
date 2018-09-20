@@ -1,12 +1,11 @@
-package contracts
+package contractcfg
 
 import (
 	"time"
-	"github.com/op/go-logging"
 )
 
 var DefaultConfig = Config{
-	LogLevel:               logging.DEBUG,
+	//LogLevel:               logging.DEBUG,
 	ContractFileSystemPath: "./chaincodes",
 	Address:                "127.0.0.1:12345",
 	ContractExecutetimeout: time.Duration(20) * time.Second,
@@ -16,7 +15,7 @@ var DefaultConfig = Config{
 }
 
 type Config struct {
-	LogLevel               logging.Level
+	//LogLevel               logging.Level
 	ContractFileSystemPath string
 	Address                string
 	ContractExecutetimeout time.Duration
@@ -24,3 +23,17 @@ type Config struct {
 	ContractBuilder        string
 	SysContract            map[string]string
 }
+
+var contractCfg Config
+func SetConfig(cfg *Config)  {
+	if cfg != nil {
+		contractCfg = *cfg
+	}else {
+		contractCfg = DefaultConfig
+	}
+}
+
+func GetConfig() *Config{
+	return &contractCfg
+}
+
