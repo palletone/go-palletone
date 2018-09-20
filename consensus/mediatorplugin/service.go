@@ -200,7 +200,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	// 1. 开启循环生产计划
 	go mp.ScheduleProductionLoop()
 
-	// 2. 给当前节点控制的活跃mediator，初始化对应的DKG
+	// 2. 给当前节点控制的活跃mediator，初始化对应的DKG. (换届后重新生成)
 	go mp.NewActiveMediatorsDKG()
 
 	// 3. 处理 VSS deal 循环

@@ -270,7 +270,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	go pm.vssDealTransmitLoop()
 
 	// append by Albert·Gou
-	// send  VSS Response
+	// broadcast  VSS Response
 	pm.vssResponseCh = make(chan mp.VSSResponseEvent)
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
 	go pm.vssResponseBroadcastLoop()

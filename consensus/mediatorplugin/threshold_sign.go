@@ -164,11 +164,14 @@ func (mp *MediatorPlugin) processResponseBuf(dvp *dkgVerifier) {
 		return
 	}
 
-	respCount := 0
 	aSize := mp.getDag().GetActiveMediatorCount()
-	for resp := range mp.respBuf[localMed][vrfrMed] {
+	respCount := 0
+	// localMed 对 vrfrMed 的 response 在 ProcessDeal 生成 response 时 自动处理了
+	if vrfrMed != localMed {
 		respCount++
+	}
 
+	for resp := range mp.respBuf[localMed][vrfrMed] {
 		jstf, err := dkg.ProcessResponse(resp)
 		if err != nil {
 			log.Error(err.Error())
@@ -180,9 +183,15 @@ func (mp *MediatorPlugin) processResponseBuf(dvp *dkgVerifier) {
 			continue
 		}
 
-		if respCount+1 >= aSize-1 {
-			log.Debug(fmt.Sprintf("%v 's DKG certifing is %v, vrfrMed: %v, count: %v",
-				localMed.Str(), dkg.Certified(), vrfrMed.Str(), respCount))
+		respCount++
+		if respCount == aSize-1 {
+			if dkg.Certified() {
+				log.Debug(fmt.Sprintf("%v 's DKG verification passed!", localMed.Str()))
+
+				// todo 进行分片签名
+
+			}
+			break
 		}
 	}
 }
