@@ -31,10 +31,9 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/vm/inproccontroller"
 
-	"github.com/spf13/viper"
-
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	cclist "github.com/palletone/go-palletone/contracts/list"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 var sysccLogger = flogging.MustGetLogger("sccapi")
@@ -192,7 +191,8 @@ func buildSysCC(context context.Context, spec *pb.ChaincodeSpec) (*pb.ChaincodeD
 }
 
 func isWhitelisted(syscc *SystemChaincode) bool {
-	chaincodes := viper.GetStringMapString("chaincode.system")
+	//chaincodes := viper.GetStringMapString("chaincode.system")
+	chaincodes := cfg.GetConfig().SysContract
 	val, ok := chaincodes[syscc.Name]
 	enabled := val == "enable" || val == "true" || val == "yes"
 	return ok && enabled

@@ -26,31 +26,31 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-type UtxoDatabase struct{
+type UtxoDatabase struct {
 	db ptndb.Database
+}
 
-}
 func NewUtxoDatabase(db ptndb.Database) *UtxoDatabase {
-	return &UtxoDatabase{db:db,}
+	return &UtxoDatabase{db: db}
 }
+
 type UtxoDb interface {
 	GetPrefix(prefix []byte) map[string][]byte
-	GetUtxoByIndex(indexKey []byte) ([]byte,error)
-	GetUtxoEntry( key []byte) (*modules.Utxo, error)
-	SaveUtxoEntity(key []byte,utxo modules.Utxo) error
+	GetUtxoByIndex(indexKey []byte) ([]byte, error)
+	GetUtxoEntry(key []byte) (*modules.Utxo, error)
+	SaveUtxoEntity(key []byte, utxo *modules.Utxo) error
 	DeleteUtxo(key []byte) error
 }
 
 // ###################### SAVE IMPL START ######################
 
-func (utxodb *UtxoDatabase) SaveUtxoEntity(key []byte, utxo modules.Utxo) error {
+func (utxodb *UtxoDatabase) SaveUtxoEntity(key []byte, utxo *modules.Utxo) error {
 	return StoreBytes(utxodb.db, key, utxo)
 }
 
 func (utxodb *UtxoDatabase) DeleteUtxo(key []byte) error {
 	return utxodb.db.Delete(key)
 }
-
 
 // ###################### SAVE IMPL END ######################
 
@@ -76,4 +76,5 @@ func (utxodb *UtxoDatabase) GetUtxoByIndex(indexKey []byte) ([]byte, error) {
 func (db *UtxoDatabase) GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
 }
+
 // ###################### GET IMPL END ######################

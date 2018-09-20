@@ -71,30 +71,7 @@ func (dagdb *DagDatabase) PutTrieSyncProgress(count uint64) error {
 
 // value will serialize to rlp encoding bytes
 func Store(db ptndb.Database, key string, value interface{}) error {
-
-	val, err := rlp.EncodeToBytes(value)
-	if err != nil {
-		return err
-	}
-
-	_, err = db.Get([]byte(key))
-	if err != nil {
-
-		if err == errors.ErrNotFound {
-			return db.Put([]byte(key), val)
-		} else {
-			return err
-		}
-	} else {
-		if err = db.Delete([]byte(key)); err != nil {
-			return err
-		}
-		if err := db.Put([]byte(key), val); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return StoreBytes(db,[]byte(key),value)
 }
 
 func StoreBytes(db ptndb.Database, key []byte, value interface{}) error {
@@ -102,6 +79,7 @@ func StoreBytes(db ptndb.Database, key []byte, value interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	_, err = db.Get(key)
 	if err != nil {
 		if err.Error() == errors.ErrNotFound.Error() {
@@ -119,9 +97,6 @@ func StoreBytes(db ptndb.Database, key []byte, value interface{}) error {
 		if err := db.Put(key, val); err != nil {
 			return err
 		}
-	}
-	if err := db.Put(key, val); err != nil {
-		return err
 	}
 	return nil
 }
@@ -141,11 +116,7 @@ func (dagdb *DagDatabase) UpdateHeadByBatch(hash common.Hash, number uint64) err
 	BatchErrorHandler(batch.Put(HeadUnitKey, hash.Bytes()), errorList)                  //PutHeadUnitHash
 	BatchErrorHandler(batch.Put(HeadFastKey, hash.Bytes()), errorList)                  //PutHeadFastUnitHash
 	if len(*errorList) == 0 { //each function call succeed.
-		batchErr := batch.Write()
-		if batchErr != nil { //batch exec succeed.
-			return nil
-		}
-		return fmt.Errorf("UpdateHeadByBatch, batch.write failed.")
+		return batch.Write()
 	}
 	return fmt.Errorf("UpdateHeadByBatch, at least one sub function call failed.")
 }

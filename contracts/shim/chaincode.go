@@ -31,21 +31,18 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
-
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/timestamp"
-
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-	commonledger "github.com/palletone/go-palletone/core/vmContractPub/ledger"
-	"github.com/palletone/go-palletone/contracts/comm"
-
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-
-	"github.com/op/go-logging"
-	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"github.com/op/go-logging"
+	"github.com/spf13/viper"
+	"github.com/pkg/errors"
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	"github.com/palletone/go-palletone/contracts/comm"
+	commonledger "github.com/palletone/go-palletone/core/vmContractPub/ledger"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 // Logger for the shim package.
@@ -255,7 +252,8 @@ func getPeerAddress() string {
 		return peerAddress
 	}
 
-	if peerAddress = viper.GetString("peer.address"); peerAddress == "" {
+	//if peerAddress = viper.GetString("peer.address"); peerAddress == "" {
+	if peerAddress = cfg.GetConfig().Address; peerAddress == "" {
 		chaincodeLogger.Fatalf("peer.address not configured, can't connect to peer")
 	}
 
