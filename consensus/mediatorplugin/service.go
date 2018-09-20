@@ -58,8 +58,8 @@ type toTBLSSigned struct {
 }
 
 type dkgVerifier struct {
-	medLocal  common.Address
-	vrfrIndex uint32
+	localMed common.Address
+	vrfrMed  common.Address
 }
 
 type MediatorPlugin struct {
@@ -77,13 +77,9 @@ type MediatorPlugin struct {
 	toBLSSigned          chan *toBLSSigned       // 接收新生产的unit
 
 	// dkg 生成 dks 相关
-	suite vss.Suite
-	dkgs  map[common.Address]*dkg.DistKeyGenerator
-
-	// dkg 完成 vss 协议相关
-	vrfrReady   map[common.Address]map[uint32]bool
-	vrfrReadyCh chan *dkgVerifier
-	respBuf     map[common.Address]map[uint32]chan *dkg.Response
+	suite   vss.Suite
+	dkgs    map[common.Address]*dkg.DistKeyGenerator
+	respBuf map[common.Address]map[common.Address]chan *dkg.Response
 
 	// 广播和处理 vss 协议 deal
 	vssDealFeed     event.Feed
@@ -167,29 +163,26 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 
 	ll := len(lams)
 	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, ll)
-	mp.vrfrReady = make(map[common.Address]map[uint32]bool, ll)
-	mp.respBuf = make(map[common.Address]map[uint32]chan *dkg.Response, ll)
+	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, ll)
 
-	for _, med := range lams {
-		initSec := mp.mediators[med].InitPartSec
+	for _, localMed := range lams {
+		initSec := mp.mediators[localMed].InitPartSec
 
+		//dkgr, err := dkg.NewDistKeyGeneratorWithoutSecret(mp.suite, initSec, initPubs, curThreshold)
 		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
 			log.Error(err.Error())
 			continue
 		}
 
-		mp.dkgs[med] = dkgr
-
-		aSize := mp.getDag().GetActiveMediatorCount()
-		mp.vrfrReady[med] = make(map[uint32]bool, aSize-1)
-		mp.initRespBuf(med)
+		mp.dkgs[localMed] = dkgr
+		mp.initRespBuf(localMed)
 	}
 
 	// todo 后面换成事件通知响应在调用, 并开启定时器
 	go mp.BroadcastVSSDeals()
 
-	//timeout := time.NewTimer(10 * time.Second)
+	//timeout := time.NewTimer(3 * time.Second)
 	//defer timeout.Stop()
 	//select {
 	//case <-mp.quit:
@@ -278,8 +271,7 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		toBLSSigned:     make(chan *toBLSSigned),
 		pendingTBLSSign: make(map[common.Hash]*toTBLSSigned),
 
-		suite:       bn256.NewSuiteG2(),
-		vrfrReadyCh: make(chan *dkgVerifier),
+		suite: bn256.NewSuiteG2(),
 
 		toProcessDealCh:     make(chan *VSSDealEvent),
 		toProcessResponseCh: make(chan *VSSResponseEvent),
