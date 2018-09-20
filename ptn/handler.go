@@ -543,7 +543,7 @@ func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
 
 		//if temporary mediators should to notice consensus and p.transitionCh <- transitionCancel
 		pm.producer.BroadcastVSSDeals()
-		p.transitionCh <- transitionCancel
+		//p.transitionCh <- transitionCancel
 		pm.transCh <- transitionCancel
 	}
 	for {
