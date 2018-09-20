@@ -22,10 +22,11 @@ import (
 	"time"
 	"net"
 	"os"
-
+	"crypto/md5"
+	"io"
+	"fmt"
 	"encoding/hex"
 	"google.golang.org/grpc"
-	"github.com/spf13/viper"
 	"github.com/golang/protobuf/proto"
 
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
@@ -36,10 +37,7 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/common"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
-
-	"crypto/md5"
-	"io"
-	"fmt"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 func marshalOrPanic(pb proto.Message) []byte {
@@ -150,7 +148,8 @@ func peerServerInit() error {
 	var opts []grpc.ServerOption
 
 	grpcServer := grpc.NewServer(opts...)
-	peerAddress := viper.GetString("peer.address")
+	//peerAddress := viper.GetString("peer.address")
+	peerAddress := cfg.GetConfig().Address
 	if peerAddress == "" {
 		peerAddress = "0.0.0.0:21726"
 	}
@@ -168,7 +167,7 @@ func peerServerInit() error {
 }
 
 func peerServerDeInit() error {
-	defer os.RemoveAll("/home/glh/tmp/chaincodes")
+	defer os.RemoveAll(cfg.GetConfig().ContractFileSystemPath)
 	return nil
 }
 

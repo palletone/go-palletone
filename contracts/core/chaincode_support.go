@@ -34,7 +34,6 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"github.com/palletone/go-palletone/contracts/platforms"
 	"github.com/palletone/go-palletone/contracts/shim"
-	"github.com/palletone/go-palletone/core/vmContractPub/config"
 	"github.com/palletone/go-palletone/vm/api"
 	"github.com/palletone/go-palletone/vm/ccintf"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -46,6 +45,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
 	"github.com/palletone/go-palletone/contracts/rwset"
 	"github.com/palletone/go-palletone/vm/controller"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 type key string
@@ -145,7 +145,8 @@ func (chaincodeSupport *ChaincodeSupport) launchStarted(chaincode string) bool {
 
 // NewChaincodeSupport creates a new ChaincodeSupport instance
 func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout time.Duration, ca accesscontrol.CA) pb.ChaincodeSupportServer {
-	path := config.GetPath("peer.fileSystemPath") + string(filepath.Separator) + "chaincodes"
+	//path := config.GetPath("peer.fileSystemPath") + string(filepath.Separator) + "chaincodes"
+	path := cfg.GetConfig().ContractFileSystemPath + string(filepath.Separator) + "chaincodes"
 	chaincodeLogger.Infof("NewChaincodeSupport chaincodes path: %s\n", path)
 
 	ccprovider.SetChaincodesPath(path)
@@ -189,7 +190,8 @@ func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout ti
 
 	//default chaincode execute timeout is 30 secs
 	execto := time.Duration(30) * time.Second
-	if eto := viper.GetDuration("chaincode.executetimeout"); eto <= time.Duration(1)*time.Second {
+	//if eto := viper.GetDuration("chaincode.executetimeout"); eto <= time.Duration(1)*time.Second {
+	if eto := cfg.GetConfig().ContractExecutetimeout; eto <= time.Duration(1)*time.Second {
 		chaincodeLogger.Errorf("Invalid execute timeout value %s (should be at least 1s); defaulting to %s", eto, execto)
 	} else {
 		chaincodeLogger.Debugf("Setting execute timeout value to %s", eto)
