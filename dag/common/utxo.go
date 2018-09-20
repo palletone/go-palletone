@@ -194,7 +194,7 @@ func (repository *UtxoRepository) UpdateUtxo(txHash common.Hash, msg *modules.Me
 func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32, txouts []*modules.Output, lockTime uint32) []error {
 	var errs []error
 	for outIndex, txout := range txouts {
-		utxo := modules.Utxo{
+		utxo := &modules.Utxo{
 			Amount:   txout.Value,
 			Asset:    txout.Asset,
 			PkScript: txout.PkScript,

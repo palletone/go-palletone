@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"sort"
 	"sync"
 	"time"
 
@@ -516,7 +515,7 @@ func TxtoTxpoolTx(txpool *TxPool, tx *modules.Transaction) *modules.TxPoolTransa
 			}
 		}
 	}
-
+	time.Sleep(2 * time.Second)
 	txpool_tx.CreationDate = time.Now()
 	txpool_tx.Nonce = txpool.GetNonce(tx.TxHash) + 1
 	txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
@@ -633,7 +632,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 
 		}
 	}
-	//pool.priority_priced.Put(tx)
+	pool.priority_priced.Put(tx)
 	pool.journalTx(tx)
 
 	// We've directly injected a replacement transaction, notify subsystems
@@ -1198,7 +1197,12 @@ func (as *utxoSet) add(addr modules.OutPoint) {
 func (pool *TxPool) GetSortedTxs() ([]*modules.TxPoolTransaction, common.StorageSize) {
 	var list modules.TxByPriority
 	var total common.StorageSize
-	for _, tx := range pool.all {
+	for {
+		tx := pool.priority_priced.Get()
+		if tx == nil {
+			break
+		}
+		dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
 		if total += tx.Tx.Size(); total <= common.StorageSize(dagconfig.DefaultConfig.UnitTxSize) {
 			list = append(list, tx)
 			// add  pending
@@ -1208,7 +1212,7 @@ func (pool *TxPool) GetSortedTxs() ([]*modules.TxPoolTransaction, common.Storage
 			break
 		}
 	}
-	sort.Sort(list)
+	// sort.Sort(list)
 	return []*modules.TxPoolTransaction(list), total
 }
 

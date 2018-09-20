@@ -623,7 +623,7 @@ func checkBalanceForWithdrawBTC(withdrawBTCReqTx *WithdrawBTCReqTX, stub *shim.C
 	//
 	ethBalance := new(big.Float)
 	ethBalance.SetInt(bigIntBalance)
-	if ethBalance.Cmp(weiBTCAmount) > 0 { //need bigger than btc for fee
+	if ethBalance.Cmp(weiBTCAmount) >= 0 { //need bigger or equal than btc
 		return true, nil
 	} else {
 		return false, errors.New("You need doposit ETH more.")
