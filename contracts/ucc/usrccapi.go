@@ -1,26 +1,26 @@
 package ucc
 
 import (
-	"io"
-	"io/ioutil"
-	"os"
-	"path"
-	"time"
 	"archive/tar"
 	"compress/gzip"
 	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	"io"
+	"io/ioutil"
+	"os"
+	"path"
+	"time"
 
+	comdb "github.com/palletone/go-palletone/contracts/comm"
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/platforms"
-	"github.com/palletone/go-palletone/contracts/rwset"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	comdb "github.com/palletone/go-palletone/contracts/comm"
+	"github.com/palletone/go-palletone/core/vmContractPub/util"
+	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 type UserChaincode struct {
@@ -186,9 +186,8 @@ func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId [
 	//从数据库读取
 	//解压到指定路径下
 	//todo del
-		usrCC := &UserChaincode{
-		}
-		return usrCC, nil
+	usrCC := &UserChaincode{}
+	return usrCC, nil
 
 	if 1 == 1 {
 		envpath, err := platforms.GetPlatformEnvPath(spec)

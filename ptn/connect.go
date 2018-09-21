@@ -26,6 +26,29 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 )
 
+const (
+	ConnectBoot       = 1
+	ConnectTransition = 2
+)
+
+func (pm *ProtocolManager) mediatorConnect() {
+	if !pm.producer.LocalHaveActiveMediator() {
+		log.Info("This node is not Mediator")
+		return
+	}
+	log.Info("Mediator transition")
+	peers := pm.dag.GetActiveMediatorNodes()
+
+	//not exsit and no self will connect
+	ps := pm.peers.GetPeers()
+	for _, peer := range peers {
+		if peer.ID.String() != pm.srvr.NodeInfo().ID && !pm.isexist(peer.ID.String(), ps) {
+			log.Debug("========mediator AddPeer==========", "peer.ID.String():", peer.ID.String())
+			pm.srvr.AddPeer(peer)
+		}
+	}
+}
+
 /*
 	1.add flag.This node whether or not mediator
 	2.check connections.
@@ -33,13 +56,12 @@ import (
 		2.2 no mediator node:unlimited
 	3.all the mediators node is connectin.Notice the mediator plugin
 */
-func (pm *ProtocolManager) mediatorConnect(srvr *p2p.Server, maxPeers int) {
+func (pm *ProtocolManager) transitionConnect() {
 	if !pm.producer.LocalHaveActiveMediator() {
 		log.Info("This node is not Mediator")
 		return
 	}
 	log.Info("Mediator transition")
-	//TODO notice handle to return and remove peer.21 channel(NO)
 
 	pm.peersTransition.MediatorsClean()
 
@@ -51,10 +73,10 @@ func (pm *ProtocolManager) mediatorConnect(srvr *p2p.Server, maxPeers int) {
 	for {
 		select {
 		case <-forceSync.C:
-			if err := pm.startMediatorConnect(srvr, maxPeers); err != nil {
+			if err := pm.startTransitionConnect(pm.srvr, pm.maxPeers); err != nil {
 				return
 			}
-		case <-pm.transCh:
+		case <-pm.transCycleConnCh:
 			pm.peersTransition.MediatorsClean()
 			return
 		default:
@@ -63,7 +85,8 @@ func (pm *ProtocolManager) mediatorConnect(srvr *p2p.Server, maxPeers int) {
 }
 
 //Start MediatorNetwork
-func (pm *ProtocolManager) startMediatorConnect(srvr *p2p.Server, maxPeers int) error {
+func (pm *ProtocolManager) startTransitionConnect(srvr *p2p.Server, maxPeers int) error {
+	//TODO must modify the GetTransitionNodes
 	peers := pm.dag.GetActiveMediatorNodes()
 	if maxPeers < len(peers)+3 {
 		log.Error("PalletOne start", "maxpeers", maxPeers, "mediator size", len(peers)+3) //3:nomediator
@@ -89,6 +112,14 @@ func (pm *ProtocolManager) startMediatorConnect(srvr *p2p.Server, maxPeers int) 
 
 	log.Debug("PalletOne", "startMediatorNetwork mediators:", len(peers))
 	return nil
+}
+
+//TODO notice handle to return and remove peer.21 channel
+func (pm *ProtocolManager) cancelTransitionConnect() {
+	peers := pm.peersTransition.GetPeers()
+	for _, peer := range peers {
+		peer.transitionCh <- transitionCancel
+	}
 }
 
 func (pm *ProtocolManager) isexist(pid string, peers []*peer) bool {

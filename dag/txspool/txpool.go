@@ -515,7 +515,7 @@ func TxtoTxpoolTx(txpool *TxPool, tx *modules.Transaction) *modules.TxPoolTransa
 			}
 		}
 	}
-	time.Sleep(2 * time.Second)
+
 	txpool_tx.CreationDate = time.Now()
 	txpool_tx.Nonce = txpool.GetNonce(tx.TxHash) + 1
 	txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
@@ -1195,25 +1195,28 @@ func (as *utxoSet) add(addr modules.OutPoint) {
 /******  end utxoSet  *****/
 //  这个接口后期需要调整， 需要先将all 进行排序， 然后按序从前到后一次取出足够多tx。
 func (pool *TxPool) GetSortedTxs() ([]*modules.TxPoolTransaction, common.StorageSize) {
-	var list modules.TxByPriority
 	var total common.StorageSize
+	list := make([]*modules.TxPoolTransaction, 0)
 	for {
 		tx := pool.priority_priced.Get()
 		if tx == nil {
+			log.Debug("Txspool get priority_priced tx failed.", "error", "tx is null")
 			break
-		}
-		dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
-		if total += tx.Tx.Size(); total <= common.StorageSize(dagconfig.DefaultConfig.UnitTxSize) {
-			list = append(list, tx)
-			// add  pending
-			pool.promoteTx(tx.Tx.Hash(), tx)
+			//continue
 		} else {
-			total = total - tx.Tx.Size()
-			break
+
+			// dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
+			if total += tx.Tx.Size(); total <= common.StorageSize(dagconfig.DefaultConfig.UnitTxSize) {
+				list = append(list, tx)
+				// add  pending
+				pool.promoteTx(tx.Tx.Hash(), tx)
+			} else {
+				total = total - tx.Tx.Size()
+				break
+			}
 		}
 	}
-	// sort.Sort(list)
-	return []*modules.TxPoolTransaction(list), total
+	return list, total
 }
 
 // SubscribeTxPreEvent registers a subscription of TxPreEvent and
