@@ -16,31 +16,24 @@
 
 package downloader
 
-/*
 import (
 	"errors"
 	"fmt"
-	"math/big"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/trie"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/modules"
-	//"github.com/palletone/go-palletone/dag/coredata"
+
+	"github.com/palletone/go-palletone/dag/storage"
+	"log"
 )
 
-var (
-	testKey, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	testAddress = crypto.PubkeyToAddress(testKey.PublicKey)
-)
+var ()
 
 // Reduce some of the parameters to make the tester faster.
 func init() {
@@ -53,51 +46,177 @@ func init() {
 type downloadTester struct {
 	downloader *Downloader
 
-	genesis *types.Block   // Genesis blocks used by the tester and peers
+	genesis *modules.Unit  // Genesis blocks used by the tester and peers
 	stateDb ptndb.Database // Database used by the tester for syncing from peers
 	peerDb  ptndb.Database // Database of the peers containing all data
 
-	ownHashes   []common.Hash                  // Hash chain belonging to the tester
-	ownHeaders  map[common.Hash]*types.Header  // Headers belonging to the tester
-	ownBlocks   map[common.Hash]*types.Block   // Blocks belonging to the tester
-	ownReceipts map[common.Hash]types.Receipts // Receipts belonging to the tester
-	ownChainTd  map[common.Hash]*big.Int       // Total difficulties of the blocks in the local chain
+	ownHashes  []common.Hash                   // Hash chain belonging to the tester
+	ownHeaders map[common.Hash]*modules.Header // Headers belonging to the tester
+	ownBlocks  map[common.Hash]*modules.Unit   // Blocks belonging to the tester
+	//ownReceipts map[common.Hash]types.Receipts // Receipts belonging to the tester
+	ownChainTd map[common.Hash]uint64 // Total difficulties of the blocks in the local chain
 
-	peerHashes   map[string][]common.Hash                  // Hash chain belonging to different test peers
-	peerHeaders  map[string]map[common.Hash]*types.Header  // Headers belonging to different test peers
-	peerBlocks   map[string]map[common.Hash]*types.Block   // Blocks belonging to different test peers
-	peerReceipts map[string]map[common.Hash]types.Receipts // Receipts belonging to different test peers
-	peerChainTds map[string]map[common.Hash]*big.Int       // Total difficulties of the blocks in the peer chains
+	peerHashes  map[string][]common.Hash                   // Hash chain belonging to different test peers
+	peerHeaders map[string]map[common.Hash]*modules.Header // Headers belonging to different test peers
+	peerBlocks  map[string]map[common.Hash]*modules.Unit   // Blocks belonging to different test peers
+	//peerReceipts map[string]map[common.Hash]types.Receipts // Receipts belonging to different test peers
+	peerChainTds map[string]map[common.Hash]uint64 // Total difficulties of the blocks in the peer chains
 
 	peerMissingStates map[string]map[common.Hash]bool // State entries that fast sync should not return
 
 	lock sync.RWMutex
 }
 
+func newGenesisForTest(db ptndb.Database) *modules.Unit {
+	header := modules.NewHeader([]common.Hash{}, []modules.IDType16{modules.PTNCOIN}, 1, []byte{})
+	header.Number.AssetID = modules.PTNCOIN
+	header.Number.IsMain = true
+	header.Number.Index = 0
+	header.Authors = &modules.Authentifier{"", []byte{}, []byte{}, []byte{}}
+	header.Witness = []*modules.Authentifier{&modules.Authentifier{"", []byte{}, []byte{}, []byte{}}}
+	tx, _ := NewCoinbaseTransaction()
+	txs := modules.Transactions{tx}
+	genesisUnit := modules.NewUnit(header, txs)
+	//fmt.Println("genesisUnit=", genesisUnit.Hash())
+	//fmt.Println("genesisUTx=", genesisUnit.Transactions()[0])
+	err := SaveGenesis(db, genesisUnit)
+	if err != nil {
+		log.Println("SaveGenesis, err", err)
+		return nil
+	}
+	return genesisUnit
+}
+func SaveGenesis(db ptndb.Database, unit *modules.Unit) error {
+	if unit.NumberU64() != 0 {
+		return fmt.Errorf("can't commit genesis unit with number > 0")
+	}
+	err := SaveUnit(db, unit, true)
+	if err != nil {
+		log.Println("SaveGenesis==", err)
+		return err
+	}
+	return nil
+}
+func NewCoinbaseTransaction() (*modules.Transaction, error) {
+	input := &modules.Input{}
+	output := &modules.Output{}
+	payload := modules.PaymentPayload{
+		Input:  []*modules.Input{input},
+		Output: []*modules.Output{output},
+	}
+	msg := modules.Message{
+		App:     modules.APP_PAYMENT,
+		Payload: payload,
+	}
+	var coinbase modules.Transaction
+	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
+	coinbase.TxHash = coinbase.Hash()
+	return &coinbase, nil
+}
+func newDag(db ptndb.Database, gunit *modules.Unit, number int) (modules.Units, error) {
+	units := make(modules.Units, number)
+	par := gunit
+	for i := 0; i < number; i++ {
+		header := modules.NewHeader([]common.Hash{par.UnitHash}, []modules.IDType16{modules.PTNCOIN}, 1, []byte{})
+		header.Number.AssetID = par.UnitHeader.Number.AssetID
+		header.Number.IsMain = par.UnitHeader.Number.IsMain
+		header.Number.Index = par.UnitHeader.Number.Index + 1
+		header.Authors = &modules.Authentifier{"", []byte{}, []byte{}, []byte{}}
+		header.Witness = []*modules.Authentifier{&modules.Authentifier{"", []byte{}, []byte{}, []byte{}}}
+		tx, _ := NewCoinbaseTransaction()
+		txs := modules.Transactions{tx}
+		unit := modules.NewUnit(header, txs)
+		err := SaveUnit(db, unit, true)
+		if err != nil {
+			log.Println("save genesis error", err)
+			return nil, err
+		}
+		units[i] = unit
+		par = unit
+	}
+	return units, nil
+}
+
+func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
+	if unit.UnitSize == 0 || unit.Size() == 0 {
+		log.Println("Unit is null")
+		return fmt.Errorf("Unit is null")
+	}
+	if unit.UnitSize != unit.Size() {
+		log.Println("Validate size", "error", "Size is invalid")
+		return modules.ErrUnit(-1)
+	}
+	//_, isSuccess, err := dag.ValidateTransactions(&unit.Txs, isGenesis)
+	//if isSuccess != true {
+	//	fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+	//}
+	dagDb := storage.NewDagDatabase(db)
+	// step4. save unit header
+	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
+	if err := dagDb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
+		log.Println("SaveHeader:", "error", err.Error())
+		return modules.ErrUnit(-3)
+	}
+	// step5. save unit hash and chain index relation
+	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
+	if err := dagDb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		log.Println("SaveHashNumber:", "error", err.Error())
+		return fmt.Errorf("Save unit hash and number error")
+	}
+	if err := dagDb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		log.Println("SaveNumberByHash:", "error", err.Error())
+		return fmt.Errorf("Save unit hash and number error")
+	}
+	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
+		return err
+	}
+	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
+		return err
+	}
+	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.Number.Index); err != nil {
+		return err
+	}
+	// update state
+	dagDb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
+	dagDb.PutHeadHeaderHash(unit.UnitHash)
+	dagDb.PutHeadUnitHash(unit.UnitHash)
+	dagDb.PutHeadFastUnitHash(unit.UnitHash)
+	// todo send message to transaction pool to delete unit's transactions
+	return nil
+}
+func saveHashByIndex(db ptndb.Database, hash common.Hash, index uint64) error {
+	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
+	err := db.Put([]byte(key), hash.Bytes())
+	return err
+}
+
 // newTester creates a new downloader test mocker.
 func newTester() *downloadTester {
 	testdb, _ := ptndb.NewMemDatabase()
-	genesis := core.GenesisBlockForTesting(testdb, testAddress, big.NewInt(1000000000))
-
+	genesisUnit := newGenesisForTest(testdb)
+	//dag.NewDagForTest(testdb)
 	tester := &downloadTester{
-		genesis:           genesis,
-		peerDb:            testdb,
-		ownHashes:         []common.Hash{genesis.Hash()},
-		ownHeaders:        map[common.Hash]*types.Header{genesis.Hash(): genesis.Header()},
-		ownBlocks:         map[common.Hash]*types.Block{genesis.Hash(): genesis},
-		ownReceipts:       map[common.Hash]types.Receipts{genesis.Hash(): nil},
-		ownChainTd:        map[common.Hash]*big.Int{genesis.Hash(): genesis.Difficulty()},
-		peerHashes:        make(map[string][]common.Hash),
-		peerHeaders:       make(map[string]map[common.Hash]*types.Header),
-		peerBlocks:        make(map[string]map[common.Hash]*types.Block),
-		peerReceipts:      make(map[string]map[common.Hash]types.Receipts),
-		peerChainTds:      make(map[string]map[common.Hash]*big.Int),
+		genesis:    genesisUnit,
+		peerDb:     testdb,
+		ownHashes:  []common.Hash{genesisUnit.Hash()},
+		ownHeaders: map[common.Hash]*modules.Header{genesisUnit.Hash(): genesisUnit.Header()},
+		ownBlocks:  map[common.Hash]*modules.Unit{genesisUnit.Hash(): genesisUnit},
+		//ownReceipts:       map[common.Hash]types.Receipts{genesis.Hash(): nil},
+		ownChainTd:  map[common.Hash]uint64{genesisUnit.Hash(): genesisUnit.NumberU64()},
+		peerHashes:  make(map[string][]common.Hash),
+		peerHeaders: make(map[string]map[common.Hash]*modules.Header),
+		peerBlocks:  make(map[string]map[common.Hash]*modules.Unit),
+		//peerReceipts:      make(map[string]map[common.Hash]types.Receipts),
+		peerChainTds:      make(map[string]map[common.Hash]uint64),
 		peerMissingStates: make(map[string]map[common.Hash]bool),
 	}
+	fmt.Printf("genesisUnit=%#v\n", genesisUnit.UnitHeader)
 	tester.stateDb, _ = ptndb.NewMemDatabase()
-	tester.stateDb.Put(genesis.Root().Bytes(), []byte{0x00})
-
-	tester.downloader = New(FullSync, tester.stateDb, new(event.TypeMux), tester, nil, tester.dropPeer)
+	//newGenesisForTest(tester.stateDb)
+	tester.stateDb.Put(genesisUnit.UnitHeader.Hash().Bytes(), []byte("0x00"))
+	//fmt.Println("error=", err)
+	tester.downloader = New(FullSync, new(event.TypeMux), tester.dropPeer, nil, tester)
 
 	return tester
 }
@@ -106,69 +225,66 @@ func newTester() *downloadTester {
 // the returned hash chain is ordered head->parent. In addition, every 3rd block
 // contains a transaction and every 5th an uncle to allow testing correct block
 // reassembly.
-func (dl *downloadTester) makeChain(n int, seed byte, parent *types.Block, parentReceipts types.Receipts, heavy bool) ([]common.Hash, map[common.Hash]*types.Header, map[common.Hash]*types.Block, map[common.Hash]types.Receipts) {
+func (dl *downloadTester) makeChain(n int, seed byte, parent *modules.Unit, heavy bool) ([]common.Hash, map[common.Hash]*modules.Header, map[common.Hash]*modules.Unit) {
 	// Generate the block chain
-	blocks, receipts := core.GenerateChain(configure.TestChainConfig, parent, ethash.NewFaker(), dl.peerDb, n, func(i int, block *core.BlockGen) {
-		block.SetCoinbase(common.Address{seed})
-
-		// If a heavy chain is requested, delay blocks to raise difficulty
-		if heavy {
-			block.OffsetTime(-1)
-		}
-		// If the block number is multiple of 3, send a bonus transaction to the miner
-		if parent == dl.genesis && i%3 == 0 {
-			signer := types.MakeSigner(configure.TestChainConfig, block.Number())
-			tx, err := types.SignTx(types.NewTransaction(block.TxNonce(testAddress), common.Address{seed}, big.NewInt(1000), configure.TxGas, nil, nil), signer, testKey)
-			if err != nil {
-				panic(err)
-			}
-			block.AddTx(tx)
-		}
-		// If the block number is a multiple of 5, add a bonus uncle to the block
-		if i > 0 && i%5 == 0 {
-			block.AddUncle(&types.Header{
-				ParentHash: block.PrevBlock(i - 1).Hash(),
-				Number:     big.NewInt(block.Number().Int64() - 1),
-			})
-		}
-	})
+	//blocks, receipts := core.GenerateChain(configure.TestChainConfig, parent, ethash.NewFaker(), dl.peerDb, n, func(i int, block *core.BlockGen) {
+	//	block.SetCoinbase(common.Address{seed})
+	//
+	//	// If a heavy chain is requested, delay blocks to raise difficulty
+	//	if heavy {
+	//		block.OffsetTime(-1)
+	//	}
+	//	// If the block number is multiple of 3, send a bonus transaction to the miner
+	//	if parent == dl.genesis && i%3 == 0 {
+	//		signer := types.MakeSigner(configure.TestChainConfig, block.Number())
+	//		tx, err := types.SignTx(types.NewTransaction(block.TxNonce(testAddress), common.Address{seed}, big.NewInt(1000), configure.TxGas, nil, nil), signer, testKey)
+	//		if err != nil {
+	//			panic(err)
+	//		}
+	//		block.AddTx(tx)
+	//	}
+	//	// If the block number is a multiple of 5, add a bonus uncle to the block
+	//	if i > 0 && i%5 == 0 {
+	//		block.AddUncle(&modules.Header{
+	//			ParentHash: block.PrevBlock(i - 1).Hash(),
+	//			Number:     big.NewInt(block.Number().Int64() - 1),
+	//		})
+	//	}
+	//})
 	// Convert the block-chain into a hash-chain and header/block maps
 	hashes := make([]common.Hash, n+1)
 	hashes[len(hashes)-1] = parent.Hash()
 
-	headerm := make(map[common.Hash]*types.Header, n+1)
+	headerm := make(map[common.Hash]*modules.Header, n+1)
 	headerm[parent.Hash()] = parent.Header()
+	dags := make(map[common.Hash]*modules.Unit, n+1)
+	dags[parent.Hash()] = parent
+	units, _ := newDag(dl.peerDb, parent, n)
 
-	blockm := make(map[common.Hash]*types.Block, n+1)
-	blockm[parent.Hash()] = parent
-
-	receiptm := make(map[common.Hash]types.Receipts, n+1)
-	receiptm[parent.Hash()] = parentReceipts
-
-	for i, b := range blocks {
+	for i, b := range units {
 		hashes[len(hashes)-i-2] = b.Hash()
 		headerm[b.Hash()] = b.Header()
-		blockm[b.Hash()] = b
-		receiptm[b.Hash()] = receipts[i]
+		dags[b.Hash()] = b
 	}
-	return hashes, headerm, blockm, receiptm
+	//fmt.Println("---==--", dl.HasHeader(hashes[15], 0))
+	return hashes, headerm, dags
 }
 
 // makeChainFork creates two chains of length n, such that h1[:f] and
 // h2[:f] are different but have a common suffix of length n-f.
-func (dl *downloadTester) makeChainFork(n, f int, parent *types.Block, parentReceipts types.Receipts, balanced bool) ([]common.Hash, []common.Hash, map[common.Hash]*types.Header, map[common.Hash]*types.Header, map[common.Hash]*types.Block, map[common.Hash]*types.Block, map[common.Hash]types.Receipts, map[common.Hash]types.Receipts) {
+func (dl *downloadTester) makeChainFork(n, f int, parent *modules.Unit, balanced bool) ([]common.Hash, []common.Hash, map[common.Hash]*modules.Header, map[common.Hash]*modules.Header, map[common.Hash]*modules.Unit, map[common.Hash]*modules.Unit) {
 	// Create the common suffix
-	hashes, headers, blocks, receipts := dl.makeChain(n-f, 0, parent, parentReceipts, false)
+	hashes, headers, blocks := dl.makeChain(n-f, 0, parent, false)
 
 	// Create the forks, making the second heavier if non balanced forks were requested
-	hashes1, headers1, blocks1, receipts1 := dl.makeChain(f, 1, blocks[hashes[0]], receipts[hashes[0]], false)
+	hashes1, headers1, blocks1 := dl.makeChain(f, 1, blocks[hashes[0]], false)
 	hashes1 = append(hashes1, hashes[1:]...)
 
 	heavy := false
 	if !balanced {
 		heavy = true
 	}
-	hashes2, headers2, blocks2, receipts2 := dl.makeChain(f, 2, blocks[hashes[0]], receipts[hashes[0]], heavy)
+	hashes2, headers2, blocks2 := dl.makeChain(f, 2, blocks[hashes[0]], heavy)
 	hashes2 = append(hashes2, hashes[1:]...)
 
 	for hash, header := range headers {
@@ -179,11 +295,8 @@ func (dl *downloadTester) makeChainFork(n, f int, parent *types.Block, parentRec
 		blocks1[hash] = block
 		blocks2[hash] = block
 	}
-	for hash, receipt := range receipts {
-		receipts1[hash] = receipt
-		receipts2[hash] = receipt
-	}
-	return hashes1, hashes2, headers1, headers2, blocks1, blocks2, receipts1, receipts2
+
+	return hashes1, hashes2, headers1, headers2, blocks1, blocks2
 }
 
 // terminate aborts any operations on the embedded downloader and releases all
@@ -193,20 +306,22 @@ func (dl *downloadTester) terminate() {
 }
 
 // sync starts synchronizing with a remote peer, blocking until it completes.
-func (dl *downloadTester) sync(id string, td *big.Int, mode SyncMode) error {
+func (dl *downloadTester) sync(id string, td uint64, mode SyncMode) error {
 	dl.lock.RLock()
 	hash := dl.peerHashes[id][0]
+	fmt.Println("sync=hash=>", hash)
 	// If no particular TD was requested, load from the peer's blockchain
-	if td == nil {
-		td = big.NewInt(1)
+	if td == 0 {
+		td = 1
 		if diff, ok := dl.peerChainTds[id][hash]; ok {
+			//fmt.Println(diff)
 			td = diff
 		}
 	}
 	dl.lock.RUnlock()
 
 	// Synchronise with the chosen peer and ensure proper cleanup afterwards
-	err := dl.downloader.synchronise(id, hash, td, mode)
+	err := dl.downloader.synchronise(id, hash, td, mode, modules.PTNCOIN)
 	select {
 	case <-dl.downloader.cancelCh:
 		// Ok, downloader fully cancelled after sync cycle
@@ -219,16 +334,17 @@ func (dl *downloadTester) sync(id string, td *big.Int, mode SyncMode) error {
 
 // HasHeader checks if a header is present in the testers canonical chain.
 func (dl *downloadTester) HasHeader(hash common.Hash, number uint64) bool {
+	fmt.Println("===================(dl *downloadTester) HasHeader=============wokao")
 	return dl.GetHeaderByHash(hash) != nil
 }
 
 // HasBlock checks if a block is present in the testers canonical chain.
 func (dl *downloadTester) HasBlock(hash common.Hash, number uint64) bool {
-	return dl.GetBlockByHash(hash) != nil
+	return dl.GetUnit(hash) != nil
 }
 
 // GetHeader retrieves a header from the testers canonical chain.
-func (dl *downloadTester) GetHeaderByHash(hash common.Hash) *types.Header {
+func (dl *downloadTester) GetHeaderByHash(hash common.Hash) *modules.Header {
 	dl.lock.RLock()
 	defer dl.lock.RUnlock()
 
@@ -236,7 +352,7 @@ func (dl *downloadTester) GetHeaderByHash(hash common.Hash) *types.Header {
 }
 
 // GetBlock retrieves a block from the testers canonical chain.
-func (dl *downloadTester) GetBlockByHash(hash common.Hash) *types.Block {
+func (dl *downloadTester) GetUnit(hash common.Hash) *modules.Unit {
 	dl.lock.RLock()
 	defer dl.lock.RUnlock()
 
@@ -244,7 +360,7 @@ func (dl *downloadTester) GetBlockByHash(hash common.Hash) *types.Block {
 }
 
 // CurrentHeader retrieves the current head header from the canonical chain.
-func (dl *downloadTester) CurrentHeader() *types.Header {
+func (dl *downloadTester) CurrentHeader() *modules.Header {
 	dl.lock.RLock()
 	defer dl.lock.RUnlock()
 
@@ -257,13 +373,13 @@ func (dl *downloadTester) CurrentHeader() *types.Header {
 }
 
 // CurrentBlock retrieves the current head block from the canonical chain.
-func (dl *downloadTester) CurrentBlock() *types.Block {
+func (dl *downloadTester) CurrentUnit() *modules.Unit {
 	dl.lock.RLock()
 	defer dl.lock.RUnlock()
 
 	for i := len(dl.ownHashes) - 1; i >= 0; i-- {
 		if block := dl.ownBlocks[dl.ownHashes[i]]; block != nil {
-			if _, err := dl.stateDb.Get(block.Root().Bytes()); err == nil {
+			if _, err := dl.stateDb.Get(block.UnitHeader.Hash().Bytes()); err == nil {
 				return block
 			}
 		}
@@ -272,7 +388,7 @@ func (dl *downloadTester) CurrentBlock() *types.Block {
 }
 
 // CurrentFastBlock retrieves the current head fast-sync block from the canonical chain.
-func (dl *downloadTester) CurrentFastBlock() *types.Block {
+func (dl *downloadTester) CurrentFastBlock() *modules.Unit {
 	dl.lock.RLock()
 	defer dl.lock.RUnlock()
 
@@ -287,32 +403,35 @@ func (dl *downloadTester) CurrentFastBlock() *types.Block {
 // FastSyncCommitHead manually sets the head block to a given hash.
 func (dl *downloadTester) FastSyncCommitHead(hash common.Hash) error {
 	// For now only check that the state trie is correct
-	if block := dl.GetBlockByHash(hash); block != nil {
-		_, err := trie.NewSecure(block.Root(), trie.NewDatabase(dl.stateDb), 0)
+	if block := dl.GetUnit(hash); block != nil {
+		_, err := trie.NewSecure(block.UnitHeader.Hash(), trie.NewDatabase(dl.stateDb), 0)
 		return err
 	}
 	return fmt.Errorf("non existent block: %x", hash[:4])
 }
 
 // GetTd retrieves the block's total difficulty from the canonical chain.
-func (dl *downloadTester) GetTd(hash common.Hash, number uint64) *big.Int {
+func (dl *downloadTester) GetTd(hash common.Hash, number uint64) uint64 {
 	dl.lock.RLock()
 	defer dl.lock.RUnlock()
 
 	return dl.ownChainTd[hash]
 }
+func (dl *downloadTester) GetAllLeafNodes() ([]*modules.Header, error) {
+	return []*modules.Header{}, nil
+}
 
 // InsertHeaderChain injects a new batch of headers into the simulated chain.
-func (dl *downloadTester) InsertHeaderChain(headers []*types.Header, checkFreq int) (int, error) {
+func (dl *downloadTester) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, error) {
 	dl.lock.Lock()
 	defer dl.lock.Unlock()
 
 	// Do a quick check, as the blockchain.InsertHeaderChain doesn't insert anything in case of errors
-	if _, ok := dl.ownHeaders[headers[0].ParentHash]; !ok {
+	if _, ok := dl.ownHeaders[headers[0].ParentsHash[0]]; !ok {
 		return 0, errors.New("unknown parent")
 	}
 	for i := 1; i < len(headers); i++ {
-		if headers[i].ParentHash != headers[i-1].Hash() {
+		if headers[i].ParentsHash[0] != headers[i-1].Hash() {
 			return i, errors.New("unknown parent")
 		}
 	}
@@ -321,55 +440,79 @@ func (dl *downloadTester) InsertHeaderChain(headers []*types.Header, checkFreq i
 		if _, ok := dl.ownHeaders[header.Hash()]; ok {
 			continue
 		}
-		if _, ok := dl.ownHeaders[header.ParentHash]; !ok {
+		if _, ok := dl.ownHeaders[header.ParentsHash[0]]; !ok {
 			return i, errors.New("unknown parent")
 		}
 		dl.ownHashes = append(dl.ownHashes, header.Hash())
 		dl.ownHeaders[header.Hash()] = header
-		dl.ownChainTd[header.Hash()] = new(big.Int).Add(dl.ownChainTd[header.ParentHash], header.Difficulty)
+		dl.ownChainTd[header.Hash()] = dl.ownChainTd[header.ParentsHash[0]] + header.Index()
 	}
 	return len(headers), nil
 }
 
 // InsertChain injects a new batch of blocks into the simulated chain.
-func (dl *downloadTester) InsertChain(blocks types.Blocks) (int, error) {
+func (dl *downloadTester) InsertDag(blocks modules.Units) (int, error) {
 	dl.lock.Lock()
 	defer dl.lock.Unlock()
-
+	//blocks modules.Units
+	//for _, block := range blocks {
+	//	fmt.Println(block.Hash())
+	//	fmt.Printf("---InsertDag--%#v\n", block.UnitHeader)
+	//}
+	fmt.Println("==============================================")
 	for i, block := range blocks {
-		if parent, ok := dl.ownBlocks[block.ParentHash()]; !ok {
-			return i, errors.New("unknown parent")
-		} else if _, err := dl.stateDb.Get(parent.Root().Bytes()); err != nil {
-			return i, fmt.Errorf("unknown parent state %x: %v", parent.Root(), err)
+		fmt.Println(i)
+		fmt.Printf("%#v\n", block.UnitHeader)
+		if block.UnitHeader.Index() == uint64(0) {
+			break
 		}
+		//if block.UnitHeader.Index() == 0 {
+		//	fmt.Println("parent")
+		//	continue
+		//}
+		parent, ok := dl.ownBlocks[block.ParentHash()[0]]
+		//fmt.Printf("==============%#v\n", parent)
+		//if parent == nil {
+		//	fmt.Println("parent")
+		//	continue
+		//}
+		//fmt.Printf("parent=%#v\n", parent.UnitHeader)
 		if _, ok := dl.ownHeaders[block.Hash()]; !ok {
 			dl.ownHashes = append(dl.ownHashes, block.Hash())
 			dl.ownHeaders[block.Hash()] = block.Header()
 		}
 		dl.ownBlocks[block.Hash()] = block
-		dl.stateDb.Put(block.Root().Bytes(), []byte{0x00})
-		dl.ownChainTd[block.Hash()] = new(big.Int).Add(dl.ownChainTd[block.ParentHash()], block.Difficulty())
+		dl.stateDb.Put(block.UnitHeader.Hash().Bytes(), []byte{0x00})
+		dl.ownChainTd[block.Hash()] = dl.ownChainTd[block.ParentHash()[0]] + block.UnitHeader.Index()
+		if parent.UnitHeader.Index() == uint64(0) {
+			continue
+		}
+		if !ok {
+			return i, errors.New("unknown parent")
+		} else if _, err := dl.stateDb.Get(parent.ParentHash()[0].Bytes()); err != nil {
+			return i, fmt.Errorf("unknown parent state %x: %v", parent.UnitHeader.Hash(), err)
+		}
+
 	}
 	return len(blocks), nil
 }
 
 // InsertReceiptChain injects a new batch of receipts into the simulated chain.
-func (dl *downloadTester) InsertReceiptChain(blocks types.Blocks, receipts []types.Receipts) (int, error) {
-	dl.lock.Lock()
-	defer dl.lock.Unlock()
-
-	for i := 0; i < len(blocks) && i < len(receipts); i++ {
-		if _, ok := dl.ownHeaders[blocks[i].Hash()]; !ok {
-			return i, errors.New("unknown owner")
-		}
-		if _, ok := dl.ownBlocks[blocks[i].ParentHash()]; !ok {
-			return i, errors.New("unknown parent")
-		}
-		dl.ownBlocks[blocks[i].Hash()] = blocks[i]
-		dl.ownReceipts[blocks[i].Hash()] = receipts[i]
-	}
-	return len(blocks), nil
-}
+//func (dl *downloadTester) InsertReceiptChain(blocks modules.Units) (int, error) {
+//	dl.lock.Lock()
+//	defer dl.lock.Unlock()
+//
+//	for i := 0; i < len(blocks); i++ {
+//		if _, ok := dl.ownHeaders[blocks[i].Hash()]; !ok {
+//			return i, errors.New("unknown owner")
+//		}
+//		if _, ok := dl.ownBlocks[blocks[i].ParentHash()[0]]; !ok {
+//			return i, errors.New("unknown parent")
+//		}
+//		dl.ownBlocks[blocks[i].Hash()] = blocks[i]
+//	}
+//	return len(blocks), nil
+//}
 
 // Rollback removes some recently added elements from the chain.
 func (dl *downloadTester) Rollback(hashes []common.Hash) {
@@ -382,20 +525,19 @@ func (dl *downloadTester) Rollback(hashes []common.Hash) {
 		}
 		delete(dl.ownChainTd, hashes[i])
 		delete(dl.ownHeaders, hashes[i])
-		delete(dl.ownReceipts, hashes[i])
 		delete(dl.ownBlocks, hashes[i])
 	}
 }
 
 // newPeer registers a new block download source into the downloader.
-func (dl *downloadTester) newPeer(id string, version int, hashes []common.Hash, headers map[common.Hash]*types.Header, blocks map[common.Hash]*types.Block, receipts map[common.Hash]types.Receipts) error {
-	return dl.newSlowPeer(id, version, hashes, headers, blocks, receipts, 0)
+func (dl *downloadTester) newPeer(id string, version int, hashes []common.Hash, headers map[common.Hash]*modules.Header, blocks map[common.Hash]*modules.Unit) error {
+	return dl.newSlowPeer(id, version, hashes, headers, blocks, 0)
 }
 
 // newSlowPeer registers a new block download source into the downloader, with a
 // specific delay time on processing the network packets sent to it, simulating
 // potentially slow network IO.
-func (dl *downloadTester) newSlowPeer(id string, version int, hashes []common.Hash, headers map[common.Hash]*types.Header, blocks map[common.Hash]*types.Block, receipts map[common.Hash]types.Receipts, delay time.Duration) error {
+func (dl *downloadTester) newSlowPeer(id string, version int, hashes []common.Hash, headers map[common.Hash]*modules.Header, blocks map[common.Hash]*modules.Unit, delay time.Duration) error {
 	dl.lock.Lock()
 	defer dl.lock.Unlock()
 
@@ -405,20 +547,22 @@ func (dl *downloadTester) newSlowPeer(id string, version int, hashes []common.Ha
 		dl.peerHashes[id] = make([]common.Hash, len(hashes))
 		copy(dl.peerHashes[id], hashes)
 
-		dl.peerHeaders[id] = make(map[common.Hash]*types.Header)
-		dl.peerBlocks[id] = make(map[common.Hash]*types.Block)
-		dl.peerReceipts[id] = make(map[common.Hash]types.Receipts)
-		dl.peerChainTds[id] = make(map[common.Hash]*big.Int)
+		dl.peerHeaders[id] = make(map[common.Hash]*modules.Header)
+		dl.peerBlocks[id] = make(map[common.Hash]*modules.Unit)
+		dl.peerChainTds[id] = make(map[common.Hash]uint64)
 		dl.peerMissingStates[id] = make(map[common.Hash]bool)
 
 		genesis := hashes[len(hashes)-1]
+		fmt.Println("hashes[len(hashes)-1]=", genesis)
 		if header := headers[genesis]; header != nil {
 			dl.peerHeaders[id][genesis] = header
-			dl.peerChainTds[id][genesis] = header.Difficulty
+			dl.peerChainTds[id][genesis] = header.Index()
+			//fmt.Println(header.Index())
 		}
 		if block := blocks[genesis]; block != nil {
 			dl.peerBlocks[id][genesis] = block
-			dl.peerChainTds[id][genesis] = block.Difficulty()
+			dl.peerChainTds[id][genesis] = block.NumberU64()
+			//fmt.Println(block.NumberU64())
 		}
 
 		for i := len(hashes) - 2; i >= 0; i-- {
@@ -426,18 +570,19 @@ func (dl *downloadTester) newSlowPeer(id string, version int, hashes []common.Ha
 
 			if header, ok := headers[hash]; ok {
 				dl.peerHeaders[id][hash] = header
-				if _, ok := dl.peerHeaders[id][header.ParentHash]; ok {
-					dl.peerChainTds[id][hash] = new(big.Int).Add(header.Difficulty, dl.peerChainTds[id][header.ParentHash])
+				if _, ok := dl.peerHeaders[id][header.ParentsHash[0]]; ok {
+					dl.peerChainTds[id][hash] = header.Index() + dl.peerChainTds[id][header.ParentsHash[0]]
+					//fmt.Println(id, hash)
+					//fmt.Println(header.Index())
+					//fmt.Println(dl.peerChainTds[id][header.ParentsHash[0]])
+					//fmt.Println(dl.peerChainTds[id][hash])
 				}
 			}
 			if block, ok := blocks[hash]; ok {
 				dl.peerBlocks[id][hash] = block
-				if _, ok := dl.peerBlocks[id][block.ParentHash()]; ok {
-					dl.peerChainTds[id][hash] = new(big.Int).Add(block.Difficulty(), dl.peerChainTds[id][block.ParentHash()])
+				if _, ok := dl.peerBlocks[id][block.ParentHash()[0]]; ok {
+					dl.peerChainTds[id][hash] = block.NumberU64() + dl.peerChainTds[id][block.ParentHash()[0]]
 				}
-			}
-			if receipt, ok := receipts[hash]; ok {
-				dl.peerReceipts[id][hash] = receipt
 			}
 		}
 	}
@@ -481,13 +626,25 @@ func (dlp *downloadTesterPeer) waitDelay() {
 	time.Sleep(delay)
 }
 
-// Head constructs a function to retrieve a peer's current head hash
-// and total difficulty.
-func (dlp *downloadTesterPeer) Head() (common.Hash, *big.Int) {
+// Head constructs a function to retrieve a peer's current head hash and total difficulty.
+//func (dlp *downloadTesterPeer) Head() (common.Hash, *big.Int) {
+//	dlp.dl.lock.RLock()
+//	defer dlp.dl.lock.RUnlock()
+//
+//	return dlp.dl.peerHashes[dlp.id][0], nil
+//}
+// Head constructs a function to retrieve a peer's current head hash and total difficulty.
+//头构造一个函数来检索对等点的当前头哈希值和总难度。
+func (dlp *downloadTesterPeer) Head(assetId modules.IDType16) (common.Hash, modules.ChainIndex) {
 	dlp.dl.lock.RLock()
 	defer dlp.dl.lock.RUnlock()
-
-	return dlp.dl.peerHashes[dlp.id][0], nil
+	//TODO xiaozhi
+	index := modules.ChainIndex{
+		modules.PTNCOIN,
+		true,
+		0,
+	}
+	return dlp.dl.peerHashes[dlp.id][0], index
 }
 
 // RequestHeadersByHash constructs a GetBlockHeaders function based on a hashed
@@ -495,24 +652,33 @@ func (dlp *downloadTesterPeer) Head() (common.Hash, *big.Int) {
 // function can be used to retrieve batches of headers from the particular peer.
 func (dlp *downloadTesterPeer) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	// Find the canonical number of the hash
+	fmt.Println("===========RequestHeadersByHash============")
 	dlp.dl.lock.RLock()
 	number := uint64(0)
+	fmt.Println(origin)
 	for num, hash := range dlp.dl.peerHashes[dlp.id] {
+		fmt.Println(hash)
 		if hash == origin {
 			number = uint64(len(dlp.dl.peerHashes[dlp.id]) - num - 1)
+			fmt.Println(number)
 			break
 		}
 	}
 	dlp.dl.lock.RUnlock()
-
+	chainIndex := modules.ChainIndex{
+		modules.PTNCOIN,
+		true,
+		number,
+	}
 	// Use the absolute header fetcher to satisfy the query
-	return dlp.RequestHeadersByNumber(number, amount, skip, reverse)
+	return dlp.RequestHeadersByNumber(chainIndex, amount, skip, reverse)
 }
 
 // RequestHeadersByNumber constructs a GetBlockHeaders function based on a numbered
 // origin; associated with a particular peer in the download tester. The returned
 // function can be used to retrieve batches of headers from the particular peer.
-func (dlp *downloadTesterPeer) RequestHeadersByNumber(origin uint64, amount int, skip int, reverse bool) error {
+//RequestHeadersByNumber基于编号的原点构造GetBlockHeaders函数；与下载测试器中的特定对等点相关联。返回的函数可以用来从特定的对等体中检索批次的报头。
+func (dlp *downloadTesterPeer) RequestHeadersByNumber(chainIndex modules.ChainIndex, amount int, skip int, reverse bool) error {
 	dlp.waitDelay()
 
 	dlp.dl.lock.RLock()
@@ -520,18 +686,31 @@ func (dlp *downloadTesterPeer) RequestHeadersByNumber(origin uint64, amount int,
 
 	// Gather the next batch of headers
 	hashes := dlp.dl.peerHashes[dlp.id]
+	for i, v := range hashes {
+		fmt.Println("RequestHeadersByNumber=", i, v)
+	}
 	headers := dlp.dl.peerHeaders[dlp.id]
-	result := make([]*types.Header, 0, amount)
-	for i := 0; i < amount && len(hashes)-int(origin)-1-i*(skip+1) >= 0; i++ {
-		if header, ok := headers[hashes[len(hashes)-int(origin)-1-i*(skip+1)]]; ok {
+	result := make([]*modules.Header, 0, amount)
+	for i := 0; i < amount && len(hashes)-int(chainIndex.Index)-1-i*(skip+1) >= 0; i++ {
+		if header, ok := headers[hashes[len(hashes)-int(chainIndex.Index)-1-i*(skip+1)]]; ok {
 			result = append(result, header)
 		}
+	}
+	for i, v := range result {
+		fmt.Println("result=", i, v.Index())
 	}
 	// Delay delivery a bit to allow attacks to unfold
 	go func() {
 		time.Sleep(time.Millisecond)
 		dlp.dl.downloader.DeliverHeaders(dlp.id, result)
 	}()
+	return nil
+}
+func (dlp *downloadTesterPeer) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
+	//log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
+	return nil
+}
+func (dlp *downloadTesterPeer) RequestLeafNodes() error {
 	return nil
 }
 
@@ -547,15 +726,13 @@ func (dlp *downloadTesterPeer) RequestBodies(hashes []common.Hash) error {
 	blocks := dlp.dl.peerBlocks[dlp.id]
 
 	transactions := make([][]*modules.Transaction, 0, len(hashes))
-	uncles := make([][]*types.Header, 0, len(hashes))
 
 	for _, hash := range hashes {
 		if block, ok := blocks[hash]; ok {
 			transactions = append(transactions, block.Transactions())
-			uncles = append(uncles, block.Uncles())
 		}
 	}
-	go dlp.dl.downloader.DeliverBodies(dlp.id, transactions, uncles)
+	go dlp.dl.downloader.DeliverBodies(dlp.id, transactions)
 
 	return nil
 }
@@ -563,24 +740,24 @@ func (dlp *downloadTesterPeer) RequestBodies(hashes []common.Hash) error {
 // RequestReceipts constructs a getReceipts method associated with a particular
 // peer in the download tester. The returned function can be used to retrieve
 // batches of block receipts from the particularly requested peer.
-func (dlp *downloadTesterPeer) RequestReceipts(hashes []common.Hash) error {
-	dlp.waitDelay()
-
-	dlp.dl.lock.RLock()
-	defer dlp.dl.lock.RUnlock()
-
-	receipts := dlp.dl.peerReceipts[dlp.id]
-
-	results := make([][]*types.Receipt, 0, len(hashes))
-	for _, hash := range hashes {
-		if receipt, ok := receipts[hash]; ok {
-			results = append(results, receipt)
-		}
-	}
-	go dlp.dl.downloader.DeliverReceipts(dlp.id, results)
-
-	return nil
-}
+//func (dlp *downloadTesterPeer) RequestReceipts(hashes []common.Hash) error {
+//	dlp.waitDelay()
+//
+//	dlp.dl.lock.RLock()
+//	defer dlp.dl.lock.RUnlock()
+//
+//	receipts := dlp.dl.peerReceipts[dlp.id]
+//
+//	results := make([][]*types.Receipt, 0, len(hashes))
+//	for _, hash := range hashes {
+//		if receipt, ok := receipts[hash]; ok {
+//			results = append(results, receipt)
+//		}
+//	}
+//	go dlp.dl.downloader.DeliverReceipts(dlp.id, results)
+//
+//	return nil
+//}
 
 // RequestNodeData constructs a getNodeData method associated with a particular
 // peer in the download tester. The returned function can be used to retrieve
@@ -637,9 +814,6 @@ func assertOwnForkedChain(t *testing.T, tester *downloadTester, common int, leng
 	if bs := len(tester.ownBlocks); bs != blocks {
 		t.Fatalf("synchronised blocks mismatch: have %v, want %v", bs, blocks)
 	}
-	if rs := len(tester.ownReceipts); rs != receipts {
-		t.Fatalf("synchronised receipts mismatch: have %v, want %v", rs, receipts)
-	}
 	// Verify the state trie too for fast syncs
 	//if tester.downloader.mode == FastSync {
 	//	pivot := uint64(0)
@@ -658,14 +832,14 @@ func assertOwnForkedChain(t *testing.T, tester *downloadTester, common int, leng
 }
 
 // Tests that simple synchronization against a canonical chain works correctly.
-// In this test common ancestor lookup should be short circuited and not require
-// binary searching.
-func TestCanonicalSynchronisation62(t *testing.T)      { testCanonicalSynchronisation(t, 62, FullSync) }
-func TestCanonicalSynchronisation63Full(t *testing.T)  { testCanonicalSynchronisation(t, 63, FullSync) }
-func TestCanonicalSynchronisation63Fast(t *testing.T)  { testCanonicalSynchronisation(t, 63, FastSync) }
-func TestCanonicalSynchronisation64Full(t *testing.T)  { testCanonicalSynchronisation(t, 64, FullSync) }
-func TestCanonicalSynchronisation64Fast(t *testing.T)  { testCanonicalSynchronisation(t, 64, FastSync) }
-func TestCanonicalSynchronisation64Light(t *testing.T) { testCanonicalSynchronisation(t, 64, LightSync) }
+// In this test common ancestor lookup should be short circuited and not require binary searching.
+//func TestCanonicalSynchronisation62(t *testing.T) { testCanonicalSynchronisation(t, 1, FullSync) }
+
+//func TestCanonicalSynchronisation63Full(t *testing.T)  { testCanonicalSynchronisation(t, 1, FullSync) }
+//func TestCanonicalSynchronisation63Fast(t *testing.T)  { testCanonicalSynchronisation(t, 1, FastSync) }
+//func TestCanonicalSynchronisation64Full(t *testing.T)  { testCanonicalSynchronisation(t, 2, FullSync) }
+//func TestCanonicalSynchronisation64Fast(t *testing.T)  { testCanonicalSynchronisation(t, 2, FastSync) }
+//func TestCanonicalSynchronisation64Light(t *testing.T) { testCanonicalSynchronisation(t, 2, LightSync) }
 
 func testCanonicalSynchronisation(t *testing.T, protocol int, mode SyncMode) {
 	t.Parallel()
@@ -675,17 +849,24 @@ func testCanonicalSynchronisation(t *testing.T, protocol int, mode SyncMode) {
 
 	// Create a small enough block chain to download
 	targetBlocks := blockCacheItems - 15
-	hashes, headers, blocks, receipts := tester.makeChain(targetBlocks, 0, tester.genesis, nil, false)
-
-	tester.newPeer("peer", protocol, hashes, headers, blocks, receipts)
-
+	//targetBlocks := 15
+	fmt.Printf("tester.genesis=%#v\n", tester.genesis.UnitHeader)
+	fmt.Printf("tester.genesis=%#v\n", tester.genesis.UnitHeader.Hash())
+	hashes, headers, blocks := tester.makeChain(targetBlocks, 0, tester.genesis, false)
+	for i, h := range hashes {
+		fmt.Println("commonHash=", i, h)
+		//fmt.Printf("commonHash  ==>  unit = %#v\n", u.UnitHeader)
+	}
+	err := tester.newPeer("peer", protocol, hashes, headers, blocks)
+	fmt.Println("tester.newPeer===err", err)
 	// Synchronise with the peer and make sure all relevant data was retrieved
-	if err := tester.sync("peer", nil, mode); err != nil {
+	if err := tester.sync("peer", 0, mode); err != nil {
 		t.Fatalf("failed to synchronise blocks: %v", err)
 	}
 	assertOwnChain(t, tester, targetBlocks+1)
 }
 
+/*
 // Tests that if a large batch of blocks are being downloaded, it is throttled
 // until the cached blocks are retrieved.
 func TestThrottling62(t *testing.T)     { testThrottling(t, 62, FullSync) }
@@ -921,10 +1102,10 @@ func TestInactiveDownloader62(t *testing.T) {
 	defer tester.terminate()
 
 	// Check that neither block headers nor bodies are accepted
-	if err := tester.downloader.DeliverHeaders("bad peer", []*types.Header{}); err != errNoSyncActive {
+	if err := tester.downloader.DeliverHeaders("bad peer", []*modules.Header{}); err != errNoSyncActive {
 		t.Errorf("error mismatch: have %v, want %v", err, errNoSyncActive)
 	}
-	if err := tester.downloader.DeliverBodies("bad peer", [][]*modules.Transaction{}, [][]*types.Header{}); err != errNoSyncActive {
+	if err := tester.downloader.DeliverBodies("bad peer", [][]*modules.Transaction{}, [][]*modules.Header{}); err != errNoSyncActive {
 		t.Errorf("error mismatch: have %v, want %v", err, errNoSyncActive)
 	}
 }
@@ -938,10 +1119,10 @@ func TestInactiveDownloader63(t *testing.T) {
 	defer tester.terminate()
 
 	// Check that neither block headers nor bodies are accepted
-	if err := tester.downloader.DeliverHeaders("bad peer", []*types.Header{}); err != errNoSyncActive {
+	if err := tester.downloader.DeliverHeaders("bad peer", []*modules.Header{}); err != errNoSyncActive {
 		t.Errorf("error mismatch: have %v, want %v", err, errNoSyncActive)
 	}
-	if err := tester.downloader.DeliverBodies("bad peer", [][]*modules.Transaction{}, [][]*types.Header{}); err != errNoSyncActive {
+	if err := tester.downloader.DeliverBodies("bad peer", [][]*modules.Transaction{}, [][]*modules.Header{}); err != errNoSyncActive {
 		t.Errorf("error mismatch: have %v, want %v", err, errNoSyncActive)
 	}
 	if err := tester.downloader.DeliverReceipts("bad peer", [][]*types.Receipt{}); err != errNoSyncActive {
@@ -1081,10 +1262,10 @@ func testEmptyShortCircuit(t *testing.T, protocol int, mode SyncMode) {
 
 	// Instrument the downloader to signal body requests
 	bodiesHave, receiptsHave := int32(0), int32(0)
-	tester.downloader.bodyFetchHook = func(headers []*types.Header) {
+	tester.downloader.bodyFetchHook = func(headers []*modules.Header) {
 		atomic.AddInt32(&bodiesHave, int32(len(headers)))
 	}
-	tester.downloader.receiptFetchHook = func(headers []*types.Header) {
+	tester.downloader.receiptFetchHook = func(headers []*modules.Header) {
 		atomic.AddInt32(&receiptsHave, int32(len(headers)))
 	}
 	// Synchronise with the peer and make sure all blocks were retrieved
@@ -1708,7 +1889,7 @@ func (ftp *floodingTestPeer) RequestHeadersByNumber(from uint64, count, skip int
 		ftp.pend.Add(1)
 
 		go func() {
-			ftp.tester.downloader.DeliverHeaders(peer, []*types.Header{{}, {}, {}, {}})
+			ftp.tester.downloader.DeliverHeaders(peer, []*modules.Header{{}, {}, {}, {}})
 			deliveriesDone <- struct{}{}
 			ftp.pend.Done()
 		}()

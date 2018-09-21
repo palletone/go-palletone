@@ -21,6 +21,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -181,6 +182,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 
 	pHead, number := peer.Head(assetId)
 	pindex := number.Index
+	//TODO xiaozhi
 	if index > pindex && pindex > 0 {
 		log.Info("===synchronise peer.index < local index===", "peer.index:", pindex, "local index:", number.Index)
 		return
@@ -197,12 +199,19 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 		//			return
 		//		}
 	}
-
+	fmt.Println("mode==", mode)
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
-	if err := pm.downloader.Synchronise(peer.id, pHead, index, mode, assetId); err != nil {
+	//TODO xiaozhi
+	fmt.Println("index=", index)
+	fmt.Println("pindex=", pindex)
+	if err := pm.downloader.Synchronise(peer.id, pHead, pindex, mode, assetId); err != nil {
 		//log.Info("ptn sync downloader.", "Synchronise err:", err)
 		return
 	}
+	//if err := pm.downloader.Synchronise(peer.id, pHead, index, mode, assetId); err != nil {
+	//	//log.Info("ptn sync downloader.", "Synchronise err:", err)
+	//	return
+	//}
 	if atomic.LoadUint32(&pm.fastSync) == 1 {
 		log.Info("Fast sync complete, auto disabling")
 		atomic.StoreUint32(&pm.fastSync, 0)

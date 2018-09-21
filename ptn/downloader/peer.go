@@ -89,7 +89,7 @@ type LightPeer interface {
 type Peer interface {
 	LightPeer
 	RequestBodies([]common.Hash) error
-	RequestReceipts([]common.Hash) error
+	//RequestReceipts([]common.Hash) error
 	RequestNodeData([]common.Hash) error
 }
 

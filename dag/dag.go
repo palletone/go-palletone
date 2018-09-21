@@ -105,6 +105,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 }
 
 func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
+	//TODO xiaozhi
 	return d.CurrentUnit()
 }
 
@@ -265,6 +266,8 @@ func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash 
 func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	index := new(modules.ChainIndex)
 	index.Index = number
+	//fmt.Println(hash)
+	//fmt.Println(number)
 	// copy(index.AssetID[:], assetId[:])
 	// index.IsMain = onMain
 	if h, err := d.dagdb.GetHeader(hash, index); err == nil && h != nil {
