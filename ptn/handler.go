@@ -413,8 +413,8 @@ type producer interface {
 	// SubscribeNewProducedUnitEvent should return an event subscription of
 	// NewProducedUnitEvent and send events to the given channel.
 	SubscribeNewProducedUnitEvent(chan<- mp.NewProducedUnitEvent) event.Subscription
-	// UnitBLSSign is to BLS sign the unit
-	ToUnitTBLSSign(peer string, unit *modules.Unit) error
+	// UnitBLSSign is to TBLS sign the unit
+	ToUnitTBLSSign(unit *modules.Unit) error
 
 	SubscribeVSSDealEvent(chan<- mp.VSSDealEvent) event.Subscription
 	ToProcessDeal(deal *mp.VSSDealEvent) error
@@ -997,7 +997,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			log.Info("===NewProducedUnitMsg===", "err:", err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		pm.producer.ToUnitTBLSSign(p.id, &unit)
+		pm.producer.ToUnitTBLSSign(&unit)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
@@ -1160,7 +1160,7 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
-			pm.producer.ToUnitTBLSSign("", unit)
+			pm.producer.ToUnitTBLSSign(unit)
 			continue
 		}
 

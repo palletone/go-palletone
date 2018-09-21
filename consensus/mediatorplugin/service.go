@@ -45,18 +45,6 @@ type PalletOne interface {
 	TxPool() *txspool.TxPool
 }
 
-// toBLSed represents a BLS sign operation.
-type toBLSSigned struct {
-	origin string
-	unit   *modules.Unit
-}
-
-// toTBLSSigned, TBLS signed auxiliary structure
-type toTBLSSigned struct {
-	unit      *modules.Unit
-	sigShares [][]byte
-}
-
 type MediatorPlugin struct {
 	ptn  PalletOne     // Full PalletOne service to retrieve other function
 	quit chan struct{} // Channel used for graceful exit
@@ -84,7 +72,7 @@ type MediatorPlugin struct {
 	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	pendingTBLSSign map[common.Hash]*toTBLSSigned // 等待TBLS阈值签名的unit
+	toTBLSSignBuf map[common.Address]chan *modules.Unit
 }
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {
@@ -114,14 +102,14 @@ func (mp *MediatorPlugin) LocalHaveActiveMediator() bool {
 	return len(lams) != 0
 }
 
-func (mp *MediatorPlugin) IsLocalMediator(add common.Address) bool {
+func (mp *MediatorPlugin) isLocalMediator(add common.Address) bool {
 	_, ok := mp.mediators[add]
 
 	return ok
 }
 
 func (mp *MediatorPlugin) IsLocalActiveMediator(add common.Address) bool {
-	if mp.IsLocalMediator(add) {
+	if mp.isLocalMediator(add) {
 		return mp.getDag().IsActiveMediator(add)
 	}
 
@@ -155,9 +143,8 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 	initPubs := mp.getDag().GetActiveMediatorInitPubs()
 	curThreshold := mp.getDag().GetCurThreshold()
 
-	ll := len(lams)
-	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, ll)
-	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, ll)
+	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator)
+	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response)
 
 	for _, localMed := range lams {
 		initSec := mp.mediators[localMed].InitPartSec
@@ -252,14 +239,23 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		mediators:         msm,
 		quit:              make(chan struct{}),
 
-		pendingTBLSSign: make(map[common.Hash]*toTBLSSigned),
-
 		suite: bn256.NewSuiteG2(),
 	}
+	mp.initTBLSSignBuf()
 
 	log.Debug("mediator plugin initialize end")
 
 	return &mp, nil
+}
+
+func (mp *MediatorPlugin) initTBLSSignBuf() {
+	mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit)
+	curThrshd := mp.getDag().GetCurThreshold()
+
+	lams := mp.GetLocalActiveMediators()
+	for _, localMed := range lams {
+		mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
+	}
 }
 
 func (mp *MediatorPlugin) getDag() dag.IDag {

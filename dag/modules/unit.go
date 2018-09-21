@@ -169,6 +169,12 @@ type Unit struct {
 	ReceivedFrom interface{}
 }
 
+func (unit *Unit) UnitAuthor() *common.Address {
+	// todo
+
+	return nil
+}
+
 //type OutPoint struct {
 //	TxHash       common.Hash // reference Utxo struct key field
 //	MessageIndex uint32      // message index in transaction

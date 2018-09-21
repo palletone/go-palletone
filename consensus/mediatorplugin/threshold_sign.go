@@ -229,22 +229,25 @@ func (mp *MediatorPlugin) SubscribeVSSResponseEvent(ch chan<- VSSResponseEvent) 
 	return mp.vssResponseScope.Track(mp.vssResponseFeed.Subscribe(ch))
 }
 
-func (mp *MediatorPlugin) ToUnitTBLSSign(peer string, unit *modules.Unit) error {
-	op := &toBLSSigned{
-		origin: peer,
-		unit:   unit,
-	}
-
+func (mp *MediatorPlugin) ToUnitTBLSSign(unit *modules.Unit) error {
 	select {
 	case <-mp.quit:
 		return errTerminated
 	default:
-		go mp.unitBLSSign(op)
+		go mp.addToTBLSSignBuf(unit)
 		return nil
 	}
 }
 
-func (mp *MediatorPlugin) unitBLSSign(toBLSSigned *toBLSSigned) {
-	//todo
+func (mp *MediatorPlugin) addToTBLSSignBuf(unit *modules.Unit) {
+	//localMed := *unit.UnitAuthor()
+	//
+	//if !mp.IsLocalActiveMediator(localMed) {
+	//	return
+	//}
 
+	lams := mp.GetLocalActiveMediators()
+	for _, localMed := range lams {
+		mp.toTBLSSignBuf[localMed] <- unit
+	}
 }
