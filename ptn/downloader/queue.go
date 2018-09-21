@@ -879,8 +879,7 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*modules.Header, tas
 	}
 }
 
-// Prepare configures the result cache to allow accepting and caching inbound
-// fetch results.
+// Prepare configures the result cache to allow accepting and caching inbound fetch results.
 func (q *queue) Prepare(offset uint64, mode SyncMode) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
