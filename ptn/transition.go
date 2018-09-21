@@ -33,7 +33,7 @@ import (
 		2.2 no mediator node:unlimited
 	3.all the mediators node is connectin.Notice the mediator plugin
 */
-func (pm *ProtocolManager) mediatorConnect(srvr *p2p.Server, maxPeers int) {
+func (pm *ProtocolManager) mediatorConnect() {
 	if !pm.producer.LocalHaveActiveMediator() {
 		log.Info("This node is not Mediator")
 		return
@@ -51,7 +51,7 @@ func (pm *ProtocolManager) mediatorConnect(srvr *p2p.Server, maxPeers int) {
 	for {
 		select {
 		case <-forceSync.C:
-			if err := pm.startMediatorConnect(srvr, maxPeers); err != nil {
+			if err := pm.startMediatorConnect(pm.srvr, pm.maxPeers); err != nil {
 				return
 			}
 		case <-pm.transCh:

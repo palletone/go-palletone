@@ -299,7 +299,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	go pm.vssResponseBroadcastLoop()
 
 	//TODO xiaozhi
-	go pm.mediatorConnect(srvr, maxPeers)
+	go pm.mediatorConnect()
 
 }
 
