@@ -71,7 +71,7 @@ func (dagdb *DagDatabase) PutTrieSyncProgress(count uint64) error {
 
 // value will serialize to rlp encoding bytes
 func Store(db ptndb.Database, key string, value interface{}) error {
-	return StoreBytes(db,[]byte(key),value)
+	return StoreBytes(db, []byte(key), value)
 }
 
 func StoreBytes(db ptndb.Database, key []byte, value interface{}) error {
@@ -115,7 +115,7 @@ func (dagdb *DagDatabase) UpdateHeadByBatch(hash common.Hash, number uint64) err
 	BatchErrorHandler(batch.Put(HeadHeaderKey, hash.Bytes()), errorList)                //PutHeadHeaderHash
 	BatchErrorHandler(batch.Put(HeadUnitKey, hash.Bytes()), errorList)                  //PutHeadUnitHash
 	BatchErrorHandler(batch.Put(HeadFastKey, hash.Bytes()), errorList)                  //PutHeadFastUnitHash
-	if len(*errorList) == 0 { //each function call succeed.
+	if len(*errorList) == 0 {                                                           //each function call succeed.
 		return batch.Write()
 	}
 	return fmt.Errorf("UpdateHeadByBatch, at least one sub function call failed.")

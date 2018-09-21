@@ -238,7 +238,6 @@ func TestTransactionAddingTxs(t *testing.T) {
 						t.Error("sorted failed.", i, tx.Priority_lvl)
 					}
 				}
-				log.Println("sort tx ================ ", tx.Tx.TxHash.String(), tx.Priority_lvl, tx.Index)
 			}
 			all = len(txs)
 			pending_cache = len(pool.pending)

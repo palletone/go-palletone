@@ -7,8 +7,35 @@ if [ ! -f "build/env.sh" ]; then
     exit 2
 fi
 
-go get -u github.com/palletone/btc-adaptor
-go get -u github.com/palletone/eth-adaptor
+btc=github.com/palletone/btc-adaptor
+eth=github.com/palletone/eth-adaptor
+
+btcfullpath=$GOPATH/src/$btc
+ethfullpath=$GOPATH/src/$eth
+
+echo $btcfullpath
+echo $ethfullpath
+
+
+#go get -u github.com/palletone/btc-adaptor
+#go get -u github.com/palletone/eth-adaptor
+
+if [ ! -d "$btcfullpath" ]; then
+	echo "btc not exist"
+	go get -u $btc
+else
+	echo "btc exist"
+	git -C $btcfullpath pull
+fi
+
+
+if [ ! -d "$ethfullpath" ]; then
+	echo "eth not exist"
+	go get -u $eth
+else
+	echo "eth exist"
+	git -C $ethfullpath  pull
+fi
 
 
 # Create fake Go workspace if it doesn't exist yet.
