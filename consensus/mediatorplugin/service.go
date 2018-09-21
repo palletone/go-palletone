@@ -171,19 +171,18 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 		mp.initRespBuf(localMed)
 	}
 
-	// todo 后面换成事件通知响应在调用, 并开启定时器
-	go mp.BroadcastVSSDeals()
+	// todo 和其他mediator建立连接后调用
+	go mp.StartVSSProtocol()
+}
 
-	//timeout := time.NewTimer(3 * time.Second)
-	//defer timeout.Stop()
-	//select {
-	//case <-mp.quit:
-	//	return
-	//case <-timeout.C:
-	//	for med, dkg := range mp.dkgs {
-	//		log.Debug(fmt.Sprintf("%v 's DKG certifing is %v", med.Str(), dkg.Certified()))
-	//	}
-	//}
+func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
+	aSize := mp.getDag().GetActiveMediatorCount()
+	mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
+
+	for i := 0; i < aSize; i++ {
+		vrfrMed := mp.getDag().GetActiveMediatorAddr(i)
+		mp.respBuf[localMed][vrfrMed] = make(chan *dkg.Response, aSize-1)
+	}
 }
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {

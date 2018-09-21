@@ -36,6 +36,22 @@ func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
 	return sc, suite.Point().Mul(sc, nil)
 }
 
+func (mp *MediatorPlugin) StartVSSProtocol() {
+	// todo 广播vss deal， 开启定时器， 并开启循环接收本地mediator完成vss协议的消息
+	go mp.BroadcastVSSDeals()
+
+	//timeout := time.NewTimer(3 * time.Second)
+	//defer timeout.Stop()
+	//select {
+	//case <-mp.quit:
+	//	return
+	//case <-timeout.C:
+	//	for med, dkg := range mp.dkgs {
+	//		log.Debug(fmt.Sprintf("%v 's DKG certifing is %v", med.Str(), dkg.Certified()))
+	//	}
+	//}
+}
+
 func (mp *MediatorPlugin) BroadcastVSSDeals() {
 	for localMed, dkg := range mp.dkgs {
 		deals, err := dkg.Deals()
@@ -123,16 +139,6 @@ func (mp *MediatorPlugin) ToProcessResponse(resp *VSSResponseEvent) error {
 	default:
 		go mp.processVSSResponse(resp)
 		return nil
-	}
-}
-
-func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
-	aSize := mp.getDag().GetActiveMediatorCount()
-	mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
-
-	for i := 0; i < aSize; i++ {
-		vrfrMed := mp.getDag().GetActiveMediatorAddr(i)
-		mp.respBuf[localMed][vrfrMed] = make(chan *dkg.Response, aSize-1)
 	}
 }
 

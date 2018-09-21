@@ -423,8 +423,7 @@ type producer interface {
 	ToProcessResponse(resp *mp.VSSResponseEvent) error
 
 	LocalHaveActiveMediator() bool
-
-	BroadcastVSSDeals()
+	StartVSSProtocol()
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -543,8 +542,7 @@ func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
 
 		//if temporary mediators should to notice consensus and p.transitionCh <- transitionCancel
 		pm.transCycleConnCh <- transitionCancel
-		pm.producer.BroadcastVSSDeals()
-
+		//go pm.producer.StartVSSProtocol()
 	}
 	for {
 
