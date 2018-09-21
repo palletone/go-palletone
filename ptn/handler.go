@@ -457,6 +457,31 @@ func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *p
 	return newPeer(pv, p, newMeteredMsgWriter(rw))
 }
 
+func (pm *ProtocolManager) mediatorCheck(p *peer) error {
+	if pm.producer.LocalHaveActiveMediator() && p.mediator {
+		peers := pm.dag.GetActiveMediatorNodes()
+		if _, ok := peers[p.ID().TerminalString()]; ok {
+			//TODO check the number of mediator connctions and nomediator connections
+		} else {
+			log.Info("PalletOne handshake failed lying selef is mediator")
+			return errors.New("PalletOne handshake failed lying selef is mediator")
+		}
+
+	}
+	return nil
+}
+
+func (pm *ProtocolManager) transitionRun(p *peer) error {
+	if pm.producer.LocalHaveActiveMediator() && p.mediator {
+		if pm.peersTransition.mediators.Has(p.ID().TerminalString()) {
+			if err := pm.handleTransitionMsg(p); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // handle is the callback invoked to manage the life cycle of an ptn peer. When
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
@@ -481,11 +506,12 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		return err
 	}
 
-	if pm.producer.LocalHaveActiveMediator() && p.mediator &&
-		!pm.peersTransition.mediators.Has(p.ID().TerminalString()) {
-		if err := pm.handleTransitionMsg(p); err != nil {
-			return err
-		}
+	if err := pm.mediatorCheck(p); err != nil {
+		return err
+	}
+
+	if err := pm.transitionRun(p); err != nil {
+		return err
 	}
 
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
@@ -1230,60 +1256,6 @@ func (pm *ProtocolManager) GetTransitionPeers() map[string]*peer {
 }
 
 /*
-func (pm *ProtocolManager) handle(p *peer) error {
-	// Ignore maxPeers if this is a trusted peer
-	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
-		return p2p.DiscTooManyPeers
-	}
-	log.Debug("PalletOne peer connected", "name", p.Name())
-
-	//TODO Devin
-	//var unitRep common2.IUnitRepository
-	//unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
-
-	// Execute the PalletOne handshake
-	head := pm.dag.CurrentHeader()
-	mediator := pm.producer.LocalHaveActiveMediator()
-
-	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), mediator); err != nil {
-		log.Debug("PalletOne handshake failed", "err", err)
-		return err
-	}
-
-	if pm.peers.MediatorCheck(p, pm.maxPeers) {
-		log.Info("ProtocolManager handler nomediator too many peers")
-		return p2p.DiscTooManyPeers
-	}
-
-	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
-		rw.Init(p.version)
-	}
-	// Register the peer locally
-	if err := pm.peers.Register(p); err != nil {
-		log.Error("PalletOne peer registration failed", "err", err)
-		return err
-	}
-	defer pm.removePeer(p.id)
-
-	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
-	if err := pm.downloader.RegisterPeer(p.id, p.version, p); err != nil {
-		return err
-	}
-	// Propagate existing transactions. new transactions appearing
-	// after this will be sent via broadcasts.
-	pm.syncTransactions(p)
-
-	//TODO CheckMediator notice consensus when full mediator connected
-
-	// main loop. handle incoming messages.
-	for {
-		if err := pm.handleMsg(p); err != nil {
-			log.Debug("PalletOne message handling failed", "err", err)
-			return err
-		}
-	}
-}
 
 func test() {
 	body := blockBody{}

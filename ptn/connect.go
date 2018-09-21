@@ -32,8 +32,21 @@ const (
 )
 
 func (pm *ProtocolManager) mediatorConnect() {
+	if !pm.producer.LocalHaveActiveMediator() {
+		log.Info("This node is not Mediator")
+		return
+	}
+	log.Info("Mediator transition")
 	peers := pm.dag.GetActiveMediatorNodes()
-	peers = peers
+
+	//not exsit and no self will connect
+	ps := pm.peers.GetPeers()
+	for _, peer := range peers {
+		if peer.ID.String() != pm.srvr.NodeInfo().ID && !pm.isexist(peer.ID.String(), ps) {
+			log.Debug("========mediator AddPeer==========", "peer.ID.String():", peer.ID.String())
+			pm.srvr.AddPeer(peer)
+		}
+	}
 }
 
 /*
