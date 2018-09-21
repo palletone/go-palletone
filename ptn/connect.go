@@ -152,7 +152,7 @@ func (pm *ProtocolManager) noMediatorCheck(p *peer) error {
 		peers := pm.dag.GetActiveMediatorNodes()
 		if _, ok := peers[p.ID().TerminalString()]; !ok {
 			//TODO check the number of mediator connctions and the number of nomediator connections
-			if pm.peers.noMediatorCheck(pm.maxPeers, len(peers)-1) {
+			if !pm.peers.noMediatorCheck(pm.maxPeers, len(peers)-1) {
 				log.Info("The number of no ediator connections full")
 				return errors.New("The number of no ediator connections full")
 			}
