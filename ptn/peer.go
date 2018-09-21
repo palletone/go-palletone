@@ -45,6 +45,10 @@ const (
 	maxKnownBlocks   = 1024  // Maximum block hashes to keep in the known list (prevent DOS)
 	maxKnownVsss     = 25    // Maximum Vss hashes to keep in the known list (prevent DOS)
 	handshakeTimeout = 5 * time.Second
+
+	transitionStep1  = 1 //All transition mediator each other connected to star vss
+	transitionStep2  = 2 //vss success
+	transitionCancel = 3 //retranstion
 )
 
 // PeerInfo represents a short summary of the PalletOne sub-protocol metadata known
@@ -79,20 +83,23 @@ type peer struct {
 
 	index modules.ChainIndex
 
-	mediator bool
+	mediator     bool
+	transitionCh chan int
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 
 	id := p.ID()
 	return &peer{
-		Peer:        p,
-		rw:          rw,
-		version:     version,
-		id:          id.TerminalString(),
-		knownTxs:    set.New(),
-		knownBlocks: set.New(),
-		peermsg:     map[modules.IDType16]peerMsg{},
+		Peer:         p,
+		rw:           rw,
+		version:      version,
+		id:           id.TerminalString(),
+		knownTxs:     set.New(),
+		knownBlocks:  set.New(),
+		peermsg:      map[modules.IDType16]peerMsg{},
+		mediator:     false,
+		transitionCh: make(chan int, 1),
 	}
 }
 
@@ -331,6 +338,7 @@ func (p *peer) readStatus(network uint64, status *statusData, genesis common.Has
 	if int(status.ProtocolVersion) != p.version {
 		return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", status.ProtocolVersion, p.version)
 	}
+
 	return nil
 }
 
@@ -362,6 +370,16 @@ func newPeerSet() *peerSet {
 	}
 }
 
+func (ps *peerSet) MediatorsAllConnected() int {
+	return 0
+}
+
+func (ps *peerSet) MediatorsSize() int {
+	ps.lock.Lock()
+	defer ps.lock.Unlock()
+	return ps.mediators.Size()
+}
+
 func (ps *peerSet) MediatorsReset(nodes []string) {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
@@ -378,7 +396,7 @@ func (ps *peerSet) MediatorsClean() {
 }
 
 //Make sure there is plenty of connection for Mediator
-func (ps *peerSet) MediatorCheck(p *peer, maxPeers int) bool {
+func (ps *peerSet) TransitionCheck(p *peer, maxPeers int) bool {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 	if p.mediator {
@@ -393,6 +411,14 @@ func (ps *peerSet) MediatorCheck(p *peer, maxPeers int) bool {
 	if size >= maxPeers-ps.mediators.Size() {
 		return false
 	}
+	return true
+}
+
+//Make sure there is plenty of connection for Mediator
+func (ps *peerSet) MediatorCheck() bool {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+	ps.mediators.Size()
 	return true
 }
 

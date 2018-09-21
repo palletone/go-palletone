@@ -104,7 +104,9 @@ func TestSignAndVerifyATx(t *testing.T) {
 	privKeys := map[common.Address]*ecdsa.PrivateKey{
 		addr: privKey,
 	}
-	err := SignTxAllPaymentInput(tx, lockScripts,nil, privKeys)
+        var hashtype uint32
+        hashtype = 1
+	_,err:= SignTxAllPaymentInput(tx, hashtype,lockScripts,nil, privKeys)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
