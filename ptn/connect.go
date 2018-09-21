@@ -130,3 +130,47 @@ func (pm *ProtocolManager) isexist(pid string, peers []*peer) bool {
 	}
 	return false
 }
+
+func (pm *ProtocolManager) mediatorCheck(p *peer) error {
+	//if pm.producer.LocalHaveActiveMediator() && p.mediator {
+	if p.mediator {
+		peers := pm.dag.GetActiveMediatorNodes()
+		if _, ok := peers[p.ID().TerminalString()]; ok {
+			//TODO check the number of mediator connctions and the number of nomediator connections
+			//if pm.peers.mediatorCheck(p, pm.maxPeers, len(peers)) {
+			//}
+		} else {
+			log.Info("PalletOne handshake failed lying selef is mediator")
+			return errors.New("PalletOne handshake failed lying selef is mediator")
+		}
+	}
+	return nil
+}
+
+func (pm *ProtocolManager) noMediatorCheck(p *peer) error {
+	if !p.mediator {
+		peers := pm.dag.GetActiveMediatorNodes()
+		if _, ok := peers[p.ID().TerminalString()]; !ok {
+			//TODO check the number of mediator connctions and the number of nomediator connections
+			if pm.peers.noMediatorCheck(pm.maxPeers, len(peers)-1) {
+				log.Info("The number of no ediator connections full")
+				return errors.New("The number of no ediator connections full")
+			}
+		} else {
+			log.Info("PalletOne handshake failed lying selef is mediator")
+			return errors.New("PalletOne handshake failed lying selef is not mediator")
+		}
+	}
+	return nil
+}
+
+func (pm *ProtocolManager) transitionRun(p *peer) error {
+	if pm.producer.LocalHaveActiveMediator() && p.mediator {
+		if pm.peersTransition.mediators.Has(p.ID().TerminalString()) {
+			if err := pm.handleTransitionMsg(p); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}

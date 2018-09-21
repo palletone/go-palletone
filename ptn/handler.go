@@ -457,31 +457,6 @@ func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *p
 	return newPeer(pv, p, newMeteredMsgWriter(rw))
 }
 
-func (pm *ProtocolManager) mediatorCheck(p *peer) error {
-	if pm.producer.LocalHaveActiveMediator() && p.mediator {
-		peers := pm.dag.GetActiveMediatorNodes()
-		if _, ok := peers[p.ID().TerminalString()]; ok {
-			//TODO check the number of mediator connctions and nomediator connections
-		} else {
-			log.Info("PalletOne handshake failed lying selef is mediator")
-			return errors.New("PalletOne handshake failed lying selef is mediator")
-		}
-
-	}
-	return nil
-}
-
-func (pm *ProtocolManager) transitionRun(p *peer) error {
-	if pm.producer.LocalHaveActiveMediator() && p.mediator {
-		if pm.peersTransition.mediators.Has(p.ID().TerminalString()) {
-			if err := pm.handleTransitionMsg(p); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 // handle is the callback invoked to manage the life cycle of an ptn peer. When
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
@@ -503,6 +478,10 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), mediator); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
+		return err
+	}
+
+	if err := pm.noMediatorCheck(p); err != nil {
 		return err
 	}
 

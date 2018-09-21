@@ -396,19 +396,17 @@ func (ps *peerSet) MediatorsClean() {
 }
 
 //Make sure there is plenty of connection for Mediator
-func (ps *peerSet) TransitionCheck(p *peer, maxPeers int) bool {
+func (ps *peerSet) noMediatorCheck(maxPeers int, mediators int) bool {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
-	if p.mediator {
-		return ps.mediators.Has(p.ID().TerminalString())
-	}
+
 	size := 0
 	for _, p := range ps.peers {
 		if !p.mediator {
 			size++
 		}
 	}
-	if size >= maxPeers-ps.mediators.Size() {
+	if size > maxPeers-mediators {
 		return false
 	}
 	return true
