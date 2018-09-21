@@ -561,7 +561,7 @@ func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
 	}
 	defer pm.removeTransitionPeer(p.id)
 
-	if pm.peersTransition.MediatorsSize() == len(pm.peersTransition.peers) {
+	if pm.peersTransition.MediatorsSize()-1 == len(pm.peersTransition.peers) {
 		//notice consensus all mediator connected
 		//if The main network is launched for the first time.
 		//(Judge node have private key).Only notice consensus go to the next vote.
