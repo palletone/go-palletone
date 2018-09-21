@@ -18,8 +18,8 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
 	unit "github.com/palletone/go-palletone/dag/modules"
-	"github.com/spf13/viper"
 	errors "github.com/pkg/errors"
+	"github.com/spf13/viper"
 )
 
 var debugX bool = true
@@ -136,7 +136,7 @@ func GetUsrCCList() {
 }
 
 //install but not into db
-func Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error) {
+func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error) {
 	logger.Infof("==========install enter=======")
 	logger.Infof("name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
 	defer logger.Infof("-----------install exit--------")
@@ -175,7 +175,7 @@ func Install(chainID string, ccName string, ccPath string, ccVersion string) (pa
 	return payloadUnit, nil
 }
 
-func DeployByName(chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId []byte, respPayload *peer.ContractDeployPayload, e error) {
+func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId []byte, respPayload *peer.ContractDeployPayload, e error) {
 	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
@@ -194,7 +194,7 @@ func DeployByName(chainID string, txid string, ccName string, ccPath string, ccV
 		return nil, nil, errors.New("crypto.GetRandomNonce error")
 	}
 
-	txsim, err := mksupt.GetTxSimulator(chainID, txid)
+	txsim, err := mksupt.GetTxSimulator(idag, chainID, txid)
 	if err != nil {
 		return nil, nil, errors.New("GetTxSimulator error")
 	}
@@ -244,7 +244,7 @@ func DeployByName(chainID string, txid string, ccName string, ccPath string, ccV
 	return cc.Id, nil, err
 }
 
-func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *unit.ContractDeployPayload, e error) {
+func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *unit.ContractDeployPayload, e error) {
 	logger.Infof("==========Deploy enter=======")
 	logger.Infof("templateId[%s]txid[%s]", hex.EncodeToString(templateId), txid)
 	defer logger.Infof("-----------Deploy exit--------")
@@ -286,7 +286,7 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 			templateCC.Version = tmpcc.vers
 		}
 	}
-	txsim, err := mksupt.GetTxSimulator(chainID, txid)
+	txsim, err := mksupt.GetTxSimulator(idag, chainID, txid)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
 	}
@@ -312,7 +312,7 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 	spec.ChaincodeId = chaincodeID
 	err = ucc.DeployUserCC(spec, setChainId, usrcc, txid, txsim, setTimeOut)
 	if err != nil {
-		return nil, nil, errors.WithMessage(err,"Deploy fail")
+		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}
 	cc := &cclist.CCInfo{
 		Id:      randNum,
@@ -338,7 +338,7 @@ func Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeo
 //timeout:ms
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
+func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
 	logger.Infof("==========Invoke enter=======")
 	logger.Infof("deployId[%s] txid[%s]", hex.EncodeToString(deployId), txid)
 	defer logger.Infof("-----------Invoke exit--------")
@@ -376,7 +376,7 @@ func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout
 		return nil, err
 	}
 
-	rsp, unit, err := es.ProcessProposal(deployId, context.Background(), sprop, prop, chainID, cid, timeout)
+	rsp, unit, err := es.ProcessProposal(idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
 	t0 := time.Now()
 	duration := t0.Sub(start)
 
