@@ -52,7 +52,7 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 			go mp.vssDealFeed.Send(event)
 		}
 
-		go mp.processResponseBuf(&dkgVerifier{localMed, localMed})
+		go mp.processResponseBuf(localMed, localMed)
 	}
 }
 
@@ -64,19 +64,9 @@ func (mp *MediatorPlugin) ToProcessDeal(deal *VSSDealEvent) error {
 	select {
 	case <-mp.quit:
 		return errTerminated
-	case mp.toProcessDealCh <- deal:
+	default:
+		go mp.processVSSDeal(deal)
 		return nil
-	}
-}
-
-func (mp *MediatorPlugin) processDealLoop() {
-	for {
-		select {
-		case <-mp.quit:
-			return
-		case deal := <-mp.toProcessDealCh:
-			go mp.processVSSDeal(deal)
-		}
 	}
 }
 
@@ -113,7 +103,7 @@ func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
 	}
 
 	vrfrMed := dag.GetActiveMediatorAddr(int(deal.Index))
-	go mp.processResponseBuf(&dkgVerifier{localMed, vrfrMed})
+	go mp.processResponseBuf(localMed, vrfrMed)
 
 	if resp.Response.Status != vss.StatusApproval {
 		log.Error(fmt.Sprintf("DKG: own deal gave a complaint: %v", localMed.String()))
@@ -130,19 +120,9 @@ func (mp *MediatorPlugin) ToProcessResponse(resp *VSSResponseEvent) error {
 	select {
 	case <-mp.quit:
 		return errTerminated
-	case mp.toProcessResponseCh <- resp:
+	default:
+		go mp.processVSSResponse(resp)
 		return nil
-	}
-}
-
-func (mp *MediatorPlugin) processResponseLoop() {
-	for {
-		select {
-		case <-mp.quit:
-			return
-		case resp := <-mp.toProcessResponseCh:
-			go mp.processVSSResponse(resp)
-		}
 	}
 }
 
@@ -156,9 +136,7 @@ func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
 	}
 }
 
-func (mp *MediatorPlugin) processResponseBuf(dvp *dkgVerifier) {
-	localMed := dvp.localMed
-	vrfrMed := dvp.vrfrMed
+func (mp *MediatorPlugin) processResponseBuf(localMed, vrfrMed common.Address) {
 	dkg := mp.getLocalActiveMediatorDKG(localMed)
 	if dkg == nil {
 		return
@@ -232,21 +210,9 @@ func (mp *MediatorPlugin) ToUnitTBLSSign(peer string, unit *modules.Unit) error 
 	select {
 	case <-mp.quit:
 		return errTerminated
-	case mp.toBLSSigned <- op:
+	default:
+		go mp.unitBLSSign(op)
 		return nil
-	}
-}
-
-func (mp *MediatorPlugin) unitBLSSignLoop() {
-	for {
-		select {
-		// Mediator Plugin terminating, abort operation
-		case <-mp.quit:
-			return
-		case op := <-mp.toBLSSigned:
-			//			PushUnit(mp.ptn.Dag(), op.unit)
-			go mp.unitBLSSign(op)
-		}
 	}
 }
 

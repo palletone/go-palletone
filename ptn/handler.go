@@ -322,7 +322,7 @@ func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
 	peers := pm.GetTransitionPeers() //pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
-			go pm.producer.ToProcessResponse(resp)
+			pm.producer.ToProcessResponse(resp)
 			continue
 		}
 
@@ -366,7 +366,7 @@ func (self *ProtocolManager) vssResponseBroadcastLoop() {
 func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDealEvent) {
 	peer, self := pm.getTransitionPeer(node)
 	if self {
-		go pm.producer.ToProcessDeal(deal)
+		pm.producer.ToProcessDeal(deal)
 		return
 	}
 
@@ -1155,7 +1155,7 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
-			go pm.producer.ToUnitTBLSSign("", unit)
+			pm.producer.ToUnitTBLSSign("", unit)
 			continue
 		}
 

@@ -57,11 +57,6 @@ type toTBLSSigned struct {
 	sigShares [][]byte
 }
 
-type dkgVerifier struct {
-	localMed common.Address
-	vrfrMed  common.Address
-}
-
 type MediatorPlugin struct {
 	ptn  PalletOne     // Full PalletOne service to retrieve other function
 	quit chan struct{} // Channel used for graceful exit
@@ -74,7 +69,6 @@ type MediatorPlugin struct {
 	// 新生产unit的事件订阅和数据发送和接收
 	newProducedUnitFeed  event.Feed              // 订阅的时候自动初始化一次
 	newProducedUnitScope event.SubscriptionScope // 零值已准备就绪待用
-	toBLSSigned          chan *toBLSSigned       // 接收新生产的unit
 
 	// dkg 生成 dks 相关
 	suite   vss.Suite
@@ -82,14 +76,12 @@ type MediatorPlugin struct {
 	respBuf map[common.Address]map[common.Address]chan *dkg.Response
 
 	// 广播和处理 vss 协议 deal
-	vssDealFeed     event.Feed
-	vssDealScope    event.SubscriptionScope
-	toProcessDealCh chan *VSSDealEvent
+	vssDealFeed  event.Feed
+	vssDealScope event.SubscriptionScope
 
 	// 广播和处理 vss 协议 response
-	vssResponseFeed     event.Feed
-	vssResponseScope    event.SubscriptionScope
-	toProcessResponseCh chan *VSSResponseEvent
+	vssResponseFeed  event.Feed
+	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
 	pendingTBLSSign map[common.Hash]*toTBLSSigned // 等待TBLS阈值签名的unit
@@ -203,15 +195,6 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	// 2. 给当前节点控制的活跃mediator，初始化对应的DKG. (换届后重新生成)
 	go mp.NewActiveMediatorsDKG()
 
-	// 3. 处理 VSS deal 循环
-	go mp.processDealLoop()
-
-	// 4. 处理 VSS response 循环
-	go mp.processResponseLoop()
-
-	// 5. BLS签名循环
-	go mp.unitBLSSignLoop()
-
 	log.Debug("mediator plugin startup end")
 
 	return nil
@@ -268,13 +251,9 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		mediators:         msm,
 		quit:              make(chan struct{}),
 
-		toBLSSigned:     make(chan *toBLSSigned),
 		pendingTBLSSign: make(map[common.Hash]*toTBLSSigned),
 
 		suite: bn256.NewSuiteG2(),
-
-		toProcessDealCh:     make(chan *VSSDealEvent),
-		toProcessResponseCh: make(chan *VSSResponseEvent),
 	}
 
 	log.Debug("mediator plugin initialize end")
