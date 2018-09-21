@@ -31,21 +31,21 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	"github.com/op/go-logging"
+	"github.com/palletone/go-palletone/contracts/accesscontrol"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/platforms"
 	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
+	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/vm/api"
 	"github.com/palletone/go-palletone/vm/ccintf"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/op/go-logging"
+	"github.com/palletone/go-palletone/vm/controller"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
-	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
-	"github.com/palletone/go-palletone/contracts/accesscontrol"
-	"github.com/palletone/go-palletone/contracts/rwset"
-	"github.com/palletone/go-palletone/vm/controller"
-	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 type key string
@@ -611,7 +611,7 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	//sir := container.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, Version: cccid.Version}, Timeout: 0}
 	// The line below is left for debugging. It replaces the line above to keep
 	// the chaincode container around to give you a chance to get data
-	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: ""/*cccid.ChainID*/, Version: cccid.Version}, Timeout: 0, Dontremove: true}
+	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/, Version: cccid.Version}, Timeout: 0, Dontremove: true}
 	vmtype, _ := chaincodeSupport.getVMType(cds)
 
 	_, err := controller.VMCProcess(context, vmtype, sir)
