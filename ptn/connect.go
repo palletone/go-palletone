@@ -26,6 +26,16 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 )
 
+const (
+	ConnectBoot       = 1
+	ConnectTransition = 2
+)
+
+func (pm *ProtocolManager) mediatorConnect() {
+	peers := pm.dag.GetActiveMediatorNodes()
+	peers = peers
+}
+
 /*
 	1.add flag.This node whether or not mediator
 	2.check connections.
@@ -33,13 +43,12 @@ import (
 		2.2 no mediator node:unlimited
 	3.all the mediators node is connectin.Notice the mediator plugin
 */
-func (pm *ProtocolManager) mediatorConnect() {
+func (pm *ProtocolManager) transitionConnect() {
 	if !pm.producer.LocalHaveActiveMediator() {
 		log.Info("This node is not Mediator")
 		return
 	}
 	log.Info("Mediator transition")
-	//TODO notice handle to return and remove peer.21 channel(NO)
 
 	pm.peersTransition.MediatorsClean()
 
@@ -51,10 +60,10 @@ func (pm *ProtocolManager) mediatorConnect() {
 	for {
 		select {
 		case <-forceSync.C:
-			if err := pm.startMediatorConnect(pm.srvr, pm.maxPeers); err != nil {
+			if err := pm.startTransitionConnect(pm.srvr, pm.maxPeers); err != nil {
 				return
 			}
-		case <-pm.transCh:
+		case <-pm.transCycleConnCh:
 			pm.peersTransition.MediatorsClean()
 			return
 		default:
@@ -63,7 +72,8 @@ func (pm *ProtocolManager) mediatorConnect() {
 }
 
 //Start MediatorNetwork
-func (pm *ProtocolManager) startMediatorConnect(srvr *p2p.Server, maxPeers int) error {
+func (pm *ProtocolManager) startTransitionConnect(srvr *p2p.Server, maxPeers int) error {
+	//TODO must modify the GetTransitionNodes
 	peers := pm.dag.GetActiveMediatorNodes()
 	if maxPeers < len(peers)+3 {
 		log.Error("PalletOne start", "maxpeers", maxPeers, "mediator size", len(peers)+3) //3:nomediator
@@ -89,6 +99,14 @@ func (pm *ProtocolManager) startMediatorConnect(srvr *p2p.Server, maxPeers int) 
 
 	log.Debug("PalletOne", "startMediatorNetwork mediators:", len(peers))
 	return nil
+}
+
+//TODO notice handle to return and remove peer.21 channel
+func (pm *ProtocolManager) cancelTransitionConnect() {
+	peers := pm.peersTransition.GetPeers()
+	for _, peer := range peers {
+		peer.transitionCh <- transitionCancel
+	}
 }
 
 func (pm *ProtocolManager) isexist(pid string, peers []*peer) bool {

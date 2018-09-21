@@ -112,8 +112,8 @@ type ProtocolManager struct {
 
 	genesis *modules.Unit
 
-	peersTransition *peerSet
-	transCh         chan int
+	peersTransition  *peerSet
+	transCycleConnCh chan int
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
@@ -123,20 +123,20 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	genesis *modules.Unit) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		networkId:       networkId,
-		dag:             dag,
-		txpool:          txpool,
-		eventMux:        mux,
-		consEngine:      engine,
-		peers:           newPeerSet(),
-		newPeerCh:       make(chan *peer),
-		noMorePeers:     make(chan struct{}),
-		txsyncCh:        make(chan *txsync),
-		quitSync:        make(chan struct{}),
-		transCh:         make(chan int, 1),
-		genesis:         genesis,
-		producer:        producer,
-		peersTransition: newPeerSet(),
+		networkId:        networkId,
+		dag:              dag,
+		txpool:           txpool,
+		eventMux:         mux,
+		consEngine:       engine,
+		peers:            newPeerSet(),
+		newPeerCh:        make(chan *peer),
+		noMorePeers:      make(chan struct{}),
+		txsyncCh:         make(chan *txsync),
+		quitSync:         make(chan struct{}),
+		transCycleConnCh: make(chan int, 1),
+		genesis:          genesis,
+		producer:         producer,
+		peersTransition:  newPeerSet(),
 	}
 
 	// Figure out whether to allow fast sync or not
@@ -542,20 +542,12 @@ func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
 		//Vote finish we will transition
 
 		//if temporary mediators should to notice consensus and p.transitionCh <- transitionCancel
+		pm.transCycleConnCh <- transitionCancel
 		pm.producer.BroadcastVSSDeals()
-		//p.transitionCh <- transitionCancel
-		pm.transCh <- transitionCancel
+
 	}
 	for {
-		select {
-		case event := <-p.transitionCh:
-			if event == transitionCancel {
-				//TODO restart transtion connect
-				log.Debug("PalletOne handleTransitionMsg transitions each other connected ok")
-				return nil
-			}
-		default:
-		}
+
 		log.Debug("PalletOne handleTransitionMsg transitions ReadMsg")
 		// Read the next message from the remote peer, and ensure it's fully consumed
 		msg, err := p.rw.ReadMsg()
@@ -569,6 +561,16 @@ func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
 		//Otherwise, immediatly return errResp.On the basis of ps.mediators
 
 		defer msg.Discard()
+
+		select {
+		case event := <-p.transitionCh:
+			if event == transitionCancel {
+				//TODO restart transtion connect
+				log.Debug("PalletOne handleTransitionMsg transitions each other connected ok")
+				return nil
+			}
+		default:
+		}
 
 		// Handle the message depending on its contents
 		switch {
