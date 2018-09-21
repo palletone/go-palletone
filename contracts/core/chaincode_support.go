@@ -31,21 +31,21 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	"github.com/op/go-logging"
+	"github.com/palletone/go-palletone/contracts/accesscontrol"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/platforms"
 	"github.com/palletone/go-palletone/contracts/shim"
-	"github.com/palletone/go-palletone/core/vmContractPub/config"
+	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
+	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/vm/api"
 	"github.com/palletone/go-palletone/vm/ccintf"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/op/go-logging"
+	"github.com/palletone/go-palletone/vm/controller"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
-	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
-	"github.com/palletone/go-palletone/contracts/accesscontrol"
-	"github.com/palletone/go-palletone/contracts/rwset"
-	"github.com/palletone/go-palletone/vm/controller"
 )
 
 type key string
@@ -145,7 +145,8 @@ func (chaincodeSupport *ChaincodeSupport) launchStarted(chaincode string) bool {
 
 // NewChaincodeSupport creates a new ChaincodeSupport instance
 func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout time.Duration, ca accesscontrol.CA) pb.ChaincodeSupportServer {
-	path := config.GetPath("peer.fileSystemPath") + string(filepath.Separator) + "chaincodes"
+	//path := config.GetPath("peer.fileSystemPath") + string(filepath.Separator) + "chaincodes"
+	path := cfg.GetConfig().ContractFileSystemPath + string(filepath.Separator) + "chaincodes"
 	chaincodeLogger.Infof("NewChaincodeSupport chaincodes path: %s\n", path)
 
 	ccprovider.SetChaincodesPath(path)
@@ -189,7 +190,8 @@ func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout ti
 
 	//default chaincode execute timeout is 30 secs
 	execto := time.Duration(30) * time.Second
-	if eto := viper.GetDuration("chaincode.executetimeout"); eto <= time.Duration(1)*time.Second {
+	//if eto := viper.GetDuration("chaincode.executetimeout"); eto <= time.Duration(1)*time.Second {
+	if eto := cfg.GetConfig().ContractExecutetimeout; eto <= time.Duration(1)*time.Second {
 		chaincodeLogger.Errorf("Invalid execute timeout value %s (should be at least 1s); defaulting to %s", eto, execto)
 	} else {
 		chaincodeLogger.Debugf("Setting execute timeout value to %s", eto)
@@ -609,7 +611,7 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	//sir := container.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, Version: cccid.Version}, Timeout: 0}
 	// The line below is left for debugging. It replaces the line above to keep
 	// the chaincode container around to give you a chance to get data
-	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: ""/*cccid.ChainID*/, Version: cccid.Version}, Timeout: 0, Dontremove: true}
+	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/, Version: cccid.Version}, Timeout: 0, Dontremove: true}
 	vmtype, _ := chaincodeSupport.getVMType(cds)
 
 	_, err := controller.VMCProcess(context, vmtype, sir)

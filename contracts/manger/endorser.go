@@ -24,14 +24,14 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 
-	"github.com/palletone/go-palletone/contracts/shim"
-	"github.com/palletone/go-palletone/contracts/rwset"
 	"github.com/palletone/go-palletone/contracts/core"
+	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-	//ut "github.com/palletone/go-palletone/dag/modules"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	putils "github.com/palletone/go-palletone/core/vmContractPub/protos/utils"
+	"github.com/palletone/go-palletone/dag"
 	unit "github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"time"
 )
 
@@ -51,7 +51,7 @@ type Support interface {
 	IsSysCCAndNotInvokableExternal(name string) bool
 	// GetTxSimulator returns the transaction simulator ,they are made unique
 	// by way of the supplied txid
-	GetTxSimulator(chainid string, txid string) (rwset.TxSimulator, error)
+	GetTxSimulator(idag dag.IDag, chainid string, txid string) (rwset.TxSimulator, error)
 
 	IsSysCC(name string) bool
 
@@ -202,7 +202,7 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 
 // ProcessProposal process the Proposal
 //func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
-func (e *Endorser) ProcessProposal(deployId []byte, ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *unit.ContractInvokePayload, error) {
+func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *unit.ContractInvokePayload, error) {
 	var txsim rwset.TxSimulator
 
 	//addr := util.ExtractRemoteAddress(ctx)
@@ -217,7 +217,7 @@ func (e *Endorser) ProcessProposal(deployId []byte, ctx context.Context, signedP
 	}
 	txid := result.txid
 	if chainID != "" {
-		if txsim, err = e.s.GetTxSimulator(chainID, txid); err != nil {
+		if txsim, err = e.s.GetTxSimulator(idag, chainID, txid); err != nil {
 			return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 		}
 		//defer txsim.Done()

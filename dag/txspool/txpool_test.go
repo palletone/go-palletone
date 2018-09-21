@@ -238,14 +238,13 @@ func TestTransactionAddingTxs(t *testing.T) {
 						t.Error("sorted failed.", i, tx.Priority_lvl)
 					}
 				}
-
 			}
 			all = len(txs)
 			pending_cache = len(pool.pending)
 			queue_cache = len(pool.queue)
 		}
 		log.Println(origin, all, len(pool.all), pending_cache, queue_cache)
-		fmt.Println("defer over.... ", time.Now().Unix()-t0.Unix())
+		fmt.Println("defer over.... spending time：", time.Now().Unix()-t0.Unix())
 	}(pool)
 
 }

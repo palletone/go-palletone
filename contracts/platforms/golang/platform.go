@@ -32,14 +32,14 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-
 	"github.com/palletone/go-palletone/contracts/platforms/util"
 	ccmetadata "github.com/palletone/go-palletone/core/vmContractPub/ccprovider/metadata"
 	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	cutil "github.com/palletone/go-palletone/vm/common"
-	"github.com/spf13/viper"
 	"io/ioutil"
+	"github.com/spf13/viper"
+    cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 // Platform for chaincodes written in Go
@@ -531,8 +531,8 @@ func (goPlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec) 
 
 	var buf []string
 	//glh
-	//buf = append(buf, "FROM "+cutil.GetDockerfileFromConfig("chaincode.golang.runtime"))
-	buf = append(buf, "FROM "+"palletimg")
+	//buf = append(buf, "FROM "+"palletimg")
+	buf = append(buf, "FROM "+ cfg.GetConfig().ContractBuilder)
 	buf = append(buf, "ADD binpackage.tar /usr/local/bin")
 
 	dockerFileContents := strings.Join(buf, "\n")

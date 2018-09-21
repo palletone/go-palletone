@@ -23,12 +23,13 @@ import (
 	"errors"
 	"fmt"
 
-	db "github.com/palletone/go-palletone/contracts/comm"
+	"github.com/palletone/go-palletone/dag"
 )
 
 type RwSetTxSimulator struct {
 	txid                    string
 	rwsetBuilder            *RWSetBuilder
+	state                   dag.IDag
 	writePerformed          bool
 	pvtdataQueriesPerformed bool
 	doneInvoked             bool
@@ -39,10 +40,11 @@ type VersionedValue struct {
 	Version *Version
 }
 
-func newBasedTxSimulator(txid string) (*RwSetTxSimulator, error) {
+func NewBasedTxSimulator(idag dag.IDag, txid string) *RwSetTxSimulator {
 	rwsetBuilder := NewRWSetBuilder()
+
 	logger.Debugf("constructing new tx simulator txid = [%s]", txid)
-	return &RwSetTxSimulator{txid, rwsetBuilder, false, false, false}, nil
+	return &RwSetTxSimulator{txid, rwsetBuilder, idag, false, false, false}
 }
 
 // GetState implements method in interface `ledger.TxSimulator`
@@ -52,13 +54,8 @@ func (s *RwSetTxSimulator) GetState(ns string, key string) ([]byte, error) {
 		return nil, err
 	}
 
-	//get value from DB !!!
-	dag, err := db.GetCcDagHand()
-	if err != nil {
-		return nil, err
-	}
 	//TODO Devin
-	ver, val := dag.GetContractState(ns, key)
+	ver, val := s.state.GetContractState(ns, key)
 	if val == nil {
 		logger.Errorf("get value from db[%s] failed", ns)
 
