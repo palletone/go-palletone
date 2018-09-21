@@ -37,11 +37,6 @@ var (
 )
 
 func (it *IDType16) String() string {
-	//result := string("")
-	//for _, b := range it {
-	//	result += fmt.Sprintf("%x", b)
-	//}
-	//return result
 	return hexutil.Encode(it.Bytes()[:])
 	//var b []byte
 	//length := len(it)

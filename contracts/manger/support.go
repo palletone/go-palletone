@@ -20,17 +20,18 @@
 package manger
 
 import (
-	"time"
-	"golang.org/x/net/context"
 	"github.com/golang/protobuf/proto"
-	"github.com/palletone/go-palletone/contracts/rwset"
-	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/contracts/scc"
+	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
+	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/rwset"
+	"golang.org/x/net/context"
+	"time"
 
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	ut "github.com/palletone/go-palletone/dag/modules"
 	chaincode "github.com/palletone/go-palletone/contracts/core"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	unit "github.com/palletone/go-palletone/dag/modules"
+	ut "github.com/palletone/go-palletone/dag/modules"
 )
 
 // SupportImpl provides an implementation of the endorser.Support interface
@@ -47,8 +48,8 @@ func (s *SupportImpl) IsSysCCAndNotInvokableExternal(name string) bool {
 // GetTxSimulator returns the transaction simulator for the specified ledger
 // a client may obtain more than one such simulator; they are made unique
 // by way of the supplied txid
-func (s *SupportImpl) GetTxSimulator(chainid string, txid string) (rwset.TxSimulator, error) {
-	return rwM.NewTxSimulator(chainid, txid)
+func (s *SupportImpl) GetTxSimulator(idag dag.IDag, chainid string, txid string) (rwset.TxSimulator, error) {
+	return rwM.NewTxSimulator(idag, chainid, txid)
 }
 
 //IsSysCC returns true if the name matches a system chaincode's
@@ -115,20 +116,20 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 
 	for idx, val := range rd {
 		rd := unit.ContractReadSet{
-			Key:   val.Key,
-			Value: val.Version,
+			Key:   val.GetKey(),
+			Value: val.GetVersion(),
 		}
 		invoke.ReadSet = append(invoke.ReadSet, rd)
-		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[0], val.Key, *val.Version)
+		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[0], val.GetKey(), *val.GetVersion())
 	}
 	for idx, val := range wt {
 		rd := unit.PayloadMapStruct{
-			Key:      val.Key,
-			Value:    val.Value,
-			IsDelete: val.IsDelete,
+			Key:      val.GetKey(),
+			Value:    val.GetValue(),
+			IsDelete: val.GetIsDelete(),
 		}
 		invoke.WriteSet = append(invoke.WriteSet, rd)
-		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[0], val.Key, val.Value, val.IsDelete)
+		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[0], val.GetKey(), val.GetValue(), val.GetIsDelete())
 	}
 
 	return invoke, nil
@@ -157,20 +158,20 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid stri
 
 	for idx, val := range rd {
 		rd := unit.ContractReadSet{
-			Key:   val.Key,
-			Value: val.Version,
+			Key:   val.GetKey(),
+			Value: val.GetVersion(),
 		}
 		deploy.ReadSet = append(deploy.ReadSet, rd)
-		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[0], val.Key, *val.Version)
+		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[0], val.GetKey(), *val.GetVersion())
 	}
 	for idx, val := range wt {
 		rd := unit.PayloadMapStruct{
-			Key:      val.Key,
-			Value:    val.Value,
-			IsDelete: val.IsDelete,
+			Key:      val.GetKey(),
+			Value:    val.GetValue(),
+			IsDelete: val.GetIsDelete(),
 		}
 		deploy.WriteSet = append(deploy.WriteSet, rd)
-		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[0], val.Key, val.Value, val.IsDelete)
+		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[0], val.GetKey(), val.GetValue(), val.GetIsDelete())
 	}
 
 	return deploy, nil

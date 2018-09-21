@@ -1,11 +1,12 @@
 package peer
 
 import (
+	"github.com/palletone/go-palletone/dag"
+	unit "github.com/palletone/go-palletone/dag/modules"
 	"golang.org/x/net/context"
 	"time"
-	unit "github.com/palletone/go-palletone/dag/modules"
 )
 
 type EndorserServer interface {
-	ProcessProposal([]byte, context.Context, *SignedProposal, *Proposal, string, *ChaincodeID, time.Duration) (*ProposalResponse, *unit.ContractInvokePayload, error)
+	ProcessProposal(dag.IDag, []byte, context.Context, *SignedProposal, *Proposal, string, *ChaincodeID, time.Duration) (*ProposalResponse, *unit.ContractInvokePayload, error)
 }
