@@ -100,7 +100,7 @@ func TestSaveUnit(t *testing.T) {
 	auth.R = sig[:32]
 	auth.S = sig[32:64]
 	auth.V = sig[64:]
-	auth.Address = addr0.String()
+	auth.Address = addr0
 	header.Authors = auth
 	contractTplPayload := modules.NewContractTplPayload([]byte("contract_template0000"),
 		"TestContractTpl", "./contract", "1.1.1", 1024,

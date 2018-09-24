@@ -148,14 +148,14 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 	}
 
 	unit.UnitHeader.Authors = &modules.Authentifier{
-		Address: signer.String(),
+		Address: signer,
 		R:       r,
 		S:       s,
 		V:       v,
 	}
 	// to set witness list, should be creator himself
 	var authentifier modules.Authentifier
-	authentifier.Address = signer.String()
+	authentifier.Address = signer
 	unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
 
 	return unit, nil
