@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/palletone/go-palletone/contracts/rwset"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/common"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/utils"
 	"github.com/palletone/go-palletone/contracts/core"
@@ -119,9 +119,9 @@ func TestEndorserDeployExecSysCC(t *testing.T) {
 		Name:    "sample_syscc",
 		Version: "ptn001",
 	}
-
+	dag, _ := cdb.GetCcDagHand()
 	sprop, prop, err := signedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
-	rsp, unit, err := es.ProcessProposal(nil,context.Background(), sprop, prop, chainID, cid, 5*time.Second)
+	rsp, unit, err := es.ProcessProposal(dag, nil, context.Background(), sprop, prop, chainID, cid, 5*time.Second)
 	if err != nil {
 		logger.Errorf("ProcessProposal error[%v]", err)
 	}
@@ -157,7 +157,7 @@ func peerInitSysCCTests() (net.Listener, error) {
 	peerAddress := "0.0.0.0:21726"
 	lis, err := net.Listen("tcp", peerAddress)
 	if err != nil {
-		return  nil, err
+		return nil, err
 	}
 
 	ccStartupTimeout := time.Duration(5000) * time.Millisecond
@@ -185,7 +185,7 @@ func peerInitSysCCTests() (net.Listener, error) {
 	//sysccinfo.origSystemCC = scc.MockRegisterSysCCs(sysccs)
 	scc.MockRegisterSysCCs(sysccs)
 	/////^^^ system initialization completed ^^^
-	return  lis, nil
+	return lis, nil
 }
 
 func peerInit() {
@@ -213,19 +213,13 @@ func TestExecSysCC(t *testing.T) {
 	f := "putval"
 	args := util.ToChaincodeArgs(f, "greeting", "hey there")
 
-	dag, err := creatTestDag()
-	if err == nil {
-		Init(dag)
-		t.Error("creatTestDag err")
-	}
-
 	var txid string = "1234567890" //default
 	nonce, err := crypto.GetRandomNonce()
 	if err == nil {
 		txid, err = computeProposalTxID(nonce, []byte("glh"))
 	}
-
-	Invoke(chainID, []byte("sample_syscc"), txid, args, 0)
+	dag, _ := cdb.GetCcDagHand()
+	Invoke(dag, chainID, []byte("sample_syscc"), txid, args, 0)
 }
 
 func multSys(t *testing.T) {
@@ -236,14 +230,14 @@ func multSys(t *testing.T) {
 	args1 := util.ToChaincodeArgs(f, "greeting", "my test1")
 	args2 := util.ToChaincodeArgs(f, "greeting", "my test2")
 	args3 := util.ToChaincodeArgs(f, "greeting", "my test3")
-
+	dag, _ := cdb.GetCcDagHand()
 	go func() {
 		nonce, err := crypto.GetRandomNonce()
 		if err == nil {
 			txid, err = computeProposalTxID(nonce, []byte("glh"))
 		}
 
-		unit, err := Invoke(chainID, []byte("sample_syscc"), txid, args1, 0)
+		unit, err := Invoke(dag, chainID, []byte("sample_syscc"), txid, args1, 0)
 		if err != nil {
 			t.Error(err)
 		} else {
@@ -258,7 +252,7 @@ func multSys(t *testing.T) {
 		if err == nil {
 			txid, err = computeProposalTxID(nonce, []byte("glh"))
 		}
-		unit, err := Invoke(chainID, []byte("sample_syscc"), txid, args2, 0)
+		unit, err := Invoke(dag, chainID, []byte("sample_syscc"), txid, args2, 0)
 		if err != nil {
 			t.Error(err)
 		} else {
@@ -273,7 +267,7 @@ func multSys(t *testing.T) {
 		if err == nil {
 			txid, err = computeProposalTxID(nonce, []byte("glh"))
 		}
-		unit, err := Invoke(chainID, []byte("sample_syscc"), txid, args3, 0)
+		unit, err := Invoke(dag, chainID, []byte("sample_syscc"), txid, args3, 0)
 		if err != nil {
 			t.Error(err)
 		} else {
@@ -295,6 +289,8 @@ func multMoreSys(t *testing.T) {
 	var tmout time.Duration = 5 * time.Second
 	var txid string = "1234567890" //default
 
+	dag, _ := cdb.GetCcDagHand()
+
 	for num := 0; num < invokeCount; num += 1 {
 		nonce, err := crypto.GetRandomNonce()
 		if err == nil {
@@ -309,7 +305,7 @@ func multMoreSys(t *testing.T) {
 		}
 
 		go func(timeout time.Duration, txid string) {
-			unit, err := Invoke(chainID, []byte{0x95, 0x27}, txid, args, timeout)
+			unit, err := Invoke(dag, chainID, []byte{0x95, 0x27}, txid, args, timeout)
 			if err != nil {
 				t.Error(err)
 			} else {
@@ -367,64 +363,6 @@ func TestGetSysCCList(t *testing.T) {
 	}
 }
 
-func TestInstallCC(t *testing.T) {
-	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
-	viper.Set("peer.address", "127.0.0.1:12345")
-	viper.Set("chaincode.executetimeout", 20*time.Second)
-
-	viper.Set("vm.endpoint", "unix:///var/run/docker.sock")
-	viper.Set("chaincode.builder", "palletimg")
-
-	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
-	chainID := util.GetTestChainID()
-
-	var txid string = "1234567890" //default
-	nonce, err := crypto.GetRandomNonce()
-	if err == nil {
-		txid, err = computeProposalTxID(nonce, []byte("glh"))
-	}
-
-	f := "init"
-	args := util.ToChaincodeArgs(f, "a", "100", "b", "200")
-
-	usercc := &ucc.UserChaincode{
-		Enabled:  true,
-		Name:     "example01",
-		Path:     "chaincode/example01",
-		Version:  "ptn001",
-		InitArgs: args,
-		//Chaincode: &samplesyscc.SampleSysCC{},
-	}
-	InitNoSysCCC()
-
-	//deploy
-	fmt.Print("=======================DeployUserCC=============================")
-	err = ucc.DeployUserCC(chainID, usercc, txid, nil, 30*time.Second)
-	if err != nil {
-		t.Errorf("DeployUserCC err:%s", err)
-	}
-	time.Sleep(1 * time.Second)
-
-	//invoke
-	fmt.Print("=======================Invoke=============================")
-	f = "invoke"
-	args = util.ToChaincodeArgs(f, "111")
-	_, err = Invoke(chainID, []byte("example01"), txid, args, 0)
-	if err != nil {
-		t.Errorf("Invoke err:%s", err)
-	}
-	time.Sleep(2 * time.Second)
-
-	//stop
-	usercc.Name = "example01"
-	fmt.Print("=======================StopUserCC=============================")
-	err = ucc.StopUserCC(chainID, usercc, txid, true)
-	if err != nil {
-		t.Errorf("StopUserCC err:%s", err)
-	}
-	time.Sleep(2 * time.Second)
-}
-
 func TestInstallCCApi(t *testing.T) {
 	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes")
 	viper.Set("peer.address", "127.0.0.1:12345")
@@ -454,17 +392,18 @@ func TestInstallCCApi(t *testing.T) {
 		//Chaincode: &samplesyscc.SampleSysCC{},
 	}
 	InitNoSysCCC()
+	dag, _ := cdb.GetCcDagHand()
 
 	//intall
 	fmt.Println("=======================intall=============================")
-	payload, err := Install(chainID, usercc.Name, usercc.Path, usercc.Version)
+	payload, err := Install(dag, chainID, usercc.Name, usercc.Path, usercc.Version)
 	if err != nil {
 		t.Errorf("install chaincode fail [%s]", usercc.Name)
 	}
 
 	//deploy
 	fmt.Println("=======================deploy=============================")
-	deployId, _, err := Deploy(chainID, payload.TemplateId[:], txid, args, 30*time.Second)
+	deployId, _, err := Deploy(dag, chainID, payload.TemplateId[:], txid, args, 30*time.Second)
 	if err != nil {
 		t.Errorf("DeployUserCC err:%s", err)
 	}
@@ -474,7 +413,7 @@ func TestInstallCCApi(t *testing.T) {
 	fmt.Println("=======================invoke=============================")
 	f = "invoke"
 	args = util.ToChaincodeArgs(f, "111")
-	_, err = Invoke(chainID, deployId, txid, args, 0)
+	_, err = Invoke(dag, chainID, deployId, txid, args, 0)
 	if err != nil {
 		t.Errorf("Invoke err:%s", err)
 	}
@@ -490,35 +429,7 @@ func TestInstallCCApi(t *testing.T) {
 	time.Sleep(2 * time.Second)
 }
 
-func invokeUserCC(t *testing.T, txid string) {
-
-	chainID := util.GetTestChainID()
-	f := "invoke"
-	args := util.ToChaincodeArgs(f, "111")
-
-	Invoke(chainID, []byte("example01"), txid, args, 0)
-
-	usercc := &ucc.UserChaincode{
-		Enabled:   true,
-		Name:      "example01",
-		Path:      "chaincode/example01",
-		Version:   "ptn001",
-		InitArgs:  args,
-		Chaincode: &samplesyscc.SampleSysCC{},
-	}
-
-	fmt.Print("=======================#################=============================")
-
-	time.Sleep(5 * time.Second)
-
-	ucc.StopUserCC(chainID, usercc, txid, true)
-}
-
-func TestFileRW(t *testing.T) {
-	ucc.RecoverChainCodeFromDb("", nil)
-}
-
-func creatTestDag() (*dag.Dag, error){
+func creatTestDag() (*dag.Dag, error) {
 	//path := "D:\\test\\levedb"
 	path := "/home/glh/test/dag"
 
@@ -541,7 +452,6 @@ func creatTestDag() (*dag.Dag, error){
 	return dag, nil
 }
 
-
 func TestContractApi(t *testing.T) {
 	viper.Set("peer.fileSystemPath", "/home/glh/tmp/chaincodes") ///home/glh/tmp/chaincodes //"D://tmp/chaincodes"
 	viper.Set("peer.address", "127.0.0.1:12345")
@@ -553,7 +463,6 @@ func TestContractApi(t *testing.T) {
 	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
 	chainID := util.GetTestChainID()
 	var txid string = "1234567890"
-
 
 	nonce, err := crypto.GetRandomNonce()
 	if err == nil {
@@ -572,9 +481,10 @@ func TestContractApi(t *testing.T) {
 		//Chaincode: &samplesyscc.SampleSysCC{},
 	}
 
+	dag, _ := cdb.GetCcDagHand()
 	//intall
 	fmt.Println("=======================intall=============================")
-	payload, err := Install(chainID, usercc.Name, usercc.Path, usercc.Version)
+	payload, err := Install(dag, chainID, usercc.Name, usercc.Path, usercc.Version)
 	if err != nil {
 		t.Errorf("install chaincode fail [%s]", usercc.Name)
 	}
@@ -585,7 +495,7 @@ func TestContractApi(t *testing.T) {
 
 	//deploy
 	fmt.Println("=======================deploy=============================")
-	deployId, _, err := Deploy(chainID, payload.TemplateId[:], txid, args, 30*time.Second)
+	deployId, _, err := Deploy(dag, chainID, payload.TemplateId[:], txid, args, 30*time.Second)
 	if err != nil {
 		t.Errorf("DeployUserCC err:%s", err)
 		return
@@ -596,7 +506,7 @@ func TestContractApi(t *testing.T) {
 	fmt.Println("=======================invoke=============================")
 	f = "invoke"
 	args = util.ToChaincodeArgs(f, "111")
-	_, err = Invoke(chainID, deployId, txid, args, 0)
+	_, err = Invoke(dag, chainID, deployId, txid, args, 0)
 	if err != nil {
 		t.Errorf("Invoke err:%s", err)
 	}
@@ -636,7 +546,7 @@ func creatHeader() (*modules.Header, error) {
 	auth.R = sig[:32]
 	auth.S = sig[32:64]
 	auth.V = sig[64:]
-	auth.Address = addr0.String()
+	auth.Address = addr0
 	header.Authors = auth
 
 	return header, nil
@@ -713,18 +623,13 @@ func saveTpl(payload *modules.ContractTplPayload) error {
 	unit.UnitSize = unit.Size()
 	unit.UnitHash = unit.Hash()
 
-	dag, err :=cdb.GetCcDagHand()
+	dag, err := cdb.GetCcDagHand()
 	log.Println("opopo----111")
 	if _, err := dag.SaveDag(unit, false); err != nil {
-		log.Println("opopo",err)
+		log.Println("opopo", err)
 	}
 	log.Println("opopo----222")
 	return nil
-}
-
-
-func TestDag(t *testing.T) {
-
 }
 
 func init() {
@@ -734,7 +639,3 @@ func init() {
 		Init(dag)
 	}
 }
-
-
-
-
