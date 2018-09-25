@@ -171,7 +171,9 @@ type Unit struct {
 
 func (unit *Unit) UnitAuthor() *common.Address {
 	// todo
-
+	if unit != nil {
+		return &unit.UnitHeader.Authors.Address
+	}
 	return nil
 }
 
@@ -448,14 +450,14 @@ type TextPayload struct {
 type Author struct {
 	Address        common.Address `json:"address"`
 	Pubkey         []byte/*common.Hash*/ `json:"pubkey"`
-	TxAuthentifier Authentifier `json:"authentifiers"`
+	TxAuthentifier *Authentifier `json:"authentifiers"`
 }
 
 type Authentifier struct {
-	Address string `json:"address"`
-	R       []byte `json:"r"`
-	S       []byte `json:"s"`
-	V       []byte `json:"v"`
+	Address common.Address `json:"address"`
+	R       []byte         `json:"r"`
+	S       []byte         `json:"s"`
+	V       []byte         `json:"v"`
 }
 
 func NewUnit(header *Header, txs Transactions) *Unit {

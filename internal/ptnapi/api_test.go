@@ -141,7 +141,9 @@ func TestSignTransaction(t *testing.T) {
 						RedeemScript: "",
 					},
 				},
-				PrivKeys: &[]string{"2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644"},
+				//PrivKeys: &[]string{"2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644"},
+				PrivKeys: &[]string{"Kxh2Ugikw3kkUVJf4GpAg7euE8tgNJG4e6DnBZVf1XdkXfe7kg26"},
+				
 				Flags:    ptnjson.String("ALL"),
 	}*/
 	/*newsign := ptnjson.SignRawTransactionCmd{

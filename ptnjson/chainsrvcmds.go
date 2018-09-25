@@ -6,10 +6,10 @@ import (
 	"errors"
 	"math"
 	"hash"
-	"bytes"
+	//"bytes"
 	"crypto/sha256"
 	"github.com/palletone/go-palletone/common"
-	
+        "crypto/ecdsa"
 	"github.com/btcsuite/btcd/btcec"
 	"golang.org/x/crypto/ripemd160"
 	"github.com/btcsuite/btcutil/base58"
@@ -414,7 +414,7 @@ const compressMagic byte = 0x01
 // PrivKeyBytesLen defines the length in bytes of a serialized private key.
 const PrivKeyBytesLen = 32
 var ErrMalformedPrivateKey = errors.New("malformed private key")
-func DecodeWIF(wif string) (*WIF, error) {
+/*func DecodeWIF(wif string) (*WIF, error) {
 	decoded := base58.Decode(wif)
 	decodedLen := len(decoded)
 	var compress bool
@@ -451,11 +451,11 @@ func DecodeWIF(wif string) (*WIF, error) {
 	privKeyBytes := decoded[1 : 1+PrivKeyBytesLen]
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyBytes)
 	return &WIF{privKey, compress, netID}, nil
-}
+}*/
 
 type WIF struct {
 	// PrivKey is the private key being imported or exported.
-	PrivKey *btcec.PrivateKey
+	PrivKey *ecdsa.PrivateKey
 
 	// CompressPubKey specifies whether the address controlled by the
 	// imported or exported private key was created by hashing a
@@ -531,4 +531,7 @@ type GetTxIdResult struct {
 	Apptype     string              `json:"apptype"`
 	Content     []byte            `json:"content"`
 	Coinbase    bool               `json:"coinbase"`
+}
+func NewWIF(privKey *ecdsa.PrivateKey, netid byte, compress bool) (*WIF, error) {
+	return &WIF{privKey, compress, netid}, nil
 }
