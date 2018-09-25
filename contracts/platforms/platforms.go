@@ -33,10 +33,10 @@ import (
 	"github.com/palletone/go-palletone/contracts/platforms/golang"
 	"github.com/palletone/go-palletone/contracts/platforms/java"
 	"github.com/palletone/go-palletone/contracts/platforms/node"
-	"github.com/palletone/go-palletone/core/vmContractPub/config"
 	cutil "github.com/palletone/go-palletone/vm/common"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/spf13/viper"
+	"github.com/palletone/go-palletone1/core/vmContractPub/config"
 )
 
 // Interface for validating the specification and and writing the package for
@@ -48,7 +48,6 @@ type Platform interface {
 	GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error)
 	GenerateDockerfile(spec *pb.ChaincodeDeploymentSpec) (string, error)
 	GenerateDockerBuild(spec *pb.ChaincodeDeploymentSpec, tw *tar.Writer) error
-
 	GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error)
 }
 
