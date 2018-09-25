@@ -27,8 +27,9 @@ func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
 		dag:  idag,
 	}
 	contractcfg.SetConfig(&contractCfg)
-
-	go cc.Init(idag)
+	if err := cc.Init(idag); err != nil {
+		return nil, err
+	}
 	log.Debug("contract initialize ok")
 	return contract, nil
 }

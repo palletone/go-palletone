@@ -18,7 +18,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
 	unit "github.com/palletone/go-palletone/dag/modules"
-	errors "github.com/pkg/errors"
+	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 )
 
