@@ -223,6 +223,7 @@ const (
 	APP_CONTRACT_INVOKE = 0x04
 	APP_CONFIG          = 0x05
 	APP_TEXT            = 0x06
+	APP_VOTE            = 0x06
 )
 
 // key: message.UnitHash(message+timestamp)
@@ -407,6 +408,16 @@ type ContractReadSet struct {
 	Key   string
 	Value *StateVersion
 }
+// 0.default vote result is the index of the option from list
+// 1.If the option is specified by the voter, set Option null
+// 2.Expected vote result:[]byte
+type VoteInitiatePayload struct {
+	Title       string        //vote title
+	Option      []string      //vote option list.
+	BallotChain uint64        //vote chain id
+	BallotType  IDType16      //vote asset id
+	ExpiredTime time.Duration //duration of voting
+}
 
 // Contract instance message
 // App: contract_deploy
@@ -448,9 +459,9 @@ type TextPayload struct {
 /************************** End of Payload Details ******************************************/
 
 type Author struct {
-	Address        common.Address `json:"address"`
-	Pubkey         []byte/*common.Hash*/ `json:"pubkey"`
-	TxAuthentifier *Authentifier `json:"authentifiers"`
+	Address        common.Address         `json:"address"`
+	Pubkey         []byte /*common.Hash*/ `json:"pubkey"`
+	TxAuthentifier *Authentifier          `json:"authentifiers"`
 }
 
 type Authentifier struct {
