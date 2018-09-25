@@ -170,7 +170,6 @@ type Unit struct {
 }
 
 func (unit *Unit) UnitAuthor() *common.Address {
-	// todo
 	if unit != nil {
 		return &unit.UnitHeader.Authors.Address
 	}
