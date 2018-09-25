@@ -68,18 +68,16 @@ func listGet(templateId []byte) (*TempCC, error) {
 
 // contract manger module init
 func Init(dag dag.IDag) error {
-	peerContractMockConfigInit()
-	err := db.SetCcDagHand(dag)
-	if err != nil {
+	//peerContractMockConfigInit()
+
+	if err := db.SetCcDagHand(dag); err != nil {
 		return err
 	}
-	err = peerServerInit()
-	if err != nil {
+	if err := peerServerInit(); err != nil {
 		logger.Errorf("peerServerInit error:%s", err)
 		return err
 	}
-	err = systemContractInit()
-	if err != nil {
+	if err := systemContractInit(); err != nil {
 		logger.Errorf("systemContractInit error:%s", err)
 		return err
 	}
@@ -89,8 +87,8 @@ func Init(dag dag.IDag) error {
 }
 
 func InitNoSysCCC() error {
-	err := peerServerInit()
-	if err != nil {
+
+	if err := peerServerInit(); err != nil {
 		logger.Errorf("peerServerInit error:%s", err)
 		return err
 	}
@@ -103,13 +101,12 @@ func InitNoSysCCC() error {
 }
 
 func Deinit() error {
-	err := peerServerDeInit()
-	if err != nil {
+	if err := peerServerDeInit(); err != nil {
 		logger.Errorf("peerServerDeInit error:%s", err)
 		return err
 	}
-	err = systemContractDeInit()
-	if err != nil {
+
+	if err := systemContractDeInit(); err != nil {
 		logger.Errorf("systemContractDeInit error:%s", err)
 		return err
 	}
@@ -418,21 +415,6 @@ func Stop(chainID string, deployId []byte, txid string, deleteImage bool) error 
 	if txid == "" {
 		return errors.New("input param txid is nil")
 	}
-
-	//clist, err := getChaincodeList(chainID)
-	//if err != nil {
-	//	logger.Errorf("not find chainlist for chainId[%s]", chainID)
-	//	return errors.New("getChaincodeList failed")
-	//}
-	//
-	//for k, v := range clist.cclist {
-	//	logger.Infof("chaincode[%s]:%v", k, *v)
-	//	if k == chainID {
-	//		if bytes.Equal(v.Id, deployId) == true {
-	//			return StopByName(setChainId, txid, v.Name, v.Path, v.Version, deleteImage)
-	//		}
-	//	}
-	//}
 
 	cc, err := cclist.GetChaincode(chainID, deployId)
 	if err != nil {
