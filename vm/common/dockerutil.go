@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -26,7 +27,6 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
-	"github.com/palletone/go-palletone1/core/vmContractPub/config"
 )
 
 //NewDockerClient creates a docker client
@@ -37,9 +37,9 @@ func NewDockerClient() (client *docker.Client, err error) {
 
 	tlsenabled := viper.GetBool("vm.docker.tls.enabled")
 	if tlsenabled {
-		cert := config.GetPath("vm.docker.tls.cert.file")
-		key := config.GetPath("vm.docker.tls.key.file")
-		ca := config.GetPath("vm.docker.tls.ca.file")
+		cert := "" // config.GetPath("vm.docker.tls.cert.file")
+		key := ""  //config.GetPath("vm.docker.tls.key.file")
+		ca := ""   //config.GetPath("vm.docker.tls.ca.file")
 		client, err = docker.NewTLSClient(endpoint, cert, key, ca)
 	} else {
 		client, err = docker.NewClient(endpoint)

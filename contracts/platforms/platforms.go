@@ -36,7 +36,6 @@ import (
 	cutil "github.com/palletone/go-palletone/vm/common"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/spf13/viper"
-	"github.com/palletone/go-palletone1/core/vmContractPub/config"
 )
 
 // Interface for validating the specification and and writing the package for
@@ -55,7 +54,7 @@ var logger = flogging.MustGetLogger("chaincode-platform")
 
 // Added for unit testing purposes
 var _Find = Find
-var _GetPath = config.GetPath
+//var _GetPath = config.GetPath
 var _VGetBool = viper.GetBool
 var _OSStat = os.Stat
 var _IOUtilReadFile = ioutil.ReadFile
