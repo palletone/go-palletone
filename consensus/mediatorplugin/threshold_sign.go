@@ -267,7 +267,7 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 	newUnitBuf := mp.toTBLSSignBuf[localMed]
 
 	signTBLS := func(newUnit *modules.Unit) (sigShare []byte, success bool) {
-		if !dag.ValidateUnit(newUnit) {
+		if !dag.ValidateUnit(newUnit, false) {
 			return
 		}
 

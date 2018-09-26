@@ -71,7 +71,8 @@ type MediatorPlugin struct {
 	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	toTBLSSignBuf map[common.Address]chan *modules.Unit
+	toTBLSSignBuf    map[common.Address]chan *modules.Unit
+	toTBLSRecoverBuf map[common.Address]map[common.Hash][][]byte
 }
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {

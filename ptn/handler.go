@@ -287,6 +287,12 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	go pm.newProducedUnitBroadcastLoop()
 
 	// append by Albert·Gou
+	// send signature
+	//pm.newProducedUnitCh = make(chan mp.NewProducedUnitEvent)
+	//pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
+	//go pm.newProducedUnitBroadcastLoop()
+
+	// append by Albert·Gou
 	// send  VSS deal
 	pm.vssDealCh = make(chan mp.VSSDealEvent)
 	pm.vssDealSub = pm.producer.SubscribeVSSDealEvent(pm.vssDealCh)
@@ -300,7 +306,6 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 
 	//TODO xiaozhi
 	go pm.mediatorConnect()
-
 }
 
 // @author Albert·Gou

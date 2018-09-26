@@ -173,6 +173,17 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 	return nil
 }
 
+// @author Albert·Gou
+func (d *Dag) ValidateUnit(unit *modules.Unit, isGenesis bool) bool {
+	// todo
+	unitState := d.validate.ValidateUnit(unit, isGenesis)
+	if unitState != modules.UNIT_STATE_VALIDATED {
+		return false
+	}
+
+	return true
+}
+
 func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
 	// step1. check exists
 	if d.Memdag.Exists(unit.UnitHash) || d.GetUnit(unit.UnitHash) != nil {
