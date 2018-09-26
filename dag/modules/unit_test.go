@@ -79,8 +79,9 @@ func TestCopyHeader(t *testing.T) {
 	u2.SetString("111111111111111111111111111111111")
 	addr := common.Address{}
 	addr.SetString("0000000011111111")
+
 	auth := Authentifier{
-		Address: "signtest",
+		Address: addr,
 		R:       []byte("12345678901234567890"),
 		S:       []byte("09876543210987654321"),
 		V:       []byte("1"),

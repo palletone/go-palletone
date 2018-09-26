@@ -148,7 +148,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	ptn.contract, err = contracts.Initialize(&config.Contract)
+	ptn.contract, err = contracts.Initialize(ptn.dag, &config.Contract)
 	if err != nil {
 		log.Error("Contract Initialize err:", err)
 		return nil, err
@@ -267,8 +267,6 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 
 	// append by Albert·Gou
 	s.mediatorPlugin.Start(srvr)
-
-	s.contract.Start(s.dag)
 
 	return nil
 }

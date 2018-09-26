@@ -211,7 +211,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	detail["Num"] = strconv.FormatUint(num, 10)
 	time := time.Unix(unit.UnitHeader.Creationdate, 0)
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
-	detail["Mediator"] = unit.UnitHeader.Authors.Address
+	detail["Mediator"] = unit.UnitAuthor().Str()
 	detail["Hash"] = unit.UnitHash.Hex()
 
 	// 3. 异步向区块链网络广播验证单元

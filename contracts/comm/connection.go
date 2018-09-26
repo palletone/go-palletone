@@ -35,7 +35,6 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-	"github.com/palletone/go-palletone/core/vmContractPub/config"
 )
 
 const defaultTimeout = time.Second * 3
@@ -247,7 +246,7 @@ func InitTLSForShim(key, certStr string) credentials.TransportCredentials {
 	if err != nil {
 		commLogger.Panicf("failed loading certificate: %v", err)
 	}
-	b, err := ioutil.ReadFile(config.GetPath("peer.tls.rootcert.file"))
+	b, err := ioutil.ReadFile(""/*config.GetPath("peer.tls.rootcert.file")*/)
 	if err != nil {
 		commLogger.Panicf("failed loading root ca cert: %v", err)
 	}

@@ -152,25 +152,6 @@ type TxPoolTransaction struct {
 	Extra        []byte
 }
 
-//// ChainId returns which chain id this transaction was signed for (if at all)
-//func (tx Transaction) ChainId() *big.Int {
-//	return deriveChainId(tx.data.V)
-//}
-//
-//// Protected returns whether the transaction is protected from replay protection.
-//func (tx Transaction) Protected() bool {
-//	return isProtectedV(tx.data.V)
-//}
-//
-//func isProtectedV(V *big.Int) bool {
-//	if V.BitLen() <= 8 {
-//		v := V.Uint64()
-//		return v != 27 && v != 28
-//	}
-//	// anything not 27 or 28 are considered unprotected
-//	return true
-//}
-//
 //// EncodeRLP implements rlp.Encoder
 //func (tx *Transaction) EncodeRLP(w io.Writer) error {
 //	return rlp.Encode(w, &tx.data)
@@ -214,9 +195,6 @@ type TxPoolTransaction struct {
 //	*tx = Transaction{data: dec}
 //	return nil
 //}
-//
-//func (tx Transaction) Data() []byte { return common.CopyBytes(tx.data.Payload) }
-//
 
 func (tx *TxPoolTransaction) GetPriorityLvl() float64 {
 	// priority_lvl=  fee/size*(1+(time.Now-CreationDate)/24)
@@ -230,7 +208,7 @@ func (tx *TxPoolTransaction) GetPriorityLvl() float64 {
 		if tx.CreationDate.Unix() <= 0 {
 			tx.CreationDate = time.Now()
 		}
-		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/24)), 64)
+		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
 	}
 	tx.Priority_lvl = priority_lvl
 	return priority_lvl

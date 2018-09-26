@@ -157,6 +157,7 @@ func NewMemDag(db storage.DagDb, unitRep dagCommon.IUnitRepository) *MemDag {
 		return nil
 	}
 	lastIrreUnit := db.GetLastIrreversibleUnit(genesisUnit.UnitHeader.Number.AssetID)
+	//fmt.Println("lastIrreUnit=", lastIrreUnit)
 	if lastIrreUnit != nil {
 		memdag.lastValidatedUnit[genesisUnit.UnitHeader.Number.AssetID.String()] = lastIrreUnit.UnitHash
 	}

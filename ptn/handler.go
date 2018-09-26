@@ -322,7 +322,19 @@ func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
 	peers := pm.GetTransitionPeers() //pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
-			go pm.producer.ToProcessResponse(resp)
+			//size, reader, err := rlp.EncodeToReader(resp)
+			//if err != nil {
+			//	log.Error(err.Error())
+			//}
+			//
+			//var r mp.VSSResponseEvent
+			//s := rlp.NewStream(reader, uint64(size))
+			//if err := s.Decode(&r); err != nil {
+			//	log.Error(err.Error())
+			//}
+			//pm.producer.ToProcessResponse(&r)
+
+			pm.producer.ToProcessResponse(resp)
 			continue
 		}
 
@@ -366,7 +378,19 @@ func (self *ProtocolManager) vssResponseBroadcastLoop() {
 func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDealEvent) {
 	peer, self := pm.getTransitionPeer(node)
 	if self {
-		go pm.producer.ToProcessDeal(deal)
+		//size, reader, err := rlp.EncodeToReader(deal)
+		//if err != nil {
+		//	log.Error(err.Error())
+		//}
+		//
+		//var d mp.VSSDealEvent
+		//s := rlp.NewStream(reader, uint64(size))
+		//if err := s.Decode(&d); err != nil {
+		//	log.Error(err.Error())
+		//}
+		//pm.producer.ToProcessDeal(&d)
+
+		pm.producer.ToProcessDeal(deal)
 		return
 	}
 
@@ -413,8 +437,8 @@ type producer interface {
 	// SubscribeNewProducedUnitEvent should return an event subscription of
 	// NewProducedUnitEvent and send events to the given channel.
 	SubscribeNewProducedUnitEvent(chan<- mp.NewProducedUnitEvent) event.Subscription
-	// UnitBLSSign is to BLS sign the unit
-	ToUnitTBLSSign(peer string, unit *modules.Unit) error
+	// UnitBLSSign is to TBLS sign the unit
+	ToUnitTBLSSign(unit *modules.Unit) error
 
 	SubscribeVSSDealEvent(chan<- mp.VSSDealEvent) event.Subscription
 	ToProcessDeal(deal *mp.VSSDealEvent) error
@@ -423,8 +447,7 @@ type producer interface {
 	ToProcessResponse(resp *mp.VSSResponseEvent) error
 
 	LocalHaveActiveMediator() bool
-
-	BroadcastVSSDeals()
+	StartVSSProtocol()
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -548,8 +571,7 @@ func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
 
 		//if temporary mediators should to notice consensus and p.transitionCh <- transitionCancel
 		pm.transCycleConnCh <- transitionCancel
-		pm.producer.BroadcastVSSDeals()
-
+		//go pm.producer.StartVSSProtocol()
 	}
 	for {
 
@@ -1001,7 +1023,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			log.Info("===NewProducedUnitMsg===", "err:", err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		pm.producer.ToUnitTBLSSign(p.id, &unit)
+		pm.producer.ToUnitTBLSSign(&unit)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
@@ -1164,7 +1186,7 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
-			go pm.producer.ToUnitTBLSSign("", unit)
+			pm.producer.ToUnitTBLSSign(unit)
 			continue
 		}
 

@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -28,10 +29,11 @@ import (
 	"os"
 	"path/filepath"
 
-	docker "github.com/fsouza/go-dockerclient"
+	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	cutil "github.com/palletone/go-palletone/vm/common"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 var logger = flogging.MustGetLogger("util")
@@ -151,7 +153,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 	}
 	if opts.Image == "" {
 		//通用的本地编译环境
-		opts.Image = cutil.GetDockerfileFromConfig("chaincode.builder")
+		opts.Image = cfg.GetConfig().ContractBuilder //cutil.GetDockerfileFromConfig("chaincode.builder")
 		if opts.Image == "" {
 			return fmt.Errorf("No image provided and \"chaincode.builder\" default does not exist")
 		}

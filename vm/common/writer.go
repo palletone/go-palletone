@@ -31,7 +31,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-
 )
 
 var vmLogger = flogging.MustGetLogger("container")

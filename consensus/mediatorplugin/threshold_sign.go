@@ -36,6 +36,24 @@ func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
 	return sc, suite.Point().Mul(sc, nil)
 }
 
+func (mp *MediatorPlugin) StartVSSProtocol() {
+	// todo 广播vss deal， 开启定时器， 并开启循环接收本地mediator完成vss协议的消息
+	log.Info("Start completing the VSS protocol.")
+
+	go mp.BroadcastVSSDeals()
+
+	//timeout := time.NewTimer(3 * time.Second)
+	//defer timeout.Stop()
+	//select {
+	//case <-mp.quit:
+	//	return
+	//case <-timeout.C:
+	//	for med, dkg := range mp.dkgs {
+	//		log.Debug(fmt.Sprintf("%v 's DKG certifing is %v", med.Str(), dkg.Certified()))
+	//	}
+	//}
+}
+
 func (mp *MediatorPlugin) BroadcastVSSDeals() {
 	for localMed, dkg := range mp.dkgs {
 		deals, err := dkg.Deals()
@@ -52,7 +70,7 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 			go mp.vssDealFeed.Send(event)
 		}
 
-		go mp.processResponseBuf(&dkgVerifier{localMed, localMed})
+		go mp.processResponseLoop(localMed, localMed)
 	}
 }
 
@@ -64,19 +82,9 @@ func (mp *MediatorPlugin) ToProcessDeal(deal *VSSDealEvent) error {
 	select {
 	case <-mp.quit:
 		return errTerminated
-	case mp.toProcessDealCh <- deal:
+	default:
+		go mp.processVSSDeal(deal)
 		return nil
-	}
-}
-
-func (mp *MediatorPlugin) processDealLoop() {
-	for {
-		select {
-		case <-mp.quit:
-			return
-		case deal := <-mp.toProcessDealCh:
-			go mp.processVSSDeal(deal)
-		}
 	}
 }
 
@@ -113,7 +121,7 @@ func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
 	}
 
 	vrfrMed := dag.GetActiveMediatorAddr(int(deal.Index))
-	go mp.processResponseBuf(&dkgVerifier{localMed, vrfrMed})
+	go mp.processResponseLoop(localMed, vrfrMed)
 
 	if resp.Response.Status != vss.StatusApproval {
 		log.Error(fmt.Sprintf("DKG: own deal gave a complaint: %v", localMed.String()))
@@ -130,37 +138,15 @@ func (mp *MediatorPlugin) ToProcessResponse(resp *VSSResponseEvent) error {
 	select {
 	case <-mp.quit:
 		return errTerminated
-	case mp.toProcessResponseCh <- resp:
+	default:
+		go mp.addToResponseBuf(resp)
 		return nil
 	}
 }
 
-func (mp *MediatorPlugin) processResponseLoop() {
-	for {
-		select {
-		case <-mp.quit:
-			return
-		case resp := <-mp.toProcessResponseCh:
-			go mp.processVSSResponse(resp)
-		}
-	}
-}
-
-func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
-	aSize := mp.getDag().GetActiveMediatorCount()
-	mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
-
-	for i := 0; i < aSize; i++ {
-		vrfrMed := mp.getDag().GetActiveMediatorAddr(i)
-		mp.respBuf[localMed][vrfrMed] = make(chan *dkg.Response, aSize-1)
-	}
-}
-
-func (mp *MediatorPlugin) processResponseBuf(dvp *dkgVerifier) {
-	localMed := dvp.localMed
-	vrfrMed := dvp.vrfrMed
-	dkg := mp.getLocalActiveMediatorDKG(localMed)
-	if dkg == nil {
+func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) {
+	dkgr := mp.getLocalActiveMediatorDKG(localMed)
+	if dkgr == nil {
 		return
 	}
 
@@ -171,32 +157,57 @@ func (mp *MediatorPlugin) processResponseBuf(dvp *dkgVerifier) {
 		respCount++
 	}
 
-	for resp := range mp.respBuf[localMed][vrfrMed] {
-		jstf, err := dkg.ProcessResponse(resp)
+	respCh := mp.respBuf[localMed][vrfrMed]
+
+	processResp := func(resp *dkg.Response) bool {
+		jstf, err := dkgr.ProcessResponse(resp)
 		if err != nil {
 			log.Error(err.Error())
-			continue
+			return false
 		}
 
 		if jstf != nil {
 			log.Error(fmt.Sprintf("DKG: wrong Process Response: %v", localMed.String()))
-			continue
+			return false
 		}
 
-		respCount++
-		if respCount == aSize-1 {
-			if dkg.Certified() {
-				log.Debug(fmt.Sprintf("%v 's DKG verification passed!", localMed.Str()))
+		return true
+	}
 
-				// todo 进行分片签名
+	isFinishedAndCertified := func() (finished, certified bool) {
+		respCount++
+
+		if respCount == aSize-1 {
+			finished = true
+
+			if dkgr.Certified() {
+				log.Info(fmt.Sprintf("%v's DKG verification passed!", localMed.Str()))
+				certified = true
+			}
+		}
+
+		return
+	}
+
+	for {
+		select {
+		case <-mp.quit:
+			return
+		case resp := <-respCh:
+			processResp(resp)
+			finished, certified := isFinishedAndCertified()
+			if certified {
+				// todo 发送验证成功消息, 开启unit分片签名
 
 			}
-			break
+			if finished {
+				return
+			}
 		}
 	}
 }
 
-func (mp *MediatorPlugin) processVSSResponse(respEvent *VSSResponseEvent) {
+func (mp *MediatorPlugin) addToResponseBuf(respEvent *VSSResponseEvent) {
 	resp := respEvent.Resp
 	lams := mp.GetLocalActiveMediators()
 	for _, localMed := range lams {
@@ -209,11 +220,6 @@ func (mp *MediatorPlugin) processVSSResponse(respEvent *VSSResponseEvent) {
 			continue
 		}
 
-		dkg := mp.getLocalActiveMediatorDKG(localMed)
-		if dkg == nil {
-			continue
-		}
-
 		vrfrMed := dag.GetActiveMediatorAddr(int(resp.Index))
 		mp.respBuf[localMed][vrfrMed] <- resp
 	}
@@ -223,34 +229,25 @@ func (mp *MediatorPlugin) SubscribeVSSResponseEvent(ch chan<- VSSResponseEvent) 
 	return mp.vssResponseScope.Track(mp.vssResponseFeed.Subscribe(ch))
 }
 
-func (mp *MediatorPlugin) ToUnitTBLSSign(peer string, unit *modules.Unit) error {
-	op := &toBLSSigned{
-		origin: peer,
-		unit:   unit,
-	}
-
+func (mp *MediatorPlugin) ToUnitTBLSSign(unit *modules.Unit) error {
 	select {
 	case <-mp.quit:
 		return errTerminated
-	case mp.toBLSSigned <- op:
+	default:
+		go mp.addToTBLSSignBuf(unit)
 		return nil
 	}
 }
 
-func (mp *MediatorPlugin) unitBLSSignLoop() {
-	for {
-		select {
-		// Mediator Plugin terminating, abort operation
-		case <-mp.quit:
-			return
-		case op := <-mp.toBLSSigned:
-			//			PushUnit(mp.ptn.Dag(), op.unit)
-			go mp.unitBLSSign(op)
-		}
+func (mp *MediatorPlugin) addToTBLSSignBuf(unit *modules.Unit) {
+	//localMed := *unit.UnitAuthor()
+	//
+	//if !mp.IsLocalActiveMediator(localMed) {
+	//	return
+	//}
+
+	lams := mp.GetLocalActiveMediators()
+	for _, localMed := range lams {
+		mp.toTBLSSignBuf[localMed] <- unit
 	}
-}
-
-func (mp *MediatorPlugin) unitBLSSign(toBLSSigned *toBLSSigned) {
-	//todo
-
 }

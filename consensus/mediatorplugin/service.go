@@ -45,23 +45,6 @@ type PalletOne interface {
 	TxPool() *txspool.TxPool
 }
 
-// toBLSed represents a BLS sign operation.
-type toBLSSigned struct {
-	origin string
-	unit   *modules.Unit
-}
-
-// toTBLSSigned, TBLS signed auxiliary structure
-type toTBLSSigned struct {
-	unit      *modules.Unit
-	sigShares [][]byte
-}
-
-type dkgVerifier struct {
-	localMed common.Address
-	vrfrMed  common.Address
-}
-
 type MediatorPlugin struct {
 	ptn  PalletOne     // Full PalletOne service to retrieve other function
 	quit chan struct{} // Channel used for graceful exit
@@ -74,7 +57,6 @@ type MediatorPlugin struct {
 	// 新生产unit的事件订阅和数据发送和接收
 	newProducedUnitFeed  event.Feed              // 订阅的时候自动初始化一次
 	newProducedUnitScope event.SubscriptionScope // 零值已准备就绪待用
-	toBLSSigned          chan *toBLSSigned       // 接收新生产的unit
 
 	// dkg 生成 dks 相关
 	suite   vss.Suite
@@ -82,17 +64,15 @@ type MediatorPlugin struct {
 	respBuf map[common.Address]map[common.Address]chan *dkg.Response
 
 	// 广播和处理 vss 协议 deal
-	vssDealFeed     event.Feed
-	vssDealScope    event.SubscriptionScope
-	toProcessDealCh chan *VSSDealEvent
+	vssDealFeed  event.Feed
+	vssDealScope event.SubscriptionScope
 
 	// 广播和处理 vss 协议 response
-	vssResponseFeed     event.Feed
-	vssResponseScope    event.SubscriptionScope
-	toProcessResponseCh chan *VSSResponseEvent
+	vssResponseFeed  event.Feed
+	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	pendingTBLSSign map[common.Hash]*toTBLSSigned // 等待TBLS阈值签名的unit
+	toTBLSSignBuf map[common.Address]chan *modules.Unit
 }
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {
@@ -122,14 +102,14 @@ func (mp *MediatorPlugin) LocalHaveActiveMediator() bool {
 	return len(lams) != 0
 }
 
-func (mp *MediatorPlugin) IsLocalMediator(add common.Address) bool {
+func (mp *MediatorPlugin) isLocalMediator(add common.Address) bool {
 	_, ok := mp.mediators[add]
 
 	return ok
 }
 
 func (mp *MediatorPlugin) IsLocalActiveMediator(add common.Address) bool {
-	if mp.IsLocalMediator(add) {
+	if mp.isLocalMediator(add) {
 		return mp.getDag().IsActiveMediator(add)
 	}
 
@@ -157,13 +137,14 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 }
 
 func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
+	log.Info("instantiate the DistKeyGenerator (DKG) struct.")
+
 	lams := mp.GetLocalActiveMediators()
 	initPubs := mp.getDag().GetActiveMediatorInitPubs()
 	curThreshold := mp.getDag().GetCurThreshold()
 
-	ll := len(lams)
-	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, ll)
-	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, ll)
+	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator)
+	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response)
 
 	for _, localMed := range lams {
 		initSec := mp.mediators[localMed].InitPartSec
@@ -179,19 +160,18 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 		mp.initRespBuf(localMed)
 	}
 
-	// todo 后面换成事件通知响应在调用, 并开启定时器
-	go mp.BroadcastVSSDeals()
+	// todo 和其他mediator建立连接后调用
+	go mp.StartVSSProtocol()
+}
 
-	//timeout := time.NewTimer(3 * time.Second)
-	//defer timeout.Stop()
-	//select {
-	//case <-mp.quit:
-	//	return
-	//case <-timeout.C:
-	//	for med, dkg := range mp.dkgs {
-	//		log.Debug(fmt.Sprintf("%v 's DKG certifing is %v", med.Str(), dkg.Certified()))
-	//	}
-	//}
+func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
+	aSize := mp.getDag().GetActiveMediatorCount()
+	mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
+
+	for i := 0; i < aSize; i++ {
+		vrfrMed := mp.getDag().GetActiveMediatorAddr(i)
+		mp.respBuf[localMed][vrfrMed] = make(chan *dkg.Response, aSize-1)
+	}
 }
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
@@ -202,15 +182,6 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 
 	// 2. 给当前节点控制的活跃mediator，初始化对应的DKG. (换届后重新生成)
 	go mp.NewActiveMediatorsDKG()
-
-	// 3. 处理 VSS deal 循环
-	go mp.processDealLoop()
-
-	// 4. 处理 VSS response 循环
-	go mp.processResponseLoop()
-
-	// 5. BLS签名循环
-	go mp.unitBLSSignLoop()
 
 	log.Debug("mediator plugin startup end")
 
@@ -268,18 +239,23 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 		mediators:         msm,
 		quit:              make(chan struct{}),
 
-		toBLSSigned:     make(chan *toBLSSigned),
-		pendingTBLSSign: make(map[common.Hash]*toTBLSSigned),
-
 		suite: bn256.NewSuiteG2(),
-
-		toProcessDealCh:     make(chan *VSSDealEvent),
-		toProcessResponseCh: make(chan *VSSResponseEvent),
 	}
+	mp.initTBLSSignBuf()
 
 	log.Debug("mediator plugin initialize end")
 
 	return &mp, nil
+}
+
+func (mp *MediatorPlugin) initTBLSSignBuf() {
+	mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit)
+	curThrshd := mp.getDag().GetCurThreshold()
+
+	lams := mp.GetLocalActiveMediators()
+	for _, localMed := range lams {
+		mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
+	}
 }
 
 func (mp *MediatorPlugin) getDag() dag.IDag {
