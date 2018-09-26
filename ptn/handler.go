@@ -100,6 +100,10 @@ type ProtocolManager struct {
 	newProducedUnitSub event.Subscription
 
 	// append by Albert·Gou
+	sigShareCh  chan mp.SigShareEvent
+	sigShareSub event.Subscription
+
+	// append by Albert·Gou
 	vssDealCh  chan mp.VSSDealEvent
 	vssDealSub event.Subscription
 
@@ -287,10 +291,10 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	go pm.newProducedUnitBroadcastLoop()
 
 	// append by Albert·Gou
-	// send signature
-	//pm.newProducedUnitCh = make(chan mp.NewProducedUnitEvent)
-	//pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
-	//go pm.newProducedUnitBroadcastLoop()
+	// send signature share
+	pm.sigShareCh = make(chan mp.SigShareEvent)
+	pm.sigShareSub = pm.producer.SubscribeSigShareEvent(pm.sigShareCh)
+	go pm.sigShareTransmitLoop()
 
 	// append by Albert·Gou
 	// send  VSS deal
@@ -441,11 +445,14 @@ func (self *ProtocolManager) vssDealTransmitLoop() {
 type producer interface {
 	// SubscribeNewProducedUnitEvent should return an event subscription of
 	// NewProducedUnitEvent and send events to the given channel.
-	SubscribeNewProducedUnitEvent(chan<- mp.NewProducedUnitEvent) event.Subscription
+	SubscribeNewProducedUnitEvent(ch chan<- mp.NewProducedUnitEvent) event.Subscription
 	// UnitBLSSign is to TBLS sign the unit
 	ToUnitTBLSSign(unit *modules.Unit) error
 
-	SubscribeVSSDealEvent(chan<- mp.VSSDealEvent) event.Subscription
+	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
+	ToTBLSRecover(sigShare *mp.SigShareEvent) error
+
+	SubscribeVSSDealEvent(ch chan<- mp.VSSDealEvent) event.Subscription
 	ToProcessDeal(deal *mp.VSSDealEvent) error
 
 	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
@@ -457,6 +464,12 @@ type producer interface {
 
 func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping PalletOne protocol")
+
+	// append by Albert·Gou
+	pm.newProducedUnitSub.Unsubscribe()
+	pm.sigShareSub.Unsubscribe()
+	pm.vssDealSub.Unsubscribe()
+	pm.vssResponseSub.Unsubscribe()
 
 	pm.txSub.Unsubscribe() // quits txBroadcastLoop
 
@@ -1113,6 +1126,21 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 
 		// Err() channel will be closed when unsubscribing.
 		case <-self.newProducedUnitSub.Err():
+			return
+		}
+	}
+}
+
+// @author Albert·Gou
+func (self *ProtocolManager) sigShareTransmitLoop() {
+	for {
+		select {
+		case event := <-self.sigShareCh:
+			// todo
+			_ = event
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.sigShareSub.Err():
 			return
 		}
 	}

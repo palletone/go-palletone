@@ -291,8 +291,18 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 		case newUnit := <-newUnitBuf:
 			sigShare, success := signTBLS(newUnit)
 			if success {
+				// todo
 				_ = sigShare
 			}
 		}
 	}
+}
+
+func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.Subscription {
+	return mp.sigShareScope.Track(mp.sigShareFeed.Subscribe(ch))
+}
+
+func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
+	// todo
+	return nil
 }

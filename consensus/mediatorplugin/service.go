@@ -53,9 +53,13 @@ type MediatorPlugin struct {
 	// Mediator`s account and passphrase controlled by this node
 	mediators map[common.Address]MediatorAccount
 
-	// 新生产unit的事件订阅和数据发送和接收
+	// 新生产unit的事件订阅
 	newProducedUnitFeed  event.Feed              // 订阅的时候自动初始化一次
 	newProducedUnitScope event.SubscriptionScope // 零值已准备就绪待用
+
+	// unit 签名分片的事件订阅
+	sigShareFeed  event.Feed
+	sigShareScope event.SubscriptionScope
 
 	// dkg 生成 dks 相关
 	suite   *bn256.Suite
