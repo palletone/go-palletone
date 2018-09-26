@@ -156,6 +156,10 @@ func NewMemDag(db storage.DagDb, unitRep dagCommon.IUnitRepository) *MemDag {
 		log.Error("NewMemDag when GetGenesisUnit", "error", err.Error())
 		return nil
 	}
+	if genesisUnit == nil {
+		log.Error("Get genesis unit failed, unit of genesis is nil.")
+		return nil
+	}
 	lastIrreUnit := db.GetLastIrreversibleUnit(genesisUnit.UnitHeader.Number.AssetID)
 	//fmt.Println("lastIrreUnit=", lastIrreUnit)
 	if lastIrreUnit != nil {

@@ -255,6 +255,7 @@ func (statedb *StateDatabase) GetContract(id common.Hash) (*modules.Contract, er
 	return contract, nil
 }
 
+
 func (statedb *StateDatabase) GetActiveMediators()[]common.Address{
 	_ ,err := statedb.GetMediatorsList()
 	if err !=nil {
@@ -283,6 +284,7 @@ func (statedb *StateDatabase)SaveVote(id []byte, voteData interface{}) error {
 	value := voteData
 	return ErrorLogHandler( StoreBytes(statedb.db, key, value),"SaveVote")
 }
+
 
 func GetDecodedComplexData(db ptndb.Database, key []byte,dataType interface{}) error{
 	valByte, err := db.Get(key)

@@ -50,6 +50,7 @@ var (
 	ATTESTATION_PREFIX               = []byte("at")
 	ASSET_PREFIX                     = []byte("as")
 	ASSET_ATTESTORS                  = []byte("ae")
+	MEDIATOR_CANDIDATE_PREFIX        = []byte("mc")
 	MEDIATOR_ELECTED_PREFIX          = []byte("md")
 
 	// lookup
