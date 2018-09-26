@@ -322,6 +322,18 @@ func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
 	peers := pm.GetTransitionPeers() //pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
+			//size, reader, err := rlp.EncodeToReader(resp)
+			//if err != nil {
+			//	log.Error(err.Error())
+			//}
+			//
+			//var r mp.VSSResponseEvent
+			//s := rlp.NewStream(reader, uint64(size))
+			//if err := s.Decode(&r); err != nil {
+			//	log.Error(err.Error())
+			//}
+			//pm.producer.ToProcessResponse(&r)
+
 			pm.producer.ToProcessResponse(resp)
 			continue
 		}
@@ -366,6 +378,18 @@ func (self *ProtocolManager) vssResponseBroadcastLoop() {
 func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDealEvent) {
 	peer, self := pm.getTransitionPeer(node)
 	if self {
+		//size, reader, err := rlp.EncodeToReader(deal)
+		//if err != nil {
+		//	log.Error(err.Error())
+		//}
+		//
+		//var d mp.VSSDealEvent
+		//s := rlp.NewStream(reader, uint64(size))
+		//if err := s.Decode(&d); err != nil {
+		//	log.Error(err.Error())
+		//}
+		//pm.producer.ToProcessDeal(&d)
+
 		pm.producer.ToProcessDeal(deal)
 		return
 	}

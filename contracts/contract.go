@@ -15,27 +15,23 @@ type Contract struct {
 	dag  dag.IDag
 }
 
-func Initialize(cfg *contractcfg.Config) (*Contract, error) {
+func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
 	var contractCfg contractcfg.Config
 	if cfg == nil {
 		contractCfg = contractcfg.DefaultConfig
 	} else {
 		contractCfg = *cfg
 	}
-
-	cc := &Contract{name: "name"}
-	contractcfg.SetConfig(&contractCfg)
-
-	log.Debug("contract initialize ok")
-	return cc, nil
-}
-
-func (c *Contract) Start(idag dag.IDag) {
-	//c.dag = dag
-	if c.dag == nil {
-		c.dag = idag
+	contract := &Contract{
+		name: "name",
+		dag:  idag,
 	}
-	go cc.Init(idag)
+	contractcfg.SetConfig(&contractCfg)
+	if err := cc.Init(idag); err != nil {
+		return nil, err
+	}
+	log.Debug("contract initialize ok")
+	return contract, nil
 }
 
 func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error) {
