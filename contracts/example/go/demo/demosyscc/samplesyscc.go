@@ -29,8 +29,6 @@ import (
 	"strings"
 	"sync"
 
-	//	"strconv"
-
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
@@ -38,11 +36,8 @@ import (
 // SampleSysCC example simple Chaincode implementation
 type SampleSysCC struct {
 }
-
-//
 var mutex sync.Mutex
 
-//
 const (
 
 	//test rate eth:btc = 2:1
