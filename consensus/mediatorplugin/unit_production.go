@@ -105,7 +105,7 @@ func PushUnit(dag dag.IDag, newUnit *modules.Unit) bool {
 	//err := dag.SaveUnit(*newUnit, false)
 	_, err := dag.SaveDag(*newUnit, false)
 	if err != nil {
-		log.Info("unit_production", "PushUnit err:", err)
+		log.Error("unit_production", "PushUnit err:", err)
 	}
 
 	return false

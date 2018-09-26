@@ -889,8 +889,9 @@ func (s *Stream) int(maxbits int) (int64, error) {
 			return 0, ErrCanonInt
 		case err != nil:
 			return 0, err
-		case size > 0 && v < 128:
-			return 0, ErrCanonSize
+			// comment by Albert·gou
+		//case size > 0 && v < 128:
+		//	return 0, ErrCanonSize
 		default:
 			switch size {
 			case 1:

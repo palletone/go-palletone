@@ -148,17 +148,18 @@ func peerServerInit() error {
 	var opts []grpc.ServerOption
 
 	grpcServer := grpc.NewServer(opts...)
-	//peerAddress := viper.GetString("peer.address")
 	peerAddress := cfg.GetConfig().Address
 	if peerAddress == "" {
 		peerAddress = "0.0.0.0:21726"
 	}
-
 	lis, err := net.Listen("tcp", peerAddress)
 	if err != nil {
 		return err
 	}
-	ccStartupTimeout := time.Duration(30) * time.Second
+	ccStartupTimeout := cfg.GetConfig().ContractDeploytimeout
+	if ccStartupTimeout <= 0 {
+		ccStartupTimeout = time.Duration(40) * time.Second
+	}
 	ca, _ := accesscontrol.NewCA()
 	pb.RegisterChaincodeSupportServer(grpcServer, core.NewChaincodeSupport(peerAddress, false, ccStartupTimeout, ca))
 	go grpcServer.Serve(lis)
@@ -203,7 +204,3 @@ func createDeployId(templateName string) string {
 	id := fmt.Sprintf("%x", h.Sum(nil))
 	return id
 }
-
-
-
-
