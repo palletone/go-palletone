@@ -59,6 +59,7 @@ const (
 	NewProducedUnitMsg = 0x09
 	VSSDealMsg         = 0x0a
 	VSSResponseMsg     = 0x0b
+	SigShareMsg        = 0x0c
 
 	GetNodeDataMsg = 0x0d
 	NodeDataMsg    = 0x0e

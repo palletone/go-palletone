@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/memunit"
@@ -635,6 +636,11 @@ func (d *Dag) GetActiveMediatorAddr(index int) common.Address {
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
 	return d.GlobalProp.GetActiveMediatorNode(index)
+}
+
+// author Albert·Gou
+func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
+	return d.GlobalProp.GetActiveMediator(add)
 }
 
 // author Albert·Gou

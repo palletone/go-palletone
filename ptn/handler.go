@@ -1136,13 +1136,44 @@ func (self *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
 		case event := <-self.sigShareCh:
-			// todo
-			_ = event
+			med := self.dag.GetUnit(event.Hash).UnitAuthor()
+			node := self.dag.GetActiveMediator(*med).Node
+			self.TransmitSigShare(node, &event)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-self.sigShareSub.Err():
 			return
 		}
+	}
+}
+
+// @author Albert·Gou
+func (pm *ProtocolManager) TransmitSigShare(node *discover.Node, sigShare *mp.SigShareEvent) {
+	peer, self := pm.getTransitionPeer(node)
+	if self {
+		//size, reader, err := rlp.EncodeToReader(sigShare)
+		//if err != nil {
+		//	log.Error(err.Error())
+		//}
+		//
+		//var s mp.SigShareEvent
+		//stream := rlp.NewStream(reader, uint64(size))
+		//if err := stream.Decode(&s); err != nil {
+		//	log.Error(err.Error())
+		//}
+		//pm.producer.ToTBLSRecover(&s)
+
+		pm.producer.ToTBLSRecover(sigShare)
+		return
+	}
+
+	if peer == nil {
+		return
+	}
+
+	err := peer.SendSigShare(sigShare)
+	if err != nil {
+		log.Error(err.Error())
 	}
 }
 
