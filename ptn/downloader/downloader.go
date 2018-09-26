@@ -432,7 +432,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	if p.version < 1 {
 		return errTooOld
 	}
-	fmt.Println("hash=", hash)
+	//fmt.Println("hash=", hash)
 	log.Info("Synchronising with the network", "peer", p.id, "ptn", p.version, "head", hash, "index", index, "mode", d.mode)
 	defer func(start time.Time) {
 		log.Debug("Synchronisation terminated", "elapsed", time.Since(start))
@@ -441,8 +441,8 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	// Look up the sync boundaries: the common ancestor and the target block
 	latest, err := d.fetchHeight(p, assetId)
 
-	fmt.Printf("latest=%#v\n", latest)
-	fmt.Printf("latest=%#v\n", latest.Hash())
+	//fmt.Printf("latest=%#v\n", latest)
+	//fmt.Printf("latest=%#v\n", latest.Hash())
 	if err != nil {
 		if err == errPeersUnavailable {
 			log.Info("==========fetchHeight return==============")
@@ -457,7 +457,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 
 	origin, err := d.findAncestor(p, latest, assetId)
 
-	fmt.Println("origin=", origin)
+	//fmt.Println("origin=", origin)
 	if err != nil {
 		return err
 	}
@@ -591,11 +591,11 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*
 
 	// Request the advertised remote head block and wait for the response
 	head, _ := p.peer.Head(assetId)
-	fmt.Println("fetchHeight=", head)
+	//fmt.Println("fetchHeight=", head)
 	if common.EmptyHash(head) {
 		return nil, errPeersUnavailable
 	}
-	fmt.Println("lalala")
+	//fmt.Println("lalala")
 	log.Debug("===fetchHeight===", "head:", head)
 	go p.peer.RequestHeadersByHash(head, 1, 0, false)
 
@@ -621,7 +621,7 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*
 				return nil, errBadPeer
 			}
 			head := headers[0]
-			fmt.Println("=============", head.Number.Index, head.Hash())
+			//fmt.Println("=============", head.Number.Index, head.Hash())
 			log.Debug("Remote head header identified", "number", head.Number.Index, "hash", head.Hash(), "peer", packet.PeerId())
 			return head, nil
 
@@ -1284,7 +1284,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
 		return errInvalidChain
 	}
-	fmt.Println("lalalala")
+	//fmt.Println("lalalala")
 	return nil
 }
 
@@ -1598,9 +1598,9 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	height := latest.Index()
 	// Figure out the valid ancestor range to prevent rewrite attacks
 	floor, ceil := uint64(0), d.lightdag.CurrentHeader().Number.Index
-	fmt.Println("findAncestor===")
-	fmt.Println("local=", ceil)
-	fmt.Println("remote=", height)
+	//fmt.Println("findAncestor===")
+	//fmt.Println("local=", ceil)
+	//fmt.Println("remote=", height)
 	//floor, ceil := uint64(0), uint64(0)
 	//TODO xiaozhi
 	//headers, err := d.lightdag.GetAllLeafNodes()
@@ -1636,8 +1636,8 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	// Span out with 15 block gaps into the future to catch bad head reports
 	limit := 2 * MaxHeaderFetch / 16
 	count := 1 + int((int64(ceil)-from)/16)
-	fmt.Println("limit=", limit)
-	fmt.Println("count=", count)
+	//fmt.Println("limit=", limit)
+	//fmt.Println("count=", count)
 	if count > limit {
 		count = limit
 	}
@@ -1647,10 +1647,10 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 		IsMain:  true,
 		Index:   uint64(from),
 	}
-	fmt.Println("count,from", count, from)
+	//fmt.Println("count,from", count, from)
 
 	go p.peer.RequestHeadersByNumber(index, count, 15, false)
-	fmt.Println("lala---")
+	//fmt.Println("lala---")
 	//TODO xiaozhi
 	// Wait for the remote response to the head fetch
 	number, hash := uint64(0), common.Hash{}
@@ -1671,7 +1671,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 			}
 			// Make sure the peer actually gave something valid
 			headers := packet.(*headerPack).headers
-			fmt.Printf("headers=%#v\n", headers[0].Hash())
+			//fmt.Printf("headers=%#v\n", headers[0].Hash())
 			if len(headers) == 0 {
 				p.log.Warn("Empty head header set")
 				return 0, errEmptyHeaderSet
@@ -1698,7 +1698,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 				fmt.Println("d.dag.HasHeader(headers[i].Hash(), headers[i].Number.Index==", headers[i].Hash(), headers[i].Number.Index)
 				if (d.mode == FullSync && d.dag.HasHeader(headers[i].Hash(), headers[i].Number.Index)) || (d.mode != FullSync && d.lightdag.HasHeader(headers[i].Hash(), headers[i].Number.Index)) {
 					number, hash = headers[i].Number.Index, headers[i].Hash()
-					fmt.Println("lalaal")
+					//fmt.Println("lalaal")
 					// If every header is known, even future ones, the peer straight out lied about its head
 					if number > height && i == limit-1 {
 						p.log.Warn("Lied about chain head", "reported", height, "found", number)
@@ -1723,7 +1723,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 		//	p.log.Warn("Ancestor below allowance", "number", number, "hash", hash, "allowance", floor)
 		//	return 0, errInvalidAncestor
 		//}
-		fmt.Println(hash)
+		//fmt.Println(hash)
 		p.log.Debug("Found common ancestor", "number", number, "hash", hash)
 		return number, nil
 	}
