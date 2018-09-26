@@ -300,8 +300,7 @@ func (q *queue) RetrieveHeaders() ([]*modules.Header, int) {
 	return headers, proced
 }
 
-// Schedule adds a set of headers for the download queue for scheduling, returning
-// the new headers encountered.
+// Schedule adds a set of headers for the download queue for scheduling, returning the new headers encountered.
 func (q *queue) Schedule(headers []*modules.Header, from uint64) []*modules.Header {
 	q.lock.Lock()
 	defer q.lock.Unlock()
@@ -317,10 +316,10 @@ func (q *queue) Schedule(headers []*modules.Header, from uint64) []*modules.Head
 			break
 		}
 		//TODO must recover
-		//		if q.headerHead != (common.Hash{}) && q.headerHead != header.ParentsHash[0] {
-		//			log.Warn("Header broke chain ancestry", "number", header.Number, "hash", hash)
-		//			break
-		//		}
+		if q.headerHead != (common.Hash{}) && q.headerHead != header.ParentsHash[0] {
+			log.Warn("Header broke chain ancestry", "number", header.Number, "hash", hash)
+			break
+		}
 		// Make sure no duplicate requests are executed
 		if _, ok := q.blockTaskPool[hash]; ok {
 			log.Warn("Header  already scheduled for block fetch", "number", header.Number, "hash", hash)
@@ -516,6 +515,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 		if q.resultCache[index] == nil {
 			components := 1
 			if q.mode == FastSync {
+				//TODO xiaozhi
 				//components = 2
 			}
 			q.resultCache[index] = &fetchResult{

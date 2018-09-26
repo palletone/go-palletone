@@ -31,6 +31,7 @@ import (
 
 	"github.com/palletone/go-palletone/dag/storage"
 	"log"
+	"sync/atomic"
 )
 
 var ()
@@ -72,8 +73,8 @@ func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header.Number.AssetID = modules.PTNCOIN
 	header.Number.IsMain = true
 	header.Number.Index = 0
-	header.Authors = &modules.Authentifier{"", []byte{}, []byte{}, []byte{}}
-	header.Witness = []*modules.Authentifier{&modules.Authentifier{"", []byte{}, []byte{}, []byte{}}}
+	header.Authors = &modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
+	header.Witness = []*modules.Authentifier{&modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}}
 	tx, _ := NewCoinbaseTransaction()
 	txs := modules.Transactions{tx}
 	genesisUnit := modules.NewUnit(header, txs)
@@ -121,8 +122,8 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int) (modules.Units, 
 		header.Number.AssetID = par.UnitHeader.Number.AssetID
 		header.Number.IsMain = par.UnitHeader.Number.IsMain
 		header.Number.Index = par.UnitHeader.Number.Index + 1
-		header.Authors = &modules.Authentifier{"", []byte{}, []byte{}, []byte{}}
-		header.Witness = []*modules.Authentifier{&modules.Authentifier{"", []byte{}, []byte{}, []byte{}}}
+		header.Authors = &modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
+		header.Witness = []*modules.Authentifier{&modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}}
 		tx, _ := NewCoinbaseTransaction()
 		txs := modules.Transactions{tx}
 		unit := modules.NewUnit(header, txs)
@@ -835,10 +836,13 @@ func assertOwnForkedChain(t *testing.T, tester *downloadTester, common int, leng
 // In this test common ancestor lookup should be short circuited and not require binary searching.
 //func TestCanonicalSynchronisation62(t *testing.T) { testCanonicalSynchronisation(t, 1, FullSync) }
 
-//func TestCanonicalSynchronisation63Full(t *testing.T)  { testCanonicalSynchronisation(t, 1, FullSync) }
-//func TestCanonicalSynchronisation63Fast(t *testing.T)  { testCanonicalSynchronisation(t, 1, FastSync) }
+func TestCanonicalSynchronisation63Full(t *testing.T) { testCanonicalSynchronisation(t, 1, FullSync) }
+
+func TestCanonicalSynchronisation63Fast(t *testing.T) { testCanonicalSynchronisation(t, 2, FullSync) }
+
 //func TestCanonicalSynchronisation64Full(t *testing.T)  { testCanonicalSynchronisation(t, 2, FullSync) }
-//func TestCanonicalSynchronisation64Fast(t *testing.T)  { testCanonicalSynchronisation(t, 2, FastSync) }
+//func TestCanonicalSynchronisation64Fast(t *testing.T) { testCanonicalSynchronisation(t, 2, FastSync) }
+
 //func TestCanonicalSynchronisation64Light(t *testing.T) { testCanonicalSynchronisation(t, 2, LightSync) }
 
 func testCanonicalSynchronisation(t *testing.T, protocol int, mode SyncMode) {
@@ -850,15 +854,15 @@ func testCanonicalSynchronisation(t *testing.T, protocol int, mode SyncMode) {
 	// Create a small enough block chain to download
 	targetBlocks := blockCacheItems - 15
 	//targetBlocks := 15
-	fmt.Printf("tester.genesis=%#v\n", tester.genesis.UnitHeader)
-	fmt.Printf("tester.genesis=%#v\n", tester.genesis.UnitHeader.Hash())
+	//fmt.Printf("tester.genesis=%#v\n", tester.genesis.UnitHeader)
+	//fmt.Printf("tester.genesis=%#v\n", tester.genesis.UnitHeader.Hash())
 	hashes, headers, blocks := tester.makeChain(targetBlocks, 0, tester.genesis, false)
-	for i, h := range hashes {
-		fmt.Println("commonHash=", i, h)
-		//fmt.Printf("commonHash  ==>  unit = %#v\n", u.UnitHeader)
-	}
-	err := tester.newPeer("peer", protocol, hashes, headers, blocks)
-	fmt.Println("tester.newPeer===err", err)
+	//for i, h := range hashes {
+	//	fmt.Println("commonHash=", i, h)
+	//	//fmt.Printf("commonHash  ==>  unit = %#v\n", u.UnitHeader)
+	//}
+	tester.newPeer("peer", protocol, hashes, headers, blocks)
+	//fmt.Println("tester.newPeer===err", err)
 	// Synchronise with the peer and make sure all relevant data was retrieved
 	if err := tester.sync("peer", 0, mode); err != nil {
 		t.Fatalf("failed to synchronise blocks: %v", err)
@@ -866,14 +870,14 @@ func testCanonicalSynchronisation(t *testing.T, protocol int, mode SyncMode) {
 	assertOwnChain(t, tester, targetBlocks+1)
 }
 
-/*
 // Tests that if a large batch of blocks are being downloaded, it is throttled
 // until the cached blocks are retrieved.
-func TestThrottling62(t *testing.T)     { testThrottling(t, 62, FullSync) }
-func TestThrottling63Full(t *testing.T) { testThrottling(t, 63, FullSync) }
-func TestThrottling63Fast(t *testing.T) { testThrottling(t, 63, FastSync) }
-func TestThrottling64Full(t *testing.T) { testThrottling(t, 64, FullSync) }
-func TestThrottling64Fast(t *testing.T) { testThrottling(t, 64, FastSync) }
+func TestThrottling62(t *testing.T)     { testThrottling(t, 1, FullSync) }
+func TestThrottling63Full(t *testing.T) { testThrottling(t, 2, FullSync) }
+
+//func TestThrottling63Fast(t *testing.T) { testThrottling(t, 1, FastSync) }
+//func TestThrottling64Full(t *testing.T) { testThrottling(t, 64, FullSync) }
+//func TestThrottling64Fast(t *testing.T) { testThrottling(t, 64, FastSync) }
 
 func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 	t.Parallel()
@@ -882,9 +886,9 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 
 	// Create a long block chain to download and the tester
 	targetBlocks := 8 * blockCacheItems
-	hashes, headers, blocks, receipts := tester.makeChain(targetBlocks, 0, tester.genesis, nil, false)
+	hashes, headers, blocks := tester.makeChain(targetBlocks, 0, tester.genesis, false)
 
-	tester.newPeer("peer", protocol, hashes, headers, blocks, receipts)
+	tester.newPeer("peer", protocol, hashes, headers, blocks)
 
 	// Wrap the importer to allow stepping
 	blocked, proceed := uint32(0), make(chan struct{})
@@ -895,7 +899,7 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 	// Start a synchronisation concurrently
 	errc := make(chan error)
 	go func() {
-		errc <- tester.sync("peer", nil, mode)
+		errc <- tester.sync("peer", 0, mode)
 	}()
 	// Iteratively take some blocks, always checking the retrieval count
 	for {
@@ -914,13 +918,13 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 			tester.lock.Lock()
 			tester.downloader.queue.lock.Lock()
 			cached = len(tester.downloader.queue.blockDonePool)
-			if mode == FastSync {
-				if receipts := len(tester.downloader.queue.receiptDonePool); receipts < cached {
-					//if tester.downloader.queue.resultCache[receipts].Header.Number.Uint64() < tester.downloader.queue.fastSyncPivot {
-					cached = receipts
-					//}
-				}
-			}
+			//if mode == FastSync {
+			//	if receipts := len(tester.downloader.queue.receiptDonePool); receipts < cached {
+			//		//if tester.downloader.queue.resultCache[receipts].Header.Number.Uint64() < tester.downloader.queue.fastSyncPivot {
+			//		cached = receipts
+			//		//}
+			//	}
+			//}
 			frozen = int(atomic.LoadUint32(&blocked))
 			retrieved = len(tester.ownBlocks)
 			tester.downloader.queue.lock.Unlock()
@@ -955,12 +959,12 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 // Tests that simple synchronization against a forked chain works correctly. In
 // this test common ancestor lookup should *not* be short circuited, and a full
 // binary search should be executed.
-func TestForkedSync62(t *testing.T)      { testForkedSync(t, 62, FullSync) }
-func TestForkedSync63Full(t *testing.T)  { testForkedSync(t, 63, FullSync) }
-func TestForkedSync63Fast(t *testing.T)  { testForkedSync(t, 63, FastSync) }
-func TestForkedSync64Full(t *testing.T)  { testForkedSync(t, 64, FullSync) }
-func TestForkedSync64Fast(t *testing.T)  { testForkedSync(t, 64, FastSync) }
-func TestForkedSync64Light(t *testing.T) { testForkedSync(t, 64, LightSync) }
+//func TestForkedSync62(t *testing.T)      { testForkedSync(t, 1, FullSync) }
+//func TestForkedSync63Full(t *testing.T)  { testForkedSync(t, 2, FullSync) }
+//func TestForkedSync63Fast(t *testing.T)  { testForkedSync(t, 2, FastSync) }
+//func TestForkedSync64Full(t *testing.T)  { testForkedSync(t, 3, FullSync) }
+//func TestForkedSync64Fast(t *testing.T)  { testForkedSync(t, 64, FastSync) }
+//func TestForkedSync64Light(t *testing.T) { testForkedSync(t, 64, LightSync) }
 
 func testForkedSync(t *testing.T, protocol int, mode SyncMode) {
 	t.Parallel()
@@ -970,24 +974,25 @@ func testForkedSync(t *testing.T, protocol int, mode SyncMode) {
 
 	// Create a long enough forked chain
 	common, fork := MaxHashFetch, 2*MaxHashFetch
-	hashesA, hashesB, headersA, headersB, blocksA, blocksB, receiptsA, receiptsB := tester.makeChainFork(common+fork, fork, tester.genesis, nil, true)
+	hashesA, hashesB, headersA, headersB, blocksA, blocksB := tester.makeChainFork(common+fork, fork, tester.genesis, true)
 
-	tester.newPeer("fork A", protocol, hashesA, headersA, blocksA, receiptsA)
-	tester.newPeer("fork B", protocol, hashesB, headersB, blocksB, receiptsB)
+	tester.newPeer("fork A", protocol, hashesA, headersA, blocksA)
+	tester.newPeer("fork B", protocol, hashesB, headersB, blocksB)
 
 	// Synchronise with the peer and make sure all blocks were retrieved
-	if err := tester.sync("fork A", nil, mode); err != nil {
+	if err := tester.sync("fork A", 0, mode); err != nil {
 		t.Fatalf("failed to synchronise blocks: %v", err)
 	}
 	assertOwnChain(t, tester, common+fork+1)
 
 	// Synchronise with the second peer and make sure that fork is pulled too
-	if err := tester.sync("fork B", nil, mode); err != nil {
+	if err := tester.sync("fork B", 0, mode); err != nil {
 		t.Fatalf("failed to synchronise blocks: %v", err)
 	}
 	assertOwnForkedChain(t, tester, common+1, []int{common + fork + 1, common + fork + 1})
 }
 
+/*
 // Tests that synchronising against a much shorter but much heavyer fork works
 // corrently and is not dropped.
 func TestHeavyForkedSync62(t *testing.T)      { testHeavyForkedSync(t, 62, FullSync) }

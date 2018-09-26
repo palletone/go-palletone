@@ -142,7 +142,7 @@ func calSigETH(args *[]string) [][]byte {
 	}
 }
 
-func multMoreSys(args [][]byte) {
+func multMoreSys(dag *dag.Dag, args [][]byte) {
 	fmt.Println("mult enter..................")
 	chainID := util.GetTestChainID()
 
@@ -159,7 +159,7 @@ func multMoreSys(args [][]byte) {
 
 	wg.Add(1)
 	go func(timeout time.Duration, txid string) {
-		unit, err := manger.Invoke(chainID, []byte{0x95, 0x27}, txid, args, timeout)
+		unit, err := manger.Invoke(dag, chainID, []byte{0x95, 0x27}, txid, args, timeout)
 		if err != nil {
 			fmt.Println(err.Error())
 		} else {
@@ -230,7 +230,7 @@ func TestExecSysCCMult(args *[]string) {
 
 	//
 	if argBytes != nil {
-		multMoreSys(argBytes)
+		multMoreSys(dag, argBytes)
 	}
 }
 func creatTestDag() (*dag.Dag, error) {

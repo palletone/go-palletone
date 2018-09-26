@@ -120,12 +120,12 @@ type Downloader struct {
 	committed       int32
 
 	// Channels
-	headerCh      chan dataPack          // [ptn/62] Channel receiving inbound block headers
-	bodyCh        chan dataPack          // [ptn/62] Channel receiving inbound block bodies
-	receiptCh     chan dataPack          // [ptn/63] Channel receiving inbound receipts
-	bodyWakeCh    chan bool              // [ptn/62] Channel to signal the block body fetcher of new tasks
-	receiptWakeCh chan bool              // [ptn/63] Channel to signal the receipt fetcher of new tasks
-	headerProcCh  chan []*modules.Header // [ptn/62] Channel to feed the header processor new tasks
+	headerCh   chan dataPack // [ptn/62] Channel receiving inbound block headers
+	bodyCh     chan dataPack // [ptn/62] Channel receiving inbound block bodies
+	receiptCh  chan dataPack // [ptn/63] Channel receiving inbound receipts
+	bodyWakeCh chan bool     // [ptn/62] Channel to signal the block body fetcher of new tasks
+	//receiptWakeCh chan bool              // [ptn/63] Channel to signal the receipt fetcher of new tasks
+	headerProcCh chan []*modules.Header // [ptn/62] Channel to feed the header processor new tasks
 
 	// for stateFetcher
 	stateSyncStart chan *stateSync
@@ -199,19 +199,19 @@ func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, lightdag LightD
 	dl := &Downloader{
 		mode: mode,
 		//levelDb:        levelDb,
-		mux:            mux,
-		queue:          newQueue(),
-		peers:          newPeerSet(),
-		rttEstimate:    uint64(rttMaxEstimate),
-		rttConfidence:  uint64(1000000),
-		lightdag:       lightdag,
-		dag:            dag,
-		dropPeer:       dropPeer,
-		headerCh:       make(chan dataPack, 1),
-		bodyCh:         make(chan dataPack, 1),
-		receiptCh:      make(chan dataPack, 1),
-		bodyWakeCh:     make(chan bool, 1),
-		receiptWakeCh:  make(chan bool, 1),
+		mux:           mux,
+		queue:         newQueue(),
+		peers:         newPeerSet(),
+		rttEstimate:   uint64(rttMaxEstimate),
+		rttConfidence: uint64(1000000),
+		lightdag:      lightdag,
+		dag:           dag,
+		dropPeer:      dropPeer,
+		headerCh:      make(chan dataPack, 1),
+		bodyCh:        make(chan dataPack, 1),
+		receiptCh:     make(chan dataPack, 1),
+		bodyWakeCh:    make(chan bool, 1),
+		//receiptWakeCh:  make(chan bool, 1),
 		headerProcCh:   make(chan []*modules.Header, 1),
 		quitCh:         make(chan struct{}),
 		stateCh:        make(chan dataPack),
@@ -772,7 +772,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 			d.dropPeer(p.id)
 
 			// Finish the sync gracefully instead of dumping the gathered data though
-			for _, ch := range []chan bool{d.bodyWakeCh, d.receiptWakeCh} {
+			for _, ch := range []chan bool{d.bodyWakeCh} {
 				select {
 				case ch <- false:
 				case <-d.cancelCh:
@@ -1101,7 +1101,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 			// Terminate header processing if we synced up
 			if len(headers) == 0 {
 				// Notify everyone that headers are fully processed
-				for _, ch := range []chan bool{d.bodyWakeCh, d.receiptWakeCh} {
+				for _, ch := range []chan bool{d.bodyWakeCh} {
 					select {
 					case ch <- false:
 					case <-d.cancelCh:
@@ -1224,7 +1224,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 			d.syncStatsLock.Unlock()
 
 			// Signal the content downloaders of the availablility of new tasks
-			for _, ch := range []chan bool{d.bodyWakeCh, d.receiptWakeCh} {
+			for _, ch := range []chan bool{d.bodyWakeCh} {
 				select {
 				case ch <- true:
 				default:
@@ -1596,10 +1596,11 @@ func (d *Downloader) getMaxNodes(headers []*modules.Header, assetId modules.IDTy
 // the head links match), we do a binary search to find the common ancestor.
 func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, assetId modules.IDType16) (uint64, error) {
 	height := latest.Index()
-	fmt.Println("findAncestor=", height)
 	// Figure out the valid ancestor range to prevent rewrite attacks
 	floor, ceil := uint64(0), d.lightdag.CurrentHeader().Number.Index
-	fmt.Println("ceil=", ceil)
+	fmt.Println("findAncestor===")
+	fmt.Println("local=", ceil)
+	fmt.Println("remote=", height)
 	//floor, ceil := uint64(0), uint64(0)
 	//TODO xiaozhi
 	//headers, err := d.lightdag.GetAllLeafNodes()
@@ -1625,7 +1626,6 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 
 	// Request the topmost blocks to short circuit binary ancestor lookup
 	head := ceil
-	fmt.Println("head=", head)
 	if head > height {
 		head = height
 	}
@@ -1636,10 +1636,12 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	// Span out with 15 block gaps into the future to catch bad head reports
 	limit := 2 * MaxHeaderFetch / 16
 	count := 1 + int((int64(ceil)-from)/16)
+	fmt.Println("limit=", limit)
+	fmt.Println("count=", count)
 	if count > limit {
 		count = limit
 	}
-	log.Debug("===findAncestor===", "RequestHeadersByNumber from", from, "count", count)
+	//log.Debug("===findAncestor===", "RequestHeadersByNumber from", from, "count", count)
 	index := modules.ChainIndex{
 		AssetID: assetId,
 		IsMain:  true,
@@ -1692,9 +1694,9 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 				}
 
 				// Otherwise check if we already know the header or not
-				fmt.Println(d.mode == FullSync)
-				fmt.Println(headers[i].Hash(), headers[i].Number.Index)
-				if (d.mode == FullSync && d.dag.HasHeader(headers[i].Hash(), headers[i].Number.Index)) || (d.mode != FullSync && d.dag.HasHeader(headers[i].Hash(), headers[i].Number.Index)) {
+				//fmt.Println(d.mode == FullSync)
+				fmt.Println("d.dag.HasHeader(headers[i].Hash(), headers[i].Number.Index==", headers[i].Hash(), headers[i].Number.Index)
+				if (d.mode == FullSync && d.dag.HasHeader(headers[i].Hash(), headers[i].Number.Index)) || (d.mode != FullSync && d.lightdag.HasHeader(headers[i].Hash(), headers[i].Number.Index)) {
 					number, hash = headers[i].Number.Index, headers[i].Hash()
 					fmt.Println("lalaal")
 					// If every header is known, even future ones, the peer straight out lied about its head
