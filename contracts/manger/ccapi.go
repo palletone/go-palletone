@@ -68,8 +68,6 @@ func listGet(templateId []byte) (*TempCC, error) {
 
 // contract manger module init
 func Init(dag dag.IDag) error {
-	//peerContractMockConfigInit()
-
 	if err := db.SetCcDagHand(dag); err != nil {
 		return err
 	}
@@ -87,16 +85,10 @@ func Init(dag dag.IDag) error {
 }
 
 func InitNoSysCCC() error {
-
 	if err := peerServerInit(); err != nil {
 		logger.Errorf("peerServerInit error:%s", err)
 		return err
 	}
-	//err = systemContractInit()
-	//if err != nil {
-	//	logger.Errorf("systemContractInit error:%s", err)
-	//	return err
-	//}
 	return nil
 }
 
@@ -123,7 +115,6 @@ func GetSysCCList() (ccInf []cclist.CCInfo, ccCount int, errs error) {
 		ci.Path = ccinf.Path
 		ci.Enable = ccinf.Enabled
 		ci.SysCC = true
-
 		scclist = append(scclist, ci)
 	}
 	return scclist, count, err
