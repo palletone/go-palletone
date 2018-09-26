@@ -66,9 +66,11 @@ func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
 func (d *Dag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
 	return d.DynGlobalProp
 }
+
 func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
 	return d.MediatorSchl
 }
+
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()

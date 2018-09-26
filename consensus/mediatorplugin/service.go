@@ -24,7 +24,6 @@ import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/kyber/share/dkg/pedersen"
-	"github.com/dedis/kyber/share/vss/pedersen"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -59,7 +58,7 @@ type MediatorPlugin struct {
 	newProducedUnitScope event.SubscriptionScope // 零值已准备就绪待用
 
 	// dkg 生成 dks 相关
-	suite   vss.Suite
+	suite   *bn256.Suite
 	dkgs    map[common.Address]*dkg.DistKeyGenerator
 	respBuf map[common.Address]map[common.Address]chan *dkg.Response
 

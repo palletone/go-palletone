@@ -85,4 +85,5 @@ type IDag interface {
 	GetActiveMediatorCount() int
 	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
+	ValidateUnit(unit *modules.Unit) bool
 }
