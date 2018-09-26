@@ -19,6 +19,7 @@ package modules
 
 import (
 	"crypto/ecdsa"
+	"math/big"
 	"strings"
 	"time"
 	"unsafe"
@@ -363,7 +364,7 @@ type ContractTplPayload struct {
 	Name       string `json:"name"`        // contract template name
 	Path       string `json:"path"`        // contract template execute path
 	Version    string `json:"version"`     // contract template version
-	Memory     uint16 `json:"memory"`      // coontract template bytecode memory size(Byte), use to compute transaction fee
+	Memory     uint16 `json:"memory"`      // contract template bytecode memory size(Byte), use to compute transaction fee
 	Bytecode   []byte `json:"bytecode"`    // contract bytecode
 }
 
@@ -407,6 +408,7 @@ type VoteInitiatePayload struct {
 	Option      []string      //vote option list.
 	BallotChain uint64        //vote chain id
 	BallotType  IDType16      //vote asset id
+	BallotCost  big.Int      //token cost
 	ExpiredTime time.Duration //duration of voting
 }
 
