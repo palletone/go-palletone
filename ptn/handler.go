@@ -964,11 +964,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case msg.Code == TxMsg:
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
 		if atomic.LoadUint32(&pm.acceptTxs) == 0 {
+			log.Debug("ProtocolManager handlmsg TxMsg pm.acceptTxs==0")
 			break
 		}
 		// Transactions can be processed, parse all of them and deliver to the pool
 		var txs []*modules.Transaction
 		if err := msg.Decode(&txs); err != nil {
+			log.Info("ProtocolManager handlmsg TxMsg", "Decode err:", err, "msg:", msg)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 		//TODO VerifyTX
@@ -1024,7 +1026,7 @@ func (self *ProtocolManager) txBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.txCh:
-
+			log.Debug("=====ProtocolManager=====", "txBroadcastLoop event.Tx", event.Tx)
 			self.BroadcastTx(event.Tx.Hash(), event.Tx)
 
 		// Err() channel will be closed when unsubscribing.
