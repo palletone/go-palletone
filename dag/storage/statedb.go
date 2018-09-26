@@ -57,6 +57,9 @@ type StateDb interface {
 	GetContractAllState(id []byte) map[modules.ContractReadSet][]byte
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id common.Hash) (*modules.Contract, error)
+	GetActiveMediators()[]common.Address
+	GetMediatorsList()[]common.Address
+	SaveMediatorsList([]common.Address)(error)
 }
 
 // ######################### SAVE IMPL START ###########################
@@ -234,6 +237,18 @@ func (statedb *StateDatabase) GetContract(id common.Hash) (*modules.Contract, er
 		return nil, err
 	}
 	return contract, nil
+}
+// fengyiran
+func (db *StateDatabase)GetActiveMeaditors()[]common.Address{
+	return make([]common.Address,21)
+}
+// fengyiran
+func (db *StateDatabase)GetMediatorsList()[]common.Address{
+	return make([]common.Address,500)
+}
+// fengyiran
+func (db *StateDatabase)SaveMediatorsList([]common.Address)(error){
+	return nil
 }
 
 /**
