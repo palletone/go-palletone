@@ -310,14 +310,6 @@ type PaymentPayload struct {
 	LockTime uint32    `json:"lock_time"`
 }
 
-//func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
-//	return &OutPoint{
-//		TxHash:       *hash,
-//		MessageIndex: messageindex,
-//		OutIndex:     outindex,
-//	}
-//}
-
 // NewTxOut returns a new bitcoin transaction output with the provided
 // transaction value and public key script.
 func NewTxOut(value uint64, pkScript []byte, asset *Asset) *Output {
@@ -597,17 +589,6 @@ func (u *Unit) ContainsParent(pHash common.Hash) bool {
 		}
 	}
 	return false
-}
-
-func RSVtoAddress(tx *Transaction) common.Address {
-	//sig := make([]byte, 65)
-	//copy(sig[32-len(tx.From.R):32], tx.From.R)
-	//copy(sig[64-len(tx.From.S):64], tx.From.S)
-	//copy(sig[64:], tx.From.V)
-	//pub, _ := crypto.SigToPub(tx.TxHash[:], sig)
-	//address := crypto.PubkeyToAddress(*pub)
-	//return address
-	return common.Address{}
 }
 
 func MsgstoAddress(msgs []*Message) common.Address {

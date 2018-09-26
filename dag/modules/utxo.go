@@ -31,7 +31,9 @@ import (
 type txoFlags uint8
 
 const (
-	tfSpent txoFlags = 1 << iota
+	tfCoinBase txoFlags = 1 << iota
+
+	tfSpent
 
 	tfModified
 )
@@ -122,6 +124,9 @@ func (utxo *Utxo) IsModified() bool {
 }
 func (utxo *Utxo) IsSpent() bool {
 	return utxo.Flags&tfSpent == tfSpent
+}
+func (utxo *Utxo) IsCoinBase() bool {
+	return utxo.Flags&tfCoinBase == tfCoinBase
 }
 func (utxo *Utxo) Spend() {
 	if utxo.IsSpent() {
@@ -283,6 +288,7 @@ type Output struct {
 	Value    uint64
 	PkScript []byte
 	Asset    *Asset
+	Vote     common.Address // 投票结果
 }
 type Input struct {
 	PreviousOutPoint *OutPoint
