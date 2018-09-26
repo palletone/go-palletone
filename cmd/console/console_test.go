@@ -108,7 +108,7 @@ func DevGenesisBlock() *core.Genesis {
 // Please ensure you call Close() on the returned tester to avoid leaks.
 func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	// Create a temporary storage for the node keys and initialize it
-	workspace, err := ioutil.TempDir("", "console-tester-")
+	workspace, err := ioutil.TempDir("./testdata", "console-tester-")
 	if err != nil {
 		t.Fatalf("failed to create temporary keystore: %v", err)
 	}
@@ -126,6 +126,28 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	if confOverride != nil {
 		confOverride(ptnConf)
 	}
+	fmt.Println("------------start open leveldb and store test genesis unit--------------")
+	db_path := "leveldb"
+	if err := os.MkdirAll(db_path, 0777); err != nil {
+		fmt.Println("mkdir error:", err)
+		return nil
+	}
+	ks := stack.GetKeyStore()
+	password := "123456"
+	account, err := ks.NewAccount(password)
+	if err != nil {
+		return nil
+	}
+	// fmt.Println("new account success and address=", account.Address.String())
+	db, _ := stack.OpenDatabase(db_path, 0, 0)
+
+	err = ks.Unlock(account, password)
+	if err != nil {
+		fmt.Printf("Failed to unlock account: %v, address: %v \n", err, account.Address.Str())
+		return nil
+	}
+	gen.SetupGenesisUnit(db, ptnConf.Genesis, ks, account)
+	db.Close()
 	if err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) { return ptn.New(ctx, ptnConf) }); err != nil {
 		t.Fatalf("failed to register PalletOne protocol: %v", err)
 	}
