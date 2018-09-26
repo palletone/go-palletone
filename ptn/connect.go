@@ -157,8 +157,8 @@ func (pm *ProtocolManager) noMediatorCheck(p *peer) error {
 				return errors.New("The number of no ediator connections full")
 			}
 		} else {
-			log.Info("PalletOne handshake failed lying selef is mediator")
-			return errors.New("PalletOne handshake failed lying selef is not mediator")
+			log.Info("PalletOne handshake failed lying self is not mediator")
+			return errors.New("PalletOne handshake failed lying self is not mediator")
 		}
 	}
 	return nil
