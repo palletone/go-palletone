@@ -7,8 +7,9 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	unit "github.com/palletone/go-palletone/dag/modules"
 	"time"
+	"errors"
 )
-
+var once int
 type Contract struct {
 	//cfg *contractcfg.Config
 	name string
@@ -19,6 +20,10 @@ type Contract struct {
 // Initialize the contract management module and load the system contract,
 // Specify dag and initial contract configuration information by the upper application
 func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
+	if once > 0 {
+		return nil, errors.New("contract already init")
+	}
+
 	var contractCfg contractcfg.Config
 	if cfg == nil {
 		contractCfg = contractcfg.DefaultConfig

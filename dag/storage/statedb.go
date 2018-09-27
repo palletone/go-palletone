@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 	"log"
+	"sort"
 	"strings"
 )
 
@@ -57,7 +58,10 @@ type StateDb interface {
 	GetContractAllState(id []byte) map[modules.ContractReadSet][]byte
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id common.Hash) (*modules.Contract, error)
-
+	SaveVote(id []byte, voteData interface{}) error
+	SaveMediatorsList(Candidates MediatorCandidates)error
+	GetMediatorsList() (MediatorCandidates,error)
+	GetActiveMediators(n int)common.Addresses
 }
 
 // ######################### SAVE IMPL START ###########################
@@ -255,21 +259,18 @@ func (statedb *StateDatabase) GetContract(id common.Hash) (*modules.Contract, er
 	return contract, nil
 }
 
-
-func (statedb *StateDatabase) GetActiveMediators()[]common.Address{
-	_ ,err := statedb.GetMediatorsList()
+// <<<<< Fengyiran
+func (statedb *StateDatabase) GetActiveMediators(n int)common.Addresses{
+	Candidates ,err := statedb.GetMediatorsList()
 	if err !=nil {
 		return nil
 	}
-	// Todo:sort candidates by vote number
-	return make([]common.Address,21)
+	return Candidates.GetHeadAddress(n)
 }
 
 func (statedb *StateDatabase) GetMediatorsList() (MediatorCandidates,error) {
-	Candidates := make(MediatorCandidates,0)
-	err := GetDecodedComplexData(statedb.db,MEDIATOR_CANDIDATE_PREFIX,Candidates)
-	return Candidates, err
-
+	Candidates,err := GetDecodedComplexData(statedb.db,MEDIATOR_CANDIDATE_PREFIX,MediatorCandidates{})
+	return Candidates.(MediatorCandidates), err
 }
 
 func (statedb *StateDatabase) SaveMediatorsList(Candidates MediatorCandidates)error{
@@ -286,16 +287,12 @@ func (statedb *StateDatabase)SaveVote(id []byte, voteData interface{}) error {
 }
 
 
-func GetDecodedComplexData(db ptndb.Database, key []byte,dataType interface{}) error{
+func GetDecodedComplexData(db ptndb.Database, key []byte,dataType interface{}) (interface{},error){
 	valByte, err := db.Get(key)
 	if err != nil{
-		return err
+		return nil,err
 	}
-	err = rlp.DecodeBytes(valByte,dataType)
-	if err != nil {
-		return err
-	}
-	return nil
+	return rlp.GetDecodedFromBytes(valByte,dataType)
 }
 func ErrorLogHandler(err error,errType string) error{
 	if err != nil {
@@ -312,8 +309,28 @@ func KeyConnector(keys ...[]byte) []byte {
 	return res
 }
 type MediatorCandidates []MediatorCandidate
-type MediatorCandidate map[common.Address]VoteNumber
+type MediatorCandidate struct{
+	Address common.Address
+	VoteNumber VoteNumber
+}
 type VoteNumber uint64
+func (ms MediatorCandidates) Swap(i, j int)      { ms[i], ms[j] = ms[j], ms[i] }
+func (ms MediatorCandidates) Len() int           { return len(ms) }
+func (ms MediatorCandidates) Less(i, j int) bool { return ms[i].VoteNumber > ms[j].VoteNumber }
+func (ms MediatorCandidates) GetHeadAddress (n int) common.Addresses {
+	if n<21{
+		log.Println("less mediator number", "error",)
+		return nil
+	}
+	var res common.Addresses
+	sort.Sort(ms)
+	for  i:=0; i<n;i++ {
+		res = append(res,ms[i].Address)
+	}
+	return res
+}
+// Fengyiran >>>>>
+
 /**
 获取合约模板
 To get contract template

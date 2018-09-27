@@ -106,8 +106,8 @@ type Utxo struct {
 	Asset    *Asset `json:"Asset"`   // 资产类别
 	PkScript []byte `json:"program"` // 要执行的代码段
 	LockTime uint32 `json:"lock_time"`
-
-	// falgs contains additional info about output such as whether it is spent, and whether is has
+	VoteResult Vote 
+	// flags contains additional info about output such as whether it is spent, and whether is has
 	// been modified since is was loaded.
 	Flags txoFlags
 }

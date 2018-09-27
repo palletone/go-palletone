@@ -67,11 +67,9 @@ func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
 func (d *Dag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
 	return d.DynGlobalProp
 }
-
 func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
 	return d.MediatorSchl
 }
-
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
@@ -181,10 +179,8 @@ func (d *Dag) ValidateUnit(unit *modules.Unit, isGenesis bool) bool {
 	if unitState != modules.UNIT_STATE_VALIDATED {
 		return false
 	}
-
 	return true
 }
-
 func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
 	// step1. check exists
 	if d.Memdag.Exists(unit.UnitHash) || d.GetUnit(unit.UnitHash) != nil {
@@ -557,7 +553,7 @@ func (d *Dag) GetTrieSyncProgress() (uint64, error) {
 func (d *Dag) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
 	d.Mutex.RLock()
 	defer d.Mutex.RUnlock()
-	return d.utxodb.GetUtxoEntry(key)
+	return d.utxodb.GetUtxoEntry(key) 
 }
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
@@ -585,7 +581,6 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 
 	return view, err
 }
-
 // GetAllUtxos is return all utxo.
 func (d *Dag) GetAllUtxos() (*txspool.UtxoViewpoint, error) {
 	view := txspool.NewUtxoViewpoint()
@@ -656,7 +651,6 @@ func (d *Dag) GetActiveMediatorAddr(index int) common.Address {
 func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
 	return d.GlobalProp.GetActiveMediatorNode(index)
 }
-
 // author Albert·Gou
 func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 	return d.GlobalProp.GetActiveMediator(add)
