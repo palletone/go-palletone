@@ -1002,6 +1002,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 
 	case msg.Code == TxMsg:
+		log.Info("===============ProtocolManager TxMsg====================")
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
 		if atomic.LoadUint32(&pm.acceptTxs) == 0 {
 			log.Debug("ProtocolManager handlmsg TxMsg pm.acceptTxs==0")
@@ -1014,7 +1015,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 		//TODO VerifyTX
-
+		log.Info("===============ProtocolManager", "TxMsg txs:", txs)
 		for i, tx := range txs {
 			// Validate and mark the remote transaction
 			if tx == nil {
@@ -1022,6 +1023,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}
 			p.MarkTransaction(tx.Hash())
 		}
+		log.Info("===============ProtocolManager TxMsg AddRemotes====================")
 		pm.txpool.AddRemotes(txs)
 	case msg.Code == ConsensusMsg:
 		var consensusmsg string

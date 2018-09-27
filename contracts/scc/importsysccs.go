@@ -22,44 +22,40 @@ package scc
 
 import (
 	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
-	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc1"
-	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc2"
 )
 
 var systemChaincodes = []*SystemChaincode{
-	//set systemChaincodes to sample
 	{
 		Id:        []byte{0x95, 0x27},
 		Enabled:   true,
 		Name:      "sample_syscc",
 		Path:      "~/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc/samplesyscc",
-		//Path:      "D:\\test\\syscc\\samplesyscc",
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &samplesyscc.SampleSysCC{},
 	},
-
-	{
-		Id:        []byte{0x95, 0x28},
-		Enabled:   true,
-		Name:      "sample_syscc1",
-		Path:      "~/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc1/samplesyscc1",
-		//Path:      "D:\\test\\syscc\\samplesyscc",
-		Version:   "ptn001",
-		InitArgs:  [][]byte{},
-		Chaincode: &samplesyscc1.SampleSysCC1{},
-	},
-
-	{
-		Id:        []byte{0x95, 0x29},
-		Enabled:   true,
-		Name:      "sample_syscc2",
-		Path:      "~/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc2/samplesyscc2",
-		//Path:      "D:\\test\\syscc\\samplesyscc",
-		Version:   "ptn001",
-		InitArgs:  [][]byte{},
-		Chaincode: &samplesyscc2.SampleSysCC2{},
-	},
+	//
+	//{
+	//	Id:        []byte{0x95, 0x28},
+	//	Enabled:   true,
+	//	Name:      "sample_syscc1",
+	//	Path:      "~/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc1/samplesyscc1",
+	//	//Path:      "D:\\test\\syscc\\samplesyscc",
+	//	Version:   "ptn001",
+	//	InitArgs:  [][]byte{},
+	//	Chaincode: &samplesyscc1.SampleSysCC1{},
+	//},
+	//
+	//{
+	//	Id:        []byte{0x95, 0x29},
+	//	Enabled:   true,
+	//	Name:      "sample_syscc2",
+	//	Path:      "~/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc2/samplesyscc2",
+	//	//Path:      "D:\\test\\syscc\\samplesyscc",
+	//	Version:   "ptn001",
+	//	InitArgs:  [][]byte{},
+	//	Chaincode: &samplesyscc2.SampleSysCC2{},
+	//},
 
 	//TODO add other system chaincodes ...
 }

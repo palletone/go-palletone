@@ -34,6 +34,7 @@ import (
 
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"time"
+	"github.com/pkg/errors"
 )
 
 var ccproviderLogger = flogging.MustGetLogger("ccprovider")
@@ -77,20 +78,23 @@ type CCPackage interface {
 }
 
 //SetChaincodesPath sets the chaincode path for this peer
-func SetChaincodesPath(path string) {
+func SetChaincodesPath(path string) error {
 	if s, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(path, 0755); err != nil {
 				ccproviderLogger.Errorf("Could not create chaincodes install path: %s", err)
+				return err
 			}
 		} else {
 			ccproviderLogger.Errorf("Could not stat chaincodes install path: %s", err)
 		}
 	} else if !s.IsDir() {
 		ccproviderLogger.Errorf("chaincode path exists but not a dir: %s", path)
+		return errors.New("chaincodes path is not dir")
 	}
 
 	chaincodeInstallPath = path
+	return nil
 }
 
 //GetChaincodePackage returns the chaincode package from the file system

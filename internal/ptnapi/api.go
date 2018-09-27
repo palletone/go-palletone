@@ -1341,23 +1341,23 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		return nil, err
 	}
 	var hashType uint32
-	 switch *cmd.Flags {
-	 case "ALL":
-	 	hashType = SigHashAll
-	 case "NONE":
-	 	hashType = SigHashNone
-	 case "SINGLE":
-	 	hashType = SigHashSingle
-	 case "ALL|ANYONECANPAY":
-	 	hashType = SigHashAll | SigHashAnyOneCanPay
-	 case "NONE|ANYONECANPAY":
-	 	hashType = SigHashNone | SigHashAnyOneCanPay
-	 case "SINGLE|ANYONECANPAY":
-	 	hashType = SigHashSingle | SigHashAnyOneCanPay
-	 default:
+	switch *cmd.Flags {
+	case "ALL":
+		hashType = SigHashAll
+	case "NONE":
+		hashType = SigHashNone
+	case "SINGLE":
+		hashType = SigHashSingle
+	case "ALL|ANYONECANPAY":
+		hashType = SigHashAll | SigHashAnyOneCanPay
+	case "NONE|ANYONECANPAY":
+		hashType = SigHashNone | SigHashAnyOneCanPay
+	case "SINGLE|ANYONECANPAY":
+		hashType = SigHashSingle | SigHashAnyOneCanPay
+	default:
 		//e := errors.New("Invalid sighash parameter")
-	 	return nil, err
-	 }
+		return nil, err
+	}
 
 	inputpoints := make(map[modules.OutPoint][]byte)
 	//scripts := make(map[string][]byte)
@@ -1419,7 +1419,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	}
 
 	var signErrs []common.SignatureError
-	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType,inputpoints, redeem, keys)
+	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, keys)
 	if err != nil {
 
 		return nil, DeserializationError{err}
@@ -1487,13 +1487,18 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 	tx := new(modules.Transaction)
 	// tx.AccountNonce =uint64(rand.Intn(100000))
 	//tx.CreationDate = time.Now().Format("2006-01-02 15:04:05")
-	keys := common.HexToHash(encodedTx)
-	tx.TxHash = keys
+	//keys := common.HexToHash(encodedTx)
+	//tx.TxHash = keys
 	//tx.Priority_lvl = tx.GetPriorityLvl()
-	//if err := rlp.DecodeBytes(encodedTx, tx); err != nil {
-	//	return common.Hash{}, err
-	//}
+	serializedTx, err := decodeHexStr(encodedTx)
+	if err != nil {
+		return common.Hash{}, err
+	}
 
+	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
+		return common.Hash{}, err
+	}
+	//log.Info("PublicTransactionPoolAPI", "SendRawTransaction tx", tx)
 	return submitTransaction(ctx, s.b, tx)
 }
 

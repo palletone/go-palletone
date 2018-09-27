@@ -8,18 +8,18 @@ import (
 	"bytes"
 	"container/list"
 	"encoding/hex"
-	cp "github.com/palletone/go-palletone/common/crypto"
-	db "github.com/palletone/go-palletone/contracts/comm"
-	cclist "github.com/palletone/go-palletone/contracts/list"
+	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	unit "github.com/palletone/go-palletone/dag/modules"
-	"github.com/pkg/errors"
-	"github.com/spf13/viper"
+	cp "github.com/palletone/go-palletone/common/crypto"
+	db "github.com/palletone/go-palletone/contracts/comm"
+	cclist "github.com/palletone/go-palletone/contracts/list"
 )
 
 var debugX bool = true
@@ -157,7 +157,6 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	//test
 	tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
 	listAdd(tcc)
-
 	logger.Infof("template id [%v]", tcc.templateId)
 
 	return payloadUnit, nil
@@ -234,14 +233,11 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 
 func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *unit.ContractDeployPayload, e error) {
 	logger.Infof("==========Deploy enter=======")
-	logger.Infof("templateId[%s]txid[%s]", hex.EncodeToString(templateId), txid)
 	defer logger.Infof("-----------Deploy exit--------")
-
+	logger.Infof("chainid[%s]templateId[%s]txid[%s]", chainID, hex.EncodeToString(templateId), txid)
 	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
-	logger.Infof("enter, chainId[%s], txid[%s],templateId[%s]", chainID, txid, string(templateId))
-	defer logger.Info("exit")
 
 	if chainID != "" {
 		setChainId = chainID
@@ -254,7 +250,6 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 		Input: &pb.ChaincodeInput{
 			Args: args,
 		},
-		//ChaincodeId: &pb.ChaincodeID{},
 	}
 	templateCC, err := ucc.RecoverChainCodeFromDb(spec, chainID, templateId)
 	if err != nil {

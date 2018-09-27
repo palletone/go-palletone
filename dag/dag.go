@@ -32,7 +32,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/memunit"
@@ -67,11 +66,9 @@ func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
 func (d *Dag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
 	return d.DynGlobalProp
 }
-
 func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
 	return d.MediatorSchl
 }
-
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
@@ -172,17 +169,6 @@ func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Su
 // irrelevant what the chain contents were prior.
 func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 	return nil
-}
-
-// @author Albert·Gou
-func (d *Dag) ValidateUnit(unit *modules.Unit, isGenesis bool) bool {
-	// todo
-	unitState := d.validate.ValidateUnit(unit, isGenesis)
-	if unitState != modules.UNIT_STATE_VALIDATED {
-		return false
-	}
-
-	return true
 }
 
 func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
@@ -557,7 +543,7 @@ func (d *Dag) GetTrieSyncProgress() (uint64, error) {
 func (d *Dag) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
 	d.Mutex.RLock()
 	defer d.Mutex.RUnlock()
-	return d.utxodb.GetUtxoEntry(key)
+	return d.utxodb.GetUtxoEntry(key) 
 }
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
@@ -636,11 +622,6 @@ func (d *Dag) GetActiveMediatorAddr(index int) common.Address {
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
 	return d.GlobalProp.GetActiveMediatorNode(index)
-}
-
-// author Albert·Gou
-func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
-	return d.GlobalProp.GetActiveMediator(add)
 }
 
 // author Albert·Gou

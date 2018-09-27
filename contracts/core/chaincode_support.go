@@ -147,7 +147,7 @@ func (chaincodeSupport *ChaincodeSupport) launchStarted(chaincode string) bool {
 func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout time.Duration, ca accesscontrol.CA) pb.ChaincodeSupportServer {
 	//path := config.GetPath("peer.fileSystemPath") + string(filepath.Separator) + "chaincodes"
 	path := cfg.GetConfig().ContractFileSystemPath + string(filepath.Separator) + "chaincodes"
-	chaincodeLogger.Infof("NewChaincodeSupport chaincodes path: %s\n", path)
+	chaincodeLogger.Infof("NewChaincodeSupport chaincodes path: %s, cfgpath[%s]\n", path, cfg.GetConfig().ContractFileSystemPath)
 
 	ccprovider.SetChaincodesPath(path)
 	pnid := viper.GetString("peer.networkId")
