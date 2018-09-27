@@ -25,6 +25,17 @@ func TestChainCodeList(t *testing.T) {
 		t.Error("not find chainlist")
 	}
 	t.Logf("vsersion=%d", cl.Version)
+	DelChaincode("cid", "cc1", "v1")
+
+	for k, v := range cl.CClist {
+		t.Logf("----%s:%v", k, *v)
+	}
+
+	cc, err := GetChaincode("cid", []byte("cc2test"))
+	if err != nil {
+		t.Error("not find chainlist")
+	}
+	t.Logf("%v", *cc)
 
 	for k, v := range cl.CClist {
 		t.Logf("%s:%v", k, *v)

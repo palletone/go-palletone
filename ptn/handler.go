@@ -17,6 +17,7 @@
 package ptn
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -95,9 +96,9 @@ type ProtocolManager struct {
 	ceSub      event.Subscription
 
 	// append by Albert·Gou
-	producer           producer
-	newProducedUnitCh  chan mp.NewProducedUnitEvent
-	newProducedUnitSub event.Subscription
+	producer   producer
+	newUnitCh  chan mp.NewUnitEvent
+	newUnitSub event.Subscription
 
 	// append by Albert·Gou
 	sigShareCh  chan mp.SigShareEvent
@@ -286,9 +287,9 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 
 	// append by Albert·Gou
 	// broadcast new unit produced by mediator
-	pm.newProducedUnitCh = make(chan mp.NewProducedUnitEvent)
-	pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
-	go pm.newProducedUnitBroadcastLoop()
+	pm.newUnitCh = make(chan mp.NewUnitEvent)
+	pm.newUnitSub = pm.producer.SubscribeNewUnitEvent(pm.newUnitCh)
+	go pm.newUnitBroadcastLoop()
 
 	// append by Albert·Gou
 	// send signature share
@@ -443,9 +444,9 @@ func (self *ProtocolManager) vssDealTransmitLoop() {
 
 // @author Albert·Gou
 type producer interface {
-	// SubscribeNewProducedUnitEvent should return an event subscription of
-	// NewProducedUnitEvent and send events to the given channel.
-	SubscribeNewProducedUnitEvent(ch chan<- mp.NewProducedUnitEvent) event.Subscription
+	// SubscribeNewUnitEvent should return an event subscription of
+	// NewUnitEvent and send events to the given channel.
+	SubscribeNewUnitEvent(ch chan<- mp.NewUnitEvent) event.Subscription
 	// UnitBLSSign is to TBLS sign the unit
 	ToUnitTBLSSign(unit *modules.Unit) error
 
@@ -466,7 +467,7 @@ func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping PalletOne protocol")
 
 	// append by Albert·Gou
-	pm.newProducedUnitSub.Unsubscribe()
+	pm.newUnitSub.Unsubscribe()
 	pm.sigShareSub.Unsubscribe()
 	pm.vssDealSub.Unsubscribe()
 	pm.vssResponseSub.Unsubscribe()
@@ -738,7 +739,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 			// Advance to the next header of the query
 			switch {
-			case query.Origin.Hash != (common.Hash{}) && query.Reverse:
+			case hashMode && query.Reverse:
 				// Hash based traversal towards the genesis block
 				for i := 0; i < int(query.Skip)+1; i++ {
 					if header, err := pm.dag.GetHeader(query.Origin.Hash, number); err == nil && header != nil {
@@ -752,35 +753,20 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 						break
 					}
 				}
-			case query.Origin.Hash != (common.Hash{}) && !query.Reverse:
-			//TODO must recover
-			/*
+			case hashMode && !query.Reverse:
 				// Hash based traversal towards the leaf block
 				var (
 					current = origin.Number.Index
 					next    = current + query.Skip + 1
+					index   = origin.Number
 				)
-				//log.Debug("msg.Code==GetBlockHeadersMsg", "current:", current, "query.Skip:", query.Skip)
 				if next <= current {
 					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
 					log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
 					unknown = true
 				} else {
-					//log.Debug("msg.Code==GetBlockHeadersMsg", "next:", next)
-
-					//index := query.Origin.Number
-					//index := modules.ChainIndex{}
-					//index.AssetID.SetBytes([]byte(query.Origin.Number.AssetID))
-					//index.Index = next
-					//index.IsMain = true
-					indexNext := modules.ChainIndex{
-						modules.PTNCOIN,
-						true,
-						next,
-					}
-					if header := pm.dag.GetHeaderByNumber(indexNext); header != nil {
-						//query.Origin.Hash = header.Hash()
-						//TODO must recover
+					index.Index = next
+					if header := pm.dag.GetHeaderByNumber(index); header != nil {
 						if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
 							query.Origin.Hash = header.Hash()
 						} else {
@@ -790,7 +776,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 						unknown = true
 					}
 				}
-			*/
 			case query.Reverse:
 				// Number based traversal towards the genesis block
 				if query.Origin.Number.Index >= query.Skip+1 {
@@ -1036,14 +1021,23 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 
 	// append by Albert·Gou
-	case msg.Code == NewProducedUnitMsg:
+	case msg.Code == NewUnitMsg:
 		// Retrieve and decode the propagated new produced unit
 		var unit modules.Unit
 		if err := msg.Decode(&unit); err != nil {
-			log.Info("===NewProducedUnitMsg===", "err:", err)
+			log.Info("===NewUnitMsg===", "err:", err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		pm.producer.ToUnitTBLSSign(&unit)
+
+		// append by Albert·Gou
+	case msg.Code == SigShareMsg:
+		var sigShare mp.SigShareEvent
+		if err := msg.Decode(&sigShare); err != nil {
+			log.Info("===SigShareMsg===", "err:", err)
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		pm.producer.ToTBLSRecover(&sigShare)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
@@ -1116,18 +1110,18 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 }
 
 // @author Albert·Gou
-func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
+func (self *ProtocolManager) newUnitBroadcastLoop() {
 	for {
 		select {
-		case event := <-self.newProducedUnitCh:
-			self.BroadcastNewProducedUnit(event.Unit)
+		case event := <-self.newUnitCh:
+			self.BroadcastNewUnit(event.Unit)
 
 			// appended by wangjiyou
 			self.BroadcastUnit(event.Unit, true)
 			self.BroadcastUnit(event.Unit, false)
 
 		// Err() channel will be closed when unsubscribing.
-		case <-self.newProducedUnitSub.Err():
+		case <-self.newUnitSub.Err():
 			return
 		}
 	}
@@ -1247,8 +1241,8 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 }
 
 // @author Albert·Gou
-// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
-func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
+// BroadcastNewUnit will propagate a new produced unit to all of active mediator's peers
+func (pm *ProtocolManager) BroadcastNewUnit(unit *modules.Unit) {
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
@@ -1340,4 +1334,96 @@ func test() {
 	sum++
 	tempGetBlockBodiesMsgSum++
 }
+
+	case msg.Code == GetBlockHeadersMsg:
+		// Decode the complex header query
+		var query getBlockHeadersData
+		if err := msg.Decode(&query); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		hashMode := query.Origin.Hash != (common.Hash{})
+		first := true
+		maxNonCanonical := uint64(100)
+
+		// Gather headers until the fetch or network limits is reached
+		var (
+			bytes   common.StorageSize
+			headers []*modules.Header
+			unknown bool
+		)
+		for !unknown && len(headers) < int(query.Amount) && bytes < softResponseLimit && len(headers) < downloader.MaxHeaderFetch {
+			// Retrieve the next header satisfying the query
+			var origin *modules.Header
+			if hashMode {
+				if first {
+					first = false
+					origin = pm.dag.GetHeaderByHash(query.Origin.Hash)
+					if origin != nil {
+						query.Origin.Number = origin.Number
+					}
+				} else {
+					var err error
+					origin, err = pm.dag.GetHeader(query.Origin.Hash, query.Origin.Number.Index)
+					if err != nil {
+						break
+					}
+				}
+			} else {
+				origin = pm.dag.GetHeaderByNumber(query.Origin.Number)
+			}
+			if origin == nil {
+				break
+			}
+			headers = append(headers, origin)
+			//TODO must modify
+			bytes += estHeaderRlpSize
+
+			// Advance to the next header of the query
+			switch {
+			case hashMode && query.Reverse:
+				// Hash based traversal towards the genesis block
+				ancestor := query.Skip + 1
+				if ancestor == 0 {
+					unknown = true
+				} else {
+					query.Origin.Hash, query.Origin.Number = pm.dag.GetAncestor(query.Origin.Hash, query.Origin.Number, ancestor, &maxNonCanonical)
+					unknown = (query.Origin.Hash == common.Hash{})
+				}
+			case hashMode && !query.Reverse:
+				// Hash based traversal towards the leaf block
+				var (
+					current = origin.Number.Uint64()
+					next    = current + query.Skip + 1
+				)
+				if next <= current {
+					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
+					p.Log().Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
+					unknown = true
+				} else {
+					if header := pm.blockchain.GetHeaderByNumber(next); header != nil {
+						nextHash := header.Hash()
+						expOldHash, _ := pm.blockchain.GetAncestor(nextHash, next, query.Skip+1, &maxNonCanonical)
+						if expOldHash == query.Origin.Hash {
+							query.Origin.Hash, query.Origin.Number = nextHash, next
+						} else {
+							unknown = true
+						}
+					} else {
+						unknown = true
+					}
+				}
+			case query.Reverse:
+				// Number based traversal towards the genesis block
+				if query.Origin.Number >= query.Skip+1 {
+					query.Origin.Number -= query.Skip + 1
+				} else {
+					unknown = true
+				}
+
+			case !query.Reverse:
+				// Number based traversal towards the leaf block
+				query.Origin.Number += query.Skip + 1
+			}
+		}
+		return p.SendBlockHeaders(headers)
 */

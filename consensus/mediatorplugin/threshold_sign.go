@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/share"
 	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
 	"github.com/dedis/kyber/sign/tbls"
@@ -196,11 +197,15 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		case resp := <-respCh:
 			processResp(resp)
 			finished, certified := isFinishedAndCertified()
-			if certified {
-				// todo 发送验证成功消息, 开启unit分片签名循环
-				go mp.signTBLSLoop(localMed)
-			}
 			if finished {
+				delete(mp.respBuf[localMed], vrfrMed)
+
+				if certified {
+					// todo 发送验证成功消息, 开启unit分片签名循环
+					delete(mp.respBuf, localMed)
+					go mp.signTBLSLoop(localMed)
+				}
+
 				return
 			}
 		}
@@ -291,10 +296,7 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 		case newUnit := <-newUnitBuf:
 			sigShare, success := signTBLS(newUnit)
 			if success {
-				go mp.sigShareFeed.Send(SigShareEvent{
-					Hash:     newUnit.Hash(),
-					SigShare: sigShare,
-				})
+				go mp.sigShareFeed.Send(SigShareEvent{Hash: newUnit.Hash(), SigShare: sigShare})
 			}
 		}
 	}
@@ -305,6 +307,70 @@ func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.
 }
 
 func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
-	// todo
-	return nil
+	select {
+	case <-mp.quit:
+		return errTerminated
+	default:
+		go mp.addToTBLSRecoverBuf(sigShare.Hash, sigShare.SigShare)
+		return nil
+	}
+}
+
+// 收集签名分片
+func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) {
+	dag := mp.getDag()
+	localMed := *dag.GetUnit(newUnitHash).UnitAuthor()
+
+	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
+	if !ok {
+		log.Error("the following mediator is not local: %v", localMed.Str())
+	}
+
+	// 当buf不存在时，说明已经recover出群签名，忽略该签名分片
+	unitSigShareBuf, ok := medSigShareBuf[newUnitHash]
+	if !ok {
+		return
+	}
+
+	mp.toTBLSRecoverBuf[localMed][newUnitHash] = append(unitSigShareBuf, sigShare)
+
+	// recover群签名
+	go mp.recoverTBLSSign(localMed, newUnitHash)
+}
+
+func (mp *MediatorPlugin) recoverTBLSSign(localMed common.Address, newUnitHash common.Hash) {
+	dag := mp.getDag()
+	aSize := dag.GetActiveMediatorCount()
+	curThreshold := dag.GetCurThreshold()
+
+	sigShares := mp.toTBLSRecoverBuf[localMed][newUnitHash]
+	if len(sigShares) < curThreshold {
+		return
+	}
+
+	dkgr := mp.getLocalActiveMediatorDKG(localMed)
+	if dkgr == nil {
+		return
+	}
+
+	dks, err := dkgr.DistKeyShare()
+	if err == nil {
+		log.Error(err.Error())
+	}
+
+	suite := mp.suite
+	pubPoly := share.NewPubPoly(suite, suite.Point().Base(), dks.Commitments())
+	sig, err := tbls.Recover(suite, pubPoly, newUnitHash[:], sigShares, curThreshold, aSize)
+	if err == nil {
+		log.Error(err.Error())
+	}
+
+	// recover后 删除buf
+	delete(mp.toTBLSRecoverBuf[localMed], newUnitHash)
+	go mp.broadcastIrreversibleUnit(newUnitHash, sig)
+}
+
+func (mp *MediatorPlugin) broadcastIrreversibleUnit(newUnitHash common.Hash, sign []byte) {
+	// todo 广播签名
+
 }

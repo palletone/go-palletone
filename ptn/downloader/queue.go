@@ -554,6 +554,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 	if progress {
 		// Wake WaitResults, resultCache was modified
 		log.Debug("===queue->reserveHeaders===q.active.Signal")
+		fmt.Println("xz  q.active.Signal()")
 		q.active.Signal()
 	}
 	// Assemble and return the block download request
@@ -692,6 +693,7 @@ func (q *queue) expire(timeout time.Duration, pendPool map[string]*fetchRequest,
 // of ready headers to the processor to keep the pipeline full. However it will
 // not block to prevent stalling other pending deliveries.
 func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcCh chan []*modules.Header) (int, error) {
+	fmt.Println("xz  DeliverHeaders")
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -779,6 +781,7 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 // The method returns the number of blocks bodies accepted from the delivery and
 // also wakes any threads waiting for data delivery.
 func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction) (int, error) {
+	fmt.Println("xz  DeliverBodies")
 	q.lock.Lock()
 	defer q.lock.Unlock()
 

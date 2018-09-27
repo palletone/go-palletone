@@ -23,8 +23,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
@@ -34,7 +34,7 @@ import (
 
 // GenerateVerifiedUnit, generate unit
 // @author Albert·Gou
-func GenerateUnit(dag dag.IDag, when time.Time, producer core.Mediator,
+func GenerateUnit(dag dag.IDag, when time.Time, producer common.Address,
 	ks *keystore.KeyStore, txspool *txspool.TxPool) *modules.Unit {
 	dgp := dag.GetDynGlobalProp()
 
@@ -43,18 +43,18 @@ func GenerateUnit(dag dag.IDag, when time.Time, producer core.Mediator,
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	log.Debug("Generating Verified Unit...")
 
-	units, err := dag.CreateUnit(&producer.Address, txspool, ks, when)
+	newUnits, err := dag.CreateUnit(&producer, txspool, ks, when)
 	if err != nil {
 		log.Error("GenerateUnit", "error", err.Error())
 		return &modules.Unit{}
 	}
 	// added by yangyu, 2018.8.9
-	if units == nil || len(units) == 0 || units[0].IsEmpty() {
+	if newUnits == nil || len(newUnits) == 0 || newUnits[0].IsEmpty() {
 		log.Info("No unit need to be packaged for now.")
 		return &modules.Unit{}
 	}
 
-	pendingUnit := &units[0]
+	pendingUnit := &newUnits[0]
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
 	if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
 		curUnit := dag.GetCurrentMemUnit(pendingUnit.UnitHeader.AssetIDs[0])
@@ -73,7 +73,7 @@ func GenerateUnit(dag dag.IDag, when time.Time, producer core.Mediator,
 	}
 	pendingUnit.UnitHash = pendingUnit.Hash()
 
-	_, err = dagcommon.GetUnitWithSig(pendingUnit, ks, producer.Address)
+	_, err = dagcommon.GetUnitWithSig(pendingUnit, ks, producer)
 	if err != nil {
 		log.Error(fmt.Sprintf("%v", err))
 	}

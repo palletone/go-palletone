@@ -59,9 +59,15 @@ type StateDb interface {
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id common.Hash) (*modules.Contract, error)
 	SaveVote(id []byte, voteData interface{}) error
-	SaveMediatorsList(Candidates MediatorCandidates)error
-	GetMediatorsList() (MediatorCandidates,error)
-	GetActiveMediators(n int)common.Addresses
+	SaveMediatorsList(Candidates MediatorCandidates) error
+	GetMediatorsList() (MediatorCandidates, error)
+	GetActiveMediators(n int) common.Addresses
+	GetGlobalProperty() (globalProperty, error)
+	SaveGlobalProperty(globalProperty globalProperty) error
+	GetDynamicGlobalProperty() (modules.DynamicGlobalProperty, error)
+	SaveDynamicGlobalProperty(DynamicGlobalProperty modules.DynamicGlobalProperty) error
+	GetMediatorSchedule() (mediatorSchedule, error)
+	SaveMediatorSchedule(MediatorSchedule mediatorSchedule) error
 }
 
 // ######################### SAVE IMPL START ###########################
@@ -92,6 +98,7 @@ func (statedb *StateDatabase) SaveContractTemplate(templateId []byte, bytecode [
 	}
 	return nil
 }
+
 /**
 保存合约属性信息
 To save contract
@@ -260,41 +267,69 @@ func (statedb *StateDatabase) GetContract(id common.Hash) (*modules.Contract, er
 }
 
 // <<<<< Fengyiran
-func (statedb *StateDatabase) GetActiveMediators(n int)common.Addresses{
-	Candidates ,err := statedb.GetMediatorsList()
-	if err !=nil {
+//get mediatorCandidates ==> sort ==> RETURN specified number of Addresses
+func (statedb *StateDatabase) GetActiveMediators(n int) common.Addresses {
+	Candidates, err := statedb.GetMediatorsList()
+	if err != nil {
 		return nil
 	}
 	return Candidates.GetHeadAddress(n)
 }
 
-func (statedb *StateDatabase) GetMediatorsList() (MediatorCandidates,error) {
-	Candidates,err := GetDecodedComplexData(statedb.db,MEDIATOR_CANDIDATE_PREFIX,MediatorCandidates{})
+func (statedb *StateDatabase) GetMediatorsList() (MediatorCandidates, error) {
+	Candidates, err := GetDecodedComplexData(statedb.db, MEDIATOR_CANDIDATE_PREFIX, MediatorCandidates{})
 	return Candidates.(MediatorCandidates), err
 }
-
-func (statedb *StateDatabase) SaveMediatorsList(Candidates MediatorCandidates)error{
+func (statedb *StateDatabase) SaveMediatorsList(Candidates MediatorCandidates) error {
 	key := MEDIATOR_CANDIDATE_PREFIX
 	value := Candidates
-	return ErrorLogHandler(StoreBytes(statedb.db,key,value),"SaveMediatorsList")
+	return ErrorLogHandler(StoreBytes(statedb.db, key, value), "SaveMediatorsList")
 }
 
-// TODO:voteData definition
-func (statedb *StateDatabase)SaveVote(id []byte, voteData interface{}) error {
-	key := KeyConnector(VOTE_PREFIX,id)
-	value := voteData
-	return ErrorLogHandler( StoreBytes(statedb.db, key, value),"SaveVote")
+func (statedb *StateDatabase) GetMediatorSchedule() (mediatorSchedule, error) {
+	MediatorSchedule, err := GetDecodedComplexData(statedb.db, MEDIATOR_SCHEME_PREFIX, mediatorSchedule{})
+	return MediatorSchedule.(mediatorSchedule), err
+}
+func (statedb *StateDatabase) SaveMediatorSchedule(MediatorSchedule mediatorSchedule) error {
+	key := MEDIATOR_SCHEME_PREFIX
+	value := MediatorSchedule
+	return ErrorLogHandler(StoreBytes(statedb.db, key, value), "SaveMediatorsList")
 }
 
+func (statedb *StateDatabase) GetGlobalProperty() (globalProperty, error) {
+	gp, err := GetDecodedComplexData(statedb.db, GLOBALPROPERTY_PREFIX, globalProperty{})
+	return gp.(globalProperty), err
+}
+func (statedb *StateDatabase) SaveGlobalProperty(globalProperty globalProperty) error {
+	key := GLOBALPROPERTY_PREFIX
+	value := globalProperty
+	return ErrorLogHandler(StoreBytes(statedb.db, key, value), "SaveGlobalProperty")
+}
 
-func GetDecodedComplexData(db ptndb.Database, key []byte,dataType interface{}) (interface{},error){
+func (statedb *StateDatabase) GetDynamicGlobalProperty() (modules.DynamicGlobalProperty, error) {
+	dgp, err := GetDecodedComplexData(statedb.db, DYNAMIC_GLOBALPROPERTY_PREFIX, modules.DynamicGlobalProperty{})
+	return dgp.(modules.DynamicGlobalProperty), err
+}
+func (statedb *StateDatabase) SaveDynamicGlobalProperty(DynamicGlobalProperty modules.DynamicGlobalProperty) error {
+	key := DYNAMIC_GLOBALPROPERTY_PREFIX
+	value := DynamicGlobalProperty
+	return ErrorLogHandler(StoreBytes(statedb.db, key, value), "SaveDynamicGlobalProperty")
+}
+
+func (statedb *StateDatabase) SaveVote(id []byte, vote interface{}) error {
+	key := KeyConnector(VOTE_PREFIX, id)
+	value := vote
+	return ErrorLogHandler(StoreBytes(statedb.db, key, value), "SaveVote")
+}
+
+func GetDecodedComplexData(db ptndb.Database, key []byte, dataType interface{}) (interface{}, error) {
 	valByte, err := db.Get(key)
-	if err != nil{
-		return nil,err
+	if err != nil {
+		return nil, err
 	}
-	return rlp.GetDecodedFromBytes(valByte,dataType)
+	return rlp.GetDecodedFromBytes(valByte, dataType)
 }
-func ErrorLogHandler(err error,errType string) error{
+func ErrorLogHandler(err error, errType string) error {
 	if err != nil {
 		log.Println(errType, "error", err.Error())
 		return err
@@ -308,27 +343,38 @@ func KeyConnector(keys ...[]byte) []byte {
 	}
 	return res
 }
+
 type MediatorCandidates []MediatorCandidate
-type MediatorCandidate struct{
-	Address common.Address
+type MediatorCandidate struct {
+	Address    common.Address
 	VoteNumber VoteNumber
 }
 type VoteNumber uint64
+type StateDBConfig [] StateConfig
+type StateConfig struct {
+	Prefix []byte
+	suffix []byte
+}
+
+func (sc StateConfig) HasSuffix() bool {
+	return sc.suffix != nil
+}
 func (ms MediatorCandidates) Swap(i, j int)      { ms[i], ms[j] = ms[j], ms[i] }
 func (ms MediatorCandidates) Len() int           { return len(ms) }
 func (ms MediatorCandidates) Less(i, j int) bool { return ms[i].VoteNumber > ms[j].VoteNumber }
-func (ms MediatorCandidates) GetHeadAddress (n int) common.Addresses {
-	if n<21{
-		log.Println("less mediator number", "error",)
+func (ms MediatorCandidates) GetHeadAddress(n int) common.Addresses {
+	if n < 21 {
+		log.Println("less mediator number", "error", )
 		return nil
 	}
 	var res common.Addresses
 	sort.Sort(ms)
-	for  i:=0; i<n;i++ {
-		res = append(res,ms[i].Address)
+	for i := 0; i < n; i++ {
+		res = append(res, ms[i].Address)
 	}
 	return res
 }
+
 // Fengyiran >>>>>
 
 /**

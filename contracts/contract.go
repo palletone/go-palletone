@@ -8,19 +8,24 @@ import (
 	unit "github.com/palletone/go-palletone/dag/modules"
 	"time"
 	"errors"
+	"sync/atomic"
 )
-var once int
+
+var initFlag int32
+
 type Contract struct {
 	//cfg *contractcfg.Config
 	name string
 	dag  dag.IDag
 }
+
 // Initialize 初始化合约管理模块以及加载系统合约，
 // 由上层应用指定dag以及初始合约配置信息
 // Initialize the contract management module and load the system contract,
 // Specify dag and initial contract configuration information by the upper application
 func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
-	if once > 0 {
+	atomic.LoadInt32(&initFlag)
+	if initFlag > 0 {
 		return nil, errors.New("contract already init")
 	}
 
@@ -38,9 +43,11 @@ func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
 	if err := cc.Init(idag); err != nil {
 		return nil, err
 	}
+	atomic.StoreInt32(&initFlag, 1)
 	log.Debug("contract initialize ok")
 	return contract, nil
 }
+
 // Install 合约安装，将指定的合约路径文件打包，并与合约名称、版本一起构成合约模板单元
 // chainID 链码ID，用于多链
 // Contract installation, packaging the specified contract path file,
@@ -49,6 +56,7 @@ func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
 func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error) {
 	return cc.Install(c.dag, chainID, ccName, ccPath, ccVersion)
 }
+
 // Deploy 将指定的合约模板部署到本地，生成对应Docker镜像及启动带有初始化合约参数的容器，用于合约的执行。
 // txid由上层应用指定，合约部署超时时间根据具体服务器配置指定，默认40秒。接口返回合约部署ID（每次部署其返回ID不同）以及部署单元
 // Deploy the specified contract template locally,
