@@ -1498,7 +1498,7 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return common.Hash{}, err
 	}
-	//log.Info("==============PublicTransactionPoolAPI", "SendRawTransaction tx", tx)
+	//log.Info("PublicTransactionPoolAPI", "SendRawTransaction tx", tx)
 	return submitTransaction(ctx, s.b, tx)
 }
 
