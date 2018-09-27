@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -52,6 +53,9 @@ var (
 	ASSET_ATTESTORS                  = []byte("ae")
 	MEDIATOR_CANDIDATE_PREFIX        = []byte("mc")
 	MEDIATOR_ELECTED_PREFIX          = []byte("md")
+	GLOBALPROPERTY_PREFIX            = []byte("gp")
+	DYNAMIC_GLOBALPROPERTY_PREFIX    = []byte("dp")
+	MEDIATOR_SCHEME_PREFIX           = []byte("ms")
 
 	// lookup
 	LookupPrefix = []byte("l")

@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -49,8 +50,8 @@ func newChainBanner(dag dag.IDag) {
 	}
 }
 
-func (mp *MediatorPlugin) SubscribeNewProducedUnitEvent(ch chan<- NewProducedUnitEvent) event.Subscription {
-	return mp.newProducedUnitScope.Track(mp.newProducedUnitFeed.Subscribe(ch))
+func (mp *MediatorPlugin) SubscribeNewUnitEvent(ch chan<- NewUnitEvent) event.Subscription {
+	return mp.newUnitScope.Track(mp.newUnitFeed.Subscribe(ch))
 }
 
 func (mp *MediatorPlugin) scheduleProductionLoop() {
@@ -178,18 +179,18 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// we must control the Mediator scheduled to produce the next VerifiedUnit.
-	ma := scheduledMediator.Address
-	med, ok := mp.mediators[ma]
+	sma := scheduledMediator.Address
+	med, ok := mp.mediators[sma]
 	if !ok {
-		detail["ScheduledMediator"] = ma.Str()
+		detail["ScheduledMediator"] = sma.Str()
 		return NotMyTurn, detail
 	}
 
 	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
 	ks := mp.ptn.GetKeyStore()
-	err := ks.Unlock(accounts.Account{Address: ma}, med.Password)
+	err := ks.Unlock(accounts.Account{Address: sma}, med.Password)
 	if err != nil {
-		detail["ScheduledKey"] = ma.Str()
+		detail["ScheduledKey"] = sma.Str()
 		return NoPrivateKey, detail
 	}
 
@@ -202,21 +203,30 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 2. 生产验证单元
-	unit := GenerateUnit(mp.getDag(), scheduledTime, *scheduledMediator, ks, mp.ptn.TxPool())
-	if unit.IsEmpty() {
+	newUnit := GenerateUnit(mp.getDag(), scheduledTime, sma, ks, mp.ptn.TxPool())
+	if newUnit.IsEmpty() {
 		return ExceptionProducing, detail
 	}
 
-	num := unit.UnitHeader.Number.Index
+	num := newUnit.UnitHeader.Number.Index
+	unitHash := newUnit.UnitHash
 	detail["Num"] = strconv.FormatUint(num, 10)
-	time := time.Unix(unit.UnitHeader.Creationdate, 0)
+	time := time.Unix(newUnit.UnitHeader.Creationdate, 0)
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
-	detail["Mediator"] = unit.UnitAuthor().Str()
-	detail["Hash"] = unit.UnitHash.Hex()
+	detail["Mediator"] = sma.Str()
+	detail["Hash"] = unitHash.Hex()
 
-	// 3. 异步向区块链网络广播验证单元
+	// 3. 初始化签名unit相关的签名分片的buf
+	mp.initTBLSRecoverBuf(sma, unitHash)
+
+	// 4. 异步向区块链网络广播验证单元
 	log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
-	mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: unit})
+	mp.newUnitFeed.Send(NewUnitEvent{Unit: newUnit})
 
 	return Produced, detail
+}
+
+func (mp *MediatorPlugin) initTBLSRecoverBuf(localMed common.Address, newUnitHash common.Hash) {
+	aSize := mp.getDag().GetActiveMediatorCount()
+	mp.toTBLSRecoverBuf[localMed][newUnitHash] = make([][]byte, 0, aSize)
 }

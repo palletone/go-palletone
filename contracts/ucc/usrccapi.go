@@ -90,7 +90,6 @@ func DeployUserCC(spec *pb.ChaincodeSpec, chainID string, usrcc *UserChaincode, 
 }
 
 func StopUserCC(chainID string, usrcc *UserChaincode, txid string, deleteImage bool) error {
-	var err error
 	ccprov := ccprovider.GetChaincodeProvider()
 	chaincodeID := &pb.ChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
 	spec := &pb.ChaincodeSpec{
@@ -100,29 +99,20 @@ func StopUserCC(chainID string, usrcc *UserChaincode, txid string, deleteImage b
 			Args: usrcc.InitArgs,
 		},
 	}
-	chaincodeDeploymentSpec := &pb.ChaincodeDeploymentSpec{ChaincodeSpec: spec, CodePackage: nil}
+	chaincodeDeploymentSpec := &pb.ChaincodeDeploymentSpec{
+		ChaincodeSpec: spec,
+		CodePackage:   nil,
+	}
 	cccid := ccprov.GetCCContext(chainID, usrcc.Name, usrcc.Version, txid, false, nil, nil)
-	err = ccprov.Stop(context.Background(), cccid, chaincodeDeploymentSpec)
-	if err != nil {
-		logger.Info("contract stop fail,", usrcc.Name)
+	if err := ccprov.Stop(context.Background(), cccid, chaincodeDeploymentSpec); err != nil {
+		return err
 	}
 
 	if deleteImage {
-		logger.Info("destroyImage not complete")
-		//dir := controller.DestroyImageReq{CCID: ccintf.CCID{
-		//	ChaincodeSpec: spec,
-		//	NetworkID:     theChaincodeSupport.peerNetworkID,
-		//	PeerID:        theChaincodeSupport.peerID,
-		//	ChainID:       cccid.ChainID},Force: true,
-		//	NoPrune: true,
-		//}
-		//_, err = controller.VMCProcess(context.Background(), controller.DOCKER, dir)
-		//if err != nil {
-		//	err = fmt.Errorf("Error destroying image: %s", err)
-		//	return err
-		//}
+		return ccprov.Destory(context.Background(), cccid, chaincodeDeploymentSpec)
+	} else {
+		return nil
 	}
-	return nil
 }
 
 func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err error) {

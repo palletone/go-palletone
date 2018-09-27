@@ -37,7 +37,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 
 	//dagcommon "github.com/palletone/go-palletone/dag/common"
-	"github.com/palletone/go-palletone/consensus/mediatorplugin"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -86,7 +86,7 @@ type PalletOne struct {
 	//etherbase  common.Address
 
 	// append by Albert·Gou
-	mediatorPlugin *mediatorplugin.MediatorPlugin
+	mediatorPlugin *mp.MediatorPlugin
 }
 
 // New creates a new PalletOne object (including the
@@ -129,7 +129,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
 
 	// append by Albert·Gou
-	ptn.mediatorPlugin, err = mediatorplugin.Initialize(ptn, &config.MediatorPlugin)
+	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ptn, &config.MediatorPlugin)
 	if err != nil {
 		log.Error("Initialize mediator plugin err:", err)
 		return nil, err

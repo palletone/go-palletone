@@ -37,7 +37,7 @@ func SetConfig(cfg *Config) {
 }
 
 func GetConfig() *Config {
-	if contractCfg.ContractFileSystemPath == "" || contractCfg.VmEndpoint == ""{
+	if contractCfg.ContractFileSystemPath == "" || contractCfg.VmEndpoint == "" {
 		contractCfg = DefaultConfig
 	}
 	return &contractCfg

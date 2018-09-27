@@ -457,6 +457,8 @@ func (vm *DockerVM) Destroy(ctxt context.Context, ccid ccintf.CCID, force bool, 
 		return err
 	}
 
+	dockerLogger.Infof("image id[%s]", id)
+
 	client, err := vm.getClientFnc()
 	if err != nil {
 		dockerLogger.Errorf("destroy-cannot create client %s", err)
