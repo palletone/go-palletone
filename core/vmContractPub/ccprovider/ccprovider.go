@@ -490,6 +490,8 @@ type ChaincodeProvider interface {
 	ExecuteWithErrorFilter(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) ([]byte, *pb.ChaincodeEvent, error)
 	// Stop stops the chaincode given context and deployment spec
 	Stop(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error
+
+	Destory(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error
 }
 
 var ccFactory ChaincodeProviderFactory

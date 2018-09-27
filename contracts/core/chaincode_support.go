@@ -456,15 +456,12 @@ type ccLauncherImpl struct {
 
 //launches the chaincode using the supplied context and notifier
 func (ccl *ccLauncherImpl) launch(ctxt context.Context, notfy chan bool) (interface{}, error) {
-
 	//launch the chaincode
 	args, env, filesToUpload, err := ccl.ccSupport.getLaunchConfigs(ccl.cccid, ccl.cds.ChaincodeSpec.Type)
 	if err != nil {
 		return nil, err
 	}
-
 	canName := ccl.cccid.GetCanonicalName()
-
 	chaincodeLogger.Debugf("start container: %s(networkid:%s,peerid:%s)", canName, ccl.ccSupport.peerNetworkID, ccl.ccSupport.peerID)
 	chaincodeLogger.Debugf("start container with args: %s", strings.Join(args, " "))
 	chaincodeLogger.Debugf("start container with env:\n\t%s", strings.Join(env, "\n\t"))
@@ -551,8 +548,7 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 			}
 		}()
 
-		chaincodeLogger.Debugf("launch info: %+v", launcher)
-
+		//chaincodeLogger.Debugf("launch info: %+v", launcher)
 		resp, err := launcher.launch(ctxt, notfy)
 		if err != nil || (resp != nil && resp.(controller.VMCResp).Err != nil) {
 			if err == nil {
@@ -611,7 +607,7 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	//sir := container.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, Version: cccid.Version}, Timeout: 0}
 	// The line below is left for debugging. It replaces the line above to keep
 	// the chaincode container around to give you a chance to get data
-	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/, Version: cccid.Version}, Timeout: 0, Dontremove: true}
+	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/ , Version: cccid.Version}, Timeout: 0, Dontremove: true}
 	vmtype, _ := chaincodeSupport.getVMType(cds)
 
 	_, err := controller.VMCProcess(context, vmtype, sir)
@@ -629,6 +625,45 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 
 	delete(chaincodeSupport.runningChaincodes.chaincodeMap, canName)
 	chaincodeSupport.runningChaincodes.Unlock()
+
+	return err
+}
+
+func (chaincodeSupport *ChaincodeSupport) Destory(context context.Context, cccid *ccprovider.CCContext, cds *pb.ChaincodeDeploymentSpec) error {
+	canName := cccid.GetCanonicalName()
+	if canName == "" {
+		return errors.New("chaincode name not set")
+	} else {
+		chaincodeLogger.Debugf("destory : %+v", canName)
+	}
+
+	sir := controller.DestroyImageReq{
+		CCID: ccintf.CCID{
+			ChaincodeSpec: cds.ChaincodeSpec,
+			NetworkID:     chaincodeSupport.peerNetworkID,
+			PeerID:        chaincodeSupport.peerID,
+			ChainID:       "",
+			Version:       cccid.Version,
+		},
+		Timeout: 0,
+		Force:   true,
+		NoPrune: false,
+	}
+	vmtype, _ := chaincodeSupport.getVMType(cds)
+
+	_, err := controller.VMCProcess(context, vmtype, sir)
+	if err != nil {
+		err = errors.WithMessage(err, "error destory container")
+	}
+
+	//chaincodeSupport.runningChaincodes.Lock()
+	//if _, ok := chaincodeSupport.chaincodeHasBeenLaunched(canName); !ok {
+	//	chaincodeSupport.runningChaincodes.Unlock()
+	//	return nil
+	//}
+	//
+	//delete(chaincodeSupport.runningChaincodes.chaincodeMap, canName)
+	//chaincodeSupport.runningChaincodes.Unlock()
 
 	return err
 }
@@ -692,11 +727,8 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 		}
 	}
 	chaincodeSupport.runningChaincodes.Unlock()
-
 	if cds == nil {
-
 		//return cID, cMsg, errors.Errorf("contract not running:%s", canName)
-
 		if cccid.Syscc {
 			return cID, cMsg, errors.Errorf("a syscc should be running (it cannot be launched) %s", canName)
 		}
@@ -706,7 +738,6 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 		}
 
 		var depPayload []byte
-
 		//hopefully we are restarting from existing image and the deployed transaction exists
 		//(this will also validate the ID from the LSCC if we're not using the config-tree approach)
 		depPayload, err = GetCDS(context, cccid.TxID, cccid.SignedProposal, cccid.Proposal, cccid.ChainID, cID.Name)
@@ -718,7 +749,6 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 		}
 
 		cds = &pb.ChaincodeDeploymentSpec{}
-
 		err = proto.Unmarshal(depPayload, cds)
 		if err != nil {
 			return cID, cMsg, errors.Wrap(err, fmt.Sprintf("failed to unmarshal deployment transactions for %s", canName))
@@ -726,7 +756,6 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 	}
 
 	//from here on : if we launch the container and get an error, we need to stop the container
-
 	//launch container if it is a System container or not in dev mode
 	if (!chaincodeSupport.userRunsCC || cds.ExecEnv == pb.ChaincodeDeploymentSpec_SYSTEM) && (chrte == nil || chrte.handler == nil) {
 		//NOTE-We need to streamline code a bit so the data from LSCC gets passed to this thus
@@ -745,14 +774,12 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 				if err != nil {
 					return cID, cMsg, err
 				}
-
 				cds = ccpack.GetDepSpec()
 				chaincodeLogger.Debugf("launchAndWaitForRegister fetched %d bytes from file system", len(cds.CodePackage))
 			}
 		}
 
 		builder := func() (io.Reader, error) { return platforms.GenerateDockerBuild(cds) }
-
 		err = chaincodeSupport.launchAndWaitForRegister(context, cccid, cds, &ccLauncherImpl{context, chaincodeSupport, cccid, cds, builder})
 		if err != nil {
 			chaincodeLogger.Errorf("launchAndWaitForRegister failed: %+v", err)
@@ -773,7 +800,6 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 		}
 		chaincodeLogger.Debug("sending init completed")
 	}
-
 	chaincodeLogger.Debug("LaunchChaincode complete")
 
 	return cID, cMsg, err

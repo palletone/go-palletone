@@ -57,7 +57,7 @@ type IDag interface {
 	GetAllLeafNodes() ([]*modules.Header, error)
 	GetUnit(common.Hash) *modules.Unit
 	CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
-	GetActiveMediatorNode(index int) *discover.Node
+
 	FastSyncCommitHead(common.Hash) error
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
 	GetContractState(id string, field string) (*modules.StateVersion, []byte)
@@ -76,16 +76,18 @@ type IDag interface {
 	WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id common.Hash) (*modules.Contract, error)
-	GetActiveMediatorAddr(index int) common.Address
-	GetActiveMediatorInitPubs() []kyber.Point
 	GetCurThreshold() int
-	IsActiveMediator(add common.Address) bool
 	GetGlobalProp() *modules.GlobalProperty
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
-	GetMediatorSchl() *modules.MediatorSchedule
-	GetActiveMediatorCount() int
 	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
 	ValidateUnit(unit *modules.Unit, isGenesis bool) bool
+	//Mediator
 	GetActiveMediator(add common.Address) *core.Mediator
+	GetActiveMediatorAddr(index int) common.Address
+	GetActiveMediatorInitPubs() []kyber.Point
+	IsActiveMediator(add common.Address) bool
+	GetMediatorSchl() *modules.MediatorSchedule
+	GetActiveMediatorCount() int
+	GetActiveMediatorNode(index int) *discover.Node
 }
