@@ -91,10 +91,7 @@ type PalletOne struct {
 
 // New creates a new PalletOne object (including the
 // initialisation of the common PalletOne object)
-var cnt int
 func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
-	fmt.Println("=================================New", cnt)
-	cnt+=1
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
