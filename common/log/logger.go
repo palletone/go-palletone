@@ -21,7 +21,7 @@
 package log
 
 import (
-	"fmt"
+	//"fmt"
 	"log"
 
 	"strings"
