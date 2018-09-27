@@ -760,7 +760,7 @@ func (pool *TxPool) AddLocals(txs []*modules.TxPoolTransaction) []error {
 // If the senders are not among the locally tracked ones, full pricing constraints
 // will apply.
 func (pool *TxPool) AddRemotes(txs []*modules.Transaction) []error {
-	pool_txs := make([]*modules.TxPoolTransaction, len(txs))
+	pool_txs := make([]*modules.TxPoolTransaction, 0 /*len(txs)*/)
 	for _, tx := range txs {
 		pool_txs = append(pool_txs, TxtoTxpoolTx(pool, tx))
 	}
