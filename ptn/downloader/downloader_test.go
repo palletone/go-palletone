@@ -73,6 +73,8 @@ func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header.Number.AssetID = modules.PTNCOIN
 	header.Number.IsMain = true
 	header.Number.Index = 0
+	//
+	header.Creationdate = time.Now().Unix()
 	header.Authors = &modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
 	header.Witness = []*modules.Authentifier{&modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}}
 	tx, _ := NewCoinbaseTransaction()
@@ -100,6 +102,7 @@ func SaveGenesis(db ptndb.Database, unit *modules.Unit) error {
 }
 func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	input := &modules.Input{}
+	input.Extra = []byte{byte(time.Now().Unix())}
 	output := &modules.Output{}
 	payload := modules.PaymentPayload{
 		Input:  []*modules.Input{input},
@@ -122,6 +125,8 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int) (modules.Units, 
 		header.Number.AssetID = par.UnitHeader.Number.AssetID
 		header.Number.IsMain = par.UnitHeader.Number.IsMain
 		header.Number.Index = par.UnitHeader.Number.Index + 1
+		//
+		header.Creationdate = time.Now().Unix()
 		header.Authors = &modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
 		header.Witness = []*modules.Authentifier{&modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}}
 		tx, _ := NewCoinbaseTransaction()
@@ -276,18 +281,26 @@ func (dl *downloadTester) makeChain(n int, seed byte, parent *modules.Unit, heav
 func (dl *downloadTester) makeChainFork(n, f int, parent *modules.Unit, balanced bool) ([]common.Hash, []common.Hash, map[common.Hash]*modules.Header, map[common.Hash]*modules.Header, map[common.Hash]*modules.Unit, map[common.Hash]*modules.Unit) {
 	// Create the common suffix
 	hashes, headers, blocks := dl.makeChain(n-f, 0, parent, false)
-
+	//for i, hash := range hashes {
+	//	fmt.Println(i, hash)
+	//}
 	// Create the forks, making the second heavier if non balanced forks were requested
 	hashes1, headers1, blocks1 := dl.makeChain(f, 1, blocks[hashes[0]], false)
 	hashes1 = append(hashes1, hashes[1:]...)
-
+	//fmt.Println()
+	//for i, hash := range hashes1 {
+	//	fmt.Println(i, hash)
+	//}
 	heavy := false
 	if !balanced {
 		heavy = true
 	}
 	hashes2, headers2, blocks2 := dl.makeChain(f, 2, blocks[hashes[0]], heavy)
 	hashes2 = append(hashes2, hashes[1:]...)
-
+	//fmt.Println()
+	//for i, hash := range hashes2 {
+	//	fmt.Println(i, hash)
+	//}
 	for hash, header := range headers {
 		headers1[hash] = header
 		headers2[hash] = header
@@ -335,7 +348,7 @@ func (dl *downloadTester) sync(id string, td uint64, mode SyncMode) error {
 
 // HasHeader checks if a header is present in the testers canonical chain.
 func (dl *downloadTester) HasHeader(hash common.Hash, number uint64) bool {
-	fmt.Println("===================(dl *downloadTester) HasHeader=============wokao")
+	//fmt.Println("===================(dl *downloadTester) HasHeader=============wokao")
 	return dl.GetHeaderByHash(hash) != nil
 }
 
@@ -792,22 +805,17 @@ func assertOwnChain(t *testing.T, tester *downloadTester, length int) {
 // number of items of the various chain components.
 func assertOwnForkedChain(t *testing.T, tester *downloadTester, common int, lengths []int) {
 	// Initialize the counters for the first fork
-	headers, blocks, receipts := lengths[0], lengths[0], lengths[0]-fsMinFullBlocks
+	headers, blocks := lengths[0], lengths[0]
 
-	if receipts < 0 {
-		receipts = 1
-	}
 	// Update the counters for each subsequent fork
 	for _, length := range lengths[1:] {
 		headers += length - common
 		blocks += length - common
-		receipts += length - common - fsMinFullBlocks
 	}
 	switch tester.downloader.mode {
-	case FullSync:
-		receipts = 1
+
 	case LightSync:
-		blocks, receipts = 1, 1
+		blocks = 1
 	}
 	if hs := len(tester.ownHeaders); hs != headers {
 		t.Fatalf("synchronised headers mismatch: have %v, want %v", hs, headers)
@@ -975,9 +983,19 @@ func testForkedSync(t *testing.T, protocol int, mode SyncMode) {
 	defer tester.terminate()
 
 	// Create a long enough forked chain
-	common, fork := MaxHashFetch, 2*MaxHashFetch
+	//common, fork := MaxHashFetch, 2*MaxHashFetch
+	common, fork := 12, 2*12
 	hashesA, hashesB, headersA, headersB, blocksA, blocksB := tester.makeChainFork(common+fork, fork, tester.genesis, true)
-
+	//fmt.Println(tester.genesis.UnitHash)
+	//fmt.Println("---start---")
+	//for i, h := range hashesA {
+	//	fmt.Println(i, h)
+	//}
+	//fmt.Println()
+	//for i, h := range hashesB {
+	//	fmt.Println(i, h)
+	//}
+	//fmt.Println("---end---")
 	tester.newPeer("fork A", protocol, hashesA, headersA, blocksA)
 	tester.newPeer("fork B", protocol, hashesB, headersB, blocksB)
 
@@ -994,8 +1012,7 @@ func testForkedSync(t *testing.T, protocol int, mode SyncMode) {
 	assertOwnForkedChain(t, tester, common+1, []int{common + fork + 1, common + fork + 1})
 }
 
-// Tests that synchronising against a much shorter but much heavyer fork works
-// corrently and is not dropped.
+// Tests that synchronising against a much shorter but much heavyer fork works corrently and is not dropped.
 //TODO xiaozhi
 //func TestHeavyForkedSync62(t *testing.T) { testHeavyForkedSync(t, 1, FullSync) }
 
@@ -1032,9 +1049,8 @@ func testHeavyForkedSync(t *testing.T, protocol int, mode SyncMode) {
 	assertOwnForkedChain(t, tester, common+1, []int{common + fork + 1, common + fork/2 + 1})
 }
 
-// Tests that chain forks are contained within a certain interval of the current
-// chain head, ensuring that malicious peers cannot waste resources by feeding
-// long dead chains.
+// Tests that chain forks are contained within a certain interval of the current chain head,
+// ensuring that malicious peers cannot waste resources by feeding long dead chains.
 //TODO xiaozhi
 //func TestBoundedForkedSync62(t *testing.T) { testBoundedForkedSync(t, 1, FullSync) }
 

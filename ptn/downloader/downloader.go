@@ -1727,6 +1727,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 		p.log.Debug("Found common ancestor", "number", number, "hash", hash)
 		return number, nil
 	}
+	fmt.Println("--------------1/2------------")
 	// Ancestor not found, we need to binary search over our chain
 	start, end := uint64(0), head
 	if floor > 0 {
