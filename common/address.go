@@ -44,6 +44,7 @@ var (
 
 // Address represents the 35 byte address of an PalletOne account.
 // for personal address, start with P1 (version 0), script address start with P3(version 5), contract address start with Pc(version 28)
+type Addresses []Address
 type Address [AddressLength]byte
 type AddressType byte
 
