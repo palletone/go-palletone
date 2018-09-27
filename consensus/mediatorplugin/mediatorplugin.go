@@ -49,8 +49,8 @@ func newChainBanner(dag dag.IDag) {
 	}
 }
 
-func (mp *MediatorPlugin) SubscribeNewProducedUnitEvent(ch chan<- NewProducedUnitEvent) event.Subscription {
-	return mp.newProducedUnitScope.Track(mp.newProducedUnitFeed.Subscribe(ch))
+func (mp *MediatorPlugin) SubscribeNewUnitEvent(ch chan<- NewUnitEvent) event.Subscription {
+	return mp.newUnitScope.Track(mp.newUnitFeed.Subscribe(ch))
 }
 
 func (mp *MediatorPlugin) scheduleProductionLoop() {
@@ -202,21 +202,21 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 2. 生产验证单元
-	unit := GenerateUnit(mp.getDag(), scheduledTime, *scheduledMediator, ks, mp.ptn.TxPool())
-	if unit.IsEmpty() {
+	newUnit := GenerateUnit(mp.getDag(), scheduledTime, *scheduledMediator, ks, mp.ptn.TxPool())
+	if newUnit.IsEmpty() {
 		return ExceptionProducing, detail
 	}
 
-	num := unit.UnitHeader.Number.Index
+	num := newUnit.UnitHeader.Number.Index
 	detail["Num"] = strconv.FormatUint(num, 10)
-	time := time.Unix(unit.UnitHeader.Creationdate, 0)
+	time := time.Unix(newUnit.UnitHeader.Creationdate, 0)
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
-	detail["Mediator"] = unit.UnitAuthor().Str()
-	detail["Hash"] = unit.UnitHash.Hex()
+	detail["Mediator"] = newUnit.UnitAuthor().Str()
+	detail["Hash"] = newUnit.UnitHash.Hex()
 
 	// 3. 异步向区块链网络广播验证单元
 	log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
-	mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: unit})
+	mp.newUnitFeed.Send(NewUnitEvent{Unit: newUnit})
 
 	return Produced, detail
 }

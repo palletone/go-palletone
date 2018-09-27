@@ -581,7 +581,7 @@ func (ps *peerSet) GetPeers() []*peer {
 // SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
 // @author Albert·Gou
 func (p *peer) SendNewProducedUnit(newUnit *modules.Unit) error {
-	return p2p.Send(p.rw, NewProducedUnitMsg, newUnit)
+	return p2p.Send(p.rw, NewUnitMsg, newUnit)
 }
 
 // @author Albert·Gou

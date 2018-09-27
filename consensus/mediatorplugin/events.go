@@ -24,8 +24,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-// NewProducedUnitEvent is posted when a unit has been produced.
-type NewProducedUnitEvent struct {
+// NewUnitEvent is posted when a unit has been produced.
+type NewUnitEvent struct {
 	Unit *modules.Unit
 }
 

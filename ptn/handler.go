@@ -95,9 +95,9 @@ type ProtocolManager struct {
 	ceSub      event.Subscription
 
 	// append by Albert·Gou
-	producer           producer
-	newProducedUnitCh  chan mp.NewProducedUnitEvent
-	newProducedUnitSub event.Subscription
+	producer   producer
+	newUnitCh  chan mp.NewUnitEvent
+	newUnitSub event.Subscription
 
 	// append by Albert·Gou
 	sigShareCh  chan mp.SigShareEvent
@@ -286,9 +286,9 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 
 	// append by Albert·Gou
 	// broadcast new unit produced by mediator
-	pm.newProducedUnitCh = make(chan mp.NewProducedUnitEvent)
-	pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
-	go pm.newProducedUnitBroadcastLoop()
+	pm.newUnitCh = make(chan mp.NewUnitEvent)
+	pm.newUnitSub = pm.producer.SubscribeNewUnitEvent(pm.newUnitCh)
+	go pm.newUnitBroadcastLoop()
 
 	// append by Albert·Gou
 	// send signature share
@@ -443,9 +443,9 @@ func (self *ProtocolManager) vssDealTransmitLoop() {
 
 // @author Albert·Gou
 type producer interface {
-	// SubscribeNewProducedUnitEvent should return an event subscription of
-	// NewProducedUnitEvent and send events to the given channel.
-	SubscribeNewProducedUnitEvent(ch chan<- mp.NewProducedUnitEvent) event.Subscription
+	// SubscribeNewUnitEvent should return an event subscription of
+	// NewUnitEvent and send events to the given channel.
+	SubscribeNewUnitEvent(ch chan<- mp.NewUnitEvent) event.Subscription
 	// UnitBLSSign is to TBLS sign the unit
 	ToUnitTBLSSign(unit *modules.Unit) error
 
@@ -466,7 +466,7 @@ func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping PalletOne protocol")
 
 	// append by Albert·Gou
-	pm.newProducedUnitSub.Unsubscribe()
+	pm.newUnitSub.Unsubscribe()
 	pm.sigShareSub.Unsubscribe()
 	pm.vssDealSub.Unsubscribe()
 	pm.vssResponseSub.Unsubscribe()
@@ -1034,11 +1034,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 
 	// append by Albert·Gou
-	case msg.Code == NewProducedUnitMsg:
+	case msg.Code == NewUnitMsg:
 		// Retrieve and decode the propagated new produced unit
 		var unit modules.Unit
 		if err := msg.Decode(&unit); err != nil {
-			log.Info("===NewProducedUnitMsg===", "err:", err)
+			log.Info("===NewUnitMsg===", "err:", err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		pm.producer.ToUnitTBLSSign(&unit)
@@ -1114,18 +1114,18 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 }
 
 // @author Albert·Gou
-func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
+func (self *ProtocolManager) newUnitBroadcastLoop() {
 	for {
 		select {
-		case event := <-self.newProducedUnitCh:
-			self.BroadcastNewProducedUnit(event.Unit)
+		case event := <-self.newUnitCh:
+			self.BroadcastNewUnit(event.Unit)
 
 			// appended by wangjiyou
 			self.BroadcastUnit(event.Unit, true)
 			self.BroadcastUnit(event.Unit, false)
 
 		// Err() channel will be closed when unsubscribing.
-		case <-self.newProducedUnitSub.Err():
+		case <-self.newUnitSub.Err():
 			return
 		}
 	}
@@ -1245,8 +1245,8 @@ func TestMakeTransaction(nonce uint64) *modules.Transaction {
 }
 
 // @author Albert·Gou
-// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
-func (pm *ProtocolManager) BroadcastNewProducedUnit(unit *modules.Unit) {
+// BroadcastNewUnit will propagate a new produced unit to all of active mediator's peers
+func (pm *ProtocolManager) BroadcastNewUnit(unit *modules.Unit) {
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
