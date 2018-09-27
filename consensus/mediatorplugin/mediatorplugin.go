@@ -223,9 +223,6 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
 	mp.newUnitFeed.Send(NewUnitEvent{Unit: newUnit})
 
-	// 5. 开启收集签名分片，recover群签名的循环
-	go mp.recoverTBLSSignLoop(sma, unitHash)
-
 	return Produced, detail
 }
 

@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/share"
 	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
 	"github.com/dedis/kyber/sign/tbls"
@@ -315,24 +316,61 @@ func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
 	}
 }
 
+// 收集签名分片
 func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) {
 	dag := mp.getDag()
 	localMed := *dag.GetUnit(newUnitHash).UnitAuthor()
 
-	medSigSharBuf, ok := mp.toTBLSRecoverBuf[localMed]
+	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
 		log.Error("the following mediator is not local: %v", localMed.Str())
 	}
 
 	// 当buf不存在时，说明已经recover出群签名，忽略该签名分片
-	unitSigSharBuf, ok := medSigSharBuf[newUnitHash]
+	unitSigShareBuf, ok := medSigShareBuf[newUnitHash]
 	if !ok {
 		return
 	}
 
-	mp.toTBLSRecoverBuf[localMed][newUnitHash] = append(unitSigSharBuf, sigShare)
+	mp.toTBLSRecoverBuf[localMed][newUnitHash] = append(unitSigShareBuf, sigShare)
+
+	// recover群签名
+	go mp.recoverTBLSSign(localMed, newUnitHash)
 }
 
-func (mp *MediatorPlugin) recoverTBLSSignLoop(localMed common.Address, newUnitHash common.Hash) {
-	// todo recover后 删除buf
+func (mp *MediatorPlugin) recoverTBLSSign(localMed common.Address, newUnitHash common.Hash) {
+	dag := mp.getDag()
+	aSize := dag.GetActiveMediatorCount()
+	curThreshold := dag.GetCurThreshold()
+
+	sigShares := mp.toTBLSRecoverBuf[localMed][newUnitHash]
+	if len(sigShares) < curThreshold {
+		return
+	}
+
+	dkgr := mp.getLocalActiveMediatorDKG(localMed)
+	if dkgr == nil {
+		return
+	}
+
+	dks, err := dkgr.DistKeyShare()
+	if err == nil {
+		log.Error(err.Error())
+	}
+
+	suite := mp.suite
+	pubPoly := share.NewPubPoly(suite, suite.Point().Base(), dks.Commitments())
+	sig, err := tbls.Recover(suite, pubPoly, newUnitHash[:], sigShares, curThreshold, aSize)
+	if err == nil {
+		log.Error(err.Error())
+	}
+
+	// recover后 删除buf
+	delete(mp.toTBLSRecoverBuf[localMed], newUnitHash)
+	go mp.broadcastIrreversibleUnit(newUnitHash, sig)
+}
+
+func (mp *MediatorPlugin) broadcastIrreversibleUnit(newUnitHash common.Hash, sign []byte) {
+	// todo 广播签名
+
 }
