@@ -18,6 +18,8 @@ package common
 
 import (
 	"bytes"
+	"log"
+	"reflect"
 	"testing"
 
 	checker "gopkg.in/check.v1"
@@ -101,5 +103,30 @@ func TestNoPrefixShortHexOddLength(t *testing.T) {
 	result := FromHex(input)
 	if !bytes.Equal(expected, result) {
 		t.Errorf("Expected %x got %x", expected, result)
+	}
+}
+
+func TestEncodeNumber(t *testing.T) {
+	input0 := uint64(18446744073709551615) //max: 18446744073709551615    9223372036854775807
+	input1 := uint32(2147483647)
+	result0 := []byte{255, 255, 255, 255, 255, 255, 255, 255}
+	result1 := []byte{127, 255, 255, 255}
+	//result2 := []byte{255, 255, 255, 255, 255, 255, 255, 255}
+	if key := EncodeNumber(input0); reflect.DeepEqual(key, result0) {
+		if n := DecodeNumber(result0); n == 18446744073709551615 {
+			log.Println("decode success.", n)
+		} else {
+			t.Fatal("decode failed.", n)
+		}
+	} else {
+		t.Fatal("encode  failed.", key)
+	}
+	if key := EncodeNumberUint32(input1); reflect.DeepEqual(key, result1) {
+		if n := DecodeNumberUint32(key); n == 2147483647 {
+		} else {
+			t.Fatal("decode failed.")
+		}
+	} else {
+		t.Fatal("encode 32 failed.", key)
 	}
 }

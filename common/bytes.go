@@ -18,6 +18,7 @@
 package common
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 )
 
@@ -120,4 +121,26 @@ func LeftPadBytes(slice []byte, l int) []byte {
 	copy(padded[l-len(slice):], slice)
 
 	return padded
+}
+
+// encodeNumber encodes a number as big endian uint64
+func EncodeNumber(number uint64) []byte {
+	enc := make([]byte, 8)
+	binary.BigEndian.PutUint64(enc, number)
+	return enc
+}
+
+func DecodeNumber(key []byte) uint64 {
+	return binary.BigEndian.Uint64(key[:])
+}
+
+// encodeNumber encodes a number as big endian uint64
+func EncodeNumberUint32(number uint32) []byte {
+	enc := make([]byte, 4)
+	binary.BigEndian.PutUint32(enc, number)
+	return enc
+}
+
+func DecodeNumberUint32(key []byte) uint32 {
+	return binary.BigEndian.Uint32(key[:])
 }
