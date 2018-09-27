@@ -27,7 +27,7 @@ type chain struct {
 }
 
 var chains = struct {
-	sync.RWMutex
+	mu    sync.Mutex
 	Clist map[string]*chain //chainId
 }{Clist: make(map[string]*chain)}
 
@@ -53,8 +53,8 @@ func addChainCodeInfo(c *chain, cc *CCInfo) error {
 }
 
 func SetChaincode(cid string, version int, chaincode *CCInfo) error {
-	chains.Lock()
-	defer chains.Unlock()
+	chains.mu.Lock()
+	defer chains.mu.Unlock()
 
 	logger.Infof("chainId[%s] ,%d, chaincode[%s]id[%s]", cid, version, chaincode.Name, hex.EncodeToString(chaincode.Id))
 	for k, v := range chains.Clist {
@@ -106,6 +106,9 @@ func GetChaincode(cid string, deployId []byte) (*CCInfo, error) {
 }
 
 func DelChaincode(cid string, ccName string, version string) (error) {
+	chains.mu.Lock()
+	defer chains.mu.Unlock()
+
 	if cid == "" || ccName == "" {
 		return errors.New("param is nil")
 	}
