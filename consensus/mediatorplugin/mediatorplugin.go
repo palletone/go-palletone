@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -178,18 +179,18 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// we must control the Mediator scheduled to produce the next VerifiedUnit.
-	ma := scheduledMediator.Address
-	med, ok := mp.mediators[ma]
+	sma := scheduledMediator.Address
+	med, ok := mp.mediators[sma]
 	if !ok {
-		detail["ScheduledMediator"] = ma.Str()
+		detail["ScheduledMediator"] = sma.Str()
 		return NotMyTurn, detail
 	}
 
 	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
 	ks := mp.ptn.GetKeyStore()
-	err := ks.Unlock(accounts.Account{Address: ma}, med.Password)
+	err := ks.Unlock(accounts.Account{Address: sma}, med.Password)
 	if err != nil {
-		detail["ScheduledKey"] = ma.Str()
+		detail["ScheduledKey"] = sma.Str()
 		return NoPrivateKey, detail
 	}
 
@@ -202,23 +203,33 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 2. 生产验证单元
-	newUnit := GenerateUnit(mp.getDag(), scheduledTime, *scheduledMediator, ks, mp.ptn.TxPool())
+	newUnit := GenerateUnit(mp.getDag(), scheduledTime, sma, ks, mp.ptn.TxPool())
 	if newUnit.IsEmpty() {
 		return ExceptionProducing, detail
 	}
 
 	num := newUnit.UnitHeader.Number.Index
+	unitHash := newUnit.UnitHash
 	detail["Num"] = strconv.FormatUint(num, 10)
 	time := time.Unix(newUnit.UnitHeader.Creationdate, 0)
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
-	detail["Mediator"] = newUnit.UnitAuthor().Str()
-	detail["Hash"] = newUnit.UnitHash.Hex()
+	detail["Mediator"] = sma.Str()
+	detail["Hash"] = unitHash.Hex()
 
-	// 3. 异步向区块链网络广播验证单元
+	// 3. 初始化签名unit相关的签名分片的buf
+	mp.initTBLSRecoverBuf(sma, unitHash)
+
+	// 4. 异步向区块链网络广播验证单元
 	log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
 	mp.newUnitFeed.Send(NewUnitEvent{Unit: newUnit})
 
-	// 4. 开启收集签名分片，recover群签名的循环
+	// 5. 开启收集签名分片，recover群签名的循环
+	go mp.recoverTBLSSignLoop(sma, unitHash)
 
 	return Produced, detail
+}
+
+func (mp *MediatorPlugin) initTBLSRecoverBuf(localMed common.Address, newUnitHash common.Hash) {
+	aSize := mp.getDag().GetActiveMediatorCount()
+	mp.toTBLSRecoverBuf[localMed][newUnitHash] = make([][]byte, 0, aSize)
 }

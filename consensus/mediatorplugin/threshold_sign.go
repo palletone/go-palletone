@@ -306,6 +306,33 @@ func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.
 }
 
 func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
-	// todo
-	return nil
+	select {
+	case <-mp.quit:
+		return errTerminated
+	default:
+		go mp.addToTBLSRecoverBuf(sigShare.Hash, sigShare.SigShare)
+		return nil
+	}
+}
+
+func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) {
+	dag := mp.getDag()
+	localMed := *dag.GetUnit(newUnitHash).UnitAuthor()
+
+	medSigSharBuf, ok := mp.toTBLSRecoverBuf[localMed]
+	if !ok {
+		log.Error("the following mediator is not local: %v", localMed.Str())
+	}
+
+	// 当buf不存在时，说明已经recover出群签名，忽略该签名分片
+	unitSigSharBuf, ok := medSigSharBuf[newUnitHash]
+	if !ok {
+		return
+	}
+
+	mp.toTBLSRecoverBuf[localMed][newUnitHash] = append(unitSigSharBuf, sigShare)
+}
+
+func (mp *MediatorPlugin) recoverTBLSSignLoop(localMed common.Address, newUnitHash common.Hash) {
+	// todo recover后 删除buf
 }
