@@ -121,7 +121,6 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		//bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
 		//etherbase:      config.Etherbase,
 	}
-
 	log.Info("Initialising PalletOne protocol", "versions", ProtocolVersions, "network", config.NetworkId)
 
 	if config.TxPool.Journal != "" {
