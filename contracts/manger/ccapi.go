@@ -278,7 +278,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 		return nil, nil, errors.WithMessage(err, "crypto.GetRandomNonce error")
 	}
 
-	usrccName := templateCC.Name + "_" + hex.EncodeToString(randNum)[0:8] //createDeployId(templateCC.Name)
+	usrccName := templateCC.Name + "-" + hex.EncodeToString(randNum)//[0:8]
 	usrcc := &ucc.UserChaincode{
 		Name:     usrccName,
 		Path:     templateCC.Path,
@@ -401,7 +401,6 @@ func Stop(chainID string, deployId []byte, txid string, deleteImage bool) error 
 	if txid == "" {
 		return errors.New("input param txid is nil")
 	}
-
 	cc, err := cclist.GetChaincode(chainID, deployId)
 	if err != nil {
 		return err
@@ -410,6 +409,7 @@ func Stop(chainID string, deployId []byte, txid string, deleteImage bool) error 
 	if err == nil {
 		cclist.DelChaincode(chainID, cc.Name, cc.Version)
 	}
+
 	return err
 }
 
