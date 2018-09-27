@@ -24,7 +24,6 @@ import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/kyber/share/dkg/pedersen"
-	"github.com/dedis/kyber/share/vss/pedersen"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -54,12 +53,16 @@ type MediatorPlugin struct {
 	// Mediator`s account and passphrase controlled by this node
 	mediators map[common.Address]MediatorAccount
 
-	// 新生产unit的事件订阅和数据发送和接收
+	// 新生产unit的事件订阅
 	newProducedUnitFeed  event.Feed              // 订阅的时候自动初始化一次
 	newProducedUnitScope event.SubscriptionScope // 零值已准备就绪待用
 
+	// unit 签名分片的事件订阅
+	sigShareFeed  event.Feed
+	sigShareScope event.SubscriptionScope
+
 	// dkg 生成 dks 相关
-	suite   vss.Suite
+	suite   *bn256.Suite
 	dkgs    map[common.Address]*dkg.DistKeyGenerator
 	respBuf map[common.Address]map[common.Address]chan *dkg.Response
 
@@ -72,7 +75,8 @@ type MediatorPlugin struct {
 	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	toTBLSSignBuf map[common.Address]chan *modules.Unit
+	toTBLSSignBuf    map[common.Address]chan *modules.Unit
+	toTBLSRecoverBuf map[common.Address]map[common.Hash][][]byte
 }
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {

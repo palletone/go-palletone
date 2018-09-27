@@ -20,12 +20,18 @@ package mediatorplugin
 
 import (
 	"github.com/dedis/kyber/share/dkg/pedersen"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // NewProducedUnitEvent is posted when a unit has been produced.
 type NewProducedUnitEvent struct {
 	Unit *modules.Unit
+}
+
+type SigShareEvent struct {
+	Hash     common.Hash
+	SigShare []byte
 }
 
 type VSSDealEvent struct {
