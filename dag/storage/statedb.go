@@ -66,6 +66,8 @@ type StateDb interface {
 	SaveGlobalProperty(globalProperty globalProperty) error
 	GetDynamicGlobalProperty() (modules.DynamicGlobalProperty, error)
 	SaveDynamicGlobalProperty(DynamicGlobalProperty modules.DynamicGlobalProperty) error
+	GetMediatorSchedule() (mediatorSchedule, error)
+	SaveMediatorSchedule(MediatorSchedule mediatorSchedule) error
 }
 
 // ######################### SAVE IMPL START ###########################
@@ -281,6 +283,16 @@ func (statedb *StateDatabase) GetMediatorsList() (MediatorCandidates, error) {
 func (statedb *StateDatabase) SaveMediatorsList(Candidates MediatorCandidates) error {
 	key := MEDIATOR_CANDIDATE_PREFIX
 	value := Candidates
+	return ErrorLogHandler(StoreBytes(statedb.db, key, value), "SaveMediatorsList")
+}
+
+func (statedb *StateDatabase) GetMediatorSchedule() (mediatorSchedule, error) {
+	MediatorSchedule, err := GetDecodedComplexData(statedb.db, MEDIATOR_SCHEME_PREFIX, mediatorSchedule{})
+	return MediatorSchedule.(mediatorSchedule), err
+}
+func (statedb *StateDatabase) SaveMediatorSchedule(MediatorSchedule mediatorSchedule) error {
+	key := MEDIATOR_SCHEME_PREFIX
+	value := MediatorSchedule
 	return ErrorLogHandler(StoreBytes(statedb.db, key, value), "SaveMediatorsList")
 }
 

@@ -55,6 +55,7 @@ var (
 	MEDIATOR_ELECTED_PREFIX          = []byte("md")
 	GLOBALPROPERTY_PREFIX            = []byte("gp")
 	DYNAMIC_GLOBALPROPERTY_PREFIX    = []byte("dp")
+	MEDIATOR_SCHEME_PREFIX           = []byte("ms")
 
 	// lookup
 	LookupPrefix = []byte("l")
