@@ -24,7 +24,8 @@ type RawTransactionGenParams struct {
 }
 
 func TestRawTransactionGen(t *testing.T) {
-	params := `{
+	// txid from btc 
+	/*params := `{
     "inputs": [
 		{
            "txid": "5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873",
@@ -39,9 +40,25 @@ func TestRawTransactionGen(t *testing.T) {
 		}
     ],
     "locktime": 0
+	}`*/
+	params := `{
+    "inputs": [
+		{
+           "txid": "b0bec28ef271525381d602b0b0035c27ec9896c3eda4a5ce58f33e94cd4da970",
+           "vout": 0,
+           "messageindex": 0
+		}
+    ],
+    "outputs": [
+		{
+           "address": "P1KzS9JG7XCZvdKRNwL47mJWCGprCCt8j8D",
+           "amount": 100000
+		}
+    ],
+    "locktime": 0
 	}`
 	params = params
-	testResult := "f89da03e64d5cf638d4d14c3ed965d3bd927d718504c13facb73081e76c9eeca01a992f87af87801b875f873e7e6e3a07348b3dba6d43e10d7140e737a05bed70a1d17220a96bd6d3794c8a80a87515680808080f848f846871c110215b9c0009976a914b5407cec767317d41442aab35bad2712626e17ca88ace3900000000000000000000000000000000090000000000000000000000000000000008080"
+	testResult := "f89ea03ca16a831cc4c7a32f7fcf694910fcd0b60974ac5ecf216fa58da39668fc9eb5f87bf87901b876f874e7e6e3a070a94dcd943ef358cea5a4edc39698ec275c03b0b002d681535271f28ec2beb080808080f849f8478880000000000000009976a914d04ef6595ea6dd1cf512a5e9077a66f9b9fb422688ace3900000000000000000000000000000000090000000000000000000000000000000000180"
 	var rawTransactionGenParams RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
