@@ -38,6 +38,7 @@ func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
 	if err := cc.Init(idag); err != nil {
 		return nil, err
 	}
+	once = 1
 	log.Debug("contract initialize ok")
 	return contract, nil
 }
