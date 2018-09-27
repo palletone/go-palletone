@@ -580,8 +580,8 @@ func (ps *peerSet) GetPeers() []*peer {
 
 // SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
 // @author Albert·Gou
-func (p *peer) SendNewProducedUnit(unit *modules.Unit) error {
-	return p2p.Send(p.rw, NewProducedUnitMsg, unit)
+func (p *peer) SendNewProducedUnit(newUnit *modules.Unit) error {
+	return p2p.Send(p.rw, NewProducedUnitMsg, newUnit)
 }
 
 // @author Albert·Gou
@@ -594,4 +594,9 @@ func (p *peer) SendVSSDeal(deal *mp.VSSDealEvent) error {
 //func (p *peer) SendVSSResponse(resp *vssRespMsg) error {
 func (p *peer) SendVSSResponse(resp *mp.VSSResponseEvent) error {
 	return p2p.Send(p.rw, VSSResponseMsg, resp)
+}
+
+// @author Albert·Gou
+func (p *peer) SendSigShare(sigShare *mp.SigShareEvent) error {
+	return p2p.Send(p.rw, SigShareMsg, sigShare)
 }

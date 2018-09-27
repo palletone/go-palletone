@@ -181,7 +181,7 @@ func (log *Logger) Check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 func (log *Logger) filter(c *zapcore.CheckedEntry, fie ...Field) {
 	ce := c
 	fields := fie
-	if len(log.openModule) == 1 && log.openModule[0] == "all" {
+	if log.openModule[0] == "all" {
 		ce.Write(fields...)
 		return
 	}

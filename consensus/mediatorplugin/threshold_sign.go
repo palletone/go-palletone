@@ -24,6 +24,7 @@ import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
+	"github.com/dedis/kyber/sign/tbls"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -157,8 +158,6 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		respCount++
 	}
 
-	respCh := mp.respBuf[localMed][vrfrMed]
-
 	processResp := func(resp *dkg.Response) bool {
 		jstf, err := dkgr.ProcessResponse(resp)
 		if err != nil {
@@ -189,6 +188,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		return
 	}
 
+	respCh := mp.respBuf[localMed][vrfrMed]
 	for {
 		select {
 		case <-mp.quit:
@@ -197,8 +197,8 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 			processResp(resp)
 			finished, certified := isFinishedAndCertified()
 			if certified {
-				// todo 发送验证成功消息, 开启unit分片签名
-
+				// todo 发送验证成功消息, 开启unit分片签名循环
+				go mp.signTBLSLoop(localMed)
 			}
 			if finished {
 				return
@@ -250,4 +250,61 @@ func (mp *MediatorPlugin) addToTBLSSignBuf(unit *modules.Unit) {
 	for _, localMed := range lams {
 		mp.toTBLSSignBuf[localMed] <- unit
 	}
+}
+
+func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
+	dkgr := mp.getLocalActiveMediatorDKG(localMed)
+	if dkgr == nil {
+		return
+	}
+
+	dks, err := dkgr.DistKeyShare()
+	if err == nil {
+		log.Error(err.Error())
+	}
+
+	dag := mp.getDag()
+	newUnitBuf := mp.toTBLSSignBuf[localMed]
+
+	signTBLS := func(newUnit *modules.Unit) (sigShare []byte, success bool) {
+		if !dag.ValidateUnit(newUnit, false) {
+			return
+		}
+
+		var err error
+		hash := newUnit.Hash()
+
+		sigShare, err = tbls.Sign(mp.suite, dks.PriShare(), hash[:])
+		if err != nil {
+			log.Error(err.Error())
+			return
+		}
+
+		success = true
+		return
+	}
+
+	for {
+		select {
+		case <-mp.quit:
+			return
+		case newUnit := <-newUnitBuf:
+			sigShare, success := signTBLS(newUnit)
+			if success {
+				go mp.sigShareFeed.Send(SigShareEvent{
+					Hash:     newUnit.Hash(),
+					SigShare: sigShare,
+				})
+			}
+		}
+	}
+}
+
+func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.Subscription {
+	return mp.sigShareScope.Track(mp.sigShareFeed.Subscribe(ch))
+}
+
+func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
+	// todo
+	return nil
 }

@@ -100,6 +100,10 @@ type ProtocolManager struct {
 	newProducedUnitSub event.Subscription
 
 	// append by Albert·Gou
+	sigShareCh  chan mp.SigShareEvent
+	sigShareSub event.Subscription
+
+	// append by Albert·Gou
 	vssDealCh  chan mp.VSSDealEvent
 	vssDealSub event.Subscription
 
@@ -287,6 +291,12 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	go pm.newProducedUnitBroadcastLoop()
 
 	// append by Albert·Gou
+	// send signature share
+	pm.sigShareCh = make(chan mp.SigShareEvent)
+	pm.sigShareSub = pm.producer.SubscribeSigShareEvent(pm.sigShareCh)
+	go pm.sigShareTransmitLoop()
+
+	// append by Albert·Gou
 	// send  VSS deal
 	pm.vssDealCh = make(chan mp.VSSDealEvent)
 	pm.vssDealSub = pm.producer.SubscribeVSSDealEvent(pm.vssDealCh)
@@ -300,7 +310,6 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 
 	//TODO xiaozhi
 	go pm.mediatorConnect()
-
 }
 
 // @author Albert·Gou
@@ -436,11 +445,14 @@ func (self *ProtocolManager) vssDealTransmitLoop() {
 type producer interface {
 	// SubscribeNewProducedUnitEvent should return an event subscription of
 	// NewProducedUnitEvent and send events to the given channel.
-	SubscribeNewProducedUnitEvent(chan<- mp.NewProducedUnitEvent) event.Subscription
+	SubscribeNewProducedUnitEvent(ch chan<- mp.NewProducedUnitEvent) event.Subscription
 	// UnitBLSSign is to TBLS sign the unit
 	ToUnitTBLSSign(unit *modules.Unit) error
 
-	SubscribeVSSDealEvent(chan<- mp.VSSDealEvent) event.Subscription
+	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
+	ToTBLSRecover(sigShare *mp.SigShareEvent) error
+
+	SubscribeVSSDealEvent(ch chan<- mp.VSSDealEvent) event.Subscription
 	ToProcessDeal(deal *mp.VSSDealEvent) error
 
 	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
@@ -452,6 +464,12 @@ type producer interface {
 
 func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping PalletOne protocol")
+
+	// append by Albert·Gou
+	pm.newProducedUnitSub.Unsubscribe()
+	pm.sigShareSub.Unsubscribe()
+	pm.vssDealSub.Unsubscribe()
+	pm.vssResponseSub.Unsubscribe()
 
 	pm.txSub.Unsubscribe() // quits txBroadcastLoop
 
@@ -984,6 +1002,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 
 	case msg.Code == TxMsg:
+		log.Info("===============ProtocolManager TxMsg====================")
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
 		if atomic.LoadUint32(&pm.acceptTxs) == 0 {
 			log.Debug("ProtocolManager handlmsg TxMsg pm.acceptTxs==0")
@@ -996,7 +1015,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 		//TODO VerifyTX
-
+		log.Info("===============ProtocolManager", "TxMsg txs:", txs)
 		for i, tx := range txs {
 			// Validate and mark the remote transaction
 			if tx == nil {
@@ -1004,6 +1023,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}
 			p.MarkTransaction(tx.Hash())
 		}
+		log.Info("===============ProtocolManager TxMsg AddRemotes====================")
 		pm.txpool.AddRemotes(txs)
 	case msg.Code == ConsensusMsg:
 		var consensusmsg string
@@ -1110,6 +1130,52 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 		case <-self.newProducedUnitSub.Err():
 			return
 		}
+	}
+}
+
+// @author Albert·Gou
+func (self *ProtocolManager) sigShareTransmitLoop() {
+	for {
+		select {
+		case event := <-self.sigShareCh:
+			med := self.dag.GetUnit(event.Hash).UnitAuthor()
+			node := self.dag.GetActiveMediator(*med).Node
+			self.TransmitSigShare(node, &event)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.sigShareSub.Err():
+			return
+		}
+	}
+}
+
+// @author Albert·Gou
+func (pm *ProtocolManager) TransmitSigShare(node *discover.Node, sigShare *mp.SigShareEvent) {
+	peer, self := pm.getTransitionPeer(node)
+	if self {
+		//size, reader, err := rlp.EncodeToReader(sigShare)
+		//if err != nil {
+		//	log.Error(err.Error())
+		//}
+		//
+		//var s mp.SigShareEvent
+		//stream := rlp.NewStream(reader, uint64(size))
+		//if err := stream.Decode(&s); err != nil {
+		//	log.Error(err.Error())
+		//}
+		//pm.producer.ToTBLSRecover(&s)
+
+		pm.producer.ToTBLSRecover(sigShare)
+		return
+	}
+
+	if peer == nil {
+		return
+	}
+
+	err := peer.SendSigShare(sigShare)
+	if err != nil {
+		log.Error(err.Error())
 	}
 }
 

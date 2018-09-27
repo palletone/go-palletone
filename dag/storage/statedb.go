@@ -57,6 +57,7 @@ type StateDb interface {
 	GetContractAllState(id []byte) map[modules.ContractReadSet][]byte
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id common.Hash) (*modules.Contract, error)
+
 }
 
 // ######################### SAVE IMPL START ###########################
@@ -83,6 +84,24 @@ func (statedb *StateDatabase) SaveContractTemplate(templateId []byte, bytecode [
 	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	key = append(key, version...)
 	if err := StoreBytes(statedb.db, key, bytecode); err != nil {
+		return err
+	}
+	return nil
+}
+/**
+保存合约属性信息
+To save contract
+*/
+func SaveContractState(db ptndb.Database, prefix []byte, id []byte, field string, value interface{}, version *modules.StateVersion) error {
+	key := []byte{}
+	key = append(prefix, id...)
+	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
+	key = append(key, []byte(field)...)
+	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
+	key = append(key, version.Bytes()...)
+
+	if err := StoreBytes(db, key, value); err != nil {
+		log.Println("Save contract template", "error", err.Error())
 		return err
 	}
 	return nil
@@ -236,6 +255,65 @@ func (statedb *StateDatabase) GetContract(id common.Hash) (*modules.Contract, er
 	return contract, nil
 }
 
+
+func (statedb *StateDatabase) GetActiveMediators()[]common.Address{
+	_ ,err := statedb.GetMediatorsList()
+	if err !=nil {
+		return nil
+	}
+	// Todo:sort candidates by vote number
+	return make([]common.Address,21)
+}
+
+func (statedb *StateDatabase) GetMediatorsList() (MediatorCandidates,error) {
+	Candidates := make(MediatorCandidates,0)
+	err := GetDecodedComplexData(statedb.db,MEDIATOR_CANDIDATE_PREFIX,Candidates)
+	return Candidates, err
+
+}
+
+func (statedb *StateDatabase) SaveMediatorsList(Candidates MediatorCandidates)error{
+	key := MEDIATOR_CANDIDATE_PREFIX
+	value := Candidates
+	return ErrorLogHandler(StoreBytes(statedb.db,key,value),"SaveMediatorsList")
+}
+
+// TODO:voteData definition
+func (statedb *StateDatabase)SaveVote(id []byte, voteData interface{}) error {
+	key := KeyConnector(VOTE_PREFIX,id)
+	value := voteData
+	return ErrorLogHandler( StoreBytes(statedb.db, key, value),"SaveVote")
+}
+
+
+func GetDecodedComplexData(db ptndb.Database, key []byte,dataType interface{}) error{
+	valByte, err := db.Get(key)
+	if err != nil{
+		return err
+	}
+	err = rlp.DecodeBytes(valByte,dataType)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func ErrorLogHandler(err error,errType string) error{
+	if err != nil {
+		log.Println(errType, "error", err.Error())
+		return err
+	}
+	return nil
+}
+func KeyConnector(keys ...[]byte) []byte {
+	var res []byte
+	for _, key := range keys {
+		res = append(res, key...)
+	}
+	return res
+}
+type MediatorCandidates []MediatorCandidate
+type MediatorCandidate map[common.Address]VoteNumber
+type VoteNumber uint64
 /**
 获取合约模板
 To get contract template

@@ -50,6 +50,8 @@ var (
 	ATTESTATION_PREFIX               = []byte("at")
 	ASSET_PREFIX                     = []byte("as")
 	ASSET_ATTESTORS                  = []byte("ae")
+	MEDIATOR_CANDIDATE_PREFIX        = []byte("mc")
+	MEDIATOR_ELECTED_PREFIX          = []byte("md")
 
 	// lookup
 	LookupPrefix = []byte("l")
@@ -69,8 +71,7 @@ var (
 
 	// suffix
 	NumberSuffix = []byte("n")
-	DBPath = dagconfig.DefaultDataDir()
-
+	DBPath       = dagconfig.DefaultDataDir()
 )
 
 func Init(path string, cache int, handles int) (*palletdb.LDBDatabase, error) {

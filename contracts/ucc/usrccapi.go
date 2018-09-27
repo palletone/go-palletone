@@ -19,7 +19,6 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/dag/rwset"
 )
 
@@ -64,14 +63,12 @@ func getDeploymentSpec(_ context.Context, spec *pb.ChaincodeSpec) (*pb.Chaincode
 	if err != nil {
 		return nil, err
 	}
-
 	cdDeploymentSpec := &pb.ChaincodeDeploymentSpec{ChaincodeSpec: spec, CodePackage: codePackageBytes}
 	return cdDeploymentSpec, nil
 }
 
 func DeployUserCC(spec *pb.ChaincodeSpec, chainID string, usrcc *UserChaincode, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
 	var err error
-
 	ccprov := ccprovider.GetChaincodeProvider()
 	ctxt := context.Background()
 	if txsim != nil {
@@ -82,44 +79,8 @@ func DeployUserCC(spec *pb.ChaincodeSpec, chainID string, usrcc *UserChaincode, 
 		logger.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
 		return err
 	}
-
 	cccid := ccprov.GetCCContext(chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, usrcc.Version, txid, false, nil, nil)
 	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, timeout)
-	if err != nil {
-		logger.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
-	}
-	logger.Infof("user chaincode %s/%s(%s) deployed", usrcc.Name, chainID, usrcc.Path)
-
-	return err
-}
-
-//delete,  not use
-func InvokeUserCC(chainID string, usrcc *UserChaincode, timeout time.Duration) error {
-	//if !usrcc.Enabled || !isWhitelisted(usrcc) {
-	//	logger.Info(fmt.Sprintf("chaincode (%s,%s) disabled", usrcc.Name, usrcc.Path))
-	//	return nil
-	//}
-	var err error
-
-	ccprov := ccprovider.GetChaincodeProvider()
-	txid := util.GenerateUUID()
-	ctxt := context.Background()
-
-	chaincodeID := &pb.ChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
-	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: usrcc.InitArgs}}
-
-	// First build and get the deployment spec
-	chaincodeDeploymentSpec, err := getDeploymentSpec(ctxt, spec)
-
-	if err != nil {
-		logger.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
-		return err
-	}
-	version := "aaaaa"
-
-	cccid := ccprov.GetCCContext(chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, version, txid, false, nil, nil)
-	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, timeout)
-
 	if err != nil {
 		logger.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
 	}
@@ -139,15 +100,11 @@ func StopUserCC(chainID string, usrcc *UserChaincode, txid string, deleteImage b
 			Args: usrcc.InitArgs,
 		},
 	}
-
 	chaincodeDeploymentSpec := &pb.ChaincodeDeploymentSpec{ChaincodeSpec: spec, CodePackage: nil}
-	//chaincodeDeploymentSpec, err := getDeploymentSpec(context.Background(), spec)
-	//if err != nil {
-	//}
-
 	cccid := ccprov.GetCCContext(chainID, usrcc.Name, usrcc.Version, txid, false, nil, nil)
 	err = ccprov.Stop(context.Background(), cccid, chaincodeDeploymentSpec)
 	if err != nil {
+		logger.Info("contract stop fail,", usrcc.Name)
 	}
 
 	if deleteImage {
@@ -165,17 +122,14 @@ func StopUserCC(chainID string, usrcc *UserChaincode, txid string, deleteImage b
 		//	return err
 		//}
 	}
-
 	return nil
 }
 
 func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err error) {
 	chaincodeID := &pb.ChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
 	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: usrcc.InitArgs}}
-
 	data, err := platforms.GetChainCodePayload(spec)
 	if err != nil {
-
 		return nil, errors.New("GetChainCodePayload fail")
 	}
 
@@ -191,7 +145,6 @@ func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId [
 
 	if 1 == 1 {
 		envpath, err := platforms.GetPlatformEnvPath(spec)
-
 		dag, err := comdb.GetCcDagHand()
 		if err != nil {
 			return nil, err
@@ -265,7 +218,6 @@ func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId [
 //+++++++++++++
 func UnTarGz(srcFilePath string, destDirPath string) error {
 	fmt.Println("UnTarGzing enter, srcPath:" + srcFilePath + ", destPath:" + destDirPath)
-
 	_, err := os.Stat(destDirPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -280,7 +232,6 @@ func UnTarGz(srcFilePath string, destDirPath string) error {
 		fmt.Printf("os.Open err =%s", err)
 		return err
 	}
-
 	defer fr.Close()
 
 	// Gzip reader
