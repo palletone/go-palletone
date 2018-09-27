@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/p2p"
 )
 
 const (
@@ -73,7 +72,7 @@ func (pm *ProtocolManager) transitionConnect() {
 	for {
 		select {
 		case <-forceSync.C:
-			if err := pm.startTransitionConnect(pm.srvr, pm.maxPeers); err != nil {
+			if err := pm.startTransitionConnect(); err != nil {
 				return
 			}
 		case <-pm.transCycleConnCh:
@@ -85,11 +84,11 @@ func (pm *ProtocolManager) transitionConnect() {
 }
 
 //Start MediatorNetwork
-func (pm *ProtocolManager) startTransitionConnect(srvr *p2p.Server, maxPeers int) error {
+func (pm *ProtocolManager) startTransitionConnect() error {
 	//TODO must modify the GetTransitionNodes
 	peers := pm.dag.GetActiveMediatorNodes()
-	if maxPeers < len(peers)+3 {
-		log.Error("PalletOne start", "maxpeers", maxPeers, "mediator size", len(peers)+3) //3:nomediator
+	if pm.maxPeers < len(peers)+3 {
+		log.Error("PalletOne start", "maxpeers", pm.maxPeers, "mediator size", len(peers)+3) //3:nomediator
 		return errors.New("maxpeers < mediator size")
 	}
 	if pm.peersTransition.mediators.Size() != len(peers) {
@@ -104,9 +103,9 @@ func (pm *ProtocolManager) startTransitionConnect(srvr *p2p.Server, maxPeers int
 	//not exsit and no self will connect
 	ps := pm.peersTransition.GetPeers()
 	for _, peer := range peers {
-		if peer.ID.String() != srvr.NodeInfo().ID && !pm.isexist(peer.ID.String(), ps) {
+		if peer.ID.String() != pm.srvr.NodeInfo().ID && !pm.isexist(peer.ID.String(), ps) {
 			log.Debug("========transition AddPeer==========", "peer.ID.String():", peer.ID.String())
-			srvr.AddPeer(peer)
+			pm.srvr.AddPeer(peer)
 		}
 	}
 
