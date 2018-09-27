@@ -553,7 +553,7 @@ func (d *Dag) GetTrieSyncProgress() (uint64, error) {
 func (d *Dag) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
 	d.Mutex.RLock()
 	defer d.Mutex.RUnlock()
-	return d.utxodb.GetUtxoEntry(key) 
+	return d.utxodb.GetUtxoEntry(key)
 }
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
@@ -581,31 +581,30 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 
 	return view, err
 }
-// GetAllUtxos is return all utxo.
-func (d *Dag) GetAllUtxos() (*txspool.UtxoViewpoint, error) {
-	view := txspool.NewUtxoViewpoint()
-	d.Mutex.RLock()
-	items := d.utxodb.GetPrefix(modules.UTXO_PREFIX)
-	d.Mutex.RUnlock()
-	var err error
-	for key, itme := range items {
-		utxo := new(modules.Utxo)
-		outpint := new(modules.OutPoint)
-		if err = rlp.DecodeBytes(itme, &utxo); err == nil {
-			outpint.SetString(key)
-			view.SetEntries(*outpint, utxo)
-		}
-	}
 
-	return view, err
+// GetAllUtxos is return all utxo.
+func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
+	d.Mutex.RLock()
+	items, err := d.utxodb.GetAllUtxos()
+	d.Mutex.RUnlock()
+
+	return items, err
 }
+
 func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
 	//return txspool.SaveUtxoView( view)
 	return nil //TODO
 }
+func (d *Dag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
+	return d.utxodb.GetAddrOutpoints(addr)
+}
 
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return d.dagdb.GetAddrOutput(addr)
+}
+
+func (d *Dag) GetAddrUtxos(addr string) ([]modules.Utxo, error) {
+	return d.utxodb.GetAddrUtxos(addr)
 }
 
 func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
@@ -651,6 +650,7 @@ func (d *Dag) GetActiveMediatorAddr(index int) common.Address {
 func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
 	return d.GlobalProp.GetActiveMediatorNode(index)
 }
+
 // author Albert·Gou
 func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 	return d.GlobalProp.GetActiveMediator(add)

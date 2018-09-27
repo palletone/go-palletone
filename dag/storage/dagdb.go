@@ -260,7 +260,7 @@ func (dagdb *DagDatabase) GetAddrOutput(addr string) ([]modules.Output, error) {
 	var err error
 	for _, b := range data {
 		out := new(modules.Output)
-		if err := rlp.DecodeBytes(b, &out); err == nil {
+		if err := rlp.DecodeBytes(b, out); err == nil {
 			outputs = append(outputs, *out)
 		} else {
 			err = err
@@ -533,7 +533,7 @@ func (dagdb *DagDatabase) gettrasaction(hash common.Hash) (*modules.Transaction,
 		return nil, err
 	}
 	tx := new(modules.Transaction)
-	if err := rlp.DecodeBytes(data, &tx); err != nil {
+	if err := rlp.DecodeBytes(data, tx); err != nil {
 		return nil, err
 	}
 	return tx, nil

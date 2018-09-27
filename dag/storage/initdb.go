@@ -37,6 +37,7 @@ var (
 	TRANSACTIONS_PREFIX              = []byte("ts")
 	AddrTransactionsHash_Prefix      = []byte("at") // addr  transactions hash prefix
 	AddrOutput_Prefix                = []byte("ao") // addr output tx's hash + msg index.
+	AddrOutPoint_Prefix              = []byte("ap") // addr outpoint
 	CONTRACT_STATE_PREFIX            = []byte("cs")
 	CONTRACT_TPL                     = []byte("ct")
 	ALL_UNITS_PREFIX                 = []byte("au")

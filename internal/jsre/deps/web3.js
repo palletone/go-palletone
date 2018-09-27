@@ -5526,6 +5526,24 @@ var methods = function () {
         params: 1,
         // inputFormatter: [null]
     });
+    var getAddrOutpoints = new Method({
+        name: 'getAddrOutpoints',
+        call: 'ptn_getAddrOutpoints',
+        params: 1,
+        // inputFormatter: [null]
+    });
+    var getAddrUtxos = new Method({
+        name: 'getAddrUtxos',
+        call: 'ptn_getAddrUtxos',
+        params: 1,
+        // inputFormatter: [null]
+    });
+    var getAllUtxos = new Method({
+        name: 'getAllUtxos',
+        call: 'ptn_getAllUtxos',
+        params: 0,  
+        // inputFormatter: [null]
+    }); 
     var getAddrTxs = new Method({
         name: 'getAddrTxs',
         call: 'ptn_getAddrTxs',
