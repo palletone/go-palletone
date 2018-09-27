@@ -108,8 +108,7 @@ To get utxo info by scanning all utxos.
 */
 func (repository *UtxoRepository) readUtxosFrAll(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
 	// key: [UTXO_PREFIX][addr]_[asset]_[msgindex]_[out index]
-	key := fmt.Sprintf("%s", string(modules.UTXO_PREFIX))
-	data := repository.utxodb.GetPrefix([]byte(key))
+	data := repository.utxodb.GetPrefix(modules.UTXO_PREFIX)
 	if data == nil {
 		return nil, 0
 	}

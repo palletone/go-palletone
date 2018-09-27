@@ -590,8 +590,17 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 func (d *Dag) GetAllUtxos() (*txspool.UtxoViewpoint, error) {
 	view := txspool.NewUtxoViewpoint()
 	d.Mutex.RLock()
-	err := view.FetchUtxos(d.utxodb, nil)
+	items := d.utxodb.GetPrefix(modules.UTXO_PREFIX)
 	d.Mutex.RUnlock()
+	var err error
+	for key, itme := range items {
+		utxo := new(modules.Utxo)
+		outpint := new(modules.OutPoint)
+		if err = rlp.DecodeBytes(itme, &utxo); err == nil {
+			outpint.SetString(key)
+			view.SetEntries(*outpint, utxo)
+		}
+	}
 
 	return view, err
 }
