@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"time"
+	"errors"
 )
 
 // ccProviderFactory implements the ccprovider.ChaincodeProviderFactory
@@ -99,5 +100,12 @@ func (c *ccProviderImpl) Stop(ctxt context.Context, cccid interface{}, spec *pb.
 	if theChaincodeSupport != nil {
 		return theChaincodeSupport.Stop(ctxt, cccid.(*ccProviderContextImpl).ctx, spec)
 	}
-	panic("ChaincodeSupport not initialized")
+	return errors.New("Stop:ChaincodeSupport not initialized")
+}
+
+func (c *ccProviderImpl) Destory(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error {
+	if theChaincodeSupport != nil {
+		return theChaincodeSupport.Destory(ctxt, cccid.(*ccProviderContextImpl).ctx, spec)
+	}
+	return errors.New("Destory:ChaincodeSupport not initialized")
 }

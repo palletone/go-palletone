@@ -756,7 +756,7 @@ func (s *PublicBlockChainAPI) Ccstop(ctx context.Context, deployId string, txid 
 	depId, _ := hex.DecodeString(deployId)
 	log.Info("Ccstop:" + deployId + ":" + txid + "_")
 
-	err := s.b.ContractStop(depId, txid, false)
+	err := s.b.ContractStop(depId, txid, true)
 	return err
 }
 
