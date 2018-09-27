@@ -566,10 +566,20 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 	// add txIn previousoutpoint
 	view := txspool.NewUtxoViewpoint()
 	d.Mutex.RLock()
-	//err := view.FetchUtxos(d.utxodb.db neededSet)
+	err := view.FetchUtxos(d.utxodb, neededSet)
 	d.Mutex.RUnlock()
 
-	return view, nil
+	return view, err
+}
+
+// GetAllUtxos is return all utxo.
+func (d *Dag) GetAllUtxos() (*txspool.UtxoViewpoint, error) {
+	view := txspool.NewUtxoViewpoint()
+	d.Mutex.RLock()
+	err := view.FetchUtxos(d.utxodb, nil)
+	d.Mutex.RUnlock()
+
+	return view, err
 }
 func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
 	//return txspool.SaveUtxoView( view)
