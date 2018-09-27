@@ -1045,6 +1045,15 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		pm.producer.ToUnitTBLSSign(&unit)
 
+		// append by Albert·Gou
+	case msg.Code == SigShareMsg:
+		var sigShare mp.SigShareEvent
+		if err := msg.Decode(&sigShare); err != nil {
+			log.Info("===SigShareMsg===", "err:", err)
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		pm.producer.ToTBLSRecover(&sigShare)
+
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}

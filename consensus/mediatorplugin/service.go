@@ -213,7 +213,7 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 			return nil, fmt.Errorf("the PalletOne service not found: %v", err)
 		}
 
-		return Initialize(ptn, cfg)
+		return NewMediatorPlugin(ptn, cfg)
 	})
 
 	if err != nil {
@@ -221,7 +221,7 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 	}
 }
 
-func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
+func NewMediatorPlugin(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	log.Debug("mediator plugin initialize begin")
 
 	mss := cfg.Mediators
@@ -245,20 +245,23 @@ func Initialize(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 
 		suite: bn256.NewSuiteG2(),
 	}
-	mp.initTBLSSignBuf()
+	mp.initTBLSBuf()
 
 	log.Debug("mediator plugin initialize end")
 
 	return &mp, nil
 }
 
-func (mp *MediatorPlugin) initTBLSSignBuf() {
-	mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit)
-	curThrshd := mp.getDag().GetCurThreshold()
+// initTBLSBuf, 初始化与TBLS签名相关的buf
+func (mp *MediatorPlugin) initTBLSBuf() {
+	lmc := len(mp.mediators)
+	mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit, lmc)
+	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash][][]byte, lmc)
 
-	lams := mp.GetLocalActiveMediators()
-	for _, localMed := range lams {
+	curThrshd := mp.getDag().GetCurThreshold()
+	for localMed, _ := range mp.mediators {
 		mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
+		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash][][]byte, curThrshd)
 	}
 }
 
