@@ -9,7 +9,6 @@ import (
 	"container/list"
 	"encoding/hex"
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
@@ -197,7 +196,6 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 		InitArgs: args,
 		Enabled:  true,
 	}
-
 	spec := &pb.ChaincodeSpec{
 		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
 		Input: &pb.ChaincodeInput{
@@ -327,7 +325,7 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	defer logger.Infof("-----------Invoke exit--------")
 
 	var mksupt Support = &SupportImpl{}
-	creator := []byte("palletone") //default
+	creator := []byte("palletone")
 
 	cc, err := cclist.GetChaincode(chainID, deployId)
 	if err != nil {
@@ -413,13 +411,13 @@ func Stop(chainID string, deployId []byte, txid string, deleteImage bool) error 
 	return err
 }
 
-func peerContractMockConfigInit() {
-	viper.Set("peer.fileSystemPath", "./chaincodes")
-	viper.Set("peer.address", "127.0.0.1:12345")
-	viper.Set("chaincode.executetimeout", 20*time.Second)
-
-	viper.Set("vm.endpoint", "unix:///var/run/docker.sock")
-	viper.Set("chaincode.builder", "palletimg")
-
-	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
-}
+//func peerContractMockConfigInit() {
+//	viper.Set("peer.fileSystemPath", "./chaincodes")
+//	viper.Set("peer.address", "127.0.0.1:12345")
+//	viper.Set("chaincode.executetimeout", 20*time.Second)
+//
+//	viper.Set("vm.endpoint", "unix:///var/run/docker.sock")
+//	viper.Set("chaincode.builder", "palletimg")
+//
+//	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
+//}
