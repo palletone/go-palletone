@@ -21,8 +21,9 @@
 package log
 
 import (
-	//"fmt"
+	"fmt"
 	"log"
+
 	"strings"
 
 	"github.com/palletone/go-palletone/common/files"
@@ -202,17 +203,16 @@ func initLogger() {
 	if err != nil {
 		log.Fatal("init logger error: ", err)
 	}
-	//TODO add openModule
+	// add openModule
+
 	//fmt.Println("====================DefaultConfig.OpenModule:", DefaultConfig.OpenModule)
-	if len(DefaultConfig.OpenModule) == 1 && DefaultConfig.OpenModule[0] == "all" {
-		l.SetOpenModule(DefaultConfig.OpenModule)
-	} else {
+	if strings.Contains(DefaultConfig.OpenModule[0], ",") {
 		arr := strings.Split(DefaultConfig.OpenModule[0], ",")
 		DefaultConfig.OpenModule[0] = ""
 		DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, arr...)
-		DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, defaultLogModule...)
-		l.SetOpenModule(DefaultConfig.OpenModule)
 	}
+	DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, defaultLogModule...)
+	l.SetOpenModule(DefaultConfig.OpenModule)
 
 	Logger = l.WithOptions(zap.AddCallerSkip(1))
 }
