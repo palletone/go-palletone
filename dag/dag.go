@@ -21,13 +21,9 @@ package dag
 
 import (
 	"fmt"
-	"sync"
-
 	"github.com/coocood/freecache"
-
+	"sync"
 	//"github.com/ethereum/go-ethereum/params"
-	"time"
-
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
@@ -43,6 +39,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"time"
 )
 
 type Dag struct {
@@ -439,16 +436,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	utxoDb := storage.NewUtxoDatabase(db)
 	stateDb := storage.NewStateDatabase(db)
 	idxDb := storage.NewIndexDatabase(db)
-
-	ngp := storage.NewGlobalProp(stateDb)
-	nsc := storage.NewMediatorSchl(stateDb)
-	ndgp := storage.NewDynGlobalProp()
-	storage.StoreGlobalProp(stateDb, ngp)
-	storage.StoreMediatorSchl(stateDb, nsc)
-	storage.StoreDynGlobalProp(stateDb, ndgp)
-
 	gp, err := storage.RetrieveGlobalProp(stateDb)
-
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
