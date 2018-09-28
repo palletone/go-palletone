@@ -38,18 +38,6 @@ import (
 	"time"
 )
 
-
-
-
-
-
-
-
-
-
-
-
-
 //保存了对合约写集、Config、Asset信息
 type StateDatabase struct {
 	db ptndb.Database
@@ -75,7 +63,7 @@ type StateDb interface {
 	GetContractAllState(id []byte) map[modules.ContractReadSet][]byte
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id common.Hash) (*modules.Contract, error)
-	SaveVote(id []byte, voteData interface{}) error
+	//SaveVote(id []byte, voteData interface{}) error
 	SaveMediatorsList(Candidates MediatorCandidates) error
 	GetMediatorsList() (MediatorCandidates, error)
 	GetActiveMediators(n int) common.Addresses
@@ -294,57 +282,93 @@ func (statedb *StateDatabase) GetActiveMediators(n int) common.Addresses {
 }
 
 func (statedb *StateDatabase) GetMediatorsList() (MediatorCandidates, error) {
-	Candidates, err := GetDecodedComplexData(statedb.db, MEDIATOR_CANDIDATE_PREFIX, MediatorCandidates{})
-	return Candidates.(MediatorCandidates), err
+	mc := MediatorCandidates{}
+	err := GetDecodedComplexData(statedb.db, MEDIATOR_CANDIDATE_PREFIX, mc)
+	return mc, err
 }
-func (statedb *StateDatabase) SaveMediatorsList(Candidates MediatorCandidates) error {
+func (statedb *StateDatabase) SaveMediatorsList(mc MediatorCandidates) error {
 	key := MEDIATOR_CANDIDATE_PREFIX
-	value := Candidates
+	value := mc
 	return ErrorLogHandler(StoreBytes(statedb.db, key, value), "SaveMediatorsList")
 }
 
-func (statedb *StateDatabase) GetMediatorSchedule() ( MediatorScheduleStore, error) {
-	MediatorSchedule, err := GetDecodedComplexData(statedb.db, MEDIATOR_SCHEME_PREFIX,  MediatorScheduleStore{})
-	return MediatorSchedule.( MediatorScheduleStore), err
+func (statedb *StateDatabase) GetMediatorSchedule() (MediatorScheduleStore, error) {
+	ms := MediatorScheduleStore{}
+	err := GetDecodedComplexData(statedb.db, MEDIATOR_SCHEME_PREFIX, &ms)
+	return ms, err
 }
-func (statedb *StateDatabase) SaveMediatorSchedule(MediatorSchedule  MediatorScheduleStore) error {
+func (statedb *StateDatabase) SaveMediatorSchedule(ms MediatorScheduleStore) error {
 	key := MEDIATOR_SCHEME_PREFIX
-	value := MediatorSchedule
+	value := ms
 	return ErrorLogHandler(StoreBytes(statedb.db, key, value), "SaveMediatorsList")
 }
 
-func (statedb *StateDatabase) GetGlobalProperty() ( GlobalPropertyStore, error) {
-	gp, err := GetDecodedComplexData(statedb.db, GLOBALPROPERTY_PREFIX,  GlobalPropertyStore{})
-	return gp.( GlobalPropertyStore), err
+func (statedb *StateDatabase) GetGlobalProperty() (GlobalPropertyStore, error) {
+	gp := GlobalPropertyStore{}
+	err := GetDecodedComplexData(statedb.db, GLOBALPROPERTY_PREFIX, &gp)
+	return gp, err
 }
-func (statedb *StateDatabase) SaveGlobalProperty(globalProperty  GlobalPropertyStore) error {
+func (statedb *StateDatabase) SaveGlobalProperty(gp GlobalPropertyStore) error {
 	key := GLOBALPROPERTY_PREFIX
-	value := globalProperty
+	value := gp
 	return ErrorLogHandler(StoreBytes(statedb.db, key, value), "SaveGlobalProperty")
 }
 
-func (statedb *StateDatabase) GetDynamicGlobalProperty() ( DynamicGlobalProperty, error) {
-	dgp, err := GetDecodedComplexData(statedb.db, DYNAMIC_GLOBALPROPERTY_PREFIX,  DynamicGlobalProperty{})
-	return dgp.( DynamicGlobalProperty), err
+func (statedb *StateDatabase) GetDynamicGlobalProperty() (DynamicGlobalProperty, error) {
+	dgp := DynamicGlobalProperty{}
+	err := GetDecodedComplexData(statedb.db, DYNAMIC_GLOBALPROPERTY_PREFIX, &dgp)
+	return dgp, err
 }
-func (statedb *StateDatabase) SaveDynamicGlobalProperty(DynamicGlobalProperty  DynamicGlobalProperty) error {
-	key := DYNAMIC_GLOBALPROPERTY_PREFIX
-	value := DynamicGlobalProperty
+func (statedb *StateDatabase) SaveDynamicGlobalProperty(dgp DynamicGlobalProperty) error {
+	key := KeyConnector(DYNAMIC_GLOBALPROPERTY_PREFIX)
+	value := dgp
 	return ErrorLogHandler(StoreBytes(statedb.db, key, value), "SaveDynamicGlobalProperty")
 }
 
-func (statedb *StateDatabase) SaveVote(id []byte, vote interface{}) error {
-	key := KeyConnector(VOTE_PREFIX, id)
-	value := vote
-	return ErrorLogHandler(StoreBytes(statedb.db, key, value), "SaveVote")
+func init() {
+
 }
 
-func GetDecodedComplexData(db ptndb.Database, key []byte, dataType interface{}) (interface{}, error) {
-	valByte, err := db.Get(key)
-	if err != nil {
-		return nil, err
+func GetDecodedComplexData(db ptndb.Database, key []byte, dataType interface{}) (error) {
+	subkey := key[:2]
+	switch {
+	case BytesEqual(subkey, GLOBALPROPERTY_PREFIX):
+		dataType = dataType.(*GlobalPropertyStore)
+
+	case BytesEqual(subkey, DYNAMIC_GLOBALPROPERTY_PREFIX):
+		dataType = dataType.(*DynamicGlobalProperty)
+
+	case BytesEqual(subkey, MEDIATOR_SCHEME_PREFIX):
+		dataType = dataType.(*MediatorScheduleStore)
+
+	case BytesEqual(subkey, MEDIATOR_CANDIDATE_PREFIX):
+		dataType = dataType.(*MediatorCandidates)
+
+	default:
+		return ErrorLogHandler(errors.New("invalid key"), "GetDecodedComplexData==>MatchKey")
 	}
-	return rlp.GetDecodedFromBytes(valByte, dataType)
+	bytes, e := db.Get(key)
+	if e != nil {
+		return ErrorLogHandler(e, "GetDecodedComplexData==>GetBytes")
+	}
+	return ErrorLogHandler(rlp.DecodeBytes(bytes, dataType), "GetDecodedComplexData==>DecodeBytes")
+}
+func BytesEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	if (a == nil) != (b == nil) { //[]int{} != []int(nil)
+		return false
+	}
+
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+
+	return true
 }
 func ErrorLogHandler(err error, errType string) error {
 	if err != nil {
@@ -370,11 +394,12 @@ type VoteNumber uint64
 type StateDBConfig [] StateConfig
 type StateConfig struct {
 	Prefix []byte
-	suffix []byte
+	Suffix []byte
 }
+type StateVersion uint64
 
 func (sc StateConfig) HasSuffix() bool {
-	return sc.suffix != nil
+	return sc.Suffix != nil
 }
 func (ms MediatorCandidates) Swap(i, j int)      { ms[i], ms[j] = ms[j], ms[i] }
 func (ms MediatorCandidates) Len() int           { return len(ms) }
@@ -392,7 +417,7 @@ func (ms MediatorCandidates) GetHeadAddress(n int) common.Addresses {
 	return res
 }
 
-// Fengyiran >>>>>
+// Fengyiran >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 /**
 获取合约模板
@@ -430,16 +455,13 @@ func (statedb *StateDatabase) GetContractTpl(templateID []byte) (version *module
 	return
 }
 
-
-
 // ######################### GET IMPL END ###########################
-
 
 //----------------from global_property.go
 // 全局属性的结构体定义
 type GlobalProperty struct {
 	ChainParameters core.ChainParameters // 区块链网络参数
-	statedb  StateDb
+	statedb         StateDb
 	ActiveMediators map[common.Address]core.Mediator // 当前活跃mediator集合；每个维护间隔更新一次
 }
 
@@ -459,6 +481,8 @@ type DynamicGlobalProperty struct {
 
 	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == verifiedUnitNum + 丢失的槽数量
 	CurrentASlot uint64
+
+	//version StateVersion
 
 	/**
 	在过去的128个见证单元生产slots中miss的数量。
@@ -580,7 +604,7 @@ func NewGlobalProp(statedb StateDb) *GlobalProperty {
 	return &GlobalProperty{
 		ChainParameters: core.NewChainParams(),
 		ActiveMediators: map[common.Address]core.Mediator{},
-		statedb:statedb,
+		statedb:         statedb,
 	}
 }
 
@@ -627,7 +651,6 @@ func InitDynGlobalProp(genesis *core.Genesis, genesisUnitHash common.Hash) *Dyna
 	return dgp
 }
 
-
 //struct for store
 type GlobalPropertyStore struct {
 	ChainParameters core.ChainParameters
@@ -651,7 +674,7 @@ func getGPT(gp *GlobalProperty) GlobalPropertyStore {
 	return gpt
 }
 
-func getGP(gpt *GlobalPropertyStore,StateDb StateDb) *GlobalProperty {
+func getGP(gpt *GlobalPropertyStore, StateDb StateDb) *GlobalProperty {
 	ams := make(map[common.Address]core.Mediator, 0)
 	for _, medInfo := range gpt.ActiveMediators {
 		med := core.InfoToMediator(&medInfo)
@@ -665,31 +688,33 @@ func getGP(gpt *GlobalPropertyStore,StateDb StateDb) *GlobalProperty {
 	return gp
 }
 
-func StoreGlobalProp (db  StateDb, gp *GlobalProperty) error {
+func StoreGlobalProp(db StateDb, gp *GlobalProperty) error {
 	gpt := getGPT(gp)
 	return db.SaveGlobalProperty(gpt)
 }
 
-func StoreDynGlobalProp(db  StateDb, dgp *DynamicGlobalProperty) error {
+func StoreDynGlobalProp(db StateDb, dgp *DynamicGlobalProperty) error {
 	return db.SaveDynamicGlobalProperty(*dgp)
 }
 
-func RetrieveGlobalProp(db  StateDb) (*GlobalProperty, error) {
+func RetrieveGlobalProp(db StateDb) (*GlobalProperty, error) {
 	gpt, err := db.GetGlobalProperty()
-	gp := getGP(&gpt,db)
+	gp := getGP(&gpt, db)
 	return gp, err
 }
 
-func RetrieveDynGlobalProp(db  StateDb) (*DynamicGlobalProperty, error) {
+func RetrieveDynGlobalProp(db StateDb) (*DynamicGlobalProperty, error) {
 	dgp, err := db.GetDynamicGlobalProperty()
 	return &dgp, err
 }
+
 //----------------from mediator_schedule.go
 // Mediator调度顺序结构体
 type MediatorSchedule struct {
 	CurrentShuffledMediators []core.Mediator
-	statedb  StateDb
+	statedb                  StateDb
 }
+
 // re:Yiran
 // This function should only be called at the initGenesis()
 func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorSchedule {
@@ -719,7 +744,7 @@ func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorS
 func NewMediatorSchl(statedb StateDb) *MediatorSchedule {
 	return &MediatorSchedule{
 		CurrentShuffledMediators: []core.Mediator{},
-		statedb:statedb,
+		statedb:                  statedb,
 	}
 }
 
@@ -867,8 +892,6 @@ func GetSlotAtTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, when time.Tim
 	return uint32(diffSecs/interval) + 1
 }
 
-
-
 type MediatorScheduleStore struct {
 	CurrentShuffledMediators []core.MediatorInfo
 }
@@ -888,7 +911,7 @@ func getMST(ms *MediatorSchedule) MediatorScheduleStore {
 	return mst
 }
 
-func getMS(mst *MediatorScheduleStore, statedb  StateDb) *MediatorSchedule {
+func getMS(mst *MediatorScheduleStore, statedb StateDb) *MediatorSchedule {
 	csm := make([]core.Mediator, 0)
 
 	for _, medInfo := range mst.CurrentShuffledMediators {
@@ -901,17 +924,14 @@ func getMS(mst *MediatorScheduleStore, statedb  StateDb) *MediatorSchedule {
 	return ms
 }
 
-func StoreMediatorSchl(db  StateDb, ms *MediatorSchedule) error {
+func StoreMediatorSchl(db StateDb, ms *MediatorSchedule) error {
 	mst := getMST(ms)
 	err := db.SaveMediatorSchedule(mst)
-	if err != nil {
-		log.Println(fmt.Sprintf("Store mediator schedule error: %s", err))
-	}
-	return err
+	return ErrorLogHandler(err,"StoreMediatorSchl==>SaveMediatorSchedule")
 }
 
-func RetrieveMediatorSchl(stateDb  StateDb) (*MediatorSchedule, error) {
+func RetrieveMediatorSchl(stateDb StateDb) (*MediatorSchedule, error) {
 	mst, err := stateDb.GetMediatorSchedule()
-	ms := getMS(&mst,stateDb)
+	ms := getMS(&mst, stateDb)
 	return ms, err
 }

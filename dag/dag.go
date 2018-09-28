@@ -436,6 +436,11 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	utxoDb := storage.NewUtxoDatabase(db)
 	stateDb := storage.NewStateDatabase(db)
 	idxDb := storage.NewIndexDatabase(db)
+
+	storage.StoreGlobalProp(stateDb,&storage.GlobalProperty{})
+	storage.StoreDynGlobalProp(stateDb,&storage.DynamicGlobalProperty{})
+	storage.StoreMediatorSchl(stateDb,&storage.MediatorSchedule{})
+
 	gp, err := storage.RetrieveGlobalProp(stateDb)
 	if err != nil {
 		log.Error(err.Error())
