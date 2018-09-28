@@ -67,12 +67,10 @@ func (d *Dag) GetGlobalProp() *storage.GlobalProperty {
 func (d *Dag) GetDynGlobalProp() *storage.DynamicGlobalProperty {
 	return d.DynGlobalProp
 }
-<<<<<<< HEAD
 
-func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
-=======
+
 func (d *Dag) GetMediatorSchl() *storage.MediatorSchedule {
->>>>>>> miles
+
 	return d.MediatorSchl
 }
 
