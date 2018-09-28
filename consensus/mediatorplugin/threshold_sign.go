@@ -264,8 +264,9 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 	}
 
 	dks, err := dkgr.DistKeyShare()
-	if err == nil {
+	if err != nil {
 		log.Error(err.Error())
+		return
 	}
 
 	dag := mp.getDag()
@@ -324,6 +325,7 @@ func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
 		log.Error("the following mediator is not local: %v", localMed.Str())
+		return
 	}
 
 	// 当buf不存在时，说明已经recover出群签名，忽略该签名分片
@@ -348,21 +350,24 @@ func (mp *MediatorPlugin) recoverTBLSSign(localMed common.Address, newUnitHash c
 		return
 	}
 
+	// todo vss协议完成后 应当再调用一次
 	dkgr := mp.getLocalActiveMediatorDKG(localMed)
 	if dkgr == nil {
 		return
 	}
 
 	dks, err := dkgr.DistKeyShare()
-	if err == nil {
+	if err != nil {
 		log.Error(err.Error())
+		return
 	}
 
 	suite := mp.suite
 	pubPoly := share.NewPubPoly(suite, suite.Point().Base(), dks.Commitments())
 	sig, err := tbls.Recover(suite, pubPoly, newUnitHash[:], sigShares, curThreshold, aSize)
-	if err == nil {
+	if err != nil {
 		log.Error(err.Error())
+		return
 	}
 
 	// recover后 删除buf
