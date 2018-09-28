@@ -23,7 +23,6 @@ package storage
 import (
 	"errors"
 	"fmt"
-
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -284,7 +283,7 @@ func (statedb *StateDatabase) GetActiveMediators(n int) common.Addresses {
 
 func (statedb *StateDatabase) GetMediatorsList() (MediatorCandidates, error) {
 	mc := MediatorCandidates{}
-	err := GetDecodedComplexData(statedb.db, MEDIATOR_CANDIDATE_PREFIX, &mc)
+	err := GetDecodedComplexData(statedb.db, MEDIATOR_CANDIDATE_PREFIX, mc)
 	return mc, err
 }
 func (statedb *StateDatabase) SaveMediatorsList(mc MediatorCandidates) error {
@@ -330,7 +329,7 @@ func init() {
 
 }
 
-func GetDecodedComplexData(db ptndb.Database, key []byte, dataType interface{}) error {
+func GetDecodedComplexData(db ptndb.Database, key []byte, dataType interface{}) (error) {
 	subkey := key[:2]
 	switch {
 	case BytesEqual(subkey, GLOBALPROPERTY_PREFIX):
@@ -392,7 +391,7 @@ type MediatorCandidate struct {
 	VoteNumber VoteNumber
 }
 type VoteNumber uint64
-type StateDBConfig []StateConfig
+type StateDBConfig [] StateConfig
 type StateConfig struct {
 	Prefix []byte
 	Suffix []byte
@@ -407,7 +406,7 @@ func (ms MediatorCandidates) Len() int           { return len(ms) }
 func (ms MediatorCandidates) Less(i, j int) bool { return ms[i].VoteNumber > ms[j].VoteNumber }
 func (ms MediatorCandidates) GetHeadAddress(n int) common.Addresses {
 	if n < 21 {
-		log.Println("less mediator number", "error")
+		log.Println("less mediator number", "error", )
 		return nil
 	}
 	var res common.Addresses
@@ -928,7 +927,7 @@ func getMS(mst *MediatorScheduleStore, statedb StateDb) *MediatorSchedule {
 func StoreMediatorSchl(db StateDb, ms *MediatorSchedule) error {
 	mst := getMST(ms)
 	err := db.SaveMediatorSchedule(mst)
-	return ErrorLogHandler(err, "StoreMediatorSchl==>SaveMediatorSchedule")
+	return ErrorLogHandler(err,"StoreMediatorSchl==>SaveMediatorSchedule")
 }
 
 func RetrieveMediatorSchl(stateDb StateDb) (*MediatorSchedule, error) {
