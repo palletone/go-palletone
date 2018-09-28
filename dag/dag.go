@@ -688,7 +688,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 		ParentsHash:  []common.Hash{currentUnit.UnitHash},
 		AssetIDs:     []modules.IDType16{currentUnit.UnitHeader.Number.AssetID},
 		Authors:      nil,
-		Witness:      []*modules.Authentifier{},
+		GroupSign:    make([]byte, 0),
 		Number:       height,
 		Creationdate: time.Now().Unix(),
 	}

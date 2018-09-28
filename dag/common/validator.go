@@ -236,7 +236,7 @@ func (validate *Validate) ValidateUnitSignature(h *modules.Header, isGenesis boo
 	emptySigUnit.UnitHeader = modules.CopyHeader(h)
 	// signature does not contain authors and witness fields
 	emptySigUnit.UnitHeader.Authors = nil
-	emptySigUnit.UnitHeader.Witness = []*modules.Authentifier{}
+	emptySigUnit.UnitHeader.GroupSign = make([]byte, 0)
 	// recover signature
 	if h.Authors == nil {
 		log.Debug("Verify unit signature ,header's authors is nil.")
@@ -481,7 +481,7 @@ func (validate *Validate) validateHeader(header *modules.Header, isGenesis bool)
 	if header.Authors == nil {
 		return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
-	if len(header.Witness) > 21 || len(header.Witness) < 16 {
+	if len(header.GroupSign) < 64 {
 		return modules.UNIT_STATE_INVALID_HEADER_WITNESS
 	}
 	sigState := validate.ValidateUnitSignature(header, isGenesis)

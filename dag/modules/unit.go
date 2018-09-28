@@ -47,14 +47,14 @@ const (
 )
 
 type Header struct {
-	ParentsHash  []common.Hash   `json:"parents_hash"`
-	AssetIDs     []IDType16      `json:"assets"`
-	Authors      *Authentifier   `json:"author" rlp:"-"`  // the unit creation authors
-	Witness      []*Authentifier `json:"witness" rlp:"-"` // 群签名
-	TxRoot       common.Hash     `json:"root"`
-	Number       ChainIndex      `json:"index"`
-	Extra        []byte          `json:"extra"`
-	Creationdate int64           `json:"creation_time"` // unit create time
+	ParentsHash  []common.Hash `json:"parents_hash"`
+	AssetIDs     []IDType16    `json:"assets"`
+	Authors      *Authentifier `json:"author" rlp:"-"`  // the unit creation authors
+	GroupSign    []byte        `json:"witness" rlp:"-"` // 群签名
+	TxRoot       common.Hash   `json:"root"`
+	Number       ChainIndex    `json:"index"`
+	Extra        []byte        `json:"extra"`
+	Creationdate int64         `json:"creation_time"` // unit create time
 }
 
 func (cpy *Header) CopyHeader(h *Header) {
@@ -101,7 +101,7 @@ func (h *Header) ChainIndex() ChainIndex {
 func (h *Header) Hash() common.Hash {
 	emptyHeader := CopyHeader(h)
 	emptyHeader.Authors = nil
-	emptyHeader.Witness = []*Authentifier{}
+	emptyHeader.GroupSign = make([]byte, 0)
 	return rlp.RlpHash(emptyHeader)
 }
 
@@ -125,8 +125,8 @@ func CopyHeader(h *Header) *Header {
 		copy(cpy.AssetIDs, h.AssetIDs)
 	}
 
-	if len(h.Witness) > 0 {
-		copy(cpy.Witness, h.Witness)
+	if len(h.GroupSign) > 0 {
+		copy(cpy.GroupSign, h.GroupSign)
 	}
 
 	if len(h.TxRoot) > 0 {
@@ -400,6 +400,7 @@ type ContractReadSet struct {
 	Key   string
 	Value *StateVersion
 }
+
 // 0.default vote result is the index of the option from list
 // 1.If the option is specified by the voter, set Option null
 // 2.Expected vote result:[]byte
@@ -408,7 +409,7 @@ type VoteInitiatePayload struct {
 	Option      []string      //vote option list.
 	BallotChain uint64        //vote chain id
 	BallotType  IDType16      //vote asset id
-	BallotCost  big.Int      //token cost
+	BallotCost  big.Int       //token cost
 	ExpiredTime time.Duration //duration of voting
 }
 
@@ -452,9 +453,9 @@ type TextPayload struct {
 /************************** End of Payload Details ******************************************/
 
 type Author struct {
-	Address        common.Address         `json:"address"`
-	Pubkey         []byte /*common.Hash*/ `json:"pubkey"`
-	TxAuthentifier *Authentifier          `json:"authentifiers"`
+	Address        common.Address `json:"address"`
+	Pubkey         []byte/*common.Hash*/ `json:"pubkey"`
+	TxAuthentifier *Authentifier `json:"authentifiers"`
 }
 
 type Authentifier struct {
@@ -518,7 +519,7 @@ func (u *Unit) Size() common.StorageSize {
 	emptyUnit := Unit{}
 	emptyUnit.UnitHeader = CopyHeader(u.UnitHeader)
 	emptyUnit.UnitHeader.Authors = nil
-	emptyUnit.UnitHeader.Witness = []*Authentifier{}
+	emptyUnit.UnitHeader.GroupSign = make([]byte, 0)
 	emptyUnit.CopyBody(u.Txs)
 
 	b, err := rlp.EncodeToBytes(emptyUnit)
