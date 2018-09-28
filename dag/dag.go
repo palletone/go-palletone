@@ -68,7 +68,6 @@ func (d *Dag) GetDynGlobalProp() *storage.DynamicGlobalProperty {
 	return d.DynGlobalProp
 }
 
-
 func (d *Dag) GetMediatorSchl() *storage.MediatorSchedule {
 
 	return d.MediatorSchl
@@ -439,22 +438,21 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	idxDb := storage.NewIndexDatabase(db)
 	gp, err := storage.RetrieveGlobalProp(stateDb)
 	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
+		log.Error(err.Error())
+		return nil, err
 	}
 
 	dgp, err := storage.RetrieveDynGlobalProp(stateDb)
 	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
+		log.Error(err.Error())
+		return nil, err
 	}
 
 	ms, err := storage.RetrieveMediatorSchl(stateDb)
 	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
+		log.Error(err.Error())
+		return nil, err
 	}
-
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
@@ -661,9 +659,10 @@ func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
 func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 	return d.GlobalProp.GetActiveMediator(add)
 }
-func (d *Dag) GetMediatorsList()(storage.MediatorCandidates,error){
+func (d *Dag) GetMediatorsList() (storage.MediatorCandidates, error) {
 	return d.statedb.GetMediatorsList()
 }
+
 // author Albert·Gou
 func (d *Dag) IsActiveMediator(add common.Address) bool {
 	return d.GlobalProp.IsActiveMediator(add)
