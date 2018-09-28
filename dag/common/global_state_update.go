@@ -29,17 +29,17 @@ import (
 
 // UpdateGlobalDynProp, update global dynamic data
 // @author Albert·Gou
-func UpdateGlobalDynProp(db ptndb.Database, gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
+func UpdateGlobalDynProp(db ptndb.Database, gp *storage.GlobalProperty, dgp *storage.DynamicGlobalProperty, unit *modules.Unit) {
 	timestamp := unit.UnitHeader.Creationdate
 	dgp.LastVerifiedUnitNum = unit.UnitHeader.Number.Index
 	dgp.LastVerifiedUnitHash = unit.UnitHash
 	dgp.LastVerifiedUnitTime = timestamp
 
-	missedUnits := uint64(modules.GetSlotAtTime(gp, dgp, time.Unix(timestamp, 0)))
+	missedUnits := uint64(storage.GetSlotAtTime(gp, dgp, time.Unix(timestamp, 0)))
 	//	println(missedUnits)
 	dgp.CurrentASlot += missedUnits + 1
-
-	go storage.StoreDynGlobalProp(db, dgp)
+	stateDb := storage.NewStateDatabase(db)
+	go storage.StoreDynGlobalProp(stateDb, dgp)
 }
 
 /**

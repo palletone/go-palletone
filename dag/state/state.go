@@ -19,8 +19,8 @@
 package state
 
 import (
-	"time"
 	"github.com/palletone/go-palletone/common"
+	"time"
 )
 
 // contract template
@@ -46,3 +46,5 @@ type ContractAccount struct {
 	Address 	common.Address				`json:"address"`			// user accounts address
 	Contracts 	map[string]ContractObj		`json:"contracts"`			// user contracts
 }
+
+
