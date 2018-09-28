@@ -959,6 +959,16 @@ func NewPublicTransactionPoolAPI(b Backend, nonceLock *AddrLocker) *PublicTransa
 	return &PublicTransactionPoolAPI{b, nonceLock}
 }
 
+func (s *PublicTransactionPoolAPI) GetAddrOutpoints(ctx context.Context, addr string) ([]modules.OutPoint, error) {
+	return s.b.GetAddrOutpoints(addr)
+}
+func (s *PublicTransactionPoolAPI) GetAddrUtxos(ctx context.Context, addr string) ([]modules.Utxo, error) {
+	return s.b.GetAddrUtxos(addr)
+}
+func (s *PublicTransactionPoolAPI) GetAllUtxos(ctx context.Context) (map[modules.OutPoint]*modules.Utxo, error) {
+	return s.b.GetAllUtxos()
+}
+
 // GetBlockTransactionCountByNumber returns the number of transactions in the block with the given block number.
 func (s *PublicTransactionPoolAPI) GetBlockTransactionCountByNumber(ctx context.Context, blockNr rpc.BlockNumber) *hexutil.Uint {
 	//	if block, _ := s.b.BlockByNumber(ctx, blockNr); block != nil {
