@@ -25,9 +25,9 @@ type RWSetBuilder struct {
 }
 
 type nsPubRwBuilder struct {
-	namespace         string
-	readMap           map[string]*KVRead
-	writeMap          map[string]*KVWrite
+	namespace string
+	readMap   map[string]*KVRead
+	writeMap  map[string]*KVWrite
 }
 
 func NewRWSetBuilder() *RWSetBuilder {
@@ -36,11 +36,18 @@ func NewRWSetBuilder() *RWSetBuilder {
 
 func (b *RWSetBuilder) AddToReadSet(ns string, key string, version *modules.StateVersion) {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
+	if nsPubRwBuilder.readMap == nil {
+		nsPubRwBuilder.readMap = make(map[string]*KVRead)
+	}
+	// ReadSet
 	nsPubRwBuilder.readMap[key] = NewKVRead(key, version)
 }
 
 func (b *RWSetBuilder) AddToWriteSet(ns string, key string, value []byte) {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
+	if nsPubRwBuilder.writeMap == nil {
+		nsPubRwBuilder.writeMap = make(map[string]*KVWrite)
+	}
 	nsPubRwBuilder.writeMap[key] = newKVWrite(key, value)
 }
 
