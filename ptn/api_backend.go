@@ -18,24 +18,23 @@ package ptn
 
 import (
 	"context"
+	"encoding/hex"
 	"log"
 	"math/big"
 	"time"
-        "github.com/palletone/go-palletone/ptnjson"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"
-
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
-
+	"github.com/palletone/go-palletone/ptnjson"
 	//cc "github.com/palletone/go-palletone/contracts/manger"
-	"encoding/hex"
 )
 
 // PtnApiBackend implements ethapi.Backend for full nodes
@@ -113,7 +112,7 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	if err != nil {
 		return nil, err
 	}
-        var txresult []byte
+	var txresult []byte
 	for _, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_TEXT {
 			if msg, ok := msgcopy.Payload.(*modules.TextPayload); ok {
@@ -122,10 +121,10 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 		}
 	}
 	txOutReply := &ptnjson.GetTxIdResult{
-        Txid:  txid,
-        Apptype :"APP_TEXT",
-        Content : txresult,
-        Coinbase: true ,
+		Txid:     txid,
+		Apptype:  "APP_TEXT",
+		Content:  txresult,
+		Coinbase: true,
 	}
 	return txOutReply, nil
 }
@@ -250,6 +249,16 @@ func (b *PtnApiBackend) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
 
 func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return b.ptn.dag.GetAddrOutput(addr)
+}
+
+func (b *PtnApiBackend) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
+	return b.ptn.dag.GetAddrOutpoints(addr)
+}
+func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]modules.Utxo, error) {
+	return b.ptn.dag.GetAddrUtxos(addr)
+}
+func (b *PtnApiBackend) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
+	return b.ptn.dag.GetAllUtxos()
 }
 
 func (b *PtnApiBackend) GetAddrTransactions(addr string) (modules.Transactions, error) {

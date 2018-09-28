@@ -21,6 +21,7 @@ package modules
 import (
 	"crypto/ecdsa"
 	"log"
+	"reflect"
 	"testing"
 	"time"
 	"unsafe"
@@ -141,5 +142,15 @@ func TestUnitSize(t *testing.T) {
 	h.Authors = au
 
 	log.Println("size: ", unsafe.Sizeof(h))
+}
 
+func TestOutPointToKey(t *testing.T) {
+
+	testPoint := OutPoint{TxHash: common.HexToHash("123567890acbdefg"), MessageIndex: 2147483647, OutIndex: 2147483647}
+	key := testPoint.ToKey()
+
+	result := KeyToOutpoint(key)
+	if !reflect.DeepEqual(testPoint, *result) {
+		t.Fatal("test failed.", result.TxHash.String(), result.MessageIndex, result.OutIndex)
+	}
 }

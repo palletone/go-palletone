@@ -587,21 +587,28 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 }
 
 // GetAllUtxos is return all utxo.
-func (d *Dag) GetAllUtxos() (*txspool.UtxoViewpoint, error) {
-	view := txspool.NewUtxoViewpoint()
+func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	d.Mutex.RLock()
-	err := view.FetchUtxos(d.utxodb, nil)
+	items, err := d.utxodb.GetAllUtxos()
 	d.Mutex.RUnlock()
-	return view, err
+
+	return items, err
 }
 
 func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
 	//return txspool.SaveUtxoView( view)
 	return nil //TODO
 }
+func (d *Dag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
+	return d.utxodb.GetAddrOutpoints(addr)
+}
 
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return d.dagdb.GetAddrOutput(addr)
+}
+
+func (d *Dag) GetAddrUtxos(addr string) ([]modules.Utxo, error) {
+	return d.utxodb.GetAddrUtxos(addr)
 }
 
 func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {

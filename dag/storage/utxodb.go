@@ -38,6 +38,11 @@ type UtxoDb interface {
 	GetPrefix(prefix []byte) map[string][]byte
 	GetUtxoByIndex(indexKey []byte) ([]byte, error)
 	GetUtxoEntry(key []byte) (*modules.Utxo, error)
+	GetAddrOutput(addr string) ([]modules.Output, error)
+	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
+	GetAddrUtxos(addr string) ([]modules.Utxo, error)
+	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
+
 	SaveUtxoEntity(key []byte, utxo *modules.Utxo) error
 	DeleteUtxo(key []byte) error
 }
@@ -68,8 +73,64 @@ func (utxodb *UtxoDatabase) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
 	}
 	return utxo, nil
 }
+
 func (utxodb *UtxoDatabase) GetUtxoByIndex(indexKey []byte) ([]byte, error) {
 	return utxodb.db.Get(indexKey)
+}
+
+func (db *UtxoDatabase) GetAddrOutput(addr string) ([]modules.Output, error) {
+
+	data := db.GetPrefix(append(AddrOutput_Prefix, []byte(addr)...))
+	outputs := make([]modules.Output, 0)
+	for _, b := range data {
+		out := new(modules.Output)
+		if err := rlp.DecodeBytes(b, out); err == nil {
+			outputs = append(outputs, *out)
+		}
+	}
+	return outputs, nil
+}
+func (db *UtxoDatabase) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
+
+	data := db.GetPrefix(append(AddrOutPoint_Prefix, []byte(addr)...))
+	outpoints := make([]modules.OutPoint, 0)
+	for _, b := range data {
+		out := new(modules.OutPoint)
+		if err := rlp.DecodeBytes(b, out); err == nil {
+			outpoints = append(outpoints, *out)
+		}
+	}
+	return outpoints, nil
+}
+
+func (db *UtxoDatabase) GetAddrUtxos(addr string) ([]modules.Utxo, error) {
+	allutxos := make([]modules.Utxo, 0)
+	outpoints, err := db.GetAddrOutpoints(addr)
+	if err != nil {
+		return nil, err
+	}
+	for _, out := range outpoints {
+		if utxo, err := db.GetUtxoEntry(out.ToKey()); err == nil {
+			allutxos = append(allutxos, *utxo)
+		}
+	}
+	return allutxos, nil
+}
+func (db *UtxoDatabase) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
+	view := make(map[modules.OutPoint]*modules.Utxo, 0)
+
+	items := db.GetPrefix(modules.UTXO_PREFIX)
+	var err error
+	for key, itme := range items {
+		utxo := new(modules.Utxo)
+		outpint := new(modules.OutPoint)
+		if err = rlp.DecodeBytes(itme, utxo); err == nil {
+			outpint.SetString(key)
+			view[*outpint] = utxo
+		}
+	}
+
+	return view, err
 }
 
 // get prefix: return maps

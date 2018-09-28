@@ -131,7 +131,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	// append by Albert·Gou
 	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ptn, &config.MediatorPlugin)
 	if err != nil {
-		log.Error("Initialize mediator plugin err:", err)
+		log.Error("Initialize mediator plugin err:", "error", err)
 		return nil, err
 	}
 
@@ -143,13 +143,13 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine,
 		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis); err != nil {
-		log.Error("NewProtocolManager err:", err)
+		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
 	}
 
 	ptn.contract, err = contracts.Initialize(ptn.dag, &config.Contract)
 	if err != nil {
-		log.Error("Contract Initialize err:", err)
+		log.Error("Contract Initialize err:", "error", err)
 		return nil, err
 	}
 

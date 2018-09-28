@@ -1237,6 +1237,13 @@ func (view *UtxoViewpoint) BestHash() *common.Hash {
 func (view *UtxoViewpoint) SetBestHash(hash *common.Hash) {
 	view.bestHash = *hash
 }
+func (view *UtxoViewpoint) SetEntries(key modules.OutPoint, utxo *modules.Utxo) {
+	if view.entries == nil {
+		view.entries = make(map[modules.OutPoint]*modules.Utxo)
+	}
+
+	view.entries[key] = utxo
+}
 func (view *UtxoViewpoint) LookupUtxo(outpoint modules.OutPoint) *modules.Utxo {
 	if view == nil {
 		return nil

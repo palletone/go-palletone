@@ -574,6 +574,21 @@ func (ec *Client) GetAddrOutput(ctx context.Context, addr string) ([]modules.Out
 	err := ec.c.CallContext(ctx, &result, "ptn_getAddrOutput", addr)
 	return result, err
 }
+func (ec *Client) GetAddrOutpoints(ctx context.Context, addr string) ([]modules.OutPoint, error) {
+	result := make([]modules.OutPoint, 0)
+	err := ec.c.CallContext(ctx, &result, "ptn_getAddrOutpoints", addr)
+	return result, err
+}
+func (ec *Client) GetAddrUtxos(ctx context.Context, addr string) ([]modules.Utxo, error) {
+	result := make([]modules.Utxo, 0)
+	err := ec.c.CallContext(ctx, &result, "ptn_getAddrUtxos", addr)
+	return result, err
+}
+func (ec *Client) GetAllUtxos(ctx context.Context) (map[modules.OutPoint]*modules.Utxo, error) {
+	result := make(map[modules.OutPoint]*modules.Utxo, 0)
+	err := ec.c.CallContext(ctx, &result, "ptn_getAllUtxos", nil)
+	return result, err
+}
 
 func (ec *Client) GetAddrTransactions(ctx context.Context, addr string) (modules.Transactions, error) {
 	result := make(modules.Transactions, 0)
