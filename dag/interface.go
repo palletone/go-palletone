@@ -94,5 +94,5 @@ type IDag interface {
 	GetMediatorSchl() *storage.MediatorSchedule
 	GetActiveMediatorCount() int
 	GetActiveMediatorNode(index int) *discover.Node
-	GetMediatorsList()(storage.MediatorCandidates,error)
+	GetMediatorsList() (storage.MediatorCandidates, error)
 }

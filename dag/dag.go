@@ -596,8 +596,8 @@ func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 }
 
 func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
-	//return txspool.SaveUtxoView( view)
-	return nil //TODO
+	//return txspool.SaveUtxoView(db, view)
+	return d.utxodb.SaveUtxoView(view.Entries())
 }
 func (d *Dag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	return d.utxodb.GetAddrOutpoints(addr)
