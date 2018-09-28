@@ -43,6 +43,7 @@ func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
 	if err := cc.Init(idag); err != nil {
 		return nil, err
 	}
+
 	atomic.StoreInt32(&initFlag, 1)
 	log.Debug("contract initialize ok")
 	return contract, nil
@@ -54,6 +55,10 @@ func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
 // and forming a contract template unit together with the contract name and version
 // Chain code ID for multiple chains
 func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error) {
+	atomic.LoadInt32(&initFlag)
+	if initFlag == 0 {
+		return nil, errors.New("Contract not initialized")
+	}
 	return cc.Install(c.dag, chainID, ccName, ccPath, ccVersion)
 }
 
@@ -66,6 +71,10 @@ func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersi
 // The interface returns the contract deployment ID (there is a different return ID for each deployment)
 // and the deployment unit
 func (c *Contract) Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *unit.ContractDeployPayload, e error) {
+	atomic.LoadInt32(&initFlag)
+	if initFlag == 0 {
+		return nil, nil, errors.New("Contract not initialized")
+	}
 	return cc.Deploy(c.dag, chainID, templateId, txid, args, timeout)
 }
 
@@ -73,11 +82,19 @@ func (c *Contract) Deploy(chainID string, templateId []byte, txid string, args [
 // The contract invoke call, execute the deployed contract according to the specified contract call parameters,
 // and the function returns the contract call unit.
 func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
+	atomic.LoadInt32(&initFlag)
+	if initFlag == 0 {
+		return nil, errors.New("Contract not initialized")
+	}
 	return cc.Invoke(c.dag, chainID, deployId, txid, args, timeout)
 }
 
 // Stop 停止指定合约。根据需求可以对镜像文件进行删除操作
 //Stop the specified contract. The image file can be deleted according to requirements.
 func (c *Contract) Stop(chainID string, deployId []byte, txid string, deleteImage bool) error {
+	atomic.LoadInt32(&initFlag)
+	if initFlag == 0 {
+		return errors.New("Contract not initialized")
+	}
 	return cc.Stop(chainID, deployId, txid, deleteImage)
 }
