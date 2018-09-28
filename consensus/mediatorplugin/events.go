@@ -30,7 +30,7 @@ type NewUnitEvent struct {
 }
 
 type SigShareEvent struct {
-	Hash     common.Hash
+	UnitHash common.Hash
 	SigShare []byte
 }
 
@@ -41,4 +41,9 @@ type VSSDealEvent struct {
 
 type VSSResponseEvent struct {
 	Resp *dkg.Response
+}
+
+type GroupSigEvent struct {
+	UnitHash common.Hash
+	GroupSig []byte
 }

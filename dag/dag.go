@@ -54,21 +54,22 @@ type Dag struct {
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
 	Mutex         sync.RWMutex
-	GlobalProp    *modules.GlobalProperty
-	DynGlobalProp *modules.DynamicGlobalProperty
-	MediatorSchl  *modules.MediatorSchedule
+	GlobalProp    *storage.GlobalProperty
+	DynGlobalProp *storage.DynamicGlobalProperty
+	MediatorSchl  *storage.MediatorSchedule
 	Memdag        *memunit.MemDag // memory unit
 }
 
-func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
+func (d *Dag) GetGlobalProp() *storage.GlobalProperty {
 	return d.GlobalProp
 }
 
-func (d *Dag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
+func (d *Dag) GetDynGlobalProp() *storage.DynamicGlobalProperty {
 	return d.DynGlobalProp
 }
 
-func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
+func (d *Dag) GetMediatorSchl() *storage.MediatorSchedule {
+
 	return d.MediatorSchl
 }
 
@@ -431,28 +432,27 @@ func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []b
 
 func NewDag(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
-
-	gp, err := storage.RetrieveGlobalProp(db)
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
-
-	dgp, err := storage.RetrieveDynGlobalProp(db)
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
-
-	ms, err := storage.RetrieveMediatorSchl(db)
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
 	dagDb := storage.NewDagDatabase(db)
 	utxoDb := storage.NewUtxoDatabase(db)
 	stateDb := storage.NewStateDatabase(db)
 	idxDb := storage.NewIndexDatabase(db)
+	gp, err := storage.RetrieveGlobalProp(stateDb)
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+
+	dgp, err := storage.RetrieveDynGlobalProp(stateDb)
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+
+	ms, err := storage.RetrieveMediatorSchl(stateDb)
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
@@ -596,8 +596,8 @@ func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 }
 
 func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
-	//return txspool.SaveUtxoView( view)
-	return nil //TODO
+	//return txspool.SaveUtxoView(db, view)
+	return d.utxodb.SaveUtxoView(view.Entries())
 }
 func (d *Dag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	return d.utxodb.GetAddrOutpoints(addr)
@@ -659,6 +659,9 @@ func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
 func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 	return d.GlobalProp.GetActiveMediator(add)
 }
+func (d *Dag) GetMediatorsList() (storage.MediatorCandidates, error) {
+	return d.statedb.GetMediatorsList()
+}
 
 // author Albert·Gou
 func (d *Dag) IsActiveMediator(add common.Address) bool {
@@ -688,7 +691,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 		ParentsHash:  []common.Hash{currentUnit.UnitHash},
 		AssetIDs:     []modules.IDType16{currentUnit.UnitHeader.Number.AssetID},
 		Authors:      nil,
-		Witness:      []*modules.Authentifier{},
+		GroupSign:    make([]byte, 0),
 		Number:       height,
 		Creationdate: time.Now().Unix(),
 	}

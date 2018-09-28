@@ -66,7 +66,8 @@ func genPair() (kyber.Scalar, kyber.Point) {
 func dkgGen() []*dkg.DistKeyGenerator {
 	dkgs := make([]*dkg.DistKeyGenerator, nbParticipants)
 	for i := 0; i < nbParticipants; i++ {
-		dkg, err := dkg.NewDistKeyGenerator(suite, partSec[i], partPubs, ntThreshold)
+		dkg, err := dkg.NewDistKeyGeneratorWithoutSecret(suite, partSec[i], partPubs, ntThreshold)
+		//dkg, err := dkg.NewDistKeyGenerator(suite, partSec[i], partPubs, ntThreshold)
 		if err != nil {
 			panic(err)
 		}
@@ -147,7 +148,8 @@ func TestTBLS(t *testing.T) {
 	err = bls.Verify(suite, dks2.Public(), msg, sig)
 	assert.Nil(t, err)
 
-	require.NotEqual(t, dks.Public(), dks2.Public())
+	require.Equal(t, dks.Public(), dks2.Public())
+	//require.NotEqual(t, dks.Public(), dks2.Public())
 
 	maybepub2 := dks.Commitments()[1]
 	err = bls.Verify(suite, maybepub2, msg, sig)

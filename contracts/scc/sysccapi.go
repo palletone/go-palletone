@@ -174,7 +174,7 @@ func DeDeploySysCC(chainID string, syscc *SystemChaincode) error {
 
 	ccprov := ccprovider.GetChaincodeProvider()
 	version := util.GetSysCCVersion()
-	cccid := ccprov.GetCCContext(chainID, syscc.Name, version, "", true, nil, nil)
+	cccid := ccprov.GetCCContext(chainID, syscc.Name, version, "123", true, nil, nil)
 	err = ccprov.Stop(ctx, cccid, chaincodeDeploymentSpec)
 	if err == nil {
 		cclist.DelChaincode(chainID, syscc.Name, version)

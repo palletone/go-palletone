@@ -102,11 +102,11 @@ func (asset *Asset) IsSimilar(similar *Asset) bool {
 }
 
 type Utxo struct {
-	Amount   uint64 `json:"amount"`  // 数量
-	Asset    *Asset `json:"Asset"`   // 资产类别
-	PkScript []byte `json:"program"` // 要执行的代码段
-	LockTime uint32 `json:"lock_time"`
-	VoteResult Vote 
+	Amount     uint64 `json:"amount"`  // 数量
+	Asset      *Asset `json:"Asset"`   // 资产类别
+	PkScript   []byte `json:"program"` // 要执行的代码段
+	LockTime   uint32 `json:"lock_time"`
+	VoteResult Vote
 	// flags contains additional info about output such as whether it is spent, and whether is has
 	// been modified since is was loaded.
 	Flags txoFlags
@@ -240,6 +240,10 @@ func (outpoint *OutPoint) Bytes() []byte {
 		return nil
 	}
 	return data
+}
+func (outpoint *OutPoint) Hash() common.Hash {
+	v := rlp.RlpHash(outpoint)
+	return v
 }
 
 func (outpoint *OutPoint) IsEmpty() bool {
