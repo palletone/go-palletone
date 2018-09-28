@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -177,6 +176,7 @@ func initGenesis(ctx *cli.Context) error {
 
 	genesisUnitHash := unit.UnitHash
 	log.Info(fmt.Sprintf("Successfully Get Genesis Unit, it's hash: %v", genesisUnitHash.Hex()))
+	stateDb := storage.NewStateDatabase(Dbconn)
 
 	// 2, 重写配置文件，修改当前节点的mediator的地址和密码
 	// @author Albert·Gou
@@ -188,8 +188,8 @@ func initGenesis(ctx *cli.Context) error {
 
 	// 3, 全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
-	gp := modules.InitGlobalProp(genesis)
-	storage.StoreGlobalProp(Dbconn, gp)
+	GP := storage.InitGlobalProp(genesis)
+	err = storage.StoreGlobalProp(stateDb,GP)
 	if err != nil {
 		utils.Fatalf("Failed to write global properties: %v", err)
 		return err
@@ -197,8 +197,8 @@ func initGenesis(ctx *cli.Context) error {
 
 	// 4, 动态全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
-	dgp := modules.InitDynGlobalProp(genesis, genesisUnitHash)
-	storage.StoreDynGlobalProp(Dbconn, dgp)
+	dgp := storage.InitDynGlobalProp(genesis, genesisUnitHash)
+	storage.StoreDynGlobalProp(stateDb, dgp)
 	if err != nil {
 		utils.Fatalf("Failed to write dynamic global properties: %v", err)
 		return err
@@ -206,8 +206,8 @@ func initGenesis(ctx *cli.Context) error {
 
 	// 5, 初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
-	ms := modules.InitMediatorSchl(gp, dgp)
-	storage.StoreMediatorSchl(Dbconn, ms)
+	ms :=  storage.InitMediatorSchl(GP, dgp)
+	storage.StoreMediatorSchl(stateDb, ms)
 	if err != nil {
 		utils.Fatalf("Failed to write mediator schedule: %v", err)
 		return err
