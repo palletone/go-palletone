@@ -20,6 +20,7 @@ package mediatorplugin
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/share"
@@ -39,21 +40,18 @@ func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
 }
 
 func (mp *MediatorPlugin) StartVSSProtocol() {
-	// todo 广播vss deal， 开启定时器， 并开启循环接收本地mediator完成vss协议的消息
 	log.Info("Start completing the VSS protocol.")
 
 	go mp.BroadcastVSSDeals()
 
-	//timeout := time.NewTimer(3 * time.Second)
-	//defer timeout.Stop()
-	//select {
-	//case <-mp.quit:
-	//	return
-	//case <-timeout.C:
-	//	for med, dkg := range mp.dkgs {
-	//		log.Debug(fmt.Sprintf("%v 's DKG certifing is %v", med.Str(), dkg.Certified()))
-	//	}
-	//}
+	timeout := time.NewTimer(3 * time.Second)
+	defer timeout.Stop()
+	select {
+	case <-mp.quit:
+		return
+	case <-timeout.C:
+		go mp.endVSSProtocol(true)
+	}
 }
 
 func (mp *MediatorPlugin) BroadcastVSSDeals() {
@@ -201,15 +199,36 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 				delete(mp.respBuf[localMed], vrfrMed)
 
 				if certified {
-					// todo 发送验证成功消息, 开启unit分片签名循环
-					delete(mp.respBuf, localMed)
 					go mp.signTBLSLoop(localMed)
+					go mp.recoverUnitsTBLS(localMed)
+
+					go mp.endVSSProtocol(false)
+					delete(mp.respBuf, localMed)
 				}
 
 				return
 			}
 		}
 	}
+}
+
+func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
+	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
+	if !ok {
+		log.Error("the following mediator is not local: %v", localMed.Str())
+		return
+	}
+
+	for newUnitHash := range medSigShareBuf {
+		go mp.recoverUnitTBLS(localMed, newUnitHash)
+	}
+}
+
+func (mp *MediatorPlugin) endVSSProtocol(timeout bool) {
+	// todo 判断本地所有的dkg是否都完成了vss协议, 并发送协议完成的消息
+	//for med, dkg := range mp.dkgs {
+	//	log.Debug(fmt.Sprintf("%v 's DKG certifing is %v", med.Str(), dkg.Certified()))
+	//}
 }
 
 func (mp *MediatorPlugin) addToResponseBuf(respEvent *VSSResponseEvent) {
@@ -337,10 +356,10 @@ func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	mp.toTBLSRecoverBuf[localMed][newUnitHash] = append(unitSigShareBuf, sigShare)
 
 	// recover群签名
-	go mp.recoverTBLSSign(localMed, newUnitHash)
+	go mp.recoverUnitTBLS(localMed, newUnitHash)
 }
 
-func (mp *MediatorPlugin) recoverTBLSSign(localMed common.Address, newUnitHash common.Hash) {
+func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, newUnitHash common.Hash) {
 	dag := mp.getDag()
 	aSize := dag.GetActiveMediatorCount()
 	curThreshold := dag.GetCurThreshold()
@@ -350,7 +369,6 @@ func (mp *MediatorPlugin) recoverTBLSSign(localMed common.Address, newUnitHash c
 		return
 	}
 
-	// todo vss协议完成后 应当再调用一次
 	dkgr := mp.getLocalActiveMediatorDKG(localMed)
 	if dkgr == nil {
 		return
