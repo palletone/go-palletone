@@ -1,0 +1,17 @@
+[Ada.Btc]
+NetID = 1
+Host = "localhost:18332"
+RPCUser = "test"
+RPCPasswd = "123456"
+CertPath = "/home/pallet/wallet/btc/btctest/rpc.cert"
+WalletPasswd = "1"
+
+[Ada.Eth]
+NetID = 1
+Rawurl = "/home/pallet/data/eth/gethtest/geth.ipc"
+
+[Ada.CCInfoKV.test]
+CCName = ""
+
+[Ada.CCInfoKV.test.ChainCodeKV]
+testk = [116, 101, 115, 116, 118]

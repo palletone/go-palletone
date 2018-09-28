@@ -105,6 +105,10 @@ type ProtocolManager struct {
 	sigShareSub event.Subscription
 
 	// append by Albert·Gou
+	groupSigCh  chan mp.GroupSigEvent
+	groupSigSub event.Subscription
+
+	// append by Albert·Gou
 	vssDealCh  chan mp.VSSDealEvent
 	vssDealSub event.Subscription
 
@@ -299,6 +303,12 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	go pm.sigShareTransmitLoop()
 
 	// append by Albert·Gou
+	// send unit group signature
+	pm.groupSigCh = make(chan mp.GroupSigEvent)
+	pm.groupSigSub = pm.producer.SubscribeGroupSigEvent(pm.groupSigCh)
+	go pm.groupSigBroadcastLoop()
+
+	// append by Albert·Gou
 	// send  VSS deal
 	pm.vssDealCh = make(chan mp.VSSDealEvent)
 	pm.vssDealSub = pm.producer.SubscribeVSSDealEvent(pm.vssDealCh)
@@ -320,6 +330,7 @@ func (pm *ProtocolManager) Stop() {
 	// append by Albert·Gou
 	pm.newUnitSub.Unsubscribe()
 	pm.sigShareSub.Unsubscribe()
+	pm.groupSigSub.Unsubscribe()
 	pm.vssDealSub.Unsubscribe()
 	pm.vssResponseSub.Unsubscribe()
 

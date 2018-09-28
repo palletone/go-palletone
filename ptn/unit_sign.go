@@ -23,6 +23,7 @@ import (
 
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -47,6 +48,8 @@ type producer interface {
 
 	LocalHaveActiveMediator() bool
 	StartVSSProtocol()
+
+	SubscribeGroupSigEvent(ch chan<- mp.GroupSigEvent) event.Subscription
 }
 
 // @author Albert·Gou
@@ -72,7 +75,7 @@ func (self *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
 		case event := <-self.sigShareCh:
-			med := self.dag.GetUnit(event.Hash).UnitAuthor()
+			med := self.dag.GetUnit(event.UnitHash).UnitAuthor()
 			node := self.dag.GetActiveMediator(*med).Node
 			self.TransmitSigShare(node, &event)
 
@@ -81,6 +84,27 @@ func (self *ProtocolManager) sigShareTransmitLoop() {
 			return
 		}
 	}
+}
+
+// @author Albert·Gou
+func (self *ProtocolManager) groupSigBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.groupSigCh:
+			self.BroadcastGroupSig(&event)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.sigShareSub.Err():
+			return
+		}
+	}
+}
+
+// @author Albert·Gou
+// BroadcastGroupSig will propagate the group signature of unit to p2p network
+func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
+	// todo 广播群签名，并在对应节点接受，然后添加到unit和header中
+
 }
 
 // @author Albert·Gou
@@ -276,7 +300,7 @@ func (pm *ProtocolManager) getActiveMediatorPeer(node *discover.Node) (p *peer, 
 	return
 }
 
-// AtiveMeatorPeers retrieves a list of peers that active mediator.
+// GetActiveMediatorPeers retrieves a list of peers that active mediator.
 // If the value is nil, it is the node itself
 // @author Albert·Gou
 func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
@@ -291,4 +315,27 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 	}
 
 	return list
+}
+
+// SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
+// @author Albert·Gou
+func (p *peer) SendNewProducedUnit(newUnit *modules.Unit) error {
+	return p2p.Send(p.rw, NewUnitMsg, newUnit)
+}
+
+// @author Albert·Gou
+//func (p *peer) SendVSSDeal(deal *vssMsg) error {
+func (p *peer) SendVSSDeal(deal *mp.VSSDealEvent) error {
+	return p2p.Send(p.rw, VSSDealMsg, deal)
+}
+
+// @author Albert·Gou
+//func (p *peer) SendVSSResponse(resp *vssRespMsg) error {
+func (p *peer) SendVSSResponse(resp *mp.VSSResponseEvent) error {
+	return p2p.Send(p.rw, VSSResponseMsg, resp)
+}
+
+// @author Albert·Gou
+func (p *peer) SendSigShare(sigShare *mp.SigShareEvent) error {
+	return p2p.Send(p.rw, SigShareMsg, sigShare)
 }

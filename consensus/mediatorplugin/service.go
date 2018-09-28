@@ -61,6 +61,10 @@ type MediatorPlugin struct {
 	sigShareFeed  event.Feed
 	sigShareScope event.SubscriptionScope
 
+	// unit 群签名的事件订阅
+	groupSigFeed  event.Feed
+	groupSigScope event.SubscriptionScope
+
 	// dkg 生成 dks 相关
 	suite   *bn256.Suite
 	dkgs    map[common.Address]*dkg.DistKeyGenerator
@@ -153,8 +157,8 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 	for _, localMed := range lams {
 		initSec := mp.mediators[localMed].InitPartSec
 
-		//dkgr, err := dkg.NewDistKeyGeneratorWithoutSecret(mp.suite, initSec, initPubs, curThreshold)
-		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
+		dkgr, err := dkg.NewDistKeyGeneratorWithoutSecret(mp.suite, initSec, initPubs, curThreshold)
+		//dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
 			log.Error(err.Error())
 			continue
