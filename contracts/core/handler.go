@@ -349,9 +349,9 @@ func (handler *Handler) processStream() error {
 				chaincodeLogger.Infof("Error handling chaincode support stream: %+v", err)
 				return err
 			} else if in == nil {
-				err = errors.New("received nil message, ending chaincode support stream")
-				chaincodeLogger.Debugf("%+v", err)
-				return err
+				//err = errors.New("received nil message, ending chaincode support stream")
+				//chaincodeLogger.Debugf("%+v", err)
+				return nil
 			}
 			chaincodeLogger.Debugf("[%s]Received message %s from shim", shorttxid(in.Txid), in.Type.String())
 			if in.Type.String() == pb.ChaincodeMessage_ERROR.String() {

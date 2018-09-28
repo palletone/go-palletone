@@ -280,6 +280,8 @@ func (s *PalletOne) Stop() error {
 	s.eventMux.Stop()
 	close(s.shutdownChan)
 
+	s.contract.Close()
+
 	// append by Albert·Gou
 	s.mediatorPlugin.Stop()
 

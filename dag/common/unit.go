@@ -154,10 +154,10 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 		V:       v,
 	}
 	// to set witness list, should be creator himself
-	var authentifier modules.Authentifier
-	authentifier.Address = signer
-	unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
-
+	// var authentifier modules.Authentifier
+	// authentifier.Address = signer
+	// unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
+	// unit.UnitHeader.GroupSign = sign
 	return unit, nil
 }
 

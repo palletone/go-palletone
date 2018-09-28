@@ -52,7 +52,7 @@ func TestNewGenesisUnit(t *testing.T) {
 	log.Println("--- Genesis unit header --- ")
 	log.Println("parent units:", gUnit.UnitHeader.ParentsHash)
 	log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
-	log.Println("witness:", gUnit.UnitHeader.Witness)
+	log.Println("group_sign:", gUnit.UnitHeader.GroupSign)
 	log.Println("Root:", gUnit.UnitHeader.TxRoot)
 	log.Println("Number:", gUnit.UnitHeader.Number.String())
 
