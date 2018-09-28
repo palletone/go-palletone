@@ -76,7 +76,7 @@ func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	//
 	header.Creationdate = time.Now().Unix()
 	header.Authors = &modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
-	header.Witness = []*modules.Authentifier{&modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}}
+	header.GroupSign = []byte{}
 	tx, _ := NewCoinbaseTransaction()
 	txs := modules.Transactions{tx}
 	genesisUnit := modules.NewUnit(header, txs)
@@ -128,7 +128,7 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int, seed byte) (modu
 		//
 		header.Creationdate = time.Now().Unix()
 		header.Authors = &modules.Authentifier{common.Address{seed}, []byte{}, []byte{}, []byte{}}
-		header.Witness = []*modules.Authentifier{&modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}}
+		header.GroupSign = []byte{}
 		tx, _ := NewCoinbaseTransaction()
 		txs := modules.Transactions{tx}
 		unit := modules.NewUnit(header, txs)
@@ -221,7 +221,7 @@ func newTester() *downloadTester {
 	tester.stateDb, _ = ptndb.NewMemDatabase()
 	//newGenesisForTest(tester.stateDb)
 	tester.stateDb.Put(genesisUnit.UnitHeader.Hash().Bytes(), []byte("0x00"))
-	//fmt.Println("error=", err)
+	//fmt.Println("error=", err)testBoundedForkedSync
 	tester.downloader = New(FullSync, new(event.TypeMux), tester.dropPeer, nil, tester)
 
 	return tester
@@ -1044,8 +1044,7 @@ func testHeavyForkedSync(t *testing.T, protocol int, mode SyncMode) {
 
 // Tests that chain forks are contained within a certain interval of the current chain head,
 // ensuring that malicious peers cannot waste resources by feeding long dead chains.
-//TODO xiaozhi
-//func TestBoundedForkedSync1(t *testing.T) { testBoundedForkedSync(t, 1, FullSync) }
+func TestBoundedForkedSync1(t *testing.T) { testBoundedForkedSync(t, 1, FullSync) }
 
 //func TestBoundedForkedSync63Full(t *testing.T) { testBoundedForkedSync(t, 2, FullSync) }
 
@@ -1117,8 +1116,7 @@ func testBoundedHeavyForkedSync(t *testing.T, protocol int, mode SyncMode) {
 	}
 }
 
-// Tests that an inactive downloader will not accept incoming block headers and
-// bodies.
+// Tests that an inactive downloader will not accept incoming block headers and bodies.
 func TestInactiveDownloader62(t *testing.T) {
 	t.Parallel()
 
@@ -1134,7 +1132,7 @@ func TestInactiveDownloader62(t *testing.T) {
 	}
 }
 
-// Tests that an inactive downloader will not accept incoming block headers, bodies and receipts.
+// Tests that an inactive downloader will not accept incoming block headers and bodies.
 func TestInactiveDownloader63(t *testing.T) {
 	t.Parallel()
 
