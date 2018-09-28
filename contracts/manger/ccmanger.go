@@ -144,10 +144,12 @@ func peerCreateChain(cid string) error {
 	return nil
 }
 
+var grpcServer *grpc.Server
+
 func peerServerInit() error {
 	var opts []grpc.ServerOption
 
-	grpcServer := grpc.NewServer(opts...)
+	grpcServer = grpc.NewServer(opts...)
 	peerAddress := cfg.GetConfig().Address
 	if peerAddress == "" {
 		peerAddress = "0.0.0.0:21726"
@@ -160,7 +162,10 @@ func peerServerInit() error {
 	if ccStartupTimeout <= 0 {
 		ccStartupTimeout = time.Duration(40) * time.Second
 	}
-	ca, _ := accesscontrol.NewCA()
+	ca, err := accesscontrol.NewCA()
+	if err != nil {
+		return err
+	}
 	pb.RegisterChaincodeSupportServer(grpcServer, core.NewChaincodeSupport(peerAddress, false, ccStartupTimeout, ca))
 	go grpcServer.Serve(lis)
 
@@ -168,6 +173,7 @@ func peerServerInit() error {
 }
 
 func peerServerDeInit() error {
+	grpcServer.Stop()
 	defer os.RemoveAll(cfg.GetConfig().ContractFileSystemPath)
 	return nil
 }

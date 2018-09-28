@@ -14,9 +14,10 @@ import (
 var initFlag int32
 
 type Contract struct {
-	//cfg *contractcfg.Config
+	cfg  *contractcfg.Config
 	name string
 	dag  dag.IDag
+	//status int32 //   1:init   2:start
 }
 
 // Initialize 初始化合约管理模块以及加载系统合约，
@@ -38,6 +39,7 @@ func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
 	contract := &Contract{
 		name: "palletone",
 		dag:  idag,
+		cfg:  cfg,
 	}
 	contractcfg.SetConfig(&contractCfg)
 	if err := cc.Init(idag); err != nil {
@@ -47,6 +49,16 @@ func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
 	atomic.StoreInt32(&initFlag, 1)
 	log.Debug("contract initialize ok")
 	return contract, nil
+}
+
+func (c *Contract) Close() error {
+	atomic.LoadInt32(&initFlag)
+	if initFlag == 0 {
+		return errors.New("contract already deInit")
+	}
+	cc.Deinit()
+	atomic.StoreInt32(&initFlag, 0)
+	return nil
 }
 
 // Install 合约安装，将指定的合约路径文件打包，并与合约名称、版本一起构成合约模板单元
