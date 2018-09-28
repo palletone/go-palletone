@@ -1186,6 +1186,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 						frequency = 1
 					}
 					if n, err := d.lightdag.InsertHeaderDag(chunk, frequency); err != nil {
+						fmt.Println("xz  d.lightdag.InsertHeaderDag(chunk, frequency)  n = ", n)
 						// If some headers were inserted, add them too to the rollback list
 						if n > 0 {
 							rollback = append(rollback, chunk[:n]...)
@@ -1296,8 +1297,8 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	return nil
 }
 
-// processFastSyncContent takes fetch results from the queue and writes them to the
-// database. It also controls the synchronisation of state nodes of the pivot block.
+// processFastSyncContent takes fetch results from the queue and writes them to the database.
+// It also controls the synchronisation of state nodes of the pivot block.
 func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modules.IDType16) error {
 	// Start syncing state of the reported head block. This should get us most of
 	// the state of the pivot block.
@@ -1638,7 +1639,15 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	//	ceil = 0
 	//	p.log.Debug("Looking for common ancestor", "local index", ceil, "remote", latest.Number.Index)
 	//}
-
+	if d.mode == FullSync {
+		ceil = d.dag.CurrentUnit().NumberU64()
+	} else if d.mode == FastSync {
+		ceil = d.dag.CurrentUnit().NumberU64()
+	}
+	if ceil >= MaxForkAncestry {
+		floor = uint64(ceil - MaxForkAncestry)
+	}
+	p.log.Debug("Looking for common ancestor", "local", ceil, "remote", height)
 	// Request the topmost blocks to short circuit binary ancestor lookup
 	head := ceil
 	if head > height {
