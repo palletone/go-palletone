@@ -11,12 +11,12 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
  */
-
 
 // Package shim provides APIs for the chaincode to access its state
 // variables, transaction context and call other chaincodes.
@@ -147,13 +147,7 @@ func Start(cc Chaincode) error {
 	if chaincodename == "" {
 		return errors.New("error chaincode id not provided")
 	}
-//glh
-/*
-	err := factory.InitFactories(factory.GetDefaultOpts())
-	if err != nil {
-		return errors.WithMessage(err, "internal error, BCCSP could not be initialized with default options")
-	}
-*/
+
 	//mock stream not set up ... get real stream
 	if streamGetter == nil {
 		streamGetter = userChaincodeStreamGetter
@@ -329,8 +323,8 @@ func chatWithPeer(chaincodename string, stream PeerChaincodeStream, cc Chaincode
 					chaincodeLogger.Errorf("Received error from server, ending chaincode stream: %+v", err)
 					return
 				} else if in == nil {
-					err = errors.New("received nil message, ending chaincode stream")
-					chaincodeLogger.Debugf("%+v", err)
+					//err = errors.New("received nil message, ending chaincode stream")
+					//chaincodeLogger.Debugf("%+v", err)
 					return
 				}
 				chaincodeLogger.Debugf("[%s]Received message %s from shim", shorttxid(in.Txid), in.Type.String())
@@ -383,28 +377,7 @@ func (stub *ChaincodeStub) init(handler *Handler, channelId string, txid string,
 	// TODO: sanity check: verify that every call to init with a nil
 	// signedProposal is a legitimate one, meaning it is an internal call
 	// to system chaincodes.
-//glh
-/*
-	if signedProposal != nil {
-		var err error
 
-		stub.proposal, err = utils.GetProposal(signedProposal.ProposalBytes)
-		if err != nil {
-			return errors.WithMessage(err, "failed extracting signedProposal from signed signedProposal")
-		}
-
-		// Extract creator, transient, binding...
-		stub.creator, stub.transient, err = utils.GetChaincodeProposalContext(stub.proposal)
-		if err != nil {
-			return errors.WithMessage(err, "failed extracting signedProposal fields")
-		}
-
-		stub.binding, err = utils.ComputeProposalBinding(stub.proposal)
-		if err != nil {
-			return errors.WithMessage(err, "failed computing binding from signedProposal")
-		}
-	}
-*/
 	return nil
 }
 
@@ -522,7 +495,7 @@ type HistoryQueryIterator struct {
 type resultType uint8
 
 const (
-	STATE_QUERY_RESULT resultType = iota + 1
+	STATE_QUERY_RESULT   resultType = iota + 1
 	HISTORY_QUERY_RESULT
 )
 
@@ -546,17 +519,6 @@ func (stub *ChaincodeStub) GetStateByRange(startKey, endKey string) (StateQueryI
 	return stub.handleGetStateByRange(collection, startKey, endKey)
 }
 
-//glh
-/*
-// GetHistoryForKey documentation can be found in interfaces.go
-func (stub *ChaincodeStub) GetHistoryForKey(key string) (HistoryQueryIteratorInterface, error) {
-	response, err := stub.handler.handleGetHistoryForKey(key, stub.ChannelId, stub.TxID)
-	if err != nil {
-		return nil, err
-	}
-	return &HistoryQueryIterator{CommonIterator: &CommonIterator{stub.handler, stub.ChannelId, stub.TxID, response, 0}}, nil
-}
-*/
 //CreateCompositeKey documentation can be found in interfaces.go
 func (stub *ChaincodeStub) CreateCompositeKey(objectType string, attributes []string) (string, error) {
 	return createCompositeKey(objectType, attributes)
@@ -633,24 +595,7 @@ func (stub *ChaincodeStub) GetStateByPartialCompositeKey(objectType string, attr
 		return nil, err
 	}
 }
-//glh
-/*
-func (iter *StateQueryIterator) Next() (*queryresult.KV, error) {
-	if result, err := iter.nextResult(STATE_QUERY_RESULT); err == nil {
-		return result.(*queryresult.KV), err
-	} else {
-		return nil, err
-	}
-}
 
-func (iter *HistoryQueryIterator) Next() (*queryresult.KeyModification, error) {
-	if result, err := iter.nextResult(HISTORY_QUERY_RESULT); err == nil {
-		return result.(*queryresult.KeyModification), err
-	} else {
-		return nil, err
-	}
-}
-*/
 // HasNext documentation can be found in interfaces.go
 func (iter *CommonIterator) HasNext() bool {
 	if iter.currentLoc < len(iter.response.Results) || iter.response.HasMore {
@@ -665,24 +610,24 @@ func (iter *CommonIterator) HasNext() bool {
 // interface that can hold values of any type.
 func (iter *CommonIterator) getResultFromBytes(queryResultBytes *pb.QueryResultBytes,
 	rType resultType) (commonledger.QueryResult, error) {
-//glh
-/*
-	if rType == STATE_QUERY_RESULT {
-		stateQueryResult := &queryresult.KV{}
-		if err := proto.Unmarshal(queryResultBytes.ResultBytes, stateQueryResult); err != nil {
-			return nil, errors.Wrap(err, "error unmarshaling result from bytes")
-		}
-		return stateQueryResult, nil
+	//glh
+	/*
+		if rType == STATE_QUERY_RESULT {
+			stateQueryResult := &queryresult.KV{}
+			if err := proto.Unmarshal(queryResultBytes.ResultBytes, stateQueryResult); err != nil {
+				return nil, errors.Wrap(err, "error unmarshaling result from bytes")
+			}
+			return stateQueryResult, nil
 
-	} else if rType == HISTORY_QUERY_RESULT {
-		historyQueryResult := &queryresult.KeyModification{}
-		if err := proto.Unmarshal(queryResultBytes.ResultBytes, historyQueryResult); err != nil {
-			return nil, err
+		} else if rType == HISTORY_QUERY_RESULT {
+			historyQueryResult := &queryresult.KeyModification{}
+			if err := proto.Unmarshal(queryResultBytes.ResultBytes, historyQueryResult); err != nil {
+				return nil, err
+			}
+			return historyQueryResult, nil
 		}
-		return historyQueryResult, nil
-	}
-	return nil, errors.New("wrong result type")
-*/
+		return nil, errors.New("wrong result type")
+	*/
 	return nil, errors.New("glh unfinished")
 }
 
@@ -793,20 +738,20 @@ func (stub *ChaincodeStub) GetArgsSlice() ([]byte, error) {
 
 // GetTxTimestamp documentation can be found in interfaces.go
 func (stub *ChaincodeStub) GetTxTimestamp() (*timestamp.Timestamp, error) {
-//glh
-/*
-	hdr, err := utils.GetHeader(stub.proposal.Header)
-	if err != nil {
-		return nil, err
-	}
-	chdr, err := utils.UnmarshalChannelHeader(hdr.ChannelHeader)
-	if err != nil {
-		return nil, err
-	}
+	//glh
+	/*
+		hdr, err := utils.GetHeader(stub.proposal.Header)
+		if err != nil {
+			return nil, err
+		}
+		chdr, err := utils.UnmarshalChannelHeader(hdr.ChannelHeader)
+		if err != nil {
+			return nil, err
+		}
 
-	return chdr.GetTimestamp(), nil
-*/
-	return nil,errors.New("glh unfinished")
+		return chdr.GetTimestamp(), nil
+	*/
+	return nil, errors.New("glh unfinished")
 }
 
 // ------------- ChaincodeEvent API ----------------------
