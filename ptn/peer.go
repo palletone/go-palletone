@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/fatih/set.v0"
 )
@@ -576,27 +575,4 @@ func (ps *peerSet) GetPeers() []*peer {
 		list = append(list, p)
 	}
 	return list
-}
-
-// SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
-// @author Albert·Gou
-func (p *peer) SendNewProducedUnit(newUnit *modules.Unit) error {
-	return p2p.Send(p.rw, NewUnitMsg, newUnit)
-}
-
-// @author Albert·Gou
-//func (p *peer) SendVSSDeal(deal *vssMsg) error {
-func (p *peer) SendVSSDeal(deal *mp.VSSDealEvent) error {
-	return p2p.Send(p.rw, VSSDealMsg, deal)
-}
-
-// @author Albert·Gou
-//func (p *peer) SendVSSResponse(resp *vssRespMsg) error {
-func (p *peer) SendVSSResponse(resp *mp.VSSResponseEvent) error {
-	return p2p.Send(p.rw, VSSResponseMsg, resp)
-}
-
-// @author Albert·Gou
-func (p *peer) SendSigShare(sigShare *mp.SigShareEvent) error {
-	return p2p.Send(p.rw, SigShareMsg, sigShare)
 }

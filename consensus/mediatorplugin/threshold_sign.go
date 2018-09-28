@@ -316,7 +316,7 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 		case newUnit := <-newUnitBuf:
 			sigShare, success := signTBLS(newUnit)
 			if success {
-				go mp.sigShareFeed.Send(SigShareEvent{Hash: newUnit.Hash(), SigShare: sigShare})
+				go mp.sigShareFeed.Send(SigShareEvent{UnitHash: newUnit.Hash(), SigShare: sigShare})
 			}
 		}
 	}
@@ -331,7 +331,7 @@ func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
 	case <-mp.quit:
 		return errTerminated
 	default:
-		go mp.addToTBLSRecoverBuf(sigShare.Hash, sigShare.SigShare)
+		go mp.addToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 		return nil
 	}
 }
@@ -359,12 +359,12 @@ func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	go mp.recoverUnitTBLS(localMed, newUnitHash)
 }
 
-func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, newUnitHash common.Hash) {
+func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash common.Hash) {
 	dag := mp.getDag()
 	aSize := dag.GetActiveMediatorCount()
 	curThreshold := dag.GetCurThreshold()
 
-	sigShares := mp.toTBLSRecoverBuf[localMed][newUnitHash]
+	sigShares := mp.toTBLSRecoverBuf[localMed][unitHash]
 	if len(sigShares) < curThreshold {
 		return
 	}
@@ -382,18 +382,17 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, newUnitHash c
 
 	suite := mp.suite
 	pubPoly := share.NewPubPoly(suite, suite.Point().Base(), dks.Commitments())
-	sig, err := tbls.Recover(suite, pubPoly, newUnitHash[:], sigShares, curThreshold, aSize)
+	groupSig, err := tbls.Recover(suite, pubPoly, unitHash[:], sigShares, curThreshold, aSize)
 	if err != nil {
 		log.Error(err.Error())
 		return
 	}
 
 	// recover后 删除buf
-	delete(mp.toTBLSRecoverBuf[localMed], newUnitHash)
-	go mp.broadcastIrreversibleUnit(newUnitHash, sig)
+	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
+	go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
 }
 
-func (mp *MediatorPlugin) broadcastIrreversibleUnit(newUnitHash common.Hash, sign []byte) {
-	// todo 广播签名
-
+func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.Subscription {
+	return mp.groupSigScope.Track(mp.groupSigFeed.Subscribe(ch))
 }
