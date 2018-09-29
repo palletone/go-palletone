@@ -959,14 +959,30 @@ func NewPublicTransactionPoolAPI(b Backend, nonceLock *AddrLocker) *PublicTransa
 	return &PublicTransactionPoolAPI{b, nonceLock}
 }
 
-func (s *PublicTransactionPoolAPI) GetAddrOutpoints(ctx context.Context, addr string) ([]modules.OutPoint, error) {
-	return s.b.GetAddrOutpoints(addr)
+func (s *PublicTransactionPoolAPI) GetAddrOutpoints(ctx context.Context, addr string) (string, error) {
+	items, err := s.b.GetAddrOutpoints(addr)
+	if err != nil {
+		return "", err
+	}
+	result_json, _ := json.Marshal(items)
+	return string(result_json), nil
 }
-func (s *PublicTransactionPoolAPI) GetAddrUtxos(ctx context.Context, addr string) ([]modules.Utxo, error) {
-	return s.b.GetAddrUtxos(addr)
+func (s *PublicTransactionPoolAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {
+	items, err := s.b.GetAddrUtxos(addr)
+	if err != nil {
+		return "", err
+	}
+	result_json, _ := json.Marshal(items)
+	return string(result_json), nil
 }
-func (s *PublicTransactionPoolAPI) GetAllUtxos(ctx context.Context) (map[modules.OutPoint]*modules.Utxo, error) {
-	return s.b.GetAllUtxos()
+func (s *PublicTransactionPoolAPI) GetAllUtxos(ctx context.Context) (string, error) {
+	items, err := s.b.GetAllUtxos()
+	if err != nil {
+		return "", err
+	}
+	result_json, _ := json.Marshal(items)
+	return string(result_json), nil
+
 }
 
 // GetBlockTransactionCountByNumber returns the number of transactions in the block with the given block number.
