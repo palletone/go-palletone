@@ -465,15 +465,13 @@ func (unitOp *UnitRepository) savePaymentPayload(txHash common.Hash, msg *module
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
 	// if this is a create token transaction, should be return a assetid
-	var pl interface{}
-	pl = msg.Payload
-	_, ok := pl.(*modules.PaymentPayload)
-	if ok == false {
-		return false
-	}
 
 	// save utxo
-	unitOp.utxoRepository.UpdateUtxo(txHash, msg, msgIndex)
+	err := unitOp.utxoRepository.UpdateUtxo(txHash, msg, msgIndex)
+	if err != nil {
+		log.Error("Update utxo failed.", "error", err)
+		return false
+	}
 	return true
 }
 
