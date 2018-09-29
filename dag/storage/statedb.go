@@ -296,7 +296,7 @@ func (statedb *StateDatabase) SaveMediatorsList(mc MediatorCandidates) error {
 func (statedb *StateDatabase) GetMediatorSchedule() (MediatorSchedule, error) {
 	msStore := MediatorScheduleStore{}
 	err := GetDecodedComplexData(statedb.db, MEDIATOR_SCHEME_PREFIX, &msStore)
-	ms := TransToMediatorSchedule(&msStore,statedb)
+	ms := TransToMediatorSchedule(&msStore, statedb)
 	return *ms, err
 }
 func (statedb *StateDatabase) SaveMediatorSchedule(ms MediatorSchedule) error {
@@ -353,7 +353,7 @@ func TransToMediatorSchedule(msStore *MediatorScheduleStore, statedb StateDb) *M
 		csm = append(csm, med)
 	}
 
-	ms := NewMediatorSchl(statedb)
+	ms := NewMediatorSchl()
 	ms.CurrentShuffledMediators = csm
 	return ms
 }
@@ -601,22 +601,6 @@ func (gp *GlobalProperty) GetInitActiveMediators() []common.Address {
 	return mediators
 }
 
-// re:Yiran
-// obsolete:statedb.GetActiveMediators() already sort address.
-func sortAddress(adds []common.Address) {
-	aSize := len(adds)
-	addStrs := make([]string, aSize, aSize)
-	for i, add := range adds {
-		addStrs[i] = add.Str()
-	}
-
-	sort.Strings(addStrs)
-
-	for i, addStr := range addStrs {
-		adds[i], _ = common.StringToAddress(addStr)
-	}
-}
-
 func (gp *GlobalProperty) GetActiveMediatorNodes() map[string]*discover.Node {
 	nodes := make(map[string]*discover.Node)
 
@@ -743,7 +727,6 @@ func RetrieveDynGlobalProp(db StateDb) (*DynamicGlobalProperty, error) {
 // Mediator调度顺序结构体
 type MediatorSchedule struct {
 	CurrentShuffledMediators []core.Mediator
-	statedb                  StateDb
 }
 
 // re:Yiran
@@ -772,10 +755,9 @@ func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorS
 	return ms
 }
 
-func NewMediatorSchl(statedb StateDb) *MediatorSchedule {
+func NewMediatorSchl() *MediatorSchedule {
 	return &MediatorSchedule{
 		CurrentShuffledMediators: []core.Mediator{},
-		statedb:                  statedb,
 	}
 }
 
@@ -922,6 +904,3 @@ func GetSlotAtTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, when time.Tim
 
 	return uint32(diffSecs/interval) + 1
 }
-
-
-
