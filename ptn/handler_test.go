@@ -17,6 +17,7 @@
 package ptn
 
 import (
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -277,6 +278,7 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 			[]common.Hash{},
 		},
 	}
+
 	// Run each of the tests and verify the results against the chain
 	for i, tt := range tests {
 		// Collect the headers to expect in the response
@@ -313,10 +315,11 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxBlockFetch+15, nil)
 	peer, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
 	defer peer.close()
-	// Create a batch of tests for various scenarios
-	limit := downloader.MaxBlockFetch
-	gUnit, _ := pm.dag.GetGenesisUnit(0)
-
+	index0 := modules.ChainIndex{
+		modules.PTNCOIN,
+		true,
+		0,
+	}
 	index1 := modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
@@ -332,30 +335,37 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 		true,
 		100,
 	}
+	fmt.Println("curent ===", pm.dag.CurrentUnit().UnitHash)
+	fmt.Println("curent ===", pm.dag.CurrentUnit().Txs[0].Hash())
+	genesisUnit := pm.dag.GetUnitByNumber(index0)
+	// Create a batch of tests for various scenarios
+	limit := downloader.MaxBlockFetch
 	tests := []struct {
 		random    int           // Number of blocks to fetch randomly from the chain
 		explicit  []common.Hash // Explicitly requested blocks
 		available []bool        // Availability of explicitly requested blocks
 		expected  int           // Total number of existing blocks to expect
 	}{
-		{1, nil, nil, 1},                                                 // A single random block should be retrievable
-		{10, nil, nil, 10},                                               // Multiple random blocks should be retrievable
-		{limit, nil, nil, limit},                                         // The maximum possible blocks should be retrievable
-		{limit + 1, nil, nil, limit},                                     // No more than the possible block count should be returned
-		{0, []common.Hash{gUnit.Hash()}, []bool{true}, 1},                // The genesis block should be retrievable
-		{0, []common.Hash{pm.dag.CurrentUnit().Hash()}, []bool{true}, 1}, // The chains head block should be retrievable
-		{0, []common.Hash{{}}, []bool{false}, 0},
+		{1, nil, nil, 1},                                                   // A single random block should be retrievable
+		{10, nil, nil, 10},                                                 // Multiple random blocks should be retrievable
+		{limit, nil, nil, limit},                                           // The maximum possible blocks should be retrievable
+		{limit + 1, nil, nil, limit},                                       // No more than the possible block count should be returned
+		{0, []common.Hash{genesisUnit.UnitHash}, []bool{true}, 1},          // The genesis block should be retrievable
+		{0, []common.Hash{pm.dag.CurrentUnit().UnitHash}, []bool{true}, 1}, // The chains head block should be retrievable
+		{0, []common.Hash{{}}, []bool{false}, 0},                           // A non existent block should not be returned
+
 		// Existing and non-existing blocks interleaved should not cause problems
 		{0, []common.Hash{
 			{},
-			pm.dag.GetUnitByNumber(index1).Hash(),
+			pm.dag.GetUnitByNumber(index1).UnitHash,
 			{},
-			pm.dag.GetUnitByNumber(index10).Hash(),
+			pm.dag.GetUnitByNumber(index10).UnitHash,
 			{},
-			pm.dag.GetUnitByNumber(index100).Hash(),
+			pm.dag.GetUnitByNumber(index100).UnitHash,
 			{},
 		}, []bool{false, true, false, true, false, true, false}, 3},
 	}
+
 	// Run each of the tests and verify the results against the chain
 	for i, tt := range tests {
 		// Collect the hashes to request, and the response to expect
@@ -367,12 +377,12 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 				num := rand.Int63n(int64(pm.dag.CurrentUnit().NumberU64()))
 				if !seen[num] {
 					seen[num] = true
-					index := modules.ChainIndex{
+					numIndex := modules.ChainIndex{
 						modules.PTNCOIN,
 						true,
 						uint64(num),
 					}
-					block := pm.dag.GetUnitByNumber(index)
+					block := pm.dag.GetUnitByNumber(numIndex)
 					hashes = append(hashes, block.Hash())
 					if len(bodies) < tt.expected {
 						bodies = append(bodies, &blockBody{Transactions: block.Transactions()})
@@ -381,12 +391,19 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 				}
 			}
 		}
+		fmt.Println("lalala")
 		for j, hash := range tt.explicit {
 			hashes = append(hashes, hash)
 			if tt.available[j] && len(bodies) < tt.expected {
-				block := pm.dag.GetUnit(hash)
+				fmt.Println(hash)
+
+				block := pm.dag.GetUnitByHash(hash)
+
 				bodies = append(bodies, &blockBody{Transactions: block.Transactions()})
 			}
+		}
+		for i, h := range hashes {
+			fmt.Println(i, h)
 		}
 		// Send the hash request and verify the response
 		p2p.Send(peer.app, 0x05, hashes)
