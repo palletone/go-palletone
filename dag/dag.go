@@ -21,9 +21,13 @@ package dag
 
 import (
 	"fmt"
-	"github.com/coocood/freecache"
 	"sync"
+
+	"github.com/coocood/freecache"
+
 	//"github.com/ethereum/go-ethereum/params"
+	"time"
+
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
@@ -39,7 +43,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"time"
 )
 
 type Dag struct {
@@ -437,9 +440,9 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	stateDb := storage.NewStateDatabase(db)
 	idxDb := storage.NewIndexDatabase(db)
 
-	storage.StoreGlobalProp(stateDb,&storage.GlobalProperty{})
-	storage.StoreDynGlobalProp(stateDb,&storage.DynamicGlobalProperty{})
-	storage.StoreMediatorSchl(stateDb,&storage.MediatorSchedule{})
+	storage.StoreGlobalProp(stateDb, &storage.GlobalProperty{})
+	storage.StoreDynGlobalProp(stateDb, &storage.DynamicGlobalProperty{})
+	stateDb.SaveMediatorSchedule(storage.MediatorSchedule{})
 
 	gp, err := storage.RetrieveGlobalProp(stateDb)
 	if err != nil {
@@ -452,8 +455,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		log.Error(err.Error())
 		return nil, err
 	}
-
-	ms, err := storage.RetrieveMediatorSchl(stateDb)
+	ms, err := stateDb.GetMediatorSchedule()
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -476,7 +478,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		Mutex:         *mutex,
 		GlobalProp:    gp,
 		DynGlobalProp: dgp,
-		MediatorSchl:  ms,
+		MediatorSchl:  &ms,
 		Memdag:        memunit.NewMemDag(dagDb, unitRep),
 	}
 

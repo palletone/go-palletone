@@ -207,7 +207,7 @@ func initGenesis(ctx *cli.Context) error {
 	// 5, 初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
 	ms :=  storage.InitMediatorSchl(GP, dgp)
-	storage.StoreMediatorSchl(stateDb, ms)
+	stateDb.SaveMediatorSchedule(*ms)
 	if err != nil {
 		utils.Fatalf("Failed to write mediator schedule: %v", err)
 		return err
