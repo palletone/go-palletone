@@ -36,8 +36,11 @@ import (
 // SampleSysCC example simple Chaincode implementation
 type SampleSysCC struct {
 }
+
+//
 var mutex sync.Mutex
 
+//
 const (
 
 	//test rate eth:btc = 2:1
@@ -441,7 +444,7 @@ type BTCTransaction_getTxByHash struct { //GetTransactionByHashParams
 
 //result
 type GetTransactionByHashResult struct {
-	Outputs []output `json:"outputs"`
+	Outputs []OutputIndex `json:"outputs"`
 }
 
 func getReqBTCAmountByInput(withdrawBTCReqTx *WithdrawBTCReqTX, stub *shim.ChaincodeStubInterface) (int64, error) {
@@ -496,27 +499,27 @@ type BTCTransaction_getTxs struct { //GetTransactionsParams
 	Skip    int    `json:"skip"`
 }
 
-type input struct {
+type InputIndex struct {
 	TxHash string `json:"txHash"`
 	Index  uint32 `json:"index"`
 	Addr   string `json:"addr"`
 	Value  int64  `json:"value"`
 }
-type output struct {
+type OutputIndex struct {
 	Index uint32 `json:"index"`
 	Addr  string `json:"addr"`
 	Value int64  `json:"value"` //satoshi
 }
-type transaction struct {
+type Transaction struct {
 	TxHash        string   `json:"txHash"`
 	BlanceChanged int64    `json:"blanceChanged"`
-	Inputs        []input  `json:"inputs"`
-	Outputs       []output `json:"outputs"`
+	Inputs        []InputIndex  `json:"inputs"`
+	Outputs       []OutputIndex `json:"outputs"`
 }
 
 //result
-type transactionsResult struct {
-	Transactions []transaction `json:"transactions"`
+type TransactionsResult struct {
+	Transactions []Transaction `json:"transactions"`
 }
 
 func getWithdrawBTCAmount(withdrawBTCReqTx *WithdrawBTCReqTX, stub *shim.ChaincodeStubInterface) (int64, error) {
@@ -541,7 +544,7 @@ func getWithdrawBTCAmount(withdrawBTCReqTx *WithdrawBTCReqTX, stub *shim.Chainco
 	}
 
 	//
-	var txsResult transactionsResult
+	var txsResult TransactionsResult
 	err = json.Unmarshal(result, &txsResult)
 	if err != nil {
 		return 0, err
@@ -828,7 +831,7 @@ func getBTCBalance(calETHSigReq *CalETHSigReq, stub *shim.ChaincodeStubInterface
 	}
 
 	//
-	var txsResult transactionsResult
+	var txsResult TransactionsResult
 	err = json.Unmarshal(result, &txsResult)
 	if err != nil {
 		return nil, nil, err
