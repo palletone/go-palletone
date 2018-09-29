@@ -84,7 +84,7 @@ type IDag interface {
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
-	ValidateUnit(unit *modules.Unit, isGenesis bool) bool
+	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
 	//Mediator
 	GetActiveMediator(add common.Address) *core.Mediator
 	GetActiveMediatorAddr(index int) common.Address

@@ -180,9 +180,9 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 }
 
 // @author Albert·Gou
-func (d *Dag) ValidateUnit(unit *modules.Unit, isGenesis bool) bool {
+func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool {
 	// todo
-	unitState := d.validate.ValidateUnit(unit, isGenesis)
+	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
 	if unitState != modules.UNIT_STATE_VALIDATED {
 		return false
 	}
@@ -195,7 +195,7 @@ func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
 		return 0, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash.String())
 	}
 	// step2. validate unit
-	unitState := d.validate.ValidateUnit(&unit, isGenesis)
+	unitState := d.validate.ValidateUnitExceptGroupSig(&unit, isGenesis)
 	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
 		return 0, fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
 	}
