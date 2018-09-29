@@ -102,9 +102,9 @@ func (asset *Asset) IsSimilar(similar *Asset) bool {
 }
 
 type Utxo struct {
-	Amount     uint64 `json:"amount"`  // 数量
-	Asset      *Asset `json:"Asset"`   // 资产类别
-	PkScript   []byte `json:"program"` // 要执行的代码段
+	Amount     uint64 `json:"amount"`    // 数量
+	Asset      *Asset `json:"Asset"`     // 资产类别
+	PkScript   []byte `json:"pk_script"` // 要执行的代码段
 	LockTime   uint32 `json:"lock_time"`
 	VoteResult []byte `json:"vote_info"`
 	// flags contains additional info about output such as whether it is spent, and whether is has

@@ -186,8 +186,7 @@ func initGenesis(ctx *cli.Context) error {
 	// 3, 全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	gp := modules.InitGlobalProp(genesis)
-	dag.StoreGlobalProp(gp)
-	if err != nil {
+	if err := dag.StoreGlobalProp(gp); err != nil {
 		utils.Fatalf("Failed to write global properties: %v", err)
 		return err
 	}
@@ -195,8 +194,7 @@ func initGenesis(ctx *cli.Context) error {
 	// 4, 动态全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	dgp := modules.InitDynGlobalProp(genesis, genesisUnitHash)
-	dag.StoreDynGlobalProp(dgp)
-	if err != nil {
+	if err := dag.StoreDynGlobalProp(dgp); err != nil {
 		utils.Fatalf("Failed to write dynamic global properties: %v", err)
 		return err
 	}
@@ -204,8 +202,7 @@ func initGenesis(ctx *cli.Context) error {
 	// 5, 初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
-	dag.StoreMediatorSchl(ms)
-	if err != nil {
+	if err := dag.StoreMediatorSchl(ms); err != nil {
 		utils.Fatalf("Failed to write mediator schedule: %v", err)
 		return err
 	}

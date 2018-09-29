@@ -258,7 +258,7 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 	if len(data) > 1 {
 		return nil, fmt.Errorf("multiple genesis unit")
 	} else if len(data) <= 0 {
-		return nil, nil
+		return nil, errors.New("leveldb not fund")
 	}
 	for _, v := range data {
 		// get unit header
