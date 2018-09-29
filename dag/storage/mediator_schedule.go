@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/ptndb"
+
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -64,10 +64,10 @@ func getMS(mst *mediatorSchedule) *modules.MediatorSchedule {
 	return ms
 }
 
-func StoreMediatorSchl(db ptndb.Database, ms *modules.MediatorSchedule) error {
+func (propdb *PropertyDatabase) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
 	mst := getMST(ms)
 
-	err := Store(db, mediatorSchlDBKey, mst)
+	err := Store(propdb.db, mediatorSchlDBKey, mst)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store mediator schedule error: %s", err))
 	}
@@ -75,10 +75,10 @@ func StoreMediatorSchl(db ptndb.Database, ms *modules.MediatorSchedule) error {
 	return err
 }
 
-func RetrieveMediatorSchl(db ptndb.Database) (*modules.MediatorSchedule, error) {
+func (propdb *PropertyDatabase) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
 	mst := new(mediatorSchedule)
 
-	err := Retrieve(db, mediatorSchlDBKey, mst)
+	err := Retrieve(propdb.db, mediatorSchlDBKey, mst)
 	if err != nil {
 		//log.Error(fmt.Sprintf("Retrieve mediator schedule error: %s", err))
 	}
