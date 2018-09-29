@@ -119,8 +119,7 @@ func ApplyUnit(dag dag.IDag, nextUnit *modules.Unit) {
 
 	// 5. 更新全局动态属性值
 	log.Debug("Updating global dynamic property...")
-	//dagcommon.UpdateGlobalDynProp(dag.Db, gp, dgp, nextUnit)
-	//TODO Devin
+	dag.UpdateGlobalDynProp(gp, dgp, nextUnit)
 	// 5. 判断是否到了维护周期，并维护
 
 	// 6. 洗牌

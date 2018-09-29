@@ -52,7 +52,9 @@ type Dag struct {
 	dagdb         storage.DagDb
 	utxodb        storage.UtxoDb
 	statedb       storage.StateDb
+	propdb        storage.PropertyDb
 	utxoRep       dagcommon.IUtxoRepository
+	propRep       dagcommon.IPropRepository
 	validate      dagcommon.Validator
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
@@ -435,31 +437,33 @@ func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []b
 func NewDag(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 
-	gp, err := storage.RetrieveGlobalProp(db)
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
-
-	dgp, err := storage.RetrieveDynGlobalProp(db)
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
-
-	ms, err := storage.RetrieveMediatorSchl(db)
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
 	dagDb := storage.NewDagDatabase(db)
 	utxoDb := storage.NewUtxoDatabase(db)
 	stateDb := storage.NewStateDatabase(db)
 	idxDb := storage.NewIndexDatabase(db)
-
+	propDb := storage.NewPropertyDb(db)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
+	propRep := dagcommon.NewPropRepository(propDb)
+
+	gp, err := propDb.RetrieveGlobalProp()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
+
+	dgp, err := propDb.RetrieveDynGlobalProp()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
+
+	ms, err := propDb.RetrieveMediatorSchl()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
 
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
@@ -468,7 +472,9 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		dagdb:         dagDb,
 		utxodb:        utxoDb,
 		statedb:       stateDb,
+		propdb:        propDb,
 		utxoRep:       utxoRep,
+		propRep:       propRep,
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
@@ -480,6 +486,58 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 
 	return dag, nil
 }
+
+func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
+	mutex := new(sync.RWMutex)
+
+	dagDb := storage.NewDagDatabase(db)
+	utxoDb := storage.NewUtxoDatabase(db)
+	stateDb := storage.NewStateDatabase(db)
+	idxDb := storage.NewIndexDatabase(db)
+	propDb := storage.NewPropertyDb(db)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
+	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
+	propRep := dagcommon.NewPropRepository(propDb)
+
+	gp, err := propDb.RetrieveGlobalProp()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
+
+	dgp, err := propDb.RetrieveDynGlobalProp()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
+
+	ms, err := propDb.RetrieveMediatorSchl()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
+
+	dag := &Dag{
+		Cache:         freecache.NewCache(200 * 1024 * 1024),
+		Db:            db,
+		unitRep:       unitRep,
+		dagdb:         dagDb,
+		utxodb:        utxoDb,
+		statedb:       stateDb,
+		propdb:        propDb,
+		utxoRep:       utxoRep,
+		propRep:       propRep,
+		validate:      validate,
+		ChainHeadFeed: new(event.Feed),
+		Mutex:         *mutex,
+		GlobalProp:    gp,
+		DynGlobalProp: dgp,
+		MediatorSchl:  ms,
+	}
+	return dag, nil
+}
+
 func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 
@@ -663,7 +721,6 @@ func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 	return d.GlobalProp.GetActiveMediator(add)
 }
 
-
 // author Albert·Gou
 func (d *Dag) IsActiveMediator(add common.Address) bool {
 	return d.GlobalProp.IsActiveMediator(add)
@@ -735,4 +792,25 @@ func (d *Dag) GetGenesisUnit(index uint64) (*modules.Unit, error) {
 }
 func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
 	return d.statedb.GetContractTpl(templateID)
+}
+func (d *Dag) UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
+	d.propRep.UpdateGlobalDynProp(gp, dgp, unit)
+}
+func (d *Dag) StoreGlobalProp(gp *modules.GlobalProperty) error {
+	return d.propdb.StoreGlobalProp(gp)
+}
+func (d *Dag) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error {
+	return d.propdb.StoreDynGlobalProp(dgp)
+}
+func (d *Dag) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
+	return d.propdb.RetrieveGlobalProp()
+}
+func (d *Dag) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
+	return d.propdb.RetrieveDynGlobalProp()
+}
+func (d *Dag) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
+	return d.propdb.StoreMediatorSchl(ms)
+}
+func (d *Dag) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
+	return d.propdb.RetrieveMediatorSchl()
 }

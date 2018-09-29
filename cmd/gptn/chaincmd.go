@@ -27,9 +27,9 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/gen"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
 	"gopkg.in/urfave/cli.v1"
 	"os"
 )
@@ -148,7 +148,7 @@ func initGenesis(ctx *cli.Context) error {
 	}
 	filepath := node.ResolvePath("leveldb")
 	dagconfig.DbPath = filepath
-
+	dag, _ := dag.NewDag4GenesisInit(Dbconn)
 	ks := node.GetKeyStore()
 	// modify by Albert·Gou
 	account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
@@ -166,7 +166,7 @@ func initGenesis(ctx *cli.Context) error {
 		return err
 	}
 
-	unit, err := gen.SetupGenesisUnit(Dbconn, genesis, ks, account)
+	unit, err := gen.SetupGenesisUnit(dag, genesis, ks, account)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis unit: %v", err)
 		return err
@@ -186,7 +186,7 @@ func initGenesis(ctx *cli.Context) error {
 	// 3, 全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	gp := modules.InitGlobalProp(genesis)
-	storage.StoreGlobalProp(Dbconn, gp)
+	dag.StoreGlobalProp(gp)
 	if err != nil {
 		utils.Fatalf("Failed to write global properties: %v", err)
 		return err
@@ -195,7 +195,7 @@ func initGenesis(ctx *cli.Context) error {
 	// 4, 动态全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	dgp := modules.InitDynGlobalProp(genesis, genesisUnitHash)
-	storage.StoreDynGlobalProp(Dbconn, dgp)
+	dag.StoreDynGlobalProp(dgp)
 	if err != nil {
 		utils.Fatalf("Failed to write dynamic global properties: %v", err)
 		return err
@@ -204,7 +204,7 @@ func initGenesis(ctx *cli.Context) error {
 	// 5, 初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
-	storage.StoreMediatorSchl(Dbconn, ms)
+	dag.StoreMediatorSchl(ms)
 	if err != nil {
 		utils.Fatalf("Failed to write mediator schedule: %v", err)
 		return err

@@ -93,4 +93,12 @@ type IDag interface {
 	GetMediatorSchl() *modules.MediatorSchedule
 	GetActiveMediatorCount() int
 	GetActiveMediatorNode(index int) *discover.Node
+
+	UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit)
+	StoreGlobalProp(gp *modules.GlobalProperty) error
+	StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error
+	RetrieveGlobalProp() (*modules.GlobalProperty, error)
+	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
+	StoreMediatorSchl(ms *modules.MediatorSchedule) error
+	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
 }
