@@ -199,6 +199,8 @@ func GetSlotAtTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, when time.Tim
 
 	diffSecs := when.Unix() - firstSlotTime.Unix()
 	interval := int64(gp.ChainParameters.MediatorInterval)
-
+	if interval == 0 {
+		return 0
+	}
 	return uint32(diffSecs/interval) + 1
 }
