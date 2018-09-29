@@ -21,7 +21,7 @@ package mediatorplugin
 import (
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/dag/modules"
 	"strconv"
 	"time"
 
@@ -43,7 +43,7 @@ func newChainBanner(dag dag.IDag) {
 		"*   -------------------------   *\n" +
 		"\n")
 
-	if storage.GetSlotAtTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), time.Now()) > 200 {
+	if modules.GetSlotAtTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), time.Now()) > 200 {
 		fmt.Printf("Your genesis seems to have an old timestamp\n" +
 			"Please consider using the --genesis-timestamp option to give your genesis a recent timestamp\n" +
 			"\n")
@@ -144,7 +144,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
 
 	// 1. 判断是否满足生产的各个条件
-	nextSlotTime := storage.GetSlotTime(gp, dgp, 1)
+	nextSlotTime := modules.GetSlotTime(gp, dgp, 1)
 	// If the next VerifiedUnit production opportunity is in the present or future, we're synced.
 	if !mp.productionEnabled {
 		if nextSlotTime.After(now) || nextSlotTime.Equal(now) {
@@ -154,7 +154,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 		}
 	}
 
-	slot := storage.GetSlotAtTime(gp, dgp, now)
+	slot := modules.GetSlotAtTime(gp, dgp, now)
 	// is anyone scheduled to produce now or one second in the future?
 	if slot == 0 {
 		detail["NextTime"] = nextSlotTime.Format("2006-01-02 15:04:05")
@@ -194,7 +194,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 		return NoPrivateKey, detail
 	}
 
-	scheduledTime := storage.GetSlotTime(gp, dgp, slot)
+	scheduledTime := modules.GetSlotTime(gp, dgp, slot)
 	diff := scheduledTime.Sub(now)
 	if diff > 500*time.Millisecond || diff < -500*time.Millisecond {
 		detail["ScheduledTime"] = scheduledTime.Format("2006-01-02 15:04:05")
