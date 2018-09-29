@@ -103,7 +103,7 @@ func (self *ProtocolManager) groupSigBroadcastLoop() {
 // @author Albert·Gou
 // BroadcastGroupSig will propagate the group signature of unit to p2p network
 func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
-	// todo 广播群签名，并在对应节点接受，然后添加到unit和header中
+	// todo 广播群签名，并在对应节点接受，然后添加到unit的header对应的字段中
 
 }
 

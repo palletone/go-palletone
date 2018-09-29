@@ -150,15 +150,15 @@ func initGenesis(ctx *cli.Context) error {
 	dagconfig.DbPath = filepath
 
 	ks := node.GetKeyStore()
-	//account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
+	// modify by Albert·Gou
+	account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
 
 	// 从配置文件中获取账户和密码
-	// modify by Albert·Gou
-	configPath := defaultConfigPath
-	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-		configPath, _ = getConfigPath(temp, node.DataDir())
-	}
-	account, password := getAccountFromConf(configPath)
+	//configPath := defaultConfigPath
+	//if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
+	//	configPath, _ = getConfigPath(temp, node.DataDir())
+	//}
+	//account, password := getAccountFromConf(configPath)
 
 	err = ks.Unlock(account, password)
 	if err != nil {
@@ -212,7 +212,6 @@ func initGenesis(ctx *cli.Context) error {
 
 	return nil
 }
-
 
 // 重写配置文件，修改配置的的mediator的地址和密码
 // @author Albert·Gou
