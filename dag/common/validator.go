@@ -56,7 +56,8 @@ type Validator interface {
 check all transactions in one unit
 return all transactions' fee
 */
-func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common.Hash]modules.TxValidationCode, bool, error) {
+func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGenesis bool) (
+	map[common.Hash]modules.TxValidationCode, bool, error) {
 	if txs == nil || txs.Len() < 1 {
 		return nil, false, fmt.Errorf("Transactions should not be empty.")
 	}

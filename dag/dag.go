@@ -183,7 +183,8 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool {
 	// todo
 	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
-	if unitState != modules.UNIT_STATE_VALIDATED {
+	if unitState != modules.UNIT_STATE_VALIDATED &&
+		unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
 		return false
 	}
 	return true
