@@ -953,6 +953,14 @@ type PublicTransactionPoolAPI struct {
 	b         Backend
 	nonceLock *AddrLocker
 }
+type PublicReturnInfo struct {
+	Item string      `json:"item"`
+	Info interface{} `json:"info"`
+}
+
+func NewPublicReturnInfo(name string, info interface{}) *PublicReturnInfo {
+	return &PublicReturnInfo{name, info}
+}
 
 // NewPublicTransactionPoolAPI creates a new RPC service with methods specific for the transaction pool.
 func NewPublicTransactionPoolAPI(b Backend, nonceLock *AddrLocker) *PublicTransactionPoolAPI {
@@ -964,7 +972,8 @@ func (s *PublicTransactionPoolAPI) GetAddrOutpoints(ctx context.Context, addr st
 	if err != nil {
 		return "", err
 	}
-	result_json, _ := json.Marshal(items)
+	info := NewPublicReturnInfo("address_outpoints", items)
+	result_json, _ := json.Marshal(info)
 	return string(result_json), nil
 }
 func (s *PublicTransactionPoolAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {
@@ -972,17 +981,29 @@ func (s *PublicTransactionPoolAPI) GetAddrUtxos(ctx context.Context, addr string
 	if err != nil {
 		return "", err
 	}
-	result_json, _ := json.Marshal(items)
+	info := NewPublicReturnInfo("address_utxos", items)
+	result_json, _ := json.Marshal(info)
 	return string(result_json), nil
 }
 func (s *PublicTransactionPoolAPI) GetAllUtxos(ctx context.Context) (string, error) {
 	items, err := s.b.GetAllUtxos()
 	if err != nil {
+		log.Error("Get all utxo failed.", "error", err, "result", items)
 		return "", err
 	}
-	result_json, _ := json.Marshal(items)
-	return string(result_json), nil
 
+	utxos := make(map[string]*modules.Utxo)
+	for key, u := range items {
+		utxos[string(key.ToKey())] = u
+	}
+	info := NewPublicReturnInfo("all_utxos", utxos)
+
+	result_json, err := json.Marshal(info)
+	if err != nil {
+		log.Error("Get all utxo ,json marshal failed.", "error", err)
+	}
+
+	return string(result_json), nil
 }
 
 // GetBlockTransactionCountByNumber returns the number of transactions in the block with the given block number.

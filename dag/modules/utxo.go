@@ -206,10 +206,12 @@ func (utxoIndex *UtxoIndex) ToKey() []byte {
 
 func (outpoint *OutPoint) ToKey() []byte {
 	// key: [UTXO_PREFIX][TxHash][MessageIndex][OutIndex]
-	key := append(UTXO_PREFIX, outpoint.TxHash.Bytes()...)
+	key := make([]byte, 0)
+	key = append(key, UTXO_PREFIX...)
+	key = append(key, outpoint.TxHash.Bytes()...)
 	key = append(key, common.EncodeNumberUint32(outpoint.MessageIndex)...)
 	key = append(key, common.EncodeNumberUint32(outpoint.OutIndex)...)
-	return key
+	return key[:]
 	// out := fmt.Sprintf("%s%s%d_%d",
 	// 	UTXO_PREFIX,
 	// 	outpoint.TxHash.String(),
@@ -228,6 +230,8 @@ func (outpoint *OutPoint) String() string {
 }
 
 func (outpoint *OutPoint) SetString(data string) error {
+	rs := []rune(data)
+	data = string(rs[len(UTXO_PREFIX):])
 	if err := rlp.DecodeBytes([]byte(data), outpoint); err != nil {
 		return err
 	}

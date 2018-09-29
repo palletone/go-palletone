@@ -77,7 +77,7 @@ func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 		key := iter.Key()
 		value := make([]byte, 0)
 		// 请注意： 直接赋值取得iter.Value()的最后一个指针
-		result[string(key)] = append(value, iter.Value()...)
+		result[*(*string)(unsafe.Pointer(&key))] = append(value, iter.Value()...)
 	}
 	return result
 }

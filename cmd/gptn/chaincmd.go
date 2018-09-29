@@ -189,7 +189,7 @@ func initGenesis(ctx *cli.Context) error {
 	// 3, 全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	GP := storage.InitGlobalProp(genesis)
-	err = storage.StoreGlobalProp(stateDb,GP)
+	err = storage.StoreGlobalProp(stateDb, GP)
 	if err != nil {
 		utils.Fatalf("Failed to write global properties: %v", err)
 		return err
@@ -206,7 +206,7 @@ func initGenesis(ctx *cli.Context) error {
 
 	// 5, 初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
-	ms :=  storage.InitMediatorSchl(GP, dgp)
+	ms := storage.InitMediatorSchl(GP, dgp)
 	stateDb.SaveMediatorSchedule(*ms)
 	if err != nil {
 		utils.Fatalf("Failed to write mediator schedule: %v", err)

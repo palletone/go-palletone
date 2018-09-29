@@ -167,10 +167,10 @@ func (db *UtxoDatabase) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error
 	var err error
 	for key, itme := range items {
 		utxo := new(modules.Utxo)
-		outpint := new(modules.OutPoint)
+		// outpint := new(modules.OutPoint)
 		if err = rlp.DecodeBytes(itme, utxo); err == nil {
-			outpint.SetString(key)
-			view[*outpint] = utxo
+			outpoint := modules.KeyToOutpoint([]byte(key))
+			view[*outpoint] = utxo
 		}
 	}
 
