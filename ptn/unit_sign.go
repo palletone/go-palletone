@@ -57,7 +57,7 @@ func (self *ProtocolManager) newUnitBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.newUnitCh:
-			self.BroadcastNewUnit(event.Unit)
+			//self.BroadcastNewUnit(event.Unit)
 
 			// appended by wangjiyou
 			self.BroadcastUnit(event.Unit, true)
@@ -66,6 +66,23 @@ func (self *ProtocolManager) newUnitBroadcastLoop() {
 			// Err() channel will be closed when unsubscribing.
 		case <-self.newUnitSub.Err():
 			return
+		}
+	}
+}
+
+// @author Albert·Gou
+// BroadcastNewUnit will propagate a new produced unit to all of active mediator's peers
+func (pm *ProtocolManager) BroadcastNewUnit(unit *modules.Unit) {
+	peers := pm.GetActiveMediatorPeers()
+	for _, peer := range peers {
+		if peer == nil {
+			pm.producer.ToUnitTBLSSign(unit)
+			continue
+		}
+
+		err := peer.SendNewProducedUnit(unit)
+		if err != nil {
+			log.Error(err.Error())
 		}
 	}
 }
@@ -87,29 +104,8 @@ func (self *ProtocolManager) sigShareTransmitLoop() {
 }
 
 // @author Albert·Gou
-func (self *ProtocolManager) groupSigBroadcastLoop() {
-	for {
-		select {
-		case event := <-self.groupSigCh:
-			self.BroadcastGroupSig(&event)
-
-			// Err() channel will be closed when unsubscribing.
-		case <-self.sigShareSub.Err():
-			return
-		}
-	}
-}
-
-// @author Albert·Gou
-// BroadcastGroupSig will propagate the group signature of unit to p2p network
-func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
-	// todo 广播群签名，并在对应节点接受，然后添加到unit和header中
-
-}
-
-// @author Albert·Gou
 func (pm *ProtocolManager) TransmitSigShare(node *discover.Node, sigShare *mp.SigShareEvent) {
-	peer, self := pm.getTransitionPeer(node)
+	peer, self := pm.GetPeer(node)
 	if self {
 		//size, reader, err := rlp.EncodeToReader(sigShare)
 		//if err != nil {
@@ -138,10 +134,32 @@ func (pm *ProtocolManager) TransmitSigShare(node *discover.Node, sigShare *mp.Si
 }
 
 // @author Albert·Gou
+func (self *ProtocolManager) groupSigBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.groupSigCh:
+			self.BroadcastGroupSig(&event)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.sigShareSub.Err():
+			return
+		}
+	}
+}
+
+// @author Albert·Gou
+// BroadcastGroupSig will propagate the group signature of unit to p2p network
+func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
+	// todo 广播群签名，并在对应节点接受，然后添加到unit的header对应的字段中
+
+}
+
+// @author Albert·Gou
 func (self *ProtocolManager) vssDealTransmitLoop() {
 	for {
 		select {
 		case event := <-self.vssDealCh:
+			// todo 应当转给选上的即将上任的mediator的节点
 			node := self.dag.GetActiveMediatorNode(event.DstIndex)
 			self.TransmitVSSDeal(node, &event)
 
@@ -153,79 +171,8 @@ func (self *ProtocolManager) vssDealTransmitLoop() {
 }
 
 // @author Albert·Gou
-func (self *ProtocolManager) vssResponseBroadcastLoop() {
-	for {
-		select {
-		case event := <-self.vssResponseCh:
-			self.BroadcastVssResp(&event)
-
-			// Err() channel will be closed when unsubscribing.
-		case <-self.vssResponseSub.Err():
-			return
-		}
-	}
-}
-
-// @author Albert·Gou
-//func (pm *ProtocolManager) BroadcastVssResp(dstId string, resp *mp.VSSResponseEvent) {
-func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
-	// comment by Albert·Gou
-	//dstId := node.ID.TerminalString()
-	//peer := pm.peers.Peer(dstId)
-	//if peer == nil {
-	//	log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
-	//}
-
-	// comment by Albert·Gou
-	//if pm.peers.PeersWithoutVssResp(dstId) {
-	//	return
-	//}
-	//pm.peers.MarkVssResp(dstId)
-
-	peers := pm.GetTransitionPeers() //pm.GetActiveMediatorPeers()
-	for _, peer := range peers {
-		if peer == nil {
-			//size, reader, err := rlp.EncodeToReader(resp)
-			//if err != nil {
-			//	log.Error(err.Error())
-			//}
-			//
-			//var r mp.VSSResponseEvent
-			//s := rlp.NewStream(reader, uint64(size))
-			//if err := s.Decode(&r); err != nil {
-			//	log.Error(err.Error())
-			//}
-			//pm.producer.ToProcessResponse(&r)
-
-			pm.producer.ToProcessResponse(resp)
-			continue
-		}
-
-		// comment by Albert·Gou
-		//dstId := peer.id
-		//if pm.peers.PeersWithoutVssResp(dstId) {
-		//	return
-		//}
-		//pm.peers.MarkVssResp(dstId)
-
-		// comment by Albert·Gou
-		//msg := &vssRespMsg{
-		//	NodeId: dstId,
-		//	Resp:   resp,
-		//}
-		//
-		//err := peer.SendVSSResponse(msg)
-
-		err := peer.SendVSSResponse(resp)
-		if err != nil {
-			log.Info(err.Error())
-		}
-	}
-}
-
-// @author Albert·Gou
 func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDealEvent) {
-	peer, self := pm.getTransitionPeer(node)
+	peer, self := pm.GetPeer(node)
 	if self {
 		//size, reader, err := rlp.EncodeToReader(deal)
 		//if err != nil {
@@ -267,26 +214,80 @@ func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDeal
 }
 
 // @author Albert·Gou
-// BroadcastNewUnit will propagate a new produced unit to all of active mediator's peers
-func (pm *ProtocolManager) BroadcastNewUnit(unit *modules.Unit) {
-	peers := pm.GetActiveMediatorPeers()
-	for _, peer := range peers {
-		if peer == nil {
-			pm.producer.ToUnitTBLSSign(unit)
-			continue
-		}
+func (self *ProtocolManager) vssResponseBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.vssResponseCh:
+			self.BroadcastVssResp(&event)
 
-		err := peer.SendNewProducedUnit(unit)
-		if err != nil {
-			log.Error(err.Error())
+			// Err() channel will be closed when unsubscribing.
+		case <-self.vssResponseSub.Err():
+			return
 		}
 	}
 }
 
-// getActiveMediatorPeer, retrieve specified active mediator peer.
-// If it is the node itself, p is nil and self is true
 // @author Albert·Gou
-func (pm *ProtocolManager) getActiveMediatorPeer(node *discover.Node) (p *peer, self bool) {
+//func (pm *ProtocolManager) BroadcastVssResp(dstId string, resp *mp.VSSResponseEvent) {
+func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
+	// comment by Albert·Gou
+	//dstId := node.ID.TerminalString()
+	//peer := pm.peers.Peer(dstId)
+	//if peer == nil {
+	//	log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
+	//}
+
+	// comment by Albert·Gou
+	//if pm.peers.PeersWithoutVssResp(dstId) {
+	//	return
+	//}
+	//pm.peers.MarkVssResp(dstId)
+
+	peers := pm.GetActiveMediatorPeers()
+	//peers := pm.GetTransitionPeers()
+	for _, peer := range peers {
+		if peer == nil {
+			//size, reader, err := rlp.EncodeToReader(resp)
+			//if err != nil {
+			//	log.Error(err.Error())
+			//}
+			//
+			//var r mp.VSSResponseEvent
+			//s := rlp.NewStream(reader, uint64(size))
+			//if err := s.Decode(&r); err != nil {
+			//	log.Error(err.Error())
+			//}
+			//pm.producer.ToProcessResponse(&r)
+
+			pm.producer.ToProcessResponse(resp)
+			continue
+		}
+
+		// comment by Albert·Gou
+		//dstId := peer.id
+		//if pm.peers.PeersWithoutVssResp(dstId) {
+		//	return
+		//}
+		//pm.peers.MarkVssResp(dstId)
+
+		// comment by Albert·Gou
+		//msg := &vssRespMsg{
+		//	NodeId: dstId,
+		//	Resp:   resp,
+		//}
+		//
+		//err := peer.SendVSSResponse(msg)
+
+		err := peer.SendVSSResponse(resp)
+		if err != nil {
+			log.Info(err.Error())
+		}
+	}
+}
+
+// GetPeer, retrieve specified peer. If it is the node itself, p is nil and self is true
+// @author Albert·Gou
+func (pm *ProtocolManager) GetPeer(node *discover.Node) (p *peer, self bool) {
 	id := node.ID
 	if pm.srvr.Self().ID == id {
 		self = true
@@ -294,7 +295,7 @@ func (pm *ProtocolManager) getActiveMediatorPeer(node *discover.Node) (p *peer, 
 
 	p = pm.peers.Peer(id.TerminalString())
 	if p == nil && !self {
-		log.Debug(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
+		log.Debug(fmt.Sprintf("the Peer is not exist: %v", node.String()))
 	}
 
 	return
@@ -308,7 +309,7 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 	list := make(map[string]*peer, len(nodes))
 
 	for id, node := range nodes {
-		peer, self := pm.getActiveMediatorPeer(node)
+		peer, self := pm.GetPeer(node)
 		if peer != nil || self {
 			list[id] = peer
 		}

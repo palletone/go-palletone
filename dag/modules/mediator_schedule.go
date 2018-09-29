@@ -19,233 +19,188 @@
 
 package modules
 
-//// Mediator调度顺序结构体
-//type MediatorSchedule struct {
-//	CurrentShuffledMediators []core.Mediator
-//	statedb storage.StateDb
+import (
+	"time"
+
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core"
+)
+
+// Mediator调度顺序结构体
+type MediatorSchedule struct {
+	CurrentShuffledMediators []core.Mediator
+}
+
+func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorSchedule {
+	log.Debug("initialize mediator schedule...")
+	ms := NewMediatorSchl()
+
+	aSize := uint64(len(gp.ActiveMediators))
+	if aSize == 0 {
+		log.Error("The current number of active mediators is 0!")
+	}
+
+	// Create witness scheduler
+	ms.CurrentShuffledMediators = make([]core.Mediator, aSize, aSize)
+	meds := gp.GetActiveMediators()
+	for i, add := range meds {
+		med := gp.GetActiveMediator(add)
+		ms.CurrentShuffledMediators[i] = *med
+	}
+
+	//	ms.UpdateMediatorSchedule(gp, dgp)
+
+	return ms
+}
+
+func NewMediatorSchl() *MediatorSchedule {
+	return &MediatorSchedule{
+		CurrentShuffledMediators: []core.Mediator{},
+	}
+}
+
+// 洗牌算法，更新mediator的调度顺序
+func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *DynamicGlobalProperty) {
+	aSize := uint64(len(gp.ActiveMediators))
+	if aSize == 0 {
+		log.Error("The current number of active mediators is 0!")
+		return
+	}
+
+	// 1. 判断是否到达洗牌时刻
+	if dgp.LastVerifiedUnitNum%aSize != 0 {
+		return
+	}
+
+	// 2. 清除CurrentShuffledMediators原来的空间，重新分配空间
+	ms.CurrentShuffledMediators = make([]core.Mediator, aSize, aSize)
+
+	// 3. 初始化数据
+	meds := gp.GetActiveMediators()
+	for i, add := range meds {
+		med := gp.GetActiveMediator(add)
+		ms.CurrentShuffledMediators[i] = *med
+	}
+
+	// 4. 打乱证人的调度顺序
+	nowHi := uint64(dgp.LastVerifiedUnitTime << 32)
+	for i := uint64(0); i < aSize; i++ {
+		// 高性能随机生成器(High performance random generator)
+		// 原理请参考 http://xorshift.di.unimi.it/
+		k := nowHi + uint64(i)*2685821657736338717
+		k ^= k >> 12
+		k ^= k << 25
+		k ^= k >> 27
+		k *= 2685821657736338717
+
+		jmax := aSize - i
+		j := i + k%jmax
+
+		// 进行N次随机交换
+		ms.CurrentShuffledMediators[i], ms.CurrentShuffledMediators[j] =
+			ms.CurrentShuffledMediators[j], ms.CurrentShuffledMediators[i]
+	}
+}
+
+/**
+@brief 获取指定的未来slotNum对应的调度mediator来生产见证单元.
+Get the mediator scheduled for uint verification in a slot.
+
+slotNum总是对应于未来的时间。
+slotNum always corresponds to a time in the future.
+
+如果slotNum == 1，则返回下一个调度Mediator。
+If slotNum == 1, return the next scheduled mediator.
+
+如果slotNum == 2，则返回下下一个调度Mediator。
+If slotNum == 2, return the next scheduled mediator after 1 verified uint gap.
+*/
+func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) *core.Mediator {
+	currentASlot := dgp.CurrentASlot + uint64(slotNum)
+	csmLen := len(ms.CurrentShuffledMediators)
+	if csmLen == 0 {
+		log.Error("The current number of shuffled mediators is 0!")
+		return nil
+	}
+
+	// 由于创世单元不是有mediator生产，所以这里需要减1
+	index := (currentASlot - 1) % uint64(csmLen)
+	return &ms.CurrentShuffledMediators[index]
+}
+
+/**
+计算在过去的128个见证单元生产slots中miss的百分比，不包括当前验证单元。
+Calculate the percent of verifiedUnit production slots that were missed in the past 128 verifiedUnits,
+not including the current verifiedUnit.
+*/
+//func MediatorParticipationRate(dgp *d.DynamicGlobalProperty) float32 {
+//	return dgp.RecentSlotsFilled / 128.0
 //}
-//// re:Yiran
-//// This function should only be called at the initGenesis()
-//func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorSchedule {
-//	log.Debug("initialize mediator schedule...")
-//	ms := &MediatorSchedule{
-//		CurrentShuffledMediators: []core.Mediator{},
-//	}
-//
-//	aSize := uint64(len(gp.ActiveMediators))
-//	if aSize == 0 {
-//		log.Error("The current number of active mediators is 0!")
-//	}
-//
-//	// Create witness scheduler
-//	ms.CurrentShuffledMediators = make([]core.Mediator, aSize, aSize)
-//	meds := gp.GetInitActiveMediators()
-//	for i, add := range meds {
-//		med := gp.GetActiveMediator(add)
-//		ms.CurrentShuffledMediators[i] = *med
-//	}
-//
-//	//	ms.UpdateMediatorSchedule(gp, dgp)
-//
-//	return ms
-//}
-//
-//func NewMediatorSchl(statedb storage.StateDb) *MediatorSchedule {
-//	return &MediatorSchedule{
-//		CurrentShuffledMediators: []core.Mediator{},
-//		statedb:statedb,
-//	}
-//}
-//
-//// 洗牌算法，更新mediator的调度顺序
-//func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *DynamicGlobalProperty) {
-//	aSize := uint64(len(gp.ActiveMediators))
-//	if aSize == 0 {
-//		log.Error("The current number of active mediators is 0!")
-//		return
-//	}
-//
-//	// 1. 判断是否到达洗牌时刻
-//	if dgp.LastVerifiedUnitNum%aSize != 0 {
-//		return
-//	}
-//
-//	// 2. 清除CurrentShuffledMediators原来的空间，重新分配空间
-//	ms.CurrentShuffledMediators = make([]core.Mediator, aSize, aSize)
-//
-//	// 3. 初始化数据
-//	meds := gp.GetActiveMediators()
-//	for i, add := range meds {
-//		med := gp.GetActiveMediator(add)
-//		ms.CurrentShuffledMediators[i] = *med
-//	}
-//
-//	// 4. 打乱证人的调度顺序
-//	nowHi := uint64(dgp.LastVerifiedUnitTime << 32)
-//	for i := uint64(0); i < aSize; i++ {
-//		// 高性能随机生成器(High performance random generator)
-//		// 原理请参考 http://xorshift.di.unimi.it/
-//		k := nowHi + uint64(i)*2685821657736338717
-//		k ^= k >> 12
-//		k ^= k << 25
-//		k ^= k >> 27
-//		k *= 2685821657736338717
-//
-//		jmax := aSize - i
-//		j := i + k%jmax
-//
-//		// 进行N次随机交换
-//		ms.CurrentShuffledMediators[i], ms.CurrentShuffledMediators[j] =
-//			ms.CurrentShuffledMediators[j], ms.CurrentShuffledMediators[i]
-//	}
-//}
-//
-///**
-//@brief 获取指定的未来slotNum对应的调度mediator来生产见证单元.
-//Get the mediator scheduled for uint verification in a slot.
-//
-//slotNum总是对应于未来的时间。
-//slotNum always corresponds to a time in the future.
-//
-//如果slotNum == 1，则返回下一个调度Mediator。
-//If slotNum == 1, return the next scheduled mediator.
-//
-//如果slotNum == 2，则返回下下一个调度Mediator。
-//If slotNum == 2, return the next scheduled mediator after 1 verified uint gap.
-//*/
-//func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) *core.Mediator {
-//	currentASlot := dgp.CurrentASlot + uint64(slotNum)
-//	csmLen := len(ms.CurrentShuffledMediators)
-//	if csmLen == 0 {
-//		log.Error("The current number of shuffled mediators is 0!")
-//		return nil
-//	}
-//
-//	// 由于创世单元不是有mediator生产，所以这里需要减1
-//	index := (currentASlot - 1) % uint64(csmLen)
-//	return &ms.CurrentShuffledMediators[index]
-//}
-//
-///**
-//计算在过去的128个见证单元生产slots中miss的百分比，不包括当前验证单元。
-//Calculate the percent of verifiedUnit production slots that were missed in the past 128 verifiedUnits,
-//not including the current verifiedUnit.
-//*/
-////func MediatorParticipationRate(dgp *d.DynamicGlobalProperty) float32 {
-////	return dgp.RecentSlotsFilled / 128.0
-////}
-//
-///**
-//@brief 获取给定的未来第slotNum个slot开始的时间。
-//Get the time at which the given slot occurs.
-//
-//如果slotNum == 0，则返回time.Unix(0,0)。
-//If slotNum == 0, return time.Unix(0,0).
-//
-//如果slotNum == N 且 N > 0，则返回大于verifiedUnitTime的第N个单元验证间隔的对齐时间
-//If slotNum == N for N > 0, return the Nth next unit-interval-aligned time greater than head_block_time().
-//*/
-//func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32) time.Time {
-//	if slotNum == 0 {
-//		return time.Unix(0, 0)
-//	}
-//
-//	interval := gp.ChainParameters.MediatorInterval
-//
-//	// 本条件是用来生产第一个unit
-//	if dgp.LastVerifiedUnitNum == 0 {
-//		/**
-//		注：第一个验证单元在genesisTime加上一个验证单元间隔
-//		n.b. first verifiedUnit is at genesisTime plus one verifiedUnitInterval
-//		*/
-//		genesisTime := dgp.LastVerifiedUnitTime
-//		return time.Unix(genesisTime+int64(slotNum)*int64(interval), 0)
-//	}
-//
-//	// 最近的验证单元的绝对slot
-//	var verifiedUnitAbsSlot = dgp.LastVerifiedUnitTime / int64(interval)
-//	// 最近的时间槽起始时间
-//	verifiedUnitSlotTime := time.Unix(verifiedUnitAbsSlot*int64(interval), 0)
-//
-//	// 在此处添加区块链网络参数修改维护的所需要的slot
-//
-//	/**
-//	如果是维护周期的话，加上维护间隔时间
-//	如果不是，就直接加上验证单元的slot时间
-//	*/
-//	// "slot 1" is verifiedUnitSlotTime,
-//	// plus maintenance interval if last uint is a maintenance verifiedUnit
-//	// plus verifiedUnit interval if last uint is not a maintenance verifiedUnit
-//	return verifiedUnitSlotTime.Add(time.Second * time.Duration(slotNum) * time.Duration(interval))
-//}
-//
-///**
-//获取在给定时间或之前出现的最近一个slot。 Get the last slot which occurs AT or BEFORE the given time.
-//*/
-//func GetSlotAtTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, when time.Time) uint32 {
-//	/**
-//	返回值是所有满足 GetSlotTime（N）<= when 中最大的N
-//	The return value is the greatest value N such that GetSlotTime( N ) <= when.
-//	如果都不满足，则返回 0
-//	If no such N exists, return 0.
-//	*/
-//	firstSlotTime := GetSlotTime(gp, dgp, 1)
-//
-//	if when.Before(firstSlotTime) {
-//		return 0
-//	}
-//
-//	diffSecs := when.Unix() - firstSlotTime.Unix()
-//	interval := int64(gp.ChainParameters.MediatorInterval)
-//
-//	return uint32(diffSecs/interval) + 1
-//}
-//
-//
-//
-//type MediatorScheduleStore struct {
-//	CurrentShuffledMediators []core.MediatorInfo
-//}
-//
-//func getMST(ms *MediatorSchedule) MediatorScheduleStore {
-//	csm := make([]core.MediatorInfo, 0)
-//
-//	for _, med := range ms.CurrentShuffledMediators {
-//		medInfo := core.MediatorToInfo(&med)
-//		csm = append(csm, medInfo)
-//	}
-//
-//	mst := MediatorScheduleStore{
-//		CurrentShuffledMediators: csm,
-//	}
-//
-//	return mst
-//}
-//
-//func getMS(mst *MediatorScheduleStore, statedb storage.StateDb) *MediatorSchedule {
-//	csm := make([]core.Mediator, 0)
-//
-//	for _, medInfo := range mst.CurrentShuffledMediators {
-//		med := core.InfoToMediator(&medInfo)
-//		csm = append(csm, med)
-//	}
-//
-//	ms := NewMediatorSchl(statedb)
-//	ms.CurrentShuffledMediators = csm
-//	return ms
-//}
-//
-//func StoreMediatorSchl(db storage.StateDb, ms *MediatorSchedule) error {
-//	mst := getMST(ms)
-//	err := db.SaveMediatorSchedule(mst)
-//	if err != nil {
-//		log.Error(fmt.Sprintf("Store mediator schedule error: %s", err))
-//	}
-//	return err
-//}
-//
-//func RetrieveMediatorSchl(stateDb storage.StateDb) (*MediatorSchedule, error) {
-//	mst, err := stateDb.GetMediatorSchedule()
-//	ms := getMS(&mst,stateDb)
-//	return ms, err
-//}
+
+/**
+@brief 获取给定的未来第slotNum个slot开始的时间。
+Get the time at which the given slot occurs.
+
+如果slotNum == 0，则返回time.Unix(0,0)。
+If slotNum == 0, return time.Unix(0,0).
+
+如果slotNum == N 且 N > 0，则返回大于verifiedUnitTime的第N个单元验证间隔的对齐时间
+If slotNum == N for N > 0, return the Nth next unit-interval-aligned time greater than head_block_time().
+*/
+func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32) time.Time {
+	if slotNum == 0 {
+		return time.Unix(0, 0)
+	}
+
+	interval := gp.ChainParameters.MediatorInterval
+
+	// 本条件是用来生产第一个unit
+	if dgp.LastVerifiedUnitNum == 0 {
+		/**
+		注：第一个验证单元在genesisTime加上一个验证单元间隔
+		n.b. first verifiedUnit is at genesisTime plus one verifiedUnitInterval
+		*/
+		genesisTime := dgp.LastVerifiedUnitTime
+		return time.Unix(genesisTime+int64(slotNum)*int64(interval), 0)
+	}
+
+	// 最近的验证单元的绝对slot
+	var verifiedUnitAbsSlot = dgp.LastVerifiedUnitTime / int64(interval)
+	// 最近的时间槽起始时间
+	verifiedUnitSlotTime := time.Unix(verifiedUnitAbsSlot*int64(interval), 0)
+
+	// 在此处添加区块链网络参数修改维护的所需要的slot
+
+	/**
+	如果是维护周期的话，加上维护间隔时间
+	如果不是，就直接加上验证单元的slot时间
+	*/
+	// "slot 1" is verifiedUnitSlotTime,
+	// plus maintenance interval if last uint is a maintenance verifiedUnit
+	// plus verifiedUnit interval if last uint is not a maintenance verifiedUnit
+	return verifiedUnitSlotTime.Add(time.Second * time.Duration(slotNum) * time.Duration(interval))
+}
+
+/**
+获取在给定时间或之前出现的最近一个slot。 Get the last slot which occurs AT or BEFORE the given time.
+*/
+func GetSlotAtTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, when time.Time) uint32 {
+	/**
+	返回值是所有满足 GetSlotTime（N）<= when 中最大的N
+	The return value is the greatest value N such that GetSlotTime( N ) <= when.
+	如果都不满足，则返回 0
+	If no such N exists, return 0.
+	*/
+	firstSlotTime := GetSlotTime(gp, dgp, 1)
+
+	if when.Before(firstSlotTime) {
+		return 0
+	}
+
+	diffSecs := when.Unix() - firstSlotTime.Unix()
+	interval := int64(gp.ChainParameters.MediatorInterval)
+	if interval == 0 {
+		return 0
+	}
+	return uint32(diffSecs/interval) + 1
+}

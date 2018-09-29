@@ -46,7 +46,7 @@ func NewValidate(dagdb storage.DagDb, utxodb storage.UtxoDb, statedb storage.Sta
 
 type Validator interface {
 	ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common.Hash]modules.TxValidationCode, bool, error)
-	ValidateUnit(unit *modules.Unit, isGenesis bool) byte
+	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) byte
 	ValidateTx(tx *modules.Transaction, isCoinbase bool, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode
 	ValidateUnitSignature(h *modules.Header, isGenesis bool) byte
 }
@@ -400,7 +400,9 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 验证Unit
 Validate unit
 */
-func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte {
+// modified by Albert·Gou 新生产的unit暂时还没有群签名
+//func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte {
+func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) byte {
 	//  unit's size  should bigger than minimum.
 	if unit.Size() < 125 {
 		log.Debug("Validate size", "error", "size is invalid", "size", unit.Size())
@@ -408,8 +410,11 @@ func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte 
 	}
 
 	// step1. check header.
-	sigState := validate.validateHeader(unit.UnitHeader, isGenesis)
-	if sigState != modules.UNIT_STATE_VALIDATED {
+	// modified by Albert·Gou 新生产的unit暂时还没有群签名
+	//sigState := validate.validateHeader(unit.UnitHeader, isGenesis)
+	sigState := validate.validateHeaderExceptGroupSig(unit.UnitHeader, isGenesis)
+	if sigState != modules.UNIT_STATE_VALIDATED &&
+		sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
 		log.Debug("Validate unit's header failed.", "error code", sigState)
 		return sigState
 	}
@@ -423,7 +428,9 @@ func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte 
 	return sigState
 }
 
-func (validate *Validate) validateHeader(header *modules.Header, isGenesis bool) byte {
+// modified by Albert·Gou 新生产的unit暂时还没有群签名
+//func (validate *Validate) validateHeader(header *modules.Header, isGenesis bool) byte {
+func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, isGenesis bool) byte {
 	if header == nil {
 		return modules.UNIT_STATE_INVALID_HEADER
 	}
@@ -481,9 +488,12 @@ func (validate *Validate) validateHeader(header *modules.Header, isGenesis bool)
 	if header.Authors == nil {
 		return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
-	if len(header.GroupSign) < 64 {
-		return modules.UNIT_STATE_INVALID_HEADER_WITNESS
-	}
+
+	// comment by Albert·Gou 新生产的unit暂时还没有群签名
+	//if len(header.GroupSign) < 64 {
+	//	return modules.UNIT_STATE_INVALID_HEADER_WITNESS
+	//}
+
 	sigState := validate.ValidateUnitSignature(header, isGenesis)
 	return sigState
 }

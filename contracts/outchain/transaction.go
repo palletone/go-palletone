@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/palletone/adaptor"
 	"github.com/palletone/btc-adaptor"
 	"github.com/palletone/go-palletone/common/log"
 
@@ -36,7 +37,7 @@ func processTransactionMethodBTC(chaincodeID string, outChainTX *pb.OutChainTran
 	params *OutChainMethod) (string, error) {
 	switch params.Method {
 	case "SignTransaction":
-		var signTransactionParams adaptorbtc.SignTransactionParams
+		var signTransactionParams adaptor.SignTransactionParams
 		err := json.Unmarshal(outChainTX.Params, &signTransactionParams)
 		if err != nil {
 			return "", fmt.Errorf("SignTransaction params error : %s", err.Error())
@@ -56,7 +57,7 @@ func processTransactionMethodBTC(chaincodeID string, outChainTX *pb.OutChainTran
 		btcAdaptor.CertPath = cfg.Ada.Btc.CertPath
 		return btcAdaptor.SignTransaction(&signTransactionParams)
 	case "SignTxSend":
-		var signTxSendParams adaptorbtc.SignTxSendParams
+		var signTxSendParams adaptor.SignTxSendParams
 		err := json.Unmarshal(outChainTX.Params, &signTxSendParams)
 		if err != nil {
 			return "", fmt.Errorf("SignTransaction params error : %s", err.Error())
@@ -77,7 +78,7 @@ func processTransactionMethodBTC(chaincodeID string, outChainTX *pb.OutChainTran
 		return btcAdaptor.SignTxSend(&signTxSendParams)
 
 	case "DecodeRawTransaction":
-		var decodeRawTransactionParams adaptorbtc.DecodeRawTransactionParams
+		var decodeRawTransactionParams adaptor.DecodeRawTransactionParams
 		err := json.Unmarshal(outChainTX.Params, &decodeRawTransactionParams)
 		if err != nil {
 			return "", fmt.Errorf("DecodeRawTransaction params error : %s", err.Error())
@@ -91,7 +92,7 @@ func processTransactionMethodBTC(chaincodeID string, outChainTX *pb.OutChainTran
 		return btcAdaptor.DecodeRawTransaction(&decodeRawTransactionParams)
 
 	case "GetTransactionByHash":
-		var getTransactionByHashParams adaptorbtc.GetTransactionByHashParams
+		var getTransactionByHashParams adaptor.GetTransactionByHashParams
 		err := json.Unmarshal(outChainTX.Params, &getTransactionByHashParams)
 		if err != nil {
 			return "", fmt.Errorf("GetTransactionByHash params error : %s", err.Error())
@@ -104,7 +105,7 @@ func processTransactionMethodBTC(chaincodeID string, outChainTX *pb.OutChainTran
 		btcAdaptor.CertPath = cfg.Ada.Btc.CertPath
 		return btcAdaptor.GetTransactionByHash(&getTransactionByHashParams)
 	case "GetTransactions":
-		var getTransactions adaptorbtc.GetTransactionsParams
+		var getTransactions adaptor.GetTransactionsParams
 		err := json.Unmarshal(outChainTX.Params, &getTransactions)
 		if err != nil {
 			return "", fmt.Errorf("GetTransactionByHash params error : %s", err.Error())
@@ -126,7 +127,7 @@ func processTransactionMethodETH(chaincodeID string, outChainTX *pb.OutChainTran
 	params *OutChainMethod) (string, error) {
 	switch params.Method {
 	case "Keccak256HashPackedSig":
-		var sigParams adaptoreth.Keccak256HashPackedSigParams
+		var sigParams adaptor.Keccak256HashPackedSigParams
 		err := json.Unmarshal(outChainTX.Params, &sigParams)
 		if err != nil {
 			return "", fmt.Errorf("Keccak256HashPackedSig params error : %s", err.Error())
@@ -142,7 +143,7 @@ func processTransactionMethodETH(chaincodeID string, outChainTX *pb.OutChainTran
 		ethAdaptor.NetID = cfg.Ada.Eth.NetID
 		return ethAdaptor.Keccak256HashPackedSig(&sigParams)
 	case "GetEventByAddress":
-		var getEventByAddressParams adaptoreth.GetEventByAddressParams
+		var getEventByAddressParams adaptor.GetEventByAddressParams
 		err := json.Unmarshal(outChainTX.Params, &getEventByAddressParams)
 		if err != nil {
 			return "", fmt.Errorf("GetEventByAddress params error : %s", err.Error())

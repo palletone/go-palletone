@@ -4,6 +4,7 @@ go:
   - 1.10.3
 before_install:
   - go get github.com/mattn/goveralls
+  - go get -u github.com/palletone/adaptor
   - go get -u github.com/palletone/btc-adaptor
   - go get -u github.com/palletone/eth-adaptor
 script:

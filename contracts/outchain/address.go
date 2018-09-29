@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/palletone/adaptor"
 	"github.com/palletone/btc-adaptor"
 	"github.com/palletone/eth-adaptor"
 	"github.com/palletone/go-palletone/common/log"
@@ -36,7 +37,7 @@ func processAddressMethodBTC(chaincodeID string, outChainAddr *pb.OutChainAddres
 	params *OutChainMethod) (string, error) {
 	switch params.Method {
 	case "CreateMultiSigAddress":
-		var createMultiSigParams adaptorbtc.CreateMultiSigParams
+		var createMultiSigParams adaptor.CreateMultiSigParams
 		err := json.Unmarshal(outChainAddr.Params, &createMultiSigParams)
 		if err != nil {
 			return "", fmt.Errorf("CreateMultiSigAddress params error : %s", err.Error())
@@ -74,7 +75,7 @@ func processAddressMethodBTC(chaincodeID string, outChainAddr *pb.OutChainAddres
 		btcAdaptor.RPCPasswd = cfg.Ada.Btc.RPCPasswd
 		btcAdaptor.CertPath = cfg.Ada.Btc.CertPath
 		//
-		var importMultisigParams adaptorbtc.ImportMultisigParams
+		var importMultisigParams adaptor.ImportMultisigParams
 		importMultisigParams.PublicKeys = createMultiSigParams.PublicKeys
 		importMultisigParams.MRequires = createMultiSigParams.M
 		importMultisigParams.WalletPasswd = cfg.Ada.Btc.WalletPasswd
@@ -107,7 +108,7 @@ func processAddressMethodETH(chaincodeID string, outChainAddr *pb.OutChainAddres
 	params *OutChainMethod) (string, error) {
 	switch params.Method {
 	case "CreateMultiSigAddress":
-		var createMultiSigAddressParams adaptoreth.CreateMultiSigAddressParams
+		var createMultiSigAddressParams adaptor.CreateMultiSigAddressParams
 		err := json.Unmarshal(outChainAddr.Params, &createMultiSigAddressParams)
 		if err != nil {
 			return "", fmt.Errorf("CreateMultiSigAddress params error : %s", err.Error())

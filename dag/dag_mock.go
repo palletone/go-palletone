@@ -5,17 +5,16 @@
 package dag
 
 import (
-	kyber "github.com/dedis/kyber"
-	gomock "github.com/golang/mock/gomock"
-	common "github.com/palletone/go-palletone/common"
-	event "github.com/palletone/go-palletone/common/event"
-	discover "github.com/palletone/go-palletone/common/p2p/discover"
-	keystore "github.com/palletone/go-palletone/core/accounts/keystore"
-	modules "github.com/palletone/go-palletone/dag/modules"
-	storage "github.com/palletone/go-palletone/dag/storage"
-	txspool "github.com/palletone/go-palletone/dag/txspool"
-	reflect "reflect"
-	time "time"
+	"github.com/dedis/kyber"
+	"github.com/golang/mock/gomock"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
+	"reflect"
+	"time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -571,9 +570,9 @@ func (mr *MockIDagMockRecorder) IsActiveMediator(add interface{}) *gomock.Call {
 }
 
 // GetGlobalProp mocks base method
-func (m *MockIDag) GetGlobalProp() *storage.GlobalProperty {
+func (m *MockIDag) GetGlobalProp() *modules.GlobalProperty {
 	ret := m.ctrl.Call(m, "GetGlobalProp")
-	ret0, _ := ret[0].(*storage.GlobalProperty)
+	ret0, _ := ret[0].(*modules.GlobalProperty)
 	return ret0
 }
 
@@ -583,9 +582,9 @@ func (mr *MockIDagMockRecorder) GetGlobalProp() *gomock.Call {
 }
 
 // GetDynGlobalProp mocks base method
-func (m *MockIDag) GetDynGlobalProp() *storage.DynamicGlobalProperty {
+func (m *MockIDag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
 	ret := m.ctrl.Call(m, "GetDynGlobalProp")
-	ret0, _ := ret[0].(*storage.DynamicGlobalProperty)
+	ret0, _ := ret[0].(*modules.DynamicGlobalProperty)
 	return ret0
 }
 
@@ -595,9 +594,9 @@ func (mr *MockIDagMockRecorder) GetDynGlobalProp() *gomock.Call {
 }
 
 // GetMediatorSchl mocks base method
-func (m *MockIDag) GetMediatorSchl() *storage.MediatorSchedule {
+func (m *MockIDag) GetMediatorSchl() *modules.MediatorSchedule {
 	ret := m.ctrl.Call(m, "GetMediatorSchl")
-	ret0, _ := ret[0].(*storage.MediatorSchedule)
+	ret0, _ := ret[0].(*modules.MediatorSchedule)
 	return ret0
 }
 

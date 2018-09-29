@@ -25,6 +25,7 @@ or, to build the full suite of utilities:
 
 but, to build the full suite of utilities in window,you should:
 
+    go get -u github.com/palletone/adaptor
     go get -u github.com/palletone/btc-adaptor
     go get -u github.com/palletone/eth-adaptor
     go build

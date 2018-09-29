@@ -22,24 +22,34 @@ package common
 import (
 	"time"
 
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
+type PropRepository struct {
+	db storage.PropertyDb
+}
+type IPropRepository interface {
+	UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit)
+}
+
+func NewPropRepository(db storage.PropertyDb) *PropRepository {
+	return &PropRepository{db: db}
+}
+
 // UpdateGlobalDynProp, update global dynamic data
 // @author Albert·Gou
-func UpdateGlobalDynProp(db ptndb.Database, gp *storage.GlobalProperty, dgp *storage.DynamicGlobalProperty, unit *modules.Unit) {
+func (rep *PropRepository) UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
 	timestamp := unit.UnitHeader.Creationdate
 	dgp.LastVerifiedUnitNum = unit.UnitHeader.Number.Index
 	dgp.LastVerifiedUnitHash = unit.UnitHash
 	dgp.LastVerifiedUnitTime = timestamp
 
-	missedUnits := uint64(storage.GetSlotAtTime(gp, dgp, time.Unix(timestamp, 0)))
+	missedUnits := uint64(modules.GetSlotAtTime(gp, dgp, time.Unix(timestamp, 0)))
 	//	println(missedUnits)
 	dgp.CurrentASlot += missedUnits + 1
-	stateDb := storage.NewStateDatabase(db)
-	go storage.StoreDynGlobalProp(stateDb, dgp)
+
+	rep.db.StoreDynGlobalProp(dgp)
 }
 
 /**

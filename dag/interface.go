@@ -28,7 +28,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"time"
 )
@@ -81,18 +80,25 @@ type IDag interface {
 	WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id common.Hash) (*modules.Contract, error)
 	GetCurThreshold() int
-	GetGlobalProp() *storage.GlobalProperty
-	GetDynGlobalProp() *storage.DynamicGlobalProperty
+	GetGlobalProp() *modules.GlobalProperty
+	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
-	ValidateUnit(unit *modules.Unit, isGenesis bool) bool
+	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
 	//Mediator
 	GetActiveMediator(add common.Address) *core.Mediator
 	GetActiveMediatorAddr(index int) common.Address
 	GetActiveMediatorInitPubs() []kyber.Point
 	IsActiveMediator(add common.Address) bool
-	GetMediatorSchl() *storage.MediatorSchedule
+	GetMediatorSchl() *modules.MediatorSchedule
 	GetActiveMediatorCount() int
 	GetActiveMediatorNode(index int) *discover.Node
-	GetMediatorsList() (storage.MediatorCandidates, error)
+
+	UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit)
+	StoreGlobalProp(gp *modules.GlobalProperty) error
+	StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error
+	RetrieveGlobalProp() (*modules.GlobalProperty, error)
+	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
+	StoreMediatorSchl(ms *modules.MediatorSchedule) error
+	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
 }
