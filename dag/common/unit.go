@@ -258,7 +258,7 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 	if len(data) > 1 {
 		return nil, fmt.Errorf("multiple genesis unit")
 	} else if len(data) <= 0 {
-		return nil, nil
+		return nil, errors.New("leveldb not fund")
 	}
 	for _, v := range data {
 		// get unit header
@@ -465,15 +465,13 @@ func (unitOp *UnitRepository) savePaymentPayload(txHash common.Hash, msg *module
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
 	// if this is a create token transaction, should be return a assetid
-	var pl interface{}
-	pl = msg.Payload
-	_, ok := pl.(*modules.PaymentPayload)
-	if ok == false {
-		return false
-	}
 
 	// save utxo
-	unitOp.utxoRepository.UpdateUtxo(txHash, msg, msgIndex)
+	err := unitOp.utxoRepository.UpdateUtxo(txHash, msg, msgIndex)
+	if err != nil {
+		log.Error("Update utxo failed.", "error", err)
+		return false
+	}
 	return true
 }
 

@@ -21,6 +21,7 @@
 package storage
 
 import (
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -135,8 +136,11 @@ func (db *UtxoDatabase) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return outputs, nil
 }
 func (db *UtxoDatabase) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
-
-	data := db.GetPrefix(append(AddrOutPoint_Prefix, []byte(addr)...))
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+	data := db.GetPrefix(append(AddrOutPoint_Prefix, address.Bytes()...))
 	outpoints := make([]modules.OutPoint, 0)
 	for _, b := range data {
 		out := new(modules.OutPoint)
@@ -167,10 +171,10 @@ func (db *UtxoDatabase) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error
 	var err error
 	for key, itme := range items {
 		utxo := new(modules.Utxo)
-		outpint := new(modules.OutPoint)
+		// outpint := new(modules.OutPoint)
 		if err = rlp.DecodeBytes(itme, utxo); err == nil {
-			outpint.SetString(key)
-			view[*outpint] = utxo
+			outpoint := modules.KeyToOutpoint([]byte(key))
+			view[*outpoint] = utxo
 		}
 	}
 

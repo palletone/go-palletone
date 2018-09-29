@@ -84,7 +84,7 @@ type IDag interface {
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
-	ValidateUnit(unit *modules.Unit, isGenesis bool) bool
+	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
 	//Mediator
 	GetActiveMediator(add common.Address) *core.Mediator
 	GetActiveMediatorAddr(index int) common.Address
@@ -93,4 +93,12 @@ type IDag interface {
 	GetMediatorSchl() *modules.MediatorSchedule
 	GetActiveMediatorCount() int
 	GetActiveMediatorNode(index int) *discover.Node
+
+	UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit)
+	StoreGlobalProp(gp *modules.GlobalProperty) error
+	StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error
+	RetrieveGlobalProp() (*modules.GlobalProperty, error)
+	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
+	StoreMediatorSchl(ms *modules.MediatorSchedule) error
+	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
 }

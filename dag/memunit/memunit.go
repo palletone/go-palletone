@@ -33,11 +33,16 @@ import (
 type MemUnit map[common.Hash]*modules.Unit
 
 func InitMemUnit() *MemUnit {
-	memunit := new(MemUnit)
-	return memunit
+	// modified by Albert·Gou
+	memunit := make(MemUnit)
+	return &memunit
 }
 
 func (mu *MemUnit) Add(u *modules.Unit) error {
+	// append by Albert·Gou
+	if mu == nil {
+		mu = InitMemUnit()
+	}
 	_, ok := (*mu)[u.UnitHash]
 	if !ok {
 		(*mu)[u.UnitHash] = u

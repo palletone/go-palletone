@@ -218,6 +218,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 
 	// 3. 初始化签名unit相关的签名分片的buf
 	mp.initTBLSRecoverBuf(sma, unitHash)
+	mp.ToUnitTBLSSign(newUnit)
 
 	// 4. 异步向区块链网络广播验证单元
 	log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")

@@ -206,7 +206,8 @@ func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32,
 			MessageIndex: msgIndex,
 			OutIndex:     uint32(outIndex),
 		}
-		if err := repository.utxodb.SaveUtxoEntity(outpoint.ToKey(), utxo); err != nil {
+		key := (&outpoint).ToKey()
+		if err := repository.utxodb.SaveUtxoEntity(key[:], utxo); err != nil {
 			log.Error("Write utxo", "error", err.Error())
 			errs = append(errs, err)
 			continue
@@ -219,8 +220,11 @@ func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32,
 
 		// get address
 		sAddr, _ := tokenengine.GetAddressFromScript(txout.PkScript)
-		//addr := common.Address{}
-		//addr.SetString(sAddr.Str())
+		// save addr key index.
+		outpoint_key := make([]byte, 0)
+		outpoint_key = append(outpoint_key, storage.AddrOutPoint_Prefix...)
+		outpoint_key = append(outpoint_key, sAddr.Bytes()...)
+		repository.idxdb.SaveIndexValue(append(outpoint_key, outpoint.Hash().Bytes()...), outpoint)
 
 		utxoIndex := modules.UtxoIndex{
 			AccountAddr: sAddr,

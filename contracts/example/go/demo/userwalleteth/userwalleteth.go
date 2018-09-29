@@ -9,6 +9,7 @@ import (
 
 	"github.com/naoina/toml"
 
+	"github.com/palletone/adaptor"
 	"github.com/palletone/eth-adaptor"
 )
 
@@ -120,7 +121,7 @@ func bobSendETHToMultiSigAddr(value string, gasPrice string, gasLimit string, re
 	ethadaptor.Rawurl = gWallet.EthConfig.Rawurl
 
 	//
-	var invokeContractParams adaptoreth.GenInvokeContractTXParams
+	var invokeContractParams adaptor.GenInvokeContractTXParams
 	invokeContractParams.ContractABI = contractABI
 	invokeContractParams.ContractAddr = contractAddr
 	invokeContractParams.CallerAddr = callerAddr //user
@@ -139,14 +140,14 @@ func bobSendETHToMultiSigAddr(value string, gasPrice string, gasLimit string, re
 		fmt.Println(resultTx)
 	}
 	//parse result
-	var genInvokeContractTXResult adaptoreth.GenInvokeContractTXResult
+	var genInvokeContractTXResult adaptor.GenInvokeContractTXResult
 	err = json.Unmarshal([]byte(resultTx), &genInvokeContractTXResult)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
 	//2.sign tx
-	var signTransactionParams adaptoreth.SignTransactionParams
+	var signTransactionParams adaptor.ETHSignTransactionParams
 	signTransactionParams.PrivateKeyHex = gWallet.NameKey[sender]
 	fmt.Println("gWallet.NameKey[sender] : ", gWallet.NameKey[sender])
 	signTransactionParams.TransactionHex = genInvokeContractTXResult.TransactionHex
@@ -159,14 +160,14 @@ func bobSendETHToMultiSigAddr(value string, gasPrice string, gasLimit string, re
 	}
 
 	//parse result
-	var signTransactionResult adaptoreth.SignTransactionResult
+	var signTransactionResult adaptor.SignTransactionResult
 	err = json.Unmarshal([]byte(resultSign), &signTransactionResult)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
 	//3.send tx
-	var sendTransactionParams adaptoreth.SendTransactionParams
+	var sendTransactionParams adaptor.SendTransactionParams
 	sendTransactionParams.TransactionHex = signTransactionResult.TransactionHex
 	resultSend, err := ethadaptor.SendTransaction(&sendTransactionParams)
 	if err != nil {
@@ -206,7 +207,7 @@ func aliceSpendEtHFromMultiAddr(gasPrice string, gasLimit string, redeem string,
 	ethadaptor.Rawurl = gWallet.EthConfig.Rawurl
 
 	//
-	var sigParams adaptoreth.Keccak256HashPackedSigParams
+	var sigParams adaptor.Keccak256HashPackedSigParams
 	sigParams.ParamTypes = string(paramTypesJson)
 	sigParams.Params = string(calSigParamsJson)
 	sigParams.PrivateKeyHex = gWallet.NameKey[spender]
@@ -221,7 +222,7 @@ func aliceSpendEtHFromMultiAddr(gasPrice string, gasLimit string, redeem string,
 	}
 
 	//parse result
-	var calSigResult adaptoreth.Keccak256HashPackedSigResult
+	var calSigResult adaptor.Keccak256HashPackedSigResult
 	err = json.Unmarshal([]byte(resultSig), &calSigResult)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -248,7 +249,7 @@ func aliceSpendEtHFromMultiAddr(gasPrice string, gasLimit string, redeem string,
 		return err
 	}
 	//
-	var invokeContractParams adaptoreth.GenInvokeContractTXParams
+	var invokeContractParams adaptor.GenInvokeContractTXParams
 	invokeContractParams.ContractABI = contractABI
 	invokeContractParams.ContractAddr = contractAddr
 	invokeContractParams.CallerAddr = callerAddr //user
@@ -267,14 +268,14 @@ func aliceSpendEtHFromMultiAddr(gasPrice string, gasLimit string, redeem string,
 		fmt.Println(resultTx)
 	}
 	//parse result
-	var genInvokeContractTXResult adaptoreth.GenInvokeContractTXResult
+	var genInvokeContractTXResult adaptor.GenInvokeContractTXResult
 	err = json.Unmarshal([]byte(resultTx), &genInvokeContractTXResult)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
 	//2.sign tx
-	var signTransactionParams adaptoreth.SignTransactionParams
+	var signTransactionParams adaptor.ETHSignTransactionParams
 	signTransactionParams.PrivateKeyHex = gWallet.NameKey[spender]
 	signTransactionParams.TransactionHex = genInvokeContractTXResult.TransactionHex
 	resultSign, err := ethadaptor.SignTransaction(&signTransactionParams)
@@ -286,14 +287,14 @@ func aliceSpendEtHFromMultiAddr(gasPrice string, gasLimit string, redeem string,
 	}
 
 	//parse result
-	var signTransactionResult adaptoreth.SignTransactionResult
+	var signTransactionResult adaptor.ETHSignTransactionResult
 	err = json.Unmarshal([]byte(resultSign), &signTransactionResult)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
 	//3.send tx
-	var sendTransactionParams adaptoreth.SendTransactionParams
+	var sendTransactionParams adaptor.SendTransactionParams
 	sendTransactionParams.TransactionHex = signTransactionResult.TransactionHex
 	resultSend, err := ethadaptor.SendTransaction(&sendTransactionParams)
 	if err != nil {
