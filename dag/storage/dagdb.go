@@ -94,8 +94,6 @@ func (dagdb *DagDatabase) SaveHeader(uHash common.Hash, h *modules.Header) error
 	// key = append(key, h.Number.Bytes()...)
 	// return StoreBytes(dagdb.db, append(key, uHash.Bytes()...), h)
 	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.String())
-	log.Println("============================== save header===============================")
-	log.Println(key)
 	return StoreBytes(dagdb.db, []byte(key), h)
 }
 
