@@ -717,6 +717,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 				p.log.Debug("No more headers available")
 				select {
 				case d.headerProcCh <- nil:
+					fmt.Println("============fetchHeaders normal d.headerProcCh <- nil==========")
 					return nil
 				case <-d.cancelCh:
 					return errCancelHeaderFetch
@@ -769,6 +770,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 			}
 			select {
 			case d.headerProcCh <- nil:
+				fmt.Println("=================fetchHeaders timeout d.headerProcCh <- nil=============")
 			case <-d.cancelCh:
 			}
 			return errBadPeer
