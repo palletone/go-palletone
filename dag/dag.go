@@ -546,7 +546,11 @@ func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error
 	}
 	//TODO compare index with number
 	if index.Index == number {
-		return d.dagdb.GetHeader(hash, &index)
+		head, err := d.dagdb.GetHeader(hash, &index)
+		if err != nil {
+			fmt.Println("=============get unit header faled =============", err)
+		}
+		return head, err
 	}
 	return nil, err
 }

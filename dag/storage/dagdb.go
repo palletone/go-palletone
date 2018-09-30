@@ -94,12 +94,13 @@ func (dagdb *DagDatabase) SaveHeader(uHash common.Hash, h *modules.Header) error
 	// key = append(key, h.Number.Bytes()...)
 	// return StoreBytes(dagdb.db, append(key, uHash.Bytes()...), h)
 	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.String())
+	log.Println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ", key)
 	return StoreBytes(dagdb.db, []byte(key), h)
 }
 
 //這是通過modules.ChainIndex存儲hash
 func (dagdb *DagDatabase) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
-	return StoreBytes(dagdb.db, append(UNIT_HASH_NUMBER_Prefix, uHash.Bytes()...), number)
+	return StoreBytes(dagdb.db, append(UNIT_HASH_NUMBER_Prefix, []byte(uHash.String())...), number)
 }
 
 //這是通過hash存儲modules.ChainIndex
@@ -126,11 +127,11 @@ value: all transactions hash set's rlp encoding bytes
 */
 func (dagdb *DagDatabase) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	// db.Put(append())
-	return StoreBytes(dagdb.db, append(BODY_PREFIX, unitHash.Bytes()...), txsHash)
+	return StoreBytes(dagdb.db, append(BODY_PREFIX, []byte(unitHash.String())...), txsHash)
 }
 
 func (dagdb *DagDatabase) GetBody(unitHash common.Hash) ([]common.Hash, error) {
-	data, err := dagdb.db.Get(append(BODY_PREFIX, unitHash.Bytes()...))
+	data, err := dagdb.db.Get(append(BODY_PREFIX, []byte(unitHash.String())...))
 	if err != nil {
 		return nil, err
 	}
@@ -152,11 +153,11 @@ value: transaction struct rlp encoding bytes
 */
 func (dagdb *DagDatabase) SaveTransaction(tx *modules.Transaction) error {
 	// save transaction
-	if err := StoreBytes(dagdb.db, append(TRANSACTION_PREFIX, tx.TxHash.Bytes()...), tx); err != nil {
+	if err := StoreBytes(dagdb.db, append(TRANSACTION_PREFIX, []byte(tx.TxHash.String())...), tx); err != nil {
 		return err
 	}
 
-	if err := StoreBytes(dagdb.db, append(Transaction_Index, tx.TxHash.Bytes()...), tx); err != nil {
+	if err := StoreBytes(dagdb.db, append(Transaction_Index, []byte(tx.TxHash.String())...), tx); err != nil {
 		return err
 	}
 	dagdb.updateAddrTransactions(tx.Address().String(), tx.TxHash)
@@ -180,7 +181,7 @@ func (dagdb *DagDatabase) saveOutputByAddr(addr string, hash common.Hash, msgind
 		return errors.New("empty tx hash.")
 	}
 	key := append(AddrOutput_Prefix, []byte(addr)...)
-	key = append(key, hash.Bytes()...)
+	key = append(key, []byte(hash.String())...)
 	if err := StoreBytes(dagdb.db, append(key, new(big.Int).SetInt64(int64(msgindex)).Bytes()...), output); err != nil {
 		return err
 	}
@@ -225,7 +226,7 @@ func (dagdb *DagDatabase) SaveTxLookupEntry(unit *modules.Unit) error {
 		if err != nil {
 			return err
 		}
-		if err := StoreBytes(dagdb.db, append(LookupPrefix, tx.TxHash.Bytes()...), data); err != nil {
+		if err := StoreBytes(dagdb.db, append(LookupPrefix, []byte(tx.TxHash.String())...), data); err != nil {
 			return err
 		}
 	}
@@ -281,7 +282,7 @@ func (dagdb *DagDatabase) GetAddrOutput(addr string) ([]modules.Output, error) {
 //	return number, nil
 //}
 func (dagdb *DagDatabase) GetNumberWithUnitHash(hash common.Hash) (modules.ChainIndex, error) {
-	data, _ := dagdb.db.Get(append(UNIT_HASH_NUMBER_Prefix, hash.Bytes()...))
+	data, _ := dagdb.db.Get(append(UNIT_HASH_NUMBER_Prefix, []byte(hash.String())...))
 	if len(data) <= 0 {
 		return modules.ChainIndex{}, nil
 	}
@@ -360,7 +361,7 @@ func (dagdb *DagDatabase) GetUnit(hash common.Hash) *modules.Unit {
 	// 2. unit header
 	uHeader, err := dagdb.GetHeader(hash, &height)
 	if err != nil {
-		log.Println("GetUnit when GetHeader failed , error:", err)
+		log.Println("GetUnit when GetHeader failed , error:", err, "hash", hash.String(), "height", height, "index", height.Index)
 		return nil
 	}
 	// get unit hash
@@ -439,6 +440,7 @@ func (dagdb *DagDatabase) GetHeader(hash common.Hash, index *modules.ChainIndex)
 	// key = append(key, index.Bytes()...)
 	// header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
 	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, index.Index, index.String(), hash.String())
+	log.Println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx", key)
 	header_bytes, err := dagdb.db.Get([]byte(key))
 	// rlp  to  Header struct
 	if err != nil {
@@ -487,7 +489,7 @@ func (dagdb *DagDatabase) GetHeaderFormIndex(number modules.ChainIndex) *modules
 
 // GetTxLookupEntry
 func (dagdb *DagDatabase) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64) {
-	data, _ := dagdb.db.Get(append(LookupPrefix, hash.Bytes()...))
+	data, _ := dagdb.db.Get(append(LookupPrefix, []byte(hash.String())...))
 	if len(data) == 0 {
 		return common.Hash{}, 0, 0
 	}
@@ -530,7 +532,7 @@ func (dagdb *DagDatabase) gettrasaction(hash common.Hash) (*modules.Transaction,
 	}
 	fmt.Println("jinlai")
 	//TODO xiaozhi
-	data, err := dagdb.db.Get(append(TRANSACTION_PREFIX, hash.Bytes()...))
+	data, err := dagdb.db.Get(append(TRANSACTION_PREFIX, []byte(hash.String())...))
 	if err != nil {
 		return nil, err
 	}
