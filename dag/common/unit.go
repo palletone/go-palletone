@@ -21,6 +21,7 @@ package common
 import (
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -39,6 +40,8 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"math/big"
+	"reflect"
+	"strings"
 	"time"
 )
 
@@ -112,22 +115,6 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset) 
 	gUnit.UnitHash = gUnit.Hash()
 	return &gUnit, nil
 }
-
-//// @author Albert·Gou
-//func StoreUnit(db ptndb.Database, unit *modules.Unit) error {
-//	err := SaveUnit(db, *unit, false)
-//
-//	if err != nil {
-//		log.Error(fmt.Sprintf("%v", err))
-//		return err
-//	}
-//
-// TODO YangYu
-//	// 此处应当更新DB中的全局属性
-//	//	go storage.StoreDynGlobalProp(dgp)
-//
-//	return nil
-//}
 
 // WithSignature, returns a new unit with the given signature.
 // @author Albert·Gou
@@ -258,7 +245,7 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 	if len(data) > 1 {
 		return nil, fmt.Errorf("multiple genesis unit")
 	} else if len(data) <= 0 {
-		return nil, errors.ErrNotFound
+		return nil, dagerrors.ErrNotFound
 	}
 	for _, v := range data {
 		// get unit header
