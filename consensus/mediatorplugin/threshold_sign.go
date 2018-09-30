@@ -210,7 +210,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 			finished = true
 
 			if dkgr.Certified() {
-				log.Info(fmt.Sprintf("%v's DKG verification passed!", localMed.Str()))
+				log.Debug(fmt.Sprintf("%v's DKG verification passed!", localMed.Str()))
 				certified = true
 			}
 		}
@@ -395,7 +395,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		return
 	}
 
-	log.Info("Recovered the Unit that hash: " + unitHash.Hex() +
+	log.Debug("Recovered the Unit that hash: " + unitHash.Hex() +
 		"  the group signature: " + hexutil.Encode(groupSig))
 
 	// recover后 删除buf
@@ -409,7 +409,7 @@ func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, unitHas
 	//func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, unit *modules.Unit) error {
 	err := bls.Verify(mp.suite, groupPublicKey, unitHash[:], groupSig)
 	if err != nil {
-		log.Info("the group signature: " + hexutil.Encode(groupSig) +
+		log.Debug("the group signature: " + hexutil.Encode(groupSig) +
 			"of the Unit that hash: " + unitHash.Hex() + " is verified through!")
 	}
 
