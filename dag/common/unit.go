@@ -21,11 +21,8 @@ package common
 import (
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"reflect"
-	"strings"
-
-	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
@@ -34,11 +31,14 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"math/big"
+	"reflect"
+	"strings"
 	"time"
 )
 
@@ -258,7 +258,7 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 	if len(data) > 1 {
 		return nil, fmt.Errorf("multiple genesis unit")
 	} else if len(data) <= 0 {
-		return nil, errors.ErrNotFound
+		return nil, dagerrors.ErrNotFound
 	}
 	for _, v := range data {
 		// get unit header
