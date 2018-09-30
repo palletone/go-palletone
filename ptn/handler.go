@@ -17,9 +17,10 @@
 package ptn
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	"errors"
 	"fmt"
+
 	"math"
 	"sync"
 	"sync/atomic"
@@ -487,53 +488,16 @@ func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
 			//21*21 resp
 			// append by Albert·Gou
 		case msg.Code == VSSDealMsg:
-			// comment by Albert·Gou
-			//var vssmsg vssMsg
-			//if err := msg.Decode(&vssmsg); err != nil {
-
-			var deal mp.VSSDealEvent
-			if err := msg.Decode(&deal); err != nil {
-				log.Info("===VSSDealMsg===", "err:", err)
-				return errResp(ErrDecode, "%v: %v", msg, err)
-			}
-			pm.producer.ToProcessDeal(&deal)
-
-			// comment by Albert·Gou
-			////TODO vssmark
-			//if !pm.peers.PeersWithoutVss(vssmsg.NodeId) {
-			//	pm.producer.ToProcessDeal(vssmsg.Deal)
-			//	pm.peers.MarkVss(vssmsg.NodeId)
-			//	pm.BroadcastVss(vssmsg.NodeId, vssmsg.Deal)
-			//}
+			pm.VSSDealMsg(msg, p)
 
 			// append by Albert·Gou
 		case msg.Code == VSSResponseMsg:
-			var resp mp.VSSResponseEvent
-			if err := msg.Decode(&resp); err != nil {
-				log.Info("===VSSResponseMsg===", "err:", err)
-				return errResp(ErrDecode, "%v: %v", msg, err)
-			}
-			pm.producer.ToProcessResponse(&resp)
+			pm.VSSResponseMsg(msg, p)
 		default:
 			return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 		}
 	}
 
-	/*
-		//2.holdup
-		step := <-p.transitionCh
-		switch {
-		case step == transitionStep1:
-			log.Info("PalletOne transition all mediators each other connected", "mediators num:", pm.peersTransition.MediatorsSize())
-		}
-
-		select {
-		case event := <-p.transitionCh:
-			if event == transitionCancel {
-				//TODO restart transtion connect
-			}
-		}
-	*/
 }
 
 //switchover: vote mediator all connected next to switchover official peerset
@@ -562,55 +526,55 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	switch {
 	case msg.Code == StatusMsg:
 		// Status messages should never arrive after the handshake
-		return pm.StatusMsg(msg)
+		return pm.StatusMsg(msg, p)
 
 	// Block header query, collect the requested headers and reply
 	case msg.Code == GetBlockHeadersMsg:
 		// Decode the complex header query
-		return pm.GetBlockHeadersMsg(msg)
+		return pm.GetBlockHeadersMsg(msg, p)
 
 	case msg.Code == BlockHeadersMsg:
 		// A batch of headers arrived to one of our previous requests
-		return pm.BlockHeadersMsg(msg)
+		return pm.BlockHeadersMsg(msg, p)
 
 	case msg.Code == GetBlockBodiesMsg:
 		// Decode the retrieval message
-		return pm.GetBlockBodiesMsg(msg)
+		return pm.GetBlockBodiesMsg(msg, p)
 
 	case msg.Code == BlockBodiesMsg:
 		// A batch of block bodies arrived to one of our previous requests
-		return pm.BlockBodiesMsg(msg)
+		return pm.BlockBodiesMsg(msg, p)
 
 	case msg.Code == GetNodeDataMsg:
 		// Decode the retrieval message
-		return pm.GetNodeDataMsg(msg)
+		return pm.GetNodeDataMsg(msg, p)
 
 	case msg.Code == NodeDataMsg:
 		// A batch of node state data arrived to one of our previous requests
-		return pm.NodeDataMsg(msg)
+		return pm.NodeDataMsg(msg, p)
 
 	case msg.Code == NewBlockHashesMsg:
-		return pm.NewBlockHashesMsg(msg)
+		return pm.NewBlockHashesMsg(msg, p)
 
 	case msg.Code == NewBlockMsg:
 		// Retrieve and decode the propagated block
-		return pm.NewBlockMsg(msg)
+		return pm.NewBlockMsg(msg, p)
 
 	case msg.Code == TxMsg:
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
-		return pm.TxMsg(msg)
+		return pm.TxMsg(msg, p)
 
 	case msg.Code == ConsensusMsg:
-		return pm.ConsensusMsg(msg)
+		return pm.ConsensusMsg(msg, p)
 
 	// append by Albert·Gou
 	case msg.Code == NewUnitMsg:
 		// Retrieve and decode the propagated new produced unit
-		return pm.NewUnitMsg(msg)
+		return pm.NewUnitMsg(msg, p)
 
 		// append by Albert·Gou
 	case msg.Code == SigShareMsg:
-		return pm.SigShareMsg(msg)
+		return pm.SigShareMsg(msg, p)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)

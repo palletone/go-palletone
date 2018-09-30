@@ -20,33 +20,35 @@ package ptn
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
-	"math"
-	"sync"
+	//"errors"
+	//"fmt"
+	//"math"
+	//"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
+	//"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/p2p/discover"
+
+	//"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rlp"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag"
+
+	//"github.com/palletone/go-palletone/core"
+	//"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/ptn/fetcher"
+	//"github.com/palletone/go-palletone/ptn/fetcher"
 )
 
-func (pm *ProtocolManager) StatusMsg(msg p2p.Msg) error {
+func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
 	// Status messages should never arrive after the handshake
 	return errResp(ErrExtraStatusMsg, "uncontrolled status message")
 }
 
-func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg) error {
+func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 	// Block header query, collect the requested headers and reply
 
 	// Decode the complex header query
@@ -139,7 +141,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg) error {
 	return p.SendUnitHeaders(headers)
 }
 
-func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg) error {
+func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg, p *peer) error {
 	// A batch of headers arrived to one of our previous requests
 	var headers []*modules.Header
 	if err := msg.Decode(&headers); err != nil {
@@ -167,7 +169,7 @@ func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg) error {
 	return nil
 }
 
-func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg) error {
+func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 	// Decode the retrieval message
 	//log.Debug("===GetBlockBodiesMsg===")
 	msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
@@ -214,7 +216,7 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg) error {
 	return p.SendBlockBodies([]*blockBody{&bodies})
 }
 
-func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg) error {
+func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
 	//log.Debug("===BlockBodiesMsg===")
 	// A batch of block bodies arrived to one of our previous requests
 	var request blockBodiesData
@@ -243,9 +245,10 @@ func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg) error {
 			log.Debug("Failed to deliver bodies", "err", err.Error())
 		}
 	}
+	return nil
 }
 
-func (pm *ProtocolManager) GetNodeDataMsg(msg p2p.Msg) error {
+func (pm *ProtocolManager) GetNodeDataMsg(msg p2p.Msg, p *peer) error {
 	// Decode the retrieval message
 	msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
 	if _, err := msgStream.List(); err != nil {
@@ -273,7 +276,7 @@ func (pm *ProtocolManager) GetNodeDataMsg(msg p2p.Msg) error {
 	return p.SendNodeData(data)
 }
 
-func (pm *ProtocolManager) NodeDataMsg(msg p2p.Msg) error {
+func (pm *ProtocolManager) NodeDataMsg(msg p2p.Msg, p *peer) error {
 	// A batch of node state data arrived to one of our previous requests
 	var data [][]byte
 	if err := msg.Decode(&data); err != nil {
@@ -283,9 +286,10 @@ func (pm *ProtocolManager) NodeDataMsg(msg p2p.Msg) error {
 	if err := pm.downloader.DeliverNodeData(p.id, data); err != nil {
 		log.Debug("Failed to deliver node state data", "err", err.Error())
 	}
+	return nil
 }
 
-func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg) error {
+func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg, p *peer) error {
 	log.Debug("===NewBlockHashesMsg===")
 	var announces newBlockHashesData
 	if err := msg.Decode(&announces); err != nil {
@@ -307,9 +311,10 @@ func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg) error {
 	for _, block := range unknown {
 		pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneHeader, p.RequestBodies)
 	}
+	return nil
 }
 
-func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg) error {
+func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	// Retrieve and decode the propagated block
 
 	var unit modules.Unit
@@ -340,14 +345,15 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg) error {
 			go pm.synchronise(p, unit.Number().AssetID)
 		}
 	}
+	return nil
 }
 
-func (pm *ProtocolManager) TxMsg(msg p2p.Msg) error {
+func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	log.Info("===============ProtocolManager TxMsg====================")
 	// Transactions arrived, make sure we have a valid and fresh chain to handle them
 	if atomic.LoadUint32(&pm.acceptTxs) == 0 {
 		log.Debug("ProtocolManager handlmsg TxMsg pm.acceptTxs==0")
-		break
+		return nil
 	}
 	// Transactions can be processed, parse all of them and deliver to the pool
 	var txs []*modules.Transaction
@@ -366,9 +372,10 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg) error {
 	}
 	log.Info("===============ProtocolManager TxMsg AddRemotes====================")
 	pm.txpool.AddRemotes(txs)
+	return nil
 }
 
-func (pm *ProtocolManager) ConsensusMsg(msg p2p.Msg) error {
+func (pm *ProtocolManager) ConsensusMsg(msg p2p.Msg, p *peer) error {
 	var consensusmsg string
 	if err := msg.Decode(&consensusmsg); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
@@ -377,9 +384,10 @@ func (pm *ProtocolManager) ConsensusMsg(msg p2p.Msg) error {
 	if consensusmsg == "A" {
 		p.SendConsensus("Hello I received A")
 	}
+	return nil
 }
 
-func (pm *ProtocolManager) NewUnitMsg(msg p2p.Msg) error {
+func (pm *ProtocolManager) NewUnitMsg(msg p2p.Msg, p *peer) error {
 	// Retrieve and decode the propagated new produced unit
 	var unit modules.Unit
 	if err := msg.Decode(&unit); err != nil {
@@ -387,39 +395,47 @@ func (pm *ProtocolManager) NewUnitMsg(msg p2p.Msg) error {
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 	pm.producer.ToUnitTBLSSign(&unit)
+	return nil
 }
 
-func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg) error {
+func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	var sigShare mp.SigShareEvent
 	if err := msg.Decode(&sigShare); err != nil {
 		log.Info("===SigShareMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 	pm.producer.ToTBLSRecover(&sigShare)
+	return nil
 }
 
-/*
+func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
+	// comment by Albert·Gou
+	//var vssmsg vssMsg
+	//if err := msg.Decode(&vssmsg); err != nil {
 
-	case msg.Code == NewBlockHashesMsg:
+	var deal mp.VSSDealEvent
+	if err := msg.Decode(&deal); err != nil {
+		log.Info("===VSSDealMsg===", "err:", err)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+	pm.producer.ToProcessDeal(&deal)
 
-	case msg.Code == NewBlockMsg:
+	// comment by Albert·Gou
+	////TODO vssmark
+	//if !pm.peers.PeersWithoutVss(vssmsg.NodeId) {
+	//	pm.producer.ToProcessDeal(vssmsg.Deal)
+	//	pm.peers.MarkVss(vssmsg.NodeId)
+	//	pm.BroadcastVss(vssmsg.NodeId, vssmsg.Deal)
+	//}
+	return nil
+}
 
-
-	case msg.Code == TxMsg:
-
-	case msg.Code == ConsensusMsg:
-
-
-	// append by Albert·Gou
-	case msg.Code == NewUnitMsg:
-
-
-		// append by Albert·Gou
-	case msg.Code == SigShareMsg:
-		var sigShare mp.SigShareEvent
-		if err := msg.Decode(&sigShare); err != nil {
-			log.Info("===SigShareMsg===", "err:", err)
-			return errResp(ErrDecode, "%v: %v", msg, err)
-		}
-		pm.producer.ToTBLSRecover(&sigShare)
-*/
+func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
+	var resp mp.VSSResponseEvent
+	if err := msg.Decode(&resp); err != nil {
+		log.Info("===VSSResponseMsg===", "err:", err)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+	pm.producer.ToProcessResponse(&resp)
+	return nil
+}
