@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
@@ -56,7 +57,8 @@ func SetupGenesisUnit(dag dag.IDag, genesis *core.Genesis, ks *keystore.KeyStore
 	//var unitRep dagCommon.IUnitRepository
 	//unitRep = dagCommon.NewUnitRepository4Db(db)
 	genesisUnit, err := dag.GetGenesisUnit(0)
-	if err != nil {
+	if err != nil && err.Error() != errors.ErrNotFound.Error() {
+		log.Info("get genesis error", "error", err)
 		return nil, err
 	}
 	// check genesis unit existing
