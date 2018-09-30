@@ -21,9 +21,13 @@ package dag
 
 import (
 	"fmt"
-	"github.com/coocood/freecache"
 	"sync"
+
+	"github.com/coocood/freecache"
+
 	//"github.com/ethereum/go-ethereum/params"
+	"time"
+
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
@@ -39,7 +43,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"time"
 )
 
 type Dag struct {
@@ -49,7 +52,9 @@ type Dag struct {
 	dagdb         storage.DagDb
 	utxodb        storage.UtxoDb
 	statedb       storage.StateDb
+	propdb        storage.PropertyDb
 	utxoRep       dagcommon.IUtxoRepository
+	propRep       dagcommon.IPropRepository
 	validate      dagcommon.Validator
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
@@ -67,12 +72,15 @@ func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
 func (d *Dag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
 	return d.DynGlobalProp
 }
+
 func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
 	return d.MediatorSchl
 }
+
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
+	//fmt.Println("d.GetHeadUnitHash()=", hash)
 	if err != nil {
 		log.Error("CurrentUnit when GetHeadUnitHash()", "error", err.Error())
 		return nil
@@ -173,42 +181,44 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 }
 
 // @author Albert·Gou
-func (d *Dag) ValidateUnit(unit *modules.Unit, isGenesis bool) bool {
+func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool {
 	// todo
-	unitState := d.validate.ValidateUnit(unit, isGenesis)
-	if unitState != modules.UNIT_STATE_VALIDATED {
+	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
+	if unitState != modules.UNIT_STATE_VALIDATED &&
+		unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
 		return false
 	}
 	return true
 }
+
 func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
 	// step1. check exists
 	if d.Memdag.Exists(unit.UnitHash) || d.GetUnit(unit.UnitHash) != nil {
-		return 0, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash.String())
+		return -2, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash.String())
 	}
 	// step2. validate unit
-	unitState := d.validate.ValidateUnit(&unit, isGenesis)
+	unitState := d.validate.ValidateUnitExceptGroupSig(&unit, isGenesis)
 	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-		return 0, fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
+		return -1, fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
 	}
 	if unitState == modules.UNIT_STATE_VALIDATED {
 		// step3.1. pass and with group signature, put into leveldb
 		if err := d.unitRep.SaveUnit(unit, false); err != nil {
-			return -1, fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
+			return 1, fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
 		}
 		// step3.2. if pass and with group signature, prune fork data
 		if err := d.Memdag.Prune(unit.UnitHeader.Number.AssetID.String(), unit.UnitHash); err != nil {
-			return -1, fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
+			return 2, fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
 		}
 	} else {
 		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
 		if err := d.Memdag.Save(&unit); err != nil {
-			return -1, fmt.Errorf("SaveDag, save error: %s", err.Error())
+			return 3, fmt.Errorf("SaveDag, save error: %s", err.Error())
 		}
 	}
 	// step5. check if it is need to switch
 	if err := d.Memdag.SwitchMainChain(); err != nil {
-		return -1, fmt.Errorf("SaveDag, save error when switch chain: %s", err.Error())
+		return 4, fmt.Errorf("SaveDag, save error when switch chain: %s", err.Error())
 	}
 	return 0, nil
 }
@@ -429,31 +439,33 @@ func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []b
 func NewDag(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 
-	gp, err := storage.RetrieveGlobalProp(db)
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
-
-	dgp, err := storage.RetrieveDynGlobalProp(db)
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
-
-	ms, err := storage.RetrieveMediatorSchl(db)
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
 	dagDb := storage.NewDagDatabase(db)
 	utxoDb := storage.NewUtxoDatabase(db)
 	stateDb := storage.NewStateDatabase(db)
 	idxDb := storage.NewIndexDatabase(db)
-
+	propDb := storage.NewPropertyDb(db)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
+	propRep := dagcommon.NewPropRepository(propDb)
+
+	gp, err := propDb.RetrieveGlobalProp()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
+
+	dgp, err := propDb.RetrieveDynGlobalProp()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
+
+	ms, err := propDb.RetrieveMediatorSchl()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
 
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
@@ -462,7 +474,9 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		dagdb:         dagDb,
 		utxodb:        utxoDb,
 		statedb:       stateDb,
+		propdb:        propDb,
 		utxoRep:       utxoRep,
+		propRep:       propRep,
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
@@ -474,6 +488,58 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 
 	return dag, nil
 }
+
+func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
+	mutex := new(sync.RWMutex)
+
+	dagDb := storage.NewDagDatabase(db)
+	utxoDb := storage.NewUtxoDatabase(db)
+	stateDb := storage.NewStateDatabase(db)
+	idxDb := storage.NewIndexDatabase(db)
+	propDb := storage.NewPropertyDb(db)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
+	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
+	propRep := dagcommon.NewPropRepository(propDb)
+
+	gp, err := propDb.RetrieveGlobalProp()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
+
+	dgp, err := propDb.RetrieveDynGlobalProp()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
+
+	ms, err := propDb.RetrieveMediatorSchl()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
+
+	dag := &Dag{
+		Cache:         freecache.NewCache(200 * 1024 * 1024),
+		Db:            db,
+		unitRep:       unitRep,
+		dagdb:         dagDb,
+		utxodb:        utxoDb,
+		statedb:       stateDb,
+		propdb:        propDb,
+		utxoRep:       utxoRep,
+		propRep:       propRep,
+		validate:      validate,
+		ChainHeadFeed: new(event.Feed),
+		Mutex:         *mutex,
+		GlobalProp:    gp,
+		DynGlobalProp: dgp,
+		MediatorSchl:  ms,
+	}
+	return dag, nil
+}
+
 func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 
@@ -500,7 +566,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		GlobalProp:    nil,
 		DynGlobalProp: nil,
 		MediatorSchl:  nil,
-		Memdag:        memunit.NewMemDag(dagDb, unitRep),
+		//Memdag:        memunit.NewMemDag(dagDb, unitRep),
 	}
 	return dag, nil
 }
@@ -553,8 +619,9 @@ func (d *Dag) GetTrieSyncProgress() (uint64, error) {
 func (d *Dag) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
 	d.Mutex.RLock()
 	defer d.Mutex.RUnlock()
-	return d.utxodb.GetUtxoEntry(key) 
+	return d.utxodb.GetUtxoEntry(key)
 }
+
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	preout := modules.OutPoint{TxHash: tx.Hash()}
@@ -581,21 +648,30 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 
 	return view, err
 }
+
 // GetAllUtxos is return all utxo.
-func (d *Dag) GetAllUtxos() (*txspool.UtxoViewpoint, error) {
-	view := txspool.NewUtxoViewpoint()
+func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	d.Mutex.RLock()
-	err := view.FetchUtxos(d.utxodb, nil)
+	items, err := d.utxodb.GetAllUtxos()
 	d.Mutex.RUnlock()
-	return view, err
+
+	return items, err
 }
+
 func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
-	//return txspool.SaveUtxoView( view)
-	return nil //TODO
+	//return txspool.SaveUtxoView(db, view)
+	return d.utxodb.SaveUtxoView(view.Entries())
+}
+func (d *Dag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
+	return d.utxodb.GetAddrOutpoints(addr)
 }
 
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return d.dagdb.GetAddrOutput(addr)
+}
+
+func (d *Dag) GetAddrUtxos(addr string) ([]modules.Utxo, error) {
+	return d.utxodb.GetAddrUtxos(addr)
 }
 
 func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
@@ -641,6 +717,7 @@ func (d *Dag) GetActiveMediatorAddr(index int) common.Address {
 func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
 	return d.GlobalProp.GetActiveMediatorNode(index)
 }
+
 // author Albert·Gou
 func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 	return d.GlobalProp.GetActiveMediator(add)
@@ -674,7 +751,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 		ParentsHash:  []common.Hash{currentUnit.UnitHash},
 		AssetIDs:     []modules.IDType16{currentUnit.UnitHeader.Number.AssetID},
 		Authors:      nil,
-		Witness:      []*modules.Authentifier{},
+		GroupSign:    make([]byte, 0),
 		Number:       height,
 		Creationdate: time.Now().Unix(),
 	}
@@ -717,4 +794,25 @@ func (d *Dag) GetGenesisUnit(index uint64) (*modules.Unit, error) {
 }
 func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
 	return d.statedb.GetContractTpl(templateID)
+}
+func (d *Dag) UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
+	d.propRep.UpdateGlobalDynProp(gp, dgp, unit)
+}
+func (d *Dag) StoreGlobalProp(gp *modules.GlobalProperty) error {
+	return d.propdb.StoreGlobalProp(gp)
+}
+func (d *Dag) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error {
+	return d.propdb.StoreDynGlobalProp(dgp)
+}
+func (d *Dag) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
+	return d.propdb.RetrieveGlobalProp()
+}
+func (d *Dag) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
+	return d.propdb.RetrieveDynGlobalProp()
+}
+func (d *Dag) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
+	return d.propdb.StoreMediatorSchl(ms)
+}
+func (d *Dag) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
+	return d.propdb.RetrieveMediatorSchl()
 }

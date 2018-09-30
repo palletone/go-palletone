@@ -21,6 +21,7 @@ package modules
 import (
 	"crypto/ecdsa"
 	"log"
+	"reflect"
 	"testing"
 	"time"
 	"unsafe"
@@ -91,22 +92,22 @@ func TestCopyHeader(t *testing.T) {
 	//	Pubkey:         []byte("1234567890123456789"),
 	//	TxAuthentifier: auth,
 	//}
-	w := []*Authentifier{}
-	w = append(w, &auth)
+	w := make([]byte, 0)
+	w = append(w, []byte("sign")...)
 	assetID := IDType16{}
 	assetID.SetBytes([]byte("0000000011111111"))
 	h := Header{
 		ParentsHash: []common.Hash{u1, u2},
 		AssetIDs:    []IDType16{assetID},
 		Authors:     &auth,
-		Witness:     w,
+		GroupSign:   w,
 		TxRoot:      common.Hash{},
 		Number:      ChainIndex{AssetID: assetID, IsMain: true, Index: 0},
 	}
 
 	newH := CopyHeader(&h)
 	newH.Authors = nil
-	newH.Witness = []*Authentifier{}
+	newH.GroupSign = make([]byte, 0)
 	hh := Header{}
 	log.Printf("newh=%v \n oldH=%v \n hh=%v", *newH, h, hh)
 }
@@ -127,7 +128,7 @@ func TestUnitSize(t *testing.T) {
 	//	TxAuthentifier: *au,
 	//}
 
-	h.Witness = append(h.Witness, au)
+	h.GroupSign = []byte("group_sign")
 	h.Number.AssetID = PTNCOIN
 	h.Number.Index = uint64(333333)
 	h.Extra = make([]byte, 20)
@@ -141,5 +142,15 @@ func TestUnitSize(t *testing.T) {
 	h.Authors = au
 
 	log.Println("size: ", unsafe.Sizeof(h))
+}
 
+func TestOutPointToKey(t *testing.T) {
+
+	testPoint := OutPoint{TxHash: common.HexToHash("123567890acbdefg"), MessageIndex: 2147483647, OutIndex: 2147483647}
+	key := testPoint.ToKey()
+
+	result := KeyToOutpoint(key)
+	if !reflect.DeepEqual(testPoint, *result) {
+		t.Fatal("test failed.", result.TxHash.String(), result.MessageIndex, result.OutIndex)
+	}
 }

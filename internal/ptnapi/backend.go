@@ -22,11 +22,11 @@ import (
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
-        "github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/ptnjson"
 	//"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
@@ -104,7 +104,11 @@ type Backend interface {
 	GetUtxoEntry(key []byte) (*modules.Utxo, error)
 
 	GetAddrOutput(addr string) ([]modules.Output, error)
-
+	//------- Get addr utxo start ------//
+	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
+	GetAddrUtxos(addr string) ([]modules.Utxo, error)
+	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
+	//------- Get addr utxo end  ------//
 	GetAddrTransactions(addr string) (modules.Transactions, error)
 
 	//contract control

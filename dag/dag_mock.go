@@ -5,16 +5,16 @@
 package dag
 
 import (
-	kyber "github.com/dedis/kyber"
-	gomock "github.com/golang/mock/gomock"
-	common "github.com/palletone/go-palletone/common"
-	event "github.com/palletone/go-palletone/common/event"
-	discover "github.com/palletone/go-palletone/common/p2p/discover"
-	keystore "github.com/palletone/go-palletone/core/accounts/keystore"
-	modules "github.com/palletone/go-palletone/dag/modules"
-	txspool "github.com/palletone/go-palletone/dag/txspool"
-	reflect "reflect"
-	time "time"
+	"github.com/dedis/kyber"
+	"github.com/golang/mock/gomock"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
+	"reflect"
+	"time"
 )
 
 // MockIDag is a mock of IDag interface

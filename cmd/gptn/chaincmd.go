@@ -20,8 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -29,10 +27,11 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/gen"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
 	"gopkg.in/urfave/cli.v1"
+	"os"
 )
 
 var (
@@ -115,8 +114,6 @@ func getAccountFromConf(configPath string) (account accounts.Account, passphrase
 	return
 }
 
-// initGenesis will initialise the given JSON format genesis file and writes it as
-// the zero'd block (i.e. genesis) or will fail hard if it can't succeed.
 func initGenesis(ctx *cli.Context) error {
 	node := makeFullNode(ctx)
 
@@ -151,17 +148,17 @@ func initGenesis(ctx *cli.Context) error {
 	}
 	filepath := node.ResolvePath("leveldb")
 	dagconfig.DbPath = filepath
-
+	dag, _ := dag.NewDag4GenesisInit(Dbconn)
 	ks := node.GetKeyStore()
-	//account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
+	// modify by Albert·Gou
+	account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
 
 	// 从配置文件中获取账户和密码
-	// modify by Albert·Gou
-	configPath := defaultConfigPath
-	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-		configPath, _ = getConfigPath(temp, node.DataDir())
-	}
-	account, password := getAccountFromConf(configPath)
+	//configPath := defaultConfigPath
+	//if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
+	//	configPath, _ = getConfigPath(temp, node.DataDir())
+	//}
+	//account, password := getAccountFromConf(configPath)
 
 	err = ks.Unlock(account, password)
 	if err != nil {
@@ -169,7 +166,7 @@ func initGenesis(ctx *cli.Context) error {
 		return err
 	}
 
-	unit, err := gen.SetupGenesisUnit(Dbconn, genesis, ks, account)
+	unit, err := gen.SetupGenesisUnit(dag, genesis, ks, account)
 	if err != nil {
 		utils.Fatalf("Failed to write genesis unit: %v", err)
 		return err
@@ -189,8 +186,7 @@ func initGenesis(ctx *cli.Context) error {
 	// 3, 全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	gp := modules.InitGlobalProp(genesis)
-	storage.StoreGlobalProp(Dbconn, gp)
-	if err != nil {
+	if err := dag.StoreGlobalProp(gp); err != nil {
 		utils.Fatalf("Failed to write global properties: %v", err)
 		return err
 	}
@@ -198,8 +194,7 @@ func initGenesis(ctx *cli.Context) error {
 	// 4, 动态全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	dgp := modules.InitDynGlobalProp(genesis, genesisUnitHash)
-	storage.StoreDynGlobalProp(Dbconn, dgp)
-	if err != nil {
+	if err := dag.StoreDynGlobalProp(dgp); err != nil {
 		utils.Fatalf("Failed to write dynamic global properties: %v", err)
 		return err
 	}
@@ -207,8 +202,7 @@ func initGenesis(ctx *cli.Context) error {
 	// 5, 初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
-	storage.StoreMediatorSchl(Dbconn, ms)
-	if err != nil {
+	if err := dag.StoreMediatorSchl(ms); err != nil {
 		utils.Fatalf("Failed to write mediator schedule: %v", err)
 		return err
 	}

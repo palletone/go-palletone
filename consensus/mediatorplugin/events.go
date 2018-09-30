@@ -24,13 +24,13 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-// NewProducedUnitEvent is posted when a unit has been produced.
-type NewProducedUnitEvent struct {
+// NewUnitEvent is posted when a unit has been produced.
+type NewUnitEvent struct {
 	Unit *modules.Unit
 }
 
 type SigShareEvent struct {
-	Hash     common.Hash
+	UnitHash common.Hash
 	SigShare []byte
 }
 
@@ -41,4 +41,9 @@ type VSSDealEvent struct {
 
 type VSSResponseEvent struct {
 	Resp *dkg.Response
+}
+
+type GroupSigEvent struct {
+	UnitHash common.Hash
+	GroupSig []byte
 }

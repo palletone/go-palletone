@@ -71,6 +71,9 @@ type IDag interface {
 	GetTrieSyncProgress() (uint64, error)
 	GetUtxoEntry(key []byte) (*modules.Utxo, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
+	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
+	GetAddrUtxos(addr string) ([]modules.Utxo, error)
+	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrTransactions(addr string) (modules.Transactions, error)
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string)
 	WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
@@ -81,7 +84,7 @@ type IDag interface {
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
-	ValidateUnit(unit *modules.Unit, isGenesis bool) bool
+	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
 	//Mediator
 	GetActiveMediator(add common.Address) *core.Mediator
 	GetActiveMediatorAddr(index int) common.Address
@@ -90,4 +93,12 @@ type IDag interface {
 	GetMediatorSchl() *modules.MediatorSchedule
 	GetActiveMediatorCount() int
 	GetActiveMediatorNode(index int) *discover.Node
+
+	UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit)
+	StoreGlobalProp(gp *modules.GlobalProperty) error
+	StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error
+	RetrieveGlobalProp() (*modules.GlobalProperty, error)
+	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
+	StoreMediatorSchl(ms *modules.MediatorSchedule) error
+	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
 }

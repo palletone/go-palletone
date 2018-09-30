@@ -128,13 +128,13 @@ func DecodeBytes(b []byte, val interface{}) error {
 	//}
 	return nil
 }
-func GetDecodedFromBytes(b []byte, dataType interface{}) (interface{},error) {
-	err := DecodeBytes(b,dataType)
-	if err != nil {
-		return nil,err
-	}
-	return dataType,nil
-}
+//func GetDecodedFromBytes(b []byte, dataType interface{}) (interface{},error) {
+//	err := DecodeBytes(b,dataType)
+//	if err != nil {
+//		return nil,err
+//	}
+//	return dataType,nil
+//}
 
 type decodeError struct {
 	msg string

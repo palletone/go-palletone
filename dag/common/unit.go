@@ -21,11 +21,11 @@ package common
 import (
 	"crypto/sha256"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 
+	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
@@ -154,10 +154,10 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 		V:       v,
 	}
 	// to set witness list, should be creator himself
-	var authentifier modules.Authentifier
-	authentifier.Address = signer
-	unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
-
+	// var authentifier modules.Authentifier
+	// authentifier.Address = signer
+	// unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
+	// unit.UnitHeader.GroupSign = sign
 	return unit, nil
 }
 
@@ -258,7 +258,7 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 	if len(data) > 1 {
 		return nil, fmt.Errorf("multiple genesis unit")
 	} else if len(data) <= 0 {
-		return nil, nil
+		return nil, errors.ErrNotFound
 	}
 	for _, v := range data {
 		// get unit header
@@ -465,15 +465,13 @@ func (unitOp *UnitRepository) savePaymentPayload(txHash common.Hash, msg *module
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
 	// if this is a create token transaction, should be return a assetid
-	var pl interface{}
-	pl = msg.Payload
-	_, ok := pl.(*modules.PaymentPayload)
-	if ok == false {
-		return false
-	}
 
 	// save utxo
-	unitOp.utxoRepository.UpdateUtxo(txHash, msg, msgIndex)
+	err := unitOp.utxoRepository.UpdateUtxo(txHash, msg, msgIndex)
+	if err != nil {
+		log.Error("Update utxo failed.", "error", err)
+		return false
+	}
 	return true
 }
 

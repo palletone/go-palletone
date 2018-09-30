@@ -8,19 +8,25 @@ import (
 	unit "github.com/palletone/go-palletone/dag/modules"
 	"time"
 	"errors"
+	"sync/atomic"
 )
-var once int
+
+var initFlag int32
+
 type Contract struct {
-	//cfg *contractcfg.Config
+	cfg  *contractcfg.Config
 	name string
 	dag  dag.IDag
+	//status int32 //   1:init   2:start
 }
+
 // Initialize 初始化合约管理模块以及加载系统合约，
 // 由上层应用指定dag以及初始合约配置信息
 // Initialize the contract management module and load the system contract,
 // Specify dag and initial contract configuration information by the upper application
 func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
-	if once > 0 {
+	atomic.LoadInt32(&initFlag)
+	if initFlag > 0 {
 		return nil, errors.New("contract already init")
 	}
 
@@ -33,23 +39,41 @@ func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
 	contract := &Contract{
 		name: "palletone",
 		dag:  idag,
+		cfg:  cfg,
 	}
 	contractcfg.SetConfig(&contractCfg)
 	if err := cc.Init(idag); err != nil {
 		return nil, err
 	}
-	once = 1
+
+	atomic.StoreInt32(&initFlag, 1)
 	log.Debug("contract initialize ok")
 	return contract, nil
 }
+
+func (c *Contract) Close() error {
+	atomic.LoadInt32(&initFlag)
+	if initFlag == 0 {
+		return errors.New("contract already deInit")
+	}
+	cc.Deinit()
+	atomic.StoreInt32(&initFlag, 0)
+	return nil
+}
+
 // Install 合约安装，将指定的合约路径文件打包，并与合约名称、版本一起构成合约模板单元
 // chainID 链码ID，用于多链
 // Contract installation, packaging the specified contract path file,
 // and forming a contract template unit together with the contract name and version
 // Chain code ID for multiple chains
 func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error) {
+	atomic.LoadInt32(&initFlag)
+	if initFlag == 0 {
+		return nil, errors.New("Contract not initialized")
+	}
 	return cc.Install(c.dag, chainID, ccName, ccPath, ccVersion)
 }
+
 // Deploy 将指定的合约模板部署到本地，生成对应Docker镜像及启动带有初始化合约参数的容器，用于合约的执行。
 // txid由上层应用指定，合约部署超时时间根据具体服务器配置指定，默认40秒。接口返回合约部署ID（每次部署其返回ID不同）以及部署单元
 // Deploy the specified contract template locally,
@@ -59,6 +83,10 @@ func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersi
 // The interface returns the contract deployment ID (there is a different return ID for each deployment)
 // and the deployment unit
 func (c *Contract) Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *unit.ContractDeployPayload, e error) {
+	atomic.LoadInt32(&initFlag)
+	if initFlag == 0 {
+		return nil, nil, errors.New("Contract not initialized")
+	}
 	return cc.Deploy(c.dag, chainID, templateId, txid, args, timeout)
 }
 
@@ -66,11 +94,19 @@ func (c *Contract) Deploy(chainID string, templateId []byte, txid string, args [
 // The contract invoke call, execute the deployed contract according to the specified contract call parameters,
 // and the function returns the contract call unit.
 func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
+	atomic.LoadInt32(&initFlag)
+	if initFlag == 0 {
+		return nil, errors.New("Contract not initialized")
+	}
 	return cc.Invoke(c.dag, chainID, deployId, txid, args, timeout)
 }
 
 // Stop 停止指定合约。根据需求可以对镜像文件进行删除操作
 //Stop the specified contract. The image file can be deleted according to requirements.
 func (c *Contract) Stop(chainID string, deployId []byte, txid string, deleteImage bool) error {
+	atomic.LoadInt32(&initFlag)
+	if initFlag == 0 {
+		return errors.New("Contract not initialized")
+	}
 	return cc.Stop(chainID, deployId, txid, deleteImage)
 }

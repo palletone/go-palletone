@@ -37,7 +37,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 
 	//dagcommon "github.com/palletone/go-palletone/dag/common"
-	"github.com/palletone/go-palletone/consensus/mediatorplugin"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -86,7 +86,7 @@ type PalletOne struct {
 	//etherbase  common.Address
 
 	// append by Albert·Gou
-	mediatorPlugin *mediatorplugin.MediatorPlugin
+	mediatorPlugin *mp.MediatorPlugin
 }
 
 // New creates a new PalletOne object (including the
@@ -129,9 +129,9 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
 
 	// append by Albert·Gou
-	ptn.mediatorPlugin, err = mediatorplugin.Initialize(ptn, &config.MediatorPlugin)
+	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ptn, &config.MediatorPlugin)
 	if err != nil {
-		log.Error("Initialize mediator plugin err:", err)
+		log.Error("Initialize mediator plugin err:", "error", err)
 		return nil, err
 	}
 
@@ -143,13 +143,13 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine,
 		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis); err != nil {
-		log.Error("NewProtocolManager err:", err)
+		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
 	}
 
 	ptn.contract, err = contracts.Initialize(ptn.dag, &config.Contract)
 	if err != nil {
-		log.Error("Contract Initialize err:", err)
+		log.Error("Contract Initialize err:", "error", err)
 		return nil, err
 	}
 
@@ -279,6 +279,8 @@ func (s *PalletOne) Stop() error {
 	//	s.engine.Stop()
 	s.eventMux.Stop()
 	close(s.shutdownChan)
+
+	s.contract.Close()
 
 	// append by Albert·Gou
 	s.mediatorPlugin.Stop()

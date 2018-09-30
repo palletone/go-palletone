@@ -27,6 +27,7 @@ install:
   - go version
   - gcc --version
 before_build:
+  - go get -u github.com/palletone/adaptor
   - go get -u github.com/palletone/btc-adaptor
   - go get -u github.com/palletone/eth-adaptor
 build_script:

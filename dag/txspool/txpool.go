@@ -29,8 +29,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -1237,6 +1235,13 @@ func (view *UtxoViewpoint) BestHash() *common.Hash {
 func (view *UtxoViewpoint) SetBestHash(hash *common.Hash) {
 	view.bestHash = *hash
 }
+func (view *UtxoViewpoint) SetEntries(key modules.OutPoint, utxo *modules.Utxo) {
+	if view.entries == nil {
+		view.entries = make(map[modules.OutPoint]*modules.Utxo)
+	}
+
+	view.entries[key] = utxo
+}
 func (view *UtxoViewpoint) LookupUtxo(outpoint modules.OutPoint) *modules.Utxo {
 	if view == nil {
 		return nil
@@ -1342,32 +1347,4 @@ func NewUtxoViewpoint() *UtxoViewpoint {
 	return &UtxoViewpoint{
 		entries: make(map[modules.OutPoint]*modules.Utxo),
 	}
-}
-
-// SaveUtxoView to update the utxo set in the database based on the provided utxo view.
-func SaveUtxoView(db ptndb.Database, view *UtxoViewpoint) error {
-	for outpoint, utxo := range view.entries {
-		// No need to update the database if the utxo was not modified.
-		if utxo == nil || !utxo.IsModified() {
-			continue
-		}
-		key := outpoint.ToKey()
-		// Remove the utxo if it is spent
-		if utxo.IsSpent() {
-
-			err := db.Delete(key)
-			if err != nil {
-				return err
-			}
-			continue
-		}
-		val, err := rlp.EncodeToBytes(utxo)
-		if err != nil {
-			return err
-		}
-		if err := db.Put(key, val); err != nil {
-			return err
-		}
-	}
-	return nil
 }

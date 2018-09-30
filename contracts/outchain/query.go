@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/palletone/adaptor"
 	"github.com/palletone/btc-adaptor"
 	"github.com/palletone/go-palletone/common/log"
 
@@ -34,7 +35,7 @@ func processQueryMethodBTC(chaincodeID string, outChainAddr *pb.OutChainQuery,
 	params *OutChainMethod) (string, error) {
 	switch params.Method {
 	case "GetBalance":
-		var getBalanceParams adaptorbtc.GetBalanceParams
+		var getBalanceParams adaptor.GetBalanceParams
 		err := json.Unmarshal(outChainAddr.Params, &getBalanceParams)
 		if err != nil {
 			return "", fmt.Errorf("GetBalance params error : %s", err.Error())

@@ -108,8 +108,7 @@ To get utxo info by scanning all utxos.
 */
 func (repository *UtxoRepository) readUtxosFrAll(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
 	// key: [UTXO_PREFIX][addr]_[asset]_[msgindex]_[out index]
-	key := fmt.Sprintf("%s", string(modules.UTXO_PREFIX))
-	data := repository.utxodb.GetPrefix([]byte(key))
+	data := repository.utxodb.GetPrefix(modules.UTXO_PREFIX)
 	if data == nil {
 		return nil, 0
 	}
@@ -207,7 +206,8 @@ func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32,
 			MessageIndex: msgIndex,
 			OutIndex:     uint32(outIndex),
 		}
-		if err := repository.utxodb.SaveUtxoEntity(outpoint.ToKey(), utxo); err != nil {
+		key := (&outpoint).ToKey()
+		if err := repository.utxodb.SaveUtxoEntity(key[:], utxo); err != nil {
 			log.Error("Write utxo", "error", err.Error())
 			errs = append(errs, err)
 			continue
@@ -220,8 +220,11 @@ func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32,
 
 		// get address
 		sAddr, _ := tokenengine.GetAddressFromScript(txout.PkScript)
-		//addr := common.Address{}
-		//addr.SetString(sAddr.Str())
+		// save addr key index.
+		outpoint_key := make([]byte, 0)
+		outpoint_key = append(outpoint_key, storage.AddrOutPoint_Prefix...)
+		outpoint_key = append(outpoint_key, sAddr.Bytes()...)
+		repository.idxdb.SaveIndexValue(append(outpoint_key, outpoint.Hash().Bytes()...), outpoint)
 
 		utxoIndex := modules.UtxoIndex{
 			AccountAddr: sAddr,

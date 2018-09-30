@@ -17,7 +17,7 @@ echo $btcfullpath
 echo $ethfullpath
 
 
-#go get -u github.com/palletone/btc-adaptor
+go get -u github.com/palletone/adaptor
 #go get -u github.com/palletone/eth-adaptor
 
 if [ ! -d "$btcfullpath" ]; then

@@ -17,20 +17,19 @@
 package gen
 
 import (
-	//"crypto/ecdsa"
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag"
 	asset2 "github.com/palletone/go-palletone/dag/asset"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -53,19 +52,20 @@ const deFaultNode = "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b
 // error is a *configure.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-func SetupGenesisUnit(db ptndb.Database, genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) (*modules.Unit, error) {
-	// TODO check genesis unit existing
-	//TODO Devin
-	var unitRep dagCommon.IUnitRepository
-	unitRep = dagCommon.NewUnitRepository4Db(db)
-	genesisUnit, err := unitRep.GetGenesisUnit(0)
-	if err != nil {
+func SetupGenesisUnit(dag dag.IDag, genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) (*modules.Unit, error) {
+
+	//var unitRep dagCommon.IUnitRepository
+	//unitRep = dagCommon.NewUnitRepository4Db(db)
+	genesisUnit, err := dag.GetGenesisUnit(0)
+	if err != nil && err.Error() != errors.ErrNotFound.Error() {
+		log.Info("get genesis error", "error", err)
 		return nil, err
 	}
+	// check genesis unit existing
 	if genesisUnit != nil {
 		return nil, fmt.Errorf("Genesis unit(%s) has been created.", genesisUnit.UnitHash.String())
 	}
-	unit, err := setupGenesisUnit(unitRep, genesis, ks)
+	unit, err := setupGenesisUnit(genesis, ks)
 	if err != nil {
 		return unit, err
 	}
@@ -77,23 +77,14 @@ func SetupGenesisUnit(db ptndb.Database, genesis *core.Genesis, ks *keystore.Key
 	}
 
 	// to save unit in db
-	if err := CommitDB(unitRep, unit, true); err != nil {
+	if err := CommitDB(dag, unit, true); err != nil {
 		log.Error("Commit genesis unit to db:", "error", err.Error())
 		return unit, err
 	}
 	return unit, nil
 }
 
-func setupGenesisUnit(unitRep dagCommon.IUnitRepository, genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Unit, error) {
-	// Just commit the new block if there is no stored genesis block.
-	stored, err := unitRep.GetGenesisUnit(0)
-	if err != nil {
-		return nil, err
-	}
-	// Check whether the genesis block is already written.
-	if stored != nil {
-		return stored, errors.New("the genesis block is existing")
-	}
+func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Unit, error) {
 
 	if genesis == nil {
 		log.Info("Writing default main-net genesis block")
@@ -185,9 +176,9 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	return txs, asset
 }
 
-func CommitDB(unitRep dagCommon.IUnitRepository, unit *modules.Unit, isGenesis bool) error {
+func CommitDB(dag dag.IDag, unit *modules.Unit, isGenesis bool) error {
 	// save genesis unit to leveldb
-	if err := unitRep.SaveUnit(*unit, isGenesis); err != nil {
+	if err := dag.SaveUnit(*unit, isGenesis); err != nil {
 		return err
 	} else {
 		log.Info("Save genesis unit success.")

@@ -21,7 +21,6 @@ package modules
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/palletone/go-palletone/common"
@@ -103,11 +102,11 @@ func (asset *Asset) IsSimilar(similar *Asset) bool {
 }
 
 type Utxo struct {
-	Amount   uint64 `json:"amount"`  // 数量
-	Asset    *Asset `json:"Asset"`   // 资产类别
-	PkScript []byte `json:"program"` // 要执行的代码段
-	LockTime uint32 `json:"lock_time"`
-	VoteResult Vote 
+	Amount     uint64 `json:"amount"`    // 数量
+	Asset      *Asset `json:"Asset"`     // 资产类别
+	PkScript   []byte `json:"pk_script"` // 要执行的代码段
+	LockTime   uint32 `json:"lock_time"`
+	VoteResult []byte `json:"vote_info"`
 	// flags contains additional info about output such as whether it is spent, and whether is has
 	// been modified since is was loaded.
 	Flags txoFlags
@@ -205,21 +204,21 @@ func (utxoIndex *UtxoIndex) ToKey() []byte {
 	return []byte(key)
 }
 
-// utxo key
-/*type OutPoint struct {
-	TxHash       common.Hash // reference Utxo struct key field
-	MessageIndex uint32      // message index in transaction
-	OutIndex     uint32
-}*/
-
 func (outpoint *OutPoint) ToKey() []byte {
-	out := fmt.Sprintf("%s%s_%d_%d",
-		UTXO_PREFIX,
-		outpoint.TxHash.String(),
-		outpoint.MessageIndex,
-		outpoint.OutIndex,
-	)
-	return []byte(out)
+	// key: [UTXO_PREFIX][TxHash][MessageIndex][OutIndex]
+	key := make([]byte, 0)
+	key = append(key, UTXO_PREFIX...)
+	key = append(key, outpoint.TxHash.Bytes()...)
+	key = append(key, common.EncodeNumberUint32(outpoint.MessageIndex)...)
+	key = append(key, common.EncodeNumberUint32(outpoint.OutIndex)...)
+	return key[:]
+	// out := fmt.Sprintf("%s%s%d_%d",
+	// 	UTXO_PREFIX,
+	// 	outpoint.TxHash.String(),
+	// 	outpoint.MessageIndex,
+	// 	outpoint.OutIndex,
+	// )
+	//  return []byte(out)
 }
 
 func (outpoint *OutPoint) String() string {
@@ -231,6 +230,8 @@ func (outpoint *OutPoint) String() string {
 }
 
 func (outpoint *OutPoint) SetString(data string) error {
+	rs := []rune(data)
+	data = string(rs[len(UTXO_PREFIX):])
 	if err := rlp.DecodeBytes([]byte(data), outpoint); err != nil {
 		return err
 	}
@@ -243,6 +244,10 @@ func (outpoint *OutPoint) Bytes() []byte {
 		return nil
 	}
 	return data
+}
+func (outpoint *OutPoint) Hash() common.Hash {
+	v := rlp.RlpHash(outpoint)
+	return v
 }
 
 func (outpoint *OutPoint) IsEmpty() bool {
@@ -258,30 +263,18 @@ func (outpoint *OutPoint) IsEmpty() bool {
 }
 
 func KeyToOutpoint(key []byte) *OutPoint {
-	// key: [UTXO_PREFIX][TxHash]_[MessageIndex]_[OutIndex]
+	// key: [UTXO_PREFIX][TxHash][MessageIndex][OutIndex]
 	preLen := len(UTXO_PREFIX)
-	sKey := key[preLen:]
-	sTxHash := sKey[:common.HashLength]
-	sKey = sKey[common.HashLength:]
+	sTxHash := key[preLen : len(key)-8]
+	sMessage := key[(preLen + common.HashLength) : len(key)-4]
+	sIndex := key[(preLen + common.HashLength + 4):]
 
-	data := strings.Split(string(sKey), "_")
-	if len(data) != 2 {
-		return nil
-	}
-
-	var vout OutPoint
+	vout := new(OutPoint)
 	vout.TxHash.SetBytes(sTxHash)
-	i, err := strconv.Atoi(data[0])
-	if err == nil {
-		vout.MessageIndex = uint32(i)
-	}
+	vout.MessageIndex = common.DecodeNumberUint32(sMessage)
+	vout.OutIndex = common.DecodeNumberUint32(sIndex)
 
-	i, err = strconv.Atoi(data[1])
-	if err == nil {
-		vout.OutIndex = uint32(i)
-	}
-
-	return &vout
+	return vout
 }
 
 type Output struct {

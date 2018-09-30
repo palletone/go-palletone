@@ -71,7 +71,7 @@ func Init(dag dag.IDag) error {
 		return err
 	}
 	if err := peerServerInit(); err != nil {
-		logger.Errorf("peerServerInit error:%s", err)
+		logger.Errorf("peerServerInit:%s", err)
 		return err
 	}
 	if err := systemContractInit(); err != nil {
