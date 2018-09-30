@@ -113,22 +113,6 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset) 
 	return &gUnit, nil
 }
 
-//// @author Albert·Gou
-//func StoreUnit(db ptndb.Database, unit *modules.Unit) error {
-//	err := SaveUnit(db, *unit, false)
-//
-//	if err != nil {
-//		log.Error(fmt.Sprintf("%v", err))
-//		return err
-//	}
-//
-// TODO YangYu
-//	// 此处应当更新DB中的全局属性
-//	//	go storage.StoreDynGlobalProp(dgp)
-//
-//	return nil
-//}
-
 // WithSignature, returns a new unit with the given signature.
 // @author Albert·Gou
 func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Address) (*modules.Unit, error) {
