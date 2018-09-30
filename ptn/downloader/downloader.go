@@ -359,13 +359,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode
 	// Reset the queue, peer set and wake channels to clean any internal leftover state
 	d.queue.Reset()
 	d.peers.Reset()
-	//TODO xiaozhi
-	//for _, ch := range []chan bool{d.bodyWakeCh, d.receiptWakeCh} {
-	//	select {
-	//	case <-ch:
-	//	default:
-	//	}
-	//}
+
 	for _, ch := range []chan bool{d.bodyWakeCh} {
 		fmt.Println("xz  d.bodyWakeCh")
 		select {
@@ -373,15 +367,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode
 		default:
 		}
 	}
-	//for _, ch := range []chan dataPack{d.headerCh, d.bodyCh, d.receiptCh} {
-	//	for empty := false; !empty; {
-	//		select {
-	//		case <-ch:
-	//		default:
-	//			empty = true
-	//		}
-	//	}
-	//}
+
 	for _, ch := range []chan dataPack{d.headerCh, d.bodyCh} {
 		fmt.Println("xz  d.headerCh or d.bodyCh==", ch)
 		for empty := false; !empty; {
@@ -833,8 +819,10 @@ func (d *Downloader) fillHeaderSkeleton(from uint64, skeleton []*modules.Header,
 // available peers, reserving a chunk of blocks for each, waiting for delivery
 // and also periodically checking for timeouts.
 func (d *Downloader) fetchBodies(from uint64, assetId modules.IDType16) error {
+
 	fmt.Println("xz  fetchBodies")
 	fmt.Println("fetchBodies2----------------------------")
+
 	log.Debug("Downloading block bodies", "origin", from)
 
 	var (
@@ -847,6 +835,8 @@ func (d *Downloader) fetchBodies(from uint64, assetId modules.IDType16) error {
 		capacity = func(p *peerConnection) int { return p.BlockCapacity(d.requestRTT()) }
 		setIdle  = func(p *peerConnection, accepted int) { p.SetBodiesIdle(accepted) }
 	)
+
+	//fmt.Println("================================================")
 
 	err := d.fetchParts(errCancelBodyFetch, d.bodyCh, deliver, d.bodyWakeCh, expire,
 		d.queue.PendingBlocks, d.queue.InFlightBlocks, d.queue.ShouldThrottleBlocks, d.queue.ReserveBodies,
@@ -1465,6 +1455,7 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 	//		return err
 	//	}
 	if err := d.dag.FastSyncCommitHead(block.Hash()); err != nil {
+		log.Info("===Downloader.commitPivotBlock===", "FastSyncCommitHead err:", err)
 		return err
 	}
 	atomic.StoreInt32(&d.committed, 1)
