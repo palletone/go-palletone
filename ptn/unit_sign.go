@@ -35,7 +35,7 @@ type producer interface {
 	// NewUnitEvent and send events to the given channel.
 	SubscribeNewUnitEvent(ch chan<- mp.NewUnitEvent) event.Subscription
 	// UnitBLSSign is to TBLS sign the unit
-	ToUnitTBLSSign(unit *modules.Unit) error
+	ToUnitTBLSSign(newUnit *modules.Unit) error
 
 	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
 	ToTBLSRecover(sigShare *mp.SigShareEvent) error
@@ -72,15 +72,15 @@ func (self *ProtocolManager) newUnitBroadcastLoop() {
 
 // @author Albert·Gou
 // BroadcastNewUnit will propagate a new produced unit to all of active mediator's peers
-func (pm *ProtocolManager) BroadcastNewUnit(unit *modules.Unit) {
+func (pm *ProtocolManager) BroadcastNewUnit(newUnit *modules.Unit) {
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
-			pm.producer.ToUnitTBLSSign(unit)
+			pm.producer.ToUnitTBLSSign(newUnit)
 			continue
 		}
 
-		err := peer.SendNewProducedUnit(unit)
+		err := peer.SendNewProducedUnit(newUnit)
 		if err != nil {
 			log.Error(err.Error())
 		}
