@@ -182,7 +182,7 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 
 // @author Albert·Gou
 func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool {
-	// todo
+	// todo yangjie 应当打印验错误的具体消息
 	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
 	if unitState != modules.UNIT_STATE_VALIDATED &&
 		unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
@@ -310,6 +310,10 @@ func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 	return d.getBodyRLP(hash)
 }
 
+// GetUnitTransactions
+func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
+	return d.dagdb.GetUnitTransactions(hash)
+}
 func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, error) {
 	tx, _, _, _ := d.dagdb.GetTransaction(hash)
 	if tx == nil {
