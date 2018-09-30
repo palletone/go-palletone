@@ -662,8 +662,10 @@ func (n *Node) EventMux() *event.TypeMux {
 // ephemeral, a memory database is returned.
 func (n *Node) OpenDatabase(name string, cache, handles int) (ptndb.Database, error) {
 	if n.config.DataDir == "" {
+		log.Debug("Open a memery database.")
 		return ptndb.NewMemDatabase()
 	}
+	log.Debug("Open a leveldb, path:", n.config.resolvePath(name))
 	//return ptndb.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
 	return storage.Init(n.config.resolvePath(name), cache, handles)
 }

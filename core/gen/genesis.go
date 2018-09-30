@@ -56,9 +56,10 @@ func SetupGenesisUnit(dag dag.IDag, genesis *core.Genesis, ks *keystore.KeyStore
 	//var unitRep dagCommon.IUnitRepository
 	//unitRep = dagCommon.NewUnitRepository4Db(db)
 	genesisUnit, err := dag.GetGenesisUnit(0)
-	if err != nil {
-		return nil, err
-	}
+	//if genesisUnit != nil {
+	//	//Genesis unit already exist in database.
+	//	return nil, errors.New("Genesis unit already exist in database. Cannot setup again.")
+	//}
 	// check genesis unit existing
 	if genesisUnit != nil {
 		return nil, fmt.Errorf("Genesis unit(%s) has been created.", genesisUnit.UnitHash.String())

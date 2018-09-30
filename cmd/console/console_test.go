@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/ptndb"
+	//"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/core/node"
@@ -128,12 +128,13 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	if confOverride != nil {
 		confOverride(ptnConf)
 	}
-	//fmt.Println("------------start open leveldb and store test genesis unit--------------")
-	//db_path := "leveldb"
-	//if err := os.MkdirAll(db_path, 0777); err != nil {
-	//	fmt.Println("mkdir error:", err)
-	//	return nil
-	//}
+
+	fmt.Println("------------start open leveldb and store test genesis unit--------------")
+	db_path := "leveldb"
+	if err := os.MkdirAll(db_path, 0777); err != nil {
+		fmt.Println("mkdir error:", err)
+		return nil
+	}
 	ks := stack.GetKeyStore()
 	password := "123456"
 	account, err := ks.NewAccount(password)
@@ -141,9 +142,9 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		return nil
 	}
 	// fmt.Println("new account success and address=", account.Address.String())
-	//db, _ := stack.OpenDatabase(db_path, 0, 0)
-	db, _ := ptndb.NewMemDatabase()
-	dag, _ := dag2.NewDagForTest(db)
+	db, _ := stack.OpenDatabase(db_path, 0, 0)
+	//db, _ := ptndb.NewMemDatabase()
+	dag, _ := dag2.NewDag4GenesisInit(db)
 	err = ks.Unlock(account, password)
 	if err != nil {
 		fmt.Printf("Failed to unlock account: %v, address: %v \n", err, account.Address.Str())
