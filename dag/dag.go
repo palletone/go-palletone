@@ -80,6 +80,7 @@ func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
+	//fmt.Println("d.GetHeadUnitHash()=", hash)
 	if err != nil {
 		log.Error("CurrentUnit when GetHeadUnitHash()", "error", err.Error())
 		return nil
@@ -565,7 +566,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		GlobalProp:    nil,
 		DynGlobalProp: nil,
 		MediatorSchl:  nil,
-		Memdag:        memunit.NewMemDag(dagDb, unitRep),
+		//Memdag:        memunit.NewMemDag(dagDb, unitRep),
 	}
 	return dag, nil
 }

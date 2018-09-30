@@ -43,6 +43,8 @@ import (
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/tokenengine"
+	"math/big"
 	"time"
 )
 
@@ -243,7 +245,9 @@ func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header.Number.Index = 0
 	header.Authors = &modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
 	header.GroupSign = []byte{}
-	tx, _ := NewCoinbaseTransaction()
+	//tx, _ := NewCoinbaseTransaction()
+	tx, _ := CreateCoinbase()
+	fmt.Printf("----------%#v\n", tx)
 	txs := modules.Transactions{tx}
 	genesisUnit := modules.NewUnit(header, txs)
 	err := SaveGenesis(db, genesisUnit)
@@ -263,7 +267,8 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 		header.Number.Index = par.UnitHeader.Number.Index + 1
 		header.Authors = &modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
 		header.GroupSign = []byte{}
-		tx, _ := NewCoinbaseTransaction()
+		//tx, _ := NewCoinbaseTransaction()
+		tx, _ := CreateCoinbase()
 		txs := modules.Transactions{tx}
 		unit := modules.NewUnit(header, txs)
 		err := SaveUnit(memdb, unit, true)
@@ -287,6 +292,61 @@ func SaveGenesis(db ptndb.Database, unit *modules.Unit) error {
 		return err
 	}
 	return nil
+}
+
+func CreateCoinbase() (*modules.Transaction, error) {
+	sAddr := "P1NsG3kiKJc87M6Di6YriqHxqfPhdvxVj2B"
+	addr, err := common.StringToAddress(sAddr)
+	if err != nil {
+
+	}
+	//bAsset := []byte("GenesisAsset")
+	//if len(bAsset) <= 0 {
+	//	return nil, fmt.Errorf("Create unit error: query asset info empty")
+	//}
+	//var asset modules.Asset
+	//if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
+	//	fmt.Println("lalall")
+	//	return nil, fmt.Errorf("Create unit: %s", err.Error())
+	//}
+	asset := modules.Asset{
+		modules.PTNCOIN,
+		modules.PTNCOIN,
+		1,
+	}
+	// setp1. create P2PKH script
+	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
+	// step. compute total income
+	totalIncome := int64(100000000) + int64(100000000)
+	// step2. create payload
+	createT := big.Int{}
+	input := modules.Input{
+		Extra: createT.SetInt64(time.Now().Unix()).Bytes(),
+	}
+	output := modules.Output{
+		Value:    uint64(totalIncome),
+		Asset:    &asset,
+		PkScript: script,
+	}
+	payload := modules.PaymentPayload{
+		Input:  []*modules.Input{&input},
+		Output: []*modules.Output{&output},
+	}
+	// step3. create message
+	msg := &modules.Message{
+		App:     modules.APP_PAYMENT,
+		Payload: &payload,
+	}
+	// step4. create coinbase
+	var coinbase modules.Transaction
+	//coinbase := modules.Transaction{
+	//	TxMessages: []modules.Message{msg},
+	//}
+	coinbase.TxMessages = append(coinbase.TxMessages, msg)
+	// coinbase.CreationDate = coinbase.CreateDate()
+	coinbase.TxHash = coinbase.Hash()
+
+	return &coinbase, nil
 }
 
 func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
@@ -321,6 +381,26 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	if err := dagDb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
 		log.Println("SaveNumberByHash:", "error", err.Error())
 		return fmt.Errorf("Save unit hash and number error")
+	}
+
+	// step6. traverse transactions and save them
+	txHashSet := []common.Hash{}
+	for _, tx := range unit.Txs {
+		// traverse messages
+
+		//fmt.Println("tx==", tx.TxHash)
+		// step7. save transaction
+		if err := dagDb.SaveTransaction(tx); err != nil {
+			log.Println("Save transaction:", "error", err.Error())
+			return err
+		}
+		txHashSet = append(txHashSet, tx.TxHash)
+	}
+
+	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
+	if err := dagDb.SaveBody(unit.UnitHash, txHashSet); err != nil {
+		log.Println("SaveBody", "error", err.Error())
+		return err
 	}
 	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
 		return err

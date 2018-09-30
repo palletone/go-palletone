@@ -392,9 +392,7 @@ func (dagdb *DagDatabase) GetUnitTransactions(hash common.Hash) (modules.Transac
 	// get transaction by tx'hash.
 	for _, txHash := range txHashList {
 		tx, _, _, _ := dagdb.GetTransaction(txHash)
-		if err != nil {
-			txs = append(txs, tx)
-		}
+		txs = append(txs, tx)
 	}
 	return txs, nil
 }
@@ -515,11 +513,13 @@ func (dagdb *DagDatabase) GetTransaction(hash common.Hash) (*modules.Transaction
 			return tx, unitHash, unitNumber, txIndex
 		}
 	}
+	fmt.Println("111111111111111111111111111111111112")
 	tx, err := dagdb.gettrasaction(hash)
 	if err != nil {
 		fmt.Println("gettrasaction error:", err.Error())
 		return nil, unitHash, unitNumber, txIndex
 	}
+
 	return tx, unitHash, unitNumber, txIndex
 }
 
@@ -528,10 +528,13 @@ func (dagdb *DagDatabase) gettrasaction(hash common.Hash) (*modules.Transaction,
 	if hash == (common.Hash{}) {
 		return nil, errors.New("hash is not exist.")
 	}
+	fmt.Println("jinlai")
+	//TODO xiaozhi
 	data, err := dagdb.db.Get(append(TRANSACTION_PREFIX, hash.Bytes()...))
 	if err != nil {
 		return nil, err
 	}
+
 	tx := new(modules.Transaction)
 	if err := rlp.DecodeBytes(data, tx); err != nil {
 		return nil, err
