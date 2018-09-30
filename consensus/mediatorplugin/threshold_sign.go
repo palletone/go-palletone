@@ -26,9 +26,11 @@ import (
 	"github.com/dedis/kyber/share"
 	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
+	"github.com/dedis/kyber/sign/bls"
 	"github.com/dedis/kyber/sign/tbls"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -208,7 +210,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 			finished = true
 
 			if dkgr.Certified() {
-				log.Info(fmt.Sprintf("%v's DKG verification passed!", localMed.Str()))
+				log.Debug(fmt.Sprintf("%v's DKG verification passed!", localMed.Str()))
 				certified = true
 			}
 		}
@@ -321,6 +323,7 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 			sigShare, success := signTBLS(newUnit)
 			if success {
 				go mp.sigShareFeed.Send(SigShareEvent{UnitHash: newUnit.Hash(), SigShare: sigShare})
+				//go mp.addToTBLSRecoverBuf(newUnit.Hash(), sigShare)
 			}
 		}
 	}
@@ -392,7 +395,23 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		return
 	}
 
+	log.Debug("Recovered the Unit that hash: " + unitHash.Hex() +
+		"  the group signature: " + hexutil.Encode(groupSig))
+
 	// recover后 删除buf
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 	go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
+
+	go mp.VerifyUnitGroupSig(dks.Public(), unitHash, groupSig)
+}
+
+func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, unitHash common.Hash, groupSig []byte) error {
+	//func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, unit *modules.Unit) error {
+	err := bls.Verify(mp.suite, groupPublicKey, unitHash[:], groupSig)
+	if err != nil {
+		log.Debug("the group signature: " + hexutil.Encode(groupSig) +
+			"of the Unit that hash: " + unitHash.Hex() + " is verified through!")
+	}
+
+	return err
 }

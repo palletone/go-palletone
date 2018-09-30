@@ -208,9 +208,8 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 		return ExceptionProducing, detail
 	}
 
-	num := newUnit.UnitHeader.Number.Index
 	unitHash := newUnit.UnitHash
-	detail["Num"] = strconv.FormatUint(num, 10)
+	detail["Num"] = strconv.FormatUint(newUnit.NumberU64(), 10)
 	time := time.Unix(newUnit.UnitHeader.Creationdate, 0)
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
 	detail["Mediator"] = sma.Str()
@@ -218,7 +217,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 
 	// 3. 初始化签名unit相关的签名分片的buf
 	mp.initTBLSRecoverBuf(sma, unitHash)
-	mp.ToUnitTBLSSign(newUnit)
+	//mp.addToTBLSSignBuf(newUnit)
 
 	// 4. 异步向区块链网络广播验证单元
 	log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
