@@ -533,7 +533,6 @@ func (dagdb *DagDatabase) gettrasaction(hash common.Hash) (*modules.Transaction,
 	if hash == (common.Hash{}) {
 		return nil, errors.New("hash is not exist.")
 	}
-	fmt.Println("jinlai")
 	//TODO xiaozhi
 	data, err := dagdb.db.Get(append(TRANSACTION_PREFIX, []byte(hash.String())...))
 	if err != nil {

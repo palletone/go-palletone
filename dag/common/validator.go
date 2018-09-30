@@ -404,6 +404,7 @@ Validate unit
 // modified by Albert·Gou 新生产的unit暂时还没有群签名
 //func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte {
 func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) byte {
+	// todo yangjie 应当验证父unit的群签名是否有效
 	//  unit's size  should bigger than minimum.
 	if unit.Size() < 125 {
 		log.Debug("Validate size", "error", "size is invalid", "size", unit.Size())
@@ -432,7 +433,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenes
 // modified by Albert·Gou 新生产的unit暂时还没有群签名
 //func (validate *Validate) validateHeader(header *modules.Header, isGenesis bool) byte {
 func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, isGenesis bool) byte {
-	// todo yangjie 应当打印验错误的具体消息
+	// todo yangjie 应当错误返回前，打印验错误的具体消息
 	if header == nil {
 		return modules.UNIT_STATE_INVALID_HEADER
 	}

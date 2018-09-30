@@ -987,7 +987,7 @@ func testForkedSync(t *testing.T, protocol int, mode SyncMode) {
 	// Create a long enough forked chain
 	common, fork := MaxHashFetch, 2*MaxHashFetch
 	//common, fork := 12, 2*12
-	fmt.Println(tester.genesis.UnitHash)
+	//fmt.Println(tester.genesis.UnitHash)
 	hashesA, hashesB, headersA, headersB, blocksA, blocksB := tester.makeChainFork(common+fork, fork, tester.genesis, true)
 
 	tester.newPeer("fork A", protocol, hashesA, headersA, blocksA)
@@ -998,7 +998,7 @@ func testForkedSync(t *testing.T, protocol int, mode SyncMode) {
 		t.Fatalf("failed to synchronise blocks: %v", err)
 	}
 	assertOwnChain(t, tester, common+fork+1)
-	fmt.Println("xz  fork A finished")
+	//fmt.Println("xz  fork A finished")
 	// Synchronise with the second peer and make sure that fork is pulled too
 	if err := tester.sync("fork B", 0, mode); err != nil {
 		t.Fatalf("failed to synchronise blocks: %v", err)

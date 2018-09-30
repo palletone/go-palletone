@@ -335,8 +335,8 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 		true,
 		100,
 	}
-	fmt.Println("curent ===", pm.dag.CurrentUnit().UnitHash)
-	fmt.Println("curent ===", pm.dag.CurrentUnit().Txs[0].Hash())
+	//fmt.Println("curent ===", pm.dag.CurrentUnit().UnitHash)
+	//fmt.Println("curent ===", pm.dag.CurrentUnit().Txs[0].Hash())
 	genesisUnit := pm.dag.GetUnitByNumber(index0)
 	// Create a batch of tests for various scenarios
 	limit := downloader.MaxBlockFetch
@@ -391,7 +391,7 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 				}
 			}
 		}
-		fmt.Println("lalala")
+		//fmt.Println("lalala")
 		for j, hash := range tt.explicit {
 			hashes = append(hashes, hash)
 			if tt.available[j] && len(bodies) < tt.expected {
@@ -402,9 +402,9 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 				bodies = append(bodies, &blockBody{Transactions: block.Transactions()})
 			}
 		}
-		for i, h := range hashes {
-			fmt.Println(i, h)
-		}
+		//for i, h := range hashes {
+		//	fmt.Println(i, h)
+		//}
 		// Send the hash request and verify the response
 		p2p.Send(peer.app, 0x05, hashes)
 		if err := p2p.ExpectMsg(peer.app, 0x06, bodies); err != nil {
