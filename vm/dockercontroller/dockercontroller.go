@@ -228,6 +228,8 @@ func (vm *DockerVM) Deploy(ctxt context.Context, ccid ccintf.CCID,
 }
 
 //Start starts a container using a previously created docker image
+//根据之前指定的镜像文件启动容器，如果镜像文件不存在则新创建，成功后启动容器
+//这里还可以指定对容器日志的输出
 func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	args []string, env []string, filesToUpload map[string][]byte, builder container.BuildSpecFactory, prelaunchFunc container.PrelaunchFunc) error {
 	imageID, err := vm.GetVMName(ccid, formatImageName)

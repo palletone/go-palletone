@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -39,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/vm/ccintf"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 const (
@@ -1315,7 +1317,8 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 				} else {
 					err = txContext.txsimulator.SetState(chaincodeID, putState.Key, putState.Value)
 				}
-			*/if txContext.txsimulator != nil {
+			*/
+			if txContext.txsimulator != nil {
 				err = txContext.txsimulator.SetState(chaincodeID, putState.Key, putState.Value)
 			}
 		} else if msg.Type.String() == pb.ChaincodeMessage_DEL_STATE.String() {
@@ -1438,8 +1441,8 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 			}
 
 			// TODO: Need to handle timeout correctly
-			timeout := time.Duration(30000) * time.Millisecond
-
+			//timeout := time.Duration(30000) * time.Millisecond
+			timeout := cfg.GetConfig().ContractDeploytimeout
 			ccMsg, _ := createCCMessage(pb.ChaincodeMessage_TRANSACTION, calledCcIns.ChainID, msg.Txid, chaincodeInput)
 
 			// Execute the chaincode... this CANNOT be an init at least for now

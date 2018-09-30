@@ -68,8 +68,7 @@ func (s *SupportImpl) Execute(ctxt context.Context, cid, name, version, txid str
 	case *pb.ChaincodeInvocationSpec:
 		cis := spec.(*pb.ChaincodeInvocationSpec)
 
-		logger.Infof("===cis:%v", cis)
-
+		logger.Infof("cis:%v", cis)
 		//decorate the chaincode input
 
 		//decorators := library.InitRegistry(library.Config{}).Lookup(library.Decoration).([]decoration.Decorator)
