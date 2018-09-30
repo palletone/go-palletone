@@ -152,7 +152,6 @@ func initGenesis(ctx *cli.Context) error {
 	ks := node.GetKeyStore()
 	// modify by Albert·Gou
 	account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
-
 	// 从配置文件中获取账户和密码
 	//configPath := defaultConfigPath
 	//if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
@@ -182,8 +181,17 @@ func initGenesis(ctx *cli.Context) error {
 	//	configPath, _ = getConfigPath(temp, node.DataDir())
 	//}
 	//modifyMediatorInConf(configPath, password, account.Address)
+	err = InitPropertyDB(genesis, genesisUnitHash, dag)
+	if err != nil {
+		utils.Fatalf("Failed toInitPropertyDB: %v", err)
+		return err
+	}
 
-	// 3, 全局属性不是交易，不需要放在Unit中
+	return nil
+}
+
+func InitPropertyDB(genesis *core.Genesis, genesisUnitHash common.Hash, dag *dag.Dag, ) error {
+	//  全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	gp := modules.InitGlobalProp(genesis)
 	if err := dag.StoreGlobalProp(gp); err != nil {
@@ -191,7 +199,7 @@ func initGenesis(ctx *cli.Context) error {
 		return err
 	}
 
-	// 4, 动态全局属性不是交易，不需要放在Unit中
+	//  动态全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	dgp := modules.InitDynGlobalProp(genesis, genesisUnitHash)
 	if err := dag.StoreDynGlobalProp(dgp); err != nil {
@@ -199,14 +207,13 @@ func initGenesis(ctx *cli.Context) error {
 		return err
 	}
 
-	// 5, 初始化mediator调度器，并存在数据库
+	//  初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
 	if err := dag.StoreMediatorSchl(ms); err != nil {
 		utils.Fatalf("Failed to write mediator schedule: %v", err)
 		return err
 	}
-
 	return nil
 }
 
