@@ -255,18 +255,18 @@ func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
 	}
 }
 
-func (mp *MediatorPlugin) ToUnitTBLSSign(unit *modules.Unit) error {
+func (mp *MediatorPlugin) ToUnitTBLSSign(newUnit *modules.Unit) error {
 	select {
 	case <-mp.quit:
 		return errTerminated
 	default:
-		go mp.addToTBLSSignBuf(unit)
+		go mp.addToTBLSSignBuf(newUnit)
 		return nil
 	}
 }
 
-func (mp *MediatorPlugin) addToTBLSSignBuf(unit *modules.Unit) {
-	//localMed := *unit.UnitAuthor()
+func (mp *MediatorPlugin) addToTBLSSignBuf(newUnit *modules.Unit) {
+	//localMed := *newUnit.UnitAuthor()
 	//
 	//if !mp.IsLocalActiveMediator(localMed) {
 	//	return
@@ -274,7 +274,7 @@ func (mp *MediatorPlugin) addToTBLSSignBuf(unit *modules.Unit) {
 
 	lams := mp.GetLocalActiveMediators()
 	for _, localMed := range lams {
-		mp.toTBLSSignBuf[localMed] <- unit
+		mp.toTBLSSignBuf[localMed] <- newUnit
 	}
 }
 

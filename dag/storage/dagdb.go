@@ -94,7 +94,7 @@ func (dagdb *DagDatabase) SaveHeader(uHash common.Hash, h *modules.Header) error
 	// key = append(key, h.Number.Bytes()...)
 	// return StoreBytes(dagdb.db, append(key, uHash.Bytes()...), h)
 	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.String())
-	log.Println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ", key)
+	log.Println("xxxxxxxxxxxxxxxxxxxxxxxxxx--- Header's key in leveldb ---xxxxxxxxxxxxxxxxxxxxxxxxxxxx ", key)
 	return StoreBytes(dagdb.db, []byte(key), h)
 }
 
@@ -515,7 +515,6 @@ func (dagdb *DagDatabase) GetTransaction(hash common.Hash) (*modules.Transaction
 			return tx, unitHash, unitNumber, txIndex
 		}
 	}
-	fmt.Println("111111111111111111111111111111111112")
 	tx, err := dagdb.gettrasaction(hash)
 	if err != nil {
 		fmt.Println("gettrasaction error:", err.Error())
@@ -530,7 +529,6 @@ func (dagdb *DagDatabase) gettrasaction(hash common.Hash) (*modules.Transaction,
 	if hash == (common.Hash{}) {
 		return nil, errors.New("hash is not exist.")
 	}
-	fmt.Println("jinlai")
 	//TODO xiaozhi
 	data, err := dagdb.db.Get(append(TRANSACTION_PREFIX, []byte(hash.String())...))
 	if err != nil {
