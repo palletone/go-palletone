@@ -59,22 +59,20 @@ type Dag struct {
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
 	Mutex         sync.RWMutex
-	GlobalProp    *modules.GlobalProperty
-	DynGlobalProp *modules.DynamicGlobalProperty
-	MediatorSchl  *modules.MediatorSchedule
+
 	Memdag        *memunit.MemDag // memory unit
 }
 
 func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
-	return d.GlobalProp
+	return d.propdb.GetGlobalProp()
 }
 
 func (d *Dag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
-	return d.DynGlobalProp
+	return d.propdb.GetDynGlobalProp()
 }
 
 func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
-	return d.MediatorSchl
+	return d.propdb.GetMediatorSchl()
 }
 
 func (d *Dag) CurrentUnit() *modules.Unit {
@@ -453,23 +451,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 
-	gp, err := propDb.RetrieveGlobalProp()
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
 
-	dgp, err := propDb.RetrieveDynGlobalProp()
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
-
-	ms, err := propDb.RetrieveMediatorSchl()
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
 
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
@@ -484,9 +466,6 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
-		GlobalProp:    gp,
-		DynGlobalProp: dgp,
-		MediatorSchl:  ms,
 		Memdag:        memunit.NewMemDag(dagDb, unitRep),
 	}
 
@@ -506,23 +485,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 
-	gp, err := propDb.RetrieveGlobalProp()
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
 
-	dgp, err := propDb.RetrieveDynGlobalProp()
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
-
-	ms, err := propDb.RetrieveMediatorSchl()
-	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
-	}
 
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
@@ -537,9 +500,6 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
-		GlobalProp:    gp,
-		DynGlobalProp: dgp,
-		MediatorSchl:  ms,
 	}
 	return dag, nil
 }
@@ -567,9 +527,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
-		GlobalProp:    nil,
-		DynGlobalProp: nil,
-		MediatorSchl:  nil,
+
 		//Memdag:        memunit.NewMemDag(dagDb, unitRep),
 	}
 	return dag, nil
@@ -684,7 +642,7 @@ func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
-	return d.GlobalProp.GetActiveMediatorNodes()
+	return d.propdb.GetGlobalProp().GetActiveMediatorNodes()
 }
 
 // get contract state
@@ -694,42 +652,42 @@ func (d *Dag) GetContractState(id string, field string) (*modules.StateVersion, 
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
-	return d.GlobalProp.GetActiveMediatorInitPubs()
+	return d.propdb.GetGlobalProp().GetActiveMediatorInitPubs()
 }
 
 // author Albert·Gou
 func (d *Dag) GetCurThreshold() int {
-	return d.GlobalProp.GetCurThreshold()
+	return d.propdb.GetGlobalProp().GetCurThreshold()
 }
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorCount() int {
-	return d.GlobalProp.GetActiveMediatorCount()
+	return d.propdb.GetGlobalProp().GetActiveMediatorCount()
 }
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediators() []common.Address {
-	return d.GlobalProp.GetActiveMediators()
+	return d.propdb.GetGlobalProp().GetActiveMediators()
 }
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorAddr(index int) common.Address {
-	return d.GlobalProp.GetActiveMediatorAddr(index)
+	return d.propdb.GetGlobalProp().GetActiveMediatorAddr(index)
 }
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
-	return d.GlobalProp.GetActiveMediatorNode(index)
+	return d.propdb.GetGlobalProp().GetActiveMediatorNode(index)
 }
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
-	return d.GlobalProp.GetActiveMediator(add)
+	return d.propdb.GetGlobalProp().GetActiveMediator(add)
 }
 
 // author Albert·Gou
 func (d *Dag) IsActiveMediator(add common.Address) bool {
-	return d.GlobalProp.IsActiveMediator(add)
+	return d.propdb.GetGlobalProp().IsActiveMediator(add)
 }
 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
