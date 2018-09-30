@@ -20,27 +20,16 @@ package ptn
 
 import (
 	"encoding/json"
-	//"errors"
-	//"fmt"
-	//"math"
-	//"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	//"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-
-	//"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rlp"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
-
-	//"github.com/palletone/go-palletone/core"
-	//"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	//"github.com/palletone/go-palletone/ptn/fetcher"
 )
 
 func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
@@ -194,7 +183,10 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		//TODO must recover
 		// Retrieve the requested block body, stopping if enough was found
 		//GetTransactionsByUnitHash(hash)
-		txs, err := pm.dag.GetTransactionByHash(hash)
+		//TODO must modify
+		//txs, err := pm.dag.GetTransactionByHash(hash)
+		txs := []*modules.Transaction{}
+		var err error
 		if err != nil {
 			log.Debug("===GetBlockBodiesMsg===", "GetTransactionByHash err:", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
@@ -207,9 +199,9 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		}
 		bytes += len(data)
 
-		//for _, tx := range txs {
-		bodies.Transactions = append(bodies.Transactions, txs)
-		//}
+		for _, tx := range txs {
+			bodies.Transactions = append(bodies.Transactions, tx)
+		}
 	}
 	//log.Debug("===GetBlockBodiesMsg===", "tempGetBlockBodiesMsgSum:", tempGetBlockBodiesMsgSum, "sum:", sum)
 	log.Debug("===GetBlockBodiesMsg===", "len(bodies):", len(bodies.Transactions), "bytes:", bytes)
