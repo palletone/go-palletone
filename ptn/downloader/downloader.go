@@ -1096,6 +1096,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 			fmt.Println("xz  <-d.headerProcCh")
 			// Terminate header processing if we synced up
 			if len(headers) == 0 {
+				fmt.Println("===processHeaders====================len(headers) == 0")
 				// Notify everyone that headers are fully processed
 				for _, ch := range []chan bool{d.bodyWakeCh} {
 					select {
@@ -1137,6 +1138,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 						return errStallingPeer
 					}
 				}
+				fmt.Println("===processHeaders====================rollback = nil")
 				// Disable any rollback and return
 				rollback = nil
 				return nil
