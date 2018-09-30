@@ -58,9 +58,9 @@ type Dag struct {
 	validate      dagcommon.Validator
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
-	Mutex         sync.RWMutex
+	Mutex sync.RWMutex
 
-	Memdag        *memunit.MemDag // memory unit
+	Memdag *memunit.MemDag // memory unit
 }
 
 func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
@@ -191,7 +191,7 @@ func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) boo
 
 func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
 	// step1. check exists
-	if d.Memdag.Exists(unit.UnitHash) || d.GetUnit(unit.UnitHash) != nil {
+	if d.Memdag.Exists(unit.UnitHash) || d.Exists(unit.UnitHash) {
 		return -2, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash.String())
 	}
 	// step2. validate unit
@@ -293,7 +293,14 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	}
 	return false
 }
-
+func (d *Dag) Exists(hash common.Hash) bool {
+	number, err := d.dagdb.GetNumberWithUnitHash(hash)
+	if err == nil && (number != modules.ChainIndex{}) {
+		log.Info("经检索，该hash已存储在leveldb中，", "hash", hash.String())
+		return true
+	}
+	return false
+}
 func (d *Dag) CurrentHeader() *modules.Header {
 	unit := d.CurrentUnit()
 	if unit != nil {
@@ -451,8 +458,6 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 
-
-
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
 		Db:            db,
@@ -484,8 +489,6 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
-
-
 
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
