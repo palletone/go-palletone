@@ -48,6 +48,7 @@ if [ ! -L "$ethdir/go-palletone" ]; then
     ln -s ../../../../../. go-palletone
     ln -s ../../../../../../btc-adaptor/. btc-adaptor
     ln -s ../../../../../../eth-adaptor/. eth-adaptor
+    ln -s ../../../../../../adaptor/. adaptor
 
     cd "$root"
 fi
