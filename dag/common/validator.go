@@ -432,6 +432,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenes
 // modified by Albert·Gou 新生产的unit暂时还没有群签名
 //func (validate *Validate) validateHeader(header *modules.Header, isGenesis bool) byte {
 func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, isGenesis bool) byte {
+	// todo yangjie 应当打印验错误的具体消息
 	if header == nil {
 		return modules.UNIT_STATE_INVALID_HEADER
 	}
