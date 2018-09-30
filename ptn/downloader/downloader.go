@@ -1163,7 +1163,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 					// Collect the yet unknown headers to mark them as uncertain
 					unknown := make([]*modules.Header, 0, len(headers))
 					for _, header := range chunk {
-						fmt.Println(header.Hash(), header.Number.Index)
+						//fmt.Println(header.Hash(), header.Number.Index)
 						if !d.lightdag.HasHeader(header.Hash(), header.Number.Index) {
 							unknown = append(unknown, header)
 						}
