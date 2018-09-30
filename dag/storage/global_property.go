@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -36,7 +37,10 @@ const (
 )
 
 type PropertyDatabase struct {
-	db ptndb.Database
+	db            ptndb.Database
+	GlobalProp    *modules.GlobalProperty
+	DynGlobalProp *modules.DynamicGlobalProperty
+	MediatorSchl  *modules.MediatorSchedule
 }
 type PropertyDb interface {
 	StoreGlobalProp(gp *modules.GlobalProperty) error
@@ -45,10 +49,44 @@ type PropertyDb interface {
 	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
+	GetGlobalProp() *modules.GlobalProperty
+	GetDynGlobalProp() *modules.DynamicGlobalProperty
+	GetMediatorSchl() *modules.MediatorSchedule
+
 }
 
 func NewPropertyDb(db ptndb.Database) *PropertyDatabase {
-	return &PropertyDatabase{db: db}
+	pdb := &PropertyDatabase{db: db}
+	gp, err := pdb.RetrieveGlobalProp()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
+
+	dgp, err := pdb.RetrieveDynGlobalProp()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
+
+	ms, err := pdb.RetrieveMediatorSchl()
+	if err != nil {
+		//log.Error(err.Error())
+		//return nil, err
+	}
+	pdb.GlobalProp = gp
+	pdb.DynGlobalProp = dgp
+	pdb.MediatorSchl = ms
+	return pdb
+}
+func (propdb *PropertyDatabase) GetGlobalProp() *modules.GlobalProperty {
+	return propdb.GlobalProp
+}
+func (propdb *PropertyDatabase) GetDynGlobalProp() *modules.DynamicGlobalProperty {
+	return propdb.DynGlobalProp
+}
+func (propdb *PropertyDatabase) GetMediatorSchl() *modules.MediatorSchedule {
+	return propdb.MediatorSchl
 }
 
 type globalProperty struct {
