@@ -80,6 +80,7 @@ func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
+	//fmt.Println("d.GetHeadUnitHash()=", hash)
 	if err != nil {
 		log.Error("CurrentUnit when GetHeadUnitHash()", "error", err.Error())
 		return nil
@@ -193,31 +194,31 @@ func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) boo
 func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
 	// step1. check exists
 	if d.Memdag.Exists(unit.UnitHash) || d.GetUnit(unit.UnitHash) != nil {
-		return 0, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash.String())
+		return -2, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash.String())
 	}
 	// step2. validate unit
 	unitState := d.validate.ValidateUnitExceptGroupSig(&unit, isGenesis)
 	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-		return 0, fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
+		return -1, fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
 	}
 	if unitState == modules.UNIT_STATE_VALIDATED {
 		// step3.1. pass and with group signature, put into leveldb
 		if err := d.unitRep.SaveUnit(unit, false); err != nil {
-			return -1, fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
+			return 1, fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
 		}
 		// step3.2. if pass and with group signature, prune fork data
 		if err := d.Memdag.Prune(unit.UnitHeader.Number.AssetID.String(), unit.UnitHash); err != nil {
-			return -1, fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
+			return 2, fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
 		}
 	} else {
 		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
 		if err := d.Memdag.Save(&unit); err != nil {
-			return -1, fmt.Errorf("SaveDag, save error: %s", err.Error())
+			return 3, fmt.Errorf("SaveDag, save error: %s", err.Error())
 		}
 	}
 	// step5. check if it is need to switch
 	if err := d.Memdag.SwitchMainChain(); err != nil {
-		return -1, fmt.Errorf("SaveDag, save error when switch chain: %s", err.Error())
+		return 4, fmt.Errorf("SaveDag, save error when switch chain: %s", err.Error())
 	}
 	return 0, nil
 }
@@ -565,7 +566,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		GlobalProp:    nil,
 		DynGlobalProp: nil,
 		MediatorSchl:  nil,
-		Memdag:        memunit.NewMemDag(dagDb, unitRep),
+		//Memdag:        memunit.NewMemDag(dagDb, unitRep),
 	}
 	return dag, nil
 }

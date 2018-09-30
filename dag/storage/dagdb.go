@@ -89,12 +89,12 @@ value: unit header rlp encoding bytes
 */
 // save header
 func (dagdb *DagDatabase) SaveHeader(uHash common.Hash, h *modules.Header) error {
-	encNum := encodeBlockNumber(h.Number.Index)
-	key := append(HEADER_PREFIX, encNum...)
-	key = append(key, h.Number.Bytes()...)
-	return StoreBytes(dagdb.db, append(key, uHash.Bytes()...), h)
-	//key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.Bytes())
-	//return StoreBytes(db, []byte(key), h)
+	// encNum := encodeBlockNumber(h.Number.Index)
+	// key := append(HEADER_PREFIX, encNum...)
+	// key = append(key, h.Number.Bytes()...)
+	// return StoreBytes(dagdb.db, append(key, uHash.Bytes()...), h)
+	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.String())
+	return StoreBytes(dagdb.db, []byte(key), h)
 }
 
 //這是通過modules.ChainIndex存儲hash
@@ -392,9 +392,7 @@ func (dagdb *DagDatabase) GetUnitTransactions(hash common.Hash) (modules.Transac
 	// get transaction by tx'hash.
 	for _, txHash := range txHashList {
 		tx, _, _, _ := dagdb.GetTransaction(txHash)
-		if err != nil {
-			txs = append(txs, tx)
-		}
+		txs = append(txs, tx)
 	}
 	return txs, nil
 }
@@ -436,12 +434,12 @@ func (dagdb *DagDatabase) GetLastIrreversibleUnit(assetID modules.IDType16) *mod
 }
 
 func (dagdb *DagDatabase) GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error) {
-	encNum := encodeBlockNumber(index.Index)
-	key := append(HEADER_PREFIX, encNum...)
-	key = append(key, index.Bytes()...)
-	header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
-	//key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, index.Index, index.String(), hash.Bytes())
-	//header_bytes, err := db.Get([]byte(key))
+	// encNum := encodeBlockNumber(index.Index)
+	// key := append(HEADER_PREFIX, encNum...)
+	// key = append(key, index.Bytes()...)
+	// header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
+	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, index.Index, index.String(), hash.String())
+	header_bytes, err := dagdb.db.Get([]byte(key))
 	// rlp  to  Header struct
 	if err != nil {
 		return nil, err
@@ -515,11 +513,13 @@ func (dagdb *DagDatabase) GetTransaction(hash common.Hash) (*modules.Transaction
 			return tx, unitHash, unitNumber, txIndex
 		}
 	}
+	fmt.Println("111111111111111111111111111111111112")
 	tx, err := dagdb.gettrasaction(hash)
 	if err != nil {
 		fmt.Println("gettrasaction error:", err.Error())
 		return nil, unitHash, unitNumber, txIndex
 	}
+
 	return tx, unitHash, unitNumber, txIndex
 }
 
@@ -528,10 +528,13 @@ func (dagdb *DagDatabase) gettrasaction(hash common.Hash) (*modules.Transaction,
 	if hash == (common.Hash{}) {
 		return nil, errors.New("hash is not exist.")
 	}
+	fmt.Println("jinlai")
+	//TODO xiaozhi
 	data, err := dagdb.db.Get(append(TRANSACTION_PREFIX, hash.Bytes()...))
 	if err != nil {
 		return nil, err
 	}
+
 	tx := new(modules.Transaction)
 	if err := rlp.DecodeBytes(data, tx); err != nil {
 		return nil, err

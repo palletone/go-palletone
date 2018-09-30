@@ -61,7 +61,7 @@ func (a Address) GetType() AddressType {
 func NewAddress(hash160 []byte, ty AddressType) Address {
 	newBytes := make([]byte, 21)
 	copy(newBytes, hash160)
-	newBytes[20]=byte(ty)
+	newBytes[20] = byte(ty)
 	return BytesToAddress(newBytes)
 }
 
@@ -248,8 +248,9 @@ func (ma *MixedcaseAddress) ValidChecksum() bool {
 func (ma *MixedcaseAddress) Original() string {
 	return ma.original
 }
+
 type SignatureError struct {
-        InputIndex uint32
-        MsgIndex uint32
-        Error    error
+	InputIndex uint32
+	MsgIndex   uint32
+	Error      error
 }
