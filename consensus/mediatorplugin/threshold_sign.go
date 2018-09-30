@@ -322,8 +322,9 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 		case newUnit := <-newUnitBuf:
 			sigShare, success := signTBLS(newUnit)
 			if success {
-				go mp.sigShareFeed.Send(SigShareEvent{UnitHash: newUnit.Hash(), SigShare: sigShare})
-				//go mp.addToTBLSRecoverBuf(newUnit.Hash(), sigShare)
+				// todo 后面改为由p2p广播
+				//go mp.sigShareFeed.Send(SigShareEvent{UnitHash: newUnit.Hash(), SigShare: sigShare})
+				go mp.addToTBLSRecoverBuf(newUnit, sigShare)
 			}
 		}
 	}
@@ -334,15 +335,19 @@ func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
 	case <-mp.quit:
 		return errTerminated
 	default:
-		go mp.addToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
+		localMed := mp.getDag().GetUnit(sigShare.UnitHash)
+		go mp.addToTBLSRecoverBuf(localMed, sigShare.SigShare)
 		return nil
 	}
 }
 
 // 收集签名分片
-func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) {
-	dag := mp.getDag()
-	localMed := *dag.GetUnit(newUnitHash).UnitAuthor()
+func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnit *modules.Unit, sigShare []byte) {
+	//func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) {
+	//	dag := mp.getDag()
+	//localMed := *dag.GetUnit(newUnitHash).UnitAuthor()
+	newUnitHash := newUnit.UnitHash
+	localMed := *newUnit.UnitAuthor()
 
 	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
@@ -402,11 +407,12 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 	go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
 
+	// todo 后面改为由dag模块调用
 	go mp.VerifyUnitGroupSig(dks.Public(), unitHash, groupSig)
 }
 
 func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, unitHash common.Hash, groupSig []byte) error {
-	//func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, unit *modules.Unit) error {
+	//func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, newUnit *modules.Unit) error {
 	err := bls.Verify(mp.suite, groupPublicKey, unitHash[:], groupSig)
 	if err != nil {
 		log.Debug("the group signature: " + hexutil.Encode(groupSig) +

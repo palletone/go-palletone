@@ -57,7 +57,8 @@ func (self *ProtocolManager) newUnitBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.newUnitCh:
-			self.BroadcastNewUnit(event.Unit)
+			// todo 待合并
+			//self.BroadcastNewUnit(event.Unit)
 
 			// appended by wangjiyou
 			self.BroadcastUnit(event.Unit, true)
