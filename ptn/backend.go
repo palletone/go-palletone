@@ -164,7 +164,7 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (palletdb.D
 
 	//fit dag DefaultConfig
 	dagconfig.DbPath = path
-
+	log.Debug("Open leveldb path:", path)
 	db, err := storage.Init(path, config.DatabaseCache, config.DatabaseHandles)
 	if err != nil {
 		return nil, err
