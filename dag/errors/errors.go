@@ -16,13 +16,21 @@
  * @date 2018
  */
 
-package error
+package errors
 
 import (
 	"errors"
 )
 
+// common error
 var (
-	ErrSetEmpty = errors.New("dag: Set is empty")
-	ErrNotFound = errors.New("dag: Not found")
+	ErrSetEmpty    = errors.New("dag: Set is empty")
+	ErrDagNotFound = errors.New("dag: Not found")
+
+	ErrNotFound = New("leveldb: not found")
 )
+
+// New returns an error that formats as the given text.
+func New(text string) error {
+	return errors.New(text)
+}

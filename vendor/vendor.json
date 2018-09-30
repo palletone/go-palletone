@@ -81,12 +81,6 @@
 			"revisionTime": "2018-05-24T03:27:03Z"
 		},
 		{
-			"checksumSHA1": "mPfUHyAZb2o01+yvvvU+24hZjsI=",
-			"path": "github.com/btcsuite/goleveldb/leveldb/errors",
-			"revision": "3fd0373267b6461dbefe91cef614278064d05465",
-			"revisionTime": "2018-07-22T20:22:23Z"
-		},
-		{
 			"checksumSHA1": "XmSM/gzGetfmtLlvg+D1kn40lSM=",
 			"path": "github.com/cespare/xxhash",
 			"revision": "48099fad606eafc26e3a569fad19ff510fff4df6",
