@@ -15,11 +15,11 @@ adafullpath=$GOPATH/src/$ada
 btcfullpath=$GOPATH/src/$btc
 ethfullpath=$GOPATH/src/$eth
 
+echo $adafullpath
 echo $btcfullpath
 echo $ethfullpath
 
 
-go get -u github.com/palletone/adaptor
 #go get -u github.com/palletone/eth-adaptor
 
 if [ ! -d "$adafullpath" ]; then
@@ -60,7 +60,6 @@ if [ ! -L "$ethdir/go-palletone" ]; then
     ln -s ../../../../../../adaptor/. adaptor
     ln -s ../../../../../../btc-adaptor/. btc-adaptor
     ln -s ../../../../../../eth-adaptor/. eth-adaptor
-    ln -s ../../../../../../adaptor/. adaptor
 
     cd "$root"
 fi
