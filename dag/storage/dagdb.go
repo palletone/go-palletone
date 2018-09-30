@@ -22,17 +22,18 @@ package storage
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
+	"log"
+	"math/big"
+	"strings"
+
 	"github.com/palletone/go-palletone/common"
 	ptnLog "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
-	"log"
-	"math/big"
-	"strings"
 )
 
 //对DAG对象的操作，包括：Unit，Tx等
@@ -100,7 +101,8 @@ func (dagdb *DagDatabase) SaveHeader(uHash common.Hash, h *modules.Header) error
 
 //這是通過modules.ChainIndex存儲hash
 func (dagdb *DagDatabase) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
-	return StoreBytes(dagdb.db, append(UNIT_HASH_NUMBER_Prefix, []byte(uHash.String())...), number)
+	key := fmt.Sprintf("%s%s", UNIT_HASH_NUMBER_Prefix, uHash.String())
+	return StoreBytes(dagdb.db, []byte(key), number)
 }
 
 //這是通過hash存儲modules.ChainIndex
@@ -282,7 +284,8 @@ func (dagdb *DagDatabase) GetAddrOutput(addr string) ([]modules.Output, error) {
 //	return number, nil
 //}
 func (dagdb *DagDatabase) GetNumberWithUnitHash(hash common.Hash) (modules.ChainIndex, error) {
-	data, _ := dagdb.db.Get(append(UNIT_HASH_NUMBER_Prefix, []byte(hash.String())...))
+	key := fmt.Sprintf("%s%s", UNIT_HASH_NUMBER_Prefix, hash.String())
+	data, _ := dagdb.db.Get([]byte(key))
 	if len(data) <= 0 {
 		return modules.ChainIndex{}, nil
 	}
@@ -361,7 +364,8 @@ func (dagdb *DagDatabase) GetUnit(hash common.Hash) *modules.Unit {
 	// 2. unit header
 	uHeader, err := dagdb.GetHeader(hash, &height)
 	if err != nil {
-		log.Println("GetUnit when GetHeader failed , error:", err, "hash", hash.String(), "height", height, "index", height.Index)
+		log.Println("GetUnit when GetHeader failed , error:", err, "hash", hash.String())
+		log.Println("height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 		return nil
 	}
 	// get unit hash
@@ -515,7 +519,6 @@ func (dagdb *DagDatabase) GetTransaction(hash common.Hash) (*modules.Transaction
 			return tx, unitHash, unitNumber, txIndex
 		}
 	}
-	fmt.Println("111111111111111111111111111111111112")
 	tx, err := dagdb.gettrasaction(hash)
 	if err != nil {
 		fmt.Println("gettrasaction error:", err.Error())
@@ -530,7 +533,6 @@ func (dagdb *DagDatabase) gettrasaction(hash common.Hash) (*modules.Transaction,
 	if hash == (common.Hash{}) {
 		return nil, errors.New("hash is not exist.")
 	}
-	fmt.Println("jinlai")
 	//TODO xiaozhi
 	data, err := dagdb.db.Get(append(TRANSACTION_PREFIX, []byte(hash.String())...))
 	if err != nil {

@@ -24,6 +24,8 @@ type Config struct {
 	VmEndpoint             string
 	ContractBuilder        string
 	SysContract            map[string]string
+
+	//vm.docker.attachStdout
 }
 
 var contractCfg Config

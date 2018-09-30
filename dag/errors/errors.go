@@ -27,7 +27,8 @@ var (
 	ErrSetEmpty    = errors.New("dag: Set is empty")
 	ErrDagNotFound = errors.New("dag: Not found")
 
-	ErrNotFound = New("leveldb: not found")
+	ErrNotFound       = New("leveldb: not found")
+	ErrNumberNotFound = New("dag: Header's number not found")
 )
 
 // New returns an error that formats as the given text.

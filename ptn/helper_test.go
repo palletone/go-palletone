@@ -200,7 +200,7 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool, dag 
 		)
 		//fmt.Println("	if shake {===》》》",td)
 		genesis, err := dag.GetGenesisUnit(0)
-		fmt.Println("genesis unti if shake {===》》》", genesis.UnitHash)
+		//fmt.Println("genesis unti if shake {===》》》", genesis.UnitHash)
 		if err != nil {
 			fmt.Println("GetGenesisUnit===error:=", err)
 		}
