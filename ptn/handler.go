@@ -17,9 +17,10 @@
 package ptn
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	"errors"
 	"fmt"
+
 	"math"
 	"sync"
 	"sync/atomic"
@@ -487,53 +488,16 @@ func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
 			//21*21 resp
 			// append by Albert·Gou
 		case msg.Code == VSSDealMsg:
-			// comment by Albert·Gou
-			//var vssmsg vssMsg
-			//if err := msg.Decode(&vssmsg); err != nil {
-
-			var deal mp.VSSDealEvent
-			if err := msg.Decode(&deal); err != nil {
-				log.Info("===VSSDealMsg===", "err:", err)
-				return errResp(ErrDecode, "%v: %v", msg, err)
-			}
-			pm.producer.ToProcessDeal(&deal)
-
-			// comment by Albert·Gou
-			////TODO vssmark
-			//if !pm.peers.PeersWithoutVss(vssmsg.NodeId) {
-			//	pm.producer.ToProcessDeal(vssmsg.Deal)
-			//	pm.peers.MarkVss(vssmsg.NodeId)
-			//	pm.BroadcastVss(vssmsg.NodeId, vssmsg.Deal)
-			//}
+			pm.VSSDealMsg(msg, p)
 
 			// append by Albert·Gou
 		case msg.Code == VSSResponseMsg:
-			var resp mp.VSSResponseEvent
-			if err := msg.Decode(&resp); err != nil {
-				log.Info("===VSSResponseMsg===", "err:", err)
-				return errResp(ErrDecode, "%v: %v", msg, err)
-			}
-			pm.producer.ToProcessResponse(&resp)
+			pm.VSSResponseMsg(msg, p)
 		default:
 			return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 		}
 	}
 
-	/*
-		//2.holdup
-		step := <-p.transitionCh
-		switch {
-		case step == transitionStep1:
-			log.Info("PalletOne transition all mediators each other connected", "mediators num:", pm.peersTransition.MediatorsSize())
-		}
-
-		select {
-		case event := <-p.transitionCh:
-			if event == transitionCancel {
-				//TODO restart transtion connect
-			}
-		}
-	*/
 }
 
 //switchover: vote mediator all connected next to switchover official peerset
@@ -562,345 +526,55 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	switch {
 	case msg.Code == StatusMsg:
 		// Status messages should never arrive after the handshake
-		return errResp(ErrExtraStatusMsg, "uncontrolled status message")
+		return pm.StatusMsg(msg, p)
 
 	// Block header query, collect the requested headers and reply
 	case msg.Code == GetBlockHeadersMsg:
 		// Decode the complex header query
-		var query getBlockHeadersData
-		if err := msg.Decode(&query); err != nil {
-			log.Info("GetBlockHeadersMsg Decode", "err:", err, "msg:", msg)
-			return errResp(ErrDecode, "%v: %v", msg, err)
-		}
-		hashMode := query.Origin.Hash != (common.Hash{})
-
-		// Gather headers until the fetch or network limits is reached
-		var (
-			bytes   common.StorageSize
-			headers []*modules.Header
-			unknown bool
-		)
-
-		for !unknown && len(headers) < int(query.Amount) && bytes < softResponseLimit && len(headers) < downloader.MaxHeaderFetch {
-			// Retrieve the next header satisfying the query
-			var origin *modules.Header
-			if hashMode {
-				//origin = pm.blockchain.GetHeaderByHash(query.Origin.Hash)
-				origin = pm.dag.GetHeaderByHash(query.Origin.Hash)
-			} else {
-				//index *modules.ChainIndex
-				origin = pm.dag.GetHeaderByNumber(query.Origin.Number)
-			}
-			if origin == nil {
-				break
-			}
-
-			number := origin.Number.Index
-			headers = append(headers, origin)
-			bytes += estHeaderRlpSize
-
-			// Advance to the next header of the query
-			switch {
-			case hashMode && query.Reverse:
-				// Hash based traversal towards the genesis block
-				for i := 0; i < int(query.Skip)+1; i++ {
-					if header, err := pm.dag.GetHeader(query.Origin.Hash, number); err == nil && header != nil {
-						if number != 0 {
-							query.Origin.Hash = header.ParentsHash[0]
-						}
-						number--
-					} else {
-						log.Info("========GetBlockHeadersMsg========", "number", number, "err:", err)
-						unknown = true
-						break
-					}
-				}
-			case hashMode && !query.Reverse:
-				// Hash based traversal towards the leaf block
-				var (
-					current = origin.Number.Index
-					next    = current + query.Skip + 1
-					index   = origin.Number
-				)
-				if next <= current {
-					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
-					log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
-					unknown = true
-				} else {
-					index.Index = next
-					if header := pm.dag.GetHeaderByNumber(index); header != nil {
-						if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
-							query.Origin.Hash = header.Hash()
-						} else {
-							unknown = true
-						}
-					} else {
-						unknown = true
-					}
-				}
-			case query.Reverse:
-				// Number based traversal towards the genesis block
-				if query.Origin.Number.Index >= query.Skip+1 {
-					query.Origin.Number.Index -= query.Skip + 1
-				} else {
-					log.Info("========GetBlockHeadersMsg========", "query.Reverse", "unknown is true")
-					unknown = true
-				}
-
-			case !query.Reverse:
-				// Number based traversal towards the leaf block
-				query.Origin.Number.Index += query.Skip + 1
-			}
-		}
-		log.Debug("========GetBlockHeadersMsg========", "query.Amount", query.Amount, "send number:", len(headers))
-		return p.SendUnitHeaders(headers)
+		return pm.GetBlockHeadersMsg(msg, p)
 
 	case msg.Code == BlockHeadersMsg:
 		// A batch of headers arrived to one of our previous requests
-		var headers []*modules.Header
-		if err := msg.Decode(&headers); err != nil {
-			log.Info("msg.Decode", "err:", err)
-			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		}
-		// If no headers were received, but we're expending a DAO fork check, maybe it's that
-		if len(headers) == 0 {
-			log.Debug("===handler->msg.Code == BlockHeadersMsg len(headers)is 0===")
-			return nil
-		}
-		// Filter out any explicitly requested headers, deliver the rest to the downloader
-		filter := len(headers) == 1
-		if filter {
-			// Irrelevant of the fork checks, send the header to the fetcher just in case
-			headers = pm.fetcher.FilterHeaders(p.id, headers, time.Now())
-		}
-		if len(headers) > 0 || !filter {
-			log.Debug("===BlockHeadersMsg ===", "len(headers):", len(headers))
-			err := pm.downloader.DeliverHeaders(p.id, headers)
-			if err != nil {
-				log.Debug("Failed to deliver headers", "err", err.Error())
-			}
-		}
+		return pm.BlockHeadersMsg(msg, p)
 
 	case msg.Code == GetBlockBodiesMsg:
 		// Decode the retrieval message
-		//log.Debug("===GetBlockBodiesMsg===")
-		msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
-		if _, err := msgStream.List(); err != nil {
-			return err
-		}
-		// Gather blocks until the fetch or network limits is reached
-		var (
-			hash  common.Hash
-			bytes int
-			//bodies []rlp.RawValue
-			bodies blockBody
-		)
-
-		for bytes < softResponseLimit && len(bodies.Transactions) < downloader.MaxBlockFetch {
-			// Retrieve the hash of the next block
-			if err := msgStream.Decode(&hash); err == rlp.EOL {
-				break
-			} else if err != nil {
-				return errResp(ErrDecode, "msg %v: %v", msg, err)
-			}
-			//TODO must recover
-			// Retrieve the requested block body, stopping if enough was found
-			//GetTransactionsByUnitHash(hash)
-			txs, err := pm.dag.GetTransactionByHash(hash)
-			if err != nil {
-				log.Debug("===GetBlockBodiesMsg===", "GetTransactionByHash err:", err)
-				return errResp(ErrDecode, "msg %v: %v", msg, err)
-			}
-			log.Debug("===GetBlockBodiesMsg===", "GetTransactionByHash txs:", txs)
-			data, err := rlp.EncodeToBytes(txs)
-			if err != nil {
-				log.Debug("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
-				return errResp(ErrDecode, "msg %v: %v", msg, err)
-			}
-			bytes += len(data)
-
-			//for _, tx := range txs {
-			bodies.Transactions = append(bodies.Transactions, txs)
-			//}
-		}
-		//log.Debug("===GetBlockBodiesMsg===", "tempGetBlockBodiesMsgSum:", tempGetBlockBodiesMsgSum, "sum:", sum)
-		log.Debug("===GetBlockBodiesMsg===", "len(bodies):", len(bodies.Transactions), "bytes:", bytes)
-		return p.SendBlockBodies([]*blockBody{&bodies})
-		//return p.SendBlockBodiesRLP(bodies)
+		return pm.GetBlockBodiesMsg(msg, p)
 
 	case msg.Code == BlockBodiesMsg:
-		//log.Debug("===BlockBodiesMsg===")
 		// A batch of block bodies arrived to one of our previous requests
-		var request blockBodiesData
-		if err := msg.Decode(&request); err != nil {
-			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		}
-		// Deliver them all to the downloader for queuing
-		transactions := make([][]*modules.Transaction, len(request))
-		sum := 0
-		for i, body := range request {
-			transactions[i] = body.Transactions
-			sum++
-		}
+		return pm.BlockBodiesMsg(msg, p)
 
-		log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(transactions), "transactions[0]:", transactions[0])
-		// Filter out any explicitly requested bodies, deliver the rest to the downloader
-		filter := len(transactions) > 0
-		if filter {
-			log.Debug("===BlockBodiesMsg->FilterBodies===")
-			transactions = pm.fetcher.FilterBodies(p.id, transactions, time.Now())
-		}
-		if len(transactions) > 0 || !filter {
-			log.Debug("===BlockBodiesMsg->DeliverBodies===")
-			err := pm.downloader.DeliverBodies(p.id, transactions)
-			if err != nil {
-				log.Debug("Failed to deliver bodies", "err", err.Error())
-			}
-		}
 	case msg.Code == GetNodeDataMsg:
 		// Decode the retrieval message
-		msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
-		if _, err := msgStream.List(); err != nil {
-			return err
-		}
-		// Gather state data until the fetch or network limits is reached
-		var (
-			hash  common.Hash
-			bytes int
-			data  [][]byte
-		)
-		for bytes < softResponseLimit && len(data) < downloader.MaxStateFetch {
-			// Retrieve the hash of the next state entry
-			if err := msgStream.Decode(&hash); err == rlp.EOL {
-				break
-			} else if err != nil {
-				return errResp(ErrDecode, "msg %v: %v", msg, err)
-			}
-			// Retrieve the requested state entry, stopping if enough was found
-			/*if entry, err := pm.blockchain.TrieNode(hash); err == nil {
-				data = append(data, entry)
-				bytes += len(entry)
-			}*/
-		}
-		return p.SendNodeData(data)
+		return pm.GetNodeDataMsg(msg, p)
 
 	case msg.Code == NodeDataMsg:
 		// A batch of node state data arrived to one of our previous requests
-		var data [][]byte
-		if err := msg.Decode(&data); err != nil {
-			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		}
-		// Deliver all to the downloader
-		if err := pm.downloader.DeliverNodeData(p.id, data); err != nil {
-			log.Debug("Failed to deliver node state data", "err", err.Error())
-		}
+		return pm.NodeDataMsg(msg, p)
 
 	case msg.Code == NewBlockHashesMsg:
-		log.Debug("===NewBlockHashesMsg===")
-		var announces newBlockHashesData
-		if err := msg.Decode(&announces); err != nil {
-			log.Debug("===NewBlockHashesMsg===", "Decode err:", err)
-			return errResp(ErrDecode, "%v: %v", msg, err)
-		}
-		// Mark the hashes as present at the remote node
-		for _, block := range announces {
-			p.MarkUnit(block.Hash)
-		}
-		// Schedule all the unknown hashes for retrieval
-		unknown := make(newBlockHashesData, 0, len(announces))
-		for _, block := range announces {
-			if !pm.dag.HasUnit(block.Hash) {
-				unknown = append(unknown, block)
-			}
-		}
-		log.Debug("===NewBlockHashesMsg===", "len(unknown):", len(unknown))
-		for _, block := range unknown {
-			pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneHeader, p.RequestBodies)
-		}
+		return pm.NewBlockHashesMsg(msg, p)
+
 	case msg.Code == NewBlockMsg:
 		// Retrieve and decode the propagated block
-
-		var unit modules.Unit
-		if err := msg.Decode(&unit); err != nil {
-			return errResp(ErrDecode, "%v: %v", msg, err)
-		}
-		unit.ReceivedAt = msg.ReceivedAt
-		unit.ReceivedFrom = p
-		log.Info("===NewBlockMsg===", "index:", unit.Number().Index)
-
-		// Mark the peer as owning the block and schedule it for import
-		p.MarkUnit(unit.UnitHash)
-		pm.fetcher.Enqueue(p.id, &unit)
-
-		hash, number := p.Head(unit.Number().AssetID)
-
-		if common.EmptyHash(hash) || (!common.EmptyHash(hash) && unit.UnitHeader.ChainIndex().Index > number.Index) {
-			trueHead := unit.Hash()
-			log.Info("=================handler p.SetHead===============")
-			p.SetHead(trueHead, unit.UnitHeader.ChainIndex())
-			// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
-			// a singe block (as the true TD is below the propagated block), however this
-			// scenario should easily be covered by the fetcher.
-			//如果在我们上面安排一个同步。注意，这将不会为单个块的间隙触发同步(因为真正的TD位于传播的块之下)，
-			//但是这个场景应该很容易被fetcher所覆盖。
-			currentUnit := pm.dag.CurrentUnit()
-			if currentUnit != nil && unit.UnitHeader.ChainIndex().Index > currentUnit.UnitHeader.ChainIndex().Index {
-				go pm.synchronise(p, unit.Number().AssetID)
-			}
-		}
+		return pm.NewBlockMsg(msg, p)
 
 	case msg.Code == TxMsg:
-		log.Info("===============ProtocolManager TxMsg====================")
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
-		if atomic.LoadUint32(&pm.acceptTxs) == 0 {
-			log.Debug("ProtocolManager handlmsg TxMsg pm.acceptTxs==0")
-			break
-		}
-		// Transactions can be processed, parse all of them and deliver to the pool
-		var txs []*modules.Transaction
-		if err := msg.Decode(&txs); err != nil {
-			log.Info("ProtocolManager handlmsg TxMsg", "Decode err:", err, "msg:", msg)
-			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		}
-		//TODO VerifyTX
-		log.Info("===============ProtocolManager", "TxMsg txs:", txs)
-		for i, tx := range txs {
-			// Validate and mark the remote transaction
-			if tx == nil {
-				return errResp(ErrDecode, "transaction %d is nil", i)
-			}
-			p.MarkTransaction(tx.Hash())
-		}
-		log.Info("===============ProtocolManager TxMsg AddRemotes====================")
-		pm.txpool.AddRemotes(txs)
+		return pm.TxMsg(msg, p)
+
 	case msg.Code == ConsensusMsg:
-		var consensusmsg string
-		if err := msg.Decode(&consensusmsg); err != nil {
-			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		}
-		log.Info("ConsensusMsg recv:", consensusmsg)
-		if consensusmsg == "A" {
-			p.SendConsensus("Hello I received A")
-		}
+		return pm.ConsensusMsg(msg, p)
 
 	// append by Albert·Gou
 	case msg.Code == NewUnitMsg:
 		// Retrieve and decode the propagated new produced unit
-		var unit modules.Unit
-		if err := msg.Decode(&unit); err != nil {
-			log.Info("===NewUnitMsg===", "err:", err)
-			return errResp(ErrDecode, "%v: %v", msg, err)
-		}
-		pm.producer.ToUnitTBLSSign(&unit)
+		return pm.NewUnitMsg(msg, p)
 
 		// append by Albert·Gou
 	case msg.Code == SigShareMsg:
-		var sigShare mp.SigShareEvent
-		if err := msg.Decode(&sigShare); err != nil {
-			log.Info("===SigShareMsg===", "err:", err)
-			return errResp(ErrDecode, "%v: %v", msg, err)
-		}
-		pm.producer.ToTBLSRecover(&sigShare)
+		return pm.SigShareMsg(msg, p)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)

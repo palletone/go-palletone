@@ -22,10 +22,11 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"reflect"
 	"strings"
+	"time"
 
-	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
@@ -34,12 +35,11 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
-	"math/big"
-	"time"
 )
 
 type IUnitRepository interface {
@@ -225,9 +225,10 @@ To get genesis unit info from leveldb
 */
 func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error) {
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
-	//key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
-	encNum := ptndb.EncodeBlockNumber(index)
-	key := append(storage.HEADER_PREFIX, encNum...)
+	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
+	// encNum := ptndb.EncodeBlockNumber(index)
+	// key := append(storage.HEADER_PREFIX, encNum...)
+
 	//if memdb, ok := db.(*ptndb.MemDatabase); ok {
 	//	hash, err := memdb.Get([]byte(key))
 	//	if err != nil {

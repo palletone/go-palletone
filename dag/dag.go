@@ -309,6 +309,10 @@ func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 	return d.getBodyRLP(hash)
 }
 
+// GetUnitTransactions
+func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
+	return d.dagdb.GetUnitTransactions(hash)
+}
 func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, error) {
 	tx, _, _, _ := d.dagdb.GetTransaction(hash)
 	if tx == nil {
