@@ -7,9 +7,11 @@ if [ ! -f "build/env.sh" ]; then
     exit 2
 fi
 
+ada=github.com/palletone/adaptor
 btc=github.com/palletone/btc-adaptor
 eth=github.com/palletone/eth-adaptor
 
+adafullpath=$GOPATH/src/$ada
 btcfullpath=$GOPATH/src/$btc
 ethfullpath=$GOPATH/src/$eth
 
@@ -19,6 +21,15 @@ echo $ethfullpath
 
 go get -u github.com/palletone/adaptor
 #go get -u github.com/palletone/eth-adaptor
+
+if [ ! -d "$adafullpath" ]; then
+	echo "adaptor not exist"
+	go get -u $ada
+else
+	echo "adaptor exist"
+	git -C $adafullpath  pull
+fi
+
 
 if [ ! -d "$btcfullpath" ]; then
 	echo "btc not exist"
@@ -46,8 +57,10 @@ if [ ! -L "$ethdir/go-palletone" ]; then
     mkdir -p "$ethdir"
     cd "$ethdir"
     ln -s ../../../../../. go-palletone
+    ln -s ../../../../../../adaptor/. adaptor
     ln -s ../../../../../../btc-adaptor/. btc-adaptor
     ln -s ../../../../../../eth-adaptor/. eth-adaptor
+    ln -s ../../../../../../adaptor/. adaptor
 
     cd "$root"
 fi

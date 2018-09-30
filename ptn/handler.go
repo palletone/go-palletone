@@ -705,6 +705,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}
 			//TODO must recover
 			// Retrieve the requested block body, stopping if enough was found
+			//GetTransactionsByUnitHash(hash)
 			txs, err := pm.dag.GetTransactionByHash(hash)
 			if err != nil {
 				log.Debug("===GetBlockBodiesMsg===", "GetTransactionByHash err:", err)
