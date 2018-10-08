@@ -145,6 +145,8 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 }
 
 func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
+	// todo 判断数据是否最新，并判断本节点是否有活跃mediator
+
 	log.Info("instantiate the DistKeyGenerator (DKG) struct.")
 
 	lams := mp.GetLocalActiveMediators()
