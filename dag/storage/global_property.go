@@ -36,6 +36,7 @@ const (
 	dynGlobalPropDBKey = "DynamicGlobalProperty"
 )
 
+// modified by Yiran
 type PropertyDatabase struct {
 	db            ptndb.Database
 	GlobalProp    *modules.GlobalProperty
@@ -52,9 +53,10 @@ type PropertyDb interface {
 	GetGlobalProp() *modules.GlobalProperty
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetMediatorSchl() *modules.MediatorSchedule
-
 }
 
+// modified by Yiran
+// initialize PropertyDB , and retrieve gp,dgp,mc from PropertyDb.
 func NewPropertyDb(db ptndb.Database) *PropertyDatabase {
 	pdb := &PropertyDatabase{db: db}
 	gp, err := pdb.RetrieveGlobalProp()
@@ -79,12 +81,18 @@ func NewPropertyDb(db ptndb.Database) *PropertyDatabase {
 	pdb.MediatorSchl = ms
 	return pdb
 }
+
+// modified by Yiran
 func (propdb *PropertyDatabase) GetGlobalProp() *modules.GlobalProperty {
 	return propdb.GlobalProp
 }
+
+// modified by Yiran
 func (propdb *PropertyDatabase) GetDynGlobalProp() *modules.DynamicGlobalProperty {
 	return propdb.DynGlobalProp
 }
+
+// modified by Yiran
 func (propdb *PropertyDatabase) GetMediatorSchl() *modules.MediatorSchedule {
 	return propdb.MediatorSchl
 }
@@ -170,4 +178,65 @@ func (propdb *PropertyDatabase) RetrieveDynGlobalProp() (*modules.DynamicGlobalP
 	}
 
 	return dgp, err
+}
+//@Yiran
+//var (
+//	MEDIATORVOTE_PREFIX = []byte("01")
+//	COMMONVOTE_PREFIX   = []byte("00")
+//
+//	MEDIATORTERMINTERVAL = 3000
+//)
+//func (propdb *PropertyDatabase) UpdateActiveMediators () error{
+//	term := unit
+//	activeMediators, err := propdb.GetActiveMediators(,MEDIATORTERMINTERVAL)
+//	if err != nil {
+//		return ErrorLogHandler(err,"GetActiveMediators")
+//	}
+//
+//}
+//func (propdb *PropertyDatabase) GetActiveMediators(term []byte) ([]common.Address, error) {
+//	key := KeyConnector(MEDIATOR_CANDIDATE_PREFIX,term)
+//	// 1. Load Addresses of MediatorCandidates
+//	addresses := make([]common.Address, 0)
+//	ErrorLogHandler(Retrieve(propdb.db, string(key), addresses),"RetrieveMediatorCandidatesAddress")
+//	// 2. Load VoteNumber of each MediatorCandidates
+//	for _, address := range(addresses) {
+//		tempKey := KeyConnector(key,address[:])
+//		Retrieve
+//	}
+//
+//}
+
+//@Yiran This function checks that a transaction contains a action which creates a vote.
+func IsVoteInitiationTx(transactionIndex []byte) error {
+	//TODO
+	return nil
+}
+
+//@Yiran this function connect multiple []byte keys to single []byte.
+func KeyConnector(keys ...[]byte) []byte {
+	var res []byte
+	for _, key := range keys {
+		res = append(res, key...)
+	}
+	return res
+}
+
+//@Yiran print error if exist.
+func ErrorLogHandler(err error, errType string) error {
+	if err != nil {
+		println(errType, "error", err.Error())
+		return err
+	}
+	return nil
+}
+//@Yiran
+type VoteBox struct {
+	candidates []Candidate
+	voter []common.Address
+}
+//@Yiran
+type Candidate struct {
+	Address    common.Address
+	VoteNumber uint64
 }
