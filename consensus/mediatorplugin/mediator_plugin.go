@@ -217,16 +217,17 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 
 	// 3. 初始化签名unit相关的签名分片的buf
 	mp.initTBLSRecoverBuf(sma, unitHash)
-	//mp.addToTBLSSignBuf(newUnit)
 
 	// 4. 异步向区块链网络广播验证单元
+	// todo 后面改为由p2p转发
+	mp.addToTBLSSignBuf(newUnit)
+	//mp.newUnitFeed.Send(NewUnitEvent{Unit: newUnit})
 	log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
-	mp.newUnitFeed.Send(NewUnitEvent{Unit: newUnit})
 
 	return Produced, detail
 }
 
 func (mp *MediatorPlugin) initTBLSRecoverBuf(localMed common.Address, newUnitHash common.Hash) {
 	aSize := mp.getDag().GetActiveMediatorCount()
-	mp.toTBLSRecoverBuf[localMed][newUnitHash] = make([][]byte, 0, aSize)
+	mp.toTBLSRecoverBuf[localMed][newUnitHash] = newSigShareSet(aSize)
 }

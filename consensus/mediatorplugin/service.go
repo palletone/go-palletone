@@ -80,7 +80,7 @@ type MediatorPlugin struct {
 
 	// unit阈值签名相关
 	toTBLSSignBuf    map[common.Address]chan *modules.Unit
-	toTBLSRecoverBuf map[common.Address]map[common.Hash][][]byte
+	toTBLSRecoverBuf map[common.Address]map[common.Hash]*sigShareSet
 }
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {
@@ -157,8 +157,8 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 	for _, localMed := range lams {
 		initSec := mp.mediators[localMed].InitPartSec
 
-		dkgr, err := dkg.NewDistKeyGeneratorWithoutSecret(mp.suite, initSec, initPubs, curThreshold)
-		//dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
+		//dkgr, err := dkg.NewDistKeyGeneratorWithoutSecret(mp.suite, initSec, initPubs, curThreshold)
+		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
 			log.Error(err.Error())
 			continue
@@ -260,12 +260,12 @@ func NewMediatorPlugin(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 func (mp *MediatorPlugin) initTBLSBuf() {
 	lmc := len(mp.mediators)
 	mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit, lmc)
-	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash][][]byte, lmc)
+	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lmc)
 
 	curThrshd := mp.getDag().GetCurThreshold()
 	for localMed, _ := range mp.mediators {
 		mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
-		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash][][]byte, curThrshd)
+		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet, curThrshd)
 	}
 }
 

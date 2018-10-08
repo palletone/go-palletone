@@ -57,7 +57,8 @@ func (self *ProtocolManager) newUnitBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.newUnitCh:
-			self.BroadcastNewUnit(event.Unit)
+			// todo 待合并
+			//self.BroadcastNewUnit(event.Unit)
 
 			// appended by wangjiyou
 			self.BroadcastUnit(event.Unit, true)
@@ -92,9 +93,14 @@ func (self *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
 		case event := <-self.sigShareCh:
-			med := self.dag.GetUnit(event.UnitHash).UnitAuthor()
-			node := self.dag.GetActiveMediator(*med).Node
-			self.TransmitSigShare(node, &event)
+			unit := self.dag.GetUnit(event.UnitHash)
+			if unit != nil {
+				med := unit.UnitAuthor()
+				node := self.dag.GetActiveMediator(*med).Node
+				self.TransmitSigShare(node, &event)
+			} else {
+				log.Error("get unit by hash is failed.", "hash", event.UnitHash)
+			}
 
 			// Err() channel will be closed when unsubscribing.
 		case <-self.sigShareSub.Err():

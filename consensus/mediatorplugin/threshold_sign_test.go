@@ -66,8 +66,8 @@ func genPair() (kyber.Scalar, kyber.Point) {
 func dkgGen() []*dkg.DistKeyGenerator {
 	dkgs := make([]*dkg.DistKeyGenerator, nbParticipants)
 	for i := 0; i < nbParticipants; i++ {
-		dkg, err := dkg.NewDistKeyGeneratorWithoutSecret(suite, partSec[i], partPubs, ntThreshold)
-		//dkg, err := dkg.NewDistKeyGenerator(suite, partSec[i], partPubs, ntThreshold)
+		//dkg, err := dkg.NewDistKeyGeneratorWithoutSecret(suite, partSec[i], partPubs, ntThreshold)
+		dkg, err := dkg.NewDistKeyGenerator(suite, partSec[i], partPubs, ntThreshold)
 		if err != nil {
 			panic(err)
 		}
@@ -134,6 +134,8 @@ func TestTBLS(t *testing.T) {
 	sig, err := tbls.Recover(suite, pubPoly, msg, sigShares, ntThreshold, nbParticipants)
 	require.Nil(t, err)
 
+	fmt.Printf("threshold sign: %v", sig)
+
 	err = bls.Verify(suite, pubPoly.Commit(), msg, sig)
 	require.Nil(t, err)
 
@@ -148,8 +150,8 @@ func TestTBLS(t *testing.T) {
 	err = bls.Verify(suite, dks2.Public(), msg, sig)
 	assert.Nil(t, err)
 
-	require.Equal(t, dks.Public(), dks2.Public())
-	//require.NotEqual(t, dks.Public(), dks2.Public())
+	//require.Equal(t, dks.Public(), dks2.Public())
+	require.NotEqual(t, dks.Public(), dks2.Public())
 
 	maybepub2 := dks.Commitments()[1]
 	err = bls.Verify(suite, maybepub2, msg, sig)
