@@ -31,9 +31,11 @@ const (
 // DefaultConfig contains reasonable default settings.
 var DefaultConfig = Config{
 	DataDir:          DefaultDataDir(),
+	HTTPHost:         DefaultHTTPHost,
 	HTTPPort:         DefaultHTTPPort,
 	HTTPModules:      []string{"net", "web3"},
 	HTTPVirtualHosts: []string{"localhost"},
+	WSHost:           DefaultWSHost,
 	WSPort:           DefaultWSPort,
 	WSModules:        []string{"net", "web3"},
 	//	P2P: p2p.Config{
