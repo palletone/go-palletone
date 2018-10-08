@@ -126,9 +126,9 @@ func (utxodb *UtxoDatabase) SaveUtxoSnapshot(index []byte) error {
 	return utxodb.SaveUtxoEntities(key, PTNutxos)
 }
 
-func (utxodb *UtxoDatabase) GetUtxoSnapshot(index []byte) error {
-
-}
+//func (utxodb *UtxoDatabase) GetUtxoSnapshot(index []byte) error {
+//
+//}
 
 // ###################### SAVE IMPL END ######################
 
