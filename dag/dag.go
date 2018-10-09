@@ -22,6 +22,7 @@ package dag
 import (
 	"fmt"
 	"github.com/coocood/freecache"
+	"github.com/palletone/go-palletone/tokenengine"
 	"sync"
 
 	//"github.com/ethereum/go-ethereum/params"
@@ -807,16 +808,36 @@ func (d *Dag) SaveUtxoSnapshot() error {
 
 //@Yiran Get last utxo snapshot
 // must calling after SaveUtxoSnapshot call , before this mediator cycle end.
+// called by GenerateVoteResult
 func (d *Dag) GetUtxoSnapshot() (*[]modules.Utxo, error) {
-	unitIndex,err:=d.GetCurrentUnitIndex()
+	unitIndex, err := d.GetCurrentUnitIndex()
 	if err != nil {
 		return nil, err
 	}
 	unitIndex.Index -= unitIndex.Index % modules.TERMINTERVAL
 	return d.utxodb.GetUtxoEntities(unitIndex)
-
 }
 
+//@Yiran
+func (d *Dag) GenerateVoteResult() (*[]storage.Candidate, error) {
+	VoteBox := storage.NewVoteBox()
+
+	utxos, err := d.utxodb.GetAllUtxos()
+	if err != nil {
+		return nil, err
+	}
+	for _, utxo := range utxos {
+		if utxo.Asset.AssetId == modules.PTNCOIN {
+			utxoHolder, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+			if err != nil {
+				return nil, err
+			}
+			VoteBox.AddToBoxIfNotVoted(utxoHolder, utxo.VoteResult)
+		}
+	}
+	VoteBox.Sort()
+	return &VoteBox.Candidates, nil
+}
 
 ////@Yiran
 //func (d *Dag) UpdateActiveMediators() error {

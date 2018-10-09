@@ -46,6 +46,7 @@ type UtxoDb interface {
 	GetAddrUtxos(addr string) ([]modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	SaveUtxoSnapshot(index modules.ChainIndex) error
+
 	SaveUtxoEntity(key []byte, utxo *modules.Utxo) error
 	SaveUtxoEntities(key []byte, utxos *[]modules.Utxo) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
@@ -155,10 +156,11 @@ func (utxodb *UtxoDatabase) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
 	}
 	return utxo, nil
 }
-//@Yiran
+
+//@Yiran get utxo snapshot from db
 func (utxodb *UtxoDatabase) GetUtxoEntities(index modules.ChainIndex) (*[]modules.Utxo, error) {
 	utxos := make([]modules.Utxo, 0)
-	key := KeyConnector([]byte(UTXOSNAPSHOT_PREFIX),ConvertBytes(index))
+	key := KeyConnector([]byte(UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
 	data, err := utxodb.db.Get(key)
 	if err != nil {
 		return nil, err

@@ -232,8 +232,27 @@ func ErrorLogHandler(err error, errType string) error {
 }
 //@Yiran
 type VoteBox struct {
-	candidates []Candidate
-	voter []common.Address
+	Candidates []Candidate
+	Voter []common.Address
+}
+func (box * VoteBox) Sort() {
+	//TODO
+}
+func (box * VoteBox) AddToBoxIfNotVoted (voter common.Address,vote common.Address) {
+	//TODO
+	//for addr := range box.voter {
+	//	if addr == voter{
+	//		return
+	//	}
+	//}
+
+}
+
+func NewVoteBox () *VoteBox {
+	return &VoteBox{
+		Candidates:make([]Candidate,0),
+		Voter:make([]common.Address,0),
+	}
 }
 //@Yiran
 type Candidate struct {
