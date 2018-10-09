@@ -1336,7 +1336,7 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 			select {
 			case <-d.cancelCh:
 				log.Debug("===processFastSyncContent===<-d.cancelCh")
-				return errCancelBlockFetch //stateSync.Cancel()
+				return errCancelBlockFetch //TODO must modify the real cancel reason   //stateSync.Cancel()
 			default:
 			}
 		}
