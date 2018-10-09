@@ -61,7 +61,7 @@ type DynamicGlobalProperty struct {
 	*/
 	//	RecentSlotsFilled float32
 }
-
+const TERMINTERVAL = 50 //DEBUG:50, DEPLOY:15000
 func (gp *GlobalProperty) GetActiveMediatorCount() int {
 	return len(gp.ActiveMediators)
 }

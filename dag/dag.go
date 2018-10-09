@@ -22,7 +22,6 @@ package dag
 import (
 	"fmt"
 	"github.com/coocood/freecache"
-	"github.com/palletone/go-palletone/dag/errors"
 	"sync"
 
 	//"github.com/ethereum/go-ethereum/params"
@@ -786,36 +785,33 @@ func (d *Dag) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
 }
 
 //@Yiran
-func (d *Dag) SaveUtxoSnapshot() error {
-	var TermInterval uint64 = 50 // DEBUG:50, DEPLOY:15000
-
+func (d *Dag) GetCurrentUnitIndex() (modules.ChainIndex, error) {
 	currentUnitHash := d.CurrentUnit().UnitHash
-	currentUnitIndex, err := d.GetUnitNumber(currentUnitHash)
+	return d.GetUnitNumber(currentUnitHash)
+}
+
+//@Yiran save utxo snapshot when new mediator cycle begin
+// unit index MUST to be  integer multiples of  termInterval.
+func (d *Dag) SaveUtxoSnapshot() error {
+	currentUnitIndex, err := d.GetCurrentUnitIndex()
 	if err != nil {
 		return err
 	}
-	if currentUnitIndex.Index%TermInterval != 0 {
-		return errors.New("SaveUtxoSnapshot must wait until last term period end")
-	}
-	return d.utxodb.SaveUtxoSnapshot(storage.ConvertBytes(currentUnitIndex))
+	return d.utxodb.SaveUtxoSnapshot(currentUnitIndex)
 }
 
-//@Yiran Get last snapshot
-func (d *Dag) GetUtxoSnapshot() ([]*modules.Utxo, error) {
-	var TermInterval uint64 = 50 // DEBUG:50, DEPLOY:15000
-
-	currentUnitHash := d.CurrentUnit().UnitHash
-	UnitIndex, err := d.GetUnitNumber(currentUnitHash)
+//@Yiran Get last utxo snapshot
+// must calling after SaveUtxoSnapshot call , before this mediator cycle end.
+func (d *Dag) GetUtxoSnapshot() (*[]modules.Utxo, error) {
+	unitIndex,err:=d.GetCurrentUnitIndex()
 	if err != nil {
 		return nil, err
 	}
-	UnitIndex.Index -= UnitIndex.Index % TermInterval
-	utxos, err := d.utxodb.GetUtxoEntities(storage.ConvertBytes(UnitIndex))
-	if err != nil {
-		return nil, err
-	}
-	return utxos, nil
+	unitIndex.Index -= unitIndex.Index % modules.TERMINTERVAL
+	return d.utxodb.GetUtxoEntities(unitIndex)
+
 }
+
 
 ////@Yiran
 //func (d *Dag) UpdateActiveMediators() error {
