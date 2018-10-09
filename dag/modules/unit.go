@@ -19,7 +19,6 @@ package modules
 
 import (
 	"crypto/ecdsa"
-	"math/big"
 	"strings"
 	"time"
 	"unsafe"
@@ -404,14 +403,14 @@ type ContractReadSet struct {
 // 0.default vote result is the index of the option from list
 // 1.If the option is specified by the voter, set Option null
 // 2.Expected vote result:[]byte
-type VoteInitiatePayload struct {
-	Title       string        //vote title
-	Option      []string      //vote option list.
-	BallotChain uint64        //vote chain id
-	BallotType  IDType16      //vote asset id
-	BallotCost  big.Int       //token cost
-	ExpiredTime time.Duration //duration of voting
-}
+//type VoteInitiatePayload struct {
+//	Title       string        //vote title
+//	Option      []string      //vote option list.
+//	BallotChain uint64        //vote chain id
+//	BallotType  IDType16      //vote asset id
+//	BallotCost  big.Int       //token cost
+//	ExpiredTime time.Duration //duration of voting
+//}
 
 // Contract instance message
 // App: contract_deploy
