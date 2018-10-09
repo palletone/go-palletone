@@ -1374,6 +1374,100 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	return mtxHex, nil
 }
 
+//create raw transction
+func (s *PublicTransactionPoolAPI) CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
+	c := cmd.(*ptnjson.CreateRawTransactionCmd)
+	// Validate the locktime, if given.
+	aid := modules.IDType16{}
+	aid.SetBytes([]byte("1111111111111111222222222222222222"))
+	ast := modules.Asset{
+		AssetId:  aid,
+		UniqueId: aid,
+		ChainId:  1,
+	}
+	ast = ast
+	if c.LockTime != nil &&
+		(*c.LockTime < 0 || *c.LockTime > int64(MaxTxInSequenceNum)) {
+		return "", &ptnjson.RPCError{
+			Code:    ptnjson.ErrRPCInvalidParameter,
+			Message: "Locktime out of range",
+		}
+	}
+	// Add all transaction inputs to a new transaction after performing
+	// some validity checks.
+	//先构造PaymentPayload结构，再组装成Transaction结构
+	pload := new(modules.PaymentPayload)
+	for _, input := range c.Inputs {
+		txHash, err := common.NewHashFromStr(input.Txid)
+		if err != nil {
+			return "", rpcDecodeHexError(input.Txid)
+		}
+		prevOut := modules.NewOutPoint(txHash, input.Vout, input.MessageIndex)
+		txInput := modules.NewTxIn(prevOut, []byte{})
+		pload.AddTxIn(*txInput)
+	}
+	// Add all transaction outputs to the transaction after performing
+	//	// some validity checks.
+	//	//only support mainnet
+	//	var params *chaincfg.Params
+	for encodedAddr, amount := range c.Amounts {
+		//		// Ensure amount is in the valid range for monetary amounts.
+		if amount <= 0 || amount > ptnjson.MaxSatoshi {
+			return "", &ptnjson.RPCError{
+				Code:    ptnjson.ErrRPCType,
+				Message: "Invalid amount",
+			}
+		}
+		addr, err := common.StringToAddress(encodedAddr)
+		if err != nil {
+			return "", &ptnjson.RPCError{
+				Code:    ptnjson.ErrRPCInvalidAddressOrKey,
+				Message: "Invalid address or key",
+			}
+		}
+		switch addr.GetType() {
+		case common.PublicKeyHash:
+		case common.ScriptHash:
+			//case *ptnjson.AddressPubKeyHash:
+			//case *ptnjson.AddressScriptHash:
+		default:
+			return "", &ptnjson.RPCError{
+				Code:    ptnjson.ErrRPCInvalidAddressOrKey,
+				Message: "Invalid address or key",
+			}
+		}
+		// Create a new script which pays to the provided address.
+		pkScript := tokenengine.GenerateP2PKHLockScript(addr[0:20])
+		// Convert the amount to satoshi.
+		dao, err := ptnjson.NewAmount(amount)
+		dao = dao
+		if err != nil {
+			context := "Failed to convert amount"
+			return "", internalRPCError(err.Error(), context)
+		}
+		txOut := modules.NewTxOut(uint64(dao), pkScript, &modules.Asset{})
+		pload.AddTxOut(*txOut)
+	}
+	//	// Set the Locktime, if given.
+	if c.LockTime != nil {
+		pload.LockTime = uint32(*c.LockTime)
+	}
+	//	// Return the serialized and hex-encoded transaction.  Note that this
+	//	// is intentionally not directly returning because the first return
+	//	// value is a string and it would result in returning an empty string to
+	//	// the client instead of nothing (nil) in the case of an error.
+	mtx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
+	mtx.TxHash = mtx.Hash()
+	mtxbt, err := rlp.EncodeToBytes(mtx)
+	if err != nil {
+		return "", err
+	}
+	mtxHex := hex.EncodeToString(mtxbt)
+	return mtxHex, nil
+}
 //sign rawtranscation
 func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	cmd := icmd.(*ptnjson.SignRawTransactionCmd)
@@ -1487,6 +1581,119 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	}, nil
 }
 
+//sign rawtranscation
+//create raw transction
+func (s *PublicTransactionPoolAPI) SignRawTransaction(icmd interface{}) (interface{}, error) {
+	cmd := icmd.(*ptnjson.SignRawTransactionCmd)
+	serializedTx, err := decodeHexStr(cmd.RawTx)
+	if err != nil {
+		return nil, err
+	}
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
+		return nil, err
+	}
+	var hashType uint32
+	switch *cmd.Flags {
+	case "ALL":
+		hashType = SigHashAll
+	case "NONE":
+		hashType = SigHashNone
+	case "SINGLE":
+		hashType = SigHashSingle
+	case "ALL|ANYONECANPAY":
+		hashType = SigHashAll | SigHashAnyOneCanPay
+	case "NONE|ANYONECANPAY":
+		hashType = SigHashNone | SigHashAnyOneCanPay
+	case "SINGLE|ANYONECANPAY":
+		hashType = SigHashSingle | SigHashAnyOneCanPay
+	default:
+		//e := errors.New("Invalid sighash parameter")
+		return nil, err
+	}
+
+	inputpoints := make(map[modules.OutPoint][]byte)
+	//scripts := make(map[string][]byte)
+	//var params *chaincfg.Params
+	var cmdInputs []ptnjson.RawTxInput
+	if cmd.Inputs != nil {
+		cmdInputs = *cmd.Inputs
+	}
+	var redeem []byte
+	for _, rti := range cmdInputs {
+		inputHash, err := common.NewHashFromStr(rti.Txid)
+		if err != nil {
+			return nil, DeserializationError{err}
+		}
+		script, err := decodeHexStr(rti.ScriptPubKey)
+		if err != nil {
+			return nil, err
+		}
+		// redeemScript is only actually used iff the user provided
+		// private keys. In which case, it is used to get the scripts
+		// for signing. If the user did not provide keys then we always
+		// get scripts from the wallet.
+		//		// Empty strings are ok for this one and hex.DecodeString will
+		//		// DTRT.
+		if rti.RedeemScript != "" {
+			redeemScript, err := decodeHexStr(rti.RedeemScript)
+			if err != nil {
+				return nil, err
+			}
+			//lockScript := tokenengine.GenerateP2SHLockScript(crypto.Hash160(redeemScript))
+			//addressMulti,err:=tokenengine.GetAddressFromScript(lockScript)
+			//if err != nil {
+			//	return nil, DeserializationError{err}
+			//}
+			//mutiAddr = addressMulti
+			//scripts[addressMulti.Str()] = redeemScript
+			redeem = redeemScript
+		}
+		inputpoints[modules.OutPoint{
+			TxHash:       *inputHash,
+			OutIndex:     rti.Vout,
+			MessageIndex: rti.MessageIndex,
+		}] = script
+	}
+
+	var keys map[common.Address]*ecdsa.PrivateKey
+	if cmd.PrivKeys != nil {
+		keys = make(map[common.Address]*ecdsa.PrivateKey)
+
+		if cmd.PrivKeys != nil {
+			for _, key := range *cmd.PrivKeys {
+				privKey, _ := crypto.FromWIF(key)
+				//privKeyBytes, _ := hex.DecodeString(key)
+				//privKey, _ := crypto.ToECDSA(privKeyBytes)
+				addr := crypto.PubkeyToAddress(&privKey.PublicKey)
+				keys[addr] = privKey
+			}
+		}
+	}
+
+	var signErrs []common.SignatureError
+	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, keys)
+	if err != nil {
+
+		return nil, DeserializationError{err}
+	}
+
+	// All returned errors (not OOM, which panics) encounted during
+	// bytes.Buffer writes are unexpected.
+	mtxbt, err := rlp.EncodeToBytes(tx)
+	if err != nil {
+		return "", err
+	}
+	signedHex := hex.EncodeToString(mtxbt)
+	signErrors := make([]ptnjson.SignRawTransactionError, 0, len(signErrs))
+	return ptnjson.SignRawTransactionResult{
+		Hex:      signedHex,
+		Complete: len(signErrors) == 0,
+		Errors:   signErrors,
+	}, nil
+}
 // SendTransaction creates a transaction for the given argument, sign it and submit it to the
 // transaction pool.
 func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args SendTxArgs) (common.Hash, error) {

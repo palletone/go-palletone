@@ -21,6 +21,7 @@
 package storage
 
 import (
+	"errors"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
@@ -44,16 +45,25 @@ type UtxoDb interface {
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr string) ([]modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
+	SaveUtxoSnapshot(index modules.ChainIndex) error
 
 	SaveUtxoEntity(key []byte, utxo *modules.Utxo) error
+	SaveUtxoEntities(key []byte, utxos *[]modules.Utxo) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
 	DeleteUtxo(key []byte) error
+	GetUtxoEntities(index modules.ChainIndex) (*[]modules.Utxo, error)
 }
 
 // ###################### SAVE IMPL START ######################
 
 func (utxodb *UtxoDatabase) SaveUtxoEntity(key []byte, utxo *modules.Utxo) error {
 	return StoreBytes(utxodb.db, key, utxo)
+}
+
+//@Yiran
+func (utxodb *UtxoDatabase) SaveUtxoEntities(key []byte, utxos *[]modules.Utxo) error {
+
+	return StoreBytes(utxodb.db, key, utxos)
 }
 
 // key: outpoint_prefix + addr + outpoint's hash
@@ -102,6 +112,34 @@ func (utxodb *UtxoDatabase) DeleteUtxo(key []byte) error {
 	return utxodb.db.Delete(key)
 }
 
+const UTXOSNAPSHOT_PREFIX = "us"
+
+//@Yiran
+func (utxodb *UtxoDatabase) SaveUtxoSnapshot(index modules.ChainIndex) error {
+	//0. examine wrong calling
+	if index.Index%modules.TERMINTERVAL != 0 {
+		return errors.New("SaveUtxoSnapshot must wait until last term period end")
+	}
+	//1. get all utxo
+	utxos, err := utxodb.GetAllUtxos()
+	if err != nil {
+		return ErrorLogHandler(err, "utxodb.GetAllUtxos")
+	}
+	PTNutxos := make([]modules.Utxo, 0)
+	for _, utxo := range utxos {
+		if utxo.Asset.AssetId == modules.PTNCOIN {
+			PTNutxos = append(PTNutxos, *utxo)
+		}
+	}
+	//2. store utxo
+	key := KeyConnector([]byte(UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
+	return utxodb.SaveUtxoEntities(key, &PTNutxos)
+}
+
+//func (utxodb *UtxoDatabase) GetUtxoSnapshot(index []byte) error {
+//
+//}
+
 // ###################### SAVE IMPL END ######################
 
 // ###################### GET IMPL START ######################
@@ -117,6 +155,20 @@ func (utxodb *UtxoDatabase) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
 		return nil, err
 	}
 	return utxo, nil
+}
+
+//@Yiran get utxo snapshot from db
+func (utxodb *UtxoDatabase) GetUtxoEntities(index modules.ChainIndex) (*[]modules.Utxo, error) {
+	utxos := make([]modules.Utxo, 0)
+	key := KeyConnector([]byte(UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
+	data, err := utxodb.db.Get(key)
+	if err != nil {
+		return nil, err
+	}
+	if err := rlp.DecodeBytes(data, utxos); err != nil {
+		return nil, err
+	}
+	return &utxos, nil
 }
 
 func (utxodb *UtxoDatabase) GetUtxoByIndex(indexKey []byte) ([]byte, error) {

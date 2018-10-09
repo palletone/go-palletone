@@ -22,6 +22,7 @@ package storage
 import (
 	"errors"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/rlp"
 	"log"
 	"strconv"
 	"testing"
@@ -132,4 +133,48 @@ func TestDBBatch(t *testing.T) {
 	log.Println("b:", string(b), err)
 
 	log.Println("table:", table)
+}
+
+type airPlane struct {
+	Seats []string
+}
+
+
+func NewAirPlane() *airPlane {
+	return &airPlane{
+		Seats: append(make([]string, 0), "person", "person", "person", "person", "person", "person", "person", "person", "person", "person", "person"),
+	}
+}
+
+func TestSaveUtxos(t *testing.T) {
+	// 0. initiate db
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	if Dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
+	log.Println("db_path:", DBPath)
+	utxodb := NewUtxoDatabase(Dbconn)
+
+	//1. construct object
+	myplane := NewAirPlane()
+	fmt.Println("myplane is :", myplane)
+	myplane2 := NewAirPlane()
+	fmt.Println("myplane2 is :", myplane2)
+	cap := make([]airPlane,0)
+	cap = append(cap,*myplane,*myplane2)
+	fmt.Println(" cap :",cap)
+	//2. store object
+	StoreBytes(utxodb.db, []byte("testkey"), &cap)
+	//3. load object
+	something, err := utxodb.db.Get([]byte("testkey"))
+
+
+	fmt.Println("db get err:", err)
+	fmt.Println("byte data:", something)
+	p := new([]airPlane)
+	err2 := rlp.DecodeBytes(something, p)
+	fmt.Println("decoded error:",err2)
+	fmt.Printf("decoded data:%v\n", p)
+
 }

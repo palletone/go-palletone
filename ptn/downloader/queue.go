@@ -729,11 +729,11 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 				break
 			}
 			//TODO  must recover //if headers[i].Hash() != header.ParentHash { //ptn
-			//if headers[i].Hash() != header.ParentsHash[0] {
-			//	log.Warn("Header broke chain ancestry", "peer", id, "number", header.Number, "hash", hash)
-			//	accepted = false
-			//	break
-			//}
+			if headers[i].Hash() != header.ParentsHash[0] {
+				log.Warn("Header broke chain ancestry", "peer", id, "number", header.Number, "hash", hash)
+				accepted = false
+				break
+			}
 		}
 	}
 	// If the batch of headers wasn't accepted, mark as unavailable

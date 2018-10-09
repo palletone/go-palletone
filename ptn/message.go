@@ -184,14 +184,12 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		// Retrieve the requested block body, stopping if enough was found
 		//GetTransactionsByUnitHash(hash)
 		//TODO must modify
-		//txs, err := pm.dag.GetTransactionByHash(hash)
-		txs := []*modules.Transaction{}
-		var err error
+		txs, err := pm.dag.GetUnitTransactions(hash)
 		if err != nil {
-			log.Debug("===GetBlockBodiesMsg===", "GetTransactionByHash err:", err)
+			log.Debug("===GetBlockBodiesMsg===", "GetUnitTransactions err:", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		log.Debug("===GetBlockBodiesMsg===", "GetTransactionByHash txs:", txs)
+		log.Debug("===GetBlockBodiesMsg===", "GetUnitTransactions txs:", txs)
 		data, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			log.Debug("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())

@@ -21,9 +21,9 @@ package dag
 
 import (
 	"fmt"
-	"sync"
-
 	"github.com/coocood/freecache"
+	"github.com/palletone/go-palletone/tokenengine"
+	"sync"
 
 	//"github.com/ethereum/go-ethereum/params"
 	"time"
@@ -315,9 +315,9 @@ func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 }
 
 // GetUnitTransactions
-func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
-	return d.dagdb.GetUnitTransactions(hash)
-}
+//func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
+//	return d.dagdb.GetUnitTransactions(hash)
+//}
 func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, error) {
 	tx, _, _, _ := d.dagdb.GetTransaction(hash)
 	if tx == nil {
@@ -562,6 +562,11 @@ func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex, error) {
 	return d.dagdb.GetNumberWithUnitHash(hash)
 }
 
+// GetUnitTransactions is return unit's body, all transactions of unit.
+func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
+	return d.dagdb.GetUnitTransactions(hash)
+}
+
 // GetCanonicalHash
 func (d *Dag) GetCanonicalHash(number uint64) (common.Hash, error) {
 	return d.dagdb.GetCanonicalHash(number)
@@ -784,3 +789,93 @@ func (d *Dag) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
 func (d *Dag) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
 	return d.propdb.RetrieveMediatorSchl()
 }
+
+//@Yiran
+func (d *Dag) GetCurrentUnitIndex() (modules.ChainIndex, error) {
+	currentUnitHash := d.CurrentUnit().UnitHash
+	return d.GetUnitNumber(currentUnitHash)
+}
+
+//@Yiran save utxo snapshot when new mediator cycle begin
+// unit index MUST to be  integer multiples of  termInterval.
+func (d *Dag) SaveUtxoSnapshot() error {
+	currentUnitIndex, err := d.GetCurrentUnitIndex()
+	if err != nil {
+		return err
+	}
+	return d.utxodb.SaveUtxoSnapshot(currentUnitIndex)
+}
+
+//@Yiran Get last utxo snapshot
+// must calling after SaveUtxoSnapshot call , before this mediator cycle end.
+// called by GenerateVoteResult
+func (d *Dag) GetUtxoSnapshot() (*[]modules.Utxo, error) {
+	unitIndex, err := d.GetCurrentUnitIndex()
+	if err != nil {
+		return nil, err
+	}
+	unitIndex.Index -= unitIndex.Index % modules.TERMINTERVAL
+	return d.utxodb.GetUtxoEntities(unitIndex)
+}
+
+//@Yiran
+func (d *Dag) GenerateVoteResult() (*[]storage.Candidate, error) {
+	VoteBox := storage.NewVoteBox()
+
+	utxos, err := d.utxodb.GetAllUtxos()
+	if err != nil {
+		return nil, err
+	}
+	for _, utxo := range utxos {
+		if utxo.Asset.AssetId == modules.PTNCOIN {
+			utxoHolder, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+			if err != nil {
+				return nil, err
+			}
+			VoteBox.AddToBoxIfNotVoted(utxoHolder, utxo.VoteResult)
+		}
+	}
+	VoteBox.Sort()
+	return &VoteBox.Candidates, nil
+}
+
+////@Yiran
+//func (d *Dag) UpdateActiveMediators() error {
+//	var TermInterval uint64 = 50
+//	MediatorNumber := d.GetActiveMediatorCount()
+//	// <1> Get election unit
+//	hash := d.CurrentUnit().UnitHash
+//	index, err := d.GetUnitNumber(hash)
+//	if err != nil {
+//		return err
+//	}
+//	if index.Index <= TermInterval {
+//		return errors.New("first election must wait until first term period end")
+//		//adjust TermInterval to fit the unit number
+//		//TermInterval = index.Index
+//	}
+//	index.Index -= index.Index % TermInterval
+//	d.GetUnitByNumber(index).
+//
+//	//// <2> Get all votes belonged to this election period
+//	//voteBox := storage.VoteBox{}
+//	//for i := TermInterval; i > 0; i-- { // for each unit in period.
+//	//	for _, Tx := range d.GetUnitByNumber(index).Txs { //for each transaction in unit
+//	//		voter := Tx.TxMessages.GetInputAddress()
+//	//		voteTo := Tx.TxMessages.GetVoteResult()
+//	//		voteBox.AddToBoxIfNotVoted(voter, voteTo)
+//	//	}
+//	//}
+//
+//	// <3> calculate vote result
+//	addresses := voteBox.Head(MediatorNumber) //sort by candidates vote number & return the addresses of the top n account
+//
+//	// <4> create active mediators from addresses & update globalProperty
+//	activeMediators := make(map[common.Address]core.Mediator, 0)
+//	for _, addr := range (addresses) {
+//		newmediator := *d.GetGlobalProp().GetActiveMediator(addr)
+//		activeMediators[addr] = newmediator
+//	}
+//
+//	return nil
+//}

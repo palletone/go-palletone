@@ -181,6 +181,9 @@ func initGenesis(ctx *cli.Context) error {
 	//	configPath, _ = getConfigPath(temp, node.DataDir())
 	//}
 	//modifyMediatorInConf(configPath, password, account.Address)
+
+	//3. initial globalproperty
+	//modified by Yiran
 	err = InitPropertyDB(genesis, genesisUnitHash, dag)
 	if err != nil {
 		utils.Fatalf("Failed toInitPropertyDB: %v", err)
@@ -190,6 +193,7 @@ func initGenesis(ctx *cli.Context) error {
 	return nil
 }
 
+// modified by Yiran
 func InitPropertyDB(genesis *core.Genesis, genesisUnitHash common.Hash, dag *dag.Dag, ) error {
 	//  全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
