@@ -21,9 +21,9 @@ package dag
 
 import (
 	"fmt"
-	"sync"
-
 	"github.com/coocood/freecache"
+	"github.com/palletone/go-palletone/dag/errors"
+	"sync"
 
 	//"github.com/ethereum/go-ethereum/params"
 	"time"
@@ -789,3 +789,76 @@ func (d *Dag) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
 func (d *Dag) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
 	return d.propdb.RetrieveMediatorSchl()
 }
+
+//@Yiran
+func (d *Dag) SaveUtxoSnapshot() error {
+	var TermInterval uint64 = 50 // DEBUG:50, DEPLOY:15000
+
+	currentUnitHash := d.CurrentUnit().UnitHash
+	currentUnitIndex, err := d.GetUnitNumber(currentUnitHash)
+	if err != nil {
+		return err
+	}
+	if currentUnitIndex.Index%TermInterval != 0 {
+		return errors.New("SaveUtxoSnapshot must wait until last term period end")
+	}
+	return d.utxodb.SaveUtxoSnapshot(storage.ConvertBytes(currentUnitIndex))
+}
+
+//@Yiran Get last snapshot
+func (d *Dag) GetUtxoSnapshot() ([]*modules.Utxo, error) {
+	var TermInterval uint64 = 50 // DEBUG:50, DEPLOY:15000
+
+	currentUnitHash := d.CurrentUnit().UnitHash
+	UnitIndex, err := d.GetUnitNumber(currentUnitHash)
+	if err != nil {
+		return nil, err
+	}
+	UnitIndex.Index -= UnitIndex.Index % TermInterval
+	utxos, err := d.utxodb.GetUtxoEntities(storage.ConvertBytes(UnitIndex))
+	if err != nil {
+		return nil, err
+	}
+	return utxos, nil
+}
+
+////@Yiran
+//func (d *Dag) UpdateActiveMediators() error {
+//	var TermInterval uint64 = 50
+//	MediatorNumber := d.GetActiveMediatorCount()
+//	// <1> Get election unit
+//	hash := d.CurrentUnit().UnitHash
+//	index, err := d.GetUnitNumber(hash)
+//	if err != nil {
+//		return err
+//	}
+//	if index.Index <= TermInterval {
+//		return errors.New("first election must wait until first term period end")
+//		//adjust TermInterval to fit the unit number
+//		//TermInterval = index.Index
+//	}
+//	index.Index -= index.Index % TermInterval
+//	d.GetUnitByNumber(index).
+//
+//	//// <2> Get all votes belonged to this election period
+//	//voteBox := storage.VoteBox{}
+//	//for i := TermInterval; i > 0; i-- { // for each unit in period.
+//	//	for _, Tx := range d.GetUnitByNumber(index).Txs { //for each transaction in unit
+//	//		voter := Tx.TxMessages.GetInputAddress()
+//	//		voteTo := Tx.TxMessages.GetVoteResult()
+//	//		voteBox.AddToBoxIfNotVoted(voter, voteTo)
+//	//	}
+//	//}
+//
+//	// <3> calculate vote result
+//	addresses := voteBox.Head(MediatorNumber) //sort by candidates vote number & return the addresses of the top n account
+//
+//	// <4> create active mediators from addresses & update globalProperty
+//	activeMediators := make(map[common.Address]core.Mediator, 0)
+//	for _, addr := range (addresses) {
+//		newmediator := *d.GetGlobalProp().GetActiveMediator(addr)
+//		activeMediators[addr] = newmediator
+//	}
+//
+//	return nil
+//}
