@@ -1299,13 +1299,15 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 	//fmt.Println("xz  processFastSyncContent")
 	log.Debug("===Enter processFastSyncContent===")
 	//TODO wangjiyou
-	stateSync := d.syncState(d.dag.CurrentUnit().Hash())
-	defer stateSync.Cancel()
-	go func() {
-		if err := stateSync.Wait(); err != nil && err != errCancelStateFetch {
-			d.queue.Close() // wake up WaitResults
-		}
-	}()
+	/*
+		stateSync := d.syncState(d.dag.CurrentUnit().Hash())
+		defer stateSync.Cancel()
+		go func() {
+			if err := stateSync.Wait(); err != nil && err != errCancelStateFetch {
+				d.queue.Close() // wake up WaitResults
+			}
+		}()
+	*/
 	// Figure out the ideal pivot block. Note, that this goalpost may move if the
 	// sync takes long enough for the chain head to move significantly.
 	pivot := uint64(0)
@@ -1328,13 +1330,13 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 			// If pivot sync is done, stop
 			if oldPivot == nil {
 				log.Debug("===processFastSyncContent===oldPivot == nil")
-				return stateSync.Cancel()
+				return nil //stateSync.Cancel()
 			}
 			// If sync failed, stop
 			select {
 			case <-d.cancelCh:
 				log.Debug("===processFastSyncContent===<-d.cancelCh")
-				return stateSync.Cancel()
+				return errCancelBlockFetch //TODO must modify the real cancel reason   //stateSync.Cancel()
 			default:
 			}
 		}
@@ -1356,43 +1358,31 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 		}
 		//fmt.Println("xz  pivot=", pivot)
 		P, beforeP, afterP := splitAroundPivot(pivot, results)
-		if err := d.commitFastSyncData(beforeP, stateSync); err != nil {
-			log.Debug("===processFastSyncContent===", "err:", err)
+		if err := d.commitFastSyncData(beforeP); err != nil {
+			log.Debug("===processFastSyncContent===", "commitFastSyncData err:", err)
 			return err
 		}
+
+
 		if P != nil {
 			// If new pivot block found, cancel old state retrieval and restart
 			if oldPivot != P {
-				stateSync.Cancel()
-
-				stateSync = d.syncState(P.Header.TxRoot)
-				defer stateSync.Cancel()
-				go func() {
-					if err := stateSync.Wait(); err != nil && err != errCancelStateFetch {
-						d.queue.Close() // wake up WaitResults
-					}
-				}()
 				oldPivot = P
 			}
+			//fmt.Printf("p=%#v\n", P.Header.Creationdate)
+			if err := d.commitPivotBlock(P); err != nil {
+				log.Debug("===processFastSyncContent===", "commitPivotBlock.err:", err)
+				return err
+			}
+			oldPivot = nil
 			// Wait for completion, occasionally checking for pivot staleness
 			select {
-			case <-stateSync.done:
-				if stateSync.err != nil {
-					log.Debug("===processFastSyncContent===", "stateSync.err:", stateSync.err)
-					return stateSync.err
-				}
-				//fmt.Printf("p=%#v\n", P.Header.Creationdate)
-				if err := d.commitPivotBlock(P); err != nil {
-					log.Debug("===processFastSyncContent===", "commitPivotBlock.err:", err)
-					return err
-				}
-				oldPivot = nil
-
 			case <-time.After(time.Second):
 				oldTail = afterP
 				continue
 			}
 		}
+
 		// Fast sync done, pivot commit done, full import
 		//fmt.Println("xz  inport")
 		if err := d.importBlockResults(afterP); err != nil {
@@ -1417,7 +1407,7 @@ func splitAroundPivot(pivot uint64, results []*fetchResult) (p *fetchResult, bef
 	}
 	return p, before, after
 }
-func (d *Downloader) commitFastSyncData(results []*fetchResult, stateSync *stateSync) error {
+func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *stateSync*/) error {
 	// Check for any early termination requests
 	log.Debug("===Enter commitFastSyncData===", "len(results):", len(results))
 	if len(results) == 0 {
@@ -1426,10 +1416,10 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult, stateSync *state
 	select {
 	case <-d.quitCh:
 		return errCancelContentProcessing
-	case <-stateSync.done:
-		if err := stateSync.Wait(); err != nil {
-			return err
-		}
+		//	case <-stateSync.done:
+		//		if err := stateSync.Wait(); err != nil {
+		//			return err
+		//		}
 	default:
 	}
 	// Retrieve the a batch of results to import
@@ -1453,6 +1443,7 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult, stateSync *state
 }
 
 func (d *Downloader) commitPivotBlock(result *fetchResult) error {
+	log.Debug("===Enter commitPivotBlock===")
 	block := modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	log.Debug("Committing fast sync pivot as new head", "number", block.Number(), "hash", block.Hash())
 	//	if _, err := d.blockchain.InsertReceiptChain([]*types.Block{block}, []types.Receipts{result.Receipts}); err != nil {
@@ -1812,3 +1803,41 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	p.log.Debug("Found common ancestor", "number", start, "hash", hash)
 	return start, nil
 }
+
+
+/*
+	if P != nil {
+		// If new pivot block found, cancel old state retrieval and restart
+		if oldPivot != P {
+			stateSync.Cancel()
+
+			stateSync = d.syncState(P.Header.TxRoot)
+			defer stateSync.Cancel()
+			go func() {
+				if err := stateSync.Wait(); err != nil && err != errCancelStateFetch {
+					d.queue.Close() // wake up WaitResults
+				}
+			}()
+			oldPivot = P
+		}
+
+		// Wait for completion, occasionally checking for pivot staleness
+		select {
+		case <-stateSync.done:
+			if stateSync.err != nil {
+				log.Debug("===processFastSyncContent===", "stateSync.err:", stateSync.err)
+				return stateSync.err
+			}
+			//fmt.Printf("p=%#v\n", P.Header.Creationdate)
+			if err := d.commitPivotBlock(P); err != nil {
+				log.Debug("===processFastSyncContent===", "commitPivotBlock.err:", err)
+				return err
+			}
+			oldPivot = nil
+
+		case <-time.After(time.Second):
+			oldTail = afterP
+			continue
+		}
+	}
+*/

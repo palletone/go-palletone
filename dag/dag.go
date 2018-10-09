@@ -314,9 +314,9 @@ func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 }
 
 // GetUnitTransactions
-func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
-	return d.dagdb.GetUnitTransactions(hash)
-}
+//func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
+//	return d.dagdb.GetUnitTransactions(hash)
+//}
 func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, error) {
 	tx, _, _, _ := d.dagdb.GetTransaction(hash)
 	if tx == nil {
@@ -559,6 +559,11 @@ func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error
 // Get UnitNumber
 func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex, error) {
 	return d.dagdb.GetNumberWithUnitHash(hash)
+}
+
+// GetUnitTransactions is return unit's body, all transactions of unit.
+func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
+	return d.dagdb.GetUnitTransactions(hash)
 }
 
 // GetCanonicalHash
