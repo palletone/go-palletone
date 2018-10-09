@@ -46,7 +46,7 @@ func (mp *MediatorPlugin) StartVSSProtocol() {
 
 	go mp.BroadcastVSSDeals()
 
-	timeout := time.NewTimer(3 * time.Second)
+	timeout := time.NewTimer(30 * time.Second)
 	defer timeout.Stop()
 	select {
 	case <-mp.quit:
