@@ -562,6 +562,11 @@ func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex, error) {
 	return d.dagdb.GetNumberWithUnitHash(hash)
 }
 
+// GetUnitTransactions is return unit's body, all transactions of unit.
+func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
+	return d.dagdb.GetUnitTransactions(hash)
+}
+
 // GetCanonicalHash
 func (d *Dag) GetCanonicalHash(number uint64) (common.Hash, error) {
 	return d.dagdb.GetCanonicalHash(number)
