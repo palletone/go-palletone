@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"time"
 )
 
 // PalletOne wraps all methods required for producing unit.
@@ -147,9 +148,21 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 	log.Info("instantiate the DistKeyGenerator (DKG) struct.")
 
+	dag := mp.getDag()
+	gp := dag.GetGlobalProp()
+	dgp := dag.GetDynGlobalProp()
+
+	nowFine := time.Now()
+	now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
+	nextSlotTime := modules.GetSlotTime(gp, dgp, 1)
+
+	if nextSlotTime.Before(now) {
+		return //we're synced.
+	}
+
 	lams := mp.GetLocalActiveMediators()
-	initPubs := mp.getDag().GetActiveMediatorInitPubs()
-	curThreshold := mp.getDag().GetCurThreshold()
+	initPubs := dag.GetActiveMediatorInitPubs()
+	curThreshold := dag.GetCurThreshold()
 
 	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator)
 	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response)

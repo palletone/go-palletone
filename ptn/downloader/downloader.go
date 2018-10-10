@@ -1336,7 +1336,7 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 			select {
 			case <-d.cancelCh:
 				log.Debug("===processFastSyncContent===<-d.cancelCh")
-				return errCancelBlockFetch //stateSync.Cancel()
+				return errCancelBlockFetch //TODO must modify the real cancel reason   //stateSync.Cancel()
 			default:
 			}
 		}
@@ -1359,7 +1359,7 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 		//fmt.Println("xz  pivot=", pivot)
 		P, beforeP, afterP := splitAroundPivot(pivot, results)
 		if err := d.commitFastSyncData(beforeP); err != nil {
-			log.Debug("===processFastSyncContent===", "err:", err)
+			log.Debug("===processFastSyncContent===", "commitFastSyncData err:", err)
 			return err
 		}
 
@@ -1443,6 +1443,7 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 }
 
 func (d *Downloader) commitPivotBlock(result *fetchResult) error {
+	log.Debug("===Enter commitPivotBlock===")
 	block := modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	log.Debug("Committing fast sync pivot as new head", "number", block.Number(), "hash", block.Hash())
 	//	if _, err := d.blockchain.InsertReceiptChain([]*types.Block{block}, []types.Receipts{result.Receipts}); err != nil {

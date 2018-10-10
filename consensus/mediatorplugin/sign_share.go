@@ -60,7 +60,7 @@ func (self *sigShareSet) apend(sigShare []byte) {
 	self.sigShares = append(self.sigShares, sigShare)
 }
 
-func (self *sigShareSet) getSigShares() (sigShares [][]byte) {
+func (self *sigShareSet) popSigShares() (sigShares [][]byte) {
 	self.dataLock.Lock()
 	defer self.dataLock.Unlock()
 

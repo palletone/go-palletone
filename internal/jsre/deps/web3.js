@@ -5367,6 +5367,20 @@ var methods = function () {
         outputFormatter: utils.toDecimal
     });
 
+    var createRawTransaction = new Method({
+        name: 'createRawTransaction',
+        call: 'ptn_createRawTransaction',
+        params: 1,
+        inputFormatter: [null]
+    });
+
+    var signRawTransaction = new Method({
+        name: 'signRawTransaction',
+        call: 'ptn_signRawTransaction',
+        params: 1,
+        inputFormatter: [null]
+    });
+
     var sendRawTransaction = new Method({
         name: 'sendRawTransaction',
         call: 'ptn_sendRawTransaction',
@@ -5597,6 +5611,8 @@ var methods = function () {
         getTransactionCount,
         call,
         estimateGas,
+        createRawTransaction,
+        signRawTransaction,
         sendRawTransaction,
         signTransaction,
         sendTransaction,

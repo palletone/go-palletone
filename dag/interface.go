@@ -50,6 +50,7 @@ type IDag interface {
 	// CurrentHeader retrieves the head header from the local chain.
 	CurrentHeader() *modules.Header
 	GetTransactionByHash(hash common.Hash) (*modules.Transaction, error)
+	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	// InsertHeaderDag inserts a batch of headers into the local chain.
 	InsertHeaderDag([]*modules.Header, int) (int, error)
 	HasUnit(hash common.Hash) bool
