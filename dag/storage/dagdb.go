@@ -95,14 +95,18 @@ func (dagdb *DagDatabase) SaveHeader(uHash common.Hash, h *modules.Header) error
 	// key = append(key, h.Number.Bytes()...)
 	// return StoreBytes(dagdb.db, append(key, uHash.Bytes()...), h)
 	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.String())
-	log.Println("xxxxxxxxxxxxxxxxxxxxxxxxxx--- Header's key in leveldb ---xxxxxxxxxxxxxxxxxxxxxxxxxxxx ", key)
 	return StoreBytes(dagdb.db, []byte(key), h)
 }
 
 //這是通過modules.ChainIndex存儲hash
 func (dagdb *DagDatabase) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
 	key := fmt.Sprintf("%s%s", UNIT_HASH_NUMBER_Prefix, uHash.String())
-	return StoreBytes(dagdb.db, []byte(key), number)
+	index := new(modules.ChainIndex)
+	index.AssetID = number.AssetID
+	index.Index = number.Index
+	index.IsMain = number.IsMain
+
+	return StoreBytes(dagdb.db, []byte(key), index)
 }
 
 //這是通過hash存儲modules.ChainIndex
@@ -112,8 +116,6 @@ func (dagdb *DagDatabase) SaveHashByNumber(uHash common.Hash, number modules.Cha
 		i = 1
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
-	//fmt.Println("SaveHashByNumber=[]byte(key)=>", key)
-	//fmt.Println("====",uHash)
 	return StoreBytes(dagdb.db, []byte(key), uHash)
 }
 
@@ -285,15 +287,17 @@ func (dagdb *DagDatabase) GetAddrOutput(addr string) ([]modules.Output, error) {
 //}
 func (dagdb *DagDatabase) GetNumberWithUnitHash(hash common.Hash) (modules.ChainIndex, error) {
 	key := fmt.Sprintf("%s%s", UNIT_HASH_NUMBER_Prefix, hash.String())
+
 	data, _ := dagdb.db.Get([]byte(key))
 	if len(data) <= 0 {
 		return modules.ChainIndex{}, nil
 	}
-	var number modules.ChainIndex
-	if err := rlp.DecodeBytes(data, &number); err != nil {
+	number := new(modules.ChainIndex)
+	if err := rlp.DecodeBytes(data, number); err != nil {
 		return modules.ChainIndex{}, fmt.Errorf("Get unit number when rlp decode error:%s", err.Error())
 	}
-	return number, nil
+
+	return *number, nil
 }
 
 //  GetCanonicalHash get
@@ -356,6 +360,7 @@ func (dagdb *DagDatabase) GetPrefix(prefix []byte) map[string][]byte {
 func (dagdb *DagDatabase) GetUnit(hash common.Hash) *modules.Unit {
 	// 1. get chainindex
 	height, err := dagdb.GetNumberWithUnitHash(hash)
+	log.Println("height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 	//fmt.Printf("height=%#v\n", height)
 	if err != nil {
 		log.Println("GetUnit when GetUnitNumber failed , error:", err)

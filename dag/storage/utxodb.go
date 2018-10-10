@@ -21,6 +21,7 @@
 package storage
 
 import (
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
@@ -122,7 +123,7 @@ func (utxodb *UtxoDatabase) SaveUtxoSnapshot(index []byte) error {
 			PTNutxos = append(PTNutxos, utxo)
 		}
 	}
-	key := KeyConnector(UTXOSNAPSHOT_PREFIX,index)
+	key := KeyConnector(UTXOSNAPSHOT_PREFIX, index)
 	return utxodb.SaveUtxoEntities(key, PTNutxos)
 }
 
@@ -138,6 +139,7 @@ func (utxodb *UtxoDatabase) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
 	utxo := new(modules.Utxo)
 	data, err := utxodb.db.Get(key)
 	if err != nil {
+		log.Error("get utxo entry failed,================================== ", "error", err)
 		return nil, err
 	}
 
@@ -148,7 +150,7 @@ func (utxodb *UtxoDatabase) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
 }
 
 func (utxodb *UtxoDatabase) GetUtxoEntities(key []byte) ([]*modules.Utxo, error) {
-	utxos := make([]*modules.Utxo,0)
+	utxos := make([]*modules.Utxo, 0)
 	data, err := utxodb.db.Get(key)
 	if err != nil {
 		return nil, err

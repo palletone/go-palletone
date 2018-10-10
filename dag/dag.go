@@ -24,6 +24,7 @@ import (
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/dag/errors"
 	"sync"
+	"sync/atomic"
 
 	//"github.com/ethereum/go-ethereum/params"
 	"time"
@@ -47,6 +48,7 @@ import (
 
 type Dag struct {
 	Cache         *freecache.Cache
+	currentUnit   atomic.Value
 	Db            ptndb.Database
 	unitRep       dagcommon.IUnitRepository
 	dagdb         storage.DagDb
@@ -160,14 +162,6 @@ func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
 	return header
 }
 
-// func (d *Dag) GetHeader(hash common.Hash, number uint64) *modules.Header {
-// 	return d.CurrentUnit().Header()
-// }
-
-//func (d *Dag) StateAt(common.Hash) (*ptndb.Database, error) {
-//	return &d.Db, nil
-//}
-
 func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
 	return d.ChainHeadFeed.Subscribe(ch)
 }
@@ -175,6 +169,15 @@ func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Su
 // FastSyncCommitHead sets the current head block to the one defined by the hash
 // irrelevant what the chain contents were prior.
 func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
+	unit := d.GetUnit(hash)
+	if unit == nil {
+		return fmt.Errorf("non existent unit [%x...]", hash[:4])
+	}
+	// store current unit
+	d.Mutex.Lock()
+	d.currentUnit.Store(unit)
+	d.Mutex.Unlock()
+
 	return nil
 }
 
@@ -314,7 +317,7 @@ func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 	return d.getBodyRLP(hash)
 }
 
-// GetUnitTransactions
+// GetUnitTransactions is return unit's body, all transactions of unit.
 func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
 	return d.dagdb.GetUnitTransactions(hash)
 }
@@ -560,11 +563,6 @@ func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error
 // Get UnitNumber
 func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex, error) {
 	return d.dagdb.GetNumberWithUnitHash(hash)
-}
-
-// GetUnitTransactions is return unit's body, all transactions of unit.
-func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
-	return d.dagdb.GetUnitTransactions(hash)
 }
 
 // GetCanonicalHash
