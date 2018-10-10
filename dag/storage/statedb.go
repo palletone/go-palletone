@@ -59,6 +59,8 @@ type StateDb interface {
 	GetContractAllState(id []byte) map[modules.ContractReadSet][]byte
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id common.Hash) (*modules.Contract, error)
+	GetAddressInfo(address common.Address) (*modules.AddressInfo, error)
+	SaveAddressInfo(address common.Address, info *modules.AddressInfo) error
 }
 
 // ######################### SAVE IMPL START ###########################
@@ -294,3 +296,25 @@ func (statedb *StateDatabase) GetContractTpl(templateID []byte) (version *module
 }
 
 // ######################### GET IMPL END ###########################
+func (statedb *StateDatabase) GetAddressInfo(address common.Address) (*modules.AddressInfo, error) {
+	key := append(ADDRESS_INFO_PREFIX, address.Bytes()...)
+	data, err := statedb.db.Get(key)
+	if err != nil {
+		return nil, err
+	}
+	info := &modules.AddressInfo{}
+	rlp.DecodeBytes(data, info)
+	return info, nil
+}
+func (statedb *StateDatabase) SaveAddressInfo(address common.Address, info *modules.AddressInfo) error {
+	key := append(ADDRESS_INFO_PREFIX, address.Bytes()...)
+	data, err := rlp.EncodeToBytes(info)
+	if err != nil {
+		return err
+	}
+	err = statedb.db.Put(key, data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
