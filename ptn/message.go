@@ -160,9 +160,10 @@ func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg, p *peer) error {
 
 func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 	// Decode the retrieval message
-	//log.Debug("===GetBlockBodiesMsg===")
+	log.Debug("===GetBlockBodiesMsg===")
 	msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
 	if _, err := msgStream.List(); err != nil {
+		log.Debug("msgStream.List() err:", err)
 		return err
 	}
 	// Gather blocks until the fetch or network limits is reached
@@ -176,14 +177,17 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 	for bytes < softResponseLimit && len(bodies.Transactions) < downloader.MaxBlockFetch {
 		// Retrieve the hash of the next block
 		if err := msgStream.Decode(&hash); err == rlp.EOL {
+			log.Debug("err == rlp.EOL")
 			break
 		} else if err != nil {
+			log.Debug("msgStream.Decode", "err", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 		//TODO must recover
 		// Retrieve the requested block body, stopping if enough was found
 		//GetTransactionsByUnitHash(hash)
 		//TODO must modify
+		log.Debug("====================GetUnitTransactions==========================")
 		txs, err := pm.dag.GetUnitTransactions(hash)
 		if err != nil {
 			log.Debug("===GetBlockBodiesMsg===", "GetUnitTransactions err:", err)

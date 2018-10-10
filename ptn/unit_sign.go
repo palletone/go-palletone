@@ -146,8 +146,8 @@ func (self *ProtocolManager) groupSigBroadcastLoop() {
 		case event := <-self.groupSigCh:
 			self.BroadcastGroupSig(&event)
 
-			// Err() channel will be closed when unsubscribing.
-		case <-self.sigShareSub.Err():
+		// Err() channel will be closed when unsubscribing.
+		case <-self.groupSigSub.Err():
 			return
 		}
 	}

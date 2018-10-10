@@ -141,9 +141,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	isMediator := ptn.mediatorPlugin.LocalHaveActiveMediator()
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine,
-		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, isMediator); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
 	}
