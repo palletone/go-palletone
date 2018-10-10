@@ -568,7 +568,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 
 	utxoview, err := pool.fetchInputUtxos(tx.Tx)
 	if err != nil {
-		fmt.Println("getchInputUtxo is error", err)
+		fmt.Println("fetchInputUtxo is error", err)
 		return false, err
 	}
 	// Check the transaction if it exists in the main chain and is not already fully spent.

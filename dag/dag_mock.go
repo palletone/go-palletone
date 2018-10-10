@@ -213,6 +213,19 @@ func (mr *MockIDagMockRecorder) GetTransactionByHash(hash interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionByHash", reflect.TypeOf((*MockIDag)(nil).GetTransactionByHash), hash)
 }
 
+// GetUnitTransactions mocks base method
+func (m *MockIDag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
+	ret := m.ctrl.Call(m, "GetUnitTransactions", hash)
+	ret0, _ := ret[0].(modules.Transactions)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUnitTransactions indicates an expected call of GetUnitTransactions
+func (mr *MockIDagMockRecorder) GetUnitTransactions(hash interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitTransactions", reflect.TypeOf((*MockIDag)(nil).GetUnitTransactions), hash)
+}
+
 // InsertHeaderDag mocks base method
 func (m *MockIDag) InsertHeaderDag(arg0 []*modules.Header, arg1 int) (int, error) {
 	ret := m.ctrl.Call(m, "InsertHeaderDag", arg0, arg1)
@@ -236,6 +249,18 @@ func (m *MockIDag) HasUnit(hash common.Hash) bool {
 // HasUnit indicates an expected call of HasUnit
 func (mr *MockIDagMockRecorder) HasUnit(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasUnit", reflect.TypeOf((*MockIDag)(nil).HasUnit), hash)
+}
+
+// Exists mocks base method
+func (m *MockIDag) Exists(hash common.Hash) bool {
+	ret := m.ctrl.Call(m, "Exists", hash)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Exists indicates an expected call of Exists
+func (mr *MockIDagMockRecorder) Exists(hash interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockIDag)(nil).Exists), hash)
 }
 
 // SaveUnit mocks base method
@@ -621,16 +646,16 @@ func (mr *MockIDagMockRecorder) GetUnitHashesFromHash(hash, max interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitHashesFromHash", reflect.TypeOf((*MockIDag)(nil).GetUnitHashesFromHash), hash, max)
 }
 
-// ValidateUnit mocks base method
-func (m *MockIDag) ValidateUnit(unit *modules.Unit, isGenesis bool) bool {
-	ret := m.ctrl.Call(m, "ValidateUnit", unit, isGenesis)
+// ValidateUnitExceptGroupSig mocks base method
+func (m *MockIDag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool {
+	ret := m.ctrl.Call(m, "ValidateUnitExceptGroupSig", unit, isGenesis)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// ValidateUnit indicates an expected call of ValidateUnit
-func (mr *MockIDagMockRecorder) ValidateUnit(unit, isGenesis interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateUnit", reflect.TypeOf((*MockIDag)(nil).ValidateUnit), unit, isGenesis)
+// ValidateUnitExceptGroupSig indicates an expected call of ValidateUnitExceptGroupSig
+func (mr *MockIDagMockRecorder) ValidateUnitExceptGroupSig(unit, isGenesis interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateUnitExceptGroupSig", reflect.TypeOf((*MockIDag)(nil).ValidateUnitExceptGroupSig), unit, isGenesis)
 }
 
 // GetActiveMediator mocks base method

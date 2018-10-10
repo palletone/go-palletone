@@ -337,7 +337,7 @@ func (dl *downloadTester) sync(id string, td uint64, mode SyncMode) error {
 	dl.lock.RUnlock()
 
 	// Synchronise with the chosen peer and ensure proper cleanup afterwards
-	fmt.Println("=========downloadTester->sync===========","td:",td)
+	fmt.Println("=========downloadTester->sync===========", "td:", td)
 	err := dl.downloader.synchronise(id, hash, td, mode, modules.PTNCOIN)
 	select {
 	case <-dl.downloader.cancelCh:
@@ -420,8 +420,8 @@ func (dl *downloadTester) CurrentFastBlock() *modules.Unit {
 // FastSyncCommitHead manually sets the head block to a given hash.
 func (dl *downloadTester) FastSyncCommitHead(hash common.Hash) error {
 	//TODO must recover
-	fmt.Println("======================downloadTester->FastSyncCommitHead==========================")
-	return  nil
+	fmt.Println("======================downloadTester->FastSyncCommitHead=============================================")
+	return nil
 	// For now only check that the state trie is correct
 	if block := dl.GetUnit(hash); block != nil {
 		_, err := trie.NewSecure(block.UnitHeader.Hash(), trie.NewDatabase(dl.stateDb), 0)
@@ -827,7 +827,7 @@ func assertOwnForkedChain(t *testing.T, tester *downloadTester, common int, leng
 		t.Fatalf("synchronised headers mismatch: have %v, want %v", hs, headers)
 	}
 	if bs := len(tester.ownBlocks); bs != blocks {
-		if bs+fsMinFullBlocks+1 != blocks{
+		if bs+fsMinFullBlocks+1 != blocks {
 			t.Fatalf("synchronised blocks mismatch: have %v, want %v", bs, blocks)
 		}
 		//TODO must recover
@@ -894,6 +894,7 @@ func TestThrottling62(t *testing.T) { testThrottling(t, 1, FullSync) }
 //func TestThrottling63Full(t *testing.T) { testThrottling(t, 1, FastSync) }
 
 func TestThrottling63Fast(t *testing.T) { testThrottling(t, 1, FastSync) }
+
 //func TestThrottling64Full(t *testing.T) { testThrottling(t, 64, FullSync) }
 //func TestThrottling64Fast(t *testing.T) { testThrottling(t, 64, FastSync) }
 
@@ -920,7 +921,7 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 		errc <- tester.sync("peer", 10, mode)
 	}()
 	firstcycle := 0
-	secondcycle:= 0
+	secondcycle := 0
 	thirdcycle := 0
 	// Iteratively take some blocks, always checking the retrieval count
 	for {
@@ -930,10 +931,10 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 		tester.lock.RUnlock()
 		firstcycle++
 		if retrieved >= targetBlocks+1 {
-			fmt.Println("=========retrieved >= targetBlocks+1=========","retrieved:",retrieved,"targetBlocks+1:",targetBlocks+1)
+			fmt.Println("=========retrieved >= targetBlocks+1=========", "retrieved:", retrieved, "targetBlocks+1:", targetBlocks+1)
 			break
 		}
-		fmt.Println("*********************************","retrieved:",retrieved,"targetBlocks+1:",targetBlocks+1)
+		fmt.Println("*********************************", "retrieved:", retrieved, "targetBlocks+1:", targetBlocks+1)
 		// Wait a bit for sync to throttle itself
 		var cached, frozen int
 		for start := time.Now(); time.Since(start) < 3*time.Second; {
@@ -957,8 +958,8 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 
 			if cached == blockCacheItems || retrieved+cached+frozen == targetBlocks+1 {
 				fmt.Println("========================cached == blockCacheItems || retrieved+cached+frozen == targetBlocks+1===================================================================")
-				fmt.Println("cached:",cached,"blockCacheItems:",blockCacheItems,"retrieved:",retrieved,"cached:",cached,
-					"frozen:",frozen,"targetBlocks+1:",targetBlocks+1)
+				fmt.Println("cached:", cached, "blockCacheItems:", blockCacheItems, "retrieved:", retrieved, "cached:", cached,
+					"frozen:", frozen, "targetBlocks+1:", targetBlocks+1)
 				thirdcycle++
 				break
 			}
@@ -973,10 +974,10 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 			//TODO must recover
 			//break;
 			//t.Fatalf("block count mismatch: have %v, want %v (owned %v, blocked %v, target %v)", cached, blockCacheItems, retrieved, frozen, targetBlocks+1)
-			if fsMinFullBlocks +retrieved+cached+frozen +1!= targetBlocks+1{
+			if fsMinFullBlocks+retrieved+cached+frozen+1 != targetBlocks+1 {
 				t.Fatalf("block count mismatch: have %v, want %v (owned %v, blocked %v, target %v)", cached, blockCacheItems, retrieved, frozen, targetBlocks+1)
-			}else {
-				retrieved+=fsMinFullBlocks+1
+			} else {
+				retrieved += fsMinFullBlocks + 1
 				break
 			}
 		}
@@ -986,7 +987,7 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 			proceed <- struct{}{}
 		}
 	}
-	fmt.Println("==================firstcycle:",firstcycle,"secondcycle:",secondcycle,"thirdcycle:",thirdcycle)
+	fmt.Println("==================firstcycle:", firstcycle, "secondcycle:", secondcycle, "thirdcycle:", thirdcycle)
 	// Check that we haven't pulled more blocks than available
 	assertOwnChain(t, tester, targetBlocks+1)
 	if err := <-errc; err != nil {

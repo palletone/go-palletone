@@ -22,6 +22,7 @@ package storage
 
 import (
 	"errors"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
@@ -148,6 +149,7 @@ func (utxodb *UtxoDatabase) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
 	utxo := new(modules.Utxo)
 	data, err := utxodb.db.Get(key)
 	if err != nil {
+		log.Error("get utxo entry failed,================================== ", "error", err)
 		return nil, err
 	}
 

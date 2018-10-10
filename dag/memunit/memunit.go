@@ -19,6 +19,8 @@ package memunit
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
@@ -26,20 +28,17 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"strings"
 )
 
 // non validated units set
 type MemUnit map[common.Hash]*modules.Unit
 
 func InitMemUnit() *MemUnit {
-	// modified by Albert·Gou
 	memunit := make(MemUnit)
 	return &memunit
 }
 
 func (mu *MemUnit) Add(u *modules.Unit) error {
-	// append by Albert·Gou
 	if mu == nil {
 		mu = InitMemUnit()
 	}
@@ -50,9 +49,9 @@ func (mu *MemUnit) Add(u *modules.Unit) error {
 	return nil
 }
 
-func (mu *MemUnit) Get(u *modules.Unit) (*modules.Unit, error) {
-	unit, ok := (*mu)[u.UnitHash]
-	if !ok {
+func (mu *MemUnit) Get(hash common.Hash) (*modules.Unit, error) {
+	unit, ok := (*mu)[hash]
+	if !ok || unit == nil {
 		return nil, fmt.Errorf("Get mem unit: unit does not be found.")
 	}
 	return unit, nil
@@ -166,7 +165,6 @@ func NewMemDag(db storage.DagDb, unitRep dagCommon.IUnitRepository) *MemDag {
 		return nil
 	}
 	lastIrreUnit := db.GetLastIrreversibleUnit(genesisUnit.UnitHeader.Number.AssetID)
-	//fmt.Println("lastIrreUnit=", lastIrreUnit)
 	if lastIrreUnit != nil {
 		memdag.lastValidatedUnit[genesisUnit.UnitHeader.Number.AssetID.String()] = lastIrreUnit.UnitHash
 	}
