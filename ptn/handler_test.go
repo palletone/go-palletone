@@ -17,17 +17,19 @@
 package ptn
 
 import (
+	"math"
+	"testing"
+
 	"github.com/golang/mock/gomock"
 	"github.com/palletone/go-palletone/common"
+	//"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/common/rlp"
+	//mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
-
-	"github.com/palletone/go-palletone/common/rlp"
-	"math"
-	"testing"
 )
 
 /*
@@ -65,7 +67,7 @@ func TestProtocolCompatibility(t *testing.T) {
 // Tests that block headers can be retrieved from a remote chain based on user queries.
 func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
 func testGetBlockHeaders(t *testing.T, protocol int) {
-	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil, nil)
+	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil, nil, nil)
 	peer, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
 	defer peer.close()
 	// Create a "random" unknown hash for testing
@@ -319,8 +321,8 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	dag := dag.NewMockIDag(mockCtrl) //.NewMockDatabase(mockCtrl)
-	//mockUnit := &modules.Unit{}
+	dag := dag.NewMockIDag(mockCtrl)
+	pro := NewMockproducer(mockCtrl)
 	height := 10
 	mockUnit := unitForTest(height)
 
@@ -328,12 +330,30 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	dag.EXPECT().GetActiveMediatorNodes().Return(map[string]*discover.Node{}).AnyTimes()
 	dag.EXPECT().CurrentHeader().Return(mockUnit.Header()).AnyTimes()
 	dag.EXPECT().CurrentUnit().Return(mockUnit).AnyTimes()
-	//dag.EXPECT().GetUnitTransactions().Return(mockUnit.Transactions()).AnyTimes()
 	dag.EXPECT().GetUnitTransactions(gomock.Any()).DoAndReturn(func(hash common.Hash) (modules.Transactions, error) {
 		return mockUnit.Transactions(), nil
-	})
+	}).AnyTimes()
 
-	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxBlockFetch+15, dag, nil)
+	pro.EXPECT().LocalHaveActiveMediator().Return(false).AnyTimes()
+	/*
+		pro.EXPECT().SubscribeNewUnitEvent(gomock.Any()).DoAndReturn(func(ch chan<- mp.NewUnitEvent) event.Subscription {
+			return nil
+		}).AnyTimes()
+		pro.EXPECT().SubscribeSigShareEvent(gomock.Any()).DoAndReturn(func(ch chan<- mp.SigShareEvent) event.Subscription {
+			return nil
+		}).AnyTimes()
+		pro.EXPECT().SubscribeGroupSigEvent(gomock.Any()).DoAndReturn(func(ch chan<- mp.GroupSigEvent) event.Subscription {
+			return nil
+		}).AnyTimes()
+		pro.EXPECT().SubscribeVSSDealEvent(gomock.Any()).DoAndReturn(func(ch chan<- mp.VSSDealEvent) event.Subscription {
+			return nil
+		}).AnyTimes()
+		pro.EXPECT().SubscribeVSSResponseEvent(gomock.Any()).DoAndReturn(func(ch chan<- mp.VSSResponseEvent) event.Subscription {
+			return nil
+		}).AnyTimes()
+	*/
+	pro = pro
+	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxBlockFetch+15, dag, nil, nil)
 
 	peer, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
 	defer peer.close()
@@ -353,114 +373,3 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 		//t.Errorf("test: bodies mismatch: %v", err)
 	}
 }
-
-/*
-func MockDag(t *testing.T) dag.IDag {
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-
-	mockObj := dag.NewMockIDag(mockCtrl) //.NewMockDatabase(mockCtrl)
-	mockObj.EXPECT().GetActiveMediatorNodes().Return(map[string]*discover.Node{})
-
-	return mockObj
-}
-
-
-func TestStatehelper_InitAcount(t *testing.T) {
-    mockCtrl := gomock.NewController(t)
-    defer mockCtrl.Finish()
-
-    mockObj := db.NewMockDatabase(mockCtrl)
-    mockObj.EXPECT().Get(gomock.Any()).DoAndReturn(func(key []byte) []byte{
-        if string(key)=="A"{
-            return []byte(strconv.Itoa(100))
-        } else{
-            return []byte(strconv.Itoa(110))
-        }
-
-    })
-
-    mockObj.EXPECT().Put(gomock.Any(),gomock.Any()).Return(nil)
-
-    helper:=NewStateHelper(mockObj)
-    helper.InitAcount("A",100)
-    assert.True(t, helper.GetAcount("A")==100,"Value must 100")
-}
-
-
-*/
-/*
-	// Create a batch of tests for various scenarios
-	limit := downloader.MaxBlockFetch
-	tests := []struct {
-		random    int           // Number of blocks to fetch randomly from the chain
-		explicit  []common.Hash // Explicitly requested blocks
-		available []bool        // Availability of explicitly requested blocks
-		expected  int           // Total number of existing blocks to expect
-	}{
-		{1, nil, nil, 1},                                                   // A single random block should be retrievable
-		{10, nil, nil, 10},                                                 // Multiple random blocks should be retrievable
-		{limit, nil, nil, limit},                                           // The maximum possible blocks should be retrievable
-		{limit + 1, nil, nil, limit},                                       // No more than the possible block count should be returned
-		{0, []common.Hash{genesisUnit.UnitHash}, []bool{true}, 1},          // The genesis block should be retrievable
-		{0, []common.Hash{pm.dag.CurrentUnit().UnitHash}, []bool{true}, 1}, // The chains head block should be retrievable
-		{0, []common.Hash{{}}, []bool{false}, 0},                           // A non existent block should not be returned
-
-		// Existing and non-existing blocks interleaved should not cause problems
-		{0, []common.Hash{
-			{},
-			pm.dag.GetUnitByNumber(index1).UnitHash,
-			{},
-			pm.dag.GetUnitByNumber(index10).UnitHash,
-			{},
-			pm.dag.GetUnitByNumber(index100).UnitHash,
-			{},
-		}, []bool{false, true, false, true, false, true, false}, 3},
-	}
-
-	// Run each of the tests and verify the results against the chain
-	for i, tt := range tests {
-		// Collect the hashes to request, and the response to expect
-		hashes, seen := []common.Hash{}, make(map[int64]bool)
-		bodies := []*blockBody{}
-
-		for j := 0; j < tt.random; j++ {
-			for {
-				num := rand.Int63n(int64(height))
-				if !seen[num] {
-					seen[num] = true
-					numIndex := modules.ChainIndex{
-						modules.PTNCOIN,
-						true,
-						uint64(num),
-					}
-					block := pm.dag.GetUnitByNumber(numIndex)
-					hashes = append(hashes, block.Hash())
-					if len(bodies) < tt.expected {
-						bodies = append(bodies, &blockBody{Transactions: block.Transactions()})
-					}
-					break
-				}
-			}
-		}
-		//fmt.Println("lalala")
-		for j, hash := range tt.explicit {
-			hashes = append(hashes, hash)
-			if tt.available[j] && len(bodies) < tt.expected {
-				fmt.Println(hash)
-
-				block := pm.dag.GetUnitByHash(hash)
-
-				bodies = append(bodies, &blockBody{Transactions: block.Transactions()})
-			}
-		}
-		//for i, h := range hashes {
-		//	fmt.Println(i, h)
-		//}
-		// Send the hash request and verify the response
-		p2p.Send(peer.app, 0x05, hashes)
-		if err := p2p.ExpectMsg(peer.app, 0x06, bodies); err != nil {
-			t.Errorf("test %d: bodies mismatch: %v", i, err)
-		}
-	}
-*/
