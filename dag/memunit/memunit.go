@@ -219,7 +219,7 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 		// if it is not null, check continuously
 		if strings.Compare(irreUnitHash.String(), "") != 0 {
 			if common.CheckExists(irreUnitHash, unit.UnitHeader.ParentsHash) < 0 {
-				return fmt.Errorf("The unit(%s) is not continious.", unit.UnitHash)
+				return fmt.Errorf("The unit(%s) is not continious.", unit.UnitHash.String())
 			}
 		}
 		// add new fork into index

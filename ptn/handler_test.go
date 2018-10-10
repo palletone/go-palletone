@@ -318,7 +318,16 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 // Tests that block contents can be retrieved from a remote chain based on their hashes.
 func TestGetBlockBodies1(t *testing.T) { testGetBlockBodies(t, 1) }
 func testGetBlockBodies(t *testing.T, protocol int) {
-	dag := MockDag(t)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	dag := dag.NewMockIDag(mockCtrl) //.NewMockDatabase(mockCtrl)
+	mockUnit := &modules.Unit{}
+	mockUnit.UnitHeader = &modules.Header{}
+	dag.EXPECT().GetUnitByNumber(gomock.Any()).Return(mockUnit).AnyTimes()
+	dag.EXPECT().GetActiveMediatorNodes().Return(map[string]*discover.Node{})
+	dag.EXPECT().CurrentHeader().Return(&modules.Header{})
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxBlockFetch+15, dag, nil)
 
 	index0 := modules.ChainIndex{
