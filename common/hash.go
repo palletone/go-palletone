@@ -196,7 +196,7 @@ func DoubleHashB(b []byte) []byte {
 
 func CheckExists(search Hash, array []Hash) int {
 	for index, h := range array {
-		if strings.Compare(search.String(), h.String()) == 0 {
+		if strings.EqualFold(search.String(), h.String()) {
 			return index
 		}
 	}
