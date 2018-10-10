@@ -378,10 +378,11 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	//TODO Devin
 	//var unitRep common2.IUnitRepository
 	//unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
-
+	log.Debug("===pm.dag.CurrentHeader===")
 	// Execute the PalletOne handshake
-	head := pm.dag.CurrentHeader()
+
 	//mediator := pm.producer.LocalHaveActiveMediator()
+	head := pm.dag.CurrentHeader()
 
 	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), pm.mediator); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
@@ -403,6 +404,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
 		rw.Init(p.version)
 	}
+
 	// Register the peer locally
 	if err := pm.peers.Register(p); err != nil {
 		log.Error("PalletOne peer registration failed", "err", err)
@@ -504,8 +506,10 @@ func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
 // peer. The remote connection is torn down upon returning any error.
 func (pm *ProtocolManager) handleMsg(p *peer) error {
 	// Read the next message from the remote peer, and ensure it's fully consumed
+	log.Debug("==============handleMsg=============")
 	msg, err := p.rw.ReadMsg()
 	if err != nil {
+		log.Debug("ProtocolManager handleMsg", "ReadMsg err:", err)
 		return err
 	}
 	if msg.Size > ProtocolMaxMsgSize {

@@ -140,7 +140,8 @@ func (pm *ProtocolManager) mediatorCheck(p *peer) error {
 			//}
 		} else {
 			log.Info("PalletOne handshake failed lying selef is mediator")
-			return errors.New("PalletOne handshake failed lying selef is mediator")
+			//TODO must recover
+			//return errors.New("PalletOne handshake failed lying selef is mediator")
 		}
 	}
 	return nil
@@ -165,7 +166,7 @@ func (pm *ProtocolManager) noMediatorCheck(p *peer) error {
 }
 
 func (pm *ProtocolManager) transitionRun(p *peer) error {
-	if pm.producer.LocalHaveActiveMediator() && p.mediator {
+	if p.mediator && pm.producer.LocalHaveActiveMediator() {
 		if pm.peersTransition.mediators.Has(p.ID().TerminalString()) {
 			if err := pm.handleTransitionMsg(p); err != nil {
 				return err

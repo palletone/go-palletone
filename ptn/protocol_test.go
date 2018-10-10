@@ -31,8 +31,8 @@ import (
 // Tests that handshake failures are detected and reported correctly.
 //func TestStatusMsgErrors1(t *testing.T) { testStatusMsgErrors(t, 1) }
 func testStatusMsgErrors(t *testing.T, protocol int) {
-	dag := MockDag(t)
-	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, dag, nil)
+
+	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil, nil)
 	var (
 		genesis, _ = pm.dag.GetGenesisUnit(0)
 		head       = pm.dag.CurrentHeader()
@@ -84,8 +84,7 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 //func TestRecvTransactions1(t *testing.T) { testRecvTransactions(t, 1) }
 func testRecvTransactions(t *testing.T, protocol int) {
 	txAdded := make(chan []*modules.Transaction)
-	dag := MockDag(t)
-	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, dag, nil)
+	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil, nil)
 	pm.acceptTxs = 1 // mark synced to accept transactions
 	p, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
 	defer pm.Stop()
@@ -110,8 +109,7 @@ func testRecvTransactions(t *testing.T, protocol int) {
 // This test checks that pending transactions are sent.
 //func TestSendTransactions1(t *testing.T) { testSendTransactions(t, 1) }
 func testSendTransactions(t *testing.T, protocol int) {
-	dag := MockDag(t)
-	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, dag, nil)
+	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil, nil)
 	defer pm.Stop()
 	// Fill the pool with big transactions.
 	const txsize = txsyncPackSize / 10

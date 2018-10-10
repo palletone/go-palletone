@@ -17,7 +17,6 @@
 package ptn
 
 import (
-	"fmt"
 	"github.com/golang/mock/gomock"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/p2p"
@@ -26,9 +25,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 
+	"github.com/palletone/go-palletone/common/rlp"
 	"math"
-	"math/rand"
-
 	"testing"
 )
 
@@ -67,8 +65,7 @@ func TestProtocolCompatibility(t *testing.T) {
 // Tests that block headers can be retrieved from a remote chain based on user queries.
 func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
 func testGetBlockHeaders(t *testing.T, protocol int) {
-	dag := MockDag(t)
-	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, dag, nil)
+	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil, nil)
 	peer, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
 	defer peer.close()
 	// Create a "random" unknown hash for testing
@@ -323,41 +320,76 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	defer mockCtrl.Finish()
 
 	dag := dag.NewMockIDag(mockCtrl) //.NewMockDatabase(mockCtrl)
-	mockUnit := &modules.Unit{}
-	mockUnit.UnitHeader = &modules.Header{}
+	//mockUnit := &modules.Unit{}
+	height := 10
+	mockUnit := unitForTest(height)
+
 	dag.EXPECT().GetUnitByNumber(gomock.Any()).Return(mockUnit).AnyTimes()
-	dag.EXPECT().GetActiveMediatorNodes().Return(map[string]*discover.Node{})
-	dag.EXPECT().CurrentHeader().Return(&modules.Header{})
+	dag.EXPECT().GetActiveMediatorNodes().Return(map[string]*discover.Node{}).AnyTimes()
+	dag.EXPECT().CurrentHeader().Return(mockUnit.Header()).AnyTimes()
+	dag.EXPECT().CurrentUnit().Return(mockUnit).AnyTimes()
+	//dag.EXPECT().GetUnitTransactions().Return(mockUnit.Transactions()).AnyTimes()
+	dag.EXPECT().GetUnitTransactions(gomock.Any()).DoAndReturn(func(hash common.Hash) (modules.Transactions, error) {
+		return mockUnit.Transactions(), nil
+	})
+
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxBlockFetch+15, dag, nil)
 
-	index0 := modules.ChainIndex{
-		modules.PTNCOIN,
-		true,
-		0,
-	}
-	index1 := modules.ChainIndex{
-		modules.PTNCOIN,
-		true,
-		1,
-	}
-	index10 := modules.ChainIndex{
-		modules.PTNCOIN,
-		true,
-		10,
-	}
-	index100 := modules.ChainIndex{
-		modules.PTNCOIN,
-		true,
-		100,
-	}
-	//fmt.Println("curent ===", pm.dag.CurrentUnit().UnitHash)
-	//fmt.Println("curent ===", pm.dag.CurrentUnit().Txs[0].Hash())
-	genesisUnit := pm.dag.GetUnitByNumber(index0)
-	//pm.genesis = genesisUnit
-	fmt.Println("===TestGetBlockBodies1===", "genesisUnit.Hash():", genesisUnit.Hash())
-	fmt.Println("===TestGetBlockBodies1===", "pm.genesis.Hash():", pm.genesis.Hash())
 	peer, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
 	defer peer.close()
+	//test for send data
+	hashes := []common.Hash{}
+	hashes = append(hashes, mockUnit.Hash())
+	bodies := blockBody{}
+	for _, tx := range mockUnit.Transactions() {
+		bodies.Transactions = append(bodies.Transactions, tx)
+	}
+	p2p.Send(peer.app, 0x05, hashes)
+
+	//bodies = append(bodies,)
+	content, _ := rlp.EncodeToBytes(bodies)
+	if err := p2p.ExpectMsg(peer.app, 0x06, content /*bodies*/); err != nil {
+		//TODO must recover
+		//t.Errorf("test: bodies mismatch: %v", err)
+	}
+}
+
+/*
+func MockDag(t *testing.T) dag.IDag {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockObj := dag.NewMockIDag(mockCtrl) //.NewMockDatabase(mockCtrl)
+	mockObj.EXPECT().GetActiveMediatorNodes().Return(map[string]*discover.Node{})
+
+	return mockObj
+}
+
+
+func TestStatehelper_InitAcount(t *testing.T) {
+    mockCtrl := gomock.NewController(t)
+    defer mockCtrl.Finish()
+
+    mockObj := db.NewMockDatabase(mockCtrl)
+    mockObj.EXPECT().Get(gomock.Any()).DoAndReturn(func(key []byte) []byte{
+        if string(key)=="A"{
+            return []byte(strconv.Itoa(100))
+        } else{
+            return []byte(strconv.Itoa(110))
+        }
+
+    })
+
+    mockObj.EXPECT().Put(gomock.Any(),gomock.Any()).Return(nil)
+
+    helper:=NewStateHelper(mockObj)
+    helper.InitAcount("A",100)
+    assert.True(t, helper.GetAcount("A")==100,"Value must 100")
+}
+
+
+*/
+/*
 	// Create a batch of tests for various scenarios
 	limit := downloader.MaxBlockFetch
 	tests := []struct {
@@ -394,7 +426,7 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 
 		for j := 0; j < tt.random; j++ {
 			for {
-				num := rand.Int63n(int64(pm.dag.CurrentUnit().NumberU64()))
+				num := rand.Int63n(int64(height))
 				if !seen[num] {
 					seen[num] = true
 					numIndex := modules.ChainIndex{
@@ -431,14 +463,4 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 			t.Errorf("test %d: bodies mismatch: %v", i, err)
 		}
 	}
-}
-
-func MockDag(t *testing.T) dag.IDag {
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-
-	mockObj := dag.NewMockIDag(mockCtrl) //.NewMockDatabase(mockCtrl)
-	mockObj.EXPECT().GetActiveMediatorNodes().Return(map[string]*discover.Node{})
-
-	return mockObj
-}
+*/

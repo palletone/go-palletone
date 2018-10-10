@@ -56,8 +56,11 @@ import (
 // newTestProtocolManager creates a new protocol manager for testing purposes,
 // with the given number of blocks already known, and potential notification
 // channels for different events.
-func newTestProtocolManager(mode downloader.SyncMode, blocks int, dag dag.IDag, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
+func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
 	memdb, _ := ptndb.NewMemDatabase()
+	if idag == nil {
+		idag, _ = MakeDags(memdb, blocks)
+	}
 	//dag, _ := MakeDags(memdb, blocks)
 	//uu := dag.CurrentUnit()
 	//log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHeader-----%#v\n", uu.UnitHeader)
@@ -82,8 +85,8 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, dag dag.IDag, 
 		true,
 		0,
 	}
-	genesisUint := dag.GetUnitByNumber(index0)
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, dag, typemux, producer, genesisUint, true)
+	genesisUint := idag.GetUnitByNumber(index0)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, idag, typemux, producer, genesisUint, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -204,6 +207,7 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool, dag 
 			head  = pm.dag.CurrentHeader()
 			index = head.Number
 		)
+		fmt.Println("==========================================index:", index.Index)
 		//fmt.Println("	if shake {===》》》",td)
 		//genesis, err := dag.GetGenesisUnit(0)
 		////fmt.Println("genesis unti if shake {===》》》", genesis.UnitHash)
@@ -223,10 +227,9 @@ func (p *testPeer) handshake(t *testing.T, index modules.ChainIndex, head common
 		NetworkId:       DefaultConfig.NetworkId,
 		Index:           index,
 		GenesisUnit:     genesis,
-		Mediator:        true,
+		Mediator:        false,
 	}
 	if err := p2p.ExpectMsg(p.app, StatusMsg, msg); err != nil {
-		//TODO must recover
 		//log.Fatalf("status recv: %v", err)
 	}
 	if err := p2p.Send(p.app, StatusMsg, msg); err != nil {
@@ -246,6 +249,21 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	newDag(dag.Db, genesisUnit, unitAccount)
 	return dag, nil
 }
+func unitForTest(index int) *modules.Unit {
+	header := modules.NewHeader([]common.Hash{}, []modules.IDType16{modules.PTNCOIN}, 1, []byte{})
+	header.Number.AssetID = modules.PTNCOIN
+	header.Number.IsMain = true
+	header.Number.Index = uint64(index)
+	header.Authors = &modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
+	header.GroupSign = []byte{}
+	//tx, _ := NewCoinbaseTransaction()
+	tx, _ := CreateCoinbase()
+	fmt.Printf("----------%#v\n", tx)
+	txs := modules.Transactions{tx}
+	genesisUnit := modules.NewUnit(header, txs)
+	return genesisUnit
+}
+
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header := modules.NewHeader([]common.Hash{}, []modules.IDType16{modules.PTNCOIN}, 1, []byte{})
 	header.Number.AssetID = modules.PTNCOIN
