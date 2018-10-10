@@ -56,9 +56,9 @@ import (
 // newTestProtocolManager creates a new protocol manager for testing purposes,
 // with the given number of blocks already known, and potential notification
 // channels for different events.
-func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
+func newTestProtocolManager(mode downloader.SyncMode, blocks int, dag dag.IDag, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
 	memdb, _ := ptndb.NewMemDatabase()
-	dag, _ := MakeDags(memdb, blocks)
+	//dag, _ := MakeDags(memdb, blocks)
 	//uu := dag.CurrentUnit()
 	//log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHeader-----%#v\n", uu.UnitHeader)
 	//log.Printf("--------newTestProtocolManager--CurrentUnit--unit.UnitHash-------%#v\n", uu.UnitHash)
@@ -77,8 +77,13 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 	engine := new(consensus.DPOSEngine)
 	typemux := new(event.TypeMux)
 	producer := new(mediatorplugin.MediatorPlugin)
-	genesisUint, _ := dag.GetGenesisUnit(0)
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, dag, typemux, producer, genesisUint)
+	index0 := modules.ChainIndex{
+		modules.PTNCOIN,
+		true,
+		0,
+	}
+	genesisUint := dag.GetUnitByNumber(index0)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, dag, typemux, producer, genesisUint, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -92,8 +97,8 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, newtx chan<- [
 // with the given number of blocks already known, and potential notification
 // channels for different events. In case of an error, the constructor force-
 // fails the test.
-func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database) {
-	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/, newtx)
+func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, dag dag.IDag, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database) {
+	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/, dag, newtx)
 	if err != nil {
 		t.Fatalf("Failed to create protocol manager: %v", err)
 	}
@@ -159,8 +164,9 @@ func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *mod
 
 // testPeer is a simulated peer to allow testing direct network calls.
 type testPeer struct {
-	net p2p.MsgReadWriter // Network layer reader/writer to simulate remote messaging
-	app *p2p.MsgPipeRW    // Application layer reader/writer to simulate the local side
+	net     p2p.MsgReadWriter // Network layer reader/writer to simulate remote messaging
+	app     *p2p.MsgPipeRW    // Application layer reader/writer to simulate the local side
+	version int
 	*peer
 }
 
@@ -185,7 +191,7 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool, dag 
 			errc <- p2p.DiscQuitting
 		}
 	}()
-	tp := &testPeer{app: app, net: net, peer: peer}
+	tp := &testPeer{app: app, net: net, peer: peer, version: version}
 	// Execute any implicitly requested handshakes and return
 	if shake {
 		var (
@@ -199,12 +205,12 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool, dag 
 			index = head.Number
 		)
 		//fmt.Println("	if shake {===》》》",td)
-		genesis, err := dag.GetGenesisUnit(0)
-		//fmt.Println("genesis unti if shake {===》》》", genesis.UnitHash)
-		if err != nil {
-			fmt.Println("GetGenesisUnit===error:=", err)
-		}
-		tp.handshake(nil, index, head.Hash(), genesis.Hash())
+		//genesis, err := dag.GetGenesisUnit(0)
+		////fmt.Println("genesis unti if shake {===》》》", genesis.UnitHash)
+		//if err != nil {
+		//	fmt.Println("GetGenesisUnit===error:=", err)
+		//}
+		tp.handshake(nil, index, head.Hash(), pm.genesis.Hash())
 	}
 	return tp, errc
 }
@@ -217,9 +223,11 @@ func (p *testPeer) handshake(t *testing.T, index modules.ChainIndex, head common
 		NetworkId:       DefaultConfig.NetworkId,
 		Index:           index,
 		GenesisUnit:     genesis,
+		Mediator:        true,
 	}
 	if err := p2p.ExpectMsg(p.app, StatusMsg, msg); err != nil {
-		log.Fatalf("status recv: %v", err)
+		//TODO must recover
+		//log.Fatalf("status recv: %v", err)
 	}
 	if err := p2p.Send(p.app, StatusMsg, msg); err != nil {
 		log.Fatalf("status send: %v", err)

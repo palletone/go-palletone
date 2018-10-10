@@ -121,7 +121,8 @@ type ProtocolManager struct {
 	// and processing
 	wg sync.WaitGroup
 
-	genesis *modules.Unit
+	genesis  *modules.Unit
+	mediator bool
 
 	peersTransition  *peerSet
 	transCycleConnCh chan int
@@ -131,7 +132,7 @@ type ProtocolManager struct {
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool,
 	engine core.ConsensusEngine, dag dag.IDag, mux *event.TypeMux, producer producer,
-	genesis *modules.Unit) (*ProtocolManager, error) {
+	genesis *modules.Unit, isMediator bool) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:        networkId,
@@ -146,6 +147,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		quitSync:         make(chan struct{}),
 		transCycleConnCh: make(chan int, 1),
 		genesis:          genesis,
+		mediator:         isMediator,
 		producer:         producer,
 		peersTransition:  newPeerSet(),
 	}
@@ -322,7 +324,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	go pm.vssResponseBroadcastLoop()
 
 	//TODO xiaozhi
-	go pm.mediatorConnect()
+	//go pm.mediatorConnect()
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -379,9 +381,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	// Execute the PalletOne handshake
 	head := pm.dag.CurrentHeader()
-	mediator := pm.producer.LocalHaveActiveMediator()
+	//mediator := pm.producer.LocalHaveActiveMediator()
 
-	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), mediator); err != nil {
+	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), pm.mediator); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
