@@ -24,11 +24,12 @@ import (
 
 // common error
 var (
-	ErrSetEmpty    = errors.New("dag: Set is empty")
-	ErrDagNotFound = errors.New("dag: Not found")
+	ErrSetEmpty    = errors.New("dag: set is empty")
+	ErrDagNotFound = errors.New("dag: not found")
 
 	ErrNotFound       = New("leveldb: not found")
-	ErrNumberNotFound = New("dag: Header's number not found")
+	ErrNumberNotFound = New("dag: header's number not found")
+	ErrUtxoNotFound   = New("utxo: not found")
 )
 
 // New returns an error that formats as the given text.

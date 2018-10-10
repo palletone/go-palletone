@@ -21,10 +21,11 @@
 package storage
 
 import (
-	"errors"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 )
@@ -148,6 +149,10 @@ func (utxodb *UtxoDatabase) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
 	utxo := new(modules.Utxo)
 	data, err := utxodb.db.Get(key)
 	if err != nil {
+		log.Error("get utxo entry failed,================================== ", "error", err)
+		if err.Error() == errors.ErrNotFound.Error() {
+			return nil, errors.ErrUtxoNotFound
+		}
 		return nil, err
 	}
 

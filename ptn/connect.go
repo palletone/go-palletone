@@ -147,6 +147,7 @@ func (pm *ProtocolManager) mediatorCheck(p *peer) error {
 }
 
 func (pm *ProtocolManager) noMediatorCheck(p *peer) error {
+	log.Info("=========ProtocolManager======", "p.mediator:", p.mediator)
 	if !p.mediator {
 		peers := pm.dag.GetActiveMediatorNodes()
 		if _, ok := peers[p.ID().TerminalString()]; !ok {
@@ -172,4 +173,13 @@ func (pm *ProtocolManager) transitionRun(p *peer) error {
 		}
 	}
 	return nil
+}
+
+func (pm *ProtocolManager) cancelOldMediatorConnect() {
+	//TODO use RemovePeer
+
+	//peers := pm.peersTransition.GetPeers()
+	//for _, peer := range peers {
+	//	peer.transitionCh <- mediatorCancel
+	//}
 }
