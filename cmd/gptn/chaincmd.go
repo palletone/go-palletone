@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/urfave/cli.v1"
 	"os"
 )
@@ -184,40 +183,12 @@ func initGenesis(ctx *cli.Context) error {
 
 	//3. initial globalproperty
 	//modified by Yiran
-	err = InitPropertyDB(genesis, genesisUnitHash, dag)
+	err = dag.InitPropertyDB(genesis, genesisUnitHash)
 	if err != nil {
 		utils.Fatalf("Failed toInitPropertyDB: %v", err)
 		return err
 	}
 
-	return nil
-}
-
-// modified by Yiran
-func InitPropertyDB(genesis *core.Genesis, genesisUnitHash common.Hash, dag *dag.Dag) error {
-	//  全局属性不是交易，不需要放在Unit中
-	// @author Albert·Gou
-	gp := modules.InitGlobalProp(genesis)
-	if err := dag.StoreGlobalProp(gp); err != nil {
-		utils.Fatalf("Failed to write global properties: %v", err)
-		return err
-	}
-
-	//  动态全局属性不是交易，不需要放在Unit中
-	// @author Albert·Gou
-	dgp := modules.InitDynGlobalProp(genesis, genesisUnitHash)
-	if err := dag.StoreDynGlobalProp(dgp); err != nil {
-		utils.Fatalf("Failed to write dynamic global properties: %v", err)
-		return err
-	}
-
-	//  初始化mediator调度器，并存在数据库
-	// @author Albert·Gou
-	ms := modules.InitMediatorSchl(gp, dgp)
-	if err := dag.StoreMediatorSchl(ms); err != nil {
-		utils.Fatalf("Failed to write mediator schedule: %v", err)
-		return err
-	}
 	return nil
 }
 

@@ -141,6 +141,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	if err != nil {
 		return nil
 	}
+
 	// fmt.Println("new account success and address=", account.Address.String())
 	db, _ := stack.OpenDatabase(db_path, 0, 0)
 	//db, _ := ptndb.NewMemDatabase()
@@ -150,7 +151,20 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		fmt.Printf("Failed to unlock account: %v, address: %v \n", err, account.Address.Str())
 		return nil
 	}
-	gen.SetupGenesisUnit(dag, ptnConf.Genesis, ks, account)
+
+	// modified by Albert·Gou
+	unit, err := gen.SetupGenesisUnit(dag, ptnConf.Genesis, ks, account)
+	if err != nil {
+		fmt.Printf("Failed to write genesis unit: %v \n", err)
+		return nil
+	}
+
+	err = dag.InitPropertyDB(ptnConf.Genesis, unit.UnitHash)
+	if err != nil {
+		fmt.Printf("Failed to InitPropertyDB: %v \n", err)
+		return nil
+	}
+
 	db.Close()
 	if err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) { return ptn.New(ctx, ptnConf) }); err != nil {
 		t.Fatalf("failed to register PalletOne protocol: %v", err)

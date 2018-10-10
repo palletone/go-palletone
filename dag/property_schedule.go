@@ -21,8 +21,11 @@
 package dag
 
 import (
+	"fmt"
+
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -111,4 +114,31 @@ func (d *Dag) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
 }
 func (d *Dag) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
 	return d.propdb.RetrieveMediatorSchl()
+}
+
+func (dag *Dag) InitPropertyDB(genesis *core.Genesis, genesisUnitHash common.Hash) error {
+	//  全局属性不是交易，不需要放在Unit中
+	// @author Albert·Gou
+	gp := modules.InitGlobalProp(genesis)
+	if err := dag.StoreGlobalProp(gp); err != nil {
+		log.Error(fmt.Sprintf("Failed to write global properties: %v", err))
+		return err
+	}
+
+	//  动态全局属性不是交易，不需要放在Unit中
+	// @author Albert·Gou
+	dgp := modules.InitDynGlobalProp(genesis, genesisUnitHash)
+	if err := dag.StoreDynGlobalProp(dgp); err != nil {
+		log.Error(fmt.Sprintf("Failed to write dynamic global properties: %v", err))
+		return err
+	}
+
+	//  初始化mediator调度器，并存在数据库
+	// @author Albert·Gou
+	ms := modules.InitMediatorSchl(gp, dgp)
+	if err := dag.StoreMediatorSchl(ms); err != nil {
+		log.Error(fmt.Sprintf("Failed to write mediator schedule: %v", err))
+		return err
+	}
+	return nil
 }
