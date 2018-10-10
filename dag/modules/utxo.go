@@ -219,14 +219,6 @@ func (outpoint *OutPoint) ToKey() []byte {
 	//  return []byte(out)
 }
 
-func (outpoint *OutPoint) String() string {
-	data, err := rlp.EncodeToBytes(outpoint)
-	if err != nil {
-		return ""
-	}
-	return string(data)
-}
-
 func (outpoint *OutPoint) SetString(data string) error {
 	rs := []rune(data)
 	data = string(rs[len(UTXO_PREFIX):])

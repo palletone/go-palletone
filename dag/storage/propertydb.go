@@ -39,6 +39,7 @@ var (
 // modified by Yiran
 type PropertyDb struct {
 	db            ptndb.Database
+	logger log.ILogger
 	//GlobalProp    *modules.GlobalProperty
 	//DynGlobalProp *modules.DynamicGlobalProperty
 	//MediatorSchl  *modules.MediatorSchedule
@@ -57,23 +58,23 @@ type IPropertyDb interface {
 
 // modified by Yiran
 // initialize PropertyDB , and retrieve gp,dgp,mc from IPropertyDb.
-func NewPropertyDb(db ptndb.Database) (*PropertyDb,error) {
-	pdb := &PropertyDb{db: db}
+func NewPropertyDb(db ptndb.Database,l log.ILogger) (*PropertyDb,error) {
+	pdb := &PropertyDb{db: db,logger:l}
 	//gp, err := pdb.RetrieveGlobalProp()
 	//if err != nil {
-	//	log.Error("RetrieveGlobalProp Error")
+	//	logger.Error("RetrieveGlobalProp Error")
 	//	return nil,err
 	//}
 	//
 	//dgp, err := pdb.RetrieveDynGlobalProp()
 	//if err != nil {
-	//	log.Error("RetrieveDynGlobalProp Error")
+	//	logger.Error("RetrieveDynGlobalProp Error")
 	//	return nil,err
 	//}
 	//
 	//ms, err := pdb.RetrieveMediatorSchl()
 	//if err != nil {
-	//	log.Error("RetrieveMediatorSchl Error")
+	//	logger.Error("RetrieveMediatorSchl Error")
 	//	return nil,err
 	//}
 	//pdb.GlobalProp = gp

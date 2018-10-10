@@ -380,6 +380,9 @@ type OutPoint struct {
 	MessageIndex uint32      // message index in transaction
 	OutIndex     uint32
 }
+func (outpoint *OutPoint) String() string{
+	return fmt.Sprintf("Outpoint[TxId:{%#x},MsgIdx:{%d},OutIdx:{%d}]",outpoint.TxHash,outpoint.MessageIndex,outpoint.OutIndex)
+}
 
 func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
 	return &OutPoint{

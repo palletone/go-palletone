@@ -37,12 +37,12 @@ import (
 
 //保存了对合约写集、Config、Asset信息
 type StateDb struct {
-	db ptndb.Database
-	log log.ILogger
+	db     ptndb.Database
+	logger log.ILogger
 }
 
-func NewStateDb(db ptndb.Database) *StateDb {
-	return &StateDb{db: db}
+func NewStateDb(db ptndb.Database,l log.ILogger) *StateDb {
+	return &StateDb{db: db, logger:l}
 }
 
 
@@ -77,7 +77,7 @@ func SaveContractState(statedb *StateDb, prefix []byte, id []byte, field string,
 	key = append(key, version.Bytes()...)
 
 	if err := StoreBytes(statedb.db, key, value); err != nil {
-		statedb.log.Error("Save contract template",  err.Error())
+		statedb.logger.Error("Save contract template",  err.Error())
 		return err
 	}
 	return nil
@@ -167,13 +167,13 @@ func (statedb *StateDb) GetContract(id common.Hash) (*modules.Contract, error) {
 	}
 	con_bytes, err := statedb.db.Get(append(CONTRACT_PTEFIX, id[:]...))
 	if err != nil {
-		statedb.log.Error("err:", err)
+		statedb.logger.Error("err:", err)
 		return nil, err
 	}
 	contract := new(modules.Contract)
 	err = rlp.DecodeBytes(con_bytes, contract)
 	if err != nil {
-		statedb.log.Error("err:", err)
+		statedb.logger.Error("err:", err)
 		return nil, err
 	}
 	return contract, nil

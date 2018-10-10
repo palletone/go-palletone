@@ -106,7 +106,7 @@ func (statedb *StateDb) GetContractTpl(templateID []byte) (version *modules.Stat
 	if len(data) == 1 {
 		for _, v := range data {
 			if err := rlp.DecodeBytes(v, &bytecode); err != nil {
-				statedb.log.Error("GetContractTpl when get bytecode", "error", err.Error(), "codeing:", v, "val:", bytecode)
+				statedb.logger.Error("GetContractTpl when get bytecode", "error", err.Error(), "codeing:", v, "val:", bytecode)
 				return
 			}
 		}
@@ -117,13 +117,13 @@ func (statedb *StateDb) GetContractTpl(templateID []byte) (version *modules.Stat
 		return
 	}
 	if err := rlp.DecodeBytes(nameByte, &name); err != nil {
-		statedb.log.Error("GetContractTpl when get name", "error", err.Error())
+		statedb.logger.Error("GetContractTpl when get name", "error", err.Error())
 		return
 	}
 
 	_, pathByte := statedb.GetTplState(templateID, modules.FIELD_TPL_PATH)
 	if err := rlp.DecodeBytes(pathByte, &path); err != nil {
-		statedb.log.Error("GetContractTpl when get path", "error", err.Error())
+		statedb.logger.Error("GetContractTpl when get path", "error", err.Error())
 		return
 	}
 	return

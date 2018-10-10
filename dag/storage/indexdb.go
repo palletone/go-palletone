@@ -23,13 +23,15 @@ package storage
 import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 type IndexDb struct{
 	db ptndb.Database
+	logger log.ILogger
 }
-func NewIndexDb(db ptndb.Database) *IndexDb {
-	return &IndexDb{db:db,}
+func NewIndexDb(db ptndb.Database,l log.ILogger) *IndexDb {
+	return &IndexDb{db:db,logger:l}
 }
 
 type IIndexDb interface {

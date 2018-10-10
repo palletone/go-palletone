@@ -38,10 +38,11 @@ type Validate struct {
 	dagdb   storage.IDagDb
 	utxodb  storage.IUtxoDb
 	statedb storage.IStateDb
+	logger log.ILogger
 }
 
-func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, statedb storage.IStateDb) *Validate {
-	return &Validate{dagdb: dagdb, utxodb: utxodb, statedb: statedb}
+func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, statedb storage.IStateDb,l log.ILogger) *Validate {
+	return &Validate{dagdb: dagdb, utxodb: utxodb, statedb: statedb,logger:l}
 }
 
 type Validator interface {

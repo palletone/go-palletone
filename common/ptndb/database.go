@@ -55,7 +55,7 @@ type LDBDatabase struct {
 	quitLock sync.Mutex      // Mutex protecting the quit channel access
 	quitChan chan chan error // Quit channel to stop the metrics collection before closing the database
 
-	log log.Plogger // Contextual logger tracking the database path
+	log log.ILogger // Contextual logger tracking the database path
 }
 
 // NewLDBDatabase returns a LevelDB wrapped object.
@@ -87,7 +87,7 @@ func NewLDBDatabase(file string, cache int, handles int) (*LDBDatabase, error) {
 	return &LDBDatabase{
 		fn:  file,
 		db:  db,
-		log: *logger,
+		log: logger,
 	}, nil
 }
 
