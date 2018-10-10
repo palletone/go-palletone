@@ -523,7 +523,7 @@ func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) 
 	fees := uint64(0)
 	for _, tx := range txs {
 		for _, msg := range tx.Tx.TxMessages {
-			payload, ok := msg.Payload.(modules.PaymentPayload)
+			payload, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok == false {
 				continue
 			}
@@ -566,4 +566,19 @@ To compute mediator interest for packaging one unit
 */
 func ComputeInterest() uint64 {
 	return uint64(100000000)
+}
+
+func IsCoinBase(tx *modules.Transaction) bool {
+	if len(tx.TxMessages) != 1 {
+		return false
+	}
+	msg, ok := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	if !ok {
+		return false
+	}
+	prevOut := msg.Input[0].PreviousOutPoint
+	if prevOut.TxHash != (common.Hash{}) {
+		return false
+	}
+	return true
 }

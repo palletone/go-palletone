@@ -667,7 +667,7 @@ func accountSignTx(ctx *cli.Context) error {
 		//		//multisig transaction need redeem for sign
 		for _, mtx := range tx.TxMessages {
 			payload := mtx.Payload
-			payment, ok := payload.(modules.PaymentPayload)
+			payment, ok := payload.(*modules.PaymentPayload)
 			if ok == true {
 				for _, txinOne := range payment.Input {
 					rawInput := ptnjson.RawTxInput{

@@ -213,7 +213,7 @@ func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
 	} else {
 		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
 		if err := d.Memdag.Save(&unit); err != nil {
-			return 3, fmt.Errorf("SaveDag, save error: %s", err.Error())
+			return 3, fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		}
 	}
 	// step5. check if it is need to switch
@@ -454,9 +454,9 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	utxoDb := storage.NewUtxoDatabase(db)
 	stateDb := storage.NewStateDatabase(db)
 	idxDb := storage.NewIndexDatabase(db)
-	propDb,err := storage.NewPropertyDb(db)
+	propDb, err := storage.NewPropertyDb(db)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
@@ -489,9 +489,9 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	utxoDb := storage.NewUtxoDatabase(db)
 	stateDb := storage.NewStateDatabase(db)
 	idxDb := storage.NewIndexDatabase(db)
-	propDb,err := storage.NewPropertyDb(db)
-	if err!= nil {
-		return nil,err
+	propDb, err := storage.NewPropertyDb(db)
+	if err != nil {
+		return nil, err
 	}
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
@@ -618,6 +618,15 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 	}
 	// if tx is Not CoinBase
 	// add txIn previousoutpoint
+	if dagcommon.IsCoinBase(tx) {
+		msgs, ok := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+		if ok {
+			for _, in := range msgs.Input {
+				neededSet[*in.PreviousOutPoint] = struct{}{}
+			}
+		}
+	}
+
 	view := txspool.NewUtxoViewpoint()
 	d.Mutex.RLock()
 	err := view.FetchUtxos(d.utxodb, neededSet)
@@ -847,7 +856,7 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 	res := make([]*modules.Utxo, 0)
 	for _, utxo := range utxos {
 		if utxo.Asset.AssetId == assetId {
-			res = append(res,utxo)
+			res = append(res, utxo)
 		}
 	}
 	return res

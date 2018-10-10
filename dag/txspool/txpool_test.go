@@ -71,7 +71,7 @@ func (ud *testUnitDag) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, err
 	preout := modules.OutPoint{TxHash: tx.Hash()}
 	for i, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
-			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				msgIdx := uint32(i)
 				preout.MessageIndex = msgIdx
 				for j := range msg.Output {

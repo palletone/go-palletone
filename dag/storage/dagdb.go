@@ -167,7 +167,7 @@ func (dagdb *DagDatabase) SaveTransaction(tx *modules.Transaction) error {
 	dagdb.updateAddrTransactions(tx.Address().String(), tx.TxHash)
 	// store output by addr
 	for i, msg := range tx.TxMessages {
-		payload, ok := msg.Payload.(modules.PaymentPayload)
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if ok {
 			for _, output := range payload.Output {
 				//  pkscript to addr
