@@ -29,15 +29,12 @@ import (
 	//"github.com/ethereum/go-ethereum/params"
 	"time"
 
-	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/memunit"
@@ -63,18 +60,6 @@ type Dag struct {
 	Mutex sync.RWMutex
 
 	Memdag *memunit.MemDag // memory unit
-}
-
-func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
-	return d.propdb.GetGlobalProp()
-}
-
-func (d *Dag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
-	return d.propdb.GetDynGlobalProp()
-}
-
-func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
-	return d.propdb.GetMediatorSchl()
 }
 
 func (d *Dag) CurrentUnit() *modules.Unit {
@@ -179,16 +164,6 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 	d.Mutex.Unlock()
 
 	return nil
-}
-
-// @author Albert·Gou
-func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool {
-	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
-	if unitState != modules.UNIT_STATE_VALIDATED &&
-		unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-		return false
-	}
-	return true
 }
 
 func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
@@ -454,10 +429,11 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	utxoDb := storage.NewUtxoDatabase(db)
 	stateDb := storage.NewStateDatabase(db)
 	idxDb := storage.NewIndexDatabase(db)
-	propDb,err := storage.NewPropertyDb(db)
+	propDb, err := storage.NewPropertyDb(db)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
+
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
@@ -489,10 +465,8 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	utxoDb := storage.NewUtxoDatabase(db)
 	stateDb := storage.NewStateDatabase(db)
 	idxDb := storage.NewIndexDatabase(db)
-	propDb,err := storage.NewPropertyDb(db)
-	if err!= nil {
-		return nil,err
-	}
+	propDb := storage.NewPropertyDb4GenesisInit(db)
+
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
@@ -655,54 +629,9 @@ func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
 	return d.dagdb.GetAddrTransactions(addr)
 }
 
-// author Albert·Gou
-func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
-	return d.GetGlobalProp().GetActiveMediatorNodes()
-}
-
 // get contract state
 func (d *Dag) GetContractState(id string, field string) (*modules.StateVersion, []byte) {
 	return d.GetContractState(id, field)
-}
-
-// author Albert·Gou
-func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
-	return d.GetGlobalProp().GetActiveMediatorInitPubs()
-}
-
-// author Albert·Gou
-func (d *Dag) GetCurThreshold() int {
-	return d.GetGlobalProp().GetCurThreshold()
-}
-
-// author Albert·Gou
-func (d *Dag) GetActiveMediatorCount() int {
-	return d.GetGlobalProp().GetActiveMediatorCount()
-}
-
-// author Albert·Gou
-func (d *Dag) GetActiveMediators() []common.Address {
-	return d.GetGlobalProp().GetActiveMediators()
-}
-
-// author Albert·Gou
-func (d *Dag) GetActiveMediatorAddr(index int) common.Address {
-	return d.GetGlobalProp().GetActiveMediatorAddr(index)
-}
-
-// author Albert·Gou
-func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
-	return d.GetGlobalProp().GetActiveMediatorNode(index)
-}
-
-// author Albert·Gou
-func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
-	return d.GetGlobalProp().GetActiveMediator(add)
-}
-
-// author Albert·Gou
-func (d *Dag) IsActiveMediator(add common.Address) bool {
-	return d.GetGlobalProp().IsActiveMediator(add)
 }
 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
@@ -775,24 +704,6 @@ func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, 
 func (d *Dag) UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
 	d.propRep.UpdateGlobalDynProp(gp, dgp, unit)
 }
-func (d *Dag) StoreGlobalProp(gp *modules.GlobalProperty) error {
-	return d.propdb.StoreGlobalProp(gp)
-}
-func (d *Dag) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error {
-	return d.propdb.StoreDynGlobalProp(dgp)
-}
-func (d *Dag) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
-	return d.propdb.RetrieveGlobalProp()
-}
-func (d *Dag) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
-	return d.propdb.RetrieveDynGlobalProp()
-}
-func (d *Dag) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
-	return d.propdb.StoreMediatorSchl(ms)
-}
-func (d *Dag) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
-	return d.propdb.RetrieveMediatorSchl()
-}
 
 //@Yiran
 func (d *Dag) GetCurrentUnitIndex() (modules.ChainIndex, error) {
@@ -847,7 +758,7 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 	res := make([]*modules.Utxo, 0)
 	for _, utxo := range utxos {
 		if utxo.Asset.AssetId == assetId {
-			res = append(res,utxo)
+			res = append(res, utxo)
 		}
 	}
 	return res

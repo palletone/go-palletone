@@ -194,7 +194,7 @@ func initGenesis(ctx *cli.Context) error {
 }
 
 // modified by Yiran
-func InitPropertyDB(genesis *core.Genesis, genesisUnitHash common.Hash, dag *dag.Dag, ) error {
+func InitPropertyDB(genesis *core.Genesis, genesisUnitHash common.Hash, dag *dag.Dag) error {
 	//  全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	gp := modules.InitGlobalProp(genesis)

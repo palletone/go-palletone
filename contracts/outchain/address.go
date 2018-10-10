@@ -68,26 +68,8 @@ func processAddressMethodBTC(chaincodeID string, outChainAddr *pb.OutChainAddres
 		if err != nil {
 			return "", err
 		}
-		//
-		btcAdaptor.NetID = cfg.Ada.Btc.NetID
-		btcAdaptor.Host = cfg.Ada.Btc.Host
-		btcAdaptor.RPCUser = cfg.Ada.Btc.RPCUser
-		btcAdaptor.RPCPasswd = cfg.Ada.Btc.RPCPasswd
-		btcAdaptor.CertPath = cfg.Ada.Btc.CertPath
-		//
-		var importMultisigParams adaptor.ImportMultisigParams
-		importMultisigParams.PublicKeys = createMultiSigParams.PublicKeys
-		importMultisigParams.MRequires = createMultiSigParams.M
-		importMultisigParams.WalletPasswd = cfg.Ada.Btc.WalletPasswd
-		resultImport, err := btcAdaptor.ImportMultisig(&importMultisigParams)
-		if err != nil {
-			return "", err
-		}
-		if strings.Contains(resultImport, "true") {
-			return result, nil
-		} else {
-			return "", errors.New("Import Multisig Failed.")
-		}
+
+		return result, nil
 
 	case "GetAddressByPubkey":
 		var btcAdaptor adaptorbtc.AdaptorBTC
