@@ -82,6 +82,10 @@ func NewPropertyDb(db ptndb.Database) (*PropertyDatabase,error) {
 	return pdb,nil
 }
 
+func NewPropertyDb4GenesisInit(db ptndb.Database) (*PropertyDatabase) {
+	return &PropertyDatabase{db: db}
+}
+
 // modified by Yiran
 func (propdb *PropertyDatabase) GetGlobalProp() *modules.GlobalProperty {
 	return propdb.GlobalProp
