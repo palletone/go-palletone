@@ -35,12 +35,12 @@ import (
 )
 
 type Validate struct {
-	dagdb   storage.DagDb
-	utxodb  storage.UtxoDb
-	statedb storage.StateDb
+	dagdb   storage.IDagDb
+	utxodb  storage.IUtxoDb
+	statedb storage.IStateDb
 }
 
-func NewValidate(dagdb storage.DagDb, utxodb storage.UtxoDb, statedb storage.StateDb) *Validate {
+func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, statedb storage.IStateDb) *Validate {
 	return &Validate{dagdb: dagdb, utxodb: utxodb, statedb: statedb}
 }
 
@@ -367,7 +367,7 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 			if in.PreviousOutPoint == nil {
 				return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
 			}
-			if utxo, err := validate.utxodb.GetUtxoEntry(in.PreviousOutPoint.ToKey()); utxo == nil || err != nil {
+			if utxo, err := validate.utxodb.GetUtxoEntry(in.PreviousOutPoint); utxo == nil || err != nil {
 				return modules.TxValidationCode_INVALID_OUTPOINT
 			}
 			// check SignatureScript

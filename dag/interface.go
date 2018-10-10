@@ -72,7 +72,7 @@ type IDag interface {
 	GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	GetTrieSyncProgress() (uint64, error)
-	GetUtxoEntry(key []byte) (*modules.Utxo, error)
+	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr string) ([]modules.Utxo, error)

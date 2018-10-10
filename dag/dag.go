@@ -48,17 +48,17 @@ type Dag struct {
 	currentUnit   atomic.Value
 	Db            ptndb.Database
 	unitRep       dagcommon.IUnitRepository
-	dagdb         storage.DagDb
-	utxodb        storage.UtxoDb
-	statedb       storage.StateDb
-	propdb        storage.PropertyDb
+	dagdb         storage.IDagDb
+	utxodb        storage.IUtxoDb
+	statedb       storage.IStateDb
+	propdb        storage.IPropertyDb
 	utxoRep       dagcommon.IUtxoRepository
 	propRep       dagcommon.IPropRepository
 	validate      dagcommon.Validator
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
 	Mutex sync.RWMutex
-
+	logger log.ILogger
 	Memdag *memunit.MemDag // memory unit
 }
 
@@ -422,20 +422,20 @@ func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []b
 	return d.utxoRep.WalletBalance(address, asset), nil
 }
 
-func NewDag(db ptndb.Database) (*Dag, error) {
+func NewDag(db ptndb.Database,l log.ILogger) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 
-	dagDb := storage.NewDagDatabase(db)
-	utxoDb := storage.NewUtxoDatabase(db)
-	stateDb := storage.NewStateDatabase(db)
-	idxDb := storage.NewIndexDatabase(db)
+	dagDb := storage.NewDagDb(db)
+	utxoDb := storage.NewUtxoDb(db,l)
+	stateDb := storage.NewStateDb(db)
+	idxDb := storage.NewIndexDb(db)
 	propDb, err := storage.NewPropertyDb(db)
 	if err != nil {
 		return nil, err
 	}
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb,l)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb,l)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 
@@ -460,15 +460,15 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 
 func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
-
-	dagDb := storage.NewDagDatabase(db)
-	utxoDb := storage.NewUtxoDatabase(db)
-	stateDb := storage.NewStateDatabase(db)
-	idxDb := storage.NewIndexDatabase(db)
+	logger:=&log.Plogger{}
+	dagDb := storage.NewDagDb(db)
+	utxoDb := storage.NewUtxoDb(db,logger)
+	stateDb := storage.NewStateDb(db)
+	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb4GenesisInit(db)
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb,logger)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb,logger)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 
@@ -491,14 +491,14 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 
 func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
+	logger:=&log.Plogger{}
+	dagDb := storage.NewDagDb(db)
+	utxoDb := storage.NewUtxoDb(db,logger)
+	stateDb := storage.NewStateDb(db)
+	idxDb := storage.NewIndexDb(db)
 
-	dagDb := storage.NewDagDatabase(db)
-	utxoDb := storage.NewUtxoDatabase(db)
-	stateDb := storage.NewStateDatabase(db)
-	idxDb := storage.NewIndexDatabase(db)
-
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb,logger)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb,logger)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
 
 	dag := &Dag{
@@ -567,10 +567,10 @@ func (d *Dag) GetTrieSyncProgress() (uint64, error) {
 	return d.dagdb.GetTrieSyncProgress()
 }
 
-func (d *Dag) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
+func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	d.Mutex.RLock()
 	defer d.Mutex.RUnlock()
-	return d.utxodb.GetUtxoEntry(key)
+	return d.utxodb.GetUtxoEntry(outpoint)
 }
 
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {

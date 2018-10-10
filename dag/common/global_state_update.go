@@ -27,13 +27,13 @@ import (
 )
 
 type PropRepository struct {
-	db storage.PropertyDb
+	db storage.IPropertyDb
 }
 type IPropRepository interface {
 	UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit)
 }
 
-func NewPropRepository(db storage.PropertyDb) *PropRepository {
+func NewPropRepository(db storage.IPropertyDb) *PropRepository {
 	return &PropRepository{db: db}
 }
 

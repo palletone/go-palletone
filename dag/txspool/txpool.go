@@ -1248,7 +1248,7 @@ func (view *UtxoViewpoint) LookupUtxo(outpoint modules.OutPoint) *modules.Utxo {
 	}
 	return view.entries[outpoint]
 }
-func (view *UtxoViewpoint) FetchUtxos(db storage.UtxoDb, outpoints map[modules.OutPoint]struct{}) error {
+func (view *UtxoViewpoint) FetchUtxos(db storage.IUtxoDb, outpoints map[modules.OutPoint]struct{}) error {
 	if len(outpoints) == 0 {
 		return nil
 	}
@@ -1262,12 +1262,12 @@ func (view *UtxoViewpoint) FetchUtxos(db storage.UtxoDb, outpoints map[modules.O
 	return view.fetchUtxosMain(db, neededSet)
 
 }
-func (view *UtxoViewpoint) fetchUtxosMain(db storage.UtxoDb, outpoints map[modules.OutPoint]struct{}) error {
+func (view *UtxoViewpoint) fetchUtxosMain(db storage.IUtxoDb, outpoints map[modules.OutPoint]struct{}) error {
 	if len(outpoints) == 0 {
 		return nil
 	}
 	for outpoint := range outpoints {
-		utxo, err := db.GetUtxoEntry(outpoint.ToKey())
+		utxo, err := db.GetUtxoEntry(&outpoint)
 		if err != nil {
 			return err
 		}

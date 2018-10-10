@@ -36,7 +36,7 @@ func TestGetUnit(t *testing.T) {
 	log.Println("dbconn is nil , renew db  start ...")
 
 	db, _ := ptndb.NewMemDatabase()
-	dagdb := NewDagDatabase(db)
+	dagdb := NewDagDb(db)
 	dagdb.GetUnit(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
 }
 
@@ -48,7 +48,7 @@ func TestGetContract(t *testing.T) {
 	origin.Id = common.HexToHash("123456")
 
 	origin.Name = "test"
-	origin.Code = []byte(`log.PrintLn("hello world")`)
+	origin.Code = []byte(`logger.PrintLn("hello world")`)
 	origin.Input = []byte("input")
 
 	Dbconn := ReNewDbConn(dagconfig.DbPath)
@@ -59,7 +59,7 @@ func TestGetContract(t *testing.T) {
 
 	log.Println("store error: ", StoreBytes(Dbconn, append(CONTRACT_PTEFIX, origin.Id[:]...), origin))
 	keys = append(keys, "Id", "id", "Name", "Code", "code", "codes", "inputs")
-	results = append(results, common.HexToHash("123456"), nil, "test", []byte(`log.PrintLn("hello world")`), nil, nil, nil)
+	results = append(results, common.HexToHash("123456"), nil, "test", []byte(`logger.PrintLn("hello world")`), nil, nil, nil)
 	log.Println("test data: ", keys)
 
 	for i, k := range keys {
@@ -84,7 +84,7 @@ func TestUnitNumberIndex(t *testing.T) {
 
 func TestGetContractState(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
-	statedb := NewStateDatabase(db)
+	statedb := NewStateDb(db)
 	version, value := statedb.GetContractState("contract0000", "name")
 	log.Println(version)
 	log.Println(value)
@@ -101,7 +101,7 @@ func TestGetUtxos(t *testing.T) {
 	//db, err := ptndb.NewLDBDatabase(db_path, 0, 0)
 	db, _ := ptndb.NewMemDatabase()
 
-	utxodb := NewUtxoDatabase(db)
+	utxodb := NewUtxoDb(db)
 	key := new(modules.OutPoint)
 	key.MessageIndex = 1
 	key.OutIndex = 0

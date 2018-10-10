@@ -45,7 +45,7 @@ func init() {
 
 type testUnitDag struct {
 	Db            *palletdb.MemDatabase
-	utxodb        storage.UtxoDb
+	utxodb        storage.IUtxoDb
 	mux           sync.RWMutex
 	GenesisUnit   *modules.Unit
 	gasLimit      uint64
@@ -110,7 +110,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	// Create the pool to test the limit enforcement with
 	db, _ := palletdb.NewMemDatabase()
-	utxodb := storage.NewUtxoDatabase(db)
+	utxodb := storage.NewUtxoDb(db)
 	mutex := new(sync.RWMutex)
 	unitchain := &testUnitDag{db, utxodb, *mutex, nil, 10000, new(event.Feed)}
 

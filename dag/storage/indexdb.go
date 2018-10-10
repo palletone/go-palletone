@@ -20,27 +20,41 @@
 
 package storage
 
-import "github.com/palletone/go-palletone/common/ptndb"
+import (
+	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/modules"
+)
 
-type IndexDatabase struct{
+type IndexDb struct{
 	db ptndb.Database
 }
-func NewIndexDatabase (db ptndb.Database) *IndexDatabase{
-	return &IndexDatabase{db:db,}
+func NewIndexDb(db ptndb.Database) *IndexDb {
+	return &IndexDb{db:db,}
 }
 
-type IndexDb interface {
+type IIndexDb interface {
 	GetPrefix(prefix []byte) map[string][]byte
 	SaveIndexValue(key []byte,value interface{}) error
+	GetUtxoByIndex(idx *modules.UtxoIndex) (*modules.Utxo, error)
+	DeleteUtxoByIndex(idx *modules.UtxoIndex) error
 }
 // ###################### SAVE IMPL START ######################
-func (idxdb *IndexDatabase) SaveIndexValue(key []byte, value interface{}) error {
+func (idxdb *IndexDb) SaveIndexValue(key []byte, value interface{}) error {
 	return StoreBytes(idxdb.db, key, value)
 }
 
 // ###################### SAVE IMPL END ######################
 // ###################### GET IMPL START ######################
-func (db *IndexDatabase) GetPrefix(prefix []byte) map[string][]byte {
+func (db *IndexDb) GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
 }
 // ###################### GET IMPL END ######################
+func(db *IndexDb) GetUtxoByIndex(idx *modules.UtxoIndex) (*modules.Utxo, error){
+	key:=idx.ToKey()
+	utxo:=new(modules.Utxo)
+	err:= retrieve(db.db,key,utxo)
+	return utxo,err
+}
+func(db *IndexDb)DeleteUtxoByIndex(idx *modules.UtxoIndex) error{
+	return db.db.Delete(idx.ToKey())
+}
