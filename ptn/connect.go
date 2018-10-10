@@ -174,3 +174,12 @@ func (pm *ProtocolManager) transitionRun(p *peer) error {
 	}
 	return nil
 }
+
+func (pm *ProtocolManager) cancelOldMediatorConnect() {
+	//TODO use RemovePeer
+
+	//peers := pm.peersTransition.GetPeers()
+	//for _, peer := range peers {
+	//	peer.transitionCh <- mediatorCancel
+	//}
+}

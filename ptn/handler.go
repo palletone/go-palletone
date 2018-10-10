@@ -458,8 +458,16 @@ func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
 		//go pm.producer.StartVSSProtocol()
 	}
 	for {
-
 		log.Debug("PalletOne handleTransitionMsg transitions ReadMsg")
+		select {
+		case event := <-p.transitionCh:
+			if event == transitionCancel {
+				//TODO restart transtion connect
+				log.Debug("PalletOne handleTransitionMsg transitions each other connected ok")
+				return nil
+			}
+		default:
+		}
 		// Read the next message from the remote peer, and ensure it's fully consumed
 		msg, err := p.rw.ReadMsg()
 		if err != nil {
@@ -472,16 +480,6 @@ func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
 		//Otherwise, immediatly return errResp.On the basis of ps.mediators
 
 		defer msg.Discard()
-
-		select {
-		case event := <-p.transitionCh:
-			if event == transitionCancel {
-				//TODO restart transtion connect
-				log.Debug("PalletOne handleTransitionMsg transitions each other connected ok")
-				return nil
-			}
-		default:
-		}
 
 		// Handle the message depending on its contents
 		switch {
@@ -502,15 +500,9 @@ func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
 
 }
 
-//switchover: vote mediator all connected next to switchover official peerset
-func (pm *ProtocolManager) switchover(p *peer) error {
-	return nil
-}
-
 // handleMsg is invoked whenever an inbound message is received from a remote
 // peer. The remote connection is torn down upon returning any error.
 func (pm *ProtocolManager) handleMsg(p *peer) error {
-
 	// Read the next message from the remote peer, and ensure it's fully consumed
 	msg, err := p.rw.ReadMsg()
 	if err != nil {
