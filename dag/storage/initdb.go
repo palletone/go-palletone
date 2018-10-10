@@ -57,6 +57,7 @@ var (
 	GLOBALPROPERTY_PREFIX            = []byte("gp")
 	DYNAMIC_GLOBALPROPERTY_PREFIX    = []byte("dp")
 	MEDIATOR_SCHEME_PREFIX           = []byte("ms")
+	ADDRESS_INFO_PREFIX              = []byte("ai")
 
 	// lookup
 	LookupPrefix = []byte("l")
