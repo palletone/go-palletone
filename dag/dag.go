@@ -653,7 +653,7 @@ func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
-	return d.propdb.GetGlobalProp().GetActiveMediatorNodes()
+	return d.GetGlobalProp().GetActiveMediatorNodes()
 }
 
 // get contract state
@@ -663,42 +663,42 @@ func (d *Dag) GetContractState(id string, field string) (*modules.StateVersion, 
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
-	return d.propdb.GetGlobalProp().GetActiveMediatorInitPubs()
+	return d.GetGlobalProp().GetActiveMediatorInitPubs()
 }
 
 // author Albert·Gou
 func (d *Dag) GetCurThreshold() int {
-	return d.propdb.GetGlobalProp().GetCurThreshold()
+	return d.GetGlobalProp().GetCurThreshold()
 }
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorCount() int {
-	return d.propdb.GetGlobalProp().GetActiveMediatorCount()
+	return d.GetGlobalProp().GetActiveMediatorCount()
 }
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediators() []common.Address {
-	return d.propdb.GetGlobalProp().GetActiveMediators()
+	return d.GetGlobalProp().GetActiveMediators()
 }
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorAddr(index int) common.Address {
-	return d.propdb.GetGlobalProp().GetActiveMediatorAddr(index)
+	return d.GetGlobalProp().GetActiveMediatorAddr(index)
 }
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
-	return d.propdb.GetGlobalProp().GetActiveMediatorNode(index)
+	return d.GetGlobalProp().GetActiveMediatorNode(index)
 }
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
-	return d.propdb.GetGlobalProp().GetActiveMediator(add)
+	return d.GetGlobalProp().GetActiveMediator(add)
 }
 
 // author Albert·Gou
 func (d *Dag) IsActiveMediator(add common.Address) bool {
-	return d.propdb.GetGlobalProp().IsActiveMediator(add)
+	return d.GetGlobalProp().IsActiveMediator(add)
 }
 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
