@@ -57,29 +57,29 @@ type PropertyDb interface {
 
 // modified by Yiran
 // initialize PropertyDB , and retrieve gp,dgp,mc from PropertyDb.
-func NewPropertyDb(db ptndb.Database) *PropertyDatabase {
+func NewPropertyDb(db ptndb.Database) (*PropertyDatabase,error) {
 	pdb := &PropertyDatabase{db: db}
 	gp, err := pdb.RetrieveGlobalProp()
 	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
+		log.Error("RetrieveGlobalProp Error")
+		return nil,err
 	}
 
 	dgp, err := pdb.RetrieveDynGlobalProp()
 	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
+		log.Error("RetrieveDynGlobalProp Error")
+		return nil,err
 	}
 
 	ms, err := pdb.RetrieveMediatorSchl()
 	if err != nil {
-		//log.Error(err.Error())
-		//return nil, err
+		log.Error("RetrieveMediatorSchl Error")
+		return nil,err
 	}
 	pdb.GlobalProp = gp
 	pdb.DynGlobalProp = dgp
 	pdb.MediatorSchl = ms
-	return pdb
+	return pdb,nil
 }
 
 // modified by Yiran
