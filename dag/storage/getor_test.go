@@ -21,6 +21,7 @@ package storage
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/common/rlp"
 	"log"
 	"reflect"
 	"testing"
@@ -90,5 +91,58 @@ func TestGetContractState(t *testing.T) {
 	data := statedb.GetContractAllState([]byte("contract0000"))
 	for k, v := range data {
 		log.Println(k, v)
+	}
+}
+
+func TestGetUtxos(t *testing.T) {
+	//db_path := dagconfig.DefaultDataDir()
+	// db_path := "/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/gptn/leveldb"
+
+	//db, err := ptndb.NewLDBDatabase(db_path, 0, 0)
+	db, _ := ptndb.NewMemDatabase()
+
+	utxodb := NewUtxoDatabase(db)
+	key := new(modules.OutPoint)
+	key.MessageIndex = 1
+	key.OutIndex = 0
+	var hash common.Hash
+	hash.SetString("0xwoaibeijingtiananmen")
+	key.TxHash = hash
+
+	utxo := new(modules.Utxo)
+	utxo.Amount = 10000000000000000
+
+	utxo.Asset = &modules.Asset{AssetId: modules.PTNCOIN, ChainId: 1}
+	utxo.LockTime = 123
+
+	utxodb.SaveUtxoEntity(key.ToKey(), utxo)
+
+	utxos, err := utxodb.GetAllUtxos()
+	for key, u := range utxos {
+		log.Println("get all utxo error", err)
+		log.Println("key", key.ToKey())
+		log.Println("utxo value", u)
+	}
+	result := utxodb.GetPrefix(modules.UTXO_PREFIX)
+	for key, b := range result {
+		log.Println("result:", key)
+		utxo := new(modules.Utxo)
+		err := rlp.DecodeBytes(b, utxo)
+		log.Println("utxo ", err, utxo)
+	}
+
+	result1 := utxodb.GetPrefix(AddrOutPoint_Prefix)
+	for key, b := range result1 {
+		log.Println("result:", key)
+		out := new(modules.OutPoint)
+		rlp.DecodeBytes(b, out)
+		log.Println("outpoint ", err, out)
+		if utxo_byte, err := db.Get(out.ToKey()); err != nil {
+			log.Println("get utxo from outpoint error", err)
+		} else {
+			utxo := new(modules.Utxo)
+			err := rlp.DecodeBytes(utxo_byte, utxo)
+			log.Println("get utxo by outpoint : ", err, utxo)
+		}
 	}
 }

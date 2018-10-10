@@ -22,8 +22,9 @@ package dag
 import (
 	"fmt"
 	"github.com/coocood/freecache"
-	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/tokenengine"
 	"sync"
+	"sync/atomic"
 
 	//"github.com/ethereum/go-ethereum/params"
 	"time"
@@ -47,6 +48,7 @@ import (
 
 type Dag struct {
 	Cache         *freecache.Cache
+	currentUnit   atomic.Value
 	Db            ptndb.Database
 	unitRep       dagcommon.IUnitRepository
 	dagdb         storage.DagDb
@@ -160,14 +162,6 @@ func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
 	return header
 }
 
-// func (d *Dag) GetHeader(hash common.Hash, number uint64) *modules.Header {
-// 	return d.CurrentUnit().Header()
-// }
-
-//func (d *Dag) StateAt(common.Hash) (*ptndb.Database, error) {
-//	return &d.Db, nil
-//}
-
 func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
 	return d.ChainHeadFeed.Subscribe(ch)
 }
@@ -175,6 +169,15 @@ func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Su
 // FastSyncCommitHead sets the current head block to the one defined by the hash
 // irrelevant what the chain contents were prior.
 func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
+	unit := d.GetUnit(hash)
+	if unit == nil {
+		return fmt.Errorf("non existent unit [%x...]", hash[:4])
+	}
+	// store current unit
+	d.Mutex.Lock()
+	d.currentUnit.Store(unit)
+	d.Mutex.Unlock()
+
 	return nil
 }
 
@@ -314,10 +317,10 @@ func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 	return d.getBodyRLP(hash)
 }
 
-// GetUnitTransactions
-//func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
-//	return d.dagdb.GetUnitTransactions(hash)
-//}
+// GetUnitTransactions is return unit's body, all transactions of unit.
+func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
+	return d.dagdb.GetUnitTransactions(hash)
+}
 func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, error) {
 	tx, _, _, _ := d.dagdb.GetTransaction(hash)
 	if tx == nil {
@@ -562,11 +565,6 @@ func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex, error) {
 	return d.dagdb.GetNumberWithUnitHash(hash)
 }
 
-// GetUnitTransactions is return unit's body, all transactions of unit.
-func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
-	return d.dagdb.GetUnitTransactions(hash)
-}
-
 // GetCanonicalHash
 func (d *Dag) GetCanonicalHash(number uint64) (common.Hash, error) {
 	return d.dagdb.GetCanonicalHash(number)
@@ -791,35 +789,52 @@ func (d *Dag) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
 }
 
 //@Yiran
-func (d *Dag) SaveUtxoSnapshot() error {
-	var TermInterval uint64 = 50 // DEBUG:50, DEPLOY:15000
-
+func (d *Dag) GetCurrentUnitIndex() (modules.ChainIndex, error) {
 	currentUnitHash := d.CurrentUnit().UnitHash
-	currentUnitIndex, err := d.GetUnitNumber(currentUnitHash)
+	return d.GetUnitNumber(currentUnitHash)
+}
+
+//@Yiran save utxo snapshot when new mediator cycle begin
+// unit index MUST to be  integer multiples of  termInterval.
+func (d *Dag) SaveUtxoSnapshot() error {
+	currentUnitIndex, err := d.GetCurrentUnitIndex()
 	if err != nil {
 		return err
 	}
-	if currentUnitIndex.Index%TermInterval != 0 {
-		return errors.New("SaveUtxoSnapshot must wait until last term period end")
-	}
-	return d.utxodb.SaveUtxoSnapshot(storage.ConvertBytes(currentUnitIndex))
+	return d.utxodb.SaveUtxoSnapshot(currentUnitIndex)
 }
 
-//@Yiran Get last snapshot
-func (d *Dag) GetUtxoSnapshot() ([]*modules.Utxo, error) {
-	var TermInterval uint64 = 50 // DEBUG:50, DEPLOY:15000
+//@Yiran Get last utxo snapshot
+// must calling after SaveUtxoSnapshot call , before this mediator cycle end.
+// called by GenerateVoteResult
+func (d *Dag) GetUtxoSnapshot() (*[]modules.Utxo, error) {
+	unitIndex, err := d.GetCurrentUnitIndex()
+	if err != nil {
+		return nil, err
+	}
+	unitIndex.Index -= unitIndex.Index % modules.TERMINTERVAL
+	return d.utxodb.GetUtxoEntities(unitIndex)
+}
 
-	currentUnitHash := d.CurrentUnit().UnitHash
-	UnitIndex, err := d.GetUnitNumber(currentUnitHash)
+//@Yiran
+func (d *Dag) GenerateVoteResult() (*[]storage.Candidate, error) {
+	VoteBox := storage.NewVoteBox()
+
+	utxos, err := d.utxodb.GetAllUtxos()
 	if err != nil {
 		return nil, err
 	}
-	UnitIndex.Index -= UnitIndex.Index % TermInterval
-	utxos, err := d.utxodb.GetUtxoEntities(storage.ConvertBytes(UnitIndex))
-	if err != nil {
-		return nil, err
+	for _, utxo := range utxos {
+		if utxo.Asset.AssetId == modules.PTNCOIN {
+			utxoHolder, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+			if err != nil {
+				return nil, err
+			}
+			VoteBox.AddToBoxIfNotVoted(utxoHolder, utxo.VoteResult)
+		}
 	}
-	return utxos, nil
+	VoteBox.Sort()
+	return &VoteBox.Candidates, nil
 }
 
 ////@Yiran

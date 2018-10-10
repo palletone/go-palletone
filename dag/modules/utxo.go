@@ -106,7 +106,7 @@ type Utxo struct {
 	Asset      *Asset `json:"Asset"`     // 资产类别
 	PkScript   []byte `json:"pk_script"` // 要执行的代码段
 	LockTime   uint32 `json:"lock_time"`
-	VoteResult []byte `json:"vote_info"`
+	VoteResult common.Address `json:"vote_info"` //edit by Yiran
 	// flags contains additional info about output such as whether it is spent, and whether is has
 	// been modified since is was loaded.
 	Flags txoFlags
@@ -206,9 +206,7 @@ func (utxoIndex *UtxoIndex) ToKey() []byte {
 
 func (outpoint *OutPoint) ToKey() []byte {
 	// key: [UTXO_PREFIX][TxHash][MessageIndex][OutIndex]
-	key := make([]byte, 0)
-	key = append(key, UTXO_PREFIX...)
-	key = append(key, outpoint.TxHash.Bytes()...)
+	key := append(UTXO_PREFIX, outpoint.TxHash.Bytes()...)
 	key = append(key, common.EncodeNumberUint32(outpoint.MessageIndex)...)
 	key = append(key, common.EncodeNumberUint32(outpoint.OutIndex)...)
 	return key[:]

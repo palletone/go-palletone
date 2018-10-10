@@ -46,7 +46,7 @@ func (mp *MediatorPlugin) StartVSSProtocol() {
 
 	go mp.BroadcastVSSDeals()
 
-	timeout := time.NewTimer(3 * time.Second)
+	timeout := time.NewTimer(30 * time.Second)
 	defer timeout.Stop()
 	select {
 	case <-mp.quit:
@@ -266,12 +266,6 @@ func (mp *MediatorPlugin) ToUnitTBLSSign(newUnit *modules.Unit) error {
 }
 
 func (mp *MediatorPlugin) addToTBLSSignBuf(newUnit *modules.Unit) {
-	//localMed := *newUnit.UnitAuthor()
-	//
-	//if !mp.IsLocalActiveMediator(localMed) {
-	//	return
-	//}
-
 	lams := mp.GetLocalActiveMediators()
 	for _, localMed := range lams {
 		mp.toTBLSSignBuf[localMed] <- newUnit
@@ -337,6 +331,7 @@ func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
 	default:
 		localMed := mp.getDag().GetUnit(sigShare.UnitHash)
 		go mp.addToTBLSRecoverBuf(localMed, sigShare.SigShare)
+		//go mp.addToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 		return nil
 	}
 }
@@ -345,7 +340,11 @@ func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
 func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnit *modules.Unit, sigShare []byte) {
 	//func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) {
 	//	dag := mp.getDag()
-	//localMed := *dag.GetUnit(newUnitHash).UnitAuthor()
+	//	newUnit := dag.GetUnit(newUnitHash)
+	if newUnit == nil {
+		log.Error("newUnit is nil!")
+	}
+
 	newUnitHash := newUnit.UnitHash
 	localMed := *newUnit.UnitAuthor()
 
@@ -401,7 +400,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	suite := mp.suite
 	pubPoly := share.NewPubPoly(suite, suite.Point().Base(), dks.Commitments())
-	groupSig, err := tbls.Recover(suite, pubPoly, unitHash[:], sigShareSet.getSigShares(), curThreshold, aSize)
+	groupSig, err := tbls.Recover(suite, pubPoly, unitHash[:], sigShareSet.popSigShares(), curThreshold, aSize)
 	if err != nil {
 		log.Error(err.Error())
 		return
