@@ -69,9 +69,9 @@ func TestValidator(t *testing.T) {
 	//dbconn := storage.ReNewDbConn("D:\\Workspace\\Code\\Go\\src\\github.com\\palletone\\go-palletone\\bin\\gptn\\leveldb")
 	dbconn := storage.ReNewDbConn(dagconfig.DbPath)
 	worldTmpState := map[string]map[string]interface{}{}
-	dagDb := storage.NewDagDatabase(dbconn)
-	utxoDb := storage.NewUtxoDatabase(dbconn)
-	stateDb := storage.NewStateDatabase(dbconn)
+	dagDb := storage.NewDagDb(dbconn)
+	utxoDb := storage.NewUtxoDb(dbconn)
+	stateDb := storage.NewStateDb(dbconn)
 	validate := NewValidate(dagDb, utxoDb, stateDb)
 	code := validate.ValidateTx(tx, false, &worldTmpState)
 	log.Println("validator code:", code, worldTmpState)

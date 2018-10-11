@@ -135,7 +135,7 @@ func (forkIndex *ForkIndex) Lenth() int {
 // TODO MemDag
 type MemDag struct {
 	//db                ptndb.Database
-	dagdb             storage.DagDb
+	dagdb             storage.IDagDb
 	unitRep           dagCommon.IUnitRepository
 	lastValidatedUnit map[string]common.Hash // the key is asset id
 	forkIndex         map[string]*ForkIndex  // the key is asset id
@@ -144,7 +144,7 @@ type MemDag struct {
 	memSize           uint8
 }
 
-func NewMemDag(db storage.DagDb, unitRep dagCommon.IUnitRepository) *MemDag {
+func NewMemDag(db storage.IDagDb, unitRep dagCommon.IUnitRepository) *MemDag {
 	memdag := MemDag{
 		lastValidatedUnit: make(map[string]common.Hash),
 		forkIndex:         make(map[string]*ForkIndex),

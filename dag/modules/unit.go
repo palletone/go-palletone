@@ -222,7 +222,7 @@ const (
 	APP_CONTRACT_INVOKE = 0x04
 	APP_CONFIG          = 0x05
 	APP_TEXT            = 0x06
-	APP_VOTE            = 0x06
+	APP_VOTE            = 0x07
 )
 
 // key: message.UnitHash(message+timestamp)
@@ -235,7 +235,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	msg.App = cpyMsg.App
 	msg.Payload = cpyMsg.Payload
 	switch cpyMsg.App {
-	case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT:
+	case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT, APP_VOTE:
 		msg.Payload = cpyMsg.Payload
 	case APP_CONFIG:
 		payload, _ := cpyMsg.Payload.(*ConfigPayload)
@@ -411,6 +411,15 @@ type ContractReadSet struct {
 //	BallotCost  big.Int       //token cost
 //	ExpiredTime time.Duration //duration of voting
 //}
+//*
+// ExpiredTerm: Represents the expiration time of this polling information
+// (at the designated deadline), which is invalid if the expiration date is exceeded
+// ExpiredTerm == 0 means that keep alive.
+// */
+type VotePayload struct {
+	Address     common.Address
+	ExpiredTerm uint16
+}
 
 // Contract instance message
 // App: contract_deploy

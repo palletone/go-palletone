@@ -41,13 +41,8 @@ type DatabaseReader interface {
 }
 
 // @author Albert·Gou
-func Retrieve(db ptndb.Database, key string, v interface{}) error {
-	//rv := reflect.ValueOf(v)
-	//if rv.Kind() != reflect.Ptr || rv.IsNil() {
-	//	return errors.New("an invalid argument, the argument must be a non-nil pointer")
-	//}
-
-	data, err := db.Get([]byte(key))
+func retrieve(db ptndb.Database, key []byte, v interface{}) error {
+	data, err := db.Get(key)
 	if err != nil {
 		return err
 	}
@@ -61,7 +56,7 @@ func Retrieve(db ptndb.Database, key string, v interface{}) error {
 }
 
 // get string
-func GetString(db ptndb.Database, key []byte) (string, error) {
+func getString(db ptndb.Database, key []byte) (string, error) {
 	if re, err := db.Get(key); err != nil {
 		return "", err
 	} else {

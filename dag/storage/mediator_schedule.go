@@ -27,8 +27,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-const (
-	mediatorSchlDBKey = "MediatorSchedule"
+var (
+	mediatorSchlDBKey = []byte("MediatorSchedule")
 )
 
 type mediatorSchedule struct {
@@ -64,10 +64,10 @@ func getMS(mst *mediatorSchedule) *modules.MediatorSchedule {
 	return ms
 }
 
-func (propdb *PropertyDatabase) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
+func (propdb *PropertyDb) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
 	mst := getMST(ms)
 
-	err := Store(propdb.db, mediatorSchlDBKey, mst)
+	err := StoreBytes(propdb.db, mediatorSchlDBKey, mst)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store mediator schedule error: %s", err))
 	}
@@ -75,12 +75,12 @@ func (propdb *PropertyDatabase) StoreMediatorSchl(ms *modules.MediatorSchedule) 
 	return err
 }
 
-func (propdb *PropertyDatabase) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
+func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
 	mst := new(mediatorSchedule)
 
-	err := Retrieve(propdb.db, mediatorSchlDBKey, mst)
+	err := retrieve(propdb.db, mediatorSchlDBKey, mst)
 	if err != nil {
-		//log.Error(fmt.Sprintf("Retrieve mediator schedule error: %s", err))
+		//logger.Error(fmt.Sprintf("Retrieve mediator schedule error: %s", err))
 	}
 
 	ms := getMS(mst)

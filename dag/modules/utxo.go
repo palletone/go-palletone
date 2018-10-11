@@ -51,7 +51,7 @@ var (
 type Asset struct {
 	AssetId  IDType16 `json:"asset_id"`  // 资产类别
 	UniqueId IDType16 `json:"unique_id"` // every token has its unique id
-	ChainId  uint64   `json:"chain_id"`  // main chain id or sub-chain id
+	ChainId  uint64   `json:"chain_id"`  // main chain id or sub-chain id,read from toml config NetworkId
 }
 
 func (asset *Asset) String() string {
@@ -102,10 +102,10 @@ func (asset *Asset) IsSimilar(similar *Asset) bool {
 }
 
 type Utxo struct {
-	Amount     uint64 `json:"amount"`    // 数量
-	Asset      *Asset `json:"Asset"`     // 资产类别
-	PkScript   []byte `json:"pk_script"` // 要执行的代码段
-	LockTime   uint32 `json:"lock_time"`
+	Amount     uint64         `json:"amount"`    // 数量
+	Asset      *Asset         `json:"Asset"`     // 资产类别
+	PkScript   []byte         `json:"pk_script"` // 要执行的代码段
+	LockTime   uint32         `json:"lock_time"`
 	VoteResult common.Address `json:"vote_info"` //edit by Yiran
 	// flags contains additional info about output such as whether it is spent, and whether is has
 	// been modified since is was loaded.
@@ -217,14 +217,6 @@ func (outpoint *OutPoint) ToKey() []byte {
 	// 	outpoint.OutIndex,
 	// )
 	//  return []byte(out)
-}
-
-func (outpoint *OutPoint) String() string {
-	data, err := rlp.EncodeToBytes(outpoint)
-	if err != nil {
-		return ""
-	}
-	return string(data)
 }
 
 func (outpoint *OutPoint) SetString(data string) error {

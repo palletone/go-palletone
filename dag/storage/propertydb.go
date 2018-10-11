@@ -31,19 +31,20 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-const (
-	globalPropDBKey    = "GlobalProperty"
-	dynGlobalPropDBKey = "DynamicGlobalProperty"
+var (
+	globalPropDBKey    = []byte("GlobalProperty")
+	dynGlobalPropDBKey = []byte("DynamicGlobalProperty")
 )
 
 // modified by Yiran
-type PropertyDatabase struct {
+type PropertyDb struct {
 	db            ptndb.Database
-	GlobalProp    *modules.GlobalProperty
-	DynGlobalProp *modules.DynamicGlobalProperty
-	MediatorSchl  *modules.MediatorSchedule
+	logger log.ILogger
+	//GlobalProp    *modules.GlobalProperty
+	//DynGlobalProp *modules.DynamicGlobalProperty
+	//MediatorSchl  *modules.MediatorSchedule
 }
-type PropertyDb interface {
+type IPropertyDb interface {
 	StoreGlobalProp(gp *modules.GlobalProperty) error
 	StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error
 	RetrieveGlobalProp() (*modules.GlobalProperty, error)
@@ -56,49 +57,52 @@ type PropertyDb interface {
 }
 
 // modified by Yiran
-// initialize PropertyDB , and retrieve gp,dgp,mc from PropertyDb.
-func NewPropertyDb(db ptndb.Database) (*PropertyDatabase,error) {
-	pdb := &PropertyDatabase{db: db}
-	gp, err := pdb.RetrieveGlobalProp()
-	if err != nil {
-		log.Error("RetrieveGlobalProp Error")
-		return nil,err
-	}
-
-	dgp, err := pdb.RetrieveDynGlobalProp()
-	if err != nil {
-		log.Error("RetrieveDynGlobalProp Error")
-		return nil,err
-	}
-
-	ms, err := pdb.RetrieveMediatorSchl()
-	if err != nil {
-		log.Error("RetrieveMediatorSchl Error")
-		return nil,err
-	}
-	pdb.GlobalProp = gp
-	pdb.DynGlobalProp = dgp
-	pdb.MediatorSchl = ms
+// initialize PropertyDB , and retrieve gp,dgp,mc from IPropertyDb.
+func NewPropertyDb(db ptndb.Database,l log.ILogger) (*PropertyDb,error) {
+	pdb := &PropertyDb{db: db,logger:l}
+	//gp, err := pdb.RetrieveGlobalProp()
+	//if err != nil {
+	//	logger.Error("RetrieveGlobalProp Error")
+	//	return nil,err
+	//}
+	//
+	//dgp, err := pdb.RetrieveDynGlobalProp()
+	//if err != nil {
+	//	logger.Error("RetrieveDynGlobalProp Error")
+	//	return nil,err
+	//}
+	//
+	//ms, err := pdb.RetrieveMediatorSchl()
+	//if err != nil {
+	//	logger.Error("RetrieveMediatorSchl Error")
+	//	return nil,err
+	//}
+	//pdb.GlobalProp = gp
+	//pdb.DynGlobalProp = dgp
+	//pdb.MediatorSchl = ms
 	return pdb,nil
 }
 
-func NewPropertyDb4GenesisInit(db ptndb.Database) (*PropertyDatabase) {
-	return &PropertyDatabase{db: db}
+func NewPropertyDb4GenesisInit(db ptndb.Database) (*PropertyDb) {
+	return &PropertyDb{db: db}
 }
 
 // modified by Yiran
-func (propdb *PropertyDatabase) GetGlobalProp() *modules.GlobalProperty {
-	return propdb.GlobalProp
+func (propdb *PropertyDb) GetGlobalProp() *modules.GlobalProperty {
+	gp,_:= propdb.RetrieveGlobalProp()
+	return gp
 }
 
 // modified by Yiran
-func (propdb *PropertyDatabase) GetDynGlobalProp() *modules.DynamicGlobalProperty {
-	return propdb.DynGlobalProp
+func (propdb *PropertyDb) GetDynGlobalProp() *modules.DynamicGlobalProperty {
+	gp,_:= propdb.RetrieveDynGlobalProp()
+	return gp
 }
 
 // modified by Yiran
-func (propdb *PropertyDatabase) GetMediatorSchl() *modules.MediatorSchedule {
-	return propdb.MediatorSchl
+func (propdb *PropertyDb) GetMediatorSchl() *modules.MediatorSchedule {
+	gp,_:= propdb.RetrieveMediatorSchl()
+	return gp
 }
 
 type globalProperty struct {
@@ -137,11 +141,11 @@ func getGP(gpt *globalProperty) *modules.GlobalProperty {
 	return gp
 }
 
-func (propdb *PropertyDatabase) StoreGlobalProp(gp *modules.GlobalProperty) error {
+func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
 
 	gpt := getGPT(gp)
 
-	err := Store(propdb.db, globalPropDBKey, gpt)
+	err := StoreBytes(propdb.db, globalPropDBKey, gpt)
 
 	if err != nil {
 		log.Error(fmt.Sprintf("Store global properties error:%s", err))
@@ -150,22 +154,22 @@ func (propdb *PropertyDatabase) StoreGlobalProp(gp *modules.GlobalProperty) erro
 	return err
 }
 
-func (propdb *PropertyDatabase) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error {
+func (propdb *PropertyDb) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error {
 
-	err := Store(propdb.db, dynGlobalPropDBKey, *dgp)
+	err := StoreBytes(propdb.db, dynGlobalPropDBKey, *dgp)
 	if err != nil {
-		//log.Error(fmt.Sprintf("Store dynamic global properties error: %s", err))
+		//logger.Error(fmt.Sprintf("Store dynamic global properties error: %s", err))
 	}
 
 	return err
 }
 
-func (propdb *PropertyDatabase) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
+func (propdb *PropertyDb) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
 	gpt := new(globalProperty)
 
-	err := Retrieve(propdb.db, globalPropDBKey, gpt)
+	err := retrieve(propdb.db, globalPropDBKey, gpt)
 	if err != nil {
-		//log.Error(fmt.Sprintf("Retrieve global properties error: %s", err))
+		//logger.Error(fmt.Sprintf("Retrieve global properties error: %s", err))
 	}
 
 	gp := getGP(gpt)
@@ -173,12 +177,12 @@ func (propdb *PropertyDatabase) RetrieveGlobalProp() (*modules.GlobalProperty, e
 	return gp, err
 }
 
-func (propdb *PropertyDatabase) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
+func (propdb *PropertyDb) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
 	dgp := modules.NewDynGlobalProp()
 
-	err := Retrieve(propdb.db, dynGlobalPropDBKey, dgp)
+	err := retrieve(propdb.db, dynGlobalPropDBKey, dgp)
 	if err != nil {
-		//log.Error(fmt.Sprintf("Retrieve dynamic global properties error: %s", err))
+		//logger.Error(fmt.Sprintf("Retrieve dynamic global properties error: %s", err))
 	}
 
 	return dgp, err
@@ -190,7 +194,7 @@ func (propdb *PropertyDatabase) RetrieveDynGlobalProp() (*modules.DynamicGlobalP
 //
 //	MEDIATORTERMINTERVAL = 3000
 //)
-//func (propdb *PropertyDatabase) UpdateActiveMediators () error{
+//func (propdb *PropertyDb) UpdateActiveMediators () error{
 //	term := unit
 //	activeMediators, err := propdb.GetActiveMediators(,MEDIATORTERMINTERVAL)
 //	if err != nil {
@@ -198,7 +202,7 @@ func (propdb *PropertyDatabase) RetrieveDynGlobalProp() (*modules.DynamicGlobalP
 //	}
 //
 //}
-//func (propdb *PropertyDatabase) GetActiveMediators(term []byte) ([]common.Address, error) {
+//func (propdb *PropertyDb) GetActiveMediators(term []byte) ([]common.Address, error) {
 //	key := KeyConnector(MEDIATOR_CANDIDATE_PREFIX,term)
 //	// 1. Load Addresses of MediatorCandidates
 //	addresses := make([]common.Address, 0)

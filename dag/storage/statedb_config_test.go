@@ -29,10 +29,10 @@ import (
 	"testing"
 )
 
-func MockStateMemDb() StateDb {
+func MockStateMemDb() IStateDb {
 	db, _ := ptndb.NewMemDatabase()
 	//db, _ := ptndb.NewLDBDatabase("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb", 0, 0)
-	statedb := NewStateDatabase(db)
+	statedb := NewStateDb(db)
 	return statedb
 }
 
@@ -61,28 +61,28 @@ func TestSaveAndGetConfig(t *testing.T) {
 	//	},
 	//	TxIndex: 0,
 	//}
-	//log.Println(stateVersion)
+	//logger.Println(stateVersion)
 	//if err := db.SaveConfig(confs, &stateVersion); err != nil {
-	//	log.Println(err)
+	//	logger.Println(err)
 	//}
 	//
 	//data := db.GetConfig([]byte("MediatorCandidates"))
 	//var mList []core.MediatorInfo
 	//fmt.Println(data)
 	//if err := rlp.DecodeBytes(data, &mList); err != nil {
-	//	log.Println("Check unit signature when get mediators list", "error", err.Error())
+	//	logger.Println("Check unit signature when get mediators list", "error", err.Error())
 	//	return
 	//}
 	//// todo get ActiveMediators
 	//bNum := db.GetConfig([]byte("ActiveMediators"))
 	//var mNum uint16
 	//if err := rlp.DecodeBytes(bNum, &mNum); err != nil {
-	//	log.Println("Check unit signature", "error", err.Error())
+	//	logger.Println("Check unit signature", "error", err.Error())
 	//	return
 	//}
 	//fmt.Println("Num=", mNum)
 	//if int(mNum) != len(mList) {
-	//	log.Println("Check unit signature", "error", "mediators info error, pls update network")
+	//	logger.Println("Check unit signature", "error", "mediators info error, pls update network")
 	//	return
 	//}
 	// todo get GenesisAsset
@@ -133,6 +133,6 @@ func TestSaveAndGetConfig(t *testing.T) {
 //	if err := rlp.DecodeBytes(data, &st); err != nil {
 //		t.Error(err.Error())
 //	}
-//	log.Println("Data:", data)
-//	log.Println(st)
+//	logger.Println("Data:", data)
+//	logger.Println(st)
 //}

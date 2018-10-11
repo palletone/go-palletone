@@ -104,7 +104,7 @@ func TestGetUnitKeys(t *testing.T) {
 			}
 		}
 		if !exist {
-			// log.Println("i:", i)
+			// logger.Println("i:", i)
 			this = append(this, v)
 		}
 	}
@@ -154,7 +154,7 @@ func TestSaveUtxos(t *testing.T) {
 		return
 	}
 	log.Println("db_path:", DBPath)
-	utxodb := NewUtxoDatabase(Dbconn)
+	utxodb := NewUtxoDb(Dbconn)
 
 	//1. construct object
 	myplane := NewAirPlane()

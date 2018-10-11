@@ -30,71 +30,45 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 
-	"log"
+
 	"strings"
+	  "github.com/palletone/go-palletone/common/log"
 )
 
 //保存了对合约写集、Config、Asset信息
-type StateDatabase struct {
-	db ptndb.Database
+type StateDb struct {
+	db     ptndb.Database
+	logger log.ILogger
 }
 
-func NewStateDatabase(db ptndb.Database) *StateDatabase {
-	return &StateDatabase{db: db}
+func NewStateDb(db ptndb.Database,l log.ILogger) *StateDb {
+	return &StateDb{db: db, logger:l}
 }
 
-type StateDb interface {
-	GetConfig(name []byte) []byte
-	GetPrefix(prefix []byte) map[string][]byte
-	SaveConfig(confs []modules.PayloadMapStruct, stateVersion *modules.StateVersion) error
-	SaveAssetInfo(assetInfo *modules.AssetInfo) error
-	GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error)
-	SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error
-	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
-	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
-	DeleteState(key []byte) error
-	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string)
-	GetContractState(id string, field string) (*modules.StateVersion, []byte)
-	GetTplAllState(id []byte) map[modules.ContractReadSet][]byte
-	GetContractAllState(id []byte) map[modules.ContractReadSet][]byte
-	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
-	GetContract(id common.Hash) (*modules.Contract, error)
-}
 
 // ######################### SAVE IMPL START ###########################
 
-func (statedb *StateDatabase) SaveAssetInfo(assetInfo *modules.AssetInfo) error {
+func (statedb *StateDb) SaveAssetInfo(assetInfo *modules.AssetInfo) error {
 	key := assetInfo.Tokey()
 	return StoreBytes(statedb.db, key, assetInfo)
 }
 
-func (statedb *StateDatabase) SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
-	return SaveContractState(statedb.db, CONTRACT_TPL, id, name, value, version)
+func (statedb *StateDb) SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
+	return SaveContractState(statedb, CONTRACT_TPL, id, name, value, version)
 }
-func (statedb *StateDatabase) SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
-	return SaveContractState(statedb.db, CONTRACT_STATE_PREFIX, id, name, value, version)
+func (statedb *StateDb) SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
+	return SaveContractState(statedb, CONTRACT_STATE_PREFIX, id, name, value, version)
 }
-func (statedb *StateDatabase) DeleteState(key []byte) error {
+func (statedb *StateDb) DeleteState(key []byte) error {
 	return statedb.db.Delete(key)
 }
 
-func (statedb *StateDatabase) SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error {
-	key := append(CONTRACT_TPL, templateId...)
-	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
-	key = append(key, []byte(modules.FIELD_TPL_BYTECODE)...)
-	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
-	key = append(key, version...)
-	if err := StoreBytes(statedb.db, key, bytecode); err != nil {
-		return err
-	}
-	return nil
-}
 
 /**
 保存合约属性信息
 To save contract
 */
-func SaveContractState(db ptndb.Database, prefix []byte, id []byte, field string, value interface{}, version *modules.StateVersion) error {
+func SaveContractState(statedb *StateDb, prefix []byte, id []byte, field string, value interface{}, version *modules.StateVersion) error {
 	key := []byte{}
 	key = append(prefix, id...)
 	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
@@ -102,8 +76,8 @@ func SaveContractState(db ptndb.Database, prefix []byte, id []byte, field string
 	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	key = append(key, version.Bytes()...)
 
-	if err := StoreBytes(db, key, value); err != nil {
-		log.Println("Save contract template", "error", err.Error())
+	if err := StoreBytes(statedb.db, key, value); err != nil {
+		statedb.logger.Error("Save contract template",  err.Error())
 		return err
 	}
 	return nil
@@ -113,42 +87,12 @@ func SaveContractState(db ptndb.Database, prefix []byte, id []byte, field string
 
 // ######################### GET IMPL START ###########################
 
-/**
-获取模板所有属性
-To get contract or contract template all fields and return
-*/
-func (statedb *StateDatabase) GetTplAllState(id []byte) map[modules.ContractReadSet][]byte {
-	// key format: [PREFIX][ID]_[field]_[version]
-	key := append(CONTRACT_TPL, id...)
-	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
-	data := getprefix(statedb.db, []byte(key))
-	if data == nil || len(data) <= 0 {
-		return nil
-	}
-	allState := map[modules.ContractReadSet][]byte{}
-	for k, v := range data {
-		sKey := strings.Split(k, "^*^")
-		if len(sKey) != 3 {
-			continue
-		}
-		var version modules.StateVersion
-		if !version.ParseStringKey(k) {
-			continue
-		}
-		rdSet := modules.ContractReadSet{
-			Key:   sKey[1],
-			Value: &version,
-		}
-		allState[rdSet] = v
-	}
-	return allState
-}
 
 /**
 获取合约（或模板）所有属性
 To get contract or contract template all fields and return
 */
-func (statedb *StateDatabase) GetContractAllState(id []byte) map[modules.ContractReadSet][]byte {
+func (statedb *StateDb) GetContractAllState(id []byte) map[modules.ContractReadSet][]byte {
 	// key format: [PREFIX][ID]_[field]_[version]
 	key := fmt.Sprintf("%s%s^*^", CONTRACT_STATE_PREFIX, hexutil.Encode(id))
 	data := getprefix(statedb.db, []byte(key))
@@ -174,34 +118,12 @@ func (statedb *StateDatabase) GetContractAllState(id []byte) map[modules.Contrac
 	return allState
 }
 
-/**
-获取合约（或模板）某一个属性
-To get contract or contract template one field
-*/
-func (statedb *StateDatabase) GetTplState(id []byte, field string) (*modules.StateVersion, []byte) {
-	//key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, hexutil.Encode(id[:]), field)
-	key := append(CONTRACT_TPL, id...)
-	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
-	key = append(key, []byte(field)...)
-	data := getprefix(statedb.db, []byte(key))
-	if data == nil || len(data) != 1 {
-		return nil, nil
-	}
-	for k, v := range data {
-		var version modules.StateVersion
-		if !version.ParseStringKey(k) {
-			return nil, nil
-		}
-		return &version, v
-	}
-	return nil, nil
-}
 
 /**
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */
-func (statedb *StateDatabase) GetContractState(id string, field string) (*modules.StateVersion, []byte) {
+func (statedb *StateDb) GetContractState(id string, field string) (*modules.StateVersion, []byte) {
 	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_STATE_PREFIX, id, field)
 	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) != 1 {
@@ -214,10 +136,10 @@ func (statedb *StateDatabase) GetContractState(id string, field string) (*module
 		}
 		return &version, v
 	}
-	log.Println("11111111")
+
 	return nil, nil
 }
-func (statedb *StateDatabase) GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error) {
+func (statedb *StateDb) GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error) {
 	key := append(modules.ASSET_INFO_PREFIX, assetId.AssetId.String()...)
 	data, err := statedb.db.Get(key)
 	if err != nil {
@@ -234,63 +156,28 @@ func (statedb *StateDatabase) GetAssetInfo(assetId *modules.Asset) (*modules.Ass
 }
 
 // get prefix: return maps
-func (db *StateDatabase) GetPrefix(prefix []byte) map[string][]byte {
+func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
 }
 
 // GetContract can get a Contract by the contract hash
-func (statedb *StateDatabase) GetContract(id common.Hash) (*modules.Contract, error) {
+func (statedb *StateDb) GetContract(id common.Hash) (*modules.Contract, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
 	con_bytes, err := statedb.db.Get(append(CONTRACT_PTEFIX, id[:]...))
 	if err != nil {
-		log.Println("err:", err)
+		statedb.logger.Error("err:", err)
 		return nil, err
 	}
 	contract := new(modules.Contract)
 	err = rlp.DecodeBytes(con_bytes, contract)
 	if err != nil {
-		log.Println("err:", err)
+		statedb.logger.Error("err:", err)
 		return nil, err
 	}
 	return contract, nil
 }
 
-/**
-获取合约模板
-To get contract template
-*/
-func (statedb *StateDatabase) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
-	key := append(CONTRACT_TPL, templateID...)
-	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
-	key = append(key, []byte(modules.FIELD_TPL_BYTECODE)...)
-	data := statedb.GetPrefix(key)
-
-	if len(data) == 1 {
-		for _, v := range data {
-			if err := rlp.DecodeBytes(v, &bytecode); err != nil {
-				fmt.Println("GetContractTpl when get bytecode", "error", err.Error(), "codeing:", v, "val:", bytecode)
-				return
-			}
-		}
-	}
-
-	version, nameByte := statedb.GetTplState(templateID, modules.FIELD_TPL_NAME)
-	if nameByte == nil {
-		return
-	}
-	if err := rlp.DecodeBytes(nameByte, &name); err != nil {
-		log.Println("GetContractTpl when get name", "error", err.Error())
-		return
-	}
-
-	_, pathByte := statedb.GetTplState(templateID, modules.FIELD_TPL_PATH)
-	if err := rlp.DecodeBytes(pathByte, &path); err != nil {
-		log.Println("GetContractTpl when get path", "error", err.Error())
-		return
-	}
-	return
-}
 
 // ######################### GET IMPL END ###########################
