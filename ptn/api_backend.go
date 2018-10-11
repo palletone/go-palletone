@@ -208,7 +208,8 @@ func (b *PtnApiBackend) GetHeader(hash common.Hash, index uint64) (*modules.Head
 
 // Get Unit
 func (b *PtnApiBackend) GetUnit(hash common.Hash) *modules.Unit {
-	return b.ptn.dag.GetUnit(hash)
+	u, _ := b.ptn.dag.GetUnit(hash)
+	return u
 }
 
 // Get UnitNumber

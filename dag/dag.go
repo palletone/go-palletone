@@ -57,7 +57,7 @@ type Dag struct {
 	validate      dagcommon.Validator
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
-	Mutex sync.RWMutex
+	Mutex  sync.RWMutex
 	logger log.ILogger
 	Memdag *memunit.MemDag // memory unit
 }
@@ -112,19 +112,20 @@ func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit {
 	return curUnit
 }
 
-func (d *Dag) GetUnit(hash common.Hash) *modules.Unit {
+func (d *Dag) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	return d.dagdb.GetUnit(hash)
 }
 
 func (d *Dag) HasUnit(hash common.Hash) bool {
-	return d.dagdb.GetUnit(hash) != nil
+	u, _ := d.dagdb.GetUnit(hash)
+	return u != nil
 }
 
-func (d *Dag) GetUnitByHash(hash common.Hash) *modules.Unit {
+func (d *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	return d.dagdb.GetUnit(hash)
 }
 
-func (d *Dag) GetUnitByNumber(number modules.ChainIndex) *modules.Unit {
+func (d *Dag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) {
 	return d.dagdb.GetUnitFormIndex(number)
 }
 
@@ -154,8 +155,8 @@ func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Su
 // FastSyncCommitHead sets the current head block to the one defined by the hash
 // irrelevant what the chain contents were prior.
 func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
-	unit := d.GetUnit(hash)
-	if unit == nil {
+	unit, err := d.GetUnit(hash)
+	if err != nil {
 		return fmt.Errorf("non existent unit [%x...]", hash[:4])
 	}
 	// store current unit
@@ -422,22 +423,22 @@ func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []b
 	return d.utxoRep.WalletBalance(address, asset), nil
 }
 
-func NewDag(db ptndb.Database,l log.ILogger) (*Dag, error) {
+func NewDag(db ptndb.Database, l log.ILogger) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 
-	dagDb := storage.NewDagDb(db,l)
-	utxoDb := storage.NewUtxoDb(db,l)
-	stateDb := storage.NewStateDb(db,l)
-	idxDb := storage.NewIndexDb(db,l)
-	propDb, err := storage.NewPropertyDb(db,l)
+	dagDb := storage.NewDagDb(db, l)
+	utxoDb := storage.NewUtxoDb(db, l)
+	stateDb := storage.NewStateDb(db, l)
+	idxDb := storage.NewIndexDb(db, l)
+	propDb, err := storage.NewPropertyDb(db, l)
 	if err != nil {
 		return nil, err
 	}
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb,l)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb,l)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb,l)
-	propRep := dagcommon.NewPropRepository(propDb,l)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, l)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, l)
+	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb, l)
+	propRep := dagcommon.NewPropRepository(propDb, l)
 
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
@@ -460,17 +461,17 @@ func NewDag(db ptndb.Database,l log.ILogger) (*Dag, error) {
 
 func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
-	logger:=log.New("Dag")
-	dagDb := storage.NewDagDb(db,logger)
-	utxoDb := storage.NewUtxoDb(db,logger)
-	stateDb := storage.NewStateDb(db,logger)
-	idxDb := storage.NewIndexDb(db,logger)
+	logger := log.New("Dag")
+	dagDb := storage.NewDagDb(db, logger)
+	utxoDb := storage.NewUtxoDb(db, logger)
+	stateDb := storage.NewStateDb(db, logger)
+	idxDb := storage.NewIndexDb(db, logger)
 	propDb := storage.NewPropertyDb4GenesisInit(db)
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb,logger)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb,logger)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb,logger)
-	propRep := dagcommon.NewPropRepository(propDb,logger)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, logger)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, logger)
+	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb, logger)
+	propRep := dagcommon.NewPropRepository(propDb, logger)
 
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
@@ -491,15 +492,15 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 
 func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
-	logger:=log.New("Dag")
-	dagDb := storage.NewDagDb(db,logger)
-	utxoDb := storage.NewUtxoDb(db,logger)
-	stateDb := storage.NewStateDb(db,logger)
-	idxDb := storage.NewIndexDb(db,logger)
+	logger := log.New("Dag")
+	dagDb := storage.NewDagDb(db, logger)
+	utxoDb := storage.NewUtxoDb(db, logger)
+	stateDb := storage.NewStateDb(db, logger)
+	idxDb := storage.NewIndexDb(db, logger)
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb,logger)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb,logger)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb,logger)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, logger)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, logger)
+	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb, logger)
 
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),

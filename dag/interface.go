@@ -41,7 +41,7 @@ type IDag interface {
 	GetCurrentUnit(assetId modules.IDType16) *modules.Unit
 	GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit
 	InsertDag(units modules.Units) (int, error)
-	GetUnitByHash(hash common.Hash) *modules.Unit
+	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
 	// GetHeaderByHash retrieves a header from the local chain.
@@ -58,7 +58,7 @@ type IDag interface {
 	SaveUnit(unit modules.Unit, isGenesis bool) error
 	//All leaf nodes for dag downloader
 	GetAllLeafNodes() ([]*modules.Header, error)
-	GetUnit(common.Hash) *modules.Unit
+	GetUnit(common.Hash) (*modules.Unit, error)
 	CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 
 	FastSyncCommitHead(common.Hash) error
@@ -85,7 +85,7 @@ type IDag interface {
 	GetCurThreshold() int
 	GetGlobalProp() *modules.GlobalProperty
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
-	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
+	GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error)
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
 	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
 	//Mediator

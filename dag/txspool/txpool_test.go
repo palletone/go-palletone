@@ -20,7 +20,6 @@ package txspool
 
 import (
 	"fmt"
-	"log"
 	"math/big"
 	"sync"
 	"testing"
@@ -28,6 +27,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/log"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -110,7 +110,8 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	// Create the pool to test the limit enforcement with
 	db, _ := palletdb.NewMemDatabase()
-	utxodb := storage.NewUtxoDb(db)
+	l := log.NewTestLog()
+	utxodb := storage.NewUtxoDb(db, l)
 	mutex := new(sync.RWMutex)
 	unitchain := &testUnitDag{db, utxodb, *mutex, nil, 10000, new(event.Feed)}
 
@@ -200,7 +201,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		if txs[i].Size() > 0 {
 			continue
 		} else {
-			log.Println("bad tx:", tx.Hash().String(), tx.Size())
+			log.Debug("bad tx:", tx.Hash().String(), tx.Size())
 		}
 	}
 
@@ -214,13 +215,13 @@ func TestTransactionAddingTxs(t *testing.T) {
 	fmt.Println("addlocals start.... ", t1)
 	pool.AddLocals(txpool_txs)
 
-	log.Println("pending:", len(pool.pending))
+	log.Debug("pending:", len(pool.pending))
 	fmt.Println("addlocals over.... ", time.Now().Unix()-t0.Unix())
 	for hash := range pool.pending {
 		if len(pool.pending) != int(config.AccountSlots) {
 			t.Errorf("addr %x: total pending transactions mismatch: have %d, want %d", hash.String(), len(pool.pending), config.AccountSlots)
 		} else {
-			log.Println("account matched.", "pending addr:", addr.String(), "amont:", len(pool.pending))
+			log.Debug("account matched.", "pending addr:", addr.String(), "amont:", len(pool.pending))
 		}
 	}
 	fmt.Println("defer start.... ", time.Now().Unix()-t0.Unix())
@@ -231,7 +232,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 			msg := fmt.Sprintf("total %v:total sizeof transactions is unexpected", total.Float64())
 			t.Error(msg)
 		} else {
-			log.Println(" total size is :", total, total.Float64(), "the cout: ", len(txs))
+			log.Debug(" total size is :", total, total.Float64(), "the cout: ", len(txs))
 			for i, tx := range txs {
 				if i < len(txs)-1 {
 					if txs[i].Priority_lvl < txs[i+1].Priority_lvl {
@@ -243,7 +244,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 			pending_cache = len(pool.pending)
 			queue_cache = len(pool.queue)
 		}
-		log.Println(origin, all, len(pool.all), pending_cache, queue_cache)
+		log.Debug("data:", origin, all, len(pool.all), pending_cache, queue_cache)
 		fmt.Println("defer over.... spending time：", time.Now().Unix()-t0.Unix())
 	}(pool)
 
