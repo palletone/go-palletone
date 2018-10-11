@@ -47,6 +47,7 @@ type IUnitRepository interface {
 	GenesisHeight() modules.ChainIndex
 	SaveUnit(unit modules.Unit, isGenesis bool) error
 	CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
+	IsGenesis(hash common.Hash) bool
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -282,6 +283,13 @@ func (unitRep *UnitRepository) GenesisHeight() modules.ChainIndex {
 		return modules.ChainIndex{}
 	}
 	return unit.UnitHeader.Number
+}
+func (unitRep *UnitRepository) IsGenesis(hash common.Hash) bool {
+	unit, err := unitRep.GetGenesisUnit(0)
+	if unit == nil || err != nil {
+		return false
+	}
+	return hash == unit.Hash()
 }
 
 func (unitOp *UnitRepository) GetUnitTransactions(unitHash common.Hash) (modules.Transactions, error) {
@@ -702,4 +710,9 @@ func (unitOp *UnitRepository) updateState(contractID []byte, key string, version
 		}
 	}
 	return true
+}
+
+func IsGenesis(hash common.Hash) bool {
+	genHash := common.HexToHash(dagconfig.DefaultConfig.GenesisHash)
+	return genHash == hash
 }

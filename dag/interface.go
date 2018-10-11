@@ -61,6 +61,9 @@ type IDag interface {
 	GetUnit(common.Hash) (*modules.Unit, error)
 	CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 
+	// validate group signature by hash
+	ValidateUnitGroupSig(hash common.Hash) (bool, error)
+
 	FastSyncCommitHead(common.Hash) error
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
 	GetContractState(id string, field string) (*modules.StateVersion, []byte)
