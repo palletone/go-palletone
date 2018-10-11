@@ -21,9 +21,9 @@
 package storage
 
 import (
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 	"strings"
-	"github.com/palletone/go-palletone/common/rlp"
 )
 
 func (statedb *StateDb) SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error {
@@ -42,7 +42,7 @@ func (statedb *StateDb) SaveContractTemplate(templateId []byte, bytecode []byte,
 获取模板所有属性
 To get contract or contract template all fields and return
 */
-func (statedb *StateDb) GetTplAllState(id []byte) map[modules.ContractReadSet][]byte {
+func (statedb *StateDb) GetTplAllState(id []byte) []*modules.ContractReadSet {
 	// key format: [PREFIX][ID]_[field]_[version]
 	key := append(CONTRACT_TPL, id...)
 	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
@@ -50,7 +50,7 @@ func (statedb *StateDb) GetTplAllState(id []byte) map[modules.ContractReadSet][]
 	if data == nil || len(data) <= 0 {
 		return nil
 	}
-	allState := map[modules.ContractReadSet][]byte{}
+	allState := []*modules.ContractReadSet{}
 	for k, v := range data {
 		sKey := strings.Split(k, "^*^")
 		if len(sKey) != 3 {
@@ -60,11 +60,12 @@ func (statedb *StateDb) GetTplAllState(id []byte) map[modules.ContractReadSet][]
 		if !version.ParseStringKey(k) {
 			continue
 		}
-		rdSet := modules.ContractReadSet{
-			Key:   sKey[1],
-			Value: &version,
+		rdSet := &modules.ContractReadSet{
+			Key:     sKey[1],
+			Version: &version,
+			Value:   v,
 		}
-		allState[rdSet] = v
+		allState = append(allState, rdSet)
 	}
 	return allState
 }
@@ -91,7 +92,6 @@ func (statedb *StateDb) GetTplState(id []byte, field string) (*modules.StateVers
 	}
 	return nil, nil
 }
-
 
 /**
 获取合约模板

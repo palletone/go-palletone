@@ -69,7 +69,7 @@ var (
 	TrieSyncKey   = []byte("TrieSync")
 
 	// contract
-	CONTRACT_PTEFIX = []byte("cs")
+	CONTRACT_PREFIX = []byte("cs")
 
 	// other prefix
 	EAENED_HEADERS_COMMISSION = "earned_headers_commossion"
