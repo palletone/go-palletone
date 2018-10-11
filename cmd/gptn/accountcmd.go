@@ -558,10 +558,10 @@ type SignTransactionParams struct {
 	PrivKeys []string   `json:"privkeys"`
 	Flags    string `jsonrpcdefault:"\"ALL\""`
 }
-type SignTransactionResult struct {
-	TransactionHex string `json:"transactionhex"`
-	Complete       bool   `json:"complete"`
-}
+//type SignTransactionResult struct {
+//	TransactionHex string `json:"transactionhex"`
+//	Complete       bool   `json:"complete"`
+//}
 
 func accountCreateTx(ctx *cli.Context) error {
 	if len(ctx.Args()) == 0 {

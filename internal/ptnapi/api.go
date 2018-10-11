@@ -1522,116 +1522,37 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 
 //sign rawtranscation
 //create raw transction
-func (s *PublicTransactionPoolAPI) SignRawTransaction(icmd interface{}) (interface{}, error) {
-	cmd := icmd.(*ptnjson.SignRawTransactionCmd)
-	serializedTx, err := decodeHexStr(cmd.RawTx)
+func (s *PublicTransactionPoolAPI) SignRawTransaction(params string) (interface{}, error) {
+	var signTransactionParams SignTransactionParams
+	err := json.Unmarshal([]byte(params), &signTransactionParams)
 	if err != nil {
-		return nil, err
+		return "",err
 	}
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
+	//transaction inputs
+	var rawinputs []ptnjson.RawTxInput
+	for _, inputOne := range signTransactionParams.Inputs {
+		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex,inputOne.ScriptPubKey,inputOne.RedeemScript}
+		rawinputs = append(rawinputs, input)
 	}
-	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
-		return nil, err
+	if len(rawinputs) == 0 {
+		return "",nil 
 	}
-	var hashType uint32
-	switch *cmd.Flags {
-	case "ALL":
-		hashType = SigHashAll
-	case "NONE":
-		hashType = SigHashNone
-	case "SINGLE":
-		hashType = SigHashSingle
-	case "ALL|ANYONECANPAY":
-		hashType = SigHashAll | SigHashAnyOneCanPay
-	case "NONE|ANYONECANPAY":
-		hashType = SigHashNone | SigHashAnyOneCanPay
-	case "SINGLE|ANYONECANPAY":
-		hashType = SigHashSingle | SigHashAnyOneCanPay
-	default:
-		//e := errors.New("Invalid sighash parameter")
-		return nil, err
-	}
-
-	inputpoints := make(map[modules.OutPoint][]byte)
-	//scripts := make(map[string][]byte)
-	//var params *chaincfg.Params
-	var cmdInputs []ptnjson.RawTxInput
-	if cmd.Inputs != nil {
-		cmdInputs = *cmd.Inputs
-	}
-	var redeem []byte
-	for _, rti := range cmdInputs {
-		inputHash, err := common.NewHashFromStr(rti.Txid)
-		if err != nil {
-			return nil, DeserializationError{err}
+	var keys []string
+	for _, key := range signTransactionParams.PrivKeys {
+		key = strings.TrimSpace(key) //Trim whitespace
+		if len(key) == 0 {
+			continue
 		}
-		script, err := decodeHexStr(rti.ScriptPubKey)
-		if err != nil {
-			return nil, err
-		}
-		// redeemScript is only actually used iff the user provided
-		// private keys. In which case, it is used to get the scripts
-		// for signing. If the user did not provide keys then we always
-		// get scripts from the wallet.
-		//		// Empty strings are ok for this one and hex.DecodeString will
-		//		// DTRT.
-		if rti.RedeemScript != "" {
-			redeemScript, err := decodeHexStr(rti.RedeemScript)
-			if err != nil {
-				return nil, err
-			}
-			//lockScript := tokenengine.GenerateP2SHLockScript(crypto.Hash160(redeemScript))
-			//addressMulti,err:=tokenengine.GetAddressFromScript(lockScript)
-			//if err != nil {
-			//	return nil, DeserializationError{err}
-			//}
-			//mutiAddr = addressMulti
-			//scripts[addressMulti.Str()] = redeemScript
-			redeem = redeemScript
-		}
-		inputpoints[modules.OutPoint{
-			TxHash:       *inputHash,
-			OutIndex:     rti.Vout,
-			MessageIndex: rti.MessageIndex,
-		}] = script
+		keys = append(keys, key)
+	}
+	if len(keys) == 0 {
+		return "",nil 
 	}
 
-	var keys map[common.Address]*ecdsa.PrivateKey
-	if cmd.PrivKeys != nil {
-		keys = make(map[common.Address]*ecdsa.PrivateKey)
-
-		if cmd.PrivKeys != nil {
-			for _, key := range *cmd.PrivKeys {
-				privKey, _ := crypto.FromWIF(key)
-				//privKeyBytes, _ := hex.DecodeString(key)
-				//privKey, _ := crypto.ToECDSA(privKeyBytes)
-				addr := crypto.PubkeyToAddress(&privKey.PublicKey)
-				keys[addr] = privKey
-			}
-		}
-	}
-
-	var signErrs []common.SignatureError
-	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, keys)
-	if err != nil {
-
-		return nil, DeserializationError{err}
-	}
-
-	// All returned errors (not OOM, which panics) encounted during
-	// bytes.Buffer writes are unexpected.
-	mtxbt, err := rlp.EncodeToBytes(tx)
-	if err != nil {
-		return "", err
-	}
-	signedHex := hex.EncodeToString(mtxbt)
-	signErrors := make([]ptnjson.SignRawTransactionError, 0, len(signErrs))
-	return ptnjson.SignRawTransactionResult{
-		Hex:      signedHex,
-		Complete: len(signErrors) == 0,
-		Errors:   signErrors,
-	}, nil
+	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx,&rawinputs,&keys, ptnjson.String("ALL")) 
+	result, _ := SignRawTransaction(newsign)
+	fmt.Println(result)
+	return result,nil
 }
 // SendTransaction creates a transaction for the given argument, sign it and submit it to the
 // transaction pool.
