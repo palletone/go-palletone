@@ -36,6 +36,9 @@ var (
 	BTCCOIN = IDType16{'b', 't', 'c', 'o', 'i', 'n'}
 )
 
+func ZeroIdType16() IDType16 {
+	return IDType16{}
+}
 func (it *IDType16) String() string {
 	return hexutil.Encode(it.Bytes()[:])
 	//var b []byte

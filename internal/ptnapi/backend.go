@@ -101,7 +101,7 @@ type Backend interface {
 
 	GetTrieSyncProgress() (uint64, error)
 
-	GetUtxoEntry(key []byte) (*modules.Utxo, error)
+	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	//------- Get addr utxo start ------//

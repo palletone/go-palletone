@@ -20,6 +20,7 @@ package asset
 
 import (
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/ptn"
 	"github.com/pborman/uuid"
 )
 
@@ -36,4 +37,11 @@ func NewAsset() modules.IDType16 {
 		assetId[i] = uuid[i]
 	}
 	return assetId
+}
+func PTN() *modules.Asset {
+
+	return &modules.Asset{AssetId: modules.PTNCOIN,
+		UniqueId: modules.ZeroIdType16(),
+		ChainId:  ptn.DefaultConfig.NetworkId,
+	}
 }

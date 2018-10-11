@@ -93,7 +93,7 @@ func (self *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
 		case event := <-self.sigShareCh:
-			unit := self.dag.GetUnit(event.UnitHash)
+			unit, _ := self.dag.GetUnit(event.UnitHash)
 			if unit != nil {
 				med := unit.UnitAuthor()
 				node := self.dag.GetActiveMediator(*med).Node
@@ -146,8 +146,8 @@ func (self *ProtocolManager) groupSigBroadcastLoop() {
 		case event := <-self.groupSigCh:
 			self.BroadcastGroupSig(&event)
 
-			// Err() channel will be closed when unsubscribing.
-		case <-self.sigShareSub.Err():
+		// Err() channel will be closed when unsubscribing.
+		case <-self.groupSigSub.Err():
 			return
 		}
 	}

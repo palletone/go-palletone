@@ -10,19 +10,6 @@ import (
 	// "github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
 )
 
-type RawTransactionGenParams struct {
-	Inputs []struct {
-		Txid         string `json:"txid"`
-		Vout         uint32 `json:"vout"`
-		MessageIndex uint32 `json:"messageindex"`
-	} `json:"inputs"`
-	Outputs []struct {
-		Address string  `json:"address"`
-		Amount  float64 `json:"amount"`
-	} `json:"outputs"`
-	Locktime int64 `json:"locktime"`
-}
-
 func TestRawTransactionGen(t *testing.T) {
 	// txid from btc
 	/*params := `{

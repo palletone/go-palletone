@@ -208,7 +208,8 @@ func (b *PtnApiBackend) GetHeader(hash common.Hash, index uint64) (*modules.Head
 
 // Get Unit
 func (b *PtnApiBackend) GetUnit(hash common.Hash) *modules.Unit {
-	return b.ptn.dag.GetUnit(hash)
+	u, _ := b.ptn.dag.GetUnit(hash)
+	return u
 }
 
 // Get UnitNumber
@@ -243,8 +244,8 @@ func (b *PtnApiBackend) GetTrieSyncProgress() (uint64, error) {
 	return b.ptn.dag.GetTrieSyncProgress()
 }
 
-func (b *PtnApiBackend) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
-	return b.ptn.dag.GetUtxoEntry(key)
+func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	return b.ptn.dag.GetUtxoEntry(outpoint)
 }
 
 func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {

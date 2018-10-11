@@ -329,7 +329,7 @@ func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
 	case <-mp.quit:
 		return errTerminated
 	default:
-		localMed := mp.getDag().GetUnit(sigShare.UnitHash)
+		localMed, _ := mp.getDag().GetUnit(sigShare.UnitHash)
 		go mp.addToTBLSRecoverBuf(localMed, sigShare.SigShare)
 		//go mp.addToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 		return nil
@@ -423,7 +423,7 @@ func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, unitHas
 	err := bls.Verify(mp.suite, groupPublicKey, unitHash[:], groupSig)
 	if err == nil {
 		log.Debug("the group signature: " + hexutil.Encode(groupSig) +
-			"of the Unit that hash: " + unitHash.Hex() + " is verified through!")
+			" of the Unit that hash: " + unitHash.Hex() + " is verified through!")
 	} else {
 		log.Error(err.Error())
 	}

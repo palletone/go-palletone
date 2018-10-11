@@ -101,8 +101,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
-
-	dag, err := dag.NewDag(db)
+	logger:=log.New()
+	dag, err := dag.NewDag(db,logger)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
@@ -141,9 +141,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	isMediator := ptn.mediatorPlugin.LocalHaveActiveMediator()
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine,
-		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, isMediator); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
 	}

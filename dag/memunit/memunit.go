@@ -135,7 +135,7 @@ func (forkIndex *ForkIndex) Lenth() int {
 // TODO MemDag
 type MemDag struct {
 	//db                ptndb.Database
-	dagdb             storage.DagDb
+	dagdb             storage.IDagDb
 	unitRep           dagCommon.IUnitRepository
 	lastValidatedUnit map[string]common.Hash // the key is asset id
 	forkIndex         map[string]*ForkIndex  // the key is asset id
@@ -144,7 +144,7 @@ type MemDag struct {
 	memSize           uint8
 }
 
-func NewMemDag(db storage.DagDb, unitRep dagCommon.IUnitRepository) *MemDag {
+func NewMemDag(db storage.IDagDb, unitRep dagCommon.IUnitRepository) *MemDag {
 	memdag := MemDag{
 		lastValidatedUnit: make(map[string]common.Hash),
 		forkIndex:         make(map[string]*ForkIndex),
@@ -164,7 +164,7 @@ func NewMemDag(db storage.DagDb, unitRep dagCommon.IUnitRepository) *MemDag {
 		log.Error("Get genesis unit failed, unit of genesis is nil.")
 		return nil
 	}
-	lastIrreUnit := db.GetLastIrreversibleUnit(genesisUnit.UnitHeader.Number.AssetID)
+	lastIrreUnit, _ := db.GetLastIrreversibleUnit(genesisUnit.UnitHeader.Number.AssetID)
 	if lastIrreUnit != nil {
 		memdag.lastValidatedUnit[genesisUnit.UnitHeader.Number.AssetID.String()] = lastIrreUnit.UnitHash
 	}
@@ -203,7 +203,7 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 	// get asset chain's las irreversible unit
 	irreUnitHash, ok := chain.lastValidatedUnit[assetId]
 	if !ok {
-		lastIrreUnit := chain.dagdb.GetLastIrreversibleUnit(unit.UnitHeader.Number.AssetID)
+		lastIrreUnit, _ := chain.dagdb.GetLastIrreversibleUnit(unit.UnitHeader.Number.AssetID)
 		if lastIrreUnit != nil {
 			irreUnitHash = lastIrreUnit.UnitHash
 			chain.lastValidatedUnit[assetId] = irreUnitHash
@@ -344,7 +344,7 @@ func (chain *MemDag) GetCurrentUnit(assetid modules.IDType16) (*modules.Unit, er
 		if !ok {
 			return nil, nil
 		}
-		unit := chain.dagdb.GetUnit(lastValidatedUnitHash)
+		unit, _ := chain.dagdb.GetUnit(lastValidatedUnitHash)
 		return unit, nil
 	}
 	fork, ok := chain.forkIndex[sAssetID]
