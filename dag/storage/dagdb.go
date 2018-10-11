@@ -72,7 +72,7 @@ type IDagDb interface {
 	GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error)
 	GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error)
 	GetHeaderByHeight(index modules.ChainIndex) (*modules.Header, error)
-	GetNumberWithUnitHash(hash common.Hash) (modules.ChainIndex, error)
+	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
 	GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
@@ -117,13 +117,13 @@ func (dagdb *DagDb) SaveHashByNumber(uHash common.Hash, number modules.ChainInde
 		i = 1
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
-	return StoreBytes(dagdb.db, []byte(key), uHash)
+	return StoreBytes(dagdb.db, []byte(key), uHash.Hex())
 }
 
 // height and assetid can get a unit key.
 func (dagdb *DagDb) SaveUHashIndex(cIndex modules.ChainIndex, uHash common.Hash) error {
 	key := fmt.Sprintf("%s_%s_%d", UNIT_NUMBER_PREFIX, cIndex.AssetID.String(), cIndex.Index)
-	return Store(dagdb.db, key, uHash.Bytes())
+	return Store(dagdb.db, key, uHash.Hex())
 }
 
 /**
@@ -168,7 +168,7 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 	dagdb.updateAddrTransactions(tx.Address().String(), tx.TxHash)
 	// store output by addr
 	for i, msg := range tx.TxMessages {
-		payload, ok := msg.Payload.(modules.PaymentPayload)
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if ok {
 			for _, output := range payload.Output {
 				//  pkscript to addr
@@ -286,19 +286,22 @@ func (dagdb *DagDb) GetAddrOutput(addr string) ([]modules.Output, error) {
 //	}
 //	return number, nil
 //}
-func (dagdb *DagDb) GetNumberWithUnitHash(hash common.Hash) (modules.ChainIndex, error) {
+func (dagdb *DagDb) GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error) {
 	key := fmt.Sprintf("%s%s", UNIT_HASH_NUMBER_Prefix, hash.String())
 
-	data, _ := dagdb.db.Get([]byte(key))
+	data, err := dagdb.db.Get([]byte(key))
+	if err != nil {
+		return nil, err
+	}
 	if len(data) <= 0 {
-		return modules.ChainIndex{}, nil
+		return nil, nil
 	}
 	number := new(modules.ChainIndex)
 	if err := rlp.DecodeBytes(data, number); err != nil {
-		return modules.ChainIndex{}, fmt.Errorf("Get unit number when rlp decode error:%s", err.Error())
+		return nil, fmt.Errorf("Get unit number when rlp decode error:%s", err.Error())
 	}
 
-	return *number, nil
+	return number, nil
 }
 
 //  GetCanonicalHash get
@@ -364,17 +367,17 @@ func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	if err != nil {
 		return nil, err
 	}
-	dagdb.logger.Debug("height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
+	dagdb.logger.Debug("index info:", "height", height.String(), "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 	//fmt.Printf("height=%#v\n", height)
 	if err != nil {
 		dagdb.logger.Error("GetUnit when GetUnitNumber failed , error:", err)
 		return nil, err
 	}
 	// 2. unit header
-	uHeader, err := dagdb.GetHeader(hash, &height)
+	uHeader, err := dagdb.GetHeader(hash, height)
 	if err != nil {
 		dagdb.logger.Error("GetUnit when GetHeader failed , error:", err, "hash", hash.String())
-		dagdb.logger.Error("height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
+		dagdb.logger.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 		return nil, err
 	}
 	// get unit hash
@@ -420,8 +423,10 @@ func (dagdb *DagDb) GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, 
 	if err != nil {
 		return nil, err
 	}
-	var h common.Hash
-	h.SetBytes(hash)
+	var hex string
+	rlp.DecodeBytes(hash, &hex)
+	h := common.HexToHash(hex)
+
 	return dagdb.GetUnit(h)
 }
 
@@ -429,7 +434,7 @@ func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.
 	key := fmt.Sprintf("%s_%s_1_", UNIT_NUMBER_PREFIX, assetID.String())
 
 	data := dagdb.GetPrefix([]byte(key))
-	irreKey := string("")
+	var irreKey string
 	for k := range data {
 		if strings.Compare(k, irreKey) > 0 {
 			irreKey = k
@@ -437,11 +442,14 @@ func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.
 	}
 	if strings.Compare(irreKey, "") > 0 {
 		rlpUnitHash := data[irreKey]
-		var unitHash common.Hash
-		if err := rlp.DecodeBytes(rlpUnitHash, &unitHash); err != nil {
-			dagdb.logger.Error("GetLastIrreversibleUnit error:", err.Error())
+		log.Info("=================================== ", "irreKey", irreKey, "hash", rlpUnitHash)
+		var hex string
+		err := rlp.DecodeBytes(rlpUnitHash, &hex)
+		if err != nil {
+			dagdb.logger.Error("GetLastIrreversibleUnit error:" + err.Error())
 			return nil, err
 		}
+		unitHash := common.HexToHash(hex)
 		return dagdb.GetUnit(unitHash)
 	}
 	return nil, errors.New("Not found")
@@ -453,7 +461,7 @@ func (dagdb *DagDb) GetHeader(hash common.Hash, index *modules.ChainIndex) (*mod
 	// key = append(key, index.Bytes()...)
 	// header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
 	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, index.Index, index.String(), hash.String())
-	dagdb.logger.Debug("GetHeader by Key:", key)
+	dagdb.logger.Debug("GetHeader by Key:", "header's key", key)
 	header_bytes, err := dagdb.db.Get([]byte(key))
 	// rlp  to  Header struct
 	if err != nil {
@@ -461,7 +469,7 @@ func (dagdb *DagDb) GetHeader(hash common.Hash, index *modules.ChainIndex) (*mod
 	}
 	header := new(modules.Header)
 	if err := rlp.Decode(bytes.NewReader(header_bytes), header); err != nil {
-		dagdb.logger.Error("Invalid unit header rlp:", err)
+		dagdb.logger.Error("Invalid unit header rlp:", "error", err)
 		return nil, err
 	}
 	return header, nil
@@ -492,7 +500,7 @@ func (dagdb *DagDb) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
 	header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
 	// rlp  to  Header struct
 	if err != nil {
-		dagdb.logger.Error("GetHeaderRlp error", err)
+		dagdb.logger.Error("GetHeaderRlp error", "error", err)
 	}
 	return header_bytes
 }
@@ -564,15 +572,15 @@ func (dagdb *DagDb) GetContractNoReader(db ptndb.Database, id common.Hash) (*mod
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
-	con_bytes, err := dagdb.db.Get(append(CONTRACT_PTEFIX, id[:]...))
+	con_bytes, err := dagdb.db.Get(append(CONTRACT_PREFIX, id[:]...))
 	if err != nil {
-		dagdb.logger.Error("err:", err)
+		dagdb.logger.Error(fmt.Sprintf("getContract error: %s", err.Error()))
 		return nil, err
 	}
 	contract := new(modules.Contract)
 	err = rlp.DecodeBytes(con_bytes, contract)
 	if err != nil {
-		dagdb.logger.Error("err:", err)
+		dagdb.logger.Error("getContract failed,decode error:" + err.Error())
 		return nil, err
 	}
 	return contract, nil

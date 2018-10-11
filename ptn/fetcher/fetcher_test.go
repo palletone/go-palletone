@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	log2 "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	dag2 "github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -120,7 +121,8 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	//	fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	//}
-	dagDb := storage.NewDagDb(db)
+	l := log2.NewTestLog()
+	dagDb := storage.NewDagDb(db, l)
 	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := dagDb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
@@ -207,10 +209,10 @@ func newTester() *fetcherTester {
 }
 
 // getBlock retrieves a block from the tester's block chain.
-func (f *fetcherTester) getBlock(hash common.Hash) *modules.Unit {
+func (f *fetcherTester) getBlock(hash common.Hash) (*modules.Unit, error) {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
-	return f.blocks[hash]
+	return f.blocks[hash], nil
 }
 
 // verifyHeader is a nop placeholder for the block header verification.

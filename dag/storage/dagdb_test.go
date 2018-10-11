@@ -18,16 +18,23 @@
  *
  */
 
-package log
+package storage
 
-//对于有些情况，我们只希望在开发环境的时候记录Log，而在生产环境不做任何记录
-type NothingLogger struct{}
+import (
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
-func (n *NothingLogger) Trace(msg string, ctx ...interface{})  {}
-func (n *NothingLogger) Debug(msg string, ctx ...interface{})  {}
-func (n *NothingLogger) Debugf(msg string, ctx ...interface{}) {}
-func (n *NothingLogger) Info(msg string, ctx ...interface{})   {}
-func (n *NothingLogger) Warn(msg string, ctx ...interface{})   {}
-func (n *NothingLogger) Error(msg string, ctx ...interface{})  {}
-func (n *NothingLogger) Errorf(msg string, ctx ...interface{}) {}
-func (n *NothingLogger) Crit(msg string, ctx ...interface{})   {}
+func TestGetUnit(t *testing.T) {
+	//log.Println("dbconn is nil , renew db  start ...")
+
+	db, _ := ptndb.NewMemDatabase()
+	l := log.NewTestLog()
+	dagdb := NewDagDb(db, l)
+	u, err := dagdb.GetUnit(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
+	assert.Nil(t, u, "empty db, must return nil Unit")
+	assert.NotNil(t, err)
+}

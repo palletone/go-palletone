@@ -21,8 +21,6 @@ package storage
 
 import (
 	"errors"
-	"log"
-	"reflect"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -54,6 +52,23 @@ func retrieve(db ptndb.Database, key []byte, v interface{}) error {
 
 	return nil
 }
+func retrieveWithVersion(db ptndb.Database, key []byte) (*modules.StateVersion, []byte, error) {
+	data, err := db.Get(key)
+	if err != nil {
+		return nil, nil, err
+	}
+	return splitValueAndVersion(data)
+}
+
+//将Statedb里的Value分割为Version和用户数据
+func splitValueAndVersion(data []byte) (*modules.StateVersion, []byte, error) {
+	verBytes := data[:29]
+	objData := data[30:]
+
+	version := &modules.StateVersion{}
+	version.SetBytes(verBytes)
+	return version, objData, nil
+}
 
 // get string
 func getString(db ptndb.Database, key []byte) (string, error) {
@@ -77,48 +92,24 @@ func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 	return result
 }
 
+// get row count by prefix
+func getCountByPrefix(db DatabaseReader, prefix []byte) int {
+	iter := db.NewIteratorWithPrefix(prefix)
+	count := 0
+	for iter.Next() {
+		count++
+	}
+	return count
+}
 func GetContractRlp(db DatabaseReader, id common.Hash) (rlp.RawValue, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
-	con_bytes, err := db.Get(append(CONTRACT_PTEFIX, id[:]...))
+	con_bytes, err := db.Get(append(CONTRACT_PREFIX, id[:]...))
 	if err != nil {
 		return nil, err
 	}
 	return con_bytes, nil
-}
-
-// Get contract key's value
-func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interface{}, error) {
-	var val interface{}
-	if common.EmptyHash(id) {
-		return nil, errors.New("the filed not defined")
-	}
-	con_bytes, err := db.Get(append(CONTRACT_PTEFIX, id[:]...))
-	if err != nil {
-		return nil, err
-	}
-	contract := new(modules.Contract)
-	err = rlp.DecodeBytes(con_bytes, contract)
-	if err != nil {
-		log.Println("err:", err)
-		return nil, err
-	}
-	obj := reflect.ValueOf(contract)
-	myref := obj.Elem()
-	typeOftype := myref.Type()
-
-	for i := 0; i < myref.NumField(); i++ {
-		filed := myref.Field(i)
-		if typeOftype.Field(i).Name == key {
-			val = filed.Interface()
-			log.Println(i, ". ", typeOftype.Field(i).Name, " ", filed.Type(), "=: ", filed.Interface())
-			break
-		} else if i == myref.NumField()-1 {
-			val = nil
-		}
-	}
-	return val, nil
 }
 
 // GetAdddrTransactionsHash

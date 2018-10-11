@@ -73,7 +73,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	// step2. get unit height
 	height, err := d.GetUnitNumber(hash)
 	// get unit header
-	uHeader, err := d.dagdb.GetHeader(hash, &height)
+	uHeader, err := d.dagdb.GetHeader(hash, height)
 	if err != nil {
 		log.Error("Current unit when get unit header", "error", err.Error())
 		return nil
@@ -135,7 +135,7 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 		log.Error("GetHeaderByHash when GetUnitNumber", "error", err.Error())
 	}
 	// get unit header
-	uHeader, err := d.dagdb.GetHeader(hash, &height)
+	uHeader, err := d.dagdb.GetHeader(hash, height)
 	if err != nil {
 		log.Error("Current unit when get unit header", "error", err.Error())
 		return nil
@@ -189,7 +189,7 @@ func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
 	} else {
 		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
 		if err := d.Memdag.Save(&unit); err != nil {
-			return 3, fmt.Errorf("SaveDag, save error: %s", err.Error())
+			return 3, fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		}
 	}
 	// step5. check if it is need to switch
@@ -273,7 +273,7 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 }
 func (d *Dag) Exists(hash common.Hash) bool {
 	number, err := d.dagdb.GetNumberWithUnitHash(hash)
-	if err == nil && (number != modules.ChainIndex{}) {
+	if err == nil && (number != nil) {
 		log.Info("经检索，该hash已存储在leveldb中，", "hash", hash.String())
 		return true
 	}
@@ -520,7 +520,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 }
 
 // Get Contract Api
-func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
+func (d *Dag) GetContract(id common.Address) (*modules.Contract, error) {
 	return d.statedb.GetContract(id)
 }
 
@@ -532,7 +532,7 @@ func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error
 	}
 	//TODO compare index with number
 	if index.Index == number {
-		head, err := d.dagdb.GetHeader(hash, &index)
+		head, err := d.dagdb.GetHeader(hash, index)
 		if err != nil {
 			fmt.Println("=============get unit header faled =============", err)
 		}
@@ -542,7 +542,7 @@ func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error
 }
 
 // Get UnitNumber
-func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex, error) {
+func (d *Dag) GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error) {
 	return d.dagdb.GetNumberWithUnitHash(hash)
 }
 
@@ -577,6 +577,11 @@ func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	preout := modules.OutPoint{TxHash: tx.Hash()}
+	var isnot_coinbase bool
+	if !dagcommon.IsCoinBase(tx) {
+		isnot_coinbase = true
+	}
+
 	for i, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
@@ -587,12 +592,17 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 					preout.OutIndex = txoutIdx
 					neededSet[preout] = struct{}{}
 				}
+				// if tx is Not CoinBase
+				// add txIn previousoutpoint
+				if isnot_coinbase {
+					for _, in := range msg.Input {
+						neededSet[*in.PreviousOutPoint] = struct{}{}
+					}
+				}
 			}
 		}
-
 	}
-	// if tx is Not CoinBase
-	// add txIn previousoutpoint
+
 	view := txspool.NewUtxoViewpoint()
 	d.Mutex.RLock()
 	err := view.FetchUtxos(d.utxodb, neededSet)
@@ -707,7 +717,7 @@ func (d *Dag) UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.Dynam
 }
 
 //@Yiran
-func (d *Dag) GetCurrentUnitIndex() (modules.ChainIndex, error) {
+func (d *Dag) GetCurrentUnitIndex() (*modules.ChainIndex, error) {
 	currentUnitHash := d.CurrentUnit().UnitHash
 	return d.GetUnitNumber(currentUnitHash)
 }

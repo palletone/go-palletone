@@ -66,6 +66,10 @@ func TestProtocolCompatibility(t *testing.T) {
 */
 // Tests that block headers can be retrieved from a remote chain based on user queries.
 //func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
+func getUnitHashbyNumber(pm *ProtocolManager, index0 modules.ChainIndex) common.Hash {
+	u, _ := pm.dag.GetUnitByNumber(index0)
+	return u.Hash()
+}
 func testGetBlockHeaders(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil, nil, nil)
 	peer, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
@@ -170,49 +174,49 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		// A single random block should be retrievable by hash and number too
 		{
 			&getBlockHeadersData{Origin: hashOrNumber{Hash: pm.dag.GetHeaderByNumber(index0).Hash()}, Amount: 1},
-			[]common.Hash{pm.dag.GetUnitByNumber(index0).Hash()},
+			[]common.Hash{getUnitHashbyNumber(pm, index0)},
 		}, {
 			&getBlockHeadersData{Origin: hashOrNumber{Number: index0}, Amount: 1},
-			[]common.Hash{pm.dag.GetUnitByNumber(index0).Hash()},
+			[]common.Hash{getUnitHashbyNumber(pm, index0)},
 		},
 		//Multiple headers should be retrievable in both directions
 		{
 			&getBlockHeadersData{Origin: hashOrNumber{Number: index0}, Amount: 3},
 			[]common.Hash{
-				pm.dag.GetUnitByNumber(index0).Hash(),
-				pm.dag.GetUnitByNumber(index1).Hash(),
-				pm.dag.GetUnitByNumber(index2).Hash(),
+				getUnitHashbyNumber(pm, index0),
+				getUnitHashbyNumber(pm, index1),
+				getUnitHashbyNumber(pm, index2),
 			},
 		},
 		{
 			&getBlockHeadersData{Origin: hashOrNumber{Number: index0}, Amount: 3, Reverse: true},
 			[]common.Hash{
-				pm.dag.GetUnitByNumber(index0).Hash(),
-				pm.dag.GetUnitByNumber(index21).Hash(),
-				pm.dag.GetUnitByNumber(index22).Hash(),
+				getUnitHashbyNumber(pm, index0),
+				getUnitHashbyNumber(pm, index21),
+				getUnitHashbyNumber(pm, index22),
 			},
 		},
 		// Multiple headers with skip lists should be retrievable
 		{
 			&getBlockHeadersData{Origin: hashOrNumber{Number: index0}, Skip: 3, Amount: 3},
 			[]common.Hash{
-				pm.dag.GetUnitByNumber(index0).Hash(),
-				pm.dag.GetUnitByNumber(index4).Hash(),
-				pm.dag.GetUnitByNumber(index8).Hash(),
+				getUnitHashbyNumber(pm, index0),
+				getUnitHashbyNumber(pm, index4),
+				getUnitHashbyNumber(pm, index8),
 			},
 		},
 		{
 			&getBlockHeadersData{Origin: hashOrNumber{Number: index0}, Skip: 3, Amount: 3, Reverse: true},
 			[]common.Hash{
-				pm.dag.GetUnitByNumber(index0).Hash(),
-				pm.dag.GetUnitByNumber(index24).Hash(),
-				pm.dag.GetUnitByNumber(index28).Hash(),
+				getUnitHashbyNumber(pm, index0),
+				getUnitHashbyNumber(pm, index24),
+				getUnitHashbyNumber(pm, index28),
 			},
 		},
 		//// The chain endpoints should be retrievable
 		{
 			&getBlockHeadersData{Origin: hashOrNumber{Number: index}, Amount: 1},
-			[]common.Hash{pm.dag.GetUnitByNumber(index).Hash()},
+			[]common.Hash{getUnitHashbyNumber(pm, index)},
 		}, {
 			&getBlockHeadersData{Origin: hashOrNumber{Number: pm.dag.CurrentUnit().Number()}, Amount: 1},
 			[]common.Hash{pm.dag.CurrentUnit().Hash()},
@@ -226,51 +230,51 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		{
 			&getBlockHeadersData{Origin: hashOrNumber{Number: in4}, Skip: 3, Amount: 3},
 			[]common.Hash{
-				pm.dag.GetUnitByNumber(in4).Hash(),
-				pm.dag.GetUnitByNumber(pm.dag.CurrentUnit().Number()).Hash(),
+				getUnitHashbyNumber(pm, in4),
+				getUnitHashbyNumber(pm, pm.dag.CurrentUnit().Number()),
 			},
 		}, {
 			&getBlockHeadersData{Origin: hashOrNumber{Number: index44}, Skip: 3, Amount: 3, Reverse: true},
 			[]common.Hash{
-				pm.dag.GetUnitByNumber(index44).Hash(),
-				pm.dag.GetUnitByNumber(index).Hash(),
+				getUnitHashbyNumber(pm, index44),
+				getUnitHashbyNumber(pm, index),
 			},
 		},
 		//// Check that requesting more than available is handled gracefully, even if mid skip
 		{
 			&getBlockHeadersData{Origin: hashOrNumber{Number: in4}, Skip: 2, Amount: 3},
 			[]common.Hash{
-				pm.dag.GetUnitByNumber(in4).Hash(),
-				pm.dag.GetUnitByNumber(in1).Hash(),
+				getUnitHashbyNumber(pm, in4),
+				getUnitHashbyNumber(pm, in1),
 			},
 		}, {
 			&getBlockHeadersData{Origin: hashOrNumber{Number: index44}, Skip: 2, Amount: 3, Reverse: true},
 			[]common.Hash{
-				pm.dag.GetUnitByNumber(index44).Hash(),
-				pm.dag.GetUnitByNumber(i1).Hash(),
+				getUnitHashbyNumber(pm, index44),
+				getUnitHashbyNumber(pm, i1),
 			},
 		},
 		//// Check a corner case where requesting more can iterate past the endpoints
 		{
 			&getBlockHeadersData{Origin: hashOrNumber{Number: i2}, Amount: 5, Reverse: true},
 			[]common.Hash{
-				pm.dag.GetUnitByNumber(i2).Hash(),
-				pm.dag.GetUnitByNumber(i1).Hash(),
-				pm.dag.GetUnitByNumber(index).Hash(),
+				getUnitHashbyNumber(pm, i2),
+				getUnitHashbyNumber(pm, i1),
+				getUnitHashbyNumber(pm, index),
 			},
 		},
 		// Check a corner case where skipping overflow loops back into the chain start
 		{
-			&getBlockHeadersData{Origin: hashOrNumber{Hash: pm.dag.GetUnitByNumber(i3).Hash()}, Amount: 2, Reverse: false, Skip: math.MaxUint64 - 1},
+			&getBlockHeadersData{Origin: hashOrNumber{Hash: getUnitHashbyNumber(pm, i3)}, Amount: 2, Reverse: false, Skip: math.MaxUint64 - 1},
 			[]common.Hash{
-				pm.dag.GetUnitByNumber(i3).Hash(),
+				getUnitHashbyNumber(pm, i3),
 			},
 		},
 		// Check a corner case where skipping overflow loops back to the same header
 		{
-			&getBlockHeadersData{Origin: hashOrNumber{Hash: pm.dag.GetUnitByNumber(i1).Hash()}, Amount: 2, Reverse: false, Skip: math.MaxUint64},
+			&getBlockHeadersData{Origin: hashOrNumber{Hash: getUnitHashbyNumber(pm, i1)}, Amount: 2, Reverse: false, Skip: math.MaxUint64},
 			[]common.Hash{
-				pm.dag.GetUnitByNumber(i1).Hash(),
+				getUnitHashbyNumber(pm, i1),
 			},
 		},
 		// Check that non existing headers aren't returned
@@ -289,7 +293,8 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		// Collect the headers to expect in the response
 		headers := []*modules.Header{}
 		for _, hash := range tt.expect {
-			headers = append(headers, pm.dag.GetUnitByHash(hash).Header())
+			u, _ := pm.dag.GetUnitByHash(hash)
+			headers = append(headers, u.Header())
 		}
 		// Send the hash request and verify the response
 		p2p.Send(peer.app, 0x03, tt.query)
@@ -298,7 +303,7 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		}
 		// If the test used number origins, repeat with hashes as the too
 		if tt.query.Origin.Hash == (common.Hash{}) {
-			if origin := pm.dag.GetUnitByNumber(tt.query.Origin.Number); origin != nil {
+			if origin, _ := pm.dag.GetUnitByNumber(tt.query.Origin.Number); origin != nil {
 				index := modules.ChainIndex{
 					AssetID: modules.PTNCOIN,
 					IsMain:  true,
@@ -326,7 +331,7 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	height := 10
 	mockUnit := unitForTest(height)
 
-	dag.EXPECT().GetUnitByNumber(gomock.Any()).Return(mockUnit).AnyTimes()
+	dag.EXPECT().GetUnitByNumber(gomock.Any()).Return(mockUnit, nil).AnyTimes()
 	dag.EXPECT().GetActiveMediatorNodes().Return(map[string]*discover.Node{}).AnyTimes()
 	dag.EXPECT().CurrentHeader().Return(mockUnit.Header()).AnyTimes()
 	dag.EXPECT().CurrentUnit().Return(mockUnit).AnyTimes()

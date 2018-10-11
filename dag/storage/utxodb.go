@@ -35,14 +35,14 @@ type UtxoDb struct {
 	logger log.ILogger
 }
 
-func NewUtxoDb(db ptndb.Database,logger log.ILogger) *UtxoDb {
+func NewUtxoDb(db ptndb.Database, logger log.ILogger) *UtxoDb {
 	var l log.ILogger
-	if logger!=nil{
-		l=logger
-	}else{
-		l=&log.NothingLogger{}
+	if logger != nil {
+		l = logger
+	} else {
+		l = &log.NothingLogger{}
 	}
-	return &UtxoDb{db: db, logger:l}
+	return &UtxoDb{db: db, logger: l}
 }
 
 type IUtxoDb interface {
@@ -53,20 +53,20 @@ type IUtxoDb interface {
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr string) ([]modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
-	SaveUtxoSnapshot(index modules.ChainIndex) error
+	SaveUtxoSnapshot(index *modules.ChainIndex) error
 
 	SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
 	SaveUtxoEntities(key []byte, utxos *[]modules.Utxo) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
 	DeleteUtxo(outpoint *modules.OutPoint) error
-	GetUtxoEntities(index modules.ChainIndex) (*[]modules.Utxo, error)
+	GetUtxoEntities(index *modules.ChainIndex) (*[]modules.Utxo, error)
 }
 
 // ###################### SAVE IMPL START ######################
 
 func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error {
-	key:=outpoint.ToKey()
-	utxodb.logger.Debug("Try to save utxo by key:",outpoint.String())
+	key := outpoint.ToKey()
+	utxodb.logger.Debug("Try to save utxo by key:", outpoint.String())
 	return StoreBytes(utxodb.db, key, utxo)
 }
 
@@ -119,14 +119,14 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 }
 
 func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
-	key:=outpoint.ToKey()
+	key := outpoint.ToKey()
 	return utxodb.db.Delete(key)
 }
 
 const UTXOSNAPSHOT_PREFIX = "us"
 
 //@Yiran
-func (utxodb *UtxoDb) SaveUtxoSnapshot(index modules.ChainIndex) error {
+func (utxodb *UtxoDb) SaveUtxoSnapshot(index *modules.ChainIndex) error {
 	//0. examine wrong calling
 	if index.Index%modules.TERMINTERVAL != 0 {
 		return errors.New("SaveUtxoSnapshot must wait until last term period end")
@@ -157,7 +157,7 @@ func (utxodb *UtxoDb) SaveUtxoSnapshot(index modules.ChainIndex) error {
 //  dbFetchUtxoEntry
 func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	utxo := new(modules.Utxo)
-	key:=outpoint.ToKey()
+	key := outpoint.ToKey()
 	data, err := utxodb.db.Get(key)
 	if err != nil {
 		log.Error("get utxo entry failed,================================== ", "error", err)
@@ -174,7 +174,7 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 }
 
 //@Yiran get utxo snapshot from db
-func (utxodb *UtxoDb) GetUtxoEntities(index modules.ChainIndex) (*[]modules.Utxo, error) {
+func (utxodb *UtxoDb) GetUtxoEntities(index *modules.ChainIndex) (*[]modules.Utxo, error) {
 	utxos := make([]modules.Utxo, 0)
 	key := KeyConnector([]byte(UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
 	data, err := utxodb.db.Get(key)

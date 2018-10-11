@@ -128,10 +128,11 @@ func (mr *MockIDagMockRecorder) InsertDag(units interface{}) *gomock.Call {
 }
 
 // GetUnitByHash mocks base method
-func (m *MockIDag) GetUnitByHash(hash common.Hash) *modules.Unit {
+func (m *MockIDag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	ret := m.ctrl.Call(m, "GetUnitByHash", hash)
 	ret0, _ := ret[0].(*modules.Unit)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetUnitByHash indicates an expected call of GetUnitByHash
@@ -289,10 +290,11 @@ func (mr *MockIDagMockRecorder) GetAllLeafNodes() *gomock.Call {
 }
 
 // GetUnit mocks base method
-func (m *MockIDag) GetUnit(arg0 common.Hash) *modules.Unit {
+func (m *MockIDag) GetUnit(arg0 common.Hash) (*modules.Unit, error) {
 	ret := m.ctrl.Call(m, "GetUnit", arg0)
 	ret0, _ := ret[0].(*modules.Unit)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetUnit indicates an expected call of GetUnit
@@ -352,9 +354,9 @@ func (mr *MockIDagMockRecorder) GetContractState(id, field interface{}) *gomock.
 }
 
 // GetUnitNumber mocks base method
-func (m *MockIDag) GetUnitNumber(hash common.Hash) (modules.ChainIndex, error) {
+func (m *MockIDag) GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error) {
 	ret := m.ctrl.Call(m, "GetUnitNumber", hash)
-	ret0, _ := ret[0].(modules.ChainIndex)
+	ret0, _ := ret[0].(*modules.ChainIndex)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -455,16 +457,16 @@ func (mr *MockIDagMockRecorder) GetTrieSyncProgress() *gomock.Call {
 }
 
 // GetUtxoEntry mocks base method
-func (m *MockIDag) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
-	ret := m.ctrl.Call(m, "GetUtxoEntry", key)
+func (m *MockIDag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	ret := m.ctrl.Call(m, "GetUtxoEntry", outpoint)
 	ret0, _ := ret[0].(*modules.Utxo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUtxoEntry indicates an expected call of GetUtxoEntry
-func (mr *MockIDagMockRecorder) GetUtxoEntry(key interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUtxoEntry", reflect.TypeOf((*MockIDag)(nil).GetUtxoEntry), key)
+func (mr *MockIDagMockRecorder) GetUtxoEntry(outpoint interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUtxoEntry", reflect.TypeOf((*MockIDag)(nil).GetUtxoEntry), outpoint)
 }
 
 // GetAddrOutput mocks base method
@@ -574,7 +576,7 @@ func (mr *MockIDagMockRecorder) WalletBalance(address, assetid, uniqueid, chaini
 }
 
 // GetContract mocks base method
-func (m *MockIDag) GetContract(id common.Hash) (*modules.Contract, error) {
+func (m *MockIDag) GetContract(id common.Address) (*modules.Contract, error) {
 	ret := m.ctrl.Call(m, "GetContract", id)
 	ret0, _ := ret[0].(*modules.Contract)
 	ret1, _ := ret[1].(error)
@@ -623,10 +625,11 @@ func (mr *MockIDagMockRecorder) GetDynGlobalProp() *gomock.Call {
 }
 
 // GetUnitByNumber mocks base method
-func (m *MockIDag) GetUnitByNumber(number modules.ChainIndex) *modules.Unit {
+func (m *MockIDag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) {
 	ret := m.ctrl.Call(m, "GetUnitByNumber", number)
 	ret0, _ := ret[0].(*modules.Unit)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetUnitByNumber indicates an expected call of GetUnitByNumber
@@ -825,4 +828,16 @@ func (m *MockIDag) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
 // RetrieveMediatorSchl indicates an expected call of RetrieveMediatorSchl
 func (mr *MockIDagMockRecorder) RetrieveMediatorSchl() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetrieveMediatorSchl", reflect.TypeOf((*MockIDag)(nil).RetrieveMediatorSchl))
+}
+
+// IsSynced mocks base method
+func (m *MockIDag) IsSynced() bool {
+	ret := m.ctrl.Call(m, "IsSynced")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsSynced indicates an expected call of IsSynced
+func (mr *MockIDagMockRecorder) IsSynced() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSynced", reflect.TypeOf((*MockIDag)(nil).IsSynced))
 }
