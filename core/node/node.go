@@ -101,7 +101,7 @@ type Node struct {
 	stop chan struct{} // Channel to wait for termination notifications
 	lock sync.RWMutex
 
-	log log.Plogger
+	log log.ILogger
 	//for genesis 2018-8-14
 	dbpath string
 }
@@ -152,7 +152,7 @@ func New(conf *Config) (*Node, error) {
 		httpEndpoint:      conf.HTTPEndpoint(),
 		wsEndpoint:        conf.WSEndpoint(),
 		eventmux:          new(event.TypeMux),
-		//log:               conf.Logger,
+		log:               conf.Logger,
 	}, nil
 }
 
@@ -208,7 +208,7 @@ func (n *Node) Start() error {
 	}
 	// 用配置创建了一个p2p.Server实例
 	running := &p2p.Server{Config: n.serverConfig}
-	n.log.Info("Starting peer-to-peer node", "instance", n.serverConfig.Name)
+	n.log.Info("Starting peer-to-peer node：")
 
 	// Otherwise copy and specialize the P2P configuration
 	services := make(map[reflect.Type]Service)

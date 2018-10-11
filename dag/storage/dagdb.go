@@ -367,7 +367,7 @@ func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	if err != nil {
 		return nil, err
 	}
-	dagdb.logger.Debug("height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
+	dagdb.logger.Debugf("height:%s", height.String())
 	//fmt.Printf("height=%#v\n", height)
 	if err != nil {
 		dagdb.logger.Error("GetUnit when GetUnitNumber failed , error:", err)

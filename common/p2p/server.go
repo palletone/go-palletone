@@ -136,7 +136,7 @@ type Config struct {
 	EnableMsgEvents bool
 
 	// Logger is a custom logger to use with the p2p.Server.
-	Logger log.Plogger `toml:",omitempty"`
+	Logger log.ILogger `toml:",omitempty"`
 }
 
 var DefaultConfig = Config{
