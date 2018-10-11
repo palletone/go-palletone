@@ -442,7 +442,7 @@ func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.
 		rlpUnitHash := data[irreKey]
 		var unitHash common.Hash
 		if err := rlp.DecodeBytes(rlpUnitHash, &unitHash); err != nil {
-			dagdb.logger.Error("GetLastIrreversibleUnit error:", err.Error())
+			dagdb.logger.Error("GetLastIrreversibleUnit error:" + err.Error())
 			return nil, err
 		}
 		return dagdb.GetUnit(unitHash)
@@ -456,7 +456,7 @@ func (dagdb *DagDb) GetHeader(hash common.Hash, index *modules.ChainIndex) (*mod
 	// key = append(key, index.Bytes()...)
 	// header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
 	key := fmt.Sprintf("%s%v_%s_%s", HEADER_PREFIX, index.Index, index.String(), hash.String())
-	dagdb.logger.Debug("GetHeader by Key:", key)
+	dagdb.logger.Debug("GetHeader by Key:", "header's key", key)
 	header_bytes, err := dagdb.db.Get([]byte(key))
 	// rlp  to  Header struct
 	if err != nil {
@@ -464,7 +464,7 @@ func (dagdb *DagDb) GetHeader(hash common.Hash, index *modules.ChainIndex) (*mod
 	}
 	header := new(modules.Header)
 	if err := rlp.Decode(bytes.NewReader(header_bytes), header); err != nil {
-		dagdb.logger.Error("Invalid unit header rlp:", err)
+		dagdb.logger.Error("Invalid unit header rlp:", "error", err)
 		return nil, err
 	}
 	return header, nil
@@ -495,7 +495,7 @@ func (dagdb *DagDb) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
 	header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
 	// rlp  to  Header struct
 	if err != nil {
-		dagdb.logger.Error("GetHeaderRlp error", err)
+		dagdb.logger.Error("GetHeaderRlp error", "error", err)
 	}
 	return header_bytes
 }
@@ -569,13 +569,13 @@ func (dagdb *DagDb) GetContractNoReader(db ptndb.Database, id common.Hash) (*mod
 	}
 	con_bytes, err := dagdb.db.Get(append(CONTRACT_PTEFIX, id[:]...))
 	if err != nil {
-		dagdb.logger.Error("err:", err)
+		dagdb.logger.Error(fmt.Sprintf("getContract error: %s", err.Error()))
 		return nil, err
 	}
 	contract := new(modules.Contract)
 	err = rlp.DecodeBytes(con_bytes, contract)
 	if err != nil {
-		dagdb.logger.Error("err:", err)
+		dagdb.logger.Error("getContract failed,decode error:" + err.Error())
 		return nil, err
 	}
 	return contract, nil
