@@ -1375,7 +1375,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 }
 
 //create raw transction
-func (s *PublicTransactionPoolAPI) CreateRawTransaction( /*s *rpcServer*/ params string) (string, error) {
+func (s *PublicTransactionPoolAPI) CreateRawTransaction( ctx context.Context,/*s *rpcServer*/ params string) (string, error) {
 	var rawTransactionGenParams RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
@@ -1522,7 +1522,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 
 //sign rawtranscation
 //create raw transction
-func (s *PublicTransactionPoolAPI) SignRawTransaction(params string) (interface{}, error) {
+func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context,params string) (interface{}, error) {
 	var signTransactionParams SignTransactionParams
 	err := json.Unmarshal([]byte(params), &signTransactionParams)
 	if err != nil {
