@@ -152,7 +152,7 @@ func New(conf *Config) (*Node, error) {
 		httpEndpoint:      conf.HTTPEndpoint(),
 		wsEndpoint:        conf.WSEndpoint(),
 		eventmux:          new(event.TypeMux),
-		log:               conf.Logger,
+		log:               log.New(), //conf.Logger,
 	}, nil
 }
 
