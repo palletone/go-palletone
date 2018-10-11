@@ -329,7 +329,7 @@ func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
 	case <-mp.quit:
 		return errTerminated
 	default:
-		localMed := mp.getDag().GetUnit(sigShare.UnitHash)
+		localMed, _ := mp.getDag().GetUnit(sigShare.UnitHash)
 		go mp.addToTBLSRecoverBuf(localMed, sigShare.SigShare)
 		//go mp.addToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 		return nil

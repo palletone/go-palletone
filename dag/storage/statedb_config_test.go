@@ -25,14 +25,16 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
-	"log"
+
+	"github.com/palletone/go-palletone/common/log"
 	"testing"
 )
 
 func MockStateMemDb() IStateDb {
 	db, _ := ptndb.NewMemDatabase()
+	l := log.NewTestLog()
 	//db, _ := ptndb.NewLDBDatabase("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb", 0, 0)
-	statedb := NewStateDb(db)
+	statedb := NewStateDb(db, l)
 	return statedb
 }
 
@@ -89,11 +91,11 @@ func TestSaveAndGetConfig(t *testing.T) {
 	genesisAsset := db.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
 	var asset modules.Asset
 	if err := rlp.DecodeBytes(genesisAsset, &asset); err != nil {
-		log.Println("Check unit signature", "error", err.Error())
+		log.Error("Check unit signature", "error", err.Error())
 		return
 	}
 	fmt.Println("asset=", asset)
-	log.Println(">>>>>>>>> Pass >>>>>>>>>>.")
+	log.Debug(">>>>>>>>> Pass >>>>>>>>>>.")
 }
 
 //

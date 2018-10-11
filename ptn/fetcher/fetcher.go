@@ -47,7 +47,7 @@ var (
 )
 
 // blockRetrievalFn is a callback type for retrieving a block from the local chain.
-type blockRetrievalFn func(common.Hash) *modules.Unit
+type blockRetrievalFn func(common.Hash) (*modules.Unit, error)
 
 // headerRequesterFn is a callback type for sending a header retrieval request.
 type headerRequesterFn func(common.Hash) error
@@ -317,7 +317,8 @@ func (f *Fetcher) loop() {
 			}
 			// Otherwise if fresh and still unknown, try and import
 			hash := op.unit.Hash()
-			if number+maxUncleDist < height || f.getBlock(hash) != nil {
+			block, _ := f.getBlock(hash)
+			if number+maxUncleDist < height || block != nil {
 				f.forgetBlock(hash)
 				log.Debug("======loop umber+maxUncleDist < height || f.getBlock(hash) != nil======")
 				continue
@@ -393,7 +394,8 @@ func (f *Fetcher) loop() {
 					f.forgetHash(hash)
 
 					// If the block still didn't arrive, queue for fetching
-					if f.getBlock(hash) == nil {
+					block, _ := f.getBlock(hash)
+					if block == nil {
 						//fmt.Println("hash=", hash)
 						request[announce.origin] = append(request[announce.origin], hash)
 						f.fetching[hash] = announce
@@ -431,7 +433,8 @@ func (f *Fetcher) loop() {
 				f.forgetHash(hash)
 
 				// If the block still didn't arrive, queue for completion
-				if f.getBlock(hash) == nil {
+				block, _ := f.getBlock(hash)
+				if block == nil {
 					request[announce.origin] = append(request[announce.origin], hash)
 					f.completing[hash] = announce
 				}
@@ -479,7 +482,8 @@ func (f *Fetcher) loop() {
 						continue
 					}
 					// Only keep if not imported by other means
-					if f.getBlock(hash) == nil {
+					blk, _ := f.getBlock(hash)
+					if blk == nil {
 						announce.header = header
 						announce.time = task.time
 
@@ -563,7 +567,8 @@ func (f *Fetcher) loop() {
 							//fmt.Printf("%#v\n", announce.number)
 							//fmt.Printf("%#v\n", announce.header)
 							//fmt.Printf("%#v\n", announce.origin)
-							if f.getBlock(hash) == nil {
+							blk, _ := f.getBlock(hash)
+							if blk == nil {
 								//fmt.Println("1212==", hash)
 								//TODO xiaozhi
 								//fmt.Printf("%#v\n", task.transactions[i][i])
@@ -697,7 +702,8 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		parentsHash := block.ParentHash()
 		for _, parentHash := range parentsHash {
 			//fmt.Println("parentHash=>", parentHash)
-			if f.getBlock(parentHash) == nil {
+			blk, _ := f.getBlock(parentHash)
+			if blk == nil {
 				log.Debug("Unknown parent of propagated block", "peer", peer, "number", block.Number().Index, "hash", hash, "parent", parentHash)
 				//TODO xiaozhi
 				return
