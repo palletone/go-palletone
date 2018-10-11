@@ -104,4 +104,5 @@ type IDag interface {
 	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
+	IsSynced() bool
 }

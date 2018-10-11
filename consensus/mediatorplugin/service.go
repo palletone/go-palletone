@@ -148,16 +148,9 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 	log.Info("instantiate the DistKeyGenerator (DKG) struct.")
 
 	dag := mp.getDag()
-	//gp := dag.GetGlobalProp()
-	//dgp := dag.GetDynGlobalProp()
-	//
-	//nowFine := time.Now()
-	//now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
-	//nextSlotTime := modules.GetSlotTime(gp, dgp, 1)
-	//
-	//if nextSlotTime.Before(now) {
-	//	return //we're synced.
-	//}
+	if !mp.productionEnabled && !dag.IsSynced() {
+		return //we're not synced.
+	}
 
 	lams := mp.GetLocalActiveMediators()
 	initPubs := dag.GetActiveMediatorInitPubs()
