@@ -25,7 +25,6 @@ import (
 	//"runtime"
 	"time"
 
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
@@ -95,7 +94,7 @@ type Config struct {
 	TrieTimeout        time.Duration
 
 	// Mining-related options
-	Etherbase    common.Address `toml:",omitempty"`
+	//Etherbase    common.Address `toml:",omitempty"`
 	MinerThreads int            `toml:",omitempty"`
 	ExtraData    []byte         `toml:",omitempty"`
 	GasPrice     *big.Int

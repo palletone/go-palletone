@@ -26,7 +26,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/palletone/go-palletone/common"
 	//"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
@@ -124,7 +123,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	}
 	ptnConf := &ptn.Config{
 		Genesis:   DevGenesisBlock(),
-		Etherbase: common.HexToAddress(testAddress),
+		//Etherbase: common.HexToAddress(testAddress),
 	}
 
 	if confOverride != nil {
@@ -155,11 +154,12 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	}
 
 	// modified by Albert·Gou
-	unit, err := gen.SetupGenesisUnit(dag, ptnConf.Genesis, ks, account)
+	unit, err := gen.SetupGenesisUnit( ptnConf.Genesis, ks, account)
 	if err != nil {
 		fmt.Printf("Failed to write genesis unit: %v \n", err)
 		return nil
 	}
+	dag.SaveUnit(unit,true)
 
 	err = dag.InitPropertyDB(ptnConf.Genesis, unit.UnitHash)
 	if err != nil {

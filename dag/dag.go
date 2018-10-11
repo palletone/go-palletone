@@ -59,7 +59,7 @@ type Dag struct {
 	// GenesisUnit   *Unit  // comment by Albert·Gou
 	Mutex  sync.RWMutex
 	logger log.ILogger
-	Memdag *memunit.MemDag // memory unit
+	Memdag memunit.IMemDag // memory unit
 }
 
 func (d *Dag) IsEmpty() bool {
