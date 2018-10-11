@@ -189,7 +189,7 @@ func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
 	} else {
 		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
 		if err := d.Memdag.Save(&unit); err != nil {
-			return 3, fmt.Errorf("SaveDag, save error: %s", err.Error())
+			return 3, fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		}
 	}
 	// step5. check if it is need to switch
@@ -577,6 +577,11 @@ func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	preout := modules.OutPoint{TxHash: tx.Hash()}
+	var isnot_coinbase bool
+	if !dagcommon.IsCoinBase(tx) {
+		isnot_coinbase = true
+	}
+
 	for i, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
@@ -587,12 +592,17 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 					preout.OutIndex = txoutIdx
 					neededSet[preout] = struct{}{}
 				}
+				// if tx is Not CoinBase
+				// add txIn previousoutpoint
+				if isnot_coinbase {
+					for _, in := range msg.Input {
+						neededSet[*in.PreviousOutPoint] = struct{}{}
+					}
+				}
 			}
 		}
-
 	}
-	// if tx is Not CoinBase
-	// add txIn previousoutpoint
+
 	view := txspool.NewUtxoViewpoint()
 	d.Mutex.RLock()
 	err := view.FetchUtxos(d.utxodb, neededSet)
