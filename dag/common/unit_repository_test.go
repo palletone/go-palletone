@@ -175,7 +175,7 @@ func TestSaveUnit(t *testing.T) {
 	//txs = append(txs, &tx1)
 	txs = append(txs, &tx2)
 	//txs = append(txs, &tx3)
-	unit := modules.Unit{
+	unit := &modules.Unit{
 		UnitHeader: header,
 		Txs:        txs,
 	}
