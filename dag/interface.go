@@ -34,8 +34,9 @@ import (
 )
 
 type IDag interface {
+	IsEmpty() bool
 	CurrentUnit() *modules.Unit
-	SaveDag(unit modules.Unit, isGenesis bool) (int, error)
+	//SaveDag(unit *modules.Unit, isGenesis bool) (int, error)
 	GetActiveMediatorNodes() map[string]*discover.Node
 	VerifyHeader(header *modules.Header, seal bool) error
 	GetCurrentUnit(assetId modules.IDType16) *modules.Unit
@@ -55,7 +56,7 @@ type IDag interface {
 	InsertHeaderDag([]*modules.Header, int) (int, error)
 	HasUnit(hash common.Hash) bool
 	Exists(hash common.Hash) bool
-	SaveUnit(unit modules.Unit, isGenesis bool) error
+	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	//All leaf nodes for dag downloader
 	GetAllLeafNodes() ([]*modules.Header, error)
 	GetUnit(common.Hash) (*modules.Unit, error)

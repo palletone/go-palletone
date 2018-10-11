@@ -30,16 +30,19 @@ import (
 // fork switch-over blocks through the chain configuration.
 type SystemConfig struct {
 	DepositRate float64 `json:"depositRate"`
+	//基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
+	FoundationAddress string `json:"foundationAddress"`
 }
 
 type Genesis struct {
-	Version                   string                   `json:"version"`
-	Alias                     string                   `json:"alias"`
-	TokenAmount               uint64                   `json:"tokenAmount"`
-	TokenDecimal              uint32                   `json:"tokenDecimal"`
-	DecimalUnit               string                   `json:"decimal_unit"`
-	ChainID                   uint64                   `json:"chainId"`
-	TokenHolder               string                   `json:"tokenHolder"`
+	Version      string `json:"version"`
+	Alias        string `json:"alias"`
+	TokenAmount  uint64 `json:"tokenAmount"`
+	TokenDecimal uint32 `json:"tokenDecimal"`
+	DecimalUnit  string `json:"decimal_unit"`
+	ChainID      uint64 `json:"chainId"`
+	TokenHolder  string `json:"tokenHolder"`
+
 	Text                      string                   `json:"text"`
 	InitialParameters         ChainParameters          `json:"initialParameters"`
 	ImmutableParameters       ImmutableChainParameters `json:"immutableChainParameters"`

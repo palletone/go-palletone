@@ -45,7 +45,7 @@ import (
 type IUnitRepository interface {
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
 	GenesisHeight() modules.ChainIndex
-	SaveUnit(unit modules.Unit, isGenesis bool) error
+	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 }
 type UnitRepository struct {
@@ -344,7 +344,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 保存单元数据，如果单元的结构基本相同
 save genesis unit data
 */
-func (unitOp *UnitRepository) SaveUnit(unit modules.Unit, isGenesis bool) error {
+func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Error("Unit is null")
@@ -430,7 +430,7 @@ func (unitOp *UnitRepository) SaveUnit(unit modules.Unit, isGenesis bool) error 
 		return err
 	}
 	// step 10  save txlookupEntry
-	if err := unitOp.dagdb.SaveTxLookupEntry(&unit); err != nil {
+	if err := unitOp.dagdb.SaveTxLookupEntry(unit); err != nil {
 		return err
 	}
 	// update state

@@ -241,18 +241,20 @@ func createExampleAccount(ctx *cli.Context) (addrStr, password string, err error
 // createExampleGenesis, create the genesis state of new chain with the specified account
 func createExampleGenesis(tokenAccount string, mediators []mp.MediatorConf, nodeInfo string) *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		DepositRate: core.DefaultDepositRate,
+		DepositRate:       core.DefaultDepositRate,
+		FoundationAddress: tokenAccount,
 	}
 
 	initParams := core.NewChainParams()
 
 	return &core.Genesis{
-		Alias:                     core.DefaultAlias,
-		Version:                   configure.Version,
-		TokenAmount:               core.DefaultTokenAmount,
-		TokenDecimal:              core.DefaultTokenDecimal,
-		ChainID:                   core.DefaultChainID,
-		TokenHolder:               tokenAccount,
+		Alias:        core.DefaultAlias,
+		Version:      configure.Version,
+		TokenAmount:  core.DefaultTokenAmount,
+		TokenDecimal: core.DefaultTokenDecimal,
+		ChainID:      core.DefaultChainID,
+		TokenHolder:  tokenAccount,
+
 		Text:                      core.DefaultText,
 		SystemConfig:              SystemConfig,
 		InitialParameters:         initParams,
