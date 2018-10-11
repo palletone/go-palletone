@@ -25,6 +25,7 @@ import (
 	"log"
 	"strings"
 
+	"fmt"
 	"github.com/palletone/go-palletone/common/files"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -52,9 +53,11 @@ var Logger *zap.Logger
 type ILogger interface {
 	Trace(msg string, ctx ...interface{})
 	Debug(msg string, ctx ...interface{})
+	Debugf(format string, ctx ...interface{})
 	Info(msg string, ctx ...interface{})
 	Warn(msg string, ctx ...interface{})
 	Error(msg string, ctx ...interface{})
+	Errorf(format string, ctx ...interface{})
 	Crit(msg string, ctx ...interface{})
 }
 
@@ -97,28 +100,34 @@ func (pl *Plogger) New(ctx ...interface{}) *Plogger {
 }
 func (pl *Plogger) Trace(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
-	Logger.Debug(msg, fileds...)
+	pl.logger.Debug(msg, fileds...)
 }
 
 func (pl *Plogger) Debug(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
-	Logger.Debug(msg, fileds...)
+	pl.logger.Debug(msg, fileds...)
+}
+func (pl *Plogger) Debugf(format string, ctx ...interface{}) {
+	pl.logger.Debug(fmt.Sprintf(format, ctx))
 }
 func (pl *Plogger) Info(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
-	Logger.Info(msg, fileds...)
+	pl.logger.Info(msg, fileds...)
 }
 func (pl *Plogger) Warn(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
-	Logger.Warn(msg, fileds...)
+	pl.logger.Warn(msg, fileds...)
 }
 func (pl *Plogger) Error(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
-	Logger.Error(msg, fileds...)
+	pl.logger.Error(msg, fileds...)
+}
+func (pl *Plogger) Errorf(format string, ctx ...interface{}) {
+	pl.logger.Error(fmt.Sprintf(format, ctx))
 }
 func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
-	Logger.Error(msg, fileds...)
+	pl.logger.Error(msg, fileds...)
 }
 
 // init zap.logger
@@ -253,6 +262,9 @@ func Debug(msg string, ctx ...interface{}) {
 	}
 	fileds := ctxTOfileds(ctx...)
 	Logger.Debug(msg, fileds...)
+}
+func Debugf(format string, ctx ...interface{}) {
+	Logger.Debug(fmt.Sprintf(format, ctx))
 }
 
 // Info
