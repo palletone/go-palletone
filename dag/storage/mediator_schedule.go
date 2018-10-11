@@ -39,7 +39,7 @@ func getMST(ms *modules.MediatorSchedule) mediatorSchedule {
 	csm := make([]core.MediatorInfo, 0)
 
 	for _, med := range ms.CurrentShuffledMediators {
-		medInfo := core.MediatorToInfo(&med)
+		medInfo := med.MediatorToInfo()
 		csm = append(csm, medInfo)
 	}
 
@@ -54,7 +54,7 @@ func getMS(mst *mediatorSchedule) *modules.MediatorSchedule {
 	csm := make([]core.Mediator, 0)
 
 	for _, medInfo := range mst.CurrentShuffledMediators {
-		med := core.InfoToMediator(&medInfo)
+		med := medInfo.InfoToMediator()
 		csm = append(csm, med)
 	}
 
