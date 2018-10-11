@@ -602,6 +602,11 @@ func (d *Dag) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	preout := modules.OutPoint{TxHash: tx.Hash()}
+	var isnot_coinbase bool
+	if !dagcommon.IsCoinBase(tx) {
+		isnot_coinbase = true
+	}
+
 	for i, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
@@ -612,17 +617,13 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 					preout.OutIndex = txoutIdx
 					neededSet[preout] = struct{}{}
 				}
-			}
-		}
-
-	}
-	// if tx is Not CoinBase
-	// add txIn previousoutpoint
-	if dagcommon.IsCoinBase(tx) {
-		msgs, ok := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-		if ok {
-			for _, in := range msgs.Input {
-				neededSet[*in.PreviousOutPoint] = struct{}{}
+				// if tx is Not CoinBase
+				// add txIn previousoutpoint
+				if isnot_coinbase {
+					for _, in := range msg.Input {
+						neededSet[*in.PreviousOutPoint] = struct{}{}
+					}
+				}
 			}
 		}
 	}
