@@ -41,7 +41,7 @@ import (
 	//"github.com/btcsuite/btcd/ptnec"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
+	//"github.com/palletone/go-palletone/tokenengine"
 	//"github.com/btcsuite/btcd/btcjson"
 )
 
@@ -546,6 +546,23 @@ type RawTransactionGenResult struct {
 	Rawtx string `json:"rawtx"`
 }
 
+type SignTransactionParams struct {
+	RawTx    string `json:"rawtx"`
+	Inputs   []struct{
+		Txid         string `json:"txid"`
+		Vout         uint32 `json:"vout"`
+		MessageIndex uint32 `json:"messageindex"`
+		ScriptPubKey string `json:"scriptPubKey"`
+		RedeemScript string `json:"redeemScript"`
+	} `json:"rawtxinput"`
+	PrivKeys []string   `json:"privkeys"`
+	Flags    string `jsonrpcdefault:"\"ALL\""`
+}
+type SignTransactionResult struct {
+	TransactionHex string `json:"transactionhex"`
+	Complete       bool   `json:"complete"`
+}
+
 func accountCreateTx(ctx *cli.Context) error {
 	if len(ctx.Args()) == 0 {
 		utils.Fatalf("No accounts specified to update")
@@ -592,15 +609,6 @@ func accountCreateTx(ctx *cli.Context) error {
 	return nil
 }
 
-type SignTransactionParams struct {
-	TransactionHex string   `json:"transactionhex"`
-	RedeemHex      string   `json:"redeemhex"`
-	Privkeys       []string `json:"privkeys"`
-}
-type SignTransactionResult struct {
-	TransactionHex string `json:"transactionhex"`
-	Complete       bool   `json:"complete"`
-}
 
 func accountSignTx(ctx *cli.Context) error {
 	if len(ctx.Args()) == 0 {
@@ -618,12 +626,12 @@ func accountSignTx(ctx *cli.Context) error {
 	}
 
 	//check empty string
-	if "" == signTransactionParams.TransactionHex {
+	if "" == signTransactionParams.RawTx {
 		return nil
 	}
 	//
 	//	//decode Transaction hexString to bytes
-	rawTXBytes, err := hex.DecodeString(signTransactionParams.TransactionHex)
+	rawTXBytes, err := hex.DecodeString(signTransactionParams.RawTx)
 	if err != nil {
 		return nil
 	}
@@ -637,7 +645,7 @@ func accountSignTx(ctx *cli.Context) error {
 	//
 	//	//get private keys for sign
 	var keys []string
-	for _, key := range signTransactionParams.Privkeys {
+	for _, key := range signTransactionParams.PrivKeys {
 		key = strings.TrimSpace(key) //Trim whitespace
 		if len(key) == 0 {
 			continue
@@ -650,37 +658,26 @@ func accountSignTx(ctx *cli.Context) error {
 	//realNet := &chaincfg.MainNetParams
 	//sign the UTXO hash, must know RedeemHex which contains in RawTxInput
 	var rawInputs []ptnjson.RawTxInput
-	for {
-		if "" == signTransactionParams.RedeemHex {
-			break
-		}
-		//		//decode redeem's hexString to bytes
-		redeem, err := hex.DecodeString(signTransactionParams.RedeemHex)
-		if err != nil {
-			break
-		}
-		//		//get multisig payScript
-		//scriptAddr, err := btcutil.NewAddressScriptHash(redeem, realNet)
-		//scriptPkScript, err := txscript.PayToAddrScript(scriptAddr)
-		h := crypto.Hash160(redeem)
-		scriptPkScript := tokenengine.GenerateP2SHLockScript(h)
-		//		//multisig transaction need redeem for sign
-		for _, mtx := range tx.TxMessages {
-			payload := mtx.Payload
-			payment, ok := payload.(modules.PaymentPayload)
-			if ok == true {
-				for _, txinOne := range payment.Input {
-					rawInput := ptnjson.RawTxInput{
-						txinOne.PreviousOutPoint.TxHash.String(), //txid
-						txinOne.PreviousOutPoint.OutIndex,
-						txinOne.PreviousOutPoint.MessageIndex, //outindex
-						string(scriptPkScript),                //multisig pay script
-						signTransactionParams.RedeemHex}       //redeem
-					rawInputs = append(rawInputs, rawInput)
-				}
-			}
-		}
-		break
+	if "" == signTransactionParams.RawTx {
+		return nil
+	}
+	//decode redeem's hexString to bytes
+	//redeem, err := hex.DecodeString(signTransactionParams.RawTx)
+	//if err != nil {
+	//	break
+	//}
+	//get multisig payScript
+	//scriptAddr, err := btcutil.NewAddressScriptHash(redeem, realNet)
+	//scriptPkScript, err := txscript.PayToAddrScript(scriptAddr)
+	//h := crypto.Hash160(redeem)
+	//scriptPkScript := tokenengine.GenerateP2SHLockScript(h)
+	//multisig transaction need redeem for sign
+	for _, inputOne := range signTransactionParams.Inputs {
+		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex,inputOne.ScriptPubKey,inputOne.RedeemScript}
+		rawInputs = append(rawInputs, input)
+	}
+	if len(rawInputs) == 0 {
+		return nil
 	}
 
 	txHex := ""
