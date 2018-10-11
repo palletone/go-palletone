@@ -73,7 +73,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	// step2. get unit height
 	height, err := d.GetUnitNumber(hash)
 	// get unit header
-	uHeader, err := d.dagdb.GetHeader(hash, &height)
+	uHeader, err := d.dagdb.GetHeader(hash, height)
 	if err != nil {
 		log.Error("Current unit when get unit header", "error", err.Error())
 		return nil
@@ -135,7 +135,7 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 		log.Error("GetHeaderByHash when GetUnitNumber", "error", err.Error())
 	}
 	// get unit header
-	uHeader, err := d.dagdb.GetHeader(hash, &height)
+	uHeader, err := d.dagdb.GetHeader(hash, height)
 	if err != nil {
 		log.Error("Current unit when get unit header", "error", err.Error())
 		return nil
@@ -273,7 +273,7 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 }
 func (d *Dag) Exists(hash common.Hash) bool {
 	number, err := d.dagdb.GetNumberWithUnitHash(hash)
-	if err == nil && (number != modules.ChainIndex{}) {
+	if err == nil && (number != nil) {
 		log.Info("经检索，该hash已存储在leveldb中，", "hash", hash.String())
 		return true
 	}
@@ -532,7 +532,7 @@ func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error
 	}
 	//TODO compare index with number
 	if index.Index == number {
-		head, err := d.dagdb.GetHeader(hash, &index)
+		head, err := d.dagdb.GetHeader(hash, index)
 		if err != nil {
 			fmt.Println("=============get unit header faled =============", err)
 		}
@@ -542,7 +542,7 @@ func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error
 }
 
 // Get UnitNumber
-func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex, error) {
+func (d *Dag) GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error) {
 	return d.dagdb.GetNumberWithUnitHash(hash)
 }
 
@@ -707,7 +707,7 @@ func (d *Dag) UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.Dynam
 }
 
 //@Yiran
-func (d *Dag) GetCurrentUnitIndex() (modules.ChainIndex, error) {
+func (d *Dag) GetCurrentUnitIndex() (*modules.ChainIndex, error) {
 	currentUnitHash := d.CurrentUnit().UnitHash
 	return d.GetUnitNumber(currentUnitHash)
 }

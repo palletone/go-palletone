@@ -22,15 +22,13 @@ package storage
 import (
 	"fmt"
 	"github.com/palletone/go-palletone/common/rlp"
-
-	"reflect"
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetUnit(t *testing.T) {
@@ -39,37 +37,9 @@ func TestGetUnit(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
 	l := log.NewTestLog()
 	dagdb := NewDagDb(db, l)
-	dagdb.GetUnit(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
-}
-
-func TestGetContract(t *testing.T) {
-	var keys []string
-	var results []interface{}
-	var origin modules.Contract
-
-	origin.Id = common.HexToHash("123456")
-
-	origin.Name = "test"
-	origin.Code = []byte(`logger.PrintLn("hello world")`)
-	origin.Input = []byte("input")
-
-	Dbconn := ReNewDbConn(dagconfig.DbPath)
-	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
-		return
-	}
-
-	log.Debug("store error: ", StoreBytes(Dbconn, append(CONTRACT_PTEFIX, origin.Id[:]...), origin))
-	keys = append(keys, "Id", "id", "Name", "Code", "code", "codes", "inputs")
-	results = append(results, common.HexToHash("123456"), nil, "test", []byte(`logger.PrintLn("hello world")`), nil, nil, nil)
-	log.Debug("test data: ", keys)
-
-	for i, k := range keys {
-		data, err := GetContractKeyValue(Dbconn, origin.Id, k)
-		if !reflect.DeepEqual(data, results[i]) {
-			t.Error("test error:", err, "the expect key is:", k, " value is :", results[i], ",but the return value is: ", data)
-		}
-	}
+	u, err := dagdb.GetUnit(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
+	assert.Nil(t, u, "empty db, must return nil Unit")
+	assert.NotNil(t, err)
 }
 
 func TestUnitNumberIndex(t *testing.T) {
@@ -84,24 +54,8 @@ func TestUnitNumberIndex(t *testing.T) {
 	}
 }
 
-func TestGetContractState(t *testing.T) {
-	db, _ := ptndb.NewMemDatabase()
-	l := log.NewTestLog()
-	statedb := NewStateDb(db, l)
-	version, value := statedb.GetContractState("contract0000", "name")
-	log.Debug("version:", version)
-	log.Debug("value:", value)
-	data := statedb.GetContractAllState([]byte("contract0000"))
-	for k, v := range data {
-		log.Debug("KV:", k, v)
-	}
-}
-
 func TestGetUtxos(t *testing.T) {
-	//db_path := dagconfig.DefaultDataDir()
-	// db_path := "/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/gptn/leveldb"
 
-	//db, err := ptndb.NewLDBDatabase(db_path, 0, 0)
 	db, _ := ptndb.NewMemDatabase()
 	l := log.NewTestLog()
 	utxodb := NewUtxoDb(db, l)

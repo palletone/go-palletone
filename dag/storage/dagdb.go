@@ -72,7 +72,7 @@ type IDagDb interface {
 	GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error)
 	GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error)
 	GetHeaderByHeight(index modules.ChainIndex) (*modules.Header, error)
-	GetNumberWithUnitHash(hash common.Hash) (modules.ChainIndex, error)
+	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
 	GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
@@ -286,19 +286,22 @@ func (dagdb *DagDb) GetAddrOutput(addr string) ([]modules.Output, error) {
 //	}
 //	return number, nil
 //}
-func (dagdb *DagDb) GetNumberWithUnitHash(hash common.Hash) (modules.ChainIndex, error) {
+func (dagdb *DagDb) GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error) {
 	key := fmt.Sprintf("%s%s", UNIT_HASH_NUMBER_Prefix, hash.String())
 
-	data, _ := dagdb.db.Get([]byte(key))
+	data, err := dagdb.db.Get([]byte(key))
+	if err != nil {
+		return nil, err
+	}
 	if len(data) <= 0 {
-		return modules.ChainIndex{}, nil
+		return nil, nil
 	}
 	number := new(modules.ChainIndex)
 	if err := rlp.DecodeBytes(data, number); err != nil {
-		return modules.ChainIndex{}, fmt.Errorf("Get unit number when rlp decode error:%s", err.Error())
+		return nil, fmt.Errorf("Get unit number when rlp decode error:%s", err.Error())
 	}
 
-	return *number, nil
+	return number, nil
 }
 
 //  GetCanonicalHash get
@@ -371,7 +374,7 @@ func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
 		return nil, err
 	}
 	// 2. unit header
-	uHeader, err := dagdb.GetHeader(hash, &height)
+	uHeader, err := dagdb.GetHeader(hash, height)
 	if err != nil {
 		dagdb.logger.Error("GetUnit when GetHeader failed , error:", err, "hash", hash.String())
 		dagdb.logger.Error("height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)

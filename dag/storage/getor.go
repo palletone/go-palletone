@@ -21,14 +21,11 @@ package storage
 
 import (
 	"errors"
-	"log"
-	"reflect"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/dag/modules"
 )
 
 const missingNumber = uint64(0xffffffffffffffff)
@@ -86,39 +83,6 @@ func GetContractRlp(db DatabaseReader, id common.Hash) (rlp.RawValue, error) {
 		return nil, err
 	}
 	return con_bytes, nil
-}
-
-// Get contract key's value
-func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interface{}, error) {
-	var val interface{}
-	if common.EmptyHash(id) {
-		return nil, errors.New("the filed not defined")
-	}
-	con_bytes, err := db.Get(append(CONTRACT_PTEFIX, id[:]...))
-	if err != nil {
-		return nil, err
-	}
-	contract := new(modules.Contract)
-	err = rlp.DecodeBytes(con_bytes, contract)
-	if err != nil {
-		log.Println("err:", err)
-		return nil, err
-	}
-	obj := reflect.ValueOf(contract)
-	myref := obj.Elem()
-	typeOftype := myref.Type()
-
-	for i := 0; i < myref.NumField(); i++ {
-		filed := myref.Field(i)
-		if typeOftype.Field(i).Name == key {
-			val = filed.Interface()
-			log.Println(i, ". ", typeOftype.Field(i).Name, " ", filed.Type(), "=: ", filed.Interface())
-			break
-		} else if i == myref.NumField()-1 {
-			val = nil
-		}
-	}
-	return val, nil
 }
 
 // GetAdddrTransactionsHash
