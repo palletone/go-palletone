@@ -520,7 +520,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 }
 
 // Get Contract Api
-func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
+func (d *Dag) GetContract(id common.Address) (*modules.Contract, error) {
 	return d.statedb.GetContract(id)
 }
 

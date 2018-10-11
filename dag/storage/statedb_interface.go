@@ -21,8 +21,8 @@
 package storage
 
 import (
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type IStateDb interface {
@@ -31,16 +31,17 @@ type IStateDb interface {
 	SaveConfig(confs []modules.PayloadMapStruct, stateVersion *modules.StateVersion) error
 	SaveAssetInfo(assetInfo *modules.AssetInfo) error
 	GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error)
-	SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error
+	SaveContract(contract *modules.Contract) error
+	SaveContractState(id common.Address, name string, value interface{}, version *modules.StateVersion) error
 	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
 	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
 	DeleteState(key []byte) error
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string)
-	GetContractState(id string, field string) (*modules.StateVersion, []byte)
-	GetTplAllState(id []byte) map[modules.ContractReadSet][]byte
-	GetContractAllState(id []byte) map[modules.ContractReadSet][]byte
+	GetContractState(id common.Address, field string) (*modules.StateVersion, []byte)
+	GetTplAllState(id []byte) []*modules.ContractReadSet
+	GetContractAllState(id common.Address) []*modules.ContractReadSet
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
-	GetContract(id common.Hash) (*modules.Contract, error)
+	GetContract(id common.Address) (*modules.Contract, error)
 	GetAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	SaveAccountInfo(address common.Address, info *modules.AccountInfo) error
 }

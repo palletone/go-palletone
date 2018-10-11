@@ -58,8 +58,8 @@ func (ud *testUnitDag) CurrentUnit() *modules.Unit {
 	}, nil)
 }
 
-func (ud *testUnitDag) GetUnit(hash common.Hash) *modules.Unit {
-	return ud.CurrentUnit()
+func (ud *testUnitDag) GetUnit(hash common.Hash) (*modules.Unit, error) {
+	return ud.CurrentUnit(), nil
 }
 
 func (ud *testUnitDag) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
@@ -215,7 +215,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	fmt.Println("addlocals start.... ", t1)
 	pool.AddLocals(txpool_txs)
 
-	log.Debug("pending:", len(pool.pending))
+	log.Debugf("pending:%d", len(pool.pending))
 	fmt.Println("addlocals over.... ", time.Now().Unix()-t0.Unix())
 	for hash := range pool.pending {
 		if len(pool.pending) != int(config.AccountSlots) {
@@ -232,7 +232,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 			msg := fmt.Sprintf("total %v:total sizeof transactions is unexpected", total.Float64())
 			t.Error(msg)
 		} else {
-			log.Debug(" total size is :", total, total.Float64(), "the cout: ", len(txs))
+			log.Debugf(" total size is :%d ,the cout:%d ", total, len(txs))
 			for i, tx := range txs {
 				if i < len(txs)-1 {
 					if txs[i].Priority_lvl < txs[i+1].Priority_lvl {
@@ -244,7 +244,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 			pending_cache = len(pool.pending)
 			queue_cache = len(pool.queue)
 		}
-		log.Debug("data:", origin, all, len(pool.all), pending_cache, queue_cache)
+		log.Debugf("data:%s,%s,%d,%d,%s", origin, all, len(pool.all), pending_cache, queue_cache)
 		fmt.Println("defer over.... spending time：", time.Now().Unix()-t0.Unix())
 	}(pool)
 

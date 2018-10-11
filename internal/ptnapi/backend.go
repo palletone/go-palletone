@@ -78,7 +78,7 @@ type Backend interface {
 	WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 
 	// Get Contract Api
-	GetContract(id common.Hash) (*modules.Contract, error)
+	GetContract(id common.Address) (*modules.Contract, error)
 
 	// Get Header
 	GetHeader(hash common.Hash, index uint64) (*modules.Header, error)

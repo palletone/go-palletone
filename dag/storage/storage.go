@@ -23,6 +23,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
@@ -57,11 +58,37 @@ func StoreBytes(db ptndb.Database, key []byte, value interface{}) error {
 	}
 	return nil
 }
+func StoreBytesWithVersion(db ptndb.Database, key []byte, version *modules.StateVersion, value interface{}) error {
+	val, err := rlp.EncodeToBytes(value)
+	if err != nil {
+		return err
+	}
+	v := append(version.Bytes(), val...)
+
+	_, err = db.Get(key)
+	if err != nil {
+		if err.Error() == errors.ErrNotFound.Error() {
+			//	if err == errors.New("not found") {
+			if err := db.Put(key, v); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	} else {
+		if err = db.Delete(key); err != nil {
+			return err
+		}
+		if err := db.Put(key, v); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func StoreString(db ptndb.Putter, key, value string) error {
 	return db.Put(util.ToByte(key), util.ToByte(value))
 }
-
 
 func BatchErrorHandler(err error, errorList *[]error) {
 	if err != nil {

@@ -572,7 +572,7 @@ func (dagdb *DagDb) GetContractNoReader(db ptndb.Database, id common.Hash) (*mod
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
-	con_bytes, err := dagdb.db.Get(append(CONTRACT_PTEFIX, id[:]...))
+	con_bytes, err := dagdb.db.Get(append(CONTRACT_PREFIX, id[:]...))
 	if err != nil {
 		dagdb.logger.Error(fmt.Sprintf("getContract error: %s", err.Error()))
 		return nil, err

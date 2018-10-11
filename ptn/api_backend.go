@@ -197,7 +197,7 @@ func (b *PtnApiBackend) WalletBalance(address string, assetid []byte, uniqueid [
 }
 
 // GetContract
-func (b *PtnApiBackend) GetContract(id common.Hash) (*modules.Contract, error) {
+func (b *PtnApiBackend) GetContract(id common.Address) (*modules.Contract, error) {
 	return b.ptn.dag.GetContract(id)
 }
 

@@ -24,13 +24,26 @@ import (
 	"errors"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 	"log"
 	"reflect"
-	"strings"
 )
+
+func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
+	//保存一个新合约的状态信息
+	//如果数据库中已经存在同样的合约ID，则报错
+	prefix := append(CONTRACT_PREFIX, contract.Id.Bytes()...)
+	count := getCountByPrefix(statedb.db, prefix)
+	if count > 0 {
+		return errors.New("Contract[" + contract.Id.String() + "]'s state existed!")
+	}
+	return StoreBytes(statedb.db, prefix, contract)
+}
+func (statedb *StateDb) SaveContractState(id common.Address, name string, value interface{}, version *modules.StateVersion) error {
+	return SaveContractState(statedb, CONTRACT_STATE_PREFIX, id.Bytes(), name, value, version)
+}
 
 /**
 保存合约属性信息
@@ -39,16 +52,36 @@ To save contract
 func SaveContractState(statedb *StateDb, prefix []byte, id []byte, field string, value interface{}, version *modules.StateVersion) error {
 	key := []byte{}
 	key = append(prefix, id...)
-	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
+	//key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	key = append(key, []byte(field)...)
-	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
-	key = append(key, version.Bytes()...)
-
-	if err := StoreBytes(statedb.db, key, value); err != nil {
+	//key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
+	//key = append(key, version.Bytes()...)
+	statedb.logger.Debug(fmt.Sprintf("Try to save contract state with version:%x", version.Bytes()))
+	if err := StoreBytesWithVersion(statedb.db, key, version, value); err != nil {
 		statedb.logger.Error("Save contract template", err.Error())
 		return err
 	}
 	return nil
+}
+
+func SaveContract(db ptndb.Database, contract *modules.Contract) error {
+	if common.EmptyHash(contract.CodeHash) {
+		contract.CodeHash = rlp.RlpHash(contract.Code)
+	}
+	// key = cs+ rlphash(contract)
+	//if common.EmptyHash(contract.Id) {
+	//	ids := rlp.RlpHash(contract)
+	//	if len(ids) > len(contract.Id) {
+	//		id := ids[len(ids)-common.HashLength:]
+	//		copy(contract.Id[common.HashLength-len(id):], id)
+	//	} else {
+	//		//*contract.Id = new(common.Hash)
+	//		copy(contract.Id[common.HashLength-len(ids):], ids[:])
+	//	}
+	//
+	//}
+
+	return StoreBytes(db, append(CONTRACT_PREFIX, contract.Id[:]...), contract)
 }
 
 // Get contract key's value
@@ -57,7 +90,7 @@ func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interfa
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
-	con_bytes, err := db.Get(append(CONTRACT_PTEFIX, id[:]...))
+	con_bytes, err := db.Get(append(CONTRACT_PREFIX, id[:]...))
 	if err != nil {
 		return nil, err
 	}
@@ -87,36 +120,36 @@ func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interfa
 func (statedb *StateDb) SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
 	return SaveContractState(statedb, CONTRACT_TPL, id, name, value, version)
 }
-func (statedb *StateDb) SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
-	return SaveContractState(statedb, CONTRACT_STATE_PREFIX, id, name, value, version)
-}
 
 /**
 获取合约（或模板）所有属性
 To get contract or contract template all fields and return
 */
-func (statedb *StateDb) GetContractAllState(id []byte) map[modules.ContractReadSet][]byte {
-	// key format: [PREFIX][ID]_[field]_[version]
-	key := fmt.Sprintf("%s%s^*^", CONTRACT_STATE_PREFIX, hexutil.Encode(id))
-	data := getprefix(statedb.db, []byte(key))
+func (statedb *StateDb) GetContractAllState(id common.Address) []*modules.ContractReadSet {
+	// key format: [PREFIX 2][ID 20][field]
+	key := append(CONTRACT_STATE_PREFIX, id.Bytes()...)
+	data := getprefix(statedb.db, key)
 	if data == nil || len(data) <= 0 {
 		return nil
 	}
-	allState := map[modules.ContractReadSet][]byte{}
+	allState := []*modules.ContractReadSet{}
 	for k, v := range data {
-		sKey := strings.Split(k, "^*^")
-		if len(sKey) != 3 {
+		if len(k) == 22 {
+			//Contract本身的状态，而不是某个Field的值
 			continue
 		}
-		var version modules.StateVersion
-		if !version.ParseStringKey(key) {
+		sKey := string(k[22:])
+		version, data, err := splitValueAndVersion(v)
+		if err != nil {
+			statedb.logger.Error("Invalid state data, cannot parse and split version")
 			continue
 		}
-		rdSet := modules.ContractReadSet{
-			Key:   sKey[1],
-			Value: &version,
+		rdSet := &modules.ContractReadSet{
+			Key:     sKey,
+			Value:   data,
+			Version: version,
 		}
-		allState[rdSet] = v
+		allState = append(allState, rdSet)
 	}
 	return allState
 }
@@ -125,29 +158,30 @@ func (statedb *StateDb) GetContractAllState(id []byte) map[modules.ContractReadS
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */
-func (statedb *StateDb) GetContractState(id string, field string) (*modules.StateVersion, []byte) {
-	key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_STATE_PREFIX, id, field)
-	data := getprefix(statedb.db, []byte(key))
-	if data == nil || len(data) != 1 {
+func (statedb *StateDb) GetContractState(id common.Address, field string) (*modules.StateVersion, []byte) {
+	key := append(CONTRACT_STATE_PREFIX, id.Bytes()...)
+	key = append(key, []byte(field)...)
+	version, data, err := retrieveWithVersion(statedb.db, key)
+	if err != nil || data == nil {
 		return nil, nil
 	}
-	for k, v := range data {
-		var version modules.StateVersion
-		if !version.ParseStringKey(k) {
-			return nil, nil
-		}
-		return &version, v
-	}
+	//for k, v := range data {
+	//	var version modules.StateVersion
+	//	if !version.ParseStringKey(k) {
+	//		return nil, nil
+	//	}
+	//	return &version, v
+	//}
 
-	return nil, nil
+	return version, data
 }
 
 // GetContract can get a Contract by the contract hash
-func (statedb *StateDb) GetContract(id common.Hash) (*modules.Contract, error) {
-	if common.EmptyHash(id) {
-		return nil, errors.New("the filed not defined")
-	}
-	con_bytes, err := statedb.db.Get(append(CONTRACT_PTEFIX, id[:]...))
+func (statedb *StateDb) GetContract(id common.Address) (*modules.Contract, error) {
+	//if common.EmptyHash(id) {
+	//	return nil, errors.New("the filed not defined")
+	//}
+	con_bytes, err := statedb.db.Get(append(CONTRACT_PREFIX, id.Bytes()[:]...))
 	if err != nil {
 		statedb.logger.Error("err:", err)
 		return nil, err
