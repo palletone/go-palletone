@@ -25,21 +25,24 @@ import (
 )
 
 type Contract struct {
-	Id       common.Hash
+	//Contract Id 即Address，[20]byte，
+	// 根据用户创建合约实例申请的RequestId截取其后20字节生成
+	Id       common.Address
 	Name     string
 	ConType  string // 合约类型： 系统合约 用户合约
 	LangCode string // 代码类别
 
-	Sign        []*Authentifier // 单一签名和多方签名
-	Code        []byte          // 合约代码。
-	CodeHash    common.Hash
-	CodeAddress common.Address
-	Input       []byte
-
-	CallerAddress common.Address
-	caller        common.Address
-	self          common.Address // 合約地址
-	jumpdests     map[common.Hash][]byte
+	Sign              []*Authentifier // 单一签名和多方签名
+	Code              []byte          // 合约代码。
+	CodeHash          common.Hash
+	CodeAddress       common.Address
+	Input             []byte
+	JuryPubKeys       [][]byte //该合约对于的陪审员公钥列表
+	NeedApprovalCount int      //需要多少个陪审员同意才算共识达成
+	CallerAddress     common.Address
+	caller            common.Address
+	self              common.Address // 合約地址
+	jumpdests         map[common.Hash][]byte
 
 	value *big.Int
 

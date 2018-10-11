@@ -22,7 +22,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"github.com/palletone/go-palletone/common"
 	"log"
 	// "github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -137,26 +136,6 @@ func AddKeysWithTag(db ptndb.Database, key, tag string) error {
 
 }
 
-func SaveContract(db ptndb.Database, contract *modules.Contract) (common.Hash, error) {
-	if common.EmptyHash(contract.CodeHash) {
-		contract.CodeHash = rlp.RlpHash(contract.Code)
-	}
-	// key = cs+ rlphash(contract)
-	if common.EmptyHash(contract.Id) {
-		ids := rlp.RlpHash(contract)
-		if len(ids) > len(contract.Id) {
-			id := ids[len(ids)-common.HashLength:]
-			copy(contract.Id[common.HashLength-len(id):], id)
-		} else {
-			//*contract.Id = new(common.Hash)
-			copy(contract.Id[common.HashLength-len(ids):], ids[:])
-		}
-
-	}
-
-	return contract.Id, StoreBytes(db, append(CONTRACT_PTEFIX, contract.Id[:]...), contract)
-}
-
 //  get  unit chain version
 // GetUnitChainVersion reads the version number from db.
 func GetUnitChainVersion(db ptndb.Database) int {
@@ -172,4 +151,3 @@ func SaveUnitChainVersion(db ptndb.Database, vsn int) error {
 	enc, _ := rlp.EncodeToBytes(uint(vsn))
 	return db.Put([]byte("UnitchainVersion"), enc)
 }
-
