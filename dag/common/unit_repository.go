@@ -55,21 +55,21 @@ type UnitRepository struct {
 	statedb        storage.IStateDb
 	validate       Validator
 	utxoRepository IUtxoRepository
-	logger log.ILogger
+	logger         log.ILogger
 }
 
-func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb,l log.ILogger) *UnitRepository {
-	val := NewValidate(dagdb, utxodb, statedb,l)
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb,l)
+func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, l log.ILogger) *UnitRepository {
+	val := NewValidate(dagdb, utxodb, statedb, l)
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, l)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
-func NewUnitRepository4Db(db ptndb.Database,l log.ILogger) *UnitRepository {
-	dagdb := storage.NewDagDb(db,l)
-	utxodb := storage.NewUtxoDb(db,l)
-	statedb := storage.NewStateDb(db,l)
-	idxdb := storage.NewIndexDb(db,l)
-	val := NewValidate(dagdb, utxodb, statedb,l)
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb,l)
+func NewUnitRepository4Db(db ptndb.Database, l log.ILogger) *UnitRepository {
+	dagdb := storage.NewDagDb(db, l)
+	utxodb := storage.NewUtxoDb(db, l)
+	statedb := storage.NewStateDb(db, l)
+	idxdb := storage.NewIndexDb(db, l)
+	val := NewValidate(dagdb, utxodb, statedb, l)
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, l)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
 func RHashStr(x interface{}) string {
