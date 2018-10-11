@@ -308,7 +308,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 		for _, msg := range tx.TxMessages {
 			if msg.App == modules.APP_PAYMENT {
 				var pl modules.PaymentPayload
-				pl, ok := msg.Payload.(modules.PaymentPayload)
+				pl, ok := msg.Payload.(*modules.PaymentPayload)
 				if !ok {
 					fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
 				} else {

@@ -31,7 +31,10 @@ const (
 )
 
 func (pm *ProtocolManager) mediatorConnect() {
-	if !pm.isTest && !pm.producer.LocalHaveActiveMediator() {
+	if pm.isTest {
+		return
+	}
+	if !pm.producer.LocalHaveActiveMediator() {
 		log.Info("This node is not Mediator")
 		return
 	}

@@ -19,8 +19,14 @@
  */
 
 package modules
-
-type AddressInfo struct {
+//一个账户（地址）的状态信息
+//Include:
+// personal account P1*
+//P2SH account P3*
+//Contract account PC*
+type AccountInfo struct {
+	//当前账户的PTN余额
 	PtnBalance    uint64
+	//当前账户对Mediator选举的投票结果
 	PtnVoteResult []byte
 }

@@ -72,6 +72,18 @@ func New(ctx ...interface{}) *Plogger {
 	pl.logger = *Logger
 	return pl
 }
+func NewTestLog() *Plogger {
+	DefaultConfig = Config{
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
+		OpenModule:       []string{"all"},
+		LoggerLvl:        "DEBUG",
+		Encoding:         "console",
+		Development:      true,
+	}
+	initLogger()
+	return &Plogger{logger: *Logger}
+}
 func (pl *Plogger) New(ctx ...interface{}) *Plogger {
 	if pl != nil {
 		return pl

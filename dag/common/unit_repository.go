@@ -49,26 +49,27 @@ type IUnitRepository interface {
 	CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 }
 type UnitRepository struct {
-	dagdb          storage.DagDb
-	idxdb          storage.IndexDb
-	uxtodb         storage.UtxoDb
-	statedb        storage.StateDb
+	dagdb          storage.IDagDb
+	idxdb          storage.IIndexDb
+	uxtodb         storage.IUtxoDb
+	statedb        storage.IStateDb
 	validate       Validator
 	utxoRepository IUtxoRepository
+	logger log.ILogger
 }
 
-func NewUnitRepository(dagdb storage.DagDb, idxdb storage.IndexDb, utxodb storage.UtxoDb, statedb storage.StateDb) *UnitRepository {
-	val := NewValidate(dagdb, utxodb, statedb)
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
+func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb,l log.ILogger) *UnitRepository {
+	val := NewValidate(dagdb, utxodb, statedb,l)
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb,l)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
-func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
-	dagdb := storage.NewDagDatabase(db)
-	utxodb := storage.NewUtxoDatabase(db)
-	statedb := storage.NewStateDatabase(db)
-	idxdb := storage.NewIndexDatabase(db)
-	val := NewValidate(dagdb, utxodb, statedb)
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
+func NewUnitRepository4Db(db ptndb.Database,l log.ILogger) *UnitRepository {
+	dagdb := storage.NewDagDb(db,l)
+	utxodb := storage.NewUtxoDb(db,l)
+	statedb := storage.NewStateDb(db,l)
+	idxdb := storage.NewIndexDb(db,l)
+	val := NewValidate(dagdb, utxodb, statedb,l)
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb,l)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
 func RHashStr(x interface{}) string {

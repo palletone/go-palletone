@@ -33,13 +33,14 @@ import (
 )
 
 type UtxoRepository struct {
-	utxodb  storage.UtxoDb
-	idxdb   storage.IndexDb
-	statedb storage.StateDb
+	utxodb  storage.IUtxoDb
+	idxdb   storage.IIndexDb
+	statedb storage.IStateDb
+	logger log.ILogger
 }
 
-func NewUtxoRepository(utxodb storage.UtxoDb, idxdb storage.IndexDb, statedb storage.StateDb) *UtxoRepository {
-	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb}
+func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb storage.IStateDb,l log.ILogger) *UtxoRepository {
+	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb,logger:l}
 }
 
 type IUtxoRepository interface {
@@ -86,17 +87,17 @@ func (repository *UtxoRepository) readUtxosByIndex(addr common.Address, asset mo
 		if err := utxoIndex.QueryFields([]byte(k)); err != nil {
 			continue
 		}
-		udata, err := repository.utxodb.GetUtxoByIndex(utxoIndex.OutPoint.ToKey())
+		utxo, err := repository.utxodb.GetUtxoEntry(utxoIndex.OutPoint)
 		if err != nil {
 			log.Error("Get utxo error by outpoint", "error:", err.Error())
 			continue
 		}
-		var utxo modules.Utxo
-		if err := rlp.DecodeBytes([]byte(udata), &utxo); err != nil {
-			log.Error("Decode utxo data :", "error:", err.Error())
-			continue
-		}
-		vout[*utxoIndex.OutPoint] = &utxo
+		//var utxo modules.Utxo
+		//if err := rlp.DecodeBytes([]byte(udata), &utxo); err != nil {
+		//	log.Error("Decode utxo data :", "error:", err.Error())
+		//	continue
+		//}
+		vout[*utxoIndex.OutPoint] = utxo
 		balance += utxo.Amount
 	}
 	return vout, balance
@@ -149,19 +150,16 @@ To get utxo struct according to it's input information
 */
 func (repository *UtxoRepository) GetUxto(txin modules.Input) modules.Utxo {
 
-	data, err := repository.utxodb.GetUtxoByIndex(txin.PreviousOutPoint.ToKey())
+	data, err := repository.utxodb.GetUtxoEntry(txin.PreviousOutPoint)
 	if err != nil {
 		return modules.Utxo{}
 	}
-	var utxo modules.Utxo
-	rlp.DecodeBytes(data, &utxo)
-	return utxo
+	return *data
 }
 
 // GetUtosOutPoint
 func (repository *UtxoRepository) GetUtxoByOutpoint(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	key := outpoint.ToKey()
-	return repository.utxodb.GetUtxoEntry(key[:])
+	return repository.utxodb.GetUtxoEntry(outpoint)
 }
 
 /**
@@ -201,13 +199,12 @@ func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32,
 		}
 
 		// write to database
-		outpoint := modules.OutPoint{
+		outpoint := &modules.OutPoint{
 			TxHash:       txHash,
 			MessageIndex: msgIndex,
 			OutIndex:     uint32(outIndex),
 		}
-		key := (&outpoint).ToKey()
-		if err := repository.utxodb.SaveUtxoEntity(key[:], utxo); err != nil {
+		if err := repository.utxodb.SaveUtxoEntity(outpoint, utxo); err != nil {
 			log.Error("Write utxo", "error", err.Error())
 			errs = append(errs, err)
 			continue
@@ -229,7 +226,7 @@ func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32,
 		utxoIndex := modules.UtxoIndex{
 			AccountAddr: sAddr,
 			Asset:       txout.Asset,
-			OutPoint:    &outpoint,
+			OutPoint:    outpoint,
 		}
 		utxoIndexVal := modules.UtxoIndexValue{
 			Amount:   txout.Value,
@@ -263,18 +260,18 @@ func (repository *UtxoRepository) destoryUtxo(txins []*modules.Input) {
 			continue
 		}
 		// get utxo info
-		data, err := repository.utxodb.GetUtxoByIndex(outpoint.ToKey())
+		utxo, err := repository.utxodb.GetUtxoEntry(outpoint)
 		if err != nil {
 			log.Error("Query utxo when destory uxto", "error", err.Error())
 			continue
 		}
-		var utxo modules.Utxo
-		if err := rlp.DecodeBytes(data, &utxo); err != nil {
-			log.Error("Decode utxo when destory uxto", "error", err.Error())
-			continue
-		}
+		//var utxo modules.Utxo
+		//if err := rlp.DecodeBytes(data, &utxo); err != nil {
+		//	log.Error("Decode utxo when destory uxto", "error", err.Error())
+		//	continue
+		//}
 		// delete utxo
-		if err := repository.utxodb.DeleteUtxo(outpoint.ToKey()); err != nil {
+		if err := repository.utxodb.DeleteUtxo(outpoint); err != nil {
 			log.Error("Destory uxto", "error", err.Error())
 			continue
 		}
@@ -282,12 +279,12 @@ func (repository *UtxoRepository) destoryUtxo(txins []*modules.Input) {
 		sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
 		addr := common.Address{}
 		addr.SetString(sAddr.String())
-		utxoIndex := modules.UtxoIndex{
+		utxoIndex := &modules.UtxoIndex{
 			AccountAddr: addr,
 			Asset:       utxo.Asset,
 			OutPoint:    outpoint,
 		}
-		if err := repository.utxodb.DeleteUtxo(utxoIndex.ToKey()); err != nil {
+		if err := repository.idxdb.DeleteUtxoByIndex(utxoIndex); err != nil {
 			log.Error("Destory uxto index", "error", err.Error())
 			continue
 		}
@@ -523,7 +520,7 @@ func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) 
 	fees := uint64(0)
 	for _, tx := range txs {
 		for _, msg := range tx.Tx.TxMessages {
-			payload, ok := msg.Payload.(modules.PaymentPayload)
+			payload, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok == false {
 				continue
 			}
@@ -566,4 +563,19 @@ To compute mediator interest for packaging one unit
 */
 func ComputeInterest() uint64 {
 	return uint64(100000000)
+}
+
+func IsCoinBase(tx *modules.Transaction) bool {
+	if len(tx.TxMessages) != 1 {
+		return false
+	}
+	msg, ok := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	if !ok {
+		return false
+	}
+	prevOut := msg.Input[0].PreviousOutPoint
+	if prevOut.TxHash != (common.Hash{}) {
+		return false
+	}
+	return true
 }

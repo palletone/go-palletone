@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"time"
 )
 
 func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
@@ -141,4 +142,19 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, genesisUnitHash common.Has
 		return err
 	}
 	return nil
+}
+
+func (dag *Dag) IsSynced() bool {
+	gp := dag.GetGlobalProp()
+	dgp := dag.GetDynGlobalProp()
+
+	nowFine := time.Now()
+	now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
+	nextSlotTime := modules.GetSlotTime(gp, dgp, 1)
+
+	if nextSlotTime.Before(now) {
+		return false
+	}
+
+	return true
 }

@@ -119,10 +119,10 @@ func TestGenesisGet(t *testing.T) {
 		fmt.Println("Connect to db error.")
 		return
 	}
-	dagDb := storage.NewDagDatabase(dbconn)
-	idxDb := storage.NewIndexDatabase(dbconn)
-	utxoDb := storage.NewUtxoDatabase(dbconn)
-	stateDb := storage.NewStateDatabase(dbconn)
+	dagDb := storage.NewDagDb(dbconn)
+	idxDb := storage.NewIndexDb(dbconn)
+	utxoDb := storage.NewUtxoDb(dbconn)
+	stateDb := storage.NewStateDb(dbconn)
 
 	unitrep := common.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
 	if unitrep == nil {

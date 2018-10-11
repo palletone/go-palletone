@@ -30,50 +30,59 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
-type UtxoDatabase struct {
-	db ptndb.Database
+type UtxoDb struct {
+	db     ptndb.Database
+	logger log.ILogger
 }
 
-func NewUtxoDatabase(db ptndb.Database) *UtxoDatabase {
-	return &UtxoDatabase{db: db}
+func NewUtxoDb(db ptndb.Database, logger log.ILogger) *UtxoDb {
+	var l log.ILogger
+	if logger != nil {
+		l = logger
+	} else {
+		l = &log.NothingLogger{}
+	}
+	return &UtxoDb{db: db, logger: l}
 }
 
-type UtxoDb interface {
+type IUtxoDb interface {
 	GetPrefix(prefix []byte) map[string][]byte
-	GetUtxoByIndex(indexKey []byte) ([]byte, error)
-	GetUtxoEntry(key []byte) (*modules.Utxo, error)
+
+	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr string) ([]modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
-	SaveUtxoSnapshot(index modules.ChainIndex) error
+	SaveUtxoSnapshot(index *modules.ChainIndex) error
 
-	SaveUtxoEntity(key []byte, utxo *modules.Utxo) error
+	SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
 	SaveUtxoEntities(key []byte, utxos *[]modules.Utxo) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
-	DeleteUtxo(key []byte) error
-	GetUtxoEntities(index modules.ChainIndex) (*[]modules.Utxo, error)
+	DeleteUtxo(outpoint *modules.OutPoint) error
+	GetUtxoEntities(index *modules.ChainIndex) (*[]modules.Utxo, error)
 }
 
 // ###################### SAVE IMPL START ######################
 
-func (utxodb *UtxoDatabase) SaveUtxoEntity(key []byte, utxo *modules.Utxo) error {
+func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error {
+	key := outpoint.ToKey()
+	utxodb.logger.Debug("Try to save utxo by key:", outpoint.String())
 	return StoreBytes(utxodb.db, key, utxo)
 }
 
 //@Yiran
-func (utxodb *UtxoDatabase) SaveUtxoEntities(key []byte, utxos *[]modules.Utxo) error {
+func (utxodb *UtxoDb) SaveUtxoEntities(key []byte, utxos *[]modules.Utxo) error {
 
 	return StoreBytes(utxodb.db, key, utxos)
 }
 
 // key: outpoint_prefix + addr + outpoint's hash
-func (utxodb *UtxoDatabase) SaveUtxoOutpoint(key []byte, outpoint *modules.OutPoint) error {
+func (utxodb *UtxoDb) SaveUtxoOutpoint(key []byte, outpoint *modules.OutPoint) error {
 	return StoreBytes(utxodb.db, key, outpoint)
 }
 
 // SaveUtxoView to update the utxo set in the database based on the provided utxo view.
-func (utxodb *UtxoDatabase) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error {
+func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error {
 	for outpoint, utxo := range view {
 		// No need to update the database if the utxo was not modified.
 		if utxo == nil || utxo.IsModified() {
@@ -109,14 +118,15 @@ func (utxodb *UtxoDatabase) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo
 	return nil
 }
 
-func (utxodb *UtxoDatabase) DeleteUtxo(key []byte) error {
+func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
+	key := outpoint.ToKey()
 	return utxodb.db.Delete(key)
 }
 
 const UTXOSNAPSHOT_PREFIX = "us"
 
 //@Yiran
-func (utxodb *UtxoDatabase) SaveUtxoSnapshot(index modules.ChainIndex) error {
+func (utxodb *UtxoDb) SaveUtxoSnapshot(index *modules.ChainIndex) error {
 	//0. examine wrong calling
 	if index.Index%modules.TERMINTERVAL != 0 {
 		return errors.New("SaveUtxoSnapshot must wait until last term period end")
@@ -137,7 +147,7 @@ func (utxodb *UtxoDatabase) SaveUtxoSnapshot(index modules.ChainIndex) error {
 	return utxodb.SaveUtxoEntities(key, &PTNutxos)
 }
 
-//func (utxodb *UtxoDatabase) GetUtxoSnapshot(index []byte) error {
+//func (utxodb *UtxoDb) GetUtxoSnapshot(index []byte) error {
 //
 //}
 
@@ -145,8 +155,9 @@ func (utxodb *UtxoDatabase) SaveUtxoSnapshot(index modules.ChainIndex) error {
 
 // ###################### GET IMPL START ######################
 //  dbFetchUtxoEntry
-func (utxodb *UtxoDatabase) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
+func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	utxo := new(modules.Utxo)
+	key := outpoint.ToKey()
 	data, err := utxodb.db.Get(key)
 	if err != nil {
 		log.Error("get utxo entry failed,================================== ", "error", err)
@@ -163,7 +174,7 @@ func (utxodb *UtxoDatabase) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
 }
 
 //@Yiran get utxo snapshot from db
-func (utxodb *UtxoDatabase) GetUtxoEntities(index modules.ChainIndex) (*[]modules.Utxo, error) {
+func (utxodb *UtxoDb) GetUtxoEntities(index *modules.ChainIndex) (*[]modules.Utxo, error) {
 	utxos := make([]modules.Utxo, 0)
 	key := KeyConnector([]byte(UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
 	data, err := utxodb.db.Get(key)
@@ -176,11 +187,11 @@ func (utxodb *UtxoDatabase) GetUtxoEntities(index modules.ChainIndex) (*[]module
 	return &utxos, nil
 }
 
-func (utxodb *UtxoDatabase) GetUtxoByIndex(indexKey []byte) ([]byte, error) {
+func (utxodb *UtxoDb) GetUtxoByIndex(indexKey []byte) ([]byte, error) {
 	return utxodb.db.Get(indexKey)
 }
 
-func (db *UtxoDatabase) GetAddrOutput(addr string) ([]modules.Output, error) {
+func (db *UtxoDb) GetAddrOutput(addr string) ([]modules.Output, error) {
 
 	data := db.GetPrefix(append(AddrOutput_Prefix, []byte(addr)...))
 	outputs := make([]modules.Output, 0)
@@ -192,7 +203,7 @@ func (db *UtxoDatabase) GetAddrOutput(addr string) ([]modules.Output, error) {
 	}
 	return outputs, nil
 }
-func (db *UtxoDatabase) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
+func (db *UtxoDb) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	address, err := common.StringToAddress(addr)
 	if err != nil {
 		return nil, err
@@ -208,20 +219,20 @@ func (db *UtxoDatabase) GetAddrOutpoints(addr string) ([]modules.OutPoint, error
 	return outpoints, nil
 }
 
-func (db *UtxoDatabase) GetAddrUtxos(addr string) ([]modules.Utxo, error) {
+func (db *UtxoDb) GetAddrUtxos(addr string) ([]modules.Utxo, error) {
 	allutxos := make([]modules.Utxo, 0)
 	outpoints, err := db.GetAddrOutpoints(addr)
 	if err != nil {
 		return nil, err
 	}
 	for _, out := range outpoints {
-		if utxo, err := db.GetUtxoEntry(out.ToKey()); err == nil {
+		if utxo, err := db.GetUtxoEntry(&out); err == nil {
 			allutxos = append(allutxos, *utxo)
 		}
 	}
 	return allutxos, nil
 }
-func (db *UtxoDatabase) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
+func (db *UtxoDb) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	view := make(map[modules.OutPoint]*modules.Utxo, 0)
 
 	items := db.GetPrefix(modules.UTXO_PREFIX)
@@ -239,7 +250,7 @@ func (db *UtxoDatabase) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error
 }
 
 // get prefix: return maps
-func (db *UtxoDatabase) GetPrefix(prefix []byte) map[string][]byte {
+func (db *UtxoDb) GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
 }
 

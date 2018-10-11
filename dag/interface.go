@@ -41,7 +41,7 @@ type IDag interface {
 	GetCurrentUnit(assetId modules.IDType16) *modules.Unit
 	GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit
 	InsertDag(units modules.Units) (int, error)
-	GetUnitByHash(hash common.Hash) *modules.Unit
+	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
 	// GetHeaderByHash retrieves a header from the local chain.
@@ -58,13 +58,13 @@ type IDag interface {
 	SaveUnit(unit modules.Unit, isGenesis bool) error
 	//All leaf nodes for dag downloader
 	GetAllLeafNodes() ([]*modules.Header, error)
-	GetUnit(common.Hash) *modules.Unit
+	GetUnit(common.Hash) (*modules.Unit, error)
 	CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 
 	FastSyncCommitHead(common.Hash) error
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
 	GetContractState(id string, field string) (*modules.StateVersion, []byte)
-	GetUnitNumber(hash common.Hash) (modules.ChainIndex, error)
+	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetHeadHeaderHash() (common.Hash, error)
 	GetHeadUnitHash() (common.Hash, error)
@@ -72,7 +72,7 @@ type IDag interface {
 	GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	GetTrieSyncProgress() (uint64, error)
-	GetUtxoEntry(key []byte) (*modules.Utxo, error)
+	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr string) ([]modules.Utxo, error)
@@ -85,7 +85,7 @@ type IDag interface {
 	GetCurThreshold() int
 	GetGlobalProp() *modules.GlobalProperty
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
-	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
+	GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error)
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
 	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
 	//Mediator
@@ -104,4 +104,5 @@ type IDag interface {
 	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
+	IsSynced() bool
 }

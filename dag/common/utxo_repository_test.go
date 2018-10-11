@@ -34,9 +34,9 @@ import (
 
 func mockUtxoRepository() *UtxoRepository{
 	db,_:=ptndb.NewMemDatabase()
-	utxodb:=storage.NewUtxoDatabase(db)
-	idxdb:=storage.NewIndexDatabase(db)
-	statedb:=storage.NewStateDatabase(db)
+	utxodb:=storage.NewUtxoDb(db)
+	idxdb:=storage.NewIndexDb(db)
+	statedb:=storage.NewStateDb(db)
 	return NewUtxoRepository(utxodb,idxdb,statedb)
 }
 
