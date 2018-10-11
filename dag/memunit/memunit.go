@@ -242,7 +242,7 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 			return err
 		}
 		// save the matured unit into leveldb
-		if err := chain.unitRep.SaveUnit(*unit, false); err != nil {
+		if err := chain.unitRep.SaveUnit(unit, false); err != nil {
 			log.Error("save the matured unit into leveldb", "error", err.Error())
 			return err
 		}
@@ -272,7 +272,7 @@ func (chain *MemDag) Prune(assetId string, maturedUnitHash common.Hash) error {
 	for i := 0; i < subindex; i++ {
 		unitHash := (*forkdata)[i]
 		unit := (*chain.memUnit)[unitHash]
-		if err := chain.unitRep.SaveUnit(*unit, false); err != nil {
+		if err := chain.unitRep.SaveUnit(unit, false); err != nil {
 			return fmt.Errorf("Prune error when save unit: %s", err.Error())
 		}
 	}
