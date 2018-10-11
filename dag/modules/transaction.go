@@ -126,6 +126,12 @@ func NewContractDeployPayload(templateid []byte, contractid []byte, name string,
 		WriteSet:     writeset,
 	}
 }
+func NewVotePayload(Address common.Address, ExpiredTerm uint16) *VotePayload {
+	return &VotePayload{
+		Address:Address,
+		ExpiredTerm:ExpiredTerm,
+	}
+}
 
 func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime time.Duration,
 	readset []ContractReadSet, writeset []PayloadMapStruct, payload []byte) *ContractInvokePayload {
