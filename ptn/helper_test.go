@@ -39,6 +39,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 
+	log2 "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag"
@@ -89,7 +90,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 		true,
 		0,
 	}
-	genesisUint := idag.GetUnitByNumber(index0)
+	genesisUint, _ := idag.GetUnitByNumber(index0)
 	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, idag, typemux, pro, genesisUint)
 	if err != nil {
 		return nil, nil, err
@@ -396,8 +397,8 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	//}
 	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
-
-	dagDb := storage.NewDagDb(db)
+	l := log2.NewTestLog()
+	dagDb := storage.NewDagDb(db, l)
 
 	if err := dagDb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		log.Println("SaveHeader:", "error", err.Error())
