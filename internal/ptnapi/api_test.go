@@ -104,11 +104,6 @@ func TestDecodeRawTransaction(t *testing.T) {
 	}
 }*/
 
-type SignTransactionParams struct {
-	TransactionHex string   `json:"transactionhex"`
-	RedeemHex      string   `json:"redeemhex"`
-	Privkeys       []string `json:"privkeys"`
-}
 
 func TestSignTransaction(t *testing.T) {
 	//from TestRawTransactionGen A --> B C
@@ -149,8 +144,8 @@ func TestSignTransaction(t *testing.T) {
 		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex,inputOne.ScriptPubKey,inputOne.RedeemScript}
 		rawinputs = append(rawinputs, input)
 	}
-	if len(inputs) == 0 {
-		return
+	if len(rawinputs) == 0 {
+		return 
 	}
 	var keys []string
 	for _, key := range signTransactionParams.PrivKeys {
@@ -161,17 +156,11 @@ func TestSignTransaction(t *testing.T) {
 		keys = append(keys, key)
 	}
 	if len(keys) == 0 {
-		return nil
+		return 
 	}
 
 
-	newsign := ptnjson.SignRawTransactionCmd{
-		//RawTx: "f8b7a00000000000000000000000000000000000000000000000000000000000000000f894f89201b88ff88de7e6e3a07348b3dba6d43e10d7140e737a05bed70a1d17220a96bd6d3794c8a80a87515680808080f862f860019976a914b5407cec767317d41442aab35bad2712626e17ca88acf843a00000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000008080",
-		RawTx: signTransactionParams.RawTx,
-		Inputs: rawinputs,
-		PrivKeys: keys,
-		Flags:    ptnjson.String("ALL"),
-	}
+	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx,&rawinputs,&keys, ptnjson.String("ALL")) 
 
 	//pk, _ := crypto.FromWIF("L3XNk86G6LXpFr9y7JSYDztgtmcC7xdcVoUkiF8dNCPRroDSyBHe")
 	//addr := crypto.PubkeyToAddress(&pk.PublicKey)
@@ -211,34 +200,7 @@ func TestSignTransaction(t *testing.T) {
 		return
 	}
 
-	//get private keys for sign
-	var keys []string
-	for _, key := range *newsign.PrivKeys {
-		key = strings.TrimSpace(key) //Trim whitespace
-		if len(key) == 0 {
-			continue
-		}
-		keys = append(keys, key)
-	}
-	if len(keys) == 0 {
-		return
-	}
-
-	var rawInputs []ptnjson.RawTxInput
-	for _, txOne := range *newsign.Inputs {
-		rawInput := ptnjson.RawTxInput{
-			txOne.Txid,         //txid
-			txOne.Vout,         //outindex
-			txOne.MessageIndex, //messageindex
-			txOne.ScriptPubKey,
-			txOne.RedeemScript} //redeem
-		rawInputs = append(rawInputs, rawInput)
-	}
-
-	send_args := ptnjson.NewSignRawTransactionCmd(newsign.RawTx, &rawInputs, &keys, ptnjson.String("ALL"))
-	//the return 'transactionhex' is used in next step
-
-	resultTransToMultsigAddr, _ := SignRawTransaction(send_args)
+	resultTransToMultsigAddr, _ := SignRawTransaction(newsign)
 	//	if !strings.Contains(resultTransToMultsigAddr, theComplete) {
 	//		t.Errorf("complete - got: false, want: true")
 	//	}
