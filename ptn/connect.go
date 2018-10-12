@@ -135,6 +135,9 @@ func (pm *ProtocolManager) isexist(pid string, peers []*peer) bool {
 
 func (pm *ProtocolManager) mediatorCheck(p *peer) error {
 	//if pm.producer.LocalHaveActiveMediator() && p.mediator {
+	if pm.isTest {
+		return nil
+	}
 	if p.mediator {
 		peers := pm.dag.GetActiveMediatorNodes()
 		if _, ok := peers[p.ID().TerminalString()]; ok {
@@ -143,8 +146,7 @@ func (pm *ProtocolManager) mediatorCheck(p *peer) error {
 			//}
 		} else {
 			log.Info("PalletOne handshake failed lying selef is mediator")
-			//TODO must recover
-			//return errors.New("PalletOne handshake failed lying selef is mediator")
+			return errors.New("PalletOne handshake failed lying selef is mediator")
 		}
 	}
 	return nil

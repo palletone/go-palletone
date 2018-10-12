@@ -397,18 +397,18 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		return err
 	}
 
-	if err := pm.noMediatorCheck(p); err != nil {
-		return err
-	}
-
-	if err := pm.mediatorCheck(p); err != nil {
-		return err
-	}
-
-	if err := pm.transitionRun(p); err != nil {
-		return err
-	}
-
+	//if err := pm.noMediatorCheck(p); err != nil {
+	//	return err
+	//}
+	//
+	//if err := pm.mediatorCheck(p); err != nil {
+	//	return err
+	//}
+	//
+	//if err := pm.transitionRun(p); err != nil {
+	//	return err
+	//}
+	//
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
 		rw.Init(p.version)
 	}
@@ -438,86 +438,13 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 }
 
-/*
-	1.CheckMediator notice consensus when full mediator connected.
-	2.Holdup
-	3.Proceing vss
-	4.Vss success.mediator notice ptn.Clean ps.mediators
-	5.Continue when Transition to complete
-*/
-func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
-	//	if p.mediator && !pm.peersTransition.mediators.Has(p.ID().TerminalString()) {
-	//		log.Debug("PalletOne handshake failed Lying is mediator")
-	//		return errors.New("PalletOne handshake failed Lying is mediator")
-	//	}
-
-	if err := pm.peersTransition.Register(p); err != nil {
-		log.Error("PalletOne peer registration failed", "err", err)
-		return err
-	}
-	defer pm.removeTransitionPeer(p.id)
-
-	if pm.peersTransition.MediatorsSize()-1 == len(pm.peersTransition.peers) {
-		//notice consensus all mediator connected
-		//if The main network is launched for the first time.
-		//(Judge node have private key).Only notice consensus go to the next vote.
-		//Vote finish we will transition
-
-		//if temporary mediators should to notice consensus and p.transitionCh <- transitionCancel
-		pm.transCycleConnCh <- transitionCancel
-		//go pm.producer.StartVSSProtocol()
-	}
-	for {
-		log.Debug("PalletOne handleTransitionMsg transitions ReadMsg")
-		select {
-		case event := <-p.transitionCh:
-			if event == transitionCancel {
-				//TODO restart transtion connect
-				log.Debug("PalletOne handleTransitionMsg transitions each other connected ok")
-				return nil
-			}
-		default:
-		}
-		// Read the next message from the remote peer, and ensure it's fully consumed
-		msg, err := p.rw.ReadMsg()
-		if err != nil {
-			return err
-		}
-		if msg.Size > ProtocolMaxMsgSize {
-			return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
-		}
-		//TODO judge msg.Code must vss code when peer In the vss processing stage.
-		//Otherwise, immediatly return errResp.On the basis of ps.mediators
-
-		defer msg.Discard()
-
-		// Handle the message depending on its contents
-		switch {
-		case msg.Code == TransitionReq:
-		case msg.Code == TransitionResp:
-			//21*21 resp
-			// append by Albert·Gou
-		case msg.Code == VSSDealMsg:
-			pm.VSSDealMsg(msg, p)
-
-			// append by Albert·Gou
-		case msg.Code == VSSResponseMsg:
-			pm.VSSResponseMsg(msg, p)
-		default:
-			return errResp(ErrInvalidMsgCode, "%v", msg.Code)
-		}
-	}
-
-}
-
 // handleMsg is invoked whenever an inbound message is received from a remote
 // peer. The remote connection is torn down upon returning any error.
 func (pm *ProtocolManager) handleMsg(p *peer) error {
 	// Read the next message from the remote peer, and ensure it's fully consumed
-	log.Debug("==============handleMsg=============")
+	//log.Debug("==============handleMsg=============")
 	msg, err := p.rw.ReadMsg()
 	if err != nil {
-		log.Debug("ProtocolManager handleMsg", "ReadMsg err:", err)
 		return err
 	}
 	if msg.Size > ProtocolMaxMsgSize {
@@ -582,10 +509,98 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case msg.Code == SigShareMsg:
 		return pm.SigShareMsg(msg, p)
 
+	//TODO must modify
+	case msg.Code == TransitionReq:
+	case msg.Code == TransitionResp:
+		//21*21 resp
+		// append by Albert·Gou
+	case msg.Code == VSSDealMsg:
+		pm.VSSDealMsg(msg, p)
+
+		// append by Albert·Gou
+	case msg.Code == VSSResponseMsg:
+		pm.VSSResponseMsg(msg, p)
+
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
 
+	return nil
+}
+
+/*
+	1.CheckMediator notice consensus when full mediator connected.
+	2.Holdup
+	3.Proceing vss
+	4.Vss success.mediator notice ptn.Clean ps.mediators
+	5.Continue when Transition to complete
+*/
+func (pm *ProtocolManager) handleTransitionMsg(p *peer) error {
+	//	if p.mediator && !pm.peersTransition.mediators.Has(p.ID().TerminalString()) {
+	//		log.Debug("PalletOne handshake failed Lying is mediator")
+	//		return errors.New("PalletOne handshake failed Lying is mediator")
+	//	}
+
+	log.Debug("=====Enter handleTransitionMsg====")
+	if err := pm.peersTransition.Register(p); err != nil {
+		log.Error("PalletOne peer registration failed", "err", err)
+		return err
+	}
+	defer pm.removeTransitionPeer(p.id)
+
+	if pm.peersTransition.MediatorsSize()-1 == len(pm.peersTransition.peers) {
+		//notice consensus all mediator connected
+		//if The main network is launched for the first time.
+		//(Judge node have private key).Only notice consensus go to the next vote.
+		//Vote finish we will transition
+
+		//if temporary mediators should to notice consensus and p.transitionCh <- transitionCancel
+		pm.transCycleConnCh <- transitionCancel
+		//go pm.producer.StartVSSProtocol()
+	}
+	log.Debug("PalletOne handleTransitionMsg transitions ReadMsg")
+	for {
+		select {
+		case event := <-p.transitionCh:
+			if event == transitionCancel {
+				//TODO restart transtion connect
+				log.Debug("PalletOne handleTransitionMsg transitions each other connected ok")
+				return nil
+			}
+		default:
+		}
+		// Read the next message from the remote peer, and ensure it's fully consumed
+		msg, err := p.rw.ReadMsg()
+		if err != nil {
+			log.Info("===handleTransitionMsg===", "ReadMsg err:", err)
+			return err
+		}
+		if msg.Size > ProtocolMaxMsgSize {
+			return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
+		}
+		//TODO judge msg.Code must vss code when peer In the vss processing stage.
+		//Otherwise, immediatly return errResp.On the basis of ps.mediators
+
+		defer msg.Discard()
+
+		// Handle the message depending on its contents
+		switch {
+		case msg.Code == TransitionReq:
+		case msg.Code == TransitionResp:
+			//21*21 resp
+			// append by Albert·Gou
+		case msg.Code == VSSDealMsg:
+			pm.VSSDealMsg(msg, p)
+
+			// append by Albert·Gou
+		case msg.Code == VSSResponseMsg:
+			pm.VSSResponseMsg(msg, p)
+		default:
+			log.Debug("handleTransitionMsg default code:", msg.Code)
+			return errResp(ErrInvalidMsgCode, "%v", msg.Code)
+		}
+	}
+	log.Debug("=====End handleTransitionMsg====")
 	return nil
 }
 
