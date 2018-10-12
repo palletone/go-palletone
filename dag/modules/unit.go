@@ -462,13 +462,22 @@ type ContractDeployPayload struct {
 
 // Contract invoke message
 // App: contract_invoke
+//如果是用户想修改自己的State信息，那么ContractId可以为空或者0字节
 type ContractInvokePayload struct {
-	ContractId   []byte             `json:"contract_id"`   // contract id
+	ContractId   []byte             `json:"contract_id"` // contract id
+	FunctionName string             `json:"function_name"`
 	Args         [][]byte           `json:"args"`          // contract arguments list
 	Excutiontime time.Duration      `json:"excution_time"` // contract execution time, millisecond
 	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
 	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
 	Payload      []byte             `json:"payload"`       // the contract execution result
+}
+
+//用户钱包发起的合约调用申请
+type ContractInvokeRequestPayload struct {
+	ContractId   []byte   `json:"contract_id"` // contract id
+	FunctionName string   `json:"function_name"`
+	Args         [][]byte `json:"args"` // contract arguments list
 }
 
 // Token exchange message and verify message

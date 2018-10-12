@@ -25,7 +25,9 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 //保存了对合约写集、Config、Asset信息
@@ -72,6 +74,25 @@ func (statedb *StateDb) GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo
 // get prefix: return maps
 func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
+}
+func (statedb *StateDb) GetCandidateMediatorAddrList() ([]common.Address, error) {
+	key := constants.STATE_CANDIDATE_MEDIATOR_LIST
+	_, data, err := retrieveWithVersion(statedb.db, key)
+	if err != nil {
+		return nil, err
+	}
+	result := []common.Address{}
+	rlp.DecodeBytes(data, result)
+	return result, nil
+}
+func (statedb *StateDb) SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error {
+	key := constants.STATE_CANDIDATE_MEDIATOR_LIST
+	addrsStr := ""
+	for _, addr := range addrs {
+		addrsStr += addr.String() + ","
+	}
+	statedb.logger.Debugf("Try to save candidate mediator address list:%s", addrsStr)
+	return StoreBytesWithVersion(statedb.db, key, v, addrs)
 }
 
 // ######################### GET IMPL END ###########################

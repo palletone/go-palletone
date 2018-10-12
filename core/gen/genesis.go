@@ -235,10 +235,10 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 	}
 }
 
-func InitialMediatorCandidates(len int, address string) []core.MediatorInfo {
-	initialMediator := make([]core.MediatorInfo, len)
+func InitialMediatorCandidates(len int, address string) []*core.MediatorInfo {
+	initialMediator := make([]*core.MediatorInfo, len)
 	for i := 0; i < len; i++ {
-		initialMediator[i] = core.MediatorInfo{
+		initialMediator[i] = &core.MediatorInfo{
 			Address:     address,
 			InitPartPub: mp.DefaultInitPartPub,
 			Node:        deFaultNode,

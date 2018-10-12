@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/memunit"
@@ -54,6 +55,7 @@ type Dag struct {
 	propdb        storage.IPropertyDb
 	utxoRep       dagcommon.IUtxoRepository
 	propRep       dagcommon.IPropRepository
+	stateRep      dagcommon.IStateRepository
 	validate      dagcommon.Validator
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
@@ -411,7 +413,7 @@ func NewDag(db ptndb.Database, l log.ILogger) (*Dag, error) {
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, l)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb, l)
 	propRep := dagcommon.NewPropRepository(propDb, l)
-
+	stateRep := dagcommon.NewStateRepository(stateDb, l)
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
 		Db:            db,
@@ -422,6 +424,7 @@ func NewDag(db ptndb.Database, l log.ILogger) (*Dag, error) {
 		propdb:        propDb,
 		utxoRep:       utxoRep,
 		propRep:       propRep,
+		stateRep:      stateRep,
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
@@ -787,3 +790,6 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 //
 //	return nil
 //}
+func (dag *Dag) GetCandidateMediators() []*core.MediatorInfo {
+	return dag.stateRep.GetCandidateMediators()
+}

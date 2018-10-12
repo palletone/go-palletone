@@ -23,7 +23,10 @@ package storage
 import (
 	"fmt"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -52,6 +55,13 @@ func (statedb *StateDb) GetConfig(name []byte) []byte {
 */
 func (statedb *StateDb) SaveConfig(confs []modules.PayloadMapStruct, stateVersion *modules.StateVersion) error {
 	for _, conf := range confs {
+		statedb.logger.Debugf("Try to save config key:%s,Value:%#x\n", conf.Key, conf.Value)
+		if conf.Key == "Mediator" {
+			mediators := []*core.MediatorInfo{}
+			rlp.DecodeBytes(conf.Value, &mediators)
+			statedb.saveMediators(mediators, stateVersion)
+			continue
+		}
 		key := fmt.Sprintf("%s_%s_%s", CONF_PREFIX, conf.Key, stateVersion.String())
 		if err := statedb.db.Put([]byte(key), conf.Value); err != nil {
 			log.Error("Save config error.")
@@ -59,4 +69,13 @@ func (statedb *StateDb) SaveConfig(confs []modules.PayloadMapStruct, stateVersio
 		}
 	}
 	return nil
+}
+func (statedb *StateDb) saveMediators(mediators []*core.MediatorInfo, v *modules.StateVersion) {
+	addressList := []common.Address{}
+	for _, mediator := range mediators {
+		addr, _ := common.StringToAddress(mediator.Address)
+		addressList = append(addressList, addr)
+		statedb.SaveAccountMediatorInfo(addr, mediator, v)
+	}
+	statedb.SaveCandidateMediatorAddrList(addressList, v)
 }
