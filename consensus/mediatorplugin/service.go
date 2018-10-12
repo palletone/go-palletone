@@ -41,7 +41,7 @@ import (
 type PalletOne interface {
 	Dag() dag.IDag
 	GetKeyStore() *keystore.KeyStore
-	TxPool() *txspool.TxPool
+	TxPool() txspool.ITxPool
 }
 
 type MediatorPlugin struct {

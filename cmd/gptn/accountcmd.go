@@ -537,17 +537,18 @@ type RawTransactionGenResult struct {
 }
 
 type SignTransactionParams struct {
-	RawTx    string `json:"rawtx"`
-	Inputs   []struct{
+	RawTx  string `json:"rawtx"`
+	Inputs []struct {
 		Txid         string `json:"txid"`
 		Vout         uint32 `json:"vout"`
 		MessageIndex uint32 `json:"messageindex"`
 		ScriptPubKey string `json:"scriptPubKey"`
 		RedeemScript string `json:"redeemScript"`
 	} `json:"rawtxinput"`
-	PrivKeys []string   `json:"privkeys"`
-	Flags    string `jsonrpcdefault:"\"ALL\""`
+	PrivKeys []string `json:"privkeys"`
+	Flags    string   `jsonrpcdefault:"\"ALL\""`
 }
+
 //type SignTransactionResult struct {
 //	TransactionHex string `json:"transactionhex"`
 //	Complete       bool   `json:"complete"`
@@ -599,7 +600,6 @@ func accountCreateTx(ctx *cli.Context) error {
 	return nil
 }
 
-
 func accountSignTx(ctx *cli.Context) error {
 	if len(ctx.Args()) == 0 {
 		utils.Fatalf("No accounts specified to update")
@@ -622,7 +622,7 @@ func accountSignTx(ctx *cli.Context) error {
 	//transaction inputs
 	var rawinputs []ptnjson.RawTxInput
 	for _, inputOne := range signTransactionParams.Inputs {
-		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex,inputOne.ScriptPubKey,inputOne.RedeemScript}
+		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex, inputOne.ScriptPubKey, inputOne.RedeemScript}
 		rawinputs = append(rawinputs, input)
 	}
 	if len(rawinputs) == 0 {

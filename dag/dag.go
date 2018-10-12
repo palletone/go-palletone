@@ -46,8 +46,8 @@ import (
 
 type Dag struct {
 	Cache         *freecache.Cache
-	currentUnit   atomic.Value
 	Db            ptndb.Database
+	currentUnit   atomic.Value
 	unitRep       dagcommon.IUnitRepository
 	dagdb         storage.IDagDb
 	utxodb        storage.IUtxoDb
@@ -360,6 +360,7 @@ func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 //All leaf nodes for dag downloader.
 //MUST have Priority.
 func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
+
 	return []*modules.Header{}, nil
 }
 
@@ -620,7 +621,7 @@ func (d *Dag) GetContractState(id string, field string) (*modules.StateVersion, 
 	return d.GetContractState(id, field)
 }
 
-func (d *Dag) CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
+func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
 	return d.unitRep.CreateUnit(mAddr, txpool, ks, t)
 }
 
@@ -659,6 +660,21 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		return fmt.Errorf("SaveDag, save error when switch chain: %s", err.Error())
 	}
 	return nil
+}
+
+// ValidateUnitGroupSig
+func (d *Dag) ValidateUnitGroupSig(hash common.Hash) (bool, error) {
+	unit, err := d.GetUnit(hash)
+	if err != nil {
+		return false, err
+	}
+
+	//unitState := d.validate.ValidateUnitExceptGroupSig(unit, dagcommon.IsGenesis(hash))
+	unitState := d.validate.ValidateUnitExceptGroupSig(unit, d.unitRep.IsGenesis(hash))
+	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+		return false, fmt.Errorf("validate unit's groupSig failed, ", "statecode", unitState)
+	}
+	return true, nil
 }
 
 func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error) {
