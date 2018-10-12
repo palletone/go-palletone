@@ -653,7 +653,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	if err != nil {
 
 	}
-	bAsset := d.statedb.GetConfig([]byte("GenesisAsset"))
+	bAsset, _, _ := d.statedb.GetConfig([]byte("GenesisAsset"))
 	if len(bAsset) <= 0 {
 		return nil, fmt.Errorf("Create unit error: query asset info empty")
 	}

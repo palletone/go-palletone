@@ -53,5 +53,6 @@ func (statedb *StateDb) GetAccountMediatorInfo(address common.Address) (*core.Me
 func (statedb *StateDb) SaveAccountMediatorInfo(address common.Address, info *core.MediatorInfo, version *modules.StateVersion) error {
 	key := append(ADDRESS_INFO_PREFIX, address.Bytes()...)
 	key = append(key, []byte("MediatorInfo")...)
+	statedb.logger.Debugf("Save one mediator info for address{%s},info:{%s}", address.String(), info)
 	return StoreBytesWithVersion(statedb.db, key, version, info)
 }

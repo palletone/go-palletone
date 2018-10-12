@@ -25,10 +25,10 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/rlp"
+
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core"
+
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -38,11 +38,11 @@ type Validate struct {
 	dagdb   storage.IDagDb
 	utxodb  storage.IUtxoDb
 	statedb storage.IStateDb
-	logger log.ILogger
+	logger  log.ILogger
 }
 
-func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, statedb storage.IStateDb,l log.ILogger) *Validate {
-	return &Validate{dagdb: dagdb, utxodb: utxodb, statedb: statedb,logger:l}
+func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, l log.ILogger) *Validate {
+	return &Validate{dagdb: dagdb, utxodb: utxodb, statedb: statedb, logger: l}
 }
 
 type Validator interface {
@@ -266,22 +266,23 @@ func (validate *Validate) ValidateUnitSignature(h *modules.Header, isGenesis boo
 		return modules.UNIT_STATE_VALIDATED
 	}
 	// get mediators
-	data := validate.statedb.GetConfig([]byte("MediatorCandidates"))
-	var mList []core.MediatorInfo
-	if err := rlp.DecodeBytes(data, &mList); err != nil {
-		log.Debug("Check unit signature when get mediators list", "error", err.Error())
-		return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
-	}
-	bNum := validate.statedb.GetConfig([]byte("ActiveMediators"))
-	var mNum uint16
-	if err := rlp.DecodeBytes(bNum, &mNum); err != nil {
-		log.Debug("Check unit signature", "error", err.Error())
-		return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
-	}
-	if int(mNum) != len(mList) {
-		log.Debug("Check unit signature", "error", "mediators info error, pls update network")
-		return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
-	}
+	//TODO Devin
+	//data, _ := validate.statedb.GetCandidateMediatorAddrList() //.GetConfig([]byte("MediatorCandidates"))
+	//var mList []core.MediatorInfo
+	//if err := rlp.DecodeBytes(data, &mList); err != nil {
+	//	log.Debug("Check unit signature when get mediators list", "error", err.Error())
+	//	return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
+	//}
+	//bNum, _ := validate.statedb.GetActiveMediatorAddrList()
+	//var mNum uint16
+	//if err := rlp.DecodeBytes(bNum, &mNum); err != nil {
+	//	log.Debug("Check unit signature", "error", err.Error())
+	//	return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
+	//}
+	//if int(mNum) != len(mList) {
+	//	log.Debug("Check unit signature", "error", "mediators info error, pls update network")
+	//	return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
+	//}
 	// 这一步后续添加： 调用 mediator 模块校验见证人的接口
 
 	//return modules.UNIT_STATE_VALIDATED

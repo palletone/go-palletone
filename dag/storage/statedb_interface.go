@@ -27,7 +27,7 @@ import (
 )
 
 type IStateDb interface {
-	GetConfig(name []byte) []byte
+	GetConfig(name []byte) ([]byte, *modules.StateVersion, error)
 	GetPrefix(prefix []byte) map[string][]byte
 	SaveConfig(confs []modules.PayloadMapStruct, stateVersion *modules.StateVersion) error
 	SaveAssetInfo(assetInfo *modules.AssetInfo) error
@@ -46,6 +46,7 @@ type IStateDb interface {
 	GetAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	SaveAccountInfo(address common.Address, info *modules.AccountInfo) error
 	GetCandidateMediatorAddrList() ([]common.Address, error)
+	GetActiveMediatorAddrList() ([]common.Address, error)
 	SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error
 	GetAccountMediatorInfo(address common.Address) (*core.MediatorInfo, error)
 	SaveAccountMediatorInfo(address common.Address, info *core.MediatorInfo, version *modules.StateVersion) error
