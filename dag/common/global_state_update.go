@@ -24,17 +24,19 @@ import (
 
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 type PropRepository struct {
-	db storage.PropertyDb
+	db storage.IPropertyDb
+	logger log.ILogger
 }
 type IPropRepository interface {
 	UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit)
 }
 
-func NewPropRepository(db storage.PropertyDb) *PropRepository {
-	return &PropRepository{db: db}
+func NewPropRepository(db storage.IPropertyDb,l log.ILogger) *PropRepository {
+	return &PropRepository{db: db,logger:l}
 }
 
 // UpdateGlobalDynProp, update global dynamic data

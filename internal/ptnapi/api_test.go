@@ -104,20 +104,23 @@ func TestDecodeRawTransaction(t *testing.T) {
 	}
 }*/
 
-type SignTransactionParams struct {
-	TransactionHex string   `json:"transactionhex"`
-	RedeemHex      string   `json:"redeemhex"`
-	Privkeys       []string `json:"privkeys"`
-}
 
 func TestSignTransaction(t *testing.T) {
 	//from TestRawTransactionGen A --> B C
 	//参数格式错误
-	/*params := `{
-	    "transactionhex": "f8b7a00000000000000000000000000000000000000000000000000000000000000000f894f89201b88ff88de7e6e3a07348b3dba6d43e10d7140e737a05bed70a1d17220a96bd6d3794c8a80a87515680808080f862f860019976a914b5407cec767317d41442aab35bad2712626e17ca88acf843a00000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000008080",
-	    "redeemhex": "",
-		"privkeys": ["2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644"]
-	  	}`*/
+	params := `{
+	"rawtx":"f89ea03ca16a831cc4c7a32f7fcf694910fcd0b60974ac5ecf216fa58da39668fc9eb5f87bf87901b876f874e7e6e3a070a94dcd943ef358cea5a4edc39698ec275c03b0b002d681535271f28ec2beb080808080f849f8478880000000000000009976a914d04ef6595ea6dd1cf512a5e9077a66f9b9fb422688ace3900000000000000000000000000000000090000000000000000000000000000000000180",
+    "rawtxinput": [
+		{
+           "txid": "b0bec28ef271525381d602b0b0035c27ec9896c3eda4a5ce58f33e94cd4da970",
+           "vout": 0,
+           "messageindex": 0,
+           "scriptPubKey":"76a9146b9fc0dd015308b8a29c460256150500cbae86cc88ac",
+           "redeemScript":""
+		}
+    ],
+    "privkeys":["L3XNk86G6LXpFr9y7JSYDztgtmcC7xdcVoUkiF8dNCPRroDSyBHe"]
+	}`
 	/*params := `{
 	  "transactionhex": "010000000236045404e65bd741109db92227ca0dc9274ef717a6612c96cd77b24a17d1bcd70000000000ffffffff7c1f7d5407b41abf29d41cf6f122ef2d40f76d956900d2c89314970951ef5b940000000000ffffffff014431d309000000001976a914bddc9a62e9b7c3cfdbe1c817520e24e32c339f3288ac00000000",
 	  "redeemhex": "522103940ab29fbf214da2d8ec99c47db63879957311bd90d2f1c635828604d541051421020106ca23b4f28dbc83838ee4745accf90e5621fe70df5b1ee8f7e1b3b41b64cb21029d80ff37838e4989a6aa26af41149d4f671976329e9ddb9b78fdea9814ae6ef553ae",
@@ -129,26 +132,35 @@ func TestSignTransaction(t *testing.T) {
 	      "privkeys": ["cQJB6w8SxVNoprVwp2xyxUFxvExMbpR2qj3banXYYXmhtTc1WxC8"]
 	      }`*/
 
-	//var signTransactionParams SignTransactionParams
-	//err := json.Unmarshal([]byte(params), &signTransactionParams)
-	//if err != nil {
-	//	return
-	//}
-	newsign := ptnjson.SignRawTransactionCmd{
-		//RawTx: "f8b7a00000000000000000000000000000000000000000000000000000000000000000f894f89201b88ff88de7e6e3a07348b3dba6d43e10d7140e737a05bed70a1d17220a96bd6d3794c8a80a87515680808080f862f860019976a914b5407cec767317d41442aab35bad2712626e17ca88acf843a00000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000008080",
-		RawTx: "f89ea03ca16a831cc4c7a32f7fcf694910fcd0b60974ac5ecf216fa58da39668fc9eb5f87bf87901b876f874e7e6e3a070a94dcd943ef358cea5a4edc39698ec275c03b0b002d681535271f28ec2beb080808080f849f8478880000000000000009976a914d04ef6595ea6dd1cf512a5e9077a66f9b9fb422688ace3900000000000000000000000000000000090000000000000000000000000000000000180",
-		Inputs: &[]ptnjson.RawTxInput{
-			{
-				Txid:         "b0bec28ef271525381d602b0b0035c27ec9896c3eda4a5ce58f33e94cd4da970",
-				Vout:         0,
-				MessageIndex: 0,
-				ScriptPubKey: "76a9146b9fc0dd015308b8a29c460256150500cbae86cc88ac",
-				RedeemScript: "",
-			},
-		},
-		PrivKeys: &[]string{"L3XNk86G6LXpFr9y7JSYDztgtmcC7xdcVoUkiF8dNCPRroDSyBHe"},
-		Flags:    ptnjson.String("ALL"),
+	var signTransactionParams SignTransactionParams
+	err := json.Unmarshal([]byte(params), &signTransactionParams)
+	if err != nil {
+		return
 	}
+
+    //transaction inputs
+	var rawinputs []ptnjson.RawTxInput
+	for _, inputOne := range signTransactionParams.Inputs {
+		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex,inputOne.ScriptPubKey,inputOne.RedeemScript}
+		rawinputs = append(rawinputs, input)
+	}
+	if len(rawinputs) == 0 {
+		return 
+	}
+	var keys []string
+	for _, key := range signTransactionParams.PrivKeys {
+		key = strings.TrimSpace(key) //Trim whitespace
+		if len(key) == 0 {
+			continue
+		}
+		keys = append(keys, key)
+	}
+	if len(keys) == 0 {
+		return 
+	}
+
+
+	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx,&rawinputs,&keys, ptnjson.String("ALL")) 
 
 	//pk, _ := crypto.FromWIF("L3XNk86G6LXpFr9y7JSYDztgtmcC7xdcVoUkiF8dNCPRroDSyBHe")
 	//addr := crypto.PubkeyToAddress(&pk.PublicKey)
@@ -188,34 +200,7 @@ func TestSignTransaction(t *testing.T) {
 		return
 	}
 
-	//get private keys for sign
-	var keys []string
-	for _, key := range *newsign.PrivKeys {
-		key = strings.TrimSpace(key) //Trim whitespace
-		if len(key) == 0 {
-			continue
-		}
-		keys = append(keys, key)
-	}
-	if len(keys) == 0 {
-		return
-	}
-
-	var rawInputs []ptnjson.RawTxInput
-	for _, txOne := range *newsign.Inputs {
-		rawInput := ptnjson.RawTxInput{
-			txOne.Txid,         //txid
-			txOne.Vout,         //outindex
-			txOne.MessageIndex, //messageindex
-			txOne.ScriptPubKey,
-			txOne.RedeemScript} //redeem
-		rawInputs = append(rawInputs, rawInput)
-	}
-
-	send_args := ptnjson.NewSignRawTransactionCmd(newsign.RawTx, &rawInputs, &keys, ptnjson.String("ALL"))
-	//the return 'transactionhex' is used in next step
-
-	resultTransToMultsigAddr, _ := SignRawTransaction(send_args)
+	resultTransToMultsigAddr, _ := SignRawTransaction(newsign)
 	//	if !strings.Contains(resultTransToMultsigAddr, theComplete) {
 	//		t.Errorf("complete - got: false, want: true")
 	//	}

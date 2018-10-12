@@ -726,15 +726,15 @@ func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error
 
 // setEtherbase retrieves the etherbase either from the directly specified
 // command line flags or from the keystore if CLI indexed.
-func setEtherbase(ctx *cli.Context, ks *keystore.KeyStore, cfg *ptn.Config) {
-	if ctx.GlobalIsSet(EtherbaseFlag.Name) {
-		account, err := MakeAddress(ks, ctx.GlobalString(EtherbaseFlag.Name))
-		if err != nil {
-			Fatalf("Option %q: %v", EtherbaseFlag.Name, err)
-		}
-		cfg.Etherbase = account.Address
-	}
-}
+//func setEtherbase(ctx *cli.Context, ks *keystore.KeyStore, cfg *ptn.Config) {
+//	if ctx.GlobalIsSet(EtherbaseFlag.Name) {
+//		account, err := MakeAddress(ks, ctx.GlobalString(EtherbaseFlag.Name))
+//		if err != nil {
+//			Fatalf("Option %q: %v", EtherbaseFlag.Name, err)
+//		}
+//		cfg.Etherbase = account.Address
+//	}
+//}
 
 // MakePasswordList reads password lines from the file specified by the global --password flag.
 func MakePasswordList(ctx *cli.Context) []string {
@@ -973,7 +973,7 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	checkExclusive(ctx, LightServFlag, SyncModeFlag, "light")
 
 	ks := stack.GetKeyStore()
-	setEtherbase(ctx, ks, cfg)
+	//setEtherbase(ctx, ks, cfg)
 	// setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
 	setDag(ctx, &cfg.Dag)

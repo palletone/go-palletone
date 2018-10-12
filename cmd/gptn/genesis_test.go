@@ -20,8 +20,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/common"
-	"github.com/palletone/go-palletone/dag/dagconfig"
+
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -114,17 +116,18 @@ func TestCustomGenesis(t *testing.T) {
 */
 
 func TestGenesisGet(t *testing.T) {
-	dbconn := storage.ReNewDbConn(dagconfig.DbPath)
-	if dbconn == nil {
+	dbconn, err := ptndb.NewMemDatabase() //   storage.ReNewDbConn(dagconfig.DbPath)
+	if err != nil {
 		fmt.Println("Connect to db error.")
 		return
 	}
-	dagDb := storage.NewDagDatabase(dbconn)
-	idxDb := storage.NewIndexDatabase(dbconn)
-	utxoDb := storage.NewUtxoDatabase(dbconn)
-	stateDb := storage.NewStateDatabase(dbconn)
+	l := log.NewTestLog()
+	dagDb := storage.NewDagDb(dbconn, l)
+	idxDb := storage.NewIndexDb(dbconn, l)
+	utxoDb := storage.NewUtxoDb(dbconn, l)
+	stateDb := storage.NewStateDb(dbconn, l)
 
-	unitrep := common.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
+	unitrep := common.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, l)
 	if unitrep == nil {
 		t.Error("new unit rep error.")
 	}

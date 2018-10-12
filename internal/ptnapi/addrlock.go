@@ -128,3 +128,20 @@ type RawTransactionGenParams struct {
         } `json:"outputs"`
         Locktime int64 `json:"locktime"`
 }
+
+type SignTransactionParams struct {
+        RawTx    string `json:"rawtx"`
+        Inputs   []struct{
+                Txid         string `json:"txid"`
+                Vout         uint32 `json:"vout"`
+                MessageIndex uint32 `json:"messageindex"`
+                ScriptPubKey string `json:"scriptPubKey"`
+                RedeemScript string `json:"redeemScript"`
+        } `json:"rawtxinput"`
+        PrivKeys []string   `json:"privkeys"`
+        Flags    string `jsonrpcdefault:"\"ALL\""`
+}
+//type SignTransactionResult struct {
+//        TransactionHex string `json:"transactionhex"`
+//        Complete       bool   `json:"complete"`
+//}

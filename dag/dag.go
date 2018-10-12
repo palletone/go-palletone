@@ -48,20 +48,24 @@ type Dag struct {
 	currentUnit   atomic.Value
 	Db            ptndb.Database
 	unitRep       dagcommon.IUnitRepository
-	dagdb         storage.DagDb
-	utxodb        storage.UtxoDb
-	statedb       storage.StateDb
-	propdb        storage.PropertyDb
+	dagdb         storage.IDagDb
+	utxodb        storage.IUtxoDb
+	statedb       storage.IStateDb
+	propdb        storage.IPropertyDb
 	utxoRep       dagcommon.IUtxoRepository
 	propRep       dagcommon.IPropRepository
 	validate      dagcommon.Validator
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
-	Mutex sync.RWMutex
-
-	Memdag *memunit.MemDag // memory unit
+	Mutex  sync.RWMutex
+	logger log.ILogger
+	Memdag memunit.IMemDag // memory unit
 }
 
+func (d *Dag) IsEmpty() bool {
+	it := d.Db.NewIterator()
+	return !it.Next()
+}
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
@@ -73,7 +77,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	// step2. get unit height
 	height, err := d.GetUnitNumber(hash)
 	// get unit header
-	uHeader, err := d.dagdb.GetHeader(hash, &height)
+	uHeader, err := d.dagdb.GetHeader(hash, height)
 	if err != nil {
 		log.Error("Current unit when get unit header", "error", err.Error())
 		return nil
@@ -112,19 +116,20 @@ func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit {
 	return curUnit
 }
 
-func (d *Dag) GetUnit(hash common.Hash) *modules.Unit {
+func (d *Dag) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	return d.dagdb.GetUnit(hash)
 }
 
 func (d *Dag) HasUnit(hash common.Hash) bool {
-	return d.dagdb.GetUnit(hash) != nil
+	u, _ := d.dagdb.GetUnit(hash)
+	return u != nil
 }
 
-func (d *Dag) GetUnitByHash(hash common.Hash) *modules.Unit {
+func (d *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	return d.dagdb.GetUnit(hash)
 }
 
-func (d *Dag) GetUnitByNumber(number modules.ChainIndex) *modules.Unit {
+func (d *Dag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) {
 	return d.dagdb.GetUnitFormIndex(number)
 }
 
@@ -134,7 +139,7 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 		log.Error("GetHeaderByHash when GetUnitNumber", "error", err.Error())
 	}
 	// get unit header
-	uHeader, err := d.dagdb.GetHeader(hash, &height)
+	uHeader, err := d.dagdb.GetHeader(hash, height)
 	if err != nil {
 		log.Error("Current unit when get unit header", "error", err.Error())
 		return nil
@@ -154,8 +159,8 @@ func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Su
 // FastSyncCommitHead sets the current head block to the one defined by the hash
 // irrelevant what the chain contents were prior.
 func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
-	unit := d.GetUnit(hash)
-	if unit == nil {
+	unit, err := d.GetUnit(hash)
+	if err != nil {
 		return fmt.Errorf("non existent unit [%x...]", hash[:4])
 	}
 	// store current unit
@@ -164,38 +169,6 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 	d.Mutex.Unlock()
 
 	return nil
-}
-
-func (d *Dag) SaveDag(unit modules.Unit, isGenesis bool) (int, error) {
-	// step1. check exists
-	if d.Memdag.Exists(unit.UnitHash) || d.Exists(unit.UnitHash) {
-		return -2, fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash.String())
-	}
-	// step2. validate unit
-	unitState := d.validate.ValidateUnitExceptGroupSig(&unit, isGenesis)
-	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-		return -1, fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
-	}
-	if unitState == modules.UNIT_STATE_VALIDATED {
-		// step3.1. pass and with group signature, put into leveldb
-		if err := d.unitRep.SaveUnit(unit, false); err != nil {
-			return 1, fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
-		}
-		// step3.2. if pass and with group signature, prune fork data
-		if err := d.Memdag.Prune(unit.UnitHeader.Number.AssetID.String(), unit.UnitHash); err != nil {
-			return 2, fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
-		}
-	} else {
-		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
-		if err := d.Memdag.Save(&unit); err != nil {
-			return 3, fmt.Errorf("SaveDag, save error: %s", err.Error())
-		}
-	}
-	// step5. check if it is need to switch
-	if err := d.Memdag.SwitchMainChain(); err != nil {
-		return 4, fmt.Errorf("SaveDag, save error when switch chain: %s", err.Error())
-	}
-	return 0, nil
 }
 
 // InsertDag attempts to insert the given batch of blocks in to the canonical
@@ -224,7 +197,7 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
-		if err := d.unitRep.SaveUnit(*u, false); err != nil {
+		if err := d.unitRep.SaveUnit(u, false); err != nil {
 			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
 		}
@@ -272,7 +245,7 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 }
 func (d *Dag) Exists(hash common.Hash) bool {
 	number, err := d.dagdb.GetNumberWithUnitHash(hash)
-	if err == nil && (number != modules.ChainIndex{}) {
+	if err == nil && (number != nil) {
 		log.Info("经检索，该hash已存储在leveldb中，", "hash", hash.String())
 		return true
 	}
@@ -422,22 +395,22 @@ func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []b
 	return d.utxoRep.WalletBalance(address, asset), nil
 }
 
-func NewDag(db ptndb.Database) (*Dag, error) {
+func NewDag(db ptndb.Database, l log.ILogger) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 
-	dagDb := storage.NewDagDatabase(db)
-	utxoDb := storage.NewUtxoDatabase(db)
-	stateDb := storage.NewStateDatabase(db)
-	idxDb := storage.NewIndexDatabase(db)
-	propDb, err := storage.NewPropertyDb(db)
+	dagDb := storage.NewDagDb(db, l)
+	utxoDb := storage.NewUtxoDb(db, l)
+	stateDb := storage.NewStateDb(db, l)
+	idxDb := storage.NewIndexDb(db, l)
+	propDb, err := storage.NewPropertyDb(db, l)
 	if err != nil {
 		return nil, err
 	}
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
-	propRep := dagcommon.NewPropRepository(propDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, l)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, l)
+	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb, l)
+	propRep := dagcommon.NewPropRepository(propDb, l)
 
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
@@ -460,17 +433,17 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 
 func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
-
-	dagDb := storage.NewDagDatabase(db)
-	utxoDb := storage.NewUtxoDatabase(db)
-	stateDb := storage.NewStateDatabase(db)
-	idxDb := storage.NewIndexDatabase(db)
+	logger := log.New("Dag")
+	dagDb := storage.NewDagDb(db, logger)
+	utxoDb := storage.NewUtxoDb(db, logger)
+	stateDb := storage.NewStateDb(db, logger)
+	idxDb := storage.NewIndexDb(db, logger)
 	propDb := storage.NewPropertyDb4GenesisInit(db)
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
-	propRep := dagcommon.NewPropRepository(propDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, logger)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, logger)
+	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb, logger)
+	propRep := dagcommon.NewPropRepository(propDb, logger)
 
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
@@ -491,15 +464,15 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 
 func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
+	logger := log.New("Dag")
+	dagDb := storage.NewDagDb(db, logger)
+	utxoDb := storage.NewUtxoDb(db, logger)
+	stateDb := storage.NewStateDb(db, logger)
+	idxDb := storage.NewIndexDb(db, logger)
 
-	dagDb := storage.NewDagDatabase(db)
-	utxoDb := storage.NewUtxoDatabase(db)
-	stateDb := storage.NewStateDatabase(db)
-	idxDb := storage.NewIndexDatabase(db)
-
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, logger)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, logger)
+	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb, logger)
 
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
@@ -519,7 +492,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 }
 
 // Get Contract Api
-func (d *Dag) GetContract(id common.Hash) (*modules.Contract, error) {
+func (d *Dag) GetContract(id common.Address) (*modules.Contract, error) {
 	return d.statedb.GetContract(id)
 }
 
@@ -531,7 +504,7 @@ func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error
 	}
 	//TODO compare index with number
 	if index.Index == number {
-		head, err := d.dagdb.GetHeader(hash, &index)
+		head, err := d.dagdb.GetHeader(hash, index)
 		if err != nil {
 			fmt.Println("=============get unit header faled =============", err)
 		}
@@ -541,7 +514,7 @@ func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error
 }
 
 // Get UnitNumber
-func (d *Dag) GetUnitNumber(hash common.Hash) (modules.ChainIndex, error) {
+func (d *Dag) GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error) {
 	return d.dagdb.GetNumberWithUnitHash(hash)
 }
 
@@ -567,15 +540,20 @@ func (d *Dag) GetTrieSyncProgress() (uint64, error) {
 	return d.dagdb.GetTrieSyncProgress()
 }
 
-func (d *Dag) GetUtxoEntry(key []byte) (*modules.Utxo, error) {
+func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	d.Mutex.RLock()
 	defer d.Mutex.RUnlock()
-	return d.utxodb.GetUtxoEntry(key)
+	return d.utxodb.GetUtxoEntry(outpoint)
 }
 
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	preout := modules.OutPoint{TxHash: tx.Hash()}
+	var isnot_coinbase bool
+	if !dagcommon.IsCoinBase(tx) {
+		isnot_coinbase = true
+	}
+
 	for i, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
@@ -586,12 +564,17 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 					preout.OutIndex = txoutIdx
 					neededSet[preout] = struct{}{}
 				}
+				// if tx is Not CoinBase
+				// add txIn previousoutpoint
+				if isnot_coinbase {
+					for _, in := range msg.Input {
+						neededSet[*in.PreviousOutPoint] = struct{}{}
+					}
+				}
 			}
 		}
-
 	}
-	// if tx is Not CoinBase
-	// add txIn previousoutpoint
+
 	view := txspool.NewUtxoViewpoint()
 	d.Mutex.RLock()
 	err := view.FetchUtxos(d.utxodb, neededSet)
@@ -637,7 +620,7 @@ func (d *Dag) GetContractState(id string, field string) (*modules.StateVersion, 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
 	return d.unitRep.CreateUnit(mAddr, txpool, ks, t)
 }
-func (d *Dag) SaveUnit(unit modules.Unit, isGenesis bool) error {
+func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	return d.unitRep.SaveUnit(unit, isGenesis)
 }
 func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error) {
@@ -706,7 +689,7 @@ func (d *Dag) UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.Dynam
 }
 
 //@Yiran
-func (d *Dag) GetCurrentUnitIndex() (modules.ChainIndex, error) {
+func (d *Dag) GetCurrentUnitIndex() (*modules.ChainIndex, error) {
 	currentUnitHash := d.CurrentUnit().UnitHash
 	return d.GetUnitNumber(currentUnitHash)
 }

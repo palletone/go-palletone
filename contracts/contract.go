@@ -1,14 +1,15 @@
 package contracts
 
 import (
+	"errors"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	cc "github.com/palletone/go-palletone/contracts/manger"
 	"github.com/palletone/go-palletone/dag"
 	unit "github.com/palletone/go-palletone/dag/modules"
-	"time"
-	"errors"
 	"sync/atomic"
+	"time"
 )
 
 var initFlag int32
@@ -19,6 +20,11 @@ type Contract struct {
 	dag  dag.IDag
 	//status int32 //   1:init   2:start
 }
+
+var (
+	//保证金合约地址（0x1号合约）
+	DepositeContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000011C")
+)
 
 // Initialize 初始化合约管理模块以及加载系统合约，
 // 由上层应用指定dag以及初始合约配置信息

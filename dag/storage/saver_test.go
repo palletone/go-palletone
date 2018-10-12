@@ -21,17 +21,17 @@ package storage
 
 import (
 	"errors"
+	"fmt"
 	"github.com/palletone/go-palletone/common"
+	plog "github.com/palletone/go-palletone/common/log"
+	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
 	"log"
 	"strconv"
 	"testing"
 	"time"
-
-	"fmt"
-	palletdb "github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func TestSaveJoint(t *testing.T) {
@@ -104,7 +104,7 @@ func TestGetUnitKeys(t *testing.T) {
 			}
 		}
 		if !exist {
-			// log.Println("i:", i)
+			// logger.Println("i:", i)
 			this = append(this, v)
 		}
 	}
@@ -139,7 +139,6 @@ type airPlane struct {
 	Seats []string
 }
 
-
 func NewAirPlane() *airPlane {
 	return &airPlane{
 		Seats: append(make([]string, 0), "person", "person", "person", "person", "person", "person", "person", "person", "person", "person", "person"),
@@ -154,27 +153,27 @@ func TestSaveUtxos(t *testing.T) {
 		return
 	}
 	log.Println("db_path:", DBPath)
-	utxodb := NewUtxoDatabase(Dbconn)
+	l := plog.NewTestLog()
+	utxodb := NewUtxoDb(Dbconn, l)
 
 	//1. construct object
 	myplane := NewAirPlane()
 	fmt.Println("myplane is :", myplane)
 	myplane2 := NewAirPlane()
 	fmt.Println("myplane2 is :", myplane2)
-	cap := make([]airPlane,0)
-	cap = append(cap,*myplane,*myplane2)
-	fmt.Println(" cap :",cap)
+	cap := make([]airPlane, 0)
+	cap = append(cap, *myplane, *myplane2)
+	fmt.Println(" cap :", cap)
 	//2. store object
 	StoreBytes(utxodb.db, []byte("testkey"), &cap)
 	//3. load object
 	something, err := utxodb.db.Get([]byte("testkey"))
 
-
 	fmt.Println("db get err:", err)
 	fmt.Println("byte data:", something)
 	p := new([]airPlane)
 	err2 := rlp.DecodeBytes(something, p)
-	fmt.Println("decoded error:",err2)
+	fmt.Println("decoded error:", err2)
 	fmt.Printf("decoded data:%v\n", p)
 
 }

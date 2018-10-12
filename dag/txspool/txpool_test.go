@@ -20,7 +20,6 @@ package txspool
 
 import (
 	"fmt"
-	"log"
 	"math/big"
 	"sync"
 	"testing"
@@ -28,6 +27,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/log"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -45,7 +45,7 @@ func init() {
 
 type testUnitDag struct {
 	Db            *palletdb.MemDatabase
-	utxodb        storage.UtxoDb
+	utxodb        storage.IUtxoDb
 	mux           sync.RWMutex
 	GenesisUnit   *modules.Unit
 	gasLimit      uint64
@@ -58,8 +58,8 @@ func (ud *testUnitDag) CurrentUnit() *modules.Unit {
 	}, nil)
 }
 
-func (ud *testUnitDag) GetUnit(hash common.Hash) *modules.Unit {
-	return ud.CurrentUnit()
+func (ud *testUnitDag) GetUnit(hash common.Hash) (*modules.Unit, error) {
+	return ud.CurrentUnit(), nil
 }
 
 func (ud *testUnitDag) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
@@ -71,7 +71,7 @@ func (ud *testUnitDag) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, err
 	preout := modules.OutPoint{TxHash: tx.Hash()}
 	for i, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
-			if msg, ok := msgcopy.Payload.(modules.PaymentPayload); ok {
+			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				msgIdx := uint32(i)
 				preout.MessageIndex = msgIdx
 				for j := range msg.Output {
@@ -110,7 +110,8 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	// Create the pool to test the limit enforcement with
 	db, _ := palletdb.NewMemDatabase()
-	utxodb := storage.NewUtxoDatabase(db)
+	l := log.NewTestLog()
+	utxodb := storage.NewUtxoDb(db, l)
 	mutex := new(sync.RWMutex)
 	unitchain := &testUnitDag{db, utxodb, *mutex, nil, 10000, new(event.Feed)}
 
@@ -200,7 +201,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		if txs[i].Size() > 0 {
 			continue
 		} else {
-			log.Println("bad tx:", tx.Hash().String(), tx.Size())
+			log.Debug("bad tx:", tx.Hash().String(), tx.Size())
 		}
 	}
 
@@ -214,13 +215,13 @@ func TestTransactionAddingTxs(t *testing.T) {
 	fmt.Println("addlocals start.... ", t1)
 	pool.AddLocals(txpool_txs)
 
-	log.Println("pending:", len(pool.pending))
+	log.Debugf("pending:%d", len(pool.pending))
 	fmt.Println("addlocals over.... ", time.Now().Unix()-t0.Unix())
 	for hash := range pool.pending {
 		if len(pool.pending) != int(config.AccountSlots) {
 			t.Errorf("addr %x: total pending transactions mismatch: have %d, want %d", hash.String(), len(pool.pending), config.AccountSlots)
 		} else {
-			log.Println("account matched.", "pending addr:", addr.String(), "amont:", len(pool.pending))
+			log.Debug("account matched.", "pending addr:", addr.String(), "amont:", len(pool.pending))
 		}
 	}
 	fmt.Println("defer start.... ", time.Now().Unix()-t0.Unix())
@@ -231,7 +232,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 			msg := fmt.Sprintf("total %v:total sizeof transactions is unexpected", total.Float64())
 			t.Error(msg)
 		} else {
-			log.Println(" total size is :", total, total.Float64(), "the cout: ", len(txs))
+			log.Debugf(" total size is :%d ,the cout:%d ", total, len(txs))
 			for i, tx := range txs {
 				if i < len(txs)-1 {
 					if txs[i].Priority_lvl < txs[i+1].Priority_lvl {
@@ -243,7 +244,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 			pending_cache = len(pool.pending)
 			queue_cache = len(pool.queue)
 		}
-		log.Println(origin, all, len(pool.all), pending_cache, queue_cache)
+		log.Debugf("data:%s,%s,%d,%d,%s", origin, all, len(pool.all), pending_cache, queue_cache)
 		fmt.Println("defer over.... spending time：", time.Now().Unix()-t0.Unix())
 	}(pool)
 

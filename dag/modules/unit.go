@@ -23,6 +23,7 @@ import (
 	"time"
 	"unsafe"
 
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -197,7 +198,7 @@ type TxPoolTxs []*TxPoolTransaction
 //	TxMessages []Message   `json:"messages"`
 //	Locktime   uint32      `json:"lock_time"`
 //}
-
+//出于DAG和基于Token的分区共识的考虑，设计了该ChainIndex，
 type ChainIndex struct {
 	AssetID IDType16
 	IsMain  bool
@@ -222,7 +223,7 @@ const (
 	APP_CONTRACT_INVOKE = 0x04
 	APP_CONFIG          = 0x05
 	APP_TEXT            = 0x06
-	APP_VOTE            = 0x06
+	APP_VOTE            = 0x07
 )
 
 // key: message.UnitHash(message+timestamp)
@@ -235,7 +236,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	msg.App = cpyMsg.App
 	msg.Payload = cpyMsg.Payload
 	switch cpyMsg.App {
-	case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT:
+	case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT, APP_VOTE:
 		msg.Payload = cpyMsg.Payload
 	case APP_CONFIG:
 		payload, _ := cpyMsg.Payload.(*ConfigPayload)
@@ -256,7 +257,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			readSet = append(readSet, ContractReadSet{Key: rs.Key, Value: &StateVersion{Height: rs.Value.Height, TxIndex: rs.Value.TxIndex}})
+			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
 		}
 		writeSet := []PayloadMapStruct{}
 		for _, ws := range payload.WriteSet {
@@ -274,7 +275,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			readSet = append(readSet, ContractReadSet{Key: rs.Key, Value: &StateVersion{Height: rs.Value.Height, TxIndex: rs.Value.TxIndex}})
+			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
 		}
 		writeSet := []PayloadMapStruct{}
 		for _, ws := range payload.WriteSet {
@@ -326,11 +327,13 @@ type StateVersion struct {
 }
 
 func (version *StateVersion) String() string {
-	data, err := rlp.EncodeToBytes(*version)
-	if err != nil {
-		return ""
-	}
-	return string(data)
+
+	return fmt.Sprintf(
+		"StateVersion[AssetId:{%#x}, Height:{%d},IsMain:%t,TxIdx:{%d}]",
+		version.Height.AssetID,
+		version.Height.Index,
+		version.Height.IsMain,
+		version.TxIndex)
 }
 
 func (version *StateVersion) ParseStringKey(key string) bool {
@@ -351,9 +354,30 @@ func (version *StateVersion) ParseStringKey(key string) bool {
 	return true
 }
 
+//16+8+1+4
 func (version *StateVersion) Bytes() []byte {
-	b, _ := rlp.EncodeToBytes(version)
+	idx := make([]byte, 8)
+	littleEndian.PutUint64(idx, version.Height.Index)
+	b := append(version.Height.AssetID.Bytes(), idx...)
+	if version.Height.IsMain {
+		b = append(b, byte(1))
+	} else {
+		b = append(b, byte(0))
+	}
+	txIdx := make([]byte, 4)
+	littleEndian.PutUint32(txIdx, version.TxIndex)
+	b = append(b, txIdx...)
 	return b[:]
+}
+func (version *StateVersion) SetBytes(b []byte) {
+	asset := IDType16{}
+	asset.SetBytes(b[:16])
+	heightIdx := littleEndian.Uint64(b[16:24])
+	isMain := b[24]
+	txIdx := littleEndian.Uint32(b[25:])
+	cidx := ChainIndex{AssetID: asset, Index: heightIdx, IsMain: isMain == byte(1)}
+	version.Height = cidx
+	version.TxIndex = txIdx
 }
 
 // Contract template deploy message
@@ -396,8 +420,9 @@ func (delState DelContractState) SetBytes(b []byte) error {
 }
 
 type ContractReadSet struct {
-	Key   string
-	Value *StateVersion
+	Key     string
+	Version *StateVersion
+	Value   []byte
 }
 
 // 0.default vote result is the index of the option from list
@@ -411,6 +436,15 @@ type ContractReadSet struct {
 //	BallotCost  big.Int       //token cost
 //	ExpiredTime time.Duration //duration of voting
 //}
+//*
+// ExpiredTerm: Represents the expiration time of this polling information
+// (at the designated deadline), which is invalid if the expiration date is exceeded
+// ExpiredTerm == 0 means that keep alive.
+// */
+type VotePayload struct {
+	Address     common.Address
+	ExpiredTerm uint16
+}
 
 // Contract instance message
 // App: contract_deploy

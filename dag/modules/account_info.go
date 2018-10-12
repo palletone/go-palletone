@@ -18,16 +18,15 @@
  *
  */
 
-package log
-
-//对于有些情况，我们只希望在开发环境的时候记录Log，而在生产环境不做任何记录
-type NothingLogger struct{}
-
-func (n *NothingLogger) Trace(msg string, ctx ...interface{})  {}
-func (n *NothingLogger) Debug(msg string, ctx ...interface{})  {}
-func (n *NothingLogger) Debugf(msg string, ctx ...interface{}) {}
-func (n *NothingLogger) Info(msg string, ctx ...interface{})   {}
-func (n *NothingLogger) Warn(msg string, ctx ...interface{})   {}
-func (n *NothingLogger) Error(msg string, ctx ...interface{})  {}
-func (n *NothingLogger) Errorf(msg string, ctx ...interface{}) {}
-func (n *NothingLogger) Crit(msg string, ctx ...interface{})   {}
+package modules
+//一个账户（地址）的状态信息
+//Include:
+// personal account P1*
+//P2SH account P3*
+//Contract account PC*
+type AccountInfo struct {
+	//当前账户的PTN余额
+	PtnBalance    uint64
+	//当前账户对Mediator选举的投票结果
+	PtnVoteResult []byte
+}

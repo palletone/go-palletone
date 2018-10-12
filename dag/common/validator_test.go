@@ -21,13 +21,14 @@
 package common
 
 import (
+	"github.com/palletone/go-palletone/common"
+	plog "github.com/palletone/go-palletone/common/log"
 	"log"
 	"math/big"
 	"testing"
 	"time"
 
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -67,12 +68,14 @@ func TestValidator(t *testing.T) {
 	tx.Hash()
 	log.Println("tx hash :", tx.TxHash.String(), tx.TxMessages[2])
 	//dbconn := storage.ReNewDbConn("D:\\Workspace\\Code\\Go\\src\\github.com\\palletone\\go-palletone\\bin\\gptn\\leveldb")
-	dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	//dbconn := storage.ReNewDbConn(dagconfig.DbPath)
+	db, _ := ptndb.NewMemDatabase()
+	l := plog.NewTestLog()
 	worldTmpState := map[string]map[string]interface{}{}
-	dagDb := storage.NewDagDatabase(dbconn)
-	utxoDb := storage.NewUtxoDatabase(dbconn)
-	stateDb := storage.NewStateDatabase(dbconn)
-	validate := NewValidate(dagDb, utxoDb, stateDb)
+	dagDb := storage.NewDagDb(db, l)
+	utxoDb := storage.NewUtxoDb(db, l)
+	stateDb := storage.NewStateDb(db, l)
+	validate := NewValidate(dagDb, utxoDb, stateDb, l)
 	code := validate.ValidateTx(tx, false, &worldTmpState)
 	log.Println("validator code:", code, worldTmpState)
 

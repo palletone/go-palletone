@@ -25,10 +25,10 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	plog "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/trie"
 	"github.com/palletone/go-palletone/dag/modules"
-
 	"github.com/palletone/go-palletone/dag/storage"
 	"log"
 	"sync/atomic"
@@ -157,7 +157,8 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	//	fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	//}
-	dagDb := storage.NewDagDatabase(db)
+	l := plog.NewTestLog()
+	dagDb := storage.NewDagDb(db, l)
 	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := dagDb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
@@ -357,7 +358,8 @@ func (dl *downloadTester) HasHeader(hash common.Hash, number uint64) bool {
 
 // HasBlock checks if a block is present in the testers canonical chain.
 func (dl *downloadTester) HasBlock(hash common.Hash, number uint64) bool {
-	return dl.GetUnit(hash) != nil
+	u, _ := dl.GetUnit(hash)
+	return u != nil
 }
 
 // GetHeader retrieves a header from the testers canonical chain.
@@ -369,11 +371,11 @@ func (dl *downloadTester) GetHeaderByHash(hash common.Hash) *modules.Header {
 }
 
 // GetBlock retrieves a block from the testers canonical chain.
-func (dl *downloadTester) GetUnit(hash common.Hash) *modules.Unit {
+func (dl *downloadTester) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	dl.lock.RLock()
 	defer dl.lock.RUnlock()
 
-	return dl.ownBlocks[hash]
+	return dl.ownBlocks[hash], nil
 }
 
 // CurrentHeader retrieves the current head header from the canonical chain.
@@ -423,7 +425,7 @@ func (dl *downloadTester) FastSyncCommitHead(hash common.Hash) error {
 	fmt.Println("======================downloadTester->FastSyncCommitHead=============================================")
 	return nil
 	// For now only check that the state trie is correct
-	if block := dl.GetUnit(hash); block != nil {
+	if block, _ := dl.GetUnit(hash); block != nil {
 		_, err := trie.NewSecure(block.UnitHeader.Hash(), trie.NewDatabase(dl.stateDb), 0)
 		return err
 	}

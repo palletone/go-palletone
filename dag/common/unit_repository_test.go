@@ -21,29 +21,31 @@
 package common
 
 import (
-	"log"
 	"testing"
 	"time"
 
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	plog "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"log"
 	"reflect"
 )
 
 func mockUnitRepository() *UnitRepository {
 	db, _ := ptndb.NewMemDatabase()
-	return NewUnitRepository4Db(db)
+	l := plog.NewTestLog()
+	return NewUnitRepository4Db(db, l)
 }
 
-func mockUnitRepositoryLeveldb(path string) *UnitRepository {
-	db, _ := ptndb.NewLDBDatabase(path, 0, 0)
-	return NewUnitRepository4Db(db)
-}
+//func mockUnitRepositoryLeveldb(path string) *UnitRepository {
+//	db, _ := ptndb.NewLDBDatabase(path, 0, 0)
+//	return NewUnitRepository4Db(db)
+//}
 
 func TestNewGenesisUnit(t *testing.T) {
 	gUnit, _ := NewGenesisUnit(modules.Transactions{}, time.Now().Unix(), &modules.Asset{})
@@ -106,7 +108,7 @@ func TestSaveUnit(t *testing.T) {
 		"TestContractTpl", "./contract", "1.1.1", 1024,
 		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159})
 	readSet := []modules.ContractReadSet{}
-	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
+	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{
 		Height:  rep.GenesisHeight(),
 		TxIndex: 0,
 	}})
@@ -173,7 +175,7 @@ func TestSaveUnit(t *testing.T) {
 	//txs = append(txs, &tx1)
 	txs = append(txs, &tx2)
 	//txs = append(txs, &tx3)
-	unit := modules.Unit{
+	unit := &modules.Unit{
 		UnitHeader: header,
 		Txs:        txs,
 	}
@@ -307,8 +309,8 @@ func TestPaymentTransactionRLP(t *testing.T) {
 	} else {
 		for _, msg := range tx.TxMessages {
 			if msg.App == modules.APP_PAYMENT {
-				var pl modules.PaymentPayload
-				pl, ok := msg.Payload.(modules.PaymentPayload)
+				var pl *modules.PaymentPayload
+				pl, ok := msg.Payload.(*modules.PaymentPayload)
 				if !ok {
 					fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
 				} else {
@@ -330,7 +332,7 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 		Path:       "./contract",
 	}
 	readSet := []modules.ContractReadSet{}
-	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
+	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{
 		Height:  rep.GenesisHeight(),
 		TxIndex: 0,
 	}})
@@ -381,7 +383,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 	rep := mockUnitRepository()
 	// TODO test ContractTplPayload
 	readSet := []modules.ContractReadSet{}
-	readSet = append(readSet, modules.ContractReadSet{Key: "name", Value: &modules.StateVersion{
+	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{
 		Height:  rep.GenesisHeight(),
 		TxIndex: 0,
 	}})

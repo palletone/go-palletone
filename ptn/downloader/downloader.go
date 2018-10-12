@@ -172,7 +172,7 @@ type LightDag interface {
 // BlockDag encapsulates functions required to sync a (full or fast) dag.
 type BlockDag interface {
 	LightDag
-	GetUnit(common.Hash) *modules.Unit
+	GetUnit(common.Hash) (*modules.Unit, error)
 	CurrentUnit() *modules.Unit
 	FastSyncCommitHead(common.Hash) error
 	//SaveDag(unit modules.Unit, isGenesis bool) (int, error)
@@ -1363,7 +1363,6 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 			return err
 		}
 
-
 		if P != nil {
 			// If new pivot block found, cancel old state retrieval and restart
 			if oldPivot != P {
@@ -1803,7 +1802,6 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	p.log.Debug("Found common ancestor", "number", start, "hash", hash)
 	return start, nil
 }
-
 
 /*
 	if P != nil {

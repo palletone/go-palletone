@@ -21,33 +21,35 @@
 package common
 
 import (
-	"io/ioutil"
-	"log"
-	"testing"
 	"github.com/palletone/go-palletone/common"
+	plog "github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/common/ptndb"
+	"io/ioutil"
+	"log"
+	"testing"
 )
 
-func mockUtxoRepository() *UtxoRepository{
-	db,_:=ptndb.NewMemDatabase()
-	utxodb:=storage.NewUtxoDatabase(db)
-	idxdb:=storage.NewIndexDatabase(db)
-	statedb:=storage.NewStateDatabase(db)
-	return NewUtxoRepository(utxodb,idxdb,statedb)
+func mockUtxoRepository() *UtxoRepository {
+	db, _ := ptndb.NewMemDatabase()
+	l := plog.NewTestLog()
+	utxodb := storage.NewUtxoDb(db, l)
+	idxdb := storage.NewIndexDb(db, l)
+	statedb := storage.NewStateDb(db, l)
+	return NewUtxoRepository(utxodb, idxdb, statedb, l)
 }
 
 func TestUpdateUtxo(t *testing.T) {
-	rep:= mockUtxoRepository()
+	rep := mockUtxoRepository()
 	rep.UpdateUtxo(common.Hash{}, &modules.Message{}, uint32(0))
 }
 
 func TestReadUtxos(t *testing.T) {
-	rep:= mockUtxoRepository()
-	utxos, totalAmount :=rep.ReadUtxos( common.Address{}, modules.Asset{})
+	rep := mockUtxoRepository()
+	utxos, totalAmount := rep.ReadUtxos(common.Address{}, modules.Asset{})
 	log.Println(utxos, totalAmount)
 }
 
@@ -81,15 +83,15 @@ func TestSaveAssetInfo(t *testing.T) {
 }
 
 func TestWalletBalance(t *testing.T) {
-	rep:= mockUtxoRepository()
+	rep := mockUtxoRepository()
 	addr := common.Address{}
 	addr.SetString("P1CXn936dYuPKGyweKPZRycGNcwmTnqeDaA")
-	balance := rep.WalletBalance( addr, modules.Asset{})
+	balance := rep.WalletBalance(addr, modules.Asset{})
 	log.Println("Address total =", balance)
 }
 
 func TestGetAccountTokens(t *testing.T) {
-	rep:= mockUtxoRepository()
+	rep := mockUtxoRepository()
 	addr := common.Address{}
 	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkNr")
 	tokens, err := rep.GetAccountTokens(addr)
@@ -102,7 +104,7 @@ func TestGetAccountTokens(t *testing.T) {
 			log.Printf("Token (%s, %v) = %v\n",
 				token.Alias, token.AssetID.AssetId, token.Balance)
 			// test WalletBalance method
-			log.Println(rep.WalletBalance( addr, *token.AssetID))
+			log.Println(rep.WalletBalance(addr, *token.AssetID))
 			// test ReadUtxos method
 			utxos, amount := rep.ReadUtxos(addr, *token.AssetID)
 			log.Printf("Addr(%s) balance=%v\n", addr.String(), amount)

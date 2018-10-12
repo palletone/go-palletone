@@ -101,8 +101,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
-
-	dag, err := dag.NewDag(db)
+	logger:=log.New()
+	dag, err := dag.NewDag(db,logger)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
