@@ -35,7 +35,7 @@ import (
 // GenerateVerifiedUnit, generate unit
 // @author Albert·Gou
 func GenerateUnit(dag dag.IDag, when time.Time, producer common.Address,
-	ks *keystore.KeyStore, txspool *txspool.TxPool) *modules.Unit {
+	ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit {
 	dgp := dag.GetDynGlobalProp()
 
 	// 1. 判断是否满足生产的若干条件

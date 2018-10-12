@@ -47,6 +47,7 @@ var DefaultConfig = Config{
 	// Irreversible Height
 	IrreversibleHeight:           16,
 	WhetherValidateUnitSignature: false,
+	GenesisHash:                  "0xeb5f66d0289ea0af68860fd5a4d1a0b38389f598ae01008433a5ca9949fcf55c",
 }
 
 // global configuration of dag modules
@@ -78,6 +79,8 @@ type Config struct {
 
 	// Validate unit signature, just for debug version
 	WhetherValidateUnitSignature bool
+	// genesis hash‘s hex
+	GenesisHash string
 }
 
 type Sconfig struct {

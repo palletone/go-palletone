@@ -72,18 +72,18 @@ func newTransaction(msg []*Message) *Transaction {
 }
 
 // AddTxIn adds a transaction input to the message.
-func (tx *Transaction) AddMessage(me Message) {
-	tx.TxMessages = append(tx.TxMessages, &me)
+func (tx *Transaction) AddMessage(me *Message) {
+	tx.TxMessages = append(tx.TxMessages, me)
 }
 
 // AddTxIn adds a transaction input to the message.
-func (pld *PaymentPayload) AddTxIn(ti Input) {
-	pld.Input = append(pld.Input, &ti)
+func (pld *PaymentPayload) AddTxIn(ti *Input) {
+	pld.Input = append(pld.Input, ti)
 }
 
 // AddTxOut adds a transaction output to the message.
-func (pld *PaymentPayload) AddTxOut(to Output) {
-	pld.Output = append(pld.Output, &to)
+func (pld *PaymentPayload) AddTxOut(to *Output) {
+	pld.Output = append(pld.Output, to)
 }
 
 func (t *Transaction) SetHash(hash common.Hash) {

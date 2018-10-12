@@ -104,7 +104,7 @@ func (asset *Asset) IsSimilar(similar *Asset) bool {
 type Utxo struct {
 	Amount     uint64         `json:"amount"`    // 数量
 	Asset      *Asset         `json:"Asset"`     // 资产类别
-	PkScript   []byte         `json:"pk_script"` // 要执行的代码段
+	PkScript   []byte         `json:"pk_script"` // 锁定脚本
 	LockTime   uint32         `json:"lock_time"`
 	VoteResult common.Address `json:"vote_info"` //edit by Yiran
 	// flags contains additional info about output such as whether it is spent, and whether is has
@@ -112,6 +112,9 @@ type Utxo struct {
 	Flags txoFlags
 }
 
+func (utxo *Utxo) StrPkScript() string {
+	return fmt.Sprintf("%x", utxo.PkScript)
+}
 func (utxo *Utxo) IsEmpty() bool {
 	if len(utxo.PkScript) != 0 || utxo.Amount > 0 || utxo.LockTime > 0 || utxo.Asset != nil {
 		return false

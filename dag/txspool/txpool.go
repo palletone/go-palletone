@@ -31,8 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/tokenengine"
+
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -140,6 +139,7 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 
 type TxPool struct {
 	config       TxPoolConfig
+	logger       log.ILogger
 	unit         dags
 	txfee        *big.Int
 	txFeed       event.Feed
@@ -167,7 +167,7 @@ type TxPool struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.ChainConfig,
+func NewTxPool(config TxPoolConfig, unit dags, l log.ILogger) *TxPool { // chainconfig *params.ChainConfig,
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 
@@ -175,6 +175,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 	pool := &TxPool{
 		config:      config,
 		unit:        unit,
+		logger:      l,
 		queue:       make(map[common.Hash]*modules.TxPoolTransaction),
 		beats:       make(map[modules.OutPoint]time.Time),
 		pending:     make(map[common.Hash]*modules.TxPoolTransaction),
@@ -500,7 +501,7 @@ func (pool *TxPool) IsTransactionInPool(hash *common.Hash) bool {
 	pool.mu.RUnlock()
 	return inpool
 }
-func TxtoTxpoolTx(txpool *TxPool, tx *modules.Transaction) *modules.TxPoolTransaction {
+func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransaction {
 	txpool_tx := new(modules.TxPoolTransaction)
 	txpool_tx.Tx = tx
 
@@ -568,7 +569,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 
 	utxoview, err := pool.fetchInputUtxos(tx.Tx)
 	if err != nil {
-		log.Error("fetchInputUtxos is failed,", "error", err)
+		pool.logger.Errorf("fetchInputUtxos by txid[%x] failed:%s", tx.Tx.TxHash.String(), err)
 		return false, err
 	}
 	// Check the transaction if it exists in the main chain and is not already fully spent.
@@ -1220,130 +1221,4 @@ func (pool *TxPool) GetSortedTxs() ([]*modules.TxPoolTransaction, common.Storage
 // starts sending event to the given channel.
 func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
-}
-
-//  UtxoViewpoint
-type UtxoViewpoint struct {
-	entries  map[modules.OutPoint]*modules.Utxo
-	bestHash common.Hash
-}
-
-func (view *UtxoViewpoint) BestHash() *common.Hash {
-	return &view.bestHash
-}
-func (view *UtxoViewpoint) SetBestHash(hash *common.Hash) {
-	view.bestHash = *hash
-}
-func (view *UtxoViewpoint) SetEntries(key modules.OutPoint, utxo *modules.Utxo) {
-	if view.entries == nil {
-		view.entries = make(map[modules.OutPoint]*modules.Utxo)
-	}
-
-	view.entries[key] = utxo
-}
-func (view *UtxoViewpoint) LookupUtxo(outpoint modules.OutPoint) *modules.Utxo {
-	if view == nil {
-		return nil
-	}
-	return view.entries[outpoint]
-}
-func (view *UtxoViewpoint) FetchUtxos(db storage.IUtxoDb, outpoints map[modules.OutPoint]struct{}) error {
-	if len(outpoints) == 0 {
-		return nil
-	}
-	neededSet := make(map[modules.OutPoint]struct{})
-	for outpoint := range outpoints {
-		if _, ok := view.entries[outpoint]; ok {
-			continue
-		}
-		neededSet[outpoint] = struct{}{}
-	}
-	return view.fetchUtxosMain(db, neededSet)
-
-}
-func (view *UtxoViewpoint) fetchUtxosMain(db storage.IUtxoDb, outpoints map[modules.OutPoint]struct{}) error {
-	if len(outpoints) == 0 {
-		return nil
-	}
-	for outpoint := range outpoints {
-		utxo, err := db.GetUtxoEntry(&outpoint)
-		if err != nil {
-			return err
-		}
-		view.entries[outpoint] = utxo
-	}
-	return nil
-}
-
-func (view *UtxoViewpoint) addTxOut(outpoint modules.OutPoint, txOut *modules.TxOut, isCoinbase bool) {
-	// Don't add provably unspendable outputs.
-	if tokenengine.IsUnspendable(txOut.PkScript) {
-		return
-	}
-	utxo := view.LookupUtxo(outpoint)
-	if utxo == nil {
-		utxo = new(modules.Utxo)
-		view.entries[outpoint] = utxo
-	}
-	utxo.Amount = uint64(txOut.Value)
-	utxo.PkScript = txOut.PkScript
-	utxo.Asset = txOut.Asset
-
-	// isCoinbase ?
-	// flags --->  标记utxo状态
-}
-
-func (view *UtxoViewpoint) AddTxOut(tx *modules.Transaction, msgIdx, txoutIdx uint32) {
-	if msgIdx >= uint32(len(tx.TxMessages)) {
-		return
-	}
-
-	for i, msgcopy := range tx.TxMessages {
-
-		if (uint32(i) == msgIdx) && (msgcopy.App == modules.APP_PAYMENT) {
-			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				if txoutIdx >= uint32(len(msg.Output)) {
-					return
-				}
-				preout := modules.OutPoint{TxHash: tx.Hash(), MessageIndex: msgIdx, OutIndex: txoutIdx}
-				output := msg.Output[txoutIdx]
-				txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: output.Asset}
-				view.addTxOut(preout, txout, false)
-			}
-		}
-
-	}
-}
-
-func (view *UtxoViewpoint) AddTxOuts(tx *modules.Transaction) {
-	preout := modules.OutPoint{TxHash: tx.Hash()}
-	for i, msgcopy := range tx.TxMessages {
-		if msgcopy.App == modules.APP_PAYMENT {
-			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				msgIdx := uint32(i)
-				preout.MessageIndex = msgIdx
-				for j, output := range msg.Output {
-					txoutIdx := uint32(j)
-					preout.OutIndex = txoutIdx
-					txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: output.Asset}
-					view.addTxOut(preout, txout, false)
-				}
-			}
-		}
-
-	}
-}
-
-func (view *UtxoViewpoint) RemoveUtxo(outpoint modules.OutPoint) {
-	delete(view.entries, outpoint)
-}
-
-func (view *UtxoViewpoint) Entries() map[modules.OutPoint]*modules.Utxo {
-	return view.entries
-}
-
-func NewUtxoViewpoint() *UtxoViewpoint {
-	return &UtxoViewpoint{
-		entries: make(map[modules.OutPoint]*modules.Utxo),
-	}
 }

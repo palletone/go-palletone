@@ -104,7 +104,6 @@ func TestDecodeRawTransaction(t *testing.T) {
 	}
 }*/
 
-
 func TestSignTransaction(t *testing.T) {
 	//from TestRawTransactionGen A --> B C
 	//参数格式错误
@@ -138,14 +137,14 @@ func TestSignTransaction(t *testing.T) {
 		return
 	}
 
-    //transaction inputs
+	//transaction inputs
 	var rawinputs []ptnjson.RawTxInput
 	for _, inputOne := range signTransactionParams.Inputs {
-		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex,inputOne.ScriptPubKey,inputOne.RedeemScript}
+		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex, inputOne.ScriptPubKey, inputOne.RedeemScript}
 		rawinputs = append(rawinputs, input)
 	}
 	if len(rawinputs) == 0 {
-		return 
+		return
 	}
 	var keys []string
 	for _, key := range signTransactionParams.PrivKeys {
@@ -156,11 +155,10 @@ func TestSignTransaction(t *testing.T) {
 		keys = append(keys, key)
 	}
 	if len(keys) == 0 {
-		return 
+		return
 	}
 
-
-	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx,&rawinputs,&keys, ptnjson.String("ALL")) 
+	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &rawinputs, &keys, ptnjson.String("ALL"))
 
 	//pk, _ := crypto.FromWIF("L3XNk86G6LXpFr9y7JSYDztgtmcC7xdcVoUkiF8dNCPRroDSyBHe")
 	//addr := crypto.PubkeyToAddress(&pk.PublicKey)

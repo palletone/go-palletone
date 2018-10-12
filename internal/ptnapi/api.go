@@ -1309,7 +1309,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		}
 		prevOut := modules.NewOutPoint(txHash, input.Vout, input.MessageIndex)
 		txInput := modules.NewTxIn(prevOut, []byte{})
-		pload.AddTxIn(*txInput)
+		pload.AddTxIn(txInput)
 	}
 	// Add all transaction outputs to the transaction after performing
 	//	// some validity checks.
@@ -1351,7 +1351,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 			return "", internalRPCError(err.Error(), context)
 		}
 		txOut := modules.NewTxOut(uint64(dao), pkScript, &modules.Asset{})
-		pload.AddTxOut(*txOut)
+		pload.AddTxOut(txOut)
 	}
 	//	// Set the Locktime, if given.
 	if c.LockTime != nil {
@@ -1375,11 +1375,11 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 }
 
 //create raw transction
-func (s *PublicTransactionPoolAPI) CreateRawTransaction( ctx context.Context,/*s *rpcServer*/ params string) (string, error) {
-	var rawTransactionGenParams RawTransactionGenParams
+func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
+	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
-		return "",err
+		return "", err
 	}
 	//transaction inputs
 	var inputs []ptnjson.TransactionInput
@@ -1388,7 +1388,7 @@ func (s *PublicTransactionPoolAPI) CreateRawTransaction( ctx context.Context,/*s
 		inputs = append(inputs, input)
 	}
 	if len(inputs) == 0 {
-		return "",nil
+		return "", nil
 	}
 	//realNet := &chaincfg.MainNetParams
 	amounts := map[string]float64{}
@@ -1399,14 +1399,15 @@ func (s *PublicTransactionPoolAPI) CreateRawTransaction( ctx context.Context,/*s
 		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
 	}
 	if len(amounts) == 0 {
-		return "",nil
+		return "", nil
 	}
 
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
 	result, _ := CreateRawTransaction(arg)
 	fmt.Println(result)
-	return result,nil
+	return result, nil
 }
+
 //sign rawtranscation
 func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	cmd := icmd.(*ptnjson.SignRawTransactionCmd)
@@ -1522,20 +1523,20 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 
 //sign rawtranscation
 //create raw transction
-func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context,params string) (interface{}, error) {
+func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string) (interface{}, error) {
 	var signTransactionParams SignTransactionParams
 	err := json.Unmarshal([]byte(params), &signTransactionParams)
 	if err != nil {
-		return "",err
+		return "", err
 	}
 	//transaction inputs
 	var rawinputs []ptnjson.RawTxInput
 	for _, inputOne := range signTransactionParams.Inputs {
-		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex,inputOne.ScriptPubKey,inputOne.RedeemScript}
+		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex, inputOne.ScriptPubKey, inputOne.RedeemScript}
 		rawinputs = append(rawinputs, input)
 	}
 	if len(rawinputs) == 0 {
-		return "",nil 
+		return "", nil
 	}
 	var keys []string
 	for _, key := range signTransactionParams.PrivKeys {
@@ -1546,14 +1547,15 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context,params
 		keys = append(keys, key)
 	}
 	if len(keys) == 0 {
-		return "",nil 
+		return "", nil
 	}
 
-	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx,&rawinputs,&keys, ptnjson.String("ALL")) 
+	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &rawinputs, &keys, ptnjson.String("ALL"))
 	result, _ := SignRawTransaction(newsign)
 	fmt.Println(result)
-	return result,nil
+	return result, nil
 }
+
 // SendTransaction creates a transaction for the given argument, sign it and submit it to the
 // transaction pool.
 func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args SendTxArgs) (common.Hash, error) {

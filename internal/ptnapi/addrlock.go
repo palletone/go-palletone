@@ -17,11 +17,11 @@
 package ptnapi
 
 import (
-	"sync"
+	"encoding/hex"
 	"fmt"
-        "encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/ptnjson"
+	"sync"
 )
 
 type AddrLocker struct {
@@ -68,79 +68,71 @@ func internalRPCError(errStr, context string) *ptnjson.RPCError {
 	return ptnjson.NewRPCError(ptnjson.ErrRPCInternal.Code, errStr)
 }
 func decodeHexStr(hexStr string) ([]byte, error) {
-        if len(hexStr)%2 != 0 {
-                hexStr = "0" + hexStr
-        }
-        decoded, err := hex.DecodeString(hexStr)
-        if err != nil {
-                return nil, &ptnjson.RPCError{
-                        Code:    ptnjson.ErrRPCDecodeHexString,
-                        Message: "Hex string decode failed: " + err.Error(),
-                }
-        }
-        return decoded, nil
+	if len(hexStr)%2 != 0 {
+		hexStr = "0" + hexStr
+	}
+	decoded, err := hex.DecodeString(hexStr)
+	if err != nil {
+		return nil, &ptnjson.RPCError{
+			Code:    ptnjson.ErrRPCDecodeHexString,
+			Message: "Hex string decode failed: " + err.Error(),
+		}
+	}
+	return decoded, nil
 }
+
 type response struct {
-        result []byte
-        err    error
+	result []byte
+	err    error
 }
 type FutureGetTxOutResult chan *response
 type SignatureError struct {
-        InputIndex uint32
-        Error      error
-}
-const (
-        SigHashOld          uint32 = 0x0
-        SigHashAll          uint32 = 0x1
-        SigHashNone         uint32 = 0x2
-        SigHashSingle       uint32 = 0x3
-        SigHashAnyOneCanPay uint32 = 0x80
-        // sigHashMask defines the number of bits of the hash type which is used
-        // to identify which outputs are signed.
-        sigHashMask = 0x1f
-)
-type (
-        // DeserializationError describes a failed deserializaion due to bad
-        // user input.  It corresponds to btcjson.ErrRPCDeserialization.
-        DeserializationError struct {
-                error
-        }
-        // InvalidParameterError describes an invalid parameter passed by
-        // the user.  It corresponds to btcjson.ErrRPCInvalidParameter.
-        InvalidParameterError struct {
-                error
-        }
-        // ParseError describes a failed parse due to bad user input.  It
-        // corresponds to btcjson.ErrRPCParse.
-        ParseError struct {
-                error
-        }
-)
-type RawTransactionGenParams struct {
-        Inputs []struct {
-                Txid         string `json:"txid"`
-                Vout         uint32 `json:"vout"`
-                MessageIndex uint32 `json:"messageindex"`
-        } `json:"inputs"`
-        Outputs []struct {
-                Address string  `json:"address"`
-                Amount  float64 `json:"amount"`
-        } `json:"outputs"`
-        Locktime int64 `json:"locktime"`
+	InputIndex uint32
+	Error      error
 }
 
+const (
+	SigHashOld          uint32 = 0x0
+	SigHashAll          uint32 = 0x1
+	SigHashNone         uint32 = 0x2
+	SigHashSingle       uint32 = 0x3
+	SigHashAnyOneCanPay uint32 = 0x80
+	// sigHashMask defines the number of bits of the hash type which is used
+	// to identify which outputs are signed.
+	sigHashMask = 0x1f
+)
+
+type (
+	// DeserializationError describes a failed deserializaion due to bad
+	// user input.  It corresponds to btcjson.ErrRPCDeserialization.
+	DeserializationError struct {
+		error
+	}
+	// InvalidParameterError describes an invalid parameter passed by
+	// the user.  It corresponds to btcjson.ErrRPCInvalidParameter.
+	InvalidParameterError struct {
+		error
+	}
+	// ParseError describes a failed parse due to bad user input.  It
+	// corresponds to btcjson.ErrRPCParse.
+	ParseError struct {
+		error
+	}
+)
+
 type SignTransactionParams struct {
-        RawTx    string `json:"rawtx"`
-        Inputs   []struct{
-                Txid         string `json:"txid"`
-                Vout         uint32 `json:"vout"`
-                MessageIndex uint32 `json:"messageindex"`
-                ScriptPubKey string `json:"scriptPubKey"`
-                RedeemScript string `json:"redeemScript"`
-        } `json:"rawtxinput"`
-        PrivKeys []string   `json:"privkeys"`
-        Flags    string `jsonrpcdefault:"\"ALL\""`
+	RawTx  string `json:"rawtx"`
+	Inputs []struct {
+		Txid         string `json:"txid"`
+		Vout         uint32 `json:"vout"`
+		MessageIndex uint32 `json:"messageindex"`
+		ScriptPubKey string `json:"scriptPubKey"`
+		RedeemScript string `json:"redeemScript"`
+	} `json:"rawtxinput"`
+	PrivKeys []string `json:"privkeys"`
+	Flags    string   `jsonrpcdefault:"\"ALL\""`
 }
+
 //type SignTransactionResult struct {
 //        TransactionHex string `json:"transactionhex"`
 //        Complete       bool   `json:"complete"`

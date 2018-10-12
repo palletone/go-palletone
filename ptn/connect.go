@@ -22,11 +22,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 )
 
-const (
-	ConnectBoot       = 1
-	ConnectTransition = 2
-)
-
 func (pm *ProtocolManager) mediatorConnect() {
 	if pm.isTest {
 		return
@@ -46,8 +41,19 @@ func (pm *ProtocolManager) mediatorConnect() {
 	}
 }
 
-func (pm *ProtocolManager) cancelOldMediatorConnect() {
+//1.is not mediator,so save only two mediator connects,and disconnect others connects.
+//2.also mediator,move peersTransition sockets to peers and delete the old mediator
+func (pm *ProtocolManager) TransitionConvert() {
 	//TODO use RemovePeer
+}
+
+//important:if not new mediator Deprecated
+//1.new mediators each other connected.Add new connections to peersTransition.
+// if new mediator existing in peers,copy peers to peersTransition
+//2.modify send vss request whith peersTransition sockets
+//3.pm.cancelOldMediatorConnect()
+func (pm *ProtocolManager) TransitionConnect() {
+
 }
 
 /*
