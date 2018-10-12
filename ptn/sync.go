@@ -198,22 +198,18 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 		//			return
 		//		}
 	}
-	//fmt.Println("mode==", mode)
+
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
-	//TODO xiaozhi
-	//fmt.Println("index=", index)
-	//fmt.Println("pindex=", pindex)
 	if err := pm.downloader.Synchronise(peer.id, pHead, pindex, mode, assetId); err != nil {
-		//log.Info("ptn sync downloader.", "Synchronise err:", err)
+		log.Info("ptn sync downloader.", "Synchronise err:", err)
 		return
 	}
-	//if err := pm.downloader.Synchronise(peer.id, pHead, index, mode, assetId); err != nil {
-	//	//log.Info("ptn sync downloader.", "Synchronise err:", err)
-	//	return
-	//}
+
 	if atomic.LoadUint32(&pm.fastSync) == 1 {
-		log.Info("Fast sync complete, auto disabling")
+		log.Info("Fast sync complete")
 		atomic.StoreUint32(&pm.fastSync, 0)
+		//TODO notice mediator execute vss
+		//
 	}
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
 
@@ -223,61 +219,3 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	}
 
 }
-
-/*
-// synchronise tries to sync up our local block chain with a remote peer.
-func (pm *ProtocolManager) synchronise(peer *peer) {
-	// Short circuit if no peers are available
-	if peer == nil {
-		return
-	}
-	// Make sure the peer's TD is higher than our own
-	currentBlock := pm.blockchain.CurrentBlock()
-	td := pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())
-
-	pHead, pTd := peer.Head()
-	if pTd.Cmp(td) <= 0 {
-		return
-	}
-	// Otherwise try to sync with the downloader
-	mode := downloader.FullSync
-	if atomic.LoadUint32(&pm.fastSync) == 1 {
-		// Fast sync was explicitly requested, and explicitly granted
-		mode = downloader.FastSync
-	} else if currentBlock.NumberU64() == 0 && pm.blockchain.CurrentFastBlock().NumberU64() > 0 {
-		// The database seems empty as the current block is the genesis. Yet the fast
-		// block is ahead, so fast sync was enabled for this node at a certain point.
-		// The only scenario where this can happen is if the user manually (or via a
-		// bad block) rolled back a fast sync node below the sync point. In this case
-		// however it's safe to reenable fast sync.
-		atomic.StoreUint32(&pm.fastSync, 1)
-		mode = downloader.FastSync
-	}
-
-	if mode == downloader.FastSync {
-		// Make sure the peer's total difficulty we are synchronizing is higher.
-		if pm.blockchain.GetTdByHash(pm.blockchain.CurrentFastBlock().Hash()).Cmp(pTd) >= 0 {
-			return
-		}
-	}
-
-	// Run the sync cycle, and disable fast sync if we've went past the pivot block
-	if err := pm.downloader.Synchronise(peer.id, pHead, pTd, mode); err != nil {
-		return
-	}
-	if atomic.LoadUint32(&pm.fastSync) == 1 {
-		log.Debug("Fast sync complete, auto disabling")
-		atomic.StoreUint32(&pm.fastSync, 0)
-	}
-	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
-	if head := pm.blockchain.CurrentBlock(); head.NumberU64() > 0 {
-		// We've completed a sync cycle, notify all peers of new state. This path is
-		// essential in star-topology networks where a gateway node needs to notify
-		// all its out-of-date peers of the availability of a new block. This failure
-		// scenario will most often crop up in private and hackathon networks with
-		// degenerate connectivity, but it should be healthy for the mainnet too to
-		// more reliably update peers or the local TD state.
-		go pm.BroadcastBlock(head, false)
-	}
-}
-*/
