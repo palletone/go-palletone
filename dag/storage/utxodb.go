@@ -158,6 +158,7 @@ func (utxodb *UtxoDb) SaveUtxoSnapshot(index *modules.ChainIndex) error {
 func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	utxo := new(modules.Utxo)
 	key := outpoint.ToKey()
+	utxodb.logger.Debugf("Query utxo by outpoint:%s", outpoint.String())
 	data, err := utxodb.db.Get(key)
 	if err != nil {
 		log.Error("get utxo entry failed,================================== ", "error", err)
