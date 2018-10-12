@@ -22,7 +22,12 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 )
 
-var TimeFormatString = "2006/01/02 15:04:05"
+var (
+	TimeFormatString = "2006/01/02 15:04:05"
+
+	PTNCOIN = IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'}
+	BTCCOIN = IDType16{'b', 't', 'c', 'c', 'o', 'i', 'n'}
+)
 
 // type 	Hash 		[]byte
 const (
@@ -30,31 +35,16 @@ const (
 )
 
 type IDType16 [ID_LENGTH]byte
-
-var (
-	PTNCOIN = IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'}
-	BTCCOIN = IDType16{'b', 't', 'c', 'o', 'i', 'n'}
-)
+type TokenTypes struct {
+	Tokens []IDType16
+}
 
 func ZeroIdType16() IDType16 {
 	return IDType16{}
 }
+
 func (it *IDType16) String() string {
 	return hexutil.Encode(it.Bytes()[:])
-	//var b []byte
-	//length := len(it)
-	//for _, v := range it {
-	//	b = append(b, v)
-	//}
-	//count := 0
-	//for i := length - 1; i >= 0; i-- {
-	//	if b[i] == ' ' || b[i] == 0 {
-	//		count++
-	//	} else {
-	//		break
-	//	}
-	//}
-	//return util.ToString(b[:length-count])
 }
 
 func (it *IDType16) Bytes() []byte {

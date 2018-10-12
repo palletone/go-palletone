@@ -440,9 +440,9 @@ func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.
 			irreKey = k
 		}
 	}
-	if strings.Compare(irreKey, "") > 0 {
-		rlpUnitHash := data[irreKey]
-		log.Info("=================================== ", "irreKey", irreKey, "hash", rlpUnitHash)
+	rlpUnitHash := data[irreKey]
+	log.Info("=================================== ", "irreKey", irreKey, "hash", rlpUnitHash)
+	if len(rlpUnitHash) > 0 {
 		var hex string
 		err := rlp.DecodeBytes(rlpUnitHash, &hex)
 		if err != nil {
@@ -452,7 +452,7 @@ func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.
 		unitHash := common.HexToHash(hex)
 		return dagdb.GetUnit(unitHash)
 	}
-	return nil, errors.New("Not found")
+	return nil, errors.New(fmt.Sprintf("the irrekey :%s ,is not found unit's hash.", irreKey))
 }
 
 func (dagdb *DagDb) GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error) {

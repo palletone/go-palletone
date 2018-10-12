@@ -46,8 +46,8 @@ import (
 
 type Dag struct {
 	Cache         *freecache.Cache
-	currentUnit   atomic.Value
 	Db            ptndb.Database
+	currentUnit   atomic.Value
 	unitRep       dagcommon.IUnitRepository
 	dagdb         storage.IDagDb
 	utxodb        storage.IUtxoDb
@@ -662,8 +662,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	return nil
 }
 
-
-//
+// ValidateUnitGroupSig
 func (d *Dag) ValidateUnitGroupSig(hash common.Hash) (bool, error) {
 	unit, err := d.GetUnit(hash)
 	if err != nil {

@@ -45,8 +45,8 @@ import (
 type IUnitRepository interface {
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
 	GenesisHeight() modules.ChainIndex
-	SaveUnit(unit modules.Unit, isGenesis bool) error
-	CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
+	SaveUnit(unit *modules.Unit, isGenesis bool) error
+	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 }
 type UnitRepository struct {
