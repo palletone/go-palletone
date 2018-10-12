@@ -624,9 +624,10 @@ func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keys
 	return d.unitRep.CreateUnit(mAddr, txpool, ks, t)
 }
 
-//func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
-//	return d.unitRep.SaveUnit(unit, isGenesis)
-//}
+//modified by Albert·Gou
+func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit) error {
+	return d.unitRep.SaveUnit(unit, true)
+}
 
 func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	// step1. check exists

@@ -173,7 +173,7 @@ func initGenesis(ctx *cli.Context) error {
 		return err
 	}
 	//将Unit存入数据库中
-	err = dag.SaveUnit(unit, true)
+	err = dag.SaveUnit4GenesisInit(unit)
 	if err != nil {
 		fmt.Println("Save Genesis unit to db error:", err)
 		return err

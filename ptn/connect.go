@@ -22,11 +22,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 )
 
-const (
-	ConnectBoot       = 1
-	ConnectTransition = 2
-)
-
 func (pm *ProtocolManager) mediatorConnect() {
 	if pm.isTest {
 		return
@@ -48,6 +43,10 @@ func (pm *ProtocolManager) mediatorConnect() {
 
 func (pm *ProtocolManager) cancelOldMediatorConnect() {
 	//TODO use RemovePeer
+}
+
+func (pm *ProtocolManager) transitionConnect() {
+
 }
 
 /*
