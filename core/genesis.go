@@ -48,7 +48,7 @@ type Genesis struct {
 	ImmutableParameters       ImmutableChainParameters `json:"immutableChainParameters"`
 	InitialTimestamp          int64                    `json:"initialTimestamp"`
 	InitialActiveMediators    uint16                   `json:"initialActiveMediators"`
-	InitialMediatorCandidates []MediatorInfo           `json:"initialMediatorCandidates"`
+	InitialMediatorCandidates []*MediatorInfo          `json:"initialMediatorCandidates"`
 	SystemConfig              SystemConfig             `json:"systemConfig"`
 }
 
@@ -57,9 +57,10 @@ func (g *Genesis) GetTokenAmount() uint64 {
 }
 
 type MediatorInfo struct {
-	Address,
-	InitPartPub,
-	Node string
+	Address     string
+	InitPartPub string
+	Node        string
+	//WebsiteUrl  string
 }
 
 // author Albert·Gou

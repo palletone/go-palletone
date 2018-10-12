@@ -128,8 +128,8 @@ func NewContractDeployPayload(templateid []byte, contractid []byte, name string,
 }
 func NewVotePayload(Address common.Address, ExpiredTerm uint16) *VotePayload {
 	return &VotePayload{
-		Address:Address,
-		ExpiredTerm:ExpiredTerm,
+		Address:     Address,
+		ExpiredTerm: ExpiredTerm,
 	}
 }
 
@@ -381,13 +381,15 @@ type Transaction struct {
 	TxHash     common.Hash `json:"txhash"`
 	TxMessages []*Message  `json:"messages"`
 }
+
 type OutPoint struct {
 	TxHash       common.Hash // reference Utxo struct key field
 	MessageIndex uint32      // message index in transaction
 	OutIndex     uint32
 }
-func (outpoint *OutPoint) String() string{
-	return fmt.Sprintf("Outpoint[TxId:{%#x},MsgIdx:{%d},OutIdx:{%d}]",outpoint.TxHash,outpoint.MessageIndex,outpoint.OutIndex)
+
+func (outpoint *OutPoint) String() string {
+	return fmt.Sprintf("Outpoint[TxId:{%#x},MsgIdx:{%d},OutIdx:{%d}]", outpoint.TxHash, outpoint.MessageIndex, outpoint.OutIndex)
 }
 
 func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {

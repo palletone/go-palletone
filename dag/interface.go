@@ -97,6 +97,8 @@ type IDag interface {
 	GetMediatorSchl() *modules.MediatorSchedule
 	GetActiveMediatorCount() int
 	GetActiveMediatorNode(index int) *discover.Node
+	//获得所有Mediator候选人列表
+	GetCandidateMediators() []*core.MediatorInfo
 
 	UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit)
 	StoreGlobalProp(gp *modules.GlobalProperty) error
