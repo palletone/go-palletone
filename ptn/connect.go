@@ -45,7 +45,7 @@ func (pm *ProtocolManager) mediatorConnect() {
 	ps := pm.peers.GetPeers()
 	for _, peer := range peers {
 		if peer.ID.String() != pm.srvr.NodeInfo().ID && !pm.isexist(peer.ID.String(), ps) {
-			log.Debug("========mediator AddPeer==========", "peer.ID.String():", peer.ID.String())
+			//log.Debug("========mediator AddPeer==========", "peer.ID.String():", peer.ID.String())
 			pm.srvr.AddPeer(peer)
 		}
 	}
