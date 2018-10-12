@@ -607,7 +607,7 @@ func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return d.dagdb.GetAddrOutput(addr)
 }
 
-func (d *Dag) GetAddrUtxos(addr string) ([]modules.Utxo, error) {
+func (d *Dag) GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
 	return d.utxodb.GetAddrUtxos(addr)
 }
 

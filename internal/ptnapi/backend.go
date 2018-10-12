@@ -106,7 +106,7 @@ type Backend interface {
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	//------- Get addr utxo start ------//
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
-	GetAddrUtxos(addr string) ([]modules.Utxo, error)
+	GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	//------- Get addr utxo end  ------//
 	GetAddrTransactions(addr string) (modules.Transactions, error)
