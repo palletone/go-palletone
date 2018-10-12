@@ -623,9 +623,43 @@ func (d *Dag) GetContractState(id string, field string) (*modules.StateVersion, 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
 	return d.unitRep.CreateUnit(mAddr, txpool, ks, t)
 }
+
+//func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
+//	return d.unitRep.SaveUnit(unit, isGenesis)
+//}
+
 func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
-	return d.unitRep.SaveUnit(unit, isGenesis)
+	// step1. check exists
+	if d.Memdag.Exists(unit.UnitHash) || d.Exists(unit.UnitHash) {
+		return fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash.String())
+	}
+	// step2. validate unit
+	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
+	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+		return fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
+	}
+	if unitState == modules.UNIT_STATE_VALIDATED {
+		// step3.1. pass and with group signature, put into leveldb
+		if err := d.unitRep.SaveUnit(unit, false); err != nil {
+			return fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
+		}
+		// step3.2. if pass and with group signature, prune fork data
+		if err := d.Memdag.Prune(unit.UnitHeader.Number.AssetID.String(), unit.UnitHash); err != nil {
+			return fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
+		}
+	} else {
+		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
+		if err := d.Memdag.Save(unit); err != nil {
+			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
+		}
+	}
+	// step5. check if it is need to switch
+	if err := d.Memdag.SwitchMainChain(); err != nil {
+		return fmt.Errorf("SaveDag, save error when switch chain: %s", err.Error())
+	}
+	return nil
 }
+
 func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error) {
 	// get current unit
 	currentUnit := d.CurrentUnit()
