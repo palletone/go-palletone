@@ -28,10 +28,10 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/dag"
+
 	asset2 "github.com/palletone/go-palletone/dag/asset"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
-	"github.com/palletone/go-palletone/dag/errors"
+
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 )
@@ -52,19 +52,19 @@ const deFaultNode = "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b
 // error is a *configure.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-func SetupGenesisUnit(dag dag.IDag, genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) (*modules.Unit, error) {
+func SetupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore, account accounts.Account) (*modules.Unit, error) {
 
 	//var unitRep dagCommon.IUnitRepository
 	//unitRep = dagCommon.NewUnitRepository4Db(db)
-	genesisUnit, err := dag.GetGenesisUnit(0)
-	if err != nil && err.Error() != errors.ErrNotFound.Error() {
-		log.Info("get genesis error", "error", err)
-		return nil, err
-	}
+	//genesisUnit, err := dag.GetGenesisUnit(0)
+	//if err != nil && err.Error() != errors.ErrNotFound.Error() {
+	//	log.Info("get genesis error", "error", err)
+	//	return nil, err
+	//}
 	// check genesis unit existing
-	if genesisUnit != nil {
-		return nil, fmt.Errorf("Genesis unit(%s) has been created.", genesisUnit.UnitHash.String())
-	}
+	//if genesisUnit != nil {
+	//	return nil, fmt.Errorf("Genesis unit(%s) has been created.", genesisUnit.UnitHash.String())
+	//}
 	unit, err := setupGenesisUnit(genesis, ks)
 	if err != nil {
 		return unit, err
@@ -77,10 +77,10 @@ func SetupGenesisUnit(dag dag.IDag, genesis *core.Genesis, ks *keystore.KeyStore
 	}
 
 	// to save unit in db
-	if err := CommitDB(dag, unit, true); err != nil {
-		log.Error("Commit genesis unit to db:", "error", err.Error())
-		return unit, err
-	}
+	//if err := CommitDB(dag, unit, true); err != nil {
+	//	log.Error("Commit genesis unit to db:", "error", err.Error())
+	//	return unit, err
+	//}
 	return unit, nil
 }
 
@@ -176,16 +176,16 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	return txs, asset
 }
 
-func CommitDB(dag dag.IDag, unit *modules.Unit, isGenesis bool) error {
-	// save genesis unit to leveldb
-	if err := dag.SaveUnit(*unit, isGenesis); err != nil {
-		return err
-	} else {
-		log.Info("Save genesis unit success.")
-	}
-
-	return nil
-}
+//func CommitDB(dag dag.IDag, unit *modules.Unit, isGenesis bool) error {
+//	// save genesis unit to leveldb
+//	if err := dag.SaveUnit(unit, isGenesis); err != nil {
+//		return err
+//	} else {
+//		log.Info("Save genesis unit success.")
+//	}
+//
+//	return nil
+//}
 
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
 func DefaultGenesisBlock() *core.Genesis {
@@ -235,10 +235,10 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 	}
 }
 
-func InitialMediatorCandidates(len int, address string) []core.MediatorInfo {
-	initialMediator := make([]core.MediatorInfo, len)
+func InitialMediatorCandidates(len int, address string) []*core.MediatorInfo {
+	initialMediator := make([]*core.MediatorInfo, len)
 	for i := 0; i < len; i++ {
-		initialMediator[i] = core.MediatorInfo{
+		initialMediator[i] = &core.MediatorInfo{
 			Address:     address,
 			InitPartPub: mp.DefaultInitPartPub,
 			Node:        deFaultNode,

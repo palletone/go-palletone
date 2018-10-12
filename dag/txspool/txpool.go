@@ -140,6 +140,7 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 
 type TxPool struct {
 	config       TxPoolConfig
+	logger       log.ILogger
 	unit         dags
 	txfee        *big.Int
 	txFeed       event.Feed
@@ -167,7 +168,7 @@ type TxPool struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.ChainConfig,
+func NewTxPool(config TxPoolConfig, unit dags, l log.ILogger) *TxPool { // chainconfig *params.ChainConfig,
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 
@@ -175,6 +176,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 	pool := &TxPool{
 		config:      config,
 		unit:        unit,
+		logger:      l,
 		queue:       make(map[common.Hash]*modules.TxPoolTransaction),
 		beats:       make(map[modules.OutPoint]time.Time),
 		pending:     make(map[common.Hash]*modules.TxPoolTransaction),
@@ -500,7 +502,7 @@ func (pool *TxPool) IsTransactionInPool(hash *common.Hash) bool {
 	pool.mu.RUnlock()
 	return inpool
 }
-func TxtoTxpoolTx(txpool *TxPool, tx *modules.Transaction) *modules.TxPoolTransaction {
+func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransaction {
 	txpool_tx := new(modules.TxPoolTransaction)
 	txpool_tx.Tx = tx
 
@@ -568,7 +570,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 
 	utxoview, err := pool.fetchInputUtxos(tx.Tx)
 	if err != nil {
-		log.Error("fetchInputUtxos is failed,", "error", err)
+		pool.logger.Errorf("fetchInputUtxos by txid[%x] failed:%s", tx.Tx.TxHash.String(), err)
 		return false, err
 	}
 	// Check the transaction if it exists in the main chain and is not already fully spent.

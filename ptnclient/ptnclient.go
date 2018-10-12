@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/ptnjson"
 	"log"
 )
 
@@ -412,6 +413,16 @@ func (ec *Client) EstimateGas(ctx context.Context, msg palletone.CallMsg) (uint6
 	return uint64(hex), nil
 }
 
+func (ec *Client) CreateRawTransaction(ctx context.Context, params string) (string, error) {
+	var result string 
+	err := ec.c.CallContext(ctx, &result, "ptn_createRawTransaction", params)
+	return result, err
+}
+func (ec *Client) SignRawTransaction(ctx context.Context, params string) (*ptnjson.SignRawTransactionResult, error) {
+	var result *ptnjson.SignRawTransactionResult 
+	err := ec.c.CallContext(ctx, &result, "ptn_signRawTransaction", params)
+	return result, err
+}
 // SendTransaction injects a signed transaction into the pending pool for execution.
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the

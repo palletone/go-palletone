@@ -30,22 +30,25 @@ import (
 // fork switch-over blocks through the chain configuration.
 type SystemConfig struct {
 	DepositRate float64 `json:"depositRate"`
+	//基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
+	FoundationAddress string `json:"foundationAddress"`
 }
 
 type Genesis struct {
-	Version                   string                   `json:"version"`
-	Alias                     string                   `json:"alias"`
-	TokenAmount               uint64                   `json:"tokenAmount"`
-	TokenDecimal              uint32                   `json:"tokenDecimal"`
-	DecimalUnit               string                   `json:"decimal_unit"`
-	ChainID                   uint64                   `json:"chainId"`
-	TokenHolder               string                   `json:"tokenHolder"`
+	Version      string `json:"version"`
+	Alias        string `json:"alias"`
+	TokenAmount  uint64 `json:"tokenAmount"`
+	TokenDecimal uint32 `json:"tokenDecimal"`
+	DecimalUnit  string `json:"decimal_unit"`
+	ChainID      uint64 `json:"chainId"`
+	TokenHolder  string `json:"tokenHolder"`
+
 	Text                      string                   `json:"text"`
 	InitialParameters         ChainParameters          `json:"initialParameters"`
 	ImmutableParameters       ImmutableChainParameters `json:"immutableChainParameters"`
 	InitialTimestamp          int64                    `json:"initialTimestamp"`
 	InitialActiveMediators    uint16                   `json:"initialActiveMediators"`
-	InitialMediatorCandidates []MediatorInfo           `json:"initialMediatorCandidates"`
+	InitialMediatorCandidates []*MediatorInfo          `json:"initialMediatorCandidates"`
 	SystemConfig              SystemConfig             `json:"systemConfig"`
 }
 
@@ -54,9 +57,10 @@ func (g *Genesis) GetTokenAmount() uint64 {
 }
 
 type MediatorInfo struct {
-	Address,
-	InitPartPub,
-	Node string
+	Address     string
+	InitPartPub string
+	Node        string
+	//WebsiteUrl  string
 }
 
 // author Albert·Gou
@@ -79,10 +83,21 @@ func PointToStr(pub kyber.Point) string {
 	return base58.Encode(pubB)
 }
 
-func MediatorToInfo(m *Mediator) MediatorInfo {
-	return MediatorInfo{
-		Address:     m.Address.Str(),
-		InitPartPub: PointToStr(m.InitPartPub),
-		Node:        m.Node.String(),
+func (medInfo *MediatorInfo) InfoToMediator() Mediator {
+	// 1. 解析 mediator 账户地址
+	add := StrToMedAdd(medInfo.Address)
+
+	// 2. 解析 mediator 的 DKS 初始公钥
+	pub := StrToPoint(medInfo.InitPartPub)
+
+	// 3. 解析mediator 的 node 节点信息
+	node := StrToMedNode(medInfo.Node)
+
+	md := Mediator{
+		Address:     add,
+		InitPartPub: pub,
+		Node:        node,
 	}
+
+	return md
 }

@@ -83,21 +83,10 @@ func StrToPoint(pubStr string) kyber.Point {
 	return pub
 }
 
-func InfoToMediator(medInfo *MediatorInfo) Mediator {
-	// 1. 解析 mediator 账户地址
-	add := StrToMedAdd(medInfo.Address)
-
-	// 2. 解析 mediator 的 DKS 初始公钥
-	pub := StrToPoint(medInfo.InitPartPub)
-
-	// 3. 解析mediator 的 node 节点信息
-	node := StrToMedNode(medInfo.Node)
-
-	md := Mediator{
-		Address:     add,
-		InitPartPub: pub,
-		Node:        node,
+func (m *Mediator) MediatorToInfo() MediatorInfo {
+	return MediatorInfo{
+		Address:     m.Address.Str(),
+		InitPartPub: PointToStr(m.InitPartPub),
+		Node:        m.Node.String(),
 	}
-
-	return md
 }

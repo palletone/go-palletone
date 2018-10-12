@@ -34,8 +34,9 @@ import (
 )
 
 type IDag interface {
+	IsEmpty() bool
 	CurrentUnit() *modules.Unit
-	SaveDag(unit modules.Unit, isGenesis bool) (int, error)
+	//SaveDag(unit *modules.Unit, isGenesis bool) (int, error)
 	GetActiveMediatorNodes() map[string]*discover.Node
 	VerifyHeader(header *modules.Header, seal bool) error
 	GetCurrentUnit(assetId modules.IDType16) *modules.Unit
@@ -55,11 +56,11 @@ type IDag interface {
 	InsertHeaderDag([]*modules.Header, int) (int, error)
 	HasUnit(hash common.Hash) bool
 	Exists(hash common.Hash) bool
-	SaveUnit(unit modules.Unit, isGenesis bool) error
+	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	//All leaf nodes for dag downloader
 	GetAllLeafNodes() ([]*modules.Header, error)
 	GetUnit(common.Hash) (*modules.Unit, error)
-	CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
+	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 
 	// validate group signature by hash
 	ValidateUnitGroupSig(hash common.Hash) (bool, error)
@@ -78,7 +79,7 @@ type IDag interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
-	GetAddrUtxos(addr string) ([]modules.Utxo, error)
+	GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrTransactions(addr string) (modules.Transactions, error)
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string)
@@ -99,6 +100,8 @@ type IDag interface {
 	GetMediatorSchl() *modules.MediatorSchedule
 	GetActiveMediatorCount() int
 	GetActiveMediatorNode(index int) *discover.Node
+	//获得所有Mediator候选人列表
+	GetCandidateMediators() []*core.MediatorInfo
 
 	UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit)
 	StoreGlobalProp(gp *modules.GlobalProperty) error

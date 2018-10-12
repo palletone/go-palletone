@@ -142,7 +142,6 @@ func initGenesis(ctx *cli.Context) error {
 
 	Dbconn, err := node.OpenDatabase("leveldb", 0, 0)
 	if err != nil {
-		fmt.Println("eveldb init failed")
 		return errors.New("leveldb init failed")
 	}
 	filepath := node.ResolvePath("leveldb")
@@ -163,13 +162,22 @@ func initGenesis(ctx *cli.Context) error {
 		utils.Fatalf("Failed to unlock account: %v, address: %v", err, account.Address.Str())
 		return err
 	}
-
-	unit, err := gen.SetupGenesisUnit(dag, genesis, ks, account)
+	//判断当前DB是否为空，不为空则报错。
+	if !dag.IsEmpty() {
+		return errors.New("leveldb is not empty")
+	}
+	//将Genesis对象转换为一个Unit
+	unit, err := gen.SetupGenesisUnit(genesis, ks, account)
 	if err != nil {
-		utils.Fatalf("Failed to write genesis unit: %v", err)
+		utils.Fatalf("Failed to generate genesis unit: %v", err)
 		return err
 	}
-
+	//将Unit存入数据库中
+	err = dag.SaveUnit4GenesisInit(unit)
+	if err != nil {
+		fmt.Println("Save Genesis unit to db error:", err)
+		return err
+	}
 	genesisUnitHash := unit.UnitHash
 	log.Info(fmt.Sprintf("Successfully Get Genesis Unit, it's hash: %v", genesisUnitHash.Hex()))
 

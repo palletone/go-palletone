@@ -176,7 +176,9 @@ func (n *Node) Start() error {
 	// 加锁
 	n.lock.Lock()
 	defer n.lock.Unlock()
-
+	if n.log == nil {
+		n.log = &log.NothingLogger{}
+	}
 	// Short circuit if the node's already running
 	// 判断是否已经运行
 	if n.server != nil {

@@ -139,7 +139,7 @@ func (statedb *StateDb) GetContractAllState(id common.Address) []*modules.Contra
 			continue
 		}
 		sKey := string(k[22:])
-		version, data, err := splitValueAndVersion(v)
+		data, version, err := splitValueAndVersion(v)
 		if err != nil {
 			statedb.logger.Error("Invalid state data, cannot parse and split version")
 			continue
@@ -161,7 +161,7 @@ To get contract or contract template one field
 func (statedb *StateDb) GetContractState(id common.Address, field string) (*modules.StateVersion, []byte) {
 	key := append(CONTRACT_STATE_PREFIX, id.Bytes()...)
 	key = append(key, []byte(field)...)
-	version, data, err := retrieveWithVersion(statedb.db, key)
+	data, version, err := retrieveWithVersion(statedb.db, key)
 	if err != nil || data == nil {
 		return nil, nil
 	}

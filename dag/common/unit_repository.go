@@ -153,13 +153,13 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool *txspool.TxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
+func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
 	if txpool == nil || mAddr == nil || ks == nil {
 		return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
 	}
 	units := []modules.Unit{}
 	// step1. get mediator responsible for asset (for now is ptn)
-	bAsset := unitOp.statedb.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
+	bAsset, _, _ := unitOp.statedb.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
 	if len(bAsset) <= 0 {
 		return nil, fmt.Errorf("Create unit error: query asset info empty")
 	}
@@ -344,7 +344,10 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 	}
 
 	confPay.ConfigSet = append(confPay.ConfigSet, modules.PayloadMapStruct{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
-
+	//Put Mediator info into config
+	d, _ := rlp.EncodeToBytes(genesisConf.InitialMediatorCandidates)
+	med := modules.PayloadMapStruct{Key: "Mediator", Value: d}
+	confPay.ConfigSet = append(confPay.ConfigSet, med)
 	return confPay, nil
 }
 
@@ -352,7 +355,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 保存单元数据，如果单元的结构基本相同
 save genesis unit data
 */
-func (unitOp *UnitRepository) SaveUnit(unit modules.Unit, isGenesis bool) error {
+func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Error("Unit is null")
@@ -412,7 +415,7 @@ func (unitOp *UnitRepository) SaveUnit(unit modules.Unit, isGenesis bool) error 
 					return fmt.Errorf("Save contract init payload error.")
 				}
 			case modules.APP_CONTRACT_INVOKE:
-				if ok := unitOp.saveContractInvokePayload(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+				if ok := unitOp.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_CONFIG:
@@ -438,7 +441,7 @@ func (unitOp *UnitRepository) SaveUnit(unit modules.Unit, isGenesis bool) error 
 		return err
 	}
 	// step 10  save txlookupEntry
-	if err := unitOp.dagdb.SaveTxLookupEntry(&unit); err != nil {
+	if err := unitOp.dagdb.SaveTxLookupEntry(unit); err != nil {
 		return err
 	}
 	// update state
@@ -496,7 +499,7 @@ func (unitOp *UnitRepository) saveConfigPayload(txHash common.Hash, msg *modules
 保存合约调用状态
 To save contract invoke state
 */
-func (unitOp *UnitRepository) saveContractInvokePayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+func (unitOp *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractInvokePayload)
@@ -510,12 +513,37 @@ func (unitOp *UnitRepository) saveContractInvokePayload(height modules.ChainInde
 			Height:  height,
 			TxIndex: txIndex,
 		}
+		//user just want to update it's statedb
+		if payload.ContractId == nil || len(payload.ContractId) == 0 {
+			addr, _ := getRequesterAddress(tx)
+			unitOp.statedb.SaveContractState(addr, ws.Key, ws.Value, version)
+		}
+
 		// save new state to database
 		if unitOp.updateState(payload.ContractId, ws.Key, version, ws.Value) != true {
 			continue
 		}
 	}
 	return true
+}
+
+//Get who send this transaction
+func getRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+	msg0 := tx.TxMessages[0]
+	if msg0.App != modules.APP_PAYMENT {
+		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
+	}
+	pay := msg0.Payload.(*modules.PaymentPayload)
+	return getFirstInputAddress(pay)
+}
+
+func getFirstInputAddress(pay *modules.PaymentPayload) (common.Address, error) {
+
+	unlockScript := pay.Input[0].SignatureScript
+	if unlockScript == nil { // coinbase?
+		return common.Address{}, errors.New("Coinbase don't have input address")
+	}
+	return tokenengine.GetAddressFromScript(unlockScript)
 }
 
 /**

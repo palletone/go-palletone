@@ -115,7 +115,7 @@ func getGPT(gp *modules.GlobalProperty) globalProperty {
 	ams := make([]core.MediatorInfo, 0)
 
 	for _, med := range gp.ActiveMediators {
-		medInfo := core.MediatorToInfo(&med)
+		medInfo := med.MediatorToInfo()
 		ams = append(ams, medInfo)
 	}
 
@@ -130,7 +130,7 @@ func getGPT(gp *modules.GlobalProperty) globalProperty {
 func getGP(gpt *globalProperty) *modules.GlobalProperty {
 	ams := make(map[common.Address]core.Mediator, 0)
 	for _, medInfo := range gpt.ActiveMediators {
-		med := core.InfoToMediator(&medInfo)
+		med := medInfo.InfoToMediator()
 		ams[med.Address] = med
 	}
 

@@ -52,7 +52,7 @@ func retrieve(db ptndb.Database, key []byte, v interface{}) error {
 
 	return nil
 }
-func retrieveWithVersion(db ptndb.Database, key []byte) (*modules.StateVersion, []byte, error) {
+func retrieveWithVersion(db ptndb.Database, key []byte) ([]byte, *modules.StateVersion, error) {
 	data, err := db.Get(key)
 	if err != nil {
 		return nil, nil, err
@@ -61,13 +61,13 @@ func retrieveWithVersion(db ptndb.Database, key []byte) (*modules.StateVersion, 
 }
 
 //将Statedb里的Value分割为Version和用户数据
-func splitValueAndVersion(data []byte) (*modules.StateVersion, []byte, error) {
+func splitValueAndVersion(data []byte) ([]byte, *modules.StateVersion, error) {
 	verBytes := data[:29]
 	objData := data[30:]
 
 	version := &modules.StateVersion{}
 	version.SetBytes(verBytes)
-	return version, objData, nil
+	return objData, version, nil
 }
 
 // get string

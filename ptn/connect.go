@@ -19,15 +19,7 @@
 package ptn
 
 import (
-	"errors"
-	"time"
-
 	"github.com/palletone/go-palletone/common/log"
-)
-
-const (
-	ConnectBoot       = 1
-	ConnectTransition = 2
 )
 
 func (pm *ProtocolManager) mediatorConnect() {
@@ -42,22 +34,27 @@ func (pm *ProtocolManager) mediatorConnect() {
 	peers := pm.dag.GetActiveMediatorNodes()
 
 	//not exsit and no self will connect
-	ps := pm.peers.GetPeers()
 	for _, peer := range peers {
-		if peer.ID.String() != pm.srvr.NodeInfo().ID && !pm.isexist(peer.ID.String(), ps) {
-			log.Debug("========mediator AddPeer==========", "peer.ID.String():", peer.ID.String())
+		if peer.ID.String() != pm.srvr.NodeInfo().ID && pm.peers.Peer(peer.ID.String()) == nil {
 			pm.srvr.AddPeer(peer)
 		}
 	}
 }
 
+func (pm *ProtocolManager) cancelOldMediatorConnect() {
+	//TODO use RemovePeer
+}
+
+func (pm *ProtocolManager) transitionConnect() {
+
+}
+
 /*
-	1.add flag.This node whether or not mediator
-	2.check connections.
-		2.1 mediator node: The no mediator connections is maxpeers sub mediators
-		2.2 no mediator node:unlimited
-	3.all the mediators node is connectin.Notice the mediator plugin
-*/
+//1.add flag.This node whether or not mediator
+//2.check connections.
+//	2.1 mediator node: The no mediator connections is maxpeers sub mediators
+//	2.2 no mediator node:unlimited
+//3.all the mediators node is connectin.Notice the mediator plugin
 func (pm *ProtocolManager) transitionConnect() {
 	if !pm.producer.LocalHaveActiveMediator() {
 		log.Info("This node is not Mediator")
@@ -66,8 +63,6 @@ func (pm *ProtocolManager) transitionConnect() {
 	log.Info("Mediator transition")
 
 	pm.peersTransition.MediatorsClean()
-
-	//TODO  The main network is launched for the first time for vss
 
 	//add interval
 	forceSync := time.NewTicker(forceSyncCycle)
@@ -94,6 +89,7 @@ func (pm *ProtocolManager) startTransitionConnect() error {
 		log.Error("PalletOne start", "maxpeers", pm.maxPeers, "mediator size", len(peers)+3) //3:nomediator
 		return errors.New("maxpeers < mediator size")
 	}
+
 	if pm.peersTransition.mediators.Size() != len(peers) {
 		nodes := []string{}
 		for _, peer := range peers {
@@ -104,9 +100,8 @@ func (pm *ProtocolManager) startTransitionConnect() error {
 	}
 
 	//not exsit and no self will connect
-	ps := pm.peersTransition.GetPeers()
 	for _, peer := range peers {
-		if peer.ID.String() != pm.srvr.NodeInfo().ID && !pm.isexist(peer.ID.String(), ps) {
+		if peer.ID.String() != pm.srvr.NodeInfo().ID && pm.peersTransition.Peer(peer.ID.String()) == nil {
 			log.Debug("========transition AddPeer==========", "peer.ID.String():", peer.ID.String())
 			pm.srvr.AddPeer(peer)
 		}
@@ -124,17 +119,11 @@ func (pm *ProtocolManager) cancelTransitionConnect() {
 	}
 }
 
-func (pm *ProtocolManager) isexist(pid string, peers []*peer) bool {
-	for _, peer := range peers {
-		if pid == peer.id {
-			return true
-		}
-	}
-	return false
-}
-
 func (pm *ProtocolManager) mediatorCheck(p *peer) error {
 	//if pm.producer.LocalHaveActiveMediator() && p.mediator {
+	if pm.isTest {
+		return nil
+	}
 	if p.mediator {
 		peers := pm.dag.GetActiveMediatorNodes()
 		if _, ok := peers[p.ID().TerminalString()]; ok {
@@ -143,8 +132,7 @@ func (pm *ProtocolManager) mediatorCheck(p *peer) error {
 			//}
 		} else {
 			log.Info("PalletOne handshake failed lying selef is mediator")
-			//TODO must recover
-			//return errors.New("PalletOne handshake failed lying selef is mediator")
+			return errors.New("PalletOne handshake failed lying selef is mediator")
 		}
 	}
 	return nil
@@ -178,12 +166,4 @@ func (pm *ProtocolManager) transitionRun(p *peer) error {
 	}
 	return nil
 }
-
-func (pm *ProtocolManager) cancelOldMediatorConnect() {
-	//TODO use RemovePeer
-
-	//peers := pm.peersTransition.GetPeers()
-	//for _, peer := range peers {
-	//	peer.transitionCh <- mediatorCancel
-	//}
-}
+*/

@@ -177,7 +177,6 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 	for bytes < softResponseLimit && len(bodies.Transactions) < downloader.MaxBlockFetch {
 		// Retrieve the hash of the next block
 		if err := msgStream.Decode(&hash); err == rlp.EOL {
-			log.Debug("err == rlp.EOL")
 			break
 		} else if err != nil {
 			log.Debug("msgStream.Decode", "err", err)
@@ -185,15 +184,12 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		}
 		//TODO must recover
 		// Retrieve the requested block body, stopping if enough was found
-		//GetTransactionsByUnitHash(hash)
-		//TODO must modify
-		log.Debug("====================GetUnitTransactions==========================")
 		txs, err := pm.dag.GetUnitTransactions(hash)
 		if err != nil {
 			log.Debug("===GetBlockBodiesMsg===", "GetUnitTransactions err:", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		log.Debug("===GetBlockBodiesMsg===", "GetUnitTransactions txs:", txs)
+
 		data, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			log.Debug("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())

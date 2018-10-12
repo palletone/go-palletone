@@ -361,7 +361,6 @@ func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode
 	d.peers.Reset()
 
 	for _, ch := range []chan bool{d.bodyWakeCh} {
-		//fmt.Println("xz  d.bodyWakeCh")
 		select {
 		case <-ch:
 		default:
@@ -369,7 +368,6 @@ func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode
 	}
 
 	for _, ch := range []chan dataPack{d.headerCh, d.bodyCh} {
-		//fmt.Println("xz  d.headerCh or d.bodyCh==", ch)
 		for empty := false; !empty; {
 			select {
 			case <-ch:
@@ -420,7 +418,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	if p.version < 1 {
 		return errTooOld
 	}
-	//fmt.Println("xz  syncWithPeer  lastHash=", hash)
+
 	log.Info("Synchronising with the network", "peer", p.id, "ptn", p.version, "head", hash, "index", index, "mode", d.mode)
 	defer func(start time.Time) {
 		log.Debug("Synchronisation terminated", "elapsed", time.Since(start))
@@ -428,9 +426,6 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 
 	// Look up the sync boundaries: the common ancestor and the target block
 	latest, err := d.fetchHeight(p, assetId)
-	//fmt.Println("xz  d.fetchHeight=", latest.Index())
-	//fmt.Printf("latest=%#v\n", latest)
-	//fmt.Printf("latest=%#v\n", latest.Hash())
 	if err != nil {
 		if err == errPeersUnavailable {
 			log.Info("==========fetchHeight return==============")
@@ -444,8 +439,6 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	log.Info("=====fetchHeight=====", "latest height:", height)
 
 	origin, err := d.findAncestor(p, latest, assetId)
-
-	//fmt.Println("origin=", origin)
 	if err != nil {
 		return err
 	}
@@ -456,7 +449,6 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		d.syncStatsChainOrigin = origin
 	}
 	d.syncStatsChainHeight = height
-	fmt.Println("d.syncStatsChainHeight=", d.syncStatsChainHeight)
 	d.syncStatsLock.Unlock()
 
 	// Ensure our origin point is below any fast sync pivot point
@@ -481,7 +473,6 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	// Initiate the sync using a concurrent header and content retrieval algorithm
 	d.queue.Prepare(origin+1, d.mode)
 	if d.syncInitHook != nil {
-		log.Debug("syncInitHook!=nil")
 		d.syncInitHook(origin, height)
 	}
 

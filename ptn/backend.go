@@ -61,7 +61,7 @@ type PalletOne struct {
 	shutdownChan chan bool // Channel for shutting down the PalletOne
 
 	// Handlers
-	txPool          *txspool.TxPool
+	txPool          txspool.ITxPool
 	protocolManager *ProtocolManager
 
 	eventMux       *event.TypeMux
@@ -101,8 +101,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
-	logger:=log.New()
-	dag, err := dag.NewDag(db,logger)
+	logger := log.New()
+	dag, err := dag.NewDag(db, logger)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
@@ -126,7 +126,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
+	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag, logger)
 
 	// append by Albert·Gou
 	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ptn, &config.MediatorPlugin)
@@ -232,7 +232,7 @@ func (s *PalletOne) APIs() []rpc.API {
 }
 
 func (s *PalletOne) AccountManager() *accounts.Manager { return s.accountManager }
-func (s *PalletOne) TxPool() *txspool.TxPool           { return s.txPool }
+func (s *PalletOne) TxPool() txspool.ITxPool           { return s.txPool }
 func (s *PalletOne) EventMux() *event.TypeMux          { return s.eventMux }
 
 func (s *PalletOne) Engine() core.ConsensusEngine       { return s.engine }
