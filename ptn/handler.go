@@ -276,6 +276,8 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.srvr = srvr
 	pm.maxPeers = maxPeers
 
+	go pm.mediatorConnect()
+
 	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
 	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
 	go pm.ceBroadcastLoop()
@@ -328,8 +330,6 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.vssResponseCh = make(chan mp.VSSResponseEvent)
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
 	go pm.vssResponseBroadcastLoop()
-
-	go pm.mediatorConnect()
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -408,7 +408,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	//if err := pm.transitionRun(p); err != nil {
 	//	return err
 	//}
-	//
+
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
 		rw.Init(p.version)
 	}
@@ -427,7 +427,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
 	pm.syncTransactions(p)
-	log.Debug("PalletOne pm handle syncTransactions")
 
 	// main loop. handle incoming messages.
 	for {
@@ -442,7 +441,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 // peer. The remote connection is torn down upon returning any error.
 func (pm *ProtocolManager) handleMsg(p *peer) error {
 	// Read the next message from the remote peer, and ensure it's fully consumed
-	//log.Debug("==============handleMsg=============")
 	msg, err := p.rw.ReadMsg()
 	if err != nil {
 		return err
@@ -515,11 +513,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		//21*21 resp
 		// append by Albert·Gou
 	case msg.Code == VSSDealMsg:
-		pm.VSSDealMsg(msg, p)
+		return pm.VSSDealMsg(msg, p)
 
 		// append by Albert·Gou
 	case msg.Code == VSSResponseMsg:
-		pm.VSSResponseMsg(msg, p)
+		return pm.VSSResponseMsg(msg, p)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
