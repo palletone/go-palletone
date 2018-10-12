@@ -21,8 +21,6 @@
 package storage
 
 import (
-	"fmt"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
@@ -30,24 +28,14 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-var (
-	CONF_PREFIX = "conf"
-)
-
 /**
 获取配置信息
 get config information
 */
-func (statedb *StateDb) GetConfig(name []byte) []byte {
-	key := fmt.Sprintf("%s_%s", CONF_PREFIX, name)
-	data := statedb.GetPrefix([]byte(key))
-	if len(data) != 1 {
-		log.Info("Get config ", "error", "not data")
-	}
-	for _, v := range data {
-		return v
-	}
-	return nil
+func (statedb *StateDb) GetConfig(name []byte) ([]byte, *modules.StateVersion, error) {
+	key := append(CONF_PREFIX, name...)
+	return retrieveWithVersion(statedb.db, key)
+
 }
 
 /**
@@ -55,15 +43,18 @@ func (statedb *StateDb) GetConfig(name []byte) []byte {
 */
 func (statedb *StateDb) SaveConfig(confs []modules.PayloadMapStruct, stateVersion *modules.StateVersion) error {
 	for _, conf := range confs {
-		statedb.logger.Debugf("Try to save config key:%s,Value:%#x\n", conf.Key, conf.Value)
+
+		statedb.logger.Debugf("Try to save config key:{%s},Value:{%#x}", conf.Key, conf.Value)
 		if conf.Key == "Mediator" {
 			mediators := []*core.MediatorInfo{}
 			rlp.DecodeBytes(conf.Value, &mediators)
 			statedb.saveMediators(mediators, stateVersion)
 			continue
 		}
-		key := fmt.Sprintf("%s_%s_%s", CONF_PREFIX, conf.Key, stateVersion.String())
-		if err := statedb.db.Put([]byte(key), conf.Value); err != nil {
+		key := append(CONF_PREFIX, conf.Key...)
+		//key := fmt.Sprintf("%s_%s_%s", CONF_PREFIX, conf.Key, stateVersion.String())
+		err := StoreBytesWithVersion(statedb.db, key, stateVersion, conf.Value)
+		if err != nil {
 			log.Error("Save config error.")
 			return err
 		}

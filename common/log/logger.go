@@ -108,7 +108,7 @@ func (pl *Plogger) Debug(msg string, ctx ...interface{}) {
 	pl.logger.Debug(msg, fileds...)
 }
 func (pl *Plogger) Debugf(format string, ctx ...interface{}) {
-	pl.logger.Debug(fmt.Sprintf(format, ctx))
+	pl.logger.Debug(fmt.Sprintf(format, ctx...))
 }
 func (pl *Plogger) Info(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
@@ -123,7 +123,7 @@ func (pl *Plogger) Error(msg string, ctx ...interface{}) {
 	pl.logger.Error(msg, fileds...)
 }
 func (pl *Plogger) Errorf(format string, ctx ...interface{}) {
-	pl.logger.Error(fmt.Sprintf(format, ctx))
+	pl.logger.Error(fmt.Sprintf(format, ctx...))
 }
 func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
@@ -264,7 +264,7 @@ func Debug(msg string, ctx ...interface{}) {
 	Logger.Debug(msg, fileds...)
 }
 func Debugf(format string, ctx ...interface{}) {
-	Logger.Debug(fmt.Sprintf(format, ctx))
+	Logger.Debug(fmt.Sprintf(format, ctx...))
 }
 
 // Info

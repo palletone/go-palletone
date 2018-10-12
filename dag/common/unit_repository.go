@@ -158,7 +158,7 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool *txspool.
 	}
 	units := []modules.Unit{}
 	// step1. get mediator responsible for asset (for now is ptn)
-	bAsset := unitOp.statedb.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
+	bAsset, _, _ := unitOp.statedb.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
 	if len(bAsset) <= 0 {
 		return nil, fmt.Errorf("Create unit error: query asset info empty")
 	}

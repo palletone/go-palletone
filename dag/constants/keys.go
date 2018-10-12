@@ -22,4 +22,5 @@ package constants
 
 var (
 	STATE_CANDIDATE_MEDIATOR_LIST = []byte("CandidateMediatorList")
+	STATE_ACTIVE_MEDIATOR_LIST    = []byte("ActiveMediatorList")
 )
