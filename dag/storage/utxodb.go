@@ -51,7 +51,7 @@ type IUtxoDb interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
-	GetAddrUtxos(addr string) ([]modules.Utxo, error)
+	GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	SaveUtxoSnapshot(index *modules.ChainIndex) error
 
@@ -219,15 +219,15 @@ func (db *UtxoDb) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	return outpoints, nil
 }
 
-func (db *UtxoDb) GetAddrUtxos(addr string) ([]modules.Utxo, error) {
-	allutxos := make([]modules.Utxo, 0)
+func (db *UtxoDb) GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
+	allutxos := make(map[modules.OutPoint]*modules.Utxo, 0)
 	outpoints, err := db.GetAddrOutpoints(addr)
 	if err != nil {
 		return nil, err
 	}
 	for _, out := range outpoints {
 		if utxo, err := db.GetUtxoEntry(&out); err == nil {
-			allutxos = append(allutxos, *utxo)
+			allutxos[out] = utxo
 		}
 	}
 	return allutxos, nil

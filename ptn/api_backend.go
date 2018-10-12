@@ -34,7 +34,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
-	//cc "github.com/palletone/go-palletone/contracts/manger"
 )
 
 // PtnApiBackend implements ethapi.Backend for full nodes
@@ -255,8 +254,14 @@ func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
 func (b *PtnApiBackend) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	return b.ptn.dag.GetAddrOutpoints(addr)
 }
-func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]modules.Utxo, error) {
-	return b.ptn.dag.GetAddrUtxos(addr)
+func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error) {
+	utxos, _ := b.ptn.dag.GetAddrUtxos(addr)
+	result := []ptnjson.UtxoJson{}
+	for o, u := range utxos {
+		ujson := ptnjson.ConvertUtxo2Json(&o, u)
+		result = append(result, ujson)
+	}
+	return result, nil
 }
 func (b *PtnApiBackend) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	return b.ptn.dag.GetAllUtxos()
