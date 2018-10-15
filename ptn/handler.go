@@ -372,6 +372,9 @@ func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *p
 // handle is the callback invoked to manage the life cycle of an ptn peer. When
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
+	log.Debug("================================Enter ProtocolManager handle======================================")
+
+	defer log.Debug("================================End ProtocolManager handle======================================")
 	// Ignore maxPeers if this is a trusted peer
 	//TODO must modify make sure  have enough connections for mediators
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
@@ -383,31 +386,22 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	//TODO Devin
 	//var unitRep common2.IUnitRepository
 	//unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
-	log.Debug("===pm.dag.CurrentHeader===")
-	// Execute the PalletOne handshake
+
 	mediator := false
 	if !pm.isTest {
 		mediator = pm.producer.LocalHaveActiveMediator()
 	}
 
 	head := pm.dag.CurrentHeader()
-
+	// Execute the PalletOne handshake
 	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), mediator); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
 
-	//if err := pm.noMediatorCheck(p); err != nil {
-	//	return err
-	//}
-	//
-	//if err := pm.mediatorCheck(p); err != nil {
-	//	return err
-	//}
-	//
-	//if err := pm.transitionRun(p); err != nil {
-	//	return err
-	//}
+	if err := pm.peerCheck(p); err != nil {
+		return err
+	}
 
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
 		rw.Init(p.version)
