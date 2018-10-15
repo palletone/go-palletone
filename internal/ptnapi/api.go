@@ -1370,6 +1370,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	log.Debugf("payload input outpoint:%s", pload.Input[0].PreviousOutPoint.TxHash.String())
 	mtxHex := hex.EncodeToString(mtxbt)
 	return mtxHex, nil
 }
@@ -1421,6 +1422,8 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
 		return nil, err
 	}
+	log.Debugf("InputOne txid:{%+v}", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0])
+
 	var hashType uint32
 	switch *cmd.Flags {
 	case "ALL":
@@ -1534,6 +1537,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 	for _, inputOne := range signTransactionParams.Inputs {
 		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex, inputOne.ScriptPubKey, inputOne.RedeemScript}
 		rawinputs = append(rawinputs, input)
+
 	}
 	if len(rawinputs) == 0 {
 		return "", nil
