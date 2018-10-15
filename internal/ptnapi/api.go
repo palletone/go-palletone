@@ -1305,7 +1305,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		}
 		prevOut := modules.NewOutPoint(txHash, input.Vout, input.MessageIndex)
 		txInput := modules.NewTxIn(prevOut, []byte{})
-		pload.AddTxIn(*txInput)
+		pload.AddTxIn(txInput)
 	}
 	// Add all transaction outputs to the transaction after performing
 	//	// some validity checks.
@@ -1347,7 +1347,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 			return "", internalRPCError(err.Error(), context)
 		}
 		txOut := modules.NewTxOut(uint64(dao), pkScript, &modules.Asset{})
-		pload.AddTxOut(*txOut)
+		pload.AddTxOut(txOut)
 	}
 	//	// Set the Locktime, if given.
 	if c.LockTime != nil {
@@ -1372,7 +1372,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 
 //create raw transction
 func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
-	var rawTransactionGenParams RawTransactionGenParams
+	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
 		return "", err

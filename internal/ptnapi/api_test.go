@@ -46,7 +46,7 @@ func TestRawTransactionGen(t *testing.T) {
 	}`
 	params = params
 	testResult := "f8b4a0b4d1fe596d4de4929e93f383a03cbad7dca61895d63d728faeb4455cdf87b164f891f88f01b88cf88ae7e6e3a070a94dcd943ef358cea5a4edc39698ec275c03b0b002d681535271f28ec2beb080808080f85ff85d8880000000000000009976a914d04ef6595ea6dd1cf512a5e9077a66f9b9fb422688ace390000000000000000000000000000000009000000000000000000000000000000000809500000000000000000000000000000000000000000080"
-	var rawTransactionGenParams RawTransactionGenParams
+	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
 		return

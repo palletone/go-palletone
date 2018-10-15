@@ -672,7 +672,7 @@ func (d *Dag) ValidateUnitGroupSig(hash common.Hash) (bool, error) {
 	//unitState := d.validate.ValidateUnitExceptGroupSig(unit, dagcommon.IsGenesis(hash))
 	unitState := d.validate.ValidateUnitExceptGroupSig(unit, d.unitRep.IsGenesis(hash))
 	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-		return false, fmt.Errorf("validate unit's groupSig failed, ", "statecode", unitState)
+		return false, fmt.Errorf("validate unit's groupSig failed, statecode:%d", unitState)
 	}
 	return true, nil
 }

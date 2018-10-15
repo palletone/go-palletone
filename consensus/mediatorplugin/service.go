@@ -57,18 +57,13 @@ type MediatorPlugin struct {
 	newUnitFeed  event.Feed              // 订阅的时候自动初始化一次
 	newUnitScope event.SubscriptionScope // 零值已准备就绪待用
 
-	// unit 签名分片的事件订阅
-	sigShareFeed  event.Feed
-	sigShareScope event.SubscriptionScope
+	// dkg 初始化 相关
+	suite *bn256.Suite
+	dkgs  map[common.Address]*dkg.DistKeyGenerator
 
-	// unit 群签名的事件订阅
-	groupSigFeed  event.Feed
-	groupSigScope event.SubscriptionScope
-
-	// dkg 生成 dks 相关
-	suite   *bn256.Suite
-	dkgs    map[common.Address]*dkg.DistKeyGenerator
+	// dkg 完成 vss 协议相关
 	respBuf map[common.Address]map[common.Address]chan *dkg.Response
+	certifiedFlag map[common.Address]bool
 
 	// 广播和处理 vss 协议 deal
 	vssDealFeed  event.Feed
@@ -81,6 +76,14 @@ type MediatorPlugin struct {
 	// unit阈值签名相关
 	toTBLSSignBuf    map[common.Address]chan *modules.Unit
 	toTBLSRecoverBuf map[common.Address]map[common.Hash]*sigShareSet
+
+	// unit 签名分片的事件订阅
+	sigShareFeed  event.Feed
+	sigShareScope event.SubscriptionScope
+
+	// unit 群签名的事件订阅
+	groupSigFeed  event.Feed
+	groupSigScope event.SubscriptionScope
 }
 
 func (mp *MediatorPlugin) Protocols() []p2p.Protocol {
@@ -155,9 +158,11 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 	lams := mp.GetLocalActiveMediators()
 	initPubs := dag.GetActiveMediatorInitPubs()
 	curThreshold := dag.GetCurThreshold()
+	lamc := len(lams)
 
-	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator)
-	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response)
+	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, lamc)
+	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
+	mp.certifiedFlag = make(map[common.Address]bool, lamc)
 
 	for _, localMed := range lams {
 		initSec := mp.mediators[localMed].InitPartSec
@@ -173,7 +178,6 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 		mp.initRespBuf(localMed)
 	}
 
-	// todo 和其他mediator建立连接后调用
 	go mp.StartVSSProtocol()
 }
 
@@ -193,7 +197,8 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	// 1. 开启循环生产计划
 	go mp.ScheduleProductionLoop()
 
-	// 2. 给当前节点控制的活跃mediator，初始化对应的DKG. (换届后重新生成)
+	// 2. 给当前节点控制的活跃mediator，初始化对应的DKG.
+	// todo 数据同步后再初始化，换届后需重新生成
 	go mp.NewActiveMediatorsDKG()
 
 	log.Debug("mediator plugin startup end")
@@ -263,12 +268,14 @@ func NewMediatorPlugin(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 
 // initTBLSBuf, 初始化与TBLS签名相关的buf
 func (mp *MediatorPlugin) initTBLSBuf() {
-	lmc := len(mp.mediators)
-	mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit, lmc)
-	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lmc)
+	lams := mp.GetLocalActiveMediators()
+	lamc := len(mp.mediators)
+
+	mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit, lamc)
+	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lamc)
 
 	curThrshd := mp.getDag().GetCurThreshold()
-	for localMed, _ := range mp.mediators {
+	for _, localMed := range lams {
 		mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
 		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet, curThrshd)
 	}
