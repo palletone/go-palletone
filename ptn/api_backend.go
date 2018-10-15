@@ -243,8 +243,14 @@ func (b *PtnApiBackend) GetTrieSyncProgress() (uint64, error) {
 	return b.ptn.dag.GetTrieSyncProgress()
 }
 
-func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	return b.ptn.dag.GetUtxoEntry(outpoint)
+func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
+
+	utxo, err := b.ptn.dag.GetUtxoEntry(outpoint)
+	if err != nil {
+		return nil, err
+	}
+	ujson := ptnjson.ConvertUtxo2Json(outpoint, utxo)
+	return &ujson, nil
 }
 
 func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
@@ -263,8 +269,18 @@ func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error) {
 	}
 	return result, nil
 }
-func (b *PtnApiBackend) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
-	return b.ptn.dag.GetAllUtxos()
+func (b *PtnApiBackend) GetAllUtxos() ([]ptnjson.UtxoJson, error) {
+	utxos, err := b.ptn.dag.GetAllUtxos()
+	if err != nil {
+		return nil, err
+	}
+	result := []ptnjson.UtxoJson{}
+	for o, u := range utxos {
+		ujson := ptnjson.ConvertUtxo2Json(&o, u)
+		result = append(result, ujson)
+	}
+	return result, nil
+
 }
 
 func (b *PtnApiBackend) GetAddrTransactions(addr string) (modules.Transactions, error) {
