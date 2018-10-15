@@ -1275,7 +1275,7 @@ const (
 	MaxTxInSequenceNum uint32 = 0xffffffff
 )
 
-//create vote transction
+//@Yiran create vote transction
 func CreateVoteTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	c := cmd.(*ptnjson.CreateVoteTransactionCmd)
 	// Validate the locktime, if given.
@@ -1286,7 +1286,7 @@ func CreateVoteTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		UniqueId: aid,
 		ChainId:  1,
 	}
-	ast = ast
+	ast = ast ////
 	if c.LockTime != nil &&
 		(*c.LockTime < 0 || *c.LockTime > int64(MaxTxInSequenceNum)) {
 		return "", &ptnjson.RPCError{
@@ -1341,7 +1341,7 @@ func CreateVoteTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		pkScript := tokenengine.GenerateP2PKHLockScript(addr[0:20])
 		// Convert the amount to satoshi.
 		dao, err := ptnjson.NewAmount(amount)
-		dao = dao
+		dao = dao ////
 		if err != nil {
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
@@ -1502,7 +1502,7 @@ func (s *PublicTransactionPoolAPI) CreateVoteTransaction(ctx context.Context /*s
 	ExpiredTerm := voteTransactionGenParams.ExpiredTerm
 
 	arg := ptnjson.NewCreateVoteTransactionCmd(inputs, amounts, &voteTransactionGenParams.Locktime, MediatorAddress, ExpiredTerm)
-	result, _ := CreateRawTransaction(arg)
+	result, _ := CreateVoteTransaction(arg)
 	fmt.Println(result)
 	return result, nil
 }
