@@ -101,13 +101,13 @@ type Backend interface {
 
 	GetTrieSyncProgress() (uint64, error)
 
-	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
 
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	//------- Get addr utxo start ------//
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error)
-	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
+	GetAllUtxos() ([]ptnjson.UtxoJson, error)
 	//------- Get addr utxo end  ------//
 	GetAddrTransactions(addr string) (modules.Transactions, error)
 

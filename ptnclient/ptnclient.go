@@ -414,15 +414,16 @@ func (ec *Client) EstimateGas(ctx context.Context, msg palletone.CallMsg) (uint6
 }
 
 func (ec *Client) CreateRawTransaction(ctx context.Context, params string) (string, error) {
-	var result string 
+	var result string
 	err := ec.c.CallContext(ctx, &result, "ptn_createRawTransaction", params)
 	return result, err
 }
 func (ec *Client) SignRawTransaction(ctx context.Context, params string) (*ptnjson.SignRawTransactionResult, error) {
-	var result *ptnjson.SignRawTransactionResult 
+	var result *ptnjson.SignRawTransactionResult
 	err := ec.c.CallContext(ctx, &result, "ptn_signRawTransaction", params)
 	return result, err
 }
+
 // SendTransaction injects a signed transaction into the pending pool for execution.
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
@@ -574,8 +575,8 @@ func (ec *Client) GetTrieSyncProgress(ctx context.Context) (uint64, error) {
 	return result, err
 }
 
-func (ec *Client) GetUtxoEntry(ctx context.Context, key []byte) (*modules.Utxo, error) {
-	result := new(modules.Utxo)
+func (ec *Client) GetUtxoEntry(ctx context.Context, key []byte) (*ptnjson.UtxoJson, error) {
+	result := new(ptnjson.UtxoJson)
 	err := ec.c.CallContext(ctx, &result, "ptn_getUtxoEntry", key)
 	return result, err
 }
@@ -590,13 +591,13 @@ func (ec *Client) GetAddrOutpoints(ctx context.Context, addr string) ([]modules.
 	err := ec.c.CallContext(ctx, &result, "ptn_getAddrOutpoints", addr)
 	return result, err
 }
-func (ec *Client) GetAddrUtxos(ctx context.Context, addr string) ([]modules.Utxo, error) {
-	result := make([]modules.Utxo, 0)
+func (ec *Client) GetAddrUtxos(ctx context.Context, addr string) ([]ptnjson.UtxoJson, error) {
+	result := make([]ptnjson.UtxoJson, 0)
 	err := ec.c.CallContext(ctx, &result, "ptn_getAddrUtxos", addr)
 	return result, err
 }
-func (ec *Client) GetAllUtxos(ctx context.Context) (map[modules.OutPoint]*modules.Utxo, error) {
-	result := make(map[modules.OutPoint]*modules.Utxo, 0)
+func (ec *Client) GetAllUtxos(ctx context.Context) ([]ptnjson.UtxoJson, error) {
+	result := make([]ptnjson.UtxoJson, 0)
 	err := ec.c.CallContext(ctx, &result, "ptn_getAllUtxos", nil)
 	return result, err
 }

@@ -992,11 +992,7 @@ func (s *PublicTransactionPoolAPI) GetAllUtxos(ctx context.Context) (string, err
 		return "", err
 	}
 
-	utxos := make(map[string]*modules.Utxo)
-	for key, u := range items {
-		utxos[string(key.ToKey())] = u
-	}
-	info := NewPublicReturnInfo("all_utxos", utxos)
+	info := NewPublicReturnInfo("all_utxos", items)
 
 	result_json, err := json.Marshal(info)
 	if err != nil {
