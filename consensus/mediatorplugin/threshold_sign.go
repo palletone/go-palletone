@@ -44,6 +44,7 @@ func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
 func (mp *MediatorPlugin) StartVSSProtocol() {
 	log.Info("Start completing the VSS protocol.")
 
+	// todo 和其他mediator建立网络连接后调用
 	go mp.BroadcastVSSDeals()
 
 	timeout := time.NewTimer(30 * time.Second)
@@ -56,11 +57,32 @@ func (mp *MediatorPlugin) StartVSSProtocol() {
 	}
 }
 
-func (mp *MediatorPlugin) endVSSProtocol(timeout bool) {
+func (mp *MediatorPlugin) endVSSProtocol(timeout bool) (completed bool) {
 	// todo 判断本地所有的dkg是否都完成了vss协议, 并发送协议完成的消息
-	//for med, dkg := range mp.dkgs {
-	//	log.Debug(fmt.Sprintf("%v 's DKG certifing is %v", med.Str(), dkg.Certified()))
-	//}
+
+	completed = mp.areCertified()
+	if !completed && timeout {
+		mp.setTimeout()
+	}
+
+	return
+}
+
+func (mp *MediatorPlugin) setTimeout() {
+	for _, dkg := range mp.dkgs {
+		dkg.SetTimeout()
+	}
+}
+
+func (mp *MediatorPlugin) areCertified() (certified bool) {
+	for _, flag := range mp.certifiedFlag {
+		certified = flag
+		if !certified {
+			break
+		}
+	}
+
+	return
 }
 
 func (mp *MediatorPlugin) getLocalActiveMediatorDKG(add common.Address) *dkg.DistKeyGenerator {
@@ -211,7 +233,9 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 
 			if dkgr.Certified() {
 				log.Debug(fmt.Sprintf("%v's DKG verification passed!", localMed.Str()))
+
 				certified = true
+				mp.certifiedFlag[localMed] = true
 			}
 		}
 

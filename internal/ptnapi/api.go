@@ -992,11 +992,7 @@ func (s *PublicTransactionPoolAPI) GetAllUtxos(ctx context.Context) (string, err
 		return "", err
 	}
 
-	utxos := make(map[string]*modules.Utxo)
-	for key, u := range items {
-		utxos[string(key.ToKey())] = u
-	}
-	info := NewPublicReturnInfo("all_utxos", utxos)
+	info := NewPublicReturnInfo("all_utxos", items)
 
 	result_json, err := json.Marshal(info)
 	if err != nil {
@@ -1279,6 +1275,107 @@ const (
 	MaxTxInSequenceNum uint32 = 0xffffffff
 )
 
+//@Yiran create vote transction
+func CreateVoteTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
+	c := cmd.(*ptnjson.CreateVoteTransactionCmd)
+	// Validate the locktime, if given.
+	aid := modules.IDType16{}
+	aid.SetBytes([]byte("1111111111111111222222222222222222"))
+	ast := modules.Asset{
+		AssetId:  aid,
+		UniqueId: aid,
+		ChainId:  1,
+	}
+	ast = ast ////
+	if c.LockTime != nil &&
+		(*c.LockTime < 0 || *c.LockTime > int64(MaxTxInSequenceNum)) {
+		return "", &ptnjson.RPCError{
+			Code:    ptnjson.ErrRPCInvalidParameter,
+			Message: "Locktime out of range",
+		}
+	}
+	// Add all transaction inputs to a new transaction after performing
+	// some validity checks.
+	//先构造PaymentPayload结构，再组装成Transaction结构
+	pload := new(modules.PaymentPayload)
+	for _, input := range c.Inputs {
+		txHash, err := common.NewHashFromStr(input.Txid)
+		if err != nil {
+			return "", rpcDecodeHexError(input.Txid)
+		}
+		prevOut := modules.NewOutPoint(txHash, input.Vout, input.MessageIndex)
+		txInput := modules.NewTxIn(prevOut, []byte{})
+		pload.AddTxIn(txInput)
+	}
+	// Add all transaction outputs to the transaction after performing
+	//	// some validity checks.
+	//	//only support mainnet
+	//	var params *chaincfg.Params
+	for encodedAddr, amount := range c.Amounts {
+		//		// Ensure amount is in the valid range for monetary amounts.
+		if amount <= 0 || amount > ptnjson.MaxSatoshi {
+			return "", &ptnjson.RPCError{
+				Code:    ptnjson.ErrRPCType,
+				Message: "Invalid amount",
+			}
+		}
+		addr, err := common.StringToAddress(encodedAddr)
+		if err != nil {
+			return "", &ptnjson.RPCError{
+				Code:    ptnjson.ErrRPCInvalidAddressOrKey,
+				Message: "Invalid address or key",
+			}
+		}
+		switch addr.GetType() {
+		case common.PublicKeyHash:
+		case common.ScriptHash:
+			//case *ptnjson.AddressPubKeyHash:
+			//case *ptnjson.AddressScriptHash:
+		default:
+			return "", &ptnjson.RPCError{
+				Code:    ptnjson.ErrRPCInvalidAddressOrKey,
+				Message: "Invalid address or key",
+			}
+		}
+		// Create a new script which pays to the provided address.
+		pkScript := tokenengine.GenerateP2PKHLockScript(addr[0:20])
+		// Convert the amount to satoshi.
+		dao, err := ptnjson.NewAmount(amount)
+		dao = dao ////
+		if err != nil {
+			context := "Failed to convert amount"
+			return "", internalRPCError(err.Error(), context)
+		}
+		txOut := modules.NewTxOut(uint64(dao), pkScript, &modules.Asset{})
+		pload.AddTxOut(txOut)
+	}
+	//	// Set the Locktime, if given.
+	if c.LockTime != nil {
+		pload.LockTime = uint32(*c.LockTime)
+	}
+	//	// Return the serialized and hex-encoded transaction.  Note that this
+	//	// is intentionally not directly returning because the first return
+	//	// value is a string and it would result in returning an empty string to
+	//	// the client instead of nothing (nil) in the case of an error.
+	mtx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	votePayload := new(modules.VotePayload)
+	votePayload.ExpiredTerm = c.ExpiredTerm
+	votePayload.Address = c.MediatorAddress
+
+	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
+	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_VOTE, votePayload))
+
+	mtx.TxHash = mtx.Hash()
+	mtxbt, err := rlp.EncodeToBytes(mtx)
+	if err != nil {
+		return "", err
+	}
+	mtxHex := hex.EncodeToString(mtxbt)
+	return mtxHex, nil
+}
+
 //create raw transction
 func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	c := cmd.(*ptnjson.CreateRawTransactionCmd)
@@ -1309,7 +1406,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		}
 		prevOut := modules.NewOutPoint(txHash, input.Vout, input.MessageIndex)
 		txInput := modules.NewTxIn(prevOut, []byte{})
-		pload.AddTxIn(*txInput)
+		pload.AddTxIn(txInput)
 	}
 	// Add all transaction outputs to the transaction after performing
 	//	// some validity checks.
@@ -1351,7 +1448,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 			return "", internalRPCError(err.Error(), context)
 		}
 		txOut := modules.NewTxOut(uint64(dao), pkScript, &modules.Asset{})
-		pload.AddTxOut(*txOut)
+		pload.AddTxOut(txOut)
 	}
 	//	// Set the Locktime, if given.
 	if c.LockTime != nil {
@@ -1370,13 +1467,50 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	log.Debugf("payload input outpoint:%s", pload.Input[0].PreviousOutPoint.TxHash.String())
 	mtxHex := hex.EncodeToString(mtxbt)
 	return mtxHex, nil
 }
 
+//@Yiran create vote transction
+func (s *PublicTransactionPoolAPI) CreateVoteTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
+	var voteTransactionGenParams ptnjson.VoteTransactionGenParams
+	err := json.Unmarshal([]byte(params), &voteTransactionGenParams)
+	if err != nil {
+		return "", err
+	}
+	//transaction inputs
+	var inputs []ptnjson.TransactionInput
+	for _, inputOne := range voteTransactionGenParams.Inputs {
+		input := ptnjson.TransactionInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex}
+		inputs = append(inputs, input)
+	}
+	if len(inputs) == 0 {
+		return "", nil
+	}
+	amounts := map[string]float64{}
+	for _, outOne := range voteTransactionGenParams.Outputs {
+		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
+			continue
+		}
+		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
+	}
+	if len(amounts) == 0 {
+		return "", nil
+	}
+
+	MediatorAddress := voteTransactionGenParams.MediatorAddress
+	ExpiredTerm := voteTransactionGenParams.ExpiredTerm
+
+	arg := ptnjson.NewCreateVoteTransactionCmd(inputs, amounts, &voteTransactionGenParams.Locktime, MediatorAddress, ExpiredTerm)
+	result, _ := CreateVoteTransaction(arg)
+	fmt.Println(result)
+	return result, nil
+}
+
 //create raw transction
 func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
-	var rawTransactionGenParams RawTransactionGenParams
+	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
 		return "", err
@@ -1421,6 +1555,8 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
 		return nil, err
 	}
+	log.Debugf("InputOne txid:{%+v}", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0])
+
 	var hashType uint32
 	switch *cmd.Flags {
 	case "ALL":
@@ -1534,6 +1670,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 	for _, inputOne := range signTransactionParams.Inputs {
 		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex, inputOne.ScriptPubKey, inputOne.RedeemScript}
 		rawinputs = append(rawinputs, input)
+
 	}
 	if len(rawinputs) == 0 {
 		return "", nil

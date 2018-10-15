@@ -114,11 +114,10 @@ func TestTransactionAddingTxs(t *testing.T) {
 	utxodb := storage.NewUtxoDb(db, l)
 	mutex := new(sync.RWMutex)
 	unitchain := &testUnitDag{db, utxodb, *mutex, nil, 10000, new(event.Feed)}
-
 	config := testTxPoolConfig
 	config.GlobalSlots = 4096
 	var pending_cache, queue_cache, all, origin int
-	pool := NewTxPool(config, unitchain)
+	pool := NewTxPool(config, unitchain,l)
 
 	defer pool.Stop()
 
