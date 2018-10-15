@@ -1,10 +1,9 @@
 package ptnjson
 
 import (
-	"github.com/palletone/go-palletone/dag/modules"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
@@ -23,6 +22,15 @@ type CreateRawTransactionCmd struct {
 	LockTime *int64
 }
 
+// CreateVoteTransactionCmd defines the createrawtransaction JSON-RPC command.
+type CreateVoteTransactionCmd struct {
+	Inputs          []TransactionInput
+	Amounts         map[string]float64 `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
+	LockTime        *int64
+	MediatorAddress common.Address
+	ExpiredTerm     uint16
+}
+
 // NewCreateRawTransactionCmd returns a new instance which can be used to issue
 // a createrawtransaction JSON-RPC command.
 //
@@ -37,6 +45,18 @@ func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts map[string]fl
 	}
 }
 
+func NewCreateVoteTransactionCmd(inputs []TransactionInput, amounts map[string]float64,
+	lockTime *int64, mediatorAddress common.Address, expiredTerm uint16) *CreateVoteTransactionCmd {
+
+	return &CreateVoteTransactionCmd{
+		Inputs:          inputs,
+		Amounts:         amounts,
+		LockTime:        lockTime,
+		MediatorAddress: mediatorAddress,
+		ExpiredTerm:     expiredTerm,
+	}
+}
+
 type RawTransactionGenParams struct {
 	Inputs []struct {
 		Txid         string `json:"txid"`
@@ -48,6 +68,22 @@ type RawTransactionGenParams struct {
 		Amount  float64 `json:"amount"`
 	} `json:"outputs"`
 	Locktime int64 `json:"locktime"`
+}
+
+type VoteTransactionGenParams struct {
+	Inputs []struct {
+		Txid         string `json:"txid"`
+		Vout         uint32 `json:"vout"`
+		MessageIndex uint32 `json:"messageindex"`
+	} `json:"inputs"`
+	Outputs []struct {
+		Address string  `json:"address"`
+		Amount  float64 `json:"amount"`
+	} `json:"outputs"`
+	Locktime int64 `json:"locktime"`
+	// Additional fields
+	MediatorAddress common.Address `json:"mediatoraddress"`
+	ExpiredTerm     uint16         `json:"expiredterm"`
 }
 
 func ConvertRawTxJson2Paymsg(rawTxJson RawTransactionGenParams) (*modules.PaymentPayload, error) {

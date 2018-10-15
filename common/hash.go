@@ -27,6 +27,7 @@ import (
 	"crypto/sha256"
 	// "github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/hexutil"
+
 	"strings"
 )
 
@@ -103,7 +104,11 @@ func (h *Hash) SetBytes(b []byte) {
 // Set string `s` to h. If s is larger than len(h) s will be cropped (from left) to fit.
 func (h *Hash) SetString(s string) { h.SetBytes([]byte(s)) }
 func (h *Hash) SetHexString(s string) error {
-	bytes, err := hexutil.Decode(s)
+	ss := s
+	if !strings.HasPrefix(s, "0x") {
+		ss = "0x" + s
+	}
+	bytes, err := hexutil.Decode(ss)
 	if err != nil {
 		return err
 	}
@@ -145,11 +150,13 @@ func (h UnprefixedHash) MarshalText() ([]byte, error) {
 }
 func NewHashFromStr(hash string) (*Hash, error) {
 	ret := new(Hash)
-	err := Decode(ret, hash)
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
+	err := ret.SetHexString(hash)
+	return ret, err
+	//err := Decode(ret, hash)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//return ret, nil
 }
 
 // Decode decodes the byte-reversed hexadecimal string encoding of a Hash to a
