@@ -111,4 +111,8 @@ type IDag interface {
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
 	IsSynced() bool
+
+	// get token info
+	GetTokenInfo(key []byte) (*modules.TokenInfo, error)
+	GetAllTokenInfo() (*modules.AllTokenInfo, error)
 }

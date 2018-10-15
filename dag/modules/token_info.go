@@ -35,8 +35,14 @@ const (
 )
 
 type IDType16 [ID_LENGTH]byte
-type TokenTypes struct {
-	Tokens []IDType16
+type AllTokenInfo struct {
+	Items map[string]*TokenInfo
+}
+type TokenInfo struct {
+	Name         string
+	Token        IDType16
+	Creator      string
+	CreationDate string
 }
 
 func ZeroIdType16() IDType16 {
@@ -61,4 +67,23 @@ func (it *IDType16) SetBytes(b []byte) {
 	}
 
 	copy(it[ID_LENGTH-len(b):], b)
+}
+func SetIdTypeByHex(id string) (IDType16, error) {
+	bytes, err := hexutil.Decode(id)
+	if err != nil {
+		return IDType16{}, err
+	}
+	var id_type IDType16
+	copy(id_type[ID_LENGTH-len(bytes):], bytes)
+	return id_type, nil
+}
+
+func (tf *AllTokenInfo) Add(token *TokenInfo) {
+	if tf == nil {
+		tf = new(AllTokenInfo)
+	}
+	if tf.Items == nil {
+		tf.Items = make(map[string]*TokenInfo)
+	}
+	tf.Items[string(TOKENTYPE)+token.Token.String()] = token
 }

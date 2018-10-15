@@ -41,13 +41,6 @@ func TestSaveJoint(t *testing.T) {
 		return
 	}
 
-	if IsGenesisUnit("123") {
-		log.Println("faile")
-		t.Error("faild")
-	} else {
-		log.Println("success")
-		t.Log("success")
-	}
 	log.Println(strconv.FormatInt(time.Now().Unix(), 10))
 	var ty []modules.IDType16
 	var p []common.Hash

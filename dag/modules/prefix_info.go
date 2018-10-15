@@ -71,6 +71,10 @@ var (
 	UTXO_PREFIX       = []byte("uo")
 	UTXO_INDEX_PREFIX = []byte("ui")
 	ASSET_INFO_PREFIX = []byte("ai")
+
+	// token info
+	TOKENTYPE  = []byte("tp") // tp[types]
+	TOKENINFOS = []byte("tokeninfos")
 )
 
 // suffix

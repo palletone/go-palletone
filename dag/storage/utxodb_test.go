@@ -65,7 +65,7 @@ func TestGetUtxos(t *testing.T) {
 		}
 	}
 
-	result1 := utxodb.GetPrefix(AddrOutPoint_Prefix)
+	result1 := utxodb.GetPrefix(modules.AddrOutPoint_Prefix)
 	for key, b := range result1 {
 		utxodb.logger.Debugf("result:", key)
 		out := new(modules.OutPoint)

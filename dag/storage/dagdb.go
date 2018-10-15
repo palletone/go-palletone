@@ -23,7 +23,6 @@ package storage
 import (
 	"bytes"
 	"fmt"
-
 	"math/big"
 	"strings"
 
@@ -57,6 +56,8 @@ type IDagDb interface {
 	SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
 	SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	SaveTxLookupEntry(unit *modules.Unit) error
+	SaveTokenInfo(token_info *modules.TokenInfo) error
+	SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error
 
 	PutCanonicalHash(hash common.Hash, number uint64) error
 	PutHeadHeaderHash(hash common.Hash) error
@@ -82,6 +83,8 @@ type IDagDb interface {
 	GetHeadFastUnitHash() (common.Hash, error)
 	GetTrieSyncProgress() (uint64, error)
 	GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
+	GetTokenInfo(key []byte) (*modules.TokenInfo, error)
+	GetAllTokenInfo() (*modules.AllTokenInfo, error)
 }
 
 // ###################### SAVE IMPL START ######################
@@ -234,6 +237,26 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 		if err := StoreBytes(dagdb.db, append(modules.LookupPrefix, []byte(tx.TxHash.String())...), data); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+func (dagdb *DagDb) SaveTokenInfo(token_info *modules.TokenInfo) error {
+	if token_info == nil {
+		return errors.New("token info is null.")
+	}
+	if err := StoreBytes(dagdb.db, append(modules.TOKENTYPE, token_info.Token[:]...), token_info); err != nil {
+		return err
+	}
+	// 更新all token_info table.
+	infos, _ := dagdb.GetAllTokenInfo()
+	infos.Add(token_info)
+	dagdb.SaveAllTokenInfo(infos)
+	return nil
+}
+
+func (dagdb *DagDb) SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error {
+	if err := StoreBytes(dagdb.db, modules.TOKENINFOS, token_itmes); err != nil {
+		return err
 	}
 	return nil
 }
@@ -639,6 +662,30 @@ func (dagdb *DagDb) PutTrieSyncProgress(count uint64) error {
 		return err
 	}
 	return nil
+}
+
+// GetTokenInfo
+func (dagdb *DagDb) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
+	data, err := dagdb.db.Get(modules.TOKENINFOS)
+	if err != nil {
+		return nil, err
+	}
+	all := new(modules.AllTokenInfo)
+	if err := rlp.DecodeBytes(data, &all); err != nil {
+		return nil, err
+	}
+	return all, nil
+}
+func (dagdb *DagDb) GetTokenInfo(key []byte) (*modules.TokenInfo, error) {
+	data, err := dagdb.db.Get(append(modules.TOKENTYPE, key...))
+	if err != nil {
+		return nil, err
+	}
+	info := new(modules.TokenInfo)
+	if err := rlp.DecodeBytes(data, &info); err != nil {
+		return nil, err
+	}
+	return info, nil
 }
 
 // ###################### GET IMPL END ######################
