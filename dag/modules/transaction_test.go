@@ -19,7 +19,7 @@ func TestTransactionEncode(t *testing.T) {
 		LockTime: 12345,
 	}
 	output := NewTxOut(1, []byte{}, &Asset{})
-	pay1s.AddTxOut(*output)
+	pay1s.AddTxOut(output)
 
 	msg := &Message{
 		App:     APP_PAYMENT,

@@ -28,6 +28,7 @@ import (
 
 	"github.com/palletone/go-palletone/common/log"
 	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
 func MockStateMemDb() IStateDb {
@@ -88,7 +89,8 @@ func TestSaveAndGetConfig(t *testing.T) {
 	//	return
 	//}
 	// todo get GenesisAsset
-	genesisAsset := db.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
+	genesisAsset ,_,err:= db.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
+	assert.NotNil(t,err)
 	var asset modules.Asset
 	if err := rlp.DecodeBytes(genesisAsset, &asset); err != nil {
 		log.Error("Check unit signature", "error", err.Error())
