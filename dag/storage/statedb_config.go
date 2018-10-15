@@ -33,7 +33,7 @@ import (
 get config information
 */
 func (statedb *StateDb) GetConfig(name []byte) ([]byte, *modules.StateVersion, error) {
-	key := append(CONF_PREFIX, name...)
+	key := append(modules.CONF_PREFIX, name...)
 	return retrieveWithVersion(statedb.db, key)
 
 }
@@ -51,7 +51,7 @@ func (statedb *StateDb) SaveConfig(confs []modules.PayloadMapStruct, stateVersio
 			statedb.saveMediators(mediators, stateVersion)
 			continue
 		}
-		key := append(CONF_PREFIX, conf.Key...)
+		key := append(modules.CONF_PREFIX, conf.Key...)
 		//key := fmt.Sprintf("%s_%s_%s", CONF_PREFIX, conf.Key, stateVersion.String())
 		err := StoreBytesWithVersion(statedb.db, key, stateVersion, conf.Value)
 		if err != nil {
