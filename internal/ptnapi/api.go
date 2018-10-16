@@ -1372,7 +1372,7 @@ func CreateVoteTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	}
 	votePayload := new(modules.VotePayload)
 	votePayload.ExpiredTerm = c.ExpiredTerm
-	votePayload.Address  = []byte(c.MediatorAddress)
+	votePayload.Address = []byte(c.MediatorAddress)
 
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_VOTE, votePayload))
@@ -1761,6 +1761,7 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return common.Hash{}, err
 	}
+	log.Debugf("Tx outpoint tx hash:%s", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0].PreviousOutPoint.TxHash.String())
 	//log.Info("PublicTransactionPoolAPI", "SendRawTransaction tx", tx)
 	return submitTransaction(ctx, s.b, tx)
 }
