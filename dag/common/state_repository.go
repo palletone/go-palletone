@@ -21,6 +21,7 @@
 package common
 
 import (
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -28,6 +29,7 @@ import (
 
 type IStateRepository interface {
 	GetCandidateMediators() []*core.MediatorInfo
+	IsCandidateMediator(addr common.Address) bool
 }
 
 type StateRepository struct {
@@ -54,4 +56,13 @@ func (rep *StateRepository) GetCandidateMediators() []*core.MediatorInfo {
 		result = append(result, minfo)
 	}
 	return result
+}
+
+func (rep *StateRepository) IsCandidateMediator(addr common.Address) bool {
+	_, err := rep.statedb.GetAccountMediatorInfo(addr)
+	if err != nil {
+		return false
+	}
+
+	return true
 }
