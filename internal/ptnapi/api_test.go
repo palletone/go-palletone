@@ -82,6 +82,68 @@ func TestRawTransactionGen(t *testing.T) {
 	return
 }
 
+func TestVoteTransactionGen(t *testing.T) {
+	params := `{
+    "inputs": [
+		{
+           "txid": "b0bec28ef271525381d602b0b0035c27ec9896c3eda4a5ce58f33e94cd4da970",
+           "vout": 0,
+           "messageindex": 0
+		}
+    ],
+    "outputs": [
+		{
+           "address": "P1KzS9JG7XCZvdKRNwL47mJWCGprCCt8j8D",
+           "amount": 100000
+		}
+    ],
+    "locktime": 0,
+	"expiredterm": 0,
+	"mediatoraddress": "P1KzS9JG7XCZvdKRNwL47mJWCGprCCt8j8D"
+	
+	}`
+	params = params
+	testResult := "f8dda07dc0d1b3d04a5e5c1e259e8234003d2b7ae4d7f417378ed7e2fa667af5696c0cf8baf88f01b88cf88ae7e6e3a0b0bec28ef271525381d602b0b0035c27ec9896c3eda4a5ce58f33e94cd4da97080808080f85ff85d8880000000000000009976a914d04ef6595ea6dd1cf512a5e9077a66f9b9fb422688ace390000000000000000000000000000000009000000000000000000000000000000000809500000000000000000000000000000000000000000080e807a6e5a350314b7a53394a473758435a76644b524e774c34376d4a5743477072434374386a384480"
+	var voteTransactionGenParams ptnjson.VoteTransactionGenParams
+	err := json.Unmarshal([]byte(params), &voteTransactionGenParams)
+	if err != nil {
+		return
+	}
+	//fmt.Println("voteTransactionGenParams:",voteTransactionGenParams)
+	//transaction inputs
+	var inputs []ptnjson.TransactionInput
+	for _, inputOne := range voteTransactionGenParams.Inputs {
+		input := ptnjson.TransactionInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex}
+		inputs = append(inputs, input)
+	}
+	if len(inputs) == 0 {
+		return
+	}
+	//realNet := &chaincfg.MainNetParams
+	amounts := map[string]float64{}
+	for _, outOne := range voteTransactionGenParams.Outputs {
+		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
+			continue
+		}
+		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
+	}
+	if len(amounts) == 0 {
+		return
+	}
+
+	MediatorAddress := voteTransactionGenParams.MediatorAddress
+	ExpiredTerm := voteTransactionGenParams.ExpiredTerm
+	arg := ptnjson.NewCreateVoteTransactionCmd(inputs, amounts, &voteTransactionGenParams.Locktime, MediatorAddress, ExpiredTerm)
+
+
+	result, _ := CreateVoteTransaction(arg)
+	if !strings.Contains(result, testResult) {
+		t.Errorf("unexpected result - got: %v, "+"want: %v", result, testResult)
+	}
+	fmt.Println(result)
+	return
+}
+
 /*
 func TestDecodeRawTransaction(t *testing.T) {
 

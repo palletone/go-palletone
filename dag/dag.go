@@ -405,10 +405,7 @@ func NewDag(db ptndb.Database, l log.ILogger) (*Dag, error) {
 	utxoDb := storage.NewUtxoDb(db, l)
 	stateDb := storage.NewStateDb(db, l)
 	idxDb := storage.NewIndexDb(db, l)
-	propDb, err := storage.NewPropertyDb(db, l)
-	if err != nil {
-		return nil, err
-	}
+	propDb := storage.NewPropertyDb(db, l)
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, l)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, l)
@@ -442,7 +439,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	utxoDb := storage.NewUtxoDb(db, logger)
 	stateDb := storage.NewStateDb(db, logger)
 	idxDb := storage.NewIndexDb(db, logger)
-	propDb := storage.NewPropertyDb4GenesisInit(db)
+	propDb := storage.NewPropertyDb(db, logger)
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, logger)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, logger)
@@ -740,6 +737,16 @@ func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, 
 }
 func (d *Dag) UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
 	d.propRep.UpdateGlobalDynProp(gp, dgp, unit)
+}
+
+// Get token info
+func (d *Dag) GetTokenInfo(key []byte) (*modules.TokenInfo, error) {
+	return d.dagdb.GetTokenInfo(key)
+}
+
+// Get all token info
+func (d *Dag) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
+	return d.dagdb.GetAllTokenInfo()
 }
 
 //@Yiran

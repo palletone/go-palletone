@@ -26,59 +26,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
-var (
-	UNIT_PREFIX                      = []byte("ut") // unit_prefix + mci + hash
-	HEADER_PREFIX                    = []byte("uh") // prefix + hash
-	HeaderCanon_Prefix               = []byte("ch") // Canon Header Prefix
-	UNIT_HASH_NUMBER_Prefix          = []byte("hn")
-	UNIT_NUMBER_PREFIX               = []byte("nh") // number 和unit hash 的对应关系
-	BODY_PREFIX                      = []byte("ub")
-	TRANSACTION_PREFIX               = []byte("tx")
-	Transaction_Index                = []byte("ti")
-	TRANSACTIONS_PREFIX              = []byte("ts")
-	AddrTransactionsHash_Prefix      = []byte("at") // addr  transactions hash prefix
-	AddrOutput_Prefix                = []byte("ao") // addr output tx's hash + msg index.
-	AddrOutPoint_Prefix              = []byte("ap") // addr outpoint
-	CONTRACT_STATE_PREFIX            = []byte("cs")
-	CONTRACT_TPL                     = []byte("ct")
-	ALL_UNITS_PREFIX                 = []byte("au")
-	WITNESS_LIST_HASHES_PREFIX       = []byte("wl")
-	DEFINITIONS_PREFIX               = []byte("de")
-	ADDRESS_PREFIX                   = []byte("ad")
-	ADDRESS_DEFINITION_CHANGE_PREFIX = []byte("ac")
-	MESSAGES_PREFIX                  = []byte("me")
-	POLL_PREFIX                      = []byte("po")
-	VOTE_PREFIX                      = []byte("vo")
-	ATTESTATION_PREFIX               = []byte("at")
-	ASSET_PREFIX                     = []byte("as")
-	ASSET_ATTESTORS                  = []byte("ae")
-	MEDIATOR_CANDIDATE_PREFIX        = []byte("mc")
-	MEDIATOR_ELECTED_PREFIX          = []byte("md")
-	GLOBALPROPERTY_PREFIX            = []byte("gp")
-	DYNAMIC_GLOBALPROPERTY_PREFIX    = []byte("dp")
-	MEDIATOR_SCHEME_PREFIX           = []byte("ms")
-	ADDRESS_INFO_PREFIX              = []byte("ai")
-	CONF_PREFIX                      = []byte("cf")
-	// lookup
-	LookupPrefix = []byte("l")
-
-	// Head Fast Key
-	HeadHeaderKey = []byte("LastHeader")
-	HeadUnitKey   = []byte("LastUnit")
-	HeadFastKey   = []byte("LastFast")
-	TrieSyncKey   = []byte("TrieSync")
-
-	// contract
-	CONTRACT_PREFIX = []byte("cs")
-
-	// other prefix
-	EAENED_HEADERS_COMMISSION = "earned_headers_commossion"
-	ALL_UNITS                 = "array_units"
-
-	// suffix
-	NumberSuffix = []byte("n")
-	DBPath       = dagconfig.DefaultDataDir()
-)
+var DBPath = dagconfig.DefaultDataDir()
 
 func Init(path string, cache int, handles int) (*palletdb.LDBDatabase, error) {
 	var err error

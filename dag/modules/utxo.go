@@ -37,14 +37,6 @@ const (
 	tfModified
 )
 
-var (
-	// state storage
-	CONTRACT_ATTRI    = []byte("contract") // like contract_[contract address]_[key]
-	UTXO_PREFIX       = []byte("uo")
-	UTXO_INDEX_PREFIX = []byte("ui")
-	ASSET_INFO_PREFIX = []byte("ai")
-)
-
 //Asset to identify token
 //By default, system asset id=0,UniqueId=0,ChainId=1
 //默认的PTN资产，则AssetId=0，UniqueId=0,ChainId是当前链的ID

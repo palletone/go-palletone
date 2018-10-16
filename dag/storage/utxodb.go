@@ -97,7 +97,7 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 					return err
 				}
 				// delete index , key  outpoint .
-				outpoint_key := append(AddrOutPoint_Prefix, address.Bytes()...)
+				outpoint_key := append(modules.AddrOutPoint_Prefix, address.Bytes()...)
 				utxodb.db.Delete(append(outpoint_key, outpoint.Hash().Bytes()...))
 
 				continue
@@ -109,7 +109,7 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 				if err := utxodb.db.Put(key, val); err != nil {
 					return err
 				} else { // save utxoindex and  addr and key
-					outpoint_key := append(AddrOutPoint_Prefix, address.Bytes()...)
+					outpoint_key := append(modules.AddrOutPoint_Prefix, address.Bytes()...)
 					utxodb.SaveUtxoOutpoint(append(outpoint_key, outpoint.Hash().Bytes()...), &outpoint)
 				}
 			}
@@ -122,8 +122,6 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 	key := outpoint.ToKey()
 	return utxodb.db.Delete(key)
 }
-
-const UTXOSNAPSHOT_PREFIX = "us"
 
 //@Yiran
 func (utxodb *UtxoDb) SaveUtxoSnapshot(index *modules.ChainIndex) error {
@@ -143,7 +141,7 @@ func (utxodb *UtxoDb) SaveUtxoSnapshot(index *modules.ChainIndex) error {
 		}
 	}
 	//2. store utxo
-	key := KeyConnector([]byte(UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
+	key := KeyConnector([]byte(modules.UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
 	return utxodb.SaveUtxoEntities(key, &PTNutxos)
 }
 
@@ -177,7 +175,7 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 //@Yiran get utxo snapshot from db
 func (utxodb *UtxoDb) GetUtxoEntities(index *modules.ChainIndex) (*[]modules.Utxo, error) {
 	utxos := make([]modules.Utxo, 0)
-	key := KeyConnector([]byte(UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
+	key := KeyConnector([]byte(modules.UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
 	data, err := utxodb.db.Get(key)
 	if err != nil {
 		return nil, err
@@ -194,7 +192,7 @@ func (utxodb *UtxoDb) GetUtxoByIndex(indexKey []byte) ([]byte, error) {
 
 func (db *UtxoDb) GetAddrOutput(addr string) ([]modules.Output, error) {
 
-	data := db.GetPrefix(append(AddrOutput_Prefix, []byte(addr)...))
+	data := db.GetPrefix(append(modules.AddrOutput_Prefix, []byte(addr)...))
 	outputs := make([]modules.Output, 0)
 	for _, b := range data {
 		out := new(modules.Output)
@@ -209,7 +207,7 @@ func (db *UtxoDb) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	if err != nil {
 		return nil, err
 	}
-	data := db.GetPrefix(append(AddrOutPoint_Prefix, address.Bytes()...))
+	data := db.GetPrefix(append(modules.AddrOutPoint_Prefix, address.Bytes()...))
 	outpoints := make([]modules.OutPoint, 0)
 	for _, b := range data {
 		out := new(modules.OutPoint)

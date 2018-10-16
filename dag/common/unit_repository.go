@@ -227,9 +227,9 @@ To get genesis unit info from leveldb
 */
 func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error) {
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
-	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
+	key := fmt.Sprintf("%s%v_", modules.HEADER_PREFIX, index)
 	// encNum := ptndb.EncodeBlockNumber(index)
-	// key := append(storage.HEADER_PREFIX, encNum...)
+	// key := append(modules.HEADER_PREFIX, encNum...)
 
 	//if memdb, ok := db.(*ptndb.MemDatabase); ok {
 	//	hash, err := memdb.Get([]byte(key))
@@ -677,7 +677,7 @@ To delete contract state
 */
 func (unitOp *UnitRepository) deleteContractState(contractID []byte, field string) {
 	oldKeyPrefix := fmt.Sprintf("%s%s^*^%s",
-		storage.CONTRACT_STATE_PREFIX,
+		modules.CONTRACT_STATE_PREFIX,
 		hexutil.Encode(contractID[:]),
 		field)
 	data := unitOp.statedb.GetPrefix([]byte(oldKeyPrefix))
@@ -727,7 +727,7 @@ func (unitOp *UnitRepository) updateState(contractID []byte, key string, version
 		unitOp.deleteContractState(contractID, key)
 		// insert new state
 		key := fmt.Sprintf("%s%s^*^%s^*^%s",
-			storage.CONTRACT_STATE_PREFIX,
+			modules.CONTRACT_STATE_PREFIX,
 			hexutil.Encode(contractID[:]),
 			key,
 			version.String())

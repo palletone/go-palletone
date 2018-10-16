@@ -87,8 +87,6 @@ type IDag interface {
 	WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id common.Address) (*modules.Contract, error)
 	GetCurThreshold() int
-	GetGlobalProp() *modules.GlobalProperty
-	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error)
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
 	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
@@ -97,18 +95,21 @@ type IDag interface {
 	GetActiveMediatorAddr(index int) common.Address
 	GetActiveMediatorInitPubs() []kyber.Point
 	IsActiveMediator(add common.Address) bool
-	GetMediatorSchl() *modules.MediatorSchedule
 	GetActiveMediatorCount() int
 	GetActiveMediatorNode(index int) *discover.Node
 	//获得所有Mediator候选人列表
 	GetCandidateMediators() []*core.MediatorInfo
 
 	UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit)
-	StoreGlobalProp(gp *modules.GlobalProperty) error
-	StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error
-	RetrieveGlobalProp() (*modules.GlobalProperty, error)
-	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
-	StoreMediatorSchl(ms *modules.MediatorSchedule) error
-	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
+	SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) error
+	GetGlobalProp() *modules.GlobalProperty
+	SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bool) error
+	GetDynGlobalProp() *modules.DynamicGlobalProperty
+	SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) error
+	GetMediatorSchl() *modules.MediatorSchedule
 	IsSynced() bool
+
+	// get token info
+	GetTokenInfo(key []byte) (*modules.TokenInfo, error)
+	GetAllTokenInfo() (*modules.AllTokenInfo, error)
 }

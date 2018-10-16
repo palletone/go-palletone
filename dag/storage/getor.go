@@ -105,7 +105,7 @@ func GetContractRlp(db DatabaseReader, id common.Hash) (rlp.RawValue, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
-	con_bytes, err := db.Get(append(CONTRACT_PREFIX, id[:]...))
+	con_bytes, err := db.Get(append(modules.CONTRACT_PREFIX, id[:]...))
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func GetContractRlp(db DatabaseReader, id common.Hash) (rlp.RawValue, error) {
 
 // GetAdddrTransactionsHash
 func GetAddrTransactionsHash(db DatabaseReader, addr string) ([]common.Hash, error) {
-	data, err := db.Get(append(AddrTransactionsHash_Prefix, []byte(addr)...))
+	data, err := db.Get(append(modules.AddrTransactionsHash_Prefix, []byte(addr)...))
 	if err != nil {
 		return []common.Hash{}, err
 	}

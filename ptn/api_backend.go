@@ -283,6 +283,17 @@ func (b *PtnApiBackend) GetAllUtxos() ([]ptnjson.UtxoJson, error) {
 
 }
 
+func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
+	all, err := b.ptn.dag.GetAllTokenInfo()
+	if err != nil {
+		return nil, err
+	}
+	return all, nil
+}
+func (b *PtnApiBackend) GetTokenInfo(key []byte) (*modules.TokenInfo, error) {
+	return b.ptn.dag.GetTokenInfo(key)
+}
+
 func (b *PtnApiBackend) GetAddrTransactions(addr string) (modules.Transactions, error) {
 	return b.ptn.dag.GetAddrTransactions(addr)
 }
