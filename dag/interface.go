@@ -108,4 +108,8 @@ type IDag interface {
 	SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) error
 	GetMediatorSchl() *modules.MediatorSchedule
 	IsSynced() bool
+
+	// get token info
+	GetTokenInfo(key []byte) (*modules.TokenInfo, error)
+	GetAllTokenInfo() (*modules.AllTokenInfo, error)
 }

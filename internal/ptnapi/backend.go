@@ -110,7 +110,8 @@ type Backend interface {
 	GetAllUtxos() ([]ptnjson.UtxoJson, error)
 	//------- Get addr utxo end  ------//
 	GetAddrTransactions(addr string) (modules.Transactions, error)
-
+	GetAllTokenInfo() (*modules.AllTokenInfo, error)
+	GetTokenInfo(key []byte) (*modules.TokenInfo, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
@@ -160,6 +161,11 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Version:   "1.0",
 			Service:   NewPrivateAccountAPI(apiBackend, nonceLock),
 			Public:    false,
+		}, {
+			Namespace: "ptn",
+			Version:   "1.0",
+			Service:   NewPublicDagAPI(apiBackend),
+			Public:    true,
 		},
 	}
 }

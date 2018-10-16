@@ -607,3 +607,15 @@ func (ec *Client) GetAddrTransactions(ctx context.Context, addr string) (modules
 	err := ec.c.CallContext(ctx, &result, "ptn_getAddrTxs", addr)
 	return result, err
 }
+
+func (ec *Client) GetAllTokenInfo(ctx context.Context) (*modules.AllTokenInfo, error) {
+	result := new(modules.AllTokenInfo)
+	err := ec.c.CallContext(ctx, &result, "ptn_getAllTokenInfo", nil)
+	return result, err
+}
+
+func (ec *Client) GetTokenInfo(ctx context.Context, key string) (*modules.TokenInfo, error) {
+	result := new(modules.TokenInfo)
+	err := ec.c.CallContext(ctx, &result, "ptn_getTokenInfo", key)
+	return result, err
+}

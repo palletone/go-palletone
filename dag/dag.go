@@ -739,6 +739,16 @@ func (d *Dag) UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.Dynam
 	d.propRep.UpdateGlobalDynProp(gp, dgp, unit)
 }
 
+// Get token info
+func (d *Dag) GetTokenInfo(key []byte) (*modules.TokenInfo, error) {
+	return d.dagdb.GetTokenInfo(key)
+}
+
+// Get all token info
+func (d *Dag) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
+	return d.dagdb.GetAllTokenInfo()
+}
+
 //@Yiran
 func (d *Dag) GetCurrentUnitIndex() (*modules.ChainIndex, error) {
 	currentUnitHash := d.CurrentUnit().UnitHash
