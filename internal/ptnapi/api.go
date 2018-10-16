@@ -1477,7 +1477,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Debugf("payload input outpoint:%s", pload.Input[0].PreviousOutPoint.TxHash.String())
+	//log.Debugf("payload input outpoint:%s", pload.Input[0].PreviousOutPoint.TxHash.String())
 	mtxHex := hex.EncodeToString(mtxbt)
 	return mtxHex, nil
 }
@@ -1565,7 +1565,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
 		return nil, err
 	}
-	log.Debugf("InputOne txid:{%+v}", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0])
+	//log.Debugf("InputOne txid:{%+v}", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0])
 
 	var hashType uint32
 	switch *cmd.Flags {
