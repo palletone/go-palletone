@@ -36,11 +36,11 @@ type UtxoRepository struct {
 	utxodb  storage.IUtxoDb
 	idxdb   storage.IIndexDb
 	statedb storage.IStateDb
-	logger log.ILogger
+	logger  log.ILogger
 }
 
-func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb storage.IStateDb,l log.ILogger) *UtxoRepository {
-	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb,logger:l}
+func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb storage.IStateDb, l log.ILogger) *UtxoRepository {
+	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb, logger: l}
 }
 
 type IUtxoRepository interface {
@@ -219,7 +219,7 @@ func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32,
 		sAddr, _ := tokenengine.GetAddressFromScript(txout.PkScript)
 		// save addr key index.
 		outpoint_key := make([]byte, 0)
-		outpoint_key = append(outpoint_key, storage.AddrOutPoint_Prefix...)
+		outpoint_key = append(outpoint_key, modules.AddrOutPoint_Prefix...)
 		outpoint_key = append(outpoint_key, sAddr.Bytes()...)
 		repository.idxdb.SaveIndexValue(append(outpoint_key, outpoint.Hash().Bytes()...), outpoint)
 

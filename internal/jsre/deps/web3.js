@@ -5571,6 +5571,19 @@ var methods = function () {
         params: 1,
         // inputFormatter: [null]
     });
+    var getTokenInfo = new Method({
+        name: 'getTokenInfo',
+        call: 'ptn_getTokenInfo',
+        params: 1,
+        // inputFormatter: [null]
+    });
+    var getAllTokenInfo = new Method({
+        name: 'getAllTokenInfo',
+        call: 'ptn_getAllTokenInfo',
+        params: 0,
+        // inputFormatter: [null]
+    });
+
 
 // del ptn_getStorageAt
 //Contract
@@ -5647,7 +5660,9 @@ var methods = function () {
         getAddrOutpoints,
         getAddrUtxos,
         getAllUtxos,
-        getAddrTxs,
+        getAddrTxs, 
+        getAllTokenInfo,
+        getTokenInfo,
         ccinstall,
         ccdeploy,
         ccinvoke,

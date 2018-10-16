@@ -94,16 +94,18 @@ func (statedb *StateDb) SaveCandidateMediatorAddrList(addrs []common.Address, v 
 	statedb.logger.Debugf("Try to save candidate mediator address list:%s", addrsStr)
 	return StoreBytesWithVersion(statedb.db, key, v, addrs)
 }
-func (statedb *StateDb) GetActiveMediatorAddrList() ([]common.Address, error) {
 
-	key := constants.STATE_ACTIVE_MEDIATOR_LIST
-	data, _, err := retrieveWithVersion(statedb.db, key)
-	if err != nil {
-		return nil, err
-	}
-	result := []common.Address{}
-	rlp.DecodeBytes(data, result)
-	return result, nil
-}
+// comment by Albert·Gou
+//func (statedb *StateDb) GetActiveMediatorAddrList() ([]common.Address, error) {
+//
+//	key := constants.STATE_ACTIVE_MEDIATOR_LIST
+//	data, _, err := retrieveWithVersion(statedb.db, key)
+//	if err != nil {
+//		return nil, err
+//	}
+//	result := []common.Address{}
+//	rlp.DecodeBytes(data, result)
+//	return result, nil
+//}
 
 // ######################### GET IMPL END ###########################

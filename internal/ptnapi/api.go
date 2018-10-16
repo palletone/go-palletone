@@ -1002,6 +1002,16 @@ func (s *PublicTransactionPoolAPI) GetAllUtxos(ctx context.Context) (string, err
 	return string(result_json), nil
 }
 
+// func (s *PublicTransactionPoolAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
+// 	items, err := s.b.GetAllTokenInfo()
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	info := NewPublicReturnInfo("all_token_info", items)
+// 	result_json, _ := json.Marshal(info)
+// 	return string(result_json), nil
+// }
+
 // GetBlockTransactionCountByNumber returns the number of transactions in the block with the given block number.
 func (s *PublicTransactionPoolAPI) GetBlockTransactionCountByNumber(ctx context.Context, blockNr rpc.BlockNumber) *hexutil.Uint {
 	//	if block, _ := s.b.BlockByNumber(ctx, blockNr); block != nil {
@@ -1994,4 +2004,36 @@ func (s *PublicNetAPI) PeerCount() hexutil.Uint {
 // Version returns the current ethereum protocol version.
 func (s *PublicNetAPI) Version() string {
 	return fmt.Sprintf("%d", s.networkVersion)
+}
+
+type PublicDagAPI struct {
+	b Backend
+	// d *dag
+}
+
+func NewPublicDagAPI(b Backend) *PublicDagAPI {
+	return &PublicDagAPI{b}
+}
+
+func (s *PublicDagAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
+	items, err := s.b.GetAllTokenInfo()
+	if err != nil {
+		return "all_token_info:null", err
+	}
+	info := NewPublicReturnInfo("all_token_info", items)
+	result_json, _ := json.Marshal(info)
+	return string(result_json), nil
+}
+func (s *PublicDagAPI) GetTokenInfo(ctx context.Context, key string) (string, error) {
+	id, err := modules.SetIdTypeByHex(key)
+	if err != nil {
+		return "", err
+	}
+	if item, err := s.b.GetTokenInfo(id[:]); err != nil {
+		return "", err
+	} else {
+		info := NewPublicReturnInfo("token_info", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
 }

@@ -26,7 +26,6 @@ import (
 	// "github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -42,11 +41,11 @@ func SaveJoint(db ptndb.Database, objJoint *modules.Joint, onDone func()) (err e
 	obj_unit := objJoint.Unit
 	obj_unit_byte, _ := json.Marshal(obj_unit)
 
-	if err = db.Put(append(UNIT_PREFIX, obj_unit.Hash().Bytes()...), obj_unit_byte); err != nil {
+	if err = db.Put(append(modules.UNIT_PREFIX, obj_unit.Hash().Bytes()...), obj_unit_byte); err != nil {
 		return
 	}
 	// add key in  unit_keys
-	log.Println("add unit key:", string(UNIT_PREFIX)+obj_unit.Hash().String(), AddUnitKeys(db, string(UNIT_PREFIX)+obj_unit.Hash().String()))
+	log.Println("add unit key:", string(modules.UNIT_PREFIX)+obj_unit.Hash().String(), AddUnitKeys(db, string(modules.UNIT_PREFIX)+obj_unit.Hash().String()))
 
 	if dagconfig.SConfig.Blight {
 		// save  update utxo , message , transaction
@@ -98,10 +97,6 @@ func ConvertBytes(val interface{}) (re []byte) {
 		log.Println("json.marshal error:", err)
 	}
 	return re[:]
-}
-
-func IsGenesisUnit(unit string) bool {
-	return unit == constants.GENESIS_UNIT
 }
 
 func GetKeysWithTag(db ptndb.Database, tag string) []string {
