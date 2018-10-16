@@ -22,7 +22,6 @@ package dag
 import (
 	"fmt"
 	"github.com/coocood/freecache"
-	"github.com/palletone/go-palletone/tokenengine"
 	"sync"
 	"sync/atomic"
 
@@ -777,26 +776,26 @@ func (d *Dag) GetUtxoSnapshot() (*[]modules.Utxo, error) {
 	return d.utxodb.GetUtxoEntities(unitIndex)
 }
 
-//@Yiran
-func (d *Dag) GenerateVoteResult() (*[]storage.Candidate, error) {
-	VoteBox := storage.NewVoteBox()
-
-	utxos, err := d.utxodb.GetAllUtxos()
-	if err != nil {
-		return nil, err
-	}
-	for _, utxo := range utxos {
-		if utxo.Asset.AssetId == modules.PTNCOIN {
-			utxoHolder, err := tokenengine.GetAddressFromScript(utxo.PkScript)
-			if err != nil {
-				return nil, err
-			}
-			VoteBox.AddToBoxIfNotVoted(utxoHolder, utxo.VoteResult)
-		}
-	}
-	VoteBox.Sort()
-	return &VoteBox.Candidates, nil
-}
+////@Yiran
+//func (d *Dag) GenerateVoteResult() (*[]storage.Candidate, error) {
+//	VoteBox := storage.NewVoteBox()
+//
+//	utxos, err := d.utxodb.GetAllUtxos()
+//	if err != nil {
+//		return nil, err
+//	}
+//	for _, utxo := range utxos {
+//		if utxo.Asset.AssetId == modules.PTNCOIN {
+//			utxoHolder, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+//			if err != nil {
+//				return nil, err
+//			}
+//			VoteBox.AddToBoxIfNotVoted(utxoHolder, utxo.VoteResult)
+//		}
+//	}
+//	VoteBox.Sort()
+//	return &VoteBox.Candidates, nil
+//}
 
 func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType16) []*modules.Utxo {
 	res := make([]*modules.Utxo, 0)

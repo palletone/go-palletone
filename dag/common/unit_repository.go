@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -351,6 +352,30 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 	return confPay, nil
 }
 
+func (unitOp *UnitRepository) saveVote(tx *modules.Transaction, msg *modules.Message, ) bool {
+	var payload interface{}
+	payload = msg.Payload
+	VotePayLoad, ok := payload.(*modules.VotePayload)
+	if ok == false {
+		//fmt.Println("not a valid vote payload")
+		return false
+	}
+	voter, err := getRequesterAddress(tx)
+	if err != nil {
+		//getAddress Error
+		return false
+	}
+
+	Candidate := common.BytesToAddress(VotePayLoad.Address)
+	err = unitOp.statedb.AddVote(voter, Candidate)
+	if err != nil {
+		//fmt.Println(AddVote error)
+		return false
+	}
+	return true
+
+}
+
 /**
 保存单元数据，如果单元的结构基本相同
 save genesis unit data
@@ -422,6 +447,10 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 				if ok := unitOp.saveConfigPayload(tx.TxHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
 					return fmt.Errorf("Save contract invode payload error.")
 				}
+			case modules.APP_VOTE:
+				if ok := unitOp.saveVote(tx, msg); ok == false {
+					return fmt.Errorf("Save vote payload error.")
+				}
 			case modules.APP_TEXT:
 			default:
 				return fmt.Errorf("Message type is not supported now: %v", msg.App)
@@ -469,6 +498,7 @@ func (unitOp *UnitRepository) savePaymentPayload(txHash common.Hash, msg *module
 		log.Error("Update utxo failed.", "error", err)
 		return false
 	}
+
 	return true
 }
 

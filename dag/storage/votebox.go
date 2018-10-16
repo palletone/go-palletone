@@ -50,10 +50,10 @@ import "github.com/palletone/go-palletone/common"
 //}
 
 //@Yiran This function checks that a transaction contains a action which creates a vote.
-func IsVoteInitiationTx(transactionIndex []byte) error {
-	//TODO
-	return nil
-}
+//func IsVoteInitiationTx(transactionIndex []byte) error {
+//	//TODO
+//	return nil
+//}
 
 //@Yiran this function connect multiple []byte keys to single []byte.
 func KeyConnector(keys ...[]byte) []byte {
@@ -75,32 +75,32 @@ func ErrorLogHandler(err error, errType string) error {
 
 //@Yiran
 type VoteBox struct {
-	Candidates []Candidate
-	Voter      []common.Address
+	Candidate common.Address
+	Voter      common.Address
 }
 
-func (box *VoteBox) Sort() {
-	//TODO
-}
-func (box *VoteBox) AddToBoxIfNotVoted(voter common.Address, vote common.Address) {
-	//TODO
-	//for addr := range box.voter {
-	//	if addr == voter{
-	//		return
-	//	}
-	//}
-
-}
-
-func NewVoteBox() *VoteBox {
-	return &VoteBox{
-		Candidates: make([]Candidate, 0),
-		Voter:      make([]common.Address, 0),
-	}
-}
-
-//@Yiran
-type Candidate struct {
-	Address    common.Address
-	VoteNumber uint64
-}
+//func (box *VoteBox) Sort() {
+//	//TODO
+//}
+//func (box *VoteBox) AddToBoxIfNotVoted(voter common.Address, vote common.Address) {
+//	//TODO
+//	//for addr := range box.voter {
+//	//	if addr == voter{
+//	//		return
+//	//	}
+//	//}
+//
+//}
+//
+//func NewVoteBox() *VoteBox {
+//	return &VoteBox{
+//		Candidates: make([]Candidate, 0),
+//		Voter:      make([]common.Address, 0),
+//	}
+//}
+//
+////@Yiran
+//type Candidate struct {
+//	Address    common.Address
+//	VoteNumber uint64
+//}

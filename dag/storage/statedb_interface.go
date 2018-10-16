@@ -47,6 +47,8 @@ type IStateDb interface {
 	SaveAccountInfo(address common.Address, info *modules.AccountInfo) error
 	GetCandidateMediatorAddrList() ([]common.Address, error)
 	//GetActiveMediatorAddrList() ([]common.Address, error)
+
+	AddVote(voter common.Address, candidate common.Address) error
 	SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error
 	GetAccountMediatorInfo(address common.Address) (*core.MediatorInfo, error)
 	SaveAccountMediatorInfo(address common.Address, info *core.MediatorInfo, version *modules.StateVersion) error

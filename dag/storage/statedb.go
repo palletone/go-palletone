@@ -95,6 +95,13 @@ func (statedb *StateDb) SaveCandidateMediatorAddrList(addrs []common.Address, v 
 	return StoreBytesWithVersion(statedb.db, key, v, addrs)
 }
 
+
+func (statedb *StateDb) AddVote(voter common.Address, candidate common.Address) error {
+	KeyConnector(constants.STATE_VOTE_LIST)
+	//return StoreBytesWithVersion(statedb.db,key,)
+	return nil
+}
+
 // comment by Albert·Gou
 //func (statedb *StateDb) GetActiveMediatorAddrList() ([]common.Address, error) {
 //
