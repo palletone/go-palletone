@@ -60,14 +60,15 @@ const (
 	VSSDealMsg         = 0x0a
 	VSSResponseMsg     = 0x0b
 	SigShareMsg        = 0x0c
+	GroupSigMsg        = 0x0d
 
-	GetNodeDataMsg = 0x0d
-	NodeDataMsg    = 0x0e
-	GetReceiptsMsg = 0x0f
-	ReceiptsMsg    = 0x10
+	GetNodeDataMsg = 0x20
+	NodeDataMsg    = 0x21
+	GetReceiptsMsg = 0x22
+	ReceiptsMsg    = 0x23
 
-	TransitionReq  = 0x11
-	TransitionResp = 0x12
+	//TransitionReq  = 0x11
+	//TransitionResp = 0x12
 )
 
 type errCode int
