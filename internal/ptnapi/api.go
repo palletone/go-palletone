@@ -1362,7 +1362,7 @@ func CreateVoteTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	}
 	votePayload := new(modules.VotePayload)
 	votePayload.ExpiredTerm = c.ExpiredTerm
-	votePayload.Address = c.MediatorAddress
+	votePayload.Address  = []byte(c.MediatorAddress)
 
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_VOTE, votePayload))
