@@ -157,7 +157,10 @@ func (self *ProtocolManager) groupSigBroadcastLoop() {
 // BroadcastGroupSig will propagate the group signature of unit to p2p network
 func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
 	// todo 广播群签名，并在对应节点接受，然后添加到unit的header对应的字段中
-
+	peers := pm.peers.PeersWithoutGroupSig(groupSig.UnitHash)
+	for _, peer := range peers {
+		peer.SendGroupSig(groupSig)
+	}
 }
 
 // @author Albert·Gou
@@ -345,4 +348,10 @@ func (p *peer) SendVSSResponse(resp *mp.VSSResponseEvent) error {
 // @author Albert·Gou
 func (p *peer) SendSigShare(sigShare *mp.SigShareEvent) error {
 	return p2p.Send(p.rw, SigShareMsg, sigShare)
+}
+
+//BroadcastGroupSig
+func (p *peer) SendGroupSig(groupSig *mp.GroupSigEvent) error {
+	p.knownGroupSig.Add(groupSig.UnitHash)
+	return p2p.Send(p.rw, GroupSigMsg, groupSig)
 }

@@ -442,7 +442,7 @@ type ContractReadSet struct {
 // ExpiredTerm == 0 means that keep alive.
 // */
 type VotePayload struct {
-	Address     common.Address
+	Address     []byte
 	ExpiredTerm uint16
 }
 

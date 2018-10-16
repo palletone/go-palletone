@@ -549,22 +549,22 @@ func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
-	preout := modules.OutPoint{TxHash: tx.Hash()}
+	//preout := modules.OutPoint{TxHash: tx.Hash()}
 	var isnot_coinbase bool
 	if !dagcommon.IsCoinBase(tx) {
 		isnot_coinbase = true
 	}
 
-	for i, msgcopy := range tx.TxMessages {
+	for _, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				msgIdx := uint32(i)
-				preout.MessageIndex = msgIdx
-				for j := range msg.Output {
-					txoutIdx := uint32(j)
-					preout.OutIndex = txoutIdx
-					neededSet[preout] = struct{}{}
-				}
+				//msgIdx := uint32(i)
+				//preout.MessageIndex = msgIdx
+				//for j := range msg.Output {
+				//	txoutIdx := uint32(j)
+				//	preout.OutIndex = txoutIdx
+				//	neededSet[preout] = struct{}{}
+				//}
 				// if tx is Not CoinBase
 				// add txIn previousoutpoint
 				if isnot_coinbase {

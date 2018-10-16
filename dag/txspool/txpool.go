@@ -182,6 +182,7 @@ func NewTxPool(config TxPoolConfig, unit dags, l log.ILogger) *TxPool { // chain
 		all:         make(map[common.Hash]*modules.TxPoolTransaction),
 		chainHeadCh: make(chan modules.ChainHeadEvent, chainHeadChanSize),
 		txfee:       new(big.Int).SetUint64(config.FeeLimit),
+		outpoints:   make(map[modules.OutPoint]*modules.TxPoolTransaction),
 	}
 	pool.locals = newUtxoSet()
 	pool.priority_priced = newTxPricedList(&pool.all)
@@ -569,7 +570,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 
 	utxoview, err := pool.fetchInputUtxos(tx.Tx)
 	if err != nil {
-		pool.logger.Errorf("fetchInputUtxos by txid[%x] failed:%s", tx.Tx.TxHash.String(), err)
+		pool.logger.Errorf("fetchInputUtxos by txid[%s] failed:%s", tx.Tx.TxHash.String(), err)
 		return false, err
 	}
 	// Check the transaction if it exists in the main chain and is not already fully spent.
@@ -625,6 +626,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				for _, txin := range msg.Input {
+
 					pool.outpoints[*txin.PreviousOutPoint] = tx
 				}
 			}
