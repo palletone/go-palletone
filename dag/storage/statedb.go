@@ -95,11 +95,34 @@ func (statedb *StateDb) SaveCandidateMediatorAddrList(addrs []common.Address, v 
 	return StoreBytesWithVersion(statedb.db, key, v, addrs)
 }
 
-
 func (statedb *StateDb) AddVote(voter common.Address, candidate common.Address) error {
-	KeyConnector(constants.STATE_VOTE_LIST)
-	//return StoreBytesWithVersion(statedb.db,key,)
-	return nil
+	key := KeyConnector(constants.STATE_VOTE_LIST, voter.Bytes())
+	return StoreBytes(statedb.db, key, candidate)
+}
+
+func (statedb *StateDb) GetSortedVote(CandidateNumber uint) ([]Candidate, error) {
+	key := constants.STATE_VOTE_LIST
+	bVoteMap := getprefix(statedb.db, key)
+	voteBox := NewVoteBox()
+	for voter, bVoteAddress := range bVoteMap {
+		voterAddress, err := common.StringToAddress(voter)
+		voteAddress := common.BytesToAddress(bVoteAddress)
+		if err != nil { // string to address error
+			return nil, err
+		}
+		info, err := statedb.GetAccountInfo(voterAddress)
+		if err != nil { // get account info error
+			return nil, err
+		}
+		voterBalance := info.PtnBalance
+
+		voteBox.AddToBoxIfNotVoted(voterBalance, voterAddress, voteAddress)
+	}
+
+	voteBox.Sort()
+
+	return voteBox.HeadN(), nil
+
 }
 
 // comment by Albert·Gou

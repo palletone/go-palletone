@@ -352,7 +352,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 	return confPay, nil
 }
 
-func (unitOp *UnitRepository) saveVote(tx *modules.Transaction, msg *modules.Message, ) bool {
+func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Message, ) bool {
 	var payload interface{}
 	payload = msg.Payload
 	VotePayLoad, ok := payload.(*modules.VotePayload)
@@ -448,7 +448,7 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_VOTE:
-				if ok := unitOp.saveVote(tx, msg); ok == false {
+				if ok := unitOp.SaveVote(tx, msg); ok == false {
 					return fmt.Errorf("Save vote payload error.")
 				}
 			case modules.APP_TEXT:

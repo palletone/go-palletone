@@ -75,32 +75,33 @@ func ErrorLogHandler(err error, errType string) error {
 
 //@Yiran
 type VoteBox struct {
-	Candidate common.Address
-	Voter      common.Address
+	Candidates []Candidate
+	Voter      []common.Address
 }
 
-//func (box *VoteBox) Sort() {
-//	//TODO
-//}
-//func (box *VoteBox) AddToBoxIfNotVoted(voter common.Address, vote common.Address) {
-//	//TODO
-//	//for addr := range box.voter {
-//	//	if addr == voter{
-//	//		return
-//	//	}
-//	//}
+func (box *VoteBox) Sort() {
+	//TODO
+}
+
+func (box *VoteBox) HeadN() []Candidate {
+	return box.Candidates
+}
+func (box *VoteBox) AddToBoxIfNotVoted(score uint64, voter common.Address, voteAddress common.Address) {
+	//TODO
+	return
+
+}
+
+func NewVoteBox() *VoteBox {
+	return &VoteBox{
+		Candidates: make([]Candidate, 0),
+		Voter:      make([]common.Address, 0),
+	}
+}
+
 //
-//}
-//
-//func NewVoteBox() *VoteBox {
-//	return &VoteBox{
-//		Candidates: make([]Candidate, 0),
-//		Voter:      make([]common.Address, 0),
-//	}
-//}
-//
-////@Yiran
-//type Candidate struct {
-//	Address    common.Address
-//	VoteNumber uint64
-//}
+//@Yiran
+type Candidate struct {
+	Address    common.Address
+	VoteNumber uint64
+}
