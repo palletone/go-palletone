@@ -77,8 +77,9 @@ type peer struct {
 
 	lock sync.RWMutex
 
-	knownTxs    *set.Set // Set of transaction hashes known to be known by this peer
-	knownBlocks *set.Set // Set of block hashes known to be known by this peer
+	knownTxs      *set.Set // Set of transaction hashes known to be known by this peer
+	knownBlocks   *set.Set // Set of block hashes known to be known by this peer
+	knownGroupSig *set.Set // Set of block hashes known to be known by this peer
 
 	index modules.ChainIndex
 
@@ -90,15 +91,16 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 
 	id := p.ID()
 	return &peer{
-		Peer:         p,
-		rw:           rw,
-		version:      version,
-		id:           id.TerminalString(),
-		knownTxs:     set.New(),
-		knownBlocks:  set.New(),
-		peermsg:      map[modules.IDType16]peerMsg{},
-		mediator:     false,
-		transitionCh: make(chan int, 1),
+		Peer:          p,
+		rw:            rw,
+		version:       version,
+		id:            id.TerminalString(),
+		knownTxs:      set.New(),
+		knownBlocks:   set.New(),
+		knownGroupSig: set.New(),
+		peermsg:       map[modules.IDType16]peerMsg{},
+		mediator:      false,
+		transitionCh:  make(chan int, 1),
 	}
 }
 
@@ -151,6 +153,16 @@ func (p *peer) MarkUnit(hash common.Hash) {
 		p.knownBlocks.Pop()
 	}
 	p.knownBlocks.Add(hash)
+}
+
+// MarkBlock marks a block as known for the peer, ensuring that the block will
+// never be propagated to this particular peer.
+func (p *peer) MarkGroupSig(hash common.Hash) {
+	// If we reached the memory allowance, drop a previously known block hash
+	for p.knownGroupSig.Size() >= maxKnownBlocks {
+		p.knownGroupSig.Pop()
+	}
+	p.knownGroupSig.Add(hash)
 }
 
 // MarkTransaction marks a transaction as known for the peer, ensuring that it
@@ -473,6 +485,20 @@ func (ps *peerSet) PeersWithoutUnit(hash common.Hash) []*peer {
 	list := make([]*peer, 0, len(ps.peers))
 	for _, p := range ps.peers {
 		if !p.knownBlocks.Has(hash) {
+			list = append(list, p)
+		}
+	}
+	return list
+}
+
+//GroupSig
+func (ps *peerSet) PeersWithoutGroupSig(hash common.Hash) []*peer {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	list := make([]*peer, 0, len(ps.peers))
+	for _, p := range ps.peers {
+		if !p.knownGroupSig.Has(hash) {
 			list = append(list, p)
 		}
 	}

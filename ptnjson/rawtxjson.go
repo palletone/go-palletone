@@ -27,7 +27,7 @@ type CreateVoteTransactionCmd struct {
 	Inputs          []TransactionInput
 	Amounts         map[string]float64 `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
 	LockTime        *int64
-	MediatorAddress common.Address
+	MediatorAddress string
 	ExpiredTerm     uint16
 }
 
@@ -46,7 +46,7 @@ func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts map[string]fl
 }
 
 func NewCreateVoteTransactionCmd(inputs []TransactionInput, amounts map[string]float64,
-	lockTime *int64, mediatorAddress common.Address, expiredTerm uint16) *CreateVoteTransactionCmd {
+	lockTime *int64, mediatorAddress string, expiredTerm uint16) *CreateVoteTransactionCmd {
 
 	return &CreateVoteTransactionCmd{
 		Inputs:          inputs,
@@ -82,7 +82,7 @@ type VoteTransactionGenParams struct {
 	} `json:"outputs"`
 	Locktime int64 `json:"locktime"`
 	// Additional fields
-	MediatorAddress common.Address `json:"mediatoraddress"`
+	MediatorAddress string `json:"mediatoraddress"`
 	ExpiredTerm     uint16         `json:"expiredterm"`
 }
 

@@ -22,7 +22,6 @@ package dag
 import (
 	"fmt"
 	"github.com/coocood/freecache"
-	"github.com/palletone/go-palletone/tokenengine"
 	"sync"
 	"sync/atomic"
 
@@ -404,10 +403,7 @@ func NewDag(db ptndb.Database, l log.ILogger) (*Dag, error) {
 	utxoDb := storage.NewUtxoDb(db, l)
 	stateDb := storage.NewStateDb(db, l)
 	idxDb := storage.NewIndexDb(db, l)
-	propDb, err := storage.NewPropertyDb(db, l)
-	if err != nil {
-		return nil, err
-	}
+	propDb := storage.NewPropertyDb(db, l)
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, l)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, l)
@@ -441,7 +437,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	utxoDb := storage.NewUtxoDb(db, logger)
 	stateDb := storage.NewStateDb(db, logger)
 	idxDb := storage.NewIndexDb(db, logger)
-	propDb := storage.NewPropertyDb4GenesisInit(db)
+	propDb := storage.NewPropertyDb(db, logger)
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, logger)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, logger)
@@ -551,22 +547,22 @@ func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
-	preout := modules.OutPoint{TxHash: tx.Hash()}
+	//preout := modules.OutPoint{TxHash: tx.Hash()}
 	var isnot_coinbase bool
 	if !dagcommon.IsCoinBase(tx) {
 		isnot_coinbase = true
 	}
 
-	for i, msgcopy := range tx.TxMessages {
+	for _, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				msgIdx := uint32(i)
-				preout.MessageIndex = msgIdx
-				for j := range msg.Output {
-					txoutIdx := uint32(j)
-					preout.OutIndex = txoutIdx
-					neededSet[preout] = struct{}{}
-				}
+				//msgIdx := uint32(i)
+				//preout.MessageIndex = msgIdx
+				//for j := range msg.Output {
+				//	txoutIdx := uint32(j)
+				//	preout.OutIndex = txoutIdx
+				//	neededSet[preout] = struct{}{}
+				//}
 				// if tx is Not CoinBase
 				// add txIn previousoutpoint
 				if isnot_coinbase {
@@ -784,26 +780,26 @@ func (d *Dag) GetUtxoSnapshot() (*[]modules.Utxo, error) {
 	return d.utxodb.GetUtxoEntities(unitIndex)
 }
 
-//@Yiran
-func (d *Dag) GenerateVoteResult() (*[]storage.Candidate, error) {
-	VoteBox := storage.NewVoteBox()
-
-	utxos, err := d.utxodb.GetAllUtxos()
-	if err != nil {
-		return nil, err
-	}
-	for _, utxo := range utxos {
-		if utxo.Asset.AssetId == modules.PTNCOIN {
-			utxoHolder, err := tokenengine.GetAddressFromScript(utxo.PkScript)
-			if err != nil {
-				return nil, err
-			}
-			VoteBox.AddToBoxIfNotVoted(utxoHolder, utxo.VoteResult)
-		}
-	}
-	VoteBox.Sort()
-	return &VoteBox.Candidates, nil
-}
+////@Yiran
+//func (d *Dag) GenerateVoteResult() (*[]storage.Candidate, error) {
+//	VoteBox := storage.NewVoteBox()
+//
+//	utxos, err := d.utxodb.GetAllUtxos()
+//	if err != nil {
+//		return nil, err
+//	}
+//	for _, utxo := range utxos {
+//		if utxo.Asset.AssetId == modules.PTNCOIN {
+//			utxoHolder, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+//			if err != nil {
+//				return nil, err
+//			}
+//			VoteBox.AddToBoxIfNotVoted(utxoHolder, utxo.VoteResult)
+//		}
+//	}
+//	VoteBox.Sort()
+//	return &VoteBox.Candidates, nil
+//}
 
 func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType16) []*modules.Utxo {
 	res := make([]*modules.Utxo, 0)
