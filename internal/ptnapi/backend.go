@@ -114,7 +114,7 @@ type Backend interface {
 
 	GetAddrTransactions(addr string) (modules.Transactions, error)
 	GetAllTokenInfo() (*modules.AllTokenInfo, error)
-	GetTokenInfo(key []byte) (*modules.TokenInfo, error)
+	GetTokenInfo(key []byte) (*ptnjson.TokenInfoJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
