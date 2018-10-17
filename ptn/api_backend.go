@@ -269,6 +269,7 @@ func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error) {
 	}
 	return result, nil
 }
+
 func (b *PtnApiBackend) GetAllUtxos() ([]ptnjson.UtxoJson, error) {
 	utxos, err := b.ptn.dag.GetAllUtxos()
 	if err != nil {
@@ -290,11 +291,13 @@ func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
 	}
 	return all, nil
 }
-func (b *PtnApiBackend) GetTokenInfo(key []byte) (*modules.TokenInfo, error) {
-	// TODO ...
-	// tokeninfo to tokenJsonInfo
-
-	return b.ptn.dag.GetTokenInfo(key)
+func (b *PtnApiBackend) GetTokenInfo(key []byte) (*ptnjson.TokenInfoJson, error) {
+	tokenInfo, err := b.ptn.dag.GetTokenInfo(key)
+	if err != nil {
+		return nil, err
+	}
+	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(tokenInfo)
+	return tokenInfoJson, nil
 }
 
 func (b *PtnApiBackend) SaveTokenInfo(token *modules.TokenInfo) (string, error) {
