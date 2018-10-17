@@ -49,7 +49,7 @@ type IStateDb interface {
 	//GetActiveMediatorAddrList() ([]common.Address, error)
 
 	AddVote(voter common.Address, candidate common.Address) error
-	GetSortedVote(CandidateNumber uint) ([]Candidate, error)
+	GetSortedVote(ReturnNumber uint) ([]common.Address, error)
 	SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error
 	GetAccountMediatorInfo(address common.Address) (*core.MediatorInfo, error)
 	SaveAccountMediatorInfo(address common.Address, info *core.MediatorInfo, version *modules.StateVersion) error

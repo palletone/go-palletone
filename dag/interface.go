@@ -99,6 +99,8 @@ type IDag interface {
 	GetActiveMediatorNode(index int) *discover.Node
 	//获得所有Mediator候选人列表
 	GetCandidateMediators() []*core.MediatorInfo
+	//Get all elected mediators.
+	GetElectedMediatorsAddress() ([]common.Address, error)
 
 	UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit)
 	SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) error
