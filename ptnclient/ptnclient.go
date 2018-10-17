@@ -616,6 +616,16 @@ func (ec *Client) GetAllTokenInfo(ctx context.Context) (*modules.AllTokenInfo, e
 
 func (ec *Client) GetTokenInfo(ctx context.Context, key string) (*modules.TokenInfo, error) {
 	result := new(modules.TokenInfo)
+	// id, err := modules.SetIdTypeByHex(key)
+	// if err != nil {
+	// 	return nil, err
+	// }
 	err := ec.c.CallContext(ctx, &result, "ptn_getTokenInfo", key)
+	return result, err
+}
+
+func (ec *Client) SaveTokenInfo(ctx context.Context, name, token, creator string) (*modules.TokenInfo, error) {
+	result := new(modules.TokenInfo)
+	err := ec.c.CallContext(ctx, nil, "ptn_saveTokenInfo", name, token, creator)
 	return result, err
 }

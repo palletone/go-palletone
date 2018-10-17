@@ -60,4 +60,8 @@ func TestHexToAddrString(t *testing.T) {
 
 	addr = HexToAddress("0x000000000000000000000000000000000000000105")
 	t.Logf("0x1 p2sh address: %s", addr.String())
+
+	addr = HexToAddress("0x3c5a9cd1dc2437342692de6ed2b948c5cbb3174800")
+	t.Logf("0x1 p2sh address: %s", addr.String())
+
 }

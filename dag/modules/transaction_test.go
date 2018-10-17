@@ -12,7 +12,11 @@ import (
 
 // The values in those tests are from the Transaction Tests
 // at github.com/ethereum/tests.
-
+func TestTransactionHash(t *testing.T) {
+	tx := &Transaction{}
+	tx.SetHash(common.HexToHash("e01c4bae7b396bc3c9bcb9275cef479560141c2010b6537abd78795bc935a2dd"))
+	t.Log(tx.TxHash.String())
+}
 func TestTransactionEncode(t *testing.T) {
 
 	pay1s := PaymentPayload{
@@ -76,4 +80,8 @@ func TestTransactionEncode(t *testing.T) {
 		log.Error("tx hash mismatch ", "right_hash", rightvrsTx.TxHash, "tx_hash", tx.TxHash)
 	}
 
+}
+func TestIDType16Hex(t *testing.T) {
+	fmt.Println("ptn hex:", PTNCOIN.String())
+	fmt.Println("btc hex:", BTCCOIN.String())
 }

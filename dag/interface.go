@@ -112,4 +112,6 @@ type IDag interface {
 	// get token info
 	GetTokenInfo(key []byte) (*modules.TokenInfo, error)
 	GetAllTokenInfo() (*modules.AllTokenInfo, error)
+	// save token info
+	SaveTokenInfo(token_info *modules.TokenInfo) (string, error)
 }
