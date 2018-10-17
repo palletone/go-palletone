@@ -363,6 +363,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 	return confPay, nil
 }
 
+//Yiran
 func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Message) bool {
 	var payload interface{}
 	payload = msg.Payload
