@@ -21,7 +21,6 @@ package mediatorplugin
 import (
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/modules"
 	"strconv"
 	"time"
 
@@ -30,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
