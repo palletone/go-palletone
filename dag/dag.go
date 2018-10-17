@@ -980,3 +980,12 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 func (dag *Dag) GetCandidateMediators() []*core.MediatorInfo {
 	return dag.stateRep.GetCandidateMediators()
 }
+
+func (dag *Dag) GetElectedMediatorsAddress() ([]common.Address, error) {
+	gp, err := dag.propdb.RetrieveGlobalProp()
+	if err != nil {
+		return nil, err
+	}
+	MediatorNumber := gp.GetActiveMediatorCount()
+	return dag.statedb.GetSortedVote(uint(MediatorNumber))
+}

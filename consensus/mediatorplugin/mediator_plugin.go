@@ -21,7 +21,6 @@ package mediatorplugin
 import (
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/modules"
 	"strconv"
 	"time"
 
@@ -30,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
@@ -221,7 +221,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	// 4. 异步向区块链网络广播验证单元
 	// todo 后面改为由p2p转发
 	mp.addToTBLSSignBuf(newUnit)
-	//mp.newUnitFeed.Send(NewUnitEvent{Unit: newUnit})
+	mp.newUnitFeed.Send(NewUnitEvent{Unit: newUnit})
 	log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
 
 	return Produced, detail

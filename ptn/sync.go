@@ -165,6 +165,8 @@ func (pm *ProtocolManager) syncer() {
 
 // synchronise tries to sync up our local block chain with a remote peer.
 func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
+	log.Info("=============Enter ProtocolManager synchronise===========")
+	defer log.Info("=============End ProtocolManager synchronise===========")
 	// Short circuit if no peers are available
 	if peer == nil {
 		return
@@ -178,10 +180,10 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 		return
 	}
 	index := currentUnit.Number().Index
-
 	pHead, number := peer.Head(assetId)
 	pindex := number.Index
-	//TODO xiaozhi
+
+	log.Info("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex)
 	if index > pindex && pindex > 0 {
 		log.Info("===synchronise peer.index < local index===", "peer.index:", pindex, "local index:", number.Index)
 		return
@@ -198,7 +200,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 		//			return
 		//		}
 	}
-
+	log.Info("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex)
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
 	if err := pm.downloader.Synchronise(peer.id, pHead, pindex, mode, assetId); err != nil {
 		log.Info("ptn sync downloader.", "Synchronise err:", err)

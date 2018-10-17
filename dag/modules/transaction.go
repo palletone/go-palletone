@@ -352,14 +352,6 @@ func (s *TxByPriority) Pop() interface{} {
 //
 // NOTE: In a future PR this will be removed.
 
-// return message struct
-func NewMessage(app byte, payload interface{}) *Message {
-	m := new(Message)
-	m.App = app
-	m.Payload = payload
-	return m
-}
-
 type writeCounter common.StorageSize
 
 func (c *writeCounter) Write(b []byte) (int, error) {

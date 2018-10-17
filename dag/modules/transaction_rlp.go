@@ -20,11 +20,10 @@ package modules
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
-
-	"io"
 )
 
 type transactionTemp struct {
@@ -32,7 +31,7 @@ type transactionTemp struct {
 	TxMessages []messageTemp
 }
 type messageTemp struct {
-	App  byte
+	App  MessageType
 	Data []byte
 }
 
