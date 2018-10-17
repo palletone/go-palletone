@@ -77,3 +77,7 @@ func TestTransactionEncode(t *testing.T) {
 	}
 
 }
+func TestIDType16Hex(t *testing.T) {
+	fmt.Println("ptn hex:", PTNCOIN.String())
+	fmt.Println("btc hex:", BTCCOIN.String())
+}

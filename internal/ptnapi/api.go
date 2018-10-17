@@ -2029,11 +2029,19 @@ func (s *PublicDagAPI) GetTokenInfo(ctx context.Context, key string) (string, er
 	if err != nil {
 		return "", err
 	}
-	if item, err := s.b.GetTokenInfo(id[:]); err != nil {
+	log.Info("-------------------key--------", "key", key, "token", id)
+	if item, err := s.b.GetTokenInfo(id.Bytes()); err != nil {
 		return "", err
 	} else {
 		info := NewPublicReturnInfo("token_info", item)
 		result_json, _ := json.Marshal(info)
 		return string(result_json), nil
 	}
+}
+
+// SaveTokenInfo save a token  ,return hex key.
+func (s *PublicDagAPI) SaveTokenInfo(ctx context.Context, name, token, creator string) (string, error) {
+	//info to token
+	info := modules.NewTokenInfo(name, token, creator)
+	return s.b.SaveTokenInfo(info)
 }

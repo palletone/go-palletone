@@ -360,8 +360,7 @@ func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 //All leaf nodes for dag downloader.
 //MUST have Priority.
 func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
-
-	return []*modules.Header{}, nil
+	return d.dagdb.GetAllLeafNodes()
 }
 
 /**
@@ -740,6 +739,11 @@ func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, 
 }
 func (d *Dag) UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
 	d.propRep.UpdateGlobalDynProp(gp, dgp, unit)
+}
+
+// save token info
+func (d *Dag) SaveTokenInfo(token_info *modules.TokenInfo) (string, error) { // return key's hex
+	return d.dagdb.SaveTokenInfo(token_info)
 }
 
 // Get token info
