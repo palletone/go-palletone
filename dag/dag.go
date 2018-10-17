@@ -22,7 +22,6 @@ package dag
 import (
 	"fmt"
 	"github.com/coocood/freecache"
-	"github.com/palletone/go-palletone/tokenengine"
 	"sync"
 	"sync/atomic"
 
@@ -360,8 +359,7 @@ func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 //All leaf nodes for dag downloader.
 //MUST have Priority.
 func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
-
-	return []*modules.Header{}, nil
+	return d.dagdb.GetAllLeafNodes()
 }
 
 /**
@@ -739,6 +737,11 @@ func (d *Dag) UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.Dynam
 	d.propRep.UpdateGlobalDynProp(gp, dgp, unit)
 }
 
+// save token info
+func (d *Dag) SaveTokenInfo(token_info *modules.TokenInfo) (string, error) { // return key's hex
+	return d.dagdb.SaveTokenInfo(token_info)
+}
+
 // Get token info
 func (d *Dag) GetTokenInfo(key []byte) (*modules.TokenInfo, error) {
 	return d.dagdb.GetTokenInfo(key)
@@ -777,26 +780,26 @@ func (d *Dag) GetUtxoSnapshot() (*[]modules.Utxo, error) {
 	return d.utxodb.GetUtxoEntities(unitIndex)
 }
 
-//@Yiran
-func (d *Dag) GenerateVoteResult() (*[]storage.Candidate, error) {
-	VoteBox := storage.NewVoteBox()
-
-	utxos, err := d.utxodb.GetAllUtxos()
-	if err != nil {
-		return nil, err
-	}
-	for _, utxo := range utxos {
-		if utxo.Asset.AssetId == modules.PTNCOIN {
-			utxoHolder, err := tokenengine.GetAddressFromScript(utxo.PkScript)
-			if err != nil {
-				return nil, err
-			}
-			VoteBox.AddToBoxIfNotVoted(utxoHolder, utxo.VoteResult)
-		}
-	}
-	VoteBox.Sort()
-	return &VoteBox.Candidates, nil
-}
+////@Yiran
+//func (d *Dag) GenerateVoteResult() (*[]storage.Candidate, error) {
+//	VoteBox := storage.NewVoteBox()
+//
+//	utxos, err := d.utxodb.GetAllUtxos()
+//	if err != nil {
+//		return nil, err
+//	}
+//	for _, utxo := range utxos {
+//		if utxo.Asset.AssetId == modules.PTNCOIN {
+//			utxoHolder, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+//			if err != nil {
+//				return nil, err
+//			}
+//			VoteBox.AddToBoxIfNotVoted(utxoHolder, utxo.VoteResult)
+//		}
+//	}
+//	VoteBox.Sort()
+//	return &VoteBox.Candidates, nil
+//}
 
 func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType16) []*modules.Utxo {
 	res := make([]*modules.Utxo, 0)

@@ -50,10 +50,10 @@ import "github.com/palletone/go-palletone/common"
 //}
 
 //@Yiran This function checks that a transaction contains a action which creates a vote.
-func IsVoteInitiationTx(transactionIndex []byte) error {
-	//TODO
-	return nil
-}
+//func IsVoteInitiationTx(transactionIndex []byte) error {
+//	//TODO
+//	return nil
+//}
 
 //@Yiran this function connect multiple []byte keys to single []byte.
 func KeyConnector(keys ...[]byte) []byte {
@@ -82,13 +82,13 @@ type VoteBox struct {
 func (box *VoteBox) Sort() {
 	//TODO
 }
-func (box *VoteBox) AddToBoxIfNotVoted(voter common.Address, vote common.Address) {
+
+func (box *VoteBox) HeadN() []Candidate {
+	return box.Candidates
+}
+func (box *VoteBox) AddToBoxIfNotVoted(score uint64, voter common.Address, voteAddress common.Address) {
 	//TODO
-	//for addr := range box.voter {
-	//	if addr == voter{
-	//		return
-	//	}
-	//}
+	return
 
 }
 
@@ -99,6 +99,7 @@ func NewVoteBox() *VoteBox {
 	}
 }
 
+//
 //@Yiran
 type Candidate struct {
 	Address    common.Address

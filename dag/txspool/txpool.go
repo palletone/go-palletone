@@ -570,7 +570,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 
 	utxoview, err := pool.fetchInputUtxos(tx.Tx)
 	if err != nil {
-		pool.logger.Errorf("fetchInputUtxos by txid[%s] failed:%s", tx.Tx.TxHash.String(), err)
+		pool.logger.Errorf("fetchInputUtxos by txid[%s] failed:%s", tx.Tx.Hash().String(), err)
 		return false, err
 	}
 	// Check the transaction if it exists in the main chain and is not already fully spent.
@@ -626,7 +626,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				for _, txin := range msg.Input {
-
+                    pool.outpoints = make(map[modules.OutPoint]*modules.TxPoolTransaction)
 					pool.outpoints[*txin.PreviousOutPoint] = tx
 				}
 			}

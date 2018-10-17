@@ -341,6 +341,8 @@ func (d *Downloader) Synchronise(id string, head common.Hash, index uint64, mode
 // it will use the best peer possible and synchronize if its TD is higher than our own. If any of the
 // checks fail an error will be returned. This method is synchronous
 func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode SyncMode, assetId modules.IDType16) error {
+	log.Info("===========Enter Downloader synchronise============")
+	defer log.Info("===========End Downloader synchronise============")
 	// Mock out the synchronisation if testing
 	if d.synchroniseMock != nil {
 		return d.synchroniseMock(id, hash)
@@ -354,7 +356,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode
 
 	// Post a user notification of the sync (only once per session)
 	if atomic.CompareAndSwapInt32(&d.notified, 0, 1) {
-		log.Info("Dag synchronisation started")
+		log.Info("Downloader synchronisation started")
 	}
 	// Reset the queue, peer set and wake channels to clean any internal leftover state
 	d.queue.Reset()
@@ -440,10 +442,10 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 
 	origin, err := d.findAncestor(p, latest, assetId)
 	if err != nil {
+		log.Debug("Downloader->syncWithPeer", "findAncestor err:", err)
 		return err
 	}
 	log.Info("=====fetchHeight=====", "origin:", origin)
-
 	d.syncStatsLock.Lock()
 	if d.syncStatsChainHeight <= origin || d.syncStatsChainOrigin > origin {
 		d.syncStatsChainOrigin = origin
@@ -566,16 +568,15 @@ func (d *Downloader) Terminate() {
 // fetchHeight retrieves the head header of the remote peer to aid in estimating
 // the total time a pending synchronisation would take.
 func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*modules.Header, error) {
-	p.log.Debug("Retrieving remote chain height")
+	log.Debug("Retrieving remote chain height")
 
 	// Request the advertised remote head block and wait for the response
+	//TODO must recover
 	head, _ := p.peer.Head(assetId)
-	//fmt.Println("fetchHeight=", head)
 	if common.EmptyHash(head) {
 		return nil, errPeersUnavailable
 	}
-	//fmt.Println("lalala")
-	log.Debug("===fetchHeight===", "head:", head)
+
 	go p.peer.RequestHeadersByHash(head, 1, 0, false)
 
 	ttl := d.requestTTL()
@@ -600,7 +601,6 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*
 				return nil, errBadPeer
 			}
 			head := headers[0]
-			//fmt.Println("=============", head.Number.Index, head.Hash())
 			log.Debug("Remote head header identified", "number", head.Number.Index, "hash", head.Hash(), "peer", packet.PeerId())
 			return head, nil
 
@@ -1607,7 +1607,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	//	return floor, err
 	//}
 	////TODO xiaozhi
-	//fmt.Printf("header=%#v\n", header)
+
 	//if header != nil {
 	//	ceil = header.Number.Index
 	//	p.log.Debug("Looking for common ancestor", "local assetid", header.Number.AssetID.String(), "local index", ceil, "remote", latest.Number.Index)
@@ -1641,7 +1641,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	if count > limit {
 		count = limit
 	}
-	//log.Debug("===findAncestor===", "RequestHeadersByNumber from", from, "count", count)
+	log.Debug("Downloader", "findAncestor", "RequestHeadersByNumber false from:", from, "count:", count)
 	index := modules.ChainIndex{
 		AssetID: assetId,
 		IsMain:  true,
@@ -1650,7 +1650,6 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	//fmt.Println("count,from", count, from)
 
 	go p.peer.RequestHeadersByNumber(index, count, 15, false)
-	//fmt.Println("lala---")
 	//TODO xiaozhi
 	// Wait for the remote response to the head fetch
 	number, hash := uint64(0), common.Hash{}
@@ -1723,8 +1722,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 		//	p.log.Warn("Ancestor below allowance", "number", number, "hash", hash, "allowance", floor)
 		//	return 0, errInvalidAncestor
 		//}
-		//fmt.Println("xz  findAncestor  number,hash", number, hash)
-		p.log.Debug("Found common ancestor", "number", number, "hash", hash)
+		log.Debug("Found common ancestor", "number", number, "hash", hash)
 		return number, nil
 	}
 	//fmt.Println("--------------1/2------------")

@@ -291,7 +291,14 @@ func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
 	return all, nil
 }
 func (b *PtnApiBackend) GetTokenInfo(key []byte) (*modules.TokenInfo, error) {
+	// TODO ...
+	// tokeninfo to tokenJsonInfo
+
 	return b.ptn.dag.GetTokenInfo(key)
+}
+
+func (b *PtnApiBackend) SaveTokenInfo(token *modules.TokenInfo) (string, error) {
+	return b.ptn.dag.SaveTokenInfo(token)
 }
 
 func (b *PtnApiBackend) GetAddrTransactions(addr string) (modules.Transactions, error) {
