@@ -95,11 +95,12 @@ func (statedb *StateDb) SaveCandidateMediatorAddrList(addrs []common.Address, v 
 	return StoreBytesWithVersion(statedb.db, key, v, addrs)
 }
 
+//Yiran
 func (statedb *StateDb) AddVote(voter common.Address, candidate common.Address) error {
 	key := KeyConnector(constants.STATE_VOTE_LIST, voter.Bytes())
-	return StoreBytes(statedb.db, key, candidate)
+	return StoreBytes(statedb.db, key, candidate.Bytes())
 }
-
+//Yiran
 func (statedb *StateDb) GetSortedVote(ReturnNumber uint) ([]common.Address, error) {
 	key := constants.STATE_VOTE_LIST
 	bVoteMap := getprefix(statedb.db, key)

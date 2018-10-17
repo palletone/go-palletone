@@ -24,41 +24,8 @@ import (
 	"github.com/palletone/go-palletone/common"
 )
 
-//@Yiran
-//var (
-//	MEDIATORVOTE_PREFIX = []byte("01")
-//	COMMONVOTE_PREFIX   = []byte("00")
-//
-//	MEDIATORTERMINTERVAL = 3000
-//)
-//func (propdb *PropertyDb) UpdateActiveMediators () error{
-//	term := unit
-//	activeMediators, err := propdb.GetActiveMediators(,MEDIATORTERMINTERVAL)
-//	if err != nil {
-//		return ErrorLogHandler(err,"GetActiveMediators")
-//	}
-//
-//}
-//func (propdb *PropertyDb) GetActiveMediators(term []byte) ([]common.Address, error) {
-//	key := KeyConnector(MEDIATOR_CANDIDATE_PREFIX,term)
-//	// 1. Load Addresses of MediatorCandidates
-//	addresses := make([]common.Address, 0)
-//	ErrorLogHandler(Retrieve(propdb.db, string(key), addresses),"RetrieveMediatorCandidatesAddress")
-//	// 2. Load VoteNumber of each MediatorCandidates
-//	for _, address := range(addresses) {
-//		tempKey := KeyConnector(key,address[:])
-//		Retrieve
-//	}
-//
-//}
-
-//@Yiran This function checks that a transaction contains a action which creates a vote.
-//func IsVoteInitiationTx(transactionIndex []byte) error {
-//	//TODO
-//	return nil
-//}
-
-//@Yiran this function connect multiple []byte keys to single []byte.
+//Yiran
+// this function connect multiple []byte keys to single []byte.
 func KeyConnector(keys ...[]byte) []byte {
 	var res []byte
 	for _, key := range keys {
@@ -67,7 +34,8 @@ func KeyConnector(keys ...[]byte) []byte {
 	return res
 }
 
-//@Yiran print error if exist.
+//Yiran
+// print error if exist.
 func ErrorLogHandler(err error, errType string) error {
 	if err != nil {
 		println(errType, "error", err.Error())
@@ -76,17 +44,18 @@ func ErrorLogHandler(err error, errType string) error {
 	return nil
 }
 
-//@Yiran
+//Yiran
 type VoteBox struct {
 	Candidates map[common.Address]uint64
 	voters     []common.Address
 }
 
-//sort
+//Yiran
+//Sort
 func (box *VoteBox) HeadN(num uint) []common.Address {
 	ResCandidates := make([]Candidate, num)
 	for CurrCandidate, CurrScore := range box.Candidates {
-		//insert if result set has space.
+		//insert if result set has space free.
 		if uint(len(ResCandidates)) < num {
 			ResCandidates = append(ResCandidates, Candidate{Address: CurrCandidate, VoteNumber: CurrScore})
 		}
@@ -101,6 +70,7 @@ func (box *VoteBox) HeadN(num uint) []common.Address {
 			}
 		}
 	}
+	// Trans []Candidate --> []Address
 	ResAddress := make([]common.Address, num)
 	for _, SortedCandidate := range ResCandidates {
 		ResAddress = append(ResAddress, SortedCandidate.Address)
@@ -108,11 +78,14 @@ func (box *VoteBox) HeadN(num uint) []common.Address {
 	return ResAddress
 }
 
+//Yiran
 func (box *VoteBox) Register(addresses []common.Address) {
 	for _, address := range addresses {
 		box.Candidates[address] = 1
 	}
 }
+
+//Yiran
 func (box *VoteBox) AddToBoxIfNotVoted(score uint64, voter common.Address, voteAddress common.Address) {
 	for i, voted := range box.voters {
 		// match, so already voted, do noting.
@@ -135,6 +108,7 @@ func (box *VoteBox) AddToBoxIfNotVoted(score uint64, voter common.Address, voteA
 
 }
 
+//Yiran
 func NewVoteBox() *VoteBox {
 	return &VoteBox{
 		Candidates: make(map[common.Address]uint64, 0),
@@ -142,13 +116,13 @@ func NewVoteBox() *VoteBox {
 	}
 }
 
-//
-//@Yiran
+//Yiran
 type Candidate struct {
 	Address    common.Address
 	VoteNumber uint64
 }
 
+//Yiran
 func BytesEqual(a, b []byte) bool {
 	if len(a) != len(b) {
 		return false
