@@ -91,9 +91,10 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 		return fmt.Errorf("Save mem unit: unit is already exists in memory")
 	}
 
-	if !chain.validateMemory() {
-		return fmt.Errorf("Save mem unit: size is out of limit")
-	}
+	//TODO must recover
+	//if !chain.validateMemory() {
+	//	return fmt.Errorf("Save mem unit: size is out of limit")
+	//}
 
 	assetId := unit.UnitHeader.Number.AssetID.String()
 
