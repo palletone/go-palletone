@@ -21,6 +21,7 @@
 package scc
 
 import (
+	"github.com/palletone/go-palletone/contracts/example/go/deposit"
 	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
 )
 
@@ -56,9 +57,19 @@ var systemChaincodes = []*SystemChaincode{
 	//	InitArgs:  [][]byte{},
 	//	Chaincode: &samplesyscc2.SampleSysCC2{},
 	//},
+	{
+		Id:        []byte{0x01},
+		Enabled:   true,
+		Name:      "deposit_syscc",
+		Path:      "../example/go/deposit/deposit",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &deposit.DepositChaincode{},
+	},
 
 	//TODO add other system chaincodes ...
 }
+
 //DeploySysCCs is the hook for system chaincodes where system chaincodes are registered
 //note the chaincode must still be deployed and launched like a user chaincode will be
 func DeploySysCCs(chainID string) {

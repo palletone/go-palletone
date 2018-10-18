@@ -978,6 +978,7 @@ func (s *PublicTransactionPoolAPI) GetAddrOutpoints(ctx context.Context, addr st
 }
 func (s *PublicTransactionPoolAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {
 	items, err := s.b.GetAddrUtxos(addr)
+
 	if err != nil {
 		return "", err
 	}
@@ -1372,7 +1373,7 @@ func CreateVoteTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	}
 	votePayload := new(modules.VotePayload)
 	votePayload.ExpiredTerm = c.ExpiredTerm
-	votePayload.Address  = []byte(c.MediatorAddress)
+	votePayload.Address = []byte(c.MediatorAddress)
 
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_VOTE, votePayload))

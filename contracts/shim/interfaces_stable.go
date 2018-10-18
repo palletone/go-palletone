@@ -17,7 +17,6 @@
  * @date 2018
  */
 
-
 package shim
 
 import (
@@ -215,6 +214,9 @@ type ChaincodeStubInterface interface {
 	// available within the transaction in the committed block regardless of the
 	// validity of the transaction.
 	SetEvent(name string, payload []byte) error
+
+	//TODO xiaozhi
+	GetAccountBalance(witnessAddr string) uint64
 }
 
 // CommonIteratorInterface allows a chaincode to check whether any more result
