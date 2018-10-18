@@ -91,7 +91,9 @@ type IDag interface {
 	GetActiveMediator(add common.Address) *core.Mediator
 	GetActiveMediatorNode(index int) *discover.Node
 	//获得所有Mediator候选人列表
-	GetCandidateMediators() []*core.MediatorInfo
+
+	// todo albert·gou
+	//GetCandidateMediators() []*core.MediatorInfo
 	//Get all elected mediators.
 	GetElectedMediatorsAddress() ([]common.Address, error)
 

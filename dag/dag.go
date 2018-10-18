@@ -34,7 +34,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/memunit"
@@ -1000,9 +999,11 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 //
 //	return nil
 //}
-func (dag *Dag) GetCandidateMediators() []*core.MediatorInfo {
-	return dag.stateRep.GetCandidateMediators()
-}
+
+// todo albert·gou
+//func (dag *Dag) GetCandidateMediators() []*core.MediatorInfo {
+//	return dag.stateRep.GetCandidateMediators()
+//}
 
 func (dag *Dag) GetElectedMediatorsAddress() ([]common.Address, error) {
 	gp, err := dag.propdb.RetrieveGlobalProp()
