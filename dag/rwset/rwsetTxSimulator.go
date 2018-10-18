@@ -21,8 +21,6 @@ package rwset
 
 import (
 	"errors"
-	"fmt"
-
 	"github.com/palletone/go-palletone/dag"
 )
 
@@ -53,16 +51,16 @@ func (s *RwSetTxSimulator) GetState(ns string, key string) ([]byte, error) {
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-
 	//TODO Devin
 	ver, val := s.state.GetContractState(ns, key)
+	//fmt.Println("xiaozhi:--", ver, val)
+	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
 	if val == nil {
 		logger.Errorf("get value from db[%s] failed", ns)
-
-		errstr := fmt.Sprintf("GetContractState [%s]-[%s] failed", ns, key)
-		return nil, errors.New(errstr)
+		return nil, nil
+		//errstr := fmt.Sprintf("GetContractState [%s]-[%s] failed", ns, key)
+		//		//return nil, errors.New(errstr)
 	}
-
 	//val, ver := decomposeVersionedValue(versionedValue)
 	if s.rwsetBuilder != nil {
 		s.rwsetBuilder.AddToReadSet(ns, key, ver)
@@ -85,7 +83,6 @@ func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 		return errors.New("pvtdata Queries Performed")
 	}
 	//todo ValidateKeyValue
-
 	s.rwsetBuilder.AddToWriteSet(ns, key, value)
 	return nil
 }

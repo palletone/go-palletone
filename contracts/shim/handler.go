@@ -17,7 +17,6 @@
  * @date 2018
  */
 
-
 package shim
 
 import (
@@ -25,8 +24,8 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/proto"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/looplab/fsm"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/pkg/errors"
 )
 
@@ -256,7 +255,6 @@ func (handler *Handler) handleInit(msg *pb.ChaincodeMessage) {
 		res := handler.cc.Init(stub)
 		chaincodeLogger.Debugf("[%s]Init get response status: %d, payload len: %d", shorttxid(msg.Txid), res.Status, len(res.Payload))
 
-
 		if res.Status >= ERROR {
 			err = errors.New(res.Message)
 			if nextStateMsg = errFunc(err, []byte(res.Message), stub.chaincodeEvent, "[%s]Init get error response. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR.String()); nextStateMsg != nil {
@@ -408,6 +406,7 @@ func (handler *Handler) callPeerWithChaincodeMsg(msg *pb.ChaincodeMessage, chann
 // handleGetState communicates with the peer to fetch the requested state information from the ledger.
 func (handler *Handler) handleGetState(collection string, key string, channelId string, txid string) ([]byte, error) {
 	// Construct payload for GET_STATE
+
 	payloadBytes, _ := proto.Marshal(&pb.GetState{Collection: collection, Key: key})
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_STATE, Payload: payloadBytes, Txid: txid, ChannelId: channelId}
@@ -703,6 +702,31 @@ func (handler *Handler) handleQueryStateClose(id, channelId, txid string) (*pb.Q
 
 	// Incorrect chaincode message received
 	return nil, errors.Errorf("incorrect chaincode message %s received. Expecting %s or %s", responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
+}
+
+//TODO xiaozhi
+func (handle *Handler) handleGetAccountBalance(witnessAddr string, channelId string, txid string) (balance string, err error) {
+	//通过 GRPC 在服务器端通过某账户获取账户余额
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ECOGNIZANCE_BALANCE_REQUEST, Payload: []byte(witnessAddr), ChannelId: channelId, Txid: txid}
+	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ECOGNIZANCE_BALANCE_REQUEST)
+	//Execute the request and get response
+	responseMsg, err := handle.callPeerWithChaincodeMsg(msg, channelId, txid)
+	if err != nil {
+		return "", errors.WithMessage(err, fmt.Sprintf("[%s]error sending READY", msg.Txid))
+	}
+	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
+		//Success response
+		chaincodeLogger.Debugf("[%s]Received %s. Successfully updated state", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
+		return string(responseMsg.Payload), nil
+	}
+	if responseMsg.Type.String() == pb.ChaincodeMessage_ERROR.String() {
+		// Error response
+		chaincodeLogger.Errorf("[%s]Received %s. Payload: %s", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_ERROR, responseMsg.Payload)
+		return "", errors.New(string(responseMsg.Payload[:]))
+	}
+	// Incorrect chaincode message received
+	return "", errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
+
 }
 
 func (handler *Handler) handleGetQueryResult(collection string, query string, channelId string, txid string) (*pb.QueryResponse, error) {

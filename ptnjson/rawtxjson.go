@@ -109,7 +109,7 @@ func ConvertRawTxJson2Paymsg(rawTxJson RawTransactionGenParams) (*modules.Paymen
 	return pay, nil
 }
 func Ptn2Dao(ptnAmount float64) uint64 {
-	return uint64(ptnAmount * 1000000000)
+	return uint64(ptnAmount * 100000000)
 }
 
 func ConvertRawTxJson2Tx(rawTxJson RawTransactionGenParams) *modules.Transaction {
