@@ -22,6 +22,7 @@ package dag
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
@@ -29,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"time"
 )
 
 func (d *Dag) GetGlobalProp() *modules.GlobalProperty {

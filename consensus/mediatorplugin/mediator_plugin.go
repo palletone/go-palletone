@@ -203,7 +203,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 2. 生产验证单元
-	newUnit := GenerateUnit(mp.getDag(), scheduledTime, sma, ks, mp.ptn.TxPool())
+	newUnit := dag.GenerateUnit(scheduledTime, sma, ks, mp.ptn.TxPool())
 	if newUnit.IsEmpty() {
 		return ExceptionProducing, detail
 	}

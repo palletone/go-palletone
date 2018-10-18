@@ -393,11 +393,11 @@ func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Mes
 save genesis unit data
 */
 func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
-
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Error("Unit is null")
 		return fmt.Errorf("Unit is null")
 	}
+
 	// step1. check unit signature, should be compare to mediator list
 	if dagconfig.DefaultConfig.WhetherValidateUnitSignature {
 		errno := unitOp.validate.ValidateUnitSignature(unit.UnitHeader, isGenesis)
