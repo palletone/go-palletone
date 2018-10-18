@@ -657,7 +657,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 
 		if skeleton {
 			index.Index = from + uint64(MaxHeaderFetch) - 1
-			p.log.Trace("Fetching skeleton headers", "count", MaxHeaderFetch, "from", from, "index:", index.Index)
+			p.log.Trace("Fetching skeleton headers", "count", MaxSkeletonSize, "from", from, "index:", index.Index)
 			go p.peer.RequestHeadersByNumber(index, MaxSkeletonSize, MaxHeaderFetch-1, false)
 		} else {
 			index.Index = from
@@ -929,7 +929,6 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 			}
 
 		case <-ticker.C:
-			log.Debug("===fetchParts <-ticker.C===")
 			// Sanity check update the progress
 			select {
 			case update <- struct{}{}:
@@ -967,7 +966,6 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 			}
 			// If there's nothing more to fetch, wait or terminate
 			pendingnum := pending()
-			log.Debug("===fetchParts===", "pendingnum:", pendingnum)
 			if pendingnum == 0 {
 				if !inFlight() && finished {
 					log.Debug("Data fetching completed", "type", kind)
@@ -1641,7 +1639,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	if count > limit {
 		count = limit
 	}
-	log.Debug("Downloader", "findAncestor", "RequestHeadersByNumber false from:", from, "count:", count)
+	log.Debug("Downloader", "findAncestor RequestHeadersByNumber false from:", from, "count:", count)
 	index := modules.ChainIndex{
 		AssetID: assetId,
 		IsMain:  true,

@@ -21,7 +21,7 @@ package core
 
 const (
 	DefaultAlias               = "PTN"
-	DefaultMediatorInterval    = 5
+	DefaultMediatorInterval    = 2 //5
 	DefaultMediatorCount       = 21
 	DefaultTokenAmount         = 100000000000000000
 	DefaultTokenDecimal        = 8
