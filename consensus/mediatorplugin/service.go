@@ -20,6 +20,7 @@ package mediatorplugin
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
@@ -44,9 +45,29 @@ type PalletOne interface {
 	TxPool() txspool.ITxPool
 }
 
+type iDag interface {
+	GetCurThreshold() int
+	IsActiveMediator(add common.Address) bool
+	IsSynced() bool
+	GenerateUnit(when time.Time, producer common.Address,
+		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit
+	GetSlotAtTime(when time.Time) uint32
+	GetSlotTime(slotNum uint32) time.Time
+	HeadUnitTime() int64
+	GetScheduledMediator(slotNum uint32) *core.Mediator
+	GetActiveMediatorInitPubs() []kyber.Point
+	GetActiveMediatorCount() int
+	GetActiveMediatorAddr(index int) common.Address
+	HeadUnitNum() uint64
+	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
+	GetUnit(common.Hash) (*modules.Unit, error)
+}
+
 type MediatorPlugin struct {
-	ptn  PalletOne     // Full PalletOne service to retrieve other function
+	ptn  PalletOne // Full PalletOne service to retrieve other function
+	dag  iDag
 	quit chan struct{} // Channel used for graceful exit
+
 	// Enable VerifiedUnit production, even if the chain is stale.
 	// 新开启一个区块链时，必须设为true
 	productionEnabled bool
@@ -62,7 +83,7 @@ type MediatorPlugin struct {
 	dkgs  map[common.Address]*dkg.DistKeyGenerator
 
 	// dkg 完成 vss 协议相关
-	respBuf map[common.Address]map[common.Address]chan *dkg.Response
+	respBuf       map[common.Address]map[common.Address]chan *dkg.Response
 	certifiedFlag map[common.Address]bool
 
 	// 广播和处理 vss 协议 deal
@@ -97,7 +118,7 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 	lams := make([]common.Address, 0)
 
-	dag := mp.getDag()
+	dag := mp.dag
 	for add := range mp.mediators {
 		if dag.IsActiveMediator(add) {
 			lams = append(lams, add)
@@ -121,7 +142,7 @@ func (mp *MediatorPlugin) isLocalMediator(add common.Address) bool {
 
 func (mp *MediatorPlugin) IsLocalActiveMediator(add common.Address) bool {
 	if mp.isLocalMediator(add) {
-		return mp.getDag().IsActiveMediator(add)
+		return mp.dag.IsActiveMediator(add)
 	}
 
 	return false
@@ -136,8 +157,8 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 		log.Info(fmt.Sprintf("Launching verified unit production for %d mediators.", len(mp.mediators)))
 
 		if mp.productionEnabled {
-			dag := mp.getDag()
-			if dag.GetDynGlobalProp().LastVerifiedUnitNum == 0 {
+			dag := mp.dag
+			if dag.HeadUnitNum() == 0 {
 				newChainBanner(dag)
 			}
 		}
@@ -150,7 +171,7 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 	log.Info("instantiate the DistKeyGenerator (DKG) struct.")
 
-	dag := mp.getDag()
+	dag := mp.dag
 	if !mp.productionEnabled && !dag.IsSynced() {
 		return //we're not synced.
 	}
@@ -182,11 +203,11 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 }
 
 func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
-	aSize := mp.getDag().GetActiveMediatorCount()
+	aSize := mp.dag.GetActiveMediatorCount()
 	mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
 
 	for i := 0; i < aSize; i++ {
-		vrfrMed := mp.getDag().GetActiveMediatorAddr(i)
+		vrfrMed := mp.dag.GetActiveMediatorAddr(i)
 		mp.respBuf[localMed][vrfrMed] = make(chan *dkg.Response, aSize-1)
 	}
 }
@@ -227,7 +248,8 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 			return nil, fmt.Errorf("the PalletOne service not found: %v", err)
 		}
 
-		return NewMediatorPlugin(ptn, cfg)
+		//return NewMediatorPlugin(ptn, ptn.Dag(), cfg)
+		return nil, nil
 	})
 
 	if err != nil {
@@ -235,8 +257,14 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 	}
 }
 
-func NewMediatorPlugin(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
+func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, error) {
 	log.Debug("mediator plugin initialize begin")
+
+	if ptn == nil || dag == nil || cfg == nil {
+		err := "pointer parameters of NewMediatorPlugin are nil!"
+		//log.Error(err)
+		panic(err)
+	}
 
 	mss := cfg.Mediators
 	msm := map[common.Address]MediatorAccount{}
@@ -252,10 +280,12 @@ func NewMediatorPlugin(ptn PalletOne, cfg *Config) (*MediatorPlugin, error) {
 	log.Debug(fmt.Sprintf("This node controls %v mediators.", len(msm)))
 
 	mp := MediatorPlugin{
-		ptn:               ptn,
+		ptn:  ptn,
+		quit: make(chan struct{}),
+		dag:  dag,
+
 		productionEnabled: cfg.EnableStaleProduction,
 		mediators:         msm,
-		quit:              make(chan struct{}),
 
 		suite: bn256.NewSuiteG2(),
 	}
@@ -274,15 +304,11 @@ func (mp *MediatorPlugin) initTBLSBuf() {
 	mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit, lamc)
 	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lamc)
 
-	curThrshd := mp.getDag().GetCurThreshold()
+	curThrshd := mp.dag.GetCurThreshold()
 	for _, localMed := range lams {
 		mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
 		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet, curThrshd)
 	}
-}
-
-func (mp *MediatorPlugin) getDag() dag.IDag {
-	return mp.ptn.Dag()
 }
 
 func ConfigToAccount(medConf MediatorConf) MediatorAccount {

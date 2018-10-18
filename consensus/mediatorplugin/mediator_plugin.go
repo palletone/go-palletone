@@ -28,22 +28,20 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
 	errTerminated = errors.New("terminated")
 )
 
-func newChainBanner(dag dag.IDag) {
+func newChainBanner(dag iDag) {
 	fmt.Printf("\n" +
 		"*   ------- NEW CHAIN -------   *\n" +
 		"*   - Welcome to PalletOne! -   *\n" +
 		"*   -------------------------   *\n" +
 		"\n")
 
-	if modules.GetSlotAtTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), time.Now()) > 200 {
+	if dag.GetSlotAtTime(time.Now()) > 200 {
 		fmt.Printf("Your genesis seems to have an old timestamp\n" +
 			"Please consider using the --genesis-timestamp option to give your genesis a recent timestamp\n" +
 			"\n")
@@ -134,17 +132,14 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	//	println("\n尝试生产验证单元...")
 	detail := map[string]string{}
 
-	dag := mp.getDag()
-	gp := dag.GetGlobalProp()
-	dgp := dag.GetDynGlobalProp()
-	ms := dag.GetMediatorSchl()
+	dag := mp.dag
 
 	// 整秒调整，四舍五入
 	nowFine := time.Now()
 	now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
 
 	// 1. 判断是否满足生产的各个条件
-	nextSlotTime := modules.GetSlotTime(gp, dgp, 1)
+	nextSlotTime := dag.GetSlotTime(1)
 	// If the next VerifiedUnit production opportunity is in the present or future, we're synced.
 	if !mp.productionEnabled {
 		if nextSlotTime.After(now) || nextSlotTime.Equal(now) {
@@ -154,7 +149,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 		}
 	}
 
-	slot := modules.GetSlotAtTime(gp, dgp, now)
+	slot := dag.GetSlotAtTime(now)
 	// is anyone scheduled to produce now or one second in the future?
 	if slot == 0 {
 		detail["NextTime"] = nextSlotTime.Format("2006-01-02 15:04:05")
@@ -162,17 +157,17 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 		return NotTimeYet, detail
 	}
 
-	// this Conditional judgment should fail, because now <= LastVerifiedUnitTime
+	// this Conditional judgment should fail, because now <= HeadUnitTime
 	// should have resulted in slot == 0.
 	//
 	// if this assert triggers, there is a serious bug in GetSlotAtTime()
 	// which would result in allowing a later block to have a timestamp
 	// less than or equal to the previous VerifiedUnit
-	if !(now.Unix() > dgp.LastVerifiedUnitTime) {
+	if !(now.Unix() > dag.HeadUnitTime()) {
 		panic("\n The later VerifiedUnit have a timestamp less than or equal to the previous!")
 	}
 
-	scheduledMediator := ms.GetScheduledMediator(dgp, slot)
+	scheduledMediator := dag.GetScheduledMediator(slot)
 	if scheduledMediator == nil {
 		log.Error("The current shuffled mediators is nil!")
 		return UnknownCondition, detail
@@ -194,7 +189,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 		return NoPrivateKey, detail
 	}
 
-	scheduledTime := modules.GetSlotTime(gp, dgp, slot)
+	scheduledTime := dag.GetSlotTime(slot)
 	diff := scheduledTime.Sub(now)
 	if diff > 500*time.Millisecond || diff < -500*time.Millisecond {
 		detail["ScheduledTime"] = scheduledTime.Format("2006-01-02 15:04:05")
@@ -228,6 +223,6 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 }
 
 func (mp *MediatorPlugin) initTBLSRecoverBuf(localMed common.Address, newUnitHash common.Hash) {
-	aSize := mp.getDag().GetActiveMediatorCount()
+	aSize := mp.dag.GetActiveMediatorCount()
 	mp.toTBLSRecoverBuf[localMed][newUnitHash] = newSigShareSet(aSize)
 }
