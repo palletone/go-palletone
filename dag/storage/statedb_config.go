@@ -23,7 +23,6 @@ package storage
 import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -45,12 +44,14 @@ func (statedb *StateDb) SaveConfig(confs []modules.PayloadMapStruct, stateVersio
 	for _, conf := range confs {
 
 		statedb.logger.Debugf("Try to save config key:{%s},Value:{%#x}", conf.Key, conf.Value)
-		if conf.Key == "Mediator" {
-			mediators := []*core.MediatorInfo{}
-			rlp.DecodeBytes(conf.Value, &mediators)
-			statedb.saveMediators(mediators, stateVersion)
-			continue
-		}
+
+		//if conf.Key == "Mediator" {
+		//	mediators := []*core.MediatorInfo{}
+		//	rlp.DecodeBytes(conf.Value, &mediators)
+		//	statedb.saveMediators(mediators, stateVersion)
+		//	continue
+		//}
+
 		key := append(modules.CONF_PREFIX, conf.Key...)
 		//key := fmt.Sprintf("%s_%s_%s", CONF_PREFIX, conf.Key, stateVersion.String())
 		err := StoreBytesWithVersion(statedb.db, key, stateVersion, conf.Value)

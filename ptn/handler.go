@@ -190,7 +190,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 				}
 			},
 			NodeInfo: func() interface{} {
-				return manager.NodeInfo()
+				return manager.NodeInfo(genesis.UnitHash)
 			},
 			PeerInfo: func(id discover.NodeID) interface{} {
 				if p := manager.peers.Peer(id.TerminalString()); p != nil {
@@ -613,7 +613,7 @@ type NodeInfo struct {
 }
 
 // NodeInfo retrieves some protocol metadata about the running host node.
-func (self *ProtocolManager) NodeInfo() *NodeInfo {
+func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 	unit := self.dag.CurrentUnit()
 	index := uint64(0)
 	if unit != nil {
@@ -622,6 +622,8 @@ func (self *ProtocolManager) NodeInfo() *NodeInfo {
 	return &NodeInfo{
 		Network: self.networkId,
 		Index:   index,
+		Genesis: genesisHash,
+		Head:    unit.UnitHash,
 	}
 }
 

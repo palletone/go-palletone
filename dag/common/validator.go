@@ -195,7 +195,7 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 检查message的app与payload是否一致
 check messaage 'app' consistent with payload type
 */
-func validateMessageType(app byte, payload interface{}) bool {
+func validateMessageType(app modules.MessageType, payload interface{}) bool {
 	switch t := payload.(type) {
 	case *modules.PaymentPayload:
 		if app == modules.APP_PAYMENT {

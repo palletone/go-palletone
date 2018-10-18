@@ -317,13 +317,18 @@ To generate config payload for genesis unit
 */
 func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (modules.ConfigPayload, error) {
 	var confPay modules.ConfigPayload
-
 	confPay.ConfigSet = []modules.PayloadMapStruct{}
 
 	tt := reflect.TypeOf(*genesisConf)
 	vv := reflect.ValueOf(*genesisConf)
 
 	for i := 0; i < tt.NumField(); i++ {
+		// modified by Albert·Gou, 不是交易，已在其他地方处理
+		if strings.Contains(tt.Field(i).Name, "Initial") ||
+			strings.Contains(tt.Field(i).Name, "Immutable") {
+			continue
+		}
+
 		if strings.Compare(tt.Field(i).Name, "SystemConfig") == 0 {
 			t := reflect.TypeOf(genesisConf.SystemConfig)
 			v := reflect.ValueOf(genesisConf.SystemConfig)
@@ -333,26 +338,33 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 					sk = strings.Replace(sk, "Initial", "", -1)
 				}
 
-				confPay.ConfigSet = append(confPay.ConfigSet, modules.PayloadMapStruct{Key: sk, Value: modules.ToPayloadMapValueBytes(v.Field(k).Interface())})
+				confPay.ConfigSet = append(confPay.ConfigSet,
+					modules.PayloadMapStruct{Key: sk, Value: modules.ToPayloadMapValueBytes(v.Field(k).Interface())})
 			}
 		} else {
 			sk := tt.Field(i).Name
 			if strings.Contains(sk, "Initial") {
 				sk = strings.Replace(sk, "Initial", "", -1)
 			}
-			confPay.ConfigSet = append(confPay.ConfigSet, modules.PayloadMapStruct{Key: sk, Value: modules.ToPayloadMapValueBytes(vv.Field(i).Interface())})
+			confPay.ConfigSet = append(confPay.ConfigSet,
+				modules.PayloadMapStruct{Key: sk, Value: modules.ToPayloadMapValueBytes(vv.Field(i).Interface())})
 		}
 	}
 
-	confPay.ConfigSet = append(confPay.ConfigSet, modules.PayloadMapStruct{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
+	confPay.ConfigSet = append(confPay.ConfigSet,
+		modules.PayloadMapStruct{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
+
+	// comment by Albert·Gou, 不是交易，已在其他地方处理
 	//Put Mediator info into config
-	d, _ := rlp.EncodeToBytes(genesisConf.InitialMediatorCandidates)
-	med := modules.PayloadMapStruct{Key: "Mediator", Value: d}
-	confPay.ConfigSet = append(confPay.ConfigSet, med)
+	//d, _ := rlp.EncodeToBytes(genesisConf.InitialMediatorCandidates)
+	//med := modules.PayloadMapStruct{Key: "Mediator", Value: d}
+	//confPay.ConfigSet = append(confPay.ConfigSet, med)
+
 	return confPay, nil
 }
 
-func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Message, ) bool {
+//Yiran
+func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Message) bool {
 	var payload interface{}
 	payload = msg.Payload
 	VotePayLoad, ok := payload.(*modules.VotePayload)
