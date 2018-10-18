@@ -1453,7 +1453,6 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		pkScript := tokenengine.GenerateP2PKHLockScript(addr[0:20])
 		// Convert the amount to satoshi.
 		dao, err := ptnjson.NewAmount(amount)
-		dao = dao
 		if err != nil {
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
@@ -1541,7 +1540,7 @@ func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s 
 		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
 			continue
 		}
-		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
+		amounts[outOne.Address] = float64(outOne.Amount)
 	}
 	if len(amounts) == 0 {
 		return "", nil
