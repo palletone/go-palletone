@@ -31,8 +31,8 @@ import (
 )
 
 var (
-	globalPropDBKey    = []byte("GlobalProperty")
-	dynGlobalPropDBKey = []byte("DynamicGlobalProperty")
+	GlobalPropDBKey    = append(modules.GLOBALPROPERTY_PREFIX, []byte("GlobalProperty")...)
+	DynGlobalPropDBKey = append(modules.DYNAMIC_GLOBALPROPERTY_PREFIX, []byte("DynamicGlobalProperty")...)
 )
 
 type globalProperty struct {
@@ -75,7 +75,7 @@ func StoreGlobalProp(db ptndb.Database, gp *modules.GlobalProperty) error {
 
 	gpt := getGPT(gp)
 
-	err := StoreBytes(db, globalPropDBKey, gpt)
+	err := StoreBytes(db, GlobalPropDBKey, gpt)
 
 	if err != nil {
 		log.Error(fmt.Sprintf("Store global properties error:%s", err))
@@ -86,7 +86,7 @@ func StoreGlobalProp(db ptndb.Database, gp *modules.GlobalProperty) error {
 
 func StoreDynGlobalProp(db ptndb.Database, dgp *modules.DynamicGlobalProperty) error {
 
-	err := StoreBytes(db, dynGlobalPropDBKey, *dgp)
+	err := StoreBytes(db, DynGlobalPropDBKey, *dgp)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store dynamic global properties error: %s", err))
 	}
@@ -97,7 +97,7 @@ func StoreDynGlobalProp(db ptndb.Database, dgp *modules.DynamicGlobalProperty) e
 func RetrieveGlobalProp(db ptndb.Database) (*modules.GlobalProperty, error) {
 	gpt := new(globalProperty)
 
-	err := retrieve(db, globalPropDBKey, gpt)
+	err := retrieve(db, GlobalPropDBKey, gpt)
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve global properties error: %s", err))
 	}
@@ -110,7 +110,7 @@ func RetrieveGlobalProp(db ptndb.Database) (*modules.GlobalProperty, error) {
 func RetrieveDynGlobalProp(db ptndb.Database) (*modules.DynamicGlobalProperty, error) {
 	dgp := modules.NewDynGlobalProp()
 
-	err := retrieve(db, dynGlobalPropDBKey, dgp)
+	err := retrieve(db, DynGlobalPropDBKey, dgp)
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve dynamic global properties error: %s", err))
 	}

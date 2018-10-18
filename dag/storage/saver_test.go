@@ -20,6 +20,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
@@ -169,4 +170,51 @@ func TestSaveUtxos(t *testing.T) {
 	fmt.Println("decoded error:", err2)
 	fmt.Printf("decoded data:%v\n", p)
 
+}
+func TestAddToken(t *testing.T) {
+	// dbconn := ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/gptn/leveldb/")
+	// if dbconn == nil {
+	// 	fmt.Println("Connect to db error.")
+	// 	return
+	// }
+	dbconn, _ := palletdb.NewMemDatabase()
+
+	token := new(modules.TokenInfo)
+	token.TokenHex = modules.PTNCOIN.String()
+	token.Token = modules.PTNCOIN
+	token.Name = "ptn"
+	token.Creator = "jay"
+	token.CreationDate = time.Now().Format(modules.TimeFormatString)
+	infos := new(tokenInfo)
+	infos.Items = make(map[string]*modules.TokenInfo)
+	infos.Items[string(modules.TOKENTYPE)+token.TokenHex] = token
+	// bytes, err := rlp.EncodeToBytes(infos)
+	// if err != nil {
+	// 	t.Errorf("error: %v", err)
+	// 	return
+	// }
+	bytes, _ := json.Marshal(infos)
+	if err := dbconn.Put(modules.TOKENINFOS, bytes); err != nil {
+		t.Error("failed")
+		return
+	}
+
+	if bytes, err := dbconn.Get(modules.TOKENINFOS); err != nil {
+		t.Error("get token infos error:", err)
+		return
+	} else {
+		log.Println("json  bytes:", bytes)
+		token_info := new(tokenInfo)
+		token_info.Items = make(map[string]*modules.TokenInfo)
+		// if err := rlp.DecodeBytes(bytes, &token_info); err != nil {
+		// 	t.Error("decode error:", err)
+		// 	return
+		// }
+		err := json.Unmarshal(bytes, &token_info)
+		log.Println("token_info: ", err, token_info)
+	}
+}
+
+type tokenInfo struct {
+	Items map[string]*modules.TokenInfo //  token_info’json string
 }

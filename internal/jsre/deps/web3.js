@@ -5583,6 +5583,12 @@ var methods = function () {
         params: 0,
         // inputFormatter: [null]
     });
+    var saveTokenInfo = new Method({
+        name: 'saveTokenInfo',
+        call: 'ptn_saveTokenInfo',
+        params: 3,   
+        //inputFormatter: [null]
+    });
 
 
 // del ptn_getStorageAt
@@ -5663,6 +5669,7 @@ var methods = function () {
         getAddrTxs, 
         getAllTokenInfo,
         getTokenInfo,
+        saveTokenInfo,
         ccinstall,
         ccdeploy,
         ccinvoke,

@@ -105,7 +105,7 @@ type Utxo struct {
 }
 
 func (utxo *Utxo) StrPkScript() string {
-	return fmt.Sprintf("%x", utxo.PkScript)
+	return fmt.Sprintf("%#x", utxo.PkScript)
 }
 func (utxo *Utxo) IsEmpty() bool {
 	if len(utxo.PkScript) != 0 || utxo.Amount > 0 || utxo.LockTime > 0 || utxo.Asset != nil {
@@ -126,7 +126,12 @@ func (utxo *Utxo) Spend() {
 	if utxo.IsSpent() {
 		return
 	}
+	// Mark the output as spent and modified.
 	utxo.Flags |= tfSpent | tfModified
+
+}
+func (utxo *Utxo) SetCoinBase() {
+	utxo.Flags |= tfCoinBase
 }
 func (utxo *Utxo) Clone() *Utxo {
 	if utxo == nil {

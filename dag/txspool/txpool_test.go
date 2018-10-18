@@ -117,7 +117,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	config := testTxPoolConfig
 	config.GlobalSlots = 4096
 	var pending_cache, queue_cache, all, origin int
-	pool := NewTxPool(config, unitchain,l)
+	pool := NewTxPool(config, unitchain, l)
 
 	defer pool.Stop()
 
@@ -255,4 +255,20 @@ func pricedTransaction(msgs []*modules.Message) *modules.Transaction {
 	tx := modules.NewTransaction(msgs)
 	tx.SetHash(rlp.RlpHash(tx))
 	return tx
+}
+
+func TestUtxoViewPoint(t *testing.T) {
+	view := NewUtxoViewpoint()
+	outpoint := new(modules.OutPoint)
+	utxo := new(modules.Utxo)
+	outpoint.MessageIndex = 1
+	outpoint.OutIndex = 2
+	view.entries[*outpoint] = utxo
+	utxo.Amount = 9999
+	utxo.Spend()
+	fmt.Println("enteris modified", outpoint, view.entries[*outpoint])
+	if view.entries[*outpoint].Amount != 9999 {
+		t.Error("failed", view.entries)
+	}
+	delete(view.entries, *outpoint)
 }

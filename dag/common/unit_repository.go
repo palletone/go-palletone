@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -316,13 +317,18 @@ To generate config payload for genesis unit
 */
 func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (modules.ConfigPayload, error) {
 	var confPay modules.ConfigPayload
-
 	confPay.ConfigSet = []modules.PayloadMapStruct{}
 
 	tt := reflect.TypeOf(*genesisConf)
 	vv := reflect.ValueOf(*genesisConf)
 
 	for i := 0; i < tt.NumField(); i++ {
+		// modified by Albert·Gou, 不是交易，已在其他地方处理
+		if strings.Contains(tt.Field(i).Name, "Initial") ||
+			strings.Contains(tt.Field(i).Name, "Immutable") {
+			continue
+		}
+
 		if strings.Compare(tt.Field(i).Name, "SystemConfig") == 0 {
 			t := reflect.TypeOf(genesisConf.SystemConfig)
 			v := reflect.ValueOf(genesisConf.SystemConfig)
@@ -332,23 +338,54 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 					sk = strings.Replace(sk, "Initial", "", -1)
 				}
 
-				confPay.ConfigSet = append(confPay.ConfigSet, modules.PayloadMapStruct{Key: sk, Value: modules.ToPayloadMapValueBytes(v.Field(k).Interface())})
+				confPay.ConfigSet = append(confPay.ConfigSet,
+					modules.PayloadMapStruct{Key: sk, Value: modules.ToPayloadMapValueBytes(v.Field(k).Interface())})
 			}
 		} else {
 			sk := tt.Field(i).Name
 			if strings.Contains(sk, "Initial") {
 				sk = strings.Replace(sk, "Initial", "", -1)
 			}
-			confPay.ConfigSet = append(confPay.ConfigSet, modules.PayloadMapStruct{Key: sk, Value: modules.ToPayloadMapValueBytes(vv.Field(i).Interface())})
+			confPay.ConfigSet = append(confPay.ConfigSet,
+				modules.PayloadMapStruct{Key: sk, Value: modules.ToPayloadMapValueBytes(vv.Field(i).Interface())})
 		}
 	}
 
-	confPay.ConfigSet = append(confPay.ConfigSet, modules.PayloadMapStruct{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
+	confPay.ConfigSet = append(confPay.ConfigSet,
+		modules.PayloadMapStruct{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
+
+	// comment by Albert·Gou, 不是交易，已在其他地方处理
 	//Put Mediator info into config
-	d, _ := rlp.EncodeToBytes(genesisConf.InitialMediatorCandidates)
-	med := modules.PayloadMapStruct{Key: "Mediator", Value: d}
-	confPay.ConfigSet = append(confPay.ConfigSet, med)
+	//d, _ := rlp.EncodeToBytes(genesisConf.InitialMediatorCandidates)
+	//med := modules.PayloadMapStruct{Key: "Mediator", Value: d}
+	//confPay.ConfigSet = append(confPay.ConfigSet, med)
+
 	return confPay, nil
+}
+
+//Yiran
+func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Message) bool {
+	var payload interface{}
+	payload = msg.Payload
+	VotePayLoad, ok := payload.(*modules.VotePayload)
+	if ok == false {
+		//fmt.Println("not a valid vote payload")
+		return false
+	}
+	voter, err := getRequesterAddress(tx)
+	if err != nil {
+		//getAddress Error
+		return false
+	}
+
+	Candidate := common.BytesToAddress(VotePayLoad.Address)
+	err = unitOp.statedb.AddVote(voter, Candidate)
+	if err != nil {
+		//fmt.Println(AddVote error)
+		return false
+	}
+	return true
+
 }
 
 /**
@@ -422,6 +459,10 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 				if ok := unitOp.saveConfigPayload(tx.TxHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
 					return fmt.Errorf("Save contract invode payload error.")
 				}
+			case modules.APP_VOTE:
+				if ok := unitOp.SaveVote(tx, msg); ok == false {
+					return fmt.Errorf("Save vote payload error.")
+				}
 			case modules.APP_TEXT:
 			default:
 				return fmt.Errorf("Message type is not supported now: %v", msg.App)
@@ -469,6 +510,7 @@ func (unitOp *UnitRepository) savePaymentPayload(txHash common.Hash, msg *module
 		log.Error("Update utxo failed.", "error", err)
 		return false
 	}
+
 	return true
 }
 

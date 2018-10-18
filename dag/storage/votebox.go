@@ -19,43 +19,143 @@
 
 package storage
 
-import "github.com/palletone/go-palletone/common"
+import (
+	"fmt"
+	"github.com/palletone/go-palletone/common"
+)
 
-//@Yiran
-//var (
-//	MEDIATORVOTE_PREFIX = []byte("01")
-//	COMMONVOTE_PREFIX   = []byte("00")
-//
-//	MEDIATORTERMINTERVAL = 3000
-//)
-//func (propdb *PropertyDb) UpdateActiveMediators () error{
-//	term := unit
-//	activeMediators, err := propdb.GetActiveMediators(,MEDIATORTERMINTERVAL)
-//	if err != nil {
-//		return ErrorLogHandler(err,"GetActiveMediators")
-//	}
-//
-//}
-//func (propdb *PropertyDb) GetActiveMediators(term []byte) ([]common.Address, error) {
-//	key := KeyConnector(MEDIATOR_CANDIDATE_PREFIX,term)
-//	// 1. Load Addresses of MediatorCandidates
-//	addresses := make([]common.Address, 0)
-//	ErrorLogHandler(Retrieve(propdb.db, string(key), addresses),"RetrieveMediatorCandidatesAddress")
-//	// 2. Load VoteNumber of each MediatorCandidates
-//	for _, address := range(addresses) {
-//		tempKey := KeyConnector(key,address[:])
-//		Retrieve
-//	}
-//
-//}
+//Yiran
+//return sorted data of given number
+func (box *VoteBox) HeadN(num uint) []common.Address {
+	ResCandidates := make([]Candidate, num)
 
-//@Yiran This function checks that a transaction contains a action which creates a vote.
-func IsVoteInitiationTx(transactionIndex []byte) error {
-	//TODO
-	return nil
+	// ##### Sort map[Address]Score --> []Candidate #####
+	for CurrCandidate, CurrScore := range box.Candidates {
+		//insert if result set has space free.
+		if uint(len(ResCandidates)) < num {
+			ResCandidates = append(ResCandidates, Candidate{Address: CurrCandidate, Score: CurrScore})
+		}
+		// insert if current score greater than smallest elem score
+		if CurrScore > ResCandidates[len(ResCandidates)-1].Score {
+			for i, c := range ResCandidates {
+				if CurrScore > c.Score {
+					//insert & pop tail
+					backcs := ResCandidates[i+1 : num-1]
+					ResCandidates = append(ResCandidates[:i], Candidate{Address: CurrCandidate, Score: CurrScore})
+					ResCandidates = append(ResCandidates, backcs...)
+				}
+			}
+		}
+	}
+
+	// ##### Trim []Candidate --> []Address #####
+	ResAddress := make([]common.Address, num)
+	for _, SortedCandidate := range ResCandidates {
+		ResAddress = append(ResAddress, SortedCandidate.Address)
+	}
+	return ResAddress
 }
 
-//@Yiran this function connect multiple []byte keys to single []byte.
+//Yiran
+//Initialize the score for the given accounts
+func (box *VoteBox) Register(addresses []common.Address) {
+	for _, address := range addresses {
+		box.Candidates[address] = 1
+	}
+}
+
+//Yiran
+//Vote Rule:
+//1.The voters did not vote
+//2.The target of the vote is the candidate
+func (box *VoteBox) AddToBoxIfNotVoted(Weight uint64, voter common.Address, voteAddress common.Address) {
+	for i, voted := range box.voters {
+		// voter has voted already, do noting.
+		if AddressEqual(voted, voter) {
+			return
+		}
+		// no match until the end of the list, so add to VoteBox
+		if i == len(box.voters)-1 {
+			// 1. mark voter already voted
+			box.voters = append(box.voters, voter)
+			// 2. increase the candidate score
+			//    The target of the vote is the candidate
+			if _, ok := box.Candidates[voter]; ok {
+				box.Candidates[voteAddress] += Weight
+			} else {
+				fmt.Println("candidate address invalid")
+			}
+		}
+	}
+	return
+
+}
+
+//Yiran
+func NewVoteBox() *VoteBox {
+	return &VoteBox{
+		Candidates: make(map[common.Address]uint64, 0),
+		voters:     make([]common.Address, 0),
+	}
+}
+
+//Yiran
+//Voting tools for Mediator election
+type VoteBox struct {
+	Candidates map[common.Address]uint64
+	voters     []common.Address
+}
+
+type SimpleVote interface {
+	//Returns the data of the specified number in order
+	HeadN(num uint) []common.Address
+	//Initialize the candidate's score before voting
+	Register(addresses []common.Address)
+	//One person, one vote
+	AddToBoxIfNotVoted(Weight uint64, voter common.Address, voteAddress common.Address)
+}
+
+//Yiran
+//Used to count voting results for mediator vote
+type Candidate struct {
+	Address common.Address
+	Score   uint64
+}
+
+//<<<<<<< Utils <<<<<<<
+//Yiran
+//Returns true when the contents of the two []byte are exactly the same
+func BytesEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	if (a == nil) != (b == nil) { //[]int{} != []int(nil)
+		return false
+	}
+
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+//Yiran
+//Returns true when the contents of the two Address are exactly the same
+func AddressEqual(a, b common.Address) bool {
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+//Yiran
+// this function connect multiple []byte to single []byte.
 func KeyConnector(keys ...[]byte) []byte {
 	var res []byte
 	for _, key := range keys {
@@ -64,7 +164,8 @@ func KeyConnector(keys ...[]byte) []byte {
 	return res
 }
 
-//@Yiran print error if exist.
+//Yiran
+//print error if exist.
 func ErrorLogHandler(err error, errType string) error {
 	if err != nil {
 		println(errType, "error", err.Error())
@@ -73,34 +174,4 @@ func ErrorLogHandler(err error, errType string) error {
 	return nil
 }
 
-//@Yiran
-type VoteBox struct {
-	Candidates []Candidate
-	Voter      []common.Address
-}
-
-func (box *VoteBox) Sort() {
-	//TODO
-}
-func (box *VoteBox) AddToBoxIfNotVoted(voter common.Address, vote common.Address) {
-	//TODO
-	//for addr := range box.voter {
-	//	if addr == voter{
-	//		return
-	//	}
-	//}
-
-}
-
-func NewVoteBox() *VoteBox {
-	return &VoteBox{
-		Candidates: make([]Candidate, 0),
-		Voter:      make([]common.Address, 0),
-	}
-}
-
-//@Yiran
-type Candidate struct {
-	Address    common.Address
-	VoteNumber uint64
-}
+//>>>>>>> Utils >>>>>>>

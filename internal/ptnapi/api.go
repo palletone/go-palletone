@@ -1478,7 +1478,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Debugf("payload input outpoint:%s", pload.Input[0].PreviousOutPoint.TxHash.String())
+	//log.Debugf("payload input outpoint:%s", pload.Input[0].PreviousOutPoint.TxHash.String())
 	mtxHex := hex.EncodeToString(mtxbt)
 	return mtxHex, nil
 }
@@ -1566,7 +1566,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
 		return nil, err
 	}
-	log.Debugf("InputOne txid:{%+v}", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0])
+	//log.Debugf("InputOne txid:{%+v}", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0])
 
 	var hashType uint32
 	switch *cmd.Flags {
@@ -1762,6 +1762,7 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return common.Hash{}, err
 	}
+	log.Debugf("Tx outpoint tx hash:%s", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0].PreviousOutPoint.TxHash.String())
 	//log.Info("PublicTransactionPoolAPI", "SendRawTransaction tx", tx)
 	return submitTransaction(ctx, s.b, tx)
 }
@@ -2030,11 +2031,19 @@ func (s *PublicDagAPI) GetTokenInfo(ctx context.Context, key string) (string, er
 	if err != nil {
 		return "", err
 	}
-	if item, err := s.b.GetTokenInfo(id[:]); err != nil {
+	log.Info("-------------------key--------", "key", key, "token", id)
+	if item, err := s.b.GetTokenInfo(id.Bytes()); err != nil {
 		return "", err
 	} else {
 		info := NewPublicReturnInfo("token_info", item)
 		result_json, _ := json.Marshal(info)
 		return string(result_json), nil
 	}
+}
+
+// SaveTokenInfo save a token  ,return hex key.
+func (s *PublicDagAPI) SaveTokenInfo(ctx context.Context, name, token, creator string) (string, error) {
+	//info to token
+	info := modules.NewTokenInfo(name, token, creator)
+	return s.b.SaveTokenInfo(info)
 }

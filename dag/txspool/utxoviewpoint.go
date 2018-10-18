@@ -46,12 +46,94 @@ func (view *UtxoViewpoint) SetEntries(key modules.OutPoint, utxo *modules.Utxo) 
 
 	view.entries[key] = utxo
 }
+func (view *UtxoViewpoint) AddUtxo(key modules.OutPoint, utxo *modules.Utxo) {
+	if view.entries == nil {
+		view.entries = make(map[modules.OutPoint]*modules.Utxo)
+	}
+	view.entries[key] = utxo
+}
 func (view *UtxoViewpoint) LookupUtxo(outpoint modules.OutPoint) *modules.Utxo {
 	if view == nil {
 		return nil
 	}
 	return view.entries[outpoint]
 }
+func (view *UtxoViewpoint) SpentUtxo(db storage.IUtxoDb, outpoints map[modules.OutPoint]struct{}) error {
+	if len(outpoints) == 0 {
+		return nil
+	}
+	for outpoint := range outpoints {
+		if utxo, has := view.entries[outpoint]; has {
+			utxo.Spend()
+			db.SaveUtxoEntity(&outpoint, utxo)
+		} else {
+			utxo, err := db.GetUtxoEntry(&outpoint)
+			if err == nil {
+				utxo.Spend()
+				db.SaveUtxoEntity(&outpoint, utxo)
+			}
+		}
+		delete(view.entries, outpoint)
+	}
+	return nil
+}
+func (view *UtxoViewpoint) FetchUnitUtxos(db storage.IUtxoDb, unit *modules.Unit) error {
+	txInFlight := map[common.Hash]int{}
+	transactions := unit.Transactions()
+	for i, tx := range transactions {
+		txInFlight[tx.Hash()] = i
+	}
+	neededSet := make(map[modules.OutPoint]struct{})
+	for i, tx := range transactions[1:] {
+		// It is acceptable for a transaction input to reference
+		// the output of another transaction in this block only
+		// if the referenced transaction comes before the
+		// current one in this block.  Add the outputs of the
+		// referenced transaction as available utxos when this
+		// is the case.  Otherwise, the utxo details are still
+		// needed.
+		//
+		// NOTE: The >= is correct here because i is one less
+		// than the actual position of the transaction within
+		// the block due to skipping the coinbase.
+		for j, msgcopy := range tx.TxMessages {
+			if msgcopy.App == modules.APP_PAYMENT {
+				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
+					for _, txIn := range msg.Input {
+						originHash := &txIn.PreviousOutPoint.TxHash
+						if inFlightIndex, ok := txInFlight[*originHash]; ok &&
+							i >= inFlightIndex {
+
+							originTx := transactions[inFlightIndex]
+							view.AddTxOut(originTx, uint32(i), uint32(j))
+							continue
+						}
+
+						// Don't request entries that are already in the view
+						// from the database.
+						if _, ok := view.entries[*txIn.PreviousOutPoint]; ok {
+							continue
+						}
+						neededSet[*txIn.PreviousOutPoint] = struct{}{}
+					}
+				}
+			}
+		}
+	}
+	return view.fetchUtxosMain(db, neededSet)
+}
+
+// fetch OutUtxos ,return  utxos  all outpoint.
+// func (view *UtxoViewpoint) FetchOutputUtxos(db storage.IUtxoDb, unit *modules.Unit) (map[modules.OutPoint]struct{}, error) {
+// 	transactions := unit.Transactions()
+// 	needSet := make(map[modules.OutPoint]struct{})
+// 	for i, tx := range transactions {
+// 		// TODO
+// 		//
+
+// 	}
+// 	return needSet, nil
+// }
 func (view *UtxoViewpoint) FetchUtxos(db storage.IUtxoDb, outpoints map[modules.OutPoint]struct{}) error {
 	if len(outpoints) == 0 {
 		return nil
@@ -96,6 +178,9 @@ func (view *UtxoViewpoint) addTxOut(outpoint modules.OutPoint, txOut *modules.Tx
 
 	// isCoinbase ?
 	// flags --->  标记utxo状态
+	if isCoinbase {
+		utxo.SetCoinBase() // utxo.Flags = modules.tfCoinBase
+	}
 }
 
 func (view *UtxoViewpoint) AddTxOut(tx *modules.Transaction, msgIdx, txoutIdx uint32) {

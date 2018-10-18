@@ -35,21 +35,21 @@ type SystemConfig struct {
 }
 
 type Genesis struct {
-	Version      string `json:"version"`
-	Alias        string `json:"alias"`
-	TokenAmount  uint64 `json:"tokenAmount"`
-	TokenDecimal uint32 `json:"tokenDecimal"`
-	DecimalUnit  string `json:"decimal_unit"`
-	ChainID      uint64 `json:"chainId"`
-	TokenHolder  string `json:"tokenHolder"`
+	Version      string       `json:"version"`
+	Alias        string       `json:"alias"`
+	TokenAmount  uint64       `json:"tokenAmount"`
+	TokenDecimal uint32       `json:"tokenDecimal"`
+	DecimalUnit  string       `json:"decimal_unit"`
+	ChainID      uint64       `json:"chainId"`
+	TokenHolder  string       `json:"tokenHolder"`
+	Text         string       `json:"text"`
+	SystemConfig SystemConfig `json:"systemConfig"`
 
-	Text                      string                   `json:"text"`
 	InitialParameters         ChainParameters          `json:"initialParameters"`
 	ImmutableParameters       ImmutableChainParameters `json:"immutableChainParameters"`
 	InitialTimestamp          int64                    `json:"initialTimestamp"`
 	InitialActiveMediators    uint16                   `json:"initialActiveMediators"`
 	InitialMediatorCandidates []*MediatorInfo          `json:"initialMediatorCandidates"`
-	SystemConfig              SystemConfig             `json:"systemConfig"`
 }
 
 func (g *Genesis) GetTokenAmount() uint64 {

@@ -21,15 +21,16 @@
 package memunit
 
 import (
-	"github.com/palletone/go-palletone/dag/storage"
+	"fmt"
+	"strings"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/common/log"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common"
-	"fmt"
-	"github.com/palletone/go-palletone/common/hexutil"
-	"strings"
-	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 /*********************************************************************/
@@ -74,7 +75,9 @@ func NewMemDag(db storage.IDagDb, unitRep dagCommon.IUnitRepository) *MemDag {
 }
 
 func (chain *MemDag) validateMemory() bool {
-	if chain.memUnit.Lenth() >= uint64(chain.memSize) {
+	length := chain.memUnit.Lenth()
+	//log.Info("MemDag", "validateMemory unit length:", length, "chain.memSize:", chain.memSize)
+	if length >= uint64(chain.memSize) {
 		return false
 	}
 	return true
@@ -87,9 +90,11 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 	if chain.memUnit.Exists(unit.UnitHash) {
 		return fmt.Errorf("Save mem unit: unit is already exists in memory")
 	}
-	if !chain.validateMemory() {
-		return fmt.Errorf("Save mem unit: size is out of limit")
-	}
+
+	//TODO must recover
+	//if !chain.validateMemory() {
+	//	return fmt.Errorf("Save mem unit: size is out of limit")
+	//}
 
 	assetId := unit.UnitHeader.Number.AssetID.String()
 
@@ -267,4 +272,3 @@ func (chain *MemDag) GetCurrentUnit(assetid modules.IDType16) (*modules.Unit, er
 	}
 	return nil, nil
 }
-

@@ -22,14 +22,13 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common/log"
-
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
-	mediatorSchlDBKey = []byte("MediatorSchedule")
+	MediatorSchlDBKey = append(modules.MEDIATOR_SCHEME_PREFIX, []byte("MediatorSchedule")...)
 )
 
 type mediatorSchedule struct {
@@ -68,7 +67,7 @@ func getMS(mst *mediatorSchedule) *modules.MediatorSchedule {
 func StoreMediatorSchl(db ptndb.Database, ms *modules.MediatorSchedule) error {
 	mst := getMST(ms)
 
-	err := StoreBytes(db, mediatorSchlDBKey, mst)
+	err := StoreBytes(db, MediatorSchlDBKey, mst)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store mediator schedule error: %s", err))
 	}
@@ -79,7 +78,7 @@ func StoreMediatorSchl(db ptndb.Database, ms *modules.MediatorSchedule) error {
 func RetrieveMediatorSchl(db ptndb.Database) (*modules.MediatorSchedule, error) {
 	mst := new(mediatorSchedule)
 
-	err := retrieve(db, mediatorSchlDBKey, mst)
+	err := retrieve(db, MediatorSchlDBKey, mst)
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve mediator schedule error: %s", err))
 	}

@@ -45,7 +45,7 @@ func TestRawTransactionGen(t *testing.T) {
     "locktime": 0
 	}`
 	params = params
-	testResult := "f8b4a0b4d1fe596d4de4929e93f383a03cbad7dca61895d63d728faeb4455cdf87b164f891f88f01b88cf88ae7e6e3a070a94dcd943ef358cea5a4edc39698ec275c03b0b002d681535271f28ec2beb080808080f85ff85d8880000000000000009976a914d04ef6595ea6dd1cf512a5e9077a66f9b9fb422688ace390000000000000000000000000000000009000000000000000000000000000000000809500000000000000000000000000000000000000000080"
+	testResult := "f8b4a0b1f64790bc708d1d5779ad2b73d03a8d9925c3def4185ae276d3a6f282bc3355f891f88f80b88cf88ae7e6e3a0b0bec28ef271525381d602b0b0035c27ec9896c3eda4a5ce58f33e94cd4da97080808080f85ff85d8880000000000000009976a914d04ef6595ea6dd1cf512a5e9077a66f9b9fb422688ace390000000000000000000000000000000009000000000000000000000000000000000809500000000000000000000000000000000000000000080"
 	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
@@ -82,6 +82,67 @@ func TestRawTransactionGen(t *testing.T) {
 	return
 }
 
+func TestVoteTransactionGen(t *testing.T) {
+	params := `{
+    "inputs": [
+		{
+           "txid": "b0bec28ef271525381d602b0b0035c27ec9896c3eda4a5ce58f33e94cd4da970",
+           "vout": 0,
+           "messageindex": 0
+		}
+    ],
+    "outputs": [
+		{
+           "address": "P1KzS9JG7XCZvdKRNwL47mJWCGprCCt8j8D",
+           "amount": 100000
+		}
+    ],
+    "locktime": 0,
+	"expiredterm": 0,
+	"mediatoraddress": "P1KzS9JG7XCZvdKRNwL47mJWCGprCCt8j8D"
+	
+	}`
+	params = params
+	testResult := "f8dda01166fd7e9ccbf92da6351e07e6dea0f2a8774694ab1b5468dce73baccb4a06c1f8baf88f80b88cf88ae7e6e3a0b0bec28ef271525381d602b0b0035c27ec9896c3eda4a5ce58f33e94cd4da97080808080f85ff85d8880000000000000009976a914d04ef6595ea6dd1cf512a5e9077a66f9b9fb422688ace390000000000000000000000000000000009000000000000000000000000000000000809500000000000000000000000000000000000000000080e806a6e5a350314b7a53394a473758435a76644b524e774c34376d4a5743477072434374386a384480"
+	var voteTransactionGenParams ptnjson.VoteTransactionGenParams
+	err := json.Unmarshal([]byte(params), &voteTransactionGenParams)
+	if err != nil {
+		return
+	}
+	//fmt.Println("voteTransactionGenParams:",voteTransactionGenParams)
+	//transaction inputs
+	var inputs []ptnjson.TransactionInput
+	for _, inputOne := range voteTransactionGenParams.Inputs {
+		input := ptnjson.TransactionInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex}
+		inputs = append(inputs, input)
+	}
+	if len(inputs) == 0 {
+		return
+	}
+	//realNet := &chaincfg.MainNetParams
+	amounts := map[string]float64{}
+	for _, outOne := range voteTransactionGenParams.Outputs {
+		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
+			continue
+		}
+		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
+	}
+	if len(amounts) == 0 {
+		return
+	}
+
+	MediatorAddress := voteTransactionGenParams.MediatorAddress
+	ExpiredTerm := voteTransactionGenParams.ExpiredTerm
+	arg := ptnjson.NewCreateVoteTransactionCmd(inputs, amounts, &voteTransactionGenParams.Locktime, MediatorAddress, ExpiredTerm)
+
+	result, _ := CreateVoteTransaction(arg)
+	if !strings.Contains(result, testResult) {
+		t.Errorf("unexpected result - got: %v, "+"want: %v", result, testResult)
+	}
+	fmt.Println(result)
+	return
+}
+
 /*
 func TestDecodeRawTransaction(t *testing.T) {
 
@@ -108,7 +169,7 @@ func TestSignTransaction(t *testing.T) {
 	//from TestRawTransactionGen A --> B C
 	//参数格式错误
 	params := `{
-	"rawtx":"f89ea03ca16a831cc4c7a32f7fcf694910fcd0b60974ac5ecf216fa58da39668fc9eb5f87bf87901b876f874e7e6e3a070a94dcd943ef358cea5a4edc39698ec275c03b0b002d681535271f28ec2beb080808080f849f8478880000000000000009976a914d04ef6595ea6dd1cf512a5e9077a66f9b9fb422688ace3900000000000000000000000000000000090000000000000000000000000000000000180",
+	"rawtx":"f8b4a01085560d869f0f2f3eb696d068713adf20879a333f5e11672ebda8f0fad8f82bf891f88f01b88cf88ae7e6e3a0b0bec28ef271525381d602b0b0035c27ec9896c3eda4a5ce58f33e94cd4da97080808080f85ff85d8880000000000000009976a914d04ef6595ea6dd1cf512a5e9077a66f9b9fb422688ace390000000000000000000000000000000009000000000000000000000000000000000809500000000000000000000000000000000000000000080",
     "rawtxinput": [
 		{
            "txid": "b0bec28ef271525381d602b0b0035c27ec9896c3eda4a5ce58f33e94cd4da970",
@@ -159,7 +220,7 @@ func TestSignTransaction(t *testing.T) {
 	}
 
 	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &rawinputs, &keys, ptnjson.String("ALL"))
-
+	//fmt.Println("newsign:", newsign)
 	//pk, _ := crypto.FromWIF("L3XNk86G6LXpFr9y7JSYDztgtmcC7xdcVoUkiF8dNCPRroDSyBHe")
 	//addr := crypto.PubkeyToAddress(&pk.PublicKey)
 	//script := tokenengine.GenerateLockScript(addr)

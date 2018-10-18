@@ -108,10 +108,13 @@ type Backend interface {
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error)
 	GetAllUtxos() ([]ptnjson.UtxoJson, error)
-	//------- Get addr utxo end  ------//
+
+	/* ---------------------save token info ------------------------*/
+	SaveTokenInfo(token_info *modules.TokenInfo) (string, error)
+
 	GetAddrTransactions(addr string) (modules.Transactions, error)
 	GetAllTokenInfo() (*modules.AllTokenInfo, error)
-	GetTokenInfo(key []byte) (*modules.TokenInfo, error)
+	GetTokenInfo(key []byte) (*ptnjson.TokenInfoJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)

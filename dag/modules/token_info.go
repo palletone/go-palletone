@@ -19,7 +19,10 @@
 package modules
 
 import (
+	"encoding/json"
 	"github.com/palletone/go-palletone/common/hexutil"
+	"time"
+	"unsafe"
 )
 
 var (
@@ -36,13 +39,19 @@ const (
 
 type IDType16 [ID_LENGTH]byte
 type AllTokenInfo struct {
-	Items map[string]*TokenInfo
+	Items map[string]*TokenInfo //  token_info’json string
 }
 type TokenInfo struct {
-	Name         string
-	Token        IDType16
-	Creator      string
-	CreationDate string
+	Name         string   `json:"name"`
+	TokenHex     string   `json:"token_hex"` // idtype16's hex
+	Token        IDType16 `json:"token_id"`
+	Creator      string   `json:"creator"`
+	CreationDate string   `json:"creation_date"`
+}
+
+func NewTokenInfo(name, token, creator string) *TokenInfo {
+	id, _ := SetIdTypeByHex(token)
+	return &TokenInfo{Name: name, TokenHex: token, Token: id, Creator: creator, CreationDate: time.Now().Format(TimeFormatString)}
 }
 
 func ZeroIdType16() IDType16 {
@@ -68,14 +77,35 @@ func (it *IDType16) SetBytes(b []byte) {
 
 	copy(it[ID_LENGTH-len(b):], b)
 }
+
 func SetIdTypeByHex(id string) (IDType16, error) {
 	bytes, err := hexutil.Decode(id)
 	if err != nil {
 		return IDType16{}, err
 	}
 	var id_type IDType16
-	copy(id_type[ID_LENGTH-len(bytes):], bytes)
+	copy(id_type[0:], bytes)
 	return id_type, nil
+}
+
+func (ti *TokenInfo) String() string {
+	token_b, _ := json.Marshal(ti)
+	return *(*string)(unsafe.Pointer(&token_b))
+}
+
+func Jsonbytes2AllTokenInfo(data []byte) (*AllTokenInfo, error) {
+	info := new(AllTokenInfo)
+	info.Items = make(map[string]*TokenInfo)
+	err := json.Unmarshal(data, &info)
+
+	return info, err
+}
+func (tf *AllTokenInfo) String() string {
+	bytes, err := json.Marshal(tf)
+	if err != nil {
+		return ""
+	}
+	return *(*string)(unsafe.Pointer(&bytes))
 }
 
 func (tf *AllTokenInfo) Add(token *TokenInfo) {
@@ -85,5 +115,5 @@ func (tf *AllTokenInfo) Add(token *TokenInfo) {
 	if tf.Items == nil {
 		tf.Items = make(map[string]*TokenInfo)
 	}
-	tf.Items[string(TOKENTYPE)+token.Token.String()] = token
+	tf.Items[string(TOKENTYPE)+token.TokenHex] = token
 }

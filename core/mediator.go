@@ -35,6 +35,7 @@ type Mediator struct {
 	Address     common.Address
 	InitPartPub kyber.Point
 	Node        *discover.Node
+	//WebsiteUrl  string
 }
 
 func StrToMedNode(mn string) *discover.Node {

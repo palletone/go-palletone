@@ -32,7 +32,6 @@ var (
 	AddrTransactionsHash_Prefix = []byte("at") // addr  transactions hash prefix
 	AddrOutput_Prefix           = []byte("ao") // addr output tx's hash + msg index.
 	AddrOutPoint_Prefix         = []byte("ap") // addr outpoint
-	ADDRESS_PREFIX              = []byte("ad")
 	CONTRACT_STATE_PREFIX       = []byte("cs")
 	CONTRACT_TPL                = []byte("ct")
 
@@ -42,12 +41,11 @@ var (
 	ATTESTATION_PREFIX            = []byte("at")
 	ASSET_PREFIX                  = []byte("as")
 	ASSET_ATTESTORS               = []byte("ae")
-	MEDIATOR_CANDIDATE_PREFIX     = []byte("mc")
-	MEDIATOR_ELECTED_PREFIX       = []byte("md")
+	MEDIATOR_INFO_PREFIX          = []byte("mi")
 	GLOBALPROPERTY_PREFIX         = []byte("gp")
 	DYNAMIC_GLOBALPROPERTY_PREFIX = []byte("dp")
 	MEDIATOR_SCHEME_PREFIX        = []byte("ms")
-	ADDRESS_INFO_PREFIX           = []byte("ai")
+	ACCOUNT_INFO_PREFIX           = []byte("ai")
 	CONF_PREFIX                   = []byte("cf")
 	// lookup
 	LookupPrefix = []byte("l")
