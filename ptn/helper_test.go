@@ -485,7 +485,7 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 }
 
 func saveHashByIndex(db ptndb.Database, hash common.Hash, index uint64) error {
-	key := fmt.Sprintf("%s%v_", storage.HEADER_PREFIX, index)
+	key := fmt.Sprintf("%s%v_", modules.HEADER_PREFIX, index)
 	err := db.Put([]byte(key), hash.Bytes())
 	return err
 }

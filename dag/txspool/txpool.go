@@ -592,7 +592,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 			}
 		}
 	}
-	log.Info("add output utxoview info====================================", "info", utxoview.entries)
+	log.Info("add output utxoview info====================================", "info", utxoview.entries[preout])
 
 	// If the transaction pool is full, discard underpriced transactions
 	if uint64(len(pool.all)) >= pool.config.GlobalSlots+pool.config.GlobalQueue {

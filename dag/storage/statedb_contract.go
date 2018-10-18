@@ -23,12 +23,13 @@ package storage
 import (
 	"errors"
 	"fmt"
+	"log"
+	"reflect"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
-	"log"
-	"reflect"
 )
 
 func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
@@ -163,6 +164,7 @@ func (statedb *StateDb) GetContractState(id common.Address, field string) (*modu
 	key = append(key, []byte(field)...)
 	data, version, err := retrieveWithVersion(statedb.db, key)
 	if err != nil || data == nil {
+
 		return nil, nil
 	}
 	//for k, v := range data {

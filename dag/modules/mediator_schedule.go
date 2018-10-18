@@ -68,7 +68,7 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 	}
 
 	// 1. 判断是否到达洗牌时刻
-	if dgp.LastVerifiedUnitNum%aSize != 0 {
+	if dgp.HeadUnitNum%aSize != 0 {
 		return
 	}
 
@@ -83,7 +83,7 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 	}
 
 	// 4. 打乱证人的调度顺序
-	nowHi := uint64(dgp.LastVerifiedUnitTime << 32)
+	nowHi := uint64(dgp.HeadUnitTime << 32)
 	for i := uint64(0); i < aSize; i++ {
 		// 高性能随机生成器(High performance random generator)
 		// 原理请参考 http://xorshift.di.unimi.it/
@@ -155,17 +155,17 @@ func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32)
 	interval := gp.ChainParameters.MediatorInterval
 
 	// 本条件是用来生产第一个unit
-	if dgp.LastVerifiedUnitNum == 0 {
+	if dgp.HeadUnitNum == 0 {
 		/**
 		注：第一个验证单元在genesisTime加上一个验证单元间隔
 		n.b. first verifiedUnit is at genesisTime plus one verifiedUnitInterval
 		*/
-		genesisTime := dgp.LastVerifiedUnitTime
+		genesisTime := dgp.HeadUnitTime
 		return time.Unix(genesisTime+int64(slotNum)*int64(interval), 0)
 	}
 
 	// 最近的验证单元的绝对slot
-	var verifiedUnitAbsSlot = dgp.LastVerifiedUnitTime / int64(interval)
+	var verifiedUnitAbsSlot = dgp.HeadUnitTime / int64(interval)
 	// 最近的时间槽起始时间
 	verifiedUnitSlotTime := time.Unix(verifiedUnitAbsSlot*int64(interval), 0)
 

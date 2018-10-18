@@ -978,6 +978,7 @@ func (s *PublicTransactionPoolAPI) GetAddrOutpoints(ctx context.Context, addr st
 }
 func (s *PublicTransactionPoolAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {
 	items, err := s.b.GetAddrUtxos(addr)
+
 	if err != nil {
 		return "", err
 	}
@@ -1452,7 +1453,6 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		pkScript := tokenengine.GenerateP2PKHLockScript(addr[0:20])
 		// Convert the amount to satoshi.
 		dao, err := ptnjson.NewAmount(amount)
-		dao = dao
 		if err != nil {
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
@@ -1503,7 +1503,7 @@ func (s *PublicTransactionPoolAPI) CreateVoteTransaction(ctx context.Context /*s
 		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
 			continue
 		}
-		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
+		amounts[outOne.Address] = float64(outOne.Amount)
 	}
 	if len(amounts) == 0 {
 		return "", nil
@@ -1540,7 +1540,7 @@ func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s 
 		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
 			continue
 		}
-		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
+		amounts[outOne.Address] = float64(outOne.Amount)
 	}
 	if len(amounts) == 0 {
 		return "", nil
@@ -1761,6 +1761,20 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return common.Hash{}, err
 	}
+	var outAmount uint64
+	for _, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if ok == false {
+			continue
+		}
+
+		for _, txout := range payload.Output {
+			log.Info("+++++++++++++++++++++++++++++++++++++++++", "tx_outAmount", txout.Value, "outInfo", txout)
+			outAmount += txout.Value
+		}
+	}
+	log.Info("--------------------------send tx ----------------------------", "txOutAmount", outAmount)
+
 	log.Debugf("Tx outpoint tx hash:%s", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0].PreviousOutPoint.TxHash.String())
 	//log.Info("PublicTransactionPoolAPI", "SendRawTransaction tx", tx)
 	return submitTransaction(ctx, s.b, tx)

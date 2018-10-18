@@ -22,11 +22,10 @@ package dag
 import (
 	"fmt"
 	"github.com/coocood/freecache"
+	"github.com/palletone/go-palletone/tokenengine"
 	"reflect"
 	"sync"
 	"sync/atomic"
-
-	//"github.com/ethereum/go-ethereum/params"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -182,7 +181,7 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // After insertion is done, all accumulated events will be fired.
 // reference : Eth InsertChain
 func (d *Dag) InsertDag(units modules.Units) (int, error) {
-	//TODO must recover
+	//TODO must recover，不连续的孤儿unit也应当存起来，以方便后面处理
 	log.Debug("===InsertDag===", "len(units):", len(units))
 	count := int(0)
 	for i, u := range units {
@@ -201,6 +200,7 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
+		// todo 应当和本地生产的unit统一接口，而不是直接存储
 		if err := d.unitRep.SaveUnit(u, false); err != nil {
 			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
@@ -632,25 +632,31 @@ func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	return items, err
 }
 
-func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
-
-	return d.utxodb.SaveUtxoView(view.Entries())
-}
 func (d *Dag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	// TODO
 	// merge dag.cache
 	all, err := d.utxodb.GetAddrOutpoints(addr)
 	if d.utxos_cache != nil {
-		for key, _ := range d.utxos_cache {
-			var exist bool
-			for _, old := range all {
-				if reflect.DeepEqual(key.ToKey(), old.ToKey()) {
-					exist = true
-					break
+		for key, utxo := range d.utxos_cache {
+			if utxo.IsSpent() {
+				delete(d.utxos_cache, key)
+			} else {
+				address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+				if err == nil {
+					if address.String() == addr {
+						var exist bool
+						for _, old := range all {
+							if reflect.DeepEqual(key.ToKey(), old.ToKey()) {
+								exist = true
+								break
+							}
+						}
+						if !exist {
+							all = append(all, key)
+						}
+					}
 				}
-			}
-			if !exist {
-				all = append(all, key)
+
 			}
 		}
 	}
@@ -667,17 +673,32 @@ func (d *Dag) GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, err
 	all, err := d.utxodb.GetAddrUtxos(addr)
 	if d.utxos_cache != nil {
 		for key, utxo := range d.utxos_cache {
-			if old, has := all[key]; has {
-				// merge
-
-				if old.IsSpent() {
-					delete(all, key)
+			if utxo.IsSpent() {
+				log.Debug("------------------the utxo is spent ----------------", "utxokey", key.String())
+				delete(d.utxos_cache, key)
+			} else {
+				address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+				//log.Debug("------------------ address ----------------", "address", address.String(), "addrHex", address.Hex())
+				if err == nil {
+					if address.String() == addr {
+						if old, has := all[key]; has {
+							// merge
+							if old.IsSpent() {
+								delete(all, key)
+							}
+						}
+						all[key] = utxo
+					}
 				}
 			}
-			all[key] = utxo
 		}
 	}
 	return all, err
+}
+
+func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
+
+	return d.utxodb.SaveUtxoView(view.Entries())
 }
 
 func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
@@ -686,7 +707,7 @@ func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
 
 // get contract state
 func (d *Dag) GetContractState(id string, field string) (*modules.StateVersion, []byte) {
-	return d.GetContractState(id, field)
+	return d.statedb.GetContractState(common.HexToAddress(id), field)
 }
 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
@@ -699,6 +720,7 @@ func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit) error {
 }
 
 func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
+	// todo 应当根据新的unit判断哪条链作为主链
 	// step1. check exists
 	if d.Memdag.Exists(unit.UnitHash) || d.Exists(unit.UnitHash) {
 		return fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash.String())
@@ -723,6 +745,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		}
 	}
+	// todo 应当先判断是否切换，再保存，并更新状态
 	// step5. check if it is need to switch
 	if err := d.Memdag.SwitchMainChain(); err != nil {
 		return fmt.Errorf("SaveDag, save error when switch chain: %s", err.Error())

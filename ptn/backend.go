@@ -129,7 +129,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag, logger)
 
 	// append by Albert·Gou
-	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ptn, &config.MediatorPlugin)
+	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ptn, dag, &config.MediatorPlugin)
 	if err != nil {
 		log.Error("Initialize mediator plugin err:", "error", err)
 		return nil, err
@@ -164,7 +164,7 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (palletdb.D
 
 	//fit dag DefaultConfig
 	dagconfig.DbPath = path
-	log.Debug("Open leveldb path:", path)
+	log.Debug("Open leveldb path:", "path", path)
 	db, err := storage.Init(path, config.DatabaseCache, config.DatabaseHandles)
 	if err != nil {
 		return nil, err

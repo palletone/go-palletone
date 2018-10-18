@@ -535,7 +535,7 @@ func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) 
 						txin.PreviousOutPoint.OutIndex)
 				}
 				// check overflow
-				if inAmount+utxo.Amount > 1<<64-1 {
+				if inAmount+utxo.Amount > (1<<64 - 1) {
 					return 0, fmt.Errorf("Compute fees: txin total overflow")
 				}
 				inAmount += utxo.Amount
@@ -543,13 +543,15 @@ func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) 
 
 			for _, txout := range payload.Output {
 				// check overflow
-				if outAmount+txout.Value > 1<<64-1 {
+				if outAmount+txout.Value > (1<<64 - 1) {
 					return 0, fmt.Errorf("Compute fees: txout total overflow")
 				}
+				log.Info("+++++++++++++++++++++ tx_out_amonut ++++++++++++++++++++", "tx_outAmount", txout.Value)
 				outAmount += txout.Value
 			}
 			if inAmount < outAmount {
-				return 0, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount.", tx.Tx.Hash().String())
+
+				return 0, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Tx.Hash().String(), inAmount, outAmount)
 			}
 			fees += inAmount - outAmount
 		}
@@ -562,7 +564,7 @@ func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) 
 To compute mediator interest for packaging one unit
 */
 func ComputeInterest() uint64 {
-	return uint64(100000000)
+	return uint64(modules.DAO)
 }
 
 func IsCoinBase(tx *modules.Transaction) bool {

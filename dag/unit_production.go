@@ -17,7 +17,7 @@
  *
  */
 
-package mediatorplugin
+package dag
 
 import (
 	"fmt"
@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/dag"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -34,7 +33,7 @@ import (
 
 // GenerateVerifiedUnit, generate unit
 // @author Albert·Gou
-func GenerateUnit(dag dag.IDag, when time.Time, producer common.Address,
+func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 	ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit {
 	dgp := dag.GetDynGlobalProp()
 
@@ -67,9 +66,9 @@ func GenerateUnit(dag dag.IDag, when time.Time, producer common.Address,
 			pendingUnit.UnitHeader.Number.Index += 1
 		}
 	} else {
-		pendingUnit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
+		pendingUnit.UnitHeader.Number.Index = dgp.HeadUnitNum + 1
 		pendingUnit.UnitHeader.ParentsHash =
-			append(pendingUnit.UnitHeader.ParentsHash, dgp.LastVerifiedUnitHash)
+			append(pendingUnit.UnitHeader.ParentsHash, dgp.HeadUnitHash)
 	}
 	pendingUnit.UnitHash = pendingUnit.Hash()
 
@@ -80,7 +79,7 @@ func GenerateUnit(dag dag.IDag, when time.Time, producer common.Address,
 
 	pendingUnit.UnitSize = pendingUnit.Size()
 
-	PushUnit(dag, pendingUnit)
+	dag.PushUnit(pendingUnit)
 
 	return pendingUnit
 }
@@ -93,10 +92,10 @@ func GenerateUnit(dag dag.IDag, when time.Time, producer common.Address,
  *
  * @return true if we switched forks as a result of this push.
  */
-func PushUnit(dag dag.IDag, newUnit *modules.Unit) bool {
+func (dag *Dag) PushUnit(newUnit *modules.Unit) bool {
 	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
 
-	ApplyUnit(dag, newUnit)
+	dag.ApplyUnit(newUnit)
 
 	// 4. 将验证单元添加到本地DB
 	log.Debug("storing the new verified unit to database...")
@@ -108,7 +107,7 @@ func PushUnit(dag dag.IDag, newUnit *modules.Unit) bool {
 	return false
 }
 
-func ApplyUnit(dag dag.IDag, nextUnit *modules.Unit) {
+func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	gp := dag.GetGlobalProp()
 	dgp := dag.GetDynGlobalProp()
 

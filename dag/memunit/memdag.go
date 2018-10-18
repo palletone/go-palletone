@@ -123,11 +123,12 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 	case -2:
 		// check last irreversible unit
 		// if it is not null, check continuously
-		if strings.Compare(irreUnitHash.String(), "") != 0 {
-			if common.CheckExists(irreUnitHash, unit.UnitHeader.ParentsHash) < 0 {
-				return fmt.Errorf("The unit(%s) is not continious.", unit.UnitHash.String())
-			}
-		}
+		// 测试utxo转账 ，暂时隐藏-----
+		// if strings.Compare(irreUnitHash.String(), "") != 0 {
+		// 	if common.CheckExists(irreUnitHash, unit.UnitHeader.ParentsHash) < 0 {
+		// 		return fmt.Errorf("The unit(%s) is not continious.", unit.UnitHash.String())
+		// 	}
+		// }
 		// add new fork into index
 		forkData := ForkData{}
 		forkData = append(forkData, unit.UnitHash)
