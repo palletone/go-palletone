@@ -83,7 +83,7 @@ type VoteTransactionGenParams struct {
 	Locktime int64 `json:"locktime"`
 	// Additional fields
 	MediatorAddress string `json:"mediatoraddress"`
-	ExpiredTerm     uint16         `json:"expiredterm"`
+	ExpiredTerm     uint16 `json:"expiredterm"`
 }
 
 func ConvertRawTxJson2Paymsg(rawTxJson RawTransactionGenParams) (*modules.PaymentPayload, error) {

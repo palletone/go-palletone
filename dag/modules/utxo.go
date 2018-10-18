@@ -27,6 +27,8 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 )
 
+var DAO uint64 = 100000000
+
 type txoFlags uint8
 
 const (

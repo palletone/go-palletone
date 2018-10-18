@@ -564,7 +564,7 @@ func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) 
 To compute mediator interest for packaging one unit
 */
 func ComputeInterest() uint64 {
-	return uint64(100000000)
+	return uint64(modules.DAO)
 }
 
 func IsCoinBase(tx *modules.Transaction) bool {
