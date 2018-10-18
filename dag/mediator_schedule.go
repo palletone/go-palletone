@@ -155,3 +155,23 @@ func (dag *Dag) IsSynced() bool {
 
 	return true
 }
+
+func (dag *Dag) GetSlotAtTime(when time.Time) uint32 {
+	return modules.GetSlotAtTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), when)
+}
+
+func (dag *Dag) GetSlotTime(slotNum uint32) time.Time {
+	return modules.GetSlotTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), slotNum)
+}
+
+func (dag *Dag) HeadUnitTime() int64 {
+	return dag.GetDynGlobalProp().HeadUnitTime
+}
+
+func (dag *Dag) GetScheduledMediator(slotNum uint32) *core.Mediator {
+	return dag.GetMediatorSchl().GetScheduledMediator(dag.GetDynGlobalProp(), slotNum)
+}
+
+func (dag *Dag) HeadUnitNum() uint64 {
+	return dag.GetDynGlobalProp().HeadUnitNum
+}

@@ -66,9 +66,9 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 			pendingUnit.UnitHeader.Number.Index += 1
 		}
 	} else {
-		pendingUnit.UnitHeader.Number.Index = dgp.LastVerifiedUnitNum + 1
+		pendingUnit.UnitHeader.Number.Index = dgp.HeadUnitNum + 1
 		pendingUnit.UnitHeader.ParentsHash =
-			append(pendingUnit.UnitHeader.ParentsHash, dgp.LastVerifiedUnitHash)
+			append(pendingUnit.UnitHeader.ParentsHash, dgp.HeadUnitHash)
 	}
 	pendingUnit.UnitHash = pendingUnit.Hash()
 
