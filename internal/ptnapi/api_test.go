@@ -103,7 +103,7 @@ func TestVoteTransactionGen(t *testing.T) {
 	
 	}`
 	params = params
-	testResult := "f8dda07dc0d1b3d04a5e5c1e259e8234003d2b7ae4d7f417378ed7e2fa667af5696c0cf8baf88f01b88cf88ae7e6e3a0b0bec28ef271525381d602b0b0035c27ec9896c3eda4a5ce58f33e94cd4da97080808080f85ff85d8880000000000000009976a914d04ef6595ea6dd1cf512a5e9077a66f9b9fb422688ace390000000000000000000000000000000009000000000000000000000000000000000809500000000000000000000000000000000000000000080e807a6e5a350314b7a53394a473758435a76644b524e774c34376d4a5743477072434374386a384480"
+	testResult := "f8dda01166fd7e9ccbf92da6351e07e6dea0f2a8774694ab1b5468dce73baccb4a06c1f8baf88f80b88cf88ae7e6e3a0b0bec28ef271525381d602b0b0035c27ec9896c3eda4a5ce58f33e94cd4da97080808080f85ff85d8880000000000000009976a914d04ef6595ea6dd1cf512a5e9077a66f9b9fb422688ace390000000000000000000000000000000009000000000000000000000000000000000809500000000000000000000000000000000000000000080e806a6e5a350314b7a53394a473758435a76644b524e774c34376d4a5743477072434374386a384480"
 	var voteTransactionGenParams ptnjson.VoteTransactionGenParams
 	err := json.Unmarshal([]byte(params), &voteTransactionGenParams)
 	if err != nil {
@@ -134,7 +134,6 @@ func TestVoteTransactionGen(t *testing.T) {
 	MediatorAddress := voteTransactionGenParams.MediatorAddress
 	ExpiredTerm := voteTransactionGenParams.ExpiredTerm
 	arg := ptnjson.NewCreateVoteTransactionCmd(inputs, amounts, &voteTransactionGenParams.Locktime, MediatorAddress, ExpiredTerm)
-
 
 	result, _ := CreateVoteTransaction(arg)
 	if !strings.Contains(result, testResult) {
@@ -221,7 +220,7 @@ func TestSignTransaction(t *testing.T) {
 	}
 
 	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &rawinputs, &keys, ptnjson.String("ALL"))
-
+	//fmt.Println("newsign:", newsign)
 	//pk, _ := crypto.FromWIF("L3XNk86G6LXpFr9y7JSYDztgtmcC7xdcVoUkiF8dNCPRroDSyBHe")
 	//addr := crypto.PubkeyToAddress(&pk.PublicKey)
 	//script := tokenengine.GenerateLockScript(addr)

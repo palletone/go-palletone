@@ -25,24 +25,25 @@ package shim
 import (
 	"flag"
 	"fmt"
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/op/go-logging"
+	"github.com/palletone/go-palletone/contracts/comm"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	commonledger "github.com/palletone/go-palletone/core/vmContractPub/ledger"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/pkg/errors"
+	"github.com/spf13/viper"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 	"io"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"github.com/op/go-logging"
-	"github.com/spf13/viper"
-	"github.com/pkg/errors"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/timestamp"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-	"github.com/palletone/go-palletone/contracts/comm"
-	commonledger "github.com/palletone/go-palletone/core/vmContractPub/ledger"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 // Logger for the shim package.
@@ -495,7 +496,7 @@ type HistoryQueryIterator struct {
 type resultType uint8
 
 const (
-	STATE_QUERY_RESULT   resultType = iota + 1
+	STATE_QUERY_RESULT resultType = iota + 1
 	HISTORY_QUERY_RESULT
 )
 
@@ -763,6 +764,18 @@ func (stub *ChaincodeStub) SetEvent(name string, payload []byte) error {
 	}
 	stub.chaincodeEvent = &pb.ChaincodeEvent{EventName: name, Payload: payload}
 	return nil
+}
+
+//TODO xiaozhi
+//---------- Recognizance API ----------
+func (stub *ChaincodeStub) GetAccountBalance(witnessAddr string) uint64 {
+	balance, err := stub.handler.handleGetAccountBalance(witnessAddr, stub.ChannelId, stub.TxID)
+	if err != nil {
+		return 0
+	}
+	//将 string 转 uint64
+	ptnAccount, err := strconv.ParseUint(balance, 10, 64)
+	return ptnAccount
 }
 
 // ------------- Logging Control and Chaincode Loggers ---------------

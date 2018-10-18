@@ -978,6 +978,7 @@ func (s *PublicTransactionPoolAPI) GetAddrOutpoints(ctx context.Context, addr st
 }
 func (s *PublicTransactionPoolAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {
 	items, err := s.b.GetAddrUtxos(addr)
+
 	if err != nil {
 		return "", err
 	}

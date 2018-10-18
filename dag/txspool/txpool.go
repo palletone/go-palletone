@@ -568,11 +568,12 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		return false, err
 	}
 
-	utxoview, err := pool.fetchInputUtxos(tx.Tx)
+	utxoview, err := pool.FetchInputUtxos(tx.Tx)
 	if err != nil {
 		pool.logger.Errorf("fetchInputUtxos by txid[%s] failed:%s", tx.Tx.Hash().String(), err)
 		return false, err
 	}
+	log.Info("fetch utxoview info====================================", "info", utxoview.entries)
 	// Check the transaction if it exists in the main chain and is not already fully spent.
 	preout := modules.OutPoint{TxHash: hash}
 	for i, msgcopy := range tx.Tx.TxMessages {
@@ -591,6 +592,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 			}
 		}
 	}
+	log.Info("add output utxoview info====================================", "info", utxoview.entries)
 
 	// If the transaction pool is full, discard underpriced transactions
 	if uint64(len(pool.all)) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
@@ -626,7 +628,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				for _, txin := range msg.Input {
-                    pool.outpoints = make(map[modules.OutPoint]*modules.TxPoolTransaction)
+					pool.outpoints = make(map[modules.OutPoint]*modules.TxPoolTransaction)
 					pool.outpoints[*txin.PreviousOutPoint] = tx
 				}
 			}
@@ -1015,13 +1017,16 @@ func (pool *TxPool) CheckSpend(output modules.OutPoint) *modules.Transaction {
 	pool.mu.RUnlock()
 	return tx.Tx
 }
-func (pool *TxPool) fetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, error) {
+func (pool *TxPool) FetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, error) {
 	utxoView, err := pool.unit.GetUtxoView(tx)
 	if err != nil {
 		fmt.Println("getUtxoView is error,", err)
 		return nil, err
 	}
-
+	//TODO   spent input utxo, and add output utxo.
+	for _, utxo := range utxoView.entries {
+		utxo.Spend()
+	}
 	// Attempt to populate any missing inputs from the transaction pool.
 	for i, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
