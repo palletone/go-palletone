@@ -39,13 +39,13 @@ type GlobalProperty struct {
 
 // 动态全局属性的结构体定义
 type DynamicGlobalProperty struct {
-	LastVerifiedUnitNum uint64 // 最近的验证单元编号(数量)
+	HeadUnitNum uint64 // 最近的验证单元编号(数量)
 
-	LastVerifiedUnitHash common.Hash // 最近的验证单元hash
+	HeadUnitHash common.Hash // 最近的验证单元hash
 
 	//	LastVerifiedUnit *v.VerifiedUnit	// 最近生产的验证单元
 
-	LastVerifiedUnitTime int64 // 最近的验证单元时间
+	HeadUnitTime int64 // 最近的验证单元时间
 
 	//	CurrentMediator *Mediator // 当前生产验证单元的mediator, 用于判断是否连续同一个mediator生产验证单元
 
@@ -61,6 +61,7 @@ type DynamicGlobalProperty struct {
 	*/
 	//	RecentSlotsFilled float32
 }
+
 const TERMINTERVAL = 50 //DEBUG:50, DEPLOY:15000
 func (gp *GlobalProperty) GetActiveMediatorCount() int {
 	return len(gp.ActiveMediators)
@@ -172,9 +173,9 @@ func NewGlobalProp() *GlobalProperty {
 
 func NewDynGlobalProp() *DynamicGlobalProperty {
 	return &DynamicGlobalProperty{
-		LastVerifiedUnitNum:  0,
-		LastVerifiedUnitHash: common.Hash{},
-		CurrentASlot:         0,
+		HeadUnitNum:  0,
+		HeadUnitHash: common.Hash{},
+		CurrentASlot: 0,
 	}
 }
 
@@ -204,8 +205,8 @@ func InitDynGlobalProp(genesis *core.Genesis, genesisUnitHash common.Hash) *Dyna
 
 	// Create dynamic global properties
 	dgp := NewDynGlobalProp()
-	dgp.LastVerifiedUnitTime = genesis.InitialTimestamp
-	dgp.LastVerifiedUnitHash = genesisUnitHash
+	dgp.HeadUnitTime = genesis.InitialTimestamp
+	dgp.HeadUnitHash = genesisUnitHash
 
 	return dgp
 }

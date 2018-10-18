@@ -1503,7 +1503,7 @@ func (s *PublicTransactionPoolAPI) CreateVoteTransaction(ctx context.Context /*s
 		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
 			continue
 		}
-		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
+		amounts[outOne.Address] = float64(outOne.Amount)
 	}
 	if len(amounts) == 0 {
 		return "", nil

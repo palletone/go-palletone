@@ -26,8 +26,6 @@ import (
 	"reflect"
 	"sync"
 	"sync/atomic"
-
-	//"github.com/ethereum/go-ethereum/params"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -183,7 +181,7 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // After insertion is done, all accumulated events will be fired.
 // reference : Eth InsertChain
 func (d *Dag) InsertDag(units modules.Units) (int, error) {
-	//TODO must recover
+	//TODO must recover，不连续的孤儿unit也应当存起来，以方便后面处理
 	log.Debug("===InsertDag===", "len(units):", len(units))
 	count := int(0)
 	for i, u := range units {
@@ -202,6 +200,7 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
+		// todo 应当和本地生产的unit统一接口，而不是直接存储
 		if err := d.unitRep.SaveUnit(u, false); err != nil {
 			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
@@ -721,6 +720,7 @@ func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit) error {
 }
 
 func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
+	// todo 应当根据新的unit判断哪条链作为主链
 	// step1. check exists
 	if d.Memdag.Exists(unit.UnitHash) || d.Exists(unit.UnitHash) {
 		return fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash.String())
@@ -745,6 +745,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		}
 	}
+	// todo 应当先判断是否切换，再保存，并更新状态
 	// step5. check if it is need to switch
 	if err := d.Memdag.SwitchMainChain(); err != nil {
 		return fmt.Errorf("SaveDag, save error when switch chain: %s", err.Error())

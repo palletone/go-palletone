@@ -23,7 +23,6 @@ package dag
 import (
 	"time"
 
-	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -86,16 +85,10 @@ type IDag interface {
 	WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id common.Address) (*modules.Contract, error)
-	GetCurThreshold() int
 	GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error)
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
-	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
 	//Mediator
 	GetActiveMediator(add common.Address) *core.Mediator
-	GetActiveMediatorAddr(index int) common.Address
-	GetActiveMediatorInitPubs() []kyber.Point
-	IsActiveMediator(add common.Address) bool
-	GetActiveMediatorCount() int
 	GetActiveMediatorNode(index int) *discover.Node
 	//获得所有Mediator候选人列表
 	GetCandidateMediators() []*core.MediatorInfo
@@ -109,7 +102,6 @@ type IDag interface {
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) error
 	GetMediatorSchl() *modules.MediatorSchedule
-	IsSynced() bool
 
 	// get token info
 	GetTokenInfo(key []byte) (*modules.TokenInfo, error)

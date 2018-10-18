@@ -135,7 +135,7 @@ func (mp *MediatorPlugin) ToProcessDeal(deal *VSSDealEvent) error {
 }
 
 func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
-	dag := mp.getDag()
+	dag := mp.dag
 	localMed := dag.GetActiveMediatorAddr(dealEvent.DstIndex)
 
 	dkgr := mp.getLocalActiveMediatorDKG(localMed)
@@ -179,7 +179,7 @@ func (mp *MediatorPlugin) addToResponseBuf(respEvent *VSSResponseEvent) {
 	resp := respEvent.Resp
 	lams := mp.GetLocalActiveMediators()
 	for _, localMed := range lams {
-		dag := mp.getDag()
+		dag := mp.dag
 
 		//ignore the message from myself
 		srcIndex := resp.Response.Index
@@ -203,7 +203,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		return
 	}
 
-	aSize := mp.getDag().GetActiveMediatorCount()
+	aSize := mp.dag.GetActiveMediatorCount()
 	respCount := 0
 	// localMed 对 vrfrMed 的 response 在 ProcessDeal 生成 response 时 自动处理了
 	if vrfrMed != localMed {
@@ -312,7 +312,7 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 		return
 	}
 
-	dag := mp.getDag()
+	dag := mp.dag
 	newUnitBuf := mp.toTBLSSignBuf[localMed]
 
 	signTBLS := func(newUnit *modules.Unit) (sigShare []byte, success bool) {
@@ -353,7 +353,7 @@ func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
 	case <-mp.quit:
 		return errTerminated
 	default:
-		localMed, _ := mp.getDag().GetUnit(sigShare.UnitHash)
+		localMed, _ := mp.dag.GetUnit(sigShare.UnitHash)
 		go mp.addToTBLSRecoverBuf(localMed, sigShare.SigShare)
 		//go mp.addToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 		return nil
@@ -363,7 +363,7 @@ func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
 // 收集签名分片
 func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnit *modules.Unit, sigShare []byte) {
 	//func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) {
-	//	dag := mp.getDag()
+	//	dag := mp.dag
 	//	newUnit := dag.GetUnit(newUnitHash)
 	if newUnit == nil {
 		log.Error("newUnit is nil!")
@@ -403,7 +403,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	sigShareSet.lock()
 	defer sigShareSet.unlock()
 
-	dag := mp.getDag()
+	dag := mp.dag
 	aSize := dag.GetActiveMediatorCount()
 	curThreshold := dag.GetCurThreshold()
 
