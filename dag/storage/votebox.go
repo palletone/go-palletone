@@ -25,52 +25,30 @@ import (
 )
 
 //Yiran
-// this function connect multiple []byte keys to single []byte.
-func KeyConnector(keys ...[]byte) []byte {
-	var res []byte
-	for _, key := range keys {
-		res = append(res, key...)
-	}
-	return res
-}
-
-//Yiran
-// print error if exist.
-func ErrorLogHandler(err error, errType string) error {
-	if err != nil {
-		println(errType, "error", err.Error())
-		return err
-	}
-	return nil
-}
-
-//Yiran
-type VoteBox struct {
-	Candidates map[common.Address]uint64
-	voters     []common.Address
-}
-
-//Yiran
-//Sort
+//return sorted data of given number
 func (box *VoteBox) HeadN(num uint) []common.Address {
 	ResCandidates := make([]Candidate, num)
+
+	// ##### Sort map[Address]Score --> []Candidate #####
 	for CurrCandidate, CurrScore := range box.Candidates {
 		//insert if result set has space free.
 		if uint(len(ResCandidates)) < num {
-			ResCandidates = append(ResCandidates, Candidate{Address: CurrCandidate, VoteNumber: CurrScore})
+			ResCandidates = append(ResCandidates, Candidate{Address: CurrCandidate, Score: CurrScore})
 		}
 		// insert if current score greater than smallest elem score
-		if CurrScore > ResCandidates[len(ResCandidates)-1].VoteNumber {
+		if CurrScore > ResCandidates[len(ResCandidates)-1].Score {
 			for i, c := range ResCandidates {
-				if CurrScore > c.VoteNumber {
+				if CurrScore > c.Score {
+					//insert & pop tail
 					backcs := ResCandidates[i+1 : num-1]
-					ResCandidates = append(ResCandidates[:i], Candidate{Address: CurrCandidate, VoteNumber: CurrScore})
+					ResCandidates = append(ResCandidates[:i], Candidate{Address: CurrCandidate, Score: CurrScore})
 					ResCandidates = append(ResCandidates, backcs...)
 				}
 			}
 		}
 	}
-	// Trans []Candidate --> []Address
+
+	// ##### Trim []Candidate --> []Address #####
 	ResAddress := make([]common.Address, num)
 	for _, SortedCandidate := range ResCandidates {
 		ResAddress = append(ResAddress, SortedCandidate.Address)
@@ -79,6 +57,7 @@ func (box *VoteBox) HeadN(num uint) []common.Address {
 }
 
 //Yiran
+//Initialize the score for the given accounts
 func (box *VoteBox) Register(addresses []common.Address) {
 	for _, address := range addresses {
 		box.Candidates[address] = 1
@@ -86,19 +65,23 @@ func (box *VoteBox) Register(addresses []common.Address) {
 }
 
 //Yiran
-func (box *VoteBox) AddToBoxIfNotVoted(score uint64, voter common.Address, voteAddress common.Address) {
+//Vote Rule:
+//1.The voters did not vote
+//2.The target of the vote is the candidate
+func (box *VoteBox) AddToBoxIfNotVoted(Weight uint64, voter common.Address, voteAddress common.Address) {
 	for i, voted := range box.voters {
-		// match, so already voted, do noting.
-		if BytesEqual(voted.Bytes(), voter.Bytes()) {
+		// voter has voted already, do noting.
+		if AddressEqual(voted, voter) {
 			return
 		}
 		// no match until the end of the list, so add to VoteBox
 		if i == len(box.voters)-1 {
 			// 1. mark voter already voted
 			box.voters = append(box.voters, voter)
-			// 2. increase candidate vote number
-			if _, ok := box.Candidates[voter]; ok { // voteAddress must belong to a candidate,
-				box.Candidates[voteAddress] += score
+			// 2. increase the candidate score
+			//    The target of the vote is the candidate
+			if _, ok := box.Candidates[voter]; ok {
+				box.Candidates[voteAddress] += Weight
 			} else {
 				fmt.Println("candidate address invalid")
 			}
@@ -117,12 +100,31 @@ func NewVoteBox() *VoteBox {
 }
 
 //Yiran
-type Candidate struct {
-	Address    common.Address
-	VoteNumber uint64
+//Voting tools for Mediator election
+type VoteBox struct {
+	Candidates map[common.Address]uint64
+	voters     []common.Address
+}
+
+type SimpleVote interface {
+	//Returns the data of the specified number in order
+	HeadN(num uint) []common.Address
+	//Initialize the candidate's score before voting
+	Register(addresses []common.Address)
+	//One person, one vote
+	AddToBoxIfNotVoted(Weight uint64, voter common.Address, voteAddress common.Address)
 }
 
 //Yiran
+//Used to count voting results for mediator vote
+type Candidate struct {
+	Address common.Address
+	Score   uint64
+}
+
+//<<<<<<< Utils <<<<<<<
+//Yiran
+//Returns true when the contents of the two []byte are exactly the same
 func BytesEqual(a, b []byte) bool {
 	if len(a) != len(b) {
 		return false
@@ -140,3 +142,36 @@ func BytesEqual(a, b []byte) bool {
 
 	return true
 }
+
+//Yiran
+//Returns true when the contents of the two Address are exactly the same
+func AddressEqual(a, b common.Address) bool {
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+//Yiran
+// this function connect multiple []byte to single []byte.
+func KeyConnector(keys ...[]byte) []byte {
+	var res []byte
+	for _, key := range keys {
+		res = append(res, key...)
+	}
+	return res
+}
+
+//Yiran
+//print error if exist.
+func ErrorLogHandler(err error, errType string) error {
+	if err != nil {
+		println(errType, "error", err.Error())
+		return err
+	}
+	return nil
+}
+
+//>>>>>>> Utils >>>>>>>
