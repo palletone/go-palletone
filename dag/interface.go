@@ -97,7 +97,7 @@ type IDag interface {
 	//Get all elected mediators.
 	GetElectedMediatorsAddress() ([]common.Address, error)
 
-	UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit)
+	UpdateGlobalDynProp(unit *modules.Unit)
 	SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) error
 	GetGlobalProp() *modules.GlobalProperty
 	SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bool) error
