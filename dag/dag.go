@@ -501,7 +501,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 }
 
 // Get Contract Api
-func (d *Dag) GetContract(id common.Address) (*modules.Contract, error) {
+func (d *Dag) GetContract(id []byte) (*modules.Contract, error) {
 	return d.statedb.GetContract(id)
 }
 
@@ -707,8 +707,9 @@ func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
 }
 
 // get contract state
-func (d *Dag) GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte) {
-	return d.statedb.GetContractState(common.HexToAddress("nil"), field)
+func (d *Dag) GetContractState(id []byte, field string) (*modules.StateVersion, []byte) {
+	return d.statedb.GetContractState(id, field)
+	//return d.statedb.GetContractState(common.HexToAddress(id), field)
 }
 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {

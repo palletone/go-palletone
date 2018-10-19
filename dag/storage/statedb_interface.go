@@ -32,16 +32,16 @@ type IStateDb interface {
 	SaveAssetInfo(assetInfo *modules.AssetInfo) error
 	GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error)
 	SaveContract(contract *modules.Contract) error
-	SaveContractState(id common.Address, name string, value interface{}, version *modules.StateVersion) error
+	SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error
 	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
 	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
 	DeleteState(key []byte) error
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string)
-	GetContractState(id common.Address, field string) (*modules.StateVersion, []byte)
+	GetContractState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetTplAllState(id []byte) []*modules.ContractReadSet
-	GetContractAllState(id common.Address) []*modules.ContractReadSet
+	GetContractAllState() []*modules.ContractReadSet
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
-	GetContract(id common.Address) (*modules.Contract, error)
+	GetContract(id []byte) (*modules.Contract, error)
 	GetAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	SaveAccountInfo(address common.Address, info *modules.AccountInfo) error
 	GetCandidateMediatorAddrList() ([]common.Address, error)
