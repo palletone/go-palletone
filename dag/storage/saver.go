@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 var (
@@ -41,11 +42,12 @@ func SaveJoint(db ptndb.Database, objJoint *modules.Joint, onDone func()) (err e
 	obj_unit := objJoint.Unit
 	obj_unit_byte, _ := json.Marshal(obj_unit)
 
-	if err = db.Put(append(modules.UNIT_PREFIX, obj_unit.Hash().Bytes()...), obj_unit_byte); err != nil {
+	if err = db.Put(append(constants.UNIT_PREFIX, obj_unit.Hash().Bytes()...), obj_unit_byte); err != nil {
 		return
 	}
 	// add key in  unit_keys
-	log.Println("add unit key:", string(modules.UNIT_PREFIX)+obj_unit.Hash().String(), AddUnitKeys(db, string(modules.UNIT_PREFIX)+obj_unit.Hash().String()))
+	log.Println("add unit key:", string(constants.UNIT_PREFIX)+obj_unit.Hash().String(),
+		AddUnitKeys(db, string(constants.UNIT_PREFIX)+obj_unit.Hash().String()))
 
 	if dagconfig.SConfig.Blight {
 		// save  update utxo , message , transaction

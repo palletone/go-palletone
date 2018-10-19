@@ -28,11 +28,12 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 var (
-	GlobalPropDBKey    = append(modules.GLOBALPROPERTY_PREFIX, []byte("GlobalProperty")...)
-	DynGlobalPropDBKey = append(modules.DYNAMIC_GLOBALPROPERTY_PREFIX, []byte("DynamicGlobalProperty")...)
+	GlobalPropDBKey    = append(constants.GLOBALPROPERTY_PREFIX, []byte("GlobalProperty")...)
+	DynGlobalPropDBKey = append(constants.DYNAMIC_GLOBALPROPERTY_PREFIX, []byte("DynamicGlobalProperty")...)
 )
 
 type globalProperty struct {

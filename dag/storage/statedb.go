@@ -56,7 +56,7 @@ func (statedb *StateDb) DeleteState(key []byte) error {
 // ######################### GET IMPL START ###########################
 
 func (statedb *StateDb) GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error) {
-	key := append(modules.ASSET_INFO_PREFIX, assetId.AssetId.String()...)
+	key := append(constants.ASSET_INFO_PREFIX, assetId.AssetId.String()...)
 	data, err := statedb.db.Get(key)
 	if err != nil {
 		return nil, err
