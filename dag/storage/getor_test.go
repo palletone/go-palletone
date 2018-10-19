@@ -21,10 +21,9 @@ package storage
 
 import (
 	"fmt"
-
-	"github.com/palletone/go-palletone/common/log"
 	"testing"
 
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 

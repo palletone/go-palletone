@@ -777,6 +777,16 @@ func (stub *ChaincodeStub) GetAccountBalance(witnessAddr string) uint64 {
 	ptnAccount, err := strconv.ParseUint(balance, 10, 64)
 	return ptnAccount
 }
+func (stub *ChaincodeStub) GetDepositConfig() ([]byte, error) {
+	return stub.handler.handleGetDepositConfig(stub.ChannelId, stub.TxID)
+}
+
+func (stub *ChaincodeStub) GetPayToContractAddr() ([]byte, error) {
+	return stub.handler.handleGetPayToContractAddr(stub.ChannelId, stub.TxID)
+}
+func (stub *ChaincodeStub) GetPayToContractTokens() ([]byte, error) {
+	return stub.handler.handleGetPayToContractTokens(stub.ChannelId, stub.TxID)
+}
 
 // ------------- Logging Control and Chaincode Loggers ---------------
 

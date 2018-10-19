@@ -23,7 +23,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/common"
-
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
