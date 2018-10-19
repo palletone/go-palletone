@@ -705,34 +705,10 @@ func (handler *Handler) handleQueryStateClose(id, channelId, txid string) (*pb.Q
 }
 
 //TODO xiaozhi
-func (handler *Handler) handleGetAccountBalance(witnessAddr string, channelId string, txid string) (balance string, err error) {
-	//通过 GRPC 在服务器端通过某账户获取账户余额
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ECOGNIZANCE_BALANCE_REQUEST, Payload: []byte(witnessAddr), ChannelId: channelId, Txid: txid}
-	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ECOGNIZANCE_BALANCE_REQUEST)
-	//Execute the request and get response
-	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
-	if err != nil {
-		return "", errors.WithMessage(err, fmt.Sprintf("[%s]error sending READY", msg.Txid))
-	}
-	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
-		//Success response
-		chaincodeLogger.Debugf("[%s]Received %s. Successfully updated state", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
-		return string(responseMsg.Payload), nil
-	}
-	if responseMsg.Type.String() == pb.ChaincodeMessage_ERROR.String() {
-		// Error response
-		chaincodeLogger.Errorf("[%s]Received %s. Payload: %s", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_ERROR, responseMsg.Payload)
-		return "", errors.New(string(responseMsg.Payload[:]))
-	}
-	// Incorrect chaincode message received
-	return "", errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
-
-}
-
 func (handler *Handler) handleGetDepositConfig(channelId, txid string) ([]byte, error) {
 	//定义一个pb.ChaincodeMessage_DEPOSIT_CONFIG_REQUEST
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ECOGNIZANCE_BALANCE_REQUEST, Payload: []byte(""), ChannelId: channelId, Txid: txid}
-	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ECOGNIZANCE_BALANCE_REQUEST)
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_DEPOSIT_CONFIG_REQUEST, Payload: []byte(""), ChannelId: channelId, Txid: txid}
+	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_DEPOSIT_CONFIG_REQUEST)
 	//Execute the request and get response
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
 	if err != nil {
@@ -749,8 +725,8 @@ func (handler *Handler) handleGetDepositConfig(channelId, txid string) ([]byte, 
 }
 func (handler *Handler) handleGetPayToContractAddr(channelId, txid string) ([]byte, error) {
 	//定义一个pb.ChaincodeMessage_USER_ADDR_REQUEST
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ECOGNIZANCE_BALANCE_REQUEST, Payload: []byte(""), ChannelId: channelId, Txid: txid}
-	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ECOGNIZANCE_BALANCE_REQUEST)
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_USER_ADDR_REQUEST, Payload: []byte(""), ChannelId: channelId, Txid: txid}
+	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_USER_ADDR_REQUEST)
 	//Execute the request and get response
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
 	if err != nil {
@@ -767,8 +743,8 @@ func (handler *Handler) handleGetPayToContractAddr(channelId, txid string) ([]by
 }
 func (handler *Handler) handleGetPayToContractTokens(channelId, txid string) ([]byte, error) {
 	//定义一个pb.ChaincodeMessage_PAYTO_TOKEN_REQUEST
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ECOGNIZANCE_BALANCE_REQUEST, Payload: []byte(""), ChannelId: channelId, Txid: txid}
-	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ECOGNIZANCE_BALANCE_REQUEST)
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_PAYTO_TOKEN_REQUEST, Payload: []byte(""), ChannelId: channelId, Txid: txid}
+	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_PAYTO_TOKEN_REQUEST)
 	//Execute the request and get response
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
 	if err != nil {
