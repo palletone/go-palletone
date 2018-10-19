@@ -32,9 +32,9 @@ func TestUnitNumberIndex(t *testing.T) {
 	key2 := fmt.Sprintf("%s_%s_%d", modules.UNIT_NUMBER_PREFIX, modules.PTNCOIN.String(), 678934)
 
 	if key1 != "nh_btcoin_10000" {
-		log.Debug("not equal.", key1)
+		log.Debug("not equal.", "key1", key1)
 	}
 	if key2 != "nh_ptncoin_678934" {
-		log.Debug("not equal.", key2)
+		log.Debug("not equal.", "key2", key2)
 	}
 }

@@ -556,15 +556,24 @@ func (unitOp *UnitRepository) saveContractInvokePayload(tx *modules.Transaction,
 			TxIndex: txIndex,
 		}
 		//user just want to update it's statedb
-		if payload.ContractId == nil || len(payload.ContractId) == 0 {
-			addr, _ := getRequesterAddress(tx)
-			unitOp.statedb.SaveContractState(addr, ws.Key, ws.Value, version)
+
+		// if payload.ContractId == nil || len(payload.ContractId) == 0 {
+		// 	addr, _ := getRequesterAddress(tx)
+		// 	// contractid
+		// 	unitOp.statedb.SaveContractState(addr, ws.Key, ws.Value, version)
+		// }
+		//@jay
+		// contractId is never nil.
+		if payload.ContractId != nil {
+			//addr, _ := getRequesterAddress(tx)
+			// contractid
+			unitOp.statedb.SaveContractState(payload.ContractId, ws.Key, ws.Value, version)
 		}
 
 		// save new state to database
-		if unitOp.updateState(payload.ContractId, ws.Key, version, ws.Value) != true {
-			continue
-		}
+		// if unitOp.updateState(payload.ContractId, ws.Key, version, ws.Value) != true {
+		// 	continue
+		// }
 	}
 	return true
 }
@@ -612,13 +621,13 @@ func (unitOp *UnitRepository) saveContractInitPayload(height modules.ChainIndex,
 			continue
 		}
 	}
-	addr := common.NewAddress(payload.ContractId, common.ContractHash)
+	//addr := common.NewAddress(payload.ContractId, common.ContractHash)
 	// save contract name
-	if unitOp.statedb.SaveContractState(addr, "ContractName", payload.Name, version) != nil {
+	if unitOp.statedb.SaveContractState(payload.ContractId, "ContractName", payload.Name, version) != nil {
 		return false
 	}
 	// save contract jury list
-	if unitOp.statedb.SaveContractState(addr, "ContractJury", payload.Jury, version) != nil {
+	if unitOp.statedb.SaveContractState(payload.ContractId, "ContractJury", payload.Jury, version) != nil {
 		return false
 	}
 	return true
@@ -773,8 +782,8 @@ func (unitOp *UnitRepository) updateState(contractID []byte, key string, version
 			hexutil.Encode(contractID[:]),
 			key,
 			version.String())
-		addr := common.NewAddress(contractID, common.ContractHash)
-		if err := unitOp.statedb.SaveContractState(addr, key, val, version); err != nil {
+		// addr := common.NewAddress(contractID, common.ContractHash)
+		if err := unitOp.statedb.SaveContractState(contractID, key, val, version); err != nil {
 			log.Error("Save state", "error", err.Error())
 			return false
 		}
