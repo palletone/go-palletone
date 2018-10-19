@@ -17,20 +17,19 @@
  * @date 2018
  */
 
-
 package core
 
 import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/core/vmContractPub/util"
 
+	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"time"
 )
 
@@ -45,11 +44,11 @@ func createCIS(ccname string, args [][]byte) (*pb.ChaincodeInvocationSpec, error
 }
 
 // GetCDS retrieves a chaincode deployment spec for the required chaincode
-func GetCDS(ctxt context.Context, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, chaincodeID string) ([]byte, error) {
+func GetCDS(contractid []byte, ctxt context.Context, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, chaincodeID string) ([]byte, error) {
 	version := util.GetSysCCVersion()
 	chaincodeLogger.Infof("chainID[%s] txid[%s]", chainID, txid)
 
-	cccid := ccprovider.NewCCContext(chainID, "lscc", version, txid, true, signedProp, prop)
+	cccid := ccprovider.NewCCContext(contractid, chainID, "lscc", version, txid, true, signedProp, prop)
 	res, _, err := ExecuteChaincode(ctxt, cccid, [][]byte{[]byte("getdepspec"), []byte(chainID), []byte(chaincodeID)}, 0)
 	if err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("execute getdepspec(%s, %s) of LSCC error", chainID, chaincodeID))
@@ -89,7 +88,9 @@ type ChaincodeDefinition interface {
 // GetChaincodeDefinition returns resourcesconfig.ChaincodeDefinition for the chaincode with the supplied name
 func GetChaincodeDefinition(ctxt context.Context, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, chaincodeID string) (ChaincodeDefinition, error) {
 	version := util.GetSysCCVersion()
-	cccid := ccprovider.NewCCContext(chainID, "lscc", version, txid, true, signedProp, prop)
+	//TODO xiaozhi
+	//cccid := ccprovider.NewCCContext(chainID, "lscc", version, txid, true, signedProp, prop)
+	cccid := ccprovider.NewCCContext(nil, chainID, "lscc", version, txid, true, signedProp, prop)
 	res, _, err := ExecuteChaincode(ctxt, cccid, [][]byte{[]byte("getccdata"), []byte(chainID), []byte(chaincodeID)}, 0)
 	if err == nil {
 		if res.Status != shim.OK {

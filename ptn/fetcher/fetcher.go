@@ -570,7 +570,6 @@ func (f *Fetcher) loop() {
 							blk, _ := f.getBlock(hash)
 							if blk == nil {
 								//fmt.Println("1212==", hash)
-								//TODO xiaozhi
 								//fmt.Printf("%#v\n", task.transactions[i][i])
 								block := modules.NewUnitWithHeader(announce.header).WithBody(task.transactions[i])
 								//fmt.Printf("announce.header==%#v\n", announce.header)
@@ -705,7 +704,6 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 			blk, _ := f.getBlock(parentHash)
 			if blk == nil {
 				log.Debug("Unknown parent of propagated block", "peer", peer, "number", block.Number().Index, "hash", hash, "parent", parentHash)
-				//TODO xiaozhi
 				return
 			}
 		}

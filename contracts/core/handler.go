@@ -820,7 +820,7 @@ func (handler *Handler) handleGetState(msg *pb.ChaincodeMessage) {
 			//res, err = txContext.txsimulator.GetState(chaincodeID, getState.Key)
 		}
 		if txContext.txsimulator != nil {
-			res, err = txContext.txsimulator.GetState(chaincodeID, getState.Key)
+			res, err = txContext.txsimulator.GetState(msg.ContractId, chaincodeID, getState.Key)
 		}
 		if err != nil {
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(err.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
@@ -1588,7 +1588,7 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 				version = util.GetSysCCVersion()
 			}
 
-			cccid := ccprovider.NewCCContext(calledCcIns.ChainID, calledCcIns.ChaincodeName, version, msg.Txid, false, txContext.signedProp, txContext.proposal)
+			cccid := ccprovider.NewCCContext(msg.ContractId, calledCcIns.ChainID, calledCcIns.ChaincodeName, version, msg.Txid, false, txContext.signedProp, txContext.proposal)
 
 			// Launch the new chaincode if not already running
 			chaincodeLogger.Debugf("[%s] launching chaincode %s on channel %s",
@@ -1603,7 +1603,7 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 			// TODO: Need to handle timeout correctly
 			//timeout := time.Duration(30000) * time.Millisecond
 			timeout := cfg.GetConfig().ContractDeploytimeout
-			ccMsg, _ := createCCMessage(pb.ChaincodeMessage_TRANSACTION, calledCcIns.ChainID, msg.Txid, chaincodeInput)
+			ccMsg, _ := createCCMessage(msg.ContractId, pb.ChaincodeMessage_TRANSACTION, calledCcIns.ChainID, msg.Txid, chaincodeInput)
 
 			// Execute the chaincode... this CANNOT be an init at least for now
 			response, execErr := handler.chaincodeSupport.Execute(ctxt, cccid, ccMsg, timeout)

@@ -58,7 +58,7 @@ type IDag interface {
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	//All leaf nodes for dag downloader
 	GetAllLeafNodes() ([]*modules.Header, error)
-	GetUnit(common.Hash) (*modules.Unit, error)
+	//GetUnit(common.Hash) (*modules.Unit, error)
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 
 	// validate group signature by hash
@@ -66,7 +66,8 @@ type IDag interface {
 
 	FastSyncCommitHead(common.Hash) error
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
-	GetContractState(id string, field string) (*modules.StateVersion, []byte)
+
+	GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte)
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetHeadHeaderHash() (common.Hash, error)
@@ -84,7 +85,7 @@ type IDag interface {
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string)
 	WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
-	GetContract(id common.Address) (*modules.Contract, error)
+	GetContract(id []byte) (*modules.Contract, error)
 	GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error)
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
 	//Mediator

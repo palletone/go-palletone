@@ -196,8 +196,8 @@ func (b *PtnApiBackend) WalletBalance(address string, assetid []byte, uniqueid [
 }
 
 // GetContract
-func (b *PtnApiBackend) GetContract(id common.Address) (*modules.Contract, error) {
-	return b.ptn.dag.GetContract(id)
+func (b *PtnApiBackend) GetContract(id string) (*modules.Contract, error) {
+	return b.ptn.dag.GetContract(common.Hex2Bytes(id))
 }
 
 // Get Header
@@ -207,7 +207,7 @@ func (b *PtnApiBackend) GetHeader(hash common.Hash, index uint64) (*modules.Head
 
 // Get Unit
 func (b *PtnApiBackend) GetUnit(hash common.Hash) *modules.Unit {
-	u, _ := b.ptn.dag.GetUnit(hash)
+	u, _ := b.ptn.dag.GetUnitByHash(hash)
 	return u
 }
 

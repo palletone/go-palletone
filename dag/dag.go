@@ -118,9 +118,9 @@ func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit {
 	return curUnit
 }
 
-func (d *Dag) GetUnit(hash common.Hash) (*modules.Unit, error) {
-	return d.dagdb.GetUnit(hash)
-}
+//func (d *Dag) GetUnit(hash common.Hash) (*modules.Unit, error) {
+//	return d.dagdb.GetUnit(hash)
+//}
 
 func (d *Dag) HasUnit(hash common.Hash) bool {
 	u, _ := d.dagdb.GetUnit(hash)
@@ -161,7 +161,7 @@ func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Su
 // FastSyncCommitHead sets the current head block to the one defined by the hash
 // irrelevant what the chain contents were prior.
 func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
-	unit, err := d.GetUnit(hash)
+	unit, err := d.GetUnitByHash(hash)
 	if err != nil {
 		return fmt.Errorf("non existent unit [%x...]", hash[:4])
 	}
@@ -501,7 +501,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 }
 
 // Get Contract Api
-func (d *Dag) GetContract(id common.Address) (*modules.Contract, error) {
+func (d *Dag) GetContract(id []byte) (*modules.Contract, error) {
 	return d.statedb.GetContract(id)
 }
 
@@ -707,8 +707,9 @@ func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
 }
 
 // get contract state
-func (d *Dag) GetContractState(id string, field string) (*modules.StateVersion, []byte) {
-	return d.statedb.GetContractState(common.HexToAddress(id), field)
+func (d *Dag) GetContractState(id []byte, field string) (*modules.StateVersion, []byte) {
+	return d.statedb.GetContractState(id, field)
+	//return d.statedb.GetContractState(common.HexToAddress(id), field)
 }
 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
@@ -810,7 +811,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 
 // ValidateUnitGroupSig
 func (d *Dag) ValidateUnitGroupSig(hash common.Hash) (bool, error) {
-	unit, err := d.GetUnit(hash)
+	unit, err := d.GetUnitByHash(hash)
 	if err != nil {
 		return false, err
 	}

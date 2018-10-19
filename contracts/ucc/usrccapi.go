@@ -79,7 +79,9 @@ func DeployUserCC(spec *pb.ChaincodeSpec, chainID string, usrcc *UserChaincode, 
 		logger.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
 		return err
 	}
-	cccid := ccprov.GetCCContext(chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, usrcc.Version, txid, false, nil, nil)
+	//TODO xiaozhi
+	// 部署是应该还没有合约ID，返回的才是合约ID
+	cccid := ccprov.GetCCContext(nil, chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, usrcc.Version, txid, false, nil, nil)
 	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, timeout)
 	if err != nil {
 		logger.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
@@ -89,7 +91,7 @@ func DeployUserCC(spec *pb.ChaincodeSpec, chainID string, usrcc *UserChaincode, 
 	return err
 }
 
-func StopUserCC(chainID string, usrcc *UserChaincode, txid string, deleteImage bool) error {
+func StopUserCC(contractid []byte, chainID string, usrcc *UserChaincode, txid string, deleteImage bool) error {
 	ccprov := ccprovider.GetChaincodeProvider()
 	chaincodeID := &pb.ChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
 	spec := &pb.ChaincodeSpec{
@@ -103,7 +105,7 @@ func StopUserCC(chainID string, usrcc *UserChaincode, txid string, deleteImage b
 		ChaincodeSpec: spec,
 		CodePackage:   nil,
 	}
-	cccid := ccprov.GetCCContext(chainID, usrcc.Name, usrcc.Version, txid, false, nil, nil)
+	cccid := ccprov.GetCCContext(contractid, chainID, usrcc.Name, usrcc.Version, txid, false, nil, nil)
 	if err := ccprov.Stop(context.Background(), cccid, chaincodeDeploymentSpec); err != nil {
 		return err
 	}

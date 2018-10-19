@@ -55,7 +55,7 @@ type Support interface {
 
 	IsSysCC(name string) bool
 
-	Execute(ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error)
+	Execute(contractid []byte, ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error)
 }
 
 // Endorser provides the Endorser service ProcessProposal
@@ -81,7 +81,7 @@ func NewEndorserServer(s Support) pb.EndorserServer {
 }
 
 //call specified chaincode (system or user)
-func (e *Endorser) callChaincode(ctxt context.Context, chainID string, version string, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, cis *pb.ChaincodeInvocationSpec, chaincodeName string, txsim rwset.TxSimulator, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+func (e *Endorser) callChaincode(contractid []byte, ctxt context.Context, chainID string, version string, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, cis *pb.ChaincodeInvocationSpec, chaincodeName string, txsim rwset.TxSimulator, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
 	logger.Debugf("[%s][%s] Entry chaincode: %s version: %s", chainID, shorttxid(txid), chaincodeName, version)
 	defer logger.Debugf("[%s][%s] Exit", chainID, shorttxid(txid))
 	var err error
@@ -93,7 +93,7 @@ func (e *Endorser) callChaincode(ctxt context.Context, chainID string, version s
 	}
 
 	scc := e.s.IsSysCC(chaincodeName)
-	res, ccevent, err = e.s.Execute(ctxt, chainID, chaincodeName, version, txid, scc, signedProp, prop, cis, timeout)
+	res, ccevent, err = e.s.Execute(contractid, ctxt, chainID, chaincodeName, version, txid, scc, signedProp, prop, cis, timeout)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -105,7 +105,7 @@ func (e *Endorser) callChaincode(ctxt context.Context, chainID string, version s
 	return res, ccevent, err
 }
 
-func (e *Endorser) simulateProposal(ctx context.Context, chainID string, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, cid *pb.ChaincodeID, txsim rwset.TxSimulator, tmout time.Duration) (*pb.Response, []byte, *pb.ChaincodeEvent, error) {
+func (e *Endorser) simulateProposal(contractid []byte, ctx context.Context, chainID string, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, cid *pb.ChaincodeID, txsim rwset.TxSimulator, tmout time.Duration) (*pb.Response, []byte, *pb.ChaincodeEvent, error) {
 	logger.Debugf("[%s][%s] Entry chaincode: %s", chainID, shorttxid(txid), cid)
 	defer logger.Debugf("[%s][%s] Exit", chainID, shorttxid(txid))
 
@@ -138,7 +138,7 @@ func (e *Endorser) simulateProposal(ctx context.Context, chainID string, txid st
 	var simResBytes []byte
 	var res *pb.Response
 	var ccevent *pb.ChaincodeEvent
-	res, ccevent, err = e.callChaincode(ctx, chainID, cid.Version, txid, signedProp, prop, cis, cid.Name, txsim, tmout)
+	res, ccevent, err = e.callChaincode(contractid, ctx, chainID, cid.Version, txid, signedProp, prop, cis, cid.Name, txsim, tmout)
 	if err != nil {
 		logger.Errorf("[%s][%s] failed to invoke chaincode %s, error: %+v", chainID, shorttxid(txid), cid, err)
 		return nil, nil, nil, err
@@ -202,7 +202,7 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 
 // ProcessProposal process the Proposal
 //func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
-func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *unit.ContractInvokePayload, error) {
+func (e *Endorser) ProcessProposal(contractid []byte, idag dag.IDag, deployId []byte, ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *unit.ContractInvokePayload, error) {
 	var txsim rwset.TxSimulator
 
 	//addr := util.ExtractRemoteAddress(ctx)
@@ -227,7 +227,7 @@ func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.C
 	}
 
 	//1 -- simulate
-	res, _, ccevent, err := e.simulateProposal(ctx, chainID, txid, signedProp, prop, cid, txsim, tmout)
+	res, _, ccevent, err := e.simulateProposal(contractid, ctx, chainID, txid, signedProp, prop, cid, txsim, tmout)
 	if err != nil {
 		logger.Error(ccevent)
 		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err

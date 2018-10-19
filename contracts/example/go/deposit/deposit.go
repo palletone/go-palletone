@@ -30,18 +30,18 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//void deposit_witness_pay(const witness_object& wit, token_type amount)
 
 		//获取用户地址
-		userAddr, err := stub.GetPayToContractAddr()
-		if err != nil {
-			fmt.Println("GetPayToContractAddr error: ", err.Error())
-			return shim.Error(err.Error())
-		}
-		fmt.Println("GetPayToContractAddr=", string(userAddr))
-		//获取 Token 数量
-		tokenAmount, err := stub.GetPayToContractTokens()
-		if err != nil {
-			fmt.Println("GetPayToContractTokens error: ", err.Error())
-		}
-		fmt.Println("GetPayToContractTokens=", string(tokenAmount))
+		//userAddr, err := stub.GetPayToContractAddr()
+		//if err != nil {
+		//	fmt.Println("GetPayToContractAddr error: ", err.Error())
+		//	return shim.Error(err.Error())
+		//}
+		//fmt.Println("GetPayToContractAddr=", string(userAddr))
+		////获取 Token 数量
+		//tokenAmount, err := stub.GetPayToContractTokens()
+		//if err != nil {
+		//	fmt.Println("GetPayToContractTokens error: ", err.Error())
+		//}
+		//fmt.Println("GetPayToContractTokens=", string(tokenAmount))
 
 		return d.deposit_witness_pay(stub, args)
 	case "deposit_cashback":
@@ -83,6 +83,7 @@ func (d *DepositChaincode) deposit_witness_pay(stub shim.ChaincodeStubInterface,
 	if err != nil {
 		return shim.Error("string parse to uint64 error: " + err.Error())
 	}
+	fmt.Println("获取账户余额=", accBal)
 	//写入写集
 	result := accBal + ptnAccount
 	resultStr := strconv.FormatUint(result, 10)
@@ -114,9 +115,12 @@ func (d *DepositChaincode) deposit_cashback(stub shim.ChaincodeStubInterface, ar
 	if err != nil {
 		return shim.Error("string parse to uint64 error: " + err.Error())
 	}
-	if accBal-ptnAccount < 0 {
+	fmt.Println("accbac", accBalStr)
+	fmt.Println(ptnAccount)
+	if accBal < ptnAccount {
 		return shim.Error("deposit does not enough.")
 	}
+	fmt.Println("lalalallal")
 	//写入写集
 	result := accBal - ptnAccount
 	resultStr := strconv.FormatUint(result, 10)
@@ -129,6 +133,11 @@ func (d DepositChaincode) forfeiture_deposit(stub shim.ChaincodeStubInterface, a
 		return shim.Error("input error: only need one arg (witnessAddr)")
 	}
 	//直接把保证金没收
+	err := stub.DelState(args[0])
+	if err != nil {
+		return shim.Error("does not delete state")
+	}
+	fmt.Println("DelState")
 	stub.PutState(args[0], []byte("0"))
 	return shim.Success([]byte("ok"))
 }
