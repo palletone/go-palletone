@@ -204,3 +204,17 @@ func GetSlotAtTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, when time.Tim
 	}
 	return uint32(diffSecs/interval) + 1
 }
+
+// UpdateGlobalDynProp, update global dynamic data
+// @author Albert·Gou
+func (dgp *DynamicGlobalProperty) UpdateGlobalDynProp(gp *GlobalProperty, unit *Unit) {
+	timestamp := unit.UnitHeader.Creationdate
+	missedUnits := uint64(GetSlotAtTime(gp, dgp, time.Unix(timestamp, 0)))
+
+	dgp.HeadUnitNum = unit.UnitHeader.Number.Index
+	dgp.HeadUnitHash = unit.UnitHash
+	dgp.HeadUnitTime = timestamp
+
+	//	println(missedUnits)
+	dgp.CurrentASlot += missedUnits + 1
+}

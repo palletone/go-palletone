@@ -164,14 +164,27 @@ func (dag *Dag) GetSlotTime(slotNum uint32) time.Time {
 	return modules.GetSlotTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), slotNum)
 }
 
-func (dag *Dag) HeadUnitTime() int64 {
-	return dag.GetDynGlobalProp().HeadUnitTime
-}
-
 func (dag *Dag) GetScheduledMediator(slotNum uint32) *core.Mediator {
 	return dag.GetMediatorSchl().GetScheduledMediator(dag.GetDynGlobalProp(), slotNum)
 }
 
+func (dag *Dag) HeadUnitTime() int64 {
+	return dag.GetDynGlobalProp().HeadUnitTime
+}
+
 func (dag *Dag) HeadUnitNum() uint64 {
 	return dag.GetDynGlobalProp().HeadUnitNum
+}
+
+func (dag *Dag) HeadUnitHash() common.Hash {
+	return dag.GetDynGlobalProp().HeadUnitHash
+}
+
+func (dag *Dag) UpdateGlobalDynProp(unit *modules.Unit) {
+	dag.propRep.UpdateGlobalDynProp(unit)
+}
+
+func (dag *Dag) UpdateMediatorSchedule() {
+	dag.propRep.UpdateMediatorSchedule()
+	return
 }

@@ -35,7 +35,6 @@ import (
 // @author Albert·Gou
 func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 	ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit {
-	dgp := dag.GetDynGlobalProp()
 
 	// 1. 判断是否满足生产的若干条件
 
@@ -66,9 +65,9 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 			pendingUnit.UnitHeader.Number.Index += 1
 		}
 	} else {
-		pendingUnit.UnitHeader.Number.Index = dgp.HeadUnitNum + 1
+		pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
 		pendingUnit.UnitHeader.ParentsHash =
-			append(pendingUnit.UnitHeader.ParentsHash, dgp.HeadUnitHash)
+			append(pendingUnit.UnitHeader.ParentsHash, dag.HeadUnitHash())
 	}
 	pendingUnit.UnitHash = pendingUnit.Hash()
 
@@ -108,17 +107,17 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit) bool {
 }
 
 func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
-	gp := dag.GetGlobalProp()
-	dgp := dag.GetDynGlobalProp()
-
 	// 4. 更新Unit中交易的状态
 
 	// 5. 更新全局动态属性值
 	log.Debug("Updating global dynamic property...")
-	dag.UpdateGlobalDynProp(gp, dgp, nextUnit)
+
+	// todo 计算mediator 丢失的 unit数量
+	//missed := dag.UpdateMediatorMissedUnits( extUnit)
+	dag.UpdateGlobalDynProp(nextUnit /*, missed*/)
 	// 5. 判断是否到了维护周期，并维护
 
 	// 6. 洗牌
 	log.Debug("shuffling the scheduling order of mediator...")
-	dag.GetMediatorSchl().UpdateMediatorSchedule(gp, dgp)
+	dag.UpdateMediatorSchedule()
 }
