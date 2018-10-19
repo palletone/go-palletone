@@ -820,7 +820,6 @@ func (handler *Handler) handleGetState(msg *pb.ChaincodeMessage) {
 			//res, err = txContext.txsimulator.GetState(chaincodeID, getState.Key)
 		}
 		if txContext.txsimulator != nil {
-
 			res, err = txContext.txsimulator.GetState(msg.ContractId, chaincodeID, getState.Key)
 		}
 		if err != nil {

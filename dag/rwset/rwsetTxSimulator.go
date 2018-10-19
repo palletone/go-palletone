@@ -21,6 +21,7 @@ package rwset
 
 import (
 	"errors"
+	"fmt"
 	"github.com/palletone/go-palletone/dag"
 )
 
@@ -51,6 +52,9 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
+	//TODO xiaozhi
+	fmt.Println("GetState(contractid []byte, ns string, key string)===>>>", contractid, ns, key)
+	return []byte("1000"), nil
 	//TODO Devin
 	ver, val := s.state.GetContractState(contractid, key)
 	//fmt.Println("xiaozhi:--", ver, val)
@@ -75,7 +79,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 
 func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 	logger.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)
-
+	fmt.Println("SetState(ns string, key string, value []byte)===>>>", ns, key, value)
 	if err := s.CheckDone(); err != nil {
 		return err
 	}
@@ -89,6 +93,7 @@ func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 
 // DeleteState implements method in interface `ledger.TxSimulator`
 func (s *RwSetTxSimulator) DeleteState(ns string, key string) error {
+	fmt.Println("DeleteState(ns string, key string)===>", ns, key)
 	return s.SetState(ns, key, nil)
 }
 
