@@ -112,9 +112,8 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	// 5. 更新全局动态属性值
 	log.Debug("Updating global dynamic property...")
 
-	// todo 计算mediator 丢失的 unit数量
-	//missed := dag.UpdateMediatorMissedUnits( extUnit)
-	dag.UpdateGlobalDynProp(nextUnit /*, missed*/)
+	missed := dag.UpdateMediatorMissedUnits(nextUnit)
+	dag.UpdateGlobalDynProp(nextUnit, missed)
 	// 5. 判断是否到了维护周期，并维护
 
 	// 6. 洗牌

@@ -21,12 +21,10 @@
 package dag
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -45,6 +43,33 @@ func (d *Dag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
 func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
 	ms, _ := d.propdb.RetrieveMediatorSchl()
 	return ms
+}
+
+func (d *Dag) SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) {
+	if !onlyStore {
+		// todo 更新缓存
+	}
+
+	d.propdb.StoreGlobalProp(gp)
+	return
+}
+
+func (d *Dag) SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bool) {
+	if !onlyStore {
+		// todo 更新缓存
+	}
+
+	d.propdb.StoreDynGlobalProp(dgp)
+	return
+}
+
+func (d *Dag) SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) {
+	if !onlyStore {
+		// todo 更新缓存
+	}
+
+	d.propdb.StoreMediatorSchl(ms)
+	return
 }
 
 // @author Albert·Gou
@@ -102,42 +127,28 @@ func (d *Dag) IsActiveMediator(add common.Address) bool {
 	return d.GetGlobalProp().IsActiveMediator(add)
 }
 
-func (d *Dag) SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) error {
-	return d.propdb.StoreGlobalProp(gp)
-}
-
-func (d *Dag) SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bool) error {
-	return d.propdb.StoreDynGlobalProp(dgp)
-}
-
-func (d *Dag) SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) error {
-	return d.propdb.StoreMediatorSchl(ms)
-}
-
 func (dag *Dag) InitPropertyDB(genesis *core.Genesis, genesisUnitHash common.Hash) error {
 	//  全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	gp := modules.InitGlobalProp(genesis)
-	if err := dag.SaveGlobalProp(gp, true); err != nil {
-		log.Error(fmt.Sprintf("Failed to write global properties: %v", err))
+	if err := dag.propdb.StoreGlobalProp(gp); err != nil {
 		return err
 	}
 
 	//  动态全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	dgp := modules.InitDynGlobalProp(genesis, genesisUnitHash)
-	if err := dag.SaveDynGlobalProp(dgp, true); err != nil {
-		log.Error(fmt.Sprintf("Failed to write dynamic global properties: %v", err))
+	if err := dag.propdb.StoreDynGlobalProp(dgp); err != nil {
 		return err
 	}
 
 	//  初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
-	if err := dag.SaveMediatorSchl(ms, true); err != nil {
-		log.Error(fmt.Sprintf("Failed to write mediator schedule: %v", err))
+	if err := dag.propdb.StoreMediatorSchl(ms); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -180,11 +191,33 @@ func (dag *Dag) HeadUnitHash() common.Hash {
 	return dag.GetDynGlobalProp().HeadUnitHash
 }
 
-func (dag *Dag) UpdateGlobalDynProp(unit *modules.Unit) {
-	dag.propRep.UpdateGlobalDynProp(unit)
+// 根据最新 unit 计算出生产该 unit 的 mediator 缺失的 unit 个数，
+// 并更新到 mediator的相应字段中，返回数量
+func (dag *Dag) UpdateMediatorMissedUnits(unit *modules.Unit) uint64 {
+	timestamp := unit.UnitHeader.Creationdate
+	missedUnits := dag.GetSlotAtTime(time.Unix(timestamp, 0))
+	// todo
+
+	return uint64(missedUnits)
+}
+
+func (dag *Dag) UpdateGlobalDynProp(unit *modules.Unit, missedUnits uint64) {
+	gp := dag.GetGlobalProp()
+	dgp := dag.GetDynGlobalProp()
+
+	dgp.UpdateGlobalDynProp(gp, unit, missedUnits)
+	dag.SaveDynGlobalProp(dgp, false)
+
+	return
 }
 
 func (dag *Dag) UpdateMediatorSchedule() {
-	dag.propRep.UpdateMediatorSchedule()
+	gp := dag.GetGlobalProp()
+	dgp := dag.GetDynGlobalProp()
+	ms := dag.GetMediatorSchl()
+
+	ms.UpdateMediatorSchedule(gp, dgp)
+	dag.SaveMediatorSchl(ms, false)
+
 	return
 }
