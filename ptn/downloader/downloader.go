@@ -1791,38 +1791,183 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 }
 
 /*
-	if P != nil {
-		// If new pivot block found, cancel old state retrieval and restart
-		if oldPivot != P {
-			stateSync.Cancel()
+func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, assetId modules.IDType16) (uint64, error) {
+	height := latest.Index()
+	// Figure out the valid ancestor range to prevent rewrite attacks
+	floor, ceil := uint64(0), uint64(0)
+	headers, err := d.lightdag.GetAllLeafNodes()
+	if err != nil {
+		log.Info("===findAncestor===", "GetAllLeafNodes err:", err)
+		return floor, nil
+	}
 
-			stateSync = d.syncState(P.Header.TxRoot)
-			defer stateSync.Cancel()
-			go func() {
-				if err := stateSync.Wait(); err != nil && err != errCancelStateFetch {
-					d.queue.Close() // wake up WaitResults
-				}
-			}()
-			oldPivot = P
-		}
+	header, err := d.getMaxNodes(headers, assetId)
+	if err != nil {
+		log.Info("===findAncestor===", "getMaxNodes err:", err)
+		return floor, err
+	}
+	if header != nil {
+		ceil = header.Number.Index
+		p.log.Debug("Looking for common ancestor", "local assetid", header.Number.AssetID.String(), "local index", ceil, "remote", latest.Number.Index)
+	} else {
+		ceil = 0
+		p.log.Debug("Looking for common ancestor", "local index", ceil, "remote", latest.Number.Index)
+	}
 
-		// Wait for completion, occasionally checking for pivot staleness
+	// Request the topmost blocks to short circuit binary ancestor lookup
+	head := ceil
+	if head > height {
+		head = height
+	}
+	from := int64(head) - int64(MaxHeaderFetch)
+	if from < 0 {
+		from = 0
+	}
+	// Span out with 15 block gaps into the future to catch bad head reports
+	limit := 2 * MaxHeaderFetch / 16
+	count := 1 + int((int64(ceil)-from)/16)
+	if count > limit {
+		count = limit
+	}
+	log.Debug("===findAncestor===", "RequestHeadersByNumber from", from, "count", count)
+	index := modules.ChainIndex{
+		AssetID: assetId,
+		IsMain:  true,
+		Index:   uint64(from),
+	}
+	go p.peer.RequestHeadersByNumber(index, count, 15, false)
+
+	// Wait for the remote response to the head fetch
+	number, hash := uint64(0), common.Hash{}
+
+	ttl := d.requestTTL()
+	timeout := time.After(ttl)
+
+	for finished := false; !finished; {
 		select {
-		case <-stateSync.done:
-			if stateSync.err != nil {
-				log.Debug("===processFastSyncContent===", "stateSync.err:", stateSync.err)
-				return stateSync.err
-			}
-			//fmt.Printf("p=%#v\n", P.Header.Creationdate)
-			if err := d.commitPivotBlock(P); err != nil {
-				log.Debug("===processFastSyncContent===", "commitPivotBlock.err:", err)
-				return err
-			}
-			oldPivot = nil
+		case <-d.cancelCh:
+			return 0, errCancelHeaderFetch
 
-		case <-time.After(time.Second):
-			oldTail = afterP
-			continue
+		case packet := <-d.headerCh:
+			// Discard anything not from the origin peer
+			if packet.PeerId() != p.id {
+				log.Debug("Received headers from incorrect peer", "peer", packet.PeerId())
+				break
+			}
+			// Make sure the peer actually gave something valid
+			headers := packet.(*headerPack).headers
+			if len(headers) == 0 {
+				p.log.Warn("Empty head header set")
+				return 0, errEmptyHeaderSet
+			}
+			// Make sure the peer's reply conforms to the request
+			for i := 0; i < len(headers); i++ {
+				if number := headers[i].Number.Index; number != uint64(from+int64(i)*16) {
+					p.log.Warn("Head headers broke chain ordering", "index", i, "requested", from+int64(i)*16, "received", number)
+					return 0, errInvalidChain
+				}
+			}
+			// Check if a common ancestor was found
+			finished = true
+			for i := len(headers) - 1; i >= 0; i-- {
+				// Skip any headers that underflow/overflow our requested set
+				if headers[i].Number.Index < uint64(from) || headers[i].Number.Index > ceil {
+					continue
+				}
+				// Otherwise check if we already know the header or not
+				if (d.mode == FullSync && d.dag.HasHeader(headers[i].Hash(), headers[i].Number.Index)) || (d.mode != FullSync && d.dag.HasHeader(headers[i].Hash(), headers[i].Number.Index)) {
+					number, hash = headers[i].Number.Index, headers[i].Hash()
+
+					// If every header is known, even future ones, the peer straight out lied about its head
+					if number > height && i == limit-1 {
+						p.log.Warn("Lied about chain head", "reported", height, "found", number)
+						return 0, errStallingPeer
+					}
+					break
+				}
+			}
+
+		case <-timeout:
+			p.log.Debug("Waiting for head header timed out", "elapsed", ttl)
+			return 0, errTimeout
+
+		case <-d.bodyCh:
+		case <-d.receiptCh:
+			// Out of bounds delivery, ignore
 		}
 	}
+	// If the head fetch already found an ancestor, return
+	if !common.EmptyHash(hash) {
+		if number <= floor {
+			p.log.Warn("Ancestor below allowance", "number", number, "hash", hash, "allowance", floor)
+			return 0, errInvalidAncestor
+		}
+		p.log.Debug("Found common ancestor", "number", number, "hash", hash)
+		return number, nil
+	}
+	// Ancestor not found, we need to binary search over our chain
+	start, end := uint64(0), head
+	if floor > 0 {
+		start = uint64(floor)
+	}
+	for start+1 < end {
+		// Split our chain interval in two, and request the hash to cross check
+		check := (start + end) / 2
+
+		ttl := d.requestTTL()
+		timeout := time.After(ttl)
+
+		index.Index = check
+		go p.peer.RequestHeadersByNumber(index, 1, 0, false)
+
+		// Wait until a reply arrives to this request
+		for arrived := false; !arrived; {
+			select {
+			case <-d.cancelCh:
+				return 0, errCancelHeaderFetch
+
+			case packer := <-d.headerCh:
+				// Discard anything not from the origin peer
+				if packer.PeerId() != p.id {
+					log.Debug("Received headers from incorrect peer", "peer", packer.PeerId())
+					break
+				}
+				// Make sure the peer actually gave something valid
+				headers := packer.(*headerPack).headers
+				if len(headers) != 1 {
+					p.log.Debug("Multiple headers for single request", "headers", len(headers))
+					return 0, errBadPeer
+				}
+				arrived = true
+
+				// Modify the search interval based on the response
+				if (d.mode == FullSync && !d.dag.HasHeader(headers[0].Hash(), headers[0].Number.Index)) || (d.mode != FullSync && !d.dag.HasHeader(headers[0].Hash(), headers[0].Number.Index)) {
+					end = check
+					break
+				}
+				header := d.dag.GetHeaderByHash(headers[0].Hash()) // Independent of sync mode, header surely exists
+				if header.Number.Index != check {
+					p.log.Debug("Received non requested header", "number", header.Number.Index, "hash", header.Hash(), "request", check)
+					return 0, errBadPeer
+				}
+				start = check
+
+			case <-timeout:
+				p.log.Debug("Waiting for search header timed out", "elapsed", ttl)
+				return 0, errTimeout
+
+			case <-d.bodyCh:
+			case <-d.receiptCh:
+				// Out of bounds delivery, ignore
+			}
+		}
+	}
+	// Ensure valid ancestry and return
+	if start <= floor && start != 0 {
+		p.log.Warn("Ancestor below allowance", "start", start, "hash", hash, "allowance", floor)
+		return 0, errInvalidAncestor
+	}
+	p.log.Debug("Found common ancestor", "number", start, "hash", hash)
+	return start, nil
+}
 */
