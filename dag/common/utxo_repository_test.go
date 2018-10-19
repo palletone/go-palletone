@@ -21,6 +21,10 @@
 package common
 
 import (
+	"io/ioutil"
+	"log"
+	"testing"
+
 	"github.com/palletone/go-palletone/common"
 	plog "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -28,9 +32,6 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"io/ioutil"
-	"log"
-	"testing"
 )
 
 func mockUtxoRepository() *UtxoRepository {

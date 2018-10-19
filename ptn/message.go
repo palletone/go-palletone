@@ -128,7 +128,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			if query.Origin.Number.Index >= query.Skip+1 {
 				query.Origin.Number.Index -= query.Skip + 1
 			} else {
-				//log.Info("========GetBlockHeadersMsg========", "query.Reverse", "unknown is true")
+				log.Info("ProtocolManager", "GetBlockHeadersMsg query.Reverse", "unknown is true")
 				unknown = true
 			}
 
@@ -149,11 +149,8 @@ func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		log.Info("msg.Decode", "err:", err)
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
-	// If no headers were received, but we're expending a DAO fork check, maybe it's that
-	if len(headers) == 0 {
-		log.Debug("===handler->msg.Code == BlockHeadersMsg len(headers)is 0===")
-		return nil
-	}
+
+	log.Debug("ProtocolManager", "BlockHeadersMsg len(headers):", len(headers))
 	// Filter out any explicitly requested headers, deliver the rest to the downloader
 	filter := len(headers) == 1
 	if filter {

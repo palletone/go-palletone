@@ -11,6 +11,13 @@ type DepositChaincode struct{}
 
 func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	fmt.Println("***system contract init about DepositChaincode***")
+	//获取配置文件
+	depositConfigBytes, err := stub.GetDepositConfig()
+	if err != nil {
+		fmt.Println("deposit error: ", err.Error())
+		return shim.Error(err.Error())
+	}
+	fmt.Println("deposit=", string(depositConfigBytes))
 	return shim.Success(nil)
 }
 
@@ -21,6 +28,21 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//交付保证金
 		//handle witness pay
 		//void deposit_witness_pay(const witness_object& wit, token_type amount)
+
+		//获取用户地址
+		userAddr, err := stub.GetPayToContractAddr()
+		if err != nil {
+			fmt.Println("GetPayToContractAddr error: ", err.Error())
+			return shim.Error(err.Error())
+		}
+		fmt.Println("GetPayToContractAddr=", string(userAddr))
+		//获取 Token 数量
+		tokenAmount, err := stub.GetPayToContractTokens()
+		if err != nil {
+			fmt.Println("GetPayToContractTokens error: ", err.Error())
+		}
+		fmt.Println("GetPayToContractTokens=", string(tokenAmount))
+
 		return d.deposit_witness_pay(stub, args)
 	case "deposit_cashback":
 		//保证金退还
