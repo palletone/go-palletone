@@ -97,13 +97,14 @@ type IDag interface {
 	//Get all elected mediators.
 	GetElectedMediatorsAddress() ([]common.Address, error)
 
-	UpdateGlobalDynProp(unit *modules.Unit)
-	SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) error
-	GetGlobalProp() *modules.GlobalProperty
-	SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bool) error
-	GetDynGlobalProp() *modules.DynamicGlobalProperty
-	SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) error
-	GetMediatorSchl() *modules.MediatorSchedule
+	// comment by albert·gou
+	//UpdateGlobalDynProp(unit *modules.Unit)
+	//SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) error
+	//GetGlobalProp() *modules.GlobalProperty
+	//SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bool) error
+	//GetDynGlobalProp() *modules.DynamicGlobalProperty
+	//SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) error
+	//GetMediatorSchl() *modules.MediatorSchedule
 
 	// get token info
 	GetTokenInfo(key []byte) (*modules.TokenInfo, error)

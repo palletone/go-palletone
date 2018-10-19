@@ -21,7 +21,6 @@ package common
 
 import (
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -30,33 +29,10 @@ type PropRepository struct {
 	logger log.ILogger
 }
 type IPropRepository interface {
-	UpdateGlobalDynProp(unit *modules.Unit)
-	UpdateMediatorSchedule()
 }
 
 func NewPropRepository(db storage.IPropertyDb, l log.ILogger) *PropRepository {
 	return &PropRepository{db: db, logger: l}
-}
-
-func (rep *PropRepository) UpdateGlobalDynProp(unit *modules.Unit) {
-	gp, _ := rep.db.RetrieveGlobalProp()
-	dgp, _ := rep.db.RetrieveDynGlobalProp()
-
-	dgp.UpdateGlobalDynProp(gp, unit)
-	rep.db.StoreDynGlobalProp(dgp)
-
-	return
-}
-
-func (rep *PropRepository) UpdateMediatorSchedule() {
-	gp, _ := rep.db.RetrieveGlobalProp()
-	dgp, _ := rep.db.RetrieveDynGlobalProp()
-	ms, _ := rep.db.RetrieveMediatorSchl()
-
-	ms.UpdateMediatorSchedule(gp, dgp)
-	rep.db.StoreMediatorSchl(ms)
-
-	return
 }
 
 /**
