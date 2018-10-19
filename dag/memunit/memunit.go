@@ -18,6 +18,7 @@
 package memunit
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -33,24 +34,42 @@ type MemUnitInfo map[common.Hash]*modules.Unit
 type MemUnit struct {
 	memUnitInfo *MemUnitInfo
 	memLock     sync.RWMutex
+
+	numberToHash     map[modules.ChainIndex]common.Hash
+	numberToHashLock sync.RWMutex
 }
 
 func InitMemUnit() *MemUnit {
 	memUnitInfo := make(MemUnitInfo)
-	memUnit := MemUnit{memUnitInfo: &memUnitInfo}
+	numberToHash := map[modules.ChainIndex]common.Hash{}
+	memUnit := MemUnit{
+		memUnitInfo:  &memUnitInfo,
+		numberToHash: numberToHash,
+	}
 	return &memUnit
 }
 
 //set the mapping relationship
 //key:number  value:unit hash
-func (mu *MemUnit) SetHashByNumber() error {
-	return nil
+func (mu *MemUnit) SetHashByNumber(chainIndex modules.ChainIndex, hash common.Hash) {
+	mu.numberToHashLock.Lock()
+	defer mu.numberToHashLock.Unlock()
+	if _, ok := mu.numberToHash[chainIndex]; ok {
+		return
+	}
+	mu.numberToHash[chainIndex] = hash
+	return
 }
 
 //get the mapping relationship
 //key:number  result:unit hash
-func (mu *MemUnit) GetHashByNumber() (common.Hash, error) {
-	return common.Hash{}, nil
+func (mu *MemUnit) GetHashByNumber(chainIndex modules.ChainIndex) (common.Hash, error) {
+	mu.numberToHashLock.RLock()
+	defer mu.numberToHashLock.RUnlock()
+	if hash, ok := mu.numberToHash[chainIndex]; ok {
+		return hash, nil
+	}
+	return common.Hash{}, errors.New("have not key")
 }
 
 func (mu *MemUnit) Add(u *modules.Unit) error {
