@@ -178,7 +178,11 @@ func (chain *MemDag) Prune(assetId string, maturedUnitHash common.Hash) error {
 	forkdata := (*(chain.forkIndex[assetId]))[index]
 	for i := 0; i < subindex; i++ {
 		unitHash := (*forkdata)[i]
-		unit := (*chain.memUnit)[unitHash]
+		//unit := (*chain.memUnit)[unitHash]
+		unit, err := chain.memUnit.Get(unitHash)
+		if err != nil {
+			return fmt.Errorf("memUnit get unithash(%v) error:%s ", unitHash, err.Error())
+		}
 		if err := chain.unitRep.SaveUnit(unit, false); err != nil {
 			return fmt.Errorf("Prune error when save unit: %s", err.Error())
 		}
@@ -265,8 +269,9 @@ func (chain *MemDag) GetCurrentUnit(assetid modules.IDType16) (*modules.Unit, er
 
 	if len(forkdata) > 0 {
 		curHash := forkdata[len(forkdata)-1]
-		curUnit, ok := (*chain.memUnit)[curHash]
-		if !ok {
+		//curUnit, ok := (*chain.memUnit)[curHash]
+		curUnit, err := chain.memUnit.Get(curHash)
+		if err != nil {
 			return nil, fmt.Errorf("MemDag.GetCurrentUnit error: get no unit hash(%s) in memUnit", curHash.String())
 		}
 		return curUnit, nil
