@@ -21,9 +21,7 @@
 package storage
 
 import (
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -62,12 +60,14 @@ func (statedb *StateDb) SaveConfig(confs []modules.PayloadMapStruct, stateVersio
 	}
 	return nil
 }
-func (statedb *StateDb) saveMediators(mediators []*core.MediatorInfo, v *modules.StateVersion) {
-	addressList := []common.Address{}
-	for _, mediator := range mediators {
-		addr, _ := common.StringToAddress(mediator.Address)
-		addressList = append(addressList, addr)
-		statedb.SaveAccountMediatorInfo(addr, mediator, v)
-	}
-	statedb.SaveCandidateMediatorAddrList(addressList, v)
-}
+
+// todo albert·gou
+//func (statedb *StateDb) saveMediators(mediators []*core.MediatorInfo, v *modules.StateVersion) {
+//	addressList := []common.Address{}
+//	for _, mediator := range mediators {
+//		addr, _ := common.StringToAddress(mediator.Address)
+//		addressList = append(addressList, addr)
+//		statedb.SaveAccountMediatorInfo(addr, mediator, v)
+//	}
+//	statedb.SaveCandidateMediatorAddrList(addressList, v)
+//}

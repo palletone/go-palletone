@@ -22,7 +22,6 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -50,7 +49,9 @@ type IStateDb interface {
 
 	AddVote(voter common.Address, candidate common.Address) error
 	GetSortedVote(ReturnNumber uint) ([]common.Address, error)
-	SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error
-	GetAccountMediatorInfo(address common.Address) (*core.MediatorInfo, error)
-	SaveAccountMediatorInfo(address common.Address, info *core.MediatorInfo, version *modules.StateVersion) error
+
+	// todo albert·gou
+	//SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error
+	//GetAccountMediatorInfo(address common.Address) (*core.MediatorInfo, error)
+	//SaveAccountMediatorInfo(address common.Address, info *core.MediatorInfo, version *modules.StateVersion) error
 }
