@@ -23,10 +23,11 @@ package storage
 import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 func (statedb *StateDb) GetAccountInfo(address common.Address) (*modules.AccountInfo, error) {
-	key := append(modules.ACCOUNT_INFO_PREFIX, address.Bytes()...)
+	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes()...)
 	info := &modules.AccountInfo{}
 	err := retrieve(statedb.db, key, info)
 	if err != nil {
@@ -35,7 +36,7 @@ func (statedb *StateDb) GetAccountInfo(address common.Address) (*modules.Account
 	return info, nil
 }
 func (statedb *StateDb) SaveAccountInfo(address common.Address, info *modules.AccountInfo) error {
-	key := append(modules.ACCOUNT_INFO_PREFIX, address.Bytes()...)
+	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes()...)
 	return StoreBytes(statedb.db, key, info)
 }
 

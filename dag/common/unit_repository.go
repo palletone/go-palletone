@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -228,7 +229,7 @@ To get genesis unit info from leveldb
 */
 func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error) {
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
-	key := fmt.Sprintf("%s%v_", modules.HEADER_PREFIX, index)
+	key := fmt.Sprintf("%s%v_", constants.HEADER_PREFIX, index)
 	// encNum := ptndb.EncodeBlockNumber(index)
 	// key := append(modules.HEADER_PREFIX, encNum...)
 
@@ -719,7 +720,7 @@ To delete contract state
 */
 func (unitOp *UnitRepository) deleteContractState(contractID []byte, field string) {
 	oldKeyPrefix := fmt.Sprintf("%s%s^*^%s",
-		modules.CONTRACT_STATE_PREFIX,
+		constants.CONTRACT_STATE_PREFIX,
 		hexutil.Encode(contractID[:]),
 		field)
 	data := unitOp.statedb.GetPrefix([]byte(oldKeyPrefix))
@@ -769,7 +770,7 @@ func (unitOp *UnitRepository) updateState(contractID []byte, key string, version
 		unitOp.deleteContractState(contractID, key)
 		// insert new state
 		key := fmt.Sprintf("%s%s^*^%s^*^%s",
-			modules.CONTRACT_STATE_PREFIX,
+			constants.CONTRACT_STATE_PREFIX,
 			hexutil.Encode(contractID[:]),
 			key,
 			version.String())
