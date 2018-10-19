@@ -29,14 +29,14 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
 	//保存一个新合约的状态信息
 	//如果数据库中已经存在同样的合约ID，则报错
-	prefix := append(modules.CONTRACT_PREFIX, contract.Id...)
+	prefix := append(constants.CONTRACT_PREFIX, contract.Id...)
 	count := getCountByPrefix(statedb.db, prefix)
 	if count > 0 {
 		return errors.New("Contract[" + common.Bytes2Hex(contract.Id) + "]'s state existed!")
@@ -44,7 +44,7 @@ func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
 	return StoreBytes(statedb.db, prefix, contract)
 }
 func (statedb *StateDb) SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
-	return SaveContractState(statedb, modules.CONTRACT_STATE_PREFIX, id, name, value, version)
+	return SaveContractState(statedb, constants.CONTRACT_STATE_PREFIX, id, name, value, version)
 }
 
 /**
@@ -130,7 +130,7 @@ To get contract or contract template all fields and return
 func (statedb *StateDb) GetContractAllState() []*modules.ContractReadSet {
 	// key format: [PREFIX 2][ID 20][field]
 	// key := append(modules.CONTRACT_STATE_PREFIX, id...)
-	data := getprefix(statedb.db, modules.CONTRACT_STATE_PREFIX)
+	data := getprefix(statedb.db, constants.CONTRACT_STATE_PREFIX)
 	if data == nil || len(data) <= 0 {
 		return nil
 	}
@@ -161,7 +161,7 @@ func (statedb *StateDb) GetContractAllState() []*modules.ContractReadSet {
 To get contract or contract template one field
 */
 func (statedb *StateDb) GetContractState(id []byte, field string) (*modules.StateVersion, []byte) {
-	key := append(modules.CONTRACT_STATE_PREFIX, id...)
+	key := append(constants.CONTRACT_STATE_PREFIX, id...)
 	key = append(key, []byte(field)...)
 	data, version, err := retrieveWithVersion(statedb.db, key)
 	if err != nil || data == nil {
@@ -184,7 +184,7 @@ func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
 	//if common.EmptyHash(id) {
 	//	return nil, errors.New("the filed not defined")
 	//}
-	con_bytes, err := statedb.db.Get(append(modules.CONTRACT_PREFIX, id...))
+	con_bytes, err := statedb.db.Get(append(constants.CONTRACT_PREFIX, id...))
 	if err != nil {
 		statedb.logger.Error("err:", err)
 		return nil, err
