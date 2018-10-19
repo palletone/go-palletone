@@ -66,7 +66,8 @@ type IDag interface {
 
 	FastSyncCommitHead(common.Hash) error
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
-	GetContractState(id string, field string) (*modules.StateVersion, []byte)
+
+	GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte)
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetHeadHeaderHash() (common.Hash, error)

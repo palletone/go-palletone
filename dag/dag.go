@@ -706,8 +706,8 @@ func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
 }
 
 // get contract state
-func (d *Dag) GetContractState(id string, field string) (*modules.StateVersion, []byte) {
-	return d.statedb.GetContractState(common.HexToAddress(id), field)
+func (d *Dag) GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte) {
+	return d.statedb.GetContractState(common.HexToAddress("nil"), field)
 }
 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {

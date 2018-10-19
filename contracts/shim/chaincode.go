@@ -62,6 +62,7 @@ const (
 // ChaincodeStub is an object passed to chaincode for shim side handling of
 // APIs.
 type ChaincodeStub struct {
+	ContractId     []byte
 	TxID           string
 	ChannelId      string
 	chaincodeEvent *pb.ChaincodeEvent
@@ -362,13 +363,14 @@ func chatWithPeer(chaincodename string, stream PeerChaincodeStream, cc Chaincode
 // -- init stub ---
 // ChaincodeInvocation functionality
 
-func (stub *ChaincodeStub) init(handler *Handler, channelId string, txid string, input *pb.ChaincodeInput, signedProposal *pb.SignedProposal) error {
+func (stub *ChaincodeStub) init(handler *Handler, contractid []byte, channelId string, txid string, input *pb.ChaincodeInput, signedProposal *pb.SignedProposal) error {
 	stub.TxID = txid
 	stub.ChannelId = channelId
 	stub.args = input.Args
 	stub.handler = handler
 	stub.signedProposal = signedProposal
 	stub.decorations = input.Decorations
+	stub.ContractId = contractid
 
 	chaincodeLogger.Info("args:", input.Args)
 	for _, tp := range input.Args {
@@ -412,7 +414,7 @@ func (stub *ChaincodeStub) InvokeChaincode(chaincodeName string, args [][]byte, 
 func (stub *ChaincodeStub) GetState(key string) ([]byte, error) {
 	// Access public data by setting the collection to empty string
 	collection := ""
-	return stub.handler.handleGetState(collection, key, stub.ChannelId, stub.TxID)
+	return stub.handler.handleGetState(collection, key, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
 // PutState documentation can be found in interfaces.go
