@@ -25,11 +25,12 @@ import (
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 func TestUnitNumberIndex(t *testing.T) {
-	key1 := fmt.Sprintf("%s_%s_%d", modules.UNIT_NUMBER_PREFIX, modules.BTCCOIN.String(), 10000)
-	key2 := fmt.Sprintf("%s_%s_%d", modules.UNIT_NUMBER_PREFIX, modules.PTNCOIN.String(), 678934)
+	key1 := fmt.Sprintf("%s_%s_%d", constants.UNIT_NUMBER_PREFIX, modules.BTCCOIN.String(), 10000)
+	key2 := fmt.Sprintf("%s_%s_%d", constants.UNIT_NUMBER_PREFIX, modules.PTNCOIN.String(), 678934)
 
 	if key1 != "nh_btcoin_10000" {
 		log.Debug("not equal.", key1)

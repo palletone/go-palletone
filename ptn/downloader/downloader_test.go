@@ -28,6 +28,7 @@ import (
 	plog "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/trie"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"log"
@@ -193,7 +194,7 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	return nil
 }
 func saveHashByIndex(db ptndb.Database, hash common.Hash, index uint64) error {
-	key := fmt.Sprintf("%s%v_", modules.HEADER_PREFIX, index)
+	key := fmt.Sprintf("%s%v_", constants.HEADER_PREFIX, index)
 	err := db.Put([]byte(key), hash.Bytes())
 	return err
 }

@@ -33,6 +33,7 @@ import (
 	"strconv"
 	"testing"
 	"time"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 func TestSaveJoint(t *testing.T) {
@@ -187,19 +188,19 @@ func TestAddToken(t *testing.T) {
 	token.CreationDate = time.Now().Format(modules.TimeFormatString)
 	infos := new(tokenInfo)
 	infos.Items = make(map[string]*modules.TokenInfo)
-	infos.Items[string(modules.TOKENTYPE)+token.TokenHex] = token
+	infos.Items[string(constants.TOKENTYPE)+token.TokenHex] = token
 	// bytes, err := rlp.EncodeToBytes(infos)
 	// if err != nil {
 	// 	t.Errorf("error: %v", err)
 	// 	return
 	// }
 	bytes, _ := json.Marshal(infos)
-	if err := dbconn.Put(modules.TOKENINFOS, bytes); err != nil {
+	if err := dbconn.Put(constants.TOKENINFOS, bytes); err != nil {
 		t.Error("failed")
 		return
 	}
 
-	if bytes, err := dbconn.Get(modules.TOKENINFOS); err != nil {
+	if bytes, err := dbconn.Get(constants.TOKENINFOS); err != nil {
 		t.Error("get token infos error:", err)
 		return
 	} else {
