@@ -54,7 +54,9 @@ message ChaincodeMessage {
         OUTCHAIN_ADDRESS = 20;
         OUTCHAIN_TRANSACTION = 21;
         OUTCHAIN_QUERY = 22;
-        ECOGNIZANCE_BALANCE_REQUEST = 23;
+        PAYTO_TOKEN_REQUEST = 23;
+        DEPOSIT_CONFIG_REQUEST = 24;
+        USER_ADDR_REQUEST = 25;
     }
 
     Type type = 1;

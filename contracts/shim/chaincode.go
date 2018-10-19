@@ -40,7 +40,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -767,16 +766,7 @@ func (stub *ChaincodeStub) SetEvent(name string, payload []byte) error {
 }
 
 //TODO xiaozhi
-//---------- Recognizance API ----------
-func (stub *ChaincodeStub) GetAccountBalance(witnessAddr string) uint64 {
-	balance, err := stub.handler.handleGetAccountBalance(witnessAddr, stub.ChannelId, stub.TxID)
-	if err != nil {
-		return 0
-	}
-	//将 string 转 uint64
-	ptnAccount, err := strconv.ParseUint(balance, 10, 64)
-	return ptnAccount
-}
+//---------- Deposit API ----------
 func (stub *ChaincodeStub) GetDepositConfig() ([]byte, error) {
 	return stub.handler.handleGetDepositConfig(stub.ChannelId, stub.TxID)
 }
