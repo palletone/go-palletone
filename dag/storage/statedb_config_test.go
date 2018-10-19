@@ -22,12 +22,12 @@ package storage
 
 import (
 	"fmt"
+	"testing"
+
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
-
-	"github.com/palletone/go-palletone/common/log"
-	"testing"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -89,8 +89,8 @@ func TestSaveAndGetConfig(t *testing.T) {
 	//	return
 	//}
 	// todo get GenesisAsset
-	genesisAsset ,_,err:= db.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
-	assert.NotNil(t,err)
+	genesisAsset, _, err := db.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
+	assert.NotNil(t, err)
 	var asset modules.Asset
 	if err := rlp.DecodeBytes(genesisAsset, &asset); err != nil {
 		log.Error("Check unit signature", "error", err.Error())

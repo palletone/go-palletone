@@ -19,10 +19,11 @@
 package palletcache
 
 import (
-	"github.com/palletone/go-palletone/dag/palletcache/cache"
-	"github.com/palletone/go-palletone/dag/palletcache/redis"
 	"log"
 	"testing"
+
+	"github.com/palletone/go-palletone/dag/palletcache/cache"
+	"github.com/palletone/go-palletone/dag/palletcache/redis"
 )
 
 var configs string = "redis"

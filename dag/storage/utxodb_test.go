@@ -21,12 +21,13 @@
 package storage
 
 import (
+	"testing"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
-	"testing"
 )
 
 func TestGetUtxos(t *testing.T) {

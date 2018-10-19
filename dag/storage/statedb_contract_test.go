@@ -21,14 +21,14 @@
 package storage
 
 import (
+	"fmt"
+	"testing"
+
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
-
-	"fmt"
-	"testing"
 )
 
 func TestGetContractState(t *testing.T) {
