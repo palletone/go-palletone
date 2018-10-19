@@ -128,7 +128,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			if query.Origin.Number.Index >= query.Skip+1 {
 				query.Origin.Number.Index -= query.Skip + 1
 			} else {
-				//log.Info("========GetBlockHeadersMsg========", "query.Reverse", "unknown is true")
+				log.Info("ProtocolManager", "GetBlockHeadersMsg query.Reverse", "unknown is true")
 				unknown = true
 			}
 
