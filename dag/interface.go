@@ -58,7 +58,7 @@ type IDag interface {
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	//All leaf nodes for dag downloader
 	GetAllLeafNodes() ([]*modules.Header, error)
-	GetUnit(common.Hash) (*modules.Unit, error)
+	//GetUnit(common.Hash) (*modules.Unit, error)
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 
 	// validate group signature by hash

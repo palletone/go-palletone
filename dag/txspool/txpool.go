@@ -81,7 +81,7 @@ var (
 
 type dags interface {
 	CurrentUnit() *modules.Unit
-	GetUnit(hash common.Hash) (*modules.Unit, error)
+	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 
 	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
@@ -296,31 +296,31 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 			var discarded, included modules.Transactions
 
 			var (
-				rem, _ = pool.unit.GetUnit(oldHead.Hash())
-				add, _ = pool.unit.GetUnit(newHead.Hash())
+				rem, _ = pool.unit.GetUnitByHash(oldHead.Hash())
+				add, _ = pool.unit.GetUnitByHash(newHead.Hash())
 			)
 			for rem.NumberU64() > add.NumberU64() {
 				discarded = append(discarded, rem.Transactions()...)
-				if rem, _ = pool.unit.GetUnit(rem.ParentHash()[0]); rem == nil {
+				if rem, _ = pool.unit.GetUnitByHash(rem.ParentHash()[0]); rem == nil {
 					log.Error("Unrooted old unit seen by tx pool", "block", oldHead.Number, "hash", oldHead.Hash())
 					return
 				}
 			}
 			for add.NumberU64() > rem.NumberU64() {
 				included = append(included, add.Transactions()...)
-				if add, _ = pool.unit.GetUnit(add.ParentHash()[0]); add == nil {
+				if add, _ = pool.unit.GetUnitByHash(add.ParentHash()[0]); add == nil {
 					log.Error("Unrooted new unit seen by tx pool", "block", newHead.Number, "hash", newHead.Hash())
 					return
 				}
 			}
 			for rem.Hash() != add.Hash() {
 				discarded = append(discarded, rem.Transactions()...)
-				if rem, _ = pool.unit.GetUnit(rem.ParentHash()[0]); rem == nil {
+				if rem, _ = pool.unit.GetUnitByHash(rem.ParentHash()[0]); rem == nil {
 					log.Error("Unrooted old unit seen by tx pool", "block", oldHead.Number, "hash", oldHead.Hash())
 					return
 				}
 				included = append(included, add.Transactions()...)
-				if add, _ = pool.unit.GetUnit(add.ParentHash()[0]); add == nil {
+				if add, _ = pool.unit.GetUnitByHash(add.ParentHash()[0]); add == nil {
 					log.Error("Unrooted new unit seen by tx pool", "block", newHead.Number, "hash", newHead.Hash())
 					return
 				}
