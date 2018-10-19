@@ -139,6 +139,9 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 	if err := chain.memUnit.Add(unit); err != nil {
 		return err
 	}
+	//save chainindex mapping unit hash
+	chain.memUnit.SetHashByNumber(unit.Number(), unit.UnitHash)
+
 	// Check if the irreversible height has been reached
 	if forkIndex.IsReachedIrreversibleHeight(index) {
 		// set unit irreversible
