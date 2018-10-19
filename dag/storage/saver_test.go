@@ -33,11 +33,12 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func TestSaveJoint(t *testing.T) {
-	Dbconn, err := ptndb.NewMemDatabase()
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
 	if Dbconn == nil {
 		fmt.Println("Connect to db error.")
 		return
@@ -52,13 +53,13 @@ func TestSaveJoint(t *testing.T) {
 	h := modules.NewHeader(p, ty, uint64(111), []byte("hello"))
 	txs := make(modules.Transactions, 0)
 	u := modules.NewUnit(h, txs)
-	err1 := SaveJoint(Dbconn, &modules.Joint{Unit: u},
+	err := SaveJoint(Dbconn, &modules.Joint{Unit: u},
 		func() { log.Println("ok") })
-	log.Println("error:", err1)
+	log.Println("error:", err)
 }
 
 func TestAddUnitKey(t *testing.T) {
-	Dbconn, err := ptndb.NewMemDatabase()
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
 	if Dbconn == nil {
 		fmt.Println("Connect ro db error.")
 		return
@@ -79,7 +80,7 @@ func TestAddUnitKey(t *testing.T) {
 }
 
 func TestGetUnitKeys(t *testing.T) {
-	Dbconn, err := ptndb.NewMemDatabase()
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
 	if Dbconn == nil {
 		fmt.Println("Connect to db error.")
 		return
@@ -104,8 +105,8 @@ func TestGetUnitKeys(t *testing.T) {
 		}
 	}
 
-	err1 := AddUnitKeys(Dbconn, "unit1231526521834")
-	if errors.New("key is already exist.").Error() == err1.Error() {
+	err := AddUnitKeys(Dbconn, "unit1231526521834")
+	if errors.New("key is already exist.").Error() == err.Error() {
 		log.Println("success test add unit", keys) // this
 	} else {
 		log.Println("failed test add  unit ")
@@ -114,7 +115,7 @@ func TestGetUnitKeys(t *testing.T) {
 }
 
 func TestDBBatch(t *testing.T) {
-	Dbconn, err := ptndb.NewMemDatabase()
+	Dbconn := ReNewDbConn(dagconfig.DbPath)
 	if Dbconn == nil {
 		fmt.Println("Connect to db error.")
 		return
@@ -124,8 +125,8 @@ func TestDBBatch(t *testing.T) {
 	err0 := table.Put([]byte("jay"), []byte("baby"))
 	log.Println("err0:", err0)
 
-	b, err1 := table.Get([]byte("jay"))
-	log.Println("b:", string(b), err1)
+	b, err := table.Get([]byte("jay"))
+	log.Println("b:", string(b), err)
 
 	log.Println("table:", table)
 }
