@@ -20,6 +20,7 @@ package memunit
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -27,26 +28,48 @@ import (
 )
 
 // non validated units set
-type MemUnit map[common.Hash]*modules.Unit
+type MemUnitInfo map[common.Hash]*modules.Unit
+
+type MemUnit struct {
+	memUnitInfo *MemUnitInfo
+	memLock     sync.RWMutex
+}
 
 func InitMemUnit() *MemUnit {
-	memunit := make(MemUnit)
-	return &memunit
+	memUnitInfo := make(MemUnitInfo)
+	memUnit := MemUnit{memUnitInfo: &memUnitInfo}
+	return &memUnit
+}
+
+//set the mapping relationship
+//key:number  value:unit hash
+func (mu *MemUnit) SetHashByNumber() error {
+	return nil
+}
+
+//get the mapping relationship
+//key:number  result:unit hash
+func (mu *MemUnit) GetHashByNumber() (common.Hash, error) {
+	return common.Hash{}, nil
 }
 
 func (mu *MemUnit) Add(u *modules.Unit) error {
+	mu.memLock.Lock()
+	defer mu.memLock.Unlock()
 	if mu == nil {
 		mu = InitMemUnit()
 	}
-	_, ok := (*mu)[u.UnitHash]
+	_, ok := (*mu.memUnitInfo)[u.UnitHash]
 	if !ok {
-		(*mu)[u.UnitHash] = u
+		(*mu.memUnitInfo)[u.UnitHash] = u
 	}
 	return nil
 }
 
 func (mu *MemUnit) Get(hash common.Hash) (*modules.Unit, error) {
-	unit, ok := (*mu)[hash]
+	mu.memLock.RLock()
+	defer mu.memLock.RUnlock()
+	unit, ok := (*mu.memUnitInfo)[hash]
 	if !ok || unit == nil {
 		return nil, fmt.Errorf("Get mem unit: unit does not be found.")
 	}
@@ -54,7 +77,9 @@ func (mu *MemUnit) Get(hash common.Hash) (*modules.Unit, error) {
 }
 
 func (mu *MemUnit) Exists(hash common.Hash) bool {
-	_, ok := (*mu)[hash]
+	mu.memLock.RLock()
+	defer mu.memLock.RUnlock()
+	_, ok := (*mu.memUnitInfo)[hash]
 	if ok {
 		return true
 	}
@@ -62,7 +87,9 @@ func (mu *MemUnit) Exists(hash common.Hash) bool {
 }
 
 func (mu *MemUnit) Lenth() uint64 {
-	return uint64(len(*mu))
+	mu.memLock.RLock()
+	defer mu.memLock.RUnlock()
+	return uint64(len(*mu.memUnitInfo))
 }
 
 /*********************************************************************/
