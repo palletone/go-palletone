@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -109,7 +110,7 @@ To get utxo info by scanning all utxos.
 */
 func (repository *UtxoRepository) readUtxosFrAll(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
 	// key: [UTXO_PREFIX][addr]_[asset]_[msgindex]_[out index]
-	data := repository.utxodb.GetPrefix(modules.UTXO_PREFIX)
+	data := repository.utxodb.GetPrefix(constants.UTXO_PREFIX)
 	if data == nil {
 		return nil, 0
 	}
@@ -219,7 +220,7 @@ func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32,
 		sAddr, _ := tokenengine.GetAddressFromScript(txout.PkScript)
 		// save addr key index.
 		outpoint_key := make([]byte, 0)
-		outpoint_key = append(outpoint_key, modules.AddrOutPoint_Prefix...)
+		outpoint_key = append(outpoint_key, constants.AddrOutPoint_Prefix...)
 		outpoint_key = append(outpoint_key, sAddr.Bytes()...)
 		repository.idxdb.SaveIndexValue(append(outpoint_key, outpoint.Hash().Bytes()...), outpoint)
 
@@ -359,7 +360,7 @@ To get balance by query all utxo table
 func (repository *UtxoRepository) walletBalanceFrAll(addr common.Address, asset modules.Asset) uint64 {
 	balance := uint64(0)
 
-	preKey := fmt.Sprintf("%s", modules.UTXO_PREFIX)
+	preKey := fmt.Sprintf("%s", constants.UTXO_PREFIX)
 
 	if data := repository.utxodb.GetPrefix([]byte(preKey)); data != nil {
 		for _, v := range data {
@@ -456,7 +457,7 @@ To get account token info by query the whole utxo table
 func (repository *UtxoRepository) getAccountTokensWhole(addr common.Address) (map[string]*modules.AccountToken, error) {
 	tokens := map[string]*modules.AccountToken{}
 
-	key := fmt.Sprintf("%s", string(modules.UTXO_PREFIX))
+	key := fmt.Sprintf("%s", string(constants.UTXO_PREFIX))
 	data := repository.utxodb.GetPrefix([]byte(key))
 	if data == nil {
 		return nil, nil

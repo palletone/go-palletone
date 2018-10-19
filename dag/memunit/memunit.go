@@ -18,8 +18,10 @@
 package memunit
 
 import (
+	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -27,26 +29,66 @@ import (
 )
 
 // non validated units set
-type MemUnit map[common.Hash]*modules.Unit
+type MemUnitInfo map[common.Hash]*modules.Unit
+
+type MemUnit struct {
+	memUnitInfo *MemUnitInfo
+	memLock     sync.RWMutex
+
+	numberToHash     map[modules.ChainIndex]common.Hash
+	numberToHashLock sync.RWMutex
+}
 
 func InitMemUnit() *MemUnit {
-	memunit := make(MemUnit)
-	return &memunit
+	memUnitInfo := make(MemUnitInfo)
+	numberToHash := map[modules.ChainIndex]common.Hash{}
+	memUnit := MemUnit{
+		memUnitInfo:  &memUnitInfo,
+		numberToHash: numberToHash,
+	}
+	return &memUnit
+}
+
+//set the mapping relationship
+//key:number  value:unit hash
+func (mu *MemUnit) SetHashByNumber(chainIndex modules.ChainIndex, hash common.Hash) {
+	mu.numberToHashLock.Lock()
+	defer mu.numberToHashLock.Unlock()
+	if _, ok := mu.numberToHash[chainIndex]; ok {
+		return
+	}
+	mu.numberToHash[chainIndex] = hash
+	return
+}
+
+//get the mapping relationship
+//key:number  result:unit hash
+func (mu *MemUnit) GetHashByNumber(chainIndex modules.ChainIndex) (common.Hash, error) {
+	mu.numberToHashLock.RLock()
+	defer mu.numberToHashLock.RUnlock()
+	if hash, ok := mu.numberToHash[chainIndex]; ok {
+		return hash, nil
+	}
+	return common.Hash{}, errors.New("have not key")
 }
 
 func (mu *MemUnit) Add(u *modules.Unit) error {
+	mu.memLock.Lock()
+	defer mu.memLock.Unlock()
 	if mu == nil {
 		mu = InitMemUnit()
 	}
-	_, ok := (*mu)[u.UnitHash]
+	_, ok := (*mu.memUnitInfo)[u.UnitHash]
 	if !ok {
-		(*mu)[u.UnitHash] = u
+		(*mu.memUnitInfo)[u.UnitHash] = u
 	}
 	return nil
 }
 
 func (mu *MemUnit) Get(hash common.Hash) (*modules.Unit, error) {
-	unit, ok := (*mu)[hash]
+	mu.memLock.RLock()
+	defer mu.memLock.RUnlock()
+	unit, ok := (*mu.memUnitInfo)[hash]
 	if !ok || unit == nil {
 		return nil, fmt.Errorf("Get mem unit: unit does not be found.")
 	}
@@ -54,7 +96,9 @@ func (mu *MemUnit) Get(hash common.Hash) (*modules.Unit, error) {
 }
 
 func (mu *MemUnit) Exists(hash common.Hash) bool {
-	_, ok := (*mu)[hash]
+	mu.memLock.RLock()
+	defer mu.memLock.RUnlock()
+	_, ok := (*mu.memUnitInfo)[hash]
 	if ok {
 		return true
 	}
@@ -62,7 +106,9 @@ func (mu *MemUnit) Exists(hash common.Hash) bool {
 }
 
 func (mu *MemUnit) Lenth() uint64 {
-	return uint64(len(*mu))
+	mu.memLock.RLock()
+	defer mu.memLock.RUnlock()
+	return uint64(len(*mu.memUnitInfo))
 }
 
 /*********************************************************************/
@@ -90,7 +136,11 @@ func (f *ForkData) Exists(hash common.Hash) bool {
 // forkIndex
 type ForkIndex []*ForkData
 
+var forkIndexLock sync.RWMutex
+
 func (forkIndex *ForkIndex) AddData(unitHash common.Hash, parentsHash []common.Hash) (int, error) {
+	forkIndexLock.Lock()
+	defer forkIndexLock.Unlock()
 	for index, fi := range *forkIndex {
 		lenth := len(*fi)
 		if lenth <= 0 {
@@ -107,6 +157,8 @@ func (forkIndex *ForkIndex) AddData(unitHash common.Hash, parentsHash []common.H
 }
 
 func (forkIndex *ForkIndex) IsReachedIrreversibleHeight(index int) bool {
+	forkIndexLock.RLock()
+	defer forkIndexLock.RUnlock()
 	if index < 0 {
 		return false
 	}
@@ -117,6 +169,8 @@ func (forkIndex *ForkIndex) IsReachedIrreversibleHeight(index int) bool {
 }
 
 func (forkIndex *ForkIndex) GetReachedIrreversibleHeightUnitHash(index int) common.Hash {
+	forkIndexLock.RLock()
+	defer forkIndexLock.RUnlock()
 	if index < 0 {
 		return common.Hash{}
 	}
@@ -124,5 +178,7 @@ func (forkIndex *ForkIndex) GetReachedIrreversibleHeightUnitHash(index int) comm
 }
 
 func (forkIndex *ForkIndex) Lenth() int {
+	forkIndexLock.RLock()
+	defer forkIndexLock.RUnlock()
 	return len(*forkIndex)
 }

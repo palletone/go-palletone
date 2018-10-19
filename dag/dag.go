@@ -34,7 +34,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/memunit"
@@ -119,9 +118,9 @@ func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit {
 	return curUnit
 }
 
-func (d *Dag) GetUnit(hash common.Hash) (*modules.Unit, error) {
-	return d.dagdb.GetUnit(hash)
-}
+//func (d *Dag) GetUnit(hash common.Hash) (*modules.Unit, error) {
+//	return d.dagdb.GetUnit(hash)
+//}
 
 func (d *Dag) HasUnit(hash common.Hash) bool {
 	u, _ := d.dagdb.GetUnit(hash)
@@ -162,7 +161,7 @@ func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Su
 // FastSyncCommitHead sets the current head block to the one defined by the hash
 // irrelevant what the chain contents were prior.
 func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
-	unit, err := d.GetUnit(hash)
+	unit, err := d.GetUnitByHash(hash)
 	if err != nil {
 		return fmt.Errorf("non existent unit [%x...]", hash[:4])
 	}
@@ -201,7 +200,9 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
-		if err := d.unitRep.SaveUnit(u, false); err != nil {
+		// modified by albert·gou
+		//if err := d.unitRep.SaveUnit(u, false); err != nil {
+		if err := d.SaveUnit(u, false); err != nil {
 			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
 		}
@@ -732,6 +733,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	}
 	if unitState == modules.UNIT_STATE_VALIDATED {
 		// step3.1. pass and with group signature, put into leveldb
+		// todo 应当先判断是否切换，再保存，并更新状态
 		if err := d.unitRep.SaveUnit(unit, false); err != nil {
 			return fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
 		}
@@ -808,7 +810,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 
 // ValidateUnitGroupSig
 func (d *Dag) ValidateUnitGroupSig(hash common.Hash) (bool, error) {
-	unit, err := d.GetUnit(hash)
+	unit, err := d.GetUnitByHash(hash)
 	if err != nil {
 		return false, err
 	}
@@ -881,9 +883,6 @@ func (d *Dag) GetGenesisUnit(index uint64) (*modules.Unit, error) {
 }
 func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
 	return d.statedb.GetContractTpl(templateID)
-}
-func (d *Dag) UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
-	d.propRep.UpdateGlobalDynProp(gp, dgp, unit)
 }
 
 // save token info
@@ -1000,9 +999,11 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 //
 //	return nil
 //}
-func (dag *Dag) GetCandidateMediators() []*core.MediatorInfo {
-	return dag.stateRep.GetCandidateMediators()
-}
+
+// todo albert·gou
+//func (dag *Dag) GetCandidateMediators() []*core.MediatorInfo {
+//	return dag.stateRep.GetCandidateMediators()
+//}
 
 func (dag *Dag) GetElectedMediatorsAddress() ([]common.Address, error) {
 	gp, err := dag.propdb.RetrieveGlobalProp()

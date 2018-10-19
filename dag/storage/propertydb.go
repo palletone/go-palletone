@@ -47,6 +47,7 @@ type IPropertyDb interface {
 // initialize PropertyDB , and retrieve gp,dgp,mc from IPropertyDb.
 func NewPropertyDb(db ptndb.Database, l log.ILogger) *PropertyDb {
 	pdb := &PropertyDb{db: db, logger: l}
+
 	//gp, err := pdb.RetrieveGlobalProp()
 	//if err != nil {
 	//	logger.Error("RetrieveGlobalProp Error")
@@ -67,6 +68,7 @@ func NewPropertyDb(db ptndb.Database, l log.ILogger) *PropertyDb {
 	//pdb.GlobalProp = gp
 	//pdb.DynGlobalProp = dgp
 	//pdb.MediatorSchl = ms
+
 	return pdb
 }
 

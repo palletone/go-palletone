@@ -20,9 +20,11 @@ package modules
 
 import (
 	"encoding/json"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"time"
 	"unsafe"
+
+	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 var (
@@ -115,5 +117,5 @@ func (tf *AllTokenInfo) Add(token *TokenInfo) {
 	if tf.Items == nil {
 		tf.Items = make(map[string]*TokenInfo)
 	}
-	tf.Items[string(TOKENTYPE)+token.TokenHex] = token
+	tf.Items[string(constants.TOKENTYPE)+token.TokenHex] = token
 }

@@ -56,7 +56,7 @@ func (statedb *StateDb) DeleteState(key []byte) error {
 // ######################### GET IMPL START ###########################
 
 func (statedb *StateDb) GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error) {
-	key := append(modules.ASSET_INFO_PREFIX, assetId.AssetId.String()...)
+	key := append(constants.ASSET_INFO_PREFIX, assetId.AssetId.String()...)
 	data, err := statedb.db.Get(key)
 	if err != nil {
 		return nil, err
@@ -75,31 +75,37 @@ func (statedb *StateDb) GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo
 func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
 }
+
+// todo albert·gou
 func (statedb *StateDb) GetCandidateMediatorAddrList() ([]common.Address, error) {
-	key := constants.STATE_CANDIDATE_MEDIATOR_LIST
-	data, _, err := retrieveWithVersion(statedb.db, key)
-	if err != nil {
-		return nil, err
-	}
-	result := []common.Address{}
-	rlp.DecodeBytes(data, result)
-	return result, nil
+	//	key := constants.STATE_CANDIDATE_MEDIATOR_LIST
+	//	data, _, err := retrieveWithVersion(statedb.db, key)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	result := []common.Address{}
+	//	rlp.DecodeBytes(data, result)
+	//	return result, nil
+	return nil, nil
 }
-func (statedb *StateDb) SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error {
-	key := constants.STATE_CANDIDATE_MEDIATOR_LIST
-	addrsStr := ""
-	for _, addr := range addrs {
-		addrsStr += addr.String() + ","
-	}
-	statedb.logger.Debugf("Try to save candidate mediator address list:%s", addrsStr)
-	return StoreBytesWithVersion(statedb.db, key, v, addrs)
-}
+
+// todo albert·gou
+//func (statedb *StateDb) SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error {
+//	key := constants.STATE_CANDIDATE_MEDIATOR_LIST
+//	addrsStr := ""
+//	for _, addr := range addrs {
+//		addrsStr += addr.String() + ","
+//	}
+//	statedb.logger.Debugf("Try to save candidate mediator address list:%s", addrsStr)
+//	return StoreBytesWithVersion(statedb.db, key, v, addrs)
+//}
 
 //Yiran
 func (statedb *StateDb) AddVote(voter common.Address, candidate common.Address) error {
 	key := KeyConnector(constants.STATE_VOTE_LIST, voter.Bytes())
 	return StoreBytes(statedb.db, key, candidate.Bytes())
 }
+
 //Yiran
 func (statedb *StateDb) GetSortedVote(ReturnNumber uint) ([]common.Address, error) {
 	key := constants.STATE_VOTE_LIST
@@ -129,7 +135,7 @@ func (statedb *StateDb) GetSortedVote(ReturnNumber uint) ([]common.Address, erro
 
 }
 
-// comment by Albert·Gou
+// todo albert·gou
 //func (statedb *StateDb) GetActiveMediatorAddrList() ([]common.Address, error) {
 //
 //	key := constants.STATE_ACTIVE_MEDIATOR_LIST

@@ -25,10 +25,11 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 var (
-	MediatorSchlDBKey = append(modules.MEDIATOR_SCHEME_PREFIX, []byte("MediatorSchedule")...)
+	MediatorSchlDBKey = append(constants.MEDIATOR_SCHEME_PREFIX, []byte("MediatorSchedule")...)
 )
 
 type mediatorSchedule struct {

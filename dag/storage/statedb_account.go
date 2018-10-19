@@ -22,12 +22,12 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 func (statedb *StateDb) GetAccountInfo(address common.Address) (*modules.AccountInfo, error) {
-	key := append(modules.ACCOUNT_INFO_PREFIX, address.Bytes()...)
+	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes()...)
 	info := &modules.AccountInfo{}
 	err := retrieve(statedb.db, key, info)
 	if err != nil {
@@ -36,23 +36,26 @@ func (statedb *StateDb) GetAccountInfo(address common.Address) (*modules.Account
 	return info, nil
 }
 func (statedb *StateDb) SaveAccountInfo(address common.Address, info *modules.AccountInfo) error {
-	key := append(modules.ACCOUNT_INFO_PREFIX, address.Bytes()...)
+	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes()...)
 	return StoreBytes(statedb.db, key, info)
 }
 
-func (statedb *StateDb) GetAccountMediatorInfo(address common.Address) (*core.MediatorInfo, error) {
-	key := append(modules.ACCOUNT_INFO_PREFIX, address.Bytes()...)
-	key = append(key, []byte("MediatorInfo")...)
-	info := &core.MediatorInfo{}
-	err := retrieve(statedb.db, key, info)
-	if err != nil {
-		return nil, err
-	}
-	return info, nil
-}
-func (statedb *StateDb) SaveAccountMediatorInfo(address common.Address, info *core.MediatorInfo, version *modules.StateVersion) error {
-	key := append(modules.ACCOUNT_INFO_PREFIX, address.Bytes()...)
-	key = append(key, []byte("MediatorInfo")...)
-	statedb.logger.Debugf("Save one mediator info for address{%s},info:{%s}", address.String(), info)
-	return StoreBytesWithVersion(statedb.db, key, version, info)
-}
+// todo albert·gou
+//func (statedb *StateDb) GetAccountMediatorInfo(address common.Address) (*core.MediatorInfo, error) {
+//	key := append(modules.ACCOUNT_INFO_PREFIX, address.Bytes()...)
+//	key = append(key, []byte("MediatorInfo")...)
+//	info := &core.MediatorInfo{}
+//	err := retrieve(statedb.db, key, info)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return info, nil
+//}
+
+// todo albert·gou
+//func (statedb *StateDb) SaveAccountMediatorInfo(address common.Address, info *core.MediatorInfo, version *modules.StateVersion) error {
+//	key := append(modules.ACCOUNT_INFO_PREFIX, address.Bytes()...)
+//	key = append(key, []byte("MediatorInfo")...)
+//	statedb.logger.Debugf("Save one mediator info for address{%s},info:{%s}", address.String(), info)
+//	return StoreBytesWithVersion(statedb.db, key, version, info)
+//}
