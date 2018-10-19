@@ -58,7 +58,7 @@ type IDag interface {
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	//All leaf nodes for dag downloader
 	GetAllLeafNodes() ([]*modules.Header, error)
-	GetUnit(common.Hash) (*modules.Unit, error)
+	//GetUnit(common.Hash) (*modules.Unit, error)
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 
 	// validate group signature by hash
@@ -66,7 +66,8 @@ type IDag interface {
 
 	FastSyncCommitHead(common.Hash) error
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
-	GetContractState(id []byte, field string) (*modules.StateVersion, []byte)
+
+	GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte)
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetHeadHeaderHash() (common.Hash, error)
@@ -91,17 +92,20 @@ type IDag interface {
 	GetActiveMediator(add common.Address) *core.Mediator
 	GetActiveMediatorNode(index int) *discover.Node
 	//获得所有Mediator候选人列表
-	GetCandidateMediators() []*core.MediatorInfo
+
+	// todo albert·gou
+	//GetCandidateMediators() []*core.MediatorInfo
 	//Get all elected mediators.
 	GetElectedMediatorsAddress() ([]common.Address, error)
 
-	UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit)
-	SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) error
-	GetGlobalProp() *modules.GlobalProperty
-	SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bool) error
-	GetDynGlobalProp() *modules.DynamicGlobalProperty
-	SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) error
-	GetMediatorSchl() *modules.MediatorSchedule
+	// comment by albert·gou
+	//UpdateGlobalDynProp(unit *modules.Unit)
+	//SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) error
+	//GetGlobalProp() *modules.GlobalProperty
+	//SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bool) error
+	//GetDynGlobalProp() *modules.DynamicGlobalProperty
+	//SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) error
+	//GetMediatorSchl() *modules.MediatorSchedule
 
 	// get token info
 	GetTokenInfo(key []byte) (*modules.TokenInfo, error)

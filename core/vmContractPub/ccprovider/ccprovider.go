@@ -17,7 +17,6 @@
  * @date 2018
  */
 
-
 package ccprovider
 
 import (
@@ -33,8 +32,8 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"time"
 	"github.com/pkg/errors"
+	"time"
 )
 
 var ccproviderLogger = flogging.MustGetLogger("ccprovider")
@@ -137,15 +136,15 @@ func (*CCInfoFSImpl) GetChaincode(ccname string, ccversion string) (CCPackage, e
 
 	//glh
 	/*
-	if err != nil {
-		//try signed CDS
-		ccscdspack := &SignedCDSPackage{}
-		_, _, err = ccscdspack.InitFromFS(ccname, ccversion)
 		if err != nil {
-			return nil, err
+			//try signed CDS
+			ccscdspack := &SignedCDSPackage{}
+			_, _, err = ccscdspack.InitFromFS(ccname, ccversion)
+			if err != nil {
+				return nil, err
+			}
+			return ccscdspack, nil
 		}
-		return ccscdspack, nil
-	}
 	*/
 	return cccdspack, err
 }
@@ -262,15 +261,15 @@ func GetCCPackage(buf []byte) (CCPackage, error) {
 
 	//glh
 	/*
-	if _, err := cccdspack.InitFromBuffer(buf); err != nil {
-		//try signed CDS
-		ccscdspack := &SignedCDSPackage{}
-		if _, err := ccscdspack.InitFromBuffer(buf); err != nil {
-			return nil, err
+		if _, err := cccdspack.InitFromBuffer(buf); err != nil {
+			//try signed CDS
+			ccscdspack := &SignedCDSPackage{}
+			if _, err := ccscdspack.InitFromBuffer(buf); err != nil {
+				return nil, err
+			}
+			return ccscdspack, nil
 		}
-		return ccscdspack, nil
-	}
-	return cccdspack, nil
+		return cccdspack, nil
 	*/
 }
 
@@ -334,6 +333,8 @@ func GetInstalledChaincodes() (*pb.ChaincodeQueryResponse, error) {
 
 //CCContext pass this around instead of string of args
 type CCContext struct {
+	//contract id
+	ContractId []byte
 	//ChainID chain id
 	ChainID string
 
@@ -367,7 +368,7 @@ type CCContext struct {
 }
 
 //NewCCContext just construct a new struct with whatever args
-func NewCCContext(cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal) *CCContext {
+func NewCCContext(contractid []byte, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal) *CCContext {
 	//version CANNOT be empty. The chaincode namespace has to use version and chain name.
 	//All system chaincodes share the same version given by utils.GetSysCCVersion. Note
 	//that neither Chain Name or Version are stored in a chaincodes state on the ledger
@@ -378,7 +379,7 @@ func NewCCContext(cid, name, version, txid string, syscc bool, signedProp *pb.Si
 
 	canName := name + ":" + version
 
-	cccid := &CCContext{cid, name, version, txid, syscc, signedProp, prop, canName, nil}
+	cccid := &CCContext{contractid, cid, name, version, txid, syscc, signedProp, prop, canName, nil}
 
 	ccproviderLogger.Debugf("NewCCCC (chain[%s],chaincode[%s],version[%s],txid[%s],syscc[%t],proposal[%p],canname[%s])", cid, name, version, txid, syscc, prop, cccid.canonicalName)
 
@@ -481,7 +482,7 @@ type ChaincodeProvider interface {
 	//GetContext(ledger ledger.PeerLedger, txid string) (context.Context, ledger.TxSimulator, error)
 	GetContext() (context.Context, error)
 	// GetCCContext returns an opaque chaincode context
-	GetCCContext(cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal) interface{}
+	GetCCContext(contractid []byte, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal) interface{}
 	// ExecuteChaincode executes the chaincode given context and args
 	ExecuteChaincode(ctxt context.Context, cccid interface{}, args [][]byte, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error)
 	// Execute executes the chaincode given context and spec (invocation or deploy)

@@ -56,7 +56,7 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 	cMsg.Decorations = cccid.ProposalDecorations
 	chaincodeLogger.Infof("txid[%s]", cccid.TxID)
 	var ccMsg *pb.ChaincodeMessage
-	ccMsg, err = createCCMessage(cctyp, cccid.ChainID, cccid.TxID, cMsg)
+	ccMsg, err = createCCMessage(cccid.ContractId, cctyp, cccid.ChainID, cccid.TxID, cMsg)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "failed to create chaincode message")
 	}

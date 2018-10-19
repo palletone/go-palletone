@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
@@ -82,7 +83,7 @@ func SaveContract(db ptndb.Database, contract *modules.Contract) error {
 	//
 	//}
 
-	return StoreBytes(db, append(modules.CONTRACT_PREFIX, contract.Id[:]...), contract)
+	return StoreBytes(db, append(constants.CONTRACT_PREFIX, contract.Id[:]...), contract)
 }
 
 // Get contract key's value
@@ -91,7 +92,7 @@ func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interfa
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
-	con_bytes, err := db.Get(append(modules.CONTRACT_PREFIX, id[:]...))
+	con_bytes, err := db.Get(append(constants.CONTRACT_PREFIX, id[:]...))
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +120,7 @@ func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interfa
 }
 
 func (statedb *StateDb) SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
-	return SaveContractState(statedb, modules.CONTRACT_TPL, id, name, value, version)
+	return SaveContractState(statedb, constants.CONTRACT_TPL, id, name, value, version)
 }
 
 /**

@@ -2,6 +2,7 @@ package contracts
 
 import (
 	"errors"
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
@@ -93,6 +94,8 @@ func (c *Contract) Deploy(chainID string, templateId []byte, txid string, args [
 	if initFlag == 0 {
 		return nil, nil, errors.New("Contract not initialized")
 	}
+	//TODO zhichunqi
+	fmt.Println("contract=Deploy=zhichunqi=", chainID, templateId, txid)
 	return cc.Deploy(c.dag, chainID, templateId, txid, args, timeout)
 }
 
@@ -104,7 +107,9 @@ func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][
 	if initFlag == 0 {
 		return nil, errors.New("Contract not initialized")
 	}
-	return cc.Invoke(c.dag, chainID, deployId, txid, args, timeout)
+	//TODO zhichunqi
+	fmt.Println("contract=Invoke=zhichunqi=", chainID, deployId, txid)
+	return cc.Invoke(deployId, c.dag, chainID, deployId, txid, args, timeout)
 }
 
 // Stop 停止指定合约。根据需求可以对镜像文件进行删除操作
@@ -114,5 +119,7 @@ func (c *Contract) Stop(chainID string, deployId []byte, txid string, deleteImag
 	if initFlag == 0 {
 		return errors.New("Contract not initialized")
 	}
-	return cc.Stop(chainID, deployId, txid, deleteImage)
+	//TODO zhichunqi
+	fmt.Println("contract=Stop=zhichunqi=", chainID, deployId, txid)
+	return cc.Stop(deployId, chainID, deployId, txid, deleteImage)
 }

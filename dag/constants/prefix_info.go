@@ -16,7 +16,7 @@
  * @date 2018
  */
 
-package modules
+package constants
 
 // prefix info
 var (
@@ -73,6 +73,8 @@ var (
 	// token info
 	TOKENTYPE  = []byte("tp") // tp[types]
 	TOKENINFOS = []byte("tokeninfos")
+
+	STATE_VOTE_LIST = []byte("MediatorVoteList")
 )
 
 // suffix

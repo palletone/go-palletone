@@ -8,17 +8,17 @@ import (
 	"bytes"
 	"container/list"
 	"encoding/hex"
-	"github.com/pkg/errors"
+	cp "github.com/palletone/go-palletone/common/crypto"
+	db "github.com/palletone/go-palletone/contracts/comm"
+	cclist "github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag"
 	unit "github.com/palletone/go-palletone/dag/modules"
-	cp "github.com/palletone/go-palletone/common/crypto"
-	db "github.com/palletone/go-palletone/contracts/comm"
-	cclist "github.com/palletone/go-palletone/contracts/list"
+	"github.com/pkg/errors"
 )
 
 var debugX bool = true
@@ -208,6 +208,7 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 		},
 	}
 
+	//err = ucc.DeployUserCC(spec, setChainId, usrcc, txid, txsim, setTimeOut)
 	err = ucc.DeployUserCC(spec, setChainId, usrcc, txid, txsim, setTimeOut)
 	if err != nil {
 		return nil, nil, errors.New("Deploy fail")
@@ -276,7 +277,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 		return nil, nil, errors.WithMessage(err, "crypto.GetRandomNonce error")
 	}
 
-	usrccName := templateCC.Name + "-" + hex.EncodeToString(randNum)//[0:8]
+	usrccName := templateCC.Name + "-" + hex.EncodeToString(randNum) //[0:8]
 	usrcc := &ucc.UserChaincode{
 		Name:     usrccName,
 		Path:     templateCC.Path,
@@ -319,7 +320,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 //timeout:ms
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
+func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
 	logger.Infof("==========Invoke enter=======")
 	logger.Infof("deployId[%s] txid[%s]", hex.EncodeToString(deployId), txid)
 	defer logger.Infof("-----------Invoke exit--------")
@@ -357,7 +358,7 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 		return nil, err
 	}
 
-	rsp, unit, err := es.ProcessProposal(idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
+	rsp, unit, err := es.ProcessProposal(contractid, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
 	t0 := time.Now()
 	duration := t0.Sub(start)
 
@@ -371,14 +372,14 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	return unit, nil
 }
 
-func StopByName(chainID string, txid string, ccName string, ccPath string, ccVersion string, deleteImage bool) error {
+func StopByName(contractid []byte, chainID string, txid string, ccName string, ccPath string, ccVersion string, deleteImage bool) error {
 	usrcc := &ucc.UserChaincode{
 		Name:    ccName,
 		Path:    ccPath,
 		Version: ccVersion,
 		Enabled: true,
 	}
-	err := ucc.StopUserCC(chainID, usrcc, txid, deleteImage)
+	err := ucc.StopUserCC(contractid, chainID, usrcc, txid, deleteImage)
 	if err != nil {
 		errMsg := fmt.Sprintf("StopUserCC err[%s]-[%s]-err[%s]", chainID, ccName, err)
 		return errors.New(errMsg)
@@ -387,7 +388,7 @@ func StopByName(chainID string, txid string, ccName string, ccPath string, ccVer
 	return nil
 }
 
-func Stop(chainID string, deployId []byte, txid string, deleteImage bool) error {
+func Stop(contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) error {
 	logger.Infof("==========Stop enter=======")
 	logger.Infof("deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 	defer logger.Infof("-----------Stop exit--------")
@@ -403,7 +404,7 @@ func Stop(chainID string, deployId []byte, txid string, deleteImage bool) error 
 	if err != nil {
 		return err
 	}
-	err = StopByName(setChainId, txid, cc.Name, cc.Path, cc.Version, deleteImage)
+	err = StopByName(contractid, setChainId, txid, cc.Name, cc.Path, cc.Version, deleteImage)
 	if err == nil {
 		cclist.DelChaincode(chainID, cc.Name, cc.Version)
 	}

@@ -60,7 +60,7 @@ type iDag interface {
 	GetActiveMediatorAddr(index int) common.Address
 	HeadUnitNum() uint64
 	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
-	GetUnit(common.Hash) (*modules.Unit, error)
+	GetUnitByHash(common.Hash) (*modules.Unit, error)
 }
 
 type MediatorPlugin struct {

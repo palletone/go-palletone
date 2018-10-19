@@ -20,10 +20,7 @@
 package common
 
 import (
-	"time"
-
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -32,26 +29,10 @@ type PropRepository struct {
 	logger log.ILogger
 }
 type IPropRepository interface {
-	UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit)
 }
 
 func NewPropRepository(db storage.IPropertyDb, l log.ILogger) *PropRepository {
 	return &PropRepository{db: db, logger: l}
-}
-
-// UpdateGlobalDynProp, update global dynamic data
-// @author Albert·Gou
-func (rep *PropRepository) UpdateGlobalDynProp(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, unit *modules.Unit) {
-	timestamp := unit.UnitHeader.Creationdate
-	dgp.HeadUnitNum = unit.UnitHeader.Number.Index
-	dgp.HeadUnitHash = unit.UnitHash
-	dgp.HeadUnitTime = timestamp
-
-	missedUnits := uint64(modules.GetSlotAtTime(gp, dgp, time.Unix(timestamp, 0)))
-	//	println(missedUnits)
-	dgp.CurrentASlot += missedUnits + 1
-
-	rep.db.StoreDynGlobalProp(dgp)
 }
 
 /**

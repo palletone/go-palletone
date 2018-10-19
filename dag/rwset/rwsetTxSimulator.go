@@ -46,13 +46,13 @@ func NewBasedTxSimulator(idag dag.IDag, txid string) *RwSetTxSimulator {
 }
 
 // GetState implements method in interface `ledger.TxSimulator`
-func (s *RwSetTxSimulator) GetState(ns string, key string) ([]byte, error) {
+func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([]byte, error) {
 	//testValue := []byte("abc")
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
 	//TODO Devin
-	ver, val := s.state.GetContractState([]byte(ns), key)
+	ver, val := s.state.GetContractState(contractid, key)
 	//fmt.Println("xiaozhi:--", ver, val)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
 	if val == nil {

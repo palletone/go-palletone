@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 const missingNumber = uint64(0xffffffffffffffff)
@@ -105,7 +106,7 @@ func GetContractRlp(db DatabaseReader, id common.Hash) (rlp.RawValue, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")
 	}
-	con_bytes, err := db.Get(append(modules.CONTRACT_PREFIX, id[:]...))
+	con_bytes, err := db.Get(append(constants.CONTRACT_PREFIX, id[:]...))
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +115,7 @@ func GetContractRlp(db DatabaseReader, id common.Hash) (rlp.RawValue, error) {
 
 // GetAdddrTransactionsHash
 func GetAddrTransactionsHash(db DatabaseReader, addr string) ([]common.Hash, error) {
-	data, err := db.Get(append(modules.AddrTransactionsHash_Prefix, []byte(addr)...))
+	data, err := db.Get(append(constants.AddrTransactionsHash_Prefix, []byte(addr)...))
 	if err != nil {
 		return []common.Hash{}, err
 	}

@@ -25,6 +25,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 var DAO uint64 = 100000000
@@ -163,7 +164,7 @@ type UtxoIndexValue struct {
 
 func (utxoIndex *UtxoIndex) AssetKey() []byte {
 	key := fmt.Sprintf("%s%s||%s",
-		UTXO_INDEX_PREFIX,
+		constants.UTXO_INDEX_PREFIX,
 		utxoIndex.AccountAddr.String(),
 		utxoIndex.Asset.String())
 	return []byte(key)
@@ -171,13 +172,13 @@ func (utxoIndex *UtxoIndex) AssetKey() []byte {
 
 func (utxoIndex *UtxoIndex) AccountKey() []byte {
 	key := fmt.Sprintf("%s%s",
-		UTXO_INDEX_PREFIX,
+		constants.UTXO_INDEX_PREFIX,
 		utxoIndex.AccountAddr.String())
 	return []byte(key)
 }
 
 func (utxoIndex *UtxoIndex) QueryFields(key []byte) error {
-	preLen := len(UTXO_INDEX_PREFIX)
+	preLen := len(constants.UTXO_INDEX_PREFIX)
 	s := string(key[preLen:])
 	ss := strings.Split(s, "||")
 	if len(ss) != 3 {
@@ -199,7 +200,7 @@ func (utxoIndex *UtxoIndex) QueryFields(key []byte) error {
 
 func (utxoIndex *UtxoIndex) ToKey() []byte {
 	key := fmt.Sprintf("%s%s||%s||%s",
-		UTXO_INDEX_PREFIX,
+		constants.UTXO_INDEX_PREFIX,
 		utxoIndex.AccountAddr.String(),
 		utxoIndex.Asset.String(),
 		utxoIndex.OutPoint.String())
@@ -208,7 +209,7 @@ func (utxoIndex *UtxoIndex) ToKey() []byte {
 
 func (outpoint *OutPoint) ToKey() []byte {
 	// key: [UTXO_PREFIX][TxHash][MessageIndex][OutIndex]
-	key := append(UTXO_PREFIX, outpoint.TxHash.Bytes()...)
+	key := append(constants.UTXO_PREFIX, outpoint.TxHash.Bytes()...)
 	key = append(key, common.EncodeNumberUint32(outpoint.MessageIndex)...)
 	key = append(key, common.EncodeNumberUint32(outpoint.OutIndex)...)
 	return key[:]
@@ -223,7 +224,7 @@ func (outpoint *OutPoint) ToKey() []byte {
 
 func (outpoint *OutPoint) SetString(data string) error {
 	rs := []rune(data)
-	data = string(rs[len(UTXO_PREFIX):])
+	data = string(rs[len(constants.UTXO_PREFIX):])
 	if err := rlp.DecodeBytes([]byte(data), outpoint); err != nil {
 		return err
 	}
@@ -256,7 +257,7 @@ func (outpoint *OutPoint) IsEmpty() bool {
 
 func KeyToOutpoint(key []byte) *OutPoint {
 	// key: [UTXO_PREFIX][TxHash][MessageIndex][OutIndex]
-	preLen := len(UTXO_PREFIX)
+	preLen := len(constants.UTXO_PREFIX)
 	sTxHash := key[preLen : len(key)-8]
 	sMessage := key[(preLen + common.HashLength) : len(key)-4]
 	sIndex := key[(preLen + common.HashLength + 4):]
@@ -310,7 +311,7 @@ type AssetInfo struct {
 
 func (assetInfo *AssetInfo) Tokey() []byte {
 	key := fmt.Sprintf("%s%s",
-		ASSET_INFO_PREFIX,
+		constants.ASSET_INFO_PREFIX,
 		assetInfo.AssetID.AssetId.String())
 	return []byte(key)
 }

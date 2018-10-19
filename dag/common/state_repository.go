@@ -21,15 +21,14 @@
 package common
 
 import (
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
 type IStateRepository interface {
-	GetCandidateMediators() []*core.MediatorInfo
-	IsCandidateMediator(addr common.Address) bool
+	// todo albert·gou
+	//GetCandidateMediators() []*core.MediatorInfo
+	//IsCandidateMediator(addr common.Address) bool
 }
 
 type StateRepository struct {
@@ -40,29 +39,32 @@ type StateRepository struct {
 func NewStateRepository(statedb storage.IStateDb, l log.ILogger) *StateRepository {
 	return &StateRepository{statedb: statedb, logger: l}
 }
-func (rep *StateRepository) GetCandidateMediators() []*core.MediatorInfo {
-	addrs, err := rep.statedb.GetCandidateMediatorAddrList()
-	result := []*core.MediatorInfo{}
-	if err != nil {
-		return result
-	}
 
-	for _, addr := range addrs {
-		minfo, err := rep.statedb.GetAccountMediatorInfo(addr)
-		if err != nil {
-			rep.logger.Errorf("GetMediator info from address:{%s} has an error:%s", addr.String(), err)
-			continue
-		}
-		result = append(result, minfo)
-	}
-	return result
-}
+// todo albert·gou
+//func (rep *StateRepository) GetCandidateMediators() []*core.MediatorInfo {
+//	addrs, err := rep.statedb.GetCandidateMediatorAddrList()
+//	result := []*core.MediatorInfo{}
+//	if err != nil {
+//		return result
+//	}
+//
+//	for _, addr := range addrs {
+//		minfo, err := rep.statedb.GetAccountMediatorInfo(addr)
+//		if err != nil {
+//			rep.logger.Errorf("GetMediator info from address:{%s} has an error:%s", addr.String(), err)
+//			continue
+//		}
+//		result = append(result, minfo)
+//	}
+//	return result
+//}
 
-func (rep *StateRepository) IsCandidateMediator(addr common.Address) bool {
-	_, err := rep.statedb.GetAccountMediatorInfo(addr)
-	if err != nil {
-		return false
-	}
-
-	return true
-}
+// todo albert·gou
+//func (rep *StateRepository) IsCandidateMediator(addr common.Address) bool {
+//	_, err := rep.statedb.GetAccountMediatorInfo(addr)
+//	if err != nil {
+//		return false
+//	}
+//
+//	return true
+//}

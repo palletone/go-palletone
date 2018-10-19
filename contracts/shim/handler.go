@@ -247,7 +247,7 @@ func (handler *Handler) handleInit(msg *pb.ChaincodeMessage) {
 		// Call chaincode's Run
 		// Create the ChaincodeStub which the chaincode can use to callback
 		stub := new(ChaincodeStub)
-		err := stub.init(handler, msg.ChannelId, msg.Txid, input, msg.Proposal)
+		err := stub.init(handler, msg.ContractId, msg.ChannelId, msg.Txid, input, msg.Proposal)
 		if nextStateMsg = errFunc(err, nil, stub.chaincodeEvent, "[%s]Init get error response. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR.String()); nextStateMsg != nil {
 			return
 		}
@@ -322,7 +322,7 @@ func (handler *Handler) handleTransaction(msg *pb.ChaincodeMessage) {
 		// Call chaincode's Run
 		// Create the ChaincodeStub which the chaincode can use to callback
 		stub := new(ChaincodeStub)
-		err := stub.init(handler, msg.ChannelId, msg.Txid, input, msg.Proposal)
+		err := stub.init(handler, msg.ContractId, msg.ChannelId, msg.Txid, input, msg.Proposal)
 		if nextStateMsg = errFunc(err, stub.chaincodeEvent, "[%s]Transaction execution failed. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR.String()); nextStateMsg != nil {
 			return
 		}
@@ -404,12 +404,12 @@ func (handler *Handler) callPeerWithChaincodeMsg(msg *pb.ChaincodeMessage, chann
 
 // TODO: Implement a method to get multiple keys at a time [FAB-1244]
 // handleGetState communicates with the peer to fetch the requested state information from the ledger.
-func (handler *Handler) handleGetState(collection string, key string, channelId string, txid string) ([]byte, error) {
+func (handler *Handler) handleGetState(collection string, key string, contractid []byte, channelId string, txid string) ([]byte, error) {
 	// Construct payload for GET_STATE
 
 	payloadBytes, _ := proto.Marshal(&pb.GetState{Collection: collection, Key: key})
 
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_STATE, Payload: payloadBytes, Txid: txid, ChannelId: channelId}
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_STATE, Payload: payloadBytes, Txid: txid, ChannelId: channelId, ContractId: contractid}
 	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_STATE)
 
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)

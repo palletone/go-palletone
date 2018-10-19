@@ -22,12 +22,13 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"strings"
 )
 
 func (statedb *StateDb) SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error {
-	key := append(modules.CONTRACT_TPL, templateId...)
+	key := append(constants.CONTRACT_TPL, templateId...)
 	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	key = append(key, []byte(modules.FIELD_TPL_BYTECODE)...)
 	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
@@ -44,7 +45,7 @@ To get contract or contract template all fields and return
 */
 func (statedb *StateDb) GetTplAllState(id []byte) []*modules.ContractReadSet {
 	// key format: [PREFIX][ID]_[field]_[version]
-	key := append(modules.CONTRACT_TPL, id...)
+	key := append(constants.CONTRACT_TPL, id...)
 	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) <= 0 {
@@ -76,7 +77,7 @@ To get contract or contract template one field
 */
 func (statedb *StateDb) GetTplState(id []byte, field string) (*modules.StateVersion, []byte) {
 	//key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, hexutil.Encode(id[:]), field)
-	key := append(modules.CONTRACT_TPL, id...)
+	key := append(constants.CONTRACT_TPL, id...)
 	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	key = append(key, []byte(field)...)
 	data := getprefix(statedb.db, []byte(key))
@@ -98,7 +99,7 @@ func (statedb *StateDb) GetTplState(id []byte, field string) (*modules.StateVers
 To get contract template
 */
 func (statedb *StateDb) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
-	key := append(modules.CONTRACT_TPL, templateID...)
+	key := append(constants.CONTRACT_TPL, templateID...)
 	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	key = append(key, []byte(modules.FIELD_TPL_BYTECODE)...)
 	data := statedb.GetPrefix(key)

@@ -17,16 +17,15 @@
  * @date 2018
  */
 
-
 package core
 
 import (
 	"context"
 
+	"errors"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"time"
-	"errors"
 )
 
 // ccProviderFactory implements the ccprovider.ChaincodeProviderFactory
@@ -69,14 +68,15 @@ type ccProviderContextImpl struct {
 //	return ctxt, txsim, nil
 //}
 
-func (c *ccProviderImpl) GetContext() (context.Context, error){
+func (c *ccProviderImpl) GetContext() (context.Context, error) {
 	return nil, nil
 }
+
 // GetCCContext returns an interface that encapsulates a
 // chaincode context; the interface is required to avoid
 // referencing the chaincode package from the interface definition
-func (c *ccProviderImpl) GetCCContext(cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal) interface{} {
-	ctx := ccprovider.NewCCContext(cid, name, version, txid, syscc, signedProp, prop)
+func (c *ccProviderImpl) GetCCContext(contractid []byte, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal) interface{} {
+	ctx := ccprovider.NewCCContext(contractid, cid, name, version, txid, syscc, signedProp, prop)
 	return &ccProviderContextImpl{ctx: ctx}
 }
 
