@@ -27,6 +27,7 @@ import (
 	"sync"
 	"time"
 
+	"encoding/json"
 	"github.com/golang/protobuf/proto"
 	"github.com/looplab/fsm"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
@@ -104,6 +105,13 @@ type Handler struct {
 	nextState chan *nextStateInfo
 }
 
+type DepositContract struct {
+	DepositContractAddress string
+	DepositAmount          uint64
+	DepositRate            float64
+	FoundationAddress      string
+}
+
 //TODO xiaozhi
 func (handler *Handler) enterGetDepositConfig(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
@@ -144,9 +152,19 @@ func (handler *Handler) enterGetDepositConfig(e *fsm.Event) {
 		chaincodeID := handler.getCCRootName()
 		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, txContext.chainID)
 		//TODO 这里要获取配置文件的信息
-		configBytes := []byte("配置文件")
+		depositContract := DepositContract{
+			DepositContractAddress: "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM",
+			DepositAmount:          1000,
+			DepositRate:            0.02,
+			FoundationAddress:      "P1GTwUBjmpoRGDDG1FvQWnDza3d8eNVffYT",
+		}
+		depositContractBytes, err := json.Marshal(&depositContract)
+		if err != nil {
+			chaincodeLogger.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+			return
+		}
 		chaincodeLogger.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
-		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: configBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: depositContractBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
 	}()
 }
 func (handler *Handler) enterGetPayToContractAddr(e *fsm.Event) {

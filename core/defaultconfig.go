@@ -20,17 +20,19 @@
 package core
 
 const (
-	DefaultAlias               = "PTN"
-	DefaultMediatorInterval    = 2 //5
-	DefaultMediatorCount       = 21
-	DefaultTokenAmount         = 100000000000000000
-	DefaultTokenDecimal        = 8
-	DefaultChainID             = 1
-	DefaultDepositRate         = 0.02
-	DefaultTokenHolder         = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
-	DefaultPassword            = "password"
-	DefaultMinMediatorCount    = 11
-	DefaultMinMediatorInterval = 1
+	DefaultAlias                  = "PTN"
+	DefaultMediatorInterval       = 2 //5
+	DefaultMediatorCount          = 21
+	DefaultTokenAmount            = 100000000000000000
+	DefaultTokenDecimal           = 8
+	DefaultChainID                = 1
+	DefaultDepositRate            = 0.02
+	DefaultDepositAmount          = 1000
+	DefaultDepositContractAddress = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
+	DefaultTokenHolder            = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
+	DefaultPassword               = "password"
+	DefaultMinMediatorCount       = 11
+	DefaultMinMediatorInterval    = 1
 
 	//DefaultText = "Hello PalletOne!",
 	DefaultText = "姓名 丨 坐标 丨 简介   \r\n" +

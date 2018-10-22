@@ -32,6 +32,10 @@ type SystemConfig struct {
 	DepositRate float64 `json:"depositRate"`
 	//基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
 	FoundationAddress string `json:"foundationAddress"`
+	//保证金的数量
+	DepositAmount uint64 `json:"depositAmount"`
+	//这是保证金的地址
+	DepositContractAddress string `json:"depositContractAddress"`
 }
 
 type Genesis struct {

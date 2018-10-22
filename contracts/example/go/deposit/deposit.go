@@ -21,13 +21,21 @@
 package deposit
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"strconv"
 )
 
-type DepositChaincode struct{}
+var depositChaincode = new(DepositChaincode)
+
+type DepositChaincode struct {
+	DepositContractAddress string
+	DepositAmount          uint64
+	DepositRate            float64
+	FoundationAddress      string
+}
 
 func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	fmt.Println("***system contract init about DepositChaincode***")
@@ -37,8 +45,13 @@ func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 		fmt.Println("deposit error: ", err.Error())
 		return shim.Error(err.Error())
 	}
-	fmt.Println("deposit=", string(depositConfigBytes))
-	return shim.Success(nil)
+	err = json.Unmarshal(depositConfigBytes, depositChaincode)
+	if err != nil {
+		fmt.Println("unmarshal depositConfigBytes error ", err)
+		return shim.Error(err.Error())
+	}
+	//fmt.Printf("DepositChaincode=%#v\n\n", depositChaincode)
+	return shim.Success([]byte("ok"))
 }
 
 func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
@@ -85,12 +98,17 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	if len(args) != 2 {
 		return shim.Error("input error: need two args (witnessAddr and ptnAmount)")
 	}
+
 	//将 string 转 uint64
 	ptnAccount, err := strconv.ParseUint(args[1], 10, 64)
 	if err != nil {
 		return shim.Error("ptnAccount input error: " + err.Error())
 	}
-
+	//与保证金合约设置的数量比较
+	if ptnAccount < depositChaincode.DepositAmount {
+		fmt.Println("input ptnAmount less than deposit amount.")
+		return shim.Error("input ptnAmount less than deposit amount.")
+	}
 	//TODO 这里需要对msg0对象，获取其中的付款的数量，以来和参数比较是否大于或等于，否则返回出错
 
 	//获取一下该用户下的账簿情况
