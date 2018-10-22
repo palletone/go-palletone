@@ -38,7 +38,7 @@ import (
 )
 
 func TestSaveJoint(t *testing.T) {
-	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	Dbconn := ptndb.NewMemDatabase()
 	if Dbconn == nil {
 		fmt.Println("Connect to db error.")
 		return
@@ -59,9 +59,10 @@ func TestSaveJoint(t *testing.T) {
 }
 
 func TestAddUnitKey(t *testing.T) {
-	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	// Dbconn := ReNewDbConn(dagconfig.DbPath)
+	Dbconn := ptndb.NewMemDatabase()
 	if Dbconn == nil {
-		fmt.Println("Connect ro db error.")
+		fmt.Println("Connect mem db error.")
 		return
 	}
 	keys := []string{"unit1231526522017", "unit1231526521834"}
@@ -80,9 +81,9 @@ func TestAddUnitKey(t *testing.T) {
 }
 
 func TestGetUnitKeys(t *testing.T) {
-	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	Dbconn := ptndb.NewMemDatabase()
 	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
+		fmt.Println("Connect mem db error.")
 		return
 	}
 	t0 := time.Now()
@@ -115,9 +116,9 @@ func TestGetUnitKeys(t *testing.T) {
 }
 
 func TestDBBatch(t *testing.T) {
-	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	Dbconn := ptndb.NewMemDatabase()
 	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
+		fmt.Println("Connect mem  db error.")
 		return
 	}
 	log.Println("db_path:", DBPath)
@@ -145,7 +146,7 @@ func TestSaveUtxos(t *testing.T) {
 	// 0. initiate db
 	Dbconn, err := ptndb.NewMemDatabase()
 	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
+		fmt.Println("Connect mem db error.")
 		return
 	}
 	log.Println("db_path:", DBPath)
