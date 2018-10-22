@@ -75,6 +75,8 @@ func (mp *MediatorPlugin) setTimeout() {
 }
 
 func (mp *MediatorPlugin) areCertified() (certified bool) {
+	mp.ctfLock.Lock()
+
 	for _, flag := range mp.certifiedFlag {
 		certified = flag
 		if !certified {
@@ -82,6 +84,7 @@ func (mp *MediatorPlugin) areCertified() (certified bool) {
 		}
 	}
 
+	mp.ctfLock.Unlock()
 	return
 }
 
@@ -235,7 +238,10 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 				log.Debug(fmt.Sprintf("%v's DKG verification passed!", localMed.Str()))
 
 				certified = true
+
+				mp.ctfLock.Lock()
 				mp.certifiedFlag[localMed] = true
+				mp.ctfLock.Unlock()
 			}
 		}
 
