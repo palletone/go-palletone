@@ -21,12 +21,13 @@ package dag
 
 import (
 	"fmt"
-	"github.com/coocood/freecache"
-	"github.com/palletone/go-palletone/tokenengine"
 	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/coocood/freecache"
+	"github.com/palletone/go-palletone/tokenengine"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
@@ -1006,6 +1007,7 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 //	return dag.stateRep.GetCandidateMediators()
 //}
 
+// GetElectedMediatorsAddress Yiran@
 func (dag *Dag) GetElectedMediatorsAddress() ([]common.Address, error) {
 	gp, err := dag.propdb.RetrieveGlobalProp()
 	if err != nil {
@@ -1013,4 +1015,15 @@ func (dag *Dag) GetElectedMediatorsAddress() ([]common.Address, error) {
 	}
 	MediatorNumber := gp.GetActiveMediatorCount()
 	return dag.statedb.GetSortedVote(uint(MediatorNumber))
+}
+
+// UpdateMediator
+func (d *Dag) UpdateMediator() error {
+	mas, err := d.GetElectedMediatorsAddress()
+	if err != nil {
+		return err
+	}
+	fmt.Println(mas)
+	//TODO
+	return nil
 }
