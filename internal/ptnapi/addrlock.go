@@ -19,9 +19,11 @@ package ptnapi
 import (
 	"encoding/hex"
 	"fmt"
+	"math"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/dag/modules"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"sync"
 )
 
@@ -102,7 +104,22 @@ const (
 	// to identify which outputs are signed.
 	sigHashMask = 0x1f
 )
+var (
+	// zeroHash is the zero value for a chainhash.Hash and is defined as
+	// a package level variable to avoid the need to create a new instance
+	// every time a check is needed.
+	zeroHash common.Hash
 
+	// block91842Hash is one of the two nodes which violate the rules
+	// set forth in BIP0030.  It is defined as a package level variable to
+	// avoid the need to create a new instance every time a check is needed.
+	//block91842Hash ,err = common.NewHashFromStr("00000000000a4d0a398161ffc163c503763b1f4360639393e0e4c8e300e0caec")
+
+	// block91880Hash is one of the two nodes which violate the rules
+	// set forth in BIP0030.  It is defined as a package level variable to
+	// avoid the need to create a new instance every time a check is needed.
+	//block91880Hash ,err = common.NewHashFromStr("00000000000743f190a18c5577a3c2d2a1f610ae9601ac046a38084ccb7cd721")
+)
 type (
 	// DeserializationError describes a failed deserializaion due to bad
 	// user input.  It corresponds to btcjson.ErrRPCDeserialization.
@@ -134,6 +151,14 @@ type SignTransactionParams struct {
 	Flags    string   `jsonrpcdefault:"\"ALL\""`
 }
 
+// isNullOutpoint determines whether or not a previous transaction output point
+// is set.
+func isNullOutpoint(outpoint *modules.OutPoint) bool {
+	if outpoint.OutIndex == math.MaxUint32 && outpoint.TxHash == zeroHash {
+		return true
+	}
+	return false
+}
 //type SignTransactionResult struct {
 //        TransactionHex string `json:"transactionhex"`
 //        Complete       bool   `json:"complete"`
@@ -229,22 +254,22 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 	}
 
 	// Coinbase script length must be between min and max length.
-	/*if dag.IsCoinBase(tx) {
+	if dagcommon.IsCoinBase(tx) {
 		slen := len(payload.Input[0].SignatureScript)
-		if slen < MinCoinbaseScriptLen || slen > MaxCoinbaseScriptLen {
+		if slen < ptnjson.MinCoinbaseScriptLen || slen > ptnjson.MaxCoinbaseScriptLen {
 			str := fmt.Sprintf("coinbase transaction script length "+
 				"of %d is out of range (min: %d, max: %d)",
-				slen, MinCoinbaseScriptLen, MaxCoinbaseScriptLen)
+				slen, ptnjson.MinCoinbaseScriptLen, ptnjson.MaxCoinbaseScriptLen)
 			return  &ptnjson.RPCError{
 					Code:    ptnjson.ErrBadCoinbaseScriptLen,
-					Message:  "transaction "+"contains duplicate inputs",
+					Message:  str,
 				}
 		}
 	} else {
 		    // Previous transaction outputs referenced by the inputs to this
 		    // transaction must not be null.
 			for _, txIn := range payload.Input {
-				if isNullOutpoint(&txIn.PreviousOutPoint) {
+				if isNullOutpoint(txIn.PreviousOutPoint) {
 					return  &ptnjson.RPCError{
 					    Code:    ptnjson.ErrBadTxInput,
 					    Message:  "transaction "+
@@ -253,7 +278,7 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 				    }
 				}
 			}
-	    }*/
+	    }
     }
 
 	return nil

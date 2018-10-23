@@ -64,6 +64,7 @@ const (
 	pubkeyUncompressed byte = 0x4 // x coord + y coord
 	pubkeyHybrid       byte = 0x6 // y_bit + x coord + y coord
     MinCoinbaseScriptLen = 2
+    MaxCoinbaseScriptLen = 100
 )
 
 // Wallet JSON errors
@@ -93,6 +94,7 @@ const (
 	ErrBadTxOutValue        RPCErrorCode = -23
     ErrDuplicateTxInputs    RPCErrorCode = -24
     ErrBadCoinbaseScriptLen RPCErrorCode = -25
+    ErrBadTxInput           RPCErrorCode = -26
 )
 const (
 	// MaxBlockWeight defines the maximum block weight, where "block
@@ -220,8 +222,6 @@ const (
 	// ErrBadTxInput indicates a transaction input is invalid in some way
 	// such as referencing a previous transaction outpoint which is out of
 	// range or not referencing one at all.
-	ErrBadTxInput
-
 	// ErrMissingTxOut indicates a transaction output referenced by an input
 	// either does not exist or has already been spent.
 	ErrMissingTxOut
