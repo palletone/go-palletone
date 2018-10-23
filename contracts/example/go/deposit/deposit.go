@@ -75,7 +75,6 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//	fmt.Println("GetPayToContractTokens error: ", err.Error())
 		//}
 		//fmt.Println("GetPayToContractTokens=", string(tokenAmount))
-
 		return d.depositWitnessPay(stub, args)
 	case "DepositCashback":
 		//保证金退还

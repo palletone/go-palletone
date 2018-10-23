@@ -57,6 +57,7 @@ message ChaincodeMessage {
         PAYTO_TOKEN_REQUEST = 23;
         DEPOSIT_CONFIG_REQUEST = 24;
         USER_ADDR_REQUEST = 25;
+        GET_CONTRACT_ALL_STATE = 26;
     }
 
     Type type = 1;

@@ -68,6 +68,7 @@ type IDag interface {
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
 
 	GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte)
+	GetContractAllStateByContractId(contract []byte) []*modules.ContractReadSet
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetHeadHeaderHash() (common.Hash, error)

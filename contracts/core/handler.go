@@ -38,6 +38,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/sysccprovider"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/vm/ccintf"
 	"github.com/pkg/errors"
@@ -255,6 +256,63 @@ func (handler *Handler) enterGetPayToContractTokens(e *fsm.Event) {
 		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: configBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
 	}()
 }
+
+func (handler *Handler) enterGetContractAllState(e *fsm.Event) {
+	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
+	if !ok {
+		e.Cancel(errors.New("received unexpected message type"))
+		return
+	}
+	chaincodeLogger.Debugf("[%s]Received %s, invoking get state from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE)
+	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
+	// is completed before the next one is triggered. The previous state transition is deemed complete only when
+	// the afterGetState function is exited. Interesting bug fix!!
+	go func() {
+		// Check if this is the unique state request from this chaincode txid
+		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
+		if !uniqueReq {
+			// Drop this request
+			chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
+			return
+		}
+
+		var serialSendMsg *pb.ChaincodeMessage
+		var txContext *transactionContext
+		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid, "[%s]No ledger context for GetState. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+
+		defer func() {
+			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
+			if serialSendMsg != nil {
+				chaincodeLogger.Debugf("[%s]handleenterGetDepositConfig serial send %s",
+					shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+				handler.serialSendAsync(serialSendMsg, nil)
+			}
+		}()
+
+		if txContext == nil {
+			chaincodeLogger.Error("txContext is nil.")
+			return
+		}
+		chaincodeID := handler.getCCRootName()
+		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, txContext.chainID)
+		//TODO 这里要获取该合约下的所有的状态
+		contractAllStates := make([]*modules.ContractReadSet, 0)
+		if txContext.txsimulator != nil {
+			contractAllStates = txContext.txsimulator.GetContractAllState(msg.ContractId)
+		}
+		//for _, v := range contractAllStates {
+		//	fmt.Println("----%#v\n\n", v)
+		//}
+		contractAllStatesBytes, err := json.Marshal(contractAllStates)
+		if err != nil {
+			fmt.Println("marshal contractAllStates error", err)
+			return
+		}
+		chaincodeLogger.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
+		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: contractAllStatesBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
+	}()
+}
+
 func shorttxid(txid string) string {
 	if len(txid) < 8 {
 		return txid
@@ -608,6 +666,7 @@ func newChaincodeSupportHandler(chaincodeSupport *ChaincodeSupport, peerChatStre
 			{Name: pb.ChaincodeMessage_DEPOSIT_CONFIG_REQUEST.String(), Src: []string{readystate}, Dst: readystate},
 			{Name: pb.ChaincodeMessage_USER_ADDR_REQUEST.String(), Src: []string{readystate}, Dst: readystate},
 			{Name: pb.ChaincodeMessage_PAYTO_TOKEN_REQUEST.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE.String(), Src: []string{readystate}, Dst: readystate},
 		},
 		fsm.Callbacks{
 			"before_" + pb.ChaincodeMessage_REGISTER.String():              func(e *fsm.Event) { v.beforeRegisterEvent(e, v.FSM.Current()) },
@@ -630,6 +689,7 @@ func newChaincodeSupportHandler(chaincodeSupport *ChaincodeSupport, peerChatStre
 			"after_" + pb.ChaincodeMessage_DEPOSIT_CONFIG_REQUEST.String(): func(e *fsm.Event) { v.enterGetDepositConfig(e) },
 			"after_" + pb.ChaincodeMessage_USER_ADDR_REQUEST.String():      func(e *fsm.Event) { v.enterGetPayToContractAddr(e) },
 			"after_" + pb.ChaincodeMessage_PAYTO_TOKEN_REQUEST.String():    func(e *fsm.Event) { v.enterGetPayToContractTokens(e) },
+			"after_" + pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE.String(): func(e *fsm.Event) { v.enterGetContractAllState(e) },
 		},
 	)
 
