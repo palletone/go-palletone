@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"sync"
 )
 
 // PalletOne wraps all methods required for producing unit.
@@ -85,6 +86,7 @@ type MediatorPlugin struct {
 	// dkg 完成 vss 协议相关
 	respBuf       map[common.Address]map[common.Address]chan *dkg.Response
 	certifiedFlag map[common.Address]bool
+	ctfLock       sync.Mutex
 
 	// 广播和处理 vss 协议 deal
 	vssDealFeed  event.Feed

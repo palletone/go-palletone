@@ -27,6 +27,7 @@ import (
 	"sync"
 	"time"
 
+	"encoding/json"
 	"github.com/golang/protobuf/proto"
 	"github.com/looplab/fsm"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
@@ -104,6 +105,13 @@ type Handler struct {
 	nextState chan *nextStateInfo
 }
 
+type DepositContract struct {
+	DepositContractAddress string
+	DepositAmount          uint64
+	DepositRate            float64
+	FoundationAddress      string
+}
+
 //TODO xiaozhi
 func (handler *Handler) enterGetDepositConfig(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
@@ -144,9 +152,19 @@ func (handler *Handler) enterGetDepositConfig(e *fsm.Event) {
 		chaincodeID := handler.getCCRootName()
 		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, txContext.chainID)
 		//TODO 这里要获取配置文件的信息
-		configBytes := []byte("配置文件")
+		depositContract := DepositContract{
+			DepositContractAddress: "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM",
+			DepositAmount:          1000,
+			DepositRate:            0.02,
+			FoundationAddress:      "P1GTwUBjmpoRGDDG1FvQWnDza3d8eNVffYT",
+		}
+		depositContractBytes, err := json.Marshal(&depositContract)
+		if err != nil {
+			chaincodeLogger.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+			return
+		}
 		chaincodeLogger.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
-		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: configBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: depositContractBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
 	}()
 }
 func (handler *Handler) enterGetPayToContractAddr(e *fsm.Event) {
@@ -820,7 +838,7 @@ func (handler *Handler) handleGetState(msg *pb.ChaincodeMessage) {
 			//res, err = txContext.txsimulator.GetState(chaincodeID, getState.Key)
 		}
 		if txContext.txsimulator != nil {
-			res, err = txContext.txsimulator.GetState(chaincodeID, getState.Key)
+			res, err = txContext.txsimulator.GetState(msg.ContractId, chaincodeID, getState.Key)
 		}
 		if err != nil {
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(err.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
@@ -1588,7 +1606,7 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 				version = util.GetSysCCVersion()
 			}
 
-			cccid := ccprovider.NewCCContext(calledCcIns.ChainID, calledCcIns.ChaincodeName, version, msg.Txid, false, txContext.signedProp, txContext.proposal)
+			cccid := ccprovider.NewCCContext(msg.ContractId, calledCcIns.ChainID, calledCcIns.ChaincodeName, version, msg.Txid, false, txContext.signedProp, txContext.proposal)
 
 			// Launch the new chaincode if not already running
 			chaincodeLogger.Debugf("[%s] launching chaincode %s on channel %s",
@@ -1603,7 +1621,7 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 			// TODO: Need to handle timeout correctly
 			//timeout := time.Duration(30000) * time.Millisecond
 			timeout := cfg.GetConfig().ContractDeploytimeout
-			ccMsg, _ := createCCMessage(pb.ChaincodeMessage_TRANSACTION, calledCcIns.ChainID, msg.Txid, chaincodeInput)
+			ccMsg, _ := createCCMessage(msg.ContractId, pb.ChaincodeMessage_TRANSACTION, calledCcIns.ChainID, msg.Txid, chaincodeInput)
 
 			// Execute the chaincode... this CANNOT be an init at least for now
 			response, execErr := handler.chaincodeSupport.Execute(ctxt, cccid, ccMsg, timeout)

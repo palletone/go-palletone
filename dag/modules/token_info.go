@@ -64,6 +64,10 @@ func (it *IDType16) String() string {
 	return hexutil.Encode(it.Bytes()[:])
 }
 
+func (it *IDType16) TokenType() string {
+	return string(it.Bytes()[:])
+}
+
 func (it *IDType16) Bytes() []byte {
 	idBytes := make([]byte, len(it))
 	for i := 0; i < len(it); i++ {

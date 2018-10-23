@@ -8,5 +8,5 @@ import (
 )
 
 type EndorserServer interface {
-	ProcessProposal(dag.IDag, []byte, context.Context, *SignedProposal, *Proposal, string, *ChaincodeID, time.Duration) (*ProposalResponse, *unit.ContractInvokePayload, error)
+	ProcessProposal([]byte, dag.IDag, []byte, context.Context, *SignedProposal, *Proposal, string, *ChaincodeID, time.Duration) (*ProposalResponse, *unit.ContractInvokePayload, error)
 }

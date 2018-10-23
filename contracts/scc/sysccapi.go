@@ -25,15 +25,15 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
+	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/vm/inproccontroller"
 
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	cclist "github.com/palletone/go-palletone/contracts/list"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
+	cclist "github.com/palletone/go-palletone/contracts/list"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
 
 var sysccLogger = flogging.MustGetLogger("sccapi")
@@ -108,22 +108,22 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 	ctxt := context.Background()
 	//glh
 	/*
-	if chainID != "" {
-		lgr := peer.GetLedger(chainID)
-		if lgr == nil {
-			panic(fmt.Sprintf("syschain %s start up failure - unexpected nil ledger for channel %s", syscc.Name, chainID))
-		}
+		if chainID != "" {
+			lgr := peer.GetLedger(chainID)
+			if lgr == nil {
+				panic(fmt.Sprintf("syschain %s start up failure - unexpected nil ledger for channel %s", syscc.Name, chainID))
+			}
 
-		//init can do GetState (and other Get's) even if Puts cannot be
-		//be handled. Need ledger for this
-		ctxt2, txsim, err := ccprov.GetContext(lgr, txid)
-		if err != nil {
-			return err
+			//init can do GetState (and other Get's) even if Puts cannot be
+			//be handled. Need ledger for this
+			ctxt2, txsim, err := ccprov.GetContext(lgr, txid)
+			if err != nil {
+				return err
+			}
+			ctxt = ctxt2
+			defer txsim.Done()
 		}
-		ctxt = ctxt2
-		defer txsim.Done()
-	}
-*/
+	*/
 	chaincodeID := &pb.ChaincodeID{Path: syscc.Path, Name: syscc.Name}
 	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: syscc.InitArgs}}
 
@@ -136,7 +136,7 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 	}
 	sysccLogger.Info("buildSysCC chaincodeDeploymentSpec =%v", chaincodeDeploymentSpec)
 	version := util.GetSysCCVersion()
-	cccid := ccprov.GetCCContext(chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, version, txid, true, nil, nil)
+	cccid := ccprov.GetCCContext(syscc.Id, chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, version, txid, true, nil, nil)
 
 	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, 0)
 
@@ -174,7 +174,7 @@ func DeDeploySysCC(chainID string, syscc *SystemChaincode) error {
 
 	ccprov := ccprovider.GetChaincodeProvider()
 	version := util.GetSysCCVersion()
-	cccid := ccprov.GetCCContext(chainID, syscc.Name, version, "123", true, nil, nil)
+	cccid := ccprov.GetCCContext(syscc.Id, chainID, syscc.Name, version, "123", true, nil, nil)
 	err = ccprov.Stop(ctx, cccid, chaincodeDeploymentSpec)
 	if err == nil {
 		cclist.DelChaincode(chainID, syscc.Name, version)

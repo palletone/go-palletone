@@ -35,6 +35,7 @@ func (statedb *StateDb) GetAccountInfo(address common.Address) (*modules.Account
 	}
 	return info, nil
 }
+
 func (statedb *StateDb) SaveAccountInfo(address common.Address, info *modules.AccountInfo) error {
 	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes()...)
 	return StoreBytes(statedb.db, key, info)

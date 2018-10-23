@@ -23,16 +23,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/common"
-	plog "github.com/palletone/go-palletone/common/log"
-	palletdb "github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/dag/modules"
 	"log"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/palletone/go-palletone/common"
+	plog "github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func TestSaveJoint(t *testing.T) {
@@ -119,7 +121,7 @@ func TestDBBatch(t *testing.T) {
 		return
 	}
 	log.Println("db_path:", DBPath)
-	table := palletdb.NewTable(Dbconn, "hehe")
+	table := ptndb.NewTable(Dbconn, "hehe")
 	err0 := table.Put([]byte("jay"), []byte("baby"))
 	log.Println("err0:", err0)
 
@@ -141,7 +143,7 @@ func NewAirPlane() *airPlane {
 
 func TestSaveUtxos(t *testing.T) {
 	// 0. initiate db
-	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	Dbconn, err := ptndb.NewMemDatabase()
 	if Dbconn == nil {
 		fmt.Println("Connect to db error.")
 		return
@@ -177,7 +179,7 @@ func TestAddToken(t *testing.T) {
 	// 	fmt.Println("Connect to db error.")
 	// 	return
 	// }
-	dbconn, _ := palletdb.NewMemDatabase()
+	dbconn, _ := ptndb.NewMemDatabase()
 
 	token := new(modules.TokenInfo)
 	token.TokenHex = modules.PTNCOIN.String()
@@ -187,19 +189,19 @@ func TestAddToken(t *testing.T) {
 	token.CreationDate = time.Now().Format(modules.TimeFormatString)
 	infos := new(tokenInfo)
 	infos.Items = make(map[string]*modules.TokenInfo)
-	infos.Items[string(modules.TOKENTYPE)+token.TokenHex] = token
+	infos.Items[string(constants.TOKENTYPE)+token.TokenHex] = token
 	// bytes, err := rlp.EncodeToBytes(infos)
 	// if err != nil {
 	// 	t.Errorf("error: %v", err)
 	// 	return
 	// }
 	bytes, _ := json.Marshal(infos)
-	if err := dbconn.Put(modules.TOKENINFOS, bytes); err != nil {
+	if err := dbconn.Put(constants.TOKENINFOS, bytes); err != nil {
 		t.Error("failed")
 		return
 	}
 
-	if bytes, err := dbconn.Get(modules.TOKENINFOS); err != nil {
+	if bytes, err := dbconn.Get(constants.TOKENINFOS); err != nil {
 		t.Error("get token infos error:", err)
 		return
 	} else {

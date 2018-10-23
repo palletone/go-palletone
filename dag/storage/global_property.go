@@ -73,11 +73,9 @@ func getGP(gpt *globalProperty) *modules.GlobalProperty {
 }
 
 func StoreGlobalProp(db ptndb.Database, gp *modules.GlobalProperty) error {
-
 	gpt := getGPT(gp)
 
 	err := StoreBytes(db, GlobalPropDBKey, gpt)
-
 	if err != nil {
 		log.Error(fmt.Sprintf("Store global properties error:%s", err))
 	}
@@ -86,7 +84,6 @@ func StoreGlobalProp(db ptndb.Database, gp *modules.GlobalProperty) error {
 }
 
 func StoreDynGlobalProp(db ptndb.Database, dgp *modules.DynamicGlobalProperty) error {
-
 	err := StoreBytes(db, DynGlobalPropDBKey, *dgp)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store dynamic global properties error: %s", err))

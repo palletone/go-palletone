@@ -27,7 +27,7 @@ import (
 type Contract struct {
 	//Contract Id 即Address，[20]byte，
 	// 根据用户创建合约实例申请的RequestId截取其后20字节生成
-	Id       common.Address
+	Id       []byte
 	Name     string
 	ConType  string // 合约类型： 系统合约 用户合约
 	LangCode string // 代码类别
