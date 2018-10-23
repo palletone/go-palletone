@@ -48,7 +48,9 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		log.Info("GetBlockHeadersMsg Decode", "err:", err, "msg:", msg)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
+
 	log.Debug("ProtocolManager", "GetBlockHeadersMsg getBlockHeadersData:", query)
+
 	hashMode := query.Origin.Hash != (common.Hash{})
 	log.Debug("ProtocolManager", "GetBlockHeadersMsg hashMode:", hashMode)
 	// Gather headers until the fetch or network limits is reached
@@ -64,6 +66,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		if hashMode {
 			origin = pm.dag.GetHeaderByHash(query.Origin.Hash)
 		} else {
+			log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Origin.Number:", query.Origin.Number)
 			origin = pm.dag.GetHeaderByNumber(query.Origin.Number)
 		}
 		log.Debug("ProtocolManager", "GetBlockHeadersMsg origin:", origin)

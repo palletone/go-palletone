@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -56,6 +57,7 @@ type IDagDb interface {
 	SaveTransactions(txs *modules.Transactions) error
 	SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
 	SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
+	GetHashByNumber(number modules.ChainIndex) (common.Hash, error)
 	SaveTxLookupEntry(unit *modules.Unit) error
 	SaveTokenInfo(token_info *modules.TokenInfo) (string, error)
 	SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error
@@ -122,7 +124,35 @@ func (dagdb *DagDb) SaveHashByNumber(uHash common.Hash, number modules.ChainInde
 		i = 1
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
-	return StoreBytes(dagdb.db, []byte(key), uHash.Hex())
+	return StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), uHash.Hex())
+}
+
+func (dagdb *DagDb) GetHashByNumber(number modules.ChainIndex) (common.Hash, error) {
+	i := 0
+	if number.IsMain {
+		i = 1
+	}
+	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
+	ha, err := GetBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)))
+	if err != nil {
+		return common.Hash{}, err
+	}
+	log.Info("DagDB", "GetHashByNumber key:", string(key), "hash:", string(ha))
+	//hash := common.Hash{}
+	strhash := ""
+	err1 := rlp.DecodeBytes(ha, &strhash) //rlp.EncodeToBytes(val)
+	if err1 != nil {
+		log.Debug("GetHashByNumber", "DecodeBytes err:", err1)
+		return common.Hash{}, err1
+	}
+	hash := common.Hash{}
+	if err := hash.SetHexString(strhash); err != nil {
+		log.Debug("GetHashByNumber", "SetHexString err:", err)
+		return common.Hash{}, err
+	}
+
+	return hash, nil
+	//return StoreBytes(dagdb.db, []byte(key), uHash.Hex())
 }
 
 // height and assetid can get a unit key.
@@ -399,7 +429,7 @@ func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	dagdb.logger.Debug("index info:", "height", height.String(), "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 	//fmt.Printf("height=%#v\n", height)
 	if err != nil {
-		dagdb.logger.Error("GetUnit when GetUnitNumber failed , error:", err)
+		dagdb.logger.Error("GetUnit when GetUnitNumber failed", "error:", err)
 		return nil, err
 	}
 	// 2. unit header

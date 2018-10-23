@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -274,7 +275,6 @@ type Output struct {
 	Value    uint64
 	PkScript []byte
 	Asset    *Asset
-	Vote     common.Address // 投票结果
 }
 type Input struct {
 	PreviousOutPoint *OutPoint

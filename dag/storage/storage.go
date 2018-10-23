@@ -20,6 +20,7 @@
 package storage
 
 import (
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/util"
@@ -58,6 +59,16 @@ func StoreBytes(db ptndb.Database, key []byte, value interface{}) error {
 	}
 	return nil
 }
+
+func GetBytes(db ptndb.Database, key []byte) ([]byte, error) {
+	val, err := db.Get(key)
+	if err != nil {
+		return []byte{}, err
+	}
+	log.Info("storage GetBytes", "key:", string(key), "value:", string(val))
+	return val, nil
+}
+
 func StoreBytesWithVersion(db ptndb.Database, key []byte, version *modules.StateVersion, value interface{}) error {
 	val, err := rlp.EncodeToBytes(value)
 	if err != nil {
