@@ -17,13 +17,8 @@
 package ptn
 
 import (
-	//"fmt"
-	//"io"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
-
-	//"github.com/palletone/go-palletone/common/rlp"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -152,9 +147,9 @@ func (hn *hashOrNumber) EncodeRLP(w io.Writer) error {
 	if hn.Hash == (common.Hash{}) {
 		return rlp.Encode(w, hn.Number)
 	}
-	if hn.Number.Index != 0 {
-		return fmt.Errorf("both origin hash (%x) and number (%d) provided", hn.Hash, hn.Number)
-	}
+	//if hn.Number.Index != 0 {
+	//	return fmt.Errorf("both origin hash (%x) and number (%d) provided", hn.Hash, hn.Number)
+	//}
 	return rlp.Encode(w, hn.Hash)
 }
 
@@ -163,20 +158,22 @@ func (hn *hashOrNumber) EncodeRLP(w io.Writer) error {
 func (hn *hashOrNumber) DecodeRLP(s *rlp.Stream) error {
 	_, size, _ := s.Kind()
 	origin, err := s.Raw()
+	log.Debug("hashOrNumber", "DecodeRLP size:", size, "origin:", string(origin))
+
 	if err == nil {
 		switch {
 		case size == 32:
 			err = rlp.DecodeBytes(origin, &hn.Hash)
-		case size <= 8:
-			err = rlp.DecodeBytes(origin, &hn.Number)
+		//case size <= 8:
 		default:
-			err = fmt.Errorf("invalid input size %d for origin", size)
+			err = rlp.DecodeBytes(origin, &hn.Number)
+			//default:
+			//	err = fmt.Errorf("invalid input size %d for origin", size)
 		}
 	}
 	return err
 }
 */
-
 // blockBody represents the data content of a single block.
 type blockBody struct {
 	Transactions []*modules.Transaction // Transactions contained within a block
