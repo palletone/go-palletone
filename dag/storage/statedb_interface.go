@@ -44,6 +44,8 @@ type IStateDb interface {
 	GetContract(id []byte) (*modules.Contract, error)
 	GetAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	SaveAccountInfo(address common.Address, info *modules.AccountInfo) error
+
+	// todo albert·gou
 	GetCandidateMediatorAddrList() ([]common.Address, error)
 	//GetActiveMediatorAddrList() ([]common.Address, error)
 

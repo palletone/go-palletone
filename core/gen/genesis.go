@@ -151,6 +151,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		App:     modules.APP_PAYMENT,
 		Payload: pay,
 	}
+
 	// step2, generate global config payload message
 	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis, asset)
 	if err != nil {
@@ -165,6 +166,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		App:     modules.APP_TEXT,
 		Payload: &modules.TextPayload{Text: []byte(genesis.Text)},
 	}
+
 	// step3, genesis transaction
 	tx := &modules.Transaction{
 		TxMessages: []*modules.Message{msg0, msg1, msg2},
