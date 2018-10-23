@@ -151,8 +151,27 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 }
 
 func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
-	header, _ := d.dagdb.GetHeaderByHeight(number)
-	return header
+	log.Debug("Dag", "GetHeaderByNumber ChainIndex:", number)
+	hash, err := d.dagdb.GetHashByNumber(number)
+	if err != nil {
+		log.Debug("Dag", "GetHeaderByNumber dagdb.GetHashByNumber err:", err)
+		return nil
+	}
+
+	uHeader, err1 := d.dagdb.GetHeader(hash, &number)
+	if err1 != nil {
+		log.Info("GetUnit when GetHeader failed ", "error:", err1, "hash", hash.String())
+		log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
+		return nil
+	}
+	return uHeader
+
+	//header, err := d.dagdb.GetHeaderByHeight(number)
+	//if err != nil {
+	//	log.Debug("Dag", "GetHeaderByNumber err:", err, "ChainIndex:", number)
+	//	return nil
+	//}
+	//return header
 }
 
 func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
@@ -711,6 +730,12 @@ func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
 func (d *Dag) GetContractState(id []byte, field string) (*modules.StateVersion, []byte) {
 	return d.statedb.GetContractState(id, field)
 	//return d.statedb.GetContractState(common.HexToAddress(id), field)
+}
+
+//get contract all state
+func (d *Dag) GetContractAllStateByContractId(contractid []byte) []*modules.ContractReadSet {
+	//TODO 这里实现一个GetContractAllStateByContractId(contractid []byte)
+	return nil
 }
 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {

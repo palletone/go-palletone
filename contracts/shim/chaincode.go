@@ -779,6 +779,9 @@ func (stub *ChaincodeStub) GetPayToContractAddr() ([]byte, error) {
 func (stub *ChaincodeStub) GetPayToContractTokens() ([]byte, error) {
 	return stub.handler.handleGetPayToContractTokens(stub.ChannelId, stub.TxID)
 }
+func (stub *ChaincodeStub) GetContractAllState() ([]byte, error) {
+	return stub.handler.handlerGetContractAllState(stub.ChannelId, stub.TxID, stub.ContractId)
+}
 
 // ------------- Logging Control and Chaincode Loggers ---------------
 
