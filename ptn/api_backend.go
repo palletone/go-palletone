@@ -19,10 +19,6 @@ package ptn
 import (
 	"context"
 	"encoding/hex"
-	"log"
-	"math/big"
-	"time"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
@@ -34,6 +30,9 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
+	"log"
+	"math/big"
+	"time"
 )
 
 // PtnApiBackend implements ethapi.Backend for full nodes
@@ -200,6 +199,7 @@ func (b *PtnApiBackend) GetContract(id string) (*modules.Contract, error) {
 	return b.ptn.dag.GetContract(common.Hex2Bytes(id))
 }
 
+/*
 // Get Header
 func (b *PtnApiBackend) GetHeader(hash common.Hash, index uint64) (*modules.Header, error) {
 	return b.ptn.dag.GetHeader(hash, index)
@@ -242,6 +242,33 @@ func (b *PtnApiBackend) GetHeadFastUnitHash() (common.Hash, error) {
 func (b *PtnApiBackend) GetTrieSyncProgress() (uint64, error) {
 	return b.ptn.dag.GetTrieSyncProgress()
 }
+*/
+
+func (b *PtnApiBackend) GetUnitByHash(hash common.Hash) *modules.Unit {
+	unit, err := b.ptn.dag.GetUnitByHash(hash)
+	if err != nil {
+		return nil
+	}
+	return unit
+}
+func (b *PtnApiBackend) GetUnitByNumber(number modules.ChainIndex) *modules.Unit {
+	unit, err := b.ptn.dag.GetUnitByNumber(number)
+	if err != nil {
+		return nil
+	}
+	return unit
+}
+
+func (b *PtnApiBackend) GetHeaderByHash(hash common.Hash) *modules.Header {
+	return b.ptn.dag.GetHeaderByHash(hash)
+}
+func (b *PtnApiBackend) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
+	return b.ptn.dag.GetHeaderByNumber(number)
+}
+
+func (b *PtnApiBackend) GetPrefix(prefix string) map[string][]byte {
+	return b.ptn.dag.GetPrefix(prefix)
+} //getprefix
 
 func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
 
@@ -347,4 +374,12 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 	//err := cc.Stop("palletone", deployId, txid, deleteImage)
 	err := b.ptn.contract.Stop("palletone", deployId, txid, deleteImage)
 	return err
+}
+
+func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {
+	return b.ptn.dag.GetCommon(key)
+}
+
+func (b *PtnApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
+	return b.ptn.dag.GetCommonByPrefix(prefix)
 }

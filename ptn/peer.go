@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/fatih/set.v0"
 )
@@ -106,7 +107,8 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 
 // Info gathers and returns a collection of metadata known about a peer.
 func (p *peer) Info( /*assetId modules.IDType16*/ ) *PeerInfo {
-	hash, number := p.Head(modules.PTNCOIN)
+	ptnAssetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
+	hash, number := p.Head(ptnAssetId)
 
 	return &PeerInfo{
 		Version: p.version,

@@ -5268,13 +5268,37 @@ Object.defineProperty(Ptn.prototype, 'defaultAccount', {
 
 var methods = function () {
 
-	  var forking = new Method({
-	      name: 'forking',
-	      call: 'ptn_forking',
-	      params: 1,
-	      inputFormatter: [null],
-	      outputFormatter: formatters.outputBigNumberFormatter
-	  });
+    var forking = new Method({
+        name: 'forking',
+        call: 'ptn_forking',
+        params: 1,
+        inputFormatter: [null],
+        outputFormatter: formatters.outputBigNumberFormatter
+    });
+
+    var getUnitByHash = new Method({
+        name: 'getUnitByHash',
+        call: 'ptn_getUnitByHash',
+        params: 1,
+        inputFormatter: [null],
+        outputFormatter: formatters.outputBlockFormatter
+    });
+
+    var getUnitByNumber = new Method({
+        name: 'getUnitByNumber',
+        call: 'ptn_getUnitByNumber',
+        params: 1,
+        inputFormatter: [null],
+        outputFormatter: formatters.outputBlockFormatter
+    });
+
+    var getPrefix = new Method({
+        name: 'getPrefix',
+        call: 'ptn_getPrefix',
+        params: 1,
+        inputFormatter: [null],
+        outputFormatter: formatters.outputBlockFormatter
+    });
 
     var getBalance = new Method({
         name: 'getBalance',
@@ -5579,15 +5603,25 @@ var methods = function () {
     });
     var getAllTokenInfo = new Method({
         name: 'getAllTokenInfo',
-        call: 'ptn_getAllTokenInfo',
+        call: 'dag_getAllTokenInfo',
         params: 0,
         // inputFormatter: [null]
     });
     var saveTokenInfo = new Method({
         name: 'saveTokenInfo',
         call: 'ptn_saveTokenInfo',
-        params: 3,   
+        params: 3,
         //inputFormatter: [null]
+    });
+    var getCommon = new Method({
+        name: 'getCommon',
+        call: 'dag_getCommon',
+        params: 1,
+    });
+    var getCommonByPrefix = new Method({ 
+        name: 'getCommonByPrefix',
+        call: 'dag_getCommonByPrefix',  
+        params: 1, 
     });
 
 
@@ -5622,7 +5656,10 @@ var methods = function () {
     });
 
     return [
-		    forking,
+        forking,
+        getUnitByHash,
+        getUnitByNumber,
+        getPrefix,
         getBalance,
         getStorageAt,
         getCode,
@@ -5651,6 +5688,8 @@ var methods = function () {
         getWork,
         walletTokens,
         walletBalance,
+        getCommon,
+        getCommonByPrefix,
         getContract,
         getHeader,
         getUnit,

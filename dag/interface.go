@@ -33,6 +33,10 @@ import (
 )
 
 type IDag interface {
+	//common geter
+	GetCommon(key []byte) ([]byte, error)
+	GetCommonByPrefix(prefix []byte) map[string][]byte
+
 	IsEmpty() bool
 	CurrentUnit() *modules.Unit
 	//SaveDag(unit *modules.Unit, isGenesis bool) (int, error)
@@ -47,6 +51,8 @@ type IDag interface {
 	// GetHeaderByHash retrieves a header from the local chain.
 	GetHeaderByHash(common.Hash) *modules.Header
 	GetHeader(hash common.Hash, number uint64) (*modules.Header, error)
+
+	GetPrefix(prefix string) map[string][]byte
 	// CurrentHeader retrieves the head header from the local chain.
 	CurrentHeader() *modules.Header
 	GetTransactionByHash(hash common.Hash) (*modules.Transaction, error)
@@ -68,7 +74,7 @@ type IDag interface {
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
 
 	GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte)
-	GetContractAllStateByContractId(contract []byte) []*modules.ContractReadSet
+	GetContractStatesById(id []byte) (map[modules.StateVersion][]byte, error)
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetHeadHeaderHash() (common.Hash, error)

@@ -174,7 +174,7 @@ func (version *StateVersion) ParseStringKey(key string) bool {
 	return true
 }
 
-//16+8+1+4
+//16+8+1+4=29
 func (version *StateVersion) Bytes() []byte {
 	idx := make([]byte, 8)
 	littleEndian.PutUint64(idx, version.Height.Index)

@@ -20,14 +20,14 @@
 package storage
 
 import (
-	"errors"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 const missingNumber = uint64(0xffffffffffffffff)
@@ -63,8 +63,11 @@ func retrieveWithVersion(db ptndb.Database, key []byte) ([]byte, *modules.StateV
 
 //将Statedb里的Value分割为Version和用户数据
 func splitValueAndVersion(data []byte) ([]byte, *modules.StateVersion, error) {
+	if len(data) <= 29 {
+		return nil, nil, errors.New("the data is irregular.")
+	}
 	verBytes := data[:29]
-	objData := data[30:]
+	objData := data[29:]
 
 	version := &modules.StateVersion{}
 	version.SetBytes(verBytes)

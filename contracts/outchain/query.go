@@ -8,6 +8,7 @@ import (
 
 	"github.com/palletone/adaptor"
 	"github.com/palletone/btc-adaptor"
+	"github.com/palletone/eth-adaptor"
 	"github.com/palletone/go-palletone/common/log"
 
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -26,6 +27,7 @@ func ProcessOutChainQuery(chaincodeID string, outChainAddr *pb.OutChainQuery) (s
 	case "btc":
 		return processQueryMethodBTC(chaincodeID, outChainAddr, &params)
 	case "eth":
+		return processQueryMethodETH(chaincodeID, outChainAddr, &params)
 	}
 
 	return "", errors.New("Unspport out chain.")
@@ -55,6 +57,29 @@ func processQueryMethodBTC(chaincodeID string, outChainAddr *pb.OutChainQuery,
 		btcAdaptor.RPCPasswd = cfg.Ada.Btc.RPCPasswd
 		btcAdaptor.CertPath = cfg.Ada.Btc.CertPath
 		return btcAdaptor.GetBalance(&getBalanceParams)
+	}
+	return "", errors.New("Unspport out chain Query method.")
+}
+
+func processQueryMethodETH(chaincodeID string, outChainAddr *pb.OutChainQuery,
+	params *OutChainMethod) (string, error) {
+	switch params.Method {
+	case "GetBalance":
+		var getHeaderParams adaptor.GetBestHeaderParams
+		err := json.Unmarshal(outChainAddr.Params, &getHeaderParams)
+		if err != nil {
+			return "", fmt.Errorf("GetBalance params error : %s", err.Error())
+		}
+
+		err1 := GetConfigTest()
+		if err != nil {
+			log.Error("loadconfig() failed !!!!!!")
+			return "", err1
+		}
+
+		var ethAdaptor adaptoreth.AdaptorETH
+		ethAdaptor.Rawurl = cfg.Ada.Eth.Rawurl
+		return ethAdaptor.GetBestHeader(&getHeaderParams)
 	}
 	return "", errors.New("Unspport out chain Query method.")
 }

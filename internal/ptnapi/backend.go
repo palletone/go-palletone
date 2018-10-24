@@ -77,29 +77,21 @@ type Backend interface {
 	WalletTokens(address string) (map[string]*modules.AccountToken, error)
 	WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 
+	// dag's get common
+	GetCommon(key []byte) ([]byte, error)
+	GetCommonByPrefix(prefix []byte) map[string][]byte
 	// Get Contract Api
 	GetContract(hex_id string) (*modules.Contract, error)
 
-	// Get Header
-	GetHeader(hash common.Hash, index uint64) (*modules.Header, error)
+	//get level db
+	GetUnitByHash(hash common.Hash) *modules.Unit
+	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
 
-	// Get Unit
-	GetUnit(hash common.Hash) *modules.Unit
+	GetHeaderByHash(hash common.Hash) *modules.Header
+	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
 
-	// Get UnitNumber
-	GetUnitNumber(hash common.Hash) uint64
-
-	// GetCanonicalHash
-	GetCanonicalHash(number uint64) (common.Hash, error)
-
-	// Get state
-	GetHeadHeaderHash() (common.Hash, error)
-
-	GetHeadUnitHash() (common.Hash, error)
-
-	GetHeadFastUnitHash() (common.Hash, error)
-
-	GetTrieSyncProgress() (uint64, error)
+	//TODO wangjiyou
+	GetPrefix(prefix string) map[string][]byte //getprefix
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
 
@@ -165,7 +157,7 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Service:   NewPrivateAccountAPI(apiBackend, nonceLock),
 			Public:    false,
 		}, {
-			Namespace: "ptn",
+			Namespace: "dag",
 			Version:   "1.0",
 			Service:   NewPublicDagAPI(apiBackend),
 			Public:    true,

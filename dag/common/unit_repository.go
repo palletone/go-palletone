@@ -161,14 +161,20 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	}
 	units := []modules.Unit{}
 	// step1. get mediator responsible for asset (for now is ptn)
-	bAsset, _, _ := unitOp.statedb.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
-	if len(bAsset) <= 0 {
-		return nil, fmt.Errorf("Create unit error: query asset info empty")
-	}
+	// bAsset, _, _ := unitOp.statedb.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
+	// if len(bAsset) <= 0 {
+	// 	return nil, fmt.Errorf("Create unit error: query asset info empty")
+	// }
+	// var asset modules.Asset
+	// if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
+	// 	return nil, fmt.Errorf("Create unit: %s", err.Error())
+	// }
+	// @jay
 	var asset modules.Asset
-	if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
-		return nil, fmt.Errorf("Create unit: %s", err.Error())
-	}
+	assetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
+	asset.AssetId = assetId
+	asset.ChainId = 1
+	asset.UniqueId = assetId
 	// step2. compute chain height
 	index := uint64(1)
 	isMain := true
