@@ -5268,13 +5268,30 @@ Object.defineProperty(Ptn.prototype, 'defaultAccount', {
 
 var methods = function () {
 
-	  var forking = new Method({
-	      name: 'forking',
-	      call: 'ptn_forking',
-	      params: 1,
-	      inputFormatter: [null],
-	      outputFormatter: formatters.outputBigNumberFormatter
-	  });
+    var forking = new Method({
+        name: 'forking',
+        call: 'ptn_forking',
+        params: 1,
+        inputFormatter: [null],
+        outputFormatter: formatters.outputBigNumberFormatter
+    });
+
+    var getUnitByHash = new Method({
+        name: 'getUnitByHash',
+        call: 'ptn_getUnitByHash',
+        params: 1,
+        inputFormatter: [null],
+        outputFormatter: formatters.outputBlockFormatter
+    });
+
+    var getUnitByNumber = new Method({
+        name: 'getUnitByNumber',
+        call: 'ptn_getUnitByNumber',
+        params: 1,
+        inputFormatter: [null],
+        outputFormatter: formatters.outputBlockFormatter
+    });
+
 
     var getBalance = new Method({
         name: 'getBalance',
@@ -5622,7 +5639,9 @@ var methods = function () {
     });
 
     return [
-		    forking,
+        forking,
+        getUnitByHash,
+        getUnitByNumber,
         getBalance,
         getStorageAt,
         getCode,

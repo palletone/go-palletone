@@ -141,7 +141,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			query.Origin.Number.Index += query.Skip + 1
 		}
 	}
-	log.Debug("========GetBlockHeadersMsg========", "query.Amount", query.Amount, "send number:", len(headers))
+	log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", len(headers), " getBlockHeadersData:", query)
 	return p.SendUnitHeaders(headers)
 }
 

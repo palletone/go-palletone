@@ -133,7 +133,14 @@ func (d *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 }
 
 func (d *Dag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) {
-	return d.dagdb.GetUnitFormIndex(number)
+	//return d.dagdb.GetUnitFormIndex(number)
+	hash, err := d.dagdb.GetHashByNumber(number)
+	if err != nil {
+		log.Debug("Dag", "GetUnitByNumber dagdb.GetHashByNumber err:", err)
+		return nil, err
+	}
+	log.Debug("Dag", "GetUnitByNumber GetUnit(hash):", hash)
+	return d.dagdb.GetUnit(hash)
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
