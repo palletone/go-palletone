@@ -160,7 +160,7 @@ func (s *RwSetTxSimulator) GetContractAllState(contractid []byte) []*modules.Con
 		},
 	}
 	return contractReadSet
-	return s.state.GetContractAllStateByContractId(contractid)
+	//return s.state.GetContractStatesById(contractid)
 }
 
 func (h *RwSetTxSimulator) CheckDone() error {

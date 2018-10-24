@@ -157,6 +157,29 @@ func (statedb *StateDb) GetContractAllState() []*modules.ContractReadSet {
 }
 
 /**
+获取合约（或模板）全部属性
+To get contract or contract template all fields
+*/
+func (statedb *StateDb) GetContractStatesById(id []byte) (map[modules.StateVersion][]byte, error) {
+	key := append(constants.CONTRACT_STATE_PREFIX, id...)
+	data := getprefix(statedb.db, key)
+	if data == nil || len(data) == 0 {
+		return nil, errors.New(fmt.Sprintf("the contract %s state is null.", id))
+	}
+	var err error
+	result := make(map[modules.StateVersion][]byte, 0)
+	for key, state_version := range data {
+		state, version, err0 := splitValueAndVersion(state_version)
+		if err0 != nil {
+			err = err0
+		}
+		result[*version] = state
+		statedb.logger.Info("the contract's state get info.", "key", key)
+	}
+	return result, err
+}
+
+/**
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */

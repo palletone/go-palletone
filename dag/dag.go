@@ -733,9 +733,8 @@ func (d *Dag) GetContractState(id []byte, field string) (*modules.StateVersion, 
 }
 
 //get contract all state
-func (d *Dag) GetContractAllStateByContractId(contractid []byte) []*modules.ContractReadSet {
-	//TODO 这里实现一个GetContractAllStateByContractId(contractid []byte)
-	return nil
+func (d *Dag) GetContractStatesById(id []byte) (map[modules.StateVersion][]byte, error) {
+	return d.statedb.GetContractStatesById(id)
 }
 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
