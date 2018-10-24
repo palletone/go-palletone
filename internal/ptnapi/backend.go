@@ -80,26 +80,12 @@ type Backend interface {
 	// Get Contract Api
 	GetContract(hex_id string) (*modules.Contract, error)
 
-	// Get Header
-	GetHeader(hash common.Hash, index uint64) (*modules.Header, error)
+	//get level db
+	GetUnitByHash(hash common.Hash) *modules.Unit
+	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
 
-	// Get Unit
-	GetUnit(hash common.Hash) *modules.Unit
-
-	// Get UnitNumber
-	GetUnitNumber(hash common.Hash) uint64
-
-	// GetCanonicalHash
-	GetCanonicalHash(number uint64) (common.Hash, error)
-
-	// Get state
-	GetHeadHeaderHash() (common.Hash, error)
-
-	GetHeadUnitHash() (common.Hash, error)
-
-	GetHeadFastUnitHash() (common.Hash, error)
-
-	GetTrieSyncProgress() (uint64, error)
+	GetHeaderByHash(hash common.Hash) *modules.Header
+	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
 

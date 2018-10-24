@@ -19,6 +19,7 @@ package ptnapi
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -26,8 +27,7 @@ import (
 	"math/big"
 	"strings"
 	"time"
-
-	"crypto/ecdsa"
+	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -43,8 +43,6 @@ import (
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
-
-	//"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
@@ -707,6 +705,39 @@ func (s *PublicBlockChainAPI) Forking(ctx context.Context, rate uint64) uint64 {
 	return forking(ctx, s.b)
 }
 
+/*
+	GetUnitByHash(hash common.Hash) *modules.Unit
+	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
+
+	GetHeaderByHash(hash common.Hash) *modules.Header
+	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
+*/
+
+//Query leveldb
+func (s *PublicBlockChainAPI) GetUnitByHash(ctx context.Context, condition string) string {
+	log.Info("PublicBlockChainAPI", "GetUnitByHash condition:", condition)
+	hash := common.Hash{}
+	//if err := json.Unmarshal(*(*[]byte)(unsafe.Pointer(&condition)), &hash); err != nil {
+	//	log.Info("PublicBlockChainAPI", "GetUnitByHash Unmarshal err:", err, "condition:", condition)
+	//	return "Unmarshal err"
+	//}
+	if err := hash.SetHexString(condition); err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByHash SetHexString err:", err, "condition:", condition)
+		return ""
+	}
+	unit := s.b.GetUnitByHash(hash)
+	if unit == nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByHash GetUnitByHash is nil hash:", hash)
+		return "GetUnitByHash nil"
+	}
+	content, err := json.Marshal(*unit)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByHash Marshal err:", err, "unit:", *unit)
+		return "Marshal err"
+	}
+	return *(*string)(unsafe.Pointer(&content))
+}
+
 //contract command
 //install
 func (s *PublicBlockChainAPI) Ccinstall(ctx context.Context, ccname string, ccpath string, ccversion string) (hexutil.Bytes, error) {
@@ -1260,6 +1291,11 @@ func (args *SendTxArgs) toTransaction() *modules.Transaction {
 func forking(ctx context.Context, b Backend) uint64 {
 	b.SendConsensus(ctx)
 	return 0
+}
+
+func queryDb(ctx context.Context, b Backend, condition string) string {
+	b.SendConsensus(ctx)
+	return ""
 }
 
 // submitTransaction is a helper function that submits tx to txPool and logs a message.
