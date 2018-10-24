@@ -479,6 +479,14 @@ func (ec *Client) GetUnitByNumberAt(ctx context.Context, condition string) (stri
 	return result, err
 }
 
+//GetPrefix
+func (ec *Client) GetPrefix(ctx context.Context, condition string) (string, error) {
+	var result string
+	log.Println("GetPrefix condition:", condition)
+	err := ec.c.CallContext(ctx, &result, "ptn_getPrefix", condition)
+	return result, err
+}
+
 func (ec *Client) CcinstallAt(ctx context.Context, ccname string, ccpath string, ccversion string) (uint64, error) {
 	var result hexutil.Uint64
 	log.Printf("==============================CcInstallAt:" + ccname + ":" + ccpath + ":" + ccversion)

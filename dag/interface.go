@@ -47,6 +47,8 @@ type IDag interface {
 	// GetHeaderByHash retrieves a header from the local chain.
 	GetHeaderByHash(common.Hash) *modules.Header
 	GetHeader(hash common.Hash, number uint64) (*modules.Header, error)
+
+	GetPrefix(prefix string) map[string][]byte
 	// CurrentHeader retrieves the head header from the local chain.
 	CurrentHeader() *modules.Header
 	GetTransactionByHash(hash common.Hash) (*modules.Transaction, error)

@@ -87,6 +87,9 @@ type Backend interface {
 	GetHeaderByHash(hash common.Hash) *modules.Header
 	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
 
+	//TODO wangjiyou
+	GetPrefix(prefix string) map[string][]byte //getprefix
+
 	GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
 
 	GetAddrOutput(addr string) ([]modules.Output, error)

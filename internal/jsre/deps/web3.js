@@ -5292,6 +5292,13 @@ var methods = function () {
         outputFormatter: formatters.outputBlockFormatter
     });
 
+    var getPrefix = new Method({
+        name: 'getPrefix',
+        call: 'ptn_getPrefix',
+        params: 1,
+        inputFormatter: [null],
+        outputFormatter: formatters.outputBlockFormatter
+    });
 
     var getBalance = new Method({
         name: 'getBalance',
@@ -5642,6 +5649,7 @@ var methods = function () {
         forking,
         getUnitByHash,
         getUnitByNumber,
+        getPrefix,
         getBalance,
         getStorageAt,
         getCode,
