@@ -39,6 +39,8 @@ var (
 )
 
 
+
+
 // General application defined JSON errors.
 const (
 	ErrRPCMisc                RPCErrorCode = -1
@@ -132,9 +134,7 @@ const (
 	PubKeyBytesLenUncompressed = 65
 	PubKeyBytesLenHybrid       = 65
 )
-
 type ErrorCode int
-
 // These constants are used to identify a specific RuleError.
 const (
 	// ErrDuplicateBlock indicates a block with the same hash already
@@ -721,3 +721,4 @@ type GetTxIdResult struct {
 func NewWIF(privKey *ecdsa.PrivateKey, netid byte, compress bool) (*WIF, error) {
 	return &WIF{privKey, compress, netid}, nil
 }
+

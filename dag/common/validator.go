@@ -41,6 +41,8 @@ type Validate struct {
 	logger  log.ILogger
 }
 
+
+
 func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, l log.ILogger) *Validate {
 	return &Validate{dagdb: dagdb, utxodb: utxodb, statedb: statedb, logger: l}
 }
