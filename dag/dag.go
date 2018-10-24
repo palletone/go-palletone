@@ -732,6 +732,11 @@ func (d *Dag) GetContractState(id []byte, field string) (*modules.StateVersion, 
 	//return d.statedb.GetContractState(common.HexToAddress(id), field)
 }
 
+//get contract all state
+func (d *Dag) GetContractStatesById(id []byte) (map[modules.StateVersion][]byte, error) {
+	return d.statedb.GetContractStatesById(id)
+}
+
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
 	return d.unitRep.CreateUnit(mAddr, txpool, ks, t)
 }

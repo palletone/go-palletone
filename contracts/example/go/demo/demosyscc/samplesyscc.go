@@ -133,7 +133,7 @@ func getBTCAddrByPubkey(pubkeyHex string, stub *shim.ChaincodeStubInterface) (st
 	return "", nil
 }
 
-//refer to the struct CreateMultiSigParams in "github.com/palletone/btc-adaptor/key.go",
+//refer to the struct CreateMultiSigParams in "github.com/palletone/adaptor/AdaptorBTC.go",
 //add 'method' member. When make a request, reserve one Pubkey for Jury.
 //example, want 2/3 MultiSig Address, set alice and bob only, N=3, reserve one for Jury.
 //If set 3 pubkeys and N=3, Jury not join in your contract, your contract is out of PalletOne.
@@ -202,7 +202,7 @@ func multiSigAddrBTC(args *[]string, stub *shim.ChaincodeStubInterface) pb.Respo
 	return shim.Success(result)
 }
 
-//refer to the struct DecodeRawTransactionParams in "github.com/palletone/btc-adaptor/transaction.go",
+//refer to the struct DecodeRawTransactionParams in "github.com/palletone/adaptor/AdaptorBTC.go",
 //add 'method' member.
 type BTCTransactionDecode struct {
 	Method string `json:"method"`
@@ -305,7 +305,7 @@ func getEthAddrByBTCTx(transactionhex string, stub *shim.ChaincodeStubInterface)
 	}
 }
 
-//refer to the struct GetEventByAddressParams in "github.com/palletone/eth-adaptor/event.go",
+//refer to the struct GetEventByAddressParams in "github.com/palletone/adaptor/AdaptorETH.go",
 //add 'method' member.
 type ETHTransaction_getevent struct { //GetEventByAddressParams
 	Method       string `json:"method"`
@@ -321,6 +321,7 @@ type GetEventByAddressResult struct {
 	Events []string `json:"events"`
 }
 
+//need check confirms
 func getDepositETHAmount(concernAddr string, eth_redeem_base64 string, stub *shim.ChaincodeStubInterface) (*big.Int, error) {
 	//get doposit event log
 	getevent := ETHTransaction_getevent{Method: "GetEventByAddress"} // GetJuryAddress
@@ -435,7 +436,7 @@ func getWithdrawETHAmount(concernAddr string, eth_redeem_base64 string, stub *sh
 	return bigIntAmount, nil
 }
 
-//refer to the struct GetTransactionByHashParams in "github.com/palletone/btc-adaptor/transaction.go",
+//refer to the struct GetTransactionByHashParams in "github.com/palletone/adaptor/AdaptorBTC.go",
 //add 'method' member.
 type BTCTransaction_getTxByHash struct { //GetTransactionByHashParams
 	Method string `json:"method"`
@@ -444,7 +445,8 @@ type BTCTransaction_getTxByHash struct { //GetTransactionByHashParams
 
 //result
 type GetTransactionByHashResult struct {
-	Outputs []OutputIndex `json:"outputs"`
+	Confirms uint64        `json:"confirms"`
+	Outputs  []OutputIndex `json:"outputs"`
 }
 
 func getReqBTCAmountByInput(withdrawBTCReqTx *WithdrawBTCReqTX, stub *shim.ChaincodeStubInterface) (int64, error) {
@@ -490,7 +492,7 @@ func getReqBTCAmountByInput(withdrawBTCReqTx *WithdrawBTCReqTX, stub *shim.Chain
 
 }
 
-//refer to the struct GetTransactionsParams in "github.com/palletone/btc-adaptor/unspend.go",
+//refer to the struct GetTransactionsParams in "github.com/palletone/adaptor/AdaptorBTC.go",
 //add 'method' member.
 type BTCTransaction_getTxs struct { //GetTransactionsParams
 	Method  string `json:"method"`
@@ -511,8 +513,9 @@ type OutputIndex struct {
 	Value int64  `json:"value"` //satoshi
 }
 type Transaction struct {
-	TxHash        string   `json:"txHash"`
-	BlanceChanged int64    `json:"blanceChanged"`
+	TxHash        string        `json:"txHash"`
+	Confirms      uint64        `json:"confirms"`
+	BlanceChanged int64         `json:"blanceChanged"`
 	Inputs        []InputIndex  `json:"inputs"`
 	Outputs       []OutputIndex `json:"outputs"`
 }
@@ -628,7 +631,7 @@ func checkBalanceForWithdrawBTC(withdrawBTCReqTx *WithdrawBTCReqTX, stub *shim.C
 	}
 }
 
-//refer to the struct SignTxSendParams in "github.com/palletone/btc-adaptor/spend.go",
+//refer to the struct SignTxSendParams in "github.com/palletone/adaptor/AdaptorBTC.go",
 //add 'method' member.
 type BTCTransaction_signTxSend struct { //SignTxSendParams
 	Method         string `json:"method"`
@@ -694,7 +697,7 @@ func withdrawBTC(args *[]string, stub *shim.ChaincodeStubInterface) pb.Response 
 }
 
 //Write a 2/3 MultiSig contract, set ETH MultiSigAddr fromat ' addr1 | addr2 | addrJury '
-//refer to the struct CreateMultiSigAddressParams in "github.com/palletone/eth-adaptor/contract.go",
+//refer to the struct CreateMultiSigAddressParams in "github.com/palletone/adaptor/AdaptorETH.go",
 //add 'method' member. When make a request, reserve one Address for Jury.
 //example, want 2/3 MultiSig Address, set alice and bob only, N=3, reserve one for Jury.
 //If set 3 address and N=3, Jury not join in your contract, your contract is out of PalletOne.
@@ -841,6 +844,9 @@ func getBTCBalance(calETHSigReq *CalETHSigReq, stub *shim.ChaincodeStubInterface
 	withdrawBtcAmount := int64(0)
 	for _, tx := range txsResult.Transactions {
 		if tx.BlanceChanged > 0 { //deposit tx
+			if tx.Confirms < 6 { //check confirms
+				continue
+			}
 			oneAddr := true
 			tempAmount := int64(0)
 			for _, oneInput := range tx.Inputs {
@@ -935,7 +941,7 @@ func checkBalanceForCalSigETH(calETHSigReq *CalETHSigReq, stub *shim.ChaincodeSt
 
 }
 
-//refer to the struct Keccak256HashPackedSigParams in "github.com/palletone/eth-adaptor/contract.go",
+//refer to the struct Keccak256HashPackedSigParams in "github.com/palletone/adaptor/AdaptorETH.go",
 //add 'method' member. Remove 'PrivateKeyHex', Jury will set itself when sign.
 type ETHTransaction_calSig struct {
 	Method     string `json:"method"`

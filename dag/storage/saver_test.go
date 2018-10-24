@@ -33,12 +33,11 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func TestSaveJoint(t *testing.T) {
-	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	Dbconn, _ := ptndb.NewMemDatabase()
 	if Dbconn == nil {
 		fmt.Println("Connect to db error.")
 		return
@@ -59,9 +58,10 @@ func TestSaveJoint(t *testing.T) {
 }
 
 func TestAddUnitKey(t *testing.T) {
-	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	// Dbconn := ReNewDbConn(dagconfig.DbPath)
+	Dbconn, _ := ptndb.NewMemDatabase()
 	if Dbconn == nil {
-		fmt.Println("Connect ro db error.")
+		fmt.Println("Connect mem db error.")
 		return
 	}
 	keys := []string{"unit1231526522017", "unit1231526521834"}
@@ -80,9 +80,9 @@ func TestAddUnitKey(t *testing.T) {
 }
 
 func TestGetUnitKeys(t *testing.T) {
-	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	Dbconn, _ := ptndb.NewMemDatabase()
 	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
+		fmt.Println("Connect mem db error.")
 		return
 	}
 	t0 := time.Now()
@@ -115,12 +115,11 @@ func TestGetUnitKeys(t *testing.T) {
 }
 
 func TestDBBatch(t *testing.T) {
-	Dbconn := ReNewDbConn(dagconfig.DbPath)
+	Dbconn, _ := ptndb.NewMemDatabase()
 	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
+		fmt.Println("Connect mem  db error.")
 		return
 	}
-	log.Println("db_path:", DBPath)
 	table := ptndb.NewTable(Dbconn, "hehe")
 	err0 := table.Put([]byte("jay"), []byte("baby"))
 	log.Println("err0:", err0)
@@ -145,10 +144,9 @@ func TestSaveUtxos(t *testing.T) {
 	// 0. initiate db
 	Dbconn, err := ptndb.NewMemDatabase()
 	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
+		fmt.Println("Connect mem db error.")
 		return
 	}
-	log.Println("db_path:", DBPath)
 	l := plog.NewTestLog()
 	utxodb := NewUtxoDb(Dbconn, l)
 

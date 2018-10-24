@@ -90,7 +90,10 @@ func TestSaveAndGetConfig(t *testing.T) {
 	//}
 	// todo get GenesisAsset
 	genesisAsset, _, err := db.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
-	assert.NotNil(t, err)
+	if !assert.NotNil(t, err) {
+		log.Error("getConfig is failed", "error", err)
+		return
+	}
 	var asset modules.Asset
 	if err := rlp.DecodeBytes(genesisAsset, &asset); err != nil {
 		log.Error("Check unit signature", "error", err.Error())
