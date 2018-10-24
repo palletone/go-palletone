@@ -131,36 +131,8 @@ func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]
 }
 
 //get all state
-func (s *RwSetTxSimulator) GetContractAllState(contractid []byte) []*modules.ContractReadSet {
-	//TODO xiaozhi 构造数据
-	contractReadSet := []*modules.ContractReadSet{
-		{
-			Key: "zhichunqi",
-			Version: &modules.StateVersion{
-				Height: modules.ChainIndex{
-					modules.PTNCOIN,
-					true,
-					0,
-				},
-				TxIndex: 0,
-			},
-			Value: []byte("zhichunqi"),
-		},
-		{
-			Key: "zhichunqi1",
-			Version: &modules.StateVersion{
-				Height: modules.ChainIndex{
-					modules.PTNCOIN,
-					true,
-					1,
-				},
-				TxIndex: 1,
-			},
-			Value: []byte("zhichunqi1"),
-		},
-	}
-	return contractReadSet
-	//return s.state.GetContractStatesById(contractid)
+func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[modules.StateVersion][]byte, error) {
+	return s.state.GetContractStatesById(contractid)
 }
 
 func (h *RwSetTxSimulator) CheckDone() error {
