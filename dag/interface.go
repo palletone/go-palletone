@@ -33,6 +33,10 @@ import (
 )
 
 type IDag interface {
+	//common geter
+	GetCommon(key []byte) ([]byte, error)
+	GetCommonByPrefix(prefix []byte) map[string][]byte
+
 	IsEmpty() bool
 	CurrentUnit() *modules.Unit
 	//SaveDag(unit *modules.Unit, isGenesis bool) (int, error)

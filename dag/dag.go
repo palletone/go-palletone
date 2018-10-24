@@ -1063,3 +1063,13 @@ func (d *Dag) UpdateMediator() error {
 	//TODO
 	return nil
 }
+
+// dag's common geter
+func (d *Dag) GetCommon(key []byte) ([]byte, error) {
+	return d.dagdb.GetCommon(key)
+}
+
+// GetCommonByPrefix  return the prefix's all key && value.
+func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
+	return d.dagdb.GetCommonByPrefix(prefix)
+}

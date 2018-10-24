@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"math/big"
 	"strings"
 	"time"
@@ -750,15 +751,16 @@ func (s *PublicBlockChainAPI) GetUnitByNumber(ctx context.Context, condition str
 	}
 	number.Index = uint64(index)
 	number.IsMain = true
-	number.AssetID = modules.PTNCOIN
-	log.Info("PublicBlockChainAPI", "GetUnitByNumber number.Index:", number.Index, "number:", number.String())
+
+	number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
+	log.Info("PublicBlockChainAPI info", "GetUnitByNumber_number.Index:", number.Index, "number:", number.String())
 
 	unit := s.b.GetUnitByNumber(number)
 	if unit == nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number)
 		return "GetUnitByNumber nil"
 	}
-	content, err := json.Marshal(*unit)
+	content, err := json.Marshal(unit)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
 		return "Marshal err"
@@ -2107,6 +2109,19 @@ type PublicDagAPI struct {
 
 func NewPublicDagAPI(b Backend) *PublicDagAPI {
 	return &PublicDagAPI{b}
+}
+func (s *PublicDagAPI) GetCommon(ctx context.Context, key string) ([]byte, error) {
+	// key to bytes
+	return s.b.GetCommon([]byte(key))
+}
+func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (string, error) {
+	result := s.b.GetCommonByPrefix([]byte(prefix))
+	if result == nil || len(result) == 0 {
+		return "null", nil
+	}
+	info := NewPublicReturnInfo("all_items", result)
+	result_json, _ := json.Marshal(info)
+	return string(result_json), nil
 }
 
 func (s *PublicDagAPI) GetAllTokenInfo(ctx context.Context) (string, error) {

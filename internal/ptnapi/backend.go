@@ -77,6 +77,9 @@ type Backend interface {
 	WalletTokens(address string) (map[string]*modules.AccountToken, error)
 	WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 
+	// dag's get common
+	GetCommon(key []byte) ([]byte, error)
+	GetCommonByPrefix(prefix []byte) map[string][]byte
 	// Get Contract Api
 	GetContract(hex_id string) (*modules.Contract, error)
 
@@ -154,7 +157,7 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Service:   NewPrivateAccountAPI(apiBackend, nonceLock),
 			Public:    false,
 		}, {
-			Namespace: "ptn",
+			Namespace: "dag",
 			Version:   "1.0",
 			Service:   NewPublicDagAPI(apiBackend),
 			Public:    true,

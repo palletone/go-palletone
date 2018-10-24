@@ -375,3 +375,11 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 	err := b.ptn.contract.Stop("palletone", deployId, txid, deleteImage)
 	return err
 }
+
+func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {
+	return b.ptn.dag.GetCommon(key)
+}
+
+func (b *PtnApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
+	return b.ptn.dag.GetCommonByPrefix(prefix)
+}

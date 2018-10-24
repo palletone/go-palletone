@@ -5603,15 +5603,25 @@ var methods = function () {
     });
     var getAllTokenInfo = new Method({
         name: 'getAllTokenInfo',
-        call: 'ptn_getAllTokenInfo',
+        call: 'dag_getAllTokenInfo',
         params: 0,
         // inputFormatter: [null]
     });
     var saveTokenInfo = new Method({
         name: 'saveTokenInfo',
         call: 'ptn_saveTokenInfo',
-        params: 3,   
+        params: 3,
         //inputFormatter: [null]
+    });
+    var getCommon = new Method({
+        name: 'getCommon',
+        call: 'dag_getCommon',
+        params: 1,
+    });
+    var getCommonByPrefix = new Method({ 
+        name: 'getCommonByPrefix',
+        call: 'dag_getCommonByPrefix',  
+        params: 1, 
     });
 
 
@@ -5678,6 +5688,8 @@ var methods = function () {
         getWork,
         walletTokens,
         walletBalance,
+        getCommon,
+        getCommonByPrefix,
         getContract,
         getHeader,
         getUnit,
