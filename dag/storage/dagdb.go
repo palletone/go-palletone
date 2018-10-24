@@ -89,6 +89,26 @@ type IDagDb interface {
 	GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
 	GetTokenInfo(key []byte) (*modules.TokenInfo, error)
 	GetAllTokenInfo() (*modules.AllTokenInfo, error)
+
+	// common geter
+	GetCommon(key []byte) ([]byte, error)
+	GetCommonByPrefix(prefix []byte) map[string][]byte
+}
+
+/* ----- common geter ----- */
+func (dagdb *DagDb) GetCommon(key []byte) ([]byte, error) {
+	return dagdb.db.Get(key)
+}
+func (dagdb *DagDb) GetCommonByPrefix(prefix []byte) map[string][]byte {
+	iter := dagdb.db.NewIteratorWithPrefix(prefix)
+	result := make(map[string][]byte, 0)
+	for iter.Next() {
+		key := iter.Key()
+		value := make([]byte, 0)
+		// 请注意： 直接赋值取得iter.Value()的最后一个指针
+		result[*(*string)(unsafe.Pointer(&key))] = append(value, iter.Value()...)
+	}
+	return result
 }
 
 // ###################### SAVE IMPL START ######################
@@ -124,6 +144,7 @@ func (dagdb *DagDb) SaveHashByNumber(uHash common.Hash, number modules.ChainInde
 		i = 1
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
+	log.Info("*****************DagDB SaveHashByNumber info.", "SaveHashByNumber_key", string(key), "hash:", uHash.Hex())
 	return StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), uHash.Hex())
 }
 
@@ -134,15 +155,16 @@ func (dagdb *DagDb) GetHashByNumber(number modules.ChainIndex) (common.Hash, err
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
 	ha, err := GetBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)))
+	log.Info("DagDB GetHashByNumber info.", "GetHashByNumber_key", string(key), "hash:", fmt.Sprintf("%x", ha))
 	if err != nil {
 		return common.Hash{}, err
 	}
-	log.Info("DagDB", "GetHashByNumber key:", string(key), "hash:", string(ha))
+
 	//hash := common.Hash{}
 	strhash := ""
 	err1 := rlp.DecodeBytes(ha, &strhash) //rlp.EncodeToBytes(val)
 	if err1 != nil {
-		log.Debug("GetHashByNumber", "DecodeBytes err:", err1)
+		log.Debug("GetHashByNumber", "DecodeBytes_err", err1)
 		return common.Hash{}, err1
 	}
 	hash := common.Hash{}
@@ -534,6 +556,8 @@ func (dagdb *DagDb) GetHeader(hash common.Hash, index *modules.ChainIndex) (*mod
 	return header, nil
 }
 
+// GetHeaderByHeight ,first :get hash  , return header.
+// TODO
 func (dagdb *DagDb) GetHeaderByHeight(index modules.ChainIndex) (*modules.Header, error) {
 	encNum := encodeBlockNumber(index.Index)
 	key := append(constants.HEADER_PREFIX, encNum...)

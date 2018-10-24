@@ -19,15 +19,16 @@ package ptnapi
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"math/big"
 	"strings"
 	"time"
-
-	"crypto/ecdsa"
+	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -43,11 +44,10 @@ import (
 	"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
-
-	//"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
+	"strconv"
 )
 
 const (
@@ -707,6 +707,82 @@ func (s *PublicBlockChainAPI) Forking(ctx context.Context, rate uint64) uint64 {
 	return forking(ctx, s.b)
 }
 
+/*
+	GetUnitByHash(hash common.Hash) *modules.Unit
+	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
+
+	GetHeaderByHash(hash common.Hash) *modules.Header
+	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
+*/
+
+//Query leveldb
+func (s *PublicBlockChainAPI) GetUnitByHash(ctx context.Context, condition string) string {
+	log.Info("PublicBlockChainAPI", "GetUnitByHash condition:", condition)
+	hash := common.Hash{}
+	if err := hash.SetHexString(condition); err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByHash SetHexString err:", err, "condition:", condition)
+		return ""
+	}
+	unit := s.b.GetUnitByHash(hash)
+	if unit == nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByHash GetUnitByHash is nil hash:", hash)
+		return "GetUnitByHash nil"
+	}
+	content, err := json.Marshal(*unit)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByHash Marshal err:", err, "unit:", *unit)
+		return "Marshal err"
+	}
+	return *(*string)(unsafe.Pointer(&content))
+}
+
+func (s *PublicBlockChainAPI) GetUnitByNumber(ctx context.Context, condition string) string {
+	log.Info("PublicBlockChainAPI", "GetUnitByNumber condition:", condition)
+
+	number := modules.ChainIndex{}
+	//if err := json.Unmarshal(*(*[]byte)(unsafe.Pointer(&condition)), &number); err != nil {
+	//	log.Info("PublicBlockChainAPI", "GetUnitByNumber Unmarshal err:", err, "condition:", condition)
+	//	return "Unmarshal err"
+	//}
+	index, err := strconv.ParseInt(condition, 10, 64)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber strconv.ParseInt err:", err, "condition:", condition)
+		return ""
+	}
+	number.Index = uint64(index)
+	number.IsMain = true
+
+	number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
+	log.Info("PublicBlockChainAPI info", "GetUnitByNumber_number.Index:", number.Index, "number:", number.String())
+
+	unit := s.b.GetUnitByNumber(number)
+	if unit == nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number)
+		return "GetUnitByNumber nil"
+	}
+	content, err := json.Marshal(unit)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
+		return "Marshal err"
+	}
+	return *(*string)(unsafe.Pointer(&content))
+}
+
+func (s *PublicBlockChainAPI) GetPrefix(condition string) string /*map[string][]byte*/ {
+	log.Info("PublicBlockChainAPI", "GetPrefix condition:", condition)
+	pre := s.b.GetPrefix(condition)
+	prefix := map[string]string{}
+	for key, value := range pre {
+		prefix[key] = *(*string)(unsafe.Pointer(&value))
+	}
+	content, err := json.Marshal(prefix)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "prefix:", prefix)
+		return "Marshal err"
+	}
+	return *(*string)(unsafe.Pointer(&content))
+}
+
 //contract command
 //install
 func (s *PublicBlockChainAPI) Ccinstall(ctx context.Context, ccname string, ccpath string, ccversion string) (hexutil.Bytes, error) {
@@ -1260,6 +1336,11 @@ func (args *SendTxArgs) toTransaction() *modules.Transaction {
 func forking(ctx context.Context, b Backend) uint64 {
 	b.SendConsensus(ctx)
 	return 0
+}
+
+func queryDb(ctx context.Context, b Backend, condition string) string {
+	b.SendConsensus(ctx)
+	return ""
 }
 
 // submitTransaction is a helper function that submits tx to txPool and logs a message.
@@ -2028,6 +2109,19 @@ type PublicDagAPI struct {
 
 func NewPublicDagAPI(b Backend) *PublicDagAPI {
 	return &PublicDagAPI{b}
+}
+func (s *PublicDagAPI) GetCommon(ctx context.Context, key string) ([]byte, error) {
+	// key to bytes
+	return s.b.GetCommon([]byte(key))
+}
+func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (string, error) {
+	result := s.b.GetCommonByPrefix([]byte(prefix))
+	if result == nil || len(result) == 0 {
+		return "null", nil
+	}
+	info := NewPublicReturnInfo("all_items", result)
+	result_json, _ := json.Marshal(info)
+	return string(result_json), nil
 }
 
 func (s *PublicDagAPI) GetAllTokenInfo(ctx context.Context) (string, error) {

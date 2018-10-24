@@ -43,7 +43,7 @@ func TestGetContractState(t *testing.T) {
 	err = statedb.SaveContractState(id, "name", "TestName", version)
 	assert.Nil(t, err, "Save contract state fail")
 	version, value := statedb.GetContractState(id, "name")
-	log.Debug("version:", version.String())
+	log.Debug("test debug: ", "version", version.String())
 	log.Debug(fmt.Sprintf("value:%#x", value))
 	assert.Equal(t, value, []byte("TestName"), "value not same.")
 	data := statedb.GetContractAllState()

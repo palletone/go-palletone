@@ -178,6 +178,10 @@ func initGenesis(ctx *cli.Context) error {
 		fmt.Println("Save Genesis unit to db error:", err)
 		return err
 	}
+	// @jay
+	// asset 存入数据库中
+	// dag.SaveCommon(key,asset)   key=[]byte(modules.FIELD_GENESIS_ASSET)
+
 	genesisUnitHash := unit.UnitHash
 	log.Info(fmt.Sprintf("Successfully Get Genesis Unit, it's hash: %v", genesisUnitHash.Hex()))
 

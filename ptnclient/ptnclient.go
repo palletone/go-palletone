@@ -464,6 +464,29 @@ func (ec *Client) ForkingAt(ctx context.Context, account common.Address, rate ui
 	return uint64(result), err
 }
 
+func (ec *Client) GetUnitByHashAt(ctx context.Context, condition string) (string, error) {
+	var result string
+	log.Println("GetUnitByHashAt condition:", condition)
+	err := ec.c.CallContext(ctx, &result, "ptn_getUnitByHash", condition)
+	return result, err
+}
+
+//GetUnitByNumber
+func (ec *Client) GetUnitByNumberAt(ctx context.Context, condition string) (string, error) {
+	var result string
+	log.Println("GetUnitByNumberAt condition:", condition)
+	err := ec.c.CallContext(ctx, &result, "ptn_getUnitByNumber", condition)
+	return result, err
+}
+
+//GetPrefix
+func (ec *Client) GetPrefix(ctx context.Context, condition string) (string, error) {
+	var result string
+	log.Println("GetPrefix condition:", condition)
+	err := ec.c.CallContext(ctx, &result, "ptn_getPrefix", condition)
+	return result, err
+}
+
 func (ec *Client) CcinstallAt(ctx context.Context, ccname string, ccpath string, ccversion string) (uint64, error) {
 	var result hexutil.Uint64
 	log.Printf("==============================CcInstallAt:" + ccname + ":" + ccpath + ":" + ccversion)
@@ -610,7 +633,7 @@ func (ec *Client) GetAddrTransactions(ctx context.Context, addr string) (modules
 
 func (ec *Client) GetAllTokenInfo(ctx context.Context) (*modules.AllTokenInfo, error) {
 	result := new(modules.AllTokenInfo)
-	err := ec.c.CallContext(ctx, &result, "ptn_getAllTokenInfo", nil)
+	err := ec.c.CallContext(ctx, &result, "dag_getAllTokenInfo", nil)
 	return result, err
 }
 
@@ -627,5 +650,16 @@ func (ec *Client) GetTokenInfo(ctx context.Context, key string) (*modules.TokenI
 func (ec *Client) SaveTokenInfo(ctx context.Context, name, token, creator string) (*modules.TokenInfo, error) {
 	result := new(modules.TokenInfo)
 	err := ec.c.CallContext(ctx, nil, "ptn_saveTokenInfo", name, token, creator)
+	return result, err
+}
+
+func (ec *Client) GetCommon(ctx context.Context, key string) ([]byte, error) {
+	result := make([]byte, 0)
+	err := ec.c.CallContext(ctx, &result, "dag_getCommon", key)
+	return result, err
+}
+func (ec *Client) GetCommonByPrefix(ctx context.Context, prefix string) (map[string][]byte, error) {
+	result := make(map[string][]byte, 0)
+	err := ec.c.CallContext(ctx, &result, "dag_getCommonByPrefix", prefix)
 	return result, err
 }

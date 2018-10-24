@@ -215,11 +215,6 @@ type ChaincodeStubInterface interface {
 	// validity of the transaction.
 	SetEvent(name string, payload []byte) error
 
-	//合约接口
-	ContractInterface
-}
-
-type ContractInterface interface {
 	//TODO xiaozhi
 	//获取保证金合约的一些配置参数
 	GetDepositConfig() ([]byte, error)
@@ -227,7 +222,8 @@ type ContractInterface interface {
 	GetPayToContractAddr() ([]byte, error)
 	//获取支付保证金数量
 	GetPayToContractTokens() ([]byte, error)
-	//
+	//获取所有的世界状态
+	GetContractAllState() ([]byte, error)
 }
 
 // CommonIteratorInterface allows a chaincode to check whether any more result

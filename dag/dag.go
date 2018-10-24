@@ -41,6 +41,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"unsafe"
 )
 
 type Dag struct {
@@ -133,7 +134,14 @@ func (d *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 }
 
 func (d *Dag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) {
-	return d.dagdb.GetUnitFormIndex(number)
+	//return d.dagdb.GetUnitFormIndex(number)
+	hash, err := d.dagdb.GetHashByNumber(number)
+	if err != nil {
+		log.Debug("Dag", "GetUnitByNumber dagdb.GetHashByNumber err:", err)
+		return nil, err
+	}
+	log.Debug("Dag", "GetUnitByNumber GetUnit(hash):", hash)
+	return d.dagdb.GetUnit(hash)
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
@@ -172,6 +180,10 @@ func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
 	//	return nil
 	//}
 	//return header
+}
+
+func (d *Dag) GetPrefix(prefix string) map[string][]byte {
+	return d.dagdb.GetPrefix(*(*[]byte)(unsafe.Pointer(&prefix)))
 }
 
 func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
@@ -732,6 +744,11 @@ func (d *Dag) GetContractState(id []byte, field string) (*modules.StateVersion, 
 	//return d.statedb.GetContractState(common.HexToAddress(id), field)
 }
 
+//get contract all state
+func (d *Dag) GetContractStatesById(id []byte) (map[modules.StateVersion][]byte, error) {
+	return d.statedb.GetContractStatesById(id)
+}
+
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
 	return d.unitRep.CreateUnit(mAddr, txpool, ks, t)
 }
@@ -1045,4 +1062,14 @@ func (d *Dag) UpdateMediator() error {
 	fmt.Println(mas)
 	//TODO
 	return nil
+}
+
+// dag's common geter
+func (d *Dag) GetCommon(key []byte) ([]byte, error) {
+	return d.dagdb.GetCommon(key)
+}
+
+// GetCommonByPrefix  return the prefix's all key && value.
+func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
+	return d.dagdb.GetCommonByPrefix(prefix)
 }

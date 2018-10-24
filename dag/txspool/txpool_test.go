@@ -58,7 +58,7 @@ func (ud *testUnitDag) CurrentUnit() *modules.Unit {
 	}, nil)
 }
 
-func (ud *testUnitDag) GetUnit(hash common.Hash) (*modules.Unit, error) {
+func (ud *testUnitDag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	return ud.CurrentUnit(), nil
 }
 

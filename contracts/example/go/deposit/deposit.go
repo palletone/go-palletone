@@ -39,18 +39,6 @@ type DepositChaincode struct {
 
 func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	fmt.Println("***system contract init about DepositChaincode***")
-	//获取配置文件
-	depositConfigBytes, err := stub.GetDepositConfig()
-	if err != nil {
-		fmt.Println("deposit error: ", err.Error())
-		return shim.Error(err.Error())
-	}
-	err = json.Unmarshal(depositConfigBytes, depositChaincode)
-	if err != nil {
-		fmt.Println("unmarshal depositConfigBytes error ", err)
-		return shim.Error(err.Error())
-	}
-	//fmt.Printf("DepositChaincode=%#v\n\n", depositChaincode)
 	return shim.Success([]byte("ok"))
 }
 
@@ -63,19 +51,23 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//void deposit_witness_pay(const witness_object& wit, token_type amount)
 
 		//获取用户地址
-		//userAddr, err := stub.GetPayToContractAddr()
-		//if err != nil {
-		//	fmt.Println("GetPayToContractAddr error: ", err.Error())
-		//	return shim.Error(err.Error())
-		//}
-		//fmt.Println("GetPayToContractAddr=", string(userAddr))
-		////获取 Token 数量
-		//tokenAmount, err := stub.GetPayToContractTokens()
-		//if err != nil {
-		//	fmt.Println("GetPayToContractTokens error: ", err.Error())
-		//}
-		//fmt.Println("GetPayToContractTokens=", string(tokenAmount))
-
+		userAddr, err := stub.GetPayToContractAddr()
+		if err != nil {
+			fmt.Println("GetPayToContractAddr error: ", err.Error())
+			//return shim.Error(err.Error())
+		}
+		fmt.Println("GetPayToContractAddr=", string(userAddr))
+		//获取 Token 数量
+		tokenAmount, err := stub.GetPayToContractTokens()
+		if err != nil {
+			fmt.Println("GetPayToContractTokens error: ", err.Error())
+		}
+		fmt.Println("GetPayToContractTokens=", string(tokenAmount))
+		states, err := stub.GetContractAllState()
+		if err != nil {
+			fmt.Println("GetContractAllState error", err.Error())
+		}
+		fmt.Println("GetContractAllState=", states)
 		return d.depositWitnessPay(stub, args)
 	case "DepositCashback":
 		//保证金退还
@@ -104,11 +96,24 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	if err != nil {
 		return shim.Error("ptnAccount input error: " + err.Error())
 	}
+	//获取配置文件
+	depositConfigBytes, err := stub.GetDepositConfig()
+	if err != nil {
+		fmt.Println("deposit error: ", err.Error())
+		return shim.Error(err.Error())
+	}
+	err = json.Unmarshal(depositConfigBytes, depositChaincode)
+	if err != nil {
+		fmt.Println("unmarshal depositConfigBytes error ", err)
+		return shim.Error(err.Error())
+	}
+	fmt.Printf("DepositChaincode=%#v\n\n", depositChaincode)
 	//与保证金合约设置的数量比较
 	if ptnAccount < depositChaincode.DepositAmount {
 		fmt.Println("input ptnAmount less than deposit amount.")
 		return shim.Error("input ptnAmount less than deposit amount.")
 	}
+
 	//TODO 这里需要对msg0对象，获取其中的付款的数量，以来和参数比较是否大于或等于，否则返回出错
 
 	//获取一下该用户下的账簿情况

@@ -19,14 +19,21 @@
 package asset
 
 import (
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	//"github.com/palletone/go-palletone/ptn"
 	"github.com/pborman/uuid"
 )
 
 func NewAsset() modules.IDType16 {
-	var assetId modules.IDType16
 
+	var assetId modules.IDType16
+	if dagconfig.DefaultConfig.PtnAssetHex != "" {
+		assetId, err := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
+		if err == nil {
+			return assetId
+		}
+	}
 	// use version 1: timestamp and mac
 	uuid := uuid.NewUUID()
 	lenth := len(uuid)
@@ -36,6 +43,12 @@ func NewAsset() modules.IDType16 {
 	for i := 0; i < lenth; i++ {
 		assetId[i] = uuid[i]
 	}
+	// new ptn asset_id
+	modules.PTNCOIN = assetId
+	dagconfig.DefaultConfig.PtnAssetId = assetId[:]
+	// TODO 更新toml文件里的PtnAssetHex
+	// dagconfig.DefaultConfig.PtnAssetHex = assetId.String()
+	// file  os.open
 	return assetId
 }
 

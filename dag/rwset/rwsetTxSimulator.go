@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type RwSetTxSimulator struct {
@@ -127,6 +128,11 @@ func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]
 	}
 
 	return rd, wt, nil
+}
+
+//get all state
+func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[modules.StateVersion][]byte, error) {
+	return s.state.GetContractStatesById(contractid)
 }
 
 func (h *RwSetTxSimulator) CheckDone() error {
