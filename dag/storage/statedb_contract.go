@@ -136,7 +136,7 @@ func (statedb *StateDb) GetContractAllState() []*modules.ContractReadSet {
 	}
 	allState := []*modules.ContractReadSet{}
 	for k, v := range data {
-		if len(k) == 22 {
+		if len(k) <= 22 {
 			//Contract本身的状态，而不是某个Field的值
 			continue
 		}
