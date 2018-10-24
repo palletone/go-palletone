@@ -355,8 +355,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 	confPay.ConfigSet = append(confPay.ConfigSet,
 		modules.PayloadMapStruct{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
 
-	// todo Albert·Gou
-	// comment by Albert·Gou, 不是交易，已在其他地方处理
+	// comment by Albert·Gou, 已作为特殊交易在其他地方处理
 	//Put Mediator info into config
 	//d, _ := rlp.EncodeToBytes(genesisConf.InitialMediatorCandidates)
 	//med := modules.PayloadMapStruct{Key: "Mediator", Value: d}
@@ -465,6 +464,8 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 				if ok := unitOp.SaveVote(tx, msg); ok == false {
 					return fmt.Errorf("Save vote payload error.")
 				}
+			case modules.OP_MEDIATOR_CREATE:
+
 			case modules.APP_TEXT:
 			default:
 				return fmt.Errorf("Message type is not supported now: %v", msg.App)

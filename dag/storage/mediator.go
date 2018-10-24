@@ -35,10 +35,21 @@ func mediatorKey(address common.Address) []byte {
 	return key
 }
 
-func StoreMediator(db ptndb.Database, med *core.Mediator) error {
-	mi := med.MediatorToInfo()
+//func StoreMediator(db ptndb.Database, med *core.Mediator) error {
+//	mi := med.MediatorToInfo()
+//
+//	err := StoreBytes(db, mediatorKey(med.Address), mi)
+//	if err != nil {
+//		log.Error(fmt.Sprintf("Store mediator error:%s", err))
+//	}
+//
+//	return err
+//}
 
-	err := StoreBytes(db, mediatorKey(med.Address), mi)
+func StoreMediatorInfo(db ptndb.Database, mi *core.MediatorInfo) error {
+	mk := append(constants.MEDIATOR_INFO_PREFIX, []byte(mi.Address)...)
+
+	err := StoreBytes(db, mk, mi)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store mediator error:%s", err))
 	}

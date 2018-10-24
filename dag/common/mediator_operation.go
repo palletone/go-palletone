@@ -25,15 +25,15 @@ import (
 )
 
 type MediatorCreateOperation struct {
-	core.MediatorInfo
-}
-
-func (mco *MediatorCreateOperation) Validate() bool {
-	return true
+	*core.MediatorInfo
 }
 
 func feePayer(tx *modules.Transaction) (common.Address, error) {
 	return getRequesterAddress(tx)
+}
+
+func (mco *MediatorCreateOperation) Validate() bool {
+	return true
 }
 
 func (mco *MediatorCreateOperation) Evaluate() bool {
@@ -42,4 +42,24 @@ func (mco *MediatorCreateOperation) Evaluate() bool {
 
 func (mco *MediatorCreateOperation) Apply() {
 	return
+}
+
+// Create initial mediators
+func GetInitialMediatorMsgs(genesisConf *core.Genesis) []*modules.Message {
+	result := make([]*modules.Message, 0)
+
+	for _, mi := range genesisConf.InitialMediatorCandidates {
+		mco := &MediatorCreateOperation{
+			MediatorInfo: mi,
+		}
+
+		msg := &modules.Message{
+			App:     modules.OP_MEDIATOR_CREATE,
+			Payload: mco,
+		}
+
+		result = append(result, msg)
+	}
+
+	return result
 }
