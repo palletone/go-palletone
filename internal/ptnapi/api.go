@@ -46,6 +46,7 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
+	"strconv"
 )
 
 const (
@@ -717,10 +718,6 @@ func (s *PublicBlockChainAPI) Forking(ctx context.Context, rate uint64) uint64 {
 func (s *PublicBlockChainAPI) GetUnitByHash(ctx context.Context, condition string) string {
 	log.Info("PublicBlockChainAPI", "GetUnitByHash condition:", condition)
 	hash := common.Hash{}
-	//if err := json.Unmarshal(*(*[]byte)(unsafe.Pointer(&condition)), &hash); err != nil {
-	//	log.Info("PublicBlockChainAPI", "GetUnitByHash Unmarshal err:", err, "condition:", condition)
-	//	return "Unmarshal err"
-	//}
 	if err := hash.SetHexString(condition); err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByHash SetHexString err:", err, "condition:", condition)
 		return ""
@@ -733,6 +730,37 @@ func (s *PublicBlockChainAPI) GetUnitByHash(ctx context.Context, condition strin
 	content, err := json.Marshal(*unit)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByHash Marshal err:", err, "unit:", *unit)
+		return "Marshal err"
+	}
+	return *(*string)(unsafe.Pointer(&content))
+}
+
+func (s *PublicBlockChainAPI) GetUnitByNumber(ctx context.Context, condition string) string {
+	log.Info("PublicBlockChainAPI", "GetUnitByNumber condition:", condition)
+
+	number := modules.ChainIndex{}
+	//if err := json.Unmarshal(*(*[]byte)(unsafe.Pointer(&condition)), &number); err != nil {
+	//	log.Info("PublicBlockChainAPI", "GetUnitByNumber Unmarshal err:", err, "condition:", condition)
+	//	return "Unmarshal err"
+	//}
+	index, err := strconv.ParseInt(condition, 10, 64)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber strconv.ParseInt err:", err, "condition:", condition)
+		return ""
+	}
+	number.Index = uint64(index)
+	number.IsMain = true
+	number.AssetID = modules.PTNCOIN
+	log.Info("PublicBlockChainAPI", "GetUnitByNumber number.Index:", number.Index, "number:", number.String())
+
+	unit := s.b.GetUnitByNumber(number)
+	if unit == nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number)
+		return "GetUnitByNumber nil"
+	}
+	content, err := json.Marshal(*unit)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
 		return "Marshal err"
 	}
 	return *(*string)(unsafe.Pointer(&content))

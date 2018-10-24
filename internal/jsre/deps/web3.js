@@ -5284,6 +5284,14 @@ var methods = function () {
         outputFormatter: formatters.outputBlockFormatter
     });
 
+    var getUnitByNumber = new Method({
+        name: 'getUnitByNumber',
+        call: 'ptn_getUnitByNumber',
+        params: 1,
+        inputFormatter: [null],
+        outputFormatter: formatters.outputBlockFormatter
+    });
+
 
     var getBalance = new Method({
         name: 'getBalance',
@@ -5633,6 +5641,7 @@ var methods = function () {
     return [
         forking,
         getUnitByHash,
+        getUnitByNumber,
         getBalance,
         getStorageAt,
         getCode,

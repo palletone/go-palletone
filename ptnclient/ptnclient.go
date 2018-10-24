@@ -471,6 +471,14 @@ func (ec *Client) GetUnitByHashAt(ctx context.Context, condition string) (string
 	return result, err
 }
 
+//GetUnitByNumber
+func (ec *Client) GetUnitByNumberAt(ctx context.Context, condition string) (string, error) {
+	var result string
+	log.Println("GetUnitByNumberAt condition:", condition)
+	err := ec.c.CallContext(ctx, &result, "ptn_getUnitByNumber", condition)
+	return result, err
+}
+
 func (ec *Client) CcinstallAt(ctx context.Context, ccname string, ccpath string, ccversion string) (uint64, error) {
 	var result hexutil.Uint64
 	log.Printf("==============================CcInstallAt:" + ccname + ":" + ccpath + ":" + ccversion)
