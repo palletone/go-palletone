@@ -26,6 +26,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -305,6 +306,53 @@ func getEthAddrByBTCTx(transactionhex string, stub *shim.ChaincodeStubInterface)
 	}
 }
 
+//refer to the struct GetBestHeaderParams in "github.com/palletone/adaptor/AdaptorETH.go",
+//add 'method' member.
+type ETHQuery_GetBestHeader struct { //GetBestHeaderParams
+	Method string `json:"method"`
+	Number string `json:"Number"` //if empty, return the best header
+}
+
+type GetBestHeaderResult struct {
+	Number string `json:"number"`
+}
+
+func getHight(stub *shim.ChaincodeStubInterface) (string, string, error) {
+	//
+	getheader := ETHQuery_GetBestHeader{Method: "GetBestHeader"} //get best hight
+	//
+	reqBytes, err := json.Marshal(getheader)
+	if err != nil {
+		return "", "", err
+	}
+	//
+	result, err := (*stub).OutChainQuery("eth", reqBytes)
+	if err != nil {
+		return "", "", err
+	}
+	//
+	var getheadresult GetBestHeaderResult
+	err = json.Unmarshal(result, &getheadresult)
+	if err != nil {
+		return "", "", err
+	}
+
+	if getheadresult.Number == "" {
+		return "", "", errors.New("{\"Error\":\"Failed to get eth height\"}")
+	}
+
+	curHeight, err := strconv.ParseUint(getheadresult.Number, 10, 64)
+	if err != nil {
+		return "", "", errors.New("{\"Error\":\"Failed to parse eth height\"}")
+	}
+	curBefore30d := curHeight - 172800 // 30 days
+	curHeight -= 6
+
+	curBefore30dStr := strconv.FormatUint(curBefore30d, 10)
+	curHeightStr := strconv.FormatUint(curHeight, 10)
+	return curBefore30dStr, curHeightStr, nil
+}
+
 //refer to the struct GetEventByAddressParams in "github.com/palletone/adaptor/AdaptorETH.go",
 //add 'method' member.
 type ETHTransaction_getevent struct { //GetEventByAddressParams
@@ -323,12 +371,18 @@ type GetEventByAddressResult struct {
 
 //need check confirms
 func getDepositETHAmount(concernAddr string, eth_redeem_base64 string, stub *shim.ChaincodeStubInterface) (*big.Int, error) {
+	startHeight, endHeight, err := getHight(stub)
+	if err != nil {
+		return nil, err
+	}
 	//get doposit event log
 	getevent := ETHTransaction_getevent{Method: "GetEventByAddress"} // GetJuryAddress
 	getevent.ContractABI = contractABI
 	getevent.ContractAddr = contractAddr
 	getevent.ConcernAddr = concernAddr
 	getevent.EventName = "Deposit"
+	getevent.StartHeight = startHeight
+	getevent.EndHeight = endHeight
 	//
 	reqBytes, err := json.Marshal(getevent)
 	if err != nil {
