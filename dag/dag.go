@@ -41,6 +41,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"unsafe"
 )
 
 type Dag struct {
@@ -179,6 +180,10 @@ func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
 	//	return nil
 	//}
 	//return header
+}
+
+func (d *Dag) GetPrefix(prefix string) map[string][]byte {
+	return d.dagdb.GetPrefix(*(*[]byte)(unsafe.Pointer(&prefix)))
 }
 
 func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {

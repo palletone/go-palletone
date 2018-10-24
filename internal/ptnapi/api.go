@@ -766,6 +766,21 @@ func (s *PublicBlockChainAPI) GetUnitByNumber(ctx context.Context, condition str
 	return *(*string)(unsafe.Pointer(&content))
 }
 
+func (s *PublicBlockChainAPI) GetPrefix(condition string) string /*map[string][]byte*/ {
+	log.Info("PublicBlockChainAPI", "GetPrefix condition:", condition)
+	pre := s.b.GetPrefix(condition)
+	prefix := map[string]string{}
+	for key, value := range pre {
+		prefix[key] = *(*string)(unsafe.Pointer(&value))
+	}
+	content, err := json.Marshal(prefix)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "prefix:", prefix)
+		return "Marshal err"
+	}
+	return *(*string)(unsafe.Pointer(&content))
+}
+
 //contract command
 //install
 func (s *PublicBlockChainAPI) Ccinstall(ctx context.Context, ccname string, ccpath string, ccversion string) (hexutil.Bytes, error) {
