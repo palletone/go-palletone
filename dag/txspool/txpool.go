@@ -798,7 +798,7 @@ func (pool *TxPool) AddRemotes(txs []*modules.Transaction) []error {
 	return pool.addTxs(pool_txs, false)
 }
 type Tag uint64
-func (mp *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan, rateLimit bool, tag Tag) ([]*TxDesc, error) {
+func (mp *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error) {
 	log.Trace("Processing transaction %v", tx.Hash())
 
 	// Protect concurrent access.

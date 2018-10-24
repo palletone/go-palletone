@@ -17,7 +17,9 @@
 package ptn
 
 import (
+        "time"
 	"github.com/palletone/go-palletone/common"
+        "github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/common/event"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -97,14 +99,41 @@ var errorToString = map[int]string{
 	ErrSuspendedPeer:           "Suspended peer",
 }
 
+type sTxDesc struct {
+	// Tx is the transaction associated with the entry.
+	Tx *modules.Transaction
+
+	// Added is the time when the entry was added to the source pool.
+	Added time.Time
+
+	// Height is the block height when the entry was added to the the source
+	// pool.
+	Height int32
+
+	// Fee is the total fee the transaction associated with the entry pays.
+	Fee int64
+
+	// FeePerKB is the fee the transaction pays in Satoshi per 1000 bytes.
+	FeePerKB int64
+}
+
+// TxDesc is a descriptor containing a transaction in the mempool along with
+// additional metadata.
+type TxDesc struct {
+	sTxDesc
+
+	// StartingPriority is the priority of the transaction when it was added
+	// to the pool.
+	StartingPriority float64
+}
+
 type txPool interface {
 	// AddRemotes should add the given transactions to the pool.
 	AddRemotes([]*modules.Transaction) []error
-
+        ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.
 	Pending() (map[common.Hash]*modules.TxPoolTransaction, error)
-
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription

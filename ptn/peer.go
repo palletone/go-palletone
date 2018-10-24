@@ -105,13 +105,13 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 	}
 }
 
-func (p *peer) ID() int32 {
+/*func (p *peer) ID() int32 {
 	p.lock.Lock()
 	id := p.id
 	p.lock.Unlock()
 
 	return id
-}
+}*/
 // Info gathers and returns a collection of metadata known about a peer.
 func (p *peer) Info( /*assetId modules.IDType16*/ ) *PeerInfo {
 	ptnAssetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
