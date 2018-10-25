@@ -1043,7 +1043,7 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 //	return dag.stateRep.GetCandidateMediators()
 //}
 
-// GetElectedMediatorsAddress Yiran@
+//GetElectedMediatorsAddress YiRan@
 func (dag *Dag) GetElectedMediatorsAddress() ([]common.Address, error) {
 	gp, err := dag.propdb.RetrieveGlobalProp()
 	if err != nil {
@@ -1054,15 +1054,15 @@ func (dag *Dag) GetElectedMediatorsAddress() ([]common.Address, error) {
 }
 
 // UpdateMediator
-func (d *Dag) UpdateMediator() error {
-	mas, err := d.GetElectedMediatorsAddress()
-	if err != nil {
-		return err
-	}
-	fmt.Println(mas)
-	//TODO
-	return nil
-}
+//func (d *Dag) UpdateMediator() error {
+//	mas, err := d.GetElectedMediatorsAddress()
+//	if err != nil {
+//		return err
+//	}
+//	fmt.Println(mas)
+//	//TODO
+//	return nil
+//}
 
 // dag's common geter
 func (d *Dag) GetCommon(key []byte) ([]byte, error) {

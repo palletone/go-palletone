@@ -57,7 +57,6 @@ type IDagDb interface {
 	SaveTransactions(txs *modules.Transactions) error
 	SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
 	SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
-	GetHashByNumber(number modules.ChainIndex) (common.Hash, error)
 	SaveTxLookupEntry(unit *modules.Unit) error
 	SaveTokenInfo(token_info *modules.TokenInfo) (string, error)
 	SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error
@@ -77,6 +76,7 @@ type IDagDb interface {
 	GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error)
 	GetHeaderByHeight(index modules.ChainIndex) (*modules.Header, error)
 	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
+	GetHashByNumber(number modules.ChainIndex) (common.Hash, error)
 	GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)

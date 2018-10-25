@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -126,10 +127,11 @@ func NewContractDeployPayload(templateid []byte, contractid []byte, name string,
 		WriteSet:     writeset,
 	}
 }
-func NewVotePayload(Address []byte, ExpiredTerm uint16) *VotePayload {
+func NewVotePayload(address [][]byte, mode uint8, voteType uint8) *VotePayload {
 	return &VotePayload{
-		Address:     Address,
-		ExpiredTerm: ExpiredTerm,
+		Address:  address,
+		Mode:     mode,
+		VoteType: voteType,
 	}
 }
 
@@ -151,7 +153,7 @@ type TxPoolTransaction struct {
 	From         []*OutPoint
 	CreationDate time.Time `json:"creation_date"`
 	Priority_lvl float64   `json:"priority_lvl"` // 打包的优先级
-	Nonce        uint64    // transaction'hash maybe repeat.
+	Nonce        uint64                          // transaction'hash maybe repeat.
 	Pending      bool
 	Confirmed    bool
 	Index        int `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
