@@ -30,6 +30,6 @@ type AccountInfo struct {
 	//当前账户的PTN余额
 	PtnBalance uint64
 	//当前账户对Mediator选举的投票结果 (temp)
-	PtnVoteResult []byte
+	//PtnVoteResult []byte
 	Votes         []VoteInfo
 }

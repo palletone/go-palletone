@@ -39,7 +39,7 @@ func TestStateDb_AccountInfo(t *testing.T) {
 	assert.Nil(t, info)
 	assert.NotNil(t, err)
 	t.Logf("correct throw error:%s", err)
-	info = &modules.AccountInfo{PtnBalance: 12345, PtnVoteResult: []byte("MediatorA")}
+	info = &modules.AccountInfo{PtnBalance: 12345, Votes: []modules.VoteInfo{{VoteContent: addr.Bytes(),  VoteType: 0}}}
 	err = statedb.SaveAccountInfo(addr, info)
 	assert.Nil(t, err)
 	info2, err := statedb.GetAccountInfo(addr)

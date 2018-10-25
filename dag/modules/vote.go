@@ -5,8 +5,8 @@ package modules
 //}
 
 type VoteInfo struct {
-	VoteType    uint8
-	VoteID      uint16
+	VoteType uint8
+	//VoteID      uint16
 	VoteContent []byte
 }
 

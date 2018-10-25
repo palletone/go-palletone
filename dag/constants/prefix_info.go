@@ -74,7 +74,7 @@ var (
 	TOKENTYPE  = []byte("tp") // tp[types]
 	TOKENINFOS = []byte("tokeninfos")
 
-	STATE_VOTE_LIST = []byte("MediatorVoteList")
+	STATE_VOTER_LIST = []byte("vl")
 )
 
 // suffix

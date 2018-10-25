@@ -80,15 +80,23 @@ func (box *VoteBox) AddToBoxIfNotVoted(Weight uint64, voter common.Address, vote
 			box.voters = append(box.voters, voter)
 			// 2. increase the candidate score
 			//    The target of the vote is the candidate
-			if _, ok := box.Candidates[voter]; ok {
+			if _, ok := box.Candidates[voteAddress]; ok {
 				box.Candidates[voteAddress] += Weight
 			} else {
 				fmt.Println("candidate address invalid")
 			}
 		}
 	}
-	return
+}
 
+func (box *VoteBox) AddToBox(Weight uint64, to []common.Address) {
+	for _, candidate := range to {
+		if _, ok := box.Candidates[candidate]; ok {
+			box.Candidates[candidate] += Weight
+		} else {
+			fmt.Println("candidate address invalid")
+		}
+	}
 }
 
 //Yiran
@@ -112,7 +120,8 @@ type SimpleVote interface {
 	//Initialize the candidate's score before voting
 	Register(addresses []common.Address)
 	//One person, one vote
-	AddToBoxIfNotVoted(Weight uint64, voter common.Address, voteAddress common.Address)
+	//AddToBoxIfNotVoted(Weight uint64, voter common.Address, voteAddress common.Address)
+	AddToBox(Weight uint64, to []common.Address)
 }
 
 //Yiran
