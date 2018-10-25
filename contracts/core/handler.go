@@ -133,24 +133,15 @@ func (handler *Handler) enterGetDepositConfig(e *fsm.Event) {
 		}
 
 		var serialSendMsg *pb.ChaincodeMessage
-		var txContext *transactionContext
-		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid, "[%s]No ledger context for GetState. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
-
 		defer func() {
 			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
-			if serialSendMsg != nil {
-				chaincodeLogger.Debugf("[%s]handleenterGetDepositConfig serial send %s",
-					shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
-				handler.serialSendAsync(serialSendMsg, nil)
-			}
+			chaincodeLogger.Debugf("[%s]handleenterGetDepositConfig serial send %s",
+				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+			handler.serialSendAsync(serialSendMsg, nil)
 		}()
 
-		if txContext == nil {
-			chaincodeLogger.Error("txContext is nil.")
-			return
-		}
 		chaincodeID := handler.getCCRootName()
-		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, txContext.chainID)
+		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
 		//TODO 这里要获取配置文件的信息
 		depositContract := DepositContract{
 			DepositContractAddress: "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM",
@@ -161,6 +152,7 @@ func (handler *Handler) enterGetDepositConfig(e *fsm.Event) {
 		depositContractBytes, err := json.Marshal(&depositContract)
 		if err != nil {
 			chaincodeLogger.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(err.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			return
 		}
 		chaincodeLogger.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
@@ -186,24 +178,17 @@ func (handler *Handler) enterGetPayToContractAddr(e *fsm.Event) {
 			return
 		}
 		var serialSendMsg *pb.ChaincodeMessage
-		var txContext *transactionContext
-		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid,
-			"[%s]No ledger context for GetPayToContractAddr. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
 		defer func() {
 			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
 			chaincodeLogger.Debugf("[%s]enterGetPayToContractAddr serial send %s",
 				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
 			handler.serialSendAsync(serialSendMsg, nil)
 		}()
-		if txContext == nil {
-			return
-		}
 		chaincodeID := handler.getCCRootName()
-		chaincodeLogger.Debugf("[%s] getting mediator or jury address for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, txContext.chainID)
+		chaincodeLogger.Debugf("[%s] getting mediator or jury address for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
 		//TODO 这里要获取支付保证金节点的地址
 		res := []byte("用户地址")
 		var err error
-		//res, err := txContext.txsimulator.GetState(msg.ContractId, chaincodeID, getState.Key)
 		if err != nil {
 			// Send error msg back to chaincode. GetState will not trigger event
 			payload := []byte(err.Error())
@@ -236,24 +221,18 @@ func (handler *Handler) enterGetPayToContractTokens(e *fsm.Event) {
 			return
 		}
 		var serialSendMsg *pb.ChaincodeMessage
-		var txContext *transactionContext
-		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid,
-			"[%s]No ledger context for GetPayToContractTokens. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
 		defer func() {
 			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
 			chaincodeLogger.Debugf("[%s]enterGetPayToContractTokens serial send %s",
 				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
 			handler.serialSendAsync(serialSendMsg, nil)
 		}()
-		if txContext == nil {
-			return
-		}
+
 		chaincodeID := handler.getCCRootName()
-		chaincodeLogger.Debugf("[%s] getting tokens for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, txContext.chainID)
+		chaincodeLogger.Debugf("[%s] getting tokens for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
 		//TODO 这里要获取支付保证金数量
 		res := []byte("支付保证金数量")
 		var err error
-		//res, err := txContext.txsimulator.GetState(msg.ContractId, chaincodeID, getState.Key)
 		if err != nil {
 			// Send error msg back to chaincode. GetState will not trigger event
 			payload := []byte(err.Error())
@@ -1510,6 +1489,12 @@ func (handler *Handler) getTxContextForMessage(channelID string, txid string, ms
 	return txContext, nil
 }
 
+//type valueState struct {
+//	Value string    `json:"value"`
+//	Time  time.Time `json:"time"`
+//	Extra string    `json:"extra"`
+//}
+
 // Handles request to ledger to put state
 func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 	go func() {
@@ -1557,6 +1542,10 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 				errHandler([]byte(unmarshalErr.Error()), "[%s]Unable to decipher payload. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
 				return
 			}
+			//vState := new(valueState)
+			//err = json.Unmarshal(putState.Value, vState)
+			//fmt.Println("vState===", vState)
+			//fmt.Println()
 			//glh
 			/*
 				if isCollectionSet(putState.Collection) {
