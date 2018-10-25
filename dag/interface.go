@@ -103,7 +103,9 @@ type IDag interface {
 	// todo albert·gou
 	//GetCandidateMediators() []*core.MediatorInfo
 	//Get all elected mediators.
-	//GetElectedMediatorsAddress() ([]common.Address, error)
+
+	// get new mediator list
+	GetElectedMediatorsAddress() ([]common.Address, error)
 
 	// comment by albert·gou
 	//UpdateGlobalDynProp(unit *modules.Unit)
