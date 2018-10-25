@@ -779,7 +779,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 // The method returns the entire filled skeleton and also the number of headers
 // already forwarded for processing.
 func (d *Downloader) fillHeaderSkeleton(from uint64, skeleton []*modules.Header, assetId modules.IDType16) ([]*modules.Header, int, error) {
-	log.Debug("Filling up skeleton", "from", from)
+	log.Debug("Filling up skeleton", "from", from, "len(skeleton):", len(skeleton))
 	d.queue.ScheduleSkeleton(from, skeleton)
 
 	var (
@@ -1028,7 +1028,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 			// Make sure that we have peers available for fetching. If all peers have been tried
 			// and all failed throw an error
 			if !progressed && !throttled && !running && len(idles) == total && pending() > 0 {
-				log.Debug("===errPeersUnavailable===")
+				log.Debug("downloader->fetchParts errPeersUnavailable", "progressed:", progressed, "throttled:", throttled, "running:", running, "len(idles):", len(idles), "total:", total, "pending():", pending())
 				return errPeersUnavailable
 			}
 		}
