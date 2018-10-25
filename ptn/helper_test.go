@@ -43,11 +43,12 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"math/big"
 	"time"
-	"github.com/palletone/go-palletone/dag/constants"
 )
 
 //var (
@@ -155,6 +156,10 @@ func (p *testTxPool) Pending() (map[common.Hash]*modules.TxPoolTransaction, erro
 
 func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return p.txFeed.Subscribe(ch)
+}
+
+func (p *testTxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error) {
+	return []*txspool.TxDesc{}, nil
 }
 
 // newTestTransaction create a new dummy transaction.

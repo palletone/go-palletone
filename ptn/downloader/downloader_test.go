@@ -323,6 +323,10 @@ func (dl *downloadTester) terminate() {
 	dl.downloader.Terminate()
 }
 
+func (dl *downloadTester) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
+	return &modules.Unit{}, nil
+}
+
 // sync starts synchronizing with a remote peer, blocking until it completes.
 func (dl *downloadTester) sync(id string, td uint64, mode SyncMode) error {
 	dl.lock.RLock()
