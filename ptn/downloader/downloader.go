@@ -629,7 +629,6 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*
 //其他peer的header只有在干净地映射到骨架上时才被接受。
 //如果没有人能够填充骨架 - 甚至origin peer也不能填充 - 它被认为是无效的，并且origin peer也被丢弃。
 func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, assetId modules.IDType16) error {
-	//fmt.Println("xz  fetchHeaders")
 	log.Debug("Directing header downloads", "origin", from)
 	defer log.Debug("Header download terminated")
 	//log.Info("Downloader->fetchHeaders", "peerConnection.id:", p.id, "from:", from, "pivot:", pivot)
@@ -705,12 +704,13 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 					}
 				}
 				// Pivot done (or not in fast sync) and no more headers, terminate the process
-				p.log.Debug("No more headers available")
+				log.Debug("No more headers available")
 				select {
 				case d.headerProcCh <- nil:
-					fmt.Println("============fetchHeaders normal d.headerProcCh <- nil==========")
+					log.Debug("fetchHeaders normal d.headerProcCh <- nil")
 					return nil
 				case <-d.cancelCh:
+					log.Debug("fetchHeaders normal <-d.cancelCh")
 					return errCancelHeaderFetch
 				}
 			}
@@ -761,7 +761,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 			}
 			select {
 			case d.headerProcCh <- nil:
-				fmt.Println("=================fetchHeaders timeout d.headerProcCh <- nil=============")
+				log.Debug("fetchHeaders timeout d.headerProcCh <- nil")
 			case <-d.cancelCh:
 			}
 			return errBadPeer
@@ -812,12 +812,7 @@ func (d *Downloader) fillHeaderSkeleton(from uint64, skeleton []*modules.Header,
 // available peers, reserving a chunk of blocks for each, waiting for delivery
 // and also periodically checking for timeouts.
 func (d *Downloader) fetchBodies(from uint64, assetId modules.IDType16) error {
-
-	//fmt.Println("xz  fetchBodies")
-	fmt.Println("fetchBodies2----------------------------")
-
 	log.Debug("Downloading block bodies", "origin", from)
-
 	var (
 		deliver = func(packet dataPack) (int, error) {
 			pack := packet.(*bodyPack)
@@ -828,8 +823,6 @@ func (d *Downloader) fetchBodies(from uint64, assetId modules.IDType16) error {
 		capacity = func(p *peerConnection) int { return p.BlockCapacity(d.requestRTT()) }
 		setIdle  = func(p *peerConnection, accepted int) { p.SetBodiesIdle(accepted) }
 	)
-
-	//fmt.Println("================================================")
 
 	err := d.fetchParts(errCancelBodyFetch, d.bodyCh, deliver, d.bodyWakeCh, expire,
 		d.queue.PendingBlocks, d.queue.InFlightBlocks, d.queue.ShouldThrottleBlocks, d.queue.ReserveBodies,
@@ -882,7 +875,6 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 			return errCancel
 
 		case packet := <-deliveryCh:
-			//fmt.Println("xz  <-deliveryCh")
 			log.Debug("===fetchParts <-deliveryCh===")
 			// If the peer was previously banned and failed to deliver its pack
 			// in a reasonable time frame, ignore its message.
@@ -1040,7 +1032,6 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 // queue until the stream ends or a failure occurs.
 //从输入通道获取一批又一批的检索头，并将它们处理和调度到头链和下加载程序的队列中，直到流结束或发生故障。
 func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, assetId modules.IDType16) error {
-	//fmt.Println("xz  processHeaders")
 	log.Debug("===Enter processHeaders===", "d.mode:", d.mode)
 	// Keep a count of uncertain headers to roll back
 	rollback := []*modules.Header{}
@@ -1084,10 +1075,9 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 			return errCancelHeaderProcessing
 
 		case headers := <-d.headerProcCh:
-			//fmt.Println("xz  <-d.headerProcCh")
 			// Terminate header processing if we synced up
 			if len(headers) == 0 {
-				fmt.Println("===processHeaders====================len(headers) == 0")
+				log.Debug("processHeaders <-d.headerProcCh len(headers) == 0")
 				// Notify everyone that headers are fully processed
 				for _, ch := range []chan bool{d.bodyWakeCh} {
 					select {
@@ -1129,7 +1119,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 						return errStallingPeer
 					}
 				}
-				fmt.Println("===processHeaders====================rollback = nil")
+				log.Debug("processHeaders rollback = nil")
 				// Disable any rollback and return
 				rollback = nil
 				return nil
@@ -1169,7 +1159,6 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 						frequency = 1
 					}
 					if n, err := d.lightdag.InsertHeaderDag(chunk, frequency); err != nil {
-						//fmt.Println("xz  d.lightdag.InsertHeaderDag(chunk, frequency)  n = ", n)
 						// If some headers were inserted, add them too to the rollback list
 						if n > 0 {
 							rollback = append(rollback, chunk[:n]...)
@@ -1228,7 +1217,6 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 
 // processFullSyncContent takes fetch results from the queue and imports them into the chain.
 func (d *Downloader) processFullSyncContent() error {
-	//fmt.Println("xz  processFullSyncContent")
 	for {
 		results := d.queue.Results(true)
 		if len(results) == 0 {
@@ -1276,7 +1264,6 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
 		return errInvalidChain
 	}
-	//fmt.Println("lalalala")
 	return nil
 }
 
@@ -1285,7 +1272,6 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modules.IDType16) error {
 	// Start syncing state of the reported head block. This should get us most of
 	// the state of the pivot block.
-	//fmt.Println("xz  processFastSyncContent")
 	log.Debug("===Enter processFastSyncContent===")
 	//TODO wangjiyou
 	/*
@@ -1301,7 +1287,6 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 	// sync takes long enough for the chain head to move significantly.
 	pivot := uint64(0)
 	//if height := latest.Number.Uint64(); height > uint64(fsMinFullBlocks) {
-	//fmt.Println("xz  latest.Number.Index=", latest.Number.Index)
 	if height := latest.Number.Index; height > uint64(fsMinFullBlocks) {
 		pivot = height - uint64(fsMinFullBlocks)
 	}
@@ -1335,7 +1320,7 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 		if oldPivot != nil {
 			results = append(append([]*fetchResult{oldPivot}, oldTail...), results...)
 		}
-		//fmt.Println("xz  len(result)=", len(results))
+
 		// Split around the pivot block and process the two sides via fast/full sync
 		if atomic.LoadInt32(&d.committed) == 0 {
 			latest = results[len(results)-1].Header
@@ -1345,7 +1330,7 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 				pivot = height - uint64(fsMinFullBlocks)
 			}
 		}
-		//fmt.Println("xz  pivot=", pivot)
+
 		P, beforeP, afterP := splitAroundPivot(pivot, results)
 		if err := d.commitFastSyncData(beforeP); err != nil {
 			log.Debug("===processFastSyncContent===", "commitFastSyncData err:", err)
@@ -1357,7 +1342,7 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 			if oldPivot != P {
 				oldPivot = P
 			}
-			//fmt.Printf("p=%#v\n", P.Header.Creationdate)
+
 			if err := d.commitPivotBlock(P); err != nil {
 				log.Debug("===processFastSyncContent===", "commitPivotBlock.err:", err)
 				return err
@@ -1372,7 +1357,6 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 		}
 
 		// Fast sync done, pivot commit done, full import
-		//fmt.Println("xz  inport")
 		if err := d.importBlockResults(afterP); err != nil {
 			log.Debug("===processFastSyncContent===", "importBlockResults.err:", err)
 			return err
@@ -1634,8 +1618,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	// Span out with 15 block gaps into the future to catch bad head reports
 	limit := 2 * MaxHeaderFetch / 16
 	count := 1 + int((int64(ceil)-from)/16)
-	//fmt.Println("limit=", limit)
-	//fmt.Println("count=", count)
+
 	if count > limit {
 		count = limit
 	}
@@ -1645,7 +1628,6 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 		IsMain:  true,
 		Index:   uint64(from),
 	}
-	//fmt.Println("count,from", count, from)
 
 	go p.peer.RequestHeadersByNumber(index, count, 15, false)
 	//TODO xiaozhi
@@ -1668,7 +1650,6 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 			}
 			// Make sure the peer actually gave something valid
 			headers := packet.(*headerPack).headers
-			//fmt.Printf("headers=%#v\n", headers[0].Hash())
 			if len(headers) == 0 {
 				p.log.Warn("Empty head header set")
 				return 0, errEmptyHeaderSet
@@ -1691,11 +1672,9 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 				}
 
 				// Otherwise check if we already know the header or not
-				//fmt.Println(d.mode == FullSync)
 				//fmt.Println("d.dag.HasHeader(headers[i].Hash(), headers[i].Number.Index==", headers[i].Hash(), headers[i].Number.Index)
 				if (d.mode == FullSync && d.dag.HasHeader(headers[i].Hash(), headers[i].Number.Index)) || (d.mode != FullSync && d.lightdag.HasHeader(headers[i].Hash(), headers[i].Number.Index)) {
 					number, hash = headers[i].Number.Index, headers[i].Hash()
-					//fmt.Println("lalaal")
 					// If every header is known, even future ones, the peer straight out lied about its head
 					if number > height && i == limit-1 {
 						p.log.Warn("Lied about chain head", "reported", height, "found", number)
@@ -1723,7 +1702,6 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 		log.Debug("Found common ancestor", "number", number, "hash", hash)
 		return number, nil
 	}
-	//fmt.Println("--------------1/2------------")
 	// Ancestor not found, we need to binary search over our chain
 	start, end := uint64(0), head
 	if floor > 0 {
