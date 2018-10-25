@@ -256,14 +256,15 @@ type ContractReadSet struct {
 //	BallotCost  big.Int       //token cost
 //	ExpiredTime time.Duration //duration of voting
 //}
-//*
-// ExpiredTerm: Represents the expiration time of this polling information
-// (at the designated deadline), which is invalid if the expiration date is exceeded
-// ExpiredTerm == 0 means that keep alive.
-// */
+
+//VotePayload YiRan@
+// Mode == 0 [ Replace ] :replace all
+// Mode == 1 [ Edit    ] :Replace the addresses in the first half of the account's votes addresses to refer to the addresses in the second half.
+// Mode == 2 [ Delete  ] :Delete the addresses from account's votes addresses
 type VotePayload struct {
-	Address     []byte
-	ExpiredTerm uint16
+	Address  [][]byte
+	VoteType uint8
+	Mode     uint8
 }
 
 // Contract instance message

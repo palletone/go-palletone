@@ -372,6 +372,8 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 
 //Yiran
 func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Message) bool {
+
+	//1. interface deduct
 	var payload interface{}
 	payload = msg.Payload
 	VotePayLoad, ok := payload.(*modules.VotePayload)
@@ -379,17 +381,32 @@ func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Mes
 		//fmt.Println("not a valid vote payload")
 		return false
 	}
+
+	//2. get voter address
 	voter, err := getRequesterAddress(tx)
 	if err != nil {
 		//getAddress Error
 		return false
 	}
 
-	Candidate := common.BytesToAddress(VotePayLoad.Address)
-	err = unitOp.statedb.AddVote(voter, Candidate)
-	if err != nil {
-		//fmt.Println(AddVote error)
-		return false
+	//3. get candidates
+	Candidates := []common.Address{}
+	for _, address := range VotePayLoad.Address {
+		Candidates = append(Candidates, common.BytesToAddress(address))
+	}
+
+	//switch
+	//case: save mediator vote
+	if VotePayLoad.VoteType == 0 {
+		err = unitOp.statedb.UpdateMediatorVote(voter, Candidates, VotePayLoad.Mode)
+		if err != nil {
+			return false
+		}
+
+		err = unitOp.statedb.UpdateVoterList(voter)
+		if err != nil {
+			return false
+		}
 	}
 	return true
 

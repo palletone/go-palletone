@@ -40,6 +40,31 @@ func (m *MockIDag) EXPECT() *MockIDagMockRecorder {
 	return m.recorder
 }
 
+// GetCommon mocks base method
+func (m *MockIDag) GetCommon(key []byte) ([]byte, error) {
+	ret := m.ctrl.Call(m, "GetCommon", key)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommon indicates an expected call of GetCommon
+func (mr *MockIDagMockRecorder) GetCommon(key interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommon", reflect.TypeOf((*MockIDag)(nil).GetCommon), key)
+}
+
+// GetCommonByPrefix mocks base method
+func (m *MockIDag) GetCommonByPrefix(prefix []byte) map[string][]byte {
+	ret := m.ctrl.Call(m, "GetCommonByPrefix", prefix)
+	ret0, _ := ret[0].(map[string][]byte)
+	return ret0
+}
+
+// GetCommonByPrefix indicates an expected call of GetCommonByPrefix
+func (mr *MockIDagMockRecorder) GetCommonByPrefix(prefix interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommonByPrefix", reflect.TypeOf((*MockIDag)(nil).GetCommonByPrefix), prefix)
+}
+
 // IsEmpty mocks base method
 func (m *MockIDag) IsEmpty() bool {
 	ret := m.ctrl.Call(m, "IsEmpty")
@@ -185,6 +210,18 @@ func (m *MockIDag) GetHeader(hash common.Hash, number uint64) (*modules.Header, 
 // GetHeader indicates an expected call of GetHeader
 func (mr *MockIDagMockRecorder) GetHeader(hash, number interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeader", reflect.TypeOf((*MockIDag)(nil).GetHeader), hash, number)
+}
+
+// GetPrefix mocks base method
+func (m *MockIDag) GetPrefix(prefix string) map[string][]byte {
+	ret := m.ctrl.Call(m, "GetPrefix", prefix)
+	ret0, _ := ret[0].(map[string][]byte)
+	return ret0
+}
+
+// GetPrefix indicates an expected call of GetPrefix
+func (mr *MockIDagMockRecorder) GetPrefix(prefix interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrefix", reflect.TypeOf((*MockIDag)(nil).GetPrefix), prefix)
 }
 
 // CurrentHeader mocks base method
@@ -349,6 +386,19 @@ func (m *MockIDag) GetContractState(contractid []byte, field string) (*modules.S
 // GetContractState indicates an expected call of GetContractState
 func (mr *MockIDagMockRecorder) GetContractState(contractid, field interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractState", reflect.TypeOf((*MockIDag)(nil).GetContractState), contractid, field)
+}
+
+// GetContractStatesById mocks base method
+func (m *MockIDag) GetContractStatesById(id []byte) (map[modules.StateVersion][]byte, error) {
+	ret := m.ctrl.Call(m, "GetContractStatesById", id)
+	ret0, _ := ret[0].(map[modules.StateVersion][]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContractStatesById indicates an expected call of GetContractStatesById
+func (mr *MockIDagMockRecorder) GetContractStatesById(id interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractStatesById", reflect.TypeOf((*MockIDag)(nil).GetContractStatesById), id)
 }
 
 // GetUnitNumber mocks base method
@@ -633,19 +683,6 @@ func (m *MockIDag) GetActiveMediatorNode(index int) *discover.Node {
 // GetActiveMediatorNode indicates an expected call of GetActiveMediatorNode
 func (mr *MockIDagMockRecorder) GetActiveMediatorNode(index interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveMediatorNode", reflect.TypeOf((*MockIDag)(nil).GetActiveMediatorNode), index)
-}
-
-// GetElectedMediatorsAddress mocks base method
-func (m *MockIDag) GetElectedMediatorsAddress() ([]common.Address, error) {
-	ret := m.ctrl.Call(m, "GetElectedMediatorsAddress")
-	ret0, _ := ret[0].([]common.Address)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetElectedMediatorsAddress indicates an expected call of GetElectedMediatorsAddress
-func (mr *MockIDagMockRecorder) GetElectedMediatorsAddress() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetElectedMediatorsAddress", reflect.TypeOf((*MockIDag)(nil).GetElectedMediatorsAddress))
 }
 
 // GetTokenInfo mocks base method

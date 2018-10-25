@@ -31,7 +31,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-
+	//"github.com/palletone/go-palletone/internal/ptnapi"
+    //dagcommon "github.com/palletone/go-palletone/dag/common"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -163,6 +164,34 @@ type TxPool struct {
 	wg sync.WaitGroup // for shutdown sync
 
 	homestead bool
+}
+
+type sTxDesc struct {
+	// Tx is the transaction associated with the entry.
+	Tx *modules.Transaction
+
+	// Added is the time when the entry was added to the source pool.
+	Added time.Time
+
+	// Height is the block height when the entry was added to the the source
+	// pool.
+	Height int32
+
+	// Fee is the total fee the transaction associated with the entry pays.
+	Fee int64
+
+	// FeePerKB is the fee the transaction pays in Satoshi per 1000 bytes.
+	FeePerKB int64
+}
+
+// TxDesc is a descriptor containing a transaction in the mempool along with
+// additional metadata.
+type TxDesc struct {
+	sTxDesc
+
+	// StartingPriority is the priority of the transaction when it was added
+	// to the pool.
+	StartingPriority float64
 }
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
@@ -494,7 +523,6 @@ func (pool *TxPool) isTransactionInPool(hash *common.Hash) bool {
 	}
 	return false
 }
-
 // IsTransactionInPool returns whether or not the passed transaction already exists in the main pool.
 func (pool *TxPool) IsTransactionInPool(hash *common.Hash) bool {
 	pool.mu.RLock()
@@ -769,7 +797,173 @@ func (pool *TxPool) AddRemotes(txs []*modules.Transaction) []error {
 	}
 	return pool.addTxs(pool_txs, false)
 }
+type Tag uint64
+func (mp *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error) {
+	log.Trace("Processing transaction %v", tx.Hash())
 
+	// Protect concurrent access.
+	mp.mu.Lock()
+	defer mp.mu.Unlock()
+
+	// Potentially accept the transaction to the memory pool.
+	missingParents, txD, err := mp.maybeAcceptTransaction(tx, true, rateLimit,
+		true)
+	if err != nil {
+		return nil, err
+	}
+	missingParents = missingParents
+	txD = txD
+
+	/*if len(missingParents) == 0 {
+		// Accept any orphan transactions that depend on this
+		// transaction (they may no longer be orphans if all inputs
+		// are now available) and repeat for those accepted
+		// transactions until there are no more.
+		newTxs := mp.processOrphans(tx)
+		acceptedTxs := make([]*TxDesc, len(newTxs)+1)
+
+		// Add the parent transaction first so remote nodes
+		// do not add orphans.
+		acceptedTxs[0] = txD
+		copy(acceptedTxs[1:], newTxs)
+
+		return acceptedTxs, nil
+	}*/
+
+	// The transaction is an orphan (has inputs missing).  Reject
+	// it if the flag to allow orphans is not set.
+	/*if !allowOrphan {
+		// Only use the first missing parent transaction in
+		// the error message.
+		//
+		// NOTE: RejectDuplicate is really not an accurate
+		// reject code here, but it matches the reference
+		// implementation and there isn't a better choice due
+		// to the limited number of reject codes.  Missing
+		// inputs is assumed to mean they are already spent
+		// which is not really always the case.
+		str := fmt.Sprintf("orphan transaction %v references "+
+			"outputs of unknown or fully-spent "+
+			"transaction %v", tx.Hash(), missingParents[0])
+		return nil, txRuleError(wire.RejectDuplicate, str)
+	}*/
+
+	// Potentially add the orphan transaction to the orphan pool.
+	//err = mp.maybeAddOrphan(tx, tag)
+	return nil, nil
+}
+
+func IsCoinBase(tx *modules.Transaction) bool {
+	if len(tx.TxMessages) != 1 {
+		return false
+	}
+	msg, ok := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	if !ok {
+		return false
+	}
+	prevOut := msg.Input[0].PreviousOutPoint
+	if prevOut.TxHash != (common.Hash{}) {
+		return false
+	}
+	return true
+}
+// maybeAcceptTransaction is the internal function which implements the public
+// MaybeAcceptTransaction.  See the comment for MaybeAcceptTransaction for
+// more details.
+//
+// This function MUST be called with the mempool lock held (for writes).
+func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLimit, rejectDupOrphans bool) ([]*common.Hash, *TxDesc, error) {
+	txHash := tx.Hash()
+	// Don't accept the transaction if it already exists in the pool.  This
+	// applies to orphan transactions as well when the reject duplicate
+	// orphans flag is set.  This check is intended to be a quick check to
+	// weed out duplicates.
+	if mp.isTransactionInPool(&txHash) || rejectDupOrphans {
+		str := fmt.Sprintf("already have transaction %v", txHash)
+		str = str
+		return nil, nil,nil//txRuleError(RejectDuplicate, str)
+	}
+
+	// Perform preliminary sanity checks on the transaction.  This makes
+	// use of blockchain which contains the invariant rules for what
+	// transactions are allowed into blocks.
+	//err := ptnapi.CheckTransactionSanity(tx)
+	//if err != nil {
+	//	return nil, nil, err
+	//}
+
+	// A standalone transaction must not be a coinbase transaction.
+	if IsCoinBase(tx) {
+		str := fmt.Sprintf("transaction %v is an individual coinbase",
+			txHash)
+		str=str
+		return nil, nil, nil //txRuleError(RejectInvalid, str)
+	}
+
+	// The transaction may not use any of the same outputs as other
+	// transactions already in the pool as that would ultimately result in a
+	// double spend.  This check is intended to be quick and therefore only
+	// detects double spends within the transaction pool itself.  The
+	// transaction could still be double spending coins from the main chain
+	// at this point.  There is a more in-depth check that happens later
+	// after fetching the referenced transaction inputs from the main chain
+	// which examines the actual spend data and prevents double spends.
+	txpooltx := TxtoTxpoolTx(mp, tx)
+	err := mp.checkPoolDoubleSpend(txpooltx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Fetch all of the unspent transaction outputs referenced by the inputs
+	// to this transaction.  This function also attempts to fetch the
+	// transaction itself to be used for detecting a duplicate transaction
+	// without needing to do a separate lookup.
+	/*utxoView, err := mp.fetchInputUtxos(tx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Don't allow the transaction if it exists in the main chain and is not
+	// not already fully spent.
+	prevOut := wire.OutPoint{Hash: *txHash}
+	for txOutIdx := range tx.MsgTx().TxOut {
+		prevOut.Index = uint32(txOutIdx)
+		entry := utxoView.LookupEntry(prevOut)
+		if entry != nil && !entry.IsSpent() {
+			return nil, nil, txRuleError(wire.RejectDuplicate,
+				"transaction already exists")
+		}
+		utxoView.RemoveEntry(prevOut)
+	}*/
+
+	// NOTE: if you modify this code to accept non-standard transactions,
+	// you should add code here to check that the transaction does a
+	// reasonable number of ECDSA signature verifications.
+
+	
+	
+
+	/*
+	// Verify crypto signatures for each input and reject the transaction if
+	// any don't verify.
+	err = blockchain.ValidateTransactionScripts(tx, utxoView,
+		txscript.StandardVerifyFlags, mp.cfg.SigCache,
+		mp.cfg.HashCache)
+	if err != nil {
+		if cerr, ok := err.(blockchain.RuleError); ok {
+			return nil, nil, chainRuleError(cerr)
+		}
+		return nil, nil, err
+	}*/
+
+	// Add to transaction pool.
+	//txD := mp.addTransaction(utxoView, tx, bestHeight, txFee)
+
+	//log.Debugf("Accepted transaction %v (pool size: %v)", txHash,
+	//	len(mp.pool))
+
+	return nil, nil, nil
+}
 // addTx enqueues a single transaction into the pool if it is valid.
 func (pool *TxPool) addTx(tx *modules.TxPoolTransaction, local bool) error {
 	pool.mu.Lock()

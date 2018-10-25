@@ -13,7 +13,7 @@
 */
 
 /*
- * @author PalletOne core developer Yiran <dev@pallet.one>
+ * @author PalletOne core developer YiRan <dev@pallet.one>
  * @date 2018
  */
 
@@ -24,7 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 )
 
-//Yiran
+//YiRan
 //return sorted data of given number
 func (box *VoteBox) HeadN(num uint) []common.Address {
 	ResCandidates := make([]Candidate, num)
@@ -56,7 +56,7 @@ func (box *VoteBox) HeadN(num uint) []common.Address {
 	return ResAddress
 }
 
-//Yiran
+//YiRan
 //Initialize the score for the given accounts
 func (box *VoteBox) Register(addresses []common.Address) {
 	for _, address := range addresses {
@@ -64,7 +64,7 @@ func (box *VoteBox) Register(addresses []common.Address) {
 	}
 }
 
-//Yiran
+//YiRan
 //Vote Rule:
 //1.The voters did not vote
 //2.The target of the vote is the candidate
@@ -80,18 +80,26 @@ func (box *VoteBox) AddToBoxIfNotVoted(Weight uint64, voter common.Address, vote
 			box.voters = append(box.voters, voter)
 			// 2. increase the candidate score
 			//    The target of the vote is the candidate
-			if _, ok := box.Candidates[voter]; ok {
+			if _, ok := box.Candidates[voteAddress]; ok {
 				box.Candidates[voteAddress] += Weight
 			} else {
 				fmt.Println("candidate address invalid")
 			}
 		}
 	}
-	return
-
+}
+//YiRan
+func (box *VoteBox) AddToBox(Weight uint64, to []common.Address) {
+	for _, candidate := range to {
+		if _, ok := box.Candidates[candidate]; ok {
+			box.Candidates[candidate] += Weight
+		} else {
+			fmt.Println("candidate address invalid")
+		}
+	}
 }
 
-//Yiran
+//YiRan
 func NewVoteBox() *VoteBox {
 	return &VoteBox{
 		Candidates: make(map[common.Address]uint64, 0),
@@ -99,23 +107,24 @@ func NewVoteBox() *VoteBox {
 	}
 }
 
-//Yiran
+//YiRan
 //Voting tools for Mediator election
 type VoteBox struct {
 	Candidates map[common.Address]uint64
 	voters     []common.Address
 }
-
+//YiRan
 type SimpleVote interface {
 	//Returns the data of the specified number in order
 	HeadN(num uint) []common.Address
 	//Initialize the candidate's score before voting
 	Register(addresses []common.Address)
 	//One person, one vote
-	AddToBoxIfNotVoted(Weight uint64, voter common.Address, voteAddress common.Address)
+	//AddToBoxIfNotVoted(Weight uint64, voter common.Address, voteAddress common.Address)
+	AddToBox(Weight uint64, to []common.Address)
 }
 
-//Yiran
+//YiRan
 //Used to count voting results for mediator vote
 type Candidate struct {
 	Address common.Address
@@ -123,7 +132,7 @@ type Candidate struct {
 }
 
 //<<<<<<< Utils <<<<<<<
-//Yiran
+//YiRan
 //Returns true when the contents of the two []byte are exactly the same
 func BytesEqual(a, b []byte) bool {
 	if len(a) != len(b) {
@@ -143,7 +152,7 @@ func BytesEqual(a, b []byte) bool {
 	return true
 }
 
-//Yiran
+//YiRan
 //Returns true when the contents of the two Address are exactly the same
 func AddressEqual(a, b common.Address) bool {
 	for i, v := range a {
@@ -154,7 +163,7 @@ func AddressEqual(a, b common.Address) bool {
 	return true
 }
 
-//Yiran
+//YiRan
 // this function connect multiple []byte to single []byte.
 func KeyConnector(keys ...[]byte) []byte {
 	var res []byte
@@ -164,7 +173,7 @@ func KeyConnector(keys ...[]byte) []byte {
 	return res
 }
 
-//Yiran
+//YiRan
 //print error if exist.
 func ErrorLogHandler(err error, errType string) error {
 	if err != nil {

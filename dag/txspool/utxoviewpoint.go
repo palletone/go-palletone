@@ -237,3 +237,49 @@ func NewUtxoViewpoint() *UtxoViewpoint {
 		entries: make(map[modules.OutPoint]*modules.Utxo),
 	}
 }
+
+// ErrorCode identifies a kind of error.
+type ErrorCode uint8
+// RuleError identifies a rule violation.  It is used to indicate that
+// processing of a block or transaction failed due to one of the many validation
+// rules.  The caller can use type assertions to determine if a failure was
+// specifically due to a rule violation and access the ErrorCode field to
+// ascertain the specific reason for the rule violation.
+//type RuleError struct {
+//	ErrorCode   ErrorCode // Describes the kind of error
+//	Description string    // Human readable description of the issue
+//}
+type RuleError struct {
+	ErrorCode   RejectCode // Describes the kind of error
+	Description string    // Human readable description of the issue
+}
+
+// TxRuleError identifies a rule violation.  It is used to indicate that
+// processing of a transaction failed due to one of the many validation
+// rules.  The caller can use type assertions to determine if a failure was
+// specifically due to a rule violation and access the ErrorCode field to
+// ascertain the specific reason for the rule violation.
+type TxRuleError struct {
+	RejectCode  RejectCode // The code to send with reject messages
+	Description string     // Human readable description of the issue
+}
+// txRuleError creates an underlying TxRuleError with the given a set of
+// arguments and returns a RuleError that encapsulates it.
+func txRuleError(c RejectCode, desc string) RuleError {
+	return RuleError{
+		ErrorCode: c, Description: desc,
+	}
+}
+
+type RejectCode uint8
+// These constants define the various supported reject codes.
+const (
+	RejectMalformed       RejectCode = 0x01
+	RejectInvalid         RejectCode = 0x10
+	RejectObsolete        RejectCode = 0x11
+	RejectDuplicate       RejectCode = 0x12
+	RejectNonstandard     RejectCode = 0x40
+	RejectDust            RejectCode = 0x41
+	RejectInsufficientFee RejectCode = 0x42
+	RejectCheckpoint      RejectCode = 0x43
+)

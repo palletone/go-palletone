@@ -349,7 +349,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	}
 	return nil
 }
-
+type Tag uint64
 func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	log.Info("===============ProtocolManager TxMsg====================")
 	// Transactions arrived, make sure we have a valid and fresh chain to handle them
@@ -370,8 +370,17 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if tx == nil {
 			return errResp(ErrDecode, "transaction %d is nil", i)
 		}
-		p.MarkTransaction(tx.Hash())
+                p.MarkTransaction(tx.Hash())
+		txHash := tx.Hash()
+                txHash = txHash
+		acceptedTxs, err := pm.txpool.ProcessTransaction(tx,
+		true, true, 0/*pm.txpool.Tag(peer.ID())*/)
+                acceptedTxs = acceptedTxs
+		if err != nil{
+                    return errResp(ErrDecode, "transaction %d not accepteable ", i)
+                }
 	}
+
 	log.Info("===============ProtocolManager TxMsg AddRemotes====================")
 	pm.txpool.AddRemotes(txs)
 	return nil
