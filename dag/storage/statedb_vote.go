@@ -111,7 +111,7 @@ func (statedb *StateDb) GetSortedVote(ReturnNumber uint) ([]common.Address, erro
 	// 1. get voter list
 	key := constants.STATE_VOTER_LIST
 	bVoterMap := getprefix(statedb.db, key)
-	voteBox := NewVoteBox()
+	voteBox := NewAddressVoteBox()
 
 	// 2. get candidate list
 	addresses, err := statedb.GetCandidateMediatorAddrList()
@@ -120,7 +120,7 @@ func (statedb *StateDb) GetSortedVote(ReturnNumber uint) ([]common.Address, erro
 	}
 
 	// 3. register candidate
-	voteBox.Register(addresses)
+	voteBox.Register(addresses, 1)
 
 	// 4. collect ballot
 	for voter, _ := range bVoterMap {
