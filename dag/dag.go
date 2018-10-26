@@ -967,8 +967,8 @@ func (d *Dag) GetUtxoSnapshot() (*[]modules.Utxo, error) {
 }
 
 ////@Yiran
-//func (d *Dag) GenerateVoteResult() (*[]storage.Candidate, error) {
-//	VoteBox := storage.NewVoteBox()
+//func (d *Dag) GenerateVoteResult() (*[]storage.AddressVote, error) {
+//	AddressVoteBox := storage.NewAddressVoteBox()
 //
 //	utxos, err := d.utxodb.GetAllUtxos()
 //	if err != nil {
@@ -980,11 +980,11 @@ func (d *Dag) GetUtxoSnapshot() (*[]modules.Utxo, error) {
 //			if err != nil {
 //				return nil, err
 //			}
-//			VoteBox.AddToBoxIfNotVoted(utxoHolder, utxo.VoteResult)
+//			AddressVoteBox.AddToBoxIfNotVoted(utxoHolder, utxo.VoteResult)
 //		}
 //	}
-//	VoteBox.Sort()
-//	return &VoteBox.Candidates, nil
+//	AddressVoteBox.Sort()
+//	return &AddressVoteBox.Candidates, nil
 //}
 
 func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType16) []*modules.Utxo {
@@ -1016,7 +1016,7 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 //	d.GetUnitByNumber(index).
 //
 //	//// <2> Get all votes belonged to this election period
-//	//voteBox := storage.VoteBox{}
+//	//voteBox := storage.AddressVoteBox{}
 //	//for i := TermInterval; i > 0; i-- { // for each unit in period.
 //	//	for _, Tx := range d.GetUnitByNumber(index).Txs { //for each transaction in unit
 //	//		voter := Tx.TxMessages.GetInputAddress()
