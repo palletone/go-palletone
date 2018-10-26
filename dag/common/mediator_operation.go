@@ -19,28 +19,30 @@
 package common
 
 import (
-	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 type MediatorCreateOperation struct {
 	*core.MediatorInfo
 }
 
-func feePayer(tx *modules.Transaction) (common.Address, error) {
-	return getRequesterAddress(tx)
-}
+//func feePayer(tx *modules.Transaction) (common.Address, error) {
+//	return getRequesterAddress(tx)
+//}
 
 func (mco *MediatorCreateOperation) Validate() bool {
 	return true
 }
 
-func (mco *MediatorCreateOperation) Evaluate() bool {
-	return true
-}
+//func (mco *MediatorCreateOperation) Evaluate() bool {
+//	return true
+//}
 
-func (mco *MediatorCreateOperation) Apply() {
+func (mco *MediatorCreateOperation) Apply(statedb storage.IStateDb) {
+	statedb.StoreMediatorInfo(mco.MediatorInfo)
 	return
 }
 
@@ -62,4 +64,23 @@ func GetInitialMediatorMsgs(genesisConf *core.Genesis) []*modules.Message {
 	}
 
 	return result
+}
+
+func (unitOp *UnitRepository) ApplyOperation(msg *modules.Message) bool {
+	var payload interface{}
+	payload = msg.Payload
+	mediatorCreateOp, ok := payload.(*MediatorCreateOperation)
+	if ok == false {
+		log.Error("a invalid Mediator Create Operation!")
+		return false
+	}
+
+	if !mediatorCreateOp.Validate() {
+		log.Error("Mediator Create Operation Validate does not pass!")
+		return false
+	}
+
+	mediatorCreateOp.Apply(unitOp.statedb)
+
+	return true
 }

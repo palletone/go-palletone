@@ -488,7 +488,9 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 					return fmt.Errorf("Save vote payload error.")
 				}
 			case modules.OP_MEDIATOR_CREATE:
-
+				if ok := unitOp.ApplyOperation(msg); ok == false {
+					return fmt.Errorf("Apply Mediator Creating Operation error.")
+				}
 			case modules.APP_TEXT:
 			default:
 				return fmt.Errorf("Message type is not supported now: %v", msg.App)

@@ -44,7 +44,7 @@ func (statedb *StateDb) SaveConfig(confs []modules.PayloadMapStruct, stateVersio
 
 		statedb.logger.Debugf("Try to save config key:{%s},Value:{%#x}", conf.Key, conf.Value)
 
-		// todo albert·gou
+		// comment by albert·gou, 已在其他地方处理
 		//if conf.Key == "Mediator" {
 		//	mediators := []*core.MediatorInfo{}
 		//	rlp.DecodeBytes(conf.Value, &mediators)
@@ -63,7 +63,7 @@ func (statedb *StateDb) SaveConfig(confs []modules.PayloadMapStruct, stateVersio
 	return nil
 }
 
-// todo albert·gou
+// comment by albert·gou, 已重写该方法
 //func (statedb *StateDb) saveMediators(mediators []*core.MediatorInfo, v *modules.StateVersion) {
 //	addressList := []common.Address{}
 //	for _, mediator := range mediators {

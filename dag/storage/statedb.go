@@ -27,6 +27,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 )
 
@@ -100,8 +101,6 @@ func (statedb *StateDb) GetCandidateMediatorAddrList() ([]common.Address, error)
 //	return StoreBytesWithVersion(statedb.db, key, v, addrs)
 //}
 
-
-
 // todo albert·gou
 //func (statedb *StateDb) GetActiveMediatorAddrList() ([]common.Address, error) {
 //
@@ -116,3 +115,8 @@ func (statedb *StateDb) GetCandidateMediatorAddrList() ([]common.Address, error)
 //}
 
 // ######################### GET IMPL END ###########################
+
+// author albert·gou
+func (statedb *StateDb) StoreMediatorInfo(mi *core.MediatorInfo) error {
+	return StoreMediatorInfo(statedb.db, mi)
+}
