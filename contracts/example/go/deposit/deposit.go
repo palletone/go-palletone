@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"strconv"
+	"time"
 )
 
 var depositChaincode = new(DepositChaincode)
@@ -37,8 +38,26 @@ type DepositChaincode struct {
 	FoundationAddress      string
 }
 
+type valueState struct {
+	Value string    `json:"value"`
+	Time  time.Time `json:"time"`
+	Extra string    `json:"extra"`
+}
+
 func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	fmt.Println("***system contract init about DepositChaincode***")
+	//获取配置文件
+	depositConfigBytes, err := stub.GetDepositConfig()
+	if err != nil {
+		fmt.Println("deposit error: ", err.Error())
+		return shim.Error(err.Error())
+	}
+	err = json.Unmarshal(depositConfigBytes, depositChaincode)
+	if err != nil {
+		fmt.Println("unmarshal depositConfigBytes error ", err)
+		return shim.Error(err.Error())
+	}
+	fmt.Printf("DepositChaincode=%#v\n\n", depositChaincode)
 	return shim.Success([]byte("ok"))
 }
 
@@ -51,23 +70,23 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//void deposit_witness_pay(const witness_object& wit, token_type amount)
 
 		//获取用户地址
-		userAddr, err := stub.GetPayToContractAddr()
-		if err != nil {
-			fmt.Println("GetPayToContractAddr error: ", err.Error())
-			//return shim.Error(err.Error())
-		}
-		fmt.Println("GetPayToContractAddr=", string(userAddr))
-		//获取 Token 数量
-		tokenAmount, err := stub.GetPayToContractTokens()
-		if err != nil {
-			fmt.Println("GetPayToContractTokens error: ", err.Error())
-		}
-		fmt.Println("GetPayToContractTokens=", string(tokenAmount))
-		states, err := stub.GetContractAllState()
-		if err != nil {
-			fmt.Println("GetContractAllState error", err.Error())
-		}
-		fmt.Println("GetContractAllState=", states)
+		//userAddr, err := stub.GetPayToContractAddr()
+		//if err != nil {
+		//	fmt.Println("GetPayToContractAddr error: ", err.Error())
+		//	//return shim.Error(err.Error())
+		//}
+		//fmt.Println("GetPayToContractAddr=", string(userAddr))
+		////获取 Token 数量
+		//tokenAmount, err := stub.GetPayToContractTokens()
+		//if err != nil {
+		//	fmt.Println("GetPayToContractTokens error: ", err.Error())
+		//}
+		//fmt.Println("GetPayToContractTokens=", string(tokenAmount))
+		//states, err := stub.GetContractAllState()
+		//if err != nil {
+		//	fmt.Println("GetContractAllState error", err.Error())
+		//}
+		//fmt.Println("GetContractAllState=", states)
 		return d.depositWitnessPay(stub, args)
 	case "DepositCashback":
 		//保证金退还
@@ -96,18 +115,7 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	if err != nil {
 		return shim.Error("ptnAccount input error: " + err.Error())
 	}
-	//获取配置文件
-	depositConfigBytes, err := stub.GetDepositConfig()
-	if err != nil {
-		fmt.Println("deposit error: ", err.Error())
-		return shim.Error(err.Error())
-	}
-	err = json.Unmarshal(depositConfigBytes, depositChaincode)
-	if err != nil {
-		fmt.Println("unmarshal depositConfigBytes error ", err)
-		return shim.Error(err.Error())
-	}
-	fmt.Printf("DepositChaincode=%#v\n\n", depositChaincode)
+
 	//与保证金合约设置的数量比较
 	if ptnAccount < depositChaincode.DepositAmount {
 		fmt.Println("input ptnAmount less than deposit amount.")
@@ -121,16 +129,32 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	if err != nil {
 		return shim.Error("get account balance from ledger error: " + err.Error())
 	}
+	vState := new(valueState)
 	//账户不存在，第一次参与
 	if accBalByte == nil {
 		//写入写集
-		stub.PutState(args[0], []byte(args[1]))
+		//TODO 这里后期可以再做修改
+		vState = &valueState{
+			Value: args[1],
+			Time:  time.Now(),
+			Extra: "这是第一次参与陪审团",
+		}
+		vStateBytes, err := json.Marshal(vState)
+		if err != nil {
+			return shim.Error("marshal valueState error " + err.Error())
+		}
+		//fmt.Println("xiaozhi=====", vState)
+		stub.PutState(args[0], vStateBytes)
 		return shim.Success([]byte("ok"))
 	}
 	//账户已存在，进行信息的更新操作
-	accBalStr := string(accBalByte)
+
+	err = json.Unmarshal(accBalByte, vState)
+	if err != nil {
+		return shim.Error("unmarshal accBalByte error " + err.Error())
+	}
 	//将 string 转 uint64
-	accBal, err := strconv.ParseUint(accBalStr, 10, 64)
+	accBal, err := strconv.ParseUint(vState.Value, 10, 64)
 	if err != nil {
 		return shim.Error("string parse to uint64 error: " + err.Error())
 	}
@@ -138,7 +162,16 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	result := accBal + ptnAccount
 	resultStr := strconv.FormatUint(result, 10)
 	//写入写集
-	stub.PutState(args[0], []byte(resultStr))
+	vState = &valueState{
+		Value: resultStr,
+		Time:  time.Now(),
+		Extra: "这是第二次向合约支付保证金，这里的时间是否需要修改为最新的？",
+	}
+	vStateBytes, err := json.Marshal(vState)
+	if err != nil {
+		return shim.Error("marshal valueState error " + err.Error())
+	}
+	stub.PutState(args[0], vStateBytes)
 	return shim.Success([]byte("ok"))
 }
 
@@ -160,6 +193,7 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 		return shim.Error("ptnAccount input error: " + err.Error())
 	}
 	//TODO 获取一下该用户下的账簿情况
+	vState := new(valueState)
 	accBalByte, err := stub.GetState(args[0])
 	if err != nil {
 		return shim.Error("get account balance from ledger error: " + err.Error())
@@ -167,9 +201,12 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 	if accBalByte == nil {
 		return shim.Error("your deposit does not exist.")
 	}
-	accBalStr := string(accBalByte)
+	err = json.Unmarshal(accBalByte, vState)
+	if err != nil {
+		return shim.Error("unmarshal accBalByte error " + err.Error())
+	}
 	//将 string 转 uint64
-	accBal, err := strconv.ParseUint(accBalStr, 10, 64)
+	accBal, err := strconv.ParseUint(vState.Value, 10, 64)
 	if err != nil {
 		return shim.Error("string parse to uint64 error: " + err.Error())
 	}
@@ -182,7 +219,16 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 	result := accBal - ptnAccount
 	resultStr := strconv.FormatUint(result, 10)
 	//写入写集
-	stub.PutState(args[0], []byte(resultStr))
+	vState = &valueState{
+		Value: resultStr,
+		Time:  time.Now(),
+		Extra: "这是退出保证金，可能只退一部分钱，时间是否需要修改？",
+	}
+	vStateBytes, err := json.Marshal(vState)
+	if err != nil {
+		return shim.Error("marshal valueState error " + err.Error())
+	}
+	stub.PutState(args[0], vStateBytes)
 	return shim.Success([]byte("ok"))
 }
 
@@ -195,7 +241,6 @@ func (d DepositChaincode) forfeitureDeposit(stub shim.ChaincodeStubInterface, ar
 	}
 
 	//TODO 这里会触发一个交易，把陪审员的保证金转给基金会的账户，可能把数量返回，写入写集
-
 	//直接把保证金没收
 	err := stub.DelState(args[0])
 	if err != nil {
