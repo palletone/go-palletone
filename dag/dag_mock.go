@@ -685,6 +685,19 @@ func (mr *MockIDagMockRecorder) GetActiveMediatorNode(index interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveMediatorNode", reflect.TypeOf((*MockIDag)(nil).GetActiveMediatorNode), index)
 }
 
+// GetElectedMediatorsAddress mocks base method
+func (m *MockIDag) GetElectedMediatorsAddress() ([]common.Address, error) {
+	ret := m.ctrl.Call(m, "GetElectedMediatorsAddress")
+	ret0, _ := ret[0].([]common.Address)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetElectedMediatorsAddress indicates an expected call of GetElectedMediatorsAddress
+func (mr *MockIDagMockRecorder) GetElectedMediatorsAddress() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetElectedMediatorsAddress", reflect.TypeOf((*MockIDag)(nil).GetElectedMediatorsAddress))
+}
+
 // GetTokenInfo mocks base method
 func (m *MockIDag) GetTokenInfo(key []byte) (*modules.TokenInfo, error) {
 	ret := m.ctrl.Call(m, "GetTokenInfo", key)
