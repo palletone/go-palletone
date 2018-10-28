@@ -50,6 +50,8 @@ var (
 	// lookup
 	LookupPrefix = []byte("l")
 
+	StableUnitHash =[]byte("StableUnitHash")
+	LastUnitHash=[]byte("LastUnitHash")
 	// Head Fast Key
 	HeadHeaderKey = []byte("LastHeader")
 	HeadUnitKey   = []byte("LastUnit")
