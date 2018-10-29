@@ -1058,7 +1058,7 @@ func (dag *Dag) GetElectedMediatorsAddress() ([]common.Address, error) {
 		return nil, err
 	}
 	MediatorNumber := gp.GetActiveMediatorCount()
-	return dag.statedb.GetSortedVote(uint(MediatorNumber))
+	return dag.statedb.GetSortedVote(uint(MediatorNumber), 0, 0)
 }
 
 // UpdateMediator

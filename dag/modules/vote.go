@@ -7,4 +7,4 @@ type VoteInfo struct {
 	VoteContent []byte
 }
 
-const TYPE_MEDIATOR = 0 // VoteContent = []byte(Common.Address)
+const TYPE_MEDIATOR = 0 // VoteContent = []byte(Common.Contents)

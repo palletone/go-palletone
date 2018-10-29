@@ -129,7 +129,7 @@ func NewContractDeployPayload(templateid []byte, contractid []byte, name string,
 }
 func NewVotePayload(address [][]byte, mode uint8, voteType uint8) *VotePayload {
 	return &VotePayload{
-		Address:  address,
+		Contents: address,
 		Mode:     mode,
 		VoteType: voteType,
 	}
