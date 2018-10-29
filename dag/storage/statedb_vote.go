@@ -2,6 +2,7 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -30,10 +31,10 @@ func (statedb *StateDb) UpdateMediatorVote(voter common.Address, candidates []co
 	case mode == 0: //[Replace all]
 		//3. append new data
 		for _, candidate := range candidates {
-			newVotes = append(newVotes, modules.VoteInfo{VoteType: 0, VoteContent: candidate.Bytes()})
+			newVotes = append(newVotes, modules.VoteInfo{VoteType: modules.TYPE_MEDIATOR, VoteContent: candidate.Bytes()})
 		}
 
-	case mode == 1: //[Edit]
+	case mode == 1: //[Replace]
 		//3. format examination
 		if len(candidates)%2 != 0 {
 			return errors.New("invalid candidates number, must be even")
@@ -67,7 +68,7 @@ func (statedb *StateDb) UpdateMediatorVote(voter common.Address, candidates []co
 		}
 		// 4. merge vote
 		newVotes = append(newVotes, resMediatorVotes...)
-
+	case mode == 3: //[Delete all]
 	default:
 		return errors.New("Invalid mode")
 
@@ -149,4 +150,12 @@ func (statedb *StateDb) GetSortedVote(ReturnNumber uint, voteType uint8, minTerm
 	// $. return elected mediator
 	return voteBox.HeadN(ReturnNumber), nil
 
+}
+
+//CreateVote YiRan@
+func (statedb *StateDb) CreateVote(voteDetail []byte) error {
+	const PREFIX_CREATE_VOTE = "v"
+	key := KeyConnector([]byte(PREFIX_CREATE_VOTE), crypto.Hash160(voteDetail))
+	value := voteDetail
+	return StoreBytes(statedb.db, key, value)
 }

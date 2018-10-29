@@ -420,13 +420,13 @@ func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Mes
 
 	//switch
 	//case: save mediator vote
-	if VotePayLoad.VoteType == 0 {
+	if VotePayLoad.VoteType == modules.TYPE_MEDIATOR {
 		err = unitOp.statedb.UpdateMediatorVote(voter, Candidates, VotePayLoad.Mode, 0)
 		if err != nil {
 			return false
 		}
 
-		err = unitOp.statedb.UpdateVoterList(voter, 0, 0)
+		err = unitOp.statedb.UpdateVoterList(voter, modules.TYPE_MEDIATOR, 0)
 		if err != nil {
 			return false
 		}
