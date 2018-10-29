@@ -2,13 +2,14 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 //UpdateMediatorVote YiRan@
-func (statedb *StateDb) UpdateMediatorVote(voter common.Address, candidates []common.Address, mode uint8) error {
+func (statedb *StateDb) UpdateMediatorVote(voter common.Address, candidates []common.Address, mode uint8, term uint16) error {
 	//1. get current account info
 	accountInfo, err := statedb.GetAccountInfo(voter)
 	if err != nil {
@@ -80,10 +81,26 @@ func (statedb *StateDb) UpdateMediatorVote(voter common.Address, candidates []co
 	return nil
 }
 
-//UpdateVoterList YiRan@ TODO:SAVE BY TERM
-func (statedb *StateDb) UpdateVoterList(voter common.Address) error {
-	key := KeyConnector(constants.STATE_VOTER_LIST, voter.Bytes())
-	return StoreBytes(statedb.db, key, 0)
+//UpdateVoterList YiRan@
+func (statedb *StateDb) UpdateVoterList(voter common.Address, voteType uint8, term uint16) error {
+	key := KeyConnector(constants.STATE_VOTER_LIST, []byte{byte(voteType)}, voter.Bytes())
+	return StoreBytes(statedb.db, key, term)
+}
+
+//UpdateVoterList YiRan@
+func (statedb *StateDb) GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address {
+	key := KeyConnector(constants.STATE_VOTER_LIST, []byte{byte(voteType)})
+	bVoterMap := getprefix(statedb.db, key)
+	res := []common.Address{}
+	for voter, term := range bVoterMap {
+		var pTerm *uint16
+		rlp.DecodeBytes(term, pTerm)
+		if *pTerm >= MinTermLimit {
+			address, _ := common.StringToAddress(voter)
+			res = append(res, address)
+		}
+	}
+	return res
 }
 
 func (statedb *StateDb) GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error) {
@@ -106,12 +123,10 @@ func (statedb *StateDb) GetAccountMediatorVote(voterAddress common.Address) ([]c
 }
 
 //GetSortedVote YiRan@
-func (statedb *StateDb) GetSortedVote(ReturnNumber uint) ([]common.Address, error) {
-
-	// 1. get voter list
-	key := constants.STATE_VOTER_LIST
-	bVoterMap := getprefix(statedb.db, key)
+func (statedb *StateDb) GetSortedVote(ReturnNumber uint, voteType uint8, minTermLimit uint16) ([]common.Address, error) {
 	voteBox := NewAddressVoteBox()
+	// 1. get voter list
+	voterList := statedb.GetVoterList(voteType, minTermLimit)
 
 	// 2. get candidate list
 	addresses, err := statedb.GetCandidateMediatorAddrList()
@@ -123,11 +138,7 @@ func (statedb *StateDb) GetSortedVote(ReturnNumber uint) ([]common.Address, erro
 	voteBox.Register(addresses, 1)
 
 	// 4. collect ballot
-	for voter, _ := range bVoterMap {
-		voterAddress, err := common.StringToAddress(voter)
-		if err != nil {
-			return nil, err
-		}
+	for _, voterAddress := range voterList {
 		to, weight, err := statedb.GetAccountMediatorVote(voterAddress)
 		if err != nil {
 			return nil, err

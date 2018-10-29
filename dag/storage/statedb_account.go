@@ -22,8 +22,8 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func (statedb *StateDb) GetAccountInfo(address common.Address) (*modules.AccountInfo, error) {
@@ -39,6 +39,21 @@ func (statedb *StateDb) GetAccountInfo(address common.Address) (*modules.Account
 func (statedb *StateDb) SaveAccountInfo(address common.Address, info *modules.AccountInfo) error {
 	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes()...)
 	return StoreBytes(statedb.db, key, info)
+}
+
+func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint8) ([][]byte) {
+	accountInfo, err := statedb.GetAccountInfo(address)
+	if err != nil {
+		return nil
+	}
+	res := make([][]byte, 0)
+	for _, vote := range accountInfo.Votes {
+		if vote.VoteType == voteType {
+			res = append(res, vote.VoteContent)
+		}
+	}
+	return res
+
 }
 
 // todo albert·gou

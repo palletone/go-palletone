@@ -49,17 +49,18 @@ type IStateDb interface {
 
 	// todo albert·gou
 	GetCandidateMediatorAddrList() ([]common.Address, error)
-	//GetActiveMediatorAddrList() ([]common.Address, error)
-
-	//AddVote(voter common.Address, candidate common.Address) error // replaced by UpdateMediatorVote
-	GetSortedVote(ReturnNumber uint) ([]common.Address, error) // TODO: YiRan UPDATE
-	UpdateMediatorVote(voter common.Address, candidates []common.Address, mode uint8) error
-	UpdateVoterList(voter common.Address) error
+	//GetActiveMediatorAddrList() ([]common.Contents, error)
+	GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte
+	//AddVote(voter common.Contents, candidate common.Contents) error // replaced by UpdateMediatorVote
+	GetSortedVote(ReturnNumber uint, voteType uint8, minTermLimit uint16) ([]common.Address, error)
+	GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
+	UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
+	UpdateMediatorVote(voter common.Address, candidates []common.Address, mode uint8, term uint16) error
 	GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error)
 
 	// todo albert·gou
-	//SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error
-	//GetAccountMediatorInfo(address common.Address) (*core.MediatorInfo, error)
-	//SaveAccountMediatorInfo(address common.Address, info *core.MediatorInfo, version *modules.StateVersion) error
+	//SaveCandidateMediatorAddrList(addrs []common.Contents, v *modules.StateVersion) error
+	//GetAccountMediatorInfo(address common.Contents) (*core.MediatorInfo, error)
+	//SaveAccountMediatorInfo(address common.Contents, info *core.MediatorInfo, version *modules.StateVersion) error
 	StoreMediatorInfo(mi *core.MediatorInfo) error
 }

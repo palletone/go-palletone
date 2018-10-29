@@ -262,7 +262,7 @@ type ContractReadSet struct {
 // Mode == 1 [ Edit    ] :Replace the addresses in the first half of the account's votes addresses to refer to the addresses in the second half.
 // Mode == 2 [ Delete  ] :Delete the addresses from account's votes addresses
 type VotePayload struct {
-	Address  [][]byte
+	Contents [][]byte
 	VoteType uint8
 	Mode     uint8
 }

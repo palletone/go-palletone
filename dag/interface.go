@@ -105,8 +105,9 @@ type IDag interface {
 	//Get all elected mediators.
 
 	// get new mediator list
+	/* Vote */
 	GetElectedMediatorsAddress() ([]common.Address, error)
-
+	GetAccountMediatorVote(address common.Address) ([]common.Address)
 	// comment by albert·gou
 	//UpdateGlobalDynProp(unit *modules.Unit)
 	//SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) error

@@ -156,20 +156,22 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 	// unit.UnitHeader.GroupSign = sign
 	return unit, nil
 }
-func (rep *UnitRepository)SetStableUnitHash(hash common.Hash){
+func (rep *UnitRepository) SetStableUnitHash(hash common.Hash) {
 	rep.dagdb.SetStableUnitHash(hash)
 }
 
-func (rep *UnitRepository)SetLastUnitHash(hash common.Hash){
+func (rep *UnitRepository) SetLastUnitHash(hash common.Hash) {
 	rep.dagdb.SetLastUnitHash(hash)
 }
-func (rep *UnitRepository)RollbackToStableUnit(){
+func (rep *UnitRepository) RollbackToStableUnit() {
 	//TODO Devin
 }
+
 //批量增加多个Unit，主要用于主链切换的情形
-func (rep *UnitRepository)BatchSaveUnit(units []*modules.Unit){
+func (rep *UnitRepository) BatchSaveUnit(units []*modules.Unit) {
 	//TODO Devin
 }
+
 /**
 创建单元
 create common unit
@@ -412,19 +414,19 @@ func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Mes
 
 	//3. get candidates
 	Candidates := []common.Address{}
-	for _, address := range VotePayLoad.Address {
+	for _, address := range VotePayLoad.Contents {
 		Candidates = append(Candidates, common.BytesToAddress(address))
 	}
 
 	//switch
 	//case: save mediator vote
 	if VotePayLoad.VoteType == 0 {
-		err = unitOp.statedb.UpdateMediatorVote(voter, Candidates, VotePayLoad.Mode)
+		err = unitOp.statedb.UpdateMediatorVote(voter, Candidates, VotePayLoad.Mode, 0)
 		if err != nil {
 			return false
 		}
 
-		err = unitOp.statedb.UpdateVoterList(voter)
+		err = unitOp.statedb.UpdateVoterList(voter, 0, 0)
 		if err != nil {
 			return false
 		}
