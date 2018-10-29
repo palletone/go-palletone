@@ -48,6 +48,12 @@ func NewDagDb(db ptndb.Database, l log.ILogger) *DagDb {
 }
 
 type IDagDb interface {
+	//设置稳定单元的Hash
+	SetStableUnitHash(hash common.Hash)
+	GetStableUnitHash() common.Hash
+	//设置最新单元的Hash
+	SetLastUnitHash(hash common.Hash)
+	GetLastUnitHash() common.Hash
 	//GetGenesisUnit() (*modules.Unit, error)
 	//SaveUnit(unit *modules.Unit, isGenesis bool) error
 	SaveHeader(uHash common.Hash, h *modules.Header) error
@@ -109,6 +115,24 @@ func (dagdb *DagDb) GetCommonByPrefix(prefix []byte) map[string][]byte {
 		result[*(*string)(unsafe.Pointer(&key))] = append(value, iter.Value()...)
 	}
 	return result
+}
+func (db *DagDb) SetStableUnitHash(hash common.Hash){
+	StoreBytes(db.db,constants.StableUnitHash,hash.Bytes())
+}
+func (db *DagDb) GetStableUnitHash() common.Hash{
+	data,_:=GetBytes(db.db,constants.StableUnitHash)
+	hash:= common.Hash{}
+	hash.SetBytes(data)
+	return hash
+}
+func (db *DagDb) SetLastUnitHash(hash common.Hash){
+	StoreBytes(db.db,constants.LastUnitHash,hash.Bytes())
+}
+func (db *DagDb) GetLastUnitHash() common.Hash{
+	data,_:=GetBytes(db.db,constants.LastUnitHash)
+	hash:= common.Hash{}
+	hash.SetBytes(data)
+	return hash
 }
 
 // ###################### SAVE IMPL START ######################

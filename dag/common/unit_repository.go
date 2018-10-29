@@ -45,6 +45,14 @@ import (
 )
 
 type IUnitRepository interface {
+	//设置稳定单元的Hash
+	SetStableUnitHash(hash common.Hash)
+	//设置最新单元的Hash
+	SetLastUnitHash(hash common.Hash)
+	//清空Unstable数据，回滚到稳定点状态
+	RollbackToStableUnit()
+	//批量增加多个Unit，主要用于主链切换的情形
+	BatchSaveUnit(units []*modules.Unit)
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
 	GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
@@ -148,7 +156,20 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 	// unit.UnitHeader.GroupSign = sign
 	return unit, nil
 }
+func (rep *UnitRepository)SetStableUnitHash(hash common.Hash){
+	rep.dagdb.SetStableUnitHash(hash)
+}
 
+func (rep *UnitRepository)SetLastUnitHash(hash common.Hash){
+	rep.dagdb.SetLastUnitHash(hash)
+}
+func (rep *UnitRepository)RollbackToStableUnit(){
+	//TODO Devin
+}
+//批量增加多个Unit，主要用于主链切换的情形
+func (rep *UnitRepository)BatchSaveUnit(units []*modules.Unit){
+	//TODO Devin
+}
 /**
 创建单元
 create common unit
