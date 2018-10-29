@@ -47,7 +47,7 @@ type IStateDb interface {
 	SaveAccountInfo(address common.Address, info *modules.AccountInfo) error
 	GetCandidateMediatorAddrList() ([]common.Address, error)
 	//GetActiveMediatorAddrList() ([]common.Address, error)
-
+	GetAccountVoteInfo(address common.Address, voteType uint8) ([][]byte)
 	//AddVote(voter common.Address, candidate common.Address) error // replaced by UpdateMediatorVote
 	GetSortedVote(ReturnNumber uint) ([]common.Address, error) // TODO: YiRan UPDATE
 	UpdateMediatorVote(voter common.Address, candidates []common.Address, mode uint8) error

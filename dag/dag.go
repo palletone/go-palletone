@@ -860,6 +860,14 @@ func (d *Dag) ValidateUnitGroupSig(hash common.Hash) (bool, error) {
 	}
 	return true, nil
 }
+func (d *Dag) GetAccountMediatorVote(address common.Address) ([]common.Address) {
+	bAddress := d.statedb.GetAccountVoteInfo(address, 0)
+	res := []common.Address{}
+	for _, b := range bAddress {
+		res = append(res, common.BytesToAddress(b))
+	}
+	return res
+}
 
 func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error) {
 	// get current unit
