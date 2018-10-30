@@ -103,6 +103,14 @@ func BytesToAddress(b []byte) Address {
 	return a
 }
 
+func BytesListToAddressList(bl [][]byte) []Address {
+	Addresses := []Address{}
+	for _, bAddress := range bl {
+		Addresses = append(Addresses, BytesToAddress(bAddress))
+	}
+	return Addresses
+}
+
 func HexToAddress(s string) Address { return BytesToAddress(FromHex(s)) }
 func PubKeyHashHexToAddress(s string) Address {
 	pubKeyHash := FromHex(s)

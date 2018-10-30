@@ -56,6 +56,18 @@ func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint
 
 }
 
+func (statedb *StateDb) AddVote2Account(address common.Address, voteInfo modules.VoteInfo) error {
+	accountInfo, err := statedb.GetAccountInfo(address)
+	if err != nil {
+		return err
+	}
+	accountInfo.Votes = append(accountInfo.Votes, voteInfo)
+	if err = statedb.SaveAccountInfo(address, accountInfo); err != nil {
+		return err
+	}
+	return nil
+}
+
 // todo albert·gou
 //func (statedb *StateDb) GetAccountMediatorInfo(address common.Address) (*core.MediatorInfo, error) {
 //	key := append(modules.ACCOUNT_INFO_PREFIX, address.Bytes()...)

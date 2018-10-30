@@ -43,17 +43,20 @@ type IStateDb interface {
 	GetContractStatesById(id []byte) (map[modules.StateVersion][]byte, error)
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id []byte) (*modules.Contract, error)
+	/* Account_Info */
 	GetAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	SaveAccountInfo(address common.Address, info *modules.AccountInfo) error
+	GetAccountVoteInfo(address common.Address, voteType uint8) ([][]byte)
+	AddVote2Account(address common.Address, voteInfo modules.VoteInfo) error
+
 	GetCandidateMediatorAddrList() ([]common.Address, error)
 	//GetActiveMediatorAddrList() ([]common.Contents, error)
-	GetAccountVoteInfo(address common.Address, voteType uint8) ([][]byte)
-	//AddVote(voter common.Contents, candidate common.Contents) error // replaced by UpdateMediatorVote
 	GetSortedVote(ReturnNumber uint, voteType uint8, minTermLimit uint16) ([]common.Address, error)
 	GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
 	UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
 	UpdateMediatorVote(voter common.Address, candidates []common.Address, mode uint8, term uint16) error
 	GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error)
+	CreateUserVote(voter common.Address, detail [][]byte, bHash []byte) error
 	// todo albert·gou
 	//SaveCandidateMediatorAddrList(addrs []common.Contents, v *modules.StateVersion) error
 	//GetAccountMediatorInfo(address common.Contents) (*core.MediatorInfo, error)

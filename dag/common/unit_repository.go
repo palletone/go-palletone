@@ -394,44 +394,42 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 }
 
 //Yiran
-func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Message) bool {
+func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Message, term uint16) error {
 
-	//1. interface deduct
-	var payload interface{}
-	payload = msg.Payload
-	VotePayLoad, ok := payload.(*modules.VotePayload)
-	if ok == false {
-		//fmt.Println("not a valid vote payload")
-		return false
+	// type deduct
+	VotePayLoad, ok := msg.Payload.(*modules.VotePayload)
+	if !ok {
+		return errors.New("not a valid vote payload")
 	}
 
-	//2. get voter address
+	// get voter
 	voter, err := getRequesterAddress(tx)
 	if err != nil {
-		//getAddress Error
-		return false
+		return err
 	}
 
-	//3. get candidates
-	Candidates := []common.Address{}
-	for _, address := range VotePayLoad.Contents {
-		Candidates = append(Candidates, common.BytesToAddress(address))
-	}
+	// save by type
+	switch {
+	case VotePayLoad.VoteType == modules.TYPE_MEDIATOR:
+		Addresses := common.BytesListToAddressList(VotePayLoad.Contents)
 
-	//switch
-	//case: save mediator vote
-	if VotePayLoad.VoteType == modules.TYPE_MEDIATOR {
-		err = unitOp.statedb.UpdateMediatorVote(voter, Candidates, VotePayLoad.Mode, 0)
-		if err != nil {
-			return false
+		if err = unitOp.statedb.UpdateMediatorVote(voter, Addresses, VotePayLoad.Mode, term); err != nil {
+			return err
 		}
 
-		err = unitOp.statedb.UpdateVoterList(voter, modules.TYPE_MEDIATOR, 0)
-		if err != nil {
-			return false
+		if err = unitOp.statedb.UpdateVoterList(voter, modules.TYPE_MEDIATOR, term); err != nil {
+			return err
+		}
+
+	case VotePayLoad.VoteType == modules.TYPE_CREATEVOTE:
+		if err = unitOp.statedb.CreateUserVote(voter, VotePayLoad.Contents, tx.TxHash.Bytes()); err != nil {
+			return err
+		}
+		if err = unitOp.statedb.AddVote2Account(voter, modules.VoteInfo{VoteType: modules.TYPE_CREATEVOTE, VoteContent: tx.TxHash.Bytes()}); err != nil {
+			return err
 		}
 	}
-	return true
+	return nil
 
 }
 
@@ -507,7 +505,7 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_VOTE:
-				if ok := unitOp.SaveVote(tx, msg); ok == false {
+				if err = unitOp.SaveVote(tx, msg, 0); err != nil {
 					return fmt.Errorf("Save vote payload error.")
 				}
 			case modules.APP_TEXT:
