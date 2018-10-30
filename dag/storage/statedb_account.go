@@ -41,7 +41,7 @@ func (statedb *StateDb) SaveAccountInfo(address common.Address, info *modules.Ac
 	return StoreBytes(statedb.db, key, info)
 }
 
-func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint8) ([][]byte) {
+func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte {
 	accountInfo, err := statedb.GetAccountInfo(address)
 	if err != nil {
 		return nil
@@ -54,4 +54,16 @@ func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint
 	}
 	return res
 
+}
+
+func (statedb *StateDb) AddVote2Account(address common.Address, voteInfo modules.VoteInfo) error {
+	accountInfo, err := statedb.GetAccountInfo(address)
+	if err != nil {
+		return err
+	}
+	accountInfo.Votes = append(accountInfo.Votes, voteInfo)
+	if err = statedb.SaveAccountInfo(address, accountInfo); err != nil {
+		return err
+	}
+	return nil
 }

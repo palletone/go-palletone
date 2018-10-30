@@ -29,7 +29,5 @@ type AccountInfo struct {
 	//AccountName string
 	//当前账户的PTN余额
 	PtnBalance uint64
-	//当前账户对Mediator选举的投票结果 (temp)
-	//PtnVoteResult []byte
-	Votes         []VoteInfo
+	Votes      []VoteInfo
 }
