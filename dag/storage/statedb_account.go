@@ -55,23 +55,3 @@ func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint
 	return res
 
 }
-
-// todo albert·gou
-//func (statedb *StateDb) GetAccountMediatorInfo(address common.Address) (*core.MediatorInfo, error) {
-//	key := append(modules.ACCOUNT_INFO_PREFIX, address.Bytes()...)
-//	key = append(key, []byte("MediatorInfo")...)
-//	info := &core.MediatorInfo{}
-//	err := retrieve(statedb.db, key, info)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return info, nil
-//}
-
-// todo albert·gou
-//func (statedb *StateDb) SaveAccountMediatorInfo(address common.Address, info *core.MediatorInfo, version *modules.StateVersion) error {
-//	key := append(modules.ACCOUNT_INFO_PREFIX, address.Bytes()...)
-//	key = append(key, []byte("MediatorInfo")...)
-//	statedb.logger.Debugf("Save one mediator info for address{%s},info:{%s}", address.String(), info)
-//	return StoreBytesWithVersion(statedb.db, key, version, info)
-//}

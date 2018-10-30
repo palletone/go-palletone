@@ -384,12 +384,6 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 	confPay.ConfigSet = append(confPay.ConfigSet,
 		modules.PayloadMapStruct{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
 
-	// comment by Albert·Gou, 已作为特殊交易在其他地方处理
-	//Put Mediator info into config
-	//d, _ := rlp.EncodeToBytes(genesisConf.InitialMediatorCandidates)
-	//med := modules.PayloadMapStruct{Key: "Mediator", Value: d}
-	//confPay.ConfigSet = append(confPay.ConfigSet, med)
-
 	return confPay, nil
 }
 

@@ -26,9 +26,6 @@ import (
 )
 
 type IStateRepository interface {
-	// todo albert·gou
-	//GetCandidateMediators() []*core.MediatorInfo
-	//IsCandidateMediator(addr common.Address) bool
 }
 
 type StateRepository struct {
@@ -39,32 +36,3 @@ type StateRepository struct {
 func NewStateRepository(statedb storage.IStateDb, l log.ILogger) *StateRepository {
 	return &StateRepository{statedb: statedb, logger: l}
 }
-
-// todo albert·gou
-//func (rep *StateRepository) GetCandidateMediators() []*core.MediatorInfo {
-//	addrs, err := rep.statedb.GetCandidateMediatorAddrList()
-//	result := []*core.MediatorInfo{}
-//	if err != nil {
-//		return result
-//	}
-//
-//	for _, addr := range addrs {
-//		minfo, err := rep.statedb.GetAccountMediatorInfo(addr)
-//		if err != nil {
-//			rep.logger.Errorf("GetMediator info from address:{%s} has an error:%s", addr.String(), err)
-//			continue
-//		}
-//		result = append(result, minfo)
-//	}
-//	return result
-//}
-
-// todo albert·gou
-//func (rep *StateRepository) IsCandidateMediator(addr common.Address) bool {
-//	_, err := rep.statedb.GetAccountMediatorInfo(addr)
-//	if err != nil {
-//		return false
-//	}
-//
-//	return true
-//}

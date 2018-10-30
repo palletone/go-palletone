@@ -95,27 +95,14 @@ type IDag interface {
 	GetContract(id []byte) (*modules.Contract, error)
 	GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error)
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
+
 	//Mediator
 	GetActiveMediator(add common.Address) *core.Mediator
 	GetActiveMediatorNode(index int) *discover.Node
-	//获得所有Mediator候选人列表
 
-	// todo albert·gou
-	//GetCandidateMediators() []*core.MediatorInfo
-	//Get all elected mediators.
-
-	// get new mediator list
 	/* Vote */
 	GetElectedMediatorsAddress() ([]common.Address, error)
-	GetAccountMediatorVote(address common.Address) ([]common.Address)
-	// comment by albert·gou
-	//UpdateGlobalDynProp(unit *modules.Unit)
-	//SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) error
-	//GetGlobalProp() *modules.GlobalProperty
-	//SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bool) error
-	//GetDynGlobalProp() *modules.DynamicGlobalProperty
-	//SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) error
-	//GetMediatorSchl() *modules.MediatorSchedule
+	GetAccountMediatorVote(address common.Address) []common.Address
 
 	// get token info
 	GetTokenInfo(key []byte) (*modules.TokenInfo, error)
