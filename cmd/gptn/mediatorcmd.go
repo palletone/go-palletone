@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -76,7 +77,8 @@ the time when the current command is running.
     Manage mediators, list all existing mediators, create a new mediator.
 `,
 		Subcommands: []cli.Command{
-			{ // 创建Mediator初始秘钥分片
+			// 创建Mediator初始秘钥分片
+			{
 				Action:    utils.MigrateFlags(createInitDKS),
 				Name:      "initdks",
 				Usage:     "Generate the initial distributed key share.",
@@ -84,6 +86,18 @@ the time when the current command is running.
 				Category:  "MEDIATOR COMMANDS",
 				Description: `
 The output of this command will be used to initialize the DistKeyGenerator.
+`,
+			},
+
+			// 列出当前区块链所有mediator的地址
+			{
+				Action:    utils.MigrateFlags(listMediators),
+				Name:      "list",
+				Usage:     "List all mediators.",
+				ArgsUsage: "",
+				Category:  "MEDIATOR COMMANDS",
+				Description: `
+List all existing mediator addresses.
 `,
 			},
 		},
@@ -165,6 +179,30 @@ func getTimestamp(ctx *cli.Context) error {
 	}
 
 	fmt.Println(timeUnix.Unix())
+
+	return nil
+}
+
+func listMediators(ctx *cli.Context) error {
+	node := makeFullNode(ctx)
+
+	Dbconn, err := node.OpenDatabase("leveldb", 0, 0)
+	if err != nil {
+		fmt.Println("leveldb init failed!")
+		return err
+	}
+
+	dag, _ := dag.NewDag4GenesisInit(Dbconn)
+	mas := dag.GetMediators()
+
+	fmt.Println("\nList all existing mediator addresses:")
+	fmt.Println("[")
+
+	for address, _ := range mas {
+		fmt.Printf("\t%s,\n", address.Str())
+	}
+
+	fmt.Println("]")
 
 	return nil
 }
