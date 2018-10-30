@@ -28,8 +28,8 @@ func (box *AddressVoteBox) InitBlackList(addresses []common.Address) {
 
 //YiRan
 //Initialize the score for the given accounts
-func (box *AddressVoteBox) Register(addresses []common.Address, initialValue uint64) {
-	for _, address := range addresses {
+func (box *AddressVoteBox) Register(addresses map[common.Address]bool, initialValue uint64) {
+	for address, _ := range addresses {
 		box.Candidates[address] = initialValue
 	}
 }
@@ -87,7 +87,7 @@ type AddressVoteBoxSorter []AddressVote
 func NewAddressVoteBoxSorter(m map[common.Address]uint64) AddressVoteBoxSorter {
 	s := make(AddressVoteBoxSorter, 0, len(m))
 	for k, v := range m {
-		s = append(s, AddressVote{Address: k, Score: v,})
+		s = append(s, AddressVote{Address: k, Score: v})
 	}
 	return s
 }

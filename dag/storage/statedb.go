@@ -77,46 +77,34 @@ func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
 }
 
-// todo albert·gou
-func (statedb *StateDb) GetCandidateMediatorAddrList() ([]common.Address, error) {
-	//	key := constants.STATE_CANDIDATE_MEDIATOR_LIST
-	//	data, _, err := retrieveWithVersion(statedb.db, key)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	result := []common.Address{}
-	//	rlp.DecodeBytes(data, result)
-	//	return result, nil
-	return nil, nil
-}
-
-// todo albert·gou
-//func (statedb *StateDb) SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error {
-//	key := constants.STATE_CANDIDATE_MEDIATOR_LIST
-//	addrsStr := ""
-//	for _, addr := range addrs {
-//		addrsStr += addr.String() + ","
-//	}
-//	statedb.logger.Debugf("Try to save candidate mediator address list:%s", addrsStr)
-//	return StoreBytesWithVersion(statedb.db, key, v, addrs)
-//}
-
-// todo albert·gou
-//func (statedb *StateDb) GetActiveMediatorAddrList() ([]common.Address, error) {
-//
-//	key := constants.STATE_ACTIVE_MEDIATOR_LIST
-//	data, _, err := retrieveWithVersion(statedb.db, key)
-//	if err != nil {
-//		return nil, err
-//	}
-//	result := []common.Address{}
-//	rlp.DecodeBytes(data, result)
-//	return result, nil
-//}
-
 // ######################### GET IMPL END ###########################
 
 // author albert·gou
 func (statedb *StateDb) StoreMediatorInfo(mi *core.MediatorInfo) error {
 	return StoreMediatorInfo(statedb.db, mi)
+}
+
+// author albert·gou
+func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator, error) {
+	return RetrieveMediator(statedb.db, address)
+}
+
+// author albert·gou
+func (statedb *StateDb) GetMediatorCount() int {
+	return GetMediatorCount(statedb.db)
+}
+
+// author albert·gou
+func (statedb *StateDb) IsMediator(address common.Address) bool {
+	return IsMediator(statedb.db, address)
+}
+
+// author albert·gou
+func (statedb *StateDb) GetMediators() map[common.Address]bool {
+	return GetMediators(statedb.db)
+}
+
+// author albert·gou
+func (statedb *StateDb) LookupMediator() map[common.Address]core.Mediator {
+	return LookupMediator(statedb.db)
 }

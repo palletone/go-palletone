@@ -130,10 +130,7 @@ func (statedb *StateDb) GetSortedVote(ReturnNumber uint, voteType uint8, minTerm
 	voterList := statedb.GetVoterList(voteType, minTermLimit)
 
 	// 2. get candidate list
-	addresses, err := statedb.GetCandidateMediatorAddrList()
-	if err != nil { // get candidates address list error
-		return nil, err
-	}
+	addresses := statedb.GetMediators()
 
 	// 3. register candidate
 	voteBox.Register(addresses, 1)

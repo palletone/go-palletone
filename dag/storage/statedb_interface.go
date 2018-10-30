@@ -47,9 +47,6 @@ type IStateDb interface {
 	GetAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	SaveAccountInfo(address common.Address, info *modules.AccountInfo) error
 
-	// todo albert·gou
-	GetCandidateMediatorAddrList() ([]common.Address, error)
-	//GetActiveMediatorAddrList() ([]common.Contents, error)
 	GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte
 	//AddVote(voter common.Contents, candidate common.Contents) error // replaced by UpdateMediatorVote
 	GetSortedVote(ReturnNumber uint, voteType uint8, minTermLimit uint16) ([]common.Address, error)
@@ -58,9 +55,10 @@ type IStateDb interface {
 	UpdateMediatorVote(voter common.Address, candidates []common.Address, mode uint8, term uint16) error
 	GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error)
 
-	// todo albert·gou
-	//SaveCandidateMediatorAddrList(addrs []common.Contents, v *modules.StateVersion) error
-	//GetAccountMediatorInfo(address common.Contents) (*core.MediatorInfo, error)
-	//SaveAccountMediatorInfo(address common.Contents, info *core.MediatorInfo, version *modules.StateVersion) error
 	StoreMediatorInfo(mi *core.MediatorInfo) error
+	RetrieveMediator(address common.Address) (*core.Mediator, error)
+	GetMediatorCount() int
+	IsMediator(address common.Address) bool
+	GetMediators() map[common.Address]bool
+	LookupMediator() map[common.Address]core.Mediator
 }

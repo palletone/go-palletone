@@ -63,11 +63,12 @@ func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator
 	err := retrieve(db, mediatorKey(address), mi)
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve mediator error: %s", err))
+		return nil, nil
 	}
 
 	med := mi.InfoToMediator()
 
-	return &med, err
+	return &med, nil
 }
 
 func GetMediatorCount(db ptndb.Database) int {

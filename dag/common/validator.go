@@ -42,8 +42,6 @@ type Validate struct {
 	logger  log.ILogger
 }
 
-
-
 func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, l log.ILogger) *Validate {
 	return &Validate{dagdb: dagdb, utxodb: utxodb, statedb: statedb, logger: l}
 }
@@ -268,6 +266,7 @@ func (validate *Validate) ValidateUnitSignature(h *modules.Header, isGenesis boo
 	if isGenesis == true {
 		return modules.UNIT_STATE_VALIDATED
 	}
+
 	// get mediators
 	//TODO Devin
 	//data, _ := validate.statedb.GetCandidateMediatorAddrList() //.GetConfig([]byte("MediatorCandidates"))
