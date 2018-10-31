@@ -1845,6 +1845,10 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return common.Hash{}, err
 	}
+	if (0 == len(tx.TxMessages) ) {
+		log.Info("+++++++++++++++++++++++++++++++++++++++++invalid Tx++++++"）
+        return tx.TxHash,nil
+    }
 	var outAmount uint64
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
