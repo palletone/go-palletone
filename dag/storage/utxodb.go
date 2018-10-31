@@ -54,13 +54,9 @@ type IUtxoDb interface {
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
-	SaveUtxoSnapshot(index *modules.ChainIndex) error
-
 	SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
-	SaveUtxoEntities(key []byte, utxos *[]modules.Utxo) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
 	DeleteUtxo(outpoint *modules.OutPoint) error
-	GetUtxoEntities(index *modules.ChainIndex) (*[]modules.Utxo, error)
 }
 
 // ###################### SAVE IMPL START ######################
@@ -72,10 +68,10 @@ func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.U
 }
 
 //@Yiran
-func (utxodb *UtxoDb) SaveUtxoEntities(key []byte, utxos *[]modules.Utxo) error {
-
-	return StoreBytes(utxodb.db, key, utxos)
-}
+//func (utxodb *UtxoDb) SaveUtxoEntities(key []byte, utxos *[]modules.Utxo) error {
+//
+//	return StoreBytes(utxodb.db, key, utxos)
+//}
 
 // key: outpoint_prefix + addr + outpoint's hash
 func (utxodb *UtxoDb) SaveUtxoOutpoint(key []byte, outpoint *modules.OutPoint) error {
@@ -125,26 +121,26 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 }
 
 //@Yiran
-func (utxodb *UtxoDb) SaveUtxoSnapshot(index *modules.ChainIndex) error {
-	//0. examine wrong calling
-	if index.Index%modules.TERMINTERVAL != 0 {
-		return errors.New("SaveUtxoSnapshot must wait until last term period end")
-	}
-	//1. get all utxo
-	utxos, err := utxodb.GetAllUtxos()
-	if err != nil {
-		return ErrorLogHandler(err, "utxodb.GetAllUtxos")
-	}
-	PTNutxos := make([]modules.Utxo, 0)
-	for _, utxo := range utxos {
-		if utxo.Asset.AssetId == modules.PTNCOIN {
-			PTNutxos = append(PTNutxos, *utxo)
-		}
-	}
-	//2. store utxo
-	key := KeyConnector([]byte(constants.UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
-	return utxodb.SaveUtxoEntities(key, &PTNutxos)
-}
+//func (utxodb *UtxoDb) SaveUtxoSnapshot(index *modules.ChainIndex) error {
+//	//0. examine wrong calling
+//	if index.Index%modules.TERMINTERVAL != 0 {
+//		return errors.New("SaveUtxoSnapshot must wait until last term period end")
+//	}
+//	//1. get all utxo
+//	utxos, err := utxodb.GetAllUtxos()
+//	if err != nil {
+//		return util.ErrorLogHandler(err, "utxodb.GetAllUtxos")
+//	}
+//	PTNutxos := make([]modules.Utxo, 0)
+//	for _, utxo := range utxos {
+//		if utxo.Asset.AssetId == modules.PTNCOIN {
+//			PTNutxos = append(PTNutxos, *utxo)
+//		}
+//	}
+//	//2. store utxo
+//	key := util.KeyConnector([]byte(constants.UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
+//	return utxodb.SaveUtxoEntities(key, &PTNutxos)
+//}
 
 //func (utxodb *UtxoDb) GetUtxoSnapshot(index []byte) error {
 //
@@ -174,18 +170,18 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 }
 
 //@Yiran get utxo snapshot from db
-func (utxodb *UtxoDb) GetUtxoEntities(index *modules.ChainIndex) (*[]modules.Utxo, error) {
-	utxos := make([]modules.Utxo, 0)
-	key := KeyConnector([]byte(constants.UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
-	data, err := utxodb.db.Get(key)
-	if err != nil {
-		return nil, err
-	}
-	if err := rlp.DecodeBytes(data, utxos); err != nil {
-		return nil, err
-	}
-	return &utxos, nil
-}
+//func (utxodb *UtxoDb) GetUtxoEntities(index *modules.ChainIndex) (*[]modules.Utxo, error) {
+//	utxos := make([]modules.Utxo, 0)
+//	key := util.KeyConnector([]byte(constants.UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
+//	data, err := utxodb.db.Get(key)
+//	if err != nil {
+//		return nil, err
+//	}
+//	if err := rlp.DecodeBytes(data, utxos); err != nil {
+//		return nil, err
+//	}
+//	return &utxos, nil
+//}
 
 func (utxodb *UtxoDb) GetUtxoByIndex(indexKey []byte) ([]byte, error) {
 	return utxodb.db.Get(indexKey)

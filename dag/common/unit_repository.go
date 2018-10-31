@@ -23,6 +23,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/palletone/go-palletone/dag/vote"
 	"math/big"
 	"reflect"
 	"strings"
@@ -410,22 +411,22 @@ func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Mes
 
 	// save by type
 	switch {
-	case VotePayLoad.VoteType == modules.TYPE_MEDIATOR:
+	case VotePayLoad.VoteType == vote.TYPE_MEDIATOR:
 		Addresses := common.BytesListToAddressList(VotePayLoad.Contents)
 
 		if err = unitOp.statedb.UpdateMediatorVote(voter, Addresses, VotePayLoad.Mode, term); err != nil {
 			return err
 		}
 
-		if err = unitOp.statedb.UpdateVoterList(voter, modules.TYPE_MEDIATOR, term); err != nil {
+		if err = unitOp.statedb.UpdateVoterList(voter, vote.TYPE_MEDIATOR, term); err != nil {
 			return err
 		}
 
-	case VotePayLoad.VoteType == modules.TYPE_CREATEVOTE:
+	case VotePayLoad.VoteType == vote.TYPE_CREATEVOTE:
 		if err = unitOp.statedb.CreateUserVote(voter, VotePayLoad.Contents, tx.TxHash.Bytes()); err != nil {
 			return err
 		}
-		if err = unitOp.statedb.AddVote2Account(voter, modules.VoteInfo{VoteType: modules.TYPE_CREATEVOTE, VoteContent: tx.TxHash.Bytes()}); err != nil {
+		if err = unitOp.statedb.AddVote2Account(voter, vote.VoteInfo{VoteType: vote.TYPE_CREATEVOTE, VoteContent: tx.TxHash.Bytes()}); err != nil {
 			return err
 		}
 	}

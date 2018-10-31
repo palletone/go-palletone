@@ -17,22 +17,13 @@
  * @date 2018
  */
 
-package storage
+package util
 
-import (
-	"github.com/palletone/go-palletone/common"
-)
-
-//YiRan
-type SimpleVote interface {
-	HeadN(num uint) []common.Address
-	Register(addresses []common.Address, inititalValue uint64)
-	AddToBox(Weight uint64, to []common.Address)
-}
-
-//YiRan
-//Used to count voting results for mediator vote
-type AddressVote struct {
-	Address common.Address
-	Score   uint64
+//ErrorLogHandler YiRan
+func ErrorLogHandler(err error, errType string) error {
+	if err != nil {
+		println(errType, "error", err.Error())
+		return err
+	}
+	return nil
 }

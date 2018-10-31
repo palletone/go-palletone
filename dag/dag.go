@@ -954,25 +954,25 @@ func (d *Dag) GetCurrentUnitIndex() (*modules.ChainIndex, error) {
 
 //@Yiran save utxo snapshot when new mediator cycle begin
 // unit index MUST to be  integer multiples of  termInterval.
-func (d *Dag) SaveUtxoSnapshot() error {
-	currentUnitIndex, err := d.GetCurrentUnitIndex()
-	if err != nil {
-		return err
-	}
-	return d.utxodb.SaveUtxoSnapshot(currentUnitIndex)
-}
+//func (d *Dag) SaveUtxoSnapshot() error {
+//	currentUnitIndex, err := d.GetCurrentUnitIndex()
+//	if err != nil {
+//		return err
+//	}
+//	return d.utxodb.SaveUtxoSnapshot(currentUnitIndex)
+//}
 
 //@Yiran Get last utxo snapshot
 // must calling after SaveUtxoSnapshot call , before this mediator cycle end.
 // called by GenerateVoteResult
-func (d *Dag) GetUtxoSnapshot() (*[]modules.Utxo, error) {
-	unitIndex, err := d.GetCurrentUnitIndex()
-	if err != nil {
-		return nil, err
-	}
-	unitIndex.Index -= unitIndex.Index % modules.TERMINTERVAL
-	return d.utxodb.GetUtxoEntities(unitIndex)
-}
+//func (d *Dag) GetUtxoSnapshot() (*[]modules.Utxo, error) {
+//	unitIndex, err := d.GetCurrentUnitIndex()
+//	if err != nil {
+//		return nil, err
+//	}
+//	unitIndex.Index -= unitIndex.Index % modules.TERMINTERVAL
+//	return d.utxodb.GetUtxoEntities(unitIndex)
+//}
 
 ////@Yiran
 //func (d *Dag) GenerateVoteResult() (*[]storage.AddressVote, error) {

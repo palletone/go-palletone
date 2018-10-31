@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/vote"
 )
 
 func (statedb *StateDb) GetAccountInfo(address common.Address) (*modules.AccountInfo, error) {
@@ -56,7 +57,7 @@ func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint
 
 }
 
-func (statedb *StateDb) AddVote2Account(address common.Address, voteInfo modules.VoteInfo) error {
+func (statedb *StateDb) AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error {
 	accountInfo, err := statedb.GetAccountInfo(address)
 	if err != nil {
 		return err

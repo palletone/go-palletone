@@ -17,7 +17,7 @@
  * @date 2018
  */
 
-package modules
+package vote
 
 type VoteInfo struct {
 	VoteType    uint8
@@ -27,7 +27,6 @@ type VoteInfo struct {
 // system vote 0-9
 const TYPE_MEDIATOR = 0 // VoteContent = []byte(Common.Address)
 //const TYPE_ADDRESS = 1  // VoteContent = []byte(Common.Address)
-
 // 10-19
 //const TYPE_LEN_2 = 10
 //const TYPE_LEN_4 = 11
@@ -39,7 +38,6 @@ const TYPE_MEDIATOR = 0 // VoteContent = []byte(Common.Address)
 //const TYPE_LEN_256 = 17
 //const TYPE_LEN_512 = 18
 //const TYPE_LEN_1024 = 19
-
 // vote detail 200 - 239
 //const TYPE_BOOL_TRUE = 200
 //const TYPE_BOOL_FALSE = 201
@@ -80,7 +78,6 @@ const TYPE_MEDIATOR = 0 // VoteContent = []byte(Common.Address)
 //const TYPE_NUM_8 = 236
 //const TYPE_NUM_9 = 237
 //const TYPE_NULL = 238
-
 // action 240- 255
-const TYPE_VOTEING = 254
+//const TYPE_VOTEING = 254
 const TYPE_CREATEVOTE = 255

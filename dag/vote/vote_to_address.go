@@ -1,10 +1,49 @@
-package storage
+/*
+   This file is part of go-palletone.
+   go-palletone is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   go-palletone is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+ * @author PalletOne core developer YiRan <dev@pallet.one>
+ * @date 2018
+ */
+
+package vote
 
 import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"sort"
 )
+
+//YiRan
+type AddressVote struct {
+	Address common.Address
+	Score   uint64
+}
+
+//YiRan
+type AddressVoteBox struct {
+	Candidates map[common.Address]uint64
+	voters     []common.Address
+}
+
+//YiRan
+func NewAddressVoteBox() *AddressVoteBox {
+	return &AddressVoteBox{
+		Candidates: make(map[common.Address]uint64, 0),
+		voters:     make([]common.Address, 0),
+	}
+}
 
 //YiRan
 //return sorted data of given number
@@ -36,7 +75,7 @@ func (box *AddressVoteBox) Register(addresses []common.Address, initialValue uin
 
 func (box *AddressVoteBox) IsVoted(voter common.Address) bool {
 	for _, voted := range box.voters {
-		if AddressEqual(voted, voter) {
+		if common.AddressEqual(voted, voter) {
 			return true
 		}
 	}
@@ -69,19 +108,6 @@ func (box *AddressVoteBox) AddToBoxIfNotVoted(Weight uint64, voter common.Addres
 }
 
 //YiRan
-func NewAddressVoteBox() *AddressVoteBox {
-	return &AddressVoteBox{
-		Candidates: make(map[common.Address]uint64, 0),
-		voters:     make([]common.Address, 0),
-	}
-}
-
-//YiRan
-type AddressVoteBox struct {
-	Candidates map[common.Address]uint64
-	voters     []common.Address
-}
-
 type AddressVoteBoxSorter []AddressVote
 
 func NewAddressVoteBoxSorter(m map[common.Address]uint64) AddressVoteBoxSorter {
@@ -91,6 +117,7 @@ func NewAddressVoteBoxSorter(m map[common.Address]uint64) AddressVoteBoxSorter {
 	}
 	return s
 }
+
 func (ms AddressVoteBoxSorter) Len() int {
 	return len(ms)
 }

@@ -262,3 +262,14 @@ type SignatureError struct {
 	MsgIndex   uint32
 	Error      error
 }
+
+//YiRan
+//Returns true when the contents of the two Address are exactly the same
+func AddressEqual(a, b Address) bool {
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}

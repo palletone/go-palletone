@@ -22,9 +22,10 @@ package storage
 import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
-	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/vote"
 )
 
 //UpdateMediatorVote YiRan@
@@ -34,8 +35,8 @@ func (statedb *StateDb) UpdateMediatorVote(voter common.Address, candidates []co
 	if err != nil {
 		return err
 	}
-	newVotes := []modules.VoteInfo{}
-	mediatorVotes := []modules.VoteInfo{}
+	newVotes := []vote.VoteInfo{}
+	mediatorVotes := []vote.VoteInfo{}
 	//2. split vote by type
 	for _, voteInfo := range accountInfo.Votes {
 		if voteInfo.VoteType != 0 {
@@ -49,7 +50,7 @@ func (statedb *StateDb) UpdateMediatorVote(voter common.Address, candidates []co
 	case mode == 0: //[Replace all]
 		//3. append new data
 		for _, candidate := range candidates {
-			newVotes = append(newVotes, modules.VoteInfo{VoteType: modules.TYPE_MEDIATOR, VoteContent: candidate.Bytes()})
+			newVotes = append(newVotes, vote.VoteInfo{VoteType: vote.TYPE_MEDIATOR, VoteContent: candidate.Bytes()})
 		}
 
 	case mode == 1: //[Replace]
@@ -61,7 +62,7 @@ func (statedb *StateDb) UpdateMediatorVote(voter common.Address, candidates []co
 		stride := len(candidates)
 		for i := 0; i < stride; i++ {
 			for j, voteInfo := range mediatorVotes {
-				if BytesEqual(voteInfo.VoteContent, candidates[i].Bytes()) {
+				if util.BytesEqual(voteInfo.VoteContent, candidates[i].Bytes()) {
 					mediatorVotes[j].VoteContent = candidates[i+stride].Bytes()
 				}
 			}
@@ -71,11 +72,11 @@ func (statedb *StateDb) UpdateMediatorVote(voter common.Address, candidates []co
 
 	case mode == 2: //[Delete]
 		// 3. copy votes which not in address list
-		resMediatorVotes := []modules.VoteInfo{}
+		resMediatorVotes := []vote.VoteInfo{}
 		pairFlag := false
 		for _, mediatorVoteInfo := range mediatorVotes {
 			for _, candidate := range candidates {
-				if BytesEqual(candidate.Bytes(), mediatorVoteInfo.VoteContent) {
+				if util.BytesEqual(candidate.Bytes(), mediatorVoteInfo.VoteContent) {
 					pairFlag = true
 				}
 			}
@@ -102,13 +103,13 @@ func (statedb *StateDb) UpdateMediatorVote(voter common.Address, candidates []co
 
 //UpdateVoterList YiRan@
 func (statedb *StateDb) UpdateVoterList(voter common.Address, voteType uint8, term uint16) error {
-	key := KeyConnector(constants.STATE_VOTER_LIST, []byte{byte(voteType)}, voter.Bytes())
+	key := util.KeyConnector(constants.STATE_VOTER_LIST, []byte{byte(voteType)}, voter.Bytes())
 	return StoreBytes(statedb.db, key, term)
 }
 
 //UpdateVoterList YiRan@
 func (statedb *StateDb) GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address {
-	key := KeyConnector(constants.STATE_VOTER_LIST, []byte{byte(voteType)})
+	key := util.KeyConnector(constants.STATE_VOTER_LIST, []byte{byte(voteType)})
 	bVoterMap := getprefix(statedb.db, key)
 	res := []common.Address{}
 	for voter, term := range bVoterMap {
@@ -143,7 +144,7 @@ func (statedb *StateDb) GetAccountMediatorVote(voterAddress common.Address) ([]c
 
 //GetSortedVote YiRan@
 func (statedb *StateDb) GetSortedVote(ReturnNumber uint, voteType uint8, minTermLimit uint16) ([]common.Address, error) {
-	voteBox := NewAddressVoteBox()
+	voteBox := vote.NewAddressVoteBox()
 	// 1. get voter list
 	voterList := statedb.GetVoterList(voteType, minTermLimit)
 
@@ -172,7 +173,7 @@ func (statedb *StateDb) GetSortedVote(ReturnNumber uint, voteType uint8, minTerm
 
 //CreateUserVote YiRan@
 func (statedb *StateDb) CreateUserVote(voter common.Address, detail [][]byte, bHash []byte) error {
-	key := KeyConnector(constants.CREATE_VOTE_PREFIX, bHash)
+	key := util.KeyConnector(constants.CREATE_VOTE_PREFIX, bHash)
 	value := detail
 	return StoreBytes(statedb.db, key, value)
 }

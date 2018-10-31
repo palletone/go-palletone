@@ -23,6 +23,7 @@ package storage
 import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/vote"
 )
 
 type IStateDb interface {
@@ -47,7 +48,7 @@ type IStateDb interface {
 	GetAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	SaveAccountInfo(address common.Address, info *modules.AccountInfo) error
 	GetAccountVoteInfo(address common.Address, voteType uint8) ([][]byte)
-	AddVote2Account(address common.Address, voteInfo modules.VoteInfo) error
+	AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error
 
 	GetCandidateMediatorAddrList() ([]common.Address, error)
 	//GetActiveMediatorAddrList() ([]common.Contents, error)
