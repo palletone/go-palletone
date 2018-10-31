@@ -95,65 +95,13 @@ func (t *Transaction) SetHash(hash common.Hash) {
 	}
 }
 
-func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {
-	return &PaymentPayload{
-		Input:    inputs,
-		Output:   outputs,
-		LockTime: defaultTxInOutAlloc,
-	}
-}
-
-func NewContractTplPayload(templateId []byte, name string, path string, version string, memory uint16, bytecode []byte) *ContractTplPayload {
-	return &ContractTplPayload{
-		TemplateId: templateId,
-		Name:       name,
-		Path:       path,
-		Version:    version,
-		Memory:     memory,
-		Bytecode:   bytecode,
-	}
-}
-
-func NewContractDeployPayload(templateid []byte, contractid []byte, name string, args [][]byte, excutiontime time.Duration,
-	jury []common.Address, readset []ContractReadSet, writeset []PayloadMapStruct) *ContractDeployPayload {
-	return &ContractDeployPayload{
-		TemplateId:   templateid,
-		ContractId:   contractid,
-		Name:         name,
-		Args:         args,
-		Excutiontime: excutiontime,
-		Jury:         jury,
-		ReadSet:      readset,
-		WriteSet:     writeset,
-	}
-}
-func NewVotePayload(address [][]byte, mode uint8, voteType uint8) *VotePayload {
-	return &VotePayload{
-		Contents: address,
-		Mode:     mode,
-		VoteType: voteType,
-	}
-}
-
-func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime time.Duration,
-	readset []ContractReadSet, writeset []PayloadMapStruct, payload []byte) *ContractInvokePayload {
-	return &ContractInvokePayload{
-		ContractId:   contractid,
-		Args:         args,
-		Excutiontime: excutiontime,
-		ReadSet:      readset,
-		WriteSet:     writeset,
-		Payload:      payload,
-	}
-}
-
 type TxPoolTransaction struct {
 	Tx *Transaction
 
 	From         []*OutPoint
 	CreationDate time.Time `json:"creation_date"`
 	Priority_lvl float64   `json:"priority_lvl"` // 打包的优先级
-	Nonce        uint64                          // transaction'hash maybe repeat.
+	Nonce        uint64    // transaction'hash maybe repeat.
 	Pending      bool
 	Confirmed    bool
 	Index        int `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置

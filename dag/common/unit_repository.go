@@ -427,6 +427,25 @@ func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Mes
 
 }
 
+//Get who send this transaction
+func getRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+	msg0 := tx.TxMessages[0]
+	if msg0.App != modules.APP_PAYMENT {
+		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
+	}
+	pay := msg0.Payload.(*modules.PaymentPayload)
+	return getFirstInputAddress(pay)
+}
+
+func getFirstInputAddress(pay *modules.PaymentPayload) (common.Address, error) {
+
+	unlockScript := pay.Input[0].SignatureScript
+	if unlockScript == nil { // coinbase?
+		return common.Address{}, errors.New("Coinbase don't have input address")
+	}
+	return tokenengine.GetAddressFromScript(unlockScript)
+}
+
 /**
 保存单元数据，如果单元的结构基本相同
 save genesis unit data
@@ -503,7 +522,7 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 					return fmt.Errorf("Save vote payload error.")
 				}
 			case modules.OP_MEDIATOR_CREATE:
-				if ok := unitOp.ApplyOperation(msg); ok == false {
+				if ok := unitOp.ApplyOperation(msg, true); ok == false {
 					return fmt.Errorf("Apply Mediator Creating Operation error.")
 				}
 			case modules.APP_TEXT:
@@ -619,25 +638,6 @@ func (unitOp *UnitRepository) saveContractInvokePayload(tx *modules.Transaction,
 		// }
 	}
 	return true
-}
-
-//Get who send this transaction
-func getRequesterAddress(tx *modules.Transaction) (common.Address, error) {
-	msg0 := tx.TxMessages[0]
-	if msg0.App != modules.APP_PAYMENT {
-		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
-	}
-	pay := msg0.Payload.(*modules.PaymentPayload)
-	return getFirstInputAddress(pay)
-}
-
-func getFirstInputAddress(pay *modules.PaymentPayload) (common.Address, error) {
-
-	unlockScript := pay.Input[0].SignatureScript
-	if unlockScript == nil { // coinbase?
-		return common.Address{}, errors.New("Coinbase don't have input address")
-	}
-	return tokenengine.GetAddressFromScript(unlockScript)
 }
 
 /**

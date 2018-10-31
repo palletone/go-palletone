@@ -223,7 +223,7 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		if app == modules.APP_TEXT {
 			return true
 		}
-	case *MediatorCreateOperation:
+	case *modules.MediatorCreateOperation:
 		if app == modules.OP_MEDIATOR_CREATE {
 			return true
 		}

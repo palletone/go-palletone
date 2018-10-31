@@ -25,23 +25,14 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
-type MediatorCreateOperation struct {
-	*core.MediatorInfo
+type MediatorCreateEvaluator struct {
 }
 
-//func feePayer(tx *modules.Transaction) (common.Address, error) {
-//	return getRequesterAddress(tx)
-//}
-
-func (mco *MediatorCreateOperation) Validate() bool {
+func (mce *MediatorCreateEvaluator) Evaluate() bool {
 	return true
 }
 
-//func (mco *MediatorCreateOperation) Evaluate() bool {
-//	return true
-//}
-
-func (mco *MediatorCreateOperation) Apply(statedb storage.IStateDb) {
+func (mce *MediatorCreateEvaluator) Apply(statedb storage.IStateDb, mco *modules.MediatorCreateOperation) {
 	statedb.StoreMediatorInfo(mco.MediatorInfo)
 	return
 }
@@ -51,7 +42,7 @@ func GetInitialMediatorMsgs(genesisConf *core.Genesis) []*modules.Message {
 	result := make([]*modules.Message, 0)
 
 	for _, mi := range genesisConf.InitialMediatorCandidates {
-		mco := &MediatorCreateOperation{
+		mco := &modules.MediatorCreateOperation{
 			MediatorInfo: mi,
 		}
 
@@ -66,10 +57,10 @@ func GetInitialMediatorMsgs(genesisConf *core.Genesis) []*modules.Message {
 	return result
 }
 
-func (unitOp *UnitRepository) ApplyOperation(msg *modules.Message) bool {
+func (unitOp *UnitRepository) ApplyOperation(msg *modules.Message, apply bool) bool {
 	var payload interface{}
 	payload = msg.Payload
-	mediatorCreateOp, ok := payload.(*MediatorCreateOperation)
+	mediatorCreateOp, ok := payload.(*modules.MediatorCreateOperation)
 	if ok == false {
 		log.Error("a invalid Mediator Create Operation!")
 		return false
@@ -80,7 +71,12 @@ func (unitOp *UnitRepository) ApplyOperation(msg *modules.Message) bool {
 		return false
 	}
 
-	mediatorCreateOp.Apply(unitOp.statedb)
+	var mce MediatorCreateEvaluator
+	result := mce.Evaluate()
 
-	return true
+	if apply {
+		mce.Apply(unitOp.statedb, mediatorCreateOp)
+	}
+
+	return result
 }
