@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -37,7 +38,7 @@ var (
 
 	MESSAGES_PREFIX               = []byte("me")
 	POLL_PREFIX                   = []byte("po")
-	VOTE_PREFIX                   = []byte("vo")
+	CREATE_VOTE_PREFIX            = []byte("vo")
 	ATTESTATION_PREFIX            = []byte("at")
 	ASSET_PREFIX                  = []byte("as")
 	ASSET_ATTESTORS               = []byte("ae")
@@ -50,6 +51,8 @@ var (
 	// lookup
 	LookupPrefix = []byte("l")
 
+	StableUnitHash = []byte("StableUnitHash")
+	LastUnitHash   = []byte("LastUnitHash")
 	// Head Fast Key
 	HeadHeaderKey = []byte("LastHeader")
 	HeadUnitKey   = []byte("LastUnit")

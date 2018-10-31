@@ -31,14 +31,28 @@ import (
 )
 
 func mediatorKey(address common.Address) []byte {
-	key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes()...)
-	return key
+	//key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes()...)
+	key := fmt.Sprintf("%s%s", constants.MEDIATOR_INFO_PREFIX, address.String())
+
+	return []byte(key)
 }
 
-func StoreMediator(db ptndb.Database, med *core.Mediator) error {
-	mi := med.MediatorToInfo()
+//func StoreMediator(db ptndb.Database, med *core.Mediator) error {
+//	mi := med.MediatorToInfo()
+//
+//	err := StoreBytes(db, mediatorKey(med.Address), mi)
+//	if err != nil {
+//		log.Error(fmt.Sprintf("Store mediator error:%s", err))
+//	}
+//
+//	return err
+//}
 
-	err := StoreBytes(db, mediatorKey(med.Address), mi)
+func StoreMediatorInfo(db ptndb.Database, mi *core.MediatorInfo) error {
+	//log.Debug(fmt.Sprintf("Store Mediator %v:", mi.AddStr))
+	add := core.StrToMedAdd(mi.AddStr)
+
+	err := StoreBytes(db, mediatorKey(add), mi)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store mediator error:%s", err))
 	}
@@ -52,11 +66,12 @@ func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator
 	err := retrieve(db, mediatorKey(address), mi)
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve mediator error: %s", err))
+		return nil, nil
 	}
 
 	med := mi.InfoToMediator()
 
-	return &med, err
+	return &med, nil
 }
 
 func GetMediatorCount(db ptndb.Database) int {
@@ -80,9 +95,11 @@ func GetMediators(db ptndb.Database) map[common.Address]bool {
 	iter := db.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
 	for iter.Next() {
 		key := iter.Key()
-		address := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
+		//log.Debug(fmt.Sprintf("Get Mediator's key : %s", key))
+		addStr := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
 
-		result[common.BytesToAddress(address)] = true
+		//result[common.BytesToAddress(address)] = true
+		result[core.StrToMedAdd(string(addStr))] = true
 	}
 
 	return result

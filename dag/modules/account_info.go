@@ -20,6 +20,8 @@
 
 package modules
 
+import "github.com/palletone/go-palletone/dag/vote"
+
 //一个账户（地址）的状态信息
 //Include:
 // personal account P1*
@@ -29,7 +31,5 @@ type AccountInfo struct {
 	//AccountName string
 	//当前账户的PTN余额
 	PtnBalance uint64
-	//当前账户对Mediator选举的投票结果 (temp)
-	//PtnVoteResult []byte
-	Votes         []VoteInfo
+	Votes      []vote.VoteInfo
 }

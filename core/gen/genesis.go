@@ -151,6 +151,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		App:     modules.APP_PAYMENT,
 		Payload: pay,
 	}
+
 	// step2, generate global config payload message
 	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis, asset)
 	if err != nil {
@@ -165,10 +166,15 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		App:     modules.APP_TEXT,
 		Payload: &modules.TextPayload{Text: []byte(genesis.Text)},
 	}
+
+	initialMediatorMsgs := dagCommon.GetInitialMediatorMsgs(genesis)
+
 	// step3, genesis transaction
 	tx := &modules.Transaction{
 		TxMessages: []*modules.Message{msg0, msg1, msg2},
 	}
+	tx.TxMessages = append(tx.TxMessages, initialMediatorMsgs...)
+
 	// tx.CreationDate = tx.CreateDate()
 	tx.TxHash = tx.Hash()
 
@@ -243,7 +249,7 @@ func InitialMediatorCandidates(len int, address string) []*core.MediatorInfo {
 	initialMediator := make([]*core.MediatorInfo, len)
 	for i := 0; i < len; i++ {
 		initialMediator[i] = &core.MediatorInfo{
-			Address:     address,
+			AddStr:      address,
 			InitPartPub: mp.DefaultInitPartPub,
 			Node:        deFaultNode,
 		}

@@ -22,7 +22,9 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/vote"
 )
 
 type IStateDb interface {
@@ -43,18 +45,24 @@ type IStateDb interface {
 	GetContractStatesById(id []byte) (map[modules.StateVersion][]byte, error)
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id []byte) (*modules.Contract, error)
+
+	/* Account_Info */
 	GetAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	SaveAccountInfo(address common.Address, info *modules.AccountInfo) error
-	GetCandidateMediatorAddrList() ([]common.Address, error)
-	//GetActiveMediatorAddrList() ([]common.Address, error)
+	AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error
+	GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte
 
-	//AddVote(voter common.Address, candidate common.Address) error // replaced by UpdateMediatorVote
-	GetSortedVote(ReturnNumber uint) ([]common.Address, error) // TODO: YiRan UPDATE
-	UpdateMediatorVote(voter common.Address, candidates []common.Address, mode uint8) error
-	UpdateVoterList(voter common.Address) error
+	GetSortedVote(ReturnNumber uint, voteType uint8, minTermLimit uint16) ([]common.Address, error)
+	GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
+	UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
+	UpdateMediatorVote(voter common.Address, candidates []common.Address, mode uint8, term uint16) error
 	GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error)
-	// todo albert·gou
-	//SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error
-	//GetAccountMediatorInfo(address common.Address) (*core.MediatorInfo, error)
-	//SaveAccountMediatorInfo(address common.Address, info *core.MediatorInfo, version *modules.StateVersion) error
+	CreateUserVote(voter common.Address, detail [][]byte, bHash []byte) error
+
+	StoreMediatorInfo(mi *core.MediatorInfo) error
+	RetrieveMediator(address common.Address) (*core.Mediator, error)
+	GetMediatorCount() int
+	IsMediator(address common.Address) bool
+	GetMediators() map[common.Address]bool
+	LookupMediator() map[common.Address]core.Mediator
 }

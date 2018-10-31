@@ -57,7 +57,9 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	msg.App = cpyMsg.App
 	msg.Payload = cpyMsg.Payload
 	switch cpyMsg.App {
-	case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT, APP_VOTE:
+	// modified by albert·gou
+	default:
+		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT, APP_VOTE:
 		msg.Payload = cpyMsg.Payload
 	case APP_CONFIG:
 		payload, _ := cpyMsg.Payload.(*ConfigPayload)
@@ -262,7 +264,7 @@ type ContractReadSet struct {
 // Mode == 1 [ Edit    ] :Replace the addresses in the first half of the account's votes addresses to refer to the addresses in the second half.
 // Mode == 2 [ Delete  ] :Delete the addresses from account's votes addresses
 type VotePayload struct {
-	Address  [][]byte
+	Contents [][]byte
 	VoteType uint8
 	Mode     uint8
 }
@@ -311,4 +313,56 @@ type ConfigPayload struct {
 // App: text
 type TextPayload struct {
 	Text []byte `json:"text"` // Textdata
+}
+
+func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {
+	return &PaymentPayload{
+		Input:    inputs,
+		Output:   outputs,
+		LockTime: defaultTxInOutAlloc,
+	}
+}
+
+func NewContractTplPayload(templateId []byte, name string, path string, version string, memory uint16, bytecode []byte) *ContractTplPayload {
+	return &ContractTplPayload{
+		TemplateId: templateId,
+		Name:       name,
+		Path:       path,
+		Version:    version,
+		Memory:     memory,
+		Bytecode:   bytecode,
+	}
+}
+
+func NewContractDeployPayload(templateid []byte, contractid []byte, name string, args [][]byte, excutiontime time.Duration,
+	jury []common.Address, readset []ContractReadSet, writeset []PayloadMapStruct) *ContractDeployPayload {
+	return &ContractDeployPayload{
+		TemplateId:   templateid,
+		ContractId:   contractid,
+		Name:         name,
+		Args:         args,
+		Excutiontime: excutiontime,
+		Jury:         jury,
+		ReadSet:      readset,
+		WriteSet:     writeset,
+	}
+}
+func NewVotePayload(address [][]byte, mode uint8, voteType uint8) *VotePayload {
+	return &VotePayload{
+		Contents: address,
+		Mode:     mode,
+		VoteType: voteType,
+	}
+}
+
+func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime time.Duration,
+	readset []ContractReadSet, writeset []PayloadMapStruct, payload []byte) *ContractInvokePayload {
+	return &ContractInvokePayload{
+		ContractId:   contractid,
+		Args:         args,
+		Excutiontime: excutiontime,
+		ReadSet:      readset,
+		WriteSet:     writeset,
+		Payload:      payload,
+	}
 }

@@ -103,6 +103,14 @@ func BytesToAddress(b []byte) Address {
 	return a
 }
 
+func BytesListToAddressList(bl [][]byte) []Address {
+	Addresses := []Address{}
+	for _, bAddress := range bl {
+		Addresses = append(Addresses, BytesToAddress(bAddress))
+	}
+	return Addresses
+}
+
 func HexToAddress(s string) Address { return BytesToAddress(FromHex(s)) }
 func PubKeyHashHexToAddress(s string) Address {
 	pubKeyHash := FromHex(s)
@@ -253,4 +261,15 @@ type SignatureError struct {
 	InputIndex uint32
 	MsgIndex   uint32
 	Error      error
+}
+
+//YiRan
+//Returns true when the contents of the two Address are exactly the same
+func AddressEqual(a, b Address) bool {
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
 }

@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -139,3 +140,36 @@ func BytesToInt(b []byte) int {
 	binary.Read(bytesBuffer, binary.BigEndian, &tmp)
 	return int(tmp)
 }
+
+//YiRan
+//Returns true when the contents of the two []byte are exactly the same
+func BytesEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	if (a == nil) != (b == nil) { //[]int{} != []int(nil)
+		return false
+	}
+
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+
+
+//YiRan
+// this function connect multiple []byte to single []byte.
+func KeyConnector(keys ...[]byte) []byte {
+	var res []byte
+	for _, key := range keys {
+		res = append(res, key...)
+	}
+	return res
+}
+
