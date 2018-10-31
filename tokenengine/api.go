@@ -21,11 +21,12 @@
 package tokenengine
 
 import (
-	"github.com/palletone/go-palletone/common"
-	//"github.com/btcsuite/btcd/btcec"
-        "fmt"
 	"crypto/ecdsa"
 	"errors"
+	"fmt"
+
+	"github.com/palletone/go-palletone/common"
+	//"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
@@ -138,7 +139,6 @@ func ScriptValidate(utxoLockScript []byte, tx *modules.Transaction, msgIdx, inpu
 	return vm.Execute()
 }
 
-
 //对交易中的Payment类型中的某个Input生成解锁脚本
 func SignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, privKey *ecdsa.PrivateKey) ([]byte, error) {
 	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
@@ -170,7 +170,7 @@ func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockS
 }
 
 //Sign a full transaction
-func SignTxAllPaymentInput(tx *modules.Transaction,hashType uint32, utxoLockScripts map[modules.OutPoint][]byte, redeemScript []byte,privKeys map[common.Address]*ecdsa.PrivateKey) ([]common.SignatureError ,error){
+func SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte, redeemScript []byte, privKeys map[common.Address]*ecdsa.PrivateKey) ([]common.SignatureError, error) {
 	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
 		if privKey, ok := privKeys[a]; ok {
 			return privKey, true, nil
@@ -188,35 +188,35 @@ func SignTxAllPaymentInput(tx *modules.Transaction,hashType uint32, utxoLockScri
 	var signErrors []common.SignatureError
 	for i, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
-			pay , ok:= msg.Payload.(*modules.PaymentPayload)
+			pay, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {
 				fmt.Println("Get Payment payload error:")
 			} else {
-	 			fmt.Println("Payment payload:", pay)
-	 		}
+				fmt.Println("Payment payload:", pay)
+			}
 			for j, input := range pay.Input {
-				utxoLockScript , _:= utxoLockScripts[*input.PreviousOutPoint]
+				utxoLockScript, _ := utxoLockScripts[*input.PreviousOutPoint]
 				checkscript := make([]byte, len(utxoLockScript))
-	 			copy(checkscript, utxoLockScript)
-                if (hashType&txscript.SigHashSingle) !=
-				txscript.SigHashSingle || j < len(pay.Output) {
-				sigScript, err := txscript.SignTxOutput(tx, i, j, utxoLockScript, hashType,
-					txscript.KeyClosure(lookupKey),  txscript.ScriptClosure(lookupRedeemScript), input.SignatureScript)
-				if err != nil {
-					signErrors = append(signErrors, common.SignatureError{
-	 						InputIndex: uint32(j),
-	 						MsgIndex :  uint32(i),
-	 						Error:      err,
-	 					})
-					return signErrors,err
+				copy(checkscript, utxoLockScript)
+				if (hashType&txscript.SigHashSingle) !=
+					txscript.SigHashSingle || j < len(pay.Output) {
+					sigScript, err := txscript.SignTxOutput(tx, i, j, utxoLockScript, hashType,
+						txscript.KeyClosure(lookupKey), txscript.ScriptClosure(lookupRedeemScript), input.SignatureScript)
+					if err != nil {
+						signErrors = append(signErrors, common.SignatureError{
+							InputIndex: uint32(j),
+							MsgIndex:   uint32(i),
+							Error:      err,
+						})
+						return signErrors, err
+					}
+					input.SignatureScript = sigScript
+					checkscript = nil
 				}
-				input.SignatureScript = sigScript
-				checkscript = nil
-			   }
 			}
 		}
 	}
-	return signErrors,nil
+	return signErrors, nil
 }
 
 //传入一个脚本二进制，解析为可读的文本形式

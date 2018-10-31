@@ -270,7 +270,7 @@ func initialMediatorCandidates(mediators []mp.MediatorConf, nodeInfo string) []*
 	initialMediators := make([]*core.MediatorInfo, mcLen)
 	for i := 0; i < mcLen; i++ {
 		initialMediators[i] = &core.MediatorInfo{
-			Address:     mediators[i].Address,
+			AddStr:      mediators[i].Address,
 			InitPartPub: mediators[i].InitPartPub,
 			Node:        nodeInfo,
 		}

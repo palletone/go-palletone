@@ -860,7 +860,7 @@ func (d *Dag) ValidateUnitGroupSig(hash common.Hash) (bool, error) {
 	}
 	return true, nil
 }
-func (d *Dag) GetAccountMediatorVote(address common.Address) ([]common.Address) {
+func (d *Dag) GetAccountMediatorVote(address common.Address) []common.Address {
 	bAddress := d.statedb.GetAccountVoteInfo(address, 0)
 	res := []common.Address{}
 	for _, b := range bAddress {
@@ -1044,11 +1044,6 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 //	}
 //
 //	return nil
-//}
-
-// todo albert·gou
-//func (dag *Dag) GetCandidateMediators() []*core.MediatorInfo {
-//	return dag.stateRep.GetCandidateMediators()
 //}
 
 //GetElectedMediatorsAddress YiRan@

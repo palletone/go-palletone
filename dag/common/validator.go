@@ -186,6 +186,7 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 		case modules.APP_CONFIG:
 		case modules.APP_TEXT:
 		case modules.APP_VOTE:
+		case modules.OP_MEDIATOR_CREATE:
 		default:
 			return modules.TxValidationCode_UNKNOWN_TX_TYPE
 		}
@@ -225,6 +226,10 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		}
 	case *modules.VotePayload:
 		if app == modules.APP_VOTE {
+			return true
+		}
+	case *modules.MediatorCreateOperation:
+		if app == modules.OP_MEDIATOR_CREATE {
 			return true
 		}
 	default:
@@ -271,6 +276,7 @@ func (validate *Validate) ValidateUnitSignature(h *modules.Header, isGenesis boo
 	if isGenesis == true {
 		return modules.UNIT_STATE_VALIDATED
 	}
+
 	// get mediators
 	//TODO Devin
 	//data, _ := validate.statedb.GetCandidateMediatorAddrList() //.GetConfig([]byte("MediatorCandidates"))

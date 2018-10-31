@@ -61,7 +61,7 @@ func (g *Genesis) GetTokenAmount() uint64 {
 }
 
 type MediatorInfo struct {
-	Address     string
+	AddStr      string
 	InitPartPub string
 	Node        string
 	//WebsiteUrl  string
@@ -89,7 +89,7 @@ func PointToStr(pub kyber.Point) string {
 
 func (medInfo *MediatorInfo) InfoToMediator() Mediator {
 	// 1. 解析 mediator 账户地址
-	add := StrToMedAdd(medInfo.Address)
+	add := StrToMedAdd(medInfo.AddStr)
 
 	// 2. 解析 mediator 的 DKS 初始公钥
 	pub := StrToPoint(medInfo.InitPartPub)

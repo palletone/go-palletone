@@ -101,6 +101,10 @@ func temp2Tx(temp transactionTemp, tx *Transaction) {
 			var tplPayload ContractTplPayload
 			rlp.DecodeBytes(m.Data, &tplPayload)
 			m1.Payload = &tplPayload
+		} else if m.App == OP_MEDIATOR_CREATE {
+			var mediatorCreateOp MediatorCreateOperation
+			rlp.DecodeBytes(m.Data, &mediatorCreateOp)
+			m1.Payload = &mediatorCreateOp
 		} else {
 			fmt.Println("Unknown message app type:", m.App)
 		}

@@ -385,12 +385,6 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 	confPay.ConfigSet = append(confPay.ConfigSet,
 		modules.PayloadMapStruct{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
 
-	// comment by Albert·Gou, 不是交易，已在其他地方处理
-	//Put Mediator info into config
-	//d, _ := rlp.EncodeToBytes(genesisConf.InitialMediatorCandidates)
-	//med := modules.PayloadMapStruct{Key: "Mediator", Value: d}
-	//confPay.ConfigSet = append(confPay.ConfigSet, med)
-
 	return confPay, nil
 }
 
@@ -432,6 +426,25 @@ func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Mes
 	}
 	return nil
 
+}
+
+//Get who send this transaction
+func getRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+	msg0 := tx.TxMessages[0]
+	if msg0.App != modules.APP_PAYMENT {
+		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
+	}
+	pay := msg0.Payload.(*modules.PaymentPayload)
+	return getFirstInputAddress(pay)
+}
+
+func getFirstInputAddress(pay *modules.PaymentPayload) (common.Address, error) {
+
+	unlockScript := pay.Input[0].SignatureScript
+	if unlockScript == nil { // coinbase?
+		return common.Address{}, errors.New("Coinbase don't have input address")
+	}
+	return tokenengine.GetAddressFromScript(unlockScript)
 }
 
 /**
@@ -508,6 +521,10 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 			case modules.APP_VOTE:
 				if err = unitOp.SaveVote(tx, msg, 0); err != nil {
 					return fmt.Errorf("Save vote payload error.")
+				}
+			case modules.OP_MEDIATOR_CREATE:
+				if ok := unitOp.ApplyOperation(msg, true); ok == false {
+					return fmt.Errorf("Apply Mediator Creating Operation error.")
 				}
 			case modules.APP_TEXT:
 			default:
@@ -622,25 +639,6 @@ func (unitOp *UnitRepository) saveContractInvokePayload(tx *modules.Transaction,
 		// }
 	}
 	return true
-}
-
-//Get who send this transaction
-func getRequesterAddress(tx *modules.Transaction) (common.Address, error) {
-	msg0 := tx.TxMessages[0]
-	if msg0.App != modules.APP_PAYMENT {
-		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
-	}
-	pay := msg0.Payload.(*modules.PaymentPayload)
-	return getFirstInputAddress(pay)
-}
-
-func getFirstInputAddress(pay *modules.PaymentPayload) (common.Address, error) {
-
-	unlockScript := pay.Input[0].SignatureScript
-	if unlockScript == nil { // coinbase?
-		return common.Address{}, errors.New("Coinbase don't have input address")
-	}
-	return tokenengine.GetAddressFromScript(unlockScript)
 }
 
 /**
