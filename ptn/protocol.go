@@ -17,12 +17,12 @@
 package ptn
 
 import (
-        "time"
 	"github.com/palletone/go-palletone/common"
-        "github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/common/event"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
+	"time"
 )
 
 // Constants to match up protocol versions and messages
@@ -130,7 +130,7 @@ type TxDesc struct {
 type txPool interface {
 	// AddRemotes should add the given transactions to the pool.
 	AddRemotes([]*modules.Transaction) []error
-        ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
+	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.
 	Pending() (map[common.Hash]*modules.TxPoolTransaction, error)
