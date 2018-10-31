@@ -1467,6 +1467,9 @@ const (
 //	mtxHex := hex.EncodeToString(mtxbt)
 //	return mtxHex, nil
 //}
+func (s *PublicBlockChainAPI) listMediator() map[common.Address]bool {
+	return s.b.Dag().GetMediators()
+}
 
 //create raw transction
 func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
@@ -2125,12 +2128,15 @@ func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (st
 }
 
 func (s *PublicDagAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
-	items, err := s.b.GetAllTokenInfo()
+	//items, err := s.b.GetAllTokenInfo()
+	items, err := s.b.Dag().GetAllTokenInfo()
 	if err != nil {
 		return "all_token_info:null", err
 	}
+
 	info := NewPublicReturnInfo("all_token_info", items)
 	result_json, _ := json.Marshal(info)
+
 	return string(result_json), nil
 }
 func (s *PublicDagAPI) GetTokenInfo(ctx context.Context, key string) (string, error) {

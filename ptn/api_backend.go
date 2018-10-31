@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -76,9 +77,14 @@ func (b *PtnApiBackend) SubscribeChainSideEvent(ch chan<- coredata.ChainSideEven
 	return nil
 }
 */
+
 func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 	b.ptn.Engine().Engine()
 	return nil
+}
+
+func (b *PtnApiBackend) Dag() dag.IDag {
+	return b.ptn.Dag()
 }
 
 func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
@@ -311,13 +317,14 @@ func (b *PtnApiBackend) GetAllUtxos() ([]ptnjson.UtxoJson, error) {
 
 }
 
-func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
-	all, err := b.ptn.dag.GetAllTokenInfo()
-	if err != nil {
-		return nil, err
-	}
-	return all, nil
-}
+//func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
+//	all, err := b.ptn.dag.GetAllTokenInfo()
+//	if err != nil {
+//		return nil, err
+//	}
+//	return all, nil
+//}
+
 func (b *PtnApiBackend) GetTokenInfo(key []byte) (*ptnjson.TokenInfoJson, error) {
 	tokenInfo, err := b.ptn.dag.GetTokenInfo(key)
 	if err != nil {

@@ -5655,6 +5655,13 @@ var methods = function () {
         inputFormatter: [null, null]
     });
 
+    var listMediator = new Method({
+        name: 'listMediator',
+        call: 'ptn_listMediator',
+        params: 0,
+        // inputFormatter: [null, null]
+    });
+
     return [
         forking,
         getUnitByHash,
@@ -5713,6 +5720,7 @@ var methods = function () {
         ccdeploy,
         ccinvoke,
         ccstop,
+        listMediator,
     ];
 };
 

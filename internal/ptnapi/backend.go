@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/ptnjson"
 	//"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -105,13 +106,14 @@ type Backend interface {
 	SaveTokenInfo(token_info *modules.TokenInfo) (string, error)
 
 	GetAddrTransactions(addr string) (modules.Transactions, error)
-	GetAllTokenInfo() (*modules.AllTokenInfo, error)
+	//GetAllTokenInfo() (*modules.AllTokenInfo, error)
 	GetTokenInfo(key []byte) (*ptnjson.TokenInfoJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
 	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
+	Dag() dag.IDag
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {
