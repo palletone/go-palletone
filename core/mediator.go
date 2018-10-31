@@ -86,7 +86,7 @@ func StrToPoint(pubStr string) kyber.Point {
 
 func (m *Mediator) MediatorToInfo() MediatorInfo {
 	return MediatorInfo{
-		Address:     m.Address.Str(),
+		AddStr:      m.Address.Str(),
 		InitPartPub: PointToStr(m.InitPartPub),
 		Node:        m.Node.String(),
 	}

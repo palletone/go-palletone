@@ -31,8 +31,10 @@ import (
 )
 
 func mediatorKey(address common.Address) []byte {
-	key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes()...)
-	return key
+	//key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes()...)
+	key := fmt.Sprintf("%s%s", constants.MEDIATOR_INFO_PREFIX, address.String())
+
+	return []byte(key)
 }
 
 //func StoreMediator(db ptndb.Database, med *core.Mediator) error {
@@ -47,7 +49,8 @@ func mediatorKey(address common.Address) []byte {
 //}
 
 func StoreMediatorInfo(db ptndb.Database, mi *core.MediatorInfo) error {
-	add := core.StrToMedAdd(mi.Address)
+	//log.Debug(fmt.Sprintf("Store Mediator %v:", mi.AddStr))
+	add := core.StrToMedAdd(mi.AddStr)
 
 	err := StoreBytes(db, mediatorKey(add), mi)
 	if err != nil {
@@ -91,11 +94,12 @@ func GetMediators(db ptndb.Database) map[common.Address]bool {
 
 	iter := db.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
 	for iter.Next() {
-		//address := iter.Key()
 		key := iter.Key()
-		address := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
+		//log.Debug(fmt.Sprintf("Get Mediator's key : %s", key))
+		addStr := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
 
-		result[common.BytesToAddress(address)] = true
+		//result[common.BytesToAddress(address)] = true
+		result[core.StrToMedAdd(string(addStr))] = true
 	}
 
 	return result
