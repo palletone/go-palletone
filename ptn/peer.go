@@ -82,10 +82,9 @@ type peer struct {
 	knownBlocks   *set.Set // Set of block hashes known to be known by this peer
 	knownGroupSig *set.Set // Set of block hashes known to be known by this peer
 
-	index modules.ChainIndex
-
-	mediator     bool
-	transitionCh chan int
+	//index modules.ChainIndex
+	mediator bool
+	//transitionCh chan int
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -101,7 +100,7 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 		knownGroupSig: set.New(),
 		peermsg:       map[modules.IDType16]peerMsg{},
 		mediator:      false,
-		transitionCh:  make(chan int, 1),
+		//transitionCh:  make(chan int, 1),
 	}
 }
 
@@ -329,8 +328,8 @@ func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis commo
 			return p2p.DiscReadTimeout
 		}
 	}
-	p.index, p.mediator = status.Index, status.Mediator
-	//p.index, p.head = status.TD, status.CurrentBlock
+	p.mediator = status.Mediator
+	p.SetHead(common.Hash{}, status.Index)
 	return nil
 }
 

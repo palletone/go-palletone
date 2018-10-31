@@ -169,6 +169,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	defer log.Info("=============End ProtocolManager synchronise===========")
 	// Short circuit if no peers are available
 	if peer == nil {
+		log.Info("ProtocolManager synchronise peer is nil")
 		return
 	}
 
