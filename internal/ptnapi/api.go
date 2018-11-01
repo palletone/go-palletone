@@ -1854,7 +1854,7 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 		return common.Hash{}, err
 	}
 	if (0 == len(tx.TxMessages) ) {
-		log.Info("+++++++++++++++++++++++++++++++++++++++++invalid Tx++++++"）
+		log.Info("+++++++++++++++++++++++++++++++++++++++++invalid Tx++++++")
         return tx.TxHash,nil
     }
 	var outAmount uint64
