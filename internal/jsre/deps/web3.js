@@ -5655,9 +5655,9 @@ var methods = function () {
         inputFormatter: [null, null]
     });
 
-    var listMediator = new Method({
-        name: 'listMediator',
-        call: 'ptn_listMediator',
+    var listMediators = new Method({
+        name: 'listMediators',
+        call: 'ptn_listMediators',
         params: 0,
         // inputFormatter: [null, null]
     });
@@ -5720,7 +5720,7 @@ var methods = function () {
         ccdeploy,
         ccinvoke,
         ccstop,
-        listMediator,
+        listMediators,
     ];
 };
 

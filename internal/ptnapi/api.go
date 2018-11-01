@@ -24,8 +24,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"math/big"
+	"strconv"
 	"strings"
 	"time"
 	"unsafe"
@@ -42,12 +42,12 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
-	"strconv"
 )
 
 const (
@@ -1467,8 +1467,16 @@ const (
 //	mtxHex := hex.EncodeToString(mtxbt)
 //	return mtxHex, nil
 //}
-func (s *PublicBlockChainAPI) listMediator() map[common.Address]bool {
-	return s.b.Dag().GetMediators()
+
+func (s *PublicBlockChainAPI) ListMediators() []string {
+	addStrs := make([]string, 0)
+	mas := s.b.Dag().GetMediators()
+
+	for address, _ := range mas {
+		addStrs = append(addStrs, address.Str())
+	}
+
+	return addStrs
 }
 
 //create raw transction
@@ -2128,8 +2136,7 @@ func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (st
 }
 
 func (s *PublicDagAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
-	//items, err := s.b.GetAllTokenInfo()
-	items, err := s.b.Dag().GetAllTokenInfo()
+	items, err := s.b.GetAllTokenInfo()
 	if err != nil {
 		return "all_token_info:null", err
 	}

@@ -20,19 +20,19 @@ package ptnapi
 import (
 	"context"
 	"math/big"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/ptnjson"
-	//"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag"
+	//"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"time"
+	"github.com/palletone/go-palletone/ptnjson"
 )
 
 // Backend interface provides the common API services (that are provided by
@@ -106,7 +106,7 @@ type Backend interface {
 	SaveTokenInfo(token_info *modules.TokenInfo) (string, error)
 
 	GetAddrTransactions(addr string) (modules.Transactions, error)
-	//GetAllTokenInfo() (*modules.AllTokenInfo, error)
+	GetAllTokenInfo() (*modules.AllTokenInfo, error)
 	GetTokenInfo(key []byte) (*ptnjson.TokenInfoJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)

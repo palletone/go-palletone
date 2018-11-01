@@ -19,6 +19,10 @@ package ptn
 import (
 	"context"
 	"encoding/hex"
+	"log"
+	"math/big"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
@@ -31,9 +35,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
-	"log"
-	"math/big"
-	"time"
 )
 
 // PtnApiBackend implements ethapi.Backend for full nodes
@@ -84,7 +85,7 @@ func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 }
 
 func (b *PtnApiBackend) Dag() dag.IDag {
-	return b.ptn.Dag()
+	return b.ptn.dag
 }
 
 func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
@@ -317,13 +318,13 @@ func (b *PtnApiBackend) GetAllUtxos() ([]ptnjson.UtxoJson, error) {
 
 }
 
-//func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
-//	all, err := b.ptn.dag.GetAllTokenInfo()
-//	if err != nil {
-//		return nil, err
-//	}
-//	return all, nil
-//}
+func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
+	all, err := b.ptn.dag.GetAllTokenInfo()
+	if err != nil {
+		return nil, err
+	}
+	return all, nil
+}
 
 func (b *PtnApiBackend) GetTokenInfo(key []byte) (*ptnjson.TokenInfoJson, error) {
 	tokenInfo, err := b.ptn.dag.GetTokenInfo(key)
