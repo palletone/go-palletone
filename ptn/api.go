@@ -24,29 +24,29 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 )
 
-// PublicEthereumAPI provides an API to access PalletOne full node-related
+// PublicPalletOneAPI provides an API to access PalletOne full node-related
 // information.
-type PublicEthereumAPI struct {
+type PublicPalletOneAPI struct {
 	p *PalletOne
 }
 
-// NewPublicEthereumAPI creates a new PalletOne protocol API for full nodes.
-func NewPublicEthereumAPI(p *PalletOne) *PublicEthereumAPI {
-	return &PublicEthereumAPI{p}
+// NewPublicPalletOneAPI creates a new PalletOne protocol API for full nodes.
+func NewPublicPalletOneAPI(p *PalletOne) *PublicPalletOneAPI {
+	return &PublicPalletOneAPI{p}
 }
 
 // Etherbase is the address that mining rewards will be send to
-func (api *PublicEthereumAPI) Etherbase() (common.Address, error) {
+func (api *PublicPalletOneAPI) Etherbase() (common.Address, error) {
 	return api.p.Etherbase()
 }
 
 // Coinbase is the address that mining rewards will be send to (alias for Etherbase)
-func (api *PublicEthereumAPI) Coinbase() (common.Address, error) {
+func (api *PublicPalletOneAPI) Coinbase() (common.Address, error) {
 	return api.Etherbase()
 }
 
 // Hashrate returns the POW hashrate
-func (api *PublicEthereumAPI) Hashrate() hexutil.Uint64 {
+func (api *PublicPalletOneAPI) Hashrate() hexutil.Uint64 {
 	//return hexutil.Uint64(api.p.Miner().HashRate())
 	return hexutil.Uint64(0)
 }

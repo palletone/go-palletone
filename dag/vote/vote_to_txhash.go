@@ -16,4 +16,9 @@
  * @author PalletOne core developer YiRan <dev@pallet.one>
  * @date 2018
  */
+
 package vote
+
+type TxHashMultipleVote struct {
+	MultipleVote
+}

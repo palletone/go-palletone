@@ -20,18 +20,19 @@ package ptnapi
 import (
 	"context"
 	"math/big"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/dag"
 	//"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"time"
+	"github.com/palletone/go-palletone/ptnjson"
 )
 
 // Backend interface provides the common API services (that are provided by
@@ -112,6 +113,7 @@ type Backend interface {
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
 	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
+	Dag() dag.IDag
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {
@@ -120,7 +122,7 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 		{
 			Namespace: "ptn",
 			Version:   "1.0",
-			Service:   NewPublicEthereumAPI(apiBackend),
+			Service:   NewPublicPalletOneAPI(apiBackend),
 			Public:    true,
 		}, {
 			Namespace: "ptn",

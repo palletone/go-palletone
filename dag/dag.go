@@ -21,6 +21,7 @@ package dag
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/dag/vote"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -862,7 +863,7 @@ func (d *Dag) ValidateUnitGroupSig(hash common.Hash) (bool, error) {
 	return true, nil
 }
 func (d *Dag) GetAccountMediatorVote(address common.Address) []common.Address {
-	bAddress := d.statedb.GetAccountVoteInfo(address, 0)
+	bAddress := d.statedb.GetAccountVoteInfo(address, vote.TYPE_MEDIATOR)
 	res := []common.Address{}
 	for _, b := range bAddress {
 		res = append(res, common.BytesToAddress(b))
@@ -1054,7 +1055,7 @@ func (dag *Dag) GetElectedMediatorsAddress() ([]common.Address, error) {
 		return nil, err
 	}
 	MediatorNumber := gp.GetActiveMediatorCount()
-	return dag.statedb.GetSortedVote(uint(MediatorNumber), 0, 0)
+	return dag.statedb.GetSortedVote(uint8(MediatorNumber), 0, 0)
 }
 
 // UpdateMediator

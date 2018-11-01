@@ -799,15 +799,14 @@ func (pool *TxPool) AddRemotes(txs []*modules.Transaction) []error {
 }
 type Tag uint64
 func (mp *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error) {
-	log.Trace("Processing transaction %v", tx.Hash())
+	//log.Trace("Processing transaction %v", tx.Hash())
 
 	// Protect concurrent access.
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
 
 	// Potentially accept the transaction to the memory pool.
-	missingParents, txD, err := mp.maybeAcceptTransaction(tx, true, rateLimit,
-		true)
+	missingParents, txD, err := mp.maybeAcceptTransaction(tx, true, rateLimit,false)
 	if err != nil {
 		return nil, err
 	}
@@ -878,7 +877,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 	// applies to orphan transactions as well when the reject duplicate
 	// orphans flag is set.  This check is intended to be a quick check to
 	// weed out duplicates.
-	if mp.isTransactionInPool(&txHash) || rejectDupOrphans {
+	if mp.isTransactionInPool(&txHash)  {
 		str := fmt.Sprintf("already have transaction %v", txHash)
 		str = str
 		return nil, nil,nil//txRuleError(RejectDuplicate, str)

@@ -1,3 +1,5 @@
+// Copyright 2018 PalletOne
+
 // Copyright 2015 The go-ethereum Authors
 // This file is part of the go-ethereum library.
 //
@@ -24,8 +26,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"math/big"
+	"strconv"
 	"strings"
 	"time"
 	"unsafe"
@@ -42,12 +44,12 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/coredata"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
-	"strconv"
 )
 
 const (
@@ -75,24 +77,24 @@ const (
 	maxProtocolVersion = 70002
 )
 
-// PublicEthereumAPI provides an API to access PalletOne related information.
+// PublicPalletOneAPI provides an API to access PalletOne related information.
 // It offers only methods that operate on public data that is freely available to anyone.
-type PublicEthereumAPI struct {
+type PublicPalletOneAPI struct {
 	b Backend
 }
 
-// NewPublicEthereumAPI creates a new PalletOne protocol API.
-func NewPublicEthereumAPI(b Backend) *PublicEthereumAPI {
-	return &PublicEthereumAPI{b}
+// NewPublicPalletOneAPI creates a new PalletOne protocol API.
+func NewPublicPalletOneAPI(b Backend) *PublicPalletOneAPI {
+	return &PublicPalletOneAPI{b}
 }
 
 // GasPrice returns a suggestion for a gas price.
-func (s *PublicEthereumAPI) GasPrice(ctx context.Context) (*big.Int, error) {
+func (s *PublicPalletOneAPI) GasPrice(ctx context.Context) (*big.Int, error) {
 	return s.b.SuggestPrice(ctx)
 }
 
 // ProtocolVersion returns the current PalletOne protocol version this node supports
-func (s *PublicEthereumAPI) ProtocolVersion() hexutil.Uint {
+func (s *PublicPalletOneAPI) ProtocolVersion() hexutil.Uint {
 	return hexutil.Uint(s.b.ProtocolVersion())
 }
 
@@ -103,7 +105,7 @@ func (s *PublicEthereumAPI) ProtocolVersion() hexutil.Uint {
 // - highestBlock:  block number of the highest block header this node has received from peers
 // - pulledStates:  number of state entries processed until now
 // - knownStates:   number of known state entries that still need to be pulled
-func (s *PublicEthereumAPI) Syncing() (interface{}, error) {
+func (s *PublicPalletOneAPI) Syncing() (interface{}, error) {
 	progress := s.b.Downloader().Progress()
 
 	// Return not syncing if the synchronisation already completed
@@ -1468,6 +1470,17 @@ const (
 //	return mtxHex, nil
 //}
 
+func (s *PublicBlockChainAPI) ListMediators() []string {
+	addStrs := make([]string, 0)
+	mas := s.b.Dag().GetMediators()
+
+	for address, _ := range mas {
+		addStrs = append(addStrs, address.Str())
+	}
+
+	return addStrs
+}
+
 //create raw transction
 func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	c := cmd.(*ptnjson.CreateRawTransactionCmd)
@@ -1842,6 +1855,10 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return common.Hash{}, err
 	}
+	if 0 == len(tx.TxMessages) {
+		log.Info("+++++++++++++++++++++++++++++++++++++++++invalid Tx++++++")
+		return tx.TxHash, nil
+	}
 	var outAmount uint64
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
@@ -2129,8 +2146,10 @@ func (s *PublicDagAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
 	if err != nil {
 		return "all_token_info:null", err
 	}
+
 	info := NewPublicReturnInfo("all_token_info", items)
 	result_json, _ := json.Marshal(info)
+
 	return string(result_json), nil
 }
 func (s *PublicDagAPI) GetTokenInfo(ctx context.Context, key string) (string, error) {

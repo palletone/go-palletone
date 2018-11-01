@@ -143,28 +143,26 @@ func (statedb *StateDb) GetAccountMediatorVote(voterAddress common.Address) ([]c
 }
 
 //GetSortedVote YiRan@
-func (statedb *StateDb) GetSortedVote(ReturnNumber uint, voteType uint8, minTermLimit uint16) ([]common.Address, error) {
-	voteBox := vote.NewAddressVoteBox()
+func (statedb *StateDb) GetSortedVote(ReturnNumber uint8, voteType uint8, minTermLimit uint16) ([]common.Address, error) {
+	voteBox := vote.AddressMultipleVote{}
 	// 1. get voter list
 	voterList := statedb.GetVoterList(voteType, minTermLimit)
 
-	// 2. get candidate list
+	// 2. register candidate
 	addresses := statedb.GetMediators()
+	voteBox.RegisterCandidates(vote.MAddress2LInterface(addresses))
 
-	// 3. register candidate
-	voteBox.Register(addresses, 1)
-
-	// 4. collect ballot
+	// 3. collect ballot
 	for _, voterAddress := range voterList {
 		to, weight, err := statedb.GetAccountMediatorVote(voterAddress)
 		if err != nil {
 			return nil, err
 		}
-		voteBox.AddToBox(weight, to)
+		voteBox.Add(to, weight)
 	}
 
 	// $. return elected mediator
-	return voteBox.HeadN(ReturnNumber), nil
+	return voteBox.Result(ReturnNumber), nil
 
 }
 
