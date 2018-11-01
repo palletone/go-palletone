@@ -1147,9 +1147,9 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 				if d.mode == FastSync || d.mode == LightSync {
 					// Collect the yet unknown headers to mark them as uncertain
 					unknown := make([]*modules.Header, 0, len(headers))
-					for _, header := range chunk {
-						//fmt.Println(header.Hash(), header.Number.Index)
+					for _, head := range chunk {
 						//if !d.lightdag.HasHeader(header.Hash(), header.Number.Index) {
+						header := head
 						if nil == d.lightdag.GetHeaderByHash(header.Hash()) {
 							unknown = append(unknown, header)
 						}

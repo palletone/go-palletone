@@ -248,10 +248,11 @@ func (validate *Validate) ValidateUnitSignature(h *modules.Header, isGenesis boo
 	// copy unit's header
 	emptySigUnit.UnitHeader = modules.CopyHeader(h)
 	// signature does not contain authors and witness fields
-	emptySigUnit.UnitHeader.Authors = nil
+	//emptySigUnit.UnitHeader.Authors = nil
 	emptySigUnit.UnitHeader.GroupSign = make([]byte, 0)
 	// recover signature
-	if h.Authors == nil {
+	//if h.Authors == nil {
+	if h.Authors.Empty() {
 		log.Debug("Verify unit signature ,header's authors is nil.")
 		return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
@@ -503,7 +504,8 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, i
 	}
 
 	// check authors
-	if header.Authors == nil {
+	//if header.Authors == nil {
+	if header.Authors.Empty() {
 		return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
 

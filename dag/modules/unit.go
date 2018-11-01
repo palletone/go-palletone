@@ -47,7 +47,7 @@ const (
 type Header struct {
 	ParentsHash  []common.Hash `json:"parents_hash"`
 	AssetIDs     []IDType16    `json:"assets"`
-	Authors      *Authentifier `json:"author" rlp:"-"`  // the unit creation authors
+	Authors      Authentifier  `json:"author" rlp:"-"`  // the unit creation authors
 	GroupSign    []byte        `json:"witness" rlp:"-"` // 群签名
 	TxRoot       common.Hash   `json:"root"`
 	Number       ChainIndex    `json:"index"`
@@ -98,7 +98,7 @@ func (h *Header) ChainIndex() ChainIndex {
 
 func (h *Header) Hash() common.Hash {
 	emptyHeader := CopyHeader(h)
-	emptyHeader.Authors = nil
+	//emptyHeader.Authors = nil
 	emptyHeader.GroupSign = make([]byte, 0)
 	return rlp.RlpHash(emptyHeader)
 }
@@ -214,17 +214,24 @@ func (height ChainIndex) Bytes() []byte {
 	return data[:]
 }
 
-type Author struct {
-	Address        common.Address `json:"address"`
-	Pubkey         []byte/*common.Hash*/ `json:"pubkey"`
-	TxAuthentifier *Authentifier `json:"authentifiers"`
-}
+//type Author struct {
+//	Address        common.Address `json:"address"`
+//	Pubkey         []byte/*common.Hash*/ `json:"pubkey"`
+//	TxAuthentifier *Authentifier `json:"authentifiers"`
+//}
 
 type Authentifier struct {
 	Address common.Address `json:"address"`
 	R       []byte         `json:"r"`
 	S       []byte         `json:"s"`
 	V       []byte         `json:"v"`
+}
+
+func (au *Authentifier) Empty() bool {
+	if len(au.Address.String()) == 0 || len(au.R) == 0 || len(au.S) == 0 || len(au.V) == 0 {
+		return true
+	}
+	return false
 }
 
 func NewUnit(header *Header, txs Transactions) *Unit {
@@ -280,7 +287,7 @@ func (u *Unit) Size() common.StorageSize {
 	}
 	emptyUnit := Unit{}
 	emptyUnit.UnitHeader = CopyHeader(u.UnitHeader)
-	emptyUnit.UnitHeader.Authors = nil
+	//emptyUnit.UnitHeader.Authors = nil
 	emptyUnit.UnitHeader.GroupSign = make([]byte, 0)
 	emptyUnit.CopyBody(u.Txs)
 

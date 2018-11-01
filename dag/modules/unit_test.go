@@ -99,14 +99,14 @@ func TestCopyHeader(t *testing.T) {
 	h := Header{
 		ParentsHash: []common.Hash{u1, u2},
 		AssetIDs:    []IDType16{assetID},
-		Authors:     &auth,
+		Authors:     auth,
 		GroupSign:   w,
 		TxRoot:      common.Hash{},
 		Number:      ChainIndex{AssetID: assetID, IsMain: true, Index: 0},
 	}
 
 	newH := CopyHeader(&h)
-	newH.Authors = nil
+	//newH.Authors = nil
 	newH.GroupSign = make([]byte, 0)
 	hh := Header{}
 	log.Printf("newh=%v \n oldH=%v \n hh=%v", *newH, h, hh)
@@ -118,7 +118,7 @@ func TestUnitSize(t *testing.T) {
 	key, _ = crypto.GenerateKey()
 	h := new(Header)
 	h.AssetIDs = append(h.AssetIDs, PTNCOIN)
-	au := new(Authentifier)
+	au := Authentifier{}
 	address := crypto.PubkeyToAddress(&key.PublicKey)
 	log.Println("address:", address)
 
