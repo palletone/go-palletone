@@ -122,7 +122,7 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 		{
 			Namespace: "ptn",
 			Version:   "1.0",
-			Service:   NewPublicEthereumAPI(apiBackend),
+			Service:   NewPublicPalletOneAPI(apiBackend),
 			Public:    true,
 		}, {
 			Namespace: "ptn",

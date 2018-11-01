@@ -26,10 +26,12 @@ import (
 
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/configure"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/gen"
+	"github.com/palletone/go-palletone/dag/errors"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -76,9 +78,10 @@ func getTokenAccount(ctx *cli.Context) (string, error) {
 	var account string
 	if !confirm {
 		account, err = console.Stdin.PromptInput("Please enter an existing account address: ")
-		if err != nil {
-			utils.Fatalf("%v", err)
-			return "", err
+		if err != nil || len(account) == 0 || !common.IsValidAddress(account) {
+			errStr := "Invalid Token Account Address!"
+			utils.Fatalf(errStr)
+			return "", errors.New(errStr)
 		}
 	} else {
 		account, err = initialAccount(ctx)
