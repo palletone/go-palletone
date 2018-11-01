@@ -21,10 +21,12 @@
 package txspool
 
 import (
+    "fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/ptnjson"
 )
 
 //  UtxoViewpoint
@@ -283,3 +285,99 @@ const (
 	RejectInsufficientFee RejectCode = 0x42
 	RejectCheckpoint      RejectCode = 0x43
 )
+
+func CheckTransactionSanity(tx *modules.Transaction) error {
+	// A transaction must have at least one input.
+	if len(tx.TxMessages) == 0 {
+		return  &ptnjson.RPCError{
+			Code:    ptnjson.ErrRPCRawTxString,
+			Message: "transaction has no inputs",
+		}
+	}
+	// A transaction must not exceed the maximum allowed block payload when
+	// serialized.
+	serializedTxSize := tx.SerializeSizeStripped()
+	if serializedTxSize > ptnjson.MaxBlockBaseSize {
+		str := fmt.Sprintf("serialized transaction is too big - got "+
+			"%d, max %d", serializedTxSize, ptnjson.MaxBlockBaseSize)
+		return  &ptnjson.RPCError{
+			Code:    ptnjson.ErrRPCRawTxString,
+			Message: str,
+		}
+	}
+
+	// Ensure the transaction amounts are in range.  Each transaction
+	// output must not be negative or more than the max allowed per
+	// transaction.  Also, the total of all outputs must abide by the same
+	// restrictions.  All amounts in a transaction are in a unit value known
+	// as a satoshi.  One bitcoin is a quantity of satoshi as defined by the
+	// SatoshiPerBitcoin constant.
+	var totalSatoshi uint64
+	for _, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if ok == false {
+			continue
+		}
+		for _, txOut := range payload.Output {
+			satoshi := txOut.Value
+			if satoshi < 0 {
+				str := fmt.Sprintf("transaction output has negative "+
+					"value of %v", satoshi)
+				return  &ptnjson.RPCError{
+					Code:    ptnjson.ErrBadTxOutValue,
+					Message: str,
+				}
+			}
+			if satoshi > ptnjson.MaxDao {
+				str := fmt.Sprintf("transaction output value of %v is "+
+					"higher than max allowed value of %v", satoshi,
+					ptnjson.MaxDao)
+				return  &ptnjson.RPCError{
+					Code:    ptnjson.ErrBadTxOutValue,
+					Message: str,
+				}
+			}
+
+			// Two's complement int64 overflow guarantees that any overflow
+			// is detected and reported.  This is impossible for Bitcoin, but
+			// perhaps possible if an alt increases the total money supply.
+			totalSatoshi += satoshi
+			if totalSatoshi < 0 {
+				str := fmt.Sprintf("total value of all transaction "+
+					"outputs exceeds max allowed value of %v",
+					ptnjson.MaxDao)
+				return  &ptnjson.RPCError{
+					Code:    ptnjson.ErrBadTxOutValue,
+					Message: str,
+				}
+			}
+			if totalSatoshi > ptnjson.MaxDao {
+				str := fmt.Sprintf("total value of all transaction "+
+					"outputs is %v which is higher than max "+
+					"allowed value of %v", totalSatoshi,
+					ptnjson.MaxDao)
+				return  &ptnjson.RPCError{
+					Code:    ptnjson.ErrBadTxOutValue,
+					Message: str,
+				}
+			}
+		}
+
+
+	// Check for duplicate transaction inputs.
+	existingTxOut := make(map[modules.OutPoint]struct{})
+	for _, txIn := range payload.Input {
+		if _, exists := existingTxOut[*txIn.PreviousOutPoint]; exists {
+			return  &ptnjson.RPCError{
+					Code:    ptnjson.ErrDuplicateTxInputs,
+					Message:  "transaction "+"contains duplicate inputs",
+				}
+		}
+		existingTxOut[*txIn.PreviousOutPoint] = struct{}{}
+	}
+
+    }
+
+	return nil
+}
+
