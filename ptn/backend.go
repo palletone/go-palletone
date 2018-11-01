@@ -194,7 +194,7 @@ func (s *PalletOne) APIs() []rpc.API {
 		{
 			Namespace: "ptn",
 			Version:   "1.0",
-			Service:   NewPublicEthereumAPI(s),
+			Service:   NewPublicPalletOneAPI(s),
 			Public:    true,
 		}, {
 			Namespace: "ptn",
