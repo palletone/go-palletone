@@ -29,6 +29,7 @@ func MAddress2MInterface(addresses map[common.Address]bool) map[interface{}]bool
 	return res
 }
 
+
 func MAddress2LInterface(addresses map[common.Address]bool) []interface{} {
 	res := make([]interface{}, 0)
 	for addr, _ := range addresses {

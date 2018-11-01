@@ -52,7 +52,7 @@ type IStateDb interface {
 	AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error
 	GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte
 
-	GetSortedVote(ReturnNumber uint, voteType uint8, minTermLimit uint16) ([]common.Address, error)
+	GetSortedVote(ReturnNumber uint8, voteType uint8, minTermLimit uint16) ([]common.Address, error)
 	GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
 	UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
 	UpdateMediatorVote(voter common.Address, candidates []common.Address, mode uint8, term uint16) error
