@@ -36,15 +36,15 @@ func TestAddressMultipleVote(t *testing.T) {
 	addr6 := common.StringToAddressGodBlessMe("P1PjSaHLTxFm52fECLxVFErd3ch8Fif7CEN")
 	addrs = append(addrs, addr1, addr2, addr3, addr4, addr5)
 	amv.Register(addrs)
-	amv.AddToBox(100, []interface{}{addr1})
-	amv.AddToBox(200, []interface{}{addr2})
-	amv.AddToBox(300, []interface{}{addr3})
-	amv.AddToBox(400, []interface{}{addr4})
-	amv.AddToBox(500, []interface{}{addr5})
-	amv.AddToBox(5000, *ListAddresses2Candidates(addrs))
+	amv.Add([]common.Address{addr1}, 100)
+	amv.Add([]common.Address{addr2}, 200)
+	amv.Add([]common.Address{addr3}, 300)
+	amv.Add([]common.Address{addr4}, 400)
+	amv.Add([]common.Address{addr5}, 500)
+	amv.Add(addrs, 5000)
 
 	// [test1] test voting to invalid candidates
-	amv.AddToBox(100, []interface{}{addr6})
+	amv.Add([]common.Address{addr6}, 512)
 	_, ok := amv.voteStatus[addr6]
 	assert.False(t, ok)
 

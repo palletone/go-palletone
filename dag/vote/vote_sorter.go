@@ -16,26 +16,33 @@
  * @author PalletOne core developer YiRan <dev@pallet.one>
  * @date 2018
  */
-
 package vote
 
-import "github.com/palletone/go-palletone/common"
-
-type AddressMultipleVote struct {
-	MultipleVote
+//Card @YiRan : struct for sorting map.
+type ScoreCard struct {
+	object interface{}
+	score  uint64
 }
 
+type MapSorter []ScoreCard
 
-func (amv *AddressMultipleVote) Result(number uint8) []common.Address {
-	sorted := amv.GetResult(number)
-	return LInterface2LAddress(sorted)
-}
-func (amv *AddressMultipleVote) Register(addresses []common.Address) {
-	listInterface := LAddress2LInterface(addresses)
-	amv.RegisterCandidates(listInterface)
+func (ms MapSorter) Len() int {
+	return len(ms)
 }
 
-func (amv *AddressMultipleVote) Add(addresses []common.Address, score uint64) {
-	lInterface := LAddress2LInterface(addresses)
-	amv.AddNToBox(score, lInterface)
+//Less @YiRan : Descending order
+func (ms MapSorter) Less(i, j int) bool {
+	return ms[i].score > ms[j].score //
+}
+func (ms MapSorter) Swap(i, j int) {
+	ms[i], ms[j] = ms[j], ms[i]
+}
+
+//NewMapSorter @YiRan : TODO:change score type to interface{}
+func NewMapSorter(m map[interface{}]uint64) MapSorter {
+	MapSorter := MapSorter{}
+	for o, s := range m {
+		MapSorter = append(MapSorter, ScoreCard{object: o, score: s})
+	}
+	return MapSorter
 }
