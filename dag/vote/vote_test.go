@@ -34,29 +34,28 @@ func TestAddressMultipleVote(t *testing.T) {
 	addr4 := common.StringToAddressGodBlessMe("P1M2v9vvP5UJAtW4vQPqPSjsLPxnzgnP9UT")
 	addr5 := common.StringToAddressGodBlessMe("P1JT8D85jFajyKguB1DvsaYERv9K8y8vckL")
 	addr6 := common.StringToAddressGodBlessMe("P1PjSaHLTxFm52fECLxVFErd3ch8Fif7CEN")
-	addrs = append(addrs, addr1,addr2,addr3,addr4,addr5)
+	addrs = append(addrs, addr1, addr2, addr3, addr4, addr5)
 	amv.Register(addrs)
-
-	// [test1] test voting to invalid candidates
-	amv.AddToBox(100, []interface{}{addr6})
-	_, ok := amv.voteStatus[addr6]
-	//fmt.Println(vs)
-	assert.False(t, ok)
-
-	// [test2] test result
 	amv.AddToBox(100, []interface{}{addr1})
 	amv.AddToBox(200, []interface{}{addr2})
 	amv.AddToBox(300, []interface{}{addr3})
 	amv.AddToBox(400, []interface{}{addr4})
 	amv.AddToBox(500, []interface{}{addr5})
-	voteResult := amv.Result(4)
-	//fmt.Println("voter result is : ", voteResult)
-	// result number
-	assert.EqualValues(t, 4, len(voteResult))
-	// result value
-	assert.EqualValues(t, uint64(500), amv.voteStatus[voteResult[0]])
-	assert.EqualValues(t, uint64(400), amv.voteStatus[voteResult[1]])
-	assert.EqualValues(t, uint64(300), amv.voteStatus[voteResult[2]])
-	assert.EqualValues(t, uint64(200), amv.voteStatus[voteResult[3]])
+	amv.AddToBox(5000, *ListAddresses2Candidates(addrs))
 
+	// [test1] test voting to invalid candidates
+	amv.AddToBox(100, []interface{}{addr6})
+	_, ok := amv.voteStatus[addr6]
+	assert.False(t, ok)
+
+	// [test2] test result
+	voteResult := amv.Result(4)
+	addr1Score, err := amv.GetScore(voteResult[0])
+	assert.Nil(t, err)
+	assert.EqualValues(t, 4, len(voteResult))
+	assert.EqualValues(t, addr5, voteResult[0])
+	assert.EqualValues(t, addr4, voteResult[1])
+	assert.EqualValues(t, addr3, voteResult[2])
+	assert.EqualValues(t, addr2, voteResult[3])
+	assert.EqualValues(t, 5500, addr1Score)
 }

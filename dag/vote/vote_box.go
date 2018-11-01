@@ -29,7 +29,7 @@ import (
 type vote interface {
 	GetScore(candidate interface{}) (uint64, error)
 	GetCandidates() []interface{}
-	GetResult(number uint8) interface{}
+	GetResult(number uint8) []interface{}
 	GetVoteDetail() map[interface{}]uint64
 	RegisterCandidates(candidates interface{})
 	AddToBox(score uint64, to interface{})
@@ -73,7 +73,7 @@ func (bv *BaseVote) GetCandidates() []interface{} {
 	return res
 }
 
-func (bv *BaseVote) GetResult(number uint8) interface{} {
+func (bv *BaseVote) GetResult(number uint8) []interface{} {
 	res := make([]interface{}, 0)
 	voteSorter := make(voteSorter, 0)
 	for c, s := range bv.voteStatus {
@@ -93,10 +93,10 @@ func (bv *BaseVote) GetVoteDetail() map[interface{}]uint64 {
 	return bv.voteStatus
 }
 
-func (bv *BaseVote) RegisterCandidates(candidates interface{}) {
+func (bv *BaseVote) RegisterCandidates(ShouldBeCList interface{}) {
 	bv.voteStatus = make(map[interface{}]uint64, 0)
-	ic := candidates.([]interface{})
-	for _, c := range ic {
+	CList := ShouldBeCList.([]interface{})
+	for _, c := range CList {
 		bv.voteStatus[c] = 0
 	}
 }
@@ -130,14 +130,14 @@ type IAddressMultipleVote interface {
 	Result(number uint8) []interface{}
 }
 
-func MapAddresses2Candidates(addresses map[common.Address]bool) map[interface{}]bool {
-	res := make(map[interface{}]bool, 0)
-	for addr, _ := range addresses {
-		res[addr] = true
-	}
-	return res
-}
-
+//func MapAddresses2Candidates(addresses map[common.Address]bool) map[interface{}]bool {
+//	res := make(map[interface{}]bool, 0)
+//	for addr, _ := range addresses {
+//		res[addr] = true
+//	}
+//	return res
+//}
+//
 func ListAddresses2Candidates(addresses []common.Address) *[]interface{} {
 	res := make([]interface{}, 0)
 	for _, addr := range addresses {
@@ -145,10 +145,13 @@ func ListAddresses2Candidates(addresses []common.Address) *[]interface{} {
 	}
 	return &res
 }
-func (amv *AddressMultipleVote) Result(number uint8) []interface{} {
-	res := amv.GetResult(number)
-	res2 := res.([]interface{})
-	return res2
+func (amv *AddressMultipleVote) Result(number uint8) []common.Address {
+	sorted := amv.GetResult(number)
+	res := make([]common.Address, 0)
+	for _, i := range sorted {
+		res = append(res, i.(common.Address))
+	}
+	return res
 }
 func (amv *AddressMultipleVote) Register(addresses []common.Address) {
 	listInterface := ListAddresses2Candidates(addresses)
