@@ -379,7 +379,7 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 	if !isCoinbase {
 		for _, in := range payment.Input {
 			// checkout input
-			if in.PreviousOutPoint == nil {
+			if in == nil || in.PreviousOutPoint == nil {
 				return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
 			}
 			if utxo, err := validate.utxodb.GetUtxoEntry(in.PreviousOutPoint); utxo == nil || err != nil {
