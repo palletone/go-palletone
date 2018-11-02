@@ -20,6 +20,7 @@ package mediatorplugin
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/dedis/kyber"
@@ -30,12 +31,10 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"sync"
 )
 
 // PalletOne wraps all methods required for producing unit.
@@ -53,7 +52,7 @@ type iDag interface {
 	GetSlotAtTime(when time.Time) uint32
 	GetSlotTime(slotNum uint32) time.Time
 	HeadUnitTime() int64
-	GetScheduledMediator(slotNum uint32) *core.Mediator
+	GetScheduledMediator(slotNum uint32) common.Address
 	GetActiveMediatorInitPubs() []kyber.Point
 	GetActiveMediatorCount() int
 	GetActiveMediatorAddr(index int) common.Address
@@ -61,7 +60,7 @@ type iDag interface {
 	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
 	GetUnitByHash(common.Hash) (*modules.Unit, error)
 	GetMediators() map[common.Address]bool
-	MediatorSchedule() []core.Mediator
+	MediatorSchedule() []common.Address
 }
 
 type MediatorPlugin struct {

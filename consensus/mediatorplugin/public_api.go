@@ -41,8 +41,8 @@ func (a *PublicMediatorAPI) Schedule() []string {
 	addStrs := make([]string, 0)
 	ms := a.dag.MediatorSchedule()
 
-	for _, med := range ms {
-		addStrs = append(addStrs, med.Address.Str())
+	for _, medAdd := range ms {
+		addStrs = append(addStrs, medAdd.Str())
 	}
 
 	return addStrs

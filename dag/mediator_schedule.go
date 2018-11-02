@@ -175,7 +175,7 @@ func (dag *Dag) GetSlotTime(slotNum uint32) time.Time {
 	return modules.GetSlotTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), slotNum)
 }
 
-func (dag *Dag) GetScheduledMediator(slotNum uint32) *core.Mediator {
+func (dag *Dag) GetScheduledMediator(slotNum uint32) common.Address {
 	return dag.GetMediatorSchl().GetScheduledMediator(dag.GetDynGlobalProp(), slotNum)
 }
 
@@ -226,6 +226,6 @@ func (dag *Dag) GetMediators() map[common.Address]bool {
 	return dag.statedb.GetMediators()
 }
 
-func (dag *Dag) MediatorSchedule() []core.Mediator {
+func (dag *Dag) MediatorSchedule() []common.Address {
 	return dag.GetMediatorSchl().CurrentShuffledMediators
 }

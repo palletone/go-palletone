@@ -22,13 +22,13 @@ package modules
 import (
 	"time"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core"
 )
 
 // Mediator调度顺序结构体
 type MediatorSchedule struct {
-	CurrentShuffledMediators []core.Mediator
+	CurrentShuffledMediators []common.Address
 }
 
 func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorSchedule {
@@ -41,11 +41,11 @@ func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorS
 	}
 
 	// Create witness scheduler
-	ms.CurrentShuffledMediators = make([]core.Mediator, aSize, aSize)
+	ms.CurrentShuffledMediators = make([]common.Address, aSize, aSize)
 	meds := gp.GetActiveMediators()
 	for i, add := range meds {
 		med := gp.GetActiveMediator(add)
-		ms.CurrentShuffledMediators[i] = *med
+		ms.CurrentShuffledMediators[i] = med.Address
 	}
 
 	ms.UpdateMediatorSchedule(gp, dgp)
@@ -55,7 +55,7 @@ func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorS
 
 func NewMediatorSchl() *MediatorSchedule {
 	return &MediatorSchedule{
-		CurrentShuffledMediators: []core.Mediator{},
+		CurrentShuffledMediators: []common.Address{},
 	}
 }
 
@@ -73,13 +73,13 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 	}
 
 	// 2. 清除CurrentShuffledMediators原来的空间，重新分配空间
-	ms.CurrentShuffledMediators = make([]core.Mediator, aSize, aSize)
+	ms.CurrentShuffledMediators = make([]common.Address, aSize, aSize)
 
 	// 3. 初始化数据
 	meds := gp.GetActiveMediators()
 	for i, add := range meds {
 		med := gp.GetActiveMediator(add)
-		ms.CurrentShuffledMediators[i] = *med
+		ms.CurrentShuffledMediators[i] = med.Address
 	}
 
 	// 4. 打乱证人的调度顺序
@@ -115,17 +115,17 @@ If slotNum == 1, return the next scheduled mediator.
 如果slotNum == 2，则返回下下一个调度Mediator。
 If slotNum == 2, return the next scheduled mediator after 1 verified uint gap.
 */
-func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) *core.Mediator {
+func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) common.Address {
 	currentASlot := dgp.CurrentASlot + uint64(slotNum)
 	csmLen := len(ms.CurrentShuffledMediators)
 	if csmLen == 0 {
 		log.Error("The current number of shuffled mediators is 0!")
-		return nil
+		return common.Address{}
 	}
 
 	// 由于创世单元不是有mediator生产，所以这里需要减1
 	index := (currentASlot - 1) % uint64(csmLen)
-	return &ms.CurrentShuffledMediators[index]
+	return ms.CurrentShuffledMediators[index]
 }
 
 /**

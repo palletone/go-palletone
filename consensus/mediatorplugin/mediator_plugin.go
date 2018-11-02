@@ -168,24 +168,23 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	scheduledMediator := dag.GetScheduledMediator(slot)
-	if scheduledMediator == nil {
+	if common.AddressEqual(scheduledMediator, common.Address{}) {
 		log.Error("The current shuffled mediators is nil!")
 		return UnknownCondition, detail
 	}
 
 	// we must control the Mediator scheduled to produce the next VerifiedUnit.
-	sma := scheduledMediator.Address
-	med, ok := mp.mediators[sma]
+	med, ok := mp.mediators[scheduledMediator]
 	if !ok {
-		detail["ScheduledMediator"] = sma.Str()
+		detail["ScheduledMediator"] = scheduledMediator.Str()
 		return NotMyTurn, detail
 	}
 
 	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
 	ks := mp.ptn.GetKeyStore()
-	err := ks.Unlock(accounts.Account{Address: sma}, med.Password)
+	err := ks.Unlock(accounts.Account{Address: scheduledMediator}, med.Password)
 	if err != nil {
-		detail["ScheduledKey"] = sma.Str()
+		detail["ScheduledKey"] = scheduledMediator.Str()
 		return NoPrivateKey, detail
 	}
 
@@ -198,7 +197,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	// 2. 生产验证单元
-	newUnit := dag.GenerateUnit(scheduledTime, sma, ks, mp.ptn.TxPool())
+	newUnit := dag.GenerateUnit(scheduledTime, scheduledMediator, ks, mp.ptn.TxPool())
 	if newUnit.IsEmpty() {
 		return ExceptionProducing, detail
 	}
@@ -207,11 +206,11 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	detail["Num"] = strconv.FormatUint(newUnit.NumberU64(), 10)
 	time := time.Unix(newUnit.UnitHeader.Creationdate, 0)
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
-	detail["Mediator"] = sma.Str()
+	detail["Mediator"] = scheduledMediator.Str()
 	detail["Hash"] = unitHash.Hex()
 
 	// 3. 初始化签名unit相关的签名分片的buf
-	mp.initTBLSRecoverBuf(sma, unitHash)
+	mp.initTBLSRecoverBuf(scheduledMediator, unitHash)
 
 	// 4. 异步向区块链网络广播验证单元
 	// todo 后面改为由p2p转发

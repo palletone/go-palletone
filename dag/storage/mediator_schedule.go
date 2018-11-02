@@ -21,11 +21,12 @@ package storage
 import (
 	"fmt"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
@@ -33,34 +34,34 @@ var (
 )
 
 type mediatorSchedule struct {
-	CurrentShuffledMediators []core.MediatorInfo
+	CurrentShuffledMediators []string
 }
 
 func getMST(ms *modules.MediatorSchedule) mediatorSchedule {
-	csm := make([]core.MediatorInfo, 0)
+	addStrs := make([]string, 0)
 
-	for _, med := range ms.CurrentShuffledMediators {
-		medInfo := med.MediatorToInfo()
-		csm = append(csm, medInfo)
+	for _, medAdd := range ms.CurrentShuffledMediators {
+		addStr := medAdd.Str()
+		addStrs = append(addStrs, addStr)
 	}
 
 	mst := mediatorSchedule{
-		CurrentShuffledMediators: csm,
+		CurrentShuffledMediators: addStrs,
 	}
 
 	return mst
 }
 
 func getMS(mst *mediatorSchedule) *modules.MediatorSchedule {
-	csm := make([]core.Mediator, 0)
+	medAdds := make([]common.Address, 0)
 
-	for _, medInfo := range mst.CurrentShuffledMediators {
-		med := medInfo.InfoToMediator()
-		csm = append(csm, med)
+	for _, addStr := range mst.CurrentShuffledMediators {
+		medAdd := core.StrToMedAdd(addStr)
+		medAdds = append(medAdds, medAdd)
 	}
 
 	ms := modules.NewMediatorSchl()
-	ms.CurrentShuffledMediators = csm
+	ms.CurrentShuffledMediators = medAdds
 
 	return ms
 }

@@ -95,6 +95,7 @@ func (a Address) Validate() (AddressType, error) {
 	var ty AddressType = AddressType(a[20])
 	return ty, nil
 }
+
 func IsValidAddress(s string) bool {
 	_, err := StringToAddress(s)
 	// if err!=nil{
