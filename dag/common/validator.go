@@ -426,15 +426,17 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenes
 		return modules.UNIT_STATE_INVALID_SIZE
 	}
 
-	// step1. check header.
-	// modified by Albert·Gou 新生产的unit暂时还没有群签名
-	//sigState := validate.validateHeader(unit.UnitHeader, isGenesis)
-	sigState := validate.validateHeaderExceptGroupSig(unit.UnitHeader, isGenesis)
-	if sigState != modules.UNIT_STATE_VALIDATED &&
-		sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-		log.Debug("Validate unit's header failed.", "error code", sigState)
-		return sigState
-	}
+	// step1. check header.New unit is no group signature yet
+	//TODO must recover
+	/*
+		sigState := validate.validateHeaderExceptGroupSig(unit.UnitHeader, isGenesis)
+		if sigState != modules.UNIT_STATE_VALIDATED &&
+			sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+			log.Debug("Validate unit's header failed.", "error code", sigState)
+			return sigState
+		}
+	*/
+	sigState := byte(modules.UNIT_STATE_VALIDATED) //TODO must delete
 	// step2. check transactions in unit
 	_, isSuccess, err := validate.ValidateTransactions(&unit.Txs, isGenesis)
 	if isSuccess != true {
@@ -504,10 +506,10 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, i
 	}
 
 	// check authors
-	//if header.Authors == nil {
-	if header.Authors.Empty() {
-		return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
-	}
+	//TODO must recover
+	//if header.Authors.Empty() {
+	//	return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
+	//}
 
 	// comment by Albert·Gou 新生产的unit暂时还没有群签名
 	//if len(header.GroupSign) < 64 {

@@ -283,12 +283,19 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	return false
 }
 func (d *Dag) Exists(hash common.Hash) bool {
-	number, err := d.dagdb.GetNumberWithUnitHash(hash)
-	if err == nil && (number != nil) {
+	if unit, err := d.dagdb.GetUnit(hash); err == nil && unit != nil {
 		log.Info("hash is exsit in leveldb ", "hash", hash.String())
 		return true
 	}
 	return false
+	/*
+		number, err := d.dagdb.GetNumberWithUnitHash(hash)
+		if err == nil && (number != nil) {
+			log.Info("hash is exsit in leveldb ", "hash", hash.String())
+			return true
+		}
+		return false
+	*/
 }
 func (d *Dag) CurrentHeader() *modules.Header {
 	unit := d.CurrentUnit()

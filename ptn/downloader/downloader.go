@@ -1144,8 +1144,8 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 					}
 					log.Debug("===processHeaders===", "len(unknown):", len(unknown))
 					// If we're importing pure headers, verify based on their recentness
+					/*TODO Whether or not recover
 					frequency := fsHeaderCheckFrequency
-					//if chunk[len(chunk)-1].Number.Uint64()+uint64(fsHeaderForceVerify) > pivot {
 					if chunk[len(chunk)-1].Number.Index+uint64(fsHeaderForceVerify) > pivot {
 						frequency = 1
 					}
@@ -1157,6 +1157,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 						log.Debug("Invalid header encountered", "number", chunk[n].Number, "hash", chunk[n].Hash(), "err", err)
 						return errInvalidChain
 					}
+					*/
 					// All verifications passed, store newly found uncertain headers
 					rollback = append(rollback, unknown...)
 					//test start
@@ -1379,10 +1380,6 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 	select {
 	case <-d.quitCh:
 		return errCancelContentProcessing
-		//	case <-stateSync.done:
-		//		if err := stateSync.Wait(); err != nil {
-		//			return err
-		//		}
 	default:
 	}
 	// Retrieve the a batch of results to import
