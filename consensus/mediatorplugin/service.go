@@ -118,8 +118,8 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 		{
 			Namespace: "mediator",
 			Version:   "1.0",
-			Service:   NewPublicEthereumAPI(apiBackend),
-			Public:    false,
+			Service:   NewPublicMediatorAPI(mp.ptn),
+			Public:    true,
 		},
 	}
 }

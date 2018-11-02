@@ -16,19 +16,23 @@
  * @date 2018
  */
 
-package web3ext
+package mediatorplugin
 
-const Mediator_JS = `
-web3._extend({
-	property: 'mediator',
-	methods: [
-		new web3._extend.Method({
-			name: 'list',
-			call: 'mediator_list',
-			params: 0,
-		}),
-	],
-	properties: [
-	]
-});
-`
+type PublicMediatorAPI struct {
+	p PalletOne
+}
+
+func NewPublicMediatorAPI(p PalletOne) *PublicMediatorAPI {
+	return &PublicMediatorAPI{p}
+}
+
+func (s *PublicMediatorAPI) List() []string {
+	addStrs := make([]string, 0)
+	mas := s.p.Dag().GetMediators()
+
+	for address, _ := range mas {
+		addStrs = append(addStrs, address.Str())
+	}
+
+	return addStrs
+}

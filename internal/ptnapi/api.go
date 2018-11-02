@@ -1470,17 +1470,6 @@ const (
 //	return mtxHex, nil
 //}
 
-func (s *PublicBlockChainAPI) ListMediators() []string {
-	addStrs := make([]string, 0)
-	mas := s.b.Dag().GetMediators()
-
-	for address, _ := range mas {
-		addStrs = append(addStrs, address.Str())
-	}
-
-	return addStrs
-}
-
 //create raw transction
 func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	c := cmd.(*ptnjson.CreateRawTransactionCmd)
