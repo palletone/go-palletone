@@ -33,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"sync"
@@ -41,7 +40,6 @@ import (
 
 // PalletOne wraps all methods required for producing unit.
 type PalletOne interface {
-	Dag() dag.IDag
 	GetKeyStore() *keystore.KeyStore
 	TxPool() txspool.ITxPool
 }
@@ -62,6 +60,8 @@ type iDag interface {
 	HeadUnitNum() uint64
 	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
 	GetUnitByHash(common.Hash) (*modules.Unit, error)
+	GetMediators() map[common.Address]bool
+	MediatorSchedule() []core.Mediator
 }
 
 type MediatorPlugin struct {
@@ -118,7 +118,7 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 		{
 			Namespace: "mediator",
 			Version:   "1.0",
-			Service:   NewPublicMediatorAPI(mp.ptn),
+			Service:   NewPublicMediatorAPI(mp),
 			Public:    true,
 		},
 	}

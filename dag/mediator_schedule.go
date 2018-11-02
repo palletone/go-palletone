@@ -225,3 +225,7 @@ func (dag *Dag) UpdateMediatorSchedule() {
 func (dag *Dag) GetMediators() map[common.Address]bool {
 	return dag.statedb.GetMediators()
 }
+
+func (dag *Dag) MediatorSchedule() []core.Mediator {
+	return dag.GetMediatorSchl().CurrentShuffledMediators
+}

@@ -109,6 +109,4 @@ type IDag interface {
 	GetAllTokenInfo() (*modules.AllTokenInfo, error)
 	// save token info
 	SaveTokenInfo(token_info *modules.TokenInfo) (string, error)
-
-	GetMediators() map[common.Address]bool
 }

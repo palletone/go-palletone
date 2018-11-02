@@ -23,12 +23,16 @@ web3._extend({
 	property: 'mediator',
 	methods: [
 		new web3._extend.Method({
-			name: 'list',
-			call: 'mediator_list',
+			name: 'schedule',
+			call: 'mediator_schedule',
 			params: 0,
 		}),
 	],
 	properties: [
+		new web3._extend.Property({
+			name: 'list',
+			getter: 'mediator_list'
+		}),
 	]
 });
 `
