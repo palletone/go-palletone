@@ -21,6 +21,7 @@ package dag
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/dag/vote"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -147,12 +148,13 @@ func (d *Dag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 	height, err := d.GetUnitNumber(hash)
 	if err != nil {
-		log.Error("GetHeaderByHash when GetUnitNumber", "error", err.Error())
+		log.Debug("GetHeaderByHash when GetUnitNumber", "error", err.Error())
+		return nil
 	}
 	// get unit header
 	uHeader, err := d.dagdb.GetHeader(hash, height)
 	if err != nil {
-		log.Error("Current unit when get unit header", "error", err.Error())
+		log.Debug("Current unit when get unit header", "error", err.Error())
 		return nil
 	}
 	return uHeader
@@ -283,7 +285,7 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 func (d *Dag) Exists(hash common.Hash) bool {
 	number, err := d.dagdb.GetNumberWithUnitHash(hash)
 	if err == nil && (number != nil) {
-		log.Info("经检索，该hash已存储在leveldb中，", "hash", hash.String())
+		log.Info("hash is exsit in leveldb ", "hash", hash.String())
 		return true
 	}
 	return false
@@ -861,7 +863,7 @@ func (d *Dag) ValidateUnitGroupSig(hash common.Hash) (bool, error) {
 	return true, nil
 }
 func (d *Dag) GetAccountMediatorVote(address common.Address) []common.Address {
-	bAddress := d.statedb.GetAccountVoteInfo(address, 0)
+	bAddress := d.statedb.GetAccountVoteInfo(address, vote.TYPE_MEDIATOR)
 	res := []common.Address{}
 	for _, b := range bAddress {
 		res = append(res, common.BytesToAddress(b))
@@ -883,9 +885,9 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	}
 	//
 	unitHeader := modules.Header{
-		ParentsHash:  []common.Hash{currentUnit.UnitHash},
-		AssetIDs:     []modules.IDType16{currentUnit.UnitHeader.Number.AssetID},
-		Authors:      nil,
+		ParentsHash: []common.Hash{currentUnit.UnitHash},
+		AssetIDs:    []modules.IDType16{currentUnit.UnitHeader.Number.AssetID},
+		//Authors:      nil,
 		GroupSign:    make([]byte, 0),
 		Number:       height,
 		Creationdate: time.Now().Unix(),
@@ -1053,7 +1055,7 @@ func (dag *Dag) GetElectedMediatorsAddress() ([]common.Address, error) {
 		return nil, err
 	}
 	MediatorNumber := gp.GetActiveMediatorCount()
-	return dag.statedb.GetSortedVote(uint(MediatorNumber), 0, 0)
+	return dag.statedb.GetSortedVote(uint8(MediatorNumber), 0, 0)
 }
 
 // UpdateMediator

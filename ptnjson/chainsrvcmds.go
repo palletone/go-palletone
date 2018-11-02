@@ -9,7 +9,7 @@ import (
 	//"bytes"
 	"crypto/sha256"
 	"github.com/palletone/go-palletone/common"
-        "crypto/ecdsa"
+    "crypto/ecdsa"
 	"github.com/btcsuite/btcd/btcec"
 	"golang.org/x/crypto/ripemd160"
 	"github.com/btcsuite/btcutil/base58"
@@ -119,13 +119,13 @@ const (
 )
 const (
 	// SatoshiPerBitcent is the number of satoshi in one bitcoin cent.
-	SatoshiPerBitcent = 1e6
+	DaoPerPtncent = 1e6
 
 	// SatoshiPerBitcoin is the number of satoshi in one bitcoin (1 BTC).
-	SatoshiPerBitcoin = 1e8
+	DaoPerPtn = 1e8
 
 	// MaxSatoshi is the maximum transaction amount allowed in satoshi.
-	MaxSatoshi = 21e6 * SatoshiPerBitcoin
+	MaxDao = 10e8 * DaoPerPtn
 )
 
 // These constants define the lengths of serialized public keys.
@@ -460,7 +460,7 @@ func NewAmount(f float64) (Amount, error) {
 		return 0, errors.New("invalid bitcoin amount")
 	}
 
-	return round(f * SatoshiPerBitcoin), nil
+	return round(f * DaoPerPtn), nil
 }
 
 // Calculate the hash of hasher over buf.
@@ -721,4 +721,3 @@ type GetTxIdResult struct {
 func NewWIF(privKey *ecdsa.PrivateKey, netid byte, compress bool) (*WIF, error) {
 	return &WIF{privKey, compress, netid}, nil
 }
-

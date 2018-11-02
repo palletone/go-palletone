@@ -19,20 +19,37 @@
 
 package vote
 
-import (
-	"github.com/palletone/go-palletone/common"
-)
+import "github.com/palletone/go-palletone/common"
 
-//IAddressMultiVote YiRan
-type IAddressMultiVote interface {
-	HeadN(num uint) []common.Address
-	Register(addresses []common.Address, inititalValue uint64)
-	AddToBox(Weight uint64, to []common.Address)
+func MAddress2MInterface(addresses map[common.Address]bool) map[interface{}]bool {
+	res := make(map[interface{}]bool, 0)
+	for addr, _ := range addresses {
+		res[addr] = true
+	}
+	return res
 }
 
-//IAddressSingleVote YiRan
-type IAddressSingleVote interface {
-	HeadN(num uint) []common.Address
-	Register(addresses []common.Address, inititalValue uint64)
-	AddToBoxIfNotVoted(Weight uint64, voter common.Address, to []common.Address)
+
+func MAddress2LInterface(addresses map[common.Address]bool) []interface{} {
+	res := make([]interface{}, 0)
+	for addr, _ := range addresses {
+		res = append(res, addr)
+	}
+	return res
+}
+
+func LAddress2LInterface(addresses []common.Address) []interface{} {
+	res := make([]interface{}, 0)
+	for _, addr := range addresses {
+		res = append(res, addr)
+	}
+	return res
+}
+
+func LInterface2LAddress(li []interface{}) []common.Address {
+	res := make([]common.Address, 0)
+	for _, iaddr := range li {
+		res = append(res, iaddr.(common.Address))
+	}
+	return res
 }

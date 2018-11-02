@@ -55,7 +55,7 @@ const (
 	ContractHash  AddressType = 28
 )
 
-func (a Address) GetType() AddressType {
+func (a *Address) GetType() AddressType {
 	return AddressType(a[20])
 }
 func NewAddress(hash160 []byte, ty AddressType) Address {
@@ -85,6 +85,12 @@ func StringToAddress(a string) (Address, error) {
 		return Address{}, errors.New("Invalid address type")
 	}
 }
+
+func StringToAddressGodBlessMe(a string) Address {
+	addr, _ := StringToAddress(a)
+	return addr
+}
+
 func (a Address) Validate() (AddressType, error) {
 	var ty AddressType = AddressType(a[20])
 	return ty, nil

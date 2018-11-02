@@ -17,3 +17,32 @@
  * @date 2018
  */
 package vote
+
+//Card @YiRan : struct for sorting map.
+type ScoreCard struct {
+	object interface{}
+	score  uint64
+}
+
+type MapSorter []ScoreCard
+
+func (ms MapSorter) Len() int {
+	return len(ms)
+}
+
+//Less @YiRan : Descending order
+func (ms MapSorter) Less(i, j int) bool {
+	return ms[i].score > ms[j].score //
+}
+func (ms MapSorter) Swap(i, j int) {
+	ms[i], ms[j] = ms[j], ms[i]
+}
+
+//NewMapSorter @YiRan : TODO:change score type to interface{}
+func NewMapSorter(m map[interface{}]uint64) MapSorter {
+	MapSorter := MapSorter{}
+	for o, s := range m {
+		MapSorter = append(MapSorter, ScoreCard{object: o, score: s})
+	}
+	return MapSorter
+}

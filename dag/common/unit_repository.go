@@ -144,7 +144,7 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 		return unit, errors.New("error.")
 	}
 
-	unit.UnitHeader.Authors = &modules.Authentifier{
+	unit.UnitHeader.Authors = modules.Authentifier{
 		Address: signer,
 		R:       r,
 		S:       s,
@@ -475,22 +475,7 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 	if isSuccess != true {
 		return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	}
-	// step4. save unit header
-	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
-	if err := unitOp.dagdb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
-		log.Info("SaveHeader:", "error", err.Error())
-		return modules.ErrUnit(-3)
-	}
-	// step5. save unit hash and chain index relation
-	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-	if err := unitOp.dagdb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Info("SaveHashNumber:", "error", err.Error())
-		return fmt.Errorf("Save unit number hash error, %s", err)
-	}
-	if err := unitOp.dagdb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Info("SaveNumberByHash:", "error", err.Error())
-		return fmt.Errorf("Save unit number error, %s", err)
-	}
+
 	// step6. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
@@ -548,6 +533,24 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 	if err := unitOp.dagdb.SaveTxLookupEntry(unit); err != nil {
 		return err
 	}
+
+	// step4. save unit header
+	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
+	if err := unitOp.dagdb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
+		log.Info("SaveHeader:", "error", err.Error())
+		return modules.ErrUnit(-3)
+	}
+	// step5. save unit hash and chain index relation
+	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
+	if err := unitOp.dagdb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		log.Info("SaveHashNumber:", "error", err.Error())
+		return fmt.Errorf("Save unit number hash error, %s", err)
+	}
+	if err := unitOp.dagdb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		log.Info("SaveNumberByHash:", "error", err.Error())
+		return fmt.Errorf("Save unit number error, %s", err)
+	}
+
 	// update state
 	unitOp.dagdb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
 	unitOp.dagdb.PutHeadHeaderHash(unit.UnitHash)

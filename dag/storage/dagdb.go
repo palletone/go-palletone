@@ -116,21 +116,21 @@ func (dagdb *DagDb) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	}
 	return result
 }
-func (db *DagDb) SetStableUnitHash(hash common.Hash){
-	StoreBytes(db.db,constants.StableUnitHash,hash.Bytes())
+func (db *DagDb) SetStableUnitHash(hash common.Hash) {
+	StoreBytes(db.db, constants.StableUnitHash, hash.Bytes())
 }
-func (db *DagDb) GetStableUnitHash() common.Hash{
-	data,_:=GetBytes(db.db,constants.StableUnitHash)
-	hash:= common.Hash{}
+func (db *DagDb) GetStableUnitHash() common.Hash {
+	data, _ := GetBytes(db.db, constants.StableUnitHash)
+	hash := common.Hash{}
 	hash.SetBytes(data)
 	return hash
 }
-func (db *DagDb) SetLastUnitHash(hash common.Hash){
-	StoreBytes(db.db,constants.LastUnitHash,hash.Bytes())
+func (db *DagDb) SetLastUnitHash(hash common.Hash) {
+	StoreBytes(db.db, constants.LastUnitHash, hash.Bytes())
 }
-func (db *DagDb) GetLastUnitHash() common.Hash{
-	data,_:=GetBytes(db.db,constants.LastUnitHash)
-	hash:= common.Hash{}
+func (db *DagDb) GetLastUnitHash() common.Hash {
+	data, _ := GetBytes(db.db, constants.LastUnitHash)
+	hash := common.Hash{}
 	hash.SetBytes(data)
 	return hash
 }
@@ -168,7 +168,7 @@ func (dagdb *DagDb) SaveHashByNumber(uHash common.Hash, number modules.ChainInde
 		i = 1
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
-	log.Info("*****************DagDB SaveHashByNumber info.", "SaveHashByNumber_key", string(key), "hash:", uHash.Hex())
+	//log.Info("*****************DagDB SaveHashByNumber info.", "SaveHashByNumber_key", string(key), "hash:", uHash.Hex())
 	return StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), uHash.Hex())
 }
 
@@ -399,7 +399,7 @@ func (dagdb *DagDb) GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex
 		return nil, err
 	}
 	if len(data) <= 0 {
-		return nil, nil
+		return nil, fmt.Errorf("data is empty with hash:%v", hash)
 	}
 	number := new(modules.ChainIndex)
 	if err := rlp.DecodeBytes(data, number); err != nil {

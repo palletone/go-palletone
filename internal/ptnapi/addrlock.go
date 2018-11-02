@@ -23,7 +23,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/dag/modules"
-	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"sync"
 )
 
@@ -163,7 +162,7 @@ func isNullOutpoint(outpoint *modules.OutPoint) bool {
 //        TransactionHex string `json:"transactionhex"`
 //        Complete       bool   `json:"complete"`
 //}
-func CheckTransactionSanity(tx *modules.Transaction) error {
+/*func CheckTransactionSanity(tx *modules.Transaction) error {
 	// A transaction must have at least one input.
 	if len(tx.TxMessages) == 0 {
 		return  &ptnjson.RPCError{
@@ -205,10 +204,10 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 					Message: str,
 				}
 			}
-			if satoshi > ptnjson.MaxSatoshi {
+			if satoshi > ptnjson.MaxDao {
 				str := fmt.Sprintf("transaction output value of %v is "+
 					"higher than max allowed value of %v", satoshi,
-					ptnjson.MaxSatoshi)
+					ptnjson.MaxDao)
 				return  &ptnjson.RPCError{
 					Code:    ptnjson.ErrBadTxOutValue,
 					Message: str,
@@ -222,17 +221,17 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 			if totalSatoshi < 0 {
 				str := fmt.Sprintf("total value of all transaction "+
 					"outputs exceeds max allowed value of %v",
-					ptnjson.MaxSatoshi)
+					ptnjson.MaxDao)
 				return  &ptnjson.RPCError{
 					Code:    ptnjson.ErrBadTxOutValue,
 					Message: str,
 				}
 			}
-			if totalSatoshi > ptnjson.MaxSatoshi {
+			if totalSatoshi > ptnjson.MaxDao {
 				str := fmt.Sprintf("total value of all transaction "+
 					"outputs is %v which is higher than max "+
 					"allowed value of %v", totalSatoshi,
-					ptnjson.MaxSatoshi)
+					ptnjson.MaxDao)
 				return  &ptnjson.RPCError{
 					Code:    ptnjson.ErrBadTxOutValue,
 					Message: str,
@@ -282,4 +281,4 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
     }
 
 	return nil
-}
+}*/

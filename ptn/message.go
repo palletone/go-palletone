@@ -370,15 +370,15 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if tx == nil {
 			return errResp(ErrDecode, "transaction %d is nil", i)
 		}
-                p.MarkTransaction(tx.Hash())
+		p.MarkTransaction(tx.Hash())
 		txHash := tx.Hash()
-                txHash = txHash
+		txHash = txHash
 		acceptedTxs, err := pm.txpool.ProcessTransaction(tx,
 		true, true, 0/*pm.txpool.Tag(peer.ID())*/)
-                acceptedTxs = acceptedTxs
+        acceptedTxs = acceptedTxs
 		if err != nil{
-                    return errResp(ErrDecode, "transaction %d not accepteable ", i)
-                }
+            return errResp(ErrDecode, "transaction %d not accepteable ", i)
+        }
 	}
 
 	log.Info("===============ProtocolManager TxMsg AddRemotes====================")

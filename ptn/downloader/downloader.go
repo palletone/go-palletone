@@ -150,22 +150,10 @@ type Downloader struct {
 
 // LightDag encapsulates functions required to synchronise a light chain.
 type LightDag interface {
-	// HasHeader verifies a header's presence in the local chain.
-	//HasHeader(common.Hash, uint64) bool
-
-	// GetHeaderByHash retrieves a header from the local chain.
 	GetHeaderByHash(common.Hash) *modules.Header
-
-	// CurrentHeader retrieves the head header from the local chain.
 	CurrentHeader() *modules.Header
-
-	// InsertHeaderDag inserts a batch of headers into the local chain.
 	InsertHeaderDag([]*modules.Header, int) (int, error)
-
-	//All leaf nodes for dag downloader
 	GetAllLeafNodes() ([]*modules.Header, error)
-
-	// Rollback removes a few recently added elements from the local chain.
 	//Rollback([]common.Hash)
 }
 
@@ -1147,9 +1135,9 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 				if d.mode == FastSync || d.mode == LightSync {
 					// Collect the yet unknown headers to mark them as uncertain
 					unknown := make([]*modules.Header, 0, len(headers))
-					for _, header := range chunk {
-						//fmt.Println(header.Hash(), header.Number.Index)
+					for _, head := range chunk {
 						//if !d.lightdag.HasHeader(header.Hash(), header.Number.Index) {
+						header := head
 						if nil == d.lightdag.GetHeaderByHash(header.Hash()) {
 							unknown = append(unknown, header)
 						}
@@ -1403,12 +1391,10 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 		"firstnum", first.Number, "firsthash", first.Hash(),
 		"lastnumn", last.Number, "lasthash", last.Hash(),
 	)
-	//blocks := make([]*modules.Unit, len(results))
+
 	blocks := make(modules.Units, len(results))
-	//receipts := make([]types.Receipts, len(results))
 	for i, result := range results {
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
-		//receipts[i] = result.Receipts
 	}
 	if index, err := d.dag.InsertDag(blocks); err != nil {
 		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number.Index, "hash", results[index].Header.Hash(), "err", err)

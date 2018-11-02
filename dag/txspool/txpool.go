@@ -866,6 +866,7 @@ func IsCoinBase(tx *modules.Transaction) bool {
 	}
 	return true
 }
+
 // maybeAcceptTransaction is the internal function which implements the public
 // MaybeAcceptTransaction.  See the comment for MaybeAcceptTransaction for
 // more details.
@@ -886,10 +887,10 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 	// Perform preliminary sanity checks on the transaction.  This makes
 	// use of blockchain which contains the invariant rules for what
 	// transactions are allowed into blocks.
-	//err := ptnapi.CheckTransactionSanity(tx)
-	//if err != nil {
-	//	return nil, nil, err
-	//}
+	err := CheckTransactionSanity(tx)
+	if err != nil {
+		return nil, nil, nil
+	}
 
 	// A standalone transaction must not be a coinbase transaction.
 	if IsCoinBase(tx) {
@@ -908,7 +909,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 	// after fetching the referenced transaction inputs from the main chain
 	// which examines the actual spend data and prevents double spends.
 	txpooltx := TxtoTxpoolTx(mp, tx)
-	err := mp.checkPoolDoubleSpend(txpooltx)
+	err = mp.checkPoolDoubleSpend(txpooltx)
 	if err != nil {
 		return nil, nil, err
 	}
