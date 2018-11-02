@@ -19,6 +19,8 @@
 package mediatorplugin
 
 import (
+	"github.com/dedis/kyber"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -64,4 +66,29 @@ type MediatorConf struct {
 	Password,
 	InitPartSec,
 	InitPartPub string
+}
+
+func (medConf MediatorConf) ConfigToAccount() MediatorAccount {
+	// 1. 解析 mediator 账户地址
+	addr := core.StrToMedAdd(medConf.Address)
+
+	// 2. 解析 mediator 的 DKS 初始公私钥
+	sec := core.StrToScalar(medConf.InitPartSec)
+	pub := core.StrToPoint(medConf.InitPartPub)
+
+	medAcc := MediatorAccount{
+		addr,
+		medConf.Password,
+		sec,
+		pub,
+	}
+
+	return medAcc
+}
+
+type MediatorAccount struct {
+	Address     common.Address
+	Password    string
+	InitPartSec kyber.Scalar
+	InitPartPub kyber.Point
 }

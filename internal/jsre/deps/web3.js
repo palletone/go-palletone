@@ -5398,11 +5398,25 @@ var methods = function () {
         inputFormatter: [null]
     });
 
-    var createVoteTransaction = new Method({
-        name: 'createVoteTransaction',
-        call: 'ptn_createVoteTransaction',
+    var createMediatorVote = new Method({
+        name: 'createMediatorVote',
+        call: 'ptn_createMediatorVote',
         params: 1,
-        inputFormatter: [null]
+    });
+    var replaceMediatorVote = new Method({
+        name: 'replaceMediatorVote',
+        call: 'ptn_replaceMediatorVote',
+        params: 2,
+    });
+    var deleteMediatorVote = new Method({
+        name: 'deleteMediatorVote',
+        call: 'ptn_deleteMediatorVote',
+        params: 1,
+    });
+    var clearMediatorVote = new Method({
+        name: 'clearMediatorVote',
+        call: 'ptn_clearMediatorVote',
+        params: 0,
     });
 
     var signRawTransaction = new Method({
@@ -5618,10 +5632,10 @@ var methods = function () {
         call: 'dag_getCommon',
         params: 1,
     });
-    var getCommonByPrefix = new Method({ 
+    var getCommonByPrefix = new Method({
         name: 'getCommonByPrefix',
-        call: 'dag_getCommonByPrefix',  
-        params: 1, 
+        call: 'dag_getCommonByPrefix',
+        params: 1,
     });
 
 
@@ -5655,13 +5669,6 @@ var methods = function () {
         inputFormatter: [null, null]
     });
 
-    var listMediators = new Method({
-        name: 'listMediators',
-        call: 'ptn_listMediators',
-        params: 0,
-        // inputFormatter: [null, null]
-    });
-
     return [
         forking,
         getUnitByHash,
@@ -5682,7 +5689,10 @@ var methods = function () {
         call,
         estimateGas,
         createRawTransaction,
-        createVoteTransaction,
+        createMediatorVote,
+        replaceMediatorVote,
+        deleteMediatorVote,
+        clearMediatorVote,
         signRawTransaction,
         sendRawTransaction,
         signTransaction,
@@ -5712,7 +5722,7 @@ var methods = function () {
         getAddrOutpoints,
         getAddrUtxos,
         getAllUtxos,
-        getAddrTxs, 
+        getAddrTxs,
         getAllTokenInfo,
         getTokenInfo,
         saveTokenInfo,
@@ -5720,7 +5730,6 @@ var methods = function () {
         ccdeploy,
         ccinvoke,
         ccstop,
-        listMediators,
     ];
 };
 

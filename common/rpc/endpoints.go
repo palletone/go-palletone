@@ -35,7 +35,7 @@ func StartHTTPEndpoint(endpoint string, apis []API, modules []string, cors []str
 	handler := NewServer()
 	for _, api := range apis {
 		if whitelist[api.Namespace] || (len(whitelist) == 0 && api.Public) {
-			// 只有这集中情况下才会把这个api进行注册
+			// 只有这几种情况下才会把这个api进行注册
 			if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
 				return nil, nil, err
 			}
