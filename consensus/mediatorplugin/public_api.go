@@ -19,19 +19,30 @@
 package mediatorplugin
 
 type PublicMediatorAPI struct {
-	p PalletOne
+	*MediatorPlugin
 }
 
-func NewPublicMediatorAPI(p PalletOne) *PublicMediatorAPI {
-	return &PublicMediatorAPI{p}
+func NewPublicMediatorAPI(mp *MediatorPlugin) *PublicMediatorAPI {
+	return &PublicMediatorAPI{mp}
 }
 
-func (s *PublicMediatorAPI) List() []string {
+func (a *PublicMediatorAPI) List() []string {
 	addStrs := make([]string, 0)
-	mas := s.p.Dag().GetMediators()
+	mas := a.dag.GetMediators()
 
 	for address, _ := range mas {
 		addStrs = append(addStrs, address.Str())
+	}
+
+	return addStrs
+}
+
+func (a *PublicMediatorAPI) Schedule() []string {
+	addStrs := make([]string, 0)
+	ms := a.dag.MediatorSchedule()
+
+	for _, med := range ms {
+		addStrs = append(addStrs, med.Address.Str())
 	}
 
 	return addStrs

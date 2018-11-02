@@ -48,7 +48,7 @@ func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorS
 		ms.CurrentShuffledMediators[i] = *med
 	}
 
-	//	ms.UpdateMediatorSchedule(gp, dgp)
+	ms.UpdateMediatorSchedule(gp, dgp)
 
 	return ms
 }
