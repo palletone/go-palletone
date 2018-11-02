@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -82,10 +81,6 @@ func (b *PtnApiBackend) SubscribeChainSideEvent(ch chan<- coredata.ChainSideEven
 func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 	b.ptn.Engine().Engine()
 	return nil
-}
-
-func (b *PtnApiBackend) Dag() dag.IDag {
-	return b.ptn.dag
 }
 
 func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {

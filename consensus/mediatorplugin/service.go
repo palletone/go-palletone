@@ -114,7 +114,14 @@ func (mp *MediatorPlugin) Protocols() []p2p.Protocol {
 }
 
 func (mp *MediatorPlugin) APIs() []rpc.API {
-	return nil
+	return []rpc.API{
+		{
+			Namespace: "mediator",
+			Version:   "1.0",
+			Service:   NewPublicMediatorAPI(mp.ptn),
+			Public:    true,
+		},
+	}
 }
 
 func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
@@ -272,7 +279,7 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 	msm := map[common.Address]MediatorAccount{}
 
 	for _, medConf := range mss {
-		medAcc := ConfigToAccount(medConf)
+		medAcc := medConf.ConfigToAccount()
 		addr := medAcc.Address
 		//log.Debug(fmt.Sprintf("this node control mediator account address: %v", addr.Str()))
 
@@ -311,29 +318,4 @@ func (mp *MediatorPlugin) initTBLSBuf() {
 		mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
 		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet, curThrshd)
 	}
-}
-
-func ConfigToAccount(medConf MediatorConf) MediatorAccount {
-	// 1. 解析 mediator 账户地址
-	addr := core.StrToMedAdd(medConf.Address)
-
-	// 2. 解析 mediator 的 DKS 初始公私钥
-	sec := core.StrToScalar(medConf.InitPartSec)
-	pub := core.StrToPoint(medConf.InitPartPub)
-
-	medAcc := MediatorAccount{
-		addr,
-		medConf.Password,
-		sec,
-		pub,
-	}
-
-	return medAcc
-}
-
-type MediatorAccount struct {
-	Address     common.Address
-	Password    string
-	InitPartSec kyber.Scalar
-	InitPartPub kyber.Point
 }

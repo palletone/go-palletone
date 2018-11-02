@@ -1,3 +1,5 @@
+// Copyright 2018 PalletOne
+
 // Copyright 2015 The go-ethereum Authors
 // This file is part of the go-ethereum library.
 //
@@ -15,6 +17,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // package web3ext contains gptn specific web3.js extensions.
+
 package web3ext
 
 var Modules = map[string]string{
@@ -30,6 +33,7 @@ var Modules = map[string]string{
 	"shh":        Shh_JS,
 	"swarmfs":    SWARMFS_JS,
 	"txpool":     TxPool_JS,
+	"mediator":   Mediator_JS,
 }
 
 const Chequebook_JS = `
