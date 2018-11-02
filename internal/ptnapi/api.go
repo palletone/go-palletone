@@ -1519,7 +1519,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	//	var params *chaincfg.Params
 	for encodedAddr, amount := range c.Amounts {
 		//		// Ensure amount is in the valid range for monetary amounts.
-		if amount <= 0 || amount > ptnjson.MaxSatoshi {
+		if amount <= 0 || amount > ptnjson.MaxDao {
 			return "", &ptnjson.RPCError{
 				Code:    ptnjson.ErrRPCType,
 				Message: "Invalid amount",
