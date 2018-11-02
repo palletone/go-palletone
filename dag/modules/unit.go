@@ -228,7 +228,7 @@ type Authentifier struct {
 }
 
 func (au *Authentifier) Empty() bool {
-	if len(au.Address.String()) == 0 || len(au.R) == 0 || len(au.S) == 0 || len(au.V) == 0 {
+	if common.IsValidAddress(au.Address.String()) || len(au.R) == 0 || len(au.S) == 0 || len(au.V) == 0 {
 		return true
 	}
 	return false
