@@ -21,104 +21,111 @@ package vote
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/errors"
+	"reflect"
 	"sort"
+
+	"github.com/palletone/go-palletone/dag/errors"
 )
 
 type vote interface {
-	GetScore(candidate interface{}) (uint64, error)
-	GetCandidates() []interface{}
-	GetResult(number uint8) []interface{}
-	GetVoteDetail() map[interface{}]uint64
 	RegisterCandidates(candidates interface{})
-	AddToBox(score uint64, i interface{})
-	AddNToBox(score uint64, to interface{})
+	Exist(candidate interface{}) bool
+	GetCandidates() []interface{}
+	AddToBox(score uint64, tos interface{})
+	GetScore(candidate interface{}) (uint64, error)
+	GetVoteDetail() map[interface{}]uint64
+	GetResult(number uint8) []interface{}
 }
 
+//BaseVote : virtual struct
 type BaseVote struct {
 	voteStatus map[interface{}]uint64
+	elemType   reflect.Type
 }
 
+//GetScore : get given candidate's current score.
 func (bv *BaseVote) GetScore(c interface{}) (uint64, error) {
-	if score, ok := bv.voteStatus[c]; ok {
-		return score, nil
-	} else {
-		return 0, errors.New("getScore:error invalid Candidate!")
+	if bv.Exist(c) {
+		return bv.voteStatus[c], nil
 	}
+	return 0, errors.New("getScore:error invalid Candidate ")
 }
 
-//getCandidates :
+//GetCandidates : get a slice of all candidates.
 func (bv *BaseVote) GetCandidates() []interface{} {
 	res := make([]interface{}, 0)
-	for c, _ := range bv.voteStatus {
+	for c := range bv.voteStatus {
 		res = append(res, c)
 	}
 	return res
 }
 
-func (bv *BaseVote) GetResult(resNumber uint8) []interface{} {
-	res := make([]interface{}, 0)
+//GetResult : get head n of vote result by descending order.
+func (bv *BaseVote) GetResult(number uint8, val interface{}) bool {
 	VoteSorter := NewMapSorter(bv.voteStatus)
 	sort.Sort(VoteSorter)
-	voteNumber := uint8(len(VoteSorter))
-	if resNumber == 0 || resNumber > voteNumber {
-		resNumber = voteNumber
-	}
+	resNumber := resultNumber(number, uint8(len(VoteSorter)))
+	rtyp := reflect.TypeOf(val).Elem()
+
+	rs := reflect.MakeSlice(rtyp, 0, 0)
 	for i := uint8(0); i < resNumber; i++ {
-		res = append(res, VoteSorter[i].object)
+		rs = reflect.Append(rs, reflect.ValueOf(VoteSorter[i].object))
 	}
-	return res
+	reflect.ValueOf(val).Elem().Set(rs)
+	return true
 }
 
+//GetVoteDetail : get a map of vote status of all candidates/
 func (bv *BaseVote) GetVoteDetail() map[interface{}]uint64 {
 	return bv.voteStatus
 }
 
-func (bv *BaseVote) RegisterCandidates(ShouldBeIList interface{}) {
+//RegisterCandidates : init the vote & grant the right to vote for those candiates.
+//candidates is slice for now.
+func (bv *BaseVote) RegisterCandidates(candidates interface{}) {
+	bv.elemType = reflect.TypeOf(candidates).Elem()
 	bv.voteStatus = make(map[interface{}]uint64, 0)
-	IList := ShouldBeIList.([]interface{})
-	for _, c := range IList {
+	for _, c := range ToInterfaceSlice(candidates) {
 		bv.voteStatus[c] = 0
 	}
 }
-func (bv *BaseVote) AddNToBox(score uint64, ShouldBeIList interface{}) {
-	IList := ShouldBeIList.([]interface{})
-	for _, c := range IList {
-		if _, ok := bv.voteStatus[c]; ok {
-			bv.voteStatus[c] += score
-		} else {
-			fmt.Println("addToBox:warning candidate invalid")
+
+//Exist : check the existence of given candidate.
+func (bv *BaseVote) Exist(c interface{}) bool {
+	_, ok := bv.voteStatus[c]
+	if !ok {
+		fmt.Printf("candidate %v doesn't exist ", c)
+	}
+	return ok
+}
+
+//AddToBox : give n candidates score.
+// candidates shoud be single element or slice
+func (bv *BaseVote) AddToBox(score uint64, candidates interface{}) {
+
+	switch reflect.ValueOf(candidates).Kind() {
+	case reflect.Slice:
+		for _, c := range ToInterfaceSlice(candidates) {
+			if bv.Exist(c) {
+				bv.voteStatus[c] += score
+			}
+		}
+	default:
+		if bv.Exist(candidates) {
+			bv.voteStatus[candidates] += score
 		}
 	}
 
 }
 
-func (bv *BaseVote) AddToBox(score uint64, i interface{}) {
-	if _, ok := bv.voteStatus[i]; ok {
-		bv.voteStatus[i] += score
-	} else {
-		fmt.Println("addToBox:warning candidate invalid")
-	}
-
-}
-
+//SingleVote : one men , one ballot
 type SingleVote struct {
 	BaseVote
-	voter map[interface{}]bool
+	voted map[interface{}]bool
 }
 
+//MultipleVote : one men, N ballots.
 type MultipleVote struct {
 	BaseVote
-}
-
-type IAddressMultipleVote interface {
-	vote
-	Register(addresses []common.Address)
-	Result(number uint8) []common.Address
-	Add(addresses []common.Address, score uint64)
-}
-
-type ITxhashMultipleVote interface {
-	vote
+	voteLimit uint8
 }

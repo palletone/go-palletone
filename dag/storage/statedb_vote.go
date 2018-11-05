@@ -150,7 +150,7 @@ func (statedb *StateDb) GetSortedVote(ReturnNumber uint8, voteType uint8, minTer
 
 	// 2. register candidate
 	addresses := statedb.GetMediators()
-	voteBox.RegisterCandidates(vote.MAddress2LInterface(addresses))
+	voteBox.RegisterCandidates(addresses)
 
 	// 3. collect ballot
 	for _, voterAddress := range voterList {
@@ -158,11 +158,13 @@ func (statedb *StateDb) GetSortedVote(ReturnNumber uint8, voteType uint8, minTer
 		if err != nil {
 			return nil, err
 		}
-		voteBox.Add(to, weight)
+		voteBox.AddToBox(weight, to)
 	}
 
 	// $. return elected mediator
-	return voteBox.Result(ReturnNumber), nil
+	res := make([]common.Address, 0)
+	voteBox.GetResult(ReturnNumber, &res)
+	return res, nil
 
 }
 
