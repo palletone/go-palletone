@@ -168,7 +168,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	}
 
 	scheduledMediator := dag.GetScheduledMediator(slot)
-	if common.AddressEqual(scheduledMediator, common.Address{}) {
+	if scheduledMediator.Equal(common.Address{}) {
 		log.Error("The current shuffled mediators is nil!")
 		return UnknownCondition, detail
 	}
@@ -204,7 +204,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 
 	unitHash := newUnit.UnitHash
 	detail["Num"] = strconv.FormatUint(newUnit.NumberU64(), 10)
-	time := time.Unix(newUnit.UnitHeader.Creationdate, 0)
+	time := time.Unix(newUnit.Timestamp(), 0)
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
 	detail["Mediator"] = scheduledMediator.Str()
 	detail["Hash"] = unitHash.Hex()
