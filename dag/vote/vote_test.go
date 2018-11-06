@@ -61,3 +61,17 @@ func TestAddressMultipleVote(t *testing.T) {
 	assert.EqualValues(t, addr2, voteResult[3])
 	assert.EqualValues(t, 5500, addr1Score)
 }
+
+func TestDeligatePrivilegedVote(t *testing.T) {
+	dpv := deligatePrivilegedVote{}
+	addrs := make([]common.Address, 0)
+	addr1 := common.StringToAddressGodBlessMe("P1GqZ72gaeq7LiS34KLJoMmCnMnaopkcEPn")
+	addr2 := common.StringToAddressGodBlessMe("P1L3F4oj1ciogAE69uogGcU8e9Hp5ZMnYJ3")
+	addr3 := common.StringToAddressGodBlessMe("P1KYtxHobTsYgR4cWF5rjb5WUM7ZkDncHa9")
+	addr4 := common.StringToAddressGodBlessMe("P1M2v9vvP5UJAtW4vQPqPSjsLPxnzgnP9UT")
+	addr5 := common.StringToAddressGodBlessMe("P1JT8D85jFajyKguB1DvsaYERv9K8y8vckL")
+	addrs = append(addrs, addr1, addr2, addr3, addr4, addr5)
+	dpv.RegisterCandidates(addrs)
+	//dpv.SetWeight()
+
+}
