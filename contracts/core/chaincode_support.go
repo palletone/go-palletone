@@ -417,7 +417,8 @@ func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCC
 	}
 	switch cLang {
 	case pb.ChaincodeSpec_GOLANG, pb.ChaincodeSpec_CAR:
-		args = []string{"chaincode", fmt.Sprintf("-peer.address=%s", chaincodeSupport.peerAddress)}
+		//args = []string{"chaincode", fmt.Sprintf("-peer.address=%s", chaincodeSupport.peerAddress)}
+		args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C /usr/local/bin && cd /usr/local/bin && ./chaincode"}
 	case pb.ChaincodeSpec_JAVA:
 		args = []string{"java", "-jar", "chaincode.jar", "--peerAddress", chaincodeSupport.peerAddress}
 	case pb.ChaincodeSpec_NODE:

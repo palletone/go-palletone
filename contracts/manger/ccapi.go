@@ -278,6 +278,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 	}
 
 	usrccName := templateCC.Name + "-" + hex.EncodeToString(randNum) //[0:8]
+	//usrccName := templateCC.Name //[0:8]
 	usrcc := &ucc.UserChaincode{
 		Name:     usrccName,
 		Path:     templateCC.Path,
