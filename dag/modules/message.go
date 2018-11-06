@@ -37,6 +37,7 @@ const (
 	APP_CONFIG
 	APP_TEXT
 	APP_VOTE
+	APP_SIGNATURE
 	OP_MEDIATOR_CREATE
 )
 
@@ -116,7 +117,13 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 		newPayload.ReadSet = readSet
 		newPayload.WriteSet = writeSet
 		msg.Payload = newPayload
+	case APP_SIGNATURE:
+		payload, _ := cpyMsg.Payload.(*SignaturePayload)
+		newPayload := SignaturePayload{}
+		newPayload.Signatures = payload.Signatures
+		msg.Payload = newPayload
 	}
+
 	return msg
 }
 
@@ -316,6 +323,13 @@ type ContractInvokeRequestPayload struct {
 // App: config	// update global config
 type ConfigPayload struct {
 	ConfigSet []ContractWriteSet `json:"config_set"` // the array of global config
+}
+type SignaturePayload struct {
+	Signatures []SignatureSet `json:"signature_set"` // the array of signature
+}
+type SignatureSet struct {
+	PubKey    []byte //compress public key
+	Signature []byte //
 }
 
 // Token exchange message and verify message
