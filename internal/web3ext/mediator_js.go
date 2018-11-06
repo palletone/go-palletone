@@ -32,6 +32,11 @@ web3._extend({
 			call: 'mediator_getInitDKS',
 			params: 0,
 		}),
+		new web3._extend.Method({
+			name: 'register',
+			call: 'mediator_register',
+			params: 1,
+		}),
 	],
 	properties: [
 		new web3._extend.Property({

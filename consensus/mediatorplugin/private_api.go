@@ -19,7 +19,10 @@
 package mediatorplugin
 
 import (
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 type PrivateMediatorAPI struct {
@@ -37,16 +40,41 @@ type MediatorCreateArgs struct {
 
 // 创建 mediator 的执行结果，包含交易哈希，初始dks
 type MediatorCreateResult struct {
+	TxHash  common.Hash        `json:"txHash"`
+	TxSize  common.StorageSize `json:"txSize"`
+	Warning string             `json:"warning"`
 }
 
-func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) *MediatorCreateResult {
+func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (res MediatorCreateResult, err error) {
 	// 1. 组装 message
+	mco := &modules.MediatorCreateOperation{
+		MediatorInfo: &args.MediatorInfo,
+	}
+
+	msg := &modules.Message{
+		App:     modules.OP_MEDIATOR_CREATE,
+		Payload: mco,
+	}
 
 	// 2. 组装 tx
+	tx := &modules.Transaction{
+		TxMessages: []*modules.Message{msg},
+	}
+	tx.TxHash = tx.Hash()
 
-	// 3. 将 tx 放入 pool
+	// 3. 签名 tx
 
-	// 4. 返回执行结果
+	// 4. 将 tx 放入 pool
+	txPool := a.ptn.TxPool()
+	err = txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
+	if err != nil {
+		return
+	}
 
-	return nil
+	// 5. 返回执行结果
+	res.TxHash = tx.TxHash
+	res.TxSize = tx.Size()
+	res.Warning = "transaction executed locally, but may not be confirmed by the network yet!"
+
+	return
 }
