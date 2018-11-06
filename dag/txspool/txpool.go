@@ -804,7 +804,7 @@ func (mp *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, 
 	// Protect concurrent access.
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
-
+    
 	// Potentially accept the transaction to the memory pool.
 	missingParents, txD, err := mp.maybeAcceptTransaction(tx, true, rateLimit,false)
 	if err != nil {
@@ -889,7 +889,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 	// transactions are allowed into blocks.
 	err := CheckTransactionSanity(tx)
 	if err != nil {
-		return nil, nil, nil
+		return nil, nil, err
 	}
 
 	// A standalone transaction must not be a coinbase transaction.
