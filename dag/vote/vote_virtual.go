@@ -34,7 +34,7 @@ type vote interface {
 	AddToBox(score uint64, tos interface{})
 	GetScore(candidate interface{}) (uint64, error)
 	GetVoteDetail() map[interface{}]uint64
-	GetResult(number uint8) []interface{}
+	GetResult(number uint8, val interface{}) bool
 }
 
 //BaseVote : virtual struct
@@ -125,7 +125,7 @@ type hierarchy interface {
 }
 
 type deligate interface {
-	SetAgent(voter interface{}) bool
+	SetAgent(voter interface{}, agent interface{}) bool
 }
 
 type privilegedVotePlugin struct {
@@ -151,12 +151,12 @@ func (pp *privilegedVotePlugin) GetWeight(voter interface{}) uint8 {
 }
 
 func (pp *privilegedVotePlugin) SetWeight(voter interface{}, weight uint8) {
-	//TODO check voter validity first
+	//check voter validity first
 	pp.weightMap[voter] = weight
 }
 
 func (pp *privilegedVotePlugin) SetWeightBatch(voters interface{}, weight uint8) {
-	//TODO check voter validity first
+	//check voter validity first
 	is := ToInterfaceSlice(voters)
 	for _, voter := range is {
 		pp.weightMap[voter] = weight
@@ -179,4 +179,9 @@ func (dp *deligateVotePlugin) SetAgent(voter interface{}, agent interface{}) boo
 	dp.agentMap[voter] = currAgent
 	return true
 
+}
+
+func (pp *deligatePrivilegedVote) GetResult(number uint8, val interface{}) bool {
+	//TODO
+	return pp.BaseVote.GetResult(number, val)
 }
