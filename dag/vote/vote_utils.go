@@ -24,38 +24,6 @@ import (
 	"reflect"
 )
 
-// func MAddress2MInterface(addresses map[common.Address]bool) map[interface{}]bool {
-// 	res := make(map[interface{}]bool, 0)
-// 	for addr, _ := range addresses {
-// 		res[addr] = true
-// 	}
-// 	return res
-// }
-
-// func MAddress2LInterface(addresses map[common.Address]bool) []interface{} {
-// 	res := make([]interface{}, 0)
-// 	for addr, _ := range addresses {
-// 		res = append(res, addr)
-// 	}
-// 	return res
-// }
-
-// func LAddress2LInterface(addresses []common.Address) []interface{} {
-// 	res := make([]interface{}, 0)
-// 	for _, addr := range addresses {
-// 		res = append(res, addr)
-// 	}
-// 	return res
-// }
-
-// func LInterface2LAddress(li []interface{}) []common.Address {
-// 	res := make([]common.Address, 0)
-// 	for _, iaddr := range li {
-// 		res = append(res, iaddr.(common.Address))
-// 	}
-// 	return res
-// }
-
 //ToSliceInterface : trans map[anything]bool or []anything to []interface{}
 func ToInterfaceSlice(s interface{}) []interface{} {
 	ret := make([]interface{}, 0)
@@ -86,4 +54,13 @@ func resultNumber(inputLen uint8, resLenth uint8) uint8 {
 		resultNumber = inputLen
 	}
 	return resultNumber
+}
+
+//TODO
+func MapExist(m interface{}, k interface{}) bool {
+	if reflect.ValueOf(m).Kind() == reflect.Map {
+		//TODO
+		return true
+	}
+	return false
 }
