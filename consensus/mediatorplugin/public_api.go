@@ -50,12 +50,12 @@ func (a *PublicMediatorAPI) Schedule() []string {
 	return addStrs
 }
 
-type InitDKSRes struct {
+type InitDKSResult struct {
 	PrivateKey string
 	PublicKey  string
 }
 
-func (a *PublicMediatorAPI) GetInitDKS() (res InitDKSRes) {
+func (a *PublicMediatorAPI) GetInitDKS() (res InitDKSResult) {
 	sec, pub := GenInitPair(a.suite)
 
 	res.PrivateKey = core.ScalarToStr(sec)
