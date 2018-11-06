@@ -19,23 +19,6 @@
 
 package vote
 
-import "github.com/palletone/go-palletone/common"
-
 type AddressMultipleVote struct {
-	MultipleVote
-}
-
-
-func (amv *AddressMultipleVote) Result(number uint8) []common.Address {
-	sorted := amv.GetResult(number)
-	return LInterface2LAddress(sorted)
-}
-func (amv *AddressMultipleVote) Register(addresses []common.Address) {
-	listInterface := LAddress2LInterface(addresses)
-	amv.RegisterCandidates(listInterface)
-}
-
-func (amv *AddressMultipleVote) Add(addresses []common.Address, score uint64) {
-	lInterface := LAddress2LInterface(addresses)
-	amv.AddNToBox(score, lInterface)
+	BaseVote
 }
