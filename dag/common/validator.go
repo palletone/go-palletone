@@ -131,14 +131,17 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 	if len(tx.TxMessages) == 0 {
 		return modules.TxValidationCode_INVALID_MSG
 	}
+
 	if tx.TxMessages[0].App != modules.APP_PAYMENT { // 交易费
 		fmt.Printf("-----------ValidateTx , %d\n", tx.TxMessages[0].App)
 		return modules.TxValidationCode_INVALID_MSG
 	}
+
 	// validate transaction hash
 	if !bytes.Equal(tx.TxHash.Bytes(), tx.Hash().Bytes()) {
 		return modules.TxValidationCode_NIL_TXACTION
 	}
+
 	for _, msg := range tx.TxMessages {
 		// check message type and payload
 		if !validateMessageType(msg.App, msg.Payload) {
