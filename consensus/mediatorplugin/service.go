@@ -120,6 +120,12 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 			Service:   NewPublicMediatorAPI(mp),
 			Public:    true,
 		},
+		{
+			Namespace: "mediator",
+			Version:   "1.0",
+			Service:   NewPrivateMediatorAPI(mp),
+			Public:    false,
+		},
 	}
 }
 

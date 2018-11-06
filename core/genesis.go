@@ -61,10 +61,10 @@ func (g *Genesis) GetTokenAmount() uint64 {
 }
 
 type MediatorInfo struct {
-	AddStr      string
-	InitPartPub string
-	Node        string
-	//WebsiteUrl  string
+	AddStr      string `json:"account"`
+	InitPartPub string `json:"initPubKey"`
+	Node        string `json:"node"`
+	//Url  		string `json:"url"`
 }
 
 // author Albert·Gou

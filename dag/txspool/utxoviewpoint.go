@@ -361,8 +361,9 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 					Message: str,
 				}
 			}
+			//todo find all txin amout by input hash
+	        // if total inamout small than out value ,err 
 		}
-
 
 	// Check for duplicate transaction inputs.
 	existingTxOut := make(map[modules.OutPoint]struct{})
@@ -377,6 +378,8 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 	}
 
     }
+    //check whether input valid need find former script and than 
+    // call 
 
 	return nil
 }

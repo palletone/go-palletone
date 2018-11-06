@@ -131,14 +131,17 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 	if len(tx.TxMessages) == 0 {
 		return modules.TxValidationCode_INVALID_MSG
 	}
+
 	if tx.TxMessages[0].App != modules.APP_PAYMENT { // 交易费
 		fmt.Printf("-----------ValidateTx , %d\n", tx.TxMessages[0].App)
 		return modules.TxValidationCode_INVALID_MSG
 	}
+
 	// validate transaction hash
 	if !bytes.Equal(tx.TxHash.Bytes(), tx.Hash().Bytes()) {
 		return modules.TxValidationCode_NIL_TXACTION
 	}
+
 	for _, msg := range tx.TxMessages {
 		// check message type and payload
 		if !validateMessageType(msg.App, msg.Payload) {
@@ -331,7 +334,7 @@ func validateTxSignature(tx *modules.Transaction) bool {
 对unit中某个交易的读写集进行验证
 To validate read set and write set of one transaction in unit'
 */
-func (validate *Validate) validateContractState(contractID []byte, readSet *[]modules.ContractReadSet, writeSet *[]modules.PayloadMapStruct, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+func (validate *Validate) validateContractState(contractID []byte, readSet *[]modules.ContractReadSet, writeSet *[]modules.ContractWriteSet, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
 	// check read set, if read field in worldTmpState then the transaction is invalid
 	contractState, cOk := (*worldTmpState)[hexutil.Encode(contractID[:])]
 	if cOk && readSet != nil {

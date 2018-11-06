@@ -110,7 +110,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 		Args:         args,
 		Excutiontime: timeout,
 		ReadSet:      make([]unit.ContractReadSet, 0),
-		WriteSet:     make([]unit.PayloadMapStruct, 0),
+		WriteSet:     make([]unit.ContractWriteSet, 0),
 	}
 
 	for idx, val := range rd {
@@ -122,7 +122,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[0], val.GetKey(), *val.GetVersion())
 	}
 	for idx, val := range wt {
-		rd := unit.PayloadMapStruct{
+		rd := unit.ContractWriteSet{
 			Key:      val.GetKey(),
 			Value:    val.GetValue(),
 			IsDelete: val.GetIsDelete(),
@@ -152,7 +152,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid stri
 		Args:         args,
 		Excutiontime: timeout,
 		ReadSet:      make([]unit.ContractReadSet, 0),
-		WriteSet:     make([]unit.PayloadMapStruct, 0),
+		WriteSet:     make([]unit.ContractWriteSet, 0),
 	}
 
 	for idx, val := range rd {
@@ -164,7 +164,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid stri
 		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[0], val.GetKey(), *val.GetVersion())
 	}
 	for idx, val := range wt {
-		rd := unit.PayloadMapStruct{
+		rd := unit.ContractWriteSet{
 			Key:      val.GetKey(),
 			Value:    val.GetValue(),
 			IsDelete: val.GetIsDelete(),

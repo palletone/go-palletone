@@ -1759,6 +1759,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 		return "", err
 	}
 	//transaction inputs
+	
 	var rawinputs []ptnjson.RawTxInput
 	for _, inputOne := range signTransactionParams.Inputs {
 		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex, inputOne.ScriptPubKey, inputOne.RedeemScript}

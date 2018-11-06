@@ -112,7 +112,7 @@ func TestSaveUnit(t *testing.T) {
 		Height:  rep.GenesisHeight(),
 		TxIndex: 0,
 	}})
-	writeSet := []modules.PayloadMapStruct{
+	writeSet := []modules.ContractWriteSet{
 		{
 			Key:   "name",
 			Value: modules.ToPayloadMapValueBytes("Joe"),
@@ -129,7 +129,7 @@ func TestSaveUnit(t *testing.T) {
 		ContractId: []byte("contract0000"),
 		Args:       [][]byte{[]byte("initial")},
 		ReadSet:    readSet,
-		WriteSet: []modules.PayloadMapStruct{
+		WriteSet: []modules.ContractWriteSet{
 			{
 				Key:   "name",
 				Value: modules.ToPayloadMapValueBytes("Alice"),
@@ -387,7 +387,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 		Height:  rep.GenesisHeight(),
 		TxIndex: 0,
 	}})
-	writeSet := []modules.PayloadMapStruct{
+	writeSet := []modules.ContractWriteSet{
 		{
 			Key:   "name",
 			Value: []byte("Joe"),

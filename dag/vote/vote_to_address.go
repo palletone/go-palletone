@@ -20,5 +20,5 @@
 package vote
 
 type AddressMultipleVote struct {
-	MultipleVote
+	BaseVote
 }

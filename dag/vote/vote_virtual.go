@@ -34,7 +34,7 @@ type vote interface {
 	AddToBox(score uint64, tos interface{})
 	GetScore(candidate interface{}) (uint64, error)
 	GetVoteDetail() map[interface{}]uint64
-	GetResult(number uint8) []interface{}
+	GetResult(number uint8, val interface{}) bool
 }
 
 //BaseVote : virtual struct
@@ -118,14 +118,70 @@ func (bv *BaseVote) AddToBox(score uint64, candidates interface{}) {
 
 }
 
-//SingleVote : one men , one ballot
-type SingleVote struct {
-	BaseVote
-	voted map[interface{}]bool
+type hierarchy interface {
+	GetWeight(voter interface{}) uint8
+	SetWeight(voter interface{}, weight uint8)
+	SetWeightBatch(voters interface{}, weight uint8)
 }
 
-//MultipleVote : one men, N ballots.
-type MultipleVote struct {
+type deligate interface {
+	SetAgent(voter interface{}, agent interface{}) bool
+}
+
+type privilegedVotePlugin struct {
+	weightMap map[interface{}]uint8
+}
+
+type deligateVotePlugin struct {
+	agentMap map[interface{}]interface{}
+}
+
+type deligatePrivilegedVote struct {
 	BaseVote
-	voteLimit uint8
+	privilegedVotePlugin
+	deligateVotePlugin
+}
+
+func (pp *privilegedVotePlugin) GetWeight(voter interface{}) uint8 {
+	if w, ok := pp.weightMap[voter]; ok {
+		return w
+	}
+	fmt.Println("voter's weight is not initialized")
+	return 0
+}
+
+func (pp *privilegedVotePlugin) SetWeight(voter interface{}, weight uint8) {
+	//check voter validity first
+	pp.weightMap[voter] = weight
+}
+
+func (pp *privilegedVotePlugin) SetWeightBatch(voters interface{}, weight uint8) {
+	//check voter validity first
+	is := ToInterfaceSlice(voters)
+	for _, voter := range is {
+		pp.weightMap[voter] = weight
+	}
+}
+
+func (dp *deligateVotePlugin) SetAgent(voter interface{}, agent interface{}) bool {
+	//check loop reference
+	//check agent and voter is valid
+	nextAgent := dp.agentMap[agent]
+	currAgent := agent
+	var nilInterface interface{}
+	for nextAgent != nilInterface {
+		if nextAgent == voter {
+			return false
+		}
+		currAgent = nextAgent
+		nextAgent = dp.agentMap[nextAgent]
+	}
+	dp.agentMap[voter] = currAgent
+	return true
+
+}
+
+func (pp *deligatePrivilegedVote) GetResult(number uint8, val interface{}) bool {
+	//TODO
+	return pp.BaseVote.GetResult(number, val)
 }
