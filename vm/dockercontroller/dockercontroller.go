@@ -21,25 +21,25 @@ package dockercontroller
 
 import (
 	"archive/tar"
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"encoding/hex"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"time"
-	"bufio"
-	"regexp"
 
-	"github.com/op/go-logging"
-	"github.com/spf13/viper"
-	"golang.org/x/net/context"
 	"github.com/fsouza/go-dockerclient"
+	"github.com/op/go-logging"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
-	"github.com/palletone/go-palletone/vm/ccintf"
 	container "github.com/palletone/go-palletone/vm/api"
+	"github.com/palletone/go-palletone/vm/ccintf"
 	com "github.com/palletone/go-palletone/vm/common"
+	"github.com/spf13/viper"
+	"golang.org/x/net/context"
 )
 
 var (
@@ -49,10 +49,11 @@ var (
 	imageRegExp  = regexp.MustCompile("^[a-z0-9]+(([._-][a-z0-9]+)+)?$")
 )
 
-func getClientMe()(dockerClient, error) {
+func getClientMe() (dockerClient, error) {
 	client, err := docker.NewClient("unix:///var/run/docker.sock")
 	return client, err
 }
+
 // getClient returns an instance that implements dockerClient interface
 type getClient func() (dockerClient, error)
 
@@ -190,13 +191,13 @@ func (vm *DockerVM) deployImage(client dockerClient, ccid ccintf.CCID,
 	}
 	//glh
 	/*
-	opts := docker.BuildImageOptions{
-		Name:         "ubuntu",
-		Pull:         false,
-		InputStream:  reader,
-		OutputStream: outputbuf,
-	}
-*/
+		opts := docker.BuildImageOptions{
+			Name:         "ubuntu",
+			Pull:         false,
+			InputStream:  reader,
+			OutputStream: outputbuf,
+		}
+	*/
 	if err := client.BuildImage(opts); err != nil {
 		dockerLogger.Errorf("Error building images: %s", err)
 		dockerLogger.Errorf("Image Output:\n********************\n%s\n********************", outputbuf.String())
@@ -253,7 +254,11 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	//stop,force remove if necessary
 	dockerLogger.Debugf("Cleanup container %s", containerID)
 	vm.stopInternal(ctxt, client, containerID, 0, false, false)
-
+	reader, err1 := builder()
+	if err1 != nil {
+		dockerLogger.Errorf("Error creating image builder for image <%s> (container id <%s>), "+
+			"because of <%s>", imageID, containerID, err1)
+	}
 	dockerLogger.Debugf("Start container %s", containerID)
 	err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout)
 	if err != nil {
@@ -262,17 +267,12 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 			if builder != nil {
 				dockerLogger.Debugf("start-could not find image <%s> (container id <%s>), because of <%s>..."+
 					"attempt to recreate image", imageID, containerID, err)
-
-				reader, err1 := builder()
-				if err1 != nil {
-					dockerLogger.Errorf("Error creating image builder for image <%s> (container id <%s>), "+
-						"because of <%s>", imageID, containerID, err1)
-				}
-
-				if err1 = vm.deployImage(client, ccid, args, env, reader); err1 != nil {
-					return err1
-				}
-
+				//if err1 = vm.deployImage(client, ccid, args, env, reader); err1 != nil {
+				//	return err1
+				//}
+				imageID = "2bdd5196cd89"
+				//args = []string{"/bin/sh","-c","cd / && tar binpackage.tar && mv chaincode /usr/local/bin && cd /usr/local/bin && ./chaincode"}
+				args = []string{"/bin/sh", "-c", "cd / && ls && tar -xvf binpackage.tar -C /usr/local/bin && cd /usr/local/bin && ./chaincode"}
 				dockerLogger.Debug("start-recreated image successfully")
 				if err1 = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout); err1 != nil {
 					dockerLogger.Errorf("start-could not recreate container post recreate image: %s", err1)
@@ -395,6 +395,15 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 		}
 	}
 
+	err = client.UploadToContainer(containerID, docker.UploadToContainerOptions{
+		InputStream:          reader,
+		Path:                 "/",
+		NoOverwriteDirNonDir: false,
+	})
+
+	if err != nil {
+		return fmt.Errorf("Error uploading files to the container instance %s: %s", containerID, err)
+	}
 	// start container with HostConfig was deprecated since v1.10 and removed in v1.2
 	err = client.StartContainer(containerID, nil)
 	if err != nil {
