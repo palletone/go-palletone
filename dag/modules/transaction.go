@@ -348,7 +348,7 @@ func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPo
 //	Payload interface{} `json:"payload"` // the true transaction data
 //}
 /************************** Payload Details ******************************************/
-//type PayloadMapStruct struct {
+//type ContractWriteSet struct {
 //
 //	Key   string
 //	Value interface{}

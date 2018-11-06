@@ -46,7 +46,7 @@ func TestSaveAndGetConfig(t *testing.T) {
 	//	return
 	//}
 	db := MockStateMemDb()
-	//confs := []modules.PayloadMapStruct{}
+	//confs := []modules.ContractWriteSet{}
 	//aid := modules.IDType16{}
 	//aid.SetBytes([]byte("1111111111111111222222222222222222"))
 	//st := modules.Asset{
@@ -54,8 +54,8 @@ func TestSaveAndGetConfig(t *testing.T) {
 	//	UniqueId: aid,
 	//	ChainId:  1,
 	//}
-	//confs = append(confs, modules.PayloadMapStruct{Key: "TestStruct", Value: modules.ToPayloadMapValueBytes(st)})
-	//confs = append(confs, modules.PayloadMapStruct{Key: "TestInt", Value: modules.ToPayloadMapValueBytes(uint32(10))})
+	//confs = append(confs, modules.ContractWriteSet{Key: "TestStruct", Value: modules.ToPayloadMapValueBytes(st)})
+	//confs = append(confs, modules.ContractWriteSet{Key: "TestInt", Value: modules.ToPayloadMapValueBytes(uint32(10))})
 	//stateVersion := modules.StateVersion{
 	//	Height: modules.ChainIndex{
 	//		AssetID: aid,

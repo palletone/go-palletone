@@ -334,7 +334,7 @@ func validateTxSignature(tx *modules.Transaction) bool {
 对unit中某个交易的读写集进行验证
 To validate read set and write set of one transaction in unit'
 */
-func (validate *Validate) validateContractState(contractID []byte, readSet *[]modules.ContractReadSet, writeSet *[]modules.PayloadMapStruct, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+func (validate *Validate) validateContractState(contractID []byte, readSet *[]modules.ContractReadSet, writeSet *[]modules.ContractWriteSet, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
 	// check read set, if read field in worldTmpState then the transaction is invalid
 	contractState, cOk := (*worldTmpState)[hexutil.Encode(contractID[:])]
 	if cOk && readSet != nil {
