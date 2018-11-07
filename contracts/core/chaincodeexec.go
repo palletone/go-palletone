@@ -88,7 +88,6 @@ type ChaincodeDefinition interface {
 // GetChaincodeDefinition returns resourcesconfig.ChaincodeDefinition for the chaincode with the supplied name
 func GetChaincodeDefinition(ctxt context.Context, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, chaincodeID string) (ChaincodeDefinition, error) {
 	version := util.GetSysCCVersion()
-	//TODO xiaozhi
 	//cccid := ccprovider.NewCCContext(chainID, "lscc", version, txid, true, signedProp, prop)
 	cccid := ccprovider.NewCCContext(nil, chainID, "lscc", version, txid, true, signedProp, prop)
 	res, _, err := ExecuteChaincode(ctxt, cccid, [][]byte{[]byte("getccdata"), []byte(chainID), []byte(chaincodeID)}, 0)

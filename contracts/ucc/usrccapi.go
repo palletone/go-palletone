@@ -79,7 +79,6 @@ func DeployUserCC(spec *pb.ChaincodeSpec, chainID string, usrcc *UserChaincode, 
 		logger.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
 		return err
 	}
-	//TODO xiaozhi
 	// 部署是应该还没有合约ID，返回的才是合约ID
 	cccid := ccprov.GetCCContext(nil, chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, usrcc.Version, txid, false, nil, nil)
 	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, timeout)

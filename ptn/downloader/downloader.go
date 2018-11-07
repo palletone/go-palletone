@@ -1615,7 +1615,6 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	}
 
 	go p.peer.RequestHeadersByNumber(index, count, 15, false)
-	//TODO xiaozhi
 	// Wait for the remote response to the head fetch
 	number, hash := uint64(0), common.Hash{}
 

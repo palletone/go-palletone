@@ -23,6 +23,7 @@ import (
 	log2 "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	dag2 "github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"log"
@@ -30,7 +31,6 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
-	"github.com/palletone/go-palletone/dag/constants"
 )
 
 var (
@@ -659,7 +659,6 @@ func testHashMemoryExhaustionAttack(t *testing.T, protocol int) {
 		t.Fatalf("queued announce count mismatch: have %d, want %d", count, hashLimit+maxQueueDist)
 	}
 	// Wait for fetches to complete
-	//TODO xiaozhi
 	verifyImportCount(t, imported, maxQueueDist)
 
 	// Feed the remaining valid hashes to ensure DOS protection state remains clean
@@ -670,7 +669,6 @@ func testHashMemoryExhaustionAttack(t *testing.T, protocol int) {
 			Index:   uint64(len(hashes) - i - 1),
 		}
 		tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), validHeaderFetcher, validBodyFetcher)
-		//TODO xiaozhi
 		verifyImportEvent(t, imported, true)
 	}
 	verifyImportDone(t, imported)

@@ -492,7 +492,6 @@ func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	txs, err := dagdb.GetUnitTransactions(uHash)
 	if err != nil {
 		dagdb.logger.Error("GetUnit when GetUnitTransactions failed , error:", err)
-		//TODO xiaozhi
 		return nil, err
 	}
 	// generate unit
@@ -662,7 +661,6 @@ func (dagdb *DagDb) gettrasaction(hash common.Hash) (*modules.Transaction, error
 	if hash == (common.Hash{}) {
 		return nil, errors.New("hash is not exist.")
 	}
-	//TODO xiaozhi
 	data, err := dagdb.db.Get(append(constants.TRANSACTION_PREFIX, []byte(hash.String())...))
 	if err != nil {
 		return nil, err

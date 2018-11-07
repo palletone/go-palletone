@@ -279,7 +279,6 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 			//		dockerLogger.Errorf("Error creating image builder for image <%s> (container id <%s>), "+
 			//			"because of <%s>", imageID, containerID, err1)
 			//	}
-			//	fmt.Println("zhichunqi...3")
 			//	////创建镜像
 			//	if err1 = vm.deployImage(client, ccid, args, env, reader); err1 != nil {
 			//		return err1
@@ -293,7 +292,6 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 			//		dockerLogger.Errorf("start-could not recreate container post recreate image: %s", err1)
 			//		return err1
 			//	}
-			//	fmt.Println("zhichunqi...4")
 			//} else {
 			//	dockerLogger.Errorf("start-could not find image <%s>, because of %s", imageID, err)
 			//	return err

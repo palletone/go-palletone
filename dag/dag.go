@@ -94,7 +94,6 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	txs, err := d.dagdb.GetUnitTransactions(uHash)
 	if err != nil {
 		log.Error("Current unit when get transactions", "error", err.Error())
-		//TODO xiaozhi
 		return nil
 	}
 	// generate unit
@@ -108,7 +107,6 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 }
 
 func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
-	//TODO xiaozhi
 	return d.CurrentUnit()
 }
 

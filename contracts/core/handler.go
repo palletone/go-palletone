@@ -112,7 +112,6 @@ type DepositContract struct {
 	FoundationAddress      string
 }
 
-//TODO xiaozhi
 func (handler *Handler) enterGetDepositConfig(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
 	if !ok {
@@ -830,7 +829,6 @@ func (handler *Handler) isValidTxSim(channelID string, txid string, fmtStr strin
 			return nil, &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(errStr), Txid: txid, ChannelId: channelID}
 		}
 	*/
-	//xiaozhi
 	if txContext == nil || txContext.txsimulator == nil {
 		// Send error msg back to chaincode. No ledger context
 		errStr := fmt.Sprintf(fmtStr, args...)
@@ -861,7 +859,6 @@ func (handler *Handler) handleGetState(msg *pb.ChaincodeMessage) {
 
 		defer func() {
 			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
-			//xiaozhi
 			//if serialSendMsg != nil {
 			//	chaincodeLogger.Debugf("[%s]handleGetState serial send %s",
 			//		shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
@@ -874,7 +871,6 @@ func (handler *Handler) handleGetState(msg *pb.ChaincodeMessage) {
 
 		if txContext == nil {
 			return
-			//xiaozhi
 			//serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			//return
 		}
@@ -896,12 +892,10 @@ func (handler *Handler) handleGetState(msg *pb.ChaincodeMessage) {
 			//glh
 			//res, err = txContext.txsimulator.GetPrivateData(chaincodeID, getState.Collection, getState.Key)
 		} else {
-			//xiaozhi
 			res, err = txContext.txsimulator.GetState(msg.ContractId, chaincodeID, getState.Key)
 			//glh
 			//res, err = txContext.txsimulator.GetState(chaincodeID, getState.Key)
 		}
-		//xiaozhi
 		//if txContext.txsimulator != nil {
 		//	res, err = txContext.txsimulator.GetState(msg.ContractId, chaincodeID, getState.Key)
 		//}
@@ -1554,7 +1548,6 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 					err = txContext.txsimulator.SetState(chaincodeID, putState.Key, putState.Value)
 				}
 			*/
-			//xiaozhi
 			if isCollectionSet(putState.Collection) {
 				//err = txContext.txsimulator.SetPrivateData(chaincodeID, putState.Collection, putState.Key, putState.Value)
 			} else {
@@ -1577,7 +1570,6 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 					err = txContext.txsimulator.DeleteState(chaincodeID, delState.Key)
 				}
 			*/
-			//xiaozhi
 			if isCollectionSet(delState.Collection) {
 				//err = txContext.txsimulator.DeletePrivateData(chaincodeID, delState.Collection, delState.Key)
 			} else {

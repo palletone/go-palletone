@@ -704,7 +704,6 @@ func (handler *Handler) handleQueryStateClose(id, channelId, txid string) (*pb.Q
 	return nil, errors.Errorf("incorrect chaincode message %s received. Expecting %s or %s", responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
 
-//TODO xiaozhi
 func (handler *Handler) handleGetDepositConfig(channelId, txid string) ([]byte, error) {
 	//定义一个pb.ChaincodeMessage_DEPOSIT_CONFIG_REQUEST
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_DEPOSIT_CONFIG_REQUEST, Payload: []byte(""), ChannelId: channelId, Txid: txid}

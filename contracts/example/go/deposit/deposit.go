@@ -143,7 +143,6 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 		if err != nil {
 			return shim.Error("marshal valueState error " + err.Error())
 		}
-		//fmt.Println("xiaozhi=====", vState)
 		stub.PutState(args[0], vStateBytes)
 		return shim.Success([]byte("ok"))
 	}
