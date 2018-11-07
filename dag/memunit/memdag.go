@@ -161,13 +161,13 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 		// }
 		// add new fork into index
 		if common.CheckExists(irreUnit.UnitHash, unit.UnitHeader.ParentsHash) < 0 {
-			log.Info(fmt.Sprintf("xxxxxxxxxxxxxxxx   The unit(%s) is not continious.%s", unit.Hash().String(), unit.UnitHeader.ChainIndex().Index))
+			log.Info(fmt.Sprintf("xxxxxxxxxxxxxxxx   The unit(%s) is not continious. index:(%d) ", unit.Hash().String(), unit.UnitHeader.ChainIndex().Index))
 		}
 		forkData := make(ForkData, 0)
 		forkData.Add(unit.Hash())
 		// index = int64(len(forkIndex))
 		forkIndex[unit.UnitHeader.Index()] = forkData
-		log.Info(fmt.Sprintf(".............. The unit(%s) is not continious.%s", unit.Hash().String(), forkData))
+		log.Info(fmt.Sprintf(".............. The unit(%s) is not continious.%v", unit.Hash().String(), forkData))
 	default:
 		log.Info("forkindex add unit is success.", "index", index)
 	}
