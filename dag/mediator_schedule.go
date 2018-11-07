@@ -25,6 +25,7 @@ import (
 
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -175,7 +176,7 @@ func (dag *Dag) GetSlotTime(slotNum uint32) time.Time {
 	return modules.GetSlotTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), slotNum)
 }
 
-func (dag *Dag) GetScheduledMediator(slotNum uint32) *core.Mediator {
+func (dag *Dag) GetScheduledMediator(slotNum uint32) common.Address {
 	return dag.GetMediatorSchl().GetScheduledMediator(dag.GetDynGlobalProp(), slotNum)
 }
 
@@ -226,6 +227,33 @@ func (dag *Dag) GetMediators() map[common.Address]bool {
 	return dag.statedb.GetMediators()
 }
 
-func (dag *Dag) MediatorSchedule() []core.Mediator {
+func (dag *Dag) MediatorSchedule() []common.Address {
 	return dag.GetMediatorSchl().CurrentShuffledMediators
+}
+
+// todo 待被调用
+func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
+	if dag.HeadUnitHash() != nextUnit.ParentHash()[0] {
+		log.Error("invalidated unit's parent hash!")
+		return false
+	}
+
+	if dag.HeadUnitTime() >= nextUnit.Timestamp() {
+		log.Error("invalidated unit's timestamp!")
+		return false
+	}
+
+	slotNum := dag.GetSlotAtTime(time.Unix(nextUnit.Timestamp(), 0))
+	if slotNum <= 0 {
+		log.Error("invalidated unit's slot!")
+		return false
+	}
+
+	scheduledMediator := dag.GetScheduledMediator(slotNum)
+	if nextUnit.UnitAuthor().Equal(scheduledMediator) {
+		log.Error("Mediator produced unit at wrong time!")
+		return false
+	}
+
+	return true
 }

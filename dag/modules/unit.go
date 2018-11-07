@@ -306,8 +306,13 @@ func (u *Unit) Size() common.StorageSize {
 func (u *Unit) Number() ChainIndex {
 	return u.UnitHeader.Number
 }
+
 func (u *Unit) NumberU64() uint64 {
 	return u.UnitHeader.Number.Index
+}
+
+func (u *Unit) Timestamp() int64 {
+	return u.UnitHeader.Creationdate
 }
 
 // return unit's parents UnitHash

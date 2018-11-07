@@ -20,5 +20,5 @@
 package vote
 
 type TxHashMultipleVote struct {
-	MultipleVote
+	BaseVote
 }

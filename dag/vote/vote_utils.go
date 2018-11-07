@@ -19,37 +19,48 @@
 
 package vote
 
-import "github.com/palletone/go-palletone/common"
+import (
+	"fmt"
+	"reflect"
+)
 
-func MAddress2MInterface(addresses map[common.Address]bool) map[interface{}]bool {
-	res := make(map[interface{}]bool, 0)
-	for addr, _ := range addresses {
-		res[addr] = true
+//ToSliceInterface : trans map[anything]bool or []anything to []interface{}
+func ToInterfaceSlice(s interface{}) []interface{} {
+	ret := make([]interface{}, 0)
+
+	v := reflect.ValueOf(s)
+	switch v.Kind() {
+	case reflect.Slice:
+		l := v.Len()
+		for i := 0; i < l; i++ {
+			// ret[i] = v.Index(i).Interface()
+			ret = append(ret, v.Index(i).Interface())
+		}
+	case reflect.Map:
+		for _, key := range v.MapKeys() {
+			ret = append(ret, key.Interface())
+		}
+	default:
+		fmt.Println("invalid parameter type, must be slice or map")
 	}
-	return res
+	return ret
 }
 
-
-func MAddress2LInterface(addresses map[common.Address]bool) []interface{} {
-	res := make([]interface{}, 0)
-	for addr, _ := range addresses {
-		res = append(res, addr)
+func resultNumber(inputLen uint8, resLenth uint8) uint8 {
+	var resultNumber uint8
+	if inputLen == 0 || inputLen > resLenth {
+		resultNumber = resLenth
+	} else {
+		resultNumber = inputLen
 	}
-	return res
+	return resultNumber
 }
 
-func LAddress2LInterface(addresses []common.Address) []interface{} {
-	res := make([]interface{}, 0)
-	for _, addr := range addresses {
-		res = append(res, addr)
+//TODO
+func MapExist(m interface{}, k interface{}) bool {
+	if reflect.ValueOf(m).Kind() == reflect.Map {
+		//TODO
+		return true
 	}
-	return res
-}
-
-func LInterface2LAddress(li []interface{}) []common.Address {
-	res := make([]common.Address, 0)
-	for _, iaddr := range li {
-		res = append(res, iaddr.(common.Address))
-	}
-	return res
+	return false
 }

@@ -33,9 +33,11 @@ const (
 	APP_CONTRACT_TPL
 	APP_CONTRACT_DEPLOY
 	APP_CONTRACT_INVOKE
+	APP_CONTRACT_INVOKE_REQUEST
 	APP_CONFIG
 	APP_TEXT
 	APP_VOTE
+	APP_SIGNATURE
 	OP_MEDIATOR_CREATE
 )
 
@@ -64,10 +66,10 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	case APP_CONFIG:
 		payload, _ := cpyMsg.Payload.(*ConfigPayload)
 		newPayload := ConfigPayload{
-			ConfigSet: []PayloadMapStruct{},
+			ConfigSet: []ContractWriteSet{},
 		}
 		for _, p := range payload.ConfigSet {
-			newPayload.ConfigSet = append(newPayload.ConfigSet, PayloadMapStruct{Key: p.Key, Value: p.Value})
+			newPayload.ConfigSet = append(newPayload.ConfigSet, ContractWriteSet{Key: p.Key, Value: p.Value})
 		}
 		msg.Payload = newPayload
 	case APP_CONTRACT_DEPLOY:
@@ -82,12 +84,20 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 		for _, rs := range payload.ReadSet {
 			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
 		}
-		writeSet := []PayloadMapStruct{}
+		writeSet := []ContractWriteSet{}
 		for _, ws := range payload.WriteSet {
-			writeSet = append(writeSet, PayloadMapStruct{Key: ws.Key, Value: ws.Value})
+			writeSet = append(writeSet, ContractWriteSet{Key: ws.Key, Value: ws.Value})
 		}
 		newPayload.ReadSet = readSet
 		newPayload.WriteSet = writeSet
+		msg.Payload = newPayload
+	case APP_CONTRACT_INVOKE_REQUEST:
+		payload, _ := cpyMsg.Payload.(*ContractInvokeRequestPayload)
+		newPayload := ContractInvokeRequestPayload{
+			ContractId:   payload.ContractId,
+			Args:         payload.Args,
+			FunctionName: payload.FunctionName,
+		}
 		msg.Payload = newPayload
 	case APP_CONTRACT_INVOKE:
 		payload, _ := cpyMsg.Payload.(*ContractInvokePayload)
@@ -100,18 +110,24 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 		for _, rs := range payload.ReadSet {
 			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
 		}
-		writeSet := []PayloadMapStruct{}
+		writeSet := []ContractWriteSet{}
 		for _, ws := range payload.WriteSet {
-			writeSet = append(writeSet, PayloadMapStruct{Key: ws.Key, Value: ws.Value})
+			writeSet = append(writeSet, ContractWriteSet{Key: ws.Key, Value: ws.Value})
 		}
 		newPayload.ReadSet = readSet
 		newPayload.WriteSet = writeSet
 		msg.Payload = newPayload
+	case APP_SIGNATURE:
+		payload, _ := cpyMsg.Payload.(*SignaturePayload)
+		newPayload := SignaturePayload{}
+		newPayload.Signatures = payload.Signatures
+		msg.Payload = newPayload
 	}
+
 	return msg
 }
 
-type PayloadMapStruct struct {
+type ContractWriteSet struct {
 	IsDelete bool
 	Key      string
 	Value    []byte
@@ -280,7 +296,7 @@ type ContractDeployPayload struct {
 	Excutiontime time.Duration      `json:"excution_time" rlp:"-"` // contract execution time, millisecond
 	Jury         []common.Address   `json:"jury"`                  // contract jurors list
 	ReadSet      []ContractReadSet  `json:"read_set"`              // the set data of read, and value could be any type
-	WriteSet     []PayloadMapStruct `json:"write_set"`             // the set data of write, and value could be any type
+	WriteSet     []ContractWriteSet `json:"write_set"`             // the set data of write, and value could be any type
 }
 
 // Contract invoke message
@@ -292,7 +308,7 @@ type ContractInvokePayload struct {
 	Args         [][]byte           `json:"args"`          // contract arguments list
 	Excutiontime time.Duration      `json:"excution_time"` // contract execution time, millisecond
 	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
-	WriteSet     []PayloadMapStruct `json:"write_set"`     // the set data of write, and value could be any type
+	WriteSet     []ContractWriteSet `json:"write_set"`     // the set data of write, and value could be any type
 	Payload      []byte             `json:"payload"`       // the contract execution result
 }
 
@@ -306,7 +322,14 @@ type ContractInvokeRequestPayload struct {
 // Token exchange message and verify message
 // App: config	// update global config
 type ConfigPayload struct {
-	ConfigSet []PayloadMapStruct `json:"config_set"` // the array of global config
+	ConfigSet []ContractWriteSet `json:"config_set"` // the array of global config
+}
+type SignaturePayload struct {
+	Signatures []SignatureSet `json:"signature_set"` // the array of signature
+}
+type SignatureSet struct {
+	PubKey    []byte //compress public key
+	Signature []byte //
 }
 
 // Token exchange message and verify message
@@ -335,7 +358,7 @@ func NewContractTplPayload(templateId []byte, name string, path string, version 
 }
 
 func NewContractDeployPayload(templateid []byte, contractid []byte, name string, args [][]byte, excutiontime time.Duration,
-	jury []common.Address, readset []ContractReadSet, writeset []PayloadMapStruct) *ContractDeployPayload {
+	jury []common.Address, readset []ContractReadSet, writeset []ContractWriteSet) *ContractDeployPayload {
 	return &ContractDeployPayload{
 		TemplateId:   templateid,
 		ContractId:   contractid,
@@ -356,7 +379,7 @@ func NewVotePayload(address [][]byte, mode uint8, voteType uint8) *VotePayload {
 }
 
 func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime time.Duration,
-	readset []ContractReadSet, writeset []PayloadMapStruct, payload []byte) *ContractInvokePayload {
+	readset []ContractReadSet, writeset []ContractWriteSet, payload []byte) *ContractInvokePayload {
 	return &ContractInvokePayload{
 		ContractId:   contractid,
 		Args:         args,

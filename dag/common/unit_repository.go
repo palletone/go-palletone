@@ -348,7 +348,7 @@ To generate config payload for genesis unit
 */
 func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (modules.ConfigPayload, error) {
 	var confPay modules.ConfigPayload
-	confPay.ConfigSet = []modules.PayloadMapStruct{}
+	confPay.ConfigSet = []modules.ContractWriteSet{}
 
 	tt := reflect.TypeOf(*genesisConf)
 	vv := reflect.ValueOf(*genesisConf)
@@ -370,7 +370,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 				}
 
 				confPay.ConfigSet = append(confPay.ConfigSet,
-					modules.PayloadMapStruct{Key: sk, Value: modules.ToPayloadMapValueBytes(v.Field(k).Interface())})
+					modules.ContractWriteSet{Key: sk, Value: modules.ToPayloadMapValueBytes(v.Field(k).Interface())})
 			}
 		} else {
 			sk := tt.Field(i).Name
@@ -378,12 +378,12 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 				sk = strings.Replace(sk, "Initial", "", -1)
 			}
 			confPay.ConfigSet = append(confPay.ConfigSet,
-				modules.PayloadMapStruct{Key: sk, Value: modules.ToPayloadMapValueBytes(vv.Field(i).Interface())})
+				modules.ContractWriteSet{Key: sk, Value: modules.ToPayloadMapValueBytes(vv.Field(i).Interface())})
 		}
 	}
 
 	confPay.ConfigSet = append(confPay.ConfigSet,
-		modules.PayloadMapStruct{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
+		modules.ContractWriteSet{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
 
 	return confPay, nil
 }

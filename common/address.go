@@ -95,6 +95,7 @@ func (a Address) Validate() (AddressType, error) {
 	var ty AddressType = AddressType(a[20])
 	return ty, nil
 }
+
 func IsValidAddress(s string) bool {
 	_, err := StringToAddress(s)
 	// if err!=nil{
@@ -189,6 +190,17 @@ func (a *Address) UnmarshalJSON(input []byte) error {
 	return hexutil.UnmarshalFixedJSON(addressT, input, a[:])
 }
 
+//YiRan
+//Returns true when the contents of the two Address are exactly the same
+func (a *Address) Equal(b Address) bool {
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // UnprefixedHash allows marshaling an Address without 0x prefix.
 // type UnprefixedAddress Address
 
@@ -267,15 +279,4 @@ type SignatureError struct {
 	InputIndex uint32
 	MsgIndex   uint32
 	Error      error
-}
-
-//YiRan
-//Returns true when the contents of the two Address are exactly the same
-func AddressEqual(a, b Address) bool {
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-	return true
 }

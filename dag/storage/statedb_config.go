@@ -39,7 +39,7 @@ func (statedb *StateDb) GetConfig(name []byte) ([]byte, *modules.StateVersion, e
 /**
 存储配置信息
 */
-func (statedb *StateDb) SaveConfig(confs []modules.PayloadMapStruct, stateVersion *modules.StateVersion) error {
+func (statedb *StateDb) SaveConfig(confs []modules.ContractWriteSet, stateVersion *modules.StateVersion) error {
 	for _, conf := range confs {
 
 		statedb.logger.Debugf("Try to save config key:{%s},Value:{%#x}", conf.Key, conf.Value)

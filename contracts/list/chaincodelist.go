@@ -1,12 +1,12 @@
 package list
 
 import (
-	"sync"
-	"github.com/pkg/errors"
-	"fmt"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"bytes"
 	"encoding/hex"
+	"fmt"
+	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	"github.com/pkg/errors"
+	"sync"
 )
 
 var logger = flogging.MustGetLogger("cclist")
@@ -43,7 +43,7 @@ func addChainCodeInfo(c *chain, cc *CCInfo) error {
 
 	for k, v := range c.CClist {
 		if k == cc.Name && v.Version == cc.Version {
-			logger.Errorf("chaincode [%s] , version[%d] already exit, %v", cc.Name, cc.Version, v)
+			logger.Errorf("chaincode [%s] , version[%s] already exit, %v", cc.Name, cc.Version, v)
 			return errors.New("already exit chaincode")
 		}
 	}
@@ -105,7 +105,7 @@ func GetChaincode(cid string, deployId []byte) (*CCInfo, error) {
 	return nil, errors.New(errmsg)
 }
 
-func DelChaincode(cid string, ccName string, version string) (error) {
+func DelChaincode(cid string, ccName string, version string) error {
 	chains.mu.Lock()
 	defer chains.mu.Unlock()
 

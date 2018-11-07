@@ -1474,14 +1474,14 @@ const (
 func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	c := cmd.(*ptnjson.CreateRawTransactionCmd)
 	// Validate the locktime, if given.
-	aid := modules.IDType16{}
+	/*aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))
 	ast := modules.Asset{
 		AssetId:  aid,
 		UniqueId: aid,
 		ChainId:  1,
 	}
-	ast = ast
+	ast = ast*/
 	if c.LockTime != nil &&
 		(*c.LockTime < 0 || *c.LockTime > int64(MaxTxInSequenceNum)) {
 		return "", &ptnjson.RPCError{
@@ -1759,6 +1759,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 		return "", err
 	}
 	//transaction inputs
+	
 	var rawinputs []ptnjson.RawTxInput
 	for _, inputOne := range signTransactionParams.Inputs {
 		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex, inputOne.ScriptPubKey, inputOne.RedeemScript}
