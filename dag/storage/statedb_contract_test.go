@@ -40,15 +40,17 @@ func TestGetContractState(t *testing.T) {
 	err := statedb.SaveContract(contract)
 	assert.Nil(t, err, "save contract to statedb fail")
 	version := &modules.StateVersion{Height: modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
-	err = statedb.SaveContractState(id, "name", "TestName", version)
+	err = statedb.SaveContractState(id, "name", "TestName1", version)
 	assert.Nil(t, err, "Save contract state fail")
-	version, value := statedb.GetContractState(id, "name")
+	version2, value := statedb.GetContractState(id, "name")
 	log.Debug("test debug: ", "version", version.String())
-	log.Debug(fmt.Sprintf("value:%#x", value))
-	assert.Equal(t, value, []byte("TestName"), "value not same.")
-	data := statedb.GetContractAllState()
-	for _, v := range data {
-		log.Debug(fmt.Sprintf("K:%s,V:%x,version:%s", v.Key, v.Value, v.Version))
+	assert.Equal(t, version, version2, "version not same.")
+	log.Debug(fmt.Sprintf("get value from db:%s", value))
+	assert.Equal(t, value, []byte("TestName1"), "value not same.")
+	data, _ := statedb.GetContractStatesById(id)
+	assert.True(t, len(data) > 0, "GetContractAllState don't return any data.")
+	for key, v := range data {
+		log.Debug(fmt.Sprintf("Key:%s,V:%s,version:%s", key, v.Value, v.Version))
 	}
 }
 

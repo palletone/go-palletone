@@ -67,7 +67,7 @@ func splitValueAndVersion(data []byte) ([]byte, *modules.StateVersion, error) {
 		return nil, nil, errors.New("the data is irregular.")
 	}
 	verBytes := data[:29]
-	objData := data[29:]
+	objData := data[30:]
 
 	version := &modules.StateVersion{}
 	version.SetBytes(verBytes)

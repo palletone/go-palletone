@@ -752,7 +752,7 @@ func (d *Dag) GetContractState(id []byte, field string) (*modules.StateVersion, 
 }
 
 //get contract all state
-func (d *Dag) GetContractStatesById(id []byte) (map[modules.StateVersion][]byte, error) {
+func (d *Dag) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
 	return d.statedb.GetContractStatesById(id)
 }
 

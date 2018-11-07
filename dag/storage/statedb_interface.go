@@ -42,7 +42,7 @@ type IStateDb interface {
 	GetContractState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetTplAllState(id []byte) []*modules.ContractReadSet
 	GetContractAllState() []*modules.ContractReadSet
-	GetContractStatesById(id []byte) (map[modules.StateVersion][]byte, error)
+	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id []byte) (*modules.Contract, error)
 

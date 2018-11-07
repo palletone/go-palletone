@@ -163,6 +163,10 @@ type StateVersion struct {
 	Height  ChainIndex
 	TxIndex uint32
 }
+type ContractStateValue struct {
+	Value   []byte
+	Version *StateVersion
+}
 
 func (version *StateVersion) String() string {
 

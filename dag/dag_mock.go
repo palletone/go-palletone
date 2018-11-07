@@ -698,6 +698,18 @@ func (mr *MockIDagMockRecorder) GetElectedMediatorsAddress() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetElectedMediatorsAddress", reflect.TypeOf((*MockIDag)(nil).GetElectedMediatorsAddress))
 }
 
+// GetAccountMediatorVote mocks base method
+func (m *MockIDag) GetAccountMediatorVote(address common.Address) []common.Address {
+	ret := m.ctrl.Call(m, "GetAccountMediatorVote", address)
+	ret0, _ := ret[0].([]common.Address)
+	return ret0
+}
+
+// GetAccountMediatorVote indicates an expected call of GetAccountMediatorVote
+func (mr *MockIDagMockRecorder) GetAccountMediatorVote(address interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountMediatorVote", reflect.TypeOf((*MockIDag)(nil).GetAccountMediatorVote), address)
+}
+
 // GetTokenInfo mocks base method
 func (m *MockIDag) GetTokenInfo(key []byte) (*modules.TokenInfo, error) {
 	ret := m.ctrl.Call(m, "GetTokenInfo", key)
