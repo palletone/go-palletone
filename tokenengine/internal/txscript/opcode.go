@@ -9,8 +9,8 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/binary"
-	"hash"
 	"fmt"
+	"hash"
 
 	"golang.org/x/crypto/ripemd160"
 
@@ -240,7 +240,7 @@ const (
 	OP_UNKNOWN197          = 0xc5 // 197
 	OP_UNKNOWN198          = 0xc6 // 198
 	OP_UNKNOWN199          = 0xc7 // 199
-	OP_UNKNOWN200          = 0xc8 // 200
+	OP_JURY_REDEEM_EQUAL   = 0xc8 // 200
 	OP_UNKNOWN201          = 0xc9 // 201
 	OP_UNKNOWN202          = 0xca // 202
 	OP_UNKNOWN203          = 0xcb // 203
@@ -512,70 +512,70 @@ var opcodeArray = [256]opcode{
 	OP_NOP10: {OP_NOP10, "OP_NOP10", 1, opcodeNop},
 
 	// Undefined opcodes.
-	OP_UNKNOWN186: {OP_UNKNOWN186, "OP_UNKNOWN186", 1, opcodeInvalid},
-	OP_UNKNOWN187: {OP_UNKNOWN187, "OP_UNKNOWN187", 1, opcodeInvalid},
-	OP_UNKNOWN188: {OP_UNKNOWN188, "OP_UNKNOWN188", 1, opcodeInvalid},
-	OP_UNKNOWN189: {OP_UNKNOWN189, "OP_UNKNOWN189", 1, opcodeInvalid},
-	OP_UNKNOWN190: {OP_UNKNOWN190, "OP_UNKNOWN190", 1, opcodeInvalid},
-	OP_UNKNOWN191: {OP_UNKNOWN191, "OP_UNKNOWN191", 1, opcodeInvalid},
-	OP_UNKNOWN192: {OP_UNKNOWN192, "OP_UNKNOWN192", 1, opcodeInvalid},
-	OP_UNKNOWN193: {OP_UNKNOWN193, "OP_UNKNOWN193", 1, opcodeInvalid},
-	OP_UNKNOWN194: {OP_UNKNOWN194, "OP_UNKNOWN194", 1, opcodeInvalid},
-	OP_UNKNOWN195: {OP_UNKNOWN195, "OP_UNKNOWN195", 1, opcodeInvalid},
-	OP_UNKNOWN196: {OP_UNKNOWN196, "OP_UNKNOWN196", 1, opcodeInvalid},
-	OP_UNKNOWN197: {OP_UNKNOWN197, "OP_UNKNOWN197", 1, opcodeInvalid},
-	OP_UNKNOWN198: {OP_UNKNOWN198, "OP_UNKNOWN198", 1, opcodeInvalid},
-	OP_UNKNOWN199: {OP_UNKNOWN199, "OP_UNKNOWN199", 1, opcodeInvalid},
-	OP_UNKNOWN200: {OP_UNKNOWN200, "OP_UNKNOWN200", 1, opcodeInvalid},
-	OP_UNKNOWN201: {OP_UNKNOWN201, "OP_UNKNOWN201", 1, opcodeInvalid},
-	OP_UNKNOWN202: {OP_UNKNOWN202, "OP_UNKNOWN202", 1, opcodeInvalid},
-	OP_UNKNOWN203: {OP_UNKNOWN203, "OP_UNKNOWN203", 1, opcodeInvalid},
-	OP_UNKNOWN204: {OP_UNKNOWN204, "OP_UNKNOWN204", 1, opcodeInvalid},
-	OP_UNKNOWN205: {OP_UNKNOWN205, "OP_UNKNOWN205", 1, opcodeInvalid},
-	OP_UNKNOWN206: {OP_UNKNOWN206, "OP_UNKNOWN206", 1, opcodeInvalid},
-	OP_UNKNOWN207: {OP_UNKNOWN207, "OP_UNKNOWN207", 1, opcodeInvalid},
-	OP_UNKNOWN208: {OP_UNKNOWN208, "OP_UNKNOWN208", 1, opcodeInvalid},
-	OP_UNKNOWN209: {OP_UNKNOWN209, "OP_UNKNOWN209", 1, opcodeInvalid},
-	OP_UNKNOWN210: {OP_UNKNOWN210, "OP_UNKNOWN210", 1, opcodeInvalid},
-	OP_UNKNOWN211: {OP_UNKNOWN211, "OP_UNKNOWN211", 1, opcodeInvalid},
-	OP_UNKNOWN212: {OP_UNKNOWN212, "OP_UNKNOWN212", 1, opcodeInvalid},
-	OP_UNKNOWN213: {OP_UNKNOWN213, "OP_UNKNOWN213", 1, opcodeInvalid},
-	OP_UNKNOWN214: {OP_UNKNOWN214, "OP_UNKNOWN214", 1, opcodeInvalid},
-	OP_UNKNOWN215: {OP_UNKNOWN215, "OP_UNKNOWN215", 1, opcodeInvalid},
-	OP_UNKNOWN216: {OP_UNKNOWN216, "OP_UNKNOWN216", 1, opcodeInvalid},
-	OP_UNKNOWN217: {OP_UNKNOWN217, "OP_UNKNOWN217", 1, opcodeInvalid},
-	OP_UNKNOWN218: {OP_UNKNOWN218, "OP_UNKNOWN218", 1, opcodeInvalid},
-	OP_UNKNOWN219: {OP_UNKNOWN219, "OP_UNKNOWN219", 1, opcodeInvalid},
-	OP_UNKNOWN220: {OP_UNKNOWN220, "OP_UNKNOWN220", 1, opcodeInvalid},
-	OP_UNKNOWN221: {OP_UNKNOWN221, "OP_UNKNOWN221", 1, opcodeInvalid},
-	OP_UNKNOWN222: {OP_UNKNOWN222, "OP_UNKNOWN222", 1, opcodeInvalid},
-	OP_UNKNOWN223: {OP_UNKNOWN223, "OP_UNKNOWN223", 1, opcodeInvalid},
-	OP_UNKNOWN224: {OP_UNKNOWN224, "OP_UNKNOWN224", 1, opcodeInvalid},
-	OP_UNKNOWN225: {OP_UNKNOWN225, "OP_UNKNOWN225", 1, opcodeInvalid},
-	OP_UNKNOWN226: {OP_UNKNOWN226, "OP_UNKNOWN226", 1, opcodeInvalid},
-	OP_UNKNOWN227: {OP_UNKNOWN227, "OP_UNKNOWN227", 1, opcodeInvalid},
-	OP_UNKNOWN228: {OP_UNKNOWN228, "OP_UNKNOWN228", 1, opcodeInvalid},
-	OP_UNKNOWN229: {OP_UNKNOWN229, "OP_UNKNOWN229", 1, opcodeInvalid},
-	OP_UNKNOWN230: {OP_UNKNOWN230, "OP_UNKNOWN230", 1, opcodeInvalid},
-	OP_UNKNOWN231: {OP_UNKNOWN231, "OP_UNKNOWN231", 1, opcodeInvalid},
-	OP_UNKNOWN232: {OP_UNKNOWN232, "OP_UNKNOWN232", 1, opcodeInvalid},
-	OP_UNKNOWN233: {OP_UNKNOWN233, "OP_UNKNOWN233", 1, opcodeInvalid},
-	OP_UNKNOWN234: {OP_UNKNOWN234, "OP_UNKNOWN234", 1, opcodeInvalid},
-	OP_UNKNOWN235: {OP_UNKNOWN235, "OP_UNKNOWN235", 1, opcodeInvalid},
-	OP_UNKNOWN236: {OP_UNKNOWN236, "OP_UNKNOWN236", 1, opcodeInvalid},
-	OP_UNKNOWN237: {OP_UNKNOWN237, "OP_UNKNOWN237", 1, opcodeInvalid},
-	OP_UNKNOWN238: {OP_UNKNOWN238, "OP_UNKNOWN238", 1, opcodeInvalid},
-	OP_UNKNOWN239: {OP_UNKNOWN239, "OP_UNKNOWN239", 1, opcodeInvalid},
-	OP_UNKNOWN240: {OP_UNKNOWN240, "OP_UNKNOWN240", 1, opcodeInvalid},
-	OP_UNKNOWN241: {OP_UNKNOWN241, "OP_UNKNOWN241", 1, opcodeInvalid},
-	OP_UNKNOWN242: {OP_UNKNOWN242, "OP_UNKNOWN242", 1, opcodeInvalid},
-	OP_UNKNOWN243: {OP_UNKNOWN243, "OP_UNKNOWN243", 1, opcodeInvalid},
-	OP_UNKNOWN244: {OP_UNKNOWN244, "OP_UNKNOWN244", 1, opcodeInvalid},
-	OP_UNKNOWN245: {OP_UNKNOWN245, "OP_UNKNOWN245", 1, opcodeInvalid},
-	OP_UNKNOWN246: {OP_UNKNOWN246, "OP_UNKNOWN246", 1, opcodeInvalid},
-	OP_UNKNOWN247: {OP_UNKNOWN247, "OP_UNKNOWN247", 1, opcodeInvalid},
-	OP_UNKNOWN248: {OP_UNKNOWN248, "OP_UNKNOWN248", 1, opcodeInvalid},
-	OP_UNKNOWN249: {OP_UNKNOWN249, "OP_UNKNOWN249", 1, opcodeInvalid},
+	OP_UNKNOWN186:        {OP_UNKNOWN186, "OP_UNKNOWN186", 1, opcodeInvalid},
+	OP_UNKNOWN187:        {OP_UNKNOWN187, "OP_UNKNOWN187", 1, opcodeInvalid},
+	OP_UNKNOWN188:        {OP_UNKNOWN188, "OP_UNKNOWN188", 1, opcodeInvalid},
+	OP_UNKNOWN189:        {OP_UNKNOWN189, "OP_UNKNOWN189", 1, opcodeInvalid},
+	OP_UNKNOWN190:        {OP_UNKNOWN190, "OP_UNKNOWN190", 1, opcodeInvalid},
+	OP_UNKNOWN191:        {OP_UNKNOWN191, "OP_UNKNOWN191", 1, opcodeInvalid},
+	OP_UNKNOWN192:        {OP_UNKNOWN192, "OP_UNKNOWN192", 1, opcodeInvalid},
+	OP_UNKNOWN193:        {OP_UNKNOWN193, "OP_UNKNOWN193", 1, opcodeInvalid},
+	OP_UNKNOWN194:        {OP_UNKNOWN194, "OP_UNKNOWN194", 1, opcodeInvalid},
+	OP_UNKNOWN195:        {OP_UNKNOWN195, "OP_UNKNOWN195", 1, opcodeInvalid},
+	OP_UNKNOWN196:        {OP_UNKNOWN196, "OP_UNKNOWN196", 1, opcodeInvalid},
+	OP_UNKNOWN197:        {OP_UNKNOWN197, "OP_UNKNOWN197", 1, opcodeInvalid},
+	OP_UNKNOWN198:        {OP_UNKNOWN198, "OP_UNKNOWN198", 1, opcodeInvalid},
+	OP_UNKNOWN199:        {OP_UNKNOWN199, "OP_UNKNOWN199", 1, opcodeInvalid},
+	OP_JURY_REDEEM_EQUAL: {OP_JURY_REDEEM_EQUAL, "OP_JURY_REDEEM_EQUAL", 1, opcodeCheckJuryRedeemEqual},
+	OP_UNKNOWN201:        {OP_UNKNOWN201, "OP_UNKNOWN201", 1, opcodeInvalid},
+	OP_UNKNOWN202:        {OP_UNKNOWN202, "OP_UNKNOWN202", 1, opcodeInvalid},
+	OP_UNKNOWN203:        {OP_UNKNOWN203, "OP_UNKNOWN203", 1, opcodeInvalid},
+	OP_UNKNOWN204:        {OP_UNKNOWN204, "OP_UNKNOWN204", 1, opcodeInvalid},
+	OP_UNKNOWN205:        {OP_UNKNOWN205, "OP_UNKNOWN205", 1, opcodeInvalid},
+	OP_UNKNOWN206:        {OP_UNKNOWN206, "OP_UNKNOWN206", 1, opcodeInvalid},
+	OP_UNKNOWN207:        {OP_UNKNOWN207, "OP_UNKNOWN207", 1, opcodeInvalid},
+	OP_UNKNOWN208:        {OP_UNKNOWN208, "OP_UNKNOWN208", 1, opcodeInvalid},
+	OP_UNKNOWN209:        {OP_UNKNOWN209, "OP_UNKNOWN209", 1, opcodeInvalid},
+	OP_UNKNOWN210:        {OP_UNKNOWN210, "OP_UNKNOWN210", 1, opcodeInvalid},
+	OP_UNKNOWN211:        {OP_UNKNOWN211, "OP_UNKNOWN211", 1, opcodeInvalid},
+	OP_UNKNOWN212:        {OP_UNKNOWN212, "OP_UNKNOWN212", 1, opcodeInvalid},
+	OP_UNKNOWN213:        {OP_UNKNOWN213, "OP_UNKNOWN213", 1, opcodeInvalid},
+	OP_UNKNOWN214:        {OP_UNKNOWN214, "OP_UNKNOWN214", 1, opcodeInvalid},
+	OP_UNKNOWN215:        {OP_UNKNOWN215, "OP_UNKNOWN215", 1, opcodeInvalid},
+	OP_UNKNOWN216:        {OP_UNKNOWN216, "OP_UNKNOWN216", 1, opcodeInvalid},
+	OP_UNKNOWN217:        {OP_UNKNOWN217, "OP_UNKNOWN217", 1, opcodeInvalid},
+	OP_UNKNOWN218:        {OP_UNKNOWN218, "OP_UNKNOWN218", 1, opcodeInvalid},
+	OP_UNKNOWN219:        {OP_UNKNOWN219, "OP_UNKNOWN219", 1, opcodeInvalid},
+	OP_UNKNOWN220:        {OP_UNKNOWN220, "OP_UNKNOWN220", 1, opcodeInvalid},
+	OP_UNKNOWN221:        {OP_UNKNOWN221, "OP_UNKNOWN221", 1, opcodeInvalid},
+	OP_UNKNOWN222:        {OP_UNKNOWN222, "OP_UNKNOWN222", 1, opcodeInvalid},
+	OP_UNKNOWN223:        {OP_UNKNOWN223, "OP_UNKNOWN223", 1, opcodeInvalid},
+	OP_UNKNOWN224:        {OP_UNKNOWN224, "OP_UNKNOWN224", 1, opcodeInvalid},
+	OP_UNKNOWN225:        {OP_UNKNOWN225, "OP_UNKNOWN225", 1, opcodeInvalid},
+	OP_UNKNOWN226:        {OP_UNKNOWN226, "OP_UNKNOWN226", 1, opcodeInvalid},
+	OP_UNKNOWN227:        {OP_UNKNOWN227, "OP_UNKNOWN227", 1, opcodeInvalid},
+	OP_UNKNOWN228:        {OP_UNKNOWN228, "OP_UNKNOWN228", 1, opcodeInvalid},
+	OP_UNKNOWN229:        {OP_UNKNOWN229, "OP_UNKNOWN229", 1, opcodeInvalid},
+	OP_UNKNOWN230:        {OP_UNKNOWN230, "OP_UNKNOWN230", 1, opcodeInvalid},
+	OP_UNKNOWN231:        {OP_UNKNOWN231, "OP_UNKNOWN231", 1, opcodeInvalid},
+	OP_UNKNOWN232:        {OP_UNKNOWN232, "OP_UNKNOWN232", 1, opcodeInvalid},
+	OP_UNKNOWN233:        {OP_UNKNOWN233, "OP_UNKNOWN233", 1, opcodeInvalid},
+	OP_UNKNOWN234:        {OP_UNKNOWN234, "OP_UNKNOWN234", 1, opcodeInvalid},
+	OP_UNKNOWN235:        {OP_UNKNOWN235, "OP_UNKNOWN235", 1, opcodeInvalid},
+	OP_UNKNOWN236:        {OP_UNKNOWN236, "OP_UNKNOWN236", 1, opcodeInvalid},
+	OP_UNKNOWN237:        {OP_UNKNOWN237, "OP_UNKNOWN237", 1, opcodeInvalid},
+	OP_UNKNOWN238:        {OP_UNKNOWN238, "OP_UNKNOWN238", 1, opcodeInvalid},
+	OP_UNKNOWN239:        {OP_UNKNOWN239, "OP_UNKNOWN239", 1, opcodeInvalid},
+	OP_UNKNOWN240:        {OP_UNKNOWN240, "OP_UNKNOWN240", 1, opcodeInvalid},
+	OP_UNKNOWN241:        {OP_UNKNOWN241, "OP_UNKNOWN241", 1, opcodeInvalid},
+	OP_UNKNOWN242:        {OP_UNKNOWN242, "OP_UNKNOWN242", 1, opcodeInvalid},
+	OP_UNKNOWN243:        {OP_UNKNOWN243, "OP_UNKNOWN243", 1, opcodeInvalid},
+	OP_UNKNOWN244:        {OP_UNKNOWN244, "OP_UNKNOWN244", 1, opcodeInvalid},
+	OP_UNKNOWN245:        {OP_UNKNOWN245, "OP_UNKNOWN245", 1, opcodeInvalid},
+	OP_UNKNOWN246:        {OP_UNKNOWN246, "OP_UNKNOWN246", 1, opcodeInvalid},
+	OP_UNKNOWN247:        {OP_UNKNOWN247, "OP_UNKNOWN247", 1, opcodeInvalid},
+	OP_UNKNOWN248:        {OP_UNKNOWN248, "OP_UNKNOWN248", 1, opcodeInvalid},
+	OP_UNKNOWN249:        {OP_UNKNOWN249, "OP_UNKNOWN249", 1, opcodeInvalid},
 
 	// Bitcoin Core internal use opcode.  Defined here for completeness.
 	OP_SMALLINTEGER: {OP_SMALLINTEGER, "OP_SMALLINTEGER", 1, opcodeInvalid},
@@ -1167,7 +1167,7 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 	// which the transaction is finalized or a timestamp depending on if the
 	// value is before the txscript.LockTimeThreshold.  When it is under the
 	// threshold it is a block height.
-	payment:=vm.tx.TxMessages[vm.msgIdx].Payload.(*modules.PaymentPayload)
+	payment := vm.tx.TxMessages[vm.msgIdx].Payload.(*modules.PaymentPayload)
 	err = verifyLockTime(int64(payment.LockTime), LockTimeThreshold,
 		int64(lockTime))
 	if err != nil {
@@ -1271,7 +1271,7 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	//	wire.SequenceLockTimeMask)
 	//return verifyLockTime(txSequence&lockTimeMask,
 	//	wire.SequenceLockTimeIsSeconds, sequence&lockTimeMask)
-     return nil
+	return nil
 }
 
 // opcodeToAltStack removes the top item from the main data stack and pushes it
@@ -2088,7 +2088,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	//if err := vm.checkPubKeyEncoding(pkBytes); err != nil {
 	//	return err
 	//}
-	hashType:=SigHashAll
+	hashType := SigHashAll
 	// Get script starting from the most recent OP_CODESEPARATOR.
 	subScript := vm.subScript()
 
@@ -2108,14 +2108,14 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	//		return err
 	//	}
 	//} else {
-		// Remove the signature since there is no way for a signature
-		// to sign itself.
-		subScript = removeOpcodeByData(subScript, fullSigBytes)
+	// Remove the signature since there is no way for a signature
+	// to sign itself.
+	subScript = removeOpcodeByData(subScript, fullSigBytes)
 
-		hash = calcSignatureHash(subScript, hashType, &vm.tx,vm.msgIdx, vm.txIdx)
+	hash = calcSignatureHash(subScript, hashType, &vm.tx, vm.msgIdx, vm.txIdx)
 	//}
 
-	valid:=crypto.VerifySignature(pkBytes,hash,fullSigBytes)
+	valid := crypto.VerifySignature(pkBytes, hash, fullSigBytes)
 	//fmt.Printf("Sign:%x, Validate Hash:%x,PubKey:%x,is valid:%s\n",
 	//	fullSigBytes, hash,pkBytes,valid)
 	//pubKey, err := btcec.ParsePubKey(pkBytes, btcec.S256())
@@ -2258,7 +2258,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 			return err
 		}
 		sigInfo := hexutil.Encode(signature)
-		signatures[sigInfo]=false //使用Map可以去除签名重复的情况
+		signatures[sigInfo] = false //使用Map可以去除签名重复的情况
 	}
 
 	// A bug in the original Satoshi client implementation means one more
@@ -2289,25 +2289,24 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 	//		script = removeOpcodeByData(script, sigInfo.signature)
 	//	}
 	//}
-	hash := calcSignatureHash(script, SigHashAll, &vm.tx,vm.msgIdx, vm.txIdx)
-	validCount:=0
+	hash := calcSignatureHash(script, SigHashAll, &vm.tx, vm.msgIdx, vm.txIdx)
+	validCount := 0
 	//TODO Devin这个算法不够优化，按理说如果一个公钥已经被验证有效了，那么接下来签名就不需要再使用这个公钥来验证
-	for signStr :=range signatures{
-		for _,pubKey:=range pubKeys{
-			rawSig,_:=hexutil.Decode(signStr)
-			valid:=crypto.VerifySignature(pubKey,hash,rawSig)
-			if valid{
-				signatures[signStr]=true
+	for signStr := range signatures {
+		for _, pubKey := range pubKeys {
+			rawSig, _ := hexutil.Decode(signStr)
+			valid := crypto.VerifySignature(pubKey, hash, rawSig)
+			if valid {
+				signatures[signStr] = true
 				validCount++
 			}
 		}
 	}
 
 	success := false
-	if validCount>=numSignatures{
-		success=true
+	if validCount >= numSignatures {
+		success = true
 	}
-
 
 	if !success && vm.hasFlag(ScriptVerifyNullFail) {
 		//for _, sig := range signatures {
@@ -2321,6 +2320,32 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 	}
 
 	vm.dstack.PushBool(success)
+	return nil
+}
+
+func opcodeCheckJuryRedeemEqual(op *parsedOpcode, vm *Engine) error {
+	contractHash, err := vm.dstack.PopByteArray()
+	if err != nil {
+		return err
+	}
+	versionData, err := vm.dstack.PopInt()
+	if err != nil {
+		return err
+	}
+	version := int(versionData.Int32())
+	if version < 0 {
+		str := fmt.Sprintf("number of pubkeys %d is negative",
+			version)
+		return scriptError(ErrInvalidPubKeyCount, str)
+	}
+	redeemScript, err := vm.dstack.PopByteArray()
+	if err != nil {
+		return err
+	}
+	//TODO check redeem
+	fmt.Printf("conract hash:%x,version:%d,redeem:%x", contractHash, version, redeemScript)
+	result := true
+	vm.dstack.PushBool(result)
 	return nil
 }
 

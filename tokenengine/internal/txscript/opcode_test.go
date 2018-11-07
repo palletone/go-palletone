@@ -101,7 +101,8 @@ func TestOpcodeDisasm(t *testing.T) {
 		case opcodeVal == 0x4e:
 			data = bytes.Repeat(oneBytes, 3)
 			expectedStr = strings.Repeat(oneStr, 3)
-
+		case opcodeVal == 200: //PalletOne contract extend
+			expectedStr = "OP_JURY_REDEEM_EQUAL"
 		// OP_1 through OP_16 display the numbers themselves.
 		case opcodeVal >= 0x51 && opcodeVal <= 0x60:
 			val := byte(opcodeVal - (0x51 - 1))
@@ -173,7 +174,8 @@ func TestOpcodeDisasm(t *testing.T) {
 			val := byte(opcodeVal - (0x51 - 1))
 			data = []byte{val}
 			expectedStr = "OP_" + strconv.Itoa(int(val))
-
+		case opcodeVal == 200:
+			expectedStr = "OP_JURY_REDEEM_EQUAL"
 		// OP_NOP1 through OP_NOP10.
 		case opcodeVal >= 0xb0 && opcodeVal <= 0xb9:
 			switch opcodeVal {
