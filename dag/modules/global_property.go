@@ -43,13 +43,13 @@ type DynamicGlobalProperty struct {
 
 	HeadUnitHash common.Hash // 最近的验证单元hash
 
-	//	LastVerifiedUnit *v.VerifiedUnit	// 最近生产的验证单元
+	// LastVerifiedUnit *v.VerifiedUnit	// 最近生产的验证单元
 
 	HeadUnitTime int64 // 最近的验证单元时间
 
-	//	CurrentMediator *Mediator // 当前生产验证单元的mediator, 用于判断是否连续同一个mediator生产验证单元
+	// CurrentMediator *Mediator // 当前生产验证单元的mediator, 用于判断是否连续同一个mediator生产验证单元
 
-	//	NextMaintenanceTime time.Time // 下一次系统维护时间
+	// NextMaintenanceTime time.Time // 下一次系统维护时间
 
 	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == verifiedUnitNum + 丢失的槽数量
 	CurrentASlot uint64
@@ -59,7 +59,9 @@ type DynamicGlobalProperty struct {
 	The count of verifiedUnit production slots that were missed in the past 128 verifiedUnits
 	用于计算mediator的参与率。used to compute mediator participation.
 	*/
-	//	RecentSlotsFilled float32
+	// RecentSlotsFilled float32
+
+	LastIrreversibleUnitNum uint32
 }
 
 const TERMINTERVAL = 50 //DEBUG:50, DEPLOY:15000
@@ -173,9 +175,10 @@ func NewGlobalProp() *GlobalProperty {
 
 func NewDynGlobalProp() *DynamicGlobalProperty {
 	return &DynamicGlobalProperty{
-		HeadUnitNum:  0,
-		HeadUnitHash: common.Hash{},
-		CurrentASlot: 0,
+		HeadUnitNum:             0,
+		HeadUnitHash:            common.Hash{},
+		CurrentASlot:            0,
+		LastIrreversibleUnitNum: 0,
 	}
 }
 
