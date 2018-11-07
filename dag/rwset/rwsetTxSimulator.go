@@ -127,7 +127,7 @@ func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]
 }
 
 //get all state
-func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[modules.StateVersion][]byte, error) {
+func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error) {
 	return s.state.GetContractStatesById(contractid)
 }
 
