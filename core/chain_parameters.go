@@ -22,15 +22,35 @@ package core
 // ChainParameters 区块链网络参数结构体的定义
 //变量名一定要大些，否则外部无法访问，导致无法进行json编码和解码
 type ChainParameters struct {
+	// 目前的操作交易费，current schedule of fees
+	CurrentFees FeeSchedule `json:"currentFees"`
+
 	// 验证单元之间的间隔时间，以秒为单元。 interval in seconds between verifiedUnits
 	MediatorInterval uint8 `json:"mediatorInterval"`
+
+	// 区块链维护事件之间的间隔，以秒为单元。 interval in sections between unit maintenance events
+	MaintenanceInterval uint32 `json:"maintenanceInterval"`
 
 	// 在维护时跳过的verifiedUnitInterval数量。 number of verifiedUnitInterval to skip at maintenance time
 	//	MaintenanceSkipSlots uint8
 }
 
-func NewChainParams() ChainParameters {
-	return ChainParameters{
-		MediatorInterval: DefaultMediatorInterval,
-	}
+func NewChainParams() (c ChainParameters) {
+	c.CurrentFees = NewFeeSchedule()
+	c.MediatorInterval = DefaultMediatorInterval
+	c.MaintenanceInterval = DefaultMaintenanceInterval
+
+	return
+}
+
+// 操作交易费计划
+type FeeSchedule struct {
+	// mediator 创建费用
+	MediatorCreateFee uint64 `json:"mediatorCreateFee"`
+}
+
+func NewFeeSchedule() (f FeeSchedule) {
+	f.MediatorCreateFee = DefaultMediatorCreateFee
+
+	return
 }
