@@ -767,7 +767,6 @@ func (stub *ChaincodeStub) SetEvent(name string, payload []byte) error {
 	return nil
 }
 
-//TODO xiaozhi
 //---------- Deposit API ----------
 func (stub *ChaincodeStub) GetDepositConfig() ([]byte, error) {
 	return stub.handler.handleGetDepositConfig(stub.ChannelId, stub.TxID)

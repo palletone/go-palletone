@@ -52,6 +52,13 @@ func GenerateP2SHLockScript(redeemScriptHash []byte) []byte {
 	return lock
 }
 
+//
+func GenerateP2CHLockScript(contractId common.Address) []byte {
+	lock, _ := txscript.NewScriptBuilder().AddData(contractId.Bytes()).AddOp(txscript.OP_JURY_REDEEM_EQUAL).
+		Script()
+	return lock
+}
+
 //根据锁定脚本获得对应的地址
 func GetAddressFromScript(lockScript []byte) (common.Address, error) {
 
@@ -126,6 +133,14 @@ func GenerateP2SHUnlockScript(signs [][]byte, redeemScript []byte) []byte {
 		builder = builder.AddData(sign)
 	}
 	unlock, _ := builder.AddData(redeemScript).Script()
+	return unlock
+}
+func GenerateP2CHUnlockScript(signs [][]byte, redeemScript []byte, version int) []byte {
+	builder := txscript.NewScriptBuilder()
+	for _, sign := range signs {
+		builder = builder.AddData(sign)
+	}
+	unlock, _ := builder.AddData(redeemScript).AddInt64(int64(version)).Script()
 	return unlock
 }
 

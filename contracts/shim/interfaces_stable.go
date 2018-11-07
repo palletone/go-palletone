@@ -215,7 +215,6 @@ type ChaincodeStubInterface interface {
 	// validity of the transaction.
 	SetEvent(name string, payload []byte) error
 
-	//TODO xiaozhi
 	//获取保证金合约的一些配置参数
 	GetDepositConfig() ([]byte, error)
 	//获取支付保证金节点的地址

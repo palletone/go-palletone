@@ -665,7 +665,6 @@ func (dlp *downloadTesterPeer) waitDelay() {
 func (dlp *downloadTesterPeer) Head(assetId modules.IDType16) (common.Hash, modules.ChainIndex) {
 	dlp.dl.lock.RLock()
 	defer dlp.dl.lock.RUnlock()
-	//TODO xiaozhi
 	index := modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
@@ -1118,7 +1117,6 @@ func testBoundedForkedSync(t *testing.T, protocol int, mode SyncMode) {
 // Tests that chain forks are contained within a certain interval of the current
 // chain head for short but heavy forks too. These are a bit special because they
 // take different ancestor lookup paths.
-//TODO xiaozhi
 //func TestBoundedHeavyForkedSync1(t *testing.T) { testBoundedHeavyForkedSync(t, 1, FullSync) }
 
 //func TestBoundedHeavyForkedSync63Full(t *testing.T) { testBoundedHeavyForkedSync(t, 2, FullSync) }
@@ -1430,7 +1428,6 @@ func testShiftedHeaderAttack(t *testing.T, protocol int, mode SyncMode) {
 // Tests that upon detecting an invalid header, the recent ones are rolled back
 // for various failure scenarios. Afterwards a full sync is attempted to make
 // sure no state was corrupted.
-//TODO xiaozhi
 //func TestInvalidHeaderRollback1t(t *testing.T) { testInvalidHeaderRollback(t, 1, FastSync) }
 
 //func TestInvalidHeaderRollback64Fast(t *testing.T)  { testInvalidHeaderRollback(t, 64, FastSync) }

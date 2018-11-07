@@ -515,7 +515,6 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 		if q.resultCache[index] == nil {
 			components := 1
 			if q.mode == FastSync {
-				//TODO xiaozhi
 				//components = 2
 			}
 			q.resultCache[index] = &fetchResult{

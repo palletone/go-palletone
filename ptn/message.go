@@ -378,6 +378,9 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
             }
             for _, txin := range payload.Input {
                 st,err := pm.dag.GetUtxoEntry(txin.PreviousOutPoint)
+                if st == nil || err != nil {
+                    return err
+                }
                 err = tokenengine.ScriptValidate(st.PkScript,tx, int(txin.PreviousOutPoint.MessageIndex), int(txin.PreviousOutPoint.OutIndex))
                 if err != nil {
                     return err

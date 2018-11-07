@@ -53,12 +53,10 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-	//TODO xiaozhi
 	//fmt.Println("GetState(contractid []byte, ns string, key string)===>>>\n\n", contractid, ns, key)
 	//return []byte("1000"), nil
 	//TODO Devin
 	ver, val := s.state.GetContractState(contractid, key)
-	//fmt.Println("xiaozhi:--", ver, val)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
 	if val == nil {
 		logger.Errorf("get value from db[%s] failed", ns)
@@ -80,7 +78,6 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 
 func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 	logger.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)
-	//TODO xiaozhi
 	fmt.Println("SetState(ns string, key string, value []byte)===>>>\n\n", ns, key, value)
 	if err := s.CheckDone(); err != nil {
 		return err
@@ -95,8 +92,7 @@ func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 
 // DeleteState implements method in interface `ledger.TxSimulator`
 func (s *RwSetTxSimulator) DeleteState(ns string, key string) error {
-	//TODO xiaozhi
-	fmt.Println("DeleteState(ns string, key string)===>\n\n", ns, key)
+	//fmt.Println("DeleteState(ns string, key string)===>\n\n", ns, key)
 	return s.SetState(ns, key, nil)
 }
 

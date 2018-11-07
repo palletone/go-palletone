@@ -7,8 +7,8 @@ package txscript
 import (
 	"fmt"
 
-	"github.com/palletone/go-palletone/common"
 	"crypto/ecdsa"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 )
 
@@ -58,6 +58,7 @@ const (
 	WitnessV0ScriptHashTy                    // Pay to witness script hash.
 	MultiSigTy                               // Multi signature.
 	NullDataTy                               // Empty data-only (provably prunable).
+	ContractHashTy                           // Pay to contract hash.
 )
 
 // scriptClassToName houses the human-readable strings which describe each
@@ -71,6 +72,7 @@ var scriptClassToName = []string{
 	WitnessV0ScriptHashTy: "witness_v0_scripthash",
 	MultiSigTy:            "multisig",
 	NullDataTy:            "nulldata",
+	ContractHashTy:        "contracthash",
 }
 
 // String implements the Stringer interface by returning the name of
@@ -163,6 +165,8 @@ func typeOfScript(pops []parsedOpcode) ScriptClass {
 		return PubKeyTy
 	} else if isPubkeyHash(pops) {
 		return PubKeyHashTy
+	} else if isContractHash(pops) {
+		return ContractHashTy
 	} else if isWitnessPubKeyHash(pops) {
 		return WitnessV0PubKeyHashTy
 	} else if isScriptHash(pops) {
@@ -418,13 +422,14 @@ func payToPubKeyScript(serializedPubKey []byte) ([]byte, error) {
 }
 func payToContractHash(serializedPubKey []byte) ([]byte, error) {
 	return NewScriptBuilder().AddData(serializedPubKey).
-		AddOp(OP_CHECKSIG).Script()
+		AddOp(OP_JURY_REDEEM_EQUAL).Script()
 }
+
 // PayToAddrScript creates a new script to pay a transaction output to a the
 // specified address.
 func PayToAddrScript(addr common.Address) ([]byte, error) {
 
-	switch  addr.GetType() {
+	switch addr.GetType() {
 	case common.PublicKeyHash:
 
 		return payToPubKeyHashScript(addr.Bytes())
@@ -470,7 +475,7 @@ func MultiSigScript(pubkeys []*ecdsa.PublicKey, nrequired int) ([]byte, error) {
 
 	builder := NewScriptBuilder().AddInt64(int64(nrequired))
 	for _, key := range pubkeys {
-		keyBytes:= crypto.CompressPubkey(key)
+		keyBytes := crypto.CompressPubkey(key)
 		builder.AddData(keyBytes)
 	}
 	builder.AddInt64(int64(len(pubkeys)))
@@ -505,15 +510,15 @@ func PushedData(script []byte) ([][]byte, error) {
 func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []common.Address, int, error) {
 	var addrs []common.Address
 	var requiredSigs int
-        //fmt.Println("ExtractPkScriptAddrs------527   527-------")
+	//fmt.Println("ExtractPkScriptAddrs------527   527-------")
 	// No valid addresses or required signatures if the script doesn't
 	// parse.
 	pops, err := parseScript(pkScript)
 	if err != nil {
-                // fmt.Println("ExtractPkScriptAddrs------532   532   532-------")
+		// fmt.Println("ExtractPkScriptAddrs------532   532   532-------")
 		return NonStandardTy, nil, 0, err
 	}
-        //fmt.Println("ExtractPkScriptAddrs------535   535-------")
+	//fmt.Println("ExtractPkScriptAddrs------535   535-------")
 	scriptClass := typeOfScript(pops)
 	switch scriptClass {
 	case PubKeyHashTy:
@@ -521,12 +526,12 @@ func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []common.Address, int, 
 		//  OP_DUP OP_HASH160 <hash> OP_EQUALVERIFY OP_CHECKSIG
 		// Therefore the pubkey hash is the 3rd item on the stack.
 		// Skip the pubkey hash if it's invalid for some reason.
-                //fmt.Println("ExtractPkScriptAddrs------542    542-------")
+		//fmt.Println("ExtractPkScriptAddrs------542    542-------")
 		requiredSigs = 1
-		addr := common.NewAddress( pops[2].data,common.PublicKeyHash)
-			//btcutil.NewAddressPubKeyHash(pops[2].data,			chainParams)
-                //fmt.Println("addr is is   is ")
-                //fmt.Println(addr)
+		addr := common.NewAddress(pops[2].data, common.PublicKeyHash)
+		//btcutil.NewAddressPubKeyHash(pops[2].data,			chainParams)
+		//fmt.Println("addr is is   is ")
+		//fmt.Println(addr)
 		if err == nil {
 			addrs = append(addrs, addr)
 		}
@@ -536,7 +541,7 @@ func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []common.Address, int, 
 	//	//  OP_0 <20-byte hash>
 	//	// Therefore, the pubkey hash is the second item on the stack.
 	//	// Skip the pubkey hash if it's invalid for some reason.
-     //           //fmt.Println("ExtractPkScriptAddrs------558   558-------")
+	//           //fmt.Println("ExtractPkScriptAddrs------558   558-------")
 	//	requiredSigs = 1
 	//	addr, err := btcutil.NewAddressWitnessPubKeyHash(pops[1].data,
 	//		chainParams)
@@ -555,20 +560,25 @@ func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []common.Address, int, 
 	//	if err == nil {
 	//		addrs = append(addrs, addr)
 	//	}
-                //fmt.Println("ExtractPkScriptAddrs------577    577-------")
+	//fmt.Println("ExtractPkScriptAddrs------577    577-------")
 	case ScriptHashTy:
 		// A pay-to-script-hash script is of the form:
 		//  OP_HASH160 <scripthash> OP_EQUAL
 		// Therefore the script hash is the 2nd item on the stack.
 		// Skip the script hash if it's invalid for some reason.
 		requiredSigs = 1
-		addr:= common.NewAddress( pops[1].data,common.ScriptHash)
+		addr := common.NewAddress(pops[1].data, common.ScriptHash)
 		//addr, err := btcutil.NewAddressScriptHashFromHash(pops[1].data,
 		//	chainParams)
 		if err == nil {
 			addrs = append(addrs, addr)
 		}
-
+	case ContractHashTy:
+		requiredSigs = 1
+		addr := common.NewAddress(pops[0].data, common.ContractHash)
+		if err == nil {
+			addrs = append(addrs, addr)
+		}
 	//case WitnessV0ScriptHashTy:
 	//	// A pay-to-witness-script-hash script is of the form:
 	//	//  OP_0 <32-byte hash>
@@ -589,12 +599,12 @@ func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []common.Address, int, 
 		// item on the stack.
 		requiredSigs = asSmallInt(pops[0].opcode)
 		numPubKeys := asSmallInt(pops[len(pops)-2].opcode)
-        // def by wuzhiyuan
+		// def by wuzhiyuan
 		// Extract the public keys while skipping any that are invalid.
 		addrs = make([]common.Address, 0, numPubKeys)
 		for i := 0; i < numPubKeys; i++ {
-			pubKey:=pops[i+1].data
-			addr :=  crypto.PubkeyBytesToAddress(pubKey)
+			pubKey := pops[i+1].data
+			addr := crypto.PubkeyBytesToAddress(pubKey)
 			addrs = append(addrs, addr)
 
 		}

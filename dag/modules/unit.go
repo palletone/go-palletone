@@ -356,7 +356,6 @@ func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 	// check transactions merkle root
 	txs := b.CopyBody(transactions)
 	//fmt.Printf("withbody==>%#v\n", txs[0])
-	//TODO xiaozhi
 	//root := core.DeriveSha(txs)
 	//if strings.Compare(root.String(), b.UnitHeader.TxRoot.String()) != 0 {
 	//	return nil

@@ -316,7 +316,8 @@ func (d *Downloader) Synchronise(id string, head common.Hash, index uint64, mode
 			// Timeouts can occur if e.g. compaction hits at the wrong time, and can be ignored
 			log.Warn("Downloader wants to drop peer, but peerdrop-function is not set", "peer", id)
 		} else {
-			d.dropPeer(id)
+			//TODO must recover
+			//d.dropPeer(id)
 		}
 
 	default:
@@ -1614,7 +1615,6 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	}
 
 	go p.peer.RequestHeadersByNumber(index, count, 15, false)
-	//TODO xiaozhi
 	// Wait for the remote response to the head fetch
 	number, hash := uint64(0), common.Hash{}
 
