@@ -24,8 +24,10 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func TestUnitNumberIndex(t *testing.T) {
@@ -37,5 +39,24 @@ func TestUnitNumberIndex(t *testing.T) {
 	}
 	if key2 != "nh_ptncoin_678934" {
 		log.Debug("not equal.", "key2", key2)
+	}
+}
+func TestGetCurrentChainIndex(t *testing.T) {
+	//dbconn := ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/gptn/leveldb/")
+	dbconn, _ := ptndb.NewMemDatabase()
+	if dbconn == nil {
+		fmt.Println("Connect to db error.")
+		return
+	}
+
+	prefix_db := dbconn.NewIteratorWithPrefix([]byte(constants.CURRENTCHAININDEX_PREFIX))
+	for prefix_db.Next() {
+		key := prefix_db.Key()
+		fmt.Println("key:", string(key))
+		value := prefix_db.Value()
+		chain_index := new(modules.ChainIndex)
+		err := rlp.DecodeBytes(value, &chain_index)
+		fmt.Println("value:", err, chain_index.String(), chain_index.AssetID, chain_index.Index, chain_index.IsMain)
+
 	}
 }
