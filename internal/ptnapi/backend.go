@@ -106,7 +106,7 @@ type Backend interface {
 
 	GetAddrTransactions(addr string) (modules.Transactions, error)
 	GetAllTokenInfo() (*modules.AllTokenInfo, error)
-	GetTokenInfo(key []byte) (*ptnjson.TokenInfoJson, error)
+	GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
@@ -158,7 +158,7 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Public:    false,
 		}, {
 			Namespace: "dag",
-			Version:   "1.0",
+			Version:   "2.0",
 			Service:   NewPublicDagAPI(apiBackend),
 			Public:    true,
 		},

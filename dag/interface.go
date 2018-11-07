@@ -43,7 +43,7 @@ type IDag interface {
 	GetActiveMediatorNodes() map[string]*discover.Node
 	VerifyHeader(header *modules.Header, seal bool) error
 	GetCurrentUnit(assetId modules.IDType16) *modules.Unit
-	GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit
+	GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit
 	InsertDag(units modules.Units) (int, error)
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
@@ -84,6 +84,7 @@ type IDag interface {
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	GetTrieSyncProgress() (uint64, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
@@ -105,7 +106,7 @@ type IDag interface {
 	GetAccountMediatorVote(address common.Address) []common.Address
 
 	// get token info
-	GetTokenInfo(key []byte) (*modules.TokenInfo, error)
+	GetTokenInfo(key string) (*modules.TokenInfo, error)
 	GetAllTokenInfo() (*modules.AllTokenInfo, error)
 	// save token info
 	SaveTokenInfo(token_info *modules.TokenInfo) (string, error)

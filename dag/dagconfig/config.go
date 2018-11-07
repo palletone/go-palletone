@@ -45,7 +45,7 @@ var DefaultConfig = Config{
 	UtxoIndex: true,
 
 	// memory unit, unit number
-	MemoryUnitSize: 128,
+	MemoryUnitSize: 1280,
 	// Irreversible Height
 	IrreversibleHeight:           16,
 	WhetherValidateUnitSignature: false,
@@ -84,7 +84,7 @@ type Config struct {
 	UtxoIndex bool
 
 	// memory unit size, unit number
-	MemoryUnitSize uint8
+	MemoryUnitSize uint
 
 	// Irreversible height
 	IrreversibleHeight int

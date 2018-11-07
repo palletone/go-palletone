@@ -658,6 +658,7 @@ func (ec *Client) GetCommon(ctx context.Context, key string) ([]byte, error) {
 	err := ec.c.CallContext(ctx, &result, "dag_getCommon", key)
 	return result, err
 }
+
 func (ec *Client) GetCommonByPrefix(ctx context.Context, prefix string) (map[string][]byte, error) {
 	result := make(map[string][]byte, 0)
 	err := ec.c.CallContext(ctx, &result, "dag_getCommonByPrefix", prefix)

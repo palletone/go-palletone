@@ -207,12 +207,13 @@ func (s *PalletOne) APIs() []rpc.API {
 			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
 			Public:    true,
 		},
-		//{
-		//	Namespace: "miner",
-		//	Version:   "1.0",
-		//	//Service:   NewPrivateMinerAPI(s),
-		//	Public: false,
-		//},
+		{
+			Namespace: "miner",
+			Version:   "2.0",
+			//Service:   NewPrivateMinerAPI(s),
+			Service: NewPublicDagAPI(s),
+			Public:  true,
+		},
 		{
 			Namespace: "ptn",
 			Version:   "1.0",

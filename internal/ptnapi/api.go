@@ -2124,11 +2124,13 @@ func (s *PublicDagAPI) GetCommon(ctx context.Context, key string) ([]byte, error
 func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (string, error) {
 	result := s.b.GetCommonByPrefix([]byte(prefix))
 	if result == nil || len(result) == 0 {
-		return "null", nil
+		return "all_items:null", nil
 	}
+
+	fmt.Println("...")
 	info := NewPublicReturnInfo("all_items", result)
-	result_json, _ := json.Marshal(info)
-	return string(result_json), nil
+	result_json, err := json.Marshal(info)
+	return string(result_json), err
 }
 
 func (s *PublicDagAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
@@ -2143,12 +2145,12 @@ func (s *PublicDagAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
 	return string(result_json), nil
 }
 func (s *PublicDagAPI) GetTokenInfo(ctx context.Context, key string) (string, error) {
-	id, err := modules.SetIdTypeByHex(key)
-	if err != nil {
-		return "", err
-	}
-	log.Info("-------------------key--------", "key", key, "token", id)
-	if item, err := s.b.GetTokenInfo(id.Bytes()); err != nil {
+	// id, err := modules.SetIdTypeByHex(key)
+	// if err != nil {
+	// 	return "", err
+	// }
+	log.Info("-------------------key--------", "key", key)
+	if item, err := s.b.GetTokenInfo(key); err != nil {
 		return "", err
 	} else {
 		info := NewPublicReturnInfo("token_info", item)

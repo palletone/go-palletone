@@ -3,6 +3,8 @@ package modules
 import (
 	"bytes"
 	"fmt"
+	"github.com/palletone/go-palletone/dag/constants"
+	"strings"
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
@@ -82,6 +84,12 @@ func TestTransactionEncode(t *testing.T) {
 
 }
 func TestIDType16Hex(t *testing.T) {
+	PTNCOIN := IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'}
 	fmt.Println("ptn hex:", PTNCOIN.String())
+	fmt.Println("ptn hex:", PTNCOIN)
 	fmt.Println("btc hex:", BTCCOIN.String())
+	key := fmt.Sprintf("%s_%s_1_%d", constants.UNIT_NUMBER_PREFIX, "abc", 100)
+	slice := strings.Split(key, fmt.Sprintf("%s_%s_1_", constants.UNIT_NUMBER_PREFIX, "abc"))
+	fmt.Println("result:", len(slice), "0:", slice[0], "1:", slice[1])
+
 }

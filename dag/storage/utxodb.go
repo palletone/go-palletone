@@ -22,6 +22,7 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
@@ -50,6 +51,7 @@ type IUtxoDb interface {
 	GetPrefix(prefix []byte) map[string][]byte
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
@@ -63,7 +65,7 @@ type IUtxoDb interface {
 
 func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error {
 	key := outpoint.ToKey()
-	utxodb.logger.Debug("Try to save utxo by key:", outpoint.String())
+	utxodb.logger.Debug("Try to save utxo by key:", "outpoint_key", outpoint.String())
 	return StoreBytes(utxodb.db, key, utxo)
 }
 
@@ -167,6 +169,19 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 		return nil, err
 	}
 	return utxo, nil
+}
+
+//
+func (utxodb *UtxoDb) GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error) {
+	outpoint := &modules.OutPoint{TxHash: txhash, MessageIndex: mindex, OutIndex: outindex}
+	utxo, err := utxodb.GetUtxoEntry(outpoint)
+	if err != nil {
+		return "", err
+	}
+	if utxo == nil {
+		return "", errors.New("get the pkscript is failed,the utxo is null.")
+	}
+	return hexutil.Encode(utxo.PkScript), nil
 }
 
 //@Yiran get utxo snapshot from db

@@ -337,7 +337,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && unit.UnitHeader.ChainIndex().Index > number.Index) {
 		trueHead := unit.Hash()
 		log.Info("=================handler p.SetHead===============")
-		p.SetHead(trueHead, unit.UnitHeader.ChainIndex())
+		p.SetHead(trueHead, unit.UnitHeader.Number)
 		// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
 		// a singe block (as the true TD is below the propagated block), however this
 		// scenario should easily be covered by the fetcher.

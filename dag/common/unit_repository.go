@@ -200,9 +200,18 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	asset.ChainId = 1
 	asset.UniqueId = assetId
 	// step2. compute chain height
+	// get current world_state index.
+
 	index := uint64(1)
 	isMain := true
-	chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index}
+	// chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index}
+	chainIndex, err := unitOp.statedb.GetCurrentChainIndex(asset.AssetId)
+	if err != nil {
+		chainIndex = &modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index + 1}
+		unitOp.logger.Error("GetCurrentChainIndex is failed.", "error", err)
+	} else {
+		chainIndex.Index += 1
+	}
 
 	// step3. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs()
@@ -238,7 +247,7 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	// step6. generate genesis unit header
 	header := modules.Header{
 		AssetIDs: []modules.IDType16{},
-		Number:   chainIndex,
+		Number:   *chainIndex,
 		TxRoot:   root,
 		//		Creationdate: time.Now().Unix(),
 	}
@@ -251,6 +260,10 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	unit.UnitSize = unit.Size()
 	units = append(units, unit)
 	return units, nil
+}
+
+func (unitOp *UnitRepository) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
+	return unitOp.statedb.GetCurrentChainIndex(assetId)
 }
 
 /**

@@ -76,6 +76,8 @@ var (
 	// token info
 	TOKENTYPE  = []byte("tp") // tp[types]
 	TOKENINFOS = []byte("tokeninfos")
+	// state current chain index
+	CURRENTCHAININDEX_PREFIX = "ccix"
 
 	STATE_VOTER_LIST = []byte("vl")
 )

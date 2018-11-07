@@ -711,7 +711,7 @@ func (mr *MockIDagMockRecorder) GetAccountMediatorVote(address interface{}) *gom
 }
 
 // GetTokenInfo mocks base method
-func (m *MockIDag) GetTokenInfo(key []byte) (*modules.TokenInfo, error) {
+func (m *MockIDag) GetTokenInfo(key string) (*modules.TokenInfo, error) {
 	ret := m.ctrl.Call(m, "GetTokenInfo", key)
 	ret0, _ := ret[0].(*modules.TokenInfo)
 	ret1, _ := ret[1].(error)
