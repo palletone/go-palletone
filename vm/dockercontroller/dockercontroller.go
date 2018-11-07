@@ -440,7 +440,7 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 
 //Stop stops a running chaincode
 func (vm *DockerVM) Stop(ctxt context.Context, ccid ccintf.CCID, timeout uint, dontkill bool, dontremove bool) error {
-	imageID, err := vm.GetImageId(ccid)
+	containerId, err := vm.GetContainerId(ccid)
 	if err != nil {
 		dockerLogger.Errorf("get image id error: %s", err)
 		return err
@@ -452,7 +452,7 @@ func (vm *DockerVM) Stop(ctxt context.Context, ccid ccintf.CCID, timeout uint, d
 	}
 	//id = strings.Replace(id, ":", "_", -1)
 
-	err = vm.stopInternal(ctxt, client, imageID, timeout, dontkill, dontremove)
+	err = vm.stopInternal(ctxt, client, containerId, timeout, dontkill, dontremove)
 
 	return err
 }
