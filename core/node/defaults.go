@@ -62,8 +62,8 @@ func DefaultDataDir() string {
 	//}
 	//// As we cannot guess a stable location, return empty and handle later
 	//return ""
-
-	return "./"
+	//return "./"
+	return "./palletone"
 }
 
 func homeDir() string {
