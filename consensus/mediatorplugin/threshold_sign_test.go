@@ -33,15 +33,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var suite = bn256.NewSuiteG2()
+var (
+	suite = bn256.NewSuiteG2()
 
-var nbParticipants = 21
-var ntThreshold = nbParticipants*2/3 + 1
+	nbParticipants = 21
+	ntThreshold    = nbParticipants*2/3 + 1
 
-var partSec []kyber.Scalar
-var partPubs []kyber.Point
+	partSec  []kyber.Scalar
+	partPubs []kyber.Point
 
-var dkgs []*dkg.DistKeyGenerator
+	dkgs []*dkg.DistKeyGenerator
+)
 
 func init() {
 	partPubs = make([]kyber.Point, nbParticipants)

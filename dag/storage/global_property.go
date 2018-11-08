@@ -27,8 +27,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
@@ -40,6 +40,8 @@ type globalProperty struct {
 	ChainParameters core.ChainParameters
 
 	ActiveMediators []core.MediatorInfo
+
+	GroupPubKey string
 }
 
 func getGPT(gp *modules.GlobalProperty) globalProperty {
@@ -53,6 +55,7 @@ func getGPT(gp *modules.GlobalProperty) globalProperty {
 	gpt := globalProperty{
 		ChainParameters: gp.ChainParameters,
 		ActiveMediators: ams,
+		GroupPubKey:     core.PointToStr(gp.GroupPubKey),
 	}
 
 	return gpt
@@ -68,6 +71,7 @@ func getGP(gpt *globalProperty) *modules.GlobalProperty {
 	gp := modules.NewGlobalProp()
 	gp.ChainParameters = gpt.ChainParameters
 	gp.ActiveMediators = ams
+	gp.GroupPubKey = core.StrToPoint(gpt.GroupPubKey)
 
 	return gp
 }
