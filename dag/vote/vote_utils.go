@@ -58,9 +58,16 @@ func resultNumber(inputLen uint8, resLenth uint8) uint8 {
 
 //TODO
 func MapExist(m interface{}, k interface{}) bool {
-	if reflect.ValueOf(m).Kind() == reflect.Map {
-		//TODO
-		return true
+	vm := reflect.ValueOf(m)
+	if vm.Kind() == reflect.Map { // m is a map?
+		if vm.Elem().Type() == reflect.TypeOf(k) { // type of key of m same with type of k ?
+			for _, key := range vm.MapKeys() {
+				if key == reflect.ValueOf(k) {
+					return true
+				}
+			}
+		}
+
 	}
 	return false
 }
