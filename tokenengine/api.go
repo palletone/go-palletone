@@ -80,6 +80,14 @@ func GetAddressFromScript(lockScript []byte) (common.Address, error) {
 //生成多签用的赎回脚本
 //Generate redeem script
 func GenerateRedeemScript(needed byte, pubKeys [][]byte) []byte {
+	if needed == 0x0 {
+		return []byte{}
+	}
+	if len(pubKeys) == 1 { //Mediator单签
+		redeemScript, _ := txscript.NewScriptBuilder().AddData(pubKeys[0]).AddOp(txscript.OP_CHECKSIG).Script()
+		return redeemScript
+	}
+	//TODO Devin pubkeys 排序
 	builder := txscript.NewScriptBuilder().AddOp(needed + 80) //OP_Number
 	for _, pubKey := range pubKeys {
 		builder = builder.AddData(pubKey)
@@ -135,6 +143,8 @@ func GenerateP2SHUnlockScript(signs [][]byte, redeemScript []byte) []byte {
 	unlock, _ := builder.AddData(redeemScript).Script()
 	return unlock
 }
+
+//根据收集到的签名和脚本生成解锁合约上的Token的脚本
 func GenerateP2CHUnlockScript(signs [][]byte, redeemScript []byte, version int) []byte {
 	builder := txscript.NewScriptBuilder()
 	for _, sign := range signs {
