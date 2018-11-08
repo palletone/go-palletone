@@ -320,6 +320,8 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 			return
 		}
 
+		// todo 判断父unit是否被确认
+
 		var err error
 		hash := newUnit.Hash()
 

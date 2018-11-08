@@ -770,13 +770,16 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
 		return fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 	}
+
 	// step2. validate unit
 	log.Debug("11111111111111111111111111111   start save dag")
 	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
+
 	log.Debug("2222222222222222@@@@@@@@@@@@@   start save dag")
 	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
 		return fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
 	}
+
 	log.Debug("#############################   start save dag")
 	if unitState == modules.UNIT_STATE_VALIDATED {
 		log.Debug("**********************   start save dag")
@@ -798,6 +801,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 			log.Info("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
 		}
 	}
+
 	log.Debug("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$   start save dag")
 	// todo 应当先判断是否切换，再保存，并更新状态
 	// step5. check if it is need to switch
