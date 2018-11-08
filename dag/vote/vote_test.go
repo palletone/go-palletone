@@ -26,33 +26,37 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAddressMultipleVote(t *testing.T) {
-	amv := AddressMultipleVote{}
+func TestBaseVoteModel(t *testing.T) {
+	bvm := NewBaseVoteModel()
+
 	addrs := make([]common.Address, 0)
 	addr1 := common.StringToAddressGodBlessMe("P1GqZ72gaeq7LiS34KLJoMmCnMnaopkcEPn")
 	addr2 := common.StringToAddressGodBlessMe("P1L3F4oj1ciogAE69uogGcU8e9Hp5ZMnYJ3")
 	addr3 := common.StringToAddressGodBlessMe("P1KYtxHobTsYgR4cWF5rjb5WUM7ZkDncHa9")
 	addr4 := common.StringToAddressGodBlessMe("P1M2v9vvP5UJAtW4vQPqPSjsLPxnzgnP9UT")
 	addr5 := common.StringToAddressGodBlessMe("P1JT8D85jFajyKguB1DvsaYERv9K8y8vckL")
-	addr6 := common.StringToAddressGodBlessMe("P1PjSaHLTxFm52fECLxVFErd3ch8Fif7CEN")
 	addrs = append(addrs, addr1, addr2, addr3, addr4, addr5)
-	amv.RegisterCandidates(addrs)
-	amv.AddToBox(100, []common.Address{addr1})
-	amv.AddToBox(200, []common.Address{addr2})
-	amv.AddToBox(300, []common.Address{addr3})
-	amv.AddToBox(400, []common.Address{addr4})
-	amv.AddToBox(500, []common.Address{addr5})
-	amv.AddToBox(5000, addrs)
+	bvm.RegisterCandidates(addrs)
+
+	// add single vote
+	bvm.AddToBox(100, addr1)
+	bvm.AddToBox(200, addr2)
+	bvm.AddToBox(300, addr3)
+	bvm.AddToBox(400, addr4)
+	bvm.AddToBox(500, addr5)
+	// add votes batch
+	bvm.AddToBox(5000, addrs)
 
 	// [test1] test voting to invalid candidates
-	amv.AddToBox(512, []common.Address{addr6})
-	_, ok := amv.voteStatus[addr6]
+	addr6 := common.StringToAddressGodBlessMe("P1PjSaHLTxFm52fECLxVFErd3ch8Fif7CEN")
+	bvm.AddToBox(512, addr6)
+	_, ok := bvm.candidatesStatus[addr6]
 	assert.False(t, ok)
 
 	// [test2] test result
 	voteResult := make([]common.Address, 0)
-	amv.GetResult(4, &voteResult)
-	addr1Score, err := amv.GetScore(voteResult[0])
+	bvm.GetResult(4, &voteResult)
+	addr1Score, err := bvm.GetScore(voteResult[0])
 	assert.Nil(t, err)
 	assert.EqualValues(t, 4, len(voteResult))
 	assert.EqualValues(t, addr5, voteResult[0])
@@ -62,8 +66,9 @@ func TestAddressMultipleVote(t *testing.T) {
 	assert.EqualValues(t, 5500, addr1Score)
 }
 
-func TestDeligatePrivilegedVote(t *testing.T) {
-	dpv := deligatePrivilegedVote{}
+func TestOpenVoteModel(t *testing.T) {
+	ovm := NewOpenVoteModel()
+
 	addrs := make([]common.Address, 0)
 	addr1 := common.StringToAddressGodBlessMe("P1GqZ72gaeq7LiS34KLJoMmCnMnaopkcEPn")
 	addr2 := common.StringToAddressGodBlessMe("P1L3F4oj1ciogAE69uogGcU8e9Hp5ZMnYJ3")
@@ -71,7 +76,23 @@ func TestDeligatePrivilegedVote(t *testing.T) {
 	addr4 := common.StringToAddressGodBlessMe("P1M2v9vvP5UJAtW4vQPqPSjsLPxnzgnP9UT")
 	addr5 := common.StringToAddressGodBlessMe("P1JT8D85jFajyKguB1DvsaYERv9K8y8vckL")
 	addrs = append(addrs, addr1, addr2, addr3, addr4, addr5)
-	dpv.RegisterCandidates(addrs)
-	//dpv.SetWeight()
+	ovm.RegisterCandidates(addrs)
 
+
+	ovm.SetCurrentVoter(addr1)
+	ovm.AddToBox(100, addr1)
+	ovm.SetCurrentVoter(addr2)
+	ovm.AddToBox(200, addr2)
+	ovm.SetCurrentVoter(addr3)
+	ovm.AddToBox(300, addr3)
+	ovm.SetCurrentVoter(addr4)
+	ovm.AddToBox(400, addr4)
+	ovm.SetCurrentVoter(addr5)
+	ovm.AddToBox(500, addr5)
+
+	// [test1] test voting to invalid candidates
+	addr6 := common.StringToAddressGodBlessMe("P1PjSaHLTxFm52fECLxVFErd3ch8Fif7CEN")
+	ovm.AddToBox(512, addr6)
+	_, ok := ovm.candidatesStatus[addr6]
+	assert.False(t, ok)
 }

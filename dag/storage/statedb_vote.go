@@ -144,7 +144,7 @@ func (statedb *StateDb) GetAccountMediatorVote(voterAddress common.Address) ([]c
 
 //GetSortedVote YiRan@
 func (statedb *StateDb) GetSortedVote(ReturnNumber uint8, voteType uint8, minTermLimit uint16) ([]common.Address, error) {
-	voteBox := vote.AddressMultipleVote{}
+	voteBox := vote.NewBaseVote()
 	// 1. get voter list
 	voterList := statedb.GetVoterList(voteType, minTermLimit)
 
