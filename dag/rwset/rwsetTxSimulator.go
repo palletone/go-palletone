@@ -158,3 +158,15 @@ func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
 
 	return nil, nil
 }
+func (s *RwSetTxSimulator)  GetTokenBalance(contractid []byte, ns string) (map[modules.Asset]uint64, error){
+	//TODO Devin query utxo
+	return map[modules.Asset]uint64{},nil
+}
+func (s *RwSetTxSimulator) PayOutToken(ns string, token modules.Asset, amount uint64, lockTime uint32) error {
+	//TODO Devin pay a token out
+	return nil
+}
+func (s *RwSetTxSimulator) GetPayOutData(ns string) ([]*modules.TokenPayOut, error) {
+	//TODO Devin get all payout list
+	return []*modules.TokenPayOut{}, nil
+}

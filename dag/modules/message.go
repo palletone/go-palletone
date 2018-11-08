@@ -266,6 +266,12 @@ type ContractReadSet struct {
 	Version *StateVersion
 	Value   []byte
 }
+type TokenPayOut struct {
+	Asset    Asset
+	Amount   uint64
+	PayTo    common.Address
+	LockTime uint32
+}
 
 // 0.default vote result is the index of the option from list
 // 1.If the option is specified by the voter, set Option null

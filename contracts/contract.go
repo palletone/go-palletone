@@ -6,6 +6,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	cc "github.com/palletone/go-palletone/contracts/manger"
+	"github.com/palletone/go-palletone/contracts/modules"
 	"github.com/palletone/go-palletone/dag"
 	unit "github.com/palletone/go-palletone/dag/modules"
 	"sync/atomic"
@@ -99,7 +100,7 @@ func (c *Contract) Deploy(chainID string, templateId []byte, txid string, args [
 // Invoke 合约invoke调用，根据指定合约调用参数执行已经部署的合约，函数返回合约调用单元。
 // The contract invoke call, execute the deployed contract according to the specified contract call parameters,
 // and the function returns the contract call unit.
-func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
+func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error) {
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		return nil, errors.New("Contract not initialized")
