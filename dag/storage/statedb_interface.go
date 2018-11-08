@@ -57,6 +57,15 @@ type IStateDb interface {
 	UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
 	UpdateMediatorVote(voter common.Address, candidates []common.Address, mode uint8, term uint16) error
 	GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error)
+
+	// world state chainIndex
+	GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)
+	SaveChainIndex(index *modules.ChainIndex) error
+
+	// todo albert·gou
+	//SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error
+	//GetAccountMediatorInfo(address common.Address) (*core.MediatorInfo, error)
+	//SaveAccountMediatorInfo(address common.Address, info *core.MediatorInfo, version *modules.StateVersion) error
 	CreateUserVote(voter common.Address, detail [][]byte, bHash []byte) error
 
 	StoreMediatorInfo(mi *core.MediatorInfo) error

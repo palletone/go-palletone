@@ -30,7 +30,7 @@ import (
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
-        "github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
@@ -337,7 +337,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && unit.UnitHeader.ChainIndex().Index > number.Index) {
 		trueHead := unit.Hash()
 		log.Info("=================handler p.SetHead===============")
-		p.SetHead(trueHead, unit.UnitHeader.ChainIndex())
+		p.SetHead(trueHead, unit.UnitHeader.Number)
 		// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
 		// a singe block (as the true TD is below the propagated block), however this
 		// scenario should easily be covered by the fetcher.
@@ -345,12 +345,15 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		//但是这个场景应该很容易被fetcher所覆盖。
 		currentUnit := pm.dag.CurrentUnit()
 		if currentUnit != nil && unit.UnitHeader.ChainIndex().Index > currentUnit.UnitHeader.ChainIndex().Index {
+			log.Info("ProtocolManager", "NewBlockMsg pm.synchronise number:", unit.Number().Index)
 			go pm.synchronise(p, unit.Number().AssetID)
 		}
 	}
 	return nil
 }
+
 type Tag uint64
+
 func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	log.Info("===============ProtocolManager TxMsg====================")
 	// Transactions arrived, make sure we have a valid and fresh chain to handle them
@@ -371,22 +374,22 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if tx == nil {
 			return errResp(ErrDecode, "transaction %d is nil", i)
 		}
-        for _, msg := range tx.TxMessages {
-            payload, ok := msg.Payload.(*modules.PaymentPayload)
-            if ok == false {
-                continue
-            }
-            for _, txin := range payload.Input {
-                st,err := pm.dag.GetUtxoEntry(txin.PreviousOutPoint)
-                if st == nil || err != nil {
-                    return err
-                }
-                err = tokenengine.ScriptValidate(st.PkScript,tx, int(txin.PreviousOutPoint.MessageIndex), int(txin.PreviousOutPoint.OutIndex))
-                if err != nil {
-                    return err
-                }
-            }
-        }
+		for _, msg := range tx.TxMessages {
+			payload, ok := msg.Payload.(*modules.PaymentPayload)
+			if ok == false {
+				continue
+			}
+			for _, txin := range payload.Input {
+				st, err := pm.dag.GetUtxoEntry(txin.PreviousOutPoint)
+				if st == nil || err != nil {
+					return err
+				}
+				err = tokenengine.ScriptValidate(st.PkScript, tx, int(txin.PreviousOutPoint.MessageIndex), int(txin.PreviousOutPoint.OutIndex))
+				if err != nil {
+					return err
+				}
+			}
+		}
 		p.MarkTransaction(tx.Hash())
 		txHash := tx.Hash()
 		txHash = txHash

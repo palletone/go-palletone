@@ -561,13 +561,14 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*
 	log.Debug("Retrieving remote chain height")
 
 	// Request the advertised remote head block and wait for the response
-	//TODO must recover
-	head, _ := p.peer.Head(assetId)
-	if common.EmptyHash(head) {
+	//TODO must modify
+	headerHash, number := p.peer.Head(assetId)
+	if common.EmptyHash(headerHash) && number.Index <= 0 {
+		log.Debug("Downloader", "fetchHeight header hash:", headerHash, "number:", number.Index)
 		return nil, errPeersUnavailable
 	}
 
-	go p.peer.RequestHeadersByHash(head, 1, 0, false)
+	go p.peer.RequestHeadersByHash(headerHash, 1, 0, false)
 
 	ttl := d.requestTTL()
 	timeout := time.After(ttl)

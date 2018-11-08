@@ -64,7 +64,9 @@ type Dag struct {
 	logger log.ILogger
 	Memdag memunit.IMemDag // memory unit
 	// memutxo
-	utxos_cache map[modules.OutPoint]*modules.Utxo
+	utxos_cache  map[modules.OutPoint]*modules.Utxo
+	utxos_cache1 map[common.Hash]map[modules.OutPoint]*modules.Utxo
+	//utxos_cache2 map[fork_number]map[modules.OutPoint]*modules.Utxo
 }
 
 func (d *Dag) IsEmpty() bool {
@@ -110,8 +112,8 @@ func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
 	return d.CurrentUnit()
 }
 
-func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit {
-	curUnit, err := d.Memdag.GetCurrentUnit(assetId)
+func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit {
+	curUnit, err := d.Memdag.GetCurrentUnit(assetId, index)
 	if err != nil {
 		log.Error("GetCurrentMemUnit", "error", err.Error())
 		return nil
@@ -286,14 +288,6 @@ func (d *Dag) Exists(hash common.Hash) bool {
 		return true
 	}
 	return false
-	/*
-		number, err := d.dagdb.GetNumberWithUnitHash(hash)
-		if err == nil && (number != nil) {
-			log.Info("hash is exsit in leveldb ", "hash", hash.String())
-			return true
-		}
-		return false
-	*/
 }
 func (d *Dag) CurrentHeader() *modules.Header {
 	unit := d.CurrentUnit()
@@ -472,7 +466,7 @@ func NewDag(db ptndb.Database, l log.ILogger) (*Dag, error) {
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
-		Memdag:        memunit.NewMemDag(dagDb, unitRep),
+		Memdag:        memunit.NewMemDag(dagDb, stateDb, unitRep),
 		utxos_cache:   make(map[modules.OutPoint]*modules.Utxo),
 	}
 
@@ -593,7 +587,11 @@ func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	defer d.Mutex.RUnlock()
 	return d.utxodb.GetUtxoEntry(outpoint)
 }
-
+func (d *Dag) GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error) {
+	d.Mutex.RLock()
+	defer d.Mutex.RUnlock()
+	return d.utxodb.GetUtxoPkScripHexByTxhash(txhash, mindex, outindex)
+}
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	//preout := modules.OutPoint{TxHash: tx.Hash()}
@@ -768,35 +766,44 @@ func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit) error {
 func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	// todo 应当根据新的unit判断哪条链作为主链
 	// step1. check exists
-	if d.Memdag.Exists(unit.UnitHash) || d.Exists(unit.UnitHash) {
-		return fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.UnitHash.String())
+	log.Debug("00000000000000000000000000000   start save dag")
+	if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
+		return fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 	}
 	// step2. validate unit
+	log.Debug("11111111111111111111111111111   start save dag")
 	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
+	log.Debug("2222222222222222@@@@@@@@@@@@@   start save dag")
 	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
 		return fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
 	}
+	log.Debug("#############################   start save dag")
 	if unitState == modules.UNIT_STATE_VALIDATED {
+		log.Debug("**********************   start save dag")
 		// step3.1. pass and with group signature, put into leveldb
 		// todo 应当先判断是否切换，再保存，并更新状态
 		if err := d.unitRep.SaveUnit(unit, false); err != nil {
 			return fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
 		}
 		// step3.2. if pass and with group signature, prune fork data
-		if err := d.Memdag.Prune(unit.UnitHeader.Number.AssetID.String(), unit.UnitHash); err != nil {
-			return fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
-		}
+		// if err := d.Memdag.Prune(unit.UnitHeader.Number.AssetID.String(), unit.Hash()); err != nil {
+		// 	return fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
+		// }
 	} else {
+		log.Debug("^^^^^^^^^^^^^^^^^^^^^^^^   start save dag")
 		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
 		if err := d.Memdag.Save(unit); err != nil {
 			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
+		} else {
+			log.Info("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
 		}
 	}
+	log.Debug("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$   start save dag")
 	// todo 应当先判断是否切换，再保存，并更新状态
 	// step5. check if it is need to switch
-	if err := d.Memdag.SwitchMainChain(); err != nil {
-		return fmt.Errorf("SaveDag, save error when switch chain: %s", err.Error())
-	}
+	// if err := d.Memdag.SwitchMainChain(); err != nil {
+	// 	return fmt.Errorf("SaveDag, save error when switch chain: %s", err.Error())
+	// }
 	// TODO
 	// update  utxo
 	var outpoint = modules.OutPoint{}
@@ -847,9 +854,9 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 			outpoint = key
 			d.utxos_cache[key] = utxo
 		}
+		log.Info("=================save Memdag and dag's utxo cache===============", "keyinfo", outpoint.String(), "utxoinfo", d.utxos_cache[outpoint])
 	}
 
-	log.Info("======================dag utxo cache===============", "keyinfo", outpoint.String(), "utxoinfo", d.utxos_cache[outpoint])
 	return nil
 }
 
@@ -944,7 +951,7 @@ func (d *Dag) SaveTokenInfo(token_info *modules.TokenInfo) (string, error) { // 
 }
 
 // Get token info
-func (d *Dag) GetTokenInfo(key []byte) (*modules.TokenInfo, error) {
+func (d *Dag) GetTokenInfo(key string) (*modules.TokenInfo, error) {
 	return d.dagdb.GetTokenInfo(key)
 }
 
@@ -1082,4 +1089,11 @@ func (d *Dag) GetCommon(key []byte) ([]byte, error) {
 // GetCommonByPrefix  return the prefix's all key && value.
 func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return d.dagdb.GetCommonByPrefix(prefix)
+}
+
+func (d *Dag) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
+	return d.statedb.GetCurrentChainIndex(assetId)
+}
+func (d *Dag) SaveChainIndex(index *modules.ChainIndex) error {
+	return d.statedb.SaveChainIndex(index)
 }

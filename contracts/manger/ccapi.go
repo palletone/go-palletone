@@ -11,6 +11,7 @@ import (
 	cp "github.com/palletone/go-palletone/common/crypto"
 	db "github.com/palletone/go-palletone/contracts/comm"
 	cclist "github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/contracts/modules"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
@@ -321,7 +322,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 //timeout:ms
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
+func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error) {
 	logger.Infof("==========Invoke enter=======")
 	logger.Infof("deployId[%s] txid[%s]", hex.EncodeToString(deployId), txid)
 	defer logger.Infof("-----------Invoke exit--------")

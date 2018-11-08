@@ -19,6 +19,16 @@
 
 package vote
 
-type TxHashMultipleVote struct {
-	BaseVote
+type processPlugin struct {
+	currentVoter interface{}
+	processMap   map[interface{}][]interface{}
+}
+
+func (pp *processPlugin) SetCurrentVoter(voter interface{}) {
+	pp.currentVoter = voter
+	pp.processMap[voter] = nil
+}
+
+func (pp *processPlugin) SetProcess(tos []interface{}) {
+	pp.processMap[pp.currentVoter] = tos
 }

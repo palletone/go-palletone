@@ -51,35 +51,62 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 		log.Info("No unit need to be packaged for now.")
 		return &modules.Unit{}
 	}
-
 	pendingUnit := &newUnits[0]
+	log.Debug("Creating Verified Unit ---------- ", "unit_hash", pendingUnit.Hash().String())
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
+	current_index, _ := dag.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
 	if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
-		curUnit := dag.GetCurrentMemUnit(pendingUnit.UnitHeader.AssetIDs[0])
-		if curUnit == nil {
-			curUnit = dag.GetCurrentUnit(pendingUnit.UnitHeader.AssetIDs[0])
-		}
-		if curUnit != nil {
+		log.Debug("Creating Verified Unit 1111111111111111", "Index", current_index)
+		curMemUnit := dag.GetCurrentMemUnit(pendingUnit.UnitHeader.AssetIDs[0], current_index.Index)
+		curUnit := dag.GetCurrentUnit(pendingUnit.UnitHeader.AssetIDs[0])
+		// if curMemUnit == nil {
+		// 	log.Debug("GetCurrentMemUnit chaindex from memdag: ", "Index", current_index)
+		// }
+		if curMemUnit != nil {
+			log.Debug("GetCurrentMemUnit chaindex from memdag: ", "memIndex", curMemUnit.UnitHeader.Index(), "index", curUnit.UnitHeader.Index())
+			if curMemUnit.UnitHeader.Index() > curUnit.UnitHeader.Index() {
+				pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curMemUnit.UnitHash)
+				pendingUnit.UnitHeader.Number = curMemUnit.UnitHeader.Number
+				pendingUnit.UnitHeader.Number.Index += 1
+			} else {
+				pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
+				pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
+				pendingUnit.UnitHeader.Number.Index += 1
+			}
+		} else {
+			log.Debug("GetCurrentMemUnit chaindex from dag dag dag: ", "dagIndex", curUnit.UnitHeader.Index())
 			pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
 			pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
 			pendingUnit.UnitHeader.Number.Index += 1
 		}
+
 	} else {
-		pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
+		log.Debug("Creating Verified Unit 2222222222222222")
+		pendingUnit.UnitHeader.Number = *current_index
+		pendingUnit.UnitHeader.Number.Index = current_index.Index + 1
+
 		pendingUnit.UnitHeader.ParentsHash =
 			append(pendingUnit.UnitHeader.ParentsHash, dag.HeadUnitHash())
 	}
-	pendingUnit.UnitHash = pendingUnit.Hash()
-
+	if pendingUnit.UnitHeader.Number == (modules.ChainIndex{}) {
+		current_index.Index += 1
+		pendingUnit.UnitHeader.Number = *current_index
+	} else {
+		log.Info("the pending unit header number index info. ", "index", pendingUnit.UnitHeader.Number.Index, "hex", pendingUnit.UnitHeader.Number.AssetID.String())
+	}
+	log.Debug("Creating Verified Unit 3333333333333333")
+	//pendingUnit.UnitHash = pendingUnit.Hash()
+	pendingUnit.Hash()
 	_, err = dagcommon.GetUnitWithSig(pendingUnit, ks, producer)
 	if err != nil {
-		log.Error(fmt.Sprintf("%v", err))
+		log.Error(fmt.Sprintf("GetUnitWithSig error: %v", err))
 	}
-
+	chain_index := pendingUnit.UnitHeader.ChainIndex()
 	pendingUnit.UnitSize = pendingUnit.Size()
+	log.Info("11111111111111111 get chain index info  1111111111111111111111111",
+		"index", chain_index.Index, "assetIdHex", chain_index.AssetID.String())
 
 	dag.PushUnit(pendingUnit)
-
 	return pendingUnit
 }
 
@@ -101,9 +128,10 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit) bool {
 	err := dag.SaveUnit(newUnit, false)
 	if err != nil {
 		log.Error("unit_production", "PushUnit err:", err)
+		return false
 	}
 
-	return false
+	return true
 }
 
 func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {

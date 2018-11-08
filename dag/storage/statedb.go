@@ -89,6 +89,30 @@ func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator
 	return RetrieveMediator(statedb.db, address)
 }
 
+func (statedb *StateDb) SaveChainIndex(index *modules.ChainIndex) error {
+	bytes, err := rlp.EncodeToBytes(index)
+	if err != nil {
+		return err
+	}
+	key := constants.CURRENTCHAININDEX_PREFIX + index.AssetID.String()
+	if err := statedb.db.Put([]byte(key), bytes); err != nil {
+		return err
+	}
+	return nil
+}
+func (statedb *StateDb) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
+	// get current chainIndex
+	key := constants.CURRENTCHAININDEX_PREFIX + assetId.String()
+	bytes, err := statedb.db.Get([]byte(key))
+	if err != nil {
+		return nil, err
+	}
+	chainIndex := new(modules.ChainIndex)
+	if err := rlp.DecodeBytes(bytes, &chainIndex); err != nil {
+		return nil, err
+	}
+	return chainIndex, nil
+}
 // author albert·gou
 func (statedb *StateDb) GetMediatorCount() int {
 	return GetMediatorCount(statedb.db)
@@ -103,6 +127,18 @@ func (statedb *StateDb) IsMediator(address common.Address) bool {
 func (statedb *StateDb) GetMediators() map[common.Address]bool {
 	return GetMediators(statedb.db)
 }
+// todo albert·gou
+//func (statedb *StateDb) GetActiveMediatorAddrList() ([]common.Address, error) {
+//
+//	key := constants.STATE_ACTIVE_MEDIATOR_LIST
+//	data, _, err := retrieveWithVersion(statedb.db, key)
+//	if err != nil {
+//		return nil, err
+//	}
+//	result := []common.Address{}
+//	rlp.DecodeBytes(data, result)
+//	return result, nil
+//}
 
 // author albert·gou
 func (statedb *StateDb) LookupMediator() map[common.Address]core.Mediator {

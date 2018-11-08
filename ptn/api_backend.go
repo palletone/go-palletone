@@ -320,8 +320,7 @@ func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
 	}
 	return all, nil
 }
-
-func (b *PtnApiBackend) GetTokenInfo(key []byte) (*ptnjson.TokenInfoJson, error) {
+func (b *PtnApiBackend) GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error) {
 	tokenInfo, err := b.ptn.dag.GetTokenInfo(key)
 	if err != nil {
 		return nil, err

@@ -29,6 +29,7 @@ import (
 	"time"
 
 	chaincode "github.com/palletone/go-palletone/contracts/core"
+	"github.com/palletone/go-palletone/contracts/modules"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	unit "github.com/palletone/go-palletone/dag/modules"
 	ut "github.com/palletone/go-palletone/dag/modules"
@@ -94,23 +95,27 @@ func GetBytesChaincodeEvent(event *pb.ChaincodeEvent) ([]byte, error) {
 	return eventBytes, err
 }
 
-func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
+func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error) {
 	logger.Debug("enter")
-	invokeData := ut.ContractInvokePayload{}
-	invokeData.ContractId = []byte(txid)
+	//invokeData := ut.ContractInvokePayload{}
+	//invokeData.ContractId = []byte(txid)
 
 	rd, wt, err := tx.GetRwData(nm)
 	if err != nil {
 		return nil, err
 	}
-
+	tokenPay, err := tx.GetPayOutData(nm)
+	if err != nil {
+		return nil, err
+	}
 	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
-	invoke := &unit.ContractInvokePayload{
+	invoke := &modules.ContractInvokeResult{
 		ContractId:   deployId,
 		Args:         args,
 		Excutiontime: timeout,
 		ReadSet:      make([]unit.ContractReadSet, 0),
 		WriteSet:     make([]unit.ContractWriteSet, 0),
+		TokenPayOut:  tokenPay,
 	}
 
 	for idx, val := range rd {

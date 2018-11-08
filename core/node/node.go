@@ -669,7 +669,7 @@ func (n *Node) OpenDatabase(name string, cache, handles int) (ptndb.Database, er
 		log.Debug("Open a memery database.")
 		return ptndb.NewMemDatabase()
 	}
-	log.Debug("Open a leveldb, path:", n.config.resolvePath(name))
+	log.Debug("Open a leveldb, path:", "info", n.config.resolvePath(name))
 	//return ptndb.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
 	return storage.Init(n.config.resolvePath(name), cache, handles)
 }

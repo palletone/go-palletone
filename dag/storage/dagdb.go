@@ -24,6 +24,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 	"unsafe"
 
@@ -93,7 +94,7 @@ type IDagDb interface {
 	GetAllLeafNodes() ([]*modules.Header, error)
 	GetTrieSyncProgress() (uint64, error)
 	GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
-	GetTokenInfo(key []byte) (*modules.TokenInfo, error)
+	GetTokenInfo(key string) (*modules.TokenInfo, error)
 	GetAllTokenInfo() (*modules.AllTokenInfo, error)
 
 	// common geter
@@ -112,7 +113,11 @@ func (dagdb *DagDb) GetCommonByPrefix(prefix []byte) map[string][]byte {
 		key := iter.Key()
 		value := make([]byte, 0)
 		// 请注意： 直接赋值取得iter.Value()的最后一个指针
-		result[*(*string)(unsafe.Pointer(&key))] = append(value, iter.Value()...)
+		// result[*(*string)(unsafe.Pointer(&key))] = append(value, iter.Value()...)
+		result[string(key)] = append(value, iter.Value()...)
+	}
+	for k, val := range result {
+		fmt.Println("key:::::::::  ", k, string(val))
 	}
 	return result
 }
@@ -152,6 +157,9 @@ func (dagdb *DagDb) SaveHeader(uHash common.Hash, h *modules.Header) error {
 
 //這是通過modules.ChainIndex存儲hash
 func (dagdb *DagDb) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
+	if number == (modules.ChainIndex{}) {
+		return errors.New("the saving chain_index is null.")
+	}
 	key := fmt.Sprintf("%s%s", constants.UNIT_HASH_NUMBER_Prefix, uHash.String())
 	index := new(modules.ChainIndex)
 	index.AssetID = number.AssetID
@@ -324,13 +332,17 @@ func (dagdb *DagDb) SaveTokenInfo(token_info *modules.TokenInfo) (string, error)
 	}
 	id, _ := modules.SetIdTypeByHex(token_info.TokenHex)
 
-	key := append(constants.TOKENTYPE, id.Bytes()...)
-	log.Info("================save token info =========", "key", string(key))
-	if err := StoreBytes(dagdb.db, key, token_info); err != nil {
+	key := string(constants.TOKENTYPE) + token_info.TokenHex
+	log.Info("================save token info =========", "key", key)
+	if err := StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), token_info); err != nil {
 		return id.String(), err
 	}
 	// 更新all token_info table.
 	infos, _ := dagdb.GetAllTokenInfo()
+	if infos == nil {
+		infos = new(modules.AllTokenInfo)
+	}
+
 	infos.Add(token_info)
 	dagdb.SaveAllTokenInfo(infos)
 	return id.String(), nil
@@ -399,7 +411,7 @@ func (dagdb *DagDb) GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex
 		return nil, err
 	}
 	if len(data) <= 0 {
-		return nil, fmt.Errorf("data is empty with hash:%v", hash)
+		return nil, fmt.Errorf("chainIndex is null. hash(%s)", hash.String())
 	}
 	number := new(modules.ChainIndex)
 	if err := rlp.DecodeBytes(data, number); err != nil {
@@ -539,13 +551,29 @@ func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.
 
 	data := dagdb.GetPrefix([]byte(key))
 	var irreKey string
+	var irreIndex []string
 	for k := range data {
-		if strings.Compare(k, irreKey) > 0 {
-			irreKey = k
+		// get the key of max index
+		if sts := strings.Split(k, key); len(sts) == 2 {
+			irreIndex = append(irreIndex, sts[1])
 		}
 	}
+	var max int64
+	for i, v := range irreIndex {
+		if index, err := strconv.ParseInt(v, 10, 64); err == nil {
+			if i == 0 {
+				max = index
+			} else {
+				if max < index {
+					max = index
+				}
+			}
+
+		}
+	}
+	irreKey = fmt.Sprintf(key+"%d", max)
 	rlpUnitHash := data[irreKey]
-	log.Info("=================================== ", "irreKey", irreKey, "hash", rlpUnitHash)
+	log.Info("============== GetLastIrreversibleUnit max index key is ===================== ", "irreKey", irreKey, "hash", rlpUnitHash)
 	if len(rlpUnitHash) > 0 {
 		var hex string
 		err := rlp.DecodeBytes(rlpUnitHash, &hex)
@@ -750,18 +778,21 @@ func (dagdb *DagDb) PutTrieSyncProgress(count uint64) error {
 func (dagdb *DagDb) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
 	data, err := dagdb.db.Get(constants.TOKENINFOS)
 	if err != nil {
+		log.Info("123123123123", "all", data)
 		return nil, err
 	}
 	if all, err := modules.Jsonbytes2AllTokenInfo(data); err != nil {
+		log.Info("78787878", "all", all)
 		return nil, err
 	} else {
+		log.Info("56565656", "all", all)
 		return all, nil
 	}
 }
-func (dagdb *DagDb) GetTokenInfo(key []byte) (*modules.TokenInfo, error) {
+func (dagdb *DagDb) GetTokenInfo(key string) (*modules.TokenInfo, error) {
 	log.Info("================get token info =========", "key", string(key))
-	key = append(constants.TOKENTYPE, key...)
-	data, err := dagdb.db.Get(key)
+	key = *(*string)(unsafe.Pointer(&constants.TOKENTYPE)) + key
+	data, err := dagdb.db.Get([]byte(key))
 	if err != nil {
 		return nil, err
 	}

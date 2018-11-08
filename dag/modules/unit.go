@@ -92,8 +92,8 @@ func HeaderEqual(oldh, newh *Header) bool {
 func (h *Header) Index() uint64 {
 	return h.Number.Index
 }
-func (h *Header) ChainIndex() ChainIndex {
-	return h.Number
+func (h *Header) ChainIndex() *ChainIndex {
+	return &h.Number
 }
 
 func (h *Header) Hash() common.Hash {

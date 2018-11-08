@@ -19,6 +19,29 @@
 
 package vote
 
-type AddressMultipleVote struct {
-	BaseVote
+import "fmt"
+
+type privilegedVotePlugin struct {
+	weightMap map[interface{}]uint64
+}
+
+func (pp *privilegedVotePlugin) GetWeight(voter interface{}) uint64 {
+	if w, ok := pp.weightMap[voter]; ok {
+		return w
+	}
+	fmt.Println("voter's weight is not initialized")
+	return 0
+}
+
+func (pp *privilegedVotePlugin) SetWeight(voter interface{}, weight uint64) {
+	//check voter validity first
+	pp.weightMap[voter] = weight
+}
+
+func (pp *privilegedVotePlugin) SetWeightBatch(voters interface{}, weight uint64) {
+	//check voter validity first
+	is := ToInterfaceSlice(voters)
+	for _, voter := range is {
+		pp.weightMap[voter] = weight
+	}
 }

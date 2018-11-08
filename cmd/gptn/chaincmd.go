@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -29,8 +31,8 @@ import (
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/urfave/cli.v1"
-	"os"
 )
 
 var (
@@ -181,6 +183,14 @@ func initGenesis(ctx *cli.Context) error {
 	// @jay
 	// asset 存入数据库中
 	// dag.SaveCommon(key,asset)   key=[]byte(modules.FIELD_GENESIS_ASSET)
+	chainIndex := unit.UnitHeader.ChainIndex()
+	if err := dag.SaveChainIndex(chainIndex); err != nil {
+		log.Info("save chain index is failed.", "error", err)
+	} else {
+		token_info := modules.NewTokenInfo("ptn", "0x70746e636f696e000000000000000000", "creator_jay")
+		idhex, _ := dag.SaveTokenInfo(token_info)
+		log.Info("save chain index is success.", "idhex", idhex)
+	}
 
 	genesisUnitHash := unit.UnitHash
 	log.Info(fmt.Sprintf("Successfully Get Genesis Unit, it's hash: %v", genesisUnitHash.Hex()))

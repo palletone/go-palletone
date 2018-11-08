@@ -24,6 +24,7 @@ import (
 	"sync"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -82,6 +83,7 @@ func (mu *MemUnit) Add(u *modules.Unit) error {
 	if !ok {
 		(*mu.memUnitInfo)[u.UnitHash] = u
 	}
+	log.Info("insert memUnit success.", "hashHex", u.UnitHash.String())
 	return nil
 }
 
@@ -97,12 +99,31 @@ func (mu *MemUnit) Get(hash common.Hash) (*modules.Unit, error) {
 
 func (mu *MemUnit) Exists(hash common.Hash) bool {
 	mu.memLock.RLock()
-	defer mu.memLock.RUnlock()
 	_, ok := (*mu.memUnitInfo)[hash]
+	mu.memLock.RUnlock()
 	if ok {
 		return true
 	}
 	return false
+}
+func (mu *MemUnit) Refresh(hash common.Hash) error {
+	// 删除该hash在memUnit的记录。
+	if hash == (common.Hash{}) {
+		return errors.New("hash is null.")
+	}
+	mu.memLock.Lock()
+	if _, has := (*mu.memUnitInfo)[hash]; has {
+		delete((*mu.memUnitInfo), hash)
+		for index, h := range mu.numberToHash {
+			if h == hash {
+				delete(mu.numberToHash, index)
+				break
+			}
+		}
+		return nil
+	}
+	mu.memLock.Unlock()
+	return errors.New(fmt.Sprintf("the hash(%s) is not exist", hash.String()))
 }
 
 func (mu *MemUnit) Lenth() uint64 {
@@ -134,47 +155,150 @@ func (f *ForkData) Exists(hash common.Hash) bool {
 
 /*********************************************************************/
 // forkIndex
-type ForkIndex []*ForkData
+// type ForkIndex []*ForkData
+type ForkIndex map[uint64]ForkData
+
+// type MainIndex map[uint64]*MainData
+type MainData struct {
+	Index  *modules.ChainIndex
+	Hash   *common.Hash
+	Number uint64
+}
 
 var forkIndexLock sync.RWMutex
 
-func (forkIndex *ForkIndex) AddData(unitHash common.Hash, parentsHash []common.Hash) (int, error) {
+func (forkIndex *ForkIndex) AddData(unitHash common.Hash, parentsHash []common.Hash, index uint64) (int64, error) {
 	forkIndexLock.Lock()
 	defer forkIndexLock.Unlock()
-	for index, fi := range *forkIndex {
-		lenth := len(*fi)
-		if lenth <= 0 {
-			continue
+	// if index <= 0 {
+	// 	index = uint64(len(*forkIndex))
+	// }
+	in, err := forkIndex.addDate(unitHash, parentsHash, index)
+	log.Info("遍历33333  fork Index:", "index", index)
+	for key, data := range *forkIndex {
+		fmt.Println("index: ", key)
+		fmt.Println(" data: ", data)
+	}
+	return in, err
+}
+func (forkIndex *ForkIndex) addDate(hash common.Hash, parentsHash []common.Hash, index uint64) (int64, error) {
+	data1 := make(ForkData, 0)
+	data, has := (*forkIndex)[index]
+	if has {
+		log.Info("444444444444   fork Index:")
+		if data.Exists(hash) {
+			log.Info("444444444444 000000000  fork Index:")
+			return int64(index), nil
 		}
-		if common.CheckExists((*fi)[lenth-1], parentsHash) >= 0 {
-			if err := (*fi).Add(unitHash); err != nil {
-				return -1, err
-			}
-			return int(index), nil
+		// index++
+		// forkIndex.addDate(hash, parentsHash, index)
+		if err := data.Add(hash); err != nil {
+			log.Info("444444444444   11111111111  fork Index:")
+			return -1, err
+		}
+	} else {
+		log.Info("5555555555555   fork Index:")
+		// add hash into ForkData and return index.
+		if err := data1.Add(hash); err != nil {
+			log.Info("55555555555  111111111   fork Index:")
+			return -1, err
 		}
 	}
-	return -2, fmt.Errorf("Unit(%s) is not continuously", unitHash)
+
+	if len(data1) > 0 {
+		(*forkIndex)[index] = data1
+	} else {
+		(*forkIndex)[index] = data
+	}
+
+	h := (*forkIndex)[index-1]
+	// TODO   验证后续再加
+	if h != nil && len(h) > 0 {
+		for _, v := range h {
+			if common.CheckExists(v, parentsHash) >= 0 {
+				log.Debug("666666666666  memUnit add data success  =================", "index", index)
+				return int64(index), nil
+			}
+		}
+	} else {
+		hh := (*forkIndex)[uint64(0)] // 重启后第一个稳定的unit hash
+		for _, v := range hh {
+			if common.CheckExists(v, parentsHash) >= 0 {
+				log.Debug("777777777777  first  add data success  =================", "index", index)
+				return int64(index), nil
+			}
+		}
+	}
+
+	return -2, fmt.Errorf(" =================== Unit(%x) is not continuously", hash)
 }
 
-func (forkIndex *ForkIndex) IsReachedIrreversibleHeight(index int) bool {
+// the  index of parameter is fork's index
+func (forkIndex *ForkIndex) IsReachedIrreversibleHeight(index uint64, main_index uint64) bool {
 	forkIndexLock.RLock()
 	defer forkIndexLock.RUnlock()
-	if index < 0 {
+	if index <= 15 {
 		return false
 	}
-	if len(*(*forkIndex)[index]) >= dagconfig.DefaultConfig.IrreversibleHeight {
-		return true
+
+	if data, has := (*forkIndex)[index]; has { //dagconfig.DefaultConfig.IrreversibleHeight {
+		if data == nil {
+			return false
+		}
+		// TODO  超过15个mediator生产的单元，fork里的第一个单元才能被确认为已不可逆（已稳定）。
+		// ...
+
+		if s_index := index - uint64(dagconfig.DefaultConfig.IrreversibleHeight); s_index >= main_index {
+			if data := (*forkIndex)[s_index+1]; data != nil {
+				return true
+			}
+		}
 	}
 	return false
 }
 
-func (forkIndex *ForkIndex) GetReachedIrreversibleHeightUnitHash(index int) common.Hash {
+func (forkIndex *ForkIndex) GetStableUnitHash(index int64) common.Hash {
+
+	if index < int64(dagconfig.DefaultConfig.IrreversibleHeight) {
+		return (common.Hash{})
+	}
+
+	s_index := uint64(index - int64(dagconfig.DefaultConfig.IrreversibleHeight-1))
+	forkIndexLock.RLock()
+	hashs, has := (*forkIndex)[s_index]
+	forkIndexLock.RUnlock()
+	if !has {
+		log.Info("forkIndex cache111 :::::::::::::::", "index", index, "s_index", s_index, "hashHex", hashs[0].String())
+		return (common.Hash{})
+	}
+	if len(hashs) <= 0 {
+		log.Info("forkIndex cache222 :::::::::::::::", "index", index, "s_index", s_index, "hashHex", hashs[0].String())
+		return (common.Hash{})
+	} else {
+		log.Debug("forkIndex cache333333  :::::::::::::::", "index", index, "s_index", s_index, "hashHex", hashs[0].String())
+	}
+	hash := (hashs)[0]
+	forkIndex.RemoveStableIndex(s_index)
+	return hash
+}
+func (forkIndex *ForkIndex) RemoveStableIndex(index uint64) {
+	if forkIndex == nil {
+		return
+	}
+	// forkIndexLock.Lock()
+	// defer forkIndexLock.Unlock()
+	_, has := (*forkIndex)[index]
+	if has {
+		delete((*forkIndex), index)
+	}
+}
+func (forkIndex *ForkIndex) GetReachedIrreversibleHeightUnitHash(index uint64) common.Hash {
 	forkIndexLock.RLock()
 	defer forkIndexLock.RUnlock()
-	if index < 0 {
+	if index <= 0 {
 		return common.Hash{}
 	}
-	return (*(*forkIndex)[index])[0]
+	return (*forkIndex)[index][0]
 }
 
 func (forkIndex *ForkIndex) Lenth() int {

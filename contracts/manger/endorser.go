@@ -25,12 +25,13 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/palletone/go-palletone/contracts/core"
+	"github.com/palletone/go-palletone/contracts/modules"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	putils "github.com/palletone/go-palletone/core/vmContractPub/protos/utils"
 	"github.com/palletone/go-palletone/dag"
-	unit "github.com/palletone/go-palletone/dag/modules"
+
 	"github.com/palletone/go-palletone/dag/rwset"
 	"time"
 )
@@ -202,7 +203,7 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 
 // ProcessProposal process the Proposal
 //func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
-func (e *Endorser) ProcessProposal(contractid []byte, idag dag.IDag, deployId []byte, ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *unit.ContractInvokePayload, error) {
+func (e *Endorser) ProcessProposal(contractid []byte, idag dag.IDag, deployId []byte, ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *modules.ContractInvokeResult, error) {
 	var txsim rwset.TxSimulator
 
 	//addr := util.ExtractRemoteAddress(ctx)
