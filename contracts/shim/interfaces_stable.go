@@ -23,6 +23,7 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // Chaincode interface must be implemented by all chaincodes. The runs
@@ -223,6 +224,10 @@ type ChaincodeStubInterface interface {
 	GetPayToContractTokens() ([]byte, error)
 	//获取所有的世界状态
 	GetContractAllState() ([]byte, error)
+	//获得该合约的Token余额
+	GetTokenBalance() (map[modules.Asset]uint64, error)
+	//将合约上锁定的某种Token支付出去
+	PayOutToken(token modules.Asset, amount uint64, lockTime uint32) error
 }
 
 // CommonIteratorInterface allows a chaincode to check whether any more result
