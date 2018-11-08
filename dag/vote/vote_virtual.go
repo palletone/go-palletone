@@ -136,10 +136,8 @@ type deligateVotePlugin struct {
 	agentMap map[interface{}]interface{}
 }
 
-type deligatePrivilegedVote struct {
-	BaseVote
-	privilegedVotePlugin
-	deligateVotePlugin
+type processPlugin struct {
+	processMap map[interface{}]interface{}
 }
 
 func (pp *privilegedVotePlugin) GetWeight(voter interface{}) uint8 {
@@ -179,9 +177,4 @@ func (dp *deligateVotePlugin) SetAgent(voter interface{}, agent interface{}) boo
 	dp.agentMap[voter] = currAgent
 	return true
 
-}
-
-func (pp *deligatePrivilegedVote) GetResult(number uint8, val interface{}) bool {
-	//TODO
-	return pp.BaseVote.GetResult(number, val)
 }

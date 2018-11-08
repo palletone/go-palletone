@@ -22,3 +22,19 @@ package vote
 type AddressMultipleVote struct {
 	BaseVote
 }
+
+type TxHashMultipleVote struct {
+	BaseVote
+}
+
+type deligatePrivilegedVote struct {
+	BaseVote
+	privilegedVotePlugin
+	deligateVotePlugin
+	processPlugin
+}
+
+func (dpv *deligatePrivilegedVote) GetResult(number uint8, val interface{}) bool {
+
+	return dpv.BaseVote.GetResult(number, val)
+}
