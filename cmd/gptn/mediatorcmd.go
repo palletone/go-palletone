@@ -23,10 +23,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
 	"gopkg.in/urfave/cli.v1"
@@ -106,8 +104,7 @@ List all existing mediator addresses.
 
 // author Albert·Gou
 func newInitDKS() (secStr, pubStr string) {
-	suite := bn256.NewSuiteG2()
-	sec, pub := mp.GenInitPair(suite)
+	sec, pub := core.GenInitPair()
 
 	secStr = core.ScalarToStr(sec)
 	pubStr = core.PointToStr(pub)

@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -301,7 +302,7 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		productionEnabled: cfg.EnableStaleProduction,
 		mediators:         msm,
 
-		suite: bn256.NewSuiteG2(),
+		suite: core.Suite,
 	}
 	mp.initTBLSBuf()
 

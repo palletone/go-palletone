@@ -30,6 +30,14 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
+var Suite = bn256.NewSuiteG2()
+
+func GenInitPair() (kyber.Scalar, kyber.Point) {
+	sc := Suite.Scalar().Pick(Suite.RandomStream())
+
+	return sc, Suite.Point().Mul(sc, nil)
+}
+
 // mediator 结构体 和具体的账户模型有关
 type Mediator struct {
 	Address     common.Address
@@ -62,7 +70,7 @@ func StrToMedAdd(addStr string) common.Address {
 
 func StrToScalar(secStr string) kyber.Scalar {
 	secB := base58.Decode(secStr)
-	sec := bn256.NewSuiteG2().Scalar()
+	sec := Suite.Scalar()
 
 	err := sec.UnmarshalBinary(secB)
 	if err != nil {
@@ -74,7 +82,7 @@ func StrToScalar(secStr string) kyber.Scalar {
 
 func StrToPoint(pubStr string) kyber.Point {
 	pubB := base58.Decode(pubStr)
-	pub := bn256.NewSuiteG2().Point()
+	pub := Suite.Point()
 
 	err := pub.UnmarshalBinary(pubB)
 	if err != nil {

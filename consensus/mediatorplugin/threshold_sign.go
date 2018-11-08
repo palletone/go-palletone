@@ -35,12 +35,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
-	sc := suite.Scalar().Pick(suite.RandomStream())
-
-	return sc, suite.Point().Mul(sc, nil)
-}
-
 func (mp *MediatorPlugin) StartVSSProtocol() {
 	log.Info("Start completing the VSS protocol.")
 

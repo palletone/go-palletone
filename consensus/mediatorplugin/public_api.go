@@ -56,7 +56,7 @@ type InitDKSResult struct {
 }
 
 func (a *PublicMediatorAPI) GetInitDKS() (res InitDKSResult) {
-	sec, pub := GenInitPair(a.suite)
+	sec, pub := core.GenInitPair()
 
 	res.PrivateKey = core.ScalarToStr(sec)
 	res.PublicKey = core.PointToStr(pub)
