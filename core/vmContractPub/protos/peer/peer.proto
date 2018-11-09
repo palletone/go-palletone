@@ -20,8 +20,8 @@ option go_package = "github.com/palletone/go-palletone/core/vmContractPub/protos
 
 package protos;
 
-import "peer/proposal.proto";
-import "peer/proposal_response.proto";
+import "github.com/palletone/go-palletone/core/vmContractPub/protos/peer/proposal.proto";
+import "github.com/palletone/go-palletone/core/vmContractPub/protos/peer/proposal_response.proto";
 
 message PeerID {
     string name = 1;
