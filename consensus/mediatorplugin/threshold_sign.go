@@ -35,12 +35,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func GenInitPair(suite vss.Suite) (kyber.Scalar, kyber.Point) {
-	sc := suite.Scalar().Pick(suite.RandomStream())
-
-	return sc, suite.Point().Mul(sc, nil)
-}
-
 func (mp *MediatorPlugin) StartVSSProtocol() {
 	log.Info("Start completing the VSS protocol.")
 
@@ -325,6 +319,8 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 		if !dag.ValidateUnitExceptGroupSig(newUnit, false) {
 			return
 		}
+
+		// todo 判断父unit是否被确认
 
 		var err error
 		hash := newUnit.Hash()

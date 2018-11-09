@@ -202,11 +202,11 @@ func (dag *Dag) UpdateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	return uint64(missedUnits)
 }
 
-func (dag *Dag) UpdateGlobalDynProp(unit *modules.Unit, missedUnits uint64) {
+func (dag *Dag) UpdateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
 	gp := dag.GetGlobalProp()
 	dgp := dag.GetDynGlobalProp()
 
-	dgp.UpdateGlobalDynProp(gp, unit, missedUnits)
+	dgp.UpdateDynGlobalProp(gp, unit, missedUnits)
 	dag.SaveDynGlobalProp(dgp, false)
 
 	return

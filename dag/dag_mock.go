@@ -126,15 +126,15 @@ func (mr *MockIDagMockRecorder) GetCurrentUnit(assetId interface{}) *gomock.Call
 }
 
 // GetCurrentMemUnit mocks base method
-func (m *MockIDag) GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit {
-	ret := m.ctrl.Call(m, "GetCurrentMemUnit", assetId)
+func (m *MockIDag) GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit {
+	ret := m.ctrl.Call(m, "GetCurrentMemUnit", assetId, index)
 	ret0, _ := ret[0].(*modules.Unit)
 	return ret0
 }
 
 // GetCurrentMemUnit indicates an expected call of GetCurrentMemUnit
-func (mr *MockIDagMockRecorder) GetCurrentMemUnit(assetId interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentMemUnit", reflect.TypeOf((*MockIDag)(nil).GetCurrentMemUnit), assetId)
+func (mr *MockIDagMockRecorder) GetCurrentMemUnit(assetId, index interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentMemUnit", reflect.TypeOf((*MockIDag)(nil).GetCurrentMemUnit), assetId, index)
 }
 
 // InsertDag mocks base method
@@ -389,9 +389,9 @@ func (mr *MockIDagMockRecorder) GetContractState(contractid, field interface{}) 
 }
 
 // GetContractStatesById mocks base method
-func (m *MockIDag) GetContractStatesById(id []byte) (map[modules.StateVersion][]byte, error) {
+func (m *MockIDag) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
 	ret := m.ctrl.Call(m, "GetContractStatesById", id)
-	ret0, _ := ret[0].(map[modules.StateVersion][]byte)
+	ret0, _ := ret[0].(map[string]*modules.ContractStateValue)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -515,6 +515,19 @@ func (m *MockIDag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, erro
 // GetUtxoEntry indicates an expected call of GetUtxoEntry
 func (mr *MockIDagMockRecorder) GetUtxoEntry(outpoint interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUtxoEntry", reflect.TypeOf((*MockIDag)(nil).GetUtxoEntry), outpoint)
+}
+
+// GetUtxoPkScripHexByTxhash mocks base method
+func (m *MockIDag) GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error) {
+	ret := m.ctrl.Call(m, "GetUtxoPkScripHexByTxhash", txhash, mindex, outindex)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUtxoPkScripHexByTxhash indicates an expected call of GetUtxoPkScripHexByTxhash
+func (mr *MockIDagMockRecorder) GetUtxoPkScripHexByTxhash(txhash, mindex, outindex interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUtxoPkScripHexByTxhash", reflect.TypeOf((*MockIDag)(nil).GetUtxoPkScripHexByTxhash), txhash, mindex, outindex)
 }
 
 // GetAddrOutput mocks base method

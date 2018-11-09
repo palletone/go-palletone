@@ -35,6 +35,8 @@ type GlobalProperty struct {
 	ChainParameters core.ChainParameters // 区块链网络参数
 
 	ActiveMediators map[common.Address]core.Mediator // 当前活跃mediator集合；每个维护间隔更新一次
+
+	GroupPubKey kyber.Point // 群公钥，用于验证群签名；每个维护间隔更新一次
 }
 
 // 动态全局属性的结构体定义
@@ -170,6 +172,7 @@ func NewGlobalProp() *GlobalProperty {
 	return &GlobalProperty{
 		ChainParameters: core.NewChainParams(),
 		ActiveMediators: map[common.Address]core.Mediator{},
+		GroupPubKey:     core.Suite.Point().Null(),
 	}
 }
 

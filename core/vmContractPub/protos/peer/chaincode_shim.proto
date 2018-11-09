@@ -147,7 +147,15 @@ message OutChainQuery {
     bytes params = 2;
     string collection = 3;
 }
-
+message GetTokenBalance {
+    bytes asset = 1;
+}
+message PayOutToken {
+    bytes asset = 1;
+    uint64 amount = 2;
+    uint32 locktime =3;
+    string collection = 4;
+}
 // Interface that provides support to chaincode execution. ChaincodeContext
 // provides the context necessary for the server to respond appropriately.
 service ChaincodeSupport {

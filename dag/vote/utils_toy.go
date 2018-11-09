@@ -20,7 +20,6 @@
 package vote
 
 import (
-	"fmt"
 	"reflect"
 )
 
@@ -41,7 +40,9 @@ func ToInterfaceSlice(s interface{}) []interface{} {
 			ret = append(ret, key.Interface())
 		}
 	default:
-		fmt.Println("invalid parameter type, must be slice or map")
+		//fmt.Println("s is not slice or map")
+		//fmt.Println("s was put into a slice as return value")
+		ret = append(ret, s)
 	}
 	return ret
 }
@@ -56,7 +57,7 @@ func resultNumber(inputLen uint8, resLenth uint8) uint8 {
 	return resultNumber
 }
 
-//TODO
+//MapExist :
 func MapExist(m interface{}, k interface{}) bool {
 	vm := reflect.ValueOf(m)
 	if vm.Kind() == reflect.Map { // m is a map?

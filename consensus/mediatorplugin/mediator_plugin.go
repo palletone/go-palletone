@@ -216,7 +216,6 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	// todo 后面改为由p2p转发
 	mp.addToTBLSSignBuf(newUnit)
 	mp.newUnitFeed.Send(NewUnitEvent{Unit: newUnit})
-	//log.Debug("Asynchronously broadcast the new signed verified unit to p2p networks...")
 
 	return Produced, detail
 }

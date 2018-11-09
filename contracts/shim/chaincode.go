@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	commonledger "github.com/palletone/go-palletone/core/vmContractPub/ledger"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
@@ -780,6 +781,18 @@ func (stub *ChaincodeStub) GetPayToContractTokens() ([]byte, error) {
 }
 func (stub *ChaincodeStub) GetContractAllState() ([]byte, error) {
 	return stub.handler.handlerGetContractAllState(stub.ChannelId, stub.TxID, stub.ContractId)
+}
+
+//获得该合约的Token余额
+func (stub *ChaincodeStub) GetTokenBalance() (map[modules.Asset]uint64, error) {
+	// TODO Devin return stub.handler.handleGetTokenBalance(stub.ContractId, stub.ChannelId, stub.TxID)
+	return map[modules.Asset]uint64{},nil
+}
+
+//将合约上锁定的某种Token支付出去
+func (stub *ChaincodeStub) PayOutToken(token modules.Asset, amount uint64, lockTime uint32) error {
+	//TODO Devin return stub.handler.handlePayOutToken(  stub.ContractId, stub.ChannelId, stub.TxID)
+	return nil
 }
 
 // ------------- Logging Control and Chaincode Loggers ---------------
