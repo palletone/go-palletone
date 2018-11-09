@@ -299,7 +299,7 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 
 // Handshake executes the ptn protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis common.Hash, mediator bool) error {
+func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis common.Hash, mediator bool, headHash common.Hash) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 	var status statusData // safe to read after two values have been received from errc
@@ -311,6 +311,7 @@ func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis commo
 			Index:           index,
 			GenesisUnit:     genesis,
 			Mediator:        mediator,
+			CurrentHeader:   headHash,
 		})
 	}()
 	go func() {
@@ -329,7 +330,7 @@ func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis commo
 		}
 	}
 	p.mediator = status.Mediator
-	p.SetHead(common.Hash{}, status.Index)
+	p.SetHead(status.CurrentHeader, status.Index)
 	return nil
 }
 
