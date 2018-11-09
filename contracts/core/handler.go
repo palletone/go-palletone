@@ -105,13 +105,6 @@ type Handler struct {
 	nextState chan *nextStateInfo
 }
 
-type DepositContract struct {
-	DepositContractAddress string
-	DepositAmount          uint64
-	DepositRate            float64
-	FoundationAddress      string
-}
-
 func (handler *Handler) enterGetDepositConfig(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
 	if !ok {
@@ -142,13 +135,12 @@ func (handler *Handler) enterGetDepositConfig(e *fsm.Event) {
 		chaincodeID := handler.getCCRootName()
 		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
 		//TODO 这里要获取配置文件的信息
-		depositContract := DepositContract{
-			DepositContractAddress: "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM",
-			DepositAmount:          1000,
-			DepositRate:            0.02,
-			FoundationAddress:      "P1GTwUBjmpoRGDDG1FvQWnDza3d8eNVffYT",
+		depositContract := &pb.DepositCfg{
+			DepositAmount: 1000,
+			DepositRate:   0.02,
+			Collection:    "",
 		}
-		depositContractBytes, err := json.Marshal(&depositContract)
+		depositContractBytes, err := proto.Marshal(depositContract)
 		if err != nil {
 			chaincodeLogger.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(err.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
@@ -874,8 +866,6 @@ func (handler *Handler) handleGetState(msg *pb.ChaincodeMessage) {
 			//serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			//return
 		}
-
-		key := string(msg.Payload)
 		getState := &pb.GetState{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, getState)
 		if unmarshalErr != nil {
@@ -908,7 +898,7 @@ func (handler *Handler) handleGetState(msg *pb.ChaincodeMessage) {
 		} else if res == nil {
 			//The state object being requested does not exist
 			chaincodeLogger.Debugf("[%s]No state associated with key: %s. Sending %s with an empty payload",
-				shorttxid(msg.Txid), key, pb.ChaincodeMessage_RESPONSE)
+				shorttxid(msg.Txid), getState.Key, pb.ChaincodeMessage_RESPONSE)
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: res, Txid: msg.Txid, ChannelId: msg.ChannelId}
 		} else {
 			// Send response msg back to chaincode. GetState will not trigger event

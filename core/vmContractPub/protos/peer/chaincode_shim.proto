@@ -159,6 +159,34 @@ message PayOutToken {
     uint32 locktime =3;
     string collection = 4;
 }
+
+message DepositCfg{
+    uint64 DepositAmount = 1;
+    double DepositRate  = 2;
+    string collection = 3;
+}
+
+message DepositWitnessPay{
+    bytes witnessAddr = 1;
+    uint64 amount = 2;
+    bytes depositContractAddr = 3;
+    string collection = 4;
+}
+
+message DepositCashback{
+    bytes witnessAddr = 1;
+    uint64 amount = 2;
+    string collection = 3;
+}
+
+message ForfeitureDeposit {
+    bytes witnessAddr = 1;
+    string collection = 2;
+}
+message Forfeiture {
+    bytes witnessAddr = 1;
+    string collection = 2;
+}
 // Interface that provides support to chaincode execution. ChaincodeContext
 // provides the context necessary for the server to respond appropriately.
 service ChaincodeSupport {

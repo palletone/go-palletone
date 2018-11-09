@@ -23,19 +23,16 @@ package deposit
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"strconv"
 	"time"
 )
 
-var depositChaincode = new(DepositChaincode)
+var depositCfg = new(pb.DepositCfg)
 
 type DepositChaincode struct {
-	DepositContractAddress string
-	DepositAmount          uint64
-	DepositRate            float64
-	FoundationAddress      string
 }
 
 type valueState struct {
@@ -52,12 +49,12 @@ func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 		fmt.Println("deposit error: ", err.Error())
 		return shim.Error(err.Error())
 	}
-	err = json.Unmarshal(depositConfigBytes, depositChaincode)
+	err = proto.Unmarshal(depositConfigBytes, depositCfg)
 	if err != nil {
 		fmt.Println("unmarshal depositConfigBytes error ", err)
 		return shim.Error(err.Error())
 	}
-	fmt.Printf("DepositChaincode=%#v\n\n", depositChaincode)
+	fmt.Printf("DepositChaincode=%#v\n\n", depositCfg)
 	return shim.Success([]byte("ok"))
 }
 
@@ -70,23 +67,23 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//void deposit_witness_pay(const witness_object& wit, token_type amount)
 
 		//获取用户地址
-		//userAddr, err := stub.GetPayToContractAddr()
-		//if err != nil {
-		//	fmt.Println("GetPayToContractAddr error: ", err.Error())
-		//	//return shim.Error(err.Error())
-		//}
-		//fmt.Println("GetPayToContractAddr=", string(userAddr))
-		////获取 Token 数量
-		//tokenAmount, err := stub.GetPayToContractTokens()
-		//if err != nil {
-		//	fmt.Println("GetPayToContractTokens error: ", err.Error())
-		//}
-		//fmt.Println("GetPayToContractTokens=", string(tokenAmount))
-		//states, err := stub.GetContractAllState()
-		//if err != nil {
-		//	fmt.Println("GetContractAllState error", err.Error())
-		//}
-		//fmt.Println("GetContractAllState=", states)
+		userAddr, err := stub.GetPayToContractAddr()
+		if err != nil {
+			fmt.Println("GetPayToContractAddr error: ", err.Error())
+			//return shim.Error(err.Error())
+		}
+		fmt.Println("GetPayToContractAddr=", string(userAddr))
+		//获取 Token 数量
+		tokenAmount, err := stub.GetPayToContractTokens()
+		if err != nil {
+			fmt.Println("GetPayToContractTokens error: ", err.Error())
+		}
+		fmt.Println("GetPayToContractTokens=", string(tokenAmount))
+		states, err := stub.GetContractAllState()
+		if err != nil {
+			fmt.Println("GetContractAllState error", err.Error())
+		}
+		fmt.Println("GetContractAllState=", states)
 		return d.depositWitnessPay(stub, args)
 	case "DepositCashback":
 		//保证金退还
@@ -117,12 +114,22 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	}
 
 	//与保证金合约设置的数量比较
-	if ptnAccount < depositChaincode.DepositAmount {
+	if ptnAccount < depositCfg.DepositAmount {
 		fmt.Println("input ptnAmount less than deposit amount.")
 		return shim.Error("input ptnAmount less than deposit amount.")
 	}
 
 	//TODO 这里需要对msg0对象，获取其中的付款的数量，以来和参数比较是否大于或等于，否则返回出错
+	//获取信息
+	//witnessPayBytes, err := stub.GetInfoPay()
+	//if err != nil {
+	//	return shim.Error("get information error: "+err.Error())
+	//}
+	//depositWitnessPay := &pb.DepositWitnessPay{}
+	//err = proto.Unmarshal(witnessPayBytes,depositWitnessPay)
+	//if err != nil {
+	//	return shim.Error("unmarshal witnessPayBytes error: "+err.Error())
+	//}
 
 	//获取一下该用户下的账簿情况
 	accBalByte, err := stub.GetState(args[0])
