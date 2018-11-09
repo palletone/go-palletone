@@ -35,7 +35,7 @@ import (
 	"gopkg.in/urfave/cli.v1"
 )
 
-const defaultGenesisJsonPath = "ptn-genesis.json"
+const defaultGenesisJsonPath = "./ptn-genesis.json"
 
 var (
 	GenesisTimestampFlag = cli.Int64Flag{
@@ -144,10 +144,7 @@ func createGenesisJson(ctx *cli.Context) error {
 		return err
 	}
 
-	genesisOut, err := getGenesisPathFromConfig(ctx)
-	if err != nil {
-		return err
-	}
+	genesisOut := getGenesisPath(ctx)
 
 	err = os.MkdirAll(filepath.Dir(genesisOut), os.ModePerm)
 	if err != nil {
@@ -203,23 +200,17 @@ func modifyConfig(ctx *cli.Context, mediators []mp.MediatorConf) error {
 	return nil
 }
 
-func getGenesisPathFromConfig(ctx *cli.Context) (string, error) {
-	cfg := FullConfig{Node: defaultNodeConfig()}
-	// Load config file.
-	if err := maybeLoadConfig(ctx, &cfg); err != nil {
-		utils.Fatalf("%v", err)
-		return "", err
-	}
-
+func getGenesisPath(ctx *cli.Context) string {
 	// Make sure we have a valid genesis JSON
 	genesisOut := ctx.Args().First()
+
 	// If no path is specified, the default path is used
 	if len(genesisOut) == 0 {
-		//		utils.Fatalf("Must supply path to genesis JSON file")
-		genesisOut, _ = getGenesisPath(defaultGenesisJsonPath, cfg.Node.DataDir)
+		// utils.Fatalf("Must supply path to genesis JSON file")
+		genesisOut = defaultGenesisJsonPath
 	}
 
-	return genesisOut, nil
+	return genesisOut
 }
 
 // initialAccount, create a initial account for a new account
@@ -280,22 +271,4 @@ func initialMediatorCandidates(mediators []mp.MediatorConf, nodeInfo string) []*
 	}
 
 	return initialMediators
-}
-
-// 根据指定路径和配置参数获取创世Json文件的路径
-// @author Albert·Gou
-func getGenesisPath(genesisPath, dataDir string) (string, error) {
-	if filepath.IsAbs(genesisPath) {
-		return genesisPath, nil
-	}
-
-	if dataDir != "" && genesisPath == "" {
-		return filepath.Join(dataDir, defaultGenesisJsonPath), nil
-	}
-
-	if genesisPath != "" {
-		return filepath.Abs(genesisPath)
-	}
-
-	return "", nil
 }

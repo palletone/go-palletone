@@ -43,7 +43,7 @@ func newChainBanner(dag iDag) {
 
 	if dag.GetSlotAtTime(time.Now()) > 200 {
 		fmt.Printf("Your genesis seems to have an old timestamp\n" +
-			"Please consider using the --genesis-timestamp option to give your genesis a recent timestamp\n" +
+			"Please consider using the --genesistime option to give your genesis a recent timestamp\n" +
 			"\n")
 	}
 }

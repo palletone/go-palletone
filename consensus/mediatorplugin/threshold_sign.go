@@ -386,7 +386,7 @@ func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnit *modules.Unit, sigShare []
 		return
 	}
 
-	sigShareSet.apend(sigShare)
+	sigShareSet.append(sigShare)
 
 	// recover群签名
 	go mp.recoverUnitTBLS(localMed, newUnitHash)
