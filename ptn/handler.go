@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/common/rlp"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
@@ -46,7 +45,9 @@ const (
 
 	// txChanSize is the size of channel listening to TxPreEvent.
 	// The number is referenced from the size of tx pool.
-	txChanSize = 4096
+	txChanSize            = 4096
+	needBroadcastMediator = 0
+	noBroadcastMediator   = 1
 )
 
 var (
@@ -549,21 +550,36 @@ func (self *ProtocolManager) txBroadcastLoop() {
 
 // BroadcastUnit will either propagate a unit to a subset of it's peers, or
 // will only announce it's availability (depending what's requested).
-func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
+func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool, broadcastMediator int) {
 	hash := unit.Hash()
+
+	for _, parentHash := range unit.ParentHash() {
+		if parent, err := pm.dag.GetUnitByHash(parentHash); err != nil || parent == nil {
+			log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash)
+			return
+		}
+	}
+
+	if needBroadcastMediator == broadcastMediator {
+		mPeers := pm.GetActiveMediatorPeers()
+		for _, peer := range mPeers {
+			if peer == nil {
+				pm.producer.ToUnitTBLSSign(unit)
+				continue
+			}
+
+			//err := peer.SendNewProducedUnit(unit)
+			err := peer.SendNewUnit(unit)
+			if err != nil {
+				log.Error(err.Error())
+			}
+		}
+	}
+
 	peers := pm.peers.PeersWithoutUnit(hash)
 
 	// If propagation is requested, send to a subset of the peer
 	if propagate {
-		//TODO must recover
-		/*
-			for _, parentHash := range unit.ParentHash() {
-				if parent := pm.dag.GetUnit(parentHash); parent == nil {
-					log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash)
-					return
-				}
-			}
-		*/
 		// Send the block to a subset of our peers
 		transfer := peers[:int(math.Sqrt(float64(len(peers))))]
 		for _, peer := range transfer {
@@ -626,31 +642,6 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 		Genesis: genesisHash,
 		Head:    unit.UnitHash,
 	}
-}
-
-func TestMakeTransaction(nonce uint64) *modules.Transaction {
-	pay := modules.PaymentPayload{
-		Input:  []*modules.Input{},
-		Output: []*modules.Output{},
-	}
-	holder := common.Address{}
-	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
-	msg0 := &modules.Message{
-		App:     modules.APP_PAYMENT,
-		Payload: pay,
-	}
-	tx := &modules.Transaction{
-		TxMessages: []*modules.Message{msg0},
-	}
-	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
-	if err != nil {
-		msg := fmt.Sprintf("Get genesis transactions hash error: %s", err)
-		log.Error(msg)
-		return nil
-	}
-	tx.TxHash.SetBytes(txHash)
-
-	return tx
 }
 
 func (pm *ProtocolManager) getTransitionPeer(node *discover.Node) (p *peer, self bool) {
