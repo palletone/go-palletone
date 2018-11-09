@@ -58,6 +58,9 @@ message ChaincodeMessage {
         DEPOSIT_CONFIG_REQUEST = 24;
         USER_ADDR_REQUEST = 25;
         GET_CONTRACT_ALL_STATE = 26;
+        GET_TOKEN_BALANCE=27;
+        PAY_OUT_TOKEN=28;
+
     }
 
     Type type = 1;

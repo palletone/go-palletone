@@ -184,9 +184,9 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	pHead, number := peer.Head(assetId)
 	pindex := number.Index
 
-	log.Info("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex)
-	if index > pindex && pindex > 0 {
-		log.Info("===synchronise peer.index < local index===", "peer.index:", pindex, "local index:", number.Index)
+	log.Info("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex, "header hash:", pHead)
+	if common.EmptyHash(pHead) || (index > pindex && pindex > 0) {
+		log.Info("===synchronise peer.index < local index===", "peer.index:", pindex, "local index:", number.Index, "header hash:", pHead)
 		return
 	}
 
@@ -201,7 +201,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 		//			return
 		//		}
 	}
-	log.Info("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex)
+	log.Info("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex, "header hash:", pHead)
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
 	if err := pm.downloader.Synchronise(peer.id, pHead, pindex, mode, assetId); err != nil {
 		log.Info("ptn sync downloader.", "Synchronise err:", err)

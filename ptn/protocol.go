@@ -146,7 +146,7 @@ type statusData struct {
 	Index           modules.ChainIndex
 	GenesisUnit     common.Hash
 	Mediator        bool
-	//CurrentBlock common.Hash
+	CurrentHeader   common.Hash
 }
 
 // newBlockHashesData is the network packet for the block announcements.

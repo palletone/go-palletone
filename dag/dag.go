@@ -271,16 +271,18 @@ func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash 
 
 // need add:   assetId modules.IDType16, onMain bool
 func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
-	index := new(modules.ChainIndex)
-	index.Index = number
-	//fmt.Println(hash)
-	//fmt.Println(number)
-	// copy(index.AssetID[:], assetId[:])
-	// index.IsMain = onMain
-	if h, err := d.dagdb.GetHeader(hash, index); err == nil && h != nil {
-		return true
-	}
-	return false
+	//index := new(modules.ChainIndex)
+	//index.Index = number
+	////fmt.Println(hash)
+	////fmt.Println(number)
+	//// copy(index.AssetID[:], assetId[:])
+	//// index.IsMain = onMain
+	//if h, err := d.dagdb.GetHeader(hash, index); err == nil && h != nil {
+	//	return true
+	//}
+	//return false
+
+	return d.GetHeaderByHash(hash) != nil
 }
 func (d *Dag) Exists(hash common.Hash) bool {
 	if unit, err := d.dagdb.GetUnit(hash); err == nil && unit != nil {

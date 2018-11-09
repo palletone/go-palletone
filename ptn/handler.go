@@ -396,7 +396,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	head := pm.dag.CurrentHeader()
 	// Execute the PalletOne handshake
-	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), mediator); err != nil {
+	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), mediator, head.Hash()); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
