@@ -319,11 +319,11 @@ func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg, p *peer) error {
 
 func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	// Retrieve and decode the propagated block
-
 	var unit modules.Unit
 	if err := msg.Decode(&unit); err != nil {
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
+
 	unit.ReceivedAt = msg.ReceivedAt
 	unit.ReceivedFrom = p
 	log.Info("===NewBlockMsg===", "index:", unit.Number().Index)
@@ -348,6 +348,8 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 			log.Info("ProtocolManager", "NewBlockMsg pm.synchronise number:", unit.Number().Index)
 			go pm.synchronise(p, unit.Number().AssetID)
 		}
+	} else {
+		pm.producer.ToUnitTBLSSign(&unit)
 	}
 	return nil
 }
@@ -425,6 +427,7 @@ func (pm *ProtocolManager) NewUnitMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===NewUnitMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
+
 	pm.producer.ToUnitTBLSSign(&unit)
 	return nil
 }
