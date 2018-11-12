@@ -24,11 +24,17 @@ type deligateVotePlugin struct {
 }
 
 func (dp *deligateVotePlugin) SetAgent(voter interface{}, agent interface{}) bool {
-	//check loop reference
-	//check agent and voter is valid
+	var nilInterface interface{}
+
+	//if agent is nil, delete agent.
+	if agent == nilInterface {
+		delete(dp.agentMap,voter)
+		return true
+	}
+
+	//check loop reference.
 	nextAgent := dp.agentMap[agent]
 	currAgent := agent
-	var nilInterface interface{}
 	for nextAgent != nilInterface {
 		if nextAgent == voter {
 			return false
@@ -36,6 +42,7 @@ func (dp *deligateVotePlugin) SetAgent(voter interface{}, agent interface{}) boo
 		currAgent = nextAgent
 		nextAgent = dp.agentMap[nextAgent]
 	}
+
 	dp.agentMap[voter] = currAgent
 	return true
 

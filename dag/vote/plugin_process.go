@@ -26,9 +26,15 @@ type processPlugin struct {
 
 func (pp *processPlugin) SetCurrentVoter(voter interface{}) {
 	pp.currentVoter = voter
-	pp.processMap[voter] = nil
 }
 
-func (pp *processPlugin) SetProcess(tos []interface{}) {
+func (pp *processPlugin) SetProcess(tosi interface{}) {
+	var NilInterfaceSlice interface{}
+	// if tosi is nil ,delete process.
+	if tosi == NilInterfaceSlice{
+		delete(pp.processMap, pp.currentVoter)
+		return
+	}
+	tos := ToInterfaceSlice(tosi)
 	pp.processMap[pp.currentVoter] = tos
 }
