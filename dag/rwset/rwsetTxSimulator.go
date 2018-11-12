@@ -20,10 +20,11 @@
 package rwset
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
+	"time"
 )
 
 type RwSetTxSimulator struct {
@@ -53,6 +54,20 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
+	//TODO
+	stateValue := modules.StateValue{
+		Asset: modules.Asset{
+			AssetId:  modules.PTNCOIN,
+			UniqueId: modules.PTNCOIN,
+			ChainId:  uint64(1),
+		},
+		Amount: 100000,
+		Time:   time.Now(),
+		Extra:  "hello",
+	}
+	stateValueByte, _ := json.Marshal(stateValue)
+	return stateValueByte, nil
+
 	//fmt.Println("GetState(contractid []byte, ns string, key string)===>>>\n\n", contractid, ns, key)
 	//return []byte("1000"), nil
 	//TODO Devin
@@ -77,8 +92,11 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 }
 
 func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
-	logger.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)
-	fmt.Println("SetState(ns string, key string, value []byte)===>>>\n\n", ns, key, value)
+	//logger.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)
+	//fmt.Println("SetState(ns string, key string, value []byte)===>>>\n\n", ns, key, value)
+	stateValue := &modules.StateValue{}
+	_ = json.Unmarshal(value, stateValue)
+	//fmt.Printf("llllllll   %#v\n", stateValue)
 	if err := s.CheckDone(); err != nil {
 		return err
 	}
@@ -158,9 +176,9 @@ func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
 
 	return nil, nil
 }
-func (s *RwSetTxSimulator)  GetTokenBalance(contractid []byte, ns string) (map[modules.Asset]uint64, error){
+func (s *RwSetTxSimulator) GetTokenBalance(contractid []byte, ns string) (map[modules.Asset]uint64, error) {
 	//TODO Devin query utxo
-	return map[modules.Asset]uint64{},nil
+	return map[modules.Asset]uint64{}, nil
 }
 func (s *RwSetTxSimulator) PayOutToken(ns string, token modules.Asset, amount uint64, lockTime uint32) error {
 	//TODO Devin pay a token out

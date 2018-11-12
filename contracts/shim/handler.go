@@ -27,6 +27,8 @@ import (
 	"github.com/looplab/fsm"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 
+	"encoding/json"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/pkg/errors"
 )
 
@@ -759,12 +761,14 @@ func (handler *Handler) handleQueryStateClose(id, channelId, txid string) (*pb.Q
 	return nil, errors.Errorf("incorrect chaincode message %s received. Expecting %s or %s", responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
 
-func (handler *Handler) handleGetDepositConfig(channelId, txid string) ([]byte, error) {
-	//定义一个pb.ChaincodeMessage_DEPOSIT_CONFIG_REQUEST
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_DEPOSITCONFIGS_REQUEST, Payload: []byte(""), ChannelId: channelId, Txid: txid}
-	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_DEPOSITCONFIGS_REQUEST)
+func (handler *Handler) handleGetSystemConfig(key, channelId, txid string) ([]byte, error) {
+	// Construct payload for PUT_STATE
+	payloadBytes, _ := proto.Marshal(&pb.KeyForSystemConfig{Key: key})
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST, Payload: payloadBytes, ChannelId: channelId, Txid: txid}
+	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST)
 	//Execute the request and get response
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
+
 	if err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error GetDepositConfig ", msg.Txid))
 	}
@@ -777,59 +781,47 @@ func (handler *Handler) handleGetDepositConfig(channelId, txid string) ([]byte, 
 	// Incorrect chaincode message received
 	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE)
 }
-func (handler *Handler) handleGetPayToContractFromAddr(channelId, txid string) ([]byte, error) {
+func (handler *Handler) handleGetInvokeFromAddr(channelId, txid string) (string, error) {
 	//定义一个pb.ChaincodeMessage_USER_ADDR_REQUEST
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_PAYTO_CONTRACT_FROM_ADDR_REQUEST, Payload: []byte(""), ChannelId: channelId, Txid: txid}
-	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_PAYTO_CONTRACT_FROM_ADDR_REQUEST)
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_INVOKE_FORM_ADDR_REQUEST, Payload: []byte(""), ChannelId: channelId, Txid: txid}
+	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_INVOKE_FORM_ADDR_REQUEST)
 	//Execute the request and get response
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error GetPayToContractAddr ", msg.Txid))
+		return "", errors.WithMessage(err, fmt.Sprintf("[%s]error GetPayToContractAddr ", msg.Txid))
 	}
 	//正确返回
 	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
 		//Success response
 		chaincodeLogger.Debugf("[%s]Received %s. Successfully get user address to pay to contract", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
-		return responseMsg.Payload, nil
+		return string(responseMsg.Payload), nil
 	}
 	// Incorrect chaincode message received
-	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE)
+	return "", errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE)
 }
-func (handler *Handler) GetPayToContractPtnTokens(channelId, txid string) ([]byte, error) {
+
+func (handler *Handler) GetPayToContractPtnTokens(channelId, txid string) (*modules.Asset, uint64, error) {
 	//定义一个pb.ChaincodeMessage_PAYTO_TOKEN_REQUEST
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_PAYTO_CONTRACT_PTN_AMOUNTS_REQUEST, Payload: []byte(""), ChannelId: channelId, Txid: txid}
 	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_PAYTO_CONTRACT_PTN_AMOUNTS_REQUEST)
 	//Execute the request and get response
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error GetPayToContractTokens ", msg.Txid))
+		return nil, 0, errors.WithMessage(err, fmt.Sprintf("[%s]error GetPayToContractTokens ", msg.Txid))
 	}
 	//正确返回
 	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
 		//Success response
 		chaincodeLogger.Debugf("[%s]Received %s. Successfully get tokens of pay to contract ", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
-		return responseMsg.Payload, nil
+		token := &modules.Tokens{}
+		err = json.Unmarshal(responseMsg.Payload, token)
+		if err != nil {
+			return nil, 0, err
+		}
+		return &token.Asset, token.Amount, nil
 	}
 	// Incorrect chaincode message received
-	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE)
-}
-func (handler *Handler) handleGetPayToContractToAddr(channelId, txid string) ([]byte, error) {
-	//定义一个pb.ChaincodeMessage_USER_ADDR_REQUEST
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_PAYTO_CONTRACT_TO_ADDR_REQUEST, Payload: []byte(""), ChannelId: channelId, Txid: txid}
-	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_PAYTO_CONTRACT_TO_ADDR_REQUEST)
-	//Execute the request and get response
-	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
-	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error GetPayToContractAddr ", msg.Txid))
-	}
-	//正确返回
-	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
-		//Success response
-		chaincodeLogger.Debugf("[%s]Received %s. Successfully get user address to pay to contract", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
-		return responseMsg.Payload, nil
-	}
-	// Incorrect chaincode message received
-	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE)
+	return nil, 0, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE)
 }
 func (handler *Handler) handlerGetContractAllState(channelId, txid string, contractid []byte) ([]byte, error) {
 	//定义一个pb.ChaincodeMessage_GET_ALL_SATE
