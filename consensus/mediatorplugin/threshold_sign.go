@@ -386,7 +386,7 @@ func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnit *modules.Unit, sigShare []
 		return
 	}
 
-	sigShareSet.apend(sigShare)
+	sigShareSet.append(sigShare)
 
 	// recover群签名
 	go mp.recoverUnitTBLS(localMed, newUnitHash)
@@ -404,6 +404,11 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	sigShareSet.lock()
 	defer sigShareSet.unlock()
+
+	// 为了保证多协程安全， 加锁后，再判断一次
+	if _, ok = mp.toTBLSRecoverBuf[localMed][unitHash]; !ok {
+		return
+	}
 
 	dag := mp.dag
 	aSize := dag.GetActiveMediatorCount()
@@ -434,7 +439,6 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	log.Debug("Recovered the Unit that hash: " + unitHash.Hex() +
 		" the group signature: " + hexutil.Encode(groupSig))
-	//log.Debug("Recovered the Unit that hash: " + unitHash.Hex() + " the group signature: " + string(groupSig))
 
 	// recover后 删除buf
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
@@ -448,10 +452,11 @@ func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, unitHas
 	//func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, newUnit *modules.Unit) error {
 	err := bls.Verify(mp.suite, groupPublicKey, unitHash[:], groupSig)
 	if err == nil {
-		log.Debug("the group signature: " + hexutil.Encode(groupSig) +
-			" of the Unit that hash: " + unitHash.Hex() + " is verified through!")
+		//log.Debug("the group signature: " + hexutil.Encode(groupSig) +
+		//	" of the Unit that hash: " + unitHash.Hex() + " is verified through!")
 	} else {
-		log.Error(err.Error())
+		log.Error("the group signature: " + hexutil.Encode(groupSig) + " of the Unit that hash: " +
+			unitHash.Hex() + " is verified that an error has occurred: " + err.Error())
 	}
 
 	return err

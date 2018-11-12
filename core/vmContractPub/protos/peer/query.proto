@@ -20,7 +20,7 @@
 syntax = "proto3";
 
 option java_package = "protos.peer";
-option go_package = "protos/peer";
+option go_package = "github.com/palletone/go-palletone/core/vmContractPub/protos/peer";
 
 package protos;
 

@@ -38,7 +38,7 @@ func (ms MapSorter) Swap(i, j int) {
 	ms[i], ms[j] = ms[j], ms[i]
 }
 
-//NewMapSorter @YiRan : TODO:change score type to interface{}
+//NewMapSorter @YiRan :
 func NewMapSorter(m map[interface{}]uint64) MapSorter {
 	MapSorter := MapSorter{}
 	for o, s := range m {

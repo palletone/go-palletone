@@ -773,11 +773,14 @@ func (stub *ChaincodeStub) GetDepositConfig() ([]byte, error) {
 	return stub.handler.handleGetDepositConfig(stub.ChannelId, stub.TxID)
 }
 
-func (stub *ChaincodeStub) GetPayToContractAddr() ([]byte, error) {
-	return stub.handler.handleGetPayToContractAddr(stub.ChannelId, stub.TxID)
+func (stub *ChaincodeStub) GetPayToContractFromAddr() ([]byte, error) {
+	return stub.handler.handleGetPayToContractFromAddr(stub.ChannelId, stub.TxID)
 }
-func (stub *ChaincodeStub) GetPayToContractTokens() ([]byte, error) {
-	return stub.handler.handleGetPayToContractTokens(stub.ChannelId, stub.TxID)
+func (stub *ChaincodeStub) GetPayToContractPtnTokens() ([]byte, error) {
+	return stub.handler.GetPayToContractPtnTokens(stub.ChannelId, stub.TxID)
+}
+func (stub *ChaincodeStub) GetPayToContractToAddr() ([]byte, error) {
+	return stub.handler.handleGetPayToContractToAddr(stub.ChannelId, stub.TxID)
 }
 func (stub *ChaincodeStub) GetContractAllState() ([]byte, error) {
 	return stub.handler.handlerGetContractAllState(stub.ChannelId, stub.TxID, stub.ContractId)
@@ -786,7 +789,7 @@ func (stub *ChaincodeStub) GetContractAllState() ([]byte, error) {
 //获得该合约的Token余额
 func (stub *ChaincodeStub) GetTokenBalance() (map[modules.Asset]uint64, error) {
 	// TODO Devin return stub.handler.handleGetTokenBalance(stub.ContractId, stub.ChannelId, stub.TxID)
-	return map[modules.Asset]uint64{},nil
+	return map[modules.Asset]uint64{}, nil
 }
 
 //将合约上锁定的某种Token支付出去

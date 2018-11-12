@@ -42,10 +42,10 @@ var (
 		Usage:     "Bootstrap and initialize a new genesis block",
 		ArgsUsage: "<genesisPath>",
 		Flags: []cli.Flag{
-			//			utils.DataDirFlag,
+			utils.DataDirFlag,
 			GenesisJsonPathFlag,
 			GenesisTimestampFlag,
-			//			utils.LightModeFlag,
+			// utils.LightModeFlag,
 		},
 		Category: "BLOCKCHAIN COMMANDS",
 		Description: `
@@ -118,15 +118,8 @@ func getAccountFromConf(configPath string) (account accounts.Account, passphrase
 func initGenesis(ctx *cli.Context) error {
 	node := makeFullNode(ctx)
 
-	// Make sure we have a valid genesis JSON
-	genesisPath := ctx.Args().First()
-	//if len(genesisPath) == 0 {
-	//	utils.Fatalf("Must supply path to genesis JSON file")
-	//}
-	// If no path is specified, the default path is used
-	if len(genesisPath) == 0 {
-		genesisPath, _ = getGenesisPath(defaultGenesisJsonPath, node.DataDir())
-	}
+	genesisPath := getGenesisPath(ctx)
+
 	file, err := os.Open(genesisPath)
 	if err != nil {
 		utils.Fatalf("Failed to read genesis file: %v", err)

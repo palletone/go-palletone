@@ -218,10 +218,12 @@ type ChaincodeStubInterface interface {
 
 	//获取保证金合约的一些配置参数
 	GetDepositConfig() ([]byte, error)
-	//获取支付保证金节点的地址
-	GetPayToContractAddr() ([]byte, error)
-	//获取支付保证金数量
-	GetPayToContractTokens() ([]byte, error)
+	//获取支付合约的 from 地址
+	GetPayToContractFromAddr() ([]byte, error)
+	//获取支付ptn数量
+	GetPayToContractPtnTokens() ([]byte, error)
+	//获取支付合约的 to 地址
+	GetPayToContractToAddr() ([]byte, error)
 	//获取所有的世界状态
 	GetContractAllState() ([]byte, error)
 	//获得该合约的Token余额
