@@ -54,12 +54,13 @@ message ChaincodeMessage {
         OUTCHAIN_ADDRESS = 20;
         OUTCHAIN_TRANSACTION = 21;
         OUTCHAIN_QUERY = 22;
-        PAYTO_TOKEN_REQUEST = 23;
-        DEPOSIT_CONFIG_REQUEST = 24;
-        USER_ADDR_REQUEST = 25;
+        GET_PAYTO_CONTRACT_PTN_AMOUNTS_REQUEST = 23;
+        GET_DEPOSITCONFIGS_REQUEST = 24;
+        GET_PAYTO_CONTRACT_FROM_ADDR_REQUEST = 25;
         GET_CONTRACT_ALL_STATE = 26;
         GET_TOKEN_BALANCE=27;
         PAY_OUT_TOKEN=28;
+        GET_PAYTO_CONTRACT_TO_ADDR_REQUEST = 29;
 
     }
 
@@ -163,29 +164,20 @@ message PayOutToken {
 message DepositCfg{
     uint64 DepositAmount = 1;
     double DepositRate  = 2;
-    string collection = 3;
-}
-
-message DepositWitnessPay{
-    bytes witnessAddr = 1;
-    uint64 amount = 2;
-    bytes depositContractAddr = 3;
+    bytes FoundationAddress = 3;
     string collection = 4;
 }
 
-message DepositCashback{
-    bytes witnessAddr = 1;
-    uint64 amount = 2;
-    string collection = 3;
+message PayToContractFromAddr {
+    bytes address = 1;
 }
 
-message ForfeitureDeposit {
-    bytes witnessAddr = 1;
-    string collection = 2;
+message PayToContractPtnAmount {
+    uint64 amount = 1;
 }
-message Forfeiture {
-    bytes witnessAddr = 1;
-    string collection = 2;
+
+message PayToContractToAddr {
+    bytes address = 1;
 }
 // Interface that provides support to chaincode execution. ChaincodeContext
 // provides the context necessary for the server to respond appropriately.
