@@ -102,7 +102,7 @@ type Utxo struct {
 	Asset      *Asset         `json:"Asset"`     // 资产类别
 	PkScript   []byte         `json:"pk_script"` // 锁定脚本
 	LockTime   uint32         `json:"lock_time"`
-	VoteResult common.Address `json:"vote_info"` //edit by Yiran
+	VoteResult common.Address `json:"vote_info"` //这个字段删掉
 	// flags contains additional info about output such as whether it is spent, and whether is has
 	// been modified since is was loaded.
 	Flags txoFlags

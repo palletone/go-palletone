@@ -1,28 +1,35 @@
 package createToken
 
 import (
+	"bytes"
+	"encoding/binary"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 
 type Token struct {
-	tokenID uint64 //inner identity
+	InnerID uint64
+	GlobalID modules.IDType16
 	Holder common.Address
-	extraMsg []byte //global unique identity
+	Creator common.Address
+	CreatedTime []byte
+	Extra []byte
 }
+
 type CustomToken struct  {
-	tokenName string
-	tokenSymbol modules.IDType16
-	owner common.Address
+	customTokenName string
+	customTokenSymbol string
 	totalSupply  uint64
+	owner common.Address
 	currentIdx uint64
 	Members map[common.Address][]uint64
 	inventory map[uint64]Token
 
 	//optional field
 	transFee uint
-	expiryTimeStamp uint64
+	//expiryTimeStamp uint64
 	Decimals uint
 }
 //IsOwner(const):Anyone
@@ -58,26 +65,85 @@ func (ct *CustomToken)TotalSupply(address common.Address) uint64{
 }
 //Name(const):AnyOne
 func (ct *CustomToken)Name(address common.Address)string{
-	return ct.tokenName
+	return ct.customTokenName
 }
 //Symbol(const):AnyOne
-func (ct *CustomToken)Symbol(address common.Address)modules.IDType16{
-	return ct.tokenSymbol
+func (ct *CustomToken)Symbol(address common.Address)string{
+	return ct.customTokenSymbol
 }
-
+//balanceOf(const):AnyOne
 func(ct *CustomToken)balanceOf(account common.Address)[]uint64 {
 	return ct.Members[account]
 }
-
-
-//Transfer(from common.Address , to common.Address, tokens []TokenID )
-//transfer(to common.Address, tokens []TokenID)
-//transferFrom(from common.Address, to common.Address, tokens []TokenID)
-
-type CustomTokenConstructor struct {
-
+//GetUniversalToken(const):AnyOne
+func(ct *CustomToken)GetGlobalIDByInnerID(account common.Address,id uint64) modules.IDType16{
+		return ct.inventory[id].GlobalID
 }
 
-func (ctor *CustomTokenConstructor) CreateToken(contractName string, tokenSymbol string, ownerAddress common.Address, recipientAddress common.Address) {
+//GetUniversalToken(const):AnyOne
+func(ct *CustomToken)GetGlobalID(account common.Address) modules.IDType16{
+	var buffer bytes.Buffer
+	buffer.WriteString(ct.customTokenSymbol)
+	buffer.WriteString(ct.customTokenName)
+	buffer.Write(ct.owner.Bytes())
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, ct.currentIdx)
+	buffer.Write(b)
+	id,_ := modules.SetIdTypeByHex(buffer.String())
+	return id
+}
+//CreateNewToken(danger):Owner
+func(ct *CustomToken)CreateNewToken(account common.Address,additional []byte)bool {
+	if !ct.IsOwner(account) {
+		return false
+	}
+	if ct.currentIdx == ct.totalSupply {
+		return false
+	}
+	ct.Members[ct.owner] = append(ct.Members[ct.owner],ct.currentIdx)
+	ct.inventory[ct.currentIdx] = Token{
+		InnerID:ct.currentIdx,
+		GlobalID:ct.GetGlobalID(common.Address{}),
+		Holder:ct.owner,
+		Creator:ct.owner,
+	}
+	ct.currentIdx++
+	return true
+}
 
+//transferFrom(danger):TokenHolder
+func(ct *CustomToken)transferFrom(from common.Address,to common.Address, ids []uint64)bool{
+	//quit if any holder of token from ids passing in is invalid.
+	for _,id := range ids {
+		if ct.inventory[id].Holder != from{
+			return false
+		}
+	}
+	// change holder
+	for _,id := range ids {
+		token := ct.inventory[id]
+		token.Holder = to
+		ct.inventory[id] = token
+	}
+	return true
+}
+
+
+//move to storage modules
+type CustomTokenConstructor struct {
+}
+
+func (ctor *CustomTokenConstructor) ValidCustomTokenSymbolUniqueness(tokenSymbol string) bool{
+	return true
+}
+
+func (ctor *CustomTokenConstructor) CreateCustomToken(Name string, Symbol string, ownerAddress common.Address)(*CustomToken,error){
+	if !ctor.ValidCustomTokenSymbolUniqueness(Symbol){
+		return nil,errors.New("InvalidCustomTokenSymbol")
+	}
+	return &CustomToken{
+		owner:ownerAddress,
+		customTokenName:Name,
+		customTokenSymbol:Symbol,
+	},nil
 }
