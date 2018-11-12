@@ -21,7 +21,6 @@ package vote
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"sort"
 )
@@ -89,7 +88,7 @@ func (bv *BaseVoteModel) RegisterCandidates(candidates interface{}) {
 func (bv *BaseVoteModel) Exist(c interface{}) bool {
 	_, ok := bv.candidatesStatus[c]
 	if !ok {
-		fmt.Printf("candidate %v doesn't exist ", c)
+		//fmt.Printf("candidate %v doesn't exist ", c)
 	}
 	return ok
 }
@@ -100,13 +99,13 @@ func (bv *BaseVoteModel) AddToBox(score uint64, candidates interface{}) {
 
 	switch reflect.ValueOf(candidates).Kind() {
 	case reflect.Slice:
-		if bv.elemType == reflect.TypeOf(candidates).Elem() {
+
 			for _, c := range ToInterfaceSlice(candidates) {
 				if bv.Exist(c) {
 					bv.candidatesStatus[c] += score
 				}
 			}
-		}
+
 
 	default:
 		if bv.Exist(candidates) {

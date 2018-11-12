@@ -25,7 +25,8 @@ type openVoteModel struct {
 	privilegedVotePlugin
 	deligateVotePlugin
 }
-func NewOpenVoteModel () *openVoteModel {
+
+func NewOpenVoteModel() *openVoteModel {
 	m := &openVoteModel{}
 	m.BaseVoteModel.candidatesStatus = make(map[interface{}]uint64, 0)
 	m.processPlugin.processMap = make(map[interface{}][]interface{}, 0)
@@ -35,7 +36,6 @@ func NewOpenVoteModel () *openVoteModel {
 }
 func (dpv *openVoteModel) RegisterCandidates(candidates interface{}) {
 	dpv.BaseVoteModel.RegisterCandidates(candidates)
-
 }
 
 //Exist : wheither exist the given candidate in vote box.
@@ -51,34 +51,13 @@ func (dpv *openVoteModel) SetCurrentVoter(voter interface{}) {
 	dpv.processPlugin.SetCurrentVoter(voter)
 }
 
-
-/*
-switch reflect.ValueOf(candidates).Kind() {
-	case reflect.Slice:
-		if bv.elemType == reflect.TypeOf(candidates).Elem() {
-			for _, c := range ToInterfaceSlice(candidates) {
-				if bv.Exist(c) {
-					bv.candidatesStatus[c] += score
-				}
-			}
-		}
-
-	default:
-		if bv.Exist(candidates) {
-			bv.candidatesStatus[candidates] += score
-		}
-	}
-*/
 func (dpv *openVoteModel) AddToBox(score uint64, tos interface{}) {
-	//check validity of candidates
-	dpv.BaseVoteModel.AddToBox(0,tos)
-
 	dpv.privilegedVotePlugin.SetWeight(dpv.processPlugin.currentVoter, score)
-	dpv.processPlugin.SetProcess(ToInterfaceSlice(tos))
-	delete(dpv.deligateVotePlugin.agentMap, dpv.processPlugin.currentVoter)
+	dpv.processPlugin.SetProcess(tos)
+	dpv.DeleteAgent()
 }
 
-//GetScore : score data may out of date
+//GetScore :get data counted last calling of CountVote()
 func (dpv *openVoteModel) GetScore(candidate interface{}) (uint64, error) {
 	return dpv.BaseVoteModel.GetScore(candidate)
 }
@@ -87,20 +66,27 @@ func (dpv *openVoteModel) GetVoteDetail() map[interface{}]uint64 {
 	return dpv.BaseVoteModel.candidatesStatus
 }
 
-func (dpv *openVoteModel) SetAgent(voter interface{}) {
-	dpv.deligateVotePlugin.SetAgent(dpv.processPlugin.currentVoter, voter)
+func (dpv *openVoteModel) SetAgent(agent interface{}) {
+	dpv.deligateVotePlugin.SetAgent(dpv.processPlugin.currentVoter, agent)
+	dpv.SetProcess(nil)
 }
 
 func (dpv *openVoteModel) DeleteAgent() {
-	delete(dpv.deligateVotePlugin.agentMap, dpv.processPlugin.currentVoter)
+	dpv.deligateVotePlugin.SetAgent(dpv.processPlugin.currentVoter, nil)
 }
 
 func (dpv *openVoteModel) CountVote() error {
+	for from, to := range dpv.deligateVotePlugin.agentMap {
+		dpv.SetWeight(to, dpv.GetWeight(to)+dpv.GetWeight(from))
+	}
+	for from, tos := range dpv.processPlugin.processMap {
+		dpv.BaseVoteModel.AddToBox(dpv.privilegedVotePlugin.GetWeight(from), tos)
+	}
 	return nil
 }
 
 func (dpv *openVoteModel) GetResult(number uint8, val interface{}) bool {
-	if err := dpv.CountVote() ;err!= nil {
+	if err := dpv.CountVote(); err != nil {
 		return false
 	}
 	return dpv.BaseVoteModel.GetResult(number, val)
