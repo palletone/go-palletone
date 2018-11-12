@@ -20,12 +20,26 @@
 package vote
 
 type vote interface {
+	//Add the candidates into the vote box. using a slice container or just single element as parameter.
+	//for every single entity vote struct, the type of candidate should be same.
 	RegisterCandidates(candidates interface{})
-	Exist(candidate interface{}) bool
+	//Query whether a candidate exists
+	ExistCandidate(candidate interface{}) bool
+	//Gets a list of all registered candidates and returns []interface.
 	GetCandidates() []interface{}
+	//Depending on the implementation, the actual operation will be different.
+	//base vote: score number will incrsing the all given candidates score directly.
+	//tos accept a slice container or just single element as parameter.
+	//open vote: score will be ignored, because power of voter is set by another method.
+	//this function only implement the operation that set the vote apiration for current voter.
 	AddToBox(score uint64, tos interface{})
-	GetScore(candidate interface{}) (uint64, error)
+	//return given candidate's score, return error if candidate not valid .
+	GetCandidateScore(candidate interface{}) (uint64, error)
+	//return current vote status for all candidates.
 	GetVoteDetail() map[interface{}]uint64
+	//count a slice of elected candiates and replace the val, so val should be a pointer by passing variable's mem address.
+	//number describe how many candidate will return .
+	// boolen value is false when candidates which passing by method called for RegisterCandidates() or  AddToBox() before is invalid
 	GetResult(number uint8, val interface{}) bool
 }
 
@@ -41,21 +55,28 @@ type deligater interface {
 
 type processor interface {
 	SetCurrentVoter(voter interface{})
-	SetProcess(tos []interface{})
+	SetProcess(tos interface{})
 }
 
 type openVote interface {
+	//Add the candidates into the vote box. using a slice container or just single element as parameter.
+	//for every single entity vote struct, the type of candidate should be same.
 	RegisterCandidates(candidates interface{})
+	//change current voter.
+	//Once you have a "voter" set,  all operations will be finished as the identity of that "voter" by default
 	SetCurrentVoter(voter interface{})
-	AddToBox(score uint64, tos interface{})
-	DeleteAgent()
-	SetAgent(voter interface{})
+	//tos accept a slice container or just single element as parameter.
+	//score is weight set to current voter.
+	AddToBox(tos interface{})
+	SetWeight(weight uint64)
+	SetAgent(agent interface{})
+	GetResult(number uint8, val interface{}) bool
 }
 
-func NewBaseVote () vote {
+func NewBaseVote() vote {
 	return NewBaseVoteModel()
 }
 
-func NewOpenVote () openVote {
+func NewOpenVote() openVote {
 	return NewOpenVoteModel()
 }

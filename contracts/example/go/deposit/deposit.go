@@ -23,19 +23,16 @@ package deposit
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"strconv"
 	"time"
 )
 
-var depositChaincode = new(DepositChaincode)
+var depositCfg = new(pb.DepositCfg)
 
 type DepositChaincode struct {
-	DepositContractAddress string
-	DepositAmount          uint64
-	DepositRate            float64
-	FoundationAddress      string
 }
 
 type valueState struct {
@@ -52,12 +49,12 @@ func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 		fmt.Println("deposit error: ", err.Error())
 		return shim.Error(err.Error())
 	}
-	err = json.Unmarshal(depositConfigBytes, depositChaincode)
+	err = proto.Unmarshal(depositConfigBytes, depositCfg)
 	if err != nil {
 		fmt.Println("unmarshal depositConfigBytes error ", err)
 		return shim.Error(err.Error())
 	}
-	fmt.Printf("DepositChaincode=%#v\n\n", depositChaincode)
+	fmt.Printf("DepositChaincode=%#v\n\n", depositCfg)
 	return shim.Success([]byte("ok"))
 }
 
@@ -117,12 +114,44 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	}
 
 	//与保证金合约设置的数量比较
-	if ptnAccount < depositChaincode.DepositAmount {
+	if ptnAccount < depositCfg.DepositAmount {
 		fmt.Println("input ptnAmount less than deposit amount.")
 		return shim.Error("input ptnAmount less than deposit amount.")
 	}
 
 	//TODO 这里需要对msg0对象，获取其中的付款的数量，以来和参数比较是否大于或等于，否则返回出错
+	//获取from地址
+	fromAddrByte, err := stub.GetPayToContractFromAddr()
+	if err != nil {
+		return shim.Error("GetPayToContractFromAddr error: " + err.Error())
+	}
+	PayToContractFromAddr := &pb.PayToContractFromAddr{}
+	err = proto.Unmarshal(fromAddrByte, PayToContractFromAddr)
+	if err != nil {
+		return shim.Error("Unmarshal fromAddrByte error: " + err.Error())
+	}
+	fmt.Println("from address ", string(PayToContractFromAddr.Address))
+
+	ptnAmountByte, err := stub.GetPayToContractPtnTokens()
+	if err != nil {
+		return shim.Error("GetPayToContractPtnTokens error: " + err.Error())
+	}
+	payToContractPtnAmount := &pb.PayToContractPtnAmount{}
+	err = proto.Unmarshal(ptnAmountByte, payToContractPtnAmount)
+	if err != nil {
+		return shim.Error("Unmarshal ptnAmountByte error: " + err.Error())
+	}
+	fmt.Println("ptn amount ", payToContractPtnAmount.Amount)
+	toAddrByte, err := stub.GetPayToContractToAddr()
+	if err != nil {
+		return shim.Error("GetPayToContractToAddr error: " + err.Error())
+	}
+	payToContractToAddr := &pb.PayToContractToAddr{}
+	err = proto.Unmarshal(toAddrByte, payToContractToAddr)
+	if err != nil {
+		return shim.Error("Unmarshal toAddrByte error: " + err.Error())
+	}
+	fmt.Println("to address ", string(payToContractToAddr.Address))
 
 	//获取一下该用户下的账簿情况
 	accBalByte, err := stub.GetState(args[0])

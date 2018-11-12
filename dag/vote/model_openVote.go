@@ -25,7 +25,8 @@ type openVoteModel struct {
 	privilegedVotePlugin
 	deligateVotePlugin
 }
-func NewOpenVoteModel () *openVoteModel {
+
+func NewOpenVoteModel() *openVoteModel {
 	m := &openVoteModel{}
 	m.BaseVoteModel.candidatesStatus = make(map[interface{}]uint64, 0)
 	m.processPlugin.processMap = make(map[interface{}][]interface{}, 0)
@@ -33,75 +34,66 @@ func NewOpenVoteModel () *openVoteModel {
 	m.deligateVotePlugin.agentMap = make(map[interface{}]interface{}, 0)
 	return m
 }
-func (dpv *openVoteModel) RegisterCandidates(candidates interface{}) {
-	dpv.BaseVoteModel.RegisterCandidates(candidates)
+func (ovm *openVoteModel) RegisterCandidates(candidates interface{}) {
+	ovm.BaseVoteModel.RegisterCandidates(candidates)
+}
+
+func (ovm *openVoteModel) GetCandidates() []interface{} {
+	return ovm.BaseVoteModel.GetCandidates()
+}
+
+func (ovm *openVoteModel) SetCurrentVoter(voter interface{}) {
+	ovm.processPlugin.SetCurrentVoter(voter)
+}
+
+func (ovm *openVoteModel) AddToBox(tos interface{}) {
+	ovm.processPlugin.SetProcess(tos)
+	ovm.deligateVotePlugin.SetAgent(ovm.currentVoter,nil)
 
 }
 
-//Exist : wheither exist the given candidate in vote box.
-func (dpv *openVoteModel) Exist(candidate interface{}) bool {
-	return dpv.BaseVoteModel.Exist(candidate)
+//GetScore :get data counted last calling of CountVote()
+func (ovm *openVoteModel) GetCandidateScore(candidate interface{}) (uint64, error) {
+	return ovm.BaseVoteModel.GetCandidateScore(candidate)
 }
 
-func (dpv *openVoteModel) GetCandidates() []interface{} {
-	return dpv.BaseVoteModel.GetCandidates()
+func (ovm *openVoteModel) GetVoteDetail() map[interface{}]uint64 {
+	return ovm.BaseVoteModel.candidatesStatus
 }
 
-func (dpv *openVoteModel) SetCurrentVoter(voter interface{}) {
-	dpv.processPlugin.SetCurrentVoter(voter)
+func (ovm *openVoteModel) SetAgent(agent interface{}) {
+	ovm.deligateVotePlugin.SetAgent(ovm.processPlugin.currentVoter, agent)
+	ovm.processPlugin.SetProcess(nil)
 }
 
+func (ovm *openVoteModel) SetWeight(weight uint64) {
+	ovm.privilegedVotePlugin.SetWeight(ovm.currentVoter, weight)
+}
 
-/*
-switch reflect.ValueOf(candidates).Kind() {
-	case reflect.Slice:
-		if bv.elemType == reflect.TypeOf(candidates).Elem() {
-			for _, c := range ToInterfaceSlice(candidates) {
-				if bv.Exist(c) {
-					bv.candidatesStatus[c] += score
-				}
-			}
-		}
+//func (ovm *openVoteModel) DeleteAgent() {
+//	ovm.deligateVotePlugin.SetAgent(ovm.processPlugin.currentVoter, nil)
+//}
 
-	default:
-		if bv.Exist(candidates) {
-			bv.candidatesStatus[candidates] += score
-		}
+func (ovm *openVoteModel) CountVote() {
+	//backup weight map
+	BackUpWeightMap := make(map[interface{}]uint64, 0)
+	for k,v := range ovm.privilegedVotePlugin.weightMap{
+		BackUpWeightMap[k]=v
 	}
-*/
-func (dpv *openVoteModel) AddToBox(score uint64, tos interface{}) {
-	//check validity of candidates
-	dpv.BaseVoteModel.AddToBox(0,tos)
 
-	dpv.privilegedVotePlugin.SetWeight(dpv.processPlugin.currentVoter, score)
-	dpv.processPlugin.SetProcess(ToInterfaceSlice(tos))
-	delete(dpv.deligateVotePlugin.agentMap, dpv.processPlugin.currentVoter)
-}
-
-//GetScore : score data may out of date
-func (dpv *openVoteModel) GetScore(candidate interface{}) (uint64, error) {
-	return dpv.BaseVoteModel.GetScore(candidate)
-}
-
-func (dpv *openVoteModel) GetVoteDetail() map[interface{}]uint64 {
-	return dpv.BaseVoteModel.candidatesStatus
-}
-
-func (dpv *openVoteModel) SetAgent(voter interface{}) {
-	dpv.deligateVotePlugin.SetAgent(dpv.processPlugin.currentVoter, voter)
-}
-
-func (dpv *openVoteModel) DeleteAgent() {
-	delete(dpv.deligateVotePlugin.agentMap, dpv.processPlugin.currentVoter)
-}
-
-func (dpv *openVoteModel) CountVote() error {
-	return nil
-}
-
-func (dpv *openVoteModel) GetResult(number uint8, val interface{}) bool {
-	if err := dpv.CountVote() ;err!= nil {
-		return false
+	for from, to := range ovm.deligateVotePlugin.agentMap {
+		ovm.privilegedVotePlugin.SetWeight(to, ovm.GetWeight(to)+ovm.GetWeight(from))
 	}
-	return dpv.BaseVoteModel.GetResult(number, val)
+	for from, tos := range ovm.processPlugin.processMap {
+		ovm.BaseVoteModel.AddToBox(ovm.privilegedVotePlugin.GetWeight(from), tos)
+	}
+	//recover weight map
+	ovm.privilegedVotePlugin.weightMap = BackUpWeightMap
 }
+
+func (ovm *openVoteModel) GetResult(number uint8, val interface{}) bool {
+	ovm.CountVote()
+	return ovm.BaseVoteModel.GetResult(number, val)
+}
+
+
