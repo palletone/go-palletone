@@ -56,7 +56,7 @@ func TestBaseVoteModel(t *testing.T) {
 	// [test2] test result
 	voteResult := make([]common.Address, 0)
 	bvm.GetResult(4, &voteResult)
-	addr1Score, err := bvm.GetScore(voteResult[0])
+	addr1Score, err := bvm.GetCandidateScore(voteResult[0])
 	assert.Nil(t, err)
 	assert.EqualValues(t, 4, len(voteResult))
 	assert.EqualValues(t, addr5, voteResult[0])
@@ -79,26 +79,33 @@ func TestOpenVoteModel(t *testing.T) {
 	ovm.RegisterCandidates(addrs)
 	//1投给2
 	ovm.SetCurrentVoter(addr1)
-	ovm.AddToBox(100, addr2)
+	ovm.SetWeight(100)
+	ovm.AddToBox( addr2)
 	//2投给3
 	ovm.SetCurrentVoter(addr2)
-	ovm.AddToBox(200, addr3)
+	ovm.SetWeight(200)
+	ovm.AddToBox( addr3)
 	//3投给4
 	ovm.SetCurrentVoter(addr3)
-	ovm.AddToBox(300, addr4)
+	ovm.SetWeight(300)
+	ovm.AddToBox( addr4)
 	//4先投给了5，后来选择跟3号投
 	ovm.SetCurrentVoter(addr4)
-	ovm.AddToBox(400, addr5)
+	ovm.SetWeight(400)
+	ovm.AddToBox(addr5)
 	ovm.SetAgent(addr3)
-	//5先跟2号投，后自己投给了1号。
+	//5先跟2号投，后来自己投给了1号。
 	ovm.SetCurrentVoter(addr5)
+	ovm.SetWeight(500)
 	ovm.SetAgent(addr2)
-	ovm.AddToBox(500, addr1)
+	ovm.AddToBox( addr1)
 
 	// [test1] test voting to invalid candidates
 	addr6 := common.StringToAddressGodBlessMe("P1PjSaHLTxFm52fECLxVFErd3ch8Fif7CEN")
 	ovm.SetCurrentVoter(addr6)
-	ovm.AddToBox(512, addr6)
+	ovm.SetWeight(512)
+	// vote to addr6 (invalid candidate)
+	ovm.AddToBox(addr6)
 	_, ok := ovm.candidatesStatus[addr6]
 	assert.False(t, ok)
 
@@ -106,9 +113,9 @@ func TestOpenVoteModel(t *testing.T) {
 	voteResult := make([]common.Address, 0)
 	ok = ovm.GetResult(3, &voteResult)
 	assert.True(t, ok)
-	addr1Score, err := ovm.GetScore(addr1)
-	addr4Score, err := ovm.GetScore(addr4)
-	addr5Score, err := ovm.GetScore(addr5)
+	addr1Score, err := ovm.GetCandidateScore(addr1)
+	addr4Score, err := ovm.GetCandidateScore(addr4)
+	addr5Score, err := ovm.GetCandidateScore(addr5)
 	assert.Nil(t, err)
 	assert.EqualValues(t, uint64(500), addr1Score)
 	assert.EqualValues(t, uint64(700), addr4Score)
@@ -133,33 +140,34 @@ func TestOpenVoteModelMDeepLevelDeligate(t *testing.T) {
 	ovm.RegisterCandidates(addrs)
 	//1投给2
 	ovm.SetCurrentVoter(addr1)
-	ovm.AddToBox(100, addr2)
+	ovm.SetWeight(100)
+	ovm.AddToBox( addr2)
 	//2跟1投
 	ovm.SetCurrentVoter(addr2)
-	ovm.SetWeight(addr2, 200)
+	ovm.SetWeight(200)
 	ovm.SetAgent(addr1)
 	//3跟2投
 	ovm.SetCurrentVoter(addr3)
-	ovm.SetWeight(addr3, 300)
+	ovm.SetWeight( 300)
 	ovm.SetAgent(addr2)
 	//4跟5投
 	ovm.SetCurrentVoter(addr4)
-	ovm.SetWeight(addr4, 400)
+	ovm.SetWeight(400)
 	ovm.SetAgent(addr5)
 	//5跟4投
 	ovm.SetCurrentVoter(addr5)
-	ovm.SetWeight(addr5, 500)
+	ovm.SetWeight(500)
 	ovm.SetAgent(addr4)
 
 	// [test2] test result
 	voteResult := make([]common.Address, 0)
 	ok := ovm.GetResult(3, &voteResult)
 	assert.True(t, ok)
-	addr1Score, _ := ovm.GetScore(addr1)
-	addr2Score, _ := ovm.GetScore(addr2)
-	addr3Score, _ := ovm.GetScore(addr3)
-	addr4Score, _ := ovm.GetScore(addr4)
-	addr5Score, _ := ovm.GetScore(addr5)
+	addr1Score, _ := ovm.GetCandidateScore(addr1)
+	addr2Score, _ := ovm.GetCandidateScore(addr2)
+	addr3Score, _ := ovm.GetCandidateScore(addr3)
+	addr4Score, _ := ovm.GetCandidateScore(addr4)
+	addr5Score, _ := ovm.GetCandidateScore(addr5)
 	assert.EqualValues(t, uint64(0), addr1Score)
 	assert.EqualValues(t, uint64(600), addr2Score)
 	assert.EqualValues(t, uint64(0), addr3Score)

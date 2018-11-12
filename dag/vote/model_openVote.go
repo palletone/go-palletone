@@ -34,60 +34,66 @@ func NewOpenVoteModel() *openVoteModel {
 	m.deligateVotePlugin.agentMap = make(map[interface{}]interface{}, 0)
 	return m
 }
-func (dpv *openVoteModel) RegisterCandidates(candidates interface{}) {
-	dpv.BaseVoteModel.RegisterCandidates(candidates)
+func (ovm *openVoteModel) RegisterCandidates(candidates interface{}) {
+	ovm.BaseVoteModel.RegisterCandidates(candidates)
 }
 
-//Exist : wheither exist the given candidate in vote box.
-func (dpv *openVoteModel) Exist(candidate interface{}) bool {
-	return dpv.BaseVoteModel.Exist(candidate)
+func (ovm *openVoteModel) GetCandidates() []interface{} {
+	return ovm.BaseVoteModel.GetCandidates()
 }
 
-func (dpv *openVoteModel) GetCandidates() []interface{} {
-	return dpv.BaseVoteModel.GetCandidates()
+func (ovm *openVoteModel) SetCurrentVoter(voter interface{}) {
+	ovm.processPlugin.SetCurrentVoter(voter)
 }
 
-func (dpv *openVoteModel) SetCurrentVoter(voter interface{}) {
-	dpv.processPlugin.SetCurrentVoter(voter)
-}
+func (ovm *openVoteModel) AddToBox(tos interface{}) {
+	ovm.processPlugin.SetProcess(tos)
+	ovm.deligateVotePlugin.SetAgent(ovm.currentVoter,nil)
 
-func (dpv *openVoteModel) AddToBox(score uint64, tos interface{}) {
-	dpv.privilegedVotePlugin.SetWeight(dpv.processPlugin.currentVoter, score)
-	dpv.processPlugin.SetProcess(tos)
-	dpv.DeleteAgent()
 }
 
 //GetScore :get data counted last calling of CountVote()
-func (dpv *openVoteModel) GetScore(candidate interface{}) (uint64, error) {
-	return dpv.BaseVoteModel.GetScore(candidate)
+func (ovm *openVoteModel) GetCandidateScore(candidate interface{}) (uint64, error) {
+	return ovm.BaseVoteModel.GetCandidateScore(candidate)
 }
 
-func (dpv *openVoteModel) GetVoteDetail() map[interface{}]uint64 {
-	return dpv.BaseVoteModel.candidatesStatus
+func (ovm *openVoteModel) GetVoteDetail() map[interface{}]uint64 {
+	return ovm.BaseVoteModel.candidatesStatus
 }
 
-func (dpv *openVoteModel) SetAgent(agent interface{}) {
-	dpv.deligateVotePlugin.SetAgent(dpv.processPlugin.currentVoter, agent)
-	dpv.SetProcess(nil)
+func (ovm *openVoteModel) SetAgent(agent interface{}) {
+	ovm.deligateVotePlugin.SetAgent(ovm.processPlugin.currentVoter, agent)
+	ovm.processPlugin.SetProcess(nil)
 }
 
-func (dpv *openVoteModel) DeleteAgent() {
-	dpv.deligateVotePlugin.SetAgent(dpv.processPlugin.currentVoter, nil)
+func (ovm *openVoteModel) SetWeight(weight uint64) {
+	ovm.privilegedVotePlugin.SetWeight(ovm.currentVoter, weight)
 }
 
-func (dpv *openVoteModel) CountVote() error {
-	for from, to := range dpv.deligateVotePlugin.agentMap {
-		dpv.SetWeight(to, dpv.GetWeight(to)+dpv.GetWeight(from))
+//func (ovm *openVoteModel) DeleteAgent() {
+//	ovm.deligateVotePlugin.SetAgent(ovm.processPlugin.currentVoter, nil)
+//}
+
+func (ovm *openVoteModel) CountVote() {
+	//backup weight map
+	BackUpWeightMap := make(map[interface{}]uint64, 0)
+	for k,v := range ovm.privilegedVotePlugin.weightMap{
+		BackUpWeightMap[k]=v
 	}
-	for from, tos := range dpv.processPlugin.processMap {
-		dpv.BaseVoteModel.AddToBox(dpv.privilegedVotePlugin.GetWeight(from), tos)
+
+	for from, to := range ovm.deligateVotePlugin.agentMap {
+		ovm.privilegedVotePlugin.SetWeight(to, ovm.GetWeight(to)+ovm.GetWeight(from))
 	}
-	return nil
+	for from, tos := range ovm.processPlugin.processMap {
+		ovm.BaseVoteModel.AddToBox(ovm.privilegedVotePlugin.GetWeight(from), tos)
+	}
+	//recover weight map
+	ovm.privilegedVotePlugin.weightMap = BackUpWeightMap
 }
 
-func (dpv *openVoteModel) GetResult(number uint8, val interface{}) bool {
-	if err := dpv.CountVote(); err != nil {
-		return false
-	}
-	return dpv.BaseVoteModel.GetResult(number, val)
+func (ovm *openVoteModel) GetResult(number uint8, val interface{}) bool {
+	ovm.CountVote()
+	return ovm.BaseVoteModel.GetResult(number, val)
 }
+
+

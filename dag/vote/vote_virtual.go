@@ -24,7 +24,7 @@ type vote interface {
 	//for every single entity vote struct, the type of candidate should be same.
 	RegisterCandidates(candidates interface{})
 	//Query whether a candidate exists
-	Exist(candidate interface{}) bool
+	ExistCandidate(candidate interface{}) bool
 	//Gets a list of all registered candidates and returns []interface.
 	GetCandidates() []interface{}
 	//Depending on the implementation, the actual operation will be different.
@@ -34,7 +34,7 @@ type vote interface {
 	//this function only implement the operation that set the vote apiration for current voter.
 	AddToBox(score uint64, tos interface{})
 	//return given candidate's score, return error if candidate not valid .
-	GetScore(candidate interface{}) (uint64, error)
+	GetCandidateScore(candidate interface{}) (uint64, error)
 	//return current vote status for all candidates.
 	GetVoteDetail() map[interface{}]uint64
 	//count a slice of elected candiates and replace the val, so val should be a pointer by passing variable's mem address.
@@ -55,7 +55,7 @@ type deligater interface {
 
 type processor interface {
 	SetCurrentVoter(voter interface{})
-	SetProcess(tos []interface{})
+	SetProcess(tos interface{})
 }
 
 type openVote interface {
@@ -63,17 +63,13 @@ type openVote interface {
 	//for every single entity vote struct, the type of candidate should be same.
 	RegisterCandidates(candidates interface{})
 	//change current voter.
-	//Once you have a "voter" set, by default all operations are done with that "voter"
+	//Once you have a "voter" set,  all operations will be finished as the identity of that "voter" by default
 	SetCurrentVoter(voter interface{})
 	//tos accept a slice container or just single element as parameter.
 	//score is weight set to current voter.
-	AddToBox(score uint64, tos interface{})
-
-	// The current voter's vote will be represented by the  passing agent .
-	SetAgent(voter interface{})
-	// cancel agent
-	DeleteAgent()
-	// count the result
+	AddToBox(tos interface{})
+	SetWeight(weight uint64)
+	SetAgent(agent interface{})
 	GetResult(number uint8, val interface{}) bool
 }
 

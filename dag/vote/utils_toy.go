@@ -57,7 +57,7 @@ func resultNumber(inputLen uint8, resLenth uint8) uint8 {
 	return resultNumber
 }
 
-//MapExist :
+//MapExist : 没测过
 func MapExist(m interface{}, k interface{}) bool {
 	vm := reflect.ValueOf(m)
 	if vm.Kind() == reflect.Map { // m is a map?

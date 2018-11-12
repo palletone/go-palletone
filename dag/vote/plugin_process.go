@@ -19,8 +19,6 @@
 
 package vote
 
-import "reflect"
-
 type processPlugin struct {
 	currentVoter interface{}
 	processMap   map[interface{}][]interface{}
@@ -33,7 +31,7 @@ func (pp *processPlugin) SetCurrentVoter(voter interface{}) {
 func (pp *processPlugin) SetProcess(tosi interface{}) {
 	var NilInterfaceSlice interface{}
 	// if tosi is nil ,delete process.
-	if reflect.ValueOf(tosi) == NilInterfaceSlice{
+	if tosi == NilInterfaceSlice{
 		delete(pp.processMap, pp.currentVoter)
 		return
 	}
