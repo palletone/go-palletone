@@ -21,6 +21,7 @@
 package scc
 
 import (
+	"github.com/palletone/go-palletone/contracts/example/go/createToken"
 	"github.com/palletone/go-palletone/contracts/example/go/deposit"
 	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
 )
@@ -65,6 +66,15 @@ var systemChaincodes = []*SystemChaincode{
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &deposit.DepositChaincode{},
+	},
+	{
+		Id : []byte{0x02},
+		Enabled:true,
+		Name:"createToken_sycc",
+		Path:"../example/go/createToken/createToken",
+		Version:"ptn001",
+		InitArgs:[][]byte{},
+		Chaincode:&createToken.CreateTokenChainCode{},
 	},
 
 	//TODO add other system chaincodes ...
