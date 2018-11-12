@@ -1234,8 +1234,8 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 	// Keep a count of uncertain headers to roll back
 	rollback := []*modules.Header{}
 	defer func() {
+		log.Debug("===processHeaders===", "len(rollback):", len(rollback))
 		if len(rollback) > 0 {
-			log.Debug("===processHeaders===", "len(rollback):", len(rollback))
 			//TODO must recover
 			/*
 				// Flatten the headers and roll them back
@@ -1259,8 +1259,6 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 					"fast", fmt.Sprintf("%d->%d", lastFastBlock, curFastBlock),
 					"block", fmt.Sprintf("%d->%d", lastBlock, curBlock))
 			*/
-		} else {
-			log.Debug("===processHeaders===", "len(rollback):", len(rollback))
 		}
 	}()
 
@@ -1298,7 +1296,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 				if d.mode != LightSync {
 					head := d.dag.CurrentUnit()
 					//if !gotHeaders && td.Cmp(d.dag.GetTd(head.Hash(), head.NumberU64())) > 0 {
-					if head != nil && !gotHeaders && index > d.dag.GetHeaderByHash(head.Hash()).Index() {
+					if !gotHeaders && index > d.dag.GetHeaderByHash(head.Hash()).Index() {
 						log.Debug("===processHeaders errStallingPeer===")
 						return errStallingPeer
 					}
@@ -1310,13 +1308,16 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 				// This check cannot be executed "as is" for full imports, since blocks may still be
 				// queued for processing when the header download completes. However, as long as the
 				// peer gave us something useful, we're already happy/progressed (above check).
-				if d.mode == FastSync || d.mode == LightSync {
-					head := d.lightdag.CurrentHeader()
-					//if td.Cmp(d.lightdag.GetTd(head.Hash(), head.Number.Uint64())) > 0 {
-					if index > d.lightdag.GetHeaderByHash(head.Hash()).Index() {
-						return errStallingPeer
-					}
-				}
+				//TODO whether or not recover
+				//if d.mode == FastSync || d.mode == LightSync {
+				//	head := d.lightdag.CurrentHeader()
+				//	//if td.Cmp(d.lightdag.GetTd(head.Hash(), head.Number.Uint64())) > 0 {
+				//	if index > d.lightdag.GetHeaderByHash(head.Hash()).Index() {
+				//		log.Info("Downloader", "processHeaders index:", index, "dag index:", d.lightdag.GetHeaderByHash(head.Hash()).Index(),
+				//			"dag head hash:", head.Hash())
+				//		return errStallingPeer
+				//	}
+				//}
 				log.Debug("processHeaders rollback = nil")
 				// Disable any rollback and return
 				rollback = nil
