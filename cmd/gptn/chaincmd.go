@@ -148,7 +148,7 @@ func initGenesis(ctx *cli.Context) error {
 	// 从配置文件中获取账户和密码
 	//configPath := defaultConfigPath
 	//if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-	//	configPath, _ = getConfigPath(temp, node.DataDir())
+	//	configPath = temp
 	//}
 	//account, password := getAccountFromConf(configPath)
 
@@ -192,7 +192,7 @@ func initGenesis(ctx *cli.Context) error {
 	// @author Albert·Gou
 	//configPath := defaultConfigPath
 	//if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-	//	configPath, _ = getConfigPath(temp, node.DataDir())
+	//	configPath = temp
 	//}
 	//modifyMediatorInConf(configPath, password, account.Address)
 

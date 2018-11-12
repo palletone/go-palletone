@@ -176,7 +176,7 @@ func modifyConfig(ctx *cli.Context, mediators []mp.MediatorConf) error {
 	cfg := &FullConfig{Node: defaultNodeConfig()}
 	configPath := defaultConfigPath
 	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-		configPath, _ = getConfigPath(temp, cfg.Node.DataDir)
+		configPath = temp
 	}
 
 	// 加载配置文件中的配置信息到 cfg中
