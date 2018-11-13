@@ -106,6 +106,7 @@ func Jsonbytes2AllTokenInfo(data []byte) (*AllTokenInfo, error) {
 
 	return info, err
 }
+
 func (tf *AllTokenInfo) String() string {
 	bytes, err := json.Marshal(tf)
 	if err != nil {

@@ -47,8 +47,8 @@ const (
 type Header struct {
 	ParentsHash  []common.Hash `json:"parents_hash"`
 	AssetIDs     []IDType16    `json:"assets"`
-	Authors      Authentifier  `json:"author" rlp:"-"`  // the unit creation authors
-	GroupSign    []byte        `json:"witness" rlp:"-"` // 群签名
+	Authors      Authentifier  `json:"author" rlp:"-"` // the unit creation authors
+	GroupSign    []byte        `json:"witness"`        // 群签名
 	TxRoot       common.Hash   `json:"root"`
 	Number       ChainIndex    `json:"index"`
 	Extra        []byte        `json:"extra"`
@@ -435,7 +435,7 @@ const (
 	TxValidationCode_ILLEGAL_WRITESET             TxValidationCode = 23
 	TxValidationCode_INVALID_WRITESET             TxValidationCode = 24
 	TxValidationCode_INVALID_MSG                  TxValidationCode = 25
-	TxValidationCode_INVALID_PAYMMENTLOAd         TxValidationCode = 26
+	TxValidationCode_INVALID_PAYMMENTLOAD         TxValidationCode = 26
 	TxValidationCode_INVALID_PAYMMENT_INPUT       TxValidationCode = 27
 	TxValidationCode_INVALID_PAYMMENT_OUTPUT      TxValidationCode = 28
 	TxValidationCode_INVALID_PAYMMENT_LOCKTIME    TxValidationCode = 29
