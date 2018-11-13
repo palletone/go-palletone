@@ -62,3 +62,14 @@ func (c *Contract) Jumpdests() map[common.Hash][]byte { return c.jumpdests }
 func (c *Contract) Value() *big.Int { return c.value }
 
 func (c *Contract) Status() int { return c.status }
+
+type Tokens struct {
+	Amount uint64 `json:"amount"`
+	Asset  Asset  `json:"asset"`
+}
+type StateValue struct {
+	Asset  Asset     `json:"asset"`
+	Amount uint64    `json:"value"`
+	Time   time.Time `json:"time"`
+	Extra  string    `json:"extra"`
+}

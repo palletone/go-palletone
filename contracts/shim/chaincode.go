@@ -769,21 +769,21 @@ func (stub *ChaincodeStub) SetEvent(name string, payload []byte) error {
 }
 
 //---------- Deposit API ----------
-func (stub *ChaincodeStub) GetDepositConfig() ([]byte, error) {
-	return stub.handler.handleGetDepositConfig(stub.ChannelId, stub.TxID)
+func (stub *ChaincodeStub) GetSystemConfig(key string) ([]byte, error) {
+	return stub.handler.handleGetSystemConfig(key, stub.ChannelId, stub.TxID)
 }
 
-func (stub *ChaincodeStub) GetPayToContractFromAddr() ([]byte, error) {
-	return stub.handler.handleGetPayToContractFromAddr(stub.ChannelId, stub.TxID)
+func (stub *ChaincodeStub) GetInvokeFromAddr() (string, error) {
+	return stub.handler.handleGetInvokeFromAddr(stub.ChannelId, stub.TxID)
 }
-func (stub *ChaincodeStub) GetPayToContractPtnTokens() ([]byte, error) {
+func (stub *ChaincodeStub) GetPayToContractPtnTokens() (*modules.Asset, uint64, error) {
 	return stub.handler.GetPayToContractPtnTokens(stub.ChannelId, stub.TxID)
-}
-func (stub *ChaincodeStub) GetPayToContractToAddr() ([]byte, error) {
-	return stub.handler.handleGetPayToContractToAddr(stub.ChannelId, stub.TxID)
 }
 func (stub *ChaincodeStub) GetContractAllState() ([]byte, error) {
 	return stub.handler.handlerGetContractAllState(stub.ChannelId, stub.TxID, stub.ContractId)
+}
+func (stub *ChaincodeStub) GetContractInvokeFee() (uint64, error) {
+	return stub.handler.handlerGetContractInvokeFee(stub.ChannelId, stub.TxID, stub.ContractId)
 }
 
 //获得该合约的Token余额
@@ -793,7 +793,8 @@ func (stub *ChaincodeStub) GetTokenBalance() (map[modules.Asset]uint64, error) {
 }
 
 //将合约上锁定的某种Token支付出去
-func (stub *ChaincodeStub) PayOutToken(token modules.Asset, amount uint64, lockTime uint32) error {
+
+func (stub *ChaincodeStub) PayOutToken(addr string, token modules.Asset, amount uint64, lockTime uint32) error {
 	//TODO Devin return stub.handler.handlePayOutToken(  stub.ContractId, stub.ChannelId, stub.TxID)
 	return nil
 }

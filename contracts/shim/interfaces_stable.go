@@ -217,19 +217,20 @@ type ChaincodeStubInterface interface {
 	SetEvent(name string, payload []byte) error
 
 	//获取保证金合约的一些配置参数
-	GetDepositConfig() ([]byte, error)
+	GetSystemConfig(key string) ([]byte, error)
 	//获取支付合约的 from 地址
-	GetPayToContractFromAddr() ([]byte, error)
+	GetInvokeFromAddr() (addr string, err error)
 	//获取支付ptn数量
-	GetPayToContractPtnTokens() ([]byte, error)
-	//获取支付合约的 to 地址
-	GetPayToContractToAddr() ([]byte, error)
+	GetPayToContractPtnTokens() (asset *modules.Asset, amount uint64, err error)
 	//获取所有的世界状态
 	GetContractAllState() ([]byte, error)
+	//获取调用合约所支付的PTN手续费
+	GetContractInvokeFee() (fee uint64, err error)
 	//获得该合约的Token余额
 	GetTokenBalance() (map[modules.Asset]uint64, error)
 	//将合约上锁定的某种Token支付出去
-	PayOutToken(token modules.Asset, amount uint64, lockTime uint32) error
+	PayOutToken(addr string, token modules.Asset, amount uint64, lockTime uint32) error
+
 }
 
 // CommonIteratorInterface allows a chaincode to check whether any more result

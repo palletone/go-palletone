@@ -21,12 +21,12 @@
 package txspool
 
 import (
-    "fmt"
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 //  UtxoViewpoint
@@ -102,6 +102,10 @@ func (view *UtxoViewpoint) FetchUnitUtxos(db storage.IUtxoDb, unit *modules.Unit
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 					for _, txIn := range msg.Input {
+						//TODO for download sync
+						if txIn == nil {
+							continue
+						}
 						originHash := &txIn.PreviousOutPoint.TxHash
 						if inFlightIndex, ok := txInFlight[*originHash]; ok &&
 							i >= inFlightIndex {
@@ -242,6 +246,7 @@ func NewUtxoViewpoint() *UtxoViewpoint {
 
 // ErrorCode identifies a kind of error.
 type ErrorCode uint8
+
 // RuleError identifies a rule violation.  It is used to indicate that
 // processing of a block or transaction failed due to one of the many validation
 // rules.  The caller can use type assertions to determine if a failure was
@@ -253,7 +258,7 @@ type ErrorCode uint8
 //}
 type RuleError struct {
 	ErrorCode   RejectCode // Describes the kind of error
-	Description string    // Human readable description of the issue
+	Description string     // Human readable description of the issue
 }
 
 // TxRuleError identifies a rule violation.  It is used to indicate that
@@ -265,6 +270,7 @@ type TxRuleError struct {
 	RejectCode  RejectCode // The code to send with reject messages
 	Description string     // Human readable description of the issue
 }
+
 // txRuleError creates an underlying TxRuleError with the given a set of
 // arguments and returns a RuleError that encapsulates it.
 func txRuleError(c RejectCode, desc string) RuleError {
@@ -274,6 +280,7 @@ func txRuleError(c RejectCode, desc string) RuleError {
 }
 
 type RejectCode uint8
+
 // These constants define the various supported reject codes.
 const (
 	RejectMalformed       RejectCode = 0x01
@@ -289,7 +296,7 @@ const (
 func CheckTransactionSanity(tx *modules.Transaction) error {
 	// A transaction must have at least one input.
 	if len(tx.TxMessages) == 0 {
-		return  &ptnjson.RPCError{
+		return &ptnjson.RPCError{
 			Code:    ptnjson.ErrRPCRawTxString,
 			Message: "transaction has no inputs",
 		}
@@ -300,7 +307,7 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 	if serializedTxSize > ptnjson.MaxBlockBaseSize {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
 			"%d, max %d", serializedTxSize, ptnjson.MaxBlockBaseSize)
-		return  &ptnjson.RPCError{
+		return &ptnjson.RPCError{
 			Code:    ptnjson.ErrRPCRawTxString,
 			Message: str,
 		}
@@ -323,7 +330,7 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 			if satoshi < 0 {
 				str := fmt.Sprintf("transaction output has negative "+
 					"value of %v", satoshi)
-				return  &ptnjson.RPCError{
+				return &ptnjson.RPCError{
 					Code:    ptnjson.ErrBadTxOutValue,
 					Message: str,
 				}
@@ -332,7 +339,7 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 				str := fmt.Sprintf("transaction output value of %v is "+
 					"higher than max allowed value of %v", satoshi,
 					ptnjson.MaxDao)
-				return  &ptnjson.RPCError{
+				return &ptnjson.RPCError{
 					Code:    ptnjson.ErrBadTxOutValue,
 					Message: str,
 				}
@@ -346,7 +353,7 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 				str := fmt.Sprintf("total value of all transaction "+
 					"outputs exceeds max allowed value of %v",
 					ptnjson.MaxDao)
-				return  &ptnjson.RPCError{
+				return &ptnjson.RPCError{
 					Code:    ptnjson.ErrBadTxOutValue,
 					Message: str,
 				}
@@ -356,31 +363,30 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 					"outputs is %v which is higher than max "+
 					"allowed value of %v", totalSatoshi,
 					ptnjson.MaxDao)
-				return  &ptnjson.RPCError{
+				return &ptnjson.RPCError{
 					Code:    ptnjson.ErrBadTxOutValue,
 					Message: str,
 				}
 			}
 			//todo find all txin amout by input hash
-	        // if total inamout small than out value ,err 
+			// if total inamout small than out value ,err
 		}
 
-	// Check for duplicate transaction inputs.
-	existingTxOut := make(map[modules.OutPoint]struct{})
-	for _, txIn := range payload.Input {
-		if _, exists := existingTxOut[*txIn.PreviousOutPoint]; exists {
-			return  &ptnjson.RPCError{
+		// Check for duplicate transaction inputs.
+		existingTxOut := make(map[modules.OutPoint]struct{})
+		for _, txIn := range payload.Input {
+			if _, exists := existingTxOut[*txIn.PreviousOutPoint]; exists {
+				return &ptnjson.RPCError{
 					Code:    ptnjson.ErrDuplicateTxInputs,
-					Message:  "transaction "+"contains duplicate inputs",
+					Message: "transaction " + "contains duplicate inputs",
 				}
+			}
+			existingTxOut[*txIn.PreviousOutPoint] = struct{}{}
 		}
-		existingTxOut[*txIn.PreviousOutPoint] = struct{}{}
-	}
 
-    }
-    //check whether input valid need find former script and than 
-    // call 
+	}
+	//check whether input valid need find former script and than
+	// call
 
 	return nil
 }
-

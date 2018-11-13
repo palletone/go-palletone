@@ -833,6 +833,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		// step3.1. pass and with group signature, put into leveldb
 		// todo 应当先判断是否切换，再保存，并更新状态
 		if err := d.unitRep.SaveUnit(unit, false); err != nil {
+			log.Info("Dag", "SaveDag, save error when save unit to db err:", err)
 			return fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
 		}
 		// step3.2. if pass and with group signature, prune fork data

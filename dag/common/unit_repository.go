@@ -482,12 +482,15 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 		log.Info("Validate size", "error", "Size is invalid")
 		return modules.ErrUnit(-1)
 	}
+	//log.Info("===dag ValidateTransactions===")
 	// step3. check transactions in unit
-	_, isSuccess, err := unitOp.validate.ValidateTransactions(&unit.Txs, isGenesis)
-	if isSuccess != true {
-		return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
-	}
-
+	//TODO must recover
+	//_, isSuccess, err := unitOp.validate.ValidateTransactions(&unit.Txs, isGenesis)
+	//if isSuccess != true {
+	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+	//}
+	var err error
+	//log.Info("===dag traverse transactions and save them===")
 	// step6. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
@@ -535,14 +538,16 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 		}
 		txHashSet = append(txHashSet, tx.TxHash)
 	}
-
+	//log.Info("===dag unitOp.dagdb.SaveBody===")
 	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
 	if err := unitOp.dagdb.SaveBody(unit.UnitHash, txHashSet); err != nil {
 		log.Info("SaveBody", "error", err.Error())
 		return err
 	}
+	//log.Info("===dag SaveTxLookupEntry===")
 	// step 10  save txlookupEntry
 	if err := unitOp.dagdb.SaveTxLookupEntry(unit); err != nil {
+		log.Info("SaveTxLookupEntry", "error", err.Error())
 		return err
 	}
 

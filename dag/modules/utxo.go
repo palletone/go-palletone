@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"strings"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -51,18 +52,22 @@ type Asset struct {
 }
 
 func (asset *Asset) String() string {
-	data, err := rlp.EncodeToBytes(asset)
-	if err != nil {
-		return ""
-	}
+	//data, err := rlp.EncodeToBytes(asset)
+	//if err != nil {
+	//	return ""
+	//}
+	//return string(data)
+	data, _ := json.Marshal(asset)
 	return string(data)
 }
 
 func (asset *Asset) SetString(data string) error {
-	if err := rlp.DecodeBytes([]byte(data), asset); err != nil {
-		return err
-	}
-	return nil
+	//if err := rlp.DecodeBytes([]byte(data), asset); err != nil {
+	//	return err
+	//}
+	//return nil
+	return json.Unmarshal([]byte(data), asset)
+
 }
 
 func (asset *Asset) IsEmpty() bool {

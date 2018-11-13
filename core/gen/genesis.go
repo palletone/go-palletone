@@ -196,9 +196,8 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
 func DefaultGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		DepositRate:            core.DefaultDepositRate,
-		DepositAmount:          core.DefaultDepositAmount,
-		DepositContractAddress: core.DefaultDepositContractAddress,
+		DepositRate:   core.DefaultDepositRate,
+		DepositAmount: core.DefaultDepositAmount,
 	}
 
 	initParams := core.NewChainParams()
@@ -222,9 +221,8 @@ func DefaultGenesisBlock() *core.Genesis {
 // DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
 func DefaultTestnetGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		DepositRate:            core.DefaultDepositRate,
-		DepositAmount:          core.DefaultDepositAmount,
-		DepositContractAddress: core.DefaultDepositContractAddress,
+		DepositRate:   core.DefaultDepositRate,
+		DepositAmount: core.DefaultDepositAmount,
 	}
 
 	initParams := core.NewChainParams()

@@ -18,16 +18,20 @@
 
 package rwset
 
-import "github.com/palletone/go-palletone/dag/modules"
+import (
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
+)
 
 type RWSetBuilder struct {
 	pubRwBuilderMap map[string]*nsPubRwBuilder
 }
 
 type nsPubRwBuilder struct {
-	namespace string
-	readMap   map[string]*KVRead
-	writeMap  map[string]*KVWrite
+	namespace   string
+	readMap     map[string]*KVRead
+	writeMap    map[string]*KVWrite
+	tokenPayOut []*modules.TokenPayOut
 }
 
 func NewRWSetBuilder() *RWSetBuilder {
@@ -42,7 +46,16 @@ func (b *RWSetBuilder) AddToReadSet(ns string, key string, version *modules.Stat
 	// ReadSet
 	nsPubRwBuilder.readMap[key] = NewKVRead(key, version)
 }
+func (b *RWSetBuilder) AddTokenPayOut(ns string, addr string, asset modules.Asset, amount uint64, lockTime uint32) {
+	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
+	if nsPubRwBuilder.tokenPayOut == nil {
+		nsPubRwBuilder.tokenPayOut = []*modules.TokenPayOut{}
+	}
+	address, _ := common.StringToAddress(addr)
+	pay := &modules.TokenPayOut{Asset: asset, Amount: amount, PayTo: address, LockTime: lockTime}
+	nsPubRwBuilder.tokenPayOut = append(nsPubRwBuilder.tokenPayOut, pay)
 
+}
 func (b *RWSetBuilder) AddToWriteSet(ns string, key string, value []byte) {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
 	if nsPubRwBuilder.writeMap == nil {
@@ -50,7 +63,9 @@ func (b *RWSetBuilder) AddToWriteSet(ns string, key string, value []byte) {
 	}
 	nsPubRwBuilder.writeMap[key] = newKVWrite(key, value)
 }
-
+func (b *RWSetBuilder) GetTokenPayOut(ns string) []*modules.TokenPayOut {
+	return b.pubRwBuilderMap[ns].tokenPayOut
+}
 func (b *RWSetBuilder) getOrCreateNsPubRwBuilder(ns string) *nsPubRwBuilder {
 	nsPubRwBuilder, ok := b.pubRwBuilderMap[ns]
 	if !ok {
@@ -66,5 +81,6 @@ func newNsPubRwBuilder(namespace string) *nsPubRwBuilder {
 		namespace,
 		make(map[string]*KVRead),
 		make(map[string]*KVWrite),
+		[]*modules.TokenPayOut{},
 	}
 }
