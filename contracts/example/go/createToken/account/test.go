@@ -13,32 +13,36 @@
 */
 
 /*
- * @author PalletOne core developer  <dev@pallet.one>
+ * @author PalletOne core developer <dev@pallet.one>
  * @date 2018
  */
-
-package createToken
+package account
 
 import (
+	"fmt"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/modules"
+	"testing"
 )
 
-type IAccount interface {
-	IsOwner() bool
-	ChangeTotalSupply(amount uint64) bool
-	ChangeOwner(des common.Address) bool
-	OwnerOf(address common.Address, TokenID uint64) common.Address
-	TotalSupply() uint64
-	Name() string
-	Symbol() string
-	balanceOf(account common.Address) []uint64
-	GlobalIDByInnerID(id uint64) modules.IDType16
-	CreateNewToken(additional []byte) bool
-	transfer(to common.Address, ids []uint64) bool
-}
 
-//func GenerateTempAccount (address common.Address) IAccount {
-//	account := Account(address)
-//	return account
-//}
+
+func TestAccountModel(t *testing.T) {
+	addr := common.StringToAddressGodBlessMe("P1GqZ72gaeq7LiS34KLJoMmCnMnaopkcEPn")
+	//1. generate user model
+	u :=GenerateUser(addr)
+
+	//2. add different type of tokens to wallet
+	u.AddNewTokenCard("wil")
+	u.AddNewTokenCard("tom")
+
+	//3. set current token for call
+	u.SetCurrentTokenCard("wil")
+
+	//4. system call
+	result, ok := u.Call("IsOwner", "")
+	if !ok {
+		//check
+	}
+	fmt.Println(result)
+
+}
