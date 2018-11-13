@@ -146,10 +146,7 @@ func initGenesis(ctx *cli.Context) error {
 	// modify by Albert·Gou
 	account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
 	// 从配置文件中获取账户和密码
-	//configPath := defaultConfigPath
-	//if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-	//	configPath, _ = getConfigPath(temp, node.DataDir())
-	//}
+	//configPath := getConfigPath(ctx)
 	//account, password := getAccountFromConf(configPath)
 
 	err = ks.Unlock(account, password)
@@ -190,10 +187,7 @@ func initGenesis(ctx *cli.Context) error {
 
 	// 2, 重写配置文件，修改当前节点的mediator的地址和密码
 	// @author Albert·Gou
-	//configPath := defaultConfigPath
-	//if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-	//	configPath, _ = getConfigPath(temp, node.DataDir())
-	//}
+	//configPath := getConfigPath(ctx)
 	//modifyMediatorInConf(configPath, password, account.Address)
 
 	//3. initial globalproperty

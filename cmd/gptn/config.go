@@ -30,19 +30,20 @@ import (
 
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/configure"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
-const defaultConfigPath = "palletone.toml"
+const defaultConfigPath = "./ptn-config.toml"
 
 var (
 	dumpConfigCommand = cli.Command{
@@ -149,41 +150,32 @@ func adaptorConfig(config FullConfig) FullConfig {
 
 // 根据指定路径和配置参数获取配置文件的路径
 // @author Albert·Gou
-func getConfigPath(configPath, dataDir string) (string, error) {
-	if filepath.IsAbs(configPath) {
-		return configPath, nil
+func getConfigPath(ctx *cli.Context) string {
+	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
+	configPath := defaultConfigPath
+	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
+		configPath = temp
 	}
 
-	if dataDir != "" && configPath == "" {
-		return filepath.Join(dataDir, defaultConfigPath), nil
-	}
-
-	if configPath != "" {
-		return filepath.Abs(configPath)
-	}
-
-	return "", nil
+	return configPath
 }
 
 // 加载指定的或者默认的配置文件，如果不存在则根据默认的配置生成文件
 // @author Albert·Gou
 func maybeLoadConfig(ctx *cli.Context, cfg *FullConfig) error {
-	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
-	configPath := defaultConfigPath
-	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-		configPath, _ = getConfigPath(temp, cfg.Node.DataDir)
-	}
+	configPath := getConfigPath(ctx)
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
-	if _, err := os.Stat(configPath); err != nil && os.IsNotExist(err) {
+	if !common.FileExist(configPath) {
 		defaultConfig := makeDefaultConfig()
-		err = makeConfigFile(&defaultConfig, configPath)
+		err := makeConfigFile(&defaultConfig, configPath)
 		if err != nil {
 			utils.Fatalf("%v", err)
 			return err
 		}
 
 		fmt.Println("Writing new config file at: ", configPath)
+		return nil
 	}
 
 	// 加载配置文件中的配置信息到 cfg中
@@ -289,7 +281,7 @@ func dumpConfig(ctx *cli.Context) error {
 	configPath := ctx.Args().First()
 	// If no path is specified, the default path is used
 	if len(configPath) == 0 {
-		configPath, _ = getConfigPath(defaultConfigPath, cfg.Node.DataDir)
+		configPath = defaultConfigPath
 	}
 
 	//	io.WriteString(os.Stdout, comment)

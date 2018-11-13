@@ -20,19 +20,25 @@
 package createToken
 
 import (
-	"github.com/palletone/go-palletone/contracts/shim"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
-type CreateTokenChainCode struct {
+type IAccount interface {
+	IsOwner() bool
+	ChangeTotalSupply(amount uint64) bool
+	ChangeOwner(des common.Address) bool
+	OwnerOf(address common.Address, TokenID uint64) common.Address
+	TotalSupply() uint64
+	Name() string
+	Symbol() string
+	balanceOf(account common.Address) []uint64
+	GlobalIDByInnerID(id uint64) modules.IDType16
+	CreateNewToken(additional []byte) bool
+	transfer(to common.Address, ids []uint64) bool
 }
 
-func (t *CreateTokenChainCode) Init(stub shim.ChaincodeStubInterface) pb.Response {
-	return pb.Response{}
-}
-
-// Invoke gets the supplied key and if it exists, updates the key with the newly
-// supplied value.
-func (t *CreateTokenChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
-	return pb.Response{}
-}
+//func GenerateTempAccount (address common.Address) IAccount {
+//	account := Account(address)
+//	return account
+//}

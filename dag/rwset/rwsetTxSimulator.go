@@ -20,16 +20,18 @@
 package rwset
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
+	"time"
 )
 
 type RwSetTxSimulator struct {
 	txid                    string
 	rwsetBuilder            *RWSetBuilder
-	state                   dag.IDag
+	dag                     dag.IDag
 	writePerformed          bool
 	pvtdataQueriesPerformed bool
 	doneInvoked             bool
@@ -53,10 +55,24 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
+	//TODO
+	stateValue := modules.StateValue{
+		Asset: modules.Asset{
+			AssetId:  modules.PTNCOIN,
+			UniqueId: modules.PTNCOIN,
+			ChainId:  uint64(1),
+		},
+		Amount: 100000,
+		Time:   time.Now(),
+		Extra:  "hello",
+	}
+	stateValueByte, _ := json.Marshal(stateValue)
+	return stateValueByte, nil
+
 	//fmt.Println("GetState(contractid []byte, ns string, key string)===>>>\n\n", contractid, ns, key)
 	//return []byte("1000"), nil
 	//TODO Devin
-	ver, val := s.state.GetContractState(contractid, key)
+	ver, val := s.dag.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
 	if val == nil {
 		logger.Errorf("get value from db[%s] failed", ns)
@@ -77,8 +93,11 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 }
 
 func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
-	logger.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)
-	fmt.Println("SetState(ns string, key string, value []byte)===>>>\n\n", ns, key, value)
+	//logger.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)
+	//fmt.Println("SetState(ns string, key string, value []byte)===>>>\n\n", ns, key, value)
+	stateValue := &modules.StateValue{}
+	_ = json.Unmarshal(value, stateValue)
+	//fmt.Printf("llllllll   %#v\n", stateValue)
 	if err := s.CheckDone(); err != nil {
 		return err
 	}
@@ -126,9 +145,9 @@ func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]
 	return rd, wt, nil
 }
 
-//get all state
+//get all dag
 func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error) {
-	return s.state.GetContractStatesById(contractid)
+	return s.dag.GetContractStatesById(contractid)
 }
 
 func (h *RwSetTxSimulator) CheckDone() error {
@@ -158,11 +177,23 @@ func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
 
 	return nil, nil
 }
-func (s *RwSetTxSimulator)  GetTokenBalance(contractid []byte, ns string) (map[modules.Asset]uint64, error){
-	//TODO Devin query utxo
-	return map[modules.Asset]uint64{},nil
+func (s *RwSetTxSimulator) GetTokenBalance(contractid []byte, ns string) (map[modules.Asset]uint64, error) {
+	addr := crypto.ContractIdToAddress(contractid)
+	utxos, _ := s.dag.GetAddrUtxos(addr.String())
+	return convertUtxo2Balance(utxos), nil
 }
-func (s *RwSetTxSimulator) PayOutToken(ns string, token modules.Asset, amount uint64, lockTime uint32) error {
+func convertUtxo2Balance(utxos map[modules.OutPoint]*modules.Utxo) map[modules.Asset]uint64 {
+	result := map[modules.Asset]uint64{}
+	for _, v := range utxos {
+		if val, ok := result[*v.Asset]; ok {
+			result[*v.Asset] = val + v.Amount
+		} else {
+			result[*v.Asset] = v.Amount
+		}
+	}
+	return result
+}
+func (s *RwSetTxSimulator) PayOutToken(ns string, address string, token modules.Asset, amount uint64, lockTime uint32) error {
 	//TODO Devin pay a token out
 	return nil
 }
