@@ -33,7 +33,8 @@ import (
 type MemUnitInfo map[common.Hash]*modules.Unit
 
 type MemUnit struct {
-	memUnitInfo *MemUnitInfo
+	//memUnitInfo *MemUnitInfo
+	memUnitInfo *sync.Map
 	memLock     sync.RWMutex
 
 	numberToHash     map[modules.ChainIndex]common.Hash
@@ -41,10 +42,10 @@ type MemUnit struct {
 }
 
 func InitMemUnit() *MemUnit {
-	memUnitInfo := make(MemUnitInfo)
+	memUnitInfo := new(sync.Map)
 	numberToHash := map[modules.ChainIndex]common.Hash{}
 	memUnit := MemUnit{
-		memUnitInfo:  &memUnitInfo,
+		memUnitInfo:  memUnitInfo,
 		numberToHash: numberToHash,
 	}
 	return &memUnit
@@ -74,62 +75,75 @@ func (mu *MemUnit) GetHashByNumber(chainIndex modules.ChainIndex) (common.Hash, 
 }
 
 func (mu *MemUnit) Add(u *modules.Unit) error {
-	mu.memLock.Lock()
-	defer mu.memLock.Unlock()
 	if mu == nil {
 		mu = InitMemUnit()
 	}
-	_, ok := (*mu.memUnitInfo)[u.UnitHash]
+	// _, ok := mu.memUnitInfo.Load(u.Hash())
+	// //_, ok := (*mu.memUnitInfo)[u.UnitHash]
+	// if !ok {
+	// 	mu.memUnitInfo.Store(u.Hash(), u)
+	// 	// (*mu.memUnitInfo)[u.UnitHash] = u
+	// }
+
+	_, ok := mu.memUnitInfo.LoadOrStore(u.Hash(), u)
 	if !ok {
-		(*mu.memUnitInfo)[u.UnitHash] = u
+		mu.memUnitInfo.Store(u.Hash(), u)
 	}
-	log.Info("insert memUnit success.", "hashHex", u.UnitHash.String())
+	log.Info("insert memUnit success.", "hashHex", u.Hash().String())
 	return nil
 }
 
 func (mu *MemUnit) Get(hash common.Hash) (*modules.Unit, error) {
-	mu.memLock.RLock()
-	defer mu.memLock.RUnlock()
-	unit, ok := (*mu.memUnitInfo)[hash]
-	if !ok || unit == nil {
+	// mu.memLock.RLock()
+	// defer mu.memLock.RUnlock()
+	data, ok := mu.memUnitInfo.Load(hash)
+	if !ok {
 		return nil, fmt.Errorf("Get mem unit: unit does not be found.")
 	}
+	// unit, ok := (*mu.memUnitInfo)[hash]
+	// if !ok || unit == nil {
+	// 	return nil, fmt.Errorf("Get mem unit: unit does not be found.")
+	// }
+	unit := data.(*modules.Unit)
 	return unit, nil
 }
 
 func (mu *MemUnit) Exists(hash common.Hash) bool {
-	mu.memLock.RLock()
-	_, ok := (*mu.memUnitInfo)[hash]
-	mu.memLock.RUnlock()
-	if ok {
-		return true
-	}
-	return false
+	_, ok := mu.memUnitInfo.Load(hash)
+	return ok
 }
 func (mu *MemUnit) Refresh(hash common.Hash) error {
 	// 删除该hash在memUnit的记录。
 	if hash == (common.Hash{}) {
 		return errors.New("hash is null.")
 	}
+	_, ok := mu.memUnitInfo.Load(hash)
+	if ok {
+		mu.memUnitInfo.Delete(hash)
+	} else {
+		log.Debug(fmt.Sprintf("the hash(%s) is not exist", hash.String()))
+	}
+
 	mu.memLock.Lock()
-	if _, has := (*mu.memUnitInfo)[hash]; has {
-		delete((*mu.memUnitInfo), hash)
-		for index, h := range mu.numberToHash {
-			if h == hash {
-				delete(mu.numberToHash, index)
-				break
-			}
+	for index, h := range mu.numberToHash {
+		if h == hash {
+			delete(mu.numberToHash, index)
+			break
 		}
-		return nil
 	}
 	mu.memLock.Unlock()
-	return errors.New(fmt.Sprintf("the hash(%s) is not exist", hash.String()))
+	return nil
+	//return errors.New(fmt.Sprintf("the hash(%s) is not exist", hash.String()))
 }
 
 func (mu *MemUnit) Lenth() uint64 {
-	mu.memLock.RLock()
-	defer mu.memLock.RUnlock()
-	return uint64(len(*mu.memUnitInfo))
+	var count uint64
+	mu.memUnitInfo.Range(func(key, val interface{}) bool {
+		fmt.Println(key, val)
+		count++
+		return true
+	})
+	return count
 }
 
 /*********************************************************************/
@@ -151,6 +165,23 @@ func (f *ForkData) Exists(hash common.Hash) bool {
 		}
 	}
 	return false
+}
+
+func (f *ForkData) GetLast() common.Hash {
+
+	for i := len(*f) - 1; i >= 0; i-- {
+		hash := f.get_last(i)
+		if hash != (common.Hash{}) {
+			return hash
+		}
+	}
+	return common.Hash{}
+}
+func (f *ForkData) get_last(index int) common.Hash {
+	if index > len(*f) || index < 0 {
+		return common.Hash{}
+	}
+	return (*f)[index]
 }
 
 /*********************************************************************/
@@ -176,8 +207,8 @@ func (forkIndex *ForkIndex) AddData(unitHash common.Hash, parentsHash []common.H
 	in, err := forkIndex.addDate(unitHash, parentsHash, index)
 	log.Info("遍历33333  fork Index:", "index", index)
 	for key, data := range *forkIndex {
-		fmt.Println("index: ", key)
-		fmt.Println(" data: ", data)
+		log.Info("index: ", "key_num", key)
+		log.Info(" data: ", "hashs", data)
 	}
 	return in, err
 }
@@ -205,7 +236,7 @@ func (forkIndex *ForkIndex) addDate(hash common.Hash, parentsHash []common.Hash,
 		}
 	}
 
-	if len(data1) > 0 {
+	if data1.Exists(hash) {
 		(*forkIndex)[index] = data1
 	} else {
 		(*forkIndex)[index] = data
@@ -216,7 +247,7 @@ func (forkIndex *ForkIndex) addDate(hash common.Hash, parentsHash []common.Hash,
 	if h != nil && len(h) > 0 {
 		for _, v := range h {
 			if common.CheckExists(v, parentsHash) >= 0 {
-				log.Debug("666666666666  memUnit add data success  =================", "index", index)
+				log.Debug("checkExists  success  =================", "index", index)
 				return int64(index), nil
 			}
 		}
@@ -224,7 +255,7 @@ func (forkIndex *ForkIndex) addDate(hash common.Hash, parentsHash []common.Hash,
 		hh := (*forkIndex)[uint64(0)] // 重启后第一个稳定的unit hash
 		for _, v := range hh {
 			if common.CheckExists(v, parentsHash) >= 0 {
-				log.Debug("777777777777  first  add data success  =================", "index", index)
+				log.Debug("checkExists first hash success  =================", "index", index)
 				return int64(index), nil
 			}
 		}
@@ -268,14 +299,10 @@ func (forkIndex *ForkIndex) GetStableUnitHash(index int64) common.Hash {
 	hashs, has := (*forkIndex)[s_index]
 	forkIndexLock.RUnlock()
 	if !has {
-		log.Info("forkIndex cache111 :::::::::::::::", "index", index, "s_index", s_index, "hashHex", hashs[0].String())
 		return (common.Hash{})
 	}
 	if len(hashs) <= 0 {
-		log.Info("forkIndex cache222 :::::::::::::::", "index", index, "s_index", s_index, "hashHex", hashs[0].String())
 		return (common.Hash{})
-	} else {
-		log.Debug("forkIndex cache333333  :::::::::::::::", "index", index, "s_index", s_index, "hashHex", hashs[0].String())
 	}
 	hash := (hashs)[0]
 	forkIndex.RemoveStableIndex(s_index)
@@ -285,8 +312,8 @@ func (forkIndex *ForkIndex) RemoveStableIndex(index uint64) {
 	if forkIndex == nil {
 		return
 	}
-	// forkIndexLock.Lock()
-	// defer forkIndexLock.Unlock()
+	forkIndexLock.Lock()
+	defer forkIndexLock.Unlock()
 	_, has := (*forkIndex)[index]
 	if has {
 		delete((*forkIndex), index)

@@ -436,7 +436,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		log.Debug("Downloader->syncWithPeer", "findAncestor err:", err)
 		return err
 	}
-	log.Info("=====fetchHeight=====", "origin:", origin)
+	log.Info("=====findAncestor=====", "origin:", origin)
 	d.syncStatsLock.Lock()
 	if d.syncStatsChainHeight <= origin || d.syncStatsChainOrigin > origin {
 		d.syncStatsChainOrigin = origin

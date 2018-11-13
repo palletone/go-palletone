@@ -57,6 +57,7 @@ type IDagDb interface {
 	GetLastUnitHash() common.Hash
 	//GetGenesisUnit() (*modules.Unit, error)
 	//SaveUnit(unit *modules.Unit, isGenesis bool) error
+
 	SaveHeader(uHash common.Hash, h *modules.Header) error
 	SaveTransaction(tx *modules.Transaction) error
 	SaveBody(unitHash common.Hash, txsHash []common.Hash) error
@@ -187,7 +188,7 @@ func (dagdb *DagDb) GetHashByNumber(number modules.ChainIndex) (common.Hash, err
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
 	ha, err := GetBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)))
-	log.Info("DagDB GetHashByNumber info.", "GetHashByNumber_key", string(key), "hash:", fmt.Sprintf("%x", ha))
+	log.Info("DagDB GetHashByNumber info.", "error", err, "GetHashByNumber_key", string(key), "hash:", fmt.Sprintf("%x", ha))
 	if err != nil {
 		return common.Hash{}, err
 	}

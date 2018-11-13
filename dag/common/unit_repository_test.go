@@ -21,6 +21,8 @@
 package common
 
 import (
+	"log"
+	"reflect"
 	"testing"
 	"time"
 
@@ -32,8 +34,6 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"log"
-	"reflect"
 )
 
 func mockUnitRepository() *UnitRepository {
@@ -47,11 +47,21 @@ func mockUnitRepository() *UnitRepository {
 //	return NewUnitRepository4Db(db)
 //}
 
-func TestNewGenesisUnit(t *testing.T) {
-	gUnit, _ := NewGenesisUnit(modules.Transactions{}, time.Now().Unix(), &modules.Asset{})
+func TestGenesisUnit(t *testing.T) {
+	payload := new(modules.PaymentPayload)
+	payload.LockTime = 999
+
+	msg := modules.NewMessage(modules.APP_PAYMENT, payload)
+	msgs := make([]*modules.Message, 0)
+	tx := modules.NewTransaction(append(msgs, msg))
+	asset := new(modules.Asset)
+	asset.AssetId = modules.PTNCOIN
+	asset.UniqueId = modules.PTNCOIN
+	asset.ChainId = 1
+
+	gUnit, _ := NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix(), asset)
 
 	log.Println("Genesis unit struct:")
-	log.Println("--- Genesis unit header --- ")
 	log.Println("parent units:", gUnit.UnitHeader.ParentsHash)
 	log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
 	log.Println("group_sign:", gUnit.UnitHeader.GroupSign)

@@ -440,8 +440,8 @@ func (handler *Handler) handleGetTokenBalance(collection string, key string, con
 	//TODO Devin
 	payloadBytes, _ := proto.Marshal(&pb.GetState{Collection: collection, Key: key})
 
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_STATE, Payload: payloadBytes, Txid: txid, ChannelId: channelId, ContractId: contractid}
-	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_STATE)
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_TOKEN_BALANCE, Payload: payloadBytes, Txid: txid, ChannelId: channelId, ContractId: contractid}
+	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_TOKEN_BALANCE)
 
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
 	if err != nil {
@@ -467,8 +467,8 @@ func (handler *Handler) handlePayOutToken(collection string, key string, contrac
 	//TODO Devin
 	payloadBytes, _ := proto.Marshal(&pb.GetState{Collection: collection, Key: key})
 
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_STATE, Payload: payloadBytes, Txid: txid, ChannelId: channelId, ContractId: contractid}
-	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_STATE)
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_PAY_OUT_TOKEN, Payload: payloadBytes, Txid: txid, ChannelId: channelId, ContractId: contractid}
+	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_PAY_OUT_TOKEN)
 
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
 	if err != nil {

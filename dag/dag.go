@@ -64,10 +64,11 @@ type Dag struct {
 	logger log.ILogger
 	Memdag memunit.IMemDag // memory unit
 	// memutxo
-	utxos_cache  map[modules.OutPoint]*modules.Utxo
-	utxos_cache1 map[common.Hash]map[modules.OutPoint]*modules.Utxo
-	//utxos_cache2 map[fork_number]map[modules.OutPoint]*modules.Utxo
+	// 按unit单元划分存储Utxo
+	utxos_cache map[common.Hash]map[modules.OutPoint]*modules.Utxo
+	// utxos_cache1 sync.Map
 }
+type MemUtxos map[modules.OutPoint]*modules.Utxo
 
 func (d *Dag) IsEmpty() bool {
 	it := d.Db.NewIterator()
@@ -115,7 +116,7 @@ func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
 func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit {
 	curUnit, err := d.Memdag.GetCurrentUnit(assetId, index)
 	if err != nil {
-		log.Error("GetCurrentMemUnit", "error", err.Error())
+		log.Info("GetCurrentMemUnit", "error", err.Error())
 		return nil
 	}
 	return curUnit
@@ -436,7 +437,12 @@ func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []b
 }
 
 // Utxos : return mem utxos
-func (d *Dag) Utxos() map[modules.OutPoint]*modules.Utxo {
+func (d *Dag) Utxos() map[common.Hash]map[modules.OutPoint]*modules.Utxo {
+	// result := d.utxos_cache1
+	// utxos := make(Utxos, 0)
+	// d.utxos_cache1.Range(func(key, v interface{}) bool {
+	// 	utxos[key] = v
+	// })
 	return d.utxos_cache
 }
 
@@ -469,9 +475,8 @@ func NewDag(db ptndb.Database, l log.ILogger) (*Dag, error) {
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
 		Memdag:        memunit.NewMemDag(dagDb, stateDb, unitRep),
-		utxos_cache:   make(map[modules.OutPoint]*modules.Utxo),
+		utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
-
 	return dag, nil
 }
 
@@ -502,7 +507,10 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
+		//Memdag:        memunit.NewMemDag(dagDb, stateDb, unitRep),
+		utxos_cache: make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
+
 	return dag, nil
 }
 
@@ -529,7 +537,8 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
-
+		Memdag:        memunit.NewMemDag(dagDb, stateDb, unitRep),
+		utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 		//Memdag:        memunit.NewMemDag(dagDb, unitRep),
 	}
 	return dag, nil
@@ -626,9 +635,18 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 	view := txspool.NewUtxoViewpoint()
 	d.Mutex.RLock()
 	err := view.FetchUtxos(d.utxodb, neededSet)
-	for out, utxo := range d.utxos_cache {
-		view.AddUtxo(out, utxo)
+	// get current hash
+	// assetId 暂时默认为ptn的assetId
+	unit := d.GetCurrentUnit(modules.PTNCOIN)
+
+	if utxos, has := d.utxos_cache[unit.Hash()]; has {
+		if utxos != nil {
+			for out, utxo := range utxos {
+				view.AddUtxo(out, utxo)
+			}
+		}
 	}
+
 	d.Mutex.RUnlock()
 
 	return view, err
@@ -655,18 +673,32 @@ func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	d.Mutex.RLock()
 	items, err := d.utxodb.GetAllUtxos()
 	// TODO---> merge dag.cache
+	// if d.utxos_cache != nil {
+	// 	for key, utxo := range d.utxos_cache {
+	// 		if old, has := items[key]; has {
+	// 			// merge
+	// 			if old.IsSpent() {
+	// 				delete(items, key)
+	// 			}
+	// 		}
+	// 		items[key] = utxo
+	// 	}
+	// }
 	if d.utxos_cache != nil {
-		for key, utxo := range d.utxos_cache {
-			if old, has := items[key]; has {
-				// merge
-				if old.IsSpent() {
-					delete(items, key)
+		for _, utxos := range d.utxos_cache {
+			if utxos != nil {
+				for key, utxo := range utxos {
+					if old, has := items[key]; has {
+						// merge
+						if old.IsSpent() {
+							delete(items, key)
+						}
+					}
+					items[key] = utxo
 				}
 			}
-			items[key] = utxo
 		}
 	}
-
 	d.Mutex.RUnlock()
 
 	return items, err
@@ -677,27 +709,30 @@ func (d *Dag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	// merge dag.cache
 	all, err := d.utxodb.GetAddrOutpoints(addr)
 	if d.utxos_cache != nil {
-		for key, utxo := range d.utxos_cache {
-			if utxo.IsSpent() {
-				delete(d.utxos_cache, key)
-			} else {
-				address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
-				if err == nil {
-					if address.String() == addr {
-						var exist bool
-						for _, old := range all {
-							if reflect.DeepEqual(key.ToKey(), old.ToKey()) {
-								exist = true
-								break
+		for hash, utxos := range d.utxos_cache {
+			for key, utxo := range utxos {
+				if utxo == nil {
+					delete(utxos, key)
+					continue
+				} else {
+					address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+					if err == nil {
+						if address.String() == addr {
+							var exist bool
+							for _, old := range all {
+								if reflect.DeepEqual(key.ToKey(), old.ToKey()) {
+									exist = true
+									break
+								}
 							}
-						}
-						if !exist {
-							all = append(all, key)
+							if !exist {
+								all = append(all, key)
+							}
 						}
 					}
 				}
-
 			}
+			d.utxos_cache[hash] = utxos
 		}
 	}
 	return all, err
@@ -706,31 +741,38 @@ func (d *Dag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return d.dagdb.GetAddrOutput(addr)
 }
-
+func (d *Dag) GetAddr1TokenUtxos(addr string, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
+	//TODO only get one token's UTXO
+	return map[modules.OutPoint]*modules.Utxo{}, nil
+}
 func (d *Dag) GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
 	// TODO
 	// merge dag.cache
 	all, err := d.utxodb.GetAddrUtxos(addr)
 	if d.utxos_cache != nil {
-		for key, utxo := range d.utxos_cache {
-			if utxo.IsSpent() {
-				log.Debug("------------------the utxo is spent ----------------", "utxokey", key.String())
-				delete(d.utxos_cache, key)
-			} else {
-				address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
-				//log.Debug("------------------ address ----------------", "address", address.String(), "addrHex", address.Hex())
-				if err == nil {
-					if address.String() == addr {
-						if old, has := all[key]; has {
-							// merge
-							if old.IsSpent() {
-								delete(all, key)
+		for hash, utxos := range d.utxos_cache {
+			for key, utxo := range utxos {
+				if utxo == nil {
+					log.Debug("------------------the utxo is nil  ----------------", "utxokey", key.String())
+					delete(utxos, key)
+					continue
+				} else {
+					address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+					//log.Debug("------------------ address ----------------", "address", address.String(), "addrHex", address.Hex())
+					if err == nil {
+						if address.String() == addr {
+							if old, has := all[key]; has {
+								// merge
+								if old.IsSpent() {
+									delete(all, key)
+								}
 							}
+							all[key] = utxo
 						}
-						all[key] = utxo
 					}
 				}
 			}
+			d.utxos_cache[hash] = utxos
 		}
 	}
 	return all, err
@@ -768,25 +810,29 @@ func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit) error {
 func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	// todo 应当根据新的unit判断哪条链作为主链
 	// step1. check exists
-	log.Debug("00000000000000000000000000000   start save dag")
-	if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
-		return fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
+	var parent_hash common.Hash
+	if !isGenesis {
+		parent_hash = unit.ParentHash()[0]
+	} else {
+		parent_hash = unit.Hash()
 	}
 
-	// step2. validate unit
-	log.Debug("11111111111111111111111111111   start save dag")
-	//TODO must recover
-	//unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
-	unitState := modules.UNIT_STATE_VALIDATED
+	log.Debug("start save dag", "index", unit.UnitHeader.Index(), "hash", unit.Hash())
 
-	log.Debug("2222222222222222@@@@@@@@@@@@@   start save dag")
+	if !isGenesis {
+		if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
+			return fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
+		}
+	}
+	// step2. validate unit
+
+	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
+
 	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
 		return fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
 	}
 
-	log.Debug("#############################   start save dag")
 	if unitState == modules.UNIT_STATE_VALIDATED {
-		log.Debug("**********************   start save dag")
 		// step3.1. pass and with group signature, put into leveldb
 		// todo 应当先判断是否切换，再保存，并更新状态
 		if err := d.unitRep.SaveUnit(unit, false); err != nil {
@@ -798,7 +844,6 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		// 	return fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
 		// }
 	} else {
-		log.Debug("^^^^^^^^^^^^^^^^^^^^^^^^   start save dag")
 		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
 		if err := d.Memdag.Save(unit); err != nil {
 			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
@@ -807,7 +852,6 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		}
 	}
 
-	log.Debug("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$   start save dag")
 	// todo 应当先判断是否切换，再保存，并更新状态
 	// step5. check if it is need to switch
 	// if err := d.Memdag.SwitchMainChain(); err != nil {
@@ -815,56 +859,91 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	// }
 	// TODO
 	// update  utxo
-	var outpoint = modules.OutPoint{}
-	view := txspool.NewUtxoViewpoint()
-	if unitState == modules.UNIT_STATE_VALIDATED {
-		view.FetchUnitUtxos(d.utxodb, unit)
-		// update leveldb
-		if view != nil {
-			needSet := make(map[modules.OutPoint]struct{})
-			for key, _ := range view.Entries() {
-				needSet[key] = struct{}{}
-			}
+	go func(unit *modules.Unit) {
+		var outpoint = modules.OutPoint{}
+		view := txspool.NewUtxoViewpoint()
+		if unitState == modules.UNIT_STATE_VALIDATED {
+			view.FetchUnitUtxos(d.utxodb, unit)
+			// update leveldb
+			if view != nil {
+				needSet := make(map[modules.OutPoint]struct{})
+				for key, _ := range view.Entries() {
+					needSet[key] = struct{}{}
+				}
 
-			if err := view.SpentUtxo(d.utxodb, needSet); err != nil {
-				log.Error("update utxo failed", "error", err)
-				// TODO
-				// 回滚 view utxo  ，回滚world_state
-			}
-		}
-		// fetch output utxo, and save
-		//view.FetchOutputUtxos(db, unit)
-		view2 := d.GetUtxosOutViewbyUnit(unit)
-		for key, utxo := range view2.Entries() {
-			if err := d.utxodb.SaveUtxoEntity(&key, utxo); err != nil {
-				log.Error("update output utxo failed", "error", err)
-				// TODO
-				// add  d.cache
-			}
-		}
-
-	} else {
-		view.FetchUnitUtxos(d.utxodb, unit)
-		// update  cache
-		if view != nil {
-			for key, utxo := range view.Entries() {
-				if old, has := d.utxos_cache[key]; has {
-					old.Spend()
-					//d.utxos_cache[key] = old
-				} else {
-					utxo.Spend()
-					d.utxos_cache[key] = utxo
+				if err := view.SpentUtxo(d.utxodb, needSet); err != nil {
+					log.Error("update utxo failed", "error", err)
+					// TODO
+					// 回滚 view utxo  ，回滚world_state
 				}
 			}
+			// fetch output utxo, and save
+			//view.FetchOutputUtxos(db, unit)
+			view2 := d.GetUtxosOutViewbyUnit(unit)
+			for key, utxo := range view2.Entries() {
+				if err := d.utxodb.SaveUtxoEntity(&key, utxo); err != nil {
+					log.Error("update output utxo failed", "error", err)
+					// TODO
+					// add  d.cache
+				}
+			}
+
+		} else {
+			// get input utxos
+			view.FetchUnitUtxos(d.utxodb, unit)
+			// update  cache
+			utxos := make(map[modules.OutPoint]*modules.Utxo)
+			var exist bool
+			if view != nil {
+				if utxos, exist = d.utxos_cache[parent_hash]; exist {
+					for key, utxo := range view.Entries() {
+						if d.utxos_cache != nil {
+
+							if old, has := utxos[key]; has {
+								old.Spend()
+								utxos[key] = old
+								//delete(utxos, key)
+							} else {
+								utxo.Spend()
+								utxos[key] = utxo
+							}
+						}
+					}
+					d.utxos_cache[parent_hash] = utxos
+				} else {
+					// 获取当前最新区块的utxo列表
+					// TODO
+					curUnit, _ := d.Memdag.GetCurrentUnit(unit.UnitHeader.Number.AssetID, unit.UnitHeader.Index()-1)
+					utxos, _ = d.utxos_cache[curUnit.Hash()]
+					for key, utxo := range view.Entries() {
+						if old, has := utxos[key]; has {
+							old.Spend()
+							utxos[key] = old
+							//delete(utxos, key)
+						} else {
+							utxo.Spend()
+							utxos[key] = utxo
+						}
+						d.utxos_cache[curUnit.Hash()] = utxos
+					}
+				}
+			}
+			// get output utxos
+			view2 := d.GetUtxosOutViewbyUnit(unit)
+			// add d.utxo_cache
+
+			for key, utxo := range view2.Entries() {
+				outpoint = key
+				if utxos == nil {
+					fmt.Println("init utxos:")
+					utxos = make(map[modules.OutPoint]*modules.Utxo)
+				}
+				utxos[key] = utxo
+			}
+			d.utxos_cache[unit.Hash()] = utxos
+			log.Info("=================saved Memdag and dag's utxo cache:  key-value ===============", "keyinfo", outpoint.String(), "utxoinfo", d.utxos_cache[unit.Hash()][outpoint])
 		}
-		view2 := d.GetUtxosOutViewbyUnit(unit)
-		// add d.utxo_cache
-		for key, utxo := range view2.Entries() {
-			outpoint = key
-			d.utxos_cache[key] = utxo
-		}
-		log.Info("=================save Memdag and dag's utxo cache===============", "keyinfo", outpoint.String(), "utxoinfo", d.utxos_cache[outpoint])
-	}
+	}(unit)
 
 	return nil
 }

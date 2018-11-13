@@ -365,7 +365,7 @@ func (chain *MemDag) GetCurrentUnit(assetid modules.IDType16, index uint64) (*mo
 	currentUnit, ok := chain.currentUnit[sAssetID]
 
 	if ok {
-		if currentUnit.UnitHeader.Index() > index {
+		if currentUnit.UnitHeader.Index() >= index {
 			return currentUnit, nil
 		}
 	}
@@ -373,29 +373,29 @@ func (chain *MemDag) GetCurrentUnit(assetid modules.IDType16, index uint64) (*mo
 	if !has {
 		return nil, fmt.Errorf("MemDag.GetCurrentUnit currented error, forkIndex has no asset(%s) info.", assetid.String())
 	}
-	// for key, data := range fork {
-	// 	fmt.Println("++++++++++++++++++++++++++++   index: ", key)
-	// 	fmt.Println("++++++++++++++++++++++++++++   data: ", *data)
-	// }
+
 	forkdata := fork[index]
-	if forkdata == nil {
-		// return lastValidatedUnit
-		return lastValidatedUnit, nil
-	}
-	if lengh := len(forkdata); lengh > 0 {
-		curHash := (forkdata)[lengh-1]
+	if forkdata != nil {
+		curHash := forkdata.GetLast()
+		if curHash == (common.Hash{}) {
+			return nil, fmt.Errorf("forkdata getLast failed,curHash is null,the index(%d)", index)
+		}
 		curUnit, err := chain.memUnit.Get(curHash)
 		if err != nil {
-			return nil, fmt.Errorf("MemDag.GetCurrentUnit error: get no unit hash(%s) in memUnit", curHash.String())
+			return nil, fmt.Errorf("MemDag.GetCurrentUnit error: get no unit hash(%s) in memUnit,error(%s)", curHash.String(), err.Error())
 		}
-		if curUnit.UnitHeader.Index() > index {
+		if curUnit.UnitHeader.Index() >= index {
 			return curUnit, nil
 		} else {
 			return nil, fmt.Errorf("memdag's current unit is old， cur_index(%d), index(%d)", curUnit.UnitHeader.Index(), index)
 		}
 
 	}
-	return nil, fmt.Errorf("forkdata is null.")
+	// return lastValidatedUnit
+	if currentUnit == nil {
+		return lastValidatedUnit, nil
+	}
+	return currentUnit, nil
 }
 
 func (chain *MemDag) GetCurrentUnitChainIndex(assetid modules.IDType16, index uint64) (*modules.ChainIndex, error) {
