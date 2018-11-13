@@ -38,12 +38,16 @@ func GenInitPair() (kyber.Scalar, kyber.Point) {
 	return sc, Suite.Point().Mul(sc, nil)
 }
 
-// mediator 结构体 和具体的账户模型有关
-type Mediator struct {
+type MediatorBase struct {
 	Address     common.Address
 	InitPartPub kyber.Point
-	Node        *discover.Node
-	//WebsiteUrl  string
+}
+
+// mediator 结构体 和具体的账户模型有关
+type Mediator struct {
+	MediatorBase
+	Node *discover.Node
+	Url  string
 }
 
 func StrToMedNode(mn string) *discover.Node {
@@ -92,10 +96,10 @@ func StrToPoint(pubStr string) kyber.Point {
 	return pub
 }
 
-func (m *Mediator) MediatorToInfo() MediatorInfo {
-	return MediatorInfo{
-		AddStr:      m.Address.Str(),
-		InitPartPub: PointToStr(m.InitPartPub),
-		Node:        m.Node.String(),
-	}
+func (m *Mediator) MediatorToInfo() (mi MediatorInfo) {
+	mi.AddStr = m.Address.Str()
+	mi.InitPartPub = PointToStr(m.InitPartPub)
+	mi.Node = m.Node.String()
+
+	return
 }

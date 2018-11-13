@@ -60,10 +60,14 @@ func (g *Genesis) GetTokenAmount() uint64 {
 	return g.TokenAmount
 }
 
-type MediatorInfo struct {
+type MediatorStrBase struct {
 	AddStr      string `json:"account"`
 	InitPartPub string `json:"initPubKey"`
-	Node        string `json:"node"`
+}
+
+type MediatorInfo struct {
+	MediatorStrBase
+	Node string `json:"node"`
 	//Url  		string `json:"url"`
 }
 
@@ -87,21 +91,15 @@ func PointToStr(pub kyber.Point) string {
 	return base58.Encode(pubB)
 }
 
-func (medInfo *MediatorInfo) InfoToMediator() Mediator {
+func (medInfo *MediatorInfo) InfoToMediator() (md Mediator) {
 	// 1. 解析 mediator 账户地址
-	add := StrToMedAdd(medInfo.AddStr)
+	md.Address = StrToMedAdd(medInfo.AddStr)
 
 	// 2. 解析 mediator 的 DKS 初始公钥
-	pub := StrToPoint(medInfo.InitPartPub)
+	md.InitPartPub = StrToPoint(medInfo.InitPartPub)
 
 	// 3. 解析mediator 的 node 节点信息
-	node := StrToMedNode(medInfo.Node)
+	md.Node = StrToMedNode(medInfo.Node)
 
-	md := Mediator{
-		Address:     add,
-		InitPartPub: pub,
-		Node:        node,
-	}
-
-	return md
+	return
 }
