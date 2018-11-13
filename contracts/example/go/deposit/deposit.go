@@ -34,7 +34,7 @@ type DepositChaincode struct {
 }
 
 func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
-	fmt.Println("***system contract init about DepositChaincode***")
+	fmt.Println("*** DepositChaincode system contract init ***")
 	return shim.Success([]byte("ok"))
 }
 
@@ -91,67 +91,65 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	//比较保证金数额和付款
 	depositAmountByte, err := stub.GetSystemConfig("DepositAmount")
 	if err != nil {
-		return shim.Error(err.Error())
+		return shim.Error("GetSystemConfig with DepositAmount error: " + err.Error())
 	}
 	//转换
 	depositAmountStr := string(depositAmountByte)
 	depositAmount, err := strconv.ParseUint(depositAmountStr, 10, 64)
 	if err != nil {
-		return shim.Error("parseuint depositAmountStr error: " + err.Error())
+		return shim.Error("String transform to uint64 error: " + err.Error())
 	}
-	//fmt.Println("depositAmount = ", depositAmount)
+	fmt.Println("invoke tokens amount = ", amount)
+	fmt.Println("depositAmount = ", depositAmount)
 	if amount < depositAmount {
-		return shim.Error("token does not enough")
+		return shim.Error("Your delivery amount with ptn token is insufficient")
 	}
 	stateValue := new(modules.StateValue)
 	//获取一下该用户下的账簿情况
-	accBalByte, err := stub.GetState(invokeFromAddr)
+	stateValueBytes, err := stub.GetState(invokeFromAddr)
 	if err != nil {
-		return shim.Error("get account balance from ledger error: " + err.Error())
+		return shim.Error("Get account balance from ledger error: " + err.Error())
 	}
 	//账户不存在，第一次参与
-	if accBalByte == nil {
+	if stateValueBytes == nil {
 		//写入写集
-		stateValue.Asset = modules.Asset{
-			AssetId:  modules.PTNCOIN,
-			UniqueId: modules.PTNCOIN,
-			ChainId:  uint64(1),
-		}
+		stateValue.Asset = *asset
 		stateValue.Amount = amount
 		stateValue.Time = time.Now()
 		stateValue.Extra = "这是第一次参与陪审团"
-		vStateBytes, err := json.Marshal(stateValue)
+		stateValueMarshalBytes, err := json.Marshal(stateValue)
 		if err != nil {
-			return shim.Error("marshal valueState error " + err.Error())
+			return shim.Error("Marshal valueState error " + err.Error())
 		}
-		stub.PutState(invokeFromAddr, vStateBytes)
+		stub.PutState(invokeFromAddr, stateValueMarshalBytes)
 		return shim.Success([]byte("ok"))
 	}
 	//账户已存在，进行信息的更新操作
-	err = json.Unmarshal(accBalByte, stateValue)
+	err = json.Unmarshal(stateValueBytes, stateValue)
 	if err != nil {
-		return shim.Error("unmarshal accBalByte error " + err.Error())
+		return shim.Error("Unmarshal stateValueBytes error " + err.Error())
 	}
 	//fmt.Printf("has exsit %#v\n", stateValue)
 	//判断资产类型是否一致
 	err = assetIsEqual(*asset, stateValue.Asset)
 	if err != nil {
-		return shim.Error("asset is not equal: " + err.Error())
+		return shim.Error("InvokeAsset is not equal with stateAsset error: " + err.Error())
 	}
 	result := stateValue.Amount + amount
 	//更新stateValue
 	stateValue.Amount = result
 	stateValue.Time = time.Now()
 	stateValue.Extra = "这是第二次向合约支付保证金，这里的时间是否需要修改为最新的？"
-	vStateBytes, err := json.Marshal(stateValue)
+	stateValueMarshalBytes, err := json.Marshal(stateValue)
 	if err != nil {
-		return shim.Error("marshal valueState error " + err.Error())
+		return shim.Error("Marshal valueState error " + err.Error())
 	}
-	stub.PutState(invokeFromAddr, vStateBytes)
+	stub.PutState(invokeFromAddr, stateValueMarshalBytes)
 	return shim.Success([]byte("ok"))
 }
 
 func assetIsEqual(invokeAsset, stateAsset modules.Asset) error {
+	fmt.Println(invokeAsset == stateAsset)
 	if invokeAsset != stateAsset {
 		return fmt.Errorf("asset is not equal")
 	}
@@ -164,7 +162,7 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 	//有可能从mediator 退出成为 jury,把金额退出一半或者一些
 	// 判断参数是否准确，第一个参数是陪审员账户，第二个参数是Tokens
 	if len(args) != 2 {
-		return shim.Error("input error: need two args (witnessAddr and ptnAmount)")
+		return shim.Error("Input error: need two args (witnessAddr and ptnAmount)")
 	}
 	//获取 请求 调用 地址
 	invokeFromAddr, err := stub.GetInvokeFromAddr()
@@ -175,39 +173,38 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 	//获取退保证金数量，将 string 转 uint64
 	ptnAccount, err := strconv.ParseUint(args[1], 10, 64)
 	if err != nil {
-		return shim.Error("ptnAccount input error: " + err.Error())
+		return shim.Error("String transform to uint64 error: " + err.Error())
 	}
-	accBalByte, err := stub.GetState(invokeFromAddr)
+	stateValueBytes, err := stub.GetState(invokeFromAddr)
 	if err != nil {
-		return shim.Error("get account balance from ledger error: " + err.Error())
+		return shim.Error("Get account balance from ledger error: " + err.Error())
 	}
-	if accBalByte == nil {
-		return shim.Error("you have not depositWitnessPay for deposit.")
+	if stateValueBytes == nil {
+		return shim.Error("Your account does not exist.")
 	}
 	stateValue := new(modules.StateValue)
-	err = json.Unmarshal(accBalByte, stateValue)
+	err = json.Unmarshal(stateValueBytes, stateValue)
 	if err != nil {
-		return shim.Error("unmarshal accBalByte error " + err.Error())
+		return shim.Error("Unmarshal stateValueBytes error: " + err.Error())
 	}
 	if stateValue.Amount < ptnAccount {
-		return shim.Error("deposit does not enough.")
+		return shim.Error("Your delivery amount with ptn token is insufficient.")
 	}
 	//调用从合约把token转到地址
 	err = stub.PayOutToken(invokeFromAddr, stateValue.Asset, ptnAccount, 0)
 	if err != nil {
-		fmt.Println("PayOutToken error: ", err.Error())
-		return shim.Error(err.Error())
+		return shim.Error("PayOutToken error: " + err.Error())
 	}
 	result := stateValue.Amount - ptnAccount
 	//更新
 	stateValue.Amount = result
 	stateValue.Time = time.Now()
 	stateValue.Extra = "这是退出保证金，可能只退一部分钱，时间是否需要修改？"
-	vStateBytes, err := json.Marshal(stateValue)
+	stateValueMarshalBytes, err := json.Marshal(stateValue)
 	if err != nil {
-		return shim.Error("marshal valueState error " + err.Error())
+		return shim.Error("Marshal valueState error: " + err.Error())
 	}
-	stub.PutState(invokeFromAddr, vStateBytes)
+	stub.PutState(invokeFromAddr, stateValueMarshalBytes)
 	return shim.Success([]byte("ok"))
 }
 
@@ -216,28 +213,28 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 func (d DepositChaincode) forfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	//参数是陪审员的账户和罚没数量
 	if len(args) != 2 {
-		return shim.Error("input error: only need one arg (witnessAddr)")
+		return shim.Error("Input error: need two arg (witnessAddr and amount)")
 	}
 	//获取该账户的账本信息
-	accBalByte, err := stub.GetState(args[0])
+	stateValueBytes, err := stub.GetState(args[0])
 	if err != nil {
-		return shim.Error("get account balance from ledger error: " + err.Error())
+		return shim.Error("Get account balance from ledger error: " + err.Error())
 	}
-	if accBalByte == nil {
+	if stateValueBytes == nil {
 		return shim.Error("you have not depositWitnessPay for deposit.")
 	}
 	stateValue := new(modules.StateValue)
-	err = json.Unmarshal(accBalByte, stateValue)
+	err = json.Unmarshal(stateValueBytes, stateValue)
 	if err != nil {
 		return shim.Error("unmarshal accBalByte error " + err.Error())
 	}
 	//获取没收保证金数量，将 string 转 uint64
 	ptnAccount, err := strconv.ParseUint(args[1], 10, 64)
 	if err != nil {
-		return shim.Error("ptnAccount input error: " + err.Error())
+		return shim.Error("String transform to uint64 error: " + err.Error())
 	}
 	if stateValue.Amount < ptnAccount {
-		return shim.Error("your deposit amount does not enough.")
+		return shim.Error("Your amount balance does not enough.")
 	}
 	//获取基金会地址
 	foundationAddressByte, err := stub.GetSystemConfig("FoundationAddress")
@@ -249,18 +246,17 @@ func (d DepositChaincode) forfeitureDeposit(stub shim.ChaincodeStubInterface, ar
 	//调用从合约把token转到地址
 	err = stub.PayOutToken(foundationAddress, stateValue.Asset, ptnAccount, 0)
 	if err != nil {
-		fmt.Println("PayOutToken error: ", err.Error())
-		return shim.Error(err.Error())
+		return shim.Error("PayOutToken error: " + err.Error())
 	}
 	result := stateValue.Amount - ptnAccount
 	//写入写集
 	stateValue.Amount = result
 	stateValue.Time = time.Now()
 	stateValue.Extra = "这是退出保证金，可能只退一部分钱，时间是否需要修改？"
-	vStateBytes, err := json.Marshal(stateValue)
+	stateValueMarshalBytes, err := json.Marshal(stateValue)
 	if err != nil {
-		return shim.Error("marshal valueState error " + err.Error())
+		return shim.Error("Marshal valueState error " + err.Error())
 	}
-	stub.PutState(args[0], vStateBytes)
+	stub.PutState(args[0], stateValueMarshalBytes)
 	return shim.Success([]byte("ok"))
 }
