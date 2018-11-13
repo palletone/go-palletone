@@ -230,6 +230,7 @@ type ChaincodeStubInterface interface {
 	GetTokenBalance() (map[modules.Asset]uint64, error)
 	//将合约上锁定的某种Token支付出去
 	PayOutToken(addr string, token modules.Asset, amount uint64, lockTime uint32) error
+
 }
 
 // CommonIteratorInterface allows a chaincode to check whether any more result

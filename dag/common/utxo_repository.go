@@ -247,6 +247,10 @@ destory utxo, delete from UTXO database
 */
 func (repository *UtxoRepository) destoryUtxo(txins []*modules.Input) {
 	for _, txin := range txins {
+		//TODO for download sync
+		if txin == nil {
+			continue
+		}
 		outpoint := txin.PreviousOutPoint
 		if outpoint == nil || outpoint.IsEmpty() {
 			if len(txin.Extra) > 0 {

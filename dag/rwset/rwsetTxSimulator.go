@@ -22,6 +22,7 @@ package rwset
 import (
 	"encoding/json"
 	"errors"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"time"
@@ -30,7 +31,7 @@ import (
 type RwSetTxSimulator struct {
 	txid                    string
 	rwsetBuilder            *RWSetBuilder
-	state                   dag.IDag
+	dag                     dag.IDag
 	writePerformed          bool
 	pvtdataQueriesPerformed bool
 	doneInvoked             bool
@@ -71,7 +72,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	//fmt.Println("GetState(contractid []byte, ns string, key string)===>>>\n\n", contractid, ns, key)
 	//return []byte("1000"), nil
 	//TODO Devin
-	ver, val := s.state.GetContractState(contractid, key)
+	ver, val := s.dag.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
 	if val == nil {
 		logger.Errorf("get value from db[%s] failed", ns)
@@ -144,9 +145,9 @@ func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]
 	return rd, wt, nil
 }
 
-//get all state
+//get all dag
 func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error) {
-	return s.state.GetContractStatesById(contractid)
+	return s.dag.GetContractStatesById(contractid)
 }
 
 func (h *RwSetTxSimulator) CheckDone() error {
@@ -177,10 +178,22 @@ func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
 	return nil, nil
 }
 func (s *RwSetTxSimulator) GetTokenBalance(contractid []byte, ns string) (map[modules.Asset]uint64, error) {
-	//TODO Devin query utxo
-	return map[modules.Asset]uint64{}, nil
+	addr := crypto.ContractIdToAddress(contractid)
+	utxos, _ := s.dag.GetAddrUtxos(addr.String())
+	return convertUtxo2Balance(utxos), nil
 }
-func (s *RwSetTxSimulator) PayOutToken(ns string, token modules.Asset, amount uint64, lockTime uint32) error {
+func convertUtxo2Balance(utxos map[modules.OutPoint]*modules.Utxo) map[modules.Asset]uint64 {
+	result := map[modules.Asset]uint64{}
+	for _, v := range utxos {
+		if val, ok := result[*v.Asset]; ok {
+			result[*v.Asset] = val + v.Amount
+		} else {
+			result[*v.Asset] = v.Amount
+		}
+	}
+	return result
+}
+func (s *RwSetTxSimulator) PayOutToken(ns string, address string, token modules.Asset, amount uint64, lockTime uint32) error {
 	//TODO Devin pay a token out
 	return nil
 }

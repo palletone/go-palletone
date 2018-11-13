@@ -793,6 +793,7 @@ func (stub *ChaincodeStub) GetTokenBalance() (map[modules.Asset]uint64, error) {
 }
 
 //将合约上锁定的某种Token支付出去
+
 func (stub *ChaincodeStub) PayOutToken(addr string, token modules.Asset, amount uint64, lockTime uint32) error {
 	//TODO Devin return stub.handler.handlePayOutToken(  stub.ContractId, stub.ChannelId, stub.TxID)
 	return nil
