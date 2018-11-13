@@ -34,7 +34,8 @@ type TokenCard interface {
 type TokenCardClass struct {
 	name   string
 	symbol string
-	method map[string]pFunc
+	methodMap map[string]pFunc
+	ctData interface{}
 }
 
 //GetName :
@@ -48,28 +49,15 @@ func (u *TokenCardClass) GetSymbol() string {
 }
 //Call :
 func (u *TokenCardClass) GetFunc(m string) pFunc {
-	f := u.method[m]
+	f := u.methodMap[m]
 	return f
 }
 
 //GenerateTokenCard : generate token-card from symbol
 func GenerateTokenCard(symbol string) TokenCard {
 	tc := &TokenCardClass{symbol: symbol}
-	//设置方法集
+	//1. 从数据库读取 CustomToken
+	//2. 将CustomToken 赋值给 tc.ctData
+	//3. 将tc.ctData的所有方法 赋值给 tc.methodMap
 	return tc
 }
-
-
-// type IAccount interface {
-// 	IsOwner() bool
-// 	ChangeTotalSupply(amount uint64) bool
-// 	ChangeOwner(des common.Address) bool
-// 	OwnerOf(address common.Address, TokenID uint64) common.Address
-// 	TotalSupply() uint64
-// 	Name() string
-// 	Symbol() string
-// 	balanceOf(account common.Address) []uint64
-// 	GlobalIDByInnerID(id uint64) modules.IDType16
-// 	CreateNewToken(additional []byte) bool
-// 	transfer(to common.Address, ids []uint64) bool
-// }
