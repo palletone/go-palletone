@@ -177,9 +177,14 @@ func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
 
 	return nil, nil
 }
-func (s *RwSetTxSimulator) GetTokenBalance(contractid []byte, ns string) (map[modules.Asset]uint64, error) {
+func (s *RwSetTxSimulator) GetTokenBalance(contractid []byte, ns string, asset *modules.Asset) (map[modules.Asset]uint64, error) {
 	addr := crypto.ContractIdToAddress(contractid)
-	utxos, _ := s.dag.GetAddrUtxos(addr.String())
+	var utxos map[modules.OutPoint]*modules.Utxo
+	if asset == nil {
+		utxos, _ = s.dag.GetAddrUtxos(addr.String())
+	} else {
+		utxos, _ = s.dag.GetAddr1TokenUtxos(addr.String(), asset)
+	}
 	return convertUtxo2Balance(utxos), nil
 }
 func convertUtxo2Balance(utxos map[modules.OutPoint]*modules.Utxo) map[modules.Asset]uint64 {
@@ -193,7 +198,7 @@ func convertUtxo2Balance(utxos map[modules.OutPoint]*modules.Utxo) map[modules.A
 	}
 	return result
 }
-func (s *RwSetTxSimulator) PayOutToken(ns string, address string, token modules.Asset, amount uint64, lockTime uint32) error {
+func (s *RwSetTxSimulator) PayOutToken(ns string, address string, token *modules.Asset, amount uint64, lockTime uint32) error {
 	s.rwsetBuilder.AddTokenPayOut(ns, address, token, amount, lockTime)
 	return nil
 }

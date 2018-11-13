@@ -741,7 +741,10 @@ func (d *Dag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return d.dagdb.GetAddrOutput(addr)
 }
-
+func (d *Dag) GetAddr1TokenUtxos(addr string, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
+	//TODO only get one token's UTXO
+	return map[modules.OutPoint]*modules.Utxo{}, nil
+}
 func (d *Dag) GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
 	// TODO
 	// merge dag.cache
