@@ -149,7 +149,7 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 			DepositAmount:     1000,
 			DepositRate:       0.02,
 		}
-		fmt.Println("keyForSystemConfig.Key = ", keyForSystemConfig.Key)
+		//fmt.Println("keyForSystemConfig.Key = ", keyForSystemConfig.Key)
 		if strings.Compare("DepositAmount", keyForSystemConfig.Key) == 0 {
 			depositAmount := strconv.FormatUint(systemConfig.DepositAmount, 10)
 			payloadBytes = []byte(depositAmount)
@@ -316,6 +316,49 @@ func (handler *Handler) enterGetContractAllState(e *fsm.Event) {
 			}
 			// Send response msg back to chaincode. GetState will not trigger event
 			chaincodeLogger.Debugf("[%s]Got contract all states. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: res, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		}
+	}()
+}
+func (handler *Handler) enterGetContractInvokeFee(e *fsm.Event) {
+	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
+	if !ok {
+		e.Cancel(errors.New("received unexpected message type"))
+		return
+	}
+	chaincodeLogger.Debugf("[%s]Received %s, invoking GetPayToContractAddr from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_CONTRACT_INVOKE_FEE)
+	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
+	// is completed before the next one is triggered. The previous state transition is deemed complete only when
+	// the afterGetState function is exited. Interesting bug fix!!
+	go func() {
+		// Check if this is the unique state request from this chaincode txid
+		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
+		if !uniqueReq {
+			// Drop this request
+			chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
+			return
+		}
+		var serialSendMsg *pb.ChaincodeMessage
+		defer func() {
+			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
+			chaincodeLogger.Debugf("[%s]enterGetPayToContractAddr serial send %s",
+				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+			handler.serialSendAsync(serialSendMsg, nil)
+		}()
+		chaincodeID := handler.getCCRootName()
+		chaincodeLogger.Debugf("[%s] getting mediator or jury address for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
+		//TODO 这里要获取支付保证金交易费用
+		res := []byte("100")
+		var err error
+		if err != nil {
+			// Send error msg back to chaincode. GetState will not trigger event
+			payload := []byte(err.Error())
+			chaincodeLogger.Errorf("[%s]Failed to get mediator or jury address(%s). Sending %s",
+				shorttxid(msg.Txid), err, pb.ChaincodeMessage_ERROR)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		} else {
+			// Send response msg back to chaincode. GetState will not trigger event
+			chaincodeLogger.Debugf("[%s]Got mediator or jury address. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: res, Txid: msg.Txid, ChannelId: msg.ChannelId}
 		}
 	}()
@@ -675,6 +718,7 @@ func newChaincodeSupportHandler(chaincodeSupport *ChaincodeSupport, peerChatStre
 			{Name: pb.ChaincodeMessage_GET_INVOKE_FORM_ADDR_REQUEST.String(), Src: []string{readystate}, Dst: readystate},
 			{Name: pb.ChaincodeMessage_GET_PAYTO_CONTRACT_PTN_AMOUNTS_REQUEST.String(), Src: []string{readystate}, Dst: readystate},
 			{Name: pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_GET_CONTRACT_INVOKE_FEE.String(), Src: []string{readystate}, Dst: readystate},
 		},
 		fsm.Callbacks{
 			"before_" + pb.ChaincodeMessage_REGISTER.String():                              func(e *fsm.Event) { v.beforeRegisterEvent(e, v.FSM.Current()) },
@@ -698,6 +742,7 @@ func newChaincodeSupportHandler(chaincodeSupport *ChaincodeSupport, peerChatStre
 			"after_" + pb.ChaincodeMessage_GET_INVOKE_FORM_ADDR_REQUEST.String():           func(e *fsm.Event) { v.enterGetInvokeFromAddr(e) },
 			"after_" + pb.ChaincodeMessage_GET_PAYTO_CONTRACT_PTN_AMOUNTS_REQUEST.String(): func(e *fsm.Event) { v.enterGetPayToContractPtnTokens(e) },
 			"after_" + pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE.String():                 func(e *fsm.Event) { v.enterGetContractAllState(e) },
+			"after_" + pb.ChaincodeMessage_GET_CONTRACT_INVOKE_FEE.String():                func(e *fsm.Event) { v.enterGetContractInvokeFee(e) },
 		},
 	)
 

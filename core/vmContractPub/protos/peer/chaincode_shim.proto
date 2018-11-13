@@ -60,6 +60,7 @@ message ChaincodeMessage {
         GET_CONTRACT_ALL_STATE = 26;
         GET_TOKEN_BALANCE=27;
         PAY_OUT_TOKEN=28;
+        GET_CONTRACT_INVOKE_FEE = 29;
 
     }
 
