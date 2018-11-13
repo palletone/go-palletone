@@ -33,7 +33,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
+	// "github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -272,49 +272,49 @@ To get genesis unit info from leveldb
 */
 func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error) {
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
-	key := fmt.Sprintf("%s%v_", constants.HEADER_PREFIX, index)
-	// encNum := ptndb.EncodeBlockNumber(index)
-	// key := append(modules.HEADER_PREFIX, encNum...)
+	//key := fmt.Sprintf("%s%v_", constants.HEADER_PREFIX, index)
 
-	//if memdb, ok := db.(*ptndb.MemDatabase); ok {
-	//	hash, err := memdb.Get([]byte(key))
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	var h common.Hash
-	//	h.SetBytes(hash)
-	//	unit := unitOp.dagdb.GetUnit( h)
-	//	return unit, nil
-	//} else if _, ok := db.(*ptndb.LDBDatabase); ok {
-	data := unitOp.dagdb.GetPrefix([]byte(key))
-	if len(data) > 1 {
-		return nil, fmt.Errorf("multiple genesis unit")
-	} else if len(data) <= 0 {
-		return nil, errors.ErrNotFound
+	// data := unitOp.dagdb.GetPrefix([]byte(key))
+	// if len(data) > 1 {
+	// 	return nil, fmt.Errorf("multiple genesis unit")
+	// } else if len(data) <= 0 {
+	// 	return nil, errors.ErrNotFound
+	// }
+	// for _, v := range data {
+	// 	// get unit header
+	// 	var uHeader modules.Header
+	// 	if err := rlp.DecodeBytes([]byte(v), &uHeader); err != nil {
+	// 		return nil, fmt.Errorf("Get genesis unit header:%s", err.Error())
+	// 	}
+	// 	// generate unit
+	// 	unit := modules.Unit{
+	// 		UnitHeader: &uHeader,
+	// 	}
+	// 	// compute unit hash
+	// 	unit.UnitHash = unit.Hash()
+	// 	// get transaction list
+	// 	txs, err := unitOp.dagdb.GetUnitTransactions(unit.UnitHash)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
+	// 	}
+	// 	unit.Txs = txs
+	// 	unit.UnitSize = unit.Size()
+	// 	return &unit, nil
+	// 	//}
+	// }
+	// return nil, nil
+	number := modules.ChainIndex{}
+	number.Index = index
+	number.IsMain = true
+
+	number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
+	hash, err := unitOp.dagdb.GetHashByNumber(number)
+	if err != nil {
+		log.Debug("unitOp: getgenesis by number , current error.", "error", err)
+		return nil, err
 	}
-	for _, v := range data {
-		// get unit header
-		var uHeader modules.Header
-		if err := rlp.DecodeBytes([]byte(v), &uHeader); err != nil {
-			return nil, fmt.Errorf("Get genesis unit header:%s", err.Error())
-		}
-		// generate unit
-		unit := modules.Unit{
-			UnitHeader: &uHeader,
-		}
-		// compute unit hash
-		unit.UnitHash = unit.Hash()
-		// get transaction list
-		txs, err := unitOp.dagdb.GetUnitTransactions(unit.UnitHash)
-		if err != nil {
-			return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
-		}
-		unit.Txs = txs
-		unit.UnitSize = unit.Size()
-		return &unit, nil
-		//}
-	}
-	return nil, nil
+	log.Debug("unitOp: get genesis(hash):", "geneseis_hash", hash)
+	return unitOp.dagdb.GetUnit(hash)
 }
 
 /**
