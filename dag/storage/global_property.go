@@ -36,19 +36,20 @@ var (
 	DynGlobalPropDBKey = append(constants.DYNAMIC_GLOBALPROPERTY_PREFIX, []byte("DynamicGlobalProperty")...)
 )
 
+// only for serialization
 type globalProperty struct {
 	ChainParameters core.ChainParameters
 
-	ActiveMediators []core.MediatorInfo
+	ActiveMediators []MediatorInfo
 
 	GroupPubKey string
 }
 
 func getGPT(gp *modules.GlobalProperty) globalProperty {
-	ams := make([]core.MediatorInfo, 0)
+	ams := make([]MediatorInfo, 0)
 
 	for _, med := range gp.ActiveMediators {
-		medInfo := med.MediatorToInfo()
+		medInfo := mediatorToInfo(med)
 		ams = append(ams, medInfo)
 	}
 
@@ -64,7 +65,7 @@ func getGPT(gp *modules.GlobalProperty) globalProperty {
 func getGP(gpt *globalProperty) *modules.GlobalProperty {
 	ams := make(map[common.Address]core.Mediator, 0)
 	for _, medInfo := range gpt.ActiveMediators {
-		med := medInfo.InfoToMediator()
+		med := medInfo.infoToMediator()
 		ams[med.Address] = med
 	}
 

@@ -20,7 +20,6 @@ package mediatorplugin
 
 import (
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
@@ -35,7 +34,7 @@ func NewPrivateMediatorAPI(mp *MediatorPlugin) *PrivateMediatorAPI {
 
 // 创建 mediator 所需的参数, 至少包含普通账户地址
 type MediatorCreateArgs struct {
-	core.MediatorInfo
+	modules.MediatorCreateOperation
 }
 
 // 创建 mediator 的执行结果，包含交易哈希，初始dks
@@ -47,13 +46,9 @@ type MediatorCreateResult struct {
 
 func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (res MediatorCreateResult, err error) {
 	// 1. 组装 message
-	mco := &modules.MediatorCreateOperation{
-		MediatorInfo: &args.MediatorInfo,
-	}
-
 	msg := &modules.Message{
 		App:     modules.OP_MEDIATOR_CREATE,
-		Payload: mco,
+		Payload: &args.MediatorCreateOperation,
 	}
 
 	// 2. 组装 tx

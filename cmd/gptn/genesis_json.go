@@ -256,11 +256,11 @@ func createExampleGenesis(tokenAccount string, mediators []mp.MediatorConf, node
 	}
 }
 
-func initialMediatorCandidates(mediators []mp.MediatorConf, nodeInfo string) []*core.MediatorInfo {
+func initialMediatorCandidates(mediators []mp.MediatorConf, nodeInfo string) []*core.InitialMediator {
 	mcLen := len(mediators)
-	initialMediators := make([]*core.MediatorInfo, mcLen)
+	initialMediators := make([]*core.InitialMediator, mcLen)
 	for i := 0; i < mcLen; i++ {
-		initialMediators[i] = &core.MediatorInfo{
+		initialMediators[i] = &core.InitialMediator{
 			AddStr:      mediators[i].Address,
 			InitPartPub: mediators[i].InitPartPub,
 			Node:        nodeInfo,

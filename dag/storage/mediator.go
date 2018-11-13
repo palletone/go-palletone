@@ -37,6 +37,30 @@ func mediatorKey(address common.Address) []byte {
 	return []byte(key)
 }
 
+// only for serialization
+type MediatorInfo struct {
+	AddStr      string `json:"account"`
+	InitPartPub string `json:"initPubKey"`
+	Node        string `json:"node"`
+	//Url  		string `json:"url"`
+}
+
+func mediatorToInfo(m core.Mediator) (mi MediatorInfo) {
+	mi.AddStr = m.Address.Str()
+	mi.InitPartPub = core.PointToStr(m.InitPartPub)
+	mi.Node = m.Node.String()
+
+	return
+}
+
+func (mi *MediatorInfo) infoToMediator() (md core.Mediator) {
+	md.Address = core.StrToMedAdd(mi.AddStr)
+	md.InitPartPub = core.StrToPoint(mi.InitPartPub)
+	md.Node = core.StrToMedNode(mi.Node)
+
+	return
+}
+
 //func StoreMediator(db ptndb.Database, med *core.Mediator) error {
 //	mi := med.MediatorToInfo()
 //
@@ -48,7 +72,7 @@ func mediatorKey(address common.Address) []byte {
 //	return err
 //}
 
-func StoreMediatorInfo(db ptndb.Database, mi *core.MediatorInfo) error {
+func StoreMediatorInfo(db ptndb.Database, mi *MediatorInfo) error {
 	//log.Debug(fmt.Sprintf("Store Mediator %v:", mi.AddStr))
 	add := core.StrToMedAdd(mi.AddStr)
 
@@ -61,7 +85,7 @@ func StoreMediatorInfo(db ptndb.Database, mi *core.MediatorInfo) error {
 }
 
 func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator, error) {
-	mi := new(core.MediatorInfo)
+	mi := new(MediatorInfo)
 
 	err := retrieve(db, mediatorKey(address), mi)
 	if err != nil {
@@ -69,7 +93,7 @@ func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator
 		return nil, nil
 	}
 
-	med := mi.InfoToMediator()
+	med := mi.infoToMediator()
 
 	return &med, nil
 }
@@ -110,13 +134,13 @@ func LookupMediator(db ptndb.Database) map[common.Address]core.Mediator {
 
 	iter := db.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
 	for iter.Next() {
-		mi := new(core.MediatorInfo)
+		mi := new(MediatorInfo)
 		err := rlp.DecodeBytes(iter.Value(), mi)
 		if err != nil {
 			log.Error(fmt.Sprintf("Error in Decoding Bytes to MediatorInfo: %s", err))
 		}
 
-		med := mi.InfoToMediator()
+		med := mi.infoToMediator()
 		result[med.Address] = med
 	}
 

@@ -51,21 +51,17 @@ type Genesis struct {
 	ImmutableParameters       ImmutableChainParameters `json:"immutableChainParameters"`
 	InitialTimestamp          int64                    `json:"initialTimestamp"`
 	InitialActiveMediators    uint16                   `json:"initialActiveMediators"`
-	InitialMediatorCandidates []*MediatorInfo          `json:"initialMediatorCandidates"`
+	InitialMediatorCandidates []*InitialMediator       `json:"initialMediatorCandidates"`
 }
 
 func (g *Genesis) GetTokenAmount() uint64 {
 	return g.TokenAmount
 }
 
-type MediatorStrBase struct {
+type InitialMediator struct {
 	AddStr      string `json:"account"`
 	InitPartPub string `json:"initPubKey"`
-}
-
-type MediatorInfo struct {
-	MediatorStrBase
-	Node string `json:"node"`
+	Node        string `json:"node"`
 	//Url  		string `json:"url"`
 }
 
@@ -89,15 +85,15 @@ func PointToStr(pub kyber.Point) string {
 	return base58.Encode(pubB)
 }
 
-func (medInfo *MediatorInfo) InfoToMediator() (md Mediator) {
+func (initMed *InitialMediator) InfoToMediator() (md Mediator) {
 	// 1. 解析 mediator 账户地址
-	md.Address = StrToMedAdd(medInfo.AddStr)
+	md.Address = StrToMedAdd(initMed.AddStr)
 
 	// 2. 解析 mediator 的 DKS 初始公钥
-	md.InitPartPub = StrToPoint(medInfo.InitPartPub)
+	md.InitPartPub = StrToPoint(initMed.InitPartPub)
 
 	// 3. 解析mediator 的 node 节点信息
-	md.Node = StrToMedNode(medInfo.Node)
+	md.Node = StrToMedNode(initMed.Node)
 
 	return
 }

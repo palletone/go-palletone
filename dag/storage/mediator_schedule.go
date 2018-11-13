@@ -33,6 +33,7 @@ var (
 	MediatorSchlDBKey = append(constants.MEDIATOR_SCHEME_PREFIX, []byte("MediatorSchedule")...)
 )
 
+// only for serialization
 type mediatorSchedule struct {
 	CurrentShuffledMediators []string
 }
