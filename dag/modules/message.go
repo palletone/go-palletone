@@ -267,7 +267,7 @@ type ContractReadSet struct {
 	Value   []byte
 }
 type TokenPayOut struct {
-	Asset    Asset
+	Asset    *Asset
 	Amount   uint64
 	PayTo    common.Address
 	LockTime uint32

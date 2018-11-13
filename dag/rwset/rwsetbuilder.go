@@ -46,7 +46,7 @@ func (b *RWSetBuilder) AddToReadSet(ns string, key string, version *modules.Stat
 	// ReadSet
 	nsPubRwBuilder.readMap[key] = NewKVRead(key, version)
 }
-func (b *RWSetBuilder) AddTokenPayOut(ns string, addr string, asset modules.Asset, amount uint64, lockTime uint32) {
+func (b *RWSetBuilder) AddTokenPayOut(ns string, addr string, asset *modules.Asset, amount uint64, lockTime uint32) {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
 	if nsPubRwBuilder.tokenPayOut == nil {
 		nsPubRwBuilder.tokenPayOut = []*modules.TokenPayOut{}
