@@ -122,7 +122,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		t.Fatalf("failed to create node: %v", err)
 	}
 	ptnConf := &ptn.Config{
-		Genesis:   DevGenesisBlock(),
+		Genesis: DevGenesisBlock(),
 		//Etherbase: common.HexToAddress(testAddress),
 	}
 
@@ -154,7 +154,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	}
 
 	// modified by Albert·Gou
-	unit, err := gen.SetupGenesisUnit( ptnConf.Genesis, ks, account)
+	unit, err := gen.SetupGenesisUnit(ptnConf.Genesis, ks, account)
 	if err != nil {
 		fmt.Printf("Failed to write genesis unit: %v \n", err)
 		return nil

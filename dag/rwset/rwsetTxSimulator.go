@@ -194,10 +194,9 @@ func convertUtxo2Balance(utxos map[modules.OutPoint]*modules.Utxo) map[modules.A
 	return result
 }
 func (s *RwSetTxSimulator) PayOutToken(ns string, address string, token modules.Asset, amount uint64, lockTime uint32) error {
-	//TODO Devin pay a token out
+	s.rwsetBuilder.AddTokenPayOut(ns, address, token, amount, lockTime)
 	return nil
 }
 func (s *RwSetTxSimulator) GetPayOutData(ns string) ([]*modules.TokenPayOut, error) {
-	//TODO Devin get all payout list
-	return []*modules.TokenPayOut{}, nil
+	return s.rwsetBuilder.GetTokenPayOut(ns), nil
 }

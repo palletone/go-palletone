@@ -162,7 +162,7 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 		case modules.APP_PAYMENT:
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {
-				return modules.TxValidationCode_INVALID_PAYMMENTLOAd
+				return modules.TxValidationCode_INVALID_PAYMMENTLOAD
 			}
 			validateCode := validate.validatePaymentPayload(payment, isCoinbase)
 			if validateCode != modules.TxValidationCode_VALID {
@@ -377,12 +377,14 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 	// check locktime
 
 	if len(payment.Input) <= 0 {
+		log.Error("payment input is null.", "payment.input", payment.Input)
 		return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
 	}
 	if !isCoinbase {
 		for _, in := range payment.Input {
 			// checkout input
 			if in == nil || in.PreviousOutPoint == nil {
+				log.Error("payment input is null.", "payment.input", payment.Input)
 				return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
 			}
 			if utxo, err := validate.utxodb.GetUtxoEntry(in.PreviousOutPoint); utxo == nil || err != nil {
@@ -393,6 +395,7 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 	}
 
 	if len(payment.Output) <= 0 {
+		log.Error("payment output is null.", "payment.output", payment.Input)
 		return modules.TxValidationCode_INVALID_PAYMMENT_OUTPUT
 	}
 

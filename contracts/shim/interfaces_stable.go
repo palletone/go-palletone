@@ -224,6 +224,8 @@ type ChaincodeStubInterface interface {
 	GetPayToContractPtnTokens() (asset *modules.Asset, amount uint64, err error)
 	//获取所有的世界状态
 	GetContractAllState() ([]byte, error)
+	//获取调用合约所支付的PTN手续费
+	GetContractInvokeFee() (fee uint64, err error)
 	//获得该合约的Token余额
 	GetTokenBalance() (map[modules.Asset]uint64, error)
 	//将合约上锁定的某种Token支付出去

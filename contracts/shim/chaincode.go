@@ -782,6 +782,9 @@ func (stub *ChaincodeStub) GetPayToContractPtnTokens() (*modules.Asset, uint64, 
 func (stub *ChaincodeStub) GetContractAllState() ([]byte, error) {
 	return stub.handler.handlerGetContractAllState(stub.ChannelId, stub.TxID, stub.ContractId)
 }
+func (stub *ChaincodeStub) GetContractInvokeFee() (uint64, error) {
+	return stub.handler.handlerGetContractInvokeFee(stub.ChannelId, stub.TxID, stub.ContractId)
+}
 
 //获得该合约的Token余额
 func (stub *ChaincodeStub) GetTokenBalance() (map[modules.Asset]uint64, error) {
