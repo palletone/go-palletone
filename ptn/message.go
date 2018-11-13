@@ -173,7 +173,8 @@ func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg, p *peer) error {
 
 func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 	// Decode the retrieval message
-	log.Debug("===GetBlockBodiesMsg===")
+	log.Debug("Enter GetBlockBodiesMsg")
+	defer log.Debug("End GetBlockBodiesMsg")
 	msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
 	if _, err := msgStream.List(); err != nil {
 		log.Debug("msgStream.List() err:", err)
@@ -199,9 +200,10 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		// Retrieve the requested block body, stopping if enough was found
 		txs, err := pm.dag.GetUnitTransactions(hash)
 		if err != nil {
-			log.Debug("===GetBlockBodiesMsg===", "GetUnitTransactions err:", err)
+			log.Debug("GetBlockBodiesMsg", "GetUnitTransactions err:", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
+		log.Debug("GetBlockBodiesMsg", "hash", hash, "txs:", txs)
 
 		data, err := rlp.EncodeToBytes(txs)
 		if err != nil {
@@ -214,8 +216,7 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			bodies.Transactions = append(bodies.Transactions, tx)
 		}
 	}
-	//log.Debug("===GetBlockBodiesMsg===", "tempGetBlockBodiesMsgSum:", tempGetBlockBodiesMsgSum, "sum:", sum)
-	log.Debug("===GetBlockBodiesMsg===", "len(bodies):", len(bodies.Transactions), "bytes:", bytes)
+	log.Debug("GetBlockBodiesMsg", "len(bodies):", len(bodies.Transactions), "bodies.Transactions:", bodies.Transactions)
 	return p.SendBlockBodies([]*blockBody{&bodies})
 }
 
@@ -227,15 +228,19 @@ func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
 	// Deliver them all to the downloader for queuing
-	transactions := make([][]*modules.Transaction, len(request))
-	sum := 0
-	for i, body := range request {
-		transactions[i] = body.Transactions
-		sum++
+	//transactions := make([][]*modules.Transaction, len(request))
+	txs := []*modules.Transaction{}
+	for _, body := range request {
+		//transactions[i] = body.Transactions
+		for _, tx := range body.Transactions {
+			txs = append(txs, tx)
+		}
 	}
 
-	log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(transactions), "transactions[0]:", transactions[0])
+	log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(txs))
 	// Filter out any explicitly requested bodies, deliver the rest to the downloader
+	transactions := [][]*modules.Transaction{}
+	transactions = append(transactions, txs)
 	filter := len(transactions) > 0
 	if filter {
 		log.Debug("===BlockBodiesMsg->FilterBodies===")

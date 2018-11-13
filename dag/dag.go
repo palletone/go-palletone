@@ -115,7 +115,7 @@ func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
 func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit {
 	curUnit, err := d.Memdag.GetCurrentUnit(assetId, index)
 	if err != nil {
-		log.Error("GetCurrentMemUnit", "error", err.Error())
+		log.Info("GetCurrentMemUnit", "error", err.Error())
 		return nil
 	}
 	return curUnit

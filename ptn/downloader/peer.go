@@ -309,7 +309,9 @@ func (p *peerConnection) HeaderCapacity(targetRTT time.Duration) int {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	return int(math.Min(1+math.Max(1, p.headerThroughput*float64(targetRTT)/float64(time.Second)), float64(MaxHeaderFetch)))
+	capacity := int(math.Min(1+math.Max(1, p.headerThroughput*float64(targetRTT)/float64(time.Second)), float64(MaxHeaderFetch)))
+	log.Debug("downloader->peerConnection->HeaderCapacity", "capacity", capacity)
+	return capacity
 }
 
 // BlockCapacity retrieves the peers block download allowance based on its
@@ -317,9 +319,10 @@ func (p *peerConnection) HeaderCapacity(targetRTT time.Duration) int {
 func (p *peerConnection) BlockCapacity(targetRTT time.Duration) int {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-	log.Debug("===peerConnection->BlockCapacity===", "p.blockThroughput:", p.blockThroughput,
+	capacity := int(math.Min(1+math.Max(1, p.blockThroughput*float64(targetRTT)/float64(time.Second)), float64(MaxBlockFetch)))
+	log.Debug("downloader->peerConnection->BlockCapacity", "capacity", capacity, "p.blockThroughput:", p.blockThroughput,
 		"targetRTT:", targetRTT, "MaxBlockFetch:", MaxBlockFetch)
-	return int(math.Min(1+math.Max(1, p.blockThroughput*float64(targetRTT)/float64(time.Second)), float64(MaxBlockFetch)))
+	return capacity
 }
 
 // ReceiptCapacity retrieves the peers receipt download allowance based on its
