@@ -28,6 +28,10 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
+type ICustomToken interface {
+
+}
+
 type Token struct {
 	InnerID     uint64
 	GlobalID    modules.IDType16
@@ -36,25 +40,25 @@ type Token struct {
 	CreatedTime []byte
 	Extra       []byte
 }
-
+//注意大小写
 type CustomToken struct {
-	customTokenName   string
-	customTokenSymbol string
-	totalSupply       uint64
-	owner             common.Address
-	currentIdx        uint64
+	CustomTokenName   string
+	CustomTokenSymbol string
+	TotalSupply       uint64
+	Owner             common.Address
+	CurrentIdx        uint64
 	Members           map[common.Address][]uint64
-	inventory         map[uint64]Token
+	Inventory         map[uint64]Token
 
 	//optional field
-	transFee uint
+	TransFee uint
 	//expiryTimeStamp uint64
 	Decimals uint
 }
 
 //IsOwner(const):Anyone
 func (ct *CustomToken) IsOwner(caller common.Address) bool {
-	return ct.owner == caller
+	return ct.Owner == caller
 }
 
 //ChangeTotalSupply(danger):Owner
@@ -62,10 +66,10 @@ func (ct *CustomToken) ChangeTotalSupply(caller common.Address, amount uint64) b
 	if !ct.IsOwner(caller) {
 		return false
 	}
-	if amount < ct.currentIdx {
+	if amount < ct.CurrentIdx {
 		return false
 	}
-	ct.totalSupply = amount
+	ct.TotalSupply = amount
 	return true
 }
 
@@ -79,47 +83,47 @@ func (ct *CustomToken) ChangeOwner(caller common.Address, des common.Address) bo
 	if !ct.IsOwner(caller) && des != caller {
 		return false
 	}
-	ct.owner = des
+	ct.Owner = des
 	return true
 }
 
 
 //OwnerOf(const):AnyOne
 func (ct *CustomToken) OwnerOf(caller common.Address, TokenID uint64) common.Address {
-	return ct.inventory[TokenID].Holder
+	return ct.Inventory[TokenID].Holder
 }
 
 //TotalSupply(const):AnyOne
-func (ct *CustomToken) TotalSupply(caller common.Address) uint64 {
-	return ct.totalSupply
+func (ct *CustomToken) GetTotalSupply(caller common.Address) uint64 {
+	return ct.TotalSupply
 }
 
 //Name(const):AnyOne
-func (ct *CustomToken) Name(caller common.Address) string {
-	return ct.customTokenName
+func (ct *CustomToken) GetName(caller common.Address) string {
+	return ct.CustomTokenName
 }
 
 //Symbol(const):AnyOne
-func (ct *CustomToken) Symbol(caller common.Address) string {
-	return ct.customTokenSymbol
+func (ct *CustomToken) GetSymbol(caller common.Address) string {
+	return ct.CustomTokenSymbol
 }
 
 //balanceOf(const):AnyOne
-func (ct *CustomToken) balanceOf(caller common.Address) []uint64 {
+func (ct *CustomToken) BalanceOf(caller common.Address) []uint64 {
 	return ct.Members[caller]
 }
 
 //GetUniversalToken(const):AnyOne
 func (ct *CustomToken) GlobalIDByInnerID(caller common.Address, id uint64) modules.IDType16 {
-	return ct.inventory[id].GlobalID
+	return ct.Inventory[id].GlobalID
 }
 
 //GetUniversalToken(const):AnyOne
 func (ct *CustomToken) GetGlobalID(caller common.Address, innerID uint64) modules.IDType16 {
 	var buffer bytes.Buffer
-	buffer.WriteString(ct.customTokenSymbol)
-	buffer.WriteString(ct.customTokenName)
-	buffer.Write(ct.owner.Bytes())
+	buffer.WriteString(ct.CustomTokenSymbol)
+	buffer.WriteString(ct.CustomTokenName)
+	buffer.Write(ct.Owner.Bytes())
 	b := make([]byte, 8)
 	binary.BigEndian.PutUint64(b, innerID)
 	buffer.Write(b)
@@ -132,33 +136,33 @@ func (ct *CustomToken) CreateNewToken(caller common.Address, additional []byte) 
 	if !ct.IsOwner(caller) {
 		return false
 	}
-	if ct.currentIdx == ct.totalSupply {
+	if ct.CurrentIdx == ct.TotalSupply {
 		return false
 	}
-	ct.Members[ct.owner] = append(ct.Members[ct.owner], ct.currentIdx)
-	ct.inventory[ct.currentIdx] = Token{
-		InnerID:  ct.currentIdx,
-		GlobalID: ct.GetGlobalID(common.Address{}, ct.currentIdx),
-		Holder:   ct.owner,
-		Creator:  ct.owner,
+	ct.Members[ct.Owner] = append(ct.Members[ct.Owner], ct.CurrentIdx)
+	ct.Inventory[ct.CurrentIdx] = Token{
+		InnerID:  ct.CurrentIdx,
+		GlobalID: ct.GetGlobalID(common.Address{}, ct.CurrentIdx),
+		Holder:   ct.Owner,
+		Creator:  ct.Owner,
 	}
-	ct.currentIdx++
+	ct.CurrentIdx++
 	return true
 }
 
 //transfer(danger):TokenHolder
-func (ct *CustomToken) transfer(caller common.Address, to common.Address, ids []uint64) bool {
+func (ct *CustomToken) Transfer(caller common.Address, to common.Address, ids []uint64) bool {
 	//quit if any holder of token from ids passing in is invalid.
 	for _, id := range ids {
-		if ct.inventory[id].Holder != caller {
+		if ct.Inventory[id].Holder != caller {
 			return false
 		}
 	}
 	// change holder
 	for _, id := range ids {
-		token := ct.inventory[id]
+		token := ct.Inventory[id]
 		token.Holder = to
-		ct.inventory[id] = token
+		ct.Inventory[id] = token
 	}
 	return true
 }
@@ -176,8 +180,8 @@ func (ctor *CustomTokenConstructor) CreateCustomToken(Name string, Symbol string
 		return nil, errors.New("InvalidCustomTokenSymbol")
 	}
 	return &CustomToken{
-		owner:             ownerAddress,
-		customTokenName:   Name,
-		customTokenSymbol: Symbol,
+		Owner:             ownerAddress,
+		CustomTokenName:   Name,
+		CustomTokenSymbol: Symbol,
 	}, nil
 }

@@ -28,6 +28,7 @@ import (
 
 func TestAccountModel(t *testing.T) {
 	addr := common.StringToAddressGodBlessMe("P1GqZ72gaeq7LiS34KLJoMmCnMnaopkcEPn")
+	token := uint64(1)
 	//1. generate user model
 	u :=GenerateUser(addr)
 
@@ -39,10 +40,11 @@ func TestAccountModel(t *testing.T) {
 	u.SetCurrentTokenCard("wil")
 
 	//4. system call
-	result, ok := u.Call("IsOwner", "")
+	result, ok := u.Call("Tranfer", addr,  []uint64{token}) //strict match
 	if !ok {
 		//check
 	}
 	fmt.Println(result)
+
 
 }

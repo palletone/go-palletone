@@ -19,7 +19,10 @@
 
 package account
 
-import "github.com/palletone/go-palletone/common"
+import (
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/contracts/example/go/createToken"
+)
 
 type pFunc func(address common.Address, params[]string) (string,bool)
 
@@ -27,14 +30,12 @@ type pFunc func(address common.Address, params[]string) (string,bool)
 type TokenCard interface {
 	GetName() string
 	GetSymbol() string
-	GetFunc(string) pFunc
 }
 
 //TokenCardClass : TokenCard class implement
 type TokenCardClass struct {
 	name   string
 	symbol string
-	methodMap map[string]pFunc
 	ctData interface{}
 }
 
@@ -47,17 +48,12 @@ func (u *TokenCardClass) GetName() string {
 func (u *TokenCardClass) GetSymbol() string {
 	return u.symbol
 }
-//Call :
-func (u *TokenCardClass) GetFunc(m string) pFunc {
-	f := u.methodMap[m]
-	return f
-}
 
 //GenerateTokenCard : generate token-card from symbol
 func GenerateTokenCard(symbol string) TokenCard {
 	tc := &TokenCardClass{symbol: symbol}
-	//1. 从数据库读取 CustomToken
-	//2. 将CustomToken 赋值给 tc.ctData
-	//3. 将tc.ctData的所有方法 赋值给 tc.methodMap
+	ct := new(createToken.CustomToken)
+	//TODO:从数据库读取 CustomToken
+	tc.ctData = ct
 	return tc
 }

@@ -21,13 +21,14 @@ package account
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"reflect"
 )
 
 //User : user calss interface
 type User interface {
 	AddNewTokenCard(symbol string) bool
 	SetCurrentTokenCard(symbol string) bool
-	Call(m string, params ...string) (string,bool)
+	Call(m string, params ...interface{}) (string,bool)
 }
 
 //UserClass : user class implement
@@ -61,11 +62,17 @@ func (u *UserClass) SetCurrentTokenCard(symbol string) bool {
 	return false
 }
 //Call :
-func (u *UserClass) Call(m string, params ...string) (string,bool) {
+func (u *UserClass) Call(m string, params ...interface{}) (string,bool) {
 	currTokenCard := u.Wallet[u.CurrentCard]
-	method := currTokenCard.GetFunc(m)
-	res,stat := method(u.Address,params)
-	return res,stat
+	vparams := make([]reflect.Value,0)
+	for _,p := range params {
+		vparams = append(vparams,reflect.ValueOf(p))
+	}
+	res := reflect.ValueOf(currTokenCard).MethodByName(m).Call(vparams)
+	if len(res)!= 2 {
+		return "return type of func invalid",false
+	}
+	return res[0].String(),res[1].Bool()
 }
 
 //GenerateUser : generate a user model for contract call.
