@@ -34,8 +34,6 @@ type SystemConfig struct {
 	FoundationAddress string `json:"foundationAddress"`
 	//保证金的数量
 	DepositAmount uint64 `json:"depositAmount"`
-	//这是保证金的地址
-	DepositContractAddress string `json:"depositContractAddress"`
 }
 
 type Genesis struct {
