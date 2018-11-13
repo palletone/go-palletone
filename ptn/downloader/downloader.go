@@ -1433,7 +1433,8 @@ func (d *Downloader) processFullSyncContent() error {
 
 func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	// Check for any early termination requests
-	log.Debug("===Downloader->importBlockResults===", "len(results):", len(results))
+	log.Debug("Enter Downloader->importBlockResults", "len(results):", len(results))
+	defer log.Debug("End Downloader->importBlockResults")
 	if len(results) == 0 {
 		return nil
 	}
@@ -1454,16 +1455,19 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 		//blocks[i] = types.NewBlockWithHeader(result.Header).WithBody(result.Transactions, result.Uncles)
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
-	//for _, u := range blocks {
-	//	fmt.Println("======importBlockResults=======")
-	//	fmt.Println(u.Hash())
-	//	fmt.Printf("%#v\n", u.UnitHeader)
-	//}
-	//if index, err := d.dag.InsertChain(blocks); err != nil {
-	if index, err := d.dag.InsertDag(blocks); err != nil {
-		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
-		return errInvalidChain
+	for _, u := range blocks {
+		log.Debug("======importBlockResults=======", "unit:", *u, "index:", u.UnitHeader.Number.Index)
+		units := []*modules.Unit{}
+		units = append(units, u)
+		if index, err := d.dag.InsertDag(units); err != nil {
+			log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
+			return errInvalidChain
+		}
 	}
+	//if index, err := d.dag.InsertDag(blocks); err != nil {
+	//	log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
+	//	return errInvalidChain
+	//}
 	return nil
 }
 

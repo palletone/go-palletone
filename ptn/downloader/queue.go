@@ -792,10 +792,10 @@ func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction) (int,
 		//			log.Debug("===queue->DeliverBodies===", "err:", errInvalidBody)
 		//			return errInvalidBody
 		//		}
-		result.Transactions = txLists[index]
+		result.Transactions = txLists[0]
 		return nil
 	}
-	return q.deliver(id, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, bodyReqTimer, len(txLists), reconstruct)
+	return q.deliver(id, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, bodyReqTimer, len(txLists[0]), reconstruct)
 }
 
 // deliver injects a data retrieval response into the results queue.
@@ -839,6 +839,7 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*modules.Header, tas
 			failure = errInvalidChain
 			break
 		}
+		//TODO must recover
 		if err := reconstruct(header, i, q.resultCache[index]); err != nil {
 			failure = err
 			break
