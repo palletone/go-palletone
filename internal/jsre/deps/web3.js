@@ -5396,8 +5396,8 @@ var methods = function () {
     var cmdCreateTransaction = new Method({
         name: 'cmdCreateTransaction',
         call: 'ptn_cmdCreateTransaction',
-        params: 1,
-        inputFormatter: [null]
+        params: 3,
+        inputFormatter: [null,null,null]
     });
 
     var createRawTransaction = new Method({

@@ -38,6 +38,7 @@ import (
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
+	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -287,7 +288,7 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 }
 func (d *Dag) Exists(hash common.Hash) bool {
 	if unit, err := d.dagdb.GetUnit(hash); err == nil && unit != nil {
-		log.Info("hash is exsit in leveldb ", "hash", hash.String())
+		log.Info("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
 		return true
 	}
 	return false
@@ -821,7 +822,8 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 
 	if !isGenesis {
 		if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
-			return fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
+			log.Info("dag", "SaveUnit unit is already existing.hash:", unit.Hash().String())
+			return dagerrors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 		}
 	}
 	// step2. validate unit

@@ -185,10 +185,10 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		hash  common.Hash
 		bytes int
 		//bodies []rlp.RawValue
-		bodies blockBody
+		bodies []blockBody
 	)
 
-	for bytes < softResponseLimit && len(bodies.Transactions) < downloader.MaxBlockFetch {
+	for bytes < softResponseLimit && len(bodies) < downloader.MaxBlockFetch {
 		// Retrieve the hash of the next block
 		if err := msgStream.Decode(&hash); err == rlp.EOL {
 			break
@@ -196,51 +196,47 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("msgStream.Decode", "err", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		//TODO must recover
 		// Retrieve the requested block body, stopping if enough was found
 		txs, err := pm.dag.GetUnitTransactions(hash)
 		if err != nil {
 			log.Debug("GetBlockBodiesMsg", "GetUnitTransactions err:", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		log.Debug("GetBlockBodiesMsg", "hash", hash, "txs:", txs)
 
 		data, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			log.Debug("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		bytes += len(data)
 
-		for _, tx := range txs {
-			bodies.Transactions = append(bodies.Transactions, tx)
-		}
+		log.Debug("GetBlockBodiesMsg", "hash", hash, "txs size:", len(txs))
+
+		bytes += len(data)
+		body := blockBody{Transactions: txs}
+		bodies = append(bodies, body)
 	}
-	log.Debug("GetBlockBodiesMsg", "len(bodies):", len(bodies.Transactions), "bodies.Transactions:", bodies.Transactions)
-	return p.SendBlockBodies([]*blockBody{&bodies})
+	log.Debug("GetBlockBodiesMsg", "len(bodies):", len(bodies))
+	return p.SendBlockBodies(bodies)
 }
 
 func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
-	//log.Debug("===BlockBodiesMsg===")
 	// A batch of block bodies arrived to one of our previous requests
+	log.Debug("Enter ProtocolManager BlockBodiesMsg")
+	defer log.Debug("End ProtocolManager BlockBodiesMsg")
 	var request blockBodiesData
 	if err := msg.Decode(&request); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
 	// Deliver them all to the downloader for queuing
 	//transactions := make([][]*modules.Transaction, len(request))
-	txs := []*modules.Transaction{}
-	for _, body := range request {
-		//transactions[i] = body.Transactions
-		for _, tx := range body.Transactions {
-			txs = append(txs, tx)
-		}
+	transactions := make([][]*modules.Transaction, len(request))
+	for i, body := range request {
+		transactions[i] = body.Transactions
+		log.Info("BlockBodiesMsg", "i", i, "txs size:", len(body.Transactions))
 	}
 
-	log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(txs))
+	log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(transactions))
 	// Filter out any explicitly requested bodies, deliver the rest to the downloader
-	transactions := [][]*modules.Transaction{}
-	transactions = append(transactions, txs)
 	filter := len(transactions) > 0
 	if filter {
 		log.Debug("===BlockBodiesMsg->FilterBodies===")
