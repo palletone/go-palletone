@@ -30,6 +30,8 @@ var (
 	ErrNotFound       = New("leveldb: not found")
 	ErrNumberNotFound = New("dag: header's number not found")
 	ErrUtxoNotFound   = New("utxo: not found")
+
+	ErrUnitExist = New("unit: exist")
 )
 
 // New returns an error that formats as the given text.
