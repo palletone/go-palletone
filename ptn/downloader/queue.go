@@ -545,7 +545,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 		} else {
 			send = append(send, header)
 		}
-		log.Info("downloader->queue", "proc", proc, "space:", space, "len(send)", len(send), "count", count)
+		//log.Info("downloader->queue", "proc", proc, "space:", space, "len(send)", len(send), "count", count)
 	}
 	log.Debug("===queue->reserveHeaders===", "len(skip):", len(skip), "len(send):", len(send), "sum:", sum, "noopsum:", noopsum)
 	// Merge all the skipped headers back
@@ -795,7 +795,11 @@ func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction) (int,
 		result.Transactions = txLists[0]
 		return nil
 	}
-	return q.deliver(id, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, bodyReqTimer, len(txLists[0]), reconstruct)
+	txsize := 0
+	if len(txLists) != 0 {
+		txsize = len(txLists[0])
+	}
+	return q.deliver(id, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, bodyReqTimer /*len(txLists[0])*/, txsize, reconstruct)
 }
 
 // deliver injects a data retrieval response into the results queue.
