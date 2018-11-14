@@ -33,7 +33,6 @@ import (
 type GlobalProperty struct {
 	ChainParameters core.ChainParameters // 区块链网络参数
 
-	//ActiveMediators map[common.Address]*core.Mediator // 当前活跃mediator集合；每个维护间隔更新一次
 	ActiveMediators map[common.Address]bool // 当前活跃mediator集合；每个维护间隔更新一次
 
 	GroupPubKey kyber.Point // 群公钥，用于验证群签名；每个维护间隔更新一次
@@ -49,7 +48,7 @@ type DynamicGlobalProperty struct {
 
 	HeadUnitTime int64 // 最近的验证单元时间
 
-	// CurrentMediator *Mediator // 当前生产验证单元的mediator, 用于判断是否连续同一个mediator生产验证单元
+	// CurrentMediator *common.Address // 当前生产验证单元的mediator, 用于判断是否连续同一个mediator生产验证单元
 
 	// NextMaintenanceTime time.Time // 下一次系统维护时间
 
@@ -80,38 +79,9 @@ func (gp *GlobalProperty) GetCurThreshold() int {
 	return aSize - offset
 }
 
-//func (gp *GlobalProperty) GetActiveMediatorInitPubs() []kyber.Point {
-//	aSize := gp.GetActiveMediatorCount()
-//	pubs := make([]kyber.Point, aSize, aSize)
-//
-//	meds := gp.GetActiveMediators()
-//	for i, add := range meds {
-//		med := gp.GetActiveMediator(add)
-//
-//		pubs[i] = med.InitPartPub
-//	}
-//
-//	return pubs
-//}
-
 func (gp *GlobalProperty) IsActiveMediator(add common.Address) bool {
-	//_, ok := gp.ActiveMediators[add]
-	//
-	//return ok
-
 	return gp.ActiveMediators[add]
 }
-
-//func (gp *GlobalProperty) GetActiveMediator(add common.Address) *core.Mediator {
-//	if !gp.IsActiveMediator(add) {
-//		log.Error(fmt.Sprintf("%v is not active mediator!", add.Str()))
-//		return nil
-//	}
-//
-//	med, _ := gp.ActiveMediators[add]
-//
-//	return med
-//}
 
 func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
 	if index < 0 || index > gp.GetActiveMediatorCount()-1 {
@@ -123,19 +93,10 @@ func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
 	return meds[index]
 }
 
-//func (gp *GlobalProperty) GetActiveMediatorNode(index int) *discover.Node {
-//	ma := gp.GetActiveMediatorAddr(index)
-//	med := gp.GetActiveMediator(ma)
-//
-//	return med.Node
-//}
-
 // GetActiveMediators, return the list of active mediators, and the order of the list from small to large
 func (gp *GlobalProperty) GetActiveMediators() []common.Address {
 	mediators := make([]common.Address, 0, gp.GetActiveMediatorCount())
 
-	//for _, m := range gp.ActiveMediators {
-	//	mediators = append(mediators, m.Address)
 	for medAdd, _ := range gp.ActiveMediators {
 		mediators = append(mediators, medAdd)
 	}
@@ -159,24 +120,9 @@ func sortAddress(adds []common.Address) {
 	}
 }
 
-//func (gp *GlobalProperty) GetActiveMediatorNodes() map[string]*discover.Node {
-//	nodes := make(map[string]*discover.Node)
-//
-//	meds := gp.GetActiveMediators()
-//	for _, add := range meds {
-//		med := gp.GetActiveMediator(add)
-//		node := med.Node
-//
-//		nodes[node.ID.TerminalString()] = node
-//	}
-//
-//	return nodes
-//}
-
 func NewGlobalProp() *GlobalProperty {
 	return &GlobalProperty{
 		ChainParameters: core.NewChainParams(),
-		//ActiveMediators: make(map[common.Address]*core.Mediator, 0),
 		ActiveMediators: make(map[common.Address]bool, 0),
 		GroupPubKey:     core.Suite.Point().Null(),
 	}
@@ -204,10 +150,6 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	// Set active mediators
 	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
 		initMed := genesis.InitialMediatorCandidates[i]
-		//md := initMed.InitToMediator()
-		//
-		//gp.ActiveMediators[md.Address] = md
-
 		gp.ActiveMediators[core.StrToMedAdd(initMed.AddStr)] = true
 	}
 

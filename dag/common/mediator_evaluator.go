@@ -37,6 +37,7 @@ func (mce *MediatorCreateEvaluator) Apply(statedb storage.IStateDb, mco *modules
 	mi.AddStr = mco.AddStr
 	mi.InitPartPub = mco.InitPartPub
 	mi.Node = mco.Node
+	mi.Url = mco.Url
 
 	statedb.StoreMediatorInfo(&mi)
 	return

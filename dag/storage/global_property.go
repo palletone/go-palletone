@@ -34,52 +34,7 @@ var (
 	DynGlobalPropDBKey = append(constants.DYNAMIC_GLOBALPROPERTY_PREFIX, []byte("DynamicGlobalProperty")...)
 )
 
-// only for serialization
-//type globalProperty struct {
-//	ChainParameters core.ChainParameters
-//
-//	ActiveMediators []*MediatorInfo
-//
-//	GroupPubKey string
-//}
-
-//func getGPT(gp *modules.GlobalProperty) globalProperty {
-//	ams := make([]*MediatorInfo, 0)
-//
-//	for _, med := range gp.ActiveMediators {
-//		medInfo := mediatorToInfo(med)
-//		ams = append(ams, medInfo)
-//	}
-//
-//	gpt := globalProperty{
-//		ChainParameters: gp.ChainParameters,
-//		ActiveMediators: ams,
-//		GroupPubKey:     core.PointToStr(gp.GroupPubKey),
-//	}
-//
-//	return gpt
-//}
-
-//func (gpt *globalProperty) getGP() *modules.GlobalProperty {
-//	ams := make(map[common.Address]*core.Mediator, 0)
-//	for _, medInfo := range gpt.ActiveMediators {
-//		med := medInfo.infoToMediator()
-//		ams[med.Address] = med
-//	}
-//
-//	gp := modules.NewGlobalProp()
-//	gp.ChainParameters = gpt.ChainParameters
-//	gp.ActiveMediators = ams
-//	gp.GroupPubKey = core.StrToPoint(gpt.GroupPubKey)
-//
-//	return gp
-//}
-
 func StoreGlobalProp(db ptndb.Database, gp *modules.GlobalProperty) error {
-	//gpt := getGPT(gp)
-	//
-	//err := StoreBytes(db, GlobalPropDBKey, gpt)
-
 	err := StoreBytes(db, GlobalPropDBKey, gp)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store global properties error:%s", err))
@@ -98,17 +53,11 @@ func StoreDynGlobalProp(db ptndb.Database, dgp *modules.DynamicGlobalProperty) e
 }
 
 func RetrieveGlobalProp(db ptndb.Database) (*modules.GlobalProperty, error) {
-	//gpt := new(globalProperty)
-	//
-	//err := retrieve(db, GlobalPropDBKey, gpt)
-
-	gp := new(modules.GlobalProperty)
+	gp := modules.NewGlobalProp()
 	err := retrieve(db, GlobalPropDBKey, gp)
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve global properties error: %s", err))
 	}
-
-	//gp := gpt.getGP()
 
 	return gp, err
 }

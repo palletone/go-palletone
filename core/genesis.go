@@ -62,7 +62,6 @@ type InitialMediator struct {
 	AddStr      string `json:"account"`
 	InitPartPub string `json:"initPubKey"`
 	Node        string `json:"node"`
-	//Url  		string `json:"url"`
 }
 
 // author Albert·Gou
@@ -85,17 +84,17 @@ func PointToStr(pub kyber.Point) string {
 	return base58.Encode(pubB)
 }
 
-func (initMed *InitialMediator) InitToMediator() (md *Mediator) {
-	md = &Mediator{}
-
-	// 1. 解析 mediator 账户地址
-	md.Address = StrToMedAdd(initMed.AddStr)
-
-	// 2. 解析 mediator 的 DKS 初始公钥
-	md.InitPartPub = StrToPoint(initMed.InitPartPub)
-
-	// 3. 解析mediator 的 node 节点信息
-	md.Node = StrToMedNode(initMed.Node)
-
-	return
-}
+//func (initMed *InitialMediator) InitToMediator() (md *Mediator) {
+//	md = &Mediator{}
+//
+//	// 1. 解析 mediator 账户地址
+//	md.Address = StrToMedAdd(initMed.AddStr)
+//
+//	// 2. 解析 mediator 的 DKS 初始公钥
+//	md.InitPartPub = StrToPoint(initMed.InitPartPub)
+//
+//	// 3. 解析mediator 的 node 节点信息
+//	md.Node = StrToMedNode(initMed.Node)
+//
+//	return
+//}
