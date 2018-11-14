@@ -23,6 +23,7 @@ package dag
 import (
 	"time"
 
+	"fmt"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -85,12 +86,32 @@ func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) boo
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
-	return d.GetGlobalProp().GetActiveMediatorNodes()
+	nodes := make(map[string]*discover.Node)
+
+	meds := d.GetActiveMediators()
+	for _, add := range meds {
+		med := d.GetActiveMediator(add)
+		node := med.Node
+
+		nodes[node.ID.TerminalString()] = node
+	}
+
+	return nodes
 }
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
-	return d.GetGlobalProp().GetActiveMediatorInitPubs()
+	aSize := d.GetActiveMediatorCount()
+	pubs := make([]kyber.Point, aSize, aSize)
+
+	meds := d.GetActiveMediators()
+	for i, add := range meds {
+		med := d.GetActiveMediator(add)
+
+		pubs[i] = med.InitPartPub
+	}
+
+	return pubs
 }
 
 // author Albert·Gou
@@ -115,12 +136,35 @@ func (d *Dag) GetActiveMediatorAddr(index int) common.Address {
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
-	return d.GetGlobalProp().GetActiveMediatorNode(index)
+	ma := d.GetActiveMediatorAddr(index)
+	med := d.GetActiveMediator(ma)
+
+	return med.Node
 }
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
-	return d.GetGlobalProp().GetActiveMediator(add)
+	if !d.GetGlobalProp().IsActiveMediator(add) {
+		log.Error(fmt.Sprintf("%v is not active mediator!", add.Str()))
+		return nil
+	}
+
+	return d.GetMediator(add)
+}
+
+func (d *Dag) GetMediator(add common.Address) *core.Mediator {
+	med, _ := d.statedb.RetrieveMediator(add)
+
+	return med
+}
+
+func (d *Dag) SaveMediator(med *core.Mediator, onlyStore bool) {
+	if !onlyStore {
+		// todo 更新缓存
+	}
+
+	d.statedb.StoreMediator(med)
+	return
 }
 
 // author Albert·Gou
@@ -197,7 +241,25 @@ func (dag *Dag) HeadUnitHash() common.Hash {
 func (dag *Dag) UpdateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	timestamp := unit.UnitHeader.Creationdate
 	missedUnits := dag.GetSlotAtTime(time.Unix(timestamp, 0))
-	// todo
+
+	if missedUnits == 0 {
+		log.Error("Trying to push double-produced unit onto current unit?!")
+	}
+
+	log.Debug("the count of missed Units: ", missedUnits)
+	missedUnits--
+
+	aSize := dag.GetActiveMediatorCount()
+	if missedUnits < uint32(aSize) {
+		var i uint32
+		for i = 0; i < missedUnits; i++ {
+			mediatorMissed := dag.GetScheduledMediator(i + 1)
+
+			med := dag.GetMediator(mediatorMissed)
+			med.TotalMissed++
+			dag.SaveMediator(med, false)
+		}
+	}
 
 	return uint64(missedUnits)
 }

@@ -44,8 +44,7 @@ func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorS
 	ms.CurrentShuffledMediators = make([]common.Address, aSize, aSize)
 	meds := gp.GetActiveMediators()
 	for i, add := range meds {
-		med := gp.GetActiveMediator(add)
-		ms.CurrentShuffledMediators[i] = med.Address
+		ms.CurrentShuffledMediators[i] = add
 	}
 
 	ms.UpdateMediatorSchedule(gp, dgp)
@@ -78,8 +77,7 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 	// 3. 初始化数据
 	meds := gp.GetActiveMediators()
 	for i, add := range meds {
-		med := gp.GetActiveMediator(add)
-		ms.CurrentShuffledMediators[i] = med.Address
+		ms.CurrentShuffledMediators[i] = add
 	}
 
 	// 4. 打乱证人的调度顺序
@@ -216,4 +214,5 @@ func (dgp *DynamicGlobalProperty) UpdateDynGlobalProp(gp *GlobalProperty, unit *
 
 	//	println(missedUnits)
 	dgp.CurrentASlot += missedUnits + 1
+
 }

@@ -44,11 +44,13 @@ type Mediator struct {
 	InitPartPub kyber.Point
 	Node        *discover.Node
 	Url         string
+	TotalMissed int64
 }
 
 func NewMediator() *Mediator {
 	return &Mediator{
-		Url: "",
+		Url:         "",
+		TotalMissed: 0,
 	}
 }
 
