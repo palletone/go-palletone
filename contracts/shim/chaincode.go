@@ -807,7 +807,7 @@ func (stub *ChaincodeStub) GetInvokeAddress() (string, error) {
 func (stub *ChaincodeStub) GetInvokeTokens() (*modules.InvokeTokens, error) {
 	return stub.handler.handleGetInvokeTokens(stub.ChannelId, stub.TxID)
 }
-func (stub *ChaincodeStub) GetContractAllState() ([]byte, error) {
+func (stub *ChaincodeStub) GetContractAllState() (map[string]*modules.ContractStateValue, error) {
 	return stub.handler.handleGetContractAllState(stub.ChannelId, stub.TxID, stub.ContractId)
 }
 func (stub *ChaincodeStub) GetInvokeFees() (*modules.InvokeFees, error) {
