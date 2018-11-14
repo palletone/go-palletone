@@ -80,6 +80,11 @@ func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 // ######################### GET IMPL END ###########################
 
 // author albert·gou
+func (statedb *StateDb) StoreMediator(med *core.Mediator) error {
+	return StoreMediator(statedb.db, med)
+}
+
+// author albert·gou
 func (statedb *StateDb) StoreMediatorInfo(mi *MediatorInfo) error {
 	return StoreMediatorInfo(statedb.db, mi)
 }

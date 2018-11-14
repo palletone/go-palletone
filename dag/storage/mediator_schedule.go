@@ -21,10 +21,8 @@ package storage
 import (
 	"fmt"
 
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -34,43 +32,44 @@ var (
 )
 
 // only for serialization
-type mediatorSchedule struct {
-	CurrentShuffledMediators []string
-}
+//type mediatorSchedule struct {
+//	CurrentShuffledMediators []string
+//}
 
-func getMST(ms *modules.MediatorSchedule) mediatorSchedule {
-	addStrs := make([]string, 0)
+//func getMST(ms *modules.MediatorSchedule) mediatorSchedule {
+//	addStrs := make([]string, 0)
+//
+//	for _, medAdd := range ms.CurrentShuffledMediators {
+//		addStr := medAdd.Str()
+//		addStrs = append(addStrs, addStr)
+//	}
+//
+//	mst := mediatorSchedule{
+//		CurrentShuffledMediators: addStrs,
+//	}
+//
+//	return mst
+//}
 
-	for _, medAdd := range ms.CurrentShuffledMediators {
-		addStr := medAdd.Str()
-		addStrs = append(addStrs, addStr)
-	}
-
-	mst := mediatorSchedule{
-		CurrentShuffledMediators: addStrs,
-	}
-
-	return mst
-}
-
-func (mst *mediatorSchedule) getMS() *modules.MediatorSchedule {
-	medAdds := make([]common.Address, 0)
-
-	for _, addStr := range mst.CurrentShuffledMediators {
-		medAdd := core.StrToMedAdd(addStr)
-		medAdds = append(medAdds, medAdd)
-	}
-
-	ms := modules.NewMediatorSchl()
-	ms.CurrentShuffledMediators = medAdds
-
-	return ms
-}
+//func (mst *mediatorSchedule) getMS() *modules.MediatorSchedule {
+//	medAdds := make([]common.Address, 0)
+//
+//	for _, addStr := range mst.CurrentShuffledMediators {
+//		medAdd := core.StrToMedAdd(addStr)
+//		medAdds = append(medAdds, medAdd)
+//	}
+//
+//	ms := modules.NewMediatorSchl()
+//	ms.CurrentShuffledMediators = medAdds
+//
+//	return ms
+//}
 
 func StoreMediatorSchl(db ptndb.Database, ms *modules.MediatorSchedule) error {
-	mst := getMST(ms)
-
-	err := StoreBytes(db, MediatorSchlDBKey, mst)
+	//mst := getMST(ms)
+	//
+	//err := StoreBytes(db, MediatorSchlDBKey, mst)
+	err := StoreBytes(db, MediatorSchlDBKey, ms)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store mediator schedule error: %s", err))
 	}
@@ -79,14 +78,17 @@ func StoreMediatorSchl(db ptndb.Database, ms *modules.MediatorSchedule) error {
 }
 
 func RetrieveMediatorSchl(db ptndb.Database) (*modules.MediatorSchedule, error) {
-	mst := new(mediatorSchedule)
+	//mst := new(mediatorSchedule)
+	//
+	//err := retrieve(db, MediatorSchlDBKey, mst)
 
-	err := retrieve(db, MediatorSchlDBKey, mst)
+	ms := new(modules.MediatorSchedule)
+	err := retrieve(db, MediatorSchlDBKey, ms)
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve mediator schedule error: %s", err))
 	}
 
-	ms := mst.getMS()
+	//ms := mst.getMS()
 
 	return ms, err
 }

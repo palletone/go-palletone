@@ -64,6 +64,7 @@ type IStateDb interface {
 
 	CreateUserVote(voter common.Address, detail [][]byte, bHash []byte) error
 
+	StoreMediator(med *core.Mediator) error
 	StoreMediatorInfo(mi *MediatorInfo) error
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
 	GetMediatorCount() int
