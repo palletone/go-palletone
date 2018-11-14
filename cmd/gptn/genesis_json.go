@@ -94,13 +94,13 @@ func getTokenAccount(ctx *cli.Context) (string, error) {
 	return account, nil
 }
 
-func createExampleMediators(ctx *cli.Context, mcLen int) []mp.MediatorConf {
-	exampleMediators := make([]mp.MediatorConf, mcLen, mcLen)
+func createExampleMediators(ctx *cli.Context, mcLen int) []*mp.MediatorConf {
+	exampleMediators := make([]*mp.MediatorConf, mcLen, mcLen)
 	for i := 0; i < mcLen; i++ {
 		account, password, _ := createExampleAccount(ctx)
 		secStr, pubStr := newInitDKS()
 
-		exampleMediators[i] = mp.MediatorConf{
+		exampleMediators[i] = &mp.MediatorConf{
 			Address:     account,
 			Password:    password,
 			InitPartSec: secStr,
@@ -172,7 +172,7 @@ func createGenesisJson(ctx *cli.Context) error {
 	return nil
 }
 
-func modifyConfig(ctx *cli.Context, mediators []mp.MediatorConf) error {
+func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 	cfg := &FullConfig{Node: defaultNodeConfig()}
 	configPath := getConfigPath(ctx)
 
@@ -230,7 +230,7 @@ func createExampleAccount(ctx *cli.Context) (addrStr, password string, err error
 }
 
 // createExampleGenesis, create the genesis state of new chain with the specified account
-func createExampleGenesis(tokenAccount string, mediators []mp.MediatorConf, nodeInfo string) *core.Genesis {
+func createExampleGenesis(tokenAccount string, mediators []*mp.MediatorConf, nodeInfo string) *core.Genesis {
 	SystemConfig := core.SystemConfig{
 		DepositRate:       core.DefaultDepositRate,
 		FoundationAddress: tokenAccount,
@@ -256,7 +256,7 @@ func createExampleGenesis(tokenAccount string, mediators []mp.MediatorConf, node
 	}
 }
 
-func initialMediatorCandidates(mediators []mp.MediatorConf, nodeInfo string) []*core.InitialMediator {
+func initialMediatorCandidates(mediators []*mp.MediatorConf, nodeInfo string) []*core.InitialMediator {
 	mcLen := len(mediators)
 	initialMediators := make([]*core.InitialMediator, mcLen)
 	for i := 0; i < mcLen; i++ {

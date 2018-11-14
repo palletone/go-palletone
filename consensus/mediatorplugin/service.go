@@ -73,7 +73,7 @@ type MediatorPlugin struct {
 	// 新开启一个区块链时，必须设为true
 	productionEnabled bool
 	// Mediator`s account and passphrase controlled by this node
-	mediators map[common.Address]MediatorAccount
+	mediators map[common.Address]*mediatorAccount
 
 	// 新生产unit的事件订阅
 	newUnitFeed  event.Feed              // 订阅的时候自动初始化一次
@@ -282,10 +282,10 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 	}
 
 	mss := cfg.Mediators
-	msm := map[common.Address]MediatorAccount{}
+	msm := make(map[common.Address]*mediatorAccount, 0)
 
 	for _, medConf := range mss {
-		medAcc := medConf.ConfigToAccount()
+		medAcc := medConf.configToAccount()
 		addr := medAcc.Address
 		//log.Debug(fmt.Sprintf("this node control mediator account address: %v", addr.Str()))
 

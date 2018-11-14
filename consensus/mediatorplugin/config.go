@@ -42,14 +42,14 @@ var (
 type Config struct {
 	EnableStaleProduction bool // Enable Verified Unit production, even if the chain is stale.
 	//	RequiredParticipation float32	// Percent of mediators (0-99) that must be participating in order to produce
-	Mediators []MediatorConf // the set of the mediator info
+	Mediators []*MediatorConf // the set of the mediator info
 }
 
 // mediator plugin default config
 var DefaultConfig = Config{
 	EnableStaleProduction: false,
-	Mediators: []MediatorConf{
-		MediatorConf{core.DefaultTokenHolder, core.DefaultPassword,
+	Mediators: []*MediatorConf{
+		&MediatorConf{core.DefaultTokenHolder, core.DefaultPassword,
 			DefaultInitPartSec, DefaultInitPartPub},
 	},
 }
@@ -68,7 +68,7 @@ type MediatorConf struct {
 	InitPartPub string
 }
 
-func (medConf MediatorConf) ConfigToAccount() MediatorAccount {
+func (medConf *MediatorConf) configToAccount() *mediatorAccount {
 	// 1. 解析 mediator 账户地址
 	addr := core.StrToMedAdd(medConf.Address)
 
@@ -76,7 +76,7 @@ func (medConf MediatorConf) ConfigToAccount() MediatorAccount {
 	sec := core.StrToScalar(medConf.InitPartSec)
 	pub := core.StrToPoint(medConf.InitPartPub)
 
-	medAcc := MediatorAccount{
+	medAcc := &mediatorAccount{
 		addr,
 		medConf.Password,
 		sec,
@@ -86,7 +86,7 @@ func (medConf MediatorConf) ConfigToAccount() MediatorAccount {
 	return medAcc
 }
 
-type MediatorAccount struct {
+type mediatorAccount struct {
 	Address     common.Address
 	Password    string
 	InitPartSec kyber.Scalar
