@@ -45,15 +45,17 @@ type MediatorInfo struct {
 	//Url  		string `json:"url"`
 }
 
-func mediatorToInfo(m core.Mediator) (mi MediatorInfo) {
-	mi.AddStr = m.Address.Str()
-	mi.InitPartPub = core.PointToStr(m.InitPartPub)
-	mi.Node = m.Node.String()
+func mediatorToInfo(md *core.Mediator) (mi *MediatorInfo) {
+	mi = &MediatorInfo{}
+	mi.AddStr = md.Address.Str()
+	mi.InitPartPub = core.PointToStr(md.InitPartPub)
+	mi.Node = md.Node.String()
 
 	return
 }
 
-func (mi *MediatorInfo) infoToMediator() (md core.Mediator) {
+func (mi *MediatorInfo) infoToMediator() (md *core.Mediator) {
+	md = &core.Mediator{}
 	md.Address = core.StrToMedAdd(mi.AddStr)
 	md.InitPartPub = core.StrToPoint(mi.InitPartPub)
 	md.Node = core.StrToMedNode(mi.Node)
@@ -61,16 +63,11 @@ func (mi *MediatorInfo) infoToMediator() (md core.Mediator) {
 	return
 }
 
-//func StoreMediator(db ptndb.Database, med *core.Mediator) error {
-//	mi := med.MediatorToInfo()
-//
-//	err := StoreBytes(db, mediatorKey(med.Address), mi)
-//	if err != nil {
-//		log.Error(fmt.Sprintf("Store mediator error:%s", err))
-//	}
-//
-//	return err
-//}
+func StoreMediator(db ptndb.Database, med *core.Mediator) error {
+	mi := mediatorToInfo(med)
+
+	return StoreMediatorInfo(db, mi)
+}
 
 func StoreMediatorInfo(db ptndb.Database, mi *MediatorInfo) error {
 	//log.Debug(fmt.Sprintf("Store Mediator %v:", mi.AddStr))
@@ -95,7 +92,7 @@ func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator
 
 	med := mi.infoToMediator()
 
-	return &med, nil
+	return med, nil
 }
 
 func GetMediatorCount(db ptndb.Database) int {
@@ -129,8 +126,8 @@ func GetMediators(db ptndb.Database) map[common.Address]bool {
 	return result
 }
 
-func LookupMediator(db ptndb.Database) map[common.Address]core.Mediator {
-	result := make(map[common.Address]core.Mediator)
+func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
+	result := make(map[common.Address]*core.Mediator)
 
 	iter := db.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
 	for iter.Next() {

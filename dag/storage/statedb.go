@@ -129,20 +129,7 @@ func (statedb *StateDb) GetMediators() map[common.Address]bool {
 	return GetMediators(statedb.db)
 }
 
-// todo albert·gou
-//func (statedb *StateDb) GetActiveMediatorAddrList() ([]common.Address, error) {
-//
-//	key := constants.STATE_ACTIVE_MEDIATOR_LIST
-//	data, _, err := retrieveWithVersion(statedb.db, key)
-//	if err != nil {
-//		return nil, err
-//	}
-//	result := []common.Address{}
-//	rlp.DecodeBytes(data, result)
-//	return result, nil
-//}
-
 // author albert·gou
-func (statedb *StateDb) LookupMediator() map[common.Address]core.Mediator {
+func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
 	return LookupMediator(statedb.db)
 }

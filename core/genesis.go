@@ -85,7 +85,9 @@ func PointToStr(pub kyber.Point) string {
 	return base58.Encode(pubB)
 }
 
-func (initMed *InitialMediator) InfoToMediator() (md Mediator) {
+func (initMed *InitialMediator) InitToMediator() (md *Mediator) {
+	md = &Mediator{}
+
 	// 1. 解析 mediator 账户地址
 	md.Address = StrToMedAdd(initMed.AddStr)
 

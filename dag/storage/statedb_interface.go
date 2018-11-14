@@ -62,10 +62,6 @@ type IStateDb interface {
 	GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)
 	SaveChainIndex(index *modules.ChainIndex) error
 
-	// todo albert·gou
-	//SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error
-	//GetAccountMediatorInfo(address common.Address) (*core.MediatorInfo, error)
-	//SaveAccountMediatorInfo(address common.Address, info *core.MediatorInfo, version *modules.StateVersion) error
 	CreateUserVote(voter common.Address, detail [][]byte, bHash []byte) error
 
 	StoreMediatorInfo(mi *MediatorInfo) error
@@ -73,5 +69,5 @@ type IStateDb interface {
 	GetMediatorCount() int
 	IsMediator(address common.Address) bool
 	GetMediators() map[common.Address]bool
-	LookupMediator() map[common.Address]core.Mediator
+	LookupMediator() map[common.Address]*core.Mediator
 }

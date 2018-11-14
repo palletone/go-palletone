@@ -40,13 +40,13 @@ var (
 type globalProperty struct {
 	ChainParameters core.ChainParameters
 
-	ActiveMediators []MediatorInfo
+	ActiveMediators []*MediatorInfo
 
 	GroupPubKey string
 }
 
 func getGPT(gp *modules.GlobalProperty) globalProperty {
-	ams := make([]MediatorInfo, 0)
+	ams := make([]*MediatorInfo, 0)
 
 	for _, med := range gp.ActiveMediators {
 		medInfo := mediatorToInfo(med)
@@ -62,8 +62,8 @@ func getGPT(gp *modules.GlobalProperty) globalProperty {
 	return gpt
 }
 
-func getGP(gpt *globalProperty) *modules.GlobalProperty {
-	ams := make(map[common.Address]core.Mediator, 0)
+func (gpt *globalProperty) getGP() *modules.GlobalProperty {
+	ams := make(map[common.Address]*core.Mediator, 0)
 	for _, medInfo := range gpt.ActiveMediators {
 		med := medInfo.infoToMediator()
 		ams[med.Address] = med
@@ -105,7 +105,7 @@ func RetrieveGlobalProp(db ptndb.Database) (*modules.GlobalProperty, error) {
 		log.Error(fmt.Sprintf("Retrieve global properties error: %s", err))
 	}
 
-	gp := getGP(gpt)
+	gp := gpt.getGP()
 
 	return gp, err
 }

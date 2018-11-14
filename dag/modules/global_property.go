@@ -34,7 +34,7 @@ import (
 type GlobalProperty struct {
 	ChainParameters core.ChainParameters // 区块链网络参数
 
-	ActiveMediators map[common.Address]core.Mediator // 当前活跃mediator集合；每个维护间隔更新一次
+	ActiveMediators map[common.Address]*core.Mediator // 当前活跃mediator集合；每个维护间隔更新一次
 
 	GroupPubKey kyber.Point // 群公钥，用于验证群签名；每个维护间隔更新一次
 }
@@ -107,7 +107,7 @@ func (gp *GlobalProperty) GetActiveMediator(add common.Address) *core.Mediator {
 
 	med, _ := gp.ActiveMediators[add]
 
-	return &med
+	return med
 }
 
 func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
@@ -171,7 +171,7 @@ func (gp *GlobalProperty) GetActiveMediatorNodes() map[string]*discover.Node {
 func NewGlobalProp() *GlobalProperty {
 	return &GlobalProperty{
 		ChainParameters: core.NewChainParams(),
-		ActiveMediators: map[common.Address]core.Mediator{},
+		ActiveMediators: make(map[common.Address]*core.Mediator, 0),
 		GroupPubKey:     core.Suite.Point().Null(),
 	}
 }
@@ -197,8 +197,8 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	log.Debug("Set active mediators...")
 	// Set active mediators
 	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
-		medInfo := genesis.InitialMediatorCandidates[i]
-		md := medInfo.InfoToMediator()
+		medInit := genesis.InitialMediatorCandidates[i]
+		md := medInit.InitToMediator()
 
 		gp.ActiveMediators[md.Address] = md
 	}

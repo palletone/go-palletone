@@ -53,7 +53,7 @@ func getMST(ms *modules.MediatorSchedule) mediatorSchedule {
 	return mst
 }
 
-func getMS(mst *mediatorSchedule) *modules.MediatorSchedule {
+func (mst *mediatorSchedule) getMS() *modules.MediatorSchedule {
 	medAdds := make([]common.Address, 0)
 
 	for _, addStr := range mst.CurrentShuffledMediators {
@@ -86,7 +86,7 @@ func RetrieveMediatorSchl(db ptndb.Database) (*modules.MediatorSchedule, error) 
 		log.Error(fmt.Sprintf("Retrieve mediator schedule error: %s", err))
 	}
 
-	ms := getMS(mst)
+	ms := mst.getMS()
 
 	return ms, err
 }
