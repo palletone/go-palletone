@@ -111,3 +111,25 @@ func TestIDType16Hex(t *testing.T) {
 
 	}
 }
+func TestTransaction_EncodeRLP_Size(t *testing.T) {
+	pay1s := PaymentPayload{
+		LockTime: 12345,
+	}
+	a := &Asset{ChainId: 1, AssetId: PTNCOIN}
+
+	output := NewTxOut(1, common.Hex2Bytes("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac"), a)
+	pay1s.AddTxOut(output)
+
+	msg := &Message{
+		App:     APP_PAYMENT,
+		Payload: pay1s,
+	}
+	tx := NewTransaction(
+		[]*Message{},
+	)
+	for i := 1; i < 1000; i++ {
+		tx.AddMessage(msg)
+		txb, _ := rlp.EncodeToBytes(tx)
+		t.Logf("input count:{%d}, encode tx size:%d\n", i, len(txb))
+	}
+}

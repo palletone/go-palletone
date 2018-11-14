@@ -569,6 +569,19 @@ func (mr *MockIDagMockRecorder) GetAddrUtxos(addr interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrUtxos", reflect.TypeOf((*MockIDag)(nil).GetAddrUtxos), addr)
 }
 
+// GetAddr1TokenUtxos mocks base method
+func (m *MockIDag) GetAddr1TokenUtxos(addr string, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
+	ret := m.ctrl.Call(m, "GetAddr1TokenUtxos", addr, asset)
+	ret0, _ := ret[0].(map[modules.OutPoint]*modules.Utxo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAddr1TokenUtxos indicates an expected call of GetAddr1TokenUtxos
+func (mr *MockIDagMockRecorder) GetAddr1TokenUtxos(addr, asset interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddr1TokenUtxos", reflect.TypeOf((*MockIDag)(nil).GetAddr1TokenUtxos), addr, asset)
+}
+
 // GetAllUtxos mocks base method
 func (m *MockIDag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	ret := m.ctrl.Call(m, "GetAllUtxos")

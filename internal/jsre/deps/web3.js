@@ -5393,6 +5393,13 @@ var methods = function () {
         outputFormatter: utils.toDecimal
     });
 
+    var cmdCreateTransaction = new Method({
+        name: 'cmdCreateTransaction',
+        call: 'ptn_cmdCreateTransaction',
+        params: 3,
+        inputFormatter: [null,null,null]
+    });
+
     var createRawTransaction = new Method({
         name: 'createRawTransaction',
         call: 'ptn_createRawTransaction',
@@ -5690,6 +5697,7 @@ var methods = function () {
         getTransactionCount,
         call,
         estimateGas,
+        cmdCreateTransaction,
         createRawTransaction,
         createMediatorVote,
         replaceMediatorVote,

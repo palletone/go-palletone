@@ -158,7 +158,7 @@ message PayOutToken {
     bytes asset = 1;
     uint64 amount = 2;
     uint32 locktime =3;
-    string collection = 4;
+    string address = 4;
 }
 
 message KeyForSystemConfig{

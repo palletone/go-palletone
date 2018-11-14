@@ -40,6 +40,7 @@ func TestGetAddressFromScript(t *testing.T) {
 	addrStr := "P1JEStL6tb7TB8e6ZJSpJhQoqin2A6pabdA"
 	addr, _ := common.StringToAddress(addrStr)
 	p2pkhLock := GenerateP2PKHLockScript(addr.Bytes())
+	t.Logf("P2PKH script:%x", p2pkhLock)
 	getAddr, _ := GetAddressFromScript(p2pkhLock)
 	t.Logf("Get Address:%s", getAddr.Str())
 	assert.True(t, getAddr == addr, "Address parse error")

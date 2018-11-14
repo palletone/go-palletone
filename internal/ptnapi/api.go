@@ -1601,6 +1601,26 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 //	return result, nil
 //}
 
+func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s *rpcServer*/, from string,to string,amount uint64) (string, error) {
+	//realNet := &chaincfg.MainNetParams
+	amounts := map[string]float64{}
+	if to == "" {
+		return "", nil
+	}
+	amounts[to] = float64(amount)
+    utxo ,err := s.b.GetAddrUtxos(from)
+    if err != nil {
+		return "", nil
+	}
+    fmt.Printf("-------utxo is %+v\n",utxo)
+
+    var inputs []ptnjson.TransactionInput
+    var rawTransactionGenParams ptnjson.RawTransactionGenParams
+	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
+	result, _ := CreateRawTransaction(arg)
+	fmt.Println(result)
+	return result, nil
+}
 //create raw transction
 func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
 	var rawTransactionGenParams ptnjson.RawTransactionGenParams

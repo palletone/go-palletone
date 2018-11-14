@@ -33,9 +33,10 @@ import (
 )
 
 var (
-	blockCacheItems      = 8192             // Maximum number of blocks to cache before throttling the download
-	blockCacheMemory     = 64 * 1024 * 1024 // Maximum amount of memory to use for block caching
-	blockCacheSizeWeight = 0.1              // Multiplier to approximate the average block size based on past ones
+	blockCacheItems  = 8192             // Maximum number of blocks to cache before throttling the download
+	blockCacheMemory = 64 * 1024 * 1024 // Maximum amount of memory to use for block caching
+	//blockCacheSizeWeight = 0.1              // Multiplier to approximate the average block size based on past ones
+	blockCacheSizeWeight = 0.3 // Multiplier to approximate the average block size based on past ones
 )
 
 var (
@@ -496,7 +497,8 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 	// Retrieve a batch of tasks, skipping previously failed ones
 	send := make([]*modules.Header, 0, count)
 	skip := make([]*modules.Header, 0)
-	log.Debug("===queue->reserveHeaders===", "count:", count)
+	log.Debug("Enter downloader->queue", "reserveHeaders count:", count)
+	defer log.Debug("End downloader->queue")
 	var sum int = 0
 	var noopsum int = 0
 	progress := false
@@ -534,6 +536,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 			q.resultCache[index].Pending--
 			progress = true
 			noopsum++
+			log.Info("downloader->queue", "header is have not tx index:", header.Number.Index, "hash:", header.Hash())
 			continue
 		}
 		// Otherwise unless the peer is known not to have the data, add to the retrieve list
@@ -542,9 +545,9 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 		} else {
 			send = append(send, header)
 		}
+		//log.Info("downloader->queue", "proc", proc, "space:", space, "len(send)", len(send), "count", count)
 	}
-	log.Debug("===queue->reserveHeaders===", "sum:", sum, "noopsum:", noopsum)
-	log.Debug("===queue->reserveHeaders===", "len(skip):", len(skip), "len(send):", len(send))
+	log.Debug("===queue->reserveHeaders===", "len(skip):", len(skip), "len(send):", len(send), "sum:", sum, "noopsum:", noopsum)
 	// Merge all the skipped headers back
 	for _, header := range skip {
 		//taskQueue.Push(header, -float32(header.Number.Uint64()))
@@ -553,7 +556,6 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 	if progress {
 		// Wake WaitResults, resultCache was modified
 		log.Debug("===queue->reserveHeaders===q.active.Signal")
-		fmt.Println("xz  q.active.Signal()")
 		q.active.Signal()
 	}
 	// Assemble and return the block download request
@@ -793,6 +795,10 @@ func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction) (int,
 		result.Transactions = txLists[index]
 		return nil
 	}
+	//txsize := 0
+	//if len(txLists) != 0 {
+	//	txsize = len(txLists[0])
+	//}
 	return q.deliver(id, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, bodyReqTimer, len(txLists), reconstruct)
 }
 
@@ -837,6 +843,7 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*modules.Header, tas
 			failure = errInvalidChain
 			break
 		}
+		//TODO must recover
 		if err := reconstruct(header, i, q.resultCache[index]); err != nil {
 			failure = err
 			break

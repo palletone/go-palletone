@@ -198,9 +198,9 @@ type TxPoolTxs []*TxPoolTransaction
 //}
 //出于DAG和基于Token的分区共识的考虑，设计了该ChainIndex，
 type ChainIndex struct {
-	AssetID IDType16
-	IsMain  bool
-	Index   uint64
+	AssetID IDType16 `json:"asset_id"`
+	IsMain  bool     `json:"is_main"`
+	Index   uint64   `json:"index"`
 }
 
 func (height ChainIndex) String() string {

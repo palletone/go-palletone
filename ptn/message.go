@@ -173,7 +173,8 @@ func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg, p *peer) error {
 
 func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 	// Decode the retrieval message
-	log.Debug("===GetBlockBodiesMsg===")
+	log.Debug("Enter GetBlockBodiesMsg")
+	defer log.Debug("End GetBlockBodiesMsg")
 	msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
 	if _, err := msgStream.List(); err != nil {
 		log.Debug("msgStream.List() err:", err)
@@ -184,10 +185,10 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		hash  common.Hash
 		bytes int
 		//bodies []rlp.RawValue
-		bodies blockBody
+		bodies []blockBody
 	)
 
-	for bytes < softResponseLimit && len(bodies.Transactions) < downloader.MaxBlockFetch {
+	for bytes < softResponseLimit && len(bodies) < downloader.MaxBlockFetch {
 		// Retrieve the hash of the next block
 		if err := msgStream.Decode(&hash); err == rlp.EOL {
 			break
@@ -195,11 +196,10 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("msgStream.Decode", "err", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		//TODO must recover
 		// Retrieve the requested block body, stopping if enough was found
 		txs, err := pm.dag.GetUnitTransactions(hash)
 		if err != nil {
-			log.Debug("===GetBlockBodiesMsg===", "GetUnitTransactions err:", err)
+			log.Debug("GetBlockBodiesMsg", "GetUnitTransactions err:", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 
@@ -208,6 +208,9 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
+
+		log.Debug("GetBlockBodiesMsg", "hash", hash, "txs size:", len(txs))
+
 		bytes += len(data)
 
 		for _, tx := range txs {
@@ -223,28 +226,30 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			bodies.Transactions = append(bodies.Transactions, tx)
 		}
 		// bodies.Transactions = txs[:]
+		body := blockBody{Transactions: txs}
+		bodies = append(bodies, body)
 	}
-	//log.Debug("===GetBlockBodiesMsg===", "tempGetBlockBodiesMsgSum:", tempGetBlockBodiesMsgSum, "sum:", sum)
-	log.Debug("===GetBlockBodiesMsg===", "len(bodies):", len(bodies.Transactions), "bytes:", bytes)
-	return p.SendBlockBodies([]*blockBody{&bodies})
+	log.Debug("GetBlockBodiesMsg", "len(bodies):", len(bodies))
+	return p.SendBlockBodies(bodies)
 }
 
 func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
-	//log.Debug("===BlockBodiesMsg===")
 	// A batch of block bodies arrived to one of our previous requests
+	log.Debug("Enter ProtocolManager BlockBodiesMsg")
+	defer log.Debug("End ProtocolManager BlockBodiesMsg")
 	var request blockBodiesData
 	if err := msg.Decode(&request); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
 	// Deliver them all to the downloader for queuing
+	//transactions := make([][]*modules.Transaction, len(request))
 	transactions := make([][]*modules.Transaction, len(request))
-	sum := 0
 	for i, body := range request {
 		transactions[i] = body.Transactions
-		sum++
+		log.Info("BlockBodiesMsg", "i", i, "txs size:", len(body.Transactions))
 	}
 
-	log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(transactions), "transactions[0]:", transactions[0])
+	log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(transactions))
 	// Filter out any explicitly requested bodies, deliver the rest to the downloader
 	filter := len(transactions) > 0
 	if filter {
@@ -345,8 +350,9 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	hash, number := p.Head(unit.Number().AssetID)
 
 	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && unit.UnitHeader.ChainIndex().Index > number.Index) {
+		log.Info("ProtocolManager", "NewBlockMsg hash:", hash, "unit.UnitHeader.ChainIndex().Index:", unit.UnitHeader.ChainIndex().Index,
+			"number.Index:", number.Index)
 		trueHead := unit.Hash()
-		log.Info("=================handler p.SetHead===============")
 		p.SetHead(trueHead, unit.UnitHeader.Number)
 		// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
 		// a singe block (as the true TD is below the propagated block), however this
