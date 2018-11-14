@@ -160,12 +160,12 @@ func NewTxOut(value uint64, pkScript []byte, asset *Asset) *Output {
 }
 
 type StateVersion struct {
-	Height  ChainIndex
-	TxIndex uint32
+	Height  ChainIndex `json:"height"`
+	TxIndex uint32     `json:"tx_index"`
 }
 type ContractStateValue struct {
-	Value   []byte
-	Version *StateVersion
+	Value   []byte        `json:"value"`
+	Version *StateVersion `json:"version"`
 }
 
 func (version *StateVersion) String() string {
@@ -266,6 +266,22 @@ type ContractReadSet struct {
 	Version *StateVersion
 	Value   []byte
 }
+type InvokeTokens struct {
+	Amount uint64 `json:"amount"`
+	Asset  Asset  `json:"asset"`
+}
+type InvokeFees struct {
+	Amount uint64 `json:"amount"`
+	Asset  Asset  `json:"asset"`
+}
+
+type StateValue struct {
+	Asset  Asset     `json:"asset"`
+	Amount uint64    `json:"value"`
+	Time   time.Time `json:"time"`
+	Extra  string    `json:"extra"`
+}
+
 type TokenPayOut struct {
 	Asset    *Asset
 	Amount   uint64

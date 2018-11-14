@@ -709,6 +709,35 @@ func (stub *ChaincodeStub) GetFunctionAndParameters() (function string, params [
 	return
 }
 
+//GetInvokeParameters documentation can be found in interfaces.go
+func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr string, invokeTokens *modules.InvokeTokens, invokeFees *modules.InvokeFees, funcName string, params []string, err error) {
+	allargs := stub.GetStringArgs()
+	if len(allargs) > 2 {
+		//TODO 解析msg0 即获取原生payload来获取请求的地址，交易费，类型，数量
+		//msg0TxHash := allargs[0]
+		invokeAddr = "invokeAddr"
+		invokeTokens = &modules.InvokeTokens{
+			Amount: 1000,
+			Asset: modules.Asset{
+				AssetId:  modules.PTNCOIN,
+				UniqueId: modules.PTNCOIN,
+				ChainId:  1,
+			},
+		}
+		invokeFees = &modules.InvokeFees{
+			Amount: 10,
+			Asset: modules.Asset{
+				AssetId:  modules.PTNCOIN,
+				UniqueId: modules.PTNCOIN,
+				ChainId:  1,
+			},
+		}
+		funcName = allargs[1]
+		params = allargs[2:]
+	}
+	return
+}
+
 // GetCreator documentation can be found in interfaces.go
 func (stub *ChaincodeStub) GetCreator() ([]byte, error) {
 	return stub.creator, nil
@@ -769,21 +798,20 @@ func (stub *ChaincodeStub) SetEvent(name string, payload []byte) error {
 }
 
 //---------- Deposit API ----------
-func (stub *ChaincodeStub) GetSystemConfig(key string) ([]byte, error) {
+func (stub *ChaincodeStub) GetSystemConfig(key string) (string, error) {
 	return stub.handler.handleGetSystemConfig(key, stub.ChannelId, stub.TxID)
 }
-
-func (stub *ChaincodeStub) GetInvokeFromAddr() (string, error) {
-	return stub.handler.handleGetInvokeFromAddr(stub.ChannelId, stub.TxID)
+func (stub *ChaincodeStub) GetInvokeAddress() (string, error) {
+	return stub.handler.handleGetInvokeAddress(stub.ChannelId, stub.TxID)
 }
-func (stub *ChaincodeStub) GetPayToContractPtnTokens() (*modules.Asset, uint64, error) {
-	return stub.handler.GetPayToContractPtnTokens(stub.ChannelId, stub.TxID)
+func (stub *ChaincodeStub) GetInvokeTokens() (*modules.InvokeTokens, error) {
+	return stub.handler.handleGetInvokeTokens(stub.ChannelId, stub.TxID)
 }
-func (stub *ChaincodeStub) GetContractAllState() ([]byte, error) {
-	return stub.handler.handlerGetContractAllState(stub.ChannelId, stub.TxID, stub.ContractId)
+func (stub *ChaincodeStub) GetContractAllState() (map[string]*modules.ContractStateValue, error) {
+	return stub.handler.handleGetContractAllState(stub.ChannelId, stub.TxID, stub.ContractId)
 }
-func (stub *ChaincodeStub) GetContractInvokeFee() (uint64, error) {
-	return stub.handler.handlerGetContractInvokeFee(stub.ChannelId, stub.TxID, stub.ContractId)
+func (stub *ChaincodeStub) GetInvokeFees() (*modules.InvokeFees, error) {
+	return stub.handler.handleGetInvokeFees(stub.ChannelId, stub.TxID, stub.ContractId)
 }
 
 //获得该合约的Token余额
