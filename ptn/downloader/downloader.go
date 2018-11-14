@@ -317,7 +317,6 @@ func (d *Downloader) Synchronise(id string, head common.Hash, index uint64, mode
 			// Timeouts can occur if e.g. compaction hits at the wrong time, and can be ignored
 			log.Warn("Downloader wants to drop peer, but peerdrop-function is not set", "peer", id)
 		} else {
-			//TODO must recover
 			d.dropPeer(id)
 		}
 
@@ -420,16 +419,16 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	// Look up the sync boundaries: the common ancestor and the target block
 	latest, err := d.fetchHeight(p, assetId)
 	if err != nil {
-		//if err == errPeersUnavailable {
-		//	log.Info("==========fetchHeight return==============")
-		//	return nil
-		//}
 		log.Info("fetchHeight", "err:", err)
 		return err
 	}
 
 	height := latest.Number.Index
-	log.Info("=====fetchHeight=====", "latest height:", height)
+	localIndex := d.dag.CurrentUnit().Number().Index
+	log.Info("Downloader", "syncWithPeer local index", localIndex, "latest peer index", height)
+	if localIndex >= height {
+		return nil
+	}
 
 	origin, err := d.findAncestor(p, latest, assetId)
 	if err != nil {
@@ -1460,7 +1459,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 		units := []*modules.Unit{}
 		units = append(units, u)
 		if index, err := d.dag.InsertDag(units); err != nil {
-			log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
+			log.Debug("Downloaded item processing failed", "number", results[index].Header.Number.Index, "hash", results[index].Header.Hash(), "err", err)
 			return errInvalidChain
 		}
 	}
