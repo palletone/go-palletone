@@ -57,6 +57,15 @@ func NewCreateVoteTransactionCmd(inputs []TransactionInput, amounts map[string]f
 	}
 }
 
+type CmdTransactionGenParams struct {
+    Address string  `json:"address"`
+	Outputs []struct {
+		Address string  `json:"address"`
+		Amount  float64 `json:"amount"`
+	} `json:"outputs"`
+	Locktime int64 `json:"locktime"`
+}
+
 type RawTransactionGenParams struct {
 	Inputs []struct {
 		Txid         string `json:"txid"`
