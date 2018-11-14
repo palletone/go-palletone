@@ -5394,6 +5394,13 @@ var methods = function () {
     });
 
     var createRawTransaction = new Method({
+        name: 'cmdCreateTransaction',
+        call: 'ptn_cmdCreateTransaction',
+        params: 1,
+        inputFormatter: [null]
+    });
+
+    var createRawTransaction = new Method({
         name: 'createRawTransaction',
         call: 'ptn_createRawTransaction',
         params: 1,
@@ -5690,6 +5697,7 @@ var methods = function () {
         getTransactionCount,
         call,
         estimateGas,
+        cmdCreateTransaction,
         createRawTransaction,
         createMediatorVote,
         replaceMediatorVote,

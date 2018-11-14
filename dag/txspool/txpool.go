@@ -31,8 +31,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	//"github.com/palletone/go-palletone/internal/ptnapi"
-    //dagcommon "github.com/palletone/go-palletone/dag/common"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -523,6 +521,7 @@ func (pool *TxPool) isTransactionInPool(hash *common.Hash) bool {
 	}
 	return false
 }
+
 // IsTransactionInPool returns whether or not the passed transaction already exists in the main pool.
 func (pool *TxPool) IsTransactionInPool(hash *common.Hash) bool {
 	pool.mu.RLock()
@@ -797,16 +796,18 @@ func (pool *TxPool) AddRemotes(txs []*modules.Transaction) []error {
 	}
 	return pool.addTxs(pool_txs, false)
 }
+
 type Tag uint64
+
 func (mp *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error) {
 	//log.Trace("Processing transaction %v", tx.Hash())
 
 	// Protect concurrent access.
 	mp.mu.Lock()
 	defer mp.mu.Unlock()
-    
+
 	// Potentially accept the transaction to the memory pool.
-	missingParents, txD, err := mp.maybeAcceptTransaction(tx, true, rateLimit,false)
+	missingParents, txD, err := mp.maybeAcceptTransaction(tx, true, rateLimit, false)
 	if err != nil {
 		return nil, err
 	}
@@ -878,10 +879,10 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 	// applies to orphan transactions as well when the reject duplicate
 	// orphans flag is set.  This check is intended to be a quick check to
 	// weed out duplicates.
-	if mp.isTransactionInPool(&txHash)  {
+	if mp.isTransactionInPool(&txHash) {
 		str := fmt.Sprintf("already have transaction %v", txHash)
 		str = str
-		return nil, nil,nil//txRuleError(RejectDuplicate, str)
+		return nil, nil, nil //txRuleError(RejectDuplicate, str)
 	}
 
 	// Perform preliminary sanity checks on the transaction.  This makes
@@ -896,7 +897,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 	if IsCoinBase(tx) {
 		str := fmt.Sprintf("transaction %v is an individual coinbase",
 			txHash)
-		str=str
+		str = str
 		return nil, nil, nil //txRuleError(RejectInvalid, str)
 	}
 
@@ -940,21 +941,18 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 	// you should add code here to check that the transaction does a
 	// reasonable number of ECDSA signature verifications.
 
-	
-	
-
 	/*
-	// Verify crypto signatures for each input and reject the transaction if
-	// any don't verify.
-	err = blockchain.ValidateTransactionScripts(tx, utxoView,
-		txscript.StandardVerifyFlags, mp.cfg.SigCache,
-		mp.cfg.HashCache)
-	if err != nil {
-		if cerr, ok := err.(blockchain.RuleError); ok {
-			return nil, nil, chainRuleError(cerr)
-		}
-		return nil, nil, err
-	}*/
+		// Verify crypto signatures for each input and reject the transaction if
+		// any don't verify.
+		err = blockchain.ValidateTransactionScripts(tx, utxoView,
+			txscript.StandardVerifyFlags, mp.cfg.SigCache,
+			mp.cfg.HashCache)
+		if err != nil {
+			if cerr, ok := err.(blockchain.RuleError); ok {
+				return nil, nil, chainRuleError(cerr)
+			}
+			return nil, nil, err
+		}*/
 
 	// Add to transaction pool.
 	//txD := mp.addTransaction(utxoView, tx, bestHeight, txFee)
@@ -964,6 +962,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 
 	return nil, nil, nil
 }
+
 // addTx enqueues a single transaction into the pool if it is valid.
 func (pool *TxPool) addTx(tx *modules.TxPoolTransaction, local bool) error {
 	pool.mu.Lock()

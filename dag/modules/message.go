@@ -283,7 +283,7 @@ type StateValue struct {
 }
 
 type TokenPayOut struct {
-	Asset    Asset
+	Asset    *Asset
 	Amount   uint64
 	PayTo    common.Address
 	LockTime uint32

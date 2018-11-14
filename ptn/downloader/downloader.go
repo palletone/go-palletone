@@ -317,7 +317,6 @@ func (d *Downloader) Synchronise(id string, head common.Hash, index uint64, mode
 			// Timeouts can occur if e.g. compaction hits at the wrong time, and can be ignored
 			log.Warn("Downloader wants to drop peer, but peerdrop-function is not set", "peer", id)
 		} else {
-			//TODO must recover
 			d.dropPeer(id)
 		}
 
@@ -420,23 +419,23 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	// Look up the sync boundaries: the common ancestor and the target block
 	latest, err := d.fetchHeight(p, assetId)
 	if err != nil {
-		//if err == errPeersUnavailable {
-		//	log.Info("==========fetchHeight return==============")
-		//	return nil
-		//}
 		log.Info("fetchHeight", "err:", err)
 		return err
 	}
 
 	height := latest.Number.Index
-	log.Info("=====fetchHeight=====", "latest height:", height)
+	localIndex := d.dag.CurrentUnit().Number().Index
+	log.Info("Downloader", "syncWithPeer local index", localIndex, "latest peer index", height)
+	if localIndex >= height {
+		return nil
+	}
 
 	origin, err := d.findAncestor(p, latest, assetId)
 	if err != nil {
 		log.Debug("Downloader->syncWithPeer", "findAncestor err:", err)
 		return err
 	}
-	log.Info("=====fetchHeight=====", "origin:", origin)
+	log.Info("=====findAncestor=====", "origin:", origin)
 	d.syncStatsLock.Lock()
 	if d.syncStatsChainHeight <= origin || d.syncStatsChainOrigin > origin {
 		d.syncStatsChainOrigin = origin
@@ -1433,7 +1432,8 @@ func (d *Downloader) processFullSyncContent() error {
 
 func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	// Check for any early termination requests
-	log.Debug("===Downloader->importBlockResults===", "len(results):", len(results))
+	log.Debug("Enter Downloader->importBlockResults", "len(results):", len(results))
+	defer log.Debug("End Downloader->importBlockResults")
 	if len(results) == 0 {
 		return nil
 	}
@@ -1454,16 +1454,19 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 		//blocks[i] = types.NewBlockWithHeader(result.Header).WithBody(result.Transactions, result.Uncles)
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
-	//for _, u := range blocks {
-	//	fmt.Println("======importBlockResults=======")
-	//	fmt.Println(u.Hash())
-	//	fmt.Printf("%#v\n", u.UnitHeader)
-	//}
-	//if index, err := d.dag.InsertChain(blocks); err != nil {
-	if index, err := d.dag.InsertDag(blocks); err != nil {
-		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
-		return errInvalidChain
+	for _, u := range blocks {
+		log.Debug("======importBlockResults=======", "unit:", *u, "index:", u.UnitHeader.Number.Index)
+		units := []*modules.Unit{}
+		units = append(units, u)
+		if index, err := d.dag.InsertDag(units); err != nil {
+			log.Debug("Downloaded item processing failed", "number", results[index].Header.Number.Index, "hash", results[index].Header.Hash(), "err", err)
+			return errInvalidChain
+		}
 	}
+	//if index, err := d.dag.InsertDag(blocks); err != nil {
+	//	log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
+	//	return errInvalidChain
+	//}
 	return nil
 }
 
