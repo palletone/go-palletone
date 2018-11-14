@@ -223,7 +223,7 @@ type ChaincodeStubInterface interface {
 	//获取支付ptn数量
 	GetInvokeTokens() (invokeTokens *modules.InvokeTokens, err error)
 	//获取所有的世界状态
-	GetContractAllState() ([]byte, error)
+	GetContractAllState() (states map[string]*modules.ContractStateValue, err error)
 	//获取调用合约所支付的PTN手续费
 	GetInvokeFees() (invokeFees *modules.InvokeFees, err error)
 	//获得该合约的Token余额

@@ -160,12 +160,12 @@ func NewTxOut(value uint64, pkScript []byte, asset *Asset) *Output {
 }
 
 type StateVersion struct {
-	Height  ChainIndex
-	TxIndex uint32
+	Height  ChainIndex `json:"height"`
+	TxIndex uint32     `json:"tx_index"`
 }
 type ContractStateValue struct {
-	Value   []byte
-	Version *StateVersion
+	Value   []byte        `json:"value"`
+	Version *StateVersion `json:"version"`
 }
 
 func (version *StateVersion) String() string {

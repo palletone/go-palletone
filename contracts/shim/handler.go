@@ -823,7 +823,7 @@ func (handler *Handler) handleGetInvokeTokens(channelId, txid string) (*modules.
 	// Incorrect chaincode message received
 	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE)
 }
-func (handler *Handler) handleGetContractAllState(channelId, txid string, contractid []byte) ([]byte, error) {
+func (handler *Handler) handleGetContractAllState(channelId, txid string, contractid []byte) (map[string]*modules.ContractStateValue, error) {
 	//定义一个pb.ChaincodeMessage_GET_ALL_SATE
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE, Payload: []byte(""), ChannelId: channelId, Txid: txid, ContractId: contractid}
 	chaincodeLogger.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE)
@@ -836,7 +836,12 @@ func (handler *Handler) handleGetContractAllState(channelId, txid string, contra
 	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
 		//Success response
 		chaincodeLogger.Debugf("[%s]Received %s. Successfully get tokens of pay to contract ", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
-		return responseMsg.Payload, nil
+		states := make(map[string]*modules.ContractStateValue)
+		err = json.Unmarshal(responseMsg.Payload, states)
+		if err != nil {
+			return nil, err
+		}
+		return states, nil
 	}
 	// Incorrect chaincode message received
 	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE)

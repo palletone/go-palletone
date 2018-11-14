@@ -40,15 +40,15 @@ func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
-	//invokeAddr, invokeTokens, invokeFees, funcName, args, err := stub.GetInvokeParameters()
-	//if err != nil {
-	//	return shim.Error("parameters error: " + err.Error())
-	//}
-	//fmt.Println("invokeAddr", invokeAddr)
-	//fmt.Printf("invokeTokens %#v\n", invokeTokens)
-	//fmt.Printf("invokeFees %#v\n", invokeFees)
-	//invokeFees, err = stub.GetInvokeFees()
-	//fmt.Printf("invokeFees %#v\n", invokeFees)
+	invokeAddr, invokeTokens, invokeFees, funcName, args, err := stub.GetInvokeParameters()
+	if err != nil {
+		return shim.Error("parameters error: " + err.Error())
+	}
+	fmt.Println("invokeAddr", invokeAddr)
+	fmt.Printf("invokeTokens %#v\n", invokeTokens)
+	fmt.Printf("invokeFees %#v\n", invokeFees)
+	invokeFees, err = stub.GetInvokeFees()
+	fmt.Printf("invokeFees %#v\n", invokeFees)
 	switch funcName {
 	case "DepositWitnessPay":
 		//交付保证金
