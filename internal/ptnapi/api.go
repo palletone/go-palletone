@@ -1624,7 +1624,8 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s 
 	if len(amounts) == 0 {
 		return "", nil
 	}
-
+    utxo ,err := s.b.GetAddrUtxos(addr)
+    fmt.Printf("-------utxo is %+v\n",utxo)
     var inputs []ptnjson.TransactionInput
     var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
