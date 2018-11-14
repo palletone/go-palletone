@@ -74,7 +74,7 @@ func (ud *testUnitDag) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, err
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				msgIdx := uint32(i)
 				preout.MessageIndex = msgIdx
-				for j := range msg.Output {
+				for j := range msg.Outputs {
 					txoutIdx := uint32(j)
 					preout.OutIndex = txoutIdx
 					neededSet[preout] = struct{}{}
@@ -166,16 +166,16 @@ func TestTransactionAddingTxs(t *testing.T) {
 	}
 
 	payload0 := &modules.PaymentPayload{
-		Input:  []*modules.Input{&input},
-		Output: []*modules.Output{&output},
+		Inputs:  []*modules.Input{&input},
+		Outputs: []*modules.Output{&output},
 	}
 	payload1 := &modules.PaymentPayload{
-		Input:  []*modules.Input{&input1},
-		Output: []*modules.Output{&output},
+		Inputs:  []*modules.Input{&input1},
+		Outputs: []*modules.Output{&output},
 	}
 	payload2 := &modules.PaymentPayload{
-		Input:  []*modules.Input{&input2},
-		Output: []*modules.Output{&output},
+		Inputs:  []*modules.Input{&input2},
+		Outputs: []*modules.Output{&output},
 	}
 	for i := 0; i < 16; i++ {
 		if i == 0 {

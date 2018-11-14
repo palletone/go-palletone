@@ -108,7 +108,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	//}
 	//t.Logf("Sign Result:%x", signResult)
 	//t.Logf("msg len:%d", len(tx.TxMessages))
-	//tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0].SignatureScript = signResult
+	//tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript = signResult
 	//
 	//signResult2, err := SignOnePaymentInput(tx, 1, 0, lockScript, privKey)
 	//tx.TxMessages[1].Payload.(*modules.PaymentPayload).Input[0].SignatureScript = signResult2
@@ -192,7 +192,7 @@ func TestMultiSign1Step(t *testing.T) {
 	}
 	t.Logf("PrvKey1&2 sign result:%x\n", sign12)
 	pay1 := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-	pay1.Input[0].SignatureScript = sign12
+	pay1.Inputs[0].SignatureScript = sign12
 	str, _ := txscript.DisasmString(sign12)
 	t.Logf("Signed script:{%s}", str)
 
@@ -229,7 +229,7 @@ func TestMultiSign2Step(t *testing.T) {
 	}
 	t.Logf("PrvKey1 sign result:%x\n", sign1)
 	pay1 := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-	pay1.Input[0].SignatureScript = sign1
+	pay1.Inputs[0].SignatureScript = sign1
 
 	privKeys2 := map[common.Address]*ecdsa.PrivateKey{
 		address2: prvKey2,
@@ -243,7 +243,7 @@ func TestMultiSign2Step(t *testing.T) {
 	t.Logf("PrvKey2 sign result:%x\n", sign2)
 
 	pay1 = tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-	pay1.Input[0].SignatureScript = sign2
+	pay1.Inputs[0].SignatureScript = sign2
 	str, _ := txscript.DisasmString(sign2)
 	t.Logf("Signed script:{%s}", str)
 

@@ -104,7 +104,7 @@ func (asset *Asset) IsSimilar(similar *Asset) bool {
 
 type Utxo struct {
 	Amount     uint64         `json:"amount"`    // 数量
-	Asset      *Asset         `json:"Asset"`     // 资产类别
+	Asset      *Asset         `json:"asset"`     // 资产类别
 	PkScript   []byte         `json:"pk_script"` // 锁定脚本
 	LockTime   uint32         `json:"lock_time"`
 	VoteResult common.Address `json:"vote_info"` //这个字段删掉
@@ -277,14 +277,14 @@ func KeyToOutpoint(key []byte) *OutPoint {
 }
 
 type Output struct {
-	Value    uint64
-	PkScript []byte
-	Asset    *Asset
+	Value    uint64 `json:"value"`
+	PkScript []byte `json:"pk_script"`
+	Asset    *Asset `json:"asset"`
 }
 type Input struct {
-	PreviousOutPoint *OutPoint
-	SignatureScript  []byte
-	Extra            []byte // if user creating a new asset, this field should be it's config data. Otherwise it is null.
+	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
+	SignatureScript  []byte    `json:"signature_script"`
+	Extra            []byte    `json:"extra"` // if user creating a new asset, this field should be it's config data. Otherwise it is null.
 }
 
 // NewTxIn returns a new ptn transaction input with the provided

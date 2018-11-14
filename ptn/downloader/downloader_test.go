@@ -106,8 +106,8 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	input.Extra = []byte{byte(time.Now().Unix())}
 	output := &modules.Output{}
 	payload := modules.PaymentPayload{
-		Input:  []*modules.Input{input},
-		Output: []*modules.Output{output},
+		Inputs:  []*modules.Input{input},
+		Outputs: []*modules.Output{output},
 	}
 	msg := modules.Message{
 		App:     modules.APP_PAYMENT,
