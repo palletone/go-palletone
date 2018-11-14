@@ -1635,13 +1635,17 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 	log.Debug("===Enter commitPivotBlock===")
 	block := modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
-	log.Debug("Committing fast sync pivot as new head", "number", block.Number(), "hash", block.Hash())
-	//	if _, err := d.blockchain.InsertReceiptChain([]*types.Block{block}, []types.Receipts{result.Receipts}); err != nil {
-	//		return err
-	//	}
-	if err := d.dag.FastSyncCommitHead(block.Hash()); err != nil {
-		log.Info("===Downloader.commitPivotBlock===", "FastSyncCommitHead err:", err)
-		return err
+	//log.Debug("Committing fast sync pivot as new head", "number", block.Number().Index, "hash", block.Hash())
+	log.Debug("Committing fast sync pivot as new head", "index:", block.UnitHeader.Number.Index, "unit", *block)
+	//if err := d.dag.FastSyncCommitHead(block.Hash()); err != nil {
+	//	log.Info("===Downloader.commitPivotBlock===", "FastSyncCommitHead err:", err)
+	//	return err
+	//}
+	units := []*modules.Unit{}
+	units = append(units, block)
+	if _, err := d.dag.InsertDag(units); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
+		log.Debug("Downloaded item processing failed", "index:", block.UnitHeader.Number.Index, "err:", err)
+		return errInvalidChain
 	}
 	atomic.StoreInt32(&d.committed, 1)
 	return nil
