@@ -266,6 +266,22 @@ type ContractReadSet struct {
 	Version *StateVersion
 	Value   []byte
 }
+type InvokeTokens struct {
+	Amount uint64 `json:"amount"`
+	Asset  Asset  `json:"asset"`
+}
+type InvokeFees struct {
+	Amount uint64 `json:"amount"`
+	Asset  Asset  `json:"asset"`
+}
+
+type StateValue struct {
+	Asset  Asset     `json:"asset"`
+	Amount uint64    `json:"value"`
+	Time   time.Time `json:"time"`
+	Extra  string    `json:"extra"`
+}
+
 type TokenPayOut struct {
 	Asset    *Asset
 	Amount   uint64

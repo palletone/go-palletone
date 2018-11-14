@@ -5393,7 +5393,7 @@ var methods = function () {
         outputFormatter: utils.toDecimal
     });
 
-    var createRawTransaction = new Method({
+    var cmdCreateTransaction = new Method({
         name: 'cmdCreateTransaction',
         call: 'ptn_cmdCreateTransaction',
         params: 1,
