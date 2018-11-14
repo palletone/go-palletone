@@ -213,6 +213,7 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 
 		bytes += len(data)
 
+		// testing by @jay
 		for _, tx := range txs {
 			msgs := tx.TxMessages
 			for i, msg := range msgs {
@@ -222,10 +223,8 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 					log.Debug("payment info ", "locktime", payment.LockTime, "inputs", payment.Inputs, "outputs", payment.Outputs)
 				}
 			}
-
-			bodies.Transactions = append(bodies.Transactions, tx)
+			// bodies.Transactions = append(bodies.Transactions, tx)
 		}
-		// bodies.Transactions = txs[:]
 		body := blockBody{Transactions: txs}
 		bodies = append(bodies, body)
 	}
