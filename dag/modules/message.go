@@ -266,6 +266,13 @@ type ContractReadSet struct {
 	Version *StateVersion
 	Value   []byte
 }
+
+type InvokeInfo struct {
+	InvokeAddress common.Address `json:"invoke_address"`
+	InvokeTokens  InvokeTokens   `json:"invoke_tokens"`
+	InvokeFees    InvokeFees     `json:"invoke_fees"`
+}
+
 type InvokeTokens struct {
 	Amount uint64 `json:"amount"`
 	Asset  Asset  `json:"asset"`
