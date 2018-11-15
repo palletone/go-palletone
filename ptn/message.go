@@ -212,6 +212,19 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		log.Debug("GetBlockBodiesMsg", "hash", hash, "txs size:", len(txs))
 
 		bytes += len(data)
+
+		// testing by @jay
+		for _, tx := range txs {
+			msgs := tx.TxMessages
+			for i, msg := range msgs {
+				log.Debug("msg info msg info msg info msg info ========================", "index", i, "app", msg.App, "payload", msg.Payload)
+				if msg.App == modules.APP_PAYMENT {
+					payment := msg.Payload.(*modules.PaymentPayload)
+					log.Debug("payment info ", "locktime", payment.LockTime, "inputs", payment.Inputs, "outputs", payment.Outputs)
+				}
+			}
+			// bodies.Transactions = append(bodies.Transactions, tx)
+		}
 		body := blockBody{Transactions: txs}
 		bodies = append(bodies, body)
 	}
@@ -383,7 +396,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 			if ok == false {
 				continue
 			}
-			for _, txin := range payload.Input {
+			for _, txin := range payload.Inputs {
 				st, err := pm.dag.GetUtxoEntry(txin.PreviousOutPoint)
 				if st == nil || err != nil {
 					return err

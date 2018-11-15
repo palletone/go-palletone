@@ -174,13 +174,13 @@ func (repository *UtxoRepository) UpdateUtxo(txHash common.Hash, msg *modules.Me
 	payment, ok := payload.(*modules.PaymentPayload)
 	if ok == true {
 		// create utxo
-		errs := repository.writeUtxo(txHash, msgIndex, payment.Output, payment.LockTime)
+		errs := repository.writeUtxo(txHash, msgIndex, payment.Outputs, payment.LockTime)
 		if len(errs) > 0 {
 			log.Error("error occurred on updated utxos, check the log file to find details.")
 			return errors.New("error occurred on updated utxos, check the log file to find details.")
 		}
 		// destory utxo
-		repository.destoryUtxo(payment.Input)
+		repository.destoryUtxo(payment.Inputs)
 		return nil
 	}
 	return errors.New("UpdateUtxo: the transaction payload is not payment.")
@@ -531,7 +531,7 @@ func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) 
 			}
 			inAmount := uint64(0)
 			outAmount := uint64(0)
-			for _, txin := range payload.Input {
+			for _, txin := range payload.Inputs {
 				utxo := repository.GetUxto(*txin)
 				if utxo.IsEmpty() {
 					return 0, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
@@ -546,7 +546,7 @@ func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) 
 				inAmount += utxo.Amount
 			}
 
-			for _, txout := range payload.Output {
+			for _, txout := range payload.Outputs {
 				// check overflow
 				if outAmount+txout.Value > (1<<64 - 1) {
 					return 0, fmt.Errorf("Compute fees: txout total overflow")
@@ -580,7 +580,7 @@ func IsCoinBase(tx *modules.Transaction) bool {
 	if !ok {
 		return false
 	}
-	prevOut := msg.Input[0].PreviousOutPoint
+	prevOut := msg.Inputs[0].PreviousOutPoint
 	if prevOut.TxHash != (common.Hash{}) {
 		return false
 	}
