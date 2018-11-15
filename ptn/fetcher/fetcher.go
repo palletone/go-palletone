@@ -233,21 +233,18 @@ func (f *Fetcher) FilterHeaders(peer string, headers []*modules.Header, time tim
 
 	select {
 	case f.headerFilter <- filter:
-		log.Debug("f.headerFilter <- filter")
 	case <-f.quit:
 		return nil
 	}
 	// Request the filtering of the header list
 	select {
 	case filter <- &headerFilterTask{peer: peer, headers: headers, time: time}:
-		log.Debug("filter <- &headerFilterTask{peer: peer, headers: headers, time: time}")
 	case <-f.quit:
 		return nil
 	}
 	// Retrieve the headers remaining after filtering
 	select {
 	case task := <-filter:
-		log.Debug("===FilterHeaders===", "task := <-filter len(task.headers):", len(task.headers))
 		return task.headers
 	case <-f.quit:
 		return nil
@@ -276,7 +273,6 @@ func (f *Fetcher) FilterBodies(peer string, transactions [][]*modules.Transactio
 	// Retrieve the bodies remaining after filtering
 	select {
 	case task := <-filter:
-		log.Debug("===FilterBodies===", "task := <-filter len(task.transactions):", len(task.transactions))
 		return task.transactions
 	case <-f.quit:
 		return nil
@@ -306,15 +302,12 @@ func (f *Fetcher) loop() {
 			}
 			// If too high up the chain or phase, continue later
 			height = f.chainHeight(op.unit.Header().ChainIndex().AssetID)
-			//fmt.Println("height=", height)
 			number := op.unit.NumberU64()
-			//fmt.Println("number=", number)
 			if number > height+1 {
 				f.queue.Push(op, -float32(op.unit.NumberU64()))
 				if f.queueChangeHook != nil {
 					f.queueChangeHook(op.unit.Hash(), true)
 				}
-				log.Debug("===loop===", "number:", number, "height:", height)
 				break
 			}
 			// Otherwise if fresh and still unknown, try and import
@@ -322,7 +315,6 @@ func (f *Fetcher) loop() {
 			block, _ := f.getBlock(hash)
 			if number+maxUncleDist < height || block != nil {
 				f.forgetBlock(hash)
-				log.Debug("======loop umber+maxUncleDist < height || f.getBlock(hash) != nil======")
 				continue
 			}
 			f.insert(op.origin, op.unit)
@@ -336,8 +328,6 @@ func (f *Fetcher) loop() {
 		case notification := <-f.notify:
 			// A block was announced, make sure the peer isn't DOSing us
 			propAnnounceInMeter.Mark(1)
-			log.Debug("===fetcher notification===")
-			//fmt.Printf("=notification.hash==%#v\n", notification.hash)
 
 			count := f.announces[notification.origin] + 1
 			if count > hashLimit {
@@ -346,8 +336,6 @@ func (f *Fetcher) loop() {
 				break
 			}
 			// If we have a valid block number, check that it's potentially useful
-			//TODO must recover
-
 			if notification.number.Index > 0 {
 				if dist := int64(notification.number.Index) - int64(f.chainHeight(notification.number.AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
 					log.Debug("Peer discarded announcement", "peer", notification.origin, "number", notification.number, "hash", notification.hash, "distance", dist)
@@ -358,14 +346,11 @@ func (f *Fetcher) loop() {
 
 			// All is well, schedule the announce if block's not yet downloading
 			if _, ok := f.fetching[notification.hash]; ok {
-				log.Debug("===fetcher fetching have===")
 				break
 			}
 			if _, ok := f.completing[notification.hash]; ok {
-				log.Debug("===fetcher completing have===")
 				break
 			}
-			log.Debug("===fetcher announced append===")
 			f.announces[notification.origin] = count
 			f.announced[notification.hash] = append(f.announced[notification.hash], notification)
 			if f.announceChangeHook != nil && len(f.announced[notification.hash]) == 1 {
@@ -398,7 +383,6 @@ func (f *Fetcher) loop() {
 					// If the block still didn't arrive, queue for fetching
 					block, _ := f.getBlock(hash)
 					if block == nil {
-						//fmt.Println("hash=", hash)
 						request[announce.origin] = append(request[announce.origin], hash)
 						f.fetching[hash] = announce
 					}
@@ -408,8 +392,6 @@ func (f *Fetcher) loop() {
 			// Send out all block header requests
 			for peer, hashes := range request {
 				log.Trace("Fetching scheduled headers", "peer", peer, "list", hashes)
-				//fmt.Println("len(hashes)=", len(hashes))
-				//fmt.Println(hashes[0])
 				// Create a closure of the fetch and schedule in on a new thread
 				fetchHeader, hashes := f.fetching[hashes[0]].fetchHeader, hashes
 				go func(fetchHeader headerRequesterFn, hashes []common.Hash) {
@@ -545,39 +527,27 @@ func (f *Fetcher) loop() {
 				return
 			}
 			bodyFilterInMeter.Mark(int64(len(task.transactions)))
-			log.Debug("===fetcher  <-f.bodyFilter pre===", "len(task.transactions):", len(task.transactions))
 			blocks := []*modules.Unit{}
 
 			for i := 0; i < len(task.transactions); i++ {
 				//TODO  modify the txhash compare
-				//matched := true
 
 				// Match up a body to any possible completion request
 				matched := false
 				for hash, announce := range f.completing {
 					if f.queued[hash] == nil {
 						txnHash := core.DeriveSha(modules.Transactions(task.transactions[i]))
-						log.Debug("<-f.bodyFilter", "Transactions", modules.Transactions(task.transactions[i]))
-						log.Debug("<-f.bodyFilter", "txnHash", txnHash, "announce.header.TxRoot", announce.header.TxRoot)
-						log.Debug("<-f.bodyFilter", "task.peer", task.peer, "announce.origin", announce.origin)
+
+
 						//TODO must recover
 						//if txnHash == announce.header.TxRoot && announce.origin == task.peer {
 						if announce.origin == task.peer {
 							// Mark the body matched, reassemble if still unknown
 							matched = true
-							//fmt.Printf("%#v\n", announce.hash)
-							//fmt.Printf("%#v\n", announce.number)
-							//fmt.Printf("%#v\n", announce.header)
-							//fmt.Printf("%#v\n", announce.origin)
+
 							blk, _ := f.getBlock(hash)
 							if blk == nil {
-								//fmt.Println("1212==", hash)
-								//fmt.Printf("%#v\n", task.transactions[i][i])
 								block := modules.NewUnitWithHeader(announce.header).WithBody(task.transactions[i])
-								//fmt.Printf("announce.header==%#v\n", announce.header)
-								//block := modules.NewUnitWithHeader(announce.header)
-								//fmt.Printf("block=%#v\n", block)
-								//fmt.Println("block=", block.Transactions()[0])
 								block.ReceivedAt = task.time
 
 								blocks = append(blocks, block)
@@ -596,10 +566,8 @@ func (f *Fetcher) loop() {
 			}
 
 			bodyFilterOutMeter.Mark(int64(len(task.transactions)))
-			log.Debug("===fetcher  filter <- task last===", "len(task.transactions):", len(task.transactions))
 			select {
 			case filter <- task:
-				log.Debug("===fetcher  filter <- task===")
 			case <-f.quit:
 				return
 			}
@@ -626,7 +594,6 @@ func (f *Fetcher) rescheduleFetch(fetch *time.Timer) {
 			earliest = announces[0].time
 		}
 	}
-	log.Debug("===fetcher rescheduleFetch===")
 	fetch.Reset(arriveTimeout - time.Since(earliest))
 }
 
@@ -650,7 +617,6 @@ func (f *Fetcher) rescheduleComplete(complete *time.Timer) {
 // has not yet been seen.
 func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 	hash := block.Hash()
-	log.Debug("=====fetcher enqueue======")
 	// Ensure the peer isn't DOSing us
 	count := f.queues[peer] + 1
 	if count > blockLimit {
@@ -660,7 +626,6 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 		return
 	}
 	// Discard any past or too distant blocks
-	//TODO must recover
 	if dist := int64(block.NumberU64()) - int64(f.chainHeight(block.Number().AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
 		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
 		propBroadcastDropMeter.Mark(1)
@@ -673,15 +638,12 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 			origin: peer,
 			unit:   block,
 		}
-		//fmt.Println("queued,", block.UnitHash)
-		//fmt.Println(hash)
 		f.queues[peer] = count
 		f.queued[hash] = op
 		f.queue.Push(op, -float32(block.NumberU64()))
 		if f.queueChangeHook != nil {
 			f.queueChangeHook(op.unit.Hash(), true)
 		}
-		//fmt.Printf("%#v\n", block.Number())
 		log.Debug("Queued propagated block", "peer", peer, "number", block.Number(), "hash", hash, "queued", f.queue.Size())
 	}
 }
@@ -690,7 +652,6 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 // block's number is at the same height as the current import phase, it updates
 // the phase states accordingly.
 func (f *Fetcher) insert(peer string, block *modules.Unit) {
-	//fmt.Println("=====>")
 	hash := block.Hash()
 
 	// Run the import on a new thread
@@ -737,7 +698,6 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 
 		// Invoke the testing hook if needed
 		if f.importedHook != nil {
-			fmt.Println("f.importedHook(block)")
 			f.importedHook(block)
 		}
 	}()
