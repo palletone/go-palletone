@@ -774,3 +774,29 @@ func (m *MockIDag) SaveTokenInfo(token_info *modules.TokenInfo) (string, error) 
 func (mr *MockIDagMockRecorder) SaveTokenInfo(token_info interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTokenInfo", reflect.TypeOf((*MockIDag)(nil).SaveTokenInfo), token_info)
 }
+
+// GetAddrByOutPoint mocks base method
+func (m *MockIDag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error) {
+	ret := m.ctrl.Call(m, "GetAddrByOutPoint", outPoint)
+	ret0, _ := ret[0].(common.Address)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAddrByOutPoint indicates an expected call of GetAddrByOutPoint
+func (mr *MockIDagMockRecorder) GetAddrByOutPoint(outPoint interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrByOutPoint", reflect.TypeOf((*MockIDag)(nil).GetAddrByOutPoint), outPoint)
+}
+
+// GetTxFee mocks base method
+func (m *MockIDag) GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error) {
+	ret := m.ctrl.Call(m, "GetTxFee", pay)
+	ret0, _ := ret[0].(modules.InvokeFees)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTxFee indicates an expected call of GetTxFee
+func (mr *MockIDagMockRecorder) GetTxFee(pay interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxFee", reflect.TypeOf((*MockIDag)(nil).GetTxFee), pay)
+}

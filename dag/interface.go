@@ -112,6 +112,6 @@ type IDag interface {
 	// save token info
 	SaveTokenInfo(token_info *modules.TokenInfo) (string, error)
 
-	GetAddrByOutPoint(outPoint *modules.OutPoint) common.Address
-	GetTxFee(pay *modules.PaymentPayload) modules.InvokeFees
+	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
+	GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error)
 }

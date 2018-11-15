@@ -741,13 +741,15 @@ func (d *Dag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	return all, err
 }
 
-func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) common.Address {
-	//TODO Devin
-	return common.Address{}
+func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error) {
+	utxo, err := d.utxodb.GetUtxoEntry(outPoint)
+	if err != nil {
+		return common.Address{}, err
+	}
+	return tokenengine.GetAddressFromScript(utxo.PkScript)
 }
-func (d *Dag) GetTxFee(pay *modules.PaymentPayload) modules.InvokeFees {
-	//TODO Devin
-	return modules.InvokeFees{}
+func (d *Dag) GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error) {
+	return d.utxoRep.ComputeTxFee(pay)
 }
 
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
