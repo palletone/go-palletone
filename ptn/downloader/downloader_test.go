@@ -81,8 +81,7 @@ func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	tx, _ := NewCoinbaseTransaction()
 	txs := modules.Transactions{tx}
 	genesisUnit := modules.NewUnit(header, txs)
-	//fmt.Println("genesisUnit=", genesisUnit.Hash())
-	//fmt.Println("genesisUTx=", genesisUnit.Transactions()[0])
+
 	err := SaveGenesis(db, genesisUnit)
 	if err != nil {
 		log.Println("SaveGenesis, err", err)
@@ -268,15 +267,13 @@ func (dl *downloadTester) makeChain(n int, seed byte, parent *modules.Unit, heav
 	dags := make(map[common.Hash]*modules.Unit, n+1)
 	dags[parent.Hash()] = parent
 	units, _ := newDag(dl.peerDb, parent, n, seed)
-	//for i, b := range units {
-	//	fmt.Println("lal", i, b.UnitHash)
-	//}
+
 	for i, b := range units {
 		hashes[len(hashes)-i-2] = b.Hash()
 		headerm[b.Hash()] = b.Header()
 		dags[b.Hash()] = b
 	}
-	//fmt.Println("---==--", dl.HasHeader(hashes[15], 0))
+
 	return hashes, headerm, dags
 }
 
@@ -343,7 +340,6 @@ func (dl *downloadTester) sync(id string, td uint64, mode SyncMode) error {
 	dl.lock.RUnlock()
 
 	// Synchronise with the chosen peer and ensure proper cleanup afterwards
-	fmt.Println("=========downloadTester->sync===========", "td:", td)
 	err := dl.downloader.synchronise(id, hash, td, mode, modules.PTNCOIN)
 	select {
 	case <-dl.downloader.cancelCh:
@@ -357,7 +353,6 @@ func (dl *downloadTester) sync(id string, td uint64, mode SyncMode) error {
 
 // HasHeader checks if a header is present in the testers canonical chain.
 func (dl *downloadTester) HasHeader(hash common.Hash, number uint64) bool {
-	//fmt.Println("===================(dl *downloadTester) HasHeader=============wokao")
 	return dl.GetHeaderByHash(hash) != nil
 }
 
@@ -427,7 +422,6 @@ func (dl *downloadTester) CurrentFastBlock() *modules.Unit {
 // FastSyncCommitHead manually sets the head block to a given hash.
 func (dl *downloadTester) FastSyncCommitHead(hash common.Hash) error {
 	//TODO must recover
-	fmt.Println("======================downloadTester->FastSyncCommitHead=============================================")
 	return nil
 	// For now only check that the state trie is correct
 	if block, _ := dl.GetUnit(hash); block != nil {
@@ -599,10 +593,6 @@ func (dl *downloadTester) newSlowPeer(id string, version int, hashes []common.Ha
 				dl.peerHeaders[id][hash] = header
 				if _, ok := dl.peerHeaders[id][header.ParentsHash[0]]; ok {
 					dl.peerChainTds[id][hash] = header.Index() + dl.peerChainTds[id][header.ParentsHash[0]]
-					//fmt.Println(id, hash)
-					//fmt.Println(header.Index())
-					//fmt.Println(dl.peerChainTds[id][header.ParentsHash[0]])
-					//fmt.Println(dl.peerChainTds[id][hash])
 				}
 			}
 			if block, ok := blocks[hash]; ok {
@@ -678,7 +668,6 @@ func (dlp *downloadTesterPeer) Head(assetId modules.IDType16) (common.Hash, modu
 // function can be used to retrieve batches of headers from the particular peer.
 func (dlp *downloadTesterPeer) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	// Find the canonical number of the hash
-	fmt.Println("===========RequestHeadersByHash============")
 	dlp.dl.lock.RLock()
 	number := uint64(0)
 	//fmt.Println(origin)

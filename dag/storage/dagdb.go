@@ -493,8 +493,7 @@ func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	if err != nil {
 		return nil, err
 	}
-	dagdb.logger.Debug("index info:", "height", height.String(), "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
-	//fmt.Printf("height=%#v\n", height)
+	//dagdb.logger.Debug("index info:", "height", height.String(), "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 	if err != nil {
 		dagdb.logger.Error("GetUnit when GetUnitNumber failed", "error:", err)
 		return nil, err
@@ -602,7 +601,7 @@ func (dagdb *DagDb) GetHeader(hash common.Hash, index *modules.ChainIndex) (*mod
 	// key = append(key, index.Bytes()...)
 	// header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
 	key := fmt.Sprintf("%s%v_%s_%s", constants.HEADER_PREFIX, index.Index, index.String(), hash.String())
-	dagdb.logger.Debug("GetHeader by Key:", "header's key", key)
+	//dagdb.logger.Debug("GetHeader by Key:", "header's key", key)
 	header_bytes, err := dagdb.db.Get([]byte(key))
 	// rlp  to  Header struct
 	if err != nil {
