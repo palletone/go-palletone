@@ -366,7 +366,7 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 		Outputs:  []*unit.Output{&txout},
 		LockTime: 12,
 	}
-	tx2 := unit.Transaction{
+	tx2 := &unit.Transaction{
 		TxMessages: []*unit.Message{
 			{
 				App:     unit.APP_PAYMENT,
@@ -376,14 +376,14 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 	}
 	tx2.TxHash = tx2.Hash()
 	msg0 := tx2.TxMessages[0].Payload.(*unit.PaymentPayload)
-	invokeAddr := idag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
+	invokeAddr, _ := idag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
 	invokeTokens := unit.InvokeTokens{}
 	outputs := tx2.TxMessages[0].Payload.(*unit.PaymentPayload).Outputs
 	invokeTokens.Asset = *outputs[0].Asset
 	for _, output := range outputs {
 		invokeTokens.Amount += output.Value
 	}
-	invokeFees := idag.GetTxFee(msg0)
+	invokeFees, _ := idag.GetTxFee(tx2)
 	invokeInfo := unit.InvokeInfo{
 		InvokeAddress: invokeAddr,
 		InvokeTokens:  invokeTokens,
@@ -391,6 +391,7 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 	}
 	invokeInfoBytes, err := json.Marshal(invokeInfo)
 	fullArgs = append(fullArgs, invokeInfoBytes)
+
 	fullArgs = append(fullArgs, args...)
 	logger.Infof("Invoke [%s][%s]", chainID, cc.Name)
 	start := time.Now()
