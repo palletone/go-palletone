@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 )
 
-// GenerateVerifiedUnit, generate unit
+// GenerateUnit, generate unit
 // @author Albert·Gou
 func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 	ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit {
@@ -51,12 +51,12 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 	}
 
 	pendingUnit := &newUnits[0]
-	//log.Debug("Creating Verified Unit ---------- ", "unit_hash", pendingUnit.Hash().String())
+	//log.Debug("Creating Unit ---------- ", "unit_hash", pendingUnit.Hash().String())
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
 	current_index, _ := dag.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
 
 	if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
-		//log.Debug("Creating Verified Unit 1111111111111111", "Index", current_index)
+		//log.Debug("Creating Unit 1111111111111111", "Index", current_index)
 
 		curMemUnit := dag.GetCurrentMemUnit(pendingUnit.UnitHeader.AssetIDs[0], current_index.Index)
 		curUnit := dag.GetCurrentUnit(pendingUnit.UnitHeader.AssetIDs[0])
@@ -85,7 +85,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 		}
 
 	} else {
-		//log.Debug("Creating Verified Unit 2222222222222222")
+		//log.Debug("Creating Unit 2222222222222222")
 		pendingUnit.UnitHeader.Number = *current_index
 		pendingUnit.UnitHeader.Number.Index = current_index.Index + 1
 
@@ -101,7 +101,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 			"hex", pendingUnit.UnitHeader.Number.AssetID.String())
 	}
 
-	//log.Debug("Creating Verified Unit 3333333333333333")
+	//log.Debug("Creating Unit 3333333333333333")
 	//pendingUnit.UnitHash = pendingUnit.Hash()
 	pendingUnit.Hash()
 	_, err = dagcommon.GetUnitWithSig(pendingUnit, ks, producer)

@@ -111,7 +111,7 @@ slotNum always corresponds to a time in the future.
 If slotNum == 1, return the next scheduled mediator.
 
 如果slotNum == 2，则返回下下一个调度Mediator。
-If slotNum == 2, return the next scheduled mediator after 1 verified uint gap.
+If slotNum == 2, return the next scheduled mediator after 1 uint gap.
 */
 func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) common.Address {
 	currentASlot := dgp.CurrentASlot + uint64(slotNum)
@@ -142,7 +142,7 @@ Get the time at which the given slot occurs.
 如果slotNum == 0，则返回time.Unix(0,0)。
 If slotNum == 0, return time.Unix(0,0).
 
-如果slotNum == N 且 N > 0，则返回大于verifiedUnitTime的第N个单元验证间隔的对齐时间
+如果slotNum == N 且 N > 0，则返回大于UnitTime的第N个单元验证间隔的对齐时间
 If slotNum == N for N > 0, return the Nth next unit-interval-aligned time greater than head_block_time().
 */
 func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32) time.Time {
@@ -156,16 +156,16 @@ func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32)
 	if dgp.HeadUnitNum == 0 {
 		/**
 		注：第一个验证单元在genesisTime加上一个验证单元间隔
-		n.b. first verifiedUnit is at genesisTime plus one verifiedUnitInterval
+		n.b. first Unit is at genesisTime plus one UnitInterval
 		*/
 		genesisTime := dgp.HeadUnitTime
 		return time.Unix(genesisTime+int64(slotNum)*int64(interval), 0)
 	}
 
 	// 最近的验证单元的绝对slot
-	var verifiedUnitAbsSlot = dgp.HeadUnitTime / int64(interval)
+	var unitAbsSlot = dgp.HeadUnitTime / int64(interval)
 	// 最近的时间槽起始时间
-	verifiedUnitSlotTime := time.Unix(verifiedUnitAbsSlot*int64(interval), 0)
+	verifiedUnitSlotTime := time.Unix(unitAbsSlot*int64(interval), 0)
 
 	// 在此处添加区块链网络参数修改维护的所需要的slot
 
@@ -173,9 +173,9 @@ func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32)
 	如果是维护周期的话，加上维护间隔时间
 	如果不是，就直接加上验证单元的slot时间
 	*/
-	// "slot 1" is verifiedUnitSlotTime,
-	// plus maintenance interval if last uint is a maintenance verifiedUnit
-	// plus verifiedUnit interval if last uint is not a maintenance verifiedUnit
+	// "slot 1" is UnitSlotTime,
+	// plus maintenance interval if last uint is a maintenance Unit
+	// plus Unit interval if last uint is not a maintenance Unit
 	return verifiedUnitSlotTime.Add(time.Second * time.Duration(slotNum) * time.Duration(interval))
 }
 

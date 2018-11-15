@@ -244,10 +244,11 @@ func (dag *Dag) UpdateMediatorMissedUnits(unit *modules.Unit) uint64 {
 
 	if missedUnits == 0 {
 		log.Error("Trying to push double-produced unit onto current unit?!")
+		return 0
 	}
 
-	log.Debug("the count of missed Units: ", missedUnits)
 	missedUnits--
+	log.Debug(fmt.Sprintf("the count of missed Units: %v", missedUnits))
 
 	aSize := dag.GetActiveMediatorCount()
 	if missedUnits < uint32(aSize) {

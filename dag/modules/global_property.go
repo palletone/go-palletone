@@ -40,24 +40,24 @@ type GlobalProperty struct {
 
 // 动态全局属性的结构体定义
 type DynamicGlobalProperty struct {
-	HeadUnitNum uint64 // 最近的验证单元编号(数量)
+	HeadUnitNum uint64 // 最近的单元编号(数量)
 
-	HeadUnitHash common.Hash // 最近的验证单元hash
+	HeadUnitHash common.Hash // 最近的单元hash
 
-	// LastVerifiedUnit *v.VerifiedUnit	// 最近生产的验证单元
+	// LastVerifiedUnit *v.VerifiedUnit	// 最近生产的单元
 
-	HeadUnitTime int64 // 最近的验证单元时间
+	HeadUnitTime int64 // 最近的单元时间
 
-	// CurrentMediator *common.Address // 当前生产验证单元的mediator, 用于判断是否连续同一个mediator生产验证单元
+	// CurrentMediator *common.Address // 当前生产单元的mediator, 用于判断是否连续同一个mediator生产单元
 
 	// NextMaintenanceTime time.Time // 下一次系统维护时间
 
-	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == verifiedUnitNum + 丢失的槽数量
+	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == UnitNum + 丢失的槽数量
 	CurrentASlot uint64
 
 	/**
-	在过去的128个见证单元生产slots中miss的数量。
-	The count of verifiedUnit production slots that were missed in the past 128 verifiedUnits
+	在过去的128个单元生产slots中miss的数量。
+	The count of Unit production slots that were missed in the past 128 Units
 	用于计算mediator的参与率。used to compute mediator participation.
 	*/
 	// RecentSlotsFilled float32

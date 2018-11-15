@@ -23,8 +23,10 @@ package storage
 import (
 	"fmt"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -34,8 +36,49 @@ var (
 	DynGlobalPropDBKey = append(constants.DYNAMIC_GLOBALPROPERTY_PREFIX, []byte("DynamicGlobalProperty")...)
 )
 
+// only for serialization
+type globalProperty struct {
+	ChainParameters core.ChainParameters
+
+	ActiveMediators []string
+
+	GroupPubKey string
+}
+
+func getGPT(gp *modules.GlobalProperty) *globalProperty {
+	ams := make([]string, 0)
+
+	for medAdd, _ := range gp.ActiveMediators {
+		ams = append(ams, medAdd.Str())
+	}
+
+	gpt := &globalProperty{
+		ChainParameters: gp.ChainParameters,
+		ActiveMediators: ams,
+		GroupPubKey:     core.PointToStr(gp.GroupPubKey),
+	}
+
+	return gpt
+}
+
+func (gpt *globalProperty) getGP() *modules.GlobalProperty {
+	ams := make(map[common.Address]bool, 0)
+	for _, addStr := range gpt.ActiveMediators {
+		ams[core.StrToMedAdd(addStr)] = true
+	}
+
+	gp := modules.NewGlobalProp()
+	gp.ChainParameters = gpt.ChainParameters
+	gp.ActiveMediators = ams
+	gp.GroupPubKey = core.StrToPoint(gpt.GroupPubKey)
+
+	return gp
+}
+
 func StoreGlobalProp(db ptndb.Database, gp *modules.GlobalProperty) error {
-	err := StoreBytes(db, GlobalPropDBKey, gp)
+	gpt := getGPT(gp)
+
+	err := StoreBytes(db, GlobalPropDBKey, gpt)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store global properties error:%s", err))
 	}
@@ -53,11 +96,14 @@ func StoreDynGlobalProp(db ptndb.Database, dgp *modules.DynamicGlobalProperty) e
 }
 
 func RetrieveGlobalProp(db ptndb.Database) (*modules.GlobalProperty, error) {
-	gp := modules.NewGlobalProp()
-	err := retrieve(db, GlobalPropDBKey, gp)
+	gpt := new(globalProperty)
+
+	err := retrieve(db, GlobalPropDBKey, gpt)
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve global properties error: %s", err))
 	}
+
+	gp := gpt.getGP()
 
 	return gp, err
 }
