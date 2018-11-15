@@ -812,7 +812,7 @@ func (s *PublicBlockChainAPI) Ccdeploy(ctx context.Context, templateId string, t
 	return hexutil.Bytes(deployId), err
 }
 
-func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string, param []string /*fun string, key string, val string*/) (string, error) {
+func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string, paymentJson string, param []string /*fun string, key string, val string*/) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
 	log.Info("-----Ccinvoke:" + deployId + ":" + txid)
 
@@ -823,7 +823,7 @@ func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txi
 	}
 
 	//args := ut.ToChaincodeArgs(fun, key, val)
-	rsp, err := s.b.ContractInvoke(depId, txid, args, 0)
+	rsp, err := s.b.ContractInvoke(depId, txid, paymentJson, args, 0)
 
 	log.Info("-----ContractInvoke:" + string(rsp))
 
@@ -836,6 +836,10 @@ func (s *PublicBlockChainAPI) Ccstop(ctx context.Context, deployId string, txid 
 
 	err := s.b.ContractStop(depId, txid, true)
 	return err
+}
+
+func (s *PublicBlockChainAPI) CreatePayment(ctx context.Context, fromAddr string, toAddr string, amt, fee uint64) (string, error) {
+	return s.b.CreatePayment(fromAddr, toAddr, amt, fee)
 }
 
 // ExecutionResult groups all structured logs emitted by the EVM
@@ -1601,26 +1605,27 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 //	return result, nil
 //}
 
-func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s *rpcServer*/, from string,to string,amount uint64) (string, error) {
+func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s *rpcServer*/, from string, to string, amount uint64) (string, error) {
 	//realNet := &chaincfg.MainNetParams
 	amounts := map[string]float64{}
 	if to == "" {
 		return "", nil
 	}
 	amounts[to] = float64(amount)
-    utxo ,err := s.b.GetAddrUtxos(from)
-    if err != nil {
+	utxo, err := s.b.GetAddrUtxos(from)
+	if err != nil {
 		return "", nil
 	}
-    fmt.Printf("-------utxo is %+v\n",utxo)
+	fmt.Printf("-------utxo is %+v\n", utxo)
 
-    var inputs []ptnjson.TransactionInput
-    var rawTransactionGenParams ptnjson.RawTransactionGenParams
+	var inputs []ptnjson.TransactionInput
+	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
 	result, _ := CreateRawTransaction(arg)
 	fmt.Println(result)
 	return result, nil
 }
+
 //create raw transction
 func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
 	var rawTransactionGenParams ptnjson.RawTransactionGenParams
