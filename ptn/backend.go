@@ -44,6 +44,7 @@ import (
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
+	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 //type LesServer interface {
@@ -86,7 +87,8 @@ type PalletOne struct {
 	//etherbase  common.Address
 
 	// append by Albert·Gou
-	mediatorPlugin *mp.MediatorPlugin
+	mediatorPlugin    *mp.MediatorPlugin
+	contractPorcessor *jury.Processor
 }
 
 // New creates a new PalletOne object (including the
@@ -128,10 +130,22 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag, logger)
 
+	ptn.contract, err = contracts.Initialize(ptn.dag, &config.Contract)
+	if err != nil {
+		log.Error("Contract Initialize err:", "error", err)
+		return nil, err
+	}
+
 	// append by Albert·Gou
 	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ptn, dag, &config.MediatorPlugin)
 	if err != nil {
 		log.Error("Initialize mediator plugin err:", "error", err)
+		return nil, err
+	}
+
+	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, ptn.contract)
+	if err != nil {
+		log.Error("contract processor creat:", "error", err)
 		return nil, err
 	}
 
@@ -142,14 +156,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine,
-		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
-		return nil, err
-	}
-
-	ptn.contract, err = contracts.Initialize(ptn.dag, &config.Contract)
-	if err != nil {
-		log.Error("Contract Initialize err:", "error", err)
 		return nil, err
 	}
 
@@ -242,6 +250,21 @@ func (s *PalletOne) EthVersion() int                    { return int(s.protocolM
 func (s *PalletOne) NetVersion() uint64                 { return s.networkId }
 func (s *PalletOne) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
 func (s *PalletOne) Dag() dag.IDag                      { return s.dag }
+
+func (s *PalletOne) ProManager() *ProtocolManager { return s.protocolManager }
+
+func (s *PalletOne) MockContractLocalSend(event jury.ContractExeEvent) {
+	s.protocolManager.ContractReqLocalSend(event)
+}
+func (s *PalletOne) MockContractSigLocalSend(event jury.ContractSigEvent) {
+	s.protocolManager.ContractSigLocalSend(event)
+}
+func (s *PalletOne) ContractBroadcast(event jury.ContractExeEvent) {
+	s.protocolManager.ContractBroadcast(event)
+}
+func (s *PalletOne) ContractSigBroadcast(event jury.ContractSigEvent){
+	s.protocolManager.ContractSigBroadcast(event)
+}
 
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.

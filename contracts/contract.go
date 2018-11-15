@@ -1,3 +1,21 @@
+/*
+	This file is part of go-palletone.
+	go-palletone is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	go-palletone is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License
+	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+ * @author PalletOne core developers <dev@pallet.one>
+ * @date 2018
+ */
 package contracts
 
 import (
@@ -20,6 +38,16 @@ type Contract struct {
 	name string
 	dag  dag.IDag
 	//status int32 //   1:init   2:start
+}
+
+type ContractInf interface {
+	Close() error
+	Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error)
+	Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *unit.ContractDeployPayload, e error)
+	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error)
+	Invoke(chainID string, deployId []byte, txid string, tx *unit.Transaction, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error)
+	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error)
+	Stop(chainID string, deployId []byte, txid string, deleteImage bool) error
 }
 
 var (

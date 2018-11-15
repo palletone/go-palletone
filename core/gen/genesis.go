@@ -34,6 +34,10 @@ import (
 
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"crypto/ecdsa"
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/dag/errors"
+	cm "github.com/palletone/go-palletone/dag/common"
 )
 
 const deFaultNode = "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f" +
@@ -180,6 +184,57 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 
 	txs := []*modules.Transaction{tx}
 	return txs, asset
+}
+
+func sigData(key *ecdsa.PrivateKey, data interface{}) ([]byte, error) {
+	txBytes, _ := rlp.EncodeToBytes(data)
+	hash := crypto.Keccak256(txBytes)
+	sign, err := crypto.Sign(hash, key)
+
+	return sign[0:64], err
+}
+
+func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction, msgType modules.MessageType, payload interface{}, ks *keystore.KeyStore) (*modules.Transaction, *modules.Asset, error) {
+	if orgTx == nil {
+		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions param is nil"))
+	}
+	if len(orgTx.TxMessages) < 2 {
+		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions tx(%s) len <2 ", orgTx.TxHash))
+	}
+
+	msgPayload := &modules.Message{
+		App:     msgType,
+		Payload: payload,
+	}
+
+	tx := &modules.Transaction{
+		TxMessages: []*modules.Message{orgTx.TxMessages[0], orgTx.TxMessages[1], msgPayload},
+	}
+
+	sig, err := cm.GetTxSig(tx, ks, singer)
+	if err != nil{
+		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.TxHash.String()))
+	}
+
+	//todo
+	//sig, _ := sigData(nil, tx)
+	sigSet := modules.SignatureSet{
+		PubKey:    nil,
+		Signature: sig,
+	}
+
+	msgSig := &modules.Message{
+		App: modules.APP_SIGNATURE,
+		Payload: &modules.SignaturePayload{
+			Signatures: []modules.SignatureSet{sigSet},
+		},
+	}
+
+	tx.TxMessages = append(tx.TxMessages, msgSig)
+	tx.TxHash = orgTx.TxHash
+
+	log.Debug("GenContractSigTransctions", "tx(%s) sig transction ok", orgTx.TxHash)
+	return tx, nil, nil
 }
 
 //func CommitDB(dag dag.IDag, unit *modules.Unit, isGenesis bool) error {

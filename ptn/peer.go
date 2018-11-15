@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/fatih/set.v0"
+	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 var (
@@ -190,6 +191,14 @@ func (p *peer) SendTransactions(txs modules.Transactions) error {
 		p.knownTxs.Add(tx.Hash())
 	}
 	return p2p.Send(p.rw, TxMsg, txs)
+}
+
+func (p *peer) SendContractExeTransaction(event jury.ContractExeEvent) error {
+	return p2p.Send(p.rw, ContractExecMsg, event)
+}
+
+func (p *peer) SendContractSigTransaction(event jury.ContractSigEvent) error {
+	return p2p.Send(p.rw, ContractSigMsg, event)
 }
 
 //SendConsensus sends consensus msg to the peer

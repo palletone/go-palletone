@@ -9,7 +9,6 @@ import (
 	"container/list"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/palletone/go-palletone/common"
 	cp "github.com/palletone/go-palletone/common/crypto"
 	db "github.com/palletone/go-palletone/contracts/comm"
 	cclist "github.com/palletone/go-palletone/contracts/list"
@@ -343,47 +342,47 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 
 	fullArgs := [][]byte{}
 	//TODO parse tx and make another args include InvokeAddr, InvokeFee, InvokeToken
-	txin := unit.Input{
-		PreviousOutPoint: &unit.OutPoint{
-			TxHash:       common.Hash{},
-			MessageIndex: 1234,
-			OutIndex:     12344,
-		},
-		SignatureScript: []byte("1234567890"),
-		Extra:           []byte("990019202020"),
-	}
-	txout := unit.Output{
-		Value:    10000,
-		PkScript: []byte("kssssssssssssssssssslsll"),
-		Asset: &unit.Asset{
-			AssetId:  unit.PTNCOIN,
-			UniqueId: unit.PTNCOIN,
-			ChainId:  1,
-		},
-	}
-	payment := &unit.PaymentPayload{
-		Inputs:   []*unit.Input{&txin},
-		Outputs:  []*unit.Output{&txout},
-		LockTime: 12,
-	}
-	tx2 := &unit.Transaction{
-		TxMessages: []*unit.Message{
-			{
-				App:     unit.APP_PAYMENT,
-				Payload: payment,
-			},
-		},
-	}
-	tx2.TxHash = tx2.Hash()
-	msg0 := tx2.TxMessages[0].Payload.(*unit.PaymentPayload)
+	// txin := unit.Input{
+	// 	PreviousOutPoint: &unit.OutPoint{
+	// 		TxHash:       common.Hash{},
+	// 		MessageIndex: 1234,
+	// 		OutIndex:     12344,
+	// 	},
+	// 	SignatureScript: []byte("1234567890"),
+	// 	Extra:           []byte("990019202020"),
+	// }
+	// txout := unit.Output{
+	// 	Value:    10000,
+	// 	PkScript: []byte("kssssssssssssssssssslsll"),
+	// 	Asset: &unit.Asset{
+	// 		AssetId:  unit.PTNCOIN,
+	// 		UniqueId: unit.PTNCOIN,
+	// 		ChainId:  1,
+	// 	},
+	// }
+	// payment := &unit.PaymentPayload{
+	// 	Inputs:   []*unit.Input{&txin},
+	// 	Outputs:  []*unit.Output{&txout},
+	// 	LockTime: 12,
+	// }
+	// tx2 := &unit.Transaction{
+	// 	TxMessages: []*unit.Message{
+	// 		{
+	// 			App:     unit.APP_PAYMENT,
+	// 			Payload: payment,
+	// 		},
+	// 	},
+	// }
+	// tx2.TxHash = tx2.Hash()
+	msg0 := tx.TxMessages[0].Payload.(*unit.PaymentPayload)
 	invokeAddr, _ := idag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
 	invokeTokens := unit.InvokeTokens{}
-	outputs := tx2.TxMessages[0].Payload.(*unit.PaymentPayload).Outputs
+	outputs := msg0.Outputs
 	invokeTokens.Asset = *outputs[0].Asset
 	for _, output := range outputs {
 		invokeTokens.Amount += output.Value
 	}
-	invokeFees, _ := idag.GetTxFee(tx2)
+	invokeFees, _ := idag.GetTxFee(tx)
 	invokeInfo := unit.InvokeInfo{
 		InvokeAddress: invokeAddr,
 		InvokeTokens:  invokeTokens,
