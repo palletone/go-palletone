@@ -322,7 +322,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 //timeout:ms
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error) {
+func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, txid string, tx *unit.Transaction, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error) {
 	logger.Infof("==========Invoke enter=======")
 	logger.Infof("deployId[%s] txid[%s]", hex.EncodeToString(deployId), txid)
 	defer logger.Infof("-----------Invoke exit--------")
@@ -339,13 +339,22 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 		return nil, errors.New(errstr)
 	}
 
+	fullArgs := [][]byte{}
+	//TODO parse tx and make another args include InvokeAddr, InvokeFee, InvokeToken
+	msg0 := tx.TxMessages[0].Payload.(*unit.PaymentPayload)
+	invokeAddr := idag.GetAddrByOutPoint(msg0.Input[0].PreviousOutPoint)
+	fullArgs = append(fullArgs, []byte(invokeAddr.String()))
+
+	feeAmt, feeAsset := idag.GetTxFee(msg0)
+
+	fullArgs = append(fullArgs, args...)
 	logger.Infof("Invoke [%s][%s]", chainID, cc.Name)
 	start := time.Now()
 	es := NewEndorserServer(mksupt)
 	spec := &pb.ChaincodeSpec{
 		ChaincodeId: &pb.ChaincodeID{Name: cc.Name},
 		Type:        pb.ChaincodeSpec_GOLANG,
-		Input:       &pb.ChaincodeInput{Args: args},
+		Input:       &pb.ChaincodeInput{Args: fullArgs},
 	}
 
 	cid := &pb.ChaincodeID{

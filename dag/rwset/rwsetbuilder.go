@@ -64,7 +64,9 @@ func (b *RWSetBuilder) AddToWriteSet(ns string, key string, value []byte) {
 	nsPubRwBuilder.writeMap[key] = newKVWrite(key, value)
 }
 func (b *RWSetBuilder) GetTokenPayOut(ns string) []*modules.TokenPayOut {
-	return b.pubRwBuilderMap[ns].tokenPayOut
+	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
+
+	return nsPubRwBuilder.tokenPayOut
 }
 func (b *RWSetBuilder) getOrCreateNsPubRwBuilder(ns string) *nsPubRwBuilder {
 	nsPubRwBuilder, ok := b.pubRwBuilderMap[ns]

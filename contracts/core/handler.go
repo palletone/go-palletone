@@ -964,7 +964,11 @@ func (handler *Handler) handleGetTokenBalance(msg *pb.ChaincodeMessage) {
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: nil, Txid: msg.Txid, ChannelId: msg.ChannelId}
 		} else {
 			// Send response msg back to chaincode. GetState will not trigger event
-			res, _ := rlp.EncodeToBytes(balance)
+			result := map[string]uint64{}
+			for asset, amt := range balance {
+				result[asset.String()] = amt
+			}
+			res, _ := rlp.EncodeToBytes(result)
 			chaincodeLogger.Debugf("[%s]Got state. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: res, Txid: msg.Txid, ChannelId: msg.ChannelId}
 		}
