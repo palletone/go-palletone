@@ -46,8 +46,15 @@ type MediatorInfo struct {
 	TotalMissed int64
 }
 
+func NewMediatorInfo() *MediatorInfo {
+	return &MediatorInfo{
+		Url:         "",
+		TotalMissed: 0,
+	}
+}
+
 func mediatorToInfo(md *core.Mediator) (mi *MediatorInfo) {
-	mi = &MediatorInfo{}
+	mi = NewMediatorInfo()
 	mi.AddStr = md.Address.Str()
 	mi.InitPartPub = core.PointToStr(md.InitPartPub)
 	mi.Node = md.Node.String()
@@ -85,7 +92,7 @@ func StoreMediatorInfo(db ptndb.Database, mi *MediatorInfo) error {
 }
 
 func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator, error) {
-	mi := new(MediatorInfo)
+	mi := NewMediatorInfo()
 
 	err := retrieve(db, mediatorKey(address), mi)
 	if err != nil {
@@ -134,7 +141,7 @@ func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
 
 	iter := db.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
 	for iter.Next() {
-		mi := new(MediatorInfo)
+		mi := NewMediatorInfo()
 		err := rlp.DecodeBytes(iter.Value(), mi)
 		if err != nil {
 			log.Error(fmt.Sprintf("Error in Decoding Bytes to MediatorInfo: %s", err))

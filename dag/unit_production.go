@@ -129,18 +129,20 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit) bool {
 }
 
 func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
-	// 4. 更新Unit中交易的状态
+	// 5. 更新Unit中交易的状态
 
-	// 5. 更新全局动态属性值
+	// 6. 计算当前区块链的unit的缺失率，并更新每个mediator的unit的缺失率
 	missed := dag.UpdateMediatorMissedUnits(nextUnit)
+
+	// 7. 更新全局动态属性值
 	dag.UpdateDynGlobalProp(nextUnit, missed)
 
-	// 6. 更新最新不可逆区块高度
+	// 8. 更新最新不可逆区块高度
 	dag.UpdateLastIrreversibleUnit()
 
-	// 7. 判断是否到了维护周期，并维护
+	// 9. 判断是否到了维护周期，并维护
 
-	// 8. 洗牌
+	// 10. 洗牌
 	dag.UpdateMediatorSchedule()
 }
 
