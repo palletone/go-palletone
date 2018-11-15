@@ -100,6 +100,9 @@ func StoreBytesWithVersion(db ptndb.Database, key []byte, version *modules.State
 func StoreString(db ptndb.Putter, key, value string) error {
 	return db.Put(util.ToByte(key), util.ToByte(value))
 }
+func GetString(db ptndb.Database, key string) (string, error) {
+	return getString(db, util.ToByte(key))
+}
 
 func BatchErrorHandler(err error, errorList *[]error) {
 	if err != nil {

@@ -169,7 +169,7 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 	}()
 }
 
-func (handler *Handler) enterGetInvokeFromAddr(e *fsm.Event) {
+func (handler *Handler) enterGetInvokeAddress(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
 	if !ok {
 		e.Cancel(errors.New("received unexpected message type"))
@@ -213,7 +213,7 @@ func (handler *Handler) enterGetInvokeFromAddr(e *fsm.Event) {
 	}()
 }
 
-func (handler *Handler) enterGetPayToContractPtnTokens(e *fsm.Event) {
+func (handler *Handler) enterGetInvokeTokens(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
 	if !ok {
 		e.Cancel(errors.New("received unexpected message type"))
@@ -242,7 +242,7 @@ func (handler *Handler) enterGetPayToContractPtnTokens(e *fsm.Event) {
 		chaincodeID := handler.getCCRootName()
 		chaincodeLogger.Debugf("[%s] getting tokens for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
 		//TODO 这里要获取支付保证金数量
-		token := &modules.Tokens{
+		invokeTokens := &modules.InvokeTokens{
 			Amount: 10000,
 			Asset: modules.Asset{
 				AssetId:  modules.PTNCOIN,
@@ -250,7 +250,7 @@ func (handler *Handler) enterGetPayToContractPtnTokens(e *fsm.Event) {
 				ChainId:  uint64(1),
 			},
 		}
-		tokenBytes, err := json.Marshal(token)
+		invokeTokensBytes, err := json.Marshal(invokeTokens)
 		if err != nil {
 			// Send error msg back to chaincode. GetState will not trigger event
 			payload := []byte(err.Error())
@@ -260,7 +260,7 @@ func (handler *Handler) enterGetPayToContractPtnTokens(e *fsm.Event) {
 		} else {
 			// Send response msg back to chaincode. GetState will not trigger event
 			chaincodeLogger.Debugf("[%s]Got tokens. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
-			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: tokenBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: invokeTokensBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
 		}
 	}()
 }
@@ -321,7 +321,7 @@ func (handler *Handler) enterGetContractAllState(e *fsm.Event) {
 		}
 	}()
 }
-func (handler *Handler) enterGetContractInvokeFee(e *fsm.Event) {
+func (handler *Handler) enterGetInvokeFees(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
 	if !ok {
 		e.Cancel(errors.New("received unexpected message type"))
@@ -349,8 +349,15 @@ func (handler *Handler) enterGetContractInvokeFee(e *fsm.Event) {
 		chaincodeID := handler.getCCRootName()
 		chaincodeLogger.Debugf("[%s] getting mediator or jury address for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
 		//TODO 这里要获取支付保证金交易费用
-		res := []byte("100")
-		var err error
+		invokeFees := &modules.InvokeFees{
+			Amount: 10000,
+			Asset: modules.Asset{
+				AssetId:  modules.PTNCOIN,
+				UniqueId: modules.PTNCOIN,
+				ChainId:  uint64(1),
+			},
+		}
+		invokeFeesBytes, err := json.Marshal(invokeFees)
 		if err != nil {
 			// Send error msg back to chaincode. GetState will not trigger event
 			payload := []byte(err.Error())
@@ -360,7 +367,7 @@ func (handler *Handler) enterGetContractInvokeFee(e *fsm.Event) {
 		} else {
 			// Send response msg back to chaincode. GetState will not trigger event
 			chaincodeLogger.Debugf("[%s]Got mediator or jury address. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
-			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: res, Txid: msg.Txid, ChannelId: msg.ChannelId}
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: invokeFeesBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
 		}
 	}()
 }
@@ -742,10 +749,10 @@ func newChaincodeSupportHandler(chaincodeSupport *ChaincodeSupport, peerChatStre
 			"enter_" + readystate:                                                          func(e *fsm.Event) { v.enterReadyState(e, v.FSM.Current()) },
 			"enter_" + endstate:                                                            func(e *fsm.Event) { v.enterEndState(e, v.FSM.Current()) },
 			"after_" + pb.ChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST.String():              func(e *fsm.Event) { v.enterGetSystemConfig(e) },
-			"after_" + pb.ChaincodeMessage_GET_INVOKE_FORM_ADDR_REQUEST.String():           func(e *fsm.Event) { v.enterGetInvokeFromAddr(e) },
-			"after_" + pb.ChaincodeMessage_GET_PAYTO_CONTRACT_PTN_AMOUNTS_REQUEST.String(): func(e *fsm.Event) { v.enterGetPayToContractPtnTokens(e) },
+			"after_" + pb.ChaincodeMessage_GET_INVOKE_FORM_ADDR_REQUEST.String():           func(e *fsm.Event) { v.enterGetInvokeAddress(e) },
+			"after_" + pb.ChaincodeMessage_GET_PAYTO_CONTRACT_PTN_AMOUNTS_REQUEST.String(): func(e *fsm.Event) { v.enterGetInvokeTokens(e) },
 			"after_" + pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE.String():                 func(e *fsm.Event) { v.enterGetContractAllState(e) },
-			"after_" + pb.ChaincodeMessage_GET_CONTRACT_INVOKE_FEE.String():                func(e *fsm.Event) { v.enterGetContractInvokeFee(e) },
+			"after_" + pb.ChaincodeMessage_GET_CONTRACT_INVOKE_FEE.String():                func(e *fsm.Event) { v.enterGetInvokeFees(e) },
 			"after_" + pb.ChaincodeMessage_GET_TOKEN_BALANCE.String():                      func(e *fsm.Event) { v.enterGetTokenBalance(e) },
 			"after_" + pb.ChaincodeMessage_PAY_OUT_TOKEN.String():                          func(e *fsm.Event) { v.enterPayOutToken(e) },
 		},

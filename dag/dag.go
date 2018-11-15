@@ -38,6 +38,7 @@ import (
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
+	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -287,7 +288,7 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 }
 func (d *Dag) Exists(hash common.Hash) bool {
 	if unit, err := d.dagdb.GetUnit(hash); err == nil && unit != nil {
-		log.Info("hash is exsit in leveldb ", "hash", hash.String())
+		log.Info("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
 		return true
 	}
 	return false
@@ -310,6 +311,8 @@ func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
 	return d.dagdb.GetUnitTransactions(hash)
 }
+
+// GetTransactionByHash is return the tx by tx's hash
 func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, error) {
 	tx, _, _, _ := d.dagdb.GetTransaction(hash)
 	if tx == nil {
@@ -624,7 +627,7 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 				// if tx is Not CoinBase
 				// add txIn previousoutpoint
 				if isnot_coinbase {
-					for _, in := range msg.Input {
+					for _, in := range msg.Inputs {
 						neededSet[*in.PreviousOutPoint] = struct{}{}
 					}
 				}
@@ -738,6 +741,15 @@ func (d *Dag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	return all, err
 }
 
+func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) common.Address {
+	//TODO Devin
+	return common.Address{}
+}
+func (d *Dag) GetTxFee(pay *modules.PaymentPayload) (uint64, modules.Asset) {
+	//TODO Devin
+	return uint64(0), modules.Asset{}
+}
+
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return d.dagdb.GetAddrOutput(addr)
 }
@@ -821,7 +833,8 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 
 	if !isGenesis {
 		if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
-			return fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
+			log.Info("dag", "SaveUnit unit is already existing.hash:", unit.Hash().String())
+			return dagerrors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 		}
 	}
 	// step2. validate unit

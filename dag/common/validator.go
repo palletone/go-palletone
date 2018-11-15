@@ -112,11 +112,11 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		if !ok {
 			return nil, false, fmt.Errorf("Coinbase payload type error.")
 		}
-		if len(coinIn.Output) != 1 {
+		if len(coinIn.Outputs) != 1 {
 			return nil, false, fmt.Errorf("Coinbase outputs error0.")
 		}
 		income := uint64(fee) + ComputeInterest()
-		if coinIn.Output[0].Value < income {
+		if coinIn.Outputs[0].Value < income {
 			return nil, false, fmt.Errorf("Coinbase outputs error: 1.%d", income)
 		}
 	}
@@ -376,15 +376,15 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload, isCoinbase bool) modules.TxValidationCode {
 	// check locktime
 
-	if len(payment.Input) <= 0 {
-		log.Error("payment input is null.", "payment.input", payment.Input)
+	if len(payment.Inputs) <= 0 {
+		log.Error("payment input is null.", "payment.input", payment.Inputs)
 		return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
 	}
 	if !isCoinbase {
-		for _, in := range payment.Input {
+		for _, in := range payment.Inputs {
 			// checkout input
 			if in == nil || in.PreviousOutPoint == nil {
-				log.Error("payment input is null.", "payment.input", payment.Input)
+				log.Error("payment input is null.", "payment.input", payment.Inputs)
 				return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
 			}
 			if utxo, err := validate.utxodb.GetUtxoEntry(in.PreviousOutPoint); utxo == nil || err != nil {
@@ -394,12 +394,12 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 		}
 	}
 
-	if len(payment.Output) <= 0 {
-		log.Error("payment output is null.", "payment.output", payment.Input)
+	if len(payment.Outputs) <= 0 {
+		log.Error("payment output is null.", "payment.output", payment.Inputs)
 		return modules.TxValidationCode_INVALID_PAYMMENT_OUTPUT
 	}
 
-	for i, out := range payment.Output {
+	for i, out := range payment.Outputs {
 		// checkout output
 		if i < 1 {
 			continue // asset = out.Asset
@@ -407,7 +407,7 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 			if out.Asset == nil {
 				return modules.TxValidationCode_INVALID_ASSET
 			}
-			if !out.Asset.IsSimilar(payment.Output[i-1].Asset) {
+			if !out.Asset.IsSimilar(payment.Outputs[i-1].Asset) {
 				return modules.TxValidationCode_INVALID_ASSET
 			}
 		}

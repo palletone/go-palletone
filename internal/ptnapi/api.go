@@ -1601,31 +1601,19 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 //	return result, nil
 //}
 
-func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
-	var cmdTransactionGenParams ptnjson.CmdTransactionGenParams
-	err := json.Unmarshal([]byte(params), &cmdTransactionGenParams)
-	if err != nil {
-		return "", err
-	}
-	//transaction inputs
-	var addr string
-	addr = cmdTransactionGenParams.Address 
-	if len(addr) == 0 {
-		return "", nil
-	}
+func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s *rpcServer*/, from string,to string,amount uint64) (string, error) {
 	//realNet := &chaincfg.MainNetParams
 	amounts := map[string]float64{}
-	for _, outOne := range cmdTransactionGenParams.Outputs {
-		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
-			continue
-		}
-		amounts[outOne.Address] = float64(outOne.Amount)
-	}
-	if len(amounts) == 0 {
+	if to == "" {
 		return "", nil
 	}
-    utxo ,err := s.b.GetAddrUtxos(addr)
+	amounts[to] = float64(amount)
+    utxo ,err := s.b.GetAddrUtxos(from)
+    if err != nil {
+		return "", nil
+	}
     fmt.Printf("-------utxo is %+v\n",utxo)
+
     var inputs []ptnjson.TransactionInput
     var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &rawTransactionGenParams.Locktime)
@@ -1888,14 +1876,14 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 			continue
 		}
 
-		for _, txout := range payload.Output {
+		for _, txout := range payload.Outputs {
 			log.Info("+++++++++++++++++++++++++++++++++++++++++", "tx_outAmount", txout.Value, "outInfo", txout)
 			outAmount += txout.Value
 		}
 	}
 	log.Info("--------------------------send tx ----------------------------", "txOutAmount", outAmount)
 
-	log.Debugf("Tx outpoint tx hash:%s", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0].PreviousOutPoint.TxHash.String())
+	log.Debugf("Tx outpoint tx hash:%s", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
 	//log.Info("PublicTransactionPoolAPI", "SendRawTransaction tx", tx)
 	return submitTransaction(ctx, s.b, tx)
 }

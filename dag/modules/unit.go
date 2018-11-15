@@ -161,7 +161,7 @@ type Unit struct {
 	UnitHeader *Header            `json:"unit_header"`  // unit header
 	Txs        Transactions       `json:"transactions"` // transaction list
 	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
-	UnitSize   common.StorageSize `json:"UnitSize"`     // unit size
+	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
 	// These fields are used by package ptn to track
 	// inter-peer block relay.
 	ReceivedAt   time.Time
@@ -198,9 +198,9 @@ type TxPoolTxs []*TxPoolTransaction
 //}
 //出于DAG和基于Token的分区共识的考虑，设计了该ChainIndex，
 type ChainIndex struct {
-	AssetID IDType16
-	IsMain  bool
-	Index   uint64
+	AssetID IDType16 `json:"asset_id"`
+	IsMain  bool     `json:"is_main"`
+	Index   uint64   `json:"index"`
 }
 
 func (height ChainIndex) String() string {
@@ -289,7 +289,7 @@ func (u *Unit) Size() common.StorageSize {
 	emptyUnit.UnitHeader = CopyHeader(u.UnitHeader)
 	//emptyUnit.UnitHeader.Authors = nil
 	emptyUnit.UnitHeader.GroupSign = make([]byte, 0)
-	emptyUnit.CopyBody(u.Txs)
+	emptyUnit.CopyBody(u.Txs[:])
 
 	b, err := rlp.EncodeToBytes(emptyUnit)
 	if err != nil {
@@ -386,7 +386,7 @@ func MsgstoAddress(msgs []*Message) common.Address {
 		if !ok {
 			break
 		}
-		for _, pay := range payment.Input {
+		for _, pay := range payment.Inputs {
 			// 通过签名信息还原出address
 			from := new(common.Address)
 			from.SetBytes(pay.Extra[:])

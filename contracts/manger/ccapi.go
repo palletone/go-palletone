@@ -342,10 +342,10 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 	fullArgs := [][]byte{}
 	//TODO parse tx and make another args include InvokeAddr, InvokeFee, InvokeToken
 	msg0 := tx.TxMessages[0].Payload.(*unit.PaymentPayload)
-	invokeAddr := idag.GetAddrByOutPoint(msg0.Input[0].PreviousOutPoint)
+	invokeAddr := idag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
 	fullArgs = append(fullArgs, []byte(invokeAddr.String()))
 
-	feeAmt, feeAsset := idag.GetTxFee(msg0)
+	//feeAmt, feeAsset := idag.GetTxFee(msg0)
 
 	fullArgs = append(fullArgs, args...)
 	logger.Infof("Invoke [%s][%s]", chainID, cc.Name)

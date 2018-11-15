@@ -40,6 +40,15 @@ func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
+	invokeAddr, invokeTokens, invokeFees, funcName, args, err := stub.GetInvokeParameters()
+	if err != nil {
+		return shim.Error("parameters error: " + err.Error())
+	}
+	fmt.Println("invokeAddr", invokeAddr)
+	fmt.Printf("invokeTokens %#v\n", invokeTokens)
+	fmt.Printf("invokeFees %#v\n", invokeFees)
+	invokeFees, err = stub.GetInvokeFees()
+	fmt.Printf("invokeFees %#v\n", invokeFees)
 	switch funcName {
 	case "DepositWitnessPay":
 		//交付保证金
@@ -76,32 +85,30 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	//fmt.Println("args[1] = ", ptnAccount)
 
 	//获取 请求 调用 地址
-	invokeFromAddr, err := stub.GetInvokeFromAddr()
+	invokeFromAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		return shim.Error("GetInvokeFromAddr error: " + err.Error())
 	}
 	//fmt.Println("invokeFromAddr address = ", invokeFromAddr)
 	//获取 请求 ptn 数量
-	asset, amount, err := stub.GetPayToContractPtnTokens()
+	invokeTokens, err := stub.GetInvokeTokens()
 	if err != nil {
 		return shim.Error("GetPayToContractPtnTokens error: " + err.Error())
 	}
-	//fmt.Printf("Tokens asset %#v\n", asset)
-	//fmt.Println("Tokens amount ", amount)
+	//fmt.Printf("invokeTokens %#v\n", invokeTokens)
 	//比较保证金数额和付款
-	depositAmountByte, err := stub.GetSystemConfig("DepositAmount")
+	depositAmountStr, err := stub.GetSystemConfig("DepositAmount")
 	if err != nil {
 		return shim.Error("GetSystemConfig with DepositAmount error: " + err.Error())
 	}
 	//转换
-	depositAmountStr := string(depositAmountByte)
 	depositAmount, err := strconv.ParseUint(depositAmountStr, 10, 64)
 	if err != nil {
 		return shim.Error("String transform to uint64 error: " + err.Error())
 	}
-	fmt.Println("invoke tokens amount = ", amount)
-	fmt.Println("depositAmount = ", depositAmount)
-	if amount < depositAmount {
+	//fmt.Println("invokeTokens = ", invokeTokens)
+	//fmt.Println("depositAmount = ", depositAmount)
+	if invokeTokens.Amount < depositAmount {
 		return shim.Error("Your delivery amount with ptn token is insufficient")
 	}
 	stateValue := new(modules.StateValue)
@@ -113,8 +120,8 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	//账户不存在，第一次参与
 	if stateValueBytes == nil {
 		//写入写集
-		stateValue.Asset = *asset
-		stateValue.Amount = amount
+		stateValue.Asset = invokeTokens.Asset
+		stateValue.Amount = invokeTokens.Amount
 		stateValue.Time = time.Now()
 		stateValue.Extra = "这是第一次参与陪审团"
 		stateValueMarshalBytes, err := json.Marshal(stateValue)
@@ -131,11 +138,11 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	}
 	//fmt.Printf("has exsit %#v\n", stateValue)
 	//判断资产类型是否一致
-	err = assetIsEqual(*asset, stateValue.Asset)
+	err = assetIsEqual(invokeTokens.Asset, stateValue.Asset)
 	if err != nil {
 		return shim.Error("InvokeAsset is not equal with stateAsset error: " + err.Error())
 	}
-	result := stateValue.Amount + amount
+	result := stateValue.Amount + invokeTokens.Amount
 	//更新stateValue
 	stateValue.Amount = result
 	stateValue.Time = time.Now()
@@ -149,7 +156,7 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 }
 
 func assetIsEqual(invokeAsset, stateAsset modules.Asset) error {
-	fmt.Println(invokeAsset == stateAsset)
+	//fmt.Println(invokeAsset == stateAsset)
 	if invokeAsset != stateAsset {
 		return fmt.Errorf("asset is not equal")
 	}
@@ -165,7 +172,7 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 		return shim.Error("Input error: need two args (witnessAddr and ptnAmount)")
 	}
 	//获取 请求 调用 地址
-	invokeFromAddr, err := stub.GetInvokeFromAddr()
+	invokeFromAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		return shim.Error("GetInvokeFromAddr error: " + err.Error())
 	}

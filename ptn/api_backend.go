@@ -361,7 +361,7 @@ func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]by
 	log.Printf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 
 	//_, err := cc.Invoke("palletone", deployId, txid, args, timeout)
-	unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, args, timeout)
+	unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, nil, args, timeout)
 	//todo print rwset
 	if err != nil {
 		return nil, err

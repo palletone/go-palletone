@@ -63,7 +63,7 @@ func TestValidator(t *testing.T) {
 	inputs = append(inputs, input)
 	outputs = append(outputs, output)
 	tx := new(modules.Transaction)
-	tx.TxMessages = append(tx.TxMessages, &modules.Message{App: modules.APP_PAYMENT, Payload: &modules.PaymentPayload{Input: inputs, Output: outputs, LockTime: uint32(999)}},
+	tx.TxMessages = append(tx.TxMessages, &modules.Message{App: modules.APP_PAYMENT, Payload: &modules.PaymentPayload{Inputs: inputs, Outputs: outputs, LockTime: uint32(999)}},
 		&modules.Message{App: modules.APP_TEXT, Payload: &modules.TextPayload{Text: []byte("test text.")}}, &modules.Message{App: modules.APP_CONTRACT_TPL, Payload: &modules.ContractTplPayload{Name: "contract name"}})
 	tx.Hash()
 	log.Println("tx hash :", tx.TxHash.String(), tx.TxMessages[2])
