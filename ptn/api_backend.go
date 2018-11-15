@@ -361,8 +361,9 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 
 func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, paymentJson string, args [][]byte, timeout time.Duration) ([]byte, error) {
 	log.Printf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-	var payment modules.PaymentPayload
-	json.Unmarshal([]byte(paymentJson), &payment)
+	var pJson ptnjson.PaymentJson
+	json.Unmarshal([]byte(paymentJson), &pJson)
+	payment := ptnjson.ConvertJson2Payment(&pJson)
 	log.Printf("----Convert payment payload from json, result:%+v", payment)
 	tx := modules.NewTransaction([]*modules.Message{})
 	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, &payment))
@@ -407,7 +408,7 @@ func (b *PtnApiBackend) CreatePayment(fromAddr string, toAddr string, amt, fee u
 		}
 
 	}
-	if len(toAddr) != 0 {
+	if len(toAddr) != 0 && amt > 0 {
 		toAddrs, _ := common.StringToAddress(toAddr)
 		output0 := modules.NewTxOut(amt, tokenengine.GenerateLockScript(toAddrs), asset)
 		pay.AddTxOut(output0)
@@ -416,6 +417,7 @@ func (b *PtnApiBackend) CreatePayment(fromAddr string, toAddr string, amt, fee u
 	fromAddrs, _ := common.StringToAddress(fromAddr)
 	output1 := modules.NewTxOut(totalInput-amt-fee, tokenengine.GenerateLockScript(fromAddrs), asset)
 	pay.AddTxOut(output1)
-	jsonPay, err := json.Marshal(pay)
-	return string(jsonPay), err
+	jsonPay := ptnjson.ConvertPayment2Json(pay)
+	json, err := json.Marshal(jsonPay)
+	return string(json), err
 }
