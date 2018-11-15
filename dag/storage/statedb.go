@@ -80,7 +80,12 @@ func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 // ######################### GET IMPL END ###########################
 
 // author albert·gou
-func (statedb *StateDb) StoreMediatorInfo(mi *core.MediatorInfo) error {
+func (statedb *StateDb) StoreMediator(med *core.Mediator) error {
+	return StoreMediator(statedb.db, med)
+}
+
+// author albert·gou
+func (statedb *StateDb) StoreMediatorInfo(mi *MediatorInfo) error {
 	return StoreMediatorInfo(statedb.db, mi)
 }
 
@@ -113,6 +118,7 @@ func (statedb *StateDb) GetCurrentChainIndex(assetId modules.IDType16) (*modules
 	}
 	return chainIndex, nil
 }
+
 // author albert·gou
 func (statedb *StateDb) GetMediatorCount() int {
 	return GetMediatorCount(statedb.db)
@@ -127,20 +133,8 @@ func (statedb *StateDb) IsMediator(address common.Address) bool {
 func (statedb *StateDb) GetMediators() map[common.Address]bool {
 	return GetMediators(statedb.db)
 }
-// todo albert·gou
-//func (statedb *StateDb) GetActiveMediatorAddrList() ([]common.Address, error) {
-//
-//	key := constants.STATE_ACTIVE_MEDIATOR_LIST
-//	data, _, err := retrieveWithVersion(statedb.db, key)
-//	if err != nil {
-//		return nil, err
-//	}
-//	result := []common.Address{}
-//	rlp.DecodeBytes(data, result)
-//	return result, nil
-//}
 
 // author albert·gou
-func (statedb *StateDb) LookupMediator() map[common.Address]core.Mediator {
+func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
 	return LookupMediator(statedb.db)
 }
