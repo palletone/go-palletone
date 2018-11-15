@@ -69,7 +69,7 @@ type MediatorPlugin struct {
 	dag  iDag
 	quit chan struct{} // Channel used for graceful exit
 
-	// Enable VerifiedUnit production, even if the chain is stale.
+	// Enable Unit production, even if the chain is stale.
 	// 新开启一个区块链时，必须设为true
 	productionEnabled bool
 	// Mediator`s account and passphrase controlled by this node
@@ -169,7 +169,7 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 		println("No mediators configured! Please add mediator and private keys to configuration.")
 	} else {
 		// 2. 开启循环生产计划
-		log.Info(fmt.Sprintf("Launching verified unit production for %d mediators.", len(mp.mediators)))
+		log.Info(fmt.Sprintf("Launching unit production for %d mediators.", len(mp.mediators)))
 
 		if mp.productionEnabled {
 			dag := mp.dag

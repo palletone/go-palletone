@@ -144,8 +144,8 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		PkScript: pkscript,
 	}
 	pay := &modules.PaymentPayload{
-		Input:  []*modules.Input{txin},
-		Output: []*modules.Output{txout},
+		Inputs:  []*modules.Input{txin},
+		Outputs: []*modules.Output{txout},
 	}
 	msg0 := &modules.Message{
 		App:     modules.APP_PAYMENT,

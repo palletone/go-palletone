@@ -34,13 +34,13 @@ const (
 var (
 	StaleProductionFlag = cli.BoolFlag{
 		Name:  "enable-stale-production",
-		Usage: "Enable Verified Unit production, even if the chain is stale.",
+		Usage: "Enable Unit production, even if the chain is stale.",
 	}
 )
 
 // config data for mediator plugin
 type Config struct {
-	EnableStaleProduction bool // Enable Verified Unit production, even if the chain is stale.
+	EnableStaleProduction bool // Enable Unit production, even if the chain is stale.
 	//	RequiredParticipation float32	// Percent of mediators (0-99) that must be participating in order to produce
 	Mediators []*MediatorConf // the set of the mediator info
 }

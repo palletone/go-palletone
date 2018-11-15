@@ -311,6 +311,8 @@ func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
 	return d.dagdb.GetUnitTransactions(hash)
 }
+
+// GetTransactionByHash is return the tx by tx's hash
 func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, error) {
 	tx, _, _, _ := d.dagdb.GetTransaction(hash)
 	if tx == nil {
@@ -625,7 +627,7 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 				// if tx is Not CoinBase
 				// add txIn previousoutpoint
 				if isnot_coinbase {
-					for _, in := range msg.Input {
+					for _, in := range msg.Inputs {
 						neededSet[*in.PreviousOutPoint] = struct{}{}
 					}
 				}

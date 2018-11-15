@@ -536,7 +536,7 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 	for _, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				for _, script := range msg.Input {
+				for _, script := range msg.Inputs {
 					txpool_tx.From = append(txpool_tx.From, script.PreviousOutPoint)
 				}
 			}
@@ -606,7 +606,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	for i, msgcopy := range tx.Tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				for j := range msg.Output {
+				for j := range msg.Outputs {
 					preout.MessageIndex = uint32(i)
 					preout.OutIndex = uint32(j)
 					// get utxo entry , if the utxo entry is spent, then return  error.
@@ -654,7 +654,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	for _, msgcopy := range tx.Tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				for _, txin := range msg.Input {
+				for _, txin := range msg.Inputs {
 					pool.outpoints = make(map[modules.OutPoint]*modules.TxPoolTransaction)
 					pool.outpoints[*txin.PreviousOutPoint] = tx
 				}
@@ -861,7 +861,7 @@ func IsCoinBase(tx *modules.Transaction) bool {
 	if !ok {
 		return false
 	}
-	prevOut := msg.Input[0].PreviousOutPoint
+	prevOut := msg.Inputs[0].PreviousOutPoint
 	if prevOut.TxHash != (common.Hash{}) {
 		return false
 	}
@@ -1112,7 +1112,7 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 		for i, msgcopy := range tx.Tx.TxMessages {
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-					for j := uint32(0); j < uint32(len(msg.Output)); j++ {
+					for j := uint32(0); j < uint32(len(msg.Outputs)); j++ {
 						preout := modules.OutPoint{TxHash: hash, MessageIndex: uint32(i), OutIndex: j}
 						if pooltxRedeemer, exist := pool.outpoints[preout]; exist {
 							pool.removeTransaction(pooltxRedeemer, true)
@@ -1138,7 +1138,7 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 		for _, msgcopy := range pooltx.Tx.TxMessages {
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-					for _, input := range msg.Input {
+					for _, input := range msg.Inputs {
 						delete(pool.outpoints, *input.PreviousOutPoint)
 					}
 				}
@@ -1169,7 +1169,7 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
 			inputs := msg.Payload.(*modules.PaymentPayload)
-			for _, input := range inputs.Input {
+			for _, input := range inputs.Inputs {
 				if tx, ok := pool.outpoints[*input.PreviousOutPoint]; ok {
 					pool.removeTransaction(tx, true)
 				}
@@ -1187,7 +1187,7 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 				continue
 			}
 			if inputs != nil {
-				for _, input := range inputs.Input {
+				for _, input := range inputs.Inputs {
 					if input == nil {
 						break
 					}
@@ -1224,7 +1224,7 @@ func (pool *TxPool) FetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, er
 	for i, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				for _, txIn := range msg.Input {
+				for _, txIn := range msg.Inputs {
 					preout := txIn.PreviousOutPoint
 					utxo := utxoView.LookupUtxo(*preout)
 					if utxo != nil && utxo.IsSpent() {

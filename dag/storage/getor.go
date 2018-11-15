@@ -20,11 +20,10 @@
 package storage
 
 import (
-	"unsafe"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -76,11 +75,8 @@ func splitValueAndVersion(data []byte) ([]byte, *modules.StateVersion, error) {
 
 // get string
 func getString(db ptndb.Database, key []byte) (string, error) {
-	if re, err := db.Get(key); err != nil {
-		return "", err
-	} else {
-		return *(*string)(unsafe.Pointer(&re)), nil
-	}
+	data, err := db.Get(key)
+	return util.ToString(data[:]), err
 }
 
 // get prefix

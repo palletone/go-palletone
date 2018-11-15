@@ -219,12 +219,12 @@ func SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScr
 			} else {
 				fmt.Println("Payment payload:", pay)
 			}
-			for j, input := range pay.Input {
+			for j, input := range pay.Inputs {
 				utxoLockScript, _ := utxoLockScripts[*input.PreviousOutPoint]
 				checkscript := make([]byte, len(utxoLockScript))
 				copy(checkscript, utxoLockScript)
 				if (hashType&txscript.SigHashSingle) !=
-					txscript.SigHashSingle || j < len(pay.Output) {
+					txscript.SigHashSingle || j < len(pay.Outputs) {
 					sigScript, err := txscript.SignTxOutput(tx, i, j, utxoLockScript, hashType,
 						txscript.KeyClosure(lookupKey), txscript.ScriptClosure(lookupRedeemScript), input.SignatureScript)
 					if err != nil {

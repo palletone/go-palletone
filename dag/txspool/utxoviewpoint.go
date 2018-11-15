@@ -101,7 +101,7 @@ func (view *UtxoViewpoint) FetchUnitUtxos(db storage.IUtxoDb, unit *modules.Unit
 		for j, msgcopy := range tx.TxMessages {
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-					for _, txIn := range msg.Input {
+					for _, txIn := range msg.Inputs {
 						//TODO for download sync
 						if txIn == nil {
 							continue
@@ -198,11 +198,11 @@ func (view *UtxoViewpoint) AddTxOut(tx *modules.Transaction, msgIdx, txoutIdx ui
 
 		if (uint32(i) == msgIdx) && (msgcopy.App == modules.APP_PAYMENT) {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				if txoutIdx >= uint32(len(msg.Output)) {
+				if txoutIdx >= uint32(len(msg.Outputs)) {
 					return
 				}
 				preout := modules.OutPoint{TxHash: tx.Hash(), MessageIndex: msgIdx, OutIndex: txoutIdx}
-				output := msg.Output[txoutIdx]
+				output := msg.Outputs[txoutIdx]
 				txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: output.Asset}
 				view.addTxOut(preout, txout, false)
 			}
@@ -218,7 +218,7 @@ func (view *UtxoViewpoint) AddTxOuts(tx *modules.Transaction) {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				msgIdx := uint32(i)
 				preout.MessageIndex = msgIdx
-				for j, output := range msg.Output {
+				for j, output := range msg.Outputs {
 					txoutIdx := uint32(j)
 					preout.OutIndex = txoutIdx
 					txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: output.Asset}
@@ -325,7 +325,7 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 		if ok == false {
 			continue
 		}
-		for _, txOut := range payload.Output {
+		for _, txOut := range payload.Outputs {
 			satoshi := txOut.Value
 			if satoshi < 0 {
 				str := fmt.Sprintf("transaction output has negative "+
@@ -374,7 +374,7 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 
 		// Check for duplicate transaction inputs.
 		existingTxOut := make(map[modules.OutPoint]struct{})
-		for _, txIn := range payload.Input {
+		for _, txIn := range payload.Inputs {
 			if _, exists := existingTxOut[*txIn.PreviousOutPoint]; exists {
 				return &ptnjson.RPCError{
 					Code:    ptnjson.ErrDuplicateTxInputs,
