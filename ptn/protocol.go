@@ -59,10 +59,12 @@ const (
 	SigShareMsg        = 0x0c
 	GroupSigMsg        = 0x0d
 
-	GetNodeDataMsg = 0x20
-	NodeDataMsg    = 0x21
-	GetReceiptsMsg = 0x22
-	ReceiptsMsg    = 0x23
+	ContractExecMsg = 0x10
+	ContractSigMsg  = 0x11
+	GetNodeDataMsg  = 0x20
+	NodeDataMsg     = 0x21
+	GetReceiptsMsg  = 0x22
+	ReceiptsMsg     = 0x23
 
 	//TransitionReq  = 0x11
 	//TransitionResp = 0x12

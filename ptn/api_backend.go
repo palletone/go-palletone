@@ -367,7 +367,12 @@ func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, paymentJson
 	log.Printf("----Convert payment payload from json, result:%+v", payment)
 	tx := modules.NewTransaction([]*modules.Message{})
 	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, &payment))
-	contractInvokeRequest := &modules.ContractInvokeRequestPayload{ContractId: deployId, FunctionName: string(args[0]), Args: args[1:]}
+	contractInvokeRequest := &modules.ContractInvokeRequestPayload{
+		ContractId: deployId,
+		//FunctionName: string(args[0]),
+		Args:    args,
+		Timeout: timeout,
+	}
 	tx.AddMessage(modules.NewMessage(modules.APP_CONTRACT_INVOKE_REQUEST, contractInvokeRequest))
 
 	unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, tx, args, timeout)
@@ -375,6 +380,10 @@ func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, paymentJson
 	if err != nil {
 		return nil, err
 	}
+
+	// todo tmp
+	//b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, args, timeout)
+	//return nil, nil
 
 	return unit.Payload, err
 }
@@ -385,6 +394,12 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 	//err := cc.Stop("palletone", deployId, txid, deleteImage)
 	err := b.ptn.contract.Stop("palletone", deployId, txid, deleteImage)
 	return err
+}
+
+func (b *PtnApiBackend) ContractTxReqBroadcast(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
+
+	b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, args, timeout)
+	return nil, nil
 }
 
 func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {

@@ -113,6 +113,7 @@ type Backend interface {
 	ContractInvoke(deployId []byte, txid string, paymentJson string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
 	CreatePayment(fromAddr string, toAddr string, amt, fee uint64) (string, error)
+	ContractTxReqBroadcast(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

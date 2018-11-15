@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
@@ -483,4 +484,48 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 	}
 	//TODO call dag
 	return nil
+}
+
+func (pm *ProtocolManager) ContractExecMsg(msg p2p.Msg, p *peer) error {
+	var event jury.ContractExeEvent
+	if err := msg.Decode(&event); err != nil {
+		log.Info("===ContractExecMsg===", "err:", err)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+	pm.contractProc.ProcessContractEvent(&event)
+	return nil
+}
+
+func (pm *ProtocolManager) ContractSigMsg(msg p2p.Msg, p *peer) error {
+	var event jury.ContractSigEvent
+	if err := msg.Decode(&event); err != nil {
+		log.Info("===ContractExecMsg===", "err:", err)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+	pm.contractProc.ProcessContractSigEvent(&event)
+	return nil
+}
+
+//local test
+func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractExeEvent) {
+	log.Info("ContractReqLocalSend", "event", event.Tx.TxHash)
+	pm.contractExecCh <- event
+}
+
+func (pm *ProtocolManager) ContractSigLocalSend(event jury.ContractSigEvent) {
+	log.Info("ContractSigLocalSend", "event", event.Tx.TxHash)
+	pm.contractSigCh <- event
+}
+
+func (pm *ProtocolManager) ContractBroadcast(event jury.ContractExeEvent) {
+	log.Info("ContractBroadcast", "event", event.Tx.TxHash)
+	peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
+	for _, peer := range peers {
+		peer.SendContractExeTransaction(event)
+	}
+}
+
+func (pm *ProtocolManager) ContractSigBroadcast(event jury.ContractSigEvent) {
+	log.Info("ContractSigBroadcast", "event", event.Tx.TxHash)
+	pm.contractSigCh <- event
 }

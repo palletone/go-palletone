@@ -554,7 +554,6 @@ func (ks *KeyStore) SigData(data interface{}, address common.Address) ([]byte, e
 	if err != nil {
 		return nil, err
 	}
-	//unit signature
 	sign, err := crypto.Sign(hash.Bytes(), privateKey)
 	if err != nil {
 		return nil, err

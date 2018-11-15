@@ -30,10 +30,16 @@ type MessageType byte
 
 const (
 	APP_PAYMENT MessageType = iota
+
+	APP_CONTRACT_TPL_REQUEST
+	APP_CONTRACT_DEPLOY_REQUEST
+	APP_CONTRACT_INVOKE_REQUEST
+	APP_CONTRACT_STOP_REQUEST
 	APP_CONTRACT_TPL
 	APP_CONTRACT_DEPLOY
 	APP_CONTRACT_INVOKE
-	APP_CONTRACT_INVOKE_REQUEST
+	APP_CONTRACT_STOP
+
 	APP_CONFIG
 	APP_TEXT
 	APP_VOTE
@@ -43,8 +49,8 @@ const (
 
 // key: message.UnitHash(message+timestamp)
 type Message struct {
-	App     MessageType // message type
-	Payload interface{} // the true transaction data
+	App     MessageType `json:"app"`     // message type
+	Payload interface{} `json:"payload"` // the true transaction data
 }
 
 // return message struct
@@ -94,9 +100,9 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	case APP_CONTRACT_INVOKE_REQUEST:
 		payload, _ := cpyMsg.Payload.(*ContractInvokeRequestPayload)
 		newPayload := ContractInvokeRequestPayload{
-			ContractId:   payload.ContractId,
-			Args:         payload.Args,
-			FunctionName: payload.FunctionName,
+			ContractId: payload.ContractId,
+			Args:       payload.Args,
+			Timeout:    payload.Timeout,
 		}
 		msg.Payload = newPayload
 	case APP_CONTRACT_INVOKE:
@@ -351,9 +357,10 @@ type ContractInvokePayload struct {
 
 //用户钱包发起的合约调用申请
 type ContractInvokeRequestPayload struct {
-	ContractId   []byte   `json:"contract_id"` // contract id
-	FunctionName string   `json:"function_name"`
-	Args         [][]byte `json:"args"` // contract arguments list
+	ContractId []byte `json:"contract_id"` // contract id
+	//FunctionName string   `json:"function_name"`
+	Args    [][]byte      `json:"args"` // contract arguments list
+	Timeout time.Duration `json:"timeout"`
 }
 
 // Token exchange message and verify message

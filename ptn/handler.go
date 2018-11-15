@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -118,6 +119,14 @@ type ProtocolManager struct {
 	vssResponseCh  chan mp.VSSResponseEvent
 	vssResponseSub event.Subscription
 
+	//contract exec
+	contractProc    contractInf
+	contractExecCh  chan jury.ContractExeEvent
+	contractExecSub event.Subscription
+
+	contractSigCh  chan jury.ContractSigEvent
+	contractSigSub event.Subscription
+
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg sync.WaitGroup
@@ -135,7 +144,7 @@ type ProtocolManager struct {
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool,
 	engine core.ConsensusEngine, dag dag.IDag, mux *event.TypeMux, producer producer,
-	genesis *modules.Unit) (*ProtocolManager, error) {
+	genesis *modules.Unit,contractProc contractInf) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:        networkId,
@@ -151,6 +160,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		transCycleConnCh: make(chan int, 1),
 		genesis:          genesis,
 		producer:         producer,
+		contractProc:     contractProc,
 		peersTransition:  newPeerSet(),
 		isTest:           false,
 	}
@@ -332,6 +342,16 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.vssResponseCh = make(chan mp.VSSResponseEvent)
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
 	go pm.vssResponseBroadcastLoop()
+
+	//contract exec
+	pm.contractExecCh = make(chan jury.ContractExeEvent)
+	pm.contractExecSub = pm.contractProc.SubscribeContractEvent(pm.contractExecCh)
+	go pm.contractExecRecvLoop()
+
+	//contract sig
+	pm.contractSigCh = make(chan jury.ContractSigEvent)
+	pm.contractSigSub = pm.contractProc.SubscribeContractSigEvent(pm.contractSigCh)
+	go pm.contractSigRecvLoop()
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -514,6 +534,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case msg.Code == GroupSigMsg:
 		return pm.GroupSigMsg(msg, p)
+
+	case msg.Code == ContractExecMsg:
+		return pm.ContractExecMsg(msg, p)
+
+	case msg.Code == ContractSigMsg:
+		return pm.ContractSigMsg(msg, p)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
