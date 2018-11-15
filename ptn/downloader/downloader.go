@@ -1466,7 +1466,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
 	for _, u := range blocks {
-		log.Debug("======importBlockResults=======", "unit:", *u, "index:", u.UnitHeader.Number.Index)
+		//log.Debug("======importBlockResults=======", "unit:", *u, "index:", u.UnitHeader.Number.Index)
 		units := []*modules.Unit{}
 		units = append(units, u)
 		if index, err := d.dag.InsertDag(units); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
@@ -1616,7 +1616,7 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
 	for _, u := range blocks {
-		log.Debug("======importBlockResults=======", "index:", u.UnitHeader.Number.Index, "transction size:", u.Txs.Len())
+		//log.Debug("======importBlockResults=======", "index:", u.UnitHeader.Number.Index, "transction size:", u.Txs.Len())
 		units := []*modules.Unit{}
 		units = append(units, u)
 		if index, err := d.dag.InsertDag(units); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
@@ -1654,7 +1654,6 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 // DeliverHeaders injects a new batch of block headers received from a remote
 // node into the download schedule.
 func (d *Downloader) DeliverHeaders(id string, headers []*modules.Header) (err error) {
-	log.Debug("===DeliverHeaders===")
 	return d.deliver(id, d.headerCh, &headerPack{id, headers}, headerInMeter, headerDropMeter)
 }
 

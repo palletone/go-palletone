@@ -25,7 +25,7 @@ type ChainParameters struct {
 	// 目前的操作交易费，current schedule of fees
 	CurrentFees FeeSchedule `json:"currentFees"`
 
-	// 验证单元之间的间隔时间，以秒为单元。 interval in seconds between verifiedUnits
+	// 验证单元之间的间隔时间，以秒为单元。 interval in seconds between Units
 	MediatorInterval uint8 `json:"mediatorInterval"`
 
 	// 区块链维护事件之间的间隔，以秒为单元。 interval in sections between unit maintenance events

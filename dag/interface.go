@@ -40,7 +40,6 @@ type IDag interface {
 	IsEmpty() bool
 	CurrentUnit() *modules.Unit
 	//SaveDag(unit *modules.Unit, isGenesis bool) (int, error)
-	GetActiveMediatorNodes() map[string]*discover.Node
 	VerifyHeader(header *modules.Header, seal bool) error
 	GetCurrentUnit(assetId modules.IDType16) *modules.Unit
 	GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit
@@ -101,6 +100,7 @@ type IDag interface {
 	//Mediator
 	GetActiveMediator(add common.Address) *core.Mediator
 	GetActiveMediatorNode(index int) *discover.Node
+	GetActiveMediatorNodes() map[string]*discover.Node
 
 	/* Vote */
 	GetElectedMediatorsAddress() ([]common.Address, error)

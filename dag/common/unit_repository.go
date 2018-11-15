@@ -537,11 +537,11 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 			return err
 		} else {
 			// tx := unit.Txs[0]
-			for _, msg := range tx.TxMessages {
-				log.Debug("tx msg info ==================== ", "msg", msg)
-				payment, ok := msg.Payload.(*modules.PaymentPayload)
-				log.Debug("payment info==================== ", "转化", ok, "payment", payment)
-			}
+			//for _, msg := range tx.TxMessages {
+			//	log.Debug("tx msg info ==================== ", "msg", msg)
+			//	payment, ok := msg.Payload.(*modules.PaymentPayload)
+			//	log.Debug("payment info==================== ", "转化", ok, "payment", payment)
+			//}
 		}
 		txHashSet = append(txHashSet, tx.TxHash)
 	}
