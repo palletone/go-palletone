@@ -23,6 +23,7 @@ import (
 	"math/big"
 	"time"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
@@ -34,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 // PtnApiBackend implements ethapi.Backend for full nodes
@@ -357,11 +359,15 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 	return depid, err
 }
 
-func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
+func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, paymentJson string, args [][]byte, timeout time.Duration) ([]byte, error) {
 	log.Printf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-
+	var payment modules.PaymentPayload
+	json.Unmarshal([]byte(paymentJson), &payment)
+	log.Printf("----Convert payment payload from json, result:%+v", payment)
+	tx := modules.NewTransaction([]*modules.Message{})
+	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, &payment))
 	//_, err := cc.Invoke("palletone", deployId, txid, args, timeout)
-	unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, nil, args, timeout)
+	unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, tx, args, timeout)
 	//todo print rwset
 	if err != nil {
 		return nil, err
@@ -384,4 +390,32 @@ func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {
 
 func (b *PtnApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return b.ptn.dag.GetCommonByPrefix(prefix)
+}
+func (b *PtnApiBackend) CreatePayment(fromAddr string, toAddr string, amt, fee uint64) (string, error) {
+	utxos, _ := b.ptn.dag.GetAddrUtxos(fromAddr)
+	//TODO 贪心算法找到合适的UTXO组合
+	pay := modules.NewPaymentPayload([]*modules.Input{}, []*modules.Output{})
+	totalInput := uint64(0)
+	var asset *modules.Asset
+	for outPoint, utxo := range utxos {
+		asset = utxo.Asset
+		input0 := modules.NewTxIn(&outPoint, []byte{})
+		pay.AddTxIn(input0)
+		totalInput += utxo.Amount
+		if totalInput > amt+fee {
+			break
+		}
+
+	}
+	if len(toAddr) != 0 {
+		toAddrs, _ := common.StringToAddress(toAddr)
+		output0 := modules.NewTxOut(amt, tokenengine.GenerateLockScript(toAddrs), asset)
+		pay.AddTxOut(output0)
+	}
+	//找零
+	fromAddrs, _ := common.StringToAddress(fromAddr)
+	output1 := modules.NewTxOut(totalInput-amt-fee, tokenengine.GenerateLockScript(fromAddrs), asset)
+	pay.AddTxOut(output1)
+	jsonPay, err := json.Marshal(pay)
+	return string(jsonPay), err
 }
