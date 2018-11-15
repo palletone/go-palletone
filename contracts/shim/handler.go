@@ -438,7 +438,7 @@ func (handler *Handler) handleGetState(collection string, key string, contractid
 func (handler *Handler) handleGetTokenBalance(address string, token *modules.Asset, contractid []byte, channelId string, txid string) (map[modules.Asset]uint64, error) {
 	par := &pb.GetTokenBalance{Address: address}
 	if token != nil {
-		par.Asset = token.Bytes()
+		par.Asset = token.String()
 	}
 	payloadBytes, _ := proto.Marshal(par)
 

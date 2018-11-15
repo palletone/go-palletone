@@ -367,7 +367,9 @@ func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, paymentJson
 	log.Printf("----Convert payment payload from json, result:%+v", payment)
 	tx := modules.NewTransaction([]*modules.Message{})
 	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, &payment))
-	//_, err := cc.Invoke("palletone", deployId, txid, args, timeout)
+	contractInvokeRequest := &modules.ContractInvokeRequestPayload{ContractId: deployId, FunctionName: string(args[0]), Args: args[1:]}
+	tx.AddMessage(modules.NewMessage(modules.APP_CONTRACT_INVOKE_REQUEST, contractInvokeRequest))
+
 	unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, tx, args, timeout)
 	//todo print rwset
 	if err != nil {

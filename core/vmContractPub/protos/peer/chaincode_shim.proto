@@ -150,7 +150,7 @@ message OutChainQuery {
 }
 message GetTokenBalance {
     string address = 1;
-    bytes asset = 2;
+    string asset = 2;
 }
 message PayOutToken {
     bytes asset = 1;

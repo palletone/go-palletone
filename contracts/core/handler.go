@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/outchain"
 	"github.com/palletone/go-palletone/core"
 
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	commonledger "github.com/palletone/go-palletone/core/vmContractPub/ledger"
@@ -794,18 +795,23 @@ func (handler *Handler) handleGetTokenBalance(msg *pb.ChaincodeMessage) {
 			return
 		}
 		chaincodeID := handler.getCCRootName()
-		chaincodeLogger.Debugf("[%s] getting balance for chaincode %s, key %s, channel %s",
-			shorttxid(msg.Txid), chaincodeID, getBalance.Asset, txContext.chainID)
-
+		chaincodeLogger.Debugf("[%s] getting balance for chaincode %s, asset: %s,address: %s, channel %s",
+			shorttxid(msg.Txid), chaincodeID, getBalance.Asset, getBalance.Address, txContext.chainID)
 		var balance map[modules.Asset]uint64
 		var err error
-		if getBalance.Asset != nil && len(getBalance.Asset) > 0 {
-			asset := &modules.Asset{}
-			asset.SetBytes(getBalance.Asset)
-			balance, err = txContext.txsimulator.GetTokenBalance(msg.ContractId, chaincodeID, asset)
-		} else { // get all token type balance
-			balance, err = txContext.txsimulator.GetTokenBalance(msg.ContractId, chaincodeID, nil)
+		addr := getBalance.Address
+		if len(addr) == 0 { //Get current contract address balance
+			addr = crypto.ContractIdToAddress(msg.ContractId).String()
 		}
+		if len(getBalance.Asset) > 0 {
+			asset := &modules.Asset{}
+			asset.SetString(getBalance.Asset)
+			balance, err = txContext.txsimulator.GetTokenBalance(chaincodeID, addr, asset)
+		} else { // get all token type balance
+			balance, err = txContext.txsimulator.GetTokenBalance(chaincodeID, addr, nil)
+
+		}
+
 		if err != nil {
 			// Send error msg back to chaincode. GetState will not trigger event
 			payload := []byte(err.Error())
