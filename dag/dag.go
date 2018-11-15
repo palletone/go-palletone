@@ -745,9 +745,9 @@ func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) common.Address {
 	//TODO Devin
 	return common.Address{}
 }
-func (d *Dag) GetTxFee(pay *modules.PaymentPayload) (uint64, modules.Asset) {
+func (d *Dag) GetTxFee(pay *modules.PaymentPayload) modules.InvokeFees {
 	//TODO Devin
-	return uint64(0), modules.Asset{}
+	return modules.InvokeFees{}
 }
 
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
