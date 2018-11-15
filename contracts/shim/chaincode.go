@@ -815,9 +815,8 @@ func (stub *ChaincodeStub) GetInvokeFees() (*modules.InvokeFees, error) {
 }
 
 //获得该合约的Token余额
-func (stub *ChaincodeStub) GetTokenBalance() (map[modules.Asset]uint64, error) {
-	// TODO Devin return stub.handler.handleGetTokenBalance(stub.ContractId, stub.ChannelId, stub.TxID)
-	return map[modules.Asset]uint64{}, nil
+func (stub *ChaincodeStub) GetTokenBalance(address string, token *modules.Asset) (map[modules.Asset]uint64, error) {
+	return stub.handler.handleGetTokenBalance(address, token, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
 //将合约上锁定的某种Token支付出去

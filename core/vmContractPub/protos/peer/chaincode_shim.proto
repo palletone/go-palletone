@@ -152,7 +152,8 @@ message OutChainQuery {
     string collection = 3;
 }
 message GetTokenBalance {
-    bytes asset = 1;
+    string address = 1;
+    bytes asset = 2;
 }
 message PayOutToken {
     bytes asset = 1;

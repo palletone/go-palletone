@@ -24,10 +24,11 @@ import (
 	"fmt"
 	"strings"
 
-	"encoding/json"
 	"github.com/palletone/go-palletone/common"
+
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/errors"
 )
 
 var DAO uint64 = 100000000
@@ -52,22 +53,36 @@ type Asset struct {
 }
 
 func (asset *Asset) String() string {
-	//data, err := rlp.EncodeToBytes(asset)
-	//if err != nil {
-	//	return ""
-	//}
-	//return string(data)
-	data, _ := json.Marshal(asset)
-	return string(data)
+	if asset.UniqueId == ZeroIdType16() {
+		return asset.AssetId.String()
+	}
+	return fmt.Sprintf("%s-%s", asset.AssetId.String(), asset.UniqueId.String())
 }
 
 func (asset *Asset) SetString(data string) error {
-	//if err := rlp.DecodeBytes([]byte(data), asset); err != nil {
-	//	return err
-	//}
-	//return nil
-	return json.Unmarshal([]byte(data), asset)
-
+	if len(data) == 34 {
+		//ERC20, AssetID only
+		a, err := SetIdTypeByHex(data)
+		if err != nil {
+			return err
+		}
+		asset.AssetId = a
+	}
+	if len(data) == 69 {
+		a, err := SetIdTypeByHex(data[:34])
+		if err != nil {
+			return err
+		}
+		b, err := SetIdTypeByHex(data[35:])
+		if err != nil {
+			return err
+		}
+		asset.AssetId = a
+		asset.UniqueId = b
+	} else {
+		return errors.New("Invalid asset string, length must be 34 or 69")
+	}
+	return nil
 }
 
 func (asset *Asset) IsEmpty() bool {
