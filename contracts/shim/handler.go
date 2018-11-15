@@ -28,7 +28,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 
 	"encoding/json"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/pkg/errors"
 )
