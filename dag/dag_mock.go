@@ -89,18 +89,6 @@ func (mr *MockIDagMockRecorder) CurrentUnit() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentUnit", reflect.TypeOf((*MockIDag)(nil).CurrentUnit))
 }
 
-// GetActiveMediatorNodes mocks base method
-func (m *MockIDag) GetActiveMediatorNodes() map[string]*discover.Node {
-	ret := m.ctrl.Call(m, "GetActiveMediatorNodes")
-	ret0, _ := ret[0].(map[string]*discover.Node)
-	return ret0
-}
-
-// GetActiveMediatorNodes indicates an expected call of GetActiveMediatorNodes
-func (mr *MockIDagMockRecorder) GetActiveMediatorNodes() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveMediatorNodes", reflect.TypeOf((*MockIDag)(nil).GetActiveMediatorNodes))
-}
-
 // VerifyHeader mocks base method
 func (m *MockIDag) VerifyHeader(header *modules.Header, seal bool) error {
 	ret := m.ctrl.Call(m, "VerifyHeader", header, seal)
@@ -711,6 +699,18 @@ func (mr *MockIDagMockRecorder) GetActiveMediatorNode(index interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveMediatorNode", reflect.TypeOf((*MockIDag)(nil).GetActiveMediatorNode), index)
 }
 
+// GetActiveMediatorNodes mocks base method
+func (m *MockIDag) GetActiveMediatorNodes() map[string]*discover.Node {
+	ret := m.ctrl.Call(m, "GetActiveMediatorNodes")
+	ret0, _ := ret[0].(map[string]*discover.Node)
+	return ret0
+}
+
+// GetActiveMediatorNodes indicates an expected call of GetActiveMediatorNodes
+func (mr *MockIDagMockRecorder) GetActiveMediatorNodes() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveMediatorNodes", reflect.TypeOf((*MockIDag)(nil).GetActiveMediatorNodes))
+}
+
 // GetElectedMediatorsAddress mocks base method
 func (m *MockIDag) GetElectedMediatorsAddress() ([]common.Address, error) {
 	ret := m.ctrl.Call(m, "GetElectedMediatorsAddress")
@@ -773,4 +773,28 @@ func (m *MockIDag) SaveTokenInfo(token_info *modules.TokenInfo) (string, error) 
 // SaveTokenInfo indicates an expected call of SaveTokenInfo
 func (mr *MockIDagMockRecorder) SaveTokenInfo(token_info interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTokenInfo", reflect.TypeOf((*MockIDag)(nil).SaveTokenInfo), token_info)
+}
+
+// GetAddrByOutPoint mocks base method
+func (m *MockIDag) GetAddrByOutPoint(outPoint *modules.OutPoint) common.Address {
+	ret := m.ctrl.Call(m, "GetAddrByOutPoint", outPoint)
+	ret0, _ := ret[0].(common.Address)
+	return ret0
+}
+
+// GetAddrByOutPoint indicates an expected call of GetAddrByOutPoint
+func (mr *MockIDagMockRecorder) GetAddrByOutPoint(outPoint interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrByOutPoint", reflect.TypeOf((*MockIDag)(nil).GetAddrByOutPoint), outPoint)
+}
+
+// GetTxFee mocks base method
+func (m *MockIDag) GetTxFee(pay *modules.PaymentPayload) modules.InvokeFees {
+	ret := m.ctrl.Call(m, "GetTxFee", pay)
+	ret0, _ := ret[0].(modules.InvokeFees)
+	return ret0
+}
+
+// GetTxFee indicates an expected call of GetTxFee
+func (mr *MockIDagMockRecorder) GetTxFee(pay interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxFee", reflect.TypeOf((*MockIDag)(nil).GetTxFee), pay)
 }
