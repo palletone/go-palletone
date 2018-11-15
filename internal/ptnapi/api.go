@@ -27,10 +27,10 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
-	"sort"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -813,7 +813,7 @@ func (s *PublicBlockChainAPI) Ccdeploy(ctx context.Context, templateId string, t
 	return hexutil.Bytes(deployId), err
 }
 
-func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string, param []string /*fun string, key string, val string*/) (string, error) {
+func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string, paymentJson string, param []string /*fun string, key string, val string*/) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
 	log.Info("-----Ccinvoke:" + deployId + ":" + txid)
 
@@ -824,7 +824,7 @@ func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txi
 	}
 
 	//args := ut.ToChaincodeArgs(fun, key, val)
-	rsp, err := s.b.ContractInvoke(depId, txid, args, 0)
+	rsp, err := s.b.ContractInvoke(depId, txid, paymentJson, args, 0)
 
 	log.Info("-----ContractInvoke:" + string(rsp))
 
@@ -837,6 +837,10 @@ func (s *PublicBlockChainAPI) Ccstop(ctx context.Context, deployId string, txid 
 
 	err := s.b.ContractStop(depId, txid, true)
 	return err
+}
+
+func (s *PublicBlockChainAPI) CreatePayment(ctx context.Context, fromAddr string, toAddr string, amt, fee uint64) (string, error) {
+	return s.b.CreatePayment(fromAddr, toAddr, amt, fee)
 }
 
 // ExecutionResult groups all structured logs emitted by the EVM
@@ -1604,98 +1608,99 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 func find_min(utxos Utxos) ptnjson.UtxoJson {
 	amout := utxos[0].Amount
 	min_utxo := utxos[0]
-	for _,utxo := range utxos {
-        if utxo.Amount < amout {
-            min_utxo = utxo
-            amout = min_utxo.Amount
-        }
+	for _, utxo := range utxos {
+		if utxo.Amount < amout {
+			min_utxo = utxo
+			amout = min_utxo.Amount
+		}
 	}
 	return min_utxo
 }
 
 type Utxos []ptnjson.UtxoJson
-func (a Utxos) Len() int {    // 重写 Len() 方法
-    return len(a)
+
+func (a Utxos) Len() int { // 重写 Len() 方法
+	return len(a)
 }
-func (a Utxos) Swap(i, j int){     // 重写 Swap() 方法
-    a[i], a[j] = a[j], a[i]
+func (a Utxos) Swap(i, j int) { // 重写 Swap() 方法
+	a[i], a[j] = a[j], a[i]
 }
-func (a Utxos) Less(i, j int) bool {    // 重写 Less() 方法， 从小到大排序
-    return a[j].Amount > a[i].Amount
+func (a Utxos) Less(i, j int) bool { // 重写 Less() 方法， 从小到大排序
+	return a[j].Amount > a[i].Amount
 }
 
-
-func Select_utxo_Greedy(utxos Utxos,amount uint64 )(Utxos,uint64){
-    var greaters Utxos
-    var lessers Utxos
-    var taken_utxo Utxos
-    var accum uint64
-    var change uint64
-    for _, utxo := range utxos {
-	    if utxo.Amount > amount {
-	        greaters = append(greaters,utxo)
-	    }
-	    if utxo.Amount < amount {
-	        lessers =  append(lessers,utxo)
-	    }
-    }
-    var min_greater ptnjson.UtxoJson
-    if len(greaters) > 0 {
-        min_greater = find_min(greaters)
-        change = min_greater.Amount - amount
-        fmt.Println(change)
-        taken_utxo = append(taken_utxo,min_greater)
-    }else if len(greaters) == 0 && len(lessers) > 0 {
-    	sort.Sort(Utxos(lessers))
-		for _,utxo := range lessers{
+func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64) {
+	var greaters Utxos
+	var lessers Utxos
+	var taken_utxo Utxos
+	var accum uint64
+	var change uint64
+	for _, utxo := range utxos {
+		if utxo.Amount > amount {
+			greaters = append(greaters, utxo)
+		}
+		if utxo.Amount < amount {
+			lessers = append(lessers, utxo)
+		}
+	}
+	var min_greater ptnjson.UtxoJson
+	if len(greaters) > 0 {
+		min_greater = find_min(greaters)
+		change = min_greater.Amount - amount
+		fmt.Println(change)
+		taken_utxo = append(taken_utxo, min_greater)
+	} else if len(greaters) == 0 && len(lessers) > 0 {
+		sort.Sort(Utxos(lessers))
+		for _, utxo := range lessers {
 			accum += utxo.Amount
-			taken_utxo = append(taken_utxo,utxo)
+			taken_utxo = append(taken_utxo, utxo)
 			if accum >= amount {
 				change = accum - amount
-			   break 
+				break
 			}
 		}
 		if accum < amount {
-            return nil, 0
+			return nil, 0
 		}
-    }
-    return taken_utxo, change
+	}
+	return taken_utxo, change
 }
 
-func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s *rpcServer*/, from string,to string,amount uint64) (string, error) {
+func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s *rpcServer*/, from string, to string, amount uint64) (string, error) {
 	//realNet := &chaincfg.MainNetParams
 	var LockTime int64
-    LockTime = 0
+	LockTime = 0
 
 	amounts := map[string]float64{}
 	if to == "" {
 		return "", fmt.Errorf("amounts is empty")
 	}
 	amounts[to] = float64(amount)
-    utxos ,err := s.b.GetAddrUtxos(from)
-    if err != nil {
+	utxos, err := s.b.GetAddrUtxos(from)
+	if err != nil {
 		return "", err
 	}
-    
-    taken_utxo,change := Select_utxo_Greedy(utxos,amount)
-    if taken_utxo == nil {
-    	return "",fmt.Errorf("Select utxo err")
-    }
 
-    var inputs []ptnjson.TransactionInput
-    var input  ptnjson.TransactionInput
-    for _,utxo := range taken_utxo{
+	taken_utxo, change := Select_utxo_Greedy(utxos, amount)
+	if taken_utxo == nil {
+		return "", fmt.Errorf("Select utxo err")
+	}
+
+	var inputs []ptnjson.TransactionInput
+	var input ptnjson.TransactionInput
+	for _, utxo := range taken_utxo {
 		input.Txid = utxo.TxHash
 		input.MessageIndex = utxo.MessageIndex
-		input.Vout  = utxo.OutIndex
-		inputs =append(inputs,input)
+		input.Vout = utxo.OutIndex
+		inputs = append(inputs, input)
 	}
-    amounts[from] = float64(change)
+	amounts[from] = float64(change)
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
 	result, _ := CreateRawTransaction(arg)
 	fmt.Println(result)
 	return result, nil
 }
+
 //create raw transction
 func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
 	var rawTransactionGenParams ptnjson.RawTransactionGenParams
@@ -1951,14 +1956,14 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 			continue
 		}
 
-		for _, txout := range payload.Output {
+		for _, txout := range payload.Outputs {
 			log.Info("+++++++++++++++++++++++++++++++++++++++++", "tx_outAmount", txout.Value, "outInfo", txout)
 			outAmount += txout.Value
 		}
 	}
 	log.Info("--------------------------send tx ----------------------------", "txOutAmount", outAmount)
 
-	log.Debugf("Tx outpoint tx hash:%s", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0].PreviousOutPoint.TxHash.String())
+	log.Debugf("Tx outpoint tx hash:%s", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
 	//log.Info("PublicTransactionPoolAPI", "SendRawTransaction tx", tx)
 	return submitTransaction(ctx, s.b, tx)
 }

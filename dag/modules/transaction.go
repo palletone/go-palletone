@@ -42,16 +42,16 @@ var (
 
 // TxOut defines a bitcoin transaction output.
 type TxOut struct {
-	Value    int64
-	PkScript []byte
-	Asset    *Asset
+	Value    int64  `json:"value"`
+	PkScript []byte `json:"pk_script"`
+	Asset    *Asset `json:"asset_info"`
 }
 
 // TxIn defines a bitcoin transaction input.
 type TxIn struct {
-	PreviousOutPoint *OutPoint
-	SignatureScript  []byte
-	Sequence         uint32
+	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
+	SignatureScript  []byte    `json:"signature_script"`
+	Sequence         uint32    `json:"sequence"`
 }
 
 func NewTransaction(msg []*Message) *Transaction {
@@ -79,12 +79,12 @@ func (tx *Transaction) AddMessage(me *Message) {
 
 // AddTxIn adds a transaction input to the message.
 func (pld *PaymentPayload) AddTxIn(ti *Input) {
-	pld.Input = append(pld.Input, ti)
+	pld.Inputs = append(pld.Inputs, ti)
 }
 
 // AddTxOut adds a transaction output to the message.
 func (pld *PaymentPayload) AddTxOut(to *Output) {
-	pld.Output = append(pld.Output, to)
+	pld.Outputs = append(pld.Outputs, to)
 }
 
 func (t *Transaction) SetHash(hash common.Hash) {
@@ -182,6 +182,13 @@ func (tx *Transaction) Hash() common.Hash {
 	v := rlp.RlpHash(tx)
 	tx.TxHash = v
 	return v
+}
+func (tx *Transaction) Messages() []*Message {
+	msgs := make([]*Message, 0)
+	for _, msg := range tx.TxMessages {
+		msgs = append(msgs, msg)
+	}
+	return msgs
 }
 
 // Size returns the true RLP encoded storage UnitSize of the transaction, either by
@@ -314,9 +321,9 @@ var (
 )
 
 type TxLookupEntry struct {
-	UnitHash  common.Hash
-	UnitIndex uint64
-	Index     uint64
+	UnitHash  common.Hash `json:"unit_hash"`
+	UnitIndex uint64      `json:"unit_index"`
+	Index     uint64      `json:"index"`
 }
 type Transactions []*Transaction
 type Transaction struct {
@@ -325,9 +332,9 @@ type Transaction struct {
 }
 
 type OutPoint struct {
-	TxHash       common.Hash // reference Utxo struct key field
-	MessageIndex uint32      // message index in transaction
-	OutIndex     uint32
+	TxHash       common.Hash //`json:"txhash"`        // reference Utxo struct key field
+	MessageIndex uint32      //`json:"message_index"` // message index in transaction
+	OutIndex     uint32      //`json:"out_index"`
 }
 
 func (outpoint *OutPoint) String() string {
@@ -477,12 +484,12 @@ func (msg *PaymentPayload) SerializeNoWitness(w io.Writer) error {
 func (msg *PaymentPayload) baseSize() int {
 	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
 	// number of transaction inputs and outputs.
-	n := 8 + VarIntSerializeSize(uint64(len(msg.Input))) +
-		VarIntSerializeSize(uint64(len(msg.Output)))
-	for _, txIn := range msg.Input {
+	n := 8 + VarIntSerializeSize(uint64(len(msg.Inputs))) +
+		VarIntSerializeSize(uint64(len(msg.Outputs)))
+	for _, txIn := range msg.Inputs {
 		n += txIn.SerializeSize()
 	}
-	for _, txOut := range msg.Output {
+	for _, txOut := range msg.Outputs {
 		n += txOut.SerializeSize()
 	}
 	return n
@@ -496,10 +503,10 @@ func (msg *Transaction) baseSize() int {
 		payload := mtx.Payload
 		payment, ok := payload.(PaymentPayload)
 		if ok == true {
-			for _, txIn := range payment.Input {
+			for _, txIn := range payment.Inputs {
 				n += txIn.SerializeSize()
 			}
-			for _, txOut := range payment.Output {
+			for _, txOut := range payment.Outputs {
 				n += txOut.SerializeSize()
 			}
 		}

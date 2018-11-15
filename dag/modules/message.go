@@ -30,10 +30,16 @@ type MessageType byte
 
 const (
 	APP_PAYMENT MessageType = iota
+
+	APP_CONTRACT_TPL_REQUEST
+	APP_CONTRACT_DEPLOY_REQUEST
+	APP_CONTRACT_INVOKE_REQUEST
+	APP_CONTRACT_STOP_REQUEST
 	APP_CONTRACT_TPL
 	APP_CONTRACT_DEPLOY
 	APP_CONTRACT_INVOKE
-	APP_CONTRACT_INVOKE_REQUEST
+	APP_CONTRACT_STOP
+
 	APP_CONFIG
 	APP_TEXT
 	APP_VOTE
@@ -94,9 +100,9 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	case APP_CONTRACT_INVOKE_REQUEST:
 		payload, _ := cpyMsg.Payload.(*ContractInvokeRequestPayload)
 		newPayload := ContractInvokeRequestPayload{
-			ContractId:   payload.ContractId,
-			Args:         payload.Args,
-			FunctionName: payload.FunctionName,
+			ContractId: payload.ContractId,
+			Args:       payload.Args,
+			Timeout:    payload.Timeout,
 		}
 		msg.Payload = newPayload
 	case APP_CONTRACT_INVOKE:
@@ -144,8 +150,8 @@ func ToPayloadMapValueBytes(data interface{}) []byte {
 // Token exchange message and verify message
 // App: payment
 type PaymentPayload struct {
-	Input    []*Input  `json:"inputs"`
-	Output   []*Output `json:"outputs"`
+	Inputs   []*Input  `json:"inputs"`
+	Outputs  []*Output `json:"outputs"`
 	LockTime uint32    `json:"lock_time"`
 }
 
@@ -266,11 +272,22 @@ type ContractReadSet struct {
 	Version *StateVersion
 	Value   []byte
 }
+
+type InvokeInfo struct {
+	InvokeAddress common.Address `json:"invoke_address"`
+	InvokeTokens  InvokeTokens   `json:"invoke_tokens"`
+	InvokeFees    InvokeFees     `json:"invoke_fees"`
+}
+
 type InvokeTokens struct {
 	Amount uint64 `json:"amount"`
 	Asset  Asset  `json:"asset"`
 }
 type InvokeFees struct {
+	Amount uint64 `json:"amount"`
+	Asset  Asset  `json:"asset"`
+}
+type AmountAsset struct {
 	Amount uint64 `json:"amount"`
 	Asset  Asset  `json:"asset"`
 }
@@ -340,9 +357,10 @@ type ContractInvokePayload struct {
 
 //用户钱包发起的合约调用申请
 type ContractInvokeRequestPayload struct {
-	ContractId   []byte   `json:"contract_id"` // contract id
-	FunctionName string   `json:"function_name"`
-	Args         [][]byte `json:"args"` // contract arguments list
+	ContractId []byte `json:"contract_id"` // contract id
+	//FunctionName string   `json:"function_name"`
+	Args    [][]byte      `json:"args"` // contract arguments list
+	Timeout time.Duration `json:"timeout"`
 }
 
 // Token exchange message and verify message
@@ -364,10 +382,14 @@ type TextPayload struct {
 	Text []byte `json:"text"` // Textdata
 }
 
+// mediatorpayload
+type MediatorPayload struct {
+}
+
 func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {
 	return &PaymentPayload{
-		Input:    inputs,
-		Output:   outputs,
+		Inputs:   inputs,
+		Outputs:  outputs,
 		LockTime: defaultTxInOutAlloc,
 	}
 }

@@ -36,23 +36,23 @@ var (
 	DynGlobalPropDBKey = append(constants.DYNAMIC_GLOBALPROPERTY_PREFIX, []byte("DynamicGlobalProperty")...)
 )
 
+// only for serialization
 type globalProperty struct {
 	ChainParameters core.ChainParameters
 
-	ActiveMediators []core.MediatorInfo
+	ActiveMediators []string
 
 	GroupPubKey string
 }
 
-func getGPT(gp *modules.GlobalProperty) globalProperty {
-	ams := make([]core.MediatorInfo, 0)
+func getGPT(gp *modules.GlobalProperty) *globalProperty {
+	ams := make([]string, 0)
 
-	for _, med := range gp.ActiveMediators {
-		medInfo := med.MediatorToInfo()
-		ams = append(ams, medInfo)
+	for medAdd, _ := range gp.ActiveMediators {
+		ams = append(ams, medAdd.Str())
 	}
 
-	gpt := globalProperty{
+	gpt := &globalProperty{
 		ChainParameters: gp.ChainParameters,
 		ActiveMediators: ams,
 		GroupPubKey:     core.PointToStr(gp.GroupPubKey),
@@ -61,11 +61,10 @@ func getGPT(gp *modules.GlobalProperty) globalProperty {
 	return gpt
 }
 
-func getGP(gpt *globalProperty) *modules.GlobalProperty {
-	ams := make(map[common.Address]core.Mediator, 0)
-	for _, medInfo := range gpt.ActiveMediators {
-		med := medInfo.InfoToMediator()
-		ams[med.Address] = med
+func (gpt *globalProperty) getGP() *modules.GlobalProperty {
+	ams := make(map[common.Address]bool, 0)
+	for _, addStr := range gpt.ActiveMediators {
+		ams[core.StrToMedAdd(addStr)] = true
 	}
 
 	gp := modules.NewGlobalProp()
@@ -104,7 +103,7 @@ func RetrieveGlobalProp(db ptndb.Database) (*modules.GlobalProperty, error) {
 		log.Error(fmt.Sprintf("Retrieve global properties error: %s", err))
 	}
 
-	gp := getGP(gpt)
+	gp := gpt.getGP()
 
 	return gp, err
 }

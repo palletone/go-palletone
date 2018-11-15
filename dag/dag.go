@@ -38,6 +38,7 @@ import (
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
+	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -139,50 +140,43 @@ func (d *Dag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) 
 	//return d.dagdb.GetUnitFormIndex(number)
 	hash, err := d.dagdb.GetHashByNumber(number)
 	if err != nil {
-		log.Debug("Dag", "GetUnitByNumber dagdb.GetHashByNumber err:", err)
+		//log.Debug("Dag", "GetUnitByNumber dagdb.GetHashByNumber err:", err)
 		return nil, err
 	}
-	log.Debug("Dag", "GetUnitByNumber GetUnit(hash):", hash)
+	//log.Debug("Dag", "GetUnitByNumber GetUnit(hash):", hash)
 	return d.dagdb.GetUnit(hash)
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 	height, err := d.GetUnitNumber(hash)
 	if err != nil {
-		log.Debug("GetHeaderByHash when GetUnitNumber", "error", err.Error())
+		//log.Debug("GetHeaderByHash when GetUnitNumber", "error", err.Error())
 		return nil
 	}
 	// get unit header
 	uHeader, err := d.dagdb.GetHeader(hash, height)
 	if err != nil {
-		log.Debug("Current unit when get unit header", "error", err.Error())
+		//log.Debug("Current unit when get unit header", "error", err.Error())
 		return nil
 	}
 	return uHeader
 }
 
 func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
-	log.Debug("Dag", "GetHeaderByNumber ChainIndex:", number)
+	//log.Debug("Dag", "GetHeaderByNumber ChainIndex:", number)
 	hash, err := d.dagdb.GetHashByNumber(number)
 	if err != nil {
-		log.Debug("Dag", "GetHeaderByNumber dagdb.GetHashByNumber err:", err)
+		//log.Debug("Dag", "GetHeaderByNumber dagdb.GetHashByNumber err:", err)
 		return nil
 	}
 
 	uHeader, err1 := d.dagdb.GetHeader(hash, &number)
 	if err1 != nil {
-		log.Info("GetUnit when GetHeader failed ", "error:", err1, "hash", hash.String())
-		log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
+		//log.Info("GetUnit when GetHeader failed ", "error:", err1, "hash", hash.String())
+		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
 		return nil
 	}
 	return uHeader
-
-	//header, err := d.dagdb.GetHeaderByHeight(number)
-	//if err != nil {
-	//	log.Debug("Dag", "GetHeaderByNumber err:", err, "ChainIndex:", number)
-	//	return nil
-	//}
-	//return header
 }
 
 func (d *Dag) GetPrefix(prefix string) map[string][]byte {
@@ -216,7 +210,7 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // reference : Eth InsertChain
 func (d *Dag) InsertDag(units modules.Units) (int, error) {
 	//TODO must recover，不连续的孤儿unit也应当存起来，以方便后面处理
-	log.Debug("===InsertDag===", "len(units):", len(units))
+	//log.Debug("===InsertDag===", "len(units):", len(units))
 	count := int(0)
 	for i, u := range units {
 		// all units must be continuous
@@ -272,22 +266,11 @@ func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash 
 
 // need add:   assetId modules.IDType16, onMain bool
 func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
-	//index := new(modules.ChainIndex)
-	//index.Index = number
-	////fmt.Println(hash)
-	////fmt.Println(number)
-	//// copy(index.AssetID[:], assetId[:])
-	//// index.IsMain = onMain
-	//if h, err := d.dagdb.GetHeader(hash, index); err == nil && h != nil {
-	//	return true
-	//}
-	//return false
-
 	return d.GetHeaderByHash(hash) != nil
 }
 func (d *Dag) Exists(hash common.Hash) bool {
 	if unit, err := d.dagdb.GetUnit(hash); err == nil && unit != nil {
-		log.Info("hash is exsit in leveldb ", "hash", hash.String())
+		log.Info("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
 		return true
 	}
 	return false
@@ -310,6 +293,8 @@ func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
 	return d.dagdb.GetUnitTransactions(hash)
 }
+
+// GetTransactionByHash is return the tx by tx's hash
 func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, error) {
 	tx, _, _, _ := d.dagdb.GetTransaction(hash)
 	if tx == nil {
@@ -624,7 +609,7 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 				// if tx is Not CoinBase
 				// add txIn previousoutpoint
 				if isnot_coinbase {
-					for _, in := range msg.Input {
+					for _, in := range msg.Inputs {
 						neededSet[*in.PreviousOutPoint] = struct{}{}
 					}
 				}
@@ -738,6 +723,17 @@ func (d *Dag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	return all, err
 }
 
+func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error) {
+	utxo, err := d.utxodb.GetUtxoEntry(outPoint)
+	if err != nil {
+		return common.Address{}, err
+	}
+	return tokenengine.GetAddressFromScript(utxo.PkScript)
+}
+func (d *Dag) GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error) {
+	return d.utxoRep.ComputeTxFee(pay)
+}
+
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return d.dagdb.GetAddrOutput(addr)
 }
@@ -817,11 +813,12 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		parent_hash = unit.Hash()
 	}
 
-	log.Debug("start save dag", "index", unit.UnitHeader.Index(), "hash", unit.Hash())
+	//log.Debug("start save dag", "index", unit.UnitHeader.Index(), "hash", unit.Hash())
 
 	if !isGenesis {
 		if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
-			return fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
+			log.Info("dag", "SaveUnit unit is already existing.hash:", unit.Hash().String())
+			return dagerrors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 		}
 	}
 	// step2. validate unit
@@ -848,7 +845,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		if err := d.Memdag.Save(unit); err != nil {
 			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		} else {
-			log.Info("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
+			//log.Info("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
 		}
 	}
 
@@ -860,7 +857,6 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	// TODO
 	// update  utxo
 	go func(unit *modules.Unit) {
-		var outpoint = modules.OutPoint{}
 		view := txspool.NewUtxoViewpoint()
 		if unitState == modules.UNIT_STATE_VALIDATED {
 			view.FetchUnitUtxos(d.utxodb, unit)
@@ -933,7 +929,6 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 			// add d.utxo_cache
 
 			for key, utxo := range view2.Entries() {
-				outpoint = key
 				if utxos == nil {
 					fmt.Println("init utxos:")
 					utxos = make(map[modules.OutPoint]*modules.Utxo)
@@ -941,7 +936,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 				utxos[key] = utxo
 			}
 			d.utxos_cache[unit.Hash()] = utxos
-			log.Info("=================saved Memdag and dag's utxo cache:  key-value ===============", "keyinfo", outpoint.String(), "utxoinfo", d.utxos_cache[unit.Hash()][outpoint])
+			//log.Info("=================saved Memdag and dag's utxo cache:  key-value ===============", "keyinfo", outpoint.String(), "utxoinfo", d.utxos_cache[unit.Hash()][outpoint])
 		}
 	}(unit)
 

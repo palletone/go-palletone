@@ -452,7 +452,7 @@ func getRequesterAddress(tx *modules.Transaction) (common.Address, error) {
 
 func getFirstInputAddress(pay *modules.PaymentPayload) (common.Address, error) {
 
-	unlockScript := pay.Input[0].SignatureScript
+	unlockScript := pay.Inputs[0].SignatureScript
 	if unlockScript == nil { // coinbase?
 		return common.Address{}, errors.New("Coinbase don't have input address")
 	}
@@ -535,6 +535,13 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 		if err := unitOp.dagdb.SaveTransaction(tx); err != nil {
 			log.Info("Save transaction:", "error", err.Error())
 			return err
+		} else {
+			// tx := unit.Txs[0]
+			//for _, msg := range tx.TxMessages {
+			//	log.Debug("tx msg info ==================== ", "msg", msg)
+			//	payment, ok := msg.Payload.(*modules.PaymentPayload)
+			//	log.Debug("payment info==================== ", "转化", ok, "payment", payment)
+			//}
 		}
 		txHashSet = append(txHashSet, tx.TxHash)
 	}
@@ -766,8 +773,8 @@ func CreateCoinbase(addr *common.Address, income uint64, asset *modules.Asset, t
 		PkScript: script,
 	}
 	payload := modules.PaymentPayload{
-		Input:  []*modules.Input{&input},
-		Output: []*modules.Output{&output},
+		Inputs:  []*modules.Input{&input},
+		Outputs: []*modules.Output{&output},
 	}
 	// step3. create message
 	msg := &modules.Message{

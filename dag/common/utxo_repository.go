@@ -49,6 +49,7 @@ type IUtxoRepository interface {
 	GetUxto(txin modules.Input) modules.Utxo
 	UpdateUtxo(txHash common.Hash, msg *modules.Message, msgIndex uint32) error
 	ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error)
+	ComputeTxFee(tx *modules.Transaction) (modules.InvokeFees, error)
 	GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64)
 	GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	WalletBalance(addr common.Address, asset modules.Asset) uint64
@@ -174,13 +175,13 @@ func (repository *UtxoRepository) UpdateUtxo(txHash common.Hash, msg *modules.Me
 	payment, ok := payload.(*modules.PaymentPayload)
 	if ok == true {
 		// create utxo
-		errs := repository.writeUtxo(txHash, msgIndex, payment.Output, payment.LockTime)
+		errs := repository.writeUtxo(txHash, msgIndex, payment.Outputs, payment.LockTime)
 		if len(errs) > 0 {
 			log.Error("error occurred on updated utxos, check the log file to find details.")
 			return errors.New("error occurred on updated utxos, check the log file to find details.")
 		}
 		// destory utxo
-		repository.destoryUtxo(payment.Input)
+		repository.destoryUtxo(payment.Inputs)
 		return nil
 	}
 	return errors.New("UpdateUtxo: the transaction payload is not payment.")
@@ -524,44 +525,57 @@ func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) 
 	// current time slice mediator default income is 1 ptn
 	fees := uint64(0)
 	for _, tx := range txs {
-		for _, msg := range tx.Tx.TxMessages {
-			payload, ok := msg.Payload.(*modules.PaymentPayload)
-			if ok == false {
-				continue
-			}
-			inAmount := uint64(0)
-			outAmount := uint64(0)
-			for _, txin := range payload.Input {
-				utxo := repository.GetUxto(*txin)
-				if utxo.IsEmpty() {
-					return 0, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
-						txin.PreviousOutPoint.TxHash.String(),
-						txin.PreviousOutPoint.MessageIndex,
-						txin.PreviousOutPoint.OutIndex)
-				}
-				// check overflow
-				if inAmount+utxo.Amount > (1<<64 - 1) {
-					return 0, fmt.Errorf("Compute fees: txin total overflow")
-				}
-				inAmount += utxo.Amount
-			}
-
-			for _, txout := range payload.Output {
-				// check overflow
-				if outAmount+txout.Value > (1<<64 - 1) {
-					return 0, fmt.Errorf("Compute fees: txout total overflow")
-				}
-				log.Info("+++++++++++++++++++++ tx_out_amonut ++++++++++++++++++++", "tx_outAmount", txout.Value)
-				outAmount += txout.Value
-			}
-			if inAmount < outAmount {
-
-				return 0, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Tx.Hash().String(), inAmount, outAmount)
-			}
-			fees += inAmount - outAmount
+		fee, err := repository.ComputeTxFee(tx.Tx)
+		if err != nil {
+			return 0, err
 		}
+		fees += fee.Amount
 	}
 	return fees, nil
+}
+
+//计算一笔Tx中包含多少手续费
+func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (modules.InvokeFees, error) {
+
+	for _, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if ok == false {
+			continue
+		}
+		inAmount := uint64(0)
+		outAmount := uint64(0)
+		for _, txin := range payload.Inputs {
+			utxo := repository.GetUxto(*txin)
+			if utxo.IsEmpty() {
+				return modules.InvokeFees{Amount: 0}, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
+					txin.PreviousOutPoint.TxHash.String(),
+					txin.PreviousOutPoint.MessageIndex,
+					txin.PreviousOutPoint.OutIndex)
+			}
+			// check overflow
+			if inAmount+utxo.Amount > (1<<64 - 1) {
+				return modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: txin total overflow")
+			}
+			inAmount += utxo.Amount
+		}
+
+		for _, txout := range payload.Outputs {
+			// check overflow
+			if outAmount+txout.Value > (1<<64 - 1) {
+				return modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: txout total overflow")
+			}
+			log.Info("+++++++++++++++++++++ tx_out_amonut ++++++++++++++++++++", "tx_outAmount", txout.Value)
+			outAmount += txout.Value
+		}
+		if inAmount < outAmount {
+
+			return modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Hash().String(), inAmount, outAmount)
+		}
+		fees := inAmount - outAmount
+		return modules.InvokeFees{Amount: fees, Asset: *(payload.Outputs[0].Asset)}, nil
+
+	}
+	return modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: no payment payload")
 }
 
 /**
@@ -580,7 +594,7 @@ func IsCoinBase(tx *modules.Transaction) bool {
 	if !ok {
 		return false
 	}
-	prevOut := msg.Input[0].PreviousOutPoint
+	prevOut := msg.Inputs[0].PreviousOutPoint
 	if prevOut.TxHash != (common.Hash{}) {
 		return false
 	}

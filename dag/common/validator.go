@@ -112,11 +112,11 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		if !ok {
 			return nil, false, fmt.Errorf("Coinbase payload type error.")
 		}
-		if len(coinIn.Output) != 1 {
+		if len(coinIn.Outputs) != 1 {
 			return nil, false, fmt.Errorf("Coinbase outputs error0.")
 		}
 		income := uint64(fee) + ComputeInterest()
-		if coinIn.Output[0].Value < income {
+		if coinIn.Outputs[0].Value < income {
 			return nil, false, fmt.Errorf("Coinbase outputs error: 1.%d", income)
 		}
 	}
@@ -376,15 +376,17 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload, isCoinbase bool) modules.TxValidationCode {
 	// check locktime
 
-	if len(payment.Input) <= 0 {
-		log.Error("payment input is null.", "payment.input", payment.Input)
-		return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
-	}
+	// TODO coinbase 交易的inputs是null.
+	// if len(payment.Inputs) <= 0 {
+	// 	log.Error("payment input is null.", "payment.input", payment.Inputs)
+	// 	return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
+	// }
+
 	if !isCoinbase {
-		for _, in := range payment.Input {
+		for _, in := range payment.Inputs {
 			// checkout input
 			if in == nil || in.PreviousOutPoint == nil {
-				log.Error("payment input is null.", "payment.input", payment.Input)
+				log.Error("payment input is null.", "payment.input", payment.Inputs)
 				return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
 			}
 			if utxo, err := validate.utxodb.GetUtxoEntry(in.PreviousOutPoint); utxo == nil || err != nil {
@@ -394,12 +396,12 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 		}
 	}
 
-	if len(payment.Output) <= 0 {
-		log.Error("payment output is null.", "payment.output", payment.Input)
+	if len(payment.Outputs) <= 0 {
+		log.Error("payment output is null.", "payment.output", payment.Inputs)
 		return modules.TxValidationCode_INVALID_PAYMMENT_OUTPUT
 	}
 
-	for i, out := range payment.Output {
+	for i, out := range payment.Outputs {
 		// checkout output
 		if i < 1 {
 			continue // asset = out.Asset
@@ -407,7 +409,7 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 			if out.Asset == nil {
 				return modules.TxValidationCode_INVALID_ASSET
 			}
-			if !out.Asset.IsSimilar(payment.Output[i-1].Asset) {
+			if !out.Asset.IsSimilar(payment.Outputs[i-1].Asset) {
 				return modules.TxValidationCode_INVALID_ASSET
 			}
 		}
@@ -433,15 +435,15 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenes
 
 	// step1. check header.New unit is no group signature yet
 	//TODO must recover
-	/*
-		sigState := validate.validateHeaderExceptGroupSig(unit.UnitHeader, isGenesis)
-		if sigState != modules.UNIT_STATE_VALIDATED &&
-			sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-			log.Debug("Validate unit's header failed.", "error code", sigState)
-			return sigState
-		}
-	*/
-	sigState := byte(modules.UNIT_STATE_VALIDATED) //TODO must delete
+
+	sigState := validate.validateHeaderExceptGroupSig(unit.UnitHeader, isGenesis)
+	if sigState != modules.UNIT_STATE_VALIDATED &&
+		sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+		log.Debug("Validate unit's header failed.", "error code", sigState)
+		return sigState
+	}
+
+	// sigState := byte(modules.UNIT_STATE_VALIDATED) //TODO must delete
 	// step2. check transactions in unit
 	_, isSuccess, err := validate.ValidateTransactions(&unit.Txs, isGenesis)
 	if isSuccess != true {
@@ -521,6 +523,12 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, i
 	//	return modules.UNIT_STATE_INVALID_HEADER_WITNESS
 	//}
 
-	sigState := validate.ValidateUnitSignature(header, isGenesis)
-	return sigState
+	// TODO 同步过来的unit 没有Authors ，因此无法验证签名有效性。
+	var thisUnitIsNotTransmitted bool
+
+	if thisUnitIsNotTransmitted {
+		sigState := validate.ValidateUnitSignature(header, isGenesis)
+		return sigState
+	}
+	return modules.UNIT_STATE_VALIDATED
 }

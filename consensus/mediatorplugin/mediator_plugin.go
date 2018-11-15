@@ -68,7 +68,7 @@ func (mp *MediatorPlugin) scheduleProductionLoop() {
 	case <-mp.quit:
 		return
 	default:
-		go mp.VerifiedUnitProductionLoop(nextWakeup)
+		go mp.UnitProductionLoop(nextWakeup)
 	}
 }
 
@@ -89,32 +89,32 @@ const (
 	UnknownCondition
 )
 
-func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) ProductionCondition {
+func (mp *MediatorPlugin) UnitProductionLoop(wakeup time.Time) ProductionCondition {
 	// Start to production unit for expiration
 	time.Sleep(wakeup.Sub(time.Now()))
 
 	// 1. 尝试生产验证单元
-	result, detail := mp.MaybeProduceVerifiedUnit()
+	result, detail := mp.MaybeProduceUnit()
 
 	// 2. 打印尝试结果
 	switch result {
 	case Produced:
-		log.Info("Generated VerifiedUnit #" + detail["Num"] + " hash: " + detail["Hash"] +
+		log.Info("Generated Unit #" + detail["Num"] + " hash: " + detail["Hash"] +
 			" with timestamp " + detail["Timestamp"] + " by mediator: " + detail["Mediator"])
 	case NotSynced:
-		log.Info("Not producing VerifiedUnit because production is disabled " +
-			"until we receive a recent VerifiedUnit (see: --enable-stale-production)")
+		log.Info("Not producing Unit because production is disabled " +
+			"until we receive a recent Unit (see: --enable-stale-production)")
 	case NotTimeYet:
-		//log.Debug("Not producing VerifiedUnit because next slot time is " + detail["NextTime"] +
+		//log.Debug("Not producing Unit because next slot time is " + detail["NextTime"] +
 		//	" , but now is " + detail["Now"])
 	case NotMyTurn:
-		//log.Debug("Not producing VerifiedUnit because current scheduled mediator is " +
+		//log.Debug("Not producing Unit because current scheduled mediator is " +
 		//	detail["ScheduledMediator"])
 	case Lag:
-		log.Info("Not producing VerifiedUnit because node didn't wake up within 500ms of the slot time." +
+		log.Info("Not producing Unit because node didn't wake up within 500ms of the slot time." +
 			" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
 	case NoPrivateKey:
-		log.Info("Not producing VerifiedUnit because I don't have the private key for " +
+		log.Info("Not producing Unit because I don't have the private key for " +
 			detail["ScheduledKey"])
 	case ExceptionProducing:
 		log.Info("Exception producing unit")
@@ -128,7 +128,7 @@ func (mp *MediatorPlugin) VerifiedUnitProductionLoop(wakeup time.Time) Productio
 	return result
 }
 
-func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[string]string) {
+func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]string) {
 	//	println("\n尝试生产验证单元...")
 	detail := map[string]string{}
 
@@ -140,7 +140,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 
 	// 1. 判断是否满足生产的各个条件
 	nextSlotTime := dag.GetSlotTime(1)
-	// If the next VerifiedUnit production opportunity is in the present or future, we're synced.
+	// If the next Unit production opportunity is in the present or future, we're synced.
 	if !mp.productionEnabled {
 		if nextSlotTime.After(now) || nextSlotTime.Equal(now) {
 			mp.productionEnabled = true
@@ -162,9 +162,9 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 	//
 	// if this assert triggers, there is a serious bug in GetSlotAtTime()
 	// which would result in allowing a later block to have a timestamp
-	// less than or equal to the previous VerifiedUnit
+	// less than or equal to the previous Unit
 	if !(now.Unix() > dag.HeadUnitTime()) {
-		panic("\n The later VerifiedUnit have a timestamp less than or equal to the previous!")
+		panic("\n The later Unit have a timestamp less than or equal to the previous!")
 	}
 
 	scheduledMediator := dag.GetScheduledMediator(slot)
@@ -173,7 +173,7 @@ func (mp *MediatorPlugin) MaybeProduceVerifiedUnit() (ProductionCondition, map[s
 		return UnknownCondition, detail
 	}
 
-	// we must control the Mediator scheduled to produce the next VerifiedUnit.
+	// we must control the Mediator scheduled to produce the next Unit.
 	med, ok := mp.mediators[scheduledMediator]
 	if !ok {
 		detail["ScheduledMediator"] = scheduledMediator.Str()

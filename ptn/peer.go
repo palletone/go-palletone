@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/fatih/set.v0"
+	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 var (
@@ -192,6 +193,14 @@ func (p *peer) SendTransactions(txs modules.Transactions) error {
 	return p2p.Send(p.rw, TxMsg, txs)
 }
 
+func (p *peer) SendContractExeTransaction(event jury.ContractExeEvent) error {
+	return p2p.Send(p.rw, ContractExecMsg, event)
+}
+
+func (p *peer) SendContractSigTransaction(event jury.ContractSigEvent) error {
+	return p2p.Send(p.rw, ContractSigMsg, event)
+}
+
 //SendConsensus sends consensus msg to the peer
 func (p *peer) SendConsensus(msgs string) error {
 	return p2p.Send(p.rw, ConsensusMsg, msgs)
@@ -223,7 +232,7 @@ func (p *peer) SendUnitHeaders(headers []*modules.Header) error {
 }
 
 // SendBlockBodies sends a batch of block contents to the remote peer.
-func (p *peer) SendBlockBodies(bodies []*blockBody) error {
+func (p *peer) SendBlockBodies(bodies []blockBody) error {
 	return p2p.Send(p.rw, BlockBodiesMsg, blockBodiesData(bodies))
 }
 

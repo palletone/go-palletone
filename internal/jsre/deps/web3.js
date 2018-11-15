@@ -5606,6 +5606,12 @@ var methods = function () {
         params: 1,
         // inputFormatter: [null]
     });
+    var createPayment = new Method({
+        name: 'createPayment',
+        call: 'ptn_createPayment',
+        params: 4,
+        // inputFormatter: [null]
+    });
     var getAllUtxos = new Method({
         name: 'getAllUtxos',
         call: 'ptn_getAllUtxos',
@@ -5667,8 +5673,8 @@ var methods = function () {
     var ccinvoke = new Method({
         name: 'ccinvoke',
         call: 'ptn_ccinvoke',
-        params: 3, //deployId string, txid string, args[]string------>["fun", "key", "value"]
-        inputFormatter: [null, null, null],
+        params: 4, //deployId string, txid string,paymentJson string, args[]string------>["fun", "key", "value"]
+        inputFormatter: [null, null, null,null],
     });
 
     var ccstop = new Method({
@@ -5740,6 +5746,7 @@ var methods = function () {
         ccdeploy,
         ccinvoke,
         ccstop,
+        createPayment,
     ];
 };
 

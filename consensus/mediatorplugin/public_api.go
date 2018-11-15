@@ -18,7 +18,9 @@
 
 package mediatorplugin
 
-import "github.com/palletone/go-palletone/core"
+import (
+	"github.com/palletone/go-palletone/core"
+)
 
 type PublicMediatorAPI struct {
 	*MediatorPlugin

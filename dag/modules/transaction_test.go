@@ -2,6 +2,7 @@ package modules
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/dag/constants"
 	"strings"
@@ -73,7 +74,7 @@ func TestTransactionEncode(t *testing.T) {
 	if payment.LockTime != 12345 {
 		t.Error("payment locktime decode error.")
 	}
-	if len(payment.Output) == 0 {
+	if len(payment.Outputs) == 0 {
 		t.Error("payment out decode error.")
 	}
 	fmt.Printf("PaymentData:%+v", payment)
@@ -92,6 +93,23 @@ func TestIDType16Hex(t *testing.T) {
 	slice := strings.Split(key, fmt.Sprintf("%s_%s_1_", constants.UNIT_NUMBER_PREFIX, "abc"))
 	fmt.Println("result:", len(slice), "0:", slice[0], "1:", slice[1])
 
+	var tx Transaction
+	str := "{\"txhash\":\"0xaa0fbe87c07b063cd6a88ab8e2c0075bec35bc80a56956cd50ce98aad3febca6\",\"messages\":[{\"App\":0,\"Payload\":{\"Inputs\":[{\"PreviousOutPoint\":null,\"SignatureScript\":null,\"Extra\":\"W+vkvg==\"}],\"Outputs\":[{\"Value\":100000000,\"PkScript\":\"dqkUj1ulfgUxOae0LG5IueWUIzBQk2WIrA==\",\"Asset\":{\"asset_id\":[119,169,59,162,215,104,17,232,157,4,140,133,144,10,158,67],\"unique_id\":[119,169,59,162,215,104,17,232,157,4,140,133,144,10,158,67],\"chain_id\":1}}],\"LockTime\":0}}]}"
+	err := json.Unmarshal([]byte(str), &tx)
+	fmt.Println("error: ", err)
+	for _, msg := range tx.Messages() {
+		fmt.Println("info: ", msg.Payload)
+		data, err := json.Marshal(msg.Payload)
+		if err != nil {
+			return
+		}
+		payment := new(PaymentPayload)
+		err1 := json.Unmarshal(data, &payment)
+		for j, out := range payment.Outputs {
+			fmt.Println("payment: ", err1, j, out)
+		}
+
+	}
 }
 func TestTransaction_EncodeRLP_Size(t *testing.T) {
 	pay1s := PaymentPayload{

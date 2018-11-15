@@ -22,7 +22,6 @@ package rwset
 import (
 	"encoding/json"
 	"errors"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"time"
@@ -177,13 +176,13 @@ func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
 
 	return nil, nil
 }
-func (s *RwSetTxSimulator) GetTokenBalance(contractid []byte, ns string, asset *modules.Asset) (map[modules.Asset]uint64, error) {
-	addr := crypto.ContractIdToAddress(contractid)
+func (s *RwSetTxSimulator) GetTokenBalance(ns string, addr string, asset *modules.Asset) (map[modules.Asset]uint64, error) {
+
 	var utxos map[modules.OutPoint]*modules.Utxo
 	if asset == nil {
-		utxos, _ = s.dag.GetAddrUtxos(addr.String())
+		utxos, _ = s.dag.GetAddrUtxos(addr)
 	} else {
-		utxos, _ = s.dag.GetAddr1TokenUtxos(addr.String(), asset)
+		utxos, _ = s.dag.GetAddr1TokenUtxos(addr, asset)
 	}
 	return convertUtxo2Balance(utxos), nil
 }

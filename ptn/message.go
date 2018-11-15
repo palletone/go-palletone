@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
@@ -185,10 +186,10 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		hash  common.Hash
 		bytes int
 		//bodies []rlp.RawValue
-		bodies blockBody
+		bodies []blockBody
 	)
 
-	for bytes < softResponseLimit && len(bodies.Transactions) < downloader.MaxBlockFetch {
+	for bytes < softResponseLimit && len(bodies) < downloader.MaxBlockFetch {
 		// Retrieve the hash of the next block
 		if err := msgStream.Decode(&hash); err == rlp.EOL {
 			break
@@ -196,51 +197,45 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("msgStream.Decode", "err", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		//TODO must recover
 		// Retrieve the requested block body, stopping if enough was found
 		txs, err := pm.dag.GetUnitTransactions(hash)
 		if err != nil {
 			log.Debug("GetBlockBodiesMsg", "GetUnitTransactions err:", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		log.Debug("GetBlockBodiesMsg", "hash", hash, "txs:", txs)
 
 		data, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			log.Debug("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
+		//log.Debug("GetBlockBodiesMsg", "hash", hash, "txs size:", len(txs))
 		bytes += len(data)
-
-		for _, tx := range txs {
-			bodies.Transactions = append(bodies.Transactions, tx)
-		}
+		body := blockBody{Transactions: txs}
+		bodies = append(bodies, body)
 	}
-	log.Debug("GetBlockBodiesMsg", "len(bodies):", len(bodies.Transactions), "bodies.Transactions:", bodies.Transactions)
-	return p.SendBlockBodies([]*blockBody{&bodies})
+	log.Debug("GetBlockBodiesMsg", "len(bodies):", len(bodies))
+	return p.SendBlockBodies(bodies)
 }
 
 func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
-	//log.Debug("===BlockBodiesMsg===")
 	// A batch of block bodies arrived to one of our previous requests
+	log.Debug("Enter ProtocolManager BlockBodiesMsg")
+	defer log.Debug("End ProtocolManager BlockBodiesMsg")
 	var request blockBodiesData
 	if err := msg.Decode(&request); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
 	// Deliver them all to the downloader for queuing
 	//transactions := make([][]*modules.Transaction, len(request))
-	txs := []*modules.Transaction{}
-	for _, body := range request {
-		//transactions[i] = body.Transactions
-		for _, tx := range body.Transactions {
-			txs = append(txs, tx)
-		}
+	transactions := make([][]*modules.Transaction, len(request))
+	for i, body := range request {
+		transactions[i] = body.Transactions
+		log.Info("BlockBodiesMsg", "i", i, "txs size:", len(body.Transactions))
 	}
 
-	log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(txs))
+	log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(transactions))
 	// Filter out any explicitly requested bodies, deliver the rest to the downloader
-	transactions := [][]*modules.Transaction{}
-	transactions = append(transactions, txs)
 	filter := len(transactions) > 0
 	if filter {
 		log.Debug("===BlockBodiesMsg->FilterBodies===")
@@ -387,7 +382,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 			if ok == false {
 				continue
 			}
-			for _, txin := range payload.Input {
+			for _, txin := range payload.Inputs {
 				st, err := pm.dag.GetUtxoEntry(txin.PreviousOutPoint)
 				if st == nil || err != nil {
 					return err
@@ -489,4 +484,48 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 	}
 	//TODO call dag
 	return nil
+}
+
+func (pm *ProtocolManager) ContractExecMsg(msg p2p.Msg, p *peer) error {
+	var event jury.ContractExeEvent
+	if err := msg.Decode(&event); err != nil {
+		log.Info("===ContractExecMsg===", "err:", err)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+	pm.contractProc.ProcessContractEvent(&event)
+	return nil
+}
+
+func (pm *ProtocolManager) ContractSigMsg(msg p2p.Msg, p *peer) error {
+	var event jury.ContractSigEvent
+	if err := msg.Decode(&event); err != nil {
+		log.Info("===ContractExecMsg===", "err:", err)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+	pm.contractProc.ProcessContractSigEvent(&event)
+	return nil
+}
+
+//local test
+func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractExeEvent) {
+	log.Info("ContractReqLocalSend", "event", event.Tx.TxHash)
+	pm.contractExecCh <- event
+}
+
+func (pm *ProtocolManager) ContractSigLocalSend(event jury.ContractSigEvent) {
+	log.Info("ContractSigLocalSend", "event", event.Tx.TxHash)
+	pm.contractSigCh <- event
+}
+
+func (pm *ProtocolManager) ContractBroadcast(event jury.ContractExeEvent) {
+	log.Info("ContractBroadcast", "event", event.Tx.TxHash)
+	peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
+	for _, peer := range peers {
+		peer.SendContractExeTransaction(event)
+	}
+}
+
+func (pm *ProtocolManager) ContractSigBroadcast(event jury.ContractSigEvent) {
+	log.Info("ContractSigBroadcast", "event", event.Tx.TxHash)
+	pm.contractSigCh <- event
 }

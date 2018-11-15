@@ -178,6 +178,7 @@ func init() {
 		bugCommand,
 		licenseCommand,
 		dumpConfigCommand,        //转储配置文件命令
+		dumpJsonCommand,          //create genesis.json
 		createGenesisJsonCommand, // 创建创世json文件命令
 		nodeInfoCommand,          // 获取本节点信息
 		timestampCommand,         // 获取指定时间的时间戳

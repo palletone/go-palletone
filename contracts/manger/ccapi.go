@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"container/list"
 	"encoding/hex"
+	"encoding/json"
 	cp "github.com/palletone/go-palletone/common/crypto"
 	db "github.com/palletone/go-palletone/contracts/comm"
 	cclist "github.com/palletone/go-palletone/contracts/list"
@@ -322,7 +323,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 //timeout:ms
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error) {
+func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, txid string, tx *unit.Transaction, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error) {
 	logger.Infof("==========Invoke enter=======")
 	logger.Infof("deployId[%s] txid[%s]", hex.EncodeToString(deployId), txid)
 	defer logger.Infof("-----------Invoke exit--------")
@@ -339,13 +340,65 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 		return nil, errors.New(errstr)
 	}
 
+	fullArgs := [][]byte{}
+	//TODO parse tx and make another args include InvokeAddr, InvokeFee, InvokeToken
+	// txin := unit.Input{
+	// 	PreviousOutPoint: &unit.OutPoint{
+	// 		TxHash:       common.Hash{},
+	// 		MessageIndex: 1234,
+	// 		OutIndex:     12344,
+	// 	},
+	// 	SignatureScript: []byte("1234567890"),
+	// 	Extra:           []byte("990019202020"),
+	// }
+	// txout := unit.Output{
+	// 	Value:    10000,
+	// 	PkScript: []byte("kssssssssssssssssssslsll"),
+	// 	Asset: &unit.Asset{
+	// 		AssetId:  unit.PTNCOIN,
+	// 		UniqueId: unit.PTNCOIN,
+	// 		ChainId:  1,
+	// 	},
+	// }
+	// payment := &unit.PaymentPayload{
+	// 	Inputs:   []*unit.Input{&txin},
+	// 	Outputs:  []*unit.Output{&txout},
+	// 	LockTime: 12,
+	// }
+	// tx2 := &unit.Transaction{
+	// 	TxMessages: []*unit.Message{
+	// 		{
+	// 			App:     unit.APP_PAYMENT,
+	// 			Payload: payment,
+	// 		},
+	// 	},
+	// }
+	// tx2.TxHash = tx2.Hash()
+	msg0 := tx.TxMessages[0].Payload.(*unit.PaymentPayload)
+	invokeAddr, _ := idag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
+	invokeTokens := unit.InvokeTokens{}
+	outputs := msg0.Outputs
+	invokeTokens.Asset = *outputs[0].Asset
+	for _, output := range outputs {
+		invokeTokens.Amount += output.Value
+	}
+	invokeFees, _ := idag.GetTxFee(tx)
+	invokeInfo := unit.InvokeInfo{
+		InvokeAddress: invokeAddr,
+		InvokeTokens:  invokeTokens,
+		InvokeFees:    invokeFees,
+	}
+	invokeInfoBytes, err := json.Marshal(invokeInfo)
+	fullArgs = append(fullArgs, invokeInfoBytes)
+
+	fullArgs = append(fullArgs, args...)
 	logger.Infof("Invoke [%s][%s]", chainID, cc.Name)
 	start := time.Now()
 	es := NewEndorserServer(mksupt)
 	spec := &pb.ChaincodeSpec{
 		ChaincodeId: &pb.ChaincodeID{Name: cc.Name},
 		Type:        pb.ChaincodeSpec_GOLANG,
-		Input:       &pb.ChaincodeInput{Args: args},
+		Input:       &pb.ChaincodeInput{Args: fullArgs},
 	}
 
 	cid := &pb.ChaincodeID{

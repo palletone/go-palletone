@@ -361,9 +361,7 @@ func (q *queue) Results(block bool) []*fetchResult {
 		}
 		q.active.Wait()
 		nproc = q.countProcessableItems()
-		log.Debug("===queue->Results===wait OK", "nproc:", nproc)
 	}
-	log.Debug("===queue->Results===", "nproc", nproc, "maxResultsProcess:", maxResultsProcess, "len(resultCache):", len(q.resultCache))
 	// Since we have a batch limit, don't pull more into "dangling" memory
 	if nproc > maxResultsProcess {
 		nproc = maxResultsProcess
@@ -400,7 +398,6 @@ func (q *queue) Results(block bool) []*fetchResult {
 			q.resultSize = common.StorageSize(blockCacheSizeWeight)*size + (1-common.StorageSize(blockCacheSizeWeight))*q.resultSize
 		}
 	}
-	log.Debug("===queue->Results===", "len(results):", len(results))
 	return results
 }
 
@@ -511,7 +508,6 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 		index := int(header.Number.Index - q.resultOffset)
 		if index >= len(q.resultCache) || index < 0 {
 			common.Report("index allocation went beyond available resultCache space")
-			log.Debug("index allocation went beyond available resultCache space")
 			return nil, false, errInvalidChain
 		}
 		if q.resultCache[index] == nil {
@@ -536,7 +532,6 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 			q.resultCache[index].Pending--
 			progress = true
 			noopsum++
-			log.Info("downloader->queue", "header is have not tx index:", header.Number.Index, "hash:", header.Hash())
 			continue
 		}
 		// Otherwise unless the peer is known not to have the data, add to the retrieve list
@@ -545,7 +540,6 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 		} else {
 			send = append(send, header)
 		}
-		//log.Info("downloader->queue", "proc", proc, "space:", space, "len(send)", len(send), "count", count)
 	}
 	log.Debug("===queue->reserveHeaders===", "len(skip):", len(skip), "len(send):", len(send), "sum:", sum, "noopsum:", noopsum)
 	// Merge all the skipped headers back
@@ -555,7 +549,6 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 	}
 	if progress {
 		// Wake WaitResults, resultCache was modified
-		log.Debug("===queue->reserveHeaders===q.active.Signal")
 		q.active.Signal()
 	}
 	// Assemble and return the block download request
@@ -694,7 +687,6 @@ func (q *queue) expire(timeout time.Duration, pendPool map[string]*fetchRequest,
 // of ready headers to the processor to keep the pipeline full. However it will
 // not block to prevent stalling other pending deliveries.
 func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcCh chan []*modules.Header) (int, error) {
-	//fmt.Println("xz  DeliverHeaders")
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -708,10 +700,9 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 
 	// Ensure headers can be mapped onto the skeleton chain
 	target := q.headerTaskPool[request.From].Hash()
-	log.Debug("===queueu.DeliverHeaders===", "len(headers):", len(headers), "MaxHeaderFetch:", MaxHeaderFetch)
+	//log.Debug("===queueu.DeliverHeaders===", "len(headers):", len(headers), "MaxHeaderFetch:", MaxHeaderFetch)
 	accepted := len(headers) == MaxHeaderFetch
 	if accepted {
-		//if headers[0].Number.Uint64() != request.From {
 		if headers[0].Number.Index != request.From {
 			log.Trace("First header broke chain ordering", "peer", id, "number", headers[0].Number.Index, "hash", headers[0].Hash(), "request.From", request.From)
 			accepted = false
@@ -782,7 +773,6 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 // The method returns the number of blocks bodies accepted from the delivery and
 // also wakes any threads waiting for data delivery.
 func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction) (int, error) {
-	//fmt.Println("xz  DeliverBodies")
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -792,14 +782,11 @@ func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction) (int,
 		//			log.Debug("===queue->DeliverBodies===", "err:", errInvalidBody)
 		//			return errInvalidBody
 		//		}
-		result.Transactions = txLists[0]
+		result.Transactions = txLists[index]
 		return nil
 	}
-	txsize := 0
-	if len(txLists) != 0 {
-		txsize = len(txLists[0])
-	}
-	return q.deliver(id, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, bodyReqTimer /*len(txLists[0])*/, txsize, reconstruct)
+
+	return q.deliver(id, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, bodyReqTimer, len(txLists), reconstruct)
 }
 
 // deliver injects a data retrieval response into the results queue.
@@ -818,7 +805,7 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*modules.Header, tas
 	}
 	reqTimer.UpdateSince(request.Time)
 	delete(pendPool, id)
-	log.Debug("===queue->deliver===", "results:", results, "len(request.Headers):", len(request.Headers))
+	//log.Debug("===queue->deliver===", "results:", results, "len(request.Headers):", len(request.Headers))
 	// If no data items were retrieved, mark them as unavailable for the origin peer
 	if results == 0 {
 		for _, header := range request.Headers {
@@ -837,13 +824,11 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*modules.Header, tas
 			break
 		}
 		// Reconstruct the next result if contents match up
-		//index := int(header.Number.Int64() - int64(q.resultOffset))
 		index := int(header.Number.Index - q.resultOffset)
 		if index >= len(q.resultCache) || index < 0 || q.resultCache[index] == nil {
 			failure = errInvalidChain
 			break
 		}
-		//TODO must recover
 		if err := reconstruct(header, i, q.resultCache[index]); err != nil {
 			failure = err
 			break
@@ -871,7 +856,6 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*modules.Header, tas
 	log.Debug("===queue->deliver===", "accepted:", accepted, "taskQueue sum:", sum)
 	// Wake up WaitResults
 	if accepted > 0 {
-		log.Debug("===queue->deliver===q.active.Signal")
 		q.active.Signal()
 	}
 	// If none of the data was good, it's a stale delivery

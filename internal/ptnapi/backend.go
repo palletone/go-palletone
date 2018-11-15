@@ -110,8 +110,10 @@ type Backend interface {
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
-	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
+	ContractInvoke(deployId []byte, txid string, paymentJson string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
+	CreatePayment(fromAddr string, toAddr string, amt, fee uint64) (string, error)
+	ContractTxReqBroadcast(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

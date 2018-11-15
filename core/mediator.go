@@ -43,7 +43,15 @@ type Mediator struct {
 	Address     common.Address
 	InitPartPub kyber.Point
 	Node        *discover.Node
-	//WebsiteUrl  string
+	Url         string
+	TotalMissed int64
+}
+
+func NewMediator() *Mediator {
+	return &Mediator{
+		Url:         "",
+		TotalMissed: 0,
+	}
 }
 
 func StrToMedNode(mn string) *discover.Node {
@@ -90,12 +98,4 @@ func StrToPoint(pubStr string) kyber.Point {
 	}
 
 	return pub
-}
-
-func (m *Mediator) MediatorToInfo() MediatorInfo {
-	return MediatorInfo{
-		AddStr:      m.Address.Str(),
-		InitPartPub: PointToStr(m.InitPartPub),
-		Node:        m.Node.String(),
-	}
 }

@@ -1,3 +1,21 @@
+/*
+	This file is part of go-palletone.
+	go-palletone is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	go-palletone is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License
+	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+ * @author PalletOne core developers <dev@pallet.one>
+ * @date 2018
+ */
 package contracts
 
 import (
@@ -20,6 +38,16 @@ type Contract struct {
 	name string
 	dag  dag.IDag
 	//status int32 //   1:init   2:start
+}
+
+type ContractInf interface {
+	Close() error
+	Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error)
+	Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *unit.ContractDeployPayload, e error)
+	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error)
+	Invoke(chainID string, deployId []byte, txid string, tx *unit.Transaction, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error)
+	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error)
+	Stop(chainID string, deployId []byte, txid string, deleteImage bool) error
 }
 
 var (
@@ -100,12 +128,12 @@ func (c *Contract) Deploy(chainID string, templateId []byte, txid string, args [
 // Invoke 合约invoke调用，根据指定合约调用参数执行已经部署的合约，函数返回合约调用单元。
 // The contract invoke call, execute the deployed contract according to the specified contract call parameters,
 // and the function returns the contract call unit.
-func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error) {
+func (c *Contract) Invoke(chainID string, deployId []byte, txid string, tx *unit.Transaction, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error) {
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		return nil, errors.New("Contract not initialized")
 	}
-	return cc.Invoke(deployId, c.dag, chainID, deployId, txid, args, timeout)
+	return cc.Invoke(deployId, c.dag, chainID, deployId, txid, tx, args, timeout)
 }
 
 // Stop 停止指定合约。根据需求可以对镜像文件进行删除操作

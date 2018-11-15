@@ -393,7 +393,7 @@ func calcHashPrevOuts(tx *modules.Transaction) common.Hash {
 	payment := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 	//TODO Devin: don't know what's this function mean
 	var b bytes.Buffer
-	for _, in := range payment.Input {
+	for _, in := range payment.Inputs {
 		// First write out the 32-byte transaction ID one of whose
 		// outputs are being referenced by this input.
 		b.Write(in.PreviousOutPoint.TxHash[:])
@@ -437,7 +437,7 @@ func calcHashOutputs(tx *modules.Transaction) common.Hash {
 	//TODO Devin don't know what to do
 	payment := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 	var b bytes.Buffer
-	for _, out := range payment.Output {
+	for _, out := range payment.Outputs {
 		modules.WriteTxOut(&b, 0, 0, out)
 	}
 
@@ -637,13 +637,13 @@ func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Trans
 	for i, msg := range txCopy.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
 			payment := msg.Payload.(*modules.PaymentPayload)
-			for j := range payment.Input {
+			for j := range payment.Inputs {
 				if i == msgIdx && j == idx {
 
 					sigScript, _ := unparseScript(script)
-					payment.Input[idx].SignatureScript = sigScript
+					payment.Inputs[idx].SignatureScript = sigScript
 				} else {
-					payment.Input[i].SignatureScript = nil
+					payment.Inputs[i].SignatureScript = nil
 				}
 			}
 		}
