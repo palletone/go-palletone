@@ -29,6 +29,7 @@ import (
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"sort"
 )
 
 // GenerateUnit, generate unit
@@ -137,20 +138,49 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	// 7. 更新全局动态属性值
 	dag.UpdateDynGlobalProp(nextUnit, missed)
 
-	// 8. 更新最新不可逆区块高度
-	dag.UpdateLastIrreversibleUnit(nextUnit)
+	// 8. 更新 mediator 的相关数据
+	dag.UpdateSigningMediator(nextUnit)
 
-	// 9. 判断是否到了维护周期，并维护
+	// 9. 更新最新不可逆区块高度
+	dag.UpdateLastIrreversibleUnit()
 
-	// 10. 洗牌
+	// 10. 判断是否到了维护周期，并维护
+
+	// 11. 洗牌
 	dag.UpdateMediatorSchedule()
 }
 
-func (dag *Dag) UpdateLastIrreversibleUnit(newUnit *modules.Unit) {
-	//dgp := dag.GetDynGlobalProp()
+func (dag *Dag) UpdateSigningMediator(newUnit *modules.Unit) {
+	// 1. 更新 签名mediator 的LastConfirmedUnitNum
 	signingMediator := newUnit.UnitAuthor()
+	med := dag.GetMediator(signingMediator)
 
-	// 更新 签名mediator的LastConfirmedUnitNum
-	med := dag.GetMediator(*signingMediator)
 	med.LastConfirmedUnitNum = uint32(newUnit.NumberU64())
+	dag.SaveMediator(med, false)
+}
+
+func (dag *Dag) UpdateLastIrreversibleUnit() {
+	aSize := dag.GetActiveMediatorCount()
+	lastConfirmedUnitNums := make([]int, 0, aSize)
+
+	// 1. 获取所有活跃 mediator 最后确认unit编号
+	meds := dag.GetActiveMediators()
+	for _, add := range meds {
+		med := dag.GetActiveMediator(add)
+		lastConfirmedUnitNums = append(lastConfirmedUnitNums, int(med.LastConfirmedUnitNum))
+	}
+
+	// 2. 排序
+	sort.Ints(lastConfirmedUnitNums)
+
+	// 3. 获取倒数第 > 2/3 个确认unit编号
+	offset := aSize - dag.GetCurThreshold()
+	var newLastIrreversibleUnitNum = uint32(lastConfirmedUnitNums[offset])
+
+	// 4. 更新
+	dgp := dag.GetDynGlobalProp()
+	if newLastIrreversibleUnitNum > dgp.LastIrreversibleUnitNum {
+		dgp.LastIrreversibleUnitNum = newLastIrreversibleUnitNum
+		dag.SaveDynGlobalProp(dgp, false)
+	}
 }

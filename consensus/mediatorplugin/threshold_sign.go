@@ -372,7 +372,7 @@ func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnit *modules.Unit, sigShare []
 	}
 
 	newUnitHash := newUnit.UnitHash
-	localMed := *newUnit.UnitAuthor()
+	localMed := newUnit.UnitAuthor()
 
 	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
