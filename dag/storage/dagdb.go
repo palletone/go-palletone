@@ -709,7 +709,7 @@ func (dagdb *DagDb) gettrasaction(hash common.Hash) (*modules.Transaction, error
 
 		// TODO ---- 将不同msg‘s app 反序列化后赋值给payload interface{}.
 
-		log.Debug("================== transaction_info======================", "error", err, "transaction_info", tx)
+		//log.Debug("================== transaction_info======================", "error", err, "transaction_info", tx)
 		msgs := make([]*modules.Message, 0)
 		for _, msg := range tx.Messages() {
 			data1, err1 := json.Marshal(msg.Payload)
