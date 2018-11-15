@@ -415,7 +415,7 @@ func (ec *Client) EstimateGas(ctx context.Context, msg palletone.CallMsg) (uint6
 
 func (ec *Client) CmdCreateTransaction(ctx context.Context, from string, to string, amount uint64) (string, error) {
 	var result string
-	err := ec.c.CallContext(ctx, &result, "ptn_cmdCreateTransaction", from,to,amount)
+	err := ec.c.CallContext(ctx, &result, "ptn_cmdCreateTransaction", from, to, amount)
 	return result, err
 }
 func (ec *Client) CreateRawTransaction(ctx context.Context, params string) (string, error) {
@@ -667,5 +667,10 @@ func (ec *Client) GetCommon(ctx context.Context, key string) ([]byte, error) {
 func (ec *Client) GetCommonByPrefix(ctx context.Context, prefix string) (map[string][]byte, error) {
 	result := make(map[string][]byte, 0)
 	err := ec.c.CallContext(ctx, &result, "dag_getCommonByPrefix", prefix)
+	return result, err
+}
+func (ec *Client) CreatePayment(ctx context.Context, fromAddr, toAddr string, amt, fee uint64) (string, error) {
+	var result string
+	err := ec.c.CallContext(ctx, &result, "ptn_createPayment", fromAddr, toAddr, amt, fee)
 	return result, err
 }

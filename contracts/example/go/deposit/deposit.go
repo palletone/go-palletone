@@ -40,15 +40,18 @@ func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
-	invokeAddr, invokeTokens, invokeFees, funcName, args, err := stub.GetInvokeParameters()
-	if err != nil {
-		return shim.Error("parameters error: " + err.Error())
-	}
-	fmt.Println("invokeAddr", invokeAddr)
-	fmt.Printf("invokeTokens %#v\n", invokeTokens)
-	fmt.Printf("invokeFees %#v\n", invokeFees)
-	invokeFees, err = stub.GetInvokeFees()
-	fmt.Printf("invokeFees %#v\n", invokeFees)
+	//fmt.Println(stub.GetArgs())
+	//fmt.Println(stub.GetArgsSlice())
+	//fmt.Println(stub.GetStringArgs())
+	//invokeAddr, invokeTokens, invokeFees, funcName, args, err := stub.GetInvokeParameters()
+	//if err != nil {
+	//	return shim.Error("parameters error: " + err.Error())
+	//}
+	//fmt.Println("invokeAddr", invokeAddr)
+	//fmt.Printf("invokeTokens %#v\n", invokeTokens)
+	//fmt.Printf("invokeFees %#v\n", invokeFees)
+	//invokeFees, err = stub.GetInvokeFees()
+	//fmt.Printf("invokeFees %#v\n", invokeFees)
 	switch funcName {
 	case "DepositWitnessPay":
 		//交付保证金
@@ -89,13 +92,13 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	if err != nil {
 		return shim.Error("GetInvokeFromAddr error: " + err.Error())
 	}
-	//fmt.Println("invokeFromAddr address = ", invokeFromAddr)
+	fmt.Println("invokeFromAddr address = ", invokeFromAddr)
 	//获取 请求 ptn 数量
 	invokeTokens, err := stub.GetInvokeTokens()
 	if err != nil {
 		return shim.Error("GetPayToContractPtnTokens error: " + err.Error())
 	}
-	//fmt.Printf("invokeTokens %#v\n", invokeTokens)
+	fmt.Printf("invokeTokens %#v\n", invokeTokens)
 	//比较保证金数额和付款
 	depositAmountStr, err := stub.GetSystemConfig("DepositAmount")
 	if err != nil {
@@ -106,14 +109,14 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	if err != nil {
 		return shim.Error("String transform to uint64 error: " + err.Error())
 	}
-	//fmt.Println("invokeTokens = ", invokeTokens)
-	//fmt.Println("depositAmount = ", depositAmount)
+	fmt.Println("invokeTokens = ", invokeTokens)
+	fmt.Println("depositAmount = ", depositAmount)
 	if invokeTokens.Amount < depositAmount {
 		return shim.Error("Your delivery amount with ptn token is insufficient")
 	}
 	stateValue := new(modules.StateValue)
 	//获取一下该用户下的账簿情况
-	stateValueBytes, err := stub.GetState(invokeFromAddr)
+	stateValueBytes, err := stub.GetState(invokeFromAddr.String())
 	if err != nil {
 		return shim.Error("Get account balance from ledger error: " + err.Error())
 	}
@@ -128,7 +131,7 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 		if err != nil {
 			return shim.Error("Marshal valueState error " + err.Error())
 		}
-		stub.PutState(invokeFromAddr, stateValueMarshalBytes)
+		stub.PutState(invokeFromAddr.String(), stateValueMarshalBytes)
 		return shim.Success([]byte("ok"))
 	}
 	//账户已存在，进行信息的更新操作
@@ -151,7 +154,7 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	if err != nil {
 		return shim.Error("Marshal valueState error " + err.Error())
 	}
-	stub.PutState(invokeFromAddr, stateValueMarshalBytes)
+	stub.PutState(invokeFromAddr.String(), stateValueMarshalBytes)
 	return shim.Success([]byte("ok"))
 }
 
@@ -182,7 +185,7 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 	if err != nil {
 		return shim.Error("String transform to uint64 error: " + err.Error())
 	}
-	stateValueBytes, err := stub.GetState(invokeFromAddr)
+	stateValueBytes, err := stub.GetState(invokeFromAddr.String())
 	if err != nil {
 		return shim.Error("Get account balance from ledger error: " + err.Error())
 	}
@@ -198,7 +201,7 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 		return shim.Error("Your delivery amount with ptn token is insufficient.")
 	}
 	//调用从合约把token转到地址
-	err = stub.PayOutToken(invokeFromAddr, stateValue.Asset, ptnAccount, 0)
+	err = stub.PayOutToken(invokeFromAddr.String(), stateValue.Asset, ptnAccount, 0)
 	if err != nil {
 		return shim.Error("PayOutToken error: " + err.Error())
 	}
@@ -211,7 +214,7 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 	if err != nil {
 		return shim.Error("Marshal valueState error: " + err.Error())
 	}
-	stub.PutState(invokeFromAddr, stateValueMarshalBytes)
+	stub.PutState(invokeFromAddr.String(), stateValueMarshalBytes)
 	return shim.Success([]byte("ok"))
 }
 
