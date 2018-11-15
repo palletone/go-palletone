@@ -1757,7 +1757,7 @@ func testForkedSyncProgress(t *testing.T, protocol int, mode SyncMode) {
 // Tests that if synchronisation is aborted due to some failure, then the progress
 // origin is not updated in the next sync cycle, as it should be considered the
 // continuation of the previous sync and not a new instance.
-func TestFailedSyncProgress1(t *testing.T) { testFailedSyncProgress(t, 1, FullSync) }
+//func TestFailedSyncProgress1(t *testing.T) { testFailedSyncProgress(t, 1, FullSync) }
 
 //func TestFailedSyncProgress63Full(t *testing.T) { testFailedSyncProgress(t, 2, FullSync) }
 
@@ -1835,7 +1835,7 @@ func testFailedSyncProgress(t *testing.T, protocol int, mode SyncMode) {
 
 // Tests that if an attacker fakes a chain height, after the attack is detected,
 // the progress height is successfully reduced at the next sync invocation.
-func TestFakedSyncProgress1(t *testing.T) { testFakedSyncProgress(t, 1, FullSync) }
+//func TestFakedSyncProgress1(t *testing.T) { testFakedSyncProgress(t, 1, FullSync) }
 
 //func TestFakedSyncProgress63Full(t *testing.T) { testFakedSyncProgress(t, 2, FullSync) }
 
