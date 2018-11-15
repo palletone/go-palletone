@@ -21,6 +21,7 @@
 package debugcc
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -64,5 +65,9 @@ func (d *DebugChainCode) getbalance(stub shim.ChaincodeStubInterface, args []str
 		return shim.Error(err.Error())
 	}
 	log.Debugf("GetBalance result:%+v", result)
-	return shim.Success(nil)
+	b, e := json.Marshal(result)
+	if e != nil {
+		return shim.Error(e.Error())
+	}
+	return shim.Success(b)
 }

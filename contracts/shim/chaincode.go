@@ -813,7 +813,7 @@ func (stub *ChaincodeStub) GetInvokeFees() (*modules.InvokeFees, error) {
 }
 
 //获得该合约的Token余额
-func (stub *ChaincodeStub) GetTokenBalance(address string, token *modules.Asset) (map[modules.Asset]uint64, error) {
+func (stub *ChaincodeStub) GetTokenBalance(address string, token *modules.Asset) ([]*modules.AmountAsset, error) {
 	return stub.handler.handleGetTokenBalance(address, token, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 

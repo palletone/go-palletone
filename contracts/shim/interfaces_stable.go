@@ -230,7 +230,7 @@ type ChaincodeStubInterface interface {
 	//获得某地址的Token余额
 	//如果地址为空则表示当前合约
 	//如果token为空则表示查询所有Token余额
-	GetTokenBalance(address string, token *modules.Asset) (map[modules.Asset]uint64, error)
+	GetTokenBalance(address string, token *modules.Asset) ([]*modules.AmountAsset, error)
 	//将合约上锁定的某种Token支付出去
 	PayOutToken(addr string, token modules.Asset, amount uint64, lockTime uint32) error
 	//获取invoke参数，包括invokeAddr,tokens,fee,funcName,params
