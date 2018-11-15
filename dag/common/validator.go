@@ -376,10 +376,12 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload, isCoinbase bool) modules.TxValidationCode {
 	// check locktime
 
-	if len(payment.Inputs) <= 0 {
-		log.Error("payment input is null.", "payment.input", payment.Inputs)
-		return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
-	}
+	// TODO coinbase 交易的inputs是null.
+	// if len(payment.Inputs) <= 0 {
+	// 	log.Error("payment input is null.", "payment.input", payment.Inputs)
+	// 	return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
+	// }
+
 	if !isCoinbase {
 		for _, in := range payment.Inputs {
 			// checkout input
@@ -433,15 +435,15 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenes
 
 	// step1. check header.New unit is no group signature yet
 	//TODO must recover
-	/*
-		sigState := validate.validateHeaderExceptGroupSig(unit.UnitHeader, isGenesis)
-		if sigState != modules.UNIT_STATE_VALIDATED &&
-			sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-			log.Debug("Validate unit's header failed.", "error code", sigState)
-			return sigState
-		}
-	*/
-	sigState := byte(modules.UNIT_STATE_VALIDATED) //TODO must delete
+
+	sigState := validate.validateHeaderExceptGroupSig(unit.UnitHeader, isGenesis)
+	if sigState != modules.UNIT_STATE_VALIDATED &&
+		sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+		log.Debug("Validate unit's header failed.", "error code", sigState)
+		return sigState
+	}
+
+	// sigState := byte(modules.UNIT_STATE_VALIDATED) //TODO must delete
 	// step2. check transactions in unit
 	_, isSuccess, err := validate.ValidateTransactions(&unit.Txs, isGenesis)
 	if isSuccess != true {
@@ -521,6 +523,12 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, i
 	//	return modules.UNIT_STATE_INVALID_HEADER_WITNESS
 	//}
 
-	sigState := validate.ValidateUnitSignature(header, isGenesis)
-	return sigState
+	// TODO 同步过来的unit 没有Authors ，因此无法验证签名有效性。
+	var thisUnitIsNotTransmitted bool
+
+	if thisUnitIsNotTransmitted {
+		sigState := validate.ValidateUnitSignature(header, isGenesis)
+		return sigState
+	}
+	return modules.UNIT_STATE_VALIDATED
 }
