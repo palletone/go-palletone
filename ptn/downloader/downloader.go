@@ -20,8 +20,6 @@ package downloader
 import (
 	"errors"
 	"fmt"
-
-	//"math/big"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -426,9 +424,9 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 
 	height := latest.Number.Index
 	localIndex := d.dag.CurrentUnit().Number().Index
-	
+
 	if localIndex >= height {
-        	log.Info("Downloader", "syncWithPeer local index", localIndex, "latest peer index", height)
+		log.Info("Downloader", "syncWithPeer local index", localIndex, "latest peer index", height)
 		return nil
 	}
 
@@ -560,7 +558,7 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*
 	//	log.Debug("Downloader", "fetchHeight header hash:", headerHash, "number:", number.Index)
 	//	return nil, errPeersUnavailable
 	//}
-        headerHash, _ := p.peer.Head(assetId)
+	headerHash, _ := p.peer.Head(assetId)
 	go p.peer.RequestHeadersByHash(headerHash, 1, 0, false)
 
 	ttl := d.requestTTL()
@@ -770,7 +768,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 		}
 	}
 	// Ensure valid ancestry and return
-	if int64(start) <= floor{
+	if int64(start) <= floor {
 		p.log.Warn("Ancestor below allowance", "start", start, "hash", hash, "allowance", floor)
 		return 0, errInvalidAncestor
 	}
@@ -946,7 +944,9 @@ func (d *Downloader) fillHeaderSkeleton(from uint64, skeleton []*modules.Header,
 		reserve  = func(p *peerConnection, count int) (*fetchRequest, bool, error) {
 			return d.queue.ReserveHeaders(p, count), false, nil
 		}
-		fetch = func(p *peerConnection, req *fetchRequest) error {return p.FetchHeaders(req.From, MaxHeaderFetch, assetId)}
+		fetch = func(p *peerConnection, req *fetchRequest) error {
+			return p.FetchHeaders(req.From, MaxHeaderFetch, assetId)
+		}
 		capacity = func(p *peerConnection) int { return p.HeaderCapacity(d.requestRTT()) }
 		setIdle  = func(p *peerConnection, accepted int) { p.SetHeadersIdle(accepted) }
 	)
@@ -1688,30 +1688,31 @@ func (d *Downloader) getMaxNodes(headers []*modules.Header, assetId modules.IDTy
 	}
 	return &maxHeader, nil
 }
-/*TODO must save
-	//fmt.Println("findAncestor===")
-	//fmt.Println("local=", ceil)
-	//fmt.Println("remote=", height)
-	//floor, ceil := uint64(0), uint64(0)
-	//TODO xiaozhi
-	//headers, err := d.lightdag.GetAllLeafNodes()
-	//if err != nil {
-	//	log.Info("===findAncestor===", "GetAllLeafNodes err:", err)
-	//	return floor, nil
-	//}
-	//header, err := d.getMaxNodes(headers, assetId)
-	//
-	//if err != nil {
-	//	log.Info("===findAncestor===", "getMaxNodes err:", err)
-	//	return floor, err
-	//}
-	////TODO xiaozhi
 
-	//if header != nil {
-	//	ceil = header.Number.Index
-	//	p.log.Debug("Looking for common ancestor", "local assetid", header.Number.AssetID.String(), "local index", ceil, "remote", latest.Number.Index)
-	//} else {
-	//	ceil = 0
-	//	p.log.Debug("Looking for common ancestor", "local index", ceil, "remote", latest.Number.Index)
-	//}
+/*TODO must save
+//fmt.Println("findAncestor===")
+//fmt.Println("local=", ceil)
+//fmt.Println("remote=", height)
+//floor, ceil := uint64(0), uint64(0)
+//TODO xiaozhi
+//headers, err := d.lightdag.GetAllLeafNodes()
+//if err != nil {
+//	log.Info("===findAncestor===", "GetAllLeafNodes err:", err)
+//	return floor, nil
+//}
+//header, err := d.getMaxNodes(headers, assetId)
+//
+//if err != nil {
+//	log.Info("===findAncestor===", "getMaxNodes err:", err)
+//	return floor, err
+//}
+////TODO xiaozhi
+
+//if header != nil {
+//	ceil = header.Number.Index
+//	p.log.Debug("Looking for common ancestor", "local assetid", header.Number.AssetID.String(), "local index", ceil, "remote", latest.Number.Index)
+//} else {
+//	ceil = 0
+//	p.log.Debug("Looking for common ancestor", "local index", ceil, "remote", latest.Number.Index)
+//}
 */
