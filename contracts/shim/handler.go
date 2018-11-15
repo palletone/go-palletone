@@ -28,7 +28,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 
 	"encoding/json"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/pkg/errors"
 )
@@ -453,16 +453,15 @@ func (handler *Handler) handleGetTokenBalance(address string, token *modules.Ass
 	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
 		// Success response
 		chaincodeLogger.Debugf("[%s]GET_TOKEN_BALANCE received payload %s", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
-		tokenStr := map[string]uint64{}
-		err = rlp.DecodeBytes(responseMsg.Payload, &tokenStr)
+		tokenList := []modules.AmountAsset{}
+		err = rlp.DecodeBytes(responseMsg.Payload, &tokenList)
 		if err != nil {
 			return nil, err
 		}
 		token := map[modules.Asset]uint64{}
-		for tStr, amt := range tokenStr {
-			a := modules.Asset{}
-			a.SetString(tStr)
-			token[a] = amt
+		for _, amt := range tokenList {
+			a := amt.Asset
+			token[a] = amt.Amount
 		}
 		return token, nil
 

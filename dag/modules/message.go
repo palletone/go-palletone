@@ -274,6 +274,10 @@ type InvokeFees struct {
 	Amount uint64 `json:"amount"`
 	Asset  Asset  `json:"asset"`
 }
+type AmountAsset struct {
+	Amount uint64 `json:"amount"`
+	Asset  Asset  `json:"asset"`
+}
 
 type StateValue struct {
 	Asset  Asset     `json:"asset"`

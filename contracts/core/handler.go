@@ -34,6 +34,7 @@ import (
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/outchain"
 	"github.com/palletone/go-palletone/core"
+
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	commonledger "github.com/palletone/go-palletone/core/vmContractPub/ledger"
@@ -971,9 +972,9 @@ func (handler *Handler) handleGetTokenBalance(msg *pb.ChaincodeMessage) {
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: nil, Txid: msg.Txid, ChannelId: msg.ChannelId}
 		} else {
 			// Send response msg back to chaincode. GetState will not trigger event
-			result := map[string]uint64{}
+			result := []modules.AmountAsset{}
 			for asset, amt := range balance {
-				result[asset.String()] = amt
+				result = append(result, modules.AmountAsset{Amount: amt, Asset: asset})
 			}
 			res, _ := rlp.EncodeToBytes(result)
 			chaincodeLogger.Debugf("[%s]Got state. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)

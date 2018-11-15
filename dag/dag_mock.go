@@ -776,10 +776,11 @@ func (mr *MockIDagMockRecorder) SaveTokenInfo(token_info interface{}) *gomock.Ca
 }
 
 // GetAddrByOutPoint mocks base method
-func (m *MockIDag) GetAddrByOutPoint(outPoint *modules.OutPoint) common.Address {
+func (m *MockIDag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error) {
 	ret := m.ctrl.Call(m, "GetAddrByOutPoint", outPoint)
 	ret0, _ := ret[0].(common.Address)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetAddrByOutPoint indicates an expected call of GetAddrByOutPoint
@@ -788,10 +789,11 @@ func (mr *MockIDagMockRecorder) GetAddrByOutPoint(outPoint interface{}) *gomock.
 }
 
 // GetTxFee mocks base method
-func (m *MockIDag) GetTxFee(pay *modules.PaymentPayload) modules.InvokeFees {
+func (m *MockIDag) GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error) {
 	ret := m.ctrl.Call(m, "GetTxFee", pay)
 	ret0, _ := ret[0].(modules.InvokeFees)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetTxFee indicates an expected call of GetTxFee
