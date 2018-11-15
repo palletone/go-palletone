@@ -24,9 +24,6 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-
-	"fmt"
-
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
@@ -536,8 +533,7 @@ func (f *Fetcher) loop() {
 				matched := false
 				for hash, announce := range f.completing {
 					if f.queued[hash] == nil {
-						txnHash := core.DeriveSha(modules.Transactions(task.transactions[i]))
-
+						//txnHash := core.DeriveSha(modules.Transactions(task.transactions[i]))
 
 						//TODO must recover
 						//if txnHash == announce.header.TxRoot && announce.origin == task.peer {
