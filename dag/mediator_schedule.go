@@ -266,10 +266,9 @@ func (dag *Dag) UpdateMediatorMissedUnits(unit *modules.Unit) uint64 {
 }
 
 func (dag *Dag) UpdateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
-	gp := dag.GetGlobalProp()
 	dgp := dag.GetDynGlobalProp()
 
-	dgp.UpdateDynGlobalProp(gp, unit, missedUnits)
+	dgp.UpdateDynGlobalProp(unit, missedUnits)
 	dag.SaveDynGlobalProp(dgp, false)
 
 	return

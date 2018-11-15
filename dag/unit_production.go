@@ -138,7 +138,7 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	dag.UpdateDynGlobalProp(nextUnit, missed)
 
 	// 8. 更新最新不可逆区块高度
-	dag.UpdateLastIrreversibleUnit()
+	dag.UpdateLastIrreversibleUnit(nextUnit)
 
 	// 9. 判断是否到了维护周期，并维护
 
@@ -146,6 +146,11 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	dag.UpdateMediatorSchedule()
 }
 
-func (dag *Dag) UpdateLastIrreversibleUnit() {
-	// todo
+func (dag *Dag) UpdateLastIrreversibleUnit(newUnit *modules.Unit) {
+	//dgp := dag.GetDynGlobalProp()
+	signingMediator := newUnit.UnitAuthor()
+
+	// 更新 签名mediator的LastConfirmedUnitNum
+	med := dag.GetMediator(*signingMediator)
+	med.LastConfirmedUnitNum = uint32(newUnit.NumberU64())
 }
