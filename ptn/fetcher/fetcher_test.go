@@ -413,7 +413,7 @@ func testSequentialAnnouncements(t *testing.T, protocol int) {
 
 // Tests that if blocks are announced by multiple peers (or even the same buggy
 // peer), they will only get downloaded at most once.
-func TestConcurrentAnnouncements1(t *testing.T) { testConcurrentAnnouncements(t, 1) }
+//func TestConcurrentAnnouncements1(t *testing.T) { testConcurrentAnnouncements(t, 1) }
 func testConcurrentAnnouncements(t *testing.T, protocol int) {
 	// Create a chain of blocks to import
 	targetunits := 4 * hashLimit

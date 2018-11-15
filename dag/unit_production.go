@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 )
 
-// GenerateVerifiedUnit, generate unit
+// GenerateUnit, generate unit
 // @author Albert·Gou
 func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 	ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit {
@@ -77,7 +77,6 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 		}
 
 	} else {
-
 		pendingUnit.UnitHeader.Number = *current_index
 		pendingUnit.UnitHeader.Number.Index = current_index.Index + 1
 

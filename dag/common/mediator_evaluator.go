@@ -33,7 +33,13 @@ func (mce *MediatorCreateEvaluator) Evaluate() bool {
 }
 
 func (mce *MediatorCreateEvaluator) Apply(statedb storage.IStateDb, mco *modules.MediatorCreateOperation) {
-	statedb.StoreMediatorInfo(mco.MediatorInfo)
+	var mi storage.MediatorInfo
+	mi.AddStr = mco.AddStr
+	mi.InitPartPub = mco.InitPartPub
+	mi.Node = mco.Node
+	mi.Url = mco.Url
+
+	statedb.StoreMediatorInfo(&mi)
 	return
 }
 
@@ -43,7 +49,9 @@ func GetInitialMediatorMsgs(genesisConf *core.Genesis) []*modules.Message {
 
 	for _, mi := range genesisConf.InitialMediatorCandidates {
 		mco := &modules.MediatorCreateOperation{
-			MediatorInfo: mi,
+			AddStr:      mi.AddStr,
+			InitPartPub: mi.InitPartPub,
+			Node:        mi.Node,
 		}
 
 		msg := &modules.Message{

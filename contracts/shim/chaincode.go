@@ -23,11 +23,13 @@
 package shim
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/op/go-logging"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/comm"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
@@ -684,7 +686,7 @@ func (iter *CommonIterator) Close() error {
 
 // GetArgs documentation can be found in interfaces.go
 func (stub *ChaincodeStub) GetArgs() [][]byte {
-	return stub.args
+	return stub.args[1:]
 }
 
 // GetStringArgs documentation can be found in interfaces.go
@@ -710,30 +712,23 @@ func (stub *ChaincodeStub) GetFunctionAndParameters() (function string, params [
 }
 
 //GetInvokeParameters documentation can be found in interfaces.go
-func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr string, invokeTokens *modules.InvokeTokens, invokeFees *modules.InvokeFees, funcName string, params []string, err error) {
-	allargs := stub.GetStringArgs()
+func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr common.Address, invokeTokens *modules.InvokeTokens, invokeFees *modules.InvokeFees, funcName string, params []string, err error) {
+	allargs := stub.args
 	if len(allargs) > 2 {
-		//TODO 解析msg0 即获取原生payload来获取请求的地址，交易费，类型，数量
-		//msg0TxHash := allargs[0]
-		invokeAddr = "invokeAddr"
-		invokeTokens = &modules.InvokeTokens{
-			Amount: 1000,
-			Asset: modules.Asset{
-				AssetId:  modules.PTNCOIN,
-				UniqueId: modules.PTNCOIN,
-				ChainId:  1,
-			},
+		invokeInfo := &modules.InvokeInfo{}
+		err := json.Unmarshal(allargs[0], invokeInfo)
+		if err != nil {
+			return common.Address{}, nil, nil, "", nil, err
 		}
-		invokeFees = &modules.InvokeFees{
-			Amount: 10,
-			Asset: modules.Asset{
-				AssetId:  modules.PTNCOIN,
-				UniqueId: modules.PTNCOIN,
-				ChainId:  1,
-			},
+		invokeAddr = invokeInfo.InvokeAddress
+		invokeTokens = &invokeInfo.InvokeTokens
+		invokeFees = &invokeInfo.InvokeFees
+		strargs := make([]string, 0, len(allargs)-1)
+		for _, barg := range allargs[1:] {
+			strargs = append(strargs, string(barg))
 		}
-		funcName = allargs[1]
-		params = allargs[2:]
+		funcName = strargs[0]
+		params = strargs[1:]
 	}
 	return
 }
@@ -801,23 +796,25 @@ func (stub *ChaincodeStub) SetEvent(name string, payload []byte) error {
 func (stub *ChaincodeStub) GetSystemConfig(key string) (string, error) {
 	return stub.handler.handleGetSystemConfig(key, stub.ChannelId, stub.TxID)
 }
-func (stub *ChaincodeStub) GetInvokeAddress() (string, error) {
-	return stub.handler.handleGetInvokeAddress(stub.ChannelId, stub.TxID)
+func (stub *ChaincodeStub) GetInvokeAddress() (common.Address, error) {
+	invokeAddr, _, _, _, _, err := stub.GetInvokeParameters()
+	return invokeAddr, err
 }
 func (stub *ChaincodeStub) GetInvokeTokens() (*modules.InvokeTokens, error) {
-	return stub.handler.handleGetInvokeTokens(stub.ChannelId, stub.TxID)
+	_, invokeTokens, _, _, _, err := stub.GetInvokeParameters()
+	return invokeTokens, err
 }
 func (stub *ChaincodeStub) GetContractAllState() (map[string]*modules.ContractStateValue, error) {
 	return stub.handler.handleGetContractAllState(stub.ChannelId, stub.TxID, stub.ContractId)
 }
 func (stub *ChaincodeStub) GetInvokeFees() (*modules.InvokeFees, error) {
-	return stub.handler.handleGetInvokeFees(stub.ChannelId, stub.TxID, stub.ContractId)
+	_, _, invokeFees, _, _, err := stub.GetInvokeParameters()
+	return invokeFees, err
 }
 
 //获得该合约的Token余额
-func (stub *ChaincodeStub) GetTokenBalance() (map[modules.Asset]uint64, error) {
-	// TODO Devin return stub.handler.handleGetTokenBalance(stub.ContractId, stub.ChannelId, stub.TxID)
-	return map[modules.Asset]uint64{}, nil
+func (stub *ChaincodeStub) GetTokenBalance(address string, token *modules.Asset) (map[modules.Asset]uint64, error) {
+	return stub.handler.handleGetTokenBalance(address, token, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
 //将合约上锁定的某种Token支付出去

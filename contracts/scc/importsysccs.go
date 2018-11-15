@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/example/go/createToken"
 	"github.com/palletone/go-palletone/contracts/example/go/deposit"
 	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
+	"github.com/palletone/go-palletone/contracts/syscontract/debugcc"
 )
 
 var systemChaincodes = []*SystemChaincode{
@@ -68,15 +69,23 @@ var systemChaincodes = []*SystemChaincode{
 		Chaincode: &deposit.DepositChaincode{},
 	},
 	{
-		Id : []byte{0x02},
-		Enabled:true,
-		Name:"createToken_sycc",
-		Path:"../example/go/createToken/createToken",
-		Version:"ptn001",
-		InitArgs:[][]byte{},
-		Chaincode:&createToken.CreateTokenChainCode{},
+		Id:        []byte{0x02},
+		Enabled:   true,
+		Name:      "createToken_sycc",
+		Path:      "../example/go/createToken/createToken",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &createToken.CreateTokenChainCode{},
 	},
-
+	{
+		Id:        []byte{0x08},
+		Enabled:   true,
+		Name:      "debug_sycc",
+		Path:      ".",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &debugcc.DebugChainCode{},
+	},
 	//TODO add other system chaincodes ...
 }
 

@@ -290,12 +290,9 @@ func (p *peerConnection) setIdle(started time.Time, delivered int, throughput *f
 	// Otherwise update the throughput with a new measurement
 	elapsed := time.Since(started) + 1 // +1 (ns) to ensure non-zero divisor
 	measured := float64(delivered) / (float64(elapsed) / float64(time.Second))
-	log.Debug("===peerConnection->setIdle pre===", "throughput:", *throughput)
+
 	*throughput = (1-measurementImpact)*(*throughput) + measurementImpact*measured
 	p.rtt = time.Duration((1-measurementImpact)*float64(p.rtt) + measurementImpact*float64(elapsed))
-
-	log.Debug("===peerConnection->setIdle===", "elapsed:", elapsed, "delivered:", delivered, "measured:", measured,
-		"throughput:", *throughput, "p.blockThroughput:", p.blockThroughput)
 
 	p.log.Trace("Peer throughput measurements updated",
 		"hps", p.headerThroughput, "bps", p.blockThroughput,
@@ -310,7 +307,7 @@ func (p *peerConnection) HeaderCapacity(targetRTT time.Duration) int {
 	defer p.lock.RUnlock()
 
 	capacity := int(math.Min(1+math.Max(1, p.headerThroughput*float64(targetRTT)/float64(time.Second)), float64(MaxHeaderFetch)))
-	log.Debug("downloader->peerConnection->HeaderCapacity", "capacity", capacity)
+	//log.Debug("downloader->peerConnection->HeaderCapacity", "capacity", capacity)
 	return capacity
 }
 
@@ -320,8 +317,8 @@ func (p *peerConnection) BlockCapacity(targetRTT time.Duration) int {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 	capacity := int(math.Min(1+math.Max(1, p.blockThroughput*float64(targetRTT)/float64(time.Second)), float64(MaxBlockFetch)))
-	log.Debug("downloader->peerConnection->BlockCapacity", "capacity", capacity, "p.blockThroughput:", p.blockThroughput,
-		"targetRTT:", targetRTT, "MaxBlockFetch:", MaxBlockFetch)
+	//log.Debug("downloader->peerConnection->BlockCapacity", "capacity", capacity, "p.blockThroughput:", p.blockThroughput,
+	//	"targetRTT:", targetRTT, "MaxBlockFetch:", MaxBlockFetch)
 	return capacity
 }
 

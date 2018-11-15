@@ -28,6 +28,7 @@ import (
 	"github.com/naoina/toml"
 	"gopkg.in/urfave/cli.v1"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
@@ -63,6 +64,25 @@ var (
 		Name:  "configfile",
 		Usage: "TOML configuration file",
 		Value: defaultConfigPath,
+	}
+
+	dumpJsonCommand = cli.Command{
+		Action:    utils.MigrateFlags(dumpJson),
+		Name:      "dumpjson",
+		Usage:     "Dumps genesis json to a specified file",
+		ArgsUsage: "<jsonFilePath>",
+		//		Flags:       append(append(nodeFlags, rpcFlags...)),
+		Flags: []cli.Flag{
+			ConfigFileFlag,
+		},
+		Category:    "MISCELLANEOUS COMMANDS",
+		Description: `The dumpjson command dumps genesis json to a specified file.`,
+	}
+
+	JsonFileFlag = cli.StringFlag{
+		Name:  "jsonfile",
+		Usage: "Genesis json file",
+		Value: defaultGenesisJsonPath,
 	}
 )
 
@@ -139,7 +159,7 @@ func defaultNodeConfig() node.Config {
 }
 
 func adaptorConfig(config FullConfig) FullConfig {
-	//config.Node.P2P = config.P2P
+	config.Node.P2P = config.P2P
 	config.Ptn.Dag = *config.Dag
 	config.Ptn.Log = *config.Log
 	config.Ptn.MediatorPlugin = config.MediatorPlugin
@@ -204,13 +224,12 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// 注意：不是将命令行中所有的配置都覆盖cfg中对应的配置，例如 Ptnstats 配置目前没有覆盖 (可能通过命令行设置)
 	utils.SetNodeConfig(ctx, &cfg.Node)
 	cfg = adaptorConfig(cfg)
-	cfg.Node.P2P = cfg.P2P
+
 	// 4. 通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
-	cfg = adaptorConfig(cfg)
 	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
 	//fmt.Println("cfg.Ptn.Log.OpenModule", cfg.Ptn.Log.OpenModule)
 	cfg.Log.OpenModule = cfg.Ptn.Log.OpenModule
@@ -268,32 +287,61 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 }
 
 // dumpConfig is the dumpconfig command.
-// modify by Albert·Gou
 func dumpConfig(ctx *cli.Context) error {
 	cfg := makeDefaultConfig()
-	//	comment := ""
-
-	//if cfg.Ptn.Genesis != nil {
-	//	cfg.Ptn.Genesis = nil
-	//	comment += "# Note: this config doesn't contain the genesis block.\n\n"
-	//}
-
 	configPath := ctx.Args().First()
 	// If no path is specified, the default path is used
 	if len(configPath) == 0 {
 		configPath = defaultConfigPath
 	}
 
-	//	io.WriteString(os.Stdout, comment)
-
 	err := makeConfigFile(&cfg, configPath)
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
 	}
-
 	fmt.Println("Dumping new config file at " + configPath)
+	return nil
+}
 
+// dumpConfig is the dumpconfig command.
+func dumpJson(ctx *cli.Context) error {
+	account := ""
+	mediators := []*mp.MediatorConf{}
+	nodeStr := ""
+
+	mediator := &mp.MediatorConf{}
+	mediators = append(mediators, mediator)
+
+	genesis := createExampleGenesis(account, mediators, nodeStr)
+	genesisJson, err := json.MarshalIndent(*genesis, "", "  ")
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	filePath := getGenesisPath(ctx)
+
+	err = os.MkdirAll(filepath.Dir(filePath), os.ModePerm)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	file, err1 := os.Create(filePath)
+	defer file.Close()
+	if err1 != nil {
+		utils.Fatalf("%v", err1)
+		return err1
+	}
+
+	_, err = file.Write(genesisJson)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	fmt.Println("Creating example genesis state in file " + filePath)
 	return nil
 }
 

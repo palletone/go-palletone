@@ -208,23 +208,8 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-
-		log.Debug("GetBlockBodiesMsg", "hash", hash, "txs size:", len(txs))
-
+		//log.Debug("GetBlockBodiesMsg", "hash", hash, "txs size:", len(txs))
 		bytes += len(data)
-
-		// testing by @jay
-		for _, tx := range txs {
-			msgs := tx.TxMessages
-			for i, msg := range msgs {
-				log.Debug("msg info msg info msg info msg info ========================", "index", i, "app", msg.App, "payload", msg.Payload)
-				if msg.App == modules.APP_PAYMENT {
-					payment := msg.Payload.(*modules.PaymentPayload)
-					log.Debug("payment info ", "locktime", payment.LockTime, "inputs", payment.Inputs, "outputs", payment.Outputs)
-				}
-			}
-			// bodies.Transactions = append(bodies.Transactions, tx)
-		}
 		body := blockBody{Transactions: txs}
 		bodies = append(bodies, body)
 	}
