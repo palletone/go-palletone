@@ -91,8 +91,10 @@ func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
 	meds := d.GetActiveMediators()
 	for _, add := range meds {
 		med := d.GetActiveMediator(add)
+		if med == nil {
+			continue
+		}
 		node := med.Node
-
 		nodes[node.ID.TerminalString()] = node
 	}
 
@@ -153,8 +155,10 @@ func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 }
 
 func (d *Dag) GetMediator(add common.Address) *core.Mediator {
-	med, _ := d.statedb.RetrieveMediator(add)
-
+	med, err := d.statedb.RetrieveMediator(add)
+	if err != nil {
+		return nil
+	}
 	return med
 }
 
