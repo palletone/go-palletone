@@ -5684,6 +5684,13 @@ var methods = function () {
         inputFormatter: [null, null]
     });
 
+    var ccinvoketx = new Method({
+        name: 'ccinvoketx',
+        call: 'ptn_ccinvoketx',
+        params: 3, //deployId string, txid string, args[]string------>["fun", "key", "value"]
+        inputFormatter: [null, null, null],
+    });
+
     return [
         forking,
         getUnitByHash,
@@ -5747,6 +5754,7 @@ var methods = function () {
         ccinvoke,
         ccstop,
         createPayment,
+        ccinvoketx,
     ];
 };
 

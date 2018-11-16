@@ -23,6 +23,7 @@ import (
 	"time"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type ContractResp struct {
@@ -72,13 +73,14 @@ type ContractInvokeReq struct {
 	deployId []byte
 	txid     string //common.Hash
 	args     [][]byte
+	tx       *modules.Transaction
 	timeout  time.Duration
 }
 
 func (req ContractInvokeReq) do(v contracts.ContractInf) ContractResp {
 	var resp ContractResp
 
-	payload, err := v.Invoke(req.chainID, req.deployId, req.txid, nil, req.args, req.timeout)
+	payload, err := v.Invoke(req.chainID, req.deployId, req.txid, req.tx, req.args, req.timeout)
 	resp = ContractResp{err, payload}
 	return resp
 }

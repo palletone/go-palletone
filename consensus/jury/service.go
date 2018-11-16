@@ -235,6 +235,7 @@ func runContractCmd(contract *contracts.Contract, trs *modules.Transaction) (mod
 					deployId: msg.Payload.(modules.ContractInvokeRequestPayload).ContractId,
 					args:     msg.Payload.(modules.ContractInvokeRequestPayload).Args,
 					txid:     trs.TxHash.String(),
+					tx:       trs,
 				}
 				payload, err := ContractProcess(contract, req)
 				if err != nil {

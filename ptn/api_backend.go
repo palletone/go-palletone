@@ -397,7 +397,6 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 }
 
 func (b *PtnApiBackend) ContractTxReqBroadcast(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
-
 	b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, args, timeout)
 	return nil, nil
 }

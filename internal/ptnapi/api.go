@@ -842,6 +842,22 @@ func (s *PublicBlockChainAPI) CreatePayment(ctx context.Context, fromAddr string
 	return s.b.CreatePayment(fromAddr, toAddr, amt, fee)
 }
 
+func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, txid string, param []string) (string, error) {
+	depId, _ := hex.DecodeString(deployId)
+	log.Info("-----Ccinvoketx:" + deployId + ":" + txid)
+
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		fmt.Printf("index[%d], value[%s]\n", i, arg)
+	}
+	rsp, err := s.b.ContractTxReqBroadcast(depId, txid, args, 0)
+
+	log.Info("-----ContractInvokeTxReq:" + string(rsp))
+
+	return string(rsp), err
+}
+
 // ExecutionResult groups all structured logs emitted by the EVM
 // while replaying a transaction in debug mode as well as transaction
 // execution status, the amount of gas used and the return value
@@ -1605,7 +1621,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 //	return result, nil
 //}
 
-func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s *rpcServer*/, from string, to string, amount uint64) (string, error) {
+func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s *rpcServer*/ , from string, to string, amount uint64) (string, error) {
 	//realNet := &chaincfg.MainNetParams
 	amounts := map[string]float64{}
 	if to == "" {
@@ -1627,7 +1643,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s 
 }
 
 //create raw transction
-func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
+func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/ , params string) (string, error) {
 	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
