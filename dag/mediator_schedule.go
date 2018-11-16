@@ -92,7 +92,6 @@ func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
 	for _, add := range meds {
 		med := d.GetActiveMediator(add)
 		node := med.Node
-
 		nodes[node.ID.TerminalString()] = node
 	}
 
@@ -153,8 +152,11 @@ func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 }
 
 func (d *Dag) GetMediator(add common.Address) *core.Mediator {
-	med, _ := d.statedb.RetrieveMediator(add)
-
+	med, err := d.statedb.RetrieveMediator(add)
+	if err != nil {
+		log.Error("dag", "GetMediator RetrieveMediator err:", err, "address:", add)
+		return nil
+	}
 	return med
 }
 
@@ -239,9 +241,7 @@ func (dag *Dag) HeadUnitHash() common.Hash {
 // 根据最新 unit 计算出生产该 unit 的 mediator 缺失的 unit 个数，
 // 并更新到 mediator的相应字段中，返回数量
 func (dag *Dag) UpdateMediatorMissedUnits(unit *modules.Unit) uint64 {
-	timestamp := unit.UnitHeader.Creationdate
-	missedUnits := dag.GetSlotAtTime(time.Unix(timestamp, 0))
-
+	missedUnits := dag.GetSlotAtTime(time.Unix(unit.Timestamp(), 0))
 	if missedUnits == 0 {
 		log.Error("Trying to push double-produced unit onto current unit?!")
 		return 0

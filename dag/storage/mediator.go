@@ -90,9 +90,10 @@ func StoreMediatorInfo(db ptndb.Database, mi *MediatorInfo) error {
 	err := StoreBytes(db, mediatorKey(add), mi)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store mediator error:%s", err))
+		return err
 	}
 
-	return err
+	return nil
 }
 
 func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator, error) {
@@ -101,7 +102,7 @@ func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator
 	err := retrieve(db, mediatorKey(address), mi)
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve mediator error: %s", err))
-		return nil, nil
+		return nil, err
 	}
 
 	med := mi.infoToMediator()

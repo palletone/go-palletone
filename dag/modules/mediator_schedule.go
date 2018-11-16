@@ -128,8 +128,8 @@ func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slo
 
 /**
 计算在过去的128个见证单元生产slots中miss的百分比，不包括当前验证单元。
-Calculate the percent of verifiedUnit production slots that were missed in the past 128 verifiedUnits,
-not including the current verifiedUnit.
+Calculate the percent of unit production slots that were missed in the past 128 units,
+not including the current unit.
 */
 //func MediatorParticipationRate(dgp *d.DynamicGlobalProperty) float32 {
 //	return dgp.RecentSlotsFilled / 128.0
@@ -165,7 +165,7 @@ func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32)
 	// 最近的验证单元的绝对slot
 	var unitAbsSlot = dgp.HeadUnitTime / int64(interval)
 	// 最近的时间槽起始时间
-	verifiedUnitSlotTime := time.Unix(unitAbsSlot*int64(interval), 0)
+	unitSlotTime := time.Unix(unitAbsSlot*int64(interval), 0)
 
 	// 在此处添加区块链网络参数修改维护的所需要的slot
 
@@ -176,7 +176,7 @@ func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32)
 	// "slot 1" is UnitSlotTime,
 	// plus maintenance interval if last uint is a maintenance Unit
 	// plus Unit interval if last uint is not a maintenance Unit
-	return verifiedUnitSlotTime.Add(time.Second * time.Duration(slotNum) * time.Duration(interval))
+	return unitSlotTime.Add(time.Second * time.Duration(slotNum) * time.Duration(interval))
 }
 
 /**

@@ -1398,7 +1398,7 @@ func (pool *TxPool) GetSortedTxs() ([]*modules.TxPoolTransaction, common.Storage
 	for {
 		tx := pool.priority_priced.Get()
 		if tx == nil {
-			log.Debug("Txspool get priority_priced tx failed.", "error", "tx is null")
+			go log.Debug("Txspool get priority_priced tx failed.", "error", "tx is null")
 			break
 			//continue
 		} else {

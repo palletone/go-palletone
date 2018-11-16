@@ -213,6 +213,9 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 	//log.Debug("===InsertDag===", "len(units):", len(units))
 	count := int(0)
 	for i, u := range units {
+		// append by albert·gou
+		d.ApplyUnit(u)
+
 		// all units must be continuous
 		if i > 0 && units[i].UnitHeader.Number.Index == units[i-1].UnitHeader.Number.Index+1 {
 			return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
