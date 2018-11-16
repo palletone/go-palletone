@@ -159,7 +159,6 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 }
 
 func assetIsEqual(invokeAsset, stateAsset modules.Asset) error {
-	//fmt.Println(invokeAsset == stateAsset)
 	if invokeAsset != stateAsset {
 		return fmt.Errorf("asset is not equal")
 	}

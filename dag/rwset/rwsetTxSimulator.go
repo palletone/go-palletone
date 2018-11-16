@@ -24,7 +24,6 @@ import (
 	"errors"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
-	"time"
 )
 
 type RwSetTxSimulator struct {
@@ -55,18 +54,23 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 		return nil, err
 	}
 	//TODO
-	stateValue := modules.StateValue{
-		Asset: modules.Asset{
-			AssetId:  modules.PTNCOIN,
-			UniqueId: modules.PTNCOIN,
-			ChainId:  uint64(1),
-		},
-		Amount: 100000,
-		Time:   time.Now(),
-		Extra:  "hello",
-	}
-	stateValueByte, _ := json.Marshal(stateValue)
-	return stateValueByte, nil
+	//asset := modules.Asset{
+	//	AssetId:  modules.PTNCOIN,
+	//	UniqueId: modules.PTNCOIN,
+	//	ChainId:  uint64(1),
+	//}
+	//stateValue := modules.StateValue{
+	//	Asset: modules.Asset{
+	//		AssetId:  modules.PTNCOIN,
+	//		UniqueId: modules.PTNCOIN,
+	//		ChainId:  uint64(0),
+	//	},
+	//	Amount: 100000,
+	//	Time:   time.Now(),
+	//	Extra:  "hello",
+	//}
+	//stateValueByte, _ := json.Marshal(stateValue)
+	//return stateValueByte, nil
 
 	//fmt.Println("GetState(contractid []byte, ns string, key string)===>>>\n\n", contractid, ns, key)
 	//return []byte("1000"), nil
