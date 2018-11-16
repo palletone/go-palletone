@@ -52,6 +52,7 @@ func GetInitialMediatorMsgs(genesisConf *core.Genesis) []*modules.Message {
 			AddStr:      mi.AddStr,
 			InitPartPub: mi.InitPartPub,
 			Node:        mi.Node,
+			Url:         "",
 		}
 
 		msg := &modules.Message{

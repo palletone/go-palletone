@@ -239,9 +239,7 @@ func (dag *Dag) HeadUnitHash() common.Hash {
 // 根据最新 unit 计算出生产该 unit 的 mediator 缺失的 unit 个数，
 // 并更新到 mediator的相应字段中，返回数量
 func (dag *Dag) UpdateMediatorMissedUnits(unit *modules.Unit) uint64 {
-	timestamp := unit.UnitHeader.Creationdate
-	missedUnits := dag.GetSlotAtTime(time.Unix(timestamp, 0))
-
+	missedUnits := dag.GetSlotAtTime(time.Unix(unit.Timestamp(), 0))
 	if missedUnits == 0 {
 		log.Error("Trying to push double-produced unit onto current unit?!")
 		return 0
