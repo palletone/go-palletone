@@ -210,12 +210,12 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	detail["Hash"] = unitHash.Hex()
 
 	// 3. 初始化签名unit相关的签名分片的buf
-	mp.initTBLSRecoverBuf(scheduledMediator, unitHash)
+	go mp.initTBLSRecoverBuf(scheduledMediator, unitHash)
 
 	// 4. 异步向区块链网络广播验证单元
 	// todo 后面改为由p2p转发
-	mp.addToTBLSSignBuf(newUnit)
-	mp.newUnitFeed.Send(NewUnitEvent{Unit: newUnit})
+	go mp.addToTBLSSignBuf(newUnit)
+	go mp.newUnitFeed.Send(NewUnitEvent{Unit: newUnit})
 
 	return Produced, detail
 }

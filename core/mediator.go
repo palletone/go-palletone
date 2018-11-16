@@ -40,17 +40,19 @@ func GenInitPair() (kyber.Scalar, kyber.Point) {
 
 // mediator 结构体 和具体的账户模型有关
 type Mediator struct {
-	Address     common.Address
-	InitPartPub kyber.Point
-	Node        *discover.Node
-	Url         string
-	TotalMissed int64
+	Address              common.Address
+	InitPartPub          kyber.Point
+	Node                 *discover.Node
+	Url                  string
+	TotalMissed          int64
+	LastConfirmedUnitNum uint32
 }
 
 func NewMediator() *Mediator {
 	return &Mediator{
-		Url:         "",
-		TotalMissed: 0,
+		Url:                  "",
+		TotalMissed:          0,
+		LastConfirmedUnitNum: 0,
 	}
 }
 

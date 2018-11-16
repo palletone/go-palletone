@@ -25,6 +25,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 )
 
@@ -168,11 +169,12 @@ type Unit struct {
 	ReceivedFrom interface{}
 }
 
-func (unit *Unit) UnitAuthor() *common.Address {
-	if unit != nil {
-		return &unit.UnitHeader.Authors.Address
+func (unit *Unit) UnitAuthor() common.Address {
+	if unit == nil {
+		log.Error("the Unit pointer is nil!")
 	}
-	return nil
+
+	return unit.UnitHeader.Authors.Address
 }
 
 //type OutPoint struct {

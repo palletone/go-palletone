@@ -33,13 +33,13 @@ func (mce *MediatorCreateEvaluator) Evaluate() bool {
 }
 
 func (mce *MediatorCreateEvaluator) Apply(statedb storage.IStateDb, mco *modules.MediatorCreateOperation) {
-	var mi storage.MediatorInfo
+	mi := storage.NewMediatorInfo()
 	mi.AddStr = mco.AddStr
 	mi.InitPartPub = mco.InitPartPub
 	mi.Node = mco.Node
 	mi.Url = mco.Url
 
-	statedb.StoreMediatorInfo(&mi)
+	statedb.StoreMediatorInfo(mi)
 	return
 }
 

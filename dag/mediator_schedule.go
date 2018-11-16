@@ -266,10 +266,9 @@ func (dag *Dag) UpdateMediatorMissedUnits(unit *modules.Unit) uint64 {
 }
 
 func (dag *Dag) UpdateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
-	gp := dag.GetGlobalProp()
 	dgp := dag.GetDynGlobalProp()
 
-	dgp.UpdateDynGlobalProp(gp, unit, missedUnits)
+	dgp.UpdateDynGlobalProp(unit, missedUnits)
 	dag.SaveDynGlobalProp(dgp, false)
 
 	return
@@ -313,7 +312,7 @@ func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 	}
 
 	scheduledMediator := dag.GetScheduledMediator(slotNum)
-	if nextUnit.UnitAuthor().Equal(scheduledMediator) {
+	if scheduledMediator.Equal(nextUnit.UnitAuthor()) {
 		log.Error("Mediator produced unit at wrong time!")
 		return false
 	}
