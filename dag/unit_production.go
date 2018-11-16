@@ -101,7 +101,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 
 	pendingUnit.UnitSize = pendingUnit.Size()
 
-	dag.PushUnit(pendingUnit)
+	go dag.PushUnit(pendingUnit)
 	return pendingUnit
 }
 

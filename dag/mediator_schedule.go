@@ -312,7 +312,7 @@ func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 	}
 
 	scheduledMediator := dag.GetScheduledMediator(slotNum)
-	if nextUnit.UnitAuthor().Equal(scheduledMediator) {
+	if scheduledMediator.Equal(nextUnit.UnitAuthor()) {
 		log.Error("Mediator produced unit at wrong time!")
 		return false
 	}
