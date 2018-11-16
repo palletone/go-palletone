@@ -21,7 +21,6 @@ package shim
 
 import (
 	"github.com/golang/protobuf/ptypes/timestamp"
-
 	"github.com/palletone/go-palletone/common"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -115,97 +114,6 @@ type ChaincodeStubInterface interface {
 	// the ledger when the transaction is validated and successfully committed.
 	DelState(key string) error
 
-	// GetStateByRange returns a range iterator over a set of keys in the
-	// ledger. The iterator can be used to iterate over all keys
-	// between the startKey (inclusive) and endKey (exclusive).
-	// The keys are returned by the iterator in lexical order. Note
-	// that startKey and endKey can be empty string, which implies unbounded range
-	// query on start or end.
-	// Call Close() on the returned StateQueryIteratorInterface object when done.
-	// The query is re-executed during validation phase to ensure result set
-	// has not changed since transaction endorsement (phantom reads detected).
-	GetStateByRange(startKey, endKey string) (StateQueryIteratorInterface, error)
-
-	// GetStateByPartialCompositeKey queries the state in the ledger based on
-	// a given partial composite key. This function returns an iterator
-	// which can be used to iterate over all composite keys whose prefix matches
-	// the given partial composite key. The `objectType` and attributes are
-	// expected to have only valid utf8 strings and should not contain
-	// U+0000 (nil byte) and U+10FFFF (biggest and unallocated code point).
-	// See related functions SplitCompositeKey and CreateCompositeKey.
-	// Call Close() on the returned StateQueryIteratorInterface object when done.
-	// The query is re-executed during validation phase to ensure result set
-	// has not changed since transaction endorsement (phantom reads detected).
-	GetStateByPartialCompositeKey(objectType string, keys []string) (StateQueryIteratorInterface, error)
-
-	// CreateCompositeKey combines the given `attributes` to form a composite
-	// key. The objectType and attributes are expected to have only valid utf8
-	// strings and should not contain U+0000 (nil byte) and U+10FFFF
-	// (biggest and unallocated code point).
-	// The resulting composite key can be used as the key in PutState().
-	CreateCompositeKey(objectType string, attributes []string) (string, error)
-
-	// SplitCompositeKey splits the specified key into attributes on which the
-	// composite key was formed. Composite keys found during range queries
-	// or partial composite key queries can therefore be split into their
-	// composite parts.
-	SplitCompositeKey(compositeKey string) (string, []string, error)
-
-	// GetQueryResult performs a "rich" query against a state database. It is
-	// only supported for state databases that support rich query,
-	// e.g.CouchDB. The query string is in the native syntax
-	// of the underlying state database. An iterator is returned
-	// which can be used to iterate (next) over the query result set.
-	// The query is NOT re-executed during validation phase, phantom reads are
-	// not detected. That is, other committed transactions may have added,
-	// updated, or removed keys that impact the result set, and this would not
-	// be detected at validation/commit time.  Applications susceptible to this
-	// should therefore not use GetQueryResult as part of transactions that update
-	// ledger, and should limit use to read-only chaincode operations.
-	GetQueryResult(query string) (StateQueryIteratorInterface, error)
-
-	// GetHistoryForKey returns a history of key values across time.
-	// For each historic key update, the historic value and associated
-	// transaction id and timestamp are returned. The timestamp is the
-	// timestamp provided by the client in the proposal header.
-	// GetHistoryForKey requires peer configuration
-	// core.ledger.history.enableHistoryDatabase to be true.
-	// The query is NOT re-executed during validation phase, phantom reads are
-	// not detected. That is, other committed transactions may have updated
-	// the key concurrently, impacting the result set, and this would not be
-	// detected at validation/commit time. Applications susceptible to this
-	// should therefore not use GetHistoryForKey as part of transactions that
-	// update ledger, and should limit use to read-only chaincode operations.
-	//GetHistoryForKey(key string) (HistoryQueryIteratorInterface, error)
-
-	// GetCreator returns `SignatureHeader.Creator` (e.g. an identity)
-	// of the `SignedProposal`. This is the identity of the agent (or user)
-	// submitting the transaction.
-	GetCreator() ([]byte, error)
-
-	// GetTransient returns the `ChaincodeProposalPayload.Transient` field.
-	// It is a map that contains data (e.g. cryptographic material)
-	// that might be used to implement some form of application-level
-	// confidentiality. The contents of this field, as prescribed by
-	// `ChaincodeProposalPayload`, are supposed to always
-	// be omitted from the transaction and excluded from the ledger.
-	GetTransient() (map[string][]byte, error)
-
-	// GetBinding returns the transaction binding, which is used to enforce a
-	// link between application data (like those stored in the transient field
-	// above) to the proposal itself. This is useful to avoid possible replay
-	// attacks.
-	GetBinding() ([]byte, error)
-
-	// GetDecorations returns additional data (if applicable) about the proposal
-	// that originated from the peer. This data is set by the decorators of the
-	// peer, which append or mutate the chaincode input passed to the chaincode.
-	GetDecorations() map[string][]byte
-
-	// GetSignedProposal returns the SignedProposal object, which contains all
-	// data elements part of a transaction proposal.
-	GetSignedProposal() (*pb.SignedProposal, error)
-
 	// GetTxTimestamp returns the timestamp when the transaction was created. This
 	// is taken from the transaction ChannelHeader, therefore it will indicate the
 	// client's timestamp and will have the same value across all endorsers.
@@ -235,29 +143,130 @@ type ChaincodeStubInterface interface {
 	PayOutToken(addr string, token modules.Asset, amount uint64, lockTime uint32) error
 	//获取invoke参数，包括invokeAddr,tokens,fee,funcName,params
 	GetInvokeParameters() (invokeAddr common.Address, invokeTokens *modules.InvokeTokens, invokeFees *modules.InvokeFees, funcName string, params []string, err error)
+
+	// GetStateByRange returns a range iterator over a set of keys in the
+	// ledger. The iterator can be used to iterate over all keys
+	// between the startKey (inclusive) and endKey (exclusive).
+	// The keys are returned by the iterator in lexical order. Note
+	// that startKey and endKey can be empty string, which implies unbounded range
+	// query on start or end.
+	// Call Close() on the returned StateQueryIteratorInterface object when done.
+	// The query is re-executed during validation phase to ensure result set
+	// has not changed since transaction endorsement (phantom reads detected).
+	//TODO
+	//GetStateByRange(startKey, endKey string) (StateQueryIteratorInterface, error)
+
+	// GetStateByPartialCompositeKey queries the state in the ledger based on
+	// a given partial composite key. This function returns an iterator
+	// which can be used to iterate over all composite keys whose prefix matches
+	// the given partial composite key. The `objectType` and attributes are
+	// expected to have only valid utf8 strings and should not contain
+	// U+0000 (nil byte) and U+10FFFF (biggest and unallocated code point).
+	// See related functions SplitCompositeKey and CreateCompositeKey.
+	// Call Close() on the returned StateQueryIteratorInterface object when done.
+	// The query is re-executed during validation phase to ensure result set
+	// has not changed since transaction endorsement (phantom reads detected).
+	//TODO
+	//GetStateByPartialCompositeKey(objectType string, keys []string) (StateQueryIteratorInterface, error)
+
+	// CreateCompositeKey combines the given `attributes` to form a composite
+	// key. The objectType and attributes are expected to have only valid utf8
+	// strings and should not contain U+0000 (nil byte) and U+10FFFF
+	// (biggest and unallocated code point).
+	// The resulting composite key can be used as the key in PutState().
+	//TODO
+	//CreateCompositeKey(objectType string, attributes []string) (string, error)
+
+	// SplitCompositeKey splits the specified key into attributes on which the
+	// composite key was formed. Composite keys found during range queries
+	// or partial composite key queries can therefore be split into their
+	// composite parts.
+	//TODO
+	//SplitCompositeKey(compositeKey string) (string, []string, error)
+
+	// GetQueryResult performs a "rich" query against a state database. It is
+	// only supported for state databases that support rich query,
+	// e.g.CouchDB. The query string is in the native syntax
+	// of the underlying state database. An iterator is returned
+	// which can be used to iterate (next) over the query result set.
+	// The query is NOT re-executed during validation phase, phantom reads are
+	// not detected. That is, other committed transactions may have added,
+	// updated, or removed keys that impact the result set, and this would not
+	// be detected at validation/commit time.  Applications susceptible to this
+	// should therefore not use GetQueryResult as part of transactions that update
+	// ledger, and should limit use to read-only chaincode operations.
+	//TODO
+	//GetQueryResult(query string) (StateQueryIteratorInterface, error)
+
+	// GetHistoryForKey returns a history of key values across time.
+	// For each historic key update, the historic value and associated
+	// transaction id and timestamp are returned. The timestamp is the
+	// timestamp provided by the client in the proposal header.
+	// GetHistoryForKey requires peer configuration
+	// core.ledger.history.enableHistoryDatabase to be true.
+	// The query is NOT re-executed during validation phase, phantom reads are
+	// not detected. That is, other committed transactions may have updated
+	// the key concurrently, impacting the result set, and this would not be
+	// detected at validation/commit time. Applications susceptible to this
+	// should therefore not use GetHistoryForKey as part of transactions that
+	// update ledger, and should limit use to read-only chaincode operations.
+	//GetHistoryForKey(key string) (HistoryQueryIteratorInterface, error)
+
+	// GetCreator returns `SignatureHeader.Creator` (e.g. an identity)
+	// of the `SignedProposal`. This is the identity of the agent (or user)
+	// submitting the transaction.
+	//TODO
+	//GetCreator() ([]byte, error)
+
+	// GetTransient returns the `ChaincodeProposalPayload.Transient` field.
+	// It is a map that contains data (e.g. cryptographic material)
+	// that might be used to implement some form of application-level
+	// confidentiality. The contents of this field, as prescribed by
+	// `ChaincodeProposalPayload`, are supposed to always
+	// be omitted from the transaction and excluded from the ledger.
+	//TODO
+	//GetTransient() (map[string][]byte, error)
+
+	// GetBinding returns the transaction binding, which is used to enforce a
+	// link between application data (like those stored in the transient field
+	// above) to the proposal itself. This is useful to avoid possible replay
+	// attacks.
+	//TODO
+	//GetBinding() ([]byte, error)
+
+	// GetDecorations returns additional data (if applicable) about the proposal
+	// that originated from the peer. This data is set by the decorators of the
+	// peer, which append or mutate the chaincode input passed to the chaincode.
+	//TODO
+	//GetDecorations() map[string][]byte
+
+	// GetSignedProposal returns the SignedProposal object, which contains all
+	// data elements part of a transaction proposal.
+	//TODO
+	//GetSignedProposal() (*pb.SignedProposal, error)
 }
 
 // CommonIteratorInterface allows a chaincode to check whether any more result
 // to be fetched from an iterator and close it when done.
-type CommonIteratorInterface interface {
-	// HasNext returns true if the range query iterator contains additional keys
-	// and values.
-	HasNext() bool
+//type CommonIteratorInterface interface {
+// HasNext returns true if the range query iterator contains additional keys
+// and values.
+//HasNext() bool
 
-	// Close closes the iterator. This should be called when done
-	// reading from the iterator to free up resources.
-	Close() error
-}
+// Close closes the iterator. This should be called when done
+// reading from the iterator to free up resources.
+//Close() error
+//}
 
 // StateQueryIteratorInterface allows a chaincode to iterate over a set of
 // key/value pairs returned by range and execute query.
-type StateQueryIteratorInterface interface {
-	// Inherit HasNext() and Close()
-	CommonIteratorInterface
+//type StateQueryIteratorInterface interface {
+// Inherit HasNext() and Close()
+//CommonIteratorInterface
 
-	// Next returns the next key and value in the range and execute query iterator.
-	//Next() (*queryresult.KV, error)
-}
+// Next returns the next key and value in the range and execute query iterator.
+//Next() (*queryresult.KV, error)
+//}
 
 // HistoryQueryIteratorInterface allows a chaincode to iterate over a set of
 // key/value pairs returned by a history query.
@@ -273,6 +282,6 @@ type StateQueryIteratorInterface interface {
 // key/value pairs returned by range query.
 // TODO: Once the execute query and history query are implemented in MockStub,
 // we need to update this interface
-type MockQueryIteratorInterface interface {
-	StateQueryIteratorInterface
-}
+//type MockQueryIteratorInterface interface {
+//	StateQueryIteratorInterface
+//}
