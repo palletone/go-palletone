@@ -44,8 +44,6 @@ type DynamicGlobalProperty struct {
 
 	HeadUnitHash common.Hash // 最近的单元hash
 
-	// LastVerifiedUnit *v.VerifiedUnit	// 最近生产的单元
-
 	HeadUnitTime int64 // 最近的单元时间
 
 	// CurrentMediator *common.Address // 当前生产单元的mediator, 用于判断是否连续同一个mediator生产单元

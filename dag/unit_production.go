@@ -89,7 +89,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 		current_index.Index += 1
 		pendingUnit.UnitHeader.Number = *current_index
 	} else {
-		log.Info("the pending unit header number index info. ", "index", pendingUnit.UnitHeader.Number.Index,
+		go log.Info("the pending unit header number index info. ", "index", pendingUnit.UnitHeader.Number.Index,
 			"hex", pendingUnit.UnitHeader.Number.AssetID.String())
 	}
 
