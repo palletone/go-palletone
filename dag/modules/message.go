@@ -292,11 +292,10 @@ type AmountAsset struct {
 	Asset  Asset  `json:"asset"`
 }
 
-type StateValue struct {
-	Asset  Asset     `json:"asset"`
-	Amount uint64    `json:"value"`
-	Time   time.Time `json:"time"`
-	Extra  string    `json:"extra"`
+type DepositStateValue struct {
+	DepositBalance AmountAsset `json:"amount_asset"`
+	Time           time.Time   `json:"time"`
+	Extra          string      `json:"extra"`
 }
 
 type TokenPayOut struct {
