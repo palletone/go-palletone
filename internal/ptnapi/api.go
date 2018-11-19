@@ -1682,7 +1682,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 //	return taken_utxo, change
 //}
 
-func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context , from string, to string, amount uint64,fee uint64) (string, error) {
+func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
 	//realNet := &chaincfg.MainNetParams
 	var LockTime int64
 	LockTime = 0
@@ -1691,7 +1691,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context , fr
 	if to == "" {
 		return "", fmt.Errorf("amounts is empty")
 	}
-	amount = amount*10e8
+	amount = amount * 10e8
 	amounts[to] = float64(amount)
 	utxoJsons, err := s.b.GetAddrUtxos(from)
 	if err != nil {
@@ -1705,12 +1705,12 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context , fr
 	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
 	}
-    if change < fee {
-			return "", fmt.Errorf("Amount Not Enough to pay")
+	if change < fee {
+		return "", fmt.Errorf("Amount Not Enough to pay")
 	}
 	if change > fee {
-	    amounts[from] = float64(change-fee)
-    }
+		amounts[from] = float64(change - fee)
+	}
 	var inputs []ptnjson.TransactionInput
 	var input ptnjson.TransactionInput
 	for _, u := range taken_utxo {
@@ -2274,7 +2274,7 @@ func (s *PublicDagAPI) GetTokenInfo(ctx context.Context, key string) (string, er
 	// if err != nil {
 	// 	return "", err
 	// }
-	log.Info("-------------------key--------", "key", key)
+
 	if item, err := s.b.GetTokenInfo(key); err != nil {
 		return "", err
 	} else {
@@ -2289,4 +2289,38 @@ func (s *PublicDagAPI) SaveTokenInfo(ctx context.Context, name, token, creator s
 	//info to token
 	info := modules.NewTokenInfo(name, token, creator)
 	return s.b.SaveTokenInfo(info)
+}
+
+func (s *PublicDagAPI) GetUnitTxsInfo(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+	if item, err := s.b.GetUnitTxsInfo(hash); err != nil {
+		return "unit_txs:null", err
+	} else {
+		info := NewPublicReturnInfo("unit_txs", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
+
+func (s *PublicDagAPI) GetUnitTxsHashHex(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+
+	if item, err := s.b.GetUnitTxsHashHex(hash); err != nil {
+		return "unit_txs_hash:null", err
+	} else {
+		info := NewPublicReturnInfo("unit_txs_hash", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
+
+func (s *PublicDagAPI) GetTxByHash(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+	if item, err := s.b.GetTxByHash(hash); err != nil {
+		return "transaction_info:null", err
+	} else {
+		info := NewPublicReturnInfo("transaction_info", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
 }

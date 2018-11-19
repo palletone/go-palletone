@@ -47,10 +47,23 @@ func ConvertPayment2Json(payment *modules.PaymentPayload) PaymentJson {
 	json.LockTime = payment.LockTime
 	json.Inputs = []InputJson{}
 	json.Outputs = []OutputJson{}
-	for _, in := range payment.Inputs {
-		input := InputJson{TxHash: in.PreviousOutPoint.TxHash.String(), MessageIndex: in.PreviousOutPoint.MessageIndex, OutIndex: in.PreviousOutPoint.OutIndex}
-		json.Inputs = append(json.Inputs, input)
+	if len(payment.Inputs) > 0 {
+		for _, in := range payment.Inputs {
+			// @jay :genesis or coinbase unit occured nil error.
+			var hstr string
+			var mindex uint32
+			var outindex uint32
+			if in.PreviousOutPoint != nil {
+				hstr = in.PreviousOutPoint.TxHash.String()
+				mindex = in.PreviousOutPoint.MessageIndex
+				outindex = in.PreviousOutPoint.OutIndex
+			}
+			input := InputJson{TxHash: hstr, MessageIndex: mindex, OutIndex: outindex}
+			json.Inputs = append(json.Inputs, input)
+
+		}
 	}
+
 	for _, out := range payment.Outputs {
 		addr, _ := tokenengine.GetAddressFromScript(out.PkScript)
 		output := OutputJson{Amount: out.Value, Asset: out.Asset.String(), ToAddress: addr.String()}

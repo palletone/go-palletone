@@ -17,6 +17,7 @@
  *  * @date 2018
  *
  */
+
 package ptnjson
 
 import (
