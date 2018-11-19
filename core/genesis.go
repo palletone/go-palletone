@@ -33,7 +33,8 @@ type SystemConfig struct {
 	//基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
 	FoundationAddress string `json:"foundationAddress"`
 	//保证金的数量
-	DepositAmount uint64 `json:"depositAmount"`
+	DepositAmountForJury     uint64 `json:"depositAmountForJury"`
+	DepositAmountForMediator uint64 `json:"depositAmountForMediator"`
 }
 
 type Genesis struct {

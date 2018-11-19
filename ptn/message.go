@@ -27,11 +27,11 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
@@ -387,7 +387,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 				if st == nil || err != nil {
 					return err
 				}
-				err = tokenengine.ScriptValidate(st.PkScript, tx, int(txin.PreviousOutPoint.MessageIndex), int(txin.PreviousOutPoint.OutIndex))
+				err = tokenengine.ScriptValidate(st.PkScript, nil, tx, int(txin.PreviousOutPoint.MessageIndex), int(txin.PreviousOutPoint.OutIndex))
 				if err != nil {
 					return err
 				}
