@@ -53,27 +53,6 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-	//TODO
-	//asset := modules.Asset{
-	//	AssetId:  modules.PTNCOIN,
-	//	UniqueId: modules.PTNCOIN,
-	//	ChainId:  uint64(1),
-	//}
-	//stateValue := modules.StateValue{
-	//	Asset: modules.Asset{
-	//		AssetId:  modules.PTNCOIN,
-	//		UniqueId: modules.PTNCOIN,
-	//		ChainId:  uint64(0),
-	//	},
-	//	Amount: 100000,
-	//	Time:   time.Now(),
-	//	Extra:  "hello",
-	//}
-	//stateValueByte, _ := json.Marshal(stateValue)
-	//return stateValueByte, nil
-
-	//fmt.Println("GetState(contractid []byte, ns string, key string)===>>>\n\n", contractid, ns, key)
-	//return []byte("1000"), nil
 	//TODO Devin
 	ver, val := s.dag.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
