@@ -813,7 +813,7 @@ func (s *PublicBlockChainAPI) Ccdeploy(ctx context.Context, templateId string, t
 	return hexutil.Bytes(deployId), err
 }
 
-func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string, paymentJson string, param []string /*fun string, key string, val string*/) (string, error) {
+func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string, txhex string, param []string /*fun string, key string, val string*/) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
 	log.Info("-----Ccinvoke:" + deployId + ":" + txid)
 
@@ -823,8 +823,8 @@ func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txi
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
 
-	//args := ut.ToChaincodeArgs(fun, key, val)
-	rsp, err := s.b.ContractInvoke(depId, txid, paymentJson, args, 0)
+	txBytes, err := hex.DecodeString(txhex)
+	rsp, err := s.b.ContractInvoke(depId, txid, txBytes, args, 0)
 
 	log.Info("-----ContractInvoke:" + string(rsp))
 

@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
@@ -360,14 +359,14 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 	return depid, err
 }
 
-func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, paymentJson string, args [][]byte, timeout time.Duration) ([]byte, error) {
+func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) ([]byte, error) {
 	log.Printf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-	var pJson ptnjson.PaymentJson
-	json.Unmarshal([]byte(paymentJson), &pJson)
-	payment := ptnjson.ConvertJson2Payment(&pJson)
-	log.Printf("----Convert payment payload from json, result:%+v", payment)
-	tx := modules.NewTransaction([]*modules.Message{})
-	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, &payment))
+	tx := &modules.Transaction{}
+	err := rlp.DecodeBytes(txBytes, tx)
+	if err != nil {
+		return nil, err
+	}
+
 	contractInvokeRequest := &modules.ContractInvokeRequestPayload{
 		ContractId: deployId,
 		//FunctionName: string(args[0]),
@@ -409,9 +408,9 @@ func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {
 func (b *PtnApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return b.ptn.dag.GetCommonByPrefix(prefix)
 }
-func (b *PtnApiBackend) DecodeTx(hex string) (string, error) {
+func (b *PtnApiBackend) DecodeTx(hexStr string) (string, error) {
 	tx := &modules.Transaction{}
-	bytes, err := hexutil.Decode(hex)
+	bytes, err := hex.DecodeString(hexStr)
 	if err != nil {
 		return "", err
 	}
