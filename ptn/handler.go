@@ -343,15 +343,21 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
 	go pm.vssResponseBroadcastLoop()
 
+	//TODO must modify for ptn test
 	//contract exec
-	pm.contractExecCh = make(chan jury.ContractExeEvent)
-	pm.contractExecSub = pm.contractProc.SubscribeContractEvent(pm.contractExecCh)
-	go pm.contractExecRecvLoop()
+	if pm.contractProc != nil {
+		pm.contractExecCh = make(chan jury.ContractExeEvent)
+		pm.contractExecSub = pm.contractProc.SubscribeContractEvent(pm.contractExecCh)
+		go pm.contractExecRecvLoop()
+	}
 
+	//TODO must modify for ptn test
 	//contract sig
-	pm.contractSigCh = make(chan jury.ContractSigEvent)
-	pm.contractSigSub = pm.contractProc.SubscribeContractSigEvent(pm.contractSigCh)
-	go pm.contractSigRecvLoop()
+	if pm.contractProc != nil {
+		pm.contractSigCh = make(chan jury.ContractSigEvent)
+		pm.contractSigSub = pm.contractProc.SubscribeContractSigEvent(pm.contractSigCh)
+		go pm.contractSigRecvLoop()
+	}
 }
 
 func (pm *ProtocolManager) Stop() {
