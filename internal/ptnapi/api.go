@@ -1877,6 +1877,13 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	}, nil
 }
 
+func trimx(para string) string {
+	if strings.HasPrefix(para, "0x") || strings.HasPrefix(para, "0X") {
+		return fmt.Sprintf("%s", para[2:])
+	}
+	return para
+}
+
 //sign rawtranscation
 //create raw transction
 func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string) (interface{}, error) {
@@ -1886,14 +1893,49 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 		return "", err
 	}
 	//transaction inputs
-
-	var rawinputs []ptnjson.RawTxInput
-	for _, inputOne := range signTransactionParams.Inputs {
-		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex, inputOne.ScriptPubKey, inputOne.RedeemScript}
-		rawinputs = append(rawinputs, input)
-
+	serializedTx, err := decodeHexStr(signTransactionParams.RawTx)
+	if err != nil {
+		return nil, err
 	}
-	if len(rawinputs) == 0 {
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
+		return nil, err
+	}
+	var srawinputs []ptnjson.RawTxInput
+	for _, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if ok == false {
+			continue
+		}
+		for _, txin := range payload.Inputs {
+			inpoint := modules.OutPoint{
+				TxHash:       txin.PreviousOutPoint.TxHash,
+				OutIndex:     txin.PreviousOutPoint.OutIndex,
+				MessageIndex: txin.PreviousOutPoint.MessageIndex,
+			}
+			uvu, eerr := s.b.GetUtxoEntry(&inpoint)
+			if eerr != nil {
+				return nil, err
+			}
+			TxHash := trimx(uvu.TxHash)
+			PkScriptHex := trimx(uvu.PkScriptHex)
+			fmt.Printf("%+v\n", PkScriptHex)
+			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
+			srawinputs = append(srawinputs, input)
+
+		}
+		/*for _, txout := range payload.Outputs {
+
+		    err = tokenengine.ScriptValidate(txout.PkScript,  tx, 0,0)
+		    if err != nil {
+		            fmt.Println("--------------1913----err-------------------------")
+		    }
+		    fmt.Printf("---1915------%+v\n--------------",txout)
+		}*/
+	}
+	if len(srawinputs) == 0 {
 		return "", nil
 	}
 	var keys []string
@@ -1908,7 +1950,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 		return "", nil
 	}
 
-	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &rawinputs, &keys, ptnjson.String("ALL"))
+	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &srawinputs, &keys, ptnjson.String("ALL"))
 	result, _ := SignRawTransaction(newsign)
 	fmt.Println(result)
 	return result, nil
