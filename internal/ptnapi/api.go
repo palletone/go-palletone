@@ -27,7 +27,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -42,6 +41,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/coredata"
@@ -839,8 +839,8 @@ func (s *PublicBlockChainAPI) Ccstop(ctx context.Context, deployId string, txid 
 	return err
 }
 
-func (s *PublicBlockChainAPI) CreatePayment(ctx context.Context, fromAddr string, toAddr string, amt, fee uint64) (string, error) {
-	return s.b.CreatePayment(fromAddr, toAddr, amt, fee)
+func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string, error) {
+	return s.b.DecodeTx(hex)
 }
 
 func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, txid string, param []string) (string, error) {
@@ -1621,68 +1621,68 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 //	fmt.Println(result)
 //	return result, nil
 //}
-func find_min(utxos Utxos) ptnjson.UtxoJson {
-	amout := utxos[0].Amount
-	min_utxo := utxos[0]
-	for _, utxo := range utxos {
-		if utxo.Amount < amout {
-			min_utxo = utxo
-			amout = min_utxo.Amount
-		}
-	}
-	return min_utxo
-}
+//func find_min(utxos Utxos) ptnjson.UtxoJson {
+//	amout := utxos[0].Amount
+//	min_utxo := utxos[0]
+//	for _, utxo := range utxos {
+//		if utxo.Amount < amout {
+//			min_utxo = utxo
+//			amout = min_utxo.Amount
+//		}
+//	}
+//	return min_utxo
+//}
+//
+//type Utxos []ptnjson.UtxoJson
+//
+//func (a Utxos) Len() int { // 重写 Len() 方法
+//	return len(a)
+//}
+//func (a Utxos) Swap(i, j int) { // 重写 Swap() 方法
+//	a[i], a[j] = a[j], a[i]
+//}
+//func (a Utxos) Less(i, j int) bool { // 重写 Less() 方法， 从小到大排序
+//	return a[j].Amount > a[i].Amount
+//}
+//
+//func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64) {
+//	var greaters Utxos
+//	var lessers Utxos
+//	var taken_utxo Utxos
+//	var accum uint64
+//	var change uint64
+//	for _, utxo := range utxos {
+//		if utxo.Amount > amount {
+//			greaters = append(greaters, utxo)
+//		}
+//		if utxo.Amount < amount {
+//			lessers = append(lessers, utxo)
+//		}
+//	}
+//	var min_greater ptnjson.UtxoJson
+//	if len(greaters) > 0 {
+//		min_greater = find_min(greaters)
+//		change = min_greater.Amount - amount
+//		fmt.Println(change)
+//		taken_utxo = append(taken_utxo, min_greater)
+//	} else if len(greaters) == 0 && len(lessers) > 0 {
+//		sort.Sort(Utxos(lessers))
+//		for _, utxo := range lessers {
+//			accum += utxo.Amount
+//			taken_utxo = append(taken_utxo, utxo)
+//			if accum >= amount {
+//				change = accum - amount
+//				break
+//			}
+//		}
+//		if accum < amount {
+//			return nil, 0
+//		}
+//	}
+//	return taken_utxo, change
+//}
 
-type Utxos []ptnjson.UtxoJson
-
-func (a Utxos) Len() int { // 重写 Len() 方法
-	return len(a)
-}
-func (a Utxos) Swap(i, j int) { // 重写 Swap() 方法
-	a[i], a[j] = a[j], a[i]
-}
-func (a Utxos) Less(i, j int) bool { // 重写 Less() 方法， 从小到大排序
-	return a[j].Amount > a[i].Amount
-}
-
-func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64) {
-	var greaters Utxos
-	var lessers Utxos
-	var taken_utxo Utxos
-	var accum uint64
-	var change uint64
-	for _, utxo := range utxos {
-		if utxo.Amount > amount {
-			greaters = append(greaters, utxo)
-		}
-		if utxo.Amount < amount {
-			lessers = append(lessers, utxo)
-		}
-	}
-	var min_greater ptnjson.UtxoJson
-	if len(greaters) > 0 {
-		min_greater = find_min(greaters)
-		change = min_greater.Amount - amount
-		fmt.Println(change)
-		taken_utxo = append(taken_utxo, min_greater)
-	} else if len(greaters) == 0 && len(lessers) > 0 {
-		sort.Sort(Utxos(lessers))
-		for _, utxo := range lessers {
-			accum += utxo.Amount
-			taken_utxo = append(taken_utxo, utxo)
-			if accum >= amount {
-				change = accum - amount
-				break
-			}
-		}
-		if accum < amount {
-			return nil, 0
-		}
-	}
-	return taken_utxo, change
-}
-
-func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s *rpcServer*/ , from string, to string, amount uint64) (string, error) {
+func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s *rpcServer*/, from string, to string, amount uint64) (string, error) {
 	//realNet := &chaincfg.MainNetParams
 	var LockTime int64
 	LockTime = 0
@@ -1692,19 +1692,23 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s 
 		return "", fmt.Errorf("amounts is empty")
 	}
 	amounts[to] = float64(amount)
-	utxos, err := s.b.GetAddrUtxos(from)
+	utxoJsons, err := s.b.GetAddrUtxos(from)
 	if err != nil {
 		return "", err
 	}
-
-	taken_utxo, change := Select_utxo_Greedy(utxos, amount)
-	if taken_utxo == nil {
+	utxos := core.Utxos{}
+	for _, json := range utxoJsons {
+		utxos = append(utxos, &json)
+	}
+	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, amount)
+	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
 	}
 
 	var inputs []ptnjson.TransactionInput
 	var input ptnjson.TransactionInput
-	for _, utxo := range taken_utxo {
+	for _, u := range taken_utxo {
+		utxo := u.(*ptnjson.UtxoJson)
 		input.Txid = utxo.TxHash
 		input.MessageIndex = utxo.MessageIndex
 		input.Vout = utxo.OutIndex
@@ -1718,7 +1722,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s 
 }
 
 //create raw transction
-func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/ , params string) (string, error) {
+func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
 	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {

@@ -669,8 +669,8 @@ func (ec *Client) GetCommonByPrefix(ctx context.Context, prefix string) (map[str
 	err := ec.c.CallContext(ctx, &result, "dag_getCommonByPrefix", prefix)
 	return result, err
 }
-func (ec *Client) CreatePayment(ctx context.Context, fromAddr, toAddr string, amt, fee uint64) (string, error) {
+func (ec *Client) DecodeTx(ctx context.Context, hex string) (string, error) {
 	var result string
-	err := ec.c.CallContext(ctx, &result, "ptn_createPayment", fromAddr, toAddr, amt, fee)
+	err := ec.c.CallContext(ctx, &result, "ptn_decodeTx", hex)
 	return result, err
 }
