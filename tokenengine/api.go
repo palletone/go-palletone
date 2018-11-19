@@ -27,9 +27,12 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	//"github.com/btcsuite/btcd/btcec"
+	"bytes"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
+	"sort"
 )
 
 //Generate a P2PKH lock script, just only need input 20bytes public key hash.
@@ -77,6 +80,18 @@ func GetAddressFromScript(lockScript []byte) (common.Address, error) {
 	return addrs[0], nil
 }
 
+type PubKey4Sort [][]byte
+
+func (c PubKey4Sort) Len() int {
+	return len(c)
+}
+func (c PubKey4Sort) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
+}
+func (c PubKey4Sort) Less(i, j int) bool {
+	return bytes.Compare(c[i], c[j]) > 0
+}
+
 //生成多签用的赎回脚本
 //Generate redeem script
 func GenerateRedeemScript(needed byte, pubKeys [][]byte) []byte {
@@ -87,7 +102,8 @@ func GenerateRedeemScript(needed byte, pubKeys [][]byte) []byte {
 		redeemScript, _ := txscript.NewScriptBuilder().AddData(pubKeys[0]).AddOp(txscript.OP_CHECKSIG).Script()
 		return redeemScript
 	}
-	//TODO Devin pubkeys 排序
+	// pubkeys 排序
+	sort.Sort(PubKey4Sort(pubKeys))
 	builder := txscript.NewScriptBuilder().AddOp(needed + 80) //OP_Number
 	for _, pubKey := range pubKeys {
 		builder = builder.AddData(pubKey)
@@ -155,8 +171,8 @@ func GenerateP2CHUnlockScript(signs [][]byte, redeemScript []byte, version int) 
 }
 
 //validate this transaction and input index script can unlock the utxo.
-func ScriptValidate(utxoLockScript []byte, tx *modules.Transaction, msgIdx, inputIndex int) error {
-	vm, err := txscript.NewEngine(utxoLockScript, tx, msgIdx, inputIndex, txscript.StandardVerifyFlags, nil, nil, 0)
+func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.PickupJuryRedeemScript, tx *modules.Transaction, msgIdx, inputIndex int) error {
+	vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, tx, msgIdx, inputIndex, txscript.StandardVerifyFlags, nil, nil, 0)
 	if err != nil {
 		log.Error("Failed to create script: ", err)
 		return err

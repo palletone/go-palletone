@@ -17,6 +17,7 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/dag/modules"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 )
@@ -2342,9 +2343,13 @@ func opcodeCheckJuryRedeemEqual(op *parsedOpcode, vm *Engine) error {
 	if err != nil {
 		return err
 	}
-	//TODO check redeem
-	fmt.Printf("conract hash:%x,version:%d,redeem:%x", contractHash, version, redeemScript)
-	result := true
+	// check redeem
+	addr := common.NewAddress(contractHash, common.ContractHash)
+	dbRedeem, err := vm.pickupJuryRedeemScript(addr, version)
+	if err != nil {
+		return scriptError(ErrPickupJuryRedeemScript, err.Error())
+	}
+	result := bytes.Equal(dbRedeem, redeemScript)
 	vm.dstack.PushBool(result)
 	return nil
 }

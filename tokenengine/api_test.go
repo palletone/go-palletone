@@ -126,7 +126,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
-	err = ScriptValidate(lockScript, tx, 0, 0)
+	err = ScriptValidate(lockScript, nil, tx, 0, 0)
 	if err != nil {
 		t.Logf("validate error:%s", err)
 	}
@@ -134,7 +134,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	//textPayload.Text=[]byte("Bad")
 	//fmt.Printf("%s", tx.TxMessages[2].Payload.(*modules.TextPayload))
 
-	err = ScriptValidate(lockScript, tx, 1, 0)
+	err = ScriptValidate(lockScript, nil, tx, 1, 0)
 	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
 
 }
@@ -151,6 +151,10 @@ var (
 	prvKey3, _  = crypto.FromWIF("KzRHTanikQgR5oqUts69JTrCXRuy9Zod5qXdnAbYwvUnuUDJ3Rro") //"5f7754e5407fc2a81f453645cbd92878a6341d30dbfe2e680fc81628d47e8023" //P1MzuBUT7ubGpkAFqUB6chqTSXmBThQv2HT
 	pubKey3B, _ = hex.DecodeString("020945d0c9ed05cf5ca9fe38dde799d7b73f4a5bfb71fc1a3c1dca79e2d86462a7")
 	address3, _ = common.StringToAddress("P1MzuBUT7ubGpkAFqUB6chqTSXmBThQv2HT")
+
+	prvKey4, _  = crypto.FromWIF("L3nZf9ds5JG5Sq2WMCxP6QSfHK6WuSpnsU8Qk2ygfGD92h553xhx") //"c3ecda5c797ef8d7ded2d332eb1cb83198ef88ede1bf9de7b60910644b45f83f" //P1MzuBUT7ubGpkAFqUB6chqTSXmBThQv2HT
+	pubKey4B, _ = hex.DecodeString("0342ccc3459303c6a24fd3382249af438763c7fab9ca57e919aec658f7d05eab68")
+	address4, _ = common.StringToAddress("P1Lcf8CTxgUwmFamn2qM7SrAukNyezakAbK")
 )
 
 func build23Address() ([]byte, []byte, string) {
@@ -197,7 +201,7 @@ func TestMultiSign1Step(t *testing.T) {
 	str, _ := txscript.DisasmString(sign12)
 	t.Logf("Signed script:{%s}", str)
 
-	err = ScriptValidate(lockScript, tx, 0, 0)
+	err = ScriptValidate(lockScript, nil, tx, 0, 0)
 	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
 }
 
@@ -248,6 +252,44 @@ func TestMultiSign2Step(t *testing.T) {
 	str, _ := txscript.DisasmString(sign2)
 	t.Logf("Signed script:{%s}", str)
 
-	err = ScriptValidate(lockScript, tx, 0, 0)
+	err = ScriptValidate(lockScript, nil, tx, 0, 0)
+	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
+}
+func mockPickupJuryRedeemScript(addr common.Address, ver int) ([]byte, error) {
+	return GenerateRedeemScript(2, [][]byte{pubKey1B, pubKey2B, pubKey3B, pubKey4B}), nil
+}
+func TestContractPayout(t *testing.T) {
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	asset0 := &modules.Asset{}
+	payment := &modules.PaymentPayload{}
+	utxoTxId, _ := common.NewHashFromStr("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
+	txIn := modules.NewTxIn(outPoint, []byte{})
+	payment.AddTxIn(txIn)
+	p1lockScript := GenerateP2PKHLockScript(crypto.Hash160(pubKey1B))
+	payment.AddTxOut(modules.NewTxOut(1, p1lockScript, asset0))
+	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
+	//scriptCp:=make([]byte,len(lockScript))
+	//copy(scriptCp,lockScript)
+	contractAddr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+	lockScript := GenerateP2CHLockScript(contractAddr) //Token 锁定到保证金合约中
+	privKeys := map[common.Address]*ecdsa.PrivateKey{
+		address1: prvKey1,
+		address2: prvKey2,
+	}
+	redeemScript, _ := mockPickupJuryRedeemScript(contractAddr, 1)
+	sign12, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, privKeys, nil)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	t.Logf("PrvKey1&2 sign result:%x\n", sign12)
+	pay1 := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	pay1.Inputs[0].SignatureScript = sign12
+	str, _ := txscript.DisasmString(sign12)
+	t.Logf("Signed script:{%s}", str)
+
+	err = ScriptValidate(lockScript, mockPickupJuryRedeemScript, tx, 0, 0)
 	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
 }
