@@ -98,7 +98,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 	//logger.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)
 	//fmt.Println("SetState(ns string, key string, value []byte)===>>>\n\n", ns, key, value)
-	stateValue := &modules.StateValue{}
+	stateValue := &modules.DepositStateValue{}
 	_ = json.Unmarshal(value, stateValue)
 	//fmt.Printf("llllllll   %#v\n", stateValue)
 	if err := s.CheckDone(); err != nil {

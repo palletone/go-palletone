@@ -527,5 +527,8 @@ func (pm *ProtocolManager) ContractBroadcast(event jury.ContractExeEvent) {
 
 func (pm *ProtocolManager) ContractSigBroadcast(event jury.ContractSigEvent) {
 	log.Info("ContractSigBroadcast", "event", event.Tx.TxHash)
-	pm.contractSigCh <- event
+	peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
+	for _, peer := range peers {
+		peer.SendContractSigTransaction(event)
+	}
 }

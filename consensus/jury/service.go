@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"bytes"
 	"github.com/palletone/go-palletone/contracts"
+	cm "github.com/palletone/go-palletone/dag/common"
 )
 
 type PeerType int
@@ -73,16 +74,16 @@ type Processor struct {
 	ptn      PalletOne
 	dag      iDag
 	ptype    PeerType
-	address  common.Address
+	local    common.Address  //local
+	list     *common.Address //dynamic
 	contract *contracts.Contract
 
 	txPool txspool.ITxPool
 	locker *sync.Mutex
 	quit   chan struct{}
-	jurors map[common.Address]Juror //记录所有执行合约的节点信息
 
-	//contracts  map[modules.MessageType]map[common.Hash]interface{} //本地记录合约执行结果，其中interface为对应的payload
 	contractTx map[common.Hash]*modules.Transaction
+	//jurors     map[common.Address]Juror //记录所有执行合约的节点信息
 
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
@@ -111,8 +112,9 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 func (p *Processor) Start(server *p2p.Server) error {
 	//启动消息接收处理线程
 
-	//合约执行线程
+	//合约执行节点更新线程
 
+	//合约执行线程
 	return nil
 }
 
@@ -132,7 +134,7 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 		return errors.New("param is nil")
 	}
 
-	if false == checkTxValid(event.Tx) {
+	if false == checkTxValid(event.Tx, p.ptn.GetKeyStore()) {
 		return errors.New("ProcessContractEvent recv event Tx is invalid")
 	}
 
@@ -141,7 +143,7 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 		return err
 	}
 
-	tx, _, err := gen.GenContractSigTransctions(p.address, event.Tx, cmsgType, payload, nil)
+	tx, _, err := gen.GenContractSigTransctions(p.local, event.Tx, cmsgType, payload, p.ptn.GetKeyStore())
 	if err != nil {
 		log.Error("GenContractSigTransctions", "err:%s", err)
 		return err
@@ -164,7 +166,7 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 		return errors.New("ProcessContractSigEvent param is nil")
 	}
 
-	if false == checkTxValid(event.Tx) {
+	if false == checkTxValid(event.Tx, p.ptn.GetKeyStore()) {
 		return errors.New("ProcessContractSigEvent event Tx is invalid")
 	}
 	tx := p.contractTx[event.Tx.TxHash]
@@ -235,6 +237,7 @@ func runContractCmd(contract *contracts.Contract, trs *modules.Transaction) (mod
 					deployId: msg.Payload.(modules.ContractInvokeRequestPayload).ContractId,
 					args:     msg.Payload.(modules.ContractInvokeRequestPayload).Args,
 					txid:     trs.TxHash.String(),
+					tx:       trs,
 				}
 				payload, err := ContractProcess(contract, req)
 				if err != nil {
@@ -255,10 +258,6 @@ func runContractCmd(contract *contracts.Contract, trs *modules.Transaction) (mod
 
 func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (bool, error) {
 	var recvSigMsg *modules.Message
-	//检查接收到的tx有效性
-	if checkTxValid(local) != true || checkTxValid(recv) != true {
-		return false, errors.New("checkAndAddTxData local or recv Tx is invalid")
-	}
 
 	//检查除签名msg外的其他msg内容是否相同
 	if len(local.TxMessages) != len(recv.TxMessages) {
@@ -269,8 +268,6 @@ func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (b
 			return false, errors.New("tx msg not equal")
 		}
 	}
-
-	//检查签名是否已存在
 	for _, msg := range recv.TxMessages {
 		if msg.App == modules.APP_SIGNATURE {
 			recvSigMsg = msg
@@ -280,7 +277,6 @@ func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (b
 	if recvSigMsg == nil {
 		return false, errors.New("not find recv sig msg")
 	}
-	//todo 验证签名的有效性
 	for i, msg := range local.TxMessages {
 		if msg.App == modules.APP_SIGNATURE {
 			sigPayload := msg.Payload.(*modules.SignaturePayload)
@@ -315,13 +311,11 @@ func getTxSigNum(tx *modules.Transaction) int {
 	return 0
 }
 
-func checkTxValid(tx *modules.Transaction) bool {
+func checkTxValid(tx *modules.Transaction, ks *keystore.KeyStore) bool {
 	if tx == nil {
 		return false
 	}
-	//签名检查
-
-	return true
+	return cm.ValidateTxSig(tx, ks)
 }
 
 func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction) error {

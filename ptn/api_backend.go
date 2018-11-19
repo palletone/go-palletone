@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -35,7 +36,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
-	"github.com/palletone/go-palletone/tokenengine"
 )
 
 // PtnApiBackend implements ethapi.Backend for full nodes
@@ -359,14 +359,14 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 	return depid, err
 }
 
-func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, paymentJson string, args [][]byte, timeout time.Duration) ([]byte, error) {
+func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) ([]byte, error) {
 	log.Printf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-	var pJson ptnjson.PaymentJson
-	json.Unmarshal([]byte(paymentJson), &pJson)
-	payment := ptnjson.ConvertJson2Payment(&pJson)
-	log.Printf("----Convert payment payload from json, result:%+v", payment)
-	tx := modules.NewTransaction([]*modules.Message{})
-	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, &payment))
+	tx := &modules.Transaction{}
+	err := rlp.DecodeBytes(txBytes, tx)
+	if err != nil {
+		return nil, err
+	}
+
 	contractInvokeRequest := &modules.ContractInvokeRequestPayload{
 		ContractId: deployId,
 		//FunctionName: string(args[0]),
@@ -397,7 +397,6 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 }
 
 func (b *PtnApiBackend) ContractTxReqBroadcast(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
-
 	b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, args, timeout)
 	return nil, nil
 }
@@ -409,32 +408,17 @@ func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {
 func (b *PtnApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return b.ptn.dag.GetCommonByPrefix(prefix)
 }
-func (b *PtnApiBackend) CreatePayment(fromAddr string, toAddr string, amt, fee uint64) (string, error) {
-	utxos, _ := b.ptn.dag.GetAddrUtxos(fromAddr)
-	//TODO 贪心算法找到合适的UTXO组合
-	pay := modules.NewPaymentPayload([]*modules.Input{}, []*modules.Output{})
-	totalInput := uint64(0)
-	var asset *modules.Asset
-	for outPoint, utxo := range utxos {
-		asset = utxo.Asset
-		input0 := modules.NewTxIn(&outPoint, []byte{})
-		pay.AddTxIn(input0)
-		totalInput += utxo.Amount
-		if totalInput > amt+fee {
-			break
-		}
-
+func (b *PtnApiBackend) DecodeTx(hexStr string) (string, error) {
+	tx := &modules.Transaction{}
+	bytes, err := hex.DecodeString(hexStr)
+	if err != nil {
+		return "", err
 	}
-	if len(toAddr) != 0 && amt > 0 {
-		toAddrs, _ := common.StringToAddress(toAddr)
-		output0 := modules.NewTxOut(amt, tokenengine.GenerateLockScript(toAddrs), asset)
-		pay.AddTxOut(output0)
+	err = rlp.DecodeBytes(bytes, tx)
+	if err != nil {
+		return "", err
 	}
-	//找零
-	fromAddrs, _ := common.StringToAddress(fromAddr)
-	output1 := modules.NewTxOut(totalInput-amt-fee, tokenengine.GenerateLockScript(fromAddrs), asset)
-	pay.AddTxOut(output1)
-	jsonPay := ptnjson.ConvertPayment2Json(pay)
-	json, err := json.Marshal(jsonPay)
+	txjson := ptnjson.ConvertTx2Json(tx)
+	json, err := json.Marshal(txjson)
 	return string(json), err
 }

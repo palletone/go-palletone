@@ -206,7 +206,6 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 		App:     msgType,
 		Payload: payload,
 	}
-
 	tx := &modules.Transaction{
 		TxMessages: []*modules.Message{orgTx.TxMessages[0], orgTx.TxMessages[1], msgPayload},
 	}

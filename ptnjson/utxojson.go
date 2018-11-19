@@ -37,6 +37,10 @@ type UtxoJson struct {
 	LockTime       uint32 `json:"lock_time"`
 }
 
+func (utxo *UtxoJson) GetAmount() uint64 {
+	return utxo.Amount
+}
+
 //type AssetJson struct {
 //	AssetId  string `json:"asset_id"`  // 资产类别
 //	UniqueId string `json:"unique_id"` // every token has its unique id
