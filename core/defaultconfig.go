@@ -20,15 +20,16 @@
 package core
 
 const (
-	DefaultAlias                  = "PTN"
-	DefaultTokenAmount            = 100000000000000000
-	DefaultTokenDecimal           = 8
-	DefaultChainID                = 1
-	DefaultDepositRate            = 0.02
-	DefaultDepositAmount          = 1000
-	DefaultDepositContractAddress = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
-	DefaultTokenHolder            = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
-	DefaultPassword               = "password"
+	DefaultAlias                    = "PTN"
+	DefaultTokenAmount              = 100000000000000000
+	DefaultTokenDecimal             = 8
+	DefaultChainID                  = 1
+	DefaultDepositRate              = 0.02
+	DefaultDepositAmountForJury     = 1000
+	DefaultDepositAmountForMediator = 2000
+	DefaultDepositContractAddress   = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
+	DefaultTokenHolder              = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
+	DefaultPassword                 = "password"
 
 	DefaultMediatorInterval    = 2 //5 /* seconds */
 	DefaultMediatorCount       = 21

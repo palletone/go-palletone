@@ -41,6 +41,7 @@ import (
 
 	log2 "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -93,7 +94,8 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 		0,
 	}
 	genesisUint, _ := idag.GetUnitByNumber(index0)
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, idag, typemux, pro, genesisUint)
+
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, idag, typemux, pro, genesisUint, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -108,7 +110,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 // with the given number of blocks already known, and potential notification
 // channels for different events. In case of an error, the constructor force-
 // fails the test.
-func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, dag dag.IDag, pro producer, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database) {
+func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, dag dag.IDag, pro producer, newtx chan<- []*modules.Transaction, ju *jury.Processor) (*ProtocolManager, ptndb.Database) {
 	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/, dag, pro, newtx)
 	if err != nil {
 		t.Fatalf("Failed to create protocol manager: %v", err)
