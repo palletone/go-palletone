@@ -49,6 +49,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/shopspring/decimal"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
@@ -1527,7 +1528,8 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 	//	// some validity checks.
 	//	//only support mainnet
 	//	var params *chaincfg.Params
-	for encodedAddr, amount := range c.Amounts {
+	for encodedAddr, ptnAmt := range c.Amounts {
+		amount := ptnjson.Ptn2Dao(ptnAmt)
 		//		// Ensure amount is in the valid range for monetary amounts.
 		if amount <= 0 || amount > ptnjson.MaxDao {
 			return "", &ptnjson.RPCError{
@@ -1556,7 +1558,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		// Create a new script which pays to the provided address.
 		pkScript := tokenengine.GenerateP2PKHLockScript(addr[0:20])
 		// Convert the amount to satoshi.
-		dao, err := ptnjson.NewAmount(amount)
+		dao := ptnjson.Ptn2Dao(ptnAmt)
 		if err != nil {
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
@@ -1682,17 +1684,19 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 //	return taken_utxo, change
 //}
 
-func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context , from string, to string, amount uint64,fee uint64) (string, error) {
+func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
+
 	//realNet := &chaincfg.MainNetParams
 	var LockTime int64
 	LockTime = 0
 
-	amounts := map[string]float64{}
+	amounts := map[string]decimal.Decimal{}
 	if to == "" {
 		return "", fmt.Errorf("amounts is empty")
 	}
-	amount = amount*10e8
-	amounts[to] = float64(amount)
+
+	amounts[to] = amount
+
 	utxoJsons, err := s.b.GetAddrUtxos(from)
 	if err != nil {
 		return "", err
@@ -1701,16 +1705,12 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context , fr
 	for _, json := range utxoJsons {
 		utxos = append(utxos, &json)
 	}
-	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, amount)
+	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
+	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
 	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
 	}
-    if change < fee {
-			return "", fmt.Errorf("Amount Not Enough to pay")
-	}
-	if change > fee {
-	    amounts[from] = float64(change-fee)
-    }
+
 	var inputs []ptnjson.TransactionInput
 	var input ptnjson.TransactionInput
 	for _, u := range taken_utxo {
@@ -1720,6 +1720,8 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context , fr
 		input.Vout = utxo.OutIndex
 		inputs = append(inputs, input)
 	}
+	amounts[from] = ptnjson.Dao2Ptn(change)
+
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
 	result, _ := CreateRawTransaction(arg)
 	fmt.Println(result)
@@ -1743,12 +1745,12 @@ func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s 
 		return "", nil
 	}
 	//realNet := &chaincfg.MainNetParams
-	amounts := map[string]float64{}
+	amounts := map[string]decimal.Decimal{}
 	for _, outOne := range rawTransactionGenParams.Outputs {
-		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
+		if len(outOne.Address) == 0 || outOne.Amount.LessThanOrEqual(decimal.New(0, 0)) {
 			continue
 		}
-		amounts[outOne.Address] = float64(outOne.Amount)
+		amounts[outOne.Address] = outOne.Amount
 	}
 	if len(amounts) == 0 {
 		return "", nil

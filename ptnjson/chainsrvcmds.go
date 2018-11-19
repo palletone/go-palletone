@@ -1,19 +1,20 @@
-
 package ptnjson
+
 import (
-//	"encoding/json"
-	"fmt"
+	//	"encoding/json"
 	"errors"
-	"math"
+	"fmt"
 	"hash"
+
 	//"bytes"
+	"crypto/ecdsa"
 	"crypto/sha256"
-	"github.com/palletone/go-palletone/common"
-    "crypto/ecdsa"
 	"github.com/btcsuite/btcd/btcec"
-	"golang.org/x/crypto/ripemd160"
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/palletone/go-palletone/common"
+	"golang.org/x/crypto/ripemd160"
 )
+
 // Standard JSON-RPC 2.0 errors.
 var (
 	ErrRPCInvalidRequest = &RPCError{
@@ -38,9 +39,6 @@ var (
 	}
 )
 
-
-
-
 // General application defined JSON errors.
 const (
 	ErrRPCMisc                RPCErrorCode = -1
@@ -62,11 +60,11 @@ const (
 )
 
 const (
-	pubkeyCompressed   byte = 0x2 // y_bit + x coord
-	pubkeyUncompressed byte = 0x4 // x coord + y coord
-	pubkeyHybrid       byte = 0x6 // y_bit + x coord + y coord
-    MinCoinbaseScriptLen = 2
-    MaxCoinbaseScriptLen = 100
+	pubkeyCompressed     byte = 0x2 // y_bit + x coord
+	pubkeyUncompressed   byte = 0x4 // x coord + y coord
+	pubkeyHybrid         byte = 0x6 // y_bit + x coord + y coord
+	MinCoinbaseScriptLen      = 2
+	MaxCoinbaseScriptLen      = 100
 )
 
 // Wallet JSON errors
@@ -94,9 +92,9 @@ const (
 	ErrRPCRawTxString       RPCErrorCode = -32602
 	ErrRPCDecodeHexString   RPCErrorCode = -22
 	ErrBadTxOutValue        RPCErrorCode = -23
-    ErrDuplicateTxInputs    RPCErrorCode = -24
-    ErrBadCoinbaseScriptLen RPCErrorCode = -25
-    ErrBadTxInput           RPCErrorCode = -26
+	ErrDuplicateTxInputs    RPCErrorCode = -24
+	ErrBadCoinbaseScriptLen RPCErrorCode = -25
+	ErrBadTxInput           RPCErrorCode = -26
 )
 const (
 	// MaxBlockWeight defines the maximum block weight, where "block
@@ -134,7 +132,9 @@ const (
 	PubKeyBytesLenUncompressed = 65
 	PubKeyBytesLenHybrid       = 65
 )
+
 type ErrorCode int
+
 // These constants are used to identify a specific RuleError.
 const (
 	// ErrDuplicateBlock indicates a block with the same hash already
@@ -218,7 +218,6 @@ const (
 	// ErrDuplicateTxInputs indicates a transaction references the same
 	// input more than once.
 
-
 	// ErrBadTxInput indicates a transaction input is invalid in some way
 	// such as referencing a previous transaction outpoint which is out of
 	// range or not referencing one at all.
@@ -266,7 +265,6 @@ const (
 
 	// ErrBadCoinbaseScriptLen indicates the length of the signature script
 	// for a coinbase transaction is not within the valid range.
-	
 
 	// ErrBadCoinbaseValue indicates the amount of a coinbase value does
 	// not match the expected value of the subsidy plus the sum of all fees.
@@ -320,7 +318,6 @@ const (
 	ErrPrevBlockNotBest
 )
 
-
 type RawTxInput struct {
 	Txid         string `json:"txid"`
 	Vout         uint32 `json:"vout"`
@@ -336,6 +333,7 @@ type SignRawTransactionCmd struct {
 	PrivKeys *[]string
 	Flags    *string `jsonrpcdefault:"\"ALL\""`
 }
+
 func NewSignRawTransactionCmd(hexEncodedTx string, inputs *[]RawTxInput, privKeys *[]string, flags *string) *SignRawTransactionCmd {
 	return &SignRawTransactionCmd{
 		RawTx:    hexEncodedTx,
@@ -371,6 +369,7 @@ type RPCError struct {
 	Code    RPCErrorCode `json:"code,omitempty"`
 	Message string       `json:"message,omitempty"`
 }
+
 // Guarantee RPCError satisifies the builtin error interface.
 var _, _ error = RPCError{}, (*RPCError)(nil)
 
@@ -395,6 +394,7 @@ type AddressPubKeyHash struct {
 	hash  [ripemd160.Size]byte
 	netID byte
 }
+
 // NewAddressPubKeyHash returns a new AddressPubKeyHash.  pkHash mustbe 20
 // bytes.
 func NewAddressPubKeyHash(pkHash []byte, netID byte) (*AddressPubKeyHash, error) {
@@ -415,6 +415,7 @@ func encodeAddress(hash160 []byte, netID byte) string {
 	// P2SH), 20 bytes for a RIPEMD160 hash, and 4 bytes of checksum.
 	return base58.CheckEncode(hash160[:ripemd160.Size], netID)
 }
+
 // EncodeAddress returns the string encoding of a pay-to-pubkey-hash
 // address.  Part of the Address interface.
 func (a *AddressPubKeyHash) EncodeAddress() string {
@@ -433,6 +434,7 @@ type AddressScriptHash struct {
 	hash  [ripemd160.Size]byte
 	netID byte
 }
+
 // Amount represents the base bitcoin monetary unit (colloquially referred
 // to as a `Satoshi').  A single Amount is equal to 1e-8 of a bitcoin.
 type Amount int64
@@ -448,35 +450,39 @@ func round(f float64) Amount {
 	return Amount(f + 0.5)
 }
 
-func NewAmount(f float64) (Amount, error) {
-	// The amount is only considered invalid if it cannot be represented
-	// as an integer type.  This may happen if f is NaN or +-Infinity.
-	switch {
-	case math.IsNaN(f):
-		fallthrough
-	case math.IsInf(f, 1):
-		fallthrough
-	case math.IsInf(f, -1):
-		return 0, errors.New("invalid bitcoin amount")
-	}
-
-	return round(f * DaoPerPtn), nil
-}
+//
+//func NewAmount(f decimal.Decimal) (Amount, error) {
+//	// The amount is only considered invalid if it cannot be represented
+//	// as an integer type.  This may happen if f is NaN or +-Infinity.
+//	switch {
+//	case math.IsNaN(f):
+//		fallthrough
+//	case math.IsInf(f, 1):
+//		fallthrough
+//	case math.IsInf(f, -1):
+//		return 0, errors.New("invalid bitcoin amount")
+//	}
+//
+//	return round(f * DaoPerPtn), nil
+//}
 
 // Calculate the hash of hasher over buf.
 func calcHash(buf []byte, hasher hash.Hash) []byte {
 	hasher.Write(buf)
 	return hasher.Sum(nil)
 }
+
 // Hash160 calculates the hash ripemd160(sha256(b)).
 func Hash160(buf []byte) []byte {
 	return calcHash(calcHash(buf, sha256.New()), ripemd160.New())
 }
+
 // NewAddressScriptHash returns a new AddressScriptHash.
 func NewAddressScriptHash(serializedScript []byte, netScriptHashAddrID byte) (*AddressScriptHash, error) {
 	scriptHash := Hash160(serializedScript)
 	return newAddressScriptHashFromHash(scriptHash, netScriptHashAddrID)
 }
+
 // newAddressScriptHashFromHash is the internal API to create a script hash
 // address with a known leading identifier byte for a network, rather than
 // looking it up through its parameters.  This is useful when creating a new
@@ -499,6 +505,7 @@ func newAddressScriptHashFromHash(scriptHash []byte, netID byte) (*AddressScript
 func (a *AddressScriptHash) String() string {
 	return a.EncodeAddress()
 }
+
 // EncodeAddress returns the string encoding of a pay-to-script-hash
 // address.  Part of the Address interface.
 func (a *AddressScriptHash) EncodeAddress() string {
@@ -507,12 +514,14 @@ func (a *AddressScriptHash) EncodeAddress() string {
 
 // PubKeyFormat describes what format to use for a pay-to-pubkey address.
 type PubKeyFormat int
+
 // AddressPubKey is an Address for a pay-to-pubkey transaction.
 type AddressPubKey struct {
 	pubKeyFormat PubKeyFormat
 	pubKey       *btcec.PublicKey
 	pubKeyHashID byte
 }
+
 const (
 	// PKFUncompressed indicates the pay-to-pubkey address format is an
 	// uncompressed public key.
@@ -546,6 +555,7 @@ var (
 	// returned and the caller must decide how to decode the address.
 	ErrAddressCollision = errors.New("address collision")
 )
+
 // EncodeAddress returns the string encoding of a pay-to-pubkey-hash
 // address.  Part of the Address interface.
 
@@ -595,11 +605,13 @@ func (a *AddressPubKey) serialize() []byte {
 	}
 }
 
-
 const compressMagic byte = 0x01
+
 // PrivKeyBytesLen defines the length in bytes of a serialized private key.
 const PrivKeyBytesLen = 32
+
 var ErrMalformedPrivateKey = errors.New("malformed private key")
+
 /*func DecodeWIF(wif string) (*WIF, error) {
 	decoded := base58.Decode(wif)
 	decodedLen := len(decoded)
@@ -653,6 +665,7 @@ type WIF struct {
 	// WIF encoding the private key.
 	netID byte
 }
+
 // paddedAppend appends the src byte slice to dst, returning the new slice.
 // If the length of the source is smaller than the passed size, leading zero
 // bytes are appended to the dst slice before appending src.
@@ -662,6 +675,7 @@ func paddedAppend(size uint, dst, src []byte) []byte {
 	}
 	return append(dst, src...)
 }
+
 // SerializePubKey serializes the associated public key of the imported or
 // exported private key in either a compressed or uncompressed format.  The
 // serialization format chosen depends on the value of w.CompressPubKey.
@@ -672,6 +686,7 @@ func (w *WIF) SerializePubKey() []byte {
 	}
 	return pk.SerializeUncompressed()
 }
+
 // String creates the Wallet Import Format string encoding of a WIF structure.
 // See DecodeWIF for a detailed breakdown of the format and requirements of
 // a valid WIF string.
@@ -705,19 +720,22 @@ func String(v string) *string {
 	*p = v
 	return p
 }
- // NewAddressScriptHash returns a new AddressScriptHash.
+
+// NewAddressScriptHash returns a new AddressScriptHash.
 // NewAddressScriptHashFromHash returns a new AddressScriptHash.  scriptHash
 // must be 20 bytes.
 func NewAddressScriptHashFromHash(scriptHash []byte, netScriptHashAddrID byte) (*AddressScriptHash, error) {
 	return newAddressScriptHashFromHash(scriptHash, netScriptHashAddrID)
 }
- // GetTxOutResult models the data from the getTransactionsByTxid command.
+
+// GetTxOutResult models the data from the getTransactionsByTxid command.
 type GetTxIdResult struct {
-	Txid        string             `json:"txid"`
-	Apptype     string              `json:"apptype"`
-	Content     []byte            `json:"content"`
-	Coinbase    bool               `json:"coinbase"`
+	Txid     string `json:"txid"`
+	Apptype  string `json:"apptype"`
+	Content  []byte `json:"content"`
+	Coinbase bool   `json:"coinbase"`
 }
+
 func NewWIF(privKey *ecdsa.PrivateKey, netid byte, compress bool) (*WIF, error) {
 	return &WIF{privKey, compress, netid}, nil
 }
