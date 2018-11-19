@@ -1682,7 +1682,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 //	return taken_utxo, change
 //}
 
-func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s *rpcServer*/, from string, to string, amount uint64) (string, error) {
+func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context , from string, to string, amount uint64,fee uint64) (string, error) {
 	//realNet := &chaincfg.MainNetParams
 	var LockTime int64
 	LockTime = 0
@@ -1714,7 +1714,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s 
 		input.Vout = utxo.OutIndex
 		inputs = append(inputs, input)
 	}
-	amounts[from] = float64(change)
+	amounts[from] = float64(change-fee)
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
 	result, _ := CreateRawTransaction(arg)
 	fmt.Println(result)

@@ -82,7 +82,7 @@ func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
 			}
 		}
 		if accum < amount {
-			return nil, 0, errors.New("Not engouh")
+			return nil, 0, errors.New("Amount Not Enough to pay")
 		}
 	}
 	return taken_utxo, change, nil
