@@ -18,6 +18,8 @@ package hexutil
 
 import (
 	"bytes"
+	"encoding/hex"
+	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
 )
@@ -200,4 +202,11 @@ func TestDecodeUint64(t *testing.T) {
 			continue
 		}
 	}
+}
+func TestDecodeHexWithout0x(t *testing.T) {
+	str := "01abcdef"
+	b, e := hex.DecodeString(str)
+	assert.Nil(t, e)
+	assert.Equal(t, b[0], byte(1))
+	t.Logf("hex:%x", b)
 }
