@@ -43,7 +43,7 @@ type MediatorInfo struct {
 	InitPartPub          string
 	Node                 string
 	Url                  string
-	TotalMissed          int64
+	TotalMissed          uint32
 	LastConfirmedUnitNum uint32
 }
 
