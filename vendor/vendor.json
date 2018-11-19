@@ -748,6 +748,12 @@
 			"revisionTime": "2016-06-18T19:32:21Z"
 		},
 		{
+			"checksumSHA1": "etcUdlsnZXEYrw5vs6/tH6E37Wo=",
+			"path": "github.com/shopspring/decimal",
+			"revision": "cd690d0c9e2447b1ef2a129a6b7b49077da89b8e",
+			"revisionTime": "2018-07-09T20:31:17Z"
+		},
+		{
 			"checksumSHA1": "r7cX1z931ZHnJIbJXCHP7jwrBCQ=",
 			"path": "github.com/sirupsen/logrus",
 			"revision": "e54a77765aca7bbdd8e56c1c54f60579968b2dc9",

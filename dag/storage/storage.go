@@ -38,26 +38,32 @@ func StoreBytes(db ptndb.Database, key []byte, value interface{}) error {
 	if err != nil {
 		return err
 	}
-
-	_, err = db.Get(key)
+	err = db.Put(key, val)
 	if err != nil {
-		if err.Error() == errors.ErrNotFound.Error() {
-			//	if err == errors.New("not found") {
-			if err := db.Put(key, val); err != nil {
+		log.Error("StoreBytes", "key:", string(key), "err:", err)
+	}
+	return err
+	/*
+		_, err = db.Get(key)
+		if err != nil {
+			if err.Error() == errors.ErrNotFound.Error() {
+				//	if err == errors.New("not found") {
+				if err := db.Put(key, val); err != nil {
+					return err
+				}
+			} else {
 				return err
 			}
 		} else {
-			return err
+			if err = db.Delete(key); err != nil {
+				return err
+			}
+			if err := db.Put(key, val); err != nil {
+				return err
+			}
 		}
-	} else {
-		if err = db.Delete(key); err != nil {
-			return err
-		}
-		if err := db.Put(key, val); err != nil {
-			return err
-		}
-	}
-	return nil
+		return nil
+	*/
 }
 
 func GetBytes(db ptndb.Database, key []byte) ([]byte, error) {

@@ -31,8 +31,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/consensus/jury"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -144,7 +144,7 @@ type ProtocolManager struct {
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool,
 	engine core.ConsensusEngine, dag dag.IDag, mux *event.TypeMux, producer producer,
-	genesis *modules.Unit,contractProc contractInf) (*ProtocolManager, error) {
+	genesis *modules.Unit, contractProc contractInf) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:        networkId,
@@ -343,15 +343,21 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
 	go pm.vssResponseBroadcastLoop()
 
+	//TODO must modify for ptn test
 	//contract exec
-	pm.contractExecCh = make(chan jury.ContractExeEvent)
-	pm.contractExecSub = pm.contractProc.SubscribeContractEvent(pm.contractExecCh)
-	go pm.contractExecRecvLoop()
+	if pm.contractProc != nil {
+		pm.contractExecCh = make(chan jury.ContractExeEvent)
+		pm.contractExecSub = pm.contractProc.SubscribeContractEvent(pm.contractExecCh)
+		go pm.contractExecRecvLoop()
+	}
 
+	//TODO must modify for ptn test
 	//contract sig
-	pm.contractSigCh = make(chan jury.ContractSigEvent)
-	pm.contractSigSub = pm.contractProc.SubscribeContractSigEvent(pm.contractSigCh)
-	go pm.contractSigRecvLoop()
+	if pm.contractProc != nil {
+		pm.contractSigCh = make(chan jury.ContractSigEvent)
+		pm.contractSigSub = pm.contractProc.SubscribeContractSigEvent(pm.contractSigCh)
+		go pm.contractSigRecvLoop()
+	}
 }
 
 func (pm *ProtocolManager) Stop() {

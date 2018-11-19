@@ -22,6 +22,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/errors"
 	"sort"
 )
@@ -52,12 +53,13 @@ func find_min(utxos []UtxoInterface) UtxoInterface {
 	}
 	return min_utxo
 }
-func Select_utxo_Greedy(utxos []UtxoInterface, amount uint64) ([]UtxoInterface, error) {
-	var greaters []UtxoInterface
-	var lessers []UtxoInterface
-	var taken_utxo []UtxoInterface
+func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
+	var greaters Utxos
+	var lessers Utxos
+	var taken_utxo Utxos
 	var accum uint64
 	var change uint64
+	logPickedAmt := ""
 	for _, utxo := range utxos {
 		if utxo.GetAmount() > amount {
 			greaters = append(greaters, utxo)
@@ -70,12 +72,14 @@ func Select_utxo_Greedy(utxos []UtxoInterface, amount uint64) ([]UtxoInterface, 
 	if len(greaters) > 0 {
 		min_greater = find_min(greaters)
 		change = min_greater.GetAmount() - amount
-		fmt.Println(change)
+		logPickedAmt += fmt.Sprintf("%d,", min_greater.GetAmount())
 		taken_utxo = append(taken_utxo, min_greater)
+
 	} else if len(greaters) == 0 && len(lessers) > 0 {
 		sort.Sort(Utxos(lessers))
 		for _, utxo := range lessers {
 			accum += utxo.GetAmount()
+			logPickedAmt += fmt.Sprintf("%d,", utxo.GetAmount())
 			taken_utxo = append(taken_utxo, utxo)
 			if accum >= amount {
 				change = accum - amount
@@ -83,8 +87,9 @@ func Select_utxo_Greedy(utxos []UtxoInterface, amount uint64) ([]UtxoInterface, 
 			}
 		}
 		if accum < amount {
-			return nil, errors.New("Not engouh")
+			return nil, 0, errors.New("Amount Not Enough to pay")
 		}
 	}
-	return taken_utxo, nil
+	log.Debugf("Pickup count[%d] utxos, each amount:%s to match wanted amount:%d", len(taken_utxo), logPickedAmt, amount)
+	return taken_utxo, change, nil
 }
