@@ -44,7 +44,7 @@ type Mediator struct {
 	InitPartPub          kyber.Point
 	Node                 *discover.Node
 	Url                  string
-	TotalMissed          int64
+	TotalMissed          uint64
 	LastConfirmedUnitNum uint32
 }
 
@@ -96,7 +96,7 @@ func StrToPoint(pubStr string) kyber.Point {
 
 	err := pub.UnmarshalBinary(pubB)
 	if err != nil {
-		//log.Error(fmt.Sprintln(err))
+		log.Error(fmt.Sprintln(err))
 	}
 
 	return pub

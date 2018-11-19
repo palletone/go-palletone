@@ -60,15 +60,17 @@ func (mp *MediatorPlugin) scheduleProductionLoop() {
 		timeToNextSecond += time.Second
 	}
 
-	nextWakeup := now.Add(timeToNextSecond)
-
 	// 2. 安排验证单元生产循环
+	// Start to production unit for expiration
+	timeout := time.NewTimer(timeToNextSecond)
+	defer timeout.Stop()
+
 	// production unit until termination is requested
 	select {
 	case <-mp.quit:
 		return
-	default:
-		go mp.UnitProductionLoop(nextWakeup)
+	case <-timeout.C:
+		go mp.unitProductionLoop()
 	}
 }
 
@@ -82,17 +84,14 @@ const (
 	NotMyTurn
 	NotTimeYet
 	NoPrivateKey
-	//	LowParticipation
+	// LowParticipation
 	Lag
-	//	Consecutive
+	// Consecutive
 	ExceptionProducing
 	UnknownCondition
 )
 
-func (mp *MediatorPlugin) UnitProductionLoop(wakeup time.Time) ProductionCondition {
-	// Start to production unit for expiration
-	time.Sleep(wakeup.Sub(time.Now()))
-
+func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	// 1. 尝试生产验证单元
 	result, detail := mp.MaybeProduceUnit()
 
