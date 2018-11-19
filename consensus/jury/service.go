@@ -74,14 +74,16 @@ type Processor struct {
 	ptn      PalletOne
 	dag      iDag
 	ptype    PeerType
-	address  common.Address
+	local    common.Address  //local
+	list     *common.Address //dynamic
 	contract *contracts.Contract
 
-	txPool     txspool.ITxPool
-	locker     *sync.Mutex
-	quit       chan struct{}
-	jurors     map[common.Address]Juror //记录所有执行合约的节点信息
+	txPool txspool.ITxPool
+	locker *sync.Mutex
+	quit   chan struct{}
+
 	contractTx map[common.Hash]*modules.Transaction
+	//jurors     map[common.Address]Juror //记录所有执行合约的节点信息
 
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
@@ -109,6 +111,8 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 
 func (p *Processor) Start(server *p2p.Server) error {
 	//启动消息接收处理线程
+
+	//合约执行节点更新线程
 
 	//合约执行线程
 	return nil
@@ -139,7 +143,7 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 		return err
 	}
 
-	tx, _, err := gen.GenContractSigTransctions(p.address, event.Tx, cmsgType, payload, p.ptn.GetKeyStore())
+	tx, _, err := gen.GenContractSigTransctions(p.local, event.Tx, cmsgType, payload, p.ptn.GetKeyStore())
 	if err != nil {
 		log.Error("GenContractSigTransctions", "err:%s", err)
 		return err
