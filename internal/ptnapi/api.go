@@ -1684,7 +1684,8 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 //	return taken_utxo, change
 //}
 
-func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s *rpcServer*/, from string, to string, amount decimal.Decimal) (string, error) {
+func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
+
 	//realNet := &chaincfg.MainNetParams
 	var LockTime int64
 	LockTime = 0
@@ -1693,7 +1694,9 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s 
 	if to == "" {
 		return "", fmt.Errorf("amounts is empty")
 	}
+
 	amounts[to] = amount
+
 	utxoJsons, err := s.b.GetAddrUtxos(from)
 	if err != nil {
 		return "", err
@@ -1702,7 +1705,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s 
 	for _, json := range utxoJsons {
 		utxos = append(utxos, &json)
 	}
-	daoAmount := ptnjson.Ptn2Dao(amount)
+	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
 	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
 	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
@@ -1718,6 +1721,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context /*s 
 		inputs = append(inputs, input)
 	}
 	amounts[from] = ptnjson.Dao2Ptn(change)
+
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
 	result, _ := CreateRawTransaction(arg)
 	fmt.Println(result)

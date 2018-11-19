@@ -413,7 +413,7 @@ func (ec *Client) EstimateGas(ctx context.Context, msg palletone.CallMsg) (uint6
 	return uint64(hex), nil
 }
 
-func (ec *Client) CmdCreateTransaction(ctx context.Context, from string, to string, amount uint64) (string, error) {
+func (ec *Client) CmdCreateTransaction(ctx context.Context, from string, to string, amount uint64,fee uint64) (string, error) {
 	var result string
 	err := ec.c.CallContext(ctx, &result, "ptn_cmdCreateTransaction", from, to, amount)
 	return result, err
