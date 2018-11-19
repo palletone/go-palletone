@@ -1691,6 +1691,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context , fr
 	if to == "" {
 		return "", fmt.Errorf("amounts is empty")
 	}
+	amount = amount*10e8
 	amounts[to] = float64(amount)
 	utxoJsons, err := s.b.GetAddrUtxos(from)
 	if err != nil {
@@ -1704,7 +1705,12 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context , fr
 	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
 	}
-
+    if change < fee {
+			return "", fmt.Errorf("Amount Not Enough to pay")
+	}
+	if change > fee {
+	    amounts[from] = float64(change-fee)
+    }
 	var inputs []ptnjson.TransactionInput
 	var input ptnjson.TransactionInput
 	for _, u := range taken_utxo {
@@ -1714,7 +1720,6 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context , fr
 		input.Vout = utxo.OutIndex
 		inputs = append(inputs, input)
 	}
-	amounts[from] = float64(change-fee)
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
 	result, _ := CreateRawTransaction(arg)
 	fmt.Println(result)
