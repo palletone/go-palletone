@@ -44,7 +44,7 @@ type Mediator struct {
 	InitPartPub          kyber.Point
 	Node                 *discover.Node
 	Url                  string
-	TotalMissed          int64
+	TotalMissed          uint32
 	LastConfirmedUnitNum uint32
 }
 

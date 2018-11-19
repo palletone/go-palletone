@@ -68,7 +68,8 @@ func (mp *MediatorPlugin) scheduleProductionLoop() {
 	case <-mp.quit:
 		return
 	default:
-		go mp.UnitProductionLoop(nextWakeup)
+		//go mp.UnitProductionLoop(nextWakeup)
+		mp.UnitProductionLoop(nextWakeup)
 	}
 }
 
@@ -215,7 +216,7 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	// 4. 异步向区块链网络广播验证单元
 	// todo 后面改为由p2p转发
 	go mp.addToTBLSSignBuf(newUnit)
-	go mp.newUnitFeed.Send(NewUnitEvent{Unit: newUnit})
+	mp.newUnitFeed.Send(NewUnitEvent{Unit: newUnit})
 
 	return Produced, detail
 }

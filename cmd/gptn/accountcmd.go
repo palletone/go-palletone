@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptnjson"
 	//"github.com/btcsuite/btcd/btcjson"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -527,8 +528,8 @@ type RawTransactionGenParams struct {
 		MessageIndex uint32 `json:"messageindex"`
 	} `json:"inputs"`
 	Outputs []struct {
-		Address string  `json:"address"`
-		Amount  float64 `json:"amount"`
+		Address string          `json:"address"`
+		Amount  decimal.Decimal `json:"amount"`
 	} `json:"outputs"`
 	Locktime int64 `json:"locktime"`
 }
@@ -577,12 +578,12 @@ func accountCreateTx(ctx *cli.Context) error {
 		return nil
 	}
 	//realNet := &chaincfg.MainNetParams
-	amounts := map[string]float64{}
+	amounts := map[string]decimal.Decimal{}
 	for _, outOne := range rawTransactionGenParams.Outputs {
-		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
+		if len(outOne.Address) == 0 || outOne.Amount.LessThanOrEqual(decimal.New(0, 0)) {
 			continue
 		}
-		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
+		amounts[outOne.Address] = (outOne.Amount)
 	}
 	if len(amounts) == 0 {
 		return nil

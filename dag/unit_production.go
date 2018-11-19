@@ -101,7 +101,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 
 	pendingUnit.UnitSize = pendingUnit.Size()
 
-	go dag.PushUnit(pendingUnit)
+	dag.PushUnit(pendingUnit)
 	return pendingUnit
 }
 
@@ -124,7 +124,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit) bool {
 	//	log.Error("unit_production", "PushUnit err:", err)
 	//	return false
 	//}
-	go dag.SaveUnit(newUnit, false)
+	dag.SaveUnit(newUnit, false)
 
 	return true
 }

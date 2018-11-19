@@ -118,25 +118,26 @@ var halfOrder = new(big.Int).Rsh(btcec.S256().N, 1)
 
 // Engine is the virtual machine that executes scripts.
 type Engine struct {
-	scripts         [][]parsedOpcode
-	scriptIdx       int
-	scriptOff       int
-	lastCodeSep     int
-	dstack          stack // data stack
-	astack          stack // alt stack
-	tx              modules.Transaction
-	msgIdx          int
-	txIdx           int
-	condStack       []int
-	numOps          int
-	flags           ScriptFlags
-	sigCache        *SigCache
-	hashCache       *TxSigHashes
-	bip16           bool     // treat execution as pay-to-script-hash
-	savedFirstStack [][]byte // stack from first script for bip16 scripts
-	witnessVersion  int
-	witnessProgram  []byte
-	inputAmount     uint64
+	scripts                [][]parsedOpcode
+	scriptIdx              int
+	scriptOff              int
+	lastCodeSep            int
+	dstack                 stack // data stack
+	astack                 stack // alt stack
+	tx                     modules.Transaction
+	msgIdx                 int
+	txIdx                  int
+	condStack              []int
+	numOps                 int
+	flags                  ScriptFlags
+	sigCache               *SigCache
+	hashCache              *TxSigHashes
+	bip16                  bool     // treat execution as pay-to-script-hash
+	savedFirstStack        [][]byte // stack from first script for bip16 scripts
+	witnessVersion         int
+	witnessProgram         []byte
+	pickupJuryRedeemScript PickupJuryRedeemScript
+	inputAmount            uint64
 }
 
 // hasFlag returns whether the script engine instance has the passed flag set.
@@ -801,7 +802,7 @@ func (vm *Engine) SetAltStack(data [][]byte) {
 // NewEngine returns a new script engine for the provided public key script,
 // transaction, and input index.  The flags modify the behavior of the script
 // engine according to the description provided by each flag.
-func NewEngine(scriptPubKey []byte, tx *modules.Transaction /**wire.MsgTx*/, msgIdx, txIdx int, flags ScriptFlags,
+func NewEngine(scriptPubKey []byte, pickupJuryRedeemScript PickupJuryRedeemScript, tx *modules.Transaction, msgIdx, txIdx int, flags ScriptFlags,
 	sigCache *SigCache, hashCache *TxSigHashes, inputAmount uint64) (*Engine, error) {
 
 	// The provided transaction input index must refer to a valid input.
@@ -941,5 +942,6 @@ func NewEngine(scriptPubKey []byte, tx *modules.Transaction /**wire.MsgTx*/, msg
 	vm.tx = *tx
 	vm.txIdx = txIdx
 	vm.msgIdx = msgIdx
+	vm.pickupJuryRedeemScript = pickupJuryRedeemScript
 	return &vm, nil
 }

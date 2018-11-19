@@ -21,10 +21,12 @@
 package ptnjson
 
 import (
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/shopspring/decimal"
 )
 
 // TransactionInput represents the inputs to a transaction.  Specifically a
@@ -38,14 +40,14 @@ type TransactionInput struct {
 // CreateRawTransactionCmd defines the createrawtransaction JSON-RPC command.
 type CreateRawTransactionCmd struct {
 	Inputs   []TransactionInput
-	Amounts  map[string]float64 `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
+	Amounts  map[string]decimal.Decimal `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
 	LockTime *int64
 }
 
 // CreateVoteTransactionCmd defines the createrawtransaction JSON-RPC command.
 type CreateVoteTransactionCmd struct {
 	Inputs          []TransactionInput
-	Amounts         map[string]float64 `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
+	Amounts         map[string]decimal.Decimal `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
 	LockTime        *int64
 	MediatorAddress string
 	ExpiredTerm     uint16
@@ -55,7 +57,7 @@ type CreateVoteTransactionCmd struct {
 // a createrawtransaction JSON-RPC command.
 //
 // Amounts are in BTC.
-func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts map[string]float64,
+func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts map[string]decimal.Decimal,
 	lockTime *int64) *CreateRawTransactionCmd {
 
 	return &CreateRawTransactionCmd{
@@ -65,7 +67,7 @@ func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts map[string]fl
 	}
 }
 
-func NewCreateVoteTransactionCmd(inputs []TransactionInput, amounts map[string]float64,
+func NewCreateVoteTransactionCmd(inputs []TransactionInput, amounts map[string]decimal.Decimal,
 	lockTime *int64, mediatorAddress string, expiredTerm uint16) *CreateVoteTransactionCmd {
 
 	return &CreateVoteTransactionCmd{
@@ -80,8 +82,8 @@ func NewCreateVoteTransactionCmd(inputs []TransactionInput, amounts map[string]f
 type CmdTransactionGenParams struct {
 	Address string `json:"address"`
 	Outputs []struct {
-		Address string  `json:"address"`
-		Amount  float64 `json:"amount"`
+		Address string          `json:"address"`
+		Amount  decimal.Decimal `json:"amount"`
 	} `json:"outputs"`
 	Locktime int64 `json:"locktime"`
 }
@@ -93,8 +95,8 @@ type RawTransactionGenParams struct {
 		MessageIndex uint32 `json:"messageindex"`
 	} `json:"inputs"`
 	Outputs []struct {
-		Address string  `json:"address"`
-		Amount  float64 `json:"amount"`
+		Address string          `json:"address"`
+		Amount  decimal.Decimal `json:"amount"`
 	} `json:"outputs"`
 	Locktime int64 `json:"locktime"`
 }
@@ -137,8 +139,12 @@ func ConvertRawTxJson2Paymsg(rawTxJson RawTransactionGenParams) (*modules.Paymen
 
 	return pay, nil
 }
-func Ptn2Dao(ptnAmount float64) uint64 {
-	return uint64(ptnAmount * 100000000)
+func Ptn2Dao(ptnAmount decimal.Decimal) uint64 {
+	return uint64(ptnAmount.Mul(decimal.New(100000000, 0)).IntPart())
+}
+func Dao2Ptn(amount uint64) decimal.Decimal {
+	d, _ := decimal.NewFromString(fmt.Sprintf("%d", amount))
+	return d.Div(decimal.New(100000000, 0))
 }
 
 func ConvertRawTxJson2Tx(rawTxJson RawTransactionGenParams) *modules.Transaction {

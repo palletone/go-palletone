@@ -262,6 +262,7 @@ func (e *Endorser) ProcessProposal(contractid []byte, idag dag.IDag, deployId []
 	}
 	logger.Debug("unit:")
 	logger.Debug(unit)
+	fmt.Printf("==unit=> %#v\n", unit)
 	// todo
 
 	pResp.Response.Payload = res.Payload

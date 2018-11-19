@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 
-	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -343,15 +342,21 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
 	go pm.vssResponseBroadcastLoop()
 
+	//TODO must modify for ptn test
 	//contract exec
-	pm.contractExecCh = make(chan jury.ContractExeEvent)
-	pm.contractExecSub = pm.contractProc.SubscribeContractEvent(pm.contractExecCh)
-	go pm.contractExecRecvLoop()
+	if pm.contractProc != nil {
+		pm.contractExecCh = make(chan jury.ContractExeEvent)
+		pm.contractExecSub = pm.contractProc.SubscribeContractEvent(pm.contractExecCh)
+		go pm.contractExecRecvLoop()
+	}
 
+	//TODO must modify for ptn test
 	//contract sig
-	pm.contractSigCh = make(chan jury.ContractSigEvent)
-	pm.contractSigSub = pm.contractProc.SubscribeContractSigEvent(pm.contractSigCh)
-	go pm.contractSigRecvLoop()
+	if pm.contractProc != nil {
+		pm.contractSigCh = make(chan jury.ContractSigEvent)
+		pm.contractSigSub = pm.contractProc.SubscribeContractSigEvent(pm.contractSigCh)
+		go pm.contractSigRecvLoop()
+	}
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -602,28 +607,27 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool, bro
 		}
 	}
 
-	peers := pm.peers.PeersWithoutUnit(hash)
-
 	// If propagation is requested, send to a subset of the peer
 	if propagate {
+		peers := pm.peers.PeersWithoutUnit(hash)
 		// Send the block to a subset of our peers
-		transfer := peers[:int(math.Sqrt(float64(len(peers))))]
-		for _, peer := range transfer {
+		//transfer := peers[:int(math.Sqrt(float64(len(peers))))]
+		for _, peer := range peers {
 			peer.SendNewUnit(unit)
 		}
-		log.Trace("BroadcastUnit Propagated block", "hash", hash, "recipients", len(transfer), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+		log.Trace("BroadcastUnit Propagated block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 		return
 	}
 
 	// Otherwise if the block is indeed in out own chain, announce it
-	if pm.dag.HasUnit(hash) {
-		for _, peer := range peers {
-			peer.SendNewUnitHashes([]common.Hash{hash}, []modules.ChainIndex{unit.Number()})
-		}
-		log.Trace("BroadcastUnit Announced block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
-	} else {
-		log.Debug("===BroadcastUnit===", "pm.dag.HasUnit(hash) is false hash:", hash.String())
-	}
+	//if pm.dag.HasUnit(hash) {
+	//	for _, peer := range peers {
+	//		peer.SendNewUnitHashes([]common.Hash{hash}, []modules.ChainIndex{unit.Number()})
+	//	}
+	//	log.Trace("BroadcastUnit Announced block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+	//} else {
+	//	log.Debug("===BroadcastUnit===", "pm.dag.HasUnit(hash) is false hash:", hash.String())
+	//}
 }
 
 func (self *ProtocolManager) ceBroadcastLoop() {

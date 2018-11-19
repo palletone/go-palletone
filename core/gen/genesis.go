@@ -32,12 +32,12 @@ import (
 	asset2 "github.com/palletone/go-palletone/dag/asset"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
 	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/dag/errors"
 	cm "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 const deFaultNode = "pnode://280d9c3b5b0f43d593038987dc03edea62662ba5a9fecea0a1b216c0e0e6f" +
@@ -211,7 +211,7 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 	}
 
 	sig, err := cm.GetTxSig(tx, ks, singer)
-	if err != nil{
+	if err != nil {
 		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.TxHash.String()))
 	}
 
@@ -250,8 +250,9 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
 func DefaultGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		DepositRate:   core.DefaultDepositRate,
-		DepositAmount: core.DefaultDepositAmount,
+		DepositRate:              core.DefaultDepositRate,
+		DepositAmountForJury:     core.DefaultDepositAmountForJury,
+		DepositAmountForMediator: core.DefaultDepositAmountForMediator,
 	}
 
 	initParams := core.NewChainParams()
@@ -275,8 +276,9 @@ func DefaultGenesisBlock() *core.Genesis {
 // DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
 func DefaultTestnetGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		DepositRate:   core.DefaultDepositRate,
-		DepositAmount: core.DefaultDepositAmount,
+		DepositRate:              core.DefaultDepositRate,
+		DepositAmountForJury:     core.DefaultDepositAmountForJury,
+		DepositAmountForMediator: core.DefaultDepositAmountForMediator,
 	}
 
 	initParams := core.NewChainParams()
