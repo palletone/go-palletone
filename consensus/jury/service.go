@@ -67,6 +67,12 @@ type PalletOne interface {
 }
 
 type iDag interface {
+	GetActiveMediators() []common.Address
+}
+
+type contractTx struct {
+	list []common.Address //dynamic
+	tx   *modules.Transaction
 }
 
 type Processor struct {
@@ -82,8 +88,8 @@ type Processor struct {
 	locker *sync.Mutex
 	quit   chan struct{}
 
-	contractTx map[common.Hash]*modules.Transaction
-	//jurors     map[common.Address]Juror //记录所有执行合约的节点信息
+	//contractTx map[common.Hash]*modules.Transaction
+	mtx map[common.Hash]*contractTx
 
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
@@ -97,12 +103,13 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 		return nil, errors.New("NewContractProcessor, param is nil")
 	}
 	p := &Processor{
-		name:       "conract processor",
-		ptn:        ptn,
-		dag:        dag,
-		contract:   contract,
-		quit:       make(chan struct{}),
-		contractTx: make(map[common.Hash]*modules.Transaction),
+		name:     "conract processor",
+		ptn:      ptn,
+		dag:      dag,
+		contract: contract,
+		quit:     make(chan struct{}),
+		mtx:      make(map[common.Hash]*contractTx),
+		//contractTx: make(map[common.Hash]*modules.Transaction),
 	}
 
 	log.Info("NewContractProcessor ok")
@@ -148,7 +155,12 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 		log.Error("GenContractSigTransctions", "err:%s", err)
 		return err
 	}
-	p.contractTx[event.Tx.TxHash] = tx
+	//p.contractTx[event.Tx.TxHash] = tx
+	p.mtx[event.Tx.TxHash] = &contractTx{
+		list: p.dag.GetActiveMediators(),
+		tx:   tx,
+	}
+
 	log.Info("ProcessContractEvent", "trs:", tx)
 	log.Info("ProcessContractEvent", "add tx", event.Tx.TxHash)
 
@@ -169,15 +181,14 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 	if false == checkTxValid(event.Tx, p.ptn.GetKeyStore()) {
 		return errors.New("ProcessContractSigEvent event Tx is invalid")
 	}
-	tx := p.contractTx[event.Tx.TxHash]
-
+	tx := p.mtx[event.Tx.TxHash].tx
 	if tx == nil {
 		log.Info("ProcessContractSigEvent", "tx(%s) is nil", event.Tx.TxHash)
 		go func() {
 			for i := 0; i < 10; i += 1 {
 				time.Sleep(time.Millisecond * 500)
-				if p.contractTx[event.Tx.TxHash] != nil {
-					tx = p.contractTx[event.Tx.TxHash]
+				if p.mtx[event.Tx.TxHash].tx != nil {
+					tx = p.mtx[event.Tx.TxHash].tx
 					if judge, _ := checkAndAddTxData(tx, event.Tx); judge == true {
 						//收集签名数量，达到要求后将tx添加到交易池
 						num := getTxSigNum(tx)
