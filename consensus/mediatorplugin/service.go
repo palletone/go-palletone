@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -141,6 +142,15 @@ func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 	}
 
 	return lams
+}
+
+func (mp *MediatorPlugin) LocalMediators() []common.Address {
+	adds := []common.Address{}
+	for add, _ := range mp.mediators {
+		adds = append(adds, add)
+	}
+
+	return adds
 }
 
 func (mp *MediatorPlugin) LocalHaveActiveMediator() bool {
