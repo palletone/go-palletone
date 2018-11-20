@@ -1390,7 +1390,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
 	for _, u := range blocks {
-		//log.Debug("======importBlockResults=======", "unit:", *u, "index:", u.UnitHeader.Number.Index)
+		log.Debug("======importBlockResults=======", "unit:", *u, "index:", u.UnitHeader.Number.Index)
 		units := []*modules.Unit{}
 		units = append(units, u)
 		if index, err := d.dag.InsertDag(units); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
@@ -1525,6 +1525,7 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
 	for _, u := range blocks {
+		log.Debug("======commitFastSyncData=======", "unit:", *u, "index:", u.UnitHeader.Number.Index)
 		units := []*modules.Unit{}
 		units = append(units, u)
 		if index, err := d.dag.InsertDag(units); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {

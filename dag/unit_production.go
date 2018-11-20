@@ -100,7 +100,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 	}
 
 	pendingUnit.UnitSize = pendingUnit.Size()
-
+	log.Debug("Dag", "GenerateUnit unit:", *pendingUnit)
 	dag.PushUnit(pendingUnit)
 	return pendingUnit
 }
