@@ -262,8 +262,12 @@ func (s *PalletOne) MockContractSigLocalSend(event jury.ContractSigEvent) {
 func (s *PalletOne) ContractBroadcast(event jury.ContractExeEvent) {
 	s.protocolManager.ContractBroadcast(event)
 }
-func (s *PalletOne) ContractSigBroadcast(event jury.ContractSigEvent){
+func (s *PalletOne) ContractSigBroadcast(event jury.ContractSigEvent) {
 	s.protocolManager.ContractSigBroadcast(event)
+}
+
+func (s *PalletOne) GetLocalMediators() []common.Address {
+	return s.mediatorPlugin.LocalMediators()
 }
 
 // Protocols implements node.Service, returning all the currently configured

@@ -64,6 +64,8 @@ type PalletOne interface {
 
 	ContractBroadcast(event ContractExeEvent)
 	ContractSigBroadcast(event ContractSigEvent)
+
+	GetLocalMediators() []common.Address
 }
 
 type iDag interface {
@@ -77,25 +79,20 @@ type contractTx struct {
 
 type Processor struct {
 	name     string
+	ptype    PeerType
 	ptn      PalletOne
 	dag      iDag
-	ptype    PeerType
-	local    common.Address  //local
-	list     *common.Address //dynamic
+	local    common.Address //local
 	contract *contracts.Contract
-
-	txPool txspool.ITxPool
-	locker *sync.Mutex
-	quit   chan struct{}
-
-	//contractTx map[common.Hash]*modules.Transaction
-	mtx map[common.Hash]*contractTx
+	txPool   txspool.ITxPool
+	locker   *sync.Mutex
+	quit     chan struct{}
+	mtx      map[common.Hash]*contractTx
 
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
-
-	contractSigFeed  event.Feed
-	contractSigScope event.SubscriptionScope
+	contractSigFeed   event.Feed
+	contractSigScope  event.SubscriptionScope
 }
 
 func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract) (*Processor, error) {
@@ -107,12 +104,13 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 		ptn:      ptn,
 		dag:      dag,
 		contract: contract,
+		local:    ptn.GetLocalMediators()[0], //dag.GetActiveMediators()[0],//todo
 		quit:     make(chan struct{}),
 		mtx:      make(map[common.Hash]*contractTx),
-		//contractTx: make(map[common.Hash]*modules.Transaction),
 	}
 
 	log.Info("NewContractProcessor ok")
+	log.Info("NewContractProcessor", "info:%v", p.local)
 	return p, nil
 }
 

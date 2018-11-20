@@ -325,6 +325,11 @@ func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
 func (b *PtnApiBackend) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	return b.ptn.dag.GetAddrOutpoints(addr)
 }
+func (b *PtnApiBackend) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error) {
+	address,err := b.ptn.dag.GetAddrByOutPoint(outPoint)
+	return address,err
+}
+
 func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error) {
 	utxos, _ := b.ptn.dag.GetAddrUtxos(addr)
 	result := []ptnjson.UtxoJson{}
