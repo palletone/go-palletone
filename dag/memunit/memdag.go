@@ -241,6 +241,10 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 	return nil
 }
 
+func (chain *MemDag) UpdateMemDag(unit *modules.Unit) error {
+	return nil
+}
+
 func (chain *MemDag) Exists(uHash common.Hash) bool {
 	if chain.memUnit.Exists(uHash) {
 		return true
@@ -412,4 +416,8 @@ func (chain *MemDag) GetCurrentUnitChainIndex(assetid modules.IDType16, index ui
 	chainIndex := unit.UnitHeader.ChainIndex()
 
 	return chainIndex, nil
+}
+
+func (chain *MemDag) GetUnit(hash common.Hash) (*modules.Unit, error) {
+	return chain.memUnit.Get(hash)
 }
