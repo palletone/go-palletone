@@ -5397,7 +5397,7 @@ var methods = function () {
         name: 'cmdCreateTransaction',
         call: 'ptn_cmdCreateTransaction',
         params: 4,
-        inputFormatter: [null,null,null]
+        inputFormatter: [null,null,null,null]
     });
 
     var createRawTransaction = new Method({
@@ -5652,6 +5652,24 @@ var methods = function () {
         call: 'dag_getCommonByPrefix',
         params: 1,
     });
+    var getUnitTxsInfo = new Method({
+        name: 'getUnitTxsInfo', 
+        call: 'dag_getUnitTxsInfo',   
+        params: 1, 
+        // inputFormatter: [null]
+    });
+    var getUnitTxsHashHex = new Method({ 
+        name: 'getUnitTxsHashHex',
+        call: 'dag_getUnitTxsHashHex',  
+        params: 1,
+        // inputFormatter: [null]
+    });
+    var getTxByHash = new Method({    
+        name: 'getTxByHash', 
+        call: 'dag_getTxByHash',   
+        params: 1,  
+        // inputFormatter: [null]
+    });    
 
 
 // del ptn_getStorageAt
@@ -5754,6 +5772,10 @@ var methods = function () {
         ccinvoke,
         ccstop,
         decodeTx,
+       // createPayment,
+        getUnitTxsInfo,
+        getUnitTxsHashHex, 
+        getTxByHash, 
         ccinvoketx,
     ];
 };
@@ -5873,7 +5895,7 @@ var properties = function () {
             outputFormatter: utils.toDecimal
         })
     ];
-};
+}; 
 
 module.exports = Net;
 

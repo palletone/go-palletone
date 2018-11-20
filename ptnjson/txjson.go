@@ -20,7 +20,9 @@
 
 package ptnjson
 
-import "github.com/palletone/go-palletone/dag/modules"
+import (
+	"github.com/palletone/go-palletone/dag/modules"
+)
 
 type TxJson struct {
 	Payment *PaymentJson `json:"payment"`

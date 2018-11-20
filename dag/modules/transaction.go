@@ -332,9 +332,9 @@ type Transaction struct {
 }
 
 type OutPoint struct {
-	TxHash       common.Hash //`json:"txhash"`        // reference Utxo struct key field
-	MessageIndex uint32      //`json:"message_index"` // message index in transaction
-	OutIndex     uint32      //`json:"out_index"`
+	TxHash       common.Hash `json:"txhash"`        // reference Utxo struct key field
+	MessageIndex uint32      `json:"message_index"` // message index in transaction
+	OutIndex     uint32      `json:"out_index"`
 }
 
 func (outpoint *OutPoint) String() string {

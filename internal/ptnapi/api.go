@@ -1877,6 +1877,13 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	}, nil
 }
 
+func trimx(para string) string {
+	if strings.HasPrefix(para, "0x") || strings.HasPrefix(para, "0X") {
+		return fmt.Sprintf("%s", para[2:])
+	}
+	return para
+}
+
 //sign rawtranscation
 //create raw transction
 func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string) (interface{}, error) {
@@ -1886,14 +1893,49 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 		return "", err
 	}
 	//transaction inputs
-
-	var rawinputs []ptnjson.RawTxInput
-	for _, inputOne := range signTransactionParams.Inputs {
-		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex, inputOne.ScriptPubKey, inputOne.RedeemScript}
-		rawinputs = append(rawinputs, input)
-
+	serializedTx, err := decodeHexStr(signTransactionParams.RawTx)
+	if err != nil {
+		return nil, err
 	}
-	if len(rawinputs) == 0 {
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
+		return nil, err
+	}
+	var srawinputs []ptnjson.RawTxInput
+	for _, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if ok == false {
+			continue
+		}
+		for _, txin := range payload.Inputs {
+			inpoint := modules.OutPoint{
+				TxHash:       txin.PreviousOutPoint.TxHash,
+				OutIndex:     txin.PreviousOutPoint.OutIndex,
+				MessageIndex: txin.PreviousOutPoint.MessageIndex,
+			}
+			uvu, eerr := s.b.GetUtxoEntry(&inpoint)
+			if eerr != nil {
+				return nil, err
+			}
+			TxHash := trimx(uvu.TxHash)
+			PkScriptHex := trimx(uvu.PkScriptHex)
+			fmt.Printf("%+v\n", PkScriptHex)
+			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
+			srawinputs = append(srawinputs, input)
+
+		}
+		/*for _, txout := range payload.Outputs {
+
+		    err = tokenengine.ScriptValidate(txout.PkScript,  tx, 0,0)
+		    if err != nil {
+		            fmt.Println("--------------1913----err-------------------------")
+		    }
+		    fmt.Printf("---1915------%+v\n--------------",txout)
+		}*/
+	}
+	if len(srawinputs) == 0 {
 		return "", nil
 	}
 	var keys []string
@@ -1908,7 +1950,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 		return "", nil
 	}
 
-	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &rawinputs, &keys, ptnjson.String("ALL"))
+	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &srawinputs, &keys, ptnjson.String("ALL"))
 	result, _ := SignRawTransaction(newsign)
 	fmt.Println(result)
 	return result, nil
@@ -2276,7 +2318,7 @@ func (s *PublicDagAPI) GetTokenInfo(ctx context.Context, key string) (string, er
 	// if err != nil {
 	// 	return "", err
 	// }
-	log.Info("-------------------key--------", "key", key)
+
 	if item, err := s.b.GetTokenInfo(key); err != nil {
 		return "", err
 	} else {
@@ -2291,4 +2333,38 @@ func (s *PublicDagAPI) SaveTokenInfo(ctx context.Context, name, token, creator s
 	//info to token
 	info := modules.NewTokenInfo(name, token, creator)
 	return s.b.SaveTokenInfo(info)
+}
+
+func (s *PublicDagAPI) GetUnitTxsInfo(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+	if item, err := s.b.GetUnitTxsInfo(hash); err != nil {
+		return "unit_txs:null", err
+	} else {
+		info := NewPublicReturnInfo("unit_txs", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
+
+func (s *PublicDagAPI) GetUnitTxsHashHex(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+
+	if item, err := s.b.GetUnitTxsHashHex(hash); err != nil {
+		return "unit_txs_hash:null", err
+	} else {
+		info := NewPublicReturnInfo("unit_txs_hash", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
+
+func (s *PublicDagAPI) GetTxByHash(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+	if item, err := s.b.GetTxByHash(hash); err != nil {
+		return "transaction_info:null", err
+	} else {
+		info := NewPublicReturnInfo("transaction_info", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
 }

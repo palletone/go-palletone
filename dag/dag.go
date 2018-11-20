@@ -21,15 +21,13 @@ package dag
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/dag/vote"
 	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
+	"unsafe"
 
 	"github.com/coocood/freecache"
-	"github.com/palletone/go-palletone/tokenengine"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -38,12 +36,13 @@ import (
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
-	dagerrors "github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"unsafe"
+	"github.com/palletone/go-palletone/dag/vote"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 type Dag struct {
@@ -140,7 +139,7 @@ func (d *Dag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) 
 	//return d.dagdb.GetUnitFormIndex(number)
 	hash, err := d.dagdb.GetHashByNumber(number)
 	if err != nil {
-		//log.Debug("Dag", "GetUnitByNumber dagdb.GetHashByNumber err:", err)
+		log.Debug("GetUnitByNumber dagdb.GetHashByNumber err:", "error", err)
 		return nil, err
 	}
 	//log.Debug("Dag", "GetUnitByNumber GetUnit(hash):", hash)
@@ -150,13 +149,13 @@ func (d *Dag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 	height, err := d.GetUnitNumber(hash)
 	if err != nil {
-		//log.Debug("GetHeaderByHash when GetUnitNumber", "error", err.Error())
+		log.Debug("GetHeaderByHash when GetUnitNumber", "error", err.Error())
 		return nil
 	}
 	// get unit header
 	uHeader, err := d.dagdb.GetHeader(hash, height)
 	if err != nil {
-		//log.Debug("Current unit when get unit header", "error", err.Error())
+		log.Debug("Current unit when get unit header", "error", err.Error())
 		return nil
 	}
 	return uHeader
@@ -166,13 +165,13 @@ func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
 	//log.Debug("Dag", "GetHeaderByNumber ChainIndex:", number)
 	hash, err := d.dagdb.GetHashByNumber(number)
 	if err != nil {
-		//log.Debug("Dag", "GetHeaderByNumber dagdb.GetHashByNumber err:", err)
+		log.Debug("Dag", "GetHeaderByNumber dagdb.GetHashByNumber err:", err)
 		return nil
 	}
 
 	uHeader, err1 := d.dagdb.GetHeader(hash, &number)
 	if err1 != nil {
-		//log.Info("GetUnit when GetHeader failed ", "error:", err1, "hash", hash.String())
+		log.Info("GetUnit when GetHeader failed ", "error:", err1, "hash", hash.String())
 		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
 		return nil
 	}
@@ -210,7 +209,6 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // reference : Eth InsertChain
 func (d *Dag) InsertDag(units modules.Units) (int, error) {
 	//TODO must recover，不连续的孤儿unit也应当存起来，以方便后面处理
-	//log.Debug("===InsertDag===", "len(units):", len(units))
 	count := int(0)
 	for i, u := range units {
 		// append by albert·gou
@@ -297,13 +295,18 @@ func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error
 	return d.dagdb.GetUnitTransactions(hash)
 }
 
+// GetUnitTxsHash is return the unit's txs hash list.
+func (d *Dag) GetUnitTxsHash(hash common.Hash) ([]common.Hash, error) {
+	return d.dagdb.GetBody(hash)
+}
+
 // GetTransactionByHash is return the tx by tx's hash
-func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, error) {
-	tx, _, _, _ := d.dagdb.GetTransaction(hash)
+func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
+	tx, uhash, _, _ := d.dagdb.GetTransaction(hash)
 	if tx == nil {
-		return nil, fmt.Errorf("GetTransactionByHash: get none transaction")
+		return nil, uhash, errors.New("get transaction by hash is failed,none the transaction.")
 	}
-	return tx, nil
+	return tx, uhash, nil
 }
 
 func (d *Dag) getBodyRLP(hash common.Hash) rlp.RawValue {
@@ -547,7 +550,7 @@ func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error
 	if index.Index == number {
 		head, err := d.dagdb.GetHeader(hash, index)
 		if err != nil {
-			fmt.Println("=============get unit header faled =============", err)
+			log.Info("get unit header faled,", "error", err)
 		}
 		return head, err
 	}
@@ -752,12 +755,11 @@ func (d *Dag) GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, err
 		for hash, utxos := range d.utxos_cache {
 			for key, utxo := range utxos {
 				if utxo == nil {
-					log.Debug("------------------the utxo is nil  ----------------", "utxokey", key.String())
+					log.Info("------------------the utxo is nil  ----------------", "utxokey", key.String())
 					delete(utxos, key)
 					continue
 				} else {
 					address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
-					//log.Debug("------------------ address ----------------", "address", address.String(), "addrHex", address.Hex())
 					if err == nil {
 						if address.String() == addr {
 							if old, has := all[key]; has {
@@ -821,7 +823,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	if !isGenesis {
 		if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
 			log.Info("dag", "SaveUnit unit is already existing.hash:", unit.Hash().String())
-			return dagerrors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
+			return errors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 		}
 	}
 	// step2. validate unit

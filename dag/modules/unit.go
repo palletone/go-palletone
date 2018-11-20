@@ -322,6 +322,12 @@ func (u *Unit) ParentHash() []common.Hash {
 	return u.UnitHeader.ParentsHash
 }
 
+func (u *Unit) SetGroupSign(sign []byte) {
+	if len(sign) > 0 {
+		u.UnitHeader.GroupSign = sign
+	}
+}
+
 type ErrUnit float64
 
 func (e ErrUnit) Error() string {
