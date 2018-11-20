@@ -38,18 +38,31 @@ func whoIs(amount uint64) string {
 	}
 }
 
-//判断要成为 Jury 还是 Mediator
-func addList(invokeaddr common.Address, amount uint64, stub shim.ChaincodeStubInterface) {
+//判断要成为 Jury 还是 Mediator 还是 Developer
+func addList(role string, invokeaddr common.Address, stub shim.ChaincodeStubInterface) {
 	switch {
-	case amount >= depositAmountsForMediator:
+	case role == "Mediator":
 		//加入 Mediator 列表
 		addMediatorList(invokeaddr, stub)
 		//加入 Jury 列表
-	case amount >= depositAmountsForJury:
+	case role == "Jury":
 		addJuryList(invokeaddr, stub)
-	default:
-		//保证金不够，不操作
+	case role == "Developer":
+		//加入 Developer 列表
+		addDeveloperList(invokeaddr, stub)
 	}
+}
+
+//加入 Developer 列表
+func addDeveloperList(invokeAddr common.Address, stub shim.ChaincodeStubInterface) {
+	//先获取状态数据库中的 Mediator 列表
+	developerListBytes, _ := stub.GetState("Developer")
+	developerList := []common.Address{}
+	_ = json.Unmarshal(developerListBytes, &developerList)
+	//fmt.Printf("developerList = %#v\n", developerList)
+	developerList = append(developerList, invokeAddr)
+	developerListBytes, _ = json.Marshal(developerList)
+	stub.PutState("Developer", developerListBytes)
 }
 
 //加入 Mediator 列表
