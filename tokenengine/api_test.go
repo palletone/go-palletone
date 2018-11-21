@@ -24,11 +24,9 @@ import (
 	"testing"
 
 	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
-	"github.com/palletone/go-palletone/common"
-
-	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/asset"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -117,12 +115,18 @@ func TestSignAndVerifyATx(t *testing.T) {
 		*outPoint:  lockScript[:],
 		*outPoint2: GenerateP2PKHLockScript(pubKeyHash),
 	}
-	privKeys := map[common.Address]*ecdsa.PrivateKey{
-		addr: privKey,
+	//privKeys := map[common.Address]*ecdsa.PrivateKey{
+	//	addr: privKey,
+	//}
+	getPubKeyFn := func(common.Address) ([]byte, error) {
+		return crypto.CompressPubkey(&privKey.PublicKey), nil
+	}
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+		return crypto.Sign(hash, privKey)
 	}
 	var hashtype uint32
 	hashtype = 1
-	_, err := SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, privKeys)
+	_, err := SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn, 0)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -171,7 +175,8 @@ func TestMultiSign1Step(t *testing.T) {
 	lockScript, redeemScript, addressMulti := build23Address()
 	t.Logf("MultiSign Address:%s\n", addressMulti)
 	t.Logf("RedeemScript: %x\n", redeemScript)
-	t.Logf("RedeemScript: %d\n", redeemScript)
+	r, _ := DisasmString(redeemScript)
+	t.Logf("RedeemScript: %s\n", r)
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
@@ -186,12 +191,30 @@ func TestMultiSign1Step(t *testing.T) {
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
 	//scriptCp:=make([]byte,len(lockScript))
 	//copy(scriptCp,lockScript)
-	privKeys := map[common.Address]*ecdsa.PrivateKey{
-		address1: prvKey1,
-		address2: prvKey2,
+	//privKeys := map[common.Address]*ecdsa.PrivateKey{
+	//	address1: prvKey1,
+	//	address2: prvKey2,
+	//}
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		if addr == address1 {
+			return crypto.CompressPubkey(&prvKey1.PublicKey), nil
+		}
+		if addr == address2 {
+			return crypto.CompressPubkey(&prvKey2.PublicKey), nil
+		}
+		return nil, nil
 	}
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 
-	sign12, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, privKeys, nil)
+		if addr == address1 {
+			return crypto.Sign(hash, prvKey1)
+		}
+		if addr == address2 {
+			return crypto.Sign(hash, prvKey2)
+		}
+		return nil, nil
+	}
+	sign12, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil, 0)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -225,10 +248,29 @@ func TestMultiSign2Step(t *testing.T) {
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
 	//scriptCp:=make([]byte,len(lockScript))
 	//copy(scriptCp,lockScript)
-	privKeys := map[common.Address]*ecdsa.PrivateKey{
-		address1: prvKey1,
+	//privKeys := map[common.Address]*ecdsa.PrivateKey{
+	//	address1: prvKey1,
+	//}
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		if addr == address1 {
+			return crypto.CompressPubkey(&prvKey1.PublicKey), nil
+		}
+		if addr == address2 {
+			return crypto.CompressPubkey(&prvKey2.PublicKey), nil
+		}
+		return nil, nil
 	}
-	sign1, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, privKeys, nil)
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+
+		if addr == address1 {
+			return crypto.Sign(hash, prvKey1)
+		}
+		if addr == address2 {
+			return crypto.Sign(hash, prvKey2)
+		}
+		return nil, nil
+	}
+	sign1, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil, 0)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -236,12 +278,12 @@ func TestMultiSign2Step(t *testing.T) {
 	pay1 := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 	pay1.Inputs[0].SignatureScript = sign1
 
-	privKeys2 := map[common.Address]*ecdsa.PrivateKey{
-		address2: prvKey2,
-	}
+	//privKeys2 := map[common.Address]*ecdsa.PrivateKey{
+	//	address2: prvKey2,
+	//}
 	//scriptCp2:=make([]byte,len(lockScript))
 	//copy(scriptCp2,lockScript)
-	sign2, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, privKeys2, sign1)
+	sign2, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, sign1, 0)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -275,12 +317,47 @@ func TestContractPayout(t *testing.T) {
 	//copy(scriptCp,lockScript)
 	contractAddr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
 	lockScript := GenerateP2CHLockScript(contractAddr) //Token 锁定到保证金合约中
-	privKeys := map[common.Address]*ecdsa.PrivateKey{
-		address1: prvKey1,
-		address2: prvKey2,
+	l, _ := txscript.DisasmString(lockScript)
+	t.Logf("Lock Script:%s", l)
+	//privKeys := map[common.Address]*ecdsa.PrivateKey{
+	//	address1: prvKey1,
+	//	address2: prvKey2,
+	//}
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		if addr == address1 {
+			return crypto.CompressPubkey(&prvKey1.PublicKey), nil
+		}
+		if addr == address2 {
+			return crypto.CompressPubkey(&prvKey2.PublicKey), nil
+		}
+		if addr == address3 {
+			return crypto.CompressPubkey(&prvKey3.PublicKey), nil
+		}
+		if addr == address4 {
+			return crypto.CompressPubkey(&prvKey4.PublicKey), nil
+		}
+		return nil, nil
+	}
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+
+		if addr == address1 {
+			return crypto.Sign(hash, prvKey1)
+		}
+		if addr == address2 {
+			return crypto.Sign(hash, prvKey2)
+		}
+		if addr == address3 {
+			return crypto.Sign(hash, prvKey3)
+		}
+		if addr == address4 {
+			return crypto.Sign(hash, prvKey4)
+		}
+		return nil, nil
 	}
 	redeemScript, _ := mockPickupJuryRedeemScript(contractAddr, 1)
-	sign12, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, privKeys, nil)
+	r, _ := txscript.DisasmString(redeemScript)
+	t.Logf("RedeemScript:%s", r)
+	sign12, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil, 1)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}

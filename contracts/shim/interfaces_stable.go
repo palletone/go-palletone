@@ -125,7 +125,7 @@ type ChaincodeStubInterface interface {
 	// validity of the transaction.
 	SetEvent(name string, payload []byte) error
 
-	//获取保证金合约的一些配置参数
+	//获取合约的一些配置参数
 	GetSystemConfig(filed string) (value string, err error)
 	//获取支付合约的 from 地址
 	GetInvokeAddress() (addr common.Address, err error)

@@ -7,11 +7,7 @@ package txscript
 import (
 	"errors"
 	"fmt"
-	//"github.com/btcsuite/btcd/btcec"
-	"crypto/ecdsa"
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -73,15 +69,15 @@ import (
 
 // RawTxInSignature returns the serialized ECDSA signature for the input idx of
 // the given transaction, with hashType appended to it.
-func RawTxInSignature(tx *modules.Transaction /**wire.MsgTx*/, msgIdx, idx int, subScript []byte,
-	hashType uint32, key *ecdsa.PrivateKey) ([]byte, error) {
+func RawTxInSignature(tx *modules.Transaction, msgIdx, idx int, subScript []byte,
+	hashType uint32, signHashFn SignHash) ([]byte, error) {
 
 	hash, err := CalcSignatureHash(subScript, hashType, tx, msgIdx, idx)
 	if err != nil {
 		return nil, err
 	}
 	//fmt.Printf("Hash is :%x to sign\n",hash)
-	sign, err := crypto.Sign(hash, key)
+	sign, err := signHashFn(hash)
 	//signature, err := key.Sign(hash)
 	if err != nil {
 		return nil, fmt.Errorf("cannot sign tx input: %s", err)
@@ -100,31 +96,31 @@ func RawTxInSignature(tx *modules.Transaction /**wire.MsgTx*/, msgIdx, idx int, 
 // as the idx'th input. privKey is serialized in either a compressed or
 // uncompressed format based on compress. This format must match the same format
 // used to generate the payment address, or the script validation will fail.
-func SignatureScript(tx *modules.Transaction, msgIdx, idx int, subscript []byte, hashType uint32, privKey *ecdsa.PrivateKey, compress bool) ([]byte, error) {
-	sig, err := RawTxInSignature(tx, msgIdx, idx, subscript, hashType, privKey)
+func SignatureScript(tx *modules.Transaction, msgIdx, idx int, subscript []byte, hashType uint32, pubKey []byte, signHashFn SignHash) ([]byte, error) {
+	sig, err := RawTxInSignature(tx, msgIdx, idx, subscript, hashType, signHashFn)
 	if err != nil {
 		return nil, err
 	}
 
-	pk := (*btcec.PublicKey)(&privKey.PublicKey)
-	var pkData []byte
-	if compress {
-		pkData = pk.SerializeCompressed()
-	} else {
-		pkData = pk.SerializeUncompressed()
-	}
+	//pk := (*btcec.PublicKey)(&privKey.PublicKey)
+	//var pkData []byte
+	//if compress {
+	//	pkData = pk.SerializeCompressed()
+	//} else {
+	//	pkData = pk.SerializeUncompressed()
+	//}
 
-	return NewScriptBuilder().AddData(sig).AddData(pkData).Script()
+	return NewScriptBuilder().AddData(sig).AddData(pubKey).Script()
 }
 
-func p2pkSignatureScript(tx *modules.Transaction /**wire.MsgTx*/, msgIdx, idx int, subScript []byte, hashType uint32, privKey *ecdsa.PrivateKey) ([]byte, error) {
-	sig, err := RawTxInSignature(tx, msgIdx, idx, subScript, hashType, privKey)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewScriptBuilder().AddData(sig).Script()
-}
+//func p2pkSignatureScript(tx *modules.Transaction /**wire.MsgTx*/, msgIdx, idx int, subScript []byte, hashType uint32, privKey *ecdsa.PrivateKey) ([]byte, error) {
+//	sig, err := RawTxInSignature(tx, msgIdx, idx, subScript, hashType, privKey)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return NewScriptBuilder().AddData(sig).Script()
+//}
 
 // signMultiSig signs as many of the outputs in the provided multisig script as
 // possible. It returns the generated script and a boolean if the script fulfils
@@ -138,11 +134,11 @@ func signMultiSig(tx *modules.Transaction, msgIdx, idx int, subScript []byte, ha
 	builder := NewScriptBuilder().AddOp(OP_FALSE)
 	signed := 0
 	for _, addr := range addresses {
-		key, _, err := kdb.GetKey(addr)
-		if err != nil || key == nil {
-			continue
-		}
-		sig, err := RawTxInSignature(tx, msgIdx, idx, subScript, hashType, key)
+		signFn := kdb.GetSignFunction(addr)
+		//if err != nil || key == nil {
+		//	continue
+		//}
+		sig, err := RawTxInSignature(tx, msgIdx, idx, subScript, hashType, signFn)
 		if err != nil {
 			continue
 		}
@@ -159,7 +155,7 @@ func signMultiSig(tx *modules.Transaction, msgIdx, idx int, subScript []byte, ha
 	return script, signed == nRequired
 }
 
-func sign(tx *modules.Transaction /**wire.MsgTx*/, msgIdx int, idx int,
+func sign(tx *modules.Transaction, msgIdx int, idx int,
 	subScript []byte, hashType uint32, kdb KeyDB, sdb ScriptDB) ([]byte,
 	ScriptClass, []common.Address, int, error) {
 	class, addresses, nrequired, err := ExtractPkScriptAddrs(subScript)
@@ -168,31 +164,31 @@ func sign(tx *modules.Transaction /**wire.MsgTx*/, msgIdx int, idx int,
 	}
 
 	switch class {
-	case PubKeyTy:
-		// look up key for address
-
-		//fmt.Println(addresses)
-		key, _, err := kdb.GetKey(addresses[0])
-		if err != nil {
-			return nil, class, nil, 0, err
-		}
-
-		script, err := p2pkSignatureScript(tx, msgIdx, idx, subScript, hashType, key)
-		if err != nil {
-			return nil, class, nil, 0, err
-		}
-
-		return script, class, addresses, nrequired, nil
+	//case PubKeyTy:
+	//	// look up key for address
+	//
+	//	//fmt.Println(addresses)
+	//	key, _, err := kdb.GetKey(addresses[0])
+	//	if err != nil {
+	//		return nil, class, nil, 0, err
+	//	}
+	//
+	//	script, err := p2pkSignatureScript(tx, msgIdx, idx, subScript, hashType, key)
+	//	if err != nil {
+	//		return nil, class, nil, 0, err
+	//	}
+	//
+	//	return script, class, addresses, nrequired, nil
 	case PubKeyHashTy:
 		// look up key for address
 
-		key, compressed, err := kdb.GetKey(addresses[0])
+		pubKey, err := kdb.GetPubKey(addresses[0])
 		if err != nil {
 			return nil, class, nil, 0, err
 		}
-
+		signHashFn := kdb.GetSignFunction(addresses[0])
 		script, err := SignatureScript(tx, msgIdx, idx, subScript, hashType,
-			key, compressed)
+			pubKey, signHashFn)
 		if err != nil {
 			return nil, class, nil, 0, err
 		}
@@ -223,7 +219,7 @@ func sign(tx *modules.Transaction /**wire.MsgTx*/, msgIdx int, idx int,
 	default:
 
 		return nil, class, nil, 0,
-			errors.New("can't sign unknown transactions")
+			errors.New("can't sign unknown transactions:" + class.String())
 	}
 
 }
@@ -414,11 +410,12 @@ func mergeMultiSig(tx *modules.Transaction, msgIdx, idx int, addresses []common.
 // KeyDB is an interface type provided to SignTxOutput, it encapsulates
 // any user state required to get the private keys for an address.
 type KeyDB interface {
-	GetKey(common.Address) (*ecdsa.PrivateKey, bool, error)
+	GetSignFunction(common.Address) SignHash
+	GetPubKey(common.Address) ([]byte, error)
 }
 
 // KeyClosure implements KeyDB with a closure.
-type KeyClosure func(common.Address) (*ecdsa.PrivateKey, bool, error)
+type KeyClosure func(common.Address, []byte) ([]byte, error)
 
 //传入一个hash,返回对该Hash的签名
 type SignHash func(hash []byte) ([]byte, error)
@@ -427,8 +424,8 @@ type SignHash func(hash []byte) ([]byte, error)
 type PickupJuryRedeemScript func(common.Address, int) ([]byte, error)
 
 // GetKey implements KeyDB by returning the result of calling the closure.
-func (kc KeyClosure) GetKey(address common.Address) (*ecdsa.PrivateKey, bool, error) {
-	return kc(address)
+func (kc KeyClosure) GetSign(address common.Address, hash []byte) ([]byte, error) {
+	return kc(address, hash)
 }
 
 // ScriptDB is an interface type provided to SignTxOutput, it encapsulates any
@@ -452,9 +449,9 @@ func (sc ScriptClosure) GetScript(address common.Address) ([]byte, error) {
 // getScript. If previousScript is provided then the results in previousScript
 // will be merged in a type-dependent manner with the newly generated.
 // signature script.
-func SignTxOutput(tx *modules.Transaction /**wire.MsgTx*/, msgIdx, idx int,
+func SignTxOutput(tx *modules.Transaction, msgIdx, idx int,
 	pkScript []byte, hashType uint32, kdb KeyDB, sdb ScriptDB,
-	previousScript []byte) ([]byte, error) {
+	previousScript []byte, juryVersion int) ([]byte, error) {
 
 	sigScript, class, addresses, nrequired, err := sign(tx,
 		msgIdx, idx, pkScript, hashType, kdb, sdb)
@@ -478,7 +475,20 @@ func SignTxOutput(tx *modules.Transaction /**wire.MsgTx*/, msgIdx, idx int,
 		// TODO keep a copy of the script for merging.
 	}
 	if class == ContractHashTy {
-		//TODO Devin
+
+		realSigScript, _, _, _, err := sign(tx, msgIdx, idx,
+			sigScript, hashType, kdb, sdb)
+		if err != nil {
+			return nil, err
+		}
+
+		// Append the p2sh script as the last push in the script.
+		builder := NewScriptBuilder()
+		builder.AddOps(realSigScript)
+
+		builder.AddData(sigScript)
+		builder.AddInt64(int64(juryVersion))
+		sigScript, _ = builder.Script()
 	}
 	// Merge scripts. with any previous data, if any.
 	mergedScript := mergeScripts(tx, msgIdx, idx, pkScript, class,

@@ -28,6 +28,7 @@ import (
 
 	"math/big"
 
+	"bytes"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common/hexutil"
 )
@@ -57,6 +58,13 @@ const (
 
 func (a *Address) GetType() AddressType {
 	return AddressType(a[20])
+}
+
+//如果是合约地址，那么是不是一个系统合约地址？
+func (a *Address) IsSystemContractAddress() bool {
+	bb := make([]byte, 20)
+	bb[19] = 0xff
+	return bytes.Compare(a.Bytes(), bb) < 0
 }
 func NewAddress(hash160 []byte, ty AddressType) Address {
 	newBytes := make([]byte, 21)
