@@ -1883,6 +1883,16 @@ func trimx(para string) string {
 	}
 	return para
 }
+func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error) {
+	// If the specified account is a valid address, return it
+	addr, err := common.StringToAddress(account)
+	if err == nil {
+		return accounts.Account{Address: addr}, nil
+	} else {
+		return accounts.Account{}, fmt.Errorf("invalid account address: %s", account)
+	}
+
+}
 
 //sign rawtranscation
 //create raw transction
@@ -1904,6 +1914,8 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 		return nil, err
 	}
 	var srawinputs []ptnjson.RawTxInput
+	var addr common.Address
+	var keys []string
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if ok == false {
@@ -1921,35 +1933,33 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 			}
 			TxHash := trimx(uvu.TxHash)
 			PkScriptHex := trimx(uvu.PkScriptHex)
-			fmt.Printf("%+v\n", PkScriptHex)
 			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
 			srawinputs = append(srawinputs, input)
 
+			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
+			if err != nil {
+				fmt.Println("get addr by outpoint is err")
+			}
 		}
 		/*for _, txout := range payload.Outputs {
-
-		    err = tokenengine.ScriptValidate(txout.PkScript,  tx, 0,0)
-		    if err != nil {
-		            fmt.Println("--------------1913----err-------------------------")
-		    }
-		    fmt.Printf("---1915------%+v\n--------------",txout)
+			err = tokenengine.ScriptValidate(txout.PkScript, tx, 0, 0)
+			if err != nil {
+			}
 		}*/
+		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+		account, _ := MakeAddress(ks, addr.String())
+		prvKey, _ := ks.DumpKey(account, "1")
+		wif := crypto.ToWIF(prvKey)
+		key := strings.TrimSpace(wif)
+		keys = append(keys, key)
+		fmt.Printf("Your private key hex is : {%x}, WIF is {%s}\n", prvKey, wif)
 	}
 	if len(srawinputs) == 0 {
 		return "", nil
 	}
-	var keys []string
-	for _, key := range signTransactionParams.PrivKeys {
-		key = strings.TrimSpace(key) //Trim whitespace
-		if len(key) == 0 {
-			continue
-		}
-		keys = append(keys, key)
-	}
 	if len(keys) == 0 {
 		return "", nil
 	}
-
 	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &srawinputs, &keys, ptnjson.String("ALL"))
 	result, _ := SignRawTransaction(newsign)
 	fmt.Println(result)
