@@ -240,7 +240,7 @@ func (dag *Dag) HeadUnitHash() common.Hash {
 
 // 根据最新 unit 计算出生产该 unit 的 mediator 缺失的 unit 个数，
 // 并更新到 mediator的相应字段中，返回数量
-func (dag *Dag) UpdateMediatorMissedUnits(unit *modules.Unit) uint64 {
+func (dag *Dag) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	missedUnits := dag.GetSlotAtTime(time.Unix(unit.Timestamp(), 0))
 	if missedUnits == 0 {
 		log.Error("Trying to push double-produced unit onto current unit?!")
@@ -265,7 +265,7 @@ func (dag *Dag) UpdateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	return uint64(missedUnits)
 }
 
-func (dag *Dag) UpdateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
+func (dag *Dag) updateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
 	dgp := dag.GetDynGlobalProp()
 
 	dgp.UpdateDynGlobalProp(unit, missedUnits)
@@ -274,7 +274,7 @@ func (dag *Dag) UpdateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
 	return
 }
 
-func (dag *Dag) UpdateMediatorSchedule() {
+func (dag *Dag) updateMediatorSchedule() {
 	gp := dag.GetGlobalProp()
 	dgp := dag.GetDynGlobalProp()
 	ms := dag.GetMediatorSchl()

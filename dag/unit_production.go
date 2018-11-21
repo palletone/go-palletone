@@ -133,24 +133,25 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	// 5. 更新Unit中交易的状态
 
 	// 6. 计算当前区块链的unit的缺失率，并更新每个mediator的unit的缺失率
-	missed := dag.UpdateMediatorMissedUnits(nextUnit)
+	missed := dag.updateMediatorMissedUnits(nextUnit)
 
 	// 7. 更新全局动态属性值
-	dag.UpdateDynGlobalProp(nextUnit, missed)
+	dag.updateDynGlobalProp(nextUnit, missed)
 
 	// 8. 更新 mediator 的相关数据
-	dag.UpdateSigningMediator(nextUnit)
+	dag.updateSigningMediator(nextUnit)
 
 	// 9. 更新最新不可逆区块高度
-	dag.UpdateLastIrreversibleUnit()
+	dag.updateLastIrreversibleUnit()
 
 	// 10. 判断是否到了维护周期，并维护
+	dag.performChainMaintenance(nextUnit)
 
 	// 11. 洗牌
-	dag.UpdateMediatorSchedule()
+	dag.updateMediatorSchedule()
 }
 
-func (dag *Dag) UpdateSigningMediator(newUnit *modules.Unit) {
+func (dag *Dag) updateSigningMediator(newUnit *modules.Unit) {
 	// 1. 更新 签名mediator 的LastConfirmedUnitNum
 	signingMediator := newUnit.UnitAuthor()
 	med := dag.GetMediator(signingMediator)
@@ -159,7 +160,7 @@ func (dag *Dag) UpdateSigningMediator(newUnit *modules.Unit) {
 	dag.SaveMediator(med, false)
 }
 
-func (dag *Dag) UpdateLastIrreversibleUnit() {
+func (dag *Dag) updateLastIrreversibleUnit() {
 	aSize := dag.GetActiveMediatorCount()
 	lastConfirmedUnitNums := make([]int, 0, aSize)
 
@@ -183,4 +184,22 @@ func (dag *Dag) UpdateLastIrreversibleUnit() {
 		dgp.LastIrreversibleUnitNum = newLastIrreversibleUnitNum
 		dag.SaveDynGlobalProp(dgp, false)
 	}
+}
+
+func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
+	dgp := dag.GetDynGlobalProp()
+
+	if dgp.NextMaintenanceTime > nextUnit.Timestamp() {
+		return
+	}
+
+	dag.updateActiveMediators()
+
+	// todo , 开始vss协议
+
+	// todo, 更新下一次维护时间
+}
+
+func (dag *Dag) updateActiveMediators() {
+	// todo , 统计投票， 选出活跃mediator
 }
