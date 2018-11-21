@@ -250,9 +250,10 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
 func DefaultGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		DepositRate:              core.DefaultDepositRate,
-		DepositAmountForJury:     core.DefaultDepositAmountForJury,
-		DepositAmountForMediator: core.DefaultDepositAmountForMediator,
+		DepositRate:               core.DefaultDepositRate,
+		DepositAmountForJury:      core.DefaultDepositAmountForJury,
+		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
+		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
 	}
 
 	initParams := core.NewChainParams()
@@ -276,9 +277,10 @@ func DefaultGenesisBlock() *core.Genesis {
 // DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
 func DefaultTestnetGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		DepositRate:              core.DefaultDepositRate,
-		DepositAmountForJury:     core.DefaultDepositAmountForJury,
-		DepositAmountForMediator: core.DefaultDepositAmountForMediator,
+		DepositRate:               core.DefaultDepositRate,
+		DepositAmountForJury:      core.DefaultDepositAmountForJury,
+		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
+		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
 	}
 
 	initParams := core.NewChainParams()
