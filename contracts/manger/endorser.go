@@ -262,7 +262,13 @@ func (e *Endorser) ProcessProposal(contractid []byte, idag dag.IDag, deployId []
 	}
 	logger.Debug("unit:")
 	logger.Debug(unit)
-	fmt.Printf("==unit=> %#v\n", unit)
+	fmt.Printf("==unit=> %#v\n", unit.ContractId)
+	fmt.Printf("==unit=> %#v\n", unit.Payload)
+	fmt.Printf("==unit=> %s\n", unit.Args)
+	fmt.Printf("==unit=> %#s\n", unit.FunctionName)
+	fmt.Printf("==unit=> %#v\n", unit.ReadSet)
+	fmt.Printf("==unit=> %#v\n", unit.WriteSet)
+	fmt.Printf("==unit=> %#v\n", unit.TokenPayOut)
 	// todo
 
 	pResp.Response.Payload = res.Payload
