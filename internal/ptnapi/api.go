@@ -21,7 +21,6 @@ package ptnapi
 import (
 	"bytes"
 	"context"
-	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -1840,23 +1839,31 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		}] = script
 	}
 
-	var keys map[common.Address]*ecdsa.PrivateKey
-	if cmd.PrivKeys != nil {
-		keys = make(map[common.Address]*ecdsa.PrivateKey)
-
-		if cmd.PrivKeys != nil {
-			for _, key := range *cmd.PrivKeys {
-				privKey, _ := crypto.FromWIF(key)
-				//privKeyBytes, _ := hex.DecodeString(key)
-				//privKey, _ := crypto.ToECDSA(privKeyBytes)
-				addr := crypto.PubkeyToAddress(&privKey.PublicKey)
-				keys[addr] = privKey
-			}
-		}
+	//var keys map[common.Address]*ecdsa.PrivateKey
+	//if cmd.PrivKeys != nil {
+	//	keys = make(map[common.Address]*ecdsa.PrivateKey)
+	//
+	//	if cmd.PrivKeys != nil {
+	//		for _, key := range *cmd.PrivKeys {
+	//			privKey, _ := crypto.FromWIF(key)
+	//			//privKeyBytes, _ := hex.DecodeString(key)
+	//			//privKey, _ := crypto.ToECDSA(privKeyBytes)
+	//			addr := crypto.PubkeyToAddress(&privKey.PublicKey)
+	//			keys[addr] = privKey
+	//		}
+	//	}
+	//}
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		//TODO use keystore
+		return nil, nil
 	}
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 
+		//TODO use keystore
+		return nil, nil
+	}
 	var signErrs []common.SignatureError
-	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, keys, 0)
+	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, getPubKeyFn, getSignFn, 0)
 	if err != nil {
 
 		return nil, DeserializationError{err}
