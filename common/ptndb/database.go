@@ -115,6 +115,7 @@ func (db *LDBDatabase) Get(key []byte) ([]byte, error) {
 }
 
 // Delete deletes the key from the queue and database
+// If don't have key match, it will NOT throw any error
 func (db *LDBDatabase) Delete(key []byte) error {
 	return db.db.Delete(key, nil)
 }
@@ -396,7 +397,7 @@ func NewTable(db Database, prefix string) Database {
 		prefix: prefix,
 	}
 }
-func (dt *table) NewIterator() Iterator{
+func (dt *table) NewIterator() Iterator {
 	return nil
 }
 func (dt *table) NewIteratorWithPrefix(prefix []byte) Iterator {

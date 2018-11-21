@@ -33,7 +33,8 @@ type ContractInvokeResult struct {
 	ReadSet      []modules.ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
 	WriteSet     []modules.ContractWriteSet `json:"write_set"`     // the set data of write, and value could be any type
 	Payload      []byte                     `json:"payload"`       // the contract execution result
-	TokenPayOut  []*modules.TokenPayOut
+	TokenPayOut  []*modules.TokenPayOut     //从合约地址付出Token
+	TokenSupply  []*modules.TokenSupply     //创币请求产生的结果
 }
 
 func (result *ContractInvokeResult) ToContractInvokePayload() *modules.ContractInvokePayload {
