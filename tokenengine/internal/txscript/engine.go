@@ -133,6 +133,7 @@ type Engine struct {
 	sigCache               *SigCache
 	hashCache              *TxSigHashes
 	bip16                  bool     // treat execution as pay-to-script-hash
+	p2ch                   bool     // pay to contract hash
 	savedFirstStack        [][]byte // stack from first script for bip16 scripts
 	witnessVersion         int
 	witnessProgram         []byte
@@ -480,10 +481,14 @@ func (vm *Engine) Step() (done bool, err error) {
 
 		vm.numOps = 0 // number of ops is per script.
 		vm.scriptOff = 0
-		if vm.scriptIdx == 0 && vm.bip16 {
+		if vm.scriptIdx == 0 && (vm.bip16 || vm.p2ch) {
 			vm.scriptIdx++
 			vm.savedFirstStack = vm.GetStack()
-		} else if vm.scriptIdx == 1 && vm.bip16 {
+		} else if vm.scriptIdx == 1 && (vm.bip16 || vm.p2ch) {
+			redeemIdx := 1
+			if vm.p2ch {
+				redeemIdx = 2
+			}
 			// Put us past the end for CheckErrorCondition()
 			vm.scriptIdx++
 			// Check script ran successfully and pull the script
@@ -493,7 +498,7 @@ func (vm *Engine) Step() (done bool, err error) {
 				return false, err
 			}
 
-			script := vm.savedFirstStack[len(vm.savedFirstStack)-1]
+			script := vm.savedFirstStack[len(vm.savedFirstStack)-redeemIdx]
 			pops, err := parseScript(script)
 			if err != nil {
 				return false, err
@@ -502,7 +507,7 @@ func (vm *Engine) Step() (done bool, err error) {
 
 			// Set stack to be the stack from first script minus the
 			// script itself
-			vm.SetStack(vm.savedFirstStack[:len(vm.savedFirstStack)-1])
+			vm.SetStack(vm.savedFirstStack[:len(vm.savedFirstStack)-redeemIdx])
 		} else if (vm.scriptIdx == 1 && vm.witnessProgram != nil) ||
 			(vm.scriptIdx == 2 && vm.witnessProgram != nil && vm.bip16) { // Nested P2SH.
 
@@ -885,6 +890,14 @@ func NewEngine(scriptPubKey []byte, pickupJuryRedeemScript PickupJuryRedeemScrip
 				"pay to script hash is not push only")
 		}
 		vm.bip16 = true
+	}
+	if isContractHash(vm.scripts[1]) {
+		// Only accept input scripts that push data for P2SH.
+		if !isPushOnly(vm.scripts[0]) {
+			return nil, scriptError(ErrNotPushOnly,
+				"pay to contract hash is not push only")
+		}
+		vm.p2ch = true
 	}
 	if vm.hasFlag(ScriptVerifyMinimalData) {
 		vm.dstack.verifyMinimalData = true

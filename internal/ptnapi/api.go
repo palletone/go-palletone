@@ -1856,7 +1856,7 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 	}
 
 	var signErrs []common.SignatureError
-	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, keys)
+	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, keys, 0)
 	if err != nil {
 
 		return nil, DeserializationError{err}

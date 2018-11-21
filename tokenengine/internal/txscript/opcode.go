@@ -2343,13 +2343,17 @@ func opcodeCheckJuryRedeemEqual(op *parsedOpcode, vm *Engine) error {
 	if err != nil {
 		return err
 	}
+
 	// check redeem
 	addr := common.NewAddress(contractHash, common.ContractHash)
-	dbRedeem, err := vm.pickupJuryRedeemScript(addr, version)
-	if err != nil {
-		return scriptError(ErrPickupJuryRedeemScript, err.Error())
+	result := true //系统合约则不用比对Jury，直接返还true
+	if !addr.IsSystemContractAddress() {
+		dbRedeem, err := vm.pickupJuryRedeemScript(addr, version)
+		if err != nil {
+			return scriptError(ErrPickupJuryRedeemScript, err.Error())
+		}
+		result = bytes.Equal(dbRedeem, redeemScript)
 	}
-	result := bytes.Equal(dbRedeem, redeemScript)
 	vm.dstack.PushBool(result)
 	return nil
 }
