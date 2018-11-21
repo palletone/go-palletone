@@ -122,7 +122,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	}
 	var hashtype uint32
 	hashtype = 1
-	_, err := SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, privKeys)
+	_, err := SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, privKeys, 0)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -191,7 +191,7 @@ func TestMultiSign1Step(t *testing.T) {
 		address2: prvKey2,
 	}
 
-	sign12, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, privKeys, nil)
+	sign12, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, privKeys, nil, 0)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -228,7 +228,7 @@ func TestMultiSign2Step(t *testing.T) {
 	privKeys := map[common.Address]*ecdsa.PrivateKey{
 		address1: prvKey1,
 	}
-	sign1, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, privKeys, nil)
+	sign1, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, privKeys, nil, 0)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -241,7 +241,7 @@ func TestMultiSign2Step(t *testing.T) {
 	}
 	//scriptCp2:=make([]byte,len(lockScript))
 	//copy(scriptCp2,lockScript)
-	sign2, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, privKeys2, sign1)
+	sign2, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, privKeys2, sign1, 0)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -275,12 +275,16 @@ func TestContractPayout(t *testing.T) {
 	//copy(scriptCp,lockScript)
 	contractAddr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
 	lockScript := GenerateP2CHLockScript(contractAddr) //Token 锁定到保证金合约中
+	l, _ := txscript.DisasmString(lockScript)
+	t.Logf("Lock Script:%s", l)
 	privKeys := map[common.Address]*ecdsa.PrivateKey{
 		address1: prvKey1,
 		address2: prvKey2,
 	}
 	redeemScript, _ := mockPickupJuryRedeemScript(contractAddr, 1)
-	sign12, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, privKeys, nil)
+	r, _ := txscript.DisasmString(redeemScript)
+	t.Logf("RedeemScript:%s", r)
+	sign12, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, privKeys, nil, 1)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}

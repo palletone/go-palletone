@@ -452,9 +452,9 @@ func (sc ScriptClosure) GetScript(address common.Address) ([]byte, error) {
 // getScript. If previousScript is provided then the results in previousScript
 // will be merged in a type-dependent manner with the newly generated.
 // signature script.
-func SignTxOutput(tx *modules.Transaction /**wire.MsgTx*/, msgIdx, idx int,
+func SignTxOutput(tx *modules.Transaction, msgIdx, idx int,
 	pkScript []byte, hashType uint32, kdb KeyDB, sdb ScriptDB,
-	previousScript []byte) ([]byte, error) {
+	previousScript []byte, juryVersion int) ([]byte, error) {
 
 	sigScript, class, addresses, nrequired, err := sign(tx,
 		msgIdx, idx, pkScript, hashType, kdb, sdb)
@@ -478,7 +478,20 @@ func SignTxOutput(tx *modules.Transaction /**wire.MsgTx*/, msgIdx, idx int,
 		// TODO keep a copy of the script for merging.
 	}
 	if class == ContractHashTy {
-		//TODO Devin
+
+		realSigScript, _, _, _, err := sign(tx, msgIdx, idx,
+			sigScript, hashType, kdb, sdb)
+		if err != nil {
+			return nil, err
+		}
+
+		// Append the p2sh script as the last push in the script.
+		builder := NewScriptBuilder()
+		builder.AddOps(realSigScript)
+
+		builder.AddData(sigScript)
+		builder.AddInt64(int64(juryVersion))
+		sigScript, _ = builder.Script()
 	}
 	// Merge scripts. with any previous data, if any.
 	mergedScript := mergeScripts(tx, msgIdx, idx, pkScript, class,
