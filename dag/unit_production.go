@@ -132,7 +132,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit) bool {
 func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	// 5. 更新Unit中交易的状态
 
-	// 6. 计算当前区块链的unit的缺失率，并更新每个mediator的unit的缺失率
+	// 6. 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
 	missed := dag.updateMediatorMissedUnits(nextUnit)
 
 	// 7. 更新全局动态属性值
@@ -187,6 +187,7 @@ func (dag *Dag) updateLastIrreversibleUnit() {
 }
 
 func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
+	gp := dag.GetGlobalProp()
 	dgp := dag.GetDynGlobalProp()
 
 	if dgp.NextMaintenanceTime > nextUnit.Timestamp() {
@@ -197,7 +198,34 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 
 	// todo , 开始vss协议
 
-	// todo, 更新下一次维护时间
+	// 更新下一次维护时间
+	nextMaintenanceTime := dgp.NextMaintenanceTime
+	maintenanceInterval := int64(gp.ChainParameters.MaintenanceInterval)
+	if nextUnit.NumberU64() == 1 {
+		nextMaintenanceTime = (nextUnit.Timestamp()/maintenanceInterval + 1) * maintenanceInterval
+	} else {
+		// We want to find the smallest k such that nextMaintenanceTime + k * maintenanceInterval > HeadUnitTime()
+		//  This implies k > ( HeadUnitTime() - nextMaintenanceTime ) / maintenanceInterval
+		//
+		// Let y be the right-hand side of this inequality, i.e.
+		// y = ( HeadUnitTime() - nextMaintenanceTime ) / maintenanceInterval
+		//
+		// and let the fractional part f be y-floor(y).  Clearly 0 <= f < 1.
+		// We can rewrite f = y-floor(y) as floor(y) = y-f.
+		//
+		// Clearly k = floor(y)+1 has k > y as desired.  Now we must
+		// show that this is the least such k, i.e. k-1 <= y.
+		//
+		// But k-1 = floor(y)+1-1 = floor(y) = y-f <= y.
+		// So this k suffices.
+		//
+
+		y := (dag.HeadUnitTime() - nextMaintenanceTime) / maintenanceInterval
+		nextMaintenanceTime += (y + 1) * maintenanceInterval
+	}
+
+	dgp.NextMaintenanceTime = nextMaintenanceTime
+	dag.SaveDynGlobalProp(dgp, false)
 }
 
 func (dag *Dag) updateActiveMediators() {

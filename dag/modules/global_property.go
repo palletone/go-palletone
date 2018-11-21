@@ -130,7 +130,7 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 	return &DynamicGlobalProperty{
 		HeadUnitNum:             0,
 		HeadUnitHash:            common.Hash{},
-		NextMaintenanceTime: 0,
+		NextMaintenanceTime:     0,
 		CurrentASlot:            0,
 		LastIrreversibleUnitNum: 0,
 	}
