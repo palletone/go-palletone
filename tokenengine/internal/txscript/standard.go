@@ -167,12 +167,12 @@ func typeOfScript(pops []parsedOpcode) ScriptClass {
 		return PubKeyHashTy
 	} else if isContractHash(pops) {
 		return ContractHashTy
-	} else if isWitnessPubKeyHash(pops) {
-		return WitnessV0PubKeyHashTy
+		//} else if isWitnessPubKeyHash(pops) {
+		//	return WitnessV0PubKeyHashTy
 	} else if isScriptHash(pops) {
 		return ScriptHashTy
-	} else if isWitnessScriptHash(pops) {
-		return WitnessV0ScriptHashTy
+		//} else if isWitnessScriptHash(pops) {
+		//	return WitnessV0ScriptHashTy
 	} else if isMultiSig(pops) {
 		return MultiSigTy
 	} else if isNullData(pops) {
