@@ -180,7 +180,8 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
-	if txpool == nil || mAddr == nil || ks == nil {
+	if txpool == nil || !common.IsValidAddress(mAddr.String()) || ks == nil {
+		log.Debug("UnitRepository", "CreateUnit txpool:", txpool, "mdAddr:", mAddr.String(), "ks:", ks)
 		return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
 	}
 	units := []modules.Unit{}

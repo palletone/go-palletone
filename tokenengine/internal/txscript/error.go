@@ -276,6 +276,7 @@ const (
 	// serialized in a compressed format.
 	ErrWitnessPubKeyType
 
+	ErrPickupJuryRedeemScript
 	// numErrorCodes is the maximum error code number used in tests.  This
 	// entry MUST be the last entry in the enum.
 	numErrorCodes
@@ -333,6 +334,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrMinimalIf:                          "ErrMinimalIf",
 	ErrWitnessPubKeyType:                  "ErrWitnessPubKeyType",
 	ErrDiscourageUpgradableWitnessProgram: "ErrDiscourageUpgradableWitnessProgram",
+	ErrPickupJuryRedeemScript:             "ErrPickupJuryRedeemScript",
 }
 
 // String returns the ErrorCode as a human-readable name.
@@ -360,9 +362,9 @@ type Error struct {
 }
 
 type SignatureError struct {
-        InputIndex uint32
-        MsgIndex uint32
-        Error      error
+	InputIndex uint32
+	MsgIndex   uint32
+	Error      error
 }
 
 // Error satisfies the error interface and prints human-readable errors.

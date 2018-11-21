@@ -110,7 +110,7 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	if err := hash.SetHexString(txid); err != nil {
 		return nil, err
 	}
-	tx, err := b.ptn.dag.GetTransactionByHash(hash)
+	tx, _, err := b.ptn.dag.GetTransactionByHash(hash)
 	if err != nil {
 		return nil, err
 	}
@@ -263,9 +263,43 @@ func (b *PtnApiBackend) GetUnitByNumber(number modules.ChainIndex) *modules.Unit
 	return unit
 }
 
+func (b *PtnApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TransactionJson, error) {
+	txs, err := b.ptn.dag.GetUnitTransactions(hash)
+	if err != nil {
+		return nil, err
+	}
+	txs_json := make([]*ptnjson.TransactionJson, 0)
+
+	for _, tx := range txs {
+		txs_json = append(txs_json, ptnjson.ConvertTx02Json(tx, hash))
+	}
+	return txs_json, nil
+}
+
+func (b *PtnApiBackend) GetUnitTxsHashHex(hash common.Hash) ([]string, error) {
+	hashs, err := b.ptn.dag.GetUnitTxsHash(hash)
+	if err != nil {
+		return nil, err
+	}
+	hexs := make([]string, 0)
+	for _, hash := range hashs {
+		hexs = append(hexs, hash.String())
+	}
+	return hexs, nil
+}
+
+func (b *PtnApiBackend) GetTxByHash(hash common.Hash) (*ptnjson.TransactionJson, error) {
+	tx, hash, err := b.ptn.dag.GetTransactionByHash(hash)
+	if err != nil {
+		return nil, err
+	}
+	return ptnjson.ConvertTx02Json(tx, hash), nil
+}
+
 func (b *PtnApiBackend) GetHeaderByHash(hash common.Hash) *modules.Header {
 	return b.ptn.dag.GetHeaderByHash(hash)
 }
+
 func (b *PtnApiBackend) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
 	return b.ptn.dag.GetHeaderByNumber(number)
 }
@@ -291,6 +325,11 @@ func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
 func (b *PtnApiBackend) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	return b.ptn.dag.GetAddrOutpoints(addr)
 }
+func (b *PtnApiBackend) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error) {
+	address,err := b.ptn.dag.GetAddrByOutPoint(outPoint)
+	return address,err
+}
+
 func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error) {
 	utxos, _ := b.ptn.dag.GetAddrUtxos(addr)
 	result := []ptnjson.UtxoJson{}

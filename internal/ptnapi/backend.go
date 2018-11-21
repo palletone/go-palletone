@@ -86,9 +86,13 @@ type Backend interface {
 	//get level db
 	GetUnitByHash(hash common.Hash) *modules.Unit
 	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
-
 	GetHeaderByHash(hash common.Hash) *modules.Header
 	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
+
+	// get transaction interface
+	GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TransactionJson, error)
+	GetUnitTxsHashHex(hash common.Hash) ([]string, error)
+	GetTxByHash(hash common.Hash) (*ptnjson.TransactionJson, error)
 
 	//TODO wangjiyou
 	GetPrefix(prefix string) map[string][]byte //getprefix

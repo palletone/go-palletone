@@ -20,28 +20,28 @@ package jury
 
 import (
 	"fmt"
-	"time"
-	"sync"
+	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/dedis/kyber"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/dag/modules"
+	"sync"
+	"time"
 
-	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core/gen"
-	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/common/p2p"
 	"bytes"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/core/gen"
 	cm "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 type PeerType int
 
 const (
-	_         PeerType = iota
+	_ PeerType = iota
 	TUnknow
 	TJury
 	TMediator
@@ -64,48 +64,58 @@ type PalletOne interface {
 
 	ContractBroadcast(event ContractExeEvent)
 	ContractSigBroadcast(event ContractSigEvent)
+
+	GetLocalMediators() []common.Address
 }
 
 type iDag interface {
+	GetActiveMediators() []common.Address
+}
+
+type contractTx struct {
+	list []common.Address //dynamic
+	tx   *modules.Transaction
 }
 
 type Processor struct {
 	name     string
+	ptype    PeerType
 	ptn      PalletOne
 	dag      iDag
-	ptype    PeerType
-	local    common.Address  //local
-	list     *common.Address //dynamic
+	local    common.Address //local
 	contract *contracts.Contract
-
-	txPool txspool.ITxPool
-	locker *sync.Mutex
-	quit   chan struct{}
-
-	contractTx map[common.Hash]*modules.Transaction
-	//jurors     map[common.Address]Juror //记录所有执行合约的节点信息
+	txPool   txspool.ITxPool
+	locker   *sync.Mutex
+	quit     chan struct{}
+	mtx      map[common.Hash]*contractTx
 
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
-
-	contractSigFeed  event.Feed
-	contractSigScope event.SubscriptionScope
+	contractSigFeed   event.Feed
+	contractSigScope  event.SubscriptionScope
 }
 
 func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract) (*Processor, error) {
 	if ptn == nil || dag == nil {
 		return nil, errors.New("NewContractProcessor, param is nil")
 	}
+	var address common.Address
+	localmediators := ptn.GetLocalMediators()
+	if len(localmediators) > 0 {
+		address = localmediators[0]
+	}
 	p := &Processor{
-		name:       "conract processor",
-		ptn:        ptn,
-		dag:        dag,
-		contract:   contract,
-		quit:       make(chan struct{}),
-		contractTx: make(map[common.Hash]*modules.Transaction),
+		name:     "conract processor",
+		ptn:      ptn,
+		dag:      dag,
+		contract: contract,
+		local:    address, //dag.GetActiveMediators()[0],//todo
+		quit:     make(chan struct{}),
+		mtx:      make(map[common.Hash]*contractTx),
 	}
 
-	log.Info("NewContractProcessor ok")
+	log.Info("NewContractProcessor ok", "mediator_address", address.String())
+	log.Info("NewContractProcessor", "info:%v", p.local)
 	return p, nil
 }
 
@@ -148,7 +158,12 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 		log.Error("GenContractSigTransctions", "err:%s", err)
 		return err
 	}
-	p.contractTx[event.Tx.TxHash] = tx
+	//p.contractTx[event.Tx.TxHash] = tx
+	p.mtx[event.Tx.TxHash] = &contractTx{
+		list: p.dag.GetActiveMediators(),
+		tx:   tx,
+	}
+
 	log.Info("ProcessContractEvent", "trs:", tx)
 	log.Info("ProcessContractEvent", "add tx", event.Tx.TxHash)
 
@@ -169,15 +184,14 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 	if false == checkTxValid(event.Tx, p.ptn.GetKeyStore()) {
 		return errors.New("ProcessContractSigEvent event Tx is invalid")
 	}
-	tx := p.contractTx[event.Tx.TxHash]
-
+	tx := p.mtx[event.Tx.TxHash].tx
 	if tx == nil {
 		log.Info("ProcessContractSigEvent", "tx(%s) is nil", event.Tx.TxHash)
 		go func() {
 			for i := 0; i < 10; i += 1 {
 				time.Sleep(time.Millisecond * 500)
-				if p.contractTx[event.Tx.TxHash] != nil {
-					tx = p.contractTx[event.Tx.TxHash]
+				if p.mtx[event.Tx.TxHash].tx != nil {
+					tx = p.mtx[event.Tx.TxHash].tx
 					if judge, _ := checkAndAddTxData(tx, event.Tx); judge == true {
 						//收集签名数量，达到要求后将tx添加到交易池
 						num := getTxSigNum(tx)

@@ -94,15 +94,15 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 	}
 
 	pendingUnit.Hash()
-	_, err = dagcommon.GetUnitWithSig(pendingUnit, ks, producer)
-	if err != nil {
+	sign_unit, err1 := dagcommon.GetUnitWithSig(pendingUnit, ks, producer)
+	if err1 != nil {
 		log.Error(fmt.Sprintf("GetUnitWithSig error: %v", err))
 	}
 
-	pendingUnit.UnitSize = pendingUnit.Size()
-
-	dag.PushUnit(pendingUnit)
-	return pendingUnit
+	sign_unit.UnitSize = sign_unit.Size()
+	log.Debug("Dag", "GenerateUnit unit:", *sign_unit)
+	dag.PushUnit(sign_unit)
+	return sign_unit
 }
 
 /**

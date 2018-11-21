@@ -270,25 +270,25 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 		if ok {
 			for _, output := range payload.Outputs {
 				//  pkscript to addr
-				addr, _ := tokenengine.GetAddressFromScript(output.PkScript[:])
-				dagdb.saveOutputByAddr(addr.String(), tx.TxHash, i, *output)
+				addr, err := tokenengine.GetAddressFromScript(output.PkScript[:])
+				if err != nil {
+					log.Error("GetAddressFromScript is failed,", "error", err)
+				}
+				dagdb.saveOutputByAddr(addr.String(), tx.TxHash, i, output)
 			}
 		}
 	}
-
 	return nil
 }
 
-func (dagdb *DagDb) saveOutputByAddr(addr string, hash common.Hash, msgindex int, output modules.Output) error {
+func (dagdb *DagDb) saveOutputByAddr(addr string, hash common.Hash, msgindex int, output *modules.Output) error {
 	if hash == (common.Hash{}) {
 		return errors.New("empty tx hash.")
 	}
 	key := append(constants.AddrOutput_Prefix, []byte(addr)...)
 	key = append(key, []byte(hash.String())...)
-	if err := StoreBytes(dagdb.db, append(key, new(big.Int).SetInt64(int64(msgindex)).Bytes()...), output); err != nil {
-		return err
-	}
-	return nil
+	err := StoreBytes(dagdb.db, append(key, new(big.Int).SetInt64(int64(msgindex)).Bytes()...), output)
+	return err
 }
 
 func (dagdb *DagDb) updateAddrTransactions(addr string, hash common.Hash) error {

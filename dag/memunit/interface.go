@@ -27,6 +27,8 @@ import (
 
 type IMemDag interface {
 	Save(unit *modules.Unit) error
+	GetUnit(hash common.Hash) (*modules.Unit, error)
+	UpdateMemDag(unit *modules.Unit) error
 	Exists(uHash common.Hash) bool
 	Prune(assetId string, maturedUnitHash common.Hash) error
 	SwitchMainChain() error

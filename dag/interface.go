@@ -54,8 +54,9 @@ type IDag interface {
 	GetPrefix(prefix string) map[string][]byte
 	// CurrentHeader retrieves the head header from the local chain.
 	CurrentHeader() *modules.Header
-	GetTransactionByHash(hash common.Hash) (*modules.Transaction, error)
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
+	GetUnitTxsHash(hash common.Hash) ([]common.Hash, error)
+	GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error)
 	// InsertHeaderDag inserts a batch of headers into the local chain.
 	InsertHeaderDag([]*modules.Header, int) (int, error)
 	HasUnit(hash common.Hash) bool
@@ -114,4 +115,6 @@ type IDag interface {
 
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error)
+	// set groupsign
+	SetUnitGroupSign(sign []byte, unit_hash common.Hash) error
 }
