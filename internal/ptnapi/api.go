@@ -1915,15 +1915,18 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		//TODO use keystore
 		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
-		account, _ := MakeAddress(ks, addr.String())
-		privKey, _ := ks.DumpPrivateKey(account, "1")
-		return crypto.CompressPubkey(&privKey.PublicKey), nil
+		//account, _ := MakeAddress(ks, addr.String())
+		
+		return ks.GetPublicKey(addr)
+		//privKey, _ := ks.DumpPrivateKey(account, "1")
+		//return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 		account, _ := MakeAddress(ks, addr.String())
-		privKey, _ := ks.DumpPrivateKey(account, "1")
-		return crypto.Sign(hash, privKey)
+		//privKey, _ := ks.DumpPrivateKey(account, "1")
+		return ks.SignHash(account,hash)
+		//return crypto.Sign(hash, privKey)
 	}
 	var srawinputs []ptnjson.RawTxInput
 
