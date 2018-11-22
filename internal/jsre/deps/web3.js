@@ -5431,8 +5431,8 @@ var methods = function () {
     var signRawTransaction = new Method({
         name: 'signRawTransaction',
         call: 'ptn_signRawTransaction',
-        params: 1,
-        inputFormatter: [null]
+        params: 3,
+        inputFormatter: [null,null,null]
     });
 
     var sendRawTransaction = new Method({
