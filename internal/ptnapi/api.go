@@ -1925,7 +1925,6 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 		return crypto.Sign(hash, privKey)
 	}
 	var srawinputs []ptnjson.RawTxInput
-	var addr common.Address
 	var keys []string
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
