@@ -19,7 +19,9 @@
 package rwset
 
 import (
+	"bytes"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -32,6 +34,8 @@ type nsPubRwBuilder struct {
 	readMap     map[string]*KVRead
 	writeMap    map[string]*KVWrite
 	tokenPayOut []*modules.TokenPayOut
+	tokenSupply []*modules.TokenSupply
+	tokenDefine *modules.TokenDefine
 }
 
 func NewRWSetBuilder() *RWSetBuilder {
@@ -68,6 +72,23 @@ func (b *RWSetBuilder) GetTokenPayOut(ns string) []*modules.TokenPayOut {
 
 	return nsPubRwBuilder.tokenPayOut
 }
+func (b *RWSetBuilder) DefineToken(ns string, tokenType int32, define []byte) {
+	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
+	nsPubRwBuilder.tokenDefine = &modules.TokenDefine{TokenType: int(tokenType), TokenDefineJson: define}
+}
+func (b *RWSetBuilder) AddSupplyToken(ns string, assetId, uniqueId []byte, amt uint64) error {
+	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
+	if nsPubRwBuilder.tokenSupply == nil {
+		nsPubRwBuilder.tokenSupply = []*modules.TokenSupply{}
+	}
+	//TODO Devin 检查assetId，禁止创建PTN BTC ETH等系统定义的Token
+	if bytes.Equal(assetId, modules.PTNCOIN.Bytes()) {
+		return errors.New("Forbidden to supply System token PTN")
+	}
+	nsPubRwBuilder.tokenSupply = append(nsPubRwBuilder.tokenSupply, &modules.TokenSupply{AssetId: assetId, UniqueId: uniqueId, Amount: amt})
+	return nil
+}
+
 func (b *RWSetBuilder) getOrCreateNsPubRwBuilder(ns string) *nsPubRwBuilder {
 	nsPubRwBuilder, ok := b.pubRwBuilderMap[ns]
 	if !ok {
@@ -84,5 +105,7 @@ func newNsPubRwBuilder(namespace string) *nsPubRwBuilder {
 		make(map[string]*KVRead),
 		make(map[string]*KVWrite),
 		[]*modules.TokenPayOut{},
+		[]*modules.TokenSupply{},
+		nil,
 	}
 }

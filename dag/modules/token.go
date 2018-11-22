@@ -22,10 +22,17 @@ package modules
 
 import "time"
 
+//定义一种全新的Token
+type TokenDefine struct {
+	TokenDefineJson []byte
+	TokenType       int //0 ERC20  1 ERC721   2 VoteToken
+}
+
+//增发一种已经定义好的Token
 type TokenSupply struct {
-	TokenDefineJson string
-	AssetId         string
-	TokenType       int
+	UniqueId []byte
+	AssetId  []byte
+	Amount   uint64
 }
 
 //同质化通证，比如ERC20
