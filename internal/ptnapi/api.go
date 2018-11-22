@@ -1895,7 +1895,7 @@ func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error
 
 //sign rawtranscation
 //create raw transction
-func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string) (interface{}, error) {
+func (s *PublicTransactionPoolAPI) SignRawTransaction(params string,password string, duration *uint64) (interface{}, error) {
 	var signTransactionParams SignTransactionParams
 	err := json.Unmarshal([]byte(params), &signTransactionParams)
 	if err != nil {
@@ -1929,7 +1929,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 		//return crypto.Sign(hash, privKey)
 	}
 	var srawinputs []ptnjson.RawTxInput
-
+    var addr common.Address
 	var keys []string
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
@@ -1950,10 +1950,10 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 			PkScriptHex := trimx(uvu.PkScriptHex)
 			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
 			srawinputs = append(srawinputs, input)
-			//addr, errr := tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
-			//if errr != nil {
-			//	fmt.Println("get addr by outpoint is err")
-			//}
+			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
+			if err != nil {
+				fmt.Println("get addr by outpoint is err")
+			}
 		}
 		/*for _, txout := range payload.Outputs {
 			err = tokenengine.ScriptValidate(txout.PkScript, tx, 0, 0)
@@ -1961,6 +1961,20 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 			}
 		}*/
 	}
+	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	var d time.Duration
+	if duration == nil {
+		d = 300 * time.Second
+	} else if *duration > max {
+		return false, errors.New("unlock duration too large")
+	} else {
+		d = time.Duration(*duration) * time.Second
+	}
+	ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
+	if err != nil {
+	    fmt.Println("get addr by outpoint is err")
+    }
 	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &srawinputs, &keys, ptnjson.String("ALL"))
 	result, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn)
 	fmt.Println(result)
