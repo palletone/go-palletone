@@ -38,8 +38,9 @@ func ValidateTxSig(tx *modules.Transaction, ks *keystore.KeyStore) bool {
 
 	if len(sigs) > 0 {
 		for i := 0; i < len(sigs); i++ {
+			fmt.Printf("sig[%v]-pubkey[%v]--tx[%v]", sigs[i].Signature, sigs[i].PubKey, tmpTx)
 			if keystore.VerifyTXWithPK(sigs[i].Signature, tmpTx, sigs[i].PubKey) != true {
-				log.Error("ValidateTxSig", "VerifyTXWithPK sig[%d] fail", i)
+				log.Error("ValidateTxSig", "VerifyTXWithPK sig fail")
 				return false
 			}
 		}
