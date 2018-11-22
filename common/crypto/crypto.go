@@ -23,15 +23,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"math/big"
-	"os"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/math"
-
+	"io"
+	"io/ioutil"
+	"math/big"
+	"os"
 )
 
 var (
@@ -78,27 +77,30 @@ func Keccak512(data ...[]byte) []byte {
 func ToECDSA(d []byte) (*ecdsa.PrivateKey, error) {
 	return toECDSA(d, true)
 }
+
 //Export private key to a WIF format with compress
-func ToWIF(prvKey []byte) string{
-	return base58.CheckEncode(append( prvKey,0x01),128)
+func ToWIF(prvKey []byte) string {
+	return base58.CheckEncode(append(prvKey, 0x01), 128)
 }
-func PrvKeyToWIF(prvKey *ecdsa.PrivateKey) string{
-	return ToWIF( FromECDSA(prvKey))
+func PrvKeyToWIF(prvKey *ecdsa.PrivateKey) string {
+	return ToWIF(FromECDSA(prvKey))
 }
+
 //Import a WIF string to get a private key
-func FromWIF(wif string) (*ecdsa.PrivateKey,error){
-	data,version,err:= base58.CheckDecode(wif)
-	if err!=nil{
-		return nil,err
+func FromWIF(wif string) (*ecdsa.PrivateKey, error) {
+	data, version, err := base58.CheckDecode(wif)
+	if err != nil {
+		return nil, err
 	}
-	if version!= 128{
-		return nil,errors.New("Invalid base58 version for WIF,version must 128")
+	if version != 128 {
+		return nil, errors.New("Invalid base58 version for WIF,version must 128")
 	}
-	if data[32]!=0x01{
-		return nil,errors.New("Must use a compress key")
+	if data[32] != 0x01 {
+		return nil, errors.New("Must use a compress key")
 	}
-	return toECDSA( data[0:32],true)
+	return toECDSA(data[0:32], true)
 }
+
 // ToECDSAUnsafe blindly converts a binary blob to a private key. It should almost
 // never be used unless you are sure the input is valid and want to avoid hitting
 // errors due to bad origin encoding (0 prefixes cut off).
@@ -150,6 +152,7 @@ func ToECDSAPub(pub []byte) *ecdsa.PublicKey {
 	return &ecdsa.PublicKey{Curve: S256(), X: x, Y: y}
 }
 
+// Deprecated: Please use crypto.CompressPubkey to get []byte pubkey
 func FromECDSAPub(pub *ecdsa.PublicKey) []byte {
 	if pub == nil || pub.X == nil || pub.Y == nil {
 		return nil
@@ -220,6 +223,7 @@ func PubkeyBytesToAddress(pubKeyCompressBytes []byte) common.Address {
 	pubKeyHash := Hash160(pubKeyCompressBytes)
 	return common.NewAddress(pubKeyHash, common.PublicKeyHash)
 }
+
 //This is for P2SH address, start with P3
 func ScriptToAddress(redeemScript []byte) common.Address {
 	scriptHash := Hash160(redeemScript)

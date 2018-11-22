@@ -347,7 +347,8 @@ func (s *PrivateAccountAPI) ImportRawKey(privkey string, password string) (commo
 // UnlockAccount will unlock the account associated with the given address with
 // the given password for duration seconds. If duration is nil it will use a
 // default of 300 seconds. It returns an indication if the account was unlocked.
-func (s *PrivateAccountAPI) UnlockAccount(addr common.Address, password string, duration *uint64) (bool, error) {
+func (s *PrivateAccountAPI) UnlockAccount(addrStr string, password string, duration *uint64) (bool, error) {
+	addr, _ := common.StringToAddress(addrStr)
 	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
 	var d time.Duration
 	if duration == nil {
@@ -1914,21 +1915,21 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		//TODO use keystore
 		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
-		account, _ := MakeAddress(ks, addr.String())
-		privKey, _ := ks.DumpPrivateKey(account, "1")
-		return crypto.CompressPubkey(&privKey.PublicKey), nil
+		//account, _ := MakeAddress(ks, addr.String())
+		
+		return ks.GetPublicKey(addr)
+		//privKey, _ := ks.DumpPrivateKey(account, "1")
+		//return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 		account, _ := MakeAddress(ks, addr.String())
-		privKey, _ := ks.DumpPrivateKey(account, "1")
-		return crypto.Sign(hash, privKey)
+		//privKey, _ := ks.DumpPrivateKey(account, "1")
+		return ks.SignHash(account,hash)
+		//return crypto.Sign(hash, privKey)
 	}
 	var srawinputs []ptnjson.RawTxInput
-<<<<<<< HEAD
-	//var addr common.Address
-=======
->>>>>>> f0ad5f42d2bb8448fdd8a278528fb83fe51b64aa
+
 	var keys []string
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
