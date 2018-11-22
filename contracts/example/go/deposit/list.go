@@ -81,20 +81,20 @@ func addJuryList(invokeAddr common.Address, stub shim.ChaincodeStubInterface) {
 func handleMember(who string, invokeFromAddr common.Address, stub shim.ChaincodeStubInterface) {
 	switch {
 	case who == "Mediator":
-		listBytes, _ := stub.GetState(who)
+		listBytes, _ := stub.GetState("MediatorList")
 		mediatorList := []common.Address{}
 		_ = json.Unmarshal(listBytes, &mediatorList)
-		move(who, mediatorList, invokeFromAddr, stub)
+		move("MediatorList", mediatorList, invokeFromAddr, stub)
 	case who == "Jury":
-		listBytes, _ := stub.GetState(who)
+		listBytes, _ := stub.GetState("JuryList")
 		juryList := []common.Address{}
 		_ = json.Unmarshal(listBytes, &juryList)
-		move(who, juryList, invokeFromAddr, stub)
+		move("JuryList", juryList, invokeFromAddr, stub)
 	case who == "Developer":
-		listBytes, _ := stub.GetState(who)
+		listBytes, _ := stub.GetState("DeveloperList")
 		developerList := []common.Address{}
 		_ = json.Unmarshal(listBytes, &developerList)
-		move(who, developerList, invokeFromAddr, stub)
+		move("DeveloperList", developerList, invokeFromAddr, stub)
 	}
 }
 

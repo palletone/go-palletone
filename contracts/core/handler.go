@@ -304,7 +304,7 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 		var payloadBytes []byte
 		var err error
 		systemConfig := &core.SystemConfig{
-			FoundationAddress:         "P1BzFaZSu4YbSEhHrmf9v8rgR8DDrcXxgqh",
+			FoundationAddress:         "P1M9qH8yxyL2P2AvCnMF2eVpqLWVVXD5HQk",
 			DepositAmountForMediator:  2000,
 			DepositAmountForJury:      1000,
 			DepositAmountForDeveloper: 800,
@@ -891,14 +891,13 @@ func (handler *Handler) handlePayOutToken(msg *pb.ChaincodeMessage) {
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			return
 		}
-		chaincodeID := handler.getCCRootName()
-		chaincodeLogger.Debugf("[%s] getting balance for chaincode %s, key %s, channel %s",
-			shorttxid(msg.Txid), chaincodeID, payout.Asset, txContext.chainID)
-
+		//
 		asset := &modules.Asset{}
 		asset.SetBytes(payout.Asset)
+		chaincodeID := handler.getCCRootName()
+		chaincodeLogger.Debugf("[%s] getting balance for chaincode %s, key %#v, channel %s",
+			shorttxid(msg.Txid), chaincodeID, asset, txContext.chainID)
 		err := txContext.txsimulator.PayOutToken(chaincodeID, payout.Address, asset, payout.Amount, payout.Locktime)
-
 		if err != nil {
 			// Send error msg back to chaincode. GetState will not trigger event
 			payload := []byte(err.Error())
