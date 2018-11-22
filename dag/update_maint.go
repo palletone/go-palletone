@@ -69,8 +69,9 @@ func (dag *Dag) updateMediatorSchedule() {
 	dgp := dag.GetDynGlobalProp()
 	ms := dag.GetMediatorSchl()
 
-	ms.UpdateMediatorSchedule(gp, dgp)
-	dag.SaveMediatorSchl(ms, false)
+	if ms.UpdateMediatorSchedule(gp, dgp) {
+		dag.SaveMediatorSchl(ms, false)
+	}
 
 	return
 }
@@ -111,9 +112,9 @@ func (dag *Dag) updateLastIrreversibleUnit() {
 }
 
 func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
-	gp := dag.GetGlobalProp()
 	dgp := dag.GetDynGlobalProp()
 
+	// Are we at the maintenance interval?
 	if dgp.NextMaintenanceTime > nextUnit.Timestamp() {
 		return
 	}
@@ -123,6 +124,7 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	// todo , 开始vss协议
 
 	// 更新下一次维护时间
+	gp := dag.GetGlobalProp()
 	nextMaintenanceTime := dgp.NextMaintenanceTime
 	maintenanceInterval := int64(gp.ChainParameters.MaintenanceInterval)
 	if nextUnit.NumberU64() == 1 {
@@ -153,5 +155,5 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 }
 
 func (dag *Dag) updateActiveMediators() {
-	// todo , 统计投票， 选出活跃mediator
+	// todo , 统计投票， 选出活跃mediator, 并更新
 }

@@ -53,40 +53,40 @@ type producer interface {
 }
 
 // @author Albert·Gou
-func (self *ProtocolManager) newUnitBroadcastLoop() {
+func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 	for {
 		select {
-		case event := <-self.newUnitCh:
+		case event := <-self.newProducedUnitCh:
 			// todo 待合并
-			//self.BroadcastNewUnit(event.Unit)
+			//self.BroadcastNewProducedUnit(event.Unit)
 
 			// appended by wangjiyou
 			self.BroadcastUnit(event.Unit, true, needBroadcastMediator)
 			self.BroadcastUnit(event.Unit, false, noBroadcastMediator)
 
 			// Err() channel will be closed when unsubscribing.
-		case <-self.newUnitSub.Err():
+		case <-self.newProducedUnitSub.Err():
 			return
 		}
 	}
 }
 
 // @author Albert·Gou
-// BroadcastNewUnit will propagate a new produced unit to all of active mediator's peers
-//func (pm *ProtocolManager) BroadcastNewUnit(newUnit *modules.Unit) {
-//	peers := pm.GetActiveMediatorPeers()
-//	for _, peer := range peers {
-//		if peer == nil {
-//			pm.producer.ToUnitTBLSSign(newUnit)
-//			continue
-//		}
-//
-//		err := peer.SendNewProducedUnit(newUnit)
-//		if err != nil {
-//			log.Error(err.Error())
-//		}
-//	}
-//}
+// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
+func (pm *ProtocolManager) BroadcastNewProducedUnit(newUnit *modules.Unit) {
+	peers := pm.GetActiveMediatorPeers()
+	for _, peer := range peers {
+		if peer == nil {
+			pm.producer.ToUnitTBLSSign(newUnit)
+			continue
+		}
+
+		err := peer.SendNewProducedUnit(newUnit)
+		if err != nil {
+			log.Error(err.Error())
+		}
+	}
+}
 
 // @author Albert·Gou
 func (self *ProtocolManager) sigShareTransmitLoop() {
@@ -329,10 +329,10 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 
 // SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
 // @author Albert·Gou
-//func (p *peer) SendNewProducedUnit(newUnit *modules.Unit) error {
-//	p.knownBlocks.Add(newUnit.UnitHash)
-//	return p2p.Send(p.rw, NewUnitMsg, newUnit)
-//}
+func (p *peer) SendNewProducedUnit(newUnit *modules.Unit) error {
+	p.knownBlocks.Add(newUnit.UnitHash)
+	return p2p.Send(p.rw, NewUnitMsg, newUnit)
+}
 
 // @author Albert·Gou
 //func (p *peer) SendVSSDeal(deal *vssMsg) error {

@@ -77,8 +77,8 @@ type MediatorPlugin struct {
 	mediators map[common.Address]*MediatorAccount
 
 	// 新生产unit的事件订阅
-	newUnitFeed  event.Feed              // 订阅的时候自动初始化一次
-	newUnitScope event.SubscriptionScope // 零值已准备就绪待用
+	newProducedUnitFeed  event.Feed              // 订阅的时候自动初始化一次
+	newProducedUnitScope event.SubscriptionScope // 零值已准备就绪待用
 
 	// dkg 初始化 相关
 	suite *bn256.Suite
@@ -252,7 +252,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 
 func (mp *MediatorPlugin) Stop() error {
 	close(mp.quit)
-	mp.newUnitScope.Close()
+	mp.newProducedUnitScope.Close()
 	log.Debug("mediator plugin stopped")
 
 	return nil

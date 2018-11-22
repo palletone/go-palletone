@@ -59,16 +59,16 @@ func NewMediatorSchl() *MediatorSchedule {
 }
 
 // 洗牌算法，更新mediator的调度顺序
-func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *DynamicGlobalProperty) {
+func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *DynamicGlobalProperty) bool {
 	aSize := uint64(len(gp.ActiveMediators))
 	if aSize == 0 {
 		log.Error("The current number of active mediators is 0!")
-		return
+		return false
 	}
 
 	// 1. 判断是否到达洗牌时刻
 	if dgp.HeadUnitNum%aSize != 0 {
-		return
+		return false
 	}
 
 	// 2. 清除CurrentShuffledMediators原来的空间，重新分配空间
@@ -98,6 +98,8 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 		ms.CurrentShuffledMediators[i], ms.CurrentShuffledMediators[j] =
 			ms.CurrentShuffledMediators[j], ms.CurrentShuffledMediators[i]
 	}
+
+	return true
 }
 
 /**
