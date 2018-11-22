@@ -375,7 +375,7 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 	// }
 	// tx2.TxHash = tx2.Hash()
 	invokeInfo := unit.InvokeInfo{}
-	if false {
+	if len(tx.TxMessages) > 0 {
 		msg0 := tx.TxMessages[0].Payload.(*unit.PaymentPayload)
 		invokeAddr, _ := idag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
 		invokeTokens := unit.InvokeTokens{}
@@ -394,7 +394,7 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 
 		invokeInfoBytes, _ := json.Marshal(invokeInfo)
 		fullArgs = append(fullArgs, invokeInfoBytes)
-	}else{
+	} else {
 		invokeInfoBytes, _ := json.Marshal(invokeInfo)
 		fullArgs = append(fullArgs, invokeInfoBytes)
 	}
