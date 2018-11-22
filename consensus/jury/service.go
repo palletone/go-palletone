@@ -35,12 +35,15 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	cm "github.com/palletone/go-palletone/dag/common"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/core/accounts"
 )
 
 type PeerType int
 
 const (
-	_ PeerType = iota
+	_         PeerType = iota
 	TUnknow
 	TJury
 	TMediator
@@ -100,9 +103,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 	}
 	var address common.Address
 	localmediators := ptn.GetLocalMediators()
-	if len(localmediators) > 0 {
-		address = localmediators[0]
-	}
+
 	p := &Processor{
 		name:     "conract processor",
 		ptn:      ptn,
@@ -110,6 +111,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 		contract: contract,
 		quit:     make(chan struct{}),
 		mtx:      make(map[common.Hash]*contractTx),
+		local:    localmediators,
 	}
 
 	log.Info("NewContractProcessor ok", "mediator_address", address.String())
