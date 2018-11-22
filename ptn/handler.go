@@ -315,7 +315,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	// append by Albert·Gou
 	// broadcast new unit produced by mediator
 	pm.newProducedUnitCh = make(chan mp.NewProducedUnitEvent)
-	pm.newProducedUnitSub = pm.producer.SubscribeNewUnitEvent(pm.newProducedUnitCh)
+	pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
 	go pm.newProducedUnitBroadcastLoop()
 
 	// append by Albert·Gou

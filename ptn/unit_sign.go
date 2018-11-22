@@ -33,7 +33,7 @@ import (
 type producer interface {
 	// SubscribeNewUnitEvent should return an event subscription of
 	// NewUnitEvent and send events to the given channel.
-	SubscribeNewUnitEvent(ch chan<- mp.NewUnitEvent) event.Subscription
+	SubscribeNewProducedUnitEvent(ch chan<- mp.NewProducedUnitEvent) event.Subscription
 	// UnitBLSSign is to TBLS sign the unit
 	ToUnitTBLSSign(newUnit *modules.Unit) error
 
