@@ -20,30 +20,27 @@ package jury
 
 import (
 	"fmt"
-	"time"
-	"sync"
+	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/dedis/kyber"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/dag/modules"
+	"sync"
+	"time"
 
-	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core/gen"
-	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/common/p2p"
 	"bytes"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/core/gen"
 	cm "github.com/palletone/go-palletone/dag/common"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"github.com/palletone/go-palletone/core/accounts"
 )
 
 type PeerType int
 
 const (
-	_         PeerType = iota
+	_ PeerType = iota
 	TUnknow
 	TJury
 	TMediator
@@ -101,17 +98,21 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 	if ptn == nil || dag == nil {
 		return nil, errors.New("NewContractProcessor, param is nil")
 	}
+	var address common.Address
+	localmediators := ptn.GetLocalMediators()
+	if len(localmediators) > 0 {
+		address = localmediators[0]
+	}
 	p := &Processor{
 		name:     "conract processor",
 		ptn:      ptn,
 		dag:      dag,
 		contract: contract,
-		local:    ptn.GetLocalMediators(), //dag.GetActiveMediators()[0],//todo
 		quit:     make(chan struct{}),
 		mtx:      make(map[common.Hash]*contractTx),
 	}
 
-	log.Info("NewContractProcessor ok")
+	log.Info("NewContractProcessor ok", "mediator_address", address.String())
 	log.Info("NewContractProcessor", "info:%v", p.local)
 	return p, nil
 }

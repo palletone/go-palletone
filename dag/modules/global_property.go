@@ -48,7 +48,7 @@ type DynamicGlobalProperty struct {
 
 	// CurrentMediator *common.Address // 当前生产单元的mediator, 用于判断是否连续同一个mediator生产单元
 
-	// NextMaintenanceTime time.Time // 下一次系统维护时间
+	NextMaintenanceTime int64 // 下一次系统维护时间
 
 	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == UnitNum + 丢失的槽数量
 	CurrentASlot uint64
@@ -130,6 +130,7 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 	return &DynamicGlobalProperty{
 		HeadUnitNum:             0,
 		HeadUnitHash:            common.Hash{},
+		NextMaintenanceTime:     0,
 		CurrentASlot:            0,
 		LastIrreversibleUnitNum: 0,
 	}

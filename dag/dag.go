@@ -110,6 +110,10 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 }
 
 func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
+	memUnit := d.GetCurrentMemUnit(assetId, 0)
+	if memUnit != nil {
+		return memUnit
+	}
 	return d.CurrentUnit()
 }
 
@@ -131,6 +135,14 @@ func (d *Dag) HasUnit(hash common.Hash) bool {
 	return u != nil
 }
 
+// GetMemUnitbyHash: get unit from memdag
+func (d *Dag) GetMemUnitbyHash(hash common.Hash) (*modules.Unit, error) {
+
+	unit, err := d.Memdag.GetUnit(hash)
+	return unit, err
+}
+
+// GetUnitByHash: get unit from dagdb
 func (d *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	return d.dagdb.GetUnit(hash)
 }
@@ -1182,6 +1194,49 @@ func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
 func (d *Dag) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
 	return d.statedb.GetCurrentChainIndex(assetId)
 }
+
 func (d *Dag) SaveChainIndex(index *modules.ChainIndex) error {
 	return d.statedb.SaveChainIndex(index)
+}
+
+func (d *Dag) SetUnitGroupSign(sign []byte, unit_hash common.Hash) error {
+	if sign == nil {
+		return errors.New("group sign is null.")
+	}
+	// get unit by the hash
+	unit, err := d.GetMemUnitbyHash(unit_hash)
+	if err != nil {
+		log.Debug("GetMemUnitbyHash falied. ", "error", err)
+		return err
+	}
+
+	unit.SetGroupSign(sign[:])
+
+	// 群签之后， 更新memdag
+	go d.Memdag.UpdateMemDag(unit)
+
+	// 将缓存池utxo更新到utxodb中
+	go d.UpdateUtxosByUnit(unit.Hash())
+
+	// TODO 状态更新。
+	// 当前最新区块高度是否小于此unit高度。
+	if curUnit := d.GetCurrentUnit(unit.UnitHeader.ChainIndex().AssetID); curUnit != nil {
+		if curUnit.UnitHeader.Index() < unit.UnitHeader.Index() {
+			// update state
+			d.dagdb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
+			d.dagdb.PutHeadHeaderHash(unit.UnitHash)
+			d.dagdb.PutHeadUnitHash(unit.UnitHash)
+			d.dagdb.PutHeadFastUnitHash(unit.UnitHash)
+		}
+	}
+	return nil
+}
+func (d *Dag) UpdateUtxosByUnit(hash common.Hash) error {
+	d.Mutex.Lock()
+	defer d.Mutex.Unlock()
+	utxos, has := d.utxos_cache[hash]
+	if !has {
+		return errors.New("the hash is not exist in utxoscache.")
+	}
+	return d.utxodb.SaveUtxoView(utxos)
 }

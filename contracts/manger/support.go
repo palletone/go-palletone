@@ -110,6 +110,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 	}
 	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
 	invoke := &modules.ContractInvokeResult{
+		FunctionName: string(args[1]),
 		ContractId:   deployId,
 		Args:         args,
 		Excutiontime: timeout,
@@ -124,7 +125,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 			Version: val.GetVersion(),
 		}
 		invoke.ReadSet = append(invoke.ReadSet, rd)
-		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[0], val.GetKey(), *val.GetVersion())
+		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[1], val.GetKey(), *val.GetVersion())
 	}
 	for idx, val := range wt {
 		rd := unit.ContractWriteSet{
@@ -133,7 +134,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 			IsDelete: val.GetIsDelete(),
 		}
 		invoke.WriteSet = append(invoke.WriteSet, rd)
-		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[0], val.GetKey(), val.GetValue(), val.GetIsDelete())
+		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[1], val.GetKey(), val.GetValue(), val.GetIsDelete())
 	}
 
 	return invoke, nil
@@ -166,7 +167,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid stri
 			Version: val.GetVersion(),
 		}
 		deploy.ReadSet = append(deploy.ReadSet, rd)
-		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[0], val.GetKey(), *val.GetVersion())
+		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[1], val.GetKey(), *val.GetVersion())
 	}
 	for idx, val := range wt {
 		rd := unit.ContractWriteSet{
@@ -175,7 +176,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid stri
 			IsDelete: val.GetIsDelete(),
 		}
 		deploy.WriteSet = append(deploy.WriteSet, rd)
-		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[0], val.GetKey(), val.GetValue(), val.GetIsDelete())
+		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[1], val.GetKey(), val.GetValue(), val.GetIsDelete())
 	}
 
 	return deploy, nil

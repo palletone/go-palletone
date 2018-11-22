@@ -32,9 +32,9 @@ import (
 
 func mediatorKey(address common.Address) []byte {
 	//key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes()...)
-	key := fmt.Sprintf("%s%s", constants.MEDIATOR_INFO_PREFIX, address.String())
+	key := append(constants.MEDIATOR_INFO_PREFIX, address.Str()...)
 
-	return []byte(key)
+	return key
 }
 
 // only for serialization
@@ -43,7 +43,7 @@ type MediatorInfo struct {
 	InitPartPub          string
 	Node                 string
 	Url                  string
-	TotalMissed          uint32
+	TotalMissed          uint64
 	LastConfirmedUnitNum uint32
 }
 

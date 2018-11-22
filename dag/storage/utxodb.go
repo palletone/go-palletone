@@ -84,33 +84,32 @@ func (utxodb *UtxoDb) SaveUtxoOutpoint(key []byte, outpoint *modules.OutPoint) e
 func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error {
 	for outpoint, utxo := range view {
 		// No need to update the database if the utxo was not modified.
-		if utxo == nil || utxo.IsModified() {
+		if utxo == nil { // || utxo.IsModified()
 			continue
 		} else {
 			key := outpoint.ToKey()
 			address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
-			// Remove the utxo if it is spent
-			if utxo.IsSpent() {
-				err := utxodb.db.Delete(key)
-				if err != nil {
-					return err
-				}
-				// delete index , key  outpoint .
-				outpoint_key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
-				utxodb.db.Delete(append(outpoint_key, outpoint.Hash().Bytes()...))
+			// // Remove the utxo if it is spent
+			// if utxo.IsSpent() {
+			// 	err := utxodb.db.Delete(key)
+			// 	if err != nil {
+			// 		return err
+			// 	}
+			// 	// delete index , key  outpoint .
+			// 	outpoint_key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
+			// 	utxodb.db.Delete(append(outpoint_key, outpoint.Hash().Bytes()...))
 
-				continue
-			} else {
-				val, err := rlp.EncodeToBytes(utxo)
-				if err != nil {
-					return err
-				}
-				if err := utxodb.db.Put(key, val); err != nil {
-					return err
-				} else { // save utxoindex and  addr and key
-					outpoint_key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
-					utxodb.SaveUtxoOutpoint(append(outpoint_key, outpoint.Hash().Bytes()...), &outpoint)
-				}
+			// 	continue
+			// } else {
+			val, err := rlp.EncodeToBytes(utxo)
+			if err != nil {
+				return err
+			}
+			if err := utxodb.db.Put(key, val); err != nil {
+				return err
+			} else { // save utxoindex and  addr and key
+				outpoint_key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
+				utxodb.SaveUtxoOutpoint(append(outpoint_key, outpoint.Hash().Bytes()...), &outpoint)
 			}
 		}
 	}
