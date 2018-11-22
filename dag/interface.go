@@ -33,6 +33,8 @@ import (
 )
 
 type IDag interface {
+	Close()
+
 	//common geter
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte

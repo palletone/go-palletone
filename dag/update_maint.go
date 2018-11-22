@@ -24,6 +24,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -111,6 +112,13 @@ func (dag *Dag) updateLastIrreversibleUnit() {
 	}
 }
 
+type ChainMaintainEvent struct {
+}
+
+func (dag *Dag) SubscribeChainMaintainEvent(ch chan<- ChainMaintainEvent) event.Subscription {
+	return dag.chainMaintainScope.Track(dag.chainMaintainFeed.Subscribe(ch))
+}
+
 func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	dgp := dag.GetDynGlobalProp()
 
@@ -121,7 +129,8 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 
 	dag.updateActiveMediators()
 
-	// todo , 开始vss协议
+	// 通知开始vss协议
+	dag.chainMaintainFeed.Send(ChainMaintainEvent{})
 
 	// 更新下一次维护时间
 	gp := dag.GetGlobalProp()

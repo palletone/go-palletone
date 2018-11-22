@@ -48,7 +48,7 @@ func newChainBanner(dag iDag) {
 	}
 }
 
-func (mp *MediatorPlugin) SubscribeNewUnitEvent(ch chan<- NewProducedUnitEvent) event.Subscription {
+func (mp *MediatorPlugin) SubscribeNewProducedUnitEvent(ch chan<- NewProducedUnitEvent) event.Subscription {
 	return mp.newProducedUnitScope.Track(mp.newProducedUnitFeed.Subscribe(ch))
 }
 

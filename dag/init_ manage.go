@@ -55,6 +55,10 @@ func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 	return true
 }
 
+func (d *Dag) Close() {
+	d.chainMaintainScope.Close()
+}
+
 // @author Albert·Gou
 func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool {
 	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
