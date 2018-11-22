@@ -471,7 +471,7 @@ func (ks *KeyStore) DumpPrivateKey(a accounts.Account, passphrase string) (priva
 	if err != nil {
 		return nil, err
 	}
-	return key.PrivateKey,nil
+	return key.PrivateKey, nil
 
 }
 
@@ -542,7 +542,7 @@ func (ks *KeyStore) GetPublicKey(address common.Address) ([]byte, error) {
 	if !found {
 		return nil, ErrLocked
 	}
-	return crypto.FromECDSAPub(&unlockedKey.PrivateKey.PublicKey), nil
+	return crypto.CompressPubkey(&unlockedKey.PrivateKey.PublicKey), nil
 }
 
 func (ks *KeyStore) SigUnit(unitHeader *modules.Header, address common.Address) ([]byte, error) {
