@@ -547,9 +547,9 @@ func (stub *ChaincodeStub) GetTokenBalance(address string, token *modules.Asset)
 }
 
 //将合约上锁定的某种Token支付出去
-func (stub *ChaincodeStub) PayOutToken(addr string, token modules.Asset, amount uint64, lockTime uint32) error {
+func (stub *ChaincodeStub) PayOutToken(addr string, invokeTokens *modules.InvokeTokens, lockTime uint32) error {
 	//TODO Devin return stub.handler.handlePayOutToken(  stub.ContractId, stub.ChannelId, stub.TxID)
-	return nil
+	return stub.handler.handlePayOutToken("", addr, invokeTokens, lockTime, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
 // ------------- Logging Control and Chaincode Loggers ---------------
