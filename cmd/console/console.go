@@ -204,10 +204,10 @@ func (c *Console) init(preload []string) error {
 		return err
 	}
 	if obj := ptn.Object(); obj != nil { // make sure the admin api is enabled over the interface
-		if _, err = c.jsre.Run(`jeth.SignRawTransaction = ptn.SignRawTransaction;`); err != nil {
-				return fmt.Errorf("ptn.SignRawTransaction: %v", err)
+		if _, err = c.jsre.Run(`jeth.signRawTransaction = ptn.signRawTransaction;`); err != nil {
+				return fmt.Errorf("ptn.signRawTransaction: %v", err)
 		}
-		obj.Set("SignRawTransaction", bridge.SignRawTransaction)
+		obj.Set("signRawTransaction", bridge.SignRawTransaction)
 	}
 	// Preload any JavaScript files before starting the console
 	for _, path := range preload {

@@ -200,7 +200,7 @@ func (b *bridge) SignRawTransaction(call otto.FunctionCall) (response otto.Value
 		duration = call.Argument(2)
 	}
 	// Send the request to the backend and return
-	val, err := call.Otto.Call("jeth.SignRawTransaction", nil, rawtx, passwd, duration)
+	val, err := call.Otto.Call("jeth.signRawTransaction", nil, rawtx, passwd, duration)
 	if err != nil {
 		throwJSException(err.Error())
 	}
