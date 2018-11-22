@@ -1762,7 +1762,7 @@ func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s 
 }
 
 //sign rawtranscation
-func SignRawTransaction(icmd interface{},pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign) (interface{}, error) {
+func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign) (interface{}, error) {
 	cmd := icmd.(*ptnjson.SignRawTransactionCmd)
 	serializedTx, err := decodeHexStr(cmd.RawTx)
 	if err != nil {
@@ -1853,7 +1853,7 @@ func SignRawTransaction(icmd interface{},pubKeyFn tokenengine.AddressGetPubKey, 
 	//		}
 	//	}
 	//}
-	
+
 	var signErrs []common.SignatureError
 	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, pubKeyFn, hashFn, 0)
 	if err != nil {
@@ -1922,8 +1922,6 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 		account, _ := MakeAddress(ks, addr.String())
 		privKey, _ := ks.DumpPrivateKey(account, "1")
-		//wif := crypto.ToWIF(prvKey)
-		//key := strings.TrimSpace(wif)
 		return crypto.Sign(hash, privKey)
 	}
 	var srawinputs []ptnjson.RawTxInput
@@ -1948,33 +1946,19 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 			PkScriptHex := trimx(uvu.PkScriptHex)
 			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
 			srawinputs = append(srawinputs, input)
-
-			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
-			if err != nil {
-				fmt.Println("get addr by outpoint is err")
-			}
+			//addr, errr := tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
+			//if errr != nil {
+			//	fmt.Println("get addr by outpoint is err")
+			//}
 		}
 		/*for _, txout := range payload.Outputs {
 			err = tokenengine.ScriptValidate(txout.PkScript, tx, 0, 0)
 			if err != nil {
 			}
 		}*/
-		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
-		account, _ := MakeAddress(ks, addr.String())
-		prvKey, _ := ks.DumpKey(account, "1")
-		wif := crypto.ToWIF(prvKey)
-		key := strings.TrimSpace(wif)
-		keys = append(keys, key)
-		fmt.Printf("Your private key hex is : {%x}, WIF is {%s}\n", prvKey, wif)
-	}
-	if len(srawinputs) == 0 {
-		return "", nil
-	}
-	if len(keys) == 0 {
-		return "", nil
 	}
 	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &srawinputs, &keys, ptnjson.String("ALL"))
-	result, _ := SignRawTransaction(newsign,getPubKeyFn,getSignFn)
+	result, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn)
 	fmt.Println(result)
 	return result, nil
 }
