@@ -546,6 +546,16 @@ func (stub *ChaincodeStub) GetTokenBalance(address string, token *modules.Asset)
 	return stub.handler.handleGetTokenBalance(address, token, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
+func (stub *ChaincodeStub) DefineToken(tokenType byte, define []byte) error {
+	return stub.handler.handleDefineToken(tokenType, define, stub.ContractId, stub.ChannelId, stub.TxID)
+}
+
+//增发一种之前已经定义好的Token
+//如果是ERC20增发，则uniqueId为空，如果是ERC721增发，则必须指定唯一的uniqueId
+func (stub *ChaincodeStub) SupplyToken(assetId []byte, uniqueId []byte, amt uint64) error {
+	return stub.handler.handleSupplyToken(assetId, uniqueId, amt, stub.ContractId, stub.ChannelId, stub.TxID)
+}
+
 //将合约上锁定的某种Token支付出去
 func (stub *ChaincodeStub) PayOutToken(addr string, invokeTokens *modules.InvokeTokens, lockTime uint32) error {
 	//TODO Devin return stub.handler.handlePayOutToken(  stub.ContractId, stub.ChannelId, stub.TxID)

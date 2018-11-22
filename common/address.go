@@ -146,10 +146,16 @@ func IsHexAddress(s string) bool {
 func (a Address) Str() string {
 	return "P" + base58.CheckEncode(a[0:20], byte(a[20]))
 }
+
+//Return account 20 bytes without address type
 func (a Address) Bytes() []byte {
 	return a[0:20]
 }
 
+//Return address all 21 bytes, you can use SetBytes function to get Address object
+func (a Address) Bytes21() []byte {
+	return a[:]
+}
 func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a.Bytes()) }
 func (a Address) Hash() Hash    { return BytesToHash(a.Bytes()) }
 func (a Address) Hex() string   { return fmt.Sprintf("0x%x", a.Bytes()) }

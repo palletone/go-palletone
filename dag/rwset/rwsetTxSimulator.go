@@ -222,3 +222,10 @@ func (s *RwSetTxSimulator) PayOutToken(ns string, address string, token *modules
 func (s *RwSetTxSimulator) GetPayOutData(ns string) ([]*modules.TokenPayOut, error) {
 	return s.rwsetBuilder.GetTokenPayOut(ns), nil
 }
+func (s *RwSetTxSimulator) DefineToken(ns string, tokenType int32, define []byte) error {
+	s.rwsetBuilder.DefineToken(ns, tokenType, define)
+	return nil
+}
+func (s *RwSetTxSimulator) SupplyToken(ns string, assetId, uniqueId []byte, amt uint64) error {
+	return s.rwsetBuilder.AddSupplyToken(ns, assetId, uniqueId, amt)
+}

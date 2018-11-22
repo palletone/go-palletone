@@ -374,22 +374,30 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 	// 	},
 	// }
 	// tx2.TxHash = tx2.Hash()
-	msg0 := tx.TxMessages[0].Payload.(*unit.PaymentPayload)
-	invokeAddr, _ := idag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
-	invokeTokens := unit.InvokeTokens{}
-	outputs := msg0.Outputs
-	invokeTokens.Asset = *outputs[0].Asset
-	for _, output := range outputs {
-		invokeTokens.Amount += output.Value
+	invokeInfo := unit.InvokeInfo{}
+	if false {
+		msg0 := tx.TxMessages[0].Payload.(*unit.PaymentPayload)
+		invokeAddr, _ := idag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
+		invokeTokens := unit.InvokeTokens{}
+		outputs := msg0.Outputs
+		invokeTokens.Asset = *outputs[0].Asset
+		for _, output := range outputs {
+			invokeTokens.Amount += output.Value
+		}
+		invokeFees, _ := idag.GetTxFee(tx)
+
+		invokeInfo = unit.InvokeInfo{
+			InvokeAddress: invokeAddr,
+			InvokeTokens:  invokeTokens,
+			InvokeFees:    invokeFees,
+		}
+
+		invokeInfoBytes, _ := json.Marshal(invokeInfo)
+		fullArgs = append(fullArgs, invokeInfoBytes)
+	}else{
+		invokeInfoBytes, _ := json.Marshal(invokeInfo)
+		fullArgs = append(fullArgs, invokeInfoBytes)
 	}
-	invokeFees, _ := idag.GetTxFee(tx)
-	invokeInfo := unit.InvokeInfo{
-		InvokeAddress: invokeAddr,
-		InvokeTokens:  invokeTokens,
-		InvokeFees:    invokeFees,
-	}
-	invokeInfoBytes, err := json.Marshal(invokeInfo)
-	fullArgs = append(fullArgs, invokeInfoBytes)
 
 	fullArgs = append(fullArgs, args...)
 	logger.Infof("Invoke [%s][%s]", chainID, cc.Name)

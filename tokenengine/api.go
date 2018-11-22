@@ -223,6 +223,11 @@ func (a *account) GetPubKey(addr common.Address) ([]byte, error) {
 	return a.pubKeyFn(addr)
 }
 
+//为钱包计算要签名某个Input对应的Hash
+func CalcSignatureHash(tx *modules.Transaction, msgIdx, inputIdx int, lockOrRedeemScript []byte) ([]byte, error) {
+	return txscript.CalcSignatureHash(lockOrRedeemScript, txscript.SigHashAll, tx, msgIdx, inputIdx)
+}
+
 //Sign a full transaction
 func SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte,
 	redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign, juryVersion int) ([]common.SignatureError, error) {

@@ -209,22 +209,22 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 	tx := &modules.Transaction{
 		TxMessages: []*modules.Message{orgTx.TxMessages[0], orgTx.TxMessages[1], msgPayload},
 	}
-
+	pubkey,err := ks.GetPublicKey(singer)
+	if err != nil{
+		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
+	}
 	sig, err := cm.GetTxSig(tx, ks, singer)
 	if err != nil {
 		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.TxHash.String()))
 	}
-
-	//todo
-	//sig, _ := sigData(nil, tx)
 	sigSet := modules.SignatureSet{
-		PubKey:    nil,
+		PubKey:    pubkey,
 		Signature: sig,
 	}
 
 	msgSig := &modules.Message{
 		App: modules.APP_SIGNATURE,
-		Payload: &modules.SignaturePayload{
+		Payload: modules.SignaturePayload{
 			Signatures: []modules.SignatureSet{sigSet},
 		},
 	}
@@ -232,7 +232,8 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 	tx.TxMessages = append(tx.TxMessages, msgSig)
 	tx.TxHash = orgTx.TxHash
 
-	log.Debug("GenContractSigTransctions", "tx(%s) sig transction ok", orgTx.TxHash)
+	log.Debug("GenContractSigTransctions", "orgTx.TxHash", " sig transction ok", )
+	//log.Debug("GenContractSigTransctions", tx.TxMessages[3].Payload.(modules.SignaturePayload).Signatures[0])
 	return tx, nil, nil
 }
 
