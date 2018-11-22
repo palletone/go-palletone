@@ -303,9 +303,9 @@ func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (b
 			sigPayload := msg.Payload.(modules.SignaturePayload)
 			sigs := sigPayload.Signatures
 			for _, sig := range sigs {
-				if true == bytes.Equal(sig.PubKey, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0].PubKey) &&
-					true == bytes.Equal(sig.Signature, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0].Signature) {
-					log.Info("tx %s already recv", recv.TxHash)
+				if true == bytes.Equal(sig.PubKey, recvSigMsg.Payload.(modules.SignaturePayload).Signatures[0].PubKey) &&
+					true == bytes.Equal(sig.Signature, recvSigMsg.Payload.(modules.SignaturePayload).Signatures[0].Signature) {
+					log.Info("tx  already recv:", recv.TxHash.String())
 					return false, nil
 				}
 			}

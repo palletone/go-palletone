@@ -23,6 +23,7 @@ func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Addr
 func ValidateTxSig(tx *modules.Transaction, ks *keystore.KeyStore) bool {
 	return true
 
+
 	var sigs []modules.SignatureSet
 	if tx == nil {
 		return false
