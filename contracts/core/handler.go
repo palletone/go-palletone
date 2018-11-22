@@ -300,10 +300,11 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 		var payloadBytes []byte
 		var err error
 		systemConfig := &core.SystemConfig{
-			FoundationAddress:        "P1BzFaZSu4YbSEhHrmf9v8rgR8DDrcXxgqh",
-			DepositAmountForJury:     1000,
-			DepositAmountForMediator: 2000,
-			DepositRate:              0.02,
+			FoundationAddress:         "P1BzFaZSu4YbSEhHrmf9v8rgR8DDrcXxgqh",
+			DepositAmountForMediator:  2000,
+			DepositAmountForJury:      1000,
+			DepositAmountForDeveloper: 800,
+			DepositRate:               0.02,
 		}
 		//fmt.Println("keyForSystemConfig.Key = ", keyForSystemConfig.Key)
 		if strings.Compare("DepositAmountForJury", keyForSystemConfig.Key) == 0 {
@@ -313,6 +314,9 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 			payloadBytes = []byte(systemConfig.FoundationAddress)
 		} else if strings.Compare("DepositAmountForMediator", keyForSystemConfig.Key) == 0 {
 			depositAmount := strconv.FormatUint(systemConfig.DepositAmountForMediator, 10)
+			payloadBytes = []byte(depositAmount)
+		} else if strings.Compare("DepositAmountForDeveloper", keyForSystemConfig.Key) == 0 {
+			depositAmount := strconv.FormatUint(systemConfig.DepositAmountForDeveloper, 10)
 			payloadBytes = []byte(depositAmount)
 		}
 		chaincodeID := handler.getCCRootName()

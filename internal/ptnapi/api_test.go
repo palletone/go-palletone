@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	"strings"
 	"testing"
+        "github.com/shopspring/decimal"
 	// "github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
 )
 
@@ -81,7 +82,7 @@ func TestRawTransactionGen(t *testing.T) {
 	//realNet := &chaincfg.MainNetParams
 	amounts := map[string]float64{}
 	for _, outOne := range rawTransactionGenParams.Outputs {
-		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
+		if len(outOne.Address) == 0 || outOne.Amount <= decimal.Decimal(0) {
 			continue
 		}
 		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
