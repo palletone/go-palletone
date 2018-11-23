@@ -1897,17 +1897,15 @@ func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error
 
 //sign rawtranscation
 //create raw transction
-func (s *PublicTransactionPoolAPI) SignRawTransaction(params string, password string, duration *uint64) (interface{}, error) {
-	var signTransactionParams SignTransactionParams
-	err := json.Unmarshal([]byte(params), &signTransactionParams)
-	if err != nil {
-		return "", err
-	}
+func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context,params string,password string, duration *uint64) (interface{}, error) {
+ 
+        
 	//transaction inputs
-	serializedTx, err := decodeHexStr(signTransactionParams.RawTx)
+	serializedTx, err := decodeHexStr(params)
 	if err != nil {
 		return nil, err
 	}
+     
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
@@ -1976,10 +1974,13 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(params string, password st
 	ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
-		fmt.Println("get addr by outpoint is err")
+		errors.New("get addr by outpoint is err")
+		return nil,err
 	}
-	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &srawinputs, &keys, ptnjson.String("ALL"))
+        
+	newsign := ptnjson.NewSignRawTransactionCmd(params, &srawinputs, &keys, ptnjson.String("ALL"))
 	result, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn)
+        
 	fmt.Println(result)
 	return result, nil
 }
