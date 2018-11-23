@@ -110,13 +110,13 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 	}
 	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
 	invoke := &modules.ContractInvokeResult{
-		FunctionName: string(args[1]),
-		ContractId:   deployId,
-		Args:         args,
-		Excutiontime: timeout,
-		ReadSet:      make([]unit.ContractReadSet, 0),
-		WriteSet:     make([]unit.ContractWriteSet, 0),
-		TokenPayOut:  tokenPay,
+		FunctionName:  string(args[1]),
+		ContractId:    deployId,
+		Args:          args,
+		ExecutionTime: timeout,
+		ReadSet:       make([]unit.ContractReadSet, 0),
+		WriteSet:      make([]unit.ContractWriteSet, 0),
+		TokenPayOut:   tokenPay,
 	}
 
 	for idx, val := range rd {
@@ -152,13 +152,13 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid stri
 	}
 	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
 	deploy := &unit.ContractDeployPayload{
-		TemplateId:   templateId,
-		ContractId:   deployId,
-		Name:         nm,
-		Args:         args,
-		Excutiontime: timeout,
-		ReadSet:      make([]unit.ContractReadSet, 0),
-		WriteSet:     make([]unit.ContractWriteSet, 0),
+		TemplateId:    templateId,
+		ContractId:    deployId,
+		Name:          nm,
+		Args:          args,
+		ExecutionTime: timeout,
+		ReadSet:       make([]unit.ContractReadSet, 0),
+		WriteSet:      make([]unit.ContractWriteSet, 0),
 	}
 
 	for idx, val := range rd {

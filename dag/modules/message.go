@@ -81,10 +81,10 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	case APP_CONTRACT_DEPLOY:
 		payload, _ := cpyMsg.Payload.(*ContractDeployPayload)
 		newPayload := ContractDeployPayload{
-			TemplateId:   payload.TemplateId,
-			ContractId:   payload.ContractId,
-			Args:         payload.Args,
-			Excutiontime: payload.Excutiontime,
+			TemplateId:    payload.TemplateId,
+			ContractId:    payload.ContractId,
+			Args:          payload.Args,
+			ExecutionTime: payload.ExecutionTime,
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
@@ -108,9 +108,9 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	case APP_CONTRACT_INVOKE:
 		payload, _ := cpyMsg.Payload.(*ContractInvokePayload)
 		newPayload := ContractInvokePayload{
-			ContractId:   payload.ContractId,
-			Args:         payload.Args,
-			Excutiontime: payload.Excutiontime,
+			ContractId:    payload.ContractId,
+			Args:          payload.Args,
+			ExecutionTime: payload.ExecutionTime,
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
@@ -331,27 +331,27 @@ type VotePayload struct {
 // App: contract_deploy
 
 type ContractDeployPayload struct {
-	TemplateId   []byte             `json:"template_id"`           // contract template id
-	ContractId   []byte             `json:"contract_id"`           // contract id
-	Name         string             `json:"name"`                  // the name for contract
-	Args         [][]byte           `json:"args"`                  // contract arguments list
-	Excutiontime time.Duration      `json:"excution_time" rlp:"-"` // contract execution time, millisecond
-	Jury         []common.Address   `json:"jury"`                  // contract jurors list
-	ReadSet      []ContractReadSet  `json:"read_set"`              // the set data of read, and value could be any type
-	WriteSet     []ContractWriteSet `json:"write_set"`             // the set data of write, and value could be any type
+	TemplateId    []byte             `json:"template_id"`            // contract template id
+	ContractId    []byte             `json:"contract_id"`            // contract id
+	Name          string             `json:"name"`                   // the name for contract
+	Args          [][]byte           `json:"args"`                   // contract arguments list
+	ExecutionTime time.Duration      `json:"execution_time" rlp:"-"` // contract execution time, millisecond
+	Jury          []common.Address   `json:"jury"`                   // contract jurors list
+	ReadSet       []ContractReadSet  `json:"read_set"`               // the set data of read, and value could be any type
+	WriteSet      []ContractWriteSet `json:"write_set"`              // the set data of write, and value could be any type
 }
 
 // Contract invoke message
 // App: contract_invoke
 //如果是用户想修改自己的State信息，那么ContractId可以为空或者0字节
 type ContractInvokePayload struct {
-	ContractId   []byte             `json:"contract_id"` // contract id
-	FunctionName string             `json:"function_name"`
-	Args         [][]byte           `json:"args"`          // contract arguments list
-	Excutiontime time.Duration      `json:"excution_time"` // contract execution time, millisecond
-	ReadSet      []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
-	WriteSet     []ContractWriteSet `json:"write_set"`     // the set data of write, and value could be any type
-	Payload      []byte             `json:"payload"`       // the contract execution result
+	ContractId    []byte             `json:"contract_id"` // contract id
+	FunctionName  string             `json:"function_name"`
+	Args          [][]byte           `json:"args"`           // contract arguments list
+	ExecutionTime time.Duration      `json:"execution_time"` // contract execution time, millisecond
+	ReadSet       []ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
+	WriteSet      []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
+	Payload       []byte             `json:"payload"`        // the contract execution result
 }
 
 //用户钱包发起的合约调用申请
@@ -407,14 +407,14 @@ func NewContractTplPayload(templateId []byte, name string, path string, version 
 func NewContractDeployPayload(templateid []byte, contractid []byte, name string, args [][]byte, excutiontime time.Duration,
 	jury []common.Address, readset []ContractReadSet, writeset []ContractWriteSet) *ContractDeployPayload {
 	return &ContractDeployPayload{
-		TemplateId:   templateid,
-		ContractId:   contractid,
-		Name:         name,
-		Args:         args,
-		Excutiontime: excutiontime,
-		Jury:         jury,
-		ReadSet:      readset,
-		WriteSet:     writeset,
+		TemplateId:    templateid,
+		ContractId:    contractid,
+		Name:          name,
+		Args:          args,
+		ExecutionTime: excutiontime,
+		Jury:          jury,
+		ReadSet:       readset,
+		WriteSet:      writeset,
 	}
 }
 func NewVotePayload(address [][]byte, mode uint8, voteType uint8) *VotePayload {
@@ -428,11 +428,11 @@ func NewVotePayload(address [][]byte, mode uint8, voteType uint8) *VotePayload {
 func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime time.Duration,
 	readset []ContractReadSet, writeset []ContractWriteSet, payload []byte) *ContractInvokePayload {
 	return &ContractInvokePayload{
-		ContractId:   contractid,
-		Args:         args,
-		Excutiontime: excutiontime,
-		ReadSet:      readset,
-		WriteSet:     writeset,
-		Payload:      payload,
+		ContractId:    contractid,
+		Args:          args,
+		ExecutionTime: excutiontime,
+		ReadSet:       readset,
+		WriteSet:      writeset,
+		Payload:       payload,
 	}
 }

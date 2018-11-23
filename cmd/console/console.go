@@ -198,6 +198,17 @@ func (c *Console) init(preload []string) error {
 		obj.Set("sleep", bridge.Sleep)
 		obj.Set("clearHistory", c.clearHistory)
 	}
+	//Add by wzhyuan  
+	ptn, err := c.jsre.Get("ptn")
+	if err != nil {
+		return err
+	}
+	if obj := ptn.Object(); obj != nil { // make sure the admin api is enabled over the interface
+		if _, err = c.jsre.Run(`jeth.signRawTransaction = ptn.signRawTransaction;`); err != nil {
+				return fmt.Errorf("ptn.signRawTransaction: %v", err)
+		}
+		obj.Set("signRawTransaction", bridge.SignRawTransaction)
+	}
 	// Preload any JavaScript files before starting the console
 	for _, path := range preload {
 		if err := c.jsre.Exec(path); err != nil {

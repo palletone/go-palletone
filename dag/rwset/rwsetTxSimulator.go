@@ -22,11 +22,8 @@ package rwset
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
-	"time"
 )
 
 type RwSetTxSimulator struct {
@@ -56,38 +53,6 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-	if key == "P1M9qH8yxyL2P2AvCnMF2eVpqLWVVXD5HQk" {
-		fmt.Println("数据库获取该地址信息")
-		//return nil, nil
-		//TODO
-		asset := modules.Asset{
-			AssetId:  modules.PTNCOIN,
-			UniqueId: modules.PTNCOIN,
-			ChainId:  uint64(1),
-		}
-		stateValue := modules.DepositStateValue{
-			DepositBalance: modules.AmountAsset{
-				Amount: uint64(1200),
-				Asset:  asset,
-			},
-			Time:  time.Now(),
-			Extra: "hello",
-		}
-		stateValueByte, _ := json.Marshal(stateValue)
-		return stateValueByte, nil
-	}
-	//if key == "MediatorList" {
-	if key == "JuryList" {
-		fmt.Println("数据库获取列表")
-		test01, _ := common.StringToAddress("P135eGbHC9UFYCWo7P39fqnuHBySRBZGVCa")
-		test02, _ := common.StringToAddress("P1M9qH8yxyL2P2AvCnMF2eVpqLWVVXD5HQk")
-		juryList := []common.Address{test01, test02}
-		//mediatorList := []common.Address{test01, test02}
-		stateValueByte, _ := json.Marshal(juryList)
-		//stateValueByte, _ := json.Marshal(mediatorList)
-		return stateValueByte, nil
-	}
-
 	//TODO Devin
 	ver, val := s.dag.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
