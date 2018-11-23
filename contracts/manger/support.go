@@ -110,13 +110,13 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 	}
 	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
 	invoke := &modules.ContractInvokeResult{
-		FunctionName: string(args[1]),
-		ContractId:   deployId,
-		Args:         args,
-		Excutiontime: timeout,
-		ReadSet:      make([]unit.ContractReadSet, 0),
-		WriteSet:     make([]unit.ContractWriteSet, 0),
-		TokenPayOut:  tokenPay,
+		FunctionName:  string(args[1]),
+		ContractId:    deployId,
+		Args:          args,
+		ExecutionTime: timeout,
+		ReadSet:       make([]unit.ContractReadSet, 0),
+		WriteSet:      make([]unit.ContractWriteSet, 0),
+		TokenPayOut:   tokenPay,
 	}
 
 	for idx, val := range rd {
