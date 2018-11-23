@@ -29,6 +29,7 @@ import (
 	"math/big"
 
 	"bytes"
+	"encoding/json"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common/hexutil"
 )
@@ -118,10 +119,15 @@ func BytesToAddress(b []byte) Address {
 	return a
 }
 
-func BytesListToAddressList(bl [][]byte) []Address {
-	Addresses := []Address{}
-	for _, bAddress := range bl {
-		Addresses = append(Addresses, BytesToAddress(bAddress))
+func BytesListToAddressList(b []byte) []Address {
+
+	var stringArray []string
+	json.Unmarshal(b, &stringArray)
+	var Addresses []Address
+
+	for _, str := range stringArray {
+		addr, _ := StringToAddress(str)
+		Addresses = append(Addresses, addr)
 	}
 	return Addresses
 }
@@ -146,10 +152,16 @@ func IsHexAddress(s string) bool {
 func (a Address) Str() string {
 	return "P" + base58.CheckEncode(a[0:20], byte(a[20]))
 }
+
+//Return account 20 bytes without address type
 func (a Address) Bytes() []byte {
 	return a[0:20]
 }
 
+//Return address all 21 bytes, you can use SetBytes function to get Address object
+func (a Address) Bytes21() []byte {
+	return a[:]
+}
 func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a.Bytes()) }
 func (a Address) Hash() Hash    { return BytesToHash(a.Bytes()) }
 func (a Address) Hex() string   { return fmt.Sprintf("0x%x", a.Bytes()) }

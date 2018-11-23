@@ -48,8 +48,8 @@ func newChainBanner(dag iDag) {
 	}
 }
 
-func (mp *MediatorPlugin) SubscribeNewUnitEvent(ch chan<- NewUnitEvent) event.Subscription {
-	return mp.newUnitScope.Track(mp.newUnitFeed.Subscribe(ch))
+func (mp *MediatorPlugin) SubscribeNewProducedUnitEvent(ch chan<- NewProducedUnitEvent) event.Subscription {
+	return mp.newProducedUnitScope.Track(mp.newProducedUnitFeed.Subscribe(ch))
 }
 
 func (mp *MediatorPlugin) scheduleProductionLoop() {
@@ -214,7 +214,7 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	// 4. 异步向区块链网络广播验证单元
 	// todo 后面改为由p2p转发
 	go mp.addToTBLSSignBuf(newUnit)
-	go mp.newUnitFeed.Send(NewUnitEvent{Unit: newUnit})
+	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
 
 	return Produced, detail
 }

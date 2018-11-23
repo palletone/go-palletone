@@ -37,6 +37,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 
 	//dagcommon "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -44,7 +45,6 @@ import (
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
-	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 //type LesServer interface {
@@ -280,6 +280,9 @@ func (s *PalletOne) Protocols() []p2p.Protocol {
 // Start implements node.Service, starting all internal goroutines needed by the
 // PalletOne protocol implementation.
 func (s *PalletOne) Start(srvr *p2p.Server) error {
+	// append by Albert·Gou
+	s.mediatorPlugin.Start(srvr)
+
 	// Start the bloom bits servicing goroutines
 	s.startBloomHandlers()
 
@@ -291,9 +294,6 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 
 	// Start the networking layer and the light server if requested
 	s.protocolManager.Start(srvr, maxPeers)
-
-	// append by Albert·Gou
-	s.mediatorPlugin.Start(srvr)
 
 	return nil
 }
@@ -312,6 +312,8 @@ func (s *PalletOne) Stop() error {
 
 	// append by Albert·Gou
 	s.mediatorPlugin.Stop()
+
+	s.dag.Close()
 
 	return nil
 }

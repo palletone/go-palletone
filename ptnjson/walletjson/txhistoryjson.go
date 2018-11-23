@@ -18,21 +18,14 @@
  *
  */
 
-package modules
+package walletjson
 
-import "github.com/palletone/go-palletone/dag/vote"
+import "github.com/shopspring/decimal"
 
-//一个账户（地址）的状态信息
-//Include:
-// personal account P1*
-//P2SH account P3*
-//Contract account PC*
-type AccountInfo struct {
-	//AccountName string
-	//当前账户的PTN余额
-	PtnBalance uint64
-	//当前账户投票Mediator的结果，string数组的JSON格式
-	MediatorVoteResult []byte
-	//通用可改选投票的结果
-	Votes []vote.VoteInfo
+type TxHistoryJson struct {
+	TxId     string
+	FromAddr string
+	ToAddr   string
+	Amount   decimal.Decimal
+	Asset    string
 }

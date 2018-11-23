@@ -24,6 +24,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -69,8 +70,9 @@ func (dag *Dag) updateMediatorSchedule() {
 	dgp := dag.GetDynGlobalProp()
 	ms := dag.GetMediatorSchl()
 
-	ms.UpdateMediatorSchedule(gp, dgp)
-	dag.SaveMediatorSchl(ms, false)
+	if ms.UpdateMediatorSchedule(gp, dgp) {
+		dag.SaveMediatorSchl(ms, false)
+	}
 
 	return
 }
@@ -110,19 +112,28 @@ func (dag *Dag) updateLastIrreversibleUnit() {
 	}
 }
 
+type ChainMaintainEvent struct {
+}
+
+func (dag *Dag) SubscribeChainMaintainEvent(ch chan<- ChainMaintainEvent) event.Subscription {
+	return dag.chainMaintainScope.Track(dag.chainMaintainFeed.Subscribe(ch))
+}
+
 func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
-	gp := dag.GetGlobalProp()
 	dgp := dag.GetDynGlobalProp()
 
+	// Are we at the maintenance interval?
 	if dgp.NextMaintenanceTime > nextUnit.Timestamp() {
 		return
 	}
 
 	dag.updateActiveMediators()
 
-	// todo , 开始vss协议
+	// 通知开始vss协议
+	dag.chainMaintainFeed.Send(ChainMaintainEvent{})
 
 	// 更新下一次维护时间
+	gp := dag.GetGlobalProp()
 	nextMaintenanceTime := dgp.NextMaintenanceTime
 	maintenanceInterval := int64(gp.ChainParameters.MaintenanceInterval)
 	if nextUnit.NumberU64() == 1 {
@@ -153,5 +164,5 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 }
 
 func (dag *Dag) updateActiveMediators() {
-	// todo , 统计投票， 选出活跃mediator
+	// todo , 统计投票， 选出活跃mediator, 并更新
 }

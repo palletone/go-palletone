@@ -21,6 +21,7 @@
 package common
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -49,15 +50,15 @@ func TestHexToAddrString(t *testing.T) {
 
 	addr := HexToAddress("0x00000000000000000000000000000000000000011C")
 	t.Logf("0x1 contract address: %s", addr.String()) //PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
-	t.Logf("compare int:%s", addr.IsSystemContractAddress())
+	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
 	newAddr, _ := StringToAddress(addr.String())
 	t.Logf("contract hex is: %x", newAddr.Bytes())
 	addr = HexToAddress("0x00000000000000000000000000000000000000021C")
 	t.Logf("0x2 contract address: %s", addr.String()) //PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
-	t.Logf("compare int:%s", addr.IsSystemContractAddress())
+	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
 	addr = HexToAddress("0x00000000000000000000000000000000000000031C")
 	t.Logf("0x3 contract address: %s", addr.String()) //PCGTta3M4t3yXu8uRgkKvaWd2d8DRLGbeyd
-	t.Logf("compare int:%s", addr.IsSystemContractAddress())
+	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
 	addr = HexToAddress("0x000000000000000000000000000000000000000100")
 	t.Logf("0x1 user address: %s", addr.String())
 
@@ -67,5 +68,13 @@ func TestHexToAddrString(t *testing.T) {
 	addr = HexToAddress("0x3c5a9cd1dc2437342692de6ed2b948c5cbb3174800")
 	t.Logf("0x1 p2sh address: %s", addr.String())
 
-	t.Logf("compare int:%s", addr.IsSystemContractAddress())
+	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
+}
+func TestBytesListToAddressList(t *testing.T) {
+	str := "[\"PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM\",\"P1LWaK3KBCuPVsXUPHXkMZr2Cm5tZquRDK8\"]"
+	addressList := BytesListToAddressList([]byte(str))
+	assert.True(t, len(addressList) == 2)
+	for _, addr := range addressList {
+		t.Logf("Address:%s", addr.String())
+	}
 }

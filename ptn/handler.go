@@ -98,9 +98,9 @@ type ProtocolManager struct {
 	ceSub      event.Subscription
 
 	// append by Albert·Gou
-	producer   producer
-	newUnitCh  chan mp.NewUnitEvent
-	newUnitSub event.Subscription
+	producer           producer
+	newProducedUnitCh  chan mp.NewProducedUnitEvent
+	newProducedUnitSub event.Subscription
 
 	// append by Albert·Gou
 	sigShareCh  chan mp.SigShareEvent
@@ -314,9 +314,9 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 
 	// append by Albert·Gou
 	// broadcast new unit produced by mediator
-	pm.newUnitCh = make(chan mp.NewUnitEvent)
-	pm.newUnitSub = pm.producer.SubscribeNewUnitEvent(pm.newUnitCh)
-	go pm.newUnitBroadcastLoop()
+	pm.newProducedUnitCh = make(chan mp.NewProducedUnitEvent)
+	pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
+	go pm.newProducedUnitBroadcastLoop()
 
 	// append by Albert·Gou
 	// send signature share
@@ -363,7 +363,7 @@ func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping PalletOne protocol")
 
 	// append by Albert·Gou
-	pm.newUnitSub.Unsubscribe()
+	pm.newProducedUnitSub.Unsubscribe()
 	pm.sigShareSub.Unsubscribe()
 	pm.groupSigSub.Unsubscribe()
 	pm.vssDealSub.Unsubscribe()

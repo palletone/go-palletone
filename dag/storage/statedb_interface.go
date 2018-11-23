@@ -55,7 +55,7 @@ type IStateDb interface {
 	GetSortedVote(ReturnNumber uint8, voteType uint8, minTermLimit uint16) ([]common.Address, error)
 	GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
 	UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
-	UpdateMediatorVote(voter common.Address, candidates []common.Address, mode uint8, term uint16) error
+	UpdateMediatorVote(voter common.Address, candidates []byte) error
 	GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error)
 
 	// world state chainIndex
