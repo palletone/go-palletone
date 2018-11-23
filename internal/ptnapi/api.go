@@ -844,8 +844,9 @@ func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string,
 	return s.b.DecodeTx(hex)
 }
 
-func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, txid string, param []string) (string, error) {
+func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, txid string, txhex string, param []string) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
+	txBytes, err := hex.DecodeString(txhex)
 	log.Info("-----Ccinvoketx:" + deployId + ":" + txid)
 
 	args := make([][]byte, len(param))
@@ -853,7 +854,7 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, t
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	rsp, err := s.b.ContractTxReqBroadcast(depId, txid, args, 0)
+	rsp, err := s.b.ContractTxReqBroadcast(depId, txid, txBytes, args, 0)
 
 	log.Info("-----ContractInvokeTxReq:" + string(rsp))
 
