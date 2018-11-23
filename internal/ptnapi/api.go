@@ -1930,6 +1930,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(params string, password st
 		//return crypto.Sign(hash, privKey)
 	}
 	var srawinputs []ptnjson.RawTxInput
+
 	var addr common.Address
 	var keys []string
 	for _, msg := range tx.TxMessages {

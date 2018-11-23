@@ -31,27 +31,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 )
 
-// GenerateUnit, generate unit
-// @author Albert·Gou
-func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
-	ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit {
-
-	// 1. 判断是否满足生产的若干条件
-
-	// 2. 生产验证单元，添加交易集、时间戳、签名
-	newUnits, err := dag.CreateUnit(&producer, txspool, ks, when)
-	if err != nil {
-		log.Error("GenerateUnit", "error", err.Error())
-		return &modules.Unit{}
-	}
-	// added by yangyu, 2018.8.9
-	if newUnits == nil || len(newUnits) == 0 || newUnits[0].IsEmpty() {
-		log.Info("No unit need to be packaged for now.")
-		return &modules.Unit{}
-	}
-
-	pendingUnit := &newUnits[0]
-	pendingUnit.UnitHeader.Creationdate = when.Unix()
+func (dag *Dag) SetUnitHeader(pendingUnit *modules.Unit) {
 	current_index, _ := dag.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
 
 	if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
@@ -91,15 +71,45 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 		go log.Info("the pending unit header number index info. ", "index", pendingUnit.UnitHeader.Number.Index,
 			"hex", pendingUnit.UnitHeader.Number.AssetID.String())
 	}
+}
 
+// GenerateUnit, generate unit
+// @author Albert·Gou
+func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
+	ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit {
+
+	// 1. 判断是否满足生产的若干条件
+
+	// 2. 生产验证单元，添加交易集、时间戳、签名
+	newUnits, err := dag.CreateUnit(&producer, txspool, ks, when)
+	if err != nil {
+		log.Error("GenerateUnit", "error", err.Error())
+		return &modules.Unit{}
+	}
+	// added by yangyu, 2018.8.9
+	if newUnits == nil || len(newUnits) == 0 || newUnits[0].IsEmpty() {
+		log.Info("No unit need to be packaged for now.")
+		return &modules.Unit{}
+	}
+
+	pendingUnit := &newUnits[0]
+	pendingUnit.UnitHeader.Creationdate = when.Unix()
+
+	dag.SetUnitHeader(pendingUnit)
+
+	pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash()
+	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
 	pendingUnit.Hash()
+
 	sign_unit, err1 := dagcommon.GetUnitWithSig(pendingUnit, ks, producer)
 	if err1 != nil {
 		log.Error(fmt.Sprintf("GetUnitWithSig error: %v", err))
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()
-	log.Debug("Dag", "GenerateUnit unit:", *sign_unit)
+
+	//go log.Debug("Dag", "GenerateUnit unit:", *sign_unit)
+
 	dag.PushUnit(sign_unit)
 	return sign_unit
 }
