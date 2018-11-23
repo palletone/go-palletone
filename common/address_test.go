@@ -21,6 +21,7 @@
 package common
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -68,4 +69,12 @@ func TestHexToAddrString(t *testing.T) {
 	t.Logf("0x1 p2sh address: %s", addr.String())
 
 	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
+}
+func TestBytesListToAddressList(t *testing.T) {
+	str := "[\"PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM\",\"P1LWaK3KBCuPVsXUPHXkMZr2Cm5tZquRDK8\"]"
+	addressList := BytesListToAddressList([]byte(str))
+	assert.True(t, len(addressList) == 2)
+	for _, addr := range addressList {
+		t.Logf("Address:%s", addr.String())
+	}
 }

@@ -322,9 +322,12 @@ type TokenPayOut struct {
 // Mode == 1 [ Edit    ] :Replace the addresses in the first half of the account's votes addresses to refer to the addresses in the second half.
 // Mode == 2 [ Delete  ] :Delete the addresses from account's votes addresses
 type VotePayload struct {
-	Contents [][]byte
+	//投票内容，JSON格式，如果是Mediator选举，则为string数组的JSON
+	//如果不想投任何一个Mediator，则将string数组清空
+	Contents []byte
+	//是Mediator选举则为0
 	VoteType uint8
-	Mode     uint8
+	//Mode     uint8
 }
 
 // Contract instance message
@@ -417,10 +420,10 @@ func NewContractDeployPayload(templateid []byte, contractid []byte, name string,
 		WriteSet:      writeset,
 	}
 }
-func NewVotePayload(address [][]byte, mode uint8, voteType uint8) *VotePayload {
+func NewVotePayload(result []byte, voteType uint8) *VotePayload {
 	return &VotePayload{
-		Contents: address,
-		Mode:     mode,
+		Contents: result,
+
 		VoteType: voteType,
 	}
 }
