@@ -411,14 +411,14 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
 	et := time.Duration(12)
 	deployPayload := modules.ContractDeployPayload{
-		TemplateId:   []byte("contract_template0000"),
-		ContractId:   []byte("contract0000"),
-		Name:         "testdeploy",
-		Args:         [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
-		Excutiontime: et,
-		Jury:         []common.Address{addr},
-		ReadSet:      readSet,
-		WriteSet:     writeSet,
+		TemplateId:    []byte("contract_template0000"),
+		ContractId:    []byte("contract0000"),
+		Name:          "testdeploy",
+		Args:          [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
+		ExecutionTime: et,
+		Jury:          []common.Address{addr},
+		ReadSet:       readSet,
+		WriteSet:      writeSet,
 	}
 	tx1 := modules.Transaction{
 		TxMessages: []*modules.Message{
@@ -458,7 +458,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 					} else {
 						fmt.Println(deployPayload.Name)
 						fmt.Println(deployPayload.ContractId)
-						fmt.Println(deployPayload.Excutiontime)
+						fmt.Println(deployPayload.ExecutionTime)
 					}
 				}
 			}
