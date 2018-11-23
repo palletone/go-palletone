@@ -60,8 +60,9 @@ type InputJson struct {
 	Signature    string `json:"signature"`
 }
 type OutputJson struct {
-	Amount    uint64 `json:"amount"`
-	Asset     string `json:"asset"`
+	Amount uint64 `json:"amount"`
+	Asset  string `json:"asset"`
+
 	ToAddress string `json:"to_address"`
 }
 
