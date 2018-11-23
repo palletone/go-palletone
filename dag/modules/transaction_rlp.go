@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -76,31 +77,34 @@ func temp2Tx(temp transactionTemp, tx *Transaction) {
 			var pay PaymentPayload
 			rlp.DecodeBytes(m.Data, &pay)
 			m1.Payload = &pay
-
 		} else if m.App == APP_TEXT {
 			var text TextPayload
 			rlp.DecodeBytes(m.Data, &text)
 			m1.Payload = &text
-
+		} else if m.App == APP_CONTRACT_INVOKE_REQUEST {
+			var invokeReq ContractInvokeRequestPayload
+			rlp.DecodeBytes(m.Data, &invokeReq)
+			m1.Payload = &invokeReq
 		} else if m.App == APP_CONTRACT_INVOKE {
 			var invoke ContractInvokePayload
 			rlp.DecodeBytes(m.Data, &invoke)
 			m1.Payload = &invoke
-
 		} else if m.App == APP_CONTRACT_DEPLOY {
 			var deploy ContractDeployPayload
 			rlp.DecodeBytes(m.Data, &deploy)
 			m1.Payload = &deploy
-
 		} else if m.App == APP_CONFIG {
 			var conf ConfigPayload
 			rlp.DecodeBytes(m.Data, &conf)
 			m1.Payload = &conf
-
 		} else if m.App == APP_CONTRACT_TPL {
 			var tplPayload ContractTplPayload
 			rlp.DecodeBytes(m.Data, &tplPayload)
 			m1.Payload = &tplPayload
+		} else if m.App == APP_SIGNATURE {
+			var sigPayload SignaturePayload
+			rlp.DecodeBytes(m.Data, &sigPayload)
+			m1.Payload = &sigPayload
 		} else if m.App == OP_MEDIATOR_CREATE {
 			var mediatorCreateOp MediatorCreateOperation
 			rlp.DecodeBytes(m.Data, &mediatorCreateOp)
