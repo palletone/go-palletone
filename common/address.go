@@ -29,6 +29,7 @@ import (
 	"math/big"
 
 	"bytes"
+	"encoding/json"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common/hexutil"
 )
@@ -118,10 +119,15 @@ func BytesToAddress(b []byte) Address {
 	return a
 }
 
-func BytesListToAddressList(bl [][]byte) []Address {
-	Addresses := []Address{}
-	for _, bAddress := range bl {
-		Addresses = append(Addresses, BytesToAddress(bAddress))
+func BytesListToAddressList(b []byte) []Address {
+
+	var stringArray []string
+	json.Unmarshal(b, &stringArray)
+	var Addresses []Address
+
+	for _, str := range stringArray {
+		addr, _ := StringToAddress(str)
+		Addresses = append(Addresses, addr)
 	}
 	return Addresses
 }

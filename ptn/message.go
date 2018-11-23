@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -519,7 +520,8 @@ func (pm *ProtocolManager) ContractSigLocalSend(event jury.ContractSigEvent) {
 
 func (pm *ProtocolManager) ContractBroadcast(event jury.ContractExeEvent) {
 	log.Info("ContractBroadcast", "event", event.Tx.TxHash)
-	peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
+	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
+	peers := pm.peers.GetPeers()
 	for _, peer := range peers {
 		peer.SendContractExeTransaction(event)
 	}
@@ -527,7 +529,8 @@ func (pm *ProtocolManager) ContractBroadcast(event jury.ContractExeEvent) {
 
 func (pm *ProtocolManager) ContractSigBroadcast(event jury.ContractSigEvent) {
 	log.Info("ContractSigBroadcast", "event", event.Tx.TxHash)
-	peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
+	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
+	peers := pm.peers.GetPeers()
 	for _, peer := range peers {
 		peer.SendContractSigTransaction(event)
 	}

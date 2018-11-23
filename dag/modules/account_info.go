@@ -31,5 +31,8 @@ type AccountInfo struct {
 	//AccountName string
 	//当前账户的PTN余额
 	PtnBalance uint64
-	Votes      []vote.VoteInfo
+	//当前账户投票Mediator的结果，string数组的JSON格式
+	MediatorVoteResult []byte
+	//通用可改选投票的结果
+	Votes []vote.VoteInfo
 }
