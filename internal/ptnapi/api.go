@@ -1494,8 +1494,8 @@ const (
 //}
 
 //create raw transction
-func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
-	c := cmd.(*ptnjson.CreateRawTransactionCmd)
+func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) (string, error) {
+
 	// Validate the locktime, if given.
 	/*aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))
@@ -1548,6 +1548,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		switch addr.GetType() {
 		case common.PublicKeyHash:
 		case common.ScriptHash:
+		case common.ContractHash:
 			//case *ptnjson.AddressPubKeyHash:
 			//case *ptnjson.AddressScriptHash:
 		default:
@@ -1557,7 +1558,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 			}
 		}
 		// Create a new script which pays to the provided address.
-		pkScript := tokenengine.GenerateP2PKHLockScript(addr[0:20])
+		pkScript := tokenengine.GenerateLockScript(addr)
 		// Convert the amount to satoshi.
 		dao := ptnjson.Ptn2Dao(ptnAmt)
 		if err != nil {
@@ -1896,7 +1897,7 @@ func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error
 
 //sign rawtranscation
 //create raw transction
-func (s *PublicTransactionPoolAPI) SignRawTransaction(params string,password string, duration *uint64) (interface{}, error) {
+func (s *PublicTransactionPoolAPI) SignRawTransaction(params string, password string, duration *uint64) (interface{}, error) {
 	var signTransactionParams SignTransactionParams
 	err := json.Unmarshal([]byte(params), &signTransactionParams)
 	if err != nil {
@@ -1917,7 +1918,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(params string,password str
 		//TODO use keystore
 		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 		//account, _ := MakeAddress(ks, addr.String())
-		
+
 		return ks.GetPublicKey(addr)
 		//privKey, _ := ks.DumpPrivateKey(account, "1")
 		//return crypto.CompressPubkey(&privKey.PublicKey), nil
@@ -1926,7 +1927,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(params string,password str
 		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 		account, _ := MakeAddress(ks, addr.String())
 		//privKey, _ := ks.DumpPrivateKey(account, "1")
-		return ks.SignHash(account,hash)
+		return ks.SignHash(account, hash)
 		//return crypto.Sign(hash, privKey)
 	}
 	var srawinputs []ptnjson.RawTxInput
@@ -1975,8 +1976,8 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(params string,password str
 	ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
-	    fmt.Println("get addr by outpoint is err")
-    }
+		fmt.Println("get addr by outpoint is err")
+	}
 	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &srawinputs, &keys, ptnjson.String("ALL"))
 	result, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn)
 	fmt.Println(result)

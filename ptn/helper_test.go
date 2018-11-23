@@ -241,7 +241,7 @@ func (p *testPeer) handshake(t *testing.T, index modules.ChainIndex, head common
 		NetworkId:       DefaultConfig.NetworkId,
 		Index:           index,
 		GenesisUnit:     genesis,
-		Mediator:        false,
+		//Mediator:        false,
 	}
 	if err := p2p.ExpectMsg(p.app, StatusMsg, msg); err != nil {
 		//log.Fatalf("status recv: %v", err)
