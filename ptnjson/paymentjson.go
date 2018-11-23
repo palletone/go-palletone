@@ -35,11 +35,13 @@ type InputJson struct {
 	TxHash       string `json:"txid"`          // reference Utxo struct key field
 	MessageIndex uint32 `json:"message_index"` // message index in transaction
 	OutIndex     uint32 `json:"out_index"`
+	UnlockScript string `json:"unlock_script"`
 }
 type OutputJson struct {
-	Amount    uint64 `json:"amount"`
-	Asset     string `json:"asset"`
-	ToAddress string `json:"to_address"`
+	Amount     uint64 `json:"amount"`
+	Asset      string `json:"asset"`
+	ToAddress  string `json:"to_address"`
+	LockScript string `json:"lock_script"`
 }
 
 func ConvertPayment2Json(payment *modules.PaymentPayload) PaymentJson {
@@ -58,7 +60,11 @@ func ConvertPayment2Json(payment *modules.PaymentPayload) PaymentJson {
 				mindex = in.PreviousOutPoint.MessageIndex
 				outindex = in.PreviousOutPoint.OutIndex
 			}
-			input := InputJson{TxHash: hstr, MessageIndex: mindex, OutIndex: outindex}
+			unlock := ""
+			if in.SignatureScript != nil {
+				unlock, _ = tokenengine.DisasmString(in.SignatureScript)
+			}
+			input := InputJson{TxHash: hstr, MessageIndex: mindex, OutIndex: outindex, UnlockScript: unlock}
 			json.Inputs = append(json.Inputs, input)
 
 		}
@@ -66,7 +72,8 @@ func ConvertPayment2Json(payment *modules.PaymentPayload) PaymentJson {
 
 	for _, out := range payment.Outputs {
 		addr, _ := tokenengine.GetAddressFromScript(out.PkScript)
-		output := OutputJson{Amount: out.Value, Asset: out.Asset.String(), ToAddress: addr.String()}
+		lock, _ := tokenengine.DisasmString(out.PkScript)
+		output := OutputJson{Amount: out.Value, Asset: out.Asset.String(), ToAddress: addr.String(), LockScript: lock}
 		json.Outputs = append(json.Outputs, output)
 	}
 	return json
