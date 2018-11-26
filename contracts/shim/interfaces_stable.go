@@ -125,7 +125,7 @@ type ChaincodeStubInterface interface {
 	// validity of the transaction.
 	SetEvent(name string, payload []byte) error
 
-	//获取保证金合约的一些配置参数
+	//获取合约的一些配置参数
 	GetSystemConfig(filed string) (value string, err error)
 	//获取支付合约的 from 地址
 	GetInvokeAddress() (addr common.Address, err error)
@@ -140,10 +140,14 @@ type ChaincodeStubInterface interface {
 	//如果token为空则表示查询所有Token余额
 	GetTokenBalance(address string, token *modules.Asset) ([]*modules.AmountAsset, error)
 	//将合约上锁定的某种Token支付出去
-	PayOutToken(addr string, token modules.Asset, amount uint64, lockTime uint32) error
+	PayOutToken(addr string, invokeTokens *modules.InvokeTokens, lockTime uint32) error
 	//获取invoke参数，包括invokeAddr,tokens,fee,funcName,params
 	GetInvokeParameters() (invokeAddr common.Address, invokeTokens *modules.InvokeTokens, invokeFees *modules.InvokeFees, funcName string, params []string, err error)
-
+	//定义并发行一种全新的Token
+	DefineToken(tokenType byte, define []byte) error
+	//增发一种之前已经定义好的Token
+	//如果是ERC20增发，则uniqueId为空，如果是ERC721增发，则必须指定唯一的uniqueId
+	SupplyToken(assetId []byte, uniqueId []byte, amt uint64) error
 	// GetStateByRange returns a range iterator over a set of keys in the
 	// ledger. The iterator can be used to iterate over all keys
 	// between the startKey (inclusive) and endKey (exclusive).

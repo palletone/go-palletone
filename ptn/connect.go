@@ -19,9 +19,7 @@
 package ptn
 
 import (
-	"errors"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
 func (pm *ProtocolManager) mediatorConnect() {
@@ -47,50 +45,50 @@ func (pm *ProtocolManager) mediatorConnect() {
 
 //1.is not mediator,so save only two mediator connects,and disconnect others connects.
 //2.also mediator,move peersTransition sockets to peers and delete the old mediator
-func (pm *ProtocolManager) TransitionConvert() {
-	if !pm.producer.LocalHaveActiveMediator() {
-		log.Info("This node is not Mediator")
-		peers := pm.peers.GetPeers()
-		for _, peer := range peers {
-			if !peer.mediator {
-				continue
-			}
-			url := "pnode://" + peer.Peer.ID().String() + "@" + peer.Peer.RemoteAddr().String()
-			log.Debug("TransitionConvert", "url:", url)
-			node, err := discover.ParseNode(url)
-			if err != nil {
-				log.Error("TransitionConvert", "invalid pnode: %v", err)
-				continue
-			}
-			pm.srvr.RemovePeer(node)
-		}
-		return
-	}
-	newPeers := pm.dag.GetActiveMediatorNodes()
-	oldPeers := pm.peers.GetPeers()
-
-	for _, oldPeer := range oldPeers {
-		if _, ok := newPeers[oldPeer.ID().String()]; ok {
-			continue
-		}
-		url := "pnode://" + oldPeer.Peer.ID().String() + "@" + oldPeer.Peer.RemoteAddr().String()
-		node, err := discover.ParseNode(url)
-		if err != nil {
-			log.Error("TransitionConvert", "invalid pnode: %v", err)
-			continue
-		}
-		pm.srvr.RemovePeer(node)
-	}
-
-	oldPeers = pm.peers.GetPeers()
-	for _, newPeer := range newPeers {
-		if pm.isexist(newPeer.ID.String(), oldPeers) {
-			continue
-		}
-		pm.srvr.AddPeer(newPeer)
-	}
-
-}
+//func (pm *ProtocolManager) TransitionConvert() {
+//	if !pm.producer.LocalHaveActiveMediator() {
+//		log.Info("This node is not Mediator")
+//		peers := pm.peers.GetPeers()
+//		for _, peer := range peers {
+//			if !peer.mediator {
+//				continue
+//			}
+//			url := "pnode://" + peer.Peer.ID().String() + "@" + peer.Peer.RemoteAddr().String()
+//			log.Debug("TransitionConvert", "url:", url)
+//			node, err := discover.ParseNode(url)
+//			if err != nil {
+//				log.Error("TransitionConvert", "invalid pnode: %v", err)
+//				continue
+//			}
+//			pm.srvr.RemovePeer(node)
+//		}
+//		return
+//	}
+//	newPeers := pm.dag.GetActiveMediatorNodes()
+//	oldPeers := pm.peers.GetPeers()
+//
+//	for _, oldPeer := range oldPeers {
+//		if _, ok := newPeers[oldPeer.ID().String()]; ok {
+//			continue
+//		}
+//		url := "pnode://" + oldPeer.Peer.ID().String() + "@" + oldPeer.Peer.RemoteAddr().String()
+//		node, err := discover.ParseNode(url)
+//		if err != nil {
+//			log.Error("TransitionConvert", "invalid pnode: %v", err)
+//			continue
+//		}
+//		pm.srvr.RemovePeer(node)
+//	}
+//
+//	oldPeers = pm.peers.GetPeers()
+//	for _, newPeer := range newPeers {
+//		if pm.isexist(newPeer.ID.String(), oldPeers) {
+//			continue
+//		}
+//		pm.srvr.AddPeer(newPeer)
+//	}
+//
+//}
 
 func (pm *ProtocolManager) isexist(pid string, peers []*peer) bool {
 	for _, peer := range peers {
@@ -101,60 +99,60 @@ func (pm *ProtocolManager) isexist(pid string, peers []*peer) bool {
 	return false
 }
 
-func (pm *ProtocolManager) peerCheck(p *peer) error {
-	//TODO must delete
-	return nil
-	if err := pm.mediatorCheck(p); err != nil {
-		log.Debug("mediatorCheck")
-		return err
-	}
-	if err := pm.noMediatorCheck(p); err != nil {
-		log.Debug("noMediatorCheck")
-		return err
-	}
+//func (pm *ProtocolManager) peerCheck(p *peer) error {
+//	//TODO must delete
+//	return nil
+//	if err := pm.mediatorCheck(p); err != nil {
+//		log.Debug("mediatorCheck")
+//		return err
+//	}
+//	if err := pm.noMediatorCheck(p); err != nil {
+//		log.Debug("noMediatorCheck")
+//		return err
+//	}
+//
+//	return nil
+//}
 
-	return nil
-}
+//func (pm *ProtocolManager) mediatorCheck(p *peer) error {
+//	log.Info("ProtocolManager mediatorCheck")
+//	if pm.isTest {
+//		return nil
+//	}
+//	if p.mediator {
+//		peers := pm.dag.GetActiveMediatorNodes()
+//		if _, ok := peers[p.ID().TerminalString()]; ok {
+//			//TODO check the number of mediator connctions and the number of nomediator connections
+//			//if pm.peers.mediatorCheck(p, pm.maxPeers, len(peers)) {
+//			//}
+//		} else {
+//			log.Info("PalletOne handshake failed lying selef is mediator")
+//			return errors.New("PalletOne handshake failed lying selef is mediator")
+//		}
+//	}
+//	return nil
+//}
 
-func (pm *ProtocolManager) mediatorCheck(p *peer) error {
-	log.Info("ProtocolManager mediatorCheck")
-	if pm.isTest {
-		return nil
-	}
-	if p.mediator {
-		peers := pm.dag.GetActiveMediatorNodes()
-		if _, ok := peers[p.ID().TerminalString()]; ok {
-			//TODO check the number of mediator connctions and the number of nomediator connections
-			//if pm.peers.mediatorCheck(p, pm.maxPeers, len(peers)) {
-			//}
-		} else {
-			log.Info("PalletOne handshake failed lying selef is mediator")
-			return errors.New("PalletOne handshake failed lying selef is mediator")
-		}
-	}
-	return nil
-}
-
-func (pm *ProtocolManager) noMediatorCheck(p *peer) error {
-	log.Info("ProtocolManager noMediatorCheck")
-	if pm.isTest {
-		return nil
-	}
-	if !p.mediator {
-		peers := pm.dag.GetActiveMediatorNodes()
-		if _, ok := peers[p.ID().TerminalString()]; !ok {
-			//TODO check the number of mediator connctions and the number of nomediator connections
-			if !pm.peers.noMediatorCheck(pm.maxPeers, len(peers)-1) {
-				log.Info("The number of no ediator connections full")
-				return errors.New("The number of no ediator connections full")
-			}
-		} else {
-			log.Info("PalletOne handshake failed lying self is not mediator")
-			return errors.New("PalletOne handshake failed lying self is not mediator")
-		}
-	}
-	return nil
-}
+//func (pm *ProtocolManager) noMediatorCheck(p *peer) error {
+//	log.Info("ProtocolManager noMediatorCheck")
+//	if pm.isTest {
+//		return nil
+//	}
+//	if !p.mediator {
+//		peers := pm.dag.GetActiveMediatorNodes()
+//		if _, ok := peers[p.ID().TerminalString()]; !ok {
+//			//TODO check the number of mediator connctions and the number of nomediator connections
+//			if !pm.peers.noMediatorCheck(pm.maxPeers, len(peers)-1) {
+//				log.Info("The number of no ediator connections full")
+//				return errors.New("The number of no ediator connections full")
+//			}
+//		} else {
+//			log.Info("PalletOne handshake failed lying self is not mediator")
+//			return errors.New("PalletOne handshake failed lying self is not mediator")
+//		}
+//	}
+//	return nil
+//}
 
 /*
 	log.Info("handle", "p.Peer.ID()", p.Peer.ID())

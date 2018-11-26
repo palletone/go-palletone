@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
@@ -47,10 +48,6 @@ type PalletOne interface {
 
 type iDag interface {
 	GetCurThreshold() int
-	IsActiveMediator(add common.Address) bool
-	IsSynced() bool
-	GenerateUnit(when time.Time, producer common.Address,
-		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit
 	GetSlotAtTime(when time.Time) uint32
 	GetSlotTime(slotNum uint32) time.Time
 	HeadUnitTime() int64
@@ -59,26 +56,39 @@ type iDag interface {
 	GetActiveMediatorCount() int
 	GetActiveMediatorAddr(index int) common.Address
 	HeadUnitNum() uint64
-	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
 	GetUnitByHash(common.Hash) (*modules.Unit, error)
 	GetMediators() map[common.Address]bool
+
+	IsActiveMediator(add common.Address) bool
+	IsSynced() bool
+
+	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
+
+	GenerateUnit(when time.Time, producer common.Address,
+		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit
+
 	MediatorSchedule() []common.Address
+
+	SubscribeChainMaintainEvent(ch chan<- dag.ChainMaintainEvent) event.Subscription
 }
 
 type MediatorPlugin struct {
-	ptn  PalletOne // Full PalletOne service to retrieve other function
-	dag  iDag
+	ptn  PalletOne     // Full PalletOne service to retrieve other function
 	quit chan struct{} // Channel used for graceful exit
+
+	dag              iDag
+	chainMaintainCh  chan dag.ChainMaintainEvent
+	chainMaintainSub event.Subscription
 
 	// Enable Unit production, even if the chain is stale.
 	// 新开启一个区块链时，必须设为true
 	productionEnabled bool
 	// Mediator`s account and passphrase controlled by this node
-	mediators map[common.Address]*mediatorAccount
+	mediators map[common.Address]*MediatorAccount
 
 	// 新生产unit的事件订阅
-	newUnitFeed  event.Feed              // 订阅的时候自动初始化一次
-	newUnitScope event.SubscriptionScope // 零值已准备就绪待用
+	newProducedUnitFeed  event.Feed              // 订阅的时候自动初始化一次
+	newProducedUnitScope event.SubscriptionScope // 零值已准备就绪待用
 
 	// dkg 初始化 相关
 	suite *bn256.Suite
@@ -144,13 +154,11 @@ func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 	return lams
 }
 
-func (mp *MediatorPlugin) LocalMediators() []common.Address {
-	adds := []common.Address{}
+func (mp *MediatorPlugin) LocalMediators() *MediatorAccount {
 	for add, _ := range mp.mediators {
-		adds = append(adds, add)
+		return mp.mediators[add]
 	}
-
-	return adds
+	return nil
 }
 
 func (mp *MediatorPlugin) LocalHaveActiveMediator() bool {
@@ -179,7 +187,7 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 		println("No mediators configured! Please add mediator and private keys to configuration.")
 	} else {
 		// 2. 开启循环生产计划
-		log.Info(fmt.Sprintf("Launching unit production for %d mediators.", len(mp.mediators)))
+		go log.Info(fmt.Sprintf("Launching unit production for %d mediators.", len(mp.mediators)))
 
 		if mp.productionEnabled {
 			dag := mp.dag
@@ -194,7 +202,7 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 }
 
 func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
-	log.Info("instantiate the DistKeyGenerator (DKG) struct.")
+	go log.Info("instantiate the DistKeyGenerator (DKG) struct.")
 
 	dag := mp.dag
 	if !mp.productionEnabled && !dag.IsSynced() {
@@ -238,24 +246,47 @@ func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
 }
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
-	log.Debug("mediator plugin startup begin")
+	go log.Debug("mediator plugin startup begin")
 
 	// 1. 开启循环生产计划
 	go mp.ScheduleProductionLoop()
 
-	// 2. 给当前节点控制的活跃mediator，初始化对应的DKG.
-	// todo 数据同步后再初始化，换届后需重新生成
-	go mp.NewActiveMediatorsDKG()
+	mp.chainMaintainCh = make(chan dag.ChainMaintainEvent)
+	mp.chainMaintainSub = mp.dag.SubscribeChainMaintainEvent(mp.chainMaintainCh)
+	go mp.chainMaintainEventRecvLoop()
 
-	log.Debug("mediator plugin startup end")
+	go log.Debug("mediator plugin startup end")
 
 	return nil
 }
 
+func (mp *MediatorPlugin) chainMaintainEventRecvLoop() {
+	for {
+		select {
+		case <-mp.chainMaintainCh:
+			// 2. 给当前节点控制的活跃mediator，初始化对应的DKG.
+			// todo 数据同步后再初始化，换届后需重新生成
+			go mp.NewActiveMediatorsDKG()
+
+			// Err() channel will be closed when unsubscribing.
+		case <-mp.chainMaintainSub.Err():
+			return
+		}
+	}
+}
+
 func (mp *MediatorPlugin) Stop() error {
 	close(mp.quit)
-	mp.newUnitScope.Close()
-	log.Debug("mediator plugin stopped")
+
+	mp.chainMaintainSub.Unsubscribe()
+
+	mp.newProducedUnitScope.Close()
+	mp.vssDealScope.Close()
+	mp.vssResponseScope.Close()
+	mp.sigShareScope.Close()
+	mp.groupSigScope.Close()
+
+	go log.Debug("mediator plugin stopped")
 
 	return nil
 }
@@ -283,7 +314,7 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 }
 
 func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, error) {
-	log.Debug("mediator plugin initialize begin")
+	go log.Debug("mediator plugin initialize begin")
 
 	if ptn == nil || dag == nil || cfg == nil {
 		err := "pointer parameters of NewMediatorPlugin are nil!"
@@ -292,7 +323,7 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 	}
 
 	mss := cfg.Mediators
-	msm := make(map[common.Address]*mediatorAccount, 0)
+	msm := make(map[common.Address]*MediatorAccount, 0)
 
 	for _, medConf := range mss {
 		medAcc := medConf.configToAccount()
@@ -302,7 +333,7 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		msm[addr] = medAcc
 	}
 
-	log.Debug(fmt.Sprintf("This node controls %v mediators.", len(msm)))
+	go log.Debug(fmt.Sprintf("This node controls %v mediators.", len(msm)))
 
 	mp := MediatorPlugin{
 		ptn:  ptn,
@@ -316,7 +347,7 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 	}
 	mp.initTBLSBuf()
 
-	log.Debug("mediator plugin initialize end")
+	go log.Debug("mediator plugin initialize end")
 
 	return &mp, nil
 }

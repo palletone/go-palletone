@@ -26,10 +26,10 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/fatih/set.v0"
-	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 var (
@@ -84,7 +84,7 @@ type peer struct {
 	knownGroupSig *set.Set // Set of block hashes known to be known by this peer
 
 	//index modules.ChainIndex
-	mediator bool
+	//mediator bool
 	//transitionCh chan int
 }
 
@@ -100,7 +100,7 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 		knownBlocks:   set.New(),
 		knownGroupSig: set.New(),
 		peermsg:       map[modules.IDType16]peerMsg{},
-		mediator:      false,
+		//mediator:      false,
 		//transitionCh:  make(chan int, 1),
 	}
 }
@@ -308,7 +308,8 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 
 // Handshake executes the ptn protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis common.Hash, mediator bool, headHash common.Hash) error {
+func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis common.Hash,
+	/*mediator bool,*/ headHash common.Hash) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 	var status statusData // safe to read after two values have been received from errc
@@ -319,8 +320,8 @@ func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis commo
 			NetworkId:       network,
 			Index:           index,
 			GenesisUnit:     genesis,
-			Mediator:        mediator,
-			CurrentHeader:   headHash,
+			//Mediator:        mediator,
+			CurrentHeader: headHash,
 		})
 	}()
 	go func() {
@@ -338,7 +339,7 @@ func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis commo
 			return p2p.DiscReadTimeout
 		}
 	}
-	p.mediator = status.Mediator
+	//p.mediator = status.Mediator
 	p.SetHead(status.CurrentHeader, status.Index)
 	return nil
 }
@@ -425,21 +426,21 @@ func (ps *peerSet) MediatorsClean() {
 }
 
 //Make sure there is plenty of connection for Mediator
-func (ps *peerSet) noMediatorCheck(maxPeers int, mediators int) bool {
-	ps.lock.RLock()
-	defer ps.lock.RUnlock()
-
-	size := 0
-	for _, p := range ps.peers {
-		if !p.mediator {
-			size++
-		}
-	}
-	if size > maxPeers-mediators {
-		return false
-	}
-	return true
-}
+//func (ps *peerSet) noMediatorCheck(maxPeers int, mediators int) bool {
+//	ps.lock.RLock()
+//	defer ps.lock.RUnlock()
+//
+//	size := 0
+//	for _, p := range ps.peers {
+//		if !p.mediator {
+//			size++
+//		}
+//	}
+//	if size > maxPeers-mediators {
+//		return false
+//	}
+//	return true
+//}
 
 //Make sure there is plenty of connection for Mediator
 func (ps *peerSet) MediatorCheck() bool {

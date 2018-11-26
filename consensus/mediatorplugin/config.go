@@ -68,7 +68,7 @@ type MediatorConf struct {
 	InitPartPub string
 }
 
-func (medConf *MediatorConf) configToAccount() *mediatorAccount {
+func (medConf *MediatorConf) configToAccount() *MediatorAccount {
 	// 1. 解析 mediator 账户地址
 	addr := core.StrToMedAdd(medConf.Address)
 
@@ -76,7 +76,7 @@ func (medConf *MediatorConf) configToAccount() *mediatorAccount {
 	sec := core.StrToScalar(medConf.InitPartSec)
 	pub := core.StrToPoint(medConf.InitPartPub)
 
-	medAcc := &mediatorAccount{
+	medAcc := &MediatorAccount{
 		addr,
 		medConf.Password,
 		sec,
@@ -86,7 +86,7 @@ func (medConf *MediatorConf) configToAccount() *mediatorAccount {
 	return medAcc
 }
 
-type mediatorAccount struct {
+type MediatorAccount struct {
 	Address     common.Address
 	Password    string
 	InitPartSec kyber.Scalar

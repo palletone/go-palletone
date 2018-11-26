@@ -419,9 +419,9 @@ func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Mes
 	// save by type
 	switch {
 	case VotePayLoad.VoteType == vote.TYPE_MEDIATOR:
-		Addresses := common.BytesListToAddressList(VotePayLoad.Contents)
+		//Addresses := common.BytesListToAddressList(VotePayLoad.Contents)
 
-		if err = unitOp.statedb.UpdateMediatorVote(voter, Addresses, VotePayLoad.Mode, term); err != nil {
+		if err = unitOp.statedb.UpdateMediatorVote(voter, VotePayLoad.Contents); err != nil {
 			return err
 		}
 
@@ -429,13 +429,13 @@ func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Mes
 			return err
 		}
 
-	case VotePayLoad.VoteType == vote.TYPE_CREATEVOTE:
-		if err = unitOp.statedb.CreateUserVote(voter, VotePayLoad.Contents, tx.TxHash.Bytes()); err != nil {
-			return err
-		}
-		if err = unitOp.statedb.AddVote2Account(voter, vote.VoteInfo{VoteType: vote.TYPE_CREATEVOTE, VoteContent: tx.TxHash.Bytes()}); err != nil {
-			return err
-		}
+		//case VotePayLoad.VoteType == vote.TYPE_CREATEVOTE:
+		//	if err = unitOp.statedb.CreateUserVote(voter, VotePayLoad.Contents, tx.TxHash.Bytes()); err != nil {
+		//		return err
+		//	}
+		//	if err = unitOp.statedb.AddVote2Account(voter, vote.VoteInfo{VoteType: vote.TYPE_CREATEVOTE, VoteContent: tx.TxHash.Bytes()}); err != nil {
+		//		return err
+		//	}
 	}
 	return nil
 

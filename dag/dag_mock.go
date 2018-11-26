@@ -40,6 +40,16 @@ func (m *MockIDag) EXPECT() *MockIDagMockRecorder {
 	return m.recorder
 }
 
+// Close mocks base method
+func (m *MockIDag) Close() {
+	m.ctrl.Call(m, "Close")
+}
+
+// Close indicates an expected call of Close
+func (mr *MockIDagMockRecorder) Close() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockIDag)(nil).Close))
+}
+
 // GetCommon mocks base method
 func (m *MockIDag) GetCommon(key []byte) ([]byte, error) {
 	ret := m.ctrl.Call(m, "GetCommon", key)
@@ -224,19 +234,6 @@ func (mr *MockIDagMockRecorder) CurrentHeader() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentHeader", reflect.TypeOf((*MockIDag)(nil).CurrentHeader))
 }
 
-// GetTransactionByHash mocks base method
-func (m *MockIDag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, error) {
-	ret := m.ctrl.Call(m, "GetTransactionByHash", hash)
-	ret0, _ := ret[0].(*modules.Transaction)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTransactionByHash indicates an expected call of GetTransactionByHash
-func (mr *MockIDagMockRecorder) GetTransactionByHash(hash interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionByHash", reflect.TypeOf((*MockIDag)(nil).GetTransactionByHash), hash)
-}
-
 // GetUnitTransactions mocks base method
 func (m *MockIDag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
 	ret := m.ctrl.Call(m, "GetUnitTransactions", hash)
@@ -248,6 +245,33 @@ func (m *MockIDag) GetUnitTransactions(hash common.Hash) (modules.Transactions, 
 // GetUnitTransactions indicates an expected call of GetUnitTransactions
 func (mr *MockIDagMockRecorder) GetUnitTransactions(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitTransactions", reflect.TypeOf((*MockIDag)(nil).GetUnitTransactions), hash)
+}
+
+// GetUnitTxsHash mocks base method
+func (m *MockIDag) GetUnitTxsHash(hash common.Hash) ([]common.Hash, error) {
+	ret := m.ctrl.Call(m, "GetUnitTxsHash", hash)
+	ret0, _ := ret[0].([]common.Hash)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUnitTxsHash indicates an expected call of GetUnitTxsHash
+func (mr *MockIDagMockRecorder) GetUnitTxsHash(hash interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitTxsHash", reflect.TypeOf((*MockIDag)(nil).GetUnitTxsHash), hash)
+}
+
+// GetTransactionByHash mocks base method
+func (m *MockIDag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
+	ret := m.ctrl.Call(m, "GetTransactionByHash", hash)
+	ret0, _ := ret[0].(*modules.Transaction)
+	ret1, _ := ret[1].(common.Hash)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetTransactionByHash indicates an expected call of GetTransactionByHash
+func (mr *MockIDagMockRecorder) GetTransactionByHash(hash interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionByHash", reflect.TypeOf((*MockIDag)(nil).GetTransactionByHash), hash)
 }
 
 // InsertHeaderDag mocks base method
@@ -799,4 +823,16 @@ func (m *MockIDag) GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error
 // GetTxFee indicates an expected call of GetTxFee
 func (mr *MockIDagMockRecorder) GetTxFee(pay interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxFee", reflect.TypeOf((*MockIDag)(nil).GetTxFee), pay)
+}
+
+// SetUnitGroupSign mocks base method
+func (m *MockIDag) SetUnitGroupSign(sign []byte, unit_hash common.Hash) error {
+	ret := m.ctrl.Call(m, "SetUnitGroupSign", sign, unit_hash)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetUnitGroupSign indicates an expected call of SetUnitGroupSign
+func (mr *MockIDagMockRecorder) SetUnitGroupSign(sign, unit_hash interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUnitGroupSign", reflect.TypeOf((*MockIDag)(nil).SetUnitGroupSign), sign, unit_hash)
 }

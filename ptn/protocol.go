@@ -65,9 +65,6 @@ const (
 	NodeDataMsg     = 0x21
 	GetReceiptsMsg  = 0x22
 	ReceiptsMsg     = 0x23
-
-	//TransitionReq  = 0x11
-	//TransitionResp = 0x12
 )
 
 type errCode int
@@ -147,8 +144,8 @@ type statusData struct {
 	NetworkId       uint64
 	Index           modules.ChainIndex
 	GenesisUnit     common.Hash
-	Mediator        bool
 	CurrentHeader   common.Hash
+	//Mediator        bool
 }
 
 // newBlockHashesData is the network packet for the block announcements.

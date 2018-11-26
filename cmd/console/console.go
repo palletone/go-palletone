@@ -187,6 +187,17 @@ func (c *Console) init(preload []string) error {
 			obj.Set("newAccount", bridge.NewAccount)
 			obj.Set("sign", bridge.Sign)
 		}
+            ptn, errr := c.jsre.Get("ptn")
+	       if errr != nil {
+	             return errr
+	       }
+	       if obj := ptn.Object(); obj != nil { // make sure the admin api is enabled over the interface
+		    if _, err = c.jsre.Run(`jeth.signRawTransaction = ptn.signRawTransaction;`); err != nil {
+				return fmt.Errorf("ptn.signRawTransaction: %v", err)
+		    }
+		     obj.Set("signRawTransaction", bridge.SignRawTransaction)
+	        }
+                  //Add by wzhyuan
 	}
 	// The admin.sleep and admin.sleepBlocks are offered by the console and not by the RPC layer.
 	admin, err := c.jsre.Get("admin")
@@ -198,6 +209,7 @@ func (c *Console) init(preload []string) error {
 		obj.Set("sleep", bridge.Sleep)
 		obj.Set("clearHistory", c.clearHistory)
 	}
+	//Add by wzhyuan  
 	// Preload any JavaScript files before starting the console
 	for _, path := range preload {
 		if err := c.jsre.Exec(path); err != nil {

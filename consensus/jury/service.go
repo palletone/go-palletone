@@ -35,13 +35,16 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	cm "github.com/palletone/go-palletone/dag/common"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/common/rlp"
 )
 
 type PeerType int
 
 const (
-	_ PeerType = iota
+	_         PeerType = iota
 	TUnknow
 	TJury
 	TMediator
@@ -65,7 +68,7 @@ type PalletOne interface {
 	ContractBroadcast(event ContractExeEvent)
 	ContractSigBroadcast(event ContractSigEvent)
 
-	GetLocalMediators() []common.Address
+	GetLocalMediators() *mp.MediatorAccount
 }
 
 type iDag interface {
@@ -82,7 +85,7 @@ type Processor struct {
 	ptype    PeerType
 	ptn      PalletOne
 	dag      iDag
-	local    common.Address //local
+	local    *mp.MediatorAccount //local
 	contract *contracts.Contract
 	txPool   txspool.ITxPool
 	locker   *sync.Mutex
@@ -101,17 +104,15 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 	}
 	var address common.Address
 	localmediators := ptn.GetLocalMediators()
-	if len(localmediators) > 0 {
-		address = localmediators[0]
-	}
+
 	p := &Processor{
 		name:     "conract processor",
 		ptn:      ptn,
 		dag:      dag,
 		contract: contract,
-		local:    address, //dag.GetActiveMediators()[0],//todo
 		quit:     make(chan struct{}),
 		mtx:      make(map[common.Hash]*contractTx),
+		local:    localmediators,
 	}
 
 	log.Info("NewContractProcessor ok", "mediator_address", address.String())
@@ -150,15 +151,21 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 
 	cmsgType, payload, err := runContractCmd(p.contract, event.Tx)
 	if err != nil {
+		log.Error(fmt.Sprintf("ProcessContractEvent runContractCmd err:%s", err))
+		return err
+	}
+	ks := p.ptn.GetKeyStore()
+	err = ks.Unlock(accounts.Account{Address: p.local.Address}, p.local.Password)
+	if err != nil {
+		log.Error(fmt.Sprintf("ProcessContractEvent account add[%s], password[%s], err[%s]", p.local.Address.String(), p.local.Password, err))
+		return err
+	}
+	tx, _, err := gen.GenContractSigTransctions(p.local.Address, event.Tx, cmsgType, payload, p.ptn.GetKeyStore())
+	if err != nil {
+		log.Error(fmt.Sprintf("ProcessContractEvent GenContractSigTransctions", "err:%s", err))
 		return err
 	}
 
-	tx, _, err := gen.GenContractSigTransctions(p.local, event.Tx, cmsgType, payload, p.ptn.GetKeyStore())
-	if err != nil {
-		log.Error("GenContractSigTransctions", "err:%s", err)
-		return err
-	}
-	//p.contractTx[event.Tx.TxHash] = tx
 	p.mtx[event.Tx.TxHash] = &contractTx{
 		list: p.dag.GetActiveMediators(),
 		tx:   tx,
@@ -170,7 +177,8 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 	//broadcast
 	go p.ptn.ContractSigBroadcast(ContractSigEvent{tx.TxHash, tx})
 	//local
-	go p.contractSigFeed.Send(ContractSigEvent{tx.TxHash, tx})
+	//go p.contractSigFeed.Send(ContractSigEvent{tx.TxHash, tx})
+	go p.ProcessContractSigEvent(&ContractSigEvent{tx.TxHash, tx})
 
 	return nil
 }
@@ -192,7 +200,8 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 				time.Sleep(time.Millisecond * 500)
 				if p.mtx[event.Tx.TxHash].tx != nil {
 					tx = p.mtx[event.Tx.TxHash].tx
-					if judge, _ := checkAndAddTxData(tx, event.Tx); judge == true {
+					judge, err := checkAndAddTxData(tx, event.Tx)
+					if err == nil && judge == true {
 						//收集签名数量，达到要求后将tx添加到交易池
 						num := getTxSigNum(tx)
 						log.Info("ProcessContractSigEvent", "tx sig num=%d", num)
@@ -209,7 +218,10 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 		}()
 	} else {
 		log.Info("ProcessContractSigEvent", "tx(%s) is ok", event.Tx.TxHash)
-		if judge, _ := checkAndAddTxData(tx, event.Tx); judge == true {
+		judge, err := checkAndAddTxData(tx, event.Tx);
+		if err != nil {
+			return err
+		} else if judge == true {
 			num := getTxSigNum(tx)
 			log.Info("ProcessContractSigEvent", "tx sig num=%d", num)
 			if num >= 1 { //todo
@@ -248,8 +260,8 @@ func runContractCmd(contract *contracts.Contract, trs *modules.Transaction) (mod
 			{
 				req := ContractInvokeReq{
 					chainID:  "palletone",
-					deployId: msg.Payload.(modules.ContractInvokeRequestPayload).ContractId,
-					args:     msg.Payload.(modules.ContractInvokeRequestPayload).Args,
+					deployId: msg.Payload.(*modules.ContractInvokeRequestPayload).ContractId,
+					args:     msg.Payload.(*modules.ContractInvokeRequestPayload).Args,
 					txid:     trs.TxHash.String(),
 					tx:       trs,
 				}
@@ -293,20 +305,21 @@ func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (b
 	}
 	for i, msg := range local.TxMessages {
 		if msg.App == modules.APP_SIGNATURE {
-			sigPayload := msg.Payload.(*modules.SignaturePayload)
+			sigPayload := msg.Payload.(modules.SignaturePayload)
 			sigs := sigPayload.Signatures
 			for _, sig := range sigs {
-				if true == bytes.Equal(sig.PubKey, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0].PubKey) &&
-					true == bytes.Equal(sig.Signature, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0].Signature) {
-					log.Info("tx %s already recv", recv.TxHash)
+				if true == bytes.Equal(sig.PubKey, recvSigMsg.Payload.(modules.SignaturePayload).Signatures[0].PubKey) &&
+					true == bytes.Equal(sig.Signature, recvSigMsg.Payload.(modules.SignaturePayload).Signatures[0].Signature) {
+					log.Info("tx  already recv:", recv.TxHash.String())
 					return false, nil
 				}
 			}
 			//直接将签名添加到msg中
-			if len(recvSigMsg.Payload.(*modules.SignaturePayload).Signatures) > 0 {
-				sigPayload.Signatures = append(sigs, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0])
+			if len(recvSigMsg.Payload.(modules.SignaturePayload).Signatures) > 0 {
+				sigPayload.Signatures = append(sigs, recvSigMsg.Payload.(modules.SignaturePayload).Signatures[0])
 			}
 			local.TxMessages[i].Payload = sigPayload
+			log.Info("checkAndAddTxData", "add sig payload:", sigPayload.Signatures)
 			return true, nil
 		}
 	}
@@ -318,7 +331,7 @@ func getTxSigNum(tx *modules.Transaction) int {
 	if tx != nil {
 		for _, msg := range tx.TxMessages {
 			if msg.App == modules.APP_SIGNATURE {
-				return len(msg.Payload.(*modules.SignaturePayload).Signatures)
+				return len(msg.Payload.(modules.SignaturePayload).Signatures)
 			}
 		}
 	}
@@ -329,6 +342,8 @@ func checkTxValid(tx *modules.Transaction, ks *keystore.KeyStore) bool {
 	if tx == nil {
 		return false
 	}
+	//printTxInfo(tx)
+
 	return cm.ValidateTxSig(tx, ks)
 }
 
@@ -337,35 +352,85 @@ func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction) error {
 		return errors.New("addTx2LocalTxTool param is nil")
 	}
 	txPool := p.ptn.TxPool()
-	log.Debug("addTx2LocalTxTool", "tx(%s)", tx.TxHash)
+	log.Debug("addTx2LocalTxTool", "tx:", tx.TxHash.String())
 
 	return txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
 }
 
 //todo txid ?
-func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, args [][]byte, timeout time.Duration) error {
-	log.Info("ContractTxReqBroadcast", "enter", "ok")
+func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) error {
+	log.Info("ContractTxReqBroadcast", fmt.Sprintf("enter, deployId[%v], txid[%s]", deployId, txid))
 	if deployId == nil || args == nil {
 		log.Error("ContractTxReqBroadcast", "param is nil")
 		return errors.New("transaction request param is nil")
 	}
-	msgPay := &modules.Message{
-		App:     modules.APP_PAYMENT,
-		Payload: modules.PaymentPayload{},
+
+	tx := &modules.Transaction{}
+	if txBytes != nil {
+		if err := rlp.DecodeBytes(txBytes, tx); err != nil {
+			return err
+		}
+	}else {
+		pay := &modules.PaymentPayload{
+			Inputs:   []*modules.Input{},
+			Outputs:  []*modules.Output{},
+			LockTime: 11111, //todo
+		}
+		msgPay := &modules.Message{
+			App:     modules.APP_PAYMENT,
+			Payload: pay,
+		}
+		tx.AddMessage(msgPay)
 	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
-		Payload: modules.ContractInvokeRequestPayload{
+		Payload: &modules.ContractInvokeRequestPayload{
 			ContractId: deployId,
 			Args:       args,
 			Timeout:    timeout,
 		},
 	}
 
+	tx.AddMessage(msgReq)
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractExeEvent{modules.NewTransaction([]*modules.Message{msgPay, msgReq})})
+	go p.ptn.ContractBroadcast(ContractExeEvent{Tx:tx})
 	//local
-	go p.contractExecFeed.Send(ContractExeEvent{modules.NewTransaction([]*modules.Message{msgPay, msgReq})})
+	//go p.contractExecFeed.Send(ContractExeEvent{modules.NewTransaction([]*modules.Message{msgPay, msgReq})})
+	go p.ProcessContractEvent(&ContractExeEvent{Tx:tx})
 
 	return nil
+}
+
+func printTxInfo(tx *modules.Transaction) {
+	if tx == nil {
+		return
+	}
+
+	log.Info("=========tx info============hash:", tx.TxHash.String())
+	for i := 0; i < len(tx.TxMessages); i++ {
+		log.Info("---------")
+		app := tx.TxMessages[i].App
+		pay := tx.TxMessages[i].Payload
+		log.Info("", "app:", app)
+		if app == modules.APP_PAYMENT {
+			p := pay.(*modules.PaymentPayload)
+			fmt.Println(p.LockTime)
+		} else if app == modules.APP_CONTRACT_INVOKE_REQUEST {
+			p := pay.(*modules.ContractInvokeRequestPayload)
+			fmt.Println(p.ContractId)
+		} else if app == modules.APP_CONTRACT_INVOKE {
+			p := pay.(*modules.ContractInvokePayload)
+			fmt.Println(p.Args)
+			for idx, v := range p.WriteSet {
+				fmt.Printf("WriteSet:idx[%d], k[%v]-v[%v]", idx, v.Key, v.Value)
+			}
+			for idx, v := range p.ReadSet {
+				fmt.Printf("ReadSet:idx[%d], k[%v]-v[%v]", idx, v.Key, v.Value)
+			}
+		} else if app == modules.APP_SIGNATURE {
+			p := pay.(modules.SignaturePayload)
+			fmt.Printf("Signatures:[%v]", p.Signatures)
+		}
+	}
+
 }

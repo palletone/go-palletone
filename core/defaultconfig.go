@@ -20,18 +20,18 @@
 package core
 
 const (
-	DefaultAlias                    = "PTN"
-	DefaultTokenAmount              = 100000000000000000
-	DefaultTokenDecimal             = 8
-	DefaultChainID                  = 1
-	DefaultDepositRate              = 0.02
-	DefaultDepositAmountForJury     = 1000
-	DefaultDepositAmountForMediator = 2000
-	DefaultDepositContractAddress   = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
-	DefaultTokenHolder              = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
-	DefaultPassword                 = "password"
+	DefaultAlias                     = "PTN"
+	DefaultTokenAmount               = 100000000000000000
+	DefaultTokenDecimal              = 8
+	DefaultChainID                   = 1
+	DefaultDepositRate               = 0.02
+	DefaultDepositAmountForMediator  = 2000
+	DefaultDepositAmountForJury      = 1000
+	DefaultDepositAmountForDeveloper = 800
+	DefaultDepositContractAddress    = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
+	DefaultTokenHolder               = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
+	DefaultPassword                  = "password"
 
-	DefaultMediatorInterval    = 2 //5 /* seconds */
 	DefaultMediatorCount       = 21
 	DefaultMinMediatorCount    = 11
 	DefaultMinMediatorInterval = 1
@@ -54,6 +54,9 @@ const (
 	PalletOne1Percent              = PalletOne100Percent / 100
 	PalletOneIrreversibleThreshold = 70 * PalletOne1Percent
 
-	DefaultMaintenanceInterval = 60 * 60 * 24 // seconds, aka: 1 day
-	DefaultMediatorCreateFee   = 5000
+	DefaultMediatorInterval    = 2       //5 /* seconds */
+	DefaultMaintenanceInterval = 60 * 10 //60 * 60 * 24 // seconds, aka: 1 day
+
+	DefaultMediatorCreateFee = 5000
+	DefaultVoteMediatorFee   = 20
 )

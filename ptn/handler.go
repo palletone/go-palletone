@@ -98,9 +98,9 @@ type ProtocolManager struct {
 	ceSub      event.Subscription
 
 	// append by Albert·Gou
-	producer   producer
-	newUnitCh  chan mp.NewUnitEvent
-	newUnitSub event.Subscription
+	producer           producer
+	newProducedUnitCh  chan mp.NewProducedUnitEvent
+	newProducedUnitSub event.Subscription
 
 	// append by Albert·Gou
 	sigShareCh  chan mp.SigShareEvent
@@ -287,7 +287,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.srvr = srvr
 	pm.maxPeers = maxPeers
 
-	go pm.mediatorConnect()
+	//go pm.mediatorConnect()
 
 	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
 	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
@@ -314,9 +314,9 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 
 	// append by Albert·Gou
 	// broadcast new unit produced by mediator
-	pm.newUnitCh = make(chan mp.NewUnitEvent)
-	pm.newUnitSub = pm.producer.SubscribeNewUnitEvent(pm.newUnitCh)
-	go pm.newUnitBroadcastLoop()
+	pm.newProducedUnitCh = make(chan mp.NewProducedUnitEvent)
+	pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
+	go pm.newProducedUnitBroadcastLoop()
 
 	// append by Albert·Gou
 	// send signature share
@@ -363,7 +363,7 @@ func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping PalletOne protocol")
 
 	// append by Albert·Gou
-	pm.newUnitSub.Unsubscribe()
+	pm.newProducedUnitSub.Unsubscribe()
 	pm.sigShareSub.Unsubscribe()
 	pm.groupSigSub.Unsubscribe()
 	pm.vssDealSub.Unsubscribe()
@@ -414,21 +414,21 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	//var unitRep common2.IUnitRepository
 	//unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
 
-	mediator := false
-	if !pm.isTest {
-		mediator = pm.producer.LocalHaveActiveMediator()
-	}
+	//mediator := false
+	//if !pm.isTest {
+	//	mediator = pm.producer.LocalHaveActiveMediator()
+	//}
 
 	head := pm.dag.CurrentHeader()
 	// Execute the PalletOne handshake
-	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), mediator, head.Hash()); err != nil {
+	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash() /*mediator,*/, head.Hash()); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
 
-	if err := pm.peerCheck(p); err != nil {
-		return err
-	}
+	//if err := pm.peerCheck(p); err != nil {
+	//	return err
+	//}
 
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
 		rw.Init(p.version)

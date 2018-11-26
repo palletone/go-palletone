@@ -21,9 +21,9 @@
 package dag
 
 import (
+	"fmt"
 	"time"
 
-	"fmt"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -72,16 +72,6 @@ func (d *Dag) SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) {
 
 	d.propdb.StoreMediatorSchl(ms)
 	return
-}
-
-// @author Albert·Gou
-func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool {
-	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
-	if unitState != modules.UNIT_STATE_VALIDATED &&
-		unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-		return false
-	}
-	return true
 }
 
 // author Albert·Gou
@@ -169,51 +159,6 @@ func (d *Dag) SaveMediator(med *core.Mediator, onlyStore bool) {
 	return
 }
 
-// author Albert·Gou
-func (d *Dag) IsActiveMediator(add common.Address) bool {
-	return d.GetGlobalProp().IsActiveMediator(add)
-}
-
-func (dag *Dag) InitPropertyDB(genesis *core.Genesis, genesisUnitHash common.Hash) error {
-	//  全局属性不是交易，不需要放在Unit中
-	// @author Albert·Gou
-	gp := modules.InitGlobalProp(genesis)
-	if err := dag.propdb.StoreGlobalProp(gp); err != nil {
-		return err
-	}
-
-	//  动态全局属性不是交易，不需要放在Unit中
-	// @author Albert·Gou
-	dgp := modules.InitDynGlobalProp(genesis, genesisUnitHash)
-	if err := dag.propdb.StoreDynGlobalProp(dgp); err != nil {
-		return err
-	}
-
-	//  初始化mediator调度器，并存在数据库
-	// @author Albert·Gou
-	ms := modules.InitMediatorSchl(gp, dgp)
-	if err := dag.propdb.StoreMediatorSchl(ms); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (dag *Dag) IsSynced() bool {
-	gp := dag.GetGlobalProp()
-	dgp := dag.GetDynGlobalProp()
-
-	nowFine := time.Now()
-	now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
-	nextSlotTime := modules.GetSlotTime(gp, dgp, 1)
-
-	if nextSlotTime.Before(now) {
-		return false
-	}
-
-	return true
-}
-
 func (dag *Dag) GetSlotAtTime(when time.Time) uint32 {
 	return modules.GetSlotAtTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), when)
 }
@@ -238,53 +183,6 @@ func (dag *Dag) HeadUnitHash() common.Hash {
 	return dag.GetDynGlobalProp().HeadUnitHash
 }
 
-// 根据最新 unit 计算出生产该 unit 的 mediator 缺失的 unit 个数，
-// 并更新到 mediator的相应字段中，返回数量
-func (dag *Dag) UpdateMediatorMissedUnits(unit *modules.Unit) uint64 {
-	missedUnits := dag.GetSlotAtTime(time.Unix(unit.Timestamp(), 0))
-	if missedUnits == 0 {
-		log.Error("Trying to push double-produced unit onto current unit?!")
-		return 0
-	}
-
-	missedUnits--
-	log.Debug(fmt.Sprintf("the count of missed Units: %v", missedUnits))
-
-	aSize := dag.GetActiveMediatorCount()
-	if missedUnits < uint32(aSize) {
-		var i uint32
-		for i = 0; i < missedUnits; i++ {
-			mediatorMissed := dag.GetScheduledMediator(i + 1)
-
-			med := dag.GetMediator(mediatorMissed)
-			med.TotalMissed++
-			dag.SaveMediator(med, false)
-		}
-	}
-
-	return uint64(missedUnits)
-}
-
-func (dag *Dag) UpdateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
-	dgp := dag.GetDynGlobalProp()
-
-	dgp.UpdateDynGlobalProp(unit, missedUnits)
-	dag.SaveDynGlobalProp(dgp, false)
-
-	return
-}
-
-func (dag *Dag) UpdateMediatorSchedule() {
-	gp := dag.GetGlobalProp()
-	dgp := dag.GetDynGlobalProp()
-	ms := dag.GetMediatorSchl()
-
-	ms.UpdateMediatorSchedule(gp, dgp)
-	dag.SaveMediatorSchl(ms, false)
-
-	return
-}
-
 func (dag *Dag) GetMediators() map[common.Address]bool {
 	return dag.statedb.GetMediators()
 }
@@ -293,29 +191,6 @@ func (dag *Dag) MediatorSchedule() []common.Address {
 	return dag.GetMediatorSchl().CurrentShuffledMediators
 }
 
-// todo 待被调用
-func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
-	if dag.HeadUnitHash() != nextUnit.ParentHash()[0] {
-		log.Error("invalidated unit's parent hash!")
-		return false
-	}
-
-	if dag.HeadUnitTime() >= nextUnit.Timestamp() {
-		log.Error("invalidated unit's timestamp!")
-		return false
-	}
-
-	slotNum := dag.GetSlotAtTime(time.Unix(nextUnit.Timestamp(), 0))
-	if slotNum <= 0 {
-		log.Error("invalidated unit's slot!")
-		return false
-	}
-
-	scheduledMediator := dag.GetScheduledMediator(slotNum)
-	if scheduledMediator.Equal(nextUnit.UnitAuthor()) {
-		log.Error("Mediator produced unit at wrong time!")
-		return false
-	}
-
-	return true
+func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
+	return dag.GetGlobalProp().ChainParameters.CurrentFees
 }

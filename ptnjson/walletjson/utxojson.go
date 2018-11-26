@@ -18,21 +18,16 @@
  *
  */
 
-package modules
+package walletjson
 
-import "github.com/palletone/go-palletone/dag/vote"
-
-//一个账户（地址）的状态信息
-//Include:
-// personal account P1*
-//P2SH account P3*
-//Contract account PC*
-type AccountInfo struct {
-	//AccountName string
-	//当前账户的PTN余额
-	PtnBalance uint64
-	//当前账户投票Mediator的结果，string数组的JSON格式
-	MediatorVoteResult []byte
-	//通用可改选投票的结果
-	Votes []vote.VoteInfo
+type UtxoJson struct {
+	TxHash         string `json:"txid"`          // reference Utxo struct key field
+	MessageIndex   uint32 `json:"message_index"` // message index in transaction
+	OutIndex       uint32 `json:"out_index"`
+	Amount         uint64 `json:"amount"`           // 数量
+	Asset          string `json:"asset"`            // 资产类别
+	PkScriptHex    string `json:"pk_script_hex"`    // 要执行的代码段
+	PkScriptString string `json:"pk_script_string"` // 要执行的代码段
+	LockTime       uint32 `json:"lock_time"`
+	OwnerAddress   string `json:"owner_address"`
 }

@@ -102,6 +102,7 @@ type Backend interface {
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	//------- Get addr utxo start ------//
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
+	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error)
 	GetAllUtxos() ([]ptnjson.UtxoJson, error)
 
@@ -117,7 +118,7 @@ type Backend interface {
 	ContractInvoke(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
 	DecodeTx(hex string) (string, error)
-	ContractTxReqBroadcast(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
+	ContractTxReqBroadcast(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

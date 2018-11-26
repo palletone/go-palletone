@@ -36,7 +36,7 @@ func (m *Mockproducer) EXPECT() *MockproducerMockRecorder {
 }
 
 // SubscribeNewUnitEvent mocks base method
-func (m *Mockproducer) SubscribeNewUnitEvent(ch chan<- mediatorplugin.NewUnitEvent) event.Subscription {
+func (m *Mockproducer) SubscribeNewUnitEvent(ch chan<- mediatorplugin.NewProducedUnitEvent) event.Subscription {
 	ret := m.ctrl.Call(m, "SubscribeNewUnitEvent", ch)
 	ret0, _ := ret[0].(event.Subscription)
 	return ret0

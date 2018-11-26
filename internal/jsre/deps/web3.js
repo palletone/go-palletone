@@ -5431,8 +5431,8 @@ var methods = function () {
     var signRawTransaction = new Method({
         name: 'signRawTransaction',
         call: 'ptn_signRawTransaction',
-        params: 1,
-        inputFormatter: [null]
+        params: 3,
+        inputFormatter: [null,null,null]
     });
 
     var sendRawTransaction = new Method({
@@ -5705,8 +5705,8 @@ var methods = function () {
     var ccinvoketx = new Method({
         name: 'ccinvoketx',
         call: 'ptn_ccinvoketx',
-        params: 3, //deployId string, txid string, args[]string------>["fun", "key", "value"]
-        inputFormatter: [null, null, null],
+        params: 4, //deployId string, txid string,paymentJson string, args[]string------>["fun", "key", "value"]
+        inputFormatter: [null, null, null, null],
     });
 
     return [
@@ -5976,7 +5976,7 @@ var methods = function () {
         name: 'unlockAccount',
         call: 'personal_unlockAccount',
         params: 3,
-        inputFormatter: [formatters.inputAddressFormatter, null, null]
+        inputFormatter: [null, null, null]
     });
 
     var sendTransaction = new Method({

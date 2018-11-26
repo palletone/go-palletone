@@ -21,7 +21,6 @@ package ptnapi
 import (
 	"bytes"
 	"context"
-	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -348,7 +347,8 @@ func (s *PrivateAccountAPI) ImportRawKey(privkey string, password string) (commo
 // UnlockAccount will unlock the account associated with the given address with
 // the given password for duration seconds. If duration is nil it will use a
 // default of 300 seconds. It returns an indication if the account was unlocked.
-func (s *PrivateAccountAPI) UnlockAccount(addr common.Address, password string, duration *uint64) (bool, error) {
+func (s *PrivateAccountAPI) UnlockAccount(addrStr string, password string, duration *uint64) (bool, error) {
+	addr, _ := common.StringToAddress(addrStr)
 	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
 	var d time.Duration
 	if duration == nil {
@@ -844,8 +844,9 @@ func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string,
 	return s.b.DecodeTx(hex)
 }
 
-func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, txid string, param []string) (string, error) {
+func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, txid string, txhex string, param []string) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
+	txBytes, err := hex.DecodeString(txhex)
 	log.Info("-----Ccinvoketx:" + deployId + ":" + txid)
 
 	args := make([][]byte, len(param))
@@ -853,7 +854,7 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, t
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	rsp, err := s.b.ContractTxReqBroadcast(depId, txid, args, 0)
+	rsp, err := s.b.ContractTxReqBroadcast(depId, txid, txBytes, args, 0)
 
 	log.Info("-----ContractInvokeTxReq:" + string(rsp))
 
@@ -1493,8 +1494,8 @@ const (
 //}
 
 //create raw transction
-func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
-	c := cmd.(*ptnjson.CreateRawTransactionCmd)
+func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) (string, error) {
+
 	// Validate the locktime, if given.
 	/*aid := modules.IDType16{}
 	aid.SetBytes([]byte("1111111111111111222222222222222222"))
@@ -1547,6 +1548,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 		switch addr.GetType() {
 		case common.PublicKeyHash:
 		case common.ScriptHash:
+		case common.ContractHash:
 			//case *ptnjson.AddressPubKeyHash:
 			//case *ptnjson.AddressScriptHash:
 		default:
@@ -1556,7 +1558,7 @@ func CreateRawTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 			}
 		}
 		// Create a new script which pays to the provided address.
-		pkScript := tokenengine.GenerateP2PKHLockScript(addr[0:20])
+		pkScript := tokenengine.GenerateLockScript(addr)
 		// Convert the amount to satoshi.
 		dao := ptnjson.Ptn2Dao(ptnAmt)
 		if err != nil {
@@ -1763,7 +1765,7 @@ func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s 
 }
 
 //sign rawtranscation
-func SignRawTransaction(icmd interface{}) (interface{}, error) {
+func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign) (interface{}, error) {
 	cmd := icmd.(*ptnjson.SignRawTransactionCmd)
 	serializedTx, err := decodeHexStr(cmd.RawTx)
 	if err != nil {
@@ -1840,25 +1842,24 @@ func SignRawTransaction(icmd interface{}) (interface{}, error) {
 		}] = script
 	}
 
-	var keys map[common.Address]*ecdsa.PrivateKey
-	if cmd.PrivKeys != nil {
-		keys = make(map[common.Address]*ecdsa.PrivateKey)
-
-		if cmd.PrivKeys != nil {
-			for _, key := range *cmd.PrivKeys {
-				privKey, _ := crypto.FromWIF(key)
-				//privKeyBytes, _ := hex.DecodeString(key)
-				//privKey, _ := crypto.ToECDSA(privKeyBytes)
-				addr := crypto.PubkeyToAddress(&privKey.PublicKey)
-				keys[addr] = privKey
-			}
-		}
-	}
+	//var keys map[common.Address]*ecdsa.PrivateKey
+	//if cmd.PrivKeys != nil {
+	//	keys = make(map[common.Address]*ecdsa.PrivateKey)
+	//
+	//	if cmd.PrivKeys != nil {
+	//		for _, key := range *cmd.PrivKeys {
+	//			privKey, _ := crypto.FromWIF(key)
+	//			//privKeyBytes, _ := hex.DecodeString(key)
+	//			//privKey, _ := crypto.ToECDSA(privKeyBytes)
+	//			addr := crypto.PubkeyToAddress(&privKey.PublicKey)
+	//			keys[addr] = privKey
+	//		}
+	//	}
+	//}
 
 	var signErrs []common.SignatureError
-	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, keys)
+	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, pubKeyFn, hashFn, 0)
 	if err != nil {
-
 		return nil, DeserializationError{err}
 	}
 
@@ -1883,27 +1884,54 @@ func trimx(para string) string {
 	}
 	return para
 }
+func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error) {
+	// If the specified account is a valid address, return it
+	addr, err := common.StringToAddress(account)
+	if err == nil {
+		return accounts.Account{Address: addr}, nil
+	} else {
+		return accounts.Account{}, fmt.Errorf("invalid account address: %s", account)
+	}
+
+}
 
 //sign rawtranscation
 //create raw transction
-func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string) (interface{}, error) {
-	var signTransactionParams SignTransactionParams
-	err := json.Unmarshal([]byte(params), &signTransactionParams)
-	if err != nil {
-		return "", err
-	}
+func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context,params string,password string, duration *uint64) (interface{}, error) {
+ 
+        
 	//transaction inputs
-	serializedTx, err := decodeHexStr(signTransactionParams.RawTx)
+	serializedTx, err := decodeHexStr(params)
 	if err != nil {
 		return nil, err
 	}
+     
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
 		return nil, err
 	}
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		//TODO use keystore
+		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+		//account, _ := MakeAddress(ks, addr.String())
+
+		return ks.GetPublicKey(addr)
+		//privKey, _ := ks.DumpPrivateKey(account, "1")
+		//return crypto.CompressPubkey(&privKey.PublicKey), nil
+	}
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+		account, _ := MakeAddress(ks, addr.String())
+		//privKey, _ := ks.DumpPrivateKey(account, "1")
+		return ks.SignHash(account, hash)
+		//return crypto.Sign(hash, privKey)
+	}
 	var srawinputs []ptnjson.RawTxInput
+
+	var addr common.Address
+	var keys []string
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if ok == false {
@@ -1921,37 +1949,38 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 			}
 			TxHash := trimx(uvu.TxHash)
 			PkScriptHex := trimx(uvu.PkScriptHex)
-			fmt.Printf("%+v\n", PkScriptHex)
 			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
 			srawinputs = append(srawinputs, input)
-
+			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
+			if err != nil {
+				fmt.Println("get addr by outpoint is err")
+			}
 		}
 		/*for _, txout := range payload.Outputs {
-
-		    err = tokenengine.ScriptValidate(txout.PkScript,  tx, 0,0)
-		    if err != nil {
-		            fmt.Println("--------------1913----err-------------------------")
-		    }
-		    fmt.Printf("---1915------%+v\n--------------",txout)
+			err = tokenengine.ScriptValidate(txout.PkScript, tx, 0, 0)
+			if err != nil {
+			}
 		}*/
 	}
-	if len(srawinputs) == 0 {
-		return "", nil
+	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	var d time.Duration
+	if duration == nil {
+		d = 300 * time.Second
+	} else if *duration > max {
+		return false, errors.New("unlock duration too large")
+	} else {
+		d = time.Duration(*duration) * time.Second
 	}
-	var keys []string
-	for _, key := range signTransactionParams.PrivKeys {
-		key = strings.TrimSpace(key) //Trim whitespace
-		if len(key) == 0 {
-			continue
-		}
-		keys = append(keys, key)
+	ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
+	if err != nil {
+		errors.New("get addr by outpoint is err")
+		return nil,err
 	}
-	if len(keys) == 0 {
-		return "", nil
-	}
-
-	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &srawinputs, &keys, ptnjson.String("ALL"))
-	result, _ := SignRawTransaction(newsign)
+        
+	newsign := ptnjson.NewSignRawTransactionCmd(params, &srawinputs, &keys, ptnjson.String("ALL"))
+	result, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn)
+        
 	fmt.Println(result)
 	return result, nil
 }
