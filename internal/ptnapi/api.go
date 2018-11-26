@@ -844,8 +844,9 @@ func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string,
 	return s.b.DecodeTx(hex)
 }
 
-func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, txid string, param []string) (string, error) {
+func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, txid string, txhex string, param []string) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
+	txBytes, err := hex.DecodeString(txhex)
 	log.Info("-----Ccinvoketx:" + deployId + ":" + txid)
 
 	args := make([][]byte, len(param))
@@ -853,7 +854,7 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, t
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	rsp, err := s.b.ContractTxReqBroadcast(depId, txid, args, 0)
+	rsp, err := s.b.ContractTxReqBroadcast(depId, txid, txBytes, args, 0)
 
 	log.Info("-----ContractInvokeTxReq:" + string(rsp))
 
@@ -1896,17 +1897,15 @@ func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error
 
 //sign rawtranscation
 //create raw transction
-func (s *PublicTransactionPoolAPI) SignRawTransaction(params string, password string, duration *uint64) (interface{}, error) {
-	var signTransactionParams SignTransactionParams
-	err := json.Unmarshal([]byte(params), &signTransactionParams)
-	if err != nil {
-		return "", err
-	}
+func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context,params string,password string, duration *uint64) (interface{}, error) {
+ 
+        
 	//transaction inputs
-	serializedTx, err := decodeHexStr(signTransactionParams.RawTx)
+	serializedTx, err := decodeHexStr(params)
 	if err != nil {
 		return nil, err
 	}
+     
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
@@ -1975,10 +1974,13 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(params string, password st
 	ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
-		fmt.Println("get addr by outpoint is err")
+		errors.New("get addr by outpoint is err")
+		return nil,err
 	}
-	newsign := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &srawinputs, &keys, ptnjson.String("ALL"))
+        
+	newsign := ptnjson.NewSignRawTransactionCmd(params, &srawinputs, &keys, ptnjson.String("ALL"))
 	result, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn)
+        
 	fmt.Println(result)
 	return result, nil
 }
