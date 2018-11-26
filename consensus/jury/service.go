@@ -31,20 +31,20 @@ import (
 	"bytes"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/rlp"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	cm "github.com/palletone/go-palletone/dag/common"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/common/rlp"
 )
 
 type PeerType int
 
 const (
-	_         PeerType = iota
+	_ PeerType = iota
 	TUnknow
 	TJury
 	TMediator
@@ -162,7 +162,7 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 	}
 	tx, _, err := gen.GenContractSigTransctions(p.local.Address, event.Tx, cmsgType, payload, p.ptn.GetKeyStore())
 	if err != nil {
-		log.Error(fmt.Sprintf("ProcessContractEvent GenContractSigTransctions", "err:%s", err))
+		log.Error(fmt.Sprintf("ProcessContractEvent GenContractSigTransctions, err:%s", err.Error()))
 		return err
 	}
 
@@ -218,7 +218,7 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 		}()
 	} else {
 		log.Info("ProcessContractSigEvent", "tx is ok", event.Tx.TxId)
-		judge, err := checkAndAddTxData(tx, event.Tx);
+		judge, err := checkAndAddTxData(tx, event.Tx)
 		if err != nil {
 			return err
 		} else if judge == true {
