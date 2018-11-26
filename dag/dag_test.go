@@ -68,8 +68,8 @@ func TestCreateUnit(t *testing.T) {
 }
 
 func TestDagRefreshUtxos(t *testing.T) {
-	db := storage.ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/palletone/gptn/leveldb/")
-	//db, _ := ptndb.NewMemDatabase()
+	//db := storage.ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/palletone/gptn/leveldb/")
+	db, _ := ptndb.NewMemDatabase()
 	dag_test, err := NewDagForTest(db)
 	if err != nil {
 		t.Fatal("New dag for test is faild,error: ", err)
