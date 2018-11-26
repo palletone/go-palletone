@@ -21,7 +21,11 @@
 package modules
 
 import (
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine"
 	"time"
 )
 
@@ -40,4 +44,47 @@ type ContractInvokeResult struct {
 
 func (result *ContractInvokeResult) ToContractInvokePayload() *modules.ContractInvokePayload {
 	return modules.NewContractInvokePayload(result.ContractId, result.Args, result.ExecutionTime, result.ReadSet, result.WriteSet, result.Payload)
+}
+func (result *ContractInvokeResult) ToContractPayments(dag dag.IDag) ([]*modules.PaymentPayload, error) {
+	addr := common.NewAddress(result.ContractId, common.ContractHash)
+	payments := []*modules.PaymentPayload{}
+	if result.TokenPayOut != nil && len(result.TokenPayOut) > 0 {
+		for _, payout := range result.TokenPayOut {
+			utxos, err := dag.GetAddr1TokenUtxos(addr.String(), payout.Asset)
+			if err != nil {
+				return nil, err
+			}
+			utxo2 := convertMapUtxo(utxos)
+			us := core.Utxos{}
+			for _, u := range utxo2 {
+				us = append(us, u)
+			}
+			selected, change, err := core.Select_utxo_Greedy(us, payout.Amount)
+			if err != nil {
+				return nil, err
+			}
+			payment := &modules.PaymentPayload{}
+			for _, s := range selected {
+				sutxo := s.(*modules.UtxoWithOutPoint)
+				in := modules.NewTxIn(&sutxo.OutPoint, nil)
+				payment.AddTxIn(in)
+			}
+			out := modules.NewTxOut(payout.Amount, tokenengine.GenerateLockScript(payout.PayTo), payout.Asset)
+			payment.AddTxOut(out)
+			//Change
+			out2 := modules.NewTxOut(change, tokenengine.GenerateLockScript(addr), payout.Asset)
+			payment.AddTxOut(out2)
+			payments = append(payments, payment)
+		}
+	}
+	return payments, nil
+}
+func convertMapUtxo(utxo map[modules.OutPoint]*modules.Utxo) []*modules.UtxoWithOutPoint {
+	var result []*modules.UtxoWithOutPoint
+	for o, u := range utxo {
+		uo := &modules.UtxoWithOutPoint{}
+		uo.Set(u, &o)
+		result = append(result, uo)
+	}
+	return result
 }
