@@ -19,29 +19,31 @@
 package ptn
 
 import (
-	"github.com/palletone/go-palletone/common/log"
+//"errors"
+//"github.com/palletone/go-palletone/common/log"
+//"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
-func (pm *ProtocolManager) mediatorConnect() {
-	if pm.isTest {
-		return
-	}
-	if !pm.producer.LocalHaveActiveMediator() {
-		log.Info("This node is not Mediator")
-		return
-	}
-	log.Info("Mediator Connect")
-
-	peers := pm.dag.GetActiveMediatorNodes()
-
-	//not exsit and no self will connect
-	for _, peer := range peers {
-		log.Debug("ProtocolManager", "GetActiveMediatorNodes:", peer.ID.String(), "local peerId:", pm.srvr.NodeInfo().ID)
-		if peer.ID.String() != pm.srvr.NodeInfo().ID && pm.peers.Peer(peer.ID.String()) == nil {
-			pm.srvr.AddPeer(peer)
-		}
-	}
-}
+//func (pm *ProtocolManager) mediatorConnect() {
+//	//if pm.isTest {
+//	//	return
+//	//}
+//	if !pm.producer.LocalHaveActiveMediator() {
+//		log.Info("This node is not Mediator")
+//		return
+//	}
+//	log.Info("Mediator Connect")
+//
+//	peers := pm.dag.GetActiveMediatorNodes()
+//
+//	//not exsit and no self will connect
+//	for _, peer := range peers {
+//		log.Debug("ProtocolManager", "GetActiveMediatorNodes:", peer.ID.String(), "local peerId:", pm.srvr.NodeInfo().ID)
+//		if peer.ID.String() != pm.srvr.NodeInfo().ID && pm.peers.Peer(peer.ID.String()) == nil {
+//			pm.srvr.AddPeer(peer)
+//		}
+//	}
+//}
 
 //1.is not mediator,so save only two mediator connects,and disconnect others connects.
 //2.also mediator,move peersTransition sockets to peers and delete the old mediator
@@ -90,14 +92,14 @@ func (pm *ProtocolManager) mediatorConnect() {
 //
 //}
 
-func (pm *ProtocolManager) isexist(pid string, peers []*peer) bool {
-	for _, peer := range peers {
-		if pid == peer.id {
-			return true
-		}
-	}
-	return false
-}
+//func (pm *ProtocolManager) isexist(pid string, peers []*peer) bool {
+//	for _, peer := range peers {
+//		if pid == peer.id {
+//			return true
+//		}
+//	}
+//	return false
+//}
 
 //func (pm *ProtocolManager) peerCheck(p *peer) error {
 //	//TODO must delete

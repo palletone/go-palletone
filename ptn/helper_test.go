@@ -99,7 +99,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 	if err != nil {
 		return nil, nil, err
 	}
-	pm.SetForTest()
+	//pm.SetForTest()
 	config := p2p.DefaultConfig
 	running := &p2p.Server{Config: config}
 	pm.Start(running, 1000)

@@ -136,7 +136,7 @@ type ProtocolManager struct {
 	transCycleConnCh chan int
 
 	//For Test
-	isTest bool
+	//isTest bool
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
@@ -161,7 +161,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		producer:         producer,
 		contractProc:     contractProc,
 		peersTransition:  newPeerSet(),
-		isTest:           false,
+		//isTest:           false,
 	}
 
 	// Figure out whether to allow fast sync or not
@@ -242,9 +242,9 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	return manager, nil
 }
 
-func (pm *ProtocolManager) SetForTest() {
-	pm.isTest = true
-}
+//func (pm *ProtocolManager) SetForTest() {
+//	pm.isTest = true
+//}
 
 func (pm *ProtocolManager) removeTransitionPeer(id string) {
 	// Short circuit if the peer was already removed

@@ -33,9 +33,11 @@ import (
 type GlobalProperty struct {
 	ChainParameters core.ChainParameters // 区块链网络参数
 
-	ActiveMediators map[common.Address]bool // 当前活跃mediator集合；每个维护间隔更新一次
+	ActiveMediators    map[common.Address]bool // 当前活跃 mediator 集合；每个维护间隔更新一次
+	CurrentGroupPubKey kyber.Point             // 当前群公钥，用于验证群签名；每个维护间隔更新一次
 
-	GroupPubKey kyber.Point // 群公钥，用于验证群签名；每个维护间隔更新一次
+	PrecedingMediators   map[common.Address]bool // 上一届 mediator
+	PrecedingGroupPubKey kyber.Point
 }
 
 // 动态全局属性的结构体定义
@@ -120,9 +122,11 @@ func sortAddress(adds []common.Address) {
 
 func NewGlobalProp() *GlobalProperty {
 	return &GlobalProperty{
-		ChainParameters: core.NewChainParams(),
-		ActiveMediators: make(map[common.Address]bool, 0),
-		GroupPubKey:     core.Suite.Point().Null(),
+		ChainParameters:      core.NewChainParams(),
+		ActiveMediators:      make(map[common.Address]bool, 0),
+		CurrentGroupPubKey:   core.Suite.Point().Null(),
+		PrecedingMediators:   make(map[common.Address]bool, 0),
+		PrecedingGroupPubKey: core.Suite.Point().Null(),
 	}
 }
 
