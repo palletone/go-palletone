@@ -116,5 +116,5 @@ type IDag interface {
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error)
 	// set groupsign
-	SetUnitGroupSign(sign []byte, unit_hash common.Hash) error
+	SetUnitGroupSign(sign []byte, hash common.Hash) error
 }
