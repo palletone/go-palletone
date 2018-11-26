@@ -403,7 +403,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	defer log.Debug("================================End ProtocolManager handle======================================")
 	// Ignore maxPeers if this is a trusted peer
-	//TODO must modify make sure  have enough connections for mediators
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
 		return p2p.DiscTooManyPeers

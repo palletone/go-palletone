@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 )
 
-func (dag *Dag) SetUnitHeader(pendingUnit *modules.Unit) {
+func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 	current_index, _ := dag.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
 
 	if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
@@ -95,7 +95,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 	pendingUnit := &newUnits[0]
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
 
-	dag.SetUnitHeader(pendingUnit)
+	dag.setUnitHeader(pendingUnit)
 
 	pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash()
 	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
