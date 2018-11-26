@@ -132,8 +132,8 @@ type ProtocolManager struct {
 
 	genesis *modules.Unit
 
-	peersTransition  *peerSet
-	transCycleConnCh chan int
+	//peersTransition  *peerSet
+	//transCycleConnCh chan int
 
 	//For Test
 	//isTest bool
@@ -156,11 +156,11 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		noMorePeers:      make(chan struct{}),
 		txsyncCh:         make(chan *txsync),
 		quitSync:         make(chan struct{}),
-		transCycleConnCh: make(chan int, 1),
+		//transCycleConnCh: make(chan int, 1),
 		genesis:          genesis,
 		producer:         producer,
 		contractProc:     contractProc,
-		peersTransition:  newPeerSet(),
+		//peersTransition:  newPeerSet(),
 		//isTest:           false,
 	}
 
@@ -245,24 +245,6 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 //func (pm *ProtocolManager) SetForTest() {
 //	pm.isTest = true
 //}
-
-func (pm *ProtocolManager) removeTransitionPeer(id string) {
-	// Short circuit if the peer was already removed
-	peer := pm.peersTransition.Peer(id)
-	if peer == nil {
-		return
-	}
-	log.Debug("Removing PalletOne peer", "peer", id)
-
-	// Unregister the peer from the PalletOne peer set
-	if err := pm.peersTransition.Unregister(id); err != nil {
-		log.Error("Peer removal failed", "peer", id, "err", err)
-	}
-	// Hard disconnect at the networking layer
-	if peer != nil {
-		peer.Peer.Disconnect(p2p.DiscUselessPeer)
-	}
-}
 
 func (pm *ProtocolManager) removePeer(id string) {
 	// Short circuit if the peer was already removed
@@ -671,31 +653,4 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 		Genesis: genesisHash,
 		Head:    unit.UnitHash,
 	}
-}
-
-func (pm *ProtocolManager) getTransitionPeer(node *discover.Node) (p *peer, self bool) {
-	id := node.ID
-	if pm.srvr.Self().ID == id {
-		self = true
-	}
-
-	p = pm.peersTransition.Peer(id.TerminalString())
-	if p == nil && !self {
-		log.Debug(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
-	}
-
-	return
-}
-func (pm *ProtocolManager) GetTransitionPeers() map[string]*peer {
-	nodes := pm.dag.GetActiveMediatorNodes()
-	list := make(map[string]*peer, len(nodes))
-
-	for id, node := range nodes {
-		peer, self := pm.getTransitionPeer(node)
-		if peer != nil || self {
-			list[id] = peer
-		}
-	}
-
-	return list
 }

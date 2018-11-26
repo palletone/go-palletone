@@ -19,7 +19,6 @@ package ptn
 import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"time"
@@ -211,13 +210,13 @@ type blockBody struct {
 type blockBodiesData []blockBody
 
 // vss boardcast the data content of a single vss message.
-type vssDealMsg struct {
-	NodeId string
-	Deal   *mp.VSSDealEvent
-}
+//type vssDealMsg struct {
+//	NodeId string
+//	Deal   *mp.VSSDealEvent
+//}
 
 // vss response boardcast the data content of a single vss message.
-type vssRespMsg struct {
-	NodeId string
-	Resp   *mp.VSSResponseEvent
-}
+//type vssRespMsg struct {
+//	NodeId string
+//	Resp   *mp.VSSResponseEvent
+//}

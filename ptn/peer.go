@@ -42,14 +42,14 @@ var (
 )
 
 const (
-	maxKnownTxs      = 32768 // Maximum transactions hashes to keep in the known list (prevent DOS)
-	maxKnownBlocks   = 1024  // Maximum block hashes to keep in the known list (prevent DOS)
-	maxKnownVsss     = 25    // Maximum Vss hashes to keep in the known list (prevent DOS)
+	maxKnownTxs    = 32768 // Maximum transactions hashes to keep in the known list (prevent DOS)
+	maxKnownBlocks = 1024  // Maximum block hashes to keep in the known list (prevent DOS)
+	//maxKnownVsss     = 25    // Maximum Vss hashes to keep in the known list (prevent DOS)
 	handshakeTimeout = 5 * time.Second
 
-	transitionStep1  = 1 //All transition mediator each other connected to star vss
-	transitionStep2  = 2 //vss success
-	transitionCancel = 3 //retranstion
+	//transitionStep1  = 1 //All transition mediator each other connected to star vss
+	//transitionStep2  = 2 //vss success
+	//transitionCancel = 3 //retranstion
 )
 
 // PeerInfo represents a short summary of the PalletOne sub-protocol metadata known
@@ -382,21 +382,21 @@ func (p *peer) String() string {
 // peerSet represents the collection of active peers currently participating in
 // the PalletOne sub-protocol.
 type peerSet struct {
-	peers        map[string]*peer
-	knownVss     *set.Set
-	knownVssResp *set.Set
-	mediators    *set.Set
-	lock         sync.RWMutex
-	closed       bool
+	peers map[string]*peer
+	//knownVss     *set.Set
+	//knownVssResp *set.Set
+	//mediators    *set.Set
+	lock   sync.RWMutex
+	closed bool
 }
 
 // newPeerSet creates a new peer set to track the active participants.
 func newPeerSet() *peerSet {
 	return &peerSet{
-		peers:        make(map[string]*peer),
-		knownVss:     set.New(),
-		knownVssResp: set.New(),
-		mediators:    set.New(),
+		peers: make(map[string]*peer),
+		//knownVss:     set.New(),
+		//knownVssResp: set.New(),
+		//mediators:    set.New(),
 	}
 }
 
@@ -404,26 +404,26 @@ func (ps *peerSet) MediatorsAllConnected() int {
 	return 0
 }
 
-func (ps *peerSet) MediatorsSize() int {
-	ps.lock.Lock()
-	defer ps.lock.Unlock()
-	return ps.mediators.Size()
-}
+//func (ps *peerSet) MediatorsSize() int {
+//	ps.lock.Lock()
+//	defer ps.lock.Unlock()
+//	return ps.mediators.Size()
+//}
 
-func (ps *peerSet) MediatorsReset(nodes []string) {
-	ps.lock.Lock()
-	defer ps.lock.Unlock()
-	ps.mediators.Clear()
-	for _, node := range nodes {
-		ps.mediators.Add(node)
-	}
-}
+//func (ps *peerSet) MediatorsReset(nodes []string) {
+//	ps.lock.Lock()
+//	defer ps.lock.Unlock()
+//	ps.mediators.Clear()
+//	for _, node := range nodes {
+//		ps.mediators.Add(node)
+//	}
+//}
 
-func (ps *peerSet) MediatorsClean() {
-	ps.lock.Lock()
-	defer ps.lock.Unlock()
-	ps.mediators.Clear()
-}
+//func (ps *peerSet) MediatorsClean() {
+//	ps.lock.Lock()
+//	defer ps.lock.Unlock()
+//	ps.mediators.Clear()
+//}
 
 //Make sure there is plenty of connection for Mediator
 //func (ps *peerSet) noMediatorCheck(maxPeers int, mediators int) bool {
@@ -443,12 +443,12 @@ func (ps *peerSet) MediatorsClean() {
 //}
 
 //Make sure there is plenty of connection for Mediator
-func (ps *peerSet) MediatorCheck() bool {
-	ps.lock.RLock()
-	defer ps.lock.RUnlock()
-	ps.mediators.Size()
-	return true
-}
+//func (ps *peerSet) MediatorCheck() bool {
+//	ps.lock.RLock()
+//	defer ps.lock.RUnlock()
+//	ps.mediators.Size()
+//	return true
+//}
 
 // Register injects a new peer into the working set, or returns an error if the
 // peer is already known.
@@ -541,43 +541,43 @@ func (ps *peerSet) PeersWithoutTx(hash common.Hash) []*peer {
 
 // PeersWithoutVss retrieves a list of peers that do not have a given transaction
 // in their set of known hashes.
-func (ps *peerSet) PeersWithoutVss(nodeId string) bool {
-	ps.lock.RLock()
-	defer ps.lock.RUnlock()
-
-	return ps.knownVss.Has(nodeId)
-}
+//func (ps *peerSet) PeersWithoutVss(nodeId string) bool {
+//	ps.lock.RLock()
+//	defer ps.lock.RUnlock()
+//
+//	return ps.knownVss.Has(nodeId)
+//}
 
 // MarkVss marks a block as known for the peer, ensuring that the block will
 // never be propagated to this particular peer.
-func (ps *peerSet) MarkVss(nodeId string) {
-	ps.lock.RLock()
-	defer ps.lock.RUnlock()
-	// If we reached the memory allowance, drop a previously known block hash
-	for ps.knownVss.Size() >= maxKnownVsss {
-		ps.knownVss.Pop()
-	}
-	ps.knownVss.Add(nodeId)
-}
+//func (ps *peerSet) MarkVss(nodeId string) {
+//	ps.lock.RLock()
+//	defer ps.lock.RUnlock()
+//	// If we reached the memory allowance, drop a previously known block hash
+//	for ps.knownVss.Size() >= maxKnownVsss {
+//		ps.knownVss.Pop()
+//	}
+//	ps.knownVss.Add(nodeId)
+//}
 
 // PeersWithoutVssResp retrieves a list of peers that do not have a given transaction
 // in their set of known hashes.
-func (ps *peerSet) PeersWithoutVssResp(nodeId string) bool {
-	ps.lock.RLock()
-	defer ps.lock.RUnlock()
-
-	return ps.knownVssResp.Has(nodeId)
-}
+//func (ps *peerSet) PeersWithoutVssResp(nodeId string) bool {
+//	ps.lock.RLock()
+//	defer ps.lock.RUnlock()
+//
+//	return ps.knownVssResp.Has(nodeId)
+//}
 
 // MarkVssResp marks a block as known for the peer, ensuring that the block will
 // never be propagated to this particular peer.
-func (ps *peerSet) MarkVssResp(nodeId string) {
-	// If we reached the memory allowance, drop a previously known block hash
-	for ps.knownVssResp.Size() >= maxKnownVsss {
-		ps.knownVssResp.Pop()
-	}
-	ps.knownVssResp.Add(nodeId)
-}
+//func (ps *peerSet) MarkVssResp(nodeId string) {
+//	// If we reached the memory allowance, drop a previously known block hash
+//	for ps.knownVssResp.Size() >= maxKnownVsss {
+//		ps.knownVssResp.Pop()
+//	}
+//	ps.knownVssResp.Add(nodeId)
+//}
 
 // BestPeer retrieves the known peer with the currently highest total difficulty.
 func (ps *peerSet) BestPeer(assetId modules.IDType16) *peer {

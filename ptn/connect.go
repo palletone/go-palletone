@@ -18,12 +18,6 @@
 
 package ptn
 
-import (
-//"errors"
-//"github.com/palletone/go-palletone/common/log"
-//"github.com/palletone/go-palletone/common/p2p/discover"
-)
-
 //func (pm *ProtocolManager) mediatorConnect() {
 //	//if pm.isTest {
 //	//	return
@@ -271,3 +265,48 @@ func (pm *ProtocolManager) transitionRun(p *peer) error {
 	return nil
 }
 */
+
+//func (pm *ProtocolManager) getTransitionPeer(node *discover.Node) (p *peer, self bool) {
+//	id := node.ID
+//	if pm.srvr.Self().ID == id {
+//		self = true
+//	}
+//
+//	p = pm.peersTransition.Peer(id.TerminalString())
+//	if p == nil && !self {
+//		log.Debug(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
+//	}
+//
+//	return
+//}
+//func (pm *ProtocolManager) GetTransitionPeers() map[string]*peer {
+//	nodes := pm.dag.GetActiveMediatorNodes()
+//	list := make(map[string]*peer, len(nodes))
+//
+//	for id, node := range nodes {
+//		peer, self := pm.getTransitionPeer(node)
+//		if peer != nil || self {
+//			list[id] = peer
+//		}
+//	}
+//
+//	return list
+//}
+
+//func (pm *ProtocolManager) removeTransitionPeer(id string) {
+//	// Short circuit if the peer was already removed
+//	peer := pm.peersTransition.Peer(id)
+//	if peer == nil {
+//		return
+//	}
+//	log.Debug("Removing PalletOne peer", "peer", id)
+//
+//	// Unregister the peer from the PalletOne peer set
+//	if err := pm.peersTransition.Unregister(id); err != nil {
+//		log.Error("Peer removal failed", "peer", id, "err", err)
+//	}
+//	// Hard disconnect at the networking layer
+//	if peer != nil {
+//		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+//	}
+//}
