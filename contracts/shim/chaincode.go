@@ -346,7 +346,7 @@ func (stub *ChaincodeStub) init(handler *Handler, contractid []byte, channelId s
 	stub.signedProposal = signedProposal
 	stub.decorations = input.Decorations
 	stub.ContractId = contractid
-	chaincodeLogger.Info("args:", input.Args)
+	//chaincodeLogger.Info("args:", input.Args)
 	for _, tp := range input.Args {
 		chaincodeLogger.Infof("%s", tp)
 	}
