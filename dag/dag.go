@@ -839,7 +839,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 
 	if !isGenesis {
 		if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
-			log.Info("dag", "SaveUnit unit is already existing.hash:", unit.Hash().String())
+			log.Info("dag:the unit is already exist in leveldb. ", "unit_hash", unit.Hash().String())
 			return errors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 		}
 	}
