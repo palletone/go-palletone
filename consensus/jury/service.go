@@ -38,6 +38,7 @@ import (
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/common/rlp"
 )
 
 type PeerType int
@@ -115,7 +116,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 	}
 
 	log.Info("NewContractProcessor ok", "mediator_address", address.String())
-	log.Info("NewContractProcessor", "info:%v", p.local)
+	log.Info("NewContractProcessor", "info:", p.local)
 	return p, nil
 }
 
@@ -140,79 +141,73 @@ func (p *Processor) SubscribeContractEvent(ch chan<- ContractExeEvent) event.Sub
 
 func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 	log.Info("ProcessContractEvent", "enter", event.Tx.TxHash)
-
-	for i := 0; i < len(event.Tx.TxMessages); i++ {
-		log.Info("ProcessContractEvent:", ":", event.Tx.TxMessages[i].App)
-	}
-
 	if event == nil {
 		return errors.New("param is nil")
 	}
 
-	if false == checkTxValid(event.Tx, p.ptn.GetKeyStore()) {
+	if false == checkTxValid(event.Tx) {
 		return errors.New("ProcessContractEvent recv event Tx is invalid")
 	}
 
 	cmsgType, payload, err := runContractCmd(p.contract, event.Tx)
 	if err != nil {
+		log.Error(fmt.Sprintf("ProcessContractEvent runContractCmd err:%s", err))
 		return err
 	}
 	ks := p.ptn.GetKeyStore()
 	err = ks.Unlock(accounts.Account{Address: p.local.Address}, p.local.Password)
 	if err != nil {
-		fmt.Printf("account add[%s], password[%s], err[%s]", p.local.Address.String(), p.local.Password, err)
+		log.Error(fmt.Sprintf("ProcessContractEvent account add[%s], password[%s], err[%s]", p.local.Address.String(), p.local.Password, err))
 		return err
 	}
-
-	fmt.Printf("account add[%s], password[%s]", p.local.Address.String(), p.local.Password)
-
 	tx, _, err := gen.GenContractSigTransctions(p.local.Address, event.Tx, cmsgType, payload, p.ptn.GetKeyStore())
 	if err != nil {
-		fmt.Printf("GenContractSigTransctions", "err:%s", err)
+		log.Error(fmt.Sprintf("ProcessContractEvent GenContractSigTransctions", "err:%s", err))
 		return err
 	}
 
-	p.mtx[event.Tx.TxHash] = &contractTx{
+	p.mtx[event.Tx.TxId] = &contractTx{
 		list: p.dag.GetActiveMediators(),
 		tx:   tx,
 	}
 
 	log.Info("ProcessContractEvent", "trs:", tx)
-	log.Info("ProcessContractEvent", "add tx", event.Tx.TxHash)
+	log.Info("ProcessContractEvent", "add tx req id:", event.Tx.TxId)
 
 	//broadcast
-	go p.ptn.ContractSigBroadcast(ContractSigEvent{tx.TxHash, tx})
+	go p.ptn.ContractSigBroadcast(ContractSigEvent{tx})
 	//local
 	//go p.contractSigFeed.Send(ContractSigEvent{tx.TxHash, tx})
-	//go p.ProcessContractSigEvent(&ContractSigEvent{tx.TxHash, tx})
+	go p.ProcessContractSigEvent(&ContractSigEvent{tx})
 
 	return nil
 }
 
 func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
-	log.Info("ProcessContractSigEvent", "event:", event.Tx.TxHash)
+	log.Info("ProcessContractSigEvent", "event tx req id:", event.Tx.TxId.String())
 	if event == nil {
 		return errors.New("ProcessContractSigEvent param is nil")
 	}
 
-	if false == checkTxValid(event.Tx, p.ptn.GetKeyStore()) {
+	if false == checkTxValid(event.Tx) {
 		return errors.New("ProcessContractSigEvent event Tx is invalid")
 	}
-	tx := p.mtx[event.Tx.TxHash].tx
+	tx := p.mtx[event.Tx.TxId].tx
 	if tx == nil {
-		log.Info("ProcessContractSigEvent", "tx(%s) is nil", event.Tx.TxHash)
+		log.Info("ProcessContractSigEvent", "local no tx id:", event.Tx.TxId.String())
 		go func() {
 			for i := 0; i < 10; i += 1 {
 				time.Sleep(time.Millisecond * 500)
-				if p.mtx[event.Tx.TxHash].tx != nil {
-					tx = p.mtx[event.Tx.TxHash].tx
-					if judge, _ := checkAndAddTxData(tx, event.Tx); judge == true {
+				if p.mtx[event.Tx.TxId].tx != nil {
+					tx = p.mtx[event.Tx.TxId].tx
+					judge, err := checkAndAddTxData(tx, event.Tx)
+					if err == nil && judge == true {
 						//收集签名数量，达到要求后将tx添加到交易池
 						num := getTxSigNum(tx)
-						log.Info("ProcessContractSigEvent", "tx sig num=%d", num)
-						if num >= 2 { //todo
+						log.Info("ProcessContractSigEvent", "tx sig num:", num)
+						if num >= 1 { //todo
 							if p.addTx2LocalTxTool(tx) != nil {
-								log.Error("ProcessContractSigEvent", "tx(%s)addTx2LocalTxTool fail", tx.TxHash)
+								log.Error("ProcessContractSigEvent", "tx id addTx2LocalTxTool fail:", tx.TxId.String())
 								return
 							}
 						}
@@ -222,10 +217,13 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 			}
 		}()
 	} else {
-		log.Info("ProcessContractSigEvent", "tx(%s) is ok", event.Tx.TxHash)
-		if judge, _ := checkAndAddTxData(tx, event.Tx); judge == true {
+		log.Info("ProcessContractSigEvent", "tx is ok", event.Tx.TxId)
+		judge, err := checkAndAddTxData(tx, event.Tx);
+		if err != nil {
+			return err
+		} else if judge == true {
 			num := getTxSigNum(tx)
-			log.Info("ProcessContractSigEvent", "tx sig num=%d", num)
+			log.Info("ProcessContractSigEvent", "tx sig num:", num)
 			if num >= 1 { //todo
 				if p.addTx2LocalTxTool(tx) != nil {
 					log.Error("ProcessContractSigEvent", "tx(%s)addTx2LocalTxTool fail", tx.TxHash)
@@ -264,12 +262,12 @@ func runContractCmd(contract *contracts.Contract, trs *modules.Transaction) (mod
 					chainID:  "palletone",
 					deployId: msg.Payload.(*modules.ContractInvokeRequestPayload).ContractId,
 					args:     msg.Payload.(*modules.ContractInvokeRequestPayload).Args,
-					txid:     trs.TxHash.String(),
+					txid:     trs.TxId.String(),
 					tx:       trs,
 				}
 				payload, err := ContractProcess(contract, req)
 				if err != nil {
-					log.Error("runContractCmd", "ContractProcess fail:%s", err)
+					log.Error("runContractCmd", "ContractProcess fail:", err)
 					return msg.App, nil, errors.New(fmt.Sprintf("txid(%s)APP_CONTRACT_INVOKE rans err:%s", req.txid, err))
 				}
 				return modules.APP_CONTRACT_INVOKE, payload, nil
@@ -340,13 +338,11 @@ func getTxSigNum(tx *modules.Transaction) int {
 	return 0
 }
 
-func checkTxValid(tx *modules.Transaction, ks *keystore.KeyStore) bool {
+func checkTxValid(tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
 	}
-	//printTxInfo(tx)
-
-	return cm.ValidateTxSig(tx, ks)
+	return cm.ValidateTxSig(tx)
 }
 
 func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction) error {
@@ -360,20 +356,29 @@ func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction) error {
 }
 
 //todo txid ?
-func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, args [][]byte, timeout time.Duration) error {
-	log.Info("ContractTxReqBroadcast", "enter", "ok")
+func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) error {
+	log.Info("ContractTxReqBroadcast", fmt.Sprintf("enter, deployId[%v], txid[%s]", deployId, txid))
 	if deployId == nil || args == nil {
 		log.Error("ContractTxReqBroadcast", "param is nil")
 		return errors.New("transaction request param is nil")
 	}
-	pay := &modules.PaymentPayload{
-		Inputs:   []*modules.Input{},
-		Outputs:  []*modules.Output{},
-		LockTime: 11111, //todo
-	}
-	msgPay := &modules.Message{
-		App:     modules.APP_PAYMENT,
-		Payload: pay,
+
+	tx := &modules.Transaction{}
+	if txBytes != nil {
+		if err := rlp.DecodeBytes(txBytes, tx); err != nil {
+			return err
+		}
+	} else {
+		pay := &modules.PaymentPayload{
+			Inputs:   []*modules.Input{},
+			Outputs:  []*modules.Output{},
+			LockTime: 11111, //todo
+		}
+		msgPay := &modules.Message{
+			App:     modules.APP_PAYMENT,
+			Payload: pay,
+		}
+		tx.AddMessage(msgPay)
 	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
@@ -384,11 +389,14 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, args []
 		},
 	}
 
+	tx.AddMessage(msgReq)
+	tx.TxHash = tx.Hash()
+	tx.TxId = tx.TxHash
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractExeEvent{modules.NewTransaction([]*modules.Message{msgPay, msgReq})})
+	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
 	//local
 	//go p.contractExecFeed.Send(ContractExeEvent{modules.NewTransaction([]*modules.Message{msgPay, msgReq})})
-	go p.ProcessContractEvent(&ContractExeEvent{modules.NewTransaction([]*modules.Message{msgPay, msgReq})})
+	go p.ProcessContractEvent(&ContractExeEvent{Tx: tx})
 
 	return nil
 }

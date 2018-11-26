@@ -28,10 +28,12 @@ import (
 type IMemDag interface {
 	Save(unit *modules.Unit) error
 	GetUnit(hash common.Hash) (*modules.Unit, error)
-	UpdateMemDag(unit *modules.Unit) error
+	UpdateMemDag(hash common.Hash, sign []byte) error
 	Exists(uHash common.Hash) bool
 	Prune(assetId string, maturedUnitHash common.Hash) error
 	SwitchMainChain() error
 	QueryIndex(assetId string, maturedUnitHash common.Hash) (uint64, int)
 	GetCurrentUnit(assetid modules.IDType16, index uint64) (*modules.Unit, error)
+	GetDelhashs() chan common.Hash
+	PushDelHashs(hashs []common.Hash)
 }

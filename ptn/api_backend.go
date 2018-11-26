@@ -326,8 +326,8 @@ func (b *PtnApiBackend) GetAddrOutpoints(addr string) ([]modules.OutPoint, error
 	return b.ptn.dag.GetAddrOutpoints(addr)
 }
 func (b *PtnApiBackend) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error) {
-	address,err := b.ptn.dag.GetAddrByOutPoint(outPoint)
-	return address,err
+	address, err := b.ptn.dag.GetAddrByOutPoint(outPoint)
+	return address, err
 }
 
 func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error) {
@@ -435,8 +435,8 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 	return err
 }
 
-func (b *PtnApiBackend) ContractTxReqBroadcast(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
-	b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, args, timeout)
+func (b *PtnApiBackend) ContractTxReqBroadcast(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
+	b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, txBytes, args, timeout)
 	return nil, nil
 }
 

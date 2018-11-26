@@ -423,9 +423,9 @@ func (ec *Client) CreateRawTransaction(ctx context.Context, params string) (stri
 	err := ec.c.CallContext(ctx, &result, "ptn_createRawTransaction", params)
 	return result, err
 }
-func (ec *Client) SignRawTransaction(ctx context.Context, params string) (*ptnjson.SignRawTransactionResult, error) {
+func (ec *Client) SignRawTransaction(ctx context.Context, params string,password string, duration *uint64) (*ptnjson.SignRawTransactionResult, error) {
 	var result *ptnjson.SignRawTransactionResult
-	err := ec.c.CallContext(ctx, &result, "ptn_signRawTransaction", params)
+	err := ec.c.CallContext(ctx, &result, "ptn_signRawTransaction", params,password,duration)
 	return result, err
 }
 

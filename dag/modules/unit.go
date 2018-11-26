@@ -48,8 +48,8 @@ const (
 type Header struct {
 	ParentsHash  []common.Hash `json:"parents_hash"`
 	AssetIDs     []IDType16    `json:"assets"`
-	Authors      Authentifier  `json:"author" rlp:"-"` // the unit creation authors
-	GroupSign    []byte        `json:"witness"`        // 群签名
+	Authors      Authentifier  `json:"author"`  // the unit creation authors
+	GroupSign    []byte        `json:"witness"` // 群签名
 	TxRoot       common.Hash   `json:"root"`
 	Number       ChainIndex    `json:"index"`
 	Extra        []byte        `json:"extra"`
@@ -99,8 +99,9 @@ func (h *Header) ChainIndex() *ChainIndex {
 
 func (h *Header) Hash() common.Hash {
 	emptyHeader := CopyHeader(h)
-	//emptyHeader.Authors = nil
-	emptyHeader.GroupSign = make([]byte, 0)
+	// 计算header’hash时 剔除签名和群签
+	emptyHeader.Authors = Authentifier{}
+	emptyHeader.GroupSign = nil
 	return rlp.RlpHash(emptyHeader)
 }
 
