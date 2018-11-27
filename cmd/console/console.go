@@ -197,7 +197,7 @@ func (c *Console) init(preload []string) error {
 		    }
 		     obj.Set("signRawTransaction", bridge.SignRawTransaction)
 	        }
-                  //Add by wzhyuan
+            //Add by wzhyuan
 	}
 	// The admin.sleep and admin.sleepBlocks are offered by the console and not by the RPC layer.
 	admin, err := c.jsre.Get("admin")
