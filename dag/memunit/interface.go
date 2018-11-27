@@ -30,7 +30,7 @@ type IMemDag interface {
 	GetUnit(hash common.Hash) (*modules.Unit, error)
 	UpdateMemDag(hash common.Hash, sign []byte) error
 	Exists(uHash common.Hash) bool
-	Prune(assetId string, maturedUnitHash common.Hash) error
+	Prune(assetId string, hashs []common.Hash) error
 	SwitchMainChain() error
 	QueryIndex(assetId string, maturedUnitHash common.Hash) (uint64, int)
 	GetCurrentUnit(assetid modules.IDType16, index uint64) (*modules.Unit, error)
