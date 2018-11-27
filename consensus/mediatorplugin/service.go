@@ -47,7 +47,7 @@ type PalletOne interface {
 }
 
 type iDag interface {
-	GetCurThreshold() int
+	ChainThreshold() int
 	GetSlotAtTime(when time.Time) uint32
 	GetSlotTime(slotNum uint32) time.Time
 	HeadUnitTime() int64
@@ -211,7 +211,7 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 
 	lams := mp.GetLocalActiveMediators()
 	initPubs := dag.GetActiveMediatorInitPubs()
-	curThreshold := dag.GetCurThreshold()
+	curThreshold := dag.ChainThreshold()
 	lamc := len(lams)
 
 	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, lamc)
@@ -360,7 +360,7 @@ func (mp *MediatorPlugin) initTBLSBuf() {
 	mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit, lamc)
 	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lamc)
 
-	curThrshd := mp.dag.GetCurThreshold()
+	curThrshd := mp.dag.ChainThreshold()
 	for _, localMed := range lams {
 		mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
 		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet, curThrshd)

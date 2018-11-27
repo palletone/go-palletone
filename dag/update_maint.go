@@ -101,7 +101,8 @@ func (dag *Dag) updateLastIrreversibleUnit() {
 	sort.Ints(lastConfirmedUnitNums)
 
 	// 3. 获取倒数第 > 2/3 个确认unit编号
-	offset := aSize - dag.GetCurThreshold()
+	offset := aSize - dag.ChainThreshold()
+	// todo 群签名对BFT共识的完善
 	var newLastIrreversibleUnitNum = uint32(lastConfirmedUnitNums[offset])
 
 	// 4. 更新

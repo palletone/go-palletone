@@ -113,3 +113,13 @@ func (dag *Dag) IsSynced() bool {
 
 	return true
 }
+
+// author Albert·Gou
+func (d *Dag) ChainThreshold() int {
+	return d.GetGlobalProp().ChainThreshold()
+}
+
+func (d *Dag) ChainExpirationDate() uint {
+	gp := d.GetGlobalProp()
+	return uint(gp.ChainThreshold()) * uint(gp.ChainParameters.MediatorInterval)
+}

@@ -18,6 +18,7 @@
 
 package ptn
 
+// modified by albert·gou
 //func (pm *ProtocolManager) mediatorConnect() {
 //	//if pm.isTest {
 //	//	return
@@ -31,9 +32,9 @@ package ptn
 //	peers := pm.dag.GetActiveMediatorNodes()
 //
 //	//not exsit and no self will connect
-//	for _, peer := range peers {
-//		log.Debug("ProtocolManager", "GetActiveMediatorNodes:", peer.ID.String(), "local peerId:", pm.srvr.NodeInfo().ID)
-//		if peer.ID.String() != pm.srvr.NodeInfo().ID && pm.peers.Peer(peer.ID.String()) == nil {
+//	for id, peer := range peers {
+//		log.Debug("ProtocolManager", "GetActiveMediatorNodes:", id, "local peerId:", pm.srvr.NodeInfo().ID)
+//		if peer.ID.String() != pm.srvr.NodeInfo().ID && pm.peers.Peer(id) == nil {
 //			pm.srvr.AddPeer(peer)
 //		}
 //	}

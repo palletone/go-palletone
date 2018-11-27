@@ -400,9 +400,9 @@ func newPeerSet() *peerSet {
 	}
 }
 
-func (ps *peerSet) MediatorsAllConnected() int {
-	return 0
-}
+//func (ps *peerSet) MediatorsAllConnected() int {
+//	return 0
+//}
 
 //func (ps *peerSet) MediatorsSize() int {
 //	ps.lock.Lock()

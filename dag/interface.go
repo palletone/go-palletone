@@ -119,4 +119,7 @@ type IDag interface {
 	GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error)
 	// set groupsign
 	SetUnitGroupSign(sign []byte, hash common.Hash) error
+
+	GetPrecedingMediatorNodes() map[string]*discover.Node
+	ChainExpirationDate() uint
 }

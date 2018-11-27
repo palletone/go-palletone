@@ -71,7 +71,7 @@ func (gp *GlobalProperty) GetActiveMediatorCount() int {
 	return len(gp.ActiveMediators)
 }
 
-func (gp *GlobalProperty) GetCurThreshold() int {
+func (gp *GlobalProperty) ChainThreshold() int {
 	aSize := gp.GetActiveMediatorCount()
 	offset := (core.PalletOne100Percent - core.PalletOneIrreversibleThreshold) * aSize /
 		core.PalletOne100Percent
