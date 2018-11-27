@@ -72,12 +72,14 @@ type Dag struct {
 	chainMaintainFeed  event.Feed
 	chainMaintainScope event.SubscriptionScope
 }
+
 type MemUtxos map[modules.OutPoint]*modules.Utxo
 
 func (d *Dag) IsEmpty() bool {
 	it := d.Db.NewIterator()
 	return !it.Next()
 }
+
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
@@ -546,7 +548,6 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		Mutex:         *mutex,
 		Memdag:        memunit.NewMemDag(dagDb, stateDb, unitRep),
 		utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
-		//Memdag:        memunit.NewMemDag(dagDb, unitRep),
 	}
 	return dag, nil
 }
@@ -838,7 +839,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 
 	if !isGenesis {
 		if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
-			log.Info("dag", "SaveUnit unit is already existing.hash:", unit.Hash().String())
+			log.Info("dag:the unit is already exist in leveldb. ", "unit_hash", unit.Hash().String())
 			return errors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 		}
 	}
@@ -1207,34 +1208,42 @@ func (d *Dag) SetUnitGroupSign(sign []byte, unit_hash common.Hash) error {
 	if sign == nil {
 		return errors.New("group sign is null.")
 	}
-	// get unit by the hash
-	unit, err := d.GetMemUnitbyHash(unit_hash)
-	if err != nil {
-		log.Debug("GetMemUnitbyHash falied. ", "error", err)
-		return err
-	}
+	// TODO 验证群签名：
+	// ...
 
-	unit.SetGroupSign(sign[:])
+	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 
-	// 群签之后， 更新memdag
-	go d.Memdag.UpdateMemDag(unit)
+	go d.Memdag.UpdateMemDag(unit_hash, sign[:])
 
 	// 将缓存池utxo更新到utxodb中
-	go d.UpdateUtxosByUnit(unit.Hash())
+	go d.UpdateUtxosByUnit(unit_hash)
+	// 更新utxo缓存池
+	go d.RefreshCacheUtxos()
 
 	// TODO 状态更新。
-	// 当前最新区块高度是否小于此unit高度。
-	if curUnit := d.GetCurrentUnit(unit.UnitHeader.ChainIndex().AssetID); curUnit != nil {
-		if curUnit.UnitHeader.Index() < unit.UnitHeader.Index() {
-			// update state
-			d.dagdb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
-			d.dagdb.PutHeadHeaderHash(unit.UnitHash)
-			d.dagdb.PutHeadUnitHash(unit.UnitHash)
-			d.dagdb.PutHeadFastUnitHash(unit.UnitHash)
-		}
-	}
+
 	return nil
 }
+
+func (d *Dag) RefreshCacheUtxos() error {
+	timeout := time.NewTimer(time.Microsecond * 500)
+	var err error
+	for {
+		select {
+		case hash := <-d.Memdag.GetDelhashs():
+			// delete hash
+			log.Debug("want to delete hash :", "hash", hash.String())
+			delete(d.utxos_cache, hash)
+
+		case <-timeout.C:
+			err = errors.New("read hash time out.")
+			goto ENDLINE
+		}
+	}
+ENDLINE:
+	return err
+}
+
 func (d *Dag) UpdateUtxosByUnit(hash common.Hash) error {
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()

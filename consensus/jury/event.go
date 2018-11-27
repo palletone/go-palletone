@@ -20,7 +20,6 @@ package jury
 
 import (
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common"
 )
 
 //type NewTxEvent struct {
@@ -33,6 +32,6 @@ type ContractExeEvent struct {
 }
 
 type ContractSigEvent struct {
-	TxHash common.Hash
+	//TxHash common.Hash
 	Tx     *modules.Transaction
 }

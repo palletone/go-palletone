@@ -261,7 +261,7 @@ func (e *Endorser) ProcessProposal(contractid []byte, idag dag.IDag, deployId []
 		return nil, nil, errors.New("Conver RwSet to dag unit fail")
 	}
 	logger.Debug("unit:")
-	logger.Debug(unit)
+	//logger.Debug(unit)
 	//fmt.Printf("==unit=> %#v\n", unit.ContractId)
 	//fmt.Printf("==unit=> %#v\n", unit.Payload)
 	//fmt.Printf("==unit=> %s\n", unit.Args)

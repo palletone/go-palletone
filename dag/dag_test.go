@@ -1,11 +1,13 @@
 package dag
 
 import (
-	"github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/storage"
 	"testing"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	dagcomm "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -48,7 +50,7 @@ func TestCreateUnit(t *testing.T) {
 	txs := modules.Transactions{tx}
 	// new unit
 
-	unit, err := common.NewGenesisUnit(txs, 123, asset)
+	unit, err := dagcomm.NewGenesisUnit(txs, 123, asset)
 	log.Info("create unit success.", "hash", unit.Hash().String())
 	// save unit
 	test_dag, err := NewDag4GenesisInit(db)
@@ -63,4 +65,27 @@ func TestCreateUnit(t *testing.T) {
 	// log.Info("Save unit success")
 	genesis, err0 := test_dag.GetGenesisUnit(0)
 	log.Info("get genesiss info", "error", err0, "info", genesis)
+}
+
+func TestDagRefreshUtxos(t *testing.T) {
+	//db := storage.ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/palletone/gptn/leveldb/")
+	db, _ := ptndb.NewMemDatabase()
+	dag_test, err := NewDagForTest(db)
+	if err != nil {
+		t.Fatal("New dag for test is faild,error: ", err)
+	}
+
+	// 添加delhash
+
+	unit := dag_test.GetCurrentUnit(modules.PTNCOIN)
+	data := make(map[modules.OutPoint]*modules.Utxo)
+	dag_test.utxos_cache[unit.Hash()] = data
+	log.Debug("this unit hash info", "hash", unit.Hash().String())
+	dag_test.Memdag.PushDelHashs([]common.Hash{unit.Hash()})
+	log.Info("start refresh cache utxos.", "cache_len", len(dag_test.utxos_cache))
+
+	dag_test.RefreshCacheUtxos()
+
+	log.Info("stop refresh cache utxos.", "cache_len", len(dag_test.utxos_cache))
+
 }

@@ -209,7 +209,7 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 	tx := &modules.Transaction{
 		TxMessages: []*modules.Message{orgTx.TxMessages[0], orgTx.TxMessages[1], msgPayload},
 	}
-	tx.TxHash = orgTx.TxHash
+	tx.TxId = orgTx.TxId
 	pubkey,err := ks.GetPublicKey(singer)
 	if err != nil{
 		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
@@ -230,6 +230,7 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 		},
 	}
 	tx.TxMessages = append(tx.TxMessages, msgSig)
+	tx.TxHash = tx.Hash()
 
 	log.Debug("GenContractSigTransctions", "orgTx.TxHash", " sig transction ok", )
 	//log.Debug("GenContractSigTransctions", tx.TxMessages[3].Payload.(modules.SignaturePayload).Signatures[0])

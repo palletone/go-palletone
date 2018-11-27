@@ -61,6 +61,7 @@ type IStateDb interface {
 	// world state chainIndex
 	GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)
 	SaveChainIndex(index *modules.ChainIndex) error
+	//GetCurrentUnit(assetId modules.IDType16) *modules.Unit
 
 	CreateUserVote(voter common.Address, detail [][]byte, bHash []byte) error
 

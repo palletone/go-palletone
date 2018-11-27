@@ -101,10 +101,10 @@ type TxPoolTransaction struct {
 	From         []*OutPoint
 	CreationDate time.Time `json:"creation_date"`
 	Priority_lvl float64   `json:"priority_lvl"` // 打包的优先级
-	Nonce        uint64    // transaction'hash maybe repeat.
+	Nonce        uint64                          // transaction'hash maybe repeat.
 	Pending      bool
 	Confirmed    bool
-	Index        int `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
+	Index        int       `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
 }
 
@@ -328,6 +328,7 @@ type TxLookupEntry struct {
 type Transactions []*Transaction
 type Transaction struct {
 	TxHash     common.Hash `json:"txhash"`
+	TxId       common.Hash `json:"txhash"`
 	TxMessages []*Message  `json:"messages"`
 }
 
