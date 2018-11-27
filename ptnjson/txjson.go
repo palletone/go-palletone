@@ -26,13 +26,27 @@ import (
 
 type TxJson struct {
 	Payment *PaymentJson `json:"payment"`
+	Vote    *VoteJson    `json:"vote"`
 	//InvokeRequest
+}
+type VoteJson struct {
+	Content string
 }
 
 func ConvertTx2Json(tx *modules.Transaction) TxJson {
-	pay := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-	payJson := ConvertPayment2Json(pay)
 	json := TxJson{}
-	json.Payment = &payJson
+	for _, m := range tx.TxMessages {
+		if m.App == modules.APP_PAYMENT {
+			pay := m.Payload.(*modules.PaymentPayload)
+			payJson := ConvertPayment2Json(pay)
+			json.Payment = &payJson
+		} else if m.App == modules.APP_VOTE {
+			v := m.Payload.(*modules.VotePayload)
+			if v.VoteType == 0 {
+				vote := &VoteJson{Content: string(v.Contents)}
+				json.Vote = vote
+			}
+		}
+	}
 	return json
 }

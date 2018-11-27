@@ -813,7 +813,25 @@ func (s *PublicBlockChainAPI) Ccdeploy(ctx context.Context, templateId string, t
 	deployId, err := s.b.ContractDeploy(tempId, txid, args, 30*time.Second)
 	return hexutil.Bytes(deployId), err
 }
-
+func (s *PublicBlockChainAPI) CreateMediatorVote(ctx context.Context, paymentHex, mediatorAddr string) (string, error) {
+	txBytes, err := hex.DecodeString(paymentHex)
+	if err != nil {
+		return "", err
+	}
+	tx := &modules.Transaction{}
+	err = rlp.DecodeBytes(txBytes, tx)
+	if err != nil {
+		return "", err
+	}
+	vote := &modules.VotePayload{}
+	vote.VoteType = 0
+	strings := []string{}
+	strings = append(strings, mediatorAddr)
+	vote.Contents, _ = json.Marshal(strings)
+	tx.AddMessage(modules.NewMessage(modules.APP_VOTE, vote))
+	txB, _ := rlp.EncodeToBytes(tx)
+	return fmt.Sprintf("%X", txB), nil
+}
 func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string, txhex string, param []string /*fun string, key string, val string*/) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
 	log.Info("-----Ccinvoke:" + deployId + ":" + txid)
@@ -1521,7 +1539,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 		if err != nil {
 			return "", rpcDecodeHexError(input.Txid)
 		}
-		prevOut := modules.NewOutPoint(txHash,input.MessageIndex,input.Vout)
+		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.Vout)
 		txInput := modules.NewTxIn(prevOut, []byte{})
 		pload.AddTxIn(txInput)
 	}
@@ -1897,15 +1915,14 @@ func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error
 
 //sign rawtranscation
 //create raw transction
-func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context,params string,password string, duration *uint64) (interface{}, error) {
- 
-        
+func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string, password string, duration *uint64) (interface{}, error) {
+
 	//transaction inputs
 	serializedTx, err := decodeHexStr(params)
 	if err != nil {
 		return nil, err
 	}
-     
+
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
@@ -1975,12 +1992,12 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context,params
 	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
 		errors.New("get addr by outpoint is err")
-		return nil,err
+		return nil, err
 	}
-        
+
 	newsign := ptnjson.NewSignRawTransactionCmd(params, &srawinputs, &keys, ptnjson.String("ALL"))
 	result, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn)
-        
+
 	fmt.Println(result)
 	return result, nil
 }
