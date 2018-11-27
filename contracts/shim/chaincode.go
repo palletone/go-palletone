@@ -229,7 +229,7 @@ func getPeerAddress() string {
 		return peerAddress
 	}
 	//if peerAddress = viper.GetString("peer.address"); peerAddress == "" {
-	if peerAddress = cfg.GetConfig().Address; peerAddress == "" {
+	if peerAddress = cfg.GetConfig().ContractAddress; peerAddress == "" {
 		chaincodeLogger.Fatalf("peer.address not configured, can't connect to peer")
 	}
 	return peerAddress

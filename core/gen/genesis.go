@@ -117,7 +117,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 
 	assetInfo := modules.AssetInfo{
 		Alias:          genesis.Alias,
-		InitialTotal:   genesis.TokenAmount,
+		InitialTotal:   genesis.GetTokenAmount(),
 		Decimal:        genesis.TokenDecimal,
 		DecimalUnit:    genesis.DecimalUnit,
 		OriginalHolder: holder,
@@ -143,7 +143,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	pkscript := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 
 	txout := &modules.Output{
-		Value:    genesis.TokenAmount,
+		Value:    genesis.GetTokenAmount(),
 		Asset:    asset,
 		PkScript: pkscript,
 	}
@@ -210,8 +210,8 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 		TxMessages: []*modules.Message{orgTx.TxMessages[0], orgTx.TxMessages[1], msgPayload},
 	}
 	tx.TxHash = orgTx.TxHash
-	pubkey,err := ks.GetPublicKey(singer)
-	if err != nil{
+	pubkey, err := ks.GetPublicKey(singer)
+	if err != nil {
 		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
 	}
 	sig, err := cm.GetTxSig(tx, ks, singer)
@@ -231,7 +231,7 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 	}
 	tx.TxMessages = append(tx.TxMessages, msgSig)
 
-	log.Debug("GenContractSigTransctions", "orgTx.TxHash", " sig transction ok", )
+	log.Debug("GenContractSigTransctions", "orgTx.TxHash", " sig transction ok")
 	//log.Debug("GenContractSigTransctions", tx.TxMessages[3].Payload.(modules.SignaturePayload).Signatures[0])
 	return tx, nil, nil
 }

@@ -24,6 +24,7 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common/log"
+	"strconv"
 )
 
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
@@ -39,9 +40,10 @@ type SystemConfig struct {
 }
 
 type Genesis struct {
-	Version      string       `json:"version"`
-	Alias        string       `json:"alias"`
-	TokenAmount  uint64       `json:"tokenAmount"`
+	Version string `json:"version"`
+	Alias   string `json:"alias"`
+	//TokenAmount  uint64       `json:"tokenAmount"`
+	TokenAmount  string       `json:"tokenAmount"`
 	TokenDecimal uint32       `json:"tokenDecimal"`
 	DecimalUnit  string       `json:"decimal_unit"`
 	ChainID      uint64       `json:"chainId"`
@@ -57,7 +59,12 @@ type Genesis struct {
 }
 
 func (g *Genesis) GetTokenAmount() uint64 {
-	return g.TokenAmount
+	amount, err := strconv.ParseInt(g.TokenAmount, 10, 64)
+	if err != nil {
+		log.Error("genesis", "get token amount err:", err)
+		return uint64(0)
+	}
+	return uint64(amount)
 }
 
 type InitialMediator struct {
