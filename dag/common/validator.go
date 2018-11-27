@@ -438,7 +438,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenes
 
 	sigState := validate.validateHeaderExceptGroupSig(unit.UnitHeader, isGenesis)
 	if sigState != modules.UNIT_STATE_VALIDATED &&
-		sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+		sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED && sigState != modules.UNIT_STATE_CHECK_HEADER_PASSED {
 		log.Debug("Validate unit's header failed.", "error code", sigState)
 		return sigState
 	}
@@ -500,7 +500,8 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, i
 		if header.AssetIDs[0] != ptnAssetID || !header.Number.IsMain || header.Number.Index != 0 {
 			return modules.UNIT_STATE_INVALID_HEADER
 		}
-		return modules.UNIT_STATE_CHECK_HEADER_PASSED
+
+		// 	return modules.UNIT_STATE_CHECK_HEADER_PASSED
 	}
 	var isValidAssetId bool
 	for _, asset := range header.AssetIDs {

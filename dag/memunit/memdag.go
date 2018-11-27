@@ -96,6 +96,90 @@ func NewMemDag(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon.IUnitR
 
 	return memdag
 }
+
+func NewMemDagForTest(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon.IUnitRepository) *MemDag {
+	memdag := &MemDag{
+		lastValidatedUnit: make(map[string]*modules.Unit),
+		forkIndex:         make(map[string]ForkIndex),
+		memUnit:           InitMemUnit(),
+		memSize:           dagconfig.DefaultConfig.MemoryUnitSize,
+		dagdb:             db,
+		unitRep:           unitRep,
+		mainChain:         make(map[string]*MainData),
+		currentUnit:       make(map[string]*modules.Unit),
+		statedb:           sdb,
+		delhashs:          make(chan common.Hash, 15),
+	}
+
+	// get genesis Last Irreversible Unit
+	unit, err := createUnitForTest()
+	unitRep.SaveUnit(unit, true)
+
+	genesisUnit, err := unitRep.GetGenesisUnit(0)
+	if err != nil {
+		log.Error("NewMemDag when GetGenesisUnit", "error", err.Error())
+		return nil
+	}
+	if genesisUnit == nil {
+		log.Error("Get genesis unit failed, unit of genesis is nil.")
+		return nil
+	}
+	assetid := genesisUnit.UnitHeader.Number.AssetID
+	lastIrreUnit, _ := db.GetLastIrreversibleUnit(assetid)
+	if lastIrreUnit != nil {
+		memdag.lastValidatedUnit[assetid.String()] = lastIrreUnit
+	}
+	memdag.currentUnit[assetid.String()] = lastIrreUnit
+	main_data := new(MainData)
+	main_data.Index = lastIrreUnit.UnitHeader.ChainIndex()
+	main_data.Hash = &lastIrreUnit.UnitHash
+	main_data.Number = lastIrreUnit.UnitHeader.Index()
+	memdag.mainChain[assetid.String()] = main_data
+
+	data0 := make(ForkData, 0)
+	if err := data0.Add(lastIrreUnit.UnitHash, lastIrreUnit.UnitHeader.Authors.Address.String()); err == nil {
+		fork_index := make(ForkIndex)
+		fork_index[uint64(0)] = data0
+		memdag.forkIndex[assetid.String()] = fork_index
+	}
+
+	return memdag
+}
+func createUnitForTest() (*modules.Unit, error) {
+	asset := new(modules.Asset)
+	asset.AssetId = modules.PTNCOIN
+	asset.UniqueId = modules.PTNCOIN
+	asset.ChainId = 1
+	// new payload tpl payload
+	inputs := make([]*modules.Input, 0)
+	in := new(modules.Input)
+	in.Extra = []byte("jay")
+	inputs = append(inputs, in)
+	outputs := make([]*modules.Output, 0)
+	out := new(modules.Output)
+	out.Value = 1100000000
+	out.Asset = asset
+	outputs = append(outputs, out)
+	payment := modules.NewPaymentPayload(inputs, outputs)
+	msg0 := modules.NewMessage(modules.APP_PAYMENT, payment)
+	tplPayload := modules.NewContractTplPayload([]byte("contract_template0000"),
+		"TestContractTpl", "./contract", "1.1.1", 1024,
+		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159})
+	// new msg
+	msg := modules.NewMessage(modules.APP_CONTRACT_TPL, tplPayload)
+	msgs := []*modules.Message{msg0}
+	// new transactions
+	tx := modules.NewTransaction(msgs[:])
+	tx1 := modules.NewTransaction(append(msgs, msg))
+	tx1 = tx1
+	txs := modules.Transactions{tx}
+	// new unit
+
+	unit, err := dagCommon.NewGenesisUnit(txs, 1536451201, asset)
+	log.Info("create unit success.", "error", err, "hash", unit.Hash().String())
+	return unit, err
+}
+
 func (chain *MemDag) GetDelhashs() chan common.Hash {
 	if chain.delhashs == nil {
 		chain.delhashs = make(chan common.Hash, 15)
@@ -239,11 +323,11 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 			}
 			log.Info("+++++++++++++++++++++++ save_memDag_success +++++++++++++++++++++++", "save_memDag_Unit_hash", unit.Hash().String(), "index", index)
 		}
-		// if err := chain.Prune(assetId, stable_hash); err != nil {
-		// 	log.Error("Check if the irreversible height has been reached", "error", err.Error())
-		// 	return err
-		// }
-		// go chain.Prune(assetId, stable_hash)
+		if err := chain.Prune(assetId, hashs); err != nil {
+			log.Error("Check if the irreversible height has been reached", "error", err.Error())
+			return err
+		}
+		// go chain.Prune(assetId, stable_hash,)
 	} else {
 		// TODO save unit into memUnit , update  world state index.
 		if !chain.Exists(unit.Hash()) {
@@ -287,15 +371,8 @@ func (chain *MemDag) updateMemdag(unit *modules.Unit) error {
 			chain.mainChain[asstid.String()] = &MainData{Index: index, Hash: &mainHash, Number: index.Index}
 		}
 
-		// 3.update forkIndex
-		forkIndex, has := chain.forkIndex[asstid.String()]
-		if has {
-			forkIndex.RemoveStableIndex(unit.UnitHeader.Index())
-		}
-		chain.forkIndex[asstid.String()] = forkIndex
+		// 3.update fork(对分叉数据剪枝)
 
-		// 4. memUnit chainIndex
-		go chain.memUnit.DelHashByNumber(*unit.UnitHeader.ChainIndex())
 	}
 	// 更新某些状态
 	// 当前最新区块高度是否小于此unit高度。
@@ -312,7 +389,7 @@ func (chain *MemDag) updateMemdag(unit *modules.Unit) error {
 		}
 	}
 	// 分支修剪
-	go chain.Prune(unit.UnitHeader.ChainIndex().AssetID.String(), unit.Hash())
+	go chain.Prune(unit.UnitHeader.ChainIndex().AssetID.String(), []common.Hash{unit.Hash()})
 
 	// 将该单元的父单元一并确认群签
 	if list := unit.ParentHash(); len(list) > 0 {
@@ -349,40 +426,43 @@ func (chain *MemDag) Exists(uHash common.Hash) bool {
 对分叉数据进行剪支
 Prune fork data
 */
-func (chain *MemDag) Prune(assetId string, maturedUnitHash common.Hash) error {
+func (chain *MemDag) Prune(assetId string, delhashs []common.Hash) error {
+	// @jay
+	if len(delhashs) < 1 {
+		return nil
+	}
+	// get fork index
+	maturedUnitHash := delhashs[0]
+
 	chain.chainLock.Lock()
 	defer chain.chainLock.Unlock()
-	// get fork index
 
 	index, subindex := chain.QueryIndex(assetId, maturedUnitHash)
 	if index < 0 {
 		return fmt.Errorf("Prune error: matured unit is not found in memory")
 	}
 
-	// save all the units before matured unit into db
-	// @jay
 	fork_index := chain.forkIndex[assetId]
 
 	forkdata, has := fork_index[index]
 	if !has {
 		return fmt.Errorf("memUnit get forkData is failed, error hash: %x , index%d", maturedUnitHash, index)
 	}
-	// for i := 0; i < subindex; i++ {
-	// 	unitHash := (forkdata)[i]
-	// 	//unit := (*chain.memUnit)[unitHash]
-	// 	unit, err := chain.memUnit.Get(unitHash)
-	// 	if err != nil {
-	// 		return fmt.Errorf("memUnit get unithash(%v) error:%s ", unitHash, err.Error())
-	// 	}
-	// 	if err := chain.unitRep.SaveUnit(unit, false); err != nil {
-	// 		return fmt.Errorf("Prune error when save unit: %s", err.Error())
-	// 	}
-	// }
+	data1 := make(ForkData, 0)
+	for index, data := range forkdata {
+		if index == subindex {
+			data1.Add(data.hash, data.addr)
+			// forkdata[index] = data1
+			break
+		}
+	}
+	fork_index[index] = data1
 
 	// rollback transaction pool
 	for j := subindex; j < len(forkdata); j++ {
 
 	}
+
 	if unit, err := chain.memUnit.Get(maturedUnitHash); err == nil && unit != nil {
 		main_data := new(MainData)
 		main_data.Hash = &maturedUnitHash
@@ -390,18 +470,17 @@ func (chain *MemDag) Prune(assetId string, maturedUnitHash common.Hash) error {
 		main_data.Number = unit.UnitHeader.Index()
 		chain.mainChain[assetId] = main_data
 	}
-	// refresh forkindex
-	if lenth := len(forkdata); lenth > 0 {
-		delete(fork_index, index)
-		// prune other forks
 
-		fmt.Println("------------------------------ new forkindex lenth>0 --------------------------------------", fork_index, index, lenth, subindex)
-		chain.forkIndex[assetId] = fork_index
-	} else {
-		fmt.Println("------------------------------ new forkindex--------------------------------------", index, lenth, subindex)
+	// refresh forkindex
+	for _, hash := range delhashs {
+		if unit, err := chain.memUnit.Get(hash); err == nil {
+			// 1. update forkindex
+			fork_index.RemoveStableIndex(unit.UnitHeader.Index())
+			chain.forkIndex[unit.UnitHeader.ChainIndex().AssetID.String()] = fork_index
+			// 2. memUnit chainIndex
+			go chain.memUnit.DelHashByNumber(*unit.UnitHeader.ChainIndex())
+		}
 	}
-	// save the matured unit
-	// chain.lastValidatedUnit[assetId] = maturedUnitHash
 
 	return nil
 }
@@ -417,14 +496,17 @@ func (chain *MemDag) SwitchMainChain() error {
 	for assetid, forkindex := range chain.forkIndex {
 		var maxIndex uint64
 		main_data := new(MainData)
+		var hash common.Hash
 		for index, forkdata := range forkindex {
 			if len(forkdata) > 0 {
-				// chain.mainChain[assetid] = index
-				// maxLenth = len(*forkdata)
-				maxIndex = index
+				if maxIndex < index {
+					maxIndex = index
+					hash = forkdata.GetLast()
+				}
 			}
 		}
 		main_data.Number = maxIndex
+		main_data.Hash = &hash
 		chain.mainChain[assetid] = main_data
 	}
 	return nil
@@ -432,12 +514,13 @@ func (chain *MemDag) SwitchMainChain() error {
 
 func (chain *MemDag) QueryIndex(assetId string, maturedUnitHash common.Hash) (uint64, int) {
 	chain.chainLock.RLock()
+	defer chain.chainLock.RUnlock()
 
 	forkindex, ok := chain.forkIndex[assetId]
 	if !ok {
 		return 0, -1
 	}
-	chain.chainLock.RUnlock()
+
 	for index, forkdata := range forkindex {
 		for subindex, data := range forkdata {
 			if strings.Compare(data.hash.String(), maturedUnitHash.String()) == 0 {
