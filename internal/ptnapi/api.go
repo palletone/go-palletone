@@ -1521,7 +1521,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 		if err != nil {
 			return "", rpcDecodeHexError(input.Txid)
 		}
-		prevOut := modules.NewOutPoint(txHash, input.Vout, input.MessageIndex)
+		prevOut := modules.NewOutPoint(txHash,input.MessageIndex,input.Vout)
 		txInput := modules.NewTxIn(prevOut, []byte{})
 		pload.AddTxIn(txInput)
 	}
