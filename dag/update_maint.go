@@ -123,17 +123,18 @@ func (dag *Dag) SubscribeChainMaintainEvent(ch chan<- ChainMaintainEvent) event.
 func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	dgp := dag.GetDynGlobalProp()
 
-	// Are we at the maintenance interval?
+	// 1. 判断是否进入维护周期. Are we at the maintenance interval?
 	if dgp.NextMaintenanceTime > nextUnit.Timestamp() {
 		return
 	}
 
+	// 2. 统计投票并更新活跃 mediator 列表
 	dag.updateActiveMediators()
 
-	// 通知开始vss协议
+	// 3. 发送更新活跃 mediator 事件，以方便其他模块做相应处理
 	dag.chainMaintainFeed.Send(ChainMaintainEvent{})
 
-	// 更新下一次维护时间
+	// 4. 计算并更新下一次维护时间
 	gp := dag.GetGlobalProp()
 	nextMaintenanceTime := dgp.NextMaintenanceTime
 	maintenanceInterval := int64(gp.ChainParameters.MaintenanceInterval)

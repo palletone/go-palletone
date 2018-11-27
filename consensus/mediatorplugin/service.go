@@ -35,7 +35,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
@@ -68,17 +67,15 @@ type iDag interface {
 		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit
 
 	MediatorSchedule() []common.Address
-
-	SubscribeChainMaintainEvent(ch chan<- dag.ChainMaintainEvent) event.Subscription
 }
 
 type MediatorPlugin struct {
 	ptn  PalletOne     // Full PalletOne service to retrieve other function
 	quit chan struct{} // Channel used for graceful exit
 
-	dag              iDag
-	chainMaintainCh  chan dag.ChainMaintainEvent
-	chainMaintainSub event.Subscription
+	dag iDag
+	//chainMaintainCh  chan dag.ChainMaintainEvent
+	//chainMaintainSub event.Subscription
 
 	// Enable Unit production, even if the chain is stale.
 	// 新开启一个区块链时，必须设为true
@@ -251,34 +248,34 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	// 1. 开启循环生产计划
 	go mp.ScheduleProductionLoop()
 
-	mp.chainMaintainCh = make(chan dag.ChainMaintainEvent)
-	mp.chainMaintainSub = mp.dag.SubscribeChainMaintainEvent(mp.chainMaintainCh)
-	go mp.chainMaintainEventRecvLoop()
+	//mp.chainMaintainCh = make(chan dag.ChainMaintainEvent)
+	//mp.chainMaintainSub = mp.dag.SubscribeChainMaintainEvent(mp.chainMaintainCh)
+	//go mp.chainMaintainEventRecvLoop()
 
 	go log.Debug("mediator plugin startup end")
 
 	return nil
 }
 
-func (mp *MediatorPlugin) chainMaintainEventRecvLoop() {
-	for {
-		select {
-		case <-mp.chainMaintainCh:
-			// 2. 给当前节点控制的活跃mediator，初始化对应的DKG.
-			// todo 数据同步后再初始化，换届后需重新生成
-			go mp.NewActiveMediatorsDKG()
-
-			// Err() channel will be closed when unsubscribing.
-		case <-mp.chainMaintainSub.Err():
-			return
-		}
-	}
-}
+//func (mp *MediatorPlugin) chainMaintainEventRecvLoop() {
+//	for {
+//		select {
+//		case <-mp.chainMaintainCh:
+//			// 2. 给当前节点控制的活跃mediator，初始化对应的DKG.
+//			// todo 数据同步后再初始化，换届后需重新生成
+//			go mp.NewActiveMediatorsDKG()
+//
+//			// Err() channel will be closed when unsubscribing.
+//		case <-mp.chainMaintainSub.Err():
+//			return
+//		}
+//	}
+//}
 
 func (mp *MediatorPlugin) Stop() error {
 	close(mp.quit)
 
-	mp.chainMaintainSub.Unsubscribe()
+	//mp.chainMaintainSub.Unsubscribe()
 
 	mp.newProducedUnitScope.Close()
 	mp.vssDealScope.Close()

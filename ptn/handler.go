@@ -137,6 +137,9 @@ type ProtocolManager struct {
 
 	//For Test
 	//isTest bool
+
+	chainMaintainCh  chan dag.ChainMaintainEvent
+	chainMaintainSub event.Subscription
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
@@ -146,20 +149,20 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	genesis *modules.Unit, contractProc contractInf) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		networkId:        networkId,
-		dag:              dag,
-		txpool:           txpool,
-		eventMux:         mux,
-		consEngine:       engine,
-		peers:            newPeerSet(),
-		newPeerCh:        make(chan *peer),
-		noMorePeers:      make(chan struct{}),
-		txsyncCh:         make(chan *txsync),
-		quitSync:         make(chan struct{}),
+		networkId:   networkId,
+		dag:         dag,
+		txpool:      txpool,
+		eventMux:    mux,
+		consEngine:  engine,
+		peers:       newPeerSet(),
+		newPeerCh:   make(chan *peer),
+		noMorePeers: make(chan struct{}),
+		txsyncCh:    make(chan *txsync),
+		quitSync:    make(chan struct{}),
 		//transCycleConnCh: make(chan int, 1),
-		genesis:          genesis,
-		producer:         producer,
-		contractProc:     contractProc,
+		genesis:      genesis,
+		producer:     producer,
+		contractProc: contractProc,
 		//peersTransition:  newPeerSet(),
 		//isTest:           false,
 	}
@@ -339,6 +342,10 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 		pm.contractSigSub = pm.contractProc.SubscribeContractSigEvent(pm.contractSigCh)
 		go pm.contractSigRecvLoop()
 	}
+
+	pm.chainMaintainCh = make(chan dag.ChainMaintainEvent)
+	pm.chainMaintainSub = pm.dag.SubscribeChainMaintainEvent(pm.chainMaintainCh)
+	go pm.chainMaintainEventRecvLoop()
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -350,6 +357,7 @@ func (pm *ProtocolManager) Stop() {
 	pm.groupSigSub.Unsubscribe()
 	pm.vssDealSub.Unsubscribe()
 	pm.vssResponseSub.Unsubscribe()
+	pm.chainMaintainSub.Unsubscribe()
 
 	pm.txSub.Unsubscribe() // quits txBroadcastLoop
 
