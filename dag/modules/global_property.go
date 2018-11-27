@@ -83,6 +83,10 @@ func (gp *GlobalProperty) IsActiveMediator(add common.Address) bool {
 	return gp.ActiveMediators[add]
 }
 
+func (gp *GlobalProperty) IsPrecedingMediator(add common.Address) bool {
+	return gp.PrecedingMediators[add]
+}
+
 func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
 	if index < 0 || index > gp.GetActiveMediatorCount()-1 {
 		log.Error(fmt.Sprintf("%v is out of the bounds of active mediator list!", index))

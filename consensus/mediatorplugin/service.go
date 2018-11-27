@@ -67,6 +67,8 @@ type iDag interface {
 		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit
 
 	MediatorSchedule() []common.Address
+
+	IsPrecedingMediator(add common.Address) bool
 }
 
 type MediatorPlugin struct {

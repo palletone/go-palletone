@@ -74,6 +74,10 @@ func (d *Dag) IsActiveMediator(add common.Address) bool {
 	return d.GetGlobalProp().IsActiveMediator(add)
 }
 
+func (d *Dag) IsPrecedingMediator(add common.Address) bool {
+	return d.GetGlobalProp().IsPrecedingMediator(add)
+}
+
 func (dag *Dag) InitPropertyDB(genesis *core.Genesis, genesisUnitHash common.Hash) error {
 	//  全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
@@ -119,7 +123,7 @@ func (d *Dag) ChainThreshold() int {
 	return d.GetGlobalProp().ChainThreshold()
 }
 
-func (d *Dag) ChainExpirationDate() uint {
+func (d *Dag) UnitIrreversibleTime() uint {
 	gp := d.GetGlobalProp()
 	return uint(gp.ChainThreshold()) * uint(gp.ChainParameters.MediatorInterval)
 }

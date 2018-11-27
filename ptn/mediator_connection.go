@@ -18,7 +18,37 @@
 
 package ptn
 
-import "time"
+import (
+	"time"
+
+	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/dag/modules"
+)
+
+// @author Albert·Gou
+type producer interface {
+	// SubscribeNewUnitEvent should return an event subscription of
+	// NewUnitEvent and send events to the given channel.
+	SubscribeNewProducedUnitEvent(ch chan<- mp.NewProducedUnitEvent) event.Subscription
+	// UnitBLSSign is to TBLS sign the unit
+	ToUnitTBLSSign(newUnit *modules.Unit) error
+
+	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
+	ToTBLSRecover(sigShare *mp.SigShareEvent) error
+
+	SubscribeVSSDealEvent(ch chan<- mp.VSSDealEvent) event.Subscription
+	ToProcessDeal(deal *mp.VSSDealEvent) error
+
+	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
+	ToProcessResponse(resp *mp.VSSResponseEvent) error
+
+	LocalHaveActiveMediator() bool
+	LocalHavePrecedingMediator() bool
+
+	SubscribeGroupSigEvent(ch chan<- mp.GroupSigEvent) event.Subscription
+}
 
 func (pm *ProtocolManager) chainMaintainEventRecvLoop() {
 	for {
@@ -79,9 +109,9 @@ func (pm *ProtocolManager) checkActiveMediatorConnection() {
 		return true
 	}
 
-	// 3. 发送mediator连接完成事件
+	// 3. 发送mediator连接完成的事件
 	sendEventFn := func() {
-
+		// todo
 	}
 
 	// 1. 设置Ticker, 每隔一段时间检查一次
@@ -100,5 +130,37 @@ func (pm *ProtocolManager) checkActiveMediatorConnection() {
 }
 
 func (pm *ProtocolManager) delayDiscPrecedingMediator() {
-	//todo
+	// 1. 判断当前节点是否是上一届活跃mediator
+	if !pm.producer.LocalHavePrecedingMediator() {
+		return
+	}
+
+	// 2. 统计出需要断开连接的mediator节点
+	delayDiscNodes := make(map[string]*discover.Node, 0)
+
+	activePeers := pm.dag.GetActiveMediatorNodes()
+	precedingPeers := pm.dag.GetPrecedingMediatorNodes()
+	for id, peer := range precedingPeers {
+		// 仅当上一届mediator 不是本届活跃mediator，并且已连接时，才断开连接
+		if _, ok := activePeers[id]; !ok && pm.peers.Peer(id) != nil {
+			delayDiscNodes[id] = peer
+		}
+	}
+
+	// 3. 设置定时器延迟 断开连接
+	discconnectFn := func() {
+		for _, peer := range delayDiscNodes {
+			pm.srvr.RemoveTrustedPeer(peer)
+		}
+	}
+
+	expiration := pm.dag.UnitIrreversibleTime()
+	delayDisc := time.NewTimer(time.Duration(expiration))
+
+	select {
+	case <-pm.quitSync:
+		return
+	case <-delayDisc.C:
+		discconnectFn()
+	}
 }

@@ -89,14 +89,30 @@ func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 }
 
 func (mp *MediatorPlugin) LocalHaveActiveMediator() bool {
-	lams := mp.GetLocalActiveMediators()
+	dag := mp.dag
+	for add := range mp.mediators {
+		if dag.IsActiveMediator(add) {
+			return true
+		}
+	}
 
-	return len(lams) != 0
+	return false
 }
 
 func (mp *MediatorPlugin) IsLocalActiveMediator(add common.Address) bool {
 	if mp.isLocalMediator(add) {
 		return mp.dag.IsActiveMediator(add)
+	}
+
+	return false
+}
+
+func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
+	dag := mp.dag
+	for add := range mp.mediators {
+		if dag.IsPrecedingMediator(add) {
+			return true
+		}
 	}
 
 	return false
