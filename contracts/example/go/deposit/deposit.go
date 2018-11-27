@@ -175,7 +175,8 @@ func (d *DepositChaincode) handleMediatorDepositWitnessPay(stub shim.ChaincodeSt
 		return shim.Success([]byte("Marshal valueState error"))
 	}
 	stub.PutState(invokeAddr.String(), stateValueMarshalBytes)
-	return shim.Success([]byte("ok"))
+	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
+	return shim.Success([]byte(str))
 }
 
 //处理 Jury
@@ -190,6 +191,7 @@ func (d *DepositChaincode) handleJuryDepositWitnessPay(stub shim.ChaincodeStubIn
 	if stateValueBytes == nil {
 		if invokeTokens.Amount >= depositAmountsForJury {
 			addList("Jury", invokeAddr, stub)
+			isJury = true
 		}
 		//写入写集
 		stateValue.DepositBalance.Amount = invokeTokens.Amount
@@ -227,7 +229,8 @@ func (d *DepositChaincode) handleJuryDepositWitnessPay(stub shim.ChaincodeStubIn
 		return shim.Success([]byte("Marshal valueState error"))
 	}
 	stub.PutState(invokeAddr.String(), stateValueMarshalBytes)
-	return shim.Success([]byte("ok"))
+	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
+	return shim.Success([]byte(str))
 }
 
 //处理 ContractDeveloper
@@ -242,6 +245,7 @@ func (d *DepositChaincode) handleDeveloperDepositWitnessPay(stub shim.ChaincodeS
 	if stateValueBytes == nil {
 		if invokeTokens.Amount >= depositAmountsForDeveloper {
 			addList("Developer", invokeAddr, stub)
+			isDeveloper = true
 		}
 		//写入写集
 		stateValue.DepositBalance.Amount = invokeTokens.Amount
@@ -279,7 +283,8 @@ func (d *DepositChaincode) handleDeveloperDepositWitnessPay(stub shim.ChaincodeS
 		return shim.Success([]byte("Marshal valueState error"))
 	}
 	stub.PutState(invokeAddr.String(), stateValueMarshalBytes)
-	return shim.Success([]byte("ok"))
+	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
+	return shim.Success([]byte(str))
 }
 
 //保证金退还
@@ -455,7 +460,8 @@ func (d *DepositChaincode) handleJuryOrDeveloperDepositCashback(who string, stub
 		return shim.Success([]byte("Marshal valueState error"))
 	}
 	stub.PutState(invokeAddr.String(), stateValueMarshalBytes)
-	return shim.Success([]byte("ok"))
+	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
+	return shim.Success([]byte(str))
 }
 
 func (d *DepositChaincode) handleJuryDepositCashback(stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.InvokeTokens, stateValue *modules.DepositStateValue) pb.Response {
@@ -516,7 +522,8 @@ func (d *DepositChaincode) handleMediatorDepositCashback(stub shim.ChaincodeStub
 	}
 	//第五步：更新状态数据库
 	stub.PutState(invokeAddr.String(), stateValueMarshalBytes)
-	return shim.Success([]byte("ok"))
+	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
+	return shim.Success([]byte(str))
 }
 
 //保证金没收
@@ -592,6 +599,7 @@ func (d *DepositChaincode) handleMediatorForfeitureDeposit(invokeAddr, forfeitur
 			return shim.Success([]byte("PayOutToken error"))
 		}
 		stub.DelState(forfeitureAddr.String())
+
 	} else if stateValue.DepositBalance.Amount < depositAmountsForMediator {
 		return shim.Success([]byte("要么没收全部，要么没收后余额还在保证金之内"))
 	} else {
@@ -602,7 +610,8 @@ func (d *DepositChaincode) handleMediatorForfeitureDeposit(invokeAddr, forfeitur
 		}
 		stub.PutState(forfeitureAddr.String(), stateValueMarshalBytes)
 	}
-	return shim.Success([]byte("ok"))
+	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
+	return shim.Success([]byte(str))
 }
 
 func (d *DepositChaincode) handleJuryForfeitureDeposit(invokeAddr, forfeitureAddr common.Address, amounts uint64, stateValue *modules.DepositStateValue, stub shim.ChaincodeStubInterface) pb.Response {
@@ -624,7 +633,8 @@ func (d *DepositChaincode) handleJuryForfeitureDeposit(invokeAddr, forfeitureAdd
 		return shim.Success([]byte("Marshal error"))
 	}
 	stub.PutState(forfeitureAddr.String(), stateValueMarshalBytes)
-	return shim.Success([]byte("ok"))
+	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
+	return shim.Success([]byte(str))
 }
 
 func (d *DepositChaincode) handleDeveloperForfeitureDeposit(invokeAddr, forfeitureAddr common.Address, amounts uint64, stateValue *modules.DepositStateValue, stub shim.ChaincodeStubInterface) pb.Response {
@@ -646,7 +656,8 @@ func (d *DepositChaincode) handleDeveloperForfeitureDeposit(invokeAddr, forfeitu
 		return shim.Success([]byte("Marshal error"))
 	}
 	stub.PutState(forfeitureAddr.String(), stateValueMarshalBytes)
-	return shim.Success([]byte("ok"))
+	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
+	return shim.Success([]byte(str))
 }
 
 //func assetIsEqual(invokeAsset, stateAsset modules.Asset) Success {
