@@ -1,7 +1,6 @@
 package dag
 
 import (
-	"github.com/palletone/go-palletone/dag/storage"
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
@@ -21,6 +20,22 @@ func TestCreateUnit(t *testing.T) {
 		log.Error("Init db error", "error", err.Error())
 		return
 	}
+	unit, _ := createUnit()
+	// save unit
+	test_dag, err := NewDag4GenesisInit(db)
+	if err != nil {
+		log.Error("New dag error", "error", err.Error())
+		return
+	}
+	if err := test_dag.SaveUnit(unit, true); err != nil {
+		log.Error("Save unit error", "error", err.Error())
+		return
+	}
+	// log.Info("Save unit success")
+	genesis, err0 := test_dag.GetGenesisUnit(0)
+	log.Info("get genesiss info", "error", err0, "info", genesis)
+}
+func createUnit() (*modules.Unit, error) {
 	asset := new(modules.Asset)
 	asset.AssetId = modules.PTNCOIN
 	asset.UniqueId = modules.PTNCOIN
@@ -50,23 +65,10 @@ func TestCreateUnit(t *testing.T) {
 	txs := modules.Transactions{tx}
 	// new unit
 
-	unit, err := dagcomm.NewGenesisUnit(txs, 123, asset)
-	log.Info("create unit success.", "hash", unit.Hash().String())
-	// save unit
-	test_dag, err := NewDag4GenesisInit(db)
-	if err != nil {
-		log.Error("New dag error", "error", err.Error())
-		return
-	}
-	if err := test_dag.SaveUnit(unit, true); err != nil {
-		log.Error("Save unit error", "error", err.Error())
-		return
-	}
-	// log.Info("Save unit success")
-	genesis, err0 := test_dag.GetGenesisUnit(0)
-	log.Info("get genesiss info", "error", err0, "info", genesis)
+	unit, err := dagcomm.NewGenesisUnit(txs, 1536451201, asset)
+	log.Info("create unit success.", "error", err, "hash", unit.Hash().String())
+	return unit, err
 }
-
 func TestDagRefreshUtxos(t *testing.T) {
 	//db := storage.ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/palletone/gptn/leveldb/")
 	db, _ := ptndb.NewMemDatabase()
@@ -74,10 +76,15 @@ func TestDagRefreshUtxos(t *testing.T) {
 	if err != nil {
 		t.Fatal("New dag for test is faild,error: ", err)
 	}
-
+	unit, err := createUnit()
+	if err != nil {
+		log.Info("create test unit is failed.", "error", err)
+		return
+	}
+	dag_test.SaveUnit(unit, true)
 	// 添加delhash
 
-	unit := dag_test.GetCurrentUnit(modules.PTNCOIN)
+	// unit := dag_test.GetCurrentUnit(modules.PTNCOIN)
 	data := make(map[modules.OutPoint]*modules.Utxo)
 	dag_test.utxos_cache[unit.Hash()] = data
 	log.Debug("this unit hash info", "hash", unit.Hash().String())

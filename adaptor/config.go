@@ -25,7 +25,7 @@ type Config struct {
 
 type BTC struct {
 	NetID        int
-	Host         string
+	BtcHost      string
 	RPCUser      string
 	RPCPasswd    string
 	CertPath     string
@@ -49,7 +49,7 @@ type CCInfo struct {
 var DefaultConfig = Config{
 	Btc: BTC{
 		NetID:         1,
-		Host:          "localhost:18332",
+		BtcHost:       "localhost:18332",
 		RPCUser:       "zxl",
 		RPCPasswd:     "123456",
 		CertPath:      "",

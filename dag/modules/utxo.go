@@ -25,7 +25,6 @@ import (
 	"strings"
 
 	"github.com/palletone/go-palletone/common"
-
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
