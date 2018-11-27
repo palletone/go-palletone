@@ -215,37 +215,25 @@ var forkIndexLock sync.RWMutex
 func (forkIndex *ForkIndex) AddData(unitHash common.Hash, parentsHash []common.Hash, index uint64, address string) (int64, error) {
 	forkIndexLock.Lock()
 	defer forkIndexLock.Unlock()
-	// if index <= 0 {
-	// 	index = uint64(len(*forkIndex))
-	// }
+
 	in, err := forkIndex.addDate(unitHash, parentsHash, index, address)
-	log.Info("遍历33333  fork Index:", "index", index)
-	for key, data := range *forkIndex {
-		log.Info("index: ", "key_num", key)
-		log.Info(" data: ", "hashs", data)
-	}
 	return in, err
 }
 func (forkIndex *ForkIndex) addDate(hash common.Hash, parentsHash []common.Hash, index uint64, addr string) (int64, error) {
 	data1 := make(ForkData, 0)
 	data, has := (*forkIndex)[index]
 	if has {
-		log.Info("444444444444   fork Index:")
 		if data.Exists(hash) {
-			log.Info("444444444444 000000000  fork Index:")
 			return int64(index), nil
 		}
 		// index++
 		// forkIndex.addDate(hash, parentsHash, index)
 		if err := data.Add(hash, addr); err != nil {
-			log.Info("444444444444   11111111111  fork Index:")
 			return -1, err
 		}
 	} else {
-		log.Info("5555555555555   fork Index:")
 		// add hash into ForkData and return index.
 		if err := data1.Add(hash, addr); err != nil {
-			log.Info("55555555555  111111111   fork Index:")
 			return -1, err
 		}
 	}
@@ -322,6 +310,8 @@ func (forkIndex *ForkIndex) GetStableUnitHash(index int64) []common.Hash {
 	countMediators = make(map[string]struct{})
 	all_index := make(UInt64Slice, 0)
 	var min_index uint64
+	forkIndexLock.RLock()
+	defer forkIndexLock.RUnlock()
 	for index, hashs := range *forkIndex {
 		for _, data := range hashs {
 			if data != nil {
@@ -345,9 +335,9 @@ func (forkIndex *ForkIndex) GetStableUnitHash(index int64) []common.Hash {
 	if min_index > 0 {
 		s_index = min_index
 	}
-	forkIndexLock.RLock()
+
 	hashs, has := (*forkIndex)[s_index]
-	forkIndexLock.RUnlock()
+
 	if !has {
 		return nil
 	}
@@ -361,7 +351,7 @@ func (forkIndex *ForkIndex) GetStableUnitHash(index int64) []common.Hash {
 			delHashs = append(delHashs, hashs[i].hash)
 		}
 	}
-	forkIndex.RemoveStableIndex(s_index)
+	// forkIndex.RemoveStableIndex(s_index)
 	return delHashs
 }
 func (forkIndex *ForkIndex) RemoveStableIndex(index uint64) {

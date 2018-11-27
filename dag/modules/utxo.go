@@ -25,7 +25,6 @@ import (
 	"strings"
 
 	"github.com/palletone/go-palletone/common"
-
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -118,14 +117,26 @@ func (asset *Asset) IsSimilar(similar *Asset) bool {
 }
 
 type Utxo struct {
-	Amount     uint64         `json:"amount"`    // 数量
-	Asset      *Asset         `json:"asset"`     // 资产类别
-	PkScript   []byte         `json:"pk_script"` // 锁定脚本
-	LockTime   uint32         `json:"lock_time"`
-	VoteResult common.Address `json:"vote_info"` //这个字段删掉
+	Amount   uint64 `json:"amount"`    // 数量
+	Asset    *Asset `json:"asset"`     // 资产类别
+	PkScript []byte `json:"pk_script"` // 锁定脚本
+	LockTime uint32 `json:"lock_time"`
+	//VoteResult common.Address `json:"vote_info"` //这个字段删掉
 	// flags contains additional info about output such as whether it is spent, and whether is has
 	// been modified since is was loaded.
 	Flags txoFlags
+}
+type UtxoWithOutPoint struct {
+	Utxo
+	OutPoint
+}
+
+func (u *UtxoWithOutPoint) GetAmount() uint64 {
+	return u.Amount
+}
+func (u *UtxoWithOutPoint) Set(utxo *Utxo, o *OutPoint) {
+	u.Utxo = *utxo
+	u.OutPoint = *o
 }
 
 func (utxo *Utxo) StrPkScript() string {

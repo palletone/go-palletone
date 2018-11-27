@@ -65,6 +65,7 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrWitnessUnexpected, "ErrWitnessUnexpected"},
 		{ErrMinimalIf, "ErrMinimalIf"},
 		{ErrWitnessPubKeyType, "ErrWitnessPubKeyType"},
+		{ErrPickupJuryRedeemScript, "ErrPickupJuryRedeemScript"},
 		{ErrDiscourageUpgradableWitnessProgram, "ErrDiscourageUpgradableWitnessProgram"},
 		{0xffff, "Unknown ErrorCode (65535)"},
 	}

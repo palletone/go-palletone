@@ -546,7 +546,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
-		Memdag:        memunit.NewMemDag(dagDb, stateDb, unitRep),
+		Memdag:        memunit.NewMemDagForTest(dagDb, stateDb, unitRep),
 		utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
 	return dag, nil
@@ -839,7 +839,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 
 	if !isGenesis {
 		if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
-			log.Info("dag", "SaveUnit unit is already existing.hash:", unit.Hash().String())
+			log.Info("dag:the unit is already exist in leveldb. ", "unit_hash", unit.Hash().String())
 			return errors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 		}
 	}
@@ -847,8 +847,8 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 
 	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
 
-	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-		return fmt.Errorf("SaveDag, validate unit error, errno=%d", unitState)
+	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED && unitState != modules.UNIT_STATE_CHECK_HEADER_PASSED {
+		return fmt.Errorf("SaveDag, validate unit error, err_no=%d", unitState)
 	}
 
 	if unitState == modules.UNIT_STATE_VALIDATED {
