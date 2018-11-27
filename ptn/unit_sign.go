@@ -47,7 +47,6 @@ type producer interface {
 	ToProcessResponse(resp *mp.VSSResponseEvent) error
 
 	LocalHaveActiveMediator() bool
-	StartVSSProtocol()
 
 	SubscribeGroupSigEvent(ch chan<- mp.GroupSigEvent) event.Subscription
 }

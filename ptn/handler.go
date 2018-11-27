@@ -272,7 +272,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.srvr = srvr
 	pm.maxPeers = maxPeers
 
-	go pm.mediatorConnect()
+	//go pm.mediatorConnect()
 
 	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
 	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)

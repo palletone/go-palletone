@@ -84,7 +84,7 @@ func (pm *ProtocolManager) checkActiveMediatorConnection() {
 
 	}
 
-	// 1. 设置Ticker, 定时检查
+	// 1. 设置Ticker, 每隔一段时间检查一次
 	checkTick := time.NewTicker(500 * time.Millisecond)
 	for {
 		select {

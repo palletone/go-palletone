@@ -138,44 +138,10 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 	}
 }
 
-func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
-	lams := make([]common.Address, 0)
-
-	dag := mp.dag
-	for add := range mp.mediators {
-		if dag.IsActiveMediator(add) {
-			lams = append(lams, add)
-		}
-	}
-
-	return lams
-}
-
-func (mp *MediatorPlugin) LocalMediators() *MediatorAccount {
-	for add, _ := range mp.mediators {
-		return mp.mediators[add]
-	}
-	return nil
-}
-
-func (mp *MediatorPlugin) LocalHaveActiveMediator() bool {
-	lams := mp.GetLocalActiveMediators()
-
-	return len(lams) != 0
-}
-
 func (mp *MediatorPlugin) isLocalMediator(add common.Address) bool {
 	_, ok := mp.mediators[add]
 
 	return ok
-}
-
-func (mp *MediatorPlugin) IsLocalActiveMediator(add common.Address) bool {
-	if mp.isLocalMediator(add) {
-		return mp.dag.IsActiveMediator(add)
-	}
-
-	return false
 }
 
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
