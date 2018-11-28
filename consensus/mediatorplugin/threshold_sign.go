@@ -35,19 +35,19 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func (mp *MediatorPlugin) StartVSSProtocol() {
-	log.Info("Start completing the VSS protocol.")
+func (mp *MediatorPlugin) startVSSProtocol() {
+	go log.Info("Start completing the VSS protocol.")
 
-	// todo 和其他mediator建立网络连接后调用
 	go mp.BroadcastVSSDeals()
 
-	timeout := time.NewTimer(30 * time.Second)
+	// todo 待删除
+	timeout := time.NewTimer(10 * time.Second)
 	defer timeout.Stop()
 	select {
 	case <-mp.quit:
 		return
 	case <-timeout.C:
-		go mp.endVSSProtocol(true)
+		//go mp.endVSSProtocol(true)
 	}
 }
 
@@ -59,11 +59,12 @@ func (mp *MediatorPlugin) endVSSProtocol(timeout bool) (completed bool) {
 		mp.setTimeout()
 	}
 
+	go log.Info(fmt.Sprintf("End completing the VSS protocol: %v.", completed))
 	return
 }
 
 func (mp *MediatorPlugin) setTimeout() {
-	for _, dkg := range mp.dkgs {
+	for _, dkg := range mp.activeDKGs {
 		dkg.SetTimeout()
 	}
 }
@@ -82,13 +83,13 @@ func (mp *MediatorPlugin) areCertified() (certified bool) {
 	return
 }
 
-func (mp *MediatorPlugin) getLocalActiveMediatorDKG(add common.Address) *dkg.DistKeyGenerator {
+func (mp *MediatorPlugin) getLocalActiveDKG(add common.Address) *dkg.DistKeyGenerator {
 	if !mp.IsLocalActiveMediator(add) {
 		log.Error(fmt.Sprintf("The following mediator is not local active mediator: %v", add.String()))
 		return nil
 	}
 
-	dkg, ok := mp.dkgs[add]
+	dkg, ok := mp.activeDKGs[add]
 	if !ok || dkg == nil {
 		log.Error(fmt.Sprintf("The following mediator`s dkg is not existed: %v", add.String()))
 		return nil
@@ -98,7 +99,7 @@ func (mp *MediatorPlugin) getLocalActiveMediatorDKG(add common.Address) *dkg.Dis
 }
 
 func (mp *MediatorPlugin) BroadcastVSSDeals() {
-	for localMed, dkg := range mp.dkgs {
+	for localMed, dkg := range mp.activeDKGs {
 		deals, err := dkg.Deals()
 		if err != nil {
 			log.Error(err.Error())
@@ -135,7 +136,7 @@ func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
 	dag := mp.dag
 	localMed := dag.GetActiveMediatorAddr(dealEvent.DstIndex)
 
-	dkgr := mp.getLocalActiveMediatorDKG(localMed)
+	dkgr := mp.getLocalActiveDKG(localMed)
 	if dkgr == nil {
 		return
 	}
@@ -195,7 +196,7 @@ func (mp *MediatorPlugin) SubscribeVSSResponseEvent(ch chan<- VSSResponseEvent) 
 }
 
 func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) {
-	dkgr := mp.getLocalActiveMediatorDKG(localMed)
+	dkgr := mp.getLocalActiveDKG(localMed)
 	if dkgr == nil {
 		return
 	}
@@ -257,7 +258,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 					go mp.signTBLSLoop(localMed)
 					go mp.recoverUnitsTBLS(localMed)
 
-					go mp.endVSSProtocol(false)
+					//go mp.endVSSProtocol(false)
 					delete(mp.respBuf, localMed)
 				}
 
@@ -301,7 +302,7 @@ func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.
 }
 
 func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
-	dkgr := mp.getLocalActiveMediatorDKG(localMed)
+	dkgr := mp.getLocalActiveDKG(localMed)
 	if dkgr == nil {
 		return
 	}
@@ -418,7 +419,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		return
 	}
 
-	dkgr := mp.getLocalActiveMediatorDKG(localMed)
+	dkgr := mp.getLocalActiveDKG(localMed)
 	if dkgr == nil {
 		return
 	}

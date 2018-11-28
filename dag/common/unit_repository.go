@@ -411,7 +411,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 }
 
 //Yiran
-func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Message, term uint16) error {
+func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Message, voter common.Address) error {
 
 	// type deduct
 	VotePayLoad, ok := msg.Payload.(*modules.VotePayload)
@@ -419,54 +419,33 @@ func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Mes
 		return errors.New("not a valid vote payload")
 	}
 
-	// get voter
-	voter, err := getRequesterAddress(tx)
-	if err != nil {
-		return err
-	}
-
 	// save by type
 	switch {
 	case VotePayLoad.VoteType == vote.TYPE_MEDIATOR:
 		//Addresses := common.BytesListToAddressList(VotePayLoad.Contents)
 
-		if err = unitOp.statedb.UpdateMediatorVote(voter, VotePayLoad.Contents); err != nil {
+		if err := unitOp.statedb.UpdateMediatorVote(voter, VotePayLoad.Contents); err != nil {
 			return err
 		}
 
-		if err = unitOp.statedb.UpdateVoterList(voter, vote.TYPE_MEDIATOR, term); err != nil {
-			return err
-		}
-
-		//case VotePayLoad.VoteType == vote.TYPE_CREATEVOTE:
-		//	if err = unitOp.statedb.CreateUserVote(voter, VotePayLoad.Contents, tx.TxHash.Bytes()); err != nil {
-		//		return err
-		//	}
-		//	if err = unitOp.statedb.AddVote2Account(voter, vote.VoteInfo{VoteType: vote.TYPE_CREATEVOTE, VoteContent: tx.TxHash.Bytes()}); err != nil {
-		//		return err
-		//	}
 	}
 	return nil
 
 }
 
 //Get who send this transaction
-func getRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+func (unitOp *UnitRepository) getRequesterAddress(tx *modules.Transaction) (common.Address, error) {
 	msg0 := tx.TxMessages[0]
 	if msg0.App != modules.APP_PAYMENT {
 		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
 	}
 	pay := msg0.Payload.(*modules.PaymentPayload)
-	return getFirstInputAddress(pay)
-}
-
-func getFirstInputAddress(pay *modules.PaymentPayload) (common.Address, error) {
-
-	unlockScript := pay.Inputs[0].SignatureScript
-	if unlockScript == nil { // coinbase?
-		return common.Address{}, errors.New("Coinbase don't have input address")
+	utxo, err := unitOp.uxtodb.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
+	if err != nil {
+		return common.Address{}, err
 	}
-	return tokenengine.GetAddressFromScript(unlockScript)
+	return tokenengine.GetAddressFromScript(utxo.PkScript)
+
 }
 
 /**
@@ -500,11 +479,18 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	//if isSuccess != true {
 	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	//}
-	var err error
 	//log.Info("===dag traverse transactions and save them===")
 	// step5. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
+		var requester common.Address
+		var err error
+		if txIndex > 0 { //coinbase don't have requester
+			requester, err = unitOp.getRequesterAddress(tx)
+			if err != nil {
+				return err
+			}
+		}
 		// traverse messages
 		for msgIndex, msg := range tx.TxMessages {
 			// handle different messages
@@ -530,7 +516,7 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_VOTE:
-				if err = unitOp.SaveVote(tx, msg, 0); err != nil {
+				if err = unitOp.SaveVote(tx, msg, requester); err != nil {
 					return fmt.Errorf("Save vote payload error.")
 				}
 			case modules.OP_MEDIATOR_CREATE:

@@ -194,12 +194,9 @@ func sigData(key *ecdsa.PrivateKey, data interface{}) ([]byte, error) {
 	return sign[0:64], err
 }
 
-func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction, msgType modules.MessageType, payload interface{}, ks *keystore.KeyStore) (*modules.Transaction, *modules.Asset, error) {
-	if orgTx == nil {
-		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions param is nil"))
-	}
-	if len(orgTx.TxMessages) < 2 {
-		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions tx(%s) len <2 ", orgTx.TxHash))
+func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction, msgType modules.MessageType, payload interface{}, ks *keystore.KeyStore) (*modules.Transaction, error) {
+	if orgTx == nil || len(orgTx.TxMessages) < 2 {
+		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions param is error"))
 	}
 
 	msgPayload := &modules.Message{
@@ -212,11 +209,11 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 	tx.TxId = orgTx.TxId
 	pubkey, err := ks.GetPublicKey(singer)
 	if err != nil {
-		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
+		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
 	}
 	sig, err := cm.GetTxSig(tx, ks, singer)
 	if err != nil {
-		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.TxHash.String()))
+		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.TxId.String()))
 	}
 	sigSet := modules.SignatureSet{
 		PubKey:    pubkey,
@@ -225,16 +222,16 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 
 	msgSig := &modules.Message{
 		App: modules.APP_SIGNATURE,
-		Payload: modules.SignaturePayload{
+		Payload: &modules.SignaturePayload{
 			Signatures: []modules.SignatureSet{sigSet},
 		},
 	}
 	tx.TxMessages = append(tx.TxMessages, msgSig)
 	tx.TxHash = tx.Hash()
 
-	log.Debug("GenContractSigTransctions", "orgTx.TxHash", " sig transction ok")
-	//log.Debug("GenContractSigTransctions", tx.TxMessages[3].Payload.(modules.SignaturePayload).Signatures[0])
-	return tx, nil, nil
+	log.Debug("GenContractSigTransctions", "orgTx.TxId id ok:", tx.TxId)
+	//log.Debug("GenContractSigTransctions", tx.TxMessages[3].Payload.(*modules.SignaturePayload).Signatures[0])
+	return tx, nil
 }
 
 //func CommitDB(dag dag.IDag, unit *modules.Unit, isGenesis bool) error {

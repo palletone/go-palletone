@@ -49,12 +49,13 @@ type IStateDb interface {
 	/* Account_Info */
 	GetAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	SaveAccountInfo(address common.Address, info *modules.AccountInfo) error
+	UpdateAccountInfoBalance(addr common.Address, addAmount int64) error
 	AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error
 	GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte
 
-	GetSortedVote(ReturnNumber uint8, voteType uint8, minTermLimit uint16) ([]common.Address, error)
-	GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
-	UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
+	GetSortedVote(returnNumber uint8, voteType uint8, minTermLimit uint16) ([]common.Address, error)
+	//GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
+	//UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
 	UpdateMediatorVote(voter common.Address, candidates []byte) error
 	GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error)
 

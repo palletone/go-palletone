@@ -239,6 +239,10 @@ func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32,
 			log.Error("Write utxo index error: %s", err.Error())
 			errs = append(errs, err)
 		}
+		//update address account info
+		if txout.Asset.AssetId == modules.PTNCOIN {
+			repository.statedb.UpdateAccountInfoBalance(sAddr, int64(txout.Value))
+		}
 	}
 	return errs
 }
@@ -294,6 +298,9 @@ func (repository *UtxoRepository) destoryUtxo(txins []*modules.Input) {
 		if err := repository.idxdb.DeleteUtxoByIndex(utxoIndex); err != nil {
 			log.Error("Destory uxto index", "error", err.Error())
 			continue
+		}
+		if utxo.Asset.AssetId == modules.PTNCOIN {
+			repository.statedb.UpdateAccountInfoBalance(sAddr, -int64(utxo.Amount))
 		}
 	}
 }

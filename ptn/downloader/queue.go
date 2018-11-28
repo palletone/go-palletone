@@ -316,7 +316,7 @@ func (q *queue) Schedule(headers []*modules.Header, from uint64) []*modules.Head
 			log.Warn("Header broke chain ordering", "number", header.Number, "hash", hash, "expected", from)
 			break
 		}
-		//TODO must recover
+
 		if q.headerHead != (common.Hash{}) && q.headerHead != header.ParentsHash[0] {
 			log.Warn("Header broke chain ancestry", "number", header.Number, "hash", hash)
 			break

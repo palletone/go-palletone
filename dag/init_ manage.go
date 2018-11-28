@@ -56,7 +56,7 @@ func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 }
 
 func (d *Dag) Close() {
-	d.chainMaintainScope.Close()
+	d.activeMediatorsUpdatedScope.Close()
 }
 
 // @author Albert·Gou

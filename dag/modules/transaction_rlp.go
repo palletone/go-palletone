@@ -29,6 +29,7 @@ import (
 
 type transactionTemp struct {
 	TxHash     common.Hash
+	TxId       common.Hash
 	TxMessages []messageTemp
 }
 type messageTemp struct {
@@ -53,7 +54,7 @@ func (tx *Transaction) EncodeRLP(w io.Writer) error {
 	return rlp.Encode(w, temp)
 }
 func tx2Temp(tx Transaction) transactionTemp {
-	temp := transactionTemp{TxHash: tx.TxHash}
+	temp := transactionTemp{TxHash: tx.TxHash, TxId: tx.TxId}
 
 	for _, m := range tx.TxMessages {
 
@@ -67,6 +68,7 @@ func tx2Temp(tx Transaction) transactionTemp {
 	return temp
 }
 func temp2Tx(temp transactionTemp, tx *Transaction) {
+	tx.TxId = temp.TxId
 	tx.TxHash = temp.TxHash
 
 	for _, m := range temp.TxMessages {

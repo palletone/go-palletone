@@ -121,7 +121,7 @@ type IDag interface {
 	SetUnitGroupSign(sign []byte, hash common.Hash, txpool txspool.ITxPool) error
 
 	IsSynced() bool
-	SubscribeChainMaintainEvent(ch chan<- ChainMaintainEvent) event.Subscription
+	SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
 	UnitIrreversibleTime() uint
 }

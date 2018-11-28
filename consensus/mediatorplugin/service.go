@@ -74,13 +74,10 @@ type iDag interface {
 type MediatorPlugin struct {
 	ptn  PalletOne     // Full PalletOne service to retrieve other function
 	quit chan struct{} // Channel used for graceful exit
-
-	dag iDag
-	//chainMaintainCh  chan dag.ChainMaintainEvent
-	//chainMaintainSub event.Subscription
+	dag  iDag
 
 	// Enable Unit production, even if the chain is stale.
-	// 新开启一个区块链时，必须设为true
+	// 新开启一条链时，第一个节点必须设为true，其他节点必须设为false
 	productionEnabled bool
 	// Mediator`s account and passphrase controlled by this node
 	mediators map[common.Address]*MediatorAccount
@@ -90,8 +87,9 @@ type MediatorPlugin struct {
 	newProducedUnitScope event.SubscriptionScope // 零值已准备就绪待用
 
 	// dkg 初始化 相关
-	suite *bn256.Suite
-	dkgs  map[common.Address]*dkg.DistKeyGenerator
+	suite         *bn256.Suite
+	activeDKGs    map[common.Address]*dkg.DistKeyGenerator
+	precedingDKGs map[common.Address]*dkg.DistKeyGenerator
 
 	// dkg 完成 vss 协议相关
 	respBuf       map[common.Address]map[common.Address]chan *dkg.Response
@@ -166,9 +164,7 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 	}
 }
 
-func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
-	go log.Info("instantiate the DistKeyGenerator (DKG) struct.")
-
+func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 	dag := mp.dag
 	if !mp.productionEnabled && !dag.IsSynced() {
 		return //we're not synced.
@@ -179,7 +175,7 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 	curThreshold := dag.ChainThreshold()
 	lamc := len(lams)
 
-	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, lamc)
+	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator, lamc)
 	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
 	mp.certifiedFlag = make(map[common.Address]bool, lamc)
 
@@ -193,11 +189,9 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 			continue
 		}
 
-		mp.dkgs[localMed] = dkgr
+		mp.activeDKGs[localMed] = dkgr
 		mp.initRespBuf(localMed)
 	}
-
-	go mp.StartVSSProtocol()
 }
 
 func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
@@ -216,34 +210,25 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	// 1. 开启循环生产计划
 	go mp.ScheduleProductionLoop()
 
-	//mp.chainMaintainCh = make(chan dag.ChainMaintainEvent)
-	//mp.chainMaintainSub = mp.dag.SubscribeChainMaintainEvent(mp.chainMaintainCh)
-	//go mp.chainMaintainEventRecvLoop()
-
 	go log.Debug("mediator plugin startup end")
 
 	return nil
 }
 
-//func (mp *MediatorPlugin) chainMaintainEventRecvLoop() {
-//	for {
-//		select {
-//		case <-mp.chainMaintainCh:
-//			// 2. 给当前节点控制的活跃mediator，初始化对应的DKG.
-//			// todo 数据同步后再初始化，换届后需重新生成
-//			go mp.NewActiveMediatorsDKG()
-//
-//			// Err() channel will be closed when unsubscribing.
-//		case <-mp.chainMaintainSub.Err():
-//			return
-//		}
-//	}
-//}
+func (mp *MediatorPlugin) UpdateMediatorsDKG() {
+	// 1. 保存旧的 dkg ， 用于之前的unit群签名确认
+	mp.precedingDKGs = mp.activeDKGs
+	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator)
+
+	// 2. 初始化当前节点控制的活跃mediator对应的DKG.
+	mp.newActiveMediatorsDKG()
+
+	// 3. 开始完成 vss 协议
+	go mp.startVSSProtocol()
+}
 
 func (mp *MediatorPlugin) Stop() error {
 	close(mp.quit)
-
-	//mp.chainMaintainSub.Unsubscribe()
 
 	mp.newProducedUnitScope.Close()
 	mp.vssDealScope.Close()
@@ -308,7 +293,9 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		productionEnabled: cfg.EnableStaleProduction,
 		mediators:         msm,
 
-		suite: core.Suite,
+		suite:         core.Suite,
+		activeDKGs:    make(map[common.Address]*dkg.DistKeyGenerator),
+		precedingDKGs: make(map[common.Address]*dkg.DistKeyGenerator),
 	}
 	mp.initTBLSBuf()
 

@@ -21,8 +21,10 @@
 package modules
 
 import (
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -87,4 +89,28 @@ func convertMapUtxo(utxo map[modules.OutPoint]*modules.Utxo) []*modules.UtxoWith
 		result = append(result, uo)
 	}
 	return result
+}
+func (result *ContractInvokeResult) ToCoinbase() ([]*modules.PaymentPayload, error) {
+	var coinbases []*modules.PaymentPayload
+	if result.TokenDefine != nil {
+		coinbase := &modules.PaymentPayload{}
+		if result.TokenDefine.TokenType == 0 { //ERC20
+			token := modules.FungibleToken{}
+			err := json.Unmarshal(result.TokenDefine.TokenDefineJson, token)
+			if err != nil {
+				return nil, err
+			}
+			newAsset := &modules.Asset{}
+			newAsset.AssetId = modules.IDType16{}
+			newAsset.AssetId.SetBytes(util.GenerateBytesUUID())
+			out := modules.NewTxOut(token.TotalSupply, tokenengine.GenerateLockScript(result.TokenDefine.Creator), newAsset)
+			coinbase.AddTxOut(out)
+		}
+		//TODO Devin ERC721
+		coinbases = append(coinbases, coinbase)
+	}
+	if result.TokenSupply != nil && len(result.TokenSupply) > 0 {
+
+	}
+	return coinbases, nil
 }

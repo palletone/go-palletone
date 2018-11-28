@@ -68,9 +68,9 @@ type Dag struct {
 	utxos_cache map[common.Hash]map[modules.OutPoint]*modules.Utxo
 	// utxos_cache1 sync.Map
 
-	// append by albert·gou 用于整个链维护时的事件订阅
-	chainMaintainFeed  event.Feed
-	chainMaintainScope event.SubscriptionScope
+	// append by albert·gou 用于活跃mediator更新时的事件订阅
+	activeMediatorsUpdatedFeed  event.Feed
+	activeMediatorsUpdatedScope event.SubscriptionScope
 }
 
 type MemUtxos map[modules.OutPoint]*modules.Utxo

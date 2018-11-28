@@ -16,12 +16,12 @@
 
 package configure
 
-// MainnetBootnodes are the enode URLs of the P2P bootstrap nodes running on
+// MainnetBootnodes are the pnode URLs of the P2P bootstrap nodes running on
 // the main PalletOne network.
 var MainnetBootnodes = []string{
 }
 
-// TestnetBootnodes are the enode URLs of the P2P bootstrap nodes running on the
+// TestnetBootnodes are the pnode URLs of the P2P bootstrap nodes running on the
 // Ropsten test network.
 var TestnetBootnodes = []string{
 }
