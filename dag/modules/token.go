@@ -20,12 +20,16 @@
 
 package modules
 
-import "time"
+import (
+	"github.com/palletone/go-palletone/common"
+	"time"
+)
 
 //定义一种全新的Token
 type TokenDefine struct {
 	TokenDefineJson []byte
 	TokenType       int //0 ERC20  1 ERC721   2 VoteToken
+	Creator         common.Address
 }
 
 //增发一种已经定义好的Token
@@ -33,6 +37,7 @@ type TokenSupply struct {
 	UniqueId []byte
 	AssetId  []byte
 	Amount   uint64
+	Creator  common.Address
 }
 
 //同质化通证，比如ERC20
