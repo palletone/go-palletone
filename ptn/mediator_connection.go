@@ -48,7 +48,7 @@ type producer interface {
 	LocalHavePrecedingMediator() bool
 
 	SubscribeGroupSigEvent(ch chan<- mp.GroupSigEvent) event.Subscription
-	StartVSSProtocol()
+	UpdateMediatorsDKG()
 }
 
 func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
@@ -112,7 +112,7 @@ func (pm *ProtocolManager) checkActiveMediatorConnection() {
 
 	// 3. 发送mediator连接完成的事件
 	processFn := func() {
-		pm.producer.StartVSSProtocol()
+		go pm.producer.UpdateMediatorsDKG()
 	}
 
 	// 1. 设置Ticker, 每隔一段时间检查一次

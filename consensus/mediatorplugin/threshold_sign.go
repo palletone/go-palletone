@@ -35,18 +35,19 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func (mp *MediatorPlugin) StartVSSProtocol() {
+func (mp *MediatorPlugin) startVSSProtocol() {
 	go log.Info("Start completing the VSS protocol.")
 
 	go mp.BroadcastVSSDeals()
 
+	// todo 待删除
 	timeout := time.NewTimer(10 * time.Second)
 	defer timeout.Stop()
 	select {
 	case <-mp.quit:
 		return
 	case <-timeout.C:
-		go mp.endVSSProtocol(true)
+		//go mp.endVSSProtocol(true)
 	}
 }
 
@@ -58,6 +59,7 @@ func (mp *MediatorPlugin) endVSSProtocol(timeout bool) (completed bool) {
 		mp.setTimeout()
 	}
 
+	go log.Info(fmt.Sprintf("End completing the VSS protocol: %v.", completed))
 	return
 }
 
@@ -256,7 +258,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 					go mp.signTBLSLoop(localMed)
 					go mp.recoverUnitsTBLS(localMed)
 
-					go mp.endVSSProtocol(false)
+					//go mp.endVSSProtocol(false)
 					delete(mp.respBuf, localMed)
 				}
 

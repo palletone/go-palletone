@@ -35,7 +35,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
@@ -70,16 +69,12 @@ type iDag interface {
 	MediatorSchedule() []common.Address
 
 	IsPrecedingMediator(add common.Address) bool
-	SubscribeActiveMediatorsUpdatedEvent(ch chan<- dag.ActiveMediatorsUpdatedEvent) event.Subscription
 }
 
 type MediatorPlugin struct {
 	ptn  PalletOne     // Full PalletOne service to retrieve other function
 	quit chan struct{} // Channel used for graceful exit
-
-	dag                       iDag
-	activeMediatorsUpdatedCh  chan dag.ActiveMediatorsUpdatedEvent
-	activeMediatorsUpdatedSub event.Subscription
+	dag  iDag
 
 	// Enable Unit production, even if the chain is stale.
 	// 新开启一条链时，第一个节点必须设为true，其他节点必须设为false
@@ -170,8 +165,6 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 }
 
 func (mp *MediatorPlugin) newActiveMediatorsDKG() {
-	go log.Info("instantiate the DistKeyGenerator (DKG) struct.")
-
 	dag := mp.dag
 	if !mp.productionEnabled && !dag.IsSynced() {
 		return //we're not synced.
@@ -199,8 +192,6 @@ func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 		mp.activeDKGs[localMed] = dkgr
 		mp.initRespBuf(localMed)
 	}
-
-	go mp.StartVSSProtocol()
 }
 
 func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
@@ -219,42 +210,25 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	// 1. 开启循环生产计划
 	go mp.ScheduleProductionLoop()
 
-	// 2. 订阅活跃 mediator 更新事件，以完成dkg的初始化
-	mp.activeMediatorsUpdatedCh = make(chan dag.ActiveMediatorsUpdatedEvent)
-	mp.activeMediatorsUpdatedSub = mp.dag.SubscribeActiveMediatorsUpdatedEvent(mp.activeMediatorsUpdatedCh)
-	go mp.activeMediatorsUpdatedEventRecvLoop()
-
 	go log.Debug("mediator plugin startup end")
 
 	return nil
 }
 
-func (mp *MediatorPlugin) activeMediatorsUpdatedEventRecvLoop() {
-	for {
-		select {
-		case <-mp.activeMediatorsUpdatedCh:
-			go mp.switchMediatorsDKG()
-
-			// Err() channel will be closed when unsubscribing.
-		case <-mp.activeMediatorsUpdatedSub.Err():
-			return
-		}
-	}
-}
-
-func (mp *MediatorPlugin) switchMediatorsDKG() {
+func (mp *MediatorPlugin) UpdateMediatorsDKG() {
 	// 1. 保存旧的 dkg ， 用于之前的unit群签名确认
 	mp.precedingDKGs = mp.activeDKGs
 	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator)
 
-	// 2. 给当前节点控制的活跃mediator，初始化对应的DKG.
-	go mp.newActiveMediatorsDKG()
+	// 2. 初始化当前节点控制的活跃mediator对应的DKG.
+	mp.newActiveMediatorsDKG()
+
+	// 3. 开始完成 vss 协议
+	go mp.startVSSProtocol()
 }
 
 func (mp *MediatorPlugin) Stop() error {
 	close(mp.quit)
-
-	mp.activeMediatorsUpdatedSub.Unsubscribe()
 
 	mp.newProducedUnitScope.Close()
 	mp.vssDealScope.Close()
