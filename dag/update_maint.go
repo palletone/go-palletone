@@ -113,7 +113,10 @@ func (dag *Dag) updateLastIrreversibleUnit() {
 	}
 }
 
+// 活跃 mediators 更新事件
 type ActiveMediatorsUpdatedEvent struct {
+	// todo
+	//IsChanged bool // 标记活跃 mediators 是否有改变
 }
 
 func (dag *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription {
@@ -134,7 +137,7 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 
 	} else {
 		// 3. 发送更新活跃 mediator 事件，以方便其他模块做相应处理
-		dag.activeMediatorsUpdatedFeed.Send(ActiveMediatorsUpdatedEvent{})
+		go dag.activeMediatorsUpdatedFeed.Send(ActiveMediatorsUpdatedEvent{})
 	}
 
 	// 4. 计算并更新下一次维护时间
