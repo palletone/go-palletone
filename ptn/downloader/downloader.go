@@ -302,7 +302,7 @@ func (d *Downloader) UnregisterPeer(id string) error {
 // Synchronise tries to sync up our local block chain with a remote peer, both
 // adding various sanity checks as well as wrapping it with various log entries.
 func (d *Downloader) Synchronise(id string, head common.Hash, index uint64, mode SyncMode, assetId modules.IDType16) error {
-	return nil
+	//return nil
 	err := d.synchronise(id, head, index, mode, assetId)
 	switch err {
 	case nil:
