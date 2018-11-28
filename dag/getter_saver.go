@@ -104,11 +104,6 @@ func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
 }
 
 // author Albert·Gou
-func (d *Dag) GetCurThreshold() int {
-	return d.GetGlobalProp().GetCurThreshold()
-}
-
-// author Albert·Gou
 func (d *Dag) GetActiveMediatorCount() int {
 	return d.GetGlobalProp().GetActiveMediatorCount()
 }
@@ -193,4 +188,17 @@ func (dag *Dag) MediatorSchedule() []common.Address {
 
 func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
 	return dag.GetGlobalProp().ChainParameters.CurrentFees
+}
+
+func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
+	nodes := make(map[string]*discover.Node)
+
+	pmds := d.GetGlobalProp().PrecedingMediators
+	for add, _ := range pmds {
+		med := d.GetMediator(add)
+		node := med.Node
+		nodes[node.ID.TerminalString()] = node
+	}
+
+	return nodes
 }

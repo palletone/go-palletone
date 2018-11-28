@@ -132,11 +132,14 @@ type ProtocolManager struct {
 
 	genesis *modules.Unit
 
-	peersTransition  *peerSet
-	transCycleConnCh chan int
+	//peersTransition  *peerSet
+	//transCycleConnCh chan int
 
 	//For Test
-	isTest bool
+	//isTest bool
+
+	chainMaintainCh  chan dag.ChainMaintainEvent
+	chainMaintainSub event.Subscription
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
@@ -146,22 +149,22 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	genesis *modules.Unit, contractProc contractInf) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		networkId:        networkId,
-		dag:              dag,
-		txpool:           txpool,
-		eventMux:         mux,
-		consEngine:       engine,
-		peers:            newPeerSet(),
-		newPeerCh:        make(chan *peer),
-		noMorePeers:      make(chan struct{}),
-		txsyncCh:         make(chan *txsync),
-		quitSync:         make(chan struct{}),
-		transCycleConnCh: make(chan int, 1),
-		genesis:          genesis,
-		producer:         producer,
-		contractProc:     contractProc,
-		peersTransition:  newPeerSet(),
-		isTest:           false,
+		networkId:   networkId,
+		dag:         dag,
+		txpool:      txpool,
+		eventMux:    mux,
+		consEngine:  engine,
+		peers:       newPeerSet(),
+		newPeerCh:   make(chan *peer),
+		noMorePeers: make(chan struct{}),
+		txsyncCh:    make(chan *txsync),
+		quitSync:    make(chan struct{}),
+		//transCycleConnCh: make(chan int, 1),
+		genesis:      genesis,
+		producer:     producer,
+		contractProc: contractProc,
+		//peersTransition:  newPeerSet(),
+		//isTest:           false,
 	}
 
 	// Figure out whether to allow fast sync or not
@@ -242,27 +245,9 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	return manager, nil
 }
 
-func (pm *ProtocolManager) SetForTest() {
-	pm.isTest = true
-}
-
-func (pm *ProtocolManager) removeTransitionPeer(id string) {
-	// Short circuit if the peer was already removed
-	peer := pm.peersTransition.Peer(id)
-	if peer == nil {
-		return
-	}
-	log.Debug("Removing PalletOne peer", "peer", id)
-
-	// Unregister the peer from the PalletOne peer set
-	if err := pm.peersTransition.Unregister(id); err != nil {
-		log.Error("Peer removal failed", "peer", id, "err", err)
-	}
-	// Hard disconnect at the networking layer
-	if peer != nil {
-		peer.Peer.Disconnect(p2p.DiscUselessPeer)
-	}
-}
+//func (pm *ProtocolManager) SetForTest() {
+//	pm.isTest = true
+//}
 
 func (pm *ProtocolManager) removePeer(id string) {
 	// Short circuit if the peer was already removed
@@ -287,7 +272,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.srvr = srvr
 	pm.maxPeers = maxPeers
 
-	go pm.mediatorConnect()
+	//go pm.mediatorConnect()
 
 	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
 	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
@@ -357,6 +342,10 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 		pm.contractSigSub = pm.contractProc.SubscribeContractSigEvent(pm.contractSigCh)
 		go pm.contractSigRecvLoop()
 	}
+
+	pm.chainMaintainCh = make(chan dag.ChainMaintainEvent)
+	pm.chainMaintainSub = pm.dag.SubscribeChainMaintainEvent(pm.chainMaintainCh)
+	go pm.chainMaintainEventRecvLoop()
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -368,6 +357,7 @@ func (pm *ProtocolManager) Stop() {
 	pm.groupSigSub.Unsubscribe()
 	pm.vssDealSub.Unsubscribe()
 	pm.vssResponseSub.Unsubscribe()
+	pm.chainMaintainSub.Unsubscribe()
 
 	pm.txSub.Unsubscribe() // quits txBroadcastLoop
 
@@ -403,7 +393,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	defer log.Debug("================================End ProtocolManager handle======================================")
 	// Ignore maxPeers if this is a trusted peer
-	//TODO must modify make sure  have enough connections for mediators
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
 		return p2p.DiscTooManyPeers
@@ -672,31 +661,4 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 		Genesis: genesisHash,
 		Head:    unit.UnitHash,
 	}
-}
-
-func (pm *ProtocolManager) getTransitionPeer(node *discover.Node) (p *peer, self bool) {
-	id := node.ID
-	if pm.srvr.Self().ID == id {
-		self = true
-	}
-
-	p = pm.peersTransition.Peer(id.TerminalString())
-	if p == nil && !self {
-		log.Debug(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
-	}
-
-	return
-}
-func (pm *ProtocolManager) GetTransitionPeers() map[string]*peer {
-	nodes := pm.dag.GetActiveMediatorNodes()
-	list := make(map[string]*peer, len(nodes))
-
-	for id, node := range nodes {
-		peer, self := pm.getTransitionPeer(node)
-		if peer != nil || self {
-			list[id] = peer
-		}
-	}
-
-	return list
 }

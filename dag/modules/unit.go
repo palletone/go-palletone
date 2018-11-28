@@ -140,8 +140,10 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 	if len(txs) > 0 {
 		u.Txs = make([]*Transaction, len(txs))
 		for i, pTx := range txs {
+			hash := pTx.Hash()
+
 			tx := Transaction{
-				TxHash: pTx.TxHash,
+				TxHash: hash,
 			}
 			if len(pTx.TxMessages) > 0 {
 				tx.TxMessages = make([]*Message, len(pTx.TxMessages))

@@ -105,6 +105,10 @@ func temp2Tx(temp transactionTemp, tx *Transaction) {
 			var sigPayload SignaturePayload
 			rlp.DecodeBytes(m.Data, &sigPayload)
 			m1.Payload = &sigPayload
+		} else if m.App == APP_VOTE {
+			var vote VotePayload
+			rlp.DecodeBytes(m.Data, &vote)
+			m1.Payload = &vote
 		} else if m.App == OP_MEDIATOR_CREATE {
 			var mediatorCreateOp MediatorCreateOperation
 			rlp.DecodeBytes(m.Data, &mediatorCreateOp)

@@ -412,7 +412,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	dag := mp.dag
 	aSize := dag.GetActiveMediatorCount()
-	curThreshold := dag.GetCurThreshold()
+	curThreshold := dag.ChainThreshold()
 
 	if sigShareSet.len() < curThreshold {
 		return

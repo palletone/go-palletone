@@ -5410,23 +5410,9 @@ var methods = function () {
     var createMediatorVote = new Method({
         name: 'createMediatorVote',
         call: 'ptn_createMediatorVote',
-        params: 1,
-    });
-    var replaceMediatorVote = new Method({
-        name: 'replaceMediatorVote',
-        call: 'ptn_replaceMediatorVote',
         params: 2,
     });
-    var deleteMediatorVote = new Method({
-        name: 'deleteMediatorVote',
-        call: 'ptn_deleteMediatorVote',
-        params: 1,
-    });
-    var clearMediatorVote = new Method({
-        name: 'clearMediatorVote',
-        call: 'ptn_clearMediatorVote',
-        params: 0,
-    });
+
 
     var signRawTransaction = new Method({
         name: 'signRawTransaction',
@@ -5731,9 +5717,6 @@ var methods = function () {
         cmdCreateTransaction,
         createRawTransaction,
         createMediatorVote,
-        replaceMediatorVote,
-        deleteMediatorVote,
-        clearMediatorVote,
         signRawTransaction,
         sendRawTransaction,
         signTransaction,

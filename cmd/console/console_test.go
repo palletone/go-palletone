@@ -92,7 +92,7 @@ func DevGenesisBlock() *core.Genesis {
 
 	return &core.Genesis{
 		Version:                "0.6.0",
-		TokenAmount:            1000000000,
+		TokenAmount:            "1000000000",
 		TokenDecimal:           8,
 		ChainID:                1,
 		TokenHolder:            core.DefaultTokenHolder,

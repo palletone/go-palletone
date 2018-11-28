@@ -19,6 +19,7 @@
 package mediatorplugin
 
 import (
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 )
 
@@ -64,4 +65,55 @@ func (a *PublicMediatorAPI) GetInitDKS() (res InitDKSResult) {
 	res.PublicKey = core.PointToStr(pub)
 
 	return
+}
+
+// todo 待删除，jury暂时使用mediator配置
+func (mp *MediatorPlugin) LocalMediators() *MediatorAccount {
+	for add, _ := range mp.mediators {
+		return mp.mediators[add]
+	}
+	return nil
+}
+
+func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
+	lams := make([]common.Address, 0)
+
+	dag := mp.dag
+	for add := range mp.mediators {
+		if dag.IsActiveMediator(add) {
+			lams = append(lams, add)
+		}
+	}
+
+	return lams
+}
+
+func (mp *MediatorPlugin) LocalHaveActiveMediator() bool {
+	dag := mp.dag
+	for add := range mp.mediators {
+		if dag.IsActiveMediator(add) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (mp *MediatorPlugin) IsLocalActiveMediator(add common.Address) bool {
+	if mp.isLocalMediator(add) {
+		return mp.dag.IsActiveMediator(add)
+	}
+
+	return false
+}
+
+func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
+	dag := mp.dag
+	for add := range mp.mediators {
+		if dag.IsPrecedingMediator(add) {
+			return true
+		}
+	}
+
+	return false
 }

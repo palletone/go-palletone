@@ -40,22 +40,31 @@ var (
 type globalProperty struct {
 	ChainParameters core.ChainParameters
 
-	ActiveMediators []string
+	ActiveMediators    []string
+	CurrentGroupPubKey string
 
-	GroupPubKey string
+	PrecedingMediators   []string
+	PrecedingGroupPubKey string
 }
 
 func getGPT(gp *modules.GlobalProperty) *globalProperty {
 	ams := make([]string, 0)
+	pms := make([]string, 0)
 
 	for medAdd, _ := range gp.ActiveMediators {
 		ams = append(ams, medAdd.Str())
 	}
 
+	for medAdd, _ := range gp.PrecedingMediators {
+		pms = append(pms, medAdd.Str())
+	}
+
 	gpt := &globalProperty{
-		ChainParameters: gp.ChainParameters,
-		ActiveMediators: ams,
-		GroupPubKey:     core.PointToStr(gp.GroupPubKey),
+		ChainParameters:      gp.ChainParameters,
+		ActiveMediators:      ams,
+		CurrentGroupPubKey:   core.PointToStr(gp.CurrentGroupPubKey),
+		PrecedingMediators:   pms,
+		PrecedingGroupPubKey: core.PointToStr(gp.PrecedingGroupPubKey),
 	}
 
 	return gpt
@@ -63,14 +72,22 @@ func getGPT(gp *modules.GlobalProperty) *globalProperty {
 
 func (gpt *globalProperty) getGP() *modules.GlobalProperty {
 	ams := make(map[common.Address]bool, 0)
+	pms := make(map[common.Address]bool, 0)
+
 	for _, addStr := range gpt.ActiveMediators {
 		ams[core.StrToMedAdd(addStr)] = true
+	}
+
+	for _, addStr := range gpt.PrecedingMediators {
+		pms[core.StrToMedAdd(addStr)] = true
 	}
 
 	gp := modules.NewGlobalProp()
 	gp.ChainParameters = gpt.ChainParameters
 	gp.ActiveMediators = ams
-	gp.GroupPubKey = core.StrToPoint(gpt.GroupPubKey)
+	gp.CurrentGroupPubKey = core.StrToPoint(gpt.CurrentGroupPubKey)
+	gp.PrecedingMediators = pms
+	gp.PrecedingGroupPubKey = core.StrToPoint(gpt.PrecedingGroupPubKey)
 
 	return gp
 }
