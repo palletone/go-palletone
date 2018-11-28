@@ -219,7 +219,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	}
 
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag)
+	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, txpool)
 
 	validator := func(header *modules.Header) error {
 		//TODO must recover
@@ -239,7 +239,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 			return 0, nil
 		}
 		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
-		return manager.dag.InsertDag(blocks)
+		return manager.dag.InsertDag(blocks, manager.txpool)
 	}
 	manager.fetcher = fetcher.New(dag.GetUnitByHash, validator, manager.BroadcastUnit, heighter, inserter, manager.removePeer)
 	return manager, nil

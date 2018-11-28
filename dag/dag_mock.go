@@ -136,16 +136,16 @@ func (mr *MockIDagMockRecorder) GetCurrentMemUnit(assetId, index interface{}) *g
 }
 
 // InsertDag mocks base method
-func (m *MockIDag) InsertDag(units modules.Units) (int, error) {
-	ret := m.ctrl.Call(m, "InsertDag", units)
+func (m *MockIDag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error) {
+	ret := m.ctrl.Call(m, "InsertDag", units, txpool)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // InsertDag indicates an expected call of InsertDag
-func (mr *MockIDagMockRecorder) InsertDag(units interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertDag", reflect.TypeOf((*MockIDag)(nil).InsertDag), units)
+func (mr *MockIDagMockRecorder) InsertDag(units, txpool interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertDag", reflect.TypeOf((*MockIDag)(nil).InsertDag), units, txpool)
 }
 
 // GetUnitByHash mocks base method
@@ -312,15 +312,15 @@ func (mr *MockIDagMockRecorder) Exists(hash interface{}) *gomock.Call {
 }
 
 // SaveUnit mocks base method
-func (m *MockIDag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
-	ret := m.ctrl.Call(m, "SaveUnit", unit, isGenesis)
+func (m *MockIDag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
+	ret := m.ctrl.Call(m, "SaveUnit", unit, txpool, isGenesis)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SaveUnit indicates an expected call of SaveUnit
-func (mr *MockIDagMockRecorder) SaveUnit(unit, isGenesis interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveUnit", reflect.TypeOf((*MockIDag)(nil).SaveUnit), unit, isGenesis)
+func (mr *MockIDagMockRecorder) SaveUnit(unit, txpool, isGenesis interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveUnit", reflect.TypeOf((*MockIDag)(nil).SaveUnit), unit, txpool, isGenesis)
 }
 
 // GetAllLeafNodes mocks base method
@@ -826,13 +826,52 @@ func (mr *MockIDagMockRecorder) GetTxFee(pay interface{}) *gomock.Call {
 }
 
 // SetUnitGroupSign mocks base method
-func (m *MockIDag) SetUnitGroupSign(sign []byte, unit_hash common.Hash) error {
-	ret := m.ctrl.Call(m, "SetUnitGroupSign", sign, unit_hash)
+func (m *MockIDag) SetUnitGroupSign(sign []byte, unit_hash common.Hash, txpool txspool.ITxPool) error {
+	ret := m.ctrl.Call(m, "SetUnitGroupSign", sign, txpool, unit_hash)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetUnitGroupSign indicates an expected call of SetUnitGroupSign
-func (mr *MockIDagMockRecorder) SetUnitGroupSign(sign, unit_hash interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUnitGroupSign", reflect.TypeOf((*MockIDag)(nil).SetUnitGroupSign), sign, unit_hash)
+func (mr *MockIDagMockRecorder) SetUnitGroupSign(sign, txpool, unit_hash interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUnitGroupSign", reflect.TypeOf((*MockIDag)(nil).SetUnitGroupSign), sign, txpool, unit_hash)
+}
+
+// GetPrecedingMediatorNodes
+func (m *MockIDag) GetPrecedingMediatorNodes() map[string]*discover.Node {
+	ret := m.ctrl.Call(m, "GetPrecedingMediatorNodes")
+	ret0, _ := ret[0].(map[string]*discover.Node)
+	return ret0
+}
+func (mr *MockIDagMockRecorder) GetPrecedingMediatorNodes() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrecedingMediatorNodes", reflect.TypeOf((*MockIDag)(nil).GetPrecedingMediatorNodes))
+}
+
+// IsSynced
+func (m *MockIDag) IsSynced() bool {
+	ret := m.ctrl.Call(m, "IsSynced")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+func (mr *MockIDagMockRecorder) IsSynced() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSynced", reflect.TypeOf((*MockIDag)(nil).IsSynced))
+}
+
+//
+func (m *MockIDag) SubscribeChainMaintainEvent(ch chan<- ChainMaintainEvent) event.Subscription {
+	ret := m.ctrl.Call(m, "SubscribeChainMaintainEvent", ch)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+func (mr *MockIDagMockRecorder) SubscribeChainMaintainEvent(ch interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeChainMaintainEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeChainMaintainEvent), ch)
+}
+
+func (m *MockIDag) UnitIrreversibleTime() uint {
+	ret := m.ctrl.Call(m, "UnitIrreversibleTime")
+	ret0, _ := ret[0].(uint)
+	return ret0
+}
+func (mr *MockIDagMockRecorder) UnitIrreversibleTime() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnitIrreversibleTime", reflect.TypeOf((*MockIDag)(nil).UnitIrreversibleTime))
 }

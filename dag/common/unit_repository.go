@@ -23,7 +23,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/vote"
+
 	"math/big"
 	"reflect"
 	"strings"
@@ -42,6 +42,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
@@ -56,7 +57,7 @@ type IUnitRepository interface {
 	BatchSaveUnit(units []*modules.Unit)
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
 	GenesisHeight() modules.ChainIndex
-	SaveUnit(unit *modules.Unit, isGenesis bool) error
+	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 }
@@ -194,6 +195,7 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	// if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
 	// 	return nil, fmt.Errorf("Create unit: %s", err.Error())
 	// }
+
 	// @jay
 	var asset modules.Asset
 	assetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
@@ -213,11 +215,20 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	} else {
 		chainIndex.Index += 1
 	}
+	// step3. generate genesis unit header
+	header := modules.Header{
+		AssetIDs: []modules.IDType16{},
+		Number:   *chainIndex,
+		//TxRoot:   root,
+		//		Creationdate: time.Now().Unix(),
+	}
+	header.AssetIDs = append(header.AssetIDs, asset.AssetId)
+	h_hash := header.HashWithOutTxRoot()
 
-	// step3. get transactions from txspool
-	poolTxs, _ := txpool.GetSortedTxs()
-	// step4. compute minner income: transaction fees + interest
-	//txs := txspool.PoolTxstoTxs(poolTxs)
+	// step4. get transactions from txspool
+	poolTxs, _ := txpool.GetSortedTxs(h_hash)
+
+	// step5. compute minner income: transaction fees + interest
 	fees, err := unitOp.utxoRepository.ComputeFees(poolTxs)
 	if err != nil {
 		log.Error(err.Error())
@@ -229,6 +240,7 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 		return nil, err
 	}
 
+	// step6 get unit's txs in txpool's txs
 	txs := modules.Transactions{coinbase}
 	if len(poolTxs) > 0 {
 		for _, tx := range poolTxs {
@@ -242,22 +254,19 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
 	*/
 
-	// step5. transactions merkle root
+	// step8. transactions merkle root
 	root := core.DeriveSha(txs)
 
-	// step6. generate genesis unit header
-	header := modules.Header{
-		AssetIDs: []modules.IDType16{},
-		Number:   *chainIndex,
-		TxRoot:   root,
-		//		Creationdate: time.Now().Unix(),
-	}
-	header.AssetIDs = append(header.AssetIDs, asset.AssetId)
+	// step9. generate genesis unit header
+	header.TxRoot = root
 	unit := modules.Unit{}
 	unit.UnitHeader = &header
-	// step7. copy txs
+	unit.UnitHash = header.Hash()
+
+	// step10. copy txs
 	unit.CopyBody(txs)
-	// step8. set size
+
+	// step11. set size
 	unit.UnitSize = unit.Size()
 	units = append(units, unit)
 	return units, nil
@@ -464,13 +473,14 @@ func getFirstInputAddress(pay *modules.PaymentPayload) (common.Address, error) {
 保存单元数据，如果单元的结构基本相同
 save genesis unit data
 */
-func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
+func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
+	// step1 判断 unit size
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Error("Unit is null")
 		return fmt.Errorf("Unit is null")
 	}
 
-	// step1. check unit signature, should be compare to mediator list
+	// step2. check unit signature, should be compare to mediator list
 	if dagconfig.DefaultConfig.WhetherValidateUnitSignature {
 		errno := unitOp.validate.ValidateUnitSignature(unit.UnitHeader, isGenesis)
 		if int(errno) != modules.UNIT_STATE_VALIDATED && int(errno) != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
@@ -478,13 +488,13 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 		}
 	}
 
-	// step2. check unit size
+	// step3. check unit size
 	if unit.UnitSize != unit.Size() {
 		log.Info("Validate size", "error", "Size is invalid")
 		return modules.ErrUnit(-1)
 	}
 	//log.Info("===dag ValidateTransactions===")
-	// step3. check transactions in unit
+	// step4. check transactions in unit
 	//TODO must recover
 	//_, isSuccess, err := unitOp.validate.ValidateTransactions(&unit.Txs, isGenesis)
 	//if isSuccess != true {
@@ -492,7 +502,7 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 	//}
 	var err error
 	//log.Info("===dag traverse transactions and save them===")
-	// step6. traverse transactions and save them
+	// step5. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
 		// traverse messages
@@ -532,51 +542,50 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 				return fmt.Errorf("Message type is not supported now: %v", msg.App)
 			}
 		}
-		// step7. save transaction
+		// step6. save transaction
 		if err := unitOp.dagdb.SaveTransaction(tx); err != nil {
 			log.Info("Save transaction:", "error", err.Error())
 			return err
-		} else {
-			// tx := unit.Txs[0]
-			//for _, msg := range tx.TxMessages {
-			//	log.Debug("tx msg info ==================== ", "msg", msg)
-			//	payment, ok := msg.Payload.(*modules.PaymentPayload)
-			//	log.Debug("payment info==================== ", "转化", ok, "payment", payment)
-			//}
 		}
 		txHashSet = append(txHashSet, tx.TxHash)
 	}
-	//log.Info("===dag unitOp.dagdb.SaveBody===")
+
+	// step7  send unitHash set to txpool, to update txpool's pending
+	if txpool != nil {
+		go txpool.SendStoredTxs(txHashSet[:])
+	}
+
 	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
 	if err := unitOp.dagdb.SaveBody(unit.UnitHash, txHashSet); err != nil {
 		log.Info("SaveBody", "error", err.Error())
 		return err
 	}
-	//log.Info("===dag SaveTxLookupEntry===")
-	// step 10  save txlookupEntry
+
+	// step 9  save txlookupEntry
 	if err := unitOp.dagdb.SaveTxLookupEntry(unit); err != nil {
 		log.Info("SaveTxLookupEntry", "error", err.Error())
 		return err
 	}
 
-	// step4. save unit header
+	// step10. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := unitOp.dagdb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
 		log.Info("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
-	// step5. save unit hash and chain index relation
+	// step11. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
 	if err := unitOp.dagdb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
 		log.Info("SaveHashNumber:", "error", err.Error())
 		return fmt.Errorf("Save unit number hash error, %s", err)
 	}
+	// step12 SaveHashByNumber
 	if err := unitOp.dagdb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
 		log.Info("SaveNumberByHash:", "error", err.Error())
 		return fmt.Errorf("Save unit number error, %s", err)
 	}
 
-	// update state
+	// step13 update state
 	unitOp.dagdb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
 	unitOp.dagdb.PutHeadHeaderHash(unit.UnitHash)
 	unitOp.dagdb.PutHeadUnitHash(unit.UnitHash)

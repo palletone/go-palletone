@@ -206,6 +206,7 @@ func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32,
 			MessageIndex: msgIndex,
 			OutIndex:     uint32(outIndex),
 		}
+
 		if err := repository.utxodb.SaveUtxoEntity(outpoint, utxo); err != nil {
 			log.Error("Write utxo", "error", err.Error())
 			errs = append(errs, err)
