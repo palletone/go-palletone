@@ -32,7 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
+	// "github.com/palletone/go-palletone/dag/txspool"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -165,11 +165,11 @@ func initGenesis(ctx *cli.Context) error {
 		utils.Fatalf("Failed to generate genesis unit: %v", err)
 		return err
 	}
-	// new txpool
+	//new txpool
 
-	txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, dag, log.New("newgenesis"))
+	//txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, dag, log.New("newgenesis"))
 	//将Unit存入数据库中
-	err = dag.SaveUnit4GenesisInit(unit, txpool)
+	err = dag.SaveUnit4GenesisInit(unit, nil)
 	if err != nil {
 		fmt.Println("Save Genesis unit to db error:", err)
 		return err

@@ -857,14 +857,14 @@ func (mr *MockIDagMockRecorder) IsSynced() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSynced", reflect.TypeOf((*MockIDag)(nil).IsSynced))
 }
 
-//
-func (m *MockIDag) SubscribeChainMaintainEvent(ch chan<- ChainMaintainEvent) event.Subscription {
-	ret := m.ctrl.Call(m, "SubscribeChainMaintainEvent", ch)
+// SubscribeActiveMediatorsUpdatedEvent
+func (m *MockIDag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription {
+	ret := m.ctrl.Call(m, "SubscribeActiveMediatorsUpdatedEvent", ch)
 	ret0, _ := ret[0].(event.Subscription)
 	return ret0
 }
-func (mr *MockIDagMockRecorder) SubscribeChainMaintainEvent(ch interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeChainMaintainEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeChainMaintainEvent), ch)
+func (mr *MockIDagMockRecorder) SubscribeActiveMediatorsUpdatedEvent(ch interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeActiveMediatorsUpdatedEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeActiveMediatorsUpdatedEvent), ch)
 }
 
 func (m *MockIDag) UnitIrreversibleTime() uint {
