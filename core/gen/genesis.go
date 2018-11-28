@@ -194,27 +194,23 @@ func sigData(key *ecdsa.PrivateKey, data interface{}) ([]byte, error) {
 	return sign[0:64], err
 }
 
-func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction, msgType modules.MessageType, payload interface{}, ks *keystore.KeyStore) (*modules.Transaction, *modules.Asset, error) {
+func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction, payload []*modules.Message, ks *keystore.KeyStore) (*modules.Transaction, *modules.Asset, error) {
 	if orgTx == nil {
 		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions param is nil"))
 	}
 	if len(orgTx.TxMessages) < 2 {
 		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions tx(%s) len <2 ", orgTx.TxHash))
 	}
-
-	msgPayload := &modules.Message{
-		App:     msgType,
-		Payload: payload,
-	}
-	tx := &modules.Transaction{
-		TxMessages: []*modules.Message{orgTx.TxMessages[0], orgTx.TxMessages[1], msgPayload},
+	tx := orgTx.Clone()
+	for _, msg := range payload {
+		tx.AddMessage(msg)
 	}
 	tx.TxId = orgTx.TxId
 	pubkey, err := ks.GetPublicKey(singer)
 	if err != nil {
 		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
 	}
-	sig, err := cm.GetTxSig(tx, ks, singer)
+	sig, err := cm.GetTxSig(&tx, ks, singer)
 	if err != nil {
 		return nil, nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.TxHash.String()))
 	}
@@ -234,7 +230,7 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 
 	log.Debug("GenContractSigTransctions", "orgTx.TxHash", " sig transction ok")
 	//log.Debug("GenContractSigTransctions", tx.TxMessages[3].Payload.(modules.SignaturePayload).Signatures[0])
-	return tx, nil, nil
+	return &tx, nil, nil
 }
 
 //func CommitDB(dag dag.IDag, unit *modules.Unit, isGenesis bool) error {

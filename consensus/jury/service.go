@@ -149,7 +149,7 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 		return errors.New("ProcessContractEvent recv event Tx is invalid")
 	}
 
-	cmsgType, payload, err := runContractCmd(p.contract, event.Tx)
+	payload, err := runContractCmd(p.contract, event.Tx)
 	if err != nil {
 		log.Error(fmt.Sprintf("ProcessContractEvent runContractCmd err:%s", err))
 		return err
@@ -160,7 +160,7 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 		log.Error(fmt.Sprintf("ProcessContractEvent account add[%s], password[%s], err[%s]", p.local.Address.String(), p.local.Password, err))
 		return err
 	}
-	tx, _, err := gen.GenContractSigTransctions(p.local.Address, event.Tx, cmsgType, payload, p.ptn.GetKeyStore())
+	tx, _, err := gen.GenContractSigTransctions(p.local.Address, event.Tx, payload, p.ptn.GetKeyStore())
 	if err != nil {
 		log.Error(fmt.Sprintf("ProcessContractEvent GenContractSigTransctions, err:%s", err.Error()))
 		return err
@@ -239,22 +239,22 @@ func (p *Processor) SubscribeContractSigEvent(ch chan<- ContractSigEvent) event.
 }
 
 //执行合约命令:install、deploy、invoke、stop，注意同时只支持一种类型
-func runContractCmd(contract *contracts.Contract, trs *modules.Transaction) (modules.MessageType, interface{}, error) {
+func runContractCmd(contract *contracts.Contract, trs *modules.Transaction) ([]*modules.Message, error) {
 	if trs == nil {
-		return 0, nil, errors.New("Transaction is nil")
+		return nil, errors.New("Transaction is nil")
 	}
 	if len(trs.TxMessages) <= 0 {
-		return 0, nil, errors.New("TxMessages is not exit in Transaction")
+		return nil, errors.New("TxMessages is not exit in Transaction")
 	}
 	for _, msg := range trs.TxMessages {
 		switch msg.App {
 		case modules.APP_CONTRACT_TPL_REQUEST:
 			{
-				return modules.APP_CONTRACT_TPL, nil, errors.New("not support APP_CONTRACT_TPL")
+				return nil, errors.New("not support APP_CONTRACT_TPL")
 			}
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
 			{
-				return msg.App, nil, errors.New("not support APP_CONTRACT_DEPLOY")
+				return nil, errors.New("not support APP_CONTRACT_DEPLOY")
 			}
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
 			{
@@ -268,18 +268,18 @@ func runContractCmd(contract *contracts.Contract, trs *modules.Transaction) (mod
 				payload, err := ContractProcess(contract, req)
 				if err != nil {
 					log.Error("runContractCmd", "ContractProcess fail:", err)
-					return msg.App, nil, errors.New(fmt.Sprintf("txid(%s)APP_CONTRACT_INVOKE rans err:%s", req.txid, err))
+					return nil, errors.New(fmt.Sprintf("txid(%s)APP_CONTRACT_INVOKE rans err:%s", req.txid, err))
 				}
-				return modules.APP_CONTRACT_INVOKE, payload, nil
+				return payload, nil
 			}
 		case modules.APP_CONTRACT_STOP_REQUEST:
 			{
-				return modules.APP_CONTRACT_STOP, nil, errors.New("not support APP_CONTRACT_STOP")
+				return nil, errors.New("not support APP_CONTRACT_STOP")
 			}
 		}
 	}
 
-	return 0, nil, errors.New(fmt.Sprintf("Transaction err, txid=%s", trs.TxHash))
+	return nil, errors.New(fmt.Sprintf("Transaction err, txid=%s", trs.TxHash))
 }
 
 func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (bool, error) {
