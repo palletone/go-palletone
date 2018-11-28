@@ -21,36 +21,12 @@ package ptn
 import (
 	"fmt"
 
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
 )
-
-// @author Albert·Gou
-type producer interface {
-	// SubscribeNewUnitEvent should return an event subscription of
-	// NewUnitEvent and send events to the given channel.
-	SubscribeNewProducedUnitEvent(ch chan<- mp.NewProducedUnitEvent) event.Subscription
-	// UnitBLSSign is to TBLS sign the unit
-	ToUnitTBLSSign(newUnit *modules.Unit) error
-
-	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
-	ToTBLSRecover(sigShare *mp.SigShareEvent) error
-
-	SubscribeVSSDealEvent(ch chan<- mp.VSSDealEvent) event.Subscription
-	ToProcessDeal(deal *mp.VSSDealEvent) error
-
-	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
-	ToProcessResponse(resp *mp.VSSResponseEvent) error
-
-	LocalHaveActiveMediator() bool
-	StartVSSProtocol()
-
-	SubscribeGroupSigEvent(ch chan<- mp.GroupSigEvent) event.Subscription
-}
 
 // @author Albert·Gou
 func (self *ProtocolManager) newProducedUnitBroadcastLoop() {

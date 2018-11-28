@@ -7,7 +7,7 @@ import (
 var DefaultConfig = Config{
 	//LogLevel:               logging.DEBUG,
 	ContractFileSystemPath: "./chaincodes",
-	Address:                "127.0.0.1:12345",
+	ContractAddress:        "127.0.0.1:12345",
 	ContractExecutetimeout: time.Duration(20) * time.Second,
 	ContractDeploytimeout:  time.Duration(40) * time.Second,
 	VmEndpoint:             "unix:///var/run/docker.sock",
@@ -18,7 +18,7 @@ var DefaultConfig = Config{
 type Config struct {
 	//LogLevel               logging.Level
 	ContractFileSystemPath string
-	Address                string
+	ContractAddress        string
 	ContractExecutetimeout time.Duration
 	ContractDeploytimeout  time.Duration
 	VmEndpoint             string

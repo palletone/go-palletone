@@ -35,7 +35,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
@@ -47,7 +46,7 @@ type PalletOne interface {
 }
 
 type iDag interface {
-	GetCurThreshold() int
+	ChainThreshold() int
 	GetSlotAtTime(when time.Time) uint32
 	GetSlotTime(slotNum uint32) time.Time
 	HeadUnitTime() int64
@@ -69,16 +68,16 @@ type iDag interface {
 
 	MediatorSchedule() []common.Address
 
-	SubscribeChainMaintainEvent(ch chan<- dag.ChainMaintainEvent) event.Subscription
+	IsPrecedingMediator(add common.Address) bool
 }
 
 type MediatorPlugin struct {
 	ptn  PalletOne     // Full PalletOne service to retrieve other function
 	quit chan struct{} // Channel used for graceful exit
 
-	dag              iDag
-	chainMaintainCh  chan dag.ChainMaintainEvent
-	chainMaintainSub event.Subscription
+	dag iDag
+	//chainMaintainCh  chan dag.ChainMaintainEvent
+	//chainMaintainSub event.Subscription
 
 	// Enable Unit production, even if the chain is stale.
 	// 新开启一个区块链时，必须设为true
@@ -141,44 +140,10 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 	}
 }
 
-func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
-	lams := make([]common.Address, 0)
-
-	dag := mp.dag
-	for add := range mp.mediators {
-		if dag.IsActiveMediator(add) {
-			lams = append(lams, add)
-		}
-	}
-
-	return lams
-}
-
-func (mp *MediatorPlugin) LocalMediators() *MediatorAccount {
-	for add, _ := range mp.mediators {
-		return mp.mediators[add]
-	}
-	return nil
-}
-
-func (mp *MediatorPlugin) LocalHaveActiveMediator() bool {
-	lams := mp.GetLocalActiveMediators()
-
-	return len(lams) != 0
-}
-
 func (mp *MediatorPlugin) isLocalMediator(add common.Address) bool {
 	_, ok := mp.mediators[add]
 
 	return ok
-}
-
-func (mp *MediatorPlugin) IsLocalActiveMediator(add common.Address) bool {
-	if mp.isLocalMediator(add) {
-		return mp.dag.IsActiveMediator(add)
-	}
-
-	return false
 }
 
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
@@ -211,7 +176,7 @@ func (mp *MediatorPlugin) NewActiveMediatorsDKG() {
 
 	lams := mp.GetLocalActiveMediators()
 	initPubs := dag.GetActiveMediatorInitPubs()
-	curThreshold := dag.GetCurThreshold()
+	curThreshold := dag.ChainThreshold()
 	lamc := len(lams)
 
 	mp.dkgs = make(map[common.Address]*dkg.DistKeyGenerator, lamc)
@@ -251,34 +216,34 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	// 1. 开启循环生产计划
 	go mp.ScheduleProductionLoop()
 
-	mp.chainMaintainCh = make(chan dag.ChainMaintainEvent)
-	mp.chainMaintainSub = mp.dag.SubscribeChainMaintainEvent(mp.chainMaintainCh)
-	go mp.chainMaintainEventRecvLoop()
+	//mp.chainMaintainCh = make(chan dag.ChainMaintainEvent)
+	//mp.chainMaintainSub = mp.dag.SubscribeChainMaintainEvent(mp.chainMaintainCh)
+	//go mp.chainMaintainEventRecvLoop()
 
 	go log.Debug("mediator plugin startup end")
 
 	return nil
 }
 
-func (mp *MediatorPlugin) chainMaintainEventRecvLoop() {
-	for {
-		select {
-		case <-mp.chainMaintainCh:
-			// 2. 给当前节点控制的活跃mediator，初始化对应的DKG.
-			// todo 数据同步后再初始化，换届后需重新生成
-			go mp.NewActiveMediatorsDKG()
-
-			// Err() channel will be closed when unsubscribing.
-		case <-mp.chainMaintainSub.Err():
-			return
-		}
-	}
-}
+//func (mp *MediatorPlugin) chainMaintainEventRecvLoop() {
+//	for {
+//		select {
+//		case <-mp.chainMaintainCh:
+//			// 2. 给当前节点控制的活跃mediator，初始化对应的DKG.
+//			// todo 数据同步后再初始化，换届后需重新生成
+//			go mp.NewActiveMediatorsDKG()
+//
+//			// Err() channel will be closed when unsubscribing.
+//		case <-mp.chainMaintainSub.Err():
+//			return
+//		}
+//	}
+//}
 
 func (mp *MediatorPlugin) Stop() error {
 	close(mp.quit)
 
-	mp.chainMaintainSub.Unsubscribe()
+	//mp.chainMaintainSub.Unsubscribe()
 
 	mp.newProducedUnitScope.Close()
 	mp.vssDealScope.Close()
@@ -360,7 +325,7 @@ func (mp *MediatorPlugin) initTBLSBuf() {
 	mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit, lamc)
 	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lamc)
 
-	curThrshd := mp.dag.GetCurThreshold()
+	curThrshd := mp.dag.ChainThreshold()
 	for _, localMed := range lams {
 		mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
 		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet, curThrshd)
