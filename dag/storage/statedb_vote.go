@@ -35,6 +35,7 @@ func (statedb *StateDb) UpdateMediatorVote(voter common.Address, candidates []by
 		return err
 	}
 	accountInfo.MediatorVoteResult = candidates
+	statedb.logger.Debugf("Try to save mediator vote result{%s} for address:%s", string(candidates), voter.String())
 	//
 	//newVotes := []vote.VoteInfo{}
 	//mediatorVotes := []vote.VoteInfo{}
