@@ -80,7 +80,7 @@ type MediatorPlugin struct {
 	//chainMaintainSub event.Subscription
 
 	// Enable Unit production, even if the chain is stale.
-	// 新开启一个区块链时，必须设为true
+	// 新开启一条链时，第一个节点必须设为true，其他节点必须设为false
 	productionEnabled bool
 	// Mediator`s account and passphrase controlled by this node
 	mediators map[common.Address]*MediatorAccount

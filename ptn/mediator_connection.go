@@ -50,14 +50,14 @@ type producer interface {
 	SubscribeGroupSigEvent(ch chan<- mp.GroupSigEvent) event.Subscription
 }
 
-func (pm *ProtocolManager) chainMaintainEventRecvLoop() {
+func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
 	for {
 		select {
-		case <-pm.chainMaintainCh:
+		case <-pm.activeMediatorsUpdatedCh:
 			go pm.switchMediatorConnect()
 
 			// Err() channel will be closed when unsubscribing.
-		case <-pm.chainMaintainSub.Err():
+		case <-pm.activeMediatorsUpdatedSub.Err():
 			return
 		}
 	}
@@ -72,7 +72,7 @@ func (pm *ProtocolManager) switchMediatorConnect() {
 	// 2. 和新的活跃mediator节点相连
 	go pm.connectWitchActiveMediators()
 
-	// 3. 检查是否连接完成并发送事件
+	// 3. 检查是否连接完成，并发送事件
 	go pm.checkActiveMediatorConnection()
 
 	// 4. 延迟关闭和旧活跃mediator节点的连接
@@ -115,7 +115,7 @@ func (pm *ProtocolManager) checkActiveMediatorConnection() {
 	}
 
 	// 1. 设置Ticker, 每隔一段时间检查一次
-	checkTick := time.NewTicker(500 * time.Millisecond)
+	checkTick := time.NewTicker(50 * time.Millisecond)
 	for {
 		select {
 		case <-pm.quitSync:

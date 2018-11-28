@@ -138,8 +138,8 @@ type ProtocolManager struct {
 	//For Test
 	//isTest bool
 
-	chainMaintainCh  chan dag.ChainMaintainEvent
-	chainMaintainSub event.Subscription
+	activeMediatorsUpdatedCh  chan dag.ActiveMediatorsUpdatedEvent
+	activeMediatorsUpdatedSub event.Subscription
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
@@ -343,9 +343,9 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 		go pm.contractSigRecvLoop()
 	}
 
-	pm.chainMaintainCh = make(chan dag.ChainMaintainEvent)
-	pm.chainMaintainSub = pm.dag.SubscribeChainMaintainEvent(pm.chainMaintainCh)
-	go pm.chainMaintainEventRecvLoop()
+	pm.activeMediatorsUpdatedCh = make(chan dag.ActiveMediatorsUpdatedEvent)
+	pm.activeMediatorsUpdatedSub = pm.dag.SubscribeActiveMediatorsUpdatedEvent(pm.activeMediatorsUpdatedCh)
+	go pm.activeMediatorsUpdatedEventRecvLoop()
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -357,7 +357,7 @@ func (pm *ProtocolManager) Stop() {
 	pm.groupSigSub.Unsubscribe()
 	pm.vssDealSub.Unsubscribe()
 	pm.vssResponseSub.Unsubscribe()
-	pm.chainMaintainSub.Unsubscribe()
+	pm.activeMediatorsUpdatedSub.Unsubscribe()
 
 	pm.txSub.Unsubscribe() // quits txBroadcastLoop
 
