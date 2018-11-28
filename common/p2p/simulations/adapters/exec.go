@@ -37,10 +37,10 @@ import (
 
 	"github.com/docker/docker/pkg/reexec"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core/node"
 	"golang.org/x/net/websocket"
 )
 
@@ -136,12 +136,12 @@ type ExecNode struct {
 	key     *ecdsa.PrivateKey
 }
 
-// Addr returns the node's enode URL
+// Addr returns the node's pnode URL
 func (n *ExecNode) Addr() []byte {
 	if n.Info == nil {
 		return nil
 	}
-	return []byte(n.Info.Enode)
+	return []byte(n.Info.Pnode)
 }
 
 // Client returns an rpc.Client which can be used to communicate with the
@@ -361,7 +361,7 @@ func execP2PNode() {
 	conf.Stack.P2P.PrivateKey = conf.Node.PrivateKey
 	//conf.Stack.Logger = log.New("node.id", conf.Node.ID.String())
 
-	// use explicit IP address in ListenAddr so that Enode URL is usable
+	// use explicit IP address in ListenAddr so that Pnode URL is usable
 	externalIP := func() string {
 		addrs, err := net.InterfaceAddrs()
 		if err != nil {
