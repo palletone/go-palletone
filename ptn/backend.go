@@ -259,8 +259,10 @@ func (s *PalletOne) MockContractLocalSend(event jury.ContractExeEvent) {
 func (s *PalletOne) MockContractSigLocalSend(event jury.ContractSigEvent) {
 	s.protocolManager.ContractSigLocalSend(event)
 }
+
 func (s *PalletOne) ContractBroadcast(event jury.ContractExeEvent) {
 	s.protocolManager.ContractBroadcast(event)
+
 }
 func (s *PalletOne) ContractSigBroadcast(event jury.ContractSigEvent) {
 	s.protocolManager.ContractSigBroadcast(event)
@@ -294,6 +296,8 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 
 	// Start the networking layer and the light server if requested
 	s.protocolManager.Start(srvr, maxPeers)
+
+	s.contractPorcessor.Start(srvr)
 
 	return nil
 }
