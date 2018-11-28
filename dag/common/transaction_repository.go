@@ -36,7 +36,7 @@ func ValidateTxSig(tx *modules.Transaction) bool {
 
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_SIGNATURE {
-			sigs = msg.Payload.(modules.SignaturePayload).Signatures
+			sigs = msg.Payload.(*modules.SignaturePayload).Signatures
 		} else {
 			tmpTx.TxMessages = append(tmpTx.TxMessages, msg)
 		}

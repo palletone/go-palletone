@@ -530,9 +530,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return pm.GroupSigMsg(msg, p)
 
 	case msg.Code == ContractExecMsg:
+		fmt.Println("===============ContractExecMsg")
 		return pm.ContractExecMsg(msg, p)
 
 	case msg.Code == ContractSigMsg:
+		fmt.Println("===============ContractSigMsg")
 		return pm.ContractSigMsg(msg, p)
 
 	default:
