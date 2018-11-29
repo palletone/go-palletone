@@ -28,6 +28,11 @@ web3._extend({
 			params: 0,
 		}),
 		new web3._extend.Method({
+			name: 'voteResult',
+			call: 'mediator_voteResult',
+			params: 0,
+		}),
+		new web3._extend.Method({
 			name: 'getInitDKS',
 			call: 'mediator_getInitDKS',
 			params: 0,
