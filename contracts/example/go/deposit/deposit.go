@@ -153,7 +153,7 @@ func (d *DepositChaincode) handleMediatorDepositWitnessPay(stub shim.ChaincodeSt
 		}
 		addList("Mediator", invokeAddr, stub)
 		stateValue.DepositBalance.Amount = invokeTokens.Amount
-		stateValue.DepositBalance.Asset = invokeTokens.Asset
+		stateValue.DepositBalance.Asset = &invokeTokens.Asset
 		stateValue.Time = time.Now() //第一次交付保证金的时间，并且加入列表
 		stateValue.Extra = "这是第一次参与"
 	} else {
@@ -195,7 +195,7 @@ func (d *DepositChaincode) handleJuryDepositWitnessPay(stub shim.ChaincodeStubIn
 		}
 		//写入写集
 		stateValue.DepositBalance.Amount = invokeTokens.Amount
-		stateValue.DepositBalance.Asset = invokeTokens.Asset
+		stateValue.DepositBalance.Asset = &invokeTokens.Asset
 		stateValue.Time = time.Now()
 		stateValue.Extra = "这是第一次参与"
 	} else {
@@ -249,7 +249,7 @@ func (d *DepositChaincode) handleDeveloperDepositWitnessPay(stub shim.ChaincodeS
 		}
 		//写入写集
 		stateValue.DepositBalance.Amount = invokeTokens.Amount
-		stateValue.DepositBalance.Asset = invokeTokens.Asset
+		stateValue.DepositBalance.Asset = &invokeTokens.Asset
 		stateValue.Time = time.Now()
 		stateValue.Extra = "这是第一次参与"
 	} else {
@@ -306,14 +306,10 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 		return shim.Success([]byte("String transform to uint64 error:"))
 	}
 	fmt.Println("ptnAccount  args[0] ", ptnAccount)
-	asset := modules.Asset{
-		modules.PTNCOIN,
-		modules.PTNCOIN,
-		0,
-	}
+	asset := modules.NewPTNAsset()
 	invokeTokens := &modules.InvokeTokens{
 		Amount: ptnAccount,
-		Asset:  asset,
+		Asset:  *asset,
 	}
 	//
 	//第一步：先获取数据库信息
@@ -324,6 +320,9 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 	if stateValueBytes == nil {
 		return shim.Success([]byte("Your account does not exist."))
 	}
+	//if stateValueBytes == nil {
+	//	return shim.Error("Your account does not exist.")
+	//}
 	stateValue := new(modules.DepositStateValue)
 	err = json.Unmarshal(stateValueBytes, stateValue)
 	if err != nil {
@@ -591,7 +590,7 @@ func (d DepositChaincode) forfeitureDeposit(stub shim.ChaincodeStubInterface, ar
 func (d *DepositChaincode) handleMediatorForfeitureDeposit(invokeAddr, forfeitureAddr common.Address, amounts uint64, stateValue *modules.DepositStateValue, stub shim.ChaincodeStubInterface) pb.Response {
 	invokeTokens := new(modules.InvokeTokens)
 	invokeTokens.Amount = amounts
-	invokeTokens.Asset = stateValue.DepositBalance.Asset
+	invokeTokens.Asset = *stateValue.DepositBalance.Asset
 	stateValue.DepositBalance.Amount -= amounts
 	if stateValue.DepositBalance.Amount == 0 {
 		err := stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
@@ -617,7 +616,7 @@ func (d *DepositChaincode) handleMediatorForfeitureDeposit(invokeAddr, forfeitur
 func (d *DepositChaincode) handleJuryForfeitureDeposit(invokeAddr, forfeitureAddr common.Address, amounts uint64, stateValue *modules.DepositStateValue, stub shim.ChaincodeStubInterface) pb.Response {
 	invokeTokens := new(modules.InvokeTokens)
 	invokeTokens.Amount = amounts
-	invokeTokens.Asset = stateValue.DepositBalance.Asset
+	invokeTokens.Asset = *stateValue.DepositBalance.Asset
 	err := stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
 	if err != nil {
 		return shim.Success([]byte("PayOutToken error"))
@@ -640,7 +639,7 @@ func (d *DepositChaincode) handleJuryForfeitureDeposit(invokeAddr, forfeitureAdd
 func (d *DepositChaincode) handleDeveloperForfeitureDeposit(invokeAddr, forfeitureAddr common.Address, amounts uint64, stateValue *modules.DepositStateValue, stub shim.ChaincodeStubInterface) pb.Response {
 	invokeTokens := new(modules.InvokeTokens)
 	invokeTokens.Amount = amounts
-	invokeTokens.Asset = stateValue.DepositBalance.Asset
+	invokeTokens.Asset = *stateValue.DepositBalance.Asset
 	err := stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
 	if err != nil {
 		return shim.Success([]byte("PayOutToken error"))

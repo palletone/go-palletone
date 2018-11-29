@@ -19,7 +19,10 @@ package downloader
 import (
 	"errors"
 	"fmt"
+	"github.com/palletone/go-palletone/dag/txspool"
+	"log"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -31,8 +34,6 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"log"
-	"sync/atomic"
 )
 
 var ()
@@ -223,7 +224,10 @@ func newTester() *downloadTester {
 	//newGenesisForTest(tester.stateDb)
 	tester.stateDb.Put(genesisUnit.UnitHeader.Hash().Bytes(), []byte("0x00"))
 	//fmt.Println("error=", err)testBoundedForkedSync
-	tester.downloader = New(FullSync, new(event.TypeMux), tester.dropPeer, nil, tester)
+
+	// new txpool for test
+	// txpool := newTxPool4Test()
+	tester.downloader = New(FullSync, new(event.TypeMux), tester.dropPeer, nil, tester, nil)
 
 	return tester
 }
@@ -472,7 +476,7 @@ func (dl *downloadTester) InsertHeaderDag(headers []*modules.Header, checkFreq i
 }
 
 // InsertChain injects a new batch of blocks into the simulated chain.
-func (dl *downloadTester) InsertDag(blocks modules.Units) (int, error) {
+func (dl *downloadTester) InsertDag(blocks modules.Units, txpool txspool.ITxPool) (int, error) {
 	dl.lock.Lock()
 	defer dl.lock.Unlock()
 	//blocks modules.Units

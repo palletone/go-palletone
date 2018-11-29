@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/configure"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/statistics/metrics"
 )
 
@@ -109,6 +110,7 @@ type Downloader struct {
 
 	lightdag LightDag
 	dag      BlockDag
+	txpool   txspool.ITxPool
 	// Callbacks
 	dropPeer peerDropFn // Drops a peer for misbehaving
 
@@ -164,7 +166,8 @@ type BlockDag interface {
 	CurrentUnit() *modules.Unit
 	FastSyncCommitHead(common.Hash) error
 	//SaveDag(unit modules.Unit, isGenesis bool) (int, error)
-	InsertDag(modules.Units) (int, error)
+	//InsertDag(modules.Units) (int, error)
+	InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error)
 
 	//TODO :
 	//LightDag
@@ -178,7 +181,7 @@ type BlockDag interface {
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
-func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, lightdag LightDag, dag BlockDag) *Downloader {
+func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, lightdag LightDag, dag BlockDag, txpool txspool.ITxPool) *Downloader {
 
 	if lightdag == nil {
 		lightdag = dag
@@ -194,6 +197,7 @@ func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, lightdag LightD
 		rttConfidence: uint64(1000000),
 		lightdag:      lightdag,
 		dag:           dag,
+		txpool:        txpool,
 		dropPeer:      dropPeer,
 		headerCh:      make(chan dataPack, 1),
 		bodyCh:        make(chan dataPack, 1),
@@ -607,11 +611,11 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	// Figure out the valid ancestor range to prevent rewrite attacks
 	floor, ceil := int64(-1), d.lightdag.CurrentHeader().Number.Index
 
-	if d.mode == FullSync {
-		ceil = d.dag.CurrentUnit().NumberU64()
-	} else if d.mode == FastSync {
-		ceil = d.dag.CurrentUnit().NumberU64()
-	}
+	//if d.mode == FullSync {
+	//	ceil = d.dag.CurrentUnit().NumberU64()
+	//} else if d.mode == FastSync {
+	//	ceil = d.dag.CurrentUnit().NumberU64()
+	//}
 	if ceil >= MaxForkAncestry {
 		floor = int64(ceil - MaxForkAncestry)
 	}
@@ -1391,10 +1395,10 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
 	for _, u := range blocks {
-		log.Debug("======importBlockResults=======", "unit:", *u, "index:", u.UnitHeader.Number.Index)
+		log.Debug("======importBlockResults=======", "index:", u.UnitHeader.Number.Index, "unit:", *u)
 		units := []*modules.Unit{}
 		units = append(units, u)
-		if index, err := d.dag.InsertDag(units); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
+		if index, err := d.dag.InsertDag(units, d.txpool); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 			log.Debug("Downloaded item processing failed", "number", results[index].Header.Number.Index, "hash", results[index].Header.Hash(), "err", err)
 			return errInvalidChain
 		}
@@ -1518,7 +1522,7 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 	// Retrieve the a batch of results to import
 	first, last := results[0].Header, results[len(results)-1].Header
 	log.Debug("Inserting fast-sync blocks", "items", len(results),
-		"firstnum", first.Number, "lastnumn", last.Number,
+		"firstnum", first.Number.Index, "lastnumn", last.Number.Index,
 	)
 
 	blocks := make(modules.Units, len(results))
@@ -1526,10 +1530,10 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
 	for _, u := range blocks {
-		log.Debug("======commitFastSyncData=======", "unit:", *u, "index:", u.UnitHeader.Number.Index)
+		log.Debug("======commitFastSyncData=======", "index:", u.UnitHeader.Number.Index, "unit:", *u)
 		units := []*modules.Unit{}
 		units = append(units, u)
-		if index, err := d.dag.InsertDag(units); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
+		if index, err := d.dag.InsertDag(units, d.txpool); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 			log.Debug("Downloaded item processing failed", "number", results[index].Header.Number.Index, "hash", results[index].Header.Hash(), "err", err)
 			return errInvalidChain
 		}
@@ -1550,7 +1554,7 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 
 	units := []*modules.Unit{}
 	units = append(units, block)
-	if _, err := d.dag.InsertDag(units); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
+	if _, err := d.dag.InsertDag(units, d.txpool); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 		log.Debug("Downloaded item processing failed", "index:", block.UnitHeader.Number.Index, "err:", err)
 		return errInvalidChain
 	}

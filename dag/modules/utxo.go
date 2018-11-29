@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/errors"
 )
 
 var DAO uint64 = 100000000
@@ -41,80 +40,6 @@ const (
 
 	tfModified
 )
-
-//Asset to identify token
-//By default, system asset id=0,UniqueId=0,ChainId=1
-//默认的PTN资产，则AssetId=0，UniqueId=0,ChainId是当前链的ID
-type Asset struct {
-	AssetId  IDType16 `json:"asset_id"`  // 资产类别
-	UniqueId IDType16 `json:"unique_id"` // every token has its unique id
-	ChainId  uint64   `json:"chain_id"`  // main chain id or sub-chain id,read from toml config NetworkId
-}
-
-func (asset *Asset) String() string {
-	if asset.UniqueId == ZeroIdType16() {
-		return asset.AssetId.String()
-	}
-	return fmt.Sprintf("%s-%s", asset.AssetId.String(), asset.UniqueId.String())
-}
-
-func (asset *Asset) SetString(data string) error {
-	if len(data) == 34 {
-		//ERC20, AssetID only
-		a, err := SetIdTypeByHex(data)
-		if err != nil {
-			return err
-		}
-		asset.AssetId = a
-	}
-	if len(data) == 69 {
-		a, err := SetIdTypeByHex(data[:34])
-		if err != nil {
-			return err
-		}
-		b, err := SetIdTypeByHex(data[35:])
-		if err != nil {
-			return err
-		}
-		asset.AssetId = a
-		asset.UniqueId = b
-	} else {
-		return errors.New("Invalid asset string, length must be 34 or 69")
-	}
-	return nil
-}
-
-func (asset *Asset) IsEmpty() bool {
-	if len(asset.AssetId) <= 0 || len(asset.UniqueId) <= 0 {
-		return true
-	}
-	return false
-}
-
-func (asset *Asset) Bytes() []byte {
-	data, err := rlp.EncodeToBytes(asset)
-	if err != nil {
-		return nil
-	}
-	return data
-}
-
-func (asset *Asset) SetBytes(data []byte) error {
-	if err := rlp.DecodeBytes(data, asset); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (asset *Asset) IsSimilar(similar *Asset) bool {
-	if !strings.EqualFold(asset.AssetId.String(), similar.AssetId.String()) {
-		return false
-	}
-	if !strings.EqualFold(asset.UniqueId.String(), similar.UniqueId.String()) {
-		return false
-	}
-	return true
-}
 
 type Utxo struct {
 	Amount   uint64 `json:"amount"`    // 数量
@@ -307,6 +232,7 @@ type Output struct {
 	PkScript []byte `json:"pk_script"`
 	Asset    *Asset `json:"asset"`
 }
+
 type Input struct {
 	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
 	SignatureScript  []byte    `json:"signature_script"`
@@ -351,7 +277,7 @@ func (assetInfo *AssetInfo) Print() {
 	fmt.Println("Asset alias", assetInfo.Alias)
 	fmt.Println("Asset Assetid", assetInfo.AssetID.AssetId)
 	fmt.Println("Asset UniqueId", assetInfo.AssetID.UniqueId)
-	fmt.Println("Asset ChainId", assetInfo.AssetID.ChainId)
+	//fmt.Println("Asset ChainId", assetInfo.AssetID.ChainId)
 	fmt.Println("Asset Decimal", assetInfo.Decimal)
 	fmt.Println("Asset DecimalUnit", assetInfo.DecimalUnit)
 	fmt.Println("Asset OriginalHolder", assetInfo.OriginalHolder.String())

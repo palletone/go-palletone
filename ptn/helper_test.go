@@ -129,6 +129,34 @@ type testTxPool struct {
 
 // AddRemotes appends a batch of transactions to the pool, and notifies any
 // listeners if the addition channel is non nil
+
+func (p *testTxPool) AddLocal(tx *modules.TxPoolTransaction) error {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	p.pool = append(p.pool, tx.Tx)
+	if p.added != nil {
+		p.added <- p.pool
+	}
+	return nil
+}
+func (p *testTxPool) AddLocals(txs []*modules.TxPoolTransaction) []error {
+	errs := make([]error, 0)
+	for _, tx := range txs {
+		errs = append(errs, p.AddLocal(tx))
+	}
+	return errs
+}
+func (p *testTxPool) AllHashs() []*common.Hash {
+	hashs := make([]*common.Hash, 0)
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	for _, tx := range p.pool {
+		hash := tx.Hash()
+		hashs = append(hashs, &hash)
+	}
+	return hashs
+}
 func (p *testTxPool) AddRemotes(txs []*modules.Transaction) []error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -139,6 +167,30 @@ func (p *testTxPool) AddRemotes(txs []*modules.Transaction) []error {
 	}
 	return make([]error, len(txs))
 }
+
+func (p *testTxPool) Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
+	return nil, nil
+}
+
+func (p *testTxPool) Get(hash common.Hash) *modules.TxPoolTransaction {
+	return nil
+}
+
+func (p *testTxPool) GetNonce(hash common.Hash) uint64 {
+	return 0
+}
+
+func (p *testTxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize) {
+	return nil, 0
+}
+func (p *testTxPool) SendStoredTxs(hashs []common.Hash) error {
+	return nil
+}
+func (p *testTxPool) Stats() (int, int) {
+	return 0, 0
+}
+
+func (p *testTxPool) Stop() {}
 
 // Pending returns all the transactions known to the pool
 func (p *testTxPool) Pending() (map[common.Hash]*modules.TxPoolTransaction, error) {
@@ -258,7 +310,7 @@ func (p *testPeer) close() {
 }
 
 func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
-	dag, _ := dag.NewDagForTest(Memdb)
+	dag, _ := dag.NewDagForTest(Memdb, nil)
 	genesisUnit := newGenesisForTest(dag.Db)
 	newDag(dag.Db, genesisUnit, unitAccount)
 	return dag, nil

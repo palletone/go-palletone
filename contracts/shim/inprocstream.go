@@ -11,12 +11,12 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
  */
-
 
 package shim
 
@@ -54,8 +54,8 @@ func (s *inProcStream) Send(msg *pb.ChaincodeMessage) (err error) {
 			return
 		}
 	}()
-	fmt.Println("inProcStream msg Send  >>>>>>:", msg)
 
+	//chaincodeLogger.Debugf("inProcStream msg Send  >>>>>>:", msg)
 	s.send <- msg
 	return
 }
@@ -63,8 +63,7 @@ func (s *inProcStream) Send(msg *pb.ChaincodeMessage) (err error) {
 func (s *inProcStream) Recv() (*pb.ChaincodeMessage, error) {
 	msg := <-s.recv
 
-	fmt.Println("inProcStream msg Recv  <<<<<<<:", msg)
-
+	//chaincodeLogger.Debugf("inProcStream msg Recv <<<<<<<:%s", msg)
 	return msg, nil
 }
 

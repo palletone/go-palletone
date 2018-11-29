@@ -43,7 +43,7 @@ func init() {
 	testTxPoolConfig.Journal = "test_transactions.rlp"
 }
 
-type testUnitDag struct {
+type UnitDag4Test struct {
 	Db            *palletdb.MemDatabase
 	utxodb        storage.IUtxoDb
 	mux           sync.RWMutex
@@ -52,21 +52,34 @@ type testUnitDag struct {
 	chainHeadFeed *event.Feed
 }
 
-func (ud *testUnitDag) CurrentUnit() *modules.Unit {
+// NewTxPool4Test return TxPool structure for testing.
+func NewTxPool4Test() *TxPool {
+	l := log.NewTestLog()
+	testDag := NewUnitDag4Test(l)
+	return NewTxPool(DefaultTxPoolConfig, testDag, l)
+}
+
+func NewUnitDag4Test(logger log.ILogger) *UnitDag4Test {
+	db, _ := palletdb.NewMemDatabase()
+	utxodb := storage.NewUtxoDb(db, logger)
+	mutex := new(sync.RWMutex)
+	return &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed)}
+}
+func (ud *UnitDag4Test) CurrentUnit() *modules.Unit {
 	return modules.NewUnit(&modules.Header{
 		Extra: []byte("test pool"),
 	}, nil)
 }
 
-func (ud *testUnitDag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
+func (ud *UnitDag4Test) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	return ud.CurrentUnit(), nil
 }
 
-func (ud *testUnitDag) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
+func (ud *UnitDag4Test) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
 	return ud.Db, nil
 }
 
-func (ud *testUnitDag) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
+func (ud *UnitDag4Test) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	preout := modules.OutPoint{TxHash: tx.Hash()}
 	for i, msgcopy := range tx.TxMessages {
@@ -91,12 +104,12 @@ func (ud *testUnitDag) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, err
 	return view, err
 }
 
-func (ud *testUnitDag) addUtxoview(view *UtxoViewpoint, tx *modules.Transaction) {
+func (ud *UnitDag4Test) addUtxoview(view *UtxoViewpoint, tx *modules.Transaction) {
 	ud.mux.Lock()
 	view.AddTxOuts(tx)
 	ud.mux.Unlock()
 }
-func (ud *testUnitDag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
+func (ud *UnitDag4Test) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
 	return ud.chainHeadFeed.Subscribe(ch)
 }
 
@@ -113,7 +126,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	l := log.NewTestLog()
 	utxodb := storage.NewUtxoDb(db, l)
 	mutex := new(sync.RWMutex)
-	unitchain := &testUnitDag{db, utxodb, *mutex, nil, 10000, new(event.Feed)}
+	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed)}
 	config := testTxPoolConfig
 	config.GlobalSlots = 4096
 	var pending_cache, queue_cache, all, origin int
@@ -216,22 +229,23 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	log.Debugf("pending:%d", len(pool.pending))
 	fmt.Println("addlocals over.... ", time.Now().Unix()-t0.Unix())
-	for hash := range pool.pending {
-		if len(pool.pending) != int(config.AccountSlots) {
-			t.Errorf("addr %x: total pending transactions mismatch: have %d, want %d", hash.String(), len(pool.pending), config.AccountSlots)
+	for hash, list := range pool.pending {
+		if len(list) != int(config.AccountSlots) {
+			t.Errorf("addr %x: total pending transactions mismatch: have %d, want %d", hash.String(), len(list), config.AccountSlots)
 		} else {
-			log.Debug("account matched.", "pending addr:", addr.String(), "amont:", len(pool.pending))
+			log.Debug("account matched.", "pending addr:", addr.String(), "amont:", len(list))
 		}
 	}
 	fmt.Println("defer start.... ", time.Now().Unix()-t0.Unix())
 	//  test GetSortedTxs{}
+	unit_hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
 	defer func(p *TxPool) {
-		if txs, total := pool.GetSortedTxs(); total.Float64() > dagconfig.DefaultConfig.UnitTxSize {
+		if txs, total := pool.GetSortedTxs(unit_hash); total.Float64() > dagconfig.DefaultConfig.UnitTxSize {
 			all = len(txs)
 			msg := fmt.Sprintf("total %v:total sizeof transactions is unexpected", total.Float64())
 			t.Error(msg)
 		} else {
-			log.Debugf(" total size is :%d ,the cout:%d ", total, len(txs))
+			log.Debugf(" total size is :%v ,the cout:%d ", total, len(txs))
 			for i, tx := range txs {
 				if i < len(txs)-1 {
 					if txs[i].Priority_lvl < txs[i+1].Priority_lvl {
@@ -240,10 +254,12 @@ func TestTransactionAddingTxs(t *testing.T) {
 				}
 			}
 			all = len(txs)
-			pending_cache = len(pool.pending)
+			for _, list := range pool.pending {
+				pending_cache += len(list)
+			}
 			queue_cache = len(pool.queue)
 		}
-		log.Debugf("data:%s,%s,%d,%d,%s", origin, all, len(pool.all), pending_cache, queue_cache)
+		log.Debugf("data:%d,%d,%d,%d,%d", origin, all, len(pool.all), pending_cache, queue_cache)
 		fmt.Println("defer over.... spending time：", time.Now().Unix()-t0.Unix())
 	}(pool)
 

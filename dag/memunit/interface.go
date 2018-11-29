@@ -23,12 +23,13 @@ package memunit
 import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 type IMemDag interface {
-	Save(unit *modules.Unit) error
+	Save(unit *modules.Unit, txpool txspool.ITxPool) error
 	GetUnit(hash common.Hash) (*modules.Unit, error)
-	UpdateMemDag(hash common.Hash, sign []byte) error
+	UpdateMemDag(hash common.Hash, sign []byte, txpool txspool.ITxPool) error
 	Exists(uHash common.Hash) bool
 	Prune(assetId string, hashs []common.Hash) error
 	SwitchMainChain() error

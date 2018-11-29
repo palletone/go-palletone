@@ -69,13 +69,14 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		if hashMode {
 			origin = pm.dag.GetHeaderByHash(query.Origin.Hash)
 		} else {
-			log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Origin.Number:", query.Origin.Number)
+			log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Origin.Number:", query.Origin.Number.Index)
 			origin = pm.dag.GetHeaderByNumber(query.Origin.Number)
 		}
-		log.Debug("ProtocolManager", "GetBlockHeadersMsg origin:", origin)
+
 		if origin == nil {
 			break
 		}
+		log.Debug("ProtocolManager", "GetBlockHeadersMsg origin index:", origin.Number.Index)
 
 		number := origin.Number.Index
 		headers = append(headers, origin)
@@ -144,7 +145,14 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			query.Origin.Number.Index += query.Skip + 1
 		}
 	}
-	log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", len(headers), " getBlockHeadersData:", query)
+	start := uint64(0)
+	end := uint64(0)
+	number := len(headers)
+	if number > 0 {
+		start = uint64(headers[0].Number.Index)
+		end = uint64(headers[number-1].Number.Index)
+	}
+	log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", len(headers), "start:", start, "end:", end, " getBlockHeadersData:", query)
 	return p.SendUnitHeaders(headers)
 }
 
@@ -198,7 +206,7 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("msgStream.Decode", "err", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		log.Debug("GetBlockBodiesMsg", "hash", hash)
+		//log.Debug("GetBlockBodiesMsg", "hash", hash)
 		// Retrieve the requested block body, stopping if enough was found
 		txs, err := pm.dag.GetUnitTransactions(hash)
 		if err != nil {
@@ -211,12 +219,14 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		//log.Debug("GetBlockBodiesMsg", "hash", hash, "txs size:", len(txs))
 		bytes += len(data)
+
+		//log.Debug("GetBlockBodiesMsg", "hash", hash, "txs size:", len(txs))
+
 		body := blockBody{Transactions: txs}
 		bodies = append(bodies, body)
 	}
-	log.Debug("GetBlockBodiesMsg", "len(bodies):", len(bodies))
+	log.Debug("GetBlockBodiesMsg", "len(bodies):", len(bodies), "bytes:", bytes)
 	return p.SendBlockBodies(bodies)
 }
 
@@ -334,25 +344,37 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	p.MarkUnit(unit.UnitHash)
 	pm.fetcher.Enqueue(p.id, &unit)
 
+	requestNumber := unit.UnitHeader.Number
 	hash, number := p.Head(unit.Number().AssetID)
-
-	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && unit.UnitHeader.ChainIndex().Index > number.Index) {
-		log.Info("ProtocolManager", "NewBlockMsg hash:", hash, "unit.UnitHeader.ChainIndex().Index:", unit.UnitHeader.ChainIndex().Index,
-			"number.Index:", number.Index)
+	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && requestNumber.Index > number.Index) {
+		log.Info("ProtocolManager", "NewBlockMsg SetHead request.Index:", unit.UnitHeader.ChainIndex().Index,
+			"local peer index:", number.Index)
 		trueHead := unit.Hash()
-		p.SetHead(trueHead, unit.UnitHeader.Number)
-		// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
-		// a singe block (as the true TD is below the propagated block), however this
-		// scenario should easily be covered by the fetcher.
-		//如果在我们上面安排一个同步。注意，这将不会为单个块的间隙触发同步(因为真正的TD位于传播的块之下)，
-		//但是这个场景应该很容易被fetcher所覆盖。
-		currentUnit := pm.dag.CurrentUnit()
-		if currentUnit != nil && unit.UnitHeader.ChainIndex().Index > currentUnit.UnitHeader.ChainIndex().Index {
-			log.Info("ProtocolManager", "NewBlockMsg pm.synchronise number:", unit.Number().Index)
-			go pm.synchronise(p, unit.Number().AssetID)
+		p.SetHead(trueHead, requestNumber)
+		requestIndex := requestNumber.Index
+		currentUnitIndex := pm.dag.GetCurrentUnit(unit.Number().AssetID).UnitHeader.Number.Index
+
+		if requestIndex > currentUnitIndex {
+			log.Info("ProtocolManager", "NewBlockMsg synchronise request.Index:", unit.UnitHeader.ChainIndex().Index,
+				"current unit index:", currentUnitIndex)
+			go func() {
+				//flag := 1
+				//for {
+				//	select {
+				//	case <-time.After(100 * time.Millisecond):
+				//		flag = 0
+				//		break
+				//	}
+				//	if flag == 0 {
+				//		break
+				//	}
+				//}
+				time.Sleep(100 * time.Millisecond)
+				pm.synchronise(p, unit.Number().AssetID)
+			}()
+		} else {
+			pm.producer.ToUnitTBLSSign(&unit)
 		}
-	} else {
-		pm.producer.ToUnitTBLSSign(&unit)
 	}
 	return nil
 }

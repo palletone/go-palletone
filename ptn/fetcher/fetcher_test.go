@@ -22,7 +22,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	log2 "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	dag2 "github.com/palletone/go-palletone/dag"
+	//dag2 "github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -172,8 +172,8 @@ func makeDag(n int, parent *modules.Unit) ([]common.Hash, map[common.Hash]*modul
 	dags := make(map[common.Hash]*modules.Unit, n+1)
 	dags[parent.Hash()] = parent
 	memdb, _ := ptndb.NewMemDatabase()
-	dag, _ := dag2.NewDagForTest(memdb)
-	units, err := newDag(dag.Db, parent, n)
+	//dag, _ := dag2.NewDagForTest(memdb)
+	units, err := newDag(memdb, parent, n)
 	if err != nil {
 		log.Println("new dag err", err.Error())
 	}

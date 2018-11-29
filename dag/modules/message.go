@@ -283,13 +283,23 @@ type InvokeTokens struct {
 	Amount uint64 `json:"amount"`
 	Asset  Asset  `json:"asset"`
 }
+
+type DepositOrVoteAwards struct {
+	Amount uint64 `json:"amount"`
+	Asset  Asset  `json:"asset"`
+}
+
+type Award struct {
+	Addr        common.Address
+	AmountAsset AmountAsset
+}
 type InvokeFees struct {
 	Amount uint64 `json:"amount"`
 	Asset  Asset  `json:"asset"`
 }
 type AmountAsset struct {
 	Amount uint64 `json:"amount"`
-	Asset  Asset  `json:"asset"`
+	Asset  *Asset `json:"asset"`
 }
 
 type DepositStateValue struct {
@@ -359,10 +369,10 @@ type ContractInvokePayload struct {
 
 //用户钱包发起的合约调用申请
 type ContractInvokeRequestPayload struct {
-	ContractId []byte `json:"contract_id"` // contract id
-	//FunctionName string   `json:"function_name"`
-	Args    [][]byte      `json:"args"` // contract arguments list
-	Timeout time.Duration `json:"timeout"`
+	ContractId   []byte        `json:"contract_id"` // contract id
+	FunctionName string        `json:"function_name"`
+	Args         [][]byte      `json:"args"` // contract arguments list
+	Timeout      time.Duration `json:"timeout"`
 }
 
 // Token exchange message and verify message

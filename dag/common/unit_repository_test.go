@@ -57,7 +57,6 @@ func TestGenesisUnit(t *testing.T) {
 	asset := new(modules.Asset)
 	asset.AssetId = modules.PTNCOIN
 	asset.UniqueId = modules.PTNCOIN
-	asset.ChainId = 1
 
 	gUnit, _ := NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix(), asset)
 
@@ -192,7 +191,7 @@ func TestSaveUnit(t *testing.T) {
 	unit.UnitSize = unit.Size()
 	unit.UnitHash = unit.Hash()
 
-	if err := rep.SaveUnit(unit, true); err != nil {
+	if err := rep.SaveUnit(unit, nil, true); err != nil {
 		log.Println(err)
 	}
 }
@@ -293,7 +292,6 @@ func TestPaymentTransactionRLP(t *testing.T) {
 		Asset: &modules.Asset{
 			AssetId:  aid,
 			UniqueId: aid,
-			ChainId:  11,
 		},
 	}
 	payment := modules.PaymentPayload{

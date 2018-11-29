@@ -78,12 +78,11 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 // GenerateUnit, generate unit
 // @author Albert·Gou
 func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey kyber.Point,
-	ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit {
-
+	ks *keystore.KeyStore, txpool txspool.ITxPool) *modules.Unit {
 	// 1. 判断是否满足生产的若干条件
 
 	// 2. 生产验证单元，添加交易集、时间戳、签名
-	newUnits, err := dag.CreateUnit(&producer, txspool, ks, when)
+	newUnits, err := dag.CreateUnit(&producer, txpool, ks, when)
 	if err != nil {
 		log.Error("GenerateUnit", "error", err.Error())
 		return &modules.Unit{}
@@ -113,7 +112,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 
 	//go log.Debug("Dag", "GenerateUnit unit:", *sign_unit)
 
-	dag.PushUnit(sign_unit)
+	dag.PushUnit(sign_unit, txpool)
 	return sign_unit
 }
 
@@ -125,7 +124,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
  *
  * @return true if we switched forks as a result of this push.
  */
-func (dag *Dag) PushUnit(newUnit *modules.Unit) bool {
+func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
 
 	dag.ApplyUnit(newUnit)
@@ -136,7 +135,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit) bool {
 	//	log.Error("unit_production", "PushUnit err:", err)
 	//	return false
 	//}
-	dag.SaveUnit(newUnit, false)
+	dag.SaveUnit(newUnit, txpool, false)
 
 	return true
 }

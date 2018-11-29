@@ -622,8 +622,9 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 		return
 	}
 	// Discard any past or too distant blocks
-	if dist := int64(block.NumberU64()) - int64(f.chainHeight(block.Number().AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
-		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
+	heightChain := int64(f.chainHeight(block.Number().AssetID))
+	if dist := int64(block.Number().Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
+		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number().Index, "heightChain", heightChain, "distance", dist)
 		propBroadcastDropMeter.Mark(1)
 		f.forgetHash(hash)
 		return
@@ -651,7 +652,7 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 	hash := block.Hash()
 
 	// Run the import on a new thread
-	log.Debug("Importing propagated block insert DAG", "peer", peer, "number", block.Number(), "hash", hash)
+	log.Debug("Importing propagated block insert DAG", "peer", peer, "number", block.Number().Index, "hash", hash)
 	go func() {
 		defer func() { f.done <- hash }()
 

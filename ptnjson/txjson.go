@@ -21,16 +21,22 @@
 package ptnjson
 
 import (
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type TxJson struct {
-	Payment *PaymentJson `json:"payment"`
-	Vote    *VoteJson    `json:"vote"`
-	//InvokeRequest
+	Payment       *PaymentJson       `json:"payment"`
+	Vote          *VoteJson          `json:"vote"`
+	InvokeRequest *InvokeRequestJson `json:"invoke_request"`
 }
 type VoteJson struct {
 	Content string
+}
+type InvokeRequestJson struct {
+	ContractAddr string
+	FunctionName string
+	Args         []string
 }
 
 func ConvertTx2Json(tx *modules.Transaction) TxJson {
@@ -46,7 +52,22 @@ func ConvertTx2Json(tx *modules.Transaction) TxJson {
 				vote := &VoteJson{Content: string(v.Contents)}
 				json.Vote = vote
 			}
+		} else if m.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+			req := m.Payload.(*modules.ContractInvokeRequestPayload)
+			json.InvokeRequest = convertInvokeRequest2Json(req)
 		}
+
 	}
 	return json
+}
+func convertInvokeRequest2Json(req *modules.ContractInvokeRequestPayload) *InvokeRequestJson {
+	addr := common.NewAddress(req.ContractId, common.ContractHash)
+	reqJson := &InvokeRequestJson{}
+	reqJson.ContractAddr = addr.String()
+	reqJson.FunctionName = req.FunctionName
+	reqJson.Args = []string{}
+	for _, arg := range req.Args {
+		reqJson.Args = append(reqJson.Args, string(arg))
+	}
+	return reqJson
 }

@@ -72,7 +72,6 @@ func TestSaveAssetInfo(t *testing.T) {
 	asset := modules.Asset{
 		AssetId:  assetid,
 		UniqueId: assetid,
-		ChainId:  0,
 	}
 	assetInfo := modules.AssetInfo{
 		Alias:        "Test",

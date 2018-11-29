@@ -45,6 +45,13 @@ const (
 	UNIT_STATE_OTHER_ERROR              = 0xFF
 )
 
+// unit state
+const (
+	U_STATE_NO_GROUPSIGN = 0x20
+	U_STATE_NO_CONFIRMED = 0x21
+	U_STATE_CONFIRMED    = 0x22
+)
+
 type Header struct {
 	ParentsHash  []common.Hash `json:"parents_hash"`
 	AssetIDs     []IDType16    `json:"assets"`
@@ -104,6 +111,17 @@ func (h *Header) Hash() common.Hash {
 	emptyHeader.Authors = Authentifier{}
 	emptyHeader.GroupSign = nil
 	return rlp.RlpHash(emptyHeader)
+}
+
+// HashWithOutTxRoot return  header's hash without txs root.
+func (h *Header) HashWithOutTxRoot() common.Hash {
+	emptyHeader := CopyHeader(h)
+	// 计算header’hash时 剔除签名和群签
+	emptyHeader.Authors = Authentifier{}
+	emptyHeader.GroupSign = nil
+	emptyHeader.TxRoot = common.Hash{}
+	return rlp.RlpHash(emptyHeader)
+
 }
 
 func (h *Header) Size() common.StorageSize {

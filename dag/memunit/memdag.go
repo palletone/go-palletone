@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 /*********************************************************************/
@@ -97,7 +98,7 @@ func NewMemDag(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon.IUnitR
 	return memdag
 }
 
-func NewMemDagForTest(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon.IUnitRepository) *MemDag {
+func NewMemDagForTest(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon.IUnitRepository, txpool txspool.ITxPool) *MemDag {
 	memdag := &MemDag{
 		lastValidatedUnit: make(map[string]*modules.Unit),
 		forkIndex:         make(map[string]ForkIndex),
@@ -113,7 +114,8 @@ func NewMemDagForTest(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon
 
 	// get genesis Last Irreversible Unit
 	unit, err := createUnitForTest()
-	unitRep.SaveUnit(unit, true)
+
+	unitRep.SaveUnit(unit, txpool, true, true)
 
 	genesisUnit, err := unitRep.GetGenesisUnit(0)
 	if err != nil {
@@ -149,7 +151,6 @@ func createUnitForTest() (*modules.Unit, error) {
 	asset := new(modules.Asset)
 	asset.AssetId = modules.PTNCOIN
 	asset.UniqueId = modules.PTNCOIN
-	asset.ChainId = 1
 	// new payload tpl payload
 	inputs := make([]*modules.Input, 0)
 	in := new(modules.Input)
@@ -208,7 +209,7 @@ func (chain *MemDag) validateMemory() bool {
 	return true
 }
 
-func (chain *MemDag) Save(unit *modules.Unit) error {
+func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 	if unit == nil {
 		return fmt.Errorf("Save mem unit: unit is null")
 	}
@@ -309,7 +310,7 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 		if err != nil {
 			return err
 		}
-		if err := chain.unitRep.SaveUnit(stable_unit, false); err != nil {
+		if err := chain.unitRep.SaveUnit(stable_unit, txpool, false, true); err != nil {
 			log.Error("save the matured unit into leveldb", "error", err.Error(), "hash", stable_unit.UnitHash.String(), "index", index)
 			return err
 		} else {
@@ -347,14 +348,14 @@ func (chain *MemDag) Save(unit *modules.Unit) error {
 	return nil
 }
 
-func (chain *MemDag) updateMemdag(unit *modules.Unit) error {
+func (chain *MemDag) updateMemdag(unit *modules.Unit, txpool txspool.ITxPool) error {
 	asstid := unit.UnitHeader.ChainIndex().AssetID
 	if !chain.Exists(unit.Hash()) {
 		return nil
 	}
 
 	// 保存单元
-	err := chain.unitRep.SaveUnit(unit, false)
+	err := chain.unitRep.SaveUnit(unit, txpool, false, true)
 	// 将该unit 从memdag中剔除
 	if err == nil {
 		// 1. refresh memUnit
@@ -395,7 +396,9 @@ func (chain *MemDag) updateMemdag(unit *modules.Unit) error {
 	if list := unit.ParentHash(); len(list) > 0 {
 		for _, h := range list {
 			if chain.Exists(h) {
-				chain.UpdateMemDag(h, unit.UnitHeader.GroupSign[:])
+				// 签名验证不过，saveUnit 传入不需要群签名的参数。
+				//chain.UpdateMemDag(h, unit.UnitHeader.GroupSign[:], txpool)
+				chain.UpdateMemDag(h, nil, txpool)
 			}
 		}
 	}
@@ -403,7 +406,7 @@ func (chain *MemDag) updateMemdag(unit *modules.Unit) error {
 	return nil
 }
 
-func (chain *MemDag) UpdateMemDag(hash common.Hash, sign []byte) error {
+func (chain *MemDag) UpdateMemDag(hash common.Hash, sign []byte, txpool txspool.ITxPool) error {
 	chain.chainLock.Lock()
 	defer chain.chainLock.Unlock()
 
@@ -411,8 +414,11 @@ func (chain *MemDag) UpdateMemDag(hash common.Hash, sign []byte) error {
 	if err != nil {
 		return err
 	}
-	unit.SetGroupSign(sign[:])
-	return chain.updateMemdag(unit)
+	if sign != nil {
+		unit.SetGroupSign(sign[:])
+	}
+
+	return chain.updateMemdag(unit, txpool)
 }
 
 func (chain *MemDag) Exists(uHash common.Hash) bool {
@@ -539,6 +545,7 @@ func (chain *MemDag) GetCurrentUnit(assetid modules.IDType16, index uint64) (*mo
 	lastValidatedUnit, has := chain.lastValidatedUnit[sAssetID]
 	if !has {
 		log.Debug("memdag's lastValidated Unit is null.")
+		return nil, fmt.Errorf("MemDag.GetCurrentUnit memdag's lastValidated Unit is null,asset(%s).", assetid.String())
 	}
 
 	currentUnit, ok := chain.currentUnit[sAssetID]
