@@ -355,7 +355,21 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		if requestIndex > currentUnitIndex {
 			log.Info("ProtocolManager", "NewBlockMsg synchronise request.Index:", unit.UnitHeader.ChainIndex().Index,
 				"current unit index:", currentUnitIndex)
-			go pm.synchronise(p, unit.Number().AssetID)
+			go func() {
+				//flag := 1
+				//for {
+				//	select {
+				//	case <-time.After(100 * time.Millisecond):
+				//		flag = 0
+				//		break
+				//	}
+				//	if flag == 0 {
+				//		break
+				//	}
+				//}
+				time.Sleep(100 * time.Millisecond)
+				pm.synchronise(p, unit.Number().AssetID)
+			}()
 		} else {
 			pm.producer.ToUnitTBLSSign(&unit)
 		}
