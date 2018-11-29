@@ -28,8 +28,8 @@ func TestRwSetTxSimulator_GetTokenBalance(t *testing.T) {
 	for k, v := range balance {
 		t.Logf("Key:{%s},Value:%d", k.String(), v)
 	}
-	ptnAsset := &modules.Asset{AssetId: modules.PTNCOIN, ChainId: 1}
-	balance1, err := simulator.GetTokenBalance("PalletOne","",  ptnAsset)
+	ptnAsset := &modules.Asset{AssetId: modules.PTNCOIN}
+	balance1, err := simulator.GetTokenBalance("PalletOne", "", ptnAsset)
 	assert.Nil(t, err)
 	assert.True(t, len(balance1) == 1, "for PTN asset, only need return 1 row")
 	assert.Equal(t, balance1[*ptnAsset], uint64(300), "sum PTN must 300")
@@ -37,11 +37,11 @@ func TestRwSetTxSimulator_GetTokenBalance(t *testing.T) {
 func mockUtxos() map[modules.OutPoint]*modules.Utxo {
 	result := map[modules.OutPoint]*modules.Utxo{}
 	p1 := modules.NewOutPoint(&common.Hash{}, 0, 0)
-	asset1 := &modules.Asset{AssetId: modules.PTNCOIN, ChainId: 1}
+	asset1 := &modules.Asset{AssetId: modules.PTNCOIN}
 	fmt.Printf("Mock asset1:%s\n", asset1.String())
 	utxo1 := &modules.Utxo{Asset: asset1, Amount: 100, LockTime: 0}
 	utxo2 := &modules.Utxo{Asset: asset1, Amount: 200, LockTime: 0}
-	asset2 := &modules.Asset{AssetId: modules.BTCCOIN, ChainId: 1}
+	asset2 := &modules.Asset{AssetId: modules.BTCCOIN}
 	fmt.Printf("Mock asset2:%s\n", asset2.String())
 	utxo3 := &modules.Utxo{Asset: asset2, Amount: 500, LockTime: 0}
 	result[*p1] = utxo1
@@ -54,7 +54,7 @@ func mockUtxos() map[modules.OutPoint]*modules.Utxo {
 func mockPtnUtxos() map[modules.OutPoint]*modules.Utxo {
 	result := map[modules.OutPoint]*modules.Utxo{}
 	p1 := modules.NewOutPoint(&common.Hash{}, 0, 0)
-	asset1 := &modules.Asset{AssetId: modules.PTNCOIN, ChainId: 1}
+	asset1 := &modules.Asset{AssetId: modules.PTNCOIN}
 	fmt.Printf("Mock asset1:%s\n", asset1.String())
 	utxo1 := &modules.Utxo{Asset: asset1, Amount: 100, LockTime: 0}
 	utxo2 := &modules.Utxo{Asset: asset1, Amount: 200, LockTime: 0}

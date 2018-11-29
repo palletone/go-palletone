@@ -108,6 +108,8 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 	if err != nil {
 		return nil, err
 	}
+	tokenDefine, _ := tx.GetTokenDefineData(nm)
+	tokenSupply, _ := tx.GetTokenSupplyData(nm)
 	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
 	invoke := &modules.ContractInvokeResult{
 		FunctionName:  string(args[1]),
@@ -117,6 +119,8 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 		ReadSet:       make([]unit.ContractReadSet, 0),
 		WriteSet:      make([]unit.ContractWriteSet, 0),
 		TokenPayOut:   tokenPay,
+		TokenDefine:   tokenDefine,
+		TokenSupply:   tokenSupply,
 	}
 
 	for idx, val := range rd {

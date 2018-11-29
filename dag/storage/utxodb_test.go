@@ -27,8 +27,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func TestGetUtxos(t *testing.T) {
@@ -46,7 +46,7 @@ func TestGetUtxos(t *testing.T) {
 	utxo := new(modules.Utxo)
 	utxo.Amount = 10000000000000000
 
-	utxo.Asset = &modules.Asset{AssetId: modules.PTNCOIN, ChainId: 1}
+	utxo.Asset = &modules.Asset{AssetId: modules.PTNCOIN}
 	utxo.LockTime = 123
 
 	utxodb.SaveUtxoEntity(key, utxo)

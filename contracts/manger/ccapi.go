@@ -9,6 +9,7 @@ import (
 	"container/list"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/palletone/go-palletone/common"
 	cp "github.com/palletone/go-palletone/common/crypto"
 	db "github.com/palletone/go-palletone/contracts/comm"
 	cclist "github.com/palletone/go-palletone/contracts/list"
@@ -341,39 +342,7 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 	}
 
 	fullArgs := [][]byte{}
-	//TODO parse tx and make another args include InvokeAddr, InvokeFee, InvokeToken
-	// txin := unit.Input{
-	// 	PreviousOutPoint: &unit.OutPoint{
-	// 		TxHash:       common.Hash{},
-	// 		MessageIndex: 1234,
-	// 		OutIndex:     12344,
-	// 	},
-	// 	SignatureScript: []byte("1234567890"),
-	// 	Extra:           []byte("990019202020"),
-	// }
-	// txout := unit.Output{
-	// 	Value:    10000,
-	// 	PkScript: []byte("kssssssssssssssssssslsll"),
-	// 	Asset: &unit.Asset{
-	// 		AssetId:  unit.PTNCOIN,
-	// 		UniqueId: unit.PTNCOIN,
-	// 		ChainId:  1,
-	// 	},
-	// }
-	// payment := &unit.PaymentPayload{
-	// 	Inputs:   []*unit.Input{&txin},
-	// 	Outputs:  []*unit.Output{&txout},
-	// 	LockTime: 12,
-	// }
-	// tx2 := &unit.Transaction{
-	// 	TxMessages: []*unit.Message{
-	// 		{
-	// 			App:     unit.APP_PAYMENT,
-	// 			Payload: payment,
-	// 		},
-	// 	},
-	// }
-	// tx2.TxHash = tx2.Hash()
+
 	invokeInfo := unit.InvokeInfo{}
 	if len(tx.TxMessages) > 0 {
 		msg0 := tx.TxMessages[0].Payload.(*unit.PaymentPayload)
@@ -422,14 +391,20 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 	}
 
 	rsp, unit, err := es.ProcessProposal(contractid, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
-	t0 := time.Now()
-	duration := t0.Sub(start)
 
 	if err != nil {
 		logger.Errorf("ProcessProposal error[%v]", err)
 		return nil, err
 	}
-
+	t0 := time.Now()
+	duration := t0.Sub(start)
+	unit.ExecutionTime = duration
+	requstId, err := common.NewHashFromStr(txid)
+	unit.RequestId = *requstId
+	if err != nil {
+		logger.Errorf("Txid[%s] is not a valid Hash,error:%s", txid, err)
+		return nil, err
+	}
 	logger.Infof("Invoke Ok, ProcessProposal duration=%v,rsp=%v,%s", duration, rsp, unit.Payload)
 
 	return unit, nil

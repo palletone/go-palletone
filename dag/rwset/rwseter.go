@@ -13,6 +13,8 @@ type TxSimulator interface {
 	GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error)
 	GetRwData(ns string) (map[string]*KVRead, map[string]*KVWrite, error)
 	GetPayOutData(ns string) ([]*modules.TokenPayOut, error)
+	GetTokenDefineData(ns string) (*modules.TokenDefine, error)
+	GetTokenSupplyData(ns string) ([]*modules.TokenSupply, error)
 	GetTxSimulationResults() ([]byte, error)
 	CheckDone() error
 	Done()
