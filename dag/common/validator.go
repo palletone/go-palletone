@@ -52,6 +52,7 @@ type Validator interface {
 	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) byte
 	ValidateTx(tx *modules.Transaction, isCoinbase bool, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode
 	ValidateUnitSignature(h *modules.Header, isGenesis bool) byte
+	ValidateUnitGroupSign(h *modules.Header, isGenesis bool) byte
 }
 
 /**
@@ -240,6 +241,13 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		return false
 	}
 	return false
+}
+
+// todo
+// 验证群签名接口，需要验证群签的正确性和有效性
+func (validate *Validate) ValidateUnitGroupSign(h *modules.Header, isGenesis bool) byte {
+
+	return modules.UNIT_STATE_INVALID_GROUP_SIGNATURE
 }
 
 /**

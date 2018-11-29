@@ -45,6 +45,13 @@ const (
 	UNIT_STATE_OTHER_ERROR              = 0xFF
 )
 
+// unit state
+const (
+	U_STATE_NO_GROUPSIGN = 0x20
+	U_STATE_NO_CONFIRMED = 0x21
+	U_STATE_CONFIRMED    = 0x22
+)
+
 type Header struct {
 	ParentsHash  []common.Hash `json:"parents_hash"`
 	AssetIDs     []IDType16    `json:"assets"`

@@ -115,7 +115,7 @@ func NewMemDagForTest(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon
 	// get genesis Last Irreversible Unit
 	unit, err := createUnitForTest()
 
-	unitRep.SaveUnit(unit, txpool, true)
+	unitRep.SaveUnit(unit, txpool, true, true)
 
 	genesisUnit, err := unitRep.GetGenesisUnit(0)
 	if err != nil {
@@ -310,7 +310,7 @@ func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 		if err != nil {
 			return err
 		}
-		if err := chain.unitRep.SaveUnit(stable_unit, txpool, false); err != nil {
+		if err := chain.unitRep.SaveUnit(stable_unit, txpool, false, true); err != nil {
 			log.Error("save the matured unit into leveldb", "error", err.Error(), "hash", stable_unit.UnitHash.String(), "index", index)
 			return err
 		} else {
@@ -355,7 +355,7 @@ func (chain *MemDag) updateMemdag(unit *modules.Unit, txpool txspool.ITxPool) er
 	}
 
 	// 保存单元
-	err := chain.unitRep.SaveUnit(unit, txpool, false)
+	err := chain.unitRep.SaveUnit(unit, txpool, false, true)
 	// 将该unit 从memdag中剔除
 	if err == nil {
 		// 1. refresh memUnit
@@ -396,7 +396,9 @@ func (chain *MemDag) updateMemdag(unit *modules.Unit, txpool txspool.ITxPool) er
 	if list := unit.ParentHash(); len(list) > 0 {
 		for _, h := range list {
 			if chain.Exists(h) {
-				chain.UpdateMemDag(h, unit.UnitHeader.GroupSign[:], txpool)
+				// 签名验证不过，saveUnit 传入不需要群签名的参数。
+				//chain.UpdateMemDag(h, unit.UnitHeader.GroupSign[:], txpool)
+				chain.UpdateMemDag(h, nil, txpool)
 			}
 		}
 	}
@@ -412,7 +414,10 @@ func (chain *MemDag) UpdateMemDag(hash common.Hash, sign []byte, txpool txspool.
 	if err != nil {
 		return err
 	}
-	unit.SetGroupSign(sign[:])
+	if sign != nil {
+		unit.SetGroupSign(sign[:])
+	}
+
 	return chain.updateMemdag(unit, txpool)
 }
 

@@ -137,13 +137,34 @@ func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules
 	return curUnit
 }
 
-//func (d *Dag) GetUnit(hash common.Hash) (*modules.Unit, error) {
-//	return d.dagdb.GetUnit(hash)
-//}
-
 func (d *Dag) HasUnit(hash common.Hash) bool {
-	u, _ := d.dagdb.GetUnit(hash)
+	u, err := d.dagdb.GetUnit(hash)
+	if err != nil {
+		return false
+	}
 	return u != nil
+}
+
+// confirm unit
+func (d *Dag) UnitIsConfirmedByHash(hash common.Hash) bool {
+	if d.HasUnit(hash) {
+		return true
+	}
+	return false
+}
+
+//confirm unit's parent
+func (d *Dag) ParentsIsConfirmByHash(hash common.Hash) bool {
+	unit, err := d.GetUnitByHash(hash)
+	if err != nil {
+		return false
+	}
+	parents := unit.ParentHash()
+	if len(parents) > 0 {
+		par := parents[0]
+		return d.HasUnit(par)
+	}
+	return false
 }
 
 // GetMemUnitbyHash: get unit from memdag
@@ -831,7 +852,7 @@ func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keys
 
 //modified by Albert·Gou
 func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit, txpool txspool.ITxPool) error {
-	return d.unitRep.SaveUnit(unit, txpool, true)
+	return d.unitRep.SaveUnit(unit, txpool, true, false)
 }
 
 func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
@@ -863,7 +884,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 	if unitState == modules.UNIT_STATE_VALIDATED {
 		// step3.1. pass and with group signature, put into leveldb
 		// todo 应当先判断是否切换，再保存，并更新状态
-		if err := d.unitRep.SaveUnit(unit, txpool, false); err != nil {
+		if err := d.unitRep.SaveUnit(unit, txpool, false, false); err != nil {
 			log.Info("Dag", "SaveDag, save error when save unit to db err:", err)
 			return fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
 		}
