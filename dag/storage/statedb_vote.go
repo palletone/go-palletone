@@ -20,11 +20,11 @@
 package storage
 
 import (
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/vote"
 )
 
 //UpdateMediatorVote YiRan@
@@ -144,29 +144,45 @@ func (statedb *StateDb) GetAccountMediatorVote(voterAddress common.Address) ([]c
 	return mediatorVotes, weight, nil
 }
 
-//GetSortedVote YiRan@
-func (statedb *StateDb) GetSortedVote(ReturnNumber uint8, voteType uint8, minTermLimit uint16) ([]common.Address, error) {
-	voteBox := vote.NewBaseVote()
-	// 1. get voter list
-	voterList := statedb.GetVoterList(voteType, minTermLimit)
-
-	// 2. register candidate
-	addresses := statedb.GetMediators()
-	voteBox.RegisterCandidates(addresses)
-
-	// 3. collect ballot
-	for _, voterAddress := range voterList {
-		to, weight, err := statedb.GetAccountMediatorVote(voterAddress)
-		if err != nil {
-			return nil, err
+func (statedb *StateDb) GetSortedMediatorVote(returnNumber int) (map[string]uint64, error) {
+	result := make(map[string]uint64)
+	for _, info := range statedb.getAllAccountInfo() {
+		if info.MediatorVoteResult != nil && len(info.MediatorVoteResult) > 0 {
+			addrs := []string{}
+			json.Unmarshal(info.MediatorVoteResult, &addrs)
+			for _, addr := range addrs {
+				if val, ok := result[addr]; ok {
+					result[addr] = val + info.PtnBalance
+				} else {
+					result[addr] = info.PtnBalance
+				}
+			}
 		}
-		voteBox.AddToBox(weight, to)
 	}
+	//TODO sort
+	return result, nil
 
-	// $. return elected mediator
-	res := make([]common.Address, 0)
-	voteBox.GetResult(ReturnNumber, &res)
-	return res, nil
+	//voteBox := vote.NewBaseVote()
+	//// 1. get voter list
+	//voterList := statedb.GetVoterList(voteType, minTermLimit)
+	//
+	//// 2. register candidate
+	//addresses := statedb.GetMediators()
+	//voteBox.RegisterCandidates(addresses)
+	//
+	//// 3. collect ballot
+	//for _, voterAddress := range voterList {
+	//	to, weight, err := statedb.GetAccountMediatorVote(voterAddress)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	voteBox.AddToBox(weight, to)
+	//}
+	//
+	//// $. return elected mediator
+	//res := make([]common.Address, 0)
+	//voteBox.GetResult(ReturnNumber, &res)
+	//return res, nil
 
 }
 
