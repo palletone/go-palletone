@@ -191,7 +191,7 @@ func TestSaveUnit(t *testing.T) {
 	unit.UnitSize = unit.Size()
 	unit.UnitHash = unit.Hash()
 
-	if err := rep.SaveUnit(unit, nil, true); err != nil {
+	if err := rep.SaveUnit(unit, nil, true, true); err != nil {
 		log.Println(err)
 	}
 }

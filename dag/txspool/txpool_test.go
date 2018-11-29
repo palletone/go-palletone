@@ -174,7 +174,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		Value: totalIncome,
 		Asset: &modules.Asset{
 			AssetId: modules.BTCCOIN,
-			ChainId: 1},
+		},
 		PkScript: script,
 	}
 

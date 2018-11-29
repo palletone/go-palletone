@@ -875,3 +875,23 @@ func (m *MockIDag) UnitIrreversibleTime() uint {
 func (mr *MockIDagMockRecorder) UnitIrreversibleTime() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnitIrreversibleTime", reflect.TypeOf((*MockIDag)(nil).UnitIrreversibleTime))
 }
+
+// UnitIsConfirmedByHash
+func (m *MockIDag) UnitIsConfirmedByHash(hash common.Hash) bool {
+	ret := m.ctrl.Call(m, "UnitIsConfirmedByHash", hash)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+func (mr *MockIDagMockRecorder) UnitIsConfirmedByHash(hash common.Hash) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnitIsConfirmedByHash", reflect.TypeOf((*MockIDag)(nil).UnitIsConfirmedByHash), hash)
+}
+
+// ParentsIsConfirmByHash
+func (m *MockIDag) ParentsIsConfirmByHash(hash common.Hash) bool {
+	ret := m.ctrl.Call(m, "ParentsIsConfirmByHash", hash)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+func (mr *MockIDagMockRecorder) ParentsIsConfirmByHash(hash common.Hash) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ParentsIsConfirmByHash", reflect.TypeOf((*MockIDag)(nil).ParentsIsConfirmByHash), hash)
+}

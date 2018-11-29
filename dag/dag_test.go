@@ -42,7 +42,6 @@ func createUnit() (*modules.Unit, error) {
 	asset := new(modules.Asset)
 	asset.AssetId = modules.PTNCOIN
 	asset.UniqueId = modules.PTNCOIN
-	asset.ChainId = 1
 	// new payload tpl payload
 	inputs := make([]*modules.Input, 0)
 	in := new(modules.Input)
