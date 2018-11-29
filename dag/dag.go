@@ -117,10 +117,15 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 
 func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
 	memUnit := d.GetCurrentMemUnit(assetId, 0)
-	if memUnit != nil {
-		return memUnit
+	curUnit := d.CurrentUnit()
+
+	if memUnit == nil {
+		return curUnit
 	}
-	return d.CurrentUnit()
+	if curUnit.NumberU64() >= memunit.NumberU64() {
+		return curUnit
+	}
+	return memunit
 }
 
 func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit {
@@ -867,7 +872,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 		if err := d.Memdag.Save(unit, txpool); err != nil {
 			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		} else {
-			log.Info("=============    save_memdag_unit     =================", "index", unit.UnitHeader.Index(), "save_memdag_unit_hex", unit.Hash().String())
+			log.Info("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
 		}
 	}
 
