@@ -604,7 +604,7 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool, bro
 		for _, peer := range peers {
 			peer.SendNewUnit(unit)
 		}
-		log.Trace("BroadcastUnit Propagated block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+		log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index, "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 		return
 	}
 

@@ -867,7 +867,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		if err := d.Memdag.Save(unit); err != nil {
 			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		} else {
-			//log.Info("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
+			log.Info("=============    save_memdag_unit     =================", "index", unit.UnitHeader.Index(), "save_memdag_unit_hex", unit.Hash().String())
 		}
 	}
 

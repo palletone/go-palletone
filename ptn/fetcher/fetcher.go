@@ -622,8 +622,9 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 		return
 	}
 	// Discard any past or too distant blocks
-	if dist := int64(block.NumberU64()) - int64(f.chainHeight(block.Number().AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
-		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
+	heightChain := int64(f.chainHeight(block.Number().AssetID))
+	if dist := int64(block.Number().Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
+		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number().Index, "heightChain", heightChain, "distance", dist)
 		propBroadcastDropMeter.Mark(1)
 		f.forgetHash(hash)
 		return
