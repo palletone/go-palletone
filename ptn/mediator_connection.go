@@ -125,6 +125,7 @@ func (pm *ProtocolManager) checkActiveMediatorConnection() {
 			if checkFn() {
 				checkTick.Stop()
 				processFn()
+				return
 			}
 		}
 	}

@@ -33,7 +33,7 @@ type GlobalProperty struct {
 	ChainParameters core.ChainParameters // 区块链网络参数
 
 	ActiveMediators    map[common.Address]bool // 当前活跃 mediator 集合；每个维护间隔更新一次
-	PrecedingMediators   map[common.Address]bool // 上一届 mediator
+	PrecedingMediators map[common.Address]bool // 上一届 mediator
 }
 
 // 动态全局属性的结构体定义
@@ -46,8 +46,6 @@ type DynamicGlobalProperty struct {
 
 	// CurrentMediator *common.Address // 当前生产单元的mediator, 用于判断是否连续同一个mediator生产单元
 
-	// todo albert·gou
-	//LastMaintenanceTime int64 // 上一次系统维护时间
 	NextMaintenanceTime int64 // 下一次系统维护时间
 
 	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == UnitNum + 丢失的槽数量
@@ -124,9 +122,9 @@ func sortAddress(adds []common.Address) {
 
 func NewGlobalProp() *GlobalProperty {
 	return &GlobalProperty{
-		ChainParameters:      core.NewChainParams(),
-		ActiveMediators:      make(map[common.Address]bool, 0),
-		PrecedingMediators:   make(map[common.Address]bool, 0),
+		ChainParameters:    core.NewChainParams(),
+		ActiveMediators:    make(map[common.Address]bool, 0),
+		PrecedingMediators: make(map[common.Address]bool, 0),
 	}
 }
 

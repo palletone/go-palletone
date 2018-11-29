@@ -315,6 +315,7 @@ func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
 		return errTerminated
 	default:
 		localMed, _ := mp.dag.GetUnitByHash(sigShare.UnitHash)
+		// todo
 		go mp.addToTBLSRecoverBuf(localMed, sigShare.SigShare)
 		//go mp.addToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 		return nil
@@ -402,11 +403,9 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	// recover后 删除buf
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 	go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
-
-	// todo 后面改为由dag模块调用
-	go mp.VerifyUnitGroupSig(dks.Public(), unitHash, groupSig)
 }
 
+// todo 后面改为由dag模块调用
 func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, unitHash common.Hash, groupSig []byte) error {
 	//func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, newUnit *modules.Unit) error {
 	err := bls.Verify(mp.suite, groupPublicKey, unitHash[:], groupSig)
