@@ -541,6 +541,7 @@ func (chain *MemDag) GetCurrentUnit(assetid modules.IDType16, index uint64) (*mo
 	lastValidatedUnit, has := chain.lastValidatedUnit[sAssetID]
 	if !has {
 		log.Debug("memdag's lastValidated Unit is null.")
+		return nil, fmt.Errorf("MemDag.GetCurrentUnit memdag's lastValidated Unit is null,asset(%s).", assetid.String())
 	}
 
 	currentUnit, ok := chain.currentUnit[sAssetID]

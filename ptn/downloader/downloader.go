@@ -611,11 +611,11 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	// Figure out the valid ancestor range to prevent rewrite attacks
 	floor, ceil := int64(-1), d.lightdag.CurrentHeader().Number.Index
 
-	if d.mode == FullSync {
-		ceil = d.dag.CurrentUnit().NumberU64()
-	} else if d.mode == FastSync {
-		ceil = d.dag.CurrentUnit().NumberU64()
-	}
+	//if d.mode == FullSync {
+	//	ceil = d.dag.CurrentUnit().NumberU64()
+	//} else if d.mode == FastSync {
+	//	ceil = d.dag.CurrentUnit().NumberU64()
+	//}
 	if ceil >= MaxForkAncestry {
 		floor = int64(ceil - MaxForkAncestry)
 	}

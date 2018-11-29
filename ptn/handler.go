@@ -238,6 +238,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 			log.Warn("Discarded bad propagated block", "number", blocks[0].Number().Index, "hash", blocks[0].Hash())
 			return 0, nil
 		}
+		log.Debug("Fetcher", "manager.dag.InsertDag index:", blocks[0].Number().Index, "hash", blocks[0].Hash())
 		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
 		return manager.dag.InsertDag(blocks, manager.txpool)
 	}
