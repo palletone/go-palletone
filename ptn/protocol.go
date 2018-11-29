@@ -36,7 +36,7 @@ var ProtocolName = "ptn"
 var ProtocolVersions = []uint{ptn1}
 
 // Number of implemented message corresponding to different protocol versions.
-var ProtocolLengths = []uint64{17, 8}
+var ProtocolLengths = []uint64{100, 8}//{17, 8}
 
 const ProtocolMaxMsgSize = 10 * 1024 * 1024 // Maximum cap on the size of a protocol message
 
@@ -127,6 +127,17 @@ type TxDesc struct {
 
 type txPool interface {
 	// AddRemotes should add the given transactions to the pool.
+	Stop()
+	AddLocal(tx *modules.TxPoolTransaction) error
+	AddLocals(txs []*modules.TxPoolTransaction) []error
+	AllHashs() []*common.Hash
+	Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
+	Get(hash common.Hash) *modules.TxPoolTransaction
+	GetNonce(hash common.Hash) uint64
+	Stats() (int, int)
+	GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize)
+	SendStoredTxs(hashs []common.Hash) error
+
 	AddRemotes([]*modules.Transaction) []error
 	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
 	// Pending should return pending transactions.

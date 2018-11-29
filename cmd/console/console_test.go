@@ -159,7 +159,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		fmt.Printf("Failed to write genesis unit: %v \n", err)
 		return nil
 	}
-	dag.SaveUnit4GenesisInit(unit)
+	dag.SaveUnit4GenesisInit(unit, nil)
 
 	err = dag.InitPropertyDB(ptnConf.Genesis, unit.UnitHash)
 	if err != nil {

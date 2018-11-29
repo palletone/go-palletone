@@ -307,6 +307,7 @@ type Output struct {
 	PkScript []byte `json:"pk_script"`
 	Asset    *Asset `json:"asset"`
 }
+
 type Input struct {
 	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
 	SignatureScript  []byte    `json:"signature_script"`

@@ -105,6 +105,17 @@ func (h *Header) Hash() common.Hash {
 	return rlp.RlpHash(emptyHeader)
 }
 
+// HashWithOutTxRoot return  header's hash without txs root.
+func (h *Header) HashWithOutTxRoot() common.Hash {
+	emptyHeader := CopyHeader(h)
+	// 计算header’hash时 剔除签名和群签
+	emptyHeader.Authors = Authentifier{}
+	emptyHeader.GroupSign = nil
+	emptyHeader.TxRoot = common.Hash{}
+	return rlp.RlpHash(emptyHeader)
+
+}
+
 func (h *Header) Size() common.StorageSize {
 	return common.StorageSize(unsafe.Sizeof(*h)) + common.StorageSize(len(h.Extra)/8)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	dagcomm "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 func TestCreateUnit(t *testing.T) {
@@ -27,7 +28,9 @@ func TestCreateUnit(t *testing.T) {
 		log.Error("New dag error", "error", err.Error())
 		return
 	}
-	if err := test_dag.SaveUnit(unit, true); err != nil {
+
+	txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag, log.New("newgenesis"))
+	if err := test_dag.SaveUnit(unit, txpool, true); err != nil {
 		log.Error("Save unit error", "error", err.Error())
 		return
 	}
@@ -72,7 +75,11 @@ func createUnit() (*modules.Unit, error) {
 func TestDagRefreshUtxos(t *testing.T) {
 	//db := storage.ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/palletone/gptn/leveldb/")
 	db, _ := ptndb.NewMemDatabase()
-	dag_test, err := NewDagForTest(db)
+	test_dag, _ := NewDag4GenesisInit(db)
+
+	txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag, log.New("newgenesis"))
+	// txpool := txspool.NewTxPool4Test()
+	dag_test, err := NewDagForTest(db, txpool)
 	if err != nil {
 		t.Fatal("New dag for test is faild,error: ", err)
 	}
@@ -81,7 +88,7 @@ func TestDagRefreshUtxos(t *testing.T) {
 		log.Info("create test unit is failed.", "error", err)
 		return
 	}
-	dag_test.SaveUnit(unit, true)
+	dag_test.SaveUnit(unit, txpool, true)
 	// 添加delhash
 
 	// unit := dag_test.GetCurrentUnit(modules.PTNCOIN)

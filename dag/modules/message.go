@@ -359,10 +359,10 @@ type ContractInvokePayload struct {
 
 //用户钱包发起的合约调用申请
 type ContractInvokeRequestPayload struct {
-	ContractId []byte `json:"contract_id"` // contract id
-	//FunctionName string   `json:"function_name"`
-	Args    [][]byte      `json:"args"` // contract arguments list
-	Timeout time.Duration `json:"timeout"`
+	ContractId   []byte        `json:"contract_id"` // contract id
+	FunctionName string        `json:"function_name"`
+	Args         [][]byte      `json:"args"` // contract arguments list
+	Timeout      time.Duration `json:"timeout"`
 }
 
 // Token exchange message and verify message

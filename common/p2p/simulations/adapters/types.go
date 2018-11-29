@@ -40,7 +40,7 @@ import (
 // * DockerNode - A Docker container node
 //
 type Node interface {
-	// Addr returns the node's address (e.g. an Enode URL)
+	// Addr returns the node's address (e.g. an Pnode URL)
 	Addr() []byte
 
 	// Client returns the RPC client which is created once the node is

@@ -45,7 +45,7 @@ type IDag interface {
 	VerifyHeader(header *modules.Header, seal bool) error
 	GetCurrentUnit(assetId modules.IDType16) *modules.Unit
 	GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit
-	InsertDag(units modules.Units) (int, error)
+	InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error)
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
@@ -63,7 +63,7 @@ type IDag interface {
 	InsertHeaderDag([]*modules.Header, int) (int, error)
 	HasUnit(hash common.Hash) bool
 	Exists(hash common.Hash) bool
-	SaveUnit(unit *modules.Unit, isGenesis bool) error
+	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
 	//All leaf nodes for dag downloader
 	GetAllLeafNodes() ([]*modules.Header, error)
 	//GetUnit(common.Hash) (*modules.Unit, error)
@@ -118,10 +118,10 @@ type IDag interface {
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error)
 	// set groupsign
-	SetUnitGroupSign(sign []byte, hash common.Hash) error
+	SetUnitGroupSign(sign []byte, hash common.Hash, txpool txspool.ITxPool) error
 
 	IsSynced() bool
-	SubscribeChainMaintainEvent(ch chan<- ChainMaintainEvent) event.Subscription
+	SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
 	UnitIrreversibleTime() uint
 }

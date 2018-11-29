@@ -68,9 +68,9 @@ type Dag struct {
 	utxos_cache map[common.Hash]map[modules.OutPoint]*modules.Utxo
 	// utxos_cache1 sync.Map
 
-	// append by albert·gou 用于整个链维护时的事件订阅
-	chainMaintainFeed  event.Feed
-	chainMaintainScope event.SubscriptionScope
+	// append by albert·gou 用于活跃mediator更新时的事件订阅
+	activeMediatorsUpdatedFeed  event.Feed
+	activeMediatorsUpdatedScope event.SubscriptionScope
 }
 
 type MemUtxos map[modules.OutPoint]*modules.Utxo
@@ -225,7 +225,7 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // wrong.
 // After insertion is done, all accumulated events will be fired.
 // reference : Eth InsertChain
-func (d *Dag) InsertDag(units modules.Units) (int, error) {
+func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error) {
 	//TODO must recover，不连续的孤儿unit也应当存起来，以方便后面处理
 	count := int(0)
 	for i, u := range units {
@@ -250,7 +250,7 @@ func (d *Dag) InsertDag(units modules.Units) (int, error) {
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
 		// modified by albert·gou
 		//if err := d.unitRep.SaveUnit(u, false); err != nil {
-		if err := d.SaveUnit(u, false); err != nil {
+		if err := d.SaveUnit(u, txpool, false); err != nil {
 			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
 		}
@@ -523,7 +523,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	return dag, nil
 }
 
-func NewDagForTest(db ptndb.Database) (*Dag, error) {
+func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 	logger := log.New("Dag")
 	dagDb := storage.NewDagDb(db, logger)
@@ -546,7 +546,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
-		Memdag:        memunit.NewMemDagForTest(dagDb, stateDb, unitRep),
+		Memdag:        memunit.NewMemDagForTest(dagDb, stateDb, unitRep, txpool),
 		utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
 	return dag, nil
@@ -821,11 +821,11 @@ func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keys
 }
 
 //modified by Albert·Gou
-func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit) error {
-	return d.unitRep.SaveUnit(unit, true)
+func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit, txpool txspool.ITxPool) error {
+	return d.unitRep.SaveUnit(unit, txpool, true)
 }
 
-func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
+func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
 	// todo 应当根据新的unit判断哪条链作为主链
 	// step1. check exists
 	var parent_hash common.Hash
@@ -854,7 +854,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	if unitState == modules.UNIT_STATE_VALIDATED {
 		// step3.1. pass and with group signature, put into leveldb
 		// todo 应当先判断是否切换，再保存，并更新状态
-		if err := d.unitRep.SaveUnit(unit, false); err != nil {
+		if err := d.unitRep.SaveUnit(unit, txpool, false); err != nil {
 			log.Info("Dag", "SaveDag, save error when save unit to db err:", err)
 			return fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
 		}
@@ -864,7 +864,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		// }
 	} else {
 		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
-		if err := d.Memdag.Save(unit); err != nil {
+		if err := d.Memdag.Save(unit, txpool); err != nil {
 			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		} else {
 			log.Info("=============    save_memdag_unit     =================", "index", unit.UnitHeader.Index(), "save_memdag_unit_hex", unit.Hash().String())
@@ -1204,7 +1204,7 @@ func (d *Dag) SaveChainIndex(index *modules.ChainIndex) error {
 	return d.statedb.SaveChainIndex(index)
 }
 
-func (d *Dag) SetUnitGroupSign(sign []byte, unit_hash common.Hash) error {
+func (d *Dag) SetUnitGroupSign(sign []byte, unit_hash common.Hash, txpool txspool.ITxPool) error {
 	if sign == nil {
 		return errors.New("group sign is null.")
 	}
@@ -1213,7 +1213,7 @@ func (d *Dag) SetUnitGroupSign(sign []byte, unit_hash common.Hash) error {
 
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 
-	go d.Memdag.UpdateMemDag(unit_hash, sign[:])
+	go d.Memdag.UpdateMemDag(unit_hash, sign[:], txpool)
 
 	// 将缓存池utxo更新到utxodb中
 	go d.UpdateUtxosByUnit(unit_hash)
