@@ -115,7 +115,7 @@ func TestTransaction_EncodeRLP_Size(t *testing.T) {
 	pay1s := PaymentPayload{
 		LockTime: 12345,
 	}
-	a := &Asset{ChainId: 1, AssetId: PTNCOIN}
+	a := &Asset{AssetId: PTNCOIN}
 
 	output := NewTxOut(1, common.Hex2Bytes("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac"), a)
 	pay1s.AddTxOut(output)

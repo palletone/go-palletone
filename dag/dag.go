@@ -444,7 +444,6 @@ func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []b
 	asset := modules.Asset{
 		AssetId:  newAssetid,
 		UniqueId: newUnitqueid,
-		ChainId:  chainid,
 	}
 
 	return d.utxoRep.WalletBalance(address, asset), nil
