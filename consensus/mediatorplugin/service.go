@@ -21,7 +21,6 @@ package mediatorplugin
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/dedis/kyber"
@@ -92,9 +91,7 @@ type MediatorPlugin struct {
 	precedingDKGs map[common.Address]*dkg.DistKeyGenerator
 
 	// dkg 完成 vss 协议相关
-	respBuf       map[common.Address]map[common.Address]chan *dkg.Response
-	certifiedFlag map[common.Address]bool
-	ctfLock       sync.Mutex
+	respBuf map[common.Address]map[common.Address]chan *dkg.Response
 
 	// 广播和处理 vss 协议 deal
 	vssDealFeed  event.Feed
@@ -177,7 +174,6 @@ func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 
 	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator, lamc)
 	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
-	mp.certifiedFlag = make(map[common.Address]bool, lamc)
 
 	for _, localMed := range lams {
 		initSec := mp.mediators[localMed].InitPartSec
@@ -229,7 +225,6 @@ func (mp *MediatorPlugin) UpdateMediatorsDKG() {
 func (mp *MediatorPlugin) switchMediatorsDKG() {
 	mp.precedingDKGs = mp.activeDKGs
 	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator)
-	mp.certifiedFlag = make(map[common.Address]bool, 0)
 }
 
 func (mp *MediatorPlugin) Stop() error {

@@ -20,8 +20,6 @@ package mediatorplugin
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/share"
 	"github.com/dedis/kyber/share/dkg/pedersen"
@@ -39,48 +37,12 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	go log.Info("Start completing the VSS protocol.")
 
 	go mp.BroadcastVSSDeals()
-
-	// todo 待删除
-	timeout := time.NewTimer(10 * time.Second)
-	defer timeout.Stop()
-	select {
-	case <-mp.quit:
-		return
-	case <-timeout.C:
-		//go mp.endVSSProtocol(true)
-	}
-}
-
-func (mp *MediatorPlugin) endVSSProtocol(timeout bool) (completed bool) {
-	// todo 判断本地所有的dkg是否都完成了vss协议, 并发送协议完成的消息
-
-	completed = mp.areCertified()
-	if !completed && timeout {
-		mp.setTimeout()
-	}
-
-	go log.Info(fmt.Sprintf("End completing the VSS protocol: %v.", completed))
-	return
 }
 
 func (mp *MediatorPlugin) setTimeout() {
 	for _, dkg := range mp.activeDKGs {
 		dkg.SetTimeout()
 	}
-}
-
-func (mp *MediatorPlugin) areCertified() (certified bool) {
-	mp.ctfLock.Lock()
-
-	for _, flag := range mp.certifiedFlag {
-		certified = flag
-		if !certified {
-			break
-		}
-	}
-
-	mp.ctfLock.Unlock()
-	return
 }
 
 func (mp *MediatorPlugin) getLocalActiveDKG(add common.Address) *dkg.DistKeyGenerator {
@@ -233,10 +195,6 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 				log.Debug(fmt.Sprintf("%v's DKG verification passed!", localMed.Str()))
 
 				certified = true
-
-				mp.ctfLock.Lock()
-				mp.certifiedFlag[localMed] = true
-				mp.ctfLock.Unlock()
 			}
 		}
 

@@ -24,12 +24,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/dedis/kyber"
 )
 
 var (
@@ -203,7 +203,7 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	// 2. 生产验证单元
 	var groupPubKey kyber.Point = nil
 	dkgr := mp.getLocalActiveDKG(scheduledMediator)
-	if dkgr != nil && mp.certifiedFlag[scheduledMediator] {
+	if dkgr != nil {
 		dks, err := dkgr.DistKeyShare()
 		if err == nil {
 			groupPubKey = dks.Public()
@@ -226,8 +226,6 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	go mp.initTBLSRecoverBuf(scheduledMediator, unitHash)
 
 	// 4. 异步向区块链网络广播验证单元
-	// todo 后面改为由p2p转发
-	go mp.addToTBLSSignBuf(newUnit)
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
 
 	return Produced, detail, *newUnit
