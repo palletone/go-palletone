@@ -45,9 +45,9 @@ const (
 
 	// txChanSize is the size of channel listening to TxPreEvent.
 	// The number is referenced from the size of tx pool.
-	txChanSize            = 4096
-	needBroadcastMediator = 0
-	noBroadcastMediator   = 1
+	txChanSize = 4096
+	//needBroadcastMediator = 0
+	//noBroadcastMediator   = 1
 )
 
 var (
@@ -510,9 +510,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return pm.ConsensusMsg(msg, p)
 
 	// append by Albert·Gou
-	case msg.Code == NewUnitMsg:
+	case msg.Code == NewProducedUnitMsg:
 		// Retrieve and decode the propagated new produced unit
-		return pm.NewUnitMsg(msg, p)
+		go pm.NewProducedUnitMsg(msg, p)
+		return pm.NewBlockMsg(msg, p)
 
 		// append by Albert·Gou
 	case msg.Code == SigShareMsg:
@@ -573,7 +574,7 @@ func (self *ProtocolManager) txBroadcastLoop() {
 
 // BroadcastUnit will either propagate a unit to a subset of it's peers, or
 // will only announce it's availability (depending what's requested).
-func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool, broadcastMediator int) {
+func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool /*, broadcastMediator int*/) {
 	hash := unit.Hash()
 
 	for _, parentHash := range unit.ParentHash() {
@@ -583,21 +584,21 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool, bro
 		}
 	}
 
-	if needBroadcastMediator == broadcastMediator {
-		mPeers := pm.GetActiveMediatorPeers()
-		for _, peer := range mPeers {
-			if peer == nil {
-				pm.producer.ToUnitTBLSSign(unit)
-				continue
-			}
-
-			//err := peer.SendNewProducedUnit(unit)
-			err := peer.SendNewUnit(unit)
-			if err != nil {
-				log.Error(err.Error())
-			}
-		}
-	}
+	//if needBroadcastMediator == broadcastMediator {
+	//	mPeers := pm.GetActiveMediatorPeers()
+	//	for _, peer := range mPeers {
+	//		if peer == nil {
+	//			pm.producer.ToUnitTBLSSign(unit)
+	//			continue
+	//		}
+	//
+	//		//err := peer.SendNewProducedUnit(unit)
+	//		err := peer.SendNewUnit(unit)
+	//		if err != nil {
+	//			log.Error(err.Error())
+	//		}
+	//	}
+	//}
 
 	// If propagation is requested, send to a subset of the peer
 	if propagate {

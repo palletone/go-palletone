@@ -37,8 +37,8 @@ const (
 	maxQueueDist          = 32                     // Maximum allowed distance from the chain head to queue
 	hashLimit             = 256                    // Maximum number of unique blocks a peer may have announced
 	blockLimit            = 64                     // Maximum number of unique blocks a peer may have delivered
-	needBroadcastMediator = 0
-	noBroadcastMediator   = 1
+	//needBroadcastMediator = 0
+	//noBroadcastMediator   = 1
 )
 
 var (
@@ -58,7 +58,7 @@ type bodyRequesterFn func([]common.Hash) error
 type headerVerifierFn func(header *modules.Header) error
 
 // blockBroadcasterFn is a callback type for broadcasting a block to connected peers.
-type blockBroadcasterFn func(block *modules.Unit, propagate bool, broadcastMediator int)
+type blockBroadcasterFn func(block *modules.Unit, propagate bool/*, broadcastMediator int*/)
 
 // chainHeightFn is a callback type to retrieve the current chain height.
 type chainHeightFn func(assetId modules.IDType16) uint64
@@ -673,7 +673,7 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		case nil:
 			// All ok, quickly propagate to our peers
 			propBroadcastOutTimer.UpdateSince(block.ReceivedAt)
-			go f.broadcastBlock(block, true, noBroadcastMediator)
+			go f.broadcastBlock(block, true/*, noBroadcastMediator*/)
 
 		//case consensus.ErrFutureBlock:
 		// Weird future block, don't fail, but neither propagate
@@ -691,7 +691,7 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		}
 		// If import succeeded, broadcast the block
 		propAnnounceOutTimer.UpdateSince(block.ReceivedAt)
-		go f.broadcastBlock(block, false, noBroadcastMediator)
+		go f.broadcastBlock(block, false/*, noBroadcastMediator*/)
 
 		// Invoke the testing hook if needed
 		if f.importedHook != nil {

@@ -33,12 +33,12 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.newProducedUnitCh:
-			// todo 待合并
-			//self.BroadcastNewProducedUnit(event.Unit)
+			// 广播给其他活跃 mediator，进行验证并群签名
+			self.BroadcastNewProducedUnit(event.Unit)
 
 			// appended by wangjiyou
-			self.BroadcastUnit(event.Unit, true, needBroadcastMediator)
-			self.BroadcastUnit(event.Unit, false, noBroadcastMediator)
+			self.BroadcastUnit(event.Unit, true /*, needBroadcastMediator*/)
+			self.BroadcastUnit(event.Unit, false /*, noBroadcastMediator*/)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-self.newProducedUnitSub.Err():
@@ -307,7 +307,7 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 // @author Albert·Gou
 func (p *peer) SendNewProducedUnit(newUnit *modules.Unit) error {
 	p.knownBlocks.Add(newUnit.UnitHash)
-	return p2p.Send(p.rw, NewUnitMsg, newUnit)
+	return p2p.Send(p.rw, NewProducedUnitMsg, newUnit)
 }
 
 // @author Albert·Gou

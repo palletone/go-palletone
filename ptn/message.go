@@ -373,7 +373,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 				pm.synchronise(p, unit.Number().AssetID)
 			}()
 		} else {
-			pm.producer.ToUnitTBLSSign(&unit)
+			//pm.producer.ToUnitTBLSSign(&unit)
 		}
 	}
 	return nil
@@ -445,11 +445,11 @@ func (pm *ProtocolManager) ConsensusMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
-func (pm *ProtocolManager) NewUnitMsg(msg p2p.Msg, p *peer) error {
+func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 	// Retrieve and decode the propagated new produced unit
 	var unit modules.Unit
 	if err := msg.Decode(&unit); err != nil {
-		log.Info("===NewUnitMsg===", "err:", err)
+		log.Info("===NewProducedUnitMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 

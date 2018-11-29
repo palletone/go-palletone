@@ -36,7 +36,7 @@ var ProtocolName = "ptn"
 var ProtocolVersions = []uint{ptn1}
 
 // Number of implemented message corresponding to different protocol versions.
-var ProtocolLengths = []uint64{100, 8}//{17, 8}
+var ProtocolLengths = []uint64{100, 8} //{17, 8}
 
 const ProtocolMaxMsgSize = 10 * 1024 * 1024 // Maximum cap on the size of a protocol message
 
@@ -52,7 +52,7 @@ const (
 	BlockBodiesMsg     = 0x06
 	NewBlockMsg        = 0x07
 	ConsensusMsg       = 0x08
-	NewUnitMsg         = 0x09
+	NewProducedUnitMsg = 0x09
 	VSSDealMsg         = 0x0a
 	VSSResponseMsg     = 0x0b
 	SigShareMsg        = 0x0c
