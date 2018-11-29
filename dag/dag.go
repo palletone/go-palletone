@@ -137,13 +137,34 @@ func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules
 	return curUnit
 }
 
-//func (d *Dag) GetUnit(hash common.Hash) (*modules.Unit, error) {
-//	return d.dagdb.GetUnit(hash)
-//}
-
 func (d *Dag) HasUnit(hash common.Hash) bool {
-	u, _ := d.dagdb.GetUnit(hash)
+	u, err := d.dagdb.GetUnit(hash)
+	if err != nil {
+		return false
+	}
 	return u != nil
+}
+
+// confirm unit
+func (d *Dag) UnitIsConfirmedByHash(hash common.Hash) bool {
+	if d.HasUnit(hash) {
+		return true
+	}
+	return false
+}
+
+//confirm unit's parent
+func (d *Dag) ParentsIsConfirmByHash(hash common.Hash) bool {
+	unit, err := d.GetUnitByHash(hash)
+	if err != nil {
+		return false
+	}
+	parents := unit.ParentHash()
+	if len(parents) > 0 {
+		par := parents[0]
+		return d.HasUnit(par)
+	}
+	return false
 }
 
 // GetMemUnitbyHash: get unit from memdag

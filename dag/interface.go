@@ -62,6 +62,8 @@ type IDag interface {
 	// InsertHeaderDag inserts a batch of headers into the local chain.
 	InsertHeaderDag([]*modules.Header, int) (int, error)
 	HasUnit(hash common.Hash) bool
+	UnitIsConfirmedByHash(hash common.Hash) bool
+	ParentsIsConfirmByHash(hash common.Hash) bool
 	Exists(hash common.Hash) bool
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
 	//All leaf nodes for dag downloader
