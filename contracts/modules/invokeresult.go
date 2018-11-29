@@ -23,8 +23,8 @@ package modules
 import (
 	"encoding/json"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -33,6 +33,7 @@ import (
 
 type ContractInvokeResult struct {
 	ContractId    []byte                     `json:"contract_id"` // contract id
+	RequestId     common.Hash                `json:"request_id"`
 	FunctionName  string                     `json:"function_name"`
 	Args          [][]byte                   `json:"args"`           // contract arguments list
 	ExecutionTime time.Duration              `json:"execution_time"` // contract execution time, millisecond
@@ -98,11 +99,11 @@ func (result *ContractInvokeResult) ToCoinbase() ([]*modules.PaymentPayload, err
 			token := modules.FungibleToken{}
 			err := json.Unmarshal(result.TokenDefine.TokenDefineJson, token)
 			if err != nil {
+				log.Error("Cannot parse token define json to FungibleToken", result.TokenDefine.TokenDefineJson)
 				return nil, err
 			}
 			newAsset := &modules.Asset{}
-			newAsset.AssetId = modules.IDType16{}
-			newAsset.AssetId.SetBytes(util.GenerateBytesUUID())
+			newAsset.AssetId, _ = modules.NewAssetId(token.Symbol, modules.AssetType_FungibleToken, result.RequestId.Bytes())
 			out := modules.NewTxOut(token.TotalSupply, tokenengine.GenerateLockScript(result.TokenDefine.Creator), newAsset)
 			coinbase.AddTxOut(out)
 		}

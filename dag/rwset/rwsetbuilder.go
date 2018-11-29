@@ -72,6 +72,14 @@ func (b *RWSetBuilder) GetTokenPayOut(ns string) []*modules.TokenPayOut {
 
 	return nsPubRwBuilder.tokenPayOut
 }
+func (b *RWSetBuilder) GetTokenDefine(ns string) *modules.TokenDefine {
+	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
+	return nsPubRwBuilder.tokenDefine
+}
+func (b *RWSetBuilder) GetTokenSupply(ns string) []*modules.TokenSupply {
+	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
+	return nsPubRwBuilder.tokenSupply
+}
 func (b *RWSetBuilder) DefineToken(ns string, tokenType int32, define []byte) {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
 	nsPubRwBuilder.tokenDefine = &modules.TokenDefine{TokenType: int(tokenType), TokenDefineJson: define}
