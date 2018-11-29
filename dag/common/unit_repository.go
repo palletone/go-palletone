@@ -502,10 +502,10 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	//log.Info("===dag ValidateTransactions===")
 	// step4. check transactions in unit
 	//TODO must recover
-	_, isSuccess, err := unitOp.validate.ValidateTransactions(&unit.Txs, isGenesis)
-	if err != nil || !isSuccess {
-		return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
-	}
+	//_, isSuccess, err := unitOp.validate.ValidateTransactions(&unit.Txs, isGenesis)
+	//if err != nil || !isSuccess {
+	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+	//}
 
 	// step5. traverse transactions and save them
 	txHashSet := []common.Hash{}
