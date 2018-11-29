@@ -831,7 +831,7 @@ func (handler *Handler) handleGetTokenBalance(msg *pb.ChaincodeMessage) {
 			// Send response msg back to chaincode. GetState will not trigger event
 			result := []*modules.AmountAsset{}
 			for asset, amt := range balance {
-				result = append(result, &modules.AmountAsset{Amount: amt, Asset: asset})
+				result = append(result, &modules.AmountAsset{Amount: amt, Asset: &asset})
 			}
 			res, _ := rlp.EncodeToBytes(result)
 			chaincodeLogger.Debugf("[%s]Got state. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
