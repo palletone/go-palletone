@@ -101,7 +101,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 	if ptn == nil || dag == nil {
 		return nil, errors.New("NewContractProcessor, param is nil")
 	}
-	var address common.Address
+
 	localmediators := ptn.GetLocalMediators()
 	p := &Processor{
 		name:     "conractProcessor",
@@ -114,8 +114,8 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 		local:    localmediators,
 	}
 
-	log.Info("NewContractProcessor ok", "mediator_address", address.String())
-	log.Info("NewContractProcessor", "info:", p.local)
+	log.Info("NewContractProcessor ok", "local address", localmediators.Address.String())
+	//log.Info("NewContractProcessor", "info:", p.local)
 	return p, nil
 }
 
