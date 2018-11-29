@@ -122,10 +122,10 @@ func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
 	if memUnit == nil {
 		return curUnit
 	}
-	if curUnit.NumberU64() >= memunit.NumberU64() {
+	if curUnit.NumberU64() >= memUnit.NumberU64() {
 		return curUnit
 	}
-	return memunit
+	return memUnit
 }
 
 func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit {
