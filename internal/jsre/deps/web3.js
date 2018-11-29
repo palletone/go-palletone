@@ -5674,13 +5674,6 @@ var methods = function () {
         inputFormatter: [null, null, null],
     });
 
-    var ccinvoke = new Method({
-        name: 'ccinvoke',
-        call: 'ptn_ccinvoke',
-        params: 4, //deployId string, txid string,paymentJson string, args[]string------>["fun", "key", "value"]
-        inputFormatter: [null, null, null,null],
-    });
-
     var ccstop = new Method({
         name: 'ccstop',
         call: 'ptn_ccstop',
@@ -5752,7 +5745,6 @@ var methods = function () {
         saveTokenInfo,
         ccinstall,
         ccdeploy,
-        ccinvoke,
         ccstop,
         decodeTx,
        // createPayment,
