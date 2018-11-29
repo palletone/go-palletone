@@ -22,6 +22,7 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/vote"
@@ -85,4 +86,14 @@ func (statedb *StateDb) AddVote2Account(address common.Address, voteInfo vote.Vo
 		return err
 	}
 	return nil
+}
+func (statedb *StateDb) getAllAccountInfo() []*modules.AccountInfo {
+	iter := statedb.db.NewIteratorWithPrefix(constants.ACCOUNT_INFO_PREFIX)
+	result := []*modules.AccountInfo{}
+	for iter.Next() {
+		info := &modules.AccountInfo{}
+		rlp.DecodeBytes(iter.Value(), info)
+		result = append(result, info)
+	}
+	return result
 }

@@ -302,6 +302,11 @@ type AmountAsset struct {
 	Asset  *Asset `json:"asset"`
 }
 
+type DepositStateValues struct {
+	TotalAmount uint64               `json:"total_amount"`
+	Values      []*DepositStateValue `json:"values"`
+}
+
 type DepositStateValue struct {
 	DepositBalance AmountAsset `json:"amount_asset"`
 	Time           time.Time   `json:"time"`

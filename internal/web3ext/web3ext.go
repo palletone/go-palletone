@@ -31,7 +31,6 @@ var Modules = map[string]string{
 	"personal":   Personal_JS,
 	"rpc":        RPC_JS,
 	"shh":        Shh_JS,
-	"swarmfs":    SWARMFS_JS,
 	"txpool":     TxPool_JS,
 	"mediator":   Mediator_JS,
 }
@@ -181,6 +180,11 @@ web3._extend({
 	property: 'debug',
 	methods: [
 		new web3._extend.Method({
+			name: 'ccinvoke',
+			call: 'debug_ccinvoke',
+			params: 4
+		}),	
+	new web3._extend.Method({
 			name: 'printBlock',
 			call: 'debug_printBlock',
 			params: 1
@@ -575,30 +579,6 @@ web3._extend({
 		new web3._extend.Property({
 			name: 'info',
 			getter: 'shh_info'
-		}),
-	]
-});
-`
-
-const SWARMFS_JS = `
-web3._extend({
-	property: 'swarmfs',
-	methods:
-	[
-		new web3._extend.Method({
-			name: 'mount',
-			call: 'swarmfs_mount',
-			params: 2
-		}),
-		new web3._extend.Method({
-			name: 'unmount',
-			call: 'swarmfs_unmount',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'listmounts',
-			call: 'swarmfs_listmounts',
-			params: 0
 		}),
 	]
 });
