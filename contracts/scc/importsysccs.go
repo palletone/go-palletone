@@ -72,7 +72,7 @@ var systemChaincodes = []*SystemChaincode{
 		Id:        []byte{0x02},
 		Enabled:   true,
 		Name:      "createToken_sycc",
-		Path:      "../example/go/createToken/createToken",
+		Path:      "../example/go/prc20/prc20",
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &createToken.CreateTokenChainCode{},
