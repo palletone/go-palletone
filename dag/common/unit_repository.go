@@ -57,7 +57,7 @@ type IUnitRepository interface {
 	BatchSaveUnit(units []*modules.Unit)
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
 	GenesisHeight() modules.ChainIndex
-	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
+	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 }
@@ -451,11 +451,18 @@ func (unitOp *UnitRepository) getRequesterAddress(tx *modules.Transaction) (comm
 保存单元数据，如果单元的结构基本相同
 save genesis unit data
 */
-func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
-	// step1 判断 unit size
+func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error {
+
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Error("Unit is null")
 		return fmt.Errorf("Unit is null")
+	}
+	// step1 验证 群签名
+	// if passed == true , don't validate group sign
+	if !passed {
+		if no := unitOp.validate.ValidateUnitGroupSign(unit.Header(), isGenesis); no != modules.UNIT_STATE_INVALID_GROUP_SIGNATURE {
+			return fmt.Errorf("Validate unit's group sign failed, err number=%d", no)
+		}
 	}
 
 	// step2. check unit signature, should be compare to mediator list
@@ -474,11 +481,11 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	//log.Info("===dag ValidateTransactions===")
 	// step4. check transactions in unit
 	//TODO must recover
-	//_, isSuccess, err := unitOp.validate.ValidateTransactions(&unit.Txs, isGenesis)
-	//if isSuccess != true {
-	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
-	//}
-	//log.Info("===dag traverse transactions and save them===")
+	_, isSuccess, err := unitOp.validate.ValidateTransactions(&unit.Txs, isGenesis)
+	if err != nil || !isSuccess {
+		return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+	}
+
 	// step5. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {

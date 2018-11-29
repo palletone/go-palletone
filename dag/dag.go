@@ -826,7 +826,7 @@ func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keys
 
 //modified by Albert·Gou
 func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit, txpool txspool.ITxPool) error {
-	return d.unitRep.SaveUnit(unit, txpool, true)
+	return d.unitRep.SaveUnit(unit, txpool, true, false)
 }
 
 func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
@@ -858,7 +858,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 	if unitState == modules.UNIT_STATE_VALIDATED {
 		// step3.1. pass and with group signature, put into leveldb
 		// todo 应当先判断是否切换，再保存，并更新状态
-		if err := d.unitRep.SaveUnit(unit, txpool, false); err != nil {
+		if err := d.unitRep.SaveUnit(unit, txpool, false, false); err != nil {
 			log.Info("Dag", "SaveDag, save error when save unit to db err:", err)
 			return fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
 		}
