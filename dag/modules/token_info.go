@@ -30,7 +30,7 @@ import (
 var (
 	TimeFormatString = "2006/01/02 15:04:05"
 
-	PTNCOIN = IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'}
+	PTNCOIN = IDType16{}
 	BTCCOIN = IDType16{'b', 't', 'c', 'c', 'o', 'i', 'n'}
 )
 

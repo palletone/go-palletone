@@ -128,8 +128,7 @@ func (repository *UtxoRepository) readUtxosFrAll(addr common.Address, asset modu
 		}
 		// check asset
 		if strings.Compare(asset.AssetId.String(), utxo.Asset.AssetId.String()) != 0 ||
-			strings.Compare(asset.UniqueId.String(), utxo.Asset.UniqueId.String()) != 0 ||
-			asset.ChainId != utxo.Asset.ChainId {
+			strings.Compare(asset.UniqueId.String(), utxo.Asset.UniqueId.String()) != 0 {
 			continue
 		}
 		// get addr
@@ -510,8 +509,7 @@ func (repository *UtxoRepository) getAccountTokensWhole(addr common.Address) (ma
 func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) bool {
 	// check asset
 	if asset != nil && (strings.Compare(asset.AssetId.String(), utxo.Asset.AssetId.String()) != 0 ||
-		strings.Compare(asset.UniqueId.String(), utxo.Asset.UniqueId.String()) != 0 ||
-		asset.ChainId != utxo.Asset.ChainId) {
+		strings.Compare(asset.UniqueId.String(), utxo.Asset.UniqueId.String()) != 0) {
 		return false
 	}
 	// get addr

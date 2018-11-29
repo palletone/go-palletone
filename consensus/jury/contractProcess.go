@@ -44,10 +44,6 @@ type ContractInstallReq struct {
 }
 
 func (req ContractInstallReq) do(v contracts.ContractInf) (interface{}, error) {
-	//var resp ContractResp
-
-	//payload, err := v.Install(req.chainID, req.ccName, req.ccPath, req.ccVersion)
-	//resp = ContractResp{err, payload}
 	return v.Install(req.chainID, req.ccName, req.ccPath, req.ccVersion)
 }
 
@@ -60,11 +56,6 @@ type ContractDeployReq struct {
 }
 
 func (req ContractDeployReq) do(v contracts.ContractInf) (interface{}, error) {
-	//var resp ContractResp
-	//
-	//_, payload, err := v.Deploy(req.chainID, req.templateId, req.txid, req.args, req.timeout)
-	//resp = ContractResp{err, payload}
-	//return resp
 	_, payload, err := v.Deploy(req.chainID, req.templateId, req.txid, req.args, req.timeout)
 	return payload, err
 }
@@ -108,11 +99,6 @@ type ContractStopReq struct {
 }
 
 func (req ContractStopReq) do(v contracts.ContractInf) (interface{}, error) {
-	//var resp ContractResp
-	//
-	//err := v.Stop(req.chainID, req.deployId, req.txid, req.deleteImage)
-	//resp = ContractResp{err, nil}
-	//return resp
 	return nil, v.Stop(req.chainID, req.deployId, req.txid, req.deleteImage)
 }
 
@@ -121,23 +107,6 @@ func ContractProcess(contract *contracts.Contract, req ContractReqInf) ([]*modul
 		log.Error("ContractProcess", "param is nil,", "err")
 		return nil, errors.New("ContractProcess param is nil")
 	}
-	//var resp interface{}
+
 	return req.do(contract)
-	//return resp, nil
-
-	//var resp interface{}
-	//c := make(chan struct{})
-	//
-	//go func() {
-	//	defer close(c)
-	//	resp = req.do(contract)
-	//}()
-	//
-	//select {
-	//case <-c:
-	//	log.Info("ContractProcess", "req resp", "ok")
-	//	return resp, nil
-	//}
-
-	//return nil, nil
 }

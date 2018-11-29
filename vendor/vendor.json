@@ -568,6 +568,12 @@
 			"revisionTime": "2018-05-15T20:40:05Z"
 		},
 		{
+			"checksumSHA1": "x/OWLjRC0cZiYtU+irn4XQFR/5A=",
+			"path": "github.com/martinlindhe/base36",
+			"revision": "5cda0030da1725952be91a1223090c4ecef8dfb2",
+			"revisionTime": "2018-07-29T04:29:28Z"
+		},
+		{
 			"checksumSHA1": "7hln62oZPZmyqEmgXaybf9WxQ7A=",
 			"path": "github.com/maruel/panicparse/stack",
 			"revision": "ad661195ed0e88491e0f14be6613304e3b1141d6",
