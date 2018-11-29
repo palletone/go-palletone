@@ -187,6 +187,12 @@ func (s *RwSetTxSimulator) PayOutToken(ns string, address string, token *modules
 func (s *RwSetTxSimulator) GetPayOutData(ns string) ([]*modules.TokenPayOut, error) {
 	return s.rwsetBuilder.GetTokenPayOut(ns), nil
 }
+func (s *RwSetTxSimulator) GetTokenDefineData(ns string) (*modules.TokenDefine, error) {
+	return s.rwsetBuilder.GetTokenDefine(ns), nil
+}
+func (s *RwSetTxSimulator) GetTokenSupplyData(ns string) ([]*modules.TokenSupply, error) {
+	return s.rwsetBuilder.GetTokenSupply(ns), nil
+}
 func (s *RwSetTxSimulator) DefineToken(ns string, tokenType int32, define []byte) error {
 	s.rwsetBuilder.DefineToken(ns, tokenType, define)
 	return nil
