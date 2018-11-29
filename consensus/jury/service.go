@@ -31,31 +31,29 @@ import (
 	"bytes"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/rlp"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	cm "github.com/palletone/go-palletone/dag/common"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/common/rlp"
 	"reflect"
 )
 
 type PeerType int
 
 const (
-	_ PeerType = iota
+	_         PeerType = iota
 	TUnknow
 	TJury
 	TMediator
 )
 
 type Juror struct {
-	name    string
-	address common.Address
-
-	//InitPartSec kyber.Scalar
+	name        string
+	address     common.Address
 	InitPartPub kyber.Point
 }
 
@@ -79,8 +77,7 @@ type iDag interface {
 type contractTx struct {
 	list []common.Address //dynamic
 	tx   *modules.Transaction
-
-	tm time.Time //creat time
+	tm   time.Time //creat time
 }
 
 type Processor struct {
@@ -90,7 +87,6 @@ type Processor struct {
 	dag      iDag
 	local    *mp.MediatorAccount //local
 	contract *contracts.Contract
-	txPool   txspool.ITxPool
 	locker   *sync.Mutex
 	quit     chan struct{}
 	mtx      map[common.Hash]*contractTx
@@ -107,12 +103,12 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 	}
 	var address common.Address
 	localmediators := ptn.GetLocalMediators()
-
 	p := &Processor{
-		name:     "conract processor",
+		name:     "conractProcessor",
 		ptn:      ptn,
 		dag:      dag,
 		contract: contract,
+		locker:   new(sync.Mutex),
 		quit:     make(chan struct{}),
 		mtx:      make(map[common.Hash]*contractTx),
 		local:    localmediators,
@@ -167,15 +163,16 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 	}
 	tx, err := gen.GenContractSigTransctions(p.local.Address, event.Tx, cmsgType, payload, ks)
 	if err != nil {
-		log.Error(fmt.Sprintf("ProcessContractEvent GenContractSigTransctions,err:%s", err))
+		log.Error(fmt.Sprintf("ProcessContractEvent GenContractSigTransctions", "err:%s", err))
 		return err
 	}
-
+	p.locker.Lock()
 	p.mtx[event.Tx.TxId] = &contractTx{
 		list: p.dag.GetActiveMediators(),
 		tx:   tx,
 		tm:   time.Now(),
 	}
+	p.locker.Unlock()
 
 	//broadcast
 	go p.ptn.ContractSigBroadcast(ContractSigEvent{tx})
@@ -195,18 +192,24 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 	if false == checkTxValid(event.Tx) {
 		return errors.New("ProcessContractSigEvent event Tx is invalid")
 	}
+	if _, ok := p.mtx[event.Tx.TxId]; ok != true {
+		errMsg := fmt.Sprintf("local not find txid: %s", event.Tx.TxId.String())
+		log.Error("ProcessContractSigEvent", errMsg)
+		return errors.New(errMsg)
+	}
 
-	tx := p.mtx[event.Tx.TxId].tx
-	if tx == nil {
+	cx := p.mtx[event.Tx.TxId]
+	if cx.tx == nil {
 		log.Info("ProcessContractSigEvent", "local no tx id, wait for moment:", event.Tx.TxId.String())
 		go func() error {
 			for i := 0; i < 10; i += 1 {
 				time.Sleep(time.Millisecond * 500)
-				if p.mtx[event.Tx.TxId].tx != nil {
-					tx = p.mtx[event.Tx.TxId].tx
-					if judge, err := checkAndAddTxData(tx, event.Tx); err == nil && judge == true {
-						if err = p.addTx2LocalTxTool(tx); err == nil {
+				if cx.tx != nil {
+					if judge, err := checkAndAddTxData(cx.tx, event.Tx); err == nil && judge == true {
+						if err = p.addTx2LocalTxTool(cx.tx, len(cx.list)); err == nil {
+							p.locker.Lock()
 							delete(p.mtx, event.Tx.TxId)
+							p.locker.Unlock()
 						} else {
 							return err
 						}
@@ -214,22 +217,24 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 					return errors.New("checkAndAddTxData fail")
 				}
 			}
-			return errors.New(fmt.Sprintf("ProcessContractSigEvent checkAndAddTxData wait local transaction timeout, tx id:%s", tx.TxId))
+			return errors.New(fmt.Sprintf("ProcessContractSigEvent checkAndAddTxData wait local transaction timeout, tx id", cx.tx.TxId))
 		}()
 	} else {
 		log.Info("ProcessContractSigEvent", "tx is ok", event.Tx.TxId)
-		if judge, err := checkAndAddTxData(tx, event.Tx); err != nil {
+		if judge, err := checkAndAddTxData(cx.tx, event.Tx); err != nil {
 			log.Error("ProcessContractSigEvent", "checkAndAddTxData err:", err.Error())
 			return err
 		} else if judge == true {
-			if err = p.addTx2LocalTxTool(tx); err == nil {
+			if err = p.addTx2LocalTxTool(cx.tx, len(cx.list)); err == nil {
+				p.locker.Lock()
 				delete(p.mtx, event.Tx.TxId)
+				p.locker.Unlock()
 			} else {
 				return err
 			}
 		}
 	}
-	return errors.New(fmt.Sprintf("ProcessContractSigEvent,err with tx id:%s", tx.TxId.String()))
+	return errors.New(fmt.Sprintf("ProcessContractSigEvent", "err with tx id:", cx.tx.TxId.String()))
 }
 
 func (p *Processor) SubscribeContractSigEvent(ch chan<- ContractSigEvent) event.Subscription {
@@ -240,14 +245,14 @@ func (p *Processor) ContractTxDeleteLoop() {
 	for {
 		time.Sleep(time.Second * time.Duration(2))
 
-		//p.locker.Lock()
+		p.locker.Lock()
 		for k, v := range p.mtx {
 			if time.Since(v.tm) > time.Second*10 { //todo
 				log.Info("ContractTxDeleteLoop", "delete id", k.String())
 				delete(p.mtx, k)
 			}
 		}
-		//p.locker.Unlock()
+		p.locker.Unlock()
 	}
 }
 
@@ -356,13 +361,13 @@ func checkTxValid(tx *modules.Transaction) bool {
 	return cm.ValidateTxSig(tx)
 }
 
-func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction) error {
+func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction, cnt int) error {
 	if tx == nil {
 		return errors.New("addTx2LocalTxTool param is nil")
 	}
-	if num := getTxSigNum(tx); num < 1 {
+	if num := getTxSigNum(tx); num < (cnt*2/3 + 1) {
 		log.Error("addTx2LocalTxTool sig num is", num)
-		return errors.New(fmt.Sprintf("addTx2LocalTxTool,tx sig num is:%d", num))
+		return errors.New(fmt.Sprintf("addTx2LocalTxTool", "tx sig num is:", num))
 	}
 
 	txPool := p.ptn.TxPool()
@@ -452,5 +457,4 @@ func printTxInfo(tx *modules.Transaction) {
 			fmt.Printf("Signatures:[%v]", p.Signatures)
 		}
 	}
-
 }
