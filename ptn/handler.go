@@ -238,6 +238,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 			log.Warn("Discarded bad propagated block", "number", blocks[0].Number().Index, "hash", blocks[0].Hash())
 			return 0, nil
 		}
+		log.Debug("Fetcher", "manager.dag.InsertDag index:", blocks[0].Number().Index, "hash", blocks[0].Hash())
 		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
 		return manager.dag.InsertDag(blocks, manager.txpool)
 	}
@@ -606,7 +607,7 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool, bro
 		for _, peer := range peers {
 			peer.SendNewUnit(unit)
 		}
-		log.Trace("BroadcastUnit Propagated block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+		log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index, "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 		return
 	}
 

@@ -117,10 +117,15 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 
 func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
 	memUnit := d.GetCurrentMemUnit(assetId, 0)
-	if memUnit != nil {
-		return memUnit
+	curUnit := d.CurrentUnit()
+
+	if memUnit == nil {
+		return curUnit
 	}
-	return d.CurrentUnit()
+	if curUnit.NumberU64() >= memUnit.NumberU64() {
+		return curUnit
+	}
+	return memUnit
 }
 
 func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit {
@@ -227,6 +232,9 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // reference : Eth InsertChain
 func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error) {
 	//TODO must recover，不连续的孤儿unit也应当存起来，以方便后面处理
+	defer func(start time.Time) {
+		log.Debug("Dag InsertDag", "elapsed", time.Since(start), "size:", len(units))
+	}(time.Now())
 	count := int(0)
 	for i, u := range units {
 		// append by albert·gou
@@ -254,8 +262,10 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
 		}
+		log.Debug("Dag", "InsertDag ok index:", u.UnitHeader.Number.Index, "hash:", u.Hash())
 		count += 1
 	}
+
 	return count, nil
 }
 
@@ -439,7 +449,6 @@ func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []b
 	asset := modules.Asset{
 		AssetId:  newAssetid,
 		UniqueId: newUnitqueid,
-		ChainId:  chainid,
 	}
 
 	return d.utxoRep.WalletBalance(address, asset), nil
@@ -867,7 +876,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 		if err := d.Memdag.Save(unit, txpool); err != nil {
 			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		} else {
-			//log.Info("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
+			log.Info("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
 		}
 	}
 

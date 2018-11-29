@@ -151,7 +151,6 @@ func createUnitForTest() (*modules.Unit, error) {
 	asset := new(modules.Asset)
 	asset.AssetId = modules.PTNCOIN
 	asset.UniqueId = modules.PTNCOIN
-	asset.ChainId = 1
 	// new payload tpl payload
 	inputs := make([]*modules.Input, 0)
 	in := new(modules.Input)
@@ -541,6 +540,7 @@ func (chain *MemDag) GetCurrentUnit(assetid modules.IDType16, index uint64) (*mo
 	lastValidatedUnit, has := chain.lastValidatedUnit[sAssetID]
 	if !has {
 		log.Debug("memdag's lastValidated Unit is null.")
+		return nil, fmt.Errorf("MemDag.GetCurrentUnit memdag's lastValidated Unit is null,asset(%s).", assetid.String())
 	}
 
 	currentUnit, ok := chain.currentUnit[sAssetID]

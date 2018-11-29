@@ -32,6 +32,5 @@ type ContractExeEvent struct {
 }
 
 type ContractSigEvent struct {
-	//TxHash common.Hash
 	Tx     *modules.Transaction
 }

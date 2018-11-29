@@ -200,7 +200,6 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	var asset modules.Asset
 	assetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
 	asset.AssetId = assetId
-	asset.ChainId = 1
 	asset.UniqueId = assetId
 	// step2. compute chain height
 	// get current world_state index.

@@ -125,9 +125,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	// get new asset id
 	assetId := asset2.NewAsset()
 	asset := &modules.Asset{
-		AssetId:  assetId,
-		UniqueId: assetId,
-		ChainId:  genesis.ChainID,
+		AssetId: assetId,
 	}
 	assetInfo.AssetID = asset
 	extra, err := rlp.EncodeToBytes(assetInfo)

@@ -611,11 +611,11 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	// Figure out the valid ancestor range to prevent rewrite attacks
 	floor, ceil := int64(-1), d.lightdag.CurrentHeader().Number.Index
 
-	if d.mode == FullSync {
-		ceil = d.dag.CurrentUnit().NumberU64()
-	} else if d.mode == FastSync {
-		ceil = d.dag.CurrentUnit().NumberU64()
-	}
+	//if d.mode == FullSync {
+	//	ceil = d.dag.CurrentUnit().NumberU64()
+	//} else if d.mode == FastSync {
+	//	ceil = d.dag.CurrentUnit().NumberU64()
+	//}
 	if ceil >= MaxForkAncestry {
 		floor = int64(ceil - MaxForkAncestry)
 	}
@@ -1395,7 +1395,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
 	for _, u := range blocks {
-		log.Debug("======importBlockResults=======", "unit:", *u, "index:", u.UnitHeader.Number.Index)
+		log.Debug("======importBlockResults=======", "index:", u.UnitHeader.Number.Index, "unit:", *u)
 		units := []*modules.Unit{}
 		units = append(units, u)
 		if index, err := d.dag.InsertDag(units, d.txpool); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
@@ -1522,7 +1522,7 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 	// Retrieve the a batch of results to import
 	first, last := results[0].Header, results[len(results)-1].Header
 	log.Debug("Inserting fast-sync blocks", "items", len(results),
-		"firstnum", first.Number, "lastnumn", last.Number,
+		"firstnum", first.Number.Index, "lastnumn", last.Number.Index,
 	)
 
 	blocks := make(modules.Units, len(results))
@@ -1530,7 +1530,7 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
 	for _, u := range blocks {
-		log.Debug("======commitFastSyncData=======", "unit:", *u, "index:", u.UnitHeader.Number.Index)
+		log.Debug("======commitFastSyncData=======", "index:", u.UnitHeader.Number.Index, "unit:", *u)
 		units := []*modules.Unit{}
 		units = append(units, u)
 		if index, err := d.dag.InsertDag(units, d.txpool); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {

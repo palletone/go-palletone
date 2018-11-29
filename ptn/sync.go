@@ -185,10 +185,10 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	pHead, number := peer.Head(assetId)
 	pindex := number.Index
 
-	log.Info("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex, "header hash:", pHead)
+	log.Info("ProtocolManager", "synchronise local unit index:", index, "local peer index:", pindex, "header hash:", pHead)
 	//if common.EmptyHash(pHead) || (index > pindex && pindex > 0) {
 	if index >= pindex && pindex > 0 {
-		log.Info("===synchronise peer.index < local index===", "peer.index:", pindex, "local index:", number.Index, "header hash:", pHead)
+		log.Info("===synchronise peer.index < local index===", "local peer.index:", pindex, "local index:", number.Index, "header hash:", pHead)
 		return
 	}
 

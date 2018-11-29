@@ -306,14 +306,10 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 		return shim.Success([]byte("String transform to uint64 error:"))
 	}
 	fmt.Println("ptnAccount  args[0] ", ptnAccount)
-	asset := modules.Asset{
-		modules.PTNCOIN,
-		modules.PTNCOIN,
-		0,
-	}
+	asset := modules.NewPTNAsset()
 	invokeTokens := &modules.InvokeTokens{
 		Amount: ptnAccount,
-		Asset:  asset,
+		Asset:  *asset,
 	}
 	//
 	//第一步：先获取数据库信息
