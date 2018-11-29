@@ -101,7 +101,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 	if ptn == nil || dag == nil {
 		return nil, errors.New("NewContractProcessor, param is nil")
 	}
-	var address common.Address
+
 	localmediators := ptn.GetLocalMediators()
 	p := &Processor{
 		name:     "conractProcessor",
@@ -114,8 +114,8 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 		local:    localmediators,
 	}
 
-	log.Info("NewContractProcessor ok", "mediator_address", address.String())
-	log.Info("NewContractProcessor", "info:", p.local)
+	log.Info("NewContractProcessor ok", "local address", localmediators.Address.String())
+	//log.Info("NewContractProcessor", "info:", p.local)
 	return p, nil
 }
 
@@ -173,6 +173,8 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 		tm:   time.Now(),
 	}
 	p.locker.Unlock()
+
+	log.Debug("ProcessContractEvent", "local txid", event.Tx.TxId,"contract transaction:",p.mtx[event.Tx.TxId].list)
 
 	//broadcast
 	go p.ptn.ContractSigBroadcast(ContractSigEvent{tx})
@@ -362,8 +364,8 @@ func checkTxValid(tx *modules.Transaction) bool {
 }
 
 func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction, cnt int) error {
-	if tx == nil {
-		return errors.New("addTx2LocalTxTool param is nil")
+	if tx == nil || cnt < 4 {
+		return errors.New(fmt.Sprintf("addTx2LocalTxTool param error, node count is [%d]", cnt))
 	}
 	if num := getTxSigNum(tx); num < (cnt*2/3 + 1) {
 		log.Error("addTx2LocalTxTool sig num is", num)

@@ -33,7 +33,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	// "github.com/palletone/go-palletone/common/rlp"
+
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -233,14 +233,35 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 		log.Error(err.Error())
 		return nil, err
 	}
-	coinbase, err := CreateCoinbase(mAddr, fees, &asset, t)
+	//TODO 附加利息收益
+	//获取保证金或投票利息收益和获取列表
+	awards, awardList, err := unitOp.utxoRepository.ComputeAwards(poolTxs, unitOp.dagdb)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
-
-	// step6 get unit's txs in txpool's txs
+	var awardsTxs modules.Transactions
+	if awardList != nil {
+		//创建增发的保证金或投票利息收益的交易
+		//地址，资产，奖励 addr *common.Address, income uint64, asset *modules.Asset, t time.Time
+		//获取奖励的列表
+		awardsTxs, err = CreateAwardsTxs(awardList, time.Now().UTC())
+		if err != nil {
+			log.Error(err.Error())
+			return nil, err
+		}
+	}
+	coinbase, err := CreateCoinbase(mAddr, fees+awards, &asset, t)
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
 	txs := modules.Transactions{coinbase}
+	//加入增发的交易
+	if awardsTxs != nil {
+		txs = append(txs, awardsTxs...)
+	}
+	// step6 get unit's txs in txpool's txs
 	if len(poolTxs) > 0 {
 		for _, tx := range poolTxs {
 			t := txspool.PooltxToTx(tx)
@@ -595,7 +616,6 @@ func (unitOp *UnitRepository) savePaymentPayload(txHash common.Hash, msg *module
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
 	// if this is a create token transaction, should be return a assetid
-
 	// save utxo
 	err := unitOp.utxoRepository.UpdateUtxo(txHash, msg, msgIndex)
 	if err != nil {
@@ -753,6 +773,38 @@ To get unit information by its ChainIndex
 //func QueryUnitByChainIndex(db ptndb.Database, number modules.ChainIndex) *modules.Unit {
 //	return storage.GetUnitFormIndex(db, number)
 //}
+
+/**
+创建增发的奖励交易
+*/
+func CreateAwardsTxs(awardsList []*modules.Award, t time.Time) (modules.Transactions, error) {
+	txs := modules.Transactions{}
+	for _, awardOne := range awardsList {
+		script := tokenengine.GenerateP2PKHLockScript(awardOne.Addr.Bytes())
+		createT := big.Int{}
+		input := modules.Input{
+			Extra: createT.SetInt64(t.Unix()).Bytes(),
+		}
+		output := modules.Output{
+			Value:    awardOne.AmountAsset.Amount,
+			Asset:    awardOne.AmountAsset.Asset,
+			PkScript: script,
+		}
+		payload := modules.PaymentPayload{
+			Inputs:  []*modules.Input{&input},
+			Outputs: []*modules.Output{&output},
+		}
+		msg := &modules.Message{
+			App:     modules.APP_PAYMENT,
+			Payload: &payload,
+		}
+		tx := &modules.Transaction{}
+		tx.TxMessages = append(tx.TxMessages, msg)
+		tx.TxHash = tx.Hash()
+		txs = append(txs, tx)
+	}
+	return txs, nil
+}
 
 /**
 创建coinbase交易

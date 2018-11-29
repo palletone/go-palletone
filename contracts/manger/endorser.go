@@ -261,20 +261,20 @@ func (e *Endorser) ProcessProposal(contractid []byte, idag dag.IDag, deployId []
 		return nil, nil, errors.New("Conver RwSet to dag unit fail")
 	}
 	logger.Debug("unit:")
-	//logger.Debug(unit)
-	//fmt.Printf("==unit=> %#v\n", unit.ContractId)
-	//fmt.Printf("==unit=> %#v\n", unit.Payload)
-	//fmt.Printf("==unit=> %s\n", unit.Args)
-	//fmt.Println("==unit=> ", unit.FunctionName)
-	//fmt.Printf("==unit=> %#v\n", unit.ReadSet)
-	//fmt.Printf("==unit=> %s\n", unit.WriteSet)
-	//fmt.Println("===")
-	//if len(unit.TokenPayOut) > 0 {
-	//	fmt.Printf("==unit=> %s\n", unit.TokenPayOut[0])
-	//	fmt.Printf("==unit=> %#v\n", unit.TokenPayOut[0].Asset)
-	//	fmt.Printf("==unit=> %s\n", unit.TokenPayOut[0].Amount)
-	//	fmt.Printf("==unit=> %#v\n", unit.TokenPayOut[0].PayTo.String())
-	//}
+	logger.Debug(unit)
+	fmt.Printf("==unit=> %#v\n", unit.ContractId)
+	fmt.Printf("==unit=> %#v\n", unit.Payload)
+	fmt.Printf("==unit=> %s\n", unit.Args)
+	fmt.Println("==unit=> ", unit.FunctionName)
+	fmt.Printf("==unit=> %#v\n", unit.ReadSet)
+	fmt.Printf("==unit=> %s\n", unit.WriteSet)
+	fmt.Println("===")
+	if len(unit.TokenPayOut) > 0 {
+		fmt.Printf("==unit=> %s\n", unit.TokenPayOut[0])
+		fmt.Printf("==unit=> %#v\n", unit.TokenPayOut[0].Asset)
+		fmt.Printf("==unit=> %s\n", unit.TokenPayOut[0].Amount)
+		fmt.Printf("==unit=> %#v\n", unit.TokenPayOut[0].PayTo.String())
+	}
 	// todo
 
 	pResp.Response.Payload = res.Payload
