@@ -174,6 +174,8 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 	}
 	p.locker.Unlock()
 
+	log.Debug("ProcessContractEvent", "local txid", event.Tx.TxId,"contract transaction:",p.mtx[event.Tx.TxId].list)
+
 	//broadcast
 	go p.ptn.ContractSigBroadcast(ContractSigEvent{tx})
 	//local
@@ -362,8 +364,8 @@ func checkTxValid(tx *modules.Transaction) bool {
 }
 
 func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction, cnt int) error {
-	if tx == nil {
-		return errors.New("addTx2LocalTxTool param is nil")
+	if tx == nil || cnt < 4 {
+		return errors.New(fmt.Sprintf("addTx2LocalTxTool param error, node count is [%d]", cnt))
 	}
 	if num := getTxSigNum(tx); num < (cnt*2/3 + 1) {
 		log.Error("addTx2LocalTxTool sig num is", num)

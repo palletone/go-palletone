@@ -33,6 +33,7 @@ func ValidateTxSig(tx *modules.Transaction) bool {
 		log.Error("ValidateTxSig", "transaction hash is not equal, tx req id:", tx.TxId)
 		return false
 	}
+	//todo 检查msg的有效性
 
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_SIGNATURE {
