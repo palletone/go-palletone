@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/dedis/kyber"
 )
 
 var (
@@ -200,7 +201,16 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	}
 
 	// 2. 生产验证单元
-	newUnit := dag.GenerateUnit(scheduledTime, scheduledMediator, ks, mp.ptn.TxPool())
+	var groupPubKey kyber.Point = nil
+	dkgr := mp.getLocalActiveDKG(scheduledMediator)
+	if dkgr != nil && mp.certifiedFlag[scheduledMediator] {
+		dks, err := dkgr.DistKeyShare()
+		if err == nil {
+			groupPubKey = dks.Public()
+		}
+	}
+
+	newUnit := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, mp.ptn.TxPool())
 	if newUnit.IsEmpty() {
 		return ExceptionProducing, detail, modules.Unit{}
 	}

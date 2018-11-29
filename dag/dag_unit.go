@@ -23,8 +23,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -75,7 +77,7 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 
 // GenerateUnit, generate unit
 // @author Albert·Gou
-func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
+func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey kyber.Point,
 	ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit {
 
 	// 1. 判断是否满足生产的若干条件
@@ -99,6 +101,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address,
 
 	pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash()
 	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
+	pendingUnit.UnitHeader.GroupPubKey = core.PointToStr(groupPubKey)
 	pendingUnit.Hash()
 
 	sign_unit, err1 := dagcommon.GetUnitWithSig(pendingUnit, ks, producer)

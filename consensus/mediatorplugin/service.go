@@ -63,7 +63,7 @@ type iDag interface {
 
 	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
 
-	GenerateUnit(when time.Time, producer common.Address,
+	GenerateUnit(when time.Time, producer common.Address, groupPubKey kyber.Point,
 		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit
 
 	MediatorSchedule() []common.Address
@@ -217,14 +217,19 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 
 func (mp *MediatorPlugin) UpdateMediatorsDKG() {
 	// 1. 保存旧的 dkg ， 用于之前的unit群签名确认
-	mp.precedingDKGs = mp.activeDKGs
-	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator)
+	mp.switchMediatorsDKG()
 
 	// 2. 初始化当前节点控制的活跃mediator对应的DKG.
 	mp.newActiveMediatorsDKG()
 
 	// 3. 开始完成 vss 协议
 	go mp.startVSSProtocol()
+}
+
+func (mp *MediatorPlugin) switchMediatorsDKG() {
+	mp.precedingDKGs = mp.activeDKGs
+	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator)
+	mp.certifiedFlag = make(map[common.Address]bool, 0)
 }
 
 func (mp *MediatorPlugin) Stop() error {
