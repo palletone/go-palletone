@@ -145,6 +145,7 @@ func (d *DepositChaincode) handleMediatorDepositWitnessPay(stub shim.ChaincodeSt
 	if err != nil {
 		return shim.Success([]byte("Get account balance from ledger error:"))
 	}
+	stateValues := new(modules.DepositStateValues)
 	stateValue := new(modules.DepositStateValue)
 	//账户不存在，第一次参与
 	if stateValueBytes == nil {
@@ -152,13 +153,15 @@ func (d *DepositChaincode) handleMediatorDepositWitnessPay(stub shim.ChaincodeSt
 			return shim.Success([]byte("Payment amount is insufficient."))
 		}
 		addList("Mediator", invokeAddr, stub)
+		stateValues.TotalAmount = invokeTokens.Amount
 		stateValue.DepositBalance.Amount = invokeTokens.Amount
 		stateValue.DepositBalance.Asset = &invokeTokens.Asset
-		stateValue.Time = time.Now() //第一次交付保证金的时间，并且加入列表
+		stateValue.Time = time.Now().UTC() //第一次交付保证金的时间，并且加入列表
 		stateValue.Extra = "这是第一次参与"
+		stateValues.Values = append(stateValues.Values, stateValue)
 	} else {
 		//已经是mediator了
-		err = json.Unmarshal(stateValueBytes, stateValue)
+		err = json.Unmarshal(stateValueBytes, stateValues)
 		if err != nil {
 			return shim.Success([]byte("Unmarshal stateValueBytes error"))
 		}
@@ -167,10 +170,14 @@ func (d *DepositChaincode) handleMediatorDepositWitnessPay(stub shim.ChaincodeSt
 		//if err != nil {
 		//	return shim.Success("InvokeAsset is not equal with stateAsset Success:"))
 		//}
-		stateValue.DepositBalance.Amount += invokeTokens.Amount
+		stateValues.TotalAmount += invokeTokens.Amount
+		stateValue.DepositBalance.Amount = invokeTokens.Amount
+		stateValue.DepositBalance.Asset = &invokeTokens.Asset
+		stateValue.Time = time.Now().UTC() //第一次交付保证金的时间，并且加入列表
 		stateValue.Extra = "这是再次向合约增加保证金数量"
+		stateValues.Values = append(stateValues.Values, stateValue)
 	}
-	stateValueMarshalBytes, err := json.Marshal(stateValue)
+	stateValueMarshalBytes, err := json.Marshal(stateValues)
 	if err != nil {
 		return shim.Success([]byte("Marshal valueState error"))
 	}
@@ -186,6 +193,7 @@ func (d *DepositChaincode) handleJuryDepositWitnessPay(stub shim.ChaincodeStubIn
 	if err != nil {
 		return shim.Success([]byte("Get account balance from ledger error:"))
 	}
+	stateValues := new(modules.DepositStateValues)
 	stateValue := new(modules.DepositStateValue)
 	isJury := false
 	if stateValueBytes == nil {
@@ -193,14 +201,16 @@ func (d *DepositChaincode) handleJuryDepositWitnessPay(stub shim.ChaincodeStubIn
 			addList("Jury", invokeAddr, stub)
 			isJury = true
 		}
+		stateValues.TotalAmount = invokeTokens.Amount
 		//写入写集
 		stateValue.DepositBalance.Amount = invokeTokens.Amount
 		stateValue.DepositBalance.Asset = &invokeTokens.Asset
-		stateValue.Time = time.Now()
+		stateValue.Time = time.Now().UTC()
 		stateValue.Extra = "这是第一次参与"
+		stateValues.Values = append(stateValues.Values, stateValue)
 	} else {
 		//账户已存在，进行信息的更新操作
-		err = json.Unmarshal(stateValueBytes, stateValue)
+		err = json.Unmarshal(stateValueBytes, stateValues)
 		if err != nil {
 			return shim.Success([]byte("Unmarshal stateValueBytes error"))
 		}
@@ -209,8 +219,12 @@ func (d *DepositChaincode) handleJuryDepositWitnessPay(stub shim.ChaincodeStubIn
 			isJury = true
 		}
 		//更新stateValue
-		stateValue.DepositBalance.Amount += invokeTokens.Amount
-		stateValue.Extra = "这是第二次向合约支付保证金"
+		stateValues.TotalAmount += invokeTokens.Amount
+		stateValue.DepositBalance.Amount = invokeTokens.Amount
+		stateValue.DepositBalance.Asset = &invokeTokens.Asset
+		stateValue.Time = time.Now().UTC()
+		stateValue.Extra = "这是再次向合约支付保证金"
+		stateValues.Values = append(stateValues.Values, stateValue)
 	}
 	//判断资产类型是否一致
 	//err = assetIsEqual(invokeTokens.Asset, stateValue.Asset)
@@ -221,10 +235,10 @@ func (d *DepositChaincode) handleJuryDepositWitnessPay(stub shim.ChaincodeStubIn
 		//判断交了保证金后是否超过了jury
 		if stateValue.DepositBalance.Amount >= depositAmountsForJury {
 			addList("Jury", invokeAddr, stub)
-			stateValue.Time = time.Now()
+			//stateValue.Time = time.Now()
 		}
 	}
-	stateValueMarshalBytes, err := json.Marshal(stateValue)
+	stateValueMarshalBytes, err := json.Marshal(stateValues)
 	if err != nil {
 		return shim.Success([]byte("Marshal valueState error"))
 	}
@@ -240,6 +254,7 @@ func (d *DepositChaincode) handleDeveloperDepositWitnessPay(stub shim.ChaincodeS
 	if err != nil {
 		return shim.Success([]byte("Get account balance from ledger error:"))
 	}
+	stateValues := new(modules.DepositStateValues)
 	stateValue := new(modules.DepositStateValue)
 	isDeveloper := false
 	if stateValueBytes == nil {
@@ -248,13 +263,15 @@ func (d *DepositChaincode) handleDeveloperDepositWitnessPay(stub shim.ChaincodeS
 			isDeveloper = true
 		}
 		//写入写集
+		stateValues.TotalAmount = invokeTokens.Amount
 		stateValue.DepositBalance.Amount = invokeTokens.Amount
 		stateValue.DepositBalance.Asset = &invokeTokens.Asset
-		stateValue.Time = time.Now()
+		stateValue.Time = time.Now().UTC()
 		stateValue.Extra = "这是第一次参与"
+		stateValues.Values = append(stateValues.Values, stateValue)
 	} else {
 		//账户已存在，进行信息的更新操作
-		err = json.Unmarshal(stateValueBytes, stateValue)
+		err = json.Unmarshal(stateValueBytes, stateValues)
 		if err != nil {
 			return shim.Success([]byte("Unmarshal stateValueBytes error"))
 		}
@@ -263,8 +280,12 @@ func (d *DepositChaincode) handleDeveloperDepositWitnessPay(stub shim.ChaincodeS
 			isDeveloper = true
 		}
 		//更新stateValue
-		stateValue.DepositBalance.Amount += invokeTokens.Amount
-		stateValue.Extra = "这是第二次向合约支付保证金"
+		stateValues.TotalAmount += invokeTokens.Amount
+		stateValue.DepositBalance.Amount = invokeTokens.Amount
+		stateValue.DepositBalance.Asset = &invokeTokens.Asset
+		stateValue.Time = time.Now().UTC()
+		stateValue.Extra = "这是再次向合约支付保证金"
+		stateValues.Values = append(stateValues.Values, stateValue)
 	}
 	//判断资产类型是否一致
 	//err = assetIsEqual(invokeTokens.Asset, stateValue.Asset)
@@ -275,10 +296,9 @@ func (d *DepositChaincode) handleDeveloperDepositWitnessPay(stub shim.ChaincodeS
 		//判断交了保证金后是否超过了jury
 		if stateValue.DepositBalance.Amount >= depositAmountsForDeveloper {
 			addList("Developer", invokeAddr, stub)
-			stateValue.Time = time.Now()
 		}
 	}
-	stateValueMarshalBytes, err := json.Marshal(stateValue)
+	stateValueMarshalBytes, err := json.Marshal(stateValues)
 	if err != nil {
 		return shim.Success([]byte("Marshal valueState error"))
 	}
