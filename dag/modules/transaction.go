@@ -332,6 +332,13 @@ type Transaction struct {
 	TxMessages []*Message  `json:"messages"`
 }
 
+//增发的利息
+type Addition struct {
+	Addr   common.Address
+	Asset  Asset
+	Amount uint64
+}
+
 type OutPoint struct {
 	TxHash       common.Hash `json:"txhash"`        // reference Utxo struct key field
 	MessageIndex uint32      `json:"message_index"` // message index in transaction

@@ -289,10 +289,6 @@ type DepositOrVoteAwards struct {
 	Asset  Asset  `json:"asset"`
 }
 
-type Award struct {
-	Addr        common.Address
-	AmountAsset AmountAsset
-}
 type InvokeFees struct {
 	Amount uint64 `json:"amount"`
 	Asset  Asset  `json:"asset"`
