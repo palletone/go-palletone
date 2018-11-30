@@ -1583,7 +1583,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
 		}
-		txOut := modules.NewTxOut(uint64(dao), pkScript, &modules.Asset{})
+		txOut := modules.NewTxOut(uint64(dao), pkScript, modules.NewPTNAsset())
 		pload.AddTxOut(txOut)
 	}
 	//	// Set the Locktime, if given.
