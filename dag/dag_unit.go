@@ -144,6 +144,11 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 		return
 	}
 
+	// 4. 验证 unit 的 mediator 调度
+	if !dag.validateMediatorSchedule(nextUnit) {
+		return
+	}
+
 	// 5. 更新Unit中交易的状态
 
 	// 6. 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量

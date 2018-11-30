@@ -275,10 +275,12 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 	newUnitBuf := mp.toTBLSSignBuf[localMed]
 
 	signTBLS := func(newUnit *modules.Unit) (sigShare []byte, success bool) {
+		// 1. 验证本 unit
 		if !dag.ValidateUnitExceptGroupSig(newUnit, false) {
 			return
 		}
 
+		// 2. 判断父 unit 是否不可逆
 		if !dag.IsIrreversibleUnit(newUnit.ParentHash()[0]) {
 			return
 		}

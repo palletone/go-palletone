@@ -28,7 +28,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-// todo 待被调用
 func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 	if dag.HeadUnitHash() != nextUnit.ParentHash()[0] {
 		log.Error("invalidated unit's parent hash!")
