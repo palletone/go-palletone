@@ -24,10 +24,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -201,12 +201,12 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	}
 
 	// 2. 生产验证单元
-	var groupPubKey kyber.Point = nil
+	var groupPubKey = ""
 	dkgr := mp.getLocalActiveDKG(scheduledMediator)
 	if dkgr != nil {
 		dks, err := dkgr.DistKeyShare()
 		if err == nil {
-			groupPubKey = dks.Public()
+			groupPubKey = core.PointToStr(dks.Public())
 		}
 	}
 
