@@ -259,6 +259,8 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 	count := int(0)
 	for i, u := range units {
 		// append by albert·gou
+		time := time.Unix(u.Timestamp(), 0)
+		log.Info(fmt.Sprint("Got unit # ", u.NumberU64(), " timestamp: ", time.Format("2006-01-02 15:04:05")))
 		d.ApplyUnit(u)
 
 		// all units must be continuous
