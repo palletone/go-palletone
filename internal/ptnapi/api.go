@@ -44,7 +44,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/coredata"
-	"github.com/palletone/go-palletone/dag/dagconfig"
+	//"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -756,7 +756,9 @@ func (s *PublicBlockChainAPI) GetUnitByNumber(ctx context.Context, condition str
 	number.Index = uint64(index)
 	number.IsMain = true
 
-	number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
+	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
+        asset := modules.NewPTNAsset()
+        number.AssetID = asset.AssetId
 	log.Info("PublicBlockChainAPI info", "GetUnitByNumber_number.Index:", number.Index, "number:", number.String())
 
 	unit := s.b.GetUnitByNumber(number)
@@ -1913,6 +1915,38 @@ func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error
 
 }
 
+func (s *PublicTransactionPoolAPI) helpSignTx(tx *modules.Transaction, password string) ([]common.SignatureError, error) {
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+		account, _ := MakeAddress(ks, addr.String())
+		ks.Unlock(account, password)
+		return ks.GetPublicKey(addr)
+	}
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+		account, _ := MakeAddress(ks, addr.String())
+		return ks.SignHashWithPassphrase(account, password, hash)
+	}
+	utxos := s.getTxUtxoLockScript(tx)
+	return tokenengine.SignTxAllPaymentInput(tx, 0, utxos, nil, getPubKeyFn, getSignFn, 0)
+
+}
+func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) map[modules.OutPoint][]byte {
+	result := map[modules.OutPoint][]byte{}
+
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_PAYMENT {
+			pay := msg.Payload.(*modules.PaymentPayload)
+			for _, input := range pay.Inputs {
+				utxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
+				lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
+				result[*input.PreviousOutPoint] = lockScript
+			}
+		}
+	}
+	return result
+}
+
 //sign rawtranscation
 //create raw transction
 func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string, password string, duration *uint64) (interface{}, error) {
@@ -1929,10 +1963,10 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
 		return nil, err
 	}
+
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		//TODO use keystore
 		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
-		//account, _ := MakeAddress(ks, addr.String())
 
 		return ks.GetPublicKey(addr)
 		//privKey, _ := ks.DumpPrivateKey(account, "1")

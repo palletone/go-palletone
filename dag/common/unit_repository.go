@@ -197,10 +197,11 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	// }
 
 	// @jay
-	var asset modules.Asset
-	assetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
-	asset.AssetId = assetId
-	asset.UniqueId = assetId
+	//var asset modules.Asset
+	//assetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
+	//asset.AssetId = assetId
+	//asset.UniqueId = assetId
+	asset := modules.NewPTNAsset()
 	// step2. compute chain height
 	// get current world_state index.
 
@@ -240,17 +241,14 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 		log.Error(err.Error())
 		return nil, err
 	}
+	//coinbase, err := CreateCoinbase(mAddr, fees+awards, asset, t)
+	coinbase, err := CreateCoinbase(mAddr, fees, addition, asset, t)
 
-	coinbase, err := CreateCoinbase(mAddr, fees, addition, &asset, t)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
 	txs := modules.Transactions{coinbase}
-	//加入增发的交易
-	//if awardsTxs != nil {
-	//	txs = append(txs, awardsTxs...)
-	//}
 	// step6 get unit's txs in txpool's txs
 	if len(poolTxs) > 0 {
 		for _, tx := range poolTxs {
@@ -327,7 +325,9 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 	number.Index = index
 	number.IsMain = true
 
-	number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
+	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
+	asset := modules.NewPTNAsset()
+	number.AssetID = asset.AssetId
 	hash, err := unitOp.dagdb.GetHashByNumber(number)
 	if err != nil {
 		log.Debug("unitOp: getgenesis by number , current error.", "error", err)

@@ -258,11 +258,6 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 	}(time.Now())
 	count := int(0)
 	for i, u := range units {
-		// append by albert·gou
-		time := time.Unix(u.Timestamp(), 0)
-		log.Info(fmt.Sprint("Got unit # ", u.NumberU64(), " timestamp: ", time.Format("2006-01-02 15:04:05")))
-		d.ApplyUnit(u)
-
 		// all units must be continuous
 		if i > 0 && units[i].UnitHeader.Number.Index == units[i-1].UnitHeader.Number.Index+1 {
 			return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
@@ -278,6 +273,12 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
+
+		// append by albert·gou
+		time := time.Unix(u.Timestamp(), 0)
+		log.Info(fmt.Sprint("Got unit # ", u.NumberU64(), " timestamp: ", time.Format("2006-01-02 15:04:05")))
+		d.ApplyUnit(u)
+
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
 		// modified by albert·gou
 		//if err := d.unitRep.SaveUnit(u, false); err != nil {
