@@ -811,9 +811,9 @@ func (mr *MockIDagMockRecorder) GetAllTokenInfo() *gomock.Call {
 }
 
 // SaveTokenInfo mocks base method
-func (m *MockIDag) SaveTokenInfo(token_info *modules.TokenInfo) (string, error) {
+func (m *MockIDag) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) {
 	ret := m.ctrl.Call(m, "SaveTokenInfo", token_info)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*modules.TokenInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
