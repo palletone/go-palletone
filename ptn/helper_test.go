@@ -401,11 +401,7 @@ func CreateCoinbase() (*modules.Transaction, error) {
 	//	fmt.Println("lalall")
 	//	return nil, fmt.Errorf("Create unit: %s", err.Error())
 	//}
-	asset := modules.Asset{
-		modules.PTNCOIN,
-		modules.PTNCOIN,
-		1,
-	}
+	asset := modules.NewPTNAsset()
 	// setp1. create P2PKH script
 	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 	// step. compute total income
@@ -417,7 +413,7 @@ func CreateCoinbase() (*modules.Transaction, error) {
 	}
 	output := modules.Output{
 		Value:    uint64(totalIncome),
-		Asset:    &asset,
+		Asset:    asset,
 		PkScript: script,
 	}
 	payload := modules.PaymentPayload{

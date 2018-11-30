@@ -1124,8 +1124,12 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 		for i, tx := range list {
 			if tx.Tx.Hash().String() == hash.String() {
 				newList := make([]*modules.TxPoolTransaction, 0)
-				newList = list[:i-1]
-				newList = append(newList, list[i:]...)
+				if i > 0 {
+					newList = append(newList, list[:i]...)
+				}
+				if len(list) > i+1 {
+					newList = append(newList, list[i+1:]...)
+				}
 				pool.pending[unit_hash] = newList
 				if len(tx.From) > 0 {
 					for _, from := range tx.From {
@@ -1180,8 +1184,12 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 		for i, tx := range list {
 			if tx.Tx.Hash().String() == hash.String() {
 				newList := make([]*modules.TxPoolTransaction, 0)
-				newList = list[:i-1]
-				newList = append(newList, list[i:]...)
+				if i > 0 {
+					newList = append(newList, list[:i]...)
+				}
+				if len(list) > i+1 {
+					newList = append(newList, list[i+1:]...)
+				}
 				pool.pending[unit_hash] = newList
 				if len(tx.From) > 0 {
 					for _, from := range tx.From {

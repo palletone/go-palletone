@@ -85,7 +85,9 @@ func (asset *Asset) ParseAssetId() (string, AssetType, []byte) {
 	return symbol, AssetType(t), assetId[4:]
 }
 func (asset *Asset) String() string {
-
+	if asset.AssetId == PTNCOIN {
+		return "PTN"
+	}
 	symbol, t, tx12 := asset.ParseAssetId()
 	assetIdStr := symbol + "+" + strconv.Itoa(int(t)) + base36.EncodeBytes(tx12)
 	if t != AssetType_NonFungibleToken {
