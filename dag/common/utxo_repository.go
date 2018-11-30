@@ -561,8 +561,6 @@ func (repository *UtxoRepository) ComputeAwards(txs []*modules.TxPoolTransaction
 	} else {
 		addition := new(modules.Addition)
 		addition.Asset = *modules.NewPTNAsset()
-		addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
-		addition.Addr = addr
 		return addition, nil
 	}
 }

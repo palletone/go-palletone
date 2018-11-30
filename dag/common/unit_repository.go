@@ -234,15 +234,20 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 		log.Error(err.Error())
 		return nil, err
 	}
+	additions := make(map[common.Address]*modules.Addition)
 	//TODO 附加利息收益
 	//获取保证金利息
-	addition, err := unitOp.utxoRepository.ComputeAwards(poolTxs, unitOp.dagdb)
+	contractAddition, err := unitOp.utxoRepository.ComputeAwards(poolTxs, unitOp.dagdb)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
+	if contractAddition != nil {
+		addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+		additions[addr] = contractAddition
+	}
 	//coinbase, err := CreateCoinbase(mAddr, fees+awards, asset, t)
-	coinbase, err := CreateCoinbase(mAddr, fees, addition, asset, t)
+	coinbase, err := CreateCoinbase(mAddr, fees, additions, asset, t)
 
 	if err != nil {
 		log.Error(err.Error())
@@ -769,22 +774,24 @@ To get unit information by its ChainIndex
 To create coinbase transaction
 */
 
-func CreateCoinbase(addr *common.Address, income uint64, addition *modules.Addition, asset *modules.Asset, t time.Time) (*modules.Transaction, error) {
+func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Address]*modules.Addition, asset *modules.Asset, t time.Time) (*modules.Transaction, error) {
 	//创建合约保证金币龄的奖励output
 	payload := modules.PaymentPayload{}
-	if addition != nil {
-		script := tokenengine.GenerateLockScript(addition.Addr)
-		createT := big.Int{}
-		contractInput := modules.Input{
-			Extra: createT.SetInt64(t.Unix()).Bytes(),
+	if len(addition) != 0 {
+		for k, v := range addition {
+			script := tokenengine.GenerateLockScript(k)
+			createT := big.Int{}
+			additionalInput := modules.Input{
+				Extra: createT.SetInt64(t.Unix()).Bytes(),
+			}
+			additionalOutput := modules.Output{
+				Value:    v.Amount,
+				Asset:    &v.Asset,
+				PkScript: script,
+			}
+			payload.Inputs = append(payload.Inputs, &additionalInput)
+			payload.Outputs = append(payload.Outputs, &additionalOutput)
 		}
-		contractOutput := modules.Output{
-			Value:    addition.Amount,
-			Asset:    &addition.Asset,
-			PkScript: script,
-		}
-		payload.Inputs = append(payload.Inputs, &contractInput)
-		payload.Outputs = append(payload.Outputs, &contractOutput)
 	}
 	// setp1. create P2PKH script
 	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
