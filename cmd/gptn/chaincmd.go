@@ -181,7 +181,7 @@ func initGenesis(ctx *cli.Context) error {
 	if err := dag.SaveChainIndex(chainIndex); err != nil {
 		log.Info("save chain index is failed.", "error", err)
 	} else {
-		token_info := modules.NewTokenInfo("ptn", "0x70746e636f696e000000000000000000", "creator_jay")
+		token_info := modules.NewTokenInfo("ptncoin", "ptn", "creator_jay")
 		idhex, _ := dag.SaveTokenInfo(token_info)
 		log.Info("save chain index is success.", "idhex", idhex)
 	}

@@ -1124,16 +1124,6 @@ func (s *PublicTransactionPoolAPI) GetAllUtxos(ctx context.Context) (string, err
 	return string(result_json), nil
 }
 
-// func (s *PublicTransactionPoolAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
-// 	items, err := s.b.GetAllTokenInfo()
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	info := NewPublicReturnInfo("all_token_info", items)
-// 	result_json, _ := json.Marshal(info)
-// 	return string(result_json), nil
-// }
-
 // GetBlockTransactionCountByNumber returns the number of transactions in the block with the given block number.
 func (s *PublicTransactionPoolAPI) GetBlockTransactionCountByNumber(ctx context.Context, blockNr rpc.BlockNumber) *hexutil.Uint {
 	//	if block, _ := s.b.BlockByNumber(ctx, blockNr); block != nil {
@@ -2394,12 +2384,9 @@ func (s *PublicDagAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
 	return string(result_json), nil
 }
 func (s *PublicDagAPI) GetTokenInfo(ctx context.Context, key string) (string, error) {
-	// id, err := modules.SetIdTypeByHex(key)
-	// if err != nil {
-	// 	return "", err
-	// }
+	hex := hexutil.Encode([]byte(key))
 
-	if item, err := s.b.GetTokenInfo(key); err != nil {
+	if item, err := s.b.GetTokenInfo(hex); err != nil {
 		return "", err
 	} else {
 		info := NewPublicReturnInfo("token_info", item)
@@ -2412,7 +2399,16 @@ func (s *PublicDagAPI) GetTokenInfo(ctx context.Context, key string) (string, er
 func (s *PublicDagAPI) SaveTokenInfo(ctx context.Context, name, token, creator string) (string, error) {
 	//info to token
 	info := modules.NewTokenInfo(name, token, creator)
-	return s.b.SaveTokenInfo(info)
+
+	item, err := s.b.SaveTokenInfo(info)
+	if err != nil {
+		return "", err
+	}
+
+	this := NewPublicReturnInfo("save_token_info", item)
+	result_json, _ := json.Marshal(this)
+	return string(result_json), nil
+
 }
 
 func (s *PublicDagAPI) GetUnitTxsInfo(ctx context.Context, hashHex string) (string, error) {

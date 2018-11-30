@@ -1084,7 +1084,7 @@ func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, 
 }
 
 // save token info
-func (d *Dag) SaveTokenInfo(token_info *modules.TokenInfo) (string, error) { // return key's hex
+func (d *Dag) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) { // return key's hex
 	return d.dagdb.SaveTokenInfo(token_info)
 }
 

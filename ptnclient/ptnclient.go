@@ -423,9 +423,9 @@ func (ec *Client) CreateRawTransaction(ctx context.Context, params string) (stri
 	err := ec.c.CallContext(ctx, &result, "ptn_createRawTransaction", params)
 	return result, err
 }
-func (ec *Client) SignRawTransaction(ctx context.Context, params string,password string, duration *uint64) (*ptnjson.SignRawTransactionResult, error) {
+func (ec *Client) SignRawTransaction(ctx context.Context, params string, password string, duration *uint64) (*ptnjson.SignRawTransactionResult, error) {
 	var result *ptnjson.SignRawTransactionResult
-	err := ec.c.CallContext(ctx, &result, "ptn_signRawTransaction", params,password,duration)
+	err := ec.c.CallContext(ctx, &result, "ptn_signRawTransaction", params, password, duration)
 	return result, err
 }
 
@@ -644,17 +644,15 @@ func (ec *Client) GetAllTokenInfo(ctx context.Context) (*modules.AllTokenInfo, e
 
 func (ec *Client) GetTokenInfo(ctx context.Context, key string) (*modules.TokenInfo, error) {
 	result := new(modules.TokenInfo)
-	// id, err := modules.SetIdTypeByHex(key)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	err := ec.c.CallContext(ctx, &result, "ptn_getTokenInfo", key)
+
+	err := ec.c.CallContext(ctx, &result, "dag_getTokenInfo", key)
 	return result, err
 }
 
 func (ec *Client) SaveTokenInfo(ctx context.Context, name, token, creator string) (*modules.TokenInfo, error) {
 	result := new(modules.TokenInfo)
-	err := ec.c.CallContext(ctx, nil, "ptn_saveTokenInfo", name, token, creator)
+
+	err := ec.c.CallContext(ctx, &result, "dag_saveTokenInfo", name, token, creator)
 	return result, err
 }
 

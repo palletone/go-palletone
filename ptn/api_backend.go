@@ -370,8 +370,14 @@ func (b *PtnApiBackend) GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error)
 	return tokenInfoJson, nil
 }
 
-func (b *PtnApiBackend) SaveTokenInfo(token *modules.TokenInfo) (string, error) {
-	return b.ptn.dag.SaveTokenInfo(token)
+func (b *PtnApiBackend) SaveTokenInfo(token *modules.TokenInfo) (*ptnjson.TokenInfoJson, error) {
+	s_token, err := b.ptn.dag.SaveTokenInfo(token)
+	if err != nil {
+		return nil, err
+	}
+
+	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(s_token)
+	return tokenInfoJson, nil
 }
 
 func (b *PtnApiBackend) GetAddrTransactions(addr string) (modules.Transactions, error) {
