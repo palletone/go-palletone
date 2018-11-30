@@ -334,7 +334,7 @@ type Transaction struct {
 
 //增发的利息
 type Addition struct {
-	Addr   common.Address
+	//Addr   common.Address
 	Asset  Asset
 	Amount uint64
 }
