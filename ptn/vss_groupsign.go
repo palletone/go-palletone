@@ -69,13 +69,11 @@ func (self *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
 		case event := <-self.sigShareCh:
-			unit, _ := self.dag.GetUnitByHash(event.UnitHash)
-			if unit != nil {
+			unit, err := self.dag.GetUnit(event.UnitHash)
+			if unit != nil && err == nil {
 				med := unit.UnitAuthor()
 				node := self.dag.GetActiveMediator(med).Node
 				self.TransmitSigShare(node, &event)
-			} else {
-				log.Error("get unit by hash is failed.", "hash", event.UnitHash)
 			}
 
 			// Err() channel will be closed when unsubscribing.

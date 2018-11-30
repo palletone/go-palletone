@@ -57,6 +57,8 @@ type iDag interface {
 	GetUnitByHash(common.Hash) (*modules.Unit, error)
 	GetMediators() map[common.Address]bool
 	GetElectedMediatorsAddress() (map[string]uint64, error)
+	GetUnit(common.Hash) (*modules.Unit, error)
+
 	IsActiveMediator(add common.Address) bool
 	IsSynced() bool
 

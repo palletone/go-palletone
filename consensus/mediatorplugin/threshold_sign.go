@@ -301,9 +301,8 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 		case newUnit := <-newUnitBuf:
 			sigShare, success := signTBLS(newUnit)
 			if success {
-				// todo 后面改为由p2p广播
-				//go mp.sigShareFeed.Send(SigShareEvent{UnitHash: newUnit.Hash(), SigShare: sigShare})
-				go mp.addToTBLSRecoverBuf(newUnit, sigShare)
+				go mp.sigShareFeed.Send(SigShareEvent{UnitHash: newUnit.Hash(), SigShare: sigShare})
+				//go mp.addToTBLSRecoverBuf(newUnit, sigShare)
 			}
 		}
 	}
@@ -314,24 +313,23 @@ func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
 	case <-mp.quit:
 		return errTerminated
 	default:
-		localMed, _ := mp.dag.GetUnitByHash(sigShare.UnitHash)
-		// todo
-		go mp.addToTBLSRecoverBuf(localMed, sigShare.SigShare)
-		//go mp.addToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
+		//localMed, _ := mp.dag.GetUnitByHash(sigShare.UnitHash)
+		//go mp.addToTBLSRecoverBuf(localMed, sigShare.SigShare)
+		go mp.addToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 		return nil
 	}
 }
 
 // 收集签名分片
-func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnit *modules.Unit, sigShare []byte) {
-	//func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) {
-	//	dag := mp.dag
-	//	newUnit := dag.GetUnit(newUnitHash)
-	if newUnit == nil {
-		log.Error("newUnit is nil!")
+//func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnit *modules.Unit, sigShare []byte) {
+func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) {
+	dag := mp.dag
+	newUnit, err := dag.GetUnit(newUnitHash)
+	if newUnit == nil || err != nil {
+		return
 	}
 
-	newUnitHash := newUnit.UnitHash
+	//newUnitHash := newUnit.UnitHash
 	localMed := newUnit.UnitAuthor()
 
 	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
