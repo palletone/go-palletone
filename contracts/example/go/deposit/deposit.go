@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -124,13 +125,13 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	var res pb.Response
 	switch {
 	case role == "Mediator":
-		//
+		//处理Mediator交付保证金
 		res = d.handleMediatorDepositWitnessPay(stub, invokeAddr, invokeTokens)
 	case role == "Jury":
-		//
+		//处理Jury交付保证金
 		res = d.handleJuryDepositWitnessPay(stub, invokeAddr, invokeTokens)
 	case role == "Developer":
-		//
+		//处理Developer交付保证金
 		res = d.handleDeveloperDepositWitnessPay(stub, invokeAddr, invokeTokens)
 	default:
 		return shim.Success([]byte("role error."))
@@ -149,13 +150,17 @@ func (d *DepositChaincode) handleMediatorDepositWitnessPay(stub shim.ChaincodeSt
 	stateValue := new(modules.DepositStateValue)
 	//账户不存在，第一次参与
 	if stateValueBytes == nil {
+		//判断保证金是否足够
 		if invokeTokens.Amount < depositAmountsForMediator {
 			return shim.Success([]byte("Payment amount is insufficient."))
 		}
+		//加入列表
 		addList("Mediator", invokeAddr, stub)
+		//处理数据
 		stateValues.TotalAmount = invokeTokens.Amount
+		stateValues.Time = time.Now().UTC()
 		stateValue.DepositBalance.Amount = invokeTokens.Amount
-		stateValue.DepositBalance.Asset = &invokeTokens.Asset
+		stateValue.DepositBalance.Asset = invokeTokens.Asset
 		stateValue.Time = time.Now().UTC() //第一次交付保证金的时间，并且加入列表
 		stateValue.Extra = "这是第一次参与"
 		stateValues.Values = append(stateValues.Values, stateValue)
@@ -165,24 +170,22 @@ func (d *DepositChaincode) handleMediatorDepositWitnessPay(stub shim.ChaincodeSt
 		if err != nil {
 			return shim.Success([]byte("Unmarshal stateValueBytes error"))
 		}
-		//判断资产类型是否一致
-		//err = assetIsEqual(invokeTokens.Asset, stateValue.Asset)
-		//if err != nil {
-		//	return shim.Success("InvokeAsset is not equal with stateAsset Success:"))
-		//}
+		//处理数据
 		stateValues.TotalAmount += invokeTokens.Amount
 		stateValue.DepositBalance.Amount = invokeTokens.Amount
-		stateValue.DepositBalance.Asset = &invokeTokens.Asset
-		stateValue.Time = time.Now().UTC() //第一次交付保证金的时间，并且加入列表
+		stateValue.DepositBalance.Asset = invokeTokens.Asset
+		stateValue.Time = time.Now().UTC()
 		stateValue.Extra = "这是再次向合约增加保证金数量"
 		stateValues.Values = append(stateValues.Values, stateValue)
 	}
+	//序列化
 	stateValueMarshalBytes, err := json.Marshal(stateValues)
 	if err != nil {
 		return shim.Success([]byte("Marshal valueState error"))
 	}
+	//更新数据
 	stub.PutState(invokeAddr.String(), stateValueMarshalBytes)
-	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
+	str := strconv.FormatUint(invokeTokens.Amount, 10)
 	return shim.Success([]byte(str))
 }
 
@@ -199,12 +202,13 @@ func (d *DepositChaincode) handleJuryDepositWitnessPay(stub shim.ChaincodeStubIn
 	if stateValueBytes == nil {
 		if invokeTokens.Amount >= depositAmountsForJury {
 			addList("Jury", invokeAddr, stub)
+			stateValues.Time = time.Now().UTC()
 			isJury = true
 		}
 		stateValues.TotalAmount = invokeTokens.Amount
 		//写入写集
 		stateValue.DepositBalance.Amount = invokeTokens.Amount
-		stateValue.DepositBalance.Asset = &invokeTokens.Asset
+		stateValue.DepositBalance.Asset = invokeTokens.Asset
 		stateValue.Time = time.Now().UTC()
 		stateValue.Extra = "这是第一次参与"
 		stateValues.Values = append(stateValues.Values, stateValue)
@@ -221,21 +225,16 @@ func (d *DepositChaincode) handleJuryDepositWitnessPay(stub shim.ChaincodeStubIn
 		//更新stateValue
 		stateValues.TotalAmount += invokeTokens.Amount
 		stateValue.DepositBalance.Amount = invokeTokens.Amount
-		stateValue.DepositBalance.Asset = &invokeTokens.Asset
+		stateValue.DepositBalance.Asset = invokeTokens.Asset
 		stateValue.Time = time.Now().UTC()
 		stateValue.Extra = "这是再次向合约支付保证金"
 		stateValues.Values = append(stateValues.Values, stateValue)
 	}
-	//判断资产类型是否一致
-	//err = assetIsEqual(invokeTokens.Asset, stateValue.Asset)
-	//if err != nil {
-	//	return shim.Success("InvokeAsset is not equal with stateAsset Success:"))
-	//}
 	if !isJury {
 		//判断交了保证金后是否超过了jury
 		if stateValue.DepositBalance.Amount >= depositAmountsForJury {
 			addList("Jury", invokeAddr, stub)
-			//stateValue.Time = time.Now()
+			stateValues.Time = time.Now().UTC()
 		}
 	}
 	stateValueMarshalBytes, err := json.Marshal(stateValues)
@@ -243,7 +242,7 @@ func (d *DepositChaincode) handleJuryDepositWitnessPay(stub shim.ChaincodeStubIn
 		return shim.Success([]byte("Marshal valueState error"))
 	}
 	stub.PutState(invokeAddr.String(), stateValueMarshalBytes)
-	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
+	str := strconv.FormatUint(invokeTokens.Amount, 10)
 	return shim.Success([]byte(str))
 }
 
@@ -260,12 +259,13 @@ func (d *DepositChaincode) handleDeveloperDepositWitnessPay(stub shim.ChaincodeS
 	if stateValueBytes == nil {
 		if invokeTokens.Amount >= depositAmountsForDeveloper {
 			addList("Developer", invokeAddr, stub)
+			stateValues.Time = time.Now().UTC()
 			isDeveloper = true
 		}
 		//写入写集
 		stateValues.TotalAmount = invokeTokens.Amount
 		stateValue.DepositBalance.Amount = invokeTokens.Amount
-		stateValue.DepositBalance.Asset = &invokeTokens.Asset
+		stateValue.DepositBalance.Asset = invokeTokens.Asset
 		stateValue.Time = time.Now().UTC()
 		stateValue.Extra = "这是第一次参与"
 		stateValues.Values = append(stateValues.Values, stateValue)
@@ -282,7 +282,7 @@ func (d *DepositChaincode) handleDeveloperDepositWitnessPay(stub shim.ChaincodeS
 		//更新stateValue
 		stateValues.TotalAmount += invokeTokens.Amount
 		stateValue.DepositBalance.Amount = invokeTokens.Amount
-		stateValue.DepositBalance.Asset = &invokeTokens.Asset
+		stateValue.DepositBalance.Asset = invokeTokens.Asset
 		stateValue.Time = time.Now().UTC()
 		stateValue.Extra = "这是再次向合约支付保证金"
 		stateValues.Values = append(stateValues.Values, stateValue)
@@ -296,6 +296,7 @@ func (d *DepositChaincode) handleDeveloperDepositWitnessPay(stub shim.ChaincodeS
 		//判断交了保证金后是否超过了jury
 		if stateValue.DepositBalance.Amount >= depositAmountsForDeveloper {
 			addList("Developer", invokeAddr, stub)
+			stateValues.Time = time.Now().UTC()
 		}
 	}
 	stateValueMarshalBytes, err := json.Marshal(stateValues)
@@ -303,7 +304,7 @@ func (d *DepositChaincode) handleDeveloperDepositWitnessPay(stub shim.ChaincodeS
 		return shim.Success([]byte("Marshal valueState error"))
 	}
 	stub.PutState(invokeAddr.String(), stateValueMarshalBytes)
-	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
+	str := strconv.FormatUint(invokeTokens.Amount, 10)
 	return shim.Success([]byte(str))
 }
 
@@ -329,29 +330,28 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 	asset := modules.NewPTNAsset()
 	invokeTokens := &modules.InvokeTokens{
 		Amount: ptnAccount,
-		Asset:  *asset,
+		Asset:  asset,
 	}
 	//
-	//第一步：先获取数据库信息
+	//先获取数据库信息
 	stateValueBytes, err := stub.GetState(invokeAddr.String())
 	if err != nil {
 		return shim.Success([]byte("Get account balance from ledger error:"))
 	}
+	//判断数据库是否为空
 	if stateValueBytes == nil {
 		return shim.Success([]byte("Your account does not exist."))
 	}
-	//if stateValueBytes == nil {
-	//	return shim.Error("Your account does not exist.")
-	//}
-	stateValue := new(modules.DepositStateValue)
-	err = json.Unmarshal(stateValueBytes, stateValue)
+	values := new(modules.DepositStateValues)
+	//如果不为空，反序列化数据库信息
+	err = json.Unmarshal(stateValueBytes, values)
 	if err != nil {
 		return shim.Success([]byte("Unmarshal stateValueBytes error:"))
 	}
-	//第二步：比较退款数量和数据库数量
+	//比较退款数量和数据库数量
 	//Asset判断
 	//数量比较
-	if stateValue.DepositBalance.Amount < invokeTokens.Amount {
+	if values.TotalAmount < invokeTokens.Amount {
 		return shim.Success([]byte("Your delivery amount with ptn token is insufficient."))
 	}
 	//获取角色
@@ -359,190 +359,191 @@ func (d *DepositChaincode) depositCashback(stub shim.ChaincodeStubInterface, arg
 	var res pb.Response
 	switch {
 	case role == "Mediator":
-		//
-		res = d.handleMediatorDepositCashback(stub, invokeAddr, invokeTokens, stateValue)
+		//处理Mediator退还保证金
+		res = d.handleMediatorDepositCashback(stub, invokeAddr, invokeTokens, values)
 	case role == "Jury":
-		//
-		res = d.handleJuryDepositCashback(stub, invokeAddr, invokeTokens, stateValue)
+		//处理Jury退还保证金
+		res = d.handleJuryDepositCashback(stub, invokeAddr, invokeTokens, values)
 	case role == "Developer":
-		//
-		res = d.handleDeveloperDepositCashback(stub, invokeAddr, invokeTokens, stateValue)
+		//处理Developer退还保证金
+		res = d.handleDeveloperDepositCashback(stub, invokeAddr, invokeTokens, values)
 	default:
+		//角色错误
 		return shim.Success([]byte("role error."))
 	}
 	return res
 }
 
-func (d *DepositChaincode) handleJuryOrDeveloperDepositCashback(who string, stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.InvokeTokens, stateValue *modules.DepositStateValue) pb.Response {
-	var err error
-	if who == "Jury" {
-		//需要判断是在在列表中
-		isJury := false
-		if stateValue.DepositBalance.Amount >= depositAmountsForJury {
-			isJury = true
-		}
-		stateValue.DepositBalance.Amount -= invokeTokens.Amount
-		if isJury {
-			//时间是否超过期限
-			startTime := stateValue.Time.YearDay()
-			endTime := time.Now().YearDay()
-			//第四步：判断是否已超过规定周期
-			if endTime-startTime >= 0 {
-				//调用从合约把token转到地址
-				err = stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
-				if err != nil {
-					return shim.Success([]byte("PayOutToken error:"))
-				}
-				//判断退保证金后，是否还在规定数量之内
-				if stateValue.DepositBalance.Amount < depositAmountsForJury {
-					//移除出列表
-					handleMember("Jury", invokeAddr, stub)
-					stateValue.Time = time.Now()
-					stateValue.Extra = "这是退出保证金，且不在列表中了"
-				} else {
-					stateValue.Extra = "这是退出保证金，但余额还够规定范围之内"
-				}
-			} else {
-				if stateValue.DepositBalance.Amount >= depositAmountsForJury {
-					//调用从合约把token转到地址
-					err = stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
-					if err != nil {
-						return shim.Success([]byte("PayOutToken error:"))
-					}
-					//一开始就不在列表中
-					stateValue.Extra = "一开始就不在列表中,退剩余余额而已"
-				} else {
-					return shim.Success([]byte("周期内不能退保证金"))
-				}
-			}
-		} else {
-			//调用从合约把token转到地址
-			err = stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
-			if err != nil {
-				return shim.Success([]byte("PayOutToken error:"))
-			}
-			//一开始就不在列表中
-			stateValue.Extra = "一开始就不在列表中,退剩余余额而已"
-		}
-	} else if who == "Developer" {
-		//需要判断是在在列表中
-		isDev := false
-		if stateValue.DepositBalance.Amount >= depositAmountsForDeveloper {
-			isDev = true
-		}
-		stateValue.DepositBalance.Amount -= invokeTokens.Amount
-		if isDev {
-			//时间是否超过期限
-			startTime := stateValue.Time.YearDay()
-			endTime := time.Now().YearDay()
-			//第四步：判断是否已超过规定周期
-			if endTime-startTime >= 10 {
-				//调用从合约把token转到地址
-				err = stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
-				if err != nil {
-					return shim.Success([]byte("PayOutToken error:"))
-				}
-				//判断退保证金后，是否还在规定数量之内
-				if stateValue.DepositBalance.Amount < depositAmountsForDeveloper {
-					//移除出列表
-					handleMember("Developer", invokeAddr, stub)
-					stateValue.Time = time.Now()
-					stateValue.Extra = "这是退出保证金，且不在列表中了"
-				} else {
-					stateValue.Extra = "这是退出保证金，但余额还够规定范围之内"
-				}
-			} else {
-				if stateValue.DepositBalance.Amount >= depositAmountsForDeveloper {
-					//调用从合约把token转到地址
-					err = stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
-					if err != nil {
-						return shim.Success([]byte("PayOutToken error:"))
-					}
-					//一开始就不在列表中
-					stateValue.Extra = "一开始就不在列表中,退剩余余额而已"
-				} else {
-					return shim.Success([]byte("周期内不能退保证金"))
-				}
-			}
-		} else {
-			//调用从合约把token转到地址
-			err = stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
-			if err != nil {
-				return shim.Success([]byte("PayOutToken error:"))
-			}
-			//一开始就不在列表中
-			stateValue.Extra = "一开始就不在列表中,退剩余余额而已"
-		}
-	}
-	stateValueMarshalBytes, err := json.Marshal(stateValue)
-	if err != nil {
-		return shim.Success([]byte("Marshal valueState error"))
-	}
-	stub.PutState(invokeAddr.String(), stateValueMarshalBytes)
-	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
-	return shim.Success([]byte(str))
-}
-
-func (d *DepositChaincode) handleJuryDepositCashback(stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.InvokeTokens, stateValue *modules.DepositStateValue) pb.Response {
-	return d.handleJuryOrDeveloperDepositCashback("Jury", stub, invokeAddr, invokeTokens, stateValue)
-}
-func (d *DepositChaincode) handleDeveloperDepositCashback(stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.InvokeTokens, stateValue *modules.DepositStateValue) pb.Response {
-	return d.handleJuryOrDeveloperDepositCashback("Developer", stub, invokeAddr, invokeTokens, stateValue)
-}
-
-func (d *DepositChaincode) handleMediatorDepositCashback(stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.InvokeTokens, stateValue *modules.DepositStateValue) pb.Response {
+func (d *DepositChaincode) handleMediatorDepositCashback(stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.InvokeTokens, values *modules.DepositStateValues) pb.Response {
 	var err error
 	//规定mediator 退款要么全部退，要么退款后，剩余数量在mediator数量范围内，
-	stateValue.DepositBalance.Amount -= invokeTokens.Amount
-	//第三步：判断是否全部退
-	if stateValue.DepositBalance.Amount == 0 {
-		startTime := stateValue.Time.YearDay()
-		endTime := time.Now().YearDay()
-		//第四步：判断是否已超过规定周期
-		if endTime-startTime >= 0 { //TODO
-			//调用从合约把token转到地址
-			//第五步：从合约把token转到地址
-			err = stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
+	values.TotalAmount -= invokeTokens.Amount
+	//判断是否全部退
+	if values.TotalAmount == 0 {
+		//加入候选列表的时的时间
+		startTime := values.Time.YearDay()
+		//当前时间
+		endTime := time.Now().UTC().YearDay()
+		//判断是否已超过规定周期
+		if endTime-startTime >= 0 {
+			//退出全部，即删除cashback
+			err = d.cashbackOrForfeitureAllDeposit("Mediator", stub, invokeAddr, invokeTokens, invokeAddr, values)
 			if err != nil {
-				return shim.Success([]byte("PayOutToken error:"))
+				return shim.Success([]byte(err.Error()))
 			}
-			//从列表移除，并在状态数据库删除
-			//第六步：从列表移除
-			handleMember("Mediator", invokeAddr, stub)
-			stateValue.Time = time.Now()
-			stateValue.Extra = "这是退出全部保证金,并移除出列表"
-			//stateValueMarshalBytes, err := json.Marshal(stateValue)
-			//if err != nil {
-			//	return shim.Success("Marshal valueState Success:"))
-			//}
-			////第七步：并在状态数据库删除
-			//stub.PutState(invokeAddr.String(), stateValueMarshalBytes)
-			stub.DelState(invokeAddr.String())
-			return shim.Success([]byte("ok"))
+			return shim.Success([]byte("成功退出"))
 		} else {
+			//没有超过周期，不能退出
 			return shim.Success([]byte("还在规定周期之内，不得退出列表"))
 		}
-	} else if stateValue.DepositBalance.Amount < depositAmountsForMediator {
+	} else if values.TotalAmount < depositAmountsForMediator {
 		//说明退款后，余额少于规定数量
 		return shim.Success([]byte("说明退款后，余额少于规定数量"))
 	} else {
-		stateValue.Extra = "这是退出保证金，只退一部分钱，剩下余额还是在规定范围之内"
-		//调用从合约把token转到地址
-		//第四步：从合约把token转到地址
-		err = stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
+		//TODO 这是只退一部分钱，剩下余额还是在规定范围之内
+		d.cashbackOrForfeitureSomeDeposit("Mediator", stub, invokeAddr, invokeTokens, invokeAddr, values)
 		if err != nil {
-			return shim.Success([]byte("PayOutToken error:"))
+			return shim.Success([]byte(err.Error()))
 		}
+		return shim.Success([]byte("成功退出一部分"))
 	}
-	//更新
-	stateValueMarshalBytes, err := json.Marshal(stateValue)
+}
+
+//对Jury退保证金的处理
+func (d *DepositChaincode) handleJuryDepositCashback(stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.InvokeTokens, values *modules.DepositStateValues) pb.Response {
+	var res pb.Response
+	if values.TotalAmount >= depositAmountsForJury {
+		//已在列表中
+		res = d.handleJuryFromList(stub, invokeAddr, invokeTokens, values)
+	} else {
+		//TODO 不在列表中
+		//res = handleCommonJury(stub, invokeAddr, invokeTokens, values)
+	}
+	return res
+}
+
+//Jury已在列表中
+func (d *DepositChaincode) handleJuryFromList(stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.InvokeTokens, values *modules.DepositStateValues) pb.Response {
+	//退出列表
+	var err error
+	//计算余额
+	values.TotalAmount -= invokeTokens.Amount
+	//判断是否退出列表
+	if values.TotalAmount == 0 {
+		//加入列表时的时间
+		startTime := values.Time.YearDay()
+		//当前退出时间
+		endTime := time.Now().UTC().YearDay()
+		//判断是否已到期
+		if endTime-startTime >= 0 {
+			//退出全部，即删除cashback
+			err = d.cashbackOrForfeitureAllDeposit("Jury", stub, invokeAddr, invokeTokens, invokeAddr, values)
+			if err != nil {
+				return shim.Success([]byte(err.Error()))
+			}
+			return shim.Success([]byte("成功退出"))
+		} else {
+			return shim.Success([]byte("未到期，不能退出列表"))
+		}
+	} else {
+		//TODO 退出一部分，且退出该部分金额后还在列表中
+		d.cashbackOrForfeitureSomeDeposit("Jury", stub, invokeAddr, invokeTokens, invokeAddr, values)
+		if err != nil {
+			return shim.Success([]byte(err.Error()))
+		}
+		return shim.Success([]byte("成功退出一部分"))
+	}
+}
+
+//对Developer退保证金的处理
+func (d *DepositChaincode) handleDeveloperDepositCashback(stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.InvokeTokens, values *modules.DepositStateValues) pb.Response {
+	var res pb.Response
+	if values.TotalAmount >= depositAmountsForDeveloper {
+		//已在列表中
+		res = d.handleDeveloperFromList(stub, invokeAddr, invokeTokens, values)
+	} else {
+		//TODO 不在列表中
+		//res = handleCommonDeveloper(stub, invokeAddr, invokeTokens, values)
+	}
+	return res
+}
+
+//Developer已在列表中
+func (d *DepositChaincode) handleDeveloperFromList(stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.InvokeTokens, values *modules.DepositStateValues) pb.Response {
+	//退出列表
+	var err error
+	//计算余额
+	values.TotalAmount -= invokeTokens.Amount
+	//判断是否退出列表
+	if values.TotalAmount == 0 {
+		//加入列表时的时间
+		startTime := values.Time.YearDay()
+		//当前退出时间
+		endTime := time.Now().UTC().YearDay()
+		//判断是否已到期
+		if endTime-startTime >= 0 {
+			//退出全部，即删除cashback
+			err = d.cashbackOrForfeitureAllDeposit("Developer", stub, invokeAddr, invokeTokens, invokeAddr, values)
+			if err != nil {
+				return shim.Success([]byte(err.Error()))
+			}
+			return shim.Success([]byte("成功退出"))
+		} else {
+			return shim.Success([]byte("未到期，不能退出列表"))
+		}
+	} else {
+		//TODO 退出一部分，且退出该部分金额后还在列表中
+		d.cashbackOrForfeitureSomeDeposit("Jury", stub, invokeAddr, invokeTokens, invokeAddr, values)
+		if err != nil {
+			return shim.Success([]byte(err.Error()))
+		}
+		return shim.Success([]byte("成功退出一部分"))
+	}
+}
+
+//退出列表处理
+func (d *DepositChaincode) cashbackOrForfeitureAllDeposit(who string, stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.InvokeTokens, forfeitureAddr common.Address, values *modules.DepositStateValues) error {
+	//计算总奖励
+	totalAward := calculateAllAwards(values.Values)
+	//退款总额：本金+利息
+	invokeTokens.Amount += totalAward
+	//调用从合约把token转到请求地址
+	err := stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
 	if err != nil {
-		return shim.Success([]byte("Marshal valueState error:"))
+		return err
 	}
-	//第五步：更新状态数据库
-	stub.PutState(invokeAddr.String(), stateValueMarshalBytes)
-	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
-	return shim.Success([]byte(str))
+	//移除出列表
+	handleMember(who, invokeAddr, stub)
+	//删除节点
+	err = stub.DelState(forfeitureAddr.String())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//节点还在列表中，计算这部分提款的余额的奖励
+func (d *DepositChaincode) cashbackOrForfeitureSomeDeposit(who string, stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.InvokeTokens, forfeitureAddr common.Address, values *modules.DepositStateValues) error {
+	//计算这部分余额的奖励
+	someAward := calculateSomeAwards(values.Values, invokeTokens)
+	//退款+利息
+	invokeTokens.Amount += someAward
+	//调用从合约把token转到请求地址
+	err := stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
+	if err != nil {
+		return err
+	}
+	//序列化
+	stateValueMarshalBytes, err := json.Marshal(values)
+	if err != nil {
+		return err
+	}
+	//更新状态数据库
+	stub.PutState(forfeitureAddr.String(), stateValueMarshalBytes)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 //保证金没收
@@ -552,33 +553,37 @@ func (d DepositChaincode) forfeitureDeposit(stub shim.ChaincodeStubInterface, ar
 	if len(args) != 3 {
 		return shim.Success([]byte("Input parameter Success,need three parameters."))
 	}
-	//
+	//基金会地址
 	invokeAddr, _ := stub.GetInvokeAddress()
 	fmt.Println("invokeAddr==", invokeAddr.String())
-	//获取基金会地址
+	//获取系统配置基金会地址
 	foundationAddress, err := stub.GetSystemConfig("FoundationAddress")
 	if err != nil {
 		return shim.Success([]byte("获取基金会地址错误"))
 	}
 	fmt.Println("foundationAddress==", foundationAddress)
-	if invokeAddr.String() != foundationAddress {
-		return shim.Success([]byte("请求地址不正确，请使用基金会的地址"))
-	}
+	//判断没收请求地址是否是基金会地址
+	//if invokeAddr.String() != foundationAddress {
+	//	return shim.Success([]byte("请求地址不正确，请使用基金会的地址"))
+	//}
+	//获取没收节点地址
 	forfeitureAddr, err := common.StringToAddress(args[0])
 	if err != nil {
 		return shim.Success([]byte("string to address error"))
 	}
 	fmt.Println(forfeitureAddr.String())
-	//获取该账户的账本信息
+	//获取没收节点的账本信息
 	stateValueBytes, err := stub.GetState(forfeitureAddr.String())
 	if err != nil {
 		return shim.Success([]byte("Get account balance from ledger error:"))
 	}
+	//判断没收节点账户是否为空
 	if stateValueBytes == nil {
 		return shim.Success([]byte("you have not depositWitnessPay for deposit."))
 	}
-	stateValue := new(modules.DepositStateValue)
-	err = json.Unmarshal(stateValueBytes, stateValue)
+	values := new(modules.DepositStateValues)
+	//将没收节点账户序列化
+	err = json.Unmarshal(stateValueBytes, values)
 	if err != nil {
 		return shim.Success([]byte("unmarshal accBalByte error"))
 	}
@@ -587,96 +592,112 @@ func (d DepositChaincode) forfeitureDeposit(stub shim.ChaincodeStubInterface, ar
 	if err != nil {
 		return shim.Success([]byte("String transform to uint64 error:"))
 	}
-	if stateValue.DepositBalance.Amount < ptnAccount {
+	//判断账户余额和没收请求数量
+	if values.TotalAmount < ptnAccount {
 		return shim.Success([]byte("Forfeiture too many."))
+	}
+	asset := modules.NewPTNAsset()
+	invokeTokens := &modules.InvokeTokens{
+		Amount: ptnAccount,
+		Asset:  asset,
 	}
 	//判断是 Jury 还是 Mediator 还是 developer
 	role := args[2]
 	res := pb.Response{}
 	switch {
 	case role == "Mediator":
-		//
-		res = d.handleMediatorForfeitureDeposit(invokeAddr, forfeitureAddr, ptnAccount, stateValue, stub)
+		//处理没收Mediator保证金
+		res = d.handleMediatorForfeitureDeposit(invokeAddr, forfeitureAddr, invokeTokens, values, stub)
 	case role == "Jury":
-		//
-		res = d.handleJuryForfeitureDeposit(invokeAddr, forfeitureAddr, ptnAccount, stateValue, stub)
+		//处理没收Jury保证金
+		res = d.handleJuryForfeitureDeposit(invokeAddr, forfeitureAddr, invokeTokens, values, stub)
 	case role == "Developer":
-		//
-		res = d.handleDeveloperForfeitureDeposit(invokeAddr, forfeitureAddr, ptnAccount, stateValue, stub)
+		//处理没收Developer保证金
+		res = d.handleDeveloperForfeitureDeposit(invokeAddr, forfeitureAddr, invokeTokens, values, stub)
 	}
 	return res
 }
 
-func (d *DepositChaincode) handleMediatorForfeitureDeposit(invokeAddr, forfeitureAddr common.Address, amounts uint64, stateValue *modules.DepositStateValue, stub shim.ChaincodeStubInterface) pb.Response {
-	invokeTokens := new(modules.InvokeTokens)
-	invokeTokens.Amount = amounts
-	invokeTokens.Asset = *stateValue.DepositBalance.Asset
-	stateValue.DepositBalance.Amount -= amounts
-	if stateValue.DepositBalance.Amount == 0 {
-		err := stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
+//处理没收Mediator保证金
+func (d *DepositChaincode) handleMediatorForfeitureDeposit(invokeAddr, forfeitureAddr common.Address, tokens *modules.InvokeTokens, values *modules.DepositStateValues, stub shim.ChaincodeStubInterface) pb.Response {
+	var err error
+	//计算余额
+	values.TotalAmount -= tokens.Amount
+	//判断是否没收全部，即在列表中移除该节点
+	if values.TotalAmount == 0 {
+		//没收不考虑是否在规定周期内,其实它肯定是在列表中并已在周期内
+		//没收全部，即删除
+		err = d.cashbackOrForfeitureAllDeposit("Mediator", stub, invokeAddr, tokens, forfeitureAddr, values)
 		if err != nil {
-			return shim.Success([]byte("PayOutToken error"))
+			return shim.Success([]byte(err.Error()))
 		}
-		stub.DelState(forfeitureAddr.String())
+		return shim.Success([]byte("成功退出"))
 
-	} else if stateValue.DepositBalance.Amount < depositAmountsForMediator {
-		return shim.Success([]byte("要么没收全部，要么没收后余额还在保证金之内"))
+	} else if values.TotalAmount < depositAmountsForMediator {
+		//没收后余额不在Mediator保证金之内
+		return shim.Success([]byte("没收后余额不在Mediator保证金之内"))
 	} else {
-		stateValue.Extra = "罚没保证金了"
-		stateValueMarshalBytes, err := json.Marshal(stateValue)
+		//TODO 退出一部分，且退出该部分金额后还在列表中
+		d.cashbackOrForfeitureSomeDeposit("Mediator", stub, invokeAddr, tokens, forfeitureAddr, values)
 		if err != nil {
-			return shim.Success([]byte("Marshal error"))
+			return shim.Success([]byte(err.Error()))
 		}
-		stub.PutState(forfeitureAddr.String(), stateValueMarshalBytes)
+		return shim.Success([]byte("成功没收一部分"))
 	}
-	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
-	return shim.Success([]byte(str))
 }
 
-func (d *DepositChaincode) handleJuryForfeitureDeposit(invokeAddr, forfeitureAddr common.Address, amounts uint64, stateValue *modules.DepositStateValue, stub shim.ChaincodeStubInterface) pb.Response {
-	invokeTokens := new(modules.InvokeTokens)
-	invokeTokens.Amount = amounts
-	invokeTokens.Asset = *stateValue.DepositBalance.Asset
-	err := stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
-	if err != nil {
-		return shim.Success([]byte("PayOutToken error"))
+func (d *DepositChaincode) handleJuryForfeitureDeposit(invokeAddr, forfeitureAddr common.Address, tokens *modules.InvokeTokens, values *modules.DepositStateValues, stub shim.ChaincodeStubInterface) pb.Response {
+	var err error
+	//计算余额
+	values.TotalAmount -= tokens.Amount
+	//判断是否没收全部，即在列表中移除该节点
+	if values.TotalAmount == 0 {
+		//没收不考虑是否在规定周期内,其实它肯定是在列表中并已在周期内
+		//没收全部，即删除
+		err = d.cashbackOrForfeitureAllDeposit("Jury", stub, invokeAddr, tokens, forfeitureAddr, values)
+		if err != nil {
+			return shim.Success([]byte(err.Error()))
+		}
+		return shim.Success([]byte("成功退出"))
+
+	} else if values.TotalAmount < depositAmountsForMediator {
+		//没收后余额不在Mediator保证金之内
+		return shim.Success([]byte("没收后余额不在Mediator保证金之内"))
+	} else {
+		//TODO 退出一部分，且退出该部分金额后还在列表中
+		d.cashbackOrForfeitureSomeDeposit("Jury", stub, invokeAddr, tokens, forfeitureAddr, values)
+		if err != nil {
+			return shim.Success([]byte(err.Error()))
+		}
+		return shim.Success([]byte("成功没收一部分"))
 	}
-	result := stateValue.DepositBalance.Amount - amounts
-	if result < depositAmountsForJury {
-		handleMember("Jury", forfeitureAddr, stub)
-	}
-	stateValue.DepositBalance.Amount = result
-	stateValue.Extra = "罚没保证金了"
-	stateValueMarshalBytes, err := json.Marshal(stateValue)
-	if err != nil {
-		return shim.Success([]byte("Marshal error"))
-	}
-	stub.PutState(forfeitureAddr.String(), stateValueMarshalBytes)
-	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
-	return shim.Success([]byte(str))
 }
 
-func (d *DepositChaincode) handleDeveloperForfeitureDeposit(invokeAddr, forfeitureAddr common.Address, amounts uint64, stateValue *modules.DepositStateValue, stub shim.ChaincodeStubInterface) pb.Response {
-	invokeTokens := new(modules.InvokeTokens)
-	invokeTokens.Amount = amounts
-	invokeTokens.Asset = *stateValue.DepositBalance.Asset
-	err := stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
-	if err != nil {
-		return shim.Success([]byte("PayOutToken error"))
+func (d *DepositChaincode) handleDeveloperForfeitureDeposit(invokeAddr, forfeitureAddr common.Address, tokens *modules.InvokeTokens, values *modules.DepositStateValues, stub shim.ChaincodeStubInterface) pb.Response {
+	var err error
+	//计算余额
+	values.TotalAmount -= tokens.Amount
+	//判断是否没收全部，即在列表中移除该节点
+	if values.TotalAmount == 0 {
+		//没收不考虑是否在规定周期内,其实它肯定是在列表中并已在周期内
+		//没收全部，即删除
+		err = d.cashbackOrForfeitureAllDeposit("Developer", stub, invokeAddr, tokens, forfeitureAddr, values)
+		if err != nil {
+			return shim.Success([]byte(err.Error()))
+		}
+		return shim.Success([]byte("成功退出"))
+
+	} else if values.TotalAmount < depositAmountsForMediator {
+		//没收后余额不在Mediator保证金之内
+		return shim.Success([]byte("没收后余额不在Mediator保证金之内"))
+	} else {
+		//TODO 退出一部分，且退出该部分金额后还在列表中
+		d.cashbackOrForfeitureSomeDeposit("Developer", stub, invokeAddr, tokens, forfeitureAddr, values)
+		if err != nil {
+			return shim.Success([]byte(err.Error()))
+		}
+		return shim.Success([]byte("成功没收一部分"))
 	}
-	result := stateValue.DepositBalance.Amount - amounts
-	if result < depositAmountsForDeveloper {
-		handleMember("Developer", forfeitureAddr, stub)
-	}
-	stateValue.DepositBalance.Amount = result
-	stateValue.Extra = "罚没保证金了"
-	stateValueMarshalBytes, err := json.Marshal(stateValue)
-	if err != nil {
-		return shim.Success([]byte("Marshal error"))
-	}
-	stub.PutState(forfeitureAddr.String(), stateValueMarshalBytes)
-	str := strconv.FormatUint(stateValue.DepositBalance.Amount, 10)
-	return shim.Success([]byte(str))
 }
 
 //func assetIsEqual(invokeAsset, stateAsset modules.Asset) Success {
@@ -685,3 +706,35 @@ func (d *DepositChaincode) handleDeveloperForfeitureDeposit(invokeAddr, forfeitu
 //	}
 //	return nil
 //}
+//计算全部的奖励
+func calculateAllAwards(values []*modules.DepositStateValue) uint64 {
+	allAward := uint64(0)
+	for _, v := range values {
+		//计算奖励
+		award := award.CalculateAwardsForDepositContractNodes(v.DepositBalance.Amount, v.Time.UTC().Unix())
+		allAward += award
+	}
+	return allAward
+}
+
+//计算退出一部分钱
+func calculateSomeAwards(values []*modules.DepositStateValue, invokeTokens *modules.InvokeTokens) uint64 {
+	someAward := uint64(0)
+	for i, value := range values {
+		someAward += value.DepositBalance.Amount
+		if someAward > invokeTokens.Amount {
+			if i == 0 {
+				values[i].DepositBalance.Amount -= invokeTokens.Amount
+			} else {
+				if someAward == invokeTokens.Amount {
+					values = values[i+1:]
+				} else {
+					values = values[i:]
+					values[i].DepositBalance.Amount = someAward - invokeTokens.Amount
+				}
+			}
+			break
+		}
+	}
+	return someAward
+}
