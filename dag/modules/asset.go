@@ -48,7 +48,12 @@ const (
 )
 
 func NewPTNAsset() *Asset {
-	return &Asset{AssetId: PTNCOIN}
+	//return &Asset{AssetId: PTNCOIN}
+        asset,err:= NewAsset("PTN", AssetType_FungibleToken, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, IDType16{})
+        if err != nil{
+            return nil
+        }
+        return asset
 }
 func NewAsset(symbol string, assetType AssetType, requestId []byte, uniqueId IDType16) (*Asset, error) {
 	asset := &Asset{}
