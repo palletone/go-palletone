@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
@@ -95,16 +94,13 @@ const (
 
 func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	// 1. 尝试生产验证单元
-	result, detail, unit := mp.MaybeProduceUnit()
+	result, detail := mp.MaybeProduceUnit()
 
 	// 2. 打印尝试结果
 	switch result {
 	case Produced:
-		log.Info("MediatorPlugin", "Generated Unit #", detail["Num"], "index:", unit.Header().Number.Index,
-			" hash: ", unit.UnitHeader.Hash(), "parenthash:", unit.ParentHash()[0],
-			" with timestamp ", detail["Timestamp"], " by mediator: ", detail["Mediator"])
-		//log.Info("Generated Unit #" + detail["Num"] + "index:"+" hash: " + detail["Hash"] +
-		//	" with timestamp " + detail["Timestamp"] + " by mediator: " + detail["Mediator"])
+		log.Info("Generated Unit # " + detail["Num"] + " with timestamp: " + detail["Timestamp"] +
+			" by mediator: " + detail["Mediator"] + " hash: " + detail["Hash"])
 	case NotSynced:
 		log.Info("Not producing Unit because production is disabled " +
 			"until we receive a recent Unit (see: --enable-stale-production)")
@@ -132,7 +128,7 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	return result
 }
 
-func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]string, modules.Unit) {
+func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]string) {
 	//	println("\n尝试生产验证单元...")
 	detail := map[string]string{}
 
@@ -149,7 +145,7 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 		if nextSlotTime.After(now) || nextSlotTime.Equal(now) {
 			mp.productionEnabled = true
 		} else {
-			return NotSynced, detail, modules.Unit{}
+			return NotSynced, detail
 		}
 	}
 
@@ -158,7 +154,7 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	if slot == 0 {
 		detail["NextTime"] = nextSlotTime.Format("2006-01-02 15:04:05")
 		detail["Now"] = now.Format("2006-01-02 15:04:05")
-		return NotTimeYet, detail, modules.Unit{}
+		return NotTimeYet, detail
 	}
 
 	// this Conditional judgment should fail, because now <= HeadUnitTime
@@ -174,14 +170,14 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	scheduledMediator := dag.GetScheduledMediator(slot)
 	if scheduledMediator.Equal(common.Address{}) {
 		log.Error("The current shuffled mediators is nil!")
-		return UnknownCondition, detail, modules.Unit{}
+		return UnknownCondition, detail
 	}
 
 	// we must control the Mediator scheduled to produce the next Unit.
 	med, ok := mp.mediators[scheduledMediator]
 	if !ok {
 		detail["ScheduledMediator"] = scheduledMediator.Str()
-		return NotMyTurn, detail, modules.Unit{}
+		return NotMyTurn, detail
 	}
 
 	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
@@ -189,7 +185,7 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	err := ks.Unlock(accounts.Account{Address: scheduledMediator}, med.Password)
 	if err != nil {
 		detail["ScheduledKey"] = scheduledMediator.Str()
-		return NoPrivateKey, detail, modules.Unit{}
+		return NoPrivateKey, detail
 	}
 
 	scheduledTime := dag.GetSlotTime(slot)
@@ -197,7 +193,7 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	if diff > 500*time.Millisecond || diff < -500*time.Millisecond {
 		detail["ScheduledTime"] = scheduledTime.Format("2006-01-02 15:04:05")
 		detail["Now"] = now.Format("2006-01-02 15:04:05")
-		return Lag, detail, modules.Unit{}
+		return Lag, detail
 	}
 
 	// 2. 生产验证单元
@@ -212,7 +208,7 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 
 	newUnit := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, mp.ptn.TxPool())
 	if newUnit.IsEmpty() {
-		return ExceptionProducing, detail, modules.Unit{}
+		return ExceptionProducing, detail
 	}
 
 	unitHash := newUnit.UnitHash
@@ -228,7 +224,7 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	// 4. 异步向区块链网络广播验证单元
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
 
-	return Produced, detail, *newUnit
+	return Produced, detail
 }
 
 func (mp *MediatorPlugin) initTBLSRecoverBuf(localMed common.Address, newUnitHash common.Hash) {
