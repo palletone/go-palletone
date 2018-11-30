@@ -313,17 +313,17 @@ func (q *queue) Schedule(headers []*modules.Header, from uint64) []*modules.Head
 		hash := header.Hash()
 		//if header.Number == nil || header.Number.Uint64() != from {
 		if header.Number.Index != from {
-			log.Warn("Header broke chain ordering", "number", header.Number, "hash", hash, "expected", from)
+			log.Warn("Header broke chain ordering", "number", header.Number.Index, "hash", hash, "expected", from)
 			break
 		}
 
 		if q.headerHead != (common.Hash{}) && q.headerHead != header.ParentsHash[0] {
-			log.Warn("Header broke chain ancestry", "number", header.Number, "hash", hash)
+			log.Warn("Header broke chain ancestry", "number", header.Number.Index, "hash", hash)
 			break
 		}
 		// Make sure no duplicate requests are executed
 		if _, ok := q.blockTaskPool[hash]; ok {
-			log.Warn("Header  already scheduled for block fetch", "number", header.Number, "hash", hash)
+			log.Warn("Header  already scheduled for block fetch", "number", header.Number.Index, "hash", hash)
 			continue
 		}
 		//		if _, ok := q.receiptTaskPool[hash]; ok {
