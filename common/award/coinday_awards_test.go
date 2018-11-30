@@ -85,8 +85,8 @@ func TestCalculateAwardsForDepositContractNodes(t *testing.T) {
 	//coinDay := getCoinDay(1000, startTime.UTC().Unix(), time.Now().UTC())
 	//币龄：4349000
 	//获取币龄收益
-	awards := CalculateAwardsForDepositContractNodes(1000, startTime.UTC().Unix())
-	if awards != 238 {
+	awards := CalculateAwardsForDepositContractNodes(5800, startTime.UTC().Unix())
+	if awards != 1382 {
 		t.Errorf("failed,want 86980,but get %d", awards)
 	} else {
 		t.Logf("succeeded,want 86980 and get %d", awards)
