@@ -54,9 +54,7 @@ func TestGenesisUnit(t *testing.T) {
 	msg := modules.NewMessage(modules.APP_PAYMENT, payload)
 	msgs := make([]*modules.Message, 0)
 	tx := modules.NewTransaction(append(msgs, msg))
-	asset := new(modules.Asset)
-	asset.AssetId = modules.PTNCOIN
-	asset.UniqueId = modules.PTNCOIN
+	asset := modules.NewPTNAsset()
 
 	gUnit, _ := NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix(), asset)
 

@@ -39,9 +39,8 @@ func TestCreateUnit(t *testing.T) {
 	log.Info("get genesiss info", "error", err0, "info", genesis)
 }
 func createUnit() (*modules.Unit, error) {
-	asset := new(modules.Asset)
-	asset.AssetId = modules.PTNCOIN
-	asset.UniqueId = modules.PTNCOIN
+	asset := modules.NewPTNAsset()
+
 	// new payload tpl payload
 	inputs := make([]*modules.Input, 0)
 	in := new(modules.Input)
