@@ -62,7 +62,7 @@ type iDag interface {
 
 	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
 
-	GenerateUnit(when time.Time, producer common.Address, groupPubKey kyber.Point,
+	GenerateUnit(when time.Time, producer common.Address, groupPubKey string,
 		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit
 
 	MediatorSchedule() []common.Address

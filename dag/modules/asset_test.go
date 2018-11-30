@@ -52,3 +52,10 @@ func TestAsset_String(t *testing.T) {
 	t.Logf("Asset:%08b", a.AssetId)
 	assert.Equal(t, asset2.Bytes(), a.Bytes())
 }
+func TestAsset_SetString(t *testing.T) {
+	asset := &Asset{}
+	asset.SetString("PTN")
+	t.Logf("%08b", asset.AssetId)
+	t.Logf("ptn string:%s", asset.String())
+	assert.Equal(t, asset.String(), "PTN")
+}
