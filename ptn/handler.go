@@ -514,12 +514,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return pm.ConsensusMsg(msg, p)
 
 	// append by Albert·Gou
-	case msg.Code == NewProducedUnitMsg:
-		// Retrieve and decode the propagated new produced unit
-		//go pm.NewProducedUnitMsg(msg, p)
-		return pm.NewBlockMsg(msg, p)
+	//case msg.Code == NewProducedUnitMsg:
+	//	// Retrieve and decode the propagated new produced unit
+	//	pm.NewProducedUnitMsg(msg, p)
+	//	return pm.NewBlockMsg(msg, p)
 
-		// append by Albert·Gou
+	// append by Albert·Gou
 	case msg.Code == SigShareMsg:
 		return pm.SigShareMsg(msg, p)
 
