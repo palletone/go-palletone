@@ -27,6 +27,7 @@ import (
 // TokenInfoJson Yiran@ sturct made for display
 type TokenInfoJson struct {
 	Name         string `json:"name"`
+	TokenStr     string `json:"token_str"`
 	TokenHex     string `json:"token_hex"` // idtype16's hex
 	Token        string `json:"token_id"`
 	Creator      string `json:"creator"`
@@ -37,6 +38,7 @@ type TokenInfoJson struct {
 func ConvertTokenInfo2Json(tokenInfo *modules.TokenInfo) *TokenInfoJson {
 	return &TokenInfoJson{
 		Name:         tokenInfo.Name,
+		TokenStr:     tokenInfo.TokenStr,
 		TokenHex:     tokenInfo.TokenHex,
 		Token:        tokenInfo.Token.TokenType(),
 		Creator:      tokenInfo.Creator,

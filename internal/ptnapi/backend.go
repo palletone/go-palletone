@@ -107,7 +107,7 @@ type Backend interface {
 	GetAllUtxos() ([]ptnjson.UtxoJson, error)
 
 	/* ---------------------save token info ------------------------*/
-	SaveTokenInfo(token_info *modules.TokenInfo) (string, error)
+	SaveTokenInfo(token_info *modules.TokenInfo) (*ptnjson.TokenInfoJson, error)
 
 	GetAddrTransactions(addr string) (modules.Transactions, error)
 	GetAllTokenInfo() (*modules.AllTokenInfo, error)

@@ -68,7 +68,7 @@ type IDagDb interface {
 	SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
 	SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	SaveTxLookupEntry(unit *modules.Unit) error
-	SaveTokenInfo(token_info *modules.TokenInfo) (string, error)
+	SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
 	SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error
 
 	PutCanonicalHash(hash common.Hash, number uint64) error
@@ -335,16 +335,16 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 	}
 	return nil
 }
-func (dagdb *DagDb) SaveTokenInfo(token_info *modules.TokenInfo) (string, error) {
+func (dagdb *DagDb) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) {
 	if token_info == nil {
-		return "", errors.New("token info is null.")
+		return token_info, errors.New("token info is null.")
 	}
-	id, _ := modules.SetIdTypeByHex(token_info.TokenHex)
+	// id, _ := modules.SetIdTypeByHex(token_info.TokenHex)
 
 	key := string(constants.TOKENTYPE) + token_info.TokenHex
 	log.Info("================save token info =========", "key", key)
 	if err := StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), token_info); err != nil {
-		return id.String(), err
+		return token_info, err
 	}
 	// 更新all token_info table.
 	infos, _ := dagdb.GetAllTokenInfo()
@@ -354,7 +354,7 @@ func (dagdb *DagDb) SaveTokenInfo(token_info *modules.TokenInfo) (string, error)
 
 	infos.Add(token_info)
 	dagdb.SaveAllTokenInfo(infos)
-	return id.String(), nil
+	return token_info, nil
 }
 
 func (dagdb *DagDb) SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error {

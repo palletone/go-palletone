@@ -5612,7 +5612,7 @@ var methods = function () {
     });
     var getTokenInfo = new Method({
         name: 'getTokenInfo',
-        call: 'ptn_getTokenInfo',
+        call: 'dag_getTokenInfo',
         params: 1,
         // inputFormatter: [null]
     });
@@ -5622,9 +5622,9 @@ var methods = function () {
         params: 0,
         // inputFormatter: [null]
     });
-    var saveTokenInfo = new Method({
+    var saveTokenInfo = new Method({  
         name: 'saveTokenInfo',
-        call: 'ptn_saveTokenInfo',
+        call: 'dag_saveTokenInfo',
         params: 3,
         //inputFormatter: [null]
     });
