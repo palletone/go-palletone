@@ -29,7 +29,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 
-	asset2 "github.com/palletone/go-palletone/dag/asset"
+	//asset2 "github.com/palletone/go-palletone/dag/asset"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 
 	"crypto/ecdsa"
@@ -123,10 +123,11 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		OriginalHolder: holder,
 	}
 	// get new asset id
-	assetId := asset2.NewAsset()
-	asset := &modules.Asset{
-		AssetId: assetId,
-	}
+	asset := modules.NewPTNAsset()
+        err = err
+	//asset := &modules.Asset{
+	//	AssetId: assetId,
+	//}
 	assetInfo.AssetID = asset
 	extra, err := rlp.EncodeToBytes(assetInfo)
 	if err != nil {

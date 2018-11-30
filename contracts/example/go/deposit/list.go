@@ -62,6 +62,7 @@ func addMediatorList(invokeAddr common.Address, stub shim.ChaincodeStubInterface
 	//fmt.Printf("MediatorList = %#v\n", mediatorList)
 	mediatorList = append(mediatorList, invokeAddr)
 	mediatorListBytes, _ = json.Marshal(mediatorList)
+	//更新列表
 	stub.PutState("MediatorList", mediatorListBytes)
 }
 
@@ -77,23 +78,26 @@ func addJuryList(invokeAddr common.Address, stub shim.ChaincodeStubInterface) {
 	stub.PutState("JuryList", juryListBytes)
 }
 
-//无论是退款还是罚款，作相应处理
+//无论是退款还是罚款，在相应列表中移除节点
 func handleMember(who string, invokeFromAddr common.Address, stub shim.ChaincodeStubInterface) {
 	switch {
 	case who == "Mediator":
 		listBytes, _ := stub.GetState("MediatorList")
 		mediatorList := []common.Address{}
 		_ = json.Unmarshal(listBytes, &mediatorList)
+		//从列表中移除该节点
 		move("MediatorList", mediatorList, invokeFromAddr, stub)
 	case who == "Jury":
 		listBytes, _ := stub.GetState("JuryList")
 		juryList := []common.Address{}
 		_ = json.Unmarshal(listBytes, &juryList)
+		//从列表中移除该节点
 		move("JuryList", juryList, invokeFromAddr, stub)
 	case who == "Developer":
 		listBytes, _ := stub.GetState("DeveloperList")
 		developerList := []common.Address{}
 		_ = json.Unmarshal(listBytes, &developerList)
+		//从列表中移除该节点
 		move("DeveloperList", developerList, invokeFromAddr, stub)
 	}
 }
@@ -107,5 +111,6 @@ func move(who string, list []common.Address, invokeAddr common.Address, stub shi
 		}
 	}
 	listBytes, _ := json.Marshal(list)
+	//更新列表
 	stub.PutState(who, listBytes)
 }

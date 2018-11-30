@@ -281,7 +281,7 @@ type InvokeInfo struct {
 
 type InvokeTokens struct {
 	Amount uint64 `json:"amount"`
-	Asset  Asset  `json:"asset"`
+	Asset  *Asset `json:"asset"`
 }
 
 type DepositOrVoteAwards struct {
@@ -289,10 +289,6 @@ type DepositOrVoteAwards struct {
 	Asset  Asset  `json:"asset"`
 }
 
-type Award struct {
-	Addr        common.Address
-	AmountAsset AmountAsset
-}
 type InvokeFees struct {
 	Amount uint64 `json:"amount"`
 	Asset  Asset  `json:"asset"`
@@ -305,6 +301,7 @@ type AmountAsset struct {
 type DepositStateValues struct {
 	TotalAmount uint64               `json:"total_amount"`
 	Values      []*DepositStateValue `json:"values"`
+	Time        time.Time            `json:"time"`
 }
 
 type DepositStateValue struct {

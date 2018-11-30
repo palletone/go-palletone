@@ -54,8 +54,8 @@ type IUtxoRepository interface {
 	GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64)
 	GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	WalletBalance(addr common.Address, asset modules.Asset) uint64
-	ComputeAwards(txs []*modules.TxPoolTransaction, dagdb storage.IDagDb) (uint64, []*modules.Award, error)
-	ComputeTxAward(tx *modules.Transaction, dagdb storage.IDagDb) (uint64, *modules.Award, error)
+	ComputeAwards(txs []*modules.TxPoolTransaction, dagdb storage.IDagDb) (*modules.Addition, error)
+	ComputeTxAward(tx *modules.Transaction, dagdb storage.IDagDb) (uint64, error)
 }
 
 /**
@@ -545,35 +545,36 @@ func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) 
 }
 
 /**
-根据交易列表计算保证金交易和投票交易的收益
+根据交易列表计算保证金交易的收益
 */
-func (repository *UtxoRepository) ComputeAwards(txs []*modules.TxPoolTransaction, dagdb storage.IDagDb) (uint64, []*modules.Award, error) {
+func (repository *UtxoRepository) ComputeAwards(txs []*modules.TxPoolTransaction, dagdb storage.IDagDb) (*modules.Addition, error) {
 	awards := uint64(0)
-	awardList := []*modules.Award{}
 	for _, tx := range txs {
-		award, awardOne, err := repository.ComputeTxAward(tx.Tx, dagdb)
+		award, err := repository.ComputeTxAward(tx.Tx, dagdb)
 		if err != nil {
-			return 0, nil, err
+			return nil, err
 		}
-		if awardOne != nil && award != 0 {
-			awardList = append(awardList, awardOne)
-			awards += award
-		}
+		awards += award
 	}
 	if awards == 0 {
-		return 0, nil, nil
+		return nil, nil
+	} else {
+		addition := new(modules.Addition)
+		addition.Asset = *modules.NewPTNAsset()
+		addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+		addition.Addr = addr
+		return addition, nil
 	}
-	return awards, awardList, nil
 }
 
-//计算一笔保证金合约或投票Tx中的币龄收益
-func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb storage.IDagDb) (uint64, *modules.Award, error) {
+//计算一笔保证金合约的币龄收益
+func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb storage.IDagDb) (uint64, error) {
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
 		}
-		//判断是否是保证金合约地址或者投票交易
+		//判断是否是保证金合约地址
 		utxo := repository.GetUxto(*payload.Inputs[0])
 		addr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
 		if addr.String() == "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM" {
@@ -591,19 +592,10 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 				award := award2.CalculateAwardsForDepositContractNodes(utxo.Amount, timestamp)
 				awards += award
 			}
-			//将output地址加入增发列表
-			awardAddr, _ := tokenengine.GetAddressFromScript(payload.Outputs[0].PkScript)
-			awardOne := &modules.Award{
-				Addr: awardAddr,
-				AmountAsset: modules.AmountAsset{
-					awards,
-					utxo.Asset,
-				},
-			}
-			return awards, awardOne, nil
+			return awards, nil
 		}
 	}
-	return 0, nil, nil
+	return 0, nil
 }
 
 //计算一笔Tx中包含多少手续费

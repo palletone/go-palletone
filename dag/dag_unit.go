@@ -139,6 +139,11 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 }
 
 func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
+	if nextUnit.ParentHash()[0] != dag.HeadUnitHash() {
+		// todo 出现分叉, 调用本方法之前未处理分叉
+		return
+	}
+
 	// 5. 更新Unit中交易的状态
 
 	// 6. 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量

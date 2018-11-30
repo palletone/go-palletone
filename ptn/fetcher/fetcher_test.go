@@ -222,7 +222,7 @@ func (f *fetcherTester) verifyHeader(header *modules.Header) error {
 }
 
 // broadcastBlock is a nop placeholder for the block broadcasting.
-func (f *fetcherTester) broadcastBlock(block *modules.Unit, propagate bool, broadcastUnit int) {
+func (f *fetcherTester) broadcastBlock(block *modules.Unit, propagate bool, broadcastMediator int) {
 }
 
 // chainHeight retrieves the current height (block number) of the chain.

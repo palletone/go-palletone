@@ -31,11 +31,11 @@ func TestCoinDay(t *testing.T) {
 		startTime2, _ = time.Parse("2006-01-02 15:04:05", "2018-11-26 01:00:00")
 		startTime3, _ = time.Parse("2006-01-02 15:04:05", "2018-11-25 02:00:00")
 		startTime4, _ = time.Parse("2006-01-02 15:04:05", "2018-11-24 03:00:00")
-		startTime5, _ = time.Parse("2006-01-02 15:04:05", "2007-01-02 00:00:00")
-		endTime1, _   = time.Parse("2006-01-02 15:04:05", "2018-11-27 23:59:59")
-		endTime2, _   = time.Parse("2006-01-02 15:04:05", "2018-11-27 01:00:00")
-		endTime3, _   = time.Parse("2006-01-02 15:04:05", "2018-11-27 03:00:00")
-		endTime4, _   = time.Parse("2006-01-02 15:04:05", "2018-11-27 23:00:00")
+		//startTime5, _ = time.Parse("2006-01-02 15:04:05", "2007-01-02 00:00:00")
+		endTime1, _ = time.Parse("2006-01-02 15:04:05", "2018-11-27 23:59:59")
+		endTime2, _ = time.Parse("2006-01-02 15:04:05", "2018-11-27 01:00:00")
+		endTime3, _ = time.Parse("2006-01-02 15:04:05", "2018-11-27 03:00:00")
+		endTime4, _ = time.Parse("2006-01-02 15:04:05", "2018-11-27 23:00:00")
 	)
 	tests := []struct {
 		startTime int64
@@ -62,11 +62,11 @@ func TestCoinDay(t *testing.T) {
 			endTime:   endTime4,
 			want:      3,
 		},
-		{
-			startTime: startTime5.UTC().Unix(),
-			endTime:   time.Now().UTC(),
-			want:      4349,
-		},
+		//{
+		//	startTime: startTime5.UTC().Unix(),
+		//	endTime:   time.Now().UTC(),
+		//	want:      4349,
+		//},
 	}
 	for i, test := range tests {
 		duration := getCoinDay(1, test.startTime, test.endTime)
@@ -79,16 +79,16 @@ func TestCoinDay(t *testing.T) {
 }
 
 func TestCalculateAwardsForDepositContractNodes(t *testing.T) {
-	startTime, _ := time.Parse("2006-01-02 15:04:05", "2007-01-02 00:00:00")
+	//startTime, _ := time.Parse("2006-01-02 15:04:05", "2007-01-02 00:00:00")
 	//距离现在天数：4349
 	//获取币龄 余额：1000
 	//coinDay := getCoinDay(1000, startTime.UTC().Unix(), time.Now().UTC())
 	//币龄：4349000
 	//获取币龄收益
-	awards := CalculateAwardsForDepositContractNodes(1000, startTime.UTC().Unix())
-	if awards != 238 {
-		t.Errorf("failed,want 86980,but get %d", awards)
-	} else {
-		t.Logf("succeeded,want 86980 and get %d", awards)
-	}
+	//awards := CalculateAwardsForDepositContractNodes(1000, startTime.UTC().Unix())
+	//if awards != 238 {
+	//	t.Errorf("failed,want 86980,but get %d", awards)
+	//} else {
+	//	t.Logf("succeeded,want 86980 and get %d", awards)
+	//}
 }
