@@ -641,7 +641,7 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 		if f.queueChangeHook != nil {
 			f.queueChangeHook(op.unit.Hash(), true)
 		}
-		log.Debug("Queued propagated block", "peer", peer, "number", block.Number(), "hash", hash, "queued", f.queue.Size())
+		log.Debug("Queued propagated block", "peer", peer, "number", block.Number().Index, "hash", hash, "queued", f.queue.Size())
 	}
 }
 
