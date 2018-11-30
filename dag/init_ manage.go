@@ -127,3 +127,15 @@ func (d *Dag) UnitIrreversibleTime() uint {
 	gp := d.GetGlobalProp()
 	return uint(gp.ChainThreshold()) * uint(gp.ChainParameters.MediatorInterval)
 }
+
+func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
+	unit, err := d.GetUnit(hash)
+	if unit != nil && err == nil {
+		lin := d.GetDynGlobalProp().LastIrreversibleUnitNum
+		if unit.NumberU64() <= uint64(lin) {
+			return true
+		}
+	}
+
+	return false
+}

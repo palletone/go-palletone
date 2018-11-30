@@ -279,7 +279,9 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 			return
 		}
 
-		// todo 判断父unit是否被确认
+		if !dag.IsIrreversibleUnit(newUnit.ParentHash()[0]) {
+			return
+		}
 
 		var err error
 		hash := newUnit.Hash()

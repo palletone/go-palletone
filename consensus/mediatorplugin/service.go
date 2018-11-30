@@ -70,6 +70,7 @@ type iDag interface {
 	MediatorSchedule() []common.Address
 
 	IsPrecedingMediator(add common.Address) bool
+	IsIrreversibleUnit(hash common.Hash) bool
 }
 
 type MediatorPlugin struct {
