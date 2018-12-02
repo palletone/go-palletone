@@ -1,7 +1,6 @@
 #!/bin/bash
-#!/usr/bin/expect
 
-echo "===============deployment================"
+source ./modifyconfig.sh
 
 function ExecInit()
 {
@@ -18,16 +17,18 @@ function ExecInit()
     `echo $gptninit`
     path=`pwd`
     fullpath=${path}"/palletone/gptn/leveldb"
-    echo $fullpath
+    echo "leveldb path:"$fullpath
     if [ ! -d $fullpath ]; then
         echo "====================init err=================="
         return
     fi
+        rm -rf init.sh log
         cd ../
     else
     echo $count
         cd node$count
         cp ../node1/palletone/gptn/leveldb ./palletone/gptn/. -rf
+        rm -rf log
         cd ../
     fi
     let ++count;  
@@ -109,6 +110,9 @@ LoopDeploy $n;
 
 json="node1/ptn-genesis.json"
 replacejson $json 
+
+
+ModifyStaticNodes $n
 
 ExecInit $n
 

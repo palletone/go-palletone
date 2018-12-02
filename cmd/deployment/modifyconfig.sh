@@ -136,22 +136,25 @@ function addStaticNodes()
     nodes=$1
     index=$2
     content=`cat $filename`
-    #echo $content
-    #length=`cat $file |jq '.initialMediatorCandidates| length'`
-    echo "node number:"$nodes
-    echo "index:"$index
+    #echo "node number:"$nodes
+    #echo "index:"$index
     acount=1
+    array="["
     while [ $acount -le $nodes ] ;
     do
 	if [ $acount -ne $index ];then
-	    echo $acount
-	    #nodeinfo=`$content | jq ".initialMediatorCandidates[0 ].node"`
+	    #echo $acount
 	    nodeinfo=`echo $content | jq ".initialMediatorCandidates[ $[$acount-1] ].node"`
-	    echo "nodeinfo:"$nodeinfo
+	    array="$array$nodeinfo,"
         fi
 	let ++acount;
     done
-    echo "============"
+    l=${#array}
+    newarr=${array:0:$[$l-1]}
+    newarr="$newarr]"
+    newStaticNodes="StaticNodes=$newarr"
+    sed -i '/^StaticNodes/c'$newStaticNodes'' node$index/ptn-config.toml
+    echo "=====addStaticNodes $index ok======="
 }
 
 
