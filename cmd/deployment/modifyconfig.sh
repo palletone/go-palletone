@@ -126,13 +126,48 @@ echo "account: "$account
 echo "publickey: "$publickey
 echo "nodeinfo: "$nodeinfo
 
-
-
-
 ModifyJson  $account $publickey $nodeinfo
 }
 
 
-#ModifyConfig 4
+function addStaticNodes()
+{
+    filename=node1/ptn-genesis.json
+    nodes=$1
+    index=$2
+    content=`cat $filename`
+    #echo $content
+    #length=`cat $file |jq '.initialMediatorCandidates| length'`
+    echo "node number:"$nodes
+    echo "index:"$index
+    acount=1
+    while [ $acount -le $nodes ] ;
+    do
+	if [ $acount -ne $index ];then
+	    echo $acount
+	    #nodeinfo=`$content | jq ".initialMediatorCandidates[0 ].node"`
+	    nodeinfo=`echo $content | jq ".initialMediatorCandidates[ $[$acount-1] ].node"`
+	    echo "nodeinfo:"$nodeinfo
+        fi
+	let ++acount;
+    done
+    echo "============"
+}
+
+
+
+
+function ModifyStaticNodes()
+{
+    count=1;
+    while [ $count -le $1 ] ;
+    do
+	#echo $count
+        addStaticNodes $1 $count
+        let ++count;
+        sleep 1;
+    done
+    return 0;
+}
 
 
