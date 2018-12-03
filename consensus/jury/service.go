@@ -104,8 +104,8 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 		return nil, errors.New("NewContractProcessor, param is nil")
 	}
 
-	localmediators := ptn.GetLocalMediators()
-	if localmediators == nil {
+	localmediator := ptn.GetLocalMediators()
+	if localmediator == nil {
 		return nil, errors.New("Cannot find local mediators, please config it")
 	}
 	p := &Processor{
@@ -116,10 +116,10 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 		locker:   new(sync.Mutex),
 		quit:     make(chan struct{}),
 		mtx:      make(map[common.Hash]*contractTx),
-		local:    localmediators,
+		local:    localmediator,
 	}
 
-	log.Info("NewContractProcessor ok", "local address", localmediators.Address.String())
+	//log.Info("NewContractProcessor ok", "local address", localmediator.Address.String())
 	//log.Info("NewContractProcessor", "info:", p.local)
 	return p, nil
 }
@@ -146,9 +146,14 @@ func (p *Processor) SubscribeContractEvent(ch chan<- ContractExeEvent) event.Sub
 }
 
 func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
-	log.Info("ProcessContractEvent", "enter, tx req id ", event.Tx.TxId)
 	if event == nil {
 		return errors.New("param is nil")
+	}
+	log.Info("ProcessContractEvent", "enter, tx req id ", event.Tx.TxId)
+
+	if p.local == nil {
+		log.Info("ProcessContractEvent", "ProcessContractEvent local is not contract processor node")
+		return errors.New("ProcessContractEvent local is not contract processor node")
 	}
 
 	if false == checkTxValid(event.Tx) {
