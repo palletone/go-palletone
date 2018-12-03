@@ -45,7 +45,7 @@ import (
 type PeerType int
 
 const (
-	_ PeerType = iota
+	_         PeerType = iota
 	TUnknow
 	TJury
 	TMediator
@@ -75,9 +75,11 @@ type iDag interface {
 }
 
 type contractTx struct {
-	list []common.Address //dynamic
-	tx   *modules.Transaction
-	tm   time.Time //creat time
+	list []common.Address     //dynamic
+	tx   *modules.Transaction //
+	//todo  change type of tx for mult transaction
+	//tx   []*modules.Transaction /
+	tm time.Time //creat time
 }
 
 type Processor struct {
@@ -381,7 +383,50 @@ func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction, cnt int) error {
 	return txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
 }
 
-//todo txid ?
+func (p *Processor) ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
+	log.Info("ContractTxCreat", fmt.Sprintf("enter, deployId[%v],", deployId))
+
+	if deployId == nil || args == nil {
+		log.Error("ContractTxCreat", "param is nil")
+		return nil, errors.New("transaction request param is nil")
+	}
+
+	tx := &modules.Transaction{}
+	if txBytes != nil {
+		if err := rlp.DecodeBytes(txBytes, tx); err != nil {
+			return nil, err
+		}
+	} else {
+		pay := &modules.PaymentPayload{
+			Inputs:   []*modules.Input{},
+			Outputs:  []*modules.Output{},
+			LockTime: 11111, //todo
+		}
+		msgPay := &modules.Message{
+			App:     modules.APP_PAYMENT,
+			Payload: pay,
+		}
+		tx.AddMessage(msgPay)
+	}
+
+	msgReq := &modules.Message{
+		App: modules.APP_CONTRACT_INVOKE_REQUEST,
+		Payload: &modules.ContractInvokeRequestPayload{
+			ContractId: deployId,
+			Args:       args,
+			Timeout:    timeout,
+		},
+	}
+
+	tx.AddMessage(msgReq)
+	tx.TxHash = common.Hash{}
+	tx.TxId = tx.Hash()
+
+	tx.TxHash = common.Hash{}
+	tx.TxHash = tx.Hash()
+
+	return rlp.EncodeToBytes(tx)
+}
 func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) error {
 	log.Info("ContractTxReqBroadcast", fmt.Sprintf("enter, deployId[%v], txid[%s]", deployId, txid))
 	if deployId == nil || args == nil {

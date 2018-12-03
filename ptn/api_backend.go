@@ -446,6 +446,10 @@ func (b *PtnApiBackend) ContractTxReqBroadcast(deployId []byte, txid string, txB
 	return nil, nil
 }
 
+func (b *PtnApiBackend) ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
+	return b.ptn.contractPorcessor.ContractTxCreat(deployId, txBytes, args, timeout)
+}
+
 func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {
 	return b.ptn.dag.GetCommon(key)
 }

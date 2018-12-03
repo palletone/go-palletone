@@ -757,8 +757,8 @@ func (s *PublicBlockChainAPI) GetUnitByNumber(ctx context.Context, condition str
 	number.IsMain = true
 
 	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
-        asset := modules.NewPTNAsset()
-        number.AssetID = asset.AssetId
+	asset := modules.NewPTNAsset()
+	number.AssetID = asset.AssetId
 	log.Info("PublicBlockChainAPI info", "GetUnitByNumber_number.Index:", number.Index, "number:", number.String())
 
 	unit := s.b.GetUnitByNumber(number)
@@ -879,6 +879,22 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, t
 	log.Info("-----ContractInvokeTxReq:" + string(rsp))
 
 	return string(rsp), err
+}
+
+func (s *PublicBlockChainAPI) CreatCcTransaction(ctx context.Context, txtype string, deployId string, txhex string, param []string) (string, error) {
+	depId, _ := hex.DecodeString(deployId)
+	txBytes, err := hex.DecodeString(txhex)
+	log.Info("-----creatCcTransaction:" + deployId )
+
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		fmt.Printf("index[%d], value[%s]\n", i, arg)
+	}
+	rsp, err := s.b.ContractTxCreat(depId, txBytes, args, 0)
+	log.Info("-----creatCcTransaction:" + string(rsp))
+
+	return hex.EncodeToString(rsp), err
 }
 
 // ExecutionResult groups all structured logs emitted by the EVM
@@ -1741,7 +1757,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 }
 
 //create raw transction
-func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
+func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/ , params string) (string, error) {
 	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
