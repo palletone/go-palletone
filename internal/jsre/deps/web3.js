@@ -5688,6 +5688,13 @@ var methods = function () {
         inputFormatter: [null, null, null, null],
     });
 
+    var creatCcTransaction = new Method({
+        name: 'creatCcTransaction',
+        call: 'ptn_creatCcTransaction',
+        params: 4, //txtype string, deployId string, paymentJson string, args[]string------>["fun", "key", "value"]
+        inputFormatter: [null, null, null, null],
+    });
+
     return [
         forking,
         getUnitByHash,
@@ -5752,6 +5759,7 @@ var methods = function () {
         getUnitTxsHashHex, 
         getTxByHash, 
         ccinvoketx,
+        creatCcTransaction,
     ];
 };
 

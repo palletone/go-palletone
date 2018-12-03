@@ -119,6 +119,8 @@ type Backend interface {
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
 	DecodeTx(hex string) (string, error)
 	ContractTxReqBroadcast(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
+
+	ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {
