@@ -1058,7 +1058,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
 		return nil, fmt.Errorf("Create unit: %s", err.Error())
 	}
-	coinbase, err := dagcommon.CreateCoinbase(&addr, 0, &asset, time.Now())
+	coinbase, err := dagcommon.CreateCoinbase(&addr, 0, nil, &asset, time.Now())
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -1086,7 +1086,7 @@ func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, 
 }
 
 // save token info
-func (d *Dag) SaveTokenInfo(token_info *modules.TokenInfo) (string, error) { // return key's hex
+func (d *Dag) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) { // return key's hex
 	return d.dagdb.SaveTokenInfo(token_info)
 }
 

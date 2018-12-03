@@ -197,10 +197,11 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	// }
 
 	// @jay
-	var asset modules.Asset
-	assetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
-	asset.AssetId = assetId
-	asset.UniqueId = assetId
+	//var asset modules.Asset
+	//assetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
+	//asset.AssetId = assetId
+	//asset.UniqueId = assetId
+	asset := modules.NewPTNAsset()
 	// step2. compute chain height
 	// get current world_state index.
 
@@ -233,34 +234,26 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 		log.Error(err.Error())
 		return nil, err
 	}
+	additions := make(map[common.Address]*modules.Addition)
 	//TODO 附加利息收益
-	//获取保证金或投票利息收益和获取列表
-	awards, awardList, err := unitOp.utxoRepository.ComputeAwards(poolTxs, unitOp.dagdb)
+	//获取保证金利息
+	contractAddition, err := unitOp.utxoRepository.ComputeAwards(poolTxs, unitOp.dagdb)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
-	var awardsTxs modules.Transactions
-	if awardList != nil {
-		//创建增发的保证金或投票利息收益的交易
-		//地址，资产，奖励 addr *common.Address, income uint64, asset *modules.Asset, t time.Time
-		//获取奖励的列表
-		awardsTxs, err = CreateAwardsTxs(awardList, time.Now().UTC())
-		if err != nil {
-			log.Error(err.Error())
-			return nil, err
-		}
+	if contractAddition != nil {
+		addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+		additions[addr] = contractAddition
 	}
-	coinbase, err := CreateCoinbase(mAddr, fees+awards, &asset, t)
+	//coinbase, err := CreateCoinbase(mAddr, fees+awards, asset, t)
+	coinbase, err := CreateCoinbase(mAddr, fees, additions, asset, t)
+
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
 	txs := modules.Transactions{coinbase}
-	//加入增发的交易
-	if awardsTxs != nil {
-		txs = append(txs, awardsTxs...)
-	}
 	// step6 get unit's txs in txpool's txs
 	if len(poolTxs) > 0 {
 		for _, tx := range poolTxs {
@@ -337,7 +330,9 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 	number.Index = index
 	number.IsMain = true
 
-	number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
+	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
+	asset := modules.NewPTNAsset()
+	number.AssetID = asset.AssetId
 	hash, err := unitOp.dagdb.GetHashByNumber(number)
 	if err != nil {
 		log.Debug("unitOp: getgenesis by number , current error.", "error", err)
@@ -775,43 +770,29 @@ To get unit information by its ChainIndex
 //}
 
 /**
-创建增发的奖励交易
-*/
-func CreateAwardsTxs(awardsList []*modules.Award, t time.Time) (modules.Transactions, error) {
-	txs := modules.Transactions{}
-	for _, awardOne := range awardsList {
-		script := tokenengine.GenerateP2PKHLockScript(awardOne.Addr.Bytes())
-		createT := big.Int{}
-		input := modules.Input{
-			Extra: createT.SetInt64(t.Unix()).Bytes(),
-		}
-		output := modules.Output{
-			Value:    awardOne.AmountAsset.Amount,
-			Asset:    awardOne.AmountAsset.Asset,
-			PkScript: script,
-		}
-		payload := modules.PaymentPayload{
-			Inputs:  []*modules.Input{&input},
-			Outputs: []*modules.Output{&output},
-		}
-		msg := &modules.Message{
-			App:     modules.APP_PAYMENT,
-			Payload: &payload,
-		}
-		tx := &modules.Transaction{}
-		tx.TxMessages = append(tx.TxMessages, msg)
-		tx.TxHash = tx.Hash()
-		txs = append(txs, tx)
-	}
-	return txs, nil
-}
-
-/**
 创建coinbase交易
 To create coinbase transaction
 */
 
-func CreateCoinbase(addr *common.Address, income uint64, asset *modules.Asset, t time.Time) (*modules.Transaction, error) {
+func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Address]*modules.Addition, asset *modules.Asset, t time.Time) (*modules.Transaction, error) {
+	//创建合约保证金币龄的奖励output
+	payload := modules.PaymentPayload{}
+	if len(addition) != 0 {
+		for k, v := range addition {
+			script := tokenengine.GenerateLockScript(k)
+			createT := big.Int{}
+			additionalInput := modules.Input{
+				Extra: createT.SetInt64(t.Unix()).Bytes(),
+			}
+			additionalOutput := modules.Output{
+				Value:    v.Amount,
+				Asset:    &v.Asset,
+				PkScript: script,
+			}
+			payload.Inputs = append(payload.Inputs, &additionalInput)
+			payload.Outputs = append(payload.Outputs, &additionalOutput)
+		}
+	}
 	// setp1. create P2PKH script
 	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 	// step. compute total income
@@ -826,10 +807,8 @@ func CreateCoinbase(addr *common.Address, income uint64, asset *modules.Asset, t
 		Asset:    asset,
 		PkScript: script,
 	}
-	payload := modules.PaymentPayload{
-		Inputs:  []*modules.Input{&input},
-		Outputs: []*modules.Output{&output},
-	}
+	payload.Inputs = append(payload.Inputs, &input)
+	payload.Outputs = append(payload.Outputs, &output)
 	// step3. create message
 	msg := &modules.Message{
 		App:     modules.APP_PAYMENT,

@@ -19,33 +19,48 @@
 package ptnapi
 
 import (
-	//"fmt"
+	"fmt"
 	//"encoding/json"
 	//"github.com/palletone/go-palletone/ptnjson"
 	//"strings"
-	//"testing"
-        //"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/dag/modules"
+	"testing"
+	//"github.com/shopspring/decimal"
 	// "github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
 )
 
+func TestHex(t *testing.T) {
+	str := "ptn"
+	hex := hexutil.Encode([]byte(str))
+
+	info := modules.NewTokenInfo("jay", str, "jay2")
+	fmt.Println("info", info.String(), hex)
+	if info.Token.String() == hex {
+		fmt.Println("success.")
+	}
+	fmt.Println("tokenHex: ", info.Token.String())
+	fmt.Println("tokenString: ", info.Token.Str())
+}
+
 /*func TestRawTransactionGen(t *testing.T) {
-	// txid from btc
-	/*params := `{
-	    "inputs": [
-			{
-	           "txid": "5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873",
-	           "vout": 0,
-	           "messageindex": 0
-			}
-	    ],
-	    "outputs": [
-			{
-	           "address": "P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX",
-	           "amount": 0.79
-			}
-	    ],
-	    "locktime": 0
-		}`*/
+// txid from btc
+/*params := `{
+    "inputs": [
+		{
+           "txid": "5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873",
+           "vout": 0,
+           "messageindex": 0
+		}
+    ],
+    "outputs": [
+		{
+           "address": "P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX",
+           "amount": 0.79
+		}
+    ],
+    "locktime": 0
+	}`*/
 /*	params := `{
     "inputs": [
 		{
@@ -188,21 +203,21 @@ func TestDecodeRawTransaction(t *testing.T) {
 }*/
 
 /*func TestSignTransaction(t *testing.T) {
-	//from TestRawTransactionGen A --> B C
-	//参数格式错误
-	params := `{
-	"rawtx":"f8e5a095874549c2af9702c90705f5b93289fefb961e0f0ac4cba7f38ea3ed2354d3a8f8c2f8c080b8bdf8bbe7e6e3a0ead59ad26deab3aad37adf5e0aa6e0e952d25be0f7694587bfd506249ab51aef80808080f890f84586b5e620f480009976a914b4c517f99712aff322dd1de35e6828ce80a6ff4888ace39000000000000000000000000000000000900000000000000000000000000000000080f8478801628f9200fab6009976a91472e4d071f347374f3a0ac3d12aaf8dad671217ee88ace3900000000000000000000000000000000090000000000000000000000000000000008080",
-	}`
-	/*params := `{
-	  "transactionhex": "010000000236045404e65bd741109db92227ca0dc9274ef717a6612c96cd77b24a17d1bcd70000000000ffffffff7c1f7d5407b41abf29d41cf6f122ef2d40f76d956900d2c89314970951ef5b940000000000ffffffff014431d309000000001976a914bddc9a62e9b7c3cfdbe1c817520e24e32c339f3288ac00000000",
-	  "redeemhex": "522103940ab29fbf214da2d8ec99c47db63879957311bd90d2f1c635828604d541051421020106ca23b4f28dbc83838ee4745accf90e5621fe70df5b1ee8f7e1b3b41b64cb21029d80ff37838e4989a6aa26af41149d4f671976329e9ddb9b78fdea9814ae6ef553ae",
-	      "privkeys": ["cUakDAWEeNeXTo3B93WBs9HRMfaFDegXcbEGooLz8BSxRBfmpYcX"]
-	      }`*/
-	/*params := `{
-	  "transactionhex": "010000000236045404e65bd741109db92227ca0dc9274ef717a6612c96cd77b24a17d1bcd700000000b400473044022024e6a6ca006f25ccd3ebf5dadf21397a6d7266536cd336061cd17cff189d95e402205af143f6726d75ac77bc8c80edcb6c56579053d2aa31601b23bc8da41385dd86014c69522103940ab29fbf214da2d8ec99c47db63879957311bd90d2f1c635828604d541051421020106ca23b4f28dbc83838ee4745accf90e5621fe70df5b1ee8f7e1b3b41b64cb21029d80ff37838e4989a6aa26af41149d4f671976329e9ddb9b78fdea9814ae6ef553aeffffffff7c1f7d5407b41abf29d41cf6f122ef2d40f76d956900d2c89314970951ef5b9400000000b40047304402206a1d7a2ae07840957bee708b6d3e1fbe7858760ac378b1e21209b348c1e2a5c402204255cd4cd4e5b5805d44bbebe7464aa021377dca5fc6bf4a5632eb2d8bc9f9e4014c69522103940ab29fbf214da2d8ec99c47db63879957311bd90d2f1c635828604d541051421020106ca23b4f28dbc83838ee4745accf90e5621fe70df5b1ee8f7e1b3b41b64cb21029d80ff37838e4989a6aa26af41149d4f671976329e9ddb9b78fdea9814ae6ef553aeffffffff014431d309000000001976a914bddc9a62e9b7c3cfdbe1c817520e24e32c339f3288ac00000000",
-	  "redeemhex": "522103940ab29fbf214da2d8ec99c47db63879957311bd90d2f1c635828604d541051421020106ca23b4f28dbc83838ee4745accf90e5621fe70df5b1ee8f7e1b3b41b64cb21029d80ff37838e4989a6aa26af41149d4f671976329e9ddb9b78fdea9814ae6ef553ae",
-	      "privkeys": ["cQJB6w8SxVNoprVwp2xyxUFxvExMbpR2qj3banXYYXmhtTc1WxC8"]
-	      }`*/
+//from TestRawTransactionGen A --> B C
+//参数格式错误
+params := `{
+"rawtx":"f8e5a095874549c2af9702c90705f5b93289fefb961e0f0ac4cba7f38ea3ed2354d3a8f8c2f8c080b8bdf8bbe7e6e3a0ead59ad26deab3aad37adf5e0aa6e0e952d25be0f7694587bfd506249ab51aef80808080f890f84586b5e620f480009976a914b4c517f99712aff322dd1de35e6828ce80a6ff4888ace39000000000000000000000000000000000900000000000000000000000000000000080f8478801628f9200fab6009976a91472e4d071f347374f3a0ac3d12aaf8dad671217ee88ace3900000000000000000000000000000000090000000000000000000000000000000008080",
+}`
+/*params := `{
+  "transactionhex": "010000000236045404e65bd741109db92227ca0dc9274ef717a6612c96cd77b24a17d1bcd70000000000ffffffff7c1f7d5407b41abf29d41cf6f122ef2d40f76d956900d2c89314970951ef5b940000000000ffffffff014431d309000000001976a914bddc9a62e9b7c3cfdbe1c817520e24e32c339f3288ac00000000",
+  "redeemhex": "522103940ab29fbf214da2d8ec99c47db63879957311bd90d2f1c635828604d541051421020106ca23b4f28dbc83838ee4745accf90e5621fe70df5b1ee8f7e1b3b41b64cb21029d80ff37838e4989a6aa26af41149d4f671976329e9ddb9b78fdea9814ae6ef553ae",
+      "privkeys": ["cUakDAWEeNeXTo3B93WBs9HRMfaFDegXcbEGooLz8BSxRBfmpYcX"]
+      }`*/
+/*params := `{
+  "transactionhex": "010000000236045404e65bd741109db92227ca0dc9274ef717a6612c96cd77b24a17d1bcd700000000b400473044022024e6a6ca006f25ccd3ebf5dadf21397a6d7266536cd336061cd17cff189d95e402205af143f6726d75ac77bc8c80edcb6c56579053d2aa31601b23bc8da41385dd86014c69522103940ab29fbf214da2d8ec99c47db63879957311bd90d2f1c635828604d541051421020106ca23b4f28dbc83838ee4745accf90e5621fe70df5b1ee8f7e1b3b41b64cb21029d80ff37838e4989a6aa26af41149d4f671976329e9ddb9b78fdea9814ae6ef553aeffffffff7c1f7d5407b41abf29d41cf6f122ef2d40f76d956900d2c89314970951ef5b9400000000b40047304402206a1d7a2ae07840957bee708b6d3e1fbe7858760ac378b1e21209b348c1e2a5c402204255cd4cd4e5b5805d44bbebe7464aa021377dca5fc6bf4a5632eb2d8bc9f9e4014c69522103940ab29fbf214da2d8ec99c47db63879957311bd90d2f1c635828604d541051421020106ca23b4f28dbc83838ee4745accf90e5621fe70df5b1ee8f7e1b3b41b64cb21029d80ff37838e4989a6aa26af41149d4f671976329e9ddb9b78fdea9814ae6ef553aeffffffff014431d309000000001976a914bddc9a62e9b7c3cfdbe1c817520e24e32c339f3288ac00000000",
+  "redeemhex": "522103940ab29fbf214da2d8ec99c47db63879957311bd90d2f1c635828604d541051421020106ca23b4f28dbc83838ee4745accf90e5621fe70df5b1ee8f7e1b3b41b64cb21029d80ff37838e4989a6aa26af41149d4f671976329e9ddb9b78fdea9814ae6ef553ae",
+      "privkeys": ["cQJB6w8SxVNoprVwp2xyxUFxvExMbpR2qj3banXYYXmhtTc1WxC8"]
+      }`*/
 
 /*	var signTransactionParams SignTransactionParams
 	err := json.Unmarshal([]byte(params), &signTransactionParams)

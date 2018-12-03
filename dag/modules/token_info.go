@@ -45,6 +45,7 @@ type AllTokenInfo struct {
 }
 type TokenInfo struct {
 	Name         string   `json:"name"`
+	TokenStr     string   `json:"token_str"`
 	TokenHex     string   `json:"token_hex"` // idtype16's hex
 	Token        IDType16 `json:"token_id"`
 	Creator      string   `json:"creator"`
@@ -52,8 +53,10 @@ type TokenInfo struct {
 }
 
 func NewTokenInfo(name, token, creator string) *TokenInfo {
-	id, _ := SetIdTypeByHex(token)
-	return &TokenInfo{Name: name, TokenHex: token, Token: id, Creator: creator, CreationDate: time.Now().Format(TimeFormatString)}
+	// 字符串转hex
+	hex := hexutil.Encode([]byte(token))
+	id, _ := SetIdTypeByHex(hex)
+	return &TokenInfo{Name: name, TokenStr: token, TokenHex: hex, Token: id, Creator: creator, CreationDate: time.Now().Format(TimeFormatString)}
 }
 
 func ZeroIdType16() IDType16 {
@@ -61,7 +64,19 @@ func ZeroIdType16() IDType16 {
 }
 
 func (it *IDType16) String() string {
-	return hexutil.Encode(it.Bytes()[:])
+	return hexutil.Encode([]byte(it.Str()))
+}
+func (it *IDType16) Str() string {
+	var b []byte
+
+	b = append(b, it.Bytes()...)
+
+	for i := len(b) - 1; i >= 0; i-- {
+		if b[i] == ' ' || b[i] == 0 {
+			b = b[:i]
+		}
+	}
+	return string(b)
 }
 
 func (it *IDType16) TokenType() string {

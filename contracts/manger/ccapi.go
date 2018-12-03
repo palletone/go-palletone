@@ -349,7 +349,7 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 		invokeAddr, _ := idag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
 		invokeTokens := unit.InvokeTokens{}
 		outputs := msg0.Outputs
-		invokeTokens.Asset = *outputs[0].Asset
+		invokeTokens.Asset = outputs[0].Asset
 		for _, output := range outputs {
 			invokeTokens.Amount += output.Value
 		}

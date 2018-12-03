@@ -148,9 +148,7 @@ func NewMemDagForTest(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon
 	return memdag
 }
 func createUnitForTest() (*modules.Unit, error) {
-	asset := new(modules.Asset)
-	asset.AssetId = modules.PTNCOIN
-	asset.UniqueId = modules.PTNCOIN
+	asset := modules.NewPTNAsset()
 	// new payload tpl payload
 	inputs := make([]*modules.Input, 0)
 	in := new(modules.Input)

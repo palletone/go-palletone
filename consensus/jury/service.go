@@ -31,21 +31,21 @@ import (
 	"bytes"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/rlp"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	cm "github.com/palletone/go-palletone/dag/common"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/common/rlp"
 	"reflect"
 )
 
 type PeerType int
 
 const (
-	_         PeerType = iota
+	_ PeerType = iota
 	TUnknow
 	TJury
 	TMediator
@@ -103,6 +103,9 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 	}
 
 	localmediators := ptn.GetLocalMediators()
+	if localmediators == nil {
+		return nil, errors.New("Cannot find local mediators, please config it")
+	}
 	p := &Processor{
 		name:     "conractProcessor",
 		ptn:      ptn,
@@ -163,7 +166,7 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 	}
 	tx, err := gen.GenContractSigTransctions(p.local.Address, event.Tx, cmsgType, payload, ks)
 	if err != nil {
-		log.Error(fmt.Sprintf("ProcessContractEvent GenContractSigTransctions", "err:%s", err))
+		log.Error(fmt.Sprintf("ProcessContractEvent GenContractSigTransctions err:%s", err))
 		return err
 	}
 	p.locker.Lock()
@@ -174,7 +177,7 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 	}
 	p.locker.Unlock()
 
-	log.Debug("ProcessContractEvent", "local txid", event.Tx.TxId,"contract transaction:",p.mtx[event.Tx.TxId].list)
+	log.Debug("ProcessContractEvent", "local txid", event.Tx.TxId, "contract transaction:", p.mtx[event.Tx.TxId].list)
 
 	//broadcast
 	go p.ptn.ContractSigBroadcast(ContractSigEvent{tx})
@@ -219,7 +222,7 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 					return errors.New("checkAndAddTxData fail")
 				}
 			}
-			return errors.New(fmt.Sprintf("ProcessContractSigEvent checkAndAddTxData wait local transaction timeout, tx id", cx.tx.TxId))
+			return errors.New(fmt.Sprintf("ProcessContractSigEvent checkAndAddTxData wait local transaction timeout, tx id:%s", cx.tx.TxId))
 		}()
 	} else {
 		log.Info("ProcessContractSigEvent", "tx is ok", event.Tx.TxId)
@@ -236,7 +239,7 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 			}
 		}
 	}
-	return errors.New(fmt.Sprintf("ProcessContractSigEvent", "err with tx id:", cx.tx.TxId.String()))
+	return errors.New(fmt.Sprintf("ProcessContractSigEvent err with tx id:%s", cx.tx.TxId.String()))
 }
 
 func (p *Processor) SubscribeContractSigEvent(ch chan<- ContractSigEvent) event.Subscription {
@@ -369,7 +372,7 @@ func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction, cnt int) error {
 	}
 	if num := getTxSigNum(tx); num < (cnt*2/3 + 1) {
 		log.Error("addTx2LocalTxTool sig num is", num)
-		return errors.New(fmt.Sprintf("addTx2LocalTxTool", "tx sig num is:", num))
+		return errors.New(fmt.Sprintf("addTx2LocalTxTool tx sig num is:%d", num))
 	}
 
 	txPool := p.ptn.TxPool()

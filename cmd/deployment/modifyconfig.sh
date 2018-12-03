@@ -126,13 +126,51 @@ echo "account: "$account
 echo "publickey: "$publickey
 echo "nodeinfo: "$nodeinfo
 
-
-
-
 ModifyJson  $account $publickey $nodeinfo
 }
 
 
-#ModifyConfig 4
+function addStaticNodes()
+{
+    filename=node1/ptn-genesis.json
+    nodes=$1
+    index=$2
+    content=`cat $filename`
+    #echo "node number:"$nodes
+    #echo "index:"$index
+    acount=1
+    array="["
+    while [ $acount -le $nodes ] ;
+    do
+	if [ $acount -ne $index ];then
+	    #echo $acount
+	    nodeinfo=`echo $content | jq ".initialMediatorCandidates[ $[$acount-1] ].node"`
+	    array="$array$nodeinfo,"
+        fi
+	let ++acount;
+    done
+    l=${#array}
+    newarr=${array:0:$[$l-1]}
+    newarr="$newarr]"
+    newStaticNodes="StaticNodes=$newarr"
+    sed -i '/^StaticNodes/c'$newStaticNodes'' node$index/ptn-config.toml
+    echo "=====addStaticNodes $index ok======="
+}
+
+
+
+
+function ModifyStaticNodes()
+{
+    count=1;
+    while [ $count -le $1 ] ;
+    do
+	#echo $count
+        addStaticNodes $1 $count
+        let ++count;
+        sleep 1;
+    done
+    return 0;
+}
 
 
