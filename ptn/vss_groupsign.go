@@ -34,10 +34,10 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 		select {
 		case event := <-self.newProducedUnitCh:
 			// 广播给其他活跃 mediator，进行验证并群签名
-			//self.BroadcastNewProducedUnit(event.Unit)
+			self.BroadcastNewProducedUnit(event.Unit)
 
-			self.BroadcastUnit(event.Unit, true, needBroadcastMediator)
-			self.BroadcastUnit(event.Unit, false, noBroadcastMediator)
+			self.BroadcastUnit(event.Unit, true /*, needBroadcastMediator*/)
+			self.BroadcastUnit(event.Unit, false /*, noBroadcastMediator*/)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-self.newProducedUnitSub.Err():

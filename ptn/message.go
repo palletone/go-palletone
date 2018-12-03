@@ -445,17 +445,17 @@ func (pm *ProtocolManager) ConsensusMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
-//func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
-//	// Retrieve and decode the propagated new produced unit
-//	var unit modules.Unit
-//	if err := msg.Decode(&unit); err != nil {
-//		log.Info("===NewProducedUnitMsg===", "err:", err)
-//		return errResp(ErrDecode, "%v: %v", msg, err)
-//	}
-//
-//	pm.producer.ToUnitTBLSSign(&unit)
-//	return nil
-//}
+func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
+	// Retrieve and decode the propagated new produced unit
+	var unit modules.Unit
+	if err := msg.Decode(&unit); err != nil {
+		log.Info("===NewProducedUnitMsg===", "err:", err)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+
+	pm.producer.ToUnitTBLSSign(&unit)
+	return nil
+}
 
 func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	var sigShare mp.SigShareEvent
