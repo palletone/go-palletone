@@ -75,7 +75,7 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 
 // GenerateUnit, generate unit
 // @author Albert·Gou
-func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey string,
+func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
 	ks *keystore.KeyStore, txpool txspool.ITxPool) *modules.Unit {
 	// 1. 判断是否满足生产的若干条件
 

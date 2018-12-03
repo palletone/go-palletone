@@ -322,6 +322,7 @@ func unitForTest(index int) *modules.Unit {
 	header.Number.Index = uint64(index)
 	header.Authors = modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
 	header.GroupSign = []byte{}
+	header.GroupPubKey = []byte{}
 	//tx, _ := NewCoinbaseTransaction()
 	tx, _ := CreateCoinbase()
 	fmt.Printf("----------%#v\n", tx)
@@ -337,6 +338,7 @@ func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header.Number.Index = 0
 	header.Authors = modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
 	header.GroupSign = []byte{}
+	header.GroupPubKey = []byte{}
 	//tx, _ := NewCoinbaseTransaction()
 	tx, _ := CreateCoinbase()
 	fmt.Printf("----------%#v\n", tx)
@@ -359,6 +361,7 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 		header.Number.Index = par.UnitHeader.Number.Index + 1
 		header.Authors = modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
 		header.GroupSign = []byte{}
+		header.GroupPubKey = []byte{}
 		//tx, _ := NewCoinbaseTransaction()
 		tx, _ := CreateCoinbase()
 		txs := modules.Transactions{tx}

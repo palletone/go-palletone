@@ -101,6 +101,7 @@ func TestCopyHeader(t *testing.T) {
 		AssetIDs:    []IDType16{assetID},
 		Authors:     auth,
 		GroupSign:   w,
+		GroupPubKey:w,
 		TxRoot:      common.Hash{},
 		Number:      ChainIndex{AssetID: assetID, IsMain: true, Index: 0},
 	}
@@ -108,6 +109,7 @@ func TestCopyHeader(t *testing.T) {
 	newH := CopyHeader(&h)
 	//newH.Authors = nil
 	newH.GroupSign = make([]byte, 0)
+	newH.GroupPubKey = make([]byte, 0)
 	hh := Header{}
 	log.Printf("newh=%v \n oldH=%v \n hh=%v", *newH, h, hh)
 }
@@ -129,6 +131,7 @@ func TestUnitSize(t *testing.T) {
 	//}
 
 	h.GroupSign = []byte("group_sign")
+	h.GroupPubKey = []byte("group_pubKey")
 	h.Number.AssetID = PTNCOIN
 	h.Number.Index = uint64(333333)
 	h.Extra = make([]byte, 20)

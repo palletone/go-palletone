@@ -278,7 +278,8 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 
 		// append by albert·gou
 		time := time.Unix(u.Timestamp(), 0)
-		log.Info(fmt.Sprint("Got unit # ", u.NumberU64(), " timestamp: ", time.Format("2006-01-02 15:04:05")))
+		log.Info(fmt.Sprint("Received unit "+u.UnitHash.TerminalString()+" #", u.NumberU64(),
+			" @ ", time.Format("2006-01-02 15:04:05"), " signed by ", u.UnitAuthor().Str()))
 		d.ApplyUnit(u)
 
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
@@ -1041,6 +1042,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 		AssetIDs:    []modules.IDType16{currentUnit.UnitHeader.Number.AssetID},
 		//Authors:      nil,
 		GroupSign:    make([]byte, 0),
+		GroupPubKey: make([]byte, 0),
 		Number:       height,
 		Creationdate: time.Now().Unix(),
 	}
