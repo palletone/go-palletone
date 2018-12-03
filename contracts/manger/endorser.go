@@ -273,7 +273,7 @@ func (e *Endorser) ProcessProposal(contractid []byte, idag dag.IDag, deployId []
 		fmt.Printf("==unit=> %#v\n", unit.TokenPayOut[0])
 		fmt.Printf("==unit=> %s\n", unit.TokenPayOut[0].Asset.String())
 		fmt.Printf("==unit=> %d\n", unit.TokenPayOut[0].Amount)
-		fmt.Printf("==unit=> %#v\n", unit.TokenPayOut[0].PayTo.String())
+		fmt.Printf("==unit=> %s\n", unit.TokenPayOut[0].PayTo.String())
 	}
 	// todo
 
