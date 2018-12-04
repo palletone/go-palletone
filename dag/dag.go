@@ -1253,7 +1253,6 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	}
 
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
-
 	go d.Memdag.UpdateMemDag(unitHash, groupSign[:], txpool)
 
 	// 将缓存池utxo更新到utxodb中
@@ -1261,7 +1260,8 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	// 更新utxo缓存池
 	go d.RefreshCacheUtxos()
 
-	// TODO 状态更新。
+	// 状态更新
+	go d.updateGlobalPropDependGroupSign(unitHash)
 
 	return nil
 }
