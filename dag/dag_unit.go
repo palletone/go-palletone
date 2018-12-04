@@ -123,11 +123,12 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
  * @return true if we switched forks as a result of this push.
  */
 func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
-	// 3. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
+	// 1. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
 
+	// 2. 更新状态
 	dag.ApplyUnit(newUnit)
 
-	// 4. 将验证单元添加到本地DB
+	// 3. 将验证单元添加到本地DB
 	//err := dag.SaveUnit(newUnit, false)
 	//if err != nil {
 	//	log.Debug("unit_production", "PushUnit err:", err)
@@ -138,35 +139,36 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	return true
 }
 
+// ApplyUnit, 利用下一个 unit 更新整个区块链状态
 func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
+	// 1. 下一个 unit 和本地 unit 连续性的判断
 	if nextUnit.ParentHash()[0] != dag.HeadUnitHash() {
 		// todo 出现分叉, 调用本方法之前未处理分叉
 		return
 	}
 
-	// 4. 验证 unit 的 mediator 调度
+	// 2. 验证 unit 的 mediator 调度
 	if !dag.validateMediatorSchedule(nextUnit) {
-		// todo 待测试验证代码
-		//return
+		return
 	}
 
 	// 5. 更新Unit中交易的状态
 
-	// 6. 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
+	// 3. 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
 	missed := dag.updateMediatorMissedUnits(nextUnit)
 
-	// 7. 更新全局动态属性值
+	// 4. 更新全局动态属性值
 	dag.updateDynGlobalProp(nextUnit, missed)
 
-	// 8. 更新 mediator 的相关数据
+	// 5. 更新 mediator 的相关数据
 	dag.updateSigningMediator(nextUnit)
 
-	// 9. 更新最新不可逆区块高度
+	// 6. 更新最新不可逆区块高度
 	dag.updateLastIrreversibleUnit()
 
-	// 10. 判断是否到了维护周期，并维护
+	// 7. 判断是否到了维护周期，并维护
 	dag.performChainMaintenance(nextUnit)
 
-	// 11. 洗牌
+	// 8. 洗牌
 	dag.updateMediatorSchedule()
 }
