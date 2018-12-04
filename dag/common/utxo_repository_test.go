@@ -28,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	plog "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag/asset"
+
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -68,7 +68,7 @@ func getTempDir(t *testing.T) string {
 }
 
 func TestSaveAssetInfo(t *testing.T) {
-	assetid := asset.NewAsset()
+	assetid := modules.PTNCOIN
 	asset := modules.Asset{
 		AssetId:  assetid,
 		UniqueId: assetid,

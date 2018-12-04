@@ -59,3 +59,9 @@ func TestAsset_SetString(t *testing.T) {
 	t.Logf("ptn string:%s", asset.String())
 	assert.Equal(t, asset.String(), "PTN")
 }
+func TestPTNAsset(t *testing.T) {
+	asset, err := NewAssetId("PTN", AssetType_FungibleToken, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	assert.Nil(t, err)
+	t.Logf("PTN hex:%X", asset.Bytes())
+	assert.Equal(t, asset, PTNCOIN)
+}

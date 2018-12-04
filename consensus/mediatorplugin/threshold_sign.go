@@ -20,11 +20,10 @@ package mediatorplugin
 
 import (
 	"fmt"
-	"github.com/dedis/kyber"
+
 	"github.com/dedis/kyber/share"
 	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
-	"github.com/dedis/kyber/sign/bls"
 	"github.com/dedis/kyber/sign/tbls"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
@@ -47,13 +46,13 @@ func (mp *MediatorPlugin) setTimeout() {
 
 func (mp *MediatorPlugin) getLocalActiveDKG(add common.Address) *dkg.DistKeyGenerator {
 	if !mp.IsLocalActiveMediator(add) {
-		log.Error(fmt.Sprintf("The following mediator is not local active mediator: %v", add.String()))
+		log.Debug(fmt.Sprintf("The following mediator is not local active mediator: %v", add.String()))
 		return nil
 	}
 
 	dkg, ok := mp.activeDKGs[add]
 	if !ok || dkg == nil {
-		log.Error(fmt.Sprintf("The following mediator`s dkg is not existed: %v", add.String()))
+		log.Debug(fmt.Sprintf("The following mediator`s dkg is not existed: %v", add.String()))
 		return nil
 	}
 
@@ -64,7 +63,7 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 	for localMed, dkg := range mp.activeDKGs {
 		deals, err := dkg.Deals()
 		if err != nil {
-			log.Error(err.Error())
+			log.Debug(err.Error())
 		}
 
 		for index, deal := range deals {
@@ -107,7 +106,7 @@ func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
 
 	resp, err := dkgr.ProcessDeal(deal)
 	if err != nil {
-		log.Error(err.Error())
+		log.Debug(err.Error())
 		return
 	}
 
@@ -115,7 +114,7 @@ func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
 	go mp.processResponseLoop(localMed, vrfrMed)
 
 	if resp.Response.Status != vss.StatusApproval {
-		log.Error(fmt.Sprintf("DKG: own deal gave a complaint: %v", localMed.String()))
+		log.Debug(fmt.Sprintf("DKG: own deal gave a complaint: %v", localMed.String()))
 		return
 	}
 
@@ -173,12 +172,12 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 	processResp := func(resp *dkg.Response) bool {
 		jstf, err := dkgr.ProcessResponse(resp)
 		if err != nil {
-			log.Error(err.Error())
+			log.Debug(err.Error())
 			return false
 		}
 
 		if jstf != nil {
-			log.Error(fmt.Sprintf("DKG: wrong Process Response: %v", localMed.String()))
+			log.Debug(fmt.Sprintf("DKG: wrong Process Response: %v", localMed.String()))
 			return false
 		}
 
@@ -229,7 +228,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
 	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
-		log.Error("the following mediator is not local: %v", localMed.Str())
+		log.Debug("the following mediator is not local: %v", localMed.Str())
 		return
 	}
 
@@ -267,7 +266,7 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 
 	dks, err := dkgr.DistKeyShare()
 	if err != nil {
-		log.Error(err.Error())
+		log.Debug(err.Error())
 		return
 	}
 
@@ -290,7 +289,7 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 
 		sigShare, err = tbls.Sign(mp.suite, dks.PriShare(), hash[:])
 		if err != nil {
-			log.Error(err.Error())
+			log.Debug(err.Error())
 			return
 		}
 
@@ -338,7 +337,7 @@ func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 
 	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
-		log.Error("the following mediator is not local: %v", localMed.Str())
+		log.Debug("the following mediator is not local: %v", localMed.Str())
 		return
 	}
 
@@ -387,7 +386,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	dks, err := dkgr.DistKeyShare()
 	if err != nil {
-		log.Error(err.Error())
+		log.Debug(err.Error())
 		return
 	}
 
@@ -395,29 +394,14 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	pubPoly := share.NewPubPoly(suite, suite.Point().Base(), dks.Commitments())
 	groupSig, err := tbls.Recover(suite, pubPoly, unitHash[:], sigShareSet.popSigShares(), curThreshold, aSize)
 	if err != nil {
-		log.Error(err.Error())
+		log.Debug(err.Error())
 		return
 	}
 
-	log.Debug("Recovered the Unit that hash: " + unitHash.Hex() +
+	log.Debug("Recovered the Unit that hash: " + unitHash.TerminalString() +
 		" the group signature: " + hexutil.Encode(groupSig))
 
 	// recover后 删除buf
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 	go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
-}
-
-// todo 后面改为由dag模块调用
-func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, unitHash common.Hash, groupSig []byte) error {
-	//func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, newUnit *modules.Unit) error {
-	err := bls.Verify(mp.suite, groupPublicKey, unitHash[:], groupSig)
-	if err == nil {
-		//log.Debug("the group signature: " + hexutil.Encode(groupSig) +
-		//	" of the Unit that hash: " + unitHash.Hex() + " is verified through!")
-	} else {
-		log.Error("the group signature: " + hexutil.Encode(groupSig) + " of the Unit that hash: " +
-			unitHash.Hex() + " is verified that an error has occurred: " + err.Error())
-	}
-
-	return err
 }

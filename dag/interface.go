@@ -71,7 +71,7 @@ type IDag interface {
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 
 	// validate group signature by hash
-	ValidateUnitGroupSig(hash common.Hash) (bool, error)
+	//ValidateUnitGroupSig(hash common.Hash) (bool, error)
 
 	FastSyncCommitHead(common.Hash) error
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
@@ -119,7 +119,7 @@ type IDag interface {
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error)
 	// set groupsign
-	SetUnitGroupSign(sign []byte, hash common.Hash, txpool txspool.ITxPool) error
+	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 
 	IsSynced() bool
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription

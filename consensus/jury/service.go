@@ -106,7 +106,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 
 	localmediator := ptn.GetLocalMediators()
 	if localmediator == nil {
-		return nil, errors.New("Cannot find local mediators, please config it")
+	//	return nil, errors.New("Cannot find local mediators, please config it")
 	}
 	p := &Processor{
 		name:     "conractProcessor",
@@ -186,6 +186,9 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 
 	log.Debug("ProcessContractEvent", "local txid", event.Tx.TxId, "contract transaction:", p.mtx[event.Tx.TxId].list)
 
+	txPool := p.ptn.TxPool()
+	txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
+
 	//broadcast
 	go p.ptn.ContractSigBroadcast(ContractSigEvent{tx})
 	//local
@@ -193,6 +196,52 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 	go p.ProcessContractSigEvent(&ContractSigEvent{tx})
 
 	return nil
+}
+
+func (p *Processor) CheckContractTxValid(tx *modules.Transaction) (bool, error) {
+	//检查本地是否存在合约执行交易，如果不存在则执行并记录到本地，并与接收到的tx进行合约比较
+
+	if tx == nil {
+		return false, errors.New("CheckContractTxValid param is nil")
+	}
+	log.Info("CheckContractTxValid", "enter, tx req id ", tx.TxId)
+
+	if p.local == nil {
+		log.Info("CheckContractTxValid", "ProcessContractEvent local is not contract processor node")
+		return false, errors.New("ProcessContractEvent local is not contract processor node")
+	}
+
+	if false == checkTxValid(tx) {
+		return false, errors.New("CheckContractTxValid recv event Tx is invalid")
+	}
+
+	cmsgType, payload, err := runContractCmd(p.contract, tx)
+	if err != nil {
+		log.Error(fmt.Sprintf("CheckContractTxValid runContractCmd err:%s", err))
+		return false, err
+	}
+	ks := p.ptn.GetKeyStore()
+	err = ks.Unlock(accounts.Account{Address: p.local.Address}, p.local.Password)
+	if err != nil {
+		log.Error(fmt.Sprintf("CheckContractTxValid account add[%s], password[%s], err[%s]", p.local.Address.String(), p.local.Password, err))
+		return false, err
+	}
+	txSig, err := gen.GenContractSigTransctions(p.local.Address, tx, cmsgType, payload, ks)
+	if err != nil {
+		log.Error(fmt.Sprintf("CheckContractTxValid GenContractSigTransctions err:%s", err))
+		return false, err
+	}
+	p.locker.Lock()
+	p.mtx[tx.TxId] = &contractTx{
+		list: p.dag.GetActiveMediators(),
+		tx:   txSig,
+		tm:   time.Now(),
+	}
+	p.locker.Unlock()
+
+	log.Debug("CheckContractTxValid", "local txid", tx.TxId, "contract transaction:", p.mtx[tx.TxId].list)
+
+	return true, nil
 }
 
 func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
