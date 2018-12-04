@@ -757,8 +757,8 @@ func (s *PublicBlockChainAPI) GetUnitByNumber(ctx context.Context, condition str
 	number.IsMain = true
 
 	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
-        asset := modules.NewPTNAsset()
-        number.AssetID = asset.AssetId
+	asset := modules.NewPTNAsset()
+	number.AssetID = asset.AssetId
 	log.Info("PublicBlockChainAPI info", "GetUnitByNumber_number.Index:", number.Index, "number:", number.String())
 
 	unit := s.b.GetUnitByNumber(number)
@@ -766,7 +766,8 @@ func (s *PublicBlockChainAPI) GetUnitByNumber(ctx context.Context, condition str
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number)
 		return "GetUnitByNumber nil"
 	}
-	content, err := json.Marshal(unit)
+	jsonUnit := ptnjson.ConvertUnit2Json(unit)
+	content, err := json.Marshal(jsonUnit)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
 		return "Marshal err"

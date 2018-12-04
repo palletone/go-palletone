@@ -20,23 +20,24 @@ package modules
 
 import (
 	"encoding/json"
-	"time"
-	"unsafe"
-
+	"github.com/martinlindhe/base36"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/dag/constants"
+	"strconv"
+	"time"
+	"unsafe"
 )
 
 var (
 	TimeFormatString = "2006/01/02 15:04:05"
-
-	PTNCOIN = IDType16{}
+	PTNCOIN   = IDType16{0x40, 0x00, 0x82, 0xBB, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	BTCCOIN = IDType16{'b', 't', 'c', 'c', 'o', 'i', 'n'}
 )
 
 // type 	Hash 		[]byte
 const (
 	ID_LENGTH = 16
+	
 )
 
 type IDType16 [ID_LENGTH]byte
@@ -65,6 +66,19 @@ func ZeroIdType16() IDType16 {
 
 func (it *IDType16) String() string {
 	return hexutil.Encode([]byte(it.Str()))
+}
+func (it *IDType16) ToAssetId() string {
+	if *it == PTNCOIN {
+		return "PTN"
+	}
+	var assetId [16]byte
+	copy(assetId[:], it[:])
+	assetId0 := it[0]
+	len := assetId0 >> 5
+	t := (assetId0 & 0xc) >> 2
+	assetId[0] = assetId0 & 3
+	symbol := base36.EncodeBytes(assetId[4-len : 4])
+	return symbol + "+" + strconv.Itoa(int(t)) + base36.EncodeBytes(assetId[4:])
 }
 func (it *IDType16) Str() string {
 	var b []byte
