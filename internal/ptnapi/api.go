@@ -525,16 +525,20 @@ func NewPublicBlockChainAPI(b Backend) *PublicBlockChainAPI {
 // GetBalance returns the amount of wei for the given address in the state of the
 // given block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta
 // block numbers are also allowed.
-func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address common.Address, blockNr rpc.BlockNumber) (*big.Int, error) {
-	/*
-		state, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
-		if state == nil || err != nil {
-			return nil, err
+func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address string) (map[string]decimal.Decimal, error) {
+	utxos, err := s.b.GetAddrUtxos(address)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]decimal.Decimal)
+	for _, utxo := range utxos {
+		if bal, ok := result[utxo.Asset]; ok {
+			result[utxo.Asset] = bal.Add(ptnjson.Dao2Ptn(utxo.Amount))
+		} else {
+			result[utxo.Asset] = ptnjson.Dao2Ptn(utxo.Amount)
 		}
-		b := state.GetBalance(address)
-		return b, state.Error()
-	*/
-	return &big.Int{}, nil
+	}
+	return result, nil
 }
 
 func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
@@ -885,7 +889,7 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, t
 func (s *PublicBlockChainAPI) CreatCcTransaction(ctx context.Context, txtype string, deployId string, txhex string, param []string) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
 	txBytes, err := hex.DecodeString(txhex)
-	log.Info("-----creatCcTransaction:" + deployId )
+	log.Info("-----creatCcTransaction:" + deployId)
 
 	args := make([][]byte, len(param))
 	for i, arg := range param {
@@ -1750,8 +1754,8 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 		inputs = append(inputs, input)
 	}
 	if change != 0 {
-        amounts[from] = ptnjson.Dao2Ptn(change)
-    }
+		amounts[from] = ptnjson.Dao2Ptn(change)
+	}
 
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
 	result, _ := CreateRawTransaction(arg)
@@ -1760,7 +1764,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 }
 
 //create raw transction
-func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/ , params string) (string, error) {
+func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
 	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {

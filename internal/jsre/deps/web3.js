@@ -5305,9 +5305,8 @@ var methods = function () {
     var getBalance = new Method({
         name: 'getBalance',
         call: 'ptn_getBalance',
-        params: 2,
-        inputFormatter: [formatters.inputAddressFormatter, formatters.inputDefaultBlockNumberFormatter],
-        outputFormatter: formatters.outputBigNumberFormatter
+        params: 1,
+        inputFormatter: [null]
     });
 
     var getStorageAt = new Method({
