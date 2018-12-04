@@ -93,7 +93,7 @@ const (
 
 func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	// 1. 尝试生产验证单元
-	result, detail := mp.MaybeProduceUnit()
+	result, detail := mp.maybeProduceUnit()
 
 	// 2. 打印尝试结果
 	switch result {
@@ -122,12 +122,12 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	}
 
 	// 3. 继续循环生产计划
-	mp.scheduleProductionLoop()
+	go mp.scheduleProductionLoop()
 
 	return result
 }
 
-func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]string) {
+func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]string) {
 	//	println("\n尝试生产验证单元...")
 	detail := map[string]string{}
 
