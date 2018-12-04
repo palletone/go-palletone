@@ -375,28 +375,24 @@ func (d *DepositChaincode) applyForDepositCashback(stub shim.ChaincodeStubInterf
 //加入退款申请列表
 func (d *DepositChaincode) addListForCashback(role string, stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.InvokeTokens) error {
 	//先获取申请列表
-	listForCashbackByte, err := stub.GetState("ListForCashback")
+	listForCashback, err := stub.GetListForCashback()
 	if err != nil {
 		return err
 	}
-	listForCashback := new(modules.ListForCashback)
-	//序列化
+	////序列化
 	cashback := new(modules.Cashback)
 	cashback.InvokeAddress = invokeAddr
 	cashback.InvokeTokens = *invokeTokens
 	cashback.Role = role
 	cashback.ApplyTime = time.Now().UTC().Unix()
-	if listForCashbackByte == nil {
+	if listForCashback == nil {
+		listForCashback = new(modules.ListForCashback)
 		listForCashback.Cashback = append(listForCashback.Cashback, cashback)
 	} else {
-		err = json.Unmarshal(listForCashbackByte, listForCashback)
-		if err != nil {
-			return err
-		}
 		listForCashback.Cashback = append(listForCashback.Cashback, cashback)
 	}
 	//反序列化
-	listForCashbackByte, err = json.Marshal(listForCashback)
+	listForCashbackByte, err := json.Marshal(listForCashback)
 	if err != nil {
 		return err
 	}
@@ -421,19 +417,10 @@ func (d *DepositChaincode) handleDepositCashbackApplication(stub shim.ChaincodeS
 //同意申请退保证金请求
 func (d *DepositChaincode) agreeForApplyCashback(stub shim.ChaincodeStubInterface, foundationAddr, cashbackAddr common.Address, applyTime int64, values *modules.DepositStateValues) pb.Response {
 	//获取请求列表
-	listForCashbackByte, err := stub.GetState("ListForCashback")
+	listForCashback, err := stub.GetListForCashback()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if listForCashbackByte == nil {
-		return shim.Error("listForCashbackByte is nil")
-	}
-	listForCashback := new(modules.ListForCashback)
-	err = json.Unmarshal(listForCashbackByte, listForCashback)
-	if err != nil {
-		return shim.Error("json.Unmarshal error " + err.Error())
-	}
-
 	//在申请退款保证金列表中移除该节点
 	cashback := moveInApplyForCashbackList(stub, listForCashback.Cashback, cashbackAddr, applyTime)
 	if cashback == nil {
@@ -565,11 +552,11 @@ func (d *DepositChaincode) handleCommonJuryOrDev(stub shim.ChaincodeStubInterfac
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	fmt.Printf("values=%s\n", values)
+	//fmt.Printf("values=%s\n", values)
 	v := handleValues(values.Values, tokens)
 	values.Values = v
 	values.TotalAmount -= tokens.Amount
-	fmt.Printf("values=%s\n", values)
+	//fmt.Printf("values=%s\n", values)
 	//序列化
 	stateValuesMarshalByte, err := json.Marshal(values)
 	if err != nil {
@@ -710,15 +697,7 @@ func (d *DepositChaincode) handleForfeitureDepositApplication(stub shim.Chaincod
 //不同意提取请求，则直接从提保证金列表中移除该节点
 func (d *DepositChaincode) disagreeForApplyCashback(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, applyTime int64) pb.Response {
 	//获取没收列表
-	listForCashbackByte, err := stub.GetState("ListForCashback")
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	if listForCashbackByte == nil {
-		return shim.Error("列表为空")
-	}
-	listForCashback := new(modules.ListForCashback)
-	err = json.Unmarshal(listForCashbackByte, listForCashback)
+	listForCashback, err := stub.GetListForCashback()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -920,10 +899,10 @@ func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.Chaincod
 	}
 	handleMember(role, forfeitureAddr, stub)
 	//从账户中移除相应没收余额
-	fmt.Printf("values=%s\n", values)
+	//fmt.Printf("values=%s\n", values)
 	v := handleValues(values.Values, tokens)
 	values.Values = v
-	fmt.Printf("values=%s\n", values)
+	//fmt.Printf("values=%s\n", values)
 	//更新数据库
 	//序列化
 	stateValuesMarshalByte, err := json.Marshal(values)
@@ -950,10 +929,10 @@ func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.Chaincod
 		return err
 	}
 	//从账户中移除相应没收余额
-	fmt.Printf("values=%s\n", values)
+	//fmt.Printf("values=%s\n", values)
 	v := handleValues(values.Values, tokens)
 	values.Values = v
-	fmt.Printf("values=%s\n", values)
+	//fmt.Printf("values=%s\n", values)
 	//更新数据库
 	//序列化
 	stateValuesMarshalByte, err := json.Marshal(values)
@@ -980,10 +959,10 @@ func (d *DepositChaincode) cashbackSomeDeposit(role string, stub shim.ChaincodeS
 		return err
 	}
 	//从账户中移除相应没收余额
-	fmt.Printf("values=%s\n", values)
+	//fmt.Printf("values=%s\n", values)
 	v := handleValues(values.Values, tokens)
 	values.Values = v
-	fmt.Printf("values=%s\n", values)
+	//fmt.Printf("values=%s\n", values)
 	//更新数据库
 	//序列化
 	stateValuesMarshalByte, err := json.Marshal(values)

@@ -386,6 +386,22 @@ func (stub *ChaincodeStub) GetState(key string) ([]byte, error) {
 	return stub.handler.handleGetState(collection, key, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
+func (stub *ChaincodeStub) GetListForCashback() (*modules.ListForCashback, error) {
+	listForCashbackByte, err := stub.handler.handleGetState("", "ListForCashback", stub.ContractId, stub.ChannelId, stub.TxID)
+	if err != nil {
+		return nil, err
+	}
+	if listForCashbackByte == nil {
+		return nil, nil
+	}
+	listForCashback := new(modules.ListForCashback)
+	err = json.Unmarshal(listForCashbackByte, listForCashback)
+	if err != nil {
+		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
+	}
+	return listForCashback, nil
+}
+
 // PutState documentation can be found in interfaces.go
 func (stub *ChaincodeStub) PutState(key string, value []byte) error {
 	if key == "" {
