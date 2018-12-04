@@ -2345,6 +2345,26 @@ func (api *PrivateDebugAPI) ChaindbCompact() error {
 func (api *PrivateDebugAPI) SetHead(number hexutil.Uint64) {
 	api.b.SetHead(uint64(number))
 }
+func (api *PrivateDebugAPI) QueryDbByKey(keyString string, keyHex string) *ptnjson.DbRowJson {
+	if keyString != "" {
+		return api.b.QueryDbByKey([]byte(keyString))
+	}
+	if keyHex != "" {
+		key, _ := hex.DecodeString(keyHex)
+		return api.b.QueryDbByKey(key)
+	}
+	return nil
+}
+func (api *PrivateDebugAPI) QueryDbByPrefix(keyString string, keyHex string) []*ptnjson.DbRowJson {
+	if keyString != "" {
+		return api.b.QueryDbByPrefix([]byte(keyString))
+	}
+	if keyHex != "" {
+		key, _ := hex.DecodeString(keyHex)
+		return api.b.QueryDbByPrefix(key)
+	}
+	return nil
+}
 
 // PublicNetAPI offers network related RPC methods
 type PublicNetAPI struct {

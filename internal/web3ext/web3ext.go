@@ -200,6 +200,16 @@ web3._extend({
 			params: 1
 		}),
 		new web3._extend.Method({
+			name: 'queryDbByKey',
+			call: 'debug_queryDbByKey',
+			params: 2
+		}),
+		new web3._extend.Method({
+			name: 'queryDbByPrefix',
+			call: 'debug_queryDbByPrefix',
+			params: 2
+		}),
+		new web3._extend.Method({
 			name: 'seedHash',
 			call: 'debug_seedHash',
 			params: 1

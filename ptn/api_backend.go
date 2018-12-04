@@ -202,6 +202,27 @@ func (b *PtnApiBackend) WalletBalance(address string, assetid []byte, uniqueid [
 func (b *PtnApiBackend) GetContract(id string) (*modules.Contract, error) {
 	return b.ptn.dag.GetContract(common.Hex2Bytes(id))
 }
+func (b *PtnApiBackend) QueryDbByKey(key []byte) *ptnjson.DbRowJson {
+	val, err := b.ptn.dag.QueryDbByKey(key)
+	if err != nil {
+
+		return nil
+	}
+	return ptnjson.NewDbRowJson(key, val)
+}
+func (b *PtnApiBackend) QueryDbByPrefix(prefix []byte) []*ptnjson.DbRowJson {
+	vals, err := b.ptn.dag.QueryDbByPrefix(prefix)
+	if err != nil {
+
+		return nil
+	}
+	result := []*ptnjson.DbRowJson{}
+	for _, val := range vals {
+		j := ptnjson.NewDbRowJson(val.Key, val.Value)
+		result = append(result, j)
+	}
+	return result
+}
 
 /*
 // Get Header

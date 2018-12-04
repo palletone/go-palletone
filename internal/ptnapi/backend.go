@@ -98,7 +98,8 @@ type Backend interface {
 	GetPrefix(prefix string) map[string][]byte //getprefix
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
-
+	QueryDbByKey(key []byte) *ptnjson.DbRowJson
+	QueryDbByPrefix(prefix []byte) []*ptnjson.DbRowJson
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	//------- Get addr utxo start ------//
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)

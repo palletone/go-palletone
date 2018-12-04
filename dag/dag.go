@@ -1294,3 +1294,17 @@ func (d *Dag) UpdateUtxosByUnit(hash common.Hash) error {
 	}
 	return d.utxodb.SaveUtxoView(utxos)
 }
+func (d *Dag) QueryDbByKey(key []byte) ([]byte, error) {
+	return d.Db.Get(key)
+}
+func (d *Dag) QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error) {
+
+	iter := d.Db.NewIteratorWithPrefix(prefix)
+	result := []*modules.DbRow{}
+	for iter.Next() {
+		key := iter.Key()
+		value := iter.Value()
+		result = append(result, &modules.DbRow{Key: key, Value: value})
+	}
+	return result, nil
+}

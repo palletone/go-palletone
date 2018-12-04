@@ -126,4 +126,6 @@ type IDag interface {
 	GetPrecedingMediatorNodes() map[string]*discover.Node
 	UnitIrreversibleTime() uint
 	GetUnit(common.Hash) (*modules.Unit, error)
+	QueryDbByKey(key []byte) ([]byte, error)
+	QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error)
 }
