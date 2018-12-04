@@ -190,6 +190,20 @@ func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
 	return dag.GetGlobalProp().ChainParameters.CurrentFees
 }
 
+func (dag *Dag) GetUnit(hash common.Hash) (*modules.Unit, error) {
+	unit, err := dag.Memdag.GetUnit(hash)
+
+	if unit == nil || err != nil {
+		unit, err = dag.dagdb.GetUnit(hash)
+	}
+
+	if unit == nil || err != nil {
+		log.Error("get unit by hash is failed.", "hash", hash)
+	}
+
+	return unit, err
+}
+
 func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 	nodes := make(map[string]*discover.Node)
 

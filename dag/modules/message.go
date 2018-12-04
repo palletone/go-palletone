@@ -284,6 +284,30 @@ type InvokeTokens struct {
 	Asset  *Asset `json:"asset"`
 }
 
+type Cashback struct {
+	InvokeAddress common.Address `json:"invoke_address"`
+	InvokeTokens  InvokeTokens   `json:"invoke_tokens"`
+	Role          string         `json:"role"`
+	ApplyTime     int64          `json:"apply_time"`
+}
+
+type ListForCashback struct {
+	Cashback []*Cashback `json:"cashback"`
+}
+
+type Forfeiture struct {
+	InvokeAddress     common.Address `json:"invoke_address"`
+	ForfeitureAddress common.Address `json:"forfeiture_address"`
+	InvokeTokens      InvokeTokens   `json:"invoke_tokens"`
+	Role              string         `json:"role"`
+	Extra             string         `json:"extra"`
+	ApplyTime         int64          `json:"apply_time"`
+}
+
+type ListForForfeiture struct {
+	Forfeiture []*Forfeiture `json:"forfeiture"`
+}
+
 type DepositOrVoteAwards struct {
 	Amount uint64 `json:"amount"`
 	Asset  Asset  `json:"asset"`
@@ -302,6 +326,7 @@ type DepositStateValues struct {
 	TotalAmount uint64               `json:"total_amount"`
 	Values      []*DepositStateValue `json:"values"`
 	Time        time.Time            `json:"time"`
+	IsRunning   bool                 `json:"is_running"`
 }
 
 type DepositStateValue struct {

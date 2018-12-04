@@ -79,6 +79,7 @@ func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header.Creationdate = time.Now().Unix()
 	header.Authors = modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
 	header.GroupSign = []byte{}
+	header.GroupPubKey = []byte{}
 	tx, _ := NewCoinbaseTransaction()
 	txs := modules.Transactions{tx}
 	genesisUnit := modules.NewUnit(header, txs)
@@ -130,6 +131,7 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int, seed byte) (modu
 		header.Creationdate = time.Now().Unix()
 		header.Authors = modules.Authentifier{common.Address{seed}, []byte{}, []byte{}, []byte{}}
 		header.GroupSign = []byte{}
+		header.GroupPubKey = []byte{}
 		tx, _ := NewCoinbaseTransaction()
 		txs := modules.Transactions{tx}
 		unit := modules.NewUnit(header, txs)

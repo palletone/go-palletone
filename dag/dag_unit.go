@@ -75,7 +75,7 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 
 // GenerateUnit, generate unit
 // @author Albert·Gou
-func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey string,
+func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
 	ks *keystore.KeyStore, txpool txspool.ITxPool) *modules.Unit {
 	// 1. 判断是否满足生产的若干条件
 
@@ -141,6 +141,11 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	if nextUnit.ParentHash()[0] != dag.HeadUnitHash() {
 		// todo 出现分叉, 调用本方法之前未处理分叉
+		return
+	}
+
+	// 4. 验证 unit 的 mediator 调度
+	if !dag.validateMediatorSchedule(nextUnit) {
 		return
 	}
 

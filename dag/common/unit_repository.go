@@ -494,13 +494,13 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 		log.Info("Validate size", "error", "Size is invalid")
 		return modules.ErrUnit(-1)
 	}
-	//log.Info("===dag ValidateTransactions===")
+	// log.Info("===dag ValidateTransactions===")
 	// step4. check transactions in unit
-	//TODO must recover
-	//_, isSuccess, err := unitOp.validate.ValidateTransactions(&unit.Txs, isGenesis)
-	//if err != nil || !isSuccess {
-	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
-	//}
+	// TODO must recover
+	_, isSuccess, err := unitOp.validate.ValidateTransactions(&unit.Txs, isGenesis)
+	if err != nil || !isSuccess {
+		return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+	}
 
 	// step5. traverse transactions and save them
 	txHashSet := []common.Hash{}
@@ -815,7 +815,7 @@ func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Add
 		Payload: &payload,
 	}
 	// step4. create coinbase
-	var coinbase modules.Transaction
+	coinbase := new(modules.Transaction)
 	//coinbase := modules.Transaction{
 	//	TxMessages: []modules.Message{msg},
 	//}
@@ -823,7 +823,7 @@ func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Add
 	// coinbase.CreationDate = coinbase.CreateDate()
 	coinbase.TxHash = coinbase.Hash()
 
-	return &coinbase, nil
+	return coinbase, nil
 }
 
 /**
