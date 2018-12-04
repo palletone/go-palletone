@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 //判断要成为 Jury 还是 Mediator 还是 Developer
@@ -102,7 +103,7 @@ func handleMember(who string, invokeFromAddr common.Address, stub shim.Chaincode
 	}
 }
 
-//从列表中移除
+//从候选列表中移除
 func move(who string, list []common.Address, invokeAddr common.Address, stub shim.ChaincodeStubInterface) {
 	for i := 0; i < len(list); i++ {
 		if list[i] == invokeAddr {
@@ -113,4 +114,21 @@ func move(who string, list []common.Address, invokeAddr common.Address, stub shi
 	listBytes, _ := json.Marshal(list)
 	//更新列表
 	stub.PutState(who, listBytes)
+}
+
+//从申请没收保证金列表中移除
+func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfeiture []*modules.Forfeiture, forfeitureAddr common.Address, applyTime int64) *modules.Forfeiture {
+	//
+	forfeiture := new(modules.Forfeiture)
+	for i := 0; i < len(listForForfeiture); i++ {
+		if listForForfeiture[i].ApplyTime == applyTime && listForForfeiture[i].ForfeitureAddress == forfeitureAddr {
+			forfeiture = listForForfeiture[i]
+			listForForfeiture = append(listForForfeiture[:i], listForForfeiture[i+1:]...)
+			break
+		}
+	}
+	listForForfeitureByte, _ := json.Marshal(listForForfeiture)
+	//更新列表
+	stub.PutState("ListForForfeiture", listForForfeitureByte)
+	return forfeiture
 }
