@@ -82,7 +82,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	newUnits, err := dag.CreateUnit(&producer, txpool, ks, when)
 	if err != nil {
-		log.Error("GenerateUnit", "error", err.Error())
+		log.Debug("GenerateUnit", "error", err.Error())
 		return &modules.Unit{}
 	}
 	// added by yangyu, 2018.8.9
@@ -103,7 +103,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 
 	sign_unit, err1 := dagcommon.GetUnitWithSig(pendingUnit, ks, producer)
 	if err1 != nil {
-		log.Error(fmt.Sprintf("GetUnitWithSig error: %v", err))
+		log.Debug(fmt.Sprintf("GetUnitWithSig error: %v", err))
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()
@@ -130,7 +130,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	// 4. 将验证单元添加到本地DB
 	//err := dag.SaveUnit(newUnit, false)
 	//if err != nil {
-	//	log.Error("unit_production", "PushUnit err:", err)
+	//	log.Debug("unit_production", "PushUnit err:", err)
 	//	return false
 	//}
 	dag.SaveUnit(newUnit, txpool, false)
@@ -146,7 +146,8 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 
 	// 4. 验证 unit 的 mediator 调度
 	if !dag.validateMediatorSchedule(nextUnit) {
-		return
+		// todo 待测试验证代码
+		//return
 	}
 
 	// 5. 更新Unit中交易的状态

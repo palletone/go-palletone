@@ -32,24 +32,24 @@ import (
 
 func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 	if dag.HeadUnitHash() != nextUnit.ParentHash()[0] {
-		log.Error("invalidated unit's parent hash!")
+		log.Debug("invalidated unit's parent hash!")
 		return false
 	}
 
 	if dag.HeadUnitTime() >= nextUnit.Timestamp() {
-		log.Error("invalidated unit's timestamp!")
+		log.Debug("invalidated unit's timestamp!")
 		return false
 	}
 
 	slotNum := dag.GetSlotAtTime(time.Unix(nextUnit.Timestamp(), 0))
 	if slotNum <= 0 {
-		log.Error("invalidated unit's slot!")
+		log.Debug("invalidated unit's slot!")
 		return false
 	}
 
 	scheduledMediator := dag.GetScheduledMediator(slotNum)
 	if scheduledMediator.Equal(nextUnit.UnitAuthor()) {
-		log.Error("Mediator produced unit at wrong time!")
+		log.Debug("Mediator produced unit at wrong time!")
 		return false
 	}
 

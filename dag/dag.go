@@ -1002,19 +1002,20 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 }
 
 // ValidateUnitGroupSig
-func (d *Dag) ValidateUnitGroupSig(hash common.Hash) (bool, error) {
-	unit, err := d.GetUnitByHash(hash)
-	if err != nil {
-		return false, err
-	}
+//func (d *Dag) ValidateUnitGroupSig(hash common.Hash) (bool, error) {
+//	unit, err := d.GetUnitByHash(hash)
+//	if err != nil {
+//		return false, err
+//	}
+//
+//	//unitState := d.validate.ValidateUnitExceptGroupSig(unit, dagcommon.IsGenesis(hash))
+//	unitState := d.validate.ValidateUnitExceptGroupSig(unit, d.unitRep.IsGenesis(hash))
+//	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+//		return false, fmt.Errorf("validate unit's groupSig failed, statecode:%d", unitState)
+//	}
+//	return true, nil
+//}
 
-	//unitState := d.validate.ValidateUnitExceptGroupSig(unit, dagcommon.IsGenesis(hash))
-	unitState := d.validate.ValidateUnitExceptGroupSig(unit, d.unitRep.IsGenesis(hash))
-	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-		return false, fmt.Errorf("validate unit's groupSig failed, statecode:%d", unitState)
-	}
-	return true, nil
-}
 func (d *Dag) GetAccountMediatorVote(address common.Address) []common.Address {
 	bAddress := d.statedb.GetAccountVoteInfo(address, vote.TYPE_MEDIATOR)
 	res := []common.Address{}
