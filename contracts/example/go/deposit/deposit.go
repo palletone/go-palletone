@@ -421,6 +421,9 @@ func (d *DepositChaincode) agreeForApplyCashback(stub shim.ChaincodeStubInterfac
 	if err != nil {
 		return shim.Error(err.Error())
 	}
+	if listForCashback == nil {
+		return shim.Error("listForCashback is nil.")
+	}
 	//在申请退款保证金列表中移除该节点
 	cashback := moveInApplyForCashbackList(stub, listForCashback.Cashback, cashbackAddr, applyTime)
 	if cashback == nil {
@@ -661,21 +664,17 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 	forfeiture.Extra = args[3]
 	forfeiture.ApplyTime = time.Now().UTC().Unix()
 	//先获取列表，再更新列表
-	listForForfeitureByte, err := stub.GetState("ListForForfeiture")
+	listForForfeiture, err := stub.GetListForForfeiture()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	listForForfeiture := new(modules.ListForForfeiture)
-	if listForForfeitureByte == nil {
+	if listForForfeiture == nil {
+		listForForfeiture = new(modules.ListForForfeiture)
 		listForForfeiture.Forfeiture = append(listForForfeiture.Forfeiture, forfeiture)
 	} else {
-		err = json.Unmarshal(listForForfeitureByte, listForForfeiture)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
 		listForForfeiture.Forfeiture = append(listForForfeiture.Forfeiture, forfeiture)
 	}
-	listForForfeitureByte, err = json.Marshal(listForForfeiture)
+	listForForfeitureByte, err := json.Marshal(listForForfeiture)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -701,6 +700,9 @@ func (d *DepositChaincode) disagreeForApplyCashback(stub shim.ChaincodeStubInter
 	if err != nil {
 		return shim.Error(err.Error())
 	}
+	if listForCashback == nil {
+		return shim.Error("listForCashback is nil")
+	}
 	fmt.Println("moveInApplyForCashbackList==>", listForCashback)
 	node := moveInApplyForCashbackList(stub, listForCashback.Cashback, cashbackAddr, applyTime)
 	if node == nil {
@@ -713,17 +715,12 @@ func (d *DepositChaincode) disagreeForApplyCashback(stub shim.ChaincodeStubInter
 //不同意这样没收请求，则直接从没收列表中移除该节点
 func (d *DepositChaincode) disagreeForApplyForfeiture(stub shim.ChaincodeStubInterface, forfeiture common.Address, applyTime int64) pb.Response {
 	//获取没收列表
-	listForForfeitureByte, err := stub.GetState("ListForForfeiture")
+	listForForfeiture, err := stub.GetListForForfeiture()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if listForForfeitureByte == nil {
-		return shim.Error("列表为空")
-	}
-	listForForfeiture := new(modules.ListForForfeiture)
-	err = json.Unmarshal(listForForfeitureByte, listForForfeiture)
-	if err != nil {
-		return shim.Error(err.Error())
+	if listForForfeiture == nil {
+		return shim.Error("listForForfeiture is nil.")
 	}
 	node := moveInApplyForForfeitureList(stub, listForForfeiture.Forfeiture, forfeiture, applyTime)
 	if node == nil {
@@ -735,17 +732,12 @@ func (d *DepositChaincode) disagreeForApplyForfeiture(stub shim.ChaincodeStubInt
 //同意申请没收请求
 func (d *DepositChaincode) agreeForApplyForfeiture(stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr common.Address, applyTime int64, values *modules.DepositStateValues) pb.Response {
 	//获取列表
-	listForForfeitureByte, err := stub.GetState("ListForForfeiture")
+	listForForfeiture, err := stub.GetListForForfeiture()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if listForForfeitureByte == nil {
-		return shim.Error("listForForfeitureByte is nil")
-	}
-	listForForfeiture := new(modules.ListForForfeiture)
-	err = json.Unmarshal(listForForfeitureByte, listForForfeiture)
-	if err != nil {
-		return shim.Error("json unmarshal error " + err.Error())
+	if listForForfeiture == nil {
+		return shim.Error("listForForfeiture is nil.")
 	}
 	//在列表中移除，并获取没收情况
 	forfeiture := moveInApplyForForfeitureList(stub, listForForfeiture.Forfeiture, forfeitureAddr, applyTime)
