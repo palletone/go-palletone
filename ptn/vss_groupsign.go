@@ -49,6 +49,7 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 // @author Albert·Gou
 // BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
 func (pm *ProtocolManager) BroadcastNewProducedUnit(newUnit *modules.Unit) {
+	return
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
@@ -65,6 +66,7 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(newUnit *modules.Unit) {
 
 // @author Albert·Gou
 func (self *ProtocolManager) sigShareTransmitLoop() {
+	return
 	for {
 		select {
 		case event := <-self.sigShareCh:
@@ -86,6 +88,7 @@ func (self *ProtocolManager) sigShareTransmitLoop() {
 
 // @author Albert·Gou
 func (pm *ProtocolManager) TransmitSigShare(node *discover.Node, sigShare *mp.SigShareEvent) {
+	return
 	peer, self := pm.GetPeer(node)
 	if self {
 		//size, reader, err := rlp.EncodeToReader(sigShare)
@@ -116,6 +119,7 @@ func (pm *ProtocolManager) TransmitSigShare(node *discover.Node, sigShare *mp.Si
 
 // @author Albert·Gou
 func (self *ProtocolManager) groupSigBroadcastLoop() {
+	return
 	for {
 		select {
 		case event := <-self.groupSigCh:
@@ -131,6 +135,7 @@ func (self *ProtocolManager) groupSigBroadcastLoop() {
 // @author Albert·Gou
 // BroadcastGroupSig will propagate the group signature of unit to p2p network
 func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
+	return
 	// todo 广播群签名，并在对应节点接受，然后添加到unit的header对应的字段中
 	peers := pm.peers.PeersWithoutGroupSig(groupSig.UnitHash)
 	for _, peer := range peers {
@@ -140,6 +145,7 @@ func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
 
 // @author Albert·Gou
 func (self *ProtocolManager) vssDealTransmitLoop() {
+	return
 	for {
 		select {
 		case event := <-self.vssDealCh:
@@ -156,6 +162,7 @@ func (self *ProtocolManager) vssDealTransmitLoop() {
 
 // @author Albert·Gou
 func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDealEvent) {
+	return
 	peer, self := pm.GetPeer(node)
 	if self {
 		//size, reader, err := rlp.EncodeToReader(deal)
@@ -199,6 +206,7 @@ func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDeal
 
 // @author Albert·Gou
 func (self *ProtocolManager) vssResponseBroadcastLoop() {
+	return
 	for {
 		select {
 		case event := <-self.vssResponseCh:
@@ -214,6 +222,7 @@ func (self *ProtocolManager) vssResponseBroadcastLoop() {
 // @author Albert·Gou
 //func (pm *ProtocolManager) BroadcastVssResp(dstId string, resp *mp.VSSResponseEvent) {
 func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
+	return
 	// comment by Albert·Gou
 	//dstId := node.ID.TerminalString()
 	//peer := pm.peers.Peer(dstId)

@@ -823,14 +823,16 @@ func assertOwnForkedChain(t *testing.T, tester *downloadTester, common int, leng
 		blocks = 1
 	}
 	if hs := len(tester.ownHeaders); hs != headers {
-		if hs+fsMinFullBlocks != headers {
-			t.Fatalf("synchronised headers mismatch: have %v, want %v", hs, headers)
-		}
+		t.Fatalf("synchronised headers mismatch: have %v, want %v", hs, headers)
+		//if hs+fsMinFullBlocks != headers {
+		//	t.Fatalf("synchronised headers mismatch: have %v, want %v", hs, headers)
+		//}
 	}
 	if bs := len(tester.ownBlocks); bs != blocks {
-		if bs+fsMinFullBlocks != blocks {
-			t.Fatalf("synchronised blocks mismatch: have %v, want %v", bs, blocks)
-		}
+		t.Fatalf("synchronised blocks mismatch: have %v, want %v", bs, blocks)
+		//if bs+fsMinFullBlocks != blocks {
+		//	t.Fatalf("synchronised blocks mismatch: have %v, want %v", bs, blocks)
+		//}
 	}
 	// Verify the state trie too for fast syncs
 	//if tester.downloader.mode == FastSync {
@@ -855,7 +857,7 @@ func assertOwnForkedChain(t *testing.T, tester *downloadTester, common int, leng
 
 func TestCanonicalSynchronisation1Full(t *testing.T) { testCanonicalSynchronisation(t, 1, FullSync) }
 
-//func TestCanonicalSynchronisation1Fast(t *testing.T) { testCanonicalSynchronisation(t, 1, FastSync) }
+func TestCanonicalSynchronisation1Fast(t *testing.T) { testCanonicalSynchronisation(t, 1, FastSync) }
 
 //func TestCanonicalSynchronisation63Fast(t *testing.T) { testCanonicalSynchronisation(t, 2, FullSync) }
 
