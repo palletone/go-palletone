@@ -1749,7 +1749,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 		input.Vout = utxo.OutIndex
 		inputs = append(inputs, input)
 	}
-	if change != 0 {
+	if change > 0 {
         amounts[from] = ptnjson.Dao2Ptn(change)
     }
 
