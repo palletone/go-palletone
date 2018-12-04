@@ -68,7 +68,6 @@ type IDag interface {
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
 	//All leaf nodes for dag downloader
 	GetAllLeafNodes() ([]*modules.Header, error)
-	//GetUnit(common.Hash) (*modules.Unit, error)
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 
 	// validate group signature by hash
@@ -126,4 +125,5 @@ type IDag interface {
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
 	UnitIrreversibleTime() uint
+	GetUnit(common.Hash) (*modules.Unit, error)
 }

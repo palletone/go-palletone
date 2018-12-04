@@ -45,9 +45,9 @@ const (
 
 	// txChanSize is the size of channel listening to TxPreEvent.
 	// The number is referenced from the size of tx pool.
-	txChanSize            = 4096
-	needBroadcastMediator = 0
-	noBroadcastMediator   = 1
+	txChanSize = 4096
+	//needBroadcastMediator = 0
+	//noBroadcastMediator   = 1
 )
 
 var (
@@ -239,9 +239,9 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 			return 0, nil
 		}
 		log.Debug("Fetcher", "manager.dag.InsertDag index:", blocks[0].Number().Index, "hash", blocks[0].Hash())
-		for _, block := range blocks {
-			manager.producer.ToUnitTBLSSign(block)
-		}
+		//for _, block := range blocks {
+		//	manager.producer.ToUnitTBLSSign(block)
+		//}
 
 		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
 		return manager.dag.InsertDag(blocks, manager.txpool)
@@ -514,10 +514,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return pm.ConsensusMsg(msg, p)
 
 	// append by Albert·Gou
-	//case msg.Code == NewProducedUnitMsg:
-	//	// Retrieve and decode the propagated new produced unit
-	//	pm.NewProducedUnitMsg(msg, p)
-	//	return pm.NewBlockMsg(msg, p)
+	case msg.Code == NewProducedUnitMsg:
+		// Retrieve and decode the propagated new produced unit
+		pm.NewProducedUnitMsg(msg, p)
+		return pm.NewBlockMsg(msg, p)
 
 	// append by Albert·Gou
 	case msg.Code == SigShareMsg:
@@ -578,7 +578,7 @@ func (self *ProtocolManager) txBroadcastLoop() {
 
 // BroadcastUnit will either propagate a unit to a subset of it's peers, or
 // will only announce it's availability (depending what's requested).
-func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool, broadcastMediator int) {
+func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool /*, broadcastMediator int*/) {
 	hash := unit.Hash()
 
 	for _, parentHash := range unit.ParentHash() {
@@ -588,21 +588,21 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool, bro
 		}
 	}
 
-	if needBroadcastMediator == broadcastMediator {
-		mPeers := pm.GetActiveMediatorPeers()
-		for _, peer := range mPeers {
-			if peer == nil {
-				pm.producer.ToUnitTBLSSign(unit)
-				continue
-			}
-
-			//err := peer.SendNewProducedUnit(unit)
-			err := peer.SendNewUnit(unit)
-			if err != nil {
-				log.Error(err.Error())
-			}
-		}
-	}
+	//if needBroadcastMediator == broadcastMediator {
+	//	mPeers := pm.GetActiveMediatorPeers()
+	//	for _, peer := range mPeers {
+	//		if peer == nil {
+	//			//pm.producer.ToUnitTBLSSign(unit)
+	//			continue
+	//		}
+	//
+	//		//err := peer.SendNewProducedUnit(unit)
+	//		err := peer.SendNewUnit(unit)
+	//		if err != nil {
+	//			log.Error(err.Error())
+	//		}
+	//	}
+	//}
 
 	// If propagation is requested, send to a subset of the peer
 	if propagate {

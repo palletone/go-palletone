@@ -34,10 +34,10 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 		select {
 		case event := <-self.newProducedUnitCh:
 			// 广播给其他活跃 mediator，进行验证并群签名
-			//self.BroadcastNewProducedUnit(event.Unit)
+			self.BroadcastNewProducedUnit(event.Unit)
 
-			self.BroadcastUnit(event.Unit, true, needBroadcastMediator)
-			self.BroadcastUnit(event.Unit, false, noBroadcastMediator)
+			self.BroadcastUnit(event.Unit, true /*, needBroadcastMediator*/)
+			self.BroadcastUnit(event.Unit, false /*, noBroadcastMediator*/)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-self.newProducedUnitSub.Err():
@@ -68,13 +68,11 @@ func (self *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
 		case event := <-self.sigShareCh:
-			unit, _ := self.dag.GetUnitByHash(event.UnitHash)
-			if unit != nil {
+			unit, err := self.dag.GetUnit(event.UnitHash)
+			if unit != nil && err == nil {
 				med := unit.UnitAuthor()
 				node := self.dag.GetActiveMediator(med).Node
 				self.TransmitSigShare(node, &event)
-			} else {
-				log.Error("get unit by hash is failed.", "hash", event.UnitHash)
 			}
 
 			// Err() channel will be closed when unsubscribing.
@@ -131,7 +129,6 @@ func (self *ProtocolManager) groupSigBroadcastLoop() {
 // @author Albert·Gou
 // BroadcastGroupSig will propagate the group signature of unit to p2p network
 func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
-	// todo 广播群签名，并在对应节点接受，然后添加到unit的header对应的字段中
 	peers := pm.peers.PeersWithoutGroupSig(groupSig.UnitHash)
 	for _, peer := range peers {
 		peer.SendGroupSig(groupSig)

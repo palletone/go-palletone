@@ -28,7 +28,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-// todo 待被调用
 func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 	if dag.HeadUnitHash() != nextUnit.ParentHash()[0] {
 		log.Error("invalidated unit's parent hash!")
@@ -126,4 +125,16 @@ func (d *Dag) ChainThreshold() int {
 func (d *Dag) UnitIrreversibleTime() uint {
 	gp := d.GetGlobalProp()
 	return uint(gp.ChainThreshold()) * uint(gp.ChainParameters.MediatorInterval)
+}
+
+func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
+	unit, err := d.GetUnit(hash)
+	if unit != nil && err == nil {
+		lin := d.GetDynGlobalProp().LastIrreversibleUnitNum
+		if unit.NumberU64() <= uint64(lin) {
+			return true
+		}
+	}
+
+	return false
 }
