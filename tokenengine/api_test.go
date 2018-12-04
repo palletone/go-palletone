@@ -28,7 +28,7 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/dag/asset"
+
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
 	"github.com/stretchr/testify/assert"
@@ -94,7 +94,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	outPoint2 := modules.NewOutPoint(utxoTxId2, 1, 1)
 	txIn2 := modules.NewTxIn(outPoint2, []byte{})
 	payment2.AddTxIn(txIn2)
-	asset1 := &modules.Asset{AssetId: asset.NewAsset()}
+	asset1 := &modules.Asset{AssetId: modules.PTNCOIN}
 	payment2.AddTxOut(modules.NewTxOut(1, lockScript, asset1))
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment2))
