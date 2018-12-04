@@ -53,41 +53,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-	//if key == "P16mXRYjxpLCfVLbC4q1f8Z7yBvGMJm4tiS" {
-	//	fmt.Println("数据库获取该地址信息")
-	//	//return nil, nil
-	//	//TODO
-	//	stateValues := modules.DepositStateValues{}
-	//	asset := &modules.Asset{
-	//		AssetId:  modules.PTNCOIN,
-	//		UniqueId: modules.PTNCOIN,
-	//	}
-	//	startTime, _ := time.Parse("2006-01-02 15:04:05", "2007-01-02 00:00:00")
-	//	stateValue := &modules.DepositStateValue{
-	//		DepositBalance: modules.AmountAsset{
-	//			Amount: uint64(5800),
-	//			Asset:  asset,
-	//		},
-	//		Time:  startTime,
-	//		Extra: "hello",
-	//	}
-	//	stateValues.TotalAmount = 5800
-	//	stateValues.Time = time.Now().UTC()
-	//	stateValues.Values = []*modules.DepositStateValue{stateValue}
-	//	stateValueByte, _ := json.Marshal(stateValues)
-	//	return stateValueByte, nil
-	//}
-	//if key == "MediatorList" {
-	//	//if key == "JuryList" {
-	//	fmt.Println("数据库获取列表")
-	//	test01, _ := common.StringToAddress("P16mXRYjxpLCfVLbC4q1f8Z7yBvGMJm4tiS")
-	//	test02, _ := common.StringToAddress("P1M9qH8yxyL2P2AvCnMF2eVpqLWVVXD5HQk")
-	//	//juryList := []common.Address{test01, test02}
-	//	mediatorList := []common.Address{test01, test02}
-	//	//stateValueByte, _ := json.Marshal(juryList)
-	//	stateValueByte, _ := json.Marshal(mediatorList)
-	//	return stateValueByte, nil
-	//}
+
 	//TODO Devin
 	ver, val := s.dag.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil

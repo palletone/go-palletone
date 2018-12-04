@@ -22,6 +22,7 @@ package deposit
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -131,4 +132,25 @@ func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfe
 	//更新列表
 	stub.PutState("ListForForfeiture", listForForfeitureByte)
 	return forfeiture
+}
+
+//从申请没收保证金列表中移除
+func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback []*modules.Cashback, cashbackAddr common.Address, applyTime int64) *modules.Cashback {
+	//
+	cashback := new(modules.Cashback)
+	for i := 0; i < len(listForCashback); i++ {
+		fmt.Println(listForCashback[i].InvokeAddress)
+		fmt.Println(listForCashback[i].ApplyTime)
+		fmt.Println(cashbackAddr)
+		fmt.Println(applyTime)
+		if listForCashback[i].ApplyTime == applyTime && listForCashback[i].InvokeAddress == cashbackAddr {
+			cashback = listForCashback[i]
+			listForCashback = append(listForCashback[:i], listForCashback[i+1:]...)
+			break
+		}
+	}
+	listForCashbackByte, _ := json.Marshal(listForCashback)
+	//更新列表
+	stub.PutState("ListForCashback", listForCashbackByte)
+	return cashback
 }
