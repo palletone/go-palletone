@@ -501,12 +501,12 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 
 //GroupSigMsg
 func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
-	var resp mp.GroupSigEvent
-	if err := msg.Decode(&resp); err != nil {
+	var gSign mp.GroupSigEvent
+	if err := msg.Decode(&gSign); err != nil {
 		log.Info("===GroupSigMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-	//TODO call dag
+	pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 	return nil
 }
 

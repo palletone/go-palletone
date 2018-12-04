@@ -261,7 +261,6 @@ func (validate *Validate) ValidateUnitSignature(h *modules.Header, isGenesis boo
 	// signature does not contain authors and witness fields
 	//emptySigUnit.UnitHeader.Authors = nil
 	emptySigUnit.UnitHeader.GroupSign = make([]byte, 0)
-	emptySigUnit.UnitHeader.GroupPubKey = make([]byte, 0)
 	// recover signature
 	//if h.Authors == nil {
 	if h.Authors.Empty() {

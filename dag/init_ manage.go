@@ -22,7 +22,9 @@ package dag
 import (
 	"time"
 
+	"github.com/dedis/kyber/sign/bls"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -137,4 +139,27 @@ func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
 	}
 
 	return false
+}
+
+func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
+	unit, err := d.GetUnit(unitHash)
+	if err != nil {
+		return err
+	}
+
+	pubKey, err := unit.GroupPubKey()
+	if err != nil {
+		return err
+	}
+
+	err = bls.Verify(core.Suite, pubKey, unitHash[:], groupSign)
+	if err == nil {
+		//log.Debug("the group signature: " + hexutil.Encode(groupSign) +
+		//	" of the Unit that hash: " + unitHash.Hex() + " is verified through!")
+	} else {
+		log.Info("the group signature: " + hexutil.Encode(groupSign) + " of the Unit that hash: " +
+			unitHash.Hex() + " is verified that an error has occurred: " + err.Error())
+	}
+
+	return err
 }

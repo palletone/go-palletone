@@ -20,11 +20,10 @@ package mediatorplugin
 
 import (
 	"fmt"
-	"github.com/dedis/kyber"
+
 	"github.com/dedis/kyber/share"
 	"github.com/dedis/kyber/share/dkg/pedersen"
 	"github.com/dedis/kyber/share/vss/pedersen"
-	"github.com/dedis/kyber/sign/bls"
 	"github.com/dedis/kyber/sign/tbls"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
@@ -399,25 +398,10 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		return
 	}
 
-	log.Debug("Recovered the Unit that hash: " + unitHash.Hex() +
+	log.Debug("Recovered the Unit that hash: " + unitHash.TerminalString() +
 		" the group signature: " + hexutil.Encode(groupSig))
 
 	// recover后 删除buf
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 	go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
-}
-
-// todo 后面改为由dag模块调用
-func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, unitHash common.Hash, groupSig []byte) error {
-	//func (mp *MediatorPlugin) VerifyUnitGroupSig(groupPublicKey kyber.Point, newUnit *modules.Unit) error {
-	err := bls.Verify(mp.suite, groupPublicKey, unitHash[:], groupSig)
-	if err == nil {
-		//log.Debug("the group signature: " + hexutil.Encode(groupSig) +
-		//	" of the Unit that hash: " + unitHash.Hex() + " is verified through!")
-	} else {
-		log.Error("the group signature: " + hexutil.Encode(groupSig) + " of the Unit that hash: " +
-			unitHash.Hex() + " is verified that an error has occurred: " + err.Error())
-	}
-
-	return err
 }

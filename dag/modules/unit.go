@@ -23,10 +23,13 @@ import (
 	"time"
 	"unsafe"
 
+	"errors"
+	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
 )
 
 // validate unit state
@@ -203,6 +206,18 @@ func (unit *Unit) UnitAuthor() common.Address {
 	}
 
 	return unit.UnitHeader.Authors.Address
+}
+
+func (unit *Unit) GroupPubKey() (kyber.Point, error) {
+	pubKeyB := unit.UnitHeader.GroupPubKey
+	if len(pubKeyB) == 0 {
+		return nil, errors.New("Group public key is null.")
+	}
+
+	pubKey := core.Suite.Point()
+	err := pubKey.UnmarshalBinary(pubKeyB)
+
+	return pubKey, err
 }
 
 //type OutPoint struct {

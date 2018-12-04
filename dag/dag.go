@@ -1042,7 +1042,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 		AssetIDs:    []modules.IDType16{currentUnit.UnitHeader.Number.AssetID},
 		//Authors:      nil,
 		GroupSign:    make([]byte, 0),
-		GroupPubKey: make([]byte, 0),
+		GroupPubKey:  make([]byte, 0),
 		Number:       height,
 		Creationdate: time.Now().Unix(),
 	}
@@ -1241,19 +1241,22 @@ func (d *Dag) SaveChainIndex(index *modules.ChainIndex) error {
 	return d.statedb.SaveChainIndex(index)
 }
 
-func (d *Dag) SetUnitGroupSign(sign []byte, unit_hash common.Hash, txpool txspool.ITxPool) error {
-	if sign == nil {
+func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
+	if groupSign == nil {
 		return errors.New("group sign is null.")
 	}
-	// TODO 验证群签名：
-	// ...
+	// 验证群签名：
+	err := d.VerifyUnitGroupSign(unitHash, groupSign)
+	if err != nil {
+		return err
+	}
 
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 
-	go d.Memdag.UpdateMemDag(unit_hash, sign[:], txpool)
+	go d.Memdag.UpdateMemDag(unitHash, groupSign[:], txpool)
 
 	// 将缓存池utxo更新到utxodb中
-	go d.UpdateUtxosByUnit(unit_hash)
+	go d.UpdateUtxosByUnit(unitHash)
 	// 更新utxo缓存池
 	go d.RefreshCacheUtxos()
 
