@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/tokenengine"
 )
@@ -257,8 +258,19 @@ func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("have body Unmarshal encode", "error", err.Error(), "body", string(body))
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		transactions[i] = txs
-		log.Info("BlockBodiesMsg", "i", i, "txs size:", len(txs))
+		var temptxs modules.Transactions
+		for _, tx := range txs {
+			msgs, err1 := storage.ConvertMsg(tx)
+			if err1 != nil {
+				log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
+				return err1
+			}
+			tx.TxMessages = msgs
+			temptxs = append(temptxs, tx)
+		}
+
+		transactions[i] = temptxs
+		log.Info("BlockBodiesMsg", "i", i, "txs size:", len(temptxs))
 	}
 	log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(transactions))
 	// Filter out any explicitly requested bodies, deliver the rest to the downloader
