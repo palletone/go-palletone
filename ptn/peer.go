@@ -115,7 +115,7 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 // Info gathers and returns a collection of metadata known about a peer.
 func (p *peer) Info( /*assetId modules.IDType16*/ ) *PeerInfo {
 	//ptnAssetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
-        asset:=modules.NewPTNAsset()
+	asset := modules.NewPTNAsset()
 	hash, number := p.Head(asset.AssetId)
 
 	return &PeerInfo{
@@ -239,7 +239,7 @@ func (p *peer) SendBlockBodies(bodies []blockBody) error {
 
 // SendBlockBodiesRLP sends a batch of block contents to the remote peer from
 // an already RLP encoded format.
-func (p *peer) SendBlockBodiesRLP(bodies []rlp.RawValue) error {
+func (p *peer) SendBlockBodiesRLP(bodies [][]byte /*[]rlp.RawValue*/) error {
 	return p2p.Send(p.rw, BlockBodiesMsg, bodies)
 }
 
