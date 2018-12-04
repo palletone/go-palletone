@@ -430,8 +430,8 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	height := latest.Number.Index
 	localIndex := d.dag.CurrentUnit().Number().Index
 
+	log.Info("Downloader", "syncWithPeer local index", localIndex, "latest peer index", height)
 	if localIndex >= height {
-		log.Info("Downloader", "syncWithPeer local index", localIndex, "latest peer index", height)
 		return nil
 	}
 
@@ -443,6 +443,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 
 	// Ensure our origin point is below any fast sync pivot point
 	pivot := uint64(0)
+	//fmt.Println("Downloader->syncWithPeer pre", "height:", height, "origin:", origin, "pivot:", pivot)
 	if d.mode == FastSync {
 		if height <= uint64(fsMinFullBlocks) {
 			origin = 0
@@ -453,7 +454,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 			}
 		}
 	}
-
+	//fmt.Println("Downloader->syncWithPeer last", "height:", height, "origin:", origin, "pivot:", pivot)
 	log.Debug("Downloader->syncWithPeer last", "origin:", origin, "pivot:", pivot)
 	d.committed = 1
 	if d.mode == FastSync && pivot != 0 {
@@ -1415,7 +1416,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modules.IDType16) error {
 	// Start syncing state of the reported head block. This should get us most of
 	// the state of the pivot block.
-	log.Debug("===Enter processFastSyncContent===")
+	log.Debug("", "===Enter processFastSyncContent===latest.Number.Index:", latest.Number.Index)
 	defer log.Debug("End processFastSyncContent")
 	//TODO wangjiyou
 
@@ -1423,6 +1424,7 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 	// sync takes long enough for the chain head to move significantly.
 	pivot := uint64(0)
 	if height := latest.Number.Index; height > uint64(fsMinFullBlocks) {
+		//fmt.Println("========================111111111111===============================height:", height)
 		pivot = height - uint64(fsMinFullBlocks)
 	}
 	// To cater for moving pivot points, track the pivot block and subsequently
@@ -1438,7 +1440,7 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 		if len(results) == 0 {
 			// If pivot sync is done, stop
 			if oldPivot == nil {
-				log.Debug("===processFastSyncContent===oldPivot == nil")
+				//fmt.Println("===processFastSyncContent===oldPivot == nil")
 				return nil //stateSync.Cancel()
 			}
 			// If sync failed, stop
@@ -1460,10 +1462,13 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 			latest = results[len(results)-1].Header
 			if height := latest.Number.Index; height > pivot+2*uint64(fsMinFullBlocks) {
 				log.Warn("Pivot became stale, moving", "old", pivot, "new", height-uint64(fsMinFullBlocks))
+				//fmt.Println("===========================2222222222============================")
 				pivot = height - uint64(fsMinFullBlocks)
 			}
 		}
+		//fmt.Println("splitAroundPivot pre", "pivot", pivot, "len(results):", len(results))
 		P, beforeP, afterP := splitAroundPivot(pivot, results)
+		//fmt.Println("splitAroundPivot last", "P", P, "len(beforeP):", len(beforeP), "len(afterP):", len(afterP))
 		if err := d.commitFastSyncData(beforeP); err != nil {
 			return err
 		}
@@ -1474,18 +1479,23 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 				oldPivot = P
 			}
 
-			if err := d.commitPivotBlock(P); err != nil {
-				return err
-			}
-			oldPivot = nil
 			// Wait for completion, occasionally checking for pivot staleness
+			//exec := true
 			select {
+			case <-time.After(time.Millisecond):
+				//fmt.Println("commitPivotBlock P index:", P.Header.Number.Index)
+				if err := d.commitPivotBlock(P); err != nil {
+					return err
+				}
+				oldPivot = nil
 			case <-time.After(time.Second):
+				//fmt.Println("time.After(time.Second)", "len(oldTail):", len(oldTail), "len(afterP):", len(afterP))
 				oldTail = afterP
 				continue
 			}
+			//fmt.Println("no time out")
 		}
-
+		//fmt.Println("importBlockResults", "len(afterP):", len(afterP))
 		// Fast sync done, pivot commit done, full import
 		if err := d.importBlockResults(afterP); err != nil {
 			return err
@@ -1510,7 +1520,7 @@ func splitAroundPivot(pivot uint64, results []*fetchResult) (p *fetchResult, bef
 func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *stateSync*/) error {
 	// Check for any early termination requests
 	log.Debug("Enter commitFastSyncData", "len(results):", len(results))
-	defer log.Debug("Enter commitFastSyncData")
+	defer log.Debug("End commitFastSyncData")
 	if len(results) == 0 {
 		return nil
 	}
@@ -1530,7 +1540,7 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
 	for _, u := range blocks {
-		log.Debug("======commitFastSyncData=======", "index:", u.UnitHeader.Number.Index, "unit:", *u)
+		//log.Debug("======commitFastSyncData=======", "index:", u.UnitHeader.Number.Index, "unit:", *u)
 		units := []*modules.Unit{}
 		units = append(units, u)
 		if index, err := d.dag.InsertDag(units, d.txpool); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
