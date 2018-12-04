@@ -196,18 +196,7 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	}
 
 	// 2. 生产验证单元
-	var groupPubKey []byte = nil
-	dkgr := mp.getLocalActiveDKG(scheduledMediator)
-	if dkgr != nil {
-		dks, err := dkgr.DistKeyShare()
-		if err == nil {
-			groupPubKey, err = dks.Public().MarshalBinary()
-			if err != nil {
-				groupPubKey = nil
-			}
-		}
-	}
-
+	groupPubKey := mp.LocalMediatorPubKey(scheduledMediator)
 	newUnit := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, mp.ptn.TxPool())
 	if newUnit.IsEmpty() {
 		return ExceptionProducing, detail

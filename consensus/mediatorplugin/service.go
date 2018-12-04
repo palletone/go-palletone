@@ -184,7 +184,7 @@ func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 		//dkgr, err := dkg.NewDistKeyGeneratorWithoutSecret(mp.suite, initSec, initPubs, curThreshold)
 		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
-			log.Error(err.Error())
+			log.Debug(err.Error())
 			continue
 		}
 
@@ -262,7 +262,7 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 	})
 
 	if err != nil {
-		log.Error(fmt.Sprintf("failed to register the Mediator Plugin service: %v", err))
+		log.Debug(fmt.Sprintf("failed to register the Mediator Plugin service: %v", err))
 	}
 }
 
