@@ -32,9 +32,7 @@ type UnitJson struct {
 	Txs        []*TxJson          `json:"transactions"` // transaction list
 	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
 	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
-	// These fields are used by package ptn to track
-	// inter-peer block relay.
-	ReceivedAt time.Time
+
 }
 type HeaderJson struct {
 	ParentsHash   []common.Hash  `json:"parents_hash"`
