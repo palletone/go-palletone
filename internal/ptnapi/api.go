@@ -1753,9 +1753,15 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 		input.Vout = utxo.OutIndex
 		inputs = append(inputs, input)
 	}
+<<<<<<< HEAD
 	if change != 0 {
 		amounts[from] = ptnjson.Dao2Ptn(change)
 	}
+=======
+	if change > 0 {
+        amounts[from] = ptnjson.Dao2Ptn(change)
+    }
+>>>>>>> 76c8f7ef48793df70e19171dbd1a8ea44ca602bd
 
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
 	result, _ := CreateRawTransaction(arg)
