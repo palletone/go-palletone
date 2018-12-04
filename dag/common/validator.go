@@ -406,13 +406,17 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 
 	if len(payment.Outputs) <= 0 {
 		// @jay 后续查明payment outputs 为null 的原因
-		log.Error("payment output is null.", "payment.output", payment.Inputs)
-		// return modules.TxValidationCode_INVALID_PAYMMENT_OUTPUT
+		log.Error("payment output is null.", "payment.output", payment.Outputs)
+		return modules.TxValidationCode_INVALID_PAYMMENT_OUTPUT
 	}
 
 	for i, out := range payment.Outputs {
 		// checkout output
 		if i < 1 {
+			if !out.Asset.IsSimilar(modules.NewPTNAsset()) {
+				return modules.TxValidationCode_INVALID_ASSET
+			}
+			// log.Debug("validation succeed！")
 			continue // asset = out.Asset
 		} else {
 			if out.Asset == nil {
