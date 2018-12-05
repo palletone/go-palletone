@@ -273,46 +273,48 @@ type ContractReadSet struct {
 	Value   []byte
 }
 
+//请求合约信息
 type InvokeInfo struct {
-	InvokeAddress common.Address `json:"invoke_address"`
-	InvokeTokens  InvokeTokens   `json:"invoke_tokens"`
-	InvokeFees    InvokeFees     `json:"invoke_fees"`
+	InvokeAddress common.Address `json:"invoke_address"` //请求地址
+	InvokeTokens  InvokeTokens   `json:"invoke_tokens"`  //请求数量
+	InvokeFees    InvokeFees     `json:"invoke_fees"`    //请求交易费
 }
 
+//请求的数量
 type InvokeTokens struct {
-	Amount uint64 `json:"amount"`
-	Asset  *Asset `json:"asset"`
+	Amount uint64 `json:"amount"` //数量
+	Asset  *Asset `json:"asset"`  //资产
 }
 
+//申请提保证金
 type Cashback struct {
-	InvokeAddress common.Address `json:"invoke_address"`
-	InvokeTokens  InvokeTokens   `json:"invoke_tokens"`
-	Role          string         `json:"role"`
-	ApplyTime     int64          `json:"apply_time"`
+	InvokeAddress common.Address `json:"invoke_address"` //请求地址
+	InvokeTokens  InvokeTokens   `json:"invoke_tokens"`  //请求数量
+	Role          string         `json:"role"`           //请求角色
+	ApplyTime     int64          `json:"apply_time"`     //请求时间
 }
 
+//申请提取保证金的列表
 type ListForCashback struct {
 	Cashback []*Cashback `json:"cashback"`
 }
 
+//申请没收保证金
 type Forfeiture struct {
-	InvokeAddress     common.Address `json:"invoke_address"`
-	ForfeitureAddress common.Address `json:"forfeiture_address"`
-	InvokeTokens      InvokeTokens   `json:"invoke_tokens"`
-	Role              string         `json:"role"`
-	Extra             string         `json:"extra"`
-	ApplyTime         int64          `json:"apply_time"`
+	InvokeAddress     common.Address `json:"invoke_address"`     //谁发起的
+	ForfeitureAddress common.Address `json:"forfeiture_address"` //没收节点地址
+	InvokeTokens      InvokeTokens   `json:"invoke_tokens"`      //没收数量
+	Role              string         `json:"role"`               //没收角色
+	Extra             string         `json:"extra"`              //备注
+	ApplyTime         int64          `json:"apply_time"`         //请求时间
 }
 
+//申请没收保证金的列表
 type ListForForfeiture struct {
 	Forfeiture []*Forfeiture `json:"forfeiture"`
 }
 
-type DepositOrVoteAwards struct {
-	Amount uint64 `json:"amount"`
-	Asset  Asset  `json:"asset"`
-}
-
+//请求合约利息
 type InvokeFees struct {
 	Amount uint64 `json:"amount"`
 	Asset  Asset  `json:"asset"`
@@ -322,17 +324,20 @@ type AmountAsset struct {
 	Asset  *Asset `json:"asset"`
 }
 
+//节点状态数据库保存值
 type DepositStateValues struct {
-	TotalAmount uint64               `json:"total_amount"`
-	Values      []*DepositStateValue `json:"values"`
-	Time        time.Time            `json:"time"`
-	IsRunning   bool                 `json:"is_running"`
+	TotalAmount    uint64               `json:"total_amount"`  //保证金总量
+	LastModifyTime int64                `json:"last_pay_time"` //最后一次改变，主要来计算币龄收益
+	EnterTime      time.Time            `json:"enter_time"`    //这是加入列表时的时间
+	Values         []*DepositStateValue `json:"values"`        //交付的历史记录
+
 }
 
+//交易的内容
 type DepositStateValue struct {
-	DepositBalance AmountAsset `json:"amount_asset"`
-	Time           time.Time   `json:"time"`
-	Extra          string      `json:"extra"`
+	DepositBalance AmountAsset `json:"amount_asset"` //数量和资产
+	Time           time.Time   `json:"time"`         //发生时间
+	Extra          string      `json:"extra"`        //额外内容
 }
 
 type TokenPayOut struct {
