@@ -2356,14 +2356,20 @@ func (api *PrivateDebugAPI) QueryDbByKey(keyString string, keyHex string) *ptnjs
 	return nil
 }
 func (api *PrivateDebugAPI) QueryDbByPrefix(keyString string, keyHex string) []*ptnjson.DbRowJson {
+	var result []*ptnjson.DbRowJson
 	if keyString != "" {
-		return api.b.QueryDbByPrefix([]byte(keyString))
+		result = api.b.QueryDbByPrefix([]byte(keyString))
 	}
 	if keyHex != "" {
 		key, _ := hex.DecodeString(keyHex)
-		return api.b.QueryDbByPrefix(key)
+		result = api.b.QueryDbByPrefix(key)
 	}
-	return nil
+	if len(result) > 10 && (keyString == "" || keyHex == "") {
+		//Data too long, only return top 10 rows
+		log.Debug("QueryDbByPrefix Return result too long, truncate it, only return 10 rows. If you want to see full data, please input both 2 args")
+		result = result[0:10]
+	}
+	return result
 }
 
 // PublicNetAPI offers network related RPC methods
