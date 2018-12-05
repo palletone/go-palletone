@@ -32,7 +32,7 @@ const (
 	DefaultTokenHolder               = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 	DefaultPassword                  = "password"
 
-	DefaultMediatorCount       = 21
+	DefaultMediatorCount       = 11 //21
 	DefaultMinMediatorCount    = 11
 	DefaultMinMediatorInterval = 1
 
@@ -54,8 +54,8 @@ const (
 	PalletOne1Percent              = PalletOne100Percent / 100
 	PalletOneIrreversibleThreshold = 70 * PalletOne1Percent
 
-	DefaultMediatorInterval    = 3       //5 /* seconds */
-	DefaultMaintenanceInterval = 60 * 10 //60 * 60 * 24 // seconds, aka: 1 day
+	DefaultMediatorInterval    = 3      //5 /* seconds */
+	DefaultMaintenanceInterval = 60 * 3 //60 * 60 * 24 // seconds, aka: 1 day
 
 	DefaultMediatorCreateFee = 5000
 	DefaultVoteMediatorFee   = 20
