@@ -1,0 +1,59 @@
+# Copyright Palletone Corp. All Rights Reserved.
+#
+#
+version: '2'
+
+services:
+  mediator0:
+    container_name: mediator0
+    image: palletone/pallet-gptn:0.6
+    working_dir: /opt/gopath/src/github.com/palletone/go-palletone
+    volumes:
+     - ./channel-artifacts/mediator0/ptn-genesis.json:/var/palletone/conf/ptn-genesis.json
+     - ./channel-artifacts/mediator0/ptn-config.toml:/var/palletone/conf/ptn-config.toml
+     - ./channel-artifacts/mediator0/palletone:/var/palletone/production
+     - ./channel-artifacts/mediator0/log:/var/palletone/log
+    command: /var/palletone/conf/ptn-config.toml
+    ports:
+     - 8535:8445
+     - 8546:8546
+     - 8080:8080
+     - 30303:30303
+     - 18332:18332
+     - 12345:12345
+
+  mediator1:
+    container_name: mediator1
+    image: palletone/pallet-gptn:0.6
+    working_dir: /opt/gopath/src/github.com/palletone/go-palletone
+    volumes:
+     - ./channel-artifacts/mediator1/ptn-genesis.json:/var/palletone/conf/ptn-genesis.json
+     - ./channel-artifacts/mediator1/ptn-config.toml:/var/palletone/conf/ptn-config.toml
+     - ./channel-artifacts/mediator1/palletone:/var/palletone/production
+     - ./channel-artifacts/mediator1/log:/var/palletone/log
+    command: /var/palletone/conf/ptn-config.toml
+    ports:
+     - 8537:8435
+     - 8547:8536
+     - 8081:8070
+     - 30304:30293
+     - 18333:18322
+     - 12346:12335
+
+  mediator2:
+   container_name: mediator2
+   image: palletone/pallet-gptn:0.6
+   working_dir: /opt/gopath/src/github.com/palletone/go-palletone
+   volumes:
+    - ./channel-artifacts/mediator2/ptn-genesis.json:/var/palletone/conf/ptn-genesis.json
+    - ./channel-artifacts/mediator2/ptn-config.toml:/var/palletone/conf/ptn-config.toml
+    - ./channel-artifacts/mediator2/palletone:/var/palletone/production
+    - ./channel-artifacts/mediator2/log:/var/palletone/log
+   command: /var/palletone/conf/ptn-config.toml
+   ports:
+    - 8538:8425
+    - 8548:8526
+    - 8082:8060
+    - 30305:30283
+    - 18334:18312
+    - 12347:12325

@@ -8,8 +8,15 @@
 .PHONY: gptn-darwin gptn-darwin-386 gptn-darwin-amd64
 .PHONY: gptn-windows gptn-windows-386 gptn-windows-amd64
 
+# Define variables needed for mirroring
+DOCKER_TAG = 0.6
+BASE_DOCKER_TAG = $(DOCKER_TAG)
+DOCKER_NS = palletone
+BASE_DOCKER_NS = $(DOCKER_NS)
+
 GOBIN = $(shell pwd)/build/bin
 GO ?= latest
+BUILD_DIR = $(shell pwd)/build
 
 gptn:
 	build/env.sh go run build/ci.go install ./cmd/gptn
@@ -23,6 +30,19 @@ swarm:
 
 all:
 	build/env.sh go run build/ci.go install
+
+docker:
+	@mkdir -p $(BUILD_DIR)/images/gptn
+	@cat images/gptn/Dockerfile.in \
+                | sed -e 's|_BASE_NS_|$(BASE_DOCKER_NS)|g' \
+                | sed -e 's|_NS_|$(DOCKER_NS)|g' \
+                | sed -e 's|_BASE_TAG_|$(BASE_DOCKER_TAG)|g' \
+                | sed -e 's|_TAG_|$(DOCKER_TAG)|g' \
+                | sed -e 's|_GPTN_PATH_|$(GOBIN)|g' \
+                > $(BUILD_DIR)/images/gptn/Dockerfile
+	@cp -rf $(GOBIN)/gptn $(BUILD_DIR)/images/gptn
+	@cp -rf images/gptn/entrypoint.sh $(BUILD_DIR)/images/gptn
+	@echo "Successful generation of mirror files"
 
 android:
 	build/env.sh go run build/ci.go aar --local

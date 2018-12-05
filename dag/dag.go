@@ -258,6 +258,8 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 	}(time.Now())
 	count := int(0)
 	for i, u := range units {
+		// todo 此处应判断第0个unit的父unit是否已存入本节点
+
 		// all units must be continuous
 		if i > 0 && units[i].UnitHeader.Number.Index == units[i-1].UnitHeader.Number.Index+1 {
 			return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
@@ -274,9 +276,10 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
 
-		// append by albert·gou
+		// append by albert·gou, 利用 unit 更新相关状态
 		time := time.Unix(u.Timestamp(), 0)
-		log.Info(fmt.Sprint("Got unit # ", u.NumberU64(), " timestamp: ", time.Format("2006-01-02 15:04:05")))
+		log.Info(fmt.Sprint("Received unit "+u.UnitHash.TerminalString()+" #", u.NumberU64(),
+			" @ ", time.Format("2006-01-02 15:04:05"), " signed by ", u.UnitAuthor().Str()))
 		d.ApplyUnit(u)
 
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
@@ -999,19 +1002,20 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 }
 
 // ValidateUnitGroupSig
-func (d *Dag) ValidateUnitGroupSig(hash common.Hash) (bool, error) {
-	unit, err := d.GetUnitByHash(hash)
-	if err != nil {
-		return false, err
-	}
+//func (d *Dag) ValidateUnitGroupSig(hash common.Hash) (bool, error) {
+//	unit, err := d.GetUnitByHash(hash)
+//	if err != nil {
+//		return false, err
+//	}
+//
+//	//unitState := d.validate.ValidateUnitExceptGroupSig(unit, dagcommon.IsGenesis(hash))
+//	unitState := d.validate.ValidateUnitExceptGroupSig(unit, d.unitRep.IsGenesis(hash))
+//	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+//		return false, fmt.Errorf("validate unit's groupSig failed, statecode:%d", unitState)
+//	}
+//	return true, nil
+//}
 
-	//unitState := d.validate.ValidateUnitExceptGroupSig(unit, dagcommon.IsGenesis(hash))
-	unitState := d.validate.ValidateUnitExceptGroupSig(unit, d.unitRep.IsGenesis(hash))
-	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-		return false, fmt.Errorf("validate unit's groupSig failed, statecode:%d", unitState)
-	}
-	return true, nil
-}
 func (d *Dag) GetAccountMediatorVote(address common.Address) []common.Address {
 	bAddress := d.statedb.GetAccountVoteInfo(address, vote.TYPE_MEDIATOR)
 	res := []common.Address{}
@@ -1039,6 +1043,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 		AssetIDs:    []modules.IDType16{currentUnit.UnitHeader.Number.AssetID},
 		//Authors:      nil,
 		GroupSign:    make([]byte, 0),
+		GroupPubKey:  make([]byte, 0),
 		Number:       height,
 		Creationdate: time.Now().Unix(),
 	}
@@ -1237,23 +1242,26 @@ func (d *Dag) SaveChainIndex(index *modules.ChainIndex) error {
 	return d.statedb.SaveChainIndex(index)
 }
 
-func (d *Dag) SetUnitGroupSign(sign []byte, unit_hash common.Hash, txpool txspool.ITxPool) error {
-	if sign == nil {
+func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
+	if groupSign == nil {
 		return errors.New("group sign is null.")
 	}
-	// TODO 验证群签名：
-	// ...
+	// 验证群签名：
+	err := d.VerifyUnitGroupSign(unitHash, groupSign)
+	if err != nil {
+		return err
+	}
 
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
-
-	go d.Memdag.UpdateMemDag(unit_hash, sign[:], txpool)
+	go d.Memdag.UpdateMemDag(unitHash, groupSign[:], txpool)
 
 	// 将缓存池utxo更新到utxodb中
-	go d.UpdateUtxosByUnit(unit_hash)
+	go d.UpdateUtxosByUnit(unitHash)
 	// 更新utxo缓存池
 	go d.RefreshCacheUtxos()
 
-	// TODO 状态更新。
+	// 状态更新
+	go d.updateGlobalPropDependGroupSign(unitHash)
 
 	return nil
 }
@@ -1285,4 +1293,18 @@ func (d *Dag) UpdateUtxosByUnit(hash common.Hash) error {
 		return errors.New("the hash is not exist in utxoscache.")
 	}
 	return d.utxodb.SaveUtxoView(utxos)
+}
+func (d *Dag) QueryDbByKey(key []byte) ([]byte, error) {
+	return d.Db.Get(key)
+}
+func (d *Dag) QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error) {
+
+	iter := d.Db.NewIteratorWithPrefix(prefix)
+	result := []*modules.DbRow{}
+	for iter.Next() {
+		key := iter.Key()
+		value := iter.Value()
+		result = append(result, &modules.DbRow{Key: key, Value: value})
+	}
+	return result, nil
 }

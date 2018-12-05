@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 )
 
@@ -94,13 +93,13 @@ const (
 
 func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	// 1. 尝试生产验证单元
-	result, detail := mp.MaybeProduceUnit()
+	result, detail := mp.maybeProduceUnit()
 
 	// 2. 打印尝试结果
 	switch result {
 	case Produced:
-		log.Info("Generated Unit # " + detail["Num"] + " with timestamp: " + detail["Timestamp"] +
-			" by mediator: " + detail["Mediator"] + " hash: " + detail["Hash"])
+		log.Info("Generated Unit " + detail["Hash"] + " #" + detail["Num"] + " @ " + detail["Timestamp"] +
+			" signed by " + detail["Mediator"])
 	case NotSynced:
 		log.Info("Not producing Unit because production is disabled " +
 			"until we receive a recent Unit (see: --enable-stale-production)")
@@ -123,12 +122,12 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	}
 
 	// 3. 继续循环生产计划
-	mp.scheduleProductionLoop()
+	go mp.scheduleProductionLoop()
 
 	return result
 }
 
-func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]string) {
+func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]string) {
 	//	println("\n尝试生产验证单元...")
 	detail := map[string]string{}
 
@@ -197,15 +196,7 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	}
 
 	// 2. 生产验证单元
-	var groupPubKey = ""
-	dkgr := mp.getLocalActiveDKG(scheduledMediator)
-	if dkgr != nil {
-		dks, err := dkgr.DistKeyShare()
-		if err == nil {
-			groupPubKey = core.PointToStr(dks.Public())
-		}
-	}
-
+	groupPubKey := mp.LocalMediatorPubKey(scheduledMediator)
 	newUnit := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, mp.ptn.TxPool())
 	if newUnit.IsEmpty() {
 		return ExceptionProducing, detail
@@ -216,7 +207,7 @@ func (mp *MediatorPlugin) MaybeProduceUnit() (ProductionCondition, map[string]st
 	time := time.Unix(newUnit.Timestamp(), 0)
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
 	detail["Mediator"] = scheduledMediator.Str()
-	detail["Hash"] = unitHash.Hex()
+	detail["Hash"] = unitHash.TerminalString()
 
 	// 3. 初始化签名unit相关的签名分片的buf
 	mp.initTBLSRecoverBuf(scheduledMediator, unitHash)

@@ -443,6 +443,15 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if tx == nil {
 			return errResp(ErrDecode, "transaction %d is nil", i)
 		}
+
+		if tx.TxId != (common.Hash{}) {
+			if valid, err := pm.contractProc.CheckContractTxValid(tx); err != nil {
+				return errResp(ErrDecode, "msg %v: %v", msg, err)
+			} else if valid == false {
+				return errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
+			}
+		}
+
 		for _, msg := range tx.TxMessages {
 			payload, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok == false {
@@ -487,17 +496,17 @@ func (pm *ProtocolManager) ConsensusMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
-//func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
-//	// Retrieve and decode the propagated new produced unit
-//	var unit modules.Unit
-//	if err := msg.Decode(&unit); err != nil {
-//		log.Info("===NewProducedUnitMsg===", "err:", err)
-//		return errResp(ErrDecode, "%v: %v", msg, err)
-//	}
-//
-//	pm.producer.ToUnitTBLSSign(&unit)
-//	return nil
-//}
+func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
+	// Retrieve and decode the propagated new produced unit
+	var unit modules.Unit
+	if err := msg.Decode(&unit); err != nil {
+		log.Info("===NewProducedUnitMsg===", "err:", err)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+
+	pm.producer.ToUnitTBLSSign(&unit)
+	return nil
+}
 
 func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	var sigShare mp.SigShareEvent
@@ -543,12 +552,12 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 
 //GroupSigMsg
 func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
-	var resp mp.GroupSigEvent
-	if err := msg.Decode(&resp); err != nil {
+	var gSign mp.GroupSigEvent
+	if err := msg.Decode(&gSign); err != nil {
 		log.Info("===GroupSigMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-	//TODO call dag
+	pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 	return nil
 }
 

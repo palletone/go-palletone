@@ -24,6 +24,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -34,7 +35,7 @@ import (
 func (dag *Dag) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	missedUnits := dag.GetSlotAtTime(time.Unix(unit.Timestamp(), 0))
 	if missedUnits == 0 {
-		log.Error("Trying to push double-produced unit onto current unit?!")
+		log.Debug("Trying to push double-produced unit onto current unit?!")
 		return 0
 	}
 
@@ -98,6 +99,7 @@ func (dag *Dag) updateLastIrreversibleUnit() {
 	}
 
 	// 2. 排序
+	// todo 应当优化本排序方法，使用第n大元素的方法
 	sort.Ints(lastConfirmedUnitNums)
 
 	// 3. 获取倒数第 > 2/3 个确认unit编号
@@ -106,11 +108,25 @@ func (dag *Dag) updateLastIrreversibleUnit() {
 	var newLastIrreversibleUnitNum = uint32(lastConfirmedUnitNums[offset])
 
 	// 4. 更新
+	dag.updateLastIrreversibleUnitNum(newLastIrreversibleUnitNum)
+}
+
+func (dag *Dag) updateLastIrreversibleUnitNum(newLastIrreversibleUnitNum uint32) {
 	dgp := dag.GetDynGlobalProp()
 	if newLastIrreversibleUnitNum > dgp.LastIrreversibleUnitNum {
 		dgp.LastIrreversibleUnitNum = newLastIrreversibleUnitNum
 		dag.SaveDynGlobalProp(dgp, false)
 	}
+}
+
+func (dag *Dag) updateGlobalPropDependGroupSign(unitHash common.Hash) {
+	unit, err := dag.GetUnit(unitHash)
+	if err != nil {
+		return
+	}
+
+	// 1. 根据群签名更新不可逆unit高度
+	dag.updateLastIrreversibleUnitNum(uint32(unit.NumberU64()))
 }
 
 // 活跃 mediators 更新事件

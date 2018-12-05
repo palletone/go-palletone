@@ -26,6 +26,7 @@ import (
 )
 
 type TxJson struct {
+	TxHash        string             `json:"tx_hash"`
 	Payment       *PaymentJson       `json:"payment"`
 	Vote          *VoteJson          `json:"vote"`
 	InvokeRequest *InvokeRequestJson `json:"invoke_request"`
@@ -40,7 +41,7 @@ type InvokeRequestJson struct {
 }
 
 func ConvertTx2Json(tx *modules.Transaction) TxJson {
-	json := TxJson{}
+	json := TxJson{TxHash: tx.Hash().String()}
 	for _, m := range tx.TxMessages {
 		if m.App == modules.APP_PAYMENT {
 			pay := m.Payload.(*modules.PaymentPayload)

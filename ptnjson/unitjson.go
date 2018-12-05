@@ -32,9 +32,7 @@ type UnitJson struct {
 	Txs        []*TxJson          `json:"transactions"` // transaction list
 	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
 	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
-	// These fields are used by package ptn to track
-	// inter-peer block relay.
-	ReceivedAt time.Time
+
 }
 type HeaderJson struct {
 	ParentsHash   []common.Hash  `json:"parents_hash"`
@@ -74,7 +72,7 @@ func convertUnitHeader2Json(header *modules.Header) *HeaderJson {
 		AuthorAddress: header.Authors.Address.String(),
 		AuthorSign:    hex.EncodeToString(append(header.Authors.R, header.Authors.S...)),
 		GroupSign:     hex.EncodeToString(header.GroupSign),
-		GroupPubKey:   header.GroupPubKey,
+		GroupPubKey:   hex.EncodeToString(header.GroupPubKey),
 		TxRoot:        header.TxRoot,
 		Extra:         hex.EncodeToString(header.Extra),
 		CreationTime:  time.Now(), // TODO: header.Creationdate

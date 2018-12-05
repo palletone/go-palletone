@@ -27,7 +27,6 @@ import (
 	"fmt"
 	"github.com/martinlindhe/base36"
 	"github.com/palletone/go-palletone/common/rlp"
-	"strconv"
 )
 
 //Asset to identify token
@@ -49,11 +48,11 @@ const (
 
 func NewPTNAsset() *Asset {
 	//return &Asset{AssetId: PTNCOIN}
-        asset,err:= NewAsset("PTN", AssetType_FungibleToken, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, IDType16{})
-        if err != nil{
-            return nil
-        }
-        return asset
+	asset, err := NewAsset("PTN", AssetType_FungibleToken, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, IDType16{})
+	if err != nil {
+		return nil
+	}
+	return asset
 }
 func NewAsset(symbol string, assetType AssetType, requestId []byte, uniqueId IDType16) (*Asset, error) {
 	asset := &Asset{}
@@ -79,36 +78,20 @@ func NewAssetId(symbol string, assetType AssetType, requestId []byte) (IDType16,
 	copy(assetId[4:], requestId[0:12])
 	return assetId, nil
 }
-func (asset *Asset) ParseAssetId() (string, AssetType, []byte) {
-	var assetId [16]byte
-	copy(assetId[:], asset.AssetId[:])
-	assetId0 := asset.AssetId[0]
-	len := assetId0 >> 5
-	t := (assetId0 & 0xc) >> 2
-	assetId[0] = assetId0 & 3
-	symbol := base36.EncodeBytes(assetId[4-len : 4])
-	return symbol, AssetType(t), assetId[4:]
-}
+
 func (asset *Asset) String() string {
 	if asset.AssetId == PTNCOIN {
 		return "PTN"
 	}
-	symbol, t, tx12 := asset.ParseAssetId()
-	assetIdStr := symbol + "+" + strconv.Itoa(int(t)) + base36.EncodeBytes(tx12)
-	if t != AssetType_NonFungibleToken {
+	//symbol, t, tx12 := asset.AssetId.ParseAssetId()
+	assetIdStr := asset.AssetId.ToAssetId()
+	if asset.UniqueId == ZeroIdType16() {
 		return assetIdStr
 	}
 
 	return fmt.Sprintf("%s-%s", assetIdStr, asset.UniqueId.String())
 }
-func string2AssetId(str string) (IDType16, error) {
-	strArray := strings.Split(str, "+")
-	symbol := strArray[0]
-	ty := strArray[1][0] - 48
-	tx12 := base36.DecodeToBytes(strArray[1][1:])
-	return NewAssetId(symbol, AssetType(ty), tx12)
 
-}
 func (asset *Asset) SetString(str string) error {
 	if str == "PTN" {
 		asset.AssetId = PTNCOIN

@@ -129,7 +129,7 @@ func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
 // author Albert·Gou
 func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 	if !d.GetGlobalProp().IsActiveMediator(add) {
-		log.Error(fmt.Sprintf("%v is not active mediator!", add.Str()))
+		log.Debug(fmt.Sprintf("%v is not active mediator!", add.Str()))
 		return nil
 	}
 
@@ -139,7 +139,7 @@ func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 func (d *Dag) GetMediator(add common.Address) *core.Mediator {
 	med, err := d.statedb.RetrieveMediator(add)
 	if err != nil {
-		log.Error("dag", "GetMediator RetrieveMediator err:", err, "address:", add)
+		log.Debug("dag", "GetMediator RetrieveMediator err:", err, "address:", add)
 		return nil
 	}
 	return med
@@ -188,6 +188,20 @@ func (dag *Dag) MediatorSchedule() []common.Address {
 
 func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
 	return dag.GetGlobalProp().ChainParameters.CurrentFees
+}
+
+func (dag *Dag) GetUnit(hash common.Hash) (*modules.Unit, error) {
+	unit, err := dag.Memdag.GetUnit(hash)
+
+	if unit == nil || err != nil {
+		unit, err = dag.dagdb.GetUnit(hash)
+	}
+
+	if unit == nil || err != nil {
+		log.Debug("get unit by hash is failed.", "hash", hash)
+	}
+
+	return unit, err
 }
 
 func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {

@@ -57,17 +57,20 @@ type iDag interface {
 	GetUnitByHash(common.Hash) (*modules.Unit, error)
 	GetMediators() map[common.Address]bool
 	GetElectedMediatorsAddress() (map[string]uint64, error)
+	GetUnit(common.Hash) (*modules.Unit, error)
+
 	IsActiveMediator(add common.Address) bool
 	IsSynced() bool
 
 	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
 
-	GenerateUnit(when time.Time, producer common.Address, groupPubKey string,
+	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
 		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit
 
 	MediatorSchedule() []common.Address
 
 	IsPrecedingMediator(add common.Address) bool
+	IsIrreversibleUnit(hash common.Hash) bool
 }
 
 type MediatorPlugin struct {
@@ -181,7 +184,7 @@ func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 		//dkgr, err := dkg.NewDistKeyGeneratorWithoutSecret(mp.suite, initSec, initPubs, curThreshold)
 		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
-			log.Error(err.Error())
+			log.Debug(err.Error())
 			continue
 		}
 
@@ -259,7 +262,7 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 	})
 
 	if err != nil {
-		log.Error(fmt.Sprintf("failed to register the Mediator Plugin service: %v", err))
+		log.Debug(fmt.Sprintf("failed to register the Mediator Plugin service: %v", err))
 	}
 }
 

@@ -850,15 +850,15 @@ func (mr *MockIDagMockRecorder) GetTxFee(pay interface{}) *gomock.Call {
 }
 
 // SetUnitGroupSign mocks base method
-func (m *MockIDag) SetUnitGroupSign(sign []byte, hash common.Hash, txpool txspool.ITxPool) error {
-	ret := m.ctrl.Call(m, "SetUnitGroupSign", sign, hash, txpool)
+func (m *MockIDag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
+	ret := m.ctrl.Call(m, "SetUnitGroupSign", unitHash, groupSign, txpool)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetUnitGroupSign indicates an expected call of SetUnitGroupSign
-func (mr *MockIDagMockRecorder) SetUnitGroupSign(sign, hash, txpool interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUnitGroupSign", reflect.TypeOf((*MockIDag)(nil).SetUnitGroupSign), sign, hash, txpool)
+func (mr *MockIDagMockRecorder) SetUnitGroupSign(unitHash, groupSign, txpool interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUnitGroupSign", reflect.TypeOf((*MockIDag)(nil).SetUnitGroupSign), unitHash, groupSign, txpool)
 }
 
 // IsSynced mocks base method
@@ -907,4 +907,17 @@ func (m *MockIDag) UnitIrreversibleTime() uint {
 // UnitIrreversibleTime indicates an expected call of UnitIrreversibleTime
 func (mr *MockIDagMockRecorder) UnitIrreversibleTime() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnitIrreversibleTime", reflect.TypeOf((*MockIDag)(nil).UnitIrreversibleTime))
+}
+
+// GetUnit mocks base method
+func (m *MockIDag) GetUnit(arg0 common.Hash) (*modules.Unit, error) {
+	ret := m.ctrl.Call(m, "GetUnit", arg0)
+	ret0, _ := ret[0].(*modules.Unit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUnit indicates an expected call of GetUnit
+func (mr *MockIDagMockRecorder) GetUnit(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnit", reflect.TypeOf((*MockIDag)(nil).GetUnit), arg0)
 }

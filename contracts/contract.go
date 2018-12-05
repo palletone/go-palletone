@@ -62,7 +62,8 @@ var (
 func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
 	atomic.LoadInt32(&initFlag)
 	if initFlag > 0 {
-		return nil, errors.New("contract already init")
+		//todo  tmp delete
+		//return nil, errors.New("contract already init")
 	}
 
 	var contractCfg contractcfg.Config

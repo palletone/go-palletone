@@ -26,13 +26,13 @@ var Modules = map[string]string{
 	"clique":     Clique_JS,
 	"debug":      Debug_JS,
 	"ptn":        Ptn_JS,
-	"miner":      Miner_JS,
+	"dag":        Dag_JS,
 	"net":        Net_JS,
 	"personal":   Personal_JS,
 	"rpc":        RPC_JS,
-	"shh":        Shh_JS,
-	"txpool":     TxPool_JS,
-	"mediator":   Mediator_JS,
+	// "shh":      Shh_JS,
+	"txpool":   TxPool_JS,
+	"mediator": Mediator_JS,
 }
 
 const Chequebook_JS = `
@@ -198,6 +198,16 @@ web3._extend({
 			name: 'setHead',
 			call: 'debug_setHead',
 			params: 1
+		}),
+		new web3._extend.Method({
+			name: 'queryDbByKey',
+			call: 'debug_queryDbByKey',
+			params: 2
+		}),
+		new web3._extend.Method({
+			name: 'queryDbByPrefix',
+			call: 'debug_queryDbByPrefix',
+			params: 2
 		}),
 		new web3._extend.Method({
 			name: 'seedHash',
@@ -452,41 +462,28 @@ web3._extend({
 });
 `
 
-const Miner_JS = `
+const Dag_JS = `
 web3._extend({
-	property: 'miner',
+	property: 'dag',
 	methods: [
 		new web3._extend.Method({
-			name: 'start',
-			call: 'miner_start',
-			params: 1,
-			inputFormatter: [null]
+			name: 'getUnitByNumber',
+        	call: 'ptn_getUnitByNumber',
+        	params: 1,
+        	inputFormatter: [null]
 		}),
 		new web3._extend.Method({
-			name: 'stop',
-			call: 'miner_stop'
+			name: 'getUnitByHash',
+       		call: 'ptn_getUnitByHash',
+        	params: 1,
+        	inputFormatter: [null]
 		}),
 		new web3._extend.Method({
-			name: 'setEtherbase',
-			call: 'miner_setEtherbase',
-			params: 1,
-			inputFormatter: [web3._extend.formatters.inputAddressFormatter]
+			name: 'getTransaction',
+        	call: 'ptn_getTransactionByHash',
+        	params: 1
 		}),
-		new web3._extend.Method({
-			name: 'setExtra',
-			call: 'miner_setExtra',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'setGasPrice',
-			call: 'miner_setGasPrice',
-			params: 1,
-			inputFormatter: [web3._extend.utils.fromDecimal]
-		}),
-		new web3._extend.Method({
-			name: 'getHashrate',
-			call: 'miner_getHashrate'
-		}),
+		
 	],
 	properties: []
 });
@@ -564,25 +561,25 @@ web3._extend({
 });
 `
 
-const Shh_JS = `
-web3._extend({
-	property: 'shh',
-	methods: [
-	],
-	properties:
-	[
-		new web3._extend.Property({
-			name: 'version',
-			getter: 'shh_version',
-			outputFormatter: web3._extend.utils.toDecimal
-		}),
-		new web3._extend.Property({
-			name: 'info',
-			getter: 'shh_info'
-		}),
-	]
-});
-`
+// const Shh_JS = `
+// web3._extend({
+// 	property: 'shh',
+// 	methods: [
+// 	],
+// 	properties:
+// 	[
+// 		new web3._extend.Property({
+// 			name: 'version',
+// 			getter: 'shh_version',
+// 			outputFormatter: web3._extend.utils.toDecimal
+// 		}),
+// 		new web3._extend.Property({
+// 			name: 'info',
+// 			getter: 'shh_info'
+// 		}),
+// 	]
+// });
+// `
 
 const TxPool_JS = `
 web3._extend({

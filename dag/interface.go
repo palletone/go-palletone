@@ -68,11 +68,10 @@ type IDag interface {
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
 	//All leaf nodes for dag downloader
 	GetAllLeafNodes() ([]*modules.Header, error)
-	//GetUnit(common.Hash) (*modules.Unit, error)
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 
 	// validate group signature by hash
-	ValidateUnitGroupSig(hash common.Hash) (bool, error)
+	//ValidateUnitGroupSig(hash common.Hash) (bool, error)
 
 	FastSyncCommitHead(common.Hash) error
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
@@ -120,10 +119,13 @@ type IDag interface {
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error)
 	// set groupsign
-	SetUnitGroupSign(sign []byte, hash common.Hash, txpool txspool.ITxPool) error
+	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 
 	IsSynced() bool
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
 	UnitIrreversibleTime() uint
+	GetUnit(common.Hash) (*modules.Unit, error)
+	QueryDbByKey(key []byte) ([]byte, error)
+	QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error)
 }

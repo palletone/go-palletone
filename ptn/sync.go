@@ -220,7 +220,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 
 	head := pm.dag.CurrentUnit()
 	if head != nil && head.UnitHeader.Number.Index > 0 {
-		go pm.BroadcastUnit(head, false, noBroadcastMediator)
+		go pm.BroadcastUnit(head, false/*, noBroadcastMediator*/)
 	}
 
 }

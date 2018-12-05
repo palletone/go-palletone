@@ -22,3 +22,8 @@ const (
 	UNIT_CREATION_DATE_INITIAL_UINT64  = 1536451200
 	UNIT_CREATION_DATE_INITIAL_FORMATE = "2018-09-09 00:00:00"
 )
+
+type DbRow struct {
+	Key   []byte
+	Value []byte
+}

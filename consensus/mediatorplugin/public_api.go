@@ -123,3 +123,19 @@ func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
 
 	return false
 }
+
+func (mp *MediatorPlugin) LocalMediatorPubKey(add common.Address) []byte {
+	var pubKey []byte = nil
+	dkgr := mp.getLocalActiveDKG(add)
+	if dkgr != nil {
+		dks, err := dkgr.DistKeyShare()
+		if err == nil {
+			pubKey, err = dks.Public().MarshalBinary()
+			if err != nil {
+				pubKey = nil
+			}
+		}
+	}
+
+	return pubKey
+}

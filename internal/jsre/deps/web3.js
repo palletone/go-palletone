@@ -5305,9 +5305,8 @@ var methods = function () {
     var getBalance = new Method({
         name: 'getBalance',
         call: 'ptn_getBalance',
-        params: 2,
-        inputFormatter: [formatters.inputAddressFormatter, formatters.inputDefaultBlockNumberFormatter],
-        outputFormatter: formatters.outputBigNumberFormatter
+        params: 1,
+        inputFormatter: [null]
     });
 
     var getStorageAt = new Method({
@@ -5688,6 +5687,13 @@ var methods = function () {
         inputFormatter: [null, null, null, null],
     });
 
+    var creatCcTransaction = new Method({
+        name: 'creatCcTransaction',
+        call: 'ptn_creatCcTransaction',
+        params: 4, //txtype string, deployId string, paymentJson string, args[]string------>["fun", "key", "value"]
+        inputFormatter: [null, null, null, null],
+    });
+
     return [
         forking,
         getUnitByHash,
@@ -5752,6 +5758,7 @@ var methods = function () {
         getUnitTxsHashHex, 
         getTxByHash, 
         ccinvoketx,
+        creatCcTransaction,
     ];
 };
 

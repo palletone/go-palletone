@@ -23,10 +23,13 @@ import (
 	"time"
 	"unsafe"
 
+	"errors"
+	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
 )
 
 // validate unit state
@@ -57,7 +60,7 @@ type Header struct {
 	AssetIDs     []IDType16    `json:"assets"`
 	Authors      Authentifier  `json:"mediator"`    // the unit creation authors
 	GroupSign    []byte        `json:"groupSign"`   // 群签名, 用于加快单元确认速度
-	GroupPubKey  string        `json:"groupPubKey"` // 群公钥, 用于验证群签名
+	GroupPubKey  []byte        `json:"groupPubKey"` // 群公钥, 用于验证群签名
 	TxRoot       common.Hash   `json:"root"`
 	Number       ChainIndex    `json:"index"`
 	Extra        []byte        `json:"extra"`
@@ -110,6 +113,7 @@ func (h *Header) Hash() common.Hash {
 	// 计算header’hash时 剔除签名和群签
 	emptyHeader.Authors = Authentifier{}
 	emptyHeader.GroupSign = nil
+	emptyHeader.GroupPubKey = nil
 	return rlp.RlpHash(emptyHeader)
 }
 
@@ -119,6 +123,7 @@ func (h *Header) HashWithOutTxRoot() common.Hash {
 	// 计算header’hash时 剔除签名和群签
 	emptyHeader.Authors = Authentifier{}
 	emptyHeader.GroupSign = nil
+	emptyHeader.GroupPubKey = nil
 	emptyHeader.TxRoot = common.Hash{}
 	return rlp.RlpHash(emptyHeader)
 
@@ -146,6 +151,10 @@ func CopyHeader(h *Header) *Header {
 
 	if len(h.GroupSign) > 0 {
 		copy(cpy.GroupSign, h.GroupSign)
+	}
+
+	if len(h.GroupPubKey) > 0 {
+		copy(cpy.GroupPubKey, h.GroupPubKey)
 	}
 
 	if len(h.TxRoot) > 0 {
@@ -197,6 +206,18 @@ func (unit *Unit) UnitAuthor() common.Address {
 	}
 
 	return unit.UnitHeader.Authors.Address
+}
+
+func (unit *Unit) GroupPubKey() (kyber.Point, error) {
+	pubKeyB := unit.UnitHeader.GroupPubKey
+	if len(pubKeyB) == 0 {
+		return nil, errors.New("Group public key is null.")
+	}
+
+	pubKey := core.Suite.Point()
+	err := pubKey.UnmarshalBinary(pubKeyB)
+
+	return pubKey, err
 }
 
 //type OutPoint struct {

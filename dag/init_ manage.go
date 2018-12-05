@@ -22,33 +22,34 @@ package dag
 import (
 	"time"
 
+	"github.com/dedis/kyber/sign/bls"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-// todo 待被调用
 func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 	if dag.HeadUnitHash() != nextUnit.ParentHash()[0] {
-		log.Error("invalidated unit's parent hash!")
+		log.Debug("invalidated unit's parent hash!")
 		return false
 	}
 
 	if dag.HeadUnitTime() >= nextUnit.Timestamp() {
-		log.Error("invalidated unit's timestamp!")
+		log.Debug("invalidated unit's timestamp!")
 		return false
 	}
 
 	slotNum := dag.GetSlotAtTime(time.Unix(nextUnit.Timestamp(), 0))
 	if slotNum <= 0 {
-		log.Error("invalidated unit's slot!")
+		log.Debug("invalidated unit's slot!")
 		return false
 	}
 
 	scheduledMediator := dag.GetScheduledMediator(slotNum)
-	if scheduledMediator.Equal(nextUnit.UnitAuthor()) {
-		log.Error("Mediator produced unit at wrong time!")
+	if !scheduledMediator.Equal(nextUnit.UnitAuthor()) {
+		log.Debug("Mediator produced unit at wrong time!")
 		return false
 	}
 
@@ -126,4 +127,39 @@ func (d *Dag) ChainThreshold() int {
 func (d *Dag) UnitIrreversibleTime() uint {
 	gp := d.GetGlobalProp()
 	return uint(gp.ChainThreshold()) * uint(gp.ChainParameters.MediatorInterval)
+}
+
+func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
+	unit, err := d.GetUnit(hash)
+	if unit != nil && err == nil {
+		lin := d.GetDynGlobalProp().LastIrreversibleUnitNum
+		if unit.NumberU64() <= uint64(lin) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
+	unit, err := d.GetUnit(unitHash)
+	if err != nil {
+		return err
+	}
+
+	pubKey, err := unit.GroupPubKey()
+	if err != nil {
+		return err
+	}
+
+	err = bls.Verify(core.Suite, pubKey, unitHash[:], groupSign)
+	if err == nil {
+		//log.Debug("the group signature: " + hexutil.Encode(groupSign) +
+		//	" of the Unit that hash: " + unitHash.Hex() + " is verified through!")
+	} else {
+		log.Info("the group signature: " + hexutil.Encode(groupSign) + " of the Unit that hash: " +
+			unitHash.Hex() + " is verified that an error has occurred: " + err.Error())
+	}
+
+	return err
 }
