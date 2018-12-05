@@ -31,8 +31,8 @@ import (
 )
 
 func mediatorKey(address common.Address) []byte {
-	//key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes()...)
-	key := append(constants.MEDIATOR_INFO_PREFIX, address.Str()...)
+	key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes()...)
+	//key := append(constants.MEDIATOR_INFO_PREFIX, address.Str()...)
 
 	return key
 }
@@ -134,8 +134,8 @@ func GetMediators(db ptndb.Database) map[common.Address]bool {
 		//log.Debug(fmt.Sprintf("Get Mediator's key : %s", key))
 		addStr := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
 
-		//result[common.BytesToAddress(address)] = true
-		result[core.StrToMedAdd(string(addStr))] = true
+		result[common.BytesToAddress(addStr)] = true
+		//result[core.StrToMedAdd(string(addStr))] = true
 	}
 
 	return result
