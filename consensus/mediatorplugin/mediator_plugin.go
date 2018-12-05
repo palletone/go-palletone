@@ -197,6 +197,10 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	// 2. 生产验证单元
 	groupPubKey := mp.LocalMediatorPubKey(scheduledMediator)
+	//execute contract
+	if err := mp.ptn.ContractProcessor().RunContractLoop(scheduledMediator,ks); err!= nil{
+		log.Error("MaybeProduceUnit", "RunContractLoop err:", err.Error())
+	}
 	newUnit := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, mp.ptn.TxPool())
 	if newUnit.IsEmpty() {
 		return ExceptionProducing, detail

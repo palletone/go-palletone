@@ -445,9 +445,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		}
 
 		if tx.TxId != (common.Hash{}) {
-			if valid, err := pm.contractProc.CheckContractTxValid(tx); err != nil {
-				return errResp(ErrDecode, "msg %v: %v", msg, err)
-			} else if valid == false {
+			if  pm.contractProc.CheckContractTxValid(tx)!= true {
 				return errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
 			}
 		}

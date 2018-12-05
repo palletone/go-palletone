@@ -36,12 +36,14 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 // PalletOne wraps all methods required for producing unit.
 type PalletOne interface {
 	GetKeyStore() *keystore.KeyStore
 	TxPool() txspool.ITxPool
+	ContractProcessor() *jury.Processor
 }
 
 type iDag interface {
