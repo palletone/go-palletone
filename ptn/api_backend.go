@@ -202,6 +202,27 @@ func (b *PtnApiBackend) WalletBalance(address string, assetid []byte, uniqueid [
 func (b *PtnApiBackend) GetContract(id string) (*modules.Contract, error) {
 	return b.ptn.dag.GetContract(common.Hex2Bytes(id))
 }
+func (b *PtnApiBackend) QueryDbByKey(key []byte) *ptnjson.DbRowJson {
+	val, err := b.ptn.dag.QueryDbByKey(key)
+	if err != nil {
+
+		return nil
+	}
+	return ptnjson.NewDbRowJson(key, val)
+}
+func (b *PtnApiBackend) QueryDbByPrefix(prefix []byte) []*ptnjson.DbRowJson {
+	vals, err := b.ptn.dag.QueryDbByPrefix(prefix)
+	if err != nil {
+
+		return nil
+	}
+	result := []*ptnjson.DbRowJson{}
+	for _, val := range vals {
+		j := ptnjson.NewDbRowJson(val.Key, val.Value)
+		result = append(result, j)
+	}
+	return result
+}
 
 /*
 // Get Header
@@ -442,8 +463,7 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 }
 
 func (b *PtnApiBackend) ContractTxReqBroadcast(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
-	b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, txBytes, args, timeout)
-	return nil, nil
+	return b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, txBytes, args, timeout)
 }
 
 func (b *PtnApiBackend) ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
@@ -470,4 +490,15 @@ func (b *PtnApiBackend) DecodeTx(hexStr string) (string, error) {
 	txjson := ptnjson.ConvertTx2Json(tx)
 	json, err := json.Marshal(txjson)
 	return string(json), err
+}
+func (b *PtnApiBackend) EncodeTx(jsonStr string) (string, error) {
+	txjson := &ptnjson.TxJson{}
+	json.Unmarshal([]byte(jsonStr), txjson)
+	tx := ptnjson.ConvertJson2Tx(txjson)
+	bytes, err := rlp.EncodeToBytes(tx)
+
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), err
 }

@@ -4,6 +4,8 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/common"
 )
 
 type contractInf interface {
@@ -13,7 +15,8 @@ type contractInf interface {
 	SubscribeContractSigEvent(ch chan<- jury.ContractSigEvent) event.Subscription
 	ProcessContractSigEvent(event *jury.ContractSigEvent) error
 
-	CheckContractTxValid(tx *modules.Transaction) (bool, error)
+	RunContractLoop(addr common.Address, ks *keystore.KeyStore) error
+	CheckContractTxValid(tx *modules.Transaction) bool
 }
 
 func (self *ProtocolManager) contractExecRecvLoop() {

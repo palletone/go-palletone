@@ -32,17 +32,17 @@ all:
 	build/env.sh go run build/ci.go install
 
 docker:
-        @mkdir -p $(BUILD_DIR)/images/gptn
-        @cat images/gptn/Dockerfile.in \
+	@mkdir -p $(BUILD_DIR)/images/gptn
+	@cat images/gptn/Dockerfile.in \
                 | sed -e 's|_BASE_NS_|$(BASE_DOCKER_NS)|g' \
                 | sed -e 's|_NS_|$(DOCKER_NS)|g' \
                 | sed -e 's|_BASE_TAG_|$(BASE_DOCKER_TAG)|g' \
                 | sed -e 's|_TAG_|$(DOCKER_TAG)|g' \
                 | sed -e 's|_GPTN_PATH_|$(GOBIN)|g' \
                 > $(BUILD_DIR)/images/gptn/Dockerfile
-        @cp -rf $(GOBIN)/gptn $(BUILD_DIR)/images/gptn
-        @cp -rf images/gptn/entrypoint.sh $(BUILD_DIR)/images/gptn
-        @echo "Successful generation of mirror files"
+	@cp -rf $(GOBIN)/gptn $(BUILD_DIR)/images/gptn
+	@cp -rf images/gptn/entrypoint.sh $(BUILD_DIR)/images/gptn
+	@echo "Successful generation of mirror files"
 
 android:
 	build/env.sh go run build/ci.go aar --local

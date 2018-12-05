@@ -12,7 +12,7 @@ var DefaultConfig = Config{
 	ContractDeploytimeout:  time.Duration(40) * time.Second,
 	VmEndpoint:             "unix:///var/run/docker.sock",
 	ContractBuilder:        "palletone/palletimg",
-	SysContract:            map[string]string{"deposit_syscc": "true", "sample_syscc": "true"},
+	SysContract:            map[string]string{"deposit_syscc": "true", "sample_syscc": "true", "createToken_sycc": "true"},
 }
 
 type Config struct {

@@ -525,16 +525,20 @@ func NewPublicBlockChainAPI(b Backend) *PublicBlockChainAPI {
 // GetBalance returns the amount of wei for the given address in the state of the
 // given block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta
 // block numbers are also allowed.
-func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address common.Address, blockNr rpc.BlockNumber) (*big.Int, error) {
-	/*
-		state, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
-		if state == nil || err != nil {
-			return nil, err
+func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address string) (map[string]decimal.Decimal, error) {
+	utxos, err := s.b.GetAddrUtxos(address)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]decimal.Decimal)
+	for _, utxo := range utxos {
+		if bal, ok := result[utxo.Asset]; ok {
+			result[utxo.Asset] = bal.Add(ptnjson.Dao2Ptn(utxo.Amount))
+		} else {
+			result[utxo.Asset] = ptnjson.Dao2Ptn(utxo.Amount)
 		}
-		b := state.GetBalance(address)
-		return b, state.Error()
-	*/
-	return &big.Int{}, nil
+	}
+	return result, nil
 }
 
 func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
@@ -864,6 +868,9 @@ func (s *PublicBlockChainAPI) Ccstop(ctx context.Context, deployId string, txid 
 func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string, error) {
 	return s.b.DecodeTx(hex)
 }
+func (s *PublicBlockChainAPI) EncodeTx(ctx context.Context, json string) (string, error) {
+	return s.b.EncodeTx(json)
+}
 
 func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, txid string, txhex string, param []string) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
@@ -877,15 +884,15 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, t
 	}
 	rsp, err := s.b.ContractTxReqBroadcast(depId, txid, txBytes, args, 0)
 
-	log.Info("-----ContractInvokeTxReq:" + string(rsp))
+	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
 
-	return string(rsp), err
+	return hex.EncodeToString(rsp), err
 }
 
 func (s *PublicBlockChainAPI) CreatCcTransaction(ctx context.Context, txtype string, deployId string, txhex string, param []string) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
 	txBytes, err := hex.DecodeString(txhex)
-	log.Info("-----creatCcTransaction:" + deployId )
+	log.Info("-----creatCcTransaction:" + deployId)
 
 	args := make([][]byte, len(param))
 	for i, arg := range param {
@@ -1749,9 +1756,10 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 		input.Vout = utxo.OutIndex
 		inputs = append(inputs, input)
 	}
+
 	if change > 0 {
-        amounts[from] = ptnjson.Dao2Ptn(change)
-    }
+		amounts[from] = ptnjson.Dao2Ptn(change)
+	}
 
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
 	result, _ := CreateRawTransaction(arg)
@@ -1760,7 +1768,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 }
 
 //create raw transction
-func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/ , params string) (string, error) {
+func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
 	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
@@ -2339,6 +2347,32 @@ func (api *PrivateDebugAPI) ChaindbCompact() error {
 // SetHead rewinds the head of the blockchain to a previous block.
 func (api *PrivateDebugAPI) SetHead(number hexutil.Uint64) {
 	api.b.SetHead(uint64(number))
+}
+func (api *PrivateDebugAPI) QueryDbByKey(keyString string, keyHex string) *ptnjson.DbRowJson {
+	if keyString != "" {
+		return api.b.QueryDbByKey([]byte(keyString))
+	}
+	if keyHex != "" {
+		key, _ := hex.DecodeString(keyHex)
+		return api.b.QueryDbByKey(key)
+	}
+	return nil
+}
+func (api *PrivateDebugAPI) QueryDbByPrefix(keyString string, keyHex string) []*ptnjson.DbRowJson {
+	var result []*ptnjson.DbRowJson
+	if keyString != "" {
+		result = api.b.QueryDbByPrefix([]byte(keyString))
+	}
+	if keyHex != "" {
+		key, _ := hex.DecodeString(keyHex)
+		result = api.b.QueryDbByPrefix(key)
+	}
+	if len(result) > 10 && (keyString == "" || keyHex == "") {
+		//Data too long, only return top 10 rows
+		log.Debug("QueryDbByPrefix Return result too long, truncate it, only return 10 rows. If you want to see full data, please input both 2 args")
+		result = result[0:10]
+	}
+	return result
 }
 
 // PublicNetAPI offers network related RPC methods

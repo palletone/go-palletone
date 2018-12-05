@@ -97,7 +97,7 @@ func (result *ContractInvokeResult) ToCoinbase() ([]*modules.PaymentPayload, err
 		coinbase := &modules.PaymentPayload{}
 		if result.TokenDefine.TokenType == 0 { //ERC20
 			token := modules.FungibleToken{}
-			err := json.Unmarshal(result.TokenDefine.TokenDefineJson, token)
+			err := json.Unmarshal(result.TokenDefine.TokenDefineJson, &token)
 			if err != nil {
 				log.Error("Cannot parse token define json to FungibleToken", result.TokenDefine.TokenDefineJson)
 				return nil, err

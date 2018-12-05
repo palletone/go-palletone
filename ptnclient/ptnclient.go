@@ -672,7 +672,11 @@ func (ec *Client) DecodeTx(ctx context.Context, hex string) (string, error) {
 	err := ec.c.CallContext(ctx, &result, "ptn_decodeTx", hex)
 	return result, err
 }
-
+func (ec *Client) EncodeTx(ctx context.Context, jsonStr string) (string, error) {
+	var result string
+	err := ec.c.CallContext(ctx, &result, "ptn_encodeTx", jsonStr)
+	return result, err
+}
 func (ec *Client) GetUnitTransactions(ctx context.Context, hashHex string) ([]*ptnjson.TransactionJson, error) {
 	result := make([]*ptnjson.TransactionJson, 0)
 	err := ec.c.CallContext(ctx, &result, "dag_getUnitTxsInfo", hashHex)

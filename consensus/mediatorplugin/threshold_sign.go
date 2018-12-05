@@ -38,12 +38,6 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	go mp.BroadcastVSSDeals()
 }
 
-func (mp *MediatorPlugin) setTimeout() {
-	for _, dkg := range mp.activeDKGs {
-		dkg.SetTimeout()
-	}
-}
-
 func (mp *MediatorPlugin) getLocalActiveDKG(add common.Address) *dkg.DistKeyGenerator {
 	if !mp.IsLocalActiveMediator(add) {
 		log.Debug(fmt.Sprintf("The following mediator is not local active mediator: %v", add.String()))
