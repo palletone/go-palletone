@@ -288,30 +288,30 @@ type InvokeTokens struct {
 
 //申请提保证金
 type Cashback struct {
-	InvokeAddress common.Address `json:"invoke_address"` //请求地址
-	InvokeTokens  InvokeTokens   `json:"invoke_tokens"`  //请求数量
-	Role          string         `json:"role"`           //请求角色
-	ApplyTime     int64          `json:"apply_time"`     //请求时间
+	CashbackAddress common.Address `json:"cashback_address"` //请求地址
+	CashbackTokens  InvokeTokens   `json:"cashback_tokens"`  //请求数量
+	Role            string         `json:"role"`             //请求角色
+	CashbackTime    int64          `json:"cashback_time"`    //请求时间
 }
 
 //申请提取保证金的列表
 type ListForCashback struct {
-	Cashback []*Cashback `json:"cashback"`
+	Cashbacks []*Cashback `json:"cashbacks"`
 }
 
 //申请没收保证金
 type Forfeiture struct {
-	InvokeAddress     common.Address `json:"invoke_address"`     //谁发起的
+	ApplyAddress      common.Address `json:"apply_address"`      //谁发起的
 	ForfeitureAddress common.Address `json:"forfeiture_address"` //没收节点地址
-	InvokeTokens      InvokeTokens   `json:"invoke_tokens"`      //没收数量
-	Role              string         `json:"role"`               //没收角色
+	ApplyTokens       InvokeTokens   `json:"apply_tokens"`       //没收数量
+	ForfeitureRole    string         `json:"forfeiture_role"`    //没收角色
 	Extra             string         `json:"extra"`              //备注
 	ApplyTime         int64          `json:"apply_time"`         //请求时间
 }
 
 //申请没收保证金的列表
 type ListForForfeiture struct {
-	Forfeiture []*Forfeiture `json:"forfeiture"`
+	Forfeitures []*Forfeiture `json:"forfeitures"`
 }
 
 //请求合约利息
@@ -319,6 +319,8 @@ type InvokeFees struct {
 	Amount uint64 `json:"amount"`
 	Asset  Asset  `json:"asset"`
 }
+
+//数量及资产类型
 type AmountAsset struct {
 	Amount uint64 `json:"amount"`
 	Asset  *Asset `json:"asset"`
@@ -326,18 +328,19 @@ type AmountAsset struct {
 
 //节点状态数据库保存值
 type DepositStateValues struct {
-	TotalAmount    uint64               `json:"total_amount"`  //保证金总量
-	LastModifyTime int64                `json:"last_pay_time"` //最后一次改变，主要来计算币龄收益
-	EnterTime      time.Time            `json:"enter_time"`    //这是加入列表时的时间
-	Values         []*DepositStateValue `json:"values"`        //交付的历史记录
-
+	TotalAmount      uint64               `json:"total_amount"`      //保证金总量
+	LastModifyTime   time.Time            `json:"last_modify_time"`  //最后一次改变，主要来计算币龄收益
+	EnterTime        time.Time            `json:"enter_time"`        //这是加入列表时的时间
+	PayValues        []*DepositStateValue `json:"pay_values"`        //交付的历史记录
+	CashbackValues   []*Cashback          `json:"cashback_values"`   //退款的历史记录
+	ForfeitureValues []*Forfeiture        `json:"forfeiture_values"` //被没收的历史记录
 }
 
 //交易的内容
 type DepositStateValue struct {
-	DepositBalance AmountAsset `json:"amount_asset"` //数量和资产
-	Time           time.Time   `json:"time"`         //发生时间
-	Extra          string      `json:"extra"`        //额外内容
+	DepositBalance AmountAsset `json:"deposit_balance"` //数量和资产
+	Time           time.Time   `json:"time"`            //发生时间
+	Extra          string      `json:"extra"`           //额外内容
 }
 
 type TokenPayOut struct {

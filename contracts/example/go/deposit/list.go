@@ -138,7 +138,7 @@ func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashbac
 	//
 	cashback := new(modules.Cashback)
 	for i := 0; i < len(listForCashback); i++ {
-		if listForCashback[i].ApplyTime == applyTime && listForCashback[i].InvokeAddress == cashbackAddr {
+		if listForCashback[i].CashbackTime == applyTime && listForCashback[i].CashbackAddress == cashbackAddr {
 			cashback = listForCashback[i]
 			listForCashback = append(listForCashback[:i], listForCashback[i+1:]...)
 			break

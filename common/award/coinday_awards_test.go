@@ -38,12 +38,12 @@ func TestCoinDay(t *testing.T) {
 		//endTime4, _ = time.Parse("2006-01-02 15:04:05", "2018-11-27 23:00:00")
 	)
 	tests := []struct {
-		startTime int64
+		startTime time.Time
 		endTime   time.Time
 		want      int64
 	}{
 		{
-			startTime: startTime1.UTC().Unix(),
+			startTime: startTime1.UTC(),
 			endTime:   endTime1,
 			want:      40000,
 		},
@@ -83,7 +83,7 @@ func TestCalculateAwardsForDepositContractNodes(t *testing.T) {
 	endTime, _ := time.Parse("2006-01-02 15:04:05", "2018-12-05 07:57:13")
 	//距离现在天数：4349
 	//获取币龄 余额：1000
-	coinDayUint64 := GetCoinDay(10000, startTime.UTC().Unix(), endTime)
+	coinDayUint64 := GetCoinDay(10000, startTime.UTC(), endTime)
 	//币龄：4349000
 	//获取币龄收益
 	awards := CalculateAwardsForDepositContractNodes(coinDayUint64)

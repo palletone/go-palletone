@@ -587,9 +587,10 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 				unit, _ := dagdb.GetUnit(unitHash)
 				//3.通过单元获取头部信息中的时间戳
 				timestamp := unit.Header().Creationdate
+				startTime := time.Unix(timestamp, 0).UTC()
 				//获取币龄
 				endTime := time.Now().UTC()
-				coinDays := award2.GetCoinDay(utxo.Amount, timestamp, endTime)
+				coinDays := award2.GetCoinDay(utxo.Amount, startTime, endTime)
 				//计算币龄收益
 				award := award2.CalculateAwardsForDepositContractNodes(coinDays)
 				awards += award
