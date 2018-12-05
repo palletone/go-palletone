@@ -67,7 +67,7 @@ type iDag interface {
 	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
 		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit
 
-	MediatorSchedule() []common.Address
+	ActiveMediators() map[common.Address]bool
 
 	IsPrecedingMediator(add common.Address) bool
 	IsIrreversibleUnit(hash common.Hash) bool
