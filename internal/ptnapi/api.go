@@ -884,9 +884,9 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, t
 	}
 	rsp, err := s.b.ContractTxReqBroadcast(depId, txid, txBytes, args, 0)
 
-	log.Info("-----ContractInvokeTxReq:" + string(rsp))
+	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
 
-	return string(rsp), err
+	return hex.EncodeToString(rsp), err
 }
 
 func (s *PublicBlockChainAPI) CreatCcTransaction(ctx context.Context, txtype string, deployId string, txhex string, param []string) (string, error) {

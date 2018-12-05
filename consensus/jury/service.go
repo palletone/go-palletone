@@ -66,7 +66,7 @@ type PalletOne interface {
 	ContractBroadcast(event ContractExeEvent)
 	ContractSigBroadcast(event ContractSigEvent)
 
-//	GetLocalMediators() *mp.MediatorAccount
+	//	GetLocalMediators() *mp.MediatorAccount
 }
 
 type iDag interface {
@@ -82,10 +82,10 @@ type contractTx struct {
 }
 
 type Processor struct {
-	name     string
-	ptype    PeerType
-	ptn      PalletOne
-	dag      iDag
+	name  string
+	ptype PeerType
+	ptn   PalletOne
+	dag   iDag
 	//local    *mp.MediatorAccount //local
 	contract *contracts.Contract
 	locker   *sync.Mutex
@@ -504,17 +504,17 @@ func (p *Processor) ContractTxCreat(deployId []byte, txBytes []byte, args [][]by
 
 	return rlp.EncodeToBytes(tx)
 }
-func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) error {
+func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) ([]byte, error) {
 	log.Info("ContractTxReqBroadcast", fmt.Sprintf("enter, deployId[%v], txid[%s]", deployId, txid))
 	if deployId == nil || args == nil {
 		log.Error("ContractTxReqBroadcast", "param is nil")
-		return errors.New("transaction request param is nil")
+		return nil, errors.New("transaction request param is nil")
 	}
 
 	tx := &modules.Transaction{}
 	if txBytes != nil {
 		if err := rlp.DecodeBytes(txBytes, tx); err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		pay := &modules.PaymentPayload{
@@ -557,7 +557,7 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes
 	//go p.contractExecFeed.Send(ContractExeEvent{modules.NewTransaction([]*modules.Message{msgPay, msgReq})})
 	//go p.ProcessContractEvent(&ContractExeEvent{Tx: tx})
 
-	return nil
+	return tx.TxId[:], nil
 }
 
 func printTxInfo(tx *modules.Transaction) {
