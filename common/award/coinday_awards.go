@@ -3,14 +3,13 @@ package award
 import (
 	"fmt"
 	"github.com/palletone/go-palletone/core"
-	"math"
 	"time"
 )
 
-func CalculateAwardsForDepositContractNodes(amount uint64, startTimestamp int64) uint64 {
-	coinDayUint64 := getCoinDay(amount, startTimestamp, time.Now().UTC())
-	coinDayFloat64 := float64(coinDayUint64)
-	fmt.Println("coinDayFloat64", coinDayFloat64)
+//计算币龄所得奖励
+func CalculateAwardsForDepositContractNodes(coinDays uint64) uint64 {
+	coinDayFloat64 := float64(coinDays)
+	fmt.Println("coinDayFloat64=", coinDayFloat64)
 	//TODO
 	yearRateFloat64 := core.DefaultDepositRate
 	//yearRateFloat64 := 0.02
@@ -23,16 +22,17 @@ func CalculateAwardsForDepositContractNodes(amount uint64, startTimestamp int64)
 }
 
 //获取币的币龄
-func getCoinDay(amount uint64, startTimestamp int64, endTime time.Time) uint64 {
-	startTime := time.Unix(startTimestamp, 0).UTC()
+func GetCoinDay(amount uint64, lastModifyTime int64, endTime time.Time) uint64 {
+	startTime := time.Unix(lastModifyTime, 0).UTC()
 	fmt.Println("startTime=", startTime)
 	fmt.Println("endTime=", endTime)
-	hourFloat64 := math.Floor(endTime.Sub(startTime).Hours())
-	//fmt.Println(endTime.Sub(startTime).Hours(), hour)
+	hourFloat64 := endTime.Sub(startTime).Hours()
+	fmt.Println("hourFloat64=", hourFloat64)
 	daysFloat64 := hourFloat64 / 24
-	fmt.Println("daysFloat64", daysFloat64)
+	fmt.Println("daysFloat64=", daysFloat64)
 	daysUint64 := uint64(daysFloat64)
-	fmt.Println("daysUint64", daysUint64)
-	coinDay := daysUint64 * amount
-	return coinDay
+	fmt.Println("daysUint64=", daysUint64)
+	coinDays := daysUint64 * amount
+	fmt.Println("coinDays", coinDays)
+	return coinDays
 }
