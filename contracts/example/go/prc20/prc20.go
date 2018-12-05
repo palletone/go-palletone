@@ -21,10 +21,9 @@ package prc20
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
+	"strings"
 
-	//	cm "github.com/palletone/go-palletone/contracts/modules"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dm "github.com/palletone/go-palletone/dag/modules"
@@ -36,15 +35,10 @@ type PRC20 struct {
 }
 
 type Symbols struct {
-	nameAddrs map[string]string `json:"nameAddrs"`
+	NameAddrs map[string]string `json:"nameaddrs"`
 }
 
 func (p *PRC20) Init(stub shim.ChaincodeStubInterface) pb.Response {
-	symbols := Symbols{nameAddrs: map[string]string{}}
-	err := setSymbols(&symbols, stub)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
 	return shim.Success(nil)
 }
 
@@ -54,6 +48,12 @@ func (p *PRC20) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	switch f {
 	case "createToken":
 		return createToken(args, stub)
+	case "putval":
+		return putval(args, stub)
+
+	case "getval":
+		return getval(args, stub)
+
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -95,7 +95,11 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	var fungible dm.FungibleToken
 	//name symbol
 	fungible.Name = args[0]
-	fungible.Symbol = args[1]
+	fungible.Symbol = strings.ToUpper(args[1])
+	if fungible.Symbol == "PTN" {
+		jsonResp := "{\"Error\":\"Can't use PTN\"}"
+		return shim.Success([]byte(jsonResp))
+	}
 	//transfer how to use ?
 	fungible.Decimals = []byte(args[2])[0]
 	//supply amount
@@ -113,10 +117,9 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//check name is only or not
 	symbols, err := getSymbols(stub)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get symbols\"}"
-		return shim.Error(jsonResp)
+		symbols = &Symbols{NameAddrs: map[string]string{}}
 	}
-	if _, ok := symbols.nameAddrs[fungible.Symbol]; ok {
+	if _, ok := symbols.NameAddrs[fungible.Symbol]; ok {
 		jsonResp := "{\"Error\":\"The symbol have been used\"}"
 		return shim.Success([]byte(jsonResp))
 	}
@@ -130,6 +133,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//==== init tokendefine
 	var tokenDefine dm.TokenDefine
 	tokenDefine.TokenDefineJson = createJson
+	copy(tokenDefine.TokenDefineJson, createJson)
 	tokenDefine.TokenType = 0
 	//get invoke address
 	createaddr, err := stub.GetInvokeAddress()
@@ -154,7 +158,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//last put state
-	symbols.nameAddrs[fungible.Symbol] = fungible.SupplyAddress
+	symbols.NameAddrs[fungible.Symbol] = fungible.SupplyAddress
 	err = setSymbols(symbols, stub)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
@@ -170,12 +174,11 @@ func putval(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	key := args[0]
 	val := args[1]
 	// Get the state from the ledger
-	valbytes, err := stub.GetState(key)
+	_, err := stub.GetState(key)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get val for " + key + "\"}"
 		return shim.Error(jsonResp)
 	}
-	fmt.Println("==== valOld demo ==== ", key, string(valbytes))
 	// Write the state to the ledger
 	err = stub.PutState(key, []byte(val))
 	if err != nil {
@@ -195,7 +198,6 @@ func getval(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Failed to get state for " + key + "\"}"
 		return shim.Error(jsonResp)
 	}
-	fmt.Println("==== valOld demo ==== ", key, string(valbytes))
 	if valbytes == nil {
 		jsonResp := "{\"Error\":\"Nil val for " + key + "\"}"
 		return shim.Error(jsonResp)
