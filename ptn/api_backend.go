@@ -492,3 +492,14 @@ func (b *PtnApiBackend) DecodeTx(hexStr string) (string, error) {
 	json, err := json.Marshal(txjson)
 	return string(json), err
 }
+func (b *PtnApiBackend) EncodeTx(jsonStr string) (string, error) {
+	txjson := &ptnjson.TxJson{}
+	json.Unmarshal([]byte(jsonStr), txjson)
+	tx := ptnjson.ConvertJson2Tx(txjson)
+	bytes, err := rlp.EncodeToBytes(tx)
+
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), err
+}

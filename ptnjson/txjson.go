@@ -61,6 +61,13 @@ func ConvertTx2Json(tx *modules.Transaction) TxJson {
 	}
 	return json
 }
+func ConvertJson2Tx(json *TxJson) *modules.Transaction {
+	tx := &modules.Transaction{}
+	pay := ConvertJson2Payment(json.Payment)
+	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay))
+	return tx
+}
+
 func convertInvokeRequest2Json(req *modules.ContractInvokeRequestPayload) *InvokeRequestJson {
 	addr := common.NewAddress(req.ContractId, common.ContractHash)
 	reqJson := &InvokeRequestJson{}

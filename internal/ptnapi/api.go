@@ -868,6 +868,9 @@ func (s *PublicBlockChainAPI) Ccstop(ctx context.Context, deployId string, txid 
 func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string, error) {
 	return s.b.DecodeTx(hex)
 }
+func (s *PublicBlockChainAPI) EncodeTx(ctx context.Context, json string) (string, error) {
+	return s.b.EncodeTx(json)
+}
 
 func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, txid string, txhex string, param []string) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
