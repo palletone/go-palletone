@@ -44,7 +44,7 @@ import (
 type PeerType int
 
 const (
-	_         PeerType = iota
+	_ PeerType = iota
 	TUnknow
 	TJury
 	TMediator
@@ -65,8 +65,6 @@ type PalletOne interface {
 
 	ContractBroadcast(event ContractExeEvent)
 	ContractSigBroadcast(event ContractSigEvent)
-
-	//	GetLocalMediators() *mp.MediatorAccount
 }
 
 type iDag interface {
@@ -74,11 +72,10 @@ type iDag interface {
 }
 
 type contractTx struct {
-	list []common.Address     //dynamic
-	tx   *modules.Transaction //
-	//todo  change type of tx for mult transaction
-	//tx   []*modules.Transaction /
-	tm time.Time //creat time
+	list  []common.Address //dynamic
+	tx    *modules.Transaction
+	valid bool
+	tm    time.Time //creat time
 }
 
 type Processor struct {
@@ -103,10 +100,6 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 		return nil, errors.New("NewContractProcessor, param is nil")
 	}
 
-	//localmediator := ptn.GetLocalMediators()
-	//if localmediator == nil {
-	//	//	return nil, errors.New("Cannot find local mediators, please config it")
-	//}
 	p := &Processor{
 		name:     "conractProcessor",
 		ptn:      ptn,
@@ -115,7 +108,6 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 		locker:   new(sync.Mutex),
 		quit:     make(chan struct{}),
 		mtx:      make(map[common.Hash]*contractTx),
-		//local:    localmediator,
 	}
 
 	//log.Info("NewContractProcessor ok", "local address", localmediator.Address.String())
@@ -150,7 +142,7 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 	}
 	log.Info("ProcessContractEvent", "enter, tx req id ", event.Tx.TxId)
 
-	if _, ok := p.mtx[ event.Tx.TxId]; ok {
+	if _, ok := p.mtx[event.Tx.TxId]; ok {
 		return nil
 	}
 
@@ -159,54 +151,26 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 	}
 
 	p.locker.Lock()
-	p.mtx[ event.Tx.TxId] = &contractTx{
-		tx: event.Tx,
-		tm: time.Now(),
+	p.mtx[event.Tx.TxId] = &contractTx{
+		tx:    event.Tx,
+		tm:    time.Now(),
+		valid: true,
 	}
 	p.locker.Unlock()
 
-	//cmsgType, payload, err := runContractCmd(p.contract, event.Tx)
-	//if err != nil {
-	//	log.Error(fmt.Sprintf("ProcessContractEvent runContractCmd err:%s", err))
-	//	return err
-	//}
-	//ks := p.ptn.GetKeyStore()
-	//err = ks.Unlock(accounts.Account{Address: p.local.Address}, p.local.Password)
-	//if err != nil {
-	//	log.Error(fmt.Sprintf("ProcessContractEvent account add[%s], password[%s], err[%s]", p.local.Address.String(), p.local.Password, err))
-	//	return err
-	//}
-	//tx, err := gen.GenContractSigTransctions(p.local.Address, event.Tx, cmsgType, payload, ks)
-	//if err != nil {
-	//	log.Error(fmt.Sprintf("ProcessContractEvent GenContractSigTransctions err:%s", err))
-	//	return err
-	//}
-	//p.locker.Lock()
-	//p.mtx[event.Tx.TxId] = &contractTx{
-	//	list: p.dag.GetActiveMediators(),
-	//	tx:   tx,
-	//	tm:   time.Now(),
-	//}
-	//p.locker.Unlock()
-	//
-	//log.Debug("ProcessContractEvent", "local txid", event.Tx.TxId, "contract transaction:", p.mtx[event.Tx.TxId].list)
-	//
-	//txPool := p.ptn.TxPool()
-	//txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
-	//
-	////broadcast
-	//go p.ptn.ContractSigBroadcast(ContractSigEvent{tx})
-	////local
-	////go p.contractSigFeed.Send(ContractSigEvent{tx.TxHash, tx})
-	//go p.ProcessContractSigEvent(&ContractSigEvent{tx})
+	//broadcast contract request transaction event
+	//go p.ptn.ContractBroadcast(*event)
 
 	return nil
 }
 
-func (p *Processor) RunContractLoop(addr common.Address, ks *keystore.KeyStore) error {
-	log.Info("ProcessContractEvent", "enter")
-	txPool := p.ptn.TxPool()
-	for txId, ctx := range (p.mtx) {
+func (p *Processor) RunContractLoop(txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error {
+	log.Info("ProcessContractEvent", "enter", addr.String())
+
+	for _, ctx := range (p.mtx) {
+		if false == ctx.valid{
+			continue
+		}
 		if false == checkTxValid(ctx.tx) {
 			log.Error("ProcessContractEvent recv event Tx is invalid")
 			continue
@@ -221,9 +185,14 @@ func (p *Processor) RunContractLoop(addr common.Address, ks *keystore.KeyStore) 
 			log.Error(fmt.Sprintf("ProcessContractEvent GenContractSigTransctions err:%s", err))
 			continue
 		}
-		log.Debug("ProcessContractEvent", "tx:", tx)
-		txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
-		delete(p.mtx, txId)
+		log.Debug("ProcessContractEvent", "tx:",tx)
+		if err = txpool.AddLocal(txspool.TxtoTxpoolTx(txpool, tx)); err != nil{
+			log.Error("ProcessContractEvent", "error", err.Error())
+			continue
+		}
+		//delete(p.mtx, txId)
+		ctx.valid = false
+
 	}
 
 	return nil
@@ -258,7 +227,8 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction) bool {
 	}
 	p.locker.Lock()
 	if _, ok := p.mtx[tx.TxId]; ok {
-		delete(p.mtx, tx.TxId)
+		//delete(p.mtx, tx.TxId)
+		p.mtx[tx.TxId].valid = false
 	}
 	p.locker.Unlock()
 
@@ -331,9 +301,11 @@ func (p *Processor) ContractTxDeleteLoop() {
 
 		p.locker.Lock()
 		for k, v := range p.mtx {
-			if time.Since(v.tm) > time.Second*10 { //todo
+			if time.Since(v.tm) > time.Second*100 { //todo
 				log.Info("ContractTxDeleteLoop", "delete id", k.String())
-				delete(p.mtx, k)
+				if v.valid == false {
+					//delete(p.mtx, k)
+				}
 			}
 		}
 		p.locker.Unlock()
@@ -520,7 +492,7 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes
 		pay := &modules.PaymentPayload{
 			Inputs:   []*modules.Input{},
 			Outputs:  []*modules.Output{},
-			LockTime: 11111, //todo
+			LockTime: 0, //todo
 		}
 		msgPay := &modules.Message{
 			App:     modules.APP_PAYMENT,
@@ -546,8 +518,9 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes
 
 	p.locker.Lock()
 	p.mtx[tx.TxId] = &contractTx{
-		tx: tx,
-		tm: time.Now(),
+		tx:    tx,
+		tm:    time.Now(),
+		valid: true,
 	}
 	p.locker.Unlock()
 
