@@ -23,8 +23,8 @@ web3._extend({
 	property: 'mediator',
 	methods: [
 		new web3._extend.Method({
-			name: 'actives',
-			call: 'mediator_actives',
+			name: 'getActives',
+			call: 'mediator_getActives',
 			params: 0,
 		}),
 		new web3._extend.Method({

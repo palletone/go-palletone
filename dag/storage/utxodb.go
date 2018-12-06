@@ -53,8 +53,8 @@ type IUtxoDb interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
-	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
-	GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
+	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
+	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
@@ -213,11 +213,7 @@ func (db *UtxoDb) GetAddrOutput(addr string) ([]modules.Output, error) {
 	}
 	return outputs, nil
 }
-func (db *UtxoDb) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
-	address, err := common.StringToAddress(addr)
-	if err != nil {
-		return nil, err
-	}
+func (db *UtxoDb) GetAddrOutpoints(address common.Address) ([]modules.OutPoint, error) {
 	data := db.GetPrefix(append(constants.AddrOutPoint_Prefix, address.Bytes()...))
 	outpoints := make([]modules.OutPoint, 0)
 	for _, b := range data {
@@ -229,7 +225,7 @@ func (db *UtxoDb) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	return outpoints, nil
 }
 
-func (db *UtxoDb) GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
+func (db *UtxoDb) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
 	allutxos := make(map[modules.OutPoint]*modules.Utxo, 0)
 	outpoints, err := db.GetAddrOutpoints(addr)
 	if err != nil {
