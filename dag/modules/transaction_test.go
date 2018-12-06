@@ -25,7 +25,7 @@ func TestTransactionEncode(t *testing.T) {
 	pay1s := PaymentPayload{
 		LockTime: 12345,
 	}
-	output := NewTxOut(1, []byte{}, &Asset{})
+	output := NewTxOut(1, []byte{0xff, 0xf1}, &Asset{})
 	pay1s.AddTxOut(output)
 
 	msg := &Message{
@@ -50,6 +50,7 @@ func TestTransactionEncode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("encode error: %v", err)
 	}
+
 	should := common.FromHex("f9010aa0000000000000000000000000b94f5374fce5edbc8e2a8697c15331677e6ebf0bf8e4f84a877061796d656e74a00000000000000000000000000000000000000000000000000000000000000000a07878787878787878787878787878787878787878787878787878787878787878f84a877061796d656e74a00000000000000000000000000000000000000000000000000000000000000000a07878787878787878787878787878787878787878787878787878787878787878f84a877061796d656e74a00000000000000000000000000000000000000000000000000000000000000000a07878787878787878787878787878787878787878787878787878787878787878823039")
 	if !bytes.Equal(txb, should) {
 		log.Error("encoded RLP mismatch", "error", txb)
@@ -63,6 +64,16 @@ func TestTransactionEncode(t *testing.T) {
 	//if tx.Locktime != 12345 {
 	//	log.Error("decode RLP mismatch", "error", txb)
 	//}
+	//fmt.Println("tx:= ", tx)
+	for _, msg := range tx.Messages() {
+		if msg.App == APP_PAYMENT {
+			pay := msg.Payload.(*PaymentPayload)
+			fmt.Println("msg", pay.Inputs, pay.Outputs)
+			for _, out := range pay.Outputs {
+				fmt.Println("info:= ", out)
+			}
+		}
+	}
 	if len(tx.TxMessages) != 3 {
 		t.Error("Rlp decode message count error")
 	}
