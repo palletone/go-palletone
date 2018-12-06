@@ -68,6 +68,16 @@ func TestTransactionEncode(t *testing.T) {
 	//if tx.Locktime != 12345 {
 	//	log.Error("decode RLP mismatch", "error", txb)
 	//}
+	//fmt.Println("tx:= ", tx)
+	for _, msg := range tx.Messages() {
+		if msg.App == APP_PAYMENT {
+			pay := msg.Payload.(*PaymentPayload)
+			fmt.Println("msg", pay.Inputs, pay.Outputs)
+			for _, out := range pay.Outputs {
+				fmt.Println("info:= ", out)
+			}
+		}
+	}
 	if len(tx.TxMessages) != 3 {
 		t.Error("Rlp decode message count error")
 	}
