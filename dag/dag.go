@@ -789,7 +789,7 @@ func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, err
 	}
 	return tokenengine.GetAddressFromScript(utxo.PkScript)
 }
-func (d *Dag) GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error) {
+func (d *Dag) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error) {
 	return d.utxoRep.ComputeTxFee(pay)
 }
 

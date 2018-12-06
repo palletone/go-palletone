@@ -347,7 +347,7 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 	if len(tx.TxMessages) > 0 {
 		msg0 := tx.TxMessages[0].Payload.(*unit.PaymentPayload)
 		invokeAddr, _ := idag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
-		invokeTokens := unit.InvokeTokens{}
+		invokeTokens := &unit.InvokeTokens{}
 		outputs := msg0.Outputs
 		invokeTokens.Asset = outputs[0].Asset
 		for _, output := range outputs {

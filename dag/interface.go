@@ -117,7 +117,7 @@ type IDag interface {
 	SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
 
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
-	GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error)
+	GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error)
 	// set groupsign
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 

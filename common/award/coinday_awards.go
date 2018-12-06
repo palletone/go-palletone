@@ -35,3 +35,13 @@ func GetCoinDay(amount uint64, lastModifyTime time.Time, endTime time.Time) uint
 	fmt.Println("coinDays=", coinDays)
 	return coinDays
 }
+
+//直接获取持币的奖励
+func GetAwardsWithCoins(coinAmount uint64, lastModifyTime int64) uint64 {
+	//获取币龄
+	startTime := time.Unix(lastModifyTime, 0).UTC()
+	coinDays := GetCoinDay(coinAmount, startTime, time.Now().UTC())
+	//计算币龄所得奖励
+	awards := CalculateAwardsForDepositContractNodes(coinDays)
+	return awards
+}

@@ -393,7 +393,7 @@ func (handler *Handler) handleGetState(collection string, key string, contractid
 	// Incorrect chaincode message received
 	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
-func (handler *Handler) handleGetTokenBalance(address string, token *modules.Asset, contractid []byte, channelId string, txid string) ([]*modules.AmountAsset, error) {
+func (handler *Handler) handleGetTokenBalance(address string, token *modules.Asset, contractid []byte, channelId string, txid string) ([]*modules.InvokeTokens, error) {
 	par := &pb.GetTokenBalance{Address: address}
 	if token != nil {
 		par.Asset = token.String()
@@ -411,7 +411,7 @@ func (handler *Handler) handleGetTokenBalance(address string, token *modules.Ass
 	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
 		// Success response
 		chaincodeLogger.Debugf("[%s]GET_TOKEN_BALANCE received payload %s", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
-		tokenList := []*modules.AmountAsset{}
+		tokenList := []*modules.InvokeTokens{}
 		err = rlp.DecodeBytes(responseMsg.Payload, &tokenList)
 		if err != nil {
 			return nil, err

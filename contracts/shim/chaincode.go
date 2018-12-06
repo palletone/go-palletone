@@ -418,6 +418,22 @@ func (stub *ChaincodeStub) GetListForForfeiture() (*modules.ListForForfeiture, e
 	return listForForfeiture, nil
 }
 
+func (stub *ChaincodeStub) GetDepositBalance(nodeAddr string) (*modules.DepositBalance, error) {
+	balanceByte, err := stub.handler.handleGetState("", nodeAddr, stub.ContractId, stub.ChannelId, stub.TxID)
+	if err != nil {
+		return nil, err
+	}
+	if balanceByte == nil {
+		return nil, nil
+	}
+	balance := new(modules.DepositBalance)
+	err = json.Unmarshal(balanceByte, balance)
+	if err != nil {
+		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
+	}
+	return balance, nil
+}
+
 // PutState documentation can be found in interfaces.go
 func (stub *ChaincodeStub) PutState(key string, value []byte) error {
 	if key == "" {
@@ -502,8 +518,8 @@ func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr common.Address, inv
 			return common.Address{}, nil, nil, "", nil, err
 		}
 		invokeAddr = invokeInfo.InvokeAddress
-		invokeTokens = &invokeInfo.InvokeTokens
-		invokeFees = &invokeInfo.InvokeFees
+		invokeTokens = invokeInfo.InvokeTokens
+		invokeFees = invokeInfo.InvokeFees
 		strargs := make([]string, 0, len(allargs)-1)
 		for _, barg := range allargs[1:] {
 			strargs = append(strargs, string(barg))
@@ -574,7 +590,7 @@ func (stub *ChaincodeStub) GetInvokeFees() (*modules.InvokeFees, error) {
 }
 
 //获得该合约的Token余额
-func (stub *ChaincodeStub) GetTokenBalance(address string, token *modules.Asset) ([]*modules.AmountAsset, error) {
+func (stub *ChaincodeStub) GetTokenBalance(address string, token *modules.Asset) ([]*modules.InvokeTokens, error) {
 	return stub.handler.handleGetTokenBalance(address, token, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
