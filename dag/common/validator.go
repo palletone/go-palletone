@@ -187,6 +187,15 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 			if validateCode != modules.TxValidationCode_VALID {
 				return validateCode
 			}
+		case modules.APP_CONTRACT_TPL_REQUEST:
+			//todo
+		case modules.APP_CONTRACT_DEPLOY_REQUEST:
+			//todo
+		case modules.APP_CONTRACT_INVOKE_REQUEST:
+			//todo
+		case modules.APP_SIGNATURE:
+			//todo
+
 		case modules.APP_CONFIG:
 		case modules.APP_TEXT:
 		case modules.APP_VOTE:
@@ -216,10 +225,19 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		if app == modules.APP_CONTRACT_DEPLOY {
 			return true
 		}
+	case *modules.ContractInvokeRequestPayload:
+		if app == modules.APP_CONTRACT_INVOKE_REQUEST {
+			return true
+		}
 	case *modules.ContractInvokePayload:
 		if app == modules.APP_CONTRACT_INVOKE {
 			return true
 		}
+	case *modules.SignaturePayload:
+		if app == modules.APP_SIGNATURE {
+			return true
+		}
+
 	case *modules.ConfigPayload:
 		if app == modules.APP_CONFIG {
 			return true
@@ -236,6 +254,7 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		if app == modules.OP_MEDIATOR_CREATE {
 			return true
 		}
+
 	default:
 		log.Info("The payload of message type is not expect. ", "payload_type", t)
 		return false

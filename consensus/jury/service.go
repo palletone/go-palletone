@@ -189,7 +189,7 @@ func (p *Processor) RunContractLoop(txpool txspool.ITxPool, addr common.Address,
 			log.Error("RunContractLoop", "error", err.Error())
 			continue
 		}
-		//ctx.valid = false
+
 	}
 
 	return nil
