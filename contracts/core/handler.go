@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/outchain"
 	"github.com/palletone/go-palletone/core"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
@@ -807,12 +808,19 @@ func (handler *Handler) handleGetTokenBalance(msg *pb.ChaincodeMessage) {
 		if len(addr) == 0 { //Get current contract address balance
 			addr = crypto.ContractIdToAddress(msg.ContractId).String()
 		}
+
+		address, err := common.StringToAddress(addr)
+		if err != nil {
+			chaincodeLogger.Error(err.Error())
+			return
+		}
+
 		if len(getBalance.Asset) > 0 {
 			asset := &modules.Asset{}
 			asset.SetString(getBalance.Asset)
-			balance, err = txContext.txsimulator.GetTokenBalance(chaincodeID, addr, asset)
+			balance, err = txContext.txsimulator.GetTokenBalance(chaincodeID, address, asset)
 		} else { // get all token type balance
-			balance, err = txContext.txsimulator.GetTokenBalance(chaincodeID, addr, nil)
+			balance, err = txContext.txsimulator.GetTokenBalance(chaincodeID, address, nil)
 
 		}
 

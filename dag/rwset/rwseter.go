@@ -1,11 +1,14 @@
 package rwset
 
-import "github.com/palletone/go-palletone/dag/modules"
+import (
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
+)
 
 type TxSimulator interface {
 	GetState(contractid []byte, ns string, key string) ([]byte, error)
 	SetState(ns string, key string, value []byte) error
-	GetTokenBalance(ns, addr string, asset *modules.Asset) (map[modules.Asset]uint64, error)
+	GetTokenBalance(ns string, addr common.Address, asset *modules.Asset) (map[modules.Asset]uint64, error)
 	PayOutToken(ns string, address string, token *modules.Asset, amount uint64, lockTime uint32) error
 	DefineToken(ns string, tokenType int32, define []byte) error
 	SupplyToken(ns string, assetId, uniqueId []byte, amt uint64) error

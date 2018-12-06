@@ -796,7 +796,7 @@ func (d *Dag) GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error) {
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return d.dagdb.GetAddrOutput(addr)
 }
-func (d *Dag) GetAddr1TokenUtxos(addr string, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
+func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
 	//TODO only get one token's UTXO
 	return map[modules.OutPoint]*modules.Utxo{}, nil
 }

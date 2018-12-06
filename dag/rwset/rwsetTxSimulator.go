@@ -22,6 +22,7 @@ package rwset
 import (
 	"encoding/json"
 	"errors"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -156,12 +157,13 @@ func (h *RwSetTxSimulator) Done() {
 	}
 	//todo
 }
+
 func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
 
 	return nil, nil
 }
-func (s *RwSetTxSimulator) GetTokenBalance(ns string, addr string, asset *modules.Asset) (map[modules.Asset]uint64, error) {
 
+func (s *RwSetTxSimulator) GetTokenBalance(ns string, addr common.Address, asset *modules.Asset) (map[modules.Asset]uint64, error) {
 	var utxos map[modules.OutPoint]*modules.Utxo
 	if asset == nil {
 		utxos, _ = s.dag.GetAddrUtxos(addr)
@@ -170,6 +172,7 @@ func (s *RwSetTxSimulator) GetTokenBalance(ns string, addr string, asset *module
 	}
 	return convertUtxo2Balance(utxos), nil
 }
+
 func convertUtxo2Balance(utxos map[modules.OutPoint]*modules.Utxo) map[modules.Asset]uint64 {
 	result := map[modules.Asset]uint64{}
 	for _, v := range utxos {
