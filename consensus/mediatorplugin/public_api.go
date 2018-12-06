@@ -43,11 +43,11 @@ func (a *PublicMediatorAPI) List() []string {
 	return addStrs
 }
 
-func (a *PublicMediatorAPI) Schedule() []string {
+func (a *PublicMediatorAPI) Actives() []string {
 	addStrs := make([]string, 0)
-	ms := a.dag.MediatorSchedule()
+	ms := a.dag.ActiveMediators()
 
-	for _, medAdd := range ms {
+	for medAdd, _ := range ms {
 		addStrs = append(addStrs, medAdd.Str())
 	}
 

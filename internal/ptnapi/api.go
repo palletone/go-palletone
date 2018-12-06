@@ -839,18 +839,12 @@ func (s *PublicBlockChainAPI) CreateMediatorVote(ctx context.Context, paymentHex
 	txB, _ := rlp.EncodeToBytes(tx)
 	return fmt.Sprintf("%X", txB), nil
 }
-func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string, txhex string, param []string /*fun string, key string, val string*/) (string, error) {
-	depId, _ := hex.DecodeString(deployId)
-	log.Info("-----Ccinvoke:" + deployId + ":" + txid)
+func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, txhex string) (string, error) {
+	txBytes, _ := hex.DecodeString(txhex)
+	tx := &modules.Transaction{}
+	rlp.DecodeBytes(txBytes, tx)
 
-	args := make([][]byte, len(param))
-	for i, arg := range param {
-		args[i] = []byte(arg)
-		fmt.Printf("index[%d], value[%s]\n", i, arg)
-	}
-
-	txBytes, err := hex.DecodeString(txhex)
-	rsp, err := s.b.ContractInvoke(depId, txid, txBytes, args, 0)
+	rsp, err := s.b.ContractInvoke(tx)
 
 	log.Info("-----ContractInvoke:" + string(rsp))
 
@@ -868,6 +862,9 @@ func (s *PublicBlockChainAPI) Ccstop(ctx context.Context, deployId string, txid 
 func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string, error) {
 	return s.b.DecodeTx(hex)
 }
+func (s *PublicBlockChainAPI) EncodeTx(ctx context.Context, json string) (string, error) {
+	return s.b.EncodeTx(json)
+}
 
 func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, txid string, txhex string, param []string) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
@@ -881,9 +878,9 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, t
 	}
 	rsp, err := s.b.ContractTxReqBroadcast(depId, txid, txBytes, args, 0)
 
-	log.Info("-----ContractInvokeTxReq:" + string(rsp))
+	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
 
-	return string(rsp), err
+	return hex.EncodeToString(rsp), err
 }
 
 func (s *PublicBlockChainAPI) CreatCcTransaction(ctx context.Context, txtype string, deployId string, txhex string, param []string) (string, error) {
@@ -1219,23 +1216,16 @@ func (s *PublicTransactionPoolAPI) GetTransactionsByTxid(ctx context.Context, tx
 	return tx, nil
 }
 
-/* old version
 // GetTransactionByHash returns the transaction for the given hash
-func (s *PublicTransactionPoolAPI) GetTransactionByHash(ctx context.Context, hash common.Hash) *RPCTransaction {
+func (s *PublicTransactionPoolAPI) GetTransactionByHash(ctx context.Context, hash common.Hash) *ptnjson.TransactionJson {
 	// Try to return an already finalized transaction
-	if tx, blockHash, blockNumber, index := coredata.GetTransaction(s.b.ChainDb(), hash); tx != nil {
-		blockHash = blockHash
-		blockNumber = blockNumber
-		index = index
-		//return newRPCTransaction(tx, blockHash, blockNumber, index)
+	tx, err := s.b.GetTxByHash(hash)
+	if err != nil {
+		return nil
 	}
-	// No finalized transaction, try to retrieve it from the pool
-	if tx := s.b.GetPoolTransaction(hash); tx != nil {
-		//return newRPCPendingTransaction(tx)
-	}
-	// Transaction unknown, return as such
-	return nil
-}*/
+	return tx
+
+}
 
 // GetRawTransactionByHash returns the bytes of the transaction for the given hash.
 func (s *PublicTransactionPoolAPI) GetRawTransactionByHash(ctx context.Context, hash common.Hash) (hexutil.Bytes, error) {

@@ -336,7 +336,7 @@ func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJ
 		return nil, err
 	}
 	ujson := ptnjson.ConvertUtxo2Json(outpoint, utxo)
-	return &ujson, nil
+	return ujson, nil
 }
 
 func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
@@ -351,9 +351,9 @@ func (b *PtnApiBackend) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Ad
 	return address, err
 }
 
-func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error) {
+func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	utxos, _ := b.ptn.dag.GetAddrUtxos(addr)
-	result := []ptnjson.UtxoJson{}
+	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {
 		ujson := ptnjson.ConvertUtxo2Json(&o, u)
 		result = append(result, ujson)
@@ -361,12 +361,12 @@ func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error) {
 	return result, nil
 }
 
-func (b *PtnApiBackend) GetAllUtxos() ([]ptnjson.UtxoJson, error) {
+func (b *PtnApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 	utxos, err := b.ptn.dag.GetAllUtxos()
 	if err != nil {
 		return nil, err
 	}
-	result := []ptnjson.UtxoJson{}
+	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {
 		ujson := ptnjson.ConvertUtxo2Json(&o, u)
 		result = append(result, ujson)
@@ -425,33 +425,11 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 	return depid, err
 }
 
-func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) ([]byte, error) {
-	log.Printf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-	tx := &modules.Transaction{}
-	err := rlp.DecodeBytes(txBytes, tx)
-	if err != nil {
-		return nil, err
-	}
+func (b *PtnApiBackend) ContractInvoke(tx *modules.Transaction) ([]byte, error) {
 
-	contractInvokeRequest := &modules.ContractInvokeRequestPayload{
-		ContractId: deployId,
-		//FunctionName: string(args[0]),
-		Args:    args,
-		Timeout: timeout,
-	}
-	tx.AddMessage(modules.NewMessage(modules.APP_CONTRACT_INVOKE_REQUEST, contractInvokeRequest))
-
-	unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, tx, args, timeout)
-	//todo print rwset
-	if err != nil {
-		return nil, err
-	}
-
-	// todo tmp
-	//b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, args, timeout)
-	//return nil, nil
-
-	return unit.Payload, err
+	//unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, tx, args, timeout)
+	//todo call contract and rebuild tx
+	return nil, nil
 }
 
 func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage bool) error {
@@ -463,8 +441,7 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 }
 
 func (b *PtnApiBackend) ContractTxReqBroadcast(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
-	b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, txBytes, args, timeout)
-	return nil, nil
+	return b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, txBytes, args, timeout)
 }
 
 func (b *PtnApiBackend) ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
@@ -491,4 +468,15 @@ func (b *PtnApiBackend) DecodeTx(hexStr string) (string, error) {
 	txjson := ptnjson.ConvertTx2Json(tx)
 	json, err := json.Marshal(txjson)
 	return string(json), err
+}
+func (b *PtnApiBackend) EncodeTx(jsonStr string) (string, error) {
+	txjson := &ptnjson.TxJson{}
+	json.Unmarshal([]byte(jsonStr), txjson)
+	tx := ptnjson.ConvertJson2Tx(txjson)
+	bytes, err := rlp.EncodeToBytes(tx)
+
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), err
 }
