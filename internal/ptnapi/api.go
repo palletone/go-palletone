@@ -1975,9 +1975,9 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
-		account, _ := MakeAddress(ks, addr.String())
+		//account, _ := MakeAddress(ks, addr.String())
 		//privKey, _ := ks.DumpPrivateKey(account, "1")
-		return ks.SignHash(account, hash)
+		return ks.SignHash(addr, hash)
 		//return crypto.Sign(hash, privKey)
 	}
 	var srawinputs []ptnjson.RawTxInput

@@ -92,7 +92,7 @@ func (w *keystoreWallet) SignHash(account accounts.Account, hash []byte) ([]byte
 		return nil, accounts.ErrUnknownAccount
 	}
 	// Account seems valid, request the keystore to sign
-	return w.keystore.SignHash(account, hash)
+	return w.keystore.SignHash(account.Address, hash)
 }
 
 // SignTx implements accounts.Wallet, attempting to sign the given transaction

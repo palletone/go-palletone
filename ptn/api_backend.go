@@ -371,14 +371,14 @@ func (b *PtnApiBackend) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Ad
 	return address, err
 }
 
-func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error) {
+func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	address, err := common.StringToAddress(addr)
 	if err != nil {
 		return nil, err
 	}
 
 	utxos, _ := b.ptn.dag.GetAddrUtxos(address)
-	result := []ptnjson.UtxoJson{}
+	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {
 		ujson := ptnjson.ConvertUtxo2Json(&o, u)
 		result = append(result, ujson)
