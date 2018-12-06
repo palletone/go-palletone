@@ -61,7 +61,7 @@ func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
 	var change uint64
 	logPickedAmt := ""
 	for _, utxo := range utxos {
-		if utxo.GetAmount() > amount {
+		if utxo.GetAmount() >= amount {
 			greaters = append(greaters, utxo)
 		}
 		if utxo.GetAmount() < amount {
