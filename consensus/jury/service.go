@@ -44,7 +44,7 @@ import (
 type PeerType int
 
 const (
-	_         PeerType = iota
+	_ PeerType = iota
 	TUnknow
 	TJury
 	TMediator
@@ -150,7 +150,7 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 	}
 	log.Info("ProcessContractEvent", "enter, tx req id ", event.Tx.TxId)
 
-	if _, ok := p.mtx[ event.Tx.TxId]; ok {
+	if _, ok := p.mtx[event.Tx.TxId]; ok {
 		return nil
 	}
 
@@ -159,7 +159,7 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 	}
 
 	p.locker.Lock()
-	p.mtx[ event.Tx.TxId] = &contractTx{
+	p.mtx[event.Tx.TxId] = &contractTx{
 		tx: event.Tx,
 		tm: time.Now(),
 	}
@@ -206,7 +206,7 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 func (p *Processor) RunContractLoop(addr common.Address, ks *keystore.KeyStore) error {
 	log.Info("ProcessContractEvent", "enter")
 	txPool := p.ptn.TxPool()
-	for txId, ctx := range (p.mtx) {
+	for txId, ctx := range p.mtx {
 		if false == checkTxValid(ctx.tx) {
 			log.Error("ProcessContractEvent recv event Tx is invalid")
 			continue
@@ -520,7 +520,7 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes
 		pay := &modules.PaymentPayload{
 			Inputs:   []*modules.Input{},
 			Outputs:  []*modules.Output{},
-			LockTime: 11111, //todo
+			LockTime: 0, //todo
 		}
 		msgPay := &modules.Message{
 			App:     modules.APP_PAYMENT,

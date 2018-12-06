@@ -839,18 +839,12 @@ func (s *PublicBlockChainAPI) CreateMediatorVote(ctx context.Context, paymentHex
 	txB, _ := rlp.EncodeToBytes(tx)
 	return fmt.Sprintf("%X", txB), nil
 }
-func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string, txhex string, param []string /*fun string, key string, val string*/) (string, error) {
-	depId, _ := hex.DecodeString(deployId)
-	log.Info("-----Ccinvoke:" + deployId + ":" + txid)
+func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, txhex string) (string, error) {
+	txBytes, _ := hex.DecodeString(txhex)
+	tx := &modules.Transaction{}
+	rlp.DecodeBytes(txBytes, tx)
 
-	args := make([][]byte, len(param))
-	for i, arg := range param {
-		args[i] = []byte(arg)
-		fmt.Printf("index[%d], value[%s]\n", i, arg)
-	}
-
-	txBytes, err := hex.DecodeString(txhex)
-	rsp, err := s.b.ContractInvoke(depId, txid, txBytes, args, 0)
+	rsp, err := s.b.ContractInvoke(tx)
 
 	log.Info("-----ContractInvoke:" + string(rsp))
 

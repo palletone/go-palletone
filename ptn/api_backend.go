@@ -425,33 +425,11 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 	return depid, err
 }
 
-func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) ([]byte, error) {
-	log.Printf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-	tx := &modules.Transaction{}
-	err := rlp.DecodeBytes(txBytes, tx)
-	if err != nil {
-		return nil, err
-	}
+func (b *PtnApiBackend) ContractInvoke(tx *modules.Transaction) ([]byte, error) {
 
-	contractInvokeRequest := &modules.ContractInvokeRequestPayload{
-		ContractId: deployId,
-		//FunctionName: string(args[0]),
-		Args:    args,
-		Timeout: timeout,
-	}
-	tx.AddMessage(modules.NewMessage(modules.APP_CONTRACT_INVOKE_REQUEST, contractInvokeRequest))
-
-	unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, tx, args, timeout)
-	//todo print rwset
-	if err != nil {
-		return nil, err
-	}
-
-	// todo tmp
-	//b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, args, timeout)
-	//return nil, nil
-
-	return unit.Payload, err
+	//unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, tx, args, timeout)
+	//todo call contract and rebuild tx
+	return nil, nil
 }
 
 func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage bool) error {
