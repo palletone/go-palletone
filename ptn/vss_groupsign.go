@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
+	"encoding/json"
 )
 
 // @author Albert·Gou
@@ -35,6 +36,11 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 		case event := <-self.newProducedUnitCh:
 			// 广播给其他活跃 mediator，进行验证并群签名
 			self.BroadcastNewProducedUnit(event.Unit)
+			data,err:=json.Marshal(event.Unit.Txs)
+			if err!=nil{
+				return
+			}
+			event.Unit.StrTxs=data
 
 			self.BroadcastUnit(event.Unit, true /*, needBroadcastMediator*/)
 			self.BroadcastUnit(event.Unit, false /*, noBroadcastMediator*/)

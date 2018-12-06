@@ -192,6 +192,7 @@ type Units []*Unit
 type Unit struct {
 	UnitHeader *Header            `json:"unit_header"`  // unit header
 	Txs        Transactions       `json:"transactions"` // transaction list
+	StrTxs     []byte	          `json:"str_transactions"`
 	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
 	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
 	// These fields are used by package ptn to track

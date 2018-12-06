@@ -471,11 +471,10 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		p.MarkTransaction(tx.Hash())
 		txHash := tx.Hash()
 		txHash = txHash
-		acceptedTxs, err := pm.txpool.ProcessTransaction(tx,
-			true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
-		acceptedTxs = acceptedTxs
+		_, err := pm.txpool.ProcessTransaction(tx,true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
+		//acceptedTxs = acceptedTxs
 		if err != nil {
-			return errResp(ErrDecode, "transaction %d not accepteable ", i)
+			return errResp(ErrDecode, "transaction %d not accepteable ", i,"err:",err)
 		}
 	}
 

@@ -853,6 +853,7 @@ func (mp *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, 
 	// Potentially accept the transaction to the memory pool.
 	missingParents, txD, err := mp.maybeAcceptTransaction(tx, true, rateLimit, false)
 	if err != nil {
+		log.Info("txpool","accept transaction err:",err)
 		return nil, err
 	}
 	missingParents = missingParents
@@ -925,7 +926,8 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 	// weed out duplicates.
 	if mp.isTransactionInPool(&txHash) {
 		str := fmt.Sprintf("already have transaction %v", txHash)
-		str = str
+		//str = str
+		log.Info("txpool","",str)
 		return nil, nil, nil //txRuleError(RejectDuplicate, str)
 	}
 
@@ -934,6 +936,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 	// transactions are allowed into blocks.
 	err := CheckTransactionSanity(tx)
 	if err != nil {
+		log.Info("txpool","Check Transaction Sanity err:",err)
 		return nil, nil, err
 	}
 
@@ -941,7 +944,8 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 	if IsCoinBase(tx) {
 		str := fmt.Sprintf("transaction %v is an individual coinbase",
 			txHash)
-		str = str
+		//str = str
+		log.Info("txpool","",str)
 		return nil, nil, nil //txRuleError(RejectInvalid, str)
 	}
 
@@ -956,6 +960,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 	txpooltx := TxtoTxpoolTx(mp, tx)
 	err = mp.checkPoolDoubleSpend(txpooltx)
 	if err != nil {
+		log.Info("txpool","check PoolD oubleSpend err:",err)
 		return nil, nil, err
 	}
 
