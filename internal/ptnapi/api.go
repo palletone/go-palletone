@@ -1216,11 +1216,20 @@ func (s *PublicTransactionPoolAPI) GetTransactionsByTxid(ctx context.Context, tx
 	return tx, nil
 }
 
-// // GetPoolTxByHash returns the pool transaction for the given hash
-// func (s *PublicTransactionPoolAPI) GetPoolTxByHash(ctx context.Context, hex string) (*ptnjson.TxPoolTxJson, error) {
-// 	hash := common.HexToHash(hex)
-// 	return s.b.GetPoolTxByHash(hash), nil
-// }
+// GetTxPoolTxByHash returns the pool transaction for the given hash
+func (s *PublicTransactionPoolAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (string, error) {
+	log.Debug("this is hash tx's hash hex to find tx.", "hex", hex)
+	hash := common.HexToHash(hex)
+	log.Debug("this is hash tx's hash  to find tx.", "hash", hash.String())
+	item, err := s.b.GetTxPoolTxByHash(hash)
+	if err != nil {
+		return "pool_tx:null", err
+	} else {
+		info := NewPublicReturnInfo("txpool_tx", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
 
 /* old version
 // GetRawTransactionByHash returns the bytes of the transaction for the given hash.
@@ -2482,15 +2491,15 @@ func (s *PublicDagAPI) GetTxByHash(ctx context.Context, hashHex string) (string,
 	}
 }
 
-// GetPoolTxByHash returns the pool transaction for the given hash
-func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (string, error) {
-	hash := common.HexToHash(hex)
-	item, err := s.b.GetTxPoolTxByHash(hash)
-	if err != nil {
-		return "pool_tx:null", err
-	} else {
-		info := NewPublicReturnInfo("txpool_tx", item)
-		result_json, _ := json.Marshal(info)
-		return string(result_json), nil
-	}
-}
+// // GetPoolTxByHash returns the pool transaction for the given hash
+// func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (string, error) {
+// 	hash := common.HexToHash(hex)
+// 	item, err := s.b.GetTxPoolTxByHash(hash)
+// 	if err != nil {
+// 		return "pool_tx:null", err
+// 	} else {
+// 		info := NewPublicReturnInfo("txpool_tx", item)
+// 		result_json, _ := json.Marshal(info)
+// 		return string(result_json), nil
+// 	}
+// }
