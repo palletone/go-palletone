@@ -96,13 +96,16 @@ func (b *PtnApiBackend) GetPoolTransactions() (modules.Transactions, error) {
 	}
 	var txs modules.Transactions
 	for _, batch := range pending {
-		txs = append(txs, txspool.PooltxToTx(batch))
+		for _, tx := range batch {
+			txs = append(txs, txspool.PooltxToTx(tx))
+		}
 	}
 	return txs, nil
 }
 
 func (b *PtnApiBackend) GetPoolTransaction(hash common.Hash) *modules.Transaction {
-	return txspool.PooltxToTx(b.ptn.txPool.Get(hash))
+	tx, _ := b.ptn.txPool.Get(hash)
+	return tx.Tx
 }
 
 func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, error) {
@@ -316,6 +319,17 @@ func (b *PtnApiBackend) GetTxByHash(hash common.Hash) (*ptnjson.TransactionJson,
 	}
 	return ptnjson.ConvertTx02Json(tx, hash), nil
 }
+
+// GetPoolTxByHash return a json of the tx in pool.
+func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
+	tx, unit_hash := b.ptn.txPool.Get(hash)
+	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
+}
+
+// func (b *PtnApiBackend) GetTxsPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
+// 	tx, unit_hash := b.ptn.txPool.Get(hash)
+// 	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
+// }
 
 func (b *PtnApiBackend) GetHeaderByHash(hash common.Hash) *modules.Header {
 	return b.ptn.dag.GetHeaderByHash(hash)

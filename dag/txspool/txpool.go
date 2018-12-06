@@ -432,15 +432,15 @@ func (pool *TxPool) Content() (map[common.Hash]*modules.Transaction, map[common.
 // Pending retrieves all currently processable transactions, groupped by origin
 // account and sorted by priority level. The returned transaction set is a copy and can be
 // freely modified by calling code.
-func (pool *TxPool) Pending() (map[common.Hash]*modules.TxPoolTransaction, error) {
+func (pool *TxPool) Pending() (map[common.Hash][]*modules.TxPoolTransaction, error) {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 
-	pending := make(map[common.Hash]*modules.TxPoolTransaction)
-	for _, txs := range pool.pending {
-		for _, tx := range txs {
-			pending[tx.Tx.Hash()] = tx
-		}
+	pending := make(map[common.Hash][]*modules.TxPoolTransaction)
+	for unit_hash, txs := range pool.pending {
+		this := make([]*modules.TxPoolTransaction, 0)
+		this = txs[:]
+		pending[unit_hash] = this
 	}
 	return pending, nil
 }
@@ -457,6 +457,13 @@ func (pool *TxPool) AllHashs() []*common.Hash {
 	}
 	pool.mu.RUnlock()
 	return hashs
+}
+
+func (pool *TxPool) AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction {
+	pool.mu.RLock()
+	defer pool.mu.RUnlock()
+	txs := pool.all
+	return txs
 }
 
 //
@@ -859,21 +866,21 @@ func (mp *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, 
 	missingParents = missingParents
 	txD = txD
 
-	/*if len(missingParents) == 0 {
-		// Accept any orphan transactions that depend on this
-		// transaction (they may no longer be orphans if all inputs
-		// are now available) and repeat for those accepted
-		// transactions until there are no more.
-		newTxs := mp.processOrphans(tx)
-		acceptedTxs := make([]*TxDesc, len(newTxs)+1)
+	// if len(missingParents) == 0 {
+	// 	// Accept any orphan transactions that depend on this
+	// 	// transaction (they may no longer be orphans if all inputs
+	// 	// are now available) and repeat for those accepted
+	// 	// transactions until there are no more.
+	// 	newTxs := mp.processOrphans(tx)
+	// 	acceptedTxs := make([]*TxDesc, len(newTxs)+1)
 
-		// Add the parent transaction first so remote nodes
-		// do not add orphans.
-		acceptedTxs[0] = txD
-		copy(acceptedTxs[1:], newTxs)
+	// 	// Add the parent transaction first so remote nodes
+	// 	// do not add orphans.
+	// 	acceptedTxs[0] = txD
+	// 	copy(acceptedTxs[1:], newTxs)
 
-		return acceptedTxs, nil
-	}*/
+	// 	return acceptedTxs, nil
+	// }
 
 	// The transaction is an orphan (has inputs missing).  Reject
 	// it if the flag to allow orphans is not set.
@@ -1102,11 +1109,24 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 
 // Get returns a transaction if it is contained in the pool
 // and nil otherwise.
-func (pool *TxPool) Get(hash common.Hash) *modules.TxPoolTransaction {
+func (pool *TxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash) {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 
-	return pool.all[hash]
+	tx := pool.all[hash]
+	var u_hash common.Hash
+	pending, err := pool.Pending()
+	if err != nil {
+		return tx, (common.Hash{})
+	}
+	for unit_hash, txs := range pending {
+		for _, p_tx := range txs {
+			if p_tx.Tx.Hash().String() == hash.String() {
+				return tx, unit_hash
+			}
+		}
+	}
+	return tx, u_hash
 }
 
 // removeTx removes a single transaction from the queue, moving all subsequent

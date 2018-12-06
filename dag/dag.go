@@ -818,9 +818,11 @@ func (d *Dag) GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, err
 							if old, has := all[key]; has {
 								// merge
 								if old.IsSpent() {
+									log.Warn("It is delete the spent utxo that I found the old utxo amount: ", "amount", old.Amount)
 									delete(all, key)
 								}
 							}
+							log.Info("new utxo amount :", "amount", utxo.Amount)
 							all[key] = utxo
 						}
 					}

@@ -695,3 +695,10 @@ func (ec *Client) GetTransactionByHash(ctx context.Context, hashHex string) (*pt
 	err := ec.c.CallContext(ctx, &result, "dag_getTxByHash", hashHex)
 	return result, err
 }
+
+// GetPoolTxByHash
+func (ec *Client) GetPoolTxByHash(ctx context.Context, hex string) (*ptnjson.TxPoolTxJson, error) {
+	result := new(ptnjson.TxPoolTxJson)
+	err := ec.c.CallContext(ctx, &result, "ptn_getTxPoolTxByHash", hex)
+	return result, err
+}

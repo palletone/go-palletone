@@ -131,8 +131,9 @@ type txPool interface {
 	AddLocal(tx *modules.TxPoolTransaction) error
 	AddLocals(txs []*modules.TxPoolTransaction) []error
 	AllHashs() []*common.Hash
+	AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction
 	Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
-	Get(hash common.Hash) *modules.TxPoolTransaction
+	Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
 	GetNonce(hash common.Hash) uint64
 	Stats() (int, int)
 	GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize)
@@ -142,7 +143,7 @@ type txPool interface {
 	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.
-	Pending() (map[common.Hash]*modules.TxPoolTransaction, error)
+	Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
