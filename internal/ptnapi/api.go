@@ -1216,23 +1216,16 @@ func (s *PublicTransactionPoolAPI) GetTransactionsByTxid(ctx context.Context, tx
 	return tx, nil
 }
 
-/* old version
 // GetTransactionByHash returns the transaction for the given hash
-func (s *PublicTransactionPoolAPI) GetTransactionByHash(ctx context.Context, hash common.Hash) *RPCTransaction {
+func (s *PublicTransactionPoolAPI) GetTransactionByHash(ctx context.Context, hash common.Hash) *ptnjson.TransactionJson {
 	// Try to return an already finalized transaction
-	if tx, blockHash, blockNumber, index := coredata.GetTransaction(s.b.ChainDb(), hash); tx != nil {
-		blockHash = blockHash
-		blockNumber = blockNumber
-		index = index
-		//return newRPCTransaction(tx, blockHash, blockNumber, index)
+	tx, err := s.b.GetTxByHash(hash)
+	if err != nil {
+		return nil
 	}
-	// No finalized transaction, try to retrieve it from the pool
-	if tx := s.b.GetPoolTransaction(hash); tx != nil {
-		//return newRPCPendingTransaction(tx)
-	}
-	// Transaction unknown, return as such
-	return nil
-}*/
+	return tx
+
+}
 
 // GetRawTransactionByHash returns the bytes of the transaction for the given hash.
 func (s *PublicTransactionPoolAPI) GetRawTransactionByHash(ctx context.Context, hash common.Hash) (hexutil.Bytes, error) {
