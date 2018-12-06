@@ -423,7 +423,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	// Look up the sync boundaries: the common ancestor and the target block
 	latest, err := d.fetchHeight(p, assetId)
 	if err != nil {
-		//log.Info("fetchHeight", "err:", err)
+		log.Info("fetchHeight", "err:", err)
 		return err
 	}
 
