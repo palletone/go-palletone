@@ -424,7 +424,8 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 type Tag uint64
 
 func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
-	log.Info("===============ProtocolManager TxMsg====================")
+	log.Info("Enter ProtocolManager TxMsg")
+	defer log.Info("End ProtocolManager TxMsg")
 	// Transactions arrived, make sure we have a valid and fresh chain to handle them
 	if atomic.LoadUint32(&pm.acceptTxs) == 0 {
 		log.Debug("ProtocolManager handlmsg TxMsg pm.acceptTxs==0")
