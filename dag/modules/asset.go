@@ -64,6 +64,12 @@ func NewAsset(symbol string, assetType AssetType, requestId []byte, uniqueId IDT
 	asset.UniqueId = uniqueId
 	return asset, nil
 }
+
+func NewPTNIdType() IDType16 {
+	ptn, _ := NewAssetId("PTN", AssetType_FungibleToken, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	return ptn
+}
+
 func NewAssetId(symbol string, assetType AssetType, requestId []byte) (IDType16, error) {
 	if len(symbol) > 5 {
 		return IDType16{}, errors.New("Symbol must less than 5 characters")

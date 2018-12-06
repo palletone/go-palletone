@@ -207,7 +207,7 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("msgStream.Decode", "err", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		//log.Debug("GetBlockBodiesMsg", "hash", hash)
+		log.Debug("GetBlockBodiesMsg", "hash", hash)
 		// Retrieve the requested block body, stopping if enough was found
 		txs, err := pm.dag.GetUnitTransactions(hash)
 		if err != nil {
@@ -424,7 +424,8 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 type Tag uint64
 
 func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
-	log.Info("===============ProtocolManager TxMsg====================")
+	log.Info("Enter ProtocolManager TxMsg")
+	defer log.Info("End ProtocolManager TxMsg")
 	// Transactions arrived, make sure we have a valid and fresh chain to handle them
 	if atomic.LoadUint32(&pm.acceptTxs) == 0 {
 		log.Debug("ProtocolManager handlmsg TxMsg pm.acceptTxs==0")
@@ -469,11 +470,10 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		p.MarkTransaction(tx.Hash())
 		txHash := tx.Hash()
 		txHash = txHash
-		acceptedTxs, err := pm.txpool.ProcessTransaction(tx,
-			true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
-		acceptedTxs = acceptedTxs
+		_, err := pm.txpool.ProcessTransaction(tx,true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
+		//acceptedTxs = acceptedTxs
 		if err != nil {
-			return errResp(ErrDecode, "transaction %d not accepteable ", i)
+			return errResp(ErrDecode, "transaction %d not accepteable ", i,"err:",err)
 		}
 	}
 
