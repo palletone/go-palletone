@@ -44,7 +44,7 @@ import (
 type PeerType int
 
 const (
-	_ PeerType = iota
+	_         PeerType = iota
 	TUnknow
 	TJury
 	TMediator
@@ -140,16 +140,14 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 	if event == nil {
 		return errors.New("param is nil")
 	}
-	log.Info("ProcessContractEvent", "enter, tx req id ", event.Tx.TxId)
-
 	if _, ok := p.mtx[event.Tx.TxId]; ok {
 		return nil
 	}
+	log.Debug("ProcessContractEvent", "enter, tx req id ", event.Tx.TxId)
 
 	if false == checkTxValid(event.Tx) {
-		return errors.New("ProcessContractEvent recv event Tx is invalid")
+		return errors.New(fmt.Sprintf("ProcessContractEvent recv event Tx is invalid, txid:%s", event.Tx.TxId.String()))
 	}
-
 	p.locker.Lock()
 	p.mtx[event.Tx.TxId] = &contractTx{
 		tx:    event.Tx,
@@ -160,39 +158,35 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 
 	//broadcast contract request transaction event
 	//go p.ptn.ContractBroadcast(*event)
-
 	return nil
 }
 
 func (p *Processor) RunContractLoop(txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error {
-	log.Info("ProcessContractEvent", "enter", addr.String())
-
+	//log.Debug("ProcessContractEvent", "enter", addr.String())
 	for _, ctx := range (p.mtx) {
-		if false == ctx.valid{
+		if false == ctx.valid {
 			continue
 		}
 		if false == checkTxValid(ctx.tx) {
-			log.Error("ProcessContractEvent recv event Tx is invalid")
+			log.Error("RunContractLoop recv event Tx is invalid,", "txid", ctx.tx.TxId.String())
 			continue
 		}
 		cmsgType, payload, err := runContractCmd(p.contract, ctx.tx)
 		if err != nil {
-			log.Error(fmt.Sprintf("ProcessContractEvent runContractCmd err:%s", err))
+			log.Error("RunContractLoop runContractCmd", "error", err.Error())
 			continue
 		}
 		tx, err := gen.GenContractSigTransctions(addr, ctx.tx, cmsgType, payload, ks)
 		if err != nil {
-			log.Error(fmt.Sprintf("ProcessContractEvent GenContractSigTransctions err:%s", err))
+			log.Error("RunContractLoop GenContractSigTransctions","error", err.Error())
 			continue
 		}
-		log.Debug("ProcessContractEvent", "tx:",tx)
-		if err = txpool.AddLocal(txspool.TxtoTxpoolTx(txpool, tx)); err != nil{
-			log.Error("ProcessContractEvent", "error", err.Error())
+		log.Debug("RunContractLoop", "tx", tx)
+		if err = txpool.AddLocal(txspool.TxtoTxpoolTx(txpool, tx)); err != nil {
+			log.Error("RunContractLoop", "error", err.Error())
 			continue
 		}
-		//delete(p.mtx, txId)
 		ctx.valid = false
-
 	}
 
 	return nil
@@ -201,39 +195,35 @@ func (p *Processor) RunContractLoop(txpool txspool.ITxPool, addr common.Address,
 func (p *Processor) CheckContractTxValid(tx *modules.Transaction) bool {
 	//检查本地是否存在合约执行交易，如果不存在则执行并记录到本地，并与接收到的tx进行合约比较
 	if tx == nil {
-		log.Error("CheckContractTxValid", " param is nil")
+		log.Error("CheckContractTxValid", "param is nil")
 		return false
 	}
-	log.Info("CheckContractTxValid", "enter, tx req id ", tx.TxId)
+	log.Debug("CheckContractTxValid", "tx req id ", tx.TxId)
 
 	if false == checkTxValid(tx) {
-		log.Error("CheckContractTxValid", " recv event Tx is invalid")
+		log.Error("CheckContractTxValid", "checkTxValid fail")
 		return false
 	}
-
 	_, payload, err := runContractCmd(p.contract, tx)
 	if err != nil {
-		log.Error(fmt.Sprintf("CheckContractTxValid runContractCmd err:%s", err))
+		log.Error("CheckContractTxValid runContractCmd","error", err.Error())
 		return false
 	}
 
 	for i := 0; i < len(tx.TxMessages); i++ {
 		if tx.TxMessages[i].App == modules.APP_CONTRACT_INVOKE {
 			if reflect.DeepEqual(tx.TxMessages[i], payload) != true {
-				log.Error("CheckContractTxValid", "not equal")
+				log.Error("CheckContractTxValid", "invoke msg not equal")
 				return false
 			}
 		}
 	}
 	p.locker.Lock()
 	if _, ok := p.mtx[tx.TxId]; ok {
-		//delete(p.mtx, tx.TxId)
 		p.mtx[tx.TxId].valid = false
 	}
 	p.locker.Unlock()
-
 	log.Debug("CheckContractTxValid", "local txid", tx.TxId, "contract transaction:", p.mtx[tx.TxId].list)
-
 	return true
 }
 
@@ -297,7 +287,7 @@ func (p *Processor) SubscribeContractSigEvent(ch chan<- ContractSigEvent) event.
 
 func (p *Processor) ContractTxDeleteLoop() {
 	for {
-		time.Sleep(time.Second * time.Duration(2))
+		time.Sleep(time.Second * time.Duration(50))
 
 		p.locker.Lock()
 		for k, v := range p.mtx {
@@ -322,11 +312,11 @@ func runContractCmd(contract *contracts.Contract, trs *modules.Transaction) (mod
 		switch msg.App {
 		case modules.APP_CONTRACT_TPL_REQUEST:
 			{
-				return msg.App, nil, errors.New("not support APP_CONTRACT_TPL")
+				return modules.APP_CONTRACT_TPL, nil, errors.New("not support APP_CONTRACT_TPL")
 			}
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
 			{
-				return msg.App, nil, errors.New("not support APP_CONTRACT_DEPLOY")
+				return modules.APP_CONTRACT_DEPLOY, nil, errors.New("not support APP_CONTRACT_DEPLOY")
 			}
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
 			{
@@ -339,14 +329,14 @@ func runContractCmd(contract *contracts.Contract, trs *modules.Transaction) (mod
 				}
 				payload, err := ContractProcess(contract, req)
 				if err != nil {
-					log.Error("runContractCmd", "ContractProcess fail:", err)
+					log.Error("runContractCmd ContractProcess ", "error", err)
 					return msg.App, nil, errors.New(fmt.Sprintf("txid(%s)APP_CONTRACT_INVOKE rans err:%s", req.txid, err))
 				}
-				return msg.App, payload, nil
+				return modules.APP_CONTRACT_INVOKE, payload, nil
 			}
 		case modules.APP_CONTRACT_STOP_REQUEST:
 			{
-				return msg.App, nil, errors.New("not support APP_CONTRACT_STOP")
+				return modules.APP_CONTRACT_STOP, nil, errors.New("not support APP_CONTRACT_STOP")
 			}
 		}
 	}
@@ -411,9 +401,6 @@ func getTxSigNum(tx *modules.Transaction) int {
 }
 
 func checkTxValid(tx *modules.Transaction) bool {
-	if tx == nil {
-		return false
-	}
 	return cm.ValidateTxSig(tx)
 }
 
