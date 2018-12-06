@@ -5210,7 +5210,7 @@ var transfer = require('../transfer');
 
 var blockCall = function (args) {
     return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? "ptn_getBlockByHash" : "ptn_getBlockByNumber";
-};
+}; 
 
 var transactionFromBlockCall = function (args) {
     return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'ptn_getTransactionByBlockHashAndIndex' : 'ptn_getTransactionByBlockNumberAndIndex';
@@ -5648,13 +5648,20 @@ var methods = function () {
         call: 'dag_getUnitTxsHashHex',  
         params: 1,
         // inputFormatter: [null]
-    });
-    var getTxByHash = new Method({    
+    }); 
+    var getTxByHash = new Method({     
         name: 'getTxByHash', 
         call: 'dag_getTxByHash',   
         params: 1,  
         // inputFormatter: [null]
     });    
+    var getTxPoolTxByHash = new Method({  
+        name: 'getTxPoolTxByHash',
+        call: 'ptn_getTxPoolTxByHash',  
+        params: 1,
+        // inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
+        // outputFormatter: utils.toDecimal
+    }); 
 
 
 // del ptn_getStorageAt
@@ -5707,6 +5714,7 @@ var methods = function () {
         getCompilers,
         getBlockTransactionCount,
         getBlockUncleCount,
+        getTxPoolTxByHash, 
         getTransaction,
         getTransactionFromBlock,
         getTransactionReceipt,

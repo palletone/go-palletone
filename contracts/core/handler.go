@@ -305,7 +305,7 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 		var payloadBytes []byte
 		var err error
 		systemConfig := &core.SystemConfig{
-			FoundationAddress:         "P15BrpYyJqKWAfzZFSDjfaqpLT8UaRbR5J3",
+			FoundationAddress:         "P1KgJoC6TwRSKZA4TB534bcpSYboJwd5gzZ",
 			DepositAmountForMediator:  2000,
 			DepositAmountForJury:      1000,
 			DepositAmountForDeveloper: 800,
@@ -837,9 +837,9 @@ func (handler *Handler) handleGetTokenBalance(msg *pb.ChaincodeMessage) {
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: nil, Txid: msg.Txid, ChannelId: msg.ChannelId}
 		} else {
 			// Send response msg back to chaincode. GetState will not trigger event
-			result := []*modules.AmountAsset{}
+			result := []*modules.InvokeTokens{}
 			for asset, amt := range balance {
-				result = append(result, &modules.AmountAsset{Amount: amt, Asset: &asset})
+				result = append(result, &modules.InvokeTokens{Amount: amt, Asset: &asset})
 			}
 			res, _ := rlp.EncodeToBytes(result)
 			chaincodeLogger.Debugf("[%s]Got state. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)

@@ -157,7 +157,7 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 	utxodb.logger.Debugf("Query utxo by outpoint:%s", outpoint.String())
 	data, err := utxodb.db.Get(key)
 	if err != nil {
-		log.Error("get utxo entry failed,================================== ", "error", err)
+		log.Error("get utxo entry failed", "error", err,"Query utxo by outpoint:%s", outpoint.String())
 		if err.Error() == errors.ErrNotFound.Error() {
 			return nil, errors.ErrUtxoNotFound
 		}

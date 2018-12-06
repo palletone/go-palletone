@@ -45,6 +45,11 @@ type OutputJson struct {
 	LockScript string `json:"lock_script"`
 	//LockScriptHex string `json:"lock_script_hex"`
 }
+type OutPointJson struct {
+	TxHashHex    string `json:"txhash"`        // reference Utxo struct key field
+	MessageIndex uint32 `json:"message_index"` // message index in transaction
+	OutIndex     uint32 `json:"out_index"`
+}
 
 func ConvertPayment2Json(payment *modules.PaymentPayload) PaymentJson {
 	json := PaymentJson{}
@@ -98,4 +103,12 @@ func ConvertJson2Payment(json *PaymentJson) modules.PaymentPayload {
 		payment.AddTxOut(output)
 	}
 	return payment
+}
+
+func ConvertOutPoint2Json(outpoint *modules.OutPoint) *OutPointJson {
+	return &OutPointJson{
+		TxHashHex:    outpoint.TxHash.String(),
+		MessageIndex: outpoint.MessageIndex,
+		OutIndex:     outpoint.OutIndex,
+	}
 }

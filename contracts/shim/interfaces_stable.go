@@ -138,7 +138,7 @@ type ChaincodeStubInterface interface {
 	//获得某地址的Token余额
 	//如果地址为空则表示当前合约
 	//如果token为空则表示查询所有Token余额
-	GetTokenBalance(address string, token *modules.Asset) ([]*modules.AmountAsset, error)
+	GetTokenBalance(address string, token *modules.Asset) ([]*modules.InvokeTokens, error)
 	//将合约上锁定的某种Token支付出去
 	PayOutToken(addr string, invokeTokens *modules.InvokeTokens, lockTime uint32) error
 	//获取invoke参数，包括invokeAddr,tokens,fee,funcName,params
@@ -152,6 +152,8 @@ type ChaincodeStubInterface interface {
 	GetListForCashback() (*modules.ListForCashback, error)
 	//获取申请没收保证金列表
 	GetListForForfeiture() (*modules.ListForForfeiture, error)
+	//获取保证金账户信息
+	GetDepositBalance(nodeAddr string) (*modules.DepositBalance, error)
 	// GetStateByRange returns a range iterator over a set of keys in the
 	// ledger. The iterator can be used to iterate over all keys
 	// between the startKey (inclusive) and endKey (exclusive).

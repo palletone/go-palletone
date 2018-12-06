@@ -545,6 +545,18 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 				if ok := unitOp.ApplyOperation(msg, true); ok == false {
 					return fmt.Errorf("Apply Mediator Creating Operation error.")
 				}
+
+			case modules.APP_CONTRACT_TPL_REQUEST:
+				//todo
+			case modules.APP_CONTRACT_DEPLOY_REQUEST:
+				//todo
+			case modules.APP_CONTRACT_STOP_REQUEST:
+				//todo
+			case modules.APP_CONTRACT_INVOKE_REQUEST:
+				//todo
+			case modules.APP_SIGNATURE:
+				//todo
+
 			case modules.APP_TEXT:
 			default:
 				return fmt.Errorf("Message type is not supported now: %v", msg.App)

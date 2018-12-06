@@ -47,9 +47,9 @@ func (utxo *UtxoJson) GetAmount() uint64 {
 //	ChainId  uint64 `json:"chain_id"`
 //}
 
-func ConvertUtxo2Json(outPoint *modules.OutPoint, utxo *modules.Utxo) UtxoJson {
+func ConvertUtxo2Json(outPoint *modules.OutPoint, utxo *modules.Utxo) *UtxoJson {
 	scriptStr, _ := tokenengine.DisasmString(utxo.PkScript)
-	return UtxoJson{
+	return &UtxoJson{
 		TxHash:         outPoint.TxHash.String(),
 		MessageIndex:   outPoint.MessageIndex,
 		OutIndex:       outPoint.OutIndex,

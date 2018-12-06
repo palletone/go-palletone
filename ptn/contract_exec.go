@@ -6,6 +6,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 type contractInf interface {
@@ -15,7 +16,7 @@ type contractInf interface {
 	SubscribeContractSigEvent(ch chan<- jury.ContractSigEvent) event.Subscription
 	ProcessContractSigEvent(event *jury.ContractSigEvent) error
 
-	RunContractLoop(addr common.Address, ks *keystore.KeyStore) error
+	RunContractLoop(txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error
 	CheckContractTxValid(tx *modules.Transaction) bool
 }
 

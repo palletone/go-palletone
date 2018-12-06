@@ -43,7 +43,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/dag/coredata"
+	//"github.com/palletone/go-palletone/dag/coredata"
 	//"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -1210,30 +1210,19 @@ func (s *PublicTransactionPoolAPI) GetTransactionCount(ctx context.Context, addr
 func (s *PublicTransactionPoolAPI) GetTransactionsByTxid(ctx context.Context, txid string) (*ptnjson.GetTxIdResult, error) {
 	tx, err := s.b.GetTxByTxid_back(txid)
 	if err != nil {
-		log.Error("Get transcation by hash ", "unit hash", txid, "error", err.Error())
+		log.Error("Get transcation by hash ", "unit_hash", txid, "error", err.Error())
 		return nil, err
 	}
 	return tx, nil
 }
 
-/* old version
-// GetTransactionByHash returns the transaction for the given hash
-func (s *PublicTransactionPoolAPI) GetTransactionByHash(ctx context.Context, hash common.Hash) *RPCTransaction {
-	// Try to return an already finalized transaction
-	if tx, blockHash, blockNumber, index := coredata.GetTransaction(s.b.ChainDb(), hash); tx != nil {
-		blockHash = blockHash
-		blockNumber = blockNumber
-		index = index
-		//return newRPCTransaction(tx, blockHash, blockNumber, index)
-	}
-	// No finalized transaction, try to retrieve it from the pool
-	if tx := s.b.GetPoolTransaction(hash); tx != nil {
-		//return newRPCPendingTransaction(tx)
-	}
-	// Transaction unknown, return as such
-	return nil
-}*/
+// // GetPoolTxByHash returns the pool transaction for the given hash
+// func (s *PublicTransactionPoolAPI) GetPoolTxByHash(ctx context.Context, hex string) (*ptnjson.TxPoolTxJson, error) {
+// 	hash := common.HexToHash(hex)
+// 	return s.b.GetPoolTxByHash(hash), nil
+// }
 
+/* old version
 // GetRawTransactionByHash returns the bytes of the transaction for the given hash.
 func (s *PublicTransactionPoolAPI) GetRawTransactionByHash(ctx context.Context, hash common.Hash) (hexutil.Bytes, error) {
 	var tx *modules.Transaction
@@ -1733,6 +1722,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	}
 	utxos := core.Utxos{}
 	for _, json := range utxoJsons {
+		//utxos = append(utxos, &json)
 		utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
 	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
@@ -2487,6 +2477,19 @@ func (s *PublicDagAPI) GetTxByHash(ctx context.Context, hashHex string) (string,
 		return "transaction_info:null", err
 	} else {
 		info := NewPublicReturnInfo("transaction_info", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
+
+// GetPoolTxByHash returns the pool transaction for the given hash
+func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (string, error) {
+	hash := common.HexToHash(hex)
+	item, err := s.b.GetTxPoolTxByHash(hash)
+	if err != nil {
+		return "pool_tx:null", err
+	} else {
+		info := NewPublicReturnInfo("txpool_tx", item)
 		result_json, _ := json.Marshal(info)
 		return string(result_json), nil
 	}

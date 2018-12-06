@@ -62,6 +62,8 @@ type Backend interface {
 	GetPoolTransactions() (modules.Transactions, error)
 	GetPoolTransaction(txHash common.Hash) *modules.Transaction
 	GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, error)
+	GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error)
+
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
 	Stats() (pending int, queued int)
 	TxPoolContent() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
@@ -104,8 +106,8 @@ type Backend interface {
 	//------- Get addr utxo start ------//
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
-	GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error)
-	GetAllUtxos() ([]ptnjson.UtxoJson, error)
+	GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error)
+	GetAllUtxos() ([]*ptnjson.UtxoJson, error)
 
 	/* ---------------------save token info ------------------------*/
 	SaveTokenInfo(token_info *modules.TokenInfo) (*ptnjson.TokenInfoJson, error)

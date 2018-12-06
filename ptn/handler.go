@@ -34,9 +34,11 @@ import (
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
+	"encoding/json"
 )
 
 const (
@@ -239,9 +241,30 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 			return 0, nil
 		}
 		log.Debug("Fetcher", "manager.dag.InsertDag index:", blocks[0].Number().Index, "hash", blocks[0].Hash())
-		//for _, block := range blocks {
-		//	manager.producer.ToUnitTBLSSign(block)
-		//}
+
+
+
+
+		for i, block := range blocks {
+			var txs modules.Transactions
+			var temptxs modules.Transactions
+			if err:=json.Unmarshal(block.StrTxs,&txs);err!=nil{
+				return 0,err
+			}
+			for _,tx:=range txs{
+				msgs, err1 := storage.ConvertMsg(tx)
+				if err1 != nil {
+					log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
+					return 0, err1
+				}
+				tx.TxMessages = msgs
+				temptxs = append(temptxs, tx)
+			}
+			block.Txs=temptxs
+			blocks[i]=block
+		}
+
+
 
 		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
 		return manager.dag.InsertDag(blocks, manager.txpool)

@@ -837,9 +837,9 @@ func (mr *MockIDagMockRecorder) GetAddrByOutPoint(outPoint interface{}) *gomock.
 }
 
 // GetTxFee mocks base method
-func (m *MockIDag) GetTxFee(pay *modules.Transaction) (modules.InvokeFees, error) {
+func (m *MockIDag) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error) {
 	ret := m.ctrl.Call(m, "GetTxFee", pay)
-	ret0, _ := ret[0].(modules.InvokeFees)
+	ret0, _ := ret[0].(*modules.InvokeFees)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -920,4 +920,30 @@ func (m *MockIDag) GetUnit(arg0 common.Hash) (*modules.Unit, error) {
 // GetUnit indicates an expected call of GetUnit
 func (mr *MockIDagMockRecorder) GetUnit(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnit", reflect.TypeOf((*MockIDag)(nil).GetUnit), arg0)
+}
+
+// QueryDbByKey mocks base method
+func (m *MockIDag) QueryDbByKey(key []byte) ([]byte, error) {
+	ret := m.ctrl.Call(m, "QueryDbByKey", key)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryDbByKey indicates an expected call of QueryDbByKey
+func (mr *MockIDagMockRecorder) QueryDbByKey(key []byte) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryDbByKey", reflect.TypeOf((*MockIDag)(nil).QueryDbByKey), key)
+}
+
+// QueryDbByPrefix mocks base method
+func (m *MockIDag) QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error) {
+	ret := m.ctrl.Call(m, "QueryDbByPrefix", prefix)
+	ret0, _ := ret[0].([]*modules.DbRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryDbByPrefix indicates an expected call of QueryDbByPrefix
+func (mr *MockIDagMockRecorder) QueryDbByPrefix(prefix []byte) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryDbByPrefix", reflect.TypeOf((*MockIDag)(nil).QueryDbByPrefix), prefix)
 }
