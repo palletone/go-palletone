@@ -27,7 +27,8 @@ import (
 
 const (
 	DefaultInitPartSec = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
-
+	DefaultInitPartPub = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
+		"MpbsWk45ymz4kmjU2AZo8Rm3mJ3MQHpdAgTo2nzWmqU3vCTW6qCfviPD1MKu3FJtmaWiLzdavLx831eCBXA1CdaiXAeU5MPcQ"
 )
 
 var (
@@ -49,7 +50,7 @@ var DefaultConfig = Config{
 	EnableStaleProduction: false,
 	Mediators: []*MediatorConf{
 		&MediatorConf{core.DefaultTokenHolder, core.DefaultPassword,
-			DefaultInitPartSec, core.DefaultInitPartPub},
+			DefaultInitPartSec, DefaultInitPartPub},
 	},
 }
 

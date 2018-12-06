@@ -36,14 +36,12 @@ type InputJson struct {
 	MessageIndex uint32 `json:"message_index"` // message index in transaction
 	OutIndex     uint32 `json:"out_index"`
 	UnlockScript string `json:"unlock_script"`
-	//UnlockScriptHex string `json:"unlock_script_hex"`
 }
 type OutputJson struct {
 	Amount     uint64 `json:"amount"`
 	Asset      string `json:"asset"`
 	ToAddress  string `json:"to_address"`
 	LockScript string `json:"lock_script"`
-	//LockScriptHex string `json:"lock_script_hex"`
 }
 
 func ConvertPayment2Json(payment *modules.PaymentPayload) PaymentJson {

@@ -251,7 +251,6 @@ func (s *PalletOne) NetVersion() uint64                 { return s.networkId }
 func (s *PalletOne) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
 func (s *PalletOne) Dag() dag.IDag                      { return s.dag }
 
-func (s *PalletOne) ContractProcessor() *jury.Processor                      { return s.contractPorcessor }
 func (s *PalletOne) ProManager() *ProtocolManager { return s.protocolManager }
 
 func (s *PalletOne) MockContractLocalSend(event jury.ContractExeEvent) {

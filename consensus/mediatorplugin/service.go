@@ -36,14 +36,12 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 // PalletOne wraps all methods required for producing unit.
 type PalletOne interface {
 	GetKeyStore() *keystore.KeyStore
 	TxPool() txspool.ITxPool
-	ContractProcessor() *jury.Processor
 }
 
 type iDag interface {
@@ -69,7 +67,7 @@ type iDag interface {
 	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
 		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit
 
-	ActiveMediators() map[common.Address]bool
+	MediatorSchedule() []common.Address
 
 	IsPrecedingMediator(add common.Address) bool
 	IsIrreversibleUnit(hash common.Hash) bool

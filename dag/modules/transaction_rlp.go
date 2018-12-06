@@ -42,40 +42,32 @@ func (tx *Transaction) DecodeRLP(s *rlp.Stream) error {
 	if err != nil {
 		return err
 	}
-	txTemp := &transactionTemp{}
-	err = rlp.DecodeBytes(raw, txTemp)
-	if err != nil {
-		return err
-	}
-	return temp2Tx(txTemp, tx)
+	var txTemp transactionTemp
+	rlp.DecodeBytes(raw, &txTemp)
+	temp2Tx(txTemp, tx)
+	//fmt.Println("Use DecodeRLP")
+	return nil
 }
 func (tx *Transaction) EncodeRLP(w io.Writer) error {
-	temp, err := tx2Temp(tx)
-	if err != nil {
-		return err
-	}
+	temp := tx2Temp(*tx)
+	//fmt.Println("Use EncodeRLP")
 	return rlp.Encode(w, temp)
 }
-func tx2Temp(tx *Transaction) (*transactionTemp, error) {
-	temp := &transactionTemp{TxHash: tx.TxHash, TxId: tx.TxId}
+func tx2Temp(tx Transaction) transactionTemp {
+	temp := transactionTemp{TxHash: tx.TxHash, TxId: tx.TxId}
 
 	for _, m := range tx.TxMessages {
 
 		m1 := messageTemp{
 			App: m.App,
 		}
-		d, err := rlp.EncodeToBytes(m.Payload)
-		if err != nil {
-			return nil, err
-		}
-		m1.Data = d
-
+		m1.Data, _ = rlp.EncodeToBytes(m.Payload)
 		temp.TxMessages = append(temp.TxMessages, m1)
 
 	}
-	return temp, nil
+	return temp
 }
-func temp2Tx(temp *transactionTemp, tx *Transaction) error {
+func temp2Tx(temp transactionTemp, tx *Transaction) {
 	tx.TxId = temp.TxId
 	tx.TxHash = temp.TxHash
 
@@ -85,10 +77,7 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 		}
 		if m.App == APP_PAYMENT {
 			var pay PaymentPayload
-			err := rlp.DecodeBytes(m.Data, &pay)
-			if err != nil {
-				return err
-			}
+			rlp.DecodeBytes(m.Data, &pay)
 			m1.Payload = &pay
 		} else if m.App == APP_TEXT {
 			var text TextPayload
@@ -132,6 +121,4 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 		tx.TxMessages = append(tx.TxMessages, m1)
 
 	}
-	return nil
-
 }

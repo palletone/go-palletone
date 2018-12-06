@@ -40,27 +40,24 @@ func (u *Utxo4Test) GetAmount() uint64 {
 func TestSelect_utxo_Greedy(t *testing.T) {
 	log.NewTestLog()
 
-	utxos := []*Utxo4Test{}
+	utxos := []UtxoInterface{}
+
 	utxos = append(utxos, &Utxo4Test{Amount: 3, TxId: common.Hash{}, MsgIdx: 0, OutIdx: 2})
 	utxos = append(utxos, &Utxo4Test{Amount: 1, TxId: common.Hash{}, MsgIdx: 0, OutIdx: 1})
 	utxos = append(utxos, &Utxo4Test{Amount: 2, TxId: common.Hash{}, MsgIdx: 0, OutIdx: 3})
 	utxos = append(utxos, &Utxo4Test{Amount: 5, TxId: common.Hash{}, MsgIdx: 0, OutIdx: 4})
-	ut := Utxos{}
-	for _, u := range utxos {
-		ut = append(ut, u)
-	}
-	result, change, err := Select_utxo_Greedy(ut, 4)
+	result, change, err := Select_utxo_Greedy(utxos, 4)
 	assert.Nil(t, err)
 	assert.Equal(t, len(result), 1)
 	assert.Equal(t, change, uint64(1))
-	result, change, err = Select_utxo_Greedy(ut, 6)
+	result, change, err = Select_utxo_Greedy(utxos, 6)
 	assert.Nil(t, err)
 	for _, u := range result {
 		t.Logf("Selected: %+v\n", u)
 	}
 	assert.Equal(t, len(result), 3)
 	assert.Equal(t, change, uint64(0))
-	result, change, err = Select_utxo_Greedy(ut, 12)
+	result, change, err = Select_utxo_Greedy(utxos, 12)
 	assert.NotNil(t, err)
 	t.Logf("get error:%s", err)
 

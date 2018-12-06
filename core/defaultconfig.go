@@ -11,7 +11,6 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -32,10 +31,8 @@ const (
 	DefaultDepositContractAddress    = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
 	DefaultTokenHolder               = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 	DefaultPassword                  = "password"
-	DefaultInitPartPub               = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
-		"MpbsWk45ymz4kmjU2AZo8Rm3mJ3MQHpdAgTo2nzWmqU3vCTW6qCfviPD1MKu3FJtmaWiLzdavLx831eCBXA1CdaiXAeU5MPcQ"
 
-	DefaultMediatorCount       = 11 //21
+	DefaultMediatorCount       = 21
 	DefaultMinMediatorCount    = 11
 	DefaultMinMediatorInterval = 1
 
@@ -57,8 +54,8 @@ const (
 	PalletOne1Percent              = PalletOne100Percent / 100
 	PalletOneIrreversibleThreshold = 70 * PalletOne1Percent
 
-	DefaultMediatorInterval    = 3      //5 /* seconds */
-	DefaultMaintenanceInterval = 60 * 3 //60 * 60 * 24 // seconds, aka: 1 day
+	DefaultMediatorInterval    = 3       //5 /* seconds */
+	DefaultMaintenanceInterval = 60 * 10 //60 * 60 * 24 // seconds, aka: 1 day
 
 	DefaultMediatorCreateFee = 5000
 	DefaultVoteMediatorFee   = 20

@@ -414,11 +414,6 @@ web3._extend({
 			inputFormatter: [web3._extend.formatters.inputAddressFormatter, null]
 		}),
 		new web3._extend.Method({
-			name: 'encodeTx',
-			call: 'ptn_encodeTx',
-			params: 1
-		}),
-		new web3._extend.Method({
 			name: 'resend',
 			call: 'ptn_resend',
 			params: 3,

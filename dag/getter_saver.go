@@ -182,8 +182,8 @@ func (dag *Dag) GetMediators() map[common.Address]bool {
 	return dag.statedb.GetMediators()
 }
 
-func (dag *Dag) ActiveMediators() map[common.Address]bool {
-	return dag.GetGlobalProp().ActiveMediators
+func (dag *Dag) MediatorSchedule() []common.Address {
+	return dag.GetMediatorSchl().CurrentShuffledMediators
 }
 
 func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {

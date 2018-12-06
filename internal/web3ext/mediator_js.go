@@ -23,8 +23,8 @@ web3._extend({
 	property: 'mediator',
 	methods: [
 		new web3._extend.Method({
-			name: 'actives',
-			call: 'mediator_actives',
+			name: 'schedule',
+			call: 'mediator_schedule',
 			params: 0,
 		}),
 		new web3._extend.Method({

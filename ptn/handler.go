@@ -605,8 +605,7 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool /*, 
 	hash := unit.Hash()
 
 	for _, parentHash := range unit.ParentHash() {
-		//if parent, err := pm.dag.GetUnitByHash(parentHash); err != nil || parent == nil {
-		if parent, err := pm.dag.GetUnit(parentHash); err != nil || parent == nil {
+		if parent, err := pm.dag.GetUnitByHash(parentHash); err != nil || parent == nil {
 			log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash)
 			return
 		}

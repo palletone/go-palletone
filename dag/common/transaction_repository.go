@@ -22,10 +22,10 @@ func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Addr
 }
 
 func ValidateTxSig(tx *modules.Transaction) bool {
+	var sigs []modules.SignatureSet
 	if tx == nil {
 		return false
 	}
-	var sigs []modules.SignatureSet
 
 	tmpTx := modules.Transaction{}
 	tmpTx.TxId = tx.TxId
@@ -47,7 +47,7 @@ func ValidateTxSig(tx *modules.Transaction) bool {
 		for i := 0; i < len(sigs); i++ {
 			//fmt.Printf("sig[%v]-pubkey[%v]--tx[%v]", sigs[i].Signature, sigs[i].PubKey, tmpTx)
 			if keystore.VerifyTXWithPK(sigs[i].Signature, tmpTx, sigs[i].PubKey) != true {
-				log.Error("ValidateTxSig", "VerifyTXWithPK sig fail", tmpTx.TxId.String())
+				log.Error("ValidateTxSig", "VerifyTXWithPK sig fail")
 				return false
 			}
 		}

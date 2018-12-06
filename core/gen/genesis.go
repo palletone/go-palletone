@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -302,7 +303,7 @@ func InitialMediatorCandidates(len int, address string) []*core.InitialMediator 
 	for i := 0; i < len; i++ {
 		var mi core.InitialMediator
 		mi.AddStr = address
-		mi.InitPartPub = core.DefaultInitPartPub
+		mi.InitPartPub = mp.DefaultInitPartPub
 		mi.Node = deFaultNode
 		initialMediator[i] = &mi
 	}

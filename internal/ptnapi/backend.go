@@ -104,8 +104,8 @@ type Backend interface {
 	//------- Get addr utxo start ------//
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
-	GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error)
-	GetAllUtxos() ([]*ptnjson.UtxoJson, error)
+	GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error)
+	GetAllUtxos() ([]ptnjson.UtxoJson, error)
 
 	/* ---------------------save token info ------------------------*/
 	SaveTokenInfo(token_info *modules.TokenInfo) (*ptnjson.TokenInfoJson, error)
@@ -116,10 +116,9 @@ type Backend interface {
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
-	ContractInvoke(tx *modules.Transaction) (rspPayload []byte, err error)
+	ContractInvoke(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
 	DecodeTx(hex string) (string, error)
-	EncodeTx(jsonStr string) (string, error)
 	ContractTxReqBroadcast(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 
 	ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
