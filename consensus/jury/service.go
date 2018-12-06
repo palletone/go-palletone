@@ -187,7 +187,7 @@ func (p *Processor) RunContractLoop(txpool txspool.ITxPool, addr common.Address,
 		}
 		log.Debug("ProcessContractEvent", "tx:",tx)
 		if err = txpool.AddLocal(txspool.TxtoTxpoolTx(txpool, tx)); err != nil{
-			log.Error("ProcessContractEvent", "error:", err.Error())
+			log.Error("ProcessContractEvent", "error", err.Error())
 			continue
 		}
 		//delete(p.mtx, txId)
@@ -301,7 +301,7 @@ func (p *Processor) ContractTxDeleteLoop() {
 
 		p.locker.Lock()
 		for k, v := range p.mtx {
-			if time.Since(v.tm) > time.Second*10 { //todo
+			if time.Since(v.tm) > time.Second*100 { //todo
 				log.Info("ContractTxDeleteLoop", "delete id", k.String())
 				if v.valid == false {
 					//delete(p.mtx, k)
