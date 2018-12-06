@@ -32,7 +32,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine"
-	"time"
 )
 
 type UtxoRepository struct {
@@ -51,7 +50,7 @@ type IUtxoRepository interface {
 	GetUxto(txin modules.Input) modules.Utxo
 	UpdateUtxo(txHash common.Hash, msg *modules.Message, msgIndex uint32) error
 	ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error)
-	ComputeTxFee(tx *modules.Transaction) (modules.InvokeFees, error)
+	ComputeTxFee(tx *modules.Transaction) (*modules.InvokeFees, error)
 	GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64)
 	GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	WalletBalance(addr common.Address, asset modules.Asset) uint64
@@ -587,12 +586,7 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 				unit, _ := dagdb.GetUnit(unitHash)
 				//3.通过单元获取头部信息中的时间戳
 				timestamp := unit.Header().Creationdate
-				startTime := time.Unix(timestamp, 0).UTC()
-				//获取币龄
-				endTime := time.Now().UTC()
-				coinDays := award2.GetCoinDay(utxo.Amount, startTime, endTime)
-				//计算币龄收益
-				award := award2.CalculateAwardsForDepositContractNodes(coinDays)
+				award := award2.GetAwardsWithCoins(utxo.Amount, timestamp)
 				awards += award
 			}
 			return awards, nil
@@ -602,7 +596,7 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 }
 
 //计算一笔Tx中包含多少手续费
-func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (modules.InvokeFees, error) {
+func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*modules.InvokeFees, error) {
 
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
@@ -614,14 +608,14 @@ func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (modules
 		for _, txin := range payload.Inputs {
 			utxo := repository.GetUxto(*txin)
 			if utxo.IsEmpty() {
-				return modules.InvokeFees{Amount: 0}, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
+				return &modules.InvokeFees{Amount: 0}, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
 					txin.PreviousOutPoint.TxHash.String(),
 					txin.PreviousOutPoint.MessageIndex,
 					txin.PreviousOutPoint.OutIndex)
 			}
 			// check overflow
 			if inAmount+utxo.Amount > (1<<64 - 1) {
-				return modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: txin total overflow")
+				return &modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: txin total overflow")
 			}
 			inAmount += utxo.Amount
 		}
@@ -629,20 +623,20 @@ func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (modules
 		for _, txout := range payload.Outputs {
 			// check overflow
 			if outAmount+txout.Value > (1<<64 - 1) {
-				return modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: txout total overflow")
+				return &modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: txout total overflow")
 			}
 			log.Info("+++++++++++++++++++++ tx_out_amonut ++++++++++++++++++++", "tx_outAmount", txout.Value)
 			outAmount += txout.Value
 		}
 		if inAmount < outAmount {
 
-			return modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Hash().String(), inAmount, outAmount)
+			return &modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Hash().String(), inAmount, outAmount)
 		}
 		fees := inAmount - outAmount
-		return modules.InvokeFees{Amount: fees, Asset: *(payload.Outputs[0].Asset)}, nil
+		return &modules.InvokeFees{Amount: fees, Asset: payload.Outputs[0].Asset}, nil
 
 	}
-	return modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: no payment payload")
+	return &modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: no payment payload")
 }
 
 /**
