@@ -167,11 +167,14 @@ func (p *Processor) RunContractLoop(txpool txspool.ITxPool, addr common.Address,
 		if false == ctx.valid {
 			continue
 		}
+		ctx.valid = false
+
 		if false == checkTxValid(ctx.tx) {
 			log.Error("RunContractLoop recv event Tx is invalid,", "txid", ctx.tx.TxId.String())
 			continue
 		}
 		cmsgType, payload, err := runContractCmd(p.contract, ctx.tx)
+
 		if err != nil {
 			log.Error("RunContractLoop runContractCmd", "error", err.Error())
 			continue
@@ -186,7 +189,7 @@ func (p *Processor) RunContractLoop(txpool txspool.ITxPool, addr common.Address,
 			log.Error("RunContractLoop", "error", err.Error())
 			continue
 		}
-		ctx.valid = false
+		//ctx.valid = false
 	}
 
 	return nil
