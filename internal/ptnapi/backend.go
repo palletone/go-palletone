@@ -104,8 +104,8 @@ type Backend interface {
 	//------- Get addr utxo start ------//
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
-	GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error)
-	GetAllUtxos() ([]ptnjson.UtxoJson, error)
+	GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error)
+	GetAllUtxos() ([]*ptnjson.UtxoJson, error)
 
 	/* ---------------------save token info ------------------------*/
 	SaveTokenInfo(token_info *modules.TokenInfo) (*ptnjson.TokenInfoJson, error)

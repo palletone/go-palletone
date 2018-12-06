@@ -336,7 +336,7 @@ func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJ
 		return nil, err
 	}
 	ujson := ptnjson.ConvertUtxo2Json(outpoint, utxo)
-	return &ujson, nil
+	return ujson, nil
 }
 
 func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
@@ -351,9 +351,9 @@ func (b *PtnApiBackend) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Ad
 	return address, err
 }
 
-func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error) {
+func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	utxos, _ := b.ptn.dag.GetAddrUtxos(addr)
-	result := []ptnjson.UtxoJson{}
+	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {
 		ujson := ptnjson.ConvertUtxo2Json(&o, u)
 		result = append(result, ujson)
@@ -361,12 +361,12 @@ func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error) {
 	return result, nil
 }
 
-func (b *PtnApiBackend) GetAllUtxos() ([]ptnjson.UtxoJson, error) {
+func (b *PtnApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 	utxos, err := b.ptn.dag.GetAllUtxos()
 	if err != nil {
 		return nil, err
 	}
-	result := []ptnjson.UtxoJson{}
+	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {
 		ujson := ptnjson.ConvertUtxo2Json(&o, u)
 		result = append(result, ujson)
