@@ -30,6 +30,7 @@ import (
 type UtxoInterface interface {
 	GetAmount() uint64
 }
+
 type Utxos []UtxoInterface
 
 func (c Utxos) Len() int {

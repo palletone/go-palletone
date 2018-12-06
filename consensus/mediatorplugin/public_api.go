@@ -20,6 +20,7 @@ package mediatorplugin
 
 import (
 	"encoding/json"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 )
@@ -43,7 +44,7 @@ func (a *PublicMediatorAPI) List() []string {
 	return addStrs
 }
 
-func (a *PublicMediatorAPI) Actives() []string {
+func (a *PublicMediatorAPI) GetActives() []string {
 	addStrs := make([]string, 0)
 	ms := a.dag.ActiveMediators()
 

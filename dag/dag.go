@@ -748,7 +748,7 @@ func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	return items, err
 }
 
-func (d *Dag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
+func (d *Dag) GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error) {
 	// TODO
 	// merge dag.cache
 	all, err := d.utxodb.GetAddrOutpoints(addr)
@@ -761,7 +761,7 @@ func (d *Dag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 				} else {
 					address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
 					if err == nil {
-						if address.String() == addr {
+						if address.Equal(addr) {
 							var exist bool
 							for _, old := range all {
 								if reflect.DeepEqual(key.ToKey(), old.ToKey()) {
@@ -796,11 +796,11 @@ func (d *Dag) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error) {
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return d.dagdb.GetAddrOutput(addr)
 }
-func (d *Dag) GetAddr1TokenUtxos(addr string, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
+func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
 	//TODO only get one token's UTXO
 	return map[modules.OutPoint]*modules.Utxo{}, nil
 }
-func (d *Dag) GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
+func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
 	// TODO
 	// merge dag.cache
 	all, err := d.utxodb.GetAddrUtxos(addr)
@@ -814,7 +814,7 @@ func (d *Dag) GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, err
 				} else {
 					address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
 					if err == nil {
-						if address.String() == addr {
+						if address.Equal(addr) {
 							if old, has := all[key]; has {
 								// merge
 								if old.IsSpent() {
