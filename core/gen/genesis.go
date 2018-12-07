@@ -192,16 +192,15 @@ func sigData(key *ecdsa.PrivateKey, data interface{}) ([]byte, error) {
 	return sign[0:64], err
 }
 
-func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction, msgType modules.MessageType, payload []*modules.Message, ks *keystore.KeyStore) (*modules.Transaction, error) {
+func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction, msgType modules.MessageType, msgs []*modules.Message, ks *keystore.KeyStore) (*modules.Transaction, error) {
 	if orgTx == nil || len(orgTx.TxMessages) < 2 {
 		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions param is error"))
 	}
-	tx := &modules.Transaction{}
-	for _, msg := range orgTx.TxMessages {
-		tx.AddMessage(msg)
+	tx := &modules.Transaction{
+		TxMessages: []*modules.Message{orgTx.TxMessages[0], orgTx.TxMessages[1]},
 	}
-	for _, msg := range payload {
-		tx.AddMessage(msg)
+	for i:= 0;i <len(msgs);i++ {
+		tx.AddMessage(msgs[i])
 	}
 
 	tx.TxId = orgTx.TxId

@@ -328,7 +328,7 @@ type TxLookupEntry struct {
 type Transactions []*Transaction
 type Transaction struct {
 	TxHash     common.Hash `json:"txhash"`
-	TxId       common.Hash `json:"txid"`
+	TxId       common.Hash `json:"txid"` //contract request id
 	TxMessages []*Message  `json:"messages"`
 }
 
