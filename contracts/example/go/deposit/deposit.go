@@ -122,12 +122,13 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	if err != nil {
 		return shim.Success([]byte("GetPayToContractPtnTokens error:"))
 	}
+	fmt.Printf("invokeTokens=%s", invokeTokens)
 	//获取退保证金数量，将 string 转 uint64
 	//TODO test
-	ptnAccount, _ := strconv.ParseUint(args[0], 10, 64)
-	invokeTokens.Amount = ptnAccount
-	fmt.Println("invokeTokens ", invokeTokens.Amount)
-	fmt.Printf("invokeTokens %#v\n", invokeTokens.Asset)
+	//ptnAccount, _ := strconv.ParseUint(args[0], 10, 64)
+	//invokeTokens.Amount = ptnAccount
+	//fmt.Println("invokeTokens ", invokeTokens.Amount)
+	//fmt.Printf("invokeTokens %#v\n", invokeTokens.Asset)
 	//获取角色
 	role := args[1]
 	switch {
@@ -476,7 +477,7 @@ func (d *DepositChaincode) handleDepositCashbackApplication(stub shim.ChaincodeS
 	//提取保证金节点地址，申请时间
 	if check == "ok" {
 		return d.agreeForApplyCashback(stub, foundationAddr, cashbackAddr, applyTime, balance)
-	} else {
+	} else if check == "no" {
 		return d.disagreeForApplyCashback(stub, cashbackAddr, applyTime)
 	}
 	return shim.Success([]byte("ok"))
@@ -787,10 +788,11 @@ func (d *DepositChaincode) handleForfeitureDepositApplication(stub shim.Chaincod
 	//check 如果为ok，则同意此申请，如果为no，则不同意此申请
 	if check == "ok" {
 		return d.agreeForApplyForfeiture(stub, foundationAddr, forfeitureAddr, applyTime, balance)
-	} else {
+	} else if check == "no" {
 		//移除申请列表，不做处理
 		return d.disagreeForApplyForfeiture(stub, forfeitureAddr, applyTime)
 	}
+	return shim.Error("请确认是否同意")
 }
 
 //不同意提取请求，则直接从提保证金列表中移除该节点
