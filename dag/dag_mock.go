@@ -260,6 +260,19 @@ func (mr *MockIDagMockRecorder) GetUnitTxsHash(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitTxsHash", reflect.TypeOf((*MockIDag)(nil).GetUnitTxsHash), hash)
 }
 
+// GetTxSearchEntry mocks base method
+func (m *MockIDag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
+	ret := m.ctrl.Call(m, "GetTxSearchEntry", hash)
+	ret0, _ := ret[0].(*modules.TxLookupEntry)
+	ret1, _ := ret[2].(error)
+	return ret0, ret1
+}
+
+// GetTxSearchEntry indicates an expected call of GetTxSearchEntry
+func (mr *MockIDagMockRecorder) GetTxSearchEntry(hash interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxSearchEntry", reflect.TypeOf((*MockIDag)(nil).GetTxSearchEntry), hash)
+}
+
 // GetTransactionByHash mocks base method
 func (m *MockIDag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
 	ret := m.ctrl.Call(m, "GetTransactionByHash", hash)

@@ -5660,6 +5660,12 @@ var methods = function () {
         params: 1,  
         // inputFormatter: [null]
     });    
+    var getTxSearchEntry = new Method({     
+        name: 'getTxSearchEntry',  
+        call: 'dag_getTxSearchEntry',   
+        params: 1,  
+        // inputFormatter: [null]
+    }); 
     var getTxPoolTxByHash = new Method({  
         name: 'getTxPoolTxByHash',
         call: 'ptn_getTxPoolTxByHash',  
@@ -5771,6 +5777,7 @@ var methods = function () {
         getUnitTxsInfo,
         getUnitTxsHashHex, 
         getTxByHash, 
+        getTxSearchEntry,
         ccinvoketx,
         creatCcTransaction,
     ];

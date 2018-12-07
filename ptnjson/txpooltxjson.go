@@ -22,6 +22,12 @@ type TxPoolTxJson struct {
 	Index        int             `json:"index"` // index 是该tx在优先级堆中的位置
 	Extra        []byte          `json:"extra"`
 }
+type TxSerachEntryJson struct {
+	UnitHash  string `json:"unit_hash"`
+	AssetId   string `json:"asset_id"`
+	UnitIndex uint64 `json:"unit_index"`
+	TxIndex   uint64 `json:"tx_index"`
+}
 
 func ConvertTxPoolTx2Json(tx *modules.TxPoolTransaction, hash common.Hash) *TxPoolTxJson {
 	if tx == nil {
@@ -59,5 +65,13 @@ func ConvertTxPoolTx2Json(tx *modules.TxPoolTransaction, hash common.Hash) *TxPo
 		Pending:      tx.Pending,
 		Confirmed:    tx.Confirmed,
 		Extra:        tx.Extra[:],
+	}
+}
+
+func ConvertTxEntry2Json(entry *modules.TxLookupEntry) *TxSerachEntryJson {
+	return &TxSerachEntryJson{
+		UnitHash:  entry.UnitHash.String(),
+		UnitIndex: entry.UnitIndex,
+		TxIndex:   entry.Index,
 	}
 }

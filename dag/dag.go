@@ -363,6 +363,14 @@ func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, comm
 	}
 	return tx, uhash, nil
 }
+func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
+	unitHash, unitNumber, txIndex, err := d.dagdb.GetTxLookupEntry(hash)
+	return &modules.TxLookupEntry{
+		UnitHash:  unitHash,
+		UnitIndex: unitNumber,
+		Index:     txIndex,
+	}, err
+}
 
 func (d *Dag) getBodyRLP(hash common.Hash) rlp.RawValue {
 	txs := modules.Transactions{}
