@@ -655,24 +655,36 @@ func (dagdb *DagDb) GetHeaderFormIndex(number modules.ChainIndex) *modules.Heade
 	return nil
 }
 
-// GetTxLookupEntry
-func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64) {
-	data, _ := dagdb.db.Get(append(constants.LookupPrefix, []byte(hash.String())...))
+// GetTxLookupEntry return unit's hash ,number
+func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
+	data, err0 := dagdb.db.Get(append(constants.LookupPrefix, []byte(hash.String())...))
 	if len(data) == 0 {
-		return common.Hash{}, 0, 0
+		return common.Hash{}, 0, 0, errors.New("not found legal data.")
 	}
-	var entry modules.TxLookupEntry
-	if err := rlp.DecodeBytes(data, &entry); err != nil {
-		return common.Hash{}, 0, 0
+	if  err0!=nil{
+		return common.Hash{}, 0, 0, err0
 	}
-	return entry.UnitHash, entry.UnitIndex, entry.Index
-
+	entry_bytes := make([]byte, 0)
+	var entry *modules.TxLookupEntry
+	if err := rlp.DecodeBytes(data, &entry_bytes); err != nil {
+		log.Info("entry bytes  ===================", "error", err, "data", data)
+		return common.Hash{}, 0, 0, err
+	} else {
+		if err := rlp.DecodeBytes(entry_bytes, &entry); err != nil {
+			log.Info("get entry structure failed ===================", "error", err, "tx_entry", entry)
+		}
+	}
+	return entry.UnitHash, entry.UnitIndex, entry.Index, err0
 }
 
 // GetTransaction retrieves a specific transaction from the database , along with its added positional metadata
 // p2p 同步区块 分为同步header 和body。 GetBody可以省掉节点包装交易块的过程。
 func (dagdb *DagDb) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
-	unitHash, unitNumber, txIndex := dagdb.GetTxLookupEntry(hash)
+	unitHash, unitNumber, txIndex,err1 := dagdb.GetTxLookupEntry(hash)
+	if err1!=nil{
+		log.Error("dag db GetTransaction","GetTxLookupEntry err:",err1,"hash:",hash)
+		return  nil, unitHash, unitNumber, txIndex
+	}
 	// if unitHash != (common.Hash{}) {
 	// 	body, _ := dagdb.GetBody(unitHash)
 	// 	if body == nil || len(body) <= int(txIndex) {
