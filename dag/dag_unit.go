@@ -77,6 +77,9 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 // @author Albert·Gou
 func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
 	ks *keystore.KeyStore, txpool txspool.ITxPool) *modules.Unit {
+	defer func(start time.Time) {
+		log.Debug("GenerateUnit unit elapsed", "elapsed", time.Since(start))
+	}(time.Now())
 	// 1. 判断是否满足生产的若干条件
 
 	// 2. 生产验证单元，添加交易集、时间戳、签名

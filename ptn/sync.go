@@ -154,6 +154,7 @@ func (pm *ProtocolManager) syncer() {
 
 		case <-forceSync.C:
 			// Force a sync even if not enough peers are present
+			log.Debug("start force Sync")
 			go pm.synchronise(pm.peers.BestPeer(modules.PTNCOIN), modules.PTNCOIN)
 
 		case <-pm.noMorePeers:
@@ -186,7 +187,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	pindex := number.Index
 
 	log.Info("ProtocolManager", "synchronise local unit index:", index, "local peer index:", pindex, "header hash:", pHead)
-	if common.EmptyHash(pHead) || (index > pindex && pindex > 0) {
+	if common.EmptyHash(pHead) || (index >= pindex && pindex > 0) {
 		//if index >= pindex && pindex > 0 {
 		log.Info("===synchronise peer.index < local index===", "local peer.index:", pindex, "local index:", number.Index, "header hash:", pHead)
 		return

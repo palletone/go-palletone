@@ -50,8 +50,8 @@ func validateGenesis(genesis *core.Genesis) {
 	fcAssert(initialTime%mediatorInterv == 0,
 		"Genesis timestamp must be divisible by mediator interval.")
 
-	minMediatorInterval := int64(genesis.ImmutableParameters.MinMediatorInterval)
-	fcAssert(mediatorInterv > minMediatorInterval, "mediator interval must be larger than min interval.")
+	//minMediatorInterval := int64(genesis.ImmutableParameters.MinMediatorInterval)
+	//fcAssert(mediatorInterv > minMediatorInterval, "mediator interval must be larger than min interval.")
 
 	mediatorCandidateCount := uint16(len(genesis.InitialMediatorCandidates))
 	fcAssert(mediatorCandidateCount != 0, "Cannot start a chain with zero mediators.")
