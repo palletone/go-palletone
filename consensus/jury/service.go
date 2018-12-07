@@ -34,18 +34,18 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	//mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
+	md "github.com/palletone/go-palletone/contracts/modules"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	cm "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"reflect"
-	md "github.com/palletone/go-palletone/contracts/modules"
 )
 
 type PeerType int
 
 const (
-	_         PeerType = iota
+	_ PeerType = iota
 	TUnknow
 	TJury
 	TMediator
@@ -165,7 +165,7 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 
 func (p *Processor) RunContractLoop(txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error {
 	//log.Debug("ProcessContractEvent", "enter", addr.String())
-	for _, ctx := range (p.mtx) {
+	for _, ctx := range p.mtx {
 		if false == ctx.valid {
 			continue
 		}
@@ -486,7 +486,7 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes
 		log.Error("ContractTxReqBroadcast", "param is nil")
 		return nil, errors.New("ContractTxReqBroadcast request param is nil")
 	}
-	log.Debug("ContractTxReqBroadcast", fmt.Sprintf("enter, deployId[%v], txid[%s]", deployId, txid))
+	log.Debug("ContractTxReqBroadcast", "enter, deployId", deployId, "txid", txid)
 
 	tx := &modules.Transaction{}
 	if txBytes != nil {
