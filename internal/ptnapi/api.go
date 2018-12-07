@@ -2533,13 +2533,13 @@ func (s *PublicDagAPI) GetTxByHash(ctx context.Context, hashHex string) (string,
 	}
 }
 
-func (s *PublicDagAPI) GetTxSearchEntry(ctx context.Context, hashHex string) (*ptnjson.TxSerachEntryJson, error) {
+func (s *PublicDagAPI) GetTxSearchEntry(ctx context.Context, hashHex string) (string, error) {
 	hash := common.HexToHash(hashHex)
 	item, err := s.b.GetTxSearchEntry(hash)
-	return item, err
-	// info := NewPublicReturnInfo("tx_entry", item)
-	// result_json, _ := json.Marshal(info)
-	// return string(result_json), err
+
+	info := NewPublicReturnInfo("tx_entry", item)
+	result_json, _ := json.Marshal(info)
+	return string(result_json), err
 }
 
 // // GetPoolTxByHash returns the pool transaction for the given hash
