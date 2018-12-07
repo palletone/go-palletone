@@ -71,13 +71,22 @@ type ContractInvokeReq struct {
 
 func (req ContractInvokeReq) do(v contracts.ContractInf) ([]*modules.Message, error) {
 	result := []*modules.Message{}
-	payload, err := v.Invoke(req.chainID, req.deployId, req.txid, req.tx, req.args, req.timeout)
+	payload, err, idag := v.Invoke(req.chainID, req.deployId, req.txid, req.tx, req.args, req.timeout)
 	if err != nil {
 		return nil, err
 	}
 	invokeRw := payload.ToContractInvokePayload()
 	if invokeRw != nil {
 		result = append(result, modules.NewMessage(modules.APP_CONTRACT_INVOKE, invokeRw))
+	}
+	toContractPayments, err := payload.ToContractPayments(idag)
+	if err != nil {
+		return nil, err
+	}
+	if toContractPayments != nil {
+		for _, toContractPayment := range toContractPayments {
+			result = append(result, modules.NewMessage(modules.APP_PAYMENT, toContractPayment))
+		}
 	}
 	cs, err := payload.ToCoinbase()
 	if err != nil {

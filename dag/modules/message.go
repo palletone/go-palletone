@@ -400,6 +400,9 @@ type ContractInvokePayload struct {
 	ReadSet       []ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
 	WriteSet      []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
 	Payload       []byte             `json:"payload"`        // the contract execution result
+	TokenPayOut   []*TokenPayOut     `json:"token_payout"`   //从合约地址付出Token
+	TokenSupply   []*TokenSupply     `json:"token_supply"`   //增发Token请求产生的结果
+	TokenDefine   *TokenDefine       `json:"token_define"`   //定义新Token
 }
 
 //用户钱包发起的合约调用申请
@@ -473,14 +476,21 @@ func NewVotePayload(result []byte, voteType uint8) *VotePayload {
 	}
 }
 
-func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime time.Duration,
-	readset []ContractReadSet, writeset []ContractWriteSet, payload []byte) *ContractInvokePayload {
+//TokenPayOut   []*modules.TokenPayOut     `json:"token_payout"`   //从合约地址付出Token
+//	TokenSupply   []*modules.TokenSupply     `json:"token_supply"`   //增发Token请求产生的结果
+//	TokenDefine   *modules.TokenDefine       `json:"token_define"`   //定义新Token
+func NewContractInvokePayload(contractid []byte, funcName string, args [][]byte, excutiontime time.Duration,
+	readset []ContractReadSet, writeset []ContractWriteSet, payload []byte, tokenPayOut []*TokenPayOut, tokenSupply []*TokenSupply, tokenDefine *TokenDefine) *ContractInvokePayload {
 	return &ContractInvokePayload{
 		ContractId:    contractid,
+		FunctionName:  funcName,
 		Args:          args,
 		ExecutionTime: excutiontime,
 		ReadSet:       readset,
 		WriteSet:      writeset,
 		Payload:       payload,
+		TokenPayOut:   tokenPayOut,
+		TokenSupply:   tokenSupply,
+		TokenDefine:   tokenDefine,
 	}
 }
