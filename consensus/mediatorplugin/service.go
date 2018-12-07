@@ -31,18 +31,20 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 // PalletOne wraps all methods required for producing unit.
 type PalletOne interface {
 	GetKeyStore() *keystore.KeyStore
 	TxPool() txspool.ITxPool
+	SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error)
+
 	ContractProcessor() *jury.Processor
 }
 
@@ -73,6 +75,9 @@ type iDag interface {
 
 	IsPrecedingMediator(add common.Address) bool
 	IsIrreversibleUnit(hash common.Hash) bool
+
+	CreateBaseTransaction(from, to common.Address, daoAmount, daoFee uint64) (*modules.Transaction, error)
+	CurrentFeeSchedule() core.FeeSchedule
 }
 
 type MediatorPlugin struct {

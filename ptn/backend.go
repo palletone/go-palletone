@@ -391,7 +391,7 @@ func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Tran
 	}
 
 	ks := p.GetKeyStore()
-	_, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, inputpoints, []byte{},
+	_, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, inputpoints, nil,
 		ks.GetPublicKey, ks.SignHash, 0)
 	if err != nil {
 		return nil, err
