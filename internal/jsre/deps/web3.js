@@ -5761,7 +5761,7 @@ var methods = function () {
         ccdeploy,
         ccstop,
         decodeTx,
-       // createPayment,
+        // createPayment,
         getUnitTxsInfo,
         getUnitTxsHashHex, 
         getTxByHash, 

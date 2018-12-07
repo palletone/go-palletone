@@ -53,7 +53,7 @@ func (result *ContractInvokeResult) ToContractPayments(dag dag.IDag) ([]*modules
 	payments := []*modules.PaymentPayload{}
 	if result.TokenPayOut != nil && len(result.TokenPayOut) > 0 {
 		for _, payout := range result.TokenPayOut {
-			utxos, err := dag.GetAddr1TokenUtxos(addr.String(), payout.Asset)
+			utxos, err := dag.GetAddr1TokenUtxos(addr, payout.Asset)
 			if err != nil {
 				return nil, err
 			}

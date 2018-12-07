@@ -22,14 +22,15 @@ func TestRwSetTxSimulator_GetTokenBalance(t *testing.T) {
 	mockPtnUtxos := mockPtnUtxos()
 	dag.EXPECT().GetAddrUtxos(gomock.Any()).Return(mockUtxos, nil).AnyTimes()
 	dag.EXPECT().GetAddr1TokenUtxos(gomock.Any(), gomock.Any()).Return(mockPtnUtxos, nil).AnyTimes()
-	balance, err := simulator.GetTokenBalance("PalletOne", "", nil)
+	addr := common.HexToAddress("P18WsGzDNcwhxTyELzDK2vv7S6f3XSWXuTg")
+	balance, err := simulator.GetTokenBalance("PalletOne", addr, nil)
 	assert.Nil(t, err)
 	assert.True(t, len(balance) == 2, "mock has 2 asset,but current is "+strconv.Itoa(len(balance)))
 	for k, v := range balance {
 		t.Logf("Key:{%s},Value:%d", k.String(), v)
 	}
 	ptnAsset := &modules.Asset{AssetId: modules.PTNCOIN}
-	balance1, err := simulator.GetTokenBalance("PalletOne", "", ptnAsset)
+	balance1, err := simulator.GetTokenBalance("PalletOne", addr, ptnAsset)
 	assert.Nil(t, err)
 	assert.True(t, len(balance1) == 1, "for PTN asset, only need return 1 row")
 	assert.Equal(t, balance1[*ptnAsset], uint64(300), "sum PTN must 300")

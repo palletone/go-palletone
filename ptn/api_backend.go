@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"encoding/json"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
@@ -358,7 +359,12 @@ func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
 }
 
 func (b *PtnApiBackend) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
-	return b.ptn.dag.GetAddrOutpoints(addr)
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	return b.ptn.dag.GetAddrOutpoints(address)
 }
 func (b *PtnApiBackend) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error) {
 	address, err := b.ptn.dag.GetAddrByOutPoint(outPoint)
@@ -366,7 +372,12 @@ func (b *PtnApiBackend) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Ad
 }
 
 func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
-	utxos, _ := b.ptn.dag.GetAddrUtxos(addr)
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	utxos, _ := b.ptn.dag.GetAddrUtxos(address)
 	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {
 		ujson := ptnjson.ConvertUtxo2Json(&o, u)

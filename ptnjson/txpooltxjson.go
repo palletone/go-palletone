@@ -24,16 +24,27 @@ type TxPoolTxJson struct {
 }
 
 func ConvertTxPoolTx2Json(tx *modules.TxPoolTransaction, hash common.Hash) *TxPoolTxJson {
-	pay := tx.Tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-	froms := make([]*OutPointJson, 0)
-	for _, out := range tx.From {
-		froms = append(froms, ConvertOutPoint2Json(out))
+	if tx == nil {
+		return nil
 	}
-	payment := ConvertPayment2Json(pay)
+	if tx.Tx == nil {
+		return nil
+	}
+	froms := make([]*OutPointJson, 0)
+	pay := new(modules.PaymentPayload)
+	if len(tx.Tx.TxMessages) > 0 {
+		pay = tx.Tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+
+		for _, out := range tx.From {
+			froms = append(froms, ConvertOutPoint2Json(out))
+		}
+	}
+
+	payJson := ConvertPayment2Json(pay)
 	return &TxPoolTxJson{
 		TxHash:     tx.Tx.Hash().String(),
 		UnitHash:   hash.String(),
-		Payment:    &payment,
+		Payment:    &payJson,
 		TxMessages: ConvertMegs2Json(tx.Tx.TxMessages),
 
 		Froms:        froms,
