@@ -42,9 +42,13 @@ package walletjson
 
 import ()
 
-type TxJson struct {
-	Inputs        []InputJson           `json:"inputs"`
+type PaymentJson struct {
+    Inputs        []InputJson           `json:"inputs"`
 	Outputs       []OutputJson          `json:"outputs"`
+}
+
+type TxJson struct {
+	Payload []PaymentJson  `json:"payload"`
 	InvokeRequest ContractInvokeRequest `json:"invoke_request"`
 }
 type ContractInvokeRequest struct {
@@ -62,7 +66,6 @@ type InputJson struct {
 type OutputJson struct {
 	Amount uint64 `json:"amount"`
 	Asset  string `json:"asset"`
-
 	ToAddress string `json:"to_address"`
 }
 

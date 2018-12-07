@@ -1706,6 +1706,53 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 //	}
 //	return taken_utxo, change
 //}
+func (s *PublicTransactionPoolAPI) WalletCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
+
+	//realNet := &chaincfg.MainNetParams
+	var LockTime int64
+	LockTime = 0
+
+	amounts := map[string]decimal.Decimal{}
+	if to == "" {
+		return "", fmt.Errorf("amounts is empty")
+	}
+
+	amounts[to] = amount
+
+	utxoJsons, err := s.b.GetAddrUtxos(from)
+	if err != nil {
+		return "", err
+	}
+	utxos := core.Utxos{}
+	for _, json := range utxoJsons {
+		//utxos = append(utxos, &json)
+		utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+	}
+	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
+	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
+	if err != nil {
+		return "", fmt.Errorf("Select utxo err")
+	}
+
+	var inputs []ptnjson.TransactionInput
+	var input ptnjson.TransactionInput
+	for _, u := range taken_utxo {
+		utxo := u.(*ptnjson.UtxoJson)
+		input.Txid = utxo.TxHash
+		input.MessageIndex = utxo.MessageIndex
+		input.Vout = utxo.OutIndex
+		inputs = append(inputs, input)
+	}
+
+	if change > 0 {
+		amounts[from] = ptnjson.Dao2Ptn(change)
+	}
+
+	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
+	result, _ := CreateRawTransaction(arg)
+	fmt.Println(result)
+	return result, nil
+}
 
 func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 

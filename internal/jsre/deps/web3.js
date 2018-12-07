@@ -5391,7 +5391,12 @@ var methods = function () {
         inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
         outputFormatter: utils.toDecimal
     });
-
+    var walletCreateTransaction = new Method({
+        name: 'walletCreateTransaction',
+        call: 'ptn_walletCreateTransaction',
+        params: 4,
+        inputFormatter: [null,null,null,null]
+    });
     var cmdCreateTransaction = new Method({
         name: 'cmdCreateTransaction',
         call: 'ptn_cmdCreateTransaction',
@@ -5721,6 +5726,7 @@ var methods = function () {
         getTransactionCount,
         call,
         estimateGas,
+        walletCreateTransaction,
         cmdCreateTransaction,
         createRawTransaction,
         createMediatorVote,
