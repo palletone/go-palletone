@@ -118,7 +118,7 @@ type Backend interface {
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
-	ContractInvoke(tx *modules.Transaction) (rspPayload []byte, err error)
+	ContractInvoke(txBytes []byte) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
 	DecodeTx(hex string) (string, error)
 	EncodeTx(jsonStr string) (string, error)

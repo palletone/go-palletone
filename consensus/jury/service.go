@@ -44,7 +44,7 @@ import (
 type PeerType int
 
 const (
-	_         PeerType = iota
+	_ PeerType = iota
 	TUnknow
 	TJury
 	TMediator
@@ -163,7 +163,7 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 
 func (p *Processor) RunContractLoop(txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error {
 	//log.Debug("ProcessContractEvent", "enter", addr.String())
-	for _, ctx := range (p.mtx) {
+	for _, ctx := range p.mtx {
 		if false == ctx.valid {
 			continue
 		}
@@ -181,7 +181,7 @@ func (p *Processor) RunContractLoop(txpool txspool.ITxPool, addr common.Address,
 		}
 		tx, err := gen.GenContractSigTransctions(addr, ctx.tx, cmsgType, payload, ks)
 		if err != nil {
-			log.Error("RunContractLoop GenContractSigTransctions","error", err.Error())
+			log.Error("RunContractLoop GenContractSigTransctions", "error", err.Error())
 			continue
 		}
 		log.Debug("RunContractLoop", "tx", tx)
@@ -209,7 +209,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction) bool {
 	}
 	_, payload, err := runContractCmd(p.contract, tx)
 	if err != nil {
-		log.Error("CheckContractTxValid runContractCmd","error", err.Error())
+		log.Error("CheckContractTxValid runContractCmd", "error", err.Error())
 		return false
 	}
 
@@ -519,6 +519,37 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes
 	//local
 	//go p.contractExecFeed.Send(ContractExeEvent{modules.NewTransaction([]*modules.Message{msgPay, msgReq})})
 	//go p.ProcessContractEvent(&ContractExeEvent{Tx: tx})
+
+	return tx.TxId[:], nil
+}
+
+func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
+	log.Info("ContractTxBroadcast enter")
+	if txBytes == nil {
+		log.Error("ContractTxBroadcast", "param is nil")
+		return nil, errors.New("transaction request param is nil")
+	}
+
+	tx := &modules.Transaction{}
+	if err := rlp.DecodeBytes(txBytes, tx); err != nil {
+		return nil, err
+	}
+
+	tx.TxHash = common.Hash{}
+	tx.TxHash = tx.Hash()
+
+	tx.TxId = tx.Hash()
+
+	p.locker.Lock()
+	p.mtx[tx.TxId] = &contractTx{
+		tx:    tx,
+		tm:    time.Now(),
+		valid: true,
+	}
+	p.locker.Unlock()
+
+	//broadcast
+	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
 
 	return tx.TxId[:], nil
 }

@@ -841,14 +841,9 @@ func (s *PublicBlockChainAPI) CreateMediatorVote(ctx context.Context, paymentHex
 }
 func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, txhex string) (string, error) {
 	txBytes, _ := hex.DecodeString(txhex)
-	tx := &modules.Transaction{}
-	rlp.DecodeBytes(txBytes, tx)
-
-	rsp, err := s.b.ContractInvoke(tx)
-
-	log.Info("-----ContractInvoke:" + string(rsp))
-
-	return string(rsp), err
+	rsp, err := s.b.ContractInvoke(txBytes)
+	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+	return hex.EncodeToString(rsp), err
 }
 
 func (s *PublicBlockChainAPI) Ccstop(ctx context.Context, deployId string, txid string) error {

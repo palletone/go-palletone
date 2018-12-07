@@ -455,11 +455,8 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 	return depid, err
 }
 
-func (b *PtnApiBackend) ContractInvoke(tx *modules.Transaction) ([]byte, error) {
-
-	//unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, tx, args, timeout)
-	//todo call contract and rebuild tx
-	return nil, nil
+func (b *PtnApiBackend) ContractInvoke(txBytes []byte) ([]byte, error) {
+	return b.ptn.contractPorcessor.ContractTxBroadcast(txBytes)
 }
 
 func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage bool) error {
