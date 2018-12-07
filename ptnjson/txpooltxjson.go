@@ -30,6 +30,11 @@ func ConvertTxPoolTx2Json(tx *modules.TxPoolTransaction, hash common.Hash) *TxPo
 	if tx.Tx == nil {
 		return nil
 	}
+	var hex_hash string
+	if hash != (common.Hash{}) {
+		hex_hash = hash.String()
+	}
+
 	froms := make([]*OutPointJson, 0)
 	pay := new(modules.PaymentPayload)
 	if len(tx.Tx.TxMessages) > 0 {
@@ -43,7 +48,7 @@ func ConvertTxPoolTx2Json(tx *modules.TxPoolTransaction, hash common.Hash) *TxPo
 	payJson := ConvertPayment2Json(pay)
 	return &TxPoolTxJson{
 		TxHash:     tx.Tx.Hash().String(),
-		UnitHash:   hash.String(),
+		UnitHash:   hex_hash,
 		Payment:    &payJson,
 		TxMessages: ConvertMegs2Json(tx.Tx.TxMessages),
 

@@ -655,7 +655,7 @@ func (dagdb *DagDb) GetHeaderFormIndex(number modules.ChainIndex) *modules.Heade
 	return nil
 }
 
-// GetTxLookupEntry
+// GetTxLookupEntry return unit's hash ,number
 func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64) {
 	data, _ := dagdb.db.Get(append(constants.LookupPrefix, []byte(hash.String())...))
 	if len(data) == 0 {
@@ -666,7 +666,6 @@ func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uin
 		return common.Hash{}, 0, 0
 	}
 	return entry.UnitHash, entry.UnitIndex, entry.Index
-
 }
 
 // GetTransaction retrieves a specific transaction from the database , along with its added positional metadata

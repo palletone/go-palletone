@@ -734,6 +734,7 @@ type GetTxIdResult struct {
 	Apptype  string `json:"apptype"`
 	Content  []byte `json:"content"`
 	Coinbase bool   `json:"coinbase"`
+	UnitHash string `json:"unit_hash"`
 }
 
 func NewWIF(privKey *ecdsa.PrivateKey, netid byte, compress bool) (*WIF, error) {

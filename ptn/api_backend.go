@@ -114,9 +114,13 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	if err := hash.SetHexString(txid); err != nil {
 		return nil, err
 	}
-	tx, _, err := b.ptn.dag.GetTransactionByHash(hash)
+	tx, unitHash, err := b.ptn.dag.GetTransactionByHash(hash)
 	if err != nil {
 		return nil, err
+	}
+	var hex_hash string
+	if unitHash != (common.Hash{}) {
+		hex_hash = unitHash.String()
 	}
 	var txresult []byte
 	for _, msgcopy := range tx.TxMessages {
@@ -131,6 +135,7 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 		Apptype:  "APP_TEXT",
 		Content:  txresult,
 		Coinbase: true,
+		UnitHash: hex_hash,
 	}
 	return txOutReply, nil
 }

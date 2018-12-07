@@ -1138,12 +1138,16 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 		return
 	}
 	if tx.Tx.Hash() != hash {
-		delete(pool.all, tx.Tx.Hash())
+		tx.Confirmed = true
+		pool.all[tx.Tx.Hash()] = tx
+		//delete(pool.all, tx.Tx.Hash())
 	}
 	// Remove it from the list of known transactions
-	delete(pool.all, hash)
-	pool.priority_priced.Removed()
+	//delete(pool.all, hash)
 
+	pool.priority_priced.Removed()
+	tx.Confirmed = true
+	pool.all[hash] = tx
 	// Remove the transaction from the pending lists and reset the account nonce
 	for unit_hash, list := range pool.pending {
 		for i, tx := range list {
@@ -1238,7 +1242,9 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 				}
 			}
 		}
-		delete(pool.all, hash)
+		//delete(pool.all, hash)
+		tx.Confirmed = true
+		pool.all[hash] = tx
 		pool.priority_priced.Removed()
 	}
 }
