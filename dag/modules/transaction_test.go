@@ -3,13 +3,12 @@ package modules
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/constants"
 	"strings"
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
-
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 // The values in those tests are from the Transaction Tests
@@ -59,6 +58,7 @@ func TestTransactionEncode(t *testing.T) {
 	//rlp_hash := new(common.Hash)
 	//*rlp_hash = rlp.RlpHash(txmsg3)
 	//rightvrsTx.SetHash(*rlp_hash)
+	// storage test
 
 	tx := new(Transaction)
 	err = rlp.DecodeBytes(txb, tx)
