@@ -93,16 +93,6 @@ type SignatureError struct {
 	Error      error
 }
 
-const (
-	SigHashOld          uint32 = 0x0
-	SigHashAll          uint32 = 0x1
-	SigHashNone         uint32 = 0x2
-	SigHashSingle       uint32 = 0x3
-	SigHashAnyOneCanPay uint32 = 0x80
-	// sigHashMask defines the number of bits of the hash type which is used
-	// to identify which outputs are signed.
-	sigHashMask = 0x1f
-)
 var (
 	// zeroHash is the zero value for a chainhash.Hash and is defined as
 	// a package level variable to avoid the need to create a new instance
