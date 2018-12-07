@@ -122,7 +122,7 @@ func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, a
 	if err != nil {
 		return shim.Success([]byte("GetPayToContractPtnTokens error:"))
 	}
-	fmt.Printf("invokeTokens=%s", invokeTokens)
+	fmt.Printf("invokeTokens=%v", invokeTokens)
 	//获取退保证金数量，将 string 转 uint64
 	//TODO test
 	//ptnAccount, _ := strconv.ParseUint(args[0], 10, 64)
