@@ -572,6 +572,9 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 		if !ok {
 			continue
 		}
+		if payload.IsCoinbase() {
+			continue
+		}
 		//判断是否是保证金合约地址
 		utxo := repository.GetUxto(*payload.Inputs[0])
 		addr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
