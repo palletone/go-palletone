@@ -123,7 +123,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	}
 	// get new asset id
 	asset := modules.NewPTNAsset()
-        err = err
+	err = err
 	//asset := &modules.Asset{
 	//	AssetId: assetId,
 	//}
@@ -192,18 +192,17 @@ func sigData(key *ecdsa.PrivateKey, data interface{}) ([]byte, error) {
 	return sign[0:64], err
 }
 
-func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction, msgType modules.MessageType, payload interface{}, ks *keystore.KeyStore) (*modules.Transaction, error) {
+func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction, msgType modules.MessageType, msgs []*modules.Message, ks *keystore.KeyStore) (*modules.Transaction, error) {
 	if orgTx == nil || len(orgTx.TxMessages) < 2 {
 		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions param is error"))
 	}
-
-	msgPayload := &modules.Message{
-		App:     msgType,
-		Payload: payload,
-	}
 	tx := &modules.Transaction{
-		TxMessages: []*modules.Message{orgTx.TxMessages[0], orgTx.TxMessages[1], msgPayload},
+		TxMessages: []*modules.Message{orgTx.TxMessages[0], orgTx.TxMessages[1]},
 	}
+	for i:= 0;i <len(msgs);i++ {
+		tx.AddMessage(msgs[i])
+	}
+
 	tx.TxId = orgTx.TxId
 	pubkey, err := ks.GetPublicKey(singer)
 	if err != nil {

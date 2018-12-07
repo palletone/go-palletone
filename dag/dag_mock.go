@@ -260,6 +260,19 @@ func (mr *MockIDagMockRecorder) GetUnitTxsHash(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitTxsHash", reflect.TypeOf((*MockIDag)(nil).GetUnitTxsHash), hash)
 }
 
+// GetTxSearchEntry mocks base method
+func (m *MockIDag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
+	ret := m.ctrl.Call(m, "GetTxSearchEntry", hash)
+	ret0, _ := ret[0].(*modules.TxLookupEntry)
+	ret1, _ := ret[2].(error)
+	return ret0, ret1
+}
+
+// GetTxSearchEntry indicates an expected call of GetTxSearchEntry
+func (mr *MockIDagMockRecorder) GetTxSearchEntry(hash interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxSearchEntry", reflect.TypeOf((*MockIDag)(nil).GetTxSearchEntry), hash)
+}
+
 // GetTransactionByHash mocks base method
 func (m *MockIDag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
 	ret := m.ctrl.Call(m, "GetTransactionByHash", hash)
@@ -580,7 +593,7 @@ func (mr *MockIDagMockRecorder) GetAddrOutput(addr interface{}) *gomock.Call {
 }
 
 // GetAddrOutpoints mocks base method
-func (m *MockIDag) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
+func (m *MockIDag) GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error) {
 	ret := m.ctrl.Call(m, "GetAddrOutpoints", addr)
 	ret0, _ := ret[0].([]modules.OutPoint)
 	ret1, _ := ret[1].(error)
@@ -593,7 +606,7 @@ func (mr *MockIDagMockRecorder) GetAddrOutpoints(addr interface{}) *gomock.Call 
 }
 
 // GetAddrUtxos mocks base method
-func (m *MockIDag) GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
+func (m *MockIDag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
 	ret := m.ctrl.Call(m, "GetAddrUtxos", addr)
 	ret0, _ := ret[0].(map[modules.OutPoint]*modules.Utxo)
 	ret1, _ := ret[1].(error)
@@ -606,7 +619,7 @@ func (mr *MockIDagMockRecorder) GetAddrUtxos(addr interface{}) *gomock.Call {
 }
 
 // GetAddr1TokenUtxos mocks base method
-func (m *MockIDag) GetAddr1TokenUtxos(addr string, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
+func (m *MockIDag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
 	ret := m.ctrl.Call(m, "GetAddr1TokenUtxos", addr, asset)
 	ret0, _ := ret[0].(map[modules.OutPoint]*modules.Utxo)
 	ret1, _ := ret[1].(error)

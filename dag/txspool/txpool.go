@@ -860,7 +860,7 @@ func (mp *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, 
 	// Potentially accept the transaction to the memory pool.
 	missingParents, txD, err := mp.maybeAcceptTransaction(tx, true, rateLimit, false)
 	if err != nil {
-		log.Info("txpool","accept transaction err:",err)
+		log.Info("txpool", "accept transaction err:", err)
 		return nil, err
 	}
 	missingParents = missingParents
@@ -934,7 +934,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 	if mp.isTransactionInPool(&txHash) {
 		str := fmt.Sprintf("already have transaction %v", txHash)
 		//str = str
-		log.Info("txpool","",str)
+		log.Info("txpool", "", str)
 		return nil, nil, nil //txRuleError(RejectDuplicate, str)
 	}
 
@@ -943,7 +943,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 	// transactions are allowed into blocks.
 	err := CheckTransactionSanity(tx)
 	if err != nil {
-		log.Info("txpool","Check Transaction Sanity err:",err)
+		log.Info("txpool", "Check Transaction Sanity err:", err)
 		return nil, nil, err
 	}
 
@@ -952,7 +952,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 		str := fmt.Sprintf("transaction %v is an individual coinbase",
 			txHash)
 		//str = str
-		log.Info("txpool","",str)
+		log.Info("txpool", "", str)
 		return nil, nil, nil //txRuleError(RejectInvalid, str)
 	}
 
@@ -967,7 +967,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLim
 	txpooltx := TxtoTxpoolTx(mp, tx)
 	err = mp.checkPoolDoubleSpend(txpooltx)
 	if err != nil {
-		log.Info("txpool","check PoolD oubleSpend err:",err)
+		log.Info("txpool", "check PoolD oubleSpend err:", err)
 		return nil, nil, err
 	}
 
@@ -1110,8 +1110,8 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 // Get returns a transaction if it is contained in the pool
 // and nil otherwise.
 func (pool *TxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash) {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	// pool.mu.RLock()
+	// defer pool.mu.RUnlock()
 
 	tx := pool.all[hash]
 	var u_hash common.Hash
@@ -1138,12 +1138,16 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 		return
 	}
 	if tx.Tx.Hash() != hash {
-		delete(pool.all, tx.Tx.Hash())
+		tx.Confirmed = true
+		pool.all[tx.Tx.Hash()] = tx
+		//delete(pool.all, tx.Tx.Hash())
 	}
 	// Remove it from the list of known transactions
-	delete(pool.all, hash)
-	pool.priority_priced.Removed()
+	//delete(pool.all, hash)
 
+	pool.priority_priced.Removed()
+	tx.Confirmed = true
+	pool.all[hash] = tx
 	// Remove the transaction from the pending lists and reset the account nonce
 	for unit_hash, list := range pool.pending {
 		for i, tx := range list {
@@ -1238,7 +1242,9 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 				}
 			}
 		}
-		delete(pool.all, hash)
+		//delete(pool.all, hash)
+		tx.Confirmed = true
+		pool.all[hash] = tx
 		pool.priority_priced.Removed()
 	}
 }

@@ -32,7 +32,7 @@ type ContractResp struct {
 }
 
 type ContractReqInf interface {
-	do(v contracts.ContractInf) ([]*modules.Message, error)
+	do(v contracts.ContractInf) (interface{}, error)
 }
 
 //////
@@ -69,26 +69,12 @@ type ContractInvokeReq struct {
 	timeout  time.Duration
 }
 
-func (req ContractInvokeReq) do(v contracts.ContractInf) ([]*modules.Message, error) {
-	result := []*modules.Message{}
+func (req ContractInvokeReq) do(v contracts.ContractInf) (interface{}, error) {
 	payload, err := v.Invoke(req.chainID, req.deployId, req.txid, req.tx, req.args, req.timeout)
 	if err != nil {
 		return nil, err
 	}
-	invokeRw := payload.ToContractInvokePayload()
-	if invokeRw != nil {
-		result = append(result, modules.NewMessage(modules.APP_CONTRACT_INVOKE, invokeRw))
-	}
-	cs, err := payload.ToCoinbase()
-	if err != nil {
-		return nil, err
-	}
-	if cs != nil && len(cs) > 0 {
-		for _, coinbase := range cs {
-			result = append(result, modules.NewMessage(modules.APP_PAYMENT, coinbase))
-		}
-	}
-	return result, nil
+	return payload, nil
 }
 
 type ContractStopReq struct {
@@ -102,7 +88,7 @@ func (req ContractStopReq) do(v contracts.ContractInf) (interface{}, error) {
 	return nil, v.Stop(req.chainID, req.deployId, req.txid, req.deleteImage)
 }
 
-func ContractProcess(contract *contracts.Contract, req ContractReqInf) ([]*modules.Message, error) {
+func ContractProcess(contract *contracts.Contract, req ContractReqInf) (interface{}, error) {
 	if contract == nil || req == nil {
 		log.Error("ContractProcess", "param is nil,", "err")
 		return nil, errors.New("ContractProcess param is nil")

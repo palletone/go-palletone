@@ -36,7 +36,7 @@ import (
 )
 
 var (
-	TXFEE      = big.NewInt(5000000) // transaction fee =5ptn
+	TXFEE      = big.NewInt(100000000) // transaction fee =1ptn
 	TX_MAXSIZE = uint32(256 * 1024)
 )
 
@@ -205,6 +205,9 @@ func (tx *Transaction) CreateDate() string {
 }
 
 func (tx *Transaction) Fee() *big.Int {
+	// TODO 计算该交易的手续费
+	// TXFEE += inputs - outputs
+
 	return TXFEE
 }
 
@@ -328,7 +331,7 @@ type TxLookupEntry struct {
 type Transactions []*Transaction
 type Transaction struct {
 	TxHash     common.Hash `json:"txhash"`
-	TxId       common.Hash `json:"txid"`
+	TxId       common.Hash `json:"txid"` //contract request id
 	TxMessages []*Message  `json:"messages"`
 }
 

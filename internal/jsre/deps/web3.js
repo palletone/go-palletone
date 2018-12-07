@@ -5391,7 +5391,12 @@ var methods = function () {
         inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
         outputFormatter: utils.toDecimal
     });
-
+    var walletCreateTransaction = new Method({
+        name: 'walletCreateTransaction',
+        call: 'ptn_walletCreateTransaction',
+        params: 4,
+        inputFormatter: [null,null,null,null]
+    });
     var cmdCreateTransaction = new Method({
         name: 'cmdCreateTransaction',
         call: 'ptn_cmdCreateTransaction',
@@ -5655,6 +5660,12 @@ var methods = function () {
         params: 1,  
         // inputFormatter: [null]
     });    
+    var getTxSearchEntry = new Method({     
+        name: 'getTxSearchEntry',  
+        call: 'dag_getTxSearchEntry',   
+        params: 1,  
+        // inputFormatter: [null]
+    }); 
     var getTxPoolTxByHash = new Method({  
         name: 'getTxPoolTxByHash',
         call: 'ptn_getTxPoolTxByHash',  
@@ -5721,6 +5732,7 @@ var methods = function () {
         getTransactionCount,
         call,
         estimateGas,
+        walletCreateTransaction,
         cmdCreateTransaction,
         createRawTransaction,
         createMediatorVote,
@@ -5761,10 +5773,11 @@ var methods = function () {
         ccdeploy,
         ccstop,
         decodeTx,
-       // createPayment,
+        // createPayment,
         getUnitTxsInfo,
         getUnitTxsHashHex, 
         getTxByHash, 
+        getTxSearchEntry,
         ccinvoketx,
         creatCcTransaction,
     ];

@@ -841,14 +841,9 @@ func (s *PublicBlockChainAPI) CreateMediatorVote(ctx context.Context, paymentHex
 }
 func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, txhex string) (string, error) {
 	txBytes, _ := hex.DecodeString(txhex)
-	tx := &modules.Transaction{}
-	rlp.DecodeBytes(txBytes, tx)
-
-	rsp, err := s.b.ContractInvoke(tx)
-
-	log.Info("-----ContractInvoke:" + string(rsp))
-
-	return string(rsp), err
+	rsp, err := s.b.ContractInvoke(txBytes)
+	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+	return hex.EncodeToString(rsp), err
 }
 
 func (s *PublicBlockChainAPI) Ccstop(ctx context.Context, deployId string, txid string) error {
@@ -1216,11 +1211,20 @@ func (s *PublicTransactionPoolAPI) GetTransactionsByTxid(ctx context.Context, tx
 	return tx, nil
 }
 
-// // GetPoolTxByHash returns the pool transaction for the given hash
-// func (s *PublicTransactionPoolAPI) GetPoolTxByHash(ctx context.Context, hex string) (*ptnjson.TxPoolTxJson, error) {
-// 	hash := common.HexToHash(hex)
-// 	return s.b.GetPoolTxByHash(hash), nil
-// }
+// GetTxPoolTxByHash returns the pool transaction for the given hash
+func (s *PublicTransactionPoolAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (string, error) {
+	log.Debug("this is hash tx's hash hex to find tx.", "hex", hex)
+	hash := common.HexToHash(hex)
+	log.Debug("this is hash tx's hash  to find tx.", "hash", hash.String())
+	item, err := s.b.GetTxPoolTxByHash(hash)
+	if err != nil {
+		return "pool_tx:null", err
+	} else {
+		info := NewPublicReturnInfo("txpool_tx", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
 
 /* old version
 // GetRawTransactionByHash returns the bytes of the transaction for the given hash.
@@ -1702,6 +1706,53 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 //	}
 //	return taken_utxo, change
 //}
+func (s *PublicTransactionPoolAPI) WalletCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
+
+	//realNet := &chaincfg.MainNetParams
+	var LockTime int64
+	LockTime = 0
+
+	amounts := map[string]decimal.Decimal{}
+	if to == "" {
+		return "", fmt.Errorf("amounts is empty")
+	}
+
+	amounts[to] = amount
+
+	utxoJsons, err := s.b.GetAddrUtxos(from)
+	if err != nil {
+		return "", err
+	}
+	utxos := core.Utxos{}
+	for _, json := range utxoJsons {
+		//utxos = append(utxos, &json)
+		utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+	}
+	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
+	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
+	if err != nil {
+		return "", fmt.Errorf("Select utxo err")
+	}
+
+	var inputs []ptnjson.TransactionInput
+	var input ptnjson.TransactionInput
+	for _, u := range taken_utxo {
+		utxo := u.(*ptnjson.UtxoJson)
+		input.Txid = utxo.TxHash
+		input.MessageIndex = utxo.MessageIndex
+		input.Vout = utxo.OutIndex
+		inputs = append(inputs, input)
+	}
+
+	if change > 0 {
+		amounts[from] = ptnjson.Dao2Ptn(change)
+	}
+
+	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
+	result, _ := CreateRawTransaction(arg)
+	fmt.Println(result)
+	return result, nil
+}
 
 func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 
@@ -2482,15 +2533,24 @@ func (s *PublicDagAPI) GetTxByHash(ctx context.Context, hashHex string) (string,
 	}
 }
 
-// GetPoolTxByHash returns the pool transaction for the given hash
-func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (string, error) {
-	hash := common.HexToHash(hex)
-	item, err := s.b.GetTxPoolTxByHash(hash)
-	if err != nil {
-		return "pool_tx:null", err
-	} else {
-		info := NewPublicReturnInfo("txpool_tx", item)
-		result_json, _ := json.Marshal(info)
-		return string(result_json), nil
-	}
+func (s *PublicDagAPI) GetTxSearchEntry(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+	item, err := s.b.GetTxSearchEntry(hash)
+
+	info := NewPublicReturnInfo("tx_entry", item)
+	result_json, _ := json.Marshal(info)
+	return string(result_json), err
 }
+
+// // GetPoolTxByHash returns the pool transaction for the given hash
+// func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (string, error) {
+// 	hash := common.HexToHash(hex)
+// 	item, err := s.b.GetTxPoolTxByHash(hash)
+// 	if err != nil {
+// 		return "pool_tx:null", err
+// 	} else {
+// 		info := NewPublicReturnInfo("txpool_tx", item)
+// 		result_json, _ := json.Marshal(info)
+// 		return string(result_json), nil
+// 	}
+// }

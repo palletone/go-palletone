@@ -172,8 +172,8 @@ func (p *testTxPool) Content() (map[common.Hash]*modules.Transaction, map[common
 	return nil, nil
 }
 
-func (p *testTxPool) Get(hash common.Hash) *modules.TxPoolTransaction {
-	return nil
+func (p *testTxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash) {
+	return nil, (common.Hash{})
 }
 
 func (p *testTxPool) GetNonce(hash common.Hash) uint64 {
@@ -193,11 +193,11 @@ func (p *testTxPool) Stats() (int, int) {
 func (p *testTxPool) Stop() {}
 
 // Pending returns all the transactions known to the pool
-func (p *testTxPool) Pending() (map[common.Hash]*modules.TxPoolTransaction, error) {
+func (p *testTxPool) Pending() (map[common.Hash][]*modules.TxPoolTransaction, error) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	batches := make(map[common.Hash]*modules.TxPoolTransaction)
+	batches := make(map[common.Hash][]*modules.TxPoolTransaction)
 	//for _, tx := range p.pool {
 	// from, _ := types.Sender(types.HomesteadSigner{}, tx)
 	// batches[from] = append(batches[from], tx)
@@ -214,6 +214,9 @@ func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Sub
 
 func (p *testTxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error) {
 	return []*txspool.TxDesc{}, nil
+}
+func (p *testTxPool) AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction {
+	return nil
 }
 
 // newTestTransaction create a new dummy transaction.

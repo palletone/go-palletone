@@ -22,18 +22,40 @@ type TxPoolTxJson struct {
 	Index        int             `json:"index"` // index 是该tx在优先级堆中的位置
 	Extra        []byte          `json:"extra"`
 }
+type TxSerachEntryJson struct {
+	UnitHash  string `json:"unit_hash"`
+	AssetId   string `json:"asset_id"`
+	UnitIndex uint64 `json:"unit_index"`
+	TxIndex   uint64 `json:"tx_index"`
+}
 
 func ConvertTxPoolTx2Json(tx *modules.TxPoolTransaction, hash common.Hash) *TxPoolTxJson {
-	pay := tx.Tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-	froms := make([]*OutPointJson, 0)
-	for _, out := range tx.From {
-		froms = append(froms, ConvertOutPoint2Json(out))
+	if tx == nil {
+		return nil
 	}
-	payment := ConvertPayment2Json(pay)
+	if tx.Tx == nil {
+		return nil
+	}
+	var hex_hash string
+	if hash != (common.Hash{}) {
+		hex_hash = hash.String()
+	}
+
+	froms := make([]*OutPointJson, 0)
+	pay := new(modules.PaymentPayload)
+	if len(tx.Tx.TxMessages) > 0 {
+		pay = tx.Tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+
+		for _, out := range tx.From {
+			froms = append(froms, ConvertOutPoint2Json(out))
+		}
+	}
+
+	payJson := ConvertPayment2Json(pay)
 	return &TxPoolTxJson{
 		TxHash:     tx.Tx.Hash().String(),
-		UnitHash:   hash.String(),
-		Payment:    &payment,
+		UnitHash:   hex_hash,
+		Payment:    &payJson,
 		TxMessages: ConvertMegs2Json(tx.Tx.TxMessages),
 
 		Froms:        froms,
@@ -43,5 +65,13 @@ func ConvertTxPoolTx2Json(tx *modules.TxPoolTransaction, hash common.Hash) *TxPo
 		Pending:      tx.Pending,
 		Confirmed:    tx.Confirmed,
 		Extra:        tx.Extra[:],
+	}
+}
+
+func ConvertTxEntry2Json(entry *modules.TxLookupEntry) *TxSerachEntryJson {
+	return &TxSerachEntryJson{
+		UnitHash:  entry.UnitHash.String(),
+		UnitIndex: entry.UnitIndex,
+		TxIndex:   entry.Index,
 	}
 }

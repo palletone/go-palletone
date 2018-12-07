@@ -95,6 +95,7 @@ type Backend interface {
 	GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TransactionJson, error)
 	GetUnitTxsHashHex(hash common.Hash) ([]string, error)
 	GetTxByHash(hash common.Hash) (*ptnjson.TransactionJson, error)
+	GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error)
 
 	//TODO wangjiyou
 	GetPrefix(prefix string) map[string][]byte //getprefix
@@ -118,7 +119,7 @@ type Backend interface {
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
-	ContractInvoke(tx *modules.Transaction) (rspPayload []byte, err error)
+	ContractInvoke(txBytes []byte) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
 	DecodeTx(hex string) (string, error)
 	EncodeTx(jsonStr string) (string, error)

@@ -114,9 +114,13 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	if err := hash.SetHexString(txid); err != nil {
 		return nil, err
 	}
-	tx, _, err := b.ptn.dag.GetTransactionByHash(hash)
+	tx, unitHash, err := b.ptn.dag.GetTransactionByHash(hash)
 	if err != nil {
 		return nil, err
+	}
+	var hex_hash string
+	if unitHash != (common.Hash{}) {
+		hex_hash = unitHash.String()
 	}
 	var txresult []byte
 	for _, msgcopy := range tx.TxMessages {
@@ -131,6 +135,7 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 		Apptype:  "APP_TEXT",
 		Content:  txresult,
 		Coinbase: true,
+		UnitHash: hex_hash,
 	}
 	return txOutReply, nil
 }
@@ -321,6 +326,11 @@ func (b *PtnApiBackend) GetTxByHash(hash common.Hash) (*ptnjson.TransactionJson,
 	return ptnjson.ConvertTx02Json(tx, hash), nil
 }
 
+func (b *PtnApiBackend) GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error) {
+	entry, err := b.ptn.dag.GetTxSearchEntry(hash)
+	return ptnjson.ConvertTxEntry2Json(entry), err
+}
+
 // GetPoolTxByHash return a json of the tx in pool.
 func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
 	tx, unit_hash := b.ptn.txPool.Get(hash)
@@ -450,11 +460,8 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 	return depid, err
 }
 
-func (b *PtnApiBackend) ContractInvoke(tx *modules.Transaction) ([]byte, error) {
-
-	//unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, tx, args, timeout)
-	//todo call contract and rebuild tx
-	return nil, nil
+func (b *PtnApiBackend) ContractInvoke(txBytes []byte) ([]byte, error) {
+	return b.ptn.contractPorcessor.ContractTxBroadcast(txBytes)
 }
 
 func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage bool) error {

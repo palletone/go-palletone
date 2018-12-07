@@ -418,6 +418,11 @@ func (ec *Client) CmdCreateTransaction(ctx context.Context, from string, to stri
 	err := ec.c.CallContext(ctx, &result, "ptn_cmdCreateTransaction", from, to, amount)
 	return result, err
 }
+func (ec *Client) walletCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
+	var result string
+	err := ec.c.CallContext(ctx, &result, "ptn_walletCreateTransaction", from, to, amount)
+	return result, err
+}
 func (ec *Client) CreateRawTransaction(ctx context.Context, params string) (string, error) {
 	var result string
 	err := ec.c.CallContext(ctx, &result, "ptn_createRawTransaction", params)
@@ -696,8 +701,15 @@ func (ec *Client) GetTransactionByHash(ctx context.Context, hashHex string) (*pt
 	return result, err
 }
 
+// GetTxSearchEntry.
+func (ec *Client) GetTxSearchEntry(ctx context.Context, hashHex string) (*ptnjson.TxSerachEntryJson, error) {
+	result := new(ptnjson.TxSerachEntryJson)
+	err := ec.c.CallContext(ctx, &result, "dag_getTxSearchEntry", hashHex)
+	return result, err
+}
+
 // GetPoolTxByHash
-func (ec *Client) GetPoolTxByHash(ctx context.Context, hex string) (*ptnjson.TxPoolTxJson, error) {
+func (ec *Client) GetTxPoolTxByHash(ctx context.Context, hex string) (*ptnjson.TxPoolTxJson, error) {
 	result := new(ptnjson.TxPoolTxJson)
 	err := ec.c.CallContext(ctx, &result, "ptn_getTxPoolTxByHash", hex)
 	return result, err

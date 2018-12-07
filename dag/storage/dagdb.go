@@ -81,6 +81,7 @@ type IDagDb interface {
 	GetUnit(hash common.Hash) (*modules.Unit, error)
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64)
+	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
 	GetPrefix(prefix []byte) map[string][]byte
 	GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error)
 	GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error)
@@ -320,16 +321,13 @@ func (dagdb *DagDb) updateAddrTransactions(addr string, hash common.Hash) error 
 
 func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 	for i, tx := range unit.Transactions() {
-		in := modules.TxLookupEntry{
+		in := &modules.TxLookupEntry{
 			UnitHash:  unit.Hash(),
 			UnitIndex: unit.NumberU64(),
 			Index:     uint64(i),
 		}
-		data, err := rlp.EncodeToBytes(in)
-		if err != nil {
-			return err
-		}
-		if err := StoreBytes(dagdb.db, append(constants.LookupPrefix, []byte(tx.TxHash.String())...), data); err != nil {
+
+		if err := StoreBytes(dagdb.db, append(constants.LookupPrefix, []byte(tx.Hash().String())...), in); err != nil {
 			return err
 		}
 	}
@@ -655,24 +653,24 @@ func (dagdb *DagDb) GetHeaderFormIndex(number modules.ChainIndex) *modules.Heade
 	return nil
 }
 
-// GetTxLookupEntry
-func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64) {
-	data, _ := dagdb.db.Get(append(constants.LookupPrefix, []byte(hash.String())...))
+// GetTxLookupEntry return unit's hash ,number
+func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
+	data, err0 := dagdb.db.Get(append(constants.LookupPrefix, []byte(hash.String())...))
 	if len(data) == 0 {
-		return common.Hash{}, 0, 0
+		return common.Hash{}, 0, 0, errors.New("not found legal data.")
 	}
-	var entry modules.TxLookupEntry
+	var entry *modules.TxLookupEntry
 	if err := rlp.DecodeBytes(data, &entry); err != nil {
-		return common.Hash{}, 0, 0
+		log.Info("get entry structure failed ===================", "error", err, "data", data)
 	}
-	return entry.UnitHash, entry.UnitIndex, entry.Index
 
+	return entry.UnitHash, entry.UnitIndex, entry.Index, err0
 }
 
 // GetTransaction retrieves a specific transaction from the database , along with its added positional metadata
 // p2p 同步区块 分为同步header 和body。 GetBody可以省掉节点包装交易块的过程。
 func (dagdb *DagDb) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
-	unitHash, unitNumber, txIndex := dagdb.GetTxLookupEntry(hash)
+	unitHash, unitNumber, txIndex, _ := dagdb.GetTxLookupEntry(hash)
 	// if unitHash != (common.Hash{}) {
 	// 	body, _ := dagdb.GetBody(unitHash)
 	// 	if body == nil || len(body) <= int(txIndex) {

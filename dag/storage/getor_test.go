@@ -70,7 +70,7 @@ func TestGetBody(t *testing.T) {
 		return
 	}
 	//key := append(constants.BODY_PREFIX, []byte("0x413a2fbc2c21258a9f813c53e81ecf02defeaa2b71a6a038cecd554e48ba0dc7")...)
-	key := "ub0x413a2fbc2c21258a9f813c53e81ecf02defeaa2b71a6a038cecd554e48ba0dc7"
+	key := "ub0x6fc88cbedc9c99d238c10374274443d4460de9162795faf8a3442abe33db72fa"
 	data, err := dbconn.Get([]byte(key))
 	if err != nil {
 		fmt.Println("get body hashs error:", err, string(key))
@@ -78,8 +78,9 @@ func TestGetBody(t *testing.T) {
 	}
 	var txhashs []common.Hash
 	if err := rlp.DecodeBytes(data, &txhashs); err != nil {
-		fmt.Println("decode error:", err)
+		fmt.Println("decode hashs error:", err)
 	}
+
 	for in, hash := range txhashs {
 		fmt.Println("index:", in, "hash:", hash.String())
 		key1 := append(constants.TRANSACTION_PREFIX, []byte(hash.String())...)
@@ -89,8 +90,9 @@ func TestGetBody(t *testing.T) {
 			return
 		}
 		tx := new(modules.Transaction)
+
 		if err := rlp.DecodeBytes(data1, &tx); err != nil {
-			fmt.Println("decode error:", err)
+			fmt.Println("decode tx error:", string(key1), err)
 		}
 		for _, msg := range tx.TxMessages {
 			fmt.Println("tx msg info ", msg)
@@ -98,5 +100,58 @@ func TestGetBody(t *testing.T) {
 			fmt.Println("payment info ", ok, payment)
 		}
 	}
+}
 
+func TestRLPTxDecode(t *testing.T) {
+	pay1s := &modules.PaymentPayload{
+		LockTime: 12345,
+	}
+	output := modules.NewTxOut(1, []byte{0xee, 0xbb}, modules.NewPTNAsset())
+	pay1s.AddTxOut(output)
+	hash := common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87")
+	input := modules.NewTxIn(modules.NewOutPoint(&hash, 0, 1), []byte{})
+	pay1s.AddTxIn(input)
+	msg := &modules.Message{
+		App:     modules.APP_PAYMENT,
+		Payload: pay1s,
+	}
+	msg2 := &modules.Message{
+		App:     modules.APP_TEXT,
+		Payload: &modules.TextPayload{Text: []byte("Hello PalletOne")},
+	}
+
+	req := &modules.ContractInvokeRequestPayload{ContractId: []byte{0xcc}, FunctionName: "TestFun", Args: [][]byte{[]byte{0x11}, {0x22}}}
+	msg3 := &modules.Message{App: modules.APP_CONTRACT_INVOKE_REQUEST, Payload: req}
+	txmsg3 := modules.NewTransaction(
+		[]*modules.Message{msg, msg2, msg3},
+	)
+	// dbconn := ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/palletone/gptn/leveldb/")
+	dbconn, _ := ptndb.NewMemDatabase()
+	tx_bytes, _ := rlp.EncodeToBytes(txmsg3)
+	key := []byte("this_is_testing_tx_encode_decode")
+	dbconn.Put(key, tx_bytes)
+
+	val, _ := dbconn.Get(key)
+	tx := new(modules.Transaction)
+	rlp.DecodeBytes(val, &tx)
+	for _, msg := range tx.Messages() {
+		if msg.App == modules.APP_PAYMENT {
+			pay, ok := msg.Payload.(*modules.PaymentPayload)
+			fmt.Println("断言结果：", ok)
+			for _, out := range pay.Outputs {
+				fmt.Println("output:= ", out)
+			}
+			for _, in := range pay.Inputs {
+				fmt.Println("input:= ", in)
+			}
+
+		} else if msg.App == modules.APP_TEXT {
+			text := msg.Payload.(*modules.TextPayload)
+			fmt.Println("msg_app", msg.App, "text", string(text.Text))
+		} else {
+			req := msg.Payload.(*modules.ContractInvokeRequestPayload)
+			fmt.Println("msg_app", msg.App, "req", req)
+		}
+
+	}
 }

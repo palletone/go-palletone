@@ -21,6 +21,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
 	unit "github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/pkg/errors"
 )
 
@@ -346,20 +347,38 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 	invokeInfo := unit.InvokeInfo{}
 	if len(tx.TxMessages) > 0 {
 		msg0 := tx.TxMessages[0].Payload.(*unit.PaymentPayload)
-		invokeAddr, _ := idag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
-		invokeTokens := &unit.InvokeTokens{}
-		outputs := msg0.Outputs
-		invokeTokens.Asset = outputs[0].Asset
-		for _, output := range outputs {
-			invokeTokens.Amount += output.Value
+		invokeAddr, err := idag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
+		if err != nil {
+			return nil, err
+		}
+		//如果是交付保证金
+		if string(args[0]) == "DepositWitnessPay" {
+			invokeTokens := &unit.InvokeTokens{}
+			outputs := msg0.Outputs
+			invokeTokens.Asset = outputs[0].Asset
+			for _, output := range outputs {
+				addr, err := tokenengine.GetAddressFromScript(output.PkScript)
+				if err != nil {
+					return nil, err
+				}
+				contractAddr, err := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+				if err != nil {
+					return nil, err
+				}
+				if addr.Equal(contractAddr) {
+					invokeTokens.Amount += output.Value
+				}
+			}
+			invokeInfo.InvokeTokens = invokeTokens
 		}
 		invokeFees, _ := idag.GetTxFee(tx)
 
-		invokeInfo = unit.InvokeInfo{
-			InvokeAddress: invokeAddr,
-			InvokeTokens:  invokeTokens,
-			InvokeFees:    invokeFees,
-		}
+		//invokeInfo = unit.InvokeInfo{
+		//	InvokeAddress: invokeAddr,
+		//	InvokeFees:    invokeFees,
+		//}
+		invokeInfo.InvokeAddress = invokeAddr
+		invokeInfo.InvokeFees = invokeFees
 
 		invokeInfoBytes, _ := json.Marshal(invokeInfo)
 		fullArgs = append(fullArgs, invokeInfoBytes)

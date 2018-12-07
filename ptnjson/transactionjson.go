@@ -38,16 +38,20 @@ type MessageJson struct {
 }
 
 func ConvertTx02Json(tx *modules.Transaction, hash common.Hash) *TransactionJson {
+	var hexHash string
 	pay := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-
+	if hash != (common.Hash{}) {
+		hexHash = hash.String()
+	}
 	payment := ConvertPayment2Json(pay)
 	return &TransactionJson{
 		TxHash:     tx.TxHash.String(),
-		UnitHash:   hash.String(),
+		UnitHash:   hexHash,
 		Payment:    &payment,
 		TxMessages: ConvertMegs2Json(tx.TxMessages),
 	}
 }
+
 func ConvertMegs2Json(msgs []*modules.Message) string {
 	data, err := json.Marshal(msgs)
 	if err != nil {
