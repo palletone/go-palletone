@@ -42,35 +42,35 @@ type TokenSupply struct {
 
 //同质化通证，比如ERC20
 type FungibleToken struct {
-	Name     string
-	Symbol   string
-	Decimals byte
+	Name     string `json:"name"`
+	Symbol   string `json:"symbol"`
+	Decimals byte   `json:"decimals"`
 	//总发行量
-	TotalSupply uint64
+	TotalSupply uint64 `json:"total_supply"`
 	//如果允许增发，那么允许哪个地址进行增发，如果为空则不允许增发
-	SupplyAddress string
+	SupplyAddress string `json:"supply_address"`
 }
 
 //非同质化通证，比如ERC721
 type NonFungibleToken struct {
-	Name   string
-	Symbol string
+	Name   string `json:"name"`
+	Symbol string `json:"symbol"`
 	//总发行量
-	TotalSupply   uint64
-	SupplyAddress string
+	TotalSupply   uint64 `json:"total_supply"`
+	SupplyAddress string `json:"supply_address"`
 }
 
 //为投票而创建的Token
 type VoteToken struct {
-	Name   string
-	Symbol string
+	Name   string `json:"name"`
+	Symbol string `json:"symbol"`
 	//该投票是否允许改投
-	VoteType byte
+	VoteType byte `json:"vote_type"`
 	//投票结束时间
-	VoteEndTime time.Time
+	VoteEndTime time.Time `json:"vote_end_time"`
 	//投票内容，JSON格式的表单
-	VoteContent []byte
+	VoteContent []byte `json:"vote_content"`
 	//总发行量
-	TotalSupply   uint64
-	SupplyAddress string
+	TotalSupply   uint64 `json:"total_supply"`
+	SupplyAddress string `json:"supply_address"`
 }
