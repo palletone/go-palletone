@@ -130,28 +130,8 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Failed to generate token Json\"}"
 		return shim.Error(jsonResp)
 	}
-	//==== init tokendefine
-	var tokenDefine dm.TokenDefine
-	tokenDefine.TokenDefineJson = createJson
-	copy(tokenDefine.TokenDefineJson, createJson)
-	tokenDefine.TokenType = 0
-	//get invoke address
-	createaddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
-		return shim.Error(jsonResp)
-	}
-	tokenDefine.Creator = createaddr
-
-	//return result
-	result, err := json.Marshal(tokenDefine)
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to Marshal result\"}"
-		return shim.Error(jsonResp)
-	}
-
 	//set token define
-	err = stub.DefineToken(byte(0), result)
+	err = stub.DefineToken(byte(0), createJson)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.DefineToken\"}"
 		return shim.Error(jsonResp)
@@ -164,7 +144,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
 		return shim.Error(jsonResp)
 	}
-	return shim.Success(result) //test
+	return shim.Success(createJson) //test
 }
 
 func putval(args []string, stub shim.ChaincodeStubInterface) pb.Response {
