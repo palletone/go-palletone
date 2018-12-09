@@ -326,6 +326,11 @@ func (b *PtnApiBackend) GetTxByHash(hash common.Hash) (*ptnjson.TransactionJson,
 	return ptnjson.ConvertTx02Json(tx, hash), nil
 }
 
+func (b *PtnApiBackend) GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error) {
+	entry, err := b.ptn.dag.GetTxSearchEntry(hash)
+	return ptnjson.ConvertTxEntry2Json(entry), err
+}
+
 // GetPoolTxByHash return a json of the tx in pool.
 func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
 	tx, unit_hash := b.ptn.txPool.Get(hash)

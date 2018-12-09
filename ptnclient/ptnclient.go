@@ -701,6 +701,13 @@ func (ec *Client) GetTransactionByHash(ctx context.Context, hashHex string) (*pt
 	return result, err
 }
 
+// GetTxSearchEntry.
+func (ec *Client) GetTxSearchEntry(ctx context.Context, hashHex string) (*ptnjson.TxSerachEntryJson, error) {
+	result := new(ptnjson.TxSerachEntryJson)
+	err := ec.c.CallContext(ctx, &result, "dag_getTxSearchEntry", hashHex)
+	return result, err
+}
+
 // GetPoolTxByHash
 func (ec *Client) GetTxPoolTxByHash(ctx context.Context, hex string) (*ptnjson.TxPoolTxJson, error) {
 	result := new(ptnjson.TxPoolTxJson)

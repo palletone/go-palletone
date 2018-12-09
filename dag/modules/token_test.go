@@ -22,11 +22,26 @@ package modules
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 )
 
 func TestToken2Json(t *testing.T) {
 	token := &FungibleToken{Name: "PalletOne BTC", Symbol: "PBTC", Decimals: 8, TotalSupply: 9000000000000}
 	txt, _ := json.Marshal(token)
-	t.Log(string(txt))
+	fmt.Println(string(txt))
+
+	tkdef := &TokenDefine{TokenDefineJson: txt}
+	txtdefJson, _ := json.Marshal(tkdef)
+	fmt.Println(string(txtdefJson))
+
+	fmt.Println("=================================")
+
+	tkdefNew := TokenDefine{}
+	json.Unmarshal(txtdefJson, &tkdefNew)
+	fmt.Println(string(tkdefNew.TokenDefineJson))
+
+	tokenNew := FungibleToken{}
+	json.Unmarshal(tkdefNew.TokenDefineJson, &tokenNew)
+	fmt.Println(tokenNew)
 }

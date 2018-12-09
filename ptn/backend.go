@@ -40,11 +40,13 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 //type LesServer interface {
@@ -356,4 +358,44 @@ func (s *PalletOne) Etherbase() (eb common.Address, err error) {
 // @author Albert·Gou
 func (p *PalletOne) GetKeyStore() *keystore.KeyStore {
 	return p.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+}
+
+// @author Albert·Gou
+func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
+	inputpoints := make(map[modules.OutPoint][]byte)
+	findPayLoad := false
+
+	for i := 0; !findPayLoad && i < len(tx.TxMessages); i++ {
+		// 1. 获取PaymentPayload
+		msg := tx.TxMessages[i]
+		if msg.App != modules.APP_PAYMENT {
+			continue
+		}
+
+		// 一个 tx 只有一个PaymentPayload， 简书查询次数
+		findPayLoad = true
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if !ok {
+			log.Debug("PaymentPayload conversion error, does not match TxMessage'APP type!")
+		}
+
+		for _, txin := range payload.Inputs {
+			inpoint := txin.PreviousOutPoint
+			utxo, err := p.dag.GetUtxoEntry(inpoint)
+			if err != nil {
+				return nil, err
+			}
+
+			inputpoints[*inpoint] = utxo.PkScript
+		}
+	}
+
+	ks := p.GetKeyStore()
+	_, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, inputpoints, nil,
+		ks.GetPublicKey, ks.SignHash, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	return tx, nil
 }

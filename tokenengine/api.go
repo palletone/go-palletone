@@ -33,6 +33,17 @@ import (
 	"sort"
 )
 
+const (
+	SigHashOld          uint32 = 0x0
+	SigHashAll          uint32 = 0x1
+	SigHashNone         uint32 = 0x2
+	SigHashSingle       uint32 = 0x3
+	SigHashAnyOneCanPay uint32 = 0x80
+	// sigHashMask defines the number of bits of the hash type which is used
+	// to identify which outputs are signed.
+	sigHashMask = 0x1f
+)
+
 type AddressGetSign func(common.Address, []byte) ([]byte, error)
 type AddressGetPubKey func(common.Address) ([]byte, error)
 

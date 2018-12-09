@@ -66,11 +66,12 @@ func splitValueAndVersion(data []byte) ([]byte, *modules.StateVersion, error) {
 		return nil, nil, errors.New("the data is irregular.")
 	}
 	verBytes := data[:29]
-	objData := data[30:]
-
+	objData := data[29:]
+	c_data := make([]byte, 0)
+	err := rlp.DecodeBytes(objData, &c_data)
 	version := &modules.StateVersion{}
 	version.SetBytes(verBytes)
-	return objData, version, nil
+	return c_data, version, err
 }
 
 // get string

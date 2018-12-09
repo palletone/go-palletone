@@ -44,7 +44,13 @@ type MediatorCreateResult struct {
 	Warning string             `json:"warning"`
 }
 
-func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (res MediatorCreateResult, err error) {
+func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (MediatorCreateResult, error) {
+	res := MediatorCreateResult{}
+	addr, err := common.StringToAddress(args.AddStr)
+	if err != nil {
+		return res, err
+	}
+
 	// 1. 组装 message
 	msg := &modules.Message{
 		App:     modules.OP_MEDIATOR_CREATE,
@@ -52,18 +58,26 @@ func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (res MediatorCrea
 	}
 
 	// 2. 组装 tx
-	tx := &modules.Transaction{
-		TxMessages: []*modules.Message{msg},
+	fee := a.dag.CurrentFeeSchedule().MediatorCreateFee
+	tx, err := a.dag.CreateBaseTransaction(addr, addr, 0, fee)
+	if err != nil {
+		return res, err
 	}
+
+	tx.TxMessages = append(tx.TxMessages, msg)
 	tx.TxHash = tx.Hash()
 
 	// 3. 签名 tx
+	tx, err = a.ptn.SignGenericTransaction(addr, tx)
+	if err != nil {
+		return res, err
+	}
 
 	// 4. 将 tx 放入 pool
 	txPool := a.ptn.TxPool()
 	err = txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
 	if err != nil {
-		return
+		return res, err
 	}
 
 	// 5. 返回执行结果
@@ -71,5 +85,5 @@ func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (res MediatorCrea
 	res.TxSize = tx.Size()
 	res.Warning = "transaction executed locally, but may not be confirmed by the network yet!"
 
-	return
+	return res, nil
 }

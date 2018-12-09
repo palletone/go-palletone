@@ -155,6 +155,16 @@ type PaymentPayload struct {
 	LockTime uint32    `json:"lock_time"`
 }
 
+func (pay *PaymentPayload) IsCoinbase() bool {
+	if len(pay.Inputs) == 0 {
+		return true
+	}
+	if pay.Inputs[0].PreviousOutPoint == nil {
+		return true
+	}
+	return false
+}
+
 // NewTxOut returns a new bitcoin transaction output with the provided
 // transaction value and public key script.
 func NewTxOut(value uint64, pkScript []byte, asset *Asset) *Output {
@@ -219,7 +229,7 @@ func (version *StateVersion) Bytes() []byte {
 }
 func (version *StateVersion) SetBytes(b []byte) {
 	asset := IDType16{}
-	asset.SetBytes(b[:16])
+	asset.SetBytes(b[:15])
 	heightIdx := littleEndian.Uint64(b[16:24])
 	isMain := b[24]
 	txIdx := littleEndian.Uint32(b[25:])

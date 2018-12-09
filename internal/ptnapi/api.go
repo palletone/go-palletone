@@ -1944,17 +1944,17 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 	var hashType uint32
 	switch *cmd.Flags {
 	case "ALL":
-		hashType = SigHashAll
+		hashType = tokenengine.SigHashAll
 	case "NONE":
-		hashType = SigHashNone
+		hashType = tokenengine.SigHashNone
 	case "SINGLE":
-		hashType = SigHashSingle
+		hashType = tokenengine.SigHashSingle
 	case "ALL|ANYONECANPAY":
-		hashType = SigHashAll | SigHashAnyOneCanPay
+		hashType = tokenengine.SigHashAll | tokenengine.SigHashAnyOneCanPay
 	case "NONE|ANYONECANPAY":
-		hashType = SigHashNone | SigHashAnyOneCanPay
+		hashType = tokenengine.SigHashNone | tokenengine.SigHashAnyOneCanPay
 	case "SINGLE|ANYONECANPAY":
-		hashType = SigHashSingle | SigHashAnyOneCanPay
+		hashType = tokenengine.SigHashSingle | tokenengine.SigHashAnyOneCanPay
 	default:
 		//e := errors.New("Invalid sighash parameter")
 		return nil, err
@@ -2621,6 +2621,15 @@ func (s *PublicDagAPI) GetTxByHash(ctx context.Context, hashHex string) (string,
 		result_json, _ := json.Marshal(info)
 		return string(result_json), nil
 	}
+}
+
+func (s *PublicDagAPI) GetTxSearchEntry(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+	item, err := s.b.GetTxSearchEntry(hash)
+
+	info := NewPublicReturnInfo("tx_entry", item)
+	result_json, _ := json.Marshal(info)
+	return string(result_json), err
 }
 
 // // GetPoolTxByHash returns the pool transaction for the given hash

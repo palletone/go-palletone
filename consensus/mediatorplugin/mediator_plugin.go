@@ -196,11 +196,13 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	}
 
 	// 2. 生产验证单元
-	groupPubKey := mp.LocalMediatorPubKey(scheduledMediator)
 	//execute contract
-	if err := mp.ptn.ContractProcessor().RunContractLoop(mp.ptn.TxPool(), scheduledMediator,ks); err!= nil{
+	// todo 待优化
+	if err := mp.ptn.ContractProcessor().RunContractLoop(mp.ptn.TxPool(), scheduledMediator, ks); err != nil {
 		log.Error("MaybeProduceUnit", "RunContractLoop err:", err.Error())
 	}
+
+	groupPubKey := mp.LocalMediatorPubKey(scheduledMediator)
 	newUnit := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, mp.ptn.TxPool())
 	if newUnit.IsEmpty() {
 		return ExceptionProducing, detail
@@ -214,7 +216,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	detail["Hash"] = unitHash.TerminalString()
 
 	// 3. 初始化签名unit相关的签名分片的buf
-	mp.initTBLSRecoverBuf(scheduledMediator, unitHash)
+	go mp.initTBLSRecoverBuf(scheduledMediator, unitHash)
 
 	// 4. 异步向区块链网络广播验证单元
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
