@@ -63,6 +63,7 @@ type InputJson struct {
 	HashForSign  string `json:"hash"`
 	Signature    string `json:"signature"`
 }
+
 type OutputJson struct {
 	Amount uint64 `json:"amount"`
 	Asset  string `json:"asset"`
