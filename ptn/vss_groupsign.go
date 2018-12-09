@@ -35,7 +35,7 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 		select {
 		case event := <-self.newProducedUnitCh:
 			// 广播给其他活跃 mediator，进行验证并群签名
-			self.BroadcastNewProducedUnit(event.Unit)
+			//self.BroadcastNewProducedUnit(event.Unit)
 			data,err:=json.Marshal(event.Unit.Txs)
 			if err!=nil{
 				return
