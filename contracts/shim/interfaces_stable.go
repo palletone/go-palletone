@@ -154,6 +154,8 @@ type ChaincodeStubInterface interface {
 	GetListForForfeiture() (*modules.ListForForfeiture, error)
 	//获取保证金账户信息
 	GetDepositBalance(nodeAddr string) (*modules.DepositBalance, error)
+	//获取候选列表
+	GetCandidateList(role string) ([]*common.Address, error)
 	// GetStateByRange returns a range iterator over a set of keys in the
 	// ledger. The iterator can be used to iterate over all keys
 	// between the startKey (inclusive) and endKey (exclusive).

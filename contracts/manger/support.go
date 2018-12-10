@@ -110,7 +110,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 	}
 	tokenDefine, _ := tx.GetTokenDefineData(nm)
 	tokenSupply, _ := tx.GetTokenSupplyData(nm)
-	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
+	logger.Infof("txid=%s, nm=%s, rd=%#v, wt=%v", txid, nm, rd, wt)
 	invoke := &modules.ContractInvokeResult{
 		FunctionName:  string(args[1]),
 		ContractId:    deployId,

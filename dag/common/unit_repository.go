@@ -231,8 +231,10 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	// step5. compute minner income: transaction fees + interest
 	fees, err := unitOp.utxoRepository.ComputeFees(poolTxs)
 	if err != nil {
-		log.Error(err.Error())
+		log.Error("ComputeFees is failed.", "error", err.Error())
 		return nil, err
+	} else {
+		log.Debug("THE unit transactions fee is here. ", "fees", fees)
 	}
 	additions := make(map[common.Address]*modules.Addition)
 	//TODO 附加利息收益

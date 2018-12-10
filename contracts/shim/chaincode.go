@@ -434,6 +434,24 @@ func (stub *ChaincodeStub) GetDepositBalance(nodeAddr string) (*modules.DepositB
 	return balance, nil
 }
 
+//获取候选列表信息
+func (stub *ChaincodeStub) GetCandidateList(role string) ([]*common.Address, error) {
+	candidateListByte, err := stub.handler.handleGetState("", role, stub.ContractId, stub.ChannelId, stub.TxID)
+	if err != nil {
+		return nil, err
+	}
+	if candidateListByte == nil {
+		return nil, nil
+	}
+	candidateList := []*common.Address{}
+	err = json.Unmarshal(candidateListByte, &candidateList)
+	if err != nil {
+		return nil, err
+	}
+	return candidateList, nil
+
+}
+
 // PutState documentation can be found in interfaces.go
 func (stub *ChaincodeStub) PutState(key string, value []byte) error {
 	if key == "" {

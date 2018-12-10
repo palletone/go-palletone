@@ -52,17 +52,18 @@ func (it *IDType16) ToAssetId() string {
 	//	return "PTN"
 	//}
 	symbol, assetType, decimal, txHash := it.ParseAssetId()
-	b12 := make([]byte, 12)
-	b12[0] = decimal
-	copy(b12[1:], txHash)
-	return symbol + "+" + strconv.Itoa(int(assetType)) + base36.EncodeBytes(b12)
+	//b12 := make([]byte, 11)
+	//b12[0] = decimal
+	//copy(b12[1:], txHash)
+	return symbol + "+" + base36.EncodeBytes([]byte{decimal}) + strconv.Itoa(int(assetType)) + base36.EncodeBytes(txHash)
 }
 func string2AssetId(str string) (IDType16, error) {
 	strArray := strings.Split(str, "+")
 	symbol := strArray[0]
 	ty := strArray[1][0] - 48
-	tx12 := base36.DecodeToBytes(strArray[1][1:])
-	return NewAssetId(symbol, AssetType(ty), tx12[0], tx12[1:])
+	decimal := base36.DecodeToBytes(strArray[1][0:1])
+	tx12 := base36.DecodeToBytes(strArray[1][2:])
+	return NewAssetId(symbol, AssetType(ty), decimal[0], tx12)
 
 }
 func (id *IDType16) ParseAssetId() (string, AssetType, byte, []byte) {

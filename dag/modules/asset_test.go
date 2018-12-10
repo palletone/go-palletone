@@ -51,6 +51,10 @@ func TestAsset_String(t *testing.T) {
 	a.SetString(assetStr)
 	t.Logf("Asset:%08b", a.AssetId)
 	assert.Equal(t, asset2.Bytes(), a.Bytes())
+
+	decimal := byte(8)
+	dStr := base36.EncodeBytes([]byte{decimal})
+	t.Log(dStr)
 }
 func TestAsset_SetString(t *testing.T) {
 	asset := &Asset{}
