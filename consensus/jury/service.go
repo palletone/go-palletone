@@ -37,6 +37,7 @@ import (
 	md "github.com/palletone/go-palletone/contracts/modules"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
+	"github.com/palletone/go-palletone/dag"
 	cm "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"reflect"
@@ -94,9 +95,10 @@ type Processor struct {
 	contractExecScope event.SubscriptionScope
 	contractSigFeed   event.Feed
 	contractSigScope  event.SubscriptionScope
+	idag              dag.IDag
 }
 
-func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract) (*Processor, error) {
+func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract, dag2 dag.IDag) (*Processor, error) {
 	if ptn == nil || dag == nil {
 		return nil, errors.New("NewContractProcessor, param is nil")
 	}
@@ -109,6 +111,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract)
 		locker:   new(sync.Mutex),
 		quit:     make(chan struct{}),
 		mtx:      make(map[common.Hash]*contractTx),
+		idag:     dag2,
 	}
 
 	//log.Info("NewContractProcessor ok", "local address", localmediator.Address.String())
@@ -175,7 +178,7 @@ func (p *Processor) RunContractLoop(txpool txspool.ITxPool, addr common.Address,
 			continue
 		}
 
-		cmsgType, msgs, err := runContractCmd(p.contract, ctx.tx)
+		cmsgType, msgs, err := runContractCmd(p.contract, ctx.tx, p.idag)
 		if err != nil {
 			log.Error("RunContractLoop runContractCmd", "error", err.Error())
 			continue
@@ -206,7 +209,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction) bool {
 		log.Error("CheckContractTxValid", "checkTxValid fail")
 		return false
 	}
-	_, payload, err := runContractCmd(p.contract, tx)
+	_, payload, err := runContractCmd(p.contract, tx, p.idag)
 	if err != nil {
 		log.Error("CheckContractTxValid runContractCmd", "error", err.Error())
 		return false
@@ -304,7 +307,7 @@ func (p *Processor) ContractTxDeleteLoop() {
 }
 
 //执行合约命令:install、deploy、invoke、stop，同时只支持一种类型
-func runContractCmd(contract *contracts.Contract, trs *modules.Transaction) (modules.MessageType, []*modules.Message, error) {
+func runContractCmd(contract *contracts.Contract, trs *modules.Transaction, idag dag.IDag) (modules.MessageType, []*modules.Message, error) {
 	if trs == nil || len(trs.TxMessages) <= 0 {
 		return 0, nil, errors.New("runContractCmd transaction or msg is nil")
 	}
@@ -335,10 +338,19 @@ func runContractCmd(contract *contracts.Contract, trs *modules.Transaction) (mod
 					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*md.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, result.ExecutionTime, result.ReadSet, result.WriteSet, result.Payload, result.TokenPayOut, result.TokenSupply, result.TokenDefine)
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, result.ExecutionTime, result.ReadSet, result.WriteSet, result.Payload)
 
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
+				}
+				toContractPayments, err := result.ToContractPayments(idag)
+				if err != nil {
+					return modules.APP_CONTRACT_INVOKE, nil, err
+				}
+				if toContractPayments != nil && len(toContractPayments) > 0 {
+					for _, contractPayment := range toContractPayments {
+						msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, contractPayment))
+					}
 				}
 				cs, err := result.ToCoinbase()
 				if err != nil {

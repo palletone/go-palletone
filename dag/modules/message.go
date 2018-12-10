@@ -490,7 +490,7 @@ func NewVotePayload(result []byte, voteType uint8) *VotePayload {
 //	TokenSupply   []*modules.TokenSupply     `json:"token_supply"`   //增发Token请求产生的结果
 //	TokenDefine   *modules.TokenDefine       `json:"token_define"`   //定义新Token
 func NewContractInvokePayload(contractid []byte, funcName string, args [][]byte, excutiontime time.Duration,
-	readset []ContractReadSet, writeset []ContractWriteSet, payload []byte, tokenPayOut []*TokenPayOut, tokenSupply []*TokenSupply, tokenDefine *TokenDefine) *ContractInvokePayload {
+	readset []ContractReadSet, writeset []ContractWriteSet, payload []byte) *ContractInvokePayload {
 	return &ContractInvokePayload{
 		ContractId:    contractid,
 		FunctionName:  funcName,

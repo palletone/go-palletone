@@ -46,7 +46,7 @@ type ContractInvokeResult struct {
 }
 
 func (result *ContractInvokeResult) ToContractInvokePayload() *modules.ContractInvokePayload {
-	return modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, result.ExecutionTime, result.ReadSet, result.WriteSet, result.Payload, result.TokenPayOut, result.TokenSupply, result.TokenDefine)
+	return modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, result.ExecutionTime, result.ReadSet, result.WriteSet, result.Payload)
 }
 func (result *ContractInvokeResult) ToContractPayments(dag dag.IDag) ([]*modules.PaymentPayload, error) {
 	addr := common.NewAddress(result.ContractId, common.ContractHash)
