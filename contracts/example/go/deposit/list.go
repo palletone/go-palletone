@@ -46,10 +46,10 @@ func addList(role string, invokeaddr common.Address, stub shim.ChaincodeStubInte
 func addDeveloperList(invokeAddr common.Address, stub shim.ChaincodeStubInterface) {
 	//先获取状态数据库中的 Developer 列表
 	developerListBytes, _ := stub.GetState("DeveloperList")
-	developerList := []common.Address{}
+	developerList := []*common.Address{}
 	_ = json.Unmarshal(developerListBytes, &developerList)
 	//fmt.Printf("developerList = %#v\n", developerList)
-	developerList = append(developerList, invokeAddr)
+	developerList = append(developerList, &invokeAddr)
 	developerListBytes, _ = json.Marshal(developerList)
 	stub.PutState("DeveloperList", developerListBytes)
 }
@@ -58,10 +58,10 @@ func addDeveloperList(invokeAddr common.Address, stub shim.ChaincodeStubInterfac
 func addMediatorList(invokeAddr common.Address, stub shim.ChaincodeStubInterface) {
 	//先获取状态数据库中的 Mediator 列表
 	mediatorListBytes, _ := stub.GetState("MediatorList")
-	mediatorList := []common.Address{}
+	mediatorList := []*common.Address{}
 	_ = json.Unmarshal(mediatorListBytes, &mediatorList)
 	//fmt.Printf("MediatorList = %#v\n", mediatorList)
-	mediatorList = append(mediatorList, invokeAddr)
+	mediatorList = append(mediatorList, &invokeAddr)
 	mediatorListBytes, _ = json.Marshal(mediatorList)
 	//更新列表
 	stub.PutState("MediatorList", mediatorListBytes)
@@ -71,10 +71,10 @@ func addMediatorList(invokeAddr common.Address, stub shim.ChaincodeStubInterface
 func addJuryList(invokeAddr common.Address, stub shim.ChaincodeStubInterface) {
 	//先获取状态数据库中的 Jury 列表
 	juryListBytes, _ := stub.GetState("JuryList")
-	juryList := []common.Address{}
+	juryList := []*common.Address{}
 	_ = json.Unmarshal(juryListBytes, &juryList)
 	//fmt.Printf("JuryList = %#v\n", juryList)
-	juryList = append(juryList, invokeAddr)
+	juryList = append(juryList, &invokeAddr)
 	juryListBytes, _ = json.Marshal(juryList)
 	stub.PutState("JuryList", juryListBytes)
 }
@@ -134,13 +134,13 @@ func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfe
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback []*modules.Cashback, cashbackAddr common.Address, applyTime int64) *modules.Cashback {
+func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback *modules.ListForCashback, cashbackAddr common.Address, applyTime int64) *modules.Cashback {
 	//
 	cashback := new(modules.Cashback)
-	for i := 0; i < len(listForCashback); i++ {
-		if listForCashback[i].CashbackTime == applyTime && listForCashback[i].CashbackAddress == cashbackAddr {
-			cashback = listForCashback[i]
-			listForCashback = append(listForCashback[:i], listForCashback[i+1:]...)
+	for i := 0; i < len(listForCashback.Cashbacks); i++ {
+		if listForCashback.Cashbacks[i].CashbackTime == applyTime && listForCashback.Cashbacks[i].CashbackAddress == cashbackAddr {
+			cashback = listForCashback.Cashbacks[i]
+			listForCashback.Cashbacks = append(listForCashback.Cashbacks[:i], listForCashback.Cashbacks[i+1:]...)
 			break
 		}
 	}

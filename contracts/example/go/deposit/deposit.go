@@ -99,6 +99,49 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case "HandleApplications":
 		//基金会对申请做相应的处理
 		return d.handleApplications(stub, args)
+	//加入获取列表
+	case "GetListForCashbackApplication":
+		listForCashback, err := stub.GetListForCashback()
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if listForCashback == nil {
+			return shim.Error("listForCashback is nil.")
+		}
+		fmt.Printf("listForCashback = %v\n", listForCashback)
+		return shim.Success([]byte("ok"))
+	case "GetListForForfeitureApplication":
+		listForForFeiture, err := stub.GetListForForfeiture()
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if listForForFeiture == nil {
+			return shim.Error("listForForFeiture is nil.")
+		}
+		fmt.Printf("listForForFeiture = %v\n", listForForFeiture)
+		return shim.Success([]byte("ok"))
+		//获取候选列表
+	case "GetListForCandidate":
+		candidateList, err := stub.GetCandidateList(args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if candidateList == nil {
+			return shim.Error("candidateList is nil")
+		}
+		fmt.Printf("candidateList = %v\n", candidateList)
+		return shim.Success([]byte("ok"))
+		//获取某个节点的账户
+	case "GetBalanceForNode":
+		balance, err := stub.GetDepositBalance(args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if balance == nil {
+			return shim.Error("balance is nil.")
+		}
+		fmt.Printf("balance = %v\n", balance)
+		return shim.Success([]byte("ok"))
 	}
 	return shim.Success([]byte("Invoke error"))
 }
@@ -227,7 +270,6 @@ func (d *DepositChaincode) handleJuryDepositWitnessPay(stub shim.ChaincodeStubIn
 
 		}
 		//处理交付保证金数据
-		balance = new(modules.DepositBalance)
 		d.updateForPayValue(balance, invokeTokens)
 	}
 	if !isJury {
@@ -494,7 +536,7 @@ func (d *DepositChaincode) agreeForApplyCashback(stub shim.ChaincodeStubInterfac
 		return shim.Error("listForCashback is nil.")
 	}
 	//在申请退款保证金列表中移除该节点
-	cashbackValue := moveInApplyForCashbackList(stub, listForCashback.Cashbacks, cashbackAddr, applyTime)
+	cashbackValue := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
 	if cashbackValue == nil {
 		return shim.Error("列表里没有该申请")
 	}
@@ -806,7 +848,7 @@ func (d *DepositChaincode) disagreeForApplyCashback(stub shim.ChaincodeStubInter
 		return shim.Error("listForCashback is nil")
 	}
 	fmt.Println("moveInApplyForCashbackList==>", listForCashback)
-	node := moveInApplyForCashbackList(stub, listForCashback.Cashbacks, cashbackAddr, applyTime)
+	node := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
 	if node == nil {
 		return shim.Error("列表里没有该申请")
 	}

@@ -305,7 +305,7 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 		var payloadBytes []byte
 		var err error
 		systemConfig := &core.SystemConfig{
-			FoundationAddress:         "P1KgJoC6TwRSKZA4TB534bcpSYboJwd5gzZ",
+			FoundationAddress:         "P1CiWGLM8Q9NJu4awuJo1quBaky8YJ2kuFJ",
 			DepositAmountForMediator:  2000,
 			DepositAmountForJury:      1000,
 			DepositAmountForDeveloper: 800,
