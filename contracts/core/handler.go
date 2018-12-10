@@ -975,7 +975,7 @@ func (handler *Handler) handleDefineToken(msg *pb.ChaincodeMessage) {
 		chaincodeLogger.Debugf("[%s] define token for chaincode %s, token define %s, channel %s",
 			shorttxid(msg.Txid), chaincodeID, string(payout.Define), txContext.chainID)
 
-		err := txContext.txsimulator.DefineToken(chaincodeID, payout.TokenType, payout.Define)
+		err := txContext.txsimulator.DefineToken(chaincodeID, payout.TokenType, payout.Define, payout.Creator)
 
 		if err != nil {
 			// Send error msg back to chaincode. GetState will not trigger event
