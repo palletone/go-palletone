@@ -144,7 +144,7 @@ type ChaincodeStubInterface interface {
 	//获取invoke参数，包括invokeAddr,tokens,fee,funcName,params
 	GetInvokeParameters() (invokeAddr common.Address, invokeTokens *modules.InvokeTokens, invokeFees *modules.InvokeFees, funcName string, params []string, err error)
 	//定义并发行一种全新的Token
-	DefineToken(tokenType byte, define []byte) error
+	DefineToken(tokenType byte, define []byte, creator string) error
 	//增发一种之前已经定义好的Token
 	//如果是ERC20增发，则uniqueId为空，如果是ERC721增发，则必须指定唯一的uniqueId
 	SupplyToken(assetId []byte, uniqueId []byte, amt uint64) error
@@ -154,6 +154,8 @@ type ChaincodeStubInterface interface {
 	GetListForForfeiture() (*modules.ListForForfeiture, error)
 	//获取保证金账户信息
 	GetDepositBalance(nodeAddr string) (*modules.DepositBalance, error)
+	//获取候选列表
+	GetCandidateList(role string) ([]*common.Address, error)
 	// GetStateByRange returns a range iterator over a set of keys in the
 	// ledger. The iterator can be used to iterate over all keys
 	// between the startKey (inclusive) and endKey (exclusive).

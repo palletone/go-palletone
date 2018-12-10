@@ -510,7 +510,7 @@ func NewDag(db ptndb.Database, l log.ILogger) (*Dag, error) {
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, l)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, l)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb, l)
+	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb, l)
 	propRep := dagcommon.NewPropRepository(propDb, l)
 	stateRep := dagcommon.NewStateRepository(stateDb, l)
 	dag := &Dag{
@@ -544,7 +544,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, logger)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, logger)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb, logger)
+	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb, logger)
 	propRep := dagcommon.NewPropRepository(propDb, logger)
 
 	dag := &Dag{
@@ -577,7 +577,7 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, logger)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, logger)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, stateDb, logger)
+	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb, logger)
 
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),

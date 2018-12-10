@@ -163,6 +163,7 @@ message PayOutToken {
 message DefineToken{
     int32 tokenType=1 ;
     bytes define=2;
+    string creator = 3;
 }
 message SupplyToken{
     bytes assetId=1;

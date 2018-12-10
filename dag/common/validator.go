@@ -40,12 +40,13 @@ import (
 type Validate struct {
 	dagdb   storage.IDagDb
 	utxodb  storage.IUtxoDb
+	utxoRep IUtxoRepository
 	statedb storage.IStateDb
 	logger  log.ILogger
 }
 
-func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, l log.ILogger) *Validate {
-	return &Validate{dagdb: dagdb, utxodb: utxodb, statedb: statedb, logger: l}
+func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, utxoRep IUtxoRepository, statedb storage.IStateDb, l log.ILogger) *Validate {
+	return &Validate{dagdb: dagdb, utxodb: utxodb, utxoRep: utxoRep, statedb: statedb, logger: l}
 }
 
 type Validator interface {
@@ -67,7 +68,7 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		return nil, false, fmt.Errorf("Transactions should not be empty.")
 	}
 
-	fee := uint64(0)
+	fee := uint64(0) // todo zxl overflow
 	txFlags := map[common.Hash]modules.TxValidationCode{}
 	isSuccess := bool(true)
 	// all transactions' new worldState
@@ -92,14 +93,12 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		}
 		// validate fee
 		if isGenesis == false && txIndex != 0 {
-			txFee := tx.Fee()
-			if txFee.Cmp(modules.TXFEE) < 0 {
-				isSuccess = false
-				txFlags[tx.TxHash] = modules.TxValidationCode_INVALID_FEE
+			txFee, err := validate.utxoRep.ComputeTxFee(tx)
+			if err != nil {
 				log.Info("ValidateTx", "txhash", tx.TxHash, "error validate code", modules.TxValidationCode_INVALID_FEE)
-				continue
+				return nil, false, err
 			}
-			fee += txFee.Uint64()
+			fee += txFee.Amount
 		}
 		txFlags[tx.TxHash] = modules.TxValidationCode_VALID
 	}

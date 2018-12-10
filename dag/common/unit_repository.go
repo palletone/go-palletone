@@ -72,8 +72,8 @@ type UnitRepository struct {
 }
 
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, l log.ILogger) *UnitRepository {
-	val := NewValidate(dagdb, utxodb, statedb, l)
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, l)
+	val := NewValidate(dagdb, utxodb, utxoRep, statedb, l)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
 func NewUnitRepository4Db(db ptndb.Database, l log.ILogger) *UnitRepository {
@@ -81,8 +81,8 @@ func NewUnitRepository4Db(db ptndb.Database, l log.ILogger) *UnitRepository {
 	utxodb := storage.NewUtxoDb(db, l)
 	statedb := storage.NewStateDb(db, l)
 	idxdb := storage.NewIndexDb(db, l)
-	val := NewValidate(dagdb, utxodb, statedb, l)
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, l)
+	val := NewValidate(dagdb, utxodb, utxoRep, statedb, l)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
 func RHashStr(x interface{}) string {

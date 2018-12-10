@@ -434,6 +434,24 @@ func (stub *ChaincodeStub) GetDepositBalance(nodeAddr string) (*modules.DepositB
 	return balance, nil
 }
 
+//获取候选列表信息
+func (stub *ChaincodeStub) GetCandidateList(role string) ([]*common.Address, error) {
+	candidateListByte, err := stub.handler.handleGetState("", role, stub.ContractId, stub.ChannelId, stub.TxID)
+	if err != nil {
+		return nil, err
+	}
+	if candidateListByte == nil {
+		return nil, nil
+	}
+	candidateList := []*common.Address{}
+	err = json.Unmarshal(candidateListByte, &candidateList)
+	if err != nil {
+		return nil, err
+	}
+	return candidateList, nil
+
+}
+
 // PutState documentation can be found in interfaces.go
 func (stub *ChaincodeStub) PutState(key string, value []byte) error {
 	if key == "" {
@@ -594,8 +612,8 @@ func (stub *ChaincodeStub) GetTokenBalance(address string, token *modules.Asset)
 	return stub.handler.handleGetTokenBalance(address, token, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
-func (stub *ChaincodeStub) DefineToken(tokenType byte, define []byte) error {
-	return stub.handler.handleDefineToken(tokenType, define, stub.ContractId, stub.ChannelId, stub.TxID)
+func (stub *ChaincodeStub) DefineToken(tokenType byte, define []byte, creator string) error {
+	return stub.handler.handleDefineToken(tokenType, define, creator, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
 //增发一种之前已经定义好的Token
