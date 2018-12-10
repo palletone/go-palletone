@@ -141,22 +141,23 @@ func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
 	if event == nil {
 		return errors.New("ProcessContractEvent param is nil")
 	}
-	if _, ok := p.mtx[event.Tx.TxId]; ok {
+	reqId := event.Tx.RequestHash()
+	if _, ok := p.mtx[reqId]; ok {
 		return nil
 	}
-	log.Debug("ProcessContractEvent", "enter, tx req id ", event.Tx.TxId)
+	log.Debug("ProcessContractEvent", "enter, tx req id ", reqId)
 
 	if false == checkTxValid(event.Tx) {
-		return errors.New(fmt.Sprintf("ProcessContractEvent recv event Tx is invalid, txid:%s", event.Tx.TxId.String()))
+		return errors.New(fmt.Sprintf("ProcessContractEvent recv event Tx is invalid, txid:%s", reqId.String()))
 	}
 	p.locker.Lock()
-	p.mtx[event.Tx.TxId] = &contractTx{
+	p.mtx[reqId] = &contractTx{
 		tx:    event.Tx,
 		tm:    time.Now(),
 		valid: true,
 	}
 	p.locker.Unlock()
-	log.Debug("ProcessContractEvent", "add tx req id ", event.Tx.TxId)
+	log.Debug("ProcessContractEvent", "add tx req id ", reqId)
 
 	//broadcast contract request transaction event
 	go p.ptn.ContractBroadcast(*event)
@@ -171,7 +172,7 @@ func (p *Processor) RunContractLoop(txpool txspool.ITxPool, addr common.Address,
 		}
 		ctx.valid = false
 		if false == checkTxValid(ctx.tx) {
-			log.Error("RunContractLoop recv event Tx is invalid,", "txid", ctx.tx.TxId.String())
+			log.Error("RunContractLoop recv event Tx is invalid,", "txid", ctx.tx.RequestHash().String())
 			continue
 		}
 
@@ -196,11 +197,12 @@ func (p *Processor) RunContractLoop(txpool txspool.ITxPool, addr common.Address,
 
 func (p *Processor) CheckContractTxValid(tx *modules.Transaction) bool {
 	//检查本地是否存在合约执行交易，如果不存在则执行并记录到本地，并与接收到的tx进行合约比较
+	reqId := tx.RequestHash()
 	if tx == nil {
 		log.Error("CheckContractTxValid", "param is nil")
 		return false
 	}
-	log.Debug("CheckContractTxValid", "tx req id ", tx.TxId)
+	log.Debug("CheckContractTxValid", "tx req id ", reqId)
 
 	if false == checkTxValid(tx) {
 		log.Error("CheckContractTxValid", "checkTxValid fail")
@@ -221,32 +223,33 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction) bool {
 		}
 	}
 	p.locker.Lock()
-	if _, ok := p.mtx[tx.TxId]; ok {
-		p.mtx[tx.TxId].valid = false
+	if _, ok := p.mtx[reqId]; ok {
+		p.mtx[reqId].valid = false
 	}
 	p.locker.Unlock()
-	log.Debug("CheckContractTxValid", "local txid", tx.TxId, "contract transaction:", p.mtx[tx.TxId].list)
+	log.Debug("CheckContractTxValid", "local txid", reqId, "contract transaction:", p.mtx[reqId].list)
 	return true
 }
 
 func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
+	reqId := event.Tx.RequestHash()
 	if event == nil || len(event.Tx.TxMessages) < 1 {
 		return errors.New("ProcessContractSigEvent param is nil")
 	}
 
-	log.Info("ProcessContractSigEvent", "enter,event tx req id:", event.Tx.TxId.String())
+	log.Info("ProcessContractSigEvent", "enter,event tx req id:", reqId.String())
 	if false == checkTxValid(event.Tx) {
 		return errors.New("ProcessContractSigEvent event Tx is invalid")
 	}
-	if _, ok := p.mtx[event.Tx.TxId]; ok != true {
-		errMsg := fmt.Sprintf("local not find txid: %s", event.Tx.TxId.String())
+	if _, ok := p.mtx[reqId]; ok != true {
+		errMsg := fmt.Sprintf("local not find txid: %s", reqId.String())
 		log.Error("ProcessContractSigEvent", errMsg)
 		return errors.New(errMsg)
 	}
 
-	cx := p.mtx[event.Tx.TxId]
+	cx := p.mtx[reqId]
 	if cx.tx == nil {
-		log.Info("ProcessContractSigEvent", "local no tx id, wait for moment:", event.Tx.TxId.String())
+		log.Info("ProcessContractSigEvent", "local no tx id, wait for moment:", reqId.String())
 		go func() error {
 			for i := 0; i < 10; i += 1 {
 				time.Sleep(time.Millisecond * 500)
@@ -254,7 +257,7 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 					if judge, err := checkAndAddTxData(cx.tx, event.Tx); err == nil && judge == true {
 						if err = p.addTx2LocalTxTool(cx.tx, len(cx.list)); err == nil {
 							p.locker.Lock()
-							delete(p.mtx, event.Tx.TxId)
+							delete(p.mtx, reqId)
 							p.locker.Unlock()
 						} else {
 							return err
@@ -263,24 +266,24 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 					return errors.New("checkAndAddTxData fail")
 				}
 			}
-			return errors.New(fmt.Sprintf("ProcessContractSigEvent checkAndAddTxData wait local transaction timeout, tx id:%s", cx.tx.TxId))
+			return errors.New(fmt.Sprintf("ProcessContractSigEvent checkAndAddTxData wait local transaction timeout, tx id:%s", reqId))
 		}()
 	} else {
-		log.Info("ProcessContractSigEvent", "tx is ok", event.Tx.TxId)
+		log.Info("ProcessContractSigEvent", "tx is ok", reqId)
 		if judge, err := checkAndAddTxData(cx.tx, event.Tx); err != nil {
 			log.Error("ProcessContractSigEvent", "checkAndAddTxData err:", err.Error())
 			return err
 		} else if judge == true {
 			if err = p.addTx2LocalTxTool(cx.tx, len(cx.list)); err == nil {
 				p.locker.Lock()
-				delete(p.mtx, event.Tx.TxId)
+				delete(p.mtx, reqId)
 				p.locker.Unlock()
 			} else {
 				return err
 			}
 		}
 	}
-	return errors.New(fmt.Sprintf("ProcessContractSigEvent err with tx id:%s", cx.tx.TxId.String()))
+	return errors.New(fmt.Sprintf("ProcessContractSigEvent err with tx id:%s", reqId.String()))
 }
 
 func (p *Processor) SubscribeContractSigEvent(ch chan<- ContractSigEvent) event.Subscription {
@@ -326,7 +329,7 @@ func runContractCmd(contract *contracts.Contract, trs *modules.Transaction) (mod
 					chainID:  "palletone",
 					deployId: msg.Payload.(*modules.ContractInvokeRequestPayload).ContractId,
 					args:     msg.Payload.(*modules.ContractInvokeRequestPayload).Args,
-					txid:     trs.TxId.String(),
+					txid:     trs.RequestHash().String(),
 					tx:       trs,
 				}
 				invokeResult, err := ContractProcess(contract, req)
@@ -359,7 +362,7 @@ func runContractCmd(contract *contracts.Contract, trs *modules.Transaction) (mod
 		}
 	}
 
-	return 0, nil, errors.New(fmt.Sprintf("runContractCmd err, txid=%s", trs.TxHash))
+	return 0, nil, errors.New(fmt.Sprintf("runContractCmd err, txid=%s", trs.RequestHash().String()))
 }
 
 func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (bool, error) {
@@ -386,7 +389,7 @@ func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (b
 			for _, sig := range sigs {
 				if true == bytes.Equal(sig.PubKey, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0].PubKey) &&
 					true == bytes.Equal(sig.Signature, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0].Signature) {
-					log.Info("tx  already recv:", recv.TxId.String())
+					log.Info("tx  already recv:", recv.RequestHash().String())
 					return false, nil
 				}
 			}
@@ -396,8 +399,8 @@ func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (b
 			}
 
 			local.TxMessages[i].Payload = sigPayload
-			local.TxHash = common.Hash{}
-			local.TxHash = local.Hash()
+			//local.TxHash = common.Hash{}
+			//local.TxHash = local.Hash()
 
 			log.Info("checkAndAddTxData", "add sig payload:", sigPayload.Signatures)
 			return true, nil
@@ -432,7 +435,7 @@ func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction, cnt int) error {
 	}
 
 	txPool := p.ptn.TxPool()
-	log.Debug("addTx2LocalTxTool", "tx:", tx.TxHash.String())
+	log.Debug("addTx2LocalTxTool", "tx:", tx.Hash().String())
 
 	return txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
 }
@@ -473,11 +476,11 @@ func (p *Processor) ContractTxCreat(deployId []byte, txBytes []byte, args [][]by
 	}
 
 	tx.AddMessage(msgReq)
-	tx.TxHash = common.Hash{}
-	tx.TxId = tx.Hash()
-
-	tx.TxHash = common.Hash{}
-	tx.TxHash = tx.Hash()
+	//tx.TxHash = common.Hash{}
+	//tx.TxId = tx.Hash()
+	//
+	//tx.TxHash = common.Hash{}
+	//tx.TxHash = tx.Hash()
 
 	return rlp.EncodeToBytes(tx)
 }
@@ -515,20 +518,20 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes
 	}
 
 	tx.AddMessage(msgReq)
-	tx.TxHash = common.Hash{}
-	tx.TxId = tx.Hash()
-
-	tx.TxHash = common.Hash{}
-	tx.TxHash = tx.Hash()
-
+	//tx.TxHash = common.Hash{}
+	//tx.TxId = tx.Hash()
+	//
+	//tx.TxHash = common.Hash{}
+	//tx.TxHash = tx.Hash()
+	req := tx.RequestHash()
 	p.locker.Lock()
-	p.mtx[tx.TxId] = &contractTx{
+	p.mtx[req] = &contractTx{
 		tx:    tx,
 		tm:    time.Now(),
 		valid: true,
 	}
 	p.locker.Unlock()
-	log.Debug("ContractTxReqBroadcast ok", "deployId", deployId, "txid", txid, "TxId", tx.TxId, "TxHash", tx.TxHash)
+	log.Debug("ContractTxReqBroadcast ok", "deployId", deployId, "txid", txid, "TxId", req, "TxHash", tx.Hash())
 
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
@@ -536,7 +539,7 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes
 	//go p.contractExecFeed.Send(ContractExeEvent{modules.NewTransaction([]*modules.Message{msgPay, msgReq})})
 	//go p.ProcessContractEvent(&ContractExeEvent{Tx: tx})
 
-	return tx.TxId[:], nil
+	return req[:], nil
 }
 
 func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
@@ -551,13 +554,13 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	tx.TxHash = common.Hash{}
-	tx.TxHash = tx.Hash()
-
-	tx.TxId = tx.Hash()
-
+	//tx.TxHash = common.Hash{}
+	//tx.TxHash = tx.Hash()
+	//
+	//tx.TxId = tx.Hash()
+	req := tx.RequestHash()
 	p.locker.Lock()
-	p.mtx[tx.TxId] = &contractTx{
+	p.mtx[req] = &contractTx{
 		tx:    tx,
 		tm:    time.Now(),
 		valid: true,
@@ -567,7 +570,7 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
 
-	return tx.TxId[:], nil
+	return req[:], nil
 }
 
 func printTxInfo(tx *modules.Transaction) {
@@ -575,7 +578,7 @@ func printTxInfo(tx *modules.Transaction) {
 		return
 	}
 
-	log.Info("=========tx info============hash:", tx.TxHash.String())
+	log.Info("=========tx info============hash:", tx.Hash().String())
 	for i := 0; i < len(tx.TxMessages); i++ {
 		log.Info("---------")
 		app := tx.TxMessages[i].App

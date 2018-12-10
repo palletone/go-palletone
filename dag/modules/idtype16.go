@@ -29,7 +29,7 @@ import (
 
 var (
 	TimeFormatString = "2006/01/02 15:04:05"
-	PTNCOIN          = IDType16{0x40, 0x00, 0x82, 0xBB, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	PTNCOIN          = IDType16{0x40, 0x00, 0x82, 0xBB, 0x08, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00}
 	BTCCOIN          = IDType16{'b', 't', 'c', 'c', 'o', 'i', 'n'}
 )
 
@@ -48,21 +48,24 @@ func (it *IDType16) String() string {
 	return hexutil.Encode([]byte(it.Str()))
 }
 func (it *IDType16) ToAssetId() string {
-	if *it == PTNCOIN {
-		return "PTN"
-	}
-	symbol, assetType, txHash := it.ParseAssetId()
-	return symbol + "+" + strconv.Itoa(int(assetType)) + base36.EncodeBytes(txHash)
+	//if *it == PTNCOIN {
+	//	return "PTN"
+	//}
+	symbol, assetType, decimal, txHash := it.ParseAssetId()
+	b12 := make([]byte, 12)
+	b12[0] = decimal
+	copy(b12[1:], txHash)
+	return symbol + "+" + strconv.Itoa(int(assetType)) + base36.EncodeBytes(b12)
 }
 func string2AssetId(str string) (IDType16, error) {
 	strArray := strings.Split(str, "+")
 	symbol := strArray[0]
 	ty := strArray[1][0] - 48
 	tx12 := base36.DecodeToBytes(strArray[1][1:])
-	return NewAssetId(symbol, AssetType(ty), tx12)
+	return NewAssetId(symbol, AssetType(ty), tx12[0], tx12[1:])
 
 }
-func (id *IDType16) ParseAssetId() (string, AssetType, []byte) {
+func (id *IDType16) ParseAssetId() (string, AssetType, byte, []byte) {
 	var assetId [16]byte
 	copy(assetId[:], id[:])
 	assetId0 := id[0]
@@ -70,7 +73,7 @@ func (id *IDType16) ParseAssetId() (string, AssetType, []byte) {
 	t := (assetId0 & 0xc) >> 2
 	assetId[0] = assetId0 & 3
 	symbol := base36.EncodeBytes(assetId[4-len : 4])
-	return symbol, AssetType(t), assetId[4:]
+	return symbol, AssetType(t), assetId[4], assetId[5:]
 }
 func (it *IDType16) Str() string {
 	var b []byte

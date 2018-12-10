@@ -168,10 +168,10 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 	if len(txs) > 0 {
 		u.Txs = make([]*Transaction, len(txs))
 		for i, pTx := range txs {
-			hash := pTx.Hash()
+			//hash := pTx.Hash()
 
 			tx := Transaction{
-				TxHash: hash,
+				RequestRows: pTx.RequestRows,
 			}
 			if len(pTx.TxMessages) > 0 {
 				tx.TxMessages = make([]*Message, len(pTx.TxMessages))
@@ -192,9 +192,9 @@ type Units []*Unit
 type Unit struct {
 	UnitHeader *Header            `json:"unit_header"`  // unit header
 	Txs        Transactions       `json:"transactions"` // transaction list
-	StrTxs     []byte	          `json:"str_transactions"`
-	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
-	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
+	StrTxs     []byte             `json:"str_transactions"`
+	UnitHash   common.Hash        `json:"unit_hash"` // unit hash
+	UnitSize   common.StorageSize `json:"unit_size"` // unit size
 	// These fields are used by package ptn to track
 	// inter-peer block relay.
 	ReceivedAt   time.Time
@@ -310,7 +310,7 @@ func (u *Unit) Transactions() []*Transaction {
 // return transaction
 func (u *Unit) Transaction(hash common.Hash) *Transaction {
 	for _, transaction := range u.Txs {
-		if transaction.TxHash == hash {
+		if transaction.Hash() == hash {
 			return transaction
 		}
 	}

@@ -584,7 +584,7 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 			for _, txin := range payload.Inputs {
 				utxo = repository.GetUxto(*txin)
 				//1.通过交易hash获取单元hash
-				_, unitHash, _, _ := dagdb.GetTransaction(tx.TxHash)
+				_, unitHash, _, _ := dagdb.GetTransaction(tx.Hash())
 				//2.通过单元hash获取单元信息
 				unit, _ := dagdb.GetUnit(unitHash)
 				//3.通过单元获取头部信息中的时间戳

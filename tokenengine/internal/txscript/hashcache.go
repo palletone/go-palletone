@@ -20,7 +20,7 @@ import (
 type TxSigHashes struct {
 	HashPrevOuts common.Hash
 	//HashSequence chainhash.Hash
-	HashOutputs  common.Hash
+	HashOutputs common.Hash
 }
 
 // NewTxSigHashes computes, and returns the cached sighashes of the given
@@ -29,7 +29,7 @@ func NewTxSigHashes(tx *modules.Transaction) *TxSigHashes {
 	return &TxSigHashes{
 		HashPrevOuts: calcHashPrevOuts(tx),
 		//HashSequence: calcHashSequence(tx),
-		HashOutputs:  calcHashOutputs(tx),
+		HashOutputs: calcHashOutputs(tx),
 	}
 }
 
@@ -56,7 +56,7 @@ func NewHashCache(maxSize uint) *HashCache {
 // transaction.
 func (h *HashCache) AddSigHashes(tx *modules.Transaction) {
 	h.Lock()
-	h.sigHashes[tx.TxHash] = NewTxSigHashes(tx)
+	h.sigHashes[tx.Hash()] = NewTxSigHashes(tx)
 	h.Unlock()
 }
 

@@ -255,16 +255,17 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 	if err != nil {
 		return err
 	}
+	txHash := tx.Hash()
 	str := *(*string)(unsafe.Pointer(&bytes))
-	key0 := string(constants.TRANSACTION_PREFIX) + tx.TxHash.String()
+	key0 := string(constants.TRANSACTION_PREFIX) + txHash.String()
 	if err := StoreString(dagdb.db, key0, str); err != nil {
 		return err
 	}
-	key1 := string(constants.Transaction_Index) + tx.TxHash.String()
+	key1 := string(constants.Transaction_Index) + txHash.String()
 	if err := StoreString(dagdb.db, key1, str); err != nil {
 		return err
 	}
-	dagdb.updateAddrTransactions(tx.Address().String(), tx.TxHash)
+	dagdb.updateAddrTransactions(tx.Address().String(), txHash)
 	// store output by addr
 	for i, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
@@ -275,7 +276,7 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 				if err != nil {
 					log.Error("GetAddressFromScript is failed,", "error", err)
 				}
-				dagdb.saveOutputByAddr(addr.String(), tx.TxHash, i, output)
+				dagdb.saveOutputByAddr(addr.String(), txHash, i, output)
 			}
 		}
 	}

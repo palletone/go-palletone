@@ -65,7 +65,7 @@ func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (MediatorCreateRe
 	}
 
 	tx.TxMessages = append(tx.TxMessages, msg)
-	tx.TxHash = tx.Hash()
+	//tx.TxHash = tx.Hash()
 
 	// 3. 签名 tx
 	tx, err = a.ptn.SignGenericTransaction(addr, tx)
@@ -81,7 +81,7 @@ func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (MediatorCreateRe
 	}
 
 	// 5. 返回执行结果
-	res.TxHash = tx.TxHash
+	//res.TxHash = tx.TxHash
 	res.TxSize = tx.Size()
 	res.Warning = "transaction executed locally, but may not be confirmed by the network yet!"
 

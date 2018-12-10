@@ -157,7 +157,8 @@ func TestSaveUnit(t *testing.T) {
 			},
 		},
 	}
-	tx1.TxHash = tx1.Hash()
+	t.Logf("Tx Hash:%s", tx1.Hash().String())
+	//tx1.TxHash = tx1.Hash()
 
 	tx2 := modules.Transaction{
 		TxMessages: []*modules.Message{
@@ -167,8 +168,8 @@ func TestSaveUnit(t *testing.T) {
 			},
 		},
 	}
-	tx2.TxHash = tx2.Hash()
-
+	//tx2.TxHash = tx2.Hash()
+	t.Logf("Tx Hash:%s", tx2.Hash().String())
 	tx3 := modules.Transaction{
 		TxMessages: []*modules.Message{
 			{
@@ -176,8 +177,8 @@ func TestSaveUnit(t *testing.T) {
 				Payload: invokePayload,
 			},
 		}}
-	tx3.TxHash = tx3.Hash()
-
+	//tx3.TxHash = tx3.Hash()
+	t.Logf("Tx Hash:%s", tx3.Hash().String())
 	txs := modules.Transactions{}
 	//txs = append(txs, &tx1)
 	txs = append(txs, &tx2)
@@ -306,7 +307,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 			},
 		},
 	}
-	tx2.TxHash = tx2.Hash()
+	//tx2.TxHash = tx2.Hash()
 	fmt.Println("Original data:", payment)
 	b, _ := rlp.EncodeToBytes(tx2)
 	var tx modules.Transaction
@@ -350,10 +351,10 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 			},
 		},
 	}
-	tx1.TxHash = tx1.Hash()
+	//tx1.TxHash = tx1.Hash()
 
 	fmt.Println(">>>>>>>>  Original transaction:")
-	fmt.Println(">>>>>>>>  hash:", tx1.TxHash)
+	fmt.Println(">>>>>>>>  hash:", tx1.Hash())
 	for index, msg := range tx1.TxMessages {
 		fmt.Printf(">>>>>>>>  message[%d]:%v\n", index, msg)
 		fmt.Println(">>>>>>>> payload type:", reflect.TypeOf(msg.Payload))
@@ -368,7 +369,7 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 			fmt.Println("Decode tx error:", err.Error())
 		} else {
 			fmt.Println("======== Decode transaction:")
-			fmt.Println("======== hash:", txDecode.TxHash)
+			fmt.Println("======== hash:", txDecode.Hash())
 			for index, msg := range txDecode.TxMessages {
 				fmt.Printf("======== message[%d]:%v\n", index, msg)
 				switch msg.App {
@@ -424,10 +425,10 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 			},
 		},
 	}
-	tx1.TxHash = tx1.Hash()
+	//tx1.TxHash = tx1.Hash()
 
 	fmt.Println(">>>>>>>>  Original transaction:")
-	fmt.Println(">>>>>>>>  hash:", tx1.TxHash)
+	fmt.Println(">>>>>>>>  hash:", tx1.Hash())
 	for index, msg := range tx1.TxMessages {
 		fmt.Printf(">>>>>>>>  message[%d]:%v\n", index, msg)
 		fmt.Println(">>>>>>>> payload type:", reflect.TypeOf(msg.Payload))
@@ -443,7 +444,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 			fmt.Println("Decode tx error:", err.Error())
 		} else {
 			fmt.Println("======== Decode transaction:")
-			fmt.Println("======== hash:", txDecode.TxHash)
+			fmt.Println("======== hash:", txDecode.Hash())
 			for index, msg := range txDecode.TxMessages {
 				fmt.Printf("======== message[%d]:%v\n", index, msg)
 				switch msg.App {

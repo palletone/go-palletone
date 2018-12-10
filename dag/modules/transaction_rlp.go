@@ -23,14 +23,12 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 )
 
 type transactionTemp struct {
-	TxHash     common.Hash
-	TxId       common.Hash
-	TxMessages []messageTemp
+	RequestRows byte
+	TxMessages  []messageTemp
 }
 type messageTemp struct {
 	App  MessageType
@@ -57,7 +55,7 @@ func (tx *Transaction) EncodeRLP(w io.Writer) error {
 	return rlp.Encode(w, temp)
 }
 func tx2Temp(tx *Transaction) (*transactionTemp, error) {
-	temp := &transactionTemp{TxHash: tx.TxHash, TxId: tx.TxId}
+	temp := &transactionTemp{RequestRows: tx.RequestRows}
 
 	for _, m := range tx.TxMessages {
 
@@ -76,8 +74,7 @@ func tx2Temp(tx *Transaction) (*transactionTemp, error) {
 	return temp, nil
 }
 func temp2Tx(temp *transactionTemp, tx *Transaction) error {
-	tx.TxId = temp.TxId
-	tx.TxHash = temp.TxHash
+	tx.RequestRows = temp.RequestRows
 
 	for _, m := range temp.TxMessages {
 		m1 := &Message{

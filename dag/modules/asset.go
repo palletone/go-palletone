@@ -48,15 +48,15 @@ const (
 
 func NewPTNAsset() *Asset {
 	//return &Asset{AssetId: PTNCOIN}
-	asset, err := NewAsset("PTN", AssetType_FungibleToken, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, IDType16{})
+	asset, err := NewAsset("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, IDType16{})
 	if err != nil {
 		return nil
 	}
 	return asset
 }
-func NewAsset(symbol string, assetType AssetType, requestId []byte, uniqueId IDType16) (*Asset, error) {
+func NewAsset(symbol string, assetType AssetType, decimal byte, requestId []byte, uniqueId IDType16) (*Asset, error) {
 	asset := &Asset{}
-	assetId, err := NewAssetId(symbol, assetType, requestId)
+	assetId, err := NewAssetId(symbol, assetType, decimal, requestId)
 	if err != nil {
 		return nil, err
 	}
@@ -66,11 +66,11 @@ func NewAsset(symbol string, assetType AssetType, requestId []byte, uniqueId IDT
 }
 
 func NewPTNIdType() IDType16 {
-	ptn, _ := NewAssetId("PTN", AssetType_FungibleToken, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	ptn, _ := NewAssetId("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 	return ptn
 }
 
-func NewAssetId(symbol string, assetType AssetType, requestId []byte) (IDType16, error) {
+func NewAssetId(symbol string, assetType AssetType, decimal byte, requestId []byte) (IDType16, error) {
 	if len(symbol) > 5 {
 		return IDType16{}, errors.New("Symbol must less than 5 characters")
 	}
@@ -81,7 +81,8 @@ func NewAssetId(symbol string, assetType AssetType, requestId []byte) (IDType16,
 	firstByte := assetId[0] | (byte(len(assetSymbol) << 5))
 	firstByte = firstByte | byte(assetType)<<2
 	assetId[0] = firstByte
-	copy(assetId[4:], requestId[0:12])
+	assetId[4] = decimal
+	copy(assetId[5:], requestId[0:11])
 	return assetId, nil
 }
 

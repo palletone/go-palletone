@@ -633,7 +633,7 @@ func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Trans
 	// Make a shallow copy of the transaction, zeroing out the script for
 	// all inputs that are not currently being processed.
 	txCopy := shallowCopyTx(tx)
-	txCopy.TxHash = common.Hash{} //Clean Tx Hash
+	//txCopy.TxHash = common.Hash{} //Clean Tx Hash
 	for i, msg := range txCopy.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
 			payment := msg.Payload.(*modules.PaymentPayload)

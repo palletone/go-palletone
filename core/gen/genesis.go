@@ -98,7 +98,7 @@ func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Un
 	txs, asset := GetGensisTransctions(ks, genesis)
 	log.Info("-> Genesis transactions:")
 	for i, tx := range txs {
-		msg := fmt.Sprintf("Tx[%d]: %s\n", i, tx.TxHash.String())
+		msg := fmt.Sprintf("Tx[%d]: %s\n", i, tx.Hash().String())
 		log.Info(msg)
 	}
 	//return modules.NewGenesisUnit(genesis, txs)
@@ -178,7 +178,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	tx.TxMessages = append(tx.TxMessages, initialMediatorMsgs...)
 
 	// tx.CreationDate = tx.CreateDate()
-	tx.TxHash = tx.Hash()
+	//tx.TxHash = tx.Hash()
 
 	txs := []*modules.Transaction{tx}
 	return txs, asset
@@ -199,18 +199,18 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 	tx := &modules.Transaction{
 		TxMessages: []*modules.Message{orgTx.TxMessages[0], orgTx.TxMessages[1]},
 	}
-	for i:= 0;i <len(msgs);i++ {
+	for i := 0; i < len(msgs); i++ {
 		tx.AddMessage(msgs[i])
 	}
 
-	tx.TxId = orgTx.TxId
+	//tx.TxId = orgTx.TxId
 	pubkey, err := ks.GetPublicKey(singer)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
 	}
 	sig, err := cm.GetTxSig(tx, ks, singer)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.TxId.String()))
+		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.Hash().String()))
 	}
 	sigSet := modules.SignatureSet{
 		PubKey:    pubkey,
@@ -224,9 +224,9 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 		},
 	}
 	tx.TxMessages = append(tx.TxMessages, msgSig)
-	tx.TxHash = tx.Hash()
+	//tx.TxHash = tx.Hash()
 
-	log.Debug("GenContractSigTransctions", "orgTx.TxId id ok:", tx.TxId)
+	log.Debug("GenContractSigTransctions", "orgTx.TxId id ok:", tx.Hash())
 	//log.Debug("GenContractSigTransctions", tx.TxMessages[3].Payload.(*modules.SignaturePayload).Signatures[0])
 	return tx, nil
 }

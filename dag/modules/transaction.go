@@ -20,7 +20,6 @@
 package modules
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -67,7 +66,7 @@ func newTransaction(msg []*Message) *Transaction {
 	for _, m := range msg {
 		tx.TxMessages = append(tx.TxMessages, m)
 	}
-	tx.TxHash = tx.Hash()
+	//tx.TxHash = tx.Hash()
 
 	return tx
 }
@@ -87,13 +86,13 @@ func (pld *PaymentPayload) AddTxOut(to *Output) {
 	pld.Outputs = append(pld.Outputs, to)
 }
 
-func (t *Transaction) SetHash(hash common.Hash) {
-	if t.TxHash == (common.Hash{}) {
-		t.TxHash = hash
-	} else {
-		t.TxHash.Set(hash)
-	}
-}
+//func (t *Transaction) SetHash(hash common.Hash) {
+//	if t.TxHash == (common.Hash{}) {
+//		t.TxHash = hash
+//	} else {
+//		t.TxHash.Set(hash)
+//	}
+//}
 
 type TxPoolTransaction struct {
 	Tx *Transaction
@@ -176,13 +175,22 @@ func (tx *TxPoolTransaction) SetPriorityLvl(priority float64) {
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
 func (tx *Transaction) Hash() common.Hash {
-	if tx.TxHash != (common.Hash{}) {
-		return tx.TxHash
-	}
+	//if tx.TxHash != (common.Hash{}) {
+	//	return tx.TxHash
+	//}
 	v := rlp.RlpHash(tx)
-	tx.TxHash = v
+	//tx.TxHash = v
 	return v
 }
+
+func (tx *Transaction) RequestHash() common.Hash {
+	req := Transaction{RequestRows: tx.RequestRows}
+	for i := 0; i < int(tx.RequestRows); i++ {
+		req.AddMessage(tx.TxMessages[i])
+	}
+	return rlp.RlpHash(req)
+}
+
 func (tx *Transaction) Messages() []*Message {
 	msgs := make([]*Message, 0)
 	for _, msg := range tx.TxMessages {
@@ -330,9 +338,10 @@ type TxLookupEntry struct {
 }
 type Transactions []*Transaction
 type Transaction struct {
-	TxHash     common.Hash `json:"txhash"`
-	TxId       common.Hash `json:"txid"` //contract request id
-	TxMessages []*Message  `json:"messages"`
+	//TxHash      common.Hash `json:"txhash"`
+	//TxId        common.Hash `json:"txid"` //contract request id
+	RequestRows byte       //如果是合约调用类型的Tx，那么前几行Message是客户端请求部分
+	TxMessages  []*Message `json:"messages"`
 }
 
 //增发的利息
@@ -440,10 +449,11 @@ func (t *Input) SerializeSize() int {
 	return 40 + VarIntSerializeSize(uint64(len(t.SignatureScript))) +
 		len(t.SignatureScript)
 }
-func (msg *PaymentPayload) SerializeSize() int {
-	n := msg.baseSize()
-	return n
-}
+
+//func (msg *PaymentPayload) SerializeSize() int {
+//	n := msg.baseSize()
+//	return n
+//}
 func (msg *Transaction) SerializeSize() int {
 	n := msg.baseSize()
 	return n
@@ -472,15 +482,15 @@ type Hash [HashSize]byte
 // DoubleHashH calculates hash(hash(b)) and returns the resulting bytes as a
 // Hash.
 // TxHash generates the Hash for the transaction.
-func (msg *PaymentPayload) TxHash() common.Hash {
-	// Encode the transaction and calculate double sha256 on the result.
-	// Ignore the error returns since the only way the encode could fail
-	// is being out of memory or due to nil pointers, both of which would
-	// cause a run-time panic.
-	buf := bytes.NewBuffer(make([]byte, 0, msg.SerializeSizeStripped()))
-	_ = msg.SerializeNoWitness(buf)
-	return common.DoubleHashH(buf.Bytes())
-}
+//func (msg *PaymentPayload) TxHash() common.Hash {
+//	// Encode the transaction and calculate double sha256 on the result.
+//	// Ignore the error returns since the only way the encode could fail
+//	// is being out of memory or due to nil pointers, both of which would
+//	// cause a run-time panic.
+//	buf := bytes.NewBuffer(make([]byte, 0, msg.SerializeSizeStripped()))
+//	_ = msg.SerializeNoWitness(buf)
+//	return common.DoubleHashH(buf.Bytes())
+//}
 
 // SerializeNoWitness encodes the transaction to w in an identical manner to
 // Serialize, however even if the source transaction has inputs with witness
@@ -492,44 +502,73 @@ func (msg *PaymentPayload) SerializeNoWitness(w io.Writer) error {
 
 // baseSize returns the serialized size of the transaction without accounting
 // for any witness data.
-func (msg *PaymentPayload) baseSize() int {
-	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
-	// number of transaction inputs and outputs.
-	n := 8 + VarIntSerializeSize(uint64(len(msg.Inputs))) +
-		VarIntSerializeSize(uint64(len(msg.Outputs)))
-	for _, txIn := range msg.Inputs {
-		n += txIn.SerializeSize()
-	}
-	for _, txOut := range msg.Outputs {
-		n += txOut.SerializeSize()
-	}
-	return n
-}
+//func (msg *PaymentPayload) baseSize() int {
+//	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
+//	// number of transaction inputs and outputs.
+//	n := 8 + VarIntSerializeSize(uint64(len(msg.Inputs))) +
+//		VarIntSerializeSize(uint64(len(msg.Outputs)))
+//	for _, txIn := range msg.Inputs {
+//		n += txIn.SerializeSize()
+//	}
+//	for _, txOut := range msg.Outputs {
+//		n += txOut.SerializeSize()
+//	}
+//	return n
+//}
+
 func (msg *Transaction) baseSize() int {
-	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
-	// number of transaction inputs and outputs.
-	n := 16 + VarIntSerializeSize(uint64(len(msg.TxMessages))) +
-		VarIntSerializeSize(uint64(len(msg.TxHash)))
-	for _, mtx := range msg.TxMessages {
-		payload := mtx.Payload
-		payment, ok := payload.(PaymentPayload)
-		if ok == true {
-			for _, txIn := range payment.Inputs {
-				n += txIn.SerializeSize()
-			}
-			for _, txOut := range payment.Outputs {
-				n += txOut.SerializeSize()
-			}
+	b, _ := rlp.EncodeToBytes(msg)
+	return len(b)
+}
+func (tx *Transaction) IsContractInvoke() bool {
+
+	for _, m := range tx.TxMessages {
+		if m.App == APP_CONTRACT_INVOKE_REQUEST {
+			return true
 		}
 	}
-	return n
+
+	return false
 }
+
+//判断一个交易是否是一个合约请求交易，并且还没有被执行
+func (tx *Transaction) IsNewContractInvokeRequest() bool {
+	if tx.RequestRows == byte(len(tx.TxMessages)) {
+		return tx.IsContractInvoke()
+	}
+	return false
+}
+
+//判断一个交易是否是完整交易，如果是普通转账交易就是完整交易，
+//如果是合约请求交易，那么带了结果Msg的就是完整交易
+//func (tx *Transaction) IsFullTx() bool{
+//	if
+//}
+
+//	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
+//	// number of transaction inputs and outputs.
+//	n := 16 + VarIntSerializeSize(uint64(len(msg.TxMessages))) +
+//		VarIntSerializeSize(uint64(len(msg.TxHash)))
+//	for _, mtx := range msg.TxMessages {
+//		payload := mtx.Payload
+//		payment, ok := payload.(PaymentPayload)
+//		if ok == true {
+//			for _, txIn := range payment.Inputs {
+//				n += txIn.SerializeSize()
+//			}
+//			for _, txOut := range payment.Outputs {
+//				n += txOut.SerializeSize()
+//			}
+//		}
+//	}
+//	return n
+//}
 
 // SerializeSizeStripped returns the number of bytes it would take to serialize
 // the transaction, excluding any included witness data.
-func (msg *PaymentPayload) SerializeSizeStripped() int {
-	return msg.baseSize()
-}
+//func (msg *PaymentPayload) SerializeSizeStripped() int {
+//	return msg.baseSize()
+//}
 
 // SerializeSizeStripped returns the number of bytes it would take to serialize
 // the transaction, excluding any included witness data.
