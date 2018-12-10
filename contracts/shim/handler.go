@@ -456,8 +456,8 @@ func (handler *Handler) handlePayOutToken(collection string, addr string, invoke
 	// Incorrect chaincode message received
 	return errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
-func (handler *Handler) handleDefineToken(tokenType byte, define []byte, contractid []byte, channelId string, txid string) error {
-	par := &pb.DefineToken{TokenType: int32(tokenType), Define: define}
+func (handler *Handler) handleDefineToken(tokenType byte, define []byte, creator string, contractid []byte, channelId string, txid string) error {
+	par := &pb.DefineToken{TokenType: int32(tokenType), Define: define, Creator: creator}
 	payloadBytes, _ := proto.Marshal(par)
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_DEFINE_TOKEN, Payload: payloadBytes, Txid: txid, ChannelId: channelId, ContractId: contractid}

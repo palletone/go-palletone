@@ -196,8 +196,9 @@ func (s *RwSetTxSimulator) GetTokenDefineData(ns string) (*modules.TokenDefine, 
 func (s *RwSetTxSimulator) GetTokenSupplyData(ns string) ([]*modules.TokenSupply, error) {
 	return s.rwsetBuilder.GetTokenSupply(ns), nil
 }
-func (s *RwSetTxSimulator) DefineToken(ns string, tokenType int32, define []byte) error {
-	s.rwsetBuilder.DefineToken(ns, tokenType, define)
+func (s *RwSetTxSimulator) DefineToken(ns string, tokenType int32, define []byte, creator string) error {
+	createAddr, _ := common.StringToAddress(creator)
+	s.rwsetBuilder.DefineToken(ns, tokenType, define, createAddr)
 	return nil
 }
 func (s *RwSetTxSimulator) SupplyToken(ns string, assetId, uniqueId []byte, amt uint64) error {

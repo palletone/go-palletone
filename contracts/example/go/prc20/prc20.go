@@ -130,8 +130,15 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Failed to generate token Json\"}"
 		return shim.Error(jsonResp)
 	}
+	//
+	createaddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+
 	//set token define
-	err = stub.DefineToken(byte(0), createJson)
+	err = stub.DefineToken(byte(0), createJson, createaddr.String())
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.DefineToken\"}"
 		return shim.Error(jsonResp)

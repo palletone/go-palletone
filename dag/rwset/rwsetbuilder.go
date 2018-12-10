@@ -80,9 +80,9 @@ func (b *RWSetBuilder) GetTokenSupply(ns string) []*modules.TokenSupply {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
 	return nsPubRwBuilder.tokenSupply
 }
-func (b *RWSetBuilder) DefineToken(ns string, tokenType int32, define []byte) {
+func (b *RWSetBuilder) DefineToken(ns string, tokenType int32, define []byte, createAddr common.Address) {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
-	nsPubRwBuilder.tokenDefine = &modules.TokenDefine{TokenType: int(tokenType), TokenDefineJson: define}
+	nsPubRwBuilder.tokenDefine = &modules.TokenDefine{TokenType: int(tokenType), TokenDefineJson: define, Creator: createAddr}
 }
 func (b *RWSetBuilder) AddSupplyToken(ns string, assetId, uniqueId []byte, amt uint64) error {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
