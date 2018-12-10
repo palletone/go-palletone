@@ -135,7 +135,7 @@ func (statedb *StateDb) GetAccountMediatorVote(voterAddress common.Address) ([]c
 	mediatorVotes := []common.Address{}
 	for _, voteInfo := range accountInfo.Votes {
 		if voteInfo.VoteType == 0 {
-			mediatorVotes = append(mediatorVotes, common.BytesToAddress(voteInfo.VoteContent))
+			mediatorVotes = append(mediatorVotes, common.BytesToAddress(voteInfo.Contents))
 		}
 	}
 	// 3. get weight

@@ -51,6 +51,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
+	vote2 "github.com/palletone/go-palletone/dag/vote"
 )
 
 const (
@@ -830,7 +831,7 @@ func (s *PublicBlockChainAPI) CreateMediatorVote(ctx context.Context, paymentHex
 	if err != nil {
 		return "", err
 	}
-	vote := &modules.VotePayload{}
+	vote := &vote2.VoteInfo{}
 	vote.VoteType = 0
 	strings := []string{}
 	strings = append(strings, mediatorAddr)

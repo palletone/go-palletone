@@ -28,26 +28,35 @@ import (
 	"github.com/palletone/go-palletone/dag/vote"
 )
 
+func accountKey(address common.Address) []byte {
+	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes()...)
+
+	return key
+}
+
 func (statedb *StateDb) GetAccountInfo(address common.Address) (*modules.AccountInfo, error) {
-	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes21()...)
 	info := &modules.AccountInfo{}
-	err := retrieve(statedb.db, key, info)
+
+	err := retrieve(statedb.db, accountKey(address), info)
 	if err != nil {
 		statedb.logger.Errorf("Get account[%s] info throw an error:%s", address.String(), err.Error())
 		return nil, err
 	}
+
 	return info, nil
 }
 
 func (statedb *StateDb) SaveAccountInfo(address common.Address, info *modules.AccountInfo) error {
-	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes21()...)
 	statedb.logger.Debugf("Save account info for address:%s", address.String())
-	return StoreBytes(statedb.db, key, info)
+
+	return StoreBytes(statedb.db, accountKey(address), info)
 }
+
 func (statedb *StateDb) UpdateAccountInfoBalance(address common.Address, addAmount int64) error {
-	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes21()...)
+	key := accountKey(address)
 	exist, _ := statedb.db.Has(key)
 	info := &modules.AccountInfo{}
+
 	if exist {
 		err := retrieve(statedb.db, key, info)
 		if err != nil {
@@ -57,10 +66,12 @@ func (statedb *StateDb) UpdateAccountInfoBalance(address common.Address, addAmou
 	} else {
 		info.PtnBalance = 0
 	}
+
 	info.PtnBalance = uint64(int64(info.PtnBalance) + addAmount)
 	statedb.logger.Debugf("Update Ptn Balance for address:%s, add Amount:%d", address.String(), addAmount)
 	return StoreBytes(statedb.db, key, info)
 }
+
 func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte {
 	accountInfo, err := statedb.GetAccountInfo(address)
 	if err != nil {
@@ -69,7 +80,7 @@ func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint
 	res := make([][]byte, 0)
 	for _, vote := range accountInfo.Votes {
 		if vote.VoteType == voteType {
-			res = append(res, vote.VoteContent)
+			res = append(res, vote.Contents)
 		}
 	}
 	return res
@@ -87,6 +98,7 @@ func (statedb *StateDb) AddVote2Account(address common.Address, voteInfo vote.Vo
 	}
 	return nil
 }
+
 func (statedb *StateDb) getAllAccountInfo() []*modules.AccountInfo {
 	iter := statedb.db.NewIteratorWithPrefix(constants.ACCOUNT_INFO_PREFIX)
 	result := []*modules.AccountInfo{}

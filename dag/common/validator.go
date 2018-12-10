@@ -34,6 +34,7 @@ import (
 	//"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/dag/vote"
 )
 
 type Validate struct {
@@ -246,7 +247,7 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		if app == modules.APP_TEXT {
 			return true
 		}
-	case *modules.VotePayload:
+	case *vote.VoteInfo:
 		if app == modules.APP_VOTE {
 			return true
 		}

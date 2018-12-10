@@ -158,10 +158,6 @@ func (a Address) Bytes() []byte {
 	return a[0:20]
 }
 
-//Return address all 21 bytes, you can use SetBytes function to get Address object
-func (a Address) Bytes21() []byte {
-	return a[:]
-}
 func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a.Bytes()) }
 func (a Address) Hash() Hash    { return BytesToHash(a.Bytes()) }
 func (a Address) Hex() string   { return fmt.Sprintf("0x%x", a.Bytes()) }

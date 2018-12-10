@@ -429,7 +429,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Message, voter common.Address) error {
 
 	// type deduct
-	VotePayLoad, ok := msg.Payload.(*modules.VotePayload)
+	VotePayLoad, ok := msg.Payload.(*vote.VoteInfo)
 	if !ok {
 		return errors.New("not a valid vote payload")
 	}
