@@ -134,8 +134,7 @@ func (c *Contract) Invoke(chainID string, deployId []byte, txid string, tx *unit
 	if initFlag == 0 {
 		return nil, errors.New("Contract not initialized")
 	}
-	contractInvokeResult, err := cc.Invoke(deployId, c.dag, chainID, deployId, txid, tx, args, timeout)
-	return contractInvokeResult, err
+	return cc.Invoke(deployId, c.dag, chainID, deployId, txid, tx, args, timeout)
 }
 
 // Stop 停止指定合约。根据需求可以对镜像文件进行删除操作

@@ -145,7 +145,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, ptn.contract, dag)
+	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, ptn.contract)
 	if err != nil {
 		log.Error("contract processor creat:", "error", err)
 		return nil, err
@@ -271,7 +271,7 @@ func (s *PalletOne) ContractSigBroadcast(event jury.ContractSigEvent) {
 	s.protocolManager.ContractSigBroadcast(event)
 }
 
-func (s *PalletOne) GetLocalMediators() *mp.MediatorAccount {
+func (s *PalletOne) GetLocalMediators() []common.Address {
 	return s.mediatorPlugin.LocalMediators()
 }
 

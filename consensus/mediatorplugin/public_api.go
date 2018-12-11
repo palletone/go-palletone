@@ -75,11 +75,12 @@ func (a *PublicMediatorAPI) VoteResult() (res string) {
 }
 
 // todo 待删除，jury暂时使用mediator配置
-func (mp *MediatorPlugin) LocalMediators() *MediatorAccount {
+func (mp *MediatorPlugin) LocalMediators() []common.Address {
+	addrs := make([]common.Address, 0)
 	for add, _ := range mp.mediators {
-		return mp.mediators[add]
+		addrs = append(addrs, mp.mediators[add].Address)
 	}
-	return nil
+	return addrs
 }
 
 func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {

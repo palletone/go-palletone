@@ -575,7 +575,7 @@ func (pm *ProtocolManager) ContractSigMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===ContractExecMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-	pm.contractProc.ProcessContractSigEvent(&event)
+	//pm.contractProc.ProcessContractSigEvent(&event)
 	return nil
 }
 
