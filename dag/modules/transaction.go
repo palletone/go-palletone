@@ -103,7 +103,8 @@ type TxPoolTransaction struct {
 	Nonce        uint64    // transaction'hash maybe repeat.
 	Pending      bool
 	Confirmed    bool
-	Index        int `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
+	TxFee        *InvokeFees `json:"tx_fee"`
+	Index        int         `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
 }
 
@@ -158,7 +159,7 @@ func (tx *TxPoolTransaction) GetPriorityLvl() float64 {
 		return tx.Priority_lvl
 	}
 	var priority_lvl float64
-	if txfee := tx.Tx.Fee(); txfee.Int64() > 0 {
+	if txfee := tx.GetTxFee(); txfee.Int64() > 0 {
 		// t0, _ := time.Parse(TimeFormatString, tx.CreationDate)
 		if tx.CreationDate.Unix() <= 0 {
 			tx.CreationDate = time.Now()
@@ -170,6 +171,13 @@ func (tx *TxPoolTransaction) GetPriorityLvl() float64 {
 }
 func (tx *TxPoolTransaction) SetPriorityLvl(priority float64) {
 	tx.Priority_lvl = priority
+}
+func (tx *TxPoolTransaction) GetTxFee() *big.Int {
+	var fee uint64
+	if tx.TxFee != nil {
+		fee = tx.TxFee.Amount
+	}
+	return big.NewInt(int64(fee))
 }
 
 // Hash hashes the RLP encoding of tx.
@@ -214,12 +222,7 @@ func (tx *Transaction) CreateDate() string {
 	n := time.Now()
 	return n.Format(TimeFormatString)
 }
-func (tx *Transaction) Fee() *big.Int {
-	// TODO 计算该交易的手续费
-	// TXFEE += inputs - outputs
 
-	return TXFEE
-}
 func (tx *Transaction) Address() common.Address {
 	return common.Address{}
 }
