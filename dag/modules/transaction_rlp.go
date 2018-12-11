@@ -55,7 +55,7 @@ func (tx *Transaction) EncodeRLP(w io.Writer) error {
 	return rlp.Encode(w, temp)
 }
 func tx2Temp(tx *Transaction) (*transactionTemp, error) {
-	temp := &transactionTemp{RequestRows: tx.RequestRows}
+	temp := &transactionTemp{}
 
 	for _, m := range tx.TxMessages {
 
@@ -74,7 +74,6 @@ func tx2Temp(tx *Transaction) (*transactionTemp, error) {
 	return temp, nil
 }
 func temp2Tx(temp *transactionTemp, tx *Transaction) error {
-	tx.RequestRows = temp.RequestRows
 
 	for _, m := range temp.TxMessages {
 		m1 := &Message{

@@ -170,9 +170,7 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 		for i, pTx := range txs {
 			//hash := pTx.Hash()
 
-			tx := Transaction{
-				RequestRows: pTx.RequestRows,
-			}
+			tx := Transaction{}
 			if len(pTx.TxMessages) > 0 {
 				tx.TxMessages = make([]*Message, len(pTx.TxMessages))
 				for j := 0; j < len(pTx.TxMessages); j++ {

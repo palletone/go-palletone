@@ -184,9 +184,12 @@ func (tx *Transaction) Hash() common.Hash {
 }
 
 func (tx *Transaction) RequestHash() common.Hash {
-	req := Transaction{RequestRows: tx.RequestRows}
-	for i := 0; i < int(tx.RequestRows); i++ {
-		req.AddMessage(tx.TxMessages[i])
+	req := Transaction{}
+	for _, msg := range tx.TxMessages {
+		req.AddMessage(msg)
+		if msg.App >= 100 { //100以上的APPCode是请求
+			break
+		}
 	}
 	return rlp.RlpHash(req)
 }
@@ -211,14 +214,12 @@ func (tx *Transaction) CreateDate() string {
 	n := time.Now()
 	return n.Format(TimeFormatString)
 }
-
 func (tx *Transaction) Fee() *big.Int {
 	// TODO 计算该交易的手续费
 	// TXFEE += inputs - outputs
 
 	return TXFEE
 }
-
 func (tx *Transaction) Address() common.Address {
 	return common.Address{}
 }
@@ -340,8 +341,8 @@ type Transactions []*Transaction
 type Transaction struct {
 	//TxHash      common.Hash `json:"txhash"`
 	//TxId        common.Hash `json:"txid"` //contract request id
-	RequestRows byte       //如果是合约调用类型的Tx，那么前几行Message是客户端请求部分
-	TxMessages  []*Message `json:"messages"`
+	//RequestRows byte       //如果是合约调用类型的Tx，那么前几行Message是客户端请求部分
+	TxMessages []*Message `json:"messages"`
 }
 
 //增发的利息
@@ -533,10 +534,9 @@ func (tx *Transaction) IsContractInvoke() bool {
 
 //判断一个交易是否是一个合约请求交易，并且还没有被执行
 func (tx *Transaction) IsNewContractInvokeRequest() bool {
-	if tx.RequestRows == byte(len(tx.TxMessages)) {
-		return tx.IsContractInvoke()
-	}
-	return false
+	lastMsg := tx.TxMessages[len(tx.TxMessages)-1]
+	return lastMsg.App >= 100
+
 }
 
 //判断一个交易是否是完整交易，如果是普通转账交易就是完整交易，
