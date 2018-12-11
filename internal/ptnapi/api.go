@@ -535,11 +535,10 @@ func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address string) (m
 	}
 	result := make(map[string]decimal.Decimal)
 	for _, utxo := range utxos {
-		asset, _ := modules.StringToAsset(utxo.Asset)
 		if bal, ok := result[utxo.Asset]; ok {
-			result[utxo.Asset] = bal.Add(ptnjson.AssetAmt2JsonAmt(asset, utxo.Amount))
+			result[utxo.Asset] = bal.Add(ptnjson.Dao2Ptn(utxo.Amount))
 		} else {
-			result[utxo.Asset] = ptnjson.AssetAmt2JsonAmt(asset, utxo.Amount)
+			result[utxo.Asset] = ptnjson.Dao2Ptn(utxo.Amount)
 		}
 	}
 	return result, nil
@@ -865,17 +864,28 @@ func (s *PublicBlockChainAPI) EncodeTx(ctx context.Context, json string) (string
 	return s.b.EncodeTx(json)
 }
 
-func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId string, txid string, txhex string, param []string) (string, error) {
+func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId, signer, from, to, daoAmount, daoFee string, param []string) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
-	txBytes, err := hex.DecodeString(txhex)
-	log.Info("-----Ccinvoketx:" + deployId + ":" + txid)
+	sigAddr,_:= common.StringToAddress(signer)
+	fromAddr,_:= common.StringToAddress(from)
+	toAddr,_:= common.StringToAddress(to)
+	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
+	fee, _ := strconv.ParseUint(daoFee, 10, 64)
+
+	log.Info("-----Ccinvoketx:", "deployId", deployId)
+	log.Info("-----Ccinvoketx:", "sigAddr", sigAddr.String())
+	log.Info("-----Ccinvoketx:", "fromAddr", fromAddr.String())
+	log.Info("-----Ccinvoketx:", "toAddr", toAddr.String())
+	log.Info("-----Ccinvoketx:", "amount", amount)
+	log.Info("-----Ccinvoketx:", "fee", fee)
 
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	rsp, err := s.b.ContractTxReqBroadcast(depId, txid, txBytes, args, 0)
+
+	rsp, err := s.b.ContractTxReqBroadcast(depId, sigAddr, fromAddr, toAddr, amount, fee, args,0)
 
 	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
 
@@ -1518,6 +1528,8 @@ const (
 //	return mtxHex, nil
 //}
 
+
+
 //create raw transction
 func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) (string, error) {
 
@@ -1702,6 +1714,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 //	}
 //	return taken_utxo, change
 //}
+
 
 func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 
@@ -1947,7 +1960,6 @@ func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) 
 	}
 	return result
 }
-
 //sign rawtranscation
 //create raw transction
 func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string, password string, duration *uint64) (interface{}, error) {

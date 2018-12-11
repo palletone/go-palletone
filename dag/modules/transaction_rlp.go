@@ -28,7 +28,6 @@ import (
 )
 
 type transactionTemp struct {
-	RequestRows byte
 	TxMessages  []messageTemp
 }
 type messageTemp struct {
@@ -59,7 +58,6 @@ func tx2Temp(tx *Transaction) (*transactionTemp, error) {
 	temp := &transactionTemp{}
 
 	for _, m := range tx.TxMessages {
-
 		m1 := messageTemp{
 			App: m.App,
 		}

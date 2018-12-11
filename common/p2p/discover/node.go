@@ -176,7 +176,13 @@ func parseComplete(rawurl string) (*Node, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid host: %v", err)
 	}
-	if ip = net.ParseIP(host); ip == nil {
+
+	addrs, err := net.LookupHost(host)
+	if err != nil {
+		return nil, fmt.Errorf("invalid lookup host: %v", err)
+	}
+
+	if ip = net.ParseIP(addrs[0]); ip == nil {
 		return nil, errors.New("invalid IP address")
 	}
 	// Ensure the IP is 4 bytes long for IPv4 addresses.
