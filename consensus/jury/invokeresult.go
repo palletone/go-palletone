@@ -27,10 +27,9 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
-	md "github.com/palletone/go-palletone/contracts/modules"
 )
 
-func  ToContractPayments(dag iDag, result *md.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
+func resultToContractPayments(dag iDag, result *modules.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
 	addr := common.NewAddress(result.ContractId, common.ContractHash)
 	payments := []*modules.PaymentPayload{}
 	if result.TokenPayOut != nil && len(result.TokenPayOut) > 0 {
@@ -64,16 +63,8 @@ func  ToContractPayments(dag iDag, result *md.ContractInvokeResult) ([]*modules.
 	}
 	return payments, nil
 }
-func convertMapUtxo(utxo map[modules.OutPoint]*modules.Utxo) []*modules.UtxoWithOutPoint {
-	var result []*modules.UtxoWithOutPoint
-	for o, u := range utxo {
-		uo := &modules.UtxoWithOutPoint{}
-		uo.Set(u, &o)
-		result = append(result, uo)
-	}
-	return result
-}
-func  ToCoinbase(result *md.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
+
+func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
 	var coinbases []*modules.PaymentPayload
 	if result.TokenDefine != nil {
 		coinbase := &modules.PaymentPayload{}
@@ -96,4 +87,14 @@ func  ToCoinbase(result *md.ContractInvokeResult) ([]*modules.PaymentPayload, er
 
 	}
 	return coinbases, nil
+}
+
+func convertMapUtxo(utxo map[modules.OutPoint]*modules.Utxo) []*modules.UtxoWithOutPoint {
+	var result []*modules.UtxoWithOutPoint
+	for o, u := range utxo {
+		uo := &modules.UtxoWithOutPoint{}
+		uo.Set(u, &o)
+		result = append(result, uo)
+	}
+	return result
 }

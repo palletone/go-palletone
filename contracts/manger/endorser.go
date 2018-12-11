@@ -21,19 +21,19 @@ package manger
 
 import (
 	"fmt"
+	"time"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 
+	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/contracts/core"
-	"github.com/palletone/go-palletone/contracts/modules"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	putils "github.com/palletone/go-palletone/core/vmContractPub/protos/utils"
-	"github.com/palletone/go-palletone/dag"
 
-	"github.com/palletone/go-palletone/dag/rwset"
-	"time"
 )
 
 type chaincodeError struct {

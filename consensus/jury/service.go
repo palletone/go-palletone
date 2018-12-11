@@ -20,27 +20,25 @@ package jury
 
 import (
 	"fmt"
+	"sync"
+	"time"
+	"reflect"
+	"bytes"
+
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"sync"
-	"time"
-
-	"bytes"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
-	//mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
-	md "github.com/palletone/go-palletone/contracts/modules"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag"
-	cm "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"reflect"
+	cm "github.com/palletone/go-palletone/dag/common"
 )
 
 type PeerType int
@@ -320,13 +318,13 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 					log.Error("runContractCmd ContractProcess ", "error", err)
 					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
-				result := invokeResult.(*md.ContractInvokeResult)
+				result := invokeResult.(*modules.ContractInvokeResult)
 				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, result.ExecutionTime, result.ReadSet, result.WriteSet, result.Payload)
 
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
-				toContractPayments, err := ToContractPayments(dag, result)
+				toContractPayments, err := resultToContractPayments(dag, result)
 				if err != nil {
 					return modules.APP_CONTRACT_INVOKE, nil, err
 				}
@@ -335,7 +333,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 						msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, contractPayment))
 					}
 				}
-				cs, err := ToCoinbase(result)
+				cs, err := resultToCoinbase(result)
 				if err != nil {
 					return modules.APP_CONTRACT_INVOKE, nil, err
 				}
