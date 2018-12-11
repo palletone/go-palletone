@@ -260,19 +260,6 @@ func (mr *MockIDagMockRecorder) GetUnitTxsHash(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitTxsHash", reflect.TypeOf((*MockIDag)(nil).GetUnitTxsHash), hash)
 }
 
-// GetTxSearchEntry mocks base method
-func (m *MockIDag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
-	ret := m.ctrl.Call(m, "GetTxSearchEntry", hash)
-	ret0, _ := ret[0].(*modules.TxLookupEntry)
-	ret1, _ := ret[2].(error)
-	return ret0, ret1
-}
-
-// GetTxSearchEntry indicates an expected call of GetTxSearchEntry
-func (mr *MockIDagMockRecorder) GetTxSearchEntry(hash interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxSearchEntry", reflect.TypeOf((*MockIDag)(nil).GetTxSearchEntry), hash)
-}
-
 // GetTransactionByHash mocks base method
 func (m *MockIDag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
 	ret := m.ctrl.Call(m, "GetTransactionByHash", hash)
@@ -285,6 +272,19 @@ func (m *MockIDag) GetTransactionByHash(hash common.Hash) (*modules.Transaction,
 // GetTransactionByHash indicates an expected call of GetTransactionByHash
 func (mr *MockIDagMockRecorder) GetTransactionByHash(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionByHash", reflect.TypeOf((*MockIDag)(nil).GetTransactionByHash), hash)
+}
+
+// GetTxSearchEntry mocks base method
+func (m *MockIDag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
+	ret := m.ctrl.Call(m, "GetTxSearchEntry", hash)
+	ret0, _ := ret[0].(*modules.TxLookupEntry)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTxSearchEntry indicates an expected call of GetTxSearchEntry
+func (mr *MockIDagMockRecorder) GetTxSearchEntry(hash interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxSearchEntry", reflect.TypeOf((*MockIDag)(nil).GetTxSearchEntry), hash)
 }
 
 // InsertHeaderDag mocks base method
@@ -384,19 +384,6 @@ func (m *MockIDag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks 
 // CreateUnit indicates an expected call of CreateUnit
 func (mr *MockIDagMockRecorder) CreateUnit(mAddr, txpool, ks, t interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUnit", reflect.TypeOf((*MockIDag)(nil).CreateUnit), mAddr, txpool, ks, t)
-}
-
-// ValidateUnitGroupSig mocks base method
-func (m *MockIDag) ValidateUnitGroupSig(hash common.Hash) (bool, error) {
-	ret := m.ctrl.Call(m, "ValidateUnitGroupSig", hash)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ValidateUnitGroupSig indicates an expected call of ValidateUnitGroupSig
-func (mr *MockIDagMockRecorder) ValidateUnitGroupSig(hash interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateUnitGroupSig", reflect.TypeOf((*MockIDag)(nil).ValidateUnitGroupSig), hash)
 }
 
 // FastSyncCommitHead mocks base method
@@ -944,7 +931,7 @@ func (m *MockIDag) QueryDbByKey(key []byte) ([]byte, error) {
 }
 
 // QueryDbByKey indicates an expected call of QueryDbByKey
-func (mr *MockIDagMockRecorder) QueryDbByKey(key []byte) *gomock.Call {
+func (mr *MockIDagMockRecorder) QueryDbByKey(key interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryDbByKey", reflect.TypeOf((*MockIDag)(nil).QueryDbByKey), key)
 }
 
@@ -957,6 +944,6 @@ func (m *MockIDag) QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error) {
 }
 
 // QueryDbByPrefix indicates an expected call of QueryDbByPrefix
-func (mr *MockIDagMockRecorder) QueryDbByPrefix(prefix []byte) *gomock.Call {
+func (mr *MockIDagMockRecorder) QueryDbByPrefix(prefix interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryDbByPrefix", reflect.TypeOf((*MockIDag)(nil).QueryDbByPrefix), prefix)
 }
