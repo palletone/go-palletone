@@ -41,7 +41,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
 	"strings"
 )
@@ -1058,15 +1057,15 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 //	return true, nil
 //}
 
-func (d *Dag) GetAccountMediatorVote(address common.Address) []common.Address {
-	// todo
-	bAddress := d.statedb.GetAccountVoteInfo(address, vote.TYPE_MEDIATOR)
-	res := []common.Address{}
-	for _, b := range bAddress {
-		res = append(res, common.BytesToAddress(b))
-	}
-	return res
-}
+//func (d *Dag) GetAccountMediatorVote(address common.Address) []common.Address {
+//	// todo
+//	bAddress := d.statedb.GetAccountVoteInfo(address, vote.TYPE_MEDIATOR)
+//	res := []common.Address{}
+//	for _, b := range bAddress {
+//		res = append(res, common.BytesToAddress(b))
+//	}
+//	return res
+//}
 
 func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error) {
 	// get current unit

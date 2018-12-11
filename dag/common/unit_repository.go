@@ -76,6 +76,7 @@ func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb stor
 	val := NewValidate(dagdb, utxodb, utxoRep, statedb, l)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
+
 func NewUnitRepository4Db(db ptndb.Database, l log.ILogger) *UnitRepository {
 	dagdb := storage.NewDagDb(db, l)
 	utxodb := storage.NewUtxoDb(db, l)
@@ -85,6 +86,7 @@ func NewUnitRepository4Db(db ptndb.Database, l log.ILogger) *UnitRepository {
 	val := NewValidate(dagdb, utxodb, utxoRep, statedb, l)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
+
 func RHashStr(x interface{}) string {
 	x_byte, err := json.Marshal(x)
 	if err != nil {

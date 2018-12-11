@@ -25,7 +25,6 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/vote"
 )
 
 func accountKey(address common.Address) []byte {
@@ -72,32 +71,32 @@ func (statedb *StateDb) UpdateAccountInfoBalance(address common.Address, addAmou
 	return StoreBytes(statedb.db, key, info)
 }
 
-func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte {
-	accountInfo, err := statedb.GetAccountInfo(address)
-	if err != nil {
-		return nil
-	}
-	res := make([][]byte, 0)
-	for _, vote := range accountInfo.Votes {
-		if vote.VoteType == voteType {
-			res = append(res, vote.Contents)
-		}
-	}
-	return res
+//func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte {
+//	accountInfo, err := statedb.GetAccountInfo(address)
+//	if err != nil {
+//		return nil
+//	}
+//	res := make([][]byte, 0)
+//	for _, vote := range accountInfo.Votes {
+//		if vote.VoteType == voteType {
+//			res = append(res, vote.Contents)
+//		}
+//	}
+//	return res
+//
+//}
 
-}
-
-func (statedb *StateDb) AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error {
-	accountInfo, err := statedb.GetAccountInfo(address)
-	if err != nil {
-		return err
-	}
-	accountInfo.Votes = append(accountInfo.Votes, voteInfo)
-	if err = statedb.SaveAccountInfo(address, accountInfo); err != nil {
-		return err
-	}
-	return nil
-}
+//func (statedb *StateDb) AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error {
+//	accountInfo, err := statedb.GetAccountInfo(address)
+//	if err != nil {
+//		return err
+//	}
+//	accountInfo.Votes = append(accountInfo.Votes, voteInfo)
+//	if err = statedb.SaveAccountInfo(address, accountInfo); err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 func (statedb *StateDb) getAllAccountInfo() []*modules.AccountInfo {
 	iter := statedb.db.NewIteratorWithPrefix(constants.ACCOUNT_INFO_PREFIX)

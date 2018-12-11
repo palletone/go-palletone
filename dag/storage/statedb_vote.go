@@ -25,7 +25,6 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/vote"
 )
 
 //UpdateMediatorVote YiRan@
@@ -35,7 +34,7 @@ func (statedb *StateDb) UpdateMediatorVote(voter common.Address, candidates []by
 	if err != nil {
 		return err
 	}
-	accountInfo.MediatorVoteResult = candidates
+	accountInfo.MediatorVote = common.BytesToAddress(candidates)
 	statedb.logger.Debugf("Try to save mediator vote result{%s} for address:%s", string(candidates), voter.String())
 	//
 	//newVotes := []vote.VoteInfo{}
@@ -126,32 +125,33 @@ func (statedb *StateDb) GetVoterList(voteType uint8, MinTermLimit uint16) []comm
 	return res
 }
 
-func (statedb *StateDb) GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error) {
-	// todo
-	// 1. get account info
-	accountInfo, err := statedb.GetAccountInfo(voterAddress)
-	if err != nil {
-		return nil, 0, err
-	}
-	// 2. get mediator vote
-	mediatorVotes := []common.Address{}
-	for _, voteInfo := range accountInfo.Votes {
-		if voteInfo.VoteType == vote.TYPE_MEDIATOR {
-			mediatorVotes = append(mediatorVotes, common.BytesToAddress(voteInfo.Contents))
-		}
-	}
-	// 3. get weight
-	weight := accountInfo.PtnBalance
-
-	return mediatorVotes, weight, nil
-}
+//func (statedb *StateDb) GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error) {
+//	// todo
+//	// 1. get account info
+//	accountInfo, err := statedb.GetAccountInfo(voterAddress)
+//	if err != nil {
+//		return nil, 0, err
+//	}
+//	// 2. get mediator vote
+//	mediatorVotes := []common.Address{}
+//	for _, voteInfo := range accountInfo.Votes {
+//		if voteInfo.VoteType == vote.TYPE_MEDIATOR {
+//			mediatorVotes = append(mediatorVotes, common.BytesToAddress(voteInfo.Contents))
+//		}
+//	}
+//	// 3. get weight
+//	weight := accountInfo.PtnBalance
+//
+//	return mediatorVotes, weight, nil
+//}
 
 func (statedb *StateDb) GetSortedMediatorVote(returnNumber int) (map[string]uint64, error) {
+	// todo
 	result := make(map[string]uint64)
 	for _, info := range statedb.getAllAccountInfo() {
-		if info.MediatorVoteResult != nil && len(info.MediatorVoteResult) > 0 {
+		if !info.MediatorVote.Equal(common.Address{}) && len(info.MediatorVote) > 0 {
 			addrs := []string{}
-			json.Unmarshal(info.MediatorVoteResult, &addrs)
+			json.Unmarshal(info.MediatorVote[:], &addrs)
 			for _, addr := range addrs {
 				if val, ok := result[addr]; ok {
 					result[addr] = val + info.PtnBalance
