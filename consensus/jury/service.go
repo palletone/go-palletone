@@ -72,7 +72,6 @@ type PalletOne interface {
 type iDag interface {
 	GetActiveMediators() []common.Address
 	IsActiveMediator(add common.Address) bool
-
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 }
 
@@ -523,11 +522,6 @@ func (p *Processor) ContractTxCreat(deployId []byte, txBytes []byte, args [][]by
 	}
 
 	tx.AddMessage(msgReq)
-	//tx.TxHash = common.Hash{}
-	//tx.TxId = tx.Hash()
-	//
-	//tx.TxHash = common.Hash{}
-	//tx.TxHash = tx.Hash()
 
 	return rlp.EncodeToBytes(tx)
 }
@@ -565,11 +559,6 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes
 	}
 
 	tx.AddMessage(msgReq)
-	//tx.TxHash = common.Hash{}
-	//tx.TxId = tx.Hash()
-	//
-	//tx.TxHash = common.Hash{}
-	//tx.TxHash = tx.Hash()
 	reqId := tx.RequestHash()
 	p.locker.Lock()
 	p.mtx[reqId] = &contractTx{
@@ -607,10 +596,6 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	//tx.TxHash = common.Hash{}
-	//tx.TxHash = tx.Hash()
-	//
-	//tx.TxId = tx.Hash()
 	req := tx.RequestHash()
 	p.locker.Lock()
 	p.mtx[req] = &contractTx{
