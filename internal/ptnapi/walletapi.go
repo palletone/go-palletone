@@ -6,10 +6,11 @@ import (
 	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/walletjson"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/shopspring/decimal"
 )
 
@@ -164,4 +165,43 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
     }
     
 	return string(bytetxjson), nil
+}
+
+// walletSendTransaction will add the signed transaction to the transaction pool.
+// The sender is responsible for signing the transaction and using the correct nonce.
+func (s *PublicTransactionPoolAPI) WalletSendTransaction(ctx context.Context, params string) (common.Hash, error) {
+    var RawTxjsonGenParams walletjson.RawTxjsonGenParams
+	err := json.Unmarshal([]byte(params), &RawTxjsonGenParams)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	pload := new(modules.PaymentPayload)
+	for _, input := range RawTxjsonGenParams.Inputs {
+		txHash, err := common.NewHashFromStr(input.TxHash)
+		if err != nil {
+			return common.Hash{}, rpcDecodeHexError(input.TxHash)
+		}
+		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.OutIndex)
+		txInput := modules.NewTxIn(prevOut, []byte(input.Signature))
+		pload.AddTxIn(txInput)
+	}
+	for _, output := range RawTxjsonGenParams.Outputs {
+		Addr,err :=common.StringToAddress(output.Address)
+		if err != nil {
+		    return common.Hash{}, err
+	    }
+		pkScript := tokenengine.GenerateLockScript(Addr)
+		asset,err :=modules.StringToAsset(output.Asset)
+	    txOut := modules.NewTxOut(uint64(output.Amount), pkScript, asset) 
+        pload.AddTxOut(txOut)
+    }
+	mtx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
+	
+	
+	log.Debugf("Tx outpoint tx hash:%s", mtx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
+	return submitTransaction(ctx, s.b, mtx)
 }
