@@ -82,15 +82,23 @@ func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
 	switch funcName {
+	case "ApplyBecomeMediator":
+		//申请成为Mediator
+		return d.ApplyBecomeMediator(stub, args)
+	case "HandleForApplyBecomeMediator":
+		//基金会对加入申请进行处理
+		return d.HandleForApplyBecomeMediator(stub, args)
+	case "ApplyForQuitMediator":
+		//申请退出Mediator
+		return d.ApplyForQuitMediator(stub, args)
+	case "HandleForApplyForQuitMediator":
+		//基金会对退出申请进行处理
+		return d.HandleForApplyForQuitMediator(stub, args)
 	case "DepositWitnessPay":
 		//交付保证金
-		//handle witness pay
-		//void deposit_witness_pay(const witness_object& wit, token_type amount)
 		return d.depositWitnessPay(stub, args)
 	case "ApplyForDepositCashback":
 		//申请保证金退还
-		//handle cashback rewards
-		//void deposit_cashback(const account_object& acct, token_type amount, bool require_vesting = true)
 		return d.applyForDepositCashback(stub, args)
 	case "ApplyForForfeitureDeposit":
 		//申请保证金没收
@@ -144,6 +152,26 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return shim.Success([]byte("ok"))
 	}
 	return shim.Success([]byte("Invoke error"))
+}
+
+//申请加入Mediator
+func (d *DepositChaincode) ApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return ApplyBecomeMediator(stub, args)
+}
+
+//基金会对申请加入Mediator进行处理
+func (d *DepositChaincode) HandleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return HandleForApplyBecomeMediator(stub, args)
+}
+
+//申请退出Mediator
+func (d *DepositChaincode) ApplyForQuitMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return ApplyForQuitMediator(stub, args)
+}
+
+//基金会对申请退出Mediator进行处理
+func (d *DepositChaincode) HandleForApplyForQuitMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return HandleForApplyForQuitMediator(stub, args)
 }
 
 //交付保证金

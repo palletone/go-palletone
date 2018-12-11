@@ -211,7 +211,7 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		// Retrieve the requested block body, stopping if enough was found
 		txs, err := pm.dag.GetUnitTransactions(hash)
 		if err != nil {
-			log.Debug("GetBlockBodiesMsg", "GetUnitTransactions err:", err)
+			log.Debug("GetBlockBodiesMsg", "hash:", hash, "GetUnitTransactions err:", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 

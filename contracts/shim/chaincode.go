@@ -402,6 +402,54 @@ func (stub *ChaincodeStub) GetListForCashback() (*modules.ListForCashback, error
 	return listForCashback, nil
 }
 
+func (stub *ChaincodeStub) GetBecomeMediatorApplyList() (*modules.BecomeMediatorApplyList, error) {
+	listByte, err := stub.handler.handleGetState("", "ListForApplyBecomeMediator", stub.ContractId, stub.ChannelId, stub.TxID)
+	if err != nil {
+		return nil, err
+	}
+	if listByte == nil {
+		return nil, nil
+	}
+	list := new(modules.BecomeMediatorApplyList)
+	err = json.Unmarshal(listByte, list)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+func (stub *ChaincodeStub) GetQuitMediatorApplyList() (*modules.QuitMediatorApplyList, error) {
+	listByte, err := stub.handler.handleGetState("", "ListForApplyQuitMediator", stub.ContractId, stub.ChannelId, stub.TxID)
+	if err != nil {
+		return nil, err
+	}
+	if listByte == nil {
+		return nil, nil
+	}
+	list := new(modules.QuitMediatorApplyList)
+	err = json.Unmarshal(listByte, list)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+func (stub *ChaincodeStub) GetAgreeForBecomeMediatorList() (*modules.AgreeForBecomeMediatorList, error) {
+	listByte, err := stub.handler.handleGetState("", "ListForAgreeBecomeMediator", stub.ContractId, stub.ChannelId, stub.TxID)
+	if err != nil {
+		return nil, err
+	}
+	if listByte == nil {
+		return nil, nil
+	}
+	list := new(modules.AgreeForBecomeMediatorList)
+	err = json.Unmarshal(listByte, list)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
 func (stub *ChaincodeStub) GetListForForfeiture() (*modules.ListForForfeiture, error) {
 	listForForfeitureByte, err := stub.handler.handleGetState("", "ListForForfeiture", stub.ContractId, stub.ChannelId, stub.TxID)
 	if err != nil {
