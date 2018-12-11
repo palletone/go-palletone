@@ -46,10 +46,18 @@ func newTxo4Greedy(outPoint modules.OutPoint, amount uint64) *Txo4Greedy {
 }
 
 func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee uint64) (*modules.Transaction, error) {
+	if daoFee == 0 {
+		return &modules.Transaction{}, fmt.Errorf("Transaction's fee id zero!")
+	}
+
 	// 1. 获取转出账户所有的utxo
 	allUtxos, err := dag.GetAddrUtxos(from)
 	if err != nil {
 		return &modules.Transaction{}, err
+	}
+
+	if len(allUtxos) == 0 {
+		return &modules.Transaction{}, fmt.Errorf("%v 's uxto is null!", from.Str())
 	}
 
 	// 2. 利用贪心算法得到指定额度的utxo集合
@@ -87,7 +95,7 @@ func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee
 		pload.AddTxOut(txOut)
 	}
 
-	// 4. 构建Transaction
+	// 5. 构建Transaction
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}

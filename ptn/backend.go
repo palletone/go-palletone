@@ -379,6 +379,7 @@ func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Tran
 			log.Debug("PaymentPayload conversion error, does not match TxMessage'APP type!")
 		}
 
+		// 2. 查询每个 Input 的 PkScript
 		for _, txin := range payload.Inputs {
 			inpoint := txin.PreviousOutPoint
 			utxo, err := p.dag.GetUtxoEntry(inpoint)
@@ -390,6 +391,7 @@ func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Tran
 		}
 	}
 
+	// 3. 使用tokenengine 和 KeyStore 给 tx 签名
 	ks := p.GetKeyStore()
 	_, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, inputpoints, nil,
 		ks.GetPublicKey, ks.SignHash, 0)

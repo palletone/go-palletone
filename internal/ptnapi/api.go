@@ -835,9 +835,11 @@ func (s *PublicBlockChainAPI) CreateMediatorVote(ctx context.Context, paymentHex
 	}
 	vote := &vote2.VoteInfo{}
 	vote.VoteType = vote2.TYPE_MEDIATOR
-	strings := []string{}
-	strings = append(strings, mediatorAddr)
-	vote.Contents, _ = json.Marshal(strings)
+	add, _ := common.StringToAddress(mediatorAddr)
+	vote.Contents = add.Bytes()
+	//strings := []string{}
+	//strings = append(strings, mediatorAddr)
+	//vote.Contents, _ = json.Marshal(strings)
 	tx.AddMessage(modules.NewMessage(modules.APP_VOTE, vote))
 	txB, _ := rlp.EncodeToBytes(tx)
 	return fmt.Sprintf("%X", txB), nil
@@ -866,9 +868,9 @@ func (s *PublicBlockChainAPI) EncodeTx(ctx context.Context, json string) (string
 
 func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId, signer, from, to, daoAmount, daoFee string, param []string) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
-	sigAddr,_:= common.StringToAddress(signer)
-	fromAddr,_:= common.StringToAddress(from)
-	toAddr,_:= common.StringToAddress(to)
+	sigAddr, _ := common.StringToAddress(signer)
+	fromAddr, _ := common.StringToAddress(from)
+	toAddr, _ := common.StringToAddress(to)
 	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
 	fee, _ := strconv.ParseUint(daoFee, 10, 64)
 
@@ -885,7 +887,7 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId, signer, 
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
 
-	rsp, err := s.b.ContractTxReqBroadcast(depId, sigAddr, fromAddr, toAddr, amount, fee, args,0)
+	rsp, err := s.b.ContractTxReqBroadcast(depId, sigAddr, fromAddr, toAddr, amount, fee, args, 0)
 
 	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
 
@@ -1528,8 +1530,6 @@ const (
 //	return mtxHex, nil
 //}
 
-
-
 //create raw transction
 func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) (string, error) {
 
@@ -1714,7 +1714,6 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 //	}
 //	return taken_utxo, change
 //}
-
 
 func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 
@@ -1960,6 +1959,7 @@ func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) 
 	}
 	return result
 }
+
 //sign rawtranscation
 //create raw transction
 func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string, password string, duration *uint64) (interface{}, error) {

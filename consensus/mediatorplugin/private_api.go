@@ -81,7 +81,7 @@ func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (MediatorCreateRe
 	}
 
 	// 5. 返回执行结果
-	//res.TxHash = tx.TxHash
+	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size()
 	res.Warning = "transaction executed locally, but may not be confirmed by the network yet!"
 
