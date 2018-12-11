@@ -534,10 +534,11 @@ func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address string) (m
 	}
 	result := make(map[string]decimal.Decimal)
 	for _, utxo := range utxos {
+		asset, _ := modules.StringToAsset(utxo.Asset)
 		if bal, ok := result[utxo.Asset]; ok {
-			result[utxo.Asset] = bal.Add(ptnjson.Dao2Ptn(utxo.Amount))
+			result[utxo.Asset] = bal.Add(ptnjson.AssetAmt2JsonAmt(asset, utxo.Amount))
 		} else {
-			result[utxo.Asset] = ptnjson.Dao2Ptn(utxo.Amount)
+			result[utxo.Asset] = ptnjson.AssetAmt2JsonAmt(asset, utxo.Amount)
 		}
 	}
 	return result, nil
@@ -1516,8 +1517,6 @@ const (
 //	return mtxHex, nil
 //}
 
-
-
 //create raw transction
 func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) (string, error) {
 
@@ -1702,7 +1701,6 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 //	}
 //	return taken_utxo, change
 //}
-
 
 func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 
@@ -1948,6 +1946,7 @@ func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) 
 	}
 	return result
 }
+
 //sign rawtranscation
 //create raw transction
 func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string, password string, duration *uint64) (interface{}, error) {

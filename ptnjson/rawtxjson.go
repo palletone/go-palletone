@@ -21,7 +21,6 @@
 package ptnjson
 
 import (
-	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -138,13 +137,6 @@ func ConvertRawTxJson2Paymsg(rawTxJson RawTransactionGenParams) (*modules.Paymen
 	}
 
 	return pay, nil
-}
-func Ptn2Dao(ptnAmount decimal.Decimal) uint64 {
-	return uint64(ptnAmount.Mul(decimal.New(100000000, 0)).IntPart())
-}
-func Dao2Ptn(amount uint64) decimal.Decimal {
-	d, _ := decimal.NewFromString(fmt.Sprintf("%d", amount))
-	return d.Div(decimal.New(100000000, 0))
 }
 
 func ConvertRawTxJson2Tx(rawTxJson RawTransactionGenParams) *modules.Transaction {
