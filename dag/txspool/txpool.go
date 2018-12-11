@@ -518,7 +518,7 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	if len(tx.From) > 0 {
 		for _, from := range tx.From {
 			local = local || pool.locals.contains(*from) // account may be local even if the transaction arrived from the network
-			if !local && pool.txfee.Cmp(tx.Tx.Fee()) > 0 {
+			if !local && pool.txfee.Cmp(tx.GetTxFee()) > 0 {
 				return ErrTxFeeTooLow
 			}
 		}
@@ -562,7 +562,7 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 	}
 
 	txpool_tx.CreationDate = time.Now()
-	txpool_tx.Nonce = txpool.GetNonce(tx.TxHash) + 1
+	txpool_tx.Nonce = txpool.GetNonce(tx.Hash()) + 1
 	txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
 
 	return txpool_tx
@@ -600,7 +600,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	hash := tx.Tx.Hash()
 
 	if pool.all[hash] != nil {
-		log.Trace("Discarding already known transaction", "hash", hash, "old_hash", pool.all[hash].Tx.TxHash)
+		log.Trace("Discarding already known transaction", "hash", hash, "old_hash", pool.all[hash].Tx.Hash())
 		return false, fmt.Errorf("known transaction: %x", hash)
 	}
 	// If the transaction fails basic validation, discard it
@@ -644,13 +644,13 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	if uint64(len(pool.all)) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
 		// If the new transaction is underpriced, don't accept it
 		if pool.priority_priced.Underpriced(tx, pool.locals) {
-			log.Trace("Discarding underpriced transaction", "hash", hash, "price", tx.Tx.Fee())
+			log.Trace("Discarding underpriced transaction", "hash", hash, "price", tx.GetTxFee().Int64())
 			return false, ErrUnderpriced
 		}
 		// New transaction is better than our worse ones, make room for it
 		drop := pool.priority_priced.Discard(len(pool.all)-int(pool.config.GlobalSlots+pool.config.GlobalQueue-1), pool.locals)
 		for _, tx := range drop {
-			log.Trace("Discarding freshly underpriced transaction", "hash", tx.Tx.TxHash, "price", tx.Tx.Fee())
+			log.Trace("Discarding freshly underpriced transaction", "hash", tx.Tx.Hash(), "price", tx.GetTxFee().Int64())
 			pool.removeTransaction(tx, true)
 		}
 	}
@@ -672,7 +672,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 
 	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
-	pool.all[tx.Tx.Hash()] = tx
+	pool.all[hash] = tx
 	for _, msgcopy := range tx.Tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {

@@ -31,7 +31,7 @@ import (
 type priceHeap []*modules.TxPoolTransaction
 
 func (h priceHeap) Len() int           { return len(h) }
-func (h priceHeap) Less(i, j int) bool { return h[i].Tx.Fee().Cmp(h[j].Tx.Fee()) < 0 }
+func (h priceHeap) Less(i, j int) bool { return h[i].GetTxFee().Cmp(h[j].GetTxFee()) < 0 }
 func (h priceHeap) Swap(i, j int) {
 	h[i], h[j] = h[j], h[i]
 	h[i].Index, h[j].Index = i, j
@@ -98,7 +98,7 @@ func (h *priorityHeap) Update(item *modules.TxPoolTransaction, priority float64)
 
 // txPricedList is a price-sorted heap to allow operating on transactions pool
 // contents in a price-incrementing way.
-type  txPricedList struct {
+type txPricedList struct {
 	all    *map[common.Hash]*modules.TxPoolTransaction // Pointer to the map of all transactions
 	items  *priorityHeap                               // Heap of prices of all the stored transactions
 	stales int                                         // Number of stale price points to (re-heap trigger)
@@ -161,7 +161,7 @@ func (l *txPricedList) Cap(threshold *big.Int, local *utxoSet) modules.TxPoolTxs
 			continue
 		}
 		// Stop the discards if we've reached the threshold
-		if tx.Tx.Fee().Cmp(threshold) >= 0 {
+		if tx.GetTxFee().Cmp(threshold) >= 0 {
 			save = append(save, tx)
 			break
 		}

@@ -199,7 +199,7 @@ func (es *EventSystem) broadcast(filters filterIndex, ev interface{}) {
 	switch e := ev.(type) {
 	case modules.TxPreEvent:
 		for _, f := range filters[PendingTransactionsSubscription] {
-			f.hashes <- e.Tx.TxHash
+			f.hashes <- e.Tx.Hash()
 		}
 
 	}

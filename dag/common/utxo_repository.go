@@ -534,11 +534,13 @@ To compute transactions' fees
 func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
 	// current time slice mediator default income is 1 ptn
 	fees := uint64(0)
-	for _, tx := range txs {
+	for i, tx := range txs {
 		fee, err := repository.ComputeTxFee(tx.Tx)
 		if err != nil {
 			return 0, err
 		}
+		tx.TxFee = fee
+		txs[i] = tx
 		fees += fee.Amount
 	}
 	return fees, nil
@@ -578,13 +580,15 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 		//判断是否是保证金合约地址
 		utxo := repository.GetUxto(*payload.Inputs[0])
 		addr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
-		if addr.String() == "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM" {
+		if addr.String() == "PCGZBFEUPJEDERgVfkc3EYosN4R6T2c6LW8" {
 			awards := uint64(0)
 			//对每一笔input输入进行计算奖励
 			for _, txin := range payload.Inputs {
 				utxo = repository.GetUxto(*txin)
 				//1.通过交易hash获取单元hash
-				_, unitHash, _, _ := dagdb.GetTransaction(tx.TxHash)
+				//txin.PreviousOutPoint.TxHash 获取txhash
+				//dagdb.GetTransaction()
+				_, unitHash, _, _ := dagdb.GetTransaction(txin.PreviousOutPoint.TxHash)
 				//2.通过单元hash获取单元信息
 				unit, _ := dagdb.GetUnit(unitHash)
 				//3.通过单元获取头部信息中的时间戳
@@ -611,14 +615,14 @@ func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*module
 		for _, txin := range payload.Inputs {
 			utxo := repository.GetUxto(*txin)
 			if utxo.IsEmpty() {
-				return &modules.InvokeFees{Amount: 0}, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
+				return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
 					txin.PreviousOutPoint.TxHash.String(),
 					txin.PreviousOutPoint.MessageIndex,
 					txin.PreviousOutPoint.OutIndex)
 			}
 			// check overflow
 			if inAmount+utxo.Amount > (1<<64 - 1) {
-				return &modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: txin total overflow")
+				return nil, fmt.Errorf("Compute fees: txin total overflow")
 			}
 			inAmount += utxo.Amount
 		}
@@ -626,20 +630,20 @@ func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*module
 		for _, txout := range payload.Outputs {
 			// check overflow
 			if outAmount+txout.Value > (1<<64 - 1) {
-				return &modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: txout total overflow")
+				return nil, fmt.Errorf("Compute fees: txout total overflow")
 			}
 			log.Info("+++++++++++++++++++++ tx_out_amonut ++++++++++++++++++++", "tx_outAmount", txout.Value)
 			outAmount += txout.Value
 		}
 		if inAmount < outAmount {
 
-			return &modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Hash().String(), inAmount, outAmount)
+			return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Hash().String(), inAmount, outAmount)
 		}
 		fees := inAmount - outAmount
 		return &modules.InvokeFees{Amount: fees, Asset: payload.Outputs[0].Asset}, nil
 
 	}
-	return &modules.InvokeFees{Amount: 0}, fmt.Errorf("Compute fees: no payment payload")
+	return nil, fmt.Errorf("Compute fees: no payment payload")
 }
 
 /**

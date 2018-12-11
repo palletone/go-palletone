@@ -43,6 +43,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
+	"strings"
 )
 
 type Dag struct {
@@ -806,7 +807,38 @@ func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 }
 func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
 	//TODO only get one token's UTXO
-	return map[modules.OutPoint]*modules.Utxo{}, nil
+	all, err := d.utxodb.GetAddrUtxos(addr)
+	if d.utxos_cache != nil {
+		for hash, utxos := range d.utxos_cache {
+			for key, utxo := range utxos {
+				if utxo == nil {
+					log.Info("------------------the utxo is nil  ----------------", "utxokey", key.String())
+					delete(utxos, key)
+					continue
+				} else {
+					address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+					if err == nil {
+						if address.Equal(addr) {
+							if strings.Compare(utxo.Asset.String(), asset.String()) == 0 {
+								if old, has := all[key]; has {
+									// merge
+									if old.IsSpent() {
+										log.Warn("It is delete the spent utxo that I found the old utxo amount: ", "amount", old.Amount)
+										delete(all, key)
+									}
+								}
+								log.Info("new utxo amount :", "amount", utxo.Amount)
+								all[key] = utxo
+							}
+						}
+					}
+				}
+			}
+			d.utxos_cache[hash] = utxos
+		}
+	}
+	return all, err
+	//return map[modules.OutPoint]*modules.Utxo{}, nil
 }
 func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
 	// TODO

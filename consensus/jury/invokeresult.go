@@ -18,37 +18,18 @@
  *
  */
 
-package modules
+package jury
 
 import (
 	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
-	"time"
 )
 
-type ContractInvokeResult struct {
-	ContractId    []byte                     `json:"contract_id"` // contract id
-	RequestId     common.Hash                `json:"request_id"`
-	FunctionName  string                     `json:"function_name"`
-	Args          [][]byte                   `json:"args"`           // contract arguments list
-	ExecutionTime time.Duration              `json:"execution_time"` // contract execution time, millisecond
-	ReadSet       []modules.ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
-	WriteSet      []modules.ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
-	Payload       []byte                     `json:"payload"`        // the contract execution result
-	TokenPayOut   []*modules.TokenPayOut     `json:"token_payout"`   //从合约地址付出Token
-	TokenSupply   []*modules.TokenSupply     `json:"token_supply"`   //增发Token请求产生的结果
-	TokenDefine   *modules.TokenDefine       `json:"token_define"`   //定义新Token
-}
-
-func (result *ContractInvokeResult) ToContractInvokePayload() *modules.ContractInvokePayload {
-	return modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, result.ExecutionTime, result.ReadSet, result.WriteSet, result.Payload, result.TokenPayOut, result.TokenSupply, result.TokenDefine)
-}
-func (result *ContractInvokeResult) ToContractPayments(dag dag.IDag) ([]*modules.PaymentPayload, error) {
+func resultToContractPayments(dag iDag, result *modules.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
 	addr := common.NewAddress(result.ContractId, common.ContractHash)
 	payments := []*modules.PaymentPayload{}
 	if result.TokenPayOut != nil && len(result.TokenPayOut) > 0 {
@@ -82,16 +63,8 @@ func (result *ContractInvokeResult) ToContractPayments(dag dag.IDag) ([]*modules
 	}
 	return payments, nil
 }
-func convertMapUtxo(utxo map[modules.OutPoint]*modules.Utxo) []*modules.UtxoWithOutPoint {
-	var result []*modules.UtxoWithOutPoint
-	for o, u := range utxo {
-		uo := &modules.UtxoWithOutPoint{}
-		uo.Set(u, &o)
-		result = append(result, uo)
-	}
-	return result
-}
-func (result *ContractInvokeResult) ToCoinbase() ([]*modules.PaymentPayload, error) {
+
+func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
 	var coinbases []*modules.PaymentPayload
 	if result.TokenDefine != nil {
 		coinbase := &modules.PaymentPayload{}
@@ -103,7 +76,7 @@ func (result *ContractInvokeResult) ToCoinbase() ([]*modules.PaymentPayload, err
 				return nil, err
 			}
 			newAsset := &modules.Asset{}
-			newAsset.AssetId, _ = modules.NewAssetId(token.Symbol, modules.AssetType_FungibleToken, result.RequestId.Bytes())
+			newAsset.AssetId, _ = modules.NewAssetId(token.Symbol, modules.AssetType_FungibleToken, token.Decimals, result.RequestId.Bytes())
 			out := modules.NewTxOut(token.TotalSupply, tokenengine.GenerateLockScript(result.TokenDefine.Creator), newAsset)
 			coinbase.AddTxOut(out)
 		}
@@ -114,4 +87,14 @@ func (result *ContractInvokeResult) ToCoinbase() ([]*modules.PaymentPayload, err
 
 	}
 	return coinbases, nil
+}
+
+func convertMapUtxo(utxo map[modules.OutPoint]*modules.Utxo) []*modules.UtxoWithOutPoint {
+	var result []*modules.UtxoWithOutPoint
+	for o, u := range utxo {
+		uo := &modules.UtxoWithOutPoint{}
+		uo.Set(u, &o)
+		result = append(result, uo)
+	}
+	return result
 }

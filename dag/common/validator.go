@@ -19,7 +19,6 @@
 package common
 
 import (
-	"bytes"
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
@@ -75,32 +74,33 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 	worldState := map[string]map[string]interface{}{}
 
 	for txIndex, tx := range *txs {
+		txHash := tx.Hash()
 		// validate transaction id duplication
-		if _, ok := txFlags[tx.TxHash]; ok == true {
+		if _, ok := txFlags[txHash]; ok == true {
 			isSuccess = false
-			log.Info("ValidateTx", "txhash", tx.TxHash, "error validate code", modules.TxValidationCode_DUPLICATE_TXID)
-			txFlags[tx.TxHash] = modules.TxValidationCode_DUPLICATE_TXID
+			log.Info("ValidateTx", "txhash", txHash, "error validate code", modules.TxValidationCode_DUPLICATE_TXID)
+			txFlags[txHash] = modules.TxValidationCode_DUPLICATE_TXID
 			continue
 		}
 		// validate common property
 		//The first Tx(txIdx==0) is a coinbase tx.
 		txCode := validate.ValidateTx(tx, txIndex == 0, &worldState)
 		if txCode != modules.TxValidationCode_VALID {
-			log.Info("ValidateTx", "txhash", tx.TxHash, "error validate code", txCode)
+			log.Info("ValidateTx", "txhash", txHash, "error validate code", txCode)
 			isSuccess = false
-			txFlags[tx.TxHash] = txCode
+			txFlags[txHash] = txCode
 			continue
 		}
 		// validate fee
 		if isGenesis == false && txIndex != 0 {
 			txFee, err := validate.utxoRep.ComputeTxFee(tx)
 			if err != nil {
-				log.Info("ValidateTx", "txhash", tx.TxHash, "error validate code", modules.TxValidationCode_INVALID_FEE)
+				log.Info("ValidateTx", "txhash", txHash, "error validate code", modules.TxValidationCode_INVALID_FEE)
 				return nil, false, err
 			}
 			fee += txFee.Amount
 		}
-		txFlags[tx.TxHash] = modules.TxValidationCode_VALID
+		txFlags[txHash] = modules.TxValidationCode_VALID
 	}
 
 	// check coinbase fee and income
@@ -137,11 +137,10 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 		fmt.Printf("-----------ValidateTx , %d\n", tx.TxMessages[0].App)
 		return modules.TxValidationCode_INVALID_MSG
 	}
-
 	// validate transaction hash
-	if !bytes.Equal(tx.TxHash.Bytes(), tx.Hash().Bytes()) {
-		return modules.TxValidationCode_NIL_TXACTION
-	}
+	//if !bytes.Equal(tx.TxHash.Bytes(), tx.Hash().Bytes()) {
+	//	return modules.TxValidationCode_NIL_TXACTION
+	//}
 
 	for _, msg := range tx.TxMessages {
 		// check message type and payload

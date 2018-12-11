@@ -1,13 +1,12 @@
 package common
 
 import (
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"fmt"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/errors"
-	"bytes"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Address) ([]byte, error) {
@@ -28,11 +27,11 @@ func ValidateTxSig(tx *modules.Transaction) bool {
 	var sigs []modules.SignatureSet
 
 	tmpTx := modules.Transaction{}
-	tmpTx.TxId = tx.TxId
-	if !bytes.Equal(tx.TxHash.Bytes(), tx.Hash().Bytes()){
-		log.Error("ValidateTxSig", "transaction hash is not equal, tx req id:", tx.TxId)
-		return false
-	}
+	//tmpTx.TxId = tx.TxId
+	//if !bytes.Equal(tx.TxHash.Bytes(), tx.Hash().Bytes()){
+	//	log.Error("ValidateTxSig", "transaction hash is not equal, tx req id:", tx.TxId)
+	//	return false
+	//}
 	//todo 检查msg的有效性
 
 	for _, msg := range tx.TxMessages {
@@ -47,7 +46,7 @@ func ValidateTxSig(tx *modules.Transaction) bool {
 		for i := 0; i < len(sigs); i++ {
 			//fmt.Printf("sig[%v]-pubkey[%v]--tx[%v]", sigs[i].Signature, sigs[i].PubKey, tmpTx)
 			if keystore.VerifyTXWithPK(sigs[i].Signature, tmpTx, sigs[i].PubKey) != true {
-				log.Error("ValidateTxSig", "VerifyTXWithPK sig fail", tmpTx.TxId.String())
+				log.Error("ValidateTxSig", "VerifyTXWithPK sig fail", tmpTx.RequestHash().String())
 				return false
 			}
 		}

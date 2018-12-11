@@ -98,7 +98,7 @@ func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Un
 	txs, asset := GetGensisTransctions(ks, genesis)
 	log.Info("-> Genesis transactions:")
 	for i, tx := range txs {
-		msg := fmt.Sprintf("Tx[%d]: %s\n", i, tx.TxHash.String())
+		msg := fmt.Sprintf("Tx[%d]: %s\n", i, tx.Hash().String())
 		log.Info(msg)
 	}
 	//return modules.NewGenesisUnit(genesis, txs)
@@ -178,7 +178,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	tx.TxMessages = append(tx.TxMessages, initialMediatorMsgs...)
 
 	// tx.CreationDate = tx.CreateDate()
-	tx.TxHash = tx.Hash()
+	//tx.TxHash = tx.Hash()
 
 	txs := []*modules.Transaction{tx}
 	return txs, asset
@@ -192,25 +192,34 @@ func sigData(key *ecdsa.PrivateKey, data interface{}) ([]byte, error) {
 	return sign[0:64], err
 }
 
-func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction, msgType modules.MessageType, msgs []*modules.Message, ks *keystore.KeyStore) (*modules.Transaction, error) {
+func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) (*modules.Transaction, error) {
 	if orgTx == nil || len(orgTx.TxMessages) < 2 {
-		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions param is error"))
+		return nil, errors.New(fmt.Sprintf("GenContractTransction param is error"))
 	}
 	tx := &modules.Transaction{
-		TxMessages: []*modules.Message{orgTx.TxMessages[0], orgTx.TxMessages[1]},
+	}
+	for i:= 0;i < len(orgTx.TxMessages);i++{
+		tx.AddMessage(orgTx.TxMessages[i])
 	}
 	for i:= 0;i <len(msgs);i++ {
 		tx.AddMessage(msgs[i])
 	}
 
-	tx.TxId = orgTx.TxId
+	return tx, nil
+}
+
+func GenContractSigTransction(singer common.Address, orgTx *modules.Transaction, ks *keystore.KeyStore) (*modules.Transaction, error) {
+	if orgTx == nil || len(orgTx.TxMessages) < 3 {
+		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions param is error"))
+	}
+	tx := orgTx
 	pubkey, err := ks.GetPublicKey(singer)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
 	}
 	sig, err := cm.GetTxSig(tx, ks, singer)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.TxId.String()))
+		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.RequestHash().String()))
 	}
 	sigSet := modules.SignatureSet{
 		PubKey:    pubkey,
@@ -224,9 +233,9 @@ func GenContractSigTransctions(singer common.Address, orgTx *modules.Transaction
 		},
 	}
 	tx.TxMessages = append(tx.TxMessages, msgSig)
-	tx.TxHash = tx.Hash()
+	//tx.TxHash = tx.Hash()
 
-	log.Debug("GenContractSigTransctions", "orgTx.TxId id ok:", tx.TxId)
+	log.Debug("GenContractSigTransctions", "orgTx.TxId id ok:", tx.Hash())
 	//log.Debug("GenContractSigTransctions", tx.TxMessages[3].Payload.(*modules.SignaturePayload).Signatures[0])
 	return tx, nil
 }

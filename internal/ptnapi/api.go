@@ -144,19 +144,21 @@ func (s *PublicTxPoolAPI) Content() map[string]map[string]map[string]*RPCTransac
 
 	// Flatten the pending transactions
 	for account, tx := range pending {
+		txHash := tx.Hash()
 		dump := make(map[string]*RPCTransaction)
 		// for _, tx := range txs {
 		// 	tx = tx
 		// 	//dump[fmt.Sprintf("%d", tx.Nonce())] = newRPCPendingTransaction(tx)
 		// }
-		dump[tx.TxHash.String()] = newRPCPendingTransaction(tx)
+		dump[txHash.String()] = newRPCPendingTransaction(tx)
 		content["pending"][account.String()] = dump
 	}
 	// Flatten the queued transactions
 	for account, tx := range queue {
+		txHash := tx.Hash()
 		dump := make(map[string]*RPCTransaction)
 
-		dump[tx.TxHash.String()] = newRPCPendingTransaction(tx)
+		dump[txHash.String()] = newRPCPendingTransaction(tx)
 
 		content["queued"][account.String()] = dump
 	}
@@ -533,10 +535,11 @@ func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address string) (m
 	}
 	result := make(map[string]decimal.Decimal)
 	for _, utxo := range utxos {
+		asset, _ := modules.StringToAsset(utxo.Asset)
 		if bal, ok := result[utxo.Asset]; ok {
-			result[utxo.Asset] = bal.Add(ptnjson.Dao2Ptn(utxo.Amount))
+			result[utxo.Asset] = bal.Add(ptnjson.AssetAmt2JsonAmt(asset, utxo.Amount))
 		} else {
-			result[utxo.Asset] = ptnjson.Dao2Ptn(utxo.Amount)
+			result[utxo.Asset] = ptnjson.AssetAmt2JsonAmt(asset, utxo.Amount)
 		}
 	}
 	return result, nil
@@ -1515,104 +1518,6 @@ const (
 //	return mtxHex, nil
 //}
 
-func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) (string, error) {
-
-	// Validate the locktime, if given.
-	if c.LockTime != nil &&
-		(*c.LockTime < 0 || *c.LockTime > int64(MaxTxInSequenceNum)) {
-		return "", &ptnjson.RPCError{
-			Code:    ptnjson.ErrRPCInvalidParameter,
-			Message: "Locktime out of range",
-		}
-	}
-	// Add all transaction inputs to a new transaction after performing
-	// some validity checks.
-	//先构造PaymentPayload结构，再组装成Transaction结构
-	pload := new(modules.PaymentPayload)
-	var inputjson []ptnjson.InputJson
-	for _, input := range c.Inputs {
-		txHash, err := common.NewHashFromStr(input.Txid)
-		if err != nil {
-			return "", rpcDecodeHexError(input.Txid)
-		}
-		inputjson = append(inputjson, ptnjson.InputJson{TxHash: input.Txid, MessageIndex: input.MessageIndex, OutIndex: input.Vout})
-		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.Vout)
-		txInput := modules.NewTxIn(prevOut, []byte{})
-		pload.AddTxIn(txInput)
-	}
-	var OutputJson []ptnjson.OutputJson
-	// Add all transaction outputs to the transaction after performing
-	//	// some validity checks.
-	//	//only support mainnet
-	//	var params *chaincfg.Params
-	for encodedAddr, ptnAmt := range c.Amounts {
-		amount := ptnjson.Ptn2Dao(ptnAmt)
-		//		// Ensure amount is in the valid range for monetary amounts.
-		if amount <= 0 || amount > ptnjson.MaxDao {
-			return "", &ptnjson.RPCError{
-				Code:    ptnjson.ErrRPCType,
-				Message: "Invalid amount",
-			}
-		}
-		addr, err := common.StringToAddress(encodedAddr)
-		if err != nil {
-			return "", &ptnjson.RPCError{
-				Code:    ptnjson.ErrRPCInvalidAddressOrKey,
-				Message: "Invalid address or key",
-			}
-		}
-		switch addr.GetType() {
-		case common.PublicKeyHash:
-		case common.ScriptHash:
-		case common.ContractHash:
-			//case *ptnjson.AddressPubKeyHash:
-			//case *ptnjson.AddressScriptHash:
-		default:
-			return "", &ptnjson.RPCError{
-				Code:    ptnjson.ErrRPCInvalidAddressOrKey,
-				Message: "Invalid address or key",
-			}
-		}
-		// Create a new script which pays to the provided address.
-		pkScript := tokenengine.GenerateLockScript(addr)
-		// Convert the amount to satoshi.
-		dao := ptnjson.Ptn2Dao(ptnAmt)
-		if err != nil {
-			context := "Failed to convert amount"
-			return "", internalRPCError(err.Error(), context)
-		}
-		asset := modules.NewPTNAsset()
-		txOut := modules.NewTxOut(uint64(dao), pkScript, asset)
-		pload.AddTxOut(txOut)
-		OutputJson = append(OutputJson, ptnjson.OutputJson{Amount: uint64(dao), Asset: asset.String(), ToAddress: addr.String()})
-	}
-	//	// Set the Locktime, if given.
-	if c.LockTime != nil {
-		pload.LockTime = uint32(*c.LockTime)
-	}
-	//	// Return the serialized and hex-encoded transaction.  Note that this
-	//	// is intentionally not directly returning because the first return
-	//	// value is a string and it would result in returning an empty string to
-	//	// the client instead of nothing (nil) in the case of an error.
-	PaymentJson := ptnjson.PaymentJson{}
-	PaymentJson.Inputs = inputjson
-	PaymentJson.Outputs = OutputJson
-	txjson := ptnjson.TxJson{}
-	txjson.Payment = &PaymentJson
-	mtx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
-	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
-	mtx.TxHash = mtx.Hash()
-	mtxbt, err := rlp.EncodeToBytes(mtx)
-	if err != nil {
-		return "", err
-	}
-	//log.Debugf("payload input outpoint:%s", pload.Input[0].PreviousOutPoint.TxHash.String())
-	mtxHex := hex.EncodeToString(mtxbt)
-	return mtxHex, nil
-}
-
 //create raw transction
 func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) (string, error) {
 
@@ -1692,7 +1597,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 		TxMessages: make([]*modules.Message, 0),
 	}
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
-	mtx.TxHash = mtx.Hash()
+	//mtx.TxHash = mtx.Hash()
 	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
@@ -1797,53 +1702,6 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 //	}
 //	return taken_utxo, change
 //}
-func (s *PublicTransactionPoolAPI) WalletCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
-
-	//realNet := &chaincfg.MainNetParams
-	var LockTime int64
-	LockTime = 0
-
-	amounts := map[string]decimal.Decimal{}
-	if to == "" {
-		return "", fmt.Errorf("amounts is empty")
-	}
-
-	amounts[to] = amount
-
-	utxoJsons, err := s.b.GetAddrUtxos(from)
-	if err != nil {
-		return "", err
-	}
-	utxos := core.Utxos{}
-	for _, json := range utxoJsons {
-		//utxos = append(utxos, &json)
-		utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
-	}
-	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
-	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
-	if err != nil {
-		return "", fmt.Errorf("Select utxo err")
-	}
-
-	var inputs []ptnjson.TransactionInput
-	var input ptnjson.TransactionInput
-	for _, u := range taken_utxo {
-		utxo := u.(*ptnjson.UtxoJson)
-		input.Txid = utxo.TxHash
-		input.MessageIndex = utxo.MessageIndex
-		input.Vout = utxo.OutIndex
-		inputs = append(inputs, input)
-	}
-
-	if change > 0 {
-		amounts[from] = ptnjson.Dao2Ptn(change)
-	}
-
-	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
-	result, _ := WalletCreateTransaction(arg)
-	fmt.Println(result)
-	return result, nil
-}
 
 func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 
@@ -2222,13 +2080,9 @@ type Authentifier struct {
 
 // SendRawTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
-func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encodedTx string /*hexutil.Bytes*/) (common.Hash, error) {
+func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encodedTx string) (common.Hash, error) {
 	tx := new(modules.Transaction)
-	// tx.AccountNonce =uint64(rand.Intn(100000))
-	//tx.CreationDate = time.Now().Format("2006-01-02 15:04:05")
-	//keys := common.HexToHash(encodedTx)
-	//tx.TxHash = keys
-	//tx.Priority_lvl = tx.GetPriorityLvl()
+
 	serializedTx, err := decodeHexStr(encodedTx)
 	if err != nil {
 		return common.Hash{}, err
@@ -2239,7 +2093,7 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 	}
 	if 0 == len(tx.TxMessages) {
 		log.Info("+++++++++++++++++++++++++++++++++++++++++invalid Tx++++++")
-		return tx.TxHash, nil
+		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
 	}
 	var outAmount uint64
 	for _, msg := range tx.TxMessages {

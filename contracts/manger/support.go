@@ -29,9 +29,8 @@ import (
 	"time"
 
 	chaincode "github.com/palletone/go-palletone/contracts/core"
-	"github.com/palletone/go-palletone/contracts/modules"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	unit "github.com/palletone/go-palletone/dag/modules"
+	md "github.com/palletone/go-palletone/dag/modules"
 	ut "github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -95,7 +94,7 @@ func GetBytesChaincodeEvent(event *pb.ChaincodeEvent) ([]byte, error) {
 	return eventBytes, err
 }
 
-func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error) {
+func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	logger.Debug("enter")
 	//invokeData := ut.ContractInvokePayload{}
 	//invokeData.ContractId = []byte(txid)
@@ -111,20 +110,20 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 	tokenDefine, _ := tx.GetTokenDefineData(nm)
 	tokenSupply, _ := tx.GetTokenSupplyData(nm)
 	logger.Infof("txid=%s, nm=%s, rd=%#v, wt=%v", txid, nm, rd, wt)
-	invoke := &modules.ContractInvokeResult{
+	invoke := &md.ContractInvokeResult{
 		FunctionName:  string(args[1]),
 		ContractId:    deployId,
 		Args:          args,
 		ExecutionTime: timeout,
-		ReadSet:       make([]unit.ContractReadSet, 0),
-		WriteSet:      make([]unit.ContractWriteSet, 0),
+		ReadSet:       make([]md.ContractReadSet, 0),
+		WriteSet:      make([]md.ContractWriteSet, 0),
 		TokenPayOut:   tokenPay,
 		TokenDefine:   tokenDefine,
 		TokenSupply:   tokenSupply,
 	}
 
 	for idx, val := range rd {
-		rd := unit.ContractReadSet{
+		rd := md.ContractReadSet{
 			Key:     val.GetKey(),
 			Version: val.GetVersion(),
 		}
@@ -132,7 +131,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[1], val.GetKey(), *val.GetVersion())
 	}
 	for idx, val := range wt {
-		rd := unit.ContractWriteSet{
+		rd := md.ContractWriteSet{
 			Key:      val.GetKey(),
 			Value:    val.GetValue(),
 			IsDelete: val.GetIsDelete(),
@@ -145,7 +144,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 }
 
 //func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, txid string, nm string, fun []byte) (*pb.ContractDeployPayload, error) {
-func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*unit.ContractDeployPayload, error) {
+func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*md.ContractDeployPayload, error) {
 	logger.Debug("enter")
 	data := ut.ContractDeployPayload{}
 	data.ContractId = []byte(txid)
@@ -155,18 +154,18 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid stri
 		return nil, err
 	}
 	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
-	deploy := &unit.ContractDeployPayload{
+	deploy := &md.ContractDeployPayload{
 		TemplateId:    templateId,
 		ContractId:    deployId,
 		Name:          nm,
 		Args:          args,
 		ExecutionTime: timeout,
-		ReadSet:       make([]unit.ContractReadSet, 0),
-		WriteSet:      make([]unit.ContractWriteSet, 0),
+		ReadSet:       make([]md.ContractReadSet, 0),
+		WriteSet:      make([]md.ContractWriteSet, 0),
 	}
 
 	for idx, val := range rd {
-		rd := unit.ContractReadSet{
+		rd := md.ContractReadSet{
 			Key:     val.GetKey(),
 			Version: val.GetVersion(),
 		}
@@ -174,7 +173,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid stri
 		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[1], val.GetKey(), *val.GetVersion())
 	}
 	for idx, val := range wt {
-		rd := unit.ContractWriteSet{
+		rd := md.ContractWriteSet{
 			Key:      val.GetKey(),
 			Value:    val.GetValue(),
 			IsDelete: val.GetIsDelete(),

@@ -21,19 +21,19 @@ package manger
 
 import (
 	"fmt"
+	"time"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 
+	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/contracts/core"
-	"github.com/palletone/go-palletone/contracts/modules"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	putils "github.com/palletone/go-palletone/core/vmContractPub/protos/utils"
-	"github.com/palletone/go-palletone/dag"
 
-	"github.com/palletone/go-palletone/dag/rwset"
-	"time"
 )
 
 type chaincodeError struct {
@@ -262,19 +262,19 @@ func (e *Endorser) ProcessProposal(contractid []byte, idag dag.IDag, deployId []
 	}
 	logger.Debug("unit:")
 	logger.Debug(unit)
-	fmt.Printf("==unit=> %#v\n", unit.ContractId)
-	fmt.Printf("==unit=> %#v\n", unit.Payload)
-	fmt.Printf("==unit=> %s\n", unit.Args)
-	fmt.Println("==unit=> ", unit.FunctionName)
-	fmt.Printf("==unit=> %#v\n", unit.ReadSet)
-	fmt.Printf("==unit=> %#v\n", unit.WriteSet)
-	fmt.Println("===")
-	if len(unit.TokenPayOut) > 0 {
-		fmt.Printf("==unit=> %#v\n", unit.TokenPayOut[0])
-		fmt.Printf("==unit=> %s\n", unit.TokenPayOut[0].Asset.String())
-		fmt.Printf("==unit=> %d\n", unit.TokenPayOut[0].Amount)
-		fmt.Printf("==unit=> %s\n", unit.TokenPayOut[0].PayTo.String())
-	}
+	//fmt.Printf("==unit=> %#v\n", unit.ContractId)
+	//fmt.Printf("==unit=> %#v\n", unit.Payload)
+	//fmt.Printf("==unit=> %s\n", unit.Args)
+	//fmt.Println("==unit=> ", unit.FunctionName)
+	//fmt.Printf("==unit=> %#v\n", unit.ReadSet)
+	//fmt.Printf("==unit=> %#s\n", unit.WriteSet)
+	//fmt.Println("===")
+	//if len(unit.TokenPayOut) > 0 {
+	//	fmt.Printf("==unit=> %#v\n", unit.TokenPayOut[0])
+	//	fmt.Printf("==unit=> %s\n", unit.TokenPayOut[0].Asset.String())
+	//	fmt.Printf("==unit=> %d\n", unit.TokenPayOut[0].Amount)
+	//	fmt.Printf("==unit=> %s\n", unit.TokenPayOut[0].PayTo.String())
+	//}
 	// todo
 
 	pResp.Response.Payload = res.Payload

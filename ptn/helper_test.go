@@ -438,7 +438,7 @@ func CreateCoinbase() (*modules.Transaction, error) {
 	//}
 	coinbase.TxMessages = append(coinbase.TxMessages, msg)
 	// coinbase.CreationDate = coinbase.CreateDate()
-	coinbase.TxHash = coinbase.Hash()
+	//coinbase.TxHash = coinbase.Hash()
 
 	return &coinbase, nil
 }
@@ -488,7 +488,7 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 			log.Println("Save transaction:", "error", err.Error())
 			return err
 		}
-		txHashSet = append(txHashSet, tx.TxHash)
+		txHashSet = append(txHashSet, tx.Hash())
 	}
 
 	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
@@ -542,7 +542,7 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	}
 	var coinbase modules.Transaction
 	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
-	coinbase.TxHash = coinbase.Hash()
+	//coinbase.TxHash = coinbase.Hash()
 	return &coinbase, nil
 }
 

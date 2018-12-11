@@ -45,7 +45,7 @@ func ConvertTx02Json(tx *modules.Transaction, hash common.Hash) *TransactionJson
 	}
 	payment := ConvertPayment2Json(pay)
 	return &TransactionJson{
-		TxHash:     tx.TxHash.String(),
+		TxHash:     tx.Hash().String(),
 		UnitHash:   hexHash,
 		Payment:    &payment,
 		TxMessages: ConvertMegs2Json(tx.TxMessages),
