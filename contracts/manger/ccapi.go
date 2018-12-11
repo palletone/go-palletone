@@ -361,7 +361,7 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 				if err != nil {
 					return nil, err
 				}
-				contractAddr, err := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+				contractAddr, err := common.StringToAddress("PCGZBFEUPJEDERgVfkc3EYosN4R6T2c6LW8")
 				if err != nil {
 					return nil, err
 				}

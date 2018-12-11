@@ -578,13 +578,15 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 		//判断是否是保证金合约地址
 		utxo := repository.GetUxto(*payload.Inputs[0])
 		addr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
-		if addr.String() == "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM" {
+		if addr.String() == "PCGZBFEUPJEDERgVfkc3EYosN4R6T2c6LW8" {
 			awards := uint64(0)
 			//对每一笔input输入进行计算奖励
 			for _, txin := range payload.Inputs {
 				utxo = repository.GetUxto(*txin)
 				//1.通过交易hash获取单元hash
-				_, unitHash, _, _ := dagdb.GetTransaction(tx.TxHash)
+				//txin.PreviousOutPoint.TxHash 获取txhash
+				//dagdb.GetTransaction()
+				_, unitHash, _, _ := dagdb.GetTransaction(txin.PreviousOutPoint.TxHash)
 				//2.通过单元hash获取单元信息
 				unit, _ := dagdb.GetUnit(unitHash)
 				//3.通过单元获取头部信息中的时间戳
