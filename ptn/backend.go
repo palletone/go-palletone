@@ -145,7 +145,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, ptn.contract)
+	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, ptn.contract, dag)
 	if err != nil {
 		log.Error("contract processor creat:", "error", err)
 		return nil, err

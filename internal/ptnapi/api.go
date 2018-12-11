@@ -47,6 +47,7 @@ import (
 	//"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/ptnjson/walletjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -1530,18 +1531,18 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 	// some validity checks.
 	//先构造PaymentPayload结构，再组装成Transaction结构
 	pload := new(modules.PaymentPayload)
-	var inputjson []ptnjson.InputJson
+	var inputjson []walletjson.InputJson
 	for _, input := range c.Inputs {
 		txHash, err := common.NewHashFromStr(input.Txid)
 		if err != nil {
 			return "", rpcDecodeHexError(input.Txid)
 		}
-		inputjson = append(inputjson, ptnjson.InputJson{TxHash: input.Txid, MessageIndex: input.MessageIndex, OutIndex: input.Vout})
+		inputjson = append(inputjson, walletjson.InputJson{TxHash: input.Txid, MessageIndex: input.MessageIndex, OutIndex: input.Vout, HashForSign: "", Signature: ""})
 		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.Vout)
 		txInput := modules.NewTxIn(prevOut, []byte{})
 		pload.AddTxIn(txInput)
 	}
-	var OutputJson []ptnjson.OutputJson
+	var OutputJson []walletjson.OutputJson
 	// Add all transaction outputs to the transaction after performing
 	//	// some validity checks.
 	//	//only support mainnet
@@ -1585,7 +1586,7 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 		asset := modules.NewPTNAsset()
 		txOut := modules.NewTxOut(uint64(dao), pkScript, asset)
 		pload.AddTxOut(txOut)
-		OutputJson = append(OutputJson, ptnjson.OutputJson{Amount: uint64(dao), Asset: asset.String(), ToAddress: addr.String()})
+		OutputJson = append(OutputJson, walletjson.OutputJson{Amount: uint64(dao), Asset: asset.String(), ToAddress: addr.String()})
 	}
 	//	// Set the Locktime, if given.
 	if c.LockTime != nil {
@@ -1595,11 +1596,11 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 	//	// is intentionally not directly returning because the first return
 	//	// value is a string and it would result in returning an empty string to
 	//	// the client instead of nothing (nil) in the case of an error.
-	PaymentJson := ptnjson.PaymentJson{}
+	PaymentJson := walletjson.PaymentJson{}
 	PaymentJson.Inputs = inputjson
 	PaymentJson.Outputs = OutputJson
-	txjson := ptnjson.TxJson{}
-	txjson.Payment = &PaymentJson
+	txjson := walletjson.TxJson{}
+	txjson.Payload = append(txjson.Payload, PaymentJson)
 	mtx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
