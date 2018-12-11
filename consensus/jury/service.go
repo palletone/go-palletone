@@ -67,12 +67,14 @@ type PalletOne interface {
 	ContractSigBroadcast(event ContractSigEvent)
 
 	GetLocalMediators() []common.Address
+	SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error)
 }
 
 type iDag interface {
 	GetActiveMediators() []common.Address
 	IsActiveMediator(add common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
+	CreateBaseTransaction(from, to common.Address, daoAmount, daoFee uint64) (*modules.Transaction, error)
 }
 
 type contractTx struct {
@@ -525,30 +527,21 @@ func (p *Processor) ContractTxCreat(deployId []byte, txBytes []byte, args [][]by
 
 	return rlp.EncodeToBytes(tx)
 }
-func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes []byte, args [][]byte, timeout time.Duration) ([]byte, error) {
+
+//func (p *Processor) ContractTxReqBroadcast(deployId []byte,txBytes []byte, args [][]byte, timeout time.Duration) ([]byte, error) {
+func (p *Processor) ContractTxReqBroadcast(deployId []byte, signer, from, to common.Address, daoAmount, daoFee uint64, args [][]byte, timeout time.Duration) ([]byte, error) {
 	if deployId == nil || args == nil {
 		log.Error("ContractTxReqBroadcast", "param is nil")
 		return nil, errors.New("ContractTxReqBroadcast request param is nil")
 	}
-	log.Debug("ContractTxReqBroadcast", "enter, deployId", deployId, "txid", txid)
+	log.Debug("ContractTxReqBroadcast", "enter, deployId", deployId)
 
-	tx := &modules.Transaction{}
-	if txBytes != nil {
-		if err := rlp.DecodeBytes(txBytes, tx); err != nil {
-			return nil, err
-		}
-	} else {
-		pay := &modules.PaymentPayload{
-			Inputs:   []*modules.Input{},
-			Outputs:  []*modules.Output{},
-			LockTime: 0, //todo
-		}
-		msgPay := &modules.Message{
-			App:     modules.APP_PAYMENT,
-			Payload: pay,
-		}
-		tx.AddMessage(msgPay)
+	tx, err := p.dag.CreateBaseTransaction(from, to, daoAmount, daoFee)
+	if err != nil {
+		return nil, err
 	}
+	log.Debug("ContractTxReqBroadcast","tx:", tx)
+
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
@@ -557,8 +550,11 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes
 			Timeout:    timeout,
 		},
 	}
-
 	tx.AddMessage(msgReq)
+	tx, err = p.ptn.SignGenericTransaction(signer, tx)
+	if err != nil {
+		return nil, err
+	}
 	reqId := tx.RequestHash()
 	p.locker.Lock()
 	p.mtx[reqId] = &contractTx{
@@ -568,7 +564,7 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, txid string, txBytes
 		executable: true, //default
 	}
 	p.locker.Unlock()
-	log.Debug("ContractTxReqBroadcast ok", "deployId", deployId, "txid", txid, "TxId", reqId.String(), "TxHash", tx.Hash().String())
+	log.Debug("ContractTxReqBroadcast ok", "deployId", deployId, "TxId", reqId.String(), "TxHash", tx.Hash().String())
 
 	if p.mtx[reqId].executable {
 		if nodeContractExecutable(p.dag, p.local, tx) == true {
