@@ -1,11 +1,10 @@
 package ptnapi
 import (
 	"context"
-	"encoding/hex"
 	//"errors"
 	"fmt"
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -143,18 +142,26 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 	PaymentJson := walletjson.PaymentJson{}
 	PaymentJson.Inputs = inputjson
 	PaymentJson.Outputs = OutputJson
-	txjson := walletjson.TxJson{}
-	txjson.Payload = append(txjson.Payload, PaymentJson)
+	
 	mtx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
 	//mtx.TxHash = mtx.Hash()
-	mtxbt, err := rlp.EncodeToBytes(mtx)
-	if err != nil {
-		return "", err
+	// sign mtx 
+	for _,input := range PaymentJson.Inputs{
+        hashforsign,err := tokenengine.CalcSignatureHash(mtx,int(input.MessageIndex),int(input.OutIndex),nil)
+        if err != nil {
+		    return "", err
+	    }
+        input.HashForSign = string(hashforsign)
 	}
-	//log.Debugf("payload input outpoint:%s", pload.Input[0].PreviousOutPoint.TxHash.String())
-	mtxHex := hex.EncodeToString(mtxbt)
-	return mtxHex, nil
+	txjson := walletjson.TxJson{}
+	txjson.Payload = append(txjson.Payload, PaymentJson)
+	bytetxjson, err := json.Marshal(txjson)
+    if err != nil {
+        return "", err
+    }
+    
+	return string(bytetxjson), nil
 }
