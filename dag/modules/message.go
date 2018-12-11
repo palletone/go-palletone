@@ -370,7 +370,7 @@ type DepositBalance struct {
 type PayValue struct {
 	PayTokens *InvokeTokens `json:"pay_tokens"` //数量和资产
 	PayTime   time.Time     `json:"pay_time"`   //发生时间
-	PayExtra  string        `json:"pay_extra"`  //额外内容
+	//PayExtra  string        `json:"pay_extra"`  //额外内容
 }
 
 type TokenPayOut struct {

@@ -150,6 +150,39 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		fmt.Printf("balance = %v\n", balance)
 		return shim.Success([]byte("ok"))
+		//获取Mediator申请加入列表
+	case "GetBecomeMediatorApplyList":
+		list, err := stub.GetBecomeMediatorApplyList()
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if list == nil {
+			return shim.Error("balance is nil.")
+		}
+		fmt.Printf("BecomeMediatorApplyList = %v\n", list)
+		return shim.Success([]byte("ok"))
+		//获取已同意的mediator列表
+	case "GetAgreeForBecomeMediatorList":
+		list, err := stub.GetAgreeForBecomeMediatorList()
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if list == nil {
+			return shim.Error("balance is nil.")
+		}
+		fmt.Printf("AgreeForBecomeMediatorList = %v\n", list)
+		return shim.Success([]byte("ok"))
+		//获取Mediator申请退出列表
+	case "GetQuitMediatorApplyList":
+		list, err := stub.GetQuitMediatorApplyList()
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if list == nil {
+			return shim.Error("balance is nil.")
+		}
+		fmt.Printf("QuitMediatorApplyList = %v\n", list)
+		return shim.Success([]byte("ok"))
 	}
 	return shim.Success([]byte("Invoke error"))
 }
@@ -363,7 +396,6 @@ func (d *DepositChaincode) updateForPayValue(balance *modules.DepositBalance, in
 	payValue.PayTokens.Amount = invokeTokens.Amount
 	payValue.PayTokens.Asset = invokeTokens.Asset
 	payValue.PayTime = time.Now().UTC()
-	payValue.PayExtra = "备注"
 
 	balance.PayValues = append(balance.PayValues, payValue)
 }
