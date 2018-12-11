@@ -342,9 +342,6 @@ type TxLookupEntry struct {
 }
 type Transactions []*Transaction
 type Transaction struct {
-	//TxHash      common.Hash `json:"txhash"`
-	//TxId        common.Hash `json:"txid"` //contract request id
-	//RequestRows byte       //如果是合约调用类型的Tx，那么前几行Message是客户端请求部分
 	TxMessages []*Message `json:"messages"`
 }
 

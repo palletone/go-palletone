@@ -68,7 +68,10 @@ func NewPTNIdType() IDType16 {
 	ptn, _ := NewAssetId("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 	return ptn
 }
-
+func (asset *Asset) GetDecimal() byte {
+	_, _, decimal, _ := asset.AssetId.ParseAssetId()
+	return decimal
+}
 func (asset *Asset) String() string {
 	if asset.AssetId == PTNCOIN {
 		return "PTN"
@@ -81,7 +84,11 @@ func (asset *Asset) String() string {
 
 	return fmt.Sprintf("%s-%s", assetIdStr, asset.UniqueId.String())
 }
-
+func StringToAsset(str string) (*Asset, error) {
+	asset := &Asset{}
+	err := asset.SetString(str)
+	return asset, err
+}
 func (asset *Asset) SetString(str string) error {
 	if str == "PTN" {
 		asset.AssetId = PTNCOIN
