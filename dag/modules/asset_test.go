@@ -45,11 +45,11 @@ func TestAsset_String(t *testing.T) {
 	t.Logf("AssetId:%08b", asset.AssetId)
 	asset2, err := NewAsset("ABC", AssetType_FungibleToken, 18, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16}, IDType16{})
 	assetStr := asset2.String()
-	t.Log(assetStr)
+	t.Log("Asset2:" + assetStr)
 	t.Logf("AssetId:%08b", asset2.AssetId)
 	a := Asset{}
 	a.SetString(assetStr)
-	t.Logf("Asset:%08b", a.AssetId)
+	t.Logf("Asset:%08b,String:%s", a.AssetId, a.String())
 	assert.Equal(t, asset2.Bytes(), a.Bytes())
 
 	decimal := byte(8)

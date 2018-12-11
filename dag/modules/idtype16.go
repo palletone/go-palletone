@@ -21,6 +21,7 @@
 package modules
 
 import (
+	"errors"
 	"github.com/martinlindhe/base36"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"strconv"
@@ -60,12 +61,28 @@ func (it *IDType16) ToAssetId() string {
 func string2AssetId(str string) (IDType16, error) {
 	strArray := strings.Split(str, "+")
 	symbol := strArray[0]
-	ty := strArray[1][0] - 48
+	ty := strArray[1][1] - 48
 	decimal := base36.DecodeToBytes(strArray[1][0:1])
 	tx12 := base36.DecodeToBytes(strArray[1][2:])
 	return NewAssetId(symbol, AssetType(ty), decimal[0], tx12)
 
 }
+func NewAssetId(symbol string, assetType AssetType, decimal byte, requestId []byte) (IDType16, error) {
+	if len(symbol) > 5 {
+		return IDType16{}, errors.New("Symbol must less than 5 characters")
+	}
+	assetId := IDType16{}
+	assetSymbol := base36.DecodeToBytes(symbol)
+	//fmt.Printf(base36.EncodeBytes(assetSymbol))
+	copy(assetId[4-len(assetSymbol):4], assetSymbol)
+	firstByte := assetId[0] | (byte(len(assetSymbol) << 5))
+	firstByte = firstByte | byte(assetType)<<2
+	assetId[0] = firstByte
+	assetId[4] = decimal
+	copy(assetId[5:], requestId[0:11])
+	return assetId, nil
+}
+
 func (id *IDType16) ParseAssetId() (string, AssetType, byte, []byte) {
 	var assetId [16]byte
 	copy(assetId[:], id[:])
