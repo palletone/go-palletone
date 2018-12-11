@@ -46,12 +46,12 @@ import (
 	//"github.com/palletone/go-palletone/dag/coredata"
 	//"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	vote2 "github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
-	vote2 "github.com/palletone/go-palletone/dag/vote"
 )
 
 const (
@@ -832,7 +832,7 @@ func (s *PublicBlockChainAPI) CreateMediatorVote(ctx context.Context, paymentHex
 		return "", err
 	}
 	vote := &vote2.VoteInfo{}
-	vote.VoteType = 0
+	vote.VoteType = vote2.TYPE_MEDIATOR
 	strings := []string{}
 	strings = append(strings, mediatorAddr)
 	vote.Contents, _ = json.Marshal(strings)
@@ -1529,13 +1529,13 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 	// some validity checks.
 	//先构造PaymentPayload结构，再组装成Transaction结构
 	pload := new(modules.PaymentPayload)
-	var inputjson  []ptnjson.InputJson
+	var inputjson []ptnjson.InputJson
 	for _, input := range c.Inputs {
 		txHash, err := common.NewHashFromStr(input.Txid)
 		if err != nil {
 			return "", rpcDecodeHexError(input.Txid)
 		}
-		inputjson = append(inputjson,ptnjson.InputJson{TxHash:input.Txid,MessageIndex:input.MessageIndex,OutIndex:input.Vout})
+		inputjson = append(inputjson, ptnjson.InputJson{TxHash: input.Txid, MessageIndex: input.MessageIndex, OutIndex: input.Vout})
 		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.Vout)
 		txInput := modules.NewTxIn(prevOut, []byte{})
 		pload.AddTxIn(txInput)
@@ -1581,10 +1581,10 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
 		}
-		asset:=modules.NewPTNAsset()
+		asset := modules.NewPTNAsset()
 		txOut := modules.NewTxOut(uint64(dao), pkScript, asset)
 		pload.AddTxOut(txOut)
-		OutputJson = append(OutputJson,ptnjson.OutputJson{Amount:uint64(dao),Asset:asset.String(),ToAddress:addr.String()})
+		OutputJson = append(OutputJson, ptnjson.OutputJson{Amount: uint64(dao), Asset: asset.String(), ToAddress: addr.String()})
 	}
 	//	// Set the Locktime, if given.
 	if c.LockTime != nil {
@@ -1597,8 +1597,8 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 	PaymentJson := ptnjson.PaymentJson{}
 	PaymentJson.Inputs = inputjson
 	PaymentJson.Outputs = OutputJson
-	txjson :=ptnjson.TxJson{}
-	txjson.Payment=&PaymentJson
+	txjson := ptnjson.TxJson{}
+	txjson.Payment = &PaymentJson
 	mtx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}

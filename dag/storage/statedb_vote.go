@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/vote"
 )
 
 //UpdateMediatorVote YiRan@
@@ -126,6 +127,7 @@ func (statedb *StateDb) GetVoterList(voteType uint8, MinTermLimit uint16) []comm
 }
 
 func (statedb *StateDb) GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error) {
+	// todo
 	// 1. get account info
 	accountInfo, err := statedb.GetAccountInfo(voterAddress)
 	if err != nil {
@@ -134,7 +136,7 @@ func (statedb *StateDb) GetAccountMediatorVote(voterAddress common.Address) ([]c
 	// 2. get mediator vote
 	mediatorVotes := []common.Address{}
 	for _, voteInfo := range accountInfo.Votes {
-		if voteInfo.VoteType == 0 {
+		if voteInfo.VoteType == vote.TYPE_MEDIATOR {
 			mediatorVotes = append(mediatorVotes, common.BytesToAddress(voteInfo.Contents))
 		}
 	}

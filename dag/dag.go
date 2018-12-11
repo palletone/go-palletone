@@ -1027,6 +1027,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 //}
 
 func (d *Dag) GetAccountMediatorVote(address common.Address) []common.Address {
+	// todo
 	bAddress := d.statedb.GetAccountVoteInfo(address, vote.TYPE_MEDIATOR)
 	res := []common.Address{}
 	for _, b := range bAddress {

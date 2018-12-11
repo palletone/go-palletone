@@ -101,4 +101,4 @@ const TYPE_MEDIATOR = 0 // VoteContent = []byte(Common.Address)
 //const TYPE_NULL = 238
 // action 240- 255
 //const TYPE_VOTEING = 254
-const TYPE_CREATEVOTE = 255
+//const TYPE_CREATEVOTE = 255

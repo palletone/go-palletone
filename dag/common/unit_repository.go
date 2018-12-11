@@ -426,7 +426,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 }
 
 //Yiran
-func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Message, voter common.Address) error {
+func (unitOp *UnitRepository) SaveVote(msg *modules.Message, voter common.Address) error {
 
 	// type deduct
 	VotePayLoad, ok := msg.Payload.(*vote.VoteInfo)
@@ -538,7 +538,7 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_VOTE:
-				if err = unitOp.SaveVote(tx, msg, requester); err != nil {
+				if err = unitOp.SaveVote(msg, requester); err != nil {
 					return fmt.Errorf("Save vote payload error.")
 				}
 			case modules.OP_MEDIATOR_CREATE:
