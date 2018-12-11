@@ -42,6 +42,11 @@ web3._extend({
 			call: 'mediator_register',
 			params: 1,
 		}),
+		new web3._extend.Method({
+			name: 'vote',
+			call: 'mediator_vote',
+			params: 0,
+		}),
 	],
 	properties: [
 		new web3._extend.Property({

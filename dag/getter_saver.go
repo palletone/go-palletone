@@ -182,6 +182,10 @@ func (dag *Dag) GetMediators() map[common.Address]bool {
 	return dag.statedb.GetMediators()
 }
 
+func (dag *Dag) IsMediator(address common.Address) bool {
+	return dag.statedb.IsMediator(address)
+}
+
 func (dag *Dag) ActiveMediators() map[common.Address]bool {
 	return dag.GetGlobalProp().ActiveMediators
 }

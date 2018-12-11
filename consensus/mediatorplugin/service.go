@@ -78,6 +78,8 @@ type iDag interface {
 
 	CreateBaseTransaction(from, to common.Address, daoAmount, daoFee uint64) (*modules.Transaction, error)
 	CurrentFeeSchedule() core.FeeSchedule
+
+	IsMediator(address common.Address) bool
 }
 
 type MediatorPlugin struct {
