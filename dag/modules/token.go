@@ -27,8 +27,8 @@ import (
 
 //定义一种全新的Token
 type TokenDefine struct {
-	TokenDefineJson []byte         `json:"tokendefinejson"`
-	TokenType       int            `json:"tokentype"` //0 ERC20  1 ERC721   2 VoteToken
+	TokenDefineJson []byte         `json:"token_define_json"`
+	TokenType       int            `json:"token_type"` //0 ERC20  1 ERC721   2 VoteToken
 	Creator         common.Address `json:"creator"`
 }
 

@@ -515,12 +515,13 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 				return err
 			}
 		}
+		txHash := tx.Hash()
 		// traverse messages
 		for msgIndex, msg := range tx.TxMessages {
 			// handle different messages
 			switch msg.App {
 			case modules.APP_PAYMENT:
-				if ok := unitOp.savePaymentPayload(tx.TxHash, msg, uint32(msgIndex)); ok != true {
+				if ok := unitOp.savePaymentPayload(txHash, msg, uint32(msgIndex)); ok != true {
 					return fmt.Errorf("Save payment payload error.")
 				}
 			case modules.APP_CONTRACT_TPL:
@@ -536,7 +537,7 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_CONFIG:
-				if ok := unitOp.saveConfigPayload(tx.TxHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
+				if ok := unitOp.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_VOTE:
@@ -569,7 +570,7 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 			log.Info("Save transaction:", "error", err.Error())
 			return err
 		}
-		txHashSet = append(txHashSet, tx.TxHash)
+		txHashSet = append(txHashSet, txHash)
 	}
 
 	// step7  send unitHash set to txpool, to update txpool's pending
@@ -835,7 +836,7 @@ func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Add
 	//}
 	coinbase.TxMessages = append(coinbase.TxMessages, msg)
 	// coinbase.CreationDate = coinbase.CreateDate()
-	coinbase.TxHash = coinbase.Hash()
+	//coinbase.TxHash = coinbase.Hash()
 
 	return coinbase, nil
 }

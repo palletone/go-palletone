@@ -23,9 +23,8 @@ package modules
 import "strings"
 import (
 	"encoding/hex"
-	"errors"
+
 	"fmt"
-	"github.com/martinlindhe/base36"
 	"github.com/palletone/go-palletone/common/rlp"
 )
 
@@ -48,15 +47,15 @@ const (
 
 func NewPTNAsset() *Asset {
 	//return &Asset{AssetId: PTNCOIN}
-	asset, err := NewAsset("PTN", AssetType_FungibleToken, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, IDType16{})
+	asset, err := NewAsset("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, IDType16{})
 	if err != nil {
 		return nil
 	}
 	return asset
 }
-func NewAsset(symbol string, assetType AssetType, requestId []byte, uniqueId IDType16) (*Asset, error) {
+func NewAsset(symbol string, assetType AssetType, decimal byte, requestId []byte, uniqueId IDType16) (*Asset, error) {
 	asset := &Asset{}
-	assetId, err := NewAssetId(symbol, assetType, requestId)
+	assetId, err := NewAssetId(symbol, assetType, decimal, requestId)
 	if err != nil {
 		return nil, err
 	}
@@ -66,23 +65,8 @@ func NewAsset(symbol string, assetType AssetType, requestId []byte, uniqueId IDT
 }
 
 func NewPTNIdType() IDType16 {
-	ptn, _ := NewAssetId("PTN", AssetType_FungibleToken, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	ptn, _ := NewAssetId("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 	return ptn
-}
-
-func NewAssetId(symbol string, assetType AssetType, requestId []byte) (IDType16, error) {
-	if len(symbol) > 5 {
-		return IDType16{}, errors.New("Symbol must less than 5 characters")
-	}
-	assetId := IDType16{}
-	assetSymbol := base36.DecodeToBytes(symbol)
-	//fmt.Printf(base36.EncodeBytes(assetSymbol))
-	copy(assetId[4-len(assetSymbol):4], assetSymbol)
-	firstByte := assetId[0] | (byte(len(assetSymbol) << 5))
-	firstByte = firstByte | byte(assetType)<<2
-	assetId[0] = firstByte
-	copy(assetId[4:], requestId[0:12])
-	return assetId, nil
 }
 
 func (asset *Asset) String() string {

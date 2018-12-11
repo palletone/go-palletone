@@ -13,14 +13,13 @@ import (
 	cp "github.com/palletone/go-palletone/common/crypto"
 	db "github.com/palletone/go-palletone/contracts/comm"
 	cclist "github.com/palletone/go-palletone/contracts/list"
-	"github.com/palletone/go-palletone/contracts/modules"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
-	unit "github.com/palletone/go-palletone/dag/modules"
+	md "github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/pkg/errors"
 )
@@ -127,7 +126,7 @@ func GetUsrCCList() {
 }
 
 //install but not into db
-func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error) {
+func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error) {
 	logger.Infof("==========install enter=======")
 	logger.Infof("name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
 	defer logger.Infof("-----------install exit--------")
@@ -149,7 +148,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	buffer.Write([]byte(ccVersion))
 	tpid := cp.Keccak256Hash(buffer.Bytes())
 
-	payloadUnit := &unit.ContractTplPayload{
+	payloadUnit := &md.ContractTplPayload{
 		TemplateId: []byte(tpid[:]),
 		Name:       ccName,
 		Path:       ccPath,
@@ -234,7 +233,7 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 	return cc.Id, nil, err
 }
 
-func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *unit.ContractDeployPayload, e error) {
+func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	logger.Infof("==========Deploy enter=======")
 	defer logger.Infof("-----------Deploy exit--------")
 	logger.Infof("chainid[%s]templateId[%s]txid[%s]", chainID, hex.EncodeToString(templateId), txid)
@@ -325,7 +324,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 //timeout:ms
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, txid string, tx *unit.Transaction, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error) {
+func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, txid string, tx *md.Transaction, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	logger.Infof("==========Invoke enter=======")
 	logger.Infof("deployId[%s] txid[%s]", hex.EncodeToString(deployId), txid)
 	defer logger.Infof("-----------Invoke exit--------")
@@ -344,16 +343,16 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 
 	fullArgs := [][]byte{}
 
-	invokeInfo := unit.InvokeInfo{}
+	invokeInfo := md.InvokeInfo{}
 	if len(tx.TxMessages) > 0 {
-		msg0 := tx.TxMessages[0].Payload.(*unit.PaymentPayload)
+		msg0 := tx.TxMessages[0].Payload.(*md.PaymentPayload)
 		invokeAddr, err := idag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
 		if err != nil {
 			return nil, err
 		}
 		//如果是交付保证金
 		if string(args[0]) == "DepositWitnessPay" {
-			invokeTokens := &unit.InvokeTokens{}
+			invokeTokens := &md.InvokeTokens{}
 			outputs := msg0.Outputs
 			invokeTokens.Asset = outputs[0].Asset
 			for _, output := range outputs {

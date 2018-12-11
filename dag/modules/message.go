@@ -31,20 +31,19 @@ type MessageType byte
 const (
 	APP_PAYMENT MessageType = iota
 
-	APP_CONTRACT_TPL_REQUEST
-	APP_CONTRACT_DEPLOY_REQUEST
-	APP_CONTRACT_INVOKE_REQUEST
-	APP_CONTRACT_STOP_REQUEST
 	APP_CONTRACT_TPL
 	APP_CONTRACT_DEPLOY
 	APP_CONTRACT_INVOKE
 	APP_CONTRACT_STOP
-
 	APP_CONFIG
 	APP_TEXT
 	APP_VOTE
 	APP_SIGNATURE
 	OP_MEDIATOR_CREATE
+	APP_CONTRACT_TPL_REQUEST    = 100
+	APP_CONTRACT_DEPLOY_REQUEST = 101
+	APP_CONTRACT_INVOKE_REQUEST = 102
+	APP_CONTRACT_STOP_REQUEST   = 103
 )
 
 // key: message.UnitHash(message+timestamp)
@@ -410,9 +409,20 @@ type ContractInvokePayload struct {
 	ReadSet       []ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
 	WriteSet      []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
 	Payload       []byte             `json:"payload"`        // the contract execution result
-	//TokenPayOut   []*TokenPayOut     `json:"token_payout"`   //从合约地址付出Token
-	//TokenSupply   []*TokenSupply     `json:"token_supply"`   //增发Token请求产生的结果
-	//TokenDefine   *TokenDefine       `json:"token_define"`   //定义新Token
+}
+//contract invoke result
+type ContractInvokeResult struct {
+	ContractId    []byte             `json:"contract_id"` // contract id
+	RequestId     common.Hash        `json:"request_id"`
+	FunctionName  string             `json:"function_name"`
+	Args          [][]byte           `json:"args"`           // contract arguments list
+	ExecutionTime time.Duration      `json:"execution_time"` // contract execution time, millisecond
+	ReadSet       []ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
+	WriteSet      []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
+	Payload       []byte             `json:"payload"`        // the contract execution result
+	TokenPayOut   []*TokenPayOut     `json:"token_payout"`   //从合约地址付出Token
+	TokenSupply   []*TokenSupply     `json:"token_supply"`   //增发Token请求产生的结果
+	TokenDefine   *TokenDefine       `json:"token_define"`   //定义新Token
 }
 
 //用户钱包发起的合约调用申请

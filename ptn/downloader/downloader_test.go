@@ -116,7 +116,7 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	}
 	var coinbase modules.Transaction
 	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
-	coinbase.TxHash = coinbase.Hash()
+	//coinbase.TxHash = coinbase.Hash()
 	return &coinbase, nil
 }
 func newDag(db ptndb.Database, gunit *modules.Unit, number int, seed byte) (modules.Units, error) {

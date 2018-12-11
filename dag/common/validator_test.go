@@ -66,19 +66,18 @@ func TestValidator(t *testing.T) {
 	tx.TxMessages = append(tx.TxMessages, &modules.Message{App: modules.APP_PAYMENT, Payload: &modules.PaymentPayload{Inputs: inputs, Outputs: outputs, LockTime: uint32(999)}},
 		&modules.Message{App: modules.APP_TEXT, Payload: &modules.TextPayload{Text: []byte("test text.")}}, &modules.Message{App: modules.APP_CONTRACT_TPL, Payload: &modules.ContractTplPayload{Name: "contract name"}})
 	tx.Hash()
-	log.Println("tx hash :", tx.TxHash.String(), tx.TxMessages[2])
+	log.Println("tx hash :", tx.Hash().String(), tx.TxMessages[2])
 	//dbconn := storage.ReNewDbConn("D:\\Workspace\\Code\\Go\\src\\github.com\\palletone\\go-palletone\\bin\\gptn\\leveldb")
 	//dbconn := storage.ReNewDbConn(dagconfig.DbPath)
 	db, _ := ptndb.NewMemDatabase()
 	l := plog.NewTestLog()
 	worldTmpState := map[string]map[string]interface{}{}
 	dagDb := storage.NewDagDb(db, l)
-	utxoDb := storage.NewUtxoDb(db, l)
-	stateDb := storage.NewStateDb(db, l)
-
 	idxDb := storage.NewIndexDb(db, l)
-	utxoRep := NewUtxoRepository(utxoDb, idxDb, stateDb, l)
+	utxoDb := storage.NewUtxoDb(db, l)
 
+	stateDb := storage.NewStateDb(db, l)
+	utxoRep := NewUtxoRepository(utxoDb, idxDb, stateDb, l)
 	validate := NewValidate(dagDb, utxoDb, utxoRep, stateDb, l)
 	code := validate.ValidateTx(tx, false, &worldTmpState)
 	log.Println("validator code:", code, worldTmpState)

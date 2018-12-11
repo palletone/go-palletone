@@ -29,7 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
+
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -269,7 +269,7 @@ func transaction(msg []*modules.Message) *modules.Transaction {
 }
 func pricedTransaction(msgs []*modules.Message) *modules.Transaction {
 	tx := modules.NewTransaction(msgs)
-	tx.SetHash(rlp.RlpHash(tx))
+	//tx.SetHash(rlp.RlpHash(tx))
 	return tx
 }
 

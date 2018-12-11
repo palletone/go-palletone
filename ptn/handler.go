@@ -360,15 +360,6 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	if pm.contractProc != nil {
 		pm.contractExecCh = make(chan jury.ContractExeEvent)
 		pm.contractExecSub = pm.contractProc.SubscribeContractEvent(pm.contractExecCh)
-		go pm.contractExecRecvLoop()
-	}
-
-	//TODO must modify for ptn test
-	//contract sig
-	if pm.contractProc != nil {
-		pm.contractSigCh = make(chan jury.ContractSigEvent)
-		pm.contractSigSub = pm.contractProc.SubscribeContractSigEvent(pm.contractSigCh)
-		go pm.contractSigRecvLoop()
 	}
 
 	pm.activeMediatorsUpdatedCh = make(chan dag.ActiveMediatorsUpdatedEvent)

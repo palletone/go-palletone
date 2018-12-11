@@ -39,18 +39,22 @@ func TestAsset_String(t *testing.T) {
 	//id := IDType16{}
 	//copy(id[4-len(symbol):4], symbol)
 	//t.Logf("Data:%08b", id)
-	asset, err := NewAsset("DEVIN", AssetType_FungibleToken, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16}, IDType16{})
+	asset, err := NewAsset("DEVIN", AssetType_FungibleToken, 4, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16}, IDType16{})
 	assert.Nil(t, err)
 	t.Log(asset.String())
 	t.Logf("AssetId:%08b", asset.AssetId)
-	asset2, err := NewAsset("ABC", AssetType_FungibleToken, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16}, IDType16{})
+	asset2, err := NewAsset("ABC", AssetType_FungibleToken, 18, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16}, IDType16{})
 	assetStr := asset2.String()
-	t.Log(assetStr)
+	t.Log("Asset2:" + assetStr)
 	t.Logf("AssetId:%08b", asset2.AssetId)
 	a := Asset{}
 	a.SetString(assetStr)
-	t.Logf("Asset:%08b", a.AssetId)
+	t.Logf("Asset:%08b,String:%s", a.AssetId, a.String())
 	assert.Equal(t, asset2.Bytes(), a.Bytes())
+
+	decimal := byte(8)
+	dStr := base36.EncodeBytes([]byte{decimal})
+	t.Log(dStr)
 }
 func TestAsset_SetString(t *testing.T) {
 	asset := &Asset{}
@@ -60,8 +64,14 @@ func TestAsset_SetString(t *testing.T) {
 	assert.Equal(t, asset.String(), "PTN")
 }
 func TestPTNAsset(t *testing.T) {
-	asset, err := NewAssetId("PTN", AssetType_FungibleToken, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	asset, err := NewAssetId("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 	assert.Nil(t, err)
-	t.Logf("PTN hex:%X", asset.Bytes())
+	t.Logf("PTN hex:%X,String:%s", asset.Bytes(), asset.ToAssetId())
 	assert.Equal(t, asset, PTNCOIN)
+}
+func TestAssetToString(t *testing.T) {
+	t1, _ := NewAssetId("T1", AssetType_FungibleToken, 8, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16})
+	t.Logf("Hex: %x,Str: %s", t1.Bytes(), t1.ToAssetId())
+	t2, _ := NewAssetId("T1", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	t.Logf("Hex: %x,Str: %s", t2.Bytes(), t2.ToAssetId())
 }

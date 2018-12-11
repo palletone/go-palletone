@@ -1,7 +1,7 @@
 package peer
 
 import (
-	"github.com/palletone/go-palletone/contracts/modules"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag"
 	"golang.org/x/net/context"
 	"time"

@@ -445,8 +445,8 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 			return errResp(ErrDecode, "transaction %d is nil", i)
 		}
 
-		if tx.TxId != (common.Hash{}) {
-			if  pm.contractProc.CheckContractTxValid(tx)!= true {
+		if tx.IsContractInvoke() {
+			if pm.contractProc.CheckContractTxValid(tx) != true {
 				return errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
 			}
 		}
@@ -470,10 +470,10 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		p.MarkTransaction(tx.Hash())
 		txHash := tx.Hash()
 		txHash = txHash
-		_, err := pm.txpool.ProcessTransaction(tx,true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
+		_, err := pm.txpool.ProcessTransaction(tx, true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
 		//acceptedTxs = acceptedTxs
 		if err != nil {
-			return errResp(ErrDecode, "transaction %d not accepteable ", i,"err:",err)
+			return errResp(ErrDecode, "transaction %d not accepteable ", i, "err:", err)
 		}
 	}
 
@@ -575,23 +575,23 @@ func (pm *ProtocolManager) ContractSigMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===ContractExecMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-	pm.contractProc.ProcessContractSigEvent(&event)
+	//pm.contractProc.ProcessContractSigEvent(&event)
 	return nil
 }
 
 //local test
 func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractExeEvent) {
-	log.Info("ContractReqLocalSend", "event", event.Tx.TxHash)
+	log.Info("ContractReqLocalSend", "event", event.Tx.Hash())
 	pm.contractExecCh <- event
 }
 
 func (pm *ProtocolManager) ContractSigLocalSend(event jury.ContractSigEvent) {
-	log.Info("ContractSigLocalSend", "event", event.Tx.TxHash)
+	log.Info("ContractSigLocalSend", "event", event.Tx.Hash())
 	pm.contractSigCh <- event
 }
 
 func (pm *ProtocolManager) ContractBroadcast(event jury.ContractExeEvent) {
-	log.Info("ContractBroadcast", "event", event.Tx.TxHash)
+	log.Info("ContractBroadcast", "event", event.Tx.Hash())
 	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {
@@ -600,7 +600,7 @@ func (pm *ProtocolManager) ContractBroadcast(event jury.ContractExeEvent) {
 }
 
 func (pm *ProtocolManager) ContractSigBroadcast(event jury.ContractSigEvent) {
-	log.Info("ContractSigBroadcast", "event", event.Tx.TxHash)
+	log.Info("ContractSigBroadcast", "event", event.Tx.Hash())
 	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {

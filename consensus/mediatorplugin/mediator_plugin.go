@@ -198,7 +198,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	// 2. 生产验证单元
 	//execute contract
 	// todo 待优化
-	if err := mp.ptn.ContractProcessor().RunContractLoop(mp.ptn.TxPool(), scheduledMediator, ks); err != nil {
+	if err := mp.ptn.ContractProcessor().AddContractLoop(mp.ptn.TxPool(), scheduledMediator,ks); err!= nil{
 		log.Error("MaybeProduceUnit", "RunContractLoop err:", err.Error())
 	}
 
