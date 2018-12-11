@@ -156,6 +156,12 @@ type ChaincodeStubInterface interface {
 	GetDepositBalance(nodeAddr string) (*modules.DepositBalance, error)
 	//获取候选列表
 	GetCandidateList(role string) ([]*common.Address, error)
+	//获取mediator申请加入列表
+	GetBecomeMediatorApplyList() (*modules.BecomeMediatorApplyList, error)
+	//获取同意mediator申请加入列表
+	GetAgreeForBecomeMediatorList() (*modules.AgreeForBecomeMediatorList, error)
+	//获取 mediator 申请退出列表
+	GetQuitMediatorApplyList() (*modules.QuitMediatorApplyList, error)
 	// GetStateByRange returns a range iterator over a set of keys in the
 	// ledger. The iterator can be used to iterate over all keys
 	// between the startKey (inclusive) and endKey (exclusive).
