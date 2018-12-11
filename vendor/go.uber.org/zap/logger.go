@@ -315,9 +315,11 @@ func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 	if !willWrite {
 		return ce
 	}
-
-	// Thread the error output through to the CheckedEntry.
 	ce.ErrorOutput = log.errorOutput
+	// Thread the error output through to the CheckedEntry.
+	if log.addStack.Enabled(ce.Entry.Level) {
+		ce.Entry.Stack = Stack("").String
+	}
 	if log.addCaller {
 		ce.Entry.Caller = zapcore.NewEntryCaller(runtime.Caller(log.callerSkip + callerSkipOffset))
 		if !ce.Entry.Caller.Defined {
@@ -325,9 +327,7 @@ func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 			log.errorOutput.Sync()
 		}
 	}
-	if log.addStack.Enabled(ce.Entry.Level) {
-		ce.Entry.Stack = Stack("").String
-	}
 
+	fmt.Println("last return ce,line  336")
 	return ce
 }

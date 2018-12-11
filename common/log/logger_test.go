@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func TestInitLogger(t *testing.T) {
@@ -34,10 +35,10 @@ func TestInitLogger(t *testing.T) {
 		"Hello debug",
 		"Hello fatal",
 	}
-	Logger.Info("info", zap.String("str", s[0]), zap.Bool("bool1", true))
-	Logger.Error("info", zap.String("str", s[1]))
-	Logger.Error("info", zap.String("str", s[2]))
-	Logger.Error("info", zap.String("str", s[3]))
+	Logger.Info("msg_info", zap.String("str", s[0]), zap.Bool("bool1", true))
+	Logger.Error("msg_error", zap.String("str", s[1]), zap.Bool("bool2", true))
+	Logger.Debug("msg_debug", zap.String("str", s[2]))
+	Logger.Fatal("msg_fatal", zap.String("str", s[3]), zap.Field{Key: "haode", Type: zapcore.SkipType, Interface: "false"})
 }
 func TestTrace(t *testing.T) {
 	InitLogger()
@@ -48,6 +49,7 @@ func TestTrace(t *testing.T) {
 func InitLog(url string, optins ...interface{}) {
 	if optins == nil {
 		optins = append(optins, 0)
+		fmt.Println("len:", len(optins))
 	}
 
 	switch optins[0].(int) {
@@ -94,6 +96,12 @@ func InitLog(url string, optins ...interface{}) {
 		Logger.Error("error ", zap.Error(errors.New("hahah")))
 	}
 
+}
+func TestNewExample(t *testing.T) {
+	l := zap.NewExample()
+	l.Error("info", zap.String("1", "1"))
+	l.Error("debug", zap.String("2", "2"))
+	l.Error("error", zap.String("3", "3"))
 }
 
 // func TestMain(m *testing.M) {

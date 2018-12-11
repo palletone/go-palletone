@@ -145,7 +145,7 @@ func InitLogger() {
 	// isDebug := DefaultConfig.IsDebug
 	// if the config file is damaged or lost, then initialize the config if log system.
 	if len(path) == 0 {
-		path = []string{"log/out.log"}
+		path = []string{"log/all.log"}
 	}
 	if len(err_path) == 0 {
 		err_path = []string{"log/err.log"}
