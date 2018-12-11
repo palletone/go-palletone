@@ -5431,6 +5431,12 @@ var methods = function () {
         params: 1,
         inputFormatter: [null]
     });
+    var walletSendTransaction = new Method({
+        name: 'walletSendTransaction',
+        call: 'ptn_walletSendTransaction',
+        params: 1,
+        inputFormatter: [null]
+    });
 
     var sendTransaction = new Method({
         name: 'sendTransaction',
@@ -5733,6 +5739,7 @@ var methods = function () {
         call,
         estimateGas,
         walletCreateTransaction,
+        walletSendTransaction,
         cmdCreateTransaction,
         createRawTransaction,
         createMediatorVote,

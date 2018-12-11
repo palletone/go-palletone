@@ -69,7 +69,20 @@ type OutputJson struct {
 	Asset  string `json:"asset"`
 	ToAddress string `json:"to_address"`
 }
-
+type RawTxjsonGenParams struct {
+	Inputs []struct {
+		TxHash       string `json:"txid"`
+		OutIndex     uint32 `json:"outindex"`
+		MessageIndex uint32 `json:"messageindex"`
+		HashForSign  string `json:"hash"`
+		Signature    string `json:"signature"`
+	} `json:"inputs"`
+	Outputs []struct {
+		Address string          `json:"address"`
+		Amount  uint64 `json:"amount"`
+		Asset  string `json:"asset"`
+	} `json:"outputs"`
+}
 //
 //func ConvertPayment2Json(payment *modules.PaymentPayload) PaymentJson {
 //	json := PaymentJson{}
