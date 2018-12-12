@@ -30,9 +30,9 @@ var Modules = map[string]string{
 	"net":        Net_JS,
 	"personal":   Personal_JS,
 	"rpc":        RPC_JS,
-	// "shh":      Shh_JS,
-	"txpool":   TxPool_JS,
-	"mediator": Mediator_JS,
+	"wallet":     Wallet_JS,
+	"txpool":     TxPool_JS,
+	"mediator":   Mediator_JS,
 }
 
 const Chequebook_JS = `
@@ -572,25 +572,36 @@ web3._extend({
 });
 `
 
-// const Shh_JS = `
-// web3._extend({
-// 	property: 'shh',
-// 	methods: [
-// 	],
-// 	properties:
-// 	[
-// 		new web3._extend.Property({
-// 			name: 'version',
-// 			getter: 'shh_version',
-// 			outputFormatter: web3._extend.utils.toDecimal
-// 		}),
-// 		new web3._extend.Property({
-// 			name: 'info',
-// 			getter: 'shh_info'
-// 		}),
-// 	]
-// });
-// `
+const Wallet_JS = `
+ web3._extend({
+ 	property: 'wallet',
+ 	methods: [
+ 	],
+ 	properties:
+ 	[
+ 		new web3._extend.Method({
+			name: 'getBalance',
+			call: 'wallet_getBalance',
+			params: 1
+		}),
+ 		new web3._extend.Method({
+			name: 'createPaymentTx',
+			call: 'wallet_createPaymentTx',
+			params: 4
+		}),
+		new web3._extend.Method({
+			name: 'createRawTransaction',
+			call: 'wallet_createRawTransaction',
+			params: 4
+		}),
+		new web3._extend.Method({
+			name: 'sendRawTransaction',
+			call: 'wallet_sendRawTransaction',
+			params: 4
+		}),
+ 	]
+ });
+ `
 
 const TxPool_JS = `
 web3._extend({

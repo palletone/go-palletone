@@ -797,6 +797,7 @@ func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, err
 	}
 	return tokenengine.GetAddressFromScript(utxo.PkScript)
 }
+
 func (d *Dag) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error) {
 	return d.utxoRep.ComputeTxFee(pay)
 }
@@ -804,6 +805,7 @@ func (d *Dag) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error) {
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return d.dagdb.GetAddrOutput(addr)
 }
+
 func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
 	//TODO only get one token's UTXO
 	all, err := d.utxodb.GetAddrUtxos(addr)
@@ -823,7 +825,7 @@ func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map
 									// merge
 									if old.IsSpent() {
 										log.Warn("It is delete the spent utxo that I found the old utxo amount: ", "amount", old.Amount)
-										delete(all, key)
+										// delete(all, key)
 									}
 								}
 								log.Info("new utxo amount :", "amount", utxo.Amount)
@@ -858,7 +860,7 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 								// merge
 								if old.IsSpent() {
 									log.Warn("It is delete the spent utxo that I found the old utxo amount: ", "amount", old.Amount)
-									delete(all, key)
+									// delete(all, key)
 								}
 							}
 							log.Info("new utxo amount :", "amount", utxo.Amount)

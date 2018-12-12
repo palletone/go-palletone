@@ -69,12 +69,6 @@ func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.U
 	return StoreBytes(utxodb.db, key, utxo)
 }
 
-//@Yiran
-//func (utxodb *UtxoDb) SaveUtxoEntities(key []byte, utxos *[]modules.Utxo) error {
-//
-//	return StoreBytes(utxodb.db, key, utxos)
-//}
-
 // key: outpoint_prefix + addr + outpoint's hash
 func (utxodb *UtxoDb) SaveUtxoOutpoint(key []byte, outpoint *modules.OutPoint) error {
 	return StoreBytes(utxodb.db, key, outpoint)
@@ -89,18 +83,7 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 		} else {
 			key := outpoint.ToKey()
 			address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
-			// // Remove the utxo if it is spent
-			// if utxo.IsSpent() {
-			// 	err := utxodb.db.Delete(key)
-			// 	if err != nil {
-			// 		return err
-			// 	}
-			// 	// delete index , key  outpoint .
-			// 	outpoint_key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
-			// 	utxodb.db.Delete(append(outpoint_key, outpoint.Hash().Bytes()...))
 
-			// 	continue
-			// } else {
 			val, err := rlp.EncodeToBytes(utxo)
 			if err != nil {
 				return err
@@ -116,9 +99,24 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 	return nil
 }
 
+// Remove the utxo
 func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
+
+	//1. get utxo
+	utxo, err := utxodb.GetUtxoEntry(outpoint)
+	if err != nil {
+		return err
+	}
 	key := outpoint.ToKey()
-	return utxodb.db.Delete(key)
+	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
+	//2. delete utxo
+	if err := utxodb.db.Delete(key); err != nil {
+		return err
+	}
+	//3. delete index , key  outpoint .
+	outpoint_key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
+	utxodb.db.Delete(append(outpoint_key, outpoint.Hash().Bytes()...))
+	return nil
 }
 
 //@Yiran
@@ -182,20 +180,6 @@ func (utxodb *UtxoDb) GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outi
 	}
 	return hexutil.Encode(utxo.PkScript), nil
 }
-
-//@Yiran get utxo snapshot from db
-//func (utxodb *UtxoDb) GetUtxoEntities(index *modules.ChainIndex) (*[]modules.Utxo, error) {
-//	utxos := make([]modules.Utxo, 0)
-//	key := util.KeyConnector([]byte(constants.UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
-//	data, err := utxodb.db.Get(key)
-//	if err != nil {
-//		return nil, err
-//	}
-//	if err := rlp.DecodeBytes(data, utxos); err != nil {
-//		return nil, err
-//	}
-//	return &utxos, nil
-//}
 
 func (utxodb *UtxoDb) GetUtxoByIndex(indexKey []byte) ([]byte, error) {
 	return utxodb.db.Get(indexKey)

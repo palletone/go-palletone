@@ -5393,7 +5393,7 @@ var methods = function () {
     });
     var walletCreateTransaction = new Method({
         name: 'walletCreateTransaction',
-        call: 'ptn_walletCreateTransaction',
+        call: 'wallet_CreateRawTransaction',
         params: 4,
         inputFormatter: [null,null,null,null]
     });
@@ -5432,8 +5432,8 @@ var methods = function () {
         inputFormatter: [null]
     });
     var walletSendTransaction = new Method({
-        name: 'walletSendTransaction',
-        call: 'ptn_walletSendTransaction',
+        name: 'walletSendRawTransaction',
+        call: 'wallet_SendRawTransaction',
         params: 1,
         inputFormatter: [null]
     });

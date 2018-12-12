@@ -20,7 +20,6 @@
 package rwset
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag"
@@ -54,7 +53,6 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-
 	//TODO Devin
 	ver, val := s.dag.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
@@ -78,8 +76,8 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 	//logger.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)
 	//fmt.Println("SetState(ns string, key string, value []byte)===>>>\n\n", ns, key, value)
-	balance := &modules.DepositBalance{}
-	_ = json.Unmarshal(value, balance)
+	//balance := &modules.DepositBalance{}
+	//_ = json.Unmarshal(value, balance)
 	//fmt.Printf("llllllll   %#v\n", stateValue)
 	if err := s.CheckDone(); err != nil {
 		return err
@@ -201,6 +199,7 @@ func (s *RwSetTxSimulator) DefineToken(ns string, tokenType int32, define []byte
 	s.rwsetBuilder.DefineToken(ns, tokenType, define, createAddr)
 	return nil
 }
-func (s *RwSetTxSimulator) SupplyToken(ns string, assetId, uniqueId []byte, amt uint64) error {
-	return s.rwsetBuilder.AddSupplyToken(ns, assetId, uniqueId, amt)
+func (s *RwSetTxSimulator) SupplyToken(ns string, assetId, uniqueId []byte, amt uint64, creator string) error {
+	createAddr, _ := common.StringToAddress(creator)
+	return s.rwsetBuilder.AddSupplyToken(ns, assetId, uniqueId, amt, createAddr)
 }

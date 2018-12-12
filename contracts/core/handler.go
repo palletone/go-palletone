@@ -305,7 +305,7 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 		var payloadBytes []byte
 		var err error
 		systemConfig := &core.SystemConfig{
-			FoundationAddress:         "P19zNJjDpsPw9hAAQfGahAT4tnq2PoRa2vL",
+			FoundationAddress:         "P1G988UGLytFgPwxy1bzY3FkzPT46ThDhTJ",
 			DepositAmountForMediator:  2000,
 			DepositAmountForJury:      1000,
 			DepositAmountForDeveloper: 800,
@@ -1046,7 +1046,7 @@ func (handler *Handler) handleSupplyToken(msg *pb.ChaincodeMessage) {
 		chaincodeLogger.Debugf("[%s] define token for chaincode %s, token asset id: %X, channel %s",
 			shorttxid(msg.Txid), chaincodeID, payout.AssetId, txContext.chainID)
 
-		err := txContext.txsimulator.SupplyToken(chaincodeID, payout.AssetId, payout.UniqueId, payout.Amount)
+		err := txContext.txsimulator.SupplyToken(chaincodeID, payout.AssetId, payout.UniqueId, payout.Amount, payout.Creator)
 
 		if err != nil {
 			// Send error msg back to chaincode. GetState will not trigger event

@@ -25,6 +25,8 @@ import (
 	"testing"
 
 	//"github.com/palletone/go-palletone/common/crypto"
+	"encoding/json"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -51,6 +53,29 @@ func TestGetContractState(t *testing.T) {
 	assert.True(t, len(data) > 0, "GetContractAllState don't return any data.")
 	for key, v := range data {
 		log.Debug(fmt.Sprintf("Key:%s,V:%s,version:%s", key, v.Value, v.Version))
+	}
+}
+
+func TestStateDb_GetMediatorCandidateList(t *testing.T) {
+	db, _ := ptndb.NewMemDatabase()
+	l := log.NewTestLog()
+	statedb := NewStateDb(db, l)
+	contractId := []byte("01")
+	addr1, err := common.StringToAddress("P1G988UGLytFgPwxy1bzY3FkzPT46ThDhTJ")
+	assert.Nil(t, err, "string 2 address fail: ")
+	addr2, err := common.StringToAddress("P1FbTqEaSLNfhp1hCwNmRkj5BkMjTNU8jRp")
+	assert.Nil(t, err, "string 2 address fail: ")
+	mediatorList := []*common.Address{&addr1, &addr2}
+	mediatorListBytes, err := json.Marshal(mediatorList)
+	assert.Nil(t, err, "json marshal error: ")
+	version := &modules.StateVersion{Height: modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	err = statedb.SaveContractState(contractId, "MediatorList", mediatorListBytes, version)
+	assert.Nil(t, err, "save mediatorlist error: ")
+	list, err := statedb.GetMediatorCandidateList()
+	assert.Nil(t, err, "get mediator candidate list error: ")
+	assert.True(t, len(list) == 2, "len is erroe")
+	for _, mediatorAddr := range list {
+		fmt.Println(mediatorAddr.String())
 	}
 }
 

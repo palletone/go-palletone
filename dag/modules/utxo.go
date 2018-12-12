@@ -105,6 +105,9 @@ func (utxo *Utxo) Clone() *Utxo {
 		Flags:    utxo.Flags,
 	}
 }
+func (utxo *Utxo) Flag2Str() string {
+	return UtxoFlags2String(utxo.Flags)
+}
 
 // UtxoIndex is key
 // utxo index db value: amount
@@ -287,4 +290,19 @@ type AccountToken struct {
 	Alias   string `json:"alias"`
 	AssetID *Asset `json:"asset_id"`
 	Balance uint64 `json:"balance"`
+}
+
+func UtxoFlags2String(flag txoFlags) string {
+	var str string
+	switch flag {
+	case tfCoinBase:
+		str = "coin_base"
+	case tfSpent:
+		str = "spent"
+	case tfModified:
+		str = "modified"
+	default:
+		str = "normal"
+	}
+	return str
 }

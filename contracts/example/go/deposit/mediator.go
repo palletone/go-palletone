@@ -36,8 +36,13 @@ func ApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) peer.R
 	if len(args) != 2 {
 		return shim.Error("arg need two parameter.")
 	}
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
 	name := args[0]
-	addr := args[1]
+	//addr := args[1]
+	addr := invokeAddr.String()
 	mediatorInfo := modules.MediatorInfo{
 		Name:    name,
 		Address: addr,
@@ -77,9 +82,9 @@ func HandleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 	var mediatorList []*modules.MediatorInfo
 	var mediator *modules.MediatorInfo
 	//不同意，移除申请列表
-	if args[0] == "不同意" {
+	if args[0] == "no" {
 		mediatorList, _ = MoveFromList(args[1], list.MediatorList)
-	} else if args[0] == "同意" {
+	} else if args[0] == "ok" {
 		//同意，移除列表，并且加入同意申请列表
 		mediatorList, mediator = MoveFromList(args[1], list.MediatorList)
 		//获取同意列表
