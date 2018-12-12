@@ -64,6 +64,7 @@ func (a *Address) GetType() AddressType {
 //如果是合约地址，那么是不是一个系统合约地址？
 func (a *Address) IsSystemContractAddress() bool {
 	bb := make([]byte, 20)
+	bb[18] = 0xff
 	bb[19] = 0xff
 	return bytes.Compare(a.Bytes(), bb) < 0
 }
