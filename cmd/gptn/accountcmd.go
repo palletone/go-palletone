@@ -373,7 +373,7 @@ func ambiguousAddrRecovery(ks *keystore.KeyStore, err *keystore.AmbiguousAddrErr
 	return *match
 }
 
-// @author Albert·Gou
+// accountCreate creates a new account into the keystore defined by the CLI flags.
 func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 	cfg := FullConfig{Node: defaultNodeConfig()}
 	// Load config file.
@@ -643,7 +643,7 @@ func accountSignTx(ctx *cli.Context) error {
 	//	// All returned errors (not OOM, which panics) encounted during
 	//	// bytes.Buffer writes are unexpected.
 	send_args := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &rawinputs, &keys, nil)
-	send_args=send_args
+	send_args = send_args
 	//signtxout, err := ptnapi.SignRawTransaction(send_args)
 	//if signtxout == nil {
 	//	utils.Fatalf("Invalid signature")

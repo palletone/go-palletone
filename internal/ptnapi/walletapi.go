@@ -22,7 +22,7 @@ type PublicWalletAPI struct {
 func NewPublicWalletAPI(b Backend) *PublicWalletAPI {
 	return &PublicWalletAPI{b}
 }
-func (s *PublicWalletAPI) WalletCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
+func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 
 	//realNet := &chaincfg.MainNetParams
 	var LockTime int64
@@ -156,12 +156,13 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
 	//mtx.TxHash = mtx.Hash()
 	// sign mtx
-	for _, input := range inputjson {
+	for index, input := range inputjson {
 		hashforsign, err := tokenengine.CalcSignatureHash(mtx, int(input.MessageIndex), int(input.OutIndex), nil)
 		if err != nil {
 			return "", err
 		}
-		input.HashForSign = string(hashforsign)
+                sh := common.BytesToHash(hashforsign)
+                inputjson[index].HashForSign = sh.String()
 	}
 	PaymentJson := walletjson.PaymentJson{}
 	PaymentJson.Inputs = inputjson
@@ -178,7 +179,7 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 
 // walletSendTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
-func (s *PublicWalletAPI) WalletSendTransaction(ctx context.Context, params string) (common.Hash, error) {
+func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string) (common.Hash, error) {
 	var RawTxjsonGenParams walletjson.RawTxjsonGenParams
 	err := json.Unmarshal([]byte(params), &RawTxjsonGenParams)
 	if err != nil {

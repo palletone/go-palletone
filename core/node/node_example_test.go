@@ -66,6 +66,7 @@ func ExampleService() {
 	if err := stack.Stop(); err != nil {
 		log.Fatalf("Failed to stop the protocol stack: %v", err)
 	}
+
 	// Output:
 	// Service starting...
 	// Service stopping...
