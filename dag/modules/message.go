@@ -237,17 +237,6 @@ func (version *StateVersion) SetBytes(b []byte) {
 	version.TxIndex = txIdx
 }
 
-// Contract template deploy message
-// App: contract_template
-type ContractTplPayload struct {
-	TemplateId []byte `json:"template_id"` // contract template id
-	Name       string `json:"name"`        // contract template name
-	Path       string `json:"path"`        // contract template execute path
-	Version    string `json:"version"`     // contract template version
-	Memory     uint16 `json:"memory"`      // contract template bytecode memory size(Byte), use to compute transaction fee
-	Bytecode   []byte `json:"bytecode"`    // contract bytecode
-}
-
 const (
 	FIELD_TPL_BYTECODE  = "TplBytecode"
 	FIELD_TPL_NAME      = "TplName"
@@ -405,7 +394,17 @@ type VotePayload struct {
 	//Mode     uint8
 }
 
-// Contract instance message
+// Contract template deploy message
+// App: contract_template
+type ContractTplPayload struct {
+	TemplateId []byte `json:"template_id"` // contract template id
+	Name       string `json:"name"`        // contract template name
+	Path       string `json:"path"`        // contract template execute path
+	Version    string `json:"version"`     // contract template version
+	Memory     uint16 `json:"memory"`      // contract template bytecode memory size(Byte), use to compute transaction fee
+	Bytecode   []byte `json:"bytecode"`    // contract bytecode
+}
+
 // App: contract_deploy
 
 type ContractDeployPayload struct {
@@ -432,6 +431,15 @@ type ContractInvokePayload struct {
 	Payload       []byte             `json:"payload"`        // the contract execution result
 }
 
+// App: contract_deploy
+type ContractStopPayload struct {
+	ContractId    []byte             `json:"contract_id"`            // contract id
+	ExecutionTime time.Duration      `json:"execution_time" rlp:"-"` // contract execution time, millisecond
+	Jury          []common.Address   `json:"jury"`                   // contract jurors list
+	ReadSet       []ContractReadSet  `json:"read_set"`               // the set data of read, and value could be any type
+	WriteSet      []ContractWriteSet `json:"write_set"`              // the set data of write, and value could be any type
+}
+
 //contract invoke result
 type ContractInvokeResult struct {
 	ContractId    []byte             `json:"contract_id"` // contract id
@@ -448,11 +456,30 @@ type ContractInvokeResult struct {
 }
 
 //用户钱包发起的合约调用申请
+type ContractInstallRequestPayload struct {
+	TplName string `json:"tpl_name"`
+	Path    string `json:"install_path"`
+	Version string `json:"tpl_version"`
+}
+
+type ContractDeployRequestPayload struct {
+	TplId   []byte        `json:"tpl_name"`
+	TxId    string        `json:"transaction_id"` //todo
+	Args    [][]byte      `json:"args"`
+	Timeout time.Duration `json:"timeout"`
+}
+
 type ContractInvokeRequestPayload struct {
 	ContractId   []byte        `json:"contract_id"` // contract id
 	FunctionName string        `json:"function_name"`
 	Args         [][]byte      `json:"args"` // contract arguments list
 	Timeout      time.Duration `json:"timeout"`
+}
+
+type ContractStopRequestPayload struct {
+	ContractId  []byte `json:"contract_id"`
+	Txid        string `json:"transaction_id"`
+	DeleteImage bool   `json:"delete_image"`
 }
 
 // Token exchange message and verify message

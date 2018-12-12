@@ -31,4 +31,6 @@ var (
 
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk
 	TestContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000081C")
+
+	TestRunContractAddress = common.HexToAddress("0x00000000000000000000000000000000000095271C")
 )

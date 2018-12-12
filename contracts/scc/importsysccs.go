@@ -29,7 +29,7 @@ import (
 
 var systemChaincodes = []*SystemChaincode{
 	{
-		Id:        []byte{0x95, 0x27},
+		Id:        TestContractAddress.Bytes(), //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
 		Enabled:   true,
 		Name:      "sample_syscc",
 		Path:      "~/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc/samplesyscc",
