@@ -716,13 +716,13 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 			hash := header.Hash()
 			//if want := request.From + 1 + uint64(i); header.Number.Uint64() != want {
 			if want := request.From + 1 + uint64(i); header.Number.Index != want {
-				log.Warn("Header broke chain ordering", "peer", id, "number", header.Number, "hash", hash, "expected", want)
+				log.Warn("Header broke chain ordering", "peer", id, "number", header.Number.Index, "hash", hash, "expected", want)
 				accepted = false
 				break
 			}
 			//TODO  must recover //if headers[i].Hash() != header.ParentHash { //ptn
 			if headers[i].Hash() != header.ParentsHash[0] {
-				log.Warn("Header broke chain ancestry", "peer", id, "number", header.Number, "hash", hash)
+				log.Warn("Header broke chain ancestry", "peer", id, "number", header.Number.Index, "hash", hash)
 				accepted = false
 				break
 			}
