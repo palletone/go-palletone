@@ -60,7 +60,7 @@ var systemChaincodes = []*SystemChaincode{
 	//	Chaincode: &samplesyscc2.SampleSysCC2{},
 	//},
 	{
-		Id:        []byte{0x01},
+		Id:        DepositContractAddress.Bytes(), //合约ID为20字节
 		Enabled:   true,
 		Name:      "deposit_syscc",
 		Path:      "../example/go/deposit/deposit",
@@ -69,7 +69,7 @@ var systemChaincodes = []*SystemChaincode{
 		Chaincode: &deposit.DepositChaincode{},
 	},
 	{
-		Id:        []byte{0x02},
+		Id:        CreateTokenContractAddress.Bytes(), //合约ID为20字节
 		Enabled:   true,
 		Name:      "createToken_sycc",
 		Path:      "../example/go/prc20/prc20",
@@ -78,7 +78,7 @@ var systemChaincodes = []*SystemChaincode{
 		Chaincode: &prc20.PRC20{},
 	},
 	{
-		Id:        []byte{0x08},
+		Id:        TestContractAddress.Bytes(),
 		Enabled:   true,
 		Name:      "debug_sycc",
 		Path:      ".",

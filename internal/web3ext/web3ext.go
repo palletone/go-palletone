@@ -419,6 +419,11 @@ web3._extend({
 			params: 1
 		}),
 		new web3._extend.Method({
+			name: 'decodeTx',
+			call: 'ptn_decodeTx',
+			params: 1
+		}),
+		new web3._extend.Method({
 			name: 'resend',
 			call: 'ptn_resend',
 			params: 3,
@@ -454,6 +459,12 @@ web3._extend({
 			call: 'ptn_ccinvoke',
 			params: 1,
 			inputFormatter: [web3._extend.formatters.inputTransactionFormatter]
+		}),
+		new web3._extend.Method({
+			name: 'ccinvoketx',
+        	call: 'ptn_ccinvoketx',
+        	params: 6, //contractAddr, from, to, daoAmount, daoFee string, args[]string------>["fun", "key", "value"]
+			inputFormatter: [null, null, null,null, null, null]
 		}),
 	],
 	properties: [

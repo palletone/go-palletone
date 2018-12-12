@@ -472,8 +472,8 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 	return err
 }
 
-func (b *PtnApiBackend) ContractTxReqBroadcast(deployId []byte, signer, from, to common.Address, daoAmount, daoFee uint64, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
-	return b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, signer, from, to, daoAmount, daoFee, args, timeout)
+func (b *PtnApiBackend) ContractTxReqBroadcast(contractId, from, to common.Address, daoAmount, daoFee uint64, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
+	return b.ptn.contractPorcessor.ContractTxReqBroadcast(contractId, from, to, daoAmount, daoFee, args, timeout)
 }
 
 func (b *PtnApiBackend) ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {

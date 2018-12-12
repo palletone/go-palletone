@@ -94,14 +94,14 @@ func GetChaincode(cid string, deployId []byte) (*CCInfo, error) {
 		clist := chains.Clist[cid]
 		for _, v := range clist.CClist {
 			//logger.Infof("++++:%v",  *v)
-			//logger.Infof("find,%s, id[%s]--[%s], ", v.Name, hex.EncodeToString(v.Id), hex.EncodeToString(deployId))
+			logger.Infof("GetChaincode find,%s, id[%s]--[%s], ", v.Name, hex.EncodeToString(v.Id), hex.EncodeToString(deployId))
 			if bytes.Equal(v.Id, deployId) == true {
 				//logger.Infof("++++++++++++++++find,%s", v.Name)
 				return v, nil
 			}
 		}
 	}
-	errmsg := fmt.Sprintf("not find chainId[%s], deployId[%v] in chains", cid, deployId)
+	errmsg := fmt.Sprintf("not find chainId[%s], deployId[%x] in chains", cid, deployId)
 	return nil, errors.New(errmsg)
 }
 

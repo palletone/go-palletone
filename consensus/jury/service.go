@@ -457,18 +457,19 @@ func nodeContractExecutable(dag iDag, addrs []common.Address, tx *modules.Transa
 			break
 		}
 	}
-
-	if len(contractId) <= 2 && len(contractId) > 0 { //system contract
+	contractAddr := common.NewAddress(contractId, common.ContractHash)
+	if contractAddr.IsSystemContractAddress() { //system contract
 		for _, addr := range addrs {
-			log.Debug("nodeContractExecutable", "contract id", contractId, "addr", addr.String())
+			log.Debug("nodeContractExecutable", "contract id", contractAddr.String(), "addr", addr.String())
 			if true == dag.IsActiveMediator(addr) {
-				log.Debug("nodeContractExecutable", "true:contract id", contractId, "addr", addr.String())
+				log.Debug("nodeContractExecutable", "true:contract id", contractAddr.String(), "addr", addr.String())
 				return true
 			}
 		}
 	} else { //usr contract
+		log.Debug("User contract, call docker to run contract.")
 	}
-	log.Debug("nodeContractExecutable", "false:contract id", contractId)
+	log.Debug("nodeContractExecutable", "false:contract id", contractAddr.String())
 
 	return false
 }
@@ -529,12 +530,12 @@ func (p *Processor) ContractTxCreat(deployId []byte, txBytes []byte, args [][]by
 }
 
 //func (p *Processor) ContractTxReqBroadcast(deployId []byte,txBytes []byte, args [][]byte, timeout time.Duration) ([]byte, error) {
-func (p *Processor) ContractTxReqBroadcast(deployId []byte, signer, from, to common.Address, daoAmount, daoFee uint64, args [][]byte, timeout time.Duration) ([]byte, error) {
-	if deployId == nil || args == nil {
+func (p *Processor) ContractTxReqBroadcast(contractAddress, from, to common.Address, daoAmount, daoFee uint64, args [][]byte, timeout time.Duration) ([]byte, error) {
+	if args == nil {
 		log.Error("ContractTxReqBroadcast", "param is nil")
 		return nil, errors.New("ContractTxReqBroadcast request param is nil")
 	}
-	log.Debug("ContractTxReqBroadcast", "enter, deployId", deployId)
+	log.Debug("ContractTxReqBroadcast", "enter, deployId", contractAddress)
 
 	tx, err := p.dag.CreateBaseTransaction(from, to, daoAmount, daoFee)
 	if err != nil {
@@ -545,13 +546,13 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, signer, from, to com
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId: deployId,
+			ContractId: contractAddress.Bytes(),
 			Args:       args,
 			Timeout:    timeout,
 		},
 	}
 	tx.AddMessage(msgReq)
-	tx, err = p.ptn.SignGenericTransaction(signer, tx)
+	tx, err = p.ptn.SignGenericTransaction(from, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -564,8 +565,9 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, signer, from, to com
 		executable: true, //default
 	}
 	p.locker.Unlock()
-	log.Debug("ContractTxReqBroadcast ok", "deployId", deployId, "TxId", reqId.String(), "TxHash", tx.Hash().String())
-
+	log.Debug("ContractTxReqBroadcast ok", "deployId", contractAddress.String(), "RequestId: ", reqId.String())
+	txHex, _ := rlp.EncodeToBytes(tx)
+	log.Debugf("Signed ContractRequest hex:%x", txHex)
 	if p.mtx[reqId].executable {
 		if nodeContractExecutable(p.dag, p.local, tx) == true {
 			go runContractReq(p.dag, p.contract, p.mtx[reqId])
