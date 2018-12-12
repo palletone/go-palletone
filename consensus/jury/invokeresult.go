@@ -22,6 +22,7 @@ package jury
 
 import (
 	"encoding/json"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
@@ -84,6 +85,15 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 		coinbases = append(coinbases, coinbase)
 	}
 	if result.TokenSupply != nil && len(result.TokenSupply) > 0 {
+		for _, tokenSupply := range result.TokenSupply {
+			assetId := &modules.Asset{}
+			assetId.AssetId.SetBytes(tokenSupply.AssetId)
+			out := modules.NewTxOut(tokenSupply.Amount, tokenengine.GenerateLockScript(tokenSupply.Creator), assetId)
+			//
+			coinbase := &modules.PaymentPayload{}
+			coinbase.AddTxOut(out)
+			coinbases = append(coinbases, coinbase)
+		}
 
 	}
 	return coinbases, nil

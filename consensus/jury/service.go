@@ -19,17 +19,15 @@
 package jury
 
 import (
+	"bytes"
 	"fmt"
+	"reflect"
 	"sync"
 	"time"
-	"reflect"
-	"bytes"
 
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/dag/errors"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
@@ -37,14 +35,16 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/dag/txspool"
 	cm "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 type PeerType int
 
 const (
-	_         PeerType = iota
+	_ PeerType = iota
 	TUnknow
 	TJury
 	TMediator
@@ -540,7 +540,7 @@ func (p *Processor) ContractTxReqBroadcast(deployId []byte, signer, from, to com
 	if err != nil {
 		return nil, err
 	}
-	log.Debug("ContractTxReqBroadcast","tx:", tx)
+	log.Debug("ContractTxReqBroadcast", "tx:", tx)
 
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
@@ -592,20 +592,26 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	req := tx.RequestHash()
+	reqId := tx.RequestHash()
 	p.locker.Lock()
-	p.mtx[req] = &contractTx{
+	p.mtx[reqId] = &contractTx{
 		reqTx:      tx,
 		tm:         time.Now(),
 		valid:      true,
 		executable: true, //default
 	}
 	p.locker.Unlock()
+	log.Debug("ContractTxBroadcast ok", "TxHash", tx.Hash().String())
 
+	if p.mtx[reqId].executable {
+		if nodeContractExecutable(p.dag, p.local, tx) == true {
+			go runContractReq(p.dag, p.contract, p.mtx[reqId])
+		}
+	}
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
 
-	return req[:], nil
+	return reqId[:], nil
 }
 
 func printTxInfo(tx *modules.Transaction) {
