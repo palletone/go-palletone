@@ -32,6 +32,10 @@ func TestAssetAmt2JsonAmt(t *testing.T) {
 	jsonAmt := AssetAmt2JsonAmt(asset, 12000)
 	assert.Equal(t, jsonAmt.String(), "1.2")
 	t.Log(jsonAmt)
+
+	devin, _ := modules.StringToAsset("DEVIN+40U1RRBWTSW9LIXC58D")
+	jsonAmt = AssetAmt2JsonAmt(devin, 1000000)
+	t.Logf("DevinAmount:%s", jsonAmt.String())
 }
 func TestJsonAmt2AssetAmt(t *testing.T) {
 	asset, _ := modules.NewAsset("TEST", modules.AssetType_FungibleToken, 5, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13}, modules.IDType16{})

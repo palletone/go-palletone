@@ -25,6 +25,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -34,11 +35,10 @@ import (
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
-	"encoding/json"
 )
 
 const (
@@ -242,16 +242,13 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		}
 		log.Debug("Fetcher", "manager.dag.InsertDag index:", blocks[0].Number().Index, "hash", blocks[0].Hash())
 
-
-
-
 		for i, block := range blocks {
 			var txs modules.Transactions
 			var temptxs modules.Transactions
-			if err:=json.Unmarshal(block.StrTxs,&txs);err!=nil{
-				return 0,err
+			if err := json.Unmarshal(block.StrTxs, &txs); err != nil {
+				return 0, err
 			}
-			for _,tx:=range txs{
+			for _, tx := range txs {
 				msgs, err1 := storage.ConvertMsg(tx)
 				if err1 != nil {
 					log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
@@ -260,11 +257,9 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 				tx.TxMessages = msgs
 				temptxs = append(temptxs, tx)
 			}
-			block.Txs=temptxs
-			blocks[i]=block
+			block.Txs = temptxs
+			blocks[i] = block
 		}
-
-
 
 		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
 		return manager.dag.InsertDag(blocks, manager.txpool)
@@ -597,7 +592,7 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool /*, 
 
 	for _, parentHash := range unit.ParentHash() {
 		if parent, err := pm.dag.GetUnitByHash(parentHash); err != nil || parent == nil {
-		//if parent, err := pm.dag.GetUnit(parentHash); err != nil || parent == nil {
+			//if parent, err := pm.dag.GetUnit(parentHash); err != nil || parent == nil {
 			log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash)
 			return
 		}

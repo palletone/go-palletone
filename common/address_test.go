@@ -59,6 +59,15 @@ func TestHexToAddrString(t *testing.T) {
 	addr = HexToAddress("0x00000000000000000000000000000000000000031C")
 	t.Logf("0x3 contract address: %s", addr.String()) //PCGTta3M4t3yXu8uRgkKvaWd2d8DRLGbeyd
 	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
+
+	addr = HexToAddress("0x00000000000000000000000000000000000000081C")
+	t.Logf("0x8 contract address: %s", addr.String()) //PCGTta3M4t3yXu8uRgkKvaWd2d8DRLGbeyd
+	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
+
+	addr = HexToAddress("0x00000000000000000000000000000000000095271C")
+	t.Logf("0x9 contract address: %s", addr.String()) //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
+	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
+
 	addr = HexToAddress("0x000000000000000000000000000000000000000100")
 	t.Logf("0x1 user address: %s", addr.String())
 

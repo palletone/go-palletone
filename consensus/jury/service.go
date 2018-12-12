@@ -298,11 +298,41 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 		switch msg.App {
 		case modules.APP_CONTRACT_TPL_REQUEST:
 			{
-				return modules.APP_CONTRACT_TPL, nil, errors.New("runContractCmd not support APP_CONTRACT_TPL")
+				msgs := []*modules.Message{}
+				req := ContractInstallReq{
+					chainID:   "palletone",
+					ccName:    msg.Payload.(*modules.ContractInstallRequestPayload).TplName,
+					ccPath:    msg.Payload.(*modules.ContractInstallRequestPayload).Path,
+					ccVersion: msg.Payload.(*modules.ContractInstallRequestPayload).Version,
+				}
+				installResult, err := ContractProcess(contract, req)
+				if err != nil {
+					log.Error("runContractCmd ContractProcess ", "error", err)
+					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_TPL_REQUEST txid(%s) err:%s", req.ccName, err))
+				}
+				payload := installResult.(*modules.ContractTplPayload)
+				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_TPL, payload))
+
+				return modules.APP_CONTRACT_TPL, msgs, nil
 			}
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
 			{
-				return modules.APP_CONTRACT_DEPLOY, nil, errors.New("runContractCmd not support APP_CONTRACT_DEPLOY")
+				msgs := []*modules.Message{}
+				req := ContractDeployReq{
+					chainID:    "palletone",
+					templateId: msg.Payload.(*modules.ContractDeployRequestPayload).TplId,
+					txid:       msg.Payload.(*modules.ContractDeployRequestPayload).TxId,
+					args:       msg.Payload.(*modules.ContractDeployRequestPayload).Args,
+					timeout:    msg.Payload.(*modules.ContractDeployRequestPayload).Timeout,
+				}
+				deployResult, err := ContractProcess(contract, req)
+				if err != nil {
+					log.Error("runContractCmd ContractProcess ", "error", err)
+					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_DEPLOY_REQUEST TplId(%s) err:%s", req.templateId, err))
+				}
+				payload := deployResult.(*modules.ContractDeployPayload)
+				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload))
+				return modules.APP_CONTRACT_DEPLOY, nil, nil
 			}
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
 			{
@@ -348,7 +378,21 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 			}
 		case modules.APP_CONTRACT_STOP_REQUEST:
 			{
-				return modules.APP_CONTRACT_STOP, nil, errors.New("not support APP_CONTRACT_STOP")
+				msgs := []*modules.Message{}
+				req := ContractStopReq{
+					chainID:     "palletone",
+					deployId:    msg.Payload.(*modules.ContractStopRequestPayload).ContractId,
+					txid:        msg.Payload.(*modules.ContractStopRequestPayload).Txid,
+					deleteImage: msg.Payload.(*modules.ContractStopRequestPayload).DeleteImage,
+				}
+				_, err := ContractProcess(contract, req) //todo
+				if err != nil {
+					log.Error("runContractCmd ContractProcess ", "error", err)
+					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_STOP_REQUEST contractId(%s) err:%s", req.deployId, err))
+				}
+				//payload := stopResult.(*modules.ContractStopPayload)
+				//msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_STOP, payload))
+				return modules.APP_CONTRACT_STOP, msgs, nil
 			}
 		}
 	}
@@ -457,18 +501,19 @@ func nodeContractExecutable(dag iDag, addrs []common.Address, tx *modules.Transa
 			break
 		}
 	}
-
-	if len(contractId) <= 2 && len(contractId) > 0 { //system contract
+	contractAddr := common.NewAddress(contractId, common.ContractHash)
+	if contractAddr.IsSystemContractAddress() { //system contract
 		for _, addr := range addrs {
-			log.Debug("nodeContractExecutable", "contract id", contractId, "addr", addr.String())
+			log.Debug("nodeContractExecutable", "contract id", contractAddr.String(), "addr", addr.String())
 			if true == dag.IsActiveMediator(addr) {
-				log.Debug("nodeContractExecutable", "true:contract id", contractId, "addr", addr.String())
+				log.Debug("nodeContractExecutable", "true:contract id", contractAddr.String(), "addr", addr.String())
 				return true
 			}
 		}
 	} else { //usr contract
+		log.Debug("User contract, call docker to run contract.")
 	}
-	log.Debug("nodeContractExecutable", "false:contract id", contractId)
+	log.Debug("nodeContractExecutable", "false:contract id", contractAddr.String())
 
 	return false
 }
@@ -529,55 +574,9 @@ func (p *Processor) ContractTxCreat(deployId []byte, txBytes []byte, args [][]by
 }
 
 //func (p *Processor) ContractTxReqBroadcast(deployId []byte,txBytes []byte, args [][]byte, timeout time.Duration) ([]byte, error) {
-func (p *Processor) ContractTxReqBroadcast(deployId []byte, signer, from, to common.Address, daoAmount, daoFee uint64, args [][]byte, timeout time.Duration) ([]byte, error) {
-	if deployId == nil || args == nil {
-		log.Error("ContractTxReqBroadcast", "param is nil")
-		return nil, errors.New("ContractTxReqBroadcast request param is nil")
-	}
-	log.Debug("ContractTxReqBroadcast", "enter, deployId", deployId)
+func (p *Processor) ContractTxReqBroadcast(contractAddress, from, to common.Address, daoAmount, daoFee uint64, args [][]byte, timeout time.Duration) ([]byte, error) {
+	return p.ContractInvokeReq(from, to, daoAmount, daoFee, contractAddress, args, timeout)
 
-	tx, err := p.dag.CreateBaseTransaction(from, to, daoAmount, daoFee)
-	if err != nil {
-		return nil, err
-	}
-	log.Debug("ContractTxReqBroadcast", "tx:", tx)
-
-	msgReq := &modules.Message{
-		App: modules.APP_CONTRACT_INVOKE_REQUEST,
-		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId: deployId,
-			Args:       args,
-			Timeout:    timeout,
-		},
-	}
-	tx.AddMessage(msgReq)
-	tx, err = p.ptn.SignGenericTransaction(signer, tx)
-	if err != nil {
-		return nil, err
-	}
-	reqId := tx.RequestHash()
-	p.locker.Lock()
-	p.mtx[reqId] = &contractTx{
-		reqTx:      tx,
-		tm:         time.Now(),
-		valid:      true,
-		executable: true, //default
-	}
-	p.locker.Unlock()
-	log.Debug("ContractTxReqBroadcast ok", "deployId", deployId, "TxId", reqId.String(), "TxHash", tx.Hash().String())
-
-	if p.mtx[reqId].executable {
-		if nodeContractExecutable(p.dag, p.local, tx) == true {
-			go runContractReq(p.dag, p.contract, p.mtx[reqId])
-		}
-	}
-	//broadcast
-	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
-	//local
-	//go p.contractExecFeed.Send(ContractExeEvent{modules.NewTransaction([]*modules.Message{msgPay, msgReq})})
-	//go p.ProcessContractEvent(&ContractExeEvent{Tx: tx})
-
-	return reqId[:], nil
 }
 
 func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
@@ -592,7 +591,37 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 
+	req := tx.RequestHash()
+	p.locker.Lock()
+	p.mtx[req] = &contractTx{
+		reqTx:      tx,
+		tm:         time.Now(),
+		valid:      true,
+		executable: true, //default
+	}
+	p.locker.Unlock()
+
+	//broadcast
+	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
+
+	return req[:], nil
+}
+
+//tmp
+func (p *Processor) creatContractTxReqBroadcast(from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message) ([]byte, error) {
+	tx, err := p.dag.CreateBaseTransaction(from, to, daoAmount, daoFee)
+	if err != nil {
+		return nil, err
+	}
+	log.Debug("creatContractTxReq", "tx:", tx)
+
+	tx.AddMessage(msg)
+	tx, err = p.ptn.SignGenericTransaction(from, tx)
+	if err != nil {
+		return nil, err
+	}
 	reqId := tx.RequestHash()
+
 	p.locker.Lock()
 	p.mtx[reqId] = &contractTx{
 		reqTx:      tx,
@@ -601,8 +630,8 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 		executable: true, //default
 	}
 	p.locker.Unlock()
-	log.Debug("ContractTxBroadcast ok", "TxHash", tx.Hash().String())
-
+	txHex, _ := rlp.EncodeToBytes(tx)
+	log.Debugf("Signed ContractRequest hex:%x", txHex)
 	if p.mtx[reqId].executable {
 		if nodeContractExecutable(p.dag, p.local, tx) == true {
 			go runContractReq(p.dag, p.contract, p.mtx[reqId])
@@ -610,8 +639,67 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 	}
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
+	//local
+	//go p.contractExecFeed.Send(ContractExeEvent{modules.NewTransaction([]*modules.Message{msgPay, msgReq})})
+	//go p.ProcessContractEvent(&ContractExeEvent{Tx: tx})
 
 	return reqId[:], nil
+}
+
+func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) ([]byte, error) {
+	msgReq := &modules.Message{
+		App: modules.APP_CONTRACT_TPL_REQUEST,
+		Payload: &modules.ContractInstallRequestPayload{
+			TplName: tplName,
+			Path:    path,
+			Version: version,
+		},
+	}
+	return p.creatContractTxReqBroadcast(from, to, daoAmount, daoFee, msgReq)
+}
+
+func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
+	msgReq := &modules.Message{
+		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
+		Payload: &modules.ContractDeployRequestPayload{
+			TplId:   templateId,
+			TxId:    txid,
+			Args:    args,
+			Timeout: timeout,
+		},
+	}
+	return p.creatContractTxReqBroadcast(from, to, daoAmount, daoFee, msgReq)
+}
+
+func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, args [][]byte, timeout time.Duration) ([]byte, error) {
+	if  from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) || args == nil {
+		log.Error("ContractInvokeReq", "param is error")
+		return nil, errors.New("ContractInvokeReq request param is error")
+	}
+
+	log.Debug("ContractInvokeReq", "enter, contractId ", contractId)
+	msgReq := &modules.Message{
+		App: modules.APP_CONTRACT_INVOKE_REQUEST,
+		Payload: &modules.ContractInvokeRequestPayload{
+			ContractId:   contractId[:],
+			FunctionName: "",
+			Args:         args,
+			Timeout:      timeout,
+		},
+	}
+	return p.creatContractTxReqBroadcast(from, to, daoAmount, daoFee, msgReq)
+}
+
+func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, txid string, deleteImage bool) ([]byte, error) {
+	msgReq := &modules.Message{
+		App: modules.APP_CONTRACT_STOP_REQUEST,
+		Payload: &modules.ContractStopRequestPayload{
+			ContractId:  contractId[:],
+			Txid:        txid,
+			DeleteImage: deleteImage,
+		},
+	}
+	return p.creatContractTxReqBroadcast(from, to, daoAmount, daoFee, msgReq)
 }
 
 func printTxInfo(tx *modules.Transaction) {
