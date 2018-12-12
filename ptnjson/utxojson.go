@@ -34,7 +34,8 @@ type UtxoJson struct {
 	Asset          string `json:"asset"`            // 资产类别
 	PkScriptHex    string `json:"pk_script_hex"`    // 要执行的代码段
 	PkScriptString string `json:"pk_script_string"` // 要执行的代码段
-	LockTime       uint32 `json:"lock_time"`
+	LockTime       uint32 `json:"lock_time"`        //
+	FlagStatus     string `json:"falg_status"`      // utxo状态
 }
 
 func (utxo *UtxoJson) GetAmount() uint64 {
@@ -57,6 +58,7 @@ func ConvertUtxo2Json(outPoint *modules.OutPoint, utxo *modules.Utxo) *UtxoJson 
 		Asset:          convertAsset2Json(utxo.Asset),
 		PkScriptHex:    hexutil.Encode(utxo.PkScript),
 		PkScriptString: scriptStr,
+		FlagStatus:     utxo.Flag2Str(),
 		LockTime:       utxo.LockTime,
 	}
 }
