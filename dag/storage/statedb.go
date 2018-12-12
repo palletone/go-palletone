@@ -25,6 +25,8 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 
+	"encoding/json"
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
@@ -137,4 +139,18 @@ func (statedb *StateDb) GetMediators() map[common.Address]bool {
 // author albert·gou
 func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
 	return LookupMediator(statedb.db)
+}
+
+//xiaozhi
+func (statedb *StateDb) GetMediatorCandidateList() ([]*common.Address, error) {
+	_, val := statedb.GetContractState([]byte("01"), "MediatorList")
+	if val == nil {
+		return nil, fmt.Errorf("mediator candidate list is nil.")
+	}
+	candidateList := []*common.Address{}
+	err := json.Unmarshal(val, &candidateList)
+	if err != nil {
+		return nil, err
+	}
+	return candidateList, nil
 }
