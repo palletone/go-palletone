@@ -117,24 +117,27 @@ func move(who string, list []common.Address, invokeAddr common.Address, stub shi
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfeiture []*modules.Forfeiture, forfeitureAddr common.Address, applyTime int64) *modules.Forfeiture {
+func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfeiture *modules.ListForForfeiture, forfeitureAddr common.Address, applyTime int64) (*modules.Forfeiture, error) {
 	//
 	forfeiture := new(modules.Forfeiture)
-	for i := 0; i < len(listForForfeiture); i++ {
-		if listForForfeiture[i].ApplyTime == applyTime && listForForfeiture[i].ForfeitureAddress == forfeitureAddr {
-			forfeiture = listForForfeiture[i]
-			listForForfeiture = append(listForForfeiture[:i], listForForfeiture[i+1:]...)
+	for i := 0; i < len(listForForfeiture.Forfeitures); i++ {
+		if listForForfeiture.Forfeitures[i].ApplyTime == applyTime && listForForfeiture.Forfeitures[i].ForfeitureAddress == forfeitureAddr {
+			forfeiture = listForForfeiture.Forfeitures[i]
+			listForForfeiture.Forfeitures = append(listForForfeiture.Forfeitures[:i], listForForfeiture.Forfeitures[i+1:]...)
 			break
 		}
 	}
-	listForForfeitureByte, _ := json.Marshal(listForForfeiture)
+	listForForfeitureByte, err := json.Marshal(listForForfeiture)
+	if err != nil {
+		return nil, err
+	}
 	//更新列表
 	stub.PutState("ListForForfeiture", listForForfeitureByte)
-	return forfeiture
+	return forfeiture, nil
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback *modules.ListForCashback, cashbackAddr common.Address, applyTime int64) *modules.Cashback {
+func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback *modules.ListForCashback, cashbackAddr common.Address, applyTime int64) (*modules.Cashback, error) {
 	//
 	cashback := new(modules.Cashback)
 	for i := 0; i < len(listForCashback.Cashbacks); i++ {
@@ -144,8 +147,11 @@ func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashbac
 			break
 		}
 	}
-	listForCashbackByte, _ := json.Marshal(listForCashback)
+	listForCashbackByte, err := json.Marshal(listForCashback)
+	if err != nil {
+		return nil, err
+	}
 	//更新列表
 	stub.PutState("ListForCashback", listForCashbackByte)
-	return cashback
+	return cashback, nil
 }

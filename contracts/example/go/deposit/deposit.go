@@ -157,7 +157,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			return shim.Error("balance is nil.")
+			return shim.Error("list is nil.")
 		}
 		fmt.Printf("BecomeMediatorApplyList = %v\n", list)
 		return shim.Success([]byte("ok"))
@@ -168,7 +168,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			return shim.Error("balance is nil.")
+			return shim.Error("list is nil.")
 		}
 		fmt.Printf("AgreeForBecomeMediatorList = %v\n", list)
 		return shim.Success([]byte("ok"))
@@ -179,7 +179,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			return shim.Error("balance is nil.")
+			return shim.Error("list is nil.")
 		}
 		fmt.Printf("QuitMediatorApplyList = %v\n", list)
 		return shim.Success([]byte("ok"))
@@ -269,7 +269,8 @@ func (d *DepositChaincode) handleMediatorDepositWitnessPay(stub shim.ChaincodeSt
 	if balance == nil {
 		//判断保证金是否足够(Mediator第一次交付必须足够)
 		if invokeTokens.Amount < depositAmountsForMediator {
-			return shim.Success([]byte("Payment amount is insufficient."))
+			//TODO 第一次交付不够的话，这里必须终止
+			return shim.Error("Payment amount is insufficient.")
 		}
 		//加入列表
 		addList("Mediator", invokeAddr, stub)
@@ -596,7 +597,10 @@ func (d *DepositChaincode) agreeForApplyCashback(stub shim.ChaincodeStubInterfac
 		return shim.Error("listForCashback is nil.")
 	}
 	//在申请退款保证金列表中移除该节点
-	cashbackValue := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
+	cashbackValue, err := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
 	if cashbackValue == nil {
 		return shim.Error("列表里没有该申请")
 	}
@@ -908,7 +912,10 @@ func (d *DepositChaincode) disagreeForApplyCashback(stub shim.ChaincodeStubInter
 		return shim.Error("listForCashback is nil")
 	}
 	fmt.Println("moveInApplyForCashbackList==>", listForCashback)
-	node := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
+	node, err := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
 	if node == nil {
 		return shim.Error("列表里没有该申请")
 	}
@@ -926,7 +933,10 @@ func (d *DepositChaincode) disagreeForApplyForfeiture(stub shim.ChaincodeStubInt
 	if listForForfeiture == nil {
 		return shim.Error("listForForfeiture is nil.")
 	}
-	node := moveInApplyForForfeitureList(stub, listForForfeiture.Forfeitures, forfeiture, applyTime)
+	node, err := moveInApplyForForfeitureList(stub, listForForfeiture, forfeiture, applyTime)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
 	if node == nil {
 		return shim.Error("列表里没有该申请")
 	}
@@ -944,7 +954,10 @@ func (d *DepositChaincode) agreeForApplyForfeiture(stub shim.ChaincodeStubInterf
 		return shim.Error("listForForfeiture is nil.")
 	}
 	//在列表中移除，并获取没收情况
-	forfeiture := moveInApplyForForfeitureList(stub, listForForfeiture.Forfeitures, forfeitureAddr, applyTime)
+	forfeiture, err := moveInApplyForForfeitureList(stub, listForForfeiture, forfeitureAddr, applyTime)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
 	if forfeiture == nil {
 		return shim.Error("列表里没有该申请")
 	}
@@ -1020,7 +1033,7 @@ func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.Chaincod
 	//减去提取部分
 	balance.TotalAmount -= forfeiture.ApplyTokens.Amount
 
-	balance.ForfeitureValues = append(balance.ForfeitureValues)
+	balance.ForfeitureValues = append(balance.ForfeitureValues, forfeiture)
 
 	//序列化
 	return d.marshalForBalance(stub, forfeiture.ForfeitureAddress, balance)

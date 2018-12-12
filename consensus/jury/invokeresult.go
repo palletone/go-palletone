@@ -57,9 +57,11 @@ func resultToContractPayments(dag iDag, result *modules.ContractInvokeResult) ([
 			out := modules.NewTxOut(payout.Amount, tokenengine.GenerateLockScript(payout.PayTo), payout.Asset)
 			payment.AddTxOut(out)
 			//Change
-			out2 := modules.NewTxOut(change, tokenengine.GenerateLockScript(addr), payout.Asset)
-			payment.AddTxOut(out2)
-			payments = append(payments, payment)
+			if change != 0 {
+				out2 := modules.NewTxOut(change, tokenengine.GenerateLockScript(addr), payout.Asset)
+				payment.AddTxOut(out2)
+				payments = append(payments, payment)
+			}
 		}
 	}
 	return payments, nil

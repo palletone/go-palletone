@@ -324,7 +324,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 //timeout:ms
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, txid string, tx *md.Transaction, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
+func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, tx *md.Transaction, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	logger.Infof("==========Invoke enter=======")
 	logger.Infof("deployId[%s] txid[%s]", hex.EncodeToString(deployId), txid)
 	defer logger.Infof("-----------Invoke exit--------")
@@ -408,7 +408,7 @@ func Invoke(contractid []byte, idag dag.IDag, chainID string, deployId []byte, t
 		return nil, err
 	}
 
-	rsp, unit, err := es.ProcessProposal(contractid, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
+	rsp, unit, err := es.ProcessProposal(idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
 
 	if err != nil {
 		logger.Errorf("ProcessProposal error[%v]", err)
