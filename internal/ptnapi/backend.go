@@ -123,7 +123,7 @@ type Backend interface {
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
 	DecodeTx(hex string) (string, error)
 	EncodeTx(jsonStr string) (string, error)
-	ContractTxReqBroadcast(deployId []byte, signer, from, to common.Address, daoAmount, daoFee uint64, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
+	ContractTxReqBroadcast(contractId, from, to common.Address, daoAmount, daoFee uint64, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 
 	ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 }

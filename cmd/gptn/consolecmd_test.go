@@ -29,14 +29,14 @@ const (
 
 // Tests that a node embedded within a console can be started up properly and
 // then terminated by closing the input stream.
-//func TestConsoleWelcome(t *testing.T) {
-//	// Start a gptn console, make sure it's cleaned up and terminate the console
-//	gptn := runGptn(t, "console")
-//	// Gather all the infos the welcome message needs to contain
-//
-//	gptn.Expect("2018")
-//	//gptn.ExpectExitConsoleWelcome()
-//}
+func TestConsoleWelcome(t *testing.T) {
+	// Start a gptn console, make sure it's cleaned up and terminate the console
+	gptn := runGptn(t, "console")
+	// Gather all the infos the welcome message needs to contain
+
+	gptn.Expect("last")
+	//gptn.ExpectExitConsoleWelcome()
+}
 
 func TestPeerToPeer(t *testing.T) {
 	//第一个节点的 pnode://6632b753a9e83bfad296f31689e7c7566ba921babc19ff8fdb99a617f494b0afc84e06b678bb567600dda2fd78cc69aaa9424051efc95c51961ffecbb30aace5

@@ -866,16 +866,15 @@ func (s *PublicBlockChainAPI) EncodeTx(ctx context.Context, json string) (string
 	return s.b.EncodeTx(json)
 }
 
-func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId, signer, from, to, daoAmount, daoFee string, param []string) (string, error) {
-	depId, _ := hex.DecodeString(deployId)
-	sigAddr, _ := common.StringToAddress(signer)
+func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId, from, to, daoAmount, daoFee string, param []string) (string, error) {
+	contractId, _ := common.StringToAddress(deployId)
+
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
 	fee, _ := strconv.ParseUint(daoFee, 10, 64)
 
-	log.Info("-----Ccinvoketx:", "deployId", deployId)
-	log.Info("-----Ccinvoketx:", "sigAddr", sigAddr.String())
+	log.Info("-----Ccinvoketx:", "contractId", contractId.String())
 	log.Info("-----Ccinvoketx:", "fromAddr", fromAddr.String())
 	log.Info("-----Ccinvoketx:", "toAddr", toAddr.String())
 	log.Info("-----Ccinvoketx:", "amount", amount)
@@ -887,7 +886,7 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId, signer, 
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
 
-	rsp, err := s.b.ContractTxReqBroadcast(depId, sigAddr, fromAddr, toAddr, amount, fee, args, 0)
+	rsp, err := s.b.ContractTxReqBroadcast(contractId, fromAddr, toAddr, amount, fee, args, 0)
 
 	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
 

@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -44,8 +45,9 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 			// 广播给其他活跃 mediator，进行验证并群签名
 			// self.BroadcastNewProducedUnit(event.Unit)
 
-			self.BroadcastUnit(event.Unit, true /*, needBroadcastMediator*/)
-			self.BroadcastUnit(event.Unit, false /*, noBroadcastMediator*/)
+				self.BroadcastUnit(event.Unit, true /*, needBroadcastMediator*/)
+				self.BroadcastUnit(event.Unit, false /*, noBroadcastMediator*/)
+			}
 
 			// Err() channel will be closed when unsubscribing.
 		case <-self.newProducedUnitSub.Err():

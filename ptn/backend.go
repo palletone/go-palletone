@@ -100,7 +100,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
 
-	db, err := CreateDB(ctx, config, "leveldb")
+	db, err := CreateDB(ctx, config, "leveldb") //MUST same with isOldGptnResource
 	if err != nil {
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err

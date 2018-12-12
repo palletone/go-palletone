@@ -427,23 +427,32 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 		log.Error("payment output is null.", "payment.output", payment.Outputs)
 		return modules.TxValidationCode_INVALID_PAYMMENT_OUTPUT
 	}
-
-	for i, out := range payment.Outputs {
-		// checkout output
-		if i < 1 {
-			if !out.Asset.IsSimilar(modules.NewPTNAsset()) {
-				return modules.TxValidationCode_INVALID_ASSET
-			}
-			// log.Debug("validation succeed！")
-			continue // asset = out.Asset
-		} else {
-			if out.Asset == nil {
-				return modules.TxValidationCode_INVALID_ASSET
-			}
-			if !out.Asset.IsSimilar(payment.Outputs[i-1].Asset) {
-				return modules.TxValidationCode_INVALID_ASSET
-			}
+	//Check coinbase payment
+	//rule:
+	//	1. all outputs have same asset
+	asset0 := payment.Outputs[0].Asset
+	for _, out := range payment.Outputs {
+		if !asset0.IsSimilar(out.Asset) {
+			return modules.TxValidationCode_INVALID_ASSET
 		}
+	}
+
+	for _, out := range payment.Outputs {
+		// // checkout output
+		// if i < 1 {
+		// 	if !out.Asset.IsSimilar(modules.NewPTNAsset()) {
+		// 		return modules.TxValidationCode_INVALID_ASSET
+		// 	}
+		// 	// log.Debug("validation succeed！")
+		// 	continue // asset = out.Asset
+		// } else {
+		// 	if out.Asset == nil {
+		// 		return modules.TxValidationCode_INVALID_ASSET
+		// 	}
+		// 	if !out.Asset.IsSimilar(payment.Outputs[i-1].Asset) {
+		// 		return modules.TxValidationCode_INVALID_ASSET
+		// 	}
+		// }
 		if out.Value <= 0 || out.Value >= 100000000000000000 {
 			return modules.TxValidationCode_INVALID_AMOUNT
 		}
