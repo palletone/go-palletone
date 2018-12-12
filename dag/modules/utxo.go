@@ -105,6 +105,9 @@ func (utxo *Utxo) Clone() *Utxo {
 		Flags:    utxo.Flags,
 	}
 }
+func (utxo *Utxo) Flag2Str() string {
+	return UtxoFlags2String(utxo.Flags)
+}
 
 // UtxoIndex is key
 // utxo index db value: amount
