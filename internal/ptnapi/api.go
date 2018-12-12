@@ -534,10 +534,11 @@ func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address string) (m
 	}
 	result := make(map[string]decimal.Decimal)
 	for _, utxo := range utxos {
+		asset, _ := modules.StringToAsset(utxo.Asset)
 		if bal, ok := result[utxo.Asset]; ok {
-			result[utxo.Asset] = bal.Add(ptnjson.Dao2Ptn(utxo.Amount))
+			result[utxo.Asset] = bal.Add(ptnjson.AssetAmt2JsonAmt(asset, utxo.Amount))
 		} else {
-			result[utxo.Asset] = ptnjson.Dao2Ptn(utxo.Amount)
+			result[utxo.Asset] = ptnjson.AssetAmt2JsonAmt(asset, utxo.Amount)
 		}
 	}
 	return result, nil
