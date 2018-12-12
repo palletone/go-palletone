@@ -148,9 +148,7 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 	//	// is intentionally not directly returning because the first return
 	//	// value is a string and it would result in returning an empty string to
 	//	// the client instead of nothing (nil) in the case of an error.
-	PaymentJson := walletjson.PaymentJson{}
-	PaymentJson.Inputs = inputjson
-	PaymentJson.Outputs = OutputJson
+	
 
 	mtx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
@@ -158,13 +156,16 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
 	//mtx.TxHash = mtx.Hash()
 	// sign mtx
-	for _, input := range PaymentJson.Inputs {
+	for _, input := range inputjson {
 		hashforsign, err := tokenengine.CalcSignatureHash(mtx, int(input.MessageIndex), int(input.OutIndex), nil)
 		if err != nil {
 			return "", err
 		}
 		input.HashForSign = string(hashforsign)
 	}
+	PaymentJson := walletjson.PaymentJson{}
+	PaymentJson.Inputs = inputjson
+	PaymentJson.Outputs = OutputJson
 	txjson := walletjson.TxJson{}
 	txjson.Payload = append(txjson.Payload, PaymentJson)
 	bytetxjson, err := json.Marshal(txjson)
