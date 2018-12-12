@@ -288,3 +288,18 @@ type AccountToken struct {
 	AssetID *Asset `json:"asset_id"`
 	Balance uint64 `json:"balance"`
 }
+
+func UtxoFlags2String(flag txoFlags) string {
+	var str string
+	switch flag {
+	case tfCoinBase:
+		str = "coin_base"
+	case tfSpent:
+		str = "spent"
+	case tfModified:
+		str = "modified"
+	default:
+		str = "normal"
+	}
+	return str
+}

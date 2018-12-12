@@ -183,7 +183,7 @@ func (repository *UtxoRepository) UpdateUtxo(txHash common.Hash, msg *modules.Me
 			log.Error("error occurred on updated utxos, check the log file to find details.")
 			return errors.New("error occurred on updated utxos, check the log file to find details.")
 		}
-		// destory utxo
+		// update utxo
 		repository.destoryUtxo(payment.Inputs)
 		return nil
 	}
@@ -279,30 +279,27 @@ func (repository *UtxoRepository) destoryUtxo(txins []*modules.Input) {
 			log.Error("Query utxo when destory uxto", "error", err.Error())
 			continue
 		}
-		//var utxo modules.Utxo
-		//if err := rlp.DecodeBytes(data, &utxo); err != nil {
-		//	log.Error("Decode utxo when destory uxto", "error", err.Error())
-		//	continue
-		//}
+		utxo.Spend()
+
 		// delete utxo
-		if err := repository.utxodb.DeleteUtxo(outpoint); err != nil {
-			log.Error("Destory uxto", "error", err.Error())
+		if err := repository.utxodb.SaveUtxoEntity(outpoint, utxo); err != nil {
+			log.Error("Update uxto... ", "error", err.Error())
 			continue
 		}
 		// delete index data
 		sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
-		addr := common.Address{}
-		addr.SetString(sAddr.String())
-		utxoIndex := &modules.UtxoIndex{
-			AccountAddr: addr,
-			Asset:       utxo.Asset,
-			OutPoint:    outpoint,
-		}
-		if err := repository.idxdb.DeleteUtxoByIndex(utxoIndex); err != nil {
-			log.Error("Destory uxto index", "error", err.Error())
-			continue
-		}
-		if utxo.Asset.AssetId == modules.PTNCOIN {
+		// addr := common.Address{}
+		// addr.SetString(sAddr.String())
+		// utxoIndex := &modules.UtxoIndex{
+		// 	AccountAddr: addr,
+		// 	Asset:       utxo.Asset,
+		// 	OutPoint:    outpoint,
+		// }
+		// if err := repository.idxdb.DeleteUtxoByIndex(utxoIndex); err != nil {
+		// 	log.Error("Destory uxto index", "error", err.Error())
+		// 	continue
+		// }
+		if utxo.Asset.AssetId == modules.NewPTNIdType() { // modules.PTNCOIN
 			repository.statedb.UpdateAccountInfoBalance(sAddr, -int64(utxo.Amount))
 		}
 	}
