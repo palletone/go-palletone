@@ -19,8 +19,6 @@
 package mediatorplugin
 
 import (
-	"encoding/json"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 )
@@ -68,11 +66,12 @@ func (a *PublicMediatorAPI) GetInitDKS() (res InitDKSResult) {
 
 	return
 }
-func (a *PublicMediatorAPI) VoteResult() (res string) {
-	result, _ := a.dag.GetElectedMediatorsAddress()
-	json, _ := json.Marshal(result)
-	return string(json)
-}
+
+//func (a *PublicMediatorAPI) VoteResult() (res string) {
+//	result, _ := a.dag.GetElectedMediatorsAddress()
+//	json, _ := json.Marshal(result)
+//	return string(json)
+//}
 
 // todo 待删除，jury暂时使用mediator配置
 func (mp *MediatorPlugin) LocalMediators() []common.Address {

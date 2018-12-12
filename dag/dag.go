@@ -1246,14 +1246,14 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 //}
 
 //GetElectedMediatorsAddress YiRan@
-func (dag *Dag) GetElectedMediatorsAddress() (map[string]uint64, error) {
-	//gp, err := dag.propdb.RetrieveGlobalProp()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//MediatorNumber := gp.GetActiveMediatorCount()
-	return dag.statedb.GetSortedMediatorVote(0)
-}
+//func (dag *Dag) GetElectedMediatorsAddress() (map[string]uint64, error) {
+//	//gp, err := dag.propdb.RetrieveGlobalProp()
+//	//if err != nil {
+//	//	return nil, err
+//	//}
+//	//MediatorNumber := gp.GetActiveMediatorCount()
+//	return dag.statedb.GetSortedMediatorVote(0)
+//}
 
 // UpdateMediator
 //func (d *Dag) UpdateMediator() error {

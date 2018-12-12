@@ -110,7 +110,7 @@ type IDag interface {
 	GetActiveMediatorNodes() map[string]*discover.Node
 
 	/* Vote */
-	GetElectedMediatorsAddress() (map[string]uint64, error)
+	//GetElectedMediatorsAddress() (map[string]uint64, error)
 	//GetAccountMediatorVote(address common.Address) []common.Address
 
 	// get token info
