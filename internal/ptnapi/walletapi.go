@@ -156,12 +156,13 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
 	//mtx.TxHash = mtx.Hash()
 	// sign mtx
-	for _, input := range inputjson {
+	for index, input := range inputjson {
 		hashforsign, err := tokenengine.CalcSignatureHash(mtx, int(input.MessageIndex), int(input.OutIndex), nil)
 		if err != nil {
 			return "", err
 		}
-		input.HashForSign = string(hashforsign)
+                sh := common.BytesToHash(hashforsign)
+                inputjson[index].HashForSign = sh.String()
 	}
 	PaymentJson := walletjson.PaymentJson{}
 	PaymentJson.Inputs = inputjson
