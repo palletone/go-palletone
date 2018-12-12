@@ -5602,12 +5602,7 @@ var methods = function () {
         params: 1,
         // inputFormatter: [null]
     });
-    var decodeTx = new Method({
-        name: 'decodeTx',
-        call: 'ptn_decodeTx',
-        params: 1,
-        // inputFormatter: [null]
-    });
+
     var getAllUtxos = new Method({
         name: 'getAllUtxos',
         call: 'ptn_getAllUtxos',
@@ -5704,12 +5699,6 @@ var methods = function () {
         inputFormatter: [null, null]
     });
 
-    var ccinvoketx = new Method({
-        name: 'ccinvoketx',
-        call: 'ptn_ccinvoketx',
-        params: 7, //deployId, signer, from, to, daoAmount, daoFee string, args[]string------>["fun", "key", "value"]
-        inputFormatter: [null, null, null, null,null, null, null],
-    });
 
     var creatCcTransaction = new Method({
         name: 'creatCcTransaction',
@@ -5779,13 +5768,11 @@ var methods = function () {
         ccinstall,
         ccdeploy,
         ccstop,
-        decodeTx,
         // createPayment,
         getUnitTxsInfo,
         getUnitTxsHashHex, 
         getTxByHash, 
         getTxSearchEntry,
-        ccinvoketx,
         creatCcTransaction,
     ];
 };
