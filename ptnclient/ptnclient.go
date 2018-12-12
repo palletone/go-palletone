@@ -447,7 +447,7 @@ func (ec *Client) SendTransaction(ctx context.Context, tx *modules.Transaction) 
 }
 func (ec *Client) WalletSendTransaction(ctx context.Context, params string) (string, error) {
 	var result string
-	err := ec.c.CallContext(ctx, &result, "ptn_walletSendTransaction", params)
+	err := ec.c.CallContext(ctx, &result, "wallet_sendRawTransaction", params)
 	return result, err
 }
 func toCallArg(msg palletone.CallMsg) interface{} {

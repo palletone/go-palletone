@@ -589,6 +589,11 @@ const Wallet_JS = `
 			call: 'wallet_createPaymentTx',
 			params: 4
 		}),
+		new web3._extend.Method({
+			name: 'createRawTransaction',
+			call: 'wallet_CreateRawTransaction',
+			params: 4
+		}),
  	]
  });
  `
