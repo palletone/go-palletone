@@ -577,7 +577,7 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 		//判断是否是保证金合约地址
 		utxo := repository.GetUxto(*payload.Inputs[0])
 		addr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
-		if addr.String() == "PCGZBFEUPJEDERgVfkc3EYosN4R6T2c6LW8" {
+		if addr.String() == "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM" {
 			awards := uint64(0)
 			//对每一笔input输入进行计算奖励
 			for _, txin := range payload.Inputs {

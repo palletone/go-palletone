@@ -245,7 +245,7 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 		return nil, err
 	}
 	if contractAddition != nil {
-		addr, _ := common.StringToAddress("PCGZBFEUPJEDERgVfkc3EYosN4R6T2c6LW8")
+		addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
 		additions[addr] = contractAddition
 	}
 	//coinbase, err := CreateCoinbase(mAddr, fees+awards, asset, t)
