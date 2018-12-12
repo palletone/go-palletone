@@ -28,8 +28,8 @@ web3._extend({
 			params: 0,
 		}),
 		new web3._extend.Method({
-			name: 'voteResult',
-			call: 'mediator_voteResult',
+			name: 'getVoted',
+			call: 'mediator_getVoted',
 			params: 0,
 		}),
 		new web3._extend.Method({

@@ -94,12 +94,12 @@ func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (TxExecuteResult,
 }
 
 // 投票 mediator 所需的参数
-type MediatorVoteArgs struct {
+type VoteMediatorArgs struct {
 	Voter    string `json:"voter"`
 	Mediator string `json:"mediator"`
 }
 
-func (a *PrivateMediatorAPI) Vote(args MediatorVoteArgs) (TxExecuteResult, error) {
+func (a *PrivateMediatorAPI) Vote(args VoteMediatorArgs) (TxExecuteResult, error) {
 	// 参数检查
 	res := TxExecuteResult{}
 	voter, err := common.StringToAddress(args.Voter)

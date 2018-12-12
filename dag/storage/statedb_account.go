@@ -38,7 +38,7 @@ func (statedb *StateDb) GetAccountInfo(address common.Address) (*modules.Account
 
 	err := retrieve(statedb.db, accountKey(address), info)
 	if err != nil {
-		statedb.logger.Errorf("Get account[%s] info throw an error:%s", address.String(), err.Error())
+		statedb.logger.Debugf("Get account[%s] info throw an error:%s", address.String(), err.Error())
 		return nil, err
 	}
 

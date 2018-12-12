@@ -23,56 +23,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 )
 
-type PublicMediatorAPI struct {
-	*MediatorPlugin
-}
-
-func NewPublicMediatorAPI(mp *MediatorPlugin) *PublicMediatorAPI {
-	return &PublicMediatorAPI{mp}
-}
-
-func (a *PublicMediatorAPI) List() []string {
-	addStrs := make([]string, 0)
-	mas := a.dag.GetMediators()
-
-	for address, _ := range mas {
-		addStrs = append(addStrs, address.Str())
-	}
-
-	return addStrs
-}
-
-func (a *PublicMediatorAPI) GetActives() []string {
-	addStrs := make([]string, 0)
-	ms := a.dag.ActiveMediators()
-
-	for medAdd, _ := range ms {
-		addStrs = append(addStrs, medAdd.Str())
-	}
-
-	return addStrs
-}
-
-type InitDKSResult struct {
-	PrivateKey string
-	PublicKey  string
-}
-
-func (a *PublicMediatorAPI) GetInitDKS() (res InitDKSResult) {
-	sec, pub := core.GenInitPair()
-
-	res.PrivateKey = core.ScalarToStr(sec)
-	res.PublicKey = core.PointToStr(pub)
-
-	return
-}
-
-//func (a *PublicMediatorAPI) VoteResult() (res string) {
-//	result, _ := a.dag.GetElectedMediatorsAddress()
-//	json, _ := json.Marshal(result)
-//	return string(json)
-//}
-
 // todo 待删除，jury暂时使用mediator配置
 func (mp *MediatorPlugin) LocalMediators() []common.Address {
 	addrs := make([]common.Address, 0)
@@ -139,4 +89,57 @@ func (mp *MediatorPlugin) LocalMediatorPubKey(add common.Address) []byte {
 	}
 
 	return pubKey
+}
+
+type PublicMediatorAPI struct {
+	*MediatorPlugin
+}
+
+func NewPublicMediatorAPI(mp *MediatorPlugin) *PublicMediatorAPI {
+	return &PublicMediatorAPI{mp}
+}
+
+func (a *PublicMediatorAPI) List() []string {
+	addStrs := make([]string, 0)
+	mas := a.dag.GetMediators()
+
+	for address, _ := range mas {
+		addStrs = append(addStrs, address.Str())
+	}
+
+	return addStrs
+}
+
+func (a *PublicMediatorAPI) GetActives() []string {
+	addStrs := make([]string, 0)
+	ms := a.dag.ActiveMediators()
+
+	for medAdd, _ := range ms {
+		addStrs = append(addStrs, medAdd.Str())
+	}
+
+	return addStrs
+}
+
+type InitDKSResult struct {
+	PrivateKey string
+	PublicKey  string
+}
+
+func (a *PublicMediatorAPI) GetInitDKS() (res InitDKSResult) {
+	sec, pub := core.GenInitPair()
+
+	res.PrivateKey = core.ScalarToStr(sec)
+	res.PublicKey = core.PointToStr(pub)
+
+	return
+}
+
+func (a *PublicMediatorAPI) GetVoted(addStr string) ([]common.Address, error) {
+	addr, err := common.StringToAddress(addStr)
+	if err != nil {
+		return []common.Address{}, err
+	}
+
+	return a.dag.GetVotedMediator(addr), nil
 }

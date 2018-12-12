@@ -78,8 +78,9 @@ type iDag interface {
 	CurrentFeeSchedule() core.FeeSchedule
 
 	GetMediators() map[common.Address]bool
-	//GetElectedMediatorsAddress() (map[string]uint64, error)
 	IsMediator(address common.Address) bool
+
+	GetVotedMediator(addr common.Address) []common.Address
 }
 
 type MediatorPlugin struct {

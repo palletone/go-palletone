@@ -26,15 +26,14 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 )
 
-//UpdateMediatorVote YiRan@
-func (statedb *StateDb) UpdateMediatorVote(voter common.Address, candidates []byte) error {
+func (statedb *StateDb) UpdateVotedMediator(voter common.Address, candidates []byte) error {
 	//1. get current account info
 	accountInfo, err := statedb.GetAccountInfo(voter)
 	if err != nil {
 		return err
 	}
-	accountInfo.MediatorVote = common.BytesToAddress(candidates)
-	statedb.logger.Debugf("Try to save mediator vote result{%s} for address:%s", accountInfo.MediatorVote.Str(), voter.Str())
+	accountInfo.VotedMediator = common.BytesToAddress(candidates)
+	statedb.logger.Debugf("Try to save mediator vote result{%s} for address:%s", accountInfo.VotedMediator.Str(), voter.Str())
 	//
 	//newVotes := []vote.VoteInfo{}
 	//mediatorVotes := []vote.VoteInfo{}

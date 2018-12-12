@@ -220,3 +220,14 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 
 	return nodes
 }
+
+func (d *Dag) GetVotedMediator(addr common.Address) []common.Address {
+	res := make([]common.Address, 0)
+	ai, err := d.statedb.GetAccountInfo(addr)
+
+	if err != nil {
+		res = append(res, ai.VotedMediator)
+	}
+
+	return res
+}

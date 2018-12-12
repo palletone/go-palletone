@@ -443,7 +443,7 @@ func (unitOp *UnitRepository) SaveVote(msg *modules.Message, voter common.Addres
 	case VotePayLoad.VoteType == vote.TYPE_MEDIATOR:
 		//Addresses := common.BytesListToAddressList(VotePayLoad.Contents)
 
-		if err := unitOp.statedb.UpdateMediatorVote(voter, VotePayLoad.Contents); err != nil {
+		if err := unitOp.statedb.UpdateVotedMediator(voter, VotePayLoad.Contents); err != nil {
 			return err
 		}
 

@@ -32,7 +32,7 @@ type AccountInfo struct {
 	//当前账户的PTN余额
 	PtnBalance uint64
 	//当前账户投票的Mediator
-	MediatorVote common.Address
+	VotedMediator common.Address
 	//通用可改选投票的结果
 	//Votes []vote.VoteInfo
 }
