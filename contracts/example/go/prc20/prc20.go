@@ -34,8 +34,13 @@ const symbolsKey = "symbols"
 type PRC20 struct {
 }
 
+type TokenInfo struct {
+	SupplyAddr string
+	AssetID    dm.IDType16
+}
+
 type Symbols struct {
-	NameAddrs map[string]string `json:"nameaddrs"`
+	NameInfos map[string]TokenInfo `json:"nameinfos"`
 }
 
 func (p *PRC20) Init(stub shim.ChaincodeStubInterface) pb.Response {
@@ -48,12 +53,8 @@ func (p *PRC20) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	switch f {
 	case "createToken":
 		return createToken(args, stub)
-	case "putval":
-		return putval(args, stub)
-
-	case "getval":
-		return getval(args, stub)
-
+	case "supplyToken":
+		return supplyToken(args, stub)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -71,15 +72,15 @@ func setSymbols(symbols *Symbols, stub shim.ChaincodeStubInterface) error {
 
 func getSymbols(stub shim.ChaincodeStubInterface) (*Symbols, error) {
 	//
+	symbols := Symbols{NameInfos: map[string]TokenInfo{}}
 	symbolsBytes, err := stub.GetState(symbolsKey)
 	if err != nil {
-		return nil, err
+		return &symbols, err
 	}
 	//
-	var symbols Symbols
 	err = json.Unmarshal(symbolsBytes, &symbols)
 	if err != nil {
-		return nil, err
+		return &symbols, err
 	}
 
 	return &symbols, nil
@@ -100,15 +101,28 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Can't use PTN\"}"
 		return shim.Success([]byte(jsonResp))
 	}
-	//transfer how to use ?
-	fungible.Decimals = []byte(args[2])[0]
-	//supply amount
-	toalSupply, err := strconv.ParseUint(args[3], 10, 64)
+	if len(fungible.Symbol) > 5 {
+		jsonResp := "{\"Error\":\"Symbol must less than 5 characters\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+	//decimals
+	decimals, _ := strconv.ParseUint(args[2], 10, 64)
+	if decimals > 18 {
+		jsonResp := "{\"Error\":\"Can't big than 18\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+	fungible.Decimals = byte(decimals)
+	//total supply
+	totalSupply, err := strconv.ParseUint(args[3], 10, 64)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to convert total supply\"}"
 		return shim.Error(jsonResp)
 	}
-	fungible.TotalSupply = toalSupply
+	if totalSupply == 0 {
+		jsonResp := "{\"Error\":\"Can't be zero\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+	fungible.TotalSupply = totalSupply
 	//address of supply
 	if len(args) > 4 {
 		fungible.SupplyAddress = args[4]
@@ -116,10 +130,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 	//check name is only or not
 	symbols, err := getSymbols(stub)
-	if err != nil {
-		symbols = &Symbols{NameAddrs: map[string]string{}}
-	}
-	if _, ok := symbols.NameAddrs[fungible.Symbol]; ok {
+	if _, ok := symbols.NameInfos[fungible.Symbol]; ok {
 		jsonResp := "{\"Error\":\"The symbol have been used\"}"
 		return shim.Success([]byte(jsonResp))
 	}
@@ -130,22 +141,30 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Failed to generate token Json\"}"
 		return shim.Error(jsonResp)
 	}
-	//
-	createaddr, err := stub.GetInvokeAddress()
+	//get creator
+	createAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
 		return shim.Error(jsonResp)
 	}
 
 	//set token define
-	err = stub.DefineToken(byte(0), createJson, createaddr.String())
+	err = stub.DefineToken(byte(0), createJson, createAddr.String())
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.DefineToken\"}"
 		return shim.Error(jsonResp)
 	}
 
 	//last put state
-	symbols.NameAddrs[fungible.Symbol] = fungible.SupplyAddress
+	if fungible.SupplyAddress != "" {
+		txid := stub.GetTxID()
+		assetID, _ := dm.NewAssetId(fungible.Symbol, dm.AssetType_FungibleToken,
+			fungible.Decimals, []byte(txid))
+		info := TokenInfo{SupplyAddr: fungible.SupplyAddress, AssetID: assetID}
+		symbols.NameInfos[fungible.Symbol] = info
+	} else {
+		symbols.NameInfos[fungible.Symbol] = TokenInfo{}
+	}
 	err = setSymbols(symbols, stub)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
@@ -154,40 +173,51 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(createJson) //test
 }
 
-func putval(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+	//params check
 	if len(args) < 2 {
-		return shim.Error("need 2 args (key and a value)")
+		return shim.Error("need 2 args (Symbol,SupplyAmout)")
 	}
-	key := args[0]
-	val := args[1]
-	// Get the state from the ledger
-	_, err := stub.GetState(key)
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get val for " + key + "\"}"
-		return shim.Error(jsonResp)
-	}
-	// Write the state to the ledger
-	err = stub.PutState(key, []byte(val))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(nil)
-}
 
-func getval(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	if len(args) != 1 {
-		return shim.Error("Incorrect number of arguments. Expecting key to query")
+	//symbol
+	symbol := strings.ToUpper(args[0])
+	//check name is exist or not
+	symbols, err := getSymbols(stub)
+	if _, ok := symbols.NameInfos[symbol]; !ok {
+		jsonResp := "{\"Error\":\"Token not exist\"}"
+		return shim.Success([]byte(jsonResp))
 	}
-	key := args[0]
-	// Get the state from the ledger
-	valbytes, err := stub.GetState(key)
+
+	//supply amount
+	supplyAmount, err := strconv.ParseUint(args[1], 10, 64)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get state for " + key + "\"}"
+		jsonResp := "{\"Error\":\"Failed to convert supply amount\"}"
 		return shim.Error(jsonResp)
 	}
-	if valbytes == nil {
-		jsonResp := "{\"Error\":\"Nil val for " + key + "\"}"
+	if supplyAmount == 0 {
+		jsonResp := "{\"Error\":\"Can't be zero\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+
+	//get invoke address
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
 		return shim.Error(jsonResp)
 	}
-	return shim.Success(valbytes)
+	//check supply address
+	if invokeAddr.String() != symbols.NameInfos[symbol].SupplyAddr {
+		jsonResp := "{\"Error\":\"Not the supply address\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+
+	//call SupplyToken
+	assetID := symbols.NameInfos[symbol].AssetID
+	err = stub.SupplyToken(assetID.Bytes(),
+		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, supplyAmount)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to call stub.SupplyToken\"}"
+		return shim.Error(jsonResp)
+	}
+	return shim.Success([]byte("")) //test
 }

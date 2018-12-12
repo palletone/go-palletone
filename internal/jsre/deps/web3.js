@@ -5431,6 +5431,12 @@ var methods = function () {
         params: 1,
         inputFormatter: [null]
     });
+    var walletSendTransaction = new Method({
+        name: 'walletSendTransaction',
+        call: 'ptn_walletSendTransaction',
+        params: 1,
+        inputFormatter: [null]
+    });
 
     var sendTransaction = new Method({
         name: 'sendTransaction',
@@ -5701,8 +5707,8 @@ var methods = function () {
     var ccinvoketx = new Method({
         name: 'ccinvoketx',
         call: 'ptn_ccinvoketx',
-        params: 4, //deployId string, txid string,paymentJson string, args[]string------>["fun", "key", "value"]
-        inputFormatter: [null, null, null, null],
+        params: 7, //deployId, signer, from, to, daoAmount, daoFee string, args[]string------>["fun", "key", "value"]
+        inputFormatter: [null, null, null, null,null, null, null],
     });
 
     var creatCcTransaction = new Method({
@@ -5733,6 +5739,7 @@ var methods = function () {
         call,
         estimateGas,
         walletCreateTransaction,
+        walletSendTransaction,
         cmdCreateTransaction,
         createRawTransaction,
         createMediatorVote,

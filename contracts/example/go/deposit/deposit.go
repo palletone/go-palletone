@@ -82,15 +82,23 @@ func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
 	switch funcName {
+	case "ApplyBecomeMediator":
+		//申请成为Mediator
+		return d.ApplyBecomeMediator(stub, args)
+	case "HandleForApplyBecomeMediator":
+		//基金会对加入申请进行处理
+		return d.HandleForApplyBecomeMediator(stub, args)
+	case "ApplyForQuitMediator":
+		//申请退出Mediator
+		return d.ApplyForQuitMediator(stub, args)
+	case "HandleForApplyForQuitMediator":
+		//基金会对退出申请进行处理
+		return d.HandleForApplyForQuitMediator(stub, args)
 	case "DepositWitnessPay":
 		//交付保证金
-		//handle witness pay
-		//void deposit_witness_pay(const witness_object& wit, token_type amount)
 		return d.depositWitnessPay(stub, args)
 	case "ApplyForDepositCashback":
 		//申请保证金退还
-		//handle cashback rewards
-		//void deposit_cashback(const account_object& acct, token_type amount, bool require_vesting = true)
 		return d.applyForDepositCashback(stub, args)
 	case "ApplyForForfeitureDeposit":
 		//申请保证金没收
@@ -142,8 +150,61 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		fmt.Printf("balance = %v\n", balance)
 		return shim.Success([]byte("ok"))
+		//获取Mediator申请加入列表
+	case "GetBecomeMediatorApplyList":
+		list, err := stub.GetBecomeMediatorApplyList()
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if list == nil {
+			return shim.Error("balance is nil.")
+		}
+		fmt.Printf("BecomeMediatorApplyList = %v\n", list)
+		return shim.Success([]byte("ok"))
+		//获取已同意的mediator列表
+	case "GetAgreeForBecomeMediatorList":
+		list, err := stub.GetAgreeForBecomeMediatorList()
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if list == nil {
+			return shim.Error("balance is nil.")
+		}
+		fmt.Printf("AgreeForBecomeMediatorList = %v\n", list)
+		return shim.Success([]byte("ok"))
+		//获取Mediator申请退出列表
+	case "GetQuitMediatorApplyList":
+		list, err := stub.GetQuitMediatorApplyList()
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if list == nil {
+			return shim.Error("balance is nil.")
+		}
+		fmt.Printf("QuitMediatorApplyList = %v\n", list)
+		return shim.Success([]byte("ok"))
 	}
 	return shim.Success([]byte("Invoke error"))
+}
+
+//申请加入Mediator
+func (d *DepositChaincode) ApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return ApplyBecomeMediator(stub, args)
+}
+
+//基金会对申请加入Mediator进行处理
+func (d *DepositChaincode) HandleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return HandleForApplyBecomeMediator(stub, args)
+}
+
+//申请退出Mediator
+func (d *DepositChaincode) ApplyForQuitMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return ApplyForQuitMediator(stub, args)
+}
+
+//基金会对申请退出Mediator进行处理
+func (d *DepositChaincode) HandleForApplyForQuitMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return HandleForApplyForQuitMediator(stub, args)
 }
 
 //交付保证金
@@ -335,7 +396,6 @@ func (d *DepositChaincode) updateForPayValue(balance *modules.DepositBalance, in
 	payValue.PayTokens.Amount = invokeTokens.Amount
 	payValue.PayTokens.Asset = invokeTokens.Asset
 	payValue.PayTime = time.Now().UTC()
-	payValue.PayExtra = "备注"
 
 	balance.PayValues = append(balance.PayValues, payValue)
 }

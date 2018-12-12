@@ -329,6 +329,27 @@ type InvokeFees struct {
 	Asset  *Asset `json:"asset"`
 }
 
+//申请成为Mediator
+type MediatorInfo struct {
+	Name    string `json:"name"`
+	Address string `json:"address"`
+}
+
+//Mediator 申请列表
+type BecomeMediatorApplyList struct {
+	MediatorList []*MediatorInfo `json:"mediator_list"`
+}
+
+//同意 Mediator 列表
+type AgreeForBecomeMediatorList struct {
+	MediatorList []*MediatorInfo `json:"mediator_list"`
+}
+
+//Mediator 退出列表
+type QuitMediatorApplyList struct {
+	MediatorList []*MediatorInfo `json:"mediator_list"`
+}
+
 //数量及资产类型
 //type AmountAsset struct {
 //	Amount uint64 `json:"amount"`
@@ -349,7 +370,7 @@ type DepositBalance struct {
 type PayValue struct {
 	PayTokens *InvokeTokens `json:"pay_tokens"` //数量和资产
 	PayTime   time.Time     `json:"pay_time"`   //发生时间
-	PayExtra  string        `json:"pay_extra"`  //额外内容
+	//PayExtra  string        `json:"pay_extra"`  //额外内容
 }
 
 type TokenPayOut struct {
@@ -410,6 +431,7 @@ type ContractInvokePayload struct {
 	WriteSet      []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
 	Payload       []byte             `json:"payload"`        // the contract execution result
 }
+
 //contract invoke result
 type ContractInvokeResult struct {
 	ContractId    []byte             `json:"contract_id"` // contract id

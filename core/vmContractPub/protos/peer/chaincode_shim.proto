@@ -169,6 +169,7 @@ message SupplyToken{
     bytes assetId=1;
     bytes uniqueId=2;
     uint64 amount=3;
+    string creator = 4;
 }
 message KeyForSystemConfig{
     string key = 1;
