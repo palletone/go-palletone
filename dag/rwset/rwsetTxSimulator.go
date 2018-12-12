@@ -201,6 +201,7 @@ func (s *RwSetTxSimulator) DefineToken(ns string, tokenType int32, define []byte
 	s.rwsetBuilder.DefineToken(ns, tokenType, define, createAddr)
 	return nil
 }
-func (s *RwSetTxSimulator) SupplyToken(ns string, assetId, uniqueId []byte, amt uint64) error {
-	return s.rwsetBuilder.AddSupplyToken(ns, assetId, uniqueId, amt)
+func (s *RwSetTxSimulator) SupplyToken(ns string, assetId, uniqueId []byte, amt uint64, creator string) error {
+	createAddr, _ := common.StringToAddress(creator)
+	return s.rwsetBuilder.AddSupplyToken(ns, assetId, uniqueId, amt, createAddr)
 }

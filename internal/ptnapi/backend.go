@@ -175,6 +175,11 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Version:   "2.0",
 			Service:   NewPublicDagAPI(apiBackend),
 			Public:    true,
+		}, {
+			Namespace: "wallet",
+			Version:   "1.0",
+			Service:   NewPublicWalletAPI(apiBackend),
+			Public:    true,
 		},
 	}
 }

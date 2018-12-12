@@ -1,20 +1,28 @@
 package ptnapi
+
 import (
 	"context"
 	//"errors"
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/walletjson"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/shopspring/decimal"
 )
 
-func (s *PublicTransactionPoolAPI) WalletCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
+type PublicWalletAPI struct {
+	b Backend
+}
+
+func NewPublicWalletAPI(b Backend) *PublicWalletAPI {
+	return &PublicWalletAPI{b}
+}
+func (s *PublicWalletAPI) WalletCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 
 	//realNet := &chaincfg.MainNetParams
 	var LockTime int64
@@ -143,34 +151,34 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 	PaymentJson := walletjson.PaymentJson{}
 	PaymentJson.Inputs = inputjson
 	PaymentJson.Outputs = OutputJson
-	
+
 	mtx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
 	//mtx.TxHash = mtx.Hash()
-	// sign mtx 
-	for _,input := range PaymentJson.Inputs{
-        hashforsign,err := tokenengine.CalcSignatureHash(mtx,int(input.MessageIndex),int(input.OutIndex),nil)
-        if err != nil {
-		    return "", err
-	    }
-        input.HashForSign = string(hashforsign)
+	// sign mtx
+	for _, input := range PaymentJson.Inputs {
+		hashforsign, err := tokenengine.CalcSignatureHash(mtx, int(input.MessageIndex), int(input.OutIndex), nil)
+		if err != nil {
+			return "", err
+		}
+		input.HashForSign = string(hashforsign)
 	}
 	txjson := walletjson.TxJson{}
 	txjson.Payload = append(txjson.Payload, PaymentJson)
 	bytetxjson, err := json.Marshal(txjson)
-    if err != nil {
-        return "", err
-    }
-    
+	if err != nil {
+		return "", err
+	}
+
 	return string(bytetxjson), nil
 }
 
 // walletSendTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
-func (s *PublicTransactionPoolAPI) WalletSendTransaction(ctx context.Context, params string) (common.Hash, error) {
-    var RawTxjsonGenParams walletjson.RawTxjsonGenParams
+func (s *PublicWalletAPI) WalletSendTransaction(ctx context.Context, params string) (common.Hash, error) {
+	var RawTxjsonGenParams walletjson.RawTxjsonGenParams
 	err := json.Unmarshal([]byte(params), &RawTxjsonGenParams)
 	if err != nil {
 		return common.Hash{}, err
@@ -187,21 +195,27 @@ func (s *PublicTransactionPoolAPI) WalletSendTransaction(ctx context.Context, pa
 		pload.AddTxIn(txInput)
 	}
 	for _, output := range RawTxjsonGenParams.Outputs {
-		Addr,err :=common.StringToAddress(output.Address)
+		Addr, err := common.StringToAddress(output.Address)
 		if err != nil {
-		    return common.Hash{}, err
-	    }
+			return common.Hash{}, err
+		}
 		pkScript := tokenengine.GenerateLockScript(Addr)
-		asset,err :=modules.StringToAsset(output.Asset)
-	    txOut := modules.NewTxOut(uint64(output.Amount), pkScript, asset) 
-        pload.AddTxOut(txOut)
-    }
+		asset, err := modules.StringToAsset(output.Asset)
+		txOut := modules.NewTxOut(uint64(output.Amount), pkScript, asset)
+		pload.AddTxOut(txOut)
+	}
 	mtx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
-	
-	
+
 	log.Debugf("Tx outpoint tx hash:%s", mtx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
 	return submitTransaction(ctx, s.b, mtx)
+}
+
+func (s *PublicWalletAPI) GetBalance(ctx context.Context, address string) ([]*walletjson.UtxoJson, error) {
+	//TODO just return a mock data
+	utxos := []*walletjson.UtxoJson{}
+	utxos = append(utxos, &walletjson.UtxoJson{TxHash: "TestHash", MessageIndex: 0, OutIndex: 0, Amount: 123456, Asset: "PTN+8000000"})
+	return utxos, nil
 }

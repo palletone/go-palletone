@@ -11,7 +11,7 @@ type TxSimulator interface {
 	GetTokenBalance(ns string, addr common.Address, asset *modules.Asset) (map[modules.Asset]uint64, error)
 	PayOutToken(ns string, address string, token *modules.Asset, amount uint64, lockTime uint32) error
 	DefineToken(ns string, tokenType int32, define []byte, creator string) error
-	SupplyToken(ns string, assetId, uniqueId []byte, amt uint64) error
+	SupplyToken(ns string, assetId, uniqueId []byte, amt uint64, creator string) error
 	DeleteState(ns string, key string) error
 	GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error)
 	GetRwData(ns string) (map[string]*KVRead, map[string]*KVWrite, error)
