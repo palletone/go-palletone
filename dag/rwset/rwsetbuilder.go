@@ -84,7 +84,7 @@ func (b *RWSetBuilder) DefineToken(ns string, tokenType int32, define []byte, cr
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
 	nsPubRwBuilder.tokenDefine = &modules.TokenDefine{TokenType: int(tokenType), TokenDefineJson: define, Creator: createAddr}
 }
-func (b *RWSetBuilder) AddSupplyToken(ns string, assetId, uniqueId []byte, amt uint64) error {
+func (b *RWSetBuilder) AddSupplyToken(ns string, assetId, uniqueId []byte, amt uint64, createAddr common.Address) error {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
 	if nsPubRwBuilder.tokenSupply == nil {
 		nsPubRwBuilder.tokenSupply = []*modules.TokenSupply{}
@@ -93,7 +93,8 @@ func (b *RWSetBuilder) AddSupplyToken(ns string, assetId, uniqueId []byte, amt u
 	if bytes.Equal(assetId, modules.PTNCOIN.Bytes()) {
 		return errors.New("Forbidden to supply System token PTN")
 	}
-	nsPubRwBuilder.tokenSupply = append(nsPubRwBuilder.tokenSupply, &modules.TokenSupply{AssetId: assetId, UniqueId: uniqueId, Amount: amt})
+	nsPubRwBuilder.tokenSupply = append(nsPubRwBuilder.tokenSupply, &modules.TokenSupply{AssetId: assetId,
+		UniqueId: uniqueId, Amount: amt, Creator: createAddr})
 	return nil
 }
 

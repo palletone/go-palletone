@@ -485,8 +485,8 @@ func (handler *Handler) handleDefineToken(tokenType byte, define []byte, creator
 	return errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 
 }
-func (handler *Handler) handleSupplyToken(assetId []byte, uniqueId []byte, amt uint64, contractid []byte, channelId string, txid string) error {
-	par := &pb.SupplyToken{AssetId: assetId, UniqueId: uniqueId, Amount: amt}
+func (handler *Handler) handleSupplyToken(assetId []byte, uniqueId []byte, amt uint64, creator string, contractid []byte, channelId string, txid string) error {
+	par := &pb.SupplyToken{AssetId: assetId, UniqueId: uniqueId, Amount: amt, Creator: creator}
 	payloadBytes, _ := proto.Marshal(par)
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_SUPPLY_TOKEN, Payload: payloadBytes, Txid: txid, ChannelId: channelId, ContractId: contractid}

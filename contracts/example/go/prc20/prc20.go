@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dm "github.com/palletone/go-palletone/dag/modules"
@@ -159,7 +160,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if fungible.SupplyAddress != "" {
 		txid := stub.GetTxID()
 		assetID, _ := dm.NewAssetId(fungible.Symbol, dm.AssetType_FungibleToken,
-			fungible.Decimals, []byte(txid))
+			fungible.Decimals, common.Hex2Bytes(txid[2:]))
 		info := TokenInfo{SupplyAddr: fungible.SupplyAddress, AssetID: assetID}
 		symbols.NameInfos[fungible.Symbol] = info
 	} else {
@@ -214,7 +215,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//call SupplyToken
 	assetID := symbols.NameInfos[symbol].AssetID
 	err = stub.SupplyToken(assetID.Bytes(),
-		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, supplyAmount)
+		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, supplyAmount, symbols.NameInfos[symbol].SupplyAddr)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.SupplyToken\"}"
 		return shim.Error(jsonResp)
