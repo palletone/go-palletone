@@ -12,6 +12,7 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/walletjson"
 	"github.com/palletone/go-palletone/tokenengine"
+    "github.com/palletone/go-palletone/common/hexutil"
 	"github.com/shopspring/decimal"
 )
 
@@ -180,24 +181,28 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 // walletSendTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
 func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string) (common.Hash, error) {
-	var RawTxjsonGenParams walletjson.RawTxjsonGenParams
+	var RawTxjsonGenParams walletjson.TxJson
 	err := json.Unmarshal([]byte(params), &RawTxjsonGenParams)
 	if err != nil {
 		return common.Hash{}, err
 	}
-
+    //fmt.Printf("---------------------------RawTxjsonGenParams----------%+v\n",RawTxjsonGenParams)
 	pload := new(modules.PaymentPayload)
-	for _, input := range RawTxjsonGenParams.Inputs {
+	for _, input := range RawTxjsonGenParams.Payload[0].Inputs{
 		txHash, err := common.NewHashFromStr(input.TxHash)
 		if err != nil {
 			return common.Hash{}, rpcDecodeHexError(input.TxHash)
 		}
 		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.OutIndex)
-		txInput := modules.NewTxIn(prevOut, []byte(input.Signature))
+        hh,err := hexutil.Decode(input.Signature)
+        if err != nil {
+			return common.Hash{}, rpcDecodeHexError(input.TxHash)
+		}
+		txInput := modules.NewTxIn(prevOut, hh)  
 		pload.AddTxIn(txInput)
 	}
-	for _, output := range RawTxjsonGenParams.Outputs {
-		Addr, err := common.StringToAddress(output.Address)
+	for _, output := range RawTxjsonGenParams.Payload[0].Outputs {
+		Addr, err := common.StringToAddress(output.ToAddress)
 		if err != nil {
 			return common.Hash{}, err
 		}
