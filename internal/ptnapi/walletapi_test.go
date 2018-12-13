@@ -1,8 +1,10 @@
 package ptnapi
 import (
-//        "fmt"
+        "fmt"
+//        "strings"
         "encoding/json"
         "testing"
+        "github.com/palletone/go-palletone/tokenengine"
         "github.com/palletone/go-palletone/ptnjson/walletjson"
         "github.com/palletone/go-palletone/common"
         "github.com/palletone/go-palletone/common/crypto"
@@ -21,7 +23,10 @@ func TestSimpleSignHash(t *testing.T) {
         signature, _ := crypto.Sign(hash.Bytes(), prvKey)
         t.Log("Signature is: " + hexutil.Encode(signature))
         pubKey := crypto.FromECDSAPub(&prvKey.PublicKey)
-        pass := crypto.VerifySignature(pubKey, hash.Bytes(), signature[0:64])
+        pubKey1 := prvKey.PublicKey
+	    pubKeyBytes := crypto.CompressPubkey(&pubKey1)
+        sign := tokenengine.GenerateP2PKHUnlockScript(signature[0:64],pubKeyBytes)
+        pass := crypto.VerifySignature(pubKey, hash.Bytes(), sign)
         if pass {
                 t.Log("Pass")
         } else {
@@ -35,25 +40,34 @@ func TestSimpleSignHash(t *testing.T) {
 	    if err != nil {
 		    t.Error("No Pass")
 	    }
-	//    fmt.Printf("--------------%+v\n--------------",RawTxjsonGenParams)
-          //  fmt.Printf("----------------------payload--%+v\n",RawTxjsonGenParams.Payload[0].Inputs[0].HashForSign)
-
+	
         for index,input:=range RawTxjsonGenParams.Payload[0].Inputs{
-            //      fmt.Printf("--------------------%d  %+v\n",index,input.HashForSign)
+            
                   hash := common.HexToHash(input.HashForSign)
 
                   privateKey := "L3vhqkbATXGc4o7VTG1mT7z1gDEFn1QmVwtxd4kWL9mMJevWnzwo"
                   prvKey, _ := crypto.FromWIF(privateKey)
                   signature, _ := crypto.Sign(hash.Bytes(), prvKey)
+    
                   t.Log("Signature is: " + hexutil.Encode(signature))
                   pubKey := crypto.FromECDSAPub(&prvKey.PublicKey)
                   pass := crypto.VerifySignature(pubKey, hash.Bytes(), signature[0:64])
                   if pass {
                       t.Log("Pass")
-                      RawTxjsonGenParams.Payload[0].Inputs[index].Signature = hexutil.Encode(signature)
+                      pubKey := prvKey.PublicKey
+                      pubKeyBytes := crypto.CompressPubkey(&pubKey)
+                      sign := tokenengine.GenerateP2PKHUnlockScript(signature[0:64],pubKeyBytes)
+                      hs := hexutil.Encode(sign)
+                      RawTxjsonGenParams.Payload[0].Inputs[index].Signature = hs
+                      //dc,err:=hexutil.Decode(hs)
+                      //err=err
                   } else {
                       t.Error("No Pass")
                   }
         }
-       // fmt.Printf("--------------%+v\n--------------",RawTxjsonGenParams)
+       jsonTx, err := json.Marshal(RawTxjsonGenParams)
+    if err != nil {
+        t.Log("生成json字符串错误")
+    }
+     fmt.Println(string(jsonTx))
 }

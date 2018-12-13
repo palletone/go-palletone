@@ -639,7 +639,7 @@ const Wallet_JS = `
 		new web3._extend.Method({
 			name: 'sendRawTransaction',
 			call: 'wallet_sendRawTransaction',
-			params: 4
+			params: 1
 		}),
  	]
  });
