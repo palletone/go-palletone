@@ -55,8 +55,26 @@ func (dag *Dag) performAccountMaintenance() {
 		index++
 	}
 
-	// 遍历所有账户的投票数据
+	// 2. 遍历所有账户
+	allAccount := dag.LookupAccount()
+	for _, info := range allAccount {
+		votingStake := info.PtnBalance
 
+		// 遍历该账户投票的mediator
+		for _, med := range info.VotedMediators {
+			index, ok := mediatorIndex[med]
+
+			// if they somehow managed to specify an illegal mediator index, ignore it.
+			if !ok {
+				continue
+			}
+
+			// 累加投票数量
+			dag.mediatorVoteTally[index].votedCount += votingStake
+		}
+
+		dag.totalVotingStake += votingStake
+	}
 }
 
 func (dag *Dag) updateActiveMediators() bool {

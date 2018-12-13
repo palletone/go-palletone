@@ -13,7 +13,7 @@
  *     along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
  * /
  *
- *  * @author PalletOne core developers <dev@pallet.one>
+ *  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  *  * @date 2018
  *
  */
@@ -21,6 +21,7 @@
 package storage
 
 import (
+	"bytes"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -86,13 +87,20 @@ func (statedb *StateDb) UpdateAccountInfoBalance(address common.Address, addAmou
 //	return nil
 //}
 
-func (statedb *StateDb) getAllAccountInfo() []*modules.AccountInfo {
+func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo {
+	result := make(map[common.Address]*modules.AccountInfo)
+
 	iter := statedb.db.NewIteratorWithPrefix(constants.ACCOUNT_INFO_PREFIX)
-	result := []*modules.AccountInfo{}
 	for iter.Next() {
-		info := &modules.AccountInfo{}
-		rlp.DecodeBytes(iter.Value(), info)
-		result = append(result, info)
+		addB := bytes.TrimPrefix(iter.Key(), constants.ACCOUNT_INFO_PREFIX)
+
+		info := modules.NewAccountInfo()
+		err := rlp.DecodeBytes(iter.Value(), info)
+		if err != nil {
+			statedb.logger.Debugf("Error in Decoding Bytes to AccountInfo: %s", err)
+		}
+
+		result[common.BytesToAddress(addB)] = info
 	}
 	return result
 }

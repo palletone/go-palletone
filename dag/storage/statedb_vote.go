@@ -31,7 +31,7 @@ func (statedb *StateDb) UpdateVotedMediator(voter common.Address, candidates []b
 	accountInfo, _ := statedb.RetrieveAccountInfo(voter)
 
 	mediator := common.BytesToAddress(candidates)
-	accountInfo.VotedMediator = append(accountInfo.VotedMediator, mediator)
+	accountInfo.VotedMediators = append(accountInfo.VotedMediators, mediator)
 	statedb.logger.Debugf("Try to save mediator vote result{%s} for address:%s", mediator.Str(), voter.Str())
 	//
 	//newVotes := []vote.VoteInfo{}

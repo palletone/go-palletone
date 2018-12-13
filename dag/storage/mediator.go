@@ -119,7 +119,7 @@ func GetMediatorCount(db ptndb.Database) int {
 func IsMediator(db ptndb.Database, address common.Address) bool {
 	has, err := db.Has(mediatorKey(address))
 	if err != nil {
-		log.Error(fmt.Sprintf("Error in determining if it is a mediator: %s", err))
+		log.Debug(fmt.Sprintf("Error in determining if it is a mediator: %s", err))
 	}
 
 	return has
@@ -132,9 +132,9 @@ func GetMediators(db ptndb.Database) map[common.Address]bool {
 	for iter.Next() {
 		key := iter.Key()
 		//log.Debug(fmt.Sprintf("Get Mediator's key : %s", key))
-		addStr := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
+		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
 
-		result[common.BytesToAddress(addStr)] = true
+		result[common.BytesToAddress(addB)] = true
 		//result[core.StrToMedAdd(string(addStr))] = true
 	}
 
@@ -149,7 +149,7 @@ func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
 		mi := NewMediatorInfo()
 		err := rlp.DecodeBytes(iter.Value(), mi)
 		if err != nil {
-			log.Error(fmt.Sprintf("Error in Decoding Bytes to MediatorInfo: %s", err))
+			log.Debug(fmt.Sprintf("Error in Decoding Bytes to MediatorInfo: %s", err))
 		}
 
 		med := mi.infoToMediator()
