@@ -45,7 +45,7 @@ type ContractInf interface {
 	Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error)
 	Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error)
 	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokePayload, error)
-	Invoke(chainID string, deployId []byte, txid string, tx *md.Transaction, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error)
+	Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error)
 	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error)
 	Stop(chainID string, deployId []byte, txid string, deleteImage bool) error
 }
@@ -129,12 +129,12 @@ func (c *Contract) Deploy(chainID string, templateId []byte, txid string, args [
 // Invoke 合约invoke调用，根据指定合约调用参数执行已经部署的合约，函数返回合约调用单元。
 // The contract invoke call, execute the deployed contract according to the specified contract call parameters,
 // and the function returns the contract call unit.
-func (c *Contract) Invoke(chainID string, deployId []byte, txid string, tx *md.Transaction, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
+func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		return nil, errors.New("Contract not initialized")
 	}
-	return cc.Invoke(deployId, c.dag, chainID, deployId, txid, tx, args, timeout)
+	return cc.Invoke(c.dag, chainID, deployId, txid, args, timeout)
 }
 
 // Stop 停止指定合约。根据需求可以对镜像文件进行删除操作

@@ -21,19 +21,18 @@ package manger
 
 import (
 	"fmt"
-	"time"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	"time"
 
-	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/contracts/core"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	putils "github.com/palletone/go-palletone/core/vmContractPub/protos/utils"
-
+	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 type chaincodeError struct {
@@ -203,7 +202,7 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 
 // ProcessProposal process the Proposal
 //func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
-func (e *Endorser) ProcessProposal(contractid []byte, idag dag.IDag, deployId []byte, ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *modules.ContractInvokeResult, error) {
+func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *modules.ContractInvokeResult, error) {
 	var txsim rwset.TxSimulator
 
 	//addr := util.ExtractRemoteAddress(ctx)
@@ -228,7 +227,7 @@ func (e *Endorser) ProcessProposal(contractid []byte, idag dag.IDag, deployId []
 	}
 
 	//1 -- simulate
-	res, _, ccevent, err := e.simulateProposal(contractid, ctx, chainID, txid, signedProp, prop, cid, txsim, tmout)
+	res, _, ccevent, err := e.simulateProposal(deployId, ctx, chainID, txid, signedProp, prop, cid, txsim, tmout)
 	if err != nil {
 		logger.Error(ccevent)
 		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
@@ -267,7 +266,7 @@ func (e *Endorser) ProcessProposal(contractid []byte, idag dag.IDag, deployId []
 	//fmt.Printf("==unit=> %s\n", unit.Args)
 	//fmt.Println("==unit=> ", unit.FunctionName)
 	//fmt.Printf("==unit=> %#v\n", unit.ReadSet)
-	//fmt.Printf("==unit=> %#s\n", unit.WriteSet)
+	//fmt.Printf("==unit=> %s\n", unit.WriteSet)
 	//fmt.Println("===")
 	//if len(unit.TokenPayOut) > 0 {
 	//	fmt.Printf("==unit=> %#v\n", unit.TokenPayOut[0])

@@ -22,24 +22,47 @@ package deposit
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 //判断要成为 Jury 还是 Mediator 还是 Developer
-func addList(role string, invokeaddr common.Address, stub shim.ChaincodeStubInterface) {
-	switch {
-	case role == "Mediator":
-		//加入 Mediator 列表
-		addMediatorList(invokeaddr, stub)
-		//加入 Jury 列表
-	case role == "Jury":
-		addJuryList(invokeaddr, stub)
-	case role == "Developer":
-		//加入 Developer 列表
-		addDeveloperList(invokeaddr, stub)
+//func addList(role string, invokeaddr common.Address, stub shim.ChaincodeStubInterface) {
+//	switch {
+//	case role == "Mediator":
+//		//加入 Mediator 列表
+//		addMediatorList(invokeaddr, stub)
+//		//加入 Jury 列表
+//	case role == "Jury":
+//		addJuryList(invokeaddr, stub)
+//	case role == "Developer":
+//		//加入 Developer 列表
+//		addDeveloperList(invokeaddr, stub)
+//	}
+//}
+
+func addCandaditeList(invokeAddr common.Address, stub shim.ChaincodeStubInterface, candidate string) error {
+	list, err := stub.GetCandidateList(candidate)
+	if err != nil {
+		return err
 	}
+	if list == nil {
+		list = []*common.Address{}
+		list = append(list, &invokeAddr)
+	} else {
+		list = append(list, &invokeAddr)
+	}
+	listByte, err := json.Marshal(list)
+	if err != nil {
+		return err
+	}
+	err = stub.PutState(candidate, listByte)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 //加入 Developer 列表
@@ -79,29 +102,55 @@ func addJuryList(invokeAddr common.Address, stub shim.ChaincodeStubInterface) {
 	stub.PutState("JuryList", juryListBytes)
 }
 
-//无论是退款还是罚款，在相应列表中移除节点
-func handleMember(who string, invokeFromAddr common.Address, stub shim.ChaincodeStubInterface) {
-	switch {
-	case who == "Mediator":
-		listBytes, _ := stub.GetState("MediatorList")
-		mediatorList := []common.Address{}
-		_ = json.Unmarshal(listBytes, &mediatorList)
-		//从列表中移除该节点
-		move("MediatorList", mediatorList, invokeFromAddr, stub)
-	case who == "Jury":
-		listBytes, _ := stub.GetState("JuryList")
-		juryList := []common.Address{}
-		_ = json.Unmarshal(listBytes, &juryList)
-		//从列表中移除该节点
-		move("JuryList", juryList, invokeFromAddr, stub)
-	case who == "Developer":
-		listBytes, _ := stub.GetState("DeveloperList")
-		developerList := []common.Address{}
-		_ = json.Unmarshal(listBytes, &developerList)
-		//从列表中移除该节点
-		move("DeveloperList", developerList, invokeFromAddr, stub)
+func moveCandidate(candidate string, invokeFromAddr common.Address, stub shim.ChaincodeStubInterface) error {
+	list, err := stub.GetCandidateList(candidate)
+	if err != nil {
+		return err
 	}
+	if list == nil {
+		return fmt.Errorf("%s", "list is nil.")
+	}
+	for i := 0; i < len(list); i++ {
+		if list[i] == &invokeFromAddr {
+			list = append(list[:i], list[i+1:]...)
+			break
+		}
+	}
+	listBytes, err := json.Marshal(list)
+	if err != nil {
+		return err
+	}
+	err = stub.PutState(candidate, listBytes)
+	if err != nil {
+		return err
+	}
+	return nil
+
 }
+
+//无论是退款还是罚款，在相应列表中移除节点
+//func handleMember(who string, invokeFromAddr common.Address, stub shim.ChaincodeStubInterface) {
+//	switch {
+//	case who == "Mediator":
+//		listBytes, _ := stub.GetState("MediatorList")
+//		mediatorList := []common.Address{}
+//		_ = json.Unmarshal(listBytes, &mediatorList)
+//		//从列表中移除该节点
+//		move("MediatorList", mediatorList, invokeFromAddr, stub)
+//	case who == "Jury":
+//		listBytes, _ := stub.GetState("JuryList")
+//		juryList := []common.Address{}
+//		_ = json.Unmarshal(listBytes, &juryList)
+//		//从列表中移除该节点
+//		move("JuryList", juryList, invokeFromAddr, stub)
+//	case who == "Developer":
+//		listBytes, _ := stub.GetState("DeveloperList")
+//		developerList := []common.Address{}
+//		_ = json.Unmarshal(listBytes, &developerList)
+//		//从列表中移除该节点
+//		move("DeveloperList", developerList, invokeFromAddr, stub)
+//	}
+//}
 
 //从候选列表中移除
 func move(who string, list []common.Address, invokeAddr common.Address, stub shim.ChaincodeStubInterface) {
@@ -117,7 +166,7 @@ func move(who string, list []common.Address, invokeAddr common.Address, stub shi
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfeiture []*modules.Forfeiture, forfeitureAddr common.Address, applyTime int64) *modules.Forfeiture {
+func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfeiture []*modules.Forfeiture, forfeitureAddr common.Address, applyTime int64) (*modules.Forfeiture, error) {
 	//
 	forfeiture := new(modules.Forfeiture)
 	for i := 0; i < len(listForForfeiture); i++ {
@@ -127,25 +176,31 @@ func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfe
 			break
 		}
 	}
-	listForForfeitureByte, _ := json.Marshal(listForForfeiture)
+	listForForfeitureByte, err := json.Marshal(listForForfeiture)
+	if err != nil {
+		return nil, err
+	}
 	//更新列表
 	stub.PutState("ListForForfeiture", listForForfeitureByte)
-	return forfeiture
+	return forfeiture, nil
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback *modules.ListForCashback, cashbackAddr common.Address, applyTime int64) *modules.Cashback {
+func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback []*modules.Cashback, cashbackAddr common.Address, applyTime int64) (*modules.Cashback, error) {
 	//
 	cashback := new(modules.Cashback)
-	for i := 0; i < len(listForCashback.Cashbacks); i++ {
-		if listForCashback.Cashbacks[i].CashbackTime == applyTime && listForCashback.Cashbacks[i].CashbackAddress == cashbackAddr {
-			cashback = listForCashback.Cashbacks[i]
-			listForCashback.Cashbacks = append(listForCashback.Cashbacks[:i], listForCashback.Cashbacks[i+1:]...)
+	for i := 0; i < len(listForCashback); i++ {
+		if listForCashback[i].CashbackTime == applyTime && listForCashback[i].CashbackAddress == cashbackAddr {
+			cashback = listForCashback[i]
+			listForCashback = append(listForCashback[:i], listForCashback[i+1:]...)
 			break
 		}
 	}
-	listForCashbackByte, _ := json.Marshal(listForCashback)
+	listForCashbackByte, err := json.Marshal(listForCashback)
+	if err != nil {
+		return nil, err
+	}
 	//更新列表
 	stub.PutState("ListForCashback", listForCashbackByte)
-	return cashback
+	return cashback, nil
 }
