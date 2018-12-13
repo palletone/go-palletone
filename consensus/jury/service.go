@@ -642,12 +642,6 @@ func (p *Processor) ContractTxCreat(deployId []byte, txBytes []byte, args [][]by
 	return rlp.EncodeToBytes(tx)
 }
 
-//func (p *Processor) ContractTxReqBroadcast(deployId []byte,txBytes []byte, args [][]byte, timeout time.Duration) ([]byte, error) {
-func (p *Processor) ContractTxReqBroadcast(contractAddress, from, to common.Address, daoAmount, daoFee uint64, args [][]byte, timeout time.Duration) ([]byte, error) {
-	return p.ContractInvokeReq(from, to, daoAmount, daoFee, contractAddress, args, timeout)
-
-}
-
 func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 	log.Info("ContractTxBroadcast enter")
 	if txBytes == nil {
@@ -716,6 +710,12 @@ func (p *Processor) creatContractTxReqBroadcast(from, to common.Address, daoAmou
 }
 
 func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) ([]byte, error) {
+	if from == (common.Address{}) || to == (common.Address{}) || tplName == ""||path == ""|| version == "" {
+		log.Error("ContractInstallReq", "param is error")
+		return nil, errors.New("ContractInstallReq request param is error")
+	}
+
+	log.Debug("ContractInstallReq", "enter, tplName ", tplName, "path", path, "version", version)
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_TPL_REQUEST,
 		Payload: &modules.ContractInstallRequestPayload{
@@ -728,6 +728,12 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 }
 
 func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
+	if from == (common.Address{}) || to == (common.Address{}) || templateId == nil{
+		log.Error("ContractDeployReq", "param is error")
+		return nil, errors.New("ContractDeployReq request param is error")
+	}
+	log.Debug("ContractDeployReq", "enter, templateId ", templateId)
+
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
 		Payload: &modules.ContractDeployRequestPayload{
@@ -760,6 +766,12 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 }
 
 func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, txid string, deleteImage bool) ([]byte, error) {
+	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) {
+		log.Error("ContractStopReq", "param is error")
+		return nil, errors.New("ContractStopReq request param is error")
+	}
+
+	log.Debug("ContractStopReq", "enter, contractId ", contractId)
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_STOP_REQUEST,
 		Payload: &modules.ContractStopRequestPayload{

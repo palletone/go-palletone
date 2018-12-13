@@ -852,6 +852,19 @@ func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, txhex string) (strin
 	return hex.EncodeToString(rsp), err
 }
 
+func (s *PublicBlockChainAPI) Ccquery(ctx context.Context, deployId string, param []string) ([]byte, error) {
+	contractId, _ := common.StringToAddress(deployId)
+
+	log.Info("-----Ccquery:", "contractId", contractId.String())
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		fmt.Printf("index[%d],value[%s]", i, arg)
+	}
+	txid := strconv.Itoa(time.Now().Nanosecond())
+	return s.b.ContractQuery(contractId[:], txid, args, 0)
+}
+
 func (s *PublicBlockChainAPI) Ccstop(ctx context.Context, deployId string, txid string) error {
 	depId, _ := hex.DecodeString(deployId)
 	log.Info("Ccstop:" + deployId + ":" + txid + "_")
@@ -867,15 +880,59 @@ func (s *PublicBlockChainAPI) EncodeTx(ctx context.Context, json string) (string
 	return s.b.EncodeTx(json)
 }
 
+func (s *PublicBlockChainAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount, daoFee, tplName, path, version string) (string, error) {
+	fromAddr, _ := common.StringToAddress(from)
+	toAddr, _ := common.StringToAddress(to)
+	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
+	fee, _ := strconv.ParseUint(daoFee, 10, 64)
+
+	//templateName, _ := hex.DecodeString(tplName)
+
+	log.Info("-----Ccinstalltx:", "fromAddr", fromAddr.String())
+	log.Info("-----Ccinstalltx:", "toAddr", toAddr.String())
+	log.Info("-----Ccinstalltx:", "amount", amount)
+	log.Info("-----Ccinstalltx:", "fee", fee)
+	log.Info("-----Ccinstalltx:", "tplName", tplName)
+	log.Info("-----Ccinstalltx:", "path", path)
+
+	rsp, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version)
+	log.Info("-----Ccinstalltx:" + hex.EncodeToString(rsp))
+
+	return hex.EncodeToString(rsp), err
+}
+func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount, daoFee, tplId, txid string, param []string) (string, error) {
+	fromAddr, _ := common.StringToAddress(from)
+	toAddr, _ := common.StringToAddress(to)
+	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
+	fee, _ := strconv.ParseUint(daoFee, 10, 64)
+	templateId, _ := hex.DecodeString(tplId)
+
+	log.Info("-----Ccdeploytx:", "fromAddr", fromAddr.String())
+	log.Info("-----Ccdeploytx:", "toAddr", toAddr.String())
+	log.Info("-----Ccdeploytx:", "amount", amount)
+	log.Info("-----Ccdeploytx:", "fee", fee)
+	log.Info("-----Ccdeploytx:", "tplId", templateId)
+	log.Info("-----Ccdeploytx:", "txid", txid)
+
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		fmt.Printf("index[%d], value[%s]\n", i, arg)
+	}
+	rsp, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, txid, args, 0)
+	log.Info("-----Ccdeploytx:" + hex.EncodeToString(rsp))
+	return hex.EncodeToString(rsp), err
+}
+
 func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId, from, to, daoAmount, daoFee string, param []string) (string, error) {
-	contractId, _ := common.StringToAddress(deployId)
+	contractAddr, _ := common.StringToAddress(deployId)
 
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
 	fee, _ := strconv.ParseUint(daoFee, 10, 64)
 
-	log.Info("-----Ccinvoketx:", "contractId", contractId.String())
+	log.Info("-----Ccinvoketx:", "contractId", contractAddr.String())
 	log.Info("-----Ccinvoketx:", "fromAddr", fromAddr.String())
 	log.Info("-----Ccinvoketx:", "toAddr", toAddr.String())
 	log.Info("-----Ccinvoketx:", "amount", amount)
@@ -886,13 +943,36 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId, from, to
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-
-	rsp, err := s.b.ContractTxReqBroadcast(contractId, fromAddr, toAddr, amount, fee, args, 0)
-
+	rsp, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
 	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
 
 	return hex.EncodeToString(rsp), err
 }
+
+func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, daoFee, contractId, txid, deleteImage string) (string, error) {
+	fromAddr, _ := common.StringToAddress(from)
+	toAddr, _ := common.StringToAddress(to)
+	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
+	fee, _ := strconv.ParseUint(daoFee, 10, 64)
+	cid := common.HexToAddress(contractId)
+
+	delImg := true
+	if del, _ := strconv.Atoi(deleteImage); del <= 0 {
+		delImg = false
+	}
+	log.Info("-----Ccstoptx:", "fromAddr", fromAddr.String())
+	log.Info("-----Ccstoptx:", "toAddr", toAddr.String())
+	log.Info("-----Ccstoptx:", "amount", amount)
+	log.Info("-----Ccstoptx:", "fee", fee)
+	log.Info("-----Ccstoptx:", "contractId", cid)
+	log.Info("-----Ccstoptx:", "txid", txid)
+	log.Info("-----Ccstoptx:", "delImg", delImg)
+
+	rsp, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, cid, txid, delImg)
+	log.Info("-----Ccstoptx:" + hex.EncodeToString(rsp))
+	return hex.EncodeToString(rsp), err
+}
+
 
 func (s *PublicBlockChainAPI) CreatCcTransaction(ctx context.Context, txtype string, deployId string, txhex string, param []string) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
@@ -1764,7 +1844,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 }
 
 //create raw transction
-func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
+func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/ , params string) (string, error) {
 	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
