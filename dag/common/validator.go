@@ -422,7 +422,6 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 	}
 
 	if len(payment.Outputs) <= 0 {
-		// @jay 后续查明payment outputs 为null 的原因
 		log.Error("payment output is null.", "payment.output", payment.Outputs)
 		return modules.TxValidationCode_INVALID_PAYMMENT_OUTPUT
 	}
@@ -452,7 +451,8 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 		// 		return modules.TxValidationCode_INVALID_ASSET
 		// 	}
 		// }
-		if out.Value <= 0 || out.Value >= 100000000000000000 {
+		if out.Value <= 0 || out.Value > 100000000000000000 {
+			log.Debug("The OutPut value is :","amount",out.Value)
 			return modules.TxValidationCode_INVALID_AMOUNT
 		}
 	}

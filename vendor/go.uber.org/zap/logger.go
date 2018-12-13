@@ -328,6 +328,5 @@ func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 		}
 	}
 
-	fmt.Println("last return ce,line  336")
 	return ce
 }
