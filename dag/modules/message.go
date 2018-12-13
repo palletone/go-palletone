@@ -293,9 +293,9 @@ type Cashback struct {
 }
 
 //申请提取保证金的列表
-type ListForCashback struct {
-	Cashbacks []*Cashback `json:"cashbacks"`
-}
+//type ListForCashback struct {
+//	Cashbacks []*Cashback `json:"cashbacks"`
+//}
 
 //申请没收保证金
 type Forfeiture struct {
@@ -308,9 +308,9 @@ type Forfeiture struct {
 }
 
 //申请没收保证金的列表
-type ListForForfeiture struct {
-	Forfeitures []*Forfeiture `json:"forfeitures"`
-}
+//type ListForForfeiture struct {
+//	Forfeitures []*Forfeiture `json:"forfeitures"`
+//}
 
 //请求合约利息
 type InvokeFees struct {
@@ -325,19 +325,19 @@ type MediatorInfo struct {
 }
 
 //Mediator 申请列表
-type BecomeMediatorApplyList struct {
-	MediatorList []*MediatorInfo `json:"mediator_list"`
-}
+//type BecomeMediatorApplyList struct {
+//	MediatorList []*MediatorInfo `json:"mediator_list"`
+//}
 
 //同意 Mediator 列表
-type AgreeForBecomeMediatorList struct {
-	MediatorList []*MediatorInfo `json:"mediator_list"`
-}
+//type AgreeForBecomeMediatorList struct {
+//	MediatorList []*MediatorInfo `json:"mediator_list"`
+//}
 
 //Mediator 退出列表
-type QuitMediatorApplyList struct {
-	MediatorList []*MediatorInfo `json:"mediator_list"`
-}
+//type QuitMediatorApplyList struct {
+//	MediatorList []*MediatorInfo `json:"mediator_list"`
+//}
 
 //数量及资产类型
 //type AmountAsset struct {

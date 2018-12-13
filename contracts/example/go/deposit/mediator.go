@@ -32,7 +32,7 @@ import (
 )
 
 //申请加入  参数：暂时  姓名和节点地址
-func ApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	if len(args) != 2 {
 		return shim.Error("arg need two parameter.")
 	}
@@ -53,10 +53,10 @@ func ApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) peer.R
 		return shim.Error(err.Error())
 	}
 	if list == nil {
-		list = new(modules.BecomeMediatorApplyList)
-		list.MediatorList = append(list.MediatorList, &mediatorInfo)
+		list = []*modules.MediatorInfo{}
+		list = append(list, &mediatorInfo)
 	} else {
-		list.MediatorList = append(list.MediatorList, &mediatorInfo)
+		list = append(list, &mediatorInfo)
 	}
 	listByte, err := json.Marshal(list)
 	if err != nil {
@@ -67,7 +67,7 @@ func ApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) peer.R
 }
 
 //处理加入 参数：同意或不同意，节点的地址
-func HandleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	if len(args) != 2 {
 		return shim.Error("arg need two parameter.")
 	}
@@ -79,24 +79,24 @@ func HandleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 	if list == nil {
 		return shim.Error("申请列表为空。")
 	}
-	var mediatorList []*modules.MediatorInfo
+	//var mediatorList []*modules.MediatorInfo
 	var mediator *modules.MediatorInfo
 	//不同意，移除申请列表
 	if args[0] == "no" {
-		mediatorList, _ = MoveFromList(args[1], list.MediatorList)
+		list, _ = moveFromList(args[1], list)
 	} else if args[0] == "ok" {
 		//同意，移除列表，并且加入同意申请列表
-		mediatorList, mediator = MoveFromList(args[1], list.MediatorList)
+		list, mediator = moveFromList(args[1], list)
 		//获取同意列表
 		agreeList, err := stub.GetAgreeForBecomeMediatorList()
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 		if agreeList == nil {
-			agreeList = new(modules.AgreeForBecomeMediatorList)
-			agreeList.MediatorList = append(agreeList.MediatorList, mediator)
+			agreeList = []*modules.MediatorInfo{}
+			agreeList = append(agreeList, mediator)
 		} else {
-			agreeList.MediatorList = append(agreeList.MediatorList, mediator)
+			agreeList = append(agreeList, mediator)
 		}
 		agreeListByte, err := json.Marshal(agreeList)
 		if err != nil {
@@ -104,7 +104,6 @@ func HandleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		}
 		stub.PutState("ListForAgreeBecomeMediator", agreeListByte)
 	}
-	list.MediatorList = mediatorList
 	listByte, err := json.Marshal(list)
 	if err != nil {
 		return shim.Error(err.Error())
@@ -113,7 +112,7 @@ func HandleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 	return shim.Success([]byte("ok"))
 }
 
-func MoveFromList(address string, list []*modules.MediatorInfo) (list1 []*modules.MediatorInfo, mediator *modules.MediatorInfo) {
+func moveFromList(address string, list []*modules.MediatorInfo) (list1 []*modules.MediatorInfo, mediator *modules.MediatorInfo) {
 	for i := 0; i < len(list); i++ {
 		if strings.Compare(list[i].Address, address) == 0 {
 			mediator = list[i]
@@ -125,7 +124,7 @@ func MoveFromList(address string, list []*modules.MediatorInfo) (list1 []*module
 }
 
 //申请加入  参数：暂时 节点地址
-func ApplyForQuitMediator(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func applyForQuitMediator(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	if len(args) != 1 {
 		return shim.Error("arg need one parameter.")
 	}
@@ -139,10 +138,10 @@ func ApplyForQuitMediator(stub shim.ChaincodeStubInterface, args []string) peer.
 		return shim.Error(err.Error())
 	}
 	if list == nil {
-		list = new(modules.QuitMediatorApplyList)
-		list.MediatorList = append(list.MediatorList, &mediatorInfo)
+		list = []*modules.MediatorInfo{}
+		list = append(list, &mediatorInfo)
 	} else {
-		list.MediatorList = append(list.MediatorList, &mediatorInfo)
+		list = append(list, &mediatorInfo)
 	}
 	listByte, err := json.Marshal(list)
 	if err != nil {
@@ -153,7 +152,7 @@ func ApplyForQuitMediator(stub shim.ChaincodeStubInterface, args []string) peer.
 }
 
 //处理退出 参数：同意或不同意，节点的地址
-func HandleForApplyForQuitMediator(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func handleForApplyForQuitMediator(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	if len(args) != 2 {
 		return shim.Error("arg need two parameter.")
 	}
@@ -165,13 +164,13 @@ func HandleForApplyForQuitMediator(stub shim.ChaincodeStubInterface, args []stri
 	if list == nil {
 		return shim.Error("申请列表为空。")
 	}
-	var mediatorList []*modules.MediatorInfo
+	//var mediatorList []*modules.MediatorInfo
 	//不同意，移除申请列表
 	if args[0] == "不同意" {
-		mediatorList, _ = MoveFromList(args[1], list.MediatorList)
+		list, _ = moveFromList(args[1], list)
 	} else if args[0] == "同意" {
 		//同意，移除列表，并且全款退出
-		mediatorList, _ = MoveFromList(args[1], list.MediatorList)
+		list, _ = moveFromList(args[1], list)
 		//处理退款
 		//获取该账户
 		balance, err := stub.GetDepositBalance(args[0])
@@ -196,19 +195,22 @@ func HandleForApplyForQuitMediator(stub shim.ChaincodeStubInterface, args []stri
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		add, err := common.StringToAddress(args[0])
+		addr, err := common.StringToAddress(args[0])
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 		//移除出候选列表
-		handleMember("Mediator", add, stub)
+		//handleMember("Mediator", add, stub)
+		err = moveCandidate("MediatorList", addr, stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
 		//删除节点
 		err = stub.DelState(args[0])
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 	}
-	list.MediatorList = mediatorList
 	listByte, err := json.Marshal(list)
 	if err != nil {
 		return shim.Error(err.Error())

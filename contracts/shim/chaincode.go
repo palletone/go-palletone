@@ -386,31 +386,45 @@ func (stub *ChaincodeStub) GetState(key string) ([]byte, error) {
 	return stub.handler.handleGetState(collection, key, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
-func (stub *ChaincodeStub) GetListForCashback() (*modules.ListForCashback, error) {
-	listForCashbackByte, err := stub.handler.handleGetState("", "ListForCashback", stub.ContractId, stub.ChannelId, stub.TxID)
+func (stub *ChaincodeStub) GetListForCashback() ([]*modules.Cashback, error) {
+	listByte, err := stub.handler.handleGetState("", "ListForCashback", stub.ContractId, stub.ChannelId, stub.TxID)
 	if err != nil {
 		return nil, err
 	}
-	if listForCashbackByte == nil {
+	if listByte == nil {
 		return nil, nil
 	}
-	listForCashback := new(modules.ListForCashback)
-	err = json.Unmarshal(listForCashbackByte, listForCashback)
+	var list []*modules.Cashback
+	err = json.Unmarshal(listByte, list)
 	if err != nil {
 		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
 	}
-	return listForCashback, nil
+	return list, nil
 }
 
-func (stub *ChaincodeStub) GetBecomeMediatorApplyList() (*modules.BecomeMediatorApplyList, error) {
-	listByte, err := stub.handler.handleGetState("", "ListForApplyBecomeMediator", stub.ContractId, stub.ChannelId, stub.TxID)
+func (stub *ChaincodeStub) GetBecomeMediatorApplyList() ([]*modules.MediatorInfo, error) {
+	return stub.GetList("ListForApplyBecomeMediator")
+}
+
+func (stub *ChaincodeStub) GetQuitMediatorApplyList() ([]*modules.MediatorInfo, error) {
+	return stub.GetList("ListForApplyQuitMediator")
+
+}
+
+func (stub *ChaincodeStub) GetAgreeForBecomeMediatorList() ([]*modules.MediatorInfo, error) {
+	return stub.GetList("ListForAgreeBecomeMediator")
+
+}
+
+func (stub *ChaincodeStub) GetList(typeList string) ([]*modules.MediatorInfo, error) {
+	listByte, err := stub.handler.handleGetState("", typeList, stub.ContractId, stub.ChannelId, stub.TxID)
 	if err != nil {
 		return nil, err
 	}
 	if listByte == nil {
 		return nil, nil
 	}
-	list := new(modules.BecomeMediatorApplyList)
+	var list []*modules.MediatorInfo
 	err = json.Unmarshal(listByte, list)
 	if err != nil {
 		return nil, err
@@ -418,52 +432,20 @@ func (stub *ChaincodeStub) GetBecomeMediatorApplyList() (*modules.BecomeMediator
 	return list, nil
 }
 
-func (stub *ChaincodeStub) GetQuitMediatorApplyList() (*modules.QuitMediatorApplyList, error) {
-	listByte, err := stub.handler.handleGetState("", "ListForApplyQuitMediator", stub.ContractId, stub.ChannelId, stub.TxID)
+func (stub *ChaincodeStub) GetListForForfeiture() ([]*modules.Forfeiture, error) {
+	listByte, err := stub.handler.handleGetState("", "ListForForfeiture", stub.ContractId, stub.ChannelId, stub.TxID)
 	if err != nil {
 		return nil, err
 	}
 	if listByte == nil {
 		return nil, nil
 	}
-	list := new(modules.QuitMediatorApplyList)
+	var list []*modules.Forfeiture
 	err = json.Unmarshal(listByte, list)
-	if err != nil {
-		return nil, err
-	}
-	return list, nil
-}
-
-func (stub *ChaincodeStub) GetAgreeForBecomeMediatorList() (*modules.AgreeForBecomeMediatorList, error) {
-	listByte, err := stub.handler.handleGetState("", "ListForAgreeBecomeMediator", stub.ContractId, stub.ChannelId, stub.TxID)
-	if err != nil {
-		return nil, err
-	}
-	if listByte == nil {
-		return nil, nil
-	}
-	list := new(modules.AgreeForBecomeMediatorList)
-	err = json.Unmarshal(listByte, list)
-	if err != nil {
-		return nil, err
-	}
-	return list, nil
-}
-
-func (stub *ChaincodeStub) GetListForForfeiture() (*modules.ListForForfeiture, error) {
-	listForForfeitureByte, err := stub.handler.handleGetState("", "ListForForfeiture", stub.ContractId, stub.ChannelId, stub.TxID)
-	if err != nil {
-		return nil, err
-	}
-	if listForForfeitureByte == nil {
-		return nil, nil
-	}
-	listForForfeiture := new(modules.ListForForfeiture)
-	err = json.Unmarshal(listForForfeitureByte, listForForfeiture)
 	if err != nil {
 		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
 	}
-	return listForForfeiture, nil
+	return list, nil
 }
 
 func (stub *ChaincodeStub) GetDepositBalance(nodeAddr string) (*modules.DepositBalance, error) {
@@ -491,7 +473,7 @@ func (stub *ChaincodeStub) GetCandidateList(role string) ([]*common.Address, err
 	if candidateListByte == nil {
 		return nil, nil
 	}
-	candidateList := []*common.Address{}
+	var candidateList []*common.Address
 	err = json.Unmarshal(candidateListByte, &candidateList)
 	if err != nil {
 		return nil, err
