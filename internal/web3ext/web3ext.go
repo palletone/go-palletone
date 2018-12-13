@@ -480,6 +480,12 @@ web3._extend({
 			inputFormatter: [null, null, null,null, null, null]
 		}),
 		new web3._extend.Method({
+			name: 'ccquery',
+			call: 'ptn_ccquery',
+			params: 2, //contractAddr,args[]string---->["func","arg1","arg2","..."]
+			inputFormatter: [null,null]
+		}),
+		new web3._extend.Method({
 			name: 'ccstoptx',
         	call: 'ptn_ccstoptx',
         	params: 7, //from, to, daoAmount, daoFee, contractId, txid, deleteImage

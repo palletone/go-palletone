@@ -849,6 +849,19 @@ func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, txhex string) (strin
 	return hex.EncodeToString(rsp), err
 }
 
+func (s *PublicBlockChainAPI) Ccquery(ctx context.Context, deployId string, param []string) ([]byte, error) {
+	contractId, _ := common.StringToAddress(deployId)
+
+	log.Info("-----Ccquery:", "contractId", contractId.String())
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		fmt.Printf("index[%d],value[%s]", i, arg)
+	}
+	txid := strconv.Itoa(time.Now().Nanosecond())
+	return s.b.ContractQuery(contractId[:], txid, args, 0)
+}
+
 func (s *PublicBlockChainAPI) Ccstop(ctx context.Context, deployId string, txid string) error {
 	depId, _ := hex.DecodeString(deployId)
 	log.Info("Ccstop:" + deployId + ":" + txid + "_")
