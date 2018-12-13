@@ -460,10 +460,23 @@ web3._extend({
 			params: 1,
 			inputFormatter: [web3._extend.formatters.inputTransactionFormatter]
 		}),
+
+		new web3._extend.Method({
+			name: 'ccinstalltx',
+        	call: 'ptn_ccinstalltx',
+        	params: 7, //from, to , daoAmount, daoFee , tplName, path, version
+			inputFormatter: [null, null, null,null, null, null, null]
+		}),
+		new web3._extend.Method({
+			name: 'ccdeploytx',
+        	call: 'ptn_ccdeploytx',
+        	params: 8, //from, to , daoAmount, daoFee uint64, templateId , txid , args  
+			inputFormatter: [null, null, null,null, null, null, null, null]
+		}),
 		new web3._extend.Method({
 			name: 'ccinvoketx',
         	call: 'ptn_ccinvoketx',
-        	params: 6, //contractAddr, from, to, daoAmount, daoFee string, args[]string------>["fun", "key", "value"]
+        	params: 6, //contractAddr, from, to, daoAmount, daoFee , args[]string------>["fun", "key", "value"]
 			inputFormatter: [null, null, null,null, null, null]
 		}),
 		new web3._extend.Method({
@@ -472,7 +485,14 @@ web3._extend({
 			params: 2, //contractAddr,args[]string---->["func","arg1","arg2","..."]
 			inputFormatter: [null,null]
 		}),
+		new web3._extend.Method({
+			name: 'ccstoptx',
+        	call: 'ptn_ccstoptx',
+        	params: 7, //from, to, daoAmount, daoFee, contractId, txid, deleteImage
+			inputFormatter: [null, null, null, null, null, null, null]
+		}),
 	],
+
 	properties: [
 		new web3._extend.Property({
 			name: 'pendingTransactions',

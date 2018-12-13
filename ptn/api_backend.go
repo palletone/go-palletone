@@ -483,8 +483,18 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 	return err
 }
 
-func (b *PtnApiBackend) ContractTxReqBroadcast(contractId, from, to common.Address, daoAmount, daoFee uint64, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
-	return b.ptn.contractPorcessor.ContractTxReqBroadcast(contractId, from, to, daoAmount, daoFee, args, timeout)
+//
+func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) ([]byte, error) {
+	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version)
+}
+func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
+	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, txid, args, timeout)
+}
+func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
+	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, contractAddress, args, timeout)
+}
+func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, txid string, deleteImage bool) ([]byte, error) {
+	return b.ptn.contractPorcessor.ContractStopReq(from, to, daoAmount, daoFee, contractId, txid, deleteImage)
 }
 
 func (b *PtnApiBackend) ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
