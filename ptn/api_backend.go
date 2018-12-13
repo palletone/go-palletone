@@ -466,7 +466,8 @@ func (b *PtnApiBackend) ContractInvoke(txBytes []byte) ([]byte, error) {
 }
 
 func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
-	rsp, err := b.ptn.contract.Invoke("palletone", contractId, txid, args, timeout)
+	contractAddr := common.HexToAddress(hex.EncodeToString(contractId))
+	rsp, err := b.ptn.contract.Invoke("palletone", contractAddr.Bytes(), txid, args, timeout)
 	if err != nil {
 		return nil, err
 	}

@@ -329,7 +329,6 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone")
-
 	cc, err := cclist.GetChaincode(chainID, deployId)
 	if err != nil {
 		return nil, err
