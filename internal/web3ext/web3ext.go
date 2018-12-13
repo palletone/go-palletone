@@ -466,6 +466,12 @@ web3._extend({
         	params: 6, //contractAddr, from, to, daoAmount, daoFee string, args[]string------>["fun", "key", "value"]
 			inputFormatter: [null, null, null,null, null, null]
 		}),
+		new web3._extend.Method({
+			name: 'ccquery',
+			call: 'ptn_ccquery',
+			params: 2, //contractAddr,args[]string---->["func","arg1","arg2","..."]
+			inputFormatter: [null,null]
+		}),
 	],
 	properties: [
 		new web3._extend.Property({

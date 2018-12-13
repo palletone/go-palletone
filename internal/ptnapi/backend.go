@@ -126,6 +126,7 @@ type Backend interface {
 	ContractTxReqBroadcast(contractId, from, to common.Address, daoAmount, daoFee uint64, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 
 	ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
+	ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

@@ -25,6 +25,7 @@ import (
 
 	"encoding/json"
 
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
@@ -462,6 +463,16 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 
 func (b *PtnApiBackend) ContractInvoke(txBytes []byte) ([]byte, error) {
 	return b.ptn.contractPorcessor.ContractTxBroadcast(txBytes)
+}
+
+func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
+	rsp, err := b.ptn.contract.Invoke("palletone", contractId, txid, args, timeout)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("=====>ContractQuery:contractId[%s]txid[%s]", hex.EncodeToString(contractId), txid)
+	fmt.Printf("contract query rsp = %#v\n", rsp)
+	return rsp.Payload, nil
 }
 
 func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage bool) error {
