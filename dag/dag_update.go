@@ -146,7 +146,7 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 		return
 	}
 
-	// 2. 对每个账户的各种投票信息进行初步统计，得到相关数据直方图
+	// 2. 对每个账户的各种投票信息进行初步统计
 	dag.performAccountMaintenance()
 
 	// 3. 统计投票并更新活跃 mediator 列表
@@ -187,21 +187,4 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 
 	dgp.NextMaintenanceTime = nextMaintenanceTime
 	dag.SaveDynGlobalProp(dgp, false)
-}
-
-func (dag *Dag) performAccountMaintenance() {
-	// todo
-}
-
-func (dag *Dag) updateActiveMediators() bool {
-	// todo 统计出active mediator个数的投票数量，并得出结论
-
-	// 根据每个mediator的得票数，排序出前n个 active mediator
-
-	// 更新每个mediator的得票数
-
-	// 更新 global property 中的 active mediator
-
-	// todo , 返回新一届mediator和上一届mediator是否有变化
-	return true
 }

@@ -71,6 +71,10 @@ type Dag struct {
 	// append by albert·gou 用于活跃mediator更新时的事件订阅
 	activeMediatorsUpdatedFeed  event.Feed
 	activeMediatorsUpdatedScope event.SubscriptionScope
+
+	// append by albert·gou 用于account 各种投票数据统计
+	mediatorVoteTally []*voteTally
+	totalVotingStake  uint64
 }
 
 type MemUtxos map[modules.OutPoint]*modules.Utxo

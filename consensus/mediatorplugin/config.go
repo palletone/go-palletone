@@ -27,7 +27,6 @@ import (
 
 const (
 	DefaultInitPartSec = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
-
 )
 
 var (
