@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"container/list"
 	"encoding/hex"
-	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	cp "github.com/palletone/go-palletone/common/crypto"
 	db "github.com/palletone/go-palletone/contracts/comm"
@@ -20,7 +19,6 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/pkg/errors"
 )
 
@@ -324,7 +322,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 //timeout:ms
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, tx *md.Transaction, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
+func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	logger.Infof("==========Invoke enter=======")
 	logger.Infof("deployId[%s] txid[%s]", hex.EncodeToString(deployId), txid)
 	defer logger.Infof("-----------Invoke exit--------")
@@ -341,59 +339,13 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, tx *md.
 		return nil, errors.New(errstr)
 	}
 
-	fullArgs := [][]byte{}
-
-	invokeInfo := md.InvokeInfo{}
-	if len(tx.TxMessages) > 0 {
-		msg0 := tx.TxMessages[0].Payload.(*md.PaymentPayload)
-		invokeAddr, err := idag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
-		if err != nil {
-			return nil, err
-		}
-		//如果是交付保证金
-		if string(args[0]) == "DepositWitnessPay" {
-			invokeTokens := &md.InvokeTokens{}
-			outputs := msg0.Outputs
-			invokeTokens.Asset = outputs[0].Asset
-			for _, output := range outputs {
-				addr, err := tokenengine.GetAddressFromScript(output.PkScript)
-				if err != nil {
-					return nil, err
-				}
-				contractAddr, err := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
-				if err != nil {
-					return nil, err
-				}
-				if addr.Equal(contractAddr) {
-					invokeTokens.Amount += output.Value
-				}
-			}
-			invokeInfo.InvokeTokens = invokeTokens
-		}
-		invokeFees, _ := idag.GetTxFee(tx)
-
-		//invokeInfo = unit.InvokeInfo{
-		//	InvokeAddress: invokeAddr,
-		//	InvokeFees:    invokeFees,
-		//}
-		invokeInfo.InvokeAddress = invokeAddr
-		invokeInfo.InvokeFees = invokeFees
-
-		invokeInfoBytes, _ := json.Marshal(invokeInfo)
-		fullArgs = append(fullArgs, invokeInfoBytes)
-	} else {
-		invokeInfoBytes, _ := json.Marshal(invokeInfo)
-		fullArgs = append(fullArgs, invokeInfoBytes)
-	}
-
-	fullArgs = append(fullArgs, args...)
 	logger.Infof("Invoke [%s][%s]", chainID, cc.Name)
 	start := time.Now()
 	es := NewEndorserServer(mksupt)
 	spec := &pb.ChaincodeSpec{
 		ChaincodeId: &pb.ChaincodeID{Name: cc.Name},
 		Type:        pb.ChaincodeSpec_GOLANG,
-		Input:       &pb.ChaincodeInput{Args: fullArgs},
+		Input:       &pb.ChaincodeInput{Args: args},
 	}
 
 	cid := &pb.ChaincodeID{

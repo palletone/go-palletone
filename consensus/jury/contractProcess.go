@@ -22,7 +22,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/errors"
-	"github.com/palletone/go-palletone/dag/modules"
 	"time"
 )
 
@@ -65,12 +64,12 @@ type ContractInvokeReq struct {
 	deployId []byte
 	txid     string //common.Hash
 	args     [][]byte
-	tx       *modules.Transaction
-	timeout  time.Duration
+	//tx       *modules.Transaction
+	timeout time.Duration
 }
 
 func (req ContractInvokeReq) do(v contracts.ContractInf) (interface{}, error) {
-	payload, err := v.Invoke(req.chainID, req.deployId, req.txid, req.tx, req.args, req.timeout)
+	payload, err := v.Invoke(req.chainID, req.deployId, req.txid, req.args, req.timeout)
 	if err != nil {
 		return nil, err
 	}

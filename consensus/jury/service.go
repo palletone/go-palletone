@@ -25,6 +25,7 @@ import (
 	"sync"
 	"time"
 
+	"encoding/json"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
@@ -39,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 type PeerType int
@@ -71,6 +73,8 @@ type PalletOne interface {
 }
 
 type iDag interface {
+	GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error)
+	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetActiveMediators() []common.Address
 	IsActiveMediator(add common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
@@ -336,14 +340,22 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 			}
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
 			{
+
 				msgs := []*modules.Message{}
 				req := ContractInvokeReq{
 					chainID:  "palletone",
 					deployId: msg.Payload.(*modules.ContractInvokeRequestPayload).ContractId,
 					args:     msg.Payload.(*modules.ContractInvokeRequestPayload).Args,
 					txid:     trs.RequestHash().String(),
-					tx:       trs,
+					//tx:       trs,
 				}
+				//对msg0进行修改
+				fullArgs, err := handleMsg0(trs, dag, req.args)
+				if err != nil {
+					return modules.APP_CONTRACT_INVOKE, nil, err
+				}
+				req.args = fullArgs
+
 				invokeResult, err := ContractProcess(contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess ", "error", err)
@@ -398,6 +410,63 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 	}
 
 	return 0, nil, errors.New(fmt.Sprintf("runContractCmd err, txid=%s", trs.RequestHash().String()))
+}
+
+func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, error) {
+	var txArgs [][]byte
+	invokeInfo := modules.InvokeInfo{}
+	if len(tx.TxMessages) > 0 {
+		msg0 := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+		invokeAddr, err := dag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
+		if err != nil {
+			return nil, err
+		}
+		//如果是交付保证金
+		if string(reqArgs[0]) == "DepositWitnessPay" {
+			invokeTokens := &modules.InvokeTokens{}
+			outputs := msg0.Outputs
+			invokeTokens.Asset = outputs[0].Asset
+			for _, output := range outputs {
+				addr, err := tokenengine.GetAddressFromScript(output.PkScript)
+				if err != nil {
+					return nil, err
+				}
+				contractAddr, err := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+				if err != nil {
+					return nil, err
+				}
+				if addr.Equal(contractAddr) {
+					invokeTokens.Amount += output.Value
+				}
+			}
+			invokeInfo.InvokeTokens = invokeTokens
+		}
+		invokeFees, err := dag.GetTxFee(tx)
+		if err != nil {
+			return nil, err
+		}
+
+		//invokeInfo = unit.InvokeInfo{
+		//	InvokeAddress: invokeAddr,
+		//	InvokeFees:    invokeFees,
+		//}
+		invokeInfo.InvokeAddress = invokeAddr
+		invokeInfo.InvokeFees = invokeFees
+
+		invokeInfoBytes, err := json.Marshal(invokeInfo)
+		if err != nil {
+			return nil, err
+		}
+		txArgs = append(txArgs, invokeInfoBytes)
+	} else {
+		invokeInfoBytes, err := json.Marshal(invokeInfo)
+		if err != nil {
+			return nil, err
+		}
+		txArgs = append(txArgs, invokeInfoBytes)
+	}
+	txArgs = append(txArgs, reqArgs...)
+	return txArgs, nil
 }
 
 func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (bool, error) {
@@ -672,7 +741,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 }
 
 func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, args [][]byte, timeout time.Duration) ([]byte, error) {
-	if  from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) || args == nil {
+	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) || args == nil {
 		log.Error("ContractInvokeReq", "param is error")
 		return nil, errors.New("ContractInvokeReq request param is error")
 	}
