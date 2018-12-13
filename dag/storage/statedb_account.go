@@ -33,42 +33,30 @@ func accountKey(address common.Address) []byte {
 	return key
 }
 
-func (statedb *StateDb) GetAccountInfo(address common.Address) (*modules.AccountInfo, error) {
-	info := &modules.AccountInfo{}
+func (statedb *StateDb) RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error) {
+	info := modules.NewAccountInfo()
 
 	err := retrieve(statedb.db, accountKey(address), info)
 	if err != nil {
 		statedb.logger.Debugf("Get account[%s] info throw an error:%s", address.String(), err.Error())
-		return nil, err
+		return info, err
 	}
 
 	return info, nil
 }
 
-func (statedb *StateDb) SaveAccountInfo(address common.Address, info *modules.AccountInfo) error {
+func (statedb *StateDb) StoreAccountInfo(address common.Address, info *modules.AccountInfo) error {
 	statedb.logger.Debugf("Save account info for address:%s", address.String())
 
 	return StoreBytes(statedb.db, accountKey(address), info)
 }
 
 func (statedb *StateDb) UpdateAccountInfoBalance(address common.Address, addAmount int64) error {
-	key := accountKey(address)
-	exist, _ := statedb.db.Has(key)
-	info := &modules.AccountInfo{}
-
-	if exist {
-		err := retrieve(statedb.db, key, info)
-		if err != nil {
-			statedb.logger.Errorf("Get account[%s] info throw an error:%s", address.String(), err.Error())
-			return err
-		}
-	} else {
-		info.PtnBalance = 0
-	}
+	info, _ := statedb.RetrieveAccountInfo(address)
 
 	info.PtnBalance = uint64(int64(info.PtnBalance) + addAmount)
 	statedb.logger.Debugf("Update Ptn Balance for address:%s, add Amount:%d", address.String(), addAmount)
-	return StoreBytes(statedb.db, key, info)
+	return StoreBytes(statedb.db, accountKey(address), info)
 }
 
 //func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte {

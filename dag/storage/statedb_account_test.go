@@ -21,12 +21,12 @@
 package storage
 
 import (
+	"testing"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestStateDb_AccountInfo(t *testing.T) {
@@ -35,15 +35,16 @@ func TestStateDb_AccountInfo(t *testing.T) {
 	statedb := NewStateDb(db, l)
 
 	addr, _ := common.StringToAddress("P173mPBwP1kXmfpg4p7rzZ5XRsGN1G1WQC8")
-	info, err := statedb.GetAccountInfo(addr)
-	assert.Nil(t, info)
+	info, err := statedb.RetrieveAccountInfo(addr)
 	assert.NotNil(t, err)
 	t.Logf("correct throw error:%s", err)
-	info = &modules.AccountInfo{PtnBalance: 12345, VotedMediator: addr}
+	info.PtnBalance = 12345
+	info.VotedMediator = append(info.VotedMediator, addr)
+
 	//Votes: []vote.VoteInfo{{Contents: , VoteType: vote.TYPE_MEDIATOR}}
-	err = statedb.SaveAccountInfo(addr, info)
+	err = statedb.StoreAccountInfo(addr, info)
 	assert.Nil(t, err)
-	info2, err := statedb.GetAccountInfo(addr)
+	info2, err := statedb.RetrieveAccountInfo(addr)
 	assert.NotNil(t, info2)
 	assert.Equal(t, info.PtnBalance, info2.PtnBalance)
 }

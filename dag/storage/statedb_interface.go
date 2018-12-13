@@ -46,8 +46,8 @@ type IStateDb interface {
 	GetContract(id []byte) (*modules.Contract, error)
 
 	/* Account_Info */
-	GetAccountInfo(address common.Address) (*modules.AccountInfo, error)
-	SaveAccountInfo(address common.Address, info *modules.AccountInfo) error
+	RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
+	StoreAccountInfo(address common.Address, info *modules.AccountInfo) error
 	UpdateAccountInfoBalance(addr common.Address, addAmount int64) error
 	//AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error
 	//GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte

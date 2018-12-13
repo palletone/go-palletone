@@ -32,7 +32,14 @@ type AccountInfo struct {
 	//当前账户的PTN余额
 	PtnBalance uint64
 	//当前账户投票的Mediator
-	VotedMediator common.Address
+	VotedMediator []common.Address
 	//通用可改选投票的结果
 	//Votes []vote.VoteInfo
+}
+
+func NewAccountInfo() *AccountInfo {
+	return &AccountInfo{
+		PtnBalance:    0,
+		VotedMediator: make([]common.Address, 0),
+	}
 }

@@ -28,12 +28,11 @@ import (
 
 func (statedb *StateDb) UpdateVotedMediator(voter common.Address, candidates []byte) error {
 	//1. get current account info
-	accountInfo, err := statedb.GetAccountInfo(voter)
-	if err != nil {
-		return err
-	}
-	accountInfo.VotedMediator = common.BytesToAddress(candidates)
-	statedb.logger.Debugf("Try to save mediator vote result{%s} for address:%s", accountInfo.VotedMediator.Str(), voter.Str())
+	accountInfo, _ := statedb.RetrieveAccountInfo(voter)
+
+	mediator := common.BytesToAddress(candidates)
+	accountInfo.VotedMediator = append(accountInfo.VotedMediator, mediator)
+	statedb.logger.Debugf("Try to save mediator vote result{%s} for address:%s", mediator.Str(), voter.Str())
 	//
 	//newVotes := []vote.VoteInfo{}
 	//mediatorVotes := []vote.VoteInfo{}
@@ -94,11 +93,8 @@ func (statedb *StateDb) UpdateVotedMediator(voter common.Address, candidates []b
 	//}
 	////$. save new account info
 	//accountInfo.Votes = newVotes
-	err = statedb.SaveAccountInfo(voter, accountInfo)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return statedb.StoreAccountInfo(voter, accountInfo)
 }
 
 //UpdateVoterList YiRan@
