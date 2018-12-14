@@ -29,7 +29,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/op/go-logging"
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/comm"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
@@ -390,8 +389,23 @@ func (stub *ChaincodeStub) GetBecomeMediatorApplyList() ([]*modules.MediatorInfo
 	return stub.GetList("ListForApplyBecomeMediator")
 }
 
-func (stub *ChaincodeStub) GetQuitMediatorApplyList() ([]*modules.MediatorInfo, error) {
-	return stub.GetList("ListForApplyQuitMediator")
+func (stub *ChaincodeStub) GetQuitMediatorApplyList() ([]string, error) {
+	listByte, err := stub.handler.handleGetState("", "ListForApplyQuitMediator", stub.ContractId, stub.ChannelId, stub.TxID)
+	if err != nil {
+		return nil, err
+	}
+	if listByte == nil {
+		return nil, nil
+	}
+	var list []string
+	err = json.Unmarshal(listByte, &list)
+	if err != nil {
+		return nil, err
+	}
+	if len(list) == 0 {
+		return nil, fmt.Errorf("%s", "list is nil.")
+	}
+	return list, nil
 
 }
 
@@ -413,6 +427,9 @@ func (stub *ChaincodeStub) GetList(typeList string) ([]*modules.MediatorInfo, er
 	if err != nil {
 		return nil, err
 	}
+	if len(list) == 0 {
+		return nil, fmt.Errorf("%s", "list is nil.")
+	}
 	return list, nil
 }
 
@@ -429,6 +446,9 @@ func (stub *ChaincodeStub) GetListForForfeiture() ([]*modules.Forfeiture, error)
 	if err != nil {
 		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
 	}
+	if len(list) == 0 {
+		return nil, fmt.Errorf("%s", "list is nil.")
+	}
 	return list, nil
 }
 
@@ -444,6 +464,9 @@ func (stub *ChaincodeStub) GetListForCashback() ([]*modules.Cashback, error) {
 	err = json.Unmarshal(listByte, &list)
 	if err != nil {
 		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
+	}
+	if len(list) == 0 {
+		return nil, fmt.Errorf("%s", "list is nil.")
 	}
 	return list, nil
 }
@@ -465,7 +488,7 @@ func (stub *ChaincodeStub) GetDepositBalance(nodeAddr string) (*modules.DepositB
 }
 
 //获取候选列表信息
-func (stub *ChaincodeStub) GetCandidateList(role string) ([]*common.Address, error) {
+func (stub *ChaincodeStub) GetCandidateList(role string) ([]string, error) {
 	candidateListByte, err := stub.handler.handleGetState("", role, stub.ContractId, stub.ChannelId, stub.TxID)
 	if err != nil {
 		return nil, err
@@ -473,10 +496,13 @@ func (stub *ChaincodeStub) GetCandidateList(role string) ([]*common.Address, err
 	if candidateListByte == nil {
 		return nil, nil
 	}
-	var candidateList []*common.Address
+	var candidateList []string
 	err = json.Unmarshal(candidateListByte, &candidateList)
 	if err != nil {
 		return nil, err
+	}
+	if len(candidateList) == 0 {
+		return nil, fmt.Errorf("%s", "list is nil.")
 	}
 	return candidateList, nil
 
@@ -558,13 +584,13 @@ func (stub *ChaincodeStub) GetFunctionAndParameters() (function string, params [
 }
 
 //GetInvokeParameters documentation can be found in interfaces.go
-func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr common.Address, invokeTokens *modules.InvokeTokens, invokeFees *modules.InvokeFees, funcName string, params []string, err error) {
+func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr string, invokeTokens *modules.InvokeTokens, invokeFees *modules.InvokeFees, funcName string, params []string, err error) {
 	allargs := stub.args
 	if len(allargs) > 2 {
 		invokeInfo := &modules.InvokeInfo{}
 		err := json.Unmarshal(allargs[0], invokeInfo)
 		if err != nil {
-			return common.Address{}, nil, nil, "", nil, err
+			return "", nil, nil, "", nil, err
 		}
 		invokeAddr = invokeInfo.InvokeAddress
 		invokeTokens = invokeInfo.InvokeTokens
@@ -622,7 +648,7 @@ func (stub *ChaincodeStub) SetEvent(name string, payload []byte) error {
 func (stub *ChaincodeStub) GetSystemConfig(key string) (string, error) {
 	return stub.handler.handleGetSystemConfig(key, stub.ChannelId, stub.TxID)
 }
-func (stub *ChaincodeStub) GetInvokeAddress() (common.Address, error) {
+func (stub *ChaincodeStub) GetInvokeAddress() (string, error) {
 	invokeAddr, _, _, _, _, err := stub.GetInvokeParameters()
 	return invokeAddr, err
 }

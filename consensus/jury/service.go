@@ -450,7 +450,7 @@ func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, 
 		//	InvokeAddress: invokeAddr,
 		//	InvokeFees:    invokeFees,
 		//}
-		invokeInfo.InvokeAddress = invokeAddr
+		invokeInfo.InvokeAddress = invokeAddr.String()
 		invokeInfo.InvokeFees = invokeFees
 
 		invokeInfoBytes, err := json.Marshal(invokeInfo)

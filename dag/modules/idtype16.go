@@ -46,7 +46,7 @@ func ZeroIdType16() IDType16 {
 }
 
 func (it *IDType16) String() string {
-	return hexutil.Encode([]byte(it.Str()))
+	return it.Str()
 }
 func (it *IDType16) ToAssetId() string {
 	//if *it == PTNCOIN {
@@ -94,16 +94,7 @@ func (id *IDType16) ParseAssetId() (string, AssetType, byte, []byte) {
 	return symbol, AssetType(t), assetId[4], assetId[5:]
 }
 func (it *IDType16) Str() string {
-	var b []byte
-
-	b = append(b, it.Bytes()...)
-
-	for i := len(b) - 1; i >= 0; i-- {
-		if b[i] == ' ' || b[i] == 0 {
-			b = b[:i]
-		}
-	}
-	return string(b)
+	return hexutil.Encode(it.Bytes())
 }
 
 func (it *IDType16) TokenType() string {

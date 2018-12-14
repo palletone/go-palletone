@@ -196,12 +196,11 @@ func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) 
 	if orgTx == nil || len(orgTx.TxMessages) < 2 {
 		return nil, errors.New(fmt.Sprintf("GenContractTransction param is error"))
 	}
-	tx := &modules.Transaction{
-	}
-	for i:= 0;i < len(orgTx.TxMessages);i++{
+	tx := &modules.Transaction{}
+	for i := 0; i < len(orgTx.TxMessages); i++ {
 		tx.AddMessage(orgTx.TxMessages[i])
 	}
-	for i:= 0;i <len(msgs);i++ {
+	for i := 0; i < len(msgs); i++ {
 		tx.AddMessage(msgs[i])
 	}
 
@@ -258,6 +257,7 @@ func DefaultGenesisBlock() *core.Genesis {
 		DepositAmountForJury:      core.DefaultDepositAmountForJury,
 		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
 		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
+		DepositPeriod:             core.DefaultDepositPeriod,
 	}
 
 	initParams := core.NewChainParams()
@@ -285,6 +285,7 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		DepositAmountForJury:      core.DefaultDepositAmountForJury,
 		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
 		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
+		DepositPeriod:             core.DefaultDepositPeriod,
 	}
 
 	initParams := core.NewChainParams()
