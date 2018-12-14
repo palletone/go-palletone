@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
 
@@ -81,6 +82,8 @@ type iDag interface {
 	IsMediator(address common.Address) bool
 
 	GetVotedMediator(addr common.Address) []common.Address
+	GetDynGlobalProp() *modules.DynamicGlobalProperty
+	GetMediatorInfo(address common.Address) *storage.MediatorInfo
 }
 
 type MediatorPlugin struct {

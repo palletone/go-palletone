@@ -91,6 +91,10 @@ func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *MediatorInfo) 
 	return StoreMediatorInfo(statedb.db, add, mi)
 }
 
+func (statedb *StateDb) RetrieveMediatorInfo(address common.Address) (*MediatorInfo, error) {
+	return RetrieveMediatorInfo(statedb.db, address)
+}
+
 // author albert·gou
 func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator, error) {
 	return RetrieveMediator(statedb.db, address)

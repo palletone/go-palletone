@@ -19,8 +19,12 @@
 package mediatorplugin
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 // todo 待删除，jury暂时使用mediator配置
@@ -126,7 +130,7 @@ type InitDKSResult struct {
 	PublicKey  string
 }
 
-func (a *PublicMediatorAPI) GetInitDKS() (res InitDKSResult) {
+func (a *PublicMediatorAPI) DumpInitDKS() (res InitDKSResult) {
 	sec, pub := core.GenInitPair()
 
 	res.PrivateKey = core.ScalarToStr(sec)
@@ -142,4 +146,24 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]common.Address, error) {
 	}
 
 	return a.dag.GetVotedMediator(addr), nil
+}
+
+func (a *PublicMediatorAPI) GetNextUpdateTime() string {
+	dgp := a.dag.GetDynGlobalProp()
+	time := time.Unix(dgp.NextMaintenanceTime, 0)
+
+	return time.Format("2006-01-02 15:04:05")
+}
+
+func (a *PublicMediatorAPI) GetInfo(addStr string) (*storage.MediatorInfo, error) {
+	mediator, err := common.StringToAddress(addStr)
+	if err != nil {
+		return nil, err
+	}
+
+	if !a.dag.IsMediator(mediator) {
+		return nil, fmt.Errorf("%v is not mediator!", mediator.Str())
+	}
+
+	return a.dag.GetMediatorInfo(mediator), nil
 }

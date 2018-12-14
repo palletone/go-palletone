@@ -57,8 +57,8 @@ func NewMediatorInfo() *MediatorInfo {
 	}
 }
 
-func mediatorToInfo(md *core.Mediator) (mi *MediatorInfo) {
-	mi = NewMediatorInfo()
+func mediatorToInfo(md *core.Mediator) *MediatorInfo {
+	mi := NewMediatorInfo()
 	//mi.AddStr = md.Address.Str()
 	mi.InitPartPub = core.PointToStr(md.InitPartPub)
 	mi.Node = md.Node.String()
@@ -66,11 +66,11 @@ func mediatorToInfo(md *core.Mediator) (mi *MediatorInfo) {
 	mi.LastConfirmedUnitNum = md.LastConfirmedUnitNum
 	mi.TotalVotes = md.TotalVotes
 
-	return
+	return mi
 }
 
-func (mi *MediatorInfo) infoToMediator() (md *core.Mediator) {
-	md = core.NewMediator()
+func (mi *MediatorInfo) infoToMediator() *core.Mediator {
+	md := core.NewMediator()
 	//md.Address = core.StrToMedAdd(mi.AddStr)
 	md.InitPartPub = core.StrToPoint(mi.InitPartPub)
 	md.Node = core.StrToMedNode(mi.Node)
@@ -78,7 +78,7 @@ func (mi *MediatorInfo) infoToMediator() (md *core.Mediator) {
 	md.LastConfirmedUnitNum = mi.LastConfirmedUnitNum
 	md.TotalVotes = mi.TotalVotes
 
-	return
+	return md
 }
 
 func StoreMediator(db ptndb.Database, med *core.Mediator) error {
@@ -100,12 +100,21 @@ func StoreMediatorInfo(db ptndb.Database, add common.Address, mi *MediatorInfo) 
 	return nil
 }
 
-func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator, error) {
+func RetrieveMediatorInfo(db ptndb.Database, address common.Address) (*MediatorInfo, error) {
 	mi := NewMediatorInfo()
 
 	err := retrieve(db, mediatorKey(address), mi)
 	if err != nil {
 		log.Error(fmt.Sprintf("Retrieve mediator error: %s", err))
+		return nil, err
+	}
+
+	return mi, nil
+}
+
+func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator, error) {
+	mi, err := RetrieveMediatorInfo(db, address)
+	if mi == nil || err != nil {
 		return nil, err
 	}
 

@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
@@ -229,4 +230,9 @@ func (d *Dag) GetVotedMediator(addr common.Address) []common.Address {
 
 func (d *Dag) LookupAccount() map[common.Address]*modules.AccountInfo {
 	return d.statedb.LookupAccount()
+}
+
+func (d *Dag) GetMediatorInfo(address common.Address) *storage.MediatorInfo {
+	mi, _ := d.statedb.RetrieveMediatorInfo(address)
+	return mi
 }

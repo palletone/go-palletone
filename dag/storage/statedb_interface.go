@@ -74,4 +74,5 @@ type IStateDb interface {
 	LookupMediator() map[common.Address]*core.Mediator
 
 	LookupAccount() map[common.Address]*modules.AccountInfo
+	RetrieveMediatorInfo(address common.Address) (*MediatorInfo, error)
 }
