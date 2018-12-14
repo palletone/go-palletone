@@ -51,18 +51,19 @@ func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee
 	}
 
 	// 1. 获取转出账户所有的utxo
-	allUtxos, err := dag.GetAddrUtxos(from)
+	//allUtxos, err := dag.GetAddrUtxos(from)
+	coreUtxos, err := dag.GetAddrUtxos(from)
 	if err != nil {
 		return &modules.Transaction{}, err
 	}
 
-	if len(allUtxos) == 0 {
+	if len(coreUtxos) == 0 {
 		return &modules.Transaction{}, fmt.Errorf("%v 's uxto is null!", from.Str())
 	}
 
 	// 2. 利用贪心算法得到指定额度的utxo集合
 	greedyUtxos := core.Utxos{}
-	for outPoint, utxo := range allUtxos {
+	for outPoint, utxo := range coreUtxos {
 		tg := newTxo4Greedy(outPoint, utxo.Amount)
 		greedyUtxos = append(greedyUtxos, tg)
 	}
@@ -102,4 +103,23 @@ func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
 
 	return tx, nil
+}
+
+func (dag *Dag) GetAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
+	// todo 待优化
+	allUtxos, err := dag.GetAddrUtxos(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	coreUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allUtxos))
+	for outPoint, utxo := range allUtxos {
+		if utxo.Asset.String() != modules.CoreAsset {
+			continue
+		}
+
+		coreUtxos[outPoint] = utxo
+	}
+
+	return coreUtxos, nil
 }

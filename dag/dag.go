@@ -845,6 +845,7 @@ func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map
 	return all, err
 	//return map[modules.OutPoint]*modules.Utxo{}, nil
 }
+
 func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
 	// TODO
 	// merge dag.cache
