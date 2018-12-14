@@ -220,9 +220,32 @@ func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string)
 	return submitTransaction(ctx, s.b, mtx)
 }
 
-func (s *PublicWalletAPI) GetBalance(ctx context.Context, address string) ([]*walletjson.UtxoJson, error) {
-	//TODO just return a mock data
-	utxos := []*walletjson.UtxoJson{}
-	utxos = append(utxos, &walletjson.UtxoJson{TxHash: "TestHash", MessageIndex: 0, OutIndex: 0, Amount: 123456, Asset: "PTN+8000000"})
-	return utxos, nil
+func (s *PublicWalletAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {
+	
+	items, err := s.b.GetAddrUtxos(addr)
+	if err != nil {
+		return "", err
+	}
+
+	info := NewPublicReturnInfo("address_utxos", items)
+	result_json, _ := json.Marshal(info)
+	return string(result_json), nil
+	
+}
+
+func (s *PublicWalletAPI) GetBalance(ctx context.Context, address string) (map[string]decimal.Decimal, error) {
+    utxos, err := s.b.GetAddrUtxos(address)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]decimal.Decimal)
+	for _, utxo := range utxos {
+		asset, _ := modules.StringToAsset(utxo.Asset)
+		if bal, ok := result[utxo.Asset]; ok {
+			result[utxo.Asset] = bal.Add(ptnjson.AssetAmt2JsonAmt(asset, utxo.Amount))
+		} else {
+			result[utxo.Asset] = ptnjson.AssetAmt2JsonAmt(asset, utxo.Amount)
+		}
+	}
+	return result, nil
 }
