@@ -65,7 +65,7 @@ func (dag *Dag) performAccountMaintenance() {
 	dag.totalVotingStake = 0
 
 	mediators := dag.GetMediators()
-	dag.mediatorVoteTally = make([]*voteTally, 0, len(mediators))
+	dag.mediatorVoteTally = make([]*voteTally, len(mediators), len(mediators))
 	mediatorIndex := make(map[common.Address]int, len(mediators))
 
 	index := 0
