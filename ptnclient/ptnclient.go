@@ -427,7 +427,7 @@ func (ec *Client) TransferToken(ctx context.Context, asset string, from string, 
 
 func (ec *Client) walletCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
 	var result string
-	err := ec.c.CallContext(ctx, &result, "ptn_walletCreateTransaction", from, to, amount)
+	err := ec.c.CallContext(ctx, &result, "wallet_createRawTransaction", from, to, amount)
 	return result, err
 }
 func (ec *Client) CreateRawTransaction(ctx context.Context, params string) (string, error) {
