@@ -21,7 +21,6 @@ package rwset
 
 import (
 	"errors"
-	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -54,8 +53,6 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-	fmt.Println("contractid  == ", contractid)
-	fmt.Println("contractid  == ", string(contractid))
 	//TODO Devin
 	ver, val := s.dag.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil

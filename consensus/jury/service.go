@@ -466,6 +466,7 @@ func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, 
 		txArgs = append(txArgs, invokeInfoBytes)
 	}
 	txArgs = append(txArgs, reqArgs...)
+	//reqArgs = append(reqArgs, txArgs...)
 	return txArgs, nil
 }
 
@@ -710,7 +711,7 @@ func (p *Processor) creatContractTxReqBroadcast(from, to common.Address, daoAmou
 }
 
 func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) ([]byte, error) {
-	if from == (common.Address{}) || to == (common.Address{}) || tplName == ""||path == ""|| version == "" {
+	if from == (common.Address{}) || to == (common.Address{}) || tplName == "" || path == "" || version == "" {
 		log.Error("ContractInstallReq", "param is error")
 		return nil, errors.New("ContractInstallReq request param is error")
 	}
@@ -728,7 +729,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 }
 
 func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
-	if from == (common.Address{}) || to == (common.Address{}) || templateId == nil{
+	if from == (common.Address{}) || to == (common.Address{}) || templateId == nil {
 		log.Error("ContractDeployReq", "param is error")
 		return nil, errors.New("ContractDeployReq request param is error")
 	}
@@ -756,7 +757,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId:   contractId[:],
+			ContractId:   contractId.Bytes(),
 			FunctionName: "",
 			Args:         args,
 			Timeout:      timeout,
