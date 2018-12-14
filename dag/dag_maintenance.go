@@ -19,7 +19,11 @@
 
 package dag
 
-import "github.com/palletone/go-palletone/common"
+import (
+	"sort"
+
+	"github.com/palletone/go-palletone/common"
+)
 
 // 投票统计辅助结构体
 type voteTally struct {
@@ -32,6 +36,27 @@ func newVoteTally(candidate common.Address) *voteTally {
 		candidate:  candidate,
 		votedCount: 0,
 	}
+}
+
+type voteTallys []*voteTally
+
+func (vts voteTallys) Len() int {
+	return len(vts)
+}
+
+func (vts voteTallys) Less(i, j int) bool {
+	mVoteI := vts[i].votedCount
+	mVoteJ := vts[j].votedCount
+
+	if mVoteI != mVoteJ {
+		return mVoteI > mVoteJ
+	}
+
+	return vts[i].candidate.Less(vts[j].candidate)
+}
+
+func (vts voteTallys) Swap(i, j int) {
+	vts[i], vts[j] = vts[j], vts[i]
 }
 
 // 获取账户相关投票数据的直方图
@@ -81,6 +106,7 @@ func (dag *Dag) updateActiveMediators() bool {
 	// todo 统计出active mediator个数的投票数量，并得出结论
 
 	// 根据每个mediator的得票数，排序出前n个 active mediator
+	sort.Sort(dag.mediatorVoteTally)
 
 	// 更新每个mediator的得票数
 

@@ -73,7 +73,7 @@ type Dag struct {
 	activeMediatorsUpdatedScope event.SubscriptionScope
 
 	// append by albert·gou 用于account 各种投票数据统计
-	mediatorVoteTally []*voteTally
+	mediatorVoteTally voteTallys
 	totalVotingStake  uint64
 }
 

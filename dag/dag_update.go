@@ -187,4 +187,7 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 
 	dgp.NextMaintenanceTime = nextMaintenanceTime
 	dag.SaveDynGlobalProp(dgp, false)
+
+	// 6. 清理中间处理缓存数据
+	dag.mediatorVoteTally = nil
 }
