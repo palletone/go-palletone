@@ -456,16 +456,17 @@ func signHash(data []byte) []byte {
 // The key used to calculate the signature is decrypted with the given password.
 //
 // https://github.com/palletone/go-palletone/wiki/Management-APIs#personal_sign
-func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr common.Address, passwd string) (hexutil.Bytes, error) {
+func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr string, passwd string) (hexutil.Bytes, error) {
 	// Look up the wallet containing the requested signer
-	account := accounts.Account{Address: addr}
+	address, _ := common.StringToAddress(addr)
+	account := accounts.Account{Address: address}
 
 	wallet, err := s.b.AccountManager().Find(account)
 	if err != nil {
 		return nil, err
 	}
 	// Assemble sign the data with the wallet
-	signature, err := wallet.SignHashWithPassphrase(account, passwd, signHash(data))
+	signature, err := wallet.SignHashWithPassphrase(account, passwd, data)
 	if err != nil {
 		return nil, err
 	}
