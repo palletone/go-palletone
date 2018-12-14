@@ -29,7 +29,7 @@ import (
 )
 
 func accountKey(address common.Address) []byte {
-	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes()...)
+	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes21()...)
 
 	return key
 }
