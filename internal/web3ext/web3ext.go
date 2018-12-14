@@ -626,6 +626,11 @@ const Wallet_JS = `
 			call: 'wallet_getBalance',
 			params: 1
 		}),
+		new web3._extend.Method({
+			name: 'getAddrUtxos',
+			call: 'wallet_getAddrUtxos',
+			params: 1
+		}),
  		new web3._extend.Method({
 			name: 'createPaymentTx',
 			call: 'wallet_createPaymentTx',

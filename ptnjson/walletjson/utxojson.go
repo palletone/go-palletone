@@ -29,5 +29,4 @@ type UtxoJson struct {
 	PkScriptHex    string `json:"pk_script_hex"`    // 要执行的代码段
 	PkScriptString string `json:"pk_script_string"` // 要执行的代码段
 	LockTime       uint32 `json:"lock_time"`
-	OwnerAddress   string `json:"owner_address"`
 }
