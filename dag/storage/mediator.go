@@ -45,6 +45,7 @@ type MediatorInfo struct {
 	Url                  string
 	TotalMissed          uint64
 	LastConfirmedUnitNum uint32
+	TotalVotes           uint64
 }
 
 func NewMediatorInfo() *MediatorInfo {
@@ -52,6 +53,7 @@ func NewMediatorInfo() *MediatorInfo {
 		Url:                  "",
 		TotalMissed:          0,
 		LastConfirmedUnitNum: 0,
+		TotalVotes:           0,
 	}
 }
 
@@ -62,6 +64,7 @@ func mediatorToInfo(md *core.Mediator) (mi *MediatorInfo) {
 	mi.Node = md.Node.String()
 	mi.TotalMissed = md.TotalMissed
 	mi.LastConfirmedUnitNum = md.LastConfirmedUnitNum
+	mi.TotalVotes = md.TotalVotes
 
 	return
 }
@@ -73,6 +76,7 @@ func (mi *MediatorInfo) infoToMediator() (md *core.Mediator) {
 	md.Node = core.StrToMedNode(mi.Node)
 	md.TotalMissed = mi.TotalMissed
 	md.LastConfirmedUnitNum = mi.LastConfirmedUnitNum
+	md.TotalVotes = mi.TotalVotes
 
 	return
 }

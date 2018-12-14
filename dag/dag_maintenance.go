@@ -104,13 +104,28 @@ func (dag *Dag) performAccountMaintenance() {
 
 func (dag *Dag) updateActiveMediators() bool {
 	// todo 统计出active mediator个数的投票数量，并得出结论
+	gp := dag.GetGlobalProp()
+	mediatorCount := len(gp.ActiveMediators)
 
 	// 根据每个mediator的得票数，排序出前n个 active mediator
+	// todo 应当优化本排序方法，使用部分排序的方法
 	sort.Sort(dag.mediatorVoteTally)
 
 	// 更新每个mediator的得票数
+	for _, voteTally := range dag.mediatorVoteTally {
+		med := dag.GetMediator(voteTally.candidate)
+		med.TotalVotes = voteTally.votedCount
+		dag.SaveMediator(med, false)
+	}
 
-	// 更新 global property 中的 active mediator
+	// 更新 global property 中的 active mediator 和 Preceding Mediators
+	gp.PrecedingMediators = gp.ActiveMediators
+	gp.ActiveMediators = make(map[common.Address]bool, mediatorCount)
+	for index := 0; index < mediatorCount; index++ {
+		voteTally := dag.mediatorVoteTally[index]
+		gp.ActiveMediators[voteTally.candidate] = true
+	}
+	dag.SaveGlobalProp(gp, false)
 
 	// todo , 返回新一届mediator和上一届mediator是否有变化
 	return true
