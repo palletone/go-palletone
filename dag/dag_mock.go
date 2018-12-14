@@ -5,6 +5,9 @@
 package dag
 
 import (
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/palletone/go-palletone/common"
 	event "github.com/palletone/go-palletone/common/event"
@@ -13,8 +16,6 @@ import (
 	keystore "github.com/palletone/go-palletone/core/accounts/keystore"
 	modules "github.com/palletone/go-palletone/dag/modules"
 	txspool "github.com/palletone/go-palletone/dag/txspool"
-	reflect "reflect"
-	time "time"
 )
 
 // MockIDag is a mock of IDag interface

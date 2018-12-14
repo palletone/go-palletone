@@ -568,7 +568,7 @@ web3._extend({
 			name: 'sign',
 			call: 'personal_sign',
 			params: 3,
-			inputFormatter: [null, web3._extend.formatters.inputAddressFormatter, null]
+			inputFormatter: [null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ecRecover',
@@ -624,6 +624,11 @@ const Wallet_JS = `
  		new web3._extend.Method({
 			name: 'getBalance',
 			call: 'wallet_getBalance',
+			params: 1
+		}),
+		new web3._extend.Method({
+			name: 'getAddrUtxos',
+			call: 'wallet_getAddrUtxos',
 			params: 1
 		}),
  		new web3._extend.Method({

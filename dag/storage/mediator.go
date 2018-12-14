@@ -31,20 +31,21 @@ import (
 )
 
 func mediatorKey(address common.Address) []byte {
-	key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes()...)
+	key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes21()...)
 	//key := append(constants.MEDIATOR_INFO_PREFIX, address.Str()...)
 
 	return key
 }
 
-// only for serialization
+// only for serialization(storage)
 type MediatorInfo struct {
-	AddStr               string
+	//AddStr               string
 	InitPartPub          string
 	Node                 string
 	Url                  string
 	TotalMissed          uint64
 	LastConfirmedUnitNum uint32
+	TotalVotes           uint64
 }
 
 func NewMediatorInfo() *MediatorInfo {
@@ -52,40 +53,43 @@ func NewMediatorInfo() *MediatorInfo {
 		Url:                  "",
 		TotalMissed:          0,
 		LastConfirmedUnitNum: 0,
+		TotalVotes:           0,
 	}
 }
 
-func mediatorToInfo(md *core.Mediator) (mi *MediatorInfo) {
-	mi = NewMediatorInfo()
-	mi.AddStr = md.Address.Str()
+func mediatorToInfo(md *core.Mediator) *MediatorInfo {
+	mi := NewMediatorInfo()
+	//mi.AddStr = md.Address.Str()
 	mi.InitPartPub = core.PointToStr(md.InitPartPub)
 	mi.Node = md.Node.String()
 	mi.TotalMissed = md.TotalMissed
 	mi.LastConfirmedUnitNum = md.LastConfirmedUnitNum
+	mi.TotalVotes = md.TotalVotes
 
-	return
+	return mi
 }
 
-func (mi *MediatorInfo) infoToMediator() (md *core.Mediator) {
-	md = core.NewMediator()
-	md.Address = core.StrToMedAdd(mi.AddStr)
+func (mi *MediatorInfo) infoToMediator() *core.Mediator {
+	md := core.NewMediator()
+	//md.Address = core.StrToMedAdd(mi.AddStr)
 	md.InitPartPub = core.StrToPoint(mi.InitPartPub)
 	md.Node = core.StrToMedNode(mi.Node)
 	md.TotalMissed = mi.TotalMissed
 	md.LastConfirmedUnitNum = mi.LastConfirmedUnitNum
+	md.TotalVotes = mi.TotalVotes
 
-	return
+	return md
 }
 
 func StoreMediator(db ptndb.Database, med *core.Mediator) error {
 	mi := mediatorToInfo(med)
 
-	return StoreMediatorInfo(db, mi)
+	return StoreMediatorInfo(db, med.Address, mi)
 }
 
-func StoreMediatorInfo(db ptndb.Database, mi *MediatorInfo) error {
+func StoreMediatorInfo(db ptndb.Database, add common.Address, mi *MediatorInfo) error {
 	//log.Debug(fmt.Sprintf("Store Mediator %v:", mi.AddStr))
-	add := core.StrToMedAdd(mi.AddStr)
+	//add := core.StrToMedAdd(mi.AddStr)
 
 	err := StoreBytes(db, mediatorKey(add), mi)
 	if err != nil {
@@ -96,7 +100,7 @@ func StoreMediatorInfo(db ptndb.Database, mi *MediatorInfo) error {
 	return nil
 }
 
-func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator, error) {
+func RetrieveMediatorInfo(db ptndb.Database, address common.Address) (*MediatorInfo, error) {
 	mi := NewMediatorInfo()
 
 	err := retrieve(db, mediatorKey(address), mi)
@@ -105,7 +109,17 @@ func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator
 		return nil, err
 	}
 
+	return mi, nil
+}
+
+func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator, error) {
+	mi, err := RetrieveMediatorInfo(db, address)
+	if mi == nil || err != nil {
+		return nil, err
+	}
+
 	med := mi.infoToMediator()
+	med.Address = address
 
 	return med, nil
 }
@@ -119,7 +133,7 @@ func GetMediatorCount(db ptndb.Database) int {
 func IsMediator(db ptndb.Database, address common.Address) bool {
 	has, err := db.Has(mediatorKey(address))
 	if err != nil {
-		log.Error(fmt.Sprintf("Error in determining if it is a mediator: %s", err))
+		log.Debug(fmt.Sprintf("Error in determining if it is a mediator: %s", err))
 	}
 
 	return has
@@ -132,9 +146,9 @@ func GetMediators(db ptndb.Database) map[common.Address]bool {
 	for iter.Next() {
 		key := iter.Key()
 		//log.Debug(fmt.Sprintf("Get Mediator's key : %s", key))
-		addStr := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
+		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
 
-		result[common.BytesToAddress(addStr)] = true
+		result[common.BytesToAddress(addB)] = true
 		//result[core.StrToMedAdd(string(addStr))] = true
 	}
 
@@ -149,11 +163,15 @@ func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
 		mi := NewMediatorInfo()
 		err := rlp.DecodeBytes(iter.Value(), mi)
 		if err != nil {
-			log.Error(fmt.Sprintf("Error in Decoding Bytes to MediatorInfo: %s", err))
+			log.Debug(fmt.Sprintf("Error in Decoding Bytes to MediatorInfo: %s", err))
 		}
 
 		med := mi.infoToMediator()
-		result[med.Address] = med
+		addB := bytes.TrimPrefix(iter.Key(), constants.MEDIATOR_INFO_PREFIX)
+		add := common.BytesToAddress(addB)
+		med.Address = add
+
+		result[add] = med
 	}
 
 	return result

@@ -19,10 +19,15 @@
 package mediatorplugin
 
 import (
+	"fmt"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/dag/vote"
 )
+
+const defaultResult = "Transaction executed locally, but may not be confirmed by the network yet!"
 
 type PrivateMediatorAPI struct {
 	*MediatorPlugin
@@ -37,15 +42,15 @@ type MediatorCreateArgs struct {
 	modules.MediatorCreateOperation
 }
 
-// 创建 mediator 的执行结果，包含交易哈希，初始dks
-type MediatorCreateResult struct {
+// 交易执行结果
+type TxExecuteResult struct {
 	TxHash  common.Hash        `json:"txHash"`
 	TxSize  common.StorageSize `json:"txSize"`
 	Warning string             `json:"warning"`
 }
 
-func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (MediatorCreateResult, error) {
-	res := MediatorCreateResult{}
+func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (TxExecuteResult, error) {
+	res := TxExecuteResult{}
 	addr, err := common.StringToAddress(args.AddStr)
 	if err != nil {
 		return res, err
@@ -81,9 +86,71 @@ func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (MediatorCreateRe
 	}
 
 	// 5. 返回执行结果
-	//res.TxHash = tx.TxHash
+	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size()
-	res.Warning = "transaction executed locally, but may not be confirmed by the network yet!"
+	res.Warning = defaultResult
+
+	return res, nil
+}
+
+// 投票 mediator 所需的参数
+type VoteMediatorArgs struct {
+	Voter    string `json:"voter"`
+	Mediator string `json:"mediator"`
+}
+
+func (a *PrivateMediatorAPI) Vote(args VoteMediatorArgs) (TxExecuteResult, error) {
+	// 参数检查
+	res := TxExecuteResult{}
+	voter, err := common.StringToAddress(args.Voter)
+	if err != nil {
+		return res, err
+	}
+
+	mediator, err := common.StringToAddress(args.Mediator)
+	if err != nil {
+		return res, err
+	}
+	if !a.dag.IsMediator(mediator) {
+		return res, fmt.Errorf("%v is not mediator!", mediator.Str())
+	}
+
+	// 1. 组装 message
+	voting := &vote.VoteInfo{
+		VoteType: vote.TYPE_MEDIATOR,
+		Contents: mediator.Bytes(),
+	}
+
+	msg := &modules.Message{
+		App:     modules.APP_VOTE,
+		Payload: voting,
+	}
+
+	// 2. 组装 tx
+	fee := a.dag.CurrentFeeSchedule().VoteMediatorFee
+	tx, err := a.dag.CreateBaseTransaction(voter, voter, 0, fee)
+	if err != nil {
+		return res, err
+	}
+	tx.TxMessages = append(tx.TxMessages, msg)
+
+	// 3. 签名 tx
+	tx, err = a.ptn.SignGenericTransaction(voter, tx)
+	if err != nil {
+		return res, err
+	}
+
+	// 4. 将 tx 放入 pool
+	txPool := a.ptn.TxPool()
+	err = txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
+	if err != nil {
+		return res, err
+	}
+
+	// 5. 返回执行结果
+	res.TxHash = tx.Hash()
+	res.TxSize = tx.Size()
+	res.Warning = defaultResult
 
 	return res, nil
 }

@@ -146,16 +146,19 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 		return
 	}
 
-	// 2. 统计投票并更新活跃 mediator 列表
+	// 2. 对每个账户的各种投票信息进行初步统计
+	dag.performAccountMaintenance()
+
+	// 3. 统计投票并更新活跃 mediator 列表
 	if !dag.updateActiveMediators() {
 		// todo , 如果没有变化， 只需做一些特殊处理，不需要发送事件
 
 	} else {
-		// 3. 发送更新活跃 mediator 事件，以方便其他模块做相应处理
+		// 4. 发送更新活跃 mediator 事件，以方便其他模块做相应处理
 		go dag.activeMediatorsUpdatedFeed.Send(ActiveMediatorsUpdatedEvent{})
 	}
 
-	// 4. 计算并更新下一次维护时间
+	// 5. 计算并更新下一次维护时间
 	gp := dag.GetGlobalProp()
 	nextMaintenanceTime := dgp.NextMaintenanceTime
 	maintenanceInterval := int64(gp.ChainParameters.MaintenanceInterval)
@@ -184,11 +187,7 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 
 	dgp.NextMaintenanceTime = nextMaintenanceTime
 	dag.SaveDynGlobalProp(dgp, false)
-}
 
-func (dag *Dag) updateActiveMediators() bool {
-	// todo , 统计投票， 选出活跃mediator, 并更新
-
-	// todo , 返回新一届mediator和上一届mediator是否有变化
-	return true
+	// 6. 清理中间处理缓存数据
+	dag.mediatorVoteTally = nil
 }

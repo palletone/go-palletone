@@ -46,6 +46,7 @@ import (
 	//"github.com/palletone/go-palletone/dag/coredata"
 	//"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	vote2 "github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
@@ -456,16 +457,17 @@ func signHash(data []byte) []byte {
 // The key used to calculate the signature is decrypted with the given password.
 //
 // https://github.com/palletone/go-palletone/wiki/Management-APIs#personal_sign
-func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr common.Address, passwd string) (hexutil.Bytes, error) {
+func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr string, passwd string) (hexutil.Bytes, error) {
 	// Look up the wallet containing the requested signer
-	account := accounts.Account{Address: addr}
+	address, _ := common.StringToAddress(addr)
+	account := accounts.Account{Address: address}
 
 	wallet, err := s.b.AccountManager().Find(account)
 	if err != nil {
 		return nil, err
 	}
 	// Assemble sign the data with the wallet
-	signature, err := wallet.SignHashWithPassphrase(account, passwd, signHash(data))
+	signature, err := wallet.SignHashWithPassphrase(account, passwd, data)
 	if err != nil {
 		return nil, err
 	}
@@ -833,11 +835,13 @@ func (s *PublicBlockChainAPI) CreateMediatorVote(ctx context.Context, paymentHex
 	if err != nil {
 		return "", err
 	}
-	vote := &modules.VotePayload{}
-	vote.VoteType = 0
-	strings := []string{}
-	strings = append(strings, mediatorAddr)
-	vote.Contents, _ = json.Marshal(strings)
+	vote := &vote2.VoteInfo{}
+	vote.VoteType = vote2.TYPE_MEDIATOR
+	add, _ := common.StringToAddress(mediatorAddr)
+	vote.Contents = add.Bytes()
+	//strings := []string{}
+	//strings = append(strings, mediatorAddr)
+	//vote.Contents, _ = json.Marshal(strings)
 	tx.AddMessage(modules.NewMessage(modules.APP_VOTE, vote))
 	txB, _ := rlp.EncodeToBytes(tx)
 	return fmt.Sprintf("%X", txB), nil
@@ -1865,7 +1869,7 @@ func createTokenTx(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 		payPTN.AddTxIn(txInput)
 	}
 	//ptn outputs
-	payPTN.AddTxOut(modules.NewTxOut(change+1, tokenengine.GenerateLockScript(toAddr), modules.NewPTNAsset()))
+	payPTN.AddTxOut(modules.NewTxOut(change+1, tokenengine.GenerateLockScript(fromAddr), modules.NewPTNAsset()))
 
 	//Token
 	utxosTkTaken, change, err := core.Select_utxo_Greedy(utxosToken, amountToken)
@@ -1885,7 +1889,7 @@ func createTokenTx(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 	//token outputs
 	payToken.AddTxOut(modules.NewTxOut(amountToken, tokenengine.GenerateLockScript(toAddr), asset))
 	if change > 0 {
-		payToken.AddTxOut(modules.NewTxOut(change, tokenengine.GenerateLockScript(toAddr), asset))
+		payToken.AddTxOut(modules.NewTxOut(change, tokenengine.GenerateLockScript(fromAddr), asset))
 	}
 
 	//tx
@@ -2000,7 +2004,7 @@ func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset stri
 	utxosPTN := core.Utxos{}
 	utxosToken := core.Utxos{}
 	for _, json := range utxoJsons {
-		if json.Asset == "PTN+8000000000000" {
+		if json.Asset == modules.CoreAsset {
 			utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash,
 				MessageIndex:   json.MessageIndex,
 				OutIndex:       json.OutIndex,

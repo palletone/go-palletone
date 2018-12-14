@@ -46,6 +46,7 @@ type Mediator struct {
 	Url                  string
 	TotalMissed          uint64
 	LastConfirmedUnitNum uint32
+	TotalVotes           uint64
 }
 
 func NewMediator() *Mediator {
@@ -53,6 +54,7 @@ func NewMediator() *Mediator {
 		Url:                  "",
 		TotalMissed:          0,
 		LastConfirmedUnitNum: 0,
+		TotalVotes:           0,
 	}
 }
 

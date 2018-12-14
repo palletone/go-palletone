@@ -369,31 +369,6 @@ type TokenPayOut struct {
 	LockTime uint32
 }
 
-// 0.default vote result is the index of the option from list
-// 1.If the option is specified by the voter, set Option null
-// 2.Expected vote result:[]byte
-//type VoteInitiatePayload struct {
-//	Title       string        //vote title
-//	Option      []string      //vote option list.
-//	BallotChain uint64        //vote chain id
-//	BallotType  IDType16      //vote asset id
-//	BallotCost  big.Int       //token cost
-//	ExpiredTime time.Duration //duration of voting
-//}
-
-//VotePayload YiRan@
-// Mode == 0 [ Replace ] :replace all
-// Mode == 1 [ Edit    ] :Replace the addresses in the first half of the account's votes addresses to refer to the addresses in the second half.
-// Mode == 2 [ Delete  ] :Delete the addresses from account's votes addresses
-type VotePayload struct {
-	//投票内容，JSON格式，如果是Mediator选举，则为string数组的JSON
-	//如果不想投任何一个Mediator，则将string数组清空
-	Contents []byte
-	//是Mediator选举则为0
-	VoteType uint8
-	//Mode     uint8
-}
-
 // Contract template deploy message
 // App: contract_template
 type ContractTplPayload struct {
@@ -406,7 +381,6 @@ type ContractTplPayload struct {
 }
 
 // App: contract_deploy
-
 type ContractDeployPayload struct {
 	TemplateId    []byte             `json:"template_id"`            // contract template id
 	ContractId    []byte             `json:"contract_id"`            // contract id
@@ -535,13 +509,6 @@ func NewContractDeployPayload(templateid []byte, contractid []byte, name string,
 		Jury:          jury,
 		ReadSet:       readset,
 		WriteSet:      writeset,
-	}
-}
-func NewVotePayload(result []byte, voteType uint8) *VotePayload {
-	return &VotePayload{
-		Contents: result,
-
-		VoteType: voteType,
 	}
 }
 

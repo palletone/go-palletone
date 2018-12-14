@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
@@ -182,6 +183,10 @@ func (dag *Dag) GetMediators() map[common.Address]bool {
 	return dag.statedb.GetMediators()
 }
 
+func (dag *Dag) IsMediator(address common.Address) bool {
+	return dag.statedb.IsMediator(address)
+}
+
 func (dag *Dag) ActiveMediators() map[common.Address]bool {
 	return dag.GetGlobalProp().ActiveMediators
 }
@@ -215,4 +220,19 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 	}
 
 	return nodes
+}
+
+func (d *Dag) GetVotedMediator(addr common.Address) []common.Address {
+	accountInfo, _ := d.statedb.RetrieveAccountInfo(addr)
+
+	return accountInfo.VotedMediators
+}
+
+func (d *Dag) LookupAccount() map[common.Address]*modules.AccountInfo {
+	return d.statedb.LookupAccount()
+}
+
+func (d *Dag) GetMediatorInfo(address common.Address) *storage.MediatorInfo {
+	mi, _ := d.statedb.RetrieveMediatorInfo(address)
+	return mi
 }

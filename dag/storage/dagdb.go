@@ -38,6 +38,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/dag/vote"
 )
 
 //对DAG对象的操作，包括：Unit，Tx等
@@ -804,7 +805,7 @@ func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
 			msg.Payload = payment
 			msgs = append(msgs, msg)
 		case modules.APP_VOTE: //7
-			payment := new(modules.VotePayload)
+			payment := new(vote.VoteInfo)
 			err2 := json.Unmarshal(data1, &payment)
 			if err2 != nil {
 				return nil, err2

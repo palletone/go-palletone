@@ -28,18 +28,33 @@ web3._extend({
 			params: 0,
 		}),
 		new web3._extend.Method({
-			name: 'voteResult',
-			call: 'mediator_voteResult',
-			params: 0,
+			name: 'getVoted',
+			call: 'mediator_getVoted',
+			params: 1,
 		}),
 		new web3._extend.Method({
-			name: 'getInitDKS',
-			call: 'mediator_getInitDKS',
+			name: 'dumpInitDKS',
+			call: 'mediator_dumpInitDKS',
 			params: 0,
 		}),
 		new web3._extend.Method({
 			name: 'register',
 			call: 'mediator_register',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'vote',
+			call: 'mediator_vote',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'getNextUpdateTime',
+			call: 'mediator_getNextUpdateTime',
+			params: 0,
+		}),
+		new web3._extend.Method({
+			name: 'getInfo',
+			call: 'mediator_getInfo',
 			params: 1,
 		}),
 	],
