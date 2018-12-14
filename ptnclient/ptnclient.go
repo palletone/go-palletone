@@ -418,6 +418,13 @@ func (ec *Client) CmdCreateTransaction(ctx context.Context, from string, to stri
 	err := ec.c.CallContext(ctx, &result, "ptn_cmdCreateTransaction", from, to, amount)
 	return result, err
 }
+
+func (ec *Client) TransferToken(ctx context.Context, asset string, from string, to string, amount uint64, fee uint64, password string, duration *uint64) (string, error) {
+	var result string
+	err := ec.c.CallContext(ctx, &result, "ptn_transferToken", asset, from, to, amount, fee, password, duration)
+	return result, err
+}
+
 func (ec *Client) walletCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
 	var result string
 	err := ec.c.CallContext(ctx, &result, "ptn_walletCreateTransaction", from, to, amount)
