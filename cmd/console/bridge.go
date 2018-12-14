@@ -167,7 +167,7 @@ func (b *bridge) UnlockAccount(call otto.FunctionCall) (response otto.Value) {
 	return val
 }
 
-//add by wzhyuan 
+//add by wzhyuan
 func (b *bridge) SignRawTransaction(call otto.FunctionCall) (response otto.Value) {
 	// Make sure we have an account specified to unlock
 	if !call.Argument(0).IsString() {
@@ -201,6 +201,58 @@ func (b *bridge) SignRawTransaction(call otto.FunctionCall) (response otto.Value
 	}
 	// Send the request to the backend and return
 	val, err := call.Otto.Call("jeth.signRawTransaction", nil, rawtx, passwd, duration)
+	if err != nil {
+		throwJSException(err.Error())
+	}
+	return val
+}
+
+//zxl add
+func (b *bridge) TransferToken(call otto.FunctionCall) (response otto.Value) {
+	// Make sure we have an account specified to unlock
+	if !call.Argument(0).IsString() {
+		throwJSException("first argument must be asset string of transfer token")
+	}
+	if !call.Argument(1).IsString() {
+		throwJSException("sencond argument must be account address string to unlock")
+	}
+	if !call.Argument(2).IsString() {
+		throwJSException("third argument must be account address string to receive token")
+	}
+	asset := call.Argument(0)
+	from := call.Argument(1)
+	to := call.Argument(2)
+
+	//3 index, amount
+	//4 index, fee
+	amount := call.Argument(3)
+	fee := call.Argument(4)
+	// If password is not given or is the null value, prompt the user for it
+	var passwd otto.Value
+
+	if call.Argument(5).IsUndefined() || call.Argument(5).IsNull() {
+		fmt.Fprintf(b.printer, "asset: %s\n", asset)
+		if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
+			throwJSException(err.Error())
+		} else {
+			passwd, _ = otto.ToValue(input)
+		}
+	} else {
+		if !call.Argument(5).IsString() {
+			throwJSException("password must be a string")
+		}
+		passwd = call.Argument(5)
+	}
+	// Third argument is the duration how long the account must be unlocked.
+	duration := otto.NullValue()
+	if call.Argument(6).IsDefined() && !call.Argument(6).IsNull() {
+		if !call.Argument(6).IsNumber() {
+			throwJSException("unlock duration must be a number")
+		}
+		duration = call.Argument(6)
+	}
+	// Send the request to the backend and return
+	val, err := call.Otto.Call("jeth.transferToken", nil, asset, from, to, amount, fee, passwd, duration)
 	if err != nil {
 		throwJSException(err.Error())
 	}

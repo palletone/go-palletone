@@ -460,7 +460,12 @@ web3._extend({
 			params: 1,
 			inputFormatter: [web3._extend.formatters.inputTransactionFormatter]
 		}),
-
+		new web3._extend.Method({
+			name: 'transferToken',
+			call: 'ptn_transferToken',
+			params: 7,
+			inputFormatter: [null,null,null,null,null,null,null]
+		}),
 		new web3._extend.Method({
 			name: 'ccinstalltx',
         	call: 'ptn_ccinstalltx',
@@ -634,7 +639,7 @@ const Wallet_JS = `
 		new web3._extend.Method({
 			name: 'sendRawTransaction',
 			call: 'wallet_sendRawTransaction',
-			params: 4
+			params: 1
 		}),
  	]
  });
