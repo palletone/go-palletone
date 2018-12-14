@@ -81,6 +81,11 @@ func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
+	fmt.Println(funcName)
+	for _, v := range args {
+
+		fmt.Println(string(v))
+	}
 	switch funcName {
 	case "ApplyBecomeMediator":
 		//申请成为Mediator
@@ -109,80 +114,142 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return d.handleApplications(stub, args)
 	//加入获取列表
 	case "GetListForCashbackApplication":
-		listForCashback, err := stub.GetListForCashback()
+		//listForCashback, err := stub.GetListForCashback()
+		//if err != nil {
+		//	return shim.Error(err.Error())
+		//}
+		//if listForCashback == nil {
+		//	return shim.Error("listForCashback is nil.")
+		//}
+		//fmt.Printf("listForCashback = %v\n", listForCashback)
+		list, err := stub.GetState("ListForCashback")
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		if listForCashback == nil {
-			return shim.Error("listForCashback is nil.")
+		if list == nil {
+			return shim.Error("list is nil.")
 		}
-		fmt.Printf("listForCashback = %v\n", listForCashback)
-		return shim.Success([]byte("ok"))
+		fmt.Println("list=", list)
+		return shim.Success(list)
 	case "GetListForForfeitureApplication":
-		listForForFeiture, err := stub.GetListForForfeiture()
+		//listForForFeiture, err := stub.GetListForForfeiture()
+		//if err != nil {
+		//	return shim.Error(err.Error())
+		//}
+		//if listForForFeiture == nil {
+		//	return shim.Error("listForForFeiture is nil.")
+		//}
+		//fmt.Printf("listForForFeiture = %v\n", listForForFeiture)
+		//return shim.Success([]byte("ok"))
+
+		list, err := stub.GetState("ListForForfeiture")
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		if listForForFeiture == nil {
-			return shim.Error("listForForFeiture is nil.")
+		if list == nil {
+			return shim.Error("list is nil.")
 		}
-		fmt.Printf("listForForFeiture = %v\n", listForForFeiture)
-		return shim.Success([]byte("ok"))
+		return shim.Success(list)
 		//获取候选列表
 	case "GetListForCandidate":
-		candidateList, err := stub.GetCandidateList(args[0])
+		//candidateList, err := stub.GetCandidateList(args[0])
+		//if err != nil {
+		//	return shim.Error(err.Error())
+		//}
+		//if candidateList == nil {
+		//	return shim.Error("candidateList is nil")
+		//}
+		//fmt.Printf("candidateList = %v\n", candidateList)
+		//return shim.Success([]byte("ok"))
+
+		list, err := stub.GetState(args[0])
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		if candidateList == nil {
-			return shim.Error("candidateList is nil")
+		if list == nil {
+			return shim.Error("list is nil.")
 		}
-		fmt.Printf("candidateList = %v\n", candidateList)
-		return shim.Success([]byte("ok"))
+		return shim.Success(list)
 		//获取某个节点的账户
 	case "GetBalanceForNode":
-		balance, err := stub.GetDepositBalance(args[0])
+		//balance, err := stub.GetDepositBalance(args[0])
+		//if err != nil {
+		//	return shim.Error(err.Error())
+		//}
+		//if balance == nil {
+		//	return shim.Error("balance is nil.")
+		//}
+		//fmt.Printf("balance = %v\n", balance)
+		//return shim.Success([]byte("ok"))
+
+		list, err := stub.GetState(args[0])
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		if balance == nil {
-			return shim.Error("balance is nil.")
+		if list == nil {
+			return shim.Error("list is nil.")
 		}
-		fmt.Printf("balance = %v\n", balance)
-		return shim.Success([]byte("ok"))
+		return shim.Success(list)
 		//获取Mediator申请加入列表
 	case "GetBecomeMediatorApplyList":
-		list, err := stub.GetBecomeMediatorApplyList()
+		//list, err := stub.GetBecomeMediatorApplyList()
+		//if err != nil {
+		//	return shim.Error(err.Error())
+		//}
+		//if list == nil {
+		//	return shim.Error("list is nil.")
+		//}
+		//fmt.Printf("BecomeMediatorApplyList = %v\n", list)
+		//return shim.Success([]byte("ok"))
+
+		list, err := stub.GetState("ListForApplyBecomeMediator")
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 		if list == nil {
 			return shim.Error("list is nil.")
 		}
-		fmt.Printf("BecomeMediatorApplyList = %v\n", list)
-		return shim.Success([]byte("ok"))
+		return shim.Success(list)
 		//获取已同意的mediator列表
 	case "GetAgreeForBecomeMediatorList":
-		list, err := stub.GetAgreeForBecomeMediatorList()
+		//list, err := stub.GetAgreeForBecomeMediatorList()
+		//if err != nil {
+		//	return shim.Error(err.Error())
+		//}
+		//if list == nil {
+		//	return shim.Error("list is nil.")
+		//}
+		//fmt.Printf("AgreeForBecomeMediatorList = %v\n", list)
+		//return shim.Success([]byte("ok"))
+
+		list, err := stub.GetState("ListForAgreeBecomeMediator")
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 		if list == nil {
 			return shim.Error("list is nil.")
 		}
-		fmt.Printf("AgreeForBecomeMediatorList = %v\n", list)
-		return shim.Success([]byte("ok"))
+		return shim.Success(list)
 		//获取Mediator申请退出列表
 	case "GetQuitMediatorApplyList":
-		list, err := stub.GetQuitMediatorApplyList()
+		//list, err := stub.GetQuitMediatorApplyList()
+		//if err != nil {
+		//	return shim.Error(err.Error())
+		//}
+		//if list == nil {
+		//	return shim.Error("list is nil.")
+		//}
+		//fmt.Printf("QuitMediatorApplyList = %v\n", list)
+		//return shim.Success([]byte("ok"))
+
+		list, err := stub.GetState("ListForApplyQuitMediator")
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 		if list == nil {
 			return shim.Error("list is nil.")
 		}
-		fmt.Printf("QuitMediatorApplyList = %v\n", list)
-		return shim.Success([]byte("ok"))
+		return shim.Success(list)
 	}
 	return shim.Success([]byte("Invoke error"))
 }
@@ -212,8 +279,8 @@ func (d *DepositChaincode) handleForApplyForQuitMediator(stub shim.ChaincodeStub
 func (d *DepositChaincode) depositWitnessPay(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	//第一个参数：合约地址；第二个参数：保证金；第三个参数：角色（Mediator Jury ContractDeveloper)
 	//Deposit("contractAddr","2000","Mediator")
-	if len(args) != 2 {
-		return shim.Success([]byte("Input parameter Success,need two parameters."))
+	if len(args) == 3 {
+		return shim.Success([]byte("Input parameter Success,need three parameters."))
 	}
 	//获取 请求 调用 地址（即交付保证节点地址）
 	invokeAddr, err := stub.GetInvokeAddress()
@@ -439,7 +506,7 @@ func (d *DepositChaincode) marshalForBalance(stub shim.ChaincodeStubInterface, n
 func (d *DepositChaincode) applyForDepositCashback(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	//第一个参数：数量；第二个参数：角色（角色（Mediator Jury ContractDeveloper)
 	//depositCashback("保证金数量","Mediator")
-	if len(args) < 2 {
+	if len(args) != 2 {
 		return shim.Success([]byte("Input parameter Success,need two parameters."))
 	}
 	//获取 请求 调用 地址

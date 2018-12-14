@@ -25,7 +25,6 @@ import (
 
 	"encoding/json"
 
-	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
@@ -472,7 +471,7 @@ func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]b
 		return nil, err
 	}
 	log.Printf("=====>ContractQuery:contractId[%s]txid[%s]", hex.EncodeToString(contractId), txid)
-	fmt.Printf("contract query rsp = %#v\n", rsp)
+	//fmt.Printf("contract query rsp = %#v\n", string(rsp.Payload))
 	return rsp.Payload, nil
 }
 

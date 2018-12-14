@@ -465,9 +465,9 @@ func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, 
 		}
 		txArgs = append(txArgs, invokeInfoBytes)
 	}
-	//txArgs = append(txArgs, reqArgs...)
-	reqArgs = append(reqArgs, txArgs...)
-	return reqArgs, nil
+	txArgs = append(txArgs, reqArgs...)
+	//reqArgs = append(reqArgs, txArgs...)
+	return txArgs, nil
 }
 
 func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (bool, error) {

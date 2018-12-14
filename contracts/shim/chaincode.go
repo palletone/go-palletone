@@ -386,22 +386,6 @@ func (stub *ChaincodeStub) GetState(key string) ([]byte, error) {
 	return stub.handler.handleGetState(collection, key, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
-func (stub *ChaincodeStub) GetListForCashback() ([]*modules.Cashback, error) {
-	listByte, err := stub.handler.handleGetState("", "ListForCashback", stub.ContractId, stub.ChannelId, stub.TxID)
-	if err != nil {
-		return nil, err
-	}
-	if listByte == nil {
-		return nil, nil
-	}
-	var list []*modules.Cashback
-	err = json.Unmarshal(listByte, list)
-	if err != nil {
-		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
-	}
-	return list, nil
-}
-
 func (stub *ChaincodeStub) GetBecomeMediatorApplyList() ([]*modules.MediatorInfo, error) {
 	return stub.GetList("ListForApplyBecomeMediator")
 }
@@ -425,7 +409,7 @@ func (stub *ChaincodeStub) GetList(typeList string) ([]*modules.MediatorInfo, er
 		return nil, nil
 	}
 	var list []*modules.MediatorInfo
-	err = json.Unmarshal(listByte, list)
+	err = json.Unmarshal(listByte, &list)
 	if err != nil {
 		return nil, err
 	}
@@ -441,7 +425,23 @@ func (stub *ChaincodeStub) GetListForForfeiture() ([]*modules.Forfeiture, error)
 		return nil, nil
 	}
 	var list []*modules.Forfeiture
-	err = json.Unmarshal(listByte, list)
+	err = json.Unmarshal(listByte, &list)
+	if err != nil {
+		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
+	}
+	return list, nil
+}
+
+func (stub *ChaincodeStub) GetListForCashback() ([]*modules.Cashback, error) {
+	listByte, err := stub.handler.handleGetState("", "ListForCashback", stub.ContractId, stub.ChannelId, stub.TxID)
+	if err != nil {
+		return nil, err
+	}
+	if listByte == nil {
+		return nil, nil
+	}
+	var list []*modules.Cashback
+	err = json.Unmarshal(listByte, &list)
 	if err != nil {
 		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
 	}
@@ -532,7 +532,7 @@ func (stub *ChaincodeStub) OutChainQuery(outChainName string, params []byte) ([]
 // GetArgs documentation can be found in interfaces.go
 func (stub *ChaincodeStub) GetArgs() [][]byte {
 
-	return stub.args
+	return stub.args[1:]
 }
 
 // GetStringArgs documentation can be found in interfaces.go
@@ -562,7 +562,7 @@ func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr common.Address, inv
 	allargs := stub.args
 	if len(allargs) > 2 {
 		invokeInfo := &modules.InvokeInfo{}
-		err := json.Unmarshal(allargs[len(allargs)-1], invokeInfo)
+		err := json.Unmarshal(allargs[0], invokeInfo)
 		if err != nil {
 			return common.Address{}, nil, nil, "", nil, err
 		}
@@ -570,7 +570,7 @@ func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr common.Address, inv
 		invokeTokens = invokeInfo.InvokeTokens
 		invokeFees = invokeInfo.InvokeFees
 		strargs := make([]string, 0, len(allargs)-1)
-		for _, barg := range allargs[:len(allargs)-1] {
+		for _, barg := range allargs[1:] {
 			strargs = append(strargs, string(barg))
 		}
 		funcName = strargs[0]
