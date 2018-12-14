@@ -15,6 +15,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/util"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 // Common errors.
@@ -463,6 +464,7 @@ func (p *DB) Reset() {
 //
 // The returned DB instance is safe for concurrent use.
 func New(cmp comparer.BasicComparer, capacity int) *DB {
+	log.Debug("make kvData's capacity.......","capacity",capacity)
 	p := &DB{
 		cmp:       cmp,
 		rnd:       rand.New(rand.NewSource(0xdeadbeef)),
