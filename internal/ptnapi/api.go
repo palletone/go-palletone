@@ -1869,7 +1869,7 @@ func createTokenTx(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 		payPTN.AddTxIn(txInput)
 	}
 	//ptn outputs
-	payPTN.AddTxOut(modules.NewTxOut(change+1, tokenengine.GenerateLockScript(toAddr), modules.NewPTNAsset()))
+	payPTN.AddTxOut(modules.NewTxOut(change+1, tokenengine.GenerateLockScript(fromAddr), modules.NewPTNAsset()))
 
 	//Token
 	utxosTkTaken, change, err := core.Select_utxo_Greedy(utxosToken, amountToken)
@@ -1889,7 +1889,7 @@ func createTokenTx(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 	//token outputs
 	payToken.AddTxOut(modules.NewTxOut(amountToken, tokenengine.GenerateLockScript(toAddr), asset))
 	if change > 0 {
-		payToken.AddTxOut(modules.NewTxOut(change, tokenengine.GenerateLockScript(toAddr), asset))
+		payToken.AddTxOut(modules.NewTxOut(change, tokenengine.GenerateLockScript(fromAddr), asset))
 	}
 
 	//tx
