@@ -28,6 +28,8 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 )
 
+const CoreAsset = "PTN+8000000000000"
+
 //Asset to identify token
 //By default, system asset id=0,UniqueId=0
 //默认的PTN资产，则AssetId=0，UniqueId=0

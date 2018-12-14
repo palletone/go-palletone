@@ -24,7 +24,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/vote"
 )
 
 type IStateDb interface {
@@ -47,17 +46,17 @@ type IStateDb interface {
 	GetContract(id []byte) (*modules.Contract, error)
 
 	/* Account_Info */
-	GetAccountInfo(address common.Address) (*modules.AccountInfo, error)
-	SaveAccountInfo(address common.Address, info *modules.AccountInfo) error
+	RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
+	StoreAccountInfo(address common.Address, info *modules.AccountInfo) error
 	UpdateAccountInfoBalance(addr common.Address, addAmount int64) error
-	AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error
-	GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte
+	//AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error
+	//GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte
 
-	GetSortedMediatorVote(returnNumber int) (map[string]uint64, error)
+	//GetSortedMediatorVote(returnNumber int) (map[string]uint64, error)
 	//GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
 	//UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
-	UpdateMediatorVote(voter common.Address, candidates []byte) error
-	GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error)
+	//GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error)
+	UpdateVotedMediator(voter common.Address, candidates []byte) error
 
 	// world state chainIndex
 	GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)
@@ -67,10 +66,13 @@ type IStateDb interface {
 	CreateUserVote(voter common.Address, detail [][]byte, bHash []byte) error
 
 	StoreMediator(med *core.Mediator) error
-	StoreMediatorInfo(mi *MediatorInfo) error
+	StoreMediatorInfo(add common.Address, mi *MediatorInfo) error
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
 	GetMediatorCount() int
 	IsMediator(address common.Address) bool
 	GetMediators() map[common.Address]bool
 	LookupMediator() map[common.Address]*core.Mediator
+
+	LookupAccount() map[common.Address]*modules.AccountInfo
+	RetrieveMediatorInfo(address common.Address) (*MediatorInfo, error)
 }

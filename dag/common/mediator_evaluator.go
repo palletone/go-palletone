@@ -34,12 +34,12 @@ func (mce *MediatorCreateEvaluator) Evaluate() bool {
 
 func (mce *MediatorCreateEvaluator) Apply(statedb storage.IStateDb, mco *modules.MediatorCreateOperation) {
 	mi := storage.NewMediatorInfo()
-	mi.AddStr = mco.AddStr
+	//mi.AddStr = mco.AddStr
 	mi.InitPartPub = mco.InitPartPub
 	mi.Node = mco.Node
 	mi.Url = mco.Url
 
-	statedb.StoreMediatorInfo(mi)
+	statedb.StoreMediatorInfo(core.StrToMedAdd(mco.AddStr), mi)
 	return
 }
 

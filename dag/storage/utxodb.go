@@ -217,7 +217,9 @@ func (db *UtxoDb) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modul
 	}
 	for _, out := range outpoints {
 		if utxo, err := db.GetUtxoEntry(&out); err == nil {
-			allutxos[out] = utxo
+			if !utxo.IsSpent() {
+				allutxos[out] = utxo
+			}
 		}
 	}
 	return allutxos, nil
@@ -231,8 +233,10 @@ func (db *UtxoDb) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 		utxo := new(modules.Utxo)
 		// outpint := new(modules.OutPoint)
 		if err = rlp.DecodeBytes(itme, utxo); err == nil {
-			outpoint := modules.KeyToOutpoint([]byte(key))
-			view[*outpoint] = utxo
+			if !utxo.IsSpent() {
+				outpoint := modules.KeyToOutpoint([]byte(key))
+				view[*outpoint] = utxo
+			}
 		}
 	}
 

@@ -163,6 +163,7 @@ func (a Address) Bytes() []byte {
 func (a Address) Bytes21() []byte {
 	return a[:]
 }
+
 func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a.Bytes()) }
 func (a Address) Hash() Hash    { return BytesToHash(a.Bytes()) }
 func (a Address) Hex() string   { return fmt.Sprintf("0x%x", a.Bytes()) }
@@ -220,6 +221,15 @@ func (a *Address) Equal(b Address) bool {
 		}
 	}
 	return true
+}
+
+func (a *Address) Less(b Address) bool {
+	for i, v := range a {
+		if v < b[i] {
+			return true
+		}
+	}
+	return false
 }
 
 // UnprefixedHash allows marshaling an Address without 0x prefix.

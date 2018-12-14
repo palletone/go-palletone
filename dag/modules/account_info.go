@@ -20,7 +20,7 @@
 
 package modules
 
-import "github.com/palletone/go-palletone/dag/vote"
+import "github.com/palletone/go-palletone/common"
 
 //一个账户（地址）的状态信息
 //Include:
@@ -31,8 +31,15 @@ type AccountInfo struct {
 	//AccountName string
 	//当前账户的PTN余额
 	PtnBalance uint64
-	//当前账户投票Mediator的结果，string数组的JSON格式
-	MediatorVoteResult []byte
+	//当前账户投票的Mediator
+	VotedMediators []common.Address
 	//通用可改选投票的结果
-	Votes []vote.VoteInfo
+	//Votes []vote.VoteInfo
+}
+
+func NewAccountInfo() *AccountInfo {
+	return &AccountInfo{
+		PtnBalance:     0,
+		VotedMediators: make([]common.Address, 0),
+	}
 }

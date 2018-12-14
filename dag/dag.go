@@ -41,7 +41,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
 	"strings"
 )
@@ -72,6 +71,10 @@ type Dag struct {
 	// append by albert·gou 用于活跃mediator更新时的事件订阅
 	activeMediatorsUpdatedFeed  event.Feed
 	activeMediatorsUpdatedScope event.SubscriptionScope
+
+	// append by albert·gou 用于account 各种投票数据统计
+	mediatorVoteTally voteTallys
+	totalVotingStake  uint64
 }
 
 type MemUtxos map[modules.OutPoint]*modules.Utxo
@@ -842,6 +845,7 @@ func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map
 	return all, err
 	//return map[modules.OutPoint]*modules.Utxo{}, nil
 }
+
 func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
 	// TODO
 	// merge dag.cache
@@ -1060,14 +1064,15 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 //	return true, nil
 //}
 
-func (d *Dag) GetAccountMediatorVote(address common.Address) []common.Address {
-	bAddress := d.statedb.GetAccountVoteInfo(address, vote.TYPE_MEDIATOR)
-	res := []common.Address{}
-	for _, b := range bAddress {
-		res = append(res, common.BytesToAddress(b))
-	}
-	return res
-}
+//func (d *Dag) GetAccountMediatorVote(address common.Address) []common.Address {
+//	// todo
+//	bAddress := d.statedb.GetAccountVoteInfo(address, vote.TYPE_MEDIATOR)
+//	res := []common.Address{}
+//	for _, b := range bAddress {
+//		res = append(res, common.BytesToAddress(b))
+//	}
+//	return res
+//}
 
 func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error) {
 	// get current unit
@@ -1248,14 +1253,14 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 //}
 
 //GetElectedMediatorsAddress YiRan@
-func (dag *Dag) GetElectedMediatorsAddress() (map[string]uint64, error) {
-	//gp, err := dag.propdb.RetrieveGlobalProp()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//MediatorNumber := gp.GetActiveMediatorCount()
-	return dag.statedb.GetSortedMediatorVote(0)
-}
+//func (dag *Dag) GetElectedMediatorsAddress() (map[string]uint64, error) {
+//	//gp, err := dag.propdb.RetrieveGlobalProp()
+//	//if err != nil {
+//	//	return nil, err
+//	//}
+//	//MediatorNumber := gp.GetActiveMediatorCount()
+//	return dag.statedb.GetSortedMediatorVote(0)
+//}
 
 // UpdateMediator
 //func (d *Dag) UpdateMediator() error {

@@ -76,6 +76,7 @@ func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb stor
 	val := NewValidate(dagdb, utxodb, utxoRep, statedb, l)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
+
 func NewUnitRepository4Db(db ptndb.Database, l log.ILogger) *UnitRepository {
 	dagdb := storage.NewDagDb(db, l)
 	utxodb := storage.NewUtxoDb(db, l)
@@ -85,6 +86,7 @@ func NewUnitRepository4Db(db ptndb.Database, l log.ILogger) *UnitRepository {
 	val := NewValidate(dagdb, utxodb, utxoRep, statedb, l)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
+
 func RHashStr(x interface{}) string {
 	x_byte, err := json.Marshal(x)
 	if err != nil {
@@ -428,10 +430,10 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 }
 
 //Yiran
-func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Message, voter common.Address) error {
+func (unitOp *UnitRepository) SaveVote(msg *modules.Message, voter common.Address) error {
 
 	// type deduct
-	VotePayLoad, ok := msg.Payload.(*modules.VotePayload)
+	VotePayLoad, ok := msg.Payload.(*vote.VoteInfo)
 	if !ok {
 		return errors.New("not a valid vote payload")
 	}
@@ -441,7 +443,7 @@ func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Mes
 	case VotePayLoad.VoteType == vote.TYPE_MEDIATOR:
 		//Addresses := common.BytesListToAddressList(VotePayLoad.Contents)
 
-		if err := unitOp.statedb.UpdateMediatorVote(voter, VotePayLoad.Contents); err != nil {
+		if err := unitOp.statedb.UpdateVotedMediator(voter, VotePayLoad.Contents); err != nil {
 			return err
 		}
 
@@ -541,7 +543,7 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 					return fmt.Errorf("Save contract invode payload error.")
 				}
 			case modules.APP_VOTE:
-				if err = unitOp.SaveVote(tx, msg, requester); err != nil {
+				if err = unitOp.SaveVote(msg, requester); err != nil {
 					return fmt.Errorf("Save vote payload error.")
 				}
 			case modules.OP_MEDIATOR_CREATE:

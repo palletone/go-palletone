@@ -24,6 +24,7 @@ import (
 	"io"
 
 	"github.com/palletone/go-palletone/common/rlp"
+	vote2 "github.com/palletone/go-palletone/dag/vote"
 )
 
 type transactionTemp struct {
@@ -113,7 +114,7 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 			rlp.DecodeBytes(m.Data, &sigPayload)
 			m1.Payload = &sigPayload
 		} else if m.App == APP_VOTE {
-			var vote VotePayload
+			var vote vote2.VoteInfo
 			rlp.DecodeBytes(m.Data, &vote)
 			m1.Payload = &vote
 		} else if m.App == OP_MEDIATOR_CREATE {

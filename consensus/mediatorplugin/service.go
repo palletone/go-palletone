@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
 
@@ -59,8 +60,6 @@ type iDag interface {
 	GetActiveMediatorAddr(index int) common.Address
 	HeadUnitNum() uint64
 	GetUnitByHash(common.Hash) (*modules.Unit, error)
-	GetMediators() map[common.Address]bool
-	GetElectedMediatorsAddress() (map[string]uint64, error)
 	GetUnit(common.Hash) (*modules.Unit, error)
 
 	IsActiveMediator(add common.Address) bool
@@ -78,6 +77,13 @@ type iDag interface {
 
 	CreateBaseTransaction(from, to common.Address, daoAmount, daoFee uint64) (*modules.Transaction, error)
 	CurrentFeeSchedule() core.FeeSchedule
+
+	GetMediators() map[common.Address]bool
+	IsMediator(address common.Address) bool
+
+	GetVotedMediator(addr common.Address) []common.Address
+	GetDynGlobalProp() *modules.DynamicGlobalProperty
+	GetMediatorInfo(address common.Address) *storage.MediatorInfo
 }
 
 type MediatorPlugin struct {
@@ -211,12 +217,12 @@ func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
 }
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
-	go log.Debug("mediator plugin startup begin")
+	log.Debug("mediator plugin startup begin")
 
 	// 1. 开启循环生产计划
 	go mp.ScheduleProductionLoop()
 
-	go log.Debug("mediator plugin startup end")
+	log.Debug("mediator plugin startup end")
 
 	return nil
 }
@@ -246,7 +252,7 @@ func (mp *MediatorPlugin) Stop() error {
 	mp.sigShareScope.Close()
 	mp.groupSigScope.Close()
 
-	go log.Debug("mediator plugin stopped")
+	log.Debug("mediator plugin stopped")
 
 	return nil
 }
@@ -274,7 +280,7 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 }
 
 func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, error) {
-	go log.Debug("mediator plugin initialize begin")
+	log.Debug("mediator plugin initialize begin")
 
 	if ptn == nil || dag == nil || cfg == nil {
 		err := "pointer parameters of NewMediatorPlugin are nil!"
@@ -293,7 +299,7 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		msm[addr] = medAcc
 	}
 
-	go log.Debug(fmt.Sprintf("This node controls %v mediators.", len(msm)))
+	log.Debug(fmt.Sprintf("This node controls %v mediators.", len(msm)))
 
 	mp := MediatorPlugin{
 		ptn:  ptn,
@@ -309,7 +315,7 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 	}
 	mp.initTBLSBuf()
 
-	go log.Debug("mediator plugin initialize end")
+	log.Debug("mediator plugin initialize end")
 
 	return &mp, nil
 }
