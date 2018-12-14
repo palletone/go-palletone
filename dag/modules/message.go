@@ -273,9 +273,9 @@ type ContractReadSet struct {
 
 //请求合约信息
 type InvokeInfo struct {
-	InvokeAddress common.Address `json:"invoke_address"` //请求地址
-	InvokeTokens  *InvokeTokens  `json:"invoke_tokens"`  //请求数量
-	InvokeFees    *InvokeFees    `json:"invoke_fees"`    //请求交易费
+	InvokeAddress string        `json:"invoke_address"` //请求地址
+	InvokeTokens  *InvokeTokens `json:"invoke_tokens"`  //请求数量
+	InvokeFees    *InvokeFees   `json:"invoke_fees"`    //请求交易费
 }
 
 //请求的数量
@@ -286,10 +286,10 @@ type InvokeTokens struct {
 
 //申请提保证金
 type Cashback struct {
-	CashbackAddress common.Address `json:"cashback_address"` //请求地址
-	CashbackTokens  *InvokeTokens  `json:"cashback_tokens"`  //请求数量
-	Role            string         `json:"role"`             //请求角色
-	CashbackTime    int64          `json:"cashback_time"`    //请求时间
+	CashbackAddress string        `json:"cashback_address"` //请求地址
+	CashbackTokens  *InvokeTokens `json:"cashback_tokens"`  //请求数量
+	Role            string        `json:"role"`             //请求角色
+	CashbackTime    int64         `json:"cashback_time"`    //请求时间
 }
 
 //申请提取保证金的列表
@@ -299,12 +299,12 @@ type Cashback struct {
 
 //申请没收保证金
 type Forfeiture struct {
-	ApplyAddress      common.Address `json:"apply_address"`      //谁发起的
-	ForfeitureAddress common.Address `json:"forfeiture_address"` //没收节点地址
-	ApplyTokens       *InvokeTokens  `json:"apply_tokens"`       //没收数量
-	ForfeitureRole    string         `json:"forfeiture_role"`    //没收角色
-	Extra             string         `json:"extra"`              //备注
-	ApplyTime         int64          `json:"apply_time"`         //请求时间
+	ApplyAddress      string        `json:"apply_address"`      //谁发起的
+	ForfeitureAddress string        `json:"forfeiture_address"` //没收节点地址
+	ApplyTokens       *InvokeTokens `json:"apply_tokens"`       //没收数量
+	ForfeitureRole    string        `json:"forfeiture_role"`    //没收角色
+	//Extra             string        `json:"extra"`              //备注
+	ApplyTime int64 `json:"apply_time"` //请求时间
 }
 
 //申请没收保证金的列表

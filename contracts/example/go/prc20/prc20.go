@@ -150,7 +150,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//set token define
-	err = stub.DefineToken(byte(0), createJson, createAddr.String())
+	err = stub.DefineToken(byte(0), createJson, createAddr)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.DefineToken\"}"
 		return shim.Error(jsonResp)
@@ -207,7 +207,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 	//check supply address
-	if invokeAddr.String() != symbols.NameInfos[symbol].SupplyAddr {
+	if invokeAddr != symbols.NameInfos[symbol].SupplyAddr {
 		jsonResp := "{\"Error\":\"Not the supply address\"}"
 		return shim.Success([]byte(jsonResp))
 	}

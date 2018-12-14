@@ -30,6 +30,7 @@ import (
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.
 type SystemConfig struct {
+	//年利率
 	DepositRate float64 `json:"depositRate"`
 	//基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
 	FoundationAddress string `json:"foundationAddress"`
@@ -37,6 +38,8 @@ type SystemConfig struct {
 	DepositAmountForMediator  uint64 `json:"depositAmountForMediator"`
 	DepositAmountForJury      uint64 `json:"depositAmountForJury"`
 	DepositAmountForDeveloper uint64 `json:"depositAmountForDeveloper"`
+	//保证金周期
+	DepositPeriod int `json:"depositPeriod"`
 }
 
 type Genesis struct {

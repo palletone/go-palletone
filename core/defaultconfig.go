@@ -26,6 +26,7 @@ const (
 	DefaultTokenDecimal              = 8
 	DefaultChainID                   = 1
 	DefaultDepositRate               = 0.02
+	DefaultDepositPeriod             = 0
 	DefaultDepositAmountForMediator  = 2000
 	DefaultDepositAmountForJury      = 1000
 	DefaultDepositAmountForDeveloper = 800
