@@ -28,8 +28,6 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 )
 
-const CoreAssetStr = "PTN+8000000000000"
-
 var CoreAsset = NewPTNAsset()
 
 //Asset to identify token

@@ -146,8 +146,6 @@ func applyForQuitMediator(stub shim.ChaincodeStubInterface) peer.Response {
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-
-	fmt.Println("lslsls", invokeAddr)
 	//获取列表
 	list, err := stub.GetQuitMediatorApplyList()
 	if err != nil {

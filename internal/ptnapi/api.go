@@ -1853,6 +1853,12 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 
 func createTokenTx(fromAddr, toAddr common.Address, amountToken uint64, feePTN uint64,
 	utxosPTN core.Utxos, utxosToken core.Utxos, asset *modules.Asset) (*modules.Transaction, error) {
+	if len(utxosPTN) == 0 {
+		return nil, fmt.Errorf("No PTN utxo")
+	}
+	if len(utxosToken) == 0 {
+		return nil, fmt.Errorf("No token utxo")
+	}
 	//PTN
 	utxosPTNTaken, change, err := core.Select_utxo_Greedy(utxosPTN, feePTN+1)
 	if err != nil {
@@ -2003,8 +2009,9 @@ func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset stri
 	//ptn utxos and token utxos
 	utxosPTN := core.Utxos{}
 	utxosToken := core.Utxos{}
+	ptn := modules.CoreAsset.String()
 	for _, json := range utxoJsons {
-		if json.Asset == modules.CoreAssetStr {
+		if json.Asset == ptn {
 			utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash,
 				MessageIndex:   json.MessageIndex,
 				OutIndex:       json.OutIndex,

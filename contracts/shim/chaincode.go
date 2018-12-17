@@ -586,22 +586,22 @@ func (stub *ChaincodeStub) GetFunctionAndParameters() (function string, params [
 //GetInvokeParameters documentation can be found in interfaces.go
 func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr string, invokeTokens *modules.InvokeTokens, invokeFees *modules.InvokeFees, funcName string, params []string, err error) {
 	allargs := stub.args
-	if len(allargs) > 2 {
-		invokeInfo := &modules.InvokeInfo{}
-		err := json.Unmarshal(allargs[0], invokeInfo)
-		if err != nil {
-			return "", nil, nil, "", nil, err
-		}
-		invokeAddr = invokeInfo.InvokeAddress
-		invokeTokens = invokeInfo.InvokeTokens
-		invokeFees = invokeInfo.InvokeFees
-		strargs := make([]string, 0, len(allargs)-1)
-		for _, barg := range allargs[1:] {
-			strargs = append(strargs, string(barg))
-		}
-		funcName = strargs[0]
-		params = strargs[1:]
+	//if len(allargs) > 2 {
+	invokeInfo := &modules.InvokeInfo{}
+	err = json.Unmarshal(allargs[0], invokeInfo)
+	if err != nil {
+		return "", nil, nil, "", nil, err
 	}
+	invokeAddr = invokeInfo.InvokeAddress
+	invokeTokens = invokeInfo.InvokeTokens
+	invokeFees = invokeInfo.InvokeFees
+	strargs := make([]string, 0, len(allargs)-1)
+	for _, barg := range allargs[1:] {
+		strargs = append(strargs, string(barg))
+	}
+	funcName = strargs[0]
+	params = strargs[1:]
+	//}
 	return
 }
 
