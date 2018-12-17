@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
+	"strings"
 )
 
 //保存了对合约写集、Config、Asset信息
@@ -146,15 +147,29 @@ func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
 }
 
 //xiaozhi
-func (statedb *StateDb) GetMediatorCandidateList() ([]*common.Address, error) {
-	_, val := statedb.GetContractState([]byte("01"), "MediatorList")
+func (statedb *StateDb) GetMediatorCandidateList() ([]string, error) {
+	depositeContractAddress := common.HexToAddress("0x00000000000000000000000000000000000000011C")
+	_, val := statedb.GetContractState(depositeContractAddress.Bytes(), "MediatorList")
 	if val == nil {
 		return nil, fmt.Errorf("mediator candidate list is nil.")
 	}
-	candidateList := []*common.Address{}
+	var candidateList []string
 	err := json.Unmarshal(val, &candidateList)
 	if err != nil {
 		return nil, err
 	}
 	return candidateList, nil
+}
+
+func (statedb *StateDb) IsInMediatorCandidateList(address common.Address) bool {
+	list, err := statedb.GetMediatorCandidateList()
+	if err != nil {
+		return false
+	}
+	for _, v := range list {
+		if strings.Compare(v, address.String()) == 0 {
+			return true
+		}
+	}
+	return false
 }

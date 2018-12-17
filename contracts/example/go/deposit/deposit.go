@@ -136,8 +136,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			jsonRsp := "{\"Error\":\"List is nil\"}"
-			return shim.Success([]byte(jsonRsp))
+			return shim.Success([]byte("[]"))
 		}
 		return shim.Success(list)
 		//获取没收保证金申请列表
@@ -147,8 +146,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			jsonRsp := "{\"Error\":\"List is nil\"}"
-			return shim.Success([]byte(jsonRsp))
+			return shim.Success([]byte("[]"))
 		}
 		return shim.Success(list)
 		//获取Mediator候选列表
@@ -158,8 +156,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			jsonRsp := "{\"Error\":\"List is nil\"}"
-			return shim.Success([]byte(jsonRsp))
+			return shim.Success([]byte("[]"))
 		}
 		return shim.Success(list)
 		//获取Jury候选列表
@@ -169,8 +166,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			jsonRsp := "{\"Error\":\"List is nil\"}"
-			return shim.Success([]byte(jsonRsp))
+			return shim.Success([]byte("[]"))
 		}
 		return shim.Success(list)
 		//获取Contract Developer候选列表
@@ -180,8 +176,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			jsonRsp := "{\"Error\":\"List is nil\"}"
-			return shim.Success([]byte(jsonRsp))
+			return shim.Success([]byte("[]"))
 		}
 		return shim.Success(list)
 		//获取某个节点的账户
@@ -191,8 +186,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			jsonRsp := "{\"Error\":\"List is nil\"}"
-			return shim.Success([]byte(jsonRsp))
+			return shim.Success([]byte("[]"))
 		}
 		return shim.Success(list)
 		//获取Mediator申请加入列表
@@ -202,8 +196,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			jsonRsp := "{\"Error\":\"List is nil\"}"
-			return shim.Success([]byte(jsonRsp))
+			return shim.Success([]byte("[]"))
 		}
 		return shim.Success(list)
 		//获取已同意的mediator列表
@@ -213,8 +206,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			jsonRsp := "{\"Error\":\"List is nil\"}"
-			return shim.Success([]byte(jsonRsp))
+			return shim.Success([]byte("[]"))
 		}
 		return shim.Success(list)
 		//获取Mediator申请退出列表
@@ -224,8 +216,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			jsonRsp := "{\"Error\":\"List is nil\"}"
-			return shim.Success([]byte(jsonRsp))
+			return shim.Success([]byte("[]"))
 		}
 		return shim.Success(list)
 	}
