@@ -307,7 +307,7 @@ func dumpConfig(ctx *cli.Context) error {
 // dumpConfig is the dumpconfig command.
 func dumpJson(ctx *cli.Context) error {
 	account := ""
-	mediators := []*mp.MediatorConf{}
+	mediators := make([]*mp.MediatorConf, 0)
 	nodeStr := ""
 
 	mediator := &mp.MediatorConf{}

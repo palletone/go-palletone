@@ -223,7 +223,7 @@ func initialAccount(ctx *cli.Context) (string, error) {
 }
 
 func createExampleAccount(ctx *cli.Context) (addrStr, password string, err error) {
-	password = core.DefaultPassword
+	password = mp.DefaultPassword
 	address, err := createAccount(ctx, password)
 	addrStr = address.Str()
 	return
