@@ -38,8 +38,8 @@ web3._extend({
 			params: 0,
 		}),
 		new web3._extend.Method({
-			name: 'register',
-			call: 'mediator_register',
+			name: 'create',
+			call: 'mediator_create',
 			params: 1,
 		}),
 		new web3._extend.Method({

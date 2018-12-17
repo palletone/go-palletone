@@ -22,6 +22,8 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/dag/vote"
@@ -37,11 +39,6 @@ func NewPrivateMediatorAPI(mp *MediatorPlugin) *PrivateMediatorAPI {
 	return &PrivateMediatorAPI{mp}
 }
 
-// 创建 mediator 所需的参数, 至少包含普通账户地址
-type MediatorCreateArgs struct {
-	modules.MediatorCreateOperation
-}
-
 // 交易执行结果
 type TxExecuteResult struct {
 	TxHash  common.Hash        `json:"txHash"`
@@ -49,38 +46,60 @@ type TxExecuteResult struct {
 	Warning string             `json:"warning"`
 }
 
-func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (TxExecuteResult, error) {
-	res := TxExecuteResult{}
+// 创建 mediator 所需的参数, 至少包含普通账户地址
+type MediatorCreateArgs struct {
+	modules.MediatorCreateOperation
+}
+
+// 相关参数检查
+func (args *MediatorCreateArgs) validate() (common.Address, error) {
+	res := common.Address{}
 	addr, err := common.StringToAddress(args.AddStr)
 	if err != nil {
 		return res, err
 	}
 
-	// 1. 组装 message
-	msg := &modules.Message{
-		App:     modules.OP_MEDIATOR_CREATE,
-		Payload: &args.MediatorCreateOperation,
-	}
+	res = addr
 
-	// 2. 组装 tx
-	fee := a.dag.CurrentFeeSchedule().MediatorCreateFee
-	tx, err := a.dag.CreateBaseTransaction(addr, addr, 0, fee)
+	_, err = core.StrToPoint(args.InitPartPub)
 	if err != nil {
 		return res, err
 	}
 
-	tx.TxMessages = append(tx.TxMessages, msg)
-	//tx.TxHash = tx.Hash()
-
-	// 3. 签名 tx
-	tx, err = a.ptn.SignGenericTransaction(addr, tx)
+	_, err = discover.ParseNode(args.Node)
 	if err != nil {
 		return res, err
 	}
 
-	// 4. 将 tx 放入 pool
-	txPool := a.ptn.TxPool()
-	err = txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
+	return res, nil
+}
+
+func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (TxExecuteResult, error) {
+	res := TxExecuteResult{}
+	// 参数验证
+	addr, err := args.validate()
+	if err != nil {
+		return res, err
+	}
+
+	// 判断本节点是否同步完成，数据是否最新
+	if !a.dag.IsSynced() {
+		return res, fmt.Errorf("The data of this node is not up to date, and mediator cannot be created at present!")
+	}
+
+	// 判断是否已经是mediator
+	if a.dag.IsMediator(addr) {
+		return res, fmt.Errorf("Account %v is already a mediator!", args.AddStr)
+	}
+
+	// 1. 创建交易
+	tx, err := a.dag.GenMediatorCreateTx(addr, &args.MediatorCreateOperation)
+	if err != nil {
+		return res, err
+	}
+
+	// 2. 签名和发送交易
+	err = a.ptn.SignAndSendTransaction(addr, tx)
 	if err != nil {
 		return res, err
 	}

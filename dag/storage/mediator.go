@@ -72,7 +72,7 @@ func mediatorToInfo(md *core.Mediator) *MediatorInfo {
 func (mi *MediatorInfo) infoToMediator() *core.Mediator {
 	md := core.NewMediator()
 	//md.Address = core.StrToMedAdd(mi.AddStr)
-	md.InitPartPub = core.StrToPoint(mi.InitPartPub)
+	md.InitPartPub, _ = core.StrToPoint(mi.InitPartPub)
 	md.Node = core.StrToMedNode(mi.Node)
 	md.TotalMissed = mi.TotalMissed
 	md.LastConfirmedUnitNum = mi.LastConfirmedUnitNum

@@ -92,14 +92,14 @@ func StrToScalar(secStr string) kyber.Scalar {
 	return sec
 }
 
-func StrToPoint(pubStr string) kyber.Point {
+func StrToPoint(pubStr string) (kyber.Point, error) {
 	pubB := base58.Decode(pubStr)
 	pub := Suite.Point()
 
 	err := pub.UnmarshalBinary(pubB)
 	if err != nil {
-		log.Error(fmt.Sprintln(err))
+		return nil, err
 	}
 
-	return pub
+	return pub, nil
 }
