@@ -274,7 +274,7 @@ func DefaultGenesisBlock() *core.Genesis {
 		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
-			core.DefaultTokenHolder),
+			core.DefaultMediator),
 	}
 }
 
@@ -302,7 +302,7 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
-			core.DefaultTokenHolder),
+			core.DefaultMediator),
 	}
 }
 

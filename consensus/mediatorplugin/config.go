@@ -26,6 +26,7 @@ import (
 )
 
 const (
+	DefaultPassword    = "password"
 	DefaultInitPartSec = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
 )
 
@@ -47,7 +48,7 @@ type Config struct {
 var DefaultConfig = Config{
 	EnableStaleProduction: false,
 	Mediators: []*MediatorConf{
-		&MediatorConf{core.DefaultTokenHolder, core.DefaultPassword,
+		&MediatorConf{core.DefaultMediator, DefaultPassword,
 			DefaultInitPartSec, core.DefaultInitPartPub},
 	},
 }

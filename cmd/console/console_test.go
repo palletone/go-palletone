@@ -101,7 +101,7 @@ func DevGenesisBlock() *core.Genesis {
 		InitialTimestamp:       gen.InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(core.DefaultMediatorCount,
-			core.DefaultTokenHolder),
+			core.DefaultMediator),
 		SystemConfig: SystemConfig,
 	}
 }

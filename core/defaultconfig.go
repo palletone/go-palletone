@@ -32,12 +32,12 @@ const (
 	DefaultDepositAmountForDeveloper = 800
 	DefaultDepositContractAddress    = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
 	DefaultTokenHolder               = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
-	DefaultPassword                  = "password"
+	DefaultMediator                  = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF"
 	DefaultInitPartPub               = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
 		"MpbsWk45ymz4kmjU2AZo8Rm3mJ3MQHpdAgTo2nzWmqU3vCTW6qCfviPD1MKu3FJtmaWiLzdavLx831eCBXA1CdaiXAeU5MPcQ"
 
-	DefaultMediatorCount       = 11 //21
-	DefaultMinMediatorCount    = 11
+	DefaultMediatorCount       = 3 //21
+	DefaultMinMediatorCount    = 3
 	DefaultMinMediatorInterval = 1
 
 	//DefaultText = "Hello PalletOne!",
@@ -58,8 +58,8 @@ const (
 	PalletOne1Percent              = PalletOne100Percent / 100
 	PalletOneIrreversibleThreshold = 70 * PalletOne1Percent
 
-	DefaultMediatorInterval    = 3      //5 /* seconds */
-	DefaultMaintenanceInterval = 60 * 3 //60 * 60 * 24 // seconds, aka: 1 day
+	DefaultMediatorInterval    = 3       //5 /* seconds */
+	DefaultMaintenanceInterval = 60 * 10 //60 * 60 * 24 // seconds, aka: 1 day
 
 	DefaultMediatorCreateFee = 5000
 	DefaultVoteMediatorFee   = 20

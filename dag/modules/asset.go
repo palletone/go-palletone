@@ -28,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 )
 
-const CoreAsset = "PTN+8000000000000"
+var CoreAsset = NewPTNAsset()
 
 //Asset to identify token
 //By default, system asset id=0,UniqueId=0
@@ -39,6 +39,7 @@ type Asset struct {
 	UniqueId IDType16 `json:"unique_id"` // every token has its unique id
 	//ChainId  uint64   `json:"chain_id"`  // main chain id or sub-chain id,read from toml config NetworkId
 }
+
 type AssetType byte
 
 const (

@@ -114,7 +114,7 @@ func (dag *Dag) GetAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*mod
 
 	coreUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allUtxos))
 	for outPoint, utxo := range allUtxos {
-		if utxo.Asset.String() != modules.CoreAsset {
+		if utxo.Asset.IsSimilar(modules.CoreAsset) {
 			continue
 		}
 
