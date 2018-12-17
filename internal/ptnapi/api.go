@@ -2003,8 +2003,9 @@ func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset stri
 	//ptn utxos and token utxos
 	utxosPTN := core.Utxos{}
 	utxosToken := core.Utxos{}
+	ptn := modules.NewPTNAsset().String()
 	for _, json := range utxoJsons {
-		if json.Asset == modules.NewPTNAsset().String() {
+		if json.Asset == ptn {
 			utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash,
 				MessageIndex:   json.MessageIndex,
 				OutIndex:       json.OutIndex,
