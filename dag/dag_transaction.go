@@ -63,6 +63,12 @@ func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee
 		return &modules.Transaction{}, fmt.Errorf("%v 's uxto is null", from.Str())
 	}
 
+	for key, utxo := range coreUtxos {
+		if utxo.IsSpent() {
+			delete(coreUtxos, key)
+		}
+	}
+
 	// 2. 利用贪心算法得到指定额度的utxo集合
 	greedyUtxos := core.Utxos{}
 	for outPoint, utxo := range coreUtxos {

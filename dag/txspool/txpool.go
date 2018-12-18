@@ -677,7 +677,9 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				for _, txin := range msg.Inputs {
-					pool.outpoints = make(map[modules.OutPoint]*modules.TxPoolTransaction)
+					if pool.outpoints == nil {
+						pool.outpoints = make(map[modules.OutPoint]*modules.TxPoolTransaction)
+					}
 					pool.outpoints[*txin.PreviousOutPoint] = tx
 				}
 			}
