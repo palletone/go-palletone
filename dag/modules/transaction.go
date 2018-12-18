@@ -192,7 +192,7 @@ func (tx *Transaction) Hash() common.Hash {
 }
 
 func (tx *Transaction) RequestHash() common.Hash {
-	req := Transaction{}
+	req := &Transaction{}
 	for _, msg := range tx.TxMessages {
 		req.AddMessage(msg)
 		if msg.App >= 100 { //100以上的APPCode是请求
