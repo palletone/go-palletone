@@ -123,3 +123,24 @@ func (dag *Dag) GetAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*mod
 
 	return coreUtxos, nil
 }
+
+func (dag *Dag) GenMediatorCreateTx(account common.Address,
+	op *modules.MediatorCreateOperation) (*modules.Transaction, error) {
+	// 1. 组装 message
+	msg := &modules.Message{
+		App:     modules.OP_MEDIATOR_CREATE,
+		Payload: op,
+	}
+
+	// 2. 组装 tx
+	fee := dag.CurrentFeeSchedule().MediatorCreateFee
+	tx, err := dag.CreateBaseTransaction(account, account, 0, fee)
+	if err != nil {
+		return nil, err
+	}
+
+	tx.TxMessages = append(tx.TxMessages, msg)
+	//tx.TxHash = tx.Hash()
+
+	return tx, nil
+}

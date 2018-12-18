@@ -84,12 +84,13 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (TxExecuteResult, e
 
 	// 判断本节点是否同步完成，数据是否最新
 	if !a.dag.IsSynced() {
-		return res, fmt.Errorf("The data of this node is not up to date, and mediator cannot be created at present!")
+		return res, fmt.Errorf("the data of this node is not up to date, " +
+			"and mediator cannot be created at present")
 	}
 
 	// 判断是否已经是mediator
 	if a.dag.IsMediator(addr) {
-		return res, fmt.Errorf("Account %v is already a mediator!", args.AddStr)
+		return res, fmt.Errorf("account %v is already a mediator", args.AddStr)
 	}
 
 	// 1. 创建交易
