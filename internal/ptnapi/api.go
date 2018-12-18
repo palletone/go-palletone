@@ -836,7 +836,7 @@ func (s *PublicBlockChainAPI) CreateMediatorVote(ctx context.Context, paymentHex
 		return "", err
 	}
 	vote := &vote2.VoteInfo{}
-	vote.VoteType = vote2.TYPE_MEDIATOR
+	vote.VoteType = vote2.TypeMediator
 	add, _ := common.StringToAddress(mediatorAddr)
 	vote.Contents = add.Bytes()
 	//strings := []string{}

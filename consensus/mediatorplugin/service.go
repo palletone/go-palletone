@@ -81,6 +81,7 @@ type iDag interface {
 	CurrentFeeSchedule() core.FeeSchedule
 
 	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation) (*modules.Transaction, error)
+	GenVoteMediatorTx(voter, mediator common.Address) (*modules.Transaction, error)
 	GetMediators() map[common.Address]bool
 	IsMediator(address common.Address) bool
 

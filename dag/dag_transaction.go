@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
@@ -141,6 +142,29 @@ func (dag *Dag) GenMediatorCreateTx(account common.Address,
 
 	tx.TxMessages = append(tx.TxMessages, msg)
 	//tx.TxHash = tx.Hash()
+
+	return tx, nil
+}
+
+func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address) (*modules.Transaction, error) {
+	// 1. 组装 message
+	voting := &vote.VoteInfo{
+		VoteType: vote.TypeMediator,
+		Contents: mediator.Bytes21(),
+	}
+
+	msg := &modules.Message{
+		App:     modules.APP_VOTE,
+		Payload: voting,
+	}
+
+	// 2. 组装 tx
+	fee := dag.CurrentFeeSchedule().VoteMediatorFee
+	tx, err := dag.CreateBaseTransaction(voter, voter, 0, fee)
+	if err != nil {
+		return nil, err
+	}
+	tx.TxMessages = append(tx.TxMessages, msg)
 
 	return tx, nil
 }

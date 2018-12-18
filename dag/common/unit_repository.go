@@ -440,7 +440,7 @@ func (unitOp *UnitRepository) SaveVote(msg *modules.Message, voter common.Addres
 
 	// save by type
 	switch {
-	case VotePayLoad.VoteType == vote.TYPE_MEDIATOR:
+	case VotePayLoad.VoteType == vote.TypeMediator:
 		//Addresses := common.BytesListToAddressList(VotePayLoad.Contents)
 
 		if err := unitOp.statedb.UpdateVotedMediator(voter, VotePayLoad.Contents); err != nil {
