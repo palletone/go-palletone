@@ -15,7 +15,10 @@ import (
     "github.com/palletone/go-palletone/common/hexutil"
 	"github.com/shopspring/decimal"
 )
-
+// Start forking command.
+func (s *PublicWalletAPI) Forking(ctx context.Context, rate uint64) uint64 {
+	return forking(ctx, s.b)
+}
 type PublicWalletAPI struct {
 	b Backend
 }
