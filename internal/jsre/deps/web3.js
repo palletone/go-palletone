@@ -5403,7 +5403,7 @@ var methods = function () {
         params: 4,
         inputFormatter: [null,null,null,null]
     });
-
+    
     var createRawTransaction = new Method({
         name: 'createRawTransaction',
         call: 'ptn_createRawTransaction',
@@ -5417,12 +5417,19 @@ var methods = function () {
         params: 2,
     });
 
-
+    
     var signRawTransaction = new Method({
         name: 'signRawTransaction',
         call: 'ptn_signRawTransaction',
         params: 3,
         inputFormatter: [null,null,null]
+    });
+    
+    var getPtnTestCoin = new Method({
+        name: 'getPtnTestCoin',
+        call: 'ptn_getPtnTestCoin',
+        params: 5,
+        inputFormatter: [null,null,null,null,null]
     });
 
     var sendRawTransaction = new Method({
@@ -5733,6 +5740,7 @@ var methods = function () {
         createRawTransaction,
         createMediatorVote,
         signRawTransaction,
+        getPtnTestCoin,
         sendRawTransaction,
         signTransaction,
         sendTransaction,

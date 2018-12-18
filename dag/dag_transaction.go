@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
@@ -47,18 +48,25 @@ func newTxo4Greedy(outPoint modules.OutPoint, amount uint64) *Txo4Greedy {
 
 func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee uint64) (*modules.Transaction, error) {
 	if daoFee == 0 {
-		return &modules.Transaction{}, fmt.Errorf("Transaction's fee id zero!")
+		return &modules.Transaction{}, fmt.Errorf("transaction's fee id zero")
 	}
 
-	// 1. 获取转出账户所有的utxo
+	// 1. 获取转出账户所有的PTN utxo
 	//allUtxos, err := dag.GetAddrUtxos(from)
-	coreUtxos, err := dag.GetAddrUtxos(from)
+	coreUtxos, err := dag.GetAddrCoreUtxos(from)
 	if err != nil {
 		return &modules.Transaction{}, err
 	}
 
+	//fmt.Println("len Utxos ======================================:", len(coreUtxos))
 	if len(coreUtxos) == 0 {
-		return &modules.Transaction{}, fmt.Errorf("%v 's uxto is null!", from.Str())
+		return &modules.Transaction{}, fmt.Errorf("%v 's uxto is null", from.Str())
+	}
+
+	for key, utxo := range coreUtxos {
+		if utxo.IsSpent() {
+			delete(coreUtxos, key)
+		}
 	}
 
 	// 2. 利用贪心算法得到指定额度的utxo集合
@@ -70,7 +78,7 @@ func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee
 
 	selUtxos, change, err := core.Select_utxo_Greedy(greedyUtxos, daoAmount+daoFee)
 	if err != nil {
-		return nil, fmt.Errorf("Select utxo err")
+		return nil, fmt.Errorf("select utxo err")
 	}
 
 	// 3. 构建PaymentPayload的Inputs
@@ -114,7 +122,13 @@ func (dag *Dag) GetAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*mod
 
 	coreUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allUtxos))
 	for outPoint, utxo := range allUtxos {
-		if utxo.Asset.IsSimilar(modules.CoreAsset) {
+		// 剔除非PTN资产
+		if !utxo.Asset.IsSimilar(modules.CoreAsset) {
+			continue
+		}
+
+		// 剔除已花费的TXO
+		if utxo.IsSpent() {
 			continue
 		}
 
@@ -122,4 +136,48 @@ func (dag *Dag) GetAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*mod
 	}
 
 	return coreUtxos, nil
+}
+
+func (dag *Dag) GenMediatorCreateTx(account common.Address,
+	op *modules.MediatorCreateOperation) (*modules.Transaction, error) {
+	// 1. 组装 message
+	msg := &modules.Message{
+		App:     modules.OP_MEDIATOR_CREATE,
+		Payload: op,
+	}
+
+	// 2. 组装 tx
+	fee := dag.CurrentFeeSchedule().MediatorCreateFee
+	tx, err := dag.CreateBaseTransaction(account, account, 0, fee)
+	if err != nil {
+		return nil, err
+	}
+
+	tx.TxMessages = append(tx.TxMessages, msg)
+	//tx.TxHash = tx.Hash()
+
+	return tx, nil
+}
+
+func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address) (*modules.Transaction, error) {
+	// 1. 组装 message
+	voting := &vote.VoteInfo{
+		VoteType: vote.TypeMediator,
+		Contents: mediator.Bytes21(),
+	}
+
+	msg := &modules.Message{
+		App:     modules.APP_VOTE,
+		Payload: voting,
+	}
+
+	// 2. 组装 tx
+	fee := dag.CurrentFeeSchedule().VoteMediatorFee
+	tx, err := dag.CreateBaseTransaction(voter, voter, 0, fee)
+	if err != nil {
+		return nil, err
+	}
+	tx.TxMessages = append(tx.TxMessages, msg)
+
+	return tx, nil
 }

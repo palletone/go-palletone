@@ -401,3 +401,20 @@ func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Tran
 
 	return tx, nil
 }
+
+// @author Albert·Gou
+func (p *PalletOne) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
+	// 3. 签名 tx
+	tx, err := p.SignGenericTransaction(addr, tx)
+	if err != nil {
+		return err
+	}
+
+	// 4. 将 tx 放入 pool
+	txPool := p.TxPool()
+	err = txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
+	if err != nil {
+		return err
+	}
+	return nil
+}

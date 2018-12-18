@@ -22,9 +22,9 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/dag/vote"
 )
 
 const defaultResult = "Transaction executed locally, but may not be confirmed by the network yet!"
@@ -37,55 +37,79 @@ func NewPrivateMediatorAPI(mp *MediatorPlugin) *PrivateMediatorAPI {
 	return &PrivateMediatorAPI{mp}
 }
 
+// 交易执行结果
+type TxExecuteResult struct {
+	TxContent string             `json:"txContent"`
+	TxHash    common.Hash        `json:"txHash"`
+	TxSize    common.StorageSize `json:"txSize"`
+	Warning   string             `json:"warning"`
+}
+
 // 创建 mediator 所需的参数, 至少包含普通账户地址
 type MediatorCreateArgs struct {
 	modules.MediatorCreateOperation
 }
 
-// 交易执行结果
-type TxExecuteResult struct {
-	TxHash  common.Hash        `json:"txHash"`
-	TxSize  common.StorageSize `json:"txSize"`
-	Warning string             `json:"warning"`
+// 相关参数检查
+func (args *MediatorCreateArgs) check() error {
+	_, err := common.StringToAddress(args.AddStr)
+	if err != nil {
+		return fmt.Errorf("invalid account address: %s", args.AddStr)
+	}
+
+	_, err = core.StrToPoint(args.InitPartPub)
+	if err != nil {
+		return fmt.Errorf("invalid init PubKey: %s", args.InitPartPub)
+	}
+
+	_, err = discover.ParseNode(args.Node)
+	if err != nil {
+		return fmt.Errorf("invalid node ID: %s", args.Node)
+	}
+
+	return nil
 }
 
-func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (TxExecuteResult, error) {
+func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (TxExecuteResult, error) {
 	res := TxExecuteResult{}
-	addr, err := common.StringToAddress(args.AddStr)
+	// 参数验证
+	err := args.check()
 	if err != nil {
 		return res, err
 	}
 
-	// 1. 组装 message
-	msg := &modules.Message{
-		App:     modules.OP_MEDIATOR_CREATE,
-		Payload: &args.MediatorCreateOperation,
+	// 判断本节点是否同步完成，数据是否最新
+	if !a.dag.IsSynced() {
+		return res, fmt.Errorf("the data of this node is not synced, " +
+			"and mediator cannot be created at present")
 	}
 
-	// 2. 组装 tx
-	fee := a.dag.CurrentFeeSchedule().MediatorCreateFee
-	tx, err := a.dag.CreateBaseTransaction(addr, addr, 0, fee)
+	addr := args.FeePayer()
+	// 判断是否已经是mediator
+	if a.dag.IsMediator(addr) {
+		return res, fmt.Errorf("account %v is already a mediator", args.AddStr)
+	}
+
+	// 判断是否申请通过
+	if !args.Validate() {
+		return res, fmt.Errorf("has not successfully paid the deposit")
+	}
+
+	// 1. 创建交易
+	tx, err := a.dag.GenMediatorCreateTx(addr, &args.MediatorCreateOperation)
 	if err != nil {
 		return res, err
 	}
 
-	tx.TxMessages = append(tx.TxMessages, msg)
-	//tx.TxHash = tx.Hash()
-
-	// 3. 签名 tx
-	tx, err = a.ptn.SignGenericTransaction(addr, tx)
-	if err != nil {
-		return res, err
-	}
-
-	// 4. 将 tx 放入 pool
-	txPool := a.ptn.TxPool()
-	err = txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
+	// 2. 签名和发送交易
+	err = a.ptn.SignAndSendTransaction(addr, tx)
 	if err != nil {
 		return res, err
 	}
 
 	// 5. 返回执行结果
+	res.TxContent = fmt.Sprintf("Create mediator %s with initPubKey : %s , node: %s , url: %s",
+		args.AddStr, args.InitPartPub, args.Node, args.Url)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size()
 	res.Warning = defaultResult
@@ -93,61 +117,45 @@ func (a *PrivateMediatorAPI) Register(args MediatorCreateArgs) (TxExecuteResult,
 	return res, nil
 }
 
-// 投票 mediator 所需的参数
-type VoteMediatorArgs struct {
-	Voter    string `json:"voter"`
-	Mediator string `json:"mediator"`
-}
-
-func (a *PrivateMediatorAPI) Vote(args VoteMediatorArgs) (TxExecuteResult, error) {
+func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (TxExecuteResult, error) {
 	// 参数检查
 	res := TxExecuteResult{}
-	voter, err := common.StringToAddress(args.Voter)
+	voter, err := common.StringToAddress(voterStr)
 	if err != nil {
-		return res, err
+		return res, fmt.Errorf("invalid account address: %s", voterStr)
 	}
 
-	mediator, err := common.StringToAddress(args.Mediator)
+	mediator, err := common.StringToAddress(mediatorStr)
 	if err != nil {
-		return res, err
+		return res, fmt.Errorf("invalid account address: %s", mediatorStr)
 	}
+
+	// 判断本节点是否同步完成，数据是否最新
+	if !a.dag.IsSynced() {
+		return res, fmt.Errorf("the data of this node is not synced, and can't vote now")
+	}
+
+	// 判断是否是mediator
 	if !a.dag.IsMediator(mediator) {
-		return res, fmt.Errorf("%v is not mediator!", mediator.Str())
+		return res, fmt.Errorf("%v is not mediator", mediatorStr)
 	}
 
-	// 1. 组装 message
-	voting := &vote.VoteInfo{
-		VoteType: vote.TYPE_MEDIATOR,
-		Contents: mediator.Bytes(),
-	}
+	// todo 判断是否已经投过该mediator
 
-	msg := &modules.Message{
-		App:     modules.APP_VOTE,
-		Payload: voting,
-	}
-
-	// 2. 组装 tx
-	fee := a.dag.CurrentFeeSchedule().VoteMediatorFee
-	tx, err := a.dag.CreateBaseTransaction(voter, voter, 0, fee)
-	if err != nil {
-		return res, err
-	}
-	tx.TxMessages = append(tx.TxMessages, msg)
-
-	// 3. 签名 tx
-	tx, err = a.ptn.SignGenericTransaction(voter, tx)
+	// 1. 创建交易
+	tx, err := a.dag.GenVoteMediatorTx(voter, mediator)
 	if err != nil {
 		return res, err
 	}
 
-	// 4. 将 tx 放入 pool
-	txPool := a.ptn.TxPool()
-	err = txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
+	// 2. 签名和发送交易
+	err = a.ptn.SignAndSendTransaction(voter, tx)
 	if err != nil {
 		return res, err
 	}
 
 	// 5. 返回执行结果
+	res.TxContent = fmt.Sprintf("Account %s vote mediator %s", voterStr, mediatorStr)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size()
 	res.Warning = defaultResult

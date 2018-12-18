@@ -80,26 +80,26 @@ func StrToMedAdd(addStr string) common.Address {
 	return addr
 }
 
-func StrToScalar(secStr string) kyber.Scalar {
+func StrToScalar(secStr string) (kyber.Scalar, error) {
 	secB := base58.Decode(secStr)
 	sec := Suite.Scalar()
 
 	err := sec.UnmarshalBinary(secB)
 	if err != nil {
-		log.Error(fmt.Sprintln(err))
+		return nil, err
 	}
 
-	return sec
+	return sec, nil
 }
 
-func StrToPoint(pubStr string) kyber.Point {
+func StrToPoint(pubStr string) (kyber.Point, error) {
 	pubB := base58.Decode(pubStr)
 	pub := Suite.Point()
 
 	err := pub.UnmarshalBinary(pubB)
 	if err != nil {
-		log.Error(fmt.Sprintln(err))
+		return nil, err
 	}
 
-	return pub
+	return pub, nil
 }

@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	// "go.uber.org/zap/zapcore"
 )
 
 func TestInitLogger(t *testing.T) {
@@ -38,7 +37,7 @@ func TestInitLogger(t *testing.T) {
 	Logger.Info("msg_info", zap.String("str", s[0]), zap.Bool("bool1", true))
 	Logger.Error("msg_error", zap.String("str", s[1]), zap.Bool("bool2", true))
 	Logger.Debug("msg_debug", zap.String("str", s[2]))
-	//	Logger.Fatal("msg_fatal", zap.String("str", s[3]), zap.Field{Key: "haode", Type: zapcore.SkipType, Interface: "false"})
+	// Logger.Fatal("msg_fatal", zap.String("str", s[3]))
 }
 func TestTrace(t *testing.T) {
 	InitLogger()

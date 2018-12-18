@@ -44,7 +44,9 @@ import (
 type PalletOne interface {
 	GetKeyStore() *keystore.KeyStore
 	TxPool() txspool.ITxPool
+
 	SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error)
+	SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
 
 	ContractProcessor() *jury.Processor
 }
@@ -78,6 +80,8 @@ type iDag interface {
 	CreateBaseTransaction(from, to common.Address, daoAmount, daoFee uint64) (*modules.Transaction, error)
 	CurrentFeeSchedule() core.FeeSchedule
 
+	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation) (*modules.Transaction, error)
+	GenVoteMediatorTx(voter, mediator common.Address) (*modules.Transaction, error)
 	GetMediators() map[common.Address]bool
 	IsMediator(address common.Address) bool
 

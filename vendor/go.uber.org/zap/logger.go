@@ -118,7 +118,9 @@ func NewExample(options ...Option) *Logger {
 		EncodeDuration: zapcore.StringDurationEncoder,
 	}
 	core := zapcore.NewCore(zapcore.NewJSONEncoder(encoderCfg), os.Stdout, DebugLevel)
-	return New(core).WithOptions(options...)
+	l := New(core).WithOptions(options...)
+	l.openModule = []string{"all"}
+	return l
 }
 
 func (log *Logger) SetOpenModule(modules []string) {

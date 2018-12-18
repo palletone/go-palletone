@@ -46,7 +46,7 @@ type VoteInfo struct {
 }
 
 // system vote 0-9
-const TYPE_MEDIATOR = 0 // VoteContent = []byte(Common.Address)
+const TypeMediator = 0 // VoteContent = []byte(Common.Address)
 //const TYPE_ADDRESS = 1  // VoteContent = []byte(Common.Address)
 // 10-19
 //const TYPE_LEN_2 = 10

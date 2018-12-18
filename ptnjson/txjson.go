@@ -50,7 +50,7 @@ func ConvertTx2Json(tx *modules.Transaction) TxJson {
 			json.Payment = &payJson
 		} else if m.App == modules.APP_VOTE {
 			v := m.Payload.(*vote.VoteInfo)
-			if v.VoteType == vote.TYPE_MEDIATOR {
+			if v.VoteType == vote.TypeMediator {
 				vote := &VoteJson{Content: string(v.Contents)}
 				json.Vote = vote
 			}
