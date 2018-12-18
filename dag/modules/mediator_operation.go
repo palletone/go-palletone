@@ -29,10 +29,13 @@ type MediatorCreateOperation struct {
 	Url         string `json:"url"`
 }
 
-func (mco *MediatorCreateOperation) FeePayer() (common.Address, error) {
-	return common.StringToAddress(mco.AddStr)
+func (mco *MediatorCreateOperation) FeePayer() common.Address {
+	addr, _ := common.StringToAddress(mco.AddStr)
+
+	return addr
 }
 
 func (mco *MediatorCreateOperation) Validate() bool {
+	// todo 判断是否已经申请缴纳保证金
 	return true
 }

@@ -41,9 +41,10 @@ func NewPrivateMediatorAPI(mp *MediatorPlugin) *PrivateMediatorAPI {
 
 // 交易执行结果
 type TxExecuteResult struct {
-	TxHash  common.Hash        `json:"txHash"`
-	TxSize  common.StorageSize `json:"txSize"`
-	Warning string             `json:"warning"`
+	TxContent string             `json:"txContent"`
+	TxHash    common.Hash        `json:"txHash"`
+	TxSize    common.StorageSize `json:"txSize"`
+	Warning   string             `json:"warning"`
 }
 
 // 创建 mediator 所需的参数, 至少包含普通账户地址
@@ -52,32 +53,29 @@ type MediatorCreateArgs struct {
 }
 
 // 相关参数检查
-func (args *MediatorCreateArgs) validate() (common.Address, error) {
-	res := common.Address{}
-	addr, err := common.StringToAddress(args.AddStr)
+func (args *MediatorCreateArgs) check() error {
+	_, err := common.StringToAddress(args.AddStr)
 	if err != nil {
-		return res, err
+		return err
 	}
-
-	res = addr
 
 	_, err = core.StrToPoint(args.InitPartPub)
 	if err != nil {
-		return res, err
+		return err
 	}
 
 	_, err = discover.ParseNode(args.Node)
 	if err != nil {
-		return res, err
+		return err
 	}
 
-	return res, nil
+	return nil
 }
 
 func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (TxExecuteResult, error) {
 	res := TxExecuteResult{}
 	// 参数验证
-	addr, err := args.validate()
+	err := args.check()
 	if err != nil {
 		return res, err
 	}
@@ -88,9 +86,15 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (TxExecuteResult, e
 			"and mediator cannot be created at present")
 	}
 
+	addr := args.FeePayer()
 	// 判断是否已经是mediator
 	if a.dag.IsMediator(addr) {
 		return res, fmt.Errorf("account %v is already a mediator", args.AddStr)
+	}
+
+	// 判断是否申请通过
+	if !args.Validate() {
+		return res, fmt.Errorf("has not successfully paid the deposit")
 	}
 
 	// 1. 创建交易
@@ -106,6 +110,8 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (TxExecuteResult, e
 	}
 
 	// 5. 返回执行结果
+	res.TxContent = fmt.Sprintf("Create mediator %s with initPubKey : %s , node: %s , url: %s",
+		args.AddStr, args.InitPartPub, args.Node, args.Url)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size()
 	res.Warning = defaultResult
