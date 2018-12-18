@@ -116,7 +116,13 @@ func (dag *Dag) GetAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*mod
 
 	coreUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allUtxos))
 	for outPoint, utxo := range allUtxos {
+		// 剔除非PTN资产
 		if !utxo.Asset.IsSimilar(modules.CoreAsset) {
+			continue
+		}
+
+		// 剔除已花费的TXO
+		if utxo.IsSpent() {
 			continue
 		}
 
