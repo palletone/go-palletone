@@ -48,19 +48,19 @@ func newTxo4Greedy(outPoint modules.OutPoint, amount uint64) *Txo4Greedy {
 
 func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee uint64) (*modules.Transaction, error) {
 	if daoFee == 0 {
-		return &modules.Transaction{}, fmt.Errorf("Transaction's fee id zero!")
+		return &modules.Transaction{}, fmt.Errorf("transaction's fee id zero")
 	}
 
-	// 1. 获取转出账户所有的utxo
+	// 1. 获取转出账户所有的PTN utxo
 	//allUtxos, err := dag.GetAddrUtxos(from)
 	coreUtxos, err := dag.GetAddrCoreUtxos(from)
 	if err != nil {
 		return &modules.Transaction{}, err
 	}
 
-	fmt.Println("len Utxos ======================================:", len(coreUtxos))
+	//fmt.Println("len Utxos ======================================:", len(coreUtxos))
 	if len(coreUtxos) == 0 {
-		return &modules.Transaction{}, fmt.Errorf("%v 's uxto is null!", from.Str())
+		return &modules.Transaction{}, fmt.Errorf("%v 's uxto is null", from.Str())
 	}
 
 	// 2. 利用贪心算法得到指定额度的utxo集合
@@ -72,7 +72,7 @@ func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee
 
 	selUtxos, change, err := core.Select_utxo_Greedy(greedyUtxos, daoAmount+daoFee)
 	if err != nil {
-		return nil, fmt.Errorf("Select utxo err")
+		return nil, fmt.Errorf("select utxo err")
 	}
 
 	// 3. 构建PaymentPayload的Inputs
@@ -116,7 +116,7 @@ func (dag *Dag) GetAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*mod
 
 	coreUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allUtxos))
 	for outPoint, utxo := range allUtxos {
-		if utxo.Asset.IsSimilar(modules.CoreAsset) {
+		if !utxo.Asset.IsSimilar(modules.CoreAsset) {
 			continue
 		}
 
