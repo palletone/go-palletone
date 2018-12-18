@@ -56,7 +56,7 @@ func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface
 	} else {
 		isExist := isInCashbacklist(invokeAddr, listForCashback)
 		if isExist {
-			return fmt.Errorf("%", "node is exist in the list.")
+			return fmt.Errorf("%s", "node is exist in the list.")
 		}
 		listForCashback = append(listForCashback, cashback)
 	}
