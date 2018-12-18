@@ -320,8 +320,9 @@ type InvokeFees struct {
 
 //申请成为Mediator
 type MediatorInfo struct {
-	Name    string `json:"name"`
-	Address string `json:"address"`
+	Name    string    `json:"name"`
+	Address string    `json:"address"`
+	Time    time.Time `json:"time"`
 }
 
 //Mediator 申请列表

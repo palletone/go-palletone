@@ -422,25 +422,25 @@ func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, 
 			return nil, err
 		}
 		//如果是交付保证金
-		if string(reqArgs[0]) == "DepositWitnessPay" {
-			invokeTokens := &modules.InvokeTokens{}
-			outputs := msg0.Outputs
-			invokeTokens.Asset = outputs[0].Asset
-			for _, output := range outputs {
-				addr, err := tokenengine.GetAddressFromScript(output.PkScript)
-				if err != nil {
-					return nil, err
-				}
-				contractAddr, err := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
-				if err != nil {
-					return nil, err
-				}
-				if addr.Equal(contractAddr) {
-					invokeTokens.Amount += output.Value
-				}
+		//if string(reqArgs[0]) == "DepositWitnessPay" {
+		invokeTokens := &modules.InvokeTokens{}
+		outputs := msg0.Outputs
+		invokeTokens.Asset = outputs[0].Asset
+		for _, output := range outputs {
+			addr, err := tokenengine.GetAddressFromScript(output.PkScript)
+			if err != nil {
+				return nil, err
 			}
-			invokeInfo.InvokeTokens = invokeTokens
+			contractAddr, err := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+			if err != nil {
+				return nil, err
+			}
+			if addr.Equal(contractAddr) {
+				invokeTokens.Amount += output.Value
+			}
 		}
+		invokeInfo.InvokeTokens = invokeTokens
+		//}
 		invokeFees, err := dag.GetTxFee(tx)
 		if err != nil {
 			return nil, err

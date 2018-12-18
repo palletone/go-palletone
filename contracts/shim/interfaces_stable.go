@@ -160,7 +160,9 @@ type ChaincodeStubInterface interface {
 	//获取同意mediator申请加入列表
 	GetAgreeForBecomeMediatorList() ([]*modules.MediatorInfo, error)
 	//获取 mediator 申请退出列表
-	GetQuitMediatorApplyList() ([]string, error)
+	GetQuitMediatorApplyList() ([]*modules.MediatorInfo, error)
+	//获取mediator 候选列表
+	GetCandidateListForMediator() ([]*modules.MediatorInfo, error)
 	// GetStateByRange returns a range iterator over a set of keys in the
 	// ledger. The iterator can be used to iterate over all keys
 	// between the startKey (inclusive) and endKey (exclusive).

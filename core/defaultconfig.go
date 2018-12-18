@@ -31,6 +31,7 @@ const (
 	DefaultDepositAmountForJury      = 1000
 	DefaultDepositAmountForDeveloper = 800
 	DefaultDepositContractAddress    = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
+	DefaultFoundationAddress         = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
 	DefaultTokenHolder               = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 	DefaultMediator                  = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF"
 	DefaultInitPartPub               = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
