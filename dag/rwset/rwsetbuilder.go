@@ -78,7 +78,10 @@ func (b *RWSetBuilder) GetTokenDefine(ns string) *modules.TokenDefine {
 }
 func (b *RWSetBuilder) GetTokenSupply(ns string) []*modules.TokenSupply {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
-	return nsPubRwBuilder.tokenSupply
+	var tokenSupply []*modules.TokenSupply
+	tokenSupply = nsPubRwBuilder.tokenSupply
+	nsPubRwBuilder.tokenSupply = []*modules.TokenSupply{}
+	return tokenSupply
 }
 func (b *RWSetBuilder) DefineToken(ns string, tokenType int32, define []byte, createAddr common.Address) {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
