@@ -53,11 +53,12 @@ func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee
 
 	// 1. 获取转出账户所有的utxo
 	//allUtxos, err := dag.GetAddrUtxos(from)
-	coreUtxos, err := dag.GetAddrUtxos(from)
+	coreUtxos, err := dag.GetAddrCoreUtxos(from)
 	if err != nil {
 		return &modules.Transaction{}, err
 	}
 
+	fmt.Println("len Utxos ======================================:", len(coreUtxos))
 	if len(coreUtxos) == 0 {
 		return &modules.Transaction{}, fmt.Errorf("%v 's uxto is null!", from.Str())
 	}
