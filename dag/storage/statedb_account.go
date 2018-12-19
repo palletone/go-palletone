@@ -22,11 +22,18 @@ package storage
 
 import (
 	"bytes"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
+
+// only for serialization(storage)
+type accountInfo struct {
+	PtnBalance uint64
+	VotedMediators []common.Address
+}
 
 func accountKey(address common.Address) []byte {
 	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes21()...)
