@@ -58,15 +58,8 @@ func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee
 		return &modules.Transaction{}, err
 	}
 
-	//fmt.Println("len Utxos ======================================:", len(coreUtxos))
 	if len(coreUtxos) == 0 {
 		return &modules.Transaction{}, fmt.Errorf("%v 's uxto is null", from.Str())
-	}
-
-	for key, utxo := range coreUtxos {
-		if utxo.IsSpent() {
-			delete(coreUtxos, key)
-		}
 	}
 
 	// 2. 利用贪心算法得到指定额度的utxo集合
@@ -95,7 +88,12 @@ func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee
 	outAmount := map[common.Address]uint64{}
 	outAmount[to] = daoAmount
 	if change > 0 {
-		outAmount[from] = change
+		// 处理from和to是同一个地址的特殊情况
+		if from.Equal(to) {
+			outAmount[to] += change
+		} else {
+			outAmount[from] = change
+		}
 	}
 
 	for addr, amount := range outAmount {
@@ -115,13 +113,13 @@ func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee
 
 func (dag *Dag) GetAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
 	// todo 待优化
-	allUtxos, err := dag.GetAddrUtxos(addr)
+	allTxos, err := dag.GetAddrUtxos(addr)
 	if err != nil {
 		return nil, err
 	}
 
-	coreUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allUtxos))
-	for outPoint, utxo := range allUtxos {
+	coreUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allTxos))
+	for outPoint, utxo := range allTxos {
 		// 剔除非PTN资产
 		if !utxo.Asset.IsSimilar(modules.CoreAsset) {
 			continue
