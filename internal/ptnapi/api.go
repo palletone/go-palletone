@@ -2297,6 +2297,41 @@ func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) 
 	return result
 }
 
+//转为压力测试准备数据用
+func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, fromAddress, toAddress string, amount int, count int, password string) ([]ptnjson.SignRawTransactionResult, error) {
+	txHash, _ := common.NewHashFromStr(txid)
+	toAddr, _ := common.StringToAddress(toAddress)
+	fromAddr, _ := common.StringToAddress(fromAddress)
+	utxoScript := tokenengine.GenerateLockScript(fromAddr)
+	ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks.Unlock(accounts.Account{Address: fromAddr}, password)
+	pubKey, _ := ks.GetPublicKey(fromAddr)
+	result := []ptnjson.SignRawTransactionResult{}
+	for i := 0; i < count; i++ {
+		tx := &modules.Transaction{}
+		pay := &modules.PaymentPayload{}
+		outPoint := modules.NewOutPoint(txHash, 0, uint32(i))
+		pay.AddTxIn(modules.NewTxIn(outPoint, []byte{}))
+		lockScript := tokenengine.GenerateLockScript(toAddr)
+		pay.AddTxOut(modules.NewTxOut(uint64(amount*100000000), lockScript, modules.NewPTNAsset()))
+		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay))
+		utxoLookup := map[modules.OutPoint][]byte{}
+		utxoLookup[*outPoint] = utxoScript
+		errs, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxoLookup, nil, func(addresses common.Address) ([]byte, error) {
+			return pubKey, nil
+		},
+			func(addresses common.Address, hash []byte) ([]byte, error) {
+				return ks.SignHash(addresses, hash)
+			}, 0)
+		if len(errs) > 0 || err != nil {
+			return nil, err
+		}
+		encodeTx, _ := rlp.EncodeToBytes(tx)
+		result = append(result, ptnjson.SignRawTransactionResult{Hex: hex.EncodeToString(encodeTx), Complete: true})
+	}
+	return result, nil
+}
+
 //sign rawtranscation
 //create raw transction
 func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
