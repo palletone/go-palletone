@@ -232,10 +232,8 @@ func GenContractSigTransction(singer common.Address, orgTx *modules.Transaction,
 		},
 	}
 	tx.TxMessages = append(tx.TxMessages, msgSig)
-	//tx.TxHash = tx.Hash()
-
 	log.Debug("GenContractSigTransctions", "orgTx.TxId id ok:", tx.Hash())
-	//log.Debug("GenContractSigTransctions", tx.TxMessages[3].Payload.(*modules.SignaturePayload).Signatures[0])
+
 	return tx, nil
 }
 

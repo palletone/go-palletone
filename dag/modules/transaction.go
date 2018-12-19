@@ -195,7 +195,7 @@ func (tx *Transaction) RequestHash() common.Hash {
 	req := &Transaction{}
 	for _, msg := range tx.TxMessages {
 		req.AddMessage(msg)
-		if msg.App >= 100 { //100以上的APPCode是请求
+		if msg.App >= APP_CONTRACT_TPL_REQUEST { //100以上的APPCode是请求
 			break
 		}
 	}
