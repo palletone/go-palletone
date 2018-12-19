@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
+	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
@@ -675,7 +676,7 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 			propBroadcastOutTimer.UpdateSince(block.ReceivedAt)
 			go f.broadcastBlock(block, true /*, noBroadcastMediator*/)
 
-		//case consensus.ErrFutureBlock:
+		case dagerrors.ErrFutureBlock:
 		// Weird future block, don't fail, but neither propagate
 
 		default:

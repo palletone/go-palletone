@@ -168,14 +168,13 @@ func (pm *ProtocolManager) syncer() {
 
 // synchronise tries to sync up our local block chain with a remote peer.
 func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
-	//return
-	log.Info("=============Enter ProtocolManager synchronise===========")
-	defer log.Info("=============End ProtocolManager synchronise===========")
 	// Short circuit if no peers are available
 	if peer == nil {
 		log.Info("ProtocolManager synchronise peer is nil")
 		return
 	}
+	log.Info("Enter ProtocolManager synchronise", "peer id:", peer.id)
+	defer log.Info("End ProtocolManager synchronise", "peer id:", peer.id)
 
 	// Make sure the peer's TD is higher than our own
 	//TODO compare local assetId & chainIndex whith remote peer assetId & chainIndex

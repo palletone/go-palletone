@@ -290,7 +290,7 @@ func (p *peer) RequestHeadersByNumber(origin modules.ChainIndex, amount int, ski
 // RequestBodies fetches a batch of blocks' bodies corresponding to the hashes
 // specified.
 func (p *peer) RequestBodies(hashes []common.Hash) error {
-	log.Debug("Fetching batch of block bodies", "count", len(hashes))
+	log.Debug("Fetching batch of block bodies", "peer id:", p.id, "count", len(hashes))
 	return p2p.Send(p.rw, GetBlockBodiesMsg, hashes)
 }
 
