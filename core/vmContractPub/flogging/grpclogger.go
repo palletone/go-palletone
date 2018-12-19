@@ -20,7 +20,7 @@
 package flogging
 
 import (
-	"github.com/op/go-logging"
+	"github.com/palletone/go-palletone/common/log"
 	"google.golang.org/grpc/grpclog"
 )
 
@@ -35,24 +35,24 @@ func initgrpclogger() {
 // logger provided by the flogging package.  This is required in order to
 // replace the default log used by the grpclog package.
 type grpclogger struct {
-	logger *logging.Logger
+	logger log.ILogger
 }
 
 func (g *grpclogger) Fatal(args ...interface{}) {
-	g.logger.Fatal(args...)
+	g.logger.Error(GRPCModuleID, args...)
 }
 
 func (g *grpclogger) Fatalf(format string, args ...interface{}) {
-	g.logger.Fatalf(format, args...)
+	g.logger.Errorf(format, args...)
 }
 
 func (g *grpclogger) Fatalln(args ...interface{}) {
-	g.logger.Fatal(args...)
+	g.logger.Error(GRPCModuleID, args...)
 }
 
 // NOTE: grpclog does not support leveled logs so for now use DEBUG
 func (g *grpclogger) Print(args ...interface{}) {
-	g.logger.Debug(args...)
+	g.logger.Debug(GRPCModuleID, args...)
 }
 
 func (g *grpclogger) Printf(format string, args ...interface{}) {
@@ -60,5 +60,5 @@ func (g *grpclogger) Printf(format string, args ...interface{}) {
 }
 
 func (g *grpclogger) Println(args ...interface{}) {
-	g.logger.Debug(args...)
+	g.logger.Debug(GRPCModuleID, args...)
 }

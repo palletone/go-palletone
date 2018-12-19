@@ -134,7 +134,7 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 		sysccLogger.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
 		return err
 	}
-	sysccLogger.Info("buildSysCC chaincodeDeploymentSpec =%v", chaincodeDeploymentSpec)
+	sysccLogger.Infof("buildSysCC chaincodeDeploymentSpec =%v", chaincodeDeploymentSpec)
 	version := util.GetSysCCVersion()
 	cccid := ccprov.GetCCContext(syscc.Id, chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, version, txid, true, nil, nil)
 

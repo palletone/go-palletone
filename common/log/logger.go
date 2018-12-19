@@ -55,7 +55,9 @@ type ILogger interface {
 	Debug(msg string, ctx ...interface{})
 	Debugf(format string, ctx ...interface{})
 	Info(msg string, ctx ...interface{})
+	Infof(format string, ctx ...interface{})
 	Warn(msg string, ctx ...interface{})
+	Warnf(format string, ctx ...interface{})
 	Error(msg string, ctx ...interface{})
 	Errorf(format string, ctx ...interface{})
 	Crit(msg string, ctx ...interface{})
@@ -114,9 +116,15 @@ func (pl *Plogger) Info(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
 	pl.logger.Info(msg, fileds...)
 }
+func (pl *Plogger) Infof(format string, ctx ...interface{}) {
+	pl.logger.Info(fmt.Sprintf(format, ctx...))
+}
 func (pl *Plogger) Warn(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
 	pl.logger.Warn(msg, fileds...)
+}
+func (pl *Plogger) Warnf(format string, ctx ...interface{}) {
+	pl.logger.Warn(fmt.Sprintf(format, ctx...))
 }
 func (pl *Plogger) Error(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)

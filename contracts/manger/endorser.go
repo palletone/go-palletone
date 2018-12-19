@@ -229,7 +229,7 @@ func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.C
 	//1 -- simulate
 	res, _, ccevent, err := e.simulateProposal(deployId, ctx, chainID, txid, signedProp, prop, cid, txsim, tmout)
 	if err != nil {
-		logger.Error(ccevent)
+		logger.Error("ProcessProposal simulateProposal error", ccevent)
 		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 	}
 	if res != nil {
@@ -259,8 +259,7 @@ func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.C
 		logger.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.New("Conver RwSet to dag unit fail")
 	}
-	logger.Debug("unit:")
-	logger.Debug(unit)
+	logger.Debug("unit:", unit)
 	//fmt.Printf("==unit=> %#v\n", unit.ContractId)
 	//fmt.Printf("==unit=> %#v\n", unit.Payload)
 	//fmt.Printf("==unit=> %s\n", unit.Args)
