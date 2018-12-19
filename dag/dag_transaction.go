@@ -85,20 +85,29 @@ func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee
 	}
 
 	// 4. 构建PaymentPayload的Outputs
-	outAmount := map[common.Address]uint64{}
-	outAmount[to] = daoAmount
+	// 为了保证顺序， 将map改为结构体数组
+	type OutAmount struct {
+		addr   common.Address
+		amount uint64
+	}
+
+	outAmounts := make([]*OutAmount, 1, 2)
+	outAmount := &OutAmount{to, daoAmount}
+	outAmounts[0] = outAmount
+
 	if change > 0 {
 		// 处理from和to是同一个地址的特殊情况
 		if from.Equal(to) {
-			outAmount[to] += change
+			outAmount.amount = outAmount.amount + change
+			outAmounts[0] = outAmount
 		} else {
-			outAmount[from] = change
+			outAmounts = append(outAmounts, &OutAmount{from, change})
 		}
 	}
 
-	for addr, amount := range outAmount {
-		pkScript := tokenengine.GenerateLockScript(addr)
-		txOut := modules.NewTxOut(amount, pkScript, modules.NewPTNAsset())
+	for _, outAmount := range outAmounts {
+		pkScript := tokenengine.GenerateLockScript(outAmount.addr)
+		txOut := modules.NewTxOut(outAmount.amount, pkScript, modules.CoreAsset)
 		pload.AddTxOut(txOut)
 	}
 

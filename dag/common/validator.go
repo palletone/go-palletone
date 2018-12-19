@@ -537,8 +537,8 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, i
 			return modules.UNIT_STATE_INVALID_HEADER
 		}
 		//ptnAssetID, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
-		asset := modules.NewPTNAsset()
-		ptnAssetID := asset.AssetId
+		//asset := modules.NewPTNAsset()
+		ptnAssetID := modules.CoreAsset.AssetId
 		if header.AssetIDs[0] != ptnAssetID || !header.Number.IsMain || header.Number.Index != 0 {
 			fmt.Println(6)
 			fmt.Println(header.AssetIDs[0].String())

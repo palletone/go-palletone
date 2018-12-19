@@ -335,8 +335,8 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 	number.IsMain = true
 
 	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
-	asset := modules.NewPTNAsset()
-	number.AssetID = asset.AssetId
+	//asset := modules.NewPTNAsset()
+	number.AssetID = modules.CoreAsset.AssetId
 	hash, err := unitOp.dagdb.GetHashByNumber(number)
 	if err != nil {
 		log.Debug("unitOp: getgenesis by number , current error.", "error", err)
