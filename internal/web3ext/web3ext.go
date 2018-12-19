@@ -414,6 +414,11 @@ web3._extend({
 			inputFormatter: [web3._extend.formatters.inputAddressFormatter, null]
 		}),
 		new web3._extend.Method({
+			name: 'batchSign',
+			call: 'ptn_batchSign',
+			params: 6
+		}),
+		new web3._extend.Method({
 			name: 'encodeTx',
 			call: 'ptn_encodeTx',
 			params: 1
