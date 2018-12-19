@@ -2295,7 +2295,7 @@ func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) 
 			}
 		}
 	}
-	return resultort
+	return result
 }
 
 //转为压力测试准备数据用
