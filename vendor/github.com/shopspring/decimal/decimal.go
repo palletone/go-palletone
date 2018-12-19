@@ -189,9 +189,7 @@ func RandFromString(value string) (Decimal, error) {
 	} else {
 		return Decimal{}, fmt.Errorf("can't convert %s to decimal: too many .s", value)
 	}
-    rand.Seed(time.Now().UnixNano())
-    r := rand.Int()
-    rd :=big.NewInt(int64(r))
+    
 	dValue := new(big.Int)
 	_, ok := dValue.SetString(intString, 10)
 	if !ok {
@@ -202,15 +200,26 @@ func RandFromString(value string) (Decimal, error) {
 		// NOTE(vadim): I doubt a string could realistically be this long
 		return Decimal{}, fmt.Errorf("can't convert %s to decimal: fractional part too long", originalInput)
 	}
-    rand_number := Decimal{
-		value: rd,
-		exp:   int32(exp),
-	}
+	rand.Seed(time.Now().UnixNano())
+    
 	input_number:= Decimal{
 		value: dValue,
 		exp:   int32(exp),
 	}
-	result := rand_number.Mod(input_number)
+	result:=Decimal{}
+	for {
+		r := rand.Int()
+	    rd :=big.NewInt(int64(r))
+
+	    rand_number := Decimal{
+			value: rd,
+			exp:   int32(exp),
+		}
+		result := rand_number.Mod(input_number)
+	    if result.IsZero() == false{
+                  break
+	    }
+    }
 	return result, nil
 }
 // RequireFromString returns a new Decimal from a string representation
