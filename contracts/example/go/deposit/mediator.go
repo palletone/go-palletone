@@ -34,8 +34,8 @@ import (
 
 //申请加入  参数：暂时  姓名
 func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) != 1 {
-		return shim.Error("arg need one parameter.")
+	if len(args) != 4 {
+		return shim.Error("arg need four parameters.")
 	}
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
@@ -43,9 +43,15 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	}
 
 	name := args[0]
+	info := args[1]
+	url := args[2]
+	email := args[3]
 	mediatorInfo := modules.MediatorInfo{
 		Name:    name,
 		Address: invokeAddr,
+		Info:    info,
+		Url:     url,
+		Email:   email,
 		Time:    time.Now().UTC(),
 	}
 	//获取列表
