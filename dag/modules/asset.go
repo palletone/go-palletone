@@ -20,11 +20,11 @@
 
 package modules
 
-import "strings"
 import (
 	"encoding/hex"
-
 	"fmt"
+	"strings"
+
 	"github.com/palletone/go-palletone/common/rlp"
 )
 

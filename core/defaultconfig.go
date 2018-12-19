@@ -37,7 +37,10 @@ const (
 	DefaultInitPartPub               = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
 		"MpbsWk45ymz4kmjU2AZo8Rm3mJ3MQHpdAgTo2nzWmqU3vCTW6qCfviPD1MKu3FJtmaWiLzdavLx831eCBXA1CdaiXAeU5MPcQ"
 
-	DefaultMediatorCount       = 3 //21
+	DefaultJuryAddr        = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF"                                          //DefaultAccountAddr
+	DefaultJuryInitPartPub = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
+		"MpbsWk45ymz4kmjU2AZo8Rm3mJ3MQHpdAgTo2nzWmqU3vCTW6qCfviPD1MKu3FJtmaWiLzdavLx831eCBXA1CdaiXAeU5MPcQ" //DefaultAccountInitPartPub
+	DefaultMediatorCount       = 3                                                                          //21
 	DefaultMinMediatorCount    = 3
 	DefaultMinMediatorInterval = 1
 

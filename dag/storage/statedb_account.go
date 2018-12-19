@@ -22,11 +22,47 @@ package storage
 
 import (
 	"bytes"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
+
+// only for serialization(storage)
+type accountInfo struct {
+	*modules.AccountInfoBase
+	VotedMediators []common.Address
+}
+
+func newAccountInfo() *accountInfo {
+	return &accountInfo{
+		AccountInfoBase: modules.NewAccountInfoBase(),
+		VotedMediators:  make([]common.Address, 0),
+	}
+}
+
+func (acc *accountInfo) accountToInfo() *modules.AccountInfo {
+	ai := modules.NewAccountInfo()
+	ai.AccountInfoBase = acc.AccountInfoBase
+
+	for _, med := range acc.VotedMediators {
+		ai.VotedMediators[med] = true
+	}
+
+	return ai
+}
+
+func infoToaccount(ai *modules.AccountInfo) *accountInfo {
+	acc := newAccountInfo()
+	acc.AccountInfoBase = ai.AccountInfoBase
+
+	for med, _ := range ai.VotedMediators {
+		acc.VotedMediators = append(acc.VotedMediators, med)
+	}
+
+	return acc
+}
 
 func accountKey(address common.Address) []byte {
 	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes21()...)
@@ -35,25 +71,28 @@ func accountKey(address common.Address) []byte {
 }
 
 func (statedb *StateDb) RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error) {
-	info := modules.NewAccountInfo()
+	acc := newAccountInfo()
 
-	err := retrieve(statedb.db, accountKey(address), info)
+	err := retrieve(statedb.db, accountKey(address), acc)
 	if err != nil {
 		statedb.logger.Debugf("Get account[%s] info throw an error:%s", address.String(), err.Error())
-		return info, err
+		return nil, err
 	}
 
-	return info, nil
+	return acc.accountToInfo(), nil
 }
 
 func (statedb *StateDb) StoreAccountInfo(address common.Address, info *modules.AccountInfo) error {
-	statedb.logger.Debugf("Save account info for address:%s", address.String())
+	//statedb.logger.Debugf("Save account info for address:%s", address.String())
 
-	return StoreBytes(statedb.db, accountKey(address), info)
+	return StoreBytes(statedb.db, accountKey(address), infoToaccount(info))
 }
 
 func (statedb *StateDb) UpdateAccountInfoBalance(address common.Address, addAmount int64) error {
-	info, _ := statedb.RetrieveAccountInfo(address)
+	info, err := statedb.RetrieveAccountInfo(address)
+	if err != nil {
+		return err
+	}
 
 	info.PtnBalance = uint64(int64(info.PtnBalance) + addAmount)
 	statedb.logger.Debugf("Update Ptn Balance for address:%s, add Amount:%d", address.String(), addAmount)
@@ -94,13 +133,15 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 	for iter.Next() {
 		addB := bytes.TrimPrefix(iter.Key(), constants.ACCOUNT_INFO_PREFIX)
 
-		info := modules.NewAccountInfo()
-		err := rlp.DecodeBytes(iter.Value(), info)
+		acc := newAccountInfo()
+		err := rlp.DecodeBytes(iter.Value(), acc)
 		if err != nil {
 			statedb.logger.Debugf("Error in Decoding Bytes to AccountInfo: %s", err)
+			continue
 		}
 
-		result[common.BytesToAddress(addB)] = info
+		result[common.BytesToAddress(addB)] = acc.accountToInfo()
 	}
+
 	return result
 }

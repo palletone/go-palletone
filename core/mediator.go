@@ -58,10 +58,10 @@ func NewMediator() *Mediator {
 	}
 }
 
-func StrToMedNode(mn string) *discover.Node {
-	node, err := discover.ParseNode(mn)
+func StrToMedNode(medNode string) *discover.Node {
+	node, err := discover.ParseNode(medNode)
 	if err != nil {
-		log.Error(fmt.Sprintf("Invalid mediator node \"%v\" : %v", mn, err))
+		log.Error(fmt.Sprintf("Invalid mediator node \"%v\" : %v", medNode, err))
 	}
 
 	return node
