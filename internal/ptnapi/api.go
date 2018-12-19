@@ -2299,7 +2299,7 @@ func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) 
 }
 
 //转为压力测试准备数据用
-func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, fromAddress, toAddress string, amount int, count int, password string) ([]ptnjson.SignRawTransactionResult, error) {
+func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, fromAddress, toAddress string, amount int, count int, password string) ([]string, error) {
 	txHash, _ := common.NewHashFromStr(txid)
 	toAddr, _ := common.StringToAddress(toAddress)
 	fromAddr, _ := common.StringToAddress(fromAddress)
@@ -2307,7 +2307,7 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 	ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 	ks.Unlock(accounts.Account{Address: fromAddr}, password)
 	pubKey, _ := ks.GetPublicKey(fromAddr)
-	result := []ptnjson.SignRawTransactionResult{}
+	result := []string{}
 	for i := 0; i < count; i++ {
 		tx := &modules.Transaction{}
 		pay := &modules.PaymentPayload{}
@@ -2328,7 +2328,7 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 			return nil, err
 		}
 		encodeTx, _ := rlp.EncodeToBytes(tx)
-		result = append(result, ptnjson.SignRawTransactionResult{Hex: hex.EncodeToString(encodeTx), Complete: true})
+		result = append(result, hex.EncodeToString(encodeTx))
 	}
 	return result, nil
 }
