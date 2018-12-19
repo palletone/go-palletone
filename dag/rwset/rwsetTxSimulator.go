@@ -47,6 +47,17 @@ func NewBasedTxSimulator(idag dag.IDag, txid string) *RwSetTxSimulator {
 	return &RwSetTxSimulator{txid, rwsetBuilder, idag, false, false, false}
 }
 
+func (s *RwSetTxSimulator) GetConfig(name string) ([]byte, error) {
+	val, _, err := s.dag.GetConfig(name)
+	if err != nil {
+		return nil, err
+	}
+	if val == nil {
+		return nil, nil
+	}
+	return val, nil
+}
+
 // GetState implements method in interface `ledger.TxSimulator`
 func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([]byte, error) {
 	//testValue := []byte("abc")

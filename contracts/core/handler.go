@@ -30,13 +30,11 @@ import (
 	"encoding/json"
 	"github.com/golang/protobuf/proto"
 	"github.com/looplab/fsm"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/rlp"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/outchain"
-	"github.com/palletone/go-palletone/core"
-
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	commonledger "github.com/palletone/go-palletone/core/vmContractPub/ledger"
@@ -48,8 +46,6 @@ import (
 	"github.com/palletone/go-palletone/vm/ccintf"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -289,6 +285,12 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 		}
 
 		var serialSendMsg *pb.ChaincodeMessage
+		var txContext *transactionContext
+		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid,
+			"[%s]No ledger context for GetState. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+		if txContext == nil {
+			return
+		}
 		defer func() {
 			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
 			chaincodeLogger.Debugf("[%s]handleenterGetDepositConfig serial send %s",
@@ -301,33 +303,39 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			return
 		}
-		//TODO 通过 keyForSystemConfig 获取相应的系统的配置
-		var payloadBytes []byte
-		var err error
-		systemConfig := &core.SystemConfig{
-			FoundationAddress:         "P1N4hGvGhjzfxmXGGKSFRL2vWZnSCXYojZU",
-			DepositAmountForMediator:  2000,
-			DepositAmountForJury:      1000,
-			DepositAmountForDeveloper: 800,
-			DepositRate:               0.02,
-			DepositPeriod:             0,
-		}
-		//fmt.Println("keyForSystemConfig.Key = ", keyForSystemConfig.Key)
-		if strings.Compare("DepositAmountForJury", keyForSystemConfig.Key) == 0 {
-			depositAmount := strconv.FormatUint(systemConfig.DepositAmountForJury, 10)
-			payloadBytes = []byte(depositAmount)
-		} else if strings.Compare("FoundationAddress", keyForSystemConfig.Key) == 0 {
-			payloadBytes = []byte(systemConfig.FoundationAddress)
-		} else if strings.Compare("DepositAmountForMediator", keyForSystemConfig.Key) == 0 {
-			depositAmount := strconv.FormatUint(systemConfig.DepositAmountForMediator, 10)
-			payloadBytes = []byte(depositAmount)
-		} else if strings.Compare("DepositAmountForDeveloper", keyForSystemConfig.Key) == 0 {
-			depositAmount := strconv.FormatUint(systemConfig.DepositAmountForDeveloper, 10)
-			payloadBytes = []byte(depositAmount)
-		} else if strings.Compare("DepositPeriod", keyForSystemConfig.Key) == 0 {
-			payloadBytes = []byte(strconv.Itoa(systemConfig.DepositPeriod))
-		}
 		chaincodeID := handler.getCCRootName()
+
+		//TODO 通过 keyForSystemConfig 获取相应的系统的配置
+		//var payloadBytes []byte
+		//var err error
+		//systemConfig := &core.SystemConfig{
+		//	FoundationAddress:         "P1N4hGvGhjzfxmXGGKSFRL2vWZnSCXYojZU",
+		//	DepositAmountForMediator:  2000,
+		//	DepositAmountForJury:      1000,
+		//	DepositAmountForDeveloper: 800,
+		//	DepositRate:               0.02,
+		//	DepositPeriod:             0,
+		//}
+		//res, err := txContext.txsimulator.GetState(msg.ContractId, chaincodeID, keyForSystemConfig.Key)
+		payloadBytes, err := txContext.txsimulator.GetConfig(keyForSystemConfig.Key)
+
+		//fmt.Println("keyForSystemConfig.Key = ", keyForSystemConfig.Key)
+		//if strings.Compare("DepositAmountForJury", keyForSystemConfig.Key) == 0 {
+		//	depositAmount := strconv.FormatUint(systemConfig.DepositAmountForJury, 10)
+		//
+		//	payloadBytes = []byte(depositAmount)
+		//} else if strings.Compare("FoundationAddress", keyForSystemConfig.Key) == 0 {
+		//	payloadBytes = []byte(systemConfig.FoundationAddress)
+		//} else if strings.Compare("DepositAmountForMediator", keyForSystemConfig.Key) == 0 {
+		//	depositAmount := strconv.FormatUint(systemConfig.DepositAmountForMediator, 10)
+		//	payloadBytes = []byte(depositAmount)
+		//} else if strings.Compare("DepositAmountForDeveloper", keyForSystemConfig.Key) == 0 {
+		//	depositAmount := strconv.FormatUint(systemConfig.DepositAmountForDeveloper, 10)
+		//	payloadBytes = []byte(depositAmount)
+		//} else if strings.Compare("DepositPeriod", keyForSystemConfig.Key) == 0 {
+		//	payloadBytes = []byte(strconv.Itoa(systemConfig.DepositPeriod))
+		//}
+		//chaincodeID := handler.getCCRootName()
 		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
 		if err != nil {
 			chaincodeLogger.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)

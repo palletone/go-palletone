@@ -6,6 +6,7 @@ import (
 )
 
 type TxSimulator interface {
+	GetConfig(name string) ([]byte, error)
 	GetState(contractid []byte, ns string, key string) ([]byte, error)
 	SetState(ns string, key string, value []byte) error
 	GetTokenBalance(ns string, addr common.Address, asset *modules.Asset) (map[modules.Asset]uint64, error)

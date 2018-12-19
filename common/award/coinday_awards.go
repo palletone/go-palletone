@@ -2,7 +2,9 @@ package award
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
+	"strconv"
 	"time"
 )
 
@@ -11,7 +13,12 @@ func CalculateAwardsForDepositContractNodes(coinDays uint64) uint64 {
 	coinDayFloat64 := float64(coinDays)
 	fmt.Println("coinDayFloat64=", coinDayFloat64)
 	//TODO
-	yearRateFloat64 := core.DefaultDepositRate
+	yearRateStr := core.DefaultDepositRate
+	yearRateFloat64, err := strconv.ParseFloat(yearRateStr, 64)
+	if err != nil {
+		log.Error("string to float64 error: ", err)
+		return 0
+	}
 	//yearRateFloat64 := 0.02
 	fmt.Println("yearRateFloat64=", yearRateFloat64)
 	awardsFloat64 := coinDayFloat64 * yearRateFloat64 / 365
