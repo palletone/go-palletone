@@ -31,7 +31,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/op/go-logging"
+
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/platforms"
@@ -214,16 +214,16 @@ func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout ti
 
 // getLogLevelFromViper gets the chaincode container log levels from viper
 func getLogLevelFromViper(module string) string {
-	levelString := viper.GetString("chaincode.logging." + module)
-	_, err := logging.LogLevel(levelString)
-
-	if err == nil {
-		chaincodeLogger.Debugf("CORE_CHAINCODE_%s set to level %s", strings.ToUpper(module), levelString)
-	} else {
-		chaincodeLogger.Warningf("CORE_CHAINCODE_%s has invalid log level %s. defaulting to %s", strings.ToUpper(module), levelString, flogging.DefaultLevel())
-		levelString = flogging.DefaultLevel()
-	}
-	return levelString
+	//levelString := viper.GetString("chaincode.logging." + module)
+	//_, err := logging.LogLevel(levelString)
+	//
+	//if err == nil {
+	//	chaincodeLogger.Debugf("CORE_CHAINCODE_%s set to level %s", strings.ToUpper(module), levelString)
+	//} else {
+	//	chaincodeLogger.Warnf("CORE_CHAINCODE_%s has invalid log level %s. defaulting to %s", strings.ToUpper(module), levelString, flogging.DefaultLevel())
+	//	levelString = flogging.DefaultLevel()
+	//}
+	return flogging.DefaultLevel()
 }
 
 // ChaincodeSupport responsible for providing interfacing with chaincodes from the Peer.
@@ -709,9 +709,9 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 			return cID, cMsg, err
 		}
 		if chrte.handler.isRunning() {
-			if chaincodeLogger.IsEnabledFor(logging.DEBUG) {
-				chaincodeLogger.Debugf("chaincode is running(no need to launch) : %s", canName)
-			}
+			//if chaincodeLogger.IsEnabledFor(logging.DEBUG) {
+			chaincodeLogger.Debugf("chaincode is running(no need to launch) : %s", canName)
+			//}
 			chaincodeSupport.runningChaincodes.Unlock()
 			return cID, cMsg, nil
 		}

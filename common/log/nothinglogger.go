@@ -27,7 +27,9 @@ func (n *NothingLogger) Trace(msg string, ctx ...interface{})  {}
 func (n *NothingLogger) Debug(msg string, ctx ...interface{})  {}
 func (n *NothingLogger) Debugf(msg string, ctx ...interface{}) {}
 func (n *NothingLogger) Info(msg string, ctx ...interface{})   {}
+func (n *NothingLogger) Infof(msg string, ctx ...interface{})  {}
 func (n *NothingLogger) Warn(msg string, ctx ...interface{})   {}
+func (n *NothingLogger) Warnf(msg string, ctx ...interface{})  {}
 func (n *NothingLogger) Error(msg string, ctx ...interface{})  {}
 func (n *NothingLogger) Errorf(msg string, ctx ...interface{}) {}
 func (n *NothingLogger) Crit(msg string, ctx ...interface{})   {}

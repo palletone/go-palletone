@@ -32,7 +32,6 @@ import (
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
-	"github.com/op/go-logging"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	container "github.com/palletone/go-palletone/vm/api"
@@ -112,7 +111,7 @@ func getDockerHostConfig() *docker.HostConfig {
 	getInt64 := func(key string) int64 {
 		defer func() {
 			if err := recover(); err != nil {
-				dockerLogger.Warningf("load vm.docker.hostConfig.%s failed, error: %v", key, err)
+				dockerLogger.Warnf("load vm.docker.hostConfig.%s failed, error: %v", key, err)
 			}
 		}()
 		n := viper.GetInt(dockerKey(key))
@@ -122,7 +121,7 @@ func getDockerHostConfig() *docker.HostConfig {
 	var logConfig docker.LogConfig
 	err := viper.UnmarshalKey(dockerKey("LogConfig"), &logConfig)
 	if err != nil {
-		dockerLogger.Warningf("load docker HostConfig.LogConfig failed, error: %s", err.Error())
+		dockerLogger.Warnf("load docker HostConfig.LogConfig failed, error: %s", err.Error())
 	}
 	networkMode := viper.GetString(dockerKey("NetworkMode"))
 	if networkMode == "" {
@@ -350,7 +349,7 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 
 			// Acquire a custom logger for our chaincode, inheriting the level from the peer
 			containerLogger := flogging.MustGetLogger(containerID)
-			logging.SetLevel(logging.GetLevel("peer"), containerID)
+			//logging.SetLevel(logging.GetLevel("peer"), containerID)
 
 			for {
 				// Loop forever dumping lines of text into the containerLogger

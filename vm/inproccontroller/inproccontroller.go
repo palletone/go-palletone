@@ -23,12 +23,12 @@ import (
 	"fmt"
 	"io"
 
-	"golang.org/x/net/context"
-	"github.com/palletone/go-palletone/vm/ccintf"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"github.com/palletone/go-palletone/contracts/shim"
-	container "github.com/palletone/go-palletone/vm/api"
+	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	container "github.com/palletone/go-palletone/vm/api"
+	"github.com/palletone/go-palletone/vm/ccintf"
+	"golang.org/x/net/context"
 )
 
 type inprocContainer struct {
@@ -75,7 +75,7 @@ type InprocVM struct {
 func (vm *InprocVM) getInstance(ctxt context.Context, ipctemplate *inprocContainer, instName string, args []string, env []string) (*inprocContainer, error) {
 	ipc := instRegistry[instName]
 	if ipc != nil {
-		inprocLogger.Warningf("chaincode instance exists for %s", instName)
+		inprocLogger.Warnf("chaincode instance exists for %s", instName)
 		return ipc, nil
 	}
 	ipc = &inprocContainer{args: args, env: env, chaincode: ipctemplate.chaincode, stopChan: make(chan struct{})}
@@ -196,7 +196,7 @@ func (vm *InprocVM) Start(ctxt context.Context, ccid ccintf.CCID, args []string,
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				inprocLogger.Criticalf("caught panic from chaincode  %s", instName)
+				inprocLogger.Errorf("caught panic from chaincode  %s", instName)
 			}
 		}()
 		ipc.launchInProc(ctxt, instName, args, env, ccSupport)
