@@ -2385,21 +2385,22 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 	fmt.Println(result)
 	return result, nil
 }
+
 //sign rawtranscation
 //create raw transction
 func (s *PublicTransactionPoolAPI) GetPtnTestCoin(ctx context.Context, from string, to string, amount, password string, duration *uint64) (common.Hash, error) {
-    var LockTime int64
+	var LockTime int64
 	LockTime = 0
 
-	amounts := map[string]decimal.Decimal{}
+	amounts := []ptnjson.AddressAmt{}
 	if to == "" {
 		return common.Hash{}, nil
 	}
-    a ,err:= decimal.NewFromString(amount) 
-    if err != nil {
+	a, err := decimal.NewFromString(amount)
+	if err != nil {
 		return common.Hash{}, nil
 	}
-	amounts[to] = a
+	amounts = append(amounts, ptnjson.AddressAmt{to, a})
 
 	utxoJsons, err := s.b.GetAddrUtxos(from)
 	if err != nil {
@@ -2410,8 +2411,8 @@ func (s *PublicTransactionPoolAPI) GetPtnTestCoin(ctx context.Context, from stri
 		//utxos = append(utxos, &json)
 		utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
 	}
-    fee,err  :=decimal.NewFromString("1") 
-    if err != nil {
+	fee, err := decimal.NewFromString("1")
+	if err != nil {
 		return common.Hash{}, nil
 	}
 	daoAmount := ptnjson.Ptn2Dao(a.Add(fee))
@@ -2431,7 +2432,7 @@ func (s *PublicTransactionPoolAPI) GetPtnTestCoin(ctx context.Context, from stri
 	}
 
 	if change > 0 {
-		amounts[from] = ptnjson.Dao2Ptn(change)
+		amounts = append(amounts, ptnjson.AddressAmt{from, ptnjson.Dao2Ptn(change)})
 	}
 
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
@@ -2552,6 +2553,7 @@ func (s *PublicTransactionPoolAPI) GetPtnTestCoin(ctx context.Context, from stri
 	log.Debugf("Tx outpoint tx hash:%s", stx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
 	return submitTransaction(ctx, s.b, stx)
 }
+
 // SendTransaction creates a transaction for the given argument, sign it and submit it to the
 // transaction pool.
 func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args SendTxArgs) (common.Hash, error) {
