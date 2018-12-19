@@ -56,7 +56,7 @@ type IStateDb interface {
 	//GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
 	//UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
 	//GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error)
-	UpdateVotedMediator(voter common.Address, candidates []byte) error
+	AppendVotedMediator(voter, mediator common.Address) error
 
 	// world state chainIndex
 	GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)

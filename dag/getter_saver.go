@@ -222,7 +222,7 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 	return nodes
 }
 
-func (d *Dag) GetVotedMediator(addr common.Address) []common.Address {
+func (d *Dag) GetVotedMediator(addr common.Address) map[common.Address]bool {
 	accountInfo, _ := d.statedb.RetrieveAccountInfo(addr)
 
 	return accountInfo.VotedMediators

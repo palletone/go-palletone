@@ -36,7 +36,7 @@ var (
 	DynGlobalPropDBKey = append(constants.DYNAMIC_GLOBALPROPERTY_PREFIX, []byte("DynamicGlobalProperty")...)
 )
 
-// only for serialization
+// only for serialization(storage)
 type globalProperty struct {
 	ChainParameters core.ChainParameters
 

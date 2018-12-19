@@ -85,7 +85,7 @@ func WriteFolderToTarPackage(tw *tar.Writer, srcPath string, excludeDir string, 
 
 		if includeFileTypeMap != nil {
 			// we only want 'fileTypes' source files at this point
-			if _, ok := includeFileTypeMap[ext]; ok != true {
+			if _, ok := includeFileTypeMap[ext]; !ok {
 				return nil
 			}
 		}

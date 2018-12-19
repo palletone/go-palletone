@@ -338,13 +338,13 @@ func fetchKeystore(am *accounts.Manager) *keystore.KeyStore {
 
 // ImportRawKey stores the given hex encoded ECDSA key into the key directory,
 // encrypting it with the passphrase.
-func (s *PrivateAccountAPI) ImportRawKey(privkey string, password string) (common.Address, error) {
+func (s *PrivateAccountAPI) ImportRawKey(privkey string, password string) (string, error) {
 	key, err := crypto.HexToECDSA(privkey)
 	if err != nil {
-		return common.Address{}, err
+		return "", err
 	}
 	acc, err := fetchKeystore(s.am).ImportECDSA(key, password)
-	return acc.Address, err
+	return acc.Address.String(), err
 }
 
 // UnlockAccount will unlock the account associated with the given address with
@@ -366,7 +366,8 @@ func (s *PrivateAccountAPI) UnlockAccount(addrStr string, password string, durat
 }
 
 // LockAccount will lock the account associated with the given address when it's unlocked.
-func (s *PrivateAccountAPI) LockAccount(addr common.Address) bool {
+func (s *PrivateAccountAPI) LockAccount(addrStr string) bool {
+	addr, _ := common.StringToAddress(addrStr)
 	return fetchKeystore(s.am).Lock(addr) == nil
 }
 
@@ -766,8 +767,8 @@ func (s *PublicBlockChainAPI) GetUnitByNumber(ctx context.Context, condition str
 	number.IsMain = true
 
 	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
-	asset := modules.NewPTNAsset()
-	number.AssetID = asset.AssetId
+	//asset := modules.NewPTNAsset()
+	number.AssetID = modules.CoreAsset.AssetId
 	log.Info("PublicBlockChainAPI info", "GetUnitByNumber_number.Index:", number.Index, "number:", number.String())
 
 	unit := s.b.GetUnitByNumber(number)
@@ -2420,8 +2421,6 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 	fmt.Println(result)
 	return result, nil
 }
-
-
 
 // SendTransaction creates a transaction for the given argument, sign it and submit it to the
 // transaction pool.

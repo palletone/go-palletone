@@ -18,38 +18,46 @@
  *
  */
 
-package modules
+package web3ext
 
-import "github.com/palletone/go-palletone/common"
-
-//一个账户（地址）的状态信息
-//Include:
-// personal account P1*
-//P2SH account P3*
-//Contract account PC*
-type AccountInfoBase struct {
-	//AccountName string
-	//当前账户的PTN余额
-	PtnBalance uint64
-	//通用可改选投票的结果
-	//Votes []vote.VoteInfo
-}
-
-func NewAccountInfoBase() *AccountInfoBase {
-	return &AccountInfoBase{
-		PtnBalance: 0,
-	}
-}
-
-type AccountInfo struct {
-	*AccountInfoBase
-	//当前账户投票的Mediator
-	VotedMediators map[common.Address]bool
-}
-
-func NewAccountInfo() *AccountInfo {
-	return &AccountInfo{
-		AccountInfoBase: NewAccountInfoBase(),
-		VotedMediators:  make(map[common.Address]bool),
-	}
-}
+const Wallet_JS = `
+ web3._extend({
+ 	property: 'wallet',
+ 	methods: [
+ 	],
+ 	properties:
+ 	[
+ 		new web3._extend.Method({
+			name: 'getBalance',
+			call: 'wallet_getBalance',
+			params: 1
+		}),
+		new web3._extend.Method({
+			name: 'getAddrUtxos',
+			call: 'wallet_getAddrUtxos',
+			params: 1
+		}),
+ 		new web3._extend.Method({
+			name: 'createPaymentTx',
+			call: 'wallet_createPaymentTx',
+			params: 4
+		}),
+		new web3._extend.Method({
+			name: 'createRawTransaction',
+			call: 'wallet_createRawTransaction',
+			params: 4
+		}),
+		new web3._extend.Method({
+			name: 'sendRawTransaction',
+			call: 'wallet_sendRawTransaction',
+			params: 1
+		}),
+		
+		new web3._extend.Method({
+			name: 'getPtnTestCoin',
+			call: 'wallet_getPtnTestCoin',
+			params: 5
+		}),
+ 	]
+ });
+ `

@@ -145,7 +145,14 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]common.Address, error) {
 		return []common.Address{}, err
 	}
 
-	return a.dag.GetVotedMediator(addr), nil
+	medMap := a.dag.GetVotedMediator(addr)
+	mediators := make([]common.Address, 0, len(medMap))
+
+	for med, _ := range medMap {
+		mediators = append(mediators, med)
+	}
+
+	return mediators, nil
 }
 
 func (a *PublicMediatorAPI) GetNextUpdateTime() string {

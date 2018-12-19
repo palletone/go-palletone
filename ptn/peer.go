@@ -115,8 +115,8 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 // Info gathers and returns a collection of metadata known about a peer.
 func (p *peer) Info( /*assetId modules.IDType16*/ ) *PeerInfo {
 	//ptnAssetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
-	asset := modules.NewPTNAsset()
-	hash, number := p.Head(asset.AssetId)
+	//asset := modules.NewPTNAsset()
+	hash, number := p.Head(modules.CoreAsset.AssetId)
 
 	return &PeerInfo{
 		Version: p.version,

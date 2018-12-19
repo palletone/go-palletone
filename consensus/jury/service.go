@@ -233,7 +233,7 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 		return errors.New("ProcessContractSigEvent event Tx is invalid")
 	}
 	reqId := event.Tx.RequestHash()
-	if _, ok := p.mtx[reqId]; ok != true {
+	if _, ok := p.mtx[reqId]; !ok {
 		errMsg := fmt.Sprintf("local not find txid: %s", reqId.String())
 		log.Debug("ProcessContractSigEvent", "info", errMsg)
 

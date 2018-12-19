@@ -69,7 +69,7 @@ func TestGenesisUnit(t *testing.T) {
 
 func TestGenGenesisConfigPayload(t *testing.T) {
 	var genesisConf core.Genesis
-	genesisConf.SystemConfig.DepositRate = 0.02
+	genesisConf.SystemConfig.DepositRate = "0.02"
 
 	genesisConf.InitialParameters.MediatorInterval = 10
 
