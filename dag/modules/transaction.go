@@ -86,14 +86,6 @@ func (pld *PaymentPayload) AddTxOut(to *Output) {
 	pld.Outputs = append(pld.Outputs, to)
 }
 
-//func (t *Transaction) SetHash(hash common.Hash) {
-//	if t.TxHash == (common.Hash{}) {
-//		t.TxHash = hash
-//	} else {
-//		t.TxHash.Set(hash)
-//	}
-//}
-
 type TxPoolTransaction struct {
 	Tx *Transaction
 
@@ -225,15 +217,6 @@ func (tx *Transaction) CreateDate() string {
 
 func (tx *Transaction) Address() common.Address {
 	return common.Address{}
-}
-
-// Cost returns amount + price
-func (tx *Transaction) Cost() *big.Int {
-	//if tx.TxFee.Cmp(TXFEE) < 0 {
-	//	tx.TxFee = TXFEE
-	//}
-	//return tx.TxFee
-	return TXFEE
 }
 
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {

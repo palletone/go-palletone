@@ -101,7 +101,8 @@ type TxPoolConfig struct {
 	AccountQueue uint64 // Maximum number of non-executable transaction slots permitted per account
 	GlobalQueue  uint64 // Maximum number of non-executable transaction slots for all accounts
 
-	Lifetime time.Duration // Maximum amount of time non-executable transaction are queued
+	Lifetime   time.Duration // Maximum amount of time non-executable transaction are queued
+	Removetime time.Duration // Maximum amount of time txpool transaction are removed
 }
 
 // DefaultTxPoolConfig contains the default configurations for the transaction
@@ -119,7 +120,8 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	AccountQueue: 64,
 	GlobalQueue:  1024,
 
-	Lifetime: 3 * time.Hour,
+	Lifetime:   3 * time.Hour,
+	Removetime: 30 * time.Minute,
 }
 
 // sanitize checks the provided user configurations and changes anything that's
@@ -146,7 +148,7 @@ type TxPool struct {
 	scope        event.SubscriptionScope
 	chainHeadCh  chan modules.ChainHeadEvent
 	chainHeadSub event.Subscription
-	mu           sync.RWMutex
+	mu           *sync.RWMutex
 
 	locals  *utxoSet   // Set of local transaction to exempt from eviction rules
 	journal *txJournal // Journal of local transaction to back up to disk
@@ -163,6 +165,7 @@ type TxPool struct {
 	wg sync.WaitGroup // for shutdown sync
 
 	homestead bool
+	quit      chan struct{} // used for exit
 }
 
 type sTxDesc struct {
@@ -231,6 +234,7 @@ func NewTxPool(config TxPoolConfig, unit dags, l log.ILogger) *TxPool { // chain
 	// Subscribe events from blockchain
 	pool.chainHeadSub = pool.unit.SubscribeChainHeadEvent(pool.chainHeadCh)
 
+	pool.mu = new(sync.RWMutex)
 	// Start the event loop and return
 	pool.wg.Add(1)
 	go pool.loop()
@@ -256,9 +260,11 @@ func (pool *TxPool) loop() {
 	journal := time.NewTicker(pool.config.Rejournal)
 	defer journal.Stop()
 
+	deleteTxTimer := time.NewTicker(5 * time.Second)
+	defer deleteTxTimer.Stop()
+
 	// Track the previous head headers for transaction reorgs
 	head := pool.unit.CurrentUnit()
-
 	// Keep waiting for and reacting to the various events
 	for {
 		select {
@@ -301,7 +307,16 @@ func (pool *TxPool) loop() {
 				}
 				pool.mu.Unlock()
 			}
+			// delete tx
+		case <-deleteTxTimer.C:
+			go pool.DeleteTx()
+
+			// quit
+		case <-pool.quit:
+			log.Info("txspool are quit now", "time", time.Now().String())
+			return
 		}
+
 	}
 }
 
@@ -1129,6 +1144,61 @@ func (pool *TxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Ha
 		}
 	}
 	return tx, u_hash
+}
+
+// DeleteTx
+func (pool *TxPool) DeleteTx() error {
+	pool.mu.Lock()
+	for hash, tx := range pool.all {
+		if !tx.Confirmed {
+			if tx.CreationDate.Add(DefaultTxPoolConfig.Lifetime).Before(time.Now()) {
+				continue
+			} else {
+				// delete
+				// log.Debug("delete the non confirmed tx.")
+				pool.DeleteTxByHash(hash)
+			}
+		}
+		if tx.CreationDate.Add(DefaultTxPoolConfig.Removetime).After(time.Now()) {
+			// delete
+			// log.Debug("delete the confirmed tx.")
+			pool.DeleteTxByHash(hash)
+		}
+	}
+	pool.mu.Unlock()
+	return nil
+}
+
+func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
+	tx, ok := pool.all[hash]
+	if !ok {
+		return errors.New(fmt.Sprintf("the tx(%s) isn't exist.", hash.String()))
+	}
+	log.Info("delete the tx.", "time", time.Now().Second()-tx.CreationDate.Second(), "hash", hash.String())
+	pool.priority_priced.Removed()
+	delete(pool.all, hash)
+	// Remove the transaction from the pending lists and reset the account nonce
+	for unit_hash, list := range pool.pending {
+		for i, tx := range list {
+			if tx.Tx.Hash().String() == hash.String() {
+				newList := make([]*modules.TxPoolTransaction, 0)
+				if i > 0 {
+					newList = append(newList, list[:i]...)
+				}
+				if len(list) > i+1 {
+					newList = append(newList, list[i+1:]...)
+				}
+				pool.pending[unit_hash] = newList
+				if len(tx.From) > 0 {
+					for _, from := range tx.From {
+						delete(pool.beats, *from)
+					}
+				}
+				break
+			}
+		}
+	}
+	return nil
 }
 
 // removeTx removes a single transaction from the queue, moving all subsequent
