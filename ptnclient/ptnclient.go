@@ -421,7 +421,7 @@ func (ec *Client) CmdCreateTransaction(ctx context.Context, from string, to stri
 
 func (ec *Client) GetPtnTestCoin(ctx context.Context, from string, to string, amount string,password string, duration *uint64) (string, error) {
 	var result string
-	err := ec.c.CallContext(ctx, &result, "ptn_getPtnTestCoin", from,to,amount,password,duration)
+	err := ec.c.CallContext(ctx, &result, "wallet_getPtnTestCoin", from,to,amount,password,duration)
 	return result, err
 }
 

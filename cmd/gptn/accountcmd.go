@@ -578,12 +578,12 @@ func accountCreateTx(ctx *cli.Context) error {
 		return nil
 	}
 	//realNet := &chaincfg.MainNetParams
-	amounts := map[string]decimal.Decimal{}
+	amounts := []ptnjson.AddressAmt{}
 	for _, outOne := range rawTransactionGenParams.Outputs {
 		if len(outOne.Address) == 0 || outOne.Amount.LessThanOrEqual(decimal.New(0, 0)) {
 			continue
 		}
-		amounts[outOne.Address] = (outOne.Amount)
+		amounts = append(amounts, ptnjson.AddressAmt{outOne.Address, outOne.Amount})
 	}
 	if len(amounts) == 0 {
 		return nil

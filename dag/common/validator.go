@@ -453,7 +453,7 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 		// 	}
 		// }
 		if out.Value <= 0 || out.Value > 100000000000000000 {
-			log.Debug("The OutPut value is :","amount",out.Value)
+			log.Debug("The OutPut value is :", "amount", out.Value)
 			return modules.TxValidationCode_INVALID_AMOUNT
 		}
 	}

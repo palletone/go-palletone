@@ -86,14 +86,6 @@ func (pld *PaymentPayload) AddTxOut(to *Output) {
 	pld.Outputs = append(pld.Outputs, to)
 }
 
-//func (t *Transaction) SetHash(hash common.Hash) {
-//	if t.TxHash == (common.Hash{}) {
-//		t.TxHash = hash
-//	} else {
-//		t.TxHash.Set(hash)
-//	}
-//}
-
 type TxPoolTransaction struct {
 	Tx *Transaction
 
@@ -195,7 +187,7 @@ func (tx *Transaction) RequestHash() common.Hash {
 	req := &Transaction{}
 	for _, msg := range tx.TxMessages {
 		req.AddMessage(msg)
-		if msg.App >= 100 { //100以上的APPCode是请求
+		if msg.App >= APP_CONTRACT_TPL_REQUEST { //100以上的APPCode是请求
 			break
 		}
 	}
@@ -225,15 +217,6 @@ func (tx *Transaction) CreateDate() string {
 
 func (tx *Transaction) Address() common.Address {
 	return common.Address{}
-}
-
-// Cost returns amount + price
-func (tx *Transaction) Cost() *big.Int {
-	//if tx.TxFee.Cmp(TXFEE) < 0 {
-	//	tx.TxFee = TXFEE
-	//}
-	//return tx.TxFee
-	return TXFEE
 }
 
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {

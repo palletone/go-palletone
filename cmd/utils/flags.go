@@ -252,6 +252,12 @@ var (
 		Usage: "Maximum amount of time non-executable transaction are queued",
 		Value: ptn.DefaultConfig.TxPool.Lifetime,
 	}
+	TxPoolRemovetimeFlag = cli.DurationFlag{
+		Name:  "txpool.removetime",
+		Usage: "Maximum amount of time txpool transaction are removed",
+		Value: ptn.DefaultConfig.TxPool.Removetime,
+	}
+
 	// Performance tuning settings
 	CacheFlag = cli.IntFlag{
 		Name:  "cache",
@@ -880,6 +886,9 @@ func setTxPool(ctx *cli.Context, cfg *txspool.TxPoolConfig) {
 	}
 	if ctx.GlobalIsSet(TxPoolLifetimeFlag.Name) {
 		cfg.Lifetime = ctx.GlobalDuration(TxPoolLifetimeFlag.Name)
+	}
+	if ctx.GlobalIsSet(TxPoolRemovetimeFlag.Name) {
+		cfg.Removetime = ctx.GlobalDuration(TxPoolRemovetimeFlag.Name)
 	}
 }
 
