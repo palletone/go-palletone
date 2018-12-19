@@ -638,7 +638,7 @@ const Wallet_JS = `
  	],
  	properties:
  	[
- 		new web3._extend.Met
+ 		new web3._extend.Method({
 			name: 'getBalance',
 			call: 'wallet_getBalance',
 			params: 1
