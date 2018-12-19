@@ -128,6 +128,9 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 }
 
 func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]string) {
+	defer func(start time.Time) {
+		log.Debug("maybeProduceUnit unit elapsed", "elapsed", time.Since(start))
+	}(time.Now())
 	//	println("\n尝试生产验证单元...")
 	detail := map[string]string{}
 
@@ -151,8 +154,8 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	slot := dag.GetSlotAtTime(now)
 	// is anyone scheduled to produce now or one second in the future?
 	if slot == 0 {
-		detail["NextTime"] = nextSlotTime.Format("2006-01-02 15:04:05")
-		detail["Now"] = now.Format("2006-01-02 15:04:05")
+		detail["NextTime"] = nextSlotTime.Format("2006-01-02 15:04:05.000")
+		detail["Now"] = now.Format("2006-01-02 15:04:05.000")
 		return NotTimeYet, detail
 	}
 
@@ -211,7 +214,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	unitHash := newUnit.UnitHash
 	detail["Num"] = strconv.FormatUint(newUnit.NumberU64(), 10)
 	time := time.Unix(newUnit.Timestamp(), 0)
-	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
+	detail["Timestamp"] = time.Format("2006-01-02 15:04:05.000")
 	detail["Mediator"] = scheduledMediator.Str()
 	detail["Hash"] = unitHash.TerminalString()
 

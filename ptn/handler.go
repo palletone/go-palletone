@@ -17,10 +17,8 @@
 package ptn
 
 import (
-	//"encoding/json"
 	"errors"
 	"fmt"
-
 	"sync"
 	"sync/atomic"
 	"time"
@@ -35,6 +33,7 @@ import (
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
+	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -224,8 +223,11 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, txpool)
 
 	validator := func(header *modules.Header) error {
-		//TODO must recover
-		return nil //dag.VerifyHeader(header, false)
+		//dag.VerifyHeader(header, false)
+		if _, err := dag.GetUnitByHash(header.Hash()); err != nil {
+			return dagerrors.ErrFutureBlock
+		}
+		return nil
 	}
 	heighter := func(assetId modules.IDType16) uint64 {
 		unit := dag.GetCurrentUnit(assetId)
@@ -238,7 +240,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		// If fast sync is running, deny importing weird blocks
 		if atomic.LoadUint32(&manager.fastSync) == 1 {
 			log.Warn("Discarded bad propagated block", "number", blocks[0].Number().Index, "hash", blocks[0].Hash())
-			return 0, nil
+			return 0, errors.New("fasting sync")
 		}
 		log.Debug("Fetcher", "manager.dag.InsertDag index:", blocks[0].Number().Index, "hash", blocks[0].Hash())
 
@@ -403,9 +405,9 @@ func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *p
 // handle is the callback invoked to manage the life cycle of an ptn peer. When
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
-	log.Debug("================================Enter ProtocolManager handle======================================")
+	log.Debug("Enter ProtocolManager handle", "peer id:", p.id)
 
-	defer log.Debug("================================End ProtocolManager handle======================================")
+	defer log.Debug("End ProtocolManager handle", "peer id:", p.id)
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
@@ -413,25 +415,12 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 	log.Debug("PalletOne peer connected", "name", p.Name())
 
-	//TODO Devin
-	//var unitRep common2.IUnitRepository
-	//unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
-
-	//mediator := false
-	//if !pm.isTest {
-	//	mediator = pm.producer.LocalHaveActiveMediator()
-	//}
-
 	head := pm.dag.CurrentHeader()
 	// Execute the PalletOne handshake
 	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash() /*mediator,*/, head.Hash()); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
-
-	//if err := pm.peerCheck(p); err != nil {
-	//	return err
-	//}
 
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
 		rw.Init(p.version)
@@ -592,7 +581,6 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool /*, 
 
 	for _, parentHash := range unit.ParentHash() {
 		if parent, err := pm.dag.GetUnitByHash(parentHash); err != nil || parent == nil {
-			//if parent, err := pm.dag.GetUnit(parentHash); err != nil || parent == nil {
 			log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash)
 			return
 		}
@@ -613,12 +601,10 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool /*, 
 	//		}
 	//	}
 	//}
-
+	propagate = true
 	// If propagation is requested, send to a subset of the peer
 	if propagate {
 		peers := pm.peers.PeersWithoutUnit(hash)
-		// Send the block to a subset of our peers
-		//transfer := peers[:int(math.Sqrt(float64(len(peers))))]
 		for _, peer := range peers {
 			peer.SendNewUnit(unit)
 		}

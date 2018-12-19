@@ -24,14 +24,17 @@ import (
 
 // common error
 var (
-	ErrSetEmpty    = errors.New("dag: set is empty")
-	ErrDagNotFound = errors.New("dag: not found")
-
+	ErrSetEmpty       = errors.New("dag: set is empty")
+	ErrDagNotFound    = errors.New("dag: not found")
 	ErrNotFound       = New("leveldb: not found")
 	ErrNumberNotFound = New("dag: header's number not found")
 	ErrUtxoNotFound   = New("utxo: not found")
+	ErrUnitExist      = New("unit: exist")
 
-	ErrUnitExist = New("unit: exist")
+	ErrUnknownAncestor = errors.New("unknown ancestor")
+	ErrPrunedAncestor  = errors.New("pruned ancestor")
+	ErrFutureBlock     = errors.New("block in the future")
+	ErrInvalidNumber   = errors.New("invalid block number")
 )
 
 // New returns an error that formats as the given text.

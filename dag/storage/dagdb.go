@@ -533,7 +533,9 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 	// get transaction by tx'hash.
 	for _, txHash := range txHashList {
 		tx, _, _, _ := dagdb.GetTransaction(txHash)
-		txs = append(txs, tx)
+		if tx != nil {
+			txs = append(txs, tx)
+		}
 	}
 	return txs, nil
 }
@@ -729,6 +731,9 @@ func (dagdb *DagDb) gettrasaction(hash common.Hash) (*modules.Transaction, error
 }
 
 func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
+	if tx == nil {
+		return nil, errors.New("convert msg tx is nil")
+	}
 	msgs := make([]*modules.Message, 0)
 	for _, msg := range tx.Messages() {
 		data1, err1 := json.Marshal(msg.Payload)
