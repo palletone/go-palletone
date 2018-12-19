@@ -207,6 +207,55 @@ func (b *bridge) SignRawTransaction(call otto.FunctionCall) (response otto.Value
 	return val
 }
 
+//add by wzhyuan
+func (b *bridge) GetPtnTestCoin(call otto.FunctionCall) (response otto.Value) {
+	// Make sure we have an account specified to unlock
+	if !call.Argument(0).IsString() {
+		throwJSException("first argument must be the address string ")
+	}
+
+	if !call.Argument(1).IsString() {
+		throwJSException("sencond argument must be address string to receive token")
+	}
+	if !call.Argument(2).IsString() {
+		throwJSException("third argument must be limit of receive token")
+	}
+
+	from  := call.Argument(0)
+	to    := call.Argument(1)
+	limit := call.Argument(2)
+   
+	// If password is not given or is the null value, prompt the user for it
+	var passwd otto.Value
+
+	if call.Argument(3).IsUndefined() || call.Argument(3).IsNull() {
+		//fmt.Fprintf(b.printer, "Sign rawtx %s\n", rawtx)
+		if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
+			throwJSException(err.Error())
+		} else {
+			passwd, _ = otto.ToValue(input)
+		}
+	} else {
+		if !call.Argument(3).IsString() {
+			throwJSException("password must be a string")
+		}
+		passwd = call.Argument(3)
+	}
+	// Third argument is the duration how long the account must be unlocked.
+	duration := otto.NullValue()
+	if call.Argument(4).IsDefined() && !call.Argument(4).IsNull() {
+		if !call.Argument(4).IsNumber() {
+			throwJSException("unlock duration must be a number")
+		}
+		duration = call.Argument(4)
+	}
+	// Send the request to the backend and return
+	val, err := call.Otto.Call("jeth.getPtnTestCoin", nil, from,to,limit, passwd, duration)
+	if err != nil {
+		throwJSException(err.Error())
+	}
+	return val
+}
 //zxl add
 func (b *bridge) TransferToken(call otto.FunctionCall) (response otto.Value) {
 	// Make sure we have an account specified to unlock

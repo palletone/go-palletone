@@ -41,7 +41,7 @@ func TestSimpleSignHash(t *testing.T) {
 		    t.Error("No Pass")
 	    }
 	
-        for index,input:=range RawTxjsonGenParams.Payload[0].Inputs{
+        for index,input := range RawTxjsonGenParams.Payload[0].Inputs{
             
                   hash := common.HexToHash(input.HashForSign)
 

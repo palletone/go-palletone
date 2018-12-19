@@ -254,8 +254,9 @@ func GenContractSigTransction(singer common.Address, orgTx *modules.Transaction,
 func DefaultGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
 		DepositRate:               core.DefaultDepositRate,
-		DepositAmountForJury:      core.DefaultDepositAmountForJury,
+		FoundationAddress:         core.DefaultFoundationAddress,
 		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
+		DepositAmountForJury:      core.DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
 		DepositPeriod:             core.DefaultDepositPeriod,
 	}
@@ -282,6 +283,7 @@ func DefaultGenesisBlock() *core.Genesis {
 func DefaultTestnetGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
 		DepositRate:               core.DefaultDepositRate,
+		FoundationAddress:         core.DefaultFoundationAddress,
 		DepositAmountForJury:      core.DefaultDepositAmountForJury,
 		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
 		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
