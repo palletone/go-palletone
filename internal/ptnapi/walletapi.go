@@ -6,19 +6,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/walletjson"
 	"github.com/palletone/go-palletone/tokenengine"
-    "github.com/palletone/go-palletone/common/hexutil"
 	"github.com/shopspring/decimal"
 )
+
 // Start forking command.
 func (s *PublicWalletAPI) Forking(ctx context.Context, rate uint64) uint64 {
 	return forking(ctx, s.b)
 }
+
 type PublicWalletAPI struct {
 	b Backend
 }
@@ -32,12 +34,12 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	var LockTime int64
 	LockTime = 0
 
-	amounts := map[string]decimal.Decimal{}
+	amounts := []ptnjson.AddressAmt{}
 	if to == "" {
 		return "", fmt.Errorf("amounts is empty")
 	}
 
-	amounts[to] = amount
+	amounts = append(amounts, ptnjson.AddressAmt{to, amount})
 
 	utxoJsons, err := s.b.GetAddrUtxos(from)
 	if err != nil {
@@ -65,7 +67,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	}
 
 	if change > 0 {
-		amounts[from] = ptnjson.Dao2Ptn(change)
+		amounts = append(amounts, ptnjson.AddressAmt{from, ptnjson.Dao2Ptn(change)})
 	}
 
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
@@ -103,7 +105,9 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 	//	// some validity checks.
 	//	//only support mainnet
 	//	var params *chaincfg.Params
-	for encodedAddr, ptnAmt := range c.Amounts {
+	for _, addramt := range c.Amounts {
+		encodedAddr := addramt.Address
+		ptnAmt := addramt.Amount
 		amount := ptnjson.Ptn2Dao(ptnAmt)
 		//		// Ensure amount is in the valid range for monetary amounts.
 		if amount <= 0 || amount > ptnjson.MaxDao {
@@ -152,7 +156,6 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 	//	// is intentionally not directly returning because the first return
 	//	// value is a string and it would result in returning an empty string to
 	//	// the client instead of nothing (nil) in the case of an error.
-	
 
 	mtx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
@@ -165,8 +168,8 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 		if err != nil {
 			return "", err
 		}
-                sh := common.BytesToHash(hashforsign)
-                inputjson[index].HashForSign = sh.String()
+		sh := common.BytesToHash(hashforsign)
+		inputjson[index].HashForSign = sh.String()
 	}
 	PaymentJson := walletjson.PaymentJson{}
 	PaymentJson.Inputs = inputjson
@@ -189,19 +192,19 @@ func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string)
 	if err != nil {
 		return common.Hash{}, err
 	}
-    //fmt.Printf("---------------------------RawTxjsonGenParams----------%+v\n",RawTxjsonGenParams)
+	//fmt.Printf("---------------------------RawTxjsonGenParams----------%+v\n",RawTxjsonGenParams)
 	pload := new(modules.PaymentPayload)
-	for _, input := range RawTxjsonGenParams.Payload[0].Inputs{
+	for _, input := range RawTxjsonGenParams.Payload[0].Inputs {
 		txHash, err := common.NewHashFromStr(input.TxHash)
 		if err != nil {
 			return common.Hash{}, rpcDecodeHexError(input.TxHash)
 		}
 		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.OutIndex)
-        hh,err := hexutil.Decode(input.Signature)
-        if err != nil {
+		hh, err := hexutil.Decode(input.Signature)
+		if err != nil {
 			return common.Hash{}, rpcDecodeHexError(input.TxHash)
 		}
-		txInput := modules.NewTxIn(prevOut, hh)  
+		txInput := modules.NewTxIn(prevOut, hh)
 		pload.AddTxIn(txInput)
 	}
 	for _, output := range RawTxjsonGenParams.Payload[0].Outputs {
@@ -224,7 +227,7 @@ func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string)
 }
 
 func (s *PublicWalletAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {
-	
+
 	items, err := s.b.GetAddrUtxos(addr)
 	if err != nil {
 		return "", err
@@ -233,11 +236,11 @@ func (s *PublicWalletAPI) GetAddrUtxos(ctx context.Context, addr string) (string
 	info := NewPublicReturnInfo("address_utxos", items)
 	result_json, _ := json.Marshal(info)
 	return string(result_json), nil
-	
+
 }
 
 func (s *PublicWalletAPI) GetBalance(ctx context.Context, address string) (map[string]decimal.Decimal, error) {
-    utxos, err := s.b.GetAddrUtxos(address)
+	utxos, err := s.b.GetAddrUtxos(address)
 	if err != nil {
 		return nil, err
 	}
