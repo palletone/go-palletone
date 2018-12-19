@@ -25,11 +25,11 @@ const (
 	DefaultTokenAmount               = "100000000000000000"
 	DefaultTokenDecimal              = 8
 	DefaultChainID                   = 1
-	DefaultDepositRate               = 0.02
-	DefaultDepositPeriod             = 0
-	DefaultDepositAmountForMediator  = 2000
-	DefaultDepositAmountForJury      = 1000
-	DefaultDepositAmountForDeveloper = 800
+	DefaultDepositRate               = "0.02"
+	DefaultDepositPeriod             = "0"
+	DefaultDepositAmountForMediator  = "2000"
+	DefaultDepositAmountForJury      = "1000"
+	DefaultDepositAmountForDeveloper = "800"
 	DefaultDepositContractAddress    = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
 	DefaultFoundationAddress         = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
 	DefaultTokenHolder               = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"

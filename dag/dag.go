@@ -895,6 +895,10 @@ func (d *Dag) GetContractState(id []byte, field string) (*modules.StateVersion, 
 	//return d.statedb.GetContractState(common.HexToAddress(id), field)
 }
 
+func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
+	return d.statedb.GetConfig([]byte(name))
+}
+
 //get contract all state
 func (d *Dag) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
 	return d.statedb.GetContractStatesById(id)

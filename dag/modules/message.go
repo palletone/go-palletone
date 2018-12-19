@@ -136,7 +136,8 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 type ContractWriteSet struct {
 	IsDelete bool
 	Key      string
-	Value    []byte
+	//Value    []byte
+	Value interface{}
 }
 
 func ToPayloadMapValueBytes(data interface{}) []byte {

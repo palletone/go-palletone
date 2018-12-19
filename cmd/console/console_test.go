@@ -85,7 +85,7 @@ type tester struct {
 
 func DevGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		DepositRate: 0.02,
+		DepositRate: "0.02",
 	}
 
 	initParams := core.NewChainParams()

@@ -31,15 +31,15 @@ import (
 // fork switch-over blocks through the chain configuration.
 type SystemConfig struct {
 	//年利率
-	DepositRate float64 `json:"depositRate"`
+	DepositRate string `json:"depositRate"`
 	//基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
 	FoundationAddress string `json:"foundationAddress"`
 	//保证金的数量
-	DepositAmountForMediator  uint64 `json:"depositAmountForMediator"`
-	DepositAmountForJury      uint64 `json:"depositAmountForJury"`
-	DepositAmountForDeveloper uint64 `json:"depositAmountForDeveloper"`
+	DepositAmountForMediator  string `json:"depositAmountForMediator"`
+	DepositAmountForJury      string `json:"depositAmountForJury"`
+	DepositAmountForDeveloper string `json:"depositAmountForDeveloper"`
 	//保证金周期
-	DepositPeriod int `json:"depositPeriod"`
+	DepositPeriod string `json:"depositPeriod"`
 }
 
 type Genesis struct {
