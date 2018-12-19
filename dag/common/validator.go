@@ -187,13 +187,42 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 				return validateCode
 			}
 		case modules.APP_CONTRACT_TPL_REQUEST:
-			//todo
+			payload, _ := msg.Payload.(*modules.ContractInstallRequestPayload)
+			if payload.TplName == "" || payload.Path == "" || payload.Version == "" {
+				return modules.TxValidationCode_INVALID_CONTRACT
+			}
+			return modules.TxValidationCode_VALID
+
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
-			//todo
+			// 参数临界值验证
+			payload, _ := msg.Payload.(*modules.ContractDeployRequestPayload)
+			if len(payload.TplId) == 0 || payload.TxId == "" || payload.Timeout < 0 {
+				return modules.TxValidationCode_INVALID_CONTRACT
+			}
+
+			validateCode := validate.validateContractdeploy(payload.TplId, worldTmpState)
+			return validateCode
+
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
-			//todo
+
+			payload, _ := msg.Payload.(*modules.ContractInvokeRequestPayload)
+			if len(payload.ContractId) == 0 {
+				return modules.TxValidationCode_INVALID_CONTRACT
+			}
+			// 验证ContractId有效性
+			_, has := (*worldTmpState)[hexutil.Encode(payload.ContractId[:])]
+			if !has {
+				return modules.TxValidationCode_INVALID_CONTRACT
+			}
+			return modules.TxValidationCode_VALID
+
 		case modules.APP_SIGNATURE:
-			//todo
+			// 签名验证
+			payload, _ := msg.Payload.(*modules.SignaturePayload)
+			validateCode := validate.validateContractSignature(payload.Signatures[:], tx, worldTmpState)
+			if validateCode != modules.TxValidationCode_VALID {
+				return validateCode
+			}
 
 		case modules.APP_CONFIG:
 		case modules.APP_TEXT:
@@ -251,6 +280,14 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		}
 	case *modules.MediatorCreateOperation:
 		if app == modules.OP_MEDIATOR_CREATE {
+			return true
+		}
+	case *modules.ContractDeployRequestPayload:
+		if app == modules.APP_CONTRACT_DEPLOY_REQUEST {
+			return true
+		}
+	case *modules.ContractInstallRequestPayload:
+		if app == modules.APP_CONTRACT_TPL_REQUEST {
 			return true
 		}
 
@@ -360,7 +397,8 @@ func validateTxSignature(tx *modules.Transaction) bool {
 对unit中某个交易的读写集进行验证
 To validate read set and write set of one transaction in unit'
 */
-func (validate *Validate) validateContractState(contractID []byte, readSet *[]modules.ContractReadSet, writeSet *[]modules.ContractWriteSet, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+func (validate *Validate) validateContractState(contractID []byte, readSet *[]modules.ContractReadSet, writeSet *[]modules.ContractWriteSet,
+	worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
 	// check read set, if read field in worldTmpState then the transaction is invalid
 	contractState, cOk := (*worldTmpState)[hexutil.Encode(contractID[:])]
 	if cOk && readSet != nil {
@@ -579,4 +617,12 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, i
 		return sigState
 	}
 	return modules.UNIT_STATE_VALIDATED
+}
+
+func (validate *Validate) validateContractdeploy(tplId []byte, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+	return modules.TxValidationCode_VALID
+}
+
+func (validate *Validate) validateContractSignature(sinatures []modules.SignatureSet, tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+	return modules.TxValidationCode_VALID
 }

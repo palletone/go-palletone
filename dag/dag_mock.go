@@ -1092,3 +1092,19 @@ func (mr *MockIDagMockRecorder) QueryDbByPrefix(prefix interface{}) *gomock.Call
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryDbByPrefix", reflect.TypeOf((*MockIDag)(nil).QueryDbByPrefix), prefix)
 }
+
+// GetConfig mocks base method
+func (m *MockIDag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfig", name)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(*modules.StateVersion)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetConfig indicates an expected call of GetConfig
+func (mr *MockIDagMockRecorder) GetConfig(name string) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockIDag)(nil).GetConfig), name)
+}
