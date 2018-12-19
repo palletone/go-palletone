@@ -206,16 +206,19 @@ func RandFromString(value string) (Decimal, error) {
 		value: dValue,
 		exp:   int32(exp),
 	}
-	result:=Decimal{}
+	result := Decimal{}
+	rand_number := Decimal{}
+	r := rand.Int()
+	rd :=big.NewInt(int64(r))
 	for {
-		r := rand.Int()
-	    rd :=big.NewInt(int64(r))
+		r = rand.Int()
+	    rd =big.NewInt(int64(r))
 
-	    rand_number := Decimal{
+	    rand_number = Decimal{
 			value: rd,
 			exp:   int32(exp),
 		}
-		result := rand_number.Mod(input_number)
+		result = rand_number.Mod(input_number)
 	    if result.IsZero() == false{
                   break
 	    }
