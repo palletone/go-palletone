@@ -87,7 +87,7 @@ func (dag *Dag) performAccountMaintenance() {
 		votingStake := info.PtnBalance
 
 		// 遍历该账户投票的mediator
-		for _, med := range info.VotedMediators {
+		for med, _ := range info.VotedMediators {
 			index, ok := mediatorIndex[med]
 
 			// if they somehow managed to specify an illegal mediator index, ignore it.
