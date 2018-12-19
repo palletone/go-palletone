@@ -5425,13 +5425,6 @@ var methods = function () {
         inputFormatter: [null,null,null]
     });
     
-    var getPtnTestCoin = new Method({
-        name: 'getPtnTestCoin',
-        call: 'ptn_getPtnTestCoin',
-        params: 5,
-        inputFormatter: [null,null,null,null,null]
-    });
-
     var sendRawTransaction = new Method({
         name: 'sendRawTransaction',
         call: 'ptn_sendRawTransaction',
@@ -5740,7 +5733,6 @@ var methods = function () {
         createRawTransaction,
         createMediatorVote,
         signRawTransaction,
-        getPtnTestCoin,
         sendRawTransaction,
         signTransaction,
         sendTransaction,

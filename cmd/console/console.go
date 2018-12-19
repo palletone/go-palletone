@@ -196,7 +196,7 @@ func (c *Console) init(preload []string) error {
 				return fmt.Errorf("ptn.signRawTransaction: %v", err)
 			}
 			obj.Set("signRawTransaction", bridge.SignRawTransaction)
-			if _, err = c.jsre.Run(`jeth.getPtnTestCoin = ptn.getPtnTestCoin;`); err != nil {
+			if _, err = c.jsre.Run(`jeth.getPtnTestCoin = wallet.getPtnTestCoin;`); err != nil {
 				return fmt.Errorf("ptn.getPtnTestCoin: %v", err)
 			}
 			obj.Set("getPtnTestCoin", bridge.GetPtnTestCoin)
