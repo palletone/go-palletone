@@ -130,8 +130,10 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag, logger)
-
+	pool := txspool.NewTxPool(config.TxPool, ptn.dag, logger)
+	ptn.txPool = pool
+	// // loop txspool to delete overtime tx.
+	// go txspool.LoopTxsPool(pool)
 	ptn.contract, err = contracts.Initialize(ptn.dag, &config.Contract)
 	if err != nil {
 		log.Error("Contract Initialize err:", "error", err)

@@ -39,8 +39,12 @@ type TransactionInput struct {
 // CreateRawTransactionCmd defines the createrawtransaction JSON-RPC command.
 type CreateRawTransactionCmd struct {
 	Inputs   []TransactionInput
-	Amounts  map[string]decimal.Decimal `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
+	Amounts  []AddressAmt `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
 	LockTime *int64
+}
+type AddressAmt struct {
+	Address string          `json:"address"`
+	Amount  decimal.Decimal `json:"amount"`
 }
 
 // CreateVoteTransactionCmd defines the createrawtransaction JSON-RPC command.
@@ -56,7 +60,7 @@ type CreateVoteTransactionCmd struct {
 // a createrawtransaction JSON-RPC command.
 //
 // Amounts are in BTC.
-func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts map[string]decimal.Decimal,
+func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts []AddressAmt,
 	lockTime *int64) *CreateRawTransactionCmd {
 
 	return &CreateRawTransactionCmd{
