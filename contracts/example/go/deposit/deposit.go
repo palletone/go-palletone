@@ -172,7 +172,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if list == nil {
 			return shim.Success([]byte("[]"))
 		}
-		fmt.Printf("list     %#s\n\n", list)
+		fmt.Printf("list     %##v\n\n", list)
 		return shim.Success(list)
 		//获取已同意的mediator列表
 	case "GetAgreeForBecomeMediatorList":
