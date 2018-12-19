@@ -496,6 +496,18 @@ web3._extend({
         	params: 7, //from, to, daoAmount, daoFee, contractId, txid, deleteImage
 			inputFormatter: [null, null, null, null, null, null, null]
 		}),
+		new web3._extend.Method({
+			name: 'depositContractInvoke',
+        	call: 'ptn_depositContractInvoke',
+        	params: 5, //from, to, daoAmount, daoFee,param[]string
+			inputFormatter: [null, null, null, null, null]
+		}),
+		new web3._extend.Method({
+			name: 'depositContractQuery',
+        	call: 'ptn_depositContractQuery',
+        	params: 1, //param[]string
+			inputFormatter: [null]
+		}),
 	],
 
 	properties: [

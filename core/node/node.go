@@ -210,7 +210,7 @@ func (n *Node) Start() error {
 	}
 	// 用配置创建了一个p2p.Server实例
 	running := &p2p.Server{Config: n.serverConfig}
-	n.log.Info("Starting peer-to-peer node：")
+	n.log.Info("Starting peer-to-peer node", "instance", n.serverConfig.Name)
 
 	// Otherwise copy and specialize the P2P configuration
 	services := make(map[reflect.Type]Service)
