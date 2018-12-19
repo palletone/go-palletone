@@ -647,7 +647,7 @@ func (handler *Handler) deleteTXIDEntry(channelID, txid string) {
 	if handler.txidMap != nil {
 		delete(handler.txidMap, txCtxID)
 	} else {
-		chaincodeLogger.Warningf("TXID %s not found!", txCtxID)
+		chaincodeLogger.Warnf("TXID %s not found!", txCtxID)
 	}
 }
 
@@ -673,7 +673,7 @@ func (handler *Handler) notifyDuringStartup(val bool) {
 				chaincodeLogger.Errorf("Error during startup .. not sending READY")
 			}
 		} else {
-			chaincodeLogger.Warningf("trying to manually run chaincode when not in devmode ?")
+			chaincodeLogger.Warn("trying to manually run chaincode when not in devmode ?")
 		}
 	}
 }
