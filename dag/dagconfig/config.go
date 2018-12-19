@@ -50,7 +50,7 @@ var DefaultConfig = Config{
 	IrreversibleHeight:           16,
 	WhetherValidateUnitSignature: false,
 	GenesisHash:                  "0xeb5f66d0289ea0af68860fd5a4d1a0b38389f598ae01008433a5ca9949fcf55c",
-	PtnAssetHex:                  modules.NewPTNAsset().AssetId.String(),
+	PtnAssetHex:                  modules.CoreAsset.AssetId.String(),
 	PtnAssetId:                   modules.NewPTNAsset().AssetId[:],
 }
 

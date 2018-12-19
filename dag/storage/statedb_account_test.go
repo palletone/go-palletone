@@ -39,7 +39,7 @@ func TestStateDb_AccountInfo(t *testing.T) {
 	assert.NotNil(t, err)
 	t.Logf("correct throw error:%s", err)
 	info.PtnBalance = 12345
-	info.VotedMediators = append(info.VotedMediators, addr)
+	info.VotedMediators[addr] = true
 
 	//Votes: []vote.VoteInfo{{Contents: , VoteType: vote.TYPE_MEDIATOR}}
 	err = statedb.StoreAccountInfo(addr, info)

@@ -123,7 +123,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	}
 	// get new asset id
 	asset := modules.NewPTNAsset()
-	err = err
+	//err = err
 	//asset := &modules.Asset{
 	//	AssetId: assetId,
 	//}

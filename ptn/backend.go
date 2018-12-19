@@ -208,24 +208,26 @@ func (s *PalletOne) APIs() []rpc.API {
 			Version:   "1.0",
 			Service:   NewPublicPalletOneAPI(s),
 			Public:    true,
-		}, {
-			Namespace: "ptn",
-			Version:   "1.0",
-			//Service:   NewPublicMinerAPI(s),
-			Public: true,
-		}, {
+		},
+		//{
+		//	Namespace: "ptn",
+		//	Version:   "1.0",
+		//	//Service:   NewPublicMinerAPI(s),
+		//	Public: true,
+		//},
+		{
 			Namespace: "ptn",
 			Version:   "1.0",
 			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
 			Public:    true,
 		},
-		{
-			Namespace: "miner",
-			Version:   "2.0",
-			//Service:   NewPrivateMinerAPI(s),
-			Service: NewPublicDagAPI(s),
-			Public:  true,
-		},
+		//{
+		//	Namespace: "miner",
+		//	Version:   "2.0",
+		//	//Service:   NewPrivateMinerAPI(s),
+		//	Service: NewPublicDagAPI(s),
+		//	Public:  true,
+		//},
 		{
 			Namespace: "ptn",
 			Version:   "1.0",

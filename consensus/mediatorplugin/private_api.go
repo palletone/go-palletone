@@ -140,7 +140,11 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (TxExecuteResult
 		return res, fmt.Errorf("%v is not mediator", mediatorStr)
 	}
 
-	// todo 判断是否已经投过该mediator
+	// 判断是否已经投过该mediator
+	voted := a.dag.GetVotedMediator(voter)
+	if voted[mediator] {
+		return res, fmt.Errorf("account %v was already voting for mediator %v", voterStr, mediatorStr)
+	}
 
 	// 1. 创建交易
 	tx, err := a.dag.GenVoteMediatorTx(voter, mediator)
