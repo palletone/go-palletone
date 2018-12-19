@@ -5986,8 +5986,7 @@ var methods = function () {
     var lockAccount = new Method({
         name: 'lockAccount',
         call: 'personal_lockAccount',
-        params: 1,
-        inputFormatter: [formatters.inputAddressFormatter]
+        params: 1
     });
 
     return [
