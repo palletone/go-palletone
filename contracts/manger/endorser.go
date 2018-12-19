@@ -259,7 +259,7 @@ func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.C
 		logger.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.New("Conver RwSet to dag unit fail")
 	}
-	logger.Debug("unit:", unit)
+	logger.Debugf("unit:%#v", unit)
 	//fmt.Printf("==unit=> %#v\n", unit.ContractId)
 	//fmt.Printf("==unit=> %#v\n", unit.Payload)
 	//fmt.Printf("==unit=> %s\n", unit.Args)
