@@ -27,19 +27,29 @@ import "github.com/palletone/go-palletone/common"
 // personal account P1*
 //P2SH account P3*
 //Contract account PC*
-type AccountInfo struct {
+type AccountInfoBase struct {
 	//AccountName string
 	//当前账户的PTN余额
 	PtnBalance uint64
-	//当前账户投票的Mediator
-	VotedMediators map[common.Address]bool
 	//通用可改选投票的结果
 	//Votes []vote.VoteInfo
 }
 
+func NewAccountInfoBase() *AccountInfoBase {
+	return &AccountInfoBase{
+		PtnBalance: 0,
+	}
+}
+
+type AccountInfo struct {
+	*AccountInfoBase
+	//当前账户投票的Mediator
+	VotedMediators map[common.Address]bool
+}
+
 func NewAccountInfo() *AccountInfo {
 	return &AccountInfo{
-		PtnBalance:     0,
-		VotedMediators: make(map[common.Address]bool),
+		AccountInfoBase: NewAccountInfoBase(),
+		VotedMediators:  make(map[common.Address]bool),
 	}
 }
