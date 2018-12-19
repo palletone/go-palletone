@@ -76,7 +76,7 @@ type SystemChaincode struct {
 
 // registerSysCC registers the given system chaincode with the peer
 func registerSysCC(syscc *SystemChaincode) (bool, error) {
-	if !syscc.Enabled || !isWhitelisted(syscc) {
+	if !syscc.Enabled || isWhitelisted(syscc) {
 		sysccLogger.Info(fmt.Sprintf("system chaincode (%s,%s,%t) disabled", syscc.Name, syscc.Path, syscc.Enabled))
 		return false, nil
 	}
@@ -97,7 +97,7 @@ func registerSysCC(syscc *SystemChaincode) (bool, error) {
 
 // deploySysCC deploys the given system chaincode on a chain
 func deploySysCC(chainID string, syscc *SystemChaincode) error {
-	if !syscc.Enabled || !isWhitelisted(syscc) {
+	if !syscc.Enabled || isWhitelisted(syscc) {
 		sysccLogger.Info(fmt.Sprintf("system chaincode (%s,%s) disabled", syscc.Name, syscc.Path))
 		return nil
 	}
@@ -194,8 +194,8 @@ func isWhitelisted(syscc *SystemChaincode) bool {
 	//chaincodes := viper.GetStringMapString("chaincode.system")
 	chaincodes := cfg.GetConfig().SysContract
 	val, ok := chaincodes[syscc.Name]
-	enabled := val == "enable" || val == "true" || val == "yes"
-	return ok && enabled
+	disabled := val == "disable" || val == "false" || val == "no"
+	return ok && disabled
 }
 
 //RegisterSysCCs is the hook for system chaincodes where system chaincodes are registered
