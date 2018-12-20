@@ -60,6 +60,9 @@ func (it *IDType16) ToAssetId() string {
 }
 func string2AssetId(str string) (IDType16, error) {
 	strArray := strings.Split(str, "+")
+	if len(strArray) < 2 {
+		return IDType16{}, errors.New("Asset string invalid")
+	}
 	symbol := strArray[0]
 	ty := strArray[1][1] - 48
 	decimal := base36.DecodeToBytes(strArray[1][0:1])
