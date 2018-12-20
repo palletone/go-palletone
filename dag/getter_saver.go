@@ -183,6 +183,14 @@ func (dag *Dag) GetMediators() map[common.Address]bool {
 	return dag.statedb.GetMediators()
 }
 
+func (dag *Dag) GetAllMediatorInCandidateList() ([]*modules.MediatorInfo, error) {
+	return dag.statedb.GetMediatorCandidateList()
+}
+
+func (dag *Dag) IsInMediatorCandidateList(address common.Address) bool {
+	return dag.statedb.IsInMediatorCandidateList(address)
+}
+
 func (dag *Dag) IsMediator(address common.Address) bool {
 	return dag.statedb.IsMediator(address)
 }
@@ -218,7 +226,6 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 		node := med.Node
 		nodes[node.ID.TerminalString()] = node
 	}
-
 	return nodes
 }
 

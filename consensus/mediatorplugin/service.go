@@ -85,6 +85,9 @@ type iDag interface {
 	GetMediators() map[common.Address]bool
 	IsMediator(address common.Address) bool
 
+	GetAllMediatorInCandidateList() ([]*modules.MediatorInfo, error)
+	IsInMediatorCandidateList(address common.Address) bool
+
 	GetVotedMediator(addr common.Address) map[common.Address]bool
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetMediatorInfo(address common.Address) *storage.MediatorInfo
