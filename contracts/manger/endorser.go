@@ -265,7 +265,13 @@ func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.C
 	//fmt.Printf("==unit=> %s\n", unit.Args)
 	//fmt.Println("==unit=> ", unit.FunctionName)
 	//fmt.Printf("==unit=> %#v\n", unit.ReadSet)
-	//fmt.Printf("==unit=> %s\n", unit.WriteSet)
+	for i := 0; i < len(unit.WriteSet); i++ {
+		fmt.Printf("==unit=> %v", unit.WriteSet[i].IsDelete)
+		fmt.Printf("==unit=> %s", unit.WriteSet[i].Key)
+		fmt.Printf("==unit=> %s", unit.WriteSet[i].Value)
+		fmt.Println()
+		fmt.Println()
+	}
 	//fmt.Println("===")
 	//if len(unit.TokenPayOut) > 0 {
 	//	fmt.Printf("==unit=> %#v\n", unit.TokenPayOut[0])
