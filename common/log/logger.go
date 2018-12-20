@@ -241,9 +241,7 @@ func initLogger() {
 		DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, arr...)
 		DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, defaultLogModule...)
 	} else {
-		if len(DefaultConfig.OpenModule[0]) == 1 && DefaultConfig.OpenModule[0] == "all" {
-
-		} else {
+		if !(len(DefaultConfig.OpenModule) == 1 && DefaultConfig.OpenModule[0] == "all") {
 			DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, defaultLogModule...)
 		}
 	}
