@@ -27,7 +27,9 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/vote"
+	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/shopspring/decimal"
 )
 
 type Txo4Greedy struct {
@@ -147,9 +149,9 @@ func (dag *Dag) getAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*mod
 
 func (dag *Dag) calculateDataFee(data interface{}) uint64 {
 	size := float64(modules.CalcDateSize(data))
-	pricePerKbyte := dag.CurrentFeeSchedule().TransferFee.PricePerKByte
+	pricePerKByte := dag.CurrentFeeSchedule().TransferFee.PricePerKByte
 
-	return uint64(size * float64(pricePerKbyte) / 1024)
+	return uint64(size * float64(pricePerKByte) / 1024)
 }
 
 func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
@@ -206,7 +208,22 @@ func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address) (*modules.Tran
 		return nil, 0, err
 	}
 
-	tx.AddMessage(msg)
+	return tx, fee, nil
+}
+
+func (dag *Dag) GenTransferPtnTx(from, to common.Address, amount decimal.Decimal, text string) (*modules.Transaction, uint64, error) {
+	// 1. 组装 message
+	msg := &modules.Message{
+		App:     modules.APP_TEXT,
+		Payload: &modules.TextPayload{Text: []byte(text)},
+	}
+
+	// 2. 组装 tx
+	fee := dag.CurrentFeeSchedule().TransferFee.BaseFee
+	tx, fee, err := dag.CreateGenericTransaction(from, to, ptnjson.Ptn2Dao(amount), fee, msg)
+	if err != nil {
+		return nil, 0, err
+	}
 
 	return tx, fee, nil
 }

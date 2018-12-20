@@ -21,8 +21,11 @@ import (
 	"encoding/json"
 	//"fmt"
 
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/shopspring/decimal"
 )
 
 // PublicPalletOneAPI provides an API to access PalletOne full node-related
@@ -113,4 +116,50 @@ type storageMap map[common.Hash]storageEntry
 type storageEntry struct {
 	Key   *common.Hash `json:"key"`
 	Value common.Hash  `json:"value"`
+}
+
+func (api *PublicPalletOneAPI) TransferPtn(from, to, amount, text, password string) (mp.TxExecuteResult, error) {
+	// 参数检查
+	res := mp.TxExecuteResult{}
+	fromAdd, err := common.StringToAddress(from)
+	if err != nil {
+		return res, fmt.Errorf("invalid account address: %s", from)
+	}
+
+	toAdd, err := common.StringToAddress(to)
+	if err != nil {
+		return res, fmt.Errorf("invalid account address: %s", to)
+	}
+
+	amountPtn, err := decimal.RandFromString(amount)
+	if err != nil {
+		return res, err
+	}
+
+	// 判断本节点是否同步完成，数据是否最新
+	if !api.p.dag.IsSynced() {
+		return res, fmt.Errorf("the data of this node is not synced, and can't vote now")
+	}
+
+	// 1. 创建交易
+	tx, fee, err := api.p.dag.GenTransferPtnTx(fromAdd, toAdd, amountPtn, text)
+	if err != nil {
+		return res, err
+	}
+
+	// 2. 签名和发送交易
+	err = api.p.SignAndSendTransaction(fromAdd, tx)
+	if err != nil {
+		return res, err
+	}
+
+	// 5. 返回执行结果
+	res.TxContent = fmt.Sprintf("Account %s transfer %vPTN to account %s with message: %v",
+		from, amount, to, text)
+	res.TxHash = tx.Hash()
+	res.TxSize = tx.Size().TerminalString()
+	res.TxFee = fmt.Sprintf("%vdao", fee)
+	res.Warning = mp.DefaultResult
+
+	return res, nil
 }

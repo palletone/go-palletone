@@ -61,7 +61,7 @@ func newFeeSchedule() (f FeeSchedule) {
 
 // 转账交易费
 type TransferFeeParameters struct {
-	BaseFee       int64  `json:"baseFee"`
+	BaseFee       uint64 `json:"baseFee"`
 	PricePerKByte uint64 `json:"pricePerKByte"`
 }
 

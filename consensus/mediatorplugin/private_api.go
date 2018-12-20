@@ -27,7 +27,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-const defaultResult = "Transaction executed locally, but may not be confirmed by the network yet!"
+const DefaultResult = "Transaction executed locally, but may not be confirmed by the network yet!"
 
 type PrivateMediatorAPI struct {
 	*MediatorPlugin
@@ -114,7 +114,7 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (TxExecuteResult, e
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()
 	res.TxFee = fmt.Sprintf("%vdao", fee)
-	res.Warning = defaultResult
+	res.Warning = DefaultResult
 
 	return res, nil
 }
@@ -165,7 +165,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (TxExecuteResult
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()
 	res.TxFee = fmt.Sprintf("%vdao", fee)
-	res.Warning = defaultResult
+	res.Warning = DefaultResult
 
 	return res, nil
 }
