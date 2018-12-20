@@ -46,14 +46,14 @@ func newTxo4Greedy(outPoint modules.OutPoint, amount uint64) *Txo4Greedy {
 	}
 }
 
-func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee uint64) (*modules.Transaction, error) {
+func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64) (*modules.Transaction, error) {
 	if daoFee == 0 {
 		return nil, fmt.Errorf("transaction's fee id zero")
 	}
 
 	// 1. 获取转出账户所有的PTN utxo
 	//allUtxos, err := dag.GetAddrUtxos(from)
-	coreUtxos, err := dag.GetAddrCoreUtxos(from)
+	coreUtxos, err := dag.getAddrCoreUtxos(from)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (dag *Dag) CreateBaseTransaction(from, to common.Address, daoAmount, daoFee
 	return tx, nil
 }
 
-func (dag *Dag) GetAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
+func (dag *Dag) getAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
 	// todo 待优化
 	allTxos, err := dag.GetAddrUtxos(addr)
 	if err != nil {
@@ -145,6 +145,30 @@ func (dag *Dag) GetAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*mod
 	return coreUtxos, nil
 }
 
+func (dag *Dag) calculateDataFee(data interface{}) uint64 {
+	size := float64(modules.CalcDateSize(data))
+	pricePerKbyte := dag.CurrentFeeSchedule().TransferFee.PricePerKByte
+
+	return uint64(size * float64(pricePerKbyte) / 1024)
+}
+
+func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
+	msg *modules.Message) (*modules.Transaction, uint64, error) {
+	// 如果是 text，则增加费用，以防止用户任意增加文本，导致网络负担加重
+	if msg.App == modules.APP_TEXT {
+		daoFee += dag.calculateDataFee(msg.Payload)
+	}
+
+	tx, err := dag.createBaseTransaction(from, to, daoAmount, daoFee)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	tx.AddMessage(msg)
+	//tx.TxMessages = append(tx.TxMessages, msgs...)
+	return tx, 0, nil
+}
+
 func (dag *Dag) GenMediatorCreateTx(account common.Address,
 	op *modules.MediatorCreateOperation) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
@@ -155,13 +179,10 @@ func (dag *Dag) GenMediatorCreateTx(account common.Address,
 
 	// 2. 组装 tx
 	fee := dag.CurrentFeeSchedule().MediatorCreateFee
-	tx, err := dag.CreateBaseTransaction(account, account, 0, fee)
+	tx, fee, err := dag.CreateGenericTransaction(account, account, 0, fee, msg)
 	if err != nil {
 		return nil, 0, err
 	}
-
-	tx.TxMessages = append(tx.TxMessages, msg)
-	//tx.TxHash = tx.Hash()
 
 	return tx, fee, nil
 }
@@ -180,11 +201,12 @@ func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address) (*modules.Tran
 
 	// 2. 组装 tx
 	fee := dag.CurrentFeeSchedule().VoteMediatorFee
-	tx, err := dag.CreateBaseTransaction(voter, voter, 0, fee)
+	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, msg)
 	if err != nil {
 		return nil, 0, err
 	}
-	tx.TxMessages = append(tx.TxMessages, msg)
+
+	tx.AddMessage(msg)
 
 	return tx, fee, nil
 }

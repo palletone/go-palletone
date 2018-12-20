@@ -72,8 +72,8 @@ func newTransaction(msg []*Message) *Transaction {
 }
 
 // AddTxIn adds a transaction input to the message.
-func (tx *Transaction) AddMessage(me *Message) {
-	tx.TxMessages = append(tx.TxMessages, me)
+func (tx *Transaction) AddMessage(msg *Message) {
+	tx.TxMessages = append(tx.TxMessages, msg)
 }
 
 // AddTxIn adds a transaction input to the message.
@@ -205,9 +205,11 @@ func (tx *Transaction) Messages() []*Message {
 // Size returns the true RLP encoded storage UnitSize of the transaction, either by
 // encoding and returning it, or returning a previsouly cached value.
 func (tx *Transaction) Size() common.StorageSize {
-	c := writeCounter(0)
-	rlp.Encode(&c, &tx)
-	return common.StorageSize(c)
+	//c := WriteCounter(0)
+	//rlp.Encode(&c, &tx)
+	//return common.StorageSize(c)
+
+	return CalcDateSize(tx)
 }
 
 func (tx *Transaction) CreateDate() string {
@@ -307,11 +309,17 @@ func (s *TxByPriority) Pop() interface{} {
 //
 // NOTE: In a future PR this will be removed.
 
-type writeCounter common.StorageSize
+type WriteCounter common.StorageSize
 
-func (c *writeCounter) Write(b []byte) (int, error) {
-	*c += writeCounter(len(b))
+func (c *WriteCounter) Write(b []byte) (int, error) {
+	*c += WriteCounter(len(b))
 	return len(b), nil
+}
+
+func CalcDateSize(data interface{}) common.StorageSize {
+	c := WriteCounter(0)
+	rlp.Encode(&c, data)
+	return common.StorageSize(c)
 }
 
 var (

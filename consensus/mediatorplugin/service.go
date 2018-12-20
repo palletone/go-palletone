@@ -77,11 +77,10 @@ type iDag interface {
 	IsPrecedingMediator(add common.Address) bool
 	IsIrreversibleUnit(hash common.Hash) bool
 
-	CreateBaseTransaction(from, to common.Address, daoAmount, daoFee uint64) (*modules.Transaction, error)
 	CurrentFeeSchedule() core.FeeSchedule
-
 	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation) (*modules.Transaction, uint64, error)
 	GenVoteMediatorTx(voter, mediator common.Address) (*modules.Transaction, uint64, error)
+
 	GetMediators() map[common.Address]bool
 	IsMediator(address common.Address) bool
 

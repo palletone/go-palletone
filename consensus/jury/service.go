@@ -78,7 +78,8 @@ type iDag interface {
 	GetActiveMediators() []common.Address
 	IsActiveMediator(add common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
-	CreateBaseTransaction(from, to common.Address, daoAmount, daoFee uint64) (*modules.Transaction, error)
+	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
+		msg *modules.Message) (*modules.Transaction, uint64, error)
 }
 
 type contractTx struct {
@@ -713,7 +714,7 @@ func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType mod
 	return false
 }
 
-func isSystemContract(tx *modules.Transaction) (bool) {
+func isSystemContract(tx *modules.Transaction) bool {
 	//if tx == nil{
 	//	return true, errors.New("isSystemContract param is nil")
 	//}
@@ -837,13 +838,13 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 
 //tmp
 func (p *Processor) creatContractTxReqBroadcast(from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message) ([]byte, error) {
-	tx, err := p.dag.CreateBaseTransaction(from, to, daoAmount, daoFee)
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, msg)
 	if err != nil {
 		return nil, err
 	}
 	log.Debug("creatContractTxReq", "tx:", tx)
 
-	tx.AddMessage(msg)
+	//tx.AddMessage(msg)
 	tx, err = p.ptn.SignGenericTransaction(from, tx)
 	if err != nil {
 		return nil, err
