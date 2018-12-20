@@ -210,8 +210,7 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 				return modules.TxValidationCode_INVALID_CONTRACT
 			}
 			// 验证ContractId有效性
-			_, has := (*worldTmpState)[hexutil.Encode(payload.ContractId[:])]
-			if !has {
+			if len(payload.ContractId) <= 0 {
 				return modules.TxValidationCode_INVALID_CONTRACT
 			}
 			return modules.TxValidationCode_VALID
