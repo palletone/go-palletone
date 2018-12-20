@@ -17,13 +17,13 @@
 package ptn
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -35,7 +35,6 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 )
@@ -244,35 +243,12 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		}
 		log.Debug("Fetcher", "manager.dag.InsertDag index:", blocks[0].Number().Index, "hash", blocks[0].Hash())
 
-		for i, block := range blocks {
-			var txs modules.Transactions
-			var temptxs modules.Transactions
-			if err := json.Unmarshal(block.StrTxs, &txs); err != nil {
-				return 0, err
-			}
-			for _, tx := range txs {
-				msgs, err1 := storage.ConvertMsg(tx)
-				if err1 != nil {
-					log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
-					return 0, err1
-				}
-				tx.TxMessages = msgs
-				temptxs = append(temptxs, tx)
-			}
-			block.Txs = temptxs
-			blocks[i] = block
-		}
-
 		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
 		return manager.dag.InsertDag(blocks, manager.txpool)
 	}
 	manager.fetcher = fetcher.New(dag.GetUnitByHash, validator, manager.BroadcastUnit, heighter, inserter, manager.removePeer)
 	return manager, nil
 }
-
-//func (pm *ProtocolManager) SetForTest() {
-//	pm.isTest = true
-//}
 
 func (pm *ProtocolManager) removePeer(id string) {
 	// Short circuit if the peer was already removed
@@ -576,7 +552,7 @@ func (self *ProtocolManager) txBroadcastLoop() {
 
 // BroadcastUnit will either propagate a unit to a subset of it's peers, or
 // will only announce it's availability (depending what's requested).
-func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool /*, broadcastMediator int*/) {
+func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	hash := unit.Hash()
 
 	for _, parentHash := range unit.ParentHash() {
@@ -586,41 +562,18 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool /*, 
 		}
 	}
 
-	//if needBroadcastMediator == broadcastMediator {
-	//	mPeers := pm.GetActiveMediatorPeers()
-	//	for _, peer := range mPeers {
-	//		if peer == nil {
-	//			//pm.producer.ToUnitTBLSSign(unit)
-	//			continue
-	//		}
-	//
-	//		//err := peer.SendNewProducedUnit(unit)
-	//		err := peer.SendNewUnit(unit)
-	//		if err != nil {
-	//			log.Error(err.Error())
-	//		}
-	//	}
-	//}
-	propagate = true
-	// If propagation is requested, send to a subset of the peer
-	if propagate {
-		peers := pm.peers.PeersWithoutUnit(hash)
-		for _, peer := range peers {
-			peer.SendNewUnit(unit)
-		}
-		log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index, "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+	data, err := json.Marshal(unit)
+	if err != nil {
+		log.Error("ProtocolManager", "BroadcastUnit json marshal err:", err)
 		return
 	}
 
-	// Otherwise if the block is indeed in out own chain, announce it
-	//if pm.dag.HasUnit(hash) {
-	//	for _, peer := range peers {
-	//		peer.SendNewUnitHashes([]common.Hash{hash}, []modules.ChainIndex{unit.Number()})
-	//	}
-	//	log.Trace("BroadcastUnit Announced block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
-	//} else {
-	//	log.Debug("===BroadcastUnit===", "pm.dag.HasUnit(hash) is false hash:", hash.String())
-	//}
+	// If propagation is requested, send to a subset of the peer
+	peers := pm.peers.PeersWithoutUnit(hash)
+	for _, peer := range peers {
+		peer.SendNewRawUnit(unit, data)
+	}
+	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index, "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 }
 
 func (self *ProtocolManager) ceBroadcastLoop() {
