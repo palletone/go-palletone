@@ -147,13 +147,13 @@ func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
 }
 
 //xiaozhi
-func (statedb *StateDb) GetMediatorCandidateList() ([]string, error) {
+func (statedb *StateDb) GetMediatorCandidateList() ([]*modules.MediatorInfo, error) {
 	depositeContractAddress := common.HexToAddress("0x00000000000000000000000000000000000000011C")
 	_, val := statedb.GetContractState(depositeContractAddress.Bytes(), "MediatorList")
 	if val == nil {
 		return nil, fmt.Errorf("mediator candidate list is nil.")
 	}
-	var candidateList []string
+	var candidateList []*modules.MediatorInfo
 	err := json.Unmarshal(val, &candidateList)
 	if err != nil {
 		return nil, err
@@ -163,6 +163,33 @@ func (statedb *StateDb) GetMediatorCandidateList() ([]string, error) {
 
 func (statedb *StateDb) IsInMediatorCandidateList(address common.Address) bool {
 	list, err := statedb.GetMediatorCandidateList()
+	if err != nil {
+		return false
+	}
+	for _, v := range list {
+		if strings.Compare(v.Address, address.String()) == 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func (statedb *StateDb) GetJuryCandidateList() ([]string, error) {
+	depositeContractAddress := common.HexToAddress("0x00000000000000000000000000000000000000011C")
+	_, val := statedb.GetContractState(depositeContractAddress.Bytes(), "JuryList")
+	if val == nil {
+		return nil, fmt.Errorf("jury candidate list is nil.")
+	}
+	var candidateList []string
+	err := json.Unmarshal(val, &candidateList)
+	if err != nil {
+		return nil, err
+	}
+	return candidateList, nil
+}
+
+func (statedb *StateDb) IsInJuryCandidateList(address common.Address) bool {
+	list, err := statedb.GetJuryCandidateList()
 	if err != nil {
 		return false
 	}
