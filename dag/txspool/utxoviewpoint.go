@@ -86,6 +86,9 @@ func (view *UtxoViewpoint) FetchUnitUtxos(db storage.IUtxoDb, unit *modules.Unit
 		txInFlight[tx.Hash()] = i
 	}
 	neededSet := make(map[modules.OutPoint]struct{})
+	if len(transactions) <= 1 {
+		return nil
+	}
 	for i, tx := range transactions[1:] {
 		// It is acceptable for a transaction input to reference
 		// the output of another transaction in this block only
@@ -126,6 +129,7 @@ func (view *UtxoViewpoint) FetchUnitUtxos(db storage.IUtxoDb, unit *modules.Unit
 			}
 		}
 	}
+
 	return view.fetchUtxosMain(db, neededSet)
 }
 
