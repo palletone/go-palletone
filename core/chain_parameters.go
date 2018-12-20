@@ -36,7 +36,7 @@ type ChainParameters struct {
 }
 
 func NewChainParams() (c ChainParameters) {
-	c.CurrentFees = NewFeeSchedule()
+	c.CurrentFees = newFeeSchedule()
 	c.MediatorInterval = DefaultMediatorInterval
 	c.MaintenanceInterval = DefaultMaintenanceInterval
 
@@ -46,13 +46,28 @@ func NewChainParams() (c ChainParameters) {
 // 操作交易费计划
 type FeeSchedule struct {
 	// mediator 创建费用
-	MediatorCreateFee uint64 `json:"mediatorCreateFee"`
-	VoteMediatorFee   uint64 `json:"voteMediatorFee"`
+	MediatorCreateFee uint64                `json:"mediatorCreateFee"`
+	VoteMediatorFee   uint64                `json:"voteMediatorFee"`
+	TransferFee       TransferFeeParameters `json:"transferPTNFee"`
 }
 
-func NewFeeSchedule() (f FeeSchedule) {
+func newFeeSchedule() (f FeeSchedule) {
 	f.MediatorCreateFee = DefaultMediatorCreateFee
 	f.VoteMediatorFee = DefaultVoteMediatorFee
+	f.TransferFee = newTransferFeeParameters()
+
+	return
+}
+
+// 转账交易费
+type TransferFeeParameters struct {
+	BaseFee       int64  `json:"baseFee"`
+	PricePerKByte uint64 `json:"pricePerKByte"`
+}
+
+func newTransferFeeParameters() (tf TransferFeeParameters) {
+	tf.BaseFee = DefaultTransferPTNBaseFee
+	tf.PricePerKByte = DefaultTransferPTNPricePerKByte
 
 	return
 }

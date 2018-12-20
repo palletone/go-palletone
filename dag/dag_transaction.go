@@ -146,7 +146,7 @@ func (dag *Dag) GetAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*mod
 }
 
 func (dag *Dag) GenMediatorCreateTx(account common.Address,
-	op *modules.MediatorCreateOperation) (*modules.Transaction, error) {
+	op *modules.MediatorCreateOperation) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
 	msg := &modules.Message{
 		App:     modules.OP_MEDIATOR_CREATE,
@@ -157,16 +157,16 @@ func (dag *Dag) GenMediatorCreateTx(account common.Address,
 	fee := dag.CurrentFeeSchedule().MediatorCreateFee
 	tx, err := dag.CreateBaseTransaction(account, account, 0, fee)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	tx.TxMessages = append(tx.TxMessages, msg)
 	//tx.TxHash = tx.Hash()
 
-	return tx, nil
+	return tx, fee, nil
 }
 
-func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address) (*modules.Transaction, error) {
+func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
 	voting := &vote.VoteInfo{
 		VoteType: vote.TypeMediator,
@@ -182,9 +182,9 @@ func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address) (*modules.Tran
 	fee := dag.CurrentFeeSchedule().VoteMediatorFee
 	tx, err := dag.CreateBaseTransaction(voter, voter, 0, fee)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	tx.TxMessages = append(tx.TxMessages, msg)
 
-	return tx, nil
+	return tx, fee, nil
 }

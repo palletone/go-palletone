@@ -37,11 +37,11 @@ const (
 	DefaultInitPartPub               = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
 		"MpbsWk45ymz4kmjU2AZo8Rm3mJ3MQHpdAgTo2nzWmqU3vCTW6qCfviPD1MKu3FJtmaWiLzdavLx831eCBXA1CdaiXAeU5MPcQ"
 
-	DefaultJuryAddr        = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF"                                          //DefaultAccountAddr
+	DefaultJuryAddr        = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF" //DefaultAccountAddr
 	DefaultJuryInitPartPub = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
 		"MpbsWk45ymz4kmjU2AZo8Rm3mJ3MQHpdAgTo2nzWmqU3vCTW6qCfviPD1MKu3FJtmaWiLzdavLx831eCBXA1CdaiXAeU5MPcQ" //DefaultAccountInitPartPub
-	DefaultMediatorCount       = 3                                                                          //21
-	DefaultMinMediatorCount    = 3
+	DefaultMediatorCount       = 3 //21
+	DefaultMinMediatorCount    = 3 //11
 	DefaultMinMediatorInterval = 1
 
 	//DefaultText = "Hello PalletOne!",
@@ -65,6 +65,8 @@ const (
 	DefaultMediatorInterval    = 3       //5 /* seconds */
 	DefaultMaintenanceInterval = 60 * 10 //60 * 60 * 24 // seconds, aka: 1 day
 
-	DefaultMediatorCreateFee = 5000
-	DefaultVoteMediatorFee   = 20
+	DefaultMediatorCreateFee        = 5000
+	DefaultVoteMediatorFee          = 20
+	DefaultTransferPTNBaseFee       = 20
+	DefaultTransferPTNPricePerKByte = 20
 )

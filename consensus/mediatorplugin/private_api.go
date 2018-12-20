@@ -39,10 +39,11 @@ func NewPrivateMediatorAPI(mp *MediatorPlugin) *PrivateMediatorAPI {
 
 // 交易执行结果
 type TxExecuteResult struct {
-	TxContent string             `json:"txContent"`
-	TxHash    common.Hash        `json:"txHash"`
-	TxSize    common.StorageSize `json:"txSize"`
-	Warning   string             `json:"warning"`
+	TxContent string      `json:"txContent"`
+	TxHash    common.Hash `json:"txHash"`
+	TxSize    string      `json:"txSize"`
+	TxFee     string      `json:"txFee"`
+	Warning   string      `json:"warning"`
 }
 
 // 创建 mediator 所需的参数, 至少包含普通账户地址
@@ -96,7 +97,7 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (TxExecuteResult, e
 	}
 
 	// 1. 创建交易
-	tx, err := a.dag.GenMediatorCreateTx(addr, &args.MediatorCreateOperation)
+	tx, fee, err := a.dag.GenMediatorCreateTx(addr, &args.MediatorCreateOperation)
 	if err != nil {
 		return res, err
 	}
@@ -111,7 +112,8 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (TxExecuteResult, e
 	res.TxContent = fmt.Sprintf("Create mediator %s with initPubKey : %s , node: %s , url: %s",
 		args.AddStr, args.InitPartPub, args.Node, args.Url)
 	res.TxHash = tx.Hash()
-	res.TxSize = tx.Size()
+	res.TxSize = tx.Size().TerminalString()
+	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = defaultResult
 
 	return res, nil
@@ -147,7 +149,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (TxExecuteResult
 	}
 
 	// 1. 创建交易
-	tx, err := a.dag.GenVoteMediatorTx(voter, mediator)
+	tx, fee, err := a.dag.GenVoteMediatorTx(voter, mediator)
 	if err != nil {
 		return res, err
 	}
@@ -161,7 +163,8 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (TxExecuteResult
 	// 5. 返回执行结果
 	res.TxContent = fmt.Sprintf("Account %s vote mediator %s", voterStr, mediatorStr)
 	res.TxHash = tx.Hash()
-	res.TxSize = tx.Size()
+	res.TxSize = tx.Size().TerminalString()
+	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = defaultResult
 
 	return res, nil
