@@ -42,6 +42,7 @@ import (
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
+	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 const defaultConfigPath = "./ptn-config.toml"
@@ -125,6 +126,7 @@ type FullConfig struct {
 	Node           node.Config
 	Ptnstats       ptnstatsConfig
 	Dashboard      dashboard.Config
+	Jury           jury.Config
 	MediatorPlugin mp.Config
 	Log            *log.Config
 	Dag            *dagconfig.Config
@@ -354,6 +356,7 @@ func makeDefaultConfig() FullConfig {
 		Node:           defaultNodeConfig(),
 		Dashboard:      dashboard.DefaultConfig,
 		P2P:            p2p.DefaultConfig,
+		Jury:           jury.DefaultConfig,
 		MediatorPlugin: mp.DefaultConfig,
 		Dag:            &dagconfig.DefaultConfig,
 		Log:            &log.DefaultConfig,

@@ -1597,14 +1597,16 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			break
 			//continue
 		} else {
-			// dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
-			if total += tx.Tx.Size(); total <= common.StorageSize(dagconfig.DefaultConfig.UnitTxSize) {
-				list = append(list, tx)
-				// add  pending
-				pool.promoteTx(hash, tx)
-			} else {
-				total = total - tx.Tx.Size()
-				break
+			if !tx.Pending && !tx.Confirmed {
+				// dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
+				if total += tx.Tx.Size(); total <= common.StorageSize(dagconfig.DefaultConfig.UnitTxSize) {
+					list = append(list, tx)
+					// add  pending
+					pool.promoteTx(hash, tx)
+				} else {
+					total = total - tx.Tx.Size()
+					break
+				}
 			}
 		}
 	}

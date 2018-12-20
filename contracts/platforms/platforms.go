@@ -24,17 +24,17 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
-	"io/ioutil"
 
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
 	"github.com/palletone/go-palletone/contracts/platforms/golang"
 	"github.com/palletone/go-palletone/contracts/platforms/java"
 	"github.com/palletone/go-palletone/contracts/platforms/node"
-	cutil "github.com/palletone/go-palletone/vm/common"
+	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	cutil "github.com/palletone/go-palletone/vm/common"
 	"github.com/spf13/viper"
 )
 
@@ -43,7 +43,7 @@ import (
 type Platform interface {
 	ValidateSpec(spec *pb.ChaincodeSpec) error
 	ValidateDeploymentSpec(spec *pb.ChaincodeDeploymentSpec) error
-    GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error)
+	GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error)
 	GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error)
 	GenerateDockerfile(spec *pb.ChaincodeDeploymentSpec) (string, error)
 	GenerateDockerBuild(spec *pb.ChaincodeDeploymentSpec, tw *tar.Writer) error
@@ -54,6 +54,7 @@ var logger = flogging.MustGetLogger("chaincode-platform")
 
 // Added for unit testing purposes
 var _Find = Find
+
 //var _GetPath = config.GetPath
 var _VGetBool = viper.GetBool
 var _OSStat = os.Stat
@@ -198,7 +199,7 @@ func GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec) (io.Reader, error) {
 		tw := tar.NewWriter(gw)
 		err := _generateDockerBuild(platform, cds, inputFiles, tw)
 		if err != nil {
-			logger.Error(err)
+			logger.Error("GenerateDockerBuild error", err)
 		}
 
 		tw.Close()

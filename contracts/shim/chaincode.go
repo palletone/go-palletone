@@ -28,10 +28,9 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"github.com/op/go-logging"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/comm"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/pkg/errors"
@@ -47,7 +46,7 @@ import (
 )
 
 // Logger for the shim package.
-var chaincodeLogger = logging.MustGetLogger("shim")
+var chaincodeLogger = log.New("shim")
 var logOutput = os.Stderr
 
 var key string
@@ -134,7 +133,7 @@ func userChaincodeStreamGetter(name string) (PeerChaincodeStream, error) {
 func Start(cc Chaincode) error {
 	// If Start() is called, we assume this is a standalone chaincode and set
 	// up formatted logging.
-	SetupChaincodeLogging()
+	//SetupChaincodeLogging()
 	chaincodename := viper.GetString("chaincode.id.name")
 	if chaincodename == "" {
 		return errors.New("error chaincode id not provided")
@@ -153,54 +152,54 @@ func Start(cc Chaincode) error {
 
 // IsEnabledForLogLevel checks to see if the chaincodeLogger is enabled for a specific logging level
 // used primarily for testing
-func IsEnabledForLogLevel(logLevel string) bool {
-	lvl, _ := logging.LogLevel(logLevel)
-	return chaincodeLogger.IsEnabledFor(lvl)
-}
+//func IsEnabledForLogLevel(logLevel string) bool {
+//	lvl, _ := logging.LogLevel(logLevel)
+//	return chaincodeLogger.IsEnabledFor(lvl)
+//}
 
 // SetupChaincodeLogging sets the chaincode logging format and the level
 // to the values of CORE_CHAINCODE_LOGFORMAT and CORE_CHAINCODE_LOGLEVEL set
 // from core.yaml by chaincode_support.go
-func SetupChaincodeLogging() {
-	viper.SetEnvPrefix("CORE")
-	viper.AutomaticEnv()
-	replacer := strings.NewReplacer(".", "_")
-	viper.SetEnvKeyReplacer(replacer)
-	// setup system-wide logging backend
-	logFormat := flogging.SetFormat(viper.GetString("chaincode.logging.format"))
-	flogging.InitBackend(logFormat, logOutput)
-	// set default log level for all modules
-	chaincodeLogLevelString := viper.GetString("chaincode.logging.level")
-	if chaincodeLogLevelString == "" {
-		chaincodeLogger.Infof("Chaincode log level not provided; defaulting to: %s", flogging.DefaultLevel())
-		flogging.InitFromSpec(flogging.DefaultLevel())
-	} else {
-		_, err := LogLevel(chaincodeLogLevelString)
-		if err == nil {
-			flogging.InitFromSpec(chaincodeLogLevelString)
-		} else {
-			chaincodeLogger.Warningf("Error: '%s' for chaincode log level: %s; defaulting to %s", err, chaincodeLogLevelString, flogging.DefaultLevel())
-			flogging.InitFromSpec(flogging.DefaultLevel())
-		}
-	}
-	// override the log level for the shim logging module - note: if this value is
-	// blank or an invalid log level, then the above call to
-	// `flogging.InitFromSpec` already set the default log level so no action
-	// is required here.
-	shimLogLevelString := viper.GetString("chaincode.logging.shim")
-	if shimLogLevelString != "" {
-		shimLogLevel, err := LogLevel(shimLogLevelString)
-		if err == nil {
-			SetLoggingLevel(shimLogLevel)
-		} else {
-			chaincodeLogger.Warningf("Error: %s for shim log level: %s", err, shimLogLevelString)
-		}
-	}
-	//now that logging is setup, print build level. This will help making sure
-	//chaincode is matched with peer.
-	buildLevel := viper.GetString("chaincode.buildlevel")
-	chaincodeLogger.Infof("Chaincode (build level: %s) starting up ...", buildLevel)
-}
+//func SetupChaincodeLogging() {
+//	viper.SetEnvPrefix("CORE")
+//	viper.AutomaticEnv()
+//	replacer := strings.NewReplacer(".", "_")
+//	viper.SetEnvKeyReplacer(replacer)
+//	// setup system-wide logging backend
+//	logFormat := flogging.SetFormat(viper.GetString("chaincode.logging.format"))
+//	flogging.InitBackend(logFormat, logOutput)
+//	// set default log level for all modules
+//	chaincodeLogLevelString := viper.GetString("chaincode.logging.level")
+//	if chaincodeLogLevelString == "" {
+//		chaincodeLogger.Infof("Chaincode log level not provided; defaulting to: %s", flogging.DefaultLevel())
+//		flogging.InitFromSpec(flogging.DefaultLevel())
+//	} else {
+//		_, err := LogLevel(chaincodeLogLevelString)
+//		if err == nil {
+//			flogging.InitFromSpec(chaincodeLogLevelString)
+//		} else {
+//			chaincodeLogger.Warningf("Error: '%s' for chaincode log level: %s; defaulting to %s", err, chaincodeLogLevelString, flogging.DefaultLevel())
+//			flogging.InitFromSpec(flogging.DefaultLevel())
+//		}
+//	}
+//	// override the log level for the shim logging module - note: if this value is
+//	// blank or an invalid log level, then the above call to
+//	// `flogging.InitFromSpec` already set the default log level so no action
+//	// is required here.
+//	shimLogLevelString := viper.GetString("chaincode.logging.shim")
+//	if shimLogLevelString != "" {
+//		shimLogLevel, err := LogLevel(shimLogLevelString)
+//		if err == nil {
+//			SetLoggingLevel(shimLogLevel)
+//		} else {
+//			chaincodeLogger.Warningf("Error: %s for shim log level: %s", err, shimLogLevelString)
+//		}
+//	}
+//	//now that logging is setup, print build level. This will help making sure
+//	//chaincode is matched with peer.
+//	buildLevel := viper.GetString("chaincode.buildlevel")
+//	chaincodeLogger.Infof("Chaincode (build level: %s) starting up ...", buildLevel)
+//}
 
 // StartInProc is an entry point for system chaincodes bootstrap. It is not an
 // API for chaincodes.
@@ -229,7 +228,7 @@ func getPeerAddress() string {
 	}
 	//if peerAddress = viper.GetString("peer.address"); peerAddress == "" {
 	if peerAddress = cfg.GetConfig().ContractAddress; peerAddress == "" {
-		chaincodeLogger.Fatalf("peer.address not configured, can't connect to peer")
+		chaincodeLogger.Error("peer.address not configured, can't connect to peer")
 	}
 	return peerAddress
 }
@@ -703,45 +702,45 @@ func (stub *ChaincodeStub) PayOutToken(addr string, invokeTokens *modules.Invoke
 
 // LoggingLevel is an enumerated type of severity levels that control
 // chaincode logging.
-type LoggingLevel logging.Level
-
-// These constants comprise the LoggingLevel enumeration
-const (
-	LogDebug    = LoggingLevel(logging.DEBUG)
-	LogInfo     = LoggingLevel(logging.INFO)
-	LogNotice   = LoggingLevel(logging.NOTICE)
-	LogWarning  = LoggingLevel(logging.WARNING)
-	LogError    = LoggingLevel(logging.ERROR)
-	LogCritical = LoggingLevel(logging.CRITICAL)
-)
-
-var shimLoggingLevel = LogInfo // Necessary for correct initialization; See Start()
+//type LoggingLevel logging.Level
+//
+//// These constants comprise the LoggingLevel enumeration
+//const (
+//	LogDebug    = LoggingLevel(logging.DEBUG)
+//	LogInfo     = LoggingLevel(logging.INFO)
+//	LogNotice   = LoggingLevel(logging.NOTICE)
+//	LogWarning  = LoggingLevel(logging.WARNING)
+//	LogError    = LoggingLevel(logging.ERROR)
+//	LogCritical = LoggingLevel(logging.CRITICAL)
+//)
+//
+//var shimLoggingLevel = LogInfo // Necessary for correct initialization; See Start()
 
 // SetLoggingLevel allows a Go language chaincode to set the logging level of
 // its shim.
-func SetLoggingLevel(level LoggingLevel) {
-	shimLoggingLevel = level
-	logging.SetLevel(logging.Level(level), "shim")
-}
+//func SetLoggingLevel(level LoggingLevel) {
+//	shimLoggingLevel = level
+//	logging.SetLevel(logging.Level(level), "shim")
+//}
 
 // LogLevel converts a case-insensitive string chosen from CRITICAL, ERROR,
 // WARNING, NOTICE, INFO or DEBUG into an element of the LoggingLevel
 // type. In the event of errors the level returned is LogError.
-func LogLevel(levelString string) (LoggingLevel, error) {
-	l, err := logging.LogLevel(levelString)
-	level := LoggingLevel(l)
-	if err != nil {
-		level = LogError
-	}
-	return level, err
-}
+//func LogLevel(levelString string) (LoggingLevel, error) {
+//	l, err := logging.LogLevel(levelString)
+//	level := LoggingLevel(l)
+//	if err != nil {
+//		level = LogError
+//	}
+//	return level, err
+//}
 
 // ------------- Chaincode Loggers ---------------
 
 // ChaincodeLogger is an abstraction of a logging object for use by
 // chaincodes. These objects are created by the NewLogger API.
 type ChaincodeLogger struct {
-	logger *logging.Logger
+	logger log.ILogger
 }
 
 // NewLogger allows a Go language chaincode to create one or more logging
@@ -750,55 +749,55 @@ type ChaincodeLogger struct {
 // by this object can be distinguished from shim logs by the name provided,
 // which will appear in the logs.
 func NewLogger(name string) *ChaincodeLogger {
-	return &ChaincodeLogger{logging.MustGetLogger(name)}
+	return &ChaincodeLogger{log.New(name)}
 }
 
 // SetLevel sets the logging level for a chaincode logger. Note that currently
 // the levels are actually controlled by the name given when the logger is
 // created, so loggers should be given unique names other than "shim".
-func (c *ChaincodeLogger) SetLevel(level LoggingLevel) {
-	logging.SetLevel(logging.Level(level), c.logger.Module)
-}
+//func (c *ChaincodeLogger) SetLevel(level LoggingLevel) {
+//	logging.SetLevel(logging.Level(level), c.logger.Module)
+//}
 
 // IsEnabledFor returns true if the logger is enabled to creates logs at the
 // given logging level.
-func (c *ChaincodeLogger) IsEnabledFor(level LoggingLevel) bool {
-	return c.logger.IsEnabledFor(logging.Level(level))
-}
+//func (c *ChaincodeLogger) IsEnabledFor(level LoggingLevel) bool {
+//	return c.logger.IsEnabledFor(logging.Level(level))
+//}
 
 // Debug logs will only appear if the ChaincodeLogger LoggingLevel is set to
 // LogDebug.
 func (c *ChaincodeLogger) Debug(args ...interface{}) {
-	c.logger.Debug(args...)
+	c.logger.Debug("Chaincode", args...)
 }
 
 // Info logs will appear if the ChaincodeLogger LoggingLevel is set to
 // LogInfo or LogDebug.
 func (c *ChaincodeLogger) Info(args ...interface{}) {
-	c.logger.Info(args...)
+	c.logger.Info("Chaincode", args...)
 }
 
 // Notice logs will appear if the ChaincodeLogger LoggingLevel is set to
 // LogNotice, LogInfo or LogDebug.
 func (c *ChaincodeLogger) Notice(args ...interface{}) {
-	c.logger.Notice(args...)
+	c.logger.Info("Chaincode", args...)
 }
 
 // Warning logs will appear if the ChaincodeLogger LoggingLevel is set to
 // LogWarning, LogNotice, LogInfo or LogDebug.
 func (c *ChaincodeLogger) Warning(args ...interface{}) {
-	c.logger.Warning(args...)
+	c.logger.Warn("Chaincode", args...)
 }
 
 // Error logs will appear if the ChaincodeLogger LoggingLevel is set to
 // LogError, LogWarning, LogNotice, LogInfo or LogDebug.
 func (c *ChaincodeLogger) Error(args ...interface{}) {
-	c.logger.Error(args...)
+	c.logger.Error("Chaincode", args...)
 }
 
 // Critical logs always appear; They can not be disabled.
 func (c *ChaincodeLogger) Critical(args ...interface{}) {
-	c.logger.Critical(args...)
+	c.logger.Error("Chaincode", args...)
 }
 
 // Debugf logs will only appear if the ChaincodeLogger LoggingLevel is set to
@@ -816,13 +815,13 @@ func (c *ChaincodeLogger) Infof(format string, args ...interface{}) {
 // Noticef logs will appear if the ChaincodeLogger LoggingLevel is set to
 // LogNotice, LogInfo or LogDebug.
 func (c *ChaincodeLogger) Noticef(format string, args ...interface{}) {
-	c.logger.Noticef(format, args...)
+	c.logger.Infof(format, args...)
 }
 
 // Warningf logs will appear if the ChaincodeLogger LoggingLevel is set to
 // LogWarning, LogNotice, LogInfo or LogDebug.
 func (c *ChaincodeLogger) Warningf(format string, args ...interface{}) {
-	c.logger.Warningf(format, args...)
+	c.logger.Warnf(format, args...)
 }
 
 // Errorf logs will appear if the ChaincodeLogger LoggingLevel is set to
@@ -833,7 +832,7 @@ func (c *ChaincodeLogger) Errorf(format string, args ...interface{}) {
 
 // Criticalf logs always appear; They can not be disabled.
 func (c *ChaincodeLogger) Criticalf(format string, args ...interface{}) {
-	c.logger.Criticalf(format, args...)
+	c.logger.Errorf(format, args...)
 }
 
 //func (stub *ChaincodeStub) GetDecorations() map[string][]byte {

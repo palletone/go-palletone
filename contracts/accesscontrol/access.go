@@ -98,14 +98,14 @@ func (ac *authenticator) authenticate(msg *pb.ChaincodeMessage, stream grpc.Serv
 	}
 
 	if msg.Type != pb.ChaincodeMessage_REGISTER {
-		logger.Warning("Got message", msg, "but expected a ChaincodeMessage_REGISTER message")
+		logger.Warn("Got message", msg, "but expected a ChaincodeMessage_REGISTER message")
 		return errors.New("First message needs to be a register")
 	}
 
 	chaincodeID := &pb.ChaincodeID{}
 	err := proto.Unmarshal(msg.Payload, chaincodeID)
 	if err != nil {
-		logger.Warning("Failed unmarshaling message:", err)
+		logger.Warn("Failed unmarshaling message:", err)
 		return err
 	}
 	ccName := chaincodeID.Name
@@ -113,19 +113,19 @@ func (ac *authenticator) authenticate(msg *pb.ChaincodeMessage, stream grpc.Serv
 	hash := extractCertificateHashFromContext(stream.Context())
 	if len(hash) == 0 {
 		errMsg := fmt.Sprintf("TLS is active but chaincode %s didn't send certificate", ccName)
-		logger.Warning(errMsg)
+		logger.Warn(errMsg)
 		return errors.New(errMsg)
 	}
 	// Look it up in the mapper
 	registeredName := ac.mapper.lookup(certHash(hash))
 	if registeredName == "" {
 		errMsg := fmt.Sprintf("Chaincode %s with given certificate hash %v not found in registry", ccName, hash)
-		logger.Warning(errMsg)
+		logger.Warn(errMsg)
 		return errors.New(errMsg)
 	}
 	if registeredName != ccName {
 		errMsg := fmt.Sprintf("Chaincode %s with given certificate hash %v belongs to a different chaincode", ccName, hash)
-		logger.Warning(errMsg)
+		logger.Warn(errMsg)
 		return fmt.Errorf(errMsg)
 	}
 

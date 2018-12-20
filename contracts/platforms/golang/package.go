@@ -136,7 +136,7 @@ func findSource(gopath, pkg string) (SourceMap, error) {
 
 		ext := filepath.Ext(path)
 		// we only want 'fileTypes' source files at this point
-		if _, ok := includeFileTypes[ext]; ok != true {
+		if _, ok := includeFileTypes[ext]; !ok {
 			return nil
 		}
 

@@ -272,7 +272,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	if to == "" {
 		return common.Hash{}, nil
 	}
-	a, err := decimal.NewFromString(amount)
+	a, err := decimal.RandFromString(amount)
 	if err != nil {
 		return common.Hash{}, nil
 	}
