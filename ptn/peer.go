@@ -222,9 +222,15 @@ func (p *peer) SendNewUnitHashes(hashes []common.Hash, numbers []modules.ChainIn
 }
 
 // SendNewBlock propagates an entire block to a remote peer.
-func (p *peer) SendNewUnit(unit *modules.Unit) error {
+//func (p *peer) SendNewUnit(unit *modules.Unit) error {
+//	p.knownBlocks.Add(unit.UnitHash)
+//	return p2p.Send(p.rw, NewBlockMsg, unit)
+//}
+
+// SendNewBlock propagates an entire block to a remote peer.
+func (p *peer) SendNewRawUnit(unit *modules.Unit, data []byte) error {
 	p.knownBlocks.Add(unit.UnitHash)
-	return p2p.Send(p.rw, NewBlockMsg, unit)
+	return p2p.Send(p.rw, NewBlockMsg, data)
 }
 
 // SendBlockHeaders sends a batch of block headers to the remote peer.

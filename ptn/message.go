@@ -36,6 +36,8 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
+type Tag uint64
+
 func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
 	// Status messages should never arrive after the handshake
 	return errResp(ErrExtraStatusMsg, "uncontrolled status message")
@@ -126,7 +128,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 						unknown = true
 					}
 				} else {
-					log.Debug("ProtocolManager", "GetBlockHeadersMsg unknown = true; pm.dag.GetHeaderByNumber not found. Index:", index)
+					log.Debug("ProtocolManager", "GetBlockHeadersMsg unknown = true; pm.dag.GetHeaderByNumber not found. Index:", index.Index)
 					unknown = true
 				}
 			}
@@ -389,18 +391,38 @@ func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg, p *peer) error {
 
 func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	// Retrieve and decode the propagated block
-	var unit modules.Unit
-	if err := msg.Decode(&unit); err != nil {
+	//unit := &modules.Unit{}
+	data := []byte{}
+	if err := msg.Decode(&data); err != nil {
+		log.Info("ProtocolManager", "NewBlockMsg msg:", msg.String())
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
+	unit := &modules.Unit{}
+	if err := json.Unmarshal(data, &unit); err != nil {
+		log.Info("ProtocolManager", "NewBlockMsg json ummarshal err:", err)
+		return err
+	}
+
+	var temptxs modules.Transactions
+	for _, tx := range unit.Txs {
+		msgs, err1 := storage.ConvertMsg(tx)
+		if err1 != nil {
+			log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
+			return err1
+		}
+		tx.TxMessages = msgs
+		temptxs = append(temptxs, tx)
+	}
+	unit.Txs = temptxs
+
 	unit.ReceivedAt = msg.ReceivedAt
 	unit.ReceivedFrom = p
-	log.Info("===NewBlockMsg===", "index:", unit.Number().Index, "peer id:", p.id)
+	log.Info("===NewBlockMsg===", "unit:", *unit, "index:", unit.Number().Index, "peer id:", p.id)
 
 	// Mark the peer as owning the block and schedule it for import
 	p.MarkUnit(unit.UnitHash)
-	pm.fetcher.Enqueue(p.id, &unit)
+	pm.fetcher.Enqueue(p.id, unit)
 
 	requestNumber := unit.UnitHeader.Number
 	hash, number := p.Head(unit.Number().AssetID)
@@ -419,14 +441,10 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 				time.Sleep(100 * time.Millisecond)
 				pm.synchronise(p, unit.Number().AssetID)
 			}()
-		} else {
-			//pm.producer.ToUnitTBLSSign(&unit)
 		}
 	}
 	return nil
 }
-
-type Tag uint64
 
 func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	log.Info("Enter ProtocolManager TxMsg")
