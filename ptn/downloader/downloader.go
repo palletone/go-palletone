@@ -645,7 +645,6 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	}
 
 	go p.peer.RequestHeadersByNumber(index, count, 15, false)
-	//TODO xiaozhi
 	// Wait for the remote response to the head fetch
 	number, hash := uint64(0), common.Hash{}
 
@@ -680,7 +679,6 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 			// Check if a common ancestor was found
 			finished = true
 			for i := len(headers) - 1; i >= 0; i-- {
-
 				// Skip any headers that underflow/overflow our requested set
 				if headers[i].Number.Index < uint64(from) || headers[i].Number.Index > ceil {
 					continue
@@ -1396,7 +1394,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
 	for _, u := range blocks {
-		log.Debug("======importBlockResults=======", "index:", u.UnitHeader.Number.Index, "unit:", *u)
+		//log.Debug("======importBlockResults=======", "index:", u.UnitHeader.Number.Index, "unit:", *u)
 		units := []*modules.Unit{}
 		units = append(units, u)
 		if index, err := d.dag.InsertDag(units, d.txpool); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
@@ -1424,7 +1422,6 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 	// sync takes long enough for the chain head to move significantly.
 	pivot := uint64(0)
 	if height := latest.Number.Index; height > uint64(fsMinFullBlocks) {
-		//fmt.Println("========================111111111111===============================height:", height)
 		pivot = height - uint64(fsMinFullBlocks)
 	}
 	// To cater for moving pivot points, track the pivot block and subsequently
@@ -1440,7 +1437,6 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 		if len(results) == 0 {
 			// If pivot sync is done, stop
 			if oldPivot == nil {
-				//fmt.Println("===processFastSyncContent===oldPivot == nil")
 				return nil //stateSync.Cancel()
 			}
 			// If sync failed, stop
@@ -1462,13 +1458,11 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 			latest = results[len(results)-1].Header
 			if height := latest.Number.Index; height > pivot+2*uint64(fsMinFullBlocks) {
 				log.Warn("Pivot became stale, moving", "old", pivot, "new", height-uint64(fsMinFullBlocks))
-				//fmt.Println("===========================2222222222============================")
 				pivot = height - uint64(fsMinFullBlocks)
 			}
 		}
-		//fmt.Println("splitAroundPivot pre", "pivot", pivot, "len(results):", len(results))
+
 		P, beforeP, afterP := splitAroundPivot(pivot, results)
-		//fmt.Println("splitAroundPivot last", "P", P, "len(beforeP):", len(beforeP), "len(afterP):", len(afterP))
 		if err := d.commitFastSyncData(beforeP); err != nil {
 			return err
 		}
@@ -1483,19 +1477,15 @@ func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modu
 			//exec := true
 			select {
 			case <-time.After(time.Millisecond):
-				//fmt.Println("commitPivotBlock P index:", P.Header.Number.Index)
 				if err := d.commitPivotBlock(P); err != nil {
 					return err
 				}
 				oldPivot = nil
 			case <-time.After(time.Second):
-				//fmt.Println("time.After(time.Second)", "len(oldTail):", len(oldTail), "len(afterP):", len(afterP))
 				oldTail = afterP
 				continue
 			}
-			//fmt.Println("no time out")
 		}
-		//fmt.Println("importBlockResults", "len(afterP):", len(afterP))
 		// Fast sync done, pivot commit done, full import
 		if err := d.importBlockResults(afterP); err != nil {
 			return err
