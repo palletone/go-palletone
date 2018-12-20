@@ -45,7 +45,7 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'vote',
 			call: 'mediator_vote',
-			params: 1,
+			params: 2,
 		}),
 		new web3._extend.Method({
 			name: 'getNextUpdateTime',

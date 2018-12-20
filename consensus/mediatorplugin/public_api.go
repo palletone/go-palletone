@@ -139,17 +139,17 @@ func (a *PublicMediatorAPI) DumpInitDKS() (res InitDKSResult) {
 	return
 }
 
-func (a *PublicMediatorAPI) GetVoted(addStr string) ([]common.Address, error) {
+func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 	addr, err := common.StringToAddress(addStr)
 	if err != nil {
-		return []common.Address{}, err
+		return nil, err
 	}
 
 	medMap := a.dag.GetVotedMediator(addr)
-	mediators := make([]common.Address, 0, len(medMap))
+	mediators := make([]string, 0, len(medMap))
 
 	for med, _ := range medMap {
-		mediators = append(mediators, med)
+		mediators = append(mediators, med.Str())
 	}
 
 	return mediators, nil
@@ -169,7 +169,7 @@ func (a *PublicMediatorAPI) GetInfo(addStr string) (*storage.MediatorInfo, error
 	}
 
 	if !a.dag.IsMediator(mediator) {
-		return nil, fmt.Errorf("%v is not mediator!", mediator.Str())
+		return nil, fmt.Errorf("%v is not mediator", mediator.Str())
 	}
 
 	return a.dag.GetMediatorInfo(mediator), nil

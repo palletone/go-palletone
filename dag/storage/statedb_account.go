@@ -90,13 +90,16 @@ func (statedb *StateDb) StoreAccountInfo(address common.Address, info *modules.A
 
 func (statedb *StateDb) UpdateAccountInfoBalance(address common.Address, addAmount int64) error {
 	info, err := statedb.RetrieveAccountInfo(address)
+	// 第一次更新时， 数据库没有该账户的相关数据
 	if err != nil {
-		return err
+		//return err
+		info = modules.NewAccountInfo()
 	}
 
 	info.PtnBalance = uint64(int64(info.PtnBalance) + addAmount)
 	statedb.logger.Debugf("Update Ptn Balance for address:%s, add Amount:%d", address.String(), addAmount)
-	return StoreBytes(statedb.db, accountKey(address), info)
+
+	return statedb.StoreAccountInfo(address, info)
 }
 
 //func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte {
