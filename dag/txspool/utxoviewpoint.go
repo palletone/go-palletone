@@ -22,6 +22,7 @@ package txspool
 
 import (
 	"fmt"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -90,7 +91,6 @@ func (view *UtxoViewpoint) FetchUnitUtxos(db storage.IUtxoDb, unit *modules.Unit
 		txInFlight[tx.Hash()] = i
 	}
 	neededSet := make(map[modules.OutPoint]struct{})
-
 	for i, tx := range transactions[1:] {
 		// It is acceptable for a transaction input to reference
 		// the output of another transaction in this block only

@@ -64,10 +64,16 @@ func TestStateDb_GetMediatorCandidateList(t *testing.T) {
 	contractId := depositeContractAddress.Bytes()
 	//fmt.Println(contractId)
 	addr1 := "P1G988UGLytFgPwxy1bzY3FkzPT46ThDhTJ"
+	mediator1 := &modules.MediatorInfo{
+		Address: addr1,
+	}
 	//assert.Nil(t, err, "string 2 address fail: ")
 	addr2 := "P1FbTqEaSLNfhp1hCwNmRkj5BkMjTNU8jRp"
+	mediator2 := &modules.MediatorInfo{
+		Address: addr2,
+	}
 	//assert.Nil(t, err, "string 2 address fail: ")
-	mediatorList := []string{addr1, addr2}
+	mediatorList := []*modules.MediatorInfo{mediator1, mediator2}
 	mediatorListBytes, err := json.Marshal(mediatorList)
 	assert.Nil(t, err, "json marshal error: ")
 	version := &modules.StateVersion{Height: modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
