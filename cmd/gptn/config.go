@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/node"
@@ -42,7 +43,6 @@ import (
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
-	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 const defaultConfigPath = "./ptn-config.toml"
@@ -227,6 +227,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	cfg = adaptorConfig(cfg)
 	utils.SetNodeConfig(ctx, &cfg.Node)
 
+	cfg.Log.OpenModule = cfg.Ptn.Log.OpenModule
 	// 4. 通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
@@ -234,7 +235,6 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	}
 	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
 	//fmt.Println("cfg.Ptn.Log.OpenModule", cfg.Ptn.Log.OpenModule)
-	cfg.Log.OpenModule = cfg.Ptn.Log.OpenModule
 
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)

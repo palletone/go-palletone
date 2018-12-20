@@ -112,7 +112,7 @@ func (ec EntryCaller) TrimmedRootPath() string {
 
 	substr := "go-palletone"
 	count := strings.Count(caller, substr)
-	if count != 2 {
+	if count <1 {
 		return ""
 	}
 	index := strings.LastIndex(caller, substr)
