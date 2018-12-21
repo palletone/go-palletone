@@ -144,3 +144,12 @@ func EncodeNumberUint32(number uint32) []byte {
 func DecodeNumberUint32(key []byte) uint32 {
 	return binary.BigEndian.Uint32(key[:])
 }
+func EncodeNumberUint16(number uint16) []byte {
+	enc := make([]byte, 2)
+	binary.BigEndian.PutUint16(enc, number)
+	return enc
+}
+
+func DecodeNumberUint16(key []byte) uint16 {
+	return binary.BigEndian.Uint16(key[:])
+}

@@ -615,12 +615,12 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	hash := tx.Tx.Hash()
 
 	if pool.all[hash] != nil {
-		log.Trace("Discarding already known transaction", "hash", hash, "old_hash", pool.all[hash].Tx.Hash())
+		pool.logger.Trace("Discarding already known transaction", "hash", hash, "old_hash", pool.all[hash].Tx.Hash())
 		return false, fmt.Errorf("known transaction: %x", hash)
 	}
 	// If the transaction fails basic validation, discard it
 	if err := pool.validateTx(tx, local); err != nil {
-		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+		pool.logger.Trace("Discarding invalid transaction", "hash", hash, "err", err)
 		return false, err
 	}
 
@@ -634,7 +634,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		return false, err
 	}
 
-	log.Info("fetch utxoview info:", "utxoinfo", utxoview)
+	pool.logger.Info("fetch utxoview info:", "utxoinfo", utxoview)
 	// Check the transaction if it exists in the main chain and is not already fully spent.
 	preout := modules.OutPoint{TxHash: hash}
 	for i, msgcopy := range tx.Tx.TxMessages {
@@ -720,7 +720,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 	// pool.journalTx(tx)
 
-	log.Trace("Pooled new future transaction", "hash", hash, "repalce", replace, "err", err)
+	pool.logger.Trace("Pooled new future transaction", "hash", hash, "repalce", replace, "err", err)
 	return replace, nil
 }
 
