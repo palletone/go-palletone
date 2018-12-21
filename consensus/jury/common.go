@@ -85,11 +85,12 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 		case modules.APP_CONTRACT_TPL_REQUEST:
 			{
 				msgs := []*modules.Message{}
+				reqPay := msg.Payload.(*modules.ContractInstallRequestPayload)
 				req := ContractInstallReq{
 					chainID:   "palletone",
-					ccName:    msg.Payload.(*modules.ContractInstallRequestPayload).TplName,
-					ccPath:    msg.Payload.(*modules.ContractInstallRequestPayload).Path,
-					ccVersion: msg.Payload.(*modules.ContractInstallRequestPayload).Version,
+					ccName:    reqPay.TplName,
+					ccPath:    reqPay.Path,
+					ccVersion: reqPay.Version,
 				}
 				installResult, err := ContractProcess(contract, req)
 				if err != nil {
@@ -98,18 +99,18 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 				}
 				payload := installResult.(*modules.ContractTplPayload)
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_TPL, payload))
-
 				return modules.APP_CONTRACT_TPL, msgs, nil
 			}
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
 			{
 				msgs := []*modules.Message{}
+				reqPay := msg.Payload.(*modules.ContractDeployRequestPayload)
 				req := ContractDeployReq{
 					chainID:    "palletone",
-					templateId: msg.Payload.(*modules.ContractDeployRequestPayload).TplId,
-					txid:       msg.Payload.(*modules.ContractDeployRequestPayload).TxId,
-					args:       msg.Payload.(*modules.ContractDeployRequestPayload).Args,
-					timeout:    msg.Payload.(*modules.ContractDeployRequestPayload).Timeout,
+					templateId: reqPay.TplId,
+					txid:       reqPay.TxId,
+					args:       reqPay.Args,
+					timeout:    reqPay.Timeout,
 				}
 				deployResult, err := ContractProcess(contract, req)
 				if err != nil {
@@ -123,10 +124,11 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
 			{
 				msgs := []*modules.Message{}
+				reqPay := msg.Payload.(*modules.ContractInvokeRequestPayload)
 				req := ContractInvokeReq{
 					chainID:  "palletone",
-					deployId: msg.Payload.(*modules.ContractInvokeRequestPayload).ContractId,
-					args:     msg.Payload.(*modules.ContractInvokeRequestPayload).Args,
+					deployId: reqPay.ContractId,
+					args:     reqPay.Args,
 					txid:     trs.RequestHash().String(),
 				}
 				//对msg0进行修改
@@ -135,7 +137,6 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 					return modules.APP_CONTRACT_INVOKE, nil, err
 				}
 				req.args = fullArgs
-
 				invokeResult, err := ContractProcess(contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess", "ContractProcess error", err.Error())
@@ -165,17 +166,17 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 						msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, coinbase))
 					}
 				}
-
 				return modules.APP_CONTRACT_INVOKE, msgs, nil
 			}
 		case modules.APP_CONTRACT_STOP_REQUEST:
 			{
 				msgs := []*modules.Message{}
+				reqPay := msg.Payload.(*modules.ContractStopRequestPayload)
 				req := ContractStopReq{
 					chainID:     "palletone",
-					deployId:    msg.Payload.(*modules.ContractStopRequestPayload).ContractId,
-					txid:        msg.Payload.(*modules.ContractStopRequestPayload).Txid,
-					deleteImage: msg.Payload.(*modules.ContractStopRequestPayload).DeleteImage,
+					deployId:    reqPay.ContractId,
+					txid:        reqPay.Txid,
+					deleteImage: reqPay.DeleteImage,
 				}
 				_, err := ContractProcess(contract, req) //todo
 				if err != nil {
@@ -388,4 +389,3 @@ func printTxInfo(tx *modules.Transaction) {
 		}
 	}
 }
-
