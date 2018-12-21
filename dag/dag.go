@@ -890,7 +890,7 @@ func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
 }
 
 func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
-	return d.dagdb.GetAddrTransactions(addr)
+	return d.unitRep.GetAddrTransactions(addr)
 }
 
 // get contract state

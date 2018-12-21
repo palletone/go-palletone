@@ -92,7 +92,7 @@ type IDagDb interface {
 	GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
-	GetAddrTransactions(addr string) (modules.Transactions, error)
+
 	GetHeadHeaderHash() (common.Hash, error)
 	GetHeadUnitHash() (common.Hash, error)
 	GetHeadFastUnitHash() (common.Hash, error)
@@ -270,7 +270,7 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 	if err := StoreString(dagdb.db, key1, str); err != nil {
 		return err
 	}
-	dagdb.updateAddrTransactions(tx.Address().String(), txHash)
+	//dagdb.updateAddrTransactions(tx.Address().String(), txHash)
 	// store output by addr
 	for i, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
@@ -298,32 +298,32 @@ func (dagdb *DagDb) saveOutputByAddr(addr string, hash common.Hash, msgindex int
 	return err
 }
 
-func (dagdb *DagDb) updateAddrTransactions(addr string, hash common.Hash) error {
-	if hash == (common.Hash{}) {
-		return errors.New("empty tx hash.")
-	}
-	hashs := make([]common.Hash, 0)
-	data, err := dagdb.db.Get(append(constants.AddrTransactionsHash_Prefix, []byte(addr)...))
-	if err != nil {
-		if err.Error() != "leveldb: not found" {
-			return err
-		} else { // first store the addr
-			hashs = append(hashs, hash)
-			if err := StoreBytes(dagdb.db, append(constants.AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
-				return err
-			}
-			return nil
-		}
-	}
-	if err := rlp.DecodeBytes(data, &hashs); err != nil {
-		return err
-	}
-	hashs = append(hashs, hash)
-	if err := StoreBytes(dagdb.db, append(constants.AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
-		return err
-	}
-	return nil
-}
+//func (dagdb *DagDb) updateAddrTransactions(addr string, hash common.Hash) error {
+//	if hash == (common.Hash{}) {
+//		return errors.New("empty tx hash.")
+//	}
+//	hashs := make([]common.Hash, 0)
+//	data, err := dagdb.db.Get(append(constants.AddrTransactionsHash_Prefix, []byte(addr)...))
+//	if err != nil {
+//		if err.Error() != "leveldb: not found" {
+//			return err
+//		} else { // first store the addr
+//			hashs = append(hashs, hash)
+//			if err := StoreBytes(dagdb.db, append(constants.AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
+//				return err
+//			}
+//			return nil
+//		}
+//	}
+//	if err := rlp.DecodeBytes(data, &hashs); err != nil {
+//		return err
+//	}
+//	hashs = append(hashs, hash)
+//	if err := StoreBytes(dagdb.db, append(constants.AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 	for i, tx := range unit.Transactions() {
@@ -370,23 +370,6 @@ func (dagdb *DagDb) SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error {
 
 // ###################### SAVE IMPL END ######################
 // ###################### GET IMPL START ######################
-// GetAddrTransactions
-func (dagdb *DagDb) GetAddrTransactions(addr string) (modules.Transactions, error) {
-	data, err := dagdb.db.Get(append(constants.AddrTransactionsHash_Prefix, []byte(addr)...))
-	if err != nil {
-		return modules.Transactions{}, err
-	}
-	hashs := make([]common.Hash, 0)
-	if err := rlp.DecodeBytes(data, hashs); err != nil {
-		return modules.Transactions{}, err
-	}
-	txs := make(modules.Transactions, 0)
-	for _, hash := range hashs {
-		tx, _, _, _ := dagdb.GetTransaction(hash)
-		txs = append(txs, tx)
-	}
-	return txs, nil
-}
 
 // Get income transactions
 func (dagdb *DagDb) GetAddrOutput(addr string) ([]modules.Output, error) {

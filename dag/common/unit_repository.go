@@ -33,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -60,6 +59,7 @@ type IUnitRepository interface {
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
+	GetAddrTransactions(addr string) (modules.Transactions, error)
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -575,6 +575,14 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 			log.Info("Save transaction:", "error", err.Error())
 			return err
 		}
+		//Index TxId for address
+		msg0 := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+
+		if !msg0.IsCoinbase() {
+			//TODO Devin tx.Address() is wrong
+			unitOp.idxdb.SaveAddressTxId(tx.Address(), txHash)
+		}
+
 		txHashSet = append(txHashSet, txHash)
 	}
 
@@ -918,4 +926,20 @@ func (unitOp *UnitRepository) updateState(contractID []byte, key string, version
 func IsGenesis(hash common.Hash) bool {
 	genHash := common.HexToHash(dagconfig.DefaultConfig.GenesisHash)
 	return genHash == hash
+}
+
+// GetAddrTransactions
+func (unitOp *UnitRepository) GetAddrTransactions(addr string) (modules.Transactions, error) {
+	address, _ := common.StringToAddress(addr)
+	hashs, err := unitOp.idxdb.GetAddressTxIds(address)
+	if err != nil {
+		return modules.Transactions{}, err
+	}
+
+	txs := make(modules.Transactions, 0)
+	for _, hash := range hashs {
+		tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
+		txs = append(txs, tx)
+	}
+	return txs, nil
 }
