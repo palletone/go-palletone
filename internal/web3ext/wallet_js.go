@@ -58,6 +58,18 @@ const Wallet_JS = `
 			call: 'wallet_getPtnTestCoin',
 			params: 5
 		}),
+		new web3._extend.Method({
+			name: 'ccinvoketx',
+			call: 'wallet_ccinvoketx',
+			params: 6, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"]
+			inputFormatter: [null, null, null,null, null, null]
+		}),
+		new web3._extend.Method({
+			name: 'transferToken',
+			call: 'wallet_transferToken',
+			params: 7,
+			inputFormatter: [null,null,null,null,null,null,null]
+		}),
  	]
  });
  `

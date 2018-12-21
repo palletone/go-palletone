@@ -657,11 +657,12 @@ func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	defer d.Mutex.RUnlock()
 	return d.utxodb.GetUtxoEntry(outpoint)
 }
-func (d *Dag) GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error) {
-	d.Mutex.RLock()
-	defer d.Mutex.RUnlock()
-	return d.utxodb.GetUtxoPkScripHexByTxhash(txhash, mindex, outindex)
-}
+
+//func (d *Dag) GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error) {
+//	d.Mutex.RLock()
+//	defer d.Mutex.RUnlock()
+//	return d.utxodb.GetUtxoPkScripHexByTxhash(txhash, mindex, outindex)
+//}
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	//preout := modules.OutPoint{TxHash: tx.Hash()}

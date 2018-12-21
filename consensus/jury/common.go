@@ -350,7 +350,9 @@ func isSystemContract(tx *modules.Transaction) bool {
 			contractAddr := common.NewAddress(contractId, common.ContractHash)
 			return contractAddr.IsSystemContractAddress() //, nil
 
-		} else if msg.App >= modules.APP_CONTRACT_TPL_REQUEST {
+		} else if msg.App == modules.APP_CONTRACT_TPL_REQUEST {
+			return true   //todo  先期将install作为系统合约处理，只有Mediator可以安装，后期在扩展到所有节点
+		} else if msg.App >= modules.APP_CONTRACT_DEPLOY_REQUEST {
 			return false //, nil
 		}
 	}

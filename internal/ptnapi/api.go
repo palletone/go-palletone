@@ -664,7 +664,7 @@ func (s *PublicBlockChainAPI) DepositContractQuery(ctx context.Context, param []
 	return s.Ccquery(ctx, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param)
 }
 
-func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, deployId, from, to, daoAmount, daoFee string, param []string) (string, error) {
+func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context,from, to, daoAmount, daoFee, deployId string,  param []string) (string, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 
 	fromAddr, _ := common.StringToAddress(from)

@@ -200,17 +200,15 @@ func (c *Console) init(preload []string) error {
 				return fmt.Errorf("ptn.signRawTransaction: %v", err)
 			}
 			obj.Set("signRawTransaction", bridge.SignRawTransaction)
-			if _, err = c.jsre.Run(`jeth.getPtnTestCoin = wallet.getPtnTestCoin;`); err != nil {
-				return fmt.Errorf("ptn.getPtnTestCoin: %v", err)
-			}
-			obj.Set("getPtnTestCoin", bridge.GetPtnTestCoin)
+			//if _, err = c.jsre.Run(`jeth.getPtnTestCoin = wallet.getPtnTestCoin;`); err != nil {
+			//	return fmt.Errorf("ptn.getPtnTestCoin: %v", err)
+			//}
+			//obj.Set("getPtnTestCoin", bridge.GetPtnTestCoin)
 			if _, err = c.jsre.Run(`jeth.transferToken = ptn.transferToken;`); err != nil {
 				return fmt.Errorf("ptn.transferToken: %v", err)
 			}
 			obj.Set("transferToken", bridge.TransferToken)
 		}
-
-		//Add by wzhyuan
 	}
 	// The admin.sleep and admin.sleepBlocks are offered by the console and not by the RPC layer.
 	admin, err := c.jsre.Get("admin")
