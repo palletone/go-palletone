@@ -419,9 +419,9 @@ func (ec *Client) CmdCreateTransaction(ctx context.Context, from string, to stri
 	return result, err
 }
 
-func (ec *Client) GetPtnTestCoin(ctx context.Context, from string, to string, amount string,password string, duration *uint64) (string, error) {
+func (ec *Client) GetPtnTestCoin(ctx context.Context, from string, to string, amount string, password string, duration *uint64) (string, error) {
 	var result string
-	err := ec.c.CallContext(ctx, &result, "wallet_getPtnTestCoin", from,to,amount,password,duration)
+	err := ec.c.CallContext(ctx, &result, "wallet_getPtnTestCoin", from, to, amount, password, duration)
 	return result, err
 }
 
@@ -729,5 +729,12 @@ func (ec *Client) GetTxSearchEntry(ctx context.Context, hashHex string) (*ptnjso
 func (ec *Client) GetTxPoolTxByHash(ctx context.Context, hex string) (*ptnjson.TxPoolTxJson, error) {
 	result := new(ptnjson.TxPoolTxJson)
 	err := ec.c.CallContext(ctx, &result, "ptn_getTxPoolTxByHash", hex)
+	return result, err
+}
+
+// GetTxHashByReqId
+func (ec *Client) GetTxHashByReqId(ctx context.Context, hex string) (string, error) {
+	var result string
+	err := ec.c.CallContext(ctx, &result, "ptn_getTxHashByReqId", hex)
 	return result, err
 }

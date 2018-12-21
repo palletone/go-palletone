@@ -126,11 +126,13 @@ type Backend interface {
 
 	ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) ([]byte, error)
 	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error)
-	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64,contractAddress common.Address, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
+	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, txid string, deleteImage bool) ([]byte, error)
 
 	ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
+	// get tx hash by req id
+	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

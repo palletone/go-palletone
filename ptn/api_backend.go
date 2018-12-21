@@ -533,3 +533,7 @@ func (b *PtnApiBackend) EncodeTx(jsonStr string) (string, error) {
 	}
 	return hex.EncodeToString(bytes), err
 }
+
+func (b *PtnApiBackend) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
+	return b.ptn.dag.GetTxHashByReqId(reqid)
+}

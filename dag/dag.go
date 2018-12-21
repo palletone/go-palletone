@@ -1364,3 +1364,18 @@ func (d *Dag) QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error) {
 	}
 	return result, nil
 }
+
+// SaveReqIdByTx
+func (d *Dag) SaveReqIdByTx(tx *modules.Transaction) error {
+	return d.dagdb.SaveReqIdByTx(tx)
+}
+
+// GetTxHashByReqId
+func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
+	return d.dagdb.GetTxHashByReqId(reqid)
+}
+
+// GetReqIdByTxHash
+func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
+	return d.dagdb.GetReqIdByTxHash(hash)
+}
