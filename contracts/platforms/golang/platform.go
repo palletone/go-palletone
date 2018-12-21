@@ -40,6 +40,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"runtime"
 )
 
 // Platform for chaincodes written in Go
@@ -85,7 +86,14 @@ func getGopath() (string, error) {
 		return "", err
 	}
 	// Only take the first element of GOPATH
-	splitGoPath := filepath.SplitList(env["GOPATH"])
+	splitGoPath := make([]string, 0)
+	os := runtime.GOOS
+	if os == "windows" {
+		splitGoPath = filepath.SplitList(env["set GOPATH"])
+	} else  {
+		splitGoPath = filepath.SplitList(env["GOPATH"])
+	}
+
 	if len(splitGoPath) == 0 {
 		return "", fmt.Errorf("invalid GOPATH environment variable value:[%s]", env["GOPATH"])
 	}

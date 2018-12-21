@@ -367,7 +367,6 @@ func (p *PalletOne) GetKeyStore() *keystore.KeyStore {
 	return p.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 }
 
-// @author Albert·Gou
 func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
 	inputpoints := make(map[modules.OutPoint][]byte)
 	findPayLoad := false
