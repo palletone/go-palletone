@@ -80,6 +80,10 @@ var (
 	CURRENTCHAININDEX_PREFIX = "ccix"
 
 	STATE_VOTER_LIST = []byte("vl")
+
+	// ReqId && TxHash maping
+	ReqIdPrefix      = []byte("req")
+	TxHash2ReqPrefix = []byte("tx2req")
 )
 
 // suffix

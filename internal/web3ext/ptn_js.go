@@ -130,6 +130,12 @@ web3._extend({
         	params: 1, //param[]string
 			inputFormatter: [null]
 		}),
+		new web3._extend.Method({
+		    name: 'getTxHashByReqId',
+		    call: 'ptn_getTxHashByReqId',
+			params: 1,
+			inputFormatter: [null]
+		}),
 	],
 
 	properties: [

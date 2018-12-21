@@ -37,8 +37,8 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/dag/vote"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 //对DAG对象的操作，包括：Unit，Tx等
@@ -105,6 +105,11 @@ type IDagDb interface {
 	// common geter
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
+
+	// get txhash  and save index
+	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
+	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
+	SaveReqIdByTx(tx *modules.Transaction) error
 }
 
 /* ----- common geter ----- */
@@ -211,7 +216,6 @@ func (dagdb *DagDb) GetHashByNumber(number modules.ChainIndex) (common.Hash, err
 	}
 
 	return hash, nil
-	//return StoreBytes(dagdb.db, []byte(key), uHash.Hex())
 }
 
 // height and assetid can get a unit key.
@@ -968,3 +972,27 @@ func (dagdb *DagDb) GetAllLeafNodes() ([]*modules.Header, error) {
 }
 
 // ###################### GET IMPL END ######################
+
+func (dagdb *DagDb) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
+	key := fmt.Sprintf("%s_%s", string(constants.ReqIdPrefix), hash.String())
+	str, err := GetString(dagdb.db, key)
+	return common.HexToHash(str), err
+}
+
+func (dagdb *DagDb) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
+	key := fmt.Sprintf("%s_%s", string(constants.TxHash2ReqPrefix), reqid.String())
+	str, err := GetString(dagdb.db, key)
+	return common.HexToHash(str), err
+}
+func (dagdb *DagDb) SaveReqIdByTx(tx *modules.Transaction) error {
+	txhash := tx.Hash()
+	reqid := tx.RequestHash()
+	key1 := fmt.Sprintf("%s_%s", string(constants.ReqIdPrefix), reqid.String())
+	key2 := fmt.Sprintf("%s_%s", string(constants.TxHash2ReqPrefix), txhash.String())
+	err1 := StoreString(dagdb.db, key1, txhash.String())
+	err2 := StoreString(dagdb.db, key2, reqid.String())
+	if err1 != nil {
+		return err1
+	}
+	return err2
+}

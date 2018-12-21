@@ -16,6 +16,7 @@ import (
 	keystore "github.com/palletone/go-palletone/core/accounts/keystore"
 	modules "github.com/palletone/go-palletone/dag/modules"
 	txspool "github.com/palletone/go-palletone/dag/txspool"
+	decimal "github.com/shopspring/decimal"
 )
 
 // MockIDag is a mock of IDag interface
@@ -1107,4 +1108,63 @@ func (m *MockIDag) GetConfig(name string) ([]byte, *modules.StateVersion, error)
 func (mr *MockIDagMockRecorder) GetConfig(name string) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockIDag)(nil).GetConfig), name)
+}
+
+// GenTransferPtnTx mocks base method
+func (m *MockIDag) GenTransferPtnTx(from, to common.Address, amount decimal.Decimal, text string) (*modules.Transaction, uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenTransferPtnTx", from, to, amount, text)
+	ret0, _ := ret[0].(*modules.Transaction)
+	ret1, _ := ret[1].(uint64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GenTransferPtnTx indicates an expected call of GenTransferPtnTx
+func (mr *MockIDagMockRecorder) GenTransferPtnTx(from, to common.Address, amount decimal.Decimal, text string) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenTransferPtnTx", reflect.TypeOf((*MockIDag)(nil).GenTransferPtnTx), from, to, amount, text)
+}
+
+// SaveReqIdByTx mocks base method
+func (m *MockIDag) SaveReqIdByTx(tx *modules.Transaction) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveReqIdByTx", tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveReqIdByTx indicates an expected call of SaveReqIdByTx
+func (mr *MockIDagMockRecorder) SaveReqIdByTx(hash common.Hash) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveReqIdByTx", reflect.TypeOf((*MockIDag)(nil).SaveReqIdByTx), hash)
+}
+
+// GetReqIdByTxHash mocks base method
+func (m *MockIDag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReqIdByTxHash", hash)
+	ret0, _ := ret[0].(common.Hash)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetReqIdByTxHash indicates an expected call of GetReqIdByTxHash
+func (mr *MockIDagMockRecorder) GetReqIdByTxHash(hash common.Hash) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReqIdByTxHash", reflect.TypeOf((*MockIDag)(nil).GetReqIdByTxHash), hash)
+}
+
+// GetTxHashByReqId mocks base method
+func (m *MockIDag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
+	ret := m.ctrl.Call(m, "GetTxHashByReqId", reqid)
+	ret0, _ := ret[0].(common.Hash)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTxHashByReqId indicates an expected call of GetTxHashByReqId
+func (mr *MockIDagMockRecorder) GetTxHashByReqId(reqid common.Hash) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxHashByReqId", reflect.TypeOf((*MockIDag)(nil).GetTxHashByReqId), reqid)
 }
