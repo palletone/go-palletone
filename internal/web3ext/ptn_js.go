@@ -97,8 +97,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccdeploytx',
         	call: 'ptn_ccdeploytx',
-        	params: 8, //from, to , daoAmount, daoFee uint64, templateId , txid , args  
-			inputFormatter: [null, null, null,null, null, null, null, null]
+        	params: 7, //from, to , daoAmount, daoFee , templateId , txid , args  
+			inputFormatter: [null, null, null,null, null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccinvoketx',
