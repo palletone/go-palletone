@@ -28,7 +28,6 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -134,8 +133,8 @@ type Backend interface {
 	ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 
-	Dag() dag.IDag
-	SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
+	//Dag() dag.IDag
+	//SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
 	TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error)
 
 	// get tx hash by req id

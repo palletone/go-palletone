@@ -32,7 +32,6 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -47,13 +46,13 @@ type PtnApiBackend struct {
 	//gpo *gasprice.Oracle
 }
 
-func (b *PtnApiBackend) Dag() dag.IDag {
-	return b.ptn.dag
-}
+//func (b *PtnApiBackend) Dag() dag.IDag {
+//	return b.ptn.dag
+//}
 
-func (b *PtnApiBackend) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
-	return b.ptn.SignAndSendTransaction(addr, tx)
-}
+//func (b *PtnApiBackend) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
+//	return b.ptn.SignAndSendTransaction(addr, tx)
+//}
 
 func (b *PtnApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
 	text *string) (*mp.TxExecuteResult, error) {
