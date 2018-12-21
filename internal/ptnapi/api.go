@@ -1037,6 +1037,7 @@ func (s *PublicTransactionPoolAPI) GetTransactionCount(ctx context.Context, addr
 	v := hexutil.Uint64(0)
 	return &v, nil
 }
+
 func (s *PublicTransactionPoolAPI) GetTransactionsByTxid(ctx context.Context, txid string) (*ptnjson.GetTxIdResult, error) {
 	tx, err := s.b.GetTxByTxid_back(txid)
 	if err != nil {
@@ -1044,6 +1045,15 @@ func (s *PublicTransactionPoolAPI) GetTransactionsByTxid(ctx context.Context, tx
 		return nil, err
 	}
 	return tx, nil
+}
+
+func (s *PublicTransactionPoolAPI) GetTxHashByReqId(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+	item, err := s.b.GetTxHashByReqId(hash)
+
+	info := NewPublicReturnInfo("tx_hash", item)
+	result_json, _ := json.Marshal(info)
+	return string(result_json), err
 }
 
 // GetTxPoolTxByHash returns the pool transaction for the given hash

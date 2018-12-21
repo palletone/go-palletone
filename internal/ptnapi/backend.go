@@ -135,6 +135,8 @@ type Backend interface {
 
 	Dag() dag.IDag
 	SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
+	// get tx hash by req id
+	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

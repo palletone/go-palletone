@@ -164,6 +164,7 @@ func adaptorConfig(config FullConfig) FullConfig {
 	config.Node.P2P = config.P2P
 	config.Ptn.Dag = *config.Dag
 	config.Ptn.Log = *config.Log
+	config.Ptn.Jury = config.Jury
 	config.Ptn.MediatorPlugin = config.MediatorPlugin
 	config.Ptn.Contract = config.Contract
 
@@ -241,6 +242,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	}
 	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
 	mp.SetMediatorPluginConfig(ctx, &cfg.MediatorPlugin)
+	jury.SetJuryConfig(ctx, &cfg.Jury)
 
 	return stack, cfg
 }

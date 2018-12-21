@@ -147,7 +147,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, ptn.contract)
+	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, ptn.contract,  &config.Jury)
 	if err != nil {
 		log.Error("contract processor creat:", "error", err)
 		return nil, err
@@ -277,6 +277,9 @@ func (s *PalletOne) ContractSigBroadcast(event jury.ContractSigEvent) {
 
 func (s *PalletOne) GetLocalMediators() []common.Address {
 	return s.mediatorPlugin.LocalMediators()
+}
+func (s *PalletOne) IsLocalActiveMediator(addr common.Address) bool {
+	return s.mediatorPlugin.IsLocalActiveMediator(addr)
 }
 
 // Protocols implements node.Service, returning all the currently configured
