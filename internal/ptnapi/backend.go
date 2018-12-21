@@ -26,13 +26,14 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
-	//"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/shopspring/decimal"
 )
 
 // Backend interface provides the common API services (that are provided by
@@ -135,6 +136,8 @@ type Backend interface {
 
 	Dag() dag.IDag
 	SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
+	TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error)
+
 	// get tx hash by req id
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 }

@@ -46,7 +46,9 @@ import (
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
+	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/shopspring/decimal"
 )
 
 //type LesServer interface {
@@ -147,7 +149,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, ptn.contract,  &config.Jury)
+	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, ptn.contract, &config.Jury)
 	if err != nil {
 		log.Error("contract processor creat:", "error", err)
 		return nil, err
@@ -424,4 +426,51 @@ func (p *PalletOne) SignAndSendTransaction(addr common.Address, tx *modules.Tran
 		return err
 	}
 	return nil
+}
+
+// @author Albert·Gou
+func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error) {
+	// 参数检查
+	fromAdd, err := common.StringToAddress(from)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", from)
+	}
+
+	toAdd, err := common.StringToAddress(to)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", to)
+	}
+
+	// 判断本节点是否同步完成，数据是否最新
+	if !p.dag.IsSynced() {
+		return nil, fmt.Errorf("the data of this node is not synced, and can't transfer now")
+	}
+
+	// 1. 创建交易
+	tx, fee, err := p.dag.GenTransferPtnTx(fromAdd, toAdd, ptnjson.Ptn2Dao(amount), text)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. 签名和发送交易
+	err = p.SignAndSendTransaction(fromAdd, tx)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. 返回执行结果
+	textStr := ""
+	if text != nil {
+		textStr = *text
+	}
+
+	res := &mp.TxExecuteResult{}
+	res.TxContent = fmt.Sprintf("Account %s transfer %vPTN to account %s with message: '%s'",
+		from, amount, to, textStr)
+	res.TxHash = tx.Hash()
+	res.TxSize = tx.Size().TerminalString()
+	res.TxFee = fmt.Sprintf("%vdao", fee)
+	res.Warning = mp.DefaultResult
+
+	return res, nil
 }

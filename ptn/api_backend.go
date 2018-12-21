@@ -19,11 +19,10 @@ package ptn
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"log"
 	"math/big"
 	"time"
-
-	"encoding/json"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
@@ -31,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -38,6 +38,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/shopspring/decimal"
 )
 
 // PtnApiBackend implements ethapi.Backend for full nodes
@@ -52,6 +53,11 @@ func (b *PtnApiBackend) Dag() dag.IDag {
 
 func (b *PtnApiBackend) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
 	return b.ptn.SignAndSendTransaction(addr, tx)
+}
+
+func (b *PtnApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
+	text *string) (*mp.TxExecuteResult, error) {
+	return b.ptn.TransferPtn(from, to, amount, text)
 }
 
 //func (b *PtnApiBackend) ChainConfig() *configure.ChainConfig {

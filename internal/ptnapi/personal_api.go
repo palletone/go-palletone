@@ -36,7 +36,6 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
 )
 
@@ -327,47 +326,11 @@ func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal,
 		return nil, fmt.Errorf("invalid account address: %v", from)
 	}
 
-	toAdd, err := common.StringToAddress(to)
-	if err != nil {
-		return nil, fmt.Errorf("invalid account address: %v", to)
-	}
-
-	// 判断本节点是否同步完成，数据是否最新
-	if !s.b.Dag().IsSynced() {
-		return nil, fmt.Errorf("the data of this node is not synced, and can't transfer now")
-	}
-
-	// 1. 创建交易
-	tx, fee, err := s.b.Dag().GenTransferPtnTx(fromAdd, toAdd, ptnjson.Ptn2Dao(amount), text)
-	if err != nil {
-		return nil, err
-	}
-
-	// 2. 解锁账户
+	// 解锁账户
 	err = fetchKeystore(s.am).TimedUnlock(accounts.Account{Address: fromAdd}, password, 3)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. 签名和发送交易
-	err = s.b.SignAndSendTransaction(fromAdd, tx)
-	if err != nil {
-		return nil, err
-	}
-
-	// 4. 返回执行结果
-	textStr := ""
-	if text != nil {
-		textStr = *text
-	}
-
-	res := &mp.TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Account %s transfer %vPTN to account %s with message: '%s'",
-		from, amount, to, textStr)
-	res.TxHash = tx.Hash()
-	res.TxSize = tx.Size().TerminalString()
-	res.TxFee = fmt.Sprintf("%vdao", fee)
-	res.Warning = mp.DefaultResult
-
-	return res, nil
+	return s.b.TransferPtn(from, to, amount, text)
 }
