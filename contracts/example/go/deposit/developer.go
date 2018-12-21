@@ -33,7 +33,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		if invokeTokens.Amount >= depositAmountsForDeveloper {
 			//加入列表
 			//addList("Jury", invokeAddr, stub)
-			err = addCandaditeList(invokeAddr, stub, "JuryList")
+			err = addCandaditeList(invokeAddr, stub, "DeveloperList")
 			if err != nil {
 				return shim.Error(err.Error())
 			}

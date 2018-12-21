@@ -1365,7 +1365,7 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 					}
 					if tx, ok := pool.outpoints[*input.PreviousOutPoint]; ok {
 						str := fmt.Sprintf("output %v already spent by "+
-							"transaction %v in the memory pool",
+							"transaction %x in the memory pool",
 							input.PreviousOutPoint, tx.Tx.Hash())
 						return errors.New(str)
 					}

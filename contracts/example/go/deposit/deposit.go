@@ -155,14 +155,14 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return shim.Success(list)
 		//获取某个节点的账户
 	case "GetCandidateBalanceWithAddr":
-		list, err := stub.GetState(args[0])
+		balance, err := stub.GetState(args[0])
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		if list == nil {
-			return shim.Success([]byte("[]"))
+		if balance == nil {
+			return shim.Success([]byte("balance is nil"))
 		}
-		return shim.Success(list)
+		return shim.Success(balance)
 		//获取Mediator申请加入列表
 	case "GetBecomeMediatorApplyList":
 		list, err := stub.GetState("ListForApplyBecomeMediator")
@@ -172,7 +172,6 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if list == nil {
 			return shim.Success([]byte("[]"))
 		}
-		fmt.Printf("list     %##v\n\n", list)
 		return shim.Success(list)
 		//获取已同意的mediator列表
 	case "GetAgreeForBecomeMediatorList":
@@ -211,11 +210,12 @@ func initDepositCfg(stub shim.ChaincodeStubInterface) {
 	}
 	fmt.Println("加入保证金候选列表，需要持币在规定时间以上，规定时间为 = ", day)
 	fmt.Println()
-	foundationAddress, err = stub.GetSystemConfig("FoundationAddress")
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
+	//foundationAddress, err = stub.GetSystemConfig("FoundationAddress")
+	//if err != nil {
+	//	fmt.Println(err.Error())
+	//	return
+	//}
+	foundationAddress = "P13wbAwQTDDGsoEjj9qCHga7xTp5JSX6SAT"
 	fmt.Println("foundationAddress = ", foundationAddress)
 	fmt.Println()
 	depositAmountsForMediatorStr, err := stub.GetSystemConfig("DepositAmountForMediator")

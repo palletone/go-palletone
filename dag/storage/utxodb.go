@@ -105,17 +105,26 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 	//1. get utxo
 	utxo, err := utxodb.GetUtxoEntry(outpoint)
 	if err != nil {
+		utxodb.logger.Errorf("Try to soft delete an unknown utxo by key:%s", outpoint.String())
 		return err
+	}
+
+	//2. soft delete utxo
+	if utxo.IsSpent() {
+		utxodb.logger.Errorf("Try to soft delete a deleted utxo by key:%s", outpoint.String())
+		return errors.New("Try to soft delete a deleted utxo")
 	}
 	key := outpoint.ToKey()
-	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
-	//2. delete utxo
-	if err := utxodb.db.Delete(key); err != nil {
+	utxo.Spend()
+	utxodb.logger.Debugf("Try to soft delete utxo by key:%s", outpoint.String())
+	err = StoreBytes(utxodb.db, key, utxo)
+	if err != nil {
 		return err
 	}
-	//3. delete index , key  outpoint .
-	outpoint_key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
-	utxodb.db.Delete(append(outpoint_key, outpoint.Hash().Bytes()...))
+	//if err := utxodb.db.Delete(key); err != nil {
+	//	return err
+	//}
+
 	return nil
 }
 

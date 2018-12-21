@@ -412,9 +412,9 @@ func (stub *ChaincodeStub) GetList(typeList string) ([]*modules.MediatorInfo, er
 	if err != nil {
 		return nil, err
 	}
-	if len(list) == 0 {
-		return nil, fmt.Errorf("%s", "list is nil.")
-	}
+	//if len(list) == 0 {
+	//	return nil, nil
+	//}
 	return list, nil
 }
 
@@ -431,9 +431,9 @@ func (stub *ChaincodeStub) GetListForForfeiture() ([]*modules.Forfeiture, error)
 	if err != nil {
 		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
 	}
-	if len(list) == 0 {
-		return nil, fmt.Errorf("%s", "list is nil.")
-	}
+	//if len(list) == 0 {
+	//	return nil, nil
+	//}
 	return list, nil
 }
 
@@ -450,9 +450,9 @@ func (stub *ChaincodeStub) GetListForCashback() ([]*modules.Cashback, error) {
 	if err != nil {
 		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
 	}
-	if len(list) == 0 {
-		return nil, fmt.Errorf("%s", "list is nil.")
-	}
+	//if len(list) == 0 {
+	//	return nil, fmt.Errorf("%s", "list is nil.")
+	//}
 	return list, nil
 }
 
@@ -462,6 +462,9 @@ func (stub *ChaincodeStub) GetDepositBalance(nodeAddr string) (*modules.DepositB
 		return nil, err
 	}
 	if balanceByte == nil {
+		return nil, nil
+	}
+	if string(balanceByte) == "" {
 		return nil, nil
 	}
 	balance := new(modules.DepositBalance)
@@ -486,9 +489,9 @@ func (stub *ChaincodeStub) GetCandidateList(role string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(candidateList) == 0 {
-		return nil, fmt.Errorf("%s", "list is nil.")
-	}
+	//if len(candidateList) == 0 {
+	//	return nil, fmt.Errorf("%s", "list is nil.")
+	//}
 	return candidateList, nil
 
 }

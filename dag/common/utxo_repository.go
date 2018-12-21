@@ -279,10 +279,9 @@ func (repository *UtxoRepository) destoryUtxo(txins []*modules.Input) {
 			log.Error("Query utxo when destory uxto", "error", err.Error())
 			continue
 		}
-		utxo.Spend()
 
 		// delete utxo
-		if err := repository.utxodb.SaveUtxoEntity(outpoint, utxo); err != nil {
+		if err := repository.utxodb.DeleteUtxo(outpoint); err != nil {
 			log.Error("Update uxto... ", "error", err.Error())
 			continue
 		}
