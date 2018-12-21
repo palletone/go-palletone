@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
+	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 // DefaultConfig contains default settings for use on the PalletOne main net.
@@ -111,6 +112,9 @@ type Config struct {
 	Dag dagconfig.Config `toml:"-"`
 	//Log config
 	Log log.Config `toml:"-"`
+
+	//jury Account
+	Jury jury.Config`toml:"-"`
 
 	//Contract config
 	Contract contractcfg.Config `toml:"-"`
