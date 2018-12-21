@@ -319,7 +319,8 @@ func (s *PrivateAccountAPI) SignAndSendTransaction(ctx context.Context, args Sen
 }
 
 // appended by albert·gou
-func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal, text, password string) (*mp.TxExecuteResult, error) {
+func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal, text *string,
+	password string) (*mp.TxExecuteResult, error) {
 	// 参数检查
 	fromAdd, err := common.StringToAddress(from)
 	if err != nil {
@@ -330,12 +331,6 @@ func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal,
 	if err != nil {
 		return nil, fmt.Errorf("invalid account address: %v", to)
 	}
-
-	//amount := ptnjson.Ptn2Dao(ptnAmt)
-	//amountPtn, err := decimal.RandFromString(amount)
-	//if err != nil {
-	//	return nil, fmt.Errorf("invalid PTN amount: %v", amount)
-	//}
 
 	// 判断本节点是否同步完成，数据是否最新
 	if !s.b.Dag().IsSynced() {
@@ -348,16 +343,27 @@ func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal,
 		return nil, err
 	}
 
-	// 2. 签名和发送交易
+	// 2. 解锁账户
+	err = fetchKeystore(s.am).TimedUnlock(accounts.Account{Address: fromAdd}, password, 3)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. 签名和发送交易
 	err = s.b.SignAndSendTransaction(fromAdd, tx)
 	if err != nil {
 		return nil, err
 	}
 
-	// 5. 返回执行结果
+	// 4. 返回执行结果
+	textStr := ""
+	if text != nil {
+		textStr = *text
+	}
+
 	res := &mp.TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Account %s transfer %vPTN to account %s with message: %v",
-		from, amount, to, text)
+	res.TxContent = fmt.Sprintf("Account %s transfer %vPTN to account %s with message: '%s'",
+		from, amount, to, textStr)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()
 	res.TxFee = fmt.Sprintf("%vdao", fee)

@@ -59,7 +59,7 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'transferPtn',
 			call: 'personal_transferPtn',
-			params: 2,
+			params: 5,
 		}),
 	],
 	properties: [

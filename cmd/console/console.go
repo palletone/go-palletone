@@ -164,7 +164,7 @@ func (c *Console) init(preload []string) error {
 		if err != nil {
 			return err
 		}
-		// Override the openWallet, unlockAccount, newAccount and sign methods since
+		// Override the openWallet, unlockAccount, newAccount, sign and transferPtn methods since
 		// these require user interaction. Assign these method in the Console the
 		// original web3 callbacks. These will be called by the jeth.* methods after
 		// they got the password from the user and send the original web3 request to
@@ -182,10 +182,14 @@ func (c *Console) init(preload []string) error {
 			if _, err = c.jsre.Run(`jeth.sign = personal.sign;`); err != nil {
 				return fmt.Errorf("personal.sign: %v", err)
 			}
+			if _, err = c.jsre.Run(`jeth.transferPtn = personal.transferPtn;`); err != nil {
+				return fmt.Errorf("personal.transferPtn: %v", err)
+			}
 			obj.Set("openWallet", bridge.OpenWallet)
 			obj.Set("unlockAccount", bridge.UnlockAccount)
 			obj.Set("newAccount", bridge.NewAccount)
 			obj.Set("sign", bridge.Sign)
+			obj.Set("transferPtn", bridge.TransferPtn)
 		}
 		ptn, errr := c.jsre.Get("ptn")
 		if errr != nil {

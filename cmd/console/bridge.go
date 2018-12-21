@@ -309,42 +309,55 @@ func (b *bridge) TransferToken(call otto.FunctionCall) (response otto.Value) {
 	return val
 }
 
-// UnlockAccount is a wrapper around the personal.TransferPtn RPC method that
+// TransferPtn is a wrapper around the personal.TransferPtn RPC method that
 // uses a non-echoing password prompt to acquire the passphrase and executes the
 // original RPC method (saved in jeth.TransferPtn) with it to actually execute
 // the RPC call.
+// appended by albert·gou
 func (b *bridge) TransferPtn(call otto.FunctionCall) (response otto.Value) {
 	var (
-		message = call.Argument(0)
-		account = call.Argument(1)
-		passwd  = call.Argument(2)
+		from     = call.Argument(0)
+		to       = call.Argument(1)
+		amount   = call.Argument(2)
+		text     = call.Argument(3)
+		password = call.Argument(4)
 	)
 
-	if !message.IsString() {
-		throwJSException("first argument must be the message to sign")
+	if !from.IsString() {
+		throwJSException("first argument must be the account")
 	}
-	if !account.IsString() {
-		throwJSException("second argument must be the account to sign with")
+	if !to.IsString() {
+		throwJSException("second argument must be the account")
+	}
+	if !amount.IsNumber() {
+		throwJSException("third argument must be the amount")
+	}
+
+	if text.IsDefined() && !text.IsNull() {
+		if !text.IsString() {
+			throwJSException("text must be a string")
+		}
 	}
 
 	// if the password is not given or null ask the user and ensure password is a string
-	if passwd.IsUndefined() || passwd.IsNull() {
-		fmt.Fprintf(b.printer, "Give password for account %s\n", account)
+	if password.IsUndefined() || password.IsNull() {
+		fmt.Fprintf(b.printer, "Give password for account %s\n", from)
 		if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
 			throwJSException(err.Error())
 		} else {
-			passwd, _ = otto.ToValue(input)
+			password, _ = otto.ToValue(input)
 		}
 	}
-	if !passwd.IsString() {
+	if !password.IsString() {
 		throwJSException("third argument must be the password to unlock the account")
 	}
 
 	// Send the request to the backend and return
-	val, err := call.Otto.Call("jeth.sign", nil, message, account, passwd)
+	val, err := call.Otto.Call("jeth.transferPtn", nil, from, to, amount, text, password)
 	if err != nil {
 		throwJSException(err.Error())
 	}
+
 	return val
 }
 
