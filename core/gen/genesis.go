@@ -207,9 +207,15 @@ func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) 
 	return tx, nil
 }
 
-func GenContractSigTransction(singer common.Address, orgTx *modules.Transaction, ks *keystore.KeyStore) (*modules.Transaction, error) {
+func GenContractSigTransction(singer common.Address, password string, orgTx *modules.Transaction, ks *keystore.KeyStore) (*modules.Transaction, error) {
 	if orgTx == nil || len(orgTx.TxMessages) < 3 {
 		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions param is error"))
+	}
+	if password != "" {
+		err := ks.Unlock(accounts.Account{Address: singer}, password)
+		if err != nil {
+			return nil, err
+		}
 	}
 	tx := orgTx
 	pubkey, err := ks.GetPublicKey(singer)
