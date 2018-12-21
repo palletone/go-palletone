@@ -474,17 +474,17 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 			}
 		}
 
-		for _, msg := range tx.TxMessages {
+		for msgIndex, msg := range tx.TxMessages {
 			payload, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok == false {
 				continue
 			}
-			for _, txin := range payload.Inputs {
+			for inputIndex, txin := range payload.Inputs {
 				st, err := pm.dag.GetUtxoEntry(txin.PreviousOutPoint)
 				if st == nil || err != nil {
 					return err
 				}
-				err = tokenengine.ScriptValidate(st.PkScript, nil, tx, int(txin.PreviousOutPoint.MessageIndex), int(txin.PreviousOutPoint.OutIndex))
+				err = tokenengine.ScriptValidate(st.PkScript, nil, tx, msgIndex, inputIndex)
 				if err != nil {
 					return err
 				}
