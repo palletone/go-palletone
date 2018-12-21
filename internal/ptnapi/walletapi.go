@@ -432,7 +432,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	return submitTransaction(ctx, s.b, stx)
 }
 
-func (s *PublicWalletAPI) Ccinvoketx(ctx context.Context, deployId, from, to, daoAmount, daoFee string, param []string) (string, error) {
+func (s *PublicWalletAPI) Ccinvoketx(ctx context.Context,from, to, daoAmount, daoFee, deployId string,  param []string) (string, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 
 	fromAddr, _ := common.StringToAddress(from)

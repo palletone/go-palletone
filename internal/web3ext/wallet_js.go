@@ -61,7 +61,7 @@ const Wallet_JS = `
 		new web3._extend.Method({
 			name: 'ccinvoketx',
 			call: 'wallet_ccinvoketx',
-			params: 6, //contractAddr, from, to, daoAmount, daoFee , args[]string------>["fun", "key", "value"]
+			params: 6, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"]
 			inputFormatter: [null, null, null,null, null, null]
 		}),
 		new web3._extend.Method({
