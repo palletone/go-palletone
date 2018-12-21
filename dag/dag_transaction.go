@@ -27,9 +27,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/vote"
-	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/shopspring/decimal"
 )
 
 type Txo4Greedy struct {
@@ -211,7 +209,7 @@ func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address) (*modules.Tran
 	return tx, fee, nil
 }
 
-func (dag *Dag) GenTransferPtnTx(from, to common.Address, amount decimal.Decimal, text string) (*modules.Transaction, uint64, error) {
+func (dag *Dag) GenTransferPtnTx(from, to common.Address, amount uint64, text string) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
 	msg := &modules.Message{
 		App:     modules.APP_TEXT,
@@ -220,7 +218,7 @@ func (dag *Dag) GenTransferPtnTx(from, to common.Address, amount decimal.Decimal
 
 	// 2. 组装 tx
 	fee := dag.CurrentFeeSchedule().TransferFee.BaseFee
-	tx, fee, err := dag.CreateGenericTransaction(from, to, ptnjson.Ptn2Dao(amount), fee, msg)
+	tx, fee, err := dag.CreateGenericTransaction(from, to, amount, fee, msg)
 	if err != nil {
 		return nil, 0, err
 	}
