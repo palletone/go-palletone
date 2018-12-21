@@ -32,6 +32,8 @@ import (
 type GlobalProperty struct {
 	ChainParameters core.ChainParameters // 区块链网络参数
 
+	ActiveJuries map[common.Address]bool //当前活跃Jury集合
+
 	ActiveMediators    map[common.Address]bool // 当前活跃 mediator 集合；每个维护间隔更新一次
 	PrecedingMediators map[common.Address]bool // 上一届 mediator
 }
@@ -73,6 +75,20 @@ func (gp *GlobalProperty) ChainThreshold() int {
 		core.PalletOne100Percent
 
 	return aSize - offset
+}
+
+func (gp *GlobalProperty) IsActiveJury(add common.Address) bool {
+	return gp.ActiveJuries[add]
+}
+
+func (gp *GlobalProperty) GetActiveJuries() []common.Address {
+	juries := make([]common.Address, 0, len(gp.ActiveJuries))
+	for addr, _ := range gp.ActiveJuries {
+		juries = append(juries, addr)
+	}
+	sortAddress(juries)
+
+	return juries
 }
 
 func (gp *GlobalProperty) IsActiveMediator(add common.Address) bool {
