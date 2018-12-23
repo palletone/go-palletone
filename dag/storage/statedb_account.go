@@ -143,7 +143,7 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 		}
 
 		value := iter.Value()
-		if value ==nil {
+		if value == nil {
 			continue
 		}
 

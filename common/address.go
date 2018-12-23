@@ -225,11 +225,11 @@ func (a *Address) Equal(b Address) bool {
 
 func (a *Address) Less(b Address) bool {
 	for i, v := range a {
-		if v < b[i] {
-			return true
+		if v >= b[i] {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
 // UnprefixedHash allows marshaling an Address without 0x prefix.
