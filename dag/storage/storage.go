@@ -71,7 +71,7 @@ func GetBytes(db ptndb.Database, key []byte) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	log.Info("storage GetBytes", "key:", string(key), "value:", string(val))
+	log.Debug("storage GetBytes", "key:", string(key), "value:", string(val))
 	return val, nil
 }
 

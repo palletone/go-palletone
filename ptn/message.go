@@ -418,7 +418,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 
 	unit.ReceivedAt = msg.ReceivedAt
 	unit.ReceivedFrom = p
-	log.Info("===NewBlockMsg===", "unit:", *unit, "index:", unit.Number().Index, "peer id:", p.id)
+	log.Debug("===NewBlockMsg===", "unit:", *unit, "index:", unit.Number().Index, "peer id:", p.id)
 
 	// Mark the peer as owning the block and schedule it for import
 	p.MarkUnit(unit.UnitHash)
@@ -427,7 +427,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	requestNumber := unit.UnitHeader.Number
 	hash, number := p.Head(unit.Number().AssetID)
 	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && requestNumber.Index > number.Index) {
-		log.Info("ProtocolManager", "NewBlockMsg SetHead request.Index:", unit.UnitHeader.ChainIndex().Index,
+		log.Debug("ProtocolManager", "NewBlockMsg SetHead request.Index:", unit.UnitHeader.ChainIndex().Index,
 			"local peer index:", number.Index)
 		trueHead := unit.Hash()
 		p.SetHead(trueHead, requestNumber)
@@ -435,7 +435,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		currentUnitIndex := pm.dag.GetCurrentUnit(unit.Number().AssetID).UnitHeader.Number.Index
 
 		if requestIndex > currentUnitIndex {
-			log.Info("ProtocolManager", "NewBlockMsg synchronise request.Index:", unit.UnitHeader.ChainIndex().Index,
+			log.Debug("ProtocolManager", "NewBlockMsg synchronise request.Index:", unit.UnitHeader.ChainIndex().Index,
 				"current unit index:", currentUnitIndex)
 			go func() {
 				time.Sleep(100 * time.Millisecond)
