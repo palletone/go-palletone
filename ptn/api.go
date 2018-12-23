@@ -120,9 +120,9 @@ type TransferPtnArgs struct {
 	From   string          `json:"from"`
 	To     string          `json:"to"`
 	Amount decimal.Decimal `json:"amount"`
-	text   *string         `json:"text"`
+	Text   *string         `json:"text"`
 }
 
 func (api *PublicPalletOneAPI) TransferPtn(args TransferPtnArgs) (*mp.TxExecuteResult, error) {
-	return api.p.TransferPtn(args.From, args.To, args.Amount, args.text)
+	return api.p.TransferPtn(args.From, args.To, args.Amount, args.Text)
 }
