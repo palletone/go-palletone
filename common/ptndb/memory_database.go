@@ -17,11 +17,20 @@
 package ptndb
 
 import (
-	"sync"
-	"errors"
-	"github.com/palletone/go-palletone/common"
 	"encoding/binary"
+	"errors"
+	"reflect"
 	"strings"
+	"sync"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/syndtr/goleveldb/leveldb/iterator"
+	"github.com/syndtr/goleveldb/leveldb/util"
+)
+
+var (
+	ErrReleased    = errors.New("leveldb: resource already relesed")
+	ErrHasReleaser = errors.New("leveldb: releaser already defined")
 )
 
 /*
@@ -31,49 +40,97 @@ type MemDatabase struct {
 	db   map[string][]byte
 	lock sync.RWMutex
 }
-type KeyValue struct{
-	Key []byte
+type KeyValue struct {
+	Key   []byte
 	Value []byte
 }
-type MemIterator struct{
-	result   []KeyValue
-	idx int
+type MemIterator struct {
+	result []KeyValue
+	idx    int
 }
-func(i *MemIterator) Next() bool{
+
+func (i *MemIterator) Next() bool {
 	i.idx++
-	return i.idx<len(i.result)
+	return i.idx < len(i.result)
 }
-func(i *MemIterator) Key() []byte{
-	if i.idx==-1{
+func (i *MemIterator) Key() []byte {
+	if i.idx == -1 {
 		return nil
 	}
 	return i.result[i.idx].Key
 }
-func(i *MemIterator) Value() []byte{
-	if i.idx==-1{
+func (i *MemIterator) Value() []byte {
+	if i.idx == -1 {
 		return nil
 	}
 	return i.result[i.idx].Value
 }
-func (db *MemDatabase) NewIterator() Iterator {
-	result:=[]KeyValue{}
-	for key:= range db.db{
-		kv:=KeyValue{[]byte(key),db.db[key]}
-		result =append(result,kv)
+
+//implement iterator interface
+func (i *MemIterator) First() bool {
+	if i.idx == -1 {
+		return false
 	}
-	return &MemIterator{result:result,idx:-1}
+	return true
+}
+func (i *MemIterator) Last() bool {
+	if i.idx == -1 {
+		return false
+	}
+	return true
+}
+func (i *MemIterator) Seek(key []byte) bool {
+	if i.idx == -1 {
+		return false
+	}
+	for j := 0; j <= i.idx; j++ {
+		val := i.result[j]
+		if reflect.DeepEqual(key, val.Key) {
+			return true
+		}
+	}
+	return false
+}
+func (i *MemIterator) Prev() bool {
+	if i.idx == -1 {
+		return false
+	}
+	return true
+
+}
+func (i *MemIterator) Valid() bool {
+	if i.idx == -1 {
+		return false
+	}
+	return true
+}
+func (i *MemIterator) Error() error {
+	return nil
+}
+func (i *MemIterator) Release() {}
+func (i *MemIterator) SetReleaser(releaser util.Releaser) {
+
+}
+
+func (db *MemDatabase) NewIterator() iterator.Iterator {
+	result := []KeyValue{}
+	for key := range db.db {
+		kv := KeyValue{[]byte(key), db.db[key]}
+		result = append(result, kv)
+	}
+	return &MemIterator{result: result, idx: -1}
 }
 
 // NewIteratorWithPrefix returns a iterator to iterate over subset of database content with a particular prefix.
-func (db *MemDatabase) NewIteratorWithPrefix(prefix []byte) Iterator {
-	result:=[]KeyValue{}
-	for key:= range db.db{
-		if strings.HasPrefix(key,string(prefix)){
+func (db *MemDatabase) NewIteratorWithPrefix(prefix []byte) iterator.Iterator {
+	result := []KeyValue{}
+	for key := range db.db {
+		if strings.HasPrefix(key, string(prefix)) {
 			kv := KeyValue{[]byte(key), db.db[key]}
 			result = append(result, kv)
 		}
 	}
-	return &MemIterator{result:result,idx:-1}
+	return &MemIterator{result: result, idx: -1}
 }
 func NewMemDatabase() (*MemDatabase, error) {
 	return &MemDatabase{
@@ -138,7 +195,10 @@ func (db *MemDatabase) NewBatch() Batch {
 
 func (db *MemDatabase) Len() int { return len(db.db) }
 
-type kv struct{ k, v []byte }
+type kv struct {
+	k, v []byte
+	del  bool
+}
 
 type memBatch struct {
 	db     *MemDatabase
@@ -147,8 +207,14 @@ type memBatch struct {
 }
 
 func (b *memBatch) Put(key, value []byte) error {
-	b.writes = append(b.writes, kv{common.CopyBytes(key), common.CopyBytes(value)})
+	b.writes = append(b.writes, kv{common.CopyBytes(key), common.CopyBytes(value), false})
 	b.size += len(value)
+	return nil
+}
+
+func (b *memBatch) Delete(key []byte) error {
+	b.writes = append(b.writes, kv{common.CopyBytes(key), nil, true})
+	b.size += 1
 	return nil
 }
 
@@ -177,4 +243,3 @@ func EncodeBlockNumber(number uint64) []byte {
 	binary.BigEndian.PutUint64(enc, number)
 	return enc
 }
-

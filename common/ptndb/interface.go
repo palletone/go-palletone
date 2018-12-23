@@ -16,7 +16,9 @@
 
 package ptndb
 
-
+import (
+	"github.com/syndtr/goleveldb/leveldb/iterator"
+)
 
 // Code using batches should try to add this much data to the batch.
 // The value was determined empirically.
@@ -27,39 +29,35 @@ type Putter interface {
 	Put(key []byte, value []byte) error
 }
 
+// Deleter wraps the database delete operation supported by both batches and regular databases.
+type Deleter interface {
+	Delete(key []byte) error
+}
+
 // Database wraps all database operations. All methods are safe for concurrent use.
 type Database interface {
 	Putter
+	Deleter
 	Get(key []byte) ([]byte, error)
 	Has(key []byte) (bool, error)
-	Delete(key []byte) error
 	Close()
 	NewBatch() Batch
-	NewIterator() Iterator
-	NewIteratorWithPrefix(prefix []byte) Iterator
+
+	NewIterator() iterator.Iterator
+	NewIteratorWithPrefix(prefix []byte) iterator.Iterator
 }
 
 // Batch is a write-only database that commits changes to its host database
 // when Write is called. Batch cannot be used concurrently.
 type Batch interface {
 	Putter
+	Deleter
 	ValueSize() int // amount of data in the batch
 	Write() error
 	// Reset resets the batch for reuse
 	Reset()
 }
+
 type Iterator interface {
-	// Next moves the iterator to the next key/value pair.
-	// It returns whether the iterator is exhausted.
-	Next() bool
-
-	// Key returns the key of the current key/value pair, or nil if done.
-	// The caller should not modify the contents of the returned slice, and
-	// its contents may change on the next call to any 'seeks method'.
-	Key() []byte
-
-	// Value returns the value of the current key/value pair, or nil if done.
-	// The caller should not modify the contents of the returned slice, and
-	// its contents may change on the next call to any 'seeks method'.
-	Value() []byte
+	iterator.Iterator
 }
