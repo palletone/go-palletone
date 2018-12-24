@@ -41,7 +41,7 @@ type TokenInfo struct {
 }
 
 type Symbols struct {
-	NameInfos map[string]TokenInfo `json:"nameinfos"`
+	TokenInfos map[string]TokenInfo `json:"tokeninfos"`
 }
 
 func (p *PRC20) Init(stub shim.ChaincodeStubInterface) pb.Response {
@@ -56,6 +56,10 @@ func (p *PRC20) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return createToken(args, stub)
 	case "supplyToken":
 		return supplyToken(args, stub)
+	case "getTokenInfo":
+		return oneToken(args, stub)
+	case "getAllTokenInfo":
+		return allToken(args, stub)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -73,7 +77,7 @@ func setSymbols(symbols *Symbols, stub shim.ChaincodeStubInterface) error {
 
 func getSymbols(stub shim.ChaincodeStubInterface) (*Symbols, error) {
 	//
-	symbols := Symbols{NameInfos: map[string]TokenInfo{}}
+	symbols := Symbols{TokenInfos: map[string]TokenInfo{}}
 	symbolsBytes, err := stub.GetState(symbolsKey)
 	if err != nil {
 		return &symbols, err
@@ -131,7 +135,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 	//check name is only or not
 	symbols, err := getSymbols(stub)
-	if _, ok := symbols.NameInfos[fungible.Symbol]; ok {
+	if _, ok := symbols.TokenInfos[fungible.Symbol]; ok {
 		jsonResp := "{\"Error\":\"The symbol have been used\"}"
 		return shim.Success([]byte(jsonResp))
 	}
@@ -157,15 +161,12 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//last put state
-	if fungible.SupplyAddress != "" {
-		txid := stub.GetTxID()
-		assetID, _ := dm.NewAssetId(fungible.Symbol, dm.AssetType_FungibleToken,
-			fungible.Decimals, common.Hex2Bytes(txid[2:]))
-		info := TokenInfo{SupplyAddr: fungible.SupplyAddress, AssetID: assetID}
-		symbols.NameInfos[fungible.Symbol] = info
-	} else {
-		symbols.NameInfos[fungible.Symbol] = TokenInfo{}
-	}
+	txid := stub.GetTxID()
+	assetID, _ := dm.NewAssetId(fungible.Symbol, dm.AssetType_FungibleToken,
+		fungible.Decimals, common.Hex2Bytes(txid[2:]))
+	info := TokenInfo{SupplyAddr: fungible.SupplyAddress, AssetID: assetID}
+	symbols.TokenInfos[fungible.Symbol] = info
+
 	err = setSymbols(symbols, stub)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
@@ -184,7 +185,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	symbol := strings.ToUpper(args[0])
 	//check name is exist or not
 	symbols, err := getSymbols(stub)
-	if _, ok := symbols.NameInfos[symbol]; !ok {
+	if _, ok := symbols.TokenInfos[symbol]; !ok {
 		jsonResp := "{\"Error\":\"Token not exist\"}"
 		return shim.Success([]byte(jsonResp))
 	}
@@ -207,18 +208,68 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 	//check supply address
-	if invokeAddr != symbols.NameInfos[symbol].SupplyAddr {
+	if invokeAddr != symbols.TokenInfos[symbol].SupplyAddr {
 		jsonResp := "{\"Error\":\"Not the supply address\"}"
 		return shim.Success([]byte(jsonResp))
 	}
 
 	//call SupplyToken
-	assetID := symbols.NameInfos[symbol].AssetID
+	assetID := symbols.TokenInfos[symbol].AssetID
 	err = stub.SupplyToken(assetID.Bytes(),
-		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, supplyAmount, symbols.NameInfos[symbol].SupplyAddr)
+		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, supplyAmount, symbols.TokenInfos[symbol].SupplyAddr)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.SupplyToken\"}"
 		return shim.Error(jsonResp)
 	}
 	return shim.Success([]byte("")) //test
+}
+
+type TokenIDInfo struct {
+	Symbol     string
+	AssetID    string
+	SupplyAddr string
+}
+
+func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+	//params check
+	if len(args) < 1 {
+		return shim.Error("need 1 args (Symbol)")
+	}
+
+	//symbol
+	symbol := strings.ToUpper(args[0])
+	//check name is exist or not
+	symbols, err := getSymbols(stub)
+	if _, ok := symbols.TokenInfos[symbol]; !ok {
+		jsonResp := "{\"Error\":\"Token not exist\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+
+	//token
+	asset := symbols.TokenInfos[symbol].AssetID
+	tkID := TokenIDInfo{symbol, asset.ToAssetId(), symbols.TokenInfos[symbol].SupplyAddr}
+	//return json
+	tkJson, err := json.Marshal(tkID)
+	if err != nil {
+		return shim.Success([]byte(err.Error()))
+	}
+	return shim.Success(tkJson) //test
+}
+
+func allToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+	symbols, err := getSymbols(stub)
+
+	var tkIDs []TokenIDInfo
+	for symbol := range symbols.TokenInfos {
+		asset := symbols.TokenInfos[symbol].AssetID
+		tkID := TokenIDInfo{symbol, asset.ToAssetId(), symbols.TokenInfos[symbol].SupplyAddr}
+		tkIDs = append(tkIDs, tkID)
+	}
+
+	//return json
+	tksJson, err := json.Marshal(tkIDs)
+	if err != nil {
+		return shim.Success([]byte(err.Error()))
+	}
+	return shim.Success(tksJson) //test
 }
