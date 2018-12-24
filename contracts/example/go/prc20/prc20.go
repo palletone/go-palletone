@@ -161,15 +161,12 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//last put state
-	if fungible.SupplyAddress != "" {
-		txid := stub.GetTxID()
-		assetID, _ := dm.NewAssetId(fungible.Symbol, dm.AssetType_FungibleToken,
-			fungible.Decimals, common.Hex2Bytes(txid[2:]))
-		info := TokenInfo{SupplyAddr: fungible.SupplyAddress, AssetID: assetID}
-		symbols.TokenInfos[fungible.Symbol] = info
-	} else {
-		symbols.TokenInfos[fungible.Symbol] = TokenInfo{}
-	}
+	txid := stub.GetTxID()
+	assetID, _ := dm.NewAssetId(fungible.Symbol, dm.AssetType_FungibleToken,
+		fungible.Decimals, common.Hex2Bytes(txid[2:]))
+	info := TokenInfo{SupplyAddr: fungible.SupplyAddress, AssetID: assetID}
+	symbols.TokenInfos[fungible.Symbol] = info
+
 	err = setSymbols(symbols, stub)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
