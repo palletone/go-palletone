@@ -170,11 +170,11 @@ func (pm *ProtocolManager) syncer() {
 func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	// Short circuit if no peers are available
 	if peer == nil {
-		log.Info("ProtocolManager synchronise peer is nil")
+		log.Debug("ProtocolManager synchronise peer is nil")
 		return
 	}
-	log.Info("Enter ProtocolManager synchronise", "peer id:", peer.id)
-	defer log.Info("End ProtocolManager synchronise", "peer id:", peer.id)
+	log.Debug("Enter ProtocolManager synchronise", "peer id:", peer.id)
+	defer log.Debug("End ProtocolManager synchronise", "peer id:", peer.id)
 
 	// Make sure the peer's TD is higher than our own
 	//TODO compare local assetId & chainIndex whith remote peer assetId & chainIndex
@@ -187,10 +187,10 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	pHead, number := peer.Head(assetId)
 	pindex := number.Index
 
-	log.Info("ProtocolManager", "synchronise local unit index:", index, "local peer index:", pindex, "header hash:", pHead)
+	log.Debug("ProtocolManager", "synchronise local unit index:", index, "local peer index:", pindex, "header hash:", pHead)
 	if common.EmptyHash(pHead) || (index >= pindex && pindex > 0) {
 		//if index >= pindex && pindex > 0 {
-		log.Info("===synchronise peer.index < local index===", "local peer.index:", pindex, "local index:", number.Index, "header hash:", pHead)
+		log.Debug("===synchronise peer.index < local index===", "local peer.index:", pindex, "local index:", number.Index, "header hash:", pHead)
 		return
 	}
 
@@ -205,7 +205,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 		//			return
 		//		}
 	}
-	log.Info("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex, "header hash:", pHead)
+	log.Debug("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex, "header hash:", pHead)
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
 	if err := pm.downloader.Synchronise(peer.id, pHead, pindex, mode, assetId); err != nil {
 		log.Info("ptn sync downloader.", "Synchronise err:", err)

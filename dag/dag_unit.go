@@ -68,7 +68,7 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 		current_index.Index += 1
 		pendingUnit.UnitHeader.Number = *current_index
 	} else {
-		go log.Info("the pending unit header number index info. ", "index", pendingUnit.UnitHeader.Number.Index,
+		log.Debug("the pending unit header number index info. ", "index", pendingUnit.UnitHeader.Number.Index,
 			"hex", pendingUnit.UnitHeader.Number.AssetID.String())
 	}
 }
