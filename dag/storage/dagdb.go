@@ -273,6 +273,12 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 	//dagdb.updateAddrTransactions(tx.Address().String(), txHash)
 	// store output by addr
 	for i, msg := range tx.TxMessages {
+		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+			if err := dagdb.SaveReqIdByTx(tx); err != nil {
+				log.Error("SaveReqIdByTx is failed,", "error", err)
+			}
+			continue
+		}
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if ok {
 			for _, output := range payload.Outputs {
@@ -959,13 +965,13 @@ func (dagdb *DagDb) GetAllLeafNodes() ([]*modules.Header, error) {
 // ###################### GET IMPL END ######################
 
 func (dagdb *DagDb) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
-	key := fmt.Sprintf("%s_%s", string(constants.ReqIdPrefix), hash.String())
+	key := fmt.Sprintf("%s_%s", string(constants.TxHash2ReqPrefix), hash.String())
 	str, err := GetString(dagdb.db, key)
 	return common.HexToHash(str), err
 }
 
 func (dagdb *DagDb) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
-	key := fmt.Sprintf("%s_%s", string(constants.TxHash2ReqPrefix), reqid.String())
+	key := fmt.Sprintf("%s_%s", string(constants.ReqIdPrefix), reqid.String())
 	str, err := GetString(dagdb.db, key)
 	return common.HexToHash(str), err
 }
