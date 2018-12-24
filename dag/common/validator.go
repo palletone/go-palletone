@@ -86,7 +86,7 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		//The first Tx(txIdx==0) is a coinbase tx.
 		txCode := validate.ValidateTx(tx, txIndex == 0, &worldState)
 		if txCode != modules.TxValidationCode_VALID {
-			log.Info("ValidateTx", "txhash", txHash, "error validate code", txCode)
+			log.Debug("ValidateTx", "txhash", txHash, "error validate code", txCode)
 			isSuccess = false
 			txFlags[txHash] = txCode
 			continue
@@ -291,7 +291,7 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		}
 
 	default:
-		log.Info("The payload of message type is not expect. ", "payload_type", t)
+		log.Debug("The payload of message type is not expect. ", "payload_type", t)
 		return false
 	}
 	return false

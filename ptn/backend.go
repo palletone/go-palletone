@@ -430,6 +430,10 @@ func (p *PalletOne) SignAndSendTransaction(addr common.Address, tx *modules.Tran
 // @author Albert·Gou
 func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error) {
 	// 参数检查
+	if from == to {
+		return nil, fmt.Errorf("please don't transfer money to yourself: %v", from)
+	}
+
 	fromAdd, err := common.StringToAddress(from)
 	if err != nil {
 		return nil, fmt.Errorf("invalid account address: %v", from)

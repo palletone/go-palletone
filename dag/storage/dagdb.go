@@ -723,6 +723,8 @@ func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
 	}
 	msgs := make([]*modules.Message, 0)
 	for _, msg := range tx.Messages() {
+		//fmt.Println("msg ", msg)
+
 		data1, err1 := json.Marshal(msg.Payload)
 		if err1 != nil {
 			return nil, err1
@@ -814,7 +816,7 @@ func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
 			msgs = append(msgs, msg)
 
 		case modules.OP_MEDIATOR_CREATE:
-			payment := new(modules.MediatorPayload)
+			payment := new(modules.MediatorCreateOperation)
 			err2 := json.Unmarshal(data1, &payment)
 			if err2 != nil {
 				return nil, err2

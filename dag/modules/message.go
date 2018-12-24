@@ -64,7 +64,7 @@ func NewMessage(app MessageType, payload interface{}) *Message {
 
 func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	msg.App = cpyMsg.App
-	msg.Payload = cpyMsg.Payload
+	//msg.Payload = cpyMsg.Payload
 	switch cpyMsg.App {
 	// modified by albert·gou
 	default:
@@ -477,10 +477,6 @@ type SignatureSet struct {
 // App: text
 type TextPayload struct {
 	Text []byte `json:"text"` // Textdata
-}
-
-// mediatorpayload
-type MediatorPayload struct {
 }
 
 func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {

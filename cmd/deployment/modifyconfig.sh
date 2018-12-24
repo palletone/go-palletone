@@ -130,7 +130,7 @@ ModifyJson  $account $publickey $nodeinfo
 }
 
 
-function addStaticNodes()
+function addBootstrapNodes()
 {
     filename=node1/ptn-genesis.json
     nodes=$1
@@ -152,24 +152,26 @@ function addStaticNodes()
     l=${#array}
     newarr=${array:0:$[$l-1]}
     newarr="$newarr]"
-    newStaticNodes="StaticNodes=$newarr"
-    sed -i '/^StaticNodes/c'$newStaticNodes'' node$index/ptn-config.toml
-    echo "=====addStaticNodes $index ok======="
+    newBootstrapNodes="BootstrapNodes=$newarr"
+    #sed -i '/^StaticNodes/c'$newStaticNodes'' node$index/ptn-config.toml
+    sed -i '/^BootstrapNodes/c'$newBootstrapNodes'' node$index/ptn-config.toml
+    echo "=====addBootstrapNodes $index ok======="
 }
 
 
 
 
-function ModifyStaticNodes()
+function ModifyBootstrapNodes()
 {
     count=1;
     while [ $count -le $1 ] ;
     do
 	#echo $count
-        addStaticNodes $1 $count
+        addBootstrapNodes $1 $count
         let ++count;
         sleep 1;
     done
+    find . -name "*.toml" | xargs sed -i -e "s%\[\:\:\]%127.0.0.1%g"
     return 0;
 }
 

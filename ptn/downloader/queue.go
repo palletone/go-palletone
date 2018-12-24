@@ -778,10 +778,10 @@ func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction) (int,
 
 	reconstruct := func(header *modules.Header, index int, result *fetchResult) error {
 		//TODO must recover
-		//		if core.DeriveSha(modules.Transactions(txLists[index])) != header.TxRoot {
-		//			log.Debug("===queue->DeliverBodies===", "err:", errInvalidBody)
-		//			return errInvalidBody
-		//		}
+		//if core.DeriveSha(modules.Transactions(txLists[index])) != header.TxRoot {
+		//	log.Debug("===queue->DeliverBodies===", "err:", errInvalidBody)
+		//	return errInvalidBody
+		//}
 		result.Transactions = txLists[index]
 		return nil
 	}

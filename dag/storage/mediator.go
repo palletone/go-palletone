@@ -163,21 +163,24 @@ func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
 		if iter.Key() == nil {
 			continue
 		}
-
-		key := make([]byte, 0)
+		key := make([]byte, len(iter.Key()))
 		copy(key, iter.Key())
-		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
 
-		value := make([]byte, 0)
+		if iter.Value() == nil {
+			continue
+		}
+		value := make([]byte, len(iter.Value()))
 		copy(value, iter.Value())
+
 		mi := NewMediatorInfo()
 		err := rlp.DecodeBytes(value, mi)
 		if err != nil {
 			log.Debug(fmt.Sprintf("Error in Decoding Bytes to MediatorInfo: %s", err))
 		}
 
-		med := mi.infoToMediator()
+		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
 		add := common.BytesToAddress(addB)
+		med := mi.infoToMediator()
 		med.Address = add
 
 		result[add] = med
