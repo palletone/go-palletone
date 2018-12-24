@@ -664,7 +664,7 @@ func (s *PublicBlockChainAPI) DepositContractQuery(ctx context.Context, param []
 	return s.Ccquery(ctx, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param)
 }
 
-func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context,from, to, daoAmount, daoFee, deployId string,  param []string) (string, error) {
+func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string) (string, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 
 	fromAddr, _ := common.StringToAddress(from)
@@ -1605,7 +1605,7 @@ func createTokenTx(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 	//PTN
 	utxosPTNTaken, change, err := core.Select_utxo_Greedy(utxosPTN, feePTN+1)
 	if err != nil {
-		return nil, fmt.Errorf("Select utxo err")
+		return nil, fmt.Errorf("Select PTN utxo err")
 	}
 	//ptn payment
 	payPTN := &modules.PaymentPayload{}
@@ -1623,7 +1623,7 @@ func createTokenTx(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 	//Token
 	utxosTkTaken, change, err := core.Select_utxo_Greedy(utxosToken, amountToken)
 	if err != nil {
-		return nil, fmt.Errorf("Select utxo err")
+		return nil, fmt.Errorf("Select token utxo err")
 	}
 	//token payment
 	payToken := &modules.PaymentPayload{}
