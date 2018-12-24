@@ -1,8 +1,10 @@
 package deposit
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common/award"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -141,8 +143,24 @@ func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, appl
 	if !isExist {
 		return fmt.Errorf("%s", "node is not exist in the list.")
 	}
-	cashbackNode, err := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
+	//获取节点信息
+	cashbackNode := &modules.Cashback{}
+	for _, m := range listForCashback {
+		if m.CashbackAddress == cashbackAddr && m.CashbackTime == applyTime {
+			cashbackNode = m
+			break
+		}
+	}
+	newList := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
+	listForCashbackByte, err := json.Marshal(newList)
 	if err != nil {
+		log.Error("Json.Marshal err:", "error", err)
+		return err
+	}
+	//更新列表
+	err = stub.PutState("ListForCashback", listForCashbackByte)
+	if err != nil {
+		log.Error("Stub.PutState err:", "error", err)
 		return err
 	}
 	//还得判断一下是否超过余额

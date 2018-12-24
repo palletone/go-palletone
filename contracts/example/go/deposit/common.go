@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common/award"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/dag/modules"
 	"strconv"
@@ -134,8 +135,16 @@ func moveAndPutStateFromCashbackList(stub shim.ChaincodeStubInterface, cashbackA
 	if !isExist {
 		return fmt.Errorf("%s", "node is not exist in the list.")
 	}
-	_, err = moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
+	newList := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
+	listForCashbackByte, err := json.Marshal(newList)
 	if err != nil {
+		log.Error("Json.Marshal err:", "error", err)
+		return err
+	}
+	//更新列表
+	err = stub.PutState("ListForCashback", listForCashbackByte)
+	if err != nil {
+		log.Error("Stub.PutState err:", "error", err)
 		return err
 	}
 	return nil
@@ -313,47 +322,36 @@ func moveCandidate(candidate string, invokeFromAddr string, stub shim.ChaincodeS
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfeiture []*modules.Forfeiture, forfeitureAddr string, applyTime int64) (*modules.Forfeiture, error) {
+func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfeiture []*modules.Forfeiture, forfeitureAddr string, applyTime int64) (newList []*modules.Forfeiture) {
 	//
-	forfeiture := new(modules.Forfeiture)
+	//forfeiture := new(modules.Forfeiture)
 	for i := 0; i < len(listForForfeiture); i++ {
 		if listForForfeiture[i].ApplyTime == applyTime && listForForfeiture[i].ForfeitureAddress == forfeitureAddr {
-			forfeiture = listForForfeiture[i]
-			listForForfeiture = append(listForForfeiture[:i], listForForfeiture[i+1:]...)
+			newList = append(listForForfeiture[:i], listForForfeiture[i+1:]...)
 			break
 		}
 	}
-	listForForfeitureByte, err := json.Marshal(listForForfeiture)
-	if err != nil {
-		return nil, err
-	}
-	//更新列表
-	err = stub.PutState("ListForForfeiture", listForForfeitureByte)
-	if err != nil {
-		return nil, err
-	}
-	return forfeiture, nil
+	return
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback []*modules.Cashback, cashbackAddr string, applyTime int64) (*modules.Cashback, error) {
+func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback []*modules.Cashback, cashbackAddr string, applyTime int64) (newList []*modules.Cashback) {
 	//
-	cashback := &modules.Cashback{}
 	for i := 0; i < len(listForCashback); i++ {
 		if listForCashback[i].CashbackTime == applyTime && listForCashback[i].CashbackAddress == cashbackAddr {
-			cashback = listForCashback[i]
-			listForCashback = append(listForCashback[:i], listForCashback[i+1:]...)
+			newList = append(listForCashback[:i], listForCashback[i+1:]...)
 			break
 		}
 	}
-	listForCashbackByte, err := json.Marshal(listForCashback)
-	if err != nil {
-		return nil, err
-	}
-	//更新列表
-	err = stub.PutState("ListForCashback", listForCashbackByte)
-	if err != nil {
-		return nil, err
-	}
-	return cashback, nil
+	return
+	//listForCashbackByte, err := json.Marshal(listForCashback)
+	//if err != nil {
+	//	return nil, err
+	//}
+	////更新列表
+	//err = stub.PutState("ListForCashback", listForCashbackByte)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//return cashback, nil
 }
