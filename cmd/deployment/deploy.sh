@@ -116,7 +116,7 @@ json="node1/ptn-genesis.json"
 replacejson $json 
 
 
-ModifyStaticNodes $n
+ModifyBootstrapNodes $n
 
 ExecInit $n
 
