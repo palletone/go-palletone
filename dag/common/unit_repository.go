@@ -260,12 +260,12 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	txs := modules.Transactions{coinbase}
 	// step6 get unit's txs in txpool's txs
 	//TODO must recover
-	//if len(poolTxs) > 0 {
-	//	for _, tx := range poolTxs {
-	//		t := txspool.PooltxToTx(tx)
-	//		txs = append(txs, t)
-	//	}
-	//}
+	if len(poolTxs) > 0 {
+		for _, tx := range poolTxs {
+			t := txspool.PooltxToTx(tx)
+			txs = append(txs, t)
+		}
+	}
 
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
