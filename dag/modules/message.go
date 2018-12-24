@@ -41,7 +41,7 @@ const (
 	APP_TEXT
 	APP_VOTE
 	OP_MEDIATOR_CREATE
-	
+
 	APP_CONTRACT_TPL_REQUEST    = 100
 	APP_CONTRACT_DEPLOY_REQUEST = 101
 	APP_CONTRACT_INVOKE_REQUEST = 102
@@ -64,7 +64,7 @@ func NewMessage(app MessageType, payload interface{}) *Message {
 
 func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	msg.App = cpyMsg.App
-	msg.Payload = cpyMsg.Payload
+	//msg.Payload = cpyMsg.Payload
 	switch cpyMsg.App {
 	// modified by albert·gou
 	default:
@@ -480,10 +480,6 @@ type SignatureSet struct {
 // App: text
 type TextPayload struct {
 	Text []byte `json:"text"` // Textdata
-}
-
-// mediatorpayload
-type MediatorPayload struct {
 }
 
 func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {

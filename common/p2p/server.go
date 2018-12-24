@@ -713,7 +713,7 @@ running:
 				name := truncateName(c.name)
 				go srv.runPeer(p)
 				peers[c.id] = p
-				log.Info("Adding p2p peer", "name", name, "addr",
+				log.Debug("Adding p2p peer", "name", name, "addr",
 					c.fd.RemoteAddr(), "peers", len(peers),
 					"peers address:", &peers)
 				if p.Inbound() {

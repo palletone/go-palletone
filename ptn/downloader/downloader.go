@@ -439,7 +439,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	if err != nil {
 		return err
 	}
-	log.Info("=====findAncestor=====", "origin:", origin)
+	log.Debug("=====findAncestor=====", "origin:", origin)
 
 	// Ensure our origin point is below any fast sync pivot point
 	pivot := uint64(0)

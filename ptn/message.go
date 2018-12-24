@@ -277,7 +277,7 @@ func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		}
 
 		transactions[i] = temptxs
-		log.Info("BlockBodiesMsg", "i", i, "txs size:", len(temptxs))
+		log.Debug("BlockBodiesMsg", "i", i, "txs size:", len(temptxs))
 	}
 	log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(transactions))
 	// Filter out any explicitly requested bodies, deliver the rest to the downloader

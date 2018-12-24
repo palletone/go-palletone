@@ -286,7 +286,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		// append by albert·gou, 利用 unit 更新相关状态
 		time := time.Unix(u.Timestamp(), 0)
 		log.Info(fmt.Sprint("Received unit "+u.UnitHash.TerminalString()+" #", u.NumberU64(),
-			" @ ", time.Format("2006-01-02 15:04:05"), " signed by ", u.UnitAuthor().Str()))
+			" @", time.Format("2006-01-02 15:04:05"), " signed by ", u.UnitAuthor().Str()))
 		d.ApplyUnit(u)
 
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
@@ -333,7 +333,7 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 }
 func (d *Dag) Exists(hash common.Hash) bool {
 	if unit, err := d.dagdb.GetUnit(hash); err == nil && unit != nil {
-		log.Info("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
+		log.Debug("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
 		return true
 	}
 	return false
@@ -931,7 +931,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 
 	if !isGenesis {
 		if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
-			log.Info("dag:the unit is already exist in leveldb. ", "unit_hash", unit.Hash().String())
+			log.Debug("dag:the unit is already exist in leveldb. ", "unit_hash", unit.Hash().String())
 			return errors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 		}
 	}
@@ -947,7 +947,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 		// step3.1. pass and with group signature, put into leveldb
 		// todo 应当先判断是否切换，再保存，并更新状态
 		if err := d.unitRep.SaveUnit(unit, txpool, false, false); err != nil {
-			log.Info("Dag", "SaveDag, save error when save unit to db err:", err)
+			log.Debug("Dag", "SaveDag, save error when save unit to db err:", err)
 			return fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
 		}
 		// step3.2. if pass and with group signature, prune fork data
@@ -959,7 +959,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 		if err := d.Memdag.Save(unit, txpool); err != nil {
 			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		} else {
-			log.Info("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
+			log.Debug("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
 		}
 	}
 
