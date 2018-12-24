@@ -512,78 +512,11 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	// step5. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
-		var requester common.Address
-		var err error
-		if txIndex > 0 { //coinbase don't have requester
-			requester, err = unitOp.getRequesterAddress(tx)
-			if err != nil {
-				return err
-			}
-		}
-		txHash := tx.Hash()
-		// traverse messages
-		for msgIndex, msg := range tx.TxMessages {
-			// handle different messages
-			switch msg.App {
-			case modules.APP_PAYMENT:
-				if ok := unitOp.savePaymentPayload(txHash, msg, uint32(msgIndex)); ok != true {
-					return fmt.Errorf("Save payment payload error.")
-				}
-			case modules.APP_CONTRACT_TPL:
-				if ok := unitOp.saveContractTpl(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
-					return fmt.Errorf("Save contract template error.")
-				}
-			case modules.APP_CONTRACT_DEPLOY:
-				if ok := unitOp.saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
-					return fmt.Errorf("Save contract init payload error.")
-				}
-			case modules.APP_CONTRACT_INVOKE:
-				if ok := unitOp.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
-					return fmt.Errorf("Save contract invode payload error.")
-				}
-			case modules.APP_CONFIG:
-				if ok := unitOp.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
-					return fmt.Errorf("Save contract invode payload error.")
-				}
-			case modules.APP_VOTE:
-				if err = unitOp.SaveVote(msg, requester); err != nil {
-					return fmt.Errorf("Save vote payload error.")
-				}
-			case modules.OP_MEDIATOR_CREATE:
-				if ok := unitOp.ApplyOperation(msg, true); ok == false {
-					return fmt.Errorf("Apply Mediator Creating Operation error.")
-				}
-
-			case modules.APP_CONTRACT_TPL_REQUEST:
-				//todo
-			case modules.APP_CONTRACT_DEPLOY_REQUEST:
-				//todo
-			case modules.APP_CONTRACT_STOP_REQUEST:
-				//todo
-			case modules.APP_CONTRACT_INVOKE_REQUEST:
-				//todo
-			case modules.APP_SIGNATURE:
-				//todo
-
-			case modules.APP_TEXT:
-			default:
-				return fmt.Errorf("Message type is not supported now: %v", msg.App)
-			}
-		}
-		// step6. save transaction
-		if err := unitOp.dagdb.SaveTransaction(tx); err != nil {
-			log.Info("Save transaction:", "error", err.Error())
+		err := unitOp.saveTx4Unit(unit, txIndex, tx)
+		if err != nil {
 			return err
 		}
-		//Index TxId for address
-		msg0 := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-
-		if !msg0.IsCoinbase() {
-			//TODO Devin tx.Address() is wrong
-			unitOp.idxdb.SaveAddressTxId(tx.Address(), txHash)
-		}
-
-		txHashSet = append(txHashSet, txHash)
+		txHashSet = append(txHashSet, tx.Hash())
 	}
 
 	// step7  send unitHash set to txpool, to update txpool's pending
@@ -628,6 +561,99 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	unitOp.dagdb.PutHeadFastUnitHash(unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
+}
+
+//Save tx in unit
+func (unitOp *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modules.Transaction) error {
+	var requester common.Address
+	var err error
+	if txIndex > 0 { //coinbase don't have requester
+		requester, err = unitOp.getRequesterAddress(tx)
+		if err != nil {
+			return err
+		}
+	}
+	txHash := tx.Hash()
+	// traverse messages
+	for msgIndex, msg := range tx.TxMessages {
+		// handle different messages
+		switch msg.App {
+		case modules.APP_PAYMENT:
+			if ok := unitOp.savePaymentPayload(txHash, msg, uint32(msgIndex)); ok != true {
+				return fmt.Errorf("Save payment payload error.")
+			}
+		case modules.APP_CONTRACT_TPL:
+			if ok := unitOp.saveContractTpl(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+				return fmt.Errorf("Save contract template error.")
+			}
+		case modules.APP_CONTRACT_DEPLOY:
+			if ok := unitOp.saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+				return fmt.Errorf("Save contract init payload error.")
+			}
+		case modules.APP_CONTRACT_INVOKE:
+			if ok := unitOp.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+				return fmt.Errorf("Save contract invode payload error.")
+			}
+		case modules.APP_CONFIG:
+			if ok := unitOp.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
+				return fmt.Errorf("Save contract invode payload error.")
+			}
+		case modules.APP_VOTE:
+			if err = unitOp.SaveVote(msg, requester); err != nil {
+				return fmt.Errorf("Save vote payload error.")
+			}
+		case modules.OP_MEDIATOR_CREATE:
+			if ok := unitOp.ApplyOperation(msg, true); ok == false {
+				return fmt.Errorf("Apply Mediator Creating Operation error.")
+			}
+
+		case modules.APP_CONTRACT_TPL_REQUEST:
+			//todo
+		case modules.APP_CONTRACT_DEPLOY_REQUEST:
+			//todo
+		case modules.APP_CONTRACT_STOP_REQUEST:
+			//todo
+		case modules.APP_CONTRACT_INVOKE_REQUEST:
+			//todo
+		case modules.APP_SIGNATURE:
+			//todo
+
+		case modules.APP_TEXT:
+		default:
+			return fmt.Errorf("Message type is not supported now: %v", msg.App)
+		}
+	}
+	// step6. save transaction
+	if err := unitOp.dagdb.SaveTransaction(tx); err != nil {
+		log.Info("Save transaction:", "error", err.Error())
+		return err
+	}
+	//Index TxId for address
+	addresses := getPayToAddresses(tx)
+	for _, addr := range addresses {
+		unitOp.idxdb.SaveAddressTxId(addr, txHash)
+	}
+
+	return nil
+}
+func getPayToAddresses(tx *modules.Transaction) []common.Address {
+	resultMap := map[common.Address]int{}
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_PAYMENT {
+			pay := msg.Payload.(*modules.PaymentPayload)
+			for _, out := range pay.Outputs {
+				addr, _ := tokenengine.GetAddressFromScript(out.PkScript)
+				if _, ok := resultMap[addr]; !ok {
+					resultMap[addr] = 1
+				}
+			}
+		}
+	}
+	keys := make([]common.Address, 0, len(resultMap))
+	for k := range resultMap {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 /**
