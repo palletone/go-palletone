@@ -534,11 +534,11 @@ func (f *Fetcher) loop() {
 				matched := false
 				for hash, announce := range f.completing {
 					if f.queued[hash] == nil {
-						txnHash := core.DeriveSha(modules.Transactions(task.transactions[i]))
+						//txnHash := core.DeriveSha(modules.Transactions(task.transactions[i]))
 
 						//TODO must recover
-						if txnHash == announce.header.TxRoot && announce.origin == task.peer {
-							//if announce.origin == task.peer {
+						//if txnHash == announce.header.TxRoot && announce.origin == task.peer {
+						if announce.origin == task.peer {
 							// Mark the body matched, reassemble if still unknown
 							matched = true
 

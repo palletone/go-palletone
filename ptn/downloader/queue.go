@@ -27,7 +27,6 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
@@ -779,10 +778,10 @@ func (q *queue) DeliverBodies(id string, txLists [][]*modules.Transaction) (int,
 
 	reconstruct := func(header *modules.Header, index int, result *fetchResult) error {
 		//TODO must recover
-		if core.DeriveSha(modules.Transactions(txLists[index])) != header.TxRoot {
-			log.Debug("===queue->DeliverBodies===", "err:", errInvalidBody)
-			return errInvalidBody
-		}
+		//if core.DeriveSha(modules.Transactions(txLists[index])) != header.TxRoot {
+		//	log.Debug("===queue->DeliverBodies===", "err:", errInvalidBody)
+		//	return errInvalidBody
+		//}
 		result.Transactions = txLists[index]
 		return nil
 	}
