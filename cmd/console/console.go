@@ -209,6 +209,16 @@ func (c *Console) init(preload []string) error {
 			}
 			obj.Set("transferToken", bridge.TransferToken)
 		}
+                wallet, perr := c.jsre.Get("wallet")
+		if perr != nil {
+			return perr
+		}
+		if obj := wallet.Object(); obj != nil { // make sure the admin api is enabled over the interface
+			if _, err = c.jsre.Run(`jptn.transferToken = wallet.transferToken;`); err != nil {
+				return fmt.Errorf("wallet.transferToken: %v", err)
+			}
+			obj.Set("transferToken", bridge.TransferToken)
+		}
 	}
 	// The admin.sleep and admin.sleepBlocks are offered by the console and not by the RPC layer.
 	admin, err := c.jsre.Get("admin")
