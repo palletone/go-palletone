@@ -175,11 +175,8 @@ func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
 func (tx *Transaction) Hash() common.Hash {
-	//if tx.TxHash != (common.Hash{}) {
-	//	return tx.TxHash
-	//}
+
 	v := rlp.RlpHash(tx)
-	//tx.TxHash = v
 	return v
 }
 
@@ -514,7 +511,7 @@ func (msg *Transaction) baseSize() int {
 }
 func (tx *Transaction) IsContractTx() bool {
 	for _, m := range tx.TxMessages {
-		if m.App >= APP_CONTRACT_TPL && m.App <= APP_SIGNATURE{
+		if m.App >= APP_CONTRACT_TPL && m.App <= APP_SIGNATURE {
 			return true
 		}
 	}
