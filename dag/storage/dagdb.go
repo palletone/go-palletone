@@ -55,9 +55,6 @@ type IDagDb interface {
 	//设置稳定单元的Hash
 	SetStableUnitHash(hash common.Hash)
 	GetStableUnitHash() common.Hash
-	//设置最新单元的Hash
-	SetLastUnitHash(hash common.Hash)
-	GetLastUnitHash() common.Hash
 	//GetGenesisUnit() (*modules.Unit, error)
 	//SaveUnit(unit *modules.Unit, isGenesis bool) error
 
@@ -139,15 +136,6 @@ func (db *DagDb) SetStableUnitHash(hash common.Hash) {
 }
 func (db *DagDb) GetStableUnitHash() common.Hash {
 	data, _ := GetBytes(db.db, constants.StableUnitHash)
-	hash := common.Hash{}
-	hash.SetBytes(data)
-	return hash
-}
-func (db *DagDb) SetLastUnitHash(hash common.Hash) {
-	StoreBytes(db.db, constants.LastUnitHash, hash.Bytes())
-}
-func (db *DagDb) GetLastUnitHash() common.Hash {
-	data, _ := GetBytes(db.db, constants.LastUnitHash)
 	hash := common.Hash{}
 	hash.SetBytes(data)
 	return hash
@@ -452,7 +440,7 @@ func (dagdb *DagDb) GetHeadHeaderHash() (common.Hash, error) {
 
 // GetHeadUnitHash stores the head unit's hash.
 func (dagdb *DagDb) GetHeadUnitHash() (common.Hash, error) {
-	data, err := dagdb.db.Get(constants.HeadUnitKey)
+	data, err := dagdb.db.Get(constants.HeadUnitHash)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -856,7 +844,7 @@ func (dagdb *DagDb) GetContractNoReader(db ptndb.Database, id common.Hash) (*mod
 	return contract, nil
 }
 
-//batch put HeaderCanon & HeaderKey & HeadUnitKey & HeadFastKey
+//batch put HeaderCanon & HeaderKey & HeadUnitHash & HeadFastKey
 func (dagdb *DagDb) UpdateHeadByBatch(hash common.Hash, number uint64) error {
 	batch := dagdb.db.NewBatch()
 	errorList := &[]error{}
@@ -864,9 +852,9 @@ func (dagdb *DagDb) UpdateHeadByBatch(hash common.Hash, number uint64) error {
 	key := append(constants.HeaderCanon_Prefix, encodeBlockNumber(number)...)
 	BatchErrorHandler(batch.Put(append(key, constants.NumberSuffix...), hash.Bytes()), errorList) //PutCanonicalHash
 	BatchErrorHandler(batch.Put(constants.HeadHeaderKey, hash.Bytes()), errorList)                //PutHeadHeaderHash
-	BatchErrorHandler(batch.Put(constants.HeadUnitKey, hash.Bytes()), errorList)                  //PutHeadUnitHash
+	BatchErrorHandler(batch.Put(constants.HeadUnitHash, hash.Bytes()), errorList)                  //PutHeadUnitHash
 	BatchErrorHandler(batch.Put(constants.HeadFastKey, hash.Bytes()), errorList)                  //PutHeadFastUnitHash
-	if len(*errorList) == 0 { //each function call succeed.
+	if len(*errorList) == 0 {                                                                     //each function call succeed.
 		return batch.Write()
 	}
 	return fmt.Errorf("UpdateHeadByBatch, at least one sub function call failed.")
@@ -888,7 +876,7 @@ func (dagdb *DagDb) PutHeadHeaderHash(hash common.Hash) error {
 
 // PutHeadUnitHash stores the head unit's hash.
 func (dagdb *DagDb) PutHeadUnitHash(hash common.Hash) error {
-	if err := dagdb.db.Put(constants.HeadUnitKey, hash.Bytes()); err != nil {
+	if err := dagdb.db.Put(constants.HeadUnitHash, hash.Bytes()); err != nil {
 		return err
 	}
 	return nil
@@ -993,13 +981,12 @@ func (dagdb *DagDb) SaveReqIdByTx(tx *modules.Transaction) error {
 
 //get Textpayload
 func (dagdb *DagDb) GetTextHash(hash common.Hash) ([]byte, error) {
-	tx,_,_,_ := dagdb.GetTransaction(hash)
+	tx, _, _, _ := dagdb.GetTransaction(hash)
 	pay := tx.TxMessages[2].Payload.(*modules.TextPayload)
 
 	texthash := pay.TextHash
 	if pay != nil {
-		return texthash,nil
+		return texthash, nil
 	}
-	return nil,errors.New("textpayload is nil !")
+	return nil, errors.New("textpayload is nil !")
 }
-
