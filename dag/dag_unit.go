@@ -59,9 +59,9 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 	} else {
 		pendingUnit.UnitHeader.Number = *current_index
 		pendingUnit.UnitHeader.Number.Index = current_index.Index + 1
-
+		parent, _ := dag.GetHeadUnitHash()
 		pendingUnit.UnitHeader.ParentsHash =
-			append(pendingUnit.UnitHeader.ParentsHash, dag.HeadUnitHash())
+			append(pendingUnit.UnitHeader.ParentsHash, parent) //dag.HeadUnitHash()
 	}
 
 	if pendingUnit.UnitHeader.Number == (modules.ChainIndex{}) {
@@ -90,7 +90,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 	// added by yangyu, 2018.8.9
 	if newUnits == nil || len(newUnits) == 0 || newUnits[0].IsEmpty() {
-		log.Info("No unit need to be packaged for now.")
+		log.Info("No unit need to be packaged for now.", "unit", newUnits[0])
 		return &modules.Unit{}
 	}
 
@@ -98,8 +98,8 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
 
 	dag.setUnitHeader(pendingUnit)
-
-	pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash()
+	parent, _ := dag.GetHeadUnitHash()
+	pendingUnit.UnitHeader.ParentsHash[0] = parent //  dag.HeadUnitHash()
 	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
 	pendingUnit.UnitHeader.GroupPubKey = groupPubKey
 	pendingUnit.Hash()

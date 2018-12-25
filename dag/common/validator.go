@@ -20,6 +20,7 @@ package common
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -63,6 +64,9 @@ return all transactions' fee
 func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGenesis bool) (
 	map[common.Hash]modules.TxValidationCode, bool, error) {
 	if txs == nil || txs.Len() < 1 {
+		if !dagconfig.DefaultConfig.IsRewardCoin {
+			return nil, true, nil
+		}
 		return nil, false, fmt.Errorf("Transactions should not be empty.")
 	}
 
