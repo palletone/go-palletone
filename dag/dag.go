@@ -424,7 +424,7 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 		if err != nil {
 			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveHashByNumber Error", i)
 		}
-		// ###save HeaderCanon & HeaderKey & HeadUnitKey & HeadFastKey
+		// ###save HeaderCanon & HeaderKey & HeadUnitHash & HeadFastKey
 		err = d.dagdb.UpdateHeadByBatch(hash, index)
 		if err != nil {
 			return i, err
