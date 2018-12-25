@@ -251,13 +251,19 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 		additions[addr] = contractAddition
 	}
 	//coinbase, err := CreateCoinbase(mAddr, fees+awards, asset, t)
-	coinbase, err := CreateCoinbase(mAddr, fees, additions, asset, t)
-
+	coinbase, rewards, err := CreateCoinbase(mAddr, fees, additions, asset, t)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
-	txs := modules.Transactions{coinbase}
+	// 若配置增发，或者该单元包含有效交易（rewards>0），则将增发奖励和交易费全发给该mediator。
+	txs := make(modules.Transactions, 0)
+	if rewards > 0 || dagconfig.DefaultConfig.IsRewardCoin {
+		log.Debug("=======================Is rewards && coinbase tx info ================", "IsReward", dagconfig.DefaultConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
+		txs = append(txs, coinbase)
+	} else {
+		//log.Debug("======================= success  ================", "IsReward", dagconfig.DefaultConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
+	}
 	// step6 get unit's txs in txpool's txs
 	//TODO must recover
 	if len(poolTxs) > 0 {
@@ -829,7 +835,7 @@ To get unit information by its ChainIndex
 To create coinbase transaction
 */
 
-func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Address]*modules.Addition, asset *modules.Asset, t time.Time) (*modules.Transaction, error) {
+func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Address]*modules.Addition, asset *modules.Asset, t time.Time) (*modules.Transaction, int64, error) {
 	//创建合约保证金币龄的奖励output
 	payload := modules.PaymentPayload{}
 	if len(addition) != 0 {
@@ -878,7 +884,7 @@ func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Add
 	// coinbase.CreationDate = coinbase.CreateDate()
 	//coinbase.TxHash = coinbase.Hash()
 
-	return coinbase, nil
+	return coinbase, totalIncome, nil
 }
 
 /**

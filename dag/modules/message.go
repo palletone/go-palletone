@@ -85,7 +85,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 			TemplateId:    payload.TemplateId,
 			ContractId:    payload.ContractId,
 			Args:          payload.Args,
-			ExecutionTime: payload.ExecutionTime,
+			//ExecutionTime: payload.ExecutionTime,
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
@@ -111,7 +111,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 		newPayload := ContractInvokePayload{
 			ContractId:    payload.ContractId,
 			Args:          payload.Args,
-			ExecutionTime: payload.ExecutionTime,
+			//ExecutionTime: payload.ExecutionTime,
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
@@ -390,7 +390,7 @@ type ContractDeployPayload struct {
 	ContractId    []byte             `json:"contract_id"`            // contract id
 	Name          string             `json:"name"`                   // the name for contract
 	Args          [][]byte           `json:"args"`                   // contract arguments list
-	ExecutionTime time.Duration      `json:"execution_time" rlp:"-"` // contract execution time, millisecond
+	//ExecutionTime time.Duration      `json:"execution_time" rlp:"-"` // contract execution time, millisecond
 	Jury          []common.Address   `json:"jury"`                   // contract jurors list
 	ReadSet       []ContractReadSet  `json:"read_set"`               // the set data of read, and value could be any type
 	WriteSet      []ContractWriteSet `json:"write_set"`              // the set data of write, and value could be any type
@@ -403,7 +403,7 @@ type ContractInvokePayload struct {
 	ContractId    []byte             `json:"contract_id"` // contract id
 	FunctionName  string             `json:"function_name"`
 	Args          [][]byte           `json:"args"`           // contract arguments list
-	ExecutionTime time.Duration      `json:"execution_time"` // contract execution time, millisecond
+	//ExecutionTime time.Duration      `json:"execution_time"` // contract execution time, millisecond
 	ReadSet       []ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
 	WriteSet      []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
 	Payload       []byte             `json:"payload"`        // the contract execution result
@@ -412,7 +412,7 @@ type ContractInvokePayload struct {
 // App: contract_deploy
 type ContractStopPayload struct {
 	ContractId    []byte             `json:"contract_id"`            // contract id
-	ExecutionTime time.Duration      `json:"execution_time" rlp:"-"` // contract execution time, millisecond
+	//ExecutionTime time.Duration      `json:"execution_time" rlp:"-"` // contract execution time, millisecond
 	Jury          []common.Address   `json:"jury"`                   // contract jurors list
 	ReadSet       []ContractReadSet  `json:"read_set"`               // the set data of read, and value could be any type
 	WriteSet      []ContractWriteSet `json:"write_set"`              // the set data of write, and value could be any type
@@ -424,7 +424,7 @@ type ContractInvokeResult struct {
 	RequestId     common.Hash        `json:"request_id"`
 	FunctionName  string             `json:"function_name"`
 	Args          [][]byte           `json:"args"`           // contract arguments list
-	ExecutionTime time.Duration      `json:"execution_time"` // contract execution time, millisecond
+	//ExecutionTime time.Duration      `json:"execution_time"` // contract execution time, millisecond
 	ReadSet       []ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
 	WriteSet      []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
 	Payload       []byte             `json:"payload"`        // the contract execution result
@@ -476,9 +476,17 @@ type SignatureSet struct {
 // Token exchange message and verify message
 // App: text
 type TextPayload struct {
-	Text []byte `json:"text"` // Textdata
+	TextHash []byte	 `json:"texthash"`
 }
 
+<<<<<<< HEAD
+
+// mediatorpayload
+type MediatorPayload struct {
+}
+
+=======
+>>>>>>> daab63fdc59520c4a9627fd52ab578a4327ad1a6
 func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {
 	return &PaymentPayload{
 		Inputs:   inputs,
@@ -505,7 +513,7 @@ func NewContractDeployPayload(templateid []byte, contractid []byte, name string,
 		ContractId:    contractid,
 		Name:          name,
 		Args:          args,
-		ExecutionTime: excutiontime,
+		//ExecutionTime: excutiontime,
 		Jury:          jury,
 		ReadSet:       readset,
 		WriteSet:      writeset,
@@ -521,7 +529,7 @@ func NewContractInvokePayload(contractid []byte, funcName string, args [][]byte,
 		ContractId:    contractid,
 		FunctionName:  funcName,
 		Args:          args,
-		ExecutionTime: excutiontime,
+		//ExecutionTime: excutiontime,
 		ReadSet:       readset,
 		WriteSet:      writeset,
 		Payload:       payload,
@@ -530,3 +538,4 @@ func NewContractInvokePayload(contractid []byte, funcName string, args [][]byte,
 		//TokenDefine:   tokenDefine,
 	}
 }
+

@@ -2,25 +2,25 @@ package ptnapi
 
 import (
 	"context"
-	//"errors"
-	"time"
-	"errors"
-	"encoding/json"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/math"
-	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/walletjson"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/shopspring/decimal"
 )
 
@@ -54,9 +54,12 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 		return "", err
 	}
 	utxos := core.Utxos{}
+	ptn := modules.CoreAsset.String()
 	for _, json := range utxoJsons {
 		//utxos = append(utxos, &json)
-		utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+		if json.Asset == ptn {
+			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+		}
 	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
 	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
@@ -285,9 +288,12 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 		return common.Hash{}, err
 	}
 	utxos := core.Utxos{}
+	ptn := modules.CoreAsset.String()
 	for _, json := range utxoJsons {
 		//utxos = append(utxos, &json)
-		utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+		if json.Asset == ptn {
+			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+		}
 	}
 	fee, err := decimal.NewFromString("1")
 	if err != nil {
@@ -432,7 +438,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	return submitTransaction(ctx, s.b, stx)
 }
 
-func (s *PublicWalletAPI) Ccinvoketx(ctx context.Context,from, to, daoAmount, daoFee, deployId string,  param []string) (string, error) {
+func (s *PublicWalletAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string) (string, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 
 	fromAddr, _ := common.StringToAddress(from)

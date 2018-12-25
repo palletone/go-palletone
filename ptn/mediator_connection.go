@@ -75,7 +75,7 @@ func (pm *ProtocolManager) switchMediatorConnect() {
 	go pm.connectWitchActiveMediators()
 
 	// 3. 检查是否连接完成，并发送事件
-	go pm.checkActiveMediatorConnection()
+	//go pm.checkActiveMediatorConnection()
 
 	// 4. 延迟关闭和旧活跃mediator节点的连接
 	go pm.delayDiscPrecedingMediator()

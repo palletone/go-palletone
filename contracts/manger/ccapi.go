@@ -367,7 +367,7 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	}
 	t0 := time.Now()
 	duration := t0.Sub(start)
-	unit.ExecutionTime = duration
+	//unit.ExecutionTime = duration
 	requstId, err := common.NewHashFromStr(txid)
 	unit.RequestId = *requstId
 	if err != nil {

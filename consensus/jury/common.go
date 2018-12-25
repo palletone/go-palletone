@@ -143,7 +143,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, result.ExecutionTime, result.ReadSet, result.WriteSet, result.Payload)
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0/*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload)
 
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
@@ -307,6 +307,7 @@ func getTxSigNum(tx *modules.Transaction) int {
 }
 
 func checkTxValid(tx *modules.Transaction) bool {
+	//printTxInfo(tx)
 	return cm.ValidateTxSig(tx)
 }
 
@@ -380,14 +381,34 @@ func printTxInfo(tx *modules.Transaction) {
 			p := pay.(*modules.ContractInvokePayload)
 			fmt.Println(p.Args)
 			for idx, v := range p.WriteSet {
-				fmt.Printf("WriteSet:idx[%d], k[%v]-v[%v]", idx, v.Key, v.Value)
+				fmt.Printf("WriteSet:idx[%d], k[%v]-v[%v]\n", idx, v.Key, v.Value)
 			}
 			for idx, v := range p.ReadSet {
-				fmt.Printf("ReadSet:idx[%d], k[%v]-v[%v]", idx, v.Key, v.Value)
+				fmt.Printf("ReadSet:idx[%d], k[%v]-v[%v]\n", idx, v.Key, v.Value)
 			}
 		} else if app == modules.APP_SIGNATURE {
 			p := pay.(*modules.SignaturePayload)
+<<<<<<< HEAD
 			fmt.Printf("Signatures:[%v]", p.Signatures)
+		}else if app == modules.APP_TEXT {
+			p := pay.(*modules.TextPayload)
+			fmt.Printf("Text:[%v]",p.TextHash)
 		}
 	}
 }
+
+func getTextHash(tx *modules.Transaction)[]byte {
+	if tx != nil {
+		for _,msg := range tx.TxMessages {
+			if msg.App == modules.APP_TEXT {
+				return msg.Payload.(*modules.TextPayload).TextHash
+			}
+		}
+	}
+}
+=======
+			fmt.Printf("Signatures:[%v]\n", p.Signatures)
+		}
+	}
+}
+>>>>>>> daab63fdc59520c4a9627fd52ab578a4327ad1a6

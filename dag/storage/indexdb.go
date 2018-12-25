@@ -42,8 +42,12 @@ type IIndexDb interface {
 	SaveIndexValue(key []byte, value interface{}) error
 	GetUtxoByIndex(idx *modules.UtxoIndex) (*modules.Utxo, error)
 	DeleteUtxoByIndex(idx *modules.UtxoIndex) error
+<<<<<<< HEAD
+
+=======
 	SaveAddressTxId(address common.Address, txid common.Hash) error
 	GetAddressTxIds(address common.Address) ([]common.Hash, error)
+>>>>>>> daab63fdc59520c4a9627fd52ab578a4327ad1a6
 }
 
 // ###################### SAVE IMPL START ######################
@@ -51,22 +55,28 @@ func (idxdb *IndexDb) SaveIndexValue(key []byte, value interface{}) error {
 	return StoreBytes(idxdb.db, key, value)
 }
 
+
 // ###################### SAVE IMPL END ######################
 // ###################### GET IMPL START ######################
-func (db *IndexDb) GetPrefix(prefix []byte) map[string][]byte {
-	return getprefix(db.db, prefix)
+func (idxdb *IndexDb) GetPrefix(prefix []byte) map[string][]byte {
+	return getprefix(idxdb.db, prefix)
 }
 
+
 // ###################### GET IMPL END ######################
-func (db *IndexDb) GetUtxoByIndex(idx *modules.UtxoIndex) (*modules.Utxo, error) {
+func (idxdb *IndexDb) GetUtxoByIndex(idx *modules.UtxoIndex) (*modules.Utxo, error) {
 	key := idx.ToKey()
 	utxo := new(modules.Utxo)
-	err := retrieve(db.db, key, utxo)
+	err := retrieve(idxdb.db, key, utxo)
 	return utxo, err
 }
-func (db *IndexDb) DeleteUtxoByIndex(idx *modules.UtxoIndex) error {
-	return db.db.Delete(idx.ToKey())
+func (idxdb *IndexDb) DeleteUtxoByIndex(idx *modules.UtxoIndex) error {
+	return idxdb.db.Delete(idx.ToKey())
 }
+<<<<<<< HEAD
+
+
+=======
 func (db *IndexDb) SaveAddressTxId(address common.Address, txid common.Hash) error {
 	key := append(constants.AddrTransactionsHash_Prefix, address.Bytes()...)
 	key = append(key, txid[:]...)
@@ -84,3 +94,4 @@ func (db *IndexDb) GetAddressTxIds(address common.Address) ([]common.Hash, error
 	}
 	return result, nil
 }
+>>>>>>> daab63fdc59520c4a9627fd52ab578a4327ad1a6

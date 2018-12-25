@@ -225,7 +225,7 @@ func (unit *Unit) GroupPubKey() (kyber.Point, error) {
 //}
 
 func (unit *Unit) IsEmpty() bool {
-	if unit == nil || len(unit.Txs) <= 0 {
+	if unit == nil || unit.Hash() == (common.Hash{}) {
 		return true
 	}
 	return false

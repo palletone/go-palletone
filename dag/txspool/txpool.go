@@ -634,7 +634,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		return false, err
 	}
 
-	pool.logger.Info("fetch utxoview info:", "utxoinfo", utxoview)
+	pool.logger.Debug("fetch utxoview info:", "utxoinfo", utxoview)
 	// Check the transaction if it exists in the main chain and is not already fully spent.
 	preout := modules.OutPoint{TxHash: hash}
 	for i, msgcopy := range tx.Tx.TxMessages {
@@ -653,7 +653,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 			}
 		}
 	}
-	log.Info("add output utxoview info: ", "utxoinfo", utxoview.entries[preout])
+	log.Debug("add output utxoview info: ", "utxoinfo", utxoview.entries[preout])
 
 	// If the transaction pool is full, discard underpriced transactions
 	if uint64(len(pool.all)) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
@@ -1174,7 +1174,7 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 	if !ok {
 		return errors.New(fmt.Sprintf("the tx(%s) isn't exist.", hash.String()))
 	}
-	log.Info("delete the tx.", "time", time.Now().Second()-tx.CreationDate.Second(), "hash", hash.String())
+	log.Debug("delete the tx.", "time", time.Now().Second()-tx.CreationDate.Second(), "hash", hash.String())
 	pool.priority_priced.Removed()
 	delete(pool.all, hash)
 	// Remove the transaction from the pending lists and reset the account nonce
