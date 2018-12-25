@@ -109,10 +109,15 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 		return err
 	}
 	if balance == nil {
-		return err
+		return fmt.Errorf("%s", "Your balance is nil.")
 	}
 	if balance.TotalAmount < invokeTokens.Amount {
-		return fmt.Errorf("%s", "Your delivery amount with ptn token is insufficient.")
+		return fmt.Errorf("%s", "Your balance is not enough.")
+	}
+	if strings.Compare(role, "Mediator") == 0 {
+		if balance.TotalAmount-invokeTokens.Amount < depositAmountsForMediator {
+			return fmt.Errorf("%s", "Can not cashback some.")
+		}
 	}
 	err = addListAndPutStateForCashback(role, stub, invokeAddr, invokeTokens)
 	if err != nil {
@@ -135,7 +140,11 @@ func moveAndPutStateFromCashbackList(stub shim.ChaincodeStubInterface, cashbackA
 	if !isExist {
 		return fmt.Errorf("%s", "node is not exist in the list.")
 	}
-	newList := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
+	newList, isOk := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
+	if !isOk {
+		log.Error("Apply time is wrong.")
+		return fmt.Errorf("%s", "Apply time is wrong.")
+	}
 	listForCashbackByte, err := json.Marshal(newList)
 	if err != nil {
 		log.Error("Json.Marshal err:", "error", err)
@@ -322,12 +331,11 @@ func moveCandidate(candidate string, invokeFromAddr string, stub shim.ChaincodeS
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfeiture []*modules.Forfeiture, forfeitureAddr string, applyTime int64) (newList []*modules.Forfeiture) {
-	//
-	//forfeiture := new(modules.Forfeiture)
+func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfeiture []*modules.Forfeiture, forfeitureAddr string, applyTime int64) (newList []*modules.Forfeiture, isOk bool) {
 	for i := 0; i < len(listForForfeiture); i++ {
 		if listForForfeiture[i].ApplyTime == applyTime && listForForfeiture[i].ForfeitureAddress == forfeitureAddr {
 			newList = append(listForForfeiture[:i], listForForfeiture[i+1:]...)
+			isOk = true
 			break
 		}
 	}
@@ -335,11 +343,12 @@ func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfe
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback []*modules.Cashback, cashbackAddr string, applyTime int64) (newList []*modules.Cashback) {
+func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback []*modules.Cashback, cashbackAddr string, applyTime int64) (newList []*modules.Cashback, isOk bool) {
 	//
 	for i := 0; i < len(listForCashback); i++ {
 		if listForCashback[i].CashbackTime == applyTime && listForCashback[i].CashbackAddress == cashbackAddr {
 			newList = append(listForCashback[:i], listForCashback[i+1:]...)
+			isOk = true
 			break
 		}
 	}

@@ -85,6 +85,8 @@ type dags interface {
 
 	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
+	// getTxfee
+	GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error)
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
@@ -112,7 +114,7 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	Journal:   "transactions.rlp",
 	Rejournal: time.Hour,
 
-	FeeLimit:  0,
+	FeeLimit:  1,
 	PriceBump: 10,
 
 	AccountSlots: 16,
@@ -579,6 +581,7 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 	txpool_tx.CreationDate = time.Now()
 	txpool_tx.Nonce = txpool.GetNonce(tx.Hash()) + 1
 	txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
+	txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
 
 	return txpool_tx
 }
@@ -1628,4 +1631,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 // starts sending event to the given channel.
 func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
+}
+
+func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error) {
+	return pool.unit.GetTxFee(tx)
 }
