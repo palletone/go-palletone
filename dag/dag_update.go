@@ -119,7 +119,7 @@ func (dag *Dag) updateLastIrreversibleUnitNum(newLastIrreversibleUnitNum uint32)
 }
 
 func (dag *Dag) updateGlobalPropDependGroupSign(unitHash common.Hash) {
-	unit, err := dag.GetUnit(unitHash)
+	unit, err := dag.GetUnitByHash(unitHash)
 	if err != nil {
 		return
 	}
