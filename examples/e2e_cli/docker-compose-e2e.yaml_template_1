@@ -1,0 +1,23 @@
+# Copyright Palletone Corp. All Rights Reserved.
+#
+#
+version: '2'
+
+services:
+  mediator0:
+    container_name: mediator0
+    image: palletone/pallet-gptn:0.6
+    working_dir: /opt/gopath/src/github.com/palletone/go-palletone
+    volumes:
+     - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator0/ptn-genesis.json:/var/palletone/conf/ptn-genesis.json
+     - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator0/ptn-config.toml:/var/palletone/conf/ptn-config.toml
+     - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator0/palletone:/var/palletone/production
+     - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator0/log:/var/palletone/log
+    command: /var/palletone/conf/ptn-config.toml
+    ports:
+     - 8545:8545
+     - 8546:8546
+     - 8080:8080
+     - 30303:30303
+     - 18332:18332
+     - 12345:12345

@@ -32,7 +32,6 @@ import (
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -99,21 +98,19 @@ type contractTx struct {
 }
 
 type Processor struct {
-	name     string
-	ptype    PeerType
+	name     string //no user
 	ptn      PalletOne
 	dag      iDag
 	local    map[common.Address]*JuryAccount //[]common.Address //local account addr
 	contract *contracts.Contract
 	locker   *sync.Mutex
 	quit     chan struct{}
-	mtx      map[common.Hash]*contractTx
+	mtx      map[common.Hash]*contractTx //all contract buffer
 
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
 	contractSigFeed   event.Feed
 	contractSigScope  event.SubscriptionScope
-	idag              dag.IDag
 }
 
 func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract, cfg *Config) (*Processor, error) {
@@ -349,11 +346,16 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 			log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
 			continue
 		}
-		log.Debug("AddContractLoop", "tx request id", tx.RequestHash().String())
+		if false == checkTxValid(ctx.rstTx) {
+			log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
+			continue
+		}
+
 		if err = txpool.AddLocal(txspool.TxtoTxpoolTx(txpool, tx)); err != nil {
 			log.Error("AddContractLoop", "error", err.Error())
 			continue
 		}
+		log.Debug("AddContractLoop", "AddLocal ok, transaction reqId", tx.RequestHash().String())
 	}
 	return nil
 }
@@ -384,7 +386,6 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction) bool {
 
 	if ok && ctx.rstTx != nil {
 		//比较msg
-		log.Debug("CheckContractTxValid", "compare txid", reqId)
 		return msgsCompare(ctx.rstTx.TxMessages, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 	} else {
 		//runContractCmd

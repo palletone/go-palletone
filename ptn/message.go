@@ -469,8 +469,9 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		}
 
 		if tx.IsContractInvoke() {
-			if pm.contractProc.CheckContractTxValid(tx) != true {
-				return errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
+			if !pm.contractProc.CheckContractTxValid(tx) {
+				log.Debug("TxMsg", "CheckContractTxValid is false")
+				return nil//errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
 			}
 		}
 
