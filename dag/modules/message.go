@@ -479,8 +479,9 @@ type SignatureSet struct {
 // Token exchange message and verify message
 // App: text
 type TextPayload struct {
-	Text []byte `json:"text"` // Textdata
+	TextHash []byte	 `json:"texthash"`
 }
+
 
 // mediatorpayload
 type MediatorPayload struct {
@@ -537,3 +538,4 @@ func NewContractInvokePayload(contractid []byte, funcName string, args [][]byte,
 		//TokenDefine:   tokenDefine,
 	}
 }
+

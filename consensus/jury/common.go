@@ -385,7 +385,19 @@ func printTxInfo(tx *modules.Transaction) {
 		} else if app == modules.APP_SIGNATURE {
 			p := pay.(*modules.SignaturePayload)
 			fmt.Printf("Signatures:[%v]", p.Signatures)
+		}else if app == modules.APP_TEXT {
+			p := pay.(*modules.TextPayload)
+			fmt.Printf("Text:[%v]",p.TextHash)
 		}
 	}
 }
 
+func getTextHash(tx *modules.Transaction)[]byte {
+	if tx != nil {
+		for _,msg := range tx.TxMessages {
+			if msg.App == modules.APP_TEXT {
+				return msg.Payload.(*modules.TextPayload).TextHash
+			}
+		}
+	}
+}
