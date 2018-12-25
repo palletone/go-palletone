@@ -114,7 +114,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 		FunctionName:  string(args[0]),
 		ContractId:    deployId,
 		Args:          args,
-		ExecutionTime: timeout,
+		//ExecutionTime: timeout,
 		ReadSet:       make([]md.ContractReadSet, 0),
 		WriteSet:      make([]md.ContractWriteSet, 0),
 		TokenPayOut:   tokenPay,
@@ -159,7 +159,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid stri
 		ContractId:    deployId,
 		Name:          nm,
 		Args:          args,
-		ExecutionTime: timeout,
+		//ExecutionTime: timeout,
 		ReadSet:       make([]md.ContractReadSet, 0),
 		WriteSet:      make([]md.ContractWriteSet, 0),
 	}

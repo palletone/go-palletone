@@ -178,11 +178,6 @@ func (d *Dag) GetMemUnitbyHash(hash common.Hash) (*modules.Unit, error) {
 	return unit, err
 }
 
-// GetUnitByHash: get unit from dagdb
-func (d *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-	return d.dagdb.GetUnit(hash)
-}
-
 func (d *Dag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) {
 	//return d.dagdb.GetUnitFormIndex(number)
 	hash, err := d.dagdb.GetHashByNumber(number)
@@ -641,7 +636,13 @@ func (d *Dag) GetHeadHeaderHash() (common.Hash, error) {
 }
 
 func (d *Dag) GetHeadUnitHash() (common.Hash, error) {
-	return d.dagdb.GetHeadUnitHash()
+	unit := d.GetCurrentUnit(modules.NewPTNIdType())
+	cur_hash := unit.Hash()
+	head_hash, err := d.dagdb.GetHeadUnitHash()
+	if !reflect.DeepEqual(head_hash, cur_hash) {
+		return unit.Hash(), err
+	}
+	return head_hash, err
 }
 
 func (d *Dag) GetHeadFastUnitHash() (common.Hash, error) {
@@ -818,6 +819,7 @@ func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map
 	//TODO only get one token's UTXO
 	all, err := d.utxodb.GetAddrUtxos(addr)
 	if d.utxos_cache != nil {
+		assetStr := asset.String()
 		for hash, utxos := range d.utxos_cache {
 			for key, utxo := range utxos {
 				if utxo == nil {
@@ -828,7 +830,7 @@ func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map
 					address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
 					if err == nil {
 						if address.Equal(addr) {
-							if strings.Compare(utxo.Asset.String(), asset.String()) == 0 {
+							if strings.Compare(utxo.Asset.String(), assetStr) == 0 {
 								if old, has := all[key]; has {
 									// merge
 									if old.IsSpent() {
@@ -1118,7 +1120,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
 		return nil, fmt.Errorf("Create unit: %s", err.Error())
 	}
-	coinbase, err := dagcommon.CreateCoinbase(&addr, 0, nil, &asset, time.Now())
+	coinbase, _, err := dagcommon.CreateCoinbase(&addr, 0, nil, &asset, time.Now())
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -1379,4 +1381,9 @@ func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 // GetReqIdByTxHash
 func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
 	return d.dagdb.GetReqIdByTxHash(hash)
+}
+
+// GetTextHash
+func (d *Dag) GetTextHash(hash common.Hash) ([]byte, error) {
+	return d.dagdb.GetTextHash(hash)
 }

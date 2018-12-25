@@ -115,13 +115,13 @@ func newTxPricedList(all *map[common.Hash]*modules.TxPoolTransaction) *txPricedL
 // Put inserts a new transaction into the heap.
 func (l *txPricedList) Put(tx *modules.TxPoolTransaction) *priorityHeap {
 	heap.Push(l.items, tx)
+	(*l.all)[tx.Tx.Hash()] = tx
 	//sort.Sort(l.items)
 	return l.items
 }
 func (l *txPricedList) Get() *modules.TxPoolTransaction {
 	if l != nil {
 		if l.items.Len() > 0 {
-			//return l.items.Pop().(*modules.TxPoolTransaction)
 			return heap.Pop(l.items).(*modules.TxPoolTransaction)
 		}
 	}
@@ -131,18 +131,23 @@ func (l *txPricedList) Get() *modules.TxPoolTransaction {
 // Removed notifies the prices transaction list that an old transaction dropped
 // from the pool. The list will just keep a counter of stale objects and update
 // the heap if a large enough ratio of transactions go stale.
-func (l *txPricedList) Removed() {
-	// Bump the stale counter, but exit if still too low (< 25%)
-	l.stales++
-	if l.stales <= len(*l.items)/4 {
-		return
-	}
+func (l *txPricedList) Removed(hash common.Hash) {
+	//// Bump the stale counter, but exit if still too low (< 25%)
+	//l.stales++
+	//if l.stales <= len(*l.items)/4 {
+	//	return
+	//}
 	// Seems we've reached a critical number of stale transactions, reheap
 	reheap := make(priorityHeap, 0, len(*l.all))
 
 	l.stales, l.items = 0, &reheap
-	for _, tx := range *l.all {
-		*l.items = append(*l.items, tx)
+
+	for key, tx := range *l.all {
+		if hash != key {
+			*l.items = append(*l.items, tx)
+		} else {
+			l.stales--
+		}
 	}
 	heap.Init(l.items)
 }

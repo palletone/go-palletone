@@ -203,7 +203,7 @@ func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
 	return dag.GetGlobalProp().ChainParameters.CurrentFees
 }
 
-func (dag *Dag) GetUnit(hash common.Hash) (*modules.Unit, error) {
+func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	unit, err := dag.Memdag.GetUnit(hash)
 
 	if unit == nil || err != nil {

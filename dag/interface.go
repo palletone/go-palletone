@@ -129,7 +129,6 @@ type IDag interface {
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
 	UnitIrreversibleTime() uint
-	GetUnit(common.Hash) (*modules.Unit, error)
 	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string) (*modules.Transaction, uint64, error)
 
 	QueryDbByKey(key []byte) ([]byte, error)
@@ -139,4 +138,7 @@ type IDag interface {
 	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	SaveReqIdByTx(tx *modules.Transaction) error
+
+	// get texthash
+	GetTextHash(hash common.Hash) ([]byte, error)
 }

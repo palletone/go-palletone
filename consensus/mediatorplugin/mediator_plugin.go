@@ -207,7 +207,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	groupPubKey := mp.LocalMediatorPubKey(scheduledMediator)
 	newUnit := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, mp.ptn.TxPool())
-	if newUnit.IsEmpty() {
+	if newUnit == nil || newUnit.IsEmpty() {
 		return ExceptionProducing, detail
 	}
 

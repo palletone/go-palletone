@@ -105,7 +105,7 @@ replaceJson ${JSON_LOC}
 modifyStaticNodes ${JSON_LOC} ${NUMNODES} ${PTNCFGP}/channel-artifacts
 
 #(6)初始化leveldb
-ExecInit ${PTNCFGP}/channel-artifacts ${NUMNODES}
+ExecInit ${PTNCFGP}/channel-artifacts ${NUMNODES} ${GPTNRBIN}
 
 #(7)退出
 exit 0
