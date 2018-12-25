@@ -636,7 +636,10 @@ func (d *Dag) GetHeadHeaderHash() (common.Hash, error) {
 }
 
 func (d *Dag) GetHeadUnitHash() (common.Hash, error) {
-	unit, _ := d.Memdag.GetCurrentUnit(modules.NewPTNIdType(), 0)
+	unit, err0 := d.Memdag.GetCurrentUnit(modules.NewPTNIdType(), 0)
+	if err0 != nil {
+		log.Debug("get mem current unit info", "error", err0, "hash", unit.Hash().String())
+	}
 	mem_hash := unit.Hash()
 	head_hash, err := d.dagdb.GetHeadUnitHash()
 
