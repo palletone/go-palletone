@@ -327,7 +327,8 @@ func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal,
 	}
 
 	// 解锁账户
-	err = fetchKeystore(s.am).TimedUnlock(accounts.Account{Address: fromAdd}, password, 3)
+	duration := 1 * time.Second
+	err = fetchKeystore(s.am).TimedUnlock(accounts.Account{Address: fromAdd}, password, duration)
 	if err != nil {
 		return nil, err
 	}
