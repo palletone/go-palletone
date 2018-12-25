@@ -628,7 +628,7 @@ func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*module
 			if outAmount+txout.Value > (1<<64 - 1) {
 				return nil, fmt.Errorf("Compute fees: txout total overflow")
 			}
-			log.Info("+++++++++++++++++++++ tx_out_amonut ++++++++++++++++++++", "tx_outAmount", txout.Value)
+			log.Debug("+++++++++++++++++++++ tx_out_amonut ++++++++++++++++++++", "tx_outAmount", txout.Value)
 			outAmount += txout.Value
 		}
 		if inAmount < outAmount {
