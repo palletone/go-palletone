@@ -130,7 +130,7 @@ func (d *Dag) UnitIrreversibleTime() uint {
 }
 
 func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
-	unit, err := d.GetUnit(hash)
+	unit, err := d.GetUnitByHash(hash)
 	if unit != nil && err == nil {
 		lin := d.GetDynGlobalProp().LastIrreversibleUnitNum
 		if unit.NumberU64() <= uint64(lin) {
@@ -142,7 +142,7 @@ func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
 }
 
 func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
-	unit, err := d.GetUnit(unitHash)
+	unit, err := d.GetUnitByHash(unitHash)
 	if err != nil {
 		return err
 	}

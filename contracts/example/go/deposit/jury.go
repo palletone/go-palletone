@@ -26,7 +26,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	if err != nil {
 		return shim.Success([]byte("GetPayToContractPtnTokens error:"))
 	}
-	fmt.Printf("lalal %#v\n", invokeTokens)
+	//fmt.Printf("lalal %#v\n", invokeTokens)
 
 	//获取账户
 	balance, err := stub.GetDepositBalance(invokeAddr)
@@ -99,7 +99,7 @@ func handleForJuryApplyCashback(stub shim.ChaincodeStubInterface, args []string)
 	}
 	//判断没收请求地址是否是基金会地址
 	if strings.Compare(invokeAddr, foundationAddress) != 0 {
-		return shim.Error("请求地址不正确，请使用基金会的地址")
+		return shim.Error("Please use foundation address.")
 	}
 	//获取一下该用户下的账簿情况
 	addr := args[0]
@@ -149,13 +149,19 @@ func handleJury(stub shim.ChaincodeStubInterface, cashbackAddr string, applyTime
 	}
 	//获取节点信息
 	cashbackNode := &modules.Cashback{}
+	isFound := false
 	for _, m := range listForCashback {
 		if m.CashbackAddress == cashbackAddr && m.CashbackTime == applyTime {
 			cashbackNode = m
+			isFound = true
 			break
 		}
 	}
-	newList := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
+	if !isFound {
+		log.Error("Apply time is wrong.")
+		return fmt.Errorf("%s", "Apply time is wrong.")
+	}
+	newList, _ := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
 	listForCashbackByte, err := json.Marshal(newList)
 	if err != nil {
 		log.Error("Json.Marshal err:", "error", err)
@@ -169,7 +175,7 @@ func handleJury(stub shim.ChaincodeStubInterface, cashbackAddr string, applyTime
 	}
 	//还得判断一下是否超过余额
 	if cashbackNode.CashbackTokens.Amount > balance.TotalAmount {
-		return fmt.Errorf("%s", "退款大于账户余额")
+		return fmt.Errorf("%s", "Balance is not enough.")
 	}
 	err = handleJuryDepositCashback(stub, cashbackAddr, cashbackNode, balance)
 	if err != nil {

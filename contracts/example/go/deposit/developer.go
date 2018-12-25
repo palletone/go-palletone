@@ -95,7 +95,7 @@ func handleForDeveloperApplyCashback(stub shim.ChaincodeStubInterface, args []st
 	}
 	//判断没收请求地址是否是基金会地址
 	if strings.Compare(invokeAddr, foundationAddress) != 0 {
-		return shim.Error("请求地址不正确，请使用基金会的地址")
+		return shim.Error("Please use foundation address.")
 	}
 	//获取一下该用户下的账簿情况
 	addr := args[0]
@@ -145,13 +145,19 @@ func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, appl
 	}
 	//获取节点信息
 	cashbackNode := &modules.Cashback{}
+	isFound := false
 	for _, m := range listForCashback {
 		if m.CashbackAddress == cashbackAddr && m.CashbackTime == applyTime {
 			cashbackNode = m
+			isFound = true
 			break
 		}
 	}
-	newList := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
+	if !isFound {
+		log.Error("Apply time is wrong.")
+		return fmt.Errorf("%s", "Apply time is wrong.")
+	}
+	newList, _ := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
 	listForCashbackByte, err := json.Marshal(newList)
 	if err != nil {
 		log.Error("Json.Marshal err:", "error", err)

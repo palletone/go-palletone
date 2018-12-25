@@ -154,12 +154,15 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//获取某个节点的账户
-	case "GetCandidateBalanceWithAddr":
+	case "GetBalanceWithAddr":
 		balance, err := stub.GetState(args[0])
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 		if balance == nil {
+			return shim.Success([]byte("balance is nil"))
+		}
+		if string(balance) == "" {
 			return shim.Success([]byte("balance is nil"))
 		}
 		return shim.Success(balance)
@@ -214,7 +217,7 @@ func initDepositCfg(stub shim.ChaincodeStubInterface) {
 	//	fmt.Println(err.Error())
 	//	return
 	//}
-	foundationAddress = "P1Lr6B1Lbws21ns1Xb8UcpwLRy6SnmdMddD"
+	foundationAddress = "P12QgmiPe4E8Y1DwC7sSchEQhJHXF35AU78"
 	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
 
 	depositAmountsForMediatorStr, err := stub.GetSystemConfig("DepositAmountForMediator")
@@ -347,15 +350,11 @@ func (d *DepositChaincode) handleForForfeitureApplication(stub shim.ChaincodeStu
 		log.Error("Please use foundation address.")
 		return shim.Error("Please use foundation address.")
 	}
-
-	//获取没收节点地址
-	//nodeAddr, err := common.StringToAddress(args[0])
-	//if err != nil {
-	//	return shim.Success([]byte("string to address error"))
-	//}
-	//fmt.Println("nodeAddr ", args[0])
-	//获取一下该用户下的账簿情况
+	//获取传入参数信息
 	addr := args[0]
+	applyTimeStr := args[1]
+	isOk := args[2]
+	//获取一下该用户下的账簿情况
 	balance, err := stub.GetDepositBalance(addr)
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err:", "error", err)
@@ -366,17 +365,13 @@ func (d *DepositChaincode) handleForForfeitureApplication(stub shim.ChaincodeStu
 		log.Error("Stub.GetDepositBalance: balance is nil.")
 		return shim.Error("Stub.GetDepositBalance: balance is nil.")
 	}
-
 	//获取申请时间戳
-	applyTime, err := strconv.ParseInt(args[1], 10, 64)
+	applyTime, err := strconv.ParseInt(applyTimeStr, 10, 64)
 	if err != nil {
 		log.Error("Strconv.ParseInt err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	//fmt.Println("applytime ", applyTime)
-	//获取是否同意
-	check := args[2]
-	return d.handleForfeitureDepositApplication(stub, invokeAddr, addr, applyTime, balance, check)
+	return d.handleForfeitureDepositApplication(stub, invokeAddr, addr, applyTime, balance, isOk)
 }
 
 //社区申请没收某节点的保证金数量
@@ -388,16 +383,27 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 		log.Error("Arg need three parameters.")
 		return shim.Error("Arg need three parameters.")
 	}
+	//获取参数信息
+	forfeitureAddr := args[0]
+	amount := args[1]
+	forfeitureRole := args[2]
 	//申请地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		log.Error("Stub.GetInvokeAddress err:", "error", err)
 		return shim.Error(err.Error())
 	}
+
 	forfeiture := new(modules.Forfeiture)
 	forfeiture.ApplyAddress = invokeAddr
+	//判断被没收时，该节点是否在相应的候选列表当中
+	isFound := isFoundInCandidateList(stub, forfeitureRole, forfeitureAddr)
+	if !isFound {
+		log.Error("Node is not exist in the candidate list.")
+		return shim.Error("Node is not exist in the candidate list.")
+	}
 	//获取没收保证金数量，将 string 转 uint64
-	ptnAccount, err := strconv.ParseUint(args[1], 10, 64)
+	ptnAccount, err := strconv.ParseUint(amount, 10, 64)
 	if err != nil {
 		log.Error("Strconv.ParseUint err:", "error", err)
 		return shim.Error(err.Error())
@@ -407,14 +413,14 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 	//if balanceValue.TotalAmount < ptnAccount {
 	//	return shim.Success([]byte("Forfeiture too many."))
 	//}
-	forfeiture.ForfeitureAddress = args[0]
+	forfeiture.ForfeitureAddress = forfeitureAddr
 	asset := modules.NewPTNAsset()
 	invokeTokens := &modules.InvokeTokens{
 		Amount: ptnAccount,
 		Asset:  asset,
 	}
 	forfeiture.ApplyTokens = invokeTokens
-	forfeiture.ForfeitureRole = args[2]
+	forfeiture.ForfeitureRole = forfeitureRole
 	forfeiture.ApplyTime = time.Now().UTC().Unix()
 	//先获取列表，再更新列表
 	listForForfeiture, err := stub.GetListForForfeiture()
@@ -445,6 +451,49 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 	}
 	log.Info("End entering applyForForfeitureDeposit func.")
 	return shim.Success([]byte("ok"))
+}
+
+func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr string) bool {
+	if strings.Compare(role, "Mediator") == 0 {
+		candidateList, err := stub.GetCandidateListForMediator()
+		if err != nil {
+			return false
+		}
+		if candidateList == nil {
+			return false
+		}
+		return isInMediatorInfolist(addr, candidateList)
+
+	} else if strings.Compare(role, "Jury") == 0 {
+		candidateList, err := stub.GetCandidateList("JuryList")
+		if err != nil {
+			return false
+		}
+		if candidateList == nil {
+			return false
+		}
+		return isInCandidateList(addr, candidateList)
+	} else if strings.Compare(role, "Developer") == 0 {
+		candidateList, err := stub.GetCandidateList("DeveloperList")
+		if err != nil {
+			return false
+		}
+		if candidateList == nil {
+			return false
+		}
+		return isInCandidateList(addr, candidateList)
+	} else {
+		return false
+	}
+}
+
+func isInCandidateList(addr string, list []string) bool {
+	for _, a := range list {
+		if strings.Compare(addr, a) == 0 {
+			return true
+		}
+	}
+	return false
 }
 
 //查找节点是否在列表中
@@ -517,12 +566,19 @@ func (d *DepositChaincode) disagreeForApplyForfeiture(stub shim.ChaincodeStubInt
 		log.Error("Stub.GetListForForfeiture:list is nil.")
 		return shim.Error("Stub.GetListForForfeiture:list is nil.")
 	}
+	//判断是否在列表中
 	isExist := isInForfeiturelist(forfeiture, listForForfeiture)
 	if !isExist {
 		log.Error("Node is not exist in the forfeiture list.")
 		return shim.Error("Node is not exist in the forfeiture list.")
 	}
-	newList := moveInApplyForForfeitureList(stub, listForForfeiture, forfeiture, applyTime)
+	//从列表中移除
+	newList, isFound := moveInApplyForForfeitureList(stub, listForForfeiture, forfeiture, applyTime)
+	if !isFound {
+		log.Error("Apply time is wrong.")
+		return shim.Error("Apply time is wrong.")
+	}
+	//
 	listForForfeitureByte, err := json.Marshal(newList)
 	if err != nil {
 		log.Error("Json.Marshal err:", "error", err)
@@ -550,6 +606,7 @@ func (d *DepositChaincode) agreeForApplyForfeiture(stub shim.ChaincodeStubInterf
 		log.Error("Stub.GetListForForfeiture err:list is nil.")
 		return shim.Error("Stub.GetListForForfeiture err:list is nil.")
 	}
+	//判断是否在列表中
 	isExist := isInForfeiturelist(forfeitureAddr, listForForfeiture)
 	if !isExist {
 		log.Error("Node is not exist in the forfeiture list.")
@@ -557,19 +614,20 @@ func (d *DepositChaincode) agreeForApplyForfeiture(stub shim.ChaincodeStubInterf
 	}
 	//获取节点信息
 	forfeiture := &modules.Forfeiture{}
+	isFound := false
 	for _, m := range listForForfeiture {
 		if m.ForfeitureAddress == forfeitureAddr && m.ApplyTime == applyTime {
 			forfeiture = m
+			isFound = true
 			break
 		}
 	}
-	//在列表中移除，并获取没收情况
-	newList := moveInApplyForForfeitureList(stub, listForForfeiture, forfeitureAddr, applyTime)
-
-	if err != nil {
-		log.Error("MoveInApplyForForfeitureList err:", "error", err)
-		return shim.Error(err.Error())
+	if !isFound {
+		log.Error("Apply time is wrong.")
+		return shim.Error("Apply time is wrong.")
 	}
+	//在列表中移除，并获取没收情况
+	newList, _ := moveInApplyForForfeitureList(stub, listForForfeiture, forfeitureAddr, applyTime)
 	listForForfeitureByte, err := json.Marshal(newList)
 	if err != nil {
 		log.Error("Json.Marshal err:", "error", err)
@@ -609,7 +667,6 @@ func (d *DepositChaincode) forfeitureAllDeposit(role string, stub shim.Chaincode
 		return err
 	}
 	//移除出列表
-	//handleMember(role, forfeitureAddr, stub)
 	err = moveCandidate(role, forfeitureAddr, stub)
 	if err != nil {
 		log.Error("MoveCandidate err:", "error", err)

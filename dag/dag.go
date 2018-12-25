@@ -178,11 +178,6 @@ func (d *Dag) GetMemUnitbyHash(hash common.Hash) (*modules.Unit, error) {
 	return unit, err
 }
 
-// GetUnitByHash: get unit from dagdb
-func (d *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-	return d.dagdb.GetUnit(hash)
-}
-
 func (d *Dag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) {
 	//return d.dagdb.GetUnitFormIndex(number)
 	hash, err := d.dagdb.GetHashByNumber(number)
