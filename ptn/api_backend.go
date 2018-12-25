@@ -140,7 +140,7 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	for _, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_TEXT {
 			if msg, ok := msgcopy.Payload.(*modules.TextPayload); ok {
-				txresult = msg.Text
+				txresult = msg.TextHash
 			}
 		}
 	}

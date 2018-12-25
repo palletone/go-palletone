@@ -1,17 +1,17 @@
 package jury
 
 import (
-	"github.com/palletone/go-palletone/dag/modules"
-	"fmt"
 	"bytes"
-	"github.com/palletone/go-palletone/contracts"
-	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/common"
 	"encoding/json"
-	"reflect"
+	"fmt"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/contracts"
 	cm "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine"
+	"reflect"
 )
 
 func localIsMinSigure(tx *modules.Transaction) bool {
@@ -143,7 +143,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0/*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload)
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload)
 
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
@@ -352,7 +352,7 @@ func isSystemContract(tx *modules.Transaction) bool {
 			return contractAddr.IsSystemContractAddress() //, nil
 
 		} else if msg.App == modules.APP_CONTRACT_TPL_REQUEST {
-			return true   //todo  先期将install作为系统合约处理，只有Mediator可以安装，后期在扩展到所有节点
+			return true //todo  先期将install作为系统合约处理，只有Mediator可以安装，后期在扩展到所有节点
 		} else if msg.App >= modules.APP_CONTRACT_DEPLOY_REQUEST {
 			return false //, nil
 		}
@@ -388,27 +388,22 @@ func printTxInfo(tx *modules.Transaction) {
 			}
 		} else if app == modules.APP_SIGNATURE {
 			p := pay.(*modules.SignaturePayload)
-<<<<<<< HEAD
 			fmt.Printf("Signatures:[%v]", p.Signatures)
-		}else if app == modules.APP_TEXT {
+		} else if app == modules.APP_TEXT {
 			p := pay.(*modules.TextPayload)
-			fmt.Printf("Text:[%v]",p.TextHash)
+			fmt.Printf("Text:[%v]", p.TextHash)
 		}
 	}
 }
 
-func getTextHash(tx *modules.Transaction)[]byte {
+func getTextHash(tx *modules.Transaction) []byte {
 	if tx != nil {
-		for _,msg := range tx.TxMessages {
+		for _, msg := range tx.TxMessages {
 			if msg.App == modules.APP_TEXT {
 				return msg.Payload.(*modules.TextPayload).TextHash
 			}
 		}
 	}
+
+	return nil
 }
-=======
-			fmt.Printf("Signatures:[%v]\n", p.Signatures)
-		}
-	}
-}
->>>>>>> daab63fdc59520c4a9627fd52ab578a4327ad1a6
