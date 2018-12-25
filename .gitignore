@@ -76,3 +76,4 @@ cmd/gptn/
 gptn/
 dag/transactions.rlp.new
 dag/transactions.rlp
+common/log/config.go
