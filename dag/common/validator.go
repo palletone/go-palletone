@@ -20,17 +20,15 @@ package common
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/configure"
-
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/vote"

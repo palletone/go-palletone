@@ -447,8 +447,8 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 }
 
 func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
-	log.Info("Enter ProtocolManager TxMsg")
-	defer log.Info("End ProtocolManager TxMsg")
+	log.Debug("Enter ProtocolManager TxMsg")
+	defer log.Debug("End ProtocolManager TxMsg")
 	// Transactions arrived, make sure we have a valid and fresh chain to handle them
 	if atomic.LoadUint32(&pm.acceptTxs) == 0 {
 		log.Debug("ProtocolManager handlmsg TxMsg pm.acceptTxs==0")
@@ -457,11 +457,11 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	// Transactions can be processed, parse all of them and deliver to the pool
 	var txs []*modules.Transaction
 	if err := msg.Decode(&txs); err != nil {
-		log.Info("ProtocolManager handlmsg TxMsg", "Decode err:", err, "msg:", msg)
+		log.Debug("ProtocolManager handlmsg TxMsg", "Decode err:", err, "msg:", msg)
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
 	//TODO VerifyTX
-	log.Info("===============ProtocolManager", "TxMsg txs:", txs)
+	log.Debug("===============ProtocolManager", "TxMsg txs:", txs)
 	for i, tx := range txs {
 		// Validate and mark the remote transaction
 		if tx == nil {
@@ -500,7 +500,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		}
 	}
 
-	log.Info("===============ProtocolManager TxMsg AddRemotes====================")
+	log.Debug("===============ProtocolManager TxMsg AddRemotes====================")
 	pm.txpool.AddRemotes(txs)
 	return nil
 }
