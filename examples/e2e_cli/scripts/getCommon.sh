@@ -343,6 +343,7 @@ function ExecInit() {
 	#channel-artifacts目录
 	CHANNELPATH=${1}
 	NUMNODES=${2}
+	GPTNRBIN=${3}
 
         count=0
         while [ ${count} -lt ${NUMNODES} ] ;
@@ -351,18 +352,19 @@ function ExecInit() {
 			#初始化leveldb信息
 			cd ${CHANNELPATH}/mediator${count}
 			cp ${CHANNELPATH}/../scripts/getInit.sh .
+			cp ${GPTNRBIN} .
 
 			gptninit=`${CHANNELPATH}/../scripts/getInit.sh`
 			#`echo $gptninit`
 			path=`pwd`
-			fullpath=${path}"/palletone/gptn/leveldb"
+			fullpath=${path}/palletone/gptn/leveldb
 			if [ ! -d $fullpath ]; then
 				echo "====================init err=================="
 				return
 			fi
 
 			#删除临时文件和目录
-			rm -rf log ${CHANNELPATH}/mediator${count}/getInit.sh
+			rm -rf log ${CHANNELPATH}/mediator${count}/getInit.sh gptn
 		else
 			cd ${CHANNELPATH}/mediator${count}
 			cp ${CHANNELPATH}/mediator0/palletone/gptn/leveldb ${CHANNELPATH}/mediator${count}/palletone/gptn -rf
