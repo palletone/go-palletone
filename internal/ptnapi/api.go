@@ -657,7 +657,7 @@ func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmoun
 
 func (s *PublicBlockChainAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string, param []string) (string, error) {
 	log.Info("---enter DepositContractInvoke---")
-	return s.Ccinvoketx(ctx, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", from, to, daoAmount, daoFee, param)
+	return s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param)
 }
 func (s *PublicBlockChainAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {
 	log.Info("---enter DepositContractQuery---")

@@ -646,8 +646,12 @@ func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*module
 计算Mediator的利息
 To compute mediator interest for packaging one unit
 */
-func ComputeInterest() uint64 {
-	return uint64(modules.DAO)
+func ComputeRewards() uint64 {
+	var rewards uint64
+	if dagconfig.DefaultConfig.IsRewardCoin {
+		rewards = uint64(modules.DAO)
+	}
+	return rewards
 }
 
 func IsCoinBase(tx *modules.Transaction) bool {
