@@ -641,11 +641,13 @@ func (d *Dag) GetHeadHeaderHash() (common.Hash, error) {
 }
 
 func (d *Dag) GetHeadUnitHash() (common.Hash, error) {
-	unit := d.GetCurrentUnit(modules.NewPTNIdType())
-	cur_hash := unit.Hash()
+	unit, _ := d.Memdag.GetCurrentUnit(modules.NewPTNIdType(), 0)
+	mem_hash := unit.Hash()
 	head_hash, err := d.dagdb.GetHeadUnitHash()
-	if !reflect.DeepEqual(head_hash, cur_hash) {
-		return unit.Hash(), err
+
+	head_unit, _ := d.GetUnitByHash(head_hash)
+	if unit.NumberU64() > head_unit.NumberU64() {
+		return mem_hash, err
 	}
 	return head_hash, err
 }
@@ -1389,6 +1391,6 @@ func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
 }
 
 // GetTextHash
-func (d *Dag)GetTextHash(hash common.Hash) ([]byte, error) {
+func (d *Dag) GetTextHash(hash common.Hash) ([]byte, error) {
 	return d.dagdb.GetTextHash(hash)
 }
