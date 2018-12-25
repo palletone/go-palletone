@@ -257,7 +257,7 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 	if err == nil || len(nodes) < 1 {
 		return errors.New("ProcessContractSigEvent getLocalNodesInfo fail")
 	}
-	node := nodes[0] //todo mult node
+	node := nodes[0]                                            //todo mult node
 	if node.ntype == TMediator /*node.ntype& TMediator != 0*/ { //mediator
 		if getTxSigNum(event.Tx) >= CONTRACT_SIG_NUM {
 			ctx.rstTx = event.Tx
@@ -355,7 +355,7 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 			log.Error("AddContractLoop", "error", err.Error())
 			continue
 		}
-		log.Debug("AddContractLoop", "AddLocal ok, transaction reqId", tx.RequestHash().String())
+		log.Debug("AddContractLoop", "Tx reqId", tx.RequestHash().String(), "Tx hash", tx.Hash().String())
 	}
 	return nil
 }
@@ -381,15 +381,14 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction) bool {
 
 	ctx, ok := p.mtx[reqId]
 	if ctx != nil && (ctx.valid == false || ctx.executable == false) {
+		log.Debug("CheckContractTxValid ctx != nil && (ctx.valid == false || ctx.executable == false)")
 		return false
 	}
-
 	if ok && ctx.rstTx != nil {
-		//比较msg
+		log.Debug("CheckContractTxValid ok && ctx.rstTx != nil") // todo del
 		return msgsCompare(ctx.rstTx.TxMessages, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 	} else {
-		//runContractCmd
-		//比较msg
+		log.Debug("CheckContractTxValid  ctx.rstTx == nil") //todo del
 		_, msgs, err := runContractCmd(p.dag, p.contract, tx)
 		if err != nil {
 			log.Error("CheckContractTxValid runContractCmd", "error", err.Error())
@@ -404,7 +403,7 @@ func (p *Processor) SubscribeContractSigEvent(ch chan<- ContractSigEvent) event.
 	return p.contractSigScope.Track(p.contractSigFeed.Subscribe(ch))
 }
 
-func (p *Processor) nodeContractExecutable(accounts map[common.Address]*JuryAccount /*addrs []common.Address*/ , tx *modules.Transaction) bool {
+func (p *Processor) nodeContractExecutable(accounts map[common.Address]*JuryAccount /*addrs []common.Address*/, tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
 	}
