@@ -818,6 +818,7 @@ func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map
 	//TODO only get one token's UTXO
 	all, err := d.utxodb.GetAddrUtxos(addr)
 	if d.utxos_cache != nil {
+		assetStr := asset.String()
 		for hash, utxos := range d.utxos_cache {
 			for key, utxo := range utxos {
 				if utxo == nil {
@@ -828,7 +829,7 @@ func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map
 					address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
 					if err == nil {
 						if address.Equal(addr) {
-							if strings.Compare(utxo.Asset.String(), asset.String()) == 0 {
+							if strings.Compare(utxo.Asset.String(), assetStr) == 0 {
 								if old, has := all[key]; has {
 									// merge
 									if old.IsSpent() {
