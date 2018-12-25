@@ -92,7 +92,7 @@ type IDagDb interface {
 	GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
-	GetAddrTransactions(addr string) (modules.Transactions, error)
+
 	GetHeadHeaderHash() (common.Hash, error)
 	GetHeadUnitHash() (common.Hash, error)
 	GetHeadFastUnitHash() (common.Hash, error)
@@ -200,7 +200,7 @@ func (dagdb *DagDb) GetHashByNumber(number modules.ChainIndex) (common.Hash, err
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
 	ha, err := GetBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)))
-	log.Info("DagDB GetHashByNumber info.", "error", err, "GetHashByNumber_key", string(key), "hash:", fmt.Sprintf("%x", ha))
+	log.Debug("DagDB GetHashByNumber info.", "error", err, "GetHashByNumber_key", string(key), "hash:", fmt.Sprintf("%x", ha))
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -273,9 +273,15 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 	if err := StoreString(dagdb.db, key1, str); err != nil {
 		return err
 	}
-	dagdb.updateAddrTransactions(tx.Address().String(), txHash)
+	//dagdb.updateAddrTransactions(tx.Address().String(), txHash)
 	// store output by addr
 	for i, msg := range tx.TxMessages {
+		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+			if err := dagdb.SaveReqIdByTx(tx); err != nil {
+				log.Error("SaveReqIdByTx is failed,", "error", err)
+			}
+			continue
+		}
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if ok {
 			for _, output := range payload.Outputs {
@@ -301,32 +307,32 @@ func (dagdb *DagDb) saveOutputByAddr(addr string, hash common.Hash, msgindex int
 	return err
 }
 
-func (dagdb *DagDb) updateAddrTransactions(addr string, hash common.Hash) error {
-	if hash == (common.Hash{}) {
-		return errors.New("empty tx hash.")
-	}
-	hashs := make([]common.Hash, 0)
-	data, err := dagdb.db.Get(append(constants.AddrTransactionsHash_Prefix, []byte(addr)...))
-	if err != nil {
-		if err.Error() != "leveldb: not found" {
-			return err
-		} else { // first store the addr
-			hashs = append(hashs, hash)
-			if err := StoreBytes(dagdb.db, append(constants.AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
-				return err
-			}
-			return nil
-		}
-	}
-	if err := rlp.DecodeBytes(data, &hashs); err != nil {
-		return err
-	}
-	hashs = append(hashs, hash)
-	if err := StoreBytes(dagdb.db, append(constants.AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
-		return err
-	}
-	return nil
-}
+//func (dagdb *DagDb) updateAddrTransactions(addr string, hash common.Hash) error {
+//	if hash == (common.Hash{}) {
+//		return errors.New("empty tx hash.")
+//	}
+//	hashs := make([]common.Hash, 0)
+//	data, err := dagdb.db.Get(append(constants.AddrTransactionsHash_Prefix, []byte(addr)...))
+//	if err != nil {
+//		if err.Error() != "leveldb: not found" {
+//			return err
+//		} else { // first store the addr
+//			hashs = append(hashs, hash)
+//			if err := StoreBytes(dagdb.db, append(constants.AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
+//				return err
+//			}
+//			return nil
+//		}
+//	}
+//	if err := rlp.DecodeBytes(data, &hashs); err != nil {
+//		return err
+//	}
+//	hashs = append(hashs, hash)
+//	if err := StoreBytes(dagdb.db, append(constants.AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 	for i, tx := range unit.Transactions() {
@@ -373,23 +379,6 @@ func (dagdb *DagDb) SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error {
 
 // ###################### SAVE IMPL END ######################
 // ###################### GET IMPL START ######################
-// GetAddrTransactions
-func (dagdb *DagDb) GetAddrTransactions(addr string) (modules.Transactions, error) {
-	data, err := dagdb.db.Get(append(constants.AddrTransactionsHash_Prefix, []byte(addr)...))
-	if err != nil {
-		return modules.Transactions{}, err
-	}
-	hashs := make([]common.Hash, 0)
-	if err := rlp.DecodeBytes(data, hashs); err != nil {
-		return modules.Transactions{}, err
-	}
-	txs := make(modules.Transactions, 0)
-	for _, hash := range hashs {
-		tx, _, _, _ := dagdb.GetTransaction(hash)
-		txs = append(txs, tx)
-	}
-	return txs, nil
-}
 
 // Get income transactions
 func (dagdb *DagDb) GetAddrOutput(addr string) ([]modules.Output, error) {
@@ -743,6 +732,8 @@ func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
 	}
 	msgs := make([]*modules.Message, 0)
 	for _, msg := range tx.Messages() {
+		//fmt.Println("msg ", msg)
+
 		data1, err1 := json.Marshal(msg.Payload)
 		if err1 != nil {
 			return nil, err1
@@ -834,7 +825,7 @@ func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
 			msgs = append(msgs, msg)
 
 		case modules.OP_MEDIATOR_CREATE:
-			payment := new(modules.MediatorPayload)
+			payment := new(modules.MediatorCreateOperation)
 			err2 := json.Unmarshal(data1, &payment)
 			if err2 != nil {
 				return nil, err2
@@ -977,13 +968,13 @@ func (dagdb *DagDb) GetAllLeafNodes() ([]*modules.Header, error) {
 // ###################### GET IMPL END ######################
 
 func (dagdb *DagDb) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
-	key := fmt.Sprintf("%s_%s", string(constants.ReqIdPrefix), hash.String())
+	key := fmt.Sprintf("%s_%s", string(constants.TxHash2ReqPrefix), hash.String())
 	str, err := GetString(dagdb.db, key)
 	return common.HexToHash(str), err
 }
 
 func (dagdb *DagDb) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
-	key := fmt.Sprintf("%s_%s", string(constants.TxHash2ReqPrefix), reqid.String())
+	key := fmt.Sprintf("%s_%s", string(constants.ReqIdPrefix), reqid.String())
 	str, err := GetString(dagdb.db, key)
 	return common.HexToHash(str), err
 }

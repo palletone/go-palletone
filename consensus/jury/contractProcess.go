@@ -34,7 +34,6 @@ type ContractReqInf interface {
 	do(v contracts.ContractInf) (interface{}, error)
 }
 
-//////
 type ContractInstallReq struct {
 	chainID   string
 	ccName    string

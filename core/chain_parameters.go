@@ -48,7 +48,7 @@ type FeeSchedule struct {
 	// mediator 创建费用
 	MediatorCreateFee uint64                `json:"mediatorCreateFee"`
 	VoteMediatorFee   uint64                `json:"voteMediatorFee"`
-	TransferFee       TransferFeeParameters `json:"transferPTNFee"`
+	TransferFee       TransferFeeParameters `json:"transferPtnFee"`
 }
 
 func newFeeSchedule() (f FeeSchedule) {
@@ -66,8 +66,8 @@ type TransferFeeParameters struct {
 }
 
 func newTransferFeeParameters() (tf TransferFeeParameters) {
-	tf.BaseFee = DefaultTransferPTNBaseFee
-	tf.PricePerKByte = DefaultTransferPTNPricePerKByte
+	tf.BaseFee = DefaultTransferPtnBaseFee
+	tf.PricePerKByte = DefaultTransferPtnPricePerKByte
 
 	return
 }

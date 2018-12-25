@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/syndtr/goleveldb/leveldb/iterator"
 )
 
 const missingNumber = uint64(0xffffffffffffffff)
@@ -34,8 +35,8 @@ const missingNumber = uint64(0xffffffffffffffff)
 // DatabaseReader wraps the Get method of a backing data store.
 type DatabaseReader interface {
 	Get(key []byte) (value []byte, err error)
-	NewIterator() ptndb.Iterator
-	NewIteratorWithPrefix(prefix []byte) ptndb.Iterator
+	NewIterator() iterator.Iterator
+	NewIteratorWithPrefix(prefix []byte) iterator.Iterator
 }
 
 // @author Albert·Gou

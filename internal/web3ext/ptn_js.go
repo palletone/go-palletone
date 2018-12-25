@@ -97,13 +97,13 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccdeploytx',
         	call: 'ptn_ccdeploytx',
-        	params: 8, //from, to , daoAmount, daoFee uint64, templateId , txid , args  
-			inputFormatter: [null, null, null,null, null, null, null, null]
+        	params: 7, //from, to , daoAmount, daoFee , templateId , txid , args  
+			inputFormatter: [null, null, null,null, null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccinvoketx',
         	call: 'ptn_ccinvoketx',
-        	params: 6, //contractAddr, from, to, daoAmount, daoFee , args[]string------>["fun", "key", "value"]
+        	params: 6, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"]
 			inputFormatter: [null, null, null,null, null, null]
 		}),
 		new web3._extend.Method({
@@ -135,6 +135,11 @@ web3._extend({
 		    call: 'ptn_getTxHashByReqId',
 			params: 1,
 			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'transferPtn',
+			call: 'ptn_transferPtn',
+			params: 1,
 		}),
 	],
 

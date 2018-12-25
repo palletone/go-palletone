@@ -107,9 +107,9 @@ func New(config Config) (*Console, error) {
 func (c *Console) init(preload []string) error {
 	// Initialize the JavaScript <-> Go RPC bridge
 	bridge := newBridge(c.client, c.prompter, c.printer)
-	c.jsre.Set("jeth", struct{}{})
+	c.jsre.Set("jptn", struct{}{})
 
-	jethObj, _ := c.jsre.Get("jeth")
+	jethObj, _ := c.jsre.Get("jptn")
 	jethObj.Object().Set("send", bridge.Send)
 	jethObj.Object().Set("sendAsync", bridge.Send)
 
@@ -127,7 +127,7 @@ func (c *Console) init(preload []string) error {
 	if _, err := c.jsre.Run("var Web3 = require('web3');"); err != nil {
 		return fmt.Errorf("web3 require: %v", err)
 	}
-	if _, err := c.jsre.Run("var web3 = new Web3(jeth);"); err != nil {
+	if _, err := c.jsre.Run("var web3 = new Web3(jptn);"); err != nil {
 		return fmt.Errorf("web3 provider: %v", err)
 	}
 	// Load the supported APIs into the JavaScript runtime environment
@@ -164,49 +164,61 @@ func (c *Console) init(preload []string) error {
 		if err != nil {
 			return err
 		}
-		// Override the openWallet, unlockAccount, newAccount and sign methods since
+		// Override the openWallet, unlockAccount, newAccount, sign and transferPtn methods since
 		// these require user interaction. Assign these method in the Console the
-		// original web3 callbacks. These will be called by the jeth.* methods after
+		// original web3 callbacks. These will be called by the jptn.* methods after
 		// they got the password from the user and send the original web3 request to
 		// the backend.
 		if obj := personal.Object(); obj != nil { // make sure the personal api is enabled over the interface
-			if _, err = c.jsre.Run(`jeth.openWallet = personal.openWallet;`); err != nil {
+			if _, err = c.jsre.Run(`jptn.openWallet = personal.openWallet;`); err != nil {
 				return fmt.Errorf("personal.openWallet: %v", err)
 			}
-			if _, err = c.jsre.Run(`jeth.unlockAccount = personal.unlockAccount;`); err != nil {
+			if _, err = c.jsre.Run(`jptn.unlockAccount = personal.unlockAccount;`); err != nil {
 				return fmt.Errorf("personal.unlockAccount: %v", err)
 			}
-			if _, err = c.jsre.Run(`jeth.newAccount = personal.newAccount;`); err != nil {
+			if _, err = c.jsre.Run(`jptn.newAccount = personal.newAccount;`); err != nil {
 				return fmt.Errorf("personal.newAccount: %v", err)
 			}
-			if _, err = c.jsre.Run(`jeth.sign = personal.sign;`); err != nil {
+			if _, err = c.jsre.Run(`jptn.sign = personal.sign;`); err != nil {
 				return fmt.Errorf("personal.sign: %v", err)
+			}
+			if _, err = c.jsre.Run(`jptn.transferPtn = personal.transferPtn;`); err != nil {
+				return fmt.Errorf("personal.transferPtn: %v", err)
 			}
 			obj.Set("openWallet", bridge.OpenWallet)
 			obj.Set("unlockAccount", bridge.UnlockAccount)
 			obj.Set("newAccount", bridge.NewAccount)
 			obj.Set("sign", bridge.Sign)
+			obj.Set("transferPtn", bridge.TransferPtn)
 		}
 		ptn, errr := c.jsre.Get("ptn")
 		if errr != nil {
 			return errr
 		}
 		if obj := ptn.Object(); obj != nil { // make sure the admin api is enabled over the interface
-			if _, err = c.jsre.Run(`jeth.signRawTransaction = ptn.signRawTransaction;`); err != nil {
+			if _, err = c.jsre.Run(`jptn.signRawTransaction = ptn.signRawTransaction;`); err != nil {
 				return fmt.Errorf("ptn.signRawTransaction: %v", err)
 			}
 			obj.Set("signRawTransaction", bridge.SignRawTransaction)
-			if _, err = c.jsre.Run(`jeth.getPtnTestCoin = wallet.getPtnTestCoin;`); err != nil {
-				return fmt.Errorf("ptn.getPtnTestCoin: %v", err)
-			}
-			obj.Set("getPtnTestCoin", bridge.GetPtnTestCoin)
-			if _, err = c.jsre.Run(`jeth.transferToken = ptn.transferToken;`); err != nil {
+			//if _, err = c.jsre.Run(`jptn.getPtnTestCoin = wallet.getPtnTestCoin;`); err != nil {
+			//	return fmt.Errorf("ptn.getPtnTestCoin: %v", err)
+			//}
+			//obj.Set("getPtnTestCoin", bridge.GetPtnTestCoin)
+			if _, err = c.jsre.Run(`jptn.transferToken = ptn.transferToken;`); err != nil {
 				return fmt.Errorf("ptn.transferToken: %v", err)
 			}
 			obj.Set("transferToken", bridge.TransferToken)
 		}
-
-		//Add by wzhyuan
+                wallet, perr := c.jsre.Get("wallet")
+		if perr != nil {
+			return perr
+		}
+		if obj := wallet.Object(); obj != nil { // make sure the admin api is enabled over the interface
+			if _, err = c.jsre.Run(`jptn.transferToken = wallet.transferToken;`); err != nil {
+				return fmt.Errorf("wallet.transferToken: %v", err)
+			}
+			obj.Set("transferToken", bridge.TransferToken)
+		}
 	}
 	// The admin.sleep and admin.sleepBlocks are offered by the console and not by the RPC layer.
 	admin, err := c.jsre.Get("admin")

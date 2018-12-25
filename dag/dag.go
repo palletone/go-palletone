@@ -286,7 +286,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		// append by albert·gou, 利用 unit 更新相关状态
 		time := time.Unix(u.Timestamp(), 0)
 		log.Info(fmt.Sprint("Received unit "+u.UnitHash.TerminalString()+" #", u.NumberU64(),
-			" @ ", time.Format("2006-01-02 15:04:05"), " signed by ", u.UnitAuthor().Str()))
+			" @", time.Format("2006-01-02 15:04:05"), " signed by ", u.UnitAuthor().Str()))
 		d.ApplyUnit(u)
 
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
@@ -333,7 +333,7 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 }
 func (d *Dag) Exists(hash common.Hash) bool {
 	if unit, err := d.dagdb.GetUnit(hash); err == nil && unit != nil {
-		log.Info("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
+		log.Debug("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
 		return true
 	}
 	return false
@@ -657,11 +657,12 @@ func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	defer d.Mutex.RUnlock()
 	return d.utxodb.GetUtxoEntry(outpoint)
 }
-func (d *Dag) GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error) {
-	d.Mutex.RLock()
-	defer d.Mutex.RUnlock()
-	return d.utxodb.GetUtxoPkScripHexByTxhash(txhash, mindex, outindex)
-}
+
+//func (d *Dag) GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error) {
+//	d.Mutex.RLock()
+//	defer d.Mutex.RUnlock()
+//	return d.utxodb.GetUtxoPkScripHexByTxhash(txhash, mindex, outindex)
+//}
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	//preout := modules.OutPoint{TxHash: tx.Hash()}
@@ -817,6 +818,7 @@ func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map
 	//TODO only get one token's UTXO
 	all, err := d.utxodb.GetAddrUtxos(addr)
 	if d.utxos_cache != nil {
+		assetStr := asset.String()
 		for hash, utxos := range d.utxos_cache {
 			for key, utxo := range utxos {
 				if utxo == nil {
@@ -827,7 +829,7 @@ func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map
 					address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
 					if err == nil {
 						if address.Equal(addr) {
-							if strings.Compare(utxo.Asset.String(), asset.String()) == 0 {
+							if strings.Compare(utxo.Asset.String(), assetStr) == 0 {
 								if old, has := all[key]; has {
 									// merge
 									if old.IsSpent() {
@@ -889,7 +891,7 @@ func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
 }
 
 func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
-	return d.dagdb.GetAddrTransactions(addr)
+	return d.unitRep.GetAddrTransactions(addr)
 }
 
 // get contract state
@@ -930,7 +932,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 
 	if !isGenesis {
 		if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
-			log.Info("dag:the unit is already exist in leveldb. ", "unit_hash", unit.Hash().String())
+			log.Debug("dag:the unit is already exist in leveldb. ", "unit_hash", unit.Hash().String())
 			return errors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 		}
 	}
@@ -946,7 +948,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 		// step3.1. pass and with group signature, put into leveldb
 		// todo 应当先判断是否切换，再保存，并更新状态
 		if err := d.unitRep.SaveUnit(unit, txpool, false, false); err != nil {
-			log.Info("Dag", "SaveDag, save error when save unit to db err:", err)
+			log.Debug("Dag", "SaveDag, save error when save unit to db err:", err)
 			return fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
 		}
 		// step3.2. if pass and with group signature, prune fork data
@@ -958,7 +960,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 		if err := d.Memdag.Save(unit, txpool); err != nil {
 			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		} else {
-			log.Info("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
+			log.Debug("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
 		}
 	}
 
@@ -1117,7 +1119,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
 		return nil, fmt.Errorf("Create unit: %s", err.Error())
 	}
-	coinbase, err := dagcommon.CreateCoinbase(&addr, 0, nil, &asset, time.Now())
+	coinbase, _, err := dagcommon.CreateCoinbase(&addr, 0, nil, &asset, time.Now())
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err

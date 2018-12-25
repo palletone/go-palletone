@@ -27,9 +27,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/vote"
-	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/shopspring/decimal"
 )
 
 type Txo4Greedy struct {
@@ -168,7 +166,7 @@ func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, dao
 
 	tx.AddMessage(msg)
 	//tx.TxMessages = append(tx.TxMessages, msgs...)
-	return tx, 0, nil
+	return tx, daoFee, nil
 }
 
 func (dag *Dag) GenMediatorCreateTx(account common.Address,
@@ -211,16 +209,25 @@ func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address) (*modules.Tran
 	return tx, fee, nil
 }
 
-func (dag *Dag) GenTransferPtnTx(from, to common.Address, amount decimal.Decimal, text string) (*modules.Transaction, uint64, error) {
-	// 1. 组装 message
-	msg := &modules.Message{
-		App:     modules.APP_TEXT,
-		Payload: &modules.TextPayload{Text: []byte(text)},
+func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string) (*modules.Transaction, uint64, error) {
+	fee := dag.CurrentFeeSchedule().TransferFee.BaseFee
+	var tx *modules.Transaction
+	var err error
+
+	// 如果没有文本，或者文本为空
+	if text == nil || *text == "" {
+		tx, err = dag.createBaseTransaction(from, to, daoAmount, fee)
+	} else {
+		// 1. 组装 message
+		msg := &modules.Message{
+			App:     modules.APP_TEXT,
+			Payload: &modules.TextPayload{Text: []byte(*text)},
+		}
+
+		// 2. 创建 tx
+		tx, fee, err = dag.CreateGenericTransaction(from, to, daoAmount, fee, msg)
 	}
 
-	// 2. 组装 tx
-	fee := dag.CurrentFeeSchedule().TransferFee.BaseFee
-	tx, fee, err := dag.CreateGenericTransaction(from, to, ptnjson.Ptn2Dao(amount), fee, msg)
 	if err != nil {
 		return nil, 0, err
 	}

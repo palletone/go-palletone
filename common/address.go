@@ -227,8 +227,12 @@ func (a *Address) Less(b Address) bool {
 	for i, v := range a {
 		if v < b[i] {
 			return true
+		} else if v > b[i] {
+			return false
 		}
 	}
+
+	// 两个地址相同
 	return false
 }
 

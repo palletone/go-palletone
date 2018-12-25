@@ -334,8 +334,8 @@ func (d *Downloader) Synchronise(id string, head common.Hash, index uint64, mode
 // it will use the best peer possible and synchronize if its TD is higher than our own. If any of the
 // checks fail an error will be returned. This method is synchronous
 func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode SyncMode, assetId modules.IDType16) error {
-	log.Info("Enter Downloader synchronise", "peer id:", id)
-	defer log.Info("End Downloader synchronise", "peer id:", id)
+	log.Debug("Enter Downloader synchronise", "peer id:", id)
+	defer log.Debug("End Downloader synchronise", "peer id:", id)
 	// Mock out the synchronisation if testing
 	if d.synchroniseMock != nil {
 		return d.synchroniseMock(id, hash)
@@ -415,7 +415,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		return errTooOld
 	}
 
-	log.Info("Synchronising with the network", "peer", p.id, "ptn", p.version, "head", hash, "index", index, "mode", d.mode)
+	log.Debug("Synchronising with the network", "peer", p.id, "ptn", p.version, "head", hash, "index", index, "mode", d.mode)
 	defer func(start time.Time) {
 		log.Debug("Synchronisation terminated", "elapsed", time.Since(start), "peer", p.id)
 	}(time.Now())
@@ -430,7 +430,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	height := latest.Number.Index
 	localIndex := d.dag.CurrentUnit().Number().Index
 
-	log.Info("Downloader", "syncWithPeer local index", localIndex, "latest peer index", height)
+	log.Debug("Downloader", "syncWithPeer local index", localIndex, "latest peer index", height)
 	if localIndex >= height {
 		return nil
 	}
@@ -439,7 +439,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	if err != nil {
 		return err
 	}
-	log.Info("=====findAncestor=====", "origin:", origin)
+	log.Debug("=====findAncestor=====", "origin:", origin)
 
 	// Ensure our origin point is below any fast sync pivot point
 	pivot := uint64(0)

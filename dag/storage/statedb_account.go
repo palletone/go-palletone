@@ -83,9 +83,12 @@ func (statedb *StateDb) RetrieveAccountInfo(address common.Address) (*modules.Ac
 }
 
 func (statedb *StateDb) StoreAccountInfo(address common.Address, info *modules.AccountInfo) error {
-	//statedb.logger.Debugf("Save account info for address:%s", address.String())
+	err := StoreBytes(statedb.db, accountKey(address), infoToaccount(info))
+	if err != nil {
+		statedb.logger.Debugf("Save account info throw an error:%s", err)
+	}
 
-	return StoreBytes(statedb.db, accountKey(address), infoToaccount(info))
+	return err
 }
 
 func (statedb *StateDb) UpdateAccountInfoBalance(address common.Address, addAmount int64) error {
@@ -134,15 +137,24 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 
 	iter := statedb.db.NewIteratorWithPrefix(constants.ACCOUNT_INFO_PREFIX)
 	for iter.Next() {
-		addB := bytes.TrimPrefix(iter.Key(), constants.ACCOUNT_INFO_PREFIX)
+		key := iter.Key()
+		if key == nil {
+			continue
+		}
+
+		value := iter.Value()
+		if value == nil {
+			continue
+		}
 
 		acc := newAccountInfo()
-		err := rlp.DecodeBytes(iter.Value(), acc)
+		err := rlp.DecodeBytes(value, acc)
 		if err != nil {
 			statedb.logger.Debugf("Error in Decoding Bytes to AccountInfo: %s", err)
 			continue
 		}
 
+		addB := bytes.TrimPrefix(key, constants.ACCOUNT_INFO_PREFIX)
 		result[common.BytesToAddress(addB)] = acc.accountToInfo()
 	}
 

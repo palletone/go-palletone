@@ -56,6 +56,11 @@ web3._extend({
 			params: 2,
 			inputFormatter: [web3._extend.formatters.inputTransactionFormatter, null]
 		}),
+		new web3._extend.Method({
+			name: 'transferPtn',
+			call: 'personal_transferPtn',
+			params: 5,
+		}),
 	],
 	properties: [
 		new web3._extend.Property({

@@ -21,8 +21,10 @@
 package storage
 
 import (
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -40,7 +42,12 @@ type IIndexDb interface {
 	SaveIndexValue(key []byte, value interface{}) error
 	GetUtxoByIndex(idx *modules.UtxoIndex) (*modules.Utxo, error)
 	DeleteUtxoByIndex(idx *modules.UtxoIndex) error
+<<<<<<< HEAD
 
+=======
+	SaveAddressTxId(address common.Address, txid common.Hash) error
+	GetAddressTxIds(address common.Address) ([]common.Hash, error)
+>>>>>>> daab63fdc59520c4a9627fd52ab578a4327ad1a6
 }
 
 // ###################### SAVE IMPL START ######################
@@ -66,5 +73,25 @@ func (idxdb *IndexDb) GetUtxoByIndex(idx *modules.UtxoIndex) (*modules.Utxo, err
 func (idxdb *IndexDb) DeleteUtxoByIndex(idx *modules.UtxoIndex) error {
 	return idxdb.db.Delete(idx.ToKey())
 }
+<<<<<<< HEAD
 
 
+=======
+func (db *IndexDb) SaveAddressTxId(address common.Address, txid common.Hash) error {
+	key := append(constants.AddrTransactionsHash_Prefix, address.Bytes()...)
+	key = append(key, txid[:]...)
+	db.logger.Debugf("Index address[%s] and tx[%s]", address.String(), txid.String())
+	return db.db.Put(key, txid[:])
+}
+func (db *IndexDb) GetAddressTxIds(address common.Address) ([]common.Hash, error) {
+	prefix := append(constants.AddrTransactionsHash_Prefix, address.Bytes()...)
+	data := getprefix(db.db, prefix)
+	var result []common.Hash
+	for _, v := range data {
+		hash := common.Hash{}
+		hash.SetBytes(v)
+		result = append(result, hash)
+	}
+	return result, nil
+}
+>>>>>>> daab63fdc59520c4a9627fd52ab578a4327ad1a6

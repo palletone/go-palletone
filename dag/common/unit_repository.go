@@ -33,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -60,6 +59,7 @@ type IUnitRepository interface {
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
+	GetAddrTransactions(addr string) (modules.Transactions, error)
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -251,14 +251,21 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 		additions[addr] = contractAddition
 	}
 	//coinbase, err := CreateCoinbase(mAddr, fees+awards, asset, t)
-	coinbase, err := CreateCoinbase(mAddr, fees, additions, asset, t)
-
+	coinbase, rewards, err := CreateCoinbase(mAddr, fees, additions, asset, t)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
-	txs := modules.Transactions{coinbase}
+	// 若配置增发，或者该单元包含有效交易（rewards>0），则将增发奖励和交易费全发给该mediator。
+	txs := make(modules.Transactions, 0)
+	if rewards > 0 || dagconfig.DefaultConfig.IsRewardCoin {
+		log.Debug("=======================Is rewards && coinbase tx info ================", "IsReward", dagconfig.DefaultConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
+		txs = append(txs, coinbase)
+	} else {
+		//log.Debug("======================= success  ================", "IsReward", dagconfig.DefaultConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
+	}
 	// step6 get unit's txs in txpool's txs
+	//TODO must recover
 	if len(poolTxs) > 0 {
 		for _, tx := range poolTxs {
 			t := txspool.PooltxToTx(tx)
@@ -512,70 +519,11 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	// step5. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
-		var requester common.Address
-		var err error
-		if txIndex > 0 { //coinbase don't have requester
-			requester, err = unitOp.getRequesterAddress(tx)
-			if err != nil {
-				return err
-			}
-		}
-		txHash := tx.Hash()
-		// traverse messages
-		for msgIndex, msg := range tx.TxMessages {
-			// handle different messages
-			switch msg.App {
-			case modules.APP_PAYMENT:
-				if ok := unitOp.savePaymentPayload(txHash, msg, uint32(msgIndex)); ok != true {
-					return fmt.Errorf("Save payment payload error.")
-				}
-			case modules.APP_CONTRACT_TPL:
-				if ok := unitOp.saveContractTpl(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
-					return fmt.Errorf("Save contract template error.")
-				}
-			case modules.APP_CONTRACT_DEPLOY:
-				if ok := unitOp.saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
-					return fmt.Errorf("Save contract init payload error.")
-				}
-			case modules.APP_CONTRACT_INVOKE:
-				if ok := unitOp.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
-					return fmt.Errorf("Save contract invode payload error.")
-				}
-			case modules.APP_CONFIG:
-				if ok := unitOp.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
-					return fmt.Errorf("Save contract invode payload error.")
-				}
-			case modules.APP_VOTE:
-				if err = unitOp.SaveVote(msg, requester); err != nil {
-					return fmt.Errorf("Save vote payload error.")
-				}
-			case modules.OP_MEDIATOR_CREATE:
-				if ok := unitOp.ApplyOperation(msg, true); ok == false {
-					return fmt.Errorf("Apply Mediator Creating Operation error.")
-				}
-
-			case modules.APP_CONTRACT_TPL_REQUEST:
-				//todo
-			case modules.APP_CONTRACT_DEPLOY_REQUEST:
-				//todo
-			case modules.APP_CONTRACT_STOP_REQUEST:
-				//todo
-			case modules.APP_CONTRACT_INVOKE_REQUEST:
-				//todo
-			case modules.APP_SIGNATURE:
-				//todo
-
-			case modules.APP_TEXT:
-			default:
-				return fmt.Errorf("Message type is not supported now: %v", msg.App)
-			}
-		}
-		// step6. save transaction
-		if err := unitOp.dagdb.SaveTransaction(tx); err != nil {
-			log.Info("Save transaction:", "error", err.Error())
+		err := unitOp.saveTx4Unit(unit, txIndex, tx)
+		if err != nil {
 			return err
 		}
-		txHashSet = append(txHashSet, txHash)
+		txHashSet = append(txHashSet, tx.Hash())
 	}
 
 	// step7  send unitHash set to txpool, to update txpool's pending
@@ -620,6 +568,99 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	unitOp.dagdb.PutHeadFastUnitHash(unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
+}
+
+//Save tx in unit
+func (unitOp *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modules.Transaction) error {
+	var requester common.Address
+	var err error
+	if txIndex > 0 { //coinbase don't have requester
+		requester, err = unitOp.getRequesterAddress(tx)
+		if err != nil {
+			return err
+		}
+	}
+	txHash := tx.Hash()
+	// traverse messages
+	for msgIndex, msg := range tx.TxMessages {
+		// handle different messages
+		switch msg.App {
+		case modules.APP_PAYMENT:
+			if ok := unitOp.savePaymentPayload(txHash, msg, uint32(msgIndex)); ok != true {
+				return fmt.Errorf("Save payment payload error.")
+			}
+		case modules.APP_CONTRACT_TPL:
+			if ok := unitOp.saveContractTpl(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+				return fmt.Errorf("Save contract template error.")
+			}
+		case modules.APP_CONTRACT_DEPLOY:
+			if ok := unitOp.saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+				return fmt.Errorf("Save contract init payload error.")
+			}
+		case modules.APP_CONTRACT_INVOKE:
+			if ok := unitOp.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+				return fmt.Errorf("Save contract invode payload error.")
+			}
+		case modules.APP_CONFIG:
+			if ok := unitOp.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
+				return fmt.Errorf("Save contract invode payload error.")
+			}
+		case modules.APP_VOTE:
+			if err = unitOp.SaveVote(msg, requester); err != nil {
+				return fmt.Errorf("Save vote payload error.")
+			}
+		case modules.OP_MEDIATOR_CREATE:
+			if ok := unitOp.ApplyOperation(msg, true); ok == false {
+				return fmt.Errorf("Apply Mediator Creating Operation error.")
+			}
+
+		case modules.APP_CONTRACT_TPL_REQUEST:
+			//todo
+		case modules.APP_CONTRACT_DEPLOY_REQUEST:
+			//todo
+		case modules.APP_CONTRACT_STOP_REQUEST:
+			//todo
+		case modules.APP_CONTRACT_INVOKE_REQUEST:
+			//todo
+		case modules.APP_SIGNATURE:
+			//todo
+
+		case modules.APP_TEXT:
+		default:
+			return fmt.Errorf("Message type is not supported now: %v", msg.App)
+		}
+	}
+	// step6. save transaction
+	if err := unitOp.dagdb.SaveTransaction(tx); err != nil {
+		log.Info("Save transaction:", "error", err.Error())
+		return err
+	}
+	//Index TxId for address
+	addresses := getPayToAddresses(tx)
+	for _, addr := range addresses {
+		unitOp.idxdb.SaveAddressTxId(addr, txHash)
+	}
+
+	return nil
+}
+func getPayToAddresses(tx *modules.Transaction) []common.Address {
+	resultMap := map[common.Address]int{}
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_PAYMENT {
+			pay := msg.Payload.(*modules.PaymentPayload)
+			for _, out := range pay.Outputs {
+				addr, _ := tokenengine.GetAddressFromScript(out.PkScript)
+				if _, ok := resultMap[addr]; !ok {
+					resultMap[addr] = 1
+				}
+			}
+		}
+	}
+	keys := make([]common.Address, 0, len(resultMap))
+	for k := range resultMap {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 /**
@@ -794,7 +835,7 @@ To get unit information by its ChainIndex
 To create coinbase transaction
 */
 
-func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Address]*modules.Addition, asset *modules.Asset, t time.Time) (*modules.Transaction, error) {
+func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Address]*modules.Addition, asset *modules.Asset, t time.Time) (*modules.Transaction, int64, error) {
 	//创建合约保证金币龄的奖励output
 	payload := modules.PaymentPayload{}
 	if len(addition) != 0 {
@@ -816,7 +857,7 @@ func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Add
 	// setp1. create P2PKH script
 	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 	// step. compute total income
-	totalIncome := int64(income) + int64(ComputeInterest())
+	totalIncome := int64(income) + int64(ComputeRewards())
 	// step2. create payload
 	createT := big.Int{}
 	input := modules.Input{
@@ -843,7 +884,7 @@ func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Add
 	// coinbase.CreationDate = coinbase.CreateDate()
 	//coinbase.TxHash = coinbase.Hash()
 
-	return coinbase, nil
+	return coinbase, totalIncome, nil
 }
 
 /**
@@ -918,4 +959,20 @@ func (unitOp *UnitRepository) updateState(contractID []byte, key string, version
 func IsGenesis(hash common.Hash) bool {
 	genHash := common.HexToHash(dagconfig.DefaultConfig.GenesisHash)
 	return genHash == hash
+}
+
+// GetAddrTransactions
+func (unitOp *UnitRepository) GetAddrTransactions(addr string) (modules.Transactions, error) {
+	address, _ := common.StringToAddress(addr)
+	hashs, err := unitOp.idxdb.GetAddressTxIds(address)
+	if err != nil {
+		return modules.Transactions{}, err
+	}
+
+	txs := make(modules.Transactions, 0)
+	for _, hash := range hashs {
+		tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
+		txs = append(txs, tx)
+	}
+	return txs, nil
 }

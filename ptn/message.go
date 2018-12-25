@@ -277,7 +277,7 @@ func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		}
 
 		transactions[i] = temptxs
-		log.Info("BlockBodiesMsg", "i", i, "txs size:", len(temptxs))
+		log.Debug("BlockBodiesMsg", "i", i, "txs size:", len(temptxs))
 	}
 	log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(transactions))
 	// Filter out any explicitly requested bodies, deliver the rest to the downloader
@@ -418,7 +418,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 
 	unit.ReceivedAt = msg.ReceivedAt
 	unit.ReceivedFrom = p
-	log.Info("===NewBlockMsg===", "unit:", *unit, "index:", unit.Number().Index, "peer id:", p.id)
+	log.Debug("===NewBlockMsg===", "unit:", *unit, "index:", unit.Number().Index, "peer id:", p.id)
 
 	// Mark the peer as owning the block and schedule it for import
 	p.MarkUnit(unit.UnitHash)
@@ -427,7 +427,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	requestNumber := unit.UnitHeader.Number
 	hash, number := p.Head(unit.Number().AssetID)
 	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && requestNumber.Index > number.Index) {
-		log.Info("ProtocolManager", "NewBlockMsg SetHead request.Index:", unit.UnitHeader.ChainIndex().Index,
+		log.Debug("ProtocolManager", "NewBlockMsg SetHead request.Index:", unit.UnitHeader.ChainIndex().Index,
 			"local peer index:", number.Index)
 		trueHead := unit.Hash()
 		p.SetHead(trueHead, requestNumber)
@@ -435,7 +435,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		currentUnitIndex := pm.dag.GetCurrentUnit(unit.Number().AssetID).UnitHeader.Number.Index
 
 		if requestIndex > currentUnitIndex {
-			log.Info("ProtocolManager", "NewBlockMsg synchronise request.Index:", unit.UnitHeader.ChainIndex().Index,
+			log.Debug("ProtocolManager", "NewBlockMsg synchronise request.Index:", unit.UnitHeader.ChainIndex().Index,
 				"current unit index:", currentUnitIndex)
 			go func() {
 				time.Sleep(100 * time.Millisecond)
@@ -469,8 +469,9 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		}
 
 		if tx.IsContractInvoke() {
-			if pm.contractProc.CheckContractTxValid(tx) != true {
-				return errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
+			if !pm.contractProc.CheckContractTxValid(tx) {
+				log.Debug("TxMsg", "CheckContractTxValid is false")
+				return nil//errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
 			}
 		}
 
