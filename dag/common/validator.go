@@ -20,17 +20,15 @@ package common
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/configure"
-
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/vote"
@@ -140,6 +138,10 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 	if tx.TxMessages[0].App != modules.APP_PAYMENT { // 交易费
 		fmt.Printf("-----------ValidateTx , %d\n", tx.TxMessages[0].App)
 		return modules.TxValidationCode_INVALID_MSG
+	}
+
+	if validate.checkTxIsExist(tx) {
+		return modules.TxValidationCode_DUPLICATE_TXID
 	}
 	// validate transaction hash
 	//if !bytes.Equal(tx.TxHash.Bytes(), tx.Hash().Bytes()) {
@@ -628,4 +630,15 @@ func (validate *Validate) validateContractdeploy(tplId []byte, worldTmpState *ma
 
 func (validate *Validate) validateContractSignature(sinatures []modules.SignatureSet, tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
 	return modules.TxValidationCode_VALID
+}
+
+func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
+	if len(tx.TxMessages) > 2 {
+		reqId := tx.RequestHash()
+		if txHash, err := validate.dagdb.GetTxHashByReqId(reqId); err == nil && txHash != (common.Hash{}) {
+			log.Debug("checkTxIsExist", "transactions exist in dag, reqId:", reqId.String())
+			return true
+		}
+	}
+	return false
 }

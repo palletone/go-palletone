@@ -110,6 +110,9 @@ type IDagDb interface {
 	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	SaveReqIdByTx(tx *modules.Transaction) error
+
+	// get texthash
+	GetTextHash(hash common.Hash) ([]byte, error)
 }
 
 /* ----- common geter ----- */
@@ -863,7 +866,7 @@ func (dagdb *DagDb) UpdateHeadByBatch(hash common.Hash, number uint64) error {
 	BatchErrorHandler(batch.Put(constants.HeadHeaderKey, hash.Bytes()), errorList)                //PutHeadHeaderHash
 	BatchErrorHandler(batch.Put(constants.HeadUnitKey, hash.Bytes()), errorList)                  //PutHeadUnitHash
 	BatchErrorHandler(batch.Put(constants.HeadFastKey, hash.Bytes()), errorList)                  //PutHeadFastUnitHash
-	if len(*errorList) == 0 {                                                                     //each function call succeed.
+	if len(*errorList) == 0 { //each function call succeed.
 		return batch.Write()
 	}
 	return fmt.Errorf("UpdateHeadByBatch, at least one sub function call failed.")
@@ -987,3 +990,16 @@ func (dagdb *DagDb) SaveReqIdByTx(tx *modules.Transaction) error {
 	}
 	return err2
 }
+
+//get Textpayload
+func (dagdb *DagDb) GetTextHash(hash common.Hash) ([]byte, error) {
+	tx,_,_,_ := dagdb.GetTransaction(hash)
+	pay := tx.TxMessages[2].Payload.(*modules.TextPayload)
+
+	texthash := pay.TextHash
+	if pay != nil {
+		return texthash,nil
+	}
+	return nil,errors.New("textpayload is nil !")
+}
+

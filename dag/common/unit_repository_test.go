@@ -406,13 +406,13 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 	}
 	addr := common.Address{}
 	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
-	et := time.Duration(12)
+	//et := time.Duration(12)
 	deployPayload := modules.ContractDeployPayload{
 		TemplateId:    []byte("contract_template0000"),
 		ContractId:    []byte("contract0000"),
 		Name:          "testdeploy",
 		Args:          [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
-		ExecutionTime: et,
+		//ExecutionTime: et,
 		Jury:          []common.Address{addr},
 		ReadSet:       readSet,
 		WriteSet:      writeSet,
@@ -455,7 +455,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 					} else {
 						fmt.Println(deployPayload.Name)
 						fmt.Println(deployPayload.ContractId)
-						fmt.Println(deployPayload.ExecutionTime)
+						//fmt.Println(deployPayload.ExecutionTime)
 					}
 				}
 			}

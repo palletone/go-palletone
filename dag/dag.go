@@ -1387,3 +1387,8 @@ func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
 	return d.dagdb.GetReqIdByTxHash(hash)
 }
+
+// GetTextHash
+func (d *Dag)GetTextHash(hash common.Hash) ([]byte, error) {
+	return d.dagdb.GetTextHash(hash)
+}
