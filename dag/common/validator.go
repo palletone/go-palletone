@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/configure"
 
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	//"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/vote"
@@ -84,6 +83,7 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		}
 		// validate common property
 		//The first Tx(txIdx==0) is a coinbase tx.
+
 		txCode := validate.ValidateTx(tx, txIndex == 0, &worldState)
 		if txCode != modules.TxValidationCode_VALID {
 			log.Debug("ValidateTx", "txhash", txHash, "error validate code", txCode)
