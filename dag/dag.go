@@ -641,7 +641,13 @@ func (d *Dag) GetHeadHeaderHash() (common.Hash, error) {
 }
 
 func (d *Dag) GetHeadUnitHash() (common.Hash, error) {
-	return d.dagdb.GetHeadUnitHash()
+	unit := d.GetCurrentUnit(modules.NewPTNIdType())
+	cur_hash := unit.Hash()
+	head_hash, err := d.dagdb.GetHeadUnitHash()
+	if !reflect.DeepEqual(head_hash, cur_hash) {
+		return unit.Hash(), err
+	}
+	return head_hash, err
 }
 
 func (d *Dag) GetHeadFastUnitHash() (common.Hash, error) {
