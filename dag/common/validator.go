@@ -116,7 +116,7 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		if len(coinIn.Outputs) != 1 {
 			return nil, false, fmt.Errorf("Coinbase outputs error0.")
 		}
-		income := uint64(fee) + ComputeInterest()
+		income := uint64(fee) + ComputeRewards()
 		if coinIn.Outputs[0].Value < income {
 			return nil, false, fmt.Errorf("Coinbase outputs error: 1.%d", income)
 		}

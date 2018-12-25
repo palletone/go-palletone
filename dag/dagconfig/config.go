@@ -52,6 +52,7 @@ var DefaultConfig = Config{
 	GenesisHash:                  "0xeb5f66d0289ea0af68860fd5a4d1a0b38389f598ae01008433a5ca9949fcf55c",
 	PtnAssetHex:                  modules.CoreAsset.AssetId.String(),
 	PtnAssetId:                   modules.NewPTNAsset().AssetId[:],
+	IsRewardCoin:                 false,
 }
 
 func init() {
@@ -95,6 +96,8 @@ type Config struct {
 	GenesisHash string
 	PtnAssetHex string
 	PtnAssetId  []byte
+
+	IsRewardCoin bool
 }
 
 type Sconfig struct {
