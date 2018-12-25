@@ -112,7 +112,7 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	Journal:   "transactions.rlp",
 	Rejournal: time.Hour,
 
-	FeeLimit:  1,
+	FeeLimit:  0,
 	PriceBump: 10,
 
 	AccountSlots: 16,
@@ -678,7 +678,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 				if txHash.String() == list.Tx.Hash().String() {
 					if list.Priority_lvl <= tx.Priority_lvl {
 						delete(pool.all, txHash)
-						pool.priority_priced.Removed()
+						pool.priority_priced.Removed(txHash)
 					}
 					return true, nil
 				}
@@ -775,7 +775,7 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 				if old.Pending || old.Confirmed {
 					// An older transaction was better, discard this
 					delete(pool.all, hash)
-					pool.priority_priced.Removed()
+					pool.priority_priced.Removed(hash)
 					return
 				}
 			}
@@ -785,7 +785,7 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 	// Otherwise discard any previous transaction and mark this
 	if old.Tx != nil {
 		delete(pool.all, old.Tx.Hash())
-		pool.priority_priced.Removed()
+		pool.priority_priced.Removed(old.Tx.Hash())
 	}
 	// Failsafe to work around direct pending inserts (tests)
 	if pool.all[tx_hash] == nil {
@@ -1155,13 +1155,13 @@ func (pool *TxPool) DeleteTx() error {
 				continue
 			} else {
 				// delete
-				// log.Debug("delete the non confirmed tx.")
+				log.Debug("delete the non confirmed tx(overtime).", "tx_hash", tx.Tx.Hash())
 				pool.DeleteTxByHash(hash)
 			}
 		}
 		if tx.CreationDate.Add(DefaultTxPoolConfig.Removetime).After(time.Now()) {
 			// delete
-			// log.Debug("delete the confirmed tx.")
+			log.Debug("delete the confirmed tx.", "tx_hash", tx.Tx.Hash())
 			pool.DeleteTxByHash(hash)
 		}
 	}
@@ -1175,7 +1175,7 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 		return errors.New(fmt.Sprintf("the tx(%s) isn't exist.", hash.String()))
 	}
 	log.Debug("delete the tx.", "time", time.Now().Second()-tx.CreationDate.Second(), "hash", hash.String())
-	pool.priority_priced.Removed()
+	pool.priority_priced.Removed(hash)
 	delete(pool.all, hash)
 	// Remove the transaction from the pending lists and reset the account nonce
 	for unit_hash, list := range pool.pending {
@@ -1192,6 +1192,17 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 				if len(tx.From) > 0 {
 					for _, from := range tx.From {
 						delete(pool.beats, *from)
+					}
+				}
+				// delete outpoints 's
+				for _, msg := range tx.Tx.Messages() {
+					if msg.App == modules.APP_PAYMENT {
+						payment, ok := msg.Payload.(*modules.PaymentPayload)
+						if ok {
+							for _, input := range payment.Inputs {
+								delete(pool.outpoints, *input.PreviousOutPoint)
+							}
+						}
 					}
 				}
 				break
@@ -1217,7 +1228,7 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 	// Remove it from the list of known transactions
 	//delete(pool.all, hash)
 
-	pool.priority_priced.Removed()
+	pool.priority_priced.Removed(hash)
 	tx.Confirmed = true
 	pool.all[hash] = tx
 	// Remove the transaction from the pending lists and reset the account nonce
@@ -1317,7 +1328,7 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 		//delete(pool.all, hash)
 		tx.Confirmed = true
 		pool.all[hash] = tx
-		pool.priority_priced.Removed()
+		pool.priority_priced.Removed(hash)
 	}
 }
 func (pool *TxPool) RemoveTransaction(hash common.Hash, removeRedeemers bool) {
@@ -1452,7 +1463,7 @@ func (pool *TxPool) promoteExecutables(accounts []modules.OutPoint) {
 								if offenders[i].String() == hash.String() {
 									// Drop the transaction from the global pools too
 									delete(pool.all, hash)
-									pool.priority_priced.Removed()
+									pool.priority_priced.Removed(hash)
 									log.Trace("Removed fairness-exceeding pending transaction", "hash", hash)
 									pending--
 									break
@@ -1472,7 +1483,7 @@ func (pool *TxPool) promoteExecutables(accounts []modules.OutPoint) {
 							hash := tx.Tx.Hash()
 							if addr.String() == hash.String() {
 								delete(pool.all, hash)
-								pool.priority_priced.Removed()
+								pool.priority_priced.Removed(hash)
 								log.Trace("Removed fairness-exceeding pending transaction", "hash", hash)
 								pending--
 								break

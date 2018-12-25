@@ -512,14 +512,12 @@ func (msg *Transaction) baseSize() int {
 	b, _ := rlp.EncodeToBytes(msg)
 	return len(b)
 }
-func (tx *Transaction) IsContractInvoke() bool {
-
+func (tx *Transaction) IsContractTx() bool {
 	for _, m := range tx.TxMessages {
-		if m.App == APP_CONTRACT_INVOKE_REQUEST {
+		if m.App >= APP_CONTRACT_TPL && m.App <= APP_SIGNATURE{
 			return true
 		}
 	}
-
 	return false
 }
 
