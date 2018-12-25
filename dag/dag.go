@@ -1118,7 +1118,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
 		return nil, fmt.Errorf("Create unit: %s", err.Error())
 	}
-	coinbase, err := dagcommon.CreateCoinbase(&addr, 0, nil, &asset, time.Now())
+	coinbase, _, err := dagcommon.CreateCoinbase(&addr, 0, nil, &asset, time.Now())
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
