@@ -279,7 +279,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	}
 	a, err := decimal.RandFromString(amount)
 	if err != nil {
-		return common.Hash{}, nil
+		return common.Hash{}, err
 	}
 	amounts = append(amounts, ptnjson.AddressAmt{to, a})
 
@@ -297,7 +297,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	}
 	fee, err := decimal.NewFromString("1")
 	if err != nil {
-		return common.Hash{}, nil
+		return common.Hash{}, err
 	}
 	daoAmount := ptnjson.Ptn2Dao(a.Add(fee))
 	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
@@ -375,7 +375,8 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 			srawinputs = append(srawinputs, input)
 			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
 			if err != nil {
-				fmt.Println("get addr by outpoint is err")
+				return common.Hash{}, err
+				//fmt.Println("get addr by outpoint is err")
 			}
 		}
 		/*for _, txout := range payload.Outputs {
