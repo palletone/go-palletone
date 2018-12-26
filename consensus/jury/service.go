@@ -70,7 +70,7 @@ type iDag interface {
 	IsActiveMediator(add common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
-		msg *modules.Message) (*modules.Transaction, uint64, error)
+		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 }
 
 type Juror struct {
@@ -511,8 +511,9 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 }
 
 //tmp
-func (p *Processor) creatContractTxReqBroadcast(from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message) ([]byte, error) {
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, msg)
+func (p *Processor) creatContractTxReqBroadcast(from, to common.Address, daoAmount, daoFee uint64,
+	msg *modules.Message) ([]byte, error) {
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, msg, p.ptn.TxPool())
 	if err != nil {
 		return nil, err
 	}
