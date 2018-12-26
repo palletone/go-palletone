@@ -62,7 +62,6 @@ type iDag interface {
 	GetActiveMediatorAddr(index int) common.Address
 	HeadUnitNum() uint64
 	GetUnitByHash(common.Hash) (*modules.Unit, error)
-	GetUnit(common.Hash) (*modules.Unit, error)
 
 	IsActiveMediator(add common.Address) bool
 	IsSynced() bool
@@ -78,8 +77,9 @@ type iDag interface {
 	IsIrreversibleUnit(hash common.Hash) bool
 
 	CurrentFeeSchedule() core.FeeSchedule
-	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation) (*modules.Transaction, uint64, error)
-	GenVoteMediatorTx(voter, mediator common.Address) (*modules.Transaction, uint64, error)
+	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation,
+		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	GenVoteMediatorTx(voter, mediator common.Address, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 
 	GetMediators() map[common.Address]bool
 	IsMediator(address common.Address) bool

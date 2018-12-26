@@ -62,6 +62,9 @@ func NewTxPool4Test() *TxPool {
 func NewUnitDag4Test(logger log.ILogger) *UnitDag4Test {
 	db, _ := palletdb.NewMemDatabase()
 	utxodb := storage.NewUtxoDb(db, logger)
+	idagdb := storage.NewDagDb(db, logger)
+
+	idagdb.PutHeadUnitHash(common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729"))
 	mutex := new(sync.RWMutex)
 	return &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed)}
 }
@@ -111,6 +114,9 @@ func (ud *UnitDag4Test) addUtxoview(view *UtxoViewpoint, tx *modules.Transaction
 }
 func (ud *UnitDag4Test) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
 	return ud.chainHeadFeed.Subscribe(ch)
+}
+func (ud *UnitDag4Test) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error) {
+	return &modules.InvokeFees{}, nil
 }
 
 // Tests that if the transaction count belonging to multiple accounts go above
@@ -200,7 +206,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		if i == 2 {
 			msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload2))
 		}
-		msgs = append(msgs, modules.NewMessage(modules.APP_TEXT, modules.TextPayload{Text: []byte(fmt.Sprintf("text%d%v", i, time.Now()))}))
+		msgs = append(msgs, modules.NewMessage(modules.APP_TEXT, modules.TextPayload{TextHash: []byte(fmt.Sprintf("text%d%v", i, time.Now()))}))
 	}
 
 	for j := 0; j < int(config.AccountSlots)*1; j++ {

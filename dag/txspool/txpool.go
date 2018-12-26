@@ -85,6 +85,8 @@ type dags interface {
 
 	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
+	// getTxfee
+	GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error)
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
@@ -259,8 +261,8 @@ func (pool *TxPool) loop() {
 
 	journal := time.NewTicker(pool.config.Rejournal)
 	defer journal.Stop()
-
-	deleteTxTimer := time.NewTicker(5 * time.Second)
+	// delete txspool's confirmed tx
+	deleteTxTimer := time.NewTicker(10 * time.Minute)
 	defer deleteTxTimer.Stop()
 
 	// Track the previous head headers for transaction reorgs
@@ -579,6 +581,7 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 	txpool_tx.CreationDate = time.Now()
 	txpool_tx.Nonce = txpool.GetNonce(tx.Hash()) + 1
 	txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
+	txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
 
 	return txpool_tx
 }
@@ -634,7 +637,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		return false, err
 	}
 
-	pool.logger.Info("fetch utxoview info:", "utxoinfo", utxoview)
+	pool.logger.Debug("fetch utxoview info:", "utxoinfo", utxoview)
 	// Check the transaction if it exists in the main chain and is not already fully spent.
 	preout := modules.OutPoint{TxHash: hash}
 	for i, msgcopy := range tx.Tx.TxMessages {
@@ -653,7 +656,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 			}
 		}
 	}
-	log.Info("add output utxoview info: ", "utxoinfo", utxoview.entries[preout])
+	log.Debug("add output utxoview info: ", "utxoinfo", utxoview.entries[preout])
 
 	// If the transaction pool is full, discard underpriced transactions
 	if uint64(len(pool.all)) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
@@ -676,9 +679,10 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 			if list != nil {
 				// New transaction is better, replace old one
 				if txHash.String() == list.Tx.Hash().String() {
-					if list.Priority_lvl <= tx.Priority_lvl {
-						delete(pool.all, txHash)
-						pool.priority_priced.Removed()
+					if list.Priority_lvl < tx.Priority_lvl {
+						//delete(pool.all, txHash)
+						tx.RemStatus = true
+						pool.priority_priced.Removed(txHash)
 					}
 					return true, nil
 				}
@@ -774,8 +778,10 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 				old := this
 				if old.Pending || old.Confirmed {
 					// An older transaction was better, discard this
-					delete(pool.all, hash)
-					pool.priority_priced.Removed()
+					//delete(pool.all, hash)
+					old.RemStatus = true
+					pool.all[hash] = old
+					pool.priority_priced.Removed(hash)
 					return
 				}
 			}
@@ -784,8 +790,8 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 
 	// Otherwise discard any previous transaction and mark this
 	if old.Tx != nil {
-		delete(pool.all, old.Tx.Hash())
-		pool.priority_priced.Removed()
+		//delete(pool.all, old.Tx.Hash())
+		pool.priority_priced.Removed(old.Tx.Hash())
 	}
 	// Failsafe to work around direct pending inserts (tests)
 	if pool.all[tx_hash] == nil {
@@ -816,10 +822,9 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 			if !exist {
 				list = append(list, tx)
 			}
-
 		}
 		pool.pending[hash] = list
-
+		pool.all[hash] = old
 	}
 	// Set the potentially new pending nonce and notify any subsystems of the new tx
 	if len(tx.From) > 0 {
@@ -1127,19 +1132,20 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 // Get returns a transaction if it is contained in the pool
 // and nil otherwise.
 func (pool *TxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash) {
-	// pool.mu.RLock()
-	// defer pool.mu.RUnlock()
+	pool.mu.RLock()
+	defer pool.mu.RUnlock()
 
 	tx := pool.all[hash]
+	log.Debug("get tx info by hash in txpool... ", "info", tx)
 	var u_hash common.Hash
 	pending, err := pool.Pending()
-	if err != nil {
-		return tx, (common.Hash{})
-	}
-	for unit_hash, txs := range pending {
-		for _, p_tx := range txs {
-			if p_tx.Tx.Hash().String() == hash.String() {
-				return tx, unit_hash
+	if err == nil {
+		for unit_hash, txs := range pending {
+			for _, p_tx := range txs {
+				if p_tx.Tx.Hash() == hash {
+					log.Debug("get tx info by hash in txpool... tx in unit hash:", "unit_hash", unit_hash, "p_tx", p_tx)
+					return p_tx, unit_hash
+				}
 			}
 		}
 	}
@@ -1155,13 +1161,13 @@ func (pool *TxPool) DeleteTx() error {
 				continue
 			} else {
 				// delete
-				// log.Debug("delete the non confirmed tx.")
+				log.Debug("delete the non confirmed tx(overtime).", "tx_hash", tx.Tx.Hash())
 				pool.DeleteTxByHash(hash)
 			}
 		}
 		if tx.CreationDate.Add(DefaultTxPoolConfig.Removetime).After(time.Now()) {
 			// delete
-			// log.Debug("delete the confirmed tx.")
+			log.Debug("delete the confirmed tx.", "tx_hash", tx.Tx.Hash())
 			pool.DeleteTxByHash(hash)
 		}
 	}
@@ -1174,8 +1180,8 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 	if !ok {
 		return errors.New(fmt.Sprintf("the tx(%s) isn't exist.", hash.String()))
 	}
-	log.Info("delete the tx.", "time", time.Now().Second()-tx.CreationDate.Second(), "hash", hash.String())
-	pool.priority_priced.Removed()
+	log.Debug("delete the tx.", "time", time.Now().Second()-tx.CreationDate.Second(), "hash", hash.String())
+	pool.priority_priced.Removed(hash)
 	delete(pool.all, hash)
 	// Remove the transaction from the pending lists and reset the account nonce
 	for unit_hash, list := range pool.pending {
@@ -1192,6 +1198,17 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 				if len(tx.From) > 0 {
 					for _, from := range tx.From {
 						delete(pool.beats, *from)
+					}
+				}
+				// delete outpoints 's
+				for _, msg := range tx.Tx.Messages() {
+					if msg.App == modules.APP_PAYMENT {
+						payment, ok := msg.Payload.(*modules.PaymentPayload)
+						if ok {
+							for _, input := range payment.Inputs {
+								delete(pool.outpoints, *input.PreviousOutPoint)
+							}
+						}
 					}
 				}
 				break
@@ -1217,7 +1234,7 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 	// Remove it from the list of known transactions
 	//delete(pool.all, hash)
 
-	pool.priority_priced.Removed()
+	pool.priority_priced.Removed(hash)
 	tx.Confirmed = true
 	pool.all[hash] = tx
 	// Remove the transaction from the pending lists and reset the account nonce
@@ -1317,7 +1334,7 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 		//delete(pool.all, hash)
 		tx.Confirmed = true
 		pool.all[hash] = tx
-		pool.priority_priced.Removed()
+		pool.priority_priced.Removed(hash)
 	}
 }
 func (pool *TxPool) RemoveTransaction(hash common.Hash, removeRedeemers bool) {
@@ -1363,17 +1380,33 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 					if input == nil {
 						break
 					}
-					if tx, ok := pool.outpoints[*input.PreviousOutPoint]; ok {
-						str := fmt.Sprintf("output %v already spent by "+
-							"transaction %x in the memory pool",
-							input.PreviousOutPoint, tx.Tx.Hash())
-						return errors.New(str)
+					//if tx, ok := pool.outpoints[*input.PreviousOutPoint]; ok {
+					//	str := fmt.Sprintf("output %v already spent by "+
+					//		"transaction %x in the memory pool",
+					//		input.PreviousOutPoint, tx.Tx.Hash())
+					//	return errors.New(str)
+					//}
+
+					if _, err := pool.OutPointIsSpend(input.PreviousOutPoint); err != nil {
+						return err
 					}
 				}
 			}
 		}
 	}
+
 	return nil
+}
+
+func (pool *TxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
+	if tx, ok := pool.outpoints[*outPoint]; ok {
+		str := fmt.Sprintf("output %v already spent by "+
+			"transaction %x in the memory pool",
+			outPoint, tx.Tx.Hash())
+		return true, errors.New(str)
+	}
+
+	return false, nil
 }
 
 func (pool *TxPool) CheckSpend(output modules.OutPoint) *modules.Transaction {
@@ -1452,7 +1485,7 @@ func (pool *TxPool) promoteExecutables(accounts []modules.OutPoint) {
 								if offenders[i].String() == hash.String() {
 									// Drop the transaction from the global pools too
 									delete(pool.all, hash)
-									pool.priority_priced.Removed()
+									pool.priority_priced.Removed(hash)
 									log.Trace("Removed fairness-exceeding pending transaction", "hash", hash)
 									pending--
 									break
@@ -1472,7 +1505,7 @@ func (pool *TxPool) promoteExecutables(accounts []modules.OutPoint) {
 							hash := tx.Tx.Hash()
 							if addr.String() == hash.String() {
 								delete(pool.all, hash)
-								pool.priority_priced.Removed()
+								pool.priority_priced.Removed(hash)
 								log.Trace("Removed fairness-exceeding pending transaction", "hash", hash)
 								pending--
 								break
@@ -1597,6 +1630,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			break
 			//continue
 		} else {
+			log.Debug("Txspool get  priority_pricedtx success.", "tx_info", tx)
 			if !tx.Pending && !tx.Confirmed {
 				// dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
 				if total += tx.Tx.Size(); total <= common.StorageSize(dagconfig.DefaultConfig.UnitTxSize) {
@@ -1617,4 +1651,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 // starts sending event to the given channel.
 func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
+}
+
+func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error) {
+	return pool.unit.GetTxFee(tx)
 }

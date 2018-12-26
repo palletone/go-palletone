@@ -48,8 +48,6 @@ import (
 type IUnitRepository interface {
 	//设置稳定单元的Hash
 	SetStableUnitHash(hash common.Hash)
-	//设置最新单元的Hash
-	SetLastUnitHash(hash common.Hash)
 	//清空Unstable数据，回滚到稳定点状态
 	RollbackToStableUnit()
 	//批量增加多个Unit，主要用于主链切换的情形
@@ -164,9 +162,6 @@ func (rep *UnitRepository) SetStableUnitHash(hash common.Hash) {
 	rep.dagdb.SetStableUnitHash(hash)
 }
 
-func (rep *UnitRepository) SetLastUnitHash(hash common.Hash) {
-	rep.dagdb.SetLastUnitHash(hash)
-}
 func (rep *UnitRepository) RollbackToStableUnit() {
 	//TODO Devin
 }
@@ -251,13 +246,19 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 		additions[addr] = contractAddition
 	}
 	//coinbase, err := CreateCoinbase(mAddr, fees+awards, asset, t)
-	coinbase, err := CreateCoinbase(mAddr, fees, additions, asset, t)
-
+	coinbase, rewards, err := CreateCoinbase(mAddr, fees, additions, asset, t)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
-	txs := modules.Transactions{coinbase}
+	// 若配置增发，或者该单元包含有效交易（rewards>0），则将增发奖励和交易费全发给该mediator。
+	txs := make(modules.Transactions, 0)
+	if rewards > 0 || dagconfig.DefaultConfig.IsRewardCoin {
+		log.Debug("=======================Is rewards && coinbase tx info ================", "IsReward", dagconfig.DefaultConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
+		txs = append(txs, coinbase)
+	} else {
+		//log.Debug("======================= success  ================", "IsReward", dagconfig.DefaultConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
+	}
 	// step6 get unit's txs in txpool's txs
 	//TODO must recover
 	if len(poolTxs) > 0 {
@@ -829,7 +830,7 @@ To get unit information by its ChainIndex
 To create coinbase transaction
 */
 
-func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Address]*modules.Addition, asset *modules.Asset, t time.Time) (*modules.Transaction, error) {
+func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Address]*modules.Addition, asset *modules.Asset, t time.Time) (*modules.Transaction, int64, error) {
 	//创建合约保证金币龄的奖励output
 	payload := modules.PaymentPayload{}
 	if len(addition) != 0 {
@@ -851,7 +852,7 @@ func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Add
 	// setp1. create P2PKH script
 	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 	// step. compute total income
-	totalIncome := int64(income) + int64(ComputeInterest())
+	totalIncome := int64(income) + int64(ComputeRewards())
 	// step2. create payload
 	createT := big.Int{}
 	input := modules.Input{
@@ -878,7 +879,7 @@ func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Add
 	// coinbase.CreationDate = coinbase.CreateDate()
 	//coinbase.TxHash = coinbase.Hash()
 
-	return coinbase, nil
+	return coinbase, totalIncome, nil
 }
 
 /**

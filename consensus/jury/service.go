@@ -32,7 +32,6 @@ import (
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -71,7 +70,7 @@ type iDag interface {
 	IsActiveMediator(add common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
-		msg *modules.Message) (*modules.Transaction, uint64, error)
+		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 }
 
 type Juror struct {
@@ -99,21 +98,19 @@ type contractTx struct {
 }
 
 type Processor struct {
-	name     string
-	ptype    PeerType
+	name     string //no user
 	ptn      PalletOne
 	dag      iDag
 	local    map[common.Address]*JuryAccount //[]common.Address //local account addr
 	contract *contracts.Contract
 	locker   *sync.Mutex
 	quit     chan struct{}
-	mtx      map[common.Hash]*contractTx
+	mtx      map[common.Hash]*contractTx //all contract buffer
 
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
 	contractSigFeed   event.Feed
 	contractSigScope  event.SubscriptionScope
-	idag              dag.IDag
 }
 
 func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract, cfg *Config) (*Processor, error) {
@@ -260,7 +257,7 @@ func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
 	if err == nil || len(nodes) < 1 {
 		return errors.New("ProcessContractSigEvent getLocalNodesInfo fail")
 	}
-	node := nodes[0] //todo mult node
+	node := nodes[0]                                            //todo mult node
 	if node.ntype == TMediator /*node.ntype& TMediator != 0*/ { //mediator
 		if getTxSigNum(event.Tx) >= CONTRACT_SIG_NUM {
 			ctx.rstTx = event.Tx
@@ -349,11 +346,16 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 			log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
 			continue
 		}
-		log.Debug("AddContractLoop", "tx request id", tx.RequestHash().String())
+		if false == checkTxValid(ctx.rstTx) {
+			log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
+			continue
+		}
+
 		if err = txpool.AddLocal(txspool.TxtoTxpoolTx(txpool, tx)); err != nil {
 			log.Error("AddContractLoop", "error", err.Error())
 			continue
 		}
+		log.Debug("AddContractLoop", "Tx reqId", tx.RequestHash().String(), "Tx hash", tx.Hash().String())
 	}
 	return nil
 }
@@ -379,16 +381,14 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction) bool {
 
 	ctx, ok := p.mtx[reqId]
 	if ctx != nil && (ctx.valid == false || ctx.executable == false) {
+		log.Debug("CheckContractTxValid ctx != nil && (ctx.valid == false || ctx.executable == false)")
 		return false
 	}
-
 	if ok && ctx.rstTx != nil {
-		//比较msg
-		log.Debug("CheckContractTxValid", "compare txid", reqId)
+		log.Debug("CheckContractTxValid ok && ctx.rstTx != nil") // todo del
 		return msgsCompare(ctx.rstTx.TxMessages, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 	} else {
-		//runContractCmd
-		//比较msg
+		log.Debug("CheckContractTxValid  ctx.rstTx == nil") //todo del
 		_, msgs, err := runContractCmd(p.dag, p.contract, tx)
 		if err != nil {
 			log.Error("CheckContractTxValid runContractCmd", "error", err.Error())
@@ -403,7 +403,7 @@ func (p *Processor) SubscribeContractSigEvent(ch chan<- ContractSigEvent) event.
 	return p.contractSigScope.Track(p.contractSigFeed.Subscribe(ch))
 }
 
-func (p *Processor) nodeContractExecutable(accounts map[common.Address]*JuryAccount /*addrs []common.Address*/ , tx *modules.Transaction) bool {
+func (p *Processor) nodeContractExecutable(accounts map[common.Address]*JuryAccount /*addrs []common.Address*/, tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
 	}
@@ -511,8 +511,9 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 }
 
 //tmp
-func (p *Processor) creatContractTxReqBroadcast(from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message) ([]byte, error) {
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, msg)
+func (p *Processor) creatContractTxReqBroadcast(from, to common.Address, daoAmount, daoFee uint64,
+	msg *modules.Message) ([]byte, error) {
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, msg, p.ptn.TxPool())
 	if err != nil {
 		return nil, err
 	}
@@ -546,80 +547,6 @@ func (p *Processor) creatContractTxReqBroadcast(from, to common.Address, daoAmou
 	//go p.ProcessContractEvent(&ContractExeEvent{Tx: tx})
 
 	return reqId[:], nil
-}
-
-func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) ([]byte, error) {
-	if from == (common.Address{}) || to == (common.Address{}) || tplName == "" || path == "" || version == "" {
-		log.Error("ContractInstallReq", "param is error")
-		return nil, errors.New("ContractInstallReq request param is error")
-	}
-
-	log.Debug("ContractInstallReq", "enter, tplName ", tplName, "path", path, "version", version)
-	msgReq := &modules.Message{
-		App: modules.APP_CONTRACT_TPL_REQUEST,
-		Payload: &modules.ContractInstallRequestPayload{
-			TplName: tplName,
-			Path:    path,
-			Version: version,
-		},
-	}
-	return p.creatContractTxReqBroadcast(from, to, daoAmount, daoFee, msgReq)
-}
-
-func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
-	if from == (common.Address{}) || to == (common.Address{}) || templateId == nil {
-		log.Error("ContractDeployReq", "param is error")
-		return nil, errors.New("ContractDeployReq request param is error")
-	}
-	log.Debug("ContractDeployReq", "enter, templateId ", templateId)
-
-	msgReq := &modules.Message{
-		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
-		Payload: &modules.ContractDeployRequestPayload{
-			TplId:   templateId,
-			TxId:    txid,
-			Args:    args,
-			Timeout: timeout,
-		},
-	}
-	return p.creatContractTxReqBroadcast(from, to, daoAmount, daoFee, msgReq)
-}
-
-func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, args [][]byte, timeout time.Duration) ([]byte, error) {
-	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) || args == nil {
-		log.Error("ContractInvokeReq", "param is error")
-		return nil, errors.New("ContractInvokeReq request param is error")
-	}
-
-	log.Debug("ContractInvokeReq", "enter, contractId ", contractId)
-	msgReq := &modules.Message{
-		App: modules.APP_CONTRACT_INVOKE_REQUEST,
-		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId:   contractId.Bytes(),
-			FunctionName: "",
-			Args:         args,
-			Timeout:      timeout,
-		},
-	}
-	return p.creatContractTxReqBroadcast(from, to, daoAmount, daoFee, msgReq)
-}
-
-func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, txid string, deleteImage bool) ([]byte, error) {
-	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) {
-		log.Error("ContractStopReq", "param is error")
-		return nil, errors.New("ContractStopReq request param is error")
-	}
-
-	log.Debug("ContractStopReq", "enter, contractId ", contractId)
-	msgReq := &modules.Message{
-		App: modules.APP_CONTRACT_STOP_REQUEST,
-		Payload: &modules.ContractStopRequestPayload{
-			ContractId:  contractId[:],
-			Txid:        txid,
-			DeleteImage: deleteImage,
-		},
-	}
-	return p.creatContractTxReqBroadcast(from, to, daoAmount, daoFee, msgReq)
 }
 
 func (p *Processor) ContractTxDeleteLoop() {

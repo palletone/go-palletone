@@ -95,6 +95,7 @@ type TxPoolTransaction struct {
 	Nonce        uint64    // transaction'hash maybe repeat.
 	Pending      bool
 	Confirmed    bool
+	RemStatus    bool        // will remove txspool
 	TxFee        *InvokeFees `json:"tx_fee"`
 	Index        int         `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
@@ -175,11 +176,8 @@ func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
 func (tx *Transaction) Hash() common.Hash {
-	//if tx.TxHash != (common.Hash{}) {
-	//	return tx.TxHash
-	//}
+
 	v := rlp.RlpHash(tx)
-	//tx.TxHash = v
 	return v
 }
 
@@ -512,14 +510,12 @@ func (msg *Transaction) baseSize() int {
 	b, _ := rlp.EncodeToBytes(msg)
 	return len(b)
 }
-func (tx *Transaction) IsContractInvoke() bool {
-
+func (tx *Transaction) IsContractTx() bool {
 	for _, m := range tx.TxMessages {
-		if m.App == APP_CONTRACT_INVOKE_REQUEST {
+		if m.App >= APP_CONTRACT_TPL && m.App <= APP_SIGNATURE {
 			return true
 		}
 	}
-
 	return false
 }
 

@@ -188,8 +188,8 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	pindex := number.Index
 
 	log.Debug("ProtocolManager", "synchronise local unit index:", index, "local peer index:", pindex, "header hash:", pHead)
-	if common.EmptyHash(pHead) || (index >= pindex && pindex > 0) {
-		//if index >= pindex && pindex > 0 {
+	if index >= pindex && pindex > 0 /*||common.EmptyHash(pHead) */ {
+		atomic.StoreUint32(&pm.acceptTxs, 1)
 		log.Debug("===synchronise peer.index < local index===", "local peer.index:", pindex, "local index:", number.Index, "header hash:", pHead)
 		return
 	}

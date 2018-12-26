@@ -108,8 +108,9 @@ func (dag *Dag) IsSynced() bool {
 	gp := dag.GetGlobalProp()
 	dgp := dag.GetDynGlobalProp()
 
-	nowFine := time.Now()
-	now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
+	//nowFine := time.Now()
+	//now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
+	now := time.Now()
 	nextSlotTime := modules.GetSlotTime(gp, dgp, 1)
 
 	if nextSlotTime.Before(now) {
@@ -130,7 +131,7 @@ func (d *Dag) UnitIrreversibleTime() uint {
 }
 
 func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
-	unit, err := d.GetUnit(hash)
+	unit, err := d.GetUnitByHash(hash)
 	if unit != nil && err == nil {
 		lin := d.GetDynGlobalProp().LastIrreversibleUnitNum
 		if unit.NumberU64() <= uint64(lin) {
@@ -142,7 +143,7 @@ func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
 }
 
 func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
-	unit, err := d.GetUnit(unitHash)
+	unit, err := d.GetUnitByHash(unitHash)
 	if err != nil {
 		return err
 	}

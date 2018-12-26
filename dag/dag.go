@@ -22,6 +22,7 @@ package dag
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -42,21 +43,22 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
-	"strings"
 )
 
 type Dag struct {
-	Cache         *freecache.Cache
-	Db            ptndb.Database
-	currentUnit   atomic.Value
-	unitRep       dagcommon.IUnitRepository
-	dagdb         storage.IDagDb
-	utxodb        storage.IUtxoDb
-	statedb       storage.IStateDb
-	propdb        storage.IPropertyDb
-	utxoRep       dagcommon.IUtxoRepository
-	propRep       dagcommon.IPropRepository
-	stateRep      dagcommon.IStateRepository
+	Cache       *freecache.Cache
+	Db          ptndb.Database
+	currentUnit atomic.Value
+
+	unitRep  dagcommon.IUnitRepository
+	dagdb    storage.IDagDb
+	utxodb   storage.IUtxoDb
+	statedb  storage.IStateDb
+	propdb   storage.IPropertyDb
+	utxoRep  dagcommon.IUtxoRepository
+	propRep  dagcommon.IPropRepository
+	stateRep dagcommon.IStateRepository
+
 	validate      dagcommon.Validator
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
@@ -176,11 +178,6 @@ func (d *Dag) GetMemUnitbyHash(hash common.Hash) (*modules.Unit, error) {
 
 	unit, err := d.Memdag.GetUnit(hash)
 	return unit, err
-}
-
-// GetUnitByHash: get unit from dagdb
-func (d *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-	return d.dagdb.GetUnit(hash)
 }
 
 func (d *Dag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) {
@@ -429,7 +426,7 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 		if err != nil {
 			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveHashByNumber Error", i)
 		}
-		// ###save HeaderCanon & HeaderKey & HeadUnitKey & HeadFastKey
+		// ###save HeaderCanon & HeaderKey & HeadUnitHash & HeadFastKey
 		err = d.dagdb.UpdateHeadByBatch(hash, index)
 		if err != nil {
 			return i, err
@@ -641,7 +638,24 @@ func (d *Dag) GetHeadHeaderHash() (common.Hash, error) {
 }
 
 func (d *Dag) GetHeadUnitHash() (common.Hash, error) {
-	return d.dagdb.GetHeadUnitHash()
+	unit := new(modules.Unit)
+	var err0 error
+	var mem_hash common.Hash
+	if d.Memdag != nil {
+		unit, err0 = d.Memdag.GetCurrentUnit(modules.NewPTNIdType(), 0)
+		if err0 != nil {
+			log.Debug("get mem current unit info", "error", err0, "hash", unit.Hash().String())
+		}
+		mem_hash = unit.Hash()
+	}
+	head_hash, err := d.dagdb.GetHeadUnitHash()
+	head_unit, _ := d.GetUnitByHash(head_hash)
+	if head_unit != nil {
+		if unit.NumberU64() > head_unit.NumberU64() {
+			return mem_hash, err
+		}
+	}
+	return head_hash, err
 }
 
 func (d *Dag) GetHeadFastUnitHash() (common.Hash, error) {
@@ -818,6 +832,7 @@ func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map
 	//TODO only get one token's UTXO
 	all, err := d.utxodb.GetAddrUtxos(addr)
 	if d.utxos_cache != nil {
+		assetStr := asset.String()
 		for hash, utxos := range d.utxos_cache {
 			for key, utxo := range utxos {
 				if utxo == nil {
@@ -828,7 +843,7 @@ func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map
 					address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
 					if err == nil {
 						if address.Equal(addr) {
-							if strings.Compare(utxo.Asset.String(), asset.String()) == 0 {
+							if strings.Compare(utxo.Asset.String(), assetStr) == 0 {
 								if old, has := all[key]; has {
 									// merge
 									if old.IsSpent() {
@@ -1118,7 +1133,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
 		return nil, fmt.Errorf("Create unit: %s", err.Error())
 	}
-	coinbase, err := dagcommon.CreateCoinbase(&addr, 0, nil, &asset, time.Now())
+	coinbase, _, err := dagcommon.CreateCoinbase(&addr, 0, nil, &asset, time.Now())
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -1379,4 +1394,9 @@ func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 // GetReqIdByTxHash
 func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
 	return d.dagdb.GetReqIdByTxHash(hash)
+}
+
+// GetTextHash
+func (d *Dag) GetTextHash(hash common.Hash) ([]byte, error) {
+	return d.dagdb.GetTextHash(hash)
 }

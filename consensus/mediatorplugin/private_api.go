@@ -97,7 +97,7 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (TxExecuteResult, e
 	}
 
 	// 1. 创建交易
-	tx, fee, err := a.dag.GenMediatorCreateTx(addr, &args.MediatorCreateOperation)
+	tx, fee, err := a.dag.GenMediatorCreateTx(addr, &args.MediatorCreateOperation, a.ptn.TxPool())
 	if err != nil {
 		return res, err
 	}
@@ -149,7 +149,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (TxExecuteResult
 	}
 
 	// 1. 创建交易
-	tx, fee, err := a.dag.GenVoteMediatorTx(voter, mediator)
+	tx, fee, err := a.dag.GenVoteMediatorTx(voter, mediator, a.ptn.TxPool())
 	if err != nil {
 		return res, err
 	}

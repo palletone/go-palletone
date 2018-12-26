@@ -23,6 +23,7 @@ package storage
 import (
 	"bytes"
 
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -138,24 +139,19 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 	iter := statedb.db.NewIteratorWithPrefix(constants.ACCOUNT_INFO_PREFIX)
 	for iter.Next() {
 		key := iter.Key()
-		if key == nil {
-			continue
-		}
+		addB := bytes.TrimPrefix(key, constants.ACCOUNT_INFO_PREFIX)
+		add := common.BytesToAddress(addB)
 
 		value := iter.Value()
-		if value == nil {
-			continue
-		}
-
 		acc := newAccountInfo()
 		err := rlp.DecodeBytes(value, acc)
 		if err != nil {
-			statedb.logger.Debugf("Error in Decoding Bytes to AccountInfo: %s", err)
+			statedb.logger.Debug(fmt.Sprintln("Error in Decoding Bytes to AccountInfo: ", err,
+				"\nkey: ", key, "\naddress: ", add.Str(), "\nvalue: ", value))
 			continue
 		}
 
-		addB := bytes.TrimPrefix(key, constants.ACCOUNT_INFO_PREFIX)
-		result[common.BytesToAddress(addB)] = acc.accountToInfo()
+		result[add] = acc.accountToInfo()
 	}
 
 	return result

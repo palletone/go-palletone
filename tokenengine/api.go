@@ -21,16 +21,14 @@
 package tokenengine
 
 import (
+	"bytes"
 	"fmt"
+	"sort"
 
 	"github.com/palletone/go-palletone/common"
-	//"github.com/btcsuite/btcd/btcec"
-	"bytes"
-
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
-	"sort"
 )
 
 const (
@@ -253,9 +251,10 @@ func SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScr
 		if msg.App == modules.APP_PAYMENT {
 			pay, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {
-				fmt.Println("Get Payment payload error:")
+				log.Debug(fmt.Sprintln("Get Payment payload error:"))
+
 			} else {
-				fmt.Println("Payment payload:", pay)
+				log.Debug(fmt.Sprintln("Payment payload:", pay))
 			}
 			for j, input := range pay.Inputs {
 				utxoLockScript, _ := utxoLockScripts[*input.PreviousOutPoint]

@@ -25,12 +25,10 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/configure"
-
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	//"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/vote"
@@ -64,6 +62,9 @@ return all transactions' fee
 func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGenesis bool) (
 	map[common.Hash]modules.TxValidationCode, bool, error) {
 	if txs == nil || txs.Len() < 1 {
+		if !dagconfig.DefaultConfig.IsRewardCoin {
+			return nil, true, nil
+		}
 		return nil, false, fmt.Errorf("Transactions should not be empty.")
 	}
 
@@ -84,6 +85,7 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		}
 		// validate common property
 		//The first Tx(txIdx==0) is a coinbase tx.
+
 		txCode := validate.ValidateTx(tx, txIndex == 0, &worldState)
 		if txCode != modules.TxValidationCode_VALID {
 			log.Debug("ValidateTx", "txhash", txHash, "error validate code", txCode)
@@ -116,7 +118,7 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		if len(coinIn.Outputs) != 1 {
 			return nil, false, fmt.Errorf("Coinbase outputs error0.")
 		}
-		income := uint64(fee) + ComputeInterest()
+		income := uint64(fee) + ComputeRewards()
 		if coinIn.Outputs[0].Value < income {
 			return nil, false, fmt.Errorf("Coinbase outputs error: 1.%d", income)
 		}
@@ -136,6 +138,10 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 	if tx.TxMessages[0].App != modules.APP_PAYMENT { // 交易费
 		fmt.Printf("-----------ValidateTx , %d\n", tx.TxMessages[0].App)
 		return modules.TxValidationCode_INVALID_MSG
+	}
+
+	if validate.checkTxIsExist(tx) {
+		return modules.TxValidationCode_DUPLICATE_TXID
 	}
 	// validate transaction hash
 	//if !bytes.Equal(tx.TxHash.Bytes(), tx.Hash().Bytes()) {
@@ -624,4 +630,15 @@ func (validate *Validate) validateContractdeploy(tplId []byte, worldTmpState *ma
 
 func (validate *Validate) validateContractSignature(sinatures []modules.SignatureSet, tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
 	return modules.TxValidationCode_VALID
+}
+
+func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
+	if len(tx.TxMessages) > 2 {
+		reqId := tx.RequestHash()
+		if txHash, err := validate.dagdb.GetTxHashByReqId(reqId); err == nil && txHash != (common.Hash{}) {
+			log.Debug("checkTxIsExist", "transactions exist in dag, reqId:", reqId.String())
+			return true
+		}
+	}
+	return false
 }

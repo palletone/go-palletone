@@ -51,6 +51,19 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		Content: content,
 		Time:    time.Now().UTC(),
 	}
+	//获取同意列表，判断是否已经申请过了
+	agreeList, err := stub.GetAgreeForBecomeMediatorList()
+	if err != nil {
+		log.Error("Stub.GetAgreeForBecomeMediatorList err:", "error", err)
+		return shim.Error(err.Error())
+	}
+	if agreeList != nil {
+		isExist := isInMediatorInfolist(invokeAddr, agreeList)
+		if isExist {
+			log.Error("Node is exist in the agree list.")
+			return shim.Error("Node is exist in the agree list.")
+		}
+	}
 	//获取列表
 	becomeList, err := stub.GetBecomeMediatorApplyList()
 	if err != nil {
@@ -154,7 +167,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		}
 	} else {
 		log.Error("Please enter ok or no.")
-		shim.Error("Please enter ok or no.")
+		return shim.Error("Please enter ok or no.")
 	}
 	err = marshalAndPutStateForMediatorList(stub, "ListForApplyBecomeMediator", becomeList)
 	if err != nil {
@@ -445,11 +458,17 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 	}
 	//获取节点信息
 	mediator := &modules.MediatorInfo{}
+	isFound := false
 	for _, m := range agreeList {
 		if strings.Compare(m.Address, invokeAddr) == 0 {
 			mediator = m
+			isFound = true
 			break
 		}
+	}
+	if !isFound {
+		log.Error("Apply time is wrong.")
+		return shim.Error("Apply time is wrong.")
 	}
 	//获取账户
 	balance, err := stub.GetDepositBalance(invokeAddr)
@@ -609,13 +628,19 @@ func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr string, apply
 	}
 	//获取节点信息
 	cashbackNode := &modules.Cashback{}
+	isFound := false
 	for _, m := range listForCashback {
 		if m.CashbackAddress == cashbackAddr && m.CashbackTime == applyTime {
 			cashbackNode = m
+			isFound = true
 			break
 		}
 	}
-	newList := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
+	if !isFound {
+		log.Error("Apply time is wrong.")
+		return fmt.Errorf("%s", "Apply time is wrong.")
+	}
+	newList, _ := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
 	listForCashbackByte, err := json.Marshal(newList)
 	if err != nil {
 		log.Error("Json.Marshal err:", "error", err)
