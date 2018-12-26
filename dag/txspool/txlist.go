@@ -122,7 +122,12 @@ func (l *txPricedList) Put(tx *modules.TxPoolTransaction) *priorityHeap {
 func (l *txPricedList) Get() *modules.TxPoolTransaction {
 	if l != nil {
 		if l.items.Len() > 0 {
-			return heap.Pop(l.items).(*modules.TxPoolTransaction)
+			tx, ok := heap.Pop(l.items).(*modules.TxPoolTransaction)
+			if ok {
+				if tx.Tx != nil {
+					return tx
+				}
+			}
 		}
 	}
 	return nil
