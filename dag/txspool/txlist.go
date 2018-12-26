@@ -20,10 +20,11 @@ package txspool
 
 import (
 	"container/heap"
+	"math/big"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
-	"math/big"
 )
 
 // priceHeap is a heap.Interface implementation over transactions for retrieving

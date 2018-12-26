@@ -32,13 +32,13 @@ import (
 
 // only for serialization(storage)
 type accountInfo struct {
-	modules.AccountInfoBase
+	*modules.AccountInfoBase
 	VotedMediators []common.Address
 }
 
 func newAccountInfo() *accountInfo {
 	return &accountInfo{
-		AccountInfoBase: *modules.NewAccountInfoBase(),
+		AccountInfoBase: modules.NewAccountInfoBase(),
 		VotedMediators:  make([]common.Address, 0),
 	}
 }
@@ -139,27 +139,15 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 	iter := statedb.db.NewIteratorWithPrefix(constants.ACCOUNT_INFO_PREFIX)
 	for iter.Next() {
 		key := iter.Key()
-		if key == nil {
-			continue
-		}
-
-		keyDup := make([]byte, len(key))
-		copy(keyDup, key)
-		addB := bytes.TrimPrefix(keyDup, constants.ACCOUNT_INFO_PREFIX)
+		addB := bytes.TrimPrefix(key, constants.ACCOUNT_INFO_PREFIX)
 		add := common.BytesToAddress(addB)
 
 		value := iter.Value()
-		if value == nil {
-			continue
-		}
-
 		acc := newAccountInfo()
-		valueDup := make([]byte, len(value))
-		copy(valueDup, value)
-		err := rlp.DecodeBytes(valueDup, acc)
+		err := rlp.DecodeBytes(value, acc)
 		if err != nil {
 			statedb.logger.Debug(fmt.Sprintln("Error in Decoding Bytes to AccountInfo: ", err,
-				"\nkey: ", keyDup, "\naddress: ", add.Str(), "\nvalue: ", valueDup))
+				"\nkey: ", key, "\naddress: ", add.Str(), "\nvalue: ", value))
 			continue
 		}
 

@@ -22,6 +22,7 @@ package dag
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -42,21 +43,22 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
-	"strings"
 )
 
 type Dag struct {
-	Cache         *freecache.Cache
-	Db            ptndb.Database
-	currentUnit   atomic.Value
-	unitRep       dagcommon.IUnitRepository
-	dagdb         storage.IDagDb
-	utxodb        storage.IUtxoDb
-	statedb       storage.IStateDb
-	propdb        storage.IPropertyDb
-	utxoRep       dagcommon.IUtxoRepository
-	propRep       dagcommon.IPropRepository
-	stateRep      dagcommon.IStateRepository
+	Cache       *freecache.Cache
+	Db          ptndb.Database
+	currentUnit atomic.Value
+
+	unitRep  dagcommon.IUnitRepository
+	dagdb    storage.IDagDb
+	utxodb   storage.IUtxoDb
+	statedb  storage.IStateDb
+	propdb   storage.IPropertyDb
+	utxoRep  dagcommon.IUtxoRepository
+	propRep  dagcommon.IPropRepository
+	stateRep dagcommon.IStateRepository
+
 	validate      dagcommon.Validator
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
