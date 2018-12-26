@@ -267,6 +267,14 @@ func (s *PublicWalletAPI) GetBalance(ctx context.Context, address string) (map[s
 	return result, nil
 }
 
+func (s *PublicWalletAPI) GetTranscations(ctx context.Context, address string) (modules.Transactions, error) {
+	txs, err := s.b.GetAddrTransactions(address)
+	if err != nil {
+		return nil, err
+	}
+	return txs, nil
+}
+
 //sign rawtranscation
 //create raw transction
 func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to string, amount, password string, duration *uint64) (common.Hash, error) {
