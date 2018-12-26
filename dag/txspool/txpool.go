@@ -586,7 +586,6 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 	return txpool_tx
 }
 
-// CheckSpend checks whether the passed outpoint is already spent by a transaction in the txpool
 func PooltxToTx(pooltx *modules.TxPoolTransaction) *modules.Transaction {
 	return pooltx.Tx
 }
@@ -702,7 +701,6 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 					pool.outpoints[*txin.PreviousOutPoint] = tx
 				}
 			}
-
 		}
 	}
 	pool.priority_priced.Put(tx)
@@ -1409,6 +1407,7 @@ func (pool *TxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
 	return false, nil
 }
 
+// CheckSpend checks whether the passed outpoint is already spent by a transaction in the txpool
 func (pool *TxPool) CheckSpend(output modules.OutPoint) *modules.Transaction {
 	pool.mu.RLock()
 	tx := pool.outpoints[output]
