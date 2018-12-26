@@ -108,8 +108,9 @@ func (dag *Dag) IsSynced() bool {
 	gp := dag.GetGlobalProp()
 	dgp := dag.GetDynGlobalProp()
 
-	nowFine := time.Now()
-	now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
+	//nowFine := time.Now()
+	//now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
+	now := time.Now()
 	nextSlotTime := modules.GetSlotTime(gp, dgp, 1)
 
 	if nextSlotTime.Before(now) {
