@@ -55,6 +55,7 @@ type PalletOne interface {
 
 	ContractBroadcast(event ContractExeEvent)
 	ContractSigBroadcast(event ContractSigEvent)
+	ContractSpecialBroadcast(event ContractSpecialEvent)
 
 	GetLocalMediators() []common.Address
 	IsLocalActiveMediator(add common.Address) bool
@@ -155,48 +156,11 @@ func (p *Processor) Stop() error {
 	return nil
 }
 
-func (p *Processor) SubscribeContractEvent(ch chan<- ContractExeEvent) event.Subscription {
-	return p.contractExecScope.Track(p.contractExecFeed.Subscribe(ch))
-}
-
 func (p *Processor) isLocalActiveJury(add common.Address) bool {
 	if _, ok := p.local[add]; ok {
 		return p.dag.IsActiveJury(add)
 	}
 	return false
-}
-
-func (p *Processor) ProcessContractEvent(event *ContractExeEvent) error {
-	if event == nil {
-		return errors.New("ProcessContractEvent param is nil")
-	}
-	reqId := event.Tx.RequestHash()
-	if _, ok := p.mtx[reqId]; ok {
-		return nil
-	}
-	log.Debug("ProcessContractEvent", "enter, tx req id ", reqId)
-
-	if false == checkTxValid(event.Tx) {
-		return errors.New(fmt.Sprintf("ProcessContractEvent recv event Tx is invalid, txid:%s", reqId.String()))
-	}
-	execBool := p.nodeContractExecutable(p.local, event.Tx)
-	p.locker.Lock()
-	p.mtx[reqId] = &contractTx{
-		reqTx:      event.Tx,
-		rstTx:      nil,
-		tm:         time.Now(),
-		valid:      true,
-		executable: execBool, //todo
-	}
-	p.locker.Unlock()
-	log.Debug("ProcessContractEvent", "add tx req id ", reqId)
-	ctx := p.mtx[reqId]
-	if ctx.executable {
-		go p.runContractReq(ctx)
-	}
-	//broadcast contract request transaction event
-	go p.ptn.ContractBroadcast(*event)
-	return nil
 }
 
 func (p *Processor) getLocalNodesInfo() ([]*nodeInfo, error) {
@@ -221,65 +185,6 @@ func (p *Processor) getLocalNodesInfo() ([]*nodeInfo, error) {
 	return nodes, nil
 }
 
-//todo  对于接收到签名交易，而本地合约还未执行完成的情况后面完善
-func (p *Processor) ProcessContractSigEvent(event *ContractSigEvent) error {
-	if event == nil || len(event.Tx.TxMessages) < 1 {
-		return errors.New("ProcessContractSigEvent param is nil")
-	}
-	if false == checkTxValid(event.Tx) {
-		return errors.New("ProcessContractSigEvent event Tx is invalid")
-	}
-	reqId := event.Tx.RequestHash()
-	if _, ok := p.mtx[reqId]; !ok {
-		log.Debug("ProcessContractSigEvent", "local not find reqId,create it", reqId.String())
-		exec := p.nodeContractExecutable(p.local, event.Tx)
-		p.locker.Lock()
-		p.mtx[reqId] = &contractTx{
-			reqTx:      event.Tx, //todo 只截取请求部分
-			tm:         time.Now(),
-			valid:      true,
-			executable: exec, //default
-		}
-		ctx := p.mtx[reqId]
-		ctx.rcvTx = append(ctx.rcvTx, event.Tx)
-		p.locker.Unlock()
-
-		if ctx.executable == true {
-			go p.runContractReq(ctx)
-		}
-		return nil
-	}
-	ctx := p.mtx[reqId]
-
-	//如果是mediator，检查接收到的签名个数是否达到3个，如果3个，添加到rstTx，否则函数返回
-	//如果是jury，将接收到tx与本地执行后的tx进行对比，相同则添加签名到sigTx，如果满足三个签名且签名值最小则广播tx，否则函数返回
-	nodes, err := p.getLocalNodesInfo()
-	if err == nil || len(nodes) < 1 {
-		return errors.New("ProcessContractSigEvent getLocalNodesInfo fail")
-	}
-	node := nodes[0]                                            //todo mult node
-	if node.ntype == TMediator /*node.ntype& TMediator != 0*/ { //mediator
-		if getTxSigNum(event.Tx) >= CONTRACT_SIG_NUM {
-			ctx.rstTx = event.Tx
-		}
-	} else if node.ntype == TJury /*node.ntype&TJury != 0*/ { //jury
-		if ok, err := checkAndAddTxData(ctx.sigTx, event.Tx); err == nil && ok {
-			//获取签名数量，计算hash值是否最小，如果是则广播交易给Mediator,这里采用相同的签名广播接口，即ContractSigMsg
-			if getTxSigNum(ctx.sigTx) >= CONTRACT_SIG_NUM {
-				//计算hash值是否最小，如果最小则广播该交易
-				if localIsMinSigure(ctx.sigTx) == true {
-					go p.ptn.ContractSigBroadcast(ContractSigEvent{Tx: ctx.sigTx})
-				}
-			}
-		}
-	} else { //default
-		log.Info("ProcessContractSigEvent this node don't care this ContractSigEvent")
-		return nil
-	}
-
-	return errors.New(fmt.Sprintf("ProcessContractSigEvent err with tx id:%s", reqId.String()))
-}
-
 func (p *Processor) runContractReq(req *contractTx) error {
 	if req == nil {
 		return errors.New("runContractReq param is nil")
@@ -300,12 +205,10 @@ func (p *Processor) runContractReq(req *contractTx) error {
 	if isSystemContract(tx) {
 		req.rstTx = tx
 	} else {
-		//todo 这里默认取其中一个，实际配置只有一个
-		var account *JuryAccount
-		for _, account = range p.local {
-			break
+		account := p.getLocalAccount()
+		if account == nil{
+			return errors.New("runContractReq no local account")
 		}
-
 		sigTx, err := gen.GenContractSigTransction(account.Address, account.Password, tx, p.ptn.GetKeyStore())
 		if err != nil {
 			log.Error("runContractReq GenContractSigTransctions", "error", err.Error())
@@ -340,7 +243,6 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 			log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
 			continue
 		}
-
 		tx, err := gen.GenContractSigTransction(addr, "", ctx.rstTx, ks)
 		if err != nil {
 			log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
@@ -399,11 +301,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction) bool {
 	}
 }
 
-func (p *Processor) SubscribeContractSigEvent(ch chan<- ContractSigEvent) event.Subscription {
-	return p.contractSigScope.Track(p.contractSigFeed.Subscribe(ch))
-}
-
-func (p *Processor) nodeContractExecutable(accounts map[common.Address]*JuryAccount /*addrs []common.Address*/, tx *modules.Transaction) bool {
+func (p *Processor) nodeContractExecutable(accounts map[common.Address]*JuryAccount /*addrs []common.Address*/ , tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
 	}
@@ -510,19 +408,14 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 	return req[:], nil
 }
 
-//tmp
-func (p *Processor) creatContractTxReqBroadcast(from, to common.Address, daoAmount, daoFee uint64,
-	msg *modules.Message) ([]byte, error) {
+func (p *Processor) creatContractTxReq(from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message, isLocalInstall bool) ([]byte, *modules.Transaction, error) {
 	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, msg, p.ptn.TxPool())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	log.Debug("creatContractTxReq", "tx:", tx)
-
-	//tx.AddMessage(msg)
-	tx, err = p.ptn.SignGenericTransaction(from, tx)
-	if err != nil {
-		return nil, err
+	if tx, err = p.ptn.SignGenericTransaction(from, tx); err != nil {
+		return nil, nil, err
 	}
 	reqId := tx.RequestHash()
 	p.locker.Lock()
@@ -533,20 +426,30 @@ func (p *Processor) creatContractTxReqBroadcast(from, to common.Address, daoAmou
 		executable: true, //default
 	}
 	p.locker.Unlock()
-	txHex, _ := rlp.EncodeToBytes(tx)
-	log.Debugf("Signed ContractRequest hex:%x", txHex)
-	if p.mtx[reqId].executable {
-		if p.nodeContractExecutable(p.local, tx) == true {
-			go p.runContractReq(p.mtx[reqId])
+	ctx := p.mtx[reqId]
+	if isLocalInstall {
+		if err = p.runContractReq(ctx); err != nil {
+			return nil, nil, err
 		}
+		account := p.getLocalAccount()
+		if account == nil {
+			return nil, nil, errors.New("creatContractTxReq no local account")
+		}
+		ctx.rstTx, err = gen.GenContractSigTransction(account.Address, account.Password, ctx.rstTx, p.ptn.GetKeyStore())
+		if err != nil {
+			return nil, nil, err
+		}
+	} else if p.nodeContractExecutable(p.local, tx) == true {
+		go p.runContractReq(ctx)
 	}
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
+	//go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
+
 	//local
 	//go p.contractExecFeed.Send(ContractExeEvent{modules.NewTransaction([]*modules.Message{msgPay, msgReq})})
 	//go p.ProcessContractEvent(&ContractExeEvent{Tx: tx})
 
-	return reqId[:], nil
+	return reqId[:], tx, nil
 }
 
 func (p *Processor) ContractTxDeleteLoop() {
@@ -563,4 +466,13 @@ func (p *Processor) ContractTxDeleteLoop() {
 		}
 		p.locker.Unlock()
 	}
+}
+
+func (p *Processor) getLocalAccount() *JuryAccount {
+	//todo 这里默认取其中一个，实际配置只有一个
+	var account *JuryAccount
+	for _, account = range p.local {
+		break
+	}
+	return account
 }

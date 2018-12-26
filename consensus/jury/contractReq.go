@@ -1,14 +1,15 @@
 package jury
 
 import (
+	"time"
+
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/errors"
-	"time"
 )
 
-func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) ([]byte, error) {
+func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, local bool) ([]byte, error) {
 	if from == (common.Address{}) || to == (common.Address{}) || tplName == "" || path == "" || version == "" {
 		log.Error("ContractInstallReq", "param is error")
 		return nil, errors.New("ContractInstallReq request param is error")
@@ -23,7 +24,14 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 			Version: version,
 		},
 	}
-	return p.creatContractTxReqBroadcast(from, to, daoAmount, daoFee, msgReq)
+	reqId, tx, err := p.creatContractTxReq(from, to, daoAmount, daoFee, msgReq, true)
+	if err != nil {
+		return nil, err
+	}
+	//broadcast
+	go p.ptn.ContractSpecialBroadcast(ContractSpecialEvent{Tx: tx})
+
+	return reqId, nil
 }
 
 func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
@@ -42,7 +50,14 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 			Timeout: timeout,
 		},
 	}
-	return p.creatContractTxReqBroadcast(from, to, daoAmount, daoFee, msgReq)
+
+	reqId, tx, err := p.creatContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
+	if err != nil {
+		return nil, err
+	}
+	//broadcast
+	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
+	return reqId, nil
 }
 
 func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, args [][]byte, timeout time.Duration) ([]byte, error) {
@@ -61,7 +76,13 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 			Timeout:      timeout,
 		},
 	}
-	return p.creatContractTxReqBroadcast(from, to, daoAmount, daoFee, msgReq)
+	reqId, tx, err := p.creatContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
+	if err != nil {
+		return nil, err
+	}
+	//broadcast
+	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
+	return reqId, nil
 }
 
 func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, txid string, deleteImage bool) ([]byte, error) {
@@ -79,5 +100,11 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 			DeleteImage: deleteImage,
 		},
 	}
-	return p.creatContractTxReqBroadcast(from, to, daoAmount, daoFee, msgReq)
+	reqId, tx, err := p.creatContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
+	if err != nil {
+		return nil, err
+	}
+	//broadcast
+	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
+	return reqId, nil
 }

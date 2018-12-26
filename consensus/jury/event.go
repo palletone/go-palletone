@@ -32,5 +32,9 @@ type ContractExeEvent struct {
 }
 
 type ContractSigEvent struct {
-	Tx     *modules.Transaction
+	Tx *modules.Transaction
+}
+
+type ContractSpecialEvent struct {
+	Tx *modules.Transaction
 }

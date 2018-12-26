@@ -29,7 +29,8 @@ import (
 type MessageType byte
 
 const (
-	APP_PAYMENT MessageType = iota
+	APP_UNKNOW  MessageType = iota
+	APP_PAYMENT
 
 	APP_CONTRACT_TPL
 	APP_CONTRACT_DEPLOY

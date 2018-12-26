@@ -58,12 +58,13 @@ const (
 	SigShareMsg        = 0x0c
 	GroupSigMsg        = 0x0d
 
-	ContractExecMsg = 0x10
-	ContractSigMsg  = 0x11
-	GetNodeDataMsg  = 0x20
-	NodeDataMsg     = 0x21
-	GetReceiptsMsg  = 0x22
-	ReceiptsMsg     = 0x23
+	ContractExecMsg    = 0x10
+	ContractSigMsg     = 0x11
+	ContractSpecialMsg = 0x12
+	GetNodeDataMsg     = 0x20
+	NodeDataMsg        = 0x21
+	GetReceiptsMsg     = 0x22
+	ReceiptsMsg        = 0x23
 )
 
 type errCode int

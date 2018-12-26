@@ -277,6 +277,10 @@ func (s *PalletOne) ContractSigBroadcast(event jury.ContractSigEvent) {
 	s.protocolManager.ContractSigBroadcast(event)
 }
 
+func (s *PalletOne) ContractSpecialBroadcast(event jury.ContractSpecialEvent) {
+	s.protocolManager.ContractSpecialBroadcast(event)
+}
+
 func (s *PalletOne) GetLocalMediators() []common.Address {
 	return s.mediatorPlugin.LocalMediators()
 }
