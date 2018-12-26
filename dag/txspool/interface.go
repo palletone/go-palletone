@@ -52,4 +52,5 @@ type ITxPool interface {
 	Stats() (int, int)
 	Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
 	GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error)
+	OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
 }

@@ -1387,7 +1387,7 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 					//	return errors.New(str)
 					//}
 
-					if err := pool.OutPointIsSpend(input.PreviousOutPoint); err != nil {
+					if _, err := pool.OutPointIsSpend(input.PreviousOutPoint); err != nil {
 						return err
 					}
 				}
@@ -1398,15 +1398,15 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 	return nil
 }
 
-func (pool *TxPool) OutPointIsSpend(outPoint *modules.OutPoint) error {
+func (pool *TxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
 	if tx, ok := pool.outpoints[*outPoint]; ok {
 		str := fmt.Sprintf("output %v already spent by "+
 			"transaction %x in the memory pool",
 			outPoint, tx.Tx.Hash())
-		return errors.New(str)
+		return true, errors.New(str)
 	}
 
-	return nil
+	return false, nil
 }
 
 func (pool *TxPool) CheckSpend(output modules.OutPoint) *modules.Transaction {
