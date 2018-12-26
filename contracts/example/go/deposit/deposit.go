@@ -217,7 +217,7 @@ func initDepositCfg(stub shim.ChaincodeStubInterface) {
 	//	fmt.Println(err.Error())
 	//	return
 	//}
-	foundationAddress = "P12QgmiPe4E8Y1DwC7sSchEQhJHXF35AU78"
+	foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
 	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
 
 	depositAmountsForMediatorStr, err := stub.GetSystemConfig("DepositAmountForMediator")
