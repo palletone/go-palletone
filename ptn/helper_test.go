@@ -130,6 +130,10 @@ type testTxPool struct {
 // AddRemotes appends a batch of transactions to the pool, and notifies any
 // listeners if the addition channel is non nil
 
+func (p *testTxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
+	return true, nil
+}
+
 func (p *testTxPool) AddLocal(tx *modules.TxPoolTransaction) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -140,6 +144,7 @@ func (p *testTxPool) AddLocal(tx *modules.TxPoolTransaction) error {
 	}
 	return nil
 }
+
 func (p *testTxPool) AddLocals(txs []*modules.TxPoolTransaction) []error {
 	errs := make([]error, 0)
 	for _, tx := range txs {
@@ -147,6 +152,7 @@ func (p *testTxPool) AddLocals(txs []*modules.TxPoolTransaction) []error {
 	}
 	return errs
 }
+
 func (p *testTxPool) AllHashs() []*common.Hash {
 	hashs := make([]*common.Hash, 0)
 	p.lock.RLock()
@@ -157,6 +163,7 @@ func (p *testTxPool) AllHashs() []*common.Hash {
 	}
 	return hashs
 }
+
 func (p *testTxPool) AddRemotes(txs []*modules.Transaction) []error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
