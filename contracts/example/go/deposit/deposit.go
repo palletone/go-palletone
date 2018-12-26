@@ -22,7 +22,6 @@ package deposit
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -46,13 +45,14 @@ type DepositChaincode struct {
 }
 
 func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
-	fmt.Println("*** DepositChaincode system contract init ***")
+	log.Info("*** DepositChaincode system contract init ***")
 	return shim.Success([]byte("ok"))
 }
 
 func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	//初始化保证金合约的配置
 	if !isLoad {
+		log.Info("init deposit contract config")
 		initDepositCfg(stub)
 	}
 	funcName, args := stub.GetFunctionAndParameters()
@@ -197,7 +197,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 	}
-	return shim.Success([]byte("Invoke error"))
+	return shim.Error("Please enter validate function name.")
 }
 
 func initDepositCfg(stub shim.ChaincodeStubInterface) {
@@ -520,40 +520,6 @@ func (d *DepositChaincode) handleForfeitureDepositApplication(stub shim.Chaincod
 	}
 }
 
-//不同意提取请求，则直接从提保证金列表中移除该节点
-//func (d *DepositChaincode) disagreeForApplyCashback(stub shim.ChaincodeStubInterface, cashbackAddr string, applyTime int64) pb.Response {
-//	//获取没收列表
-//	listForCashback, err := stub.GetListForCashback()
-//	if err != nil {
-//		log.Error("Stub.GetListForCashback err:", "error", err)
-//		return shim.Error(err.Error())
-//	}
-//	if listForCashback == nil {
-//		log.Error("Stub.GetListForCashback err: list is nil.")
-//		return shim.Error("Stub.GetListForCashback err: list is nil.")
-//	}
-//	isExist := isInCashbacklist(cashbackAddr, listForCashback)
-//	if !isExist {
-//		log.Error("Node is not exist in the cashback list.")
-//		return shim.Error("Node is not exist in the cashback list.")
-//	}
-//	//fmt.Println("moveInApplyForCashbackList==>", listForCashback)
-//	newList := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
-//	listForCashbackByte, err := json.Marshal(newList)
-//	if err != nil {
-//		log.Error("Json.Marshal err:", "error", err)
-//		return shim.Error(err.Error())
-//	}
-//	//更新列表
-//	err = stub.PutState("ListForCashback", listForCashbackByte)
-//	if err != nil {
-//		log.Error("Stub.PutState err:", "error", err)
-//		return shim.Error(err.Error())
-//	}
-//	//fmt.Println("moveInApplyForCashbackList==>", listForCashback)
-//	return shim.Success([]byte("ok"))
-//}
-
 //不同意这样没收请求，则直接从没收列表中移除该节点
 func (d *DepositChaincode) disagreeForApplyForfeiture(stub shim.ChaincodeStubInterface, forfeiture string, applyTime int64) pb.Response {
 	//获取没收列表
@@ -653,7 +619,7 @@ func (d *DepositChaincode) agreeForApplyForfeiture(stub shim.ChaincodeStubInterf
 	case forfeiture.ForfeitureRole == "Developer":
 		return d.handleDeveloperForfeitureDeposit(foundationAddr, forfeiture, balance, stub)
 	default:
-		return shim.Error("role error")
+		return shim.Error("Please enter validate role.")
 	}
 }
 
