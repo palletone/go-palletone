@@ -684,7 +684,7 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmoun
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
 	rsp, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
-	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
 
 	return hex.EncodeToString(rsp), err
 }

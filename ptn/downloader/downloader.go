@@ -350,7 +350,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode
 
 	// Post a user notification of the sync (only once per session)
 	if atomic.CompareAndSwapInt32(&d.notified, 0, 1) {
-		log.Info("Downloader synchronisation started")
+		log.Debug("Downloader synchronisation started")
 	}
 	// Reset the queue, peer set and wake channels to clean any internal leftover state
 	d.queue.Reset()

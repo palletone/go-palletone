@@ -471,7 +471,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if tx.IsContractTx() {
 			if !pm.contractProc.CheckContractTxValid(tx) {
 				log.Debug("TxMsg", "CheckContractTxValid is false")
-				return nil//errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
+				return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
 			}
 		}
 
@@ -615,7 +615,7 @@ func (pm *ProtocolManager) ContractSigLocalSend(event jury.ContractSigEvent) {
 }
 
 func (pm *ProtocolManager) ContractBroadcast(event jury.ContractExeEvent) {
-	log.Info("ContractBroadcast", "event", event.Tx.Hash())
+	log.Debug("ContractBroadcast", "event", event.Tx.Hash())
 	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {
