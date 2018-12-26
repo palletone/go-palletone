@@ -42,14 +42,14 @@ func NewAccountInfoBase() *AccountInfoBase {
 }
 
 type AccountInfo struct {
-	AccountInfoBase
+	*AccountInfoBase
 	//当前账户投票的Mediator
 	VotedMediators map[common.Address]bool
 }
 
 func NewAccountInfo() *AccountInfo {
 	return &AccountInfo{
-		AccountInfoBase: *NewAccountInfoBase(),
+		AccountInfoBase: NewAccountInfoBase(),
 		VotedMediators:  make(map[common.Address]bool),
 	}
 }

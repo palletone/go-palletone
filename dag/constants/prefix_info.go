@@ -69,7 +69,7 @@ var (
 	CONTRACT_ATTRI    = []byte("contract") // like contract_[contract address]_[key]
 	UTXO_PREFIX       = []byte("uo")
 	UTXO_INDEX_PREFIX = []byte("ui")
-	ASSET_INFO_PREFIX = []byte("ai")
+	ASSET_INFO_PREFIX = []byte("pi") // ACCOUNT_INFO_PREFIX is also "ai"  asset=property
 
 	// token info
 	TOKENTYPE  = []byte("tp") // tp[types]
