@@ -204,14 +204,18 @@ func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
 }
 
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-	if dag.Memdag != nil {
-		unit, err := dag.Memdag.GetUnit(hash)
-		if err == nil && unit != nil {
-			return unit, nil
-		}
-		log.Debug("get unit by hash is failed.", "hash", hash)
+	unit, err := dag.dagdb.GetUnit(hash)
+
+	if err != nil && dag.Memdag != nil {
+		unit, err = dag.Memdag.GetUnit(hash)
 	}
-	return dag.dagdb.GetUnit(hash)
+
+	if err != nil {
+		log.Debug("get unit by hash is failed.", "hash", hash)
+		return nil, err
+	}
+
+	return unit, nil
 }
 
 func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
