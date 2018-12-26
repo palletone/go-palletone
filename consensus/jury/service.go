@@ -30,11 +30,11 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/contracts"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 )
 
 type PeerType = int
@@ -206,7 +206,7 @@ func (p *Processor) runContractReq(req *contractTx) error {
 		req.rstTx = tx
 	} else {
 		account := p.getLocalAccount()
-		if account == nil{
+		if account == nil {
 			return errors.New("runContractReq no local account")
 		}
 		sigTx, err := gen.GenContractSigTransction(account.Address, account.Password, tx, p.ptn.GetKeyStore())

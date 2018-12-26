@@ -20,14 +20,10 @@ var (
 type AccountConf struct {
 	Address,
 	Password string
-	//InitPartSec,
-	//InitPartPub string
 }
 type JuryAccount struct {
 	Address     common.Address
 	Password    string
-	//InitPartSec kyber.Scalar
-	//InitPartPub kyber.Point
 }
 type Config struct {
 	Accounts []*AccountConf // the set of the mediator info
@@ -35,21 +31,17 @@ type Config struct {
 
 func (aConf *AccountConf) configToAccount() *JuryAccount {
 	addr := core.StrToMedAdd(aConf.Address)
-	//sec, _ := core.StrToScalar(aConf.InitPartSec)
-	//pub, _ := core.StrToPoint(aConf.InitPartPub)
 
 	medAcc := &JuryAccount{
 		addr,
 		aConf.Password,
-		//sec,
-		//pub,
 	}
 	return medAcc
 }
 
 var DefaultConfig = Config{
 	Accounts: []*AccountConf{
-		&AccountConf{core.DefaultJuryAddr, DefaultPassword	},/*,DefaultInitPartSec, core.DefaultJuryInitPartPub*/
+		&AccountConf{core.DefaultJuryAddr, DefaultPassword	},
 	},
 }
 

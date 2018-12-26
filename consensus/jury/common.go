@@ -308,7 +308,6 @@ func getTxSigNum(tx *modules.Transaction) int {
 }
 
 func checkTxValid(tx *modules.Transaction) bool {
-	//printTxInfo(tx)
 	return cm.ValidateTxSig(tx)
 }
 
