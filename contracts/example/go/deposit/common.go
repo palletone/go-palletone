@@ -30,10 +30,12 @@ func updateForPayValue(balance *modules.DepositBalance, invokeTokens *modules.In
 func marshalAndPutStateForBalance(stub shim.ChaincodeStubInterface, nodeAddr string, balance *modules.DepositBalance) error {
 	balanceByte, err := json.Marshal(balance)
 	if err != nil {
+		log.Error("json.Marshal err:", "error", err)
 		return err
 	}
 	err = stub.PutState(nodeAddr, balanceByte)
 	if err != nil {
+		log.Error("stub.PutState err:", "error", err)
 		return err
 	}
 	return nil
@@ -44,6 +46,7 @@ func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface
 	//先获取申请列表
 	listForCashback, err := stub.GetListForCashback()
 	if err != nil {
+		log.Error("stub.GetListForCashback err:", "error", err)
 		return err
 	}
 	////序列化
@@ -53,10 +56,12 @@ func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface
 	cashback.Role = role
 	cashback.CashbackTime = time.Now().UTC().Unix()
 	if listForCashback == nil {
+		log.Info("stub.GetListForCashback:list is nil.")
 		listForCashback = []*modules.Cashback{cashback}
 	} else {
 		isExist := isInCashbacklist(invokeAddr, listForCashback)
 		if isExist {
+			log.Error("node is exist in the list.")
 			return fmt.Errorf("%s", "node is exist in the list.")
 		}
 		listForCashback = append(listForCashback, cashback)
@@ -64,10 +69,12 @@ func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface
 	//反序列化
 	listForCashbackByte, err := json.Marshal(listForCashback)
 	if err != nil {
+		log.Error("json.Marshal err:", "error", err)
 		return err
 	}
 	err = stub.PutState("ListForCashback", listForCashbackByte)
 	if err != nil {
+		log.Error("stub.PutState err:", "error", err)
 		return err
 	}
 	return nil
@@ -85,16 +92,19 @@ func isInCashbacklist(addr string, list []*modules.Cashback) bool {
 
 func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []string) error {
 	if len(args) != 1 {
+		log.Error("arg need one parameter.")
 		return fmt.Errorf("%s", "arg need one parameter.")
 	}
 	//获取 请求 调用 地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
+		log.Error("stub.GetInvokeAddress err:", "error", err)
 		return err
 	}
 	//数量
 	ptnAccount, err := strconv.ParseUint(args[0], 10, 64)
 	if err != nil {
+		log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
 	//TODO 是否传进来
@@ -106,21 +116,26 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 	//先获取数据库信息
 	balance, err := stub.GetDepositBalance(invokeAddr)
 	if err != nil {
+		log.Error("stub.GetDepositBalance err:", "error", err)
 		return err
 	}
 	if balance == nil {
-		return fmt.Errorf("%s", "Your balance is nil.")
+		log.Error("balance is nil")
+		return fmt.Errorf("%s", "balance is nil")
 	}
 	if balance.TotalAmount < invokeTokens.Amount {
-		return fmt.Errorf("%s", "Your balance is not enough.")
+		log.Error("balance is not enough")
+		return fmt.Errorf("%s", "balance is not enough")
 	}
 	if strings.Compare(role, "Mediator") == 0 {
 		if balance.TotalAmount-invokeTokens.Amount < depositAmountsForMediator {
-			return fmt.Errorf("%s", "Can not cashback some.")
+			log.Error("can not cashback some")
+			return fmt.Errorf("%s", "can not cashback some")
 		}
 	}
 	err = addListAndPutStateForCashback(role, stub, invokeAddr, invokeTokens)
 	if err != nil {
+		log.Error("addListAndPutStateForCashback err:", "error", err)
 		return err
 	}
 	return nil
@@ -131,14 +146,17 @@ func moveAndPutStateFromCashbackList(stub shim.ChaincodeStubInterface, cashbackA
 	//获取没收列表
 	listForCashback, err := stub.GetListForCashback()
 	if err != nil {
+		log.Error("stub.GetListForCashback err:", "error", err)
 		return err
 	}
 	if listForCashback == nil {
+		log.Error("listForCashback is nil")
 		return fmt.Errorf("%s", "listForCashback is nil")
 	}
 	isExist := isInCashbacklist(cashbackAddr, listForCashback)
 	if !isExist {
-		return fmt.Errorf("%s", "node is not exist in the list.")
+		log.Error("node is not exist in the cashback list.")
+		return fmt.Errorf("%s", "node is not exist in the cashback list.")
 	}
 	newList, isOk := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
 	if !isOk {
@@ -164,6 +182,7 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 	//调用从合约把token转到请求地址
 	err := stub.PayOutToken(cashbackAddr, cashbackValue.CashbackTokens, 0)
 	if err != nil {
+		log.Error("stub.PayOutToken err:", "error", err)
 		return err
 	}
 	awards := award.GetAwardsWithCoins(balance.TotalAmount, balance.LastModifyTime.Unix())
@@ -179,6 +198,7 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 			//handleMember("Jury", cashbackAddr, stub)
 			err = moveCandidate("JuryList", cashbackAddr, stub)
 			if err != nil {
+				log.Error("moveCandidate err:", "error", err)
 				return err
 			}
 		}
@@ -188,6 +208,7 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 			//handleMember("Developer", cashbackAddr, stub)
 			err = moveCandidate("DeveloperList", cashbackAddr, stub)
 			if err != nil {
+				log.Error("moveCandidate err:", "error", err)
 				return err
 			}
 		}
@@ -197,40 +218,11 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 	//序列化
 	err = marshalAndPutStateForBalance(stub, cashbackAddr, balance)
 	if err != nil {
+		log.Error("marshalAndPutStateForBalance err:", "error", err)
 		return err
 	}
 	return nil
 }
-
-//同意提取保证金处理
-//func handleCashback(stub shim.ChaincodeStubInterface, foundationAddr, cashbackAddr string, applyTime int64, balance *modules.DepositBalance) error {
-//	//获取请求列表
-//	listForCashback, err := stub.GetListForCashback()
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	if listForCashback == nil {
-//		return shim.Error("listForCashback is nil.")
-//	}
-//	//在申请退款保证金列表中移除该节点
-//	//fmt.Println(listForCashback)
-//	//fmt.Println(cashbackAddr)
-//	//fmt.Println(applyTime)
-//	cashbackValue, err := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	//fmt.Println(cashbackValue)
-//	//fmt.Printf("%#v\n\n", cashbackValue)
-//	if cashbackValue == nil {
-//		return shim.Error("列表里没有该申请")
-//	}
-//	//还得判断一下是否超过余额
-//	if cashbackValue.CashbackTokens.Amount > balance.TotalAmount {
-//		return shim.Error("退款大于账户余额")
-//	}
-//
-//}
 
 //处理申请提保证金请求并移除列表
 func cashbackAllDeposit(role string, stub shim.ChaincodeStubInterface, cashbackAddr string, invokeTokens *modules.InvokeTokens, balance *modules.DepositBalance) error {
@@ -245,16 +237,19 @@ func cashbackAllDeposit(role string, stub shim.ChaincodeStubInterface, cashbackA
 	//调用从合约把token转到请求地址
 	err := stub.PayOutToken(cashbackAddr, invokeTokens, 0)
 	if err != nil {
+		log.Error("stub.PayOutToken err:", "error", err)
 		return err
 	}
 	//移除出列表
 	err = moveCandidate(role, cashbackAddr, stub)
 	if err != nil {
+		log.Error("moveCandidate err:", "error", err)
 		return err
 	}
 	//删除节点
 	err = stub.DelState(cashbackAddr)
 	if err != nil {
+		log.Error("stub.DelState err:", "error", err)
 		return err
 	}
 	return nil
@@ -265,6 +260,7 @@ func handleCommonJuryOrDev(stub shim.ChaincodeStubInterface, cashbackAddr string
 	//调用从合约把token转到请求地址
 	err := stub.PayOutToken(cashbackAddr, cashbackValue.CashbackTokens, 0)
 	if err != nil {
+		log.Error("stub.PayOutToken err:", "error", err)
 		return err
 	}
 	//fmt.Printf("balanceValue=%s\n", balanceValue)
@@ -278,6 +274,7 @@ func handleCommonJuryOrDev(stub shim.ChaincodeStubInterface, cashbackAddr string
 
 	err = marshalAndPutStateForBalance(stub, cashbackAddr, balance)
 	if err != nil {
+		log.Error("marshalAndPutStateForBalance err:", "error", err)
 		return err
 	}
 	return nil
@@ -286,19 +283,23 @@ func handleCommonJuryOrDev(stub shim.ChaincodeStubInterface, cashbackAddr string
 func addCandaditeList(invokeAddr string, stub shim.ChaincodeStubInterface, candidate string) error {
 	list, err := stub.GetCandidateList(candidate)
 	if err != nil {
+		log.Error("stub.GetCandidateList err:", "error", err)
 		return err
 	}
 	if list == nil {
+		log.Info("stub.GetCandidateList: list is nil")
 		list = []string{invokeAddr}
 	} else {
 		list = append(list, invokeAddr)
 	}
 	listByte, err := json.Marshal(list)
 	if err != nil {
+		log.Error("json.Marshal err:", "error", err)
 		return err
 	}
 	err = stub.PutState(candidate, listByte)
 	if err != nil {
+		log.Error("stub.PutState err:", "error", err)
 		return err
 	}
 	return nil
@@ -307,9 +308,11 @@ func addCandaditeList(invokeAddr string, stub shim.ChaincodeStubInterface, candi
 func moveCandidate(candidate string, invokeFromAddr string, stub shim.ChaincodeStubInterface) error {
 	list, err := stub.GetCandidateList(candidate)
 	if err != nil {
+		log.Error("stub.GetCandidateList err:", "error", err)
 		return err
 	}
 	if list == nil {
+		log.Error("stub.GetCandidateList err: list is nil")
 		return fmt.Errorf("%s", "list is nil.")
 	}
 	for i := 0; i < len(list); i++ {
@@ -320,10 +323,12 @@ func moveCandidate(candidate string, invokeFromAddr string, stub shim.ChaincodeS
 	}
 	listBytes, err := json.Marshal(list)
 	if err != nil {
+		log.Error("json.Marshal err:", "error", err)
 		return err
 	}
 	err = stub.PutState(candidate, listBytes)
 	if err != nil {
+		log.Error("stub.PutState err:", "error", err)
 		return err
 	}
 	return nil
@@ -344,7 +349,6 @@ func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfe
 
 //从申请没收保证金列表中移除
 func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback []*modules.Cashback, cashbackAddr string, applyTime int64) (newList []*modules.Cashback, isOk bool) {
-	//
 	for i := 0; i < len(listForCashback); i++ {
 		if listForCashback[i].CashbackTime == applyTime && listForCashback[i].CashbackAddress == cashbackAddr {
 			newList = append(listForCashback[:i], listForCashback[i+1:]...)
@@ -353,14 +357,4 @@ func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashbac
 		}
 	}
 	return
-	//listForCashbackByte, err := json.Marshal(listForCashback)
-	//if err != nil {
-	//	return nil, err
-	//}
-	////更新列表
-	//err = stub.PutState("ListForCashback", listForCashbackByte)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//return cashback, nil
 }
