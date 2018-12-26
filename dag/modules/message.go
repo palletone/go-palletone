@@ -29,8 +29,7 @@ import (
 type MessageType byte
 
 const (
-	APP_UNKNOW  MessageType = iota
-	APP_PAYMENT
+	APP_PAYMENT MessageType = iota
 
 	APP_CONTRACT_TPL
 	APP_CONTRACT_DEPLOY
@@ -42,6 +41,8 @@ const (
 	APP_TEXT
 	APP_VOTE
 	OP_MEDIATOR_CREATE
+
+	APP_UNKNOW
 
 	APP_CONTRACT_TPL_REQUEST    = 100
 	APP_CONTRACT_DEPLOY_REQUEST = 101
