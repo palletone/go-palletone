@@ -261,8 +261,8 @@ func (pool *TxPool) loop() {
 
 	journal := time.NewTicker(pool.config.Rejournal)
 	defer journal.Stop()
-
-	deleteTxTimer := time.NewTicker(5 * time.Second)
+	// delete txspool's confirmed tx
+	deleteTxTimer := time.NewTicker(10 * time.Minute)
 	defer deleteTxTimer.Stop()
 
 	// Track the previous head headers for transaction reorgs
@@ -679,8 +679,9 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 			if list != nil {
 				// New transaction is better, replace old one
 				if txHash.String() == list.Tx.Hash().String() {
-					if list.Priority_lvl <= tx.Priority_lvl {
-						delete(pool.all, txHash)
+					if list.Priority_lvl < tx.Priority_lvl {
+						//delete(pool.all, txHash)
+						tx.RemStatus = true
 						pool.priority_priced.Removed(txHash)
 					}
 					return true, nil
@@ -777,7 +778,9 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 				old := this
 				if old.Pending || old.Confirmed {
 					// An older transaction was better, discard this
-					delete(pool.all, hash)
+					//delete(pool.all, hash)
+					old.RemStatus = true
+					pool.all[hash] = old
 					pool.priority_priced.Removed(hash)
 					return
 				}
@@ -787,7 +790,7 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 
 	// Otherwise discard any previous transaction and mark this
 	if old.Tx != nil {
-		delete(pool.all, old.Tx.Hash())
+		//delete(pool.all, old.Tx.Hash())
 		pool.priority_priced.Removed(old.Tx.Hash())
 	}
 	// Failsafe to work around direct pending inserts (tests)
@@ -819,10 +822,9 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 			if !exist {
 				list = append(list, tx)
 			}
-
 		}
 		pool.pending[hash] = list
-
+		pool.all[hash] = old
 	}
 	// Set the potentially new pending nonce and notify any subsystems of the new tx
 	if len(tx.From) > 0 {
@@ -1130,19 +1132,20 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 // Get returns a transaction if it is contained in the pool
 // and nil otherwise.
 func (pool *TxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash) {
-	// pool.mu.RLock()
-	// defer pool.mu.RUnlock()
+	pool.mu.RLock()
+	defer pool.mu.RUnlock()
 
 	tx := pool.all[hash]
+	log.Debug("get tx info by hash in txpool... ", "info", tx)
 	var u_hash common.Hash
 	pending, err := pool.Pending()
-	if err != nil {
-		return tx, (common.Hash{})
-	}
-	for unit_hash, txs := range pending {
-		for _, p_tx := range txs {
-			if p_tx.Tx.Hash().String() == hash.String() {
-				return tx, unit_hash
+	if err == nil {
+		for unit_hash, txs := range pending {
+			for _, p_tx := range txs {
+				if p_tx.Tx.Hash() == hash {
+					log.Debug("get tx info by hash in txpool... tx in unit hash:", "unit_hash", unit_hash, "p_tx", p_tx)
+					return p_tx, unit_hash
+				}
 			}
 		}
 	}
@@ -1377,16 +1380,32 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 					if input == nil {
 						break
 					}
-					if tx, ok := pool.outpoints[*input.PreviousOutPoint]; ok {
-						str := fmt.Sprintf("output %v already spent by "+
-							"transaction %x in the memory pool",
-							input.PreviousOutPoint, tx.Tx.Hash())
-						return errors.New(str)
+					//if tx, ok := pool.outpoints[*input.PreviousOutPoint]; ok {
+					//	str := fmt.Sprintf("output %v already spent by "+
+					//		"transaction %x in the memory pool",
+					//		input.PreviousOutPoint, tx.Tx.Hash())
+					//	return errors.New(str)
+					//}
+
+					if err := pool.OutPointIsSpend(input.PreviousOutPoint); err != nil {
+						return err
 					}
 				}
 			}
 		}
 	}
+
+	return nil
+}
+
+func (pool *TxPool) OutPointIsSpend(outPoint *modules.OutPoint) error {
+	if tx, ok := pool.outpoints[*outPoint]; ok {
+		str := fmt.Sprintf("output %v already spent by "+
+			"transaction %x in the memory pool",
+			outPoint, tx.Tx.Hash())
+		return errors.New(str)
+	}
+
 	return nil
 }
 
@@ -1611,6 +1630,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			break
 			//continue
 		} else {
+			log.Debug("Txspool get  priority_pricedtx success.", "tx_info", tx)
 			if !tx.Pending && !tx.Confirmed {
 				// dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
 				if total += tx.Tx.Size(); total <= common.StorageSize(dagconfig.DefaultConfig.UnitTxSize) {
