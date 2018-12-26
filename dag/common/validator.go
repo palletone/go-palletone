@@ -458,6 +458,7 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 				log.Error("payment input is null.", "payment.input", payment.Inputs)
 				return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
 			}
+			// 合约创币后同步到mediator的utxo验证不通过,在创币后需要先将创币的utxo同步到所有mediator节点。
 			if utxo, err := validate.utxodb.GetUtxoEntry(in.PreviousOutPoint); utxo == nil || err != nil {
 				return modules.TxValidationCode_INVALID_OUTPOINT
 			}

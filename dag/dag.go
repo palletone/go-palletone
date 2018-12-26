@@ -89,7 +89,6 @@ func (d *Dag) IsEmpty() bool {
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
-	//fmt.Println("d.GetHeadUnitHash()=", hash)
 	if err != nil {
 		log.Error("CurrentUnit when GetHeadUnitHash()", "error", err.Error())
 		return nil
