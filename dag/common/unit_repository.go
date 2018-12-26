@@ -48,8 +48,6 @@ import (
 type IUnitRepository interface {
 	//设置稳定单元的Hash
 	SetStableUnitHash(hash common.Hash)
-	//设置最新单元的Hash
-	SetLastUnitHash(hash common.Hash)
 	//清空Unstable数据，回滚到稳定点状态
 	RollbackToStableUnit()
 	//批量增加多个Unit，主要用于主链切换的情形
@@ -164,9 +162,6 @@ func (rep *UnitRepository) SetStableUnitHash(hash common.Hash) {
 	rep.dagdb.SetStableUnitHash(hash)
 }
 
-func (rep *UnitRepository) SetLastUnitHash(hash common.Hash) {
-	rep.dagdb.SetLastUnitHash(hash)
-}
 func (rep *UnitRepository) RollbackToStableUnit() {
 	//TODO Devin
 }

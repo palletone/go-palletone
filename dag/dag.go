@@ -424,7 +424,7 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 		if err != nil {
 			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveHashByNumber Error", i)
 		}
-		// ###save HeaderCanon & HeaderKey & HeadUnitKey & HeadFastKey
+		// ###save HeaderCanon & HeaderKey & HeadUnitHash & HeadFastKey
 		err = d.dagdb.UpdateHeadByBatch(hash, index)
 		if err != nil {
 			return i, err
@@ -636,13 +636,22 @@ func (d *Dag) GetHeadHeaderHash() (common.Hash, error) {
 }
 
 func (d *Dag) GetHeadUnitHash() (common.Hash, error) {
-	unit, _ := d.Memdag.GetCurrentUnit(modules.NewPTNIdType(), 0)
-	mem_hash := unit.Hash()
+	unit := new(modules.Unit)
+	var err0 error
+	var mem_hash common.Hash
+	if d.Memdag != nil {
+		unit, err0 = d.Memdag.GetCurrentUnit(modules.NewPTNIdType(), 0)
+		if err0 != nil {
+			log.Debug("get mem current unit info", "error", err0, "hash", unit.Hash().String())
+		}
+		mem_hash = unit.Hash()
+	}
 	head_hash, err := d.dagdb.GetHeadUnitHash()
-
 	head_unit, _ := d.GetUnitByHash(head_hash)
-	if unit.NumberU64() > head_unit.NumberU64() {
-		return mem_hash, err
+	if head_unit != nil {
+		if unit.NumberU64() > head_unit.NumberU64() {
+			return mem_hash, err
+		}
 	}
 	return head_hash, err
 }

@@ -52,12 +52,10 @@ var (
 	LookupPrefix = []byte("l")
 
 	StableUnitHash = []byte("StableUnitHash")
-	LastUnitHash   = []byte("LastUnitHash")
-	// Head Fast Key
-	HeadHeaderKey = []byte("LastHeader")
-	HeadUnitKey   = []byte("LastUnit")
-	HeadFastKey   = []byte("LastFast")
-	TrieSyncKey   = []byte("TrieSync")
+	HeadUnitHash   = []byte("HeadUnitHash")
+	HeadHeaderKey  = []byte("LastHeader")
+	HeadFastKey    = []byte("LastFast")
+	TrieSyncKey    = []byte("TrieSync")
 
 	// contract
 	CONTRACT_PREFIX = []byte("cs")
@@ -84,8 +82,6 @@ var (
 	// ReqId && TxHash maping
 	ReqIdPrefix      = []byte("req")
 	TxHash2ReqPrefix = []byte("tx2req")
-
-
 )
 
 // suffix

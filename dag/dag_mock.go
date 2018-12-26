@@ -975,3 +975,16 @@ func (m *MockIDag) SaveReqIdByTx(tx *modules.Transaction) error {
 func (mr *MockIDagMockRecorder) SaveReqIdByTx(tx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveReqIdByTx", reflect.TypeOf((*MockIDag)(nil).SaveReqIdByTx), tx)
 }
+
+// GetTextHash mocks base method
+func (m *MockIDag) GetTextHash(hash common.Hash) ([]byte, error) {
+	ret := m.ctrl.Call(m, "GetTextHash", hash)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTextHash indicates an expected call of GetTextHash
+func (mr *MockIDagMockRecorder) GetTextHash(hash common.Hash) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTextHash", reflect.TypeOf((*MockIDag)(nil).GetTextHash), hash)
+}
