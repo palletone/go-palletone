@@ -139,10 +139,18 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 	iter := statedb.db.NewIteratorWithPrefix(constants.ACCOUNT_INFO_PREFIX)
 	for iter.Next() {
 		key := iter.Key()
+		if key == nil {
+			continue
+		}
+
 		addB := bytes.TrimPrefix(key, constants.ACCOUNT_INFO_PREFIX)
 		add := common.BytesToAddress(addB)
 
 		value := iter.Value()
+		if value == nil {
+			continue
+		}
+
 		acc := newAccountInfo()
 		err := rlp.DecodeBytes(value, acc)
 		if err != nil {
