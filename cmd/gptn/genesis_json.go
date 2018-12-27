@@ -98,7 +98,7 @@ func createExampleMediators(ctx *cli.Context, mcLen int) []*mp.MediatorConf {
 	exampleMediators := make([]*mp.MediatorConf, mcLen, mcLen)
 	for i := 0; i < mcLen; i++ {
 		account, password, _ := createExampleAccount(ctx)
-		secStr, pubStr := newInitDKS()
+		secStr, pubStr := core.CreateInitDKS()
 
 		exampleMediators[i] = &mp.MediatorConf{
 			Address:     account,

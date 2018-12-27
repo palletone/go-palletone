@@ -95,3 +95,13 @@ func PointToStr(pub kyber.Point) string {
 
 	return base58.Encode(pubB)
 }
+
+// author Albert·Gou
+func CreateInitDKS() (secStr, pubStr string) {
+	sec, pub := GenInitPair()
+
+	secStr = ScalarToStr(sec)
+	pubStr = PointToStr(pub)
+
+	return
+}

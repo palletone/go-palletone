@@ -71,96 +71,117 @@ func (args *MediatorCreateArgs) check() error {
 	return nil
 }
 
-func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (TxExecuteResult, error) {
-	res := TxExecuteResult{}
+// 相关参数检查
+func (args *MediatorCreateArgs) setDefaults(node *discover.Node) (initPrivKey string) {
+	if args.InitPartPub == "" {
+		args.InitPartPub, initPrivKey = core.CreateInitDKS()
+	}
+
+	if args.Node == "" {
+		args.Node = node.String()
+	}
+
+	return
+}
+
+func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, error) {
+	// 参数补全
+	initPrivKey := args.setDefaults(a.srvr.Self())
+
 	// 参数验证
 	err := args.check()
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
 	if !a.dag.IsSynced() {
-		return res, fmt.Errorf("the data of this node is not synced, " +
+		return nil, fmt.Errorf("the data of this node is not synced, " +
 			"and mediator cannot be created at present")
 	}
 
 	addr := args.FeePayer()
 	// 判断是否已经是mediator
 	if a.dag.IsMediator(addr) {
-		return res, fmt.Errorf("account %v is already a mediator", args.AddStr)
+		return nil, fmt.Errorf("account %v is already a mediator", args.AddStr)
 	}
 
 	// 判断是否申请通过
 	if !args.Validate() {
-		return res, fmt.Errorf("has not successfully paid the deposit")
+		return nil, fmt.Errorf("has not successfully paid the deposit")
 	}
 
 	// 1. 创建交易
 	tx, fee, err := a.dag.GenMediatorCreateTx(addr, &args.MediatorCreateOperation, a.ptn.TxPool())
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 
 	// 2. 签名和发送交易
 	err = a.ptn.SignAndSendTransaction(addr, tx)
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 
 	// 5. 返回执行结果
+	res := &TxExecuteResult{}
 	res.TxContent = fmt.Sprintf("Create mediator %s with initPubKey : %s , node: %s , url: %s",
 		args.AddStr, args.InitPartPub, args.Node, args.Url)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()
 	res.TxFee = fmt.Sprintf("%vdao", fee)
-	res.Warning = DefaultResult
+
+	if initPrivKey != "" {
+		res.Warning = "Your initPrivKey is: " + initPrivKey + " , " + DefaultResult
+	} else {
+		res.Warning = DefaultResult
+	}
 
 	return res, nil
 }
 
-func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (TxExecuteResult, error) {
+func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (*TxExecuteResult, error) {
 	// 参数检查
-	res := TxExecuteResult{}
 	voter, err := common.StringToAddress(voterStr)
 	if err != nil {
-		return res, fmt.Errorf("invalid account address: %s", voterStr)
+		return nil, fmt.Errorf("invalid account address: %s", voterStr)
 	}
 
 	mediator, err := common.StringToAddress(mediatorStr)
 	if err != nil {
-		return res, fmt.Errorf("invalid account address: %s", mediatorStr)
+		return nil, fmt.Errorf("invalid account address: %s", mediatorStr)
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
 	if !a.dag.IsSynced() {
-		return res, fmt.Errorf("the data of this node is not synced, and can't vote now")
+		return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
 	}
 
 	// 判断是否是mediator
 	if !a.dag.IsMediator(mediator) {
-		return res, fmt.Errorf("%v is not mediator", mediatorStr)
+		return nil, fmt.Errorf("%v is not mediator", mediatorStr)
 	}
 
 	// 判断是否已经投过该mediator
 	voted := a.dag.GetVotedMediator(voter)
 	if voted[mediator] {
-		return res, fmt.Errorf("account %v was already voting for mediator %v", voterStr, mediatorStr)
+		return nil, fmt.Errorf("account %v was already voting for mediator %v", voterStr, mediatorStr)
 	}
 
 	// 1. 创建交易
 	tx, fee, err := a.dag.GenVoteMediatorTx(voter, mediator, a.ptn.TxPool())
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 
 	// 2. 签名和发送交易
 	err = a.ptn.SignAndSendTransaction(voter, tx)
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 
 	// 5. 返回执行结果
+	res := &TxExecuteResult{}
 	res.TxContent = fmt.Sprintf("Account %s vote mediator %s", voterStr, mediatorStr)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()
