@@ -267,12 +267,59 @@ func (s *PublicWalletAPI) GetBalance(ctx context.Context, address string) (map[s
 	return result, nil
 }
 
-func (s *PublicWalletAPI) GetTranscations(ctx context.Context, address string) (modules.Transactions, error) {
+func (s *PublicWalletAPI) GetTranscations(ctx context.Context, address string) (string, error) {
 	txs, err := s.b.GetAddrTransactions(address)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return txs, nil
+
+	gets := []ptnjson.GetTransactions{}
+	for _, tx := range txs {
+
+		get := ptnjson.GetTransactions{}
+		get.Txid = tx.Hash().String()
+
+		for _, msg := range tx.TxMessages {
+			payload, ok := msg.Payload.(*modules.PaymentPayload)
+
+			if ok == false {
+				continue
+			}
+
+			for _, txin := range payload.Inputs {
+
+				if txin.PreviousOutPoint != nil {
+					addr, err := s.b.GetAddrByOutPoint(txin.PreviousOutPoint)
+					if err != nil {
+
+						return "", err
+					}
+
+					get.Inputs = append(get.Inputs, addr.String())
+				} else {
+					get.Inputs = append(get.Inputs, "coinbase")
+				}
+
+			}
+
+			for _, txout := range payload.Outputs {
+				var gout ptnjson.GetTranscationOut
+				addr, err := tokenengine.GetAddressFromScript(txout.PkScript)
+				if err != nil {
+					return "", err
+				}
+				gout.Addr = addr.String()
+				gout.Value = txout.Value
+				gout.Asset = txout.Asset.String()
+				get.Outputs = append(get.Outputs, gout)
+			}
+
+			gets = append(gets, get)
+		}
+	}
+	result := ptnjson.ConvertGetTransactions2Json(gets) 
+
+	return result,nil
 }
 
 //sign rawtranscation
