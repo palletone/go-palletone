@@ -67,6 +67,7 @@ type iDag interface {
 	GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetActiveMediators() []common.Address
+	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	IsActiveJury(add common.Address) bool
 	IsActiveMediator(add common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
@@ -243,6 +244,11 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 			log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
 			continue
 		}
+		txHash, err := p.dag.GetTxHashByReqId(ctx.rstTx.RequestHash())
+		if err == nil && txHash != (common.Hash{}) {
+			log.Info("AddContractLoop", "transaction request Id already in dag", ctx.rstTx.RequestHash())
+			continue
+		}
 		tx, err := gen.GenContractSigTransction(addr, "", ctx.rstTx, ks)
 		if err != nil {
 			log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
@@ -393,7 +399,6 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 	if err := rlp.DecodeBytes(txBytes, tx); err != nil {
 		return nil, err
 	}
-
 	req := tx.RequestHash()
 	p.locker.Lock()
 	p.mtx[req] = &contractTx{
@@ -439,6 +444,7 @@ func (p *Processor) creatContractTxReq(from, to common.Address, daoAmount, daoFe
 		if err != nil {
 			return nil, nil, err
 		}
+		tx = ctx.rstTx
 	} else if p.nodeContractExecutable(p.local, tx) == true {
 		go p.runContractReq(ctx)
 	}
@@ -448,7 +454,6 @@ func (p *Processor) creatContractTxReq(from, to common.Address, daoAmount, daoFe
 	//local
 	//go p.contractExecFeed.Send(ContractExeEvent{modules.NewTransaction([]*modules.Message{msgPay, msgReq})})
 	//go p.ProcessContractEvent(&ContractExeEvent{Tx: tx})
-
 	return reqId[:], tx, nil
 }
 

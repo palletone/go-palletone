@@ -6,7 +6,7 @@ version: '2'
 services:
   mediator0:
     container_name: mediator0
-    image: palletone/pallet-gptn:0.6
+    image: palletone/pallet-gptn
     working_dir: /opt/gopath/src/github.com/palletone/go-palletone
     volumes:
      - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator0/ptn-genesis.json:/var/palletone/conf/ptn-genesis.json
