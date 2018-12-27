@@ -63,7 +63,6 @@ type ContractInvokeReq struct {
 	deployId []byte
 	txid     string //common.Hash
 	args     [][]byte
-	//tx       *modules.Transaction
 	timeout time.Duration
 }
 
