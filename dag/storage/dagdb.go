@@ -221,11 +221,12 @@ value: all transactions hash set's rlp encoding bytes
 */
 func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	// db.Put(append())
-	return StoreBytes(dagdb.db, append(constants.BODY_PREFIX, []byte(unitHash.String())...), txsHash)
+	dagdb.logger.Debugf("Save body of unit[%s], include txs:%x", unitHash.String(), txsHash)
+	return StoreBytes(dagdb.db, append(constants.BODY_PREFIX, unitHash.Bytes()...), txsHash)
 }
 
 func (dagdb *DagDb) GetBody(unitHash common.Hash) ([]common.Hash, error) {
-	data, err := dagdb.db.Get(append(constants.BODY_PREFIX, []byte(unitHash.String())...))
+	data, err := dagdb.db.Get(append(constants.BODY_PREFIX, unitHash.Bytes()...))
 	if err != nil {
 		return nil, err
 	}
