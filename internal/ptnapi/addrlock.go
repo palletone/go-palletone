@@ -140,6 +140,8 @@ type SignTransactionParams struct {
 	Flags    string   `jsonrpcdefault:"\"ALL\""`
 }
 
+
+
 // isNullOutpoint determines whether or not a previous transaction output point
 // is set.
 func isNullOutpoint(outpoint *modules.OutPoint) bool {
