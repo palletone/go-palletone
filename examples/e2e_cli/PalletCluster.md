@@ -1,45 +1,46 @@
 ############################################################  
 #                    Pallet Cluster Building Manual        #
-#                    Pallet¼¯Èº´î½¨ÊÖ²á                    #
+#                    Palleté›†ç¾¤æ­å»ºæ‰‹å†Œ                    #
 ############################################################  
 This document is the basic configuration document for the private network built by PalletOne. The specific steps are as follows:
-±¾ÎÄµµÎªPalletOne´î½¨Ë½ÓÐÍøÂçµÄ»ù±¾ÅäÖÃÎÄµµ£¬¾ßÌå²½Öè²Î¿¼ÈçÏÂ£º
+æœ¬æ–‡æ¡£ä¸ºPalletOneæ­å»ºç§æœ‰ç½‘ç»œçš„åŸºæœ¬é…ç½®æ–‡æ¡£ï¼Œå…·ä½“æ­¥éª¤å‚è€ƒå¦‚ä¸‹ï¼š
 ############################################################
 #                    (1)First                              #
-#                    (1)µÚÒ»²¿·Ö                           #
+#                    (1)ç¬¬ä¸€éƒ¨åˆ†                           #
 ############################################################
+
 (1)Basic Environment Configuration
-(1)»ù´¡»·¾³ÅäÖÃ
+(1)åŸºç¡€çŽ¯å¢ƒé…ç½®
 	(1.1)Cluster planning
-	(1.1)¼¯Èº¹æ»®
+	(1.1)é›†ç¾¤è§„åˆ’
 		IP	            Name	    Role	    OS
 		192.168.110.117	K8SNode01	Mediator0	Centos7
 		192.168.110.118	K8SNode02	Mediator1	Centos7
 		192.168.110.119	K8SNode03	Mediator2	Centos7
 		192.168.110.120	K8SNode04	Mediator3	Centos7
 	(1.2)Host configuration
-	(1.2)Ö÷»úÅäÖÃ
+	(1.2)ä¸»æœºé…ç½®
 		1>Close SELinux and firewall
-		1>¹Ø±ÕselinuxºÍ·À»ðÇ½
+		1>å…³é—­selinuxå’Œé˜²ç«å¢™
 		#sudo sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 		#sudo systemctl stop firewalld.service && systemctl disable firewalld.service
 		#
 		2>Configure Host Time, Time Zone, System Language
-		2>ÅäÖÃÖ÷»úÊ±¼ä¡¢Ê±Çø¡¢ÏµÍ³ÓïÑÔ
+		2>é…ç½®ä¸»æœºæ—¶é—´ã€æ—¶åŒºã€ç³»ç»Ÿè¯­è¨€
 		##Modify time zone
-		##ÐÞ¸ÄÊ±Çø
+		##ä¿®æ”¹æ—¶åŒº
 		#ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 		#
 		##Modifying the System Language Environment
-		##ÐÞ¸ÄÏµÍ³ÓïÑÔ»·¾³
+		##ä¿®æ”¹ç³»ç»Ÿè¯­è¨€çŽ¯å¢ƒ
 		#sudo echo 'LANG="en_US.UTF-8"' >> /etc/profile;source /etc/profile
 		#
 		##Configure host NTP time synchronization
-		##ÅäÖÃÖ÷»úNTPÊ±¼äÍ¬²½
+		##é…ç½®ä¸»æœºNTPæ—¶é—´åŒæ­¥
 		#ntpdate -u cn.pool.ntp.org
 		#
 		3>performance tuning of Kernel
-		3>KernelÐÔÄÜµ÷ÓÅ
+		3>Kernelæ€§èƒ½è°ƒä¼˜
 		#cat >> /etc/sysctl.conf<<EOF
 		net.ipv4.ip_forward=1
 		net.ipv4.neigh.default.gc_thresh1=4096
@@ -49,33 +50,33 @@ This document is the basic configuration document for the private network built 
 		#sysctl -p
 		#
 		4>Add host information
-		4>Ìí¼ÓÖ÷»úÐÅÏ¢µ½/etc/hosts
-		#sudo hostnamectl set-hostname k8snode01     #Each node is modified with a different name[¸÷¸ö½Úµã½øÐÐÐÞ¸Ä£¬Ãû×Ö²»Í¬]
+		4>æ·»åŠ ä¸»æœºä¿¡æ¯åˆ°/etc/hosts
+		#sudo hostnamectl set-hostname k8snode01     #Each node is modified with a different name[å„ä¸ªèŠ‚ç‚¹è¿›è¡Œä¿®æ”¹ï¼Œåå­—ä¸åŒ]
 		#vi /etc/hosts
 		192.168.110.117 k8snode01
 		192.168.110.118 k8snode02
 		192.168.110.119 k8snode03
 		192.168.110.120 k8snode04
 	(1.3)Configure Docker
-	(1.3)ÅäÖÃDocker
+	(1.3)é…ç½®Docker
 		0>Installation Pre-Dependency
-		0>°²×°Ç°ÖÃÒÀÀµ
+		0>å®‰è£…å‰ç½®ä¾èµ–
 		#yum -y install expect spawn jq
 		#
 		1>Adding users (optional)
-		1>Ìí¼ÓÓÃ»§(¿ÉÑ¡)
+		1>æ·»åŠ ç”¨æˆ·(å¯é€‰)
 		#sudo adduser k8sdocker
 		#
 		2>Setting passwords for new users(optional)
-		2>ÎªÐÂÓÃ»§ÉèÖÃÃÜÂë(¿ÉÑ¡)
+		2>ä¸ºæ–°ç”¨æˆ·è®¾ç½®å¯†ç (å¯é€‰)
 		#sudo passwd k8sdocker
 		#
 		3>Setting passwords for new users(optional)
-		3>ÎªÐÂÓÃ»§Ìí¼ÓsudoÈ¨ÏÞ(¿ÉÑ¡)
+		3>ä¸ºæ–°ç”¨æˆ·æ·»åŠ sudoæƒé™(å¯é€‰)
 		#sudo echo 'k8sdocker ALL=(ALL) ALL' >> /etc/sudoers
 		#
 		4>Uninstall old version of Docker software
-		4>Ð¶ÔØ¾É°æ±¾DockerÈí¼þ
+		4>å¸è½½æ—§ç‰ˆæœ¬Dockerè½¯ä»¶
 		#sudo yum remove docker \
 		              docker-client \
 		              docker-client-latest \
@@ -89,52 +90,52 @@ This document is the basic configuration document for the private network built 
 		              container*
 		#
 		5>Define installation version
-		5>¶¨Òå°²×°°æ±¾
+		5>å®šä¹‰å®‰è£…ç‰ˆæœ¬
 			5.1># step 1: install the necessary system tools
-			5.1># step 1: °²×°±ØÒªµÄÒ»Ð©ÏµÍ³¹¤¾ß
+			5.1># step 1: å®‰è£…å¿…è¦çš„ä¸€äº›ç³»ç»Ÿå·¥å…·
 			#sudo yum update -y
 			#sudo yum install -y yum-utils device-mapper-persistent-data lvm2 bash-completion
 			#export docker_version=17.03.2
 			#
 			5.2># Step 2: Adding Software Source Information
-			5.2># Step 2: Ìí¼ÓÈí¼þÔ´ÐÅÏ¢
+			5.2># Step 2: æ·»åŠ è½¯ä»¶æºä¿¡æ¯
 			#sudo yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
 			#
 			5.3># Step 3: Update and install Docker-CE
-			5.3># Step 3: ¸üÐÂ²¢°²×° Docker-CE
+			5.3># Step 3: æ›´æ–°å¹¶å®‰è£… Docker-CE
 			#sudo yum makecache all
 			#version=$(yum list docker-ce.x86_64 --showduplicates | sort -r|grep ${docker_version}|awk '{print $2}')
 			#sudo yum -y install --setopt=obsoletes=0 docker-ce-${version} docker-ce-selinux-${version}
 			#
 			5.4># Step 4: If you have installed a high-level version of Docker, you can downgrade the installation (optional)
-			5.4># Step 4: Èç¹ûÒÑ¾­°²×°¸ß°æ±¾Docker,¿É½øÐÐ½µ¼¶°²×°(¿ÉÑ¡)
+			5.4># Step 4: å¦‚æžœå·²ç»å®‰è£…é«˜ç‰ˆæœ¬Docker,å¯è¿›è¡Œé™çº§å®‰è£…(å¯é€‰)
 			#yum downgrade --setopt=obsoletes=0 -y docker-ce-${version} docker-ce-selinux-${version}
 			#
 			5.5># Step 5: Set up boot start
-			5.5># Step 5: ÉèÖÃ¿ª»úÆô¶¯
+			5.5># Step 5: è®¾ç½®å¼€æœºå¯åŠ¨
 			#sudo systemctl enable docker && systemctl start docker.service
 			#
 		6>Docker configuration
-		6>DockerÅäÖÃ
+		6>Dockeré…ç½®
 		##Configure image acceleration address
-		##ÅäÖÃ¾µÏñ¼ÓËÙµØÖ·
+		##é…ç½®é•œåƒåŠ é€Ÿåœ°å€
 		#vi /etc/docker/daemon.json
 		{
 		  "registry-mirrors": ["https://kri93zmv.mirror.aliyuncs.com"]
 		}
-		±¸×¢£ºÈç¹û³öÏÖ£ºFailed to start Docker Application Container Engine£¬ÔòÖ´ÐÐÈçÏÂÓï¾ä£º
+		å¤‡æ³¨ï¼šå¦‚æžœå‡ºçŽ°ï¼šFailed to start Docker Application Container Engineï¼Œåˆ™æ‰§è¡Œå¦‚ä¸‹è¯­å¥ï¼š
 		#rm /etc/docker/key.json 
 		#rm -rf /var/lib/docker/
 	(1.4)Configure Palletone
-	(1.4)ÅäÖÃPalletone
+	(1.4)é…ç½®Palletone
 		0>Configure GOPATH environment variables
-		0>ÅäÖÃGOPATH»·¾³±äÁ¿
+		0>é…ç½®GOPATHçŽ¯å¢ƒå˜é‡
 		##Install the specified go1.10.4. version
-		##°²×°Ö¸¶¨go1.10.4.°æ±¾
+		##å®‰è£…æŒ‡å®šgo1.10.4.ç‰ˆæœ¬
 		#go version
 		#
 		##Configuring environment variables
-		##ÅäÖÃ»·¾³±äÁ¿
+		##é…ç½®çŽ¯å¢ƒå˜é‡
 		#vi /etc/profile
 		export GOROOT=/opt/go
 		export GOPATH=/opt/gopath
@@ -142,7 +143,7 @@ This document is the basic configuration document for the private network built 
 		#source /etc/profile
 		#
 		1>Download the code and compile it
-		1>ÏÂÔØ´úÂë£¬²¢¶ÔÆä½øÐÐ±àÒë
+		1>ä¸‹è½½ä»£ç ï¼Œå¹¶å¯¹å…¶è¿›è¡Œç¼–è¯‘
 		#cd $GOPATH
 		#mkdir -p src/github.com/palletone
 		#cd $GOPATH/src/github.com/palletone
@@ -160,20 +161,20 @@ This document is the basic configuration document for the private network built 
 		#make all
 		#
 		##Note: Be sure to remember the path of the gptn executable
-		##±¸×¢£ºÎñ±Ø¼Ç×¡gptn¿ÉÖ´ÐÐ³ÌÐòµÄÂ·¾¶($PROJECT/build/bin/gptn)
+		##å¤‡æ³¨ï¼šåŠ¡å¿…è®°ä½gptnå¯æ‰§è¡Œç¨‹åºçš„è·¯å¾„($PROJECT/build/bin/gptn)
 		#
 		2>Give privileges to scripts
-		2>Îª½Å±¾¸³ÓèÈ¨ÏÞ
+		2>ä¸ºè„šæœ¬èµ‹äºˆæƒé™
 		#cd $GOPATH/src/github.com/palletone/go-palletone/examples/e2e_cli
 		#chmod -R 775 *
 		#
 		##Modify the location of the gptn executable file in getAccount.sh in the scripts directory to the absolute path under build/bin
-		##½«scriptsÄ¿Â¼ÖÐµÄgetAccount.shÖÐµÄgptn¿ÉÖ´ÐÐÎÄ¼þÎ»ÖÃ½øÐÐÐÞ¸ÄÎªbuild/binÏÂÃæµÄ¾ø¶ÔÂ·¾¶
+		##å°†scriptsç›®å½•ä¸­çš„getAccount.shä¸­çš„gptnå¯æ‰§è¡Œæ–‡ä»¶ä½ç½®è¿›è¡Œä¿®æ”¹ä¸ºbuild/binä¸‹é¢çš„ç»å¯¹è·¯å¾„
 									#!/usr/bin/expect
 									#!/bin/bash
-									#²úÉúÕËºÅÐÅÏ¢
+									#äº§ç”Ÿè´¦å·ä¿¡æ¯
 									set timeout 30
-									#ÐèÒªÅäÖÃgptnµÄ¾ø¶ÔÂ·¾¶µØÖ·
+									#éœ€è¦é…ç½®gptnçš„ç»å¯¹è·¯å¾„åœ°å€
 									#spawn "gptn's dir" account new
 									spawn /opt/gopath/src/github.com/palletone/go-palletone/build/bin/gptn account new
 									expect "Passphrase:"
@@ -183,54 +184,55 @@ This document is the basic configuration document for the private network built 
 									interact
 		#
 		##Modify the location of the gptn executable file in getInit.sh in the scripts directory to the absolute path under mediator0
-		##½«scriptsÄ¿Â¼ÖÐµÄgetInit.shÖÐµÄgptn¿ÉÖ´ÐÐÎÄ¼þÎ»ÖÃ½øÐÐÐÞ¸ÄÎªmediator0ÏÂÃæµÄ¾ø¶ÔÂ·¾¶
+		##å°†scriptsç›®å½•ä¸­çš„getInit.shä¸­çš„gptnå¯æ‰§è¡Œæ–‡ä»¶ä½ç½®è¿›è¡Œä¿®æ”¹ä¸ºmediator0ä¸‹é¢çš„ç»å¯¹è·¯å¾„
 									#!/usr/bin/expect
 									set timeout 30
-									#ÊäÈëgptnÔÚMediator0µÄ¾ø¶ÔÂ·¾¶
+									#è¾“å…¥gptnåœ¨Mediator0çš„ç»å¯¹è·¯å¾„
 									spawn /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator0/gptn init
 									expect "Passphrase:"
 									send "1\r"
 									interact
 		#
 		3>Generating configuration path information for N nodes
-		3>Éú³ÉN¸ö½ÚµãµÄÅäÖÃÂ·¾¶ÐÅÏ¢
-		#./generateArtifacts.sh 3               #The latter parameter can only be odd[ºóÃæµÄ²ÎÊýÖ»ÄÜÎªÆæÊý]
+		3>ç”ŸæˆNä¸ªèŠ‚ç‚¹çš„é…ç½®è·¯å¾„ä¿¡æ¯
+		#./generateArtifacts.sh 3               #The latter parameter can only be odd[åŽé¢çš„å‚æ•°åªèƒ½ä¸ºå¥‡æ•°]
 		#ls -l
 		##Note: After executing the script, the channel-artifacts directory is generated. If the execution fails, the directory is deleted.
-		##±¸×¢£ºÖ´ÐÐ¸Ã½Å±¾ºóÉú³Échannel-artifactsÄ¿Â¼£¬ÈôÖ´ÐÐÊ§°Ü£¬Ôò½«¸ÃÄ¿Â¼½øÐÐÉ¾³ý
+		##å¤‡æ³¨ï¼šæ‰§è¡Œè¯¥è„šæœ¬åŽç”Ÿæˆchannel-artifactsç›®å½•ï¼Œè‹¥æ‰§è¡Œå¤±è´¥ï¼Œåˆ™å°†è¯¥ç›®å½•è¿›è¡Œåˆ é™¤
 ############################################################
 #                    (2)Second                             #
-#                    (2)µÚ¶þ²¿·Ö                           #
+#                    (2)ç¬¬äºŒéƒ¨åˆ†                           #
 ############################################################
+
 (2)Configuring Super Nodes
-(2)ÅäÖÃ³¬¼¶½Úµã
+(2)é…ç½®è¶…çº§èŠ‚ç‚¹
 	(2.1)Generate Docker image [optional]
-	(2.1)Éú³ÉDocker¾µÏñ¡¾¿ÉÑ¡¡¿
+	(2.1)ç”ŸæˆDockeré•œåƒã€å¯é€‰ã€‘
 		1>Generating docker image related files
-		1>Éú³Édocker¾µÏñÏà¹ØÎÄ¼þ
+		1>ç”Ÿæˆdockeré•œåƒç›¸å…³æ–‡ä»¶
 		#cd $GOPATH/src/github.com/go-palletone
 		#make docker
 		#cd build/images/gptn
 		#
 		2>Generate an image and upload it to dockerhub
-		2>Éú³É¾µÏñ£¬²¢ÉÏ´«µ½dockerhub
+		2>ç”Ÿæˆé•œåƒï¼Œå¹¶ä¸Šä¼ åˆ°dockerhub
 		#docker build -t palletone/pallet-gptn:0.6 .
 		#docker images
 		#
 		3>Log in to dockerhub
-		3>µÇÂ¼dockerhub
+		3>ç™»å½•dockerhub
 		#docker login
 		#docker push palletone/pallet-gptn:0.6
 		#
 		##Query the image in dockerhub
-		##ÔÚdockerhub²éÑ¯¸Ã¾µÏñ
+		##åœ¨dockerhubæŸ¥è¯¢è¯¥é•œåƒ
 		#
-	(2.2)ÅäÖÃMediator0
+	(2.2)é…ç½®Mediator0
 	(2.2)Configure Mediator0
 	  ##Enter the Mediator0 directory and configure accordingly. The specific configuration information is as follows:
-		##½øÈëMediator0Ä¿Â¼½øÐÐÏàÓ¦µÄÅäÖÃ£¬¾ßÌåÅäÖÃÐÅÏ¢ÈçÏÂËùÊ¾£º
+		##è¿›å…¥Mediator0ç›®å½•è¿›è¡Œç›¸åº”çš„é…ç½®ï¼Œå…·ä½“é…ç½®ä¿¡æ¯å¦‚ä¸‹æ‰€ç¤ºï¼š
 		1>Enter mediator0 directory
-		1>½øÈëmediator0Ä¿Â¼
+		1>è¿›å…¥mediator0ç›®å½•
 		#cd $GOPATH/src/github.com/palletone/go-palletone/examples/e2e_cli
 		#cd channel-artifacts/mediator0
 		#ls -l
@@ -241,7 +243,7 @@ This document is the basic configuration document for the private network built 
 					-rw-r--r-- 1 root root     3343 Dec 25 01:26 ptn-config.toml
 					-rw-r--r-- 1 root root     2854 Dec 25 01:26 ptn-genesis.json
 		2>Modify toml file
-		2>ÐÞ¸ÄtomlÎÄ¼þ
+		2>ä¿®æ”¹tomlæ–‡ä»¶
 		#vi ptn-config.toml
 			[Node]
 			DataDir = "/var/palletone/production"
@@ -256,19 +258,19 @@ This document is the basic configuration document for the private network built 
 			BootstrapNodes = []
 			StaticNodes=["pnode://3ea34ff09489627399bbeac8d3af93b34981afc623228210bd49c8ce11860f78c736aa3721ebb91aec76353a3b93ee6a2aadd05337ab0723a71a7c9f68947144@mediator0:30303","pnode://01f20de81a80738b30d944a756ade9f4222f95a696d45b451aed596eefa204f3c8ae98305363feceeb28f5c140a6736118f59c81716c0cdd123365cad8a528eb@mediator1:30303","pnode://2a891ee523a40961c0760871be0613551aab45ad7a4ecd23369b713601228173b6e91d4ce748a2cbb571ae0c9b4d47ce605500ad3785cbadeb9ca8ba1a412f6e@mediator2:30303"]
 		##Note: Change the relative path in the configuration file to absolute path, replace the IP address of gptn in StaticNodes in p2p, and change it to [container name] if it runs locally.
-		##±¸×¢:½«ÅäÖÃÎÄ¼þÖÐµÄÏà¶ÔÂ·¾¶ÐÞ¸ÄÎª¾ø¶ÔÂ·¾¶£»½«p2pÖÐµÄStaticNodesÖÐÌæ»»ÎªgptnËùÔÚµÄIPµØÖ·£»ÈôÎª±¾»úÔËÐÐ£¬½«ÆäÐÞ¸ÄÎª[ÈÝÆ÷Ãû³Æ];
+		##å¤‡æ³¨:å°†é…ç½®æ–‡ä»¶ä¸­çš„ç›¸å¯¹è·¯å¾„ä¿®æ”¹ä¸ºç»å¯¹è·¯å¾„ï¼›å°†p2pä¸­çš„StaticNodesä¸­æ›¿æ¢ä¸ºgptnæ‰€åœ¨çš„IPåœ°å€ï¼›è‹¥ä¸ºæœ¬æœºè¿è¡Œï¼Œå°†å…¶ä¿®æ”¹ä¸º[å®¹å™¨åç§°];
 		3>Modify JSON file
-		3>ÐÞ¸ÄjsonÎÄ¼þ
+		3>ä¿®æ”¹jsonæ–‡ä»¶
 		#vi ptn-genesis.json
 		#
 		##Note: No modification is required for the time being.
-		##±¸×¢£ºÔÝÊ±²»ÓÃÐÞ¸Ä
-	(2.3)ÅäÖÃMediator1
+		##å¤‡æ³¨ï¼šæš‚æ—¶ä¸ç”¨ä¿®æ”¹
+	(2.3)é…ç½®Mediator1
 	(2.3)Configure Mediator1
 		##Enter the Mediator1 directory and configure it accordingly. The specific configuration information is as follows:
-		##½øÈëMediator1Ä¿Â¼½øÐÐÏàÓ¦µÄÅäÖÃ£¬¾ßÌåÅäÖÃÐÅÏ¢ÈçÏÂËùÊ¾£º
+		##è¿›å…¥Mediator1ç›®å½•è¿›è¡Œç›¸åº”çš„é…ç½®ï¼Œå…·ä½“é…ç½®ä¿¡æ¯å¦‚ä¸‹æ‰€ç¤ºï¼š
 		1>Enter mediator1 directory
-		1>½øÈëmediator1Ä¿Â¼
+		1>è¿›å…¥mediator1ç›®å½•
 		#cd $GOPATH/src/github.com/palletone/go-palletone/examples/e2e_cli
 		#cd channel-artifacts/mediator1
 		#ls -l
@@ -276,7 +278,7 @@ This document is the basic configuration document for the private network built 
 					drwx------ 5 root root       68 Dec 25 02:41 palletone
 					-rw-r--r-- 1 root root     3343 Dec 25 01:26 ptn-config.toml
 		2>Modify toml file
-		2>ÐÞ¸ÄtomlÎÄ¼þ
+		2>ä¿®æ”¹tomlæ–‡ä»¶
 		#vi ptn-config.toml
 			[Node]
 			DataDir = "/var/palletone/production"
@@ -292,18 +294,18 @@ This document is the basic configuration document for the private network built 
 			StaticNodes=["pnode://3ea34ff09489627399bbeac8d3af93b34981afc623228210bd49c8ce11860f78c736aa3721ebb91aec76353a3b93ee6a2aadd05337ab0723a71a7c9f68947144@mediator0:30303","pnode://2a891ee523a40961c0760871be0613551aab45ad7a4ecd23369b713601228173b6e91d4ce748a2cbb571ae0c9b4d47ce605500ad3785cbadeb9ca8ba1a412f6e@mediator2:30303"]
 		##Note: 
 				Update pnode information to Mediator0 and mediator2;
-				Modify the relative path in the configuration file to absolute path£»
+				Modify the relative path in the configuration file to absolute pathï¼›
 				Replace the IP address of gptn in StaticNodes in p2p, and change it to [container name] if it runs locally.
-		##±¸×¢:
-				½«pnodeÐÅÏ¢¸üÐÂÎªmediator0ºÍmediator2£»
-				½«ÅäÖÃÎÄ¼þÖÐµÄÏà¶ÔÂ·¾¶ÐÞ¸ÄÎª¾ø¶ÔÂ·¾¶£»
-				½«p2pÖÐµÄStaticNodesÖÐÌæ»»ÎªgptnËùÔÚµÄIPµØÖ·£»ÈôÎª±¾»úÔËÐÐ£¬½«ÆäÐÞ¸ÄÎª[ÈÝÆ÷Ãû³Æ];
-	(2.4)ÅäÖÃMediator2
+		##å¤‡æ³¨:
+				å°†pnodeä¿¡æ¯æ›´æ–°ä¸ºmediator0å’Œmediator2ï¼›
+				å°†é…ç½®æ–‡ä»¶ä¸­çš„ç›¸å¯¹è·¯å¾„ä¿®æ”¹ä¸ºç»å¯¹è·¯å¾„ï¼›
+				å°†p2pä¸­çš„StaticNodesä¸­æ›¿æ¢ä¸ºgptnæ‰€åœ¨çš„IPåœ°å€ï¼›è‹¥ä¸ºæœ¬æœºè¿è¡Œï¼Œå°†å…¶ä¿®æ”¹ä¸º[å®¹å™¨åç§°];
+	(2.4)é…ç½®Mediator2
 	(2.4)Configure Mediator2
 		##Enter the Mediator2 directory and configure it accordingly. The specific configuration information is as follows:
-		##½øÈëMediator2Ä¿Â¼½øÐÐÏàÓ¦µÄÅäÖÃ£¬¾ßÌåÅäÖÃÐÅÏ¢ÈçÏÂËùÊ¾£º
+		##è¿›å…¥Mediator2ç›®å½•è¿›è¡Œç›¸åº”çš„é…ç½®ï¼Œå…·ä½“é…ç½®ä¿¡æ¯å¦‚ä¸‹æ‰€ç¤ºï¼š
 		1>Enter mediator2 directory
-		1>½øÈëmediator2Ä¿Â¼
+		1>è¿›å…¥mediator2ç›®å½•
 		#cd $GOPATH/src/github.com/palletone/go-palletone/examples/e2e_cli
 		#cd channel-artifacts/mediator2
 		#ls -l
@@ -311,7 +313,7 @@ This document is the basic configuration document for the private network built 
 					drwx------ 5 root root       68 Dec 25 02:41 palletone
 					-rw-r--r-- 1 root root     3343 Dec 25 01:26 ptn-config.toml
 		2>Modify toml file
-		2>ÐÞ¸ÄtomlÎÄ¼þ
+		2>ä¿®æ”¹tomlæ–‡ä»¶
 		#vi ptn-config.toml
 			[Node]
 			DataDir = "/var/palletone/production"
@@ -327,76 +329,78 @@ This document is the basic configuration document for the private network built 
 			StaticNodes=["pnode://3ea34ff09489627399bbeac8d3af93b34981afc623228210bd49c8ce11860f78c736aa3721ebb91aec76353a3b93ee6a2aadd05337ab0723a71a7c9f68947144@mediator0:30303","pnode://2a891ee523a40961c0760871be0613551aab45ad7a4ecd23369b713601228173b6e91d4ce748a2cbb571ae0c9b4d47ce605500ad3785cbadeb9ca8ba1a412f6e@mediator1:30303"]
 		##Note: 
 				Update pnode information to Mediator0 and mediator1;
-				Modify the relative path in the configuration file to absolute path£»
+				Modify the relative path in the configuration file to absolute pathï¼›
 				Replace the IP address of gptn in StaticNodes in p2p, and change it to [container name] if it runs locally.
-		##±¸×¢:
-				½«pnodeÐÅÏ¢¸üÐÂÎªmediator0ºÍmediator2£»
-				½«ÅäÖÃÎÄ¼þÖÐµÄÏà¶ÔÂ·¾¶ÐÞ¸ÄÎª¾ø¶ÔÂ·¾¶£»
-				½«p2pÖÐµÄStaticNodesÖÐÌæ»»ÎªgptnËùÔÚµÄIPµØÖ·£»ÈôÎª±¾»úÔËÐÐ£¬½«ÆäÐÞ¸ÄÎª[ÈÝÆ÷Ãû³Æ];
+		##å¤‡æ³¨:
+				å°†pnodeä¿¡æ¯æ›´æ–°ä¸ºmediator0å’Œmediator2ï¼›
+				å°†é…ç½®æ–‡ä»¶ä¸­çš„ç›¸å¯¹è·¯å¾„ä¿®æ”¹ä¸ºç»å¯¹è·¯å¾„ï¼›
+				å°†p2pä¸­çš„StaticNodesä¸­æ›¿æ¢ä¸ºgptnæ‰€åœ¨çš„IPåœ°å€ï¼›è‹¥ä¸ºæœ¬æœºè¿è¡Œï¼Œå°†å…¶ä¿®æ”¹ä¸º[å®¹å™¨åç§°];
 	(2.5)Configure docker template
-	(2.5)ÅäÖÃdockerÄ£°å
+	(2.5)é…ç½®dockeræ¨¡æ¿
 		##Enter the e2e_cli directory and configure it accordingly. The specific configuration information is as follows:
-		##½øÈëe2e_cliÄ¿Â¼½øÐÐÏàÓ¦µÄÅäÖÃ£¬¾ßÌåÅäÖÃÐÅÏ¢ÈçÏÂËùÊ¾£º
+		##è¿›å…¥e2e_cliç›®å½•è¿›è¡Œç›¸åº”çš„é…ç½®ï¼Œå…·ä½“é…ç½®ä¿¡æ¯å¦‚ä¸‹æ‰€ç¤ºï¼š
 		1>Enter e2e_cli directory
-		1>½øÈëe2e_cliÄ¿Â¼
+		1>è¿›å…¥e2e_cliç›®å½•
 		#cd $GOPATH/src/github.com/palletone/go-palletone/examples/e2e_cli
 		#
 		2>Configuration template file
-		2>ÅäÖÃÄ£°åÎÄ¼þ
+		2>é…ç½®æ¨¡æ¿æ–‡ä»¶
 		#vi docker-compose-e2e.yaml
 		#
 		##Note: Refer to the file under e2e_cli directory.
-		##±¸×¢:²Î¿¼e2e_cliÄ¿Â¼ÏÂÃæµÄ¸ÃÎÄ¼þ£»
+		##å¤‡æ³¨:å‚è€ƒe2e_cliç›®å½•ä¸‹é¢çš„è¯¥æ–‡ä»¶ï¼›
 		3>Start container
-		3>Æô¶¯ÈÝÆ÷
+		3>å¯åŠ¨å®¹å™¨
 		##Startup container in the background
-		##ºóÌ¨Æô¶¯ÈÝÆ÷
+		##åŽå°å¯åŠ¨å®¹å™¨
 		#docker-compose -f docker-compose-e2e.yaml up -d
 		#
 		##Query running container
-		##²éÑ¯ÔËÐÐµÄÈÝÆ÷
+		##æŸ¥è¯¢è¿è¡Œçš„å®¹å™¨
 		#docker ps
 		#
 		4>Stop running the container (optional)
-		4>Í£Ö¹ÔËÐÐÈÝÆ÷(¿ÉÑ¡)
+		4>åœæ­¢è¿è¡Œå®¹å™¨(å¯é€‰)
 		#docker-compose -f docker-compose-e2e.yaml down
 		#
 ############################################################
 #                    (3)Third                              #
-#                    (3)µÚÈý²¿·Ö                           #
+#                    (3)ç¬¬ä¸‰éƒ¨åˆ†                           #
 ############################################################
+
 (3)Configuration data node
-(3)ÅäÖÃÊý¾Ý½Úµã
+(3)é…ç½®æ•°æ®èŠ‚ç‚¹
 	(3.1)Configuration data node
-	(3.1)ÅäÖÃÊý¾Ý½Úµã
+	(3.1)é…ç½®æ•°æ®èŠ‚ç‚¹
 		1>Copy mediator0 to mediator3
-		1>¿½±´mediator0Îªmediator3
+		1>æ‹·è´mediator0ä¸ºmediator3
 		#cd $GOPATH/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts
 		#
 		#cp -rf mediator0 mediator3
 		#
 		2>Modify the toml configuration file
-		2>ÐÞ¸ÄtomlÅäÖÃÎÄ¼þ
+		2>ä¿®æ”¹tomlé…ç½®æ–‡ä»¶
 		#cd mediator3
 		#vi ptn-config.toml
 			[MediatorPlugin]
 			EnableStaleProduction=false
 		3>Add mediator3 configuration information to the template file in the e2e_cli directory.
-		3>ÔÚe2e_cliÄ¿Â¼µÄÄ£°åÎÄ¼þÖÐÌí¼Ómediator3ÅäÖÃÐÅÏ¢
+		3>åœ¨e2e_cliç›®å½•çš„æ¨¡æ¿æ–‡ä»¶ä¸­æ·»åŠ mediator3é…ç½®ä¿¡æ¯
 		#vi docker-compose-e2e.yaml
 		#
 		4>Start the service based on the template file
-		4>¸ù¾ÝÄ£°åÎÄ¼þÆô¶¯·þÎñ
+		4>æ ¹æ®æ¨¡æ¿æ–‡ä»¶å¯åŠ¨æœåŠ¡
 		#docker-compose -f docker-compose-e2e.yaml up -d
 		#docker ps
 		#
 		5>Enter the Mediator 3 directory to view the logs
-		5>½øÈëmediator3Ä¿Â¼²é¿´ÈÕÖ¾
+		5>è¿›å…¥mediator3ç›®å½•æŸ¥çœ‹æ—¥å¿—
 		#cd mediator3/log
 		#tail -f all.log
 ############################################################
 #                    (4)Four                               #
-#                    (4)µÚËÄ²¿·Ö                           #
+#                    (4)ç¬¬å››éƒ¨åˆ†                           #
 ############################################################
+
 (4)End
-(4)½áÎ²
+(4)ç»“å°¾
