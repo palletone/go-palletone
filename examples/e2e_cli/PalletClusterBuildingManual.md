@@ -169,7 +169,7 @@ The basic configuration commands in CentOS are as follows:
 		#
 #### 		(2.1.2) Generate an image and upload it to dockerhub
 		#docker build -t palletone/pallet-gptn:0.6 .      #Generate version 0.6
-		#docker build -t palletone/pallet-gptn            #Generate version latest
+		#docker build -t palletone/pallet-gptn     .      #Generate version latest
 		#docker images
 			REPOSITORY                   TAG                 IMAGE ID            CREATED             SIZE
 			palletone/pallet-gptn        0.6                 3ff3b7de24c9        2 days ago          406MB
