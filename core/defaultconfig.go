@@ -30,16 +30,19 @@ const (
 	DefaultDepositAmountForMediator  = "2000"
 	DefaultDepositAmountForJury      = "1000"
 	DefaultDepositAmountForDeveloper = "800"
-	DefaultDepositContractAddress    = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
-	DefaultFoundationAddress         = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
-	DefaultTokenHolder               = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
-	DefaultMediator                  = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF"
-	DefaultInitPartPub               = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
+
+	DefaultDepositContractAddress = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
+	DefaultFoundationAddress      = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
+	DefaultTokenHolder            = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
+
+	DefaultMediator   = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF"
+	DefaultInitPubKey = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
 		"MpbsWk45ymz4kmjU2AZo8Rm3mJ3MQHpdAgTo2nzWmqU3vCTW6qCfviPD1MKu3FJtmaWiLzdavLx831eCBXA1CdaiXAeU5MPcQ"
 
 	DefaultJuryAddr        = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF" //DefaultAccountAddr
 	DefaultJuryInitPartPub = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
 		"MpbsWk45ymz4kmjU2AZo8Rm3mJ3MQHpdAgTo2nzWmqU3vCTW6qCfviPD1MKu3FJtmaWiLzdavLx831eCBXA1CdaiXAeU5MPcQ" //DefaultAccountInitPartPub
+
 	DefaultMediatorCount       = 3 //21
 	DefaultMinMediatorCount    = 3 //11
 	DefaultMinMediatorInterval = 1

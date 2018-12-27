@@ -98,7 +98,7 @@ func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
 	for i, add := range meds {
 		med := d.GetActiveMediator(add)
 
-		pubs[i] = med.InitPartPub
+		pubs[i] = med.InitPubKey
 	}
 
 	return pubs
