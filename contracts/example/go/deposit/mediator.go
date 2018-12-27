@@ -386,7 +386,8 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 
 func deleteNode(stub shim.ChaincodeStubInterface, balance *modules.DepositBalance, nodeAddr string) error {
 	//计算币龄收益
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, balance.LastModifyTime.Unix())
+	endTime := balance.LastModifyTime * 1800
+	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
 	//本金+利息
 	balance.TotalAmount += awards
 	//TODO 是否传入
@@ -493,11 +494,12 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		}
 		balance = &modules.DepositBalance{}
 		//处理数据
-		balance.EnterTime = time.Now().UTC()
+		balance.EnterTime = time.Now().UTC().Unix() / 1800
 		updateForPayValue(balance, invokeTokens)
 	} else {
 		//TODO 再次交付保证金时，先计算当前余额的币龄奖励
-		awards := award.GetAwardsWithCoins(balance.TotalAmount, balance.LastModifyTime.Unix())
+		endTime := balance.LastModifyTime * 1800
+		awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
 		balance.TotalAmount += awards
 		//处理数据
 		updateForPayValue(balance, invokeTokens)
@@ -657,7 +659,7 @@ func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr string, apply
 	//判断是否全部退
 	if result == 0 {
 		//加入候选列表的时的时间
-		startTime := balance.EnterTime.YearDay()
+		startTime := time.Unix(balance.EnterTime*1800, 0).UTC().YearDay()
 		//当前时间
 		endTime := time.Now().UTC().YearDay()
 		//判断是否已超过规定周期
