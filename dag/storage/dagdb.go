@@ -769,6 +769,14 @@ func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
 			if err2 != nil {
 				return nil, err2
 			}
+			// decode WriteSet interface
+			for i, cw := range payment.WriteSet {
+				val_byte, _ := json.Marshal(cw.Value)
+				var item interface{}
+				json.Unmarshal(val_byte, &item)
+				payment.WriteSet[i].Value = item
+			}
+
 			msg.Payload = payment
 			msgs = append(msgs, msg)
 		case modules.APP_CONTRACT_INVOKE_REQUEST: //4
@@ -852,7 +860,7 @@ func (dagdb *DagDb) UpdateHeadByBatch(hash common.Hash, number uint64) error {
 	key := append(constants.HeaderCanon_Prefix, encodeBlockNumber(number)...)
 	BatchErrorHandler(batch.Put(append(key, constants.NumberSuffix...), hash.Bytes()), errorList) //PutCanonicalHash
 	BatchErrorHandler(batch.Put(constants.HeadHeaderKey, hash.Bytes()), errorList)                //PutHeadHeaderHash
-	BatchErrorHandler(batch.Put(constants.HeadUnitHash, hash.Bytes()), errorList)                  //PutHeadUnitHash
+	BatchErrorHandler(batch.Put(constants.HeadUnitHash, hash.Bytes()), errorList)                 //PutHeadUnitHash
 	BatchErrorHandler(batch.Put(constants.HeadFastKey, hash.Bytes()), errorList)                  //PutHeadFastUnitHash
 	if len(*errorList) == 0 {                                                                     //each function call succeed.
 		return batch.Write()
