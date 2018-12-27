@@ -38,3 +38,10 @@ func TestGetUnit(t *testing.T) {
 	assert.Nil(t, u, "empty db, must return nil Unit")
 	assert.NotNil(t, err)
 }
+func TestPrintHashList(t *testing.T) {
+	hash1 := common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347")
+	hash2 := common.HexToHash("0xddff4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d493ee")
+	txsHash := []common.Hash{hash1, hash2}
+	t.Logf("%x", txsHash)
+
+}
