@@ -20,10 +20,10 @@ package jury
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/common"
 	"sync"
 	"sync/atomic"
 	"errors"
+	"github.com/palletone/go-palletone/common"
 )
 
 func GetJurors() ([]Processor, error) {

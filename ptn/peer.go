@@ -202,6 +202,10 @@ func (p *peer) SendContractSigTransaction(event jury.ContractSigEvent) error {
 	return p2p.Send(p.rw, ContractSigMsg, event)
 }
 
+func (p *peer) SendContractSpecialTransaction(event jury.ContractSpecialEvent) error {
+	return p2p.Send(p.rw, ContractSpecialMsg, event)
+}
+
 //SendConsensus sends consensus msg to the peer
 func (p *peer) SendConsensus(msgs string) error {
 	return p2p.Send(p.rw, ConsensusMsg, msgs)

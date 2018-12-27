@@ -471,7 +471,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if tx.IsContractTx() {
 			if !pm.contractProc.CheckContractTxValid(tx) {
 				log.Debug("TxMsg", "CheckContractTxValid is false")
-				return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
+				return nil//errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
 			}
 		}
 
@@ -599,7 +599,17 @@ func (pm *ProtocolManager) ContractSigMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===ContractExecMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-	//pm.contractProc.ProcessContractSigEvent(&event)
+	pm.contractProc.ProcessContractSigEvent(&event)
+	return nil
+}
+
+func (pm *ProtocolManager) ContractSpecialMsg(msg p2p.Msg, p *peer) error {
+	var event jury.ContractSpecialEvent
+	if err := msg.Decode(&event); err != nil {
+		log.Info("===ContractSpecialMsg===", "err:", err)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+	pm.contractProc.ProcessContractSpecialEvent(&event)
 	return nil
 }
 
@@ -631,3 +641,12 @@ func (pm *ProtocolManager) ContractSigBroadcast(event jury.ContractSigEvent) {
 		peer.SendContractSigTransaction(event)
 	}
 }
+
+func (pm *ProtocolManager) ContractSpecialBroadcast(event jury.ContractSpecialEvent) {
+	log.Info("ContractSpecialBroadcast", "event", event.Tx.Hash())
+	peers := pm.peers.GetPeers()
+	for _, peer := range peers {
+		peer.SendContractSpecialTransaction(event)
+	}
+}
+

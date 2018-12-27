@@ -333,6 +333,9 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	if pm.contractProc != nil {
 		pm.contractExecCh = make(chan jury.ContractExeEvent)
 		pm.contractExecSub = pm.contractProc.SubscribeContractEvent(pm.contractExecCh)
+
+		pm.contractSigCh = make(chan jury.ContractSigEvent)
+		pm.contractSigSub = pm.contractProc.SubscribeContractSigEvent(pm.contractSigCh)
 	}
 
 	pm.activeMediatorsUpdatedCh = make(chan dag.ActiveMediatorsUpdatedEvent)
@@ -516,6 +519,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case msg.Code == ContractSigMsg:
 		log.Debug("===============ContractSigMsg")
 		return pm.ContractSigMsg(msg, p)
+	case msg.Code == ContractSpecialMsg:
+		log.Debug("===============ContractSigMsg")
+		return pm.ContractSpecialMsg(msg, p)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
