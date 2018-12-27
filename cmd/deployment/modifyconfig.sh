@@ -57,7 +57,8 @@ tempinfo=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`
 accountlength=35
 accounttemp=${tempinfo:0:$accountlength}
 #account=`echo ${accounttemp//^M/}`
-account=`echo ${accounttemp///}`
+account=`echo ${accounttemp//
+/}`
 
 
 
@@ -78,25 +79,27 @@ key=`echo $info`
 privatekeylength=44
 private=${key#*private key: }
 privatekeytemp=${private:0:$privatekeylength}
-privatekey=`echo ${privatekeytemp///}`
+privatekey=`echo ${privatekeytemp//
+/}`
 #echo $privatekey
 
 
 publickeylength=175
 public=${key#*public key: }
 publickeytemp=${public:0:$publickeylength}
-publickey=`echo ${publickeytemp///}`
+publickey=`echo ${publickeytemp//
+/}`
 #echo $publickey
 
 
 
 
-newInitPartSec="InitPartSec=\"$privatekey\""
-sed -i '/^InitPartSec/c'$newInitPartSec'' ptn-config.toml
+newInitPrivKey="InitPrivKey=\"$privatekey\""
+sed -i '/^InitPrivKey/c'$newInitPrivKey'' ptn-config.toml
 
 
-newInitPartPub="InitPartPub=\"$publickey\""
-sed -i '/^InitPartPub/c'$newInitPartPub'' ptn-config.toml
+newInitPubKey="InitPubKey=\"$publickey\""
+sed -i '/^InitPubKey/c'$newInitPubKey'' ptn-config.toml
 
 
 

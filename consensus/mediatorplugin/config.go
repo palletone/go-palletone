@@ -27,7 +27,7 @@ import (
 
 const (
 	DefaultPassword    = "password"
-	DefaultInitPartSec = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
+	DefaultInitPrivKey = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
 )
 
 var (
@@ -49,7 +49,7 @@ var DefaultConfig = Config{
 	EnableStaleProduction: false,
 	Mediators: []*MediatorConf{
 		&MediatorConf{core.DefaultMediator, DefaultPassword,
-			DefaultInitPartSec, core.DefaultInitPartPub},
+			DefaultInitPrivKey, core.DefaultInitPubKey},
 	},
 }
 
@@ -63,8 +63,8 @@ func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
 type MediatorConf struct {
 	Address,
 	Password,
-	InitPartSec,
-	InitPartPub string
+	InitPrivKey,
+	InitPubKey string
 }
 
 func (medConf *MediatorConf) configToAccount() *MediatorAccount {
@@ -72,8 +72,8 @@ func (medConf *MediatorConf) configToAccount() *MediatorAccount {
 	addr := core.StrToMedAdd(medConf.Address)
 
 	// 2. 解析 mediator 的 DKS 初始公私钥
-	sec, _ := core.StrToScalar(medConf.InitPartSec)
-	pub, _ := core.StrToPoint(medConf.InitPartPub)
+	sec, _ := core.StrToScalar(medConf.InitPrivKey)
+	pub, _ := core.StrToPoint(medConf.InitPubKey)
 
 	medAcc := &MediatorAccount{
 		addr,
@@ -88,6 +88,6 @@ func (medConf *MediatorConf) configToAccount() *MediatorAccount {
 type MediatorAccount struct {
 	Address     common.Address
 	Password    string
-	InitPartSec kyber.Scalar
-	InitPartPub kyber.Point
+	InitPrivKey kyber.Scalar
+	InitPubKey  kyber.Point
 }

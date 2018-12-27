@@ -199,7 +199,7 @@ func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
 
 	for _, localMed := range lams {
-		initSec := mp.mediators[localMed].InitPartSec
+		initSec := mp.mediators[localMed].InitPrivKey
 
 		//dkgr, err := dkg.NewDistKeyGeneratorWithoutSecret(mp.suite, initSec, initPubs, curThreshold)
 		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)

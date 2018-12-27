@@ -43,6 +43,7 @@ type TxExecuteResult struct {
 	TxHash    common.Hash `json:"txHash"`
 	TxSize    string      `json:"txSize"`
 	TxFee     string      `json:"txFee"`
+	Tip       string      `json:"tip"`
 	Warning   string      `json:"warning"`
 }
 
@@ -58,9 +59,9 @@ func (args *MediatorCreateArgs) check() error {
 		return fmt.Errorf("invalid account address: %s", args.AddStr)
 	}
 
-	_, err = core.StrToPoint(args.InitPartPub)
+	_, err = core.StrToPoint(args.InitPubKey)
 	if err != nil {
-		return fmt.Errorf("invalid init PubKey: %s", args.InitPartPub)
+		return fmt.Errorf("invalid init PubKey: %s", args.InitPubKey)
 	}
 
 	_, err = discover.ParseNode(args.Node)
@@ -73,8 +74,8 @@ func (args *MediatorCreateArgs) check() error {
 
 // 相关参数检查
 func (args *MediatorCreateArgs) setDefaults(node *discover.Node) (initPrivKey string) {
-	if args.InitPartPub == "" {
-		args.InitPartPub, initPrivKey = core.CreateInitDKS()
+	if args.InitPubKey == "" {
+		args.InitPubKey, initPrivKey = core.CreateInitDKS()
 	}
 
 	if args.Node == "" {
@@ -126,15 +127,14 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, 
 	// 5. 返回执行结果
 	res := &TxExecuteResult{}
 	res.TxContent = fmt.Sprintf("Create mediator %s with initPubKey : %s , node: %s , url: %s",
-		args.AddStr, args.InitPartPub, args.Node, args.Url)
+		args.AddStr, args.InitPubKey, args.Node, args.Url)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()
 	res.TxFee = fmt.Sprintf("%vdao", fee)
+	res.Warning = DefaultResult
 
 	if initPrivKey != "" {
-		res.Warning = "Your initPrivKey is: " + initPrivKey + " , " + DefaultResult
-	} else {
-		res.Warning = DefaultResult
+		res.Tip = "Your initial private key is: " + initPrivKey
 	}
 
 	return res, nil
