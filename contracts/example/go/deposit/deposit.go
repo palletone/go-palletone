@@ -134,7 +134,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//获取Jury候选列表
-	case "GetListForJuryCandidater":
+	case "GetListForJuryCandidate":
 		list, err := stub.GetState("JuryList")
 		if err != nil {
 			return shim.Error(err.Error())
