@@ -20,6 +20,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"strconv"
 )
 
 // StorageSize is a wrapper around a float value that supports user friendly
@@ -59,4 +60,24 @@ func (s StorageSize) Bytes() []byte {
 	binary.LittleEndian.PutUint64(bytes, bits)
 
 	return bytes
+}
+
+// str to uint64
+func Str2Int64(str string) int64 {
+	num, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		return -1
+	}
+	return num
+}
+
+func Str2Uint64(str string) uint64 {
+	num := Str2Int64(str)
+	if num < 0 {
+		return 0
+	}
+	return uint64(num)
+}
+func Uint642Str(num uint64) string {
+	return strconv.FormatInt(int64(num), 10)
 }

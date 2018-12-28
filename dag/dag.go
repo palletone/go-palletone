@@ -903,7 +903,7 @@ func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
 	return d.utxodb.SaveUtxoView(view.Entries())
 }
 
-func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
+func (d *Dag) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
 	return d.unitRep.GetAddrTransactions(addr)
 }
 
@@ -991,7 +991,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 			// update leveldb
 			if view != nil {
 				needSet := make(map[modules.OutPoint]struct{})
-				for key, _ := range view.Entries() {
+				for key := range view.Entries() {
 					needSet[key] = struct{}{}
 				}
 

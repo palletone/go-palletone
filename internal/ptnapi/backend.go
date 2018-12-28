@@ -114,7 +114,7 @@ type Backend interface {
 	/* ---------------------save token info ------------------------*/
 	SaveTokenInfo(token_info *modules.TokenInfo) (*ptnjson.TokenInfoJson, error)
 
-	GetAddrTransactions(addr string) (modules.Transactions, error)
+	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 	GetAllTokenInfo() (*modules.AllTokenInfo, error)
 	GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error)
 	//contract control
@@ -130,7 +130,6 @@ type Backend interface {
 	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, txid string, deleteImage bool) ([]byte, error)
 
-	ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 
 	//Dag() dag.IDag

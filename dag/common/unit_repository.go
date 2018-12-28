@@ -57,7 +57,7 @@ type IUnitRepository interface {
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
-	GetAddrTransactions(addr string) (modules.Transactions, error)
+	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -659,6 +659,11 @@ func getPayToAddresses(tx *modules.Transaction) []common.Address {
 	return keys
 }
 
+func getPayFromAddresses(tx *modules.Transaction) []*modules.OutPoint {
+	outpoints, _ := tx.GetAddressInfo()
+	return outpoints
+}
+
 /**
 保存PaymentPayload
 save PaymentPayload data
@@ -957,18 +962,30 @@ func IsGenesis(hash common.Hash) bool {
 	return genHash == hash
 }
 
-// GetAddrTransactions
-func (unitOp *UnitRepository) GetAddrTransactions(addr string) (modules.Transactions, error) {
+// GetAddrTransactions containing from && to address
+func (unitOp *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
 	address, _ := common.StringToAddress(addr)
 	hashs, err := unitOp.idxdb.GetAddressTxIds(address)
 	if err != nil {
-		return modules.Transactions{}, err
+		return nil, err
 	}
-
+	alltxs := make(map[string]modules.Transactions)
 	txs := make(modules.Transactions, 0)
 	for _, hash := range hashs {
 		tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
 		txs = append(txs, tx)
 	}
-	return txs, nil
+	alltxs["into"] = txs
+
+	// from tx
+	txs = make(modules.Transactions, 0)
+	from_hashs, err1 := unitOp.idxdb.GetFromAddressTxIds(addr)
+	if err1 == nil {
+		for _, hash := range from_hashs {
+			tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
+			txs = append(txs, tx)
+		}
+	}
+	alltxs["out"] = txs
+	return alltxs, err1
 }

@@ -49,7 +49,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	mediatorInfo := modules.MediatorInfo{
 		Address: invokeAddr,
 		Content: content,
-		Time:    time.Now().UTC(),
+		Time:    time.Now().UTC().Unix() / 1800,
 	}
 	//获取同意列表，判断是否已经申请过了
 	agreeList, err := stub.GetAgreeForBecomeMediatorList()
@@ -262,7 +262,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 			break
 		}
 	}
-	mediator.Time = time.Now().UTC()
+	mediator.Time = time.Now().UTC().Unix() / 1800
 	//获取列表
 	quitList, err := stub.GetQuitMediatorApplyList()
 	if err != nil {

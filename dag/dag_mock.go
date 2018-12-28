@@ -633,9 +633,9 @@ func (mr *MockIDagMockRecorder) GetAllUtxos() *gomock.Call {
 }
 
 // GetAddrTransactions mocks base method
-func (m *MockIDag) GetAddrTransactions(addr string) (modules.Transactions, error) {
+func (m *MockIDag) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
 	ret := m.ctrl.Call(m, "GetAddrTransactions", addr)
-	ret0, _ := ret[0].(modules.Transactions)
+	ret0, _ := ret[0].(map[string]modules.Transactions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

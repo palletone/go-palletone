@@ -450,7 +450,7 @@ func (b *PtnApiBackend) SaveTokenInfo(token *modules.TokenInfo) (*ptnjson.TokenI
 	return tokenInfoJson, nil
 }
 
-func (b *PtnApiBackend) GetAddrTransactions(addr string) (modules.Transactions, error) {
+func (b *PtnApiBackend) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
 	return b.ptn.dag.GetAddrTransactions(addr)
 }
 
@@ -509,10 +509,6 @@ func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, 
 }
 func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, txid string, deleteImage bool) ([]byte, error) {
 	return b.ptn.contractPorcessor.ContractStopReq(from, to, daoAmount, daoFee, contractId, txid, deleteImage)
-}
-
-func (b *PtnApiBackend) ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
-	return b.ptn.contractPorcessor.ContractTxCreat(deployId, txBytes, args, timeout)
 }
 
 func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {
