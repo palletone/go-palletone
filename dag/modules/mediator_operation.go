@@ -20,13 +20,12 @@ package modules
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/core"
 )
 
 type MediatorCreateOperation struct {
-	AddStr     string `json:"account"`
-	InitPubKey string `json:"initPubKey"`
-	Node       string `json:"node"`
-	Url        string `json:"url"`
+	*core.MediatorInfoBase
+	Url string `json:"url"`
 }
 
 func (mco *MediatorCreateOperation) FeePayer() common.Address {

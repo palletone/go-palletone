@@ -21,6 +21,7 @@ package modules
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -28,7 +29,6 @@ import (
 	"strconv"
 	"time"
 
-	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/obj"
 	"github.com/palletone/go-palletone/common/rlp"

@@ -43,19 +43,18 @@ type Mediator struct {
 	Address    common.Address
 	InitPubKey kyber.Point
 	Node       *discover.Node
-
-	*MediatorBase
+	*MediatorInfoExpand
 }
 
-type MediatorBase struct {
+type MediatorInfoExpand struct {
 	Url                  string
 	TotalMissed          uint64
 	LastConfirmedUnitNum uint32
 	TotalVotes           uint64
 }
 
-func NewMediatorBase() *MediatorBase {
-	return &MediatorBase{
+func NewMediatorBase() *MediatorInfoExpand {
+	return &MediatorInfoExpand{
 		Url:                  "",
 		TotalMissed:          0,
 		LastConfirmedUnitNum: 0,
@@ -65,7 +64,7 @@ func NewMediatorBase() *MediatorBase {
 
 func NewMediator() *Mediator {
 	return &Mediator{
-		MediatorBase: NewMediatorBase(),
+		MediatorInfoExpand: NewMediatorBase(),
 	}
 }
 

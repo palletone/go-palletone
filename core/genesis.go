@@ -70,10 +70,14 @@ func (g *Genesis) GetTokenAmount() uint64 {
 	return uint64(amount)
 }
 
-type InitialMediator struct {
+type MediatorInfoBase struct {
 	AddStr     string `json:"account"`
 	InitPubKey string `json:"initPubKey"`
 	Node       string `json:"node"`
+}
+
+type InitialMediator struct {
+	*MediatorInfoBase
 }
 
 // author Albert·Gou

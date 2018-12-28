@@ -264,11 +264,10 @@ func initialMediatorCandidates(mediators []*mp.MediatorConf, nodeInfo string) []
 	mcLen := len(mediators)
 	initialMediators := make([]*core.InitialMediator, mcLen)
 	for i := 0; i < mcLen; i++ {
-		initialMediators[i] = &core.InitialMediator{
-			AddStr:     mediators[i].Address,
-			InitPubKey: mediators[i].InitPubKey,
-			Node:       nodeInfo,
-		}
+		im := &core.InitialMediator{}
+		im.AddStr = mediators[i].Address
+		im.InitPubKey = mediators[i].InitPubKey
+		im.Node = nodeInfo
 	}
 
 	return initialMediators

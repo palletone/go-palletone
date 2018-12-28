@@ -39,35 +39,32 @@ func mediatorKey(address common.Address) []byte {
 
 // only for serialization(storage)
 type MediatorInfo struct {
-	//AddStr               string
-	InitPubKey string
-	Node       string
-
-	*core.MediatorBase
+	*core.MediatorInfoBase
+	*core.MediatorInfoExpand
 }
 
 func NewMediatorInfo() *MediatorInfo {
 	return &MediatorInfo{
-		MediatorBase: core.NewMediatorBase(),
+		MediatorInfoExpand: core.NewMediatorBase(),
 	}
 }
 
 func mediatorToInfo(md *core.Mediator) *MediatorInfo {
 	mi := NewMediatorInfo()
-	//mi.AddStr = md.Address.Str()
+	mi.AddStr = md.Address.Str()
 	mi.InitPubKey = core.PointToStr(md.InitPubKey)
 	mi.Node = md.Node.String()
-	mi.MediatorBase = md.MediatorBase
+	mi.MediatorInfoExpand = md.MediatorInfoExpand
 
 	return mi
 }
 
 func (mi *MediatorInfo) infoToMediator() *core.Mediator {
 	md := core.NewMediator()
-	//md.Address = core.StrToMedAdd(mi.AddStr)
+	md.Address = core.StrToMedAdd(mi.AddStr)
 	md.InitPubKey, _ = core.StrToPoint(mi.InitPubKey)
 	md.Node = core.StrToMedNode(mi.Node)
-	md.MediatorBase = mi.MediatorBase
+	md.MediatorInfoExpand = mi.MediatorInfoExpand
 
 	return md
 }

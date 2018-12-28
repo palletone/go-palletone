@@ -49,10 +49,8 @@ func GetInitialMediatorMsgs(genesisConf *core.Genesis) []*modules.Message {
 
 	for _, mi := range genesisConf.InitialMediatorCandidates {
 		mco := &modules.MediatorCreateOperation{
-			AddStr:     mi.AddStr,
-			InitPubKey: mi.InitPubKey,
-			Node:       mi.Node,
-			Url:        "",
+			MediatorInfoBase: mi.MediatorInfoBase,
+			Url:              "",
 		}
 
 		msg := &modules.Message{
