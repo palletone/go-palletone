@@ -813,12 +813,16 @@ func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
 				return nil, err2
 			}
 			// decode WriteSet interface
-			for i, cw := range payment.WriteSet {
-				val_byte, _ := json.Marshal(cw.Value)
-				var item interface{}
-				json.Unmarshal(val_byte, &item)
-				payment.WriteSet[i].Value = item
-			}
+			//for i, cw := range payment.WriteSet {
+			//	fmt.Println("lal========================ala", i, cw.Value)
+			//	//fmt.Printf("lalalalala%#v\n\n",cw.Value)
+			//	val_byte, _ := json.Marshal(cw.Value)
+			//	var item []byte
+			//	json.Unmarshal(val_byte, &item)
+			//	fmt.Println("===========", item)
+			//	payment.WriteSet[i].Value = item
+			//
+			//}
 
 			msg.Payload = payment
 			msgs = append(msgs, msg)
