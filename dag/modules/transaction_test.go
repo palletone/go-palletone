@@ -85,8 +85,8 @@ func TestTxHash(t *testing.T) {
 		} else {
 			fmt.Println("value:=", payment.Outputs[0].Value)
 		}
-		fmt.Println("tx_hash", tx_item.Hash().String())       //every different
-		fmt.Println("tx_hashstr", tx_item.HashStr().String()) //every same
+		fmt.Println("tx_hash", tx_item.Hash_old().String()) //every different
+		fmt.Println("tx_hashstr", tx_item.Hash().String())  //every same
 	}
 }
 
