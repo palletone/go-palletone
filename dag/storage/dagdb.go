@@ -226,10 +226,12 @@ func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error 
 }
 
 func (dagdb *DagDb) GetBody(unitHash common.Hash) ([]common.Hash, error) {
+	log.Debug("get body prefix info ", "prefix", string(constants.BODY_PREFIX))
 	data, err := dagdb.db.Get(append(constants.BODY_PREFIX, unitHash.Bytes()...))
 	if err != nil {
 		return nil, err
 	}
+
 	var txHashs []common.Hash
 	if err := rlp.DecodeBytes(data, &txHashs); err != nil {
 		return nil, err
@@ -552,7 +554,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 	txs := modules.Transactions{}
 	txHashList, err := dagdb.GetBody(hash)
 	if err != nil {
-		dagdb.logger.Info("GetUnitTransactions when get body error", "error", err.Error())
+		dagdb.logger.Info("GetUnitTransactions when get body error", "error", err.Error(), "unit_hash", hash.String())
 		return nil, err
 	}
 	// get transaction by tx'hash.
