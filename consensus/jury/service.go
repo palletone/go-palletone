@@ -348,46 +348,6 @@ func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction, cnt int) error {
 	return txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
 }
 
-func (p *Processor) ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
-	log.Info("ContractTxCreat", fmt.Sprintf("enter, deployId[%v],", deployId))
-
-	if deployId == nil || args == nil {
-		log.Error("ContractTxCreat", "param is nil")
-		return nil, errors.New("transaction request param is nil")
-	}
-
-	tx := &modules.Transaction{}
-	if txBytes != nil {
-		if err := rlp.DecodeBytes(txBytes, tx); err != nil {
-			return nil, err
-		}
-	} else {
-		pay := &modules.PaymentPayload{
-			Inputs:   []*modules.Input{},
-			Outputs:  []*modules.Output{},
-			LockTime: 11111, //todo
-		}
-		msgPay := &modules.Message{
-			App:     modules.APP_PAYMENT,
-			Payload: pay,
-		}
-		tx.AddMessage(msgPay)
-	}
-
-	msgReq := &modules.Message{
-		App: modules.APP_CONTRACT_INVOKE_REQUEST,
-		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId: deployId,
-			Args:       args,
-			Timeout:    timeout,
-		},
-	}
-
-	tx.AddMessage(msgReq)
-
-	return rlp.EncodeToBytes(tx)
-}
-
 func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 	if txBytes == nil {
 		log.Error("ContractTxBroadcast", "param is nil")

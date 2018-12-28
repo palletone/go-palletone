@@ -713,22 +713,6 @@ func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount,
 	return hex.EncodeToString(rsp), err
 }
 
-func (s *PublicBlockChainAPI) CreatCcTransaction(ctx context.Context, txtype string, deployId string, txhex string, param []string) (string, error) {
-	depId, _ := hex.DecodeString(deployId)
-	txBytes, err := hex.DecodeString(txhex)
-	log.Info("-----creatCcTransaction:" + deployId)
-
-	args := make([][]byte, len(param))
-	for i, arg := range param {
-		args[i] = []byte(arg)
-		fmt.Printf("index[%d], value[%s]\n", i, arg)
-	}
-	rsp, err := s.b.ContractTxCreat(depId, txBytes, args, 0)
-	log.Info("-----creatCcTransaction:" + string(rsp))
-
-	return hex.EncodeToString(rsp), err
-}
-
 // ExecutionResult groups all structured logs emitted by the EVM
 // while replaying a transaction in debug mode as well as transaction
 // execution status, the amount of gas used and the return value

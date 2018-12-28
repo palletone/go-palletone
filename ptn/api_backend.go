@@ -511,10 +511,6 @@ func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, da
 	return b.ptn.contractPorcessor.ContractStopReq(from, to, daoAmount, daoFee, contractId, txid, deleteImage)
 }
 
-func (b *PtnApiBackend) ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
-	return b.ptn.contractPorcessor.ContractTxCreat(deployId, txBytes, args, timeout)
-}
-
 func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {
 	return b.ptn.dag.GetCommon(key)
 }
