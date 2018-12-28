@@ -225,7 +225,7 @@ func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error 
 }
 
 func (dagdb *DagDb) GetBody(unitHash common.Hash) ([]common.Hash, error) {
-	log.Debug("get body prefix info ", "prefix", string(constants.BODY_PREFIX))
+	log.Debug("get unit body info", "unitHash", unitHash.String())
 	data, err := dagdb.db.Get(append(constants.BODY_PREFIX, unitHash.Bytes()...))
 	if err != nil {
 		return nil, err
