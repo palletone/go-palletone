@@ -268,6 +268,7 @@ func initialMediatorCandidates(mediators []*mp.MediatorConf, nodeInfo string) []
 		im.AddStr = mediators[i].Address
 		im.InitPubKey = mediators[i].InitPubKey
 		im.Node = nodeInfo
+		initialMediators[i] = im
 	}
 
 	return initialMediators

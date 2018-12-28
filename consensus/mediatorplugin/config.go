@@ -44,12 +44,16 @@ type Config struct {
 	Mediators []*MediatorConf // the set of the mediator info
 }
 
+func DefaultMediatorConf() *MediatorConf {
+	return &MediatorConf{core.DefaultMediator, DefaultPassword,
+		DefaultInitPrivKey, core.DefaultInitPubKey}
+}
+
 // mediator plugin default config
 var DefaultConfig = Config{
 	EnableStaleProduction: false,
 	Mediators: []*MediatorConf{
-		&MediatorConf{core.DefaultMediator, DefaultPassword,
-			DefaultInitPrivKey, core.DefaultInitPubKey},
+		DefaultMediatorConf(),
 	},
 }
 

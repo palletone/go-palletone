@@ -35,7 +35,9 @@ const (
 	DefaultFoundationAddress      = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM"
 	DefaultTokenHolder            = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 
-	DefaultMediator   = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF"
+	DefaultMediator = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF"
+	DefaultNodeInfo = "pnode://4bdc1c533f6e3700a0a6cc346bf2364eace58a10d8a782762c8d2b27cf4d96c25827c82a15" +
+		"684d348e88722b259f31abcccd4d0eaae0f52eeb85e1eb5342b862@127.0.0.1:30303"
 	DefaultInitPubKey = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
 		"MpbsWk45ymz4kmjU2AZo8Rm3mJ3MQHpdAgTo2nzWmqU3vCTW6qCfviPD1MKu3FJtmaWiLzdavLx831eCBXA1CdaiXAeU5MPcQ"
 
