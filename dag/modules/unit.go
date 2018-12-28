@@ -198,7 +198,7 @@ type Unit struct {
 	ReceivedFrom interface{}
 }
 
-func (unit *Unit) UnitAuthor() common.Address {
+func (unit *Unit) Author() common.Address {
 	if unit == nil {
 		log.Error("the Unit pointer is nil!")
 	}

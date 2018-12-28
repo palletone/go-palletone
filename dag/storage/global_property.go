@@ -91,6 +91,7 @@ func (gpt *globalProperty) getGP() *modules.GlobalProperty {
 
 	gp := modules.NewGlobalProp()
 	gp.ChainParameters = gpt.ChainParameters
+	gp.ActiveJuries = ajs
 	gp.ActiveMediators = ams
 	gp.PrecedingMediators = pms
 

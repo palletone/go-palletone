@@ -278,7 +278,7 @@ func (forkIndex *ForkIndex) IsReachedIrreversibleHeight(index uint64, main_index
 		if data == nil {
 			return false
 		}
-		// TODO  超过15个mediator生产的单元，fork里的第一个单元才能被确认为已不可逆（已稳定）。
+		// TODO  超过2/3个mediator生产的单元，fork里的第一个单元才能被确认为已不可逆（已稳定）。
 		// ...
 
 		if s_index := index - uint64(dagconfig.DefaultConfig.IrreversibleHeight); s_index >= main_index {
