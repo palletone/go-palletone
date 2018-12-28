@@ -683,9 +683,10 @@ func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.Chaincod
 	}
 	//计算一部分的利息
 	//获取币龄
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, balance.LastModifyTime.Unix())
+	endTime := balance.LastModifyTime * 1800
+	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
 	//fmt.Println("awards ", awards)
-	balance.LastModifyTime = time.Now().UTC()
+	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
 	//加上利息奖励
 	balance.TotalAmount += awards
 	//减去提取部分
@@ -706,9 +707,10 @@ func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.Chaincod
 		return shim.Error(err.Error())
 	}
 	//计算当前币龄奖励
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, balance.LastModifyTime.Unix())
+	endTime := balance.LastModifyTime * 1800
+	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
 	//fmt.Println("awards ", awards)
-	balance.LastModifyTime = time.Now().UTC()
+	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
 	//加上利息奖励
 	balance.TotalAmount += awards
 	//减去提取部分
