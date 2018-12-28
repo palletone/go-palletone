@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/tokenengine"
 )
@@ -267,12 +266,12 @@ func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		}
 		var temptxs modules.Transactions
 		for _, tx := range txs {
-			msgs, err1 := storage.ConvertMsg(tx)
-			if err1 != nil {
-				log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
-				break
-			}
-			tx.TxMessages = msgs
+			//msgs, err1 := storage.ConvertMsg(tx)
+			//if err1 != nil {
+			//	log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
+			//	break
+			//}
+			//tx.TxMessages = msgs
 			temptxs = append(temptxs, tx)
 		}
 
@@ -406,12 +405,12 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 
 	var temptxs modules.Transactions
 	for _, tx := range unit.Txs {
-		msgs, err1 := storage.ConvertMsg(tx)
-		if err1 != nil {
-			log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
-			return err1
-		}
-		tx.TxMessages = msgs
+		//msgs, err1 := storage.ConvertMsg(tx)
+		//if err1 != nil {
+		//	log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
+		//	return err1
+		//}
+		//tx.TxMessages = msgs
 		temptxs = append(temptxs, tx)
 	}
 	unit.Txs = temptxs
@@ -471,7 +470,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if tx.IsContractTx() {
 			if !pm.contractProc.CheckContractTxValid(tx) {
 				log.Debug("TxMsg", "CheckContractTxValid is false")
-				return nil//errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
+				return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
 			}
 		}
 
@@ -649,4 +648,3 @@ func (pm *ProtocolManager) ContractSpecialBroadcast(event jury.ContractSpecialEv
 		peer.SendContractSpecialTransaction(event)
 	}
 }
-

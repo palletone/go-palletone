@@ -37,7 +37,6 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
@@ -747,139 +746,139 @@ func (dagdb *DagDb) gettrasaction(hash common.Hash) (*modules.Transaction, error
 	}
 	// TODO ---- 将不同msg‘s app 反序列化后赋值给payload interface{}.
 	//log.Debug("================== transaction_info======================", "error", err, "transaction_info", tx)
-	msgs, err1 := ConvertMsg(tx)
-	if err1 != nil {
-		log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
-		return nil, err1
-	}
-
-	tx.TxMessages = msgs
+	//msgs, err1 := ConvertMsg(tx)
+	//if err1 != nil {
+	//	log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
+	//	return nil, err1
+	//}
+	//
+	//tx.TxMessages = msgs
 	return tx, err
 }
 
-func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
-	if tx == nil {
-		return nil, errors.New("convert msg tx is nil")
-	}
-	msgs := make([]*modules.Message, 0)
-	for _, msg := range tx.Messages() {
-		//fmt.Println("msg ", msg)
-
-		data1, err1 := json.Marshal(msg.Payload)
-		if err1 != nil {
-			return nil, err1
-		}
-		switch msg.App {
-		default:
-			//case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT, APP_VOTE:
-			// payment := new(modules.PaymentPayload)
-			// err2 := json.Unmarshal(data1, &payment)
-			// if err2 != nil {
-			// 	return nil, err2
-			// }
-			// msg.Payload = payment
-			msgs = append(msgs, msg)
-
-		case modules.APP_PAYMENT: //0
-			payment := new(modules.PaymentPayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-		case modules.APP_CONTRACT_TPL: //1
-			payment := new(modules.ContractTplPayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-
-		case modules.APP_CONTRACT_DEPLOY: //2
-			payment := new(modules.ContractDeployPayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-
-		case modules.APP_CONTRACT_INVOKE: //3
-			payment := new(modules.ContractInvokePayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			// decode WriteSet interface
-			//for i, cw := range payment.WriteSet {
-			//	fmt.Println("lal========================ala", i, cw.Value)
-			//	//fmt.Printf("lalalalala%#v\n\n",cw.Value)
-			//	val_byte, _ := json.Marshal(cw.Value)
-			//	var item []byte
-			//	json.Unmarshal(val_byte, &item)
-			//	fmt.Println("===========", item)
-			//	payment.WriteSet[i].Value = item
-			//
-			//}
-
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-		case modules.APP_CONTRACT_INVOKE_REQUEST: //4
-			payment := new(modules.ContractInvokeRequestPayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-		case modules.APP_CONFIG: //5
-			payment := new(modules.ConfigPayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-		case modules.APP_TEXT: //6
-			payment := new(modules.TextPayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-		case modules.APP_VOTE: //7
-			payment := new(vote.VoteInfo)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-		case modules.APP_SIGNATURE: //8
-			payment := new(modules.SignaturePayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-
-		case modules.OP_MEDIATOR_CREATE:
-			payment := new(modules.MediatorCreateOperation)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-
-		}
-	}
-	return msgs, nil
-}
+//func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
+//	if tx == nil {
+//		return nil, errors.New("convert msg tx is nil")
+//	}
+//	msgs := make([]*modules.Message, 0)
+//	for _, msg := range tx.Messages() {
+//		//fmt.Println("msg ", msg)
+//
+//		data1, err1 := json.Marshal(msg.Payload)
+//		if err1 != nil {
+//			return nil, err1
+//		}
+//		switch msg.App {
+//		default:
+//			//case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT, APP_VOTE:
+//			// payment := new(modules.PaymentPayload)
+//			// err2 := json.Unmarshal(data1, &payment)
+//			// if err2 != nil {
+//			// 	return nil, err2
+//			// }
+//			// msg.Payload = payment
+//			msgs = append(msgs, msg)
+//
+//		case modules.APP_PAYMENT: //0
+//			payment := new(modules.PaymentPayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//		case modules.APP_CONTRACT_TPL: //1
+//			payment := new(modules.ContractTplPayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//
+//		case modules.APP_CONTRACT_DEPLOY: //2
+//			payment := new(modules.ContractDeployPayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//
+//		case modules.APP_CONTRACT_INVOKE: //3
+//			payment := new(modules.ContractInvokePayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			// decode WriteSet interface
+//			//for i, cw := range payment.WriteSet {
+//			//	fmt.Println("lal========================ala", i, cw.Value)
+//			//	//fmt.Printf("lalalalala%#v\n\n",cw.Value)
+//			//	val_byte, _ := json.Marshal(cw.Value)
+//			//	var item []byte
+//			//	json.Unmarshal(val_byte, &item)
+//			//	fmt.Println("===========", item)
+//			//	payment.WriteSet[i].Value = item
+//			//
+//			//}
+//
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//		case modules.APP_CONTRACT_INVOKE_REQUEST: //4
+//			payment := new(modules.ContractInvokeRequestPayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//		case modules.APP_CONFIG: //5
+//			payment := new(modules.ConfigPayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//		case modules.APP_TEXT: //6
+//			payment := new(modules.TextPayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//		case modules.APP_VOTE: //7
+//			payment := new(vote.VoteInfo)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//		case modules.APP_SIGNATURE: //8
+//			payment := new(modules.SignaturePayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//
+//		case modules.OP_MEDIATOR_CREATE:
+//			payment := new(modules.MediatorCreateOperation)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//
+//		}
+//	}
+//	return msgs, nil
+//}
 
 func (dagdb *DagDb) GetContractNoReader(db ptndb.Database, id common.Hash) (*modules.Contract, error) {
 	if common.EmptyHash(id) {

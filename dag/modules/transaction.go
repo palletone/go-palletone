@@ -180,15 +180,15 @@ func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
 func (tx *Transaction) Hash() common.Hash {
-	b, err := json.Marshal(tx)
-	if err != nil {
-		log.Error("json marshal error", "error", err)
-		return common.Hash{}
-	}
-	v := rlp.RlpHash(b[:])
-	return v
-}
-func (tx *Transaction) Hash_old() common.Hash {
+	//	b, err := json.Marshal(tx)
+	//	if err != nil {
+	//		log.Error("json marshal error", "error", err)
+	//		return common.Hash{}
+	//	}
+	//	v := rlp.RlpHash(b[:])
+	//	return v
+	//}
+	//func (tx *Transaction) Hash_old() common.Hash {
 
 	v := rlp.RlpHash(tx)
 	return v
@@ -202,12 +202,12 @@ func (tx *Transaction) RequestHash() common.Hash {
 			break
 		}
 	}
-	b, err := json.Marshal(req)
-	if err != nil {
-		log.Error("json marshal error", "error", err)
-		return common.Hash{}
-	}
-	return rlp.RlpHash(b[:])
+	//b, err := json.Marshal(req)
+	//if err != nil {
+	//	log.Error("json marshal error", "error", err)
+	//	return common.Hash{}
+	//}
+	return rlp.RlpHash(req)
 }
 
 func (tx *Transaction) Messages() []*Message {

@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"strings"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/common/rlp"
 )
 
@@ -152,4 +153,16 @@ func (asset *Asset) IsSimilar(similar *Asset) bool {
 		return false
 	}
 	return true
+}
+func (asset *Asset) MarshalJSON() ([]byte, error) {
+	return json.Marshal(asset.String())
+}
+func (asset *Asset) UnmarshalJSON(data []byte) error {
+	var str string
+	err := json.Unmarshal(data, &str)
+	if err != nil {
+		return err
+	}
+	asset.SetString(str)
+	return nil
 }
