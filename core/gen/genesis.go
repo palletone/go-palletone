@@ -325,7 +325,7 @@ func InitialMediatorCandidates(len int, address string) []*core.InitialMediator 
 	for i := 0; i < len; i++ {
 		var mi core.InitialMediator
 		mi.AddStr = address
-		mi.InitPartPub = core.DefaultInitPartPub
+		mi.InitPubKey = core.DefaultInitPubKey
 		mi.Node = deFaultNode
 		initialMediator[i] = &mi
 	}

@@ -64,6 +64,33 @@ func TestTransactionJson(t *testing.T) {
 	}
 
 }
+
+func TestTxHash(t *testing.T) {
+	data := `{"messages":[{"app":0,"payload":{"inputs":[{"pre_outpoint":{"txhash":"0xefcbb3619e2b144da01bf971509b99cc50d107c4698d27a37a8ba2fd4163581d","message_index":0,"out_index":0},"signature_script":"QG/9d+nQKetVVI0YSHvdlgS5fpUOCUkLikt8Ks34TH3mUDX6Bdw+uGBZjuMBiZf22Xs3BTOJ8SF1SIHNmmlt77khAgWOS0I9+ukHx0UyH1CK9jlXT9WXsWJofO7Pi0uG2rs0","extra":null}],"outputs":[{"value":"99999999999999999","pk_script":"dqkUX3Q90SF0P766C6FcplbeGpbOue+IrA==","asset":{"asset_id":[64,0,130,187,8,0,0,0,0,0,0,0,0,0,0,0],"unique_id":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}}],"lock_time":0}},{"app":102,"payload":{"contract_id":"AAAAAAAAAAAAAAAAAAAAAAAAAAI=","function_name":"","args":["Y3JlYXRlVG9rZW4=","enhsIHRlc3QgZGVzY3JpcHRpb24=","enhs","MQ==","MTAwMA==","UDE5aGlTcGpXRGN1UWtQa2hEam1jYlZhMzlhMmRhc3RFS3A="],"timeout":0}},{"app":3,"payload":{"contract_id":"AAAAAAAAAAAAAAAAAAAAAAAAAAI=","function_name":"","args":["eyJpbnZva2VfYWRkcmVzcyI6IlAxOWhpU3BqV0RjdVFrUGtoRGptY2JWYTM5YTJkYXN0RUtwIiwiaW52b2tlX3Rva2VucyI6eyJhbW91bnQiOjAsImFzc2V0Ijp7ImFzc2V0X2lkIjpbNjQsMCwxMzAsMTg3LDgsMCwwLDAsMCwwLDAsMCwwLDAsMCwwXSwidW5pcXVlX2lkIjpbMCwwLDAsMCwwLDAsMCwwLDAsMCwwLDAsMCwwLDAsMF19fSwiaW52b2tlX2ZlZXMiOnsiYW1vdW50IjoxLCJhc3NldCI6eyJhc3NldF9pZCI6WzY0LDAsMTMwLDE4Nyw4LDAsMCwwLDAsMCwwLDAsMCwwLDAsMF0sInVuaXF1ZV9pZCI6WzAsMCwwLDAsMCwwLDAsMCwwLDAsMCwwLDAsMCwwLDBdfX19","Y3JlYXRlVG9rZW4=","enhsIHRlc3QgZGVzY3JpcHRpb24=","enhs","MQ==","MTAwMA==","UDE5aGlTcGpXRGN1UWtQa2hEam1jYlZhMzlhMmRhc3RFS3A="],"read_set":[],"write_set":[{"IsDelete":false,"Key":"symbols","Value":"eyJ0b2tlbmluZm9zIjp7IlpYTCI6eyJTdXBwbHlBZGRyIjoiUDE5aGlTcGpXRGN1UWtQa2hEam1jYlZhMzlhMmRhc3RFS3AiLCJBc3NldElEIjpbNjQsMCwxODEsMjMzLDEsMjIsMTY4LDEyMiw5OSwxNTMsMTQzLDI1NSwyMywxNDMsMjAsNDZdfX19"}],"payload":"eyJuYW1lIjoienhsIHRlc3QgZGVzY3JpcHRpb24iLCJzeW1ib2wiOiJaWEwiLCJkZWNpbWFscyI6MSwidG90YWxfc3VwcGx5IjoxMDAwLCJzdXBwbHlfYWRkcmVzcyI6IlAxOWhpU3BqV0RjdVFrUGtoRGptY2JWYTM5YTJkYXN0RUtwIn0="}},{"app":0,"payload":{"inputs":null,"outputs":[{"value":"1000","pk_script":"dqkUX3Q90SF0P766C6FcplbeGpbOue+IrA==","asset":{"asset_id":[64,0,181,233,1,22,168,122,99,153,143,255,23,143,20,46],"unique_id":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}}],"lock_time":0}},{"app":5,"payload":{"signature_set":[{"PubKey":"AgWOS0I9+ukHx0UyH1CK9jlXT9WXsWJofO7Pi0uG2rs0","Signature":"05W6jF7uZMeZoySKwkHF+97YcXflqyIRACKpYza+ezsjF2KgB4cHrr8h3FQL4jvTaN4aaekD87lPgnAtkSnQxgE="}]}}]}`
+	tx_item := new(Transaction)
+	errNew := json.Unmarshal([]byte(data), tx_item)
+	if errNew != nil {
+		fmt.Println(errNew)
+	} else {
+		fmt.Println("json_result_payload: ", errNew, tx_item.TxMessages[0].Payload)
+		data1, err1 := json.Marshal(tx_item.TxMessages[0].Payload)
+		if err1 != nil {
+			fmt.Println(err1)
+			return
+		}
+		fmt.Println("str_date1:", string(data1))
+		payment := new(PaymentPayload)
+		err2 := json.Unmarshal(data1, &payment)
+		if err2 != nil {
+			fmt.Println(err2)
+		} else {
+			fmt.Println("value:=", payment.Outputs[0].Value)
+		}
+		fmt.Println("tx_hash", tx_item.Hash_old().String()) //every different
+		fmt.Println("tx_hashstr", tx_item.Hash().String())  //every same
+	}
+}
+
 func TestTransactionEncode(t *testing.T) {
 
 	pay1s := PaymentPayload{

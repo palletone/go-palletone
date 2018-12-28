@@ -23,10 +23,10 @@ import (
 )
 
 type MediatorCreateOperation struct {
-	AddStr      string `json:"account"`
-	InitPartPub string `json:"initPubKey"`
-	Node        string `json:"node"`
-	Url         string `json:"url"`
+	AddStr     string `json:"account"`
+	InitPubKey string `json:"initPubKey"`
+	Node       string `json:"node"`
+	Url        string `json:"url"`
 }
 
 func (mco *MediatorCreateOperation) FeePayer() common.Address {

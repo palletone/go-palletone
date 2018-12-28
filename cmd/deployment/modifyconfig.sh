@@ -89,15 +89,12 @@ publickey=`echo ${publickeytemp///}`
 #echo $publickey
 
 
+newInitPrivKey="InitPrivKey=\"$privatekey\""
+sed -i '/^InitPrivKey/c'$newInitPrivKey'' ptn-config.toml
 
 
-newInitPartSec="InitPartSec=\"$privatekey\""
-sed -i '/^InitPartSec/c'$newInitPartSec'' ptn-config.toml
-
-
-newInitPartPub="InitPartPub=\"$publickey\""
-sed -i '/^InitPartPub/c'$newInitPartPub'' ptn-config.toml
-
+newInitPubKey="InitPubKey=\"$publickey\""
+sed -i '/^InitPubKey/c'$newInitPubKey'' ptn-config.toml
 
 
 

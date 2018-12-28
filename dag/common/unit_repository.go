@@ -484,11 +484,12 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	}
 	// step1 验证 群签名
 	// if passed == true , don't validate group sign
-	if !passed {
-		if no := unitOp.validate.ValidateUnitGroupSign(unit.Header(), isGenesis); no != modules.UNIT_STATE_INVALID_GROUP_SIGNATURE {
-			return fmt.Errorf("Validate unit's group sign failed, err number=%d", no)
-		}
-	}
+	//if !passed {
+	//	if state := unitOp.validate.ValidateUnitGroupSign(unit.Header(), isGenesis); state ==
+	// 		modules.UNIT_STATE_INVALID_GROUP_SIGNATURE {
+	//		return fmt.Errorf("Validate unit's group sign failed, err number=%d", state)
+	//	}
+	//}
 
 	// step2. check unit signature, should be compare to mediator list
 	if dagconfig.DefaultConfig.WhetherValidateUnitSignature {

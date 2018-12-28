@@ -133,8 +133,8 @@ function updateTomlFile() {
         #修改TOML配置文件中的秘钥参数
         privatekey=${3}
         publickey=${4}
-        n_InitPartSec="InitPartSec=\"$privatekey\""
-        n_InitPartPub="InitPartPub=\"$publickey\""
+        n_InitPrivKey="InitPrivKey=\"$privatekey\""
+        n_InitPubKey="InitPubKey=\"$publickey\""
 
         #修改配置文件
         sed -i '/^ListenAddr/c'${n_ListenAddr}'' ${DUMPFILE}
@@ -143,8 +143,8 @@ function updateTomlFile() {
         sed -i '/^EnableStaleProduction/c'${n_EnableStaleProduction}'' ${DUMPFILE}
         sed -i '/^Address/c'${n_Address}'' ${DUMPFILE}
         sed -i '/^Password/c'${n_Password}'' ${DUMPFILE}
-        sed -i '/^InitPartSec/c'${n_InitPartSec}'' ${DUMPFILE}
-        sed -i '/^InitPartPub/c'${n_InitPartPub}'' ${DUMPFILE}
+        sed -i '/^InitPrivKey/c'${n_InitPrivKey}'' ${DUMPFILE}
+        sed -i '/^InitPubKey/c'${n_InitPubKey}'' ${DUMPFILE}
 
         return 0
 }

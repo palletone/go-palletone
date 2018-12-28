@@ -80,7 +80,7 @@ func (dag *Dag) updateMediatorSchedule() {
 
 func (dag *Dag) updateSigningMediator(newUnit *modules.Unit) {
 	// 1. 更新 签名mediator 的LastConfirmedUnitNum
-	signingMediator := newUnit.UnitAuthor()
+	signingMediator := newUnit.Author()
 	med := dag.GetMediator(signingMediator)
 
 	med.LastConfirmedUnitNum = uint32(newUnit.NumberU64())

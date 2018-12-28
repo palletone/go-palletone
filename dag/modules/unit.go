@@ -23,6 +23,7 @@ import (
 	"time"
 	"unsafe"
 
+	"encoding/json"
 	"errors"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
@@ -125,7 +126,12 @@ func (h *Header) HashWithOutTxRoot() common.Hash {
 	emptyHeader.GroupSign = nil
 	emptyHeader.GroupPubKey = nil
 	emptyHeader.TxRoot = common.Hash{}
-	return rlp.RlpHash(emptyHeader)
+	b, err := json.Marshal(emptyHeader)
+	if err != nil {
+		log.Error("json marshal error", "error", err)
+		return common.Hash{}
+	}
+	return rlp.RlpHash(b[:])
 
 }
 
@@ -198,7 +204,7 @@ type Unit struct {
 	ReceivedFrom interface{}
 }
 
-func (unit *Unit) UnitAuthor() common.Address {
+func (unit *Unit) Author() common.Address {
 	if unit == nil {
 		log.Error("the Unit pointer is nil!")
 	}

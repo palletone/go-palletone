@@ -40,31 +40,24 @@ func mediatorKey(address common.Address) []byte {
 // only for serialization(storage)
 type MediatorInfo struct {
 	//AddStr               string
-	InitPartPub          string
-	Node                 string
-	Url                  string
-	TotalMissed          uint64
-	LastConfirmedUnitNum uint32
-	TotalVotes           uint64
+	InitPubKey string
+	Node       string
+
+	*core.MediatorBase
 }
 
 func NewMediatorInfo() *MediatorInfo {
 	return &MediatorInfo{
-		Url:                  "",
-		TotalMissed:          0,
-		LastConfirmedUnitNum: 0,
-		TotalVotes:           0,
+		MediatorBase: core.NewMediatorBase(),
 	}
 }
 
 func mediatorToInfo(md *core.Mediator) *MediatorInfo {
 	mi := NewMediatorInfo()
 	//mi.AddStr = md.Address.Str()
-	mi.InitPartPub = core.PointToStr(md.InitPartPub)
+	mi.InitPubKey = core.PointToStr(md.InitPubKey)
 	mi.Node = md.Node.String()
-	mi.TotalMissed = md.TotalMissed
-	mi.LastConfirmedUnitNum = md.LastConfirmedUnitNum
-	mi.TotalVotes = md.TotalVotes
+	mi.MediatorBase = md.MediatorBase
 
 	return mi
 }
@@ -72,11 +65,9 @@ func mediatorToInfo(md *core.Mediator) *MediatorInfo {
 func (mi *MediatorInfo) infoToMediator() *core.Mediator {
 	md := core.NewMediator()
 	//md.Address = core.StrToMedAdd(mi.AddStr)
-	md.InitPartPub, _ = core.StrToPoint(mi.InitPartPub)
+	md.InitPubKey, _ = core.StrToPoint(mi.InitPubKey)
 	md.Node = core.StrToMedNode(mi.Node)
-	md.TotalMissed = mi.TotalMissed
-	md.LastConfirmedUnitNum = mi.LastConfirmedUnitNum
-	md.TotalVotes = mi.TotalVotes
+	md.MediatorBase = mi.MediatorBase
 
 	return md
 }
