@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -38,7 +37,7 @@ var (
 
 // only for serialization(storage)
 type globalProperty struct {
-	ChainParameters core.ChainParameters
+	*modules.GlobalPropBase
 
 	ActiveJuries       []common.Address
 	ActiveMediators    []common.Address
@@ -63,7 +62,7 @@ func getGPT(gp *modules.GlobalProperty) *globalProperty {
 	}
 
 	gpt := &globalProperty{
-		ChainParameters:    gp.ChainParameters,
+		GlobalPropBase:     gp.GlobalPropBase,
 		ActiveJuries:       ajs,
 		ActiveMediators:    ams,
 		PrecedingMediators: pms,
@@ -90,7 +89,7 @@ func (gpt *globalProperty) getGP() *modules.GlobalProperty {
 	}
 
 	gp := modules.NewGlobalProp()
-	gp.ChainParameters = gpt.ChainParameters
+	gp.GlobalPropBase = gpt.GlobalPropBase
 	gp.ActiveJuries = ajs
 	gp.ActiveMediators = ams
 	gp.PrecedingMediators = pms

@@ -40,21 +40,32 @@ func GenInitPair() (kyber.Scalar, kyber.Point) {
 
 // mediator 结构体 和具体的账户模型有关
 type Mediator struct {
-	Address              common.Address
-	InitPubKey           kyber.Point
-	Node                 *discover.Node
+	Address    common.Address
+	InitPubKey kyber.Point
+	Node       *discover.Node
+
+	*MediatorBase
+}
+
+type MediatorBase struct {
 	Url                  string
 	TotalMissed          uint64
 	LastConfirmedUnitNum uint32
 	TotalVotes           uint64
 }
 
-func NewMediator() *Mediator {
-	return &Mediator{
+func NewMediatorBase() *MediatorBase {
+	return &MediatorBase{
 		Url:                  "",
 		TotalMissed:          0,
 		LastConfirmedUnitNum: 0,
 		TotalVotes:           0,
+	}
+}
+
+func NewMediator() *Mediator {
+	return &Mediator{
+		MediatorBase: NewMediatorBase(),
 	}
 }
 
