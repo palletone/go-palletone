@@ -163,14 +163,12 @@ func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, dao
 	if msg.App == modules.APP_TEXT {
 		daoFee += dag.calculateDataFee(msg.Payload)
 	}
-
 	tx, err := dag.createBaseTransaction(from, to, daoAmount, daoFee, txPool)
 	if err != nil {
 		return nil, 0, err
 	}
-
 	tx.AddMessage(msg)
-	//tx.TxMessages = append(tx.TxMessages, msgs...)
+
 	return tx, daoFee, nil
 }
 

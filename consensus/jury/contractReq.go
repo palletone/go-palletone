@@ -24,7 +24,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 			Version: version,
 		},
 	}
-	reqId, tx, err := p.creatContractTxReq(from, to, daoAmount, daoFee, msgReq, true)
+	reqId, tx, err := p.createContractTxReq(from, to, daoAmount, daoFee, msgReq, true)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 		},
 	}
 
-	reqId, tx, err := p.creatContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
+	reqId, tx, err := p.createContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 			Timeout:      timeout,
 		},
 	}
-	reqId, tx, err := p.creatContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
+	reqId, tx, err := p.createContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 			DeleteImage: deleteImage,
 		},
 	}
-	reqId, tx, err := p.creatContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
+	reqId, tx, err := p.createContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
 	if err != nil {
 		return nil, err
 	}
