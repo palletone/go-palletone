@@ -226,10 +226,12 @@ func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error 
 }
 
 func (dagdb *DagDb) GetBody(unitHash common.Hash) ([]common.Hash, error) {
+	log.Debug("get body prefix info ", "prefix", string(constants.BODY_PREFIX))
 	data, err := dagdb.db.Get(append(constants.BODY_PREFIX, unitHash.Bytes()...))
 	if err != nil {
 		return nil, err
 	}
+
 	var txHashs []common.Hash
 	if err := rlp.DecodeBytes(data, &txHashs); err != nil {
 		return nil, err
@@ -552,7 +554,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 	txs := modules.Transactions{}
 	txHashList, err := dagdb.GetBody(hash)
 	if err != nil {
-		dagdb.logger.Info("GetUnitTransactions when get body error", "error", err.Error())
+		dagdb.logger.Info("GetUnitTransactions when get body error", "error", err.Error(), "unit_hash", hash.String())
 		return nil, err
 	}
 	// get transaction by tx'hash.
@@ -903,7 +905,7 @@ func (dagdb *DagDb) UpdateHeadByBatch(hash common.Hash, number uint64) error {
 	BatchErrorHandler(batch.Put(constants.HeadHeaderKey, hash.Bytes()), errorList)                //PutHeadHeaderHash
 	BatchErrorHandler(batch.Put(constants.HeadUnitHash, hash.Bytes()), errorList)                 //PutHeadUnitHash
 	BatchErrorHandler(batch.Put(constants.HeadFastKey, hash.Bytes()), errorList)                  //PutHeadFastUnitHash
-	if len(*errorList) == 0 { //each function call succeed.
+	if len(*errorList) == 0 {                                                                     //each function call succeed.
 		return batch.Write()
 	}
 	return fmt.Errorf("UpdateHeadByBatch, at least one sub function call failed.")
