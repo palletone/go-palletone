@@ -18,6 +18,52 @@ func TestTransactionHash(t *testing.T) {
 	//tx.SetHash(common.HexToHash("e01c4bae7b396bc3c9bcb9275cef479560141c2010b6537abd78795bc935a2dd"))
 	t.Log(tx.Hash().String())
 }
+func TestTransactionJson(t *testing.T) {
+	pay1s := PaymentPayload{
+		LockTime: 12345,
+	}
+	output := NewTxOut(99999999999999999, []byte{0xee, 0xbb}, NewPTNAsset())
+	pay1s.AddTxOut(output)
+	hash := common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87")
+	input := NewTxIn(NewOutPoint(&hash, 0, 1), []byte{})
+	pay1s.AddTxIn(input)
+	msg := &Message{
+		App:     APP_PAYMENT,
+		Payload: pay1s,
+	}
+	txmsg := NewTransaction(
+		[]*Message{msg},
+	)
+	data, err := json.Marshal(txmsg)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println("json ", string(data))
+	}
+	//
+	txmsgNew := NewTransaction(
+		[]*Message{msg},
+	)
+	errNew := json.Unmarshal(data, txmsgNew)
+	if errNew != nil {
+		fmt.Println(errNew)
+	} else {
+		fmt.Println("zzzz ", txmsgNew.TxMessages[0].Payload)
+		data1, err1 := json.Marshal(txmsgNew.TxMessages[0].Payload)
+		if err1 != nil {
+			fmt.Println(err1)
+			return
+		}
+		fmt.Println(string(data1))
+		payment := new(PaymentPayload)
+		err2 := json.Unmarshal(data1, &payment)
+		if err2 != nil {
+			fmt.Println(err2)
+		} else {
+			fmt.Println(payment.Outputs[0].Value)
+		}
+	}
+}
 func TestTransactionEncode(t *testing.T) {
 
 	pay1s := PaymentPayload{
