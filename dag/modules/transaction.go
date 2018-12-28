@@ -28,6 +28,7 @@ import (
 	"strconv"
 	"time"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/obj"
 	"github.com/palletone/go-palletone/common/rlp"
@@ -182,7 +183,14 @@ func (tx *Transaction) Hash() common.Hash {
 	v := rlp.RlpHash(tx)
 	return v
 }
-
+func (tx *Transaction) HashStr() common.Hash {
+	b, err := json.Marshal(tx)
+	if err != nil {
+		fmt.Println("error", err)
+	}
+	v := rlp.RlpHash(b[:])
+	return v
+}
 func (tx *Transaction) RequestHash() common.Hash {
 	req := &Transaction{}
 	for _, msg := range tx.TxMessages {
