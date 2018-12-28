@@ -134,7 +134,8 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, 
 	res.Warning = DefaultResult
 
 	if initPrivKey != "" {
-		res.Tip = "Your initial private key is: " + initPrivKey
+		res.Tip = "Your initial private key is: ," + initPrivKey + " initial public key is: " +
+			args.InitPubKey + ", please keep in mind!"
 	}
 
 	return res, nil

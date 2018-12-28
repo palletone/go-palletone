@@ -40,24 +40,31 @@ var (
 type globalProperty struct {
 	ChainParameters core.ChainParameters
 
-	ActiveMediators    []string
-	PrecedingMediators []string
+	ActiveJuries       []common.Address
+	ActiveMediators    []common.Address
+	PrecedingMediators []common.Address
 }
 
 func getGPT(gp *modules.GlobalProperty) *globalProperty {
-	ams := make([]string, 0)
-	pms := make([]string, 0)
+	ajs := make([]common.Address, 0)
+	ams := make([]common.Address, 0)
+	pms := make([]common.Address, 0)
+
+	for juryAdd, _ := range gp.ActiveJuries {
+		ajs = append(ajs, juryAdd)
+	}
 
 	for medAdd, _ := range gp.ActiveMediators {
-		ams = append(ams, medAdd.Str())
+		ams = append(ams, medAdd)
 	}
 
 	for medAdd, _ := range gp.PrecedingMediators {
-		pms = append(pms, medAdd.Str())
+		pms = append(pms, medAdd)
 	}
 
 	gpt := &globalProperty{
 		ChainParameters:    gp.ChainParameters,
+		ActiveJuries:       ajs,
 		ActiveMediators:    ams,
 		PrecedingMediators: pms,
 	}
@@ -66,15 +73,20 @@ func getGPT(gp *modules.GlobalProperty) *globalProperty {
 }
 
 func (gpt *globalProperty) getGP() *modules.GlobalProperty {
+	ajs := make(map[common.Address]bool, 0)
 	ams := make(map[common.Address]bool, 0)
 	pms := make(map[common.Address]bool, 0)
 
+	for _, addStr := range gpt.ActiveJuries {
+		ajs[addStr] = true
+	}
+
 	for _, addStr := range gpt.ActiveMediators {
-		ams[core.StrToMedAdd(addStr)] = true
+		ams[addStr] = true
 	}
 
 	for _, addStr := range gpt.PrecedingMediators {
-		pms[core.StrToMedAdd(addStr)] = true
+		pms[addStr] = true
 	}
 
 	gp := modules.NewGlobalProp()
