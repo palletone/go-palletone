@@ -49,7 +49,7 @@ type TxExecuteResult struct {
 
 // 创建 mediator 所需的参数, 至少包含普通账户地址
 type MediatorCreateArgs struct {
-	modules.MediatorCreateOperation
+	*modules.MediatorCreateOperation
 }
 
 // 相关参数检查
@@ -113,7 +113,7 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, 
 	}
 
 	// 1. 创建交易
-	tx, fee, err := a.dag.GenMediatorCreateTx(addr, &args.MediatorCreateOperation, a.ptn.TxPool())
+	tx, fee, err := a.dag.GenMediatorCreateTx(addr, args.MediatorCreateOperation, a.ptn.TxPool())
 	if err != nil {
 		return nil, err
 	}

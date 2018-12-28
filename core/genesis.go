@@ -76,8 +76,22 @@ type MediatorInfoBase struct {
 	Node       string `json:"node"`
 }
 
+func NewMediatorInfoBase() *MediatorInfoBase {
+	return &MediatorInfoBase{
+		AddStr:     "",
+		InitPubKey: "",
+		Node:       "",
+	}
+}
+
 type InitialMediator struct {
 	*MediatorInfoBase
+}
+
+func NewInitialMediator() *InitialMediator {
+	return &InitialMediator{
+		MediatorInfoBase: NewMediatorInfoBase(),
+	}
 }
 
 // author Albert·Gou

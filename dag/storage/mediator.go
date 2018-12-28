@@ -45,6 +45,7 @@ type MediatorInfo struct {
 
 func NewMediatorInfo() *MediatorInfo {
 	return &MediatorInfo{
+		MediatorInfoBase:   core.NewMediatorInfoBase(),
 		MediatorInfoExpand: core.NewMediatorBase(),
 	}
 }
@@ -107,7 +108,7 @@ func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator
 	}
 
 	med := mi.infoToMediator()
-	med.Address = address
+	//med.Address = address
 
 	return med, nil
 }
@@ -171,7 +172,7 @@ func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
 		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
 		add := common.BytesToAddress(addB)
 		med := mi.infoToMediator()
-		med.Address = add
+		//med.Address = add
 
 		result[add] = med
 	}
