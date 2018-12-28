@@ -23,6 +23,7 @@ import (
 	"time"
 	"unsafe"
 
+	"encoding/json"
 	"errors"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
@@ -125,7 +126,12 @@ func (h *Header) HashWithOutTxRoot() common.Hash {
 	emptyHeader.GroupSign = nil
 	emptyHeader.GroupPubKey = nil
 	emptyHeader.TxRoot = common.Hash{}
-	return rlp.RlpHash(emptyHeader)
+	b, err := json.Marshal(emptyHeader)
+	if err != nil {
+		log.Error("json marshal error", "error", err)
+		return common.Hash{}
+	}
+	return rlp.RlpHash(b[:])
 
 }
 

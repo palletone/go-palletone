@@ -21,6 +21,7 @@ package modules
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -28,8 +29,8 @@ import (
 	"strconv"
 	"time"
 
-	"encoding/json"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/obj"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
@@ -179,18 +180,20 @@ func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
 func (tx *Transaction) Hash() common.Hash {
-
-	v := rlp.RlpHash(tx)
-	return v
-}
-func (tx *Transaction) HashStr() common.Hash {
 	b, err := json.Marshal(tx)
 	if err != nil {
-		fmt.Println("error", err)
+		log.Error("json marshal error", "error", err)
+		return common.Hash{}
 	}
 	v := rlp.RlpHash(b[:])
 	return v
 }
+func (tx *Transaction) Hash_old() common.Hash {
+
+	v := rlp.RlpHash(tx)
+	return v
+}
+
 func (tx *Transaction) RequestHash() common.Hash {
 	req := &Transaction{}
 	for _, msg := range tx.TxMessages {
@@ -199,7 +202,12 @@ func (tx *Transaction) RequestHash() common.Hash {
 			break
 		}
 	}
-	return rlp.RlpHash(req)
+	b, err := json.Marshal(req)
+	if err != nil {
+		log.Error("json marshal error", "error", err)
+		return common.Hash{}
+	}
+	return rlp.RlpHash(b[:])
 }
 
 func (tx *Transaction) Messages() []*Message {
@@ -267,7 +275,13 @@ func (s Transactions) GetRlp(i int) []byte {
 	return enc
 }
 func (s Transactions) Hash() common.Hash {
-	v := rlp.RlpHash(s)
+	b, err := json.Marshal(s)
+	if err != nil {
+		log.Error("json marshal error", "error", err)
+		return common.Hash{}
+	}
+
+	v := rlp.RlpHash(b[:])
 	return v
 }
 
