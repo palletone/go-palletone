@@ -150,8 +150,12 @@ function addBootstrapNodes()
 	let ++acount;
     done
     l=${#array}
-    newarr=${array:0:$[$l-1]}
-    newarr="$newarr]"
+    if [ $l -eq 1 ] ;then
+        newarr="[]"
+    else
+        newarr=${array:0:$[$l-1]}
+        newarr="$newarr]"
+    fi
     newBootstrapNodes="BootstrapNodes=$newarr"
     #sed -i '/^StaticNodes/c'$newStaticNodes'' node$index/ptn-config.toml
     sed -i '/^BootstrapNodes/c'$newBootstrapNodes'' node$index/ptn-config.toml

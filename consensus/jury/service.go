@@ -348,46 +348,6 @@ func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction, cnt int) error {
 	return txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
 }
 
-func (p *Processor) ContractTxCreat(deployId []byte, txBytes []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
-	log.Info("ContractTxCreat", fmt.Sprintf("enter, deployId[%v],", deployId))
-
-	if deployId == nil || args == nil {
-		log.Error("ContractTxCreat", "param is nil")
-		return nil, errors.New("transaction request param is nil")
-	}
-
-	tx := &modules.Transaction{}
-	if txBytes != nil {
-		if err := rlp.DecodeBytes(txBytes, tx); err != nil {
-			return nil, err
-		}
-	} else {
-		pay := &modules.PaymentPayload{
-			Inputs:   []*modules.Input{},
-			Outputs:  []*modules.Output{},
-			LockTime: 11111, //todo
-		}
-		msgPay := &modules.Message{
-			App:     modules.APP_PAYMENT,
-			Payload: pay,
-		}
-		tx.AddMessage(msgPay)
-	}
-
-	msgReq := &modules.Message{
-		App: modules.APP_CONTRACT_INVOKE_REQUEST,
-		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId: deployId,
-			Args:       args,
-			Timeout:    timeout,
-		},
-	}
-
-	tx.AddMessage(msgReq)
-
-	return rlp.EncodeToBytes(tx)
-}
-
 func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 	if txBytes == nil {
 		log.Error("ContractTxBroadcast", "param is nil")
@@ -413,12 +373,12 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 	return req[:], nil
 }
 
-func (p *Processor) creatContractTxReq(from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message, isLocalInstall bool) ([]byte, *modules.Transaction, error) {
+func (p *Processor) createContractTxReq(from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message, isLocalInstall bool) ([]byte, *modules.Transaction, error) {
 	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, msg, p.ptn.TxPool())
 	if err != nil {
 		return nil, nil, err
 	}
-	log.Debug("creatContractTxReq", "tx:", tx)
+	log.Debug("createContractTxReq", "tx:", tx)
 	if tx, err = p.ptn.SignGenericTransaction(from, tx); err != nil {
 		return nil, nil, err
 	}
@@ -438,7 +398,7 @@ func (p *Processor) creatContractTxReq(from, to common.Address, daoAmount, daoFe
 		}
 		account := p.getLocalAccount()
 		if account == nil {
-			return nil, nil, errors.New("creatContractTxReq no local account")
+			return nil, nil, errors.New("createContractTxReq no local account")
 		}
 		ctx.rstTx, err = gen.GenContractSigTransction(account.Address, account.Password, ctx.rstTx, p.ptn.GetKeyStore())
 		if err != nil {
@@ -459,12 +419,17 @@ func (p *Processor) creatContractTxReq(from, to common.Address, daoAmount, daoFe
 
 func (p *Processor) ContractTxDeleteLoop() {
 	for {
-		time.Sleep(time.Second * time.Duration(20))
+		time.Sleep(time.Second * time.Duration(5))
 		p.locker.Lock()
 		for k, v := range p.mtx {
-			if time.Since(v.tm) > time.Second*100 { //todo
-				if v.valid == false {
-					log.Info("ContractTxDeleteLoop", "delete tx id", k.String())
+			if v.valid == false {
+				if time.Since(v.tm) > time.Second*120 {
+					log.Info("ContractTxDeleteLoop, contract is invalid", "delete tx id", k.String())
+					delete(p.mtx, k)
+				}
+			} else {
+				if time.Since(v.tm) > time.Second*600 {
+					log.Info("ContractTxDeleteLoop, contract is valid", "delete tx id", k.String())
 					delete(p.mtx, k)
 				}
 			}

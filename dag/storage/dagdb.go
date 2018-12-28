@@ -265,7 +265,7 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 	dagdb.updateAddrTransactions(tx, txHash)
 	// store output by addr
 	for i, msg := range tx.TxMessages {
-		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+		if msg.App >= modules.APP_CONTRACT_TPL_REQUEST && msg.App <= modules.APP_CONTRACT_STOP_REQUEST {
 			if err := dagdb.SaveReqIdByTx(tx); err != nil {
 				log.Error("SaveReqIdByTx is failed,", "error", err)
 			}
@@ -903,7 +903,7 @@ func (dagdb *DagDb) UpdateHeadByBatch(hash common.Hash, number uint64) error {
 	BatchErrorHandler(batch.Put(constants.HeadHeaderKey, hash.Bytes()), errorList)                //PutHeadHeaderHash
 	BatchErrorHandler(batch.Put(constants.HeadUnitHash, hash.Bytes()), errorList)                 //PutHeadUnitHash
 	BatchErrorHandler(batch.Put(constants.HeadFastKey, hash.Bytes()), errorList)                  //PutHeadFastUnitHash
-	if len(*errorList) == 0 {                                                                     //each function call succeed.
+	if len(*errorList) == 0 { //each function call succeed.
 		return batch.Write()
 	}
 	return fmt.Errorf("UpdateHeadByBatch, at least one sub function call failed.")
