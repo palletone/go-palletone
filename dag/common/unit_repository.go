@@ -415,7 +415,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 				//confPay.ConfigSet = append(confPay.ConfigSet,
 				//	modules.ContractWriteSet{Key: sk, Value: modules.ToPayloadMapValueBytes(v.Field(k).Interface())})
 				confPay.ConfigSet = append(confPay.ConfigSet,
-					modules.ContractWriteSet{Key: sk, Value: v.Field(k).Interface()})
+					modules.ContractWriteSet{Key: sk, Value: []byte(v.Field(k).String())})
 			}
 		} else {
 			sk := tt.Field(i).Name

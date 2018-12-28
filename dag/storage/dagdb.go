@@ -811,12 +811,16 @@ func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
 				return nil, err2
 			}
 			// decode WriteSet interface
-			for i, cw := range payment.WriteSet {
-				val_byte, _ := json.Marshal(cw.Value)
-				var item interface{}
-				json.Unmarshal(val_byte, &item)
-				payment.WriteSet[i].Value = item
-			}
+			//for i, cw := range payment.WriteSet {
+			//	fmt.Println("lal========================ala", i, cw.Value)
+			//	//fmt.Printf("lalalalala%#v\n\n",cw.Value)
+			//	val_byte, _ := json.Marshal(cw.Value)
+			//	var item []byte
+			//	json.Unmarshal(val_byte, &item)
+			//	fmt.Println("===========", item)
+			//	payment.WriteSet[i].Value = item
+			//
+			//}
 
 			msg.Payload = payment
 			msgs = append(msgs, msg)
@@ -903,7 +907,7 @@ func (dagdb *DagDb) UpdateHeadByBatch(hash common.Hash, number uint64) error {
 	BatchErrorHandler(batch.Put(constants.HeadHeaderKey, hash.Bytes()), errorList)                //PutHeadHeaderHash
 	BatchErrorHandler(batch.Put(constants.HeadUnitHash, hash.Bytes()), errorList)                 //PutHeadUnitHash
 	BatchErrorHandler(batch.Put(constants.HeadFastKey, hash.Bytes()), errorList)                  //PutHeadFastUnitHash
-	if len(*errorList) == 0 { //each function call succeed.
+	if len(*errorList) == 0 {                                                                     //each function call succeed.
 		return batch.Write()
 	}
 	return fmt.Errorf("UpdateHeadByBatch, at least one sub function call failed.")

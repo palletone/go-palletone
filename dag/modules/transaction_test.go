@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 )
@@ -85,8 +86,8 @@ func TestTxHash(t *testing.T) {
 		} else {
 			fmt.Println("value:=", payment.Outputs[0].Value)
 		}
-		fmt.Println("tx_hash", tx_item.Hash().String())       //every different
-		fmt.Println("tx_hashstr", tx_item.HashStr().String()) //every same
+		fmt.Println("tx_hash", tx_item.Hash_old().String()) //every different
+		fmt.Println("tx_hashstr", tx_item.Hash().String())  //every same
 	}
 }
 
@@ -223,3 +224,33 @@ func TestTransaction_EncodeRLP_Size(t *testing.T) {
 		t.Logf("input count:{%d}, encode tx size:%d\n", i, len(txb))
 	}
 }
+
+func TestRlpdecodeValue(t *testing.T) {
+	//str := "W3siYWRkcmVzcyI6IlAxQVB6TlgxbVRBcTQyak5wU0I4UUh4SnZjenU0VFlac0g1IiwiY29udGVudCI6IntcImtleVwiLFwidmFsdWVcIn0iLCJ0aW1lIjo4NTg4NzZ9XQ=="
+	//var val []byte
+	//err := rlp.DecodeBytes([]byte(str), &val)
+	//fmt.Println("error", err, "val", val)
+	str1 := "[{\"address\":\"P1DU7BHzyVU3eehHKySqgeEZhZC8oQo1yaM\",\"content\":\"{\\\"key\\\",\\\"value\\\"}\",\"time\":858877}]"
+	//strBytes, _ := rlp.EncodeToBytes(str1)
+	strBytes, _ := rlp.EncodeToBytes(str1)
+	fmt.Println(strBytes)
+
+	var val []byte
+	err := rlp.DecodeBytes(strBytes, &val)
+	fmt.Println("error", err, "val", string(val))
+
+	str := hexutil.Encode(strBytes)
+	fmt.Println(str)
+	//
+	//j, _ := json.Marshal(str1)
+	//fmt.Println(j)
+	//json.Unmarshal(j, &val)
+	//fmt.Println(val)
+	//fmt.Println(string(val))
+	//rlp.
+}
+
+//[{\"address\":\"P1DU7BHzyVU3eehHKySqgeEZhZC8oQo1yaM\",\"content\":\"{\\\"key\\\",\\\"value\\\"}\",\"time\":858877}]
+//1. rlp.decode
+//
+//2. rlp.decode
