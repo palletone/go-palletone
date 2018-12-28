@@ -450,7 +450,7 @@ func (b *PtnApiBackend) SaveTokenInfo(token *modules.TokenInfo) (*ptnjson.TokenI
 	return tokenInfoJson, nil
 }
 
-func (b *PtnApiBackend) GetAddrTransactions(addr string) (modules.Transactions, error) {
+func (b *PtnApiBackend) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
 	return b.ptn.dag.GetAddrTransactions(addr)
 }
 

@@ -5609,9 +5609,9 @@ var methods = function () {
         params: 0,
         // inputFormatter: [null]
     });
-    var getAddrTxs = new Method({
-        name: 'getAddrTxs',
-        call: 'ptn_getAddrTxs',
+    var getAddrTransactions = new Method({
+        name: 'getAddrTransactions',
+        call: 'ptn_getAddrTransactions',
         params: 1,
         // inputFormatter: [null]
     });
@@ -5761,7 +5761,7 @@ var methods = function () {
         getAddrOutpoints,
         getAddrUtxos,
         getAllUtxos,
-        getAddrTxs,
+        getAddrTransactions,
         getAllTokenInfo,
         getTokenInfo,
         saveTokenInfo,

@@ -267,6 +267,16 @@ func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address string) (m
 	}
 	return result, nil
 }
+func (s *PublicBlockChainAPI) GetAddrTransactions(ctx context.Context, addr string) (string, error) {
+	result, err := s.b.GetAddrTransactions(addr)
+	if result == nil {
+		return "all_txs:null", nil
+	}
+
+	info := NewPublicReturnInfo("all_txs", result)
+	result_json, err := json.Marshal(info)
+	return string(result_json), err
+}
 
 func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
 	result, err := s.b.WalletTokens(address)
@@ -2605,16 +2615,3 @@ func (s *PublicDagAPI) GetTxSearchEntry(ctx context.Context, hashHex string) (st
 	result_json, _ := json.Marshal(info)
 	return string(result_json), err
 }
-
-// // GetPoolTxByHash returns the pool transaction for the given hash
-// func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (string, error) {
-// 	hash := common.HexToHash(hex)
-// 	item, err := s.b.GetTxPoolTxByHash(hash)
-// 	if err != nil {
-// 		return "pool_tx:null", err
-// 	} else {
-// 		info := NewPublicReturnInfo("txpool_tx", item)
-// 		result_json, _ := json.Marshal(info)
-// 		return string(result_json), nil
-// 	}
-// }

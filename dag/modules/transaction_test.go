@@ -40,29 +40,28 @@ func TestTransactionJson(t *testing.T) {
 	} else {
 		fmt.Println("json ", string(data))
 	}
-	//
-	txmsgNew := NewTransaction(
-		[]*Message{msg},
-	)
-	errNew := json.Unmarshal(data, txmsgNew)
+
+	tx_item := new(Transaction)
+	errNew := json.Unmarshal(data, tx_item)
 	if errNew != nil {
 		fmt.Println(errNew)
 	} else {
-		fmt.Println("zzzz ", txmsgNew.TxMessages[0].Payload)
-		data1, err1 := json.Marshal(txmsgNew.TxMessages[0].Payload)
+		fmt.Println("json_result_payload: ", errNew, tx_item.TxMessages[0].Payload)
+		data1, err1 := json.Marshal(tx_item.TxMessages[0].Payload)
 		if err1 != nil {
 			fmt.Println(err1)
 			return
 		}
-		fmt.Println(string(data1))
+		fmt.Println("str_date1:", string(data1))
 		payment := new(PaymentPayload)
 		err2 := json.Unmarshal(data1, &payment)
 		if err2 != nil {
 			fmt.Println(err2)
 		} else {
-			fmt.Println(payment.Outputs[0].Value)
+			fmt.Println("value:=", payment.Outputs[0].Value)
 		}
 	}
+
 }
 func TestTransactionEncode(t *testing.T) {
 
@@ -85,7 +84,7 @@ func TestTransactionEncode(t *testing.T) {
 	//txmsg2 := NewTransaction(
 	//	[]*Message{msg, msg},
 	//)
-	req := &ContractInvokeRequestPayload{ContractId: []byte{0xcc}, FunctionName: "TestFun", Args: [][]byte{[]byte{0x11}, {0x22}}}
+	req := &ContractInvokeRequestPayload{ContractId: []byte{0xcc}, FunctionName: "TestFun", Args: [][]byte{{0x11}, {0x22}}}
 	msg3 := &Message{App: APP_CONTRACT_INVOKE_REQUEST, Payload: req}
 	txmsg3 := NewTransaction(
 		[]*Message{msg, msg2, msg3},

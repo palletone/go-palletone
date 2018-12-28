@@ -652,9 +652,9 @@ func (ec *Client) GetAllUtxos(ctx context.Context) ([]ptnjson.UtxoJson, error) {
 	return result, err
 }
 
-func (ec *Client) GetAddrTransactions(ctx context.Context, addr string) (modules.Transactions, error) {
-	result := make(modules.Transactions, 0)
-	err := ec.c.CallContext(ctx, &result, "ptn_getAddrTxs", addr)
+func (ec *Client) GetAddrTransactions(ctx context.Context, addr string) (map[string]modules.Transactions, error) {
+	result := make(map[string]modules.Transactions)
+	err := ec.c.CallContext(ctx, &result, "ptn_getAddrTransactions", addr)
 	return result, err
 }
 

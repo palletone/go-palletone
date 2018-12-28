@@ -270,56 +270,58 @@ func (s *PublicWalletAPI) GetBalance(ctx context.Context, address string) (map[s
 func (s *PublicWalletAPI) GetTranscations(ctx context.Context, address string) (string, error) {
 	txs, err := s.b.GetAddrTransactions(address)
 	if err != nil {
-		return "", err
+		return "null", err
 	}
 
 	gets := []ptnjson.GetTransactions{}
-	for _, tx := range txs {
+	for _, items := range txs {
+		for _, tx := range items {
 
-		get := ptnjson.GetTransactions{}
-		get.Txid = tx.Hash().String()
+			get := ptnjson.GetTransactions{}
+			get.Txid = tx.Hash().String()
 
-		for _, msg := range tx.TxMessages {
-			payload, ok := msg.Payload.(*modules.PaymentPayload)
+			for _, msg := range tx.TxMessages {
+				payload, ok := msg.Payload.(*modules.PaymentPayload)
 
-			if ok == false {
-				continue
-			}
+				if ok == false {
+					continue
+				}
 
-			for _, txin := range payload.Inputs {
+				for _, txin := range payload.Inputs {
 
-				if txin.PreviousOutPoint != nil {
-					addr, err := s.b.GetAddrByOutPoint(txin.PreviousOutPoint)
-					if err != nil {
+					if txin.PreviousOutPoint != nil {
+						addr, err := s.b.GetAddrByOutPoint(txin.PreviousOutPoint)
+						if err != nil {
 
-						return "", err
+							return "null", err
+						}
+
+						get.Inputs = append(get.Inputs, addr.String())
+					} else {
+						get.Inputs = append(get.Inputs, "coinbase")
 					}
 
-					get.Inputs = append(get.Inputs, addr.String())
-				} else {
-					get.Inputs = append(get.Inputs, "coinbase")
 				}
 
-			}
-
-			for _, txout := range payload.Outputs {
-				var gout ptnjson.GetTranscationOut
-				addr, err := tokenengine.GetAddressFromScript(txout.PkScript)
-				if err != nil {
-					return "", err
+				for _, txout := range payload.Outputs {
+					var gout ptnjson.GetTranscationOut
+					addr, err := tokenengine.GetAddressFromScript(txout.PkScript)
+					if err != nil {
+						return "null", err
+					}
+					gout.Addr = addr.String()
+					gout.Value = txout.Value
+					gout.Asset = txout.Asset.String()
+					get.Outputs = append(get.Outputs, gout)
 				}
-				gout.Addr = addr.String()
-				gout.Value = txout.Value
-				gout.Asset = txout.Asset.String()
-				get.Outputs = append(get.Outputs, gout)
-			}
 
-			gets = append(gets, get)
+				gets = append(gets, get)
+			}
 		}
 	}
-	result := ptnjson.ConvertGetTransactions2Json(gets) 
+	result := ptnjson.ConvertGetTransactions2Json(gets)
 
-	return result,nil
+	return result, nil
 }
 
 //sign rawtranscation

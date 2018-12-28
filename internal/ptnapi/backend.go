@@ -114,7 +114,7 @@ type Backend interface {
 	/* ---------------------save token info ------------------------*/
 	SaveTokenInfo(token_info *modules.TokenInfo) (*ptnjson.TokenInfoJson, error)
 
-	GetAddrTransactions(addr string) (modules.Transactions, error)
+	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 	GetAllTokenInfo() (*modules.AllTokenInfo, error)
 	GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error)
 	//contract control

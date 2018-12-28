@@ -169,6 +169,8 @@ func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 	var fee uint64
 	if tx.TxFee != nil {
 		fee = tx.TxFee.Amount
+	} else {
+		fee = 20 // 20dao
 	}
 	return big.NewInt(int64(fee))
 }
@@ -215,8 +217,28 @@ func (tx *Transaction) CreateDate() string {
 	return n.Format(TimeFormatString)
 }
 
-func (tx *Transaction) Address() common.Address {
-	return common.Address{}
+// address return the tx's original address  of from and to
+func (tx *Transaction) GetAddressInfo() ([]*OutPoint, [][]byte) {
+	froms := make([]*OutPoint, 0)
+	tos := make([][]byte, 0)
+	if len(tx.Messages()) > 0 {
+		msg := tx.Messages()[0]
+		if msg.App == APP_PAYMENT {
+			payment, ok := msg.Payload.(*PaymentPayload)
+			if ok {
+				for _, input := range payment.Inputs {
+					if input.PreviousOutPoint != nil {
+						froms = append(froms, input.PreviousOutPoint)
+					}
+				}
+
+				for _, out := range payment.Outputs {
+					tos = append(tos, out.PkScript[:])
+				}
+			}
+		}
+	}
+	return froms, tos
 }
 
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
@@ -359,52 +381,6 @@ func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPo
 	}
 }
 
-// key: message.UnitHash(message+timestamp)
-//type Message struct {
-//	App     string      `json:"app"`     // message type
-//	Payload interface{} `json:"payload"` // the true transaction data
-//}
-/************************** Payload Details ******************************************/
-//type ContractWriteSet struct {
-//
-//	Key   string
-//	Value interface{}
-//}
-// Token exchange message and verify message
-// App: payment
-//type PaymentPayload struct {
-//	Input  []*Input  `json:"inputs"`
-//	Output []*Output `json:"outputs"`
-//	LockTime uint32  `json:"lock_time"`
-//}
-// NewTxOut returns a new bitcoin transaction output with the provided
-// transaction value and public key script.
-//func NewTxOut(value uint64, pkScript []byte,asset Asset) *Output {
-//	return &Output{
-//		Value:    value,
-//		PkScript: pkScript,
-//		Asset : asset,
-//	}
-//}
-//type Output struct {
-//	Value    uint64
-//	PkScript []byte
-//	Asset    Asset
-//}
-//type Input struct {
-//	PreviousOutPoint OutPoint
-//	SignatureScript  []byte
-//	Extra            []byte // if user creating a new asset, this field should be it's config data. Otherwise it is null.
-//}
-// NewTxIn returns a new ptn transaction input with the provided
-// previous outpoint point and signature script with a default sequence of
-// MaxTxInSequenceNum.
-//func NewTxIn(prevOut *OutPoint, signatureScript []byte) *Input {
-//	return &Input{
-//		PreviousOutPoint: *prevOut,
-//		SignatureScript:  signatureScript,
-//	}
-//}
 // VarIntSerializeSize returns the number of bytes it would take to serialize
 // val as a variable length integer.
 func VarIntSerializeSize(val uint64) int {
@@ -737,7 +713,7 @@ func (l binaryFreeList) PutUint64(w io.Writer, byteOrder binary.ByteOrder, val u
 	return err
 }
 func WriteTxOut(w io.Writer, pver uint32, version int32, to *Output) error {
-	err := binarySerializer.PutUint64(w, littleEndian, uint64(to.Value))
+	err := binarySerializer.PutUint64(w, littleEndian, to.Value)
 	if err != nil {
 		return err
 	}
