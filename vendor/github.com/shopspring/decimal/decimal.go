@@ -700,8 +700,8 @@ func (d Decimal) Sign() int {
 //	true if d > 0
 //	false if d == 0
 //	false if d < 0
-func (d Decimal) IsPositive() bool {
-	return d.Sign() == 1
+func (d Decimal) IsPositive() bool { 
+	return d.Sign() >= 1
 }
 
 // IsNegative return
