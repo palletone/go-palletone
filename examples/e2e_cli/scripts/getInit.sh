@@ -1,12 +1,9 @@
 #!/usr/bin/expect
 
+#(1)设置超时时间
 set timeout 30
-
-#输入gptn在Mediator0的绝对路径
-spawn /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator0/gptn init
-
+#(2)执行init
+spawn ./gptn init
 expect "Passphrase:"
-
 send "1\r"
-
 interact

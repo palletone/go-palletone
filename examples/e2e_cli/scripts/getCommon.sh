@@ -33,15 +33,13 @@ function generateGenesis() {
         echo "##########################################################"
         echo "#####   Generate genesis file using gptn tool    #########"
         echo "##########################################################"
-        $GPTNGEN dumpjson
-        if [ -f "${PCFGPAH}/ptn-genesis.json" ]; then
-                if [ ! -d "${PCFGPAH}/channel-artifacts/${NODENAM}" ]; then
-                        mkdir -p ${PCFGPAH}/channel-artifacts/${NODENAM}
-                fi
-
-                mv -f ${PCFGPAH}/ptn-genesis.json ${PCFGPAH}/channel-artifacts/${NODENAM}
+        if [ -d "${PCFGPAH}" ]; then
+		cd ${PCFGPAH}
+		$GPTNGEN dumpjson
+		cd ${PCFGPAH}/../../
         else
                 echo "Generate genesis file failed,please check!"
+		exit 1
         fi
         echo
 	
@@ -69,15 +67,13 @@ function generateToml() {
         echo "##########################################################"
         echo "#####Generate configuration file using gptn tool #########"
         echo "##########################################################"
-        ${GPTNGEN} dumpconfig
-        if [ -f "${PCFGPAH}/ptn-config.toml" ]; then
-                if [ ! -d "${PCFGPAH}/channel-artifacts/${NODENAM}" ]; then
-                        mkdir -p ${PCFGPAH}/channel-artifacts/${NODENAM}
-                fi
-
-                mv -f ${PCFGPAH}/ptn-config.toml ${PCFGPAH}/channel-artifacts/${NODENAM}
+        if [ -d "${PCFGPAH}" ]; then
+		cd ${PCFGPAH}
+		${GPTNGEN} dumpconfig
+		cd ${PCFGPAH}/../..
         else
                 echo "Generate configuration file failed,please check!"
+		exit 1
         fi
         echo
 	
@@ -122,6 +118,8 @@ function updateTomlFile() {
         n_BtcHost="BtcHost=\"localhost:${BtcHost}\""
         n_ContractAddress="ContractAddress=\"127.0.0.1:${ContractAddress}\""
         n_EnableStaleProduction="EnableStaleProduction=true"
+	n_Datadir="DataDir=\"/var/palletone/production"\"
+	n_ContractFileSystemPath="ContractFileSystemPath=\"/var/palletone/production/chaincodes"\"
 
         #修改TOML配置文件中的账号参数
         account=${2}
@@ -137,6 +135,8 @@ function updateTomlFile() {
         n_InitPubKey="InitPubKey=\"$publickey\""
 
         #修改配置文件
+	sed -i '/^ContractFileSystemPath/c'${n_ContractFileSystemPath}'' ${DUMPFILE}
+	#sed -i '/^DataDir/c'${n_Datadir}'' ${DUMPFILE}
         sed -i '/^ListenAddr/c'${n_ListenAddr}'' ${DUMPFILE}
         sed -i '/^BtcHost/c'${n_BtcHost}'' ${DUMPFILE}
         sed -i '/^ContractAddress/c'${n_ContractAddress}'' ${DUMPFILE}
@@ -195,11 +195,15 @@ function updateGenesis() {
 #######################################################
 function getPtnAccount() {
 	SCPATH=${1}
+	TMPATH=${2}
+
+	cd ${TMPATH}
         Account=`${SCPATH}/scripts/getAccount.sh`
         tempinfo=`echo ${Account} | sed -n '$p'| awk '{print $NF}'`
         accountlength=35
         accounttemp=${tempinfo:0:$accountlength}
-        account=`echo ${accounttemp//^M/}`
+        account=`echo ${accounttemp///}`
+	cd ${TMPATH}/../..
         echo ${account}
 }
 
@@ -209,16 +213,21 @@ function getPtnAccount() {
 function getPtnKeys() {
         #gptn可执行程序路径
         GPTNGEN=${1}
+	TMPATH=${2}
 
-        key=`${GPTNGEN} mediator initdks`
+	cd ${TMPATH}
+	info=`${GPTNGEN} mediator initdks`
+	key=`echo $info`
         privatekeylength=44
         private=${key#*private key: }
         privatekeytemp=${private:0:$privatekeylength}
-        privatekey=`echo ${privatekeytemp//^M/}`
+
+        privatekey=`echo ${privatekeytemp///}`
         publickeylength=175
         public=${key#*public key: }
         publickeytemp=${public:0:$publickeylength}
-        publickey=`echo ${publickeytemp//^M/}`
+        publickey=`echo ${publickeytemp///}`
+	cd ${TMPATH}/../..
         echo ${privatekey}_${publickey}
 }
 
@@ -228,15 +237,17 @@ function getPtnKeys() {
 function getPtnNode() {
 	#gptn可执行程序路径
         GPTNGEN=${1}
+	TMPATH=${2}
         b=140
 
+	cd ${TMPATH}
         while true
         do
-                info=`${GPTNGEN} nodeInfo`
+                info=`${GPTNGEN} nodeInfo `
                 tempinfo=`echo $info | sed -n '$p'| awk '{print $NF}'`
                 length=`echo ${#tempinfo}`
                 nodeinfotemp=${tempinfo:0:$length}
-                nodeinfo=`echo ${nodeinfotemp//^M/}`
+                nodeinfo=`echo ${nodeinfotemp///}`
 		length=`echo ${#nodeinfo}`
                 if [ "$length" -lt "$b" ]; then
                         continue
@@ -244,6 +255,7 @@ function getPtnNode() {
                         break
                 fi
         done
+	cd ${TMPATH}/../..
         echo ${nodeinfo}
 }
 
@@ -339,44 +351,22 @@ function modifyStaticNodes() {
 #(13)
 #######################################################
 function ExecInit() {
-	##环境变量
-	#channel-artifacts目录
+	#相关变量信息
 	CHANNELPATH=${1}
 	NUMNODES=${2}
-	GPTNRBIN=${3}
-
-        count=0
-        while [ ${count} -lt ${NUMNODES} ] ;
-        do
+	
+	count=0
+	while [ ${count} -lt ${NUMNODES} ] ;
+	do
 		if [ ${count} -eq 0 ]; then
-			#初始化leveldb信息
-			cd ${CHANNELPATH}/mediator${count}
-			cp ${CHANNELPATH}/../scripts/getInit.sh .
-			cp ${GPTNRBIN} .
-
-			gptninit=`${CHANNELPATH}/../scripts/getInit.sh`
-			#`echo $gptninit`
-			path=`pwd`
-			fullpath=${path}/palletone/gptn/leveldb
-			if [ ! -d $fullpath ]; then
-				echo "====================init err=================="
-				return
-			fi
-
-			#删除临时文件和目录
-			rm -rf log ${CHANNELPATH}/mediator${count}/getInit.sh gptn
-		else
-			cd ${CHANNELPATH}/mediator${count}
-			cp ${CHANNELPATH}/mediator0/palletone/gptn/leveldb ${CHANNELPATH}/mediator${count}/palletone/gptn -rf
+			cp ${CHANNELPATH}/../scripts/getInit.sh  ${CHANNELPATH}/mediator${count}
+			cp ${CHANNELPATH}/../scripts/getGenis.sh ${CHANNELPATH}/mediator${count}
 		fi
 
-		#创建日志目录
-		mkdir -p ${CHANNELPATH}/mediator${count}/log
-
 		let ++count
-		sleep 1
-    	done
+                sleep 1
+	done
 
-    	echo "====================init ok====================="
-    	return 0;
+	echo "====================init ok====================="
+	return 0;
 }
