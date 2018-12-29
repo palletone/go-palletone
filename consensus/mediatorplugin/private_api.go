@@ -61,7 +61,7 @@ func (args *MediatorCreateArgs) check() error {
 
 	_, err = core.StrToPoint(args.InitPubKey)
 	if err != nil {
-		return fmt.Errorf("invalid init PubKey: %s", args.InitPubKey)
+		return fmt.Errorf("invalid init public key: %s", args.InitPubKey)
 	}
 
 	_, err = discover.ParseNode(args.Node)
@@ -75,7 +75,7 @@ func (args *MediatorCreateArgs) check() error {
 // 相关参数检查
 func (args *MediatorCreateArgs) setDefaults(node *discover.Node) (initPrivKey string) {
 	if args.InitPubKey == "" {
-		args.InitPubKey, initPrivKey = core.CreateInitDKS()
+		initPrivKey, args.InitPubKey = core.CreateInitDKS()
 	}
 
 	if args.Node == "" {
