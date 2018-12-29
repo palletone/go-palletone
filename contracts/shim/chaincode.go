@@ -384,22 +384,22 @@ func (stub *ChaincodeStub) GetState(key string) ([]byte, error) {
 	return stub.handler.handleGetState(collection, key, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
-func (stub *ChaincodeStub) GetCandidateListForMediator() ([]*modules.MediatorInfo, error) {
+func (stub *ChaincodeStub) GetCandidateListForMediator() ([]*modules.MediatorRegisterInfo, error) {
 	return stub.GetList("MediatorList")
 }
-func (stub *ChaincodeStub) GetBecomeMediatorApplyList() ([]*modules.MediatorInfo, error) {
+func (stub *ChaincodeStub) GetBecomeMediatorApplyList() ([]*modules.MediatorRegisterInfo, error) {
 	return stub.GetList("ListForApplyBecomeMediator")
 }
-func (stub *ChaincodeStub) GetQuitMediatorApplyList() ([]*modules.MediatorInfo, error) {
+func (stub *ChaincodeStub) GetQuitMediatorApplyList() ([]*modules.MediatorRegisterInfo, error) {
 	return stub.GetList("ListForApplyQuitMediator")
 }
 
-func (stub *ChaincodeStub) GetAgreeForBecomeMediatorList() ([]*modules.MediatorInfo, error) {
+func (stub *ChaincodeStub) GetAgreeForBecomeMediatorList() ([]*modules.MediatorRegisterInfo, error) {
 	return stub.GetList("ListForAgreeBecomeMediator")
 
 }
 
-func (stub *ChaincodeStub) GetList(typeList string) ([]*modules.MediatorInfo, error) {
+func (stub *ChaincodeStub) GetList(typeList string) ([]*modules.MediatorRegisterInfo, error) {
 	listByte, err := stub.handler.handleGetState("", typeList, stub.ContractId, stub.ChannelId, stub.TxID)
 	if err != nil {
 		return nil, err
@@ -407,7 +407,7 @@ func (stub *ChaincodeStub) GetList(typeList string) ([]*modules.MediatorInfo, er
 	if listByte == nil {
 		return nil, nil
 	}
-	var list []*modules.MediatorInfo
+	var list []*modules.MediatorRegisterInfo
 	err = json.Unmarshal(listByte, &list)
 	if err != nil {
 		return nil, err

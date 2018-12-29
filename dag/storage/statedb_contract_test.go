@@ -56,7 +56,7 @@ func TestGetContractState(t *testing.T) {
 	}
 }
 
-func TestStateDb_GetMediatorCandidateList(t *testing.T) {
+func TestStateDb_GetApprovedMediatorList(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
 	l := log.NewTestLog()
 	statedb := NewStateDb(db, l)
@@ -64,22 +64,22 @@ func TestStateDb_GetMediatorCandidateList(t *testing.T) {
 	contractId := depositeContractAddress.Bytes()
 	//fmt.Println(contractId)
 	addr1 := "P1G988UGLytFgPwxy1bzY3FkzPT46ThDhTJ"
-	mediator1 := &modules.MediatorInfo{
+	mediator1 := &modules.MediatorRegisterInfo{
 		Address: addr1,
 	}
 	//assert.Nil(t, err, "string 2 address fail: ")
 	addr2 := "P1FbTqEaSLNfhp1hCwNmRkj5BkMjTNU8jRp"
-	mediator2 := &modules.MediatorInfo{
+	mediator2 := &modules.MediatorRegisterInfo{
 		Address: addr2,
 	}
 	//assert.Nil(t, err, "string 2 address fail: ")
-	mediatorList := []*modules.MediatorInfo{mediator1, mediator2}
+	mediatorList := []*modules.MediatorRegisterInfo{mediator1, mediator2}
 	mediatorListBytes, err := json.Marshal(mediatorList)
 	assert.Nil(t, err, "json marshal error: ")
 	version := &modules.StateVersion{Height: modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
 	err = statedb.SaveContractState(contractId, "MediatorList", mediatorListBytes, version)
 	assert.Nil(t, err, "save mediatorlist error: ")
-	list, err := statedb.GetMediatorCandidateList()
+	list, err := statedb.GetApprovedMediatorList()
 	assert.Nil(t, err, "get mediator candidate list error: ")
 	assert.True(t, len(list) == 2, "len is erroe")
 	for _, mediatorAddr := range list {
