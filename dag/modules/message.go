@@ -324,7 +324,7 @@ type InvokeFees struct {
 }
 
 //申请成为Mediator
-type MediatorInfo struct {
+type MediatorRegisterInfo struct {
 	Address string `json:"address"`
 	Content string `json:"content"`
 	Time    int64  `json:"time"`
