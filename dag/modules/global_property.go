@@ -28,23 +28,39 @@ import (
 	"github.com/palletone/go-palletone/core"
 )
 
+type GlobalPropBase struct {
+	ChainParameters core.ChainParameters // 区块链网络参数
+}
+
+func NewGlobalPropBase() *GlobalPropBase {
+	return &GlobalPropBase{
+		ChainParameters: core.NewChainParams(),
+	}
+}
+
 // 全局属性的结构体定义
 type GlobalProperty struct {
-	ChainParameters core.ChainParameters // 区块链网络参数
+	*GlobalPropBase
 
-	ActiveJuries map[common.Address]bool //当前活跃Jury集合
-
+	ActiveJuries       map[common.Address]bool //当前活跃Jury集合
 	ActiveMediators    map[common.Address]bool // 当前活跃 mediator 集合；每个维护间隔更新一次
 	PrecedingMediators map[common.Address]bool // 上一届 mediator
 }
 
+func NewGlobalProp() *GlobalProperty {
+	return &GlobalProperty{
+		GlobalPropBase:     NewGlobalPropBase(),
+		ActiveJuries:       make(map[common.Address]bool, 0),
+		ActiveMediators:    make(map[common.Address]bool, 0),
+		PrecedingMediators: make(map[common.Address]bool, 0),
+	}
+}
+
 // 动态全局属性的结构体定义
 type DynamicGlobalProperty struct {
-	HeadUnitNum uint64 // 最近的单元编号(数量)
-
+	HeadUnitNum  uint64      // 最近的单元编号(数量)
 	HeadUnitHash common.Hash // 最近的单元hash
-
-	HeadUnitTime int64 // 最近的单元时间
+	HeadUnitTime int64       // 最近的单元时间
 
 	// CurrentMediator *common.Address // 当前生产单元的mediator, 用于判断是否连续同一个mediator生产单元
 
@@ -61,6 +77,16 @@ type DynamicGlobalProperty struct {
 	// RecentSlotsFilled float32
 
 	LastIrreversibleUnitNum uint32
+}
+
+func NewDynGlobalProp() *DynamicGlobalProperty {
+	return &DynamicGlobalProperty{
+		HeadUnitNum:             0,
+		HeadUnitHash:            common.Hash{},
+		NextMaintenanceTime:     0,
+		CurrentASlot:            0,
+		LastIrreversibleUnitNum: 0,
+	}
 }
 
 const TERMINTERVAL = 50 //DEBUG:50, DEPLOY:15000
@@ -133,24 +159,6 @@ func sortAddress(adds []common.Address) {
 
 	for i, addStr := range addStrs {
 		adds[i], _ = common.StringToAddress(addStr)
-	}
-}
-
-func NewGlobalProp() *GlobalProperty {
-	return &GlobalProperty{
-		ChainParameters:    core.NewChainParams(),
-		ActiveMediators:    make(map[common.Address]bool, 0),
-		PrecedingMediators: make(map[common.Address]bool, 0),
-	}
-}
-
-func NewDynGlobalProp() *DynamicGlobalProperty {
-	return &DynamicGlobalProperty{
-		HeadUnitNum:             0,
-		HeadUnitHash:            common.Hash{},
-		NextMaintenanceTime:     0,
-		CurrentASlot:            0,
-		LastIrreversibleUnitNum: 0,
 	}
 }
 

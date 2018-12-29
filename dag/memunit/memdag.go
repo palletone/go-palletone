@@ -244,7 +244,7 @@ func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 		}
 	}
 	// save unit to index
-	index, err := forkIndex.AddData(unit.Hash(), unit.ParentHash(), unit.UnitHeader.Index(), unit.UnitHeader.Authors.Address.String())
+	index, err := forkIndex.AddData(unit.Hash(), unit.ParentHash(), unit.NumberU64(), unit.Author().String())
 	switch index {
 	case -1:
 		log.Error("errrrorrrrrrrrrrrrrrrrrrrrrrrrrrrrrr", "error", err)

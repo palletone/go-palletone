@@ -98,7 +98,7 @@ func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
 	for i, add := range meds {
 		med := d.GetActiveMediator(add)
 
-		pubs[i] = med.InitPartPub
+		pubs[i] = med.InitPubKey
 	}
 
 	return pubs
@@ -241,6 +241,15 @@ func (d *Dag) GetVotedMediator(addr common.Address) map[common.Address]bool {
 
 func (d *Dag) LookupAccount() map[common.Address]*modules.AccountInfo {
 	return d.statedb.LookupAccount()
+}
+
+func (d *Dag) GetPtnBalance(addr common.Address) uint64 {
+	accountInfo, err := d.statedb.RetrieveAccountInfo(addr)
+	if err != nil {
+		accountInfo = modules.NewAccountInfo()
+	}
+
+	return accountInfo.PtnBalance
 }
 
 func (d *Dag) GetMediatorInfo(address common.Address) *storage.MediatorInfo {

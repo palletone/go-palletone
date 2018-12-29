@@ -308,7 +308,6 @@ func getTxSigNum(tx *modules.Transaction) int {
 }
 
 func checkTxValid(tx *modules.Transaction) bool {
-	//printTxInfo(tx)
 	return cm.ValidateTxSig(tx)
 }
 
@@ -407,4 +406,16 @@ func getTextHash(tx *modules.Transaction) []byte {
 	}
 
 	return nil
+}
+
+func getContractTxType(tx *modules.Transaction) (modules.MessageType, error) {
+	if tx == nil {
+		return modules.APP_UNKNOW, errors.New("getContractTxType get param is nil")
+	}
+	for _, msg := range tx.TxMessages {
+		if msg.App >= modules.APP_CONTRACT_TPL_REQUEST && msg.App <= modules.APP_CONTRACT_STOP_REQUEST {
+			return msg.App, nil
+		}
+	}
+	return modules.APP_UNKNOW, errors.New("getContractTxType not contract Tx")
 }

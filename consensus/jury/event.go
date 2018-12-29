@@ -22,15 +22,15 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-//type NewTxEvent struct {
-//	Tx *modules.Transaction
-//}
-
 //install deploy invoke stop
 type ContractExeEvent struct {
 	Tx *modules.Transaction
 }
 
 type ContractSigEvent struct {
-	Tx     *modules.Transaction
+	Tx *modules.Transaction
+}
+
+type ContractSpecialEvent struct {
+	Tx *modules.Transaction
 }

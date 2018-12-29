@@ -89,7 +89,6 @@ func (d *Dag) IsEmpty() bool {
 func (d *Dag) CurrentUnit() *modules.Unit {
 	// step1. get current unit hash
 	hash, err := d.GetHeadUnitHash()
-	//fmt.Println("d.GetHeadUnitHash()=", hash)
 	if err != nil {
 		log.Error("CurrentUnit when GetHeadUnitHash()", "error", err.Error())
 		return nil
@@ -283,7 +282,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		// append by albert·gou, 利用 unit 更新相关状态
 		time := time.Unix(u.Timestamp(), 0)
 		log.Info(fmt.Sprint("Received unit "+u.UnitHash.TerminalString()+" #", u.NumberU64(),
-			" @", time.Format("2006-01-02 15:04:05"), " signed by ", u.UnitAuthor().Str()))
+			" @", time.Format("2006-01-02 15:04:05"), " signed by ", u.Author().Str()))
 		d.ApplyUnit(u)
 
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
@@ -904,7 +903,7 @@ func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
 	return d.utxodb.SaveUtxoView(view.Entries())
 }
 
-func (d *Dag) GetAddrTransactions(addr string) (modules.Transactions, error) {
+func (d *Dag) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
 	return d.unitRep.GetAddrTransactions(addr)
 }
 
@@ -992,7 +991,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 			// update leveldb
 			if view != nil {
 				needSet := make(map[modules.OutPoint]struct{})
-				for key, _ := range view.Entries() {
+				for key := range view.Entries() {
 					needSet[key] = struct{}{}
 				}
 

@@ -633,9 +633,9 @@ func (mr *MockIDagMockRecorder) GetAllUtxos() *gomock.Call {
 }
 
 // GetAddrTransactions mocks base method
-func (m *MockIDag) GetAddrTransactions(addr string) (modules.Transactions, error) {
+func (m *MockIDag) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
 	ret := m.ctrl.Call(m, "GetAddrTransactions", addr)
-	ret0, _ := ret[0].(modules.Transactions)
+	ret0, _ := ret[0].(map[string]modules.Transactions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -899,8 +899,9 @@ func (mr *MockIDagMockRecorder) GetUnit(arg0 interface{}) *gomock.Call {
 }
 
 // GenTransferPtnTx mocks base method
-func (m *MockIDag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string) (*modules.Transaction, uint64, error) {
-	ret := m.ctrl.Call(m, "GenTransferPtnTx", from, to, daoAmount, text)
+func (m *MockIDag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
+	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+	ret := m.ctrl.Call(m, "GenTransferPtnTx", from, to, daoAmount, text, txPool)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
 	ret2, _ := ret[2].(error)
@@ -908,8 +909,8 @@ func (m *MockIDag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, t
 }
 
 // GenTransferPtnTx indicates an expected call of GenTransferPtnTx
-func (mr *MockIDagMockRecorder) GenTransferPtnTx(from, to, daoAmount, text interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenTransferPtnTx", reflect.TypeOf((*MockIDag)(nil).GenTransferPtnTx), from, to, daoAmount, text)
+func (mr *MockIDagMockRecorder) GenTransferPtnTx(from, to, daoAmount, text, txpool interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenTransferPtnTx", reflect.TypeOf((*MockIDag)(nil).GenTransferPtnTx), from, to, daoAmount, text, txpool)
 }
 
 // QueryDbByKey mocks base method

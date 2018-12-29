@@ -39,44 +39,33 @@ func mediatorKey(address common.Address) []byte {
 
 // only for serialization(storage)
 type MediatorInfo struct {
-	//AddStr               string
-	InitPartPub          string
-	Node                 string
-	Url                  string
-	TotalMissed          uint64
-	LastConfirmedUnitNum uint32
-	TotalVotes           uint64
+	*core.MediatorInfoBase
+	*core.MediatorInfoExpand
 }
 
 func NewMediatorInfo() *MediatorInfo {
 	return &MediatorInfo{
-		Url:                  "",
-		TotalMissed:          0,
-		LastConfirmedUnitNum: 0,
-		TotalVotes:           0,
+		MediatorInfoBase:   core.NewMediatorInfoBase(),
+		MediatorInfoExpand: core.NewMediatorBase(),
 	}
 }
 
 func mediatorToInfo(md *core.Mediator) *MediatorInfo {
 	mi := NewMediatorInfo()
-	//mi.AddStr = md.Address.Str()
-	mi.InitPartPub = core.PointToStr(md.InitPartPub)
+	mi.AddStr = md.Address.Str()
+	mi.InitPubKey = core.PointToStr(md.InitPubKey)
 	mi.Node = md.Node.String()
-	mi.TotalMissed = md.TotalMissed
-	mi.LastConfirmedUnitNum = md.LastConfirmedUnitNum
-	mi.TotalVotes = md.TotalVotes
+	mi.MediatorInfoExpand = md.MediatorInfoExpand
 
 	return mi
 }
 
 func (mi *MediatorInfo) infoToMediator() *core.Mediator {
 	md := core.NewMediator()
-	//md.Address = core.StrToMedAdd(mi.AddStr)
-	md.InitPartPub, _ = core.StrToPoint(mi.InitPartPub)
+	md.Address = core.StrToMedAdd(mi.AddStr)
+	md.InitPubKey, _ = core.StrToPoint(mi.InitPubKey)
 	md.Node = core.StrToMedNode(mi.Node)
-	md.TotalMissed = mi.TotalMissed
-	md.LastConfirmedUnitNum = mi.LastConfirmedUnitNum
-	md.TotalVotes = mi.TotalVotes
+	md.MediatorInfoExpand = mi.MediatorInfoExpand
 
 	return md
 }
@@ -119,7 +108,7 @@ func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator
 	}
 
 	med := mi.infoToMediator()
-	med.Address = address
+	//med.Address = address
 
 	return med, nil
 }
@@ -145,6 +134,10 @@ func GetMediators(db ptndb.Database) map[common.Address]bool {
 	iter := db.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
 	for iter.Next() {
 		key := iter.Key()
+		if key == nil {
+			continue
+		}
+
 		//log.Debug(fmt.Sprintf("Get Mediator's key : %s", key))
 		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
 
@@ -160,17 +153,15 @@ func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
 
 	iter := db.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
 	for iter.Next() {
-		if iter.Key() == nil {
+		key := iter.Key()
+		if key == nil {
 			continue
 		}
-		key := make([]byte, len(iter.Key()))
-		copy(key, iter.Key())
 
-		if iter.Value() == nil {
+		value := iter.Value()
+		if value == nil {
 			continue
 		}
-		value := make([]byte, len(iter.Value()))
-		copy(value, iter.Value())
 
 		mi := NewMediatorInfo()
 		err := rlp.DecodeBytes(value, mi)
@@ -181,7 +172,7 @@ func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
 		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
 		add := common.BytesToAddress(addB)
 		med := mi.infoToMediator()
-		med.Address = add
+		//med.Address = add
 
 		result[add] = med
 	}

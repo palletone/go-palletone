@@ -98,13 +98,13 @@ func createExampleMediators(ctx *cli.Context, mcLen int) []*mp.MediatorConf {
 	exampleMediators := make([]*mp.MediatorConf, mcLen, mcLen)
 	for i := 0; i < mcLen; i++ {
 		account, password, _ := createExampleAccount(ctx)
-		secStr, pubStr := newInitDKS()
+		secStr, pubStr := core.CreateInitDKS()
 
 		exampleMediators[i] = &mp.MediatorConf{
 			Address:     account,
 			Password:    password,
-			InitPartSec: secStr,
-			InitPartPub: pubStr,
+			InitPrivKey: secStr,
+			InitPubKey:  pubStr,
 		}
 	}
 
@@ -264,11 +264,11 @@ func initialMediatorCandidates(mediators []*mp.MediatorConf, nodeInfo string) []
 	mcLen := len(mediators)
 	initialMediators := make([]*core.InitialMediator, mcLen)
 	for i := 0; i < mcLen; i++ {
-		initialMediators[i] = &core.InitialMediator{
-			AddStr:      mediators[i].Address,
-			InitPartPub: mediators[i].InitPartPub,
-			Node:        nodeInfo,
-		}
+		im := core.NewInitialMediator()
+		im.AddStr = mediators[i].Address
+		im.InitPubKey = mediators[i].InitPubKey
+		im.Node = nodeInfo
+		initialMediators[i] = im
 	}
 
 	return initialMediators

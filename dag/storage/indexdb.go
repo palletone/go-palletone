@@ -21,10 +21,14 @@
 package storage
 
 import (
+	"fmt"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -44,6 +48,8 @@ type IIndexDb interface {
 	DeleteUtxoByIndex(idx *modules.UtxoIndex) error
 	SaveAddressTxId(address common.Address, txid common.Hash) error
 	GetAddressTxIds(address common.Address) ([]common.Hash, error)
+	GetFromAddressTxIds(addr string) ([]common.Hash, error)
+	GetTxFromAddresses(tx *modules.Transaction) ([]string, error)
 }
 
 // ###################### SAVE IMPL START ######################
@@ -84,4 +90,47 @@ func (db *IndexDb) GetAddressTxIds(address common.Address) ([]common.Hash, error
 		result = append(result, hash)
 	}
 	return result, nil
+}
+
+func (db *IndexDb) GetFromAddressTxIds(addr string) ([]common.Hash, error) {
+	hashs := make([]common.Hash, 0)
+	data, err := db.db.Get(append(constants.AddrTx_From_Prefix, []byte(addr)...))
+	if err != nil {
+
+		return nil, err
+	}
+	if err := rlp.DecodeBytes(data, &hashs); err != nil {
+		return hashs, err
+	}
+	return hashs, nil
+}
+
+func (db *IndexDb) GetTxFromAddresses(tx *modules.Transaction) ([]string, error) {
+
+	froms := make([]string, 0)
+	if tx == nil {
+		return froms, errors.New("tx is nil, not exist address.")
+	}
+	outpoints, _ := tx.GetAddressInfo()
+	for _, op := range outpoints {
+		addr, err := db.getOutpointAddr(op)
+		if err == nil {
+			froms = append(froms, addr)
+		}
+	}
+
+	return froms, nil
+}
+func (db *IndexDb) getOutpointAddr(outpoint *modules.OutPoint) (string, error) {
+	out_key := append(constants.OutPointAddr_Prefix, outpoint.ToKey()...)
+	data, err := db.db.Get(out_key[:])
+	if len(data) <= 0 {
+		return "", errors.New(fmt.Sprintf("address is null. outpoint_key(%s)", outpoint.ToKey()))
+	}
+	if err != nil {
+		return "", err
+	}
+	var str string
+	err0 := rlp.DecodeBytes(data, &str)
+	return str, err0
 }

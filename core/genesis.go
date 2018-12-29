@@ -70,10 +70,28 @@ func (g *Genesis) GetTokenAmount() uint64 {
 	return uint64(amount)
 }
 
+type MediatorInfoBase struct {
+	AddStr     string `json:"account"`
+	InitPubKey string `json:"initPubKey"`
+	Node       string `json:"node"`
+}
+
+func NewMediatorInfoBase() *MediatorInfoBase {
+	return &MediatorInfoBase{
+		AddStr:     "",
+		InitPubKey: "",
+		Node:       "",
+	}
+}
+
 type InitialMediator struct {
-	AddStr      string `json:"account"`
-	InitPartPub string `json:"initPubKey"`
-	Node        string `json:"node"`
+	*MediatorInfoBase
+}
+
+func NewInitialMediator() *InitialMediator {
+	return &InitialMediator{
+		MediatorInfoBase: NewMediatorInfoBase(),
+	}
 }
 
 // author Albert·Gou
@@ -94,4 +112,14 @@ func PointToStr(pub kyber.Point) string {
 	}
 
 	return base58.Encode(pubB)
+}
+
+// author Albert·Gou
+func CreateInitDKS() (secStr, pubStr string) {
+	sec, pub := GenInitPair()
+
+	secStr = ScalarToStr(sec)
+	pubStr = PointToStr(pub)
+
+	return
 }

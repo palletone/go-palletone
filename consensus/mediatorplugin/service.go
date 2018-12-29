@@ -96,6 +96,7 @@ type MediatorPlugin struct {
 	ptn  PalletOne     // Full PalletOne service to retrieve other function
 	quit chan struct{} // Channel used for graceful exit
 	dag  iDag
+	srvr *p2p.Server
 
 	// Enable Unit production, even if the chain is stale.
 	// 新开启一条链时，第一个节点必须设为true，其他节点必须设为false
@@ -198,7 +199,7 @@ func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
 
 	for _, localMed := range lams {
-		initSec := mp.mediators[localMed].InitPartSec
+		initSec := mp.mediators[localMed].InitPrivKey
 
 		//dkgr, err := dkg.NewDistKeyGeneratorWithoutSecret(mp.suite, initSec, initPubs, curThreshold)
 		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
@@ -224,6 +225,8 @@ func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	log.Debug("mediator plugin startup begin")
+
+	mp.srvr = server
 
 	// 1. 开启循环生产计划
 	go mp.ScheduleProductionLoop()

@@ -93,11 +93,12 @@ func (statedb *StateDb) StoreAccountInfo(address common.Address, info *modules.A
 }
 
 func (statedb *StateDb) UpdateAccountInfoBalance(address common.Address, addAmount int64) error {
-	info, err := statedb.RetrieveAccountInfo(address)
+	info := modules.NewAccountInfo()
+	err := retrieve(statedb.db, accountKey(address), info)
 	// 第一次更新时， 数据库没有该账户的相关数据
 	if err != nil {
-		//return err
 		info = modules.NewAccountInfo()
+		statedb.logger.Debugf("Account info for [%s] don't exist,create it first", address.String())
 	}
 
 	info.PtnBalance = uint64(int64(info.PtnBalance) + addAmount)
@@ -139,10 +140,18 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 	iter := statedb.db.NewIteratorWithPrefix(constants.ACCOUNT_INFO_PREFIX)
 	for iter.Next() {
 		key := iter.Key()
+		if key == nil {
+			continue
+		}
+
 		addB := bytes.TrimPrefix(key, constants.ACCOUNT_INFO_PREFIX)
 		add := common.BytesToAddress(addB)
 
 		value := iter.Value()
+		if value == nil {
+			continue
+		}
+
 		acc := newAccountInfo()
 		err := rlp.DecodeBytes(value, acc)
 		if err != nil {

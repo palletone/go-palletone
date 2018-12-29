@@ -51,6 +51,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
+	"math/rand"
 )
 
 const (
@@ -266,6 +267,16 @@ func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address string) (m
 		}
 	}
 	return result, nil
+}
+func (s *PublicBlockChainAPI) GetAddrTransactions(ctx context.Context, addr string) (string, error) {
+	result, err := s.b.GetAddrTransactions(addr)
+	if result == nil {
+		return "all_txs:null", nil
+	}
+
+	info := NewPublicReturnInfo("all_txs", result)
+	result_json, err := json.Marshal(info)
+	return string(result_json), err
 }
 
 func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
@@ -588,8 +599,10 @@ func (s *PublicBlockChainAPI) Ccquery(ctx context.Context, deployId string, para
 	msgArg := []byte("query has no msg0")
 	fullArgs = append(fullArgs, msgArg)
 	fullArgs = append(fullArgs, args...)
-	txid := strconv.Itoa(time.Now().Nanosecond())
-	rsp, err := s.b.ContractQuery(contractId[:], txid[:4], fullArgs, 0)
+
+	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+
+	rsp, err := s.b.ContractQuery(contractId[:], txid[:], fullArgs, 0)
 	if err != nil {
 		return "", err
 	}
@@ -684,7 +697,7 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmoun
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
 	rsp, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
-	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
 
 	return hex.EncodeToString(rsp), err
 }
@@ -710,22 +723,6 @@ func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount,
 
 	rsp, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, cid, txid, delImg)
 	log.Info("-----Ccstoptx:" + hex.EncodeToString(rsp))
-	return hex.EncodeToString(rsp), err
-}
-
-func (s *PublicBlockChainAPI) CreatCcTransaction(ctx context.Context, txtype string, deployId string, txhex string, param []string) (string, error) {
-	depId, _ := hex.DecodeString(deployId)
-	txBytes, err := hex.DecodeString(txhex)
-	log.Info("-----creatCcTransaction:" + deployId)
-
-	args := make([][]byte, len(param))
-	for i, arg := range param {
-		args[i] = []byte(arg)
-		fmt.Printf("index[%d], value[%s]\n", i, arg)
-	}
-	rsp, err := s.b.ContractTxCreat(depId, txBytes, args, 0)
-	log.Info("-----creatCcTransaction:" + string(rsp))
-
 	return hex.EncodeToString(rsp), err
 }
 
@@ -1570,6 +1567,9 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 		if json.Asset == ptn {
 			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
 		}
+	}
+	if fee.IsPositive() {
+		return "", fmt.Errorf("fee is ZERO ")
 	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
 	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
@@ -2605,16 +2605,3 @@ func (s *PublicDagAPI) GetTxSearchEntry(ctx context.Context, hashHex string) (st
 	result_json, _ := json.Marshal(info)
 	return string(result_json), err
 }
-
-// // GetPoolTxByHash returns the pool transaction for the given hash
-// func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (string, error) {
-// 	hash := common.HexToHash(hex)
-// 	item, err := s.b.GetTxPoolTxByHash(hash)
-// 	if err != nil {
-// 		return "pool_tx:null", err
-// 	} else {
-// 		info := NewPublicReturnInfo("txpool_tx", item)
-// 		result_json, _ := json.Marshal(info)
-// 		return string(result_json), nil
-// 	}
-// }

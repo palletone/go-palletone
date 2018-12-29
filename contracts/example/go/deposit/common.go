@@ -15,13 +15,13 @@ import (
 //处理交付保证金数据
 func updateForPayValue(balance *modules.DepositBalance, invokeTokens *modules.InvokeTokens) {
 	balance.TotalAmount += invokeTokens.Amount
-	balance.LastModifyTime = time.Now().UTC()
+	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
 
 	payTokens := &modules.InvokeTokens{}
 	payValue := &modules.PayValue{PayTokens: payTokens}
 	payValue.PayTokens.Amount = invokeTokens.Amount
 	payValue.PayTokens.Asset = invokeTokens.Asset
-	payValue.PayTime = time.Now().UTC()
+	payValue.PayTime = time.Now().UTC().Unix() / 1800
 
 	balance.PayValues = append(balance.PayValues, payValue)
 }
@@ -185,8 +185,9 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
 	}
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, balance.LastModifyTime.Unix())
-	balance.LastModifyTime = time.Now().UTC()
+	endTime := balance.LastModifyTime * 1800
+	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
+	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
 	//加上利息奖励
 	balance.TotalAmount += awards
 	//减去提取部分
@@ -228,10 +229,12 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 func cashbackAllDeposit(role string, stub shim.ChaincodeStubInterface, cashbackAddr string, invokeTokens *modules.InvokeTokens, balance *modules.DepositBalance) error {
 	//计算保证金全部利息
 	//获取币龄
-	endTime := time.Now().UTC()
-	coinDays := award.GetCoinDay(balance.TotalAmount, balance.LastModifyTime, endTime)
-	//计算币龄收益
-	awards := award.CalculateAwardsForDepositContractNodes(coinDays)
+	//endTime := time.Now().UTC()
+	//coinDays := award.GetCoinDay(balance.TotalAmount, balance.LastModifyTime, endTime)
+	////计算币龄收益
+	//awards := award.CalculateAwardsForDepositContractNodes(coinDays)
+	endTime := balance.LastModifyTime * 1800
+	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
 	//本金+利息
 	invokeTokens.Amount += awards
 	//调用从合约把token转到请求地址
@@ -266,7 +269,7 @@ func handleCommonJuryOrDev(stub shim.ChaincodeStubInterface, cashbackAddr string
 	//fmt.Printf("balanceValue=%s\n", balanceValue)
 	//v := handleValues(balanceValue.Values, tokens)
 	//balanceValue.Values = v
-	balance.LastModifyTime = time.Now().UTC()
+	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
 	balance.TotalAmount -= cashbackValue.CashbackTokens.Amount
 	//fmt.Printf("balanceValue=%s\n", balanceValue)
 	//TODO

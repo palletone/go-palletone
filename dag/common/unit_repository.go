@@ -57,7 +57,7 @@ type IUnitRepository interface {
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
-	GetAddrTransactions(addr string) (modules.Transactions, error)
+	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -415,7 +415,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 				//confPay.ConfigSet = append(confPay.ConfigSet,
 				//	modules.ContractWriteSet{Key: sk, Value: modules.ToPayloadMapValueBytes(v.Field(k).Interface())})
 				confPay.ConfigSet = append(confPay.ConfigSet,
-					modules.ContractWriteSet{Key: sk, Value: v.Field(k).Interface()})
+					modules.ContractWriteSet{Key: sk, Value: []byte(v.Field(k).String())})
 			}
 		} else {
 			sk := tt.Field(i).Name
@@ -484,11 +484,12 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	}
 	// step1 验证 群签名
 	// if passed == true , don't validate group sign
-	if !passed {
-		if no := unitOp.validate.ValidateUnitGroupSign(unit.Header(), isGenesis); no != modules.UNIT_STATE_INVALID_GROUP_SIGNATURE {
-			return fmt.Errorf("Validate unit's group sign failed, err number=%d", no)
-		}
-	}
+	//if !passed {
+	//	if state := unitOp.validate.ValidateUnitGroupSign(unit.Header(), isGenesis); state ==
+	// 		modules.UNIT_STATE_INVALID_GROUP_SIGNATURE {
+	//		return fmt.Errorf("Validate unit's group sign failed, err number=%d", state)
+	//	}
+	//}
 
 	// step2. check unit signature, should be compare to mediator list
 	if dagconfig.DefaultConfig.WhetherValidateUnitSignature {
@@ -656,6 +657,11 @@ func getPayToAddresses(tx *modules.Transaction) []common.Address {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func getPayFromAddresses(tx *modules.Transaction) []*modules.OutPoint {
+	outpoints, _ := tx.GetAddressInfo()
+	return outpoints
 }
 
 /**
@@ -956,18 +962,30 @@ func IsGenesis(hash common.Hash) bool {
 	return genHash == hash
 }
 
-// GetAddrTransactions
-func (unitOp *UnitRepository) GetAddrTransactions(addr string) (modules.Transactions, error) {
+// GetAddrTransactions containing from && to address
+func (unitOp *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
 	address, _ := common.StringToAddress(addr)
 	hashs, err := unitOp.idxdb.GetAddressTxIds(address)
 	if err != nil {
-		return modules.Transactions{}, err
+		return nil, err
 	}
-
+	alltxs := make(map[string]modules.Transactions)
 	txs := make(modules.Transactions, 0)
 	for _, hash := range hashs {
 		tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
 		txs = append(txs, tx)
 	}
-	return txs, nil
+	alltxs["into"] = txs
+
+	// from tx
+	txs = make(modules.Transactions, 0)
+	from_hashs, err1 := unitOp.idxdb.GetFromAddressTxIds(addr)
+	if err1 == nil {
+		for _, hash := range from_hashs {
+			tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
+			txs = append(txs, tx)
+		}
+	}
+	alltxs["out"] = txs
+	return alltxs, err1
 }

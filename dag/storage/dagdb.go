@@ -37,7 +37,6 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
@@ -221,14 +220,17 @@ value: all transactions hash set's rlp encoding bytes
 */
 func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	// db.Put(append())
-	return StoreBytes(dagdb.db, append(constants.BODY_PREFIX, []byte(unitHash.String())...), txsHash)
+	dagdb.logger.Debugf("Save body of unit[%s], include txs:%x", unitHash.String(), txsHash)
+	return StoreBytes(dagdb.db, append(constants.BODY_PREFIX, unitHash.Bytes()...), txsHash)
 }
 
 func (dagdb *DagDb) GetBody(unitHash common.Hash) ([]common.Hash, error) {
-	data, err := dagdb.db.Get(append(constants.BODY_PREFIX, []byte(unitHash.String())...))
+	log.Debug("get unit body info", "unitHash", unitHash.String())
+	data, err := dagdb.db.Get(append(constants.BODY_PREFIX, unitHash.Bytes()...))
 	if err != nil {
 		return nil, err
 	}
+
 	var txHashs []common.Hash
 	if err := rlp.DecodeBytes(data, &txHashs); err != nil {
 		return nil, err
@@ -261,10 +263,10 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 	if err := StoreString(dagdb.db, key1, str); err != nil {
 		return err
 	}
-	//dagdb.updateAddrTransactions(tx.Address().String(), txHash)
+	dagdb.updateAddrTransactions(tx, txHash)
 	// store output by addr
 	for i, msg := range tx.TxMessages {
-		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+		if msg.App >= modules.APP_CONTRACT_TPL_REQUEST && msg.App <= modules.APP_CONTRACT_STOP_REQUEST {
 			if err := dagdb.SaveReqIdByTx(tx); err != nil {
 				log.Error("SaveReqIdByTx is failed,", "error", err)
 			}
@@ -295,32 +297,49 @@ func (dagdb *DagDb) saveOutputByAddr(addr string, hash common.Hash, msgindex int
 	return err
 }
 
-//func (dagdb *DagDb) updateAddrTransactions(addr string, hash common.Hash) error {
-//	if hash == (common.Hash{}) {
-//		return errors.New("empty tx hash.")
-//	}
-//	hashs := make([]common.Hash, 0)
-//	data, err := dagdb.db.Get(append(constants.AddrTransactionsHash_Prefix, []byte(addr)...))
-//	if err != nil {
-//		if err.Error() != "leveldb: not found" {
-//			return err
-//		} else { // first store the addr
-//			hashs = append(hashs, hash)
-//			if err := StoreBytes(dagdb.db, append(constants.AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
-//				return err
-//			}
-//			return nil
-//		}
-//	}
-//	if err := rlp.DecodeBytes(data, &hashs); err != nil {
-//		return err
-//	}
-//	hashs = append(hashs, hash)
-//	if err := StoreBytes(dagdb.db, append(constants.AddrTransactionsHash_Prefix, []byte(addr)...), hashs); err != nil {
-//		return err
-//	}
-//	return nil
-//}
+func (dagdb *DagDb) updateAddrTransactions(tx *modules.Transaction, hash common.Hash) error {
+
+	if hash == (common.Hash{}) {
+		return errors.New("empty tx hash.")
+	}
+	froms, err := dagdb.GetTxFromAddress(tx)
+	if err != nil {
+		return err
+	}
+	// 1. save from_address
+	for _, addr := range froms {
+		go dagdb.saveAddrTxHashByKey(constants.AddrTx_From_Prefix, addr, hash)
+	}
+	// 2. to_address 已经在上层接口处理了。
+	// for _, addr := range tos { // constants.AddrTx_To_Prefix
+	// 	go dagdb.saveAddrTxHashByKey(constants.AddrTx_To_Prefix, addr, hash)
+	// }
+	return nil
+}
+func (dagdb *DagDb) saveAddrTxHashByKey(key []byte, addr string, hash common.Hash) error {
+
+	hashs := make([]common.Hash, 0)
+	data, err := dagdb.db.Get(append(key, []byte(addr)...))
+	if err != nil {
+		if err.Error() != "leveldb: not found" {
+			return err
+		} else { // first store the addr
+			hashs = append(hashs, hash)
+			if err := StoreBytes(dagdb.db, append(key, []byte(addr)...), hashs); err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+	if err := rlp.DecodeBytes(data, &hashs); err != nil {
+		return err
+	}
+	hashs = append(hashs, hash)
+	if err := StoreBytes(dagdb.db, append(key, []byte(addr)...), hashs); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 	for i, tx := range unit.Transactions() {
@@ -385,17 +404,40 @@ func (dagdb *DagDb) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return outputs, err
 }
 
-//func GetUnitNumber(db DatabaseReader, hash common.Hash) (modules.ChainIndex, error) {
-//	data, _ := db.Get(append(UNIT_HASH_NUMBER_Prefix, hash.Bytes()...))
-//	if len(data) <= 0 {
-//		return modules.ChainIndex{}, fmt.Errorf("Get from unit number rlp data none")
-//	}
-//	var number modules.ChainIndex
-//	if err := rlp.DecodeBytes(data, &number); err != nil {
-//		return modules.ChainIndex{}, fmt.Errorf("Get unit number when rlp decode error:%s", err.Error())
-//	}
-//	return number, nil
-//}
+func (dagdb *DagDb) GetTxFromAddress(tx *modules.Transaction) ([]string, error) {
+
+	froms := make([]string, 0)
+	if tx == nil {
+		return froms, errors.New("tx is nil, not exist address.")
+	}
+	outpoints, _ := tx.GetAddressInfo()
+	for _, op := range outpoints {
+		addr, err := dagdb.getOutpointAddr(op)
+		if err == nil {
+			froms = append(froms, addr)
+		} else {
+			log.Info("get out address is failed.", "error", err)
+		}
+	}
+
+	return froms, nil
+}
+func (dagdb *DagDb) getOutpointAddr(outpoint *modules.OutPoint) (string, error) {
+	if outpoint == nil {
+		return "", fmt.Errorf("outpoint_key is nil ")
+	}
+	out_key := append(constants.OutPointAddr_Prefix, outpoint.ToKey()...)
+	data, err := dagdb.db.Get(out_key[:])
+	if len(data) <= 0 {
+		return "", fmt.Errorf("address is null. outpoint_key(%s)", outpoint.ToKey())
+	}
+	if err != nil {
+		return "", err
+	}
+	var str string
+	err0 := rlp.DecodeBytes(data, &str)
+	return str, err0
+}
 func (dagdb *DagDb) GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error) {
 	key := fmt.Sprintf("%s%s", constants.UNIT_HASH_NUMBER_Prefix, hash.String())
 
@@ -511,7 +553,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 	txs := modules.Transactions{}
 	txHashList, err := dagdb.GetBody(hash)
 	if err != nil {
-		dagdb.logger.Info("GetUnitTransactions when get body error", "error", err.Error())
+		dagdb.logger.Info("GetUnitTransactions when get body error", "error", err.Error(), "unit_hash", hash.String())
 		return nil, err
 	}
 	// get transaction by tx'hash.
@@ -704,127 +746,139 @@ func (dagdb *DagDb) gettrasaction(hash common.Hash) (*modules.Transaction, error
 	}
 	// TODO ---- 将不同msg‘s app 反序列化后赋值给payload interface{}.
 	//log.Debug("================== transaction_info======================", "error", err, "transaction_info", tx)
-	msgs, err1 := ConvertMsg(tx)
-	if err1 != nil {
-		log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
-		return nil, err1
-	}
-
-	tx.TxMessages = msgs
+	//msgs, err1 := ConvertMsg(tx)
+	//if err1 != nil {
+	//	log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
+	//	return nil, err1
+	//}
+	//
+	//tx.TxMessages = msgs
 	return tx, err
 }
 
-func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
-	if tx == nil {
-		return nil, errors.New("convert msg tx is nil")
-	}
-	msgs := make([]*modules.Message, 0)
-	for _, msg := range tx.Messages() {
-		//fmt.Println("msg ", msg)
-
-		data1, err1 := json.Marshal(msg.Payload)
-		if err1 != nil {
-			return nil, err1
-		}
-		switch msg.App {
-		default:
-			//case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT, APP_VOTE:
-			// payment := new(modules.PaymentPayload)
-			// err2 := json.Unmarshal(data1, &payment)
-			// if err2 != nil {
-			// 	return nil, err2
-			// }
-			// msg.Payload = payment
-			msgs = append(msgs, msg)
-
-		case modules.APP_PAYMENT: //0
-			payment := new(modules.PaymentPayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-		case modules.APP_CONTRACT_TPL: //1
-			payment := new(modules.ContractTplPayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-
-		case modules.APP_CONTRACT_DEPLOY: //2
-			payment := new(modules.ContractDeployPayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-
-		case modules.APP_CONTRACT_INVOKE: //3
-			payment := new(modules.ContractInvokePayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-		case modules.APP_CONTRACT_INVOKE_REQUEST: //4
-			payment := new(modules.ContractInvokeRequestPayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-		case modules.APP_CONFIG: //5
-			payment := new(modules.ConfigPayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-		case modules.APP_TEXT: //6
-			payment := new(modules.TextPayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-		case modules.APP_VOTE: //7
-			payment := new(vote.VoteInfo)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-		case modules.APP_SIGNATURE: //8
-			payment := new(modules.SignaturePayload)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-
-		case modules.OP_MEDIATOR_CREATE:
-			payment := new(modules.MediatorCreateOperation)
-			err2 := json.Unmarshal(data1, &payment)
-			if err2 != nil {
-				return nil, err2
-			}
-			msg.Payload = payment
-			msgs = append(msgs, msg)
-
-		}
-	}
-	return msgs, nil
-}
+//func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
+//	if tx == nil {
+//		return nil, errors.New("convert msg tx is nil")
+//	}
+//	msgs := make([]*modules.Message, 0)
+//	for _, msg := range tx.Messages() {
+//		//fmt.Println("msg ", msg)
+//
+//		data1, err1 := json.Marshal(msg.Payload)
+//		if err1 != nil {
+//			return nil, err1
+//		}
+//		switch msg.App {
+//		default:
+//			//case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT, APP_VOTE:
+//			// payment := new(modules.PaymentPayload)
+//			// err2 := json.Unmarshal(data1, &payment)
+//			// if err2 != nil {
+//			// 	return nil, err2
+//			// }
+//			// msg.Payload = payment
+//			msgs = append(msgs, msg)
+//
+//		case modules.APP_PAYMENT: //0
+//			payment := new(modules.PaymentPayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//		case modules.APP_CONTRACT_TPL: //1
+//			payment := new(modules.ContractTplPayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//
+//		case modules.APP_CONTRACT_DEPLOY: //2
+//			payment := new(modules.ContractDeployPayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//
+//		case modules.APP_CONTRACT_INVOKE: //3
+//			payment := new(modules.ContractInvokePayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			// decode WriteSet interface
+//			//for i, cw := range payment.WriteSet {
+//			//	fmt.Println("lal========================ala", i, cw.Value)
+//			//	//fmt.Printf("lalalalala%#v\n\n",cw.Value)
+//			//	val_byte, _ := json.Marshal(cw.Value)
+//			//	var item []byte
+//			//	json.Unmarshal(val_byte, &item)
+//			//	fmt.Println("===========", item)
+//			//	payment.WriteSet[i].Value = item
+//			//
+//			//}
+//
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//		case modules.APP_CONTRACT_INVOKE_REQUEST: //4
+//			payment := new(modules.ContractInvokeRequestPayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//		case modules.APP_CONFIG: //5
+//			payment := new(modules.ConfigPayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//		case modules.APP_TEXT: //6
+//			payment := new(modules.TextPayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//		case modules.APP_VOTE: //7
+//			payment := new(vote.VoteInfo)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//		case modules.APP_SIGNATURE: //8
+//			payment := new(modules.SignaturePayload)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//
+//		case modules.OP_MEDIATOR_CREATE:
+//			payment := new(modules.MediatorCreateOperation)
+//			err2 := json.Unmarshal(data1, &payment)
+//			if err2 != nil {
+//				return nil, err2
+//			}
+//			msg.Payload = payment
+//			msgs = append(msgs, msg)
+//
+//		}
+//	}
+//	return msgs, nil
+//}
 
 func (dagdb *DagDb) GetContractNoReader(db ptndb.Database, id common.Hash) (*modules.Contract, error) {
 	if common.EmptyHash(id) {
@@ -852,7 +906,7 @@ func (dagdb *DagDb) UpdateHeadByBatch(hash common.Hash, number uint64) error {
 	key := append(constants.HeaderCanon_Prefix, encodeBlockNumber(number)...)
 	BatchErrorHandler(batch.Put(append(key, constants.NumberSuffix...), hash.Bytes()), errorList) //PutCanonicalHash
 	BatchErrorHandler(batch.Put(constants.HeadHeaderKey, hash.Bytes()), errorList)                //PutHeadHeaderHash
-	BatchErrorHandler(batch.Put(constants.HeadUnitHash, hash.Bytes()), errorList)                  //PutHeadUnitHash
+	BatchErrorHandler(batch.Put(constants.HeadUnitHash, hash.Bytes()), errorList)                 //PutHeadUnitHash
 	BatchErrorHandler(batch.Put(constants.HeadFastKey, hash.Bytes()), errorList)                  //PutHeadFastUnitHash
 	if len(*errorList) == 0 {                                                                     //each function call succeed.
 		return batch.Write()

@@ -75,3 +75,21 @@ func isCoinBase(tx *modules.Transaction) bool {
 	}
 	return true
 }
+
+type GetTranscationOut struct {
+		Addr         string `json:"address"`
+		Value        uint64 `json:"vout"`
+		Asset        string `json:"asset"`
+	}
+type GetTransactions struct {
+	Txid   string `json:"txid"`
+    Inputs  []string `json:"inputs"`
+	Outputs []GetTranscationOut `json:"outputs"`
+}
+func ConvertGetTransactions2Json(gets []GetTransactions) string {
+	data, err := json.Marshal(gets)
+	if err != nil {
+		return ""
+	}
+	return *(*string)(unsafe.Pointer(&data))
+}

@@ -70,7 +70,7 @@ func (self *ProtocolManager) sigShareTransmitLoop() {
 		case event := <-self.sigShareCh:
 			unit, err := self.dag.GetUnitByHash(event.UnitHash)
 			if unit != nil && err == nil {
-				med := unit.UnitAuthor()
+				med := unit.Author()
 				node := self.dag.GetActiveMediator(med).Node
 				self.TransmitSigShare(node, &event)
 			}

@@ -48,8 +48,14 @@ func newTxo4Greedy(outPoint modules.OutPoint, amount uint64) *Txo4Greedy {
 }
 
 func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, txPool txspool.ITxPool) (*modules.Transaction, error) {
+	// 条件判断
 	if daoFee == 0 {
-		return nil, fmt.Errorf("transaction's fee id zero")
+		return nil, fmt.Errorf("transaction fee cannot be 0")
+	}
+
+	daoTotal := daoAmount + daoFee
+	if daoTotal > dag.GetPtnBalance(from) {
+		return nil, fmt.Errorf("the ptn balance of the account is not enough %v", daoTotal)
 	}
 
 	// 1. 获取转出账户所有的PTN utxo
@@ -70,7 +76,7 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 		greedyUtxos = append(greedyUtxos, tg)
 	}
 
-	selUtxos, change, err := core.Select_utxo_Greedy(greedyUtxos, daoAmount+daoFee)
+	selUtxos, change, err := core.Select_utxo_Greedy(greedyUtxos, daoTotal)
 	if err != nil {
 		return nil, fmt.Errorf("select utxo err")
 	}
@@ -163,14 +169,12 @@ func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, dao
 	if msg.App == modules.APP_TEXT {
 		daoFee += dag.calculateDataFee(msg.Payload)
 	}
-
 	tx, err := dag.createBaseTransaction(from, to, daoAmount, daoFee, txPool)
 	if err != nil {
 		return nil, 0, err
 	}
-
 	tx.AddMessage(msg)
-	//tx.TxMessages = append(tx.TxMessages, msgs...)
+
 	return tx, daoFee, nil
 }
 

@@ -21,6 +21,7 @@
 package modules
 
 import (
+	"encoding/json"
 	"github.com/martinlindhe/base36"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -74,4 +75,12 @@ func TestAssetToString(t *testing.T) {
 	t.Logf("Hex: %x,Str: %s", t1.Bytes(), t1.ToAssetId())
 	t2, _ := NewAssetId("T1", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 	t.Logf("Hex: %x,Str: %s", t2.Bytes(), t2.ToAssetId())
+}
+func TestAsset_MarshalJSON(t *testing.T) {
+	ptn := NewPTNAsset()
+	js, _ := json.Marshal(ptn)
+	t.Logf("%s", string(js))
+	str := ptn.String()
+	js, _ = json.Marshal(str)
+	t.Logf("%s", string(js))
 }

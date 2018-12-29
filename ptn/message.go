@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/tokenengine"
 )
@@ -267,12 +266,12 @@ func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		}
 		var temptxs modules.Transactions
 		for _, tx := range txs {
-			msgs, err1 := storage.ConvertMsg(tx)
-			if err1 != nil {
-				log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
-				break
-			}
-			tx.TxMessages = msgs
+			//msgs, err1 := storage.ConvertMsg(tx)
+			//if err1 != nil {
+			//	log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
+			//	break
+			//}
+			//tx.TxMessages = msgs
 			temptxs = append(temptxs, tx)
 		}
 
@@ -406,12 +405,12 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 
 	var temptxs modules.Transactions
 	for _, tx := range unit.Txs {
-		msgs, err1 := storage.ConvertMsg(tx)
-		if err1 != nil {
-			log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
-			return err1
-		}
-		tx.TxMessages = msgs
+		//msgs, err1 := storage.ConvertMsg(tx)
+		//if err1 != nil {
+		//	log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
+		//	return err1
+		//}
+		//tx.TxMessages = msgs
 		temptxs = append(temptxs, tx)
 	}
 	unit.Txs = temptxs
@@ -471,7 +470,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if tx.IsContractTx() {
 			if !pm.contractProc.CheckContractTxValid(tx) {
 				log.Debug("TxMsg", "CheckContractTxValid is false")
-				return nil//errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
+				return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
 			}
 		}
 
@@ -599,7 +598,17 @@ func (pm *ProtocolManager) ContractSigMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===ContractExecMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-	//pm.contractProc.ProcessContractSigEvent(&event)
+	pm.contractProc.ProcessContractSigEvent(&event)
+	return nil
+}
+
+func (pm *ProtocolManager) ContractSpecialMsg(msg p2p.Msg, p *peer) error {
+	var event jury.ContractSpecialEvent
+	if err := msg.Decode(&event); err != nil {
+		log.Info("===ContractSpecialMsg===", "err:", err)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+	pm.contractProc.ProcessContractSpecialEvent(&event)
 	return nil
 }
 
@@ -615,7 +624,7 @@ func (pm *ProtocolManager) ContractSigLocalSend(event jury.ContractSigEvent) {
 }
 
 func (pm *ProtocolManager) ContractBroadcast(event jury.ContractExeEvent) {
-	log.Info("ContractBroadcast", "event", event.Tx.Hash())
+	log.Debug("ContractBroadcast", "event", event.Tx.Hash())
 	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {
@@ -629,5 +638,13 @@ func (pm *ProtocolManager) ContractSigBroadcast(event jury.ContractSigEvent) {
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {
 		peer.SendContractSigTransaction(event)
+	}
+}
+
+func (pm *ProtocolManager) ContractSpecialBroadcast(event jury.ContractSpecialEvent) {
+	log.Info("ContractSpecialBroadcast", "event", event.Tx.Hash())
+	peers := pm.peers.GetPeers()
+	for _, peer := range peers {
+		peer.SendContractSpecialTransaction(event)
 	}
 }

@@ -65,6 +65,10 @@ type IUtxoDb interface {
 func (utxodb *UtxoDb) saveUtxoOutpoint(address common.Address, outpoint *modules.OutPoint) error {
 	key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
 	key = append(key, outpoint.Bytes()...)
+
+	// save outpoint tofind address
+	out_key := append(constants.OutPointAddr_Prefix, outpoint.ToKey()...)
+	StoreBytes(utxodb.db, out_key, address.String())
 	return StoreBytes(utxodb.db, key, outpoint)
 }
 func (utxodb *UtxoDb) batchSaveUtxoOutpoint(batch ptndb.Batch, address common.Address, outpoint *modules.OutPoint) error {

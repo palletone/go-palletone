@@ -14,6 +14,9 @@ type contractInf interface {
 	ProcessContractEvent(event *jury.ContractExeEvent) error
 
 	SubscribeContractSigEvent(ch chan<- jury.ContractSigEvent) event.Subscription
+	ProcessContractSigEvent(event *jury.ContractSigEvent) error
+
+	ProcessContractSpecialEvent(event *jury.ContractSpecialEvent) error
 
 	AddContractLoop(txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error
 	CheckContractTxValid(tx *modules.Transaction) bool

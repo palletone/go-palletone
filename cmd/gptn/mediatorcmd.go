@@ -103,18 +103,8 @@ List all existing mediator addresses.
 )
 
 // author Albert·Gou
-func newInitDKS() (secStr, pubStr string) {
-	sec, pub := core.GenInitPair()
-
-	secStr = core.ScalarToStr(sec)
-	pubStr = core.PointToStr(pub)
-
-	return
-}
-
-// author Albert·Gou
 func createInitDKS(ctx *cli.Context) error {
-	secStr, pubStr := newInitDKS()
+	secStr, pubStr := core.CreateInitDKS()
 
 	fmt.Println("Generate a initial distributed key share:")
 	fmt.Println("{")

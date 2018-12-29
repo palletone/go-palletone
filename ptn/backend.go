@@ -277,6 +277,10 @@ func (s *PalletOne) ContractSigBroadcast(event jury.ContractSigEvent) {
 	s.protocolManager.ContractSigBroadcast(event)
 }
 
+func (s *PalletOne) ContractSpecialBroadcast(event jury.ContractSpecialEvent) {
+	s.protocolManager.ContractSpecialBroadcast(event)
+}
+
 func (s *PalletOne) GetLocalMediators() []common.Address {
 	return s.mediatorPlugin.LocalMediators()
 }
@@ -431,7 +435,11 @@ func (p *PalletOne) SignAndSendTransaction(addr common.Address, tx *modules.Tran
 func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error) {
 	// 参数检查
 	if from == to {
-		return nil, fmt.Errorf("please don't transfer money to yourself: %v", from)
+		return nil, fmt.Errorf("please don't transfer ptn to yourself: %v", from)
+	}
+
+	if amount.Cmp(decimal.New(0, 0)) != 1 {
+		return nil, fmt.Errorf("the amount of the transfer must be greater than 0")
 	}
 
 	fromAdd, err := common.StringToAddress(from)

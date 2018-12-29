@@ -20,6 +20,8 @@
 package award
 
 import (
+	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 )
@@ -83,6 +85,12 @@ func TestCalculateAwardsForDepositContractNodes(t *testing.T) {
 	endTime, _ := time.Parse("2006-01-02 15:04:05", "2018-12-05 07:57:13")
 	//距离现在天数：4349
 	//获取币龄 余额：1000
+	fmt.Println(time.Now().UTC().Unix())
+	fmt.Println((endTime.Unix() - startTime.Unix()) / 60 / 60 / 24)
+	fmt.Println((endTime.Unix()/60 - startTime.Unix()/60) / 60 / 24)
+	fmt.Println(startTime.UTC().Unix())
+	fmt.Println(endTime.UTC().Unix() / 60 / 60 / 24)
+
 	coinDayUint64 := GetCoinDay(10000, startTime.UTC(), endTime)
 	//币龄：4349000
 	//获取币龄收益
@@ -92,4 +100,22 @@ func TestCalculateAwardsForDepositContractNodes(t *testing.T) {
 	} else {
 		t.Logf("succeeded,want 2 and get %d", awards)
 	}
+}
+
+func TestTime(t *testing.T) {
+	//txid := strconv.FormatInt(time.Now().UTC().Unix(), 10)
+	//fmt.Println(txid)
+	//fmt.Println(time.Now().UTC().Unix())
+	//time.Sleep(1 * time.Second)
+	//txid = strconv.FormatInt(time.Now().UTC().Unix(), 10)
+	//fmt.Println(txid)
+
+	tx := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+	fmt.Println(tx)
+	time.Sleep(1 * time.Second)
+	tx = fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+	fmt.Println(tx)
+	time.Sleep(1 * time.Second)
+	tx = fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+	fmt.Println(tx)
 }

@@ -173,13 +173,11 @@ func (outpoint *OutPoint) ToKey() []byte {
 	key = append(key, common.EncodeNumberUint32(outpoint.MessageIndex)...)
 	key = append(key, common.EncodeNumberUint32(outpoint.OutIndex)...)
 	return key[:]
-	// out := fmt.Sprintf("%s%s%d_%d",
-	// 	UTXO_PREFIX,
-	// 	outpoint.TxHash.String(),
-	// 	outpoint.MessageIndex,
-	// 	outpoint.OutIndex,
-	// )
-	//  return []byte(out)
+
+}
+func (outpoint *OutPoint) ToKeyStr() string {
+	b := outpoint.ToKey()
+	return string(b)
 }
 
 func (outpoint *OutPoint) SetString(data string) error {
@@ -231,7 +229,7 @@ func KeyToOutpoint(key []byte) *OutPoint {
 }
 
 type Output struct {
-	Value    uint64 `json:"value"`
+	Value    uint64 `json:"value,string"`
 	PkScript []byte `json:"pk_script"`
 	Asset    *Asset `json:"asset"`
 }

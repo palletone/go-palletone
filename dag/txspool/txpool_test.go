@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
-
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -206,7 +205,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		if i == 2 {
 			msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload2))
 		}
-		msgs = append(msgs, modules.NewMessage(modules.APP_TEXT, modules.TextPayload{TextHash: []byte(fmt.Sprintf("text%d%v", i, time.Now()))}))
+		msgs = append(msgs, modules.NewMessage(modules.APP_TEXT, &modules.TextPayload{TextHash: []byte(fmt.Sprintf("text%d%v", i, time.Now()))}))
 	}
 
 	for j := 0; j < int(config.AccountSlots)*1; j++ {

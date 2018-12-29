@@ -5609,9 +5609,9 @@ var methods = function () {
         params: 0,
         // inputFormatter: [null]
     });
-    var getAddrTxs = new Method({
-        name: 'getAddrTxs',
-        call: 'ptn_getAddrTxs',
+    var getAddrTransactions = new Method({
+        name: 'getAddrTransactions',
+        call: 'ptn_getAddrTransactions',
         params: 1,
         // inputFormatter: [null]
     });
@@ -5699,14 +5699,6 @@ var methods = function () {
         inputFormatter: [null, null]
     });
 
-
-    var creatCcTransaction = new Method({
-        name: 'creatCcTransaction',
-        call: 'ptn_creatCcTransaction',
-        params: 4, //txtype string, deployId string, paymentJson string, args[]string------>["fun", "key", "value"]
-        inputFormatter: [null, null, null, null],
-    });
-
     return [
         forking,
         getUnitByHash,
@@ -5761,7 +5753,7 @@ var methods = function () {
         getAddrOutpoints,
         getAddrUtxos,
         getAllUtxos,
-        getAddrTxs,
+        getAddrTransactions,
         getAllTokenInfo,
         getTokenInfo,
         saveTokenInfo,
@@ -5773,7 +5765,6 @@ var methods = function () {
         getUnitTxsHashHex, 
         getTxByHash, 
         getTxSearchEntry,
-        creatCcTransaction,
     ];
 };
 

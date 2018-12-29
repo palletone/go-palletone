@@ -61,7 +61,11 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
 		}
 	}
+	if  fee.IsPositive() {
+		return "", fmt.Errorf("fee is ZERO ")
+	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
+
 	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
 	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
@@ -264,6 +268,63 @@ func (s *PublicWalletAPI) GetBalance(ctx context.Context, address string) (map[s
 			result[utxo.Asset] = ptnjson.AssetAmt2JsonAmt(asset, utxo.Amount)
 		}
 	}
+	return result, nil
+}
+
+func (s *PublicWalletAPI) GetTranscations(ctx context.Context, address string) (string, error) {
+	txs, err := s.b.GetAddrTransactions(address)
+	if err != nil {
+		return "null", err
+	}
+
+	gets := []ptnjson.GetTransactions{}
+	for _, items := range txs {
+		for _, tx := range items {
+
+			get := ptnjson.GetTransactions{}
+			get.Txid = tx.Hash().String()
+
+			for _, msg := range tx.TxMessages {
+				payload, ok := msg.Payload.(*modules.PaymentPayload)
+
+				if ok == false {
+					continue
+				}
+
+				for _, txin := range payload.Inputs {
+
+					if txin.PreviousOutPoint != nil {
+						addr, err := s.b.GetAddrByOutPoint(txin.PreviousOutPoint)
+						if err != nil {
+
+							return "null", err
+						}
+
+						get.Inputs = append(get.Inputs, addr.String())
+					} else {
+						get.Inputs = append(get.Inputs, "coinbase")
+					}
+
+				}
+
+				for _, txout := range payload.Outputs {
+					var gout ptnjson.GetTranscationOut
+					addr, err := tokenengine.GetAddressFromScript(txout.PkScript)
+					if err != nil {
+						return "null", err
+					}
+					gout.Addr = addr.String()
+					gout.Value = txout.Value
+					gout.Asset = txout.Asset.String()
+					get.Outputs = append(get.Outputs, gout)
+				}
+
+				gets = append(gets, get)
+			}
+		}
+	}
+	result := ptnjson.ConvertGetTransactions2Json(gets)
+
 	return result, nil
 }
 

@@ -42,6 +42,8 @@ const (
 	APP_VOTE
 	OP_MEDIATOR_CREATE
 
+	APP_UNKNOW
+
 	APP_CONTRACT_TPL_REQUEST    = 100
 	APP_CONTRACT_DEPLOY_REQUEST = 101
 	APP_CONTRACT_INVOKE_REQUEST = 102
@@ -137,8 +139,8 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 type ContractWriteSet struct {
 	IsDelete bool
 	Key      string
-	//Value    []byte
-	Value interface{}
+	Value    []byte
+	//Value interface{}
 }
 
 func ToPayloadMapValueBytes(data interface{}) []byte {
@@ -323,9 +325,9 @@ type InvokeFees struct {
 
 //申请成为Mediator
 type MediatorInfo struct {
-	Address string    `json:"address"`
-	Content string    `json:"content"`
-	Time    time.Time `json:"time"`
+	Address string `json:"address"`
+	Content string `json:"content"`
+	Time    int64  `json:"time"`
 }
 
 //Mediator 申请列表
@@ -352,8 +354,8 @@ type MediatorInfo struct {
 //节点状态数据库保存值
 type DepositBalance struct {
 	TotalAmount      uint64        `json:"total_amount"`      //保证金总量
-	LastModifyTime   time.Time     `json:"last_modify_time"`  //最后一次改变，主要来计算币龄收益
-	EnterTime        time.Time     `json:"enter_time"`        //这是加入列表时的时间
+	LastModifyTime   int64         `json:"last_modify_time"`  //最后一次改变，主要来计算币龄收益
+	EnterTime        int64         `json:"enter_time"`        //这是加入列表时的时间
 	PayValues        []*PayValue   `json:"pay_values"`        //交付的历史记录
 	CashbackValues   []*Cashback   `json:"cashback_values"`   //退款的历史记录
 	ForfeitureValues []*Forfeiture `json:"forfeiture_values"` //被没收的历史记录
@@ -362,7 +364,7 @@ type DepositBalance struct {
 //交易的内容
 type PayValue struct {
 	PayTokens *InvokeTokens `json:"pay_tokens"` //数量和资产
-	PayTime   time.Time     `json:"pay_time"`   //发生时间
+	PayTime   int64         `json:"pay_time"`   //发生时间
 	//PayExtra  string        `json:"pay_extra"`  //额外内容
 }
 
