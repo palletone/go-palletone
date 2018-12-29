@@ -532,9 +532,14 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	if tx.Tx.Size() > 32*1024 {
 		return ErrOversizedData
 	}
+	// 交易费太低的交易，不能通过验证。
+	if pool.txfee.Cmp(tx.GetTxFee()) > 0 {
+		return ErrTxFeeTooLow
+	}
+
 	if len(tx.From) > 0 {
 		for _, from := range tx.From {
-			local = local || pool.locals.contains(*from) // account may be local even if the transaction arrived from the network
+			local = local || pool.locals.contains(*from) // tx maybe local even if the transaction arrived from the network
 			if !local && pool.txfee.Cmp(tx.GetTxFee()) > 0 {
 				return ErrTxFeeTooLow
 			}

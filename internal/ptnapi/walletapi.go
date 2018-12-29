@@ -61,7 +61,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
 		}
 	}
-	if  fee.IsPositive() {
+	if !fee.IsPositive() {
 		return "", fmt.Errorf("fee is ZERO ")
 	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
@@ -514,6 +514,9 @@ func (s *PublicWalletAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, d
 	log.Info("-----Ccinvoketx:", "amount", amount)
 	log.Info("-----Ccinvoketx:", "fee", fee)
 
+    if fee <= 0 {
+		return "", fmt.Errorf("fee is ZERO ")
+	}
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
@@ -551,6 +554,9 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	if err != nil {
 		fmt.Println(err.Error())
 		return common.Hash{}, err
+	}
+	if !fee.IsPositive() {
+		return common.Hash{}, fmt.Errorf("fee is ZERO ")
 	}
 	//
 	fromAddr, err := common.StringToAddress(from)
