@@ -514,6 +514,9 @@ func (s *PublicWalletAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, d
 	log.Info("-----Ccinvoketx:", "amount", amount)
 	log.Info("-----Ccinvoketx:", "fee", fee)
 
+    if fee <= 0 {
+		return "", fmt.Errorf("fee is ZERO ")
+	}
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
@@ -551,6 +554,9 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	if err != nil {
 		fmt.Println(err.Error())
 		return common.Hash{}, err
+	}
+	if !fee.IsPositive() {
+		return common.Hash{}, fmt.Errorf("fee is ZERO ")
 	}
 	//
 	fromAddr, err := common.StringToAddress(from)
