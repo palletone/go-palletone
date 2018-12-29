@@ -51,6 +51,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
+	"math/rand"
 )
 
 const (
@@ -598,8 +599,10 @@ func (s *PublicBlockChainAPI) Ccquery(ctx context.Context, deployId string, para
 	msgArg := []byte("query has no msg0")
 	fullArgs = append(fullArgs, msgArg)
 	fullArgs = append(fullArgs, args...)
-	txid := strconv.Itoa(time.Now().Nanosecond())
-	rsp, err := s.b.ContractQuery(contractId[:], txid[:4], fullArgs, 0)
+
+	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+
+	rsp, err := s.b.ContractQuery(contractId[:], txid[:], fullArgs, 0)
 	if err != nil {
 		return "", err
 	}
@@ -1564,6 +1567,9 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 		if json.Asset == ptn {
 			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
 		}
+	}
+	if fee.IsPositive() {
+		return "", fmt.Errorf("fee is ZERO ")
 	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
 	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)

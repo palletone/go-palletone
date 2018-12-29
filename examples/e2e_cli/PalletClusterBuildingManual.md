@@ -193,7 +193,16 @@ The basic configuration commands in CentOS are as follows:
 			drwx------ 5 root root       68 Dec 25 02:41 palletone
 			-rw-r--r-- 1 root root     3343 Dec 25 01:26 ptn-config.toml
 			-rw-r--r-- 1 root root     2854 Dec 25 01:26 ptn-genesis.json
-##### 		(2.2.2) Modify the toml file
+#####		(2.2.2) Initialize the database		
+		#./gptn init
+			Passphrase:                   #Enter a password, such as entering a number 1;
+		#
+		##Copy the database information of mediator0 to other node directories
+		#cd ..
+		#cp -rf mediator0/palletone/gptn/leveldb mediator1/palletone/gptn/leveldb
+		#cp -rf mediator0/palletone/gptn/leveldb mediator2/palletone/gptn/leveldb
+		#cd mediator0
+##### 		(2.2.3) Modify the toml file
 		#vi ptn-config.toml
 			[Node]
 			DataDir = "/var/palletone/production"
@@ -209,7 +218,7 @@ The basic configuration commands in CentOS are as follows:
 			StaticNodes=["pnode://3ea34ff09489627399bbeac8d3af93b34981afc623228210bd49c8ce11860f78c736aa3721ebb91aec76353a3b93ee6a2aadd05337ab0723a71a7c9f68947144@mediator0:30303","pnode://01f20de81a80738b30d944a756ade9f4222f95a696d45b451aed596eefa204f3c8ae98305363feceeb28f5c140a6736118f59c81716c0cdd123365cad8a528eb@mediator1:30303","pnode://2a891ee523a40961c0760871be0613551aab45ad7a4ecd23369b713601228173b6e91d4ce748a2cbb571ae0c9b4d47ce605500ad3785cbadeb9ca8ba1a412f6e@mediator2:30303"]
 		##Note: Change the relative path in the configuration file to an absolute path; Replace the StaticNodes in p2p with the IP address where gptn is located; If it is running on this machine, modify it to the container name.[备注:将配置文件中的相对路径修改为绝对路径；将p2p中的StaticNodes中替换为gptn所在的IP地址；若为本机运行，将其修改为容器名称]
 		##;
-##### 		(2.2.3) Modify the json file
+##### 		(2.2.4) Modify the json file
 		#vi ptn-genesis.json
 		#
 		##Remarks: No need to modify temporarily
