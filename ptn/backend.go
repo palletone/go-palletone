@@ -438,6 +438,10 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *s
 		return nil, fmt.Errorf("please don't transfer ptn to yourself: %v", from)
 	}
 
+	if amount.Cmp(decimal.New(0, 0)) != 1 {
+		return nil, fmt.Errorf("the amount of the transfer must be greater than 0")
+	}
+
 	fromAdd, err := common.StringToAddress(from)
 	if err != nil {
 		return nil, fmt.Errorf("invalid account address: %v", from)

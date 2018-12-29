@@ -243,6 +243,15 @@ func (d *Dag) LookupAccount() map[common.Address]*modules.AccountInfo {
 	return d.statedb.LookupAccount()
 }
 
+func (d *Dag) GetPtnBalance(addr common.Address) uint64 {
+	accountInfo, err := d.statedb.RetrieveAccountInfo(addr)
+	if err != nil {
+		accountInfo = modules.NewAccountInfo()
+	}
+
+	return accountInfo.PtnBalance
+}
+
 func (d *Dag) GetMediatorInfo(address common.Address) *storage.MediatorInfo {
 	mi, _ := d.statedb.RetrieveMediatorInfo(address)
 	return mi
